@@ -97,8 +97,8 @@ void instr_ula(char *va, int is_const)
     // se for a primeira vez que a var aparece, faz o cadastro
     if (var_find(va) == -1)
     {
-        var_add (va, is_const);                                       // adiciona variavel na tabela
-        int type = sim_regi(va);                                      // registra variavel no simulador (se for do usuario)
+        var_add (va, is_const);  // adiciona variavel na tabela
+        int type = sim_regi(va); // registra variavel no simulador (se for do usuario)
 
         // se for uma variavel float, inicializa com zero
         if (!is_const && type > 1)
@@ -156,6 +156,7 @@ void instr_oft(char *va)
 {
     // escreve a nova instrucao
     fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(var_find(va_name)+atoi(va),nbopr));
+    
     // cadastra, tambem, no tradutor da simulacao
     strcat ( va_name, " ");
     strcat ( va_name, va );

@@ -127,7 +127,8 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     for (int i = 0; i < opc_cnt(); i++) fprintf(f_veri, ".%s(1),\n", opc_get(i));
 
     // essa conta ta aproximada, mas é melhor que nada
-    printf("Info: using %d%% of the Assembly Instruction Set\n", opc_cnt()*100/92);
+    printf("Info: using %d%% of the Assembly Instruction Set\n", opc_cnt()*100/102);
+    printf("Info: using %d%% of the ULA operations\n", opc_ucnt()*100/(49-15)); // 49 no mux, 15 repetidos ou sem uso
 
     // ------------------------------------------------------------------------
     // finalizacao da instancia do processador --------------------------------
@@ -536,7 +537,7 @@ void hdl_tb_file(int itr_addr)
         if (inn_used(i))
         {
             fprintf(f_veri, "// variaveis da porta %d\n", i);
-            fprintf(f_veri, "integer data_in_%d; // para ver no simulador\n", i);
+            fprintf(f_veri, "integer data_in_%d;\n", i);
             fprintf(f_veri, "reg signed [%d:0] in_%d = 0;\n", nubits-1, i);
             fprintf(f_veri, "reg req_in_%d = 0;\n\n", i);
         }
@@ -569,7 +570,7 @@ void hdl_tb_file(int itr_addr)
         if (inn_used(i))
         {
             fprintf(f_veri, "    // decodificacao da porta %d\n", i);
-            fprintf(f_veri, "    if (proc_req_in == %d) proc_io_in = in_%d; // dado aparece no simulador\n", (int)pow(2,i),i);
+            fprintf(f_veri, "    if (proc_req_in == %d) proc_io_in = in_%d;\n", (int)pow(2,i),i);
             fprintf(f_veri, "    req_in_%d = proc_req_in == %d;\n",                 i, (int)pow(2,i),i);
         }
     }
@@ -605,7 +606,7 @@ void hdl_tb_file(int itr_addr)
         {
             fprintf(f_veri, "// variaveis da porta %d\n", i);
             fprintf(f_veri, "integer data_out_%d;\n", i);
-            fprintf(f_veri, "reg signed [%d:0] out_sig_%d = 0; // para ver no simulador\n", nubits-1, i);
+            fprintf(f_veri, "reg signed [%d:0] out_sig_%d = 0;\n", nubits-1, i);
             fprintf(f_veri, "reg out_en_%d = 0;\n\n", i);
         }
     }
@@ -637,7 +638,7 @@ void hdl_tb_file(int itr_addr)
         if (out_used(i))
         {
             fprintf(f_veri, "    // decodificacao da porta %d\n", i);
-            fprintf(f_veri, "    if (proc_out_en == %d) out_sig_%d <= proc_io_out; // dado aparece no simulador\n", (int)pow(2,i),i);
+            fprintf(f_veri, "    if (proc_out_en == %d) out_sig_%d <= proc_io_out;\n", (int)pow(2,i),i);
             fprintf(f_veri, "    out_en_%d = proc_out_en == %d;\n",                 i, (int)pow(2,i),i);
         }
     }
@@ -663,7 +664,7 @@ void hdl_tb_file(int itr_addr)
     // geracao do progress e $finish ------------------------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_veri, "// barra de progresso e finish ------------------------------------------------\n\n");
+    fprintf(f_veri, "// cadastro de sinais, barra de progresso e finish ----------------------------\n\n");
 
     fprintf(f_veri, "integer progress, chrys;\n");
     fprintf(f_veri, "initial begin\n\n");

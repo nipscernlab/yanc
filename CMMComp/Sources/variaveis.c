@@ -137,7 +137,7 @@ int exec_inum(char *text)
 
 // converte float ieee 32 bits para meu float
 // tentar mudar pra converter float de 64 bits
-void f2mf(char *va, int *m, int *e)
+void f2mf(char *va, int *s, int *m, int *e)
 {
     float f = atof(va);
 
@@ -147,6 +147,7 @@ void f2mf(char *va, int *m, int *e)
 
     // desempacota padrao IEEE ------------------------------------------------
 
+    *s = ( *ifl >> 31) & 0x00000001;
     *e = ((*ifl >> 23) & 0xFF) - 127 - 22;
     *m = ((*ifl & 0x007FFFFF) + 0x00800000) >> 1;
 
@@ -188,10 +189,11 @@ int exec_fnum(char *text)
 
     // calcula residuo --------------------------------------------------------
 
-    int   m,e; f2mf(text,&m,&e);
-    float mf = m*pow(2,e);
+    int s,m,e; f2mf(text,&s,&m,&e);
     
+    float mf    = (s) ? -m*pow(2,e) : m*pow(2,e);
     float delta = mf-num;
+
     if (delta != 0.0 && num != 0.0) printf("Info: constant %s on line %d aproximated to %.14f (error = %.14f)\n",text,line_num+1,mf,delta);
 
     // adiciona na tabela -----------------------------------------------------

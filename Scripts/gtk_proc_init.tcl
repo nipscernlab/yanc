@@ -128,11 +128,11 @@ gtkwave::/Edit/Insert_Comment {I/O ****************}
 set req_in  [listVar "proc.req_in_sim"]
 set entrada [listVar "proc.in_sim"    ]
 
-puts "Info: found [llength $req_in] input ports in use"
+puts "Info: detected [llength $req_in] input ports in use"
 
 for {set i 0} {$i < [llength $req_in] } {incr i} {
 
-    puts "Info: adding signals for input port $i"
+    #puts "Info: adding signals for input port $i"
 
     addVar [list [lindex $req_in  $i]] "Binary"         "Yellow" "req_in $i" "" ""
     addVar [list [lindex $entrada $i]] "Signed_Decimal" "Yellow" "input  $i" "" ""
@@ -143,11 +143,11 @@ for {set i 0} {$i < [llength $req_in] } {incr i} {
 set out_en [listVar "proc.out_en_sim"]
 set saida  [listVar "proc.out_sig"   ]
 
-puts "Info: found [llength $out_en] output ports in use"
+puts "Info: detected [llength $out_en] output ports in use"
 
 for {set i 0} {$i < [llength $out_en] } {incr i} {
 
-    puts "Info: adding signals for output port $i"
+    #puts "Info: adding signals for output port $i"
 
     addVar [list [lindex $out_en $i]] "Binary"         "Yellow" "out_en $i" "" ""
     addVar [list [lindex $saida  $i]] "Signed_Decimal" "Yellow" "output $i" "" ""
@@ -157,7 +157,7 @@ for {set i 0} {$i < [llength $out_en] } {incr i} {
 
 gtkwave::/Edit/Insert_Comment {Instructions *******}
 
-puts "Info: adding Assembly and C± instructions"
+puts "Info: adding Assembly and C± instructions..."
 
 # Assembly --------------------------------------------------------------------
 
@@ -240,3 +240,5 @@ gtkwave::/View/Left_Justified_Signals
 # engana bug -> cria uma aba vazia no gtkwave. refresh soh funciona assim com o GTK3
 gtkwave::loadFile "fix.vcd"
 gtkwave::setTabActive 0
+
+puts "Info: standard GTKWave configuration finished"

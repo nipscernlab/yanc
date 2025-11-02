@@ -35,7 +35,7 @@ proc addVar {facname dataFormat color alias tradutor filter} {
 proc addVars {proc tipo padrao dataFormat filter} {
     set var_typ [listVar $padrao $proc]
 
-    puts "Info: found [llength $var_typ] '$tipo' type variables for '$proc'"
+    #puts "Info: found [llength $var_typ] '$tipo' type variables for '$proc'"
     
     for {set i 0} {$i < [llength $var_typ] } {incr i} {
         set facname [lindex $var_typ $i]
@@ -107,7 +107,7 @@ proc addArrs {proc tipo padrao dataFormat tradutor} {
 
 # Pega parametros no arquivo de configuracao ----------------------------------
 
-puts "Info: running standard GTKWave configuration..."
+puts "Info: running standard GTKWave configuration"
 
 set    fileID [open "tcl_infos.txt" r]
 gets  $fileID  proc_list
@@ -145,7 +145,7 @@ gtkwave::/Edit/Insert_Comment {I/O ****************}
 set req_in  [listVar "$proc.req_in_sim" $proc]
 set entrada [listVar "$proc.in_sim"     $proc]
 
-puts "Info: found [llength $req_in] input ports in use for '$proc'"
+#puts "Info: found [llength $req_in] input ports in use for '$proc'"
 
 for {set i 0} {$i < [llength $req_in] } {incr i} {
     addVar [list [lindex $req_in  $i]] "Binary"         "Yellow" "req_in $i" "" ""
@@ -157,7 +157,7 @@ for {set i 0} {$i < [llength $req_in] } {incr i} {
 set out_en  [listVar "$proc.out_en_sim" $proc]
 set saida   [listVar "$proc.out_sig"    $proc]
 
-puts "Info: found [llength $out_en] output ports in use for '$proc'"
+#puts "Info: found [llength $out_en] output ports in use for '$proc'"
 
 for {set i 0} {$i < [llength $out_en] } {incr i} {
     addVar [list [lindex $out_en  $i]] "Binary"         "Yellow" "out_en $i" "" ""
@@ -180,7 +180,7 @@ addVar [getVar "$proc.linetabs" $proc] "Signed_Decimal" "Violet" "C+-" "$tmp_dir
 
 gtkwave::/Edit/Insert_Comment {Variables **********}
 
-puts "Info: adding variables..."
+#puts "Info: adding variables..."
 
 addVars $proc "int"   "$proc.me1"      "Signed_Decimal" ""
 addVars $proc "float" "$proc.me2"      "BitsToReal"     ""
@@ -193,7 +193,7 @@ addArrs $proc "comp"  "comp_arr_me3"   "Binary"         "$bin_dir/comp2gtkw.exe"
 
 gtkwave::/Edit/Insert_Comment {Flags **************}
 
-puts "Info: adding flags..."
+#puts "Info: adding flags..."
 
 # Stack -----------------------------------------------------------------------
 
@@ -243,7 +243,7 @@ gtkwave::/Edit/Alias_Highlighted_Trace "Rounding Error (float)"
 
 # Fim do loop de processadores ------------------------------------------------
 
-puts "Info: finished configuring processor '$proc'"
+#puts "Info: finished configuring processor '$proc'"
 incr  proc_indx
 
 }
@@ -256,3 +256,5 @@ gtkwave::/View/Left_Justified_Signals
 # engana bug -> cria uma aba vazia no gtkwave. refresh soh funciona assim com o GTK3
 gtkwave::/File/Open_New_Tab "fix.vcd"
 gtkwave::setTabActive 0
+
+puts "Info: standard GTKWave configuration finished"
