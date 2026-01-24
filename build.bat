@@ -10,7 +10,7 @@ cls
 echo off
 
 set SRC_DIR=%cd%
-set BLD_DIR=C:\saphoComponents
+set BLD_DIR=C:\nipscern\Aurora\components
 
 set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
 

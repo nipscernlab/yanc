@@ -17,10 +17,9 @@ set ROOT_DIR=%cd%
 set BISON=C:\packs\msys64\usr\bin\bison.exe
 set FLEX=C:\packs\msys64\usr\bin\flex.exe
 set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
-set IVERILOG=C:\nipscern\Aurora\saphoComponents\Packages\iverilog\bin\iverilog.exe
-set VVP=C:\nipscern\Aurora\saphoComponents\Packages\iverilog\bin\vvp.exe
-set GTKWAVE=C:\packs\gtkwave_gtk3_mingw64_standalone\bin\gtkwave.exe
-set YOSYS=C:\packs\oss-cad-suite\bin\yosys.exe
+set IVERILOG=C:\nipscern\Aurora\components\Packages\iverilog\bin\iverilog.exe
+set VVP=C:\nipscern\Aurora\components\Packages\iverilog\bin\vvp.exe
+set GTKWAVE=C:\nipscern\Aurora\components\Packages\iverilog\gtkwave\bin\gtkwave.exe
 
 set    TESTE_DIR=%ROOT_DIR%\Teste
 rmdir %TESTE_DIR% /s /q

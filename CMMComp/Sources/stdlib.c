@@ -2144,6 +2144,19 @@ void exec_shift(int ida, int etb, int idc)
         add_instr("SET %s\n", v_name[ida]);
     }
 
+    // ida float e etb float na memoria
+    if (v_type[ida] == 2 && get_type(etb) == 2 && etb%OFST != 0)
+    {
+        for (int i = N-1; i > 0; i--)
+        {
+            add_instr("LOD_V %s %d\n", v_name[ida], i-1);
+            add_instr("SET_V %s %d\n", v_name[ida], i);
+        }
+
+        add_instr("LOD %s\n", v_name[etb%OFST]);
+        add_instr("SET %s\n", v_name[ida]);
+    }
+
     // ida float e etb float no acc
     if (v_type[ida] == 2 && get_type(etb) == 2 && etb%OFST == 0)
     {

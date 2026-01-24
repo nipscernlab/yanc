@@ -163,12 +163,12 @@ void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
         exit(EXIT_FAILURE);
     }
 
-    v_type[id_var] = type_tmp;               // o tipo da variavel esta em type_tmp (ver no flex quando acha int, float ou comp)
-    v_used[id_var] = 0;                      // acabou de ser declarada, entao ainda nao foi usada
-    v_fnid[id_var] = find_var(fname);        // guarda em que funcao ela esta
-    v_isar[id_var] = 2;                      // variavel eh array 2D
-    v_size[id_var] = atoi(v_name[id_x]);     // guarda o tamanho da dimensao i
-    v_siz2[id_var] = atoi(v_name[id_y]);     // guarda o tamanho da dimensao j
+    v_type[id_var] = type_tmp;           // o tipo da variavel esta em type_tmp (ver no flex quando acha int, float ou comp)
+    v_used[id_var] = 0;                  // acabou de ser declarada, entao ainda nao foi usada
+    v_fnid[id_var] = find_var(fname);    // guarda em que funcao ela esta
+    v_isar[id_var] = 2;                  // variavel eh array 2D
+    v_size[id_var] = atoi(v_name[id_x]); // guarda o tamanho da dimensao i
+    v_siz2[id_var] = atoi(v_name[id_y]); // guarda o tamanho da dimensao j
 
     int type = type_tmp;
 
@@ -203,7 +203,7 @@ void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
     {
         add_sinst(0, "#array %s 3 %d\n", v_name[id_var], size);
         idi = get_img_id(id_var);
-        add_sinst(0, "#array %s 4 %d\n", v_name[idi], size);
+        add_sinst(0, "#array %s 4 %d\n", v_name[idi]   , size);
 
         v_isar[idi] = 2; // variavel eh array 2D
     }
@@ -213,7 +213,7 @@ void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
     {
         add_sinst(0, "#arrays %s 3 %d %s\n", v_name[id_var], size, v_name[id_fname]);
         idi = get_img_id(id_var);
-        add_sinst(0, "#arrays %s 4 %d %s\n", v_name[idi], size, v_name[id_fname]);
+        add_sinst(0, "#arrays %s 4 %d %s\n", v_name[idi]   , size, v_name[id_fname]);
 
         v_isar[idi] = 2; // variavel eh array 2D
 
@@ -221,8 +221,8 @@ void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
     }
 
     // cria uma variavel auxiliar pra guardar o tamanho da dimensao x
-    add_instr("LOD %s\n",           v_name[id_x  ]);
-    add_instr("SET  %s_arr_size\n", v_name[id_var]);
+    add_instr("LOD %s\n",          v_name[id_y  ]);
+    add_instr("SET %s_arr_size\n", v_name[id_var]);
 }
 
 // ----------------------------------------------------------------------------

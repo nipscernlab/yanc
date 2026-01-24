@@ -16,7 +16,7 @@
 
 // variaveis auxiliares para lexer de arrays
 int   tam_arr;      // tamanho do array
-char name_arr[128]; // nome da variavel que esta sendo lida
+char name_arr[128]; // nome do array que esta sendo lido
 
 // variaveis de estado
 int  n_ins = 0;     // numero de instrucoes
