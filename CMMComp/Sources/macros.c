@@ -43,13 +43,11 @@ void mac_use(int ids, int global, int id_num)
     printf("Info: replacing C± code by user macro %s at line %d\n", v_name[ids], line_num+1);
 
     // se for global, tem q ver se tem que chamar a funcao main ainda ---------
-
     if ((mainok == 0) && (global == 1))
     {
-        add_sinst(-2, "CAL main\n");
-        add_sinst(-3, "@fim JMP fim\n");
+        add_sinst(-2, "JMP main\n");
 
-        mainok = 2; // funcao main foi chamada no inicio
+        mainok = 1; // questao da funcao main foi resolvida
     }
 
     // remover as aspas da string (trabalho da porra!) ------------------------

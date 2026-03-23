@@ -19,7 +19,7 @@
 // ----------------------------------------------------------------------------
 
 int  fun_id;      // guarda id da funcao sendo usada
-int  mainok  = 0; // status da funcao main: 0 -> nao usada, 1 -> declarada, 2 -> chamada no inicio
+int  mainok  = 0; // status da funcao main: 0 -> indefinido, 1 -> resolvido (como sera chamada)
 char fname [512]; // nome da funcao atual sendo parseada
 
 // ----------------------------------------------------------------------------
@@ -279,17 +279,21 @@ void par_check(int et)
 // declara uma funcao
 void declar_fun(int id1, int id2) //id1 -> tipo, id2 -> indice para o nome
 {
-    // se ainda nao for a funcao main, entao tem que dar um call pra ela antes
-    // pois CAL main deve ser a primeira instrucao do processador depois do reset
-    // Desabilitei a nao utilizacao de CAL para funcao main sozinho
-    // preciso ver como fazer isso funcionar no gtkwave antes
+    // entra nesse if se a primeira funcao declarada nao for a main
+    // nesse case tem que dar um JMP pra ela antes
+    // pois main deve ser a primeira funcao do processador depois do reset
     if ((mainok == 0) && (strcmp(v_name[id2], "main") != 0))
-    //if (mainok == 0)
     {
-        add_sinst(-2, "CAL main\n"    );
-        add_sinst(-3, "@fim JMP fim\n");
+        add_sinst(-2, "JMP main\n");
 
-        mainok = 2; // funcao main foi chamada no inicio
+        mainok = 1; // resolvido a questao da funcao main
+    }
+    // entra nesse if se a primeira funcao declarada for a main
+    // nesse caso nao precisa dar JMP
+    // soh marca em mainok que essa questao ja foi resolvida
+    else if ((mainok == 0) && (strcmp(v_name[id2], "main") == 0))
+    {
+        mainok = 1; // definido como a funcao main sera usada
     }
 
     add_sinst(0, "@%s ", v_name[id2]);
@@ -547,14 +551,12 @@ void func_ret(int id) // id -> id da funcao atual
     if ((v_type[id] != 6) && (ret_ok == 0))
         {fprintf (stderr, "Erro na função %s: cadê o retorno pra essa função?\n", v_name[id]); exit(EXIT_FAILURE);}
 
-    if (strcmp(v_name[id], "main") == 0) // se eh funcao main ...
+    // se eh funcao main, da um JMP fim
+    if (strcmp(v_name[id], "main") == 0)
     {
-        if (mainok == 0) // soh tem a funcao main
-             add_sinst(-3, "@fim JMP fim\n");
-        else add_instr("RET\n"); // tem subrotinas
+        add_sinst(-3, "@fim JMP fim\n");
 
-        v_used[id] = 1; // funcao main foi usada
-        mainok     = 1; // funcao main foi parseada
+        v_used[id] = 1; // funcao main foi usada (evita warning de funcao main declarada mas nao usada)
     }
     else if (v_type[id] == 6) {add_instr("RET\n");} // se eh tipo void, ainda precisa gerar um RET
 
@@ -569,9 +571,10 @@ void void_ret()
     if (v_type[fun_parse] != 6)
         {fprintf (stderr, "Erro na linha %d: cadê o valor de retorno da função?\n", line_num+1); exit(EXIT_FAILURE);}
 
-    if ((strcmp(fname, "main") == 0) && (mainok == 0)) // se eh funcao main e soh tem ela ...
-         add_sinst(-3, "@fim JMP fim\n");              // ai nao usa RET, pula pro fim
-    else add_instr(             "RET\n");              // se nao, usa return padrao
+    // se eh funcao main, usa JMP fim ao inves de RET
+    if ((strcmp(fname, "main") == 0))
+         add_sinst(-3, "@fim JMP fim\n");
+    else add_instr(             "RET\n");
 }
 
 // ----------------------------------------------------------------------------

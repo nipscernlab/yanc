@@ -5,7 +5,7 @@
 // variaveis de estado --------------------------------------------------------
 
 extern char fname[512];             // nome da funcao atual sendo parseada
-extern int  mainok;                 // status da funcao main: 0 -> nao usada, 1 -> declarada, 2 -> chamada no inicio
+extern int  mainok;                 // status da funcao main: 0 -> indefinido, 1 -> resolvido (como sera chamada)
 extern int  fun_id;                 // guarda id da funcao sendo usada
 
 // declaracao -----------------------------------------------------------------
