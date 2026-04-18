@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/nipscernlab/nipscernweb/blob/main/assets/icon-projects/yanc.svg"
+  <img src="https://github.com/nipscernlab/nipscernweb/blob/main/assets/icons/yanc.svg"
        alt="YANC Icon"
        width="160">
 </p>
