@@ -1,0 +1,128 @@
+name: Release YANC binaries
+
+# Builda os compiladores do YANC (cmmcomp, asmcomp, appcomp, comp2gtkw)
+# em uma maquina Windows com MSYS2 + MinGW-w64, empacota num zip e
+# publica como asset de release.
+#
+# Como usar:
+#   - Push de tag v* (ex: git tag v1 && git push origin v1) -> roda
+#     automatico, cria release "YANC v1" e anexa yanc-bin-v1.zip.
+#   - workflow_dispatch -> roda sem criar release, deixa o zip como
+#     artifact pra inspecao.
+#
+# Aurora consome o asset via components/Scripts/download-yanc.js,
+# que pinaa a tag esperada (atualizar la quando subir uma nova).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (mingw64 + bison + flex)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: >-
+            mingw-w64-x86_64-gcc
+            bison
+            flex
+            zip
+
+      - name: Build binaries
+        shell: msys2 {0}
+        # Cada compilador segue o mesmo padrao do build.bat: rodar
+        # bison/flex se aplicavel, gcc nas fontes, mover .exe pra out/bin.
+        # Usar -O2 pra binarios um pouco mais enxutos que o default.
+        run: |
+          set -euo pipefail
+          mkdir -p out/bin
+
+          # cmmcomp
+          pushd CMMComp/Sources
+          bison -y -d CMMComp.y
+          flex CMMComp.l
+          gcc -O2 -o cmmcomp.exe \
+              data_assign.c data_declar.c data_use.c itr.c diretivas.c \
+              funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
+              variaveis.c array_index.c global.c macros.c y.tab.c
+          mv cmmcomp.exe ../../out/bin/
+          rm -f lex.yy.c y.tab.c y.tab.h
+          popd
+
+          # appcomp
+          pushd APP/Sources
+          flex -o app.c app.l
+          gcc -O2 -o appcomp.exe app.c eval.c variaveis.c
+          mv appcomp.exe ../../out/bin/
+          rm -f app.c
+          popd
+
+          # asmcomp
+          pushd ASM/Sources
+          flex -o ASMComp.c ASMComp.l
+          gcc -O2 -o asmcomp.exe \
+              ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
+              hdl.c simulacao.c array.c
+          mv asmcomp.exe ../../out/bin/
+          rm -f ASMComp.c
+          popd
+
+          # comp2gtkw
+          pushd Scripts
+          gcc -O2 -o comp2gtkw.exe comp2gtkw.c
+          mv comp2gtkw.exe ../out/bin/
+          popd
+
+          ls -l out/bin
+
+      - name: Determine artifact name
+        id: artifact
+        shell: bash
+        # Em push de tag, GITHUB_REF_NAME e a tag (ex: v1). Em
+        # workflow_dispatch e o branch (ex: main); usar 'manual' como
+        # rotulo nesse caso pra deixar claro que nao e release oficial.
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "name=yanc-bin-${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=manual" >> "$GITHUB_OUTPUT"
+            echo "name=yanc-bin-manual" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          cd out
+          zip -r "../${{ steps.artifact.outputs.name }}.zip" bin
+          ls -la "../${{ steps.artifact.outputs.name }}.zip"
+
+      - name: Upload artifact (always)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: ${{ steps.artifact.outputs.name }}.zip
+          retention-days: 14
+
+      - name: Create release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: 'YANC ${{ github.ref_name }}'
+          generate_release_notes: true
+          files: |
+            ${{ steps.artifact.outputs.name }}.zip
