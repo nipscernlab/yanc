@@ -88,6 +88,25 @@ jobs:
 
           ls -l out/bin
 
+      - name: Stage HDL + Macros
+        shell: msys2 {0}
+        # Empacotar tambem as bibliotecas SAPHO (HDL/ — modulos verilog
+        # processor/core/ula/etc — e Macros/ — LUTs e helpers de float)
+        # junto com os binarios. Aurora baixa o zip e extrai em
+        # components/, entao bin/, HDL/ e Macros/ caem em
+        # components/{bin,HDL,Macros}/ sem nenhum codigo a mais do lado
+        # do Aurora.
+        #
+        # Scripts/ fica de fora porque o components/Scripts/ do Aurora
+        # contem arquivos de build proprios (copy-components.js,
+        # download-toolchain.js, download-yanc.js etc.) misturados com
+        # os scripts SAPHO. Overwriting wholesale quebraria o build.
+        run: |
+          set -euo pipefail
+          cp -r HDL out/HDL
+          cp -r Macros out/Macros
+          ls -l out
+
       - name: Determine artifact name
         id: artifact
         shell: bash
@@ -108,7 +127,10 @@ jobs:
         run: |
           set -euo pipefail
           cd out
-          zip -r "../${{ steps.artifact.outputs.name }}.zip" bin
+          # Zipa bin/, HDL/ e Macros/ — extrair em components/ produz
+          # components/{bin,HDL,Macros}/, exatamente o layout que Aurora
+          # espera.
+          zip -r "../${{ steps.artifact.outputs.name }}.zip" bin HDL Macros
           ls -la "../${{ steps.artifact.outputs.name }}.zip"
 
       - name: Upload artifact (always)
