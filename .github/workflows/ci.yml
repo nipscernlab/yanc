@@ -74,21 +74,30 @@ jobs:
           gcc -O2 -Wall -o comp2gtkw.exe comp2gtkw.c
           test -x comp2gtkw.exe
 
-      - name: Smoke test cmmcomp on all examples
+      - name: Smoke test full pipeline on all examples
         shell: msys2 {0}
         # For every .cmm in Exemplos/, copy the processor directory to a
-        # writable scratch area (so cmmcomp's outputs do not dirty the
-        # checkout) and invoke cmmcomp with the same argument shape that
-        # go_proc.bat uses: <file.cmm> <prname> <proc_dir> <mac_dir>
-        # <tmp_dir> <multi_proc_flag>. We then check that the expected
-        # <prname>.asm appeared and is non-empty. Failure of any example
-        # fails the job.
+        # writable scratch area (so generated files do not dirty the
+        # checkout) and run the full toolchain end-to-end:
+        #
+        #   cmmcomp  : <file.cmm> -> Software/<prname>.asm
+        #   appcomp  : Software/<prname>.asm -> tmp/app_log.txt
+        #   asmcomp  : Software/<prname>.asm -> Hardware/<prname>.v
+        #                                     + Hardware/<prname>_data.mif
+        #                                     + Hardware/<prname>_inst.mif
+        #
+        # Same argument shapes as go_proc.bat. The Hardware/ subdir is
+        # created up front because asmcomp does not mkdir it itself. Any
+        # non-zero exit or missing/empty expected artifact fails the job.
         run: |
-          set -euo pipefail
+          set -uo pipefail
 
           ROOT="$(pwd)"
           CMMCOMP="$ROOT/CMMComp/Sources/cmmcomp.exe"
+          APPCOMP="$ROOT/APP/Sources/appcomp.exe"
+          ASMCOMP="$ROOT/ASM/Sources/asmcomp.exe"
           MAC_DIR="$ROOT/Macros"
+          HDL_DIR="$ROOT/HDL"
           SCRATCH="$ROOT/.smoke"
           rm -rf "$SCRATCH"
           mkdir -p "$SCRATCH"
@@ -101,21 +110,30 @@ jobs:
 
             work_proc="$SCRATCH/proc/$prname"
             tmp_dir="$SCRATCH/tmp/$prname"
-            mkdir -p "$tmp_dir"
-            cp -r "$proc_dir_rel" "$(dirname "$work_proc")/"
+            mkdir -p "$tmp_dir" "$(dirname "$work_proc")"
+            cp -r "$proc_dir_rel" "$work_proc"
+            mkdir -p "$work_proc/Hardware" "$work_proc/Simulation"
+
+            asm_file="$work_proc/Software/$prname.asm"
 
             echo "=== smoke: $filename ==="
-            if ! "$CMMCOMP" -en "$filename" "$prname" "$work_proc" "$MAC_DIR" "$tmp_dir" 0; then
-              echo "FAIL: cmmcomp exited non-zero for $filename"
-              fail=1
-              continue
-            fi
 
-            out_asm="$work_proc/Software/$prname.asm"
-            if [ ! -s "$out_asm" ]; then
-              echo "FAIL: $out_asm is missing or empty"
-              fail=1
+            if ! "$CMMCOMP" -en "$filename" "$prname" "$work_proc" "$MAC_DIR" "$tmp_dir" 0; then
+              echo "FAIL: cmmcomp exited non-zero for $prname"; fail=1; continue
             fi
+            [ -s "$asm_file" ] || { echo "FAIL: $asm_file missing/empty"; fail=1; continue; }
+
+            if ! "$APPCOMP" -en "$asm_file" "$tmp_dir"; then
+              echo "FAIL: appcomp exited non-zero for $prname"; fail=1; continue
+            fi
+            [ -s "$tmp_dir/app_log.txt" ] || { echo "FAIL: app_log.txt missing/empty"; fail=1; continue; }
+
+            if ! "$ASMCOMP" -en "$asm_file" "$work_proc" "$HDL_DIR" "$MAC_DIR" "$tmp_dir" 100 1000 0; then
+              echo "FAIL: asmcomp exited non-zero for $prname"; fail=1; continue
+            fi
+            for art in "$prname.v" "${prname}_data.mif" "${prname}_inst.mif"; do
+              [ -s "$work_proc/Hardware/$art" ] || { echo "FAIL: Hardware/$art missing/empty"; fail=1; }
+            done
           done < <(find Exemplos -name '*.cmm' | sort)
 
           rm -rf "$SCRATCH"
