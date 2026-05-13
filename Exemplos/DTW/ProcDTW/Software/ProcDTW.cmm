@@ -12,34 +12,34 @@ int dtw[75][75];
 int k, j, menor, val_final,cont;
 int data_ref[75], data[75];
 
-    
-void main() 
+
+void main()
 {
-    //if(in(0) == 0) //No reset geral:
+    //if(in(0) == 0) //On general reset:
     //{
         len_ref = 75;
         cont    = 0;
-        while(cont < 75) // Preenchimento do vetor 1 com 0 se len_ref for 0 (para primeiro caso)
+        while(cont < 75) // Fill vector 1 with 0s if len_ref is 0 (for the first case)
         {
             data_ref[cont] = 0;
             cont++;
         }
-        out(2, 10); 
+        out(2, 10);
     //}
-    //else //processamento normal
+    //else //normal processing
     //{
         out(2,-122);
         return;
 
 #INTERPOINT
-out(2,-123);        
+out(2,-123);
         k = 0;
-        
-        len_data = in(2);        // Comprimento do vetor 2
-            
+
+        len_data = in(2);        // Length of vector 2
+
         cont = 0;
-        
-        while(cont < 75) // Preenchimento do vetor 2
+
+        while(cont < 75) // Fill vector 2
         {
             if (len_data > cont)
             {
@@ -54,39 +54,39 @@ out(2,-123);
         out(2,-124);
         out(2,k);
         out(2,len_data);
-        
-        while (k < len_data) // linhas da matriz dtw
+
+        while (k < len_data) // rows of the dtw matrix
         {
             j = 0;
             out(2,-125);
             while (j < len_ref)
             {
-                if(k == 0 && j == 0)        // Primeira posiçao k=0, j=0 
+                if(k == 0 && j == 0)        // First position k=0, j=0
                 {
                     dtw[k][j] = abs(data[k] - data_ref[j]);
                     out(2, dtw[k][j]);
                 }
                 else
                 {
-                    if(k == 0 && j > 0)         // Primeira linha
+                    if(k == 0 && j > 0)         // First row
                     {
                         dtw[k][j] = abs(data[k] - data_ref[j]) + dtw[k][j-1];
                         out(2, dtw[k][j]);
                     }
                 }
-                
-                if (k > 0 && j == 0)             // Primeira coluna 
+
+                if (k > 0 && j == 0)             // First column
                 {
                     dtw[k][j] = abs(data[k] - data_ref[j]) + dtw[k - 1][j];
                     out(2, dtw[k][j]);
                 }
                 else
-                {               
-                    if (k > 0 && j > 0)         // Para as demais posições
+                {
+                    if (k > 0 && j > 0)         // For the remaining positions
                     {
                         menor = dtw[k-1][j];
-                        out(2, menor);  
-                        if (dtw[k][j-1] < menor) 
+                        out(2, menor);
+                        if (dtw[k][j-1] < menor)
                         {
                             menor = dtw[k][j-1];
                             out(2, menor);
@@ -96,7 +96,7 @@ out(2,-123);
                         {
                             menor = dtw[k-1][j-1];
                             out(2, menor);
-                        }                      
+                        }
                         dtw[k][j] = abs(data[k] - data_ref[j]) + menor;
                         out(2, dtw[k][j]);
                     }
@@ -105,23 +105,23 @@ out(2,-123);
             }
             k++;
         }
-        
+
         val_final = dtw[k-1][j-1];
 
-        if(dtw[k-1][j-1]>36000)  //Se houver novidade
+        if(dtw[k-1][j-1]>36000)  //If there is novelty
         {
-            cont    = 0;           // Reset no contador
-            len_ref = len_data;        // Atualização do comprimento
-            while(cont < 75)    // Atualização do vetor 1
+            cont    = 0;           // Reset the counter
+            len_ref = len_data;        // Update the length
+            while(cont < 75)    // Update vector 1
             {
                 data_ref[cont]= data[cont];
                 cont++ ;
             }
         }
-        
+
         out(1,val_final);
         out(2, 36000);
-        
+
     //}
     out(0,1);
 }

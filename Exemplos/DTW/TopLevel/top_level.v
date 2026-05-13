@@ -18,7 +18,7 @@ module top_level(
 		wire flag_zc = |out1;
 		
 		
-//registrador do used_w - 1:
+// used_w - 1 register:
 reg [6:0] reg_usedw_1;
 wire signed [31:0] in2_proc_DTW = reg_usedw_1;
 always @ (posedge clk or posedge rst_geral)
@@ -98,7 +98,7 @@ maq_estados maq_estados_inst(
 									  .rst_geral(rst_geral),
 									  .flag_zc(flag_zc),
 									  .almost_empty_FIFO((almost_empty)&(!empty)),
-									  .out(out_maq) // out[1] o enable do registrador used_w - 1; out[0] o rst do proc dtw ;
+									  .out(out_maq) // out[1] the enable of the used_w - 1 register; out[0] the rst of the dtw proc ;
 );
 
 

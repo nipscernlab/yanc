@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// rotinas para manipular variaveis encontradas no arquivo .asm ---------------
+// routines for handling variables found in the .asm file ---------------------
 // ----------------------------------------------------------------------------
 
-void var_add (char *var, int val);  // adiciona variavel na tabela
-void var_inc (int   val);           // incrementa o tamanho da memoria (para arrays)
-int  var_find(char *val);           // retorna o indice da variavel na tabela
-int  var_val (char *var);           // retorna o valor  da variavel
-int  var_cnt ();                    // retorna o numero de variaveis
+void var_add (char *var, int val);  // adds a variable to the table
+void var_inc (int   val);           // increments the memory size (for arrays)
+int  var_find(char *val);           // returns the variable's index in the table
+int  var_val (char *var);           // returns the variable's value
+int  var_cnt ();                    // returns the number of variables

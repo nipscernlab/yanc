@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
-// biblioteca padrao do sapho -------------------------------------------------
+// SAPHO standard library -----------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include <string.h>
 #include <stdlib.h>
 
-// includes locais
+// local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\oper.h"
 #include "..\Headers\stdlib.h"
@@ -19,7 +19,7 @@
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// entrada e saida ------------------------------------------------------------
+// input and output ----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 // input ex: int x = in(0);
@@ -29,7 +29,7 @@ int exec_in(int id)
 
     if (acc_ok == 0) add_instr("INN %s\n", v_name[id]); else add_instr("P_INN %s\n", v_name[id]);
 
-    acc_ok = 1;  // diz que o acc agora tem um valor carregado
+    acc_ok = 1;  // marks the acc as now holding a value
 
     return OFST;
 }
@@ -41,7 +41,7 @@ int exec_fin(int id)
 
     if (acc_ok == 0) add_instr("F_INN %s\n", v_name[id]); else add_instr("PF_INN %s\n", v_name[id]);
 
-    acc_ok = 1;  // diz que o acc agora tem um valor carregado
+    acc_ok = 1;  // marks the acc as now holding a value
 
     return 2*OFST;
 }
@@ -50,29 +50,29 @@ int exec_fin(int id)
 void exec_out(int id, int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) > 2) {fprintf (stderr, MSG_ERR_PICK_COMP_INFO, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa range de porta
+    // check port range
     if (atoi(v_name[id]) >= nuioou) {fprintf(stderr, MSG_ERR_NO_OUT_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // int var
@@ -84,7 +84,7 @@ void exec_out(int id, int et)
     // int acc
     if ((get_type(et) == 1) && (et%OFST==0))
     {
-        // nao faz nada
+        // nothing to do
     }
 
     // float var
@@ -112,29 +112,29 @@ void exec_out(int id, int et)
 void exec_fout(int id, int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) > 2) {fprintf (stderr, MSG_ERR_PICK_COMP_INFO, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa range de porta
+    // check port range
     if (atoi(v_name[id]) >= nuioou) {fprintf(stderr, MSG_ERR_NO_OUT_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // int var
@@ -169,147 +169,147 @@ void exec_fout(int id, int et)
 }
 
 // ----------------------------------------------------------------------------
-// funcoes especiais que evitam codigo ----------------------------------------
+// special functions that save code -------------------------------------------
 // ----------------------------------------------------------------------------
 
-// pega o sinal do primeiro argumento e coloca no segundo
+// takes the sign of the first argument and applies it to the second
 int exec_sign(int et1, int et2)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et1 foi declarada
+    // check whether et1 was declared
     if (et1%OFST != 0 && v_type[et1%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et1%OFST], fname)); exit(EXIT_FAILURE);}
     
-    // checa se et2 foi declarada
+    // check whether et2 was declared
     if (et2%OFST != 0 && v_type[et2%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et2%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et1 eh uma variavel
+    // check whether et1 is a variable
     if (et1%OFST != 0 && v_isar[et1%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et1%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et2 eh uma variavel
+    // check whether et2 is a variable
     if (et2%OFST != 0 && v_isar[et2%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et2%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se tem comp
+    // check whether there is a comp
     if ((get_type(et1) > 2) || (get_type(et2) > 2)) {fprintf (stderr, MSG_ERR_SIGN_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et1%OFST != 0) v_used[et1%OFST] = 1;
     if (et2%OFST != 0) v_used[et2%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // int na memoria e int na memoria
+    // int in memory and int in memory
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et2%OFST]);
         add_instr("SGN %s\n"   , v_name[et1%OFST]);
     }
 
-    // int na memoria e int no acc
+    // int in memory and int in acc
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         add_instr("SGN %s\n", v_name[et1%OFST]);
     }
 
-    // int na memoria e float var na memoria
+    // int in memory and float var in memory
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et2%OFST]);
         add_instr("F_SGN %s\n" , v_name[et1%OFST]);
     }
 
-    // int na memoria e float no acc
+    // int in memory and float in acc
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         add_instr("F_SGN %s\n", v_name[et1%OFST]);
     }
 
-    // int no acc e int na memoria
+    // int in acc and int in memory
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et2%OFST]);
         add_instr("S_SGN\n");
     }
 
-    // int no acc e int no acc
+    // int in acc and int in acc
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         add_instr("S_SGN\n");
     }
 
-    // int no acc e float var na memoria
+    // int in acc and float var in memory
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         add_instr("P_LOD %s\n", v_name[et2%OFST]  );
         add_instr("SF_SGN\n");
     }
 
-    // int no acc e float no acc
+    // int in acc and float in acc
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         add_instr("SF_SGN\n");
     }
 
-    // float var e int var
+    // float var and int var
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et2%OFST]);
         add_instr("SGN %s\n"   , v_name[et1%OFST]);
     }
 
-    // float var e int no acc
+    // float var and int in acc
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         add_instr("SGN %s\n"  , v_name[et1%OFST]);
     }
 
-    // float var e float var
+    // float var and float var
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et2%OFST]);
         add_instr("F_SGN %s\n" , v_name[et1%OFST]);
     }
 
-    // float var e float no acc
+    // float var and float in acc
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         add_instr("F_SGN %s\n" , v_name[et1%OFST]);
     }
 
-    // float no acc e int na memoria
+    // float in acc and int in memory
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et2%OFST]);
         add_instr("S_SGN\n");
     }
 
-    // float no acc e int no acc
+    // float in acc and int in acc
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         add_instr("S_SGN\n");
     }
 
-    // float no acc e float var na memoria
+    // float in acc and float var in memory
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         add_instr("P_LOD %s\n", v_name[et2%OFST]);
         add_instr("SF_SGN\n");
     }
 
-    // float no acc e float no acc
+    // float in acc and float in acc
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         add_instr("SF_SGN\n");
@@ -320,27 +320,27 @@ int exec_sign(int et1, int et2)
     return get_type(et2)*OFST;
 }
 
-// valor absoluto (int, float e comp)
+// absolute value (int, float and comp)
 int exec_abs(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
     
     char  ld [10]; if (acc_ok == 0) strcpy(ld  , "LOD"   ); else strcpy(ld  , "P_LOD"  );
@@ -348,34 +348,34 @@ int exec_abs(int et)
     char fabs[10]; if (acc_ok == 0) strcpy(fabs,"F_ABS_M"); else strcpy(fabs,"PF_ABS_M");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // int na memoria
+    // int in memory
     if ((get_type(et) == 1) && (et % OFST != 0))
     {
         add_instr("%s %s\n", abs, v_name[et%OFST]);
     }
 
-    // int no acc
+    // int in acc
     if ((get_type(et) == 1) && (et % OFST == 0))
     {
         add_instr("ABS\n");
     }
 
-    // float na memoria
+    // float in memory
     if ((get_type(et) == 2) && (et % OFST != 0))
     {
         add_instr("%s %s\n", fabs, v_name[et%OFST]);
     }
 
-    // float no acc
+    // float in acc
     if ((get_type(et) == 2) && (et % OFST == 0))
     {
         add_instr("F_ABS\n");
     }
 
-    // comp const, na memoria e no acc
+    // comp const, in memory and in acc
     if ((get_type(et) == 3) || (get_type(et) == 5))
     {
         et = exec_sqrt(exec_mod2(et));
@@ -386,27 +386,27 @@ int exec_abs(int et)
     return get_type(et)*OFST;
 }
 
-// zera se for negativo
+// clears if negative
 int exec_pst(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char  ld [10]; if (acc_ok == 0) strcpy( ld , "LOD"   ); else strcpy( ld , "P_LOD"  );
@@ -414,28 +414,28 @@ int exec_pst(int et)
     char fpst[10]; if (acc_ok == 0) strcpy(fpst,"F_PST_M"); else strcpy(fpst,"PF_PST_M");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // int na memoria
+    // int in memory
     if ((get_type(et) == 1) && (et % OFST != 0))
     {
         add_instr("%s %s\n", pst, v_name[et%OFST]);
     }
 
-    // int no acc
+    // int in acc
     if ((get_type(et) == 1) && (et % OFST == 0))
     {
         add_instr("PST\n");
     }
 
-    // float na memoria
+    // float in memory
     if ((get_type(et) == 2)  && (et % OFST != 0))
     {
         add_instr("%s %s\n", fpst, v_name[et%OFST]);
     }
 
-    // float no acc
+    // float in acc
     if ((get_type(et) == 2)  && (et % OFST == 0))
     {
         add_instr("F_PST\n");
@@ -453,45 +453,45 @@ int exec_pst(int et)
     return get_type(et)*OFST;
 }
 
-// divisao por constante
+// division by constant
 int exec_norm(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh int
+    // check whether it is int
     if (get_type(et) != 1) {fprintf (stderr, MSG_ERR_NORM_NON_INT, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char nrm[10]; if (acc_ok == 0) strcpy(nrm,"NRM_M"); else strcpy(nrm,"P_NRM_M");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // int na memoria
+    // int in memory
     if ((get_type(et) == 1) && (et % OFST != 0))
     {
         add_instr("%s %s\n", nrm, v_name[et%OFST]);
     }
 
-    // int no acc
+    // int in acc
     if ((get_type(et) == 1) && (et % OFST == 0))
     {
         add_instr("NRM\n");
@@ -505,39 +505,39 @@ int exec_norm(int et)
 void exec_copy(int et1, int id2)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et1 foi declarada
+    // check whether et1 was declared
     if (et1%OFST != 0 && v_type[et1%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et1%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et1 eh uma variavel
+    // check whether et1 is a variable
     if (et1%OFST != 0 && v_isar[et1%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et1%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se id2 foi declarada
+    // check whether id2 was declared
     if (v_type[id2] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
 
-    // checa se id2 eh uma variavel
+    // check whether id2 is a variable
     if (v_isar[id2] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et1%OFST != 0) v_used[et1%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // de var para var
+    // from var to var
     if (et1%OFST != 0)
     {
         add_instr("LOD %s\n", v_name[et1%OFST]);
         add_instr("SET %s\n", v_name[id2]     );
     }
 
-    // de acc para var
+    // from acc to var
     if (et1%OFST == 0)
     {
         add_instr("SET %s\n", v_name[id2]     );
@@ -545,64 +545,64 @@ void exec_copy(int et1, int id2)
 }
 
 // ----------------------------------------------------------------------------
-// funcoes nao-lineares -------------------------------------------------------
+// non-linear functions -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// raiz quadrada
+// square root
 int exec_sqrt(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // int na memoria
+    // int in memory
     if ((get_type(et) == 1) && (et % OFST != 0))
     {
         add_instr("%s %s\n", i2f, v_name[et%OFST]);
         add_instr("CAL float_sqrt\n");
     }
 
-    // int no acc
+    // int in acc
     if ((get_type(et) == 1) && (et % OFST == 0))
     {
         add_instr("I2F\n");
         add_instr("CAL float_sqrt\n");
     }
 
-    // float na memoria
+    // float in memory
     if ((get_type(et) == 2) && (et % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et%OFST]);
         add_instr("CAL float_sqrt\n");
     }
 
-    // float no acc
+    // float in acc
     if ((get_type(et) == 2) && (et % OFST == 0))
     {
         add_instr("CAL float_sqrt\n");
@@ -613,61 +613,61 @@ int exec_sqrt(int et)
     return 2*OFST;
 }
 
-// arco-tangente
+// arctangent
 int exec_atan(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // int na memoria
+    // int in memory
     if ((get_type(et) == 1) && (et % OFST != 0))
     {
         add_instr("%s %s\n", i2f, v_name[et%OFST]);
         add_instr("CAL float_atan\n");
     }
 
-    // int no acc
+    // int in acc
     if ((get_type(et) == 1) && (et % OFST == 0))
     {
         add_instr("I2F\n");
         add_instr("CAL float_atan\n");
     }
 
-    // float na memoria
+    // float in memory
     if ((get_type(et) == 2) && (et % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et%OFST]);
         add_instr("CAL float_atan\n");
     }
 
-    // float no acc
+    // float in acc
     if ((get_type(et) == 2) && (et % OFST == 0))
     {
         add_instr("CAL float_atan\n");
@@ -678,61 +678,61 @@ int exec_atan(int et)
     return 2*OFST;
 }
 
-// seno
+// sine
 int exec_sin(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // int na memoria
+    // int in memory
     if ((get_type(et) == 1) && (et % OFST != 0))
     {
         add_instr("%s %s\n", i2f, v_name[et%OFST]);
         add_instr("CAL float_sin\n");
     }
 
-    // int no acc
+    // int in acc
     if ((get_type(et) == 1) && (et % OFST == 0))
     {
         add_instr("I2F\n");
         add_instr("CAL float_sin\n");
     }
 
-    // float na memoria
+    // float in memory
     if ((get_type(et) == 2) && (et % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et%OFST]);
         add_instr("CAL float_sin\n");
     }
 
-    // float no acc
+    // float in acc
     if ((get_type(et) == 2) && (et % OFST == 0))
     {
         add_instr("CAL float_sin\n");
@@ -743,40 +743,40 @@ int exec_sin(int et)
     return 2*OFST;
 }
 
-// cosseno
+// cosine
 int exec_cos(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // int na memoria
+    // int in memory
     if ((get_type(et) == 1) && (et % OFST != 0))
     {
         add_instr("%s %s\n", i2f, v_name[et%OFST]);
@@ -785,7 +785,7 @@ int exec_cos(int et)
         add_instr("CAL float_sin\n");
     }
 
-    // int no acc
+    // int in acc
     if ((get_type(et) == 1) && (et % OFST == 0))
     {
         add_instr("I2F\n");
@@ -794,7 +794,7 @@ int exec_cos(int et)
         add_instr("CAL float_sin\n");
     }
 
-    // float na memoria
+    // float in memory
     if ((get_type(et) == 2) && (et % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et%OFST]);
@@ -803,7 +803,7 @@ int exec_cos(int et)
         add_instr("CAL float_sin\n");
     }
 
-    // float no acc
+    // float in acc
     if ((get_type(et) == 2) && (et % OFST == 0))
     {
         add_instr("F_NEG\n");
@@ -817,39 +817,39 @@ int exec_cos(int et)
 }
 
 // ----------------------------------------------------------------------------
-// funcoes especiais para numeros complexos -----------------------------------
+// special functions for complex numbers --------------------------------------
 // ----------------------------------------------------------------------------
 
-// retorna a parte real de um comp
+// returns the real part of a comp
 int exec_real(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) < 3) {fprintf (stderr, MSG_ERR_REAL_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // comp const
@@ -861,13 +861,13 @@ int exec_real(int et)
         add_instr("%s %s\n", ld, v_name[et_r%OFST]);
     }
 
-    // comp na memoria
+    // comp in memory
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[et % OFST]);
     }
 
-    // comp no acc
+    // comp in acc
     if ((get_type(et) == 3) && (et % OFST == 0))
     {
         add_instr("POP\n");
@@ -878,36 +878,36 @@ int exec_real(int et)
     return 2*OFST;
 }
 
-// retorna a parte imag de um comp
+// returns the imag part of a comp
 int exec_imag(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) < 3) {fprintf (stderr, MSG_ERR_IMAG_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // comp const
@@ -919,7 +919,7 @@ int exec_imag(int et)
         add_instr("%s %s\n", ld, v_name[et_i%OFST]);
     }
 
-    // comp na memoria
+    // comp in memory
     if ((get_type(et) == 3) && (et%OFST != 0))
     {
         int et_r, et_i;
@@ -928,7 +928,7 @@ int exec_imag(int et)
         add_instr("%s %s\n", ld, v_name[et_i%OFST]);
     }
 
-    // comp no acc
+    // comp in acc
     if ((get_type(et) == 3) && (et%OFST == 0))
     {
         add_instr("SET_P aux_var\n");
@@ -940,105 +940,105 @@ int exec_imag(int et)
     return 2*OFST;
 }
 
-// modulo ao quadrado de um num complexo
+// squared magnitude of a complex number
 int exec_mod2(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) < 3) {fprintf (stderr, MSG_ERR_MOD2_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int etr, eti;
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // se for uma constante ---------------------------------------------------
+    // when it is a constant -------------------------------------------------
     if (get_type(et) == 5)
     {
-        get_cmp_cst(et ,&etr,&eti);     // pega o et de cada constante float
-        etr  = oper_mult(etr, etr);     // parte real ao quadrado
-        eti  = oper_mult(eti, eti);     // parte imag ao quadrado
-        etr  = oper_soma(etr, eti);     // soma os quadrados
+        get_cmp_cst(et ,&etr,&eti);     // get the et of each float constant
+        etr  = oper_mult(etr, etr);     // real part squared
+        eti  = oper_mult(eti, eti);     // imag part squared
+        etr  = oper_soma(etr, eti);     // sum of the squares
     }
 
-    // se estiver na memoria --------------------------------------------------
+    // when it is in memory --------------------------------------------------
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
-        get_cmp_ets(et ,&etr,&eti);     // pega o et de cada constante float
-        etr  = oper_mult(etr, etr);     // parte real ao quadrado
-        eti  = oper_mult(eti, eti);     // parte imag ao quadrado
-        etr  = oper_soma(etr, eti);     // soma os quadrados
+        get_cmp_ets(et ,&etr,&eti);     // get the et of each variable
+        etr  = oper_mult(etr, etr);     // real part squared
+        eti  = oper_mult(eti, eti);     // imag part squared
+        etr  = oper_soma(etr, eti);     // sum of the squares
     }
 
-    // se estiver no acumulador -----------------------------------------------
+    // when it is in the accumulator ------------------------------------------
     if ((get_type(et) == 3) && (et % OFST == 0))
     {
-        add_instr("PSH\n");             // parte imag fica no acc e pilha
+        add_instr("PSH\n");             // imag part stays in acc and on the stack
         oper_mult(2*OFST,2*OFST );      // multiplica acc com pilha
-        add_instr("SET_P aux_var\n");   // salva temp e pega parte real
+        add_instr("SET_P aux_var\n");   // save temp and fetch real part
 
-        add_instr("PSH\n");             // parte real fica no acc e pilha
+        add_instr("PSH\n");             // real part stays in acc and on the stack
         oper_mult(2*OFST,2*OFST );      // multiplica acc com pilha
-        add_instr("P_LOD aux_var\n");   // xuxa o quadr do real pra pilha e pega o quadr do imag
+        add_instr("P_LOD aux_var\n");   // push the real-squared onto the stack and fetch the imag-squared
 
-        oper_soma(2*OFST,2*OFST);       // soma os quadrados
+        oper_soma(2*OFST,2*OFST);       // sum of the squares
 
-        etr = 2*OFST;                   // saida tem q ser et estendido pra float no acc
+        etr = 2*OFST;                   // output must be an extended et for float in the acc
     }
 
     return 2*OFST;
 }
 
-// calcula a fase (em radianos) de um num complexo
+// computes the phase (in radians) of a complex number
 int exec_fase(int et)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(et) < 3) {fprintf (stderr, MSG_ERR_FASE_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
     
     int et_r, et_i;
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // comp const
@@ -1048,14 +1048,14 @@ int exec_fase(int et)
         oper_divi  (et_r,et_i);
     }
 
-    // comp na memoria
+    // comp in memory
     if ((get_type(et) == 3) && (et%OFST != 0))
     {
         get_cmp_ets(et,&et_i,&et_r);
         oper_divi  (et_r,et_i);
     }
 
-    // comp no acc
+    // comp in acc
     if ((get_type(et) == 3) && (et%OFST == 0))
     {
         int id = exec_id("aux_var");
@@ -1071,54 +1071,54 @@ int exec_fase(int et)
     return 2*OFST;
 }
 
-// junta doi numeros reais pra fazer um complexo
+// joins two real numbers into a complex
 int exec_comp(int etr, int eti)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se etr foi declarada
+    // check whether etr was declared
     if (etr%OFST != 0 && v_type[etr%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[etr%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eti foi declarada
+    // check whether eti was declared
     if (eti%OFST != 0 && v_type[eti%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[eti%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etr eh uma variavel
+    // check whether etr is a variable
     if (etr%OFST != 0 && v_isar[etr%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[etr%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (eti%OFST != 0 && v_isar[eti%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[eti%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se eh comp
+    // check whether it is comp
     if (get_type(etr) > 2 || get_type(eti) > 2) {fprintf (stderr, MSG_ERR_COMPLEX_OF_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (etr%OFST != 0) v_used[etr%OFST] = 1;
     if (eti%OFST != 0) v_used[eti%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // int na memoria e int na memoria
+    // int in memory and int in memory
     if ((get_type(etr) == 1) && (etr % OFST != 0) && (get_type(eti) == 1) && (eti % OFST != 0))
     {
         add_instr("%s %s\n", i2f, v_name[etr%OFST]);
         add_instr("P_I2F_M %s\n", v_name[eti%OFST]);
     }
 
-    // int na memoria e int no acc
+    // int in memory and int in acc
     if ((get_type(etr) == 1) && (etr % OFST != 0) && (get_type(eti) == 1) && (eti % OFST == 0))
     {
         add_instr("SET aux_var\n");
@@ -1126,14 +1126,14 @@ int exec_comp(int etr, int eti)
         add_instr("P_I2F_M aux_var\n");
     }
 
-    // int na memoria e float na memoria
+    // int in memory and float in memory
     if ((get_type(etr) == 1) && (etr % OFST != 0) && (get_type(eti) == 2) && (eti % OFST != 0))
     {
         add_instr("%s %s\n", i2f, v_name[etr%OFST]);
         add_instr("P_LOD %s\n"  , v_name[eti%OFST]);
     }
 
-    // int na memoria e float no acc
+    // int in memory and float in acc
     if ((get_type(etr) == 1) && (etr % OFST != 0) && (get_type(eti) == 2) && (eti % OFST == 0))
     {
         add_instr("SET aux_var\n");
@@ -1141,14 +1141,14 @@ int exec_comp(int etr, int eti)
         add_instr("P_LOD aux_var\n");
     }
 
-    // int no acc e int na memoria
+    // int in acc and int in memory
     if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 1) && (eti % OFST != 0))
     {
         add_instr("I2F\n");
         add_instr("P_I2F_M %s\n", v_name[eti%OFST]);
     }
 
-    // int no acc e int no acc
+    // int in acc and int in acc
     if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 1) && (eti % OFST == 0))
     {
         add_instr("SET_P aux_var\n");
@@ -1156,14 +1156,14 @@ int exec_comp(int etr, int eti)
         add_instr("P_I2F_M aux_var\n");
     }
 
-    // int no acc e float na memoria
+    // int in acc and float in memory
     if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 2) && (eti % OFST != 0))
     {
         add_instr("I2F\n");
         add_instr("P_LOD %s\n", v_name[eti%OFST]);
     }
 
-    // int no acc e float no acc
+    // int in acc and float in acc
     if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 2) && (eti % OFST == 0))
     {
         add_instr("SET_P aux_var\n");
@@ -1171,14 +1171,14 @@ int exec_comp(int etr, int eti)
         add_instr("P_LOD aux_var\n");
     }
 
-    // float na memoria e int na memoria
+    // float in memory and int in memory
     if ((get_type(etr) == 2) && (etr % OFST != 0) && (get_type(eti) == 1) && (eti % OFST != 0))
     {
         add_instr("%s %s\n",  ld, v_name[etr%OFST]);
         add_instr("P_I2F_M %s\n", v_name[eti%OFST]);
     }
 
-    // float na memoria e int no acc
+    // float in memory and int in acc
     if ((get_type(etr) == 2) && (etr % OFST != 0) && (get_type(eti) == 1) && (eti % OFST == 0))
     {
         add_instr("SET aux_var\n");
@@ -1186,14 +1186,14 @@ int exec_comp(int etr, int eti)
         add_instr("P_I2F_M aux_var\n");
     }
 
-    // float na memoria e float na memoria
+    // float in memory and float in memory
     if ((get_type(etr) == 2) && (etr % OFST != 0) && (get_type(eti) == 2) && (eti % OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[etr%OFST]);
         add_instr("P_LOD %s\n" , v_name[eti%OFST]);
     }
 
-    // float na memoria e float no acc
+    // float in memory and float in acc
     if ((get_type(etr) == 2) && (etr % OFST != 0) && (get_type(eti) == 2) && (eti % OFST == 0))
     {
         add_instr("SET aux_var\n");
@@ -1201,28 +1201,28 @@ int exec_comp(int etr, int eti)
         add_instr("P_LOD aux_var\n");
     }
 
-    // float no acc e int na memoria
+    // float in acc and int in memory
     if ((get_type(etr) == 2) && (etr % OFST == 0) && (get_type(eti) == 1) && (eti % OFST != 0))
     {
         add_instr("P_I2F_M %s\n", v_name[eti%OFST]);
     }
 
-    // float no acc e int no acc
+    // float in acc and int in acc
     if ((get_type(etr) == 2) && (etr % OFST == 0) && (get_type(eti) == 1) && (eti % OFST == 0))
     {
         add_instr("I2F\n");
     }
 
-    // float no acc e float na memoria
+    // float in acc and float in memory
     if ((get_type(etr) == 2) && (etr % OFST == 0) && (get_type(eti) == 2) && (eti % OFST != 0))
     {
         add_instr("P_LOD %s\n", v_name[eti%OFST]);
     }
 
-    // float no acc e float no acc
+    // float in acc and float in acc
     if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 2) && (eti % OFST == 0))
     {
-        // nao faz nada
+        // nothing to do
     }
 
     acc_ok = 1;
@@ -1230,46 +1230,46 @@ int exec_comp(int etr, int eti)
 }
 
 // ----------------------------------------------------------------------------
-// funcoes especiais para trabalho com vetores --------------------------------
-// nao cria funcoes no stdlib diretamente -------------------------------------
-// ao inves disso, usa notacao de Dirac nos statments -------------------------
+// special functions for vector work ------------------------------------------
+// does not create stdlib functions directly ----------------------------------
+// instead, uses Dirac notation in statements --------------------------------
 // ----------------------------------------------------------------------------
 
-// multiplicacao entre dois vetores, ex: <a|b>
-// essa rotina gera um exp
+// multiplication between two vectors, e.g. <a|b>
+// this routine produces an exp
 int exec_vtv(int id1, int id2)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se id1 foi declarado
+    // check whether id1 was declared
     if (v_type[id1] == 0) {fprintf(stderr, MSG_ERR_VAR_NOT_FOUND, line_num+1, rem_fname(v_name[id1], fname)); exit(EXIT_FAILURE);}
 
-    // checa se id2 foi declarado
+    // check whether id2 was declared
     if (v_type[id2] == 0) {fprintf(stderr, MSG_ERR_VAR_NOT_FOUND, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
 
-    // checa se sao vetores mesmo
+    // check that they really are vectors
     if (v_isar[id1] != 1 || v_isar[id2] != 1) {fprintf(stderr, MSG_ERR_INNER_NEEDS_VECTORS, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se tamanhos sao iguais
+    // check that the sizes match
     if (v_size[id1] != v_size[id2]) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se sao do mesmo tipo
+    // check that they are the same type
     if (v_type[id1] != v_type[id2]) {fprintf(stderr, MSG_ERR_TYPE_DIFF, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se tem variavel tipo comp
+    // check whether there is a comp variable
     if (v_type[id1] == 3 || v_type[id2] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     v_used[id1] = 1;
     v_used[id2] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[id1];
@@ -1277,14 +1277,14 @@ int exec_vtv(int id1, int id2)
     char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
     // ------------------------------------------------------------------------
-    // implementa o produto entre vetores -------------------------------------
+    // implements the vector product ------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_INNER, line_num+1);
 
-    // implementar para todas as combinacoes
+    // implement every combination
 
-    // int com int
+    // int with int
     if ((v_type[id1] == 1) && (v_type[id2] == 1))
     {
         add_instr( "%s %s\n", ld, v_name[id1]);
@@ -1298,7 +1298,7 @@ int exec_vtv(int id1, int id2)
         }
     }
 
-    // float com float
+    // float with float
     if ((v_type[id1] == 2) && (v_type[id2] == 2))
     {
         add_instr(   "%s %s\n", ld, v_name[id1]);
@@ -1316,66 +1316,66 @@ int exec_vtv(int id1, int id2)
     return v_type[id1]*OFST;
 }
 
-// multiplicacao de matriz por vetor, ex: A # |B|b>;
+// matrix-vector multiplication, e.g. A # |B|b>;
 void exec_Mv(int idy, int idM, int idv)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idy foi declarada
+    // check whether idy was declared
     if (v_type[idy] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idM foi declarada
+    // check whether idM was declared
     if (v_type[idM] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idv foi declarada
+    // check whether idv was declared
     if (v_type[idv] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
-    // checa se os tipos sao os mesmos
+    // check that the types match
     if (v_type[idy] != v_type[idM] || v_type[idy] != v_type[idv]) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idy] == 3 || v_type[idM] == 3 || v_type[idv] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se idy eh um vetor
+    // check whether idy is a vector
     if (v_isar[idy] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idM eh uma matriz
+    // check whether idM is a matrix
     if (v_isar[idM] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX2, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idv eh um vetor
+    // check whether idv is a vector
     if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
-    // checa tamanho entre saida e matriz
+    // check size between output and matrix
     if (v_size[idy] != v_size[idM]) {fprintf(stderr, MSG_ERR_MATRIX_ROW_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
-    // checa tamanho entre matriz e vetor
+    // check size between matrix and vector
     if (v_size[idv] != v_siz2[idM]) {fprintf(stderr, MSG_ERR_MATRIX_COL_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     v_used[idM] = 1;
     v_used[idv] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[idM];
     int M = v_siz2[idM];
 
     // ------------------------------------------------------------------------
-    // implementa o produto entre matriz e vetor ------------------------------
+    // implements the matrix-vector product -----------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_MV, line_num+1);
 
-    // implementar combinacoes sob demanda apenas
+    // implement combinations only on demand
 
-    // int com int
+    // int with int
     if ((v_type[idM] == 1) && (v_type[idv] == 1))
     {
         for (int i = 0; i < N; i++)
@@ -1394,7 +1394,7 @@ void exec_Mv(int idy, int idM, int idv)
         }
     }
 
-    // float com float
+    // float with float
     if ((v_type[idM] == 2) && (v_type[idv] == 2))
     {
         for (int i = 0; i < N; i++)
@@ -1414,49 +1414,49 @@ void exec_Mv(int idy, int idM, int idv)
     }
 }
 
-// multiplicacao de constante por vetor, ex: a # c|b>;
+// constant-vector multiplication, e.g. a # c|b>;
 void exec_cv(int idy, int et, int idv)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idy foi declarada
+    // check whether idy was declared
     if (v_type[idy] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et foi declarada
+    // check whether et was declared
     if (et%OFST != 0 && v_type[et%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idv foi declarada
+    // check whether idv was declared
     if (v_type[idv] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
-    // checa se os tipos sao os mesmos
+    // check that the types match
     if (v_type[idy] != get_type(et) || v_type[idy] != v_type[idv]) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idy] == 3 || get_type(et) == 3 || v_type[idv] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se idy eh um vetor
+    // check whether idy is a vector
     if (v_isar[idy] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (et%OFST != 0 && v_isar[et%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[et%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idv eh um vetor
+    // check whether idv is a vector
     if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
-    // checa tamanho entre vetores
+    // check size between vectors
     if (v_size[idy] != v_size[idv]) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (et%OFST != 0) v_used[et%OFST] = 1;
                       v_used[idv    ] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[idv];
@@ -1464,26 +1464,26 @@ void exec_cv(int idy, int et, int idv)
     char g[64]; if (et%OFST==0) strcpy(g,"aux_var"); else strcpy(g,v_name[et%OFST]);
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_CV, line_num+1);
 
     if (et%OFST==0) add_instr("SET aux_var\n");
 
-    // implementar combinacoes sob demanda
+    // implement combinations on demand
 
     for (int i = 0; i < N; i++)
     {
         add_instr("LOD_V %s %d\n", v_name[idv], i);
 
-        // int com int
+        // int with int
         if (v_type[idy] == 1)
         {
             add_instr("MLT %s\n", g);
         }
 
-        // float com float
+        // float with float
         if (v_type[idy] == 2)
         {
             add_instr("F_MLT %s\n", g);
@@ -1495,52 +1495,52 @@ void exec_cv(int idy, int et, int idv)
     acc_ok = 0;
 }
 
-// soma ponderada no segundo vetor, ex: a # |b> + c|d>;
-// fiz mais pra usar no RLS mesmo
+// weighted sum into the second vector, e.g. a # |b> + c|d>;
+// added mainly for RLS use
 void exec_apcb(int idy, int ida, int etc, int idb)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idy foi declarada
+    // check whether idy was declared
     if (v_type[idy] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
-    // checa se ida foi declarada
+    // check whether ida was declared
     if (v_type[ida] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etc foi declarada
+    // check whether etc was declared
     if (etc%OFST != 0 && v_type[etc%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
     
-    // checa se idb foi declarada
+    // check whether idb was declared
     if (v_type[idb] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
-    // checa se os tipos sao os mesmos
+    // check that the types match
     if (v_type[idy] != v_type[ida] || v_type[idy] != get_type(etc) || v_type[idy] != v_type[idb]) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idy] == 3 || v_type[ida] == 3 || get_type(etc) == 3 || v_type[idb] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se idy eh um vetor
+    // check whether idy is a vector
     if (v_isar[idy] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
-    // checa se ida eh um vetor
+    // check whether ida is a vector
     if (v_isar[ida] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
-    // checa se et eh uma variavel
+    // check whether et is a variable
     if (etc%OFST != 0 && v_isar[etc%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idb eh um vetor
+    // check whether idb is a vector
     if (v_isar[idb] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
-    // checa tamanho entre vetores
+    // check size between vectors
     if (v_size[idy] != v_size[ida]) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa tamanho entre vetores
+    // check size between vectors
     if (v_size[idy] != v_size[idb]) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
                        v_used[ida     ] = 1;
@@ -1548,7 +1548,7 @@ void exec_apcb(int idy, int ida, int etc, int idb)
                        v_used[idb     ] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_VECTOR_SUM, line_num+1);
@@ -1558,7 +1558,7 @@ void exec_apcb(int idy, int ida, int etc, int idb)
     char g[64]; if (etc%OFST==0) strcpy(g,"aux_var"); else strcpy(g,v_name[etc%OFST]);
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (etc%OFST==0) add_instr("SET aux_var\n");
@@ -1587,55 +1587,55 @@ void exec_apcb(int idy, int ida, int etc, int idb)
     acc_ok = 0;
 }
 
-// produto externo entre dois vetores, ex: A # |a><b|;
+// outer product between two vectors, e.g. A # |a><b|;
 void exec_vvt(int idM, int ida, int idb)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idM foi declarada
+    // check whether idM was declared
     if (v_type[idM] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
-    // checa se ida foi declarada
+    // check whether ida was declared
     if (v_type[ida] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
     
-    // checa se idb foi declarada
+    // check whether idb was declared
     if (v_type[idb] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
-    // checa se os tipos sao os mesmos
+    // check that the types match
     if (v_type[idM] != v_type[ida] || v_type[idM] != v_type[idb]) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idM] == 3 || v_type[ida] == 3 || v_type[idb] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se idM eh uma matriz
+    // check whether idM is a matrix
     if (v_isar[idM] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
-    // checa se ida eh um vetor
+    // check whether ida is a vector
     if (v_isar[ida] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idb eh um vetor
+    // check whether idb is a vector
     if (v_isar[idb] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
-    // checa tamanho entre elementos
+    // check size between elements
     if (v_size[idM] != v_size[ida] || v_size[idM] != v_size[idb]) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     v_used[ida] = 1;
     v_used[idb] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[ida];
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_OUTER, line_num+1);
@@ -1663,49 +1663,49 @@ void exec_vvt(int idM, int ida, int idb)
     }
 }
 
-// subtracao de matriz com produto externo, ex: A # B - |a><b|;
-// esse eu fiz mais por causa do RLS mesmo
+// matrix subtraction with outer product, e.g. A # B - |a><b|;
+// added mainly for RLS use
 void exec_Mmvvt(int idA, int idB, int ida, int idb)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idA foi declarada
+    // check whether idA was declared
     if (v_type[idA] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idA foi declarada
+    // check whether idA was declared
     if (v_type[idB] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idB], fname)); exit(EXIT_FAILURE);}
     
-    // checa se ida foi declarada
+    // check whether ida was declared
     if (v_type[ida] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idb foi declarada
+    // check whether idb was declared
     if (v_type[idb] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
-    // checa se os tipos sao os mesmos
+    // check that the types match
     if (v_type[idA] != v_type[idB] || v_type[idA] != v_type[ida] || v_type[idA] != v_type[idb]) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idA] == 3 || v_type[idB] == 3 || v_type[ida] == 3 || v_type[idb] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
-    // checa se idA eh uma matriz
+    // check whether idA is a matrix
     if (v_isar[idA] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idB eh uma matriz
+    // check whether idB is a matrix
     if (v_isar[idB] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idB], fname)); exit(EXIT_FAILURE);}
 
-    // checa se ida eh um vetor
+    // check whether ida is a vector
     if (v_isar[ida] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idb eh um vetor
+    // check whether idb is a vector
     if (v_isar[idb] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
-    // checa tamanho entre elementos
+    // check size between elements
     if (v_size[idA] != v_siz2[idA] || v_size[idA] != v_size[idB] || v_size[idA] != v_siz2[idB] || v_size[idA] != v_size[ida] || 
         v_size[idA] != v_size[idb]) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     v_used[idB] = 1;
@@ -1713,13 +1713,13 @@ void exec_Mmvvt(int idA, int idB, int ida, int idb)
     v_used[idb] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[ida];
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_OUTER, line_num+1);
@@ -1752,49 +1752,49 @@ void exec_Mmvvt(int idA, int idB, int ida, int idb)
     }
 }
 
-// produto entre constante e matriz, ex: A # c|B|;
+// product of constant and matrix, e.g. A # c|B|;
 void exec_cM(int idA, int etc, int idM)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idA foi declarada
+    // check whether idA was declared
     if (v_type[idA] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etc foi declarada
+    // check whether etc was declared
     if (etc%OFST != 0 && v_type[etc%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
     
-    // checa se idM foi declarada
+    // check whether idM was declared
     if (v_type[idM] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
-    // checa se os tipos sao os mesmos
+    // check that the types match
     if (v_type[idA] != get_type(etc) || v_type[idA] != v_type[idM]) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idA] == 3 || get_type(etc) == 3 || v_type[idM] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se idA eh uma matriz
+    // check whether idA is a matrix
     if (v_isar[idA] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etc eh uma variavel
+    // check whether etc is a variable
     if (etc%OFST != 0 && v_isar[etc%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idM eh uma matriz
+    // check whether idM is a matrix
     if (v_isar[idM] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
-    // checa tamanho entre elementos
+    // check size between elements
     if (v_size[idA] != v_size[idM] || v_siz2[idA] != v_siz2[idM]) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (etc%OFST != 0) v_used[etc%OFST] = 1;
                        v_used[idM     ] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[idM];
@@ -1803,7 +1803,7 @@ void exec_cM(int idA, int etc, int idM)
     char g[64]; if (etc%OFST==0) strcpy(g,"aux_var"); else strcpy(g,v_name[etc%OFST]);
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_CM, line_num+1);
@@ -1829,44 +1829,44 @@ void exec_cM(int idA, int etc, int idM)
     acc_ok = 0;
 }
 
-// gera matriz identidade com constante, ex: A # c|I|;
+// generates identity matrix with constant, e.g. A # c|I|;
 void exec_cI(int idM, int etc)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idM foi declarada
+    // check whether idM was declared
     if (v_type[idM] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etc foi declarada
+    // check whether etc was declared
     if (etc%OFST != 0 && v_type[etc%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se os tipos sao os mesmos
+    // check that the types match
     if (v_type[idM] != get_type(etc)) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idM] == 3 || get_type(etc) == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
-    // checa se idM eh uma matriz
+    // check whether idM is a matrix
     if (v_isar[idM] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etc eh uma variavel
+    // check whether etc is a variable
     if (etc%OFST != 0 && v_isar[etc%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (etc%OFST != 0) v_used[etc%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[idM];
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_CM, line_num+1);
@@ -1898,30 +1898,30 @@ void exec_cI(int idM, int etc)
     acc_ok = 0;
 }
 
-// gera vetor de zeros, ex: a # |0>;
+// generates a zero vector, e.g. a # |0>;
 void exec_v0(int idv)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idv foi declarada
+    // check whether idv was declared
     if (v_type[idv] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idv] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
     
-    // checa se idv eh um vetor
+    // check whether idv is a vector
     if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[idv];
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_ZERO_VECTOR, line_num+1);
@@ -1935,36 +1935,36 @@ void exec_v0(int idv)
     for (int i = 0; i < N; i++) add_instr("SET_V %s %d\n", v_name[idv], i);
 }
 
-// le vetor de entrada com peso c, ex: a # c|in(0)>;
+// reads input vector with weight c, e.g. a # c|in(0)>;
 void exec_cvin(int idv, int etc, int idp)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idv foi declarada
+    // check whether idv was declared
     if (v_type[idv] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etc foi declarada
+    // check whether etc was declared
     if (etc%OFST != 0 && v_type[etc%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idv] == 3 || get_type(etc) == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se idv eh um vetor
+    // check whether idv is a vector
     if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etc eh uma variavel
+    // check whether etc is a variable
     if (etc%OFST != 0 && v_isar[etc%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (etc%OFST != 0) v_used[etc%OFST] = 1;
 
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[idv];
@@ -1972,7 +1972,7 @@ void exec_cvin(int idv, int etc, int idp)
     char g[64]; if (etc%OFST==0) strcpy(g,"aux_var"); else strcpy(g,v_name[etc%OFST]);
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_SET_VECTOR, line_num+1);
@@ -2001,37 +2001,37 @@ void exec_cvin(int idv, int etc, int idp)
     acc_ok = 0;
 }
 
-// escreve vetor pra saida com peso c, ex: out(0, c|a>);
+// writes vector to output with weight c, e.g. out(0, c|a>);
 void exec_vout(int idp, int etc, int idv)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se idv foi declarada
+    // check whether idv was declared
     if (v_type[idv] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etc foi declarada
+    // check whether etc was declared
     if (etc%OFST != 0 && v_type[etc%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[idv] == 3 || get_type(etc) == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se idv eh um vetor
+    // check whether idv is a vector
     if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etc eh uma variavel
+    // check whether etc is a variable
     if (etc%OFST != 0 && v_isar[etc%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[etc%OFST], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (etc%OFST != 0) v_used[etc%OFST] = 1;
                        v_used[idv     ] = 1;
     
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[idv];
@@ -2039,7 +2039,7 @@ void exec_vout(int idp, int etc, int idv)
     char g[64]; if (etc%OFST==0) strcpy(g,"aux_var"); else strcpy(g,v_name[etc%OFST]);
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_FLUSH_VECTOR, line_num+1);
@@ -2069,55 +2069,55 @@ void exec_vout(int idp, int etc, int idv)
     acc_ok = 0;
 }
 
-// executa um shift register no vetor com o valor dado a esquerda, ex: a # b -> |c>;
-// a e c tem que ser os mesmos vetores
-// fazer um novo tipo de array para shift register?
+// performs a shift register on the vector with the value given on the left, e.g. a # b -> |c>;
+// a and c must be the same vector
+// create a new array type for shift register?
 void exec_shift(int ida, int etb, int idc)
 {
     // ------------------------------------------------------------------------
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // checa se ida foi declarada
+    // check whether ida was declared
     if (v_type[ida] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etb foi declarada
+    // check whether etb was declared
     if (etb%OFST != 0 && v_type[etb%OFST] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[etb%OFST], fname)); exit(EXIT_FAILURE);}
 
-    // checa se idc eh igual a ida
+    // check whether idc equals ida
     if (idc != ida) {fprintf(stderr, MSG_ERR_SHIFT_VEC_SELF, line_num+1); exit(EXIT_FAILURE);}
     
-    // checa se nao eh comp
+    // check that it is not comp
     if (v_type[ida] == 3 || get_type(etb) == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // checa se sao tipos iguais
+    // check that the types match
     //if (v_type[ida] != v_type[etb%OFST]) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
     
-    // checa se ida eh um vetor
+    // check whether ida is a vector
     if (v_isar[ida] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
-    // checa se etb eh uma variavel
+    // check whether etb is a variable
     if (etb%OFST != 0 && v_isar[etb%OFST] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[etb%OFST], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // atualiza status das variaveis ------------------------------------------
+    // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (etb%OFST != 0) v_used[etb%OFST] = 1;
     
     // ------------------------------------------------------------------------
-    // prepara variaveis locais -----------------------------------------------
+    // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
     int N = v_size[ida];
 
     // ------------------------------------------------------------------------
-    // executa ----------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_SHIFT, v_name[ida], line_num+1);
 
-    // ida int e etb int na memoria
+    // ida int and etb int in memory
     if (v_type[ida] == 1 && get_type(etb) == 1 && etb%OFST != 0)
     {
         for (int i = N-1; i > 0; i--)
@@ -2145,7 +2145,7 @@ void exec_shift(int ida, int etb, int idc)
         add_instr("SET %s\n", v_name[ida]);
     }
 
-    // ida float e etb float na memoria
+    // ida float and etb float in memory
     if (v_type[ida] == 2 && get_type(etb) == 2 && etb%OFST != 0)
     {
         for (int i = N-1; i > 0; i--)

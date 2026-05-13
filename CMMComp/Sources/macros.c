@@ -1,20 +1,20 @@
 // ----------------------------------------------------------------------------
-// funcoes e variaveis pra criacao e utilizacao de macros ---------------------
+// functions and variables used to create and use macros ----------------------
 // ----------------------------------------------------------------------------
 
 /*
 TODO:
-1- implementar mais funcoes nao-lineares
-2- ver no TCC do Tiago Falcao qual metodo eh melhor pra cada caso
+1- implement more non-linear functions
+2- check Tiago Falcao's thesis for which method is best in each case
 */
 
-// includes globais
+// global includes
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-// includes locais
+// local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\global.h"
 #include "..\Headers\funcoes.h"
@@ -23,50 +23,50 @@ TODO:
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// gerenciamento de macros criadas pelo usuario -------------------------------
+// management of user-created macros ------------------------------------------
 // ----------------------------------------------------------------------------
 
-// redeclaracao de variaveis globais ------------------------------------------
+// global variable definitions ------------------------------------------------
 
-int mac_using = 0; // se estiver lendo uma macro, nao deve escrever o assembler durante o parse
+int mac_using = 0; // while reading a macro, the assembler must not be written during the parse
 
-// nao deixa o parser escrever no arquivo assembler ---------------------------
-// ao inves disso, copia o codigo de uma macro
-// id_num eh o terceiro argumento da macro, que deve ser o numero de instrucoes
-// tirar essa necessidade de passar o id_num, pois o numero de instrucoes eh fixo
+// blocks the parser from writing to the assembler file -----------------------
+// instead, copies the code of a macro
+// id_num is the third argument of the macro, which must be the number of instructions
+// remove the need to pass id_num, since the instruction count is fixed
 void mac_use(int ids, int global, int id_num)
 {
-    // checa consistencia -----------------------------------------------------
+    // consistency check ------------------------------------------------------
 
     if (mac_using == 1)
         {fprintf(stderr, MSG_ERR_NESTED_MACRO, line_num+1); exit(EXIT_FAILURE);}
 
     printf(MSG_INFO_USER_MACRO, v_name[ids], line_num+1);
 
-    // se for global, tem q ver se tem que chamar a funcao main ainda ---------
+    // global: check whether main still needs to be called --------------------
     if ((mainok == 0) && (global == 1))
     {
         add_sinst(-2, "JMP main\n");
 
-        mainok = 1; // questao da funcao main foi resolvida
+        mainok = 1; // main function status resolved
     }
 
-    // remover as aspas da string (trabalho da porra!) ------------------------
-    // mudar para um codigo mais simples como o que ta em array.c -------------
+    // strip the quotes from the string (clunky!) -----------------------------
+    // switch to simpler code like the one in array.c -------------------------
 
     char f_name[64];
     strcpy(f_name, v_name[ids]);
     char file_name[512];
-    int  tamanho = strlen(f_name); // tamanho da string
-    int idxToDel = tamanho-1;      // indice para deletar, nesse caso o ultimo, as aspas.
+    int  tamanho = strlen(f_name); // string length
+    int idxToDel = tamanho-1;      // index to delete, in this case the trailing quote
     strcpy ( file_name, "");
-    memmove(&f_name[idxToDel], &f_name[idxToDel+1], 1); // deletando de fato as ultimas aspas
-    strcat ( file_name, f_name+1); // agora copia, tirando as primeiras aspas
+    memmove(&f_name[idxToDel], &f_name[idxToDel+1], 1); // actually delete the trailing quote
+    strcat ( file_name, f_name+1); // copy starting after the leading quote
 
     char    mac_name[1024];
     sprintf(mac_name, "%s/%s", dir_soft, file_name);
 
-    // copia o codigo do arquivo asm ------------------------------------------
+    // copy the code from the asm file ----------------------------------------
 
     FILE *f_macro;
     char a;
@@ -76,8 +76,8 @@ void mac_use(int ids, int global, int id_num)
                       fputc  ('\n',f_asm);
 	                  fclose (f_macro);
 
-    // preenche tabela de codigo cmm com -1 (INTERNO) -------------------------
-    
+    // fill the cmm-code table with -1 (INTERNAL) -----------------------------
+
     int n = atoi(v_name[id_num]);
     for (int i = 0; i < n; i++)
     {
@@ -88,7 +88,7 @@ void mac_use(int ids, int global, int id_num)
     mac_using = 1;
 }
 
-// libera o parser pra salvar no arquivo assembler ----------------------------
+// releases the parser to write to the assembler file -------------------------
 
 void mac_end()
 {
@@ -97,10 +97,10 @@ void mac_end()
 }
 
 // ----------------------------------------------------------------------------
-// funcoes auxiliares para geracao de macros pre-definidas --------------------
+// helpers for generating predefined macros -----------------------------------
 // ----------------------------------------------------------------------------
 
-// concatena conteudo do arquivo read no arquivo write
+// concatenates the contents of the read file into the write file
 void fcat2end(char *n_read, char *n_write)
 {
     FILE *f_in  = fopen(n_read , "r");
@@ -114,33 +114,33 @@ void fcat2end(char *n_read, char *n_write)
 }
 
 // ----------------------------------------------------------------------------
-// gerenciamento de macros pre-definidas --------------------------------------
+// management of predefined macros --------------------------------------------
 // ----------------------------------------------------------------------------
 
-// variaveis locais -----------------------------------------------------------
+// local variables ------------------------------------------------------------
 
-int fatan = 0; // se vai precisar de macro pra arco tangente
-int fsqrt = 0; // se vai precisar de macro pra raiz quadrada
-int fsin  = 0; // se vai precisar de macro pra seno
+int fatan = 0; // whether the arctangent macro is needed
+int fsqrt = 0; // whether the square-root macro is needed
+int fsin  = 0; // whether the sine macro is needed
 
-// adiciona flag de uma macro pre-definida ------------------------------------
+// adds a flag for a predefined macro -----------------------------------------
 
 void mac_add(char *name)
 {
-         if (strcmp(name, "fsqrt") == 0) fsqrt = 1; // raiz quadrada
-    else if (strcmp(name, "fatan") == 0) fatan = 1; // arco tangente
-    else if (strcmp(name, "fsin" ) == 0) fsin  = 1; // seno
+         if (strcmp(name, "fsqrt") == 0) fsqrt = 1; // square root
+    else if (strcmp(name, "fatan") == 0) fatan = 1; // arctangent
+    else if (strcmp(name, "fsin" ) == 0) fsin  = 1; // sine
 }
 
-// copia as macros pre-definidas no final arquivo assembler -------------------
+// copies the predefined macros at the end of the assembler file --------------
 
 void mac_copy(char *fasm)
 {
-    // se nao tiver nada pra fazer, sai! --------------------------------------
+    // bail out if there is nothing to do -------------------------------------
 
     if (!(fsqrt || fatan || fsin)) return;
 
-    // copia o que precisa no final do asm ------------------------------------
+    // copy what is needed at the end of the asm ------------------------------
 
     char tasm[1024]; sprintf(tasm, "%s/%s", dir_tmp, "tasm.txt");
 
@@ -167,10 +167,10 @@ void mac_copy(char *fasm)
 }
 
 // ----------------------------------------------------------------------------
-// backup do codigo em c+- das macros pre-definidas ---------------------------
+// backup of the c+- code for the predefined macros ---------------------------
 // ----------------------------------------------------------------------------
 
-// arco-tg para float (float_atan.asm)
+// arctangent for float (float_atan.asm)
 /*float float_atan(float x)
 {
     float ax = abs(x);
@@ -180,7 +180,7 @@ void mac_copy(char *fasm)
     if (ax > 0.98)
     {
         float xm1 = ax-1;
-        return sign(x, 0.7853981634 + xm1*0.5 - xm1*xm1*0.25); 
+        return sign(x, 0.7853981634 + xm1*0.5 - xm1*xm1*0.25);
     }
 
     float termo      = x;
@@ -200,11 +200,11 @@ void mac_copy(char *fasm)
     return resultado;
 }*/
 
-// seno para float (float_sin.asm)
+// sine for float (float_sin.asm)
 /*float sin(float x)
 {
     if (x == 0) return 0.0;
-    
+
     while (abs(x) > 3.141592654) x = x - sign(x, 6.283185307);
 
     float termo      = x;

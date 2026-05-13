@@ -1,19 +1,19 @@
 // ----------------------------------------------------------------------------
-// tradutor de num complexo para o gtkwave ------------------------------------
+// translator from complex number to gtkwave ----------------------------------
 // ----------------------------------------------------------------------------
 
 #include   <math.h>
 #include  <stdio.h>
 #include <stdlib.h>
 
-// binario (em ascii) para meu float
+// binary (in ascii) to internal float
 float b2mf(char *ifl, int nbm, int nbe)
 {
-    // sinal ------------------------------------------------------------------
+    // sign -------------------------------------------------------------------
 
     int s = ifl[0] == '1';
 
-    // expoente ---------------------------------------------------------------
+    // exponent ---------------------------------------------------------------
 
     char exb[64]; for (int i=0;i<nbe;i++) exb[i] = ifl[i+1]; exb[nbe]=0;
 
@@ -30,7 +30,7 @@ float b2mf(char *ifl, int nbm, int nbe)
 
     int  m = strtol(mab,&endp,2);
 
-    // gera o float -----------------------------------------------------------
+    // build the float --------------------------------------------------------
 
     float  f = m * pow(2,e);
     if (s) f = -f;
@@ -53,9 +53,9 @@ int main(int argc, char **argv)
     {
         bufi[0] = 0;
         fscanf(stdin, "%s", bufi);
-        if (bufi[0]) 
+        if (bufi[0])
         {
-            // os primeiros 16 bits codificam o nbm e nbe
+            // the first 16 bits encode nbm and nbe
             for (i=0; i<8; i++)
             {
                 ma[i] = bufi[i  ];
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
             nbe   = strtol(ex,NULL,2);
             nbits = nbm+nbe+1;
 
-            // agora pega a parte real e imag
+            // now read the real and imaginary parts
             for (i=0;i<nbits;i++)
             {
                 re[i] = bufi[16+i];
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
             re[nbits] = 0;
             im[nbits] = 0;
 
-            // gera o float equivalente
+            // generate the equivalent float
             float fre = b2mf(re,nbm,nbe);
             float fim = b2mf(im,nbm,nbe);
 

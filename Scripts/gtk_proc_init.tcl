@@ -1,8 +1,8 @@
 #------------------------------------------------------------------------------
-# Funcoes auxiliares ----------------------------------------------------------
+# Helper functions ------------------------------------------------------------
 #------------------------------------------------------------------------------
 
-# pega a primeira variavel com o padrao de texto dado
+# fetches the first variable that matches the given text pattern
 proc getVar {padrao} {
     for {set i 0} {$i < [gtkwave::getNumFacs]} {incr i} {
         set facname [gtkwave::getFacName $i]
@@ -11,7 +11,7 @@ proc getVar {padrao} {
     return ""
 }
 
-# lista todas as variaveis com o mesmo padrao de texto dado
+# lists all variables matching the same given text pattern
 proc listVar {padrao} {
     set lista [list]
     for {set i 0} {$i < [gtkwave::getNumFacs]} {incr i} {
@@ -21,7 +21,7 @@ proc listVar {padrao} {
     return $lista
 }
 
-# adiciona uma variavel ao gtkwave
+# adds a variable to gtkwave
 proc addVar {facname dataFormat color alias tradutor filter} {
     gtkwave::addSignalsFromList $facname
     gtkwave::/Edit/Data_Format/$dataFormat
@@ -31,12 +31,12 @@ proc addVar {facname dataFormat color alias tradutor filter} {
     gtkwave::/Edit/Alias_Highlighted_Trace $alias
 }
 
-# adiciona variaveis de acordo com o tipo de dado
+# adds variables according to the data type
 proc addVars {tipo padrao dataFormat tradutor} {
     set var_typ [listVar $padrao]
 
     puts "Info: found [llength $var_typ] '$tipo' type variables"
-    
+
     for {set i 0} {$i < [llength $var_typ] } {incr i} {
         set facname [lindex $var_typ $i]
         regexp {_f_(.*?)_v_} $facname -> funcao
@@ -46,50 +46,50 @@ proc addVars {tipo padrao dataFormat tradutor} {
     }
 }
 
-# adiciona arrays de acordo com o tipo de dado
+# adds arrays according to the data type
 proc addArrs {tipo padrao dataFormat tradutor} {
     array set grupos {}
 
-    # pega todos os arryas do tipo dado e separa em grupos
+    # pick all arrays of the given type and split them into groups
     for {set i 0} {$i < [gtkwave::getNumFacs]} {incr i} {
         set facname [gtkwave::getFacName $i]
 
         if {[string compare $tipo "float"] == 0} {
             if {[string match "*$padrao*" $facname] &&
                 [regexp {^(.*?)(\d{4})$} $facname -> base _]} {
-        
+
                 lappend grupos($base) $facname
             }
         } else {
             if {[string match "*$padrao*" $facname] &&
                 [regexp {^(.*?)(\d{4}\[\d+:\d+\])$} $facname -> base _]} {
-        
+
                 lappend grupos($base) $facname
             }
         }
     }
 
-    # adiciona cada array encontrado
+    # add each array found
     foreach base [lsort [array names grupos]] {
-    
-        # adiciona array no gtkwave e da highlight
+
+        # add the array to gtkwave and highlight it
         gtkwave::addSignalsFromList $grupos($base)
 
-        # tradutor
+        # translator
         gtkwave::/Edit/Data_Format/$dataFormat
         gtkwave::installProcFilter [gtkwave::setCurrentTranslateProc $tradutor]
 
-        # pega funcao e nome do array
+        # extract function and array name
         regexp {_f_(.*?)_v_} $base -> funcao
         regexp {_v_(.*?)_e_} $base -> var
         if {[string compare $funcao global]!=0} {append funcao "()"}
 
-        # cria grupo no gtkwave e tira o highlight
+        # create group in gtkwave and remove highlight
         gtkwave::/Edit/Create_Group "$tipo $var in $funcao"
         gtkwave::/Edit/Toggle_Group_Open|Close
         gtkwave::/Edit/UnHighlight_All
 
-        # muda o nome de cada indice do array
+        # rename each index of the array
         set i 0
         foreach sinal $grupos($base) {
             gtkwave::highlightSignalsFromList $sinal
@@ -100,10 +100,10 @@ proc addArrs {tipo padrao dataFormat tradutor} {
 }
 
 #------------------------------------------------------------------------------
-# Comeca aqui -----------------------------------------------------------------
+# Start here ------------------------------------------------------------------
 #------------------------------------------------------------------------------
 
-# Pega parametros no arquivo de configuracao ----------------------------------
+# Read parameters from the configuration file ---------------------------------
 
 puts "Info: running standard GTKWave configuration..."
 
@@ -112,18 +112,18 @@ gets  $fileID tmp_dir
 gets  $fileID bin_dir
 close $fileID
 
-# Insere sinais basicos -------------------------------------------------------
+# Insert basic signals --------------------------------------------------------
 
 set clk      [getVar "clk"]
 set rst      [getVar "rst"]
 
 gtkwave::addSignalsFromList [list $clk $rst]
 
-# Separador de I/O ------------------------------------------------------------
+# I/O separator ---------------------------------------------------------------
 
 gtkwave::/Edit/Insert_Comment {I/O ****************}
 
-# Sinais de entrada -----------------------------------------------------------
+# Input signals ---------------------------------------------------------------
 
 set req_in  [listVar "proc.req_in_sim"]
 set entrada [listVar "proc.in_sim"    ]
@@ -138,7 +138,7 @@ for {set i 0} {$i < [llength $req_in] } {incr i} {
     addVar [list [lindex $entrada $i]] "Signed_Decimal" "Yellow" "input  $i" "" ""
 }
 
-# Sinais de saida -------------------------------------------------------------
+# Output signals --------------------------------------------------------------
 
 set out_en [listVar "proc.out_en_sim"]
 set saida  [listVar "proc.out_sig"   ]
@@ -153,11 +153,11 @@ for {set i 0} {$i < [llength $out_en] } {incr i} {
     addVar [list [lindex $saida  $i]] "Signed_Decimal" "Yellow" "output $i" "" ""
 }
 
-# Separador de Instrucoes -----------------------------------------------------
+# Instructions separator ------------------------------------------------------
 
 gtkwave::/Edit/Insert_Comment {Instructions *******}
 
-puts "Info: adding Assembly and C± instructions..."
+puts "Info: adding Assembly and C+- instructions..."
 
 # Assembly --------------------------------------------------------------------
 
@@ -167,7 +167,7 @@ addVar [getVar "proc.valr2"   ] "Decimal" "Indigo" "Assembly" "$tmp_dir/trad_opc
 
 addVar [getVar "proc.linetabs"] "Signed_Decimal" "Violet" "C+-" "$tmp_dir/trad_cmm.txt" ""
 
-# Separador de Variaveis ------------------------------------------------------
+# Variables separator ---------------------------------------------------------
 
 gtkwave::/Edit/Insert_Comment {Variables **********}
 
@@ -180,7 +180,7 @@ addArrs "int"   "arr_me1"       "Signed_Decimal" ""
 addArrs "float" "arr_me2"       "BitsToReal"     ""
 addArrs "comp"  "comp_arr_me3"  "Binary"         "$bin_dir/comp2gtkw.exe"
 
-# Separador de Flags ----------------------------------------------------------
+# Flags separator -------------------------------------------------------------
 
 gtkwave::/Edit/Insert_Comment {Flags **************}
 
@@ -216,11 +216,11 @@ gtkwave::/Edit/Alias_Highlighted_Trace "Inst Stack Max"
 gtkwave::highlightSignalsFromList [getVar "isp.fl_full"]
 gtkwave::/Edit/Alias_Highlighted_Trace "Inst Stack Overflow"
 
-# ULA -------------------------------------------------------------------------
+# ALU -------------------------------------------------------------------------
 
 set lista_flags [list [getVar "ula.delta_int"] [getVar "ula.delta_float"]]
 gtkwave::addSignalsFromList $lista_flags
-gtkwave::/Edit/Create_Group "ULA"
+gtkwave::/Edit/Create_Group "ALU"
 gtkwave::/Edit/Toggle_Group_Open|Close
 gtkwave::/Edit/UnHighlight_All
 
@@ -232,12 +232,12 @@ gtkwave::highlightSignalsFromList [getVar "ula.delta_float"]
 gtkwave::/Edit/Data_Format/Analog/Step
 gtkwave::/Edit/Alias_Highlighted_Trace "Rounding Error (float)"
 
-# Visualizacao ----------------------------------------------------------------
+# Visualization ---------------------------------------------------------------
 
 gtkwave::/Time/Zoom/Zoom_Best_Fit
 gtkwave::/View/Left_Justified_Signals
 
-# engana bug -> cria uma aba vazia no gtkwave. refresh soh funciona assim com o GTK3
+# bug workaround -> creates an empty tab in gtkwave. refresh only works this way with GTK3
 gtkwave::loadFile "fix.vcd"
 gtkwave::setTabActive 0
 

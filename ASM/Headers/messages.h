@@ -1,28 +1,28 @@
 // ----------------------------------------------------------------------------
-// suporte bilingue PT/EN para as mensagens do asmcomp ------------------------
+// PT/EN bilingual support for asmcomp messages -------------------------------
 // ----------------------------------------------------------------------------
-// como usar:
-//   printf(MSG_XXX, args...);   ou   fprintf(stderr, MSG_XXX, args...);
-// pra ver as duas versões da string, basta procurar pelo MSG_XXX abaixo.
+// usage:
+//   printf(MSG_XXX, args...);   or   fprintf(stderr, MSG_XXX, args...);
+// to see both versions of the string, just search for MSG_XXX below.
 // ----------------------------------------------------------------------------
 
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
-// 0 = portugues (default), 1 = ingles
+// 0 = Portuguese (default), 1 = English
 extern int lang_en;
 
-// macro de selecao de string. recebe PT e EN e escolhe baseado em lang_en
+// string-selection macro. takes PT and EN and picks one based on lang_en
 #define M(pt, en) (lang_en ? (en) : (pt))
 
-// procura -en/-pt em argv, ajusta lang_en e remove a flag de argv/argc
+// scans argv for -en/-pt, adjusts lang_en and removes the flag from argv/argc
 void parse_lang_flag(int *argc, char **argv);
 
 // ----------------------------------------------------------------------------
-// catalogo de mensagens ------------------------------------------------------
+// message catalog ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// erros gerais --------------------------------------------------------------
+// general errors ------------------------------------------------------------
 
 #define MSG_ERR_TOO_MANY_VARS \
     M("Erro: número de variáveis > %d", \
@@ -44,7 +44,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: inconsistência no ponto flutuante. Tem que ser NUBITS = NBMANT + NBEXPO + 1.\n", \
       "Error: floating-point setup doesn't add up. You gotta have NUBITS = NBMANT + NBEXPO + 1.\n")
 
-// erros de leitura de arquivo de inicializacao de array ---------------------
+// errors when reading array initialization files ----------------------------
 
 #define MSG_ERR_EMPTY_LINE \
     M("Erro: a linha %d do arquivo '%s' tá vazia! Aí fica difícil.\n", \
@@ -102,7 +102,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: tá faltando %d linhas no arquivo '%s'!\n", \
       "Error: you're %d lines short in file '%s'!\n")
 
-// warnings ------------------------------------------------------------------
+// warning messages ----------------------------------------------------------
 
 #define MSG_WARN_EXTRA_LINES \
     M("Atenção: tá sobrando %d linhas no arquivo '%s'!\n", \
@@ -116,7 +116,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção: porta de saída %d não está sendo usada. Gastando hardware à toa!\n", \
       "Heads up: output port %d isn't being used. Burning hardware for nothing!\n")
 
-// infos de uso de recursos --------------------------------------------------
+// info messages for resource usage ------------------------------------------
 
 #define MSG_INFO_FILL_ARRAY \
     M("Info: enchendo array com %d valores lidos do arquivo %s\n", \
@@ -142,7 +142,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: usando %d%% das operações da ULA\n", \
       "Info: using %d%% of the ULA operations\n")
 
-// infos de adicao de circuitos (opcodes.c) ----------------------------------
+// info messages for circuit additions (opcodes.c) ---------------------------
 
 #define MSG_INFO_ARRAY_HANDLING \
     M("Info: adicionando suporte a array\n", \
@@ -164,7 +164,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: adicionando pilha de memória para chamadas de função\n", \
       "Info: adding stack memory for function calls\n")
 
-// infos de recursos da ULA (opcodes.c) --------------------------------------
+// info messages for ALU resources (opcodes.c) -------------------------------
 
 #define MSG_INFO_INT2FLOAT \
     M("Info: recurso da ULA -> conversor de int para float\n", \
@@ -302,7 +302,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: recurso da ULA -> aproximação de raiz quadrada para float\n", \
       "Info: ULA resource -> root-square approximation for float\n")
 
-// sucessos ------------------------------------------------------------------
+// success messages ----------------------------------------------------------
 
 #define MSG_OK_ASM_DONE \
     M("Sucesso: o processador tá pronto pra uso.\n", \

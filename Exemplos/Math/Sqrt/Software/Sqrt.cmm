@@ -12,8 +12,8 @@ float my_sqrt(float num)
 {
     if (num == 0.0) return 0.0;
     
-    int v = (((num << 1) >>> 24) + 22) >>> 1;         // pega o expoente
-        v = ((((v-22) << 23) + (1 << 22)) << 1) >> 1; // monta o float
+    int v = (((num << 1) >>> 24) + 22) >>> 1;         // get the exponent
+        v = ((((v-22) << 23) + (1 << 22)) << 1) >> 1; // build the float
 
     float x; copy(v,x);
 

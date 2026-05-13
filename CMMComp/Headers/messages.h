@@ -1,28 +1,28 @@
 // ----------------------------------------------------------------------------
-// suporte bilingue PT/EN para as mensagens do cmmcomp ------------------------
+// bilingual PT/EN support for cmmcomp messages -------------------------------
 // ----------------------------------------------------------------------------
-// como usar:
-//   printf(MSG_XXX, args...);   ou   fprintf(stderr, MSG_XXX, args...);
-// pra ver as duas versões da string, basta procurar pelo MSG_XXX abaixo.
+// usage:
+//   printf(MSG_XXX, args...);   or   fprintf(stderr, MSG_XXX, args...);
+// to see both string versions, search for MSG_XXX below.
 // ----------------------------------------------------------------------------
 
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
-// 0 = portugues (default), 1 = ingles
+// 0 = portuguese (default), 1 = english
 extern int lang_en;
 
-// macro de selecao de string. recebe PT e EN e escolhe baseado em lang_en
+// string-selection macro. takes PT and EN and chooses based on lang_en
 #define M(pt, en) (lang_en ? (en) : (pt))
 
-// procura -en/-pt em argv, ajusta lang_en e remove a flag de argv/argc
+// scans argv for -en/-pt, sets lang_en and removes the flag from argv/argc
 void parse_lang_flag(int *argc, char **argv);
 
 // ============================================================================
-// CATALOGO DE MENSAGENS ======================================================
+// MESSAGE CATALOG ============================================================
 // ============================================================================
 
-// erros gerais (parser/main/limites) ----------------------------------------
+// general errors (parser/main/limits) ---------------------------------------
 
 #define MSG_ERR_SYNTAX \
     M("Erro de sintaxe na linha %d. Você é uma pessoa confusa!\n", \
@@ -40,7 +40,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: cadê a função main()?\n", \
       "Error: yo, where's the main() function?\n")
 
-// erros de variaveis / numeros ----------------------------------------------
+// variable / number errors --------------------------------------------------
 
 #define MSG_ERR_RESERVED_I \
     M("Erro na linha %d: símbolo 'i' é reservado para indicar a parte imaginária de uma constante complexa.\n", \
@@ -58,7 +58,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: o maior número float que pode ser representado é %f!\n", \
       "Error on line %d: the biggest float this thing can hold is %f!\n")
 
-// erros de declaracao / atribuicao / uso de variaveis -----------------------
+// declaration / assignment / variable-use errors ---------------------------
 
 #define MSG_ERR_VAR_EXISTS \
     M("Erro na linha %d: a variável '%s' já existe. Vai tomar um Ω³!\n", \
@@ -112,7 +112,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: não é assim que se usa '%s'!\n", \
       "Error on line %d: that's not how you use '%s'!\n")
 
-// erros e warnings de I/O ---------------------------------------------------
+// I/O errors and warnings ---------------------------------------------------
 
 #define MSG_ERR_NO_IN_PORT \
     M("Erro na linha %d: não tem porta de entrada %s não!\n", \
@@ -130,7 +130,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: se não quiser esse warning, use 'out'.\n", \
       "Heads up on line %d: if you don't want this warning, use 'out'.\n")
 
-// erros e warnings de stdlib (funcoes especiais) ----------------------------
+// stdlib errors and warnings (special functions) ----------------------------
 
 #define MSG_ERR_PICK_COMP_INFO \
     M("Erro na linha %d: primeiro seleciona qual informação desse número complexo você quer!\n", \
@@ -172,7 +172,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: argumentos da função complex(.,.) não podem ser complexos!\n", \
       "Error on line %d: arguments of complex(.,.) can't themselves be complex!\n")
 
-// erros de algebra linear (notacao de Dirac) --------------------------------
+// linear algebra errors (Dirac notation) ------------------------------------
 
 #define MSG_ERR_INNER_NEEDS_VECTORS \
     M("Erro na linha %d: o nome tá dizendo, produto vetorial é entre vetores!\n", \
@@ -226,7 +226,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: só dá pra fazer shift de um vetor nele mesmo, abensoado!\n", \
       "Error on line %d: you can only shift a vector into itself, mate!\n")
 
-// erros e warnings de operadores (oper.c) -----------------------------------
+// operator errors and warnings (oper.c) -------------------------------------
 
 #define MSG_ERR_MOD_NON_INT \
     M("Erro na linha %d: qual o sentido de calcular o resto da divisão sem ser com número inteiro? Vai se tratar!\n", \
@@ -276,7 +276,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: o segundo operando do shift tá em float. Aí você me quebra!\n", \
       "Heads up on line %d: the second operand of the shift is a float. Now you're killin' me!\n")
 
-// warnings de conversao de tipo (data_assign.c / funcoes.c) ------------------
+// type-conversion warnings (data_assign.c / funcoes.c) ----------------------
 
 #define MSG_WARN_INT_RECV_FLOAT \
     M("Atenção na linha %d: variável '%s' é int, mas recebe float.\n", \
@@ -302,7 +302,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: nessa conversão, eu vou pegar só a parte real hein!\n", \
       "Heads up on line %d: in this conversion I'm only grabbing the real part, just so you know!\n")
 
-// warnings/erros de funcao (funcoes.c) --------------------------------------
+// function errors/warnings (funcoes.c) --------------------------------------
 
 #define MSG_WARN_CONV_F2I_PARAM \
     M("Atenção na linha %d: convertendo float para int no parâmetro %d da função '%s'.\n", \
@@ -376,7 +376,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: lista de parâmetros da função '%s' difere da original.\n", \
       "Error on line %d: parameter list of function '%s' doesn't match the original.\n")
 
-// warnings/erros de saltos (saltos.c) ---------------------------------------
+// jump errors/warnings (saltos.c) -------------------------------------------
 
 #define MSG_WARN_COND_FLOAT \
     M("Atenção na linha %d: expressão condicional dando float! Vou arredondar.\n", \
@@ -402,7 +402,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: índice do case dando comp! Vou arredondar a parte real.\n", \
       "Heads up on line %d: case index came out comp! Gonna round the real part.\n")
 
-// warnings de indices de array (array_index.c) ------------------------------
+// array-index warnings (array_index.c) --------------------------------------
 
 #define MSG_WARN_IDX_FLOAT \
     M("Atenção na linha %d: tá vendo que o índice do array tá em ponto flutuante né? Vou arredondar!\n", \
@@ -436,7 +436,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: índice de array tá dando float. Vai gerar muito código pra arredondar!\n", \
       "Heads up on line %d: array index is coming out float. Gonna generate a ton of code to round it!\n")
 
-// warnings/erros de variaveis nao usadas (variaveis.c) ----------------------
+// unused-variable errors/warnings (variaveis.c) -----------------------------
 
 #define MSG_WARN_UNUSED_GLOBAL_VAR \
     M("Atenção: variável global '%s' não está sendo usada. Economize memória!\n", \
@@ -468,7 +468,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: já tem uma interrupção rolando em outro ponto antes desse!\n", \
       "Error on line %d: there's already an interrupt going on somewhere else before this one!\n")
 
-// infos ---------------------------------------------------------------------
+// info messages -------------------------------------------------------------
 
 #define MSG_INFO_INTERRUPT_DIRECTIVE \
     M("Info: diretiva de interrupção encontrada na linha %d\n", \
@@ -502,7 +502,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: inicialização de array com arquivo %s para variável '%s' na linha %d\n", \
       "Info: array initialization with file %s for variable '%s' at line %d\n")
 
-// infos de notacao de Dirac (stdlib.c) --------------------------------------
+// Dirac-notation info messages (stdlib.c) -----------------------------------
 
 #define MSG_INFO_DIRAC_INNER \
     M("Info: notação de Dirac para Produto Interno detectada na linha %d\n", \

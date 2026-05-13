@@ -8,7 +8,7 @@
 module maq_estados
 (
 	input	clk, rst_geral, flag_zc, almost_empty_FIFO,
-	output reg [1:0] out // out[1] o enable do registrador used_w - 1; out[0] o rst do proc dtw ;
+	output reg [1:0] out // out[1] the enable of the used_w - 1 register; out[0] the rst of the dtw proc ;
 );
 
 	// Declare the state register to be "safe" to implement
@@ -23,13 +23,13 @@ module maq_estados
 	always @ (state) begin
 		case (state)
 			S0:
-				out = 2'b00; //aguardar o flag_zc, nao da reset proc dtw e nao armazena used_w - 1: out[1:0] = 00
+				out = 2'b00; //wait for flag_zc, does not reset proc dtw and does not store used_w - 1: out[1:0] = 00
 			S1:
-				out = 2'b10; //teve flag_zc armazena num reg o valor de usedw - 1 (enable) e nao da rst proc dtw ainda
+				out = 2'b10; //flag_zc happened, store the value of usedw - 1 in a reg (enable) and still does not assert rst proc dtw
 			S2:
-				out = 2'b01; //volta pra zero o enable do reg usedw - 1, e da um rst_proc_dtw
+				out = 2'b01; //clear the enable of the usedw - 1 reg, and assert rst_proc_dtw
 			S3:
-				out = 2'b00; //volta o rst_proc_dtw para 0
+				out = 2'b00; //bring rst_proc_dtw back to 0
 			default:
 				out = 2'b00; 
 		endcase

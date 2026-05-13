@@ -1,21 +1,21 @@
 // ----------------------------------------------------------------------------
-// rotinas para tratamento de labels ------------------------------------------
+// label handling routines ----------------------------------------------------
 // ----------------------------------------------------------------------------
 
-#define NLABMAX 99999 // trocar para arrays dinamicos
+#define NLABMAX 99999 // switch to dynamic arrays later
 
-// includes globais
+// global includes
 #include <string.h>
 #include <stdlib.h>
 #include  <stdio.h>
 
-// includes locais
+// local includes
 #include "..\Headers\eval.h"
 #include "..\Headers\simulacao.h"
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// variaveis locais -----------------------------------------------------------
+// local variables ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 char l_name[NLABMAX][512];
@@ -23,10 +23,10 @@ int  l_val [NLABMAX];
 int  l_count;
 
 // ----------------------------------------------------------------------------
-// funcoes auxiliares ---------------------------------------------------------
+// helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// adiciona labels ao vetor de labels
+// appends a label to the label vector
 void add_label(char *la, int val)
 {
     if (l_count == NLABMAX)
@@ -43,18 +43,18 @@ void add_label(char *la, int val)
 }
 
 // ----------------------------------------------------------------------------
-// funcoes de interface -------------------------------------------------------
+// interface functions --------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// pega todos os labels no arquivo de log
+// reads every label from the log file
 void lab_reg()
 {
-    // abre o arquivo de log
+    // open the log file
     char path[1024];
     sprintf(path, "%s/app_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
-    
-    // faz a varredura no arquivo de log
+
+    // scan the log file
     char linha[1001];
     char nome [128];
     int  val;
@@ -62,18 +62,18 @@ void lab_reg()
     {
         if (sscanf(linha, "@%s %d", nome, &val) == 2)
         {
-            add_label(nome, val);                          // cadastra label
-            if (strcmp(nome,"fim") == 0) sim_set_fim(val); // define endereco de @fim
+            add_label(nome, val);                          // register the label
+            if (strcmp(nome,"fim") == 0) sim_set_fim(val); // set the @fim address
         }
     }
 
     fclose(input);
 }
 
-// pega o indice da label
+// returns the label's index
 int lab_find(char *la)
 {
-	for (int i = 0; i < l_count; i++) 
+	for (int i = 0; i < l_count; i++)
         if (strcmp(la, l_name[i]) == 0)
             return l_val[i];
 

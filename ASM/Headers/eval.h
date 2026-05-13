@@ -1,35 +1,35 @@
 // ----------------------------------------------------------------------------
-// rotinas e variaveis globais para gerar os arquivos .mif das memorias ... ---
-// a medida que o lex vai escaneando o .asm -----------------------------------
+// global routines and variables used to generate the .mif memory files -------
+// as the lexer scans the .asm ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// variaveis globais ----------------------------------------------------------
+// global variables -----------------------------------------------------------
 
-// diretorios de acesso aos arquivos .mif e .v
-extern char proc_dir[1024];    // diretorio do processador
-extern char temp_dir[1024];    // diretorio da pasta Tmp
-extern char  hdl_dir[1024];    // diretorio da pasta HDL
-extern char  mac_dir[1024];    // diretorio da pasta Macros
+// directories used to access the .mif and .v files
+extern char proc_dir[1024];    // processor directory
+extern char temp_dir[1024];    // Tmp folder directory
+extern char  hdl_dir[1024];    // HDL folder directory
+extern char  mac_dir[1024];    // Macros folder directory
 
-// guarda os valores das diretivas
-extern char prname  [128 ];    // nome do processador
-extern int  nubits;            // tamanho da palavra da ula
-extern int  nbmant;            // numero de bits da mantissa
-extern int  nbexpo;            // numero de bits do expoente
-extern int  ddepth;            // tamanho da pilha de dados
-extern int  sdepth;            // tamanho da pilha de subrotinas
-extern int  nuioin;            // numero de portas de entrada
-extern int  nuioou;            // numero de portas de saida
-extern int  nugain;            // constante de divisao
-extern int  fftsiz;            // tamanho da fft (em bits)
+// stores the directive values
+extern char prname  [128 ];    // processor name
+extern int  nubits;            // ALU word width (bits)
+extern int  nbmant;            // mantissa width (bits)
+extern int  nbexpo;            // exponent width (bits)
+extern int  ddepth;            // data stack depth
+extern int  sdepth;            // subroutine stack depth
+extern int  nuioin;            // number of input ports
+extern int  nuioou;            // number of output ports
+extern int  nugain;            // division constant
+extern int  fftsiz;            // FFT size (bits)
 
-// funcoes globais ------------------------------------------------------------
+// global functions -----------------------------------------------------------
 
-int get_n_ins();               // numero de instrucoes (usar soh depois do eval_init())
-int inn_used(int i);           // diz se a porta de entrada i foi usada
-int out_used(int i);           // diz se a porta de saida   i foi usada
+int get_n_ins();               // number of instructions (only use after eval_init())
+int inn_used(int i);           // tells whether input port i was used
+int out_used(int i);           // tells whether output port i was used
 
-// funcoes usadas no lexer (.l) -----------------------------------------------
+// functions used in the lexer (.l) -------------------------------------------
 
 void eval_init  (int   clk  , int clk_n, int s_typ);
 void eval_direct(int   next_state);

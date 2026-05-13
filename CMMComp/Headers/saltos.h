@@ -1,25 +1,25 @@
 // ----------------------------------------------------------------------------
-// rotinas para implementacao de saltos ---------------------------------------
+// routines for jump implementation -------------------------------------------
 // ----------------------------------------------------------------------------
 
 // if/else --------------------------------------------------------------------
 
-void    if_exp (int et);             // inicio do if
-void    if_stmt();                   // antes dos stmts do if
-void  else_stmt();                   // antes dos stmts do else
-void    if_fim ();                   // final do if/else
+void    if_exp (int et);             // if start
+void    if_stmt();                   // before the if stmts
+void  else_stmt();                   // before the else stmts
+void    if_fim ();                   // end of if/else
 
 // while ----------------------------------------------------------------------
 
-void  while_expp();                  // somente a palavra-chave while - gera um label nesse ponto
-void  while_expexp(int  et);         // executa o exp e cria um JIZ pra ver se entra ou nao
-void  while_stmt();                  // final do while. Da um JMP para o inicio e cria um label pro final logo abaixo
-void  exec_break();                  // da um JMP pro final do while
+void  while_expp();                  // the while keyword alone - emits a label here
+void  while_expexp(int  et);         // evaluates exp and emits a JIZ to decide whether to enter or not
+void  while_stmt();                  // end of while. Emits a JMP back to the start and a label for the end right below
+void  exec_break();                  // emits a JMP to the end of the while
 
 // switch/case ----------------------------------------------------------------
 
-void   case_test (int id, int type); // testa se eh o case correto
-void defaut_test ();                 // testa se eh o default
-void switch_break();                 // achou um break do switch/case
-void exec_switch (int et);           // inicio do switch/case
-void  end_switch ();                 // final do switch/case
+void   case_test (int id, int type); // tests whether this is the correct case
+void defaut_test ();                 // tests whether this is the default
+void switch_break();                 // a switch/case break was found
+void exec_switch (int et);           // switch/case start
+void  end_switch ();                 // switch/case end

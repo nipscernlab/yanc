@@ -1,9 +1,9 @@
 :: ****************************************************************************
-:: Script para criar a pasta saphoCompmonents *********************************
+:: Script to build the saphoCompmonents folder *********************************
 :: ****************************************************************************
 
 :: ----------------------------------------------------------------------------
-:: Configura o ambiente -------------------------------------------------------
+:: Set up the environment -----------------------------------------------------
 :: ----------------------------------------------------------------------------
 
 cls
@@ -15,31 +15,31 @@ set BLD_DIR=C:\nipscern\Aurora\components
 set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
 
 :: ----------------------------------------------------------------------------
-:: Limpa a arvore de pastas ---------------------------------------------------
+:: Clean the folder tree ------------------------------------------------------
 :: ----------------------------------------------------------------------------
 
-:: limpa \bin
+:: clean \bin
 del %BLD_DIR%\bin\appcomp.exe
 del %BLD_DIR%\bin\asmcomp.exe
 del %BLD_DIR%\bin\cmmcomp.exe
 del %BLD_DIR%\bin\comp2gtkw.exe
 
-:: limpa \HDL
+:: clean \HDL
 del %BLD_DIR%\HDL\*.* /q
 
-:: limpa \Macros
+:: clean \Macros
 del %BLD_DIR%\Macros\*.* /q
 
-:: limpa \Scripts
+:: clean \Scripts
 del %BLD_DIR%\Scripts\*.c
 del %BLD_DIR%\Scripts\*.tcl
 del %BLD_DIR%\Scripts\*.ys
 
 :: ----------------------------------------------------------------------------
-:: Preenche a pasta \bin com os executaveis -----------------------------------
+:: Populate the \bin folder with the executables ------------------------------
 :: ----------------------------------------------------------------------------
 
-:: Gera o compilador CMM ------------------------------------------------------
+:: Build the CMM compiler -----------------------------------------------------
 
 cd %SRC_DIR%\CMMComp\Sources
 
@@ -52,7 +52,7 @@ del  lex.yy.c
 del  y.tab.c
 del  y.tab.h
 
-:: Gera o Assembler pre-processor ---------------------------------------------
+:: Build the Assembler pre-processor ------------------------------------------
 
 cd %SRC_DIR%\APP\Sources
 
@@ -64,7 +64,7 @@ del  app.c
 
 cd %SRC_DIR%
 
-:: Gera o compilador Assembler ------------------------------------------------
+:: Build the Assembler compiler -----------------------------------------------
 
 cd %SRC_DIR%\ASM\Sources
 
@@ -74,7 +74,7 @@ flex  -o ASMComp.c ASMComp.l
 move asmcomp.exe %BLD_DIR%\bin
 del  ASMComp.c
 
-:: Gera tradutores para o GTKWave ---------------------------------------------
+:: Build translators for GTKWave ----------------------------------------------
 
 cd %SRC_DIR%\Scripts
 
@@ -83,7 +83,7 @@ cd %SRC_DIR%\Scripts
 move comp2gtkw.exe  %BLD_DIR%\bin
 
 :: ----------------------------------------------------------------------------
-:: Copia as pastas HDL, Macros e Scipts ---------------------------------------
+:: Copy HDL, Macros and Scripts folders ---------------------------------------
 :: ----------------------------------------------------------------------------
 
 cd %BLD_DIR%

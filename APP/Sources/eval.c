@@ -1,35 +1,35 @@
 // ----------------------------------------------------------------------------
-// rotinas para uso durante a analise lexica do codigo em assembly ------------
+// routines used during lexical analysis of the assembly code -----------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include  <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-// includes locais
+// local includes
 #include "..\Headers\variaveis.h"
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// declaracao de variaveis locais ---------------------------------------------
+// local variable declarations ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// variaveis auxiliares para lexer de arrays
-int   tam_arr;      // tamanho do array
-char name_arr[128]; // nome do array que esta sendo lido
+// helper variables for the array lexer
+int   tam_arr;      // array size
+char name_arr[128]; // name of the array currently being read
 
-// variaveis de estado
-int  n_ins = 0;     // numero de instrucoes
-int  state = 0;     // estado do compilador
+// state variables
+int  n_ins = 0;     // number of instructions
+int  state = 0;     // compiler state
 
-FILE *f_log;        // arquivo de log
+FILE *f_log;        // log file
 
 // ----------------------------------------------------------------------------
-// rotinas que atuam no lexer -------------------------------------------------
+// routines that act on the lexer ---------------------------------------------
 // ----------------------------------------------------------------------------
 
-// executado antes do lexer
+// runs before the lexer
 void eval_init(char *path)
 {
     char    file[1001];
@@ -40,74 +40,74 @@ void eval_init(char *path)
     if (f_log == NULL) {fprintf(stderr, MSG_ERR_CANT_CREATE_LOG, path); exit(EXIT_FAILURE);}
 }
 
-// executado quando uma diretiva eh encontrada
+// runs when a directive is found
 void eval_direct(int next_state)
 {
-    // vai pro estado que pega o argumento especifico da diretiva
+    // moves to the state that picks up the directive's specific argument
     state = next_state;
 }
 
-// executado quando acha a diretiva #ITRAD
+// runs when the #ITRAD directive is found
 void eval_itrad()
 {
-    // instrucao atual eh cadastrada como ponto de interrupcao
+    // current instruction is registered as the interrupt point
     fprintf(f_log, "itr_addr %d\n", n_ins);
      printf(MSG_INFO_ITR_HANDLING);
 }
 
-// executado quando um novo opcode eh encontrado
+// runs when a new opcode is found
 void eval_opcode(int next_state)
 {
-    // proximo estado depende do tipo de opcode:
-    // 0 : nao tem operando
-    // 17: operando eh endereco da memoria de dados
-    // 18: operando eh endereco da memoria de instrucao
+    // next state depends on the opcode type:
+    // 0 : no operand
+    // 17: operand is a data-memory address
+    // 18: operand is an instruction-memory address
     state = next_state;
 
-    // nao tem operando, ja pode contar uma instrucao
+    // no operand, so we can already count an instruction
     if (state == 0) n_ins++;
 }
 
-// executado quando um novo operando eh encontrado
+// runs when a new operand is found
 void eval_opernd(char *va)
 {
     switch (state)
     {
-        case  1: fprintf(f_log, "prname %s\n", va ); state =  0; break; // nome do processador
-        case  2: fprintf(f_log, "nubits %s\n", va ); state =  0; break; // num de bits da ula
-        case  3: fprintf(f_log, "nbmant %s\n", va ); state =  0; break; // num de bits da mantissa
-        case  4: fprintf(f_log, "nbexpo %s\n", va ); state =  0; break; // num de bits do expoente
-        case 11: strcpy (name_arr,             va ); state = 12; break; // achou um array sem inicializacao
-        case 12:                                     state = 13; break; // pega o tipo de dado (nao precisa no app)
-        case 13: var_add(name_arr,        atoi(va)); state =  0; break; // declara  array sem inicializacao
-        case 14: strcpy (name_arr,             va ); state = 15; break; // achou um array com inicializacao
-        case 15:                                     state = 16; break; // pega o tipo de dado (nao precisa no app)
-        case 16:          tam_arr =       atoi(va ); state = 17; break; // pega o tamanho do array com arquivo
-        case 17: var_add(name_arr,         tam_arr); state =  0; break; // preenche memoria com valor do arquivo
-        case 18: var_add(va,1);             n_ins++; state =  0; break; // operacoes com a ULA
-        case 19:                            n_ins++; state =  0; break; // operacoes de salto
-        case 20:                            n_ins++; state =  0; break; // operacoes de entrada
-        case 21:                            n_ins++; state =  0; break; // operacoes de saida
-        case 22:                                     state = 23; break; // prepara   ofsset constante
-        case 23:                            n_ins++; state =  0; break; // instr com offset constante
+        case  1: fprintf(f_log, "prname %s\n", va ); state =  0; break; // processor name
+        case  2: fprintf(f_log, "nubits %s\n", va ); state =  0; break; // ALU word width (bits)
+        case  3: fprintf(f_log, "nbmant %s\n", va ); state =  0; break; // mantissa width (bits)
+        case  4: fprintf(f_log, "nbexpo %s\n", va ); state =  0; break; // exponent width (bits)
+        case 11: strcpy (name_arr,             va ); state = 12; break; // found an array without initialization
+        case 12:                                     state = 13; break; // pick up data type (not needed in app)
+        case 13: var_add(name_arr,        atoi(va)); state =  0; break; // declare array without initialization
+        case 14: strcpy (name_arr,             va ); state = 15; break; // found an array with initialization
+        case 15:                                     state = 16; break; // pick up data type (not needed in app)
+        case 16:          tam_arr =       atoi(va ); state = 17; break; // pick up the file-initialized array size
+        case 17: var_add(name_arr,         tam_arr); state =  0; break; // fill memory with values from file
+        case 18: var_add(va,1);             n_ins++; state =  0; break; // ALU operations
+        case 19:                            n_ins++; state =  0; break; // jump operations
+        case 20:                            n_ins++; state =  0; break; // input operations
+        case 21:                            n_ins++; state =  0; break; // output operations
+        case 22:                                     state = 23; break; // prepare constant offset
+        case 23:                            n_ins++; state =  0; break; // instr with constant offset
     }
 }
 
-// executado quando um novo label eh encontrado
+// runs when a new label is found
 void eval_label(char *va)
 {
     fprintf(f_log, "%s %d\n", va, n_ins);
 }
 
-// executado depois do lexer
+// runs after the lexer
 void eval_finish()
 {
-    // termina arquivo de log
+    // finalize log file
     fprintf(f_log, "n_ins %d\n", n_ins    );
     fprintf(f_log, "n_dat %d\n", var_cnt());
     fclose (f_log);
 
-    // checa se da pra criar a memoria de dados
+    // checks whether data memory can be created
     if (var_cnt() <= 2) {fprintf(stderr, MSG_ERR_USELESS_PROC); exit(EXIT_FAILURE);}
 
     printf(MSG_INFO_INS_VAR_FOUND, n_ins, var_cnt());

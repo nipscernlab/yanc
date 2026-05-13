@@ -1,15 +1,15 @@
 // ----------------------------------------------------------------------------
-// funcoes e variaveis na criacao e utilizacao de macros ----------------------
+// functions and variables used to create and use macros ----------------------
 // ----------------------------------------------------------------------------
 
-// uso de macros do usuario ---------------------------------------------------
+// user macro usage -----------------------------------------------------------
 
-extern int mac_using;                          // se estiver lendo uma macro, nao deve escrever o assembler durante o parse
+extern int mac_using;                          // while reading a macro, the assembler must not be written during the parse
 
-void mac_use(int ids, int global, int id_num); // habilita o uso de macro pelo usuario
-void mac_end();                                // ponto de termino da macro
+void mac_use(int ids, int global, int id_num); // enables user macro usage
+void mac_end();                                // macro end point
 
-// uso de macros pre-definidas ------------------------------------------------
+// predefined macro usage -----------------------------------------------------
 
-void mac_add (char *name);                     // adiciona flag de uma macro pre-definida
-void mac_copy(char *fasm);                     // copia as macros pre-definidas no final arquivo assembler
+void mac_add (char *name);                     // adds a flag for a predefined macro
+void mac_copy(char *fasm);                     // copies the predefined macros at the end of the assembler file

@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
-// funcoes e variaveis globais do compilador ----------------------------------
+// global functions and variables of the compiler -----------------------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include <stdarg.h>
 #include <string.h>
 #include  <ctype.h>
 
-// includes locais
+// local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\macros.h"
 #include "..\Headers\global.h"
@@ -16,28 +16,28 @@
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// redeclaracao de variaveis globais ------------------------------------------
+// global variable definitions ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-FILE *f_asm;          // arquivo de saida
-FILE *f_log;          // arquivo de log, guarda informacoes do projeto (nome, nbmant etc)
-FILE *f_lin;          // arquivo de linhas do programa em cmm
+FILE *f_asm;          // output file
+FILE *f_log;          // log file holding project information (name, nbmant, etc.)
+FILE *f_lin;          // line file for the cmm program
 
-char dir_macro[1024]; // diretorio Macros
-char dir_tmp  [1024]; // diretorio Temp
-char dir_soft [1024]; // diretorio Software
+char dir_macro[1024]; // Macros directory
+char dir_tmp  [1024]; // Temp directory
+char dir_soft [1024]; // Software directory
 
-// variaveis de estado
-int  acc_ok   = 0;    // 0 -> acc vazio (use LOD)  , 1 -> acc carregado (use P_LOD)
-int  line_num = 0;    // numero da linha sendo parseada
-int  num_ins  = 0;    // numero de instrucoes do parse
-int  sim_arr  = 0;    // diz se simula ou nao array
+// state variables
+int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
+int  line_num = 0;    // line number being parsed
+int  num_ins  = 0;    // number of instructions parsed
+int  sim_arr  = 0;    // tells whether the array is simulated or not
 
 // ----------------------------------------------------------------------------
-// funcoes auxiliares ---------------------------------------------------------
+// helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// funcao para achar a instrucao correta na funcao add_instr
+// helper that finds the right instruction inside add_instr
 int find_opc(const char *opc, const char *str)
 {
     size_t len = strlen(opc);
@@ -59,8 +59,8 @@ int find_opc(const char *opc, const char *str)
     return 0;
 }
 
-// Substitui ⟨ por < e ⟩ por >
-// para mostrar no gtkwave
+// Replaces ⟨ with < and ⟩ with >
+// so they can be displayed in gtkwave
 void substituir_braket(char *str)
 {
     unsigned char *src = (unsigned char *)str;
@@ -86,33 +86,33 @@ void substituir_braket(char *str)
 }
 
 // ----------------------------------------------------------------------------
-// funcoes de inicio e termino do parse ---------------------------------------
+// parser start and end functions ---------------------------------------------
 // ----------------------------------------------------------------------------
 
 void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d_tmp, char *d_array)
 {
-    // pega os argumentos -----------------------------------------------------
+    // pick up the arguments --------------------------------------------------
 
-    char cmm_file[1024]; sprintf(cmm_file, "%s/Software/%s"    , d_proc, f_name); // nome do arquivo .cmm de entrada
-    char asm_file[1024]; sprintf(asm_file, "%s/Software/%s.asm", d_proc, prname); // nome do arquivo .asm de saida
+    char cmm_file[1024]; sprintf(cmm_file, "%s/Software/%s"    , d_proc, f_name); // input .cmm file name
+    char asm_file[1024]; sprintf(asm_file, "%s/Software/%s.asm", d_proc, prname); // output .asm file name
 
-    yyin  = fopen(cmm_file, "r"); // abre arquivo .cmm
-    f_asm = fopen(asm_file, "w"); // cria arquivo .asm
+    yyin  = fopen(cmm_file, "r"); // open the .cmm file
+    f_asm = fopen(asm_file, "w"); // create the .asm file
 
-    sprintf(dir_soft , "%s/Software", d_proc ); // pega o diretorio Software
-    strcpy (dir_macro,                d_macro); // pega o diretorio Macro
-    strcpy (dir_tmp  ,                d_tmp  ); // pega o diretorio Tmp
+    sprintf(dir_soft , "%s/Software", d_proc ); // record the Software directory
+    strcpy (dir_macro,                d_macro); // record the Macro directory
+    strcpy (dir_tmp  ,                d_tmp  ); // record the Tmp directory
 
     sim_arr = strcmp(d_array, "1") == 0;
 
-    // cria arquivos auxiliares -----------------------------------------------
+    // create helper files ----------------------------------------------------
 
     char path[1024];
 
-    sprintf(path,   "%s/cmm_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log com infos pro assembler e gtkwave
-    sprintf(path, "%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memoria no pc.v que passa de asm para cmm
+    sprintf(path,   "%s/cmm_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
+    sprintf(path, "%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
 
-    // gera uma instrucao NOP no inicio (tentar tirar isso) -------------------
+    // emit a NOP instruction at the start (try to remove this) ---------------
 
     add_sinst(-1,"NOP\n");
 }
@@ -120,40 +120,40 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 void parse_end(char *prname, char *d_proc)
 {
     printf(MSG_INFO_INS_GENERATED, num_ins);
-    
-    // fecha os arquivos --------------------------------------------------------
 
-    fclose(f_asm); // codigo   assembly
-    fclose(f_lin); // tradutor assembly
-    
-    // checa se precisa adicionar macros no arquivo .asm ------------------------
+    // close the files --------------------------------------------------------
+
+    fclose(f_asm); // assembly code
+    fclose(f_lin); // assembly translator
+
+    // check whether macros need to be appended to the .asm file --------------
 
     char asm_file[1024]; sprintf(asm_file, "%s/Software/%s.asm", d_proc, prname);
 
 	mac_copy(asm_file);
 
-	// checa consistencia de todas as variaveis e funcoes -----------------------
-  
+	// check consistency of all variables and functions -----------------------
+
 	check_var(); // (variaveis.c)
 
-    // termina o arquivo de log do cmm ------------------------------------------
+    // finalize the cmm log file ----------------------------------------------
 
-    fprintf(f_log, "num_ins %d\n", num_ins); // numero de instrucoes (sem macros finais)
+    fprintf(f_log, "num_ins %d\n", num_ins); // number of instructions (excluding final macros)
     fclose (f_log);
 
-    // gera o arquivo de traducao pro codigo cmm --------------------------------
+    // generate the translation file for the cmm code -------------------------
 
     char     path[1024]; sprintf(path    , "%s/%s", dir_tmp,     "trad_cmm.txt");
     char cmm_file[1024]; sprintf(cmm_file, "%s/Software/%s.cmm", d_proc, prname);
-  
+
     FILE *output = fopen(path    , "w");
     FILE *input  = fopen(cmm_file, "r");
 
     char linha[1001], texto[1001] = "";
-    fputs("-1 INTERNO\n"     , output); // codigo para inicio do arquivo
-    fputs("-2 void main();\n", output); // codigo pra CAL main
-    fputs("-3 FIM\n"         , output); // codigo para @fim JMP fim
-    fputs("-4 User Macro\n"  , output); // codigo asm do usuario (#USEMAC)
+    fputs("-1 INTERNAL\n"    , output); // code for the file start
+    fputs("-2 void main();\n", output); // code for CAL main
+    fputs("-3 END\n"         , output); // code for @fim JMP fim
+    fputs("-4 User Macro\n"  , output); // user-supplied asm code (#USEMAC)
 
     int cnt = 1;
     while(fgets(texto, 1001, input) != NULL)
@@ -169,10 +169,10 @@ void parse_end(char *prname, char *d_proc)
 }
 
 // ----------------------------------------------------------------------------
-// funcoes para cadastro de instrucoes ----------------------------------------
+// functions for registering instructions -------------------------------------
 // ----------------------------------------------------------------------------
 
-// adiciona instrucao no arquivo asm
+// adds an instruction to the asm file
 void add_instr(char *inst, ...)
 {
     va_list  args;
@@ -183,18 +183,18 @@ void add_instr(char *inst, ...)
     va_end  (args);
 
     // ------------------------------------------------------------------------
-    // adiciona instrucao -----------------------------------------------------
+    // append the instruction -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (mac_using == 0) fprintf(f_asm, "%s", str);
 
-    // tabela para tradutor assembly do gtkwave -------------------------------
+    // table for the gtkwave assembly translator ------------------------------
 
     if (mac_using == 0) num_ins++;
     if (mac_using == 0) fprintf(f_lin, "%s\n", itob(line_num+1,20));
 
     // ------------------------------------------------------------------------
-    // verifica se a instrucao precisa de alguma macro especial ---------------
+    // check whether the instruction needs a special macro --------------------
     // ------------------------------------------------------------------------
 
     if (find_opc("float_sqrt", str)) mac_add("fsqrt");
@@ -202,21 +202,21 @@ void add_instr(char *inst, ...)
     if (find_opc("float_sin" , str)) mac_add("fsin" );
 }
 
-// adiciona instrucoes especiais
-// type =  0 -> comentario
-// type = -1 -> INTERNO
+// adds special instructions
+// type =  0 -> comment
+// type = -1 -> INTERNAL
 // type = -2 -> void main();
-// type = -3 -> FIM
+// type = -3 -> END
 void add_sinst(int type, char *inst, ...)
 {
-    // adiciona instrucao -----------------------------------------------------
+    // append the instruction -------------------------------------------------
 
     va_list  args;
     va_start(args , inst);
     if (mac_using == 0) vfprintf(f_asm, inst, args);
     va_end  (args);
 
-    // tabela para tradutor asselbly do gtkwave -------------------------------
+    // table for the gtkwave assembly translator ------------------------------
 
     if (type != 0)
     {

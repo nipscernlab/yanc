@@ -68,9 +68,9 @@ void main()
            sinal_entrada = 0.0000001;
         }
        
-       // Aplicando filtro
-       
-       // Seção 1
+       // Applying filter
+
+       // Section 1
        
        x1 = sinal_entrada*0.615089250452674;
        
@@ -83,7 +83,7 @@ void main()
        y1_n1 = y1;
        out(3,y1);
        
-       // Seção 2
+       // Section 2
        
        x2 = y1*0.442537969917818;
        
@@ -98,7 +98,7 @@ void main()
        
        
        
-       // Seção 3
+       // Section 3
        
        x3 = y2*0.098185425944027;
        

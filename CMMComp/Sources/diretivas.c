@@ -1,40 +1,40 @@
 // ----------------------------------------------------------------------------
-// Reune funcoes e variaveis de estado acionadas por diretivas ----------------
+// Gathers functions and state variables driven by directives -----------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include <string.h>
 #include <stdlib.h>
 
-// includes locais
+// local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\global.h"
 #include "..\Headers\funcoes.h"
 #include "..\Headers\variaveis.h"
 
 // ----------------------------------------------------------------------------
-// redeclaracao de variaveis globais ------------------------------------------
+// global variable definitions ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-char prname[128] ; // nome do processador
-int  nbmant  = 16; // numero de bits de mantissa
-int  nbexpo  =  6; // numero de bits de expoente
-int  nuioin  =  1; // numero de portas de entrada
-int  nuioou  =  1; // numero de portas de saida
+char prname[128] ; // processor name
+int  nbmant  = 16; // mantissa width (bits)
+int  nbexpo  =  6; // exponent width (bits)
+int  nuioin  =  1; // number of input ports
+int  nuioou  =  1; // number of output ports
 
 // ----------------------------------------------------------------------------
-// Controle de diretivas ------------------------------------------------------
+// Directive handling ---------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// escreve as diretivas de compilacao no arquivo asm
+// writes the compilation directives to the asm file
 void dire_exec(char *dir, int id, int t)
 {
     add_sinst(0, "%s %s\n", dir, v_name[id]);
 
     int ival = atoi(v_name[id]);
 
-    // acao a tomar dependendo da diretiva
-    // soh as diretivas 1 3 e 4 que tem efeito no compilador cmm
+    // action to take depending on the directive
+    // only directives 1, 3 and 4 affect the cmm compiler
     switch(t)
     {
         case  1: strcpy (prname,v_name[id]); break;

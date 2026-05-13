@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// implementa instrucoes de assign (lado esquerdo) ----------------------------
+// assignment instructions (left-hand side) -----------------------------------
 // ----------------------------------------------------------------------------
 
-void ass_set  (int id, int et);           // assign padrao
-void ass_array(int id, int et , int fft); // assign em array
-void ass_pplus(int id);                   // assign em i++
-void ass_aplus(int id, int et);           // assign em i++ pra array 1D
-void ass_apl2d(int id, int et1, int et2); // assign em i++ pra array 2D
+void ass_set  (int id, int et);           // standard assignment
+void ass_array(int id, int et , int fft); // array assignment
+void ass_pplus(int id);                   // i++ assignment
+void ass_aplus(int id, int et);           // i++ assignment for a 1D array
+void ass_apl2d(int id, int et1, int et2); // i++ assignment for a 2D array

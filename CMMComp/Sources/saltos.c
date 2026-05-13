@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
-// rotinas para implementacao de saltos ---------------------------------------
+// routines for jump implementation -------------------------------------------
 // ----------------------------------------------------------------------------
 
 /*
 TODO:
-1- revisar switch case
+1- review switch case
 */
 
 #include <stdlib.h>
@@ -17,7 +17,7 @@ TODO:
 #include "..\Headers\variaveis.h"
 #include "..\Headers\messages.h"
 
-// variaveis de estado para switch case
+// switch/case state variables
 int switching = 0;
 int case_cnt  = 0;
 int swit_cnt  = 0;
@@ -37,7 +37,7 @@ void if_exp(int et)
     // int acc
     if ((get_type(et) == 1) && (et%OFST==0))
     {
-        // nao faz nada
+        // nothing to do
     }
 
     // float var
@@ -52,7 +52,7 @@ void if_exp(int et)
     if ((get_type(et) == 2) && (et%OFST==0))
     {
         fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
-        
+
         add_instr("F2I\n");
     }
 
@@ -89,20 +89,20 @@ void if_exp(int et)
     acc_ok = 0;
 }
 
-// cria label do final do if sem else
+// creates the label at the end of an if-without-else
 void if_stmt()
 {
     int n = pop_lab();
     add_sinst(0, "@L%delse ", n);
 }
 
-// antes dos statments do else
+// before the else statements
 void else_stmt()
 {
     add_instr("JMP L%dend\n@L%delse ", get_lab(), get_lab());
 }
 
-// cria label do final do if/else
+// creates the label at the end of an if/else
 void if_fim()
 {
     int n = pop_lab();
@@ -113,30 +113,30 @@ void if_fim()
 // while ----------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// final do while. Da um JMP para o inicio e cria um label pro final logo abaixo
+// end of while. Emits a JMP back to the start and a label for the end right below
 void while_stmt()
 {
     int n = pop_lab();
     add_instr("JMP L%d\n@L%dend ",n,n);
 }
 
-// da um JMP pro final do while
+// emits a JMP to the end of the while
 void exec_break()
 {
-    // checa se o break esta dentro de um while
+    // check whether the break is inside a while
     if (get_while() == 0) {fprintf(stderr, MSG_ERR_BREAK_LOST, line_num+1); exit(EXIT_FAILURE);}
 
     add_instr("JMP L%dend\n", get_while());
 }
 
-// somente a palavra-chave while - gera um label nesse ponto
+// the while keyword alone - emits a label here
 void while_expp()
 {
     int n = push_lab(1);
     add_sinst(0, "@L%d ", n);
 }
 
-// executa o exp e cria um JIZ pra ver se entra ou nao
+// evaluates exp and emits a JIZ to decide whether to enter or not
 void while_expexp(int et)
 {
     // int var
@@ -148,7 +148,7 @@ void while_expexp(int et)
     // int acc
     if ((get_type(et) == 1) && (et%OFST==0))
     {
-        // nao faz nada
+        // nothing to do
     }
 
     // float var
@@ -163,7 +163,7 @@ void while_expexp(int et)
     if ((get_type(et) == 2) && (et%OFST==0))
     {
         fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
-        
+
         add_instr("F2I\n");
     }
 
@@ -203,37 +203,37 @@ void while_expexp(int et)
 // switch/case ----------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// executa case x: do switch case
+// emits case x: of the switch-case
 void case_test(int id, int type)
 {
     case_cnt++;
     add_sinst(0, "@sw_case_%d_%d ", swit_cnt, case_cnt);
 
-    // gera o exp do valor do case
+    // build the exp for the case value
     int et1 = num2exp(id,type);
-    // gera o exp da variavel de controle
+    // build the exp for the control variable
     int et2 =  id2exp(find_var("switch_exp"));
-    // faz operacao de comparacao
+    // run the comparison
     oper_cmp(et1,et2,4);
 
     add_instr("JIZ sw_case_%d_%d\n", swit_cnt, case_cnt+1);
     acc_ok = 0;
 }
 
-// executa default do switch case
+// emits default of the switch-case
 void defaut_test()
 {
     case_cnt++;
     add_sinst(0, "@sw_case_%d_%d ", swit_cnt, case_cnt);
 }
 
-// executa break do switch case
+// emits break of the switch-case
 void switch_break()
 {
     add_instr("JMP switch_end_%d\n", swit_cnt);
 }
 
-// inicio do switch case
+// switch-case start
 void exec_switch(int et)
 {
     if (switching == 1)
@@ -242,17 +242,17 @@ void exec_switch(int et)
         exit(EXIT_FAILURE);
     }
 
-    // acha a variavel switch_exp (lexer) -------------------------------------
+    // find the switch_exp variable (lexer) -----------------------------------
 
     if (find_var("switch_exp") == -1) add_var("switch_exp");
     int id = find_var("switch_exp");
 
-    // equivalente a declar_var -----------------------------------------------
+    // equivalent to declar_var -----------------------------------------------
 
     v_type[id] = get_type(et);
     v_used[id] = 0;
 
-    // equivalente a ass_set --------------------------------------------------
+    // equivalent to ass_set --------------------------------------------------
 
     // int var
     if ((get_type(et) == 1) && (et%OFST!=0))
@@ -263,7 +263,7 @@ void exec_switch(int et)
     // int acc
     if ((get_type(et) == 1) && (et%OFST==0))
     {
-        // nao faz nada
+        // nothing to do
     }
 
     // float var
@@ -278,7 +278,7 @@ void exec_switch(int et)
     if ((get_type(et) == 2) && (et%OFST==0))
     {
         fprintf(stdout, MSG_WARN_CASE_FLOAT, line_num+1);
-        
+
         add_instr("F2I\n");
     }
 
@@ -312,7 +312,7 @@ void exec_switch(int et)
 
     add_instr("SET switch_exp\n");
 
-    // finaliza ---------------------------------------------------------------
+    // finalize ---------------------------------------------------------------
 
     acc_ok     = 0;
     switching  = 1;
@@ -320,7 +320,7 @@ void exec_switch(int et)
     swit_cnt++;
 }
 
-// fim do switch case
+// switch-case end
 void end_switch()
 {
     add_sinst(0, "@sw_case_%d_%d ", swit_cnt, case_cnt+1);

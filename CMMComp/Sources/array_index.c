@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// tratamento de indice de arrays ---------------------------------------------
+// array index handling -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 /*
@@ -8,12 +8,12 @@ TODO:
 2- AST vai economizar muito codigo em array 2D
 */
 
-// includes globais
+// global includes
 #include  <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-// includes locais
+// local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\global.h"
 #include "..\Headers\funcoes.h"
@@ -22,45 +22,45 @@ TODO:
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// array no assign. Ex: x[i] = y; ---------------------------------------------
+// array in assignment, e.g. x[i] = y; ----------------------------------------
 // ----------------------------------------------------------------------------
 
-// coloca o indice do array no acumulador (array 1D)
+// loads the array index into the accumulator (1D array)
 void arr_1d_index(int id, int et)
 {
     // ------------------------------------------------------------------------
-    // teste de argumentos ----------------------------------------------------
+    // argument check ---------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // tem que ver se eh array mesmo
+    // must check that it really is an array
     if (v_isar[id] == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    // tem que ver se eh array 1D mesmo
+    // must check that it really is a 1D array
     if (v_isar[id] == 2)
         {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // execucao ---------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     int etr, eti;
 
-    // se int na memoria --------------------------------------------------
+    // when int in memory -------------------------------------------------
 
     if ((get_type(et) == 1) && (et % OFST != 0))
     {
         add_instr("LOD %s\n", v_name[et % OFST]);
     }
 
-    // se int no acc ------------------------------------------------------
+    // when int in acc ----------------------------------------------------
 
     if ((get_type(et) == 1) && (et % OFST == 0))
     {
-        // nao faz nada
+        // nothing to do
     }
 
-    // se float na memoria --------------------------------------------
+    // when float in memory -----------------------------------------
 
     if ((get_type(et) == 2) && (et % OFST != 0))
     {
@@ -69,7 +69,7 @@ void arr_1d_index(int id, int et)
         add_instr("F2I_M %s\n", v_name[et % OFST]);
     }
 
-    // se float no acc ----------------------------------------------------
+    // when float in acc --------------------------------------------------
 
     if ((get_type(et) == 2) && (et % OFST == 0))
     {
@@ -78,7 +78,7 @@ void arr_1d_index(int id, int et)
         add_instr("F2I\n");
     }
 
-    // se comp const na memoria -------------------------------------------
+    // when comp const in memory ------------------------------------------
 
     if (get_type(et) == 5)
     {
@@ -89,7 +89,7 @@ void arr_1d_index(int id, int et)
         add_instr("F2I_M %s\n", v_name[etr % OFST]);
     }
 
-    // se comp no acc -----------------------------------------------------
+    // when comp in acc ---------------------------------------------------
 
     if ((get_type(et) == 3) && (et % OFST == 0))
     {
@@ -99,7 +99,7 @@ void arr_1d_index(int id, int et)
         add_instr("F2I\n");
     }
 
-    // se comp na memoria -------------------------------------------------
+    // when comp in memory ------------------------------------------------
 
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
@@ -111,28 +111,28 @@ void arr_1d_index(int id, int et)
     acc_ok = 1; // acc carregado
 }
 
-// coloca o indice do array no acumulador (array 2D)
+// loads the array index into the accumulator (2D array)
 void arr_2d_index(int id, int et1, int et2)
 {
     // ------------------------------------------------------------------------
-    // teste de argumentos ----------------------------------------------------
+    // argument check ---------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // tem que ver se eh array mesmo
+    // must check that it really is an array
     if (v_isar[id] == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    // tem que ver se nao eh array 1D
+    // must check that it is not a 1D array
     if (v_isar[id] == 1)
         {fprintf (stderr, MSG_ERR_ARRAY_1D, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
-    // execucao ---------------------------------------------------------------
+    // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     int etr, eti;
 
-    // int no acc e int no acc
+    // int in acc and int in acc
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         add_instr("SET_P aux_var\n");
@@ -140,14 +140,14 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // int no acc e int na memoria
+    // int in acc and int in memory
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         add_instr("MLT %s_arr_size\n", v_name[id]);
         add_instr("ADD %s\n",  v_name[et2 % OFST]);
     }
 
-    // int no acc e float no acc
+    // int in acc and float in acc
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -158,7 +158,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // int no acc e float na memoria
+    // int in acc and float in memory
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -168,7 +168,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // int no acc e comp const na memoria
+    // int in acc and comp const in memory
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -180,7 +180,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // int no acc e comp no acc
+    // int in acc and comp in acc
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -192,7 +192,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // int no acc e comp na memoria
+    // int in acc and comp in memory
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -202,7 +202,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // int na memoria e int no acc
+    // int in memory and int in acc
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         add_instr("P_LOD %s\n",  v_name[et1 % OFST]);
@@ -210,7 +210,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // int na memoria e int na memoria
+    // int in memory and int in memory
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         add_instr("LOD  %s\n",  v_name[et1 % OFST]);
@@ -218,7 +218,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD  %s\n",  v_name[et2 % OFST]);
     }
 
-    // int na memoria e float no acc
+    // int in memory and float in acc
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -229,7 +229,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // int na memoria e float na memoria
+    // int in memory and float in memory
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -240,7 +240,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // int na memoria e comp const na memoria
+    // int in memory and comp const in memory
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -253,7 +253,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // int na memoria e comp no acc
+    // int in memory and comp in acc
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -266,7 +266,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // int na memoria e comp na memoria
+    // int in memory and comp in memory
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -277,7 +277,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // float no acc e int no acc
+    // float in acc and int in acc
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -288,7 +288,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // float no acc e int na memoria
+    // float in acc and int in memory
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -298,7 +298,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD %s\n",  v_name[et2 % OFST]);
     }
 
-    // float no acc e float no acc
+    // float in acc and float in acc
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
@@ -310,7 +310,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // float no acc e float na memoria
+    // float in acc and float in memory
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -321,7 +321,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // float no acc e comp const na memoria
+    // float in acc and comp const in memory
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -334,7 +334,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // float no acc e comp no acc
+    // float in acc and comp in acc
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -347,7 +347,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // float no acc e comp na memoria
+    // float in acc and comp in memory
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -358,7 +358,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // float na memoria e int no acc
+    // float in memory and int in acc
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -368,7 +368,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // float na memoria e int na memoria
+    // float in memory and int in memory
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -378,7 +378,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD    %s\n",  v_name[et2 % OFST]);
     }
 
-    // float na memoria e float no acc
+    // float in memory and float in acc
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
@@ -389,7 +389,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // float na memoria e float na memoria
+    // float in memory and float in memory
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
@@ -400,7 +400,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // float na memoria e comp const na memoria
+    // float in memory and comp const in memory
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -413,7 +413,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // float na memoria e comp no acc
+    // float in memory and comp in acc
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -426,7 +426,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // float na memoria e comp na memoria
+    // float in memory and comp in memory
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -437,7 +437,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp const na memoria e int no acc
+    // comp const in memory and int in acc
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -451,7 +451,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // comp const na memoria e int na memoria
+    // comp const in memory and int in memory
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -463,7 +463,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   %s\n",  v_name[et2 % OFST]);
     }
 
-    // comp const na memoria e float no acc
+    // comp const in memory and float in acc
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -477,7 +477,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // comp const na memoria e float na memoria
+    // comp const in memory and float in memory
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -490,7 +490,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp const na memoria e comp const na memoria
+    // comp const in memory and comp const in memory
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -504,7 +504,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp const na memoria e comp no acc
+    // comp const in memory and comp in acc
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -519,7 +519,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // comp const na memoria e comp na memoria
+    // comp const in memory and comp in memory
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -532,7 +532,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp no acc e int no acc
+    // comp in acc and int in acc
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -544,7 +544,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // comp no acc e int na memoria
+    // comp in acc and int in memory
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -555,7 +555,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD %s\n",  v_name[et2 % OFST]);
     }
 
-    // comp no acc e float no acc
+    // comp in acc and float in acc
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -568,7 +568,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // comp no acc e float na memoria
+    // comp in acc and float in memory
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -580,7 +580,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp no acc e comp const na memoria
+    // comp in acc and comp const in memory
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -594,7 +594,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp no acc e comp no acc
+    // comp in acc and comp in acc
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -608,7 +608,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // comp no acc e comp na memoria
+    // comp in acc and comp in memory
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -620,7 +620,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp na memoria e int no acc
+    // comp in memory and int in acc
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -630,7 +630,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp na memoria e int na memoria
+    // comp in memory and int in memory
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -640,7 +640,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   %s\n",  v_name[et2 % OFST]);
     }
 
-    // comp na memoria e float no acc
+    // comp in memory and float in acc
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -651,7 +651,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp na memoria e float na memoria
+    // comp in memory and float in memory
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -662,7 +662,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp na memoria e comp const na memoria
+    // comp in memory and comp const in memory
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -675,7 +675,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("S_ADD\n");
     }
 
-    // comp na memoria e comp no acc
+    // comp in memory and comp in acc
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -688,7 +688,7 @@ void arr_2d_index(int id, int et1, int et2)
         add_instr("ADD   aux_var\n");
     }
 
-    // comp na memoria e comp na memoria
+    // comp in memory and comp in memory
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -703,35 +703,35 @@ void arr_2d_index(int id, int et1, int et2)
 }
 
 // ----------------------------------------------------------------------------
-// array em expressoes. EX: x = y[i]; -----------------------------------------
+// array in expressions, e.g. x = y[i]; ---------------------------------------
 // ----------------------------------------------------------------------------
 
-// transforma array 1d num exp
-// parametro fft diz se eh pra usar indice invertido
+// turns a 1D array into an exp
+// the fft parameter tells whether to use the reversed index
 int arr_1d2exp(int id, int et, int fft)
 {
-    // testes de consistencia -------------------------------------------------
+    // consistency checks -----------------------------------------------------
 
-    // testa se a variavel ja foi declarada
+    // test whether the variable has been declared
     if (v_type[id] == 0)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    // tem que ver se eh array mesmo
+    // must check that it really is an array
     if (v_isar[id] == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    // tem que ver se eh array 1D mesmo
+    // must check that it really is a 1D array
     if (v_isar[id] == 2)
         {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    // prepara os comandos de LOD --------------------------------------------
+    // prepare the LOD commands ----------------------------------------------
 
     char ldv[10]; if (fft    == 1) strcpy(ldv,"ILI"    ); else strcpy(ldv,"LDI"  );
     char ldi[10]; if (acc_ok == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
     char f2i[10]; if (acc_ok == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
 
     // ------------------------------------------------------------------------
-    // escreve as instrucoes --------------------------------------------------
+    // write the instructions -------------------------------------------------
     // ------------------------------------------------------------------------
 
     char num[32];
@@ -742,20 +742,20 @@ int arr_1d2exp(int id, int et, int fft)
 
     if (type < 3)
     {
-        // int no acc
+        // int in acc
         if ((get_type(et) == 1) && (et % OFST == 0))
         {
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
-        // int na memoria
+        // int in memory
         if ((get_type(et) == 1) && (et % OFST != 0))
         {
             add_instr("%s %s\n", ldi, v_name[et % OFST]);
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
-        // float no acc
+        // float in acc
         if ((get_type(et) == 2) && (et % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
@@ -764,7 +764,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
-        // float na memoria
+        // float in memory
         if ((get_type(et) == 2) && (et % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
@@ -773,7 +773,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
-        // comp const na memoria
+        // comp const in memory
         if ((get_type(et) == 5) && (et % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
@@ -784,7 +784,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
-        // comp no acc
+        // comp in acc
         if ((get_type(et) == 3) && (et % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
@@ -794,7 +794,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
-        // comp na memoria
+        // comp in memory
         if ((get_type(et) == 3) && (et % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
@@ -808,7 +808,7 @@ int arr_1d2exp(int id, int et, int fft)
 
     else
     {
-        // int no acc
+        // int in acc
         if ((get_type(et) == 1) && (et % OFST == 0))
         {
             add_instr("SET   aux_var\n");
@@ -817,7 +817,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s_i\n", ldv, v_name[id]);
         }
 
-        // int na memoria
+        // int in memory
         if ((get_type(et) == 1) && (et % OFST != 0))
         {
             add_instr("%s %s\n"    , ldi, v_name[et % OFST]);
@@ -826,7 +826,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s_i\n"  , ldv, v_name[id]);
         }
 
-        // float no acc
+        // float in acc
         if ((get_type(et) == 2) && (et % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
@@ -838,7 +838,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s_i\n", ldv, v_name[id]);
         }
 
-        // float na memoria
+        // float in memory
         if ((get_type(et) == 2) && (et % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
@@ -850,7 +850,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s_i\n", ldv, v_name[id]);
         }
 
-        // comp const na memoria
+        // comp const in memory
         if ((get_type(et) == 5) && (et % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
@@ -864,7 +864,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s_i\n", ldv, v_name[id]);
         }
 
-        // comp no acc
+        // comp in acc
         if ((get_type(et) == 3) && (et % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
@@ -877,7 +877,7 @@ int arr_1d2exp(int id, int et, int fft)
             add_instr("%s %s_i\n", ldv, v_name[id]);
         }
 
-        // comp na memoria
+        // comp in memory
         if ((get_type(et) == 3) && (et % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
@@ -899,28 +899,28 @@ int arr_1d2exp(int id, int et, int fft)
 // transforma array 2D em exp
 int arr_2d2exp(int id, int et1, int et2)
 {
-    // testes de consistencia -------------------------------------------------
+    // consistency checks -----------------------------------------------------
 
-    // testa se a variavel ja foi declarada
+    // test whether the variable has been declared
     if (v_type[id] == 0)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    // tem que ver se eh array 2D mesmo
+    // must check that it really is a 2D array
     if (v_isar[id] == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    // tem que ver se nao eh array 1D
+    // must check that it is not a 1D array
     if (v_isar[id] == 1)
         {fprintf (stderr, MSG_ERR_ARRAY_1D , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    // prepara os comandos de LOD ---------------------------------------------
+    // prepare the LOD commands -----------------------------------------------
 
-    char ldv[10];                  strcpy(ldv,"LDI"    ); // ainda nao tem fft 2d
+    char ldv[10];                  strcpy(ldv,"LDI"    ); // no 2D FFT yet
     char ldi[10]; if (acc_ok == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
     char f2i[10]; if (acc_ok == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
 
     // ------------------------------------------------------------------------
-    // escreve as instrucoes --------------------------------------------------
+    // write the instructions -------------------------------------------------
     // ------------------------------------------------------------------------
 
     char num[32];
@@ -931,7 +931,7 @@ int arr_2d2exp(int id, int et1, int et2)
 
     if (type < 3)
     {
-        // int no acc e int no acc
+        // int in acc and int in acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             add_instr("SET_P aux_var\n");
@@ -940,7 +940,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // int no acc e int na memoria
+        // int in acc and int in memory
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             add_instr("MLT %s_arr_size\n", v_name[id]);
@@ -948,7 +948,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s %s\n" , ldv   , v_name[id]);
         }
 
-        // int no acc e float no acc
+        // int in acc and float in acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -960,7 +960,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // int no acc e float na memoria
+        // int in acc and float in memory
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -971,7 +971,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv    , v_name[id]);
         }
 
-        // int no acc e comp const na memoria
+        // int in acc and comp const in memory
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -984,7 +984,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv    , v_name[id]);
         }
 
-        // int no acc e comp no acc
+        // int in acc and comp in acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -997,7 +997,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // int no acc e comp na memoria
+        // int in acc and comp in memory
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1008,7 +1008,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv    , v_name[id]);
         }
 
-        // int na memoria e int no acc
+        // int in memory and int in acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             add_instr("P_LOD %s\n" , v_name[et1 % OFST]);
@@ -1017,7 +1017,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // int na memoria e int na memoria
+        // int in memory and int in memory
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             add_instr( "%s %s\n", ldi, v_name[et1 % OFST]);
@@ -1026,7 +1026,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s %s\n", ldv        , v_name[id]);
         }
 
-        // int na memoria e float no acc
+        // int in memory and float in acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -1038,7 +1038,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // int na memoria e float na memoria
+        // int in memory and float in memory
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -1050,7 +1050,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
-        // int na memoria e comp const na memoria
+        // int in memory and comp const in memory
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1064,7 +1064,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
-        // int na memoria e comp no acc
+        // int in memory and comp in acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1078,7 +1078,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // int na memoria e comp na memoria
+        // int in memory and comp in memory
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1090,7 +1090,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
-        // float no acc e int no acc
+        // float in acc and int in acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -1102,7 +1102,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // float no acc e int na memoria
+        // float in acc and int in memory
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -1113,7 +1113,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s %s\n" , ldv   , v_name[id]);
         }
 
-        // float no acc e float no acc
+        // float in acc and float in acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
@@ -1126,7 +1126,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // float no acc e float na memoria
+        // float in acc and float in memory
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1138,7 +1138,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n" , ldv   , v_name[id]);
         }
 
-        // float no acc e comp const na memoria
+        // float in acc and comp const in memory
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1152,7 +1152,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr("%s %s\n", ldv        , v_name[id]);
         }
 
-        // float no acc e comp no acc
+        // float in acc and comp in acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1166,7 +1166,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // float no acc e comp na memoria
+        // float in acc and comp in memory
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1178,7 +1178,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv,     v_name[id]);
         }
 
-        // float na memoria e int no acc
+        // float in memory and int in acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -1190,7 +1190,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n" , ldv   , v_name[id]);
         }
 
-        // float na memoria e int na memoria
+        // float in memory and int in memory
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -1201,7 +1201,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s %s\n", ldv        , v_name[id]);
         }
 
-        // float na memoria e float no acc
+        // float in memory and float in acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
@@ -1214,7 +1214,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // float na memoria e float na memoria
+        // float in memory and float in memory
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1226,7 +1226,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
-        // float na memoria e comp const na memoria
+        // float in memory and comp const in memory
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1240,7 +1240,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
-        // float na memoria e comp no acc
+        // float in memory and comp in acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1254,7 +1254,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv     , v_name[id]);
         }
 
-        // float na memoria e comp na memoria
+        // float in memory and comp in memory
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1266,7 +1266,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
-        // comp const na memoria e int no acc
+        // comp const in memory and int in acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1281,7 +1281,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // comp const na memoria e int na memoria
+        // comp const in memory and int in memory
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1294,7 +1294,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s %s\n", ldv        , v_name[id]);
         }
 
-        // comp const na memoria e float no acc
+        // comp const in memory and float in acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1309,7 +1309,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // comp const na memoria e float na memoria
+        // comp const in memory and float in memory
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1323,7 +1323,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
-        // comp const na memoria e comp const na memoria
+        // comp const in memory and comp const in memory
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1338,7 +1338,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv   , v_name[id]);
         }
 
-        // comp const na memoria e comp no acc
+        // comp const in memory and comp in acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1354,7 +1354,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // comp const na memoria e comp na memoria
+        // comp const in memory and comp in memory
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1368,7 +1368,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
-        // comp no acc e int no acc
+        // comp in acc and int in acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1381,7 +1381,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // comp no acc e int na memoria
+        // comp in acc and int in memory
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1393,7 +1393,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s %s\n",  ldv   , v_name[id]);
         }
 
-        // comp no acc e float no acc
+        // comp in acc and float in acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1407,7 +1407,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s  %s\n", ldv    , v_name[id]);
         }
 
-        // comp no acc e float na memoria
+        // comp in acc and float in memory
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1420,7 +1420,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
-        // comp no acc e comp const na memoria
+        // comp in acc and comp const in memory
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1435,7 +1435,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
-        // comp no acc e comp no acc
+        // comp in acc and comp in acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1450,7 +1450,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
-        // comp no acc e comp na memoria
+        // comp in acc and comp in memory
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1463,7 +1463,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
-        // comp na memoria e int no acc
+        // comp in memory and int in acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1474,7 +1474,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
-        // comp na memoria e int na memoria
+        // comp in memory and int in memory
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1485,7 +1485,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s %s\n", ldv        , v_name[id]);
         }
 
-        // comp na memoria e float no acc
+        // comp in memory and float in acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1497,7 +1497,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
-        // comp na memoria e float na memoria
+        // comp in memory and float in memory
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1509,7 +1509,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
-        // comp na memoria e comp const na memoria
+        // comp in memory and comp const in memory
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1523,7 +1523,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
-        // comp na memoria e comp no acc
+        // comp in memory and comp in acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1537,7 +1537,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s\n",  ldv   , v_name[id]);
         }
 
-        // comp na memoria e comp na memoria
+        // comp in memory and comp in memory
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1554,7 +1554,7 @@ int arr_2d2exp(int id, int et1, int et2)
 
     else
     {
-        // int no acc e int no acc
+        // int in acc and int in acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             add_instr("SET_P aux_var\n");
@@ -1566,7 +1566,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // int no acc e int na memoria
+        // int in acc and int in memory
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             add_instr("MLT   %s_arr_size\n" , v_name[id]);
@@ -1577,7 +1577,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv   , v_name[id]);
         }
 
-        // int no acc e float no acc
+        // int in acc and float in acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -1592,7 +1592,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // int no acc e float na memoria
+        // int in acc and float in memory
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -1606,7 +1606,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // int no acc e comp const na memoria
+        // int in acc and comp const in memory
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1622,7 +1622,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // int no acc e comp no acc
+        // int in acc and comp in acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1638,7 +1638,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // int no acc e comp na memoria
+        // int in acc and comp in memory
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1652,7 +1652,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // int na memoria e int no acc
+        // int in memory and int in acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             add_instr("P_LOD %s\n",  v_name[et1 % OFST]);
@@ -1664,7 +1664,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // int na memoria e int na memoria
+        // int in memory and int in memory
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             add_instr( "%s   %s\n", ldi, v_name[et1 % OFST]);
@@ -1676,7 +1676,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv      , v_name[id]);
         }
 
-        // int na memoria e float no acc
+        // int in memory and float in acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -1691,7 +1691,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // int na memoria e float na memoria
+        // int in memory and float in memory
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
@@ -1706,7 +1706,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv      , v_name[id]);
         }
 
-        // int na memoria e comp const na memoria
+        // int in memory and comp const in memory
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1723,7 +1723,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv      , v_name[id]);
         }
 
-        // int na memoria e comp no acc
+        // int in memory and comp in acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1740,7 +1740,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv   , v_name[id]);
         }
 
-        // int na memoria e comp na memoria
+        // int in memory and comp in memory
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1755,7 +1755,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv      , v_name[id]);
         }
 
-        // float no acc e int no acc
+        // float in acc and int in acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -1770,7 +1770,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // float no acc e int na memoria
+        // float in acc and int in memory
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
@@ -1784,7 +1784,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // float no acc e float no acc
+        // float in acc and float in acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
@@ -1800,7 +1800,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // float no acc e float na memoria
+        // float in acc and float in memory
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1815,7 +1815,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // float no acc e comp const na memoria
+        // float in acc and comp const in memory
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1832,7 +1832,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // float no acc e comp no acc
+        // float in acc and comp in acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1849,7 +1849,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // float no acc e comp na memoria
+        // float in acc and comp in memory
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1864,7 +1864,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // float na memoria e int no acc
+        // float in memory and int in acc
         if ((get_type(et1) == 2) && (et1 % OFST != 1) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1880,7 +1880,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // float na memoria e int na memoria
+        // float in memory and int in memory
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1894,7 +1894,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv      , v_name[id]);
         }
 
-        // float na memoria e float no acc
+        // float in memory and float in acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1910,7 +1910,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // float na memoria e float na memoria
+        // float in memory and float in memory
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1925,7 +1925,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv      , v_name[id]);
         }
 
-        // float na memoria e comp const na memoria
+        // float in memory and comp const in memory
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1943,7 +1943,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv , v_name[id]);
         }
 
-        // float na memoria e comp no acc
+        // float in memory and comp in acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1960,7 +1960,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // float na memoria e comp na memoria
+        // float in memory and comp in memory
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -1975,7 +1975,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv      , v_name[id]);
         }
 
-        // comp const na memoria e int no acc
+        // comp const in memory and int in acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -1993,7 +1993,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp const na memoria e int na memoria
+        // comp const in memory and int in memory
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -2009,7 +2009,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv      , v_name[id]);
         }
 
-        // comp const na memoria e float no acc
+        // comp const in memory and float in acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2027,7 +2027,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp const na memoria e float na memoria
+        // comp const in memory and float in memory
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2044,7 +2044,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv      , v_name[id]);
         }
 
-        // comp const na memoria e comp const na memoria
+        // comp const in memory and comp const in memory
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2062,7 +2062,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv , v_name[id]);
         }
 
-        // comp const na memoria e comp no acc
+        // comp const in memory and comp in acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2081,7 +2081,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp const na memoria e comp na memoria
+        // comp const in memory and comp in memory
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2098,7 +2098,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv      , v_name[id]);
         }
 
-        // comp no acc e int no acc
+        // comp in acc and int in acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -2114,7 +2114,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp no acc e int na memoria
+        // comp in acc and int in memory
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -2129,7 +2129,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp no acc e float no acc
+        // comp in acc and float in acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2146,7 +2146,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr("%s    %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp no acc e float na memoria
+        // comp in acc and float in memory
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2162,7 +2162,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp no acc e comp const na memoria
+        // comp in acc and comp const in memory
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2180,7 +2180,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp no acc e comp no acc
+        // comp in acc and comp in acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2198,7 +2198,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp no acc e comp na memoria
+        // comp in acc and comp in memory
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2214,7 +2214,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp na memoria e int no acc
+        // comp in memory and int in acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -2228,7 +2228,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr("%s      %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp na memoria e int na memoria
+        // comp in memory and int in memory
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
@@ -2242,7 +2242,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s   %s_i\n", ldv      , v_name[id]);
         }
 
-        // comp na memoria e float no acc
+        // comp in memory and float in acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2257,7 +2257,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv  , v_name[id]);
         }
 
-        // comp na memoria e float na memoria
+        // comp in memory and float in memory
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2272,7 +2272,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv      , v_name[id]);
         }
 
-        // comp na memoria e comp const na memoria
+        // comp in memory and comp const in memory
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2289,7 +2289,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s     %s_i\n", ldv      , v_name[id]);
         }
 
-        // comp na memoria e comp no acc
+        // comp in memory and comp in acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
@@ -2306,7 +2306,7 @@ int arr_2d2exp(int id, int et1, int et2)
             add_instr( "%s %s_i\n", ldv    , v_name[id]);
         }
 
-        // comp na memoria e comp na memoria
+        // comp in memory and comp in memory
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);

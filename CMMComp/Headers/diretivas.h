@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
-// reune funcoes e variaveis acionadas por diretivas --------------------------
+// gathers functions and variables driven by directives -----------------------
 // ----------------------------------------------------------------------------
 
-// somente essas 3 sao usadas pelo compilador cmm
-extern char prname[128]; // nome do processador
-extern int  nbmant;      // numero de bits de mantissa
-extern int  nbexpo;      // numero de bits de expoente
-extern int  nuioin;      // numero de portas de entrada
-extern int  nuioou;      // numero de portas de saida
+// only these 3 are used by the cmm compiler
+extern char prname[128]; // processor name
+extern int  nbmant;      // mantissa width (bits)
+extern int  nbexpo;      // exponent width (bits)
+extern int  nuioin;      // number of input ports
+extern int  nuioou;      // number of output ports
 
-// parse das diretivas
+// directive parsing
 void dire_exec (char *dir, int id, int t);

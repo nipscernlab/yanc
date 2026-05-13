@@ -17,169 +17,169 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 %%
 
-"#PRNAME"  eval_direct( 1); // nome do processador
-"#NUBITS"  eval_direct( 2); // num de bits da ULA
-"#NBMANT"  eval_direct( 3); // num de bits da mantissa
-"#NBEXPO"  eval_direct( 4); // num de bits do expoente
-"#NDSTAC"  ;                // precisa ser identificado pra nao dar erro
-"#SDEPTH"  ;                // mesma coisa pra todos ai embaixo
+"#PRNAME"  eval_direct( 1); // processor name
+"#NUBITS"  eval_direct( 2); // ALU word width (bits)
+"#NBMANT"  eval_direct( 3); // mantissa width (bits)
+"#NBEXPO"  eval_direct( 4); // exponent width (bits)
+"#NDSTAC"  ;                // must be recognized to avoid an error
+"#SDEPTH"  ;                // same goes for everyone below
 "#NUIOIN"  ;
 "#NUIOOU"  ;
 "#NUGAIN"  ;
 "#FFTSIZ"  ;
 
-"#array"   eval_direct(11); // array normal
-"#arrays"  eval_direct(14); // array com arquivo de inicializacao
+"#array"   eval_direct(11); // regular array
+"#arrays"  eval_direct(14); // array with initialization file
 
-"#ITRAD"   eval_itrad (  ); // ponto de endereco da interrupcao
+"#ITRAD"   eval_itrad (  ); // interrupt address point
 
-   "LOD"   eval_opcode(18); // carrega dado da memoria
+   "LOD"   eval_opcode(18); // loads data from memory
  "P_LOD"   eval_opcode(18); // PUSH + LOD
-   "LDI"   eval_opcode(18); // LOD com enderecamento indireto (indice no acc)
-   "ILI"   eval_opcode(18); // LOD com enderecamento indireto invertido (FFT)
+   "LDI"   eval_opcode(18); // LOD with indirect addressing (index in acc)
+   "ILI"   eval_opcode(18); // LOD with reverse indirect addressing (FFT)
 
-   "SET"   eval_opcode(18); // salva dado na memoria
+   "SET"   eval_opcode(18); // stores data in memory
    "SET_P" eval_opcode(18); // SET + POP
-   "STI"   eval_opcode(18); // SET com enderecamento indireto (indice na pilha)
-   "ISI"   eval_opcode(18); // SET com enderecamento indireto invertido (FFT)
+   "STI"   eval_opcode(18); // SET with indirect addressing (index on stack)
+   "ISI"   eval_opcode(18); // SET with reverse indirect addressing (FFT)
 
-   "PSH"   eval_opcode( 0); // xuxa dado na pilha
-   "POP"   eval_opcode( 0); // retira dado da pilha
+   "PSH"   eval_opcode( 0); // pushes data onto the stack
+   "POP"   eval_opcode( 0); // pops data from the stack
 
-   "INN"   eval_opcode(20); // entrada de dados
- "F_INN"   eval_opcode(20); // entrada de dados em ponto flutuante
+   "INN"   eval_opcode(20); // data input
+ "F_INN"   eval_opcode(20); // floating-point data input
  "P_INN"   eval_opcode(20); // PUSH + INN
 "PF_INN"   eval_opcode(20); // PUSH + F_INN
-   "OUT"   eval_opcode(21); // saida de dados
+   "OUT"   eval_opcode(21); // data output
 
-   "JMP"   eval_opcode(19); // salto incondicional
-   "JIZ"   eval_opcode(19); // salta se acc for zero
+   "JMP"   eval_opcode(19); // unconditional jump
+   "JIZ"   eval_opcode(19); // jump if acc is zero
 
-   "CAL"   eval_opcode(19); // chamada de subrotina
-   "RET"   eval_opcode( 0); // retorno de subrotina
+   "CAL"   eval_opcode(19); // subroutine call
+   "RET"   eval_opcode( 0); // subroutine return
 
-   "ADD"   eval_opcode(18); // adicao em ponto fixo com memoria
- "S_ADD"   eval_opcode( 0); // adicao em ponto fixo com pilha
- "F_ADD"   eval_opcode(18); // adicao em ponto flut com memoria
-"SF_ADD"   eval_opcode( 0); // adicao em ponto flut com pilha
+   "ADD"   eval_opcode(18); // fixed-point addition with memory
+ "S_ADD"   eval_opcode( 0); // fixed-point addition with stack
+ "F_ADD"   eval_opcode(18); // floating-point addition with memory
+"SF_ADD"   eval_opcode( 0); // floating-point addition with stack
 
-   "MLT"   eval_opcode(18); // multip em ponto fixo com memoria
- "S_MLT"   eval_opcode( 0); // multip em ponto fixo com pilha
- "F_MLT"   eval_opcode(18); // multip em ponto flut com memoria
-"SF_MLT"   eval_opcode( 0); // multip em ponto flut com pilha
+   "MLT"   eval_opcode(18); // fixed-point multiplication with memory
+ "S_MLT"   eval_opcode( 0); // fixed-point multiplication with stack
+ "F_MLT"   eval_opcode(18); // floating-point multiplication with memory
+"SF_MLT"   eval_opcode( 0); // floating-point multiplication with stack
 
-   "DIV"   eval_opcode(18); // divisa em ponto fixo com memoria
- "S_DIV"   eval_opcode( 0); // divisa em ponto fixo com pilha
- "F_DIV"   eval_opcode(18); // divisa em ponto flut com memoria
-"SF_DIV"   eval_opcode( 0); // divisa em ponto flut com pilha
+   "DIV"   eval_opcode(18); // fixed-point division with memory
+ "S_DIV"   eval_opcode( 0); // fixed-point division with stack
+ "F_DIV"   eval_opcode(18); // floating-point division with memory
+"SF_DIV"   eval_opcode( 0); // floating-point division with stack
 
-   "MOD"   eval_opcode(18); // resto da divisao em ponto fixo com memoria
- "S_MOD"   eval_opcode( 0); // resto da divisao em ponto fixo com pilha
+   "MOD"   eval_opcode(18); // fixed-point remainder with memory
+ "S_MOD"   eval_opcode( 0); // fixed-point remainder with stack
 
-   "SGN"   eval_opcode(18); // pega sinal em ponto fixo com memoria
- "S_SGN"   eval_opcode( 0); // pega sinal em ponto fixo com pilha
- "F_SGN"   eval_opcode(18); // pega sinal em ponto flut com memoria
-"SF_SGN"   eval_opcode( 0); // pega sinal em ponto flut com pilha
+   "SGN"   eval_opcode(18); // fixed-point sign with memory
+ "S_SGN"   eval_opcode( 0); // fixed-point sign with stack
+ "F_SGN"   eval_opcode(18); // floating-point sign with memory
+"SF_SGN"   eval_opcode( 0); // floating-point sign with stack
 
-   "NEG"   eval_opcode( 0); // negacao em ponto fixo com acc
-   "NEG_M" eval_opcode(18); // negacao em ponto fixo com memoria
+   "NEG"   eval_opcode( 0); // fixed-point negation with acc
+   "NEG_M" eval_opcode(18); // fixed-point negation with memory
  "P_NEG_M" eval_opcode(18); // PUSH +   NEG_M
- "F_NEG"   eval_opcode( 0); // negacao em ponto flut com acc
- "F_NEG_M" eval_opcode(18); // negacao em ponto flut com memoria
+ "F_NEG"   eval_opcode( 0); // floating-point negation with acc
+ "F_NEG_M" eval_opcode(18); // floating-point negation with memory
 "PF_NEG_M" eval_opcode(18); // PUSH + F_NEG_M
 
-   "ABS"   eval_opcode( 0); // abs em ponto fixo com acc
-   "ABS_M" eval_opcode(18); // abs em ponto fixo com memoria
+   "ABS"   eval_opcode( 0); // fixed-point abs with acc
+   "ABS_M" eval_opcode(18); // fixed-point abs with memory
  "P_ABS_M" eval_opcode(18); // PUSH +   ABS_M
- "F_ABS"   eval_opcode( 0); // abs em ponto flut com acc
- "F_ABS_M" eval_opcode(18); // abs em ponto flut com memoria
+ "F_ABS"   eval_opcode( 0); // floating-point abs with acc
+ "F_ABS_M" eval_opcode(18); // floating-point abs with memory
 "PF_ABS_M" eval_opcode(18); // PUSH + F_ABS_M
 
-   "PST"   eval_opcode( 0); // zera negativo em ponto fixo com acc
-   "PST_M" eval_opcode(18); // zera negativo em ponto fixo com memoria
+   "PST"   eval_opcode( 0); // clears if negative, fixed-point with acc
+   "PST_M" eval_opcode(18); // clears if negative, fixed-point with memory
  "P_PST_M" eval_opcode(18); // PUSH +   PST_M
- "F_PST"   eval_opcode( 0); // zera negativo em ponto flut com acc
- "F_PST_M" eval_opcode(18); // zera negativo em ponto flut com memoria
+ "F_PST"   eval_opcode( 0); // clears if negative, floating-point with acc
+ "F_PST_M" eval_opcode(18); // clears if negative, floating-point with memory
 "PF_PST_M" eval_opcode(18); // PUSH + F_PST_M
 
-   "NRM"   eval_opcode( 0); // divide por constante em ponto fixo com acc
-   "NRM_M" eval_opcode(18); // divide por constante em ponto fixo com memoria
+   "NRM"   eval_opcode( 0); // divides by constant, fixed-point with acc
+   "NRM_M" eval_opcode(18); // divides by constant, fixed-point with memory
  "P_NRM_M" eval_opcode(18); // PUSH +   NRM_M
 
-   "I2F"   eval_opcode( 0); // int2float com acc
-   "I2F_M" eval_opcode(18); // int2float com mem
+   "I2F"   eval_opcode( 0); // int2float with acc
+   "I2F_M" eval_opcode(18); // int2float with mem
  "P_I2F_M" eval_opcode(18); // PUSH + I2F_M
 
-   "F2I"   eval_opcode( 0); // float2int com acc
-   "F2I_M" eval_opcode(18); // float2int com mem
+   "F2I"   eval_opcode( 0); // float2int with acc
+   "F2I_M" eval_opcode(18); // float2int with mem
  "P_F2I_M" eval_opcode(18); // PUSH + F2I_M
 
-   "AND"   eval_opcode(18); // and com memoria
- "S_AND"   eval_opcode( 0); // and com pilha
-   "ORR"   eval_opcode(18); // or  com memoria
- "S_ORR"   eval_opcode( 0); // or  cop pilha
-   "XOR"   eval_opcode(18); // xor com memoria
- "S_XOR"   eval_opcode( 0); // xor com pilha
-   
-   "INV"   eval_opcode( 0); // not com acc
-   "INV_M" eval_opcode(18); // not com mem
+   "AND"   eval_opcode(18); // and with memory
+ "S_AND"   eval_opcode( 0); // and with stack
+   "ORR"   eval_opcode(18); // or  with memory
+ "S_ORR"   eval_opcode( 0); // or  with stack
+   "XOR"   eval_opcode(18); // xor with memory
+ "S_XOR"   eval_opcode( 0); // xor with stack
+
+   "INV"   eval_opcode( 0); // not with acc
+   "INV_M" eval_opcode(18); // not with mem
  "P_INV_M" eval_opcode(18); // PUSH + INV_M
 
-   "LAN"   eval_opcode(18); // and logico com memoria
- "S_LAN"   eval_opcode( 0); // and logico com pilha
-   "LOR"   eval_opcode(18); // or  logico com memoria
- "S_LOR"   eval_opcode( 0); // or  logico com pilha
+   "LAN"   eval_opcode(18); // logical and with memory
+ "S_LAN"   eval_opcode( 0); // logical and with stack
+   "LOR"   eval_opcode(18); // logical or  with memory
+ "S_LOR"   eval_opcode( 0); // logical or  with stack
 
-   "LIN"   eval_opcode( 0); // inversao logica com acc
-   "LIN_M" eval_opcode(18); // inversao logica com mem
+   "LIN"   eval_opcode( 0); // logical inversion with acc
+   "LIN_M" eval_opcode(18); // logical inversion with mem
  "P_LIN_M" eval_opcode(18); // PUSH + LIN_M
 
-   "LES"   eval_opcode(18); // menor que em ponto fixo com memoria
- "S_LES"   eval_opcode( 0); // menor que em ponto fixo com pilha
- "F_LES"   eval_opcode(18); // menor que em ponto flut com memoria
-"SF_LES"   eval_opcode( 0); // menor que em ponto flut com pilha
+   "LES"   eval_opcode(18); // less than, fixed-point with memory
+ "S_LES"   eval_opcode( 0); // less than, fixed-point with stack
+ "F_LES"   eval_opcode(18); // less than, floating-point with memory
+"SF_LES"   eval_opcode( 0); // less than, floating-point with stack
 
-   "GRE"   eval_opcode(18); // maior que em ponto fixo com memoria
- "S_GRE"   eval_opcode( 0); // maior que em ponto fixo com pilha
- "F_GRE"   eval_opcode(18); // maior que em ponto flut com memoria
-"SF_GRE"   eval_opcode( 0); // maior que em ponto flut com pilha
+   "GRE"   eval_opcode(18); // greater than, fixed-point with memory
+ "S_GRE"   eval_opcode( 0); // greater than, fixed-point with stack
+ "F_GRE"   eval_opcode(18); // greater than, floating-point with memory
+"SF_GRE"   eval_opcode( 0); // greater than, floating-point with stack
 
-   "EQU"   eval_opcode(18); // igual a com memoria
- "S_EQU"   eval_opcode( 0); // igual a com pilha
+   "EQU"   eval_opcode(18); // equal to, with memory
+ "S_EQU"   eval_opcode( 0); // equal to, with stack
 
-   "SHL"   eval_opcode(18); // shift left  com memoria
- "S_SHL"   eval_opcode( 0); // shift left  com pilha
-   "SHR"   eval_opcode(18); // shift right com memoria
- "S_SHR"   eval_opcode( 0); // shift right com pilha
-   "SRS"   eval_opcode(18); // shift right aritmetico com memoria
- "S_SRS"   eval_opcode( 0); // shift right aritmetico com pilha
+   "SHL"   eval_opcode(18); // shift left  with memory
+ "S_SHL"   eval_opcode( 0); // shift left  with stack
+   "SHR"   eval_opcode(18); // shift right with memory
+ "S_SHR"   eval_opcode( 0); // shift right with stack
+   "SRS"   eval_opcode(18); // arithmetic shift right with memory
+ "S_SRS"   eval_opcode( 0); // arithmetic shift right with stack
 
-   /* instrucoes especiais */
+   /* special instructions */
 
    "NOP"   eval_opcode( 0); // no operation
- "F_ROT"   eval_opcode( 0); // potencia de 2 mais proxima da raiz (com ACC)
- "F_SU1"   eval_opcode(18); // subtracao de ponto flutuante com memoria na entrada 1
- "F_SU2"   eval_opcode(18); // subtracao de ponto flutuante com memoria na entrada 2
-"SF_SU1"   eval_opcode( 0); // subtracao de ponto flutuante com pilha na entrada 1
-"SF_SU2"   eval_opcode( 0); // subtracao de ponto flutuante com pilha na entrada 2
+ "F_ROT"   eval_opcode( 0); // nearest power-of-two square-root approximation (with ACC)
+ "F_SU1"   eval_opcode(18); // floating-point subtraction with memory at input 1
+ "F_SU2"   eval_opcode(18); // floating-point subtraction with memory at input 2
+"SF_SU1"   eval_opcode( 0); // floating-point subtraction with stack at input 1
+"SF_SU2"   eval_opcode( 0); // floating-point subtraction with stack at input 2
 
-   /* pseudo instrucoes */
-   /* evita enderecamento indireto */
-   
-   "LOD_V" eval_opcode(22); //   LOD com offset constante
- "P_LOD_V" eval_opcode(22); // P_LOD com offset constante
-   "SET_V" eval_opcode(22); //   SET com offset constante
-   "ADD_V" eval_opcode(22); //   ADD com offset constante
- "F_ADD_V" eval_opcode(22); // F_ADD com offset constante
-   "MLT_V" eval_opcode(22); //   MLT com offset constante
- "F_MLT_V" eval_opcode(22); // F_MLT com offset constante
+   /* pseudo instructions */
+   /* avoids indirect addressing */
 
-{VARIA}    eval_opernd(yytext); // usado em instrucoes da ula com variaveis (IDs)
-{INNUM}    eval_opernd(yytext); // usado em instrucoes da ula com constante int
-{FLNUM}    eval_opernd(yytext); // usado em instrucoes da ula com constante float
+   "LOD_V" eval_opcode(22); //   LOD with constant offset
+ "P_LOD_V" eval_opcode(22); // P_LOD with constant offset
+   "SET_V" eval_opcode(22); //   SET with constant offset
+   "ADD_V" eval_opcode(22); //   ADD with constant offset
+ "F_ADD_V" eval_opcode(22); // F_ADD with constant offset
+   "MLT_V" eval_opcode(22); //   MLT with constant offset
+ "F_MLT_V" eval_opcode(22); // F_MLT with constant offset
 
-{STRIN}    eval_opernd(yytext); // usado em instrucoes com strings (ex: arquivo de incializacao de array)
-{LABEL}    eval_label (yytext); // usado em instrucoes de salto
+{VARIA}    eval_opernd(yytext); // used on ALU instructions with variables (IDs)
+{INNUM}    eval_opernd(yytext); // used on ALU instructions with an int constant
+{FLNUM}    eval_opernd(yytext); // used on ALU instructions with a float constant
+
+{STRIN}    eval_opernd(yytext); // used on instructions with strings (e.g. array initialization file)
+{LABEL}    eval_label (yytext); // used on jump instructions
 
 {COMEN}
 {EMPTY}
@@ -191,13 +191,13 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 int main(int argc, char *argv[])
 {
-    parse_lang_flag(&argc, argv);   // processa flag -en/-pt (remove de argv)
+    parse_lang_flag(&argc, argv);   // processes -en/-pt flag (removes from argv)
 
-	  yyin = fopen(argv[1], "r"); // primeiro argumento eh o arquivo .asm de entrada
-    eval_init   (argv[2]);      // segundo  argumento eh o caminho pro arquivo de log
-    yylex();                    // executa o lexer
-	  fclose(yyin);               // fecha o arquivo .asm
-    eval_finish();              // finaliza o arquivo de log
+	  yyin = fopen(argv[1], "r"); // first argument is the input .asm file
+    eval_init   (argv[2]);      // second argument is the path to the log file
+    yylex();                    // run the lexer
+	  fclose(yyin);               // close the .asm file
+    eval_finish();              // finalize the log file
 
     printf(MSG_OK_APP_DONE);
 

@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
-// tratamento de indice de arrays ---------------------------------------------
+// array index handling -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// uso de array no assign (lado esquerdo) -------------------------------------
+// array used in assignments (left-hand side) ---------------------------------
 
-void arr_1d_index(int id, int et);              // pega o indice de um array 1D
-void arr_2d_index(int id, int et1, int et2);    // pega o indice de um array 2D
+void arr_1d_index(int id, int et);              // gets the index of a 1D array
+void arr_2d_index(int id, int et1, int et2);    // gets the index of a 2D array
 
-// uso de array em expressoes (lado direito) ----------------------------------
+// array used in expressions (right-hand side) --------------------------------
 
-int  arr_1d2exp  (int id, int et , int fft);    // transforma array 1D num exp
-int  arr_2d2exp  (int id, int et1, int et2);    // transforma array 2D num exp
+int  arr_1d2exp  (int id, int et , int fft);    // turns a 1D array into an exp
+int  arr_2d2exp  (int id, int et1, int et2);    // turns a 2D array into an exp

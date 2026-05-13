@@ -1,17 +1,17 @@
 // ----------------------------------------------------------------------------
-// rotinas para reducao exp ---------------------------------------------------
+// routines for exp reduction -------------------------------------------------
 // ----------------------------------------------------------------------------
 
 /*
 TODO:
-1- rever os operadores de incremento ++
+1- revisit the ++ increment operators
 */
 
-// includes globais
+// global includes
 #include  <stdio.h>
 #include <stdlib.h>
 
-// includes locais
+// local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\oper.h"
 #include "..\Headers\global.h"
@@ -22,8 +22,8 @@ TODO:
 #include "..\Headers\array_index.h"
 #include "..\Headers\messages.h"
 
-// reducao de constantes para exp
-// nao da load, soh atualiza estados das variaveis
+// constant reduction into exp
+// does not emit a load, just updates the variable state
 int num2exp(int id, int dtype)
 {
     v_used[id] = 1;
@@ -34,15 +34,15 @@ int num2exp(int id, int dtype)
     return dtype*OFST+id;
 }
 
-// reducao de ID pra exp
-// ainda nao da load, soh checa e atualiza estados da variavel
+// ID reduction into exp
+// does not emit a load yet, just checks and updates the variable state
 int id2exp(int id)
 {
-    // Testa se a variavel ja foi declarada
+    // test whether the variable has already been declared
     if (v_type[id] == 0)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    // Se for um array, esqueceram o indice
+    // if it is an array, the index is missing
     if (v_isar[id] > 0)
         {fprintf (stderr, MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
@@ -51,85 +51,85 @@ int id2exp(int id)
     return v_type[id]*OFST+id;
 }
 
-// reducao de ++ pra exp
+// ++ reduction into exp
 int pplus2exp(int id)
 {
     if (v_type[id] > 2)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // equivalente a pegar o x na expressao (x+1)
+    // equivalent to taking x in the expression (x+1)
     int et = id2exp(id);
 
-    // agora transforma o 1 em um exp
-    // primeiro faz o lexer do 1
+    // now turn the 1 into an exp
+    // first run the lexer on 1
     if (find_var("1") == -1) add_var("1");
     int lval = find_var("1");
-    // pega se deve vir de INUM ou FNUM
+    // decide whether it comes from INUM or FNUM
     int type = get_type(et);
-    // depois o parser
+    // then the parser
     int et1 = num2exp(lval,type);
-    // depois faz operacao de soma
+    // then perform the addition
     int ret = oper_soma(et,et1);
-    // por ultimo, atribui de volta pra id
+    // finally, assign back to id
     ass_set(id, ret);
 
-    acc_ok = 1; //nao pode liberar o acc, pois eh um exp
+    acc_ok = 1; // cannot free acc, since it is an exp
 
     return ret;
 }
 
-// reducao de ++ pra exp em array 1D
+// ++ reduction into exp on a 1D array
 int pplus1d2exp(int id, int ete)
 {
     if (v_type[id] > 2)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // equivalente a pegar o x na expressao (x+1)
+    // equivalent to taking x in the expression (x+1)
     int et = arr_1d2exp(id,ete,0);
-    // agora transforma o 1 em um exp
-    // primeiro faz o lexer do 1
+    // now turn the 1 into an exp
+    // first run the lexer on 1
     if (find_var("1") == -1) add_var("1");
     int lval = find_var("1");
-    // pega se deve vir de INUM ou FNUM
+    // decide whether it comes from INUM or FNUM
     int type = get_type(et);
-    // depois o parser
+    // then the parser
     int et1 = num2exp(lval,type);
-    // depois faz operacao de soma
+    // then perform the addition
     int ret = oper_soma(et,et1);
-    // faz o load no indice do array novamente
+    // reload the array index
     arr_1d_index(id, ete);
-    // por ultimo, atribui de volta pra id
+    // finally, assign back to id
     ass_array(id, ret, 0);
 
-    acc_ok = 1; //nao pode liberar o acc, pois eh um exp
+    acc_ok = 1; // cannot free acc, since it is an exp
 
     return ret;
 }
 
-// reducao de ++ pra exp em array 2D
+// ++ reduction into exp on a 2D array
 int pplus2d2exp(int id, int et1, int et2)
 {
     if (v_type[id] > 2)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
-    // equivalente a pegar o x na expressao (x+1)
+    // equivalent to taking x in the expression (x+1)
     int et = arr_2d2exp(id,et1,et2);
-    // agora transforma o 1 em um exp
-    // primeiro faz o lexer do 1
+    // now turn the 1 into an exp
+    // first run the lexer on 1
     if (find_var("1") == -1) add_var("1");
     int lval = find_var("1");
-    // pega se deve vir de INUM ou FNUM
+    // decide whether it comes from INUM or FNUM
     int type = get_type(et);
-    // depois o parser
+    // then the parser
     int etx = num2exp(lval,type);
-    // depois faz operacao de soma
+    // then perform the addition
     int ret = oper_soma(et,etx);
-    // faz o load no indice do array novamente
+    // reload the array index
     arr_2d_index(id, et1, et2);
-    // por ultimo, atribui de volta pra id
+    // finally, assign back to id
     ass_array(id, ret, 0);
 
-    acc_ok = 1; //nao pode liberar o acc, pois eh um exp
+    acc_ok = 1; // cannot free acc, since it is an exp
 
     return ret;
 }

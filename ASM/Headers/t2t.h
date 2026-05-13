@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// rotinas de conversao entre tipos de dados ----------------------------------
+// data-type conversion routines ----------------------------------------------
 // ----------------------------------------------------------------------------
 
-         char* itob(int    x, int    w    ); // converte inteiro para binario (string)
-unsigned int   f2mf(char *va, float *delta); // converte float (string) para meu float
-         float mf2f(char *ifl             ); // converte meu float (string) para float
+         char* itob(int    x, int    w    ); // converts an integer to binary (string)
+unsigned int   f2mf(char *va, float *delta); // converts a float (string) to "my float"
+         float mf2f(char *ifl             ); // converts "my float" (string) back to float

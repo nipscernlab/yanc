@@ -1,57 +1,57 @@
 // ----------------------------------------------------------------------------
-// rotinas para simulacao com o iverilog/gtkwave ------------------------------
+// routines for simulation with iverilog/gtkwave ------------------------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include  <stdio.h>
 #include <string.h>
 
-// includes locais
+// local includes
 #include "..\Headers\eval.h"
 #include "..\Headers\variaveis.h"
 
 // ----------------------------------------------------------------------------
-// variaveis locais -----------------------------------------------------------
+// local variables ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// parametros de simulacao
-int clk_frq;           // frequencia do clock de simulacao
-int clk_num;           // num de clocks maximo a simular
-int sim_typ;           // tipo de simulacao (um proc ou multicore)
+// simulation parameters
+int clk_frq;           // simulation clock frequency
+int clk_num;           // max number of clocks to simulate
+int sim_typ;           // simulation type (single-proc or multicore)
 
-// arquivo de traducao
-FILE *f_tran;          // arquivo de traducao de opcode
-int  sim_n_opc = 0;    // numero de instrucoes no arquivo de traducao
-int  sim_fim;          // endereco do fim do programa
+// translation file
+FILE *f_tran;          // opcode translation file
+int  sim_n_opc = 0;    // number of instructions in the translation file
+int  sim_fim;          // address of the end of the program
 
-// variaveis declaradas pelo usuario
-int  s_count  = 0;     // numero de variaveis registradas
-char s_name[1000][64]; // nome da variavel encontrada
-int  s_addr[1000];     // endereco da variavel encontrada
-int  s_type[1000];     // tipo da variavel encontrada
+// user-declared variables
+int  s_count  = 0;     // number of registered variables
+char s_name[1000][64]; // name     of the found variable
+int  s_addr[1000];     // address  of the found variable
+int  s_type[1000];     // type     of the found variable
 
-// arrays declarados pelo usuario
-int  s_count_arr  = 0;     // numero de arrays registrados
-char s_name_arr[1000][64]; // nome do array encontrado
-int  s_addr_arr[1000];     // endereco do array encontrado
-int  s_type_arr[1000];     // tipo do array encontrado
-int  s_size_arr[1000];     // tamanho do array encontrado
+// user-declared arrays
+int  s_count_arr  = 0;     // number of registered arrays
+char s_name_arr[1000][64]; // name     of the found array
+int  s_addr_arr[1000];     // address  of the found array
+int  s_type_arr[1000];     // type     of the found array
+int  s_size_arr[1000];     // size     of the found array
 
 // ----------------------------------------------------------------------------
-// funcoes auxiliares ---------------------------------------------------------
+// helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// funcao auxiliar que procura no arquivo cmm_log.txt se ...
-// char *va aponta para uma variavel declarada no .cmm
-// tambem retorna o tipo da variavel encontrada
+// helper that searches cmm_log.txt to check whether ...
+// char *va points to a variable declared in the .cmm
+// also returns the type of the variable found
 int sim_is_var(char *va, int *tipo, int *is_global, char *nome)
 {
-    // abre o arquivo de log --------------------------------------------------
+    // open the log file ------------------------------------------------------
 
     char path[1024]; sprintf(path, "%s/cmm_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
-  
-    // varre as linhas do arquivo procurando a variavel -----------------------
+
+    // scan the file lines looking for the variable ---------------------------
 
     char texto[1001];
     char funcao[128];
@@ -60,13 +60,13 @@ int sim_is_var(char *va, int *tipo, int *is_global, char *nome)
     int ok = 0;
     while(fgets(texto, 1001, input) != NULL)
     {
-        // pega os 3 parametros da variavel -----------------------------------
+        // pick up the variable's 3 parameters --------------------------------
 
         if (sscanf (texto, "%s %s %d", funcao, variav, tipo) != 3) continue;
 
-        // monta o nome da variavel com os dados do arquivo de log ------------
+        // build the variable name from the log data --------------------------
 
-        // se for variavel global, nao coloca o nome da funcao
+        // global variables don't include the function name
         if (strcmp(funcao,"global")==0)
         {
             *is_global = 1;
@@ -78,7 +78,7 @@ int sim_is_var(char *va, int *tipo, int *is_global, char *nome)
             sprintf(nome , "%s_%s", funcao, variav);
         }
 
-        // se for a variavel desejada, monta o nome dela e sai do loop --------
+        // if it matches the wanted variable, build its name and break --------
 
         if (strcmp(nome,va) == 0)
         {
@@ -86,23 +86,23 @@ int sim_is_var(char *va, int *tipo, int *is_global, char *nome)
             ok = 1; break;
         }
     }
-    
+
     fclose(input);
 
     return ok;
 }
 
-// funcao auxiliar que procura no arquivo cmm_log.txt se ...
-// char *va aponta para uma array declarado no .cmm
-// tambem retorna o tipo e tamanho do array encontrado
+// helper that searches cmm_log.txt to check whether ...
+// char *va points to an array declared in the .cmm
+// also returns the type and size of the array found
 int sim_is_arr(char *va, int *tipo, int *size, int *is_global, char *nome)
 {
-    // abre o arquivo de log --------------------------------------------------
+    // open the log file ------------------------------------------------------
 
     char path[1024]; sprintf(path, "%s/cmm_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
-  
-    // varre as linhas do arquivo procurando a variavel -----------------------
+
+    // scan the file lines looking for the variable --------------------------
 
     char texto[1001];
     char funcao[128];
@@ -111,13 +111,13 @@ int sim_is_arr(char *va, int *tipo, int *size, int *is_global, char *nome)
     int ok = 0;
     while(fgets(texto, 1001, input) != NULL)
     {
-        // pega os 4 parametros do array --------------------------------------
+        // pick up the array's 4 parameters -----------------------------------
 
         if (sscanf (texto, "%s %s %d %d", funcao, variav, tipo, size) != 4) continue;
 
-        // monta o nome do array com os dados do arquivo de log ---------------
+        // build the array name from the log data -----------------------------
 
-        // se for array global, nao coloca o nome da funcao
+        // global arrays don't include the function name
         if (strcmp(funcao,"global")==0)
         {
             *is_global = 1;
@@ -129,7 +129,7 @@ int sim_is_arr(char *va, int *tipo, int *size, int *is_global, char *nome)
             sprintf(nome , "%s_%s", funcao, variav);
         }
 
-        // se for o arrayl desejada, monta o nome dele e sai do loop ----------
+        // if it matches the wanted array, build its name and break -----------
 
         if (strcmp(nome,va) == 0)
         {
@@ -137,54 +137,54 @@ int sim_is_arr(char *va, int *tipo, int *size, int *is_global, char *nome)
             ok = 1; break;
         }
     }
-    
+
     fclose(input);
 
     return ok;
 }
 
 // ----------------------------------------------------------------------------
-// rotinas para acessar parametros da simulacao -------------------------------
+// routines to access simulation parameters -----------------------------------
 // ----------------------------------------------------------------------------
 
-int sim_clk    (){return clk_frq;} // pega frequencia do clock de simulacao
-int sim_clk_num(){return clk_num;} // pega numero de clocks a simular
-int sim_multi  (){return sim_typ;} // pega tipo de simulacao (um proc ou multicore)
+int sim_clk    (){return clk_frq;} // returns the simulation clock frequency
+int sim_clk_num(){return clk_num;} // returns the number of clocks to simulate
+int sim_multi  (){return sim_typ;} // returns the simulation type (single-proc or multicore)
 
 // ----------------------------------------------------------------------------
-// rotinas para acoes com o arquivo de traducao -------------------------------
+// routines for translation-file operations -----------------------------------
 // ----------------------------------------------------------------------------
 
-// cria arquivo de traducao de opcode
-// e inicializa variaveis de simulacao
+// creates the opcode translation file
+// and initializes the simulation variables
 void sim_init(int clk, int clk_n, int s_typ)
 {
-    // abre arquivo de traducao de opcode na pasta Temp
+    // open the opcode translation file in the Temp folder
     char path[1024];
     sprintf(path, "%s/trad_opcode.txt", temp_dir);
     f_tran  = fopen(path, "w");
 
-    clk_frq = clk;   // frequencia do clock  de simulacao
-    clk_num = clk_n; // numero de clocks a simular
-    sim_typ = s_typ; // tipo de simulacao (um proc ou multicore)
+    clk_frq = clk;   // simulation clock frequency
+    clk_num = clk_n; // number of clocks to simulate
+    sim_typ = s_typ; // simulation type (single-proc or multicore)
 }
 
-// adiciona opcode e operando no arquivo de traducao
+// appends an opcode and operand to the translation file
 void sim_add(char *opc, char *opr)
 {
     fprintf(f_tran , "%d %s %s\n", sim_n_opc++, opc, opr);
 }
 
-void sim_set_fim(int fim){sim_fim  = fim;} // define  endereco de @fim
-int  sim_get_fim(       ){return sim_fim;} // retorna endereco de @fim
-void sim_finish (       ){fclose(f_tran);} // fecha arquivo de traducao
+void sim_set_fim(int fim){sim_fim  = fim;} // sets the @fim address
+int  sim_get_fim(       ){return sim_fim;} // returns the @fim address
+void sim_finish (       ){fclose(f_tran);} // closes the translation file
 
 // ----------------------------------------------------------------------------
-// rotinas para acoes com variaveis do usuario --------------------------------
+// routines for user-variable operations --------------------------------------
 // ----------------------------------------------------------------------------
 
-// procura, no arquivo de log, se eh uma variavel declarada no codigo .cmm
-// se sim, cadastra ela para mostrar no simulador
+// checks the log file to see whether it's a variable declared in the .cmm code
+// if so, registers it for display in the simulator
 int sim_regi(char *va)
 {
     int  tipo;
@@ -205,8 +205,8 @@ int sim_regi(char *va)
     return tipo;
 }
 
-// procura, no arquivo cmm_log.txt, se eh um array declarado no codigo .cmm
-// se sim, cadastra ele para mostrar no simulador
+// checks cmm_log.txt to see whether it's an array declared in the .cmm code
+// if so, registers it for display in the simulator
 void sim_regi_arr(char *va)
 {
     int  tipo, size;
@@ -226,7 +226,7 @@ void sim_regi_arr(char *va)
     }
 }
 
-// pega conteudo da memoria
+// returns the memory contents
 void sim_mem(int addr, char *val)
 {
     char aux[256]; sprintf(aux, "%s/Hardware/%s_data.mif", proc_dir, prname);
@@ -247,13 +247,13 @@ void sim_mem(int addr, char *val)
     fclose(f_data);
 }
 
-char* sim_name    (int i){return s_name    [i];} // pega nome     da variavel
-int   sim_addr    (int i){return s_addr    [i];} // pega endereco da variavel
-int   sim_type    (int i){return s_type    [i];} // pega tipo     da variavel
-int   sim_cont    (     ){return s_count      ;} // pega numero   de variaveis registradas
+char* sim_name    (int i){return s_name    [i];} // returns the variable name
+int   sim_addr    (int i){return s_addr    [i];} // returns the variable address
+int   sim_type    (int i){return s_type    [i];} // returns the variable type
+int   sim_cont    (     ){return s_count      ;} // returns the number of registered variables
 
-char* sim_name_arr(int i){return s_name_arr[i];} // pega nome     do array
-int   sim_addr_arr(int i){return s_addr_arr[i];} // pega endereco do array
-int   sim_type_arr(int i){return s_type_arr[i];} // pega tipo     do array
-int   sim_cont_arr(     ){return s_count_arr  ;} // pega numero   de arrays registradas
-int   sim_size_arr(int i){return s_size_arr[i];} // pega tamanho  do array
+char* sim_name_arr(int i){return s_name_arr[i];} // returns the array name
+int   sim_addr_arr(int i){return s_addr_arr[i];} // returns the array address
+int   sim_type_arr(int i){return s_type_arr[i];} // returns the array type
+int   sim_cont_arr(     ){return s_count_arr  ;} // returns the number of registered arrays
+int   sim_size_arr(int i){return s_size_arr[i];} // returns the array size

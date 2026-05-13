@@ -1,23 +1,23 @@
 // ----------------------------------------------------------------------------
-// conversao e tratamento de dados --------------------------------------------
+// data conversion and handling -----------------------------------------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include   <math.h>
 #include <stdlib.h>
 #include <string.h>
 
-// includes locais
+// local includes
 #include "..\Headers\global.h"
 #include "..\Headers\data_use.h"
 #include "..\Headers\variaveis.h"
 
 // ----------------------------------------------------------------------------
-// conversao de dados ---------------------------------------------------------
+// data conversion ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// converte o inteiro x para binario de comprimento w
-// tentar mudar para conseguir converter int maior de 32 bits
+// converts the integer x to a binary string of length w
+// could be revised to support ints wider than 32 bits
 char *itob(int x, int w)
 {
 	int z;
@@ -39,27 +39,27 @@ char *itob(int x, int w)
 }
 
 // ----------------------------------------------------------------------------
-// funcoes auxiliares de acesso a terminais -----------------------------------
+// helper functions for accessing terminals -----------------------------------
 // ----------------------------------------------------------------------------
 
-// pega o tipo da variavel
+// gets the variable type
 int get_type(int et)
 {
     int t;
 
-         if (et <   OFST) t = 0; // indefinido
+         if (et <   OFST) t = 0; // undefined
     else if (et < 2*OFST) t = 1; // int
     else if (et < 3*OFST) t = 2; // float
     else if (et < 4*OFST) t = 3; // comp real
     else if (et < 5*OFST) t = 4; // comp img
-    else if (et < 6*OFST) t = 5; // comp const (ex: 3+7.5i)
+    else if (et < 6*OFST) t = 5; // comp const (e.g. 3+7.5i)
     else                  t =-1;
 
     return t;
 }
 
-// pega o id da parte imag de uma var complexa
-// a parte real esta no param id
+// gets the id of the imag part of a complex var
+// the real part is in the id parameter
 int get_img_id(int id)
 {
        char name[1024];
@@ -69,8 +69,8 @@ int get_img_id(int id)
     return find_var(name);
 }
 
-// separa a parte real e imaginaria de uma constante complexa
-// gerando duas entradas na tabela pra ponto flutuante
+// splits the real and imaginary parts of a complex constant
+// generating two floating-point entries in the table
 void get_cmp_cst(int et, int *et_r, int *et_i)
 {
     char  txt[64];
@@ -85,8 +85,8 @@ void get_cmp_cst(int et, int *et_r, int *et_i)
     *et_i = 2*OFST + exec_fnum(txt);
 }
 
-// gera ID estendido float pra parte real e imaginaria
-// de um num complexo na memoria
+// generates the extended float IDs for the real and imag parts
+// of a complex number in memory
 void get_cmp_ets(int et, int *et_r, int *et_i)
 {
     *et_r = 2*OFST + (et % OFST);

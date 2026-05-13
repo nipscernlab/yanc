@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// tratamento de interrupcao --------------------------------------------------
+// interrupt handling ---------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -8,12 +8,12 @@
 #include "..\Headers\global.h"
 #include "..\Headers\messages.h"
 
-int itr_ok = 0; // se ja usou ou nao interrupcao
+int itr_ok = 0; // tells whether an interrupt has already been used
 
-// gera diretiva #ITRAD
-// ainda tenho q checar os lugares q nao podem ter isso
-// ex: dentro de loop, dentro de switch case, pensar ...
-// talvez um warning ja sirva
+// emits the #ITRAD directive
+// still need to check the places where this is not allowed
+// e.g. inside a loop, inside a switch case, etc.
+// a warning may already be enough
 void dire_inter()
 {
     if (itr_ok == 1) {fprintf(stderr, MSG_ERR_DUP_INTERRUPT, line_num+1); exit(EXIT_FAILURE);}

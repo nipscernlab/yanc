@@ -1,20 +1,20 @@
 // ----------------------------------------------------------------------------
-// rotinas para manipular variaveis encontradas no arquivo .asm ---------------
+// routines for handling variables found in the .asm file ---------------------
 // ----------------------------------------------------------------------------
 
-#define NVARMAX 999999 // trocar para arrays dinamicos
+#define NVARMAX 999999 // switch to dynamic arrays later
 
-// includes globais
+// global includes
 #include  <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-// includes locais
+// local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// variaveis locais -----------------------------------------------------------
+// local variables ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 int  v_count = 0;
@@ -22,11 +22,11 @@ char v_name[NVARMAX][512];
 int  v_val [NVARMAX];
 
 // ----------------------------------------------------------------------------
-// rotinas de interface -------------------------------------------------------
+// interface routines ---------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// addiciona uma nova variavel na tabela
-// se o operando for uma constante, converte seu valor para binario ...
+// adds a new variable to the table
+// if the operand is a constant, converts its value to binary ...
 void var_add(char *var, int is_const)
 {
     if (v_count == NVARMAX)
@@ -35,14 +35,14 @@ void var_add(char *var, int is_const)
         exit(EXIT_FAILURE);
     }
 
-    // transforma char *var pra int val
+    // turn char *var into int val
     int   val;
     float delta;
     switch(is_const)
     {
-        case 0: val = 0;                break; // nao eh constante
-        case 1: val = atoi(var);        break; // constante tipo int
-        case 2: val = f2mf(var,&delta); break; // constante tipo float
+        case 0: val = 0;                break; // not a constant
+        case 1: val = atoi(var);        break; // int constant
+        case 2: val = f2mf(var,&delta); break; // float constant
     }
 
     strcpy(v_name [v_count], var);
@@ -50,9 +50,9 @@ void var_add(char *var, int is_const)
     v_count++;
 }
 
-// ve se uma variavel ja foi usado
-// se sim, pega o indice na tabela
-// se nao, retorna -1
+// checks whether a variable has already been used
+// if so, returns its index in the table
+// if not, returns -1
 int var_find(char *val)
 {
 	int i, ind = -1;
@@ -66,6 +66,6 @@ int var_find(char *val)
 	return ind;
 }
 
-void var_inc (int   val){v_count += val             ;} // incrementa o tamanho da memoria (para arrays)
-int  var_val (char *var){return v_val[var_find(var)];} // retorna o valor  da variavel
-int  var_cnt (         ){return v_count             ;} // retorna o numero de variaveis
+void var_inc (int   val){v_count += val             ;} // increments the memory size (for arrays)
+int  var_val (char *var){return v_val[var_find(var)];} // returns the variable's value
+int  var_cnt (         ){return v_count             ;} // returns the number of variables

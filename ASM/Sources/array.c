@@ -1,14 +1,14 @@
 // ----------------------------------------------------------------------------
-// tratamento de arrays em assembly -------------------------------------------
+// assembly array handling ----------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include <string.h>
 #include <stdlib.h>
 #include  <ctype.h>
 #include   <math.h>
 
-// includes locais
+// local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\eval.h"
 #include "..\Headers\array.h"
@@ -16,10 +16,10 @@
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// funcoes auxiliares ---------------------------------------------------------
+// helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// funcao auxiliar para remover aspas de uma string
+// helper to strip quotes from a string
 void rem_aspas(char *str)
 {
     int j = 0; char c;
@@ -27,23 +27,23 @@ void rem_aspas(char *str)
     str[j] = '\0';
 }
 
-// funcao auxiliar para verificar se o conteudo da linha de um arquivo eh um int valido
+// helper that checks whether a file line contains a valid int
 int linha_e_inteiro(char *linha, int idx, char *f_name)
 {
-    // primeiro checa formatacao ----------------------------------------------
+    // formatting check -------------------------------------------------------
 
-    // ignora espaços em branco no começo
+    // skip leading whitespace
     while (isspace((unsigned char)*linha)) linha++ ;
-    // se linha ta vazia, nao eh um inteiro valido
+    // empty line is not a valid integer
     if (*linha == '\0' || *linha == '\n') {fprintf(stderr, MSG_ERR_EMPTY_LINE, idx, f_name); exit(EXIT_FAILURE);}
-    // passa pelos caracteres dos numeros (incluindo sinal de negativo)
+    // walk over the numeric characters (including the negative sign)
     char *endptr; strtol(linha, &endptr, 10);
-    // verifica se o restante da string é só espaços
+    // make sure the remainder of the string is only whitespace
     while (isspace((unsigned char)*endptr)) endptr++;
-    // eh inteiro se não sobrou mais nada
+    // it's an integer if nothing else is left
     if (*endptr != '\0') {fprintf(stderr, MSG_ERR_INVALID_INT, idx, f_name); exit(EXIT_FAILURE);}
-    
-    // checa se o valor cabe no numero de bits --------------------------------
+
+    // check that the value fits in the bit count -----------------------------
 
     int max = (int) ( pow(2,nbmant+nbexpo+1-1)-1);
     int min = (int) (-pow(2,nbmant+nbexpo+1-1)  );
@@ -55,55 +55,55 @@ int linha_e_inteiro(char *linha, int idx, char *f_name)
     return num;
 }
 
-// funcao auxiliar para verificar se uma linha representa um float valido
+// helper that checks whether a line is a valid float
 int linha_e_float(char *linha, int idx, char *f_name, float *delta)
 {
-    // checa formatacao -------------------------------------------------------
-    
-    // ignora espaços em branco iniciais
+    // formatting check -------------------------------------------------------
+
+    // skip leading whitespace
     while (isspace((unsigned char)*linha)) linha++;
-    // linha vazia
+    // empty line
     if (*linha == '\0' || *linha == '\n') {fprintf(stderr, MSG_ERR_EMPTY_LINE, idx, f_name); exit(EXIT_FAILURE);}
-    // passa pelos caracteres dos numeros (incluindo sinal de negativo)
+    // walk over the numeric characters (including the negative sign)
     char *endptr; strtof(linha, &endptr);
-    // verifica se o restante da string é só espaços
+    // make sure the remainder of the string is only whitespace
     while (isspace((unsigned char)*endptr)) endptr++;
-    // eh float se nao sobrou mais nada
+    // it's a float if nothing else is left
     if (*endptr != '\0') {fprintf(stderr, MSG_ERR_INVALID_FLOAT, idx, f_name); exit(EXIT_FAILURE);}
 
-    // verifica limites -------------------------------------------------------
+    // range check ------------------------------------------------------------
 
-    float max = (float)((pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1)); // maior valor possivel em modulo
-    float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // menor valor possivel em modulo
-    float num = (atof(linha)<0.0) ? -atof(linha) : atof(linha);         //       valor do num   em modulo
+    float max = (float)((pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1)); // largest representable magnitude
+    float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // smallest representable magnitude
+    float num = (atof(linha)<0.0) ? -atof(linha) : atof(linha);         // absolute value of the number
 
     if (num < min && num != 0.0) {fprintf(stderr, MSG_ERR_FLOAT_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
     if (num > max)               {fprintf(stderr, MSG_ERR_FLOAT_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
 
-    // converte e calcula residuo ---------------------------------------------
+    // convert and compute the residual ---------------------------------------
 
     return f2mf(linha,delta);
 }
 
-// função auxiliar para verificar e extrair um float válido
-// usado pra ler variaveis tipo comp de arquivo
+// helper that validates and extracts a float
+// used when reading comp variables from a file
 int parse_float(const char *str, float *out_value, const char **out_end)
 {
     char *endptr;
 
-    float val = strtof(str, &endptr); // tenta converter
-    if (str  == endptr)     return 0; // falha na conversão
-    *out_value =    val;              // pega o valor convertido
-    *out_end   = endptr;              // aponta para o proximo caractere da linha
-                            return 1; // conversao ok
+    float val = strtof(str, &endptr); // try to convert
+    if (str  == endptr)     return 0; // conversion failed
+    *out_value =    val;              // grab the converted value
+    *out_end   = endptr;              // points to the next character in the line
+                            return 1; // conversion ok
 }
 
-// funcao auxiliar para separar a parte real e imaginaria de um comp
+// helper to split a comp's real and imaginary parts
 void separar_complexo(const char *entrada, char *real, char *imag) {
     char buffer[100];
     int j = 0;
 
-    // Remover espaços
+    // strip whitespace
     for (int i = 0; entrada[i] != '\0'; i++) {
         if (!isspace((unsigned char)entrada[i])) {
             buffer[j++] = entrada[i];
@@ -111,9 +111,9 @@ void separar_complexo(const char *entrada, char *real, char *imag) {
     }
     buffer[j] = '\0';
 
-    // Procurar último '+' ou '-' que separa real de imaginário
+    // find the last '+' or '-' that splits real from imaginary
     int pos = -1;
-    for (int i = 1; buffer[i] != '\0'; i++) { // pular índice 0 para não confundir sinal da parte real
+    for (int i = 1; buffer[i] != '\0'; i++) { // skip index 0 to avoid confusing it with the real part's sign
         if (buffer[i] == '+' || buffer[i] == '-') {
             pos = i;
         }
@@ -126,11 +126,11 @@ void separar_complexo(const char *entrada, char *real, char *imag) {
         return;
     }
 
-    // Copiar parte real
+    // copy the real part
     strncpy(real, buffer, pos);
     real[pos] = '\0';
 
-    // Copiar parte imaginária (sem o 'i')
+    // copy the imaginary part (without the 'i')
     strcpy(imag, buffer + pos);
     size_t len = strlen(imag);
     if (len > 0 && imag[len - 1] == 'i') {
@@ -138,72 +138,72 @@ void separar_complexo(const char *entrada, char *real, char *imag) {
     }
 }
 
-// funcao auxiliar para verificar se uma linha contém um comp valido
+// helper that checks whether a line contains a valid comp
 int linha_e_comp(const char *linha, int idx, char *f_name, float *delta)
 {
     const char *p = linha;
     float f1, f2;
 
-    // checa formatacao -------------------------------------------------------
+    // formatting check -------------------------------------------------------
 
-    // Ignora espaços
+    // skip whitespace
     while (isspace((unsigned char)*p)) p++;
-    // Primeiro float
+    // first float
     if (!parse_float(p, &f1, &p)) {fprintf(stderr, MSG_ERR_INVALID_COMP, idx, f_name); exit(EXIT_FAILURE);}
-    // Ignora espaços
+    // skip whitespace
     while (isspace((unsigned char)*p)) p++;
-    // Segundo float
+    // second float
     if (!parse_float(p, &f2, &p)) {fprintf(stderr, MSG_ERR_INVALID_COMP, idx, f_name); exit(EXIT_FAILURE);}
-    // se o proximo caractere nao for a letra i, retorna
+    // if the next character is not 'i', bail out
     if (*p != 'i')                {fprintf(stderr, MSG_ERR_INVALID_COMP, idx, f_name); exit(EXIT_FAILURE);}
-    // incrementa o ponteiro do ´i´
+    // advance past the 'i'
     p++;
-    // Ignora espaços
+    // skip whitespace
     while (isspace((unsigned char)*p)) p++;
-    // se sobrou algo na linha, nao eh comp valido
+    // if anything else remains on the line, it's not a valid comp
     if (*p != '\0')               {fprintf(stderr, MSG_ERR_INVALID_COMP, idx, f_name); exit(EXIT_FAILURE);}
 
-    // verifica limites -------------------------------------------------------
+    // range check ------------------------------------------------------------
 
-    float max = (float)((pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1)); // maior valor possivel em modulo
-    float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // menor valor possivel em modulo
+    float max = (float)((pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1)); // largest representable magnitude
+    float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // smallest representable magnitude
     char  real [64], imag[64];
 
     separar_complexo(linha, real, imag);
 
-    // parte real
-    float num = (atof(real)<0.0) ? -atof(real) : atof(real); // valor da parte realem modulo
+    // real part
+    float num = (atof(real)<0.0) ? -atof(real) : atof(real); // absolute value of the real part
     if (num < min && num != 0.0) {fprintf(stderr, MSG_ERR_COMP_REAL_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
     if (num > max)               {fprintf(stderr, MSG_ERR_COMP_REAL_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
 
-    // parte imaginaria
-        num = (atof(imag)<0.0) ? -atof(imag) : atof(imag); // valor da parte imaginaria em modulo
+    // imaginary part
+        num = (atof(imag)<0.0) ? -atof(imag) : atof(imag); // absolute value of the imaginary part
     if (num < min && num != 0.0) {fprintf(stderr, MSG_ERR_COMP_IMAG_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
     if (num > max)               {fprintf(stderr, MSG_ERR_COMP_IMAG_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
 
-    // converte e calcula residuo da parte real -------------------------------
+    // convert the real part and compute the residual -------------------------
 
     return f2mf(real,delta);
 }
 
-// funcao auxiliar para preencher array na memoria de dados
-// usado com inicializacao de array (ex: int x[10] "nome do arquivo")
-// f_name  -> nome do arquivo a ser lido
-// tam     -> tamanho do arquivo
-// fil_typ -> tipo de dado
-// f_data  -> arquivo da memoria de dados
+// helper that fills an array in data memory
+// used for array initialization (e.g. int x[10] "filename")
+// f_name  -> name of the file to read
+// tam     -> file size
+// fil_typ -> data type
+// f_data  -> data-memory file
 void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
 {
-    // informa que o array vai ser preenchido ---------------------------------
+    // announce that the array will be filled ---------------------------------
 
     if (fil_typ != 4) printf(MSG_INFO_FILL_ARRAY, tam, f_name);
 
-    // abre o arquivo para leitura -------------------------------------------
-    
+    // open the file for reading ----------------------------------------------
+
     rem_aspas(f_name);
 
     char path[2048];
-    // verifica se é LUT na pasta Macros
+    // check if it's a LUT in the Macros folder
     if (f_name[0]=='$')
         sprintf(path, "%s/%s"          , mac_dir, f_name+1);
     else
@@ -212,7 +212,7 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
     FILE *f_file =        fopen  (path  , "r");
     if   (f_file == NULL){fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path); exit(EXIT_FAILURE);}
 
-    // agora le o arquivo -----------------------------------------------------
+    // now read the file ------------------------------------------------------
 
     int  val;
     char linha[128];
@@ -226,58 +226,58 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
     {
         i++;
 
-        // se for tipo int
+        // int type
         if (fil_typ == 1) val = linha_e_inteiro(linha,i,f_name);
 
-        // se for tipo float
+        // float type
         if (fil_typ == 2)
         {
             val = linha_e_float(linha,i,f_name,&delta);
-            // guarda o maior erro de aproximacao
+            // keep track of the largest approximation error
             if (fabs(delta) > fabs(dmax)) {dmax = delta; idx = i;}
         }
 
-        // se for a parte real de um comp
+        // real part of a comp
         if (fil_typ == 3)
         {
             val = linha_e_comp(linha,i,f_name,&delta);
-            // guarda o maior erro de aproximacao
+            // keep track of the largest approximation error
             if (fabs(delta) > fabs(dmax)) {dmax = delta; idx = i;}
         }
 
-        // se for a parte imaginaria de um comp
+        // imaginary part of a comp
         if (fil_typ == 4)
         {
             separar_complexo(linha, real, imag);
             val = f2mf(imag,&delta);
-            // guarda o maior erro de aproximacao
+            // keep track of the largest approximation error
             if (fabs(delta) > fabs(dmax)) {dmax = delta; idx = i;}
         }
 
-        // se tem mais dados do que o necessario, da um warning e sai
+        // if there are more values than needed, emit a warning and bail out
         if (i > tam)
         {
             fprintf(stdout, MSG_WARN_EXTRA_LINES, i-tam, f_name);
             break;
         }
-        // senao, preenche a memoria com o novo valor
+        // otherwise, fill the memory with the new value
         else
             fprintf(f_data, "%s\n", itob(val,nubits));
     }
 
-    // se tem menos dados do que o necessario, gera um erro
+    // if there are fewer values than needed, raise an error
     if ((i < tam) && (fil_typ != 4))
         {fprintf(stderr, MSG_ERR_MISSING_LINES, tam-i, f_name); exit(EXIT_FAILURE);}
 
-    // informa o maior erro de aproximacao pra float
+    // report the largest approximation error for float
     if (fil_typ == 2 && dmax != 0.0)
         printf(MSG_INFO_APPROX_ERR, f_name, dmax, idx);
 
-    // informa o maior erro de aproximacao pra real do comp
+    // report the largest approximation error for the real part of comp
     if (fil_typ == 3 && dmax != 0.0)
         printf(MSG_INFO_APPROX_ERR_REAL, f_name, dmax, idx);
 
-    // informa o maior erro de aproximacao pra imag do comp
+    // report the largest approximation error for the imaginary part of comp
     if (fil_typ == 4 && dmax != 0.0)
         printf(MSG_INFO_APPROX_ERR_IMAG, f_name, dmax, idx);
 
@@ -285,24 +285,24 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
 }
 
 // ----------------------------------------------------------------------------
-// funcoes de manipulacao de arrays -------------------------------------------
+// array manipulation functions -----------------------------------------------
 // ----------------------------------------------------------------------------
 
-// adiciona array na memoria de dados
-// se for array normal (f_name = ""), completa com zero
-// se for array inicializado, chama fill_mem para preencher
+// adds an array to data memory
+// for a regular array (f_name = ""), fills with zeros
+// for an initialized array, calls fill_mem to populate it
 void arr_add(int size, int type, char *f_name, FILE *f_data)
 {
-    // incrementa o tamanho da memoria de acordo
+    // increment memory size accordingly
     var_inc(size-1);
-    // se nao tem arquivo, preenche com zero
+    // no file: fill with zeros
     if (strcmp(f_name, "") == 0)
         for (int i = 0; i < size; i++)
         {
             if (type > 1)
-                fprintf(f_data, "%s\n", itob(f2mf("0.0",NULL), nubits)); // se for float ou comp, inicializa com 0.0
+                fprintf(f_data, "%s\n", itob(f2mf("0.0",NULL), nubits)); // float or comp: initialize with 0.0
             else
-                fprintf(f_data, "%s\n", itob(0,nubits));                 // se for int, inicializa com 0
+                fprintf(f_data, "%s\n", itob(0,nubits));                 // int: initialize with 0
         }
     else
         fill_mem(f_name, size, type, f_data);

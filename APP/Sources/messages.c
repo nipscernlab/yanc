@@ -1,15 +1,15 @@
 // ----------------------------------------------------------------------------
-// suporte bilingue PT/EN para as mensagens do appcomp ------------------------
+// PT/EN bilingual support for appcomp messages -------------------------------
 // ----------------------------------------------------------------------------
 
 #include <string.h>
 
 #include "..\Headers\messages.h"
 
-int lang_en = 0; // default: portugues
+int lang_en = 0; // default: Portuguese
 
-// procura -en/-pt em argv, seta lang_en e remove a flag
-// mantem o resto dos argumentos na ordem original
+// scans argv for -en/-pt, sets lang_en and removes the flag
+// preserves the remaining arguments in their original order
 void parse_lang_flag(int *argc, char **argv)
 {
     int w = 1;

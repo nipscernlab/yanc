@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// gera labels em assembly pras instrucoes de salto ---------------------------
+// generates assembly labels for the jump instructions ------------------------
 // ----------------------------------------------------------------------------
 
 #define LABMAX 99999
@@ -10,16 +10,16 @@
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// variaveis locais -----------------------------------------------------------
+// local variables ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 int stk_ind = 0;
 int lab_cnt = 0;
 int lab_stk[LABMAX];
-int lab_typ[LABMAX]; // 0 para if/else e 1 para while
+int lab_typ[LABMAX]; // 0 for if/else and 1 for while
 
 // ----------------------------------------------------------------------------
-// funcoes de interface -------------------------------------------------------
+// interface functions --------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 int push_lab(int typ)
@@ -49,7 +49,7 @@ int get_lab()
     return lab_stk[stk_ind-1];
 }
 
-// pega o indice do while mais recente na pilha (ou 0 se nao existir)
+// returns the index of the most recent while on the stack (or 0 if none)
 int get_while()
 {
     int i = stk_ind-1;
@@ -57,7 +57,7 @@ int get_while()
     return i+1;
 }
 
-// pega o indice do if/else mais recente na pilha (ou 0 se nao existir)
+// returns the index of the most recent if/else on the stack (or 0 if none)
 int get_if()
 {
     int i = stk_ind-1;

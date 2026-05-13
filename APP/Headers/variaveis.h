@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
-// tabela de variaveis --------------------------------------------------------
+// variable table -------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-void var_add(char *va, int size); // adiciona variaveis e arrays
-int  var_cnt();                   // pega o numero total de variaveis
+void var_add(char *va, int size); // adds variables and arrays
+int  var_cnt();                   // returns the total number of variables

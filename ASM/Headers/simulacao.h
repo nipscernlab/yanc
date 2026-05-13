@@ -1,35 +1,35 @@
 // ----------------------------------------------------------------------------
-// rotinas para simulacao com o iverilog/gtkwave ------------------------------
+// routines for simulation with iverilog/gtkwave ------------------------------
 // ----------------------------------------------------------------------------
 
-// acessa parametros da simulacao ---------------------------------------------
+// access to simulation parameters --------------------------------------------
 
-int   sim_clk    ();                                // pega frequencia do clock de simulacao
-int   sim_clk_num();                                // pega numero de clocks a simular
-int   sim_multi  ();                                // pega tipo de simulacao (um proc ou multicore)
+int   sim_clk    ();                                // returns the simulation clock frequency
+int   sim_clk_num();                                // returns the number of clocks to simulate
+int   sim_multi  ();                                // returns the simulation type (single-proc or multicore)
 
-// acoes com o arquivo de traducao --------------------------------------------
+// translation file operations ------------------------------------------------
 
-void  sim_init   (int   clk, int clk_n, int s_typ); // cria arquivo de traducao
-void  sim_add    (char *opc, char *opr);            // adiciona opcode e operando
-void  sim_set_fim(int   fim);                       // define  endereco de @fim
-int   sim_get_fim();                                // retorna endereco de @fim
-void  sim_finish ();                                // fecha arquivo de traducao
+void  sim_init   (int   clk, int clk_n, int s_typ); // creates the translation file
+void  sim_add    (char *opc, char *opr);            // adds an opcode and operand
+void  sim_set_fim(int   fim);                       // sets the @fim address
+int   sim_get_fim();                                // returns the @fim address
+void  sim_finish ();                                // closes the translation file
 
-// acoes com variaveis do usuario ---------------------------------------------
+// user variable operations ---------------------------------------------------
 
-int   sim_regi   (char *va);                        // registra         variavel
-char* sim_name   (int    i);                        // pega nome     da variavel
-int   sim_addr   (int    i);                        // pega endereco da variavel
-int   sim_type   (int    i);                        // pega tipo     da variavel
-int   sim_cont   (        );                        // pega numero   de variaveis registradas
-void  sim_mem    (int addr, char *var);             // pega conteudo da memoria
+int   sim_regi   (char *va);                        // registers a variable
+char* sim_name   (int    i);                        // gets the variable name
+int   sim_addr   (int    i);                        // gets the variable address
+int   sim_type   (int    i);                        // gets the variable type
+int   sim_cont   (        );                        // gets the number of registered variables
+void  sim_mem    (int addr, char *var);             // gets the memory contents
 
-// acoes com arrays do usuario ---------------------------------------------
+// user array operations ------------------------------------------------------
 
-void  sim_regi_arr(char *va);                       // registra         array
-char* sim_name_arr(int    i);                       // pega nome     do array
-int   sim_addr_arr(int    i);                       // pega endereco do array
-int   sim_type_arr(int    i);                       // pega tipo     do array
-int   sim_cont_arr(        );                       // pega numero   de arrays registradas
-int   sim_size_arr(int    i);                       // pega tamanho do array
+void  sim_regi_arr(char *va);                       // registers an array
+char* sim_name_arr(int    i);                       // gets the array name
+int   sim_addr_arr(int    i);                       // gets the array address
+int   sim_type_arr(int    i);                       // gets the array type
+int   sim_cont_arr(        );                       // gets the number of registered arrays
+int   sim_size_arr(int    i);                       // gets the array size

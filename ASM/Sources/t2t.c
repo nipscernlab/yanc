@@ -1,19 +1,19 @@
 // ----------------------------------------------------------------------------
-// rotinas de conversao entre tipos de dados ----------------------------------
+// data-type conversion routines ----------------------------------------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include <string.h>
 #include <stdlib.h>
 #include  <stdio.h>
 #include   <math.h>
 
-// includes locais
+// local includes
 #include "..\Headers\eval.h"
 
-// converte o inteiro x para binario de comprimento w
-// tentar mudar para conseguir converter int maior que 32 bits
-// uma forma de mudar eh usar ascii pra x tambem
+// converts the integer x to a binary string of length w
+// could be revised to support ints wider than 32 bits
+// one way would be to switch x to an ascii representation as well
 char *itob(int x, int w)
 {
 	int z;
@@ -34,8 +34,8 @@ char *itob(int x, int w)
     return b;
 }
 
-// converte float ieee 32 bits para meu float
-// tentar mudar pra converter float de 64 bits
+// converts an IEEE-754 32-bit float to "my float"
+// could be revised to convert 64-bit floats too
 unsigned int f2mf(char *va, float *delta)
 {
     float f = atof(va);
@@ -44,17 +44,17 @@ unsigned int f2mf(char *va, float *delta)
 
     int *ifl = (int*)&f;
 
-    // desempacota padrao IEEE ------------------------------------------------
+    // unpack standard IEEE ---------------------------------------------------
 
     int s =  (*ifl >> 31) & 0x00000001;
     int e = ((*ifl >> 23) & 0xFF) - 127 - 22;
     int m = ((*ifl & 0x007FFFFF) + 0x00800000) >> 1;
 
-    // sinal ------------------------------------------------------------------
+    // sign -------------------------------------------------------------------
 
     s = s << (nbmant + nbexpo);
 
-    // expoente ---------------------------------------------------------------
+    // exponent ---------------------------------------------------------------
 
     e = e + (23-nbmant);
 
@@ -69,37 +69,37 @@ unsigned int f2mf(char *va, float *delta)
 
     if (nbmant == 23)
     {
-        if (*ifl & 0x00000001) m = m+1; // arredonda
+        if (*ifl & 0x00000001) m = m+1; // round
     }
     else
     {
         sh = 23-nbmant+sh;
-        int carry = (m >> (sh-1)) & 0x00000001; // carry de arredondamento
+        int carry = (m >> (sh-1)) & 0x00000001; // rounding carry
         m = m >> sh;
-        if (carry) m = m+1; // arredonda
+        if (carry) m = m+1; // round
     }
 
-    // calcula residuo --------------------------------------------------------
-    
-    float num = (atof(va)<0.0) ? -atof(va) : atof(va); // valor do numero em modulo
+    // residual ---------------------------------------------------------------
+
+    float num = (atof(va)<0.0) ? -atof(va) : atof(va); // absolute value of the number
     *delta = m*pow(2,e)-num;
 
-    // junta tudo -------------------------------------------------------------
-    
+    // assemble ---------------------------------------------------------------
+
     e = e & ((int)(pow(2,nbexpo)-1));
     e = e << nbmant;
 
     return s + e + m;
 }
 
-// converte meu float (em ascii) para float
+// converts "my float" (as ascii) back to float
 float mf2f(char *ifl)
 {
-    // sinal ------------------------------------------------------------------
+    // sign -------------------------------------------------------------------
 
     int s = ifl[0] == '1';
 
-    // expoente ---------------------------------------------------------------
+    // exponent ---------------------------------------------------------------
 
     char exb[64]; for (int i=0;i<nbexpo;i++) exb[i] = ifl[i+1]; exb[nbexpo]=0;
 
@@ -116,7 +116,7 @@ float mf2f(char *ifl)
 
     int  m = strtol(mab,&endp,2);
 
-    // gera o float -----------------------------------------------------------
+    // build the float --------------------------------------------------------
 
     float  f = m * pow(2,e);
     if (s) f = -f;

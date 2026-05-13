@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
-// tratamento de arrays em assembly -------------------------------------------
+// assembly array handling ----------------------------------------------------
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
 
-// adiciona array na memoria de dados
-// se for array normal (f_name = ""), completa com zero
-// se for array inicializado, chama fill_mem para preencher
+// adds an array to data memory
+// for a regular array (f_name = ""), fills it with zeros
+// for an initialized array, calls fill_mem to populate it
 void arr_add(int size, int type, char *f_name, FILE *f_data);

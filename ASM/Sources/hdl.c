@@ -1,14 +1,14 @@
 // ----------------------------------------------------------------------------
-// rotinas para geracao dos arquivos .v ---------------------------------------
+// routines for generating the .v files ---------------------------------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include <string.h>
 #include <stdlib.h>
 #include  <stdio.h>
 #include   <math.h>
 
-// includes locais
+// local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\eval.h"
 #include "..\Headers\opcodes.h"
@@ -16,20 +16,20 @@
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
-// funcoes auxiliares ---------------------------------------------------------
+// helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// troca \ por / em um path
+// replaces \ with / on a path
 void force_rightbar(char *str){while (*str) {if (*str == '\\') *str = '/'; str++;}}
 
 // ----------------------------------------------------------------------------
-// gera arquivo verilog com uma instancia do processador ----------------------
+// generates the verilog file with a processor instance -----------------------
 // ----------------------------------------------------------------------------
 
 void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
 {
     // ------------------------------------------------------------------------
-    // cria o arquivo .v para escrita -----------------------------------------
+    // create the .v file for writing -----------------------------------------
     // ------------------------------------------------------------------------
 
     char    tmp[512];
@@ -38,71 +38,71 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     FILE *f_veri = fopen(tmp,"w");
 
     // ------------------------------------------------------------------------
-    // cria cabecalho e portas do modulo --------------------------------------
+    // write the module header and ports --------------------------------------
     // ------------------------------------------------------------------------
 
     int comma;
     int nbioin = (nuioin > 1) ? (int)ceil(log2(nuioin)) : 1;
     int nbioou = (nuioou > 1) ? (int)ceil(log2(nuioou)) : 1;
 
-    // o comeco eh padrao ....
+    // the prologue is fixed ....
     fprintf(f_veri, "module %s (\n\n", prname);
     fprintf(f_veri, "input  clk, rst,\n");
 
-    // verifica se precisa adicionar barramento de entrada in
+    // check whether the 'in' input bus needs to be added
     if (nuioin > 0 && opc_inn()) fprintf(f_veri, "input  signed [%d:0] in ,\n", nubits-1);
-    // sempre adiciona o barramento de saida out
-    /*tem que ter alguma saida*/ fprintf(f_veri, "output signed [%d:0] out"   , nubits-1); comma = 0;
+    // always add the 'out' output bus
+    /*needs at least one output*/ fprintf(f_veri, "output signed [%d:0] out"   , nubits-1); comma = 0;
 
-    // verifica se pode ter mais alguma coisa depois pra colocar uma virgula
+    // check whether anything else may come next, to add a trailing comma
     if ((nuioin > 0 && opc_inn()) || (nuioou > 0 && opc_out()) || (itr_addr != 0)) {fprintf(f_veri, ",\n"); comma = 1;}
 
-    // verifica se vai ter que adicionar controle pra porta de entrada
+    // check whether input-port control needs to be added
     if (nuioin > 0 && opc_inn()) {fprintf(f_veri, "output [%d:0] req_in", nuioin-1); comma = 0;}
 
-    // verifica se pode ter mais alguma coisa depois pra colocar uma virgula
+    // check whether anything else may come next, to add a trailing comma
     if ((nuioou > 0 && opc_out()) || (itr_addr != 0)) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
 
-    // verifica se vai ter que adicionar controle pra porta de saida
+    // check whether output-port control needs to be added
     if (nuioou > 0 && opc_out()) {fprintf(f_veri, "output [%d:0] out_en", nuioou-1); comma = 0;}
 
-    // verifica se pode ter mais alguma coisa depois pra colocar uma virgula
+    // check whether anything else may come next, to add a trailing comma
     if ((itr_addr != 0)) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
 
-    // verifica se vai ter que adicionar pino de interrupcao
+    // check whether the interrupt pin needs to be added
     if (itr_addr != 0) fprintf(f_veri, "input  itr);\n\n"); else fprintf(f_veri, ");\n\n");
 
     // ------------------------------------------------------------------------
-    // wires de interface com I/O ---------------------------------------------
+    // I/O interface wires ----------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // se nao tem barramento de entrada, precisa criar um wire pra ligar a toa no processador
+    // no input bus: a wire is needed so it can be tied off into the processor
     if (nuioin == 0 || !opc_inn()) fprintf(f_veri, "wire [%d:0] in;\n", nubits-1);
 
-    // se nao tem pino de interrupcao, precisa criar um wire pra ligar no processador
+    // no interrupt pin: a wire is needed for the processor connection
     if (itr_addr == 0) fprintf(f_veri, "wire itr = 1'b0;\n");
 
-    // sempre precisa pra ligar no processador
+    // always needed for the processor connection
     fprintf(f_veri, "wire proc_req_in, proc_out_en;\n");
 
-    // sempre precisa pra ligar no processador
+    // always needed for the processor connection
     fprintf(f_veri, "wire [%d:0] addr_in;\n"   , nbioin-1);
     fprintf(f_veri, "wire [%d:0] addr_out;\n\n", nbioou-1);
 
     // ------------------------------------------------------------------------
-    // wires de interface com simulacao ---------------------------------------
+    // simulation interface wires ---------------------------------------------
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "`ifdef __ICARUS__\n");
-    // acesso as variaveis na memoria de dados
+    // access to the variables in data memory
     fprintf(f_veri, "wire mem_wr;\n");
     fprintf(f_veri, "wire [%d:0] mem_addr_wr;\n" , (int)ceil(log2(n_dat)-1));
-    // acesso ao indice da instrucao no program counter
+    // access to the instruction index in the program counter
     fprintf(f_veri, "wire [%d:0] pc_sim_val;\n"  , (int)ceil(log2(n_ins)-1));
     fprintf(f_veri, "`endif\n\n");
 
     // ------------------------------------------------------------------------
-    // parametros do processador ----------------------------------------------
+    // processor parameters ---------------------------------------------------
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "processor#(.NUBITS(%d),\n", nubits);
@@ -118,21 +118,21 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     fprintf(f_veri,            ".NBIOOU(%d),\n", nbioou);
     fprintf(f_veri,            ".FFTSIZ(%d),\n", fftsiz);
 
-    // se tem interrupcao, coloca o endereco dela no processador
+    // if there's an interrupt, set its address on the processor
     if (itr_addr != 0) fprintf(f_veri, ".ITRADD(%d),\n", itr_addr);
 
     // ------------------------------------------------------------------------
-    // alocacao dinamica de recursos ------------------------------------------
+    // dynamic resource allocation --------------------------------------------
     // ------------------------------------------------------------------------
 
     for (int i = 0; i < opc_cnt(); i++) fprintf(f_veri, ".%s(1),\n", opc_get(i));
 
-    // essa conta ta aproximada, mas é melhor que nada
+    // this estimate is rough, but it's better than nothing
     printf(MSG_INFO_ISA_USAGE, opc_cnt()*100/102);
-    printf(MSG_INFO_ULA_USAGE, opc_ucnt()*100/(49-15)); // 49 no mux, 15 repetidos ou sem uso
+    printf(MSG_INFO_ULA_USAGE, opc_ucnt()*100/(49-15)); // 49 in the mux, 15 duplicated or unused
 
     // ------------------------------------------------------------------------
-    // finalizacao da instancia do processador --------------------------------
+    // finalize the processor instance ----------------------------------------
     // ------------------------------------------------------------------------
 
     char path[1024]; sprintf(path, "%s/Hardware/%s", proc_dir, prname); force_rightbar(path);
@@ -146,42 +146,42 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     fprintf(f_veri, "`endif\n\n");
 
     // ------------------------------------------------------------------------
-    // decodificadores de endereco de I/O -------------------------------------
+    // I/O address decoders ---------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // verifica se precisa de decodificador de endereco pra portas de entrada
+    // check whether an address decoder is needed for the input ports
     if (opc_inn())
     {
-        // se for soh uma porta, liga direto no proc_req_in
+        // single port: hook it straight to proc_req_in
         if (nuioin == 1) fprintf(f_veri, "assign req_in = proc_req_in;\n"                            , nuioin);
         else             fprintf(f_veri, "addr_dec #(%d) dec_in (proc_req_in, addr_in , req_in);\n"  , nuioin);
     }
-    
-    // verifica se precisa de decodificador de endereco pra portas de saida
+
+    // check whether an address decoder is needed for the output ports
     if (opc_out())
     {
-        // se for soh uma porta, liga direto no proc_out_en
+        // single port: hook it straight to proc_out_en
         if (nuioou == 1) fprintf(f_veri, "assign out_en = proc_out_en;\n\n"                          , nuioou);
         else             fprintf(f_veri, "addr_dec #(%d) dec_out(proc_out_en, addr_out, out_en);\n\n", nuioou);
     }
 
     // ------------------------------------------------------------------------
-    // inicio de interface com simulacao (iverilog+gtkwave) -------------------
+    // simulation interface start (iverilog+gtkwave) --------------------------
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "// ----------------------------------------------------------------------------\n");
-    fprintf(f_veri, "// Simulacao ------------------------------------------------------------------\n");
+    fprintf(f_veri, "// Simulation -----------------------------------------------------------------\n");
     fprintf(f_veri, "// ----------------------------------------------------------------------------\n\n");
 
     fprintf(f_veri, "`ifdef __ICARUS__\n\n");
 
     // ------------------------------------------------------------------------
-    // cadastra portas de I/O para simulacao ----------------------------------
+    // register I/O ports for the simulation ----------------------------------
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "// I/O ------------------------------------------------------------------------\n\n");
 
-    // cadastra portas de entrada pra simulacao
+    // register input ports for the simulation
     for(int i=0; i<nuioin; i++)
     {
         if (inn_used(i))
@@ -192,7 +192,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     }
     if (opc_inn()) fprintf(f_veri,"\n");
 
-    // cadastra portas de saida pra simulacao
+    // register output ports for the simulation
     for(int i=0;i<nuioou;i++)
     {
         if (out_used(i))
@@ -202,7 +202,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
         }
     }
 
-    // decodifica porta de entrada
+    // decode input ports
     if (opc_inn())
     {
         if (nuioin > 0) fprintf(f_veri, "\nalways @ (*) begin\n");
@@ -218,7 +218,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
         if (nuioin > 0) fprintf(f_veri, "end\n");
     }
 
-    // decodifica portas de saida
+    // decode output ports
     if (opc_out())
     {
         if (nuioou > 0) fprintf(f_veri, "\nalways @ (*) begin\n");
@@ -235,57 +235,57 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     }
 
     // ------------------------------------------------------------------------
-    // cadastra variaveis do usuario para simulacao ---------------------------
+    // register user variables for the simulation -----------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_veri, "// variaveis ------------------------------------------------------------------\n\n");
+    fprintf(f_veri, "// variables ------------------------------------------------------------------\n\n");
 
     int has_float = 0;
-    // cria um registrador para cada variavel encontrada
+    // create a register for each found variable
     for (int i = 0; i < sim_cont(); i++)
     {
-        // se for int, usa o tipo de dado reg na simulacao
+        // int: use the reg data type in the simulation
         if (sim_type(i) == 1)
         {
             fprintf(f_veri, "reg [%d:0] %s = 0;\n", nubits-1, sim_name(i));
         }
 
-        // se for float, usa o tipo de dado real na simulacao
+        // float: use the real data type in the simulation
         if (sim_type(i) == 2)
         {
-            // se for a primeira variavel float, cria os auxiliares
+            // first float variable: emit the helpers
             if (has_float == 0)
             {
                 has_float = 1;
                 fprintf(f_veri, "integer sm_me2; always @ (*) sm_me2 = (out[%d]) ? -out[%d:0] : out[%d:0];\n", nbmant+nbexpo  , nbmant-1, nbmant-1);
                 fprintf(f_veri, "integer  e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]);\n"               , nbmant+nbexpo-1, nbmant);
             }
-            // cria a variavel real com valor inicial 0.0
+            // create the real variable with initial value 0.0
             fprintf(f_veri, "real %s = 0.0;\n", sim_name(i));
         }
 
-        // se for comp, usa tipo de dado reg na simulacao
+        // comp: use reg in the simulation
         if (sim_type(i) > 2)
         {
-            // esta funcionando com dx, mas deveria ser o equivalente de 0.0 em binario
-            // testar com itob(f2mf("0.0",NULL), nubits)
+            // currently using dx, but it should be the binary equivalent of 0.0
+            // try it with itob(f2mf("0.0",NULL), nubits)
             fprintf(f_veri, "reg [%d:0] %s = %d'dx;\n", nubits-1, sim_name(i), nubits-1);
         }
     }
-    
-    // inicia o always para registrar as variaveis
+
+    // begin the always block that registers the variables
     fprintf(f_veri, "\nalways @ (posedge clk) begin\n");
-    // registra cada variavel, dependendo do endereco de cada uma
+    // register each variable based on its address
     for (int i = 0; i < sim_cont(); i++)
     {
         if (sim_type(i) == 1) fprintf(f_veri, "   if (mem_addr_wr == %d && mem_wr) %s <= out;\n"                   , sim_addr(i), sim_name(i));
         if (sim_type(i) == 2) fprintf(f_veri, "   if (mem_addr_wr == %d && mem_wr) %s <= sm_me2*$pow(2.0,e_me2);\n", sim_addr(i), sim_name(i));
-        if (sim_type(i) >  2) fprintf(f_veri, "   if (mem_addr_wr == %d && mem_wr) %s <= out;\n"                   , sim_addr(i), sim_name(i));  
+        if (sim_type(i) >  2) fprintf(f_veri, "   if (mem_addr_wr == %d && mem_wr) %s <= out;\n"                   , sim_addr(i), sim_name(i));
     }
     fprintf(f_veri, "end\n\n");
 
-    // se a variavel for comp ...
-    // junta a parte real e imag em uma variavel do dobro de tamanho
+    // for comp variables ...
+    // combine real and imag parts into a variable twice the width
     char ni[64],nj[64],im[64];
     int has_comp = 0;
     for (int i = 0; i < sim_cont(); i++)
@@ -310,27 +310,27 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     if (has_comp == 1) fprintf(f_veri, "\n");
 
     // ------------------------------------------------------------------------
-    // cadastra arrays do usuario para simulacao ------------------------------
+    // register user arrays for the simulation --------------------------------
     // ------------------------------------------------------------------------
 
     if (sim_cont_arr()>0)
     fprintf(f_veri, "// arrays ---------------------------------------------------------------------\n\n");
 
-    // cria um registrador para cada variavel do array
+    // create a register for each array element
     for (int i = 0; i < sim_cont_arr(); i++)
     {
         for (int j = 0; j < sim_size_arr(i); j++)
         {
-            // pega o valor no arquivo .mif
+            // grab the value from the .mif file
             char val[256]; sim_mem(sim_addr_arr(i)+j, val);
 
-            // se for int, usa o tipo de dado reg na simulacao
+            // int: use the reg data type in the simulation
             if (sim_type_arr(i) == 1)
             {
                 fprintf(f_veri, "reg [%d-1:0] %s%04d=%d'b%s;\n", nubits, sim_name_arr(i), j, nubits, val);
             }
 
-            // se for float, usa tipo de dado real na simulacao
+            // float: use the real data type in the simulation
             if (sim_type_arr(i) == 2)
             {
                 if (has_float == 0)
@@ -342,7 +342,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
                 fprintf(f_veri, "real %s%04d = %f;\n", sim_name_arr(i), j, mf2f(val));
             }
 
-            // se for comp usa tipo reg na simulacao
+            // comp: use reg in the simulation
             if (sim_type_arr(i) > 2)
             {
                 fprintf(f_veri, "reg [%d-1:0] %s%04d=%d'b%s;\n", nubits, sim_name_arr(i), j, nubits, val);
@@ -350,9 +350,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
         }
     }
 
-    // inicia o always para registrar as variaveis do array
+    // begin the always block that registers the array variables
     if (sim_cont_arr()>0) fprintf(f_veri, "\nalways @ (posedge clk) begin\n");
-    // registra cada variavel, dependendo do endereco de cada uma
+    // register each variable based on its address
     for (int i = 0; i < sim_cont_arr(); i++)
     {
         for (int j = 0; j < sim_size_arr(i); j++)
@@ -365,8 +365,8 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     }
     if (sim_cont_arr()>0) fprintf(f_veri, "end\n\n");
 
-    // se a variavel for comp ...
-    // junta a parte real e imag em uma variavel do dobro de tamanho
+    // for comp arrays ...
+    // combine real and imag parts into a variable twice the width
     for (int i = 0; i < sim_cont_arr(); i++)
     {
         if (sim_type_arr(i) == 3)
@@ -389,31 +389,31 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     if (sim_cont_arr()>0) fprintf(f_veri, "\n");
 
     // ------------------------------------------------------------------------
-    // interface com istrucoes cmm e asm --------------------------------------
+    // interface with cmm and asm instructions --------------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_veri, "// instrucoes -----------------------------------------------------------------\n\n");
+    fprintf(f_veri, "// instructions ---------------------------------------------------------------\n\n");
 
-    // cria 10 registradores para retardar a instrucao @fim
+    // create 10 registers to delay the @fim instruction
     int nreg = 10;
     for (int i = 0; i < nreg; i++) fprintf(f_veri, "reg [%d:0] valr%d=0;\n", nubits-1, i+1);
     fprintf(f_veri, "\n");
 
     int num_ins = get_n_ins();
 
-    // cria memoria que vai guardar a tabela de instrucoes
+    // create the memory that will hold the instruction table
     fprintf(f_veri, "reg [19:0] min [0:%d-1];\n\n", num_ins);
-    // cria interface com essa memoria
+    // create the interface to that memory
     fprintf(f_veri, "reg signed [19:0] linetab =-1;\n"  );
     fprintf(f_veri, "reg signed [19:0] linetabs=-1;\n\n");
-    // inicializa a memoria com o arquivo .txt
+    // initialize the memory from the .txt file
     fprintf(f_veri, "initial	$readmemb(\"pc_%s_mem.txt\",min);\n\n"  , prname );
-    // executa os registros
+    // run the registers
     fprintf(f_veri, "always @ (posedge clk) begin\n");
     fprintf(f_veri, "if (pc_sim_val < %d) linetab <= min[pc_sim_val];\n", num_ins);
     fprintf(f_veri, "linetabs <= linetab;   \n");
     fprintf(f_veri, "valr1    <= pc_sim_val;\n");
-    // delays para o @fim
+    // delay stages for @fim
     fprintf(f_veri, "valr2    <= valr1;\n");
     fprintf(f_veri, "valr3    <= valr2;\n");
     fprintf(f_veri, "valr4    <= valr3;\n");
@@ -426,7 +426,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
 
     fprintf(f_veri, "end\n\n");
 
-    // se for simulacao tipo single, cadastra $finish no endewreco @fim
+    // for single-proc simulations, hook $finish at the @fim address
     if (sim_multi()==0)
     {
     fprintf(f_veri, "always @ (posedge clk) if (valr10 == %d) begin\n", sim_get_fim());
@@ -436,7 +436,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     }
 
     // ------------------------------------------------------------------------
-    // finaliza arquivo -------------------------------------------------------
+    // finalize the file ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "`endif\n\n");
@@ -446,13 +446,13 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
 }
 
 // ----------------------------------------------------------------------------
-// gera arquivo verilog com o test-bench do processador -----------------------
+// generates the verilog file with the processor's test-bench -----------------
 // ----------------------------------------------------------------------------
 
 void hdl_tb_file(int itr_addr)
 {
     // ------------------------------------------------------------------------
-    // cria o arquivo .v ------------------------------------------------------
+    // create the .v file -----------------------------------------------------
     // ------------------------------------------------------------------------
 
     int     aux;
@@ -462,92 +462,92 @@ void hdl_tb_file(int itr_addr)
     FILE *f_veri = fopen(tmp,"w");
 
     // ------------------------------------------------------------------------
-    // cabecalho --------------------------------------------------------------
+    // header -----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "`timescale 1ns/1ps\n\n", prname);
     fprintf(f_veri,    "module %s_tb();\n\n", prname);
-    
+
     // ------------------------------------------------------------------------
-    // geracao de clock e reset -----------------------------------------------
+    // clock and reset generation ---------------------------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_veri, "// geracao de clock e reset ---------------------------------------------------\n\n");
+    fprintf(f_veri, "// clock and reset generation -------------------------------------------------\n\n");
 
-    double T = 1000.0/sim_clk(); // periodo do clock em ns (clk frq em MHz)
+    double T = 1000.0/sim_clk(); // clock period in ns (clk frq in MHz)
 
-    // variaveis de clock e reset
+    // clock and reset variables
     fprintf(f_veri, "reg clk, rst;\n\n");
 
-    // inicio do initial
+    // initial block start
     fprintf(f_veri, "initial begin\n");
-    // inicializa clock e da um reset
+    // initialize clock and assert reset
     fprintf(f_veri, "    clk = 0;\n");
     fprintf(f_veri, "    rst = 1;\n");
     fprintf(f_veri, "    #%f;\n",  T);
     fprintf(f_veri, "    rst = 0;\n");
-    // fim do initial
+    // initial block end
     fprintf(f_veri, "end\n\n");
 
-    // geracao do clock -------------------------------------------------------
+    // clock generation -------------------------------------------------------
     fprintf(f_veri, "always #%f clk = ~clk;\n\n", T/2.0);
 
     // ------------------------------------------------------------------------
-    // portas de interface com o processador ----------------------------------
+    // processor interface ports ----------------------------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_veri, "// instancia do processador ---------------------------------------------------\n\n");
+    fprintf(f_veri, "// processor instance ---------------------------------------------------------\n\n");
 
-    // verifica se precisa adicionar barramento de entrada in
+    // check whether the 'in' input bus needs to be added
     if (nuioin > 0 && opc_inn()) fprintf(f_veri, "reg  signed [%d:0] proc_io_in = 0;\n", nubits-1);
-    // sempre adiciona o barramento de saida out
-    /*tem que ter alguma saida*/ fprintf(f_veri, "wire signed [%d:0] proc_io_out;\n"   , nubits-1);
-    // verifica se vai ter que adicionar controle pra porta de entrada
+    // always add the 'out' output bus
+    /*needs at least one output*/ fprintf(f_veri, "wire signed [%d:0] proc_io_out;\n"   , nubits-1);
+    // check whether input-port control needs to be added
     if (nuioin > 0 && opc_inn()) fprintf(f_veri, "wire [%d:0] proc_req_in;\n"          , nuioin-1);
-    // verifica se vai ter que adicionar controle pra porta de saida
+    // check whether output-port control needs to be added
     if (nuioou > 0 && opc_out()) fprintf(f_veri, "wire [%d:0] proc_out_en;\n\n"        , nuioou-1);
 
     // ------------------------------------------------------------------------
-    // instancia do processador -----------------------------------------------
+    // processor instance -----------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // o comeco eh padrao
+    // the prologue is fixed
     fprintf(f_veri, "%s proc(clk,rst", prname);
-    // verifica se precisa adicionar barramento de entrada in
+    // check whether the 'in' input bus needs to be added
     if (nuioin > 0 && opc_inn()) fprintf(f_veri, ",proc_io_in" );
-    // sempre adiciona o barramento de saida out
-    /*tem que ter alguma saida*/ fprintf(f_veri, ",proc_io_out");
-    // verifica se vai ter que adicionar controle pra porta de entrada
+    // always add the 'out' output bus
+    /*needs at least one output*/ fprintf(f_veri, ",proc_io_out");
+    // check whether input-port control needs to be added
     if (nuioin > 0 && opc_inn()) fprintf(f_veri, ",proc_req_in");
-    // verifica se vai ter que adicionar controle pra porta de saida
+    // check whether output-port control needs to be added
     if (nuioou > 0 && opc_out()) fprintf(f_veri, ",proc_out_en");
-    // verifica se vai ter que adicionar pino de interrupcao
+    // check whether the interrupt pin needs to be added
     if (itr_addr != 0)           fprintf(f_veri, ",1'b0"       );
-    // finaliza instancia
+    // close the instance
                                  fprintf(f_veri, ");\n\n"      );
 
     // ------------------------------------------------------------------------
-    // interface com portas de entrada ----------------------------------------
+    // input-port interface ---------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (opc_inn()) fprintf(f_veri, "// portas de entrada ----------------------------------------------------------\n\n");
+    if (opc_inn()) fprintf(f_veri, "// input ports ----------------------------------------------------------------\n\n");
 
-    // cadastra portas de entrada pra simulacao
+    // register input ports for the simulation
     for(int i=0;i<nuioin;i++)
     {
         if (inn_used(i))
         {
-            fprintf(f_veri, "// variaveis da porta %d\n", i);
+            fprintf(f_veri, "// port %d variables\n", i);
             fprintf(f_veri, "integer data_in_%d;\n", i);
             fprintf(f_veri, "reg signed [%d:0] in_%d = 0;\n", nubits-1, i);
             fprintf(f_veri, "reg req_in_%d = 0;\n\n", i);
         }
     }
 
-    // abre os arquivos de leitura para as portas de entrada
+    // open the read files for the input ports
     if (opc_inn())
     {
-        fprintf(f_veri, "// abre um arquivo para leitura em cada porta\n");
+        fprintf(f_veri, "// open a file for reading on each port\n");
         fprintf(f_veri, "initial begin\n");
     }
     for(int i=0;i<nuioin;i++)
@@ -555,32 +555,32 @@ void hdl_tb_file(int itr_addr)
         if (inn_used(i))
         {
             force_rightbar(proc_dir);
-            fprintf(f_veri, "    data_in_%d = $fopen(\"%s/Simulation/input_%d.txt\", \"r\"); // coloque os seus dados de entrada neste arquivo\n",i,proc_dir,i); 
+            fprintf(f_veri, "    data_in_%d = $fopen(\"%s/Simulation/input_%d.txt\", \"r\"); // place your input data in this file\n",i,proc_dir,i);
         }
     }
     if (opc_inn()) fprintf(f_veri, "end\n\n");
 
-    // decodifica portas de entrada
+    // decode input ports
     if (opc_inn())
     {
-        fprintf(f_veri, "// decodifica portas de entrada\n");
+        fprintf(f_veri, "// decode input ports\n");
         fprintf(f_veri, "always @ (*) begin\n");
     }
     for(int i=0;i<nuioin;i++)
     {
         if (inn_used(i))
         {
-            fprintf(f_veri, "    // decodificacao da porta %d\n", i);
+            fprintf(f_veri, "    // port %d decoding\n", i);
             fprintf(f_veri, "    if (proc_req_in == %d) proc_io_in = in_%d;\n", (int)pow(2,i),i);
             fprintf(f_veri, "    req_in_%d = proc_req_in == %d;\n",                 i, (int)pow(2,i),i);
         }
     }
     if (opc_inn()) fprintf(f_veri, "end\n\n");
 
-    // implementa a leitura dos dados de entrada
+    // implement reading of the input data
     if (opc_inn())
     {
-        fprintf(f_veri, "// implementa a leitura dos dados de entrada\n");
+        fprintf(f_veri, "// implement reading of the input data\n");
         fprintf(f_veri, "integer scan_result;\n");
         fprintf(f_veri, "always @ (negedge clk) begin  \n");
     }
@@ -588,34 +588,34 @@ void hdl_tb_file(int itr_addr)
     {
         if (inn_used(i))
         {
-            fprintf(f_veri, "    // lendo a porta %d\n", i);
+            fprintf(f_veri, "    // reading port %d\n", i);
             fprintf(f_veri, "    if (data_in_%d != 0 && proc_req_in == %d) scan_result = $fscanf(data_in_%d, \"%%d\", in_%d);\n", i,(int)pow(2,i),i,i);
         }
     }
     if (opc_inn()) fprintf(f_veri, "end\n\n");
 
     // ------------------------------------------------------------------------
-    // interface com portas de saida ------------------------------------------
+    // output-port interface --------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (opc_out()) fprintf(f_veri, "// portas de saida ------------------------------------------------------------\n\n");
+    if (opc_out()) fprintf(f_veri, "// output ports ---------------------------------------------------------------\n\n");
 
-    // cadastra portas de saida
+    // register output ports
     for(int i=0;i<nuioou;i++)
     {
         if (out_used(i))
         {
-            fprintf(f_veri, "// variaveis da porta %d\n", i);
+            fprintf(f_veri, "// port %d variables\n", i);
             fprintf(f_veri, "integer data_out_%d;\n", i);
             fprintf(f_veri, "reg signed [%d:0] out_sig_%d = 0;\n", nubits-1, i);
             fprintf(f_veri, "reg out_en_%d = 0;\n\n", i);
         }
     }
 
-    // abre os arquivos de escrita para as portas de saida
+    // open the write files for the output ports
     if (opc_out())
     {
-        fprintf(f_veri, "// abre um arquivo para escrita de cada porta\n");
+        fprintf(f_veri, "// open a file for writing on each port\n");
         fprintf(f_veri, "initial begin\n");
     }
     for(int i=0;i<nuioou;i++)
@@ -623,59 +623,59 @@ void hdl_tb_file(int itr_addr)
         if (out_used(i))
         {
             force_rightbar(proc_dir);
-            fprintf(f_veri, "    data_out_%d = $fopen(\"%s/Simulation/output_%d.txt\", \"w\"); // veja os dados de saida neste arquivo\n",i,proc_dir,i); 
+            fprintf(f_veri, "    data_out_%d = $fopen(\"%s/Simulation/output_%d.txt\", \"w\"); // check the output data in this file\n",i,proc_dir,i);
         }
     }
     if (opc_out()) fprintf(f_veri, "end\n\n");
 
-    // decodifica portas de saida
+    // decode output ports
     if (opc_out())
     {
-        fprintf(f_veri, "// decodifica portas de saida\n");
+        fprintf(f_veri, "// decode output ports\n");
         fprintf(f_veri, "always @ (*) begin\n");
     }
     for(int i=0;i<nuioou;i++)
     {
         if (out_used(i))
         {
-            fprintf(f_veri, "    // decodificacao da porta %d\n", i);
+            fprintf(f_veri, "    // port %d decoding\n", i);
             fprintf(f_veri, "    if (proc_out_en == %d) out_sig_%d <= proc_io_out;\n", (int)pow(2,i),i);
             fprintf(f_veri, "    out_en_%d = proc_out_en == %d;\n",                 i, (int)pow(2,i),i);
         }
     }
     if (opc_out()) fprintf(f_veri, "end\n\n");
 
-    // implementa escrita no arquivo
+    // implement writing to the file
     if (opc_out())
     {
-        fprintf(f_veri, "// implementa escrita no arquivo\n");
+        fprintf(f_veri, "// implement writing to the file\n");
         fprintf(f_veri, "always @ (posedge clk) begin\n");
     }
     for(int i=0;i<nuioou;i++)
     {
         if (out_used(i))
         {
-            fprintf(f_veri, "    // escreve na porta %d\n", i);
+            fprintf(f_veri, "    // write to port %d\n", i);
             fprintf(f_veri, "    if (out_en_%d == 1'b1) $fdisplay(data_out_%d, \"%%0d\", out_sig_%d);\n", i,i,i);
         }
     }
     if (opc_out()) fprintf(f_veri, "end\n\n");
 
     // ------------------------------------------------------------------------
-    // geracao do progress e $finish ------------------------------------------
+    // progress and $finish generation ----------------------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_veri, "// cadastro de sinais, barra de progresso e finish ----------------------------\n\n");
+    fprintf(f_veri, "// signal registration, progress bar and finish ------------------------------\n\n");
 
     fprintf(f_veri, "integer progress, chrys;\n");
     fprintf(f_veri, "initial begin\n\n");
-    // necessario pro iverilog criar o .vcd
+    // needed for iverilog to create the .vcd
     fprintf(f_veri, "    $dumpfile(\"%s_tb.vcd\");\n\n", prname);
     //fprintf(f_veri, "    $dumpvars(0,%s_tb);\n\n"    , prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.clk);\n"    , prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.rst);\n"    , prname);
 
-    // cadastra portas de entrada pra simulacao -------------------------------
+    // register input ports for the simulation --------------------------------
 
     for(int i=0; i<nuioin; i++)
     {
@@ -686,7 +686,7 @@ void hdl_tb_file(int itr_addr)
         }
     }
 
-    // cadastra portas de saida pra simulacao ---------------------------------
+    // register output ports for the simulation -------------------------------
 
     for(int i=0;i<nuioou;i++)
     {
@@ -697,35 +697,35 @@ void hdl_tb_file(int itr_addr)
         }
     }
 
-    // cadastra instrucoes C+- e Assembly -------------------------------------
+    // register C+- and Assembly instructions ---------------------------------
 
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.valr2);\n"    , prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.linetabs);\n" , prname);
 
-    // cadastra variaveis do usuario ------------------------------------------
+    // register user variables ------------------------------------------------
 
     for (int i = 0; i < sim_cont(); i++)
     {
         if (sim_type(i) == 3)
         {
-            // tenho que pegar o nome da variavel que eh a parte real do complexo
-            // e juntar com a palavra "comp_" pra achar o nome correto
-            // pra isso, checa primeiro se nao eh a parte imaginaria (nao termina com "_i_e_")
+            // need the name of the variable that is the real part of the complex
+            // and combine it with "comp_" to get the correct name
+            // so first check it's not the imaginary part (doesn't end with "_i_e_")
             if (strcmp(sim_name(i)+strlen(sim_name(i))-5,"_i_e_") != 0)
                 fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.comp_%s);\n" , prname, sim_name(i));
         }
         else    fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.%s);\n"      , prname, sim_name(i));
     }
 
-    // cadastra arrays do usuario ---------------------------------------------
+    // register user arrays ---------------------------------------------------
 
     for (int i = 0; i < sim_cont_arr(); i++)
     {
-        // se for complexo, pega so a variavel que é a parte real
-        // pra compor o nome final com "comp_"
+        // if it's complex, take only the variable that is the real part
+        // to compose the final name with "comp_"
         if (sim_type_arr(i) == 3)
         {
-            // checa primeiro se nao eh a parte imaginaria (nao termina com "_i_e_")
+            // first check it's not the imaginary part (doesn't end with "_i_e_")
             if (strcmp(sim_name_arr(i)+strlen(sim_name_arr(i))-5,"_i_e_") != 0)
                 for (int j = 0; j < sim_size_arr(i); j++)
                     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.comp_%s%04d);\n" , prname, sim_name_arr(i), j);
@@ -737,7 +737,7 @@ void hdl_tb_file(int itr_addr)
         }
     }
 
-    // se tiver CAL, cadastra flags da pilha de subrotinas --------------------
+    // if there's a CAL, register the subroutine-stack flags ------------------
 
     if (opc_cal())
     {
@@ -746,18 +746,18 @@ void hdl_tb_file(int itr_addr)
         fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.genblk2.isp.fl_full);\n" , prname, prname);
     }
 
-    // cadastra flags da pilha de dados ---------------------------------------
+    // register data-stack flags ----------------------------------------------
 
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.sp.pointeri);\n", prname, prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.sp.fl_max);\n"  , prname, prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.sp.fl_full);\n" , prname, prname);
 
-    // cadastra flags de erro de arredondamento -------------------------------
+    // register rounding-error flags ------------------------------------------
 
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_float);\n" , prname, prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_int);\n\n" , prname, prname);
 
-    // barra de progressao ----------------------------------------------------
+    // progress bar -----------------------------------------------------------
 
     fprintf(f_veri, "    progress = $fopen(\"progress.txt\", \"w\");\n" );
     fprintf(f_veri, "    for (chrys = 10; chrys <= 100; chrys = chrys + 10) begin\n");
@@ -767,13 +767,13 @@ void hdl_tb_file(int itr_addr)
     fprintf(f_veri, "    end\n\n");
     fprintf(f_veri, "    $fclose(progress);\n");
 
-    // termina a simulacao ----------------------------------------------------
+    // end the simulation -----------------------------------------------------
 
     fprintf(f_veri, "    $finish;\n\n");
-    fprintf(f_veri, "end\n\n"); // fim do initial
+    fprintf(f_veri, "end\n\n"); // end of initial
 
     // ------------------------------------------------------------------------
-    // finaliza arquivo -------------------------------------------------------
+    // finalize the file ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "endmodule\n");

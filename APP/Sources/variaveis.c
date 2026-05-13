@@ -1,38 +1,38 @@
 // ----------------------------------------------------------------------------
-// tabela de variaveis --------------------------------------------------------
+// variable table -------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "..\Headers\messages.h"
 
-#define NVARMAX 999999 // mudar pra array dinamico
+#define NVARMAX 999999 // switch to a dynamic array later
 
 int  v_count = 0;
 char v_name[NVARMAX][512];
 
-// funcoes auxiliares ---------------------------------------------------------
+// helper functions -----------------------------------------------------------
 
-// ve se uma variavel ja foi usada
-// se sim, pega o indice na tabela
-// se nao, retorna -1
+// checks whether a variable has already been used
+// if so, returns its index in the table
+// if not, returns -1
 int var_find(char *val)
 {
 	int ind = -1;
 
 	for (int i = 0; i < v_count; i++)
 		if (strcmp(val, v_name[i]) == 0) {ind = i; break;}
-        
+
 	return ind;
 }
 
-// funcoes de interface global ------------------------------------------------
+// global interface functions -------------------------------------------------
 
-// addiciona uma nova variavel na tabela
-// pode ser um vetor com size > 1
+// adds a new variable to the table
+// may be a vector with size > 1
 void var_add(char *va, int size)
 {
     if (var_find(va) == -1)
@@ -44,7 +44,7 @@ void var_add(char *va, int size)
     if (v_count > NVARMAX) {fprintf(stderr, MSG_ERR_TOO_MANY_VARS, NVARMAX); exit(EXIT_FAILURE);}
 }
 
-// retorna o numero de variaveis
+// returns the number of variables
 int var_cnt(void)
 {
     return v_count;

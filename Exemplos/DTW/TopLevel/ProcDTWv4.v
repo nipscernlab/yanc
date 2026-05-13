@@ -22,7 +22,7 @@ end
 wire signed [31:0] out_proc;
 
 
-//Instancia do Processador
+// Processor instance
 ProcDTW DTWv4_inst(
 								 .clk(clk),
 								 .rst(rst_geral),

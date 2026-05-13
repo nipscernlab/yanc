@@ -1,31 +1,31 @@
 // ----------------------------------------------------------------------------
-// implementacao da tabela de indentificadores --------------------------------
+// identifier table implementation --------------------------------------------
 // ----------------------------------------------------------------------------
 
-// includes globais
+// global includes
 #include <string.h>
 #include <stdlib.h>
 #include   <math.h>
 
-// includes locais
+// local includes
 #include "..\Headers\global.h"
 #include "..\Headers\funcoes.h"
 #include "..\Headers\variaveis.h"
 #include "..\Headers\diretivas.h"
 #include "..\Headers\messages.h"
 
-int  v_count = 0;          // guarda o tamanho da tabela
-char v_name[NVARMAX][512]; // nome da variavel ou funcao
-int  v_isar[NVARMAX];      // se variavel eh um array
-int  v_type[NVARMAX];      // 0 -> nao identificada, 1 -> int, 2 -> float
-int  v_fnid[NVARMAX];      // ID da funcao a qual a variavel pertence
-int  v_used[NVARMAX];      // se ID ja foi usado
-int  v_isco[NVARMAX];      // se variavel eh uma constante
-int  v_fpar[NVARMAX];      // se ID eh uma funcao, diz a lista de parametros
-int  v_size[NVARMAX];      // tamanho do array (caso seja array)
-int  v_siz2[NVARMAX];      // tamanho da dimensao j (caso seja matriz)
+int  v_count = 0;          // stores the size of the table
+char v_name[NVARMAX][512]; // name of the variable or function
+int  v_isar[NVARMAX];      // whether the variable is an array
+int  v_type[NVARMAX];      // 0 -> unidentified, 1 -> int, 2 -> float
+int  v_fnid[NVARMAX];      // ID of the function the variable belongs to
+int  v_used[NVARMAX];      // whether the ID has already been used
+int  v_isco[NVARMAX];      // whether the variable is a constant
+int  v_fpar[NVARMAX];      // if the ID is a function, holds the parameter list
+int  v_size[NVARMAX];      // array size (when it is an array)
+int  v_siz2[NVARMAX];      // size of the j dimension (when it is a matrix)
 
-// procura variavel na tabela (-1 se nao achar)
+// searches the table for the variable (-1 if not found)
 int find_var(char *val)
 {
 	int i, ind = -1;
@@ -41,7 +41,7 @@ int find_var(char *val)
 	return ind;
 }
 
-// adiciona variavel na tabela
+// adds a variable to the table
 void add_var(char *var)
 {
     if (v_count == NVARMAX)
@@ -56,43 +56,43 @@ void add_var(char *var)
     }
 }
 
-// checa quais variaveis e funcoes foram usadas (no final do parse)
+// checks which variables and functions were used (at the end of the parse)
 void check_var()
 {
     if (mainok == 0) {fprintf (stderr, MSG_ERR_NO_MAIN); exit(EXIT_FAILURE);}
 
-    // varre toda a tabela de variaveis
+    // walk the whole variable table
     for (int i = 0; i < v_count; i++)
     {
-        // checa se variavel foi declarada e nao foi usada ...
+        // check whether a variable was declared but not used ...
         if (((v_type[i] == 1) || (v_type[i] == 2) || (v_type[i] == 3)) && (v_used[i] == 0))
         {
-            // checa se eh ou nao global
+            // check whether it is global or not
             if (strcmp(v_name[v_fnid[i]], "") == 0)
                 fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_name[i]);
             else
                 fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, rem_fname(v_name[i], v_name[v_fnid[i]]), v_name[v_fnid[i]]);
         }
 
-        // checa se a funcao foi declarada e nao foi usada
+        // check whether a function was declared but not used
         if (((v_type[i] == 5) || (v_type[i] == 6) || (v_type[i] == 7)) && v_used[i] == 0)
             fprintf (stdout, MSG_WARN_UNUSED_FUNCTION, v_name[i]);
     }
 }
 
-// tira o nome da funcao da variavel
+// strips the function name from the variable
 char* rem_fname(char *var, char *fname)
 {
     if (strcmp(fname,"") == 0) return var;
     int    ind = 0;
     while (var[ind] == fname[ind]) ind++;
-    // se ind != strlen(fname) eh pq a variavel nao
-    // contem todo o nome da funcao no comeco
-    // entao melhor nao remover nada (deve ser global)
-    return (ind == strlen(fname)) ? var + ind + 1 : var; // o +1 eh pra tirar o '_'
+    // if ind != strlen(fname) it means the variable does not
+    // contain the full function name at the beginning,
+    // so it is better not to remove anything (it must be global)
+    return (ind == strlen(fname)) ? var + ind + 1 : var; // the +1 skips the '_'
 }
 
-// usado quando o lexer acha um ID
+// used when the lexer finds an ID
 int exec_id(char *text)
 {
     if (strcmp(text,"i") == 0)
@@ -100,12 +100,12 @@ int exec_id(char *text)
 
     char var_name[64];
 
-    if (find_var(text) == -1)                                     // primeiro ve se tem uma variavel global
+    if (find_var(text) == -1)                                     // first check whether there is a global variable
     {
             strcpy  (var_name, fname);
-        if (strcmp  (var_name, "") != 0) strcat (var_name, "_");  // se nao, coloca o nome da funcao atual antes
+        if (strcmp  (var_name, "") != 0) strcat (var_name, "_");  // otherwise, prepend the current function name
             strcat  (var_name, text);
-        if (find_var(var_name)    == -1) add_var(var_name);       // cria a variavel local, caso ela ainda nao exista
+        if (find_var(var_name)    == -1) add_var(var_name);       // create the local variable if it does not exist yet
     }
     else
     {
@@ -114,18 +114,18 @@ int exec_id(char *text)
     return find_var(var_name);
 }
 
-// usado quando o lexer acha uma constante int
+// used when the lexer finds an int constant
 int exec_inum(char *text)
 {
-    // verifica limites -------------------------------------------------------
-    // nessa funcao nunca entra constante negativa
+    // range check ------------------------------------------------------------
+    // no negative constants ever reach this function
 
     int max = (int) (pow(2,nbmant+nbexpo+1-1)-1);
     int num = atoi(text);
 
     if (num > max) {fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, max); exit(EXIT_FAILURE);}
 
-    // adiciona na tabela -----------------------------------------------------
+    // add to the table -------------------------------------------------------
 
     if (find_var(text) == -1) add_var(text);
 
@@ -136,8 +136,8 @@ int exec_inum(char *text)
     return id;
 }
 
-// converte float ieee 32 bits para meu float
-// tentar mudar pra converter float de 64 bits
+// converts an IEEE-754 32-bit float to "my float"
+// could be revised to convert 64-bit floats too
 void f2mf(char *va, int *s, int *m, int *e)
 {
     float f = atof(va);
@@ -146,13 +146,13 @@ void f2mf(char *va, int *s, int *m, int *e)
 
     int *ifl = (int*)&f;
 
-    // desempacota padrao IEEE ------------------------------------------------
+    // unpack standard IEEE ---------------------------------------------------
 
     *s = ( *ifl >> 31) & 0x00000001;
     *e = ((*ifl >> 23) & 0xFF) - 127 - 22;
     *m = ((*ifl & 0x007FFFFF) + 0x00800000) >> 1;
 
-    // expoente ---------------------------------------------------------------
+    // exponent ---------------------------------------------------------------
 
     *e = *e + (23-nbmant);
 
@@ -163,41 +163,41 @@ void f2mf(char *va, int *s, int *m, int *e)
 
     if (nbmant == 23)
     {
-        if (*ifl & 0x00000001) *m = *m+1; // arredonda
+        if (*ifl & 0x00000001) *m = *m+1; // round
     }
     else
     {
         sh = 23-nbmant+sh;
-        int carry = (*m >> (sh-1)) & 0x00000001; // carry de arredondamento
+        int carry = (*m >> (sh-1)) & 0x00000001; // rounding carry
         *m = *m >> sh;
-        if (carry) *m = *m+1; // arredonda
+        if (carry) *m = *m+1; // round
     }
 }
 
-// usado quando o lexer acha uma constante float
+// used when the lexer finds a float constant
 int exec_fnum(char *text)
 {
-    // verifica limites -------------------------------------------------------
-    // nunca entra o sinal negativo da constante aqui
+    // range check ------------------------------------------------------------
+    // the negative sign of the constant never enters here
 
-    float max = (float)((pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1)); // maior valor possivel em modulo
-    float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // menor valor possivel em modulo
-    float num = atof(text);                                             //       valor do num   em modulo
-    float abs = (num < 0.0) ? -num : num;                               //       valor do num   em modulo
+    float max = (float)((pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1)); // largest representable magnitude
+    float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // smallest representable magnitude
+    float num = atof(text);                                             // absolute value of the number
+    float abs = (num < 0.0) ? -num : num;                               // absolute value of the number
 
     if (abs < min && abs != 0.0) {fprintf (stderr, MSG_ERR_FLOAT_MIN, line_num+1, min); exit(EXIT_FAILURE);}
     if (abs > max)               {fprintf (stderr, MSG_ERR_FLOAT_MAX, line_num+1, max); exit(EXIT_FAILURE);}
 
-    // calcula residuo --------------------------------------------------------
+    // compute the residual ---------------------------------------------------
 
     int s,m,e; f2mf(text,&s,&m,&e);
-    
+
     float mf    = (s) ? -m*pow(2,e) : m*pow(2,e);
     float delta = mf-num;
 
     if (delta != 0.0 && num != 0.0) printf(MSG_INFO_CONST_APPROX,text,line_num+1,mf,delta);
 
-    // adiciona na tabela -----------------------------------------------------
+    // add to the table -------------------------------------------------------
 
     if (find_var(text) == -1) add_var(text);
 
@@ -208,10 +208,10 @@ int exec_fnum(char *text)
     return id;
 }
 
-// usado quando o lexer acha uma constante comp
+// used when the lexer finds a comp constant
 int exec_cnum(char *text)
 {
-    // remova espacos em branco -----------------------------------------------
+    // strip whitespace -------------------------------------------------------
 
     int i = 0, j = 0;
     char temp[strlen(text) + 1];
@@ -225,7 +225,7 @@ int exec_cnum(char *text)
     }
     text[j] = '\0';
 
-    // adiciona na tabela -----------------------------------------------------
+    // add to the table -------------------------------------------------------
 
     if (find_var(text) == -1) add_var(text);
     return find_var(text);

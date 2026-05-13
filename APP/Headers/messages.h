@@ -1,28 +1,28 @@
 // ----------------------------------------------------------------------------
-// suporte bilingue PT/EN para as mensagens do appcomp ------------------------
+// PT/EN bilingual support for appcomp messages -------------------------------
 // ----------------------------------------------------------------------------
-// como usar:
-//   printf(MSG_XXX, args...);   ou   fprintf(stderr, MSG_XXX, args...);
-// pra ver as duas versões da string, basta procurar pelo MSG_XXX abaixo.
+// usage:
+//   printf(MSG_XXX, args...);   or   fprintf(stderr, MSG_XXX, args...);
+// to see both versions of the string, just search for MSG_XXX below.
 // ----------------------------------------------------------------------------
 
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
-// 0 = portugues (default), 1 = ingles
+// 0 = Portuguese (default), 1 = English
 extern int lang_en;
 
-// macro de selecao de string. recebe PT e EN e escolhe baseado em lang_en
+// string-selection macro. takes PT and EN and picks one based on lang_en
 #define M(pt, en) (lang_en ? (en) : (pt))
 
-// procura -en/-pt em argv, ajusta lang_en e remove a flag de argv/argc
+// scans argv for -en/-pt, adjusts lang_en and removes the flag from argv/argc
 void parse_lang_flag(int *argc, char **argv);
 
 // ----------------------------------------------------------------------------
-// catalogo de mensagens ------------------------------------------------------
+// message catalog ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// erros
+// errors
 #define MSG_ERR_TOO_MANY_VARS \
     M("Erro: número de variáveis > %d", \
       "Error: variable count blew past %d")
@@ -35,7 +35,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: esse processador não serve pra nada. Você não tem nada útil pra fazer não?\n", \
       "Error: this processor is totally useless. Don't you have anything actually fun to do?\n")
 
-// infos
+// info messages
 #define MSG_INFO_ITR_HANDLING \
     M("Info: implementando tratamento de interrupção\n", \
       "Info: implementing interruption handling\n")
@@ -44,7 +44,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: foram encontradas %d instruções e %d variáveis\n", \
       "Info: %d instructions and %d variables were found\n")
 
-// sucessos
+// success messages
 #define MSG_OK_APP_DONE \
     M("Sucesso: já sei a quantidade de memória! Vamo vê agora quais circuitos você precisa...\n", \
       "Sweet: got the memory count nailed down! Now let's see which circuits you'll need...\n")

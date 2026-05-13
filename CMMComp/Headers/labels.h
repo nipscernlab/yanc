@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// gera labels em assembly pras instrucoes de salto ---------------------------
+// generates assembly labels for the jump instructions ------------------------
 // ----------------------------------------------------------------------------
 
-int  push_lab(int type); // coloca   um label na pilha
-int   pop_lab();         // pega ultimo label na pilha
-int   get_lab();         // le   indice do ultimo lab
-int get_while();         // pega indice do ultimo while
-int get_if   ();         // pega indice do ultimo if
+int  push_lab(int type); // pushes a label onto the stack
+int   pop_lab();         // pops the latest label from the stack
+int   get_lab();         // reads the latest label index
+int get_while();         // gets the latest while index
+int get_if   ();         // gets the latest if    index

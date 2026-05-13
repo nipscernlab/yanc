@@ -1,19 +1,19 @@
 :: ****************************************************************************
-:: Script para emular o SAPHO na compilacao de um projeto com varios procs
+:: Script to emulate SAPHO when compiling a project with multiple procs
 :: ****************************************************************************
 
-:: Configura o terminal -------------------------------------------------------
+:: Set up the terminal --------------------------------------------------------
 
 cls
 echo off
 chcp 65001>%TMP_PRO%\log.txt
 
-:: Configura o ambiente -------------------------------------------------------
+:: Set up the environment -----------------------------------------------------
 
-:: diretorio atual
+:: current directory
 set ROOT_DIR=%cd%
 
-:: programas necessarios
+:: required tools
 set BISON=C:\packs\msys64\usr\bin\bison.exe
 set FLEX=C:\packs\msys64\usr\bin\flex.exe
 set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
@@ -24,24 +24,24 @@ set GTKWAVE=C:\nipscern\Aurora\components\Packages\iverilog\gtkwave\bin\gtkwave.
 set    TESTE_DIR=%ROOT_DIR%\Teste
 rmdir %TESTE_DIR% /s /q
 
-:: Parametros definidos pelo usuario do SAPHO para compilacao -----------------
+:: Parameters defined by the SAPHO user for compilation -----------------------
 
-:: nome da pasta do projeto
+:: project folder name
 set PROJET=DTW
-:: lista dos tipo de processadores que tem no projeto (nomes das sub-pastas do projeto)
+:: list of processor types in the project (names of the project subfolders)
 set PROC_LIST=ProcDTW ZeroCross
-:: lista das instancias que serao simuladas (um mesmo proc pode ter varias instancias)
+:: list of instances to simulate (a single proc may have several instances)
 set INST_LIST=ZeroCross_inst DTWv4_inst
-:: lista do tipo de processador para cada instancia (tem que ser do mesmo tamanho de PROC_LIST)
+:: list of processor types for each instance (must match the length of PROC_LIST)
 set PROC_TYPE=ZeroCross ProcDTW
-:: nome do test bench (sem .v) a ser simulado (tem que estar na pasta TopLevel)
+:: testbench name (without .v) to simulate (must be in the TopLevel folder)
 set TB=top_level_tb
-:: nome do arquivo de visualizacao do gtkwave (se nao achar, usa o script padrao)
+:: gtkwave layout filename (if not found, uses the default script)
 set GTKW=dtw.gtkw
 
-:: Parametros que o SAPHO tem que saber ---------------------------------------
+:: Parameters that SAPHO must know --------------------------------------------
 
-:: Arvore de pastas apos a instalacao
+:: folder tree after installation
 set INST_DIR=%TESTE_DIR%\saphoComponents
 set BIN_DIR=%INST_DIR%\bin
 set HDL_DIR=%INST_DIR%\HDL
@@ -49,12 +49,12 @@ set MAC_DIR=%INST_DIR%\Macros
 set SCR_DIR=%INST_DIR%\Scripts
 set TMP_DIR=%INST_DIR%\Temp
 
-:: Arvore de pastas do projeto sendo executado
+:: project folder tree being executed
 set USER_DIR=%TESTE_DIR%\Projetos
 set PROJ_DIR=%USER_DIR%\%PROJET%
 set TOPL_DIR=%PROJ_DIR%\TopLevel
 
-:: Gera diretorios pra teste --------------------------------------------------
+:: Create test directories ----------------------------------------------------
 
 mkdir %TESTE_DIR%
     mkdir %INST_DIR%
@@ -69,14 +69,14 @@ mkdir %TESTE_DIR%
     mkdir %TMP_DIR%\%%i
 ))
 
-:: Copia os arquivos para os diretorios de teste ------------------------------
+:: Copy files into the test directories ---------------------------------------
 
 xcopy Exemplos %USER_DIR% /e /i /q>%TMP_DIR%\xcopy.txt
 xcopy HDL %HDL_DIR% /q /y>%TMP_DIR%\xcopy.txt
 xcopy Macros %MAC_DIR% /q /y>%TMP_DIR%\xcopy.txt
 xcopy Scripts %SCR_DIR% /q /y>%TMP_DIR%\xcopy.txt
 
-:: Gera o compilador CMM ------------------------------------------------------
+:: Build the CMM compiler -----------------------------------------------------
 
 cd %ROOT_DIR%\CMMComp\Sources
 
@@ -89,7 +89,7 @@ del lex.yy.c
 del  y.tab.c
 del  y.tab.h
 
-:: Gera o Assembler pre-processor ---------------------------------------------
+:: Build the Assembler pre-processor ------------------------------------------
 
 cd %ROOT_DIR%\APP\Sources
 
@@ -99,7 +99,7 @@ cd %ROOT_DIR%\APP\Sources
 move APP.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 del app.c
 
-:: Gera o compilador Assembler ------------------------------------------------
+:: Build the Assembler compiler -----------------------------------------------
 
 cd %ROOT_DIR%\ASM\Sources
 
@@ -109,7 +109,7 @@ cd %ROOT_DIR%\ASM\Sources
 move ASM.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 del ASMComp.c
 
-:: Gera tradutores de dados ---------------------------------------------------
+:: Build data translators -----------------------------------------------------
 
 cd %SCR_DIR%
 
@@ -117,7 +117,7 @@ cd %SCR_DIR%
 
 move comp2gtkw.exe  %BIN_DIR%>%TMP_DIR%\xcopy.txt
 
-:: Executa o compilador CMM ---------------------------------------------------
+:: Run the CMM compiler -------------------------------------------------------
 
 cd  %BIN_DIR%
 
@@ -125,41 +125,41 @@ cd  %BIN_DIR%
     CMMComp.exe %%i.cmm %%i %PROJ_DIR%\%%i %MAC_DIR% %TMP_DIR%\%%i 1
 ))
 
-:: Executa o Assembler pre-processor ------------------------------------------
+:: Run the Assembler pre-processor --------------------------------------------
 
 (for %%i in (%PROC_LIST%) do (
     APP.exe %PROJ_DIR%\%%i\Software\%%i.asm %TMP_DIR%\%%i
 ))
 
-:: Executa o compilador Assembler ---------------------------------------------
+:: Run the Assembler compiler -------------------------------------------------
 
 (for %%i in (%PROC_LIST%) do (
     ASM.exe %PROJ_DIR%\%%i\Software\%%i.asm %PROJ_DIR%\%%i %HDL_DIR% %MAC_DIR% %TMP_DIR%\%%i 0 0 1
     cp %PROJ_DIR%\%%i\Hardware\%%i.v %TMP_DIR%\%%i
 ))
 
-:: Gera o testbench com o Icarus ----------------------------------------------
+:: Build the testbench with Icarus --------------------------------------------
 
 cd %TMP_DIR%
 
 setlocal enabledelayedexpansion
 
-:: lista arquivos da pasta HDL
+:: list HDL folder files
 dir %HDL_DIR%\*.v /b > f_list.txt
 for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do set "HDL_V=!HDL_V!%HDL_DIR%\%%a "
 
-:: lista arquivos da pasta TopLevel
+:: list TopLevel folder files
 dir %TOPL_DIR%\*.v /b > f_list.txt
 for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do set "TOP_V=!TOP_V!%TOPL_DIR%\%%a "
 
-:: lista arquivos dos processadores encontrados
-for %%a in (%PROC_LIST%) do set "PRO_V=!PRO_V!%TMP_DIR%\%%a\%%a.v " 
+:: list files of the processors found
+for %%a in (%PROC_LIST%) do set "PRO_V=!PRO_V!%TMP_DIR%\%%a\%%a.v "
 
 %IVERILOG% -s %TB% -o %TMP_DIR%\%PROJET%.vvp %HDL_V% %PRO_V% %TOP_V%
 
 for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\%%a_tb.v %PROJ_DIR%\%%a\Simulation>%TMP_DIR%\xcopy.txt
 
-:: Roda o testbench com o vvp -------------------------------------------------
+:: Run the testbench with vvp -------------------------------------------------
 
 dir %TOPL_DIR%\*.txt /b > f_list.txt
 for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do copy %TOPL_DIR%\%%a .\>%TMP_DIR%\xcopy.txt
@@ -175,7 +175,7 @@ del xcopy.txt
 ::start /b cmd /c %VVP% %PROJET%.vvp
 %VVP% %PROJET%.vvp -fst
 
-:: Roda o GtkWave -------------------------------------------------------------
+:: Run GtkWave ----------------------------------------------------------------
 
 echo %INST_LIST%> tcl_infos.txt
 echo %PROC_TYPE%>>tcl_infos.txt

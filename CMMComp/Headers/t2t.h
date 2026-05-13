@@ -1,14 +1,14 @@
 // ----------------------------------------------------------------------------
-// conversao e tratamento de dados --------------------------------------------
+// data conversion and handling -----------------------------------------------
 // ----------------------------------------------------------------------------
 
-// conversao de dados ---------------------------------------------------------
+// data conversion ------------------------------------------------------------
 
-char* itob(int x, int w);                           // converte inteiro para string binaria
+char* itob(int x, int w);                           // converts an integer to a binary string
 
-// funcoes auxiliares de acesso a tipos de terminais --------------------------
+// helper functions for accessing terminal types ------------------------------
 
-int  get_type   (int et);                           // pega o tipo de dado
-int  get_img_id (int id);                           // pega o id da parte imaginaria
-void get_cmp_cst(int et, int *et_r, int *et_i);     // gera ets para uma constante complexa
-void get_cmp_ets(int et, int *et_r, int *et_i);     // pega ets de   uma variavel  complexa
+int  get_type   (int et);                           // gets the data type
+int  get_img_id (int id);                           // gets the id of the imaginary part
+void get_cmp_cst(int et, int *et_r, int *et_i);     // generates ets for a complex constant
+void get_cmp_ets(int et, int *et_r, int *et_i);     // gets the ets of a complex variable

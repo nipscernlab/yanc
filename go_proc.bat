@@ -1,19 +1,19 @@
 :: ****************************************************************************
-:: Script para emular o SAPHO na compilacao de um unico processador ***********
+:: Script to emulate SAPHO when compiling a single processor ******************
 :: ****************************************************************************
 
-:: Configura o terminal -------------------------------------------------------
+:: Set up the terminal --------------------------------------------------------
 
 cls
 echo off
 chcp 65001>%TMP_PRO%\log.txt
 
-:: Configura o ambiente -------------------------------------------------------
+:: Set up the environment -----------------------------------------------------
 
-:: diretorio atual
+:: current directory
 set ROOT_DIR=%cd%
 
-:: programas necessarios
+:: required tools
 set BISON=C:\packs\msys64\usr\bin\bison.exe
 set FLEX=C:\packs\msys64\usr\bin\flex.exe
 set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
@@ -24,37 +24,37 @@ set GTKWAVE=C:\nipscern\Aurora\components\Packages\iverilog\gtkwave\bin\gtkwave.
 set    TESTE_DIR=%ROOT_DIR%\Teste
 rmdir %TESTE_DIR% /s /q
 
-:: Parametros definidos pelo usuario do SAPHO para compilacao -----------------
+:: Parameters defined by the SAPHO user for compilation -----------------------
 
-:: nome da pasta do projeto
+:: project folder name
 ::set PROJET=Math
 ::set PROJET=RLS
 set PROJET=FFT
-:: nome do tipo de processador a ser simulado (uma sub-pasta do projeto)
+:: processor type name to simulate (a subfolder of the project)
 ::set PROC=ArcTan
 ::set PROC=Seno
 ::set PROC=Sqrt
 ::set PROC=proc_rls
 set PROC=proc_fft
-:: nome do arquivo cmm em que o processador esta definido
+:: cmm filename where the processor is defined
 ::set FNAM=ArcTan.cmm
 ::set FNAM=Seno.cmm
 ::set FNAM=Sqrt.cmm
 ::set FNAM=proc_rls.cmm
 set FNAM=proc_fft.cmm
-:: test_bench (sem .v) a ser simulado (tem que estar na pasta Simulation)
-:: se nao achar, usa simulacao padrao
+:: test_bench (without .v) to simulate (must be in the Simulation folder)
+:: if not found, uses default simulation
 set TB=errado
-:: nome do arquivo de visualizacao do gtkwave (se nao achar, usa o script padrao)
+:: gtkwave layout filename (if not found, uses the default script)
 set GTKW=teste.gtkw
-:: frequencia de operacao do processador em MHz
+:: processor operating frequency in MHz
 set FRE_CLK=100
-:: numero de clocks a ser simulado
+:: number of clocks to simulate
 set NUM_CLK=1000000
 
-:: Parametros que o SAPHO tem que saber ---------------------------------------
+:: Parameters that SAPHO must know --------------------------------------------
 
-:: Arvore de pastas apos a instalacao
+:: folder tree after installation
 set INST_DIR=%TESTE_DIR%\saphoComponents
 set BIN_DIR=%INST_DIR%\bin
 set HDL_DIR=%INST_DIR%\HDL
@@ -62,7 +62,7 @@ set MAC_DIR=%INST_DIR%\Macros
 set SCR_DIR=%INST_DIR%\Scripts
 set TMP_DIR=%INST_DIR%\Temp
 
-:: Arvore de pastas do projeto sendo executado
+:: project folder tree being executed
 set USER_DIR=%TESTE_DIR%\Projetos
 set PROC_DIR=%USER_DIR%\%PROJET%\%PROC%
 set SOFT_DIR=%PROC_DIR%\Software
@@ -70,7 +70,7 @@ set HARD_DIR=%PROC_DIR%\Hardware
 set SIMU_DIR=%PROC_DIR%\Simulation
 set TMP_PRO=%TMP_DIR%\%PROC%
 
-:: Gera diretorios pra teste --------------------------------------------------
+:: Create test directories ----------------------------------------------------
 
 mkdir %TESTE_DIR%
     mkdir %INST_DIR%
@@ -82,14 +82,14 @@ mkdir %TESTE_DIR%
             mkdir %TMP_PRO%
     mkdir %USER_DIR%
 
-:: Copia os arquivos para os diretorios de teste ------------------------------
+:: Copy files into the test directories ---------------------------------------
 
 xcopy Exemplos %USER_DIR% /e /i /q>%TMP_PRO%\log.txt
 xcopy HDL      %HDL_DIR%  /q    /y>%TMP_PRO%\log.txt
 xcopy Macros   %MAC_DIR%  /q    /y>%TMP_PRO%\log.txt
 xcopy Scripts  %SCR_DIR%  /q    /y>%TMP_PRO%\log.txt
 
-:: Gera o compilador CMM ------------------------------------------------------
+:: Build the CMM compiler -----------------------------------------------------
 
 cd %ROOT_DIR%\CMMComp\Sources
 
@@ -102,7 +102,7 @@ del  lex.yy.c
 del  y.tab.c
 del  y.tab.h
 
-:: Gera o Assembler pre-processor ---------------------------------------------
+:: Build the Assembler pre-processor ------------------------------------------
 
 cd %ROOT_DIR%\APP\Sources
 
@@ -112,7 +112,7 @@ cd %ROOT_DIR%\APP\Sources
 move APP.exe %BIN_DIR%>%TMP_PRO%\log.txt
 del  app.c
 
-:: Gera o compilador Assembler ------------------------------------------------
+:: Build the Assembler compiler -----------------------------------------------
 
 cd %ROOT_DIR%\ASM\Sources
 
@@ -122,7 +122,7 @@ cd %ROOT_DIR%\ASM\Sources
 move ASM.exe %BIN_DIR%>%TMP_PRO%\log.txt
 del  ASMComp.c
 
-:: Gera tradutores para o GTKWave ---------------------------------------------
+:: Build translators for GTKWave ----------------------------------------------
 
 cd %SCR_DIR%
 
@@ -130,33 +130,33 @@ cd %SCR_DIR%
 
 move comp2gtkw.exe  %BIN_DIR%>%TMP_PRO%\log.txt
 
-:: Executa o compilador CMM ---------------------------------------------------
+:: Run the CMM compiler -------------------------------------------------------
 
-echo #### Roda o compilador CMM
+echo #### Running the CMM compiler
 
 cd %BIN_DIR%
 
 CMMComp.exe %FNAM% %PROC% %PROC_DIR% %MAC_DIR% %TMP_PRO% 0
 
-:: Executa o Assembler pre-processor ------------------------------------------
+:: Run the Assembler pre-processor --------------------------------------------
 
-echo #### Roda o Pre-assembler
+echo #### Running the Pre-assembler
 
 set ASM_FILE=%SOFT_DIR%\%PROC%.asm
 
 APP.exe %ASM_FILE% %TMP_PRO%
 
-:: Executa o compilador Assembler ---------------------------------------------
+:: Run the Assembler compiler -------------------------------------------------
 
-echo #### Roda o Assembler
+echo #### Running the Assembler
 
 set ASM_FILE=%SOFT_DIR%\%PROC%.asm
 
 ASM.exe %ASM_FILE% %PROC_DIR% %HDL_DIR% %MAC_DIR% %TMP_PRO% %FRE_CLK% %NUM_CLK% 0
 
-:: Gera o testbench com o Icarus ----------------------------------------------
+:: Build the testbench with Icarus --------------------------------------------
 
-echo #### Roda o Icarus
+echo #### Running Icarus
 
 set UPROC=%HARD_DIR%\%PROC%
 cd  %HDL_DIR%
@@ -170,9 +170,9 @@ if exist %SIMU_DIR%\%TB%.v (
 
 %IVERILOG% -s %TB_MOD% -o %TMP_PRO%\%PROC%.vvp %SIMU_DIR%\%TB_MOD%.v %UPROC%.v addr_dec.v instr_dec.v processor.v core.v ula.v
 
-:: Roda o testbench com o vvp -------------------------------------------------
+:: Run the testbench with vvp -------------------------------------------------
 
-echo #### Roda o VVP
+echo #### Running VVP
 
 copy %UPROC%_data.mif %TMP_PRO%>%TMP_PRO%\log.txt
 copy %UPROC%_inst.mif %TMP_PRO%>%TMP_PRO%\log.txt
@@ -181,9 +181,9 @@ cd  %TMP_PRO%
 
 %VVP% %PROC%.vvp -fst
 
-:: Roda o GtkWave -------------------------------------------------------------
+:: Run GtkWave ----------------------------------------------------------------
 
-echo #### Roda o GTKWave
+echo #### Running GTKWave
 
 echo %TMP_PRO%>tcl_infos.txt
 echo %BIN_DIR%>>tcl_infos.txt

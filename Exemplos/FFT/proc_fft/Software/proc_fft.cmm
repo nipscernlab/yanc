@@ -45,7 +45,7 @@ void fft(int N)
 
 void main()
 {
-    // divide 0 a pi em N/2 partes
+    // split 0 to pi into N/2 parts
     wpv[0] =  1.0 + 0.0i;
     wpv[1] =  0.7071067811 + 0.7071067811i;
     wpv[2] =  0.0 + 1.0i;

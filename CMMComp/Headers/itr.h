@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// tratamento de interrupcao --------------------------------------------------
+// interrupt handling ---------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-extern int itr_ok; // se ja usou ou nao interrupcao
+extern int itr_ok; // tells whether an interrupt has already been used
 
-void dire_inter(); // marca ponto de inicio da interrupcao
+void dire_inter(); // marks the interrupt start point

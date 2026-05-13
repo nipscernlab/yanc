@@ -2,7 +2,7 @@
 
 module top_level_tb();
 
-// Variaveis da instancia
+// Instance variables
 reg clk, rst_geral, rst_proc;
 reg wrreq = 1'b0;
 reg [13:0] cont_rst_proc;
@@ -14,12 +14,12 @@ wire [2:0] out_en_DTW;
 wire empty, full, almost_empty;
 wire signed [15:0] q;
 wire signed [6:0] usedw;
-// Variaveis intermediarias para Leitura
+// Intermediate variables for reading
 
 // Clock
 always #2 clk <= ~clk;
 
-// Teste do reset
+// Reset test
 initial
 fork
 	clk <= 1'b0;
@@ -48,15 +48,15 @@ begin
 //	if (req_in[1] == 1'b1)
 	if (rst_proc)
 	begin
-		// Coloca o dado no barramento
+		// Place the data on the bus
 		scan_result = $fscanf(data_in1, "%d", data);
-		// Pulso no write req da FIFO
+		// Pulse on FIFO write req
 		wrreq <= 1'b1;
 		#5 wrreq<= 1'b0;
 	end
 end
 
-// Contador de reset proc
+// Proc reset counter
 always@(posedge clk or posedge rst_geral)
 begin
 	if (rst_geral == 1'b1)
