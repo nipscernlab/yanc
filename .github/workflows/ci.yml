@@ -1,0 +1,75 @@
+name: CI
+
+# Builds all three compilers (cmmcomp, asmcomp, appcomp) plus comp2gtkw
+# on every push and pull request to catch breakages before they reach a
+# release tag. Mirrors the relevant parts of release.yml but skips the
+# packaging / release-creation steps.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (mingw64 + bison + flex)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: >-
+            mingw-w64-x86_64-gcc
+            bison
+            flex
+
+      - name: Build cmmcomp
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          cd CMMComp/Sources
+          bison -y -d CMMComp.y
+          flex CMMComp.l
+          gcc -O2 -Wall -o cmmcomp.exe \
+              data_assign.c data_declar.c data_use.c itr.c diretivas.c \
+              funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
+              variaveis.c array_index.c global.c macros.c messages.c y.tab.c
+          test -x cmmcomp.exe
+          rm -f lex.yy.c y.tab.c y.tab.h
+
+      - name: Build appcomp
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          cd APP/Sources
+          flex -o app.c app.l
+          gcc -O2 -Wall -o appcomp.exe app.c eval.c variaveis.c messages.c
+          test -x appcomp.exe
+          rm -f app.c
+
+      - name: Build asmcomp
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          cd ASM/Sources
+          flex -o ASMComp.c ASMComp.l
+          gcc -O2 -Wall -o asmcomp.exe \
+              ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
+              hdl.c simulacao.c array.c messages.c
+          test -x asmcomp.exe
+          rm -f ASMComp.c
+
+      - name: Build comp2gtkw
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          cd Scripts
+          gcc -O2 -Wall -o comp2gtkw.exe comp2gtkw.c
+          test -x comp2gtkw.exe
