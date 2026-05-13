@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "..\Headers\messages.h"
+
 #define NVARMAX 999999 // mudar pra array dinamico
 
 int  v_count = 0;
@@ -39,7 +41,7 @@ void var_add(char *va, int size)
         v_count += size;
     }
 
-    if (v_count > NVARMAX) {fprintf(stderr, "Erro: número de variáveis > %d", NVARMAX); exit(EXIT_FAILURE);}
+    if (v_count > NVARMAX) {fprintf(stderr, MSG_ERR_TOO_MANY_VARS, NVARMAX); exit(EXIT_FAILURE);}
 }
 
 // retorna o numero de variaveis

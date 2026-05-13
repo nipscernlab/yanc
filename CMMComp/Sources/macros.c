@@ -20,6 +20,7 @@ TODO:
 #include "..\Headers\funcoes.h"
 #include "..\Headers\diretivas.h"
 #include "..\Headers\variaveis.h"
+#include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
 // gerenciamento de macros criadas pelo usuario -------------------------------
@@ -38,9 +39,9 @@ void mac_use(int ids, int global, int id_num)
     // checa consistencia -----------------------------------------------------
 
     if (mac_using == 1)
-        {fprintf(stderr, "Erro na linha %d: tá chamando uma macro dentro da outra. você é uma pessoa confusa!\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf(stderr, MSG_ERR_NESTED_MACRO, line_num+1); exit(EXIT_FAILURE);}
 
-    printf("Info: replacing C± code by user macro %s at line %d\n", v_name[ids], line_num+1);
+    printf(MSG_INFO_USER_MACRO, v_name[ids], line_num+1);
 
     // se for global, tem q ver se tem que chamar a funcao main ainda ---------
     if ((mainok == 0) && (global == 1))
@@ -70,7 +71,7 @@ void mac_use(int ids, int global, int id_num)
     FILE *f_macro;
     char a;
         f_macro  =    fopen  (mac_name, "r");
-    if (f_macro == 0){fprintf(stderr, "Erro na linha %d: cadê a macro %s? Tinha que estar na pasta Software!\n", line_num+1, file_name); exit(EXIT_FAILURE);}
+    if (f_macro == 0){fprintf(stderr, MSG_ERR_MACRO_NOT_FOUND, line_num+1, file_name); exit(EXIT_FAILURE);}
 	do {      a  =    fgetc  (f_macro); if (a != EOF) fputc(a,f_asm);} while (a != EOF);
                       fputc  ('\n',f_asm);
 	                  fclose (f_macro);
@@ -91,7 +92,7 @@ void mac_use(int ids, int global, int id_num)
 
 void mac_end()
 {
-    if (mac_using == 0) {fprintf(stderr, "Erro na linha %d: não estou achando o começo da macro\n", line_num+1); exit(EXIT_FAILURE);}
+    if (mac_using == 0) {fprintf(stderr, MSG_ERR_MACRO_NO_START, line_num+1); exit(EXIT_FAILURE);}
     mac_using = 0;
 }
 
@@ -145,21 +146,21 @@ void mac_copy(char *fasm)
 
     if (fsqrt)
     {
-        printf("Info: adding assembly macro for root square computation\n");
+        printf(MSG_INFO_SQRT_MACRO);
         sprintf(tasm, "%s/float_sqrt.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fatan)
     {
-        printf("Info: adding assembly macro for arc-tangent computation\n");
+        printf(MSG_INFO_ATAN_MACRO);
         sprintf(tasm, "%s/float_atan.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fsin)
     {
-        printf("Info: adding assembly macro for sin computation\n");
+        printf(MSG_INFO_SIN_MACRO);
         sprintf(tasm, "%s/float_sin.asm", dir_macro);
         fcat2end(tasm,fasm);
     }

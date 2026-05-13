@@ -13,6 +13,7 @@
 #include "..\Headers\data_use.h"
 #include "..\Headers\variaveis.h"
 #include "..\Headers\data_declar.h"
+#include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
 // redeclaracao de variaveis globais ------------------------------------------
@@ -97,7 +98,7 @@ void par_check(int et)
 
     if ((t_fun == 1) && (t_cal == 2) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo float para int no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_name[fun_id]);
 
         add_instr("%s %s\n", ld, v_name[et%OFST]);
         add_instr("F2I\n");
@@ -107,7 +108,7 @@ void par_check(int et)
 
     if ((t_fun == 1) && (t_cal == 2) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo float para int no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_name[fun_id]);
 
         add_instr("F2I\n");
     }
@@ -116,7 +117,7 @@ void par_check(int et)
 
     if ((t_fun == 1) && (t_cal == 5))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo comp para int no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_name[fun_id]);
 
         get_cmp_cst(et,&etr,&eti);
 
@@ -128,7 +129,7 @@ void par_check(int et)
 
     if ((t_fun == 1) && (t_cal == 3) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo comp para int no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_name[fun_id]);
 
         add_instr("%s %s\n", ld, v_name[et%OFST]);
         add_instr("F2I\n");
@@ -138,7 +139,7 @@ void par_check(int et)
 
     if ((t_fun == 1) && (t_cal == 3) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo comp para int no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_name[fun_id]);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -148,7 +149,7 @@ void par_check(int et)
 
     if ((t_fun == 2) && (t_cal == 1) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo int para float no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_name[fun_id]);
         
         add_instr("%s %s\n", i2f, v_name[et%OFST]);
     }
@@ -157,7 +158,7 @@ void par_check(int et)
 
     if ((t_fun == 2) && (t_cal == 1) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo int para float no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_name[fun_id]);
 
         add_instr("I2F\n");
     }
@@ -180,7 +181,7 @@ void par_check(int et)
 
     if ((t_fun == 2) && (t_cal == 5))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo comp para float no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_name[fun_id]);
 
         get_cmp_cst(et,&etr,&eti);
 
@@ -191,7 +192,7 @@ void par_check(int et)
 
     if ((t_fun == 2) && (t_cal == 3) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo comp para float no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_name[fun_id]);
 
         add_instr("%s %s\n", ld, v_name[et%OFST]);
     }
@@ -200,7 +201,7 @@ void par_check(int et)
 
     if ((t_fun == 2) && (t_cal == 3) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo comp para float no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_name[fun_id]);
 
         add_instr("POP\n");
     }
@@ -209,7 +210,7 @@ void par_check(int et)
 
     if ((t_fun == 3) && (t_cal == 1) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo int para comp no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_name[fun_id]);
         
         add_instr("%s %s\n", i2f, v_name[et%OFST]);
         add_instr("P_LOD 0.0\n");
@@ -219,7 +220,7 @@ void par_check(int et)
 
     if ((t_fun == 3) && (t_cal == 1) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo int para comp no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_name[fun_id]);
         
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
@@ -229,7 +230,7 @@ void par_check(int et)
 
     if ((t_fun == 3) && (t_cal == 2) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo float para comp no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_name[fun_id]);
 
         add_instr("%s %s\n", ld, v_name[et%OFST]);
         add_instr("P_LOD 0.0\n");
@@ -239,7 +240,7 @@ void par_check(int et)
 
     if ((t_fun == 3) && (t_cal == 2) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: convertendo float para comp no parâmetro %d da função '%s'.\n", line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_name[fun_id]);
 
         add_instr("P_LOD 0.0\n");
     }
@@ -348,7 +349,7 @@ void declar_ret(int et, int ret)
 {
     // checa se eh funcao mesmo, ou void por engano
     if (v_type[fun_parse] == 6)
-        {fprintf (stderr, "Erro na linha %d: valor de retorno em função void? viajou!\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_VOID_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
 
     // testa se esta dentro de um if/else
     //if ((get_if() > 0) && (v_type[fun_parse] != 6))
@@ -376,7 +377,7 @@ void declar_ret(int et, int ret)
     // int com float var
     if ((left_type == 7) && (get_type(et) == 2) && (et%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: vai converter float para int no retorno da função '%s'? Dá-lhe código!\n", line_num+1, v_name[fun_parse]);
+        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_name[fun_parse]);
 
         add_instr("F2I_M %s\n", v_name[et%OFST]);
     }
@@ -384,14 +385,14 @@ void declar_ret(int et, int ret)
     // int com float acc
     if ((left_type == 7) && (get_type(et) == 2) && (et%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: vai converter float para int no retorno da função '%s'? Dá-lhe código!\n", line_num+1, v_name[fun_parse]);
+        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_name[fun_parse]);
         add_instr("F2I\n");
     }
 
     // int com comp const
     if ((left_type == 7) && (get_type(et) == 5))
     {
-        fprintf (stdout, "Atenção na linha %d: nessa conversão, eu vou arredondar a parte real hein!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
         get_cmp_cst(et,&etr,&eti);
         
@@ -401,7 +402,7 @@ void declar_ret(int et, int ret)
     // int com comp var
     if ((left_type == 7) && (get_type(et) == 3) && (et%OFST!=0))
     {
-        fprintf (stdout, "Atenção na linha %d: nessa conversão, eu vou arredondar a parte real hein!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
         get_cmp_ets(et,&etr,&eti);
         
@@ -411,7 +412,7 @@ void declar_ret(int et, int ret)
     // int com comp acc
     if ((left_type == 7) && (get_type(et) == 3) && (et%OFST==0))
     {
-        fprintf (stdout, "Atenção na linha %d: nessa conversão, eu vou arredondar a parte real hein!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -420,7 +421,7 @@ void declar_ret(int et, int ret)
     // float com int var
     if ((left_type == 8) && (get_type(et) == 1) && (et%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: retorno é float, mas recebe int.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
         add_instr("I2F_M %s\n", v_name[et % OFST]);
     }
@@ -428,7 +429,7 @@ void declar_ret(int et, int ret)
     // float com int acc
     if ((left_type == 8) && (get_type(et) == 1) && (et%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: retorno é float, mas recebe int.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
         
         add_instr("I2F\n");
     }
@@ -448,7 +449,7 @@ void declar_ret(int et, int ret)
     // float com comp const
     if ((left_type == 8) && (get_type(et) == 5))
     {
-        fprintf (stdout, "Atenção na linha %d: nessa conversão, eu vou pegar só a parte real hein!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_cst(et,&etr,&eti);
         
@@ -458,7 +459,7 @@ void declar_ret(int et, int ret)
     // float com comp var
     if ((left_type == 8) && (get_type(et) == 3) && (et%OFST!=0))
     {
-        fprintf (stdout, "Atenção na linha %d: nessa conversão, eu vou pegar só a parte real hein!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_ets(et,&etr,&eti);
         
@@ -468,7 +469,7 @@ void declar_ret(int et, int ret)
     // float com comp acc
     if ((left_type == 8) && (get_type(et) == 3) && (et%OFST==0))
     {
-        fprintf (stdout, "Atenção na linha %d: nessa conversão, eu vou pegar só a parte real hein!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         add_instr("POP\n");
     }
@@ -476,7 +477,7 @@ void declar_ret(int et, int ret)
     // comp com int var
     if ((left_type == 9) && (get_type(et) == 1) && (et%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: retorno da função é comp, mas recebe int.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
         add_instr("I2F_M %s\n", v_name[et % OFST]);
         add_instr("P_LOD 0.0\n");
@@ -485,7 +486,7 @@ void declar_ret(int et, int ret)
     // comp com int acc
     if ((left_type == 9) && (get_type(et) == 1) && (et%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: retorno da função é comp, mas recebe int.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_RET_COMP_RECV_INT, line_num+1);
         
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
@@ -494,7 +495,7 @@ void declar_ret(int et, int ret)
     // comp com float var
     if ((left_type == 9) && (get_type(et) == 2) && (et%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: retorno da função é comp, mas recebe float.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
         add_instr("LOD %s\n", v_name[et % OFST]);
         add_instr("P_LOD 0.0\n");
@@ -503,7 +504,7 @@ void declar_ret(int et, int ret)
     // comp com float acc
     if ((left_type == 9) && (get_type(et) == 2) && (et%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: retorno da função é comp, mas recebe float.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
         add_instr("P_LOD 0.0\n");
     }
@@ -549,7 +550,7 @@ void func_ret(int id) // id -> id da funcao atual
 {
     // checa se a funcao teve a instrucao return x;
     if ((v_type[id] != 6) && (ret_ok == 0))
-        {fprintf (stderr, "Erro na função %s: cadê o retorno pra essa função?\n", v_name[id]); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_FUNC_NO_RETURN, v_name[id]); exit(EXIT_FAILURE);}
 
     // se eh funcao main, da um JMP fim
     if (strcmp(v_name[id], "main") == 0)
@@ -569,7 +570,7 @@ void void_ret()
 {
     // checa se eh void mesmo, ou funcao por engano
     if (v_type[fun_parse] != 6)
-        {fprintf (stderr, "Erro na linha %d: cadê o valor de retorno da função?\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_NO_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
 
     // se eh funcao main, usa JMP fim ao inves de RET
     if ((strcmp(fname, "main") == 0))
@@ -605,14 +606,14 @@ void vcall(int id)
     // posso usar funcao com chamada void tb, por isso testar tudo aqui
     if  (v_type[id] < 6)
     {
-        fprintf(stderr, "Erro na linha %d: cadê essa função '%s'?\n", line_num+1, rem_fname(v_name[id], fname));
+        fprintf(stderr, MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
     }
 
     // checa numero de parametros
     if (get_npar(p_test) != get_npar(v_fpar[id])) // p_test tem a lista de par na chamada e v_fpar na declaracao
     {
-        fprintf(stderr, "Erro na linha %d: olha lá direito quantos parâmetros tem a função '%s'.\n", line_num+1, rem_fname(v_name[id], fname));
+        fprintf(stderr, MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
     }
 
@@ -627,18 +628,18 @@ int fcall(int id)
 {
     if (v_type[id] == 6)
     {
-        fprintf (stderr, "Erro na linha %d: olha lá a funcao '%s', você vai ver que ela nao retorna nada.\n", line_num+1, v_name[id]);
+        fprintf (stderr, MSG_ERR_VOID_FUNC_USE, line_num+1, v_name[id]);
         exit(EXIT_FAILURE);
     }
     else if (v_type[id] < 6)
     {
-        fprintf (stderr, "Erro na linha %d: A função '%s' tá onde?\n", line_num+1, rem_fname(v_name[id], fname));
+        fprintf (stderr, MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
     }
 
     if (get_npar(p_test) != get_npar(v_fpar[id]))
     {
-        fprintf(stderr, "Erro na linha %d: lista de parâmetros da função '%s' difere da original.\n", line_num+1, v_name[id]);
+        fprintf(stderr, MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_name[id]);
         exit(EXIT_FAILURE);
     }
 

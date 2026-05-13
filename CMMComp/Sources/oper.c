@@ -14,6 +14,7 @@
 #include "..\Headers\data_use.h"
 #include "..\Headers\diretivas.h"
 #include "..\Headers\variaveis.h"
+#include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
 // operacoes aritmeticas ------------------------------------------------------
@@ -2395,7 +2396,7 @@ int oper_divi(int et1, int et2)
 int oper_mod(int et1, int et2)
 {
     if ((get_type(et1) > 1) || (get_type(et2) > 1))
-        {fprintf(stderr, "Erro na linha %d: qual o sentido de calcular o resto da divisão sem ser com número inteiro? Vai se tratar!\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf(stderr, MSG_ERR_MOD_NON_INT, line_num+1); exit(EXIT_FAILURE);}
 
     char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
@@ -2487,7 +2488,7 @@ int oper_cmp(int et1, int et2, int type)
     // int var com comp const
     if ((get_type(et1)==1) && (et1%OFST!=0) && (get_type(et2)==5))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         oper_mult(et1,et1);
         exec_mod2(et2);
@@ -2497,7 +2498,7 @@ int oper_cmp(int et1, int et2, int type)
     // int var com comp var
     if ((get_type(et1)==1) && (et1%OFST!=0) && (get_type(et2)==3) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         oper_mult(et1,et1);
         exec_mod2(et2);
@@ -2507,7 +2508,7 @@ int oper_cmp(int et1, int et2, int type)
     // int var com comp acc
     if ((get_type(et1)==1) && (et1%OFST!=0) && (get_type(et2)==3) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
@@ -2555,7 +2556,7 @@ int oper_cmp(int et1, int et2, int type)
     // int acc com comp const
     if ((get_type(et1)==1) && (et1%OFST==0) && (get_type(et2)==5))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
@@ -2567,7 +2568,7 @@ int oper_cmp(int et1, int et2, int type)
     // int acc com comp var
     if ((get_type(et1)==1) && (et1%OFST==0) && (get_type(et2)==3) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
@@ -2579,7 +2580,7 @@ int oper_cmp(int et1, int et2, int type)
     // int acc com comp acc
     if ((get_type(et1)==1) && (et1%OFST==0) && (get_type(et2)==3) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         add_instr("SET_P aux_var \n");
         add_instr("SET_P aux_var1\n");
@@ -2635,7 +2636,7 @@ int oper_cmp(int et1, int et2, int type)
     // float var com comp const
     if ((get_type(et1)==2) && (et1%OFST!=0) && (get_type(et2)==5))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         oper_mult(et1,et1);
         exec_mod2(et2);
@@ -2645,7 +2646,7 @@ int oper_cmp(int et1, int et2, int type)
     // float var com comp var
     if ((get_type(et1)==2) && (et1%OFST!=0) && (get_type(et2)==3) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         oper_mult(et1,et1);
         exec_mod2(et2);
@@ -2655,7 +2656,7 @@ int oper_cmp(int et1, int et2, int type)
     // float var com comp acc
     if ((get_type(et1)==2) && (et1%OFST!=0) && (get_type(et2)==3) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
@@ -2701,7 +2702,7 @@ int oper_cmp(int et1, int et2, int type)
     // float acc com comp const
     if ((get_type(et1)==2) && (et1%OFST==0) && (get_type(et2)==5))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
@@ -2713,7 +2714,7 @@ int oper_cmp(int et1, int et2, int type)
     // float acc com comp var
     if ((get_type(et1)==2) && (et1%OFST==0) && (get_type(et2)==3) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
@@ -2725,7 +2726,7 @@ int oper_cmp(int et1, int et2, int type)
     // float acc com comp acc
     if ((get_type(et1)==2) && (et1%OFST==0) && (get_type(et2)==3) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         add_instr("SET_P aux_var \n");
         add_instr("SET_P aux_var1\n");
@@ -2742,7 +2743,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp const com int var
     if ((get_type(et1)==5) && (get_type(et2)==1) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         exec_mod2(et1);
         oper_mult(et2,et2);
@@ -2752,7 +2753,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp const com int acc
     if ((get_type(et1)==5) && (get_type(et2)==1) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         add_instr("SET   aux_var\n");
         acc_ok = 0;
@@ -2766,7 +2767,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp const com float var
     if ((get_type(et1)==5) && (get_type(et2)==2) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         exec_mod2(et1);
         oper_mult(et2,et2);
@@ -2776,7 +2777,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp const com float acc
     if ((get_type(et1)==5) && (get_type(et2)==2) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         add_instr("SET   aux_var\n");
         acc_ok = 0;
@@ -2790,7 +2791,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp const com comp const
     if ((get_type(et1)==5) && (get_type(et2)==5))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
         exec_mod2(et2);
@@ -2800,7 +2801,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp const com comp var
     if ((get_type(et1)==5) && (get_type(et2)==3) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
         exec_mod2(et2);
@@ -2810,7 +2811,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp const com comp acc
     if ((get_type(et1)==5) && (get_type(et2)==3) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
@@ -2825,7 +2826,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp var com int var
     if ((get_type(et1)==3) && (et1%OFST!=0) && (get_type(et2)==1) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         exec_mod2(et1);
         oper_mult(et2,et2);
@@ -2835,7 +2836,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp var com int acc
     if ((get_type(et1)==3) && (et1%OFST!=0) && (get_type(et2)==1) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         add_instr("SET   aux_var\n");
         acc_ok = 0;
@@ -2849,7 +2850,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp var com float var
     if ((get_type(et1)==3) && (et1%OFST!=0) && (get_type(et2)==2) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         exec_mod2(et1);
         oper_mult(et2,et2);
@@ -2859,7 +2860,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp var com float acc
     if ((get_type(et1)==3) && (et1%OFST!=0) && (get_type(et2)==2) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         add_instr("SET   aux_var\n");
         acc_ok = 0;
@@ -2873,7 +2874,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp var com comp const
     if ((get_type(et1)==3) && (et1%OFST!=0) && (get_type(et2)==5))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
         exec_mod2(et2);
@@ -2883,7 +2884,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp var com comp var
     if ((get_type(et1)==3) && (et1%OFST!=0) && (get_type(et2)==3) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
         exec_mod2(et2);
@@ -2893,7 +2894,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp var com comp acc
     if ((get_type(et1)==3) && (et1%OFST!=0) && (get_type(et2)==3) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
@@ -2908,7 +2909,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp acc com int var
     if ((get_type(et1)==3) && (et1%OFST==0) && (get_type(et2)==1) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
         oper_mult(et2,et2);
@@ -2918,7 +2919,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp acc com int acc
     if ((get_type(et1)==3) && (et1%OFST==0) && (get_type(et2)==1) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         add_instr("SET_P aux_var\n");
         exec_mod2(et1);
@@ -2931,7 +2932,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp acc com float var
     if ((get_type(et1)==3) && (et1%OFST==0) && (get_type(et2)==2) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
         oper_mult(et2,et2);
@@ -2941,7 +2942,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp acc com float acc
     if ((get_type(et1)==3) && (et1%OFST==0) && (get_type(et2)==2) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         add_instr("SET_P aux_var\n");
         exec_mod2(et1);
@@ -2954,7 +2955,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp acc com comp const
     if ((get_type(et1)==3) && (et1%OFST==0) && (get_type(et2)==5))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
         exec_mod2(et2);
@@ -2964,7 +2965,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp acc com comp var
     if ((get_type(et1)==3) && (et1%OFST==0) && (get_type(et2)==3) && (et2%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
         exec_mod2(et2);
@@ -2974,7 +2975,7 @@ int oper_cmp(int et1, int et2, int type)
     // comp acc com comp acc
     if ((get_type(et1)==3) && (et1%OFST==0) && (get_type(et2)==3) && (et2%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         add_instr("SET_P aux_var \n");
         add_instr("SET_P aux_var1\n");
@@ -3036,7 +3037,7 @@ int oper_lin(int et)
     // se for um float var na memoria
     if ((get_type(et) == 2) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão lógica com float? Você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_LOGIC_FLOAT, line_num+1);
 
         add_instr("%s %s\n", f2i, v_name[et%OFST]);
         add_instr("LIN\n");
@@ -3045,7 +3046,7 @@ int oper_lin(int et)
     // se for um float no acc
     if ((get_type(et) == 2) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão lógica com float? Você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_LOGIC_FLOAT, line_num+1);
 
         add_instr("F2I\n");
         add_instr("LIN\n");
@@ -3054,7 +3055,7 @@ int oper_lin(int et)
     // se for um comp const
     if (get_type(et) == 5)
     {
-        fprintf(stdout, "Atenção na linha %d: expressão lógica com comp? Sério? Vou arredondar a parte real!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_LOGIC_COMP, line_num+1);
 
         get_cmp_cst(et,&etr,&eti);
 
@@ -3065,7 +3066,7 @@ int oper_lin(int et)
     // se for um comp var
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão lógica com comp? Sério? Vou arredondar a parte real!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_LOGIC_COMP, line_num+1);
 
         add_instr("%s %s\n", f2i, v_name[et%OFST]);
         add_instr("LIN\n");
@@ -3074,7 +3075,7 @@ int oper_lin(int et)
     // se for um comp no acc
     if ((get_type(et) == 3) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão lógica com comp? Sério? Vou arredondar a parte real!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_LOGIC_COMP, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -3091,7 +3092,7 @@ int oper_lanor(int et1, int et2, int type)
 {
     if ((get_type(et1) > 1) || (get_type(et2) > 1))
     {
-        fprintf(stderr, "Erro na linha %d: operação lógica, só entre números inteiros!\n", line_num+1);
+        fprintf(stderr, MSG_ERR_LOGIC_NON_INT, line_num+1);
         exit(EXIT_FAILURE);
     }
 
@@ -3145,7 +3146,7 @@ int oper_lanor(int et1, int et2, int type)
 int oper_inv(int et)
 {
     if (get_type(et) > 1)
-        {fprintf(stderr, "Erro na linha %d: uso incorreto do operador '~'. Tem que passar tipo int. Viajou?\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf(stderr, MSG_ERR_INV_NON_INT, line_num+1); exit(EXIT_FAILURE);}
 
     int etr, eti;
 
@@ -3173,7 +3174,7 @@ int oper_bitw(int et1, int et2, int type)
 {
     if (get_type(et1) > 2 || get_type(et2) > 2)
     {
-        fprintf(stderr, "Erro na linha %d: como você quer que eu faça operações bitwise com um número complexo? Viajou?\n", line_num+1);
+        fprintf(stderr, MSG_ERR_BITWISE_COMPLEX, line_num+1);
         exit(EXIT_FAILURE);
     }
     
@@ -3226,10 +3227,10 @@ int oper_bitw(int et1, int et2, int type)
 int oper_shift(int et1, int et2, int type)
 {
     if (get_type(et1) > 2)
-        {fprintf(stderr, "Erro na linha %d: como você quer que eu desloque bits de um número complexo? Viajou?\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf(stderr, MSG_ERR_SHIFT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     if (get_type(et2) > 2)
-        {fprintf(stderr, "Erro na linha %d: usando comp pra deslocar bits? Você é uma pessoa confusa!\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf(stderr, MSG_ERR_SHIFT_BY_COMP, line_num+1); exit(EXIT_FAILURE);}
 
     char op[16];
 
@@ -3260,7 +3261,7 @@ int oper_shift(int et1, int et2, int type)
     // int/float var com float var
     if ((et1%OFST != 0) && (get_type(et2) == 2) && (et2%OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: o segundo operando do shift tá em float. Aí você me quebra!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
         add_instr("%s %s\n", ld, v_name[et2%OFST]);
         add_instr("F2I\n");
@@ -3270,7 +3271,7 @@ int oper_shift(int et1, int et2, int type)
     // int/float var com float acc
     if ((et1%OFST != 0) && (get_type(et2) == 2) && (et2%OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: o segundo operando do shift tá em float. Aí você me quebra!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
         add_instr("F2I\n");
         add_instr("%s %s\n", op, v_name[et1%OFST]);
@@ -3292,7 +3293,7 @@ int oper_shift(int et1, int et2, int type)
     // int/float acc com float var
     if ((et1%OFST == 0) && (get_type(et2) == 2) && (et2%OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: o segundo operando do shift tá em float. Aí você me quebra!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
         add_instr("P_LOD %s\n", v_name[et2%OFST]);
         add_instr("F2I\n");
@@ -3302,7 +3303,7 @@ int oper_shift(int et1, int et2, int type)
     // int/float acc com float acc
     if ((et1%OFST == 0) && (get_type(et2) == 2) && (et2%OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: o segundo operando do shift tá em float. Aí você me quebra!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
         
         add_instr("F2I\n");
         add_instr("S_%s\n", op);

@@ -15,6 +15,7 @@ TODO:
 #include "..\Headers\global.h"
 #include "..\Headers\data_use.h"
 #include "..\Headers\variaveis.h"
+#include "..\Headers\messages.h"
 
 // variaveis de estado para switch case
 int switching = 0;
@@ -42,7 +43,7 @@ void if_exp(int et)
     // float var
     if ((get_type(et) == 2) && (et%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando float! Vou arredondar.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
 
         add_instr("F2I_M %s\n", v_name[et%OFST]);
     }
@@ -50,7 +51,7 @@ void if_exp(int et)
     // float acc
     if ((get_type(et) == 2) && (et%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando float! Vou arredondar.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
         
         add_instr("F2I\n");
     }
@@ -58,7 +59,7 @@ void if_exp(int et)
     // comp const
     if (get_type(et) == 5)
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando comp! Vou arredondar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
         int etr,eti;
         get_cmp_cst(et,&etr,&eti);
@@ -69,7 +70,7 @@ void if_exp(int et)
     // comp var
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando comp! Vou arredondar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
         add_instr("F2I_M %s\n", v_name[et%OFST]);
     }
@@ -77,7 +78,7 @@ void if_exp(int et)
     // comp acc
     if ((get_type(et) == 3) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando comp! Vou arredondar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -123,7 +124,7 @@ void while_stmt()
 void exec_break()
 {
     // checa se o break esta dentro de um while
-    if (get_while() == 0) {fprintf(stderr, "Erro na linha %d: esse brake aí tá perdido!\n", line_num+1); exit(EXIT_FAILURE);}
+    if (get_while() == 0) {fprintf(stderr, MSG_ERR_BREAK_LOST, line_num+1); exit(EXIT_FAILURE);}
 
     add_instr("JMP L%dend\n", get_while());
 }
@@ -153,7 +154,7 @@ void while_expexp(int et)
     // float var
     if ((get_type(et) == 2) && (et%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando float! Vou arredondar.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
 
         add_instr("F2I_M %s\n", v_name[et%OFST]);
     }
@@ -161,7 +162,7 @@ void while_expexp(int et)
     // float acc
     if ((get_type(et) == 2) && (et%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando float! Vou arredondar.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
         
         add_instr("F2I\n");
     }
@@ -169,7 +170,7 @@ void while_expexp(int et)
     // comp const
     if (get_type(et) == 5)
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando comp! Vou arredondar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
         int etr,eti;
         get_cmp_cst(et,&etr,&eti);
@@ -180,7 +181,7 @@ void while_expexp(int et)
     // comp var
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando comp! Vou arredondar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
         add_instr("F2I_M %s\n", v_name[et%OFST]);
     }
@@ -188,7 +189,7 @@ void while_expexp(int et)
     // comp acc
     if ((get_type(et) == 3) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: expressão condicional dando comp! Vou arredondar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -237,7 +238,7 @@ void exec_switch(int et)
 {
     if (switching == 1)
     {
-        fprintf(stderr, "Erro na linha %d: um switch/case dentro de outro? Você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stderr, MSG_ERR_NESTED_SWITCH, line_num+1);
         exit(EXIT_FAILURE);
     }
 
@@ -268,7 +269,7 @@ void exec_switch(int et)
     // float var
     if ((get_type(et) == 2) && (et%OFST!=0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice do case dando float! Vou arredondar.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CASE_FLOAT, line_num+1);
 
         add_instr("F2I_M %s\n", v_name[et%OFST]);
     }
@@ -276,7 +277,7 @@ void exec_switch(int et)
     // float acc
     if ((get_type(et) == 2) && (et%OFST==0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice do case dando float! Vou arredondar.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CASE_FLOAT, line_num+1);
         
         add_instr("F2I\n");
     }
@@ -284,7 +285,7 @@ void exec_switch(int et)
     // comp const
     if (get_type(et) == 5)
     {
-        fprintf(stdout, "Atenção na linha %d: índice do case dando comp! Vou arredondar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
 
         int etr,eti;
         get_cmp_cst(et,&etr,&eti);
@@ -295,7 +296,7 @@ void exec_switch(int et)
     // comp var
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice do case dando comp! Vou arredondar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
 
         add_instr("F2I_M %s\n", v_name[et%OFST]);
     }
@@ -303,7 +304,7 @@ void exec_switch(int et)
     // comp acc
     if ((get_type(et) == 3) && (et % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice do case dando comp! Vou arredondar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");

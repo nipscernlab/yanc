@@ -13,6 +13,7 @@
 #include "..\Headers\eval.h"
 #include "..\Headers\array.h"
 #include "..\Headers\variaveis.h"
+#include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
 // funcoes auxiliares ---------------------------------------------------------
@@ -34,13 +35,13 @@ int linha_e_inteiro(char *linha, int idx, char *f_name)
     // ignora espaços em branco no começo
     while (isspace((unsigned char)*linha)) linha++ ;
     // se linha ta vazia, nao eh um inteiro valido
-    if (*linha == '\0' || *linha == '\n') {fprintf(stderr, "Erro: a linha %d do arquivo '%s' tá vazia! Aí fica difícil.\n", idx, f_name); exit(EXIT_FAILURE);}
+    if (*linha == '\0' || *linha == '\n') {fprintf(stderr, MSG_ERR_EMPTY_LINE, idx, f_name); exit(EXIT_FAILURE);}
     // passa pelos caracteres dos numeros (incluindo sinal de negativo)
     char *endptr; strtol(linha, &endptr, 10);
     // verifica se o restante da string é só espaços
     while (isspace((unsigned char)*endptr)) endptr++;
     // eh inteiro se não sobrou mais nada
-    if (*endptr != '\0') {fprintf(stderr, "Erro: a linha %d do arquivo '%s' não é um inteiro válido!\n", idx, f_name); exit(EXIT_FAILURE);}
+    if (*endptr != '\0') {fprintf(stderr, MSG_ERR_INVALID_INT, idx, f_name); exit(EXIT_FAILURE);}
     
     // checa se o valor cabe no numero de bits --------------------------------
 
@@ -48,8 +49,8 @@ int linha_e_inteiro(char *linha, int idx, char *f_name)
     int min = (int) (-pow(2,nbmant+nbexpo+1-1)  );
     int num = atoi(linha);
 
-    if (num > max) {fprintf(stderr, "Erro: a linha %d do arquivo '%s' é maior que o limite de %d!\n", idx, f_name, max); exit(EXIT_FAILURE);}
-    if (num < min) {fprintf(stderr, "Erro: a linha %d do arquivo '%s' é menor que o limite de %d!\n", idx, f_name, min); exit(EXIT_FAILURE);}
+    if (num > max) {fprintf(stderr, MSG_ERR_INT_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
+    if (num < min) {fprintf(stderr, MSG_ERR_INT_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
 
     return num;
 }
@@ -62,13 +63,13 @@ int linha_e_float(char *linha, int idx, char *f_name, float *delta)
     // ignora espaços em branco iniciais
     while (isspace((unsigned char)*linha)) linha++;
     // linha vazia
-    if (*linha == '\0' || *linha == '\n') {fprintf(stderr, "Erro: a linha %d do arquivo '%s' tá vazia! Aí fica difícil.\n", idx, f_name); exit(EXIT_FAILURE);}
+    if (*linha == '\0' || *linha == '\n') {fprintf(stderr, MSG_ERR_EMPTY_LINE, idx, f_name); exit(EXIT_FAILURE);}
     // passa pelos caracteres dos numeros (incluindo sinal de negativo)
     char *endptr; strtof(linha, &endptr);
     // verifica se o restante da string é só espaços
     while (isspace((unsigned char)*endptr)) endptr++;
     // eh float se nao sobrou mais nada
-    if (*endptr != '\0') {fprintf(stderr, "Erro: a linha %d do arquivo '%s' não é um float válido!\n", idx, f_name); exit(EXIT_FAILURE);}
+    if (*endptr != '\0') {fprintf(stderr, MSG_ERR_INVALID_FLOAT, idx, f_name); exit(EXIT_FAILURE);}
 
     // verifica limites -------------------------------------------------------
 
@@ -76,8 +77,8 @@ int linha_e_float(char *linha, int idx, char *f_name, float *delta)
     float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // menor valor possivel em modulo
     float num = (atof(linha)<0.0) ? -atof(linha) : atof(linha);         //       valor do num   em modulo
 
-    if (num < min && num != 0.0) {fprintf(stderr, "Erro: a linha %d do arquivo '%s' é menor que o limite de %f!\n", idx, f_name, min); exit(EXIT_FAILURE);}
-    if (num > max)               {fprintf(stderr, "Erro: a linha %d do arquivo '%s' é maior que o limite de %f!\n", idx, f_name, max); exit(EXIT_FAILURE);}
+    if (num < min && num != 0.0) {fprintf(stderr, MSG_ERR_FLOAT_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
+    if (num > max)               {fprintf(stderr, MSG_ERR_FLOAT_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
 
     // converte e calcula residuo ---------------------------------------------
 
@@ -119,7 +120,7 @@ void separar_complexo(const char *entrada, char *real, char *imag) {
     }
 
     if (pos == -1) {
-        fprintf(stderr, "Formato inválido!\n");
+        fprintf(stderr, MSG_ERR_BAD_FORMAT);
         real[0] = '\0';
         imag[0] = '\0';
         return;
@@ -148,19 +149,19 @@ int linha_e_comp(const char *linha, int idx, char *f_name, float *delta)
     // Ignora espaços
     while (isspace((unsigned char)*p)) p++;
     // Primeiro float
-    if (!parse_float(p, &f1, &p)) {fprintf(stderr, "Erro: a linha %d do arquivo '%s' não é um comp válido!\n", idx, f_name); exit(EXIT_FAILURE);}
+    if (!parse_float(p, &f1, &p)) {fprintf(stderr, MSG_ERR_INVALID_COMP, idx, f_name); exit(EXIT_FAILURE);}
     // Ignora espaços
     while (isspace((unsigned char)*p)) p++;
     // Segundo float
-    if (!parse_float(p, &f2, &p)) {fprintf(stderr, "Erro: a linha %d do arquivo '%s' não é um comp válido!\n", idx, f_name); exit(EXIT_FAILURE);}
+    if (!parse_float(p, &f2, &p)) {fprintf(stderr, MSG_ERR_INVALID_COMP, idx, f_name); exit(EXIT_FAILURE);}
     // se o proximo caractere nao for a letra i, retorna
-    if (*p != 'i')                {fprintf(stderr, "Erro: a linha %d do arquivo '%s' não é um comp válido!\n", idx, f_name); exit(EXIT_FAILURE);}
+    if (*p != 'i')                {fprintf(stderr, MSG_ERR_INVALID_COMP, idx, f_name); exit(EXIT_FAILURE);}
     // incrementa o ponteiro do ´i´
     p++;
     // Ignora espaços
     while (isspace((unsigned char)*p)) p++;
     // se sobrou algo na linha, nao eh comp valido
-    if (*p != '\0')               {fprintf(stderr, "Erro: a linha %d do arquivo '%s' não é um comp válido!\n", idx, f_name); exit(EXIT_FAILURE);}
+    if (*p != '\0')               {fprintf(stderr, MSG_ERR_INVALID_COMP, idx, f_name); exit(EXIT_FAILURE);}
 
     // verifica limites -------------------------------------------------------
 
@@ -172,13 +173,13 @@ int linha_e_comp(const char *linha, int idx, char *f_name, float *delta)
 
     // parte real
     float num = (atof(real)<0.0) ? -atof(real) : atof(real); // valor da parte realem modulo
-    if (num < min && num != 0.0) {fprintf(stderr, "Erro: parte real da linha %d do arquivo '%s' é menor que o limite de %f!\n", idx, f_name, min); exit(EXIT_FAILURE);}
-    if (num > max)               {fprintf(stderr, "Erro: parte real da linha %d do arquivo '%s' é maior que o limite de %f!\n", idx, f_name, max); exit(EXIT_FAILURE);}
+    if (num < min && num != 0.0) {fprintf(stderr, MSG_ERR_COMP_REAL_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
+    if (num > max)               {fprintf(stderr, MSG_ERR_COMP_REAL_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
 
     // parte imaginaria
         num = (atof(imag)<0.0) ? -atof(imag) : atof(imag); // valor da parte imaginaria em modulo
-    if (num < min && num != 0.0) {fprintf(stderr, "Erro: parte imaginária da linha %d do arquivo '%s' é menor que o limite de %f!\n", idx, f_name, min); exit(EXIT_FAILURE);}
-    if (num > max)               {fprintf(stderr, "Erro: parte imaginária da linha %d do arquivo '%s' é maior que o limite de %f!\n", idx, f_name, max); exit(EXIT_FAILURE);}
+    if (num < min && num != 0.0) {fprintf(stderr, MSG_ERR_COMP_IMAG_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
+    if (num > max)               {fprintf(stderr, MSG_ERR_COMP_IMAG_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
 
     // converte e calcula residuo da parte real -------------------------------
 
@@ -195,7 +196,7 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
 {
     // informa que o array vai ser preenchido ---------------------------------
 
-    if (fil_typ != 4) printf("Info: filling array with %d values read from file %s\n", tam, f_name);
+    if (fil_typ != 4) printf(MSG_INFO_FILL_ARRAY, tam, f_name);
 
     // abre o arquivo para leitura -------------------------------------------
     
@@ -209,7 +210,7 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
         sprintf(path, "%s/Software/%s", proc_dir, f_name  );
 
     FILE *f_file =        fopen  (path  , "r");
-    if   (f_file == NULL){fprintf(stderr, "Erro: não rolou de abrir o arquivo '%s'!!\n", path); exit(EXIT_FAILURE);}
+    if   (f_file == NULL){fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path); exit(EXIT_FAILURE);}
 
     // agora le o arquivo -----------------------------------------------------
 
@@ -256,7 +257,7 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
         // se tem mais dados do que o necessario, da um warning e sai
         if (i > tam)
         {
-            fprintf(stdout, "Atenção: tá sobrando %d linhas no arquivo '%s'!\n", i-tam, f_name);
+            fprintf(stdout, MSG_WARN_EXTRA_LINES, i-tam, f_name);
             break;
         }
         // senao, preenche a memoria com o novo valor
@@ -266,19 +267,19 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
 
     // se tem menos dados do que o necessario, gera um erro
     if ((i < tam) && (fil_typ != 4))
-        {fprintf(stderr, "Erro: tá faltando %d linhas no arquivo '%s'!\n", tam-i, f_name); exit(EXIT_FAILURE);}
+        {fprintf(stderr, MSG_ERR_MISSING_LINES, tam-i, f_name); exit(EXIT_FAILURE);}
 
     // informa o maior erro de aproximacao pra float
     if (fil_typ == 2 && dmax != 0.0)
-        printf("Info: largest approximation error in file '%s' is %.14f on line %d\n", f_name, dmax, idx);
+        printf(MSG_INFO_APPROX_ERR, f_name, dmax, idx);
 
     // informa o maior erro de aproximacao pra real do comp
     if (fil_typ == 3 && dmax != 0.0)
-        printf("Info: largest approximation error, for real part, in file '%s', is %.14f on line %d\n", f_name, dmax, idx);
+        printf(MSG_INFO_APPROX_ERR_REAL, f_name, dmax, idx);
 
     // informa o maior erro de aproximacao pra imag do comp
     if (fil_typ == 4 && dmax != 0.0)
-        printf("Info: largest approximation error, for imaginary part, in file '%s', is %.14f on line %d\n", f_name, dmax, idx);
+        printf(MSG_INFO_APPROX_ERR_IMAG, f_name, dmax, idx);
 
     fclose(f_file);
 }

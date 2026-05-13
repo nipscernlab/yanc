@@ -20,6 +20,7 @@ TODO:
 #include "..\Headers\variaveis.h"
 #include "..\Headers\data_assign.h"
 #include "..\Headers\array_index.h"
+#include "..\Headers\messages.h"
 
 // reducao de constantes para exp
 // nao da load, soh atualiza estados das variaveis
@@ -39,11 +40,11 @@ int id2exp(int id)
 {
     // Testa se a variavel ja foi declarada
     if (v_type[id] == 0)
-        {fprintf (stderr, "Erro na linha %d: mané, declara a variável '%s' direito!\n", line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // Se for um array, esqueceram o indice
     if (v_isar[id] > 0)
-        {fprintf (stderr, "Erro na linha %d: cadê o índice de array da variável '%s'?\n", line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     v_used[id] = 1;
 
@@ -54,7 +55,7 @@ int id2exp(int id)
 int pplus2exp(int id)
 {
     if (v_type[id] > 2)
-        {fprintf (stderr, "Erro na linha %d: o que você bebeu pra querer incrementar um número complexo?\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalente a pegar o x na expressao (x+1)
     int et = id2exp(id);
@@ -81,7 +82,7 @@ int pplus2exp(int id)
 int pplus1d2exp(int id, int ete)
 {
     if (v_type[id] > 2)
-        {fprintf (stderr, "Erro na linha %d: o que você bebeu pra querer incrementar um número complexo?\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalente a pegar o x na expressao (x+1)
     int et = arr_1d2exp(id,ete,0);
@@ -109,7 +110,7 @@ int pplus1d2exp(int id, int ete)
 int pplus2d2exp(int id, int et1, int et2)
 {
     if (v_type[id] > 2)
-        {fprintf (stderr, "Erro na linha %d: o que você bebeu pra querer incrementar um número complexo?\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalente a pegar o x na expressao (x+1)
     int et = arr_2d2exp(id,et1,et2);

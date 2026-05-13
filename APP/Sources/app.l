@@ -1,5 +1,6 @@
 %{
     #include "..\Headers\eval.h"
+    #include "..\Headers\messages.h"
 %}
 
 INNUM  [-+]?[0-9]+
@@ -190,13 +191,15 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 int main(int argc, char *argv[])
 {
+    parse_lang_flag(&argc, argv);   // processa flag -en/-pt (remove de argv)
+
 	  yyin = fopen(argv[1], "r"); // primeiro argumento eh o arquivo .asm de entrada
     eval_init   (argv[2]);      // segundo  argumento eh o caminho pro arquivo de log
     yylex();                    // executa o lexer
 	  fclose(yyin);               // fecha o arquivo .asm
     eval_finish();              // finaliza o arquivo de log
 
-    printf("Sucesso: já sei a quantidade de memória! Vamo vê agora quais circuitos você precisa...\n");
+    printf(MSG_OK_APP_DONE);
 
     return 0;
 }

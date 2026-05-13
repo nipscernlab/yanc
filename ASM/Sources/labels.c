@@ -12,6 +12,7 @@
 // includes locais
 #include "..\Headers\eval.h"
 #include "..\Headers\simulacao.h"
+#include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
 // variaveis locais -----------------------------------------------------------
@@ -30,7 +31,7 @@ void add_label(char *la, int val)
 {
     if (l_count == NLABMAX)
     {
-        fprintf(stderr, "Erro: número de labels > %d", NLABMAX);
+        fprintf(stderr, MSG_ERR_TOO_MANY_LABELS, NLABMAX);
         exit(EXIT_FAILURE);
     }
     else

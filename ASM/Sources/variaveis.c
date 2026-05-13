@@ -11,6 +11,7 @@
 
 // includes locais
 #include "..\Headers\t2t.h"
+#include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
 // variaveis locais -----------------------------------------------------------
@@ -30,7 +31,7 @@ void var_add(char *var, int is_const)
 {
     if (v_count == NVARMAX)
     {
-        fprintf(stderr, "Erro: número de variáveis > %d", NVARMAX);
+        fprintf(stderr, MSG_ERR_TOO_MANY_VARS, NVARMAX);
         exit(EXIT_FAILURE);
     }
 

@@ -82,7 +82,7 @@ cd %ROOT_DIR%\CMMComp\Sources
 
 %BISON% -y -d CMMComp.y
 %FLEX%        CMMComp.l
-%GCC%      -o CMMComp.exe data_assign.c data_declar.c macros.c itr.c data_use.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c y.tab.c
+%GCC%      -o CMMComp.exe data_assign.c data_declar.c macros.c itr.c data_use.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c messages.c y.tab.c
 
 move CMMComp.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 del lex.yy.c
@@ -94,7 +94,7 @@ del  y.tab.h
 cd %ROOT_DIR%\APP\Sources
 
 %FLEX% -o app.c app.l
-%GCC%  -o APP.exe app.c eval.c variaveis.c
+%GCC%  -o APP.exe app.c eval.c variaveis.c messages.c
 
 move APP.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 del app.c
@@ -104,7 +104,7 @@ del app.c
 cd %ROOT_DIR%\ASM\Sources
 
 %FLEX% -o ASMComp.c ASMComp.l
-%GCC%  -o ASM.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c
+%GCC%  -o ASM.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c
 
 move ASM.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 del ASMComp.c

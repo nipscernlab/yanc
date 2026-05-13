@@ -8,6 +8,8 @@
 #include <string.h>
 #include  <stdio.h>
 
+#include "..\Headers\messages.h"
+
 // ----------------------------------------------------------------------------
 // variaveis locais -----------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -66,7 +68,7 @@ void opc_add(char *mne)
 			if ((find_opc("LDI") == -1) && (find_opc("STI") == -1) &&
 			    (find_opc("ILI") == -1) && (find_opc("ISI") == -1))
 			{
-				printf("Info: adding array handling\n");
+				printf(MSG_INFO_ARRAY_HANDLING);
 			}
 		}
 
@@ -76,13 +78,13 @@ void opc_add(char *mne)
 			if ((find_opc("LDI") == -1) && (find_opc("STI") == -1) &&
 			    (find_opc("ILI") == -1) && (find_opc("ISI") == -1))
 			{
-				printf("Info: adding array handling\n");
+				printf(MSG_INFO_ARRAY_HANDLING);
 			}
 
 			// se ainda nao tem circuito de inversao de bits, escreve a info
 			if ((find_opc("ILI") == -1) && (find_opc("ISI") == -1))
 			{
-				printf("Info: adding bit-reverse array index (FFT)\n");
+				printf(MSG_INFO_BIT_REVERSE);
 			}
 		}
 
@@ -95,7 +97,7 @@ void opc_add(char *mne)
 			if ((find_opc("LDI") == -1) && (find_opc("STI") == -1) &&
 			    (find_opc("ILI") == -1) && (find_opc("ISI") == -1))
 			{
-				printf("Info: adding array handling\n");
+				printf(MSG_INFO_ARRAY_HANDLING);
 			}
 		}
 
@@ -105,13 +107,13 @@ void opc_add(char *mne)
 			if ((find_opc("LDI") == -1) && (find_opc("STI") == -1) &&
 			    (find_opc("ILI") == -1) && (find_opc("ISI") == -1))
 			{
-				printf("Info: adding array handling\n");
+				printf(MSG_INFO_ARRAY_HANDLING);
 			}
 
 			// se ainda nao tem circuito de inversao de bits, escreve a info
 			if ((find_opc("ILI") == -1) && (find_opc("ISI") == -1))
 			{
-				printf("Info: adding bit-reverse array index (FFT)\n");
+				printf(MSG_INFO_BIT_REVERSE);
 			}
 		}
 
@@ -124,7 +126,7 @@ void opc_add(char *mne)
 			if ((find_opc(  "INN") == -1) && (find_opc( "F_INN") == -1) &&
 			    (find_opc("P_INN") == -1) && (find_opc("PF_INN") == -1))
 			{
-				printf("Info: adding data input handling\n");
+				printf(MSG_INFO_INPUT_HANDLING);
 			}
 		}
 
@@ -134,14 +136,14 @@ void opc_add(char *mne)
 			if ((find_opc(  "INN") == -1) && (find_opc( "F_INN") == -1) &&
 			    (find_opc("P_INN") == -1) && (find_opc("PF_INN") == -1))
 			{
-				printf("Info: adding data input handling\n");
+				printf(MSG_INFO_INPUT_HANDLING);
 			}
 
 			// se ainda nao tem circuito de int2float, escreve a info
 			if ((find_opc("F_INN") == -1) && (find_opc("F_INN") == -1) &&
 			    (find_opc(  "I2F") == -1) && (find_opc("I2F_M") == -1) && (find_opc("P_I2F_M") == -1))
 			{
-				printf("Info: ULA resource -> int to float converter\n"); u_count++;
+				printf(MSG_INFO_INT2FLOAT); u_count++;
 			}
 		}
 
@@ -151,7 +153,7 @@ void opc_add(char *mne)
 			if ((find_opc(  "INN") == -1) && (find_opc( "F_INN") == -1) &&
 			    (find_opc("P_INN") == -1) && (find_opc("PF_INN") == -1))
 			{
-				printf("Info: adding data input handling\n");
+				printf(MSG_INFO_INPUT_HANDLING);
 			}
 		}
 
@@ -161,20 +163,20 @@ void opc_add(char *mne)
 			if ((find_opc(  "INN") == -1) && (find_opc( "F_INN") == -1) &&
 			    (find_opc("P_INN") == -1) && (find_opc("PF_INN") == -1))
 			{
-				printf("Info: adding data input handling\n");
+				printf(MSG_INFO_INPUT_HANDLING);
 			}
 
 			// se ainda nao tem circuito de int2float, escreve a info
 			if ((find_opc("F_INN") == -1) && (find_opc("F_INN") == -1) &&
 			    (find_opc(  "I2F") == -1) && (find_opc("I2F_M") == -1) && (find_opc("P_I2F_M") == -1))
 			{
-				printf("Info: ULA resource -> int to float converter\n"); u_count++;
+				printf(MSG_INFO_INT2FLOAT); u_count++;
 			}
 		}
 
 		if (strcmp(mne, "OUT") == 0)
 		{
-			printf("Info: adding data output handling\n");
+			printf(MSG_INFO_OUTPUT_HANDLING);
 		}
 
 		// nao tem mensagem pra JMP ainda
@@ -182,7 +184,7 @@ void opc_add(char *mne)
 
 		if (strcmp(mne, "CAL") == 0)
 		{
-			printf("Info: adding stack memory for function calls\n");
+			printf(MSG_INFO_STACK_MEMORY);
 		}
 
 		// nao tem mensagem pra RET ainda
@@ -192,7 +194,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de soma pra int, escreve a info
 			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1))
 			{
-				printf("Info: ULA resource -> integer adder\n"); u_count++;
+				printf(MSG_INFO_INT_ADDER); u_count++;
 			}
 		}
 
@@ -201,7 +203,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de soma pra int, escreve a info
 			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1))
 			{
-				printf("Info: ULA resource -> integer adder\n"); u_count++;
+				printf(MSG_INFO_INT_ADDER); u_count++;
 			}
 		}
 
@@ -212,7 +214,7 @@ void opc_add(char *mne)
 			    (find_opc( "F_SU1") == -1) && (find_opc( "F_SU2") == -1) &&
 				(find_opc("SF_SU1") == -1) && (find_opc("SF_SU2") == -1))
 			{
-				printf("Info: ULA resource -> float-point adder\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ADDER); u_count++;
 			}
 		}
 
@@ -223,7 +225,7 @@ void opc_add(char *mne)
 			    (find_opc( "F_SU1") == -1) && (find_opc( "F_SU2") == -1) &&
 				(find_opc("SF_SU1") == -1) && (find_opc("SF_SU2") == -1))
 			{
-				printf("Info: ULA resource -> float-point adder\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ADDER); u_count++;
 			}
 		}
 
@@ -232,7 +234,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de multiplicador inteiro, escreve a info
 			if ((find_opc("MLT") == -1) && (find_opc("S_MLT") == -1) && (find_opc("MLT_V") == -1))
 			{
-				printf("Info: ULA resource -> integer multiplier\n"); u_count++;
+				printf(MSG_INFO_INT_MULT); u_count++;
 			}
 		}
 
@@ -241,7 +243,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de multiplicador inteiro, escreve a info
 			if ((find_opc("MLT") == -1) && (find_opc("S_MLT") == -1) && (find_opc("MLT_V") == -1))
 			{
-				printf("Info: ULA resource -> integer multiplier\n"); u_count++;
+				printf(MSG_INFO_INT_MULT); u_count++;
 			}
 		}
 
@@ -250,7 +252,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de multiplicador float-point, escreve a info
 			if ((find_opc("F_MLT") == -1) && (find_opc("SF_MLT") == -1) && (find_opc("F_MLT_V") == -1))
 			{
-				printf("Info: ULA resource -> float-point multiplier\n"); u_count++;
+				printf(MSG_INFO_FLOAT_MULT); u_count++;
 			}
 		}
 
@@ -259,7 +261,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de multiplicador float-point, escreve a info
 			if ((find_opc("F_MLT") == -1) && (find_opc("SF_MLT") == -1) && (find_opc("F_MLT_V") == -1))
 			{
-				printf("Info: ULA resource -> float-point multiplier\n"); u_count++;
+				printf(MSG_INFO_FLOAT_MULT); u_count++;
 			}
 		}
 
@@ -268,7 +270,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de divisor inteiro, escreve a info
 			if ((find_opc("DIV") == -1) && (find_opc("S_DIV") == -1))
 			{
-				printf("Info: ULA resource -> integer divider (not recomended for high frequency opperation)\n"); u_count++;
+				printf(MSG_INFO_INT_DIV); u_count++;
 			}
 		}
 
@@ -277,7 +279,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de divisor inteiro, escreve a info
 			if ((find_opc("DIV") == -1) && (find_opc("S_DIV") == -1))
 			{
-				printf("Info: ULA resource -> integer divider (not recomended for high frequency opperation)\n"); u_count++;
+				printf(MSG_INFO_INT_DIV); u_count++;
 			}
 		}
 
@@ -286,7 +288,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de divisor float-point, escreve a info
 			if ((find_opc("F_DIV") == -1) && (find_opc("SF_DIV") == -1))
 			{
-				printf("Info: ULA resource -> float-point divider (not recomended for high frequency opperation)\n"); u_count++;
+				printf(MSG_INFO_FLOAT_DIV); u_count++;
 			}
 		}
 
@@ -295,7 +297,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de divisor float-point, escreve a info
 			if ((find_opc("F_DIV") == -1) && (find_opc("SF_DIV") == -1))
 			{
-				printf("Info: ULA resource -> float-point divider (not recomended for high frequency opperation)\n"); u_count++;
+				printf(MSG_INFO_FLOAT_DIV); u_count++;
 			}
 		}
 
@@ -304,7 +306,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de modulo inteiro, escreve a info
 			if ((find_opc("MOD") == -1) && (find_opc("S_MOD") == -1))
 			{
-				printf("Info: ULA resource -> modulo computation (not recomended for high frequency opperation)\n"); u_count++;
+				printf(MSG_INFO_MODULO); u_count++;
 			}
 		}
 
@@ -313,7 +315,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de modulo inteiro, escreve a info
 			if ((find_opc("MOD") == -1) && (find_opc("S_MOD") == -1))
 			{
-				printf("Info: ULA resource -> modulo computation (not recomended for high frequency opperation)\n"); u_count++;
+				printf(MSG_INFO_MODULO); u_count++;
 			}
 		}
 
@@ -322,7 +324,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de sinal inteiro, escreve a info
 			if ((find_opc("SGN") == -1) && (find_opc("S_SGN") == -1))
 			{
-				printf("Info: ULA resource -> integer sign computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_INT_SIGN); u_count++;
 			}
 		}
 
@@ -331,7 +333,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de sinal inteiro, escreve a info
 			if ((find_opc("SGN") == -1) && (find_opc("S_SGN") == -1))
 			{
-				printf("Info: ULA resource -> integer sign computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_INT_SIGN); u_count++;
 			}
 		}
 
@@ -340,7 +342,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de sinal float-point, escreve a info
 			if ((find_opc("F_SGN") == -1) && (find_opc("SF_SGN") == -1))
 			{
-				printf("Info: ULA resource -> float-point sign computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_FLOAT_SIGN); u_count++;
 			}
 		}
 
@@ -349,7 +351,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de sinal float-point, escreve a info
 			if ((find_opc("F_SGN") == -1) && (find_opc("SF_SGN") == -1))
 			{
-				printf("Info: ULA resource -> float-point sign computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_FLOAT_SIGN); u_count++;
 			}
 		}
 
@@ -358,7 +360,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de negativo inteiro, escreve a info
 			if ((find_opc("NEG") == -1) && (find_opc("NEG_M") == -1) && (find_opc("P_NEG_M") == -1))
 			{
-				printf("Info: ULA resource -> integer negative operation\n"); u_count++;
+				printf(MSG_INFO_INT_NEG); u_count++;
 			}
 		}
 
@@ -367,7 +369,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de negativo inteiro, escreve a info
 			if ((find_opc("NEG") == -1) && (find_opc("NEG_M") == -1) && (find_opc("P_NEG_M") == -1))
 			{
-				printf("Info: ULA resource -> integer negative operation\n"); u_count++;
+				printf(MSG_INFO_INT_NEG); u_count++;
 			}
 		}
 
@@ -376,7 +378,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de negativo inteiro, escreve a info
 			if ((find_opc("NEG") == -1) && (find_opc("NEG_M") == -1) && (find_opc("P_NEG_M") == -1))
 			{
-				printf("Info: ULA resource -> integer negative operation\n"); u_count++;
+				printf(MSG_INFO_INT_NEG); u_count++;
 			}
 		}
 
@@ -385,7 +387,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de negativo float-point, escreve a info
 			if ((find_opc("F_NEG") == -1) && (find_opc("F_NEG_M") == -1) && (find_opc("PF_NEG_M") == -1))
 			{
-				printf("Info: ULA resource -> float-point negative operation\n"); u_count++;
+				printf(MSG_INFO_FLOAT_NEG); u_count++;
 			}
 		}
 
@@ -394,7 +396,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de negativo float-point, escreve a info
 			if ((find_opc("F_NEG") == -1) && (find_opc("F_NEG_M") == -1) && (find_opc("PF_NEG_M") == -1))
 			{
-				printf("Info: ULA resource -> float-point negative operation\n"); u_count++;
+				printf(MSG_INFO_FLOAT_NEG); u_count++;
 			}
 		}
 
@@ -403,7 +405,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de negativo float-point, escreve a info
 			if ((find_opc("F_NEG") == -1) && (find_opc("F_NEG_M") == -1) && (find_opc("PF_NEG_M") == -1))
 			{
-				printf("Info: ULA resource -> float-point negative operation\n"); u_count++;
+				printf(MSG_INFO_FLOAT_NEG); u_count++;
 			}
 		}
 
@@ -412,7 +414,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de absoluto inteiro, escreve a info
 			if ((find_opc("ABS") == -1) && (find_opc("ABS_M") == -1) && (find_opc("P_ABS_M") == -1))
 			{
-				printf("Info: ULA resource -> integer absolute operation\n"); u_count++;
+				printf(MSG_INFO_INT_ABS); u_count++;
 			}
 		}
 
@@ -421,7 +423,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de absoluto inteiro, escreve a info
 			if ((find_opc("ABS") == -1) && (find_opc("ABS_M") == -1) && (find_opc("P_ABS_M") == -1))
 			{
-				printf("Info: ULA resource -> integer absolute operation\n"); u_count++;
+				printf(MSG_INFO_INT_ABS); u_count++;
 			}
 		}
 
@@ -430,7 +432,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de absoluto inteiro, escreve a info
 			if ((find_opc("ABS") == -1) && (find_opc("ABS_M") == -1) && (find_opc("P_ABS_M") == -1))
 			{
-				printf("Info: ULA resource -> integer absolute operation\n"); u_count++;
+				printf(MSG_INFO_INT_ABS); u_count++;
 			}
 		}
 
@@ -439,7 +441,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de absoluto float-point, escreve a info
 			if ((find_opc("F_ABS") == -1) && (find_opc("F_ABS_M") == -1) && (find_opc("PF_ABS_M") == -1))
 			{
-				printf("Info: ULA resource -> float-point absolute operation\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ABS); u_count++;
 			}
 		}
 
@@ -448,7 +450,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de absoluto float-point, escreve a info
 			if ((find_opc("F_ABS") == -1) && (find_opc("F_ABS_M") == -1) && (find_opc("PF_ABS_M") == -1))
 			{
-				printf("Info: ULA resource -> float-point absolute operation\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ABS); u_count++;
 			}
 		}
 
@@ -457,7 +459,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de absoluto float-point, escreve a info
 			if ((find_opc("F_ABS") == -1) && (find_opc("F_ABS_M") == -1) && (find_opc("PF_ABS_M") == -1))
 			{
-				printf("Info: ULA resource -> float-point absolute operation\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ABS); u_count++;
 			}
 		}
 
@@ -466,7 +468,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de pset pra int, escreve a info
 			if ((find_opc("PST") == -1) && (find_opc("PST_M") == -1) && (find_opc("P_PST_M") == -1))
 			{
-				printf("Info: ULA resource -> integer pset computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_INT_PSET); u_count++;
 			}
 		}
 
@@ -475,7 +477,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de pset pra int, escreve a info
 			if ((find_opc("PST") == -1) && (find_opc("PST_M") == -1) && (find_opc("P_PST_M") == -1))
 			{
-				printf("Info: ULA resource -> integer pset computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_INT_PSET); u_count++;
 			}
 		}
 
@@ -484,7 +486,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de pset pra int, escreve a info
 			if ((find_opc("PST") == -1) && (find_opc("PST_M") == -1) && (find_opc("P_PST_M") == -1))
 			{
-				printf("Info: ULA resource -> integer pset computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_INT_PSET); u_count++;
 			}
 		}
 
@@ -493,7 +495,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de pset pra float-point, escreve a info
 			if ((find_opc("F_PST") == -1) && (find_opc("F_PST_M") == -1) && (find_opc("PF_PST_M") == -1))
 			{
-				printf("Info: ULA resource -> float-point pset computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_FLOAT_PSET); u_count++;
 			}
 		}
 
@@ -502,7 +504,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de pset pra float-point, escreve a info
 			if ((find_opc("F_PST") == -1) && (find_opc("F_PST_M") == -1) && (find_opc("PF_PST_M") == -1))
 			{
-				printf("Info: ULA resource -> float-point pset computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_FLOAT_PSET); u_count++;
 			}
 		}
 
@@ -511,7 +513,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de pset pra float-point, escreve a info
 			if ((find_opc("F_PST") == -1) && (find_opc("F_PST_M") == -1) && (find_opc("PF_PST_M") == -1))
 			{
-				printf("Info: ULA resource -> float-point pset computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_FLOAT_PSET); u_count++;
 			}
 		}
 
@@ -520,7 +522,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de normalizacao, escreve a info
 			if ((find_opc("NRM") == -1) && (find_opc("NRM_M") == -1) && (find_opc("P_NRM_M") == -1))
 			{
-				printf("Info: ULA resource -> normalization computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_NORM); u_count++;
 			}
 		}
 
@@ -529,7 +531,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de normalizacao, escreve a info
 			if ((find_opc("NRM") == -1) && (find_opc("NRM_M") == -1) && (find_opc("P_NRM_M") == -1))
 			{
-				printf("Info: ULA resource -> normalization computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_NORM); u_count++;
 			}
 		}
 
@@ -538,7 +540,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de normalizacao, escreve a info
 			if ((find_opc("NRM") == -1) && (find_opc("NRM_M") == -1) && (find_opc("P_NRM_M") == -1))
 			{
-				printf("Info: ULA resource -> normalization computation (standard library)\n"); u_count++;
+				printf(MSG_INFO_NORM); u_count++;
 			}
 		}
 
@@ -548,7 +550,7 @@ void opc_add(char *mne)
 			if ((find_opc("F_INN") == -1) && (find_opc("F_INN") == -1) &&
 			    (find_opc(  "I2F") == -1) && (find_opc("I2F_M") == -1) && (find_opc("P_I2F_M") == -1))
 			{
-				printf("Info: ULA resource -> int to float converter\n"); u_count++;
+				printf(MSG_INFO_INT2FLOAT); u_count++;
 			}
 		}
 
@@ -558,7 +560,7 @@ void opc_add(char *mne)
 			if ((find_opc("F_INN") == -1) && (find_opc("F_INN") == -1) &&
 			    (find_opc(  "I2F") == -1) && (find_opc("I2F_M") == -1) && (find_opc("P_I2F_M") == -1))
 			{
-				printf("Info: ULA resource -> int to float converter\n"); u_count++;
+				printf(MSG_INFO_INT2FLOAT); u_count++;
 			}
 		}
 
@@ -568,7 +570,7 @@ void opc_add(char *mne)
 			if ((find_opc("F_INN") == -1) && (find_opc("F_INN") == -1) &&
 			    (find_opc(  "I2F") == -1) && (find_opc("I2F_M") == -1) && (find_opc("P_I2F_M") == -1))
 			{
-				printf("Info: ULA resource -> int to float converter\n"); u_count++;
+				printf(MSG_INFO_INT2FLOAT); u_count++;
 			}
 		}
 
@@ -577,7 +579,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de float2int, escreve a info
 			if ((find_opc("F2I") == -1) && (find_opc("F2I_M") == -1) && (find_opc("P_F2I_M") == -1))
 			{
-				printf("Info: ULA resource -> float to int converter\n"); u_count++;
+				printf(MSG_INFO_FLOAT2INT); u_count++;
 			}
 		}
 
@@ -586,7 +588,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de float2int, escreve a info
 			if ((find_opc("F2I") == -1) && (find_opc("F2I_M") == -1) && (find_opc("P_F2I_M") == -1))
 			{
-				printf("Info: ULA resource -> float to int converter\n"); u_count++;
+				printf(MSG_INFO_FLOAT2INT); u_count++;
 			}
 		}
 
@@ -595,7 +597,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de float2int, escreve a info
 			if ((find_opc("F2I") == -1) && (find_opc("F2I_M") == -1) && (find_opc("P_F2I_M") == -1))
 			{
-				printf("Info: ULA resource -> float to int converter\n"); u_count++;
+				printf(MSG_INFO_FLOAT2INT); u_count++;
 			}
 		}
 
@@ -604,7 +606,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de and, escreve a info
 			if ((find_opc("AND") == -1) && (find_opc("S_AND") == -1))
 			{
-				printf("Info: ULA resource -> & operator\n"); u_count++;
+				printf(MSG_INFO_OP_AND); u_count++;
 			}
 		}
 
@@ -613,7 +615,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de and, escreve a info
 			if ((find_opc("AND") == -1) && (find_opc("S_AND") == -1))
 			{
-				printf("Info: ULA resource -> & operator\n"); u_count++;
+				printf(MSG_INFO_OP_AND); u_count++;
 			}
 		}
 
@@ -622,7 +624,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de or, escreve a info
 			if ((find_opc("ORR") == -1) && (find_opc("S_ORR") == -1))
 			{
-				printf("Info: ULA resource -> | operator\n"); u_count++;
+				printf(MSG_INFO_OP_OR); u_count++;
 			}
 		}
 
@@ -631,7 +633,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de or, escreve a info
 			if ((find_opc("ORR") == -1) && (find_opc("S_ORR") == -1))
 			{
-				printf("Info: ULA resource -> | operator\n"); u_count++;
+				printf(MSG_INFO_OP_OR); u_count++;
 			}
 		}
 
@@ -640,7 +642,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de xor, escreve a info
 			if ((find_opc("XOR") == -1) && (find_opc("S_XOR") == -1))
 			{
-				printf("Info: ULA resource -> ^ operator\n"); u_count++;
+				printf(MSG_INFO_OP_XOR); u_count++;
 			}
 		}
 
@@ -649,7 +651,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de xor, escreve a info
 			if ((find_opc("XOR") == -1) && (find_opc("S_XOR") == -1))
 			{
-				printf("Info: ULA resource -> ^ operator\n"); u_count++;
+				printf(MSG_INFO_OP_XOR); u_count++;
 			}
 		}
 
@@ -658,7 +660,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de not, escreve a info
 			if ((find_opc("INV") == -1) && (find_opc("INV_M") == -1) && (find_opc("P_INV_M") == -1))
 			{
-				printf("Info: ULA resource -> ~ operator\n"); u_count++;
+				printf(MSG_INFO_OP_NOT); u_count++;
 			}
 		}
 
@@ -667,7 +669,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de not, escreve a info
 			if ((find_opc("INV") == -1) && (find_opc("INV_M") == -1) && (find_opc("P_INV_M") == -1))
 			{
-				printf("Info: ULA resource -> ~ operator\n"); u_count++;
+				printf(MSG_INFO_OP_NOT); u_count++;
 			}
 		}
 
@@ -676,7 +678,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de not, escreve a info
 			if ((find_opc("INV") == -1) && (find_opc("INV_M") == -1) && (find_opc("P_INV_M") == -1))
 			{
-				printf("Info: ULA resource -> ~ operator\n"); u_count++;
+				printf(MSG_INFO_OP_NOT); u_count++;
 			}
 		}
 
@@ -685,7 +687,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de and, escreve a info
 			if ((find_opc("LAN") == -1) && (find_opc("S_LAN") == -1))
 			{
-				printf("Info: ULA resource -> && operator\n"); u_count++;
+				printf(MSG_INFO_OP_LAND); u_count++;
 			}
 		}
 
@@ -694,7 +696,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de and, escreve a info
 			if ((find_opc("LAN") == -1) && (find_opc("S_LAN") == -1))
 			{
-				printf("Info: ULA resource -> && operator\n"); u_count++;
+				printf(MSG_INFO_OP_LAND); u_count++;
 			}
 		}
 
@@ -703,7 +705,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de or, escreve a info
 			if ((find_opc("LOR") == -1) && (find_opc("S_LOR") == -1))
 			{
-				printf("Info: ULA resource -> || operator\n"); u_count++;
+				printf(MSG_INFO_OP_LOR); u_count++;
 			}
 		}
 
@@ -712,7 +714,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de or, escreve a info
 			if ((find_opc("LOR") == -1) && (find_opc("S_LOR") == -1))
 			{
-				printf("Info: ULA resource -> || operator\n"); u_count++;
+				printf(MSG_INFO_OP_LOR); u_count++;
 			}
 		}
 
@@ -721,7 +723,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de not, escreve a info
 			if ((find_opc("LIN") == -1) && (find_opc("LIN_M") == -1) && (find_opc("P_LIN_M") == -1))
 			{
-				printf("Info: ULA resource -> ! operator\n"); u_count++;
+				printf(MSG_INFO_OP_LNOT); u_count++;
 			}
 		}
 
@@ -730,7 +732,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de not, escreve a info
 			if ((find_opc("LIN") == -1) && (find_opc("LIN_M") == -1) && (find_opc("P_LIN_M") == -1))
 			{
-				printf("Info: ULA resource -> ! operator\n"); u_count++;
+				printf(MSG_INFO_OP_LNOT); u_count++;
 			}
 		}
 
@@ -739,7 +741,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de not, escreve a info
 			if ((find_opc("LIN") == -1) && (find_opc("LIN_M") == -1) && (find_opc("P_LIN_M") == -1))
 			{
-				printf("Info: ULA resource -> ! operator\n"); u_count++;
+				printf(MSG_INFO_OP_LNOT); u_count++;
 			}
 		}
 
@@ -748,7 +750,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de menor para int, escreve a info
 			if ((find_opc("LES") == -1) && (find_opc("S_LES") == -1))
 			{
-				printf("Info: ULA resource -> < operator for int\n"); u_count++;
+				printf(MSG_INFO_OP_LES_INT); u_count++;
 			}
 		}
 
@@ -757,7 +759,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de menor para int, escreve a info
 			if ((find_opc("LES") == -1) && (find_opc("S_LES") == -1))
 			{
-				printf("Info: ULA resource -> < operator for int\n"); u_count++;
+				printf(MSG_INFO_OP_LES_INT); u_count++;
 			}
 		}
 
@@ -766,7 +768,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de menor para float, escreve a info
 			if ((find_opc("F_LES") == -1) && (find_opc("SF_LES") == -1))
 			{
-				printf("Info: ULA resource -> < operator for float\n"); u_count++;
+				printf(MSG_INFO_OP_LES_FLOAT); u_count++;
 			}
 		}
 
@@ -775,7 +777,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de menor para float, escreve a info
 			if ((find_opc("F_LES") == -1) && (find_opc("SF_LES") == -1))
 			{
-				printf("Info: ULA resource -> < operator for float\n"); u_count++;
+				printf(MSG_INFO_OP_LES_FLOAT); u_count++;
 			}
 		}
 
@@ -784,7 +786,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de maior para int, escreve a info
 			if ((find_opc("GRE") == -1) && (find_opc("S_GRE") == -1))
 			{
-				printf("Info: ULA resource -> > operator for int\n"); u_count++;
+				printf(MSG_INFO_OP_GRE_INT); u_count++;
 			}
 		}
 
@@ -793,7 +795,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de maior para int, escreve a info
 			if ((find_opc("GRE") == -1) && (find_opc("S_GRE") == -1))
 			{
-				printf("Info: ULA resource -> > operator for int\n"); u_count++;
+				printf(MSG_INFO_OP_GRE_INT); u_count++;
 			}
 		}
 
@@ -802,7 +804,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de maior para float, escreve a info
 			if ((find_opc("F_GRE") == -1) && (find_opc("SF_GRE") == -1))
 			{
-				printf("Info: ULA resource -> > operator for float\n"); u_count++;
+				printf(MSG_INFO_OP_GRE_FLOAT); u_count++;
 			}
 		}
 
@@ -811,7 +813,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de maior para float, escreve a info
 			if ((find_opc("F_GRE") == -1) && (find_opc("SF_GRE") == -1))
 			{
-				printf("Info: ULA resource -> > operator for float\n"); u_count++;
+				printf(MSG_INFO_OP_GRE_FLOAT); u_count++;
 			}
 		}
 
@@ -820,7 +822,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de igual, escreve a info
 			if ((find_opc("EQU") == -1) && (find_opc("S_EQU") == -1))
 			{
-				printf("Info: ULA resource -> == operator\n"); u_count++;
+				printf(MSG_INFO_OP_EQU); u_count++;
 			}
 		}
 
@@ -829,7 +831,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de igual, escreve a info
 			if ((find_opc("EQU") == -1) && (find_opc("S_EQU") == -1))
 			{
-				printf("Info: ULA resource -> == operator\n"); u_count++;
+				printf(MSG_INFO_OP_EQU); u_count++;
 			}
 		}
 
@@ -838,7 +840,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de deslocamento para a esquerda, escreve a info
 			if ((find_opc("SHL") == -1) && (find_opc("S_SHL") == -1))
 			{
-				printf("Info: ULA resource -> << operator\n"); u_count++;
+				printf(MSG_INFO_OP_SHL); u_count++;
 			}
 		}
 
@@ -847,7 +849,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de deslocamento para a esquerda, escreve a info
 			if ((find_opc("SHL") == -1) && (find_opc("S_SHL") == -1))
 			{
-				printf("Info: ULA resource -> << operator\n"); u_count++;
+				printf(MSG_INFO_OP_SHL); u_count++;
 			}
 		}
 
@@ -856,7 +858,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de deslocamento para a direita, escreve a info
 			if ((find_opc("SHR") == -1) && (find_opc("S_SHR") == -1))
 			{
-				printf("Info: ULA resource -> >> operator\n"); u_count++;
+				printf(MSG_INFO_OP_SHR); u_count++;
 			}
 		}
 
@@ -865,7 +867,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de deslocamento para a direita, escreve a info
 			if ((find_opc("SHR") == -1) && (find_opc("S_SHR") == -1))
 			{
-				printf("Info: ULA resource -> >> operator\n"); u_count++;
+				printf(MSG_INFO_OP_SHR); u_count++;
 			}
 		}
 
@@ -874,7 +876,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de deslocamento para a direita com sinal, escreve a info
 			if ((find_opc("SRS") == -1) && (find_opc("S_SRS") == -1))
 			{
-				printf("Info: ULA resource -> >>> operator\n"); u_count++;
+				printf(MSG_INFO_OP_SRS); u_count++;
 			}
 		}
 
@@ -883,7 +885,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o circuito de deslocamento para a direita com sinal, escreve a info
 			if ((find_opc("SRS") == -1) && (find_opc("S_SRS") == -1))
 			{
-				printf("Info: ULA resource -> >>> operator\n"); u_count++;
+				printf(MSG_INFO_OP_SRS); u_count++;
 			}
 		}
 
@@ -894,7 +896,7 @@ void opc_add(char *mne)
 			// se ainda nao tem o opcode F_ROT, escreve a info
 			if (find_opc("F_ROT") == -1)
 			{
-				printf("Info: ULA resource -> root-square approximation for float\n"); u_count++;
+				printf(MSG_INFO_FLOAT_SQRT); u_count++;
 			}
 		}
 
@@ -905,7 +907,7 @@ void opc_add(char *mne)
 			    (find_opc( "F_SU1") == -1) && (find_opc( "F_SU2") == -1) &&
 				(find_opc("SF_SU1") == -1) && (find_opc("SF_SU2") == -1))
 			{
-				printf("Info: ULA resource -> float-point adder\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ADDER); u_count++;
 			}
 		}
 
@@ -916,7 +918,7 @@ void opc_add(char *mne)
 			    (find_opc( "F_SU1") == -1) && (find_opc( "F_SU2") == -1) &&
 				(find_opc("SF_SU1") == -1) && (find_opc("SF_SU2") == -1))
 			{
-				printf("Info: ULA resource -> float-point adder\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ADDER); u_count++;
 			}
 		}
 
@@ -927,7 +929,7 @@ void opc_add(char *mne)
 			    (find_opc( "F_SU1") == -1) && (find_opc( "F_SU2") == -1) &&
 				(find_opc("SF_SU1") == -1) && (find_opc("SF_SU2") == -1))
 			{
-				printf("Info: ULA resource -> float-point adder\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ADDER); u_count++;
 			}
 		}
 
@@ -938,7 +940,7 @@ void opc_add(char *mne)
 			    (find_opc( "F_SU1") == -1) && (find_opc( "F_SU2") == -1) &&
 				(find_opc("SF_SU1") == -1) && (find_opc("SF_SU2") == -1))
 			{
-				printf("Info: ULA resource -> float-point adder\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ADDER); u_count++;
 			}
 		}
 
@@ -951,7 +953,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de soma pra int, escreve a info
 			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1))
 			{
-				printf("Info: ULA resource -> integer adder\n"); u_count++;
+				printf(MSG_INFO_INT_ADDER); u_count++;
 			}
 		}
 
@@ -962,7 +964,7 @@ void opc_add(char *mne)
 			    (find_opc( "F_SU1") == -1) && (find_opc( "F_SU2") == -1) &&
 				(find_opc("SF_SU1") == -1) && (find_opc("SF_SU2") == -1))
 			{
-				printf("Info: ULA resource -> float-point adder\n"); u_count++;
+				printf(MSG_INFO_FLOAT_ADDER); u_count++;
 			}
 		}
 
@@ -971,7 +973,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de multiplicador inteiro, escreve a info
 			if ((find_opc("MLT") == -1) && (find_opc("S_MLT") == -1) && (find_opc("MLT_V") == -1))
 			{
-				printf("Info: ULA resource -> integer multiplier\n"); u_count++;
+				printf(MSG_INFO_INT_MULT); u_count++;
 			}
 		}
 
@@ -980,7 +982,7 @@ void opc_add(char *mne)
 			// se ainda nao tem circuito de multiplicador float-point, escreve a info
 			if ((find_opc("F_MLT") == -1) && (find_opc("SF_MLT") == -1) && (find_opc("F_MLT_V") == -1))
 			{
-				printf("Info: ULA resource -> float-point multiplier\n"); u_count++;
+				printf(MSG_INFO_FLOAT_MULT); u_count++;
 			}
 		}
 

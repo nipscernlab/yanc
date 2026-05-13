@@ -7,6 +7,8 @@
 #include  <stdio.h>
 #include <stdlib.h>
 
+#include "..\Headers\messages.h"
+
 // ----------------------------------------------------------------------------
 // variaveis locais -----------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -26,7 +28,7 @@ int push_lab(int typ)
 
     if (lab_cnt == LABMAX)
     {
-        fprintf (stderr, "Erro: aumente o número de Labels permitidos (if, while). Atual = %d\n", LABMAX);
+        fprintf (stderr, MSG_ERR_TOO_MANY_LABELS, LABMAX);
         exit(EXIT_FAILURE);
     }
 

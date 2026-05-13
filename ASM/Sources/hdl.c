@@ -13,6 +13,7 @@
 #include "..\Headers\eval.h"
 #include "..\Headers\opcodes.h"
 #include "..\Headers\simulacao.h"
+#include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
 // funcoes auxiliares ---------------------------------------------------------
@@ -127,8 +128,8 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     for (int i = 0; i < opc_cnt(); i++) fprintf(f_veri, ".%s(1),\n", opc_get(i));
 
     // essa conta ta aproximada, mas é melhor que nada
-    printf("Info: using %d%% of the Assembly Instruction Set\n", opc_cnt()*100/102);
-    printf("Info: using %d%% of the ULA operations\n", opc_ucnt()*100/(49-15)); // 49 no mux, 15 repetidos ou sem uso
+    printf(MSG_INFO_ISA_USAGE, opc_cnt()*100/102);
+    printf(MSG_INFO_ULA_USAGE, opc_ucnt()*100/(49-15)); // 49 no mux, 15 repetidos ou sem uso
 
     // ------------------------------------------------------------------------
     // finalizacao da instancia do processador --------------------------------
@@ -212,7 +213,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
                 fprintf(f_veri, "   if (req_in == %d) in_sim_%d = in;\n", (int)pow(2,i),i);
                 fprintf(f_veri, "   req_in_sim_%d = req_in == %d;\n",  i, (int)pow(2,i),i);
             }
-            else printf("Atenção: porta de entrada %d não está sendo usada. Gastando hardware à toa!\n", i);
+            else printf(MSG_WARN_UNUSED_IN_PORT, i);
         }
         if (nuioin > 0) fprintf(f_veri, "end\n");
     }
@@ -228,7 +229,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
                 fprintf(f_veri, "   if (out_en == %d) out_sig_%d <= out;\n", (int)pow(2,i),i);
                 fprintf(f_veri, "   out_en_sim_%d = out_en == %d;\n",     i, (int)pow(2,i),i);
             }
-            else printf("Atenção: porta de saída %d não está sendo usada. Gastando hardware à toa!\n", i);
+            else printf(MSG_WARN_UNUSED_OUT_PORT, i);
         }
         if (nuioou > 0) fprintf(f_veri, "end\n\n");
     }

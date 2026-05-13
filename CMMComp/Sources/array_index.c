@@ -19,6 +19,7 @@ TODO:
 #include "..\Headers\funcoes.h"
 #include "..\Headers\data_use.h"
 #include "..\Headers\variaveis.h"
+#include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
 // array no assign. Ex: x[i] = y; ---------------------------------------------
@@ -33,11 +34,11 @@ void arr_1d_index(int id, int et)
 
     // tem que ver se eh array mesmo
     if (v_isar[id] == 0)
-        {fprintf (stderr, "Erro na linha %d: '%s' não é array não, abensoado!\n", line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // tem que ver se eh array 1D mesmo
     if (v_isar[id] == 2)
-        {fprintf (stderr, "Erro na linha %d: array '%s' tem duas dimensões!\n"  , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // execucao ---------------------------------------------------------------
@@ -63,7 +64,7 @@ void arr_1d_index(int id, int et)
 
     if ((get_type(et) == 2) && (et % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: tá vendo que o índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX_FLOAT, line_num+1);
 
         add_instr("F2I_M %s\n", v_name[et % OFST]);
     }
@@ -72,7 +73,7 @@ void arr_1d_index(int id, int et)
 
     if ((get_type(et) == 2) && (et % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: tá vendo que o índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX_FLOAT, line_num+1);
 
         add_instr("F2I\n");
     }
@@ -81,7 +82,7 @@ void arr_1d_index(int id, int et)
 
     if (get_type(et) == 5)
     {
-        fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
         get_cmp_cst(et, &etr, &eti);
 
@@ -92,7 +93,7 @@ void arr_1d_index(int id, int et)
 
     if ((get_type(et) == 3) && (et % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -102,7 +103,7 @@ void arr_1d_index(int id, int et)
 
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
         add_instr("F2I_M %s\n", v_name[et % OFST]);
     }
@@ -119,11 +120,11 @@ void arr_2d_index(int id, int et1, int et2)
 
     // tem que ver se eh array mesmo
     if (v_isar[id] == 0)
-        {fprintf (stderr, "Erro na linha %d: '%s' não é array não, abensoado!\n", line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // tem que ver se nao eh array 1D
     if (v_isar[id] == 1)
-        {fprintf (stderr, "Erro na linha %d: array '%s' tem uma dimensão só!\n", line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_ARRAY_1D, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // execucao ---------------------------------------------------------------
@@ -149,7 +150,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int no acc e float no acc
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
         add_instr("F2I\n");
         add_instr("SET_P aux_var\n");
@@ -160,7 +161,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int no acc e float na memoria
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
@@ -170,7 +171,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int no acc e comp const na memoria
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         get_cmp_cst(et2, &etr, &eti);
 
@@ -182,7 +183,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int no acc e comp no acc
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
@@ -194,7 +195,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int no acc e comp na memoria
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
@@ -220,7 +221,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int na memoria e float no acc
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
         add_instr("F2I\n");
         add_instr("P_LOD %s\n",  v_name[et1 % OFST]);
@@ -231,7 +232,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int na memoria e float na memoria
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
         add_instr("LOD     %s\n",  v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -242,7 +243,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int na memoria e comp const na memoria
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         get_cmp_cst(et2, &etr, &eti);
 
@@ -255,7 +256,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int na memoria e comp no acc
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
@@ -268,7 +269,7 @@ void arr_2d_index(int id, int et1, int et2)
     // int na memoria e comp na memoria
     if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("LOD     %s\n",  v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -279,7 +280,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float no acc e int no acc
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
@@ -290,7 +291,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float no acc e int na memoria
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
         add_instr("F2I\n");
         add_instr("MLT %s_arr_size\n", v_name[id]);
@@ -300,7 +301,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float no acc e float no acc
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: tá vendo que os índices do array estão em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
         add_instr("F2I\n");
         add_instr("SET_P aux_var\n");
@@ -312,7 +313,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float no acc e float na memoria
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I\n");
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -323,7 +324,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float no acc e comp const na memoria
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(et2, &etr, &eti);
 
@@ -336,7 +337,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float no acc e comp no acc
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
@@ -349,7 +350,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float no acc e comp na memoria
     if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I\n");
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -360,7 +361,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float na memoria e int no acc
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
         add_instr("P_F2I_M %s\n" , v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -370,7 +371,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float na memoria e int na memoria
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
         add_instr("F2I_M  %s\n",  v_name[et1 % OFST]);
         add_instr("MLT    %s_arr_size\n", v_name[id]);
@@ -380,7 +381,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float na memoria e float no acc
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: tá vendo que os índices do array estão em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
@@ -391,7 +392,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float na memoria e float na memoria
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: tá vendo que os índices do array estão em ponto flutuante né? Vou arredondar!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
         add_instr("F2I_M   %s\n",  v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -402,7 +403,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float na memoria e comp const na memoria
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(et2, &etr, &eti);
 
@@ -415,7 +416,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float na memoria e comp no acc
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
@@ -428,7 +429,7 @@ void arr_2d_index(int id, int et1, int et2)
     // float na memoria e comp na memoria
     if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I_M   %s\n",  v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -439,7 +440,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp const na memoria e int no acc
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         get_cmp_cst(et1, &etr, &eti);
 
@@ -453,7 +454,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp const na memoria e int na memoria
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         get_cmp_cst(et1, &etr, &eti);
 
@@ -465,7 +466,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp const na memoria e float no acc
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(et1, &etr, &eti);
 
@@ -479,7 +480,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp const na memoria e float na memoria
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(et1, &etr, &eti);
 
@@ -492,7 +493,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp const na memoria e comp const na memoria
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(et1, &etr, &eti);
         add_instr("F2I_M   %s\n" , v_name[etr % OFST]);
@@ -506,7 +507,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp const na memoria e comp no acc
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(et1, &etr, &eti);
 
@@ -521,7 +522,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp const na memoria e comp na memoria
     if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(et1, &etr, &eti);
 
@@ -534,7 +535,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp no acc e int no acc
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("POP\n");
@@ -546,7 +547,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp no acc e int na memoria
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -557,7 +558,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp no acc e float no acc
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I\n");
         add_instr("SET_P aux_var\n");
@@ -570,7 +571,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp no acc e float na memoria
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -582,7 +583,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp no acc e comp const na memoria
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(et2, &etr, &eti);
 
@@ -596,7 +597,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp no acc e comp no acc
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
@@ -610,7 +611,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp no acc e comp na memoria
     if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -622,7 +623,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp na memoria e int no acc
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -632,7 +633,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp na memoria e int na memoria
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("F2I_M %s\n",  v_name[et1 % OFST]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
@@ -642,7 +643,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp na memoria e float no acc
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
@@ -653,7 +654,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp na memoria e float na memoria
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
     {
-        fprintf(stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I_M   %s\n",  v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -664,7 +665,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp na memoria e comp const na memoria
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(et2, &etr, &eti);
 
@@ -677,7 +678,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp na memoria e comp no acc
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
     {
-        fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
@@ -690,7 +691,7 @@ void arr_2d_index(int id, int et1, int et2)
     // comp na memoria e comp na memoria
     if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
     {
-        fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+        fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I_M   %s\n" , v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -713,15 +714,15 @@ int arr_1d2exp(int id, int et, int fft)
 
     // testa se a variavel ja foi declarada
     if (v_type[id] == 0)
-        {fprintf (stderr, "Erro na linha %d: mané, declara a variável '%s' direito!\n", line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // tem que ver se eh array mesmo
     if (v_isar[id] == 0)
-        {fprintf (stderr, "Erro na linha %d: '%s' não é array não, abensoado!\n", line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // tem que ver se eh array 1D mesmo
     if (v_isar[id] == 2)
-        {fprintf (stderr, "Erro na linha %d: array '%s' tem duas dimensões!\n"  , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // prepara os comandos de LOD --------------------------------------------
 
@@ -757,7 +758,7 @@ int arr_1d2exp(int id, int et, int fft)
         // float no acc
         if ((get_type(et) == 2) && (et % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array tá dando float. Vai gerar muito código pra arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
             add_instr("F2I\n");
             add_instr("%s %s\n", ldv, v_name[id]);
@@ -766,7 +767,7 @@ int arr_1d2exp(int id, int et, int fft)
         // float na memoria
         if ((get_type(et) == 2) && (et % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array tá dando float. Vai gerar muito código pra arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
             add_instr("%s %s\n", f2i, v_name[et % OFST]);
             add_instr("%s %s\n", ldv, v_name[id]);
@@ -775,7 +776,7 @@ int arr_1d2exp(int id, int et, int fft)
         // comp const na memoria
         if ((get_type(et) == 5) && (et % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
             get_cmp_cst(et, &etr, &eti);
 
@@ -786,7 +787,7 @@ int arr_1d2exp(int id, int et, int fft)
         // comp no acc
         if ((get_type(et) == 3) && (et % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -796,7 +797,7 @@ int arr_1d2exp(int id, int et, int fft)
         // comp na memoria
         if ((get_type(et) == 3) && (et % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
             add_instr("%s %s\n", f2i, v_name[et%OFST]);
             add_instr("%s %s\n", ldv, v_name[id]);
@@ -828,7 +829,7 @@ int arr_1d2exp(int id, int et, int fft)
         // float no acc
         if ((get_type(et) == 2) && (et % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array tá dando float. Vai gerar muito código pra arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
@@ -840,7 +841,7 @@ int arr_1d2exp(int id, int et, int fft)
         // float na memoria
         if ((get_type(et) == 2) && (et % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array tá dando float. Vai gerar muito código pra arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
             add_instr("%s %s\n"  , f2i, v_name[et % OFST]);
             add_instr("SET   aux_var\n");
@@ -852,7 +853,7 @@ int arr_1d2exp(int id, int et, int fft)
         // comp const na memoria
         if ((get_type(et) == 5) && (et % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
             get_cmp_cst(et, &etr, &eti);
 
@@ -866,7 +867,7 @@ int arr_1d2exp(int id, int et, int fft)
         // comp no acc
         if ((get_type(et) == 3) && (et % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -879,7 +880,7 @@ int arr_1d2exp(int id, int et, int fft)
         // comp na memoria
         if ((get_type(et) == 3) && (et % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
             add_instr("%s %s\n"  , f2i, v_name[et%OFST]);
             add_instr("SET   aux_var\n");
@@ -902,15 +903,15 @@ int arr_2d2exp(int id, int et1, int et2)
 
     // testa se a variavel ja foi declarada
     if (v_type[id] == 0)
-        {fprintf (stderr, "Erro na linha %d: mané, declara a variável '%s' direito!\n", line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // tem que ver se eh array 2D mesmo
     if (v_isar[id] == 0)
-        {fprintf (stderr, "Erro na linha %d: '%s' não é array não, abensoado!\n", line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // tem que ver se nao eh array 1D
     if (v_isar[id] == 1)
-        {fprintf (stderr, "Erro na linha %d: array '%s' tem uma dimensão só!\n" , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_ARRAY_1D , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // prepara os comandos de LOD ---------------------------------------------
 
@@ -950,7 +951,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e float no acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P aux_var\n");
@@ -962,7 +963,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e float na memoria
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
             add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
@@ -973,7 +974,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e comp const na memoria
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -986,7 +987,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e comp no acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -999,7 +1000,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e comp na memoria
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
             add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
@@ -1028,7 +1029,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e float no acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_LOD %s\n" , v_name[et1 % OFST]);
@@ -1040,7 +1041,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e float na memoria
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -1052,7 +1053,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e comp const na memoria
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -1066,7 +1067,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e comp no acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1080,7 +1081,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e comp na memoria
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -1092,7 +1093,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e int no acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1104,7 +1105,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e int na memoria
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT %s_arr_size\n", v_name[id]);
@@ -1115,7 +1116,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e float no acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que os índices do array estão em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P aux_var\n");
@@ -1128,7 +1129,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e float na memoria
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -1140,7 +1141,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e comp const na memoria
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -1154,7 +1155,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e comp no acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1168,7 +1169,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e comp na memoria
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -1180,7 +1181,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e int no acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("SET   aux_var\n");
             add_instr("F2I_M %s\n" ,   v_name[et1%OFST]);
@@ -1192,7 +1193,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e int na memoria
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr( "%s %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
@@ -1203,7 +1204,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e float no acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que os índices do array estão em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
@@ -1216,7 +1217,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e float na memoria
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -1228,7 +1229,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e comp const na memoria
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -1242,7 +1243,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e comp no acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1256,7 +1257,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e comp na memoria
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -1268,7 +1269,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e int no acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -1283,7 +1284,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e int na memoria
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -1296,7 +1297,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e float no acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -1311,7 +1312,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e float na memoria
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -1325,7 +1326,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e comp const na memoria
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
             add_instr("%s %s\n", f2i, v_name[etr % OFST]);
@@ -1340,7 +1341,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e comp no acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -1356,7 +1357,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e comp na memoria
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: Esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -1370,7 +1371,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e int no acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("POP\n");
@@ -1383,7 +1384,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e int na memoria
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -1395,7 +1396,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e float no acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P aux_var\n");
@@ -1409,7 +1410,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e float na memoria
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -1422,7 +1423,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e comp const na memoria
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -1437,7 +1438,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e comp no acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -1452,7 +1453,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e comp na memoria
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -1465,7 +1466,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e int no acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -1476,7 +1477,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e int na memoria
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr( "%s %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
@@ -1487,7 +1488,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e float no acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
@@ -1499,7 +1500,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e float na memoria
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("%s %s\n", f2i,  v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -1511,7 +1512,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e comp const na memoria
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -1525,7 +1526,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e comp no acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1539,7 +1540,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e comp na memoria
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("%s      %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -1579,7 +1580,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e float no acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P aux_var\n");
@@ -1594,7 +1595,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e float na memoria
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
             add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
@@ -1608,7 +1609,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e comp const na memoria
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -1624,7 +1625,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e comp no acc
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1640,7 +1641,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int no acc e comp na memoria
         if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
             add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
@@ -1678,7 +1679,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e float no acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_LOD %s\n",  v_name[et1 % OFST]);
@@ -1693,7 +1694,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e float na memoria
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -1708,7 +1709,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e comp const na memoria
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -1725,7 +1726,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e comp no acc
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1742,7 +1743,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // int na memoria e comp na memoria
         if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -1757,7 +1758,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e int no acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1772,7 +1773,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e int na memoria
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT   %s_arr_size\n", v_name[id]);
@@ -1786,7 +1787,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e float no acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: tá vendo que os índices do array estão em ponto flutuante né? Vou arredondar!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P aux_var\n");
@@ -1802,7 +1803,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e float na memoria
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -1817,7 +1818,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e comp const na memoria
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -1834,7 +1835,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e comp no acc
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1851,7 +1852,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float no acc e comp na memoria
         if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -1866,7 +1867,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e int no acc
         if ((get_type(et1) == 2) && (et1 % OFST != 1) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
@@ -1882,7 +1883,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e int na memoria
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("%s    %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT   %s_arr_size\n"    , v_name[id]);
@@ -1896,7 +1897,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e float no acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
@@ -1912,7 +1913,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e float na memoria
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -1927,7 +1928,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e comp const na memoria
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
@@ -1945,7 +1946,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e comp no acc
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -1962,7 +1963,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // float na memoria e comp na memoria
         if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -1977,7 +1978,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e int no acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -1995,7 +1996,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e int na memoria
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -2011,7 +2012,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e float no acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -2029,7 +2030,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e float na memoria
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -2046,7 +2047,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e comp const na memoria
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
             add_instr( "%s %s\n", f2i, v_name[etr % OFST]);
@@ -2064,7 +2065,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e comp no acc
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -2083,7 +2084,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp const na memoria e comp na memoria
         if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et1, &etr, &eti);
 
@@ -2100,7 +2101,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e int no acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("POP\n");
@@ -2116,7 +2117,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e int na memoria
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -2131,7 +2132,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e float no acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P aux_var\n");
@@ -2148,7 +2149,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e float na memoria
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P   aux_var\n");
             add_instr("F2I\n");
@@ -2164,7 +2165,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e comp const na memoria
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -2182,7 +2183,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e comp no acc
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -2200,7 +2201,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp no acc e comp na memoria
         if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P   aux_var\n");
             add_instr("F2I\n");
@@ -2216,7 +2217,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e int no acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("P_F2I_M %s\n" , v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n", v_name[id]);
@@ -2230,7 +2231,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e int na memoria
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("%s    %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT   %s_arr_size\n"    , v_name[id]);
@@ -2244,7 +2245,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e float no acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n" , v_name[et1 % OFST]);
@@ -2259,7 +2260,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e float na memoria
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
@@ -2274,7 +2275,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e comp const na memoria
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(et2, &etr, &eti);
 
@@ -2291,7 +2292,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e comp no acc
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
@@ -2308,7 +2309,7 @@ int arr_2d2exp(int id, int et1, int et2)
         // comp na memoria e comp na memoria
         if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
         {
-            fprintf (stdout, "Atenção na linha %d: esses índices do array estão uma bagunça. você é uma pessoa confusa!\n", line_num+1);
+            fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr(" %s     %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);

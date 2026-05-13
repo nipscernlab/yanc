@@ -1,0 +1,74 @@
+# ============================================================================
+# Compiladores (binarios e arquivos intermediarios) --------------------------
+# ============================================================================
+
+# binarios gerados pelo gcc
+*.exe
+*.dll
+*.o
+*.obj
+*.a
+*.lib
+*.pdb
+*.ilk
+
+# saidas do flex (.l -> .c)
+APP/Sources/app.c
+ASM/Sources/ASMComp.c
+CMMComp/Sources/lex.yy.c
+
+# saidas do bison (.y -> .c/.h)
+CMMComp/Sources/y.tab.c
+CMMComp/Sources/y.tab.h
+
+# ============================================================================
+# Logs e arquivos de estado gerados em runtime -------------------------------
+# ============================================================================
+
+# logs do appcomp/cmmcomp (gerados na pasta do projeto/Temp)
+app_log.txt
+cmm_log.txt
+trad_opcode.txt
+trad_cmm.txt
+tcl_infos.txt
+progress.txt
+pc_*_mem.txt
+
+# ============================================================================
+# Pasta de teste (go_proc.bat / go_proj.bat reconstroem do zero) -------------
+# ============================================================================
+
+/Teste/
+
+# ============================================================================
+# Saidas de simulacao (iverilog / gtkwave / vvp) -----------------------------
+# ============================================================================
+
+*.vvp
+*.fst
+*.vcd
+# excecao: o fix.vcd em Scripts/ eh um template versionado
+!Scripts/fix.vcd
+
+# memorias geradas pelo asmcomp
+*_data.mif
+*_inst.mif
+
+# ============================================================================
+# Lixo de SO e editores ------------------------------------------------------
+# ============================================================================
+
+# Windows
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+
+# editores
+*.swp
+*.swo
+*~
+.idea/

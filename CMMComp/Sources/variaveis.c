@@ -12,6 +12,7 @@
 #include "..\Headers\funcoes.h"
 #include "..\Headers\variaveis.h"
 #include "..\Headers\diretivas.h"
+#include "..\Headers\messages.h"
 
 int  v_count = 0;          // guarda o tamanho da tabela
 char v_name[NVARMAX][512]; // nome da variavel ou funcao
@@ -45,7 +46,7 @@ void add_var(char *var)
 {
     if (v_count == NVARMAX)
     {
-        fprintf (stderr, "Erro: Aumente o número de variáveis permitidas. Atual = %d\n", NVARMAX);
+        fprintf (stderr, MSG_ERR_TOO_MANY_VARS, NVARMAX);
         exit(EXIT_FAILURE);
     }
     else
@@ -58,7 +59,7 @@ void add_var(char *var)
 // checa quais variaveis e funcoes foram usadas (no final do parse)
 void check_var()
 {
-    if (mainok == 0) {fprintf (stderr, "Erro: cadê a função main()?\n"); exit(EXIT_FAILURE);}
+    if (mainok == 0) {fprintf (stderr, MSG_ERR_NO_MAIN); exit(EXIT_FAILURE);}
 
     // varre toda a tabela de variaveis
     for (int i = 0; i < v_count; i++)
@@ -68,14 +69,14 @@ void check_var()
         {
             // checa se eh ou nao global
             if (strcmp(v_name[v_fnid[i]], "") == 0)
-                fprintf (stdout, "Atenção: variável global '%s' não está sendo usada. Economize memória!\n", v_name[i]);
+                fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_name[i]);
             else
-                fprintf (stdout, "Atenção: variável '%s' na função '%s' não está sendo usada. Economize memória!\n", rem_fname(v_name[i], v_name[v_fnid[i]]), v_name[v_fnid[i]]);
+                fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, rem_fname(v_name[i], v_name[v_fnid[i]]), v_name[v_fnid[i]]);
         }
 
         // checa se a funcao foi declarada e nao foi usada
         if (((v_type[i] == 5) || (v_type[i] == 6) || (v_type[i] == 7)) && v_used[i] == 0)
-            fprintf (stdout, "Atenção: função '%s' não está sendo usada. Economize memória!\n", v_name[i]);
+            fprintf (stdout, MSG_WARN_UNUSED_FUNCTION, v_name[i]);
     }
 }
 
@@ -95,7 +96,7 @@ char* rem_fname(char *var, char *fname)
 int exec_id(char *text)
 {
     if (strcmp(text,"i") == 0)
-        {fprintf (stderr, "Erro na linha %d: símbolo 'i' é reservado para indicar a parte imaginária de uma constante complexa.\n", line_num+1); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_RESERVED_I, line_num+1); exit(EXIT_FAILURE);}
 
     char var_name[64];
 
@@ -122,7 +123,7 @@ int exec_inum(char *text)
     int max = (int) (pow(2,nbmant+nbexpo+1-1)-1);
     int num = atoi(text);
 
-    if (num > max) {fprintf (stderr, "Erro na linha %d: o maior número inteiro que pode ser representado é %d!\n", line_num+1, max); exit(EXIT_FAILURE);}
+    if (num > max) {fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, max); exit(EXIT_FAILURE);}
 
     // adiciona na tabela -----------------------------------------------------
 
@@ -184,8 +185,8 @@ int exec_fnum(char *text)
     float num = atof(text);                                             //       valor do num   em modulo
     float abs = (num < 0.0) ? -num : num;                               //       valor do num   em modulo
 
-    if (abs < min && abs != 0.0) {fprintf (stderr, "Erro na linha %d: o menor número float que pode ser representado é %f!\n", line_num+1, min); exit(EXIT_FAILURE);}
-    if (abs > max)               {fprintf (stderr, "Erro na linha %d: o maior número float que pode ser representado é %f!\n", line_num+1, max); exit(EXIT_FAILURE);}
+    if (abs < min && abs != 0.0) {fprintf (stderr, MSG_ERR_FLOAT_MIN, line_num+1, min); exit(EXIT_FAILURE);}
+    if (abs > max)               {fprintf (stderr, MSG_ERR_FLOAT_MAX, line_num+1, max); exit(EXIT_FAILURE);}
 
     // calcula residuo --------------------------------------------------------
 
@@ -194,7 +195,7 @@ int exec_fnum(char *text)
     float mf    = (s) ? -m*pow(2,e) : m*pow(2,e);
     float delta = mf-num;
 
-    if (delta != 0.0 && num != 0.0) printf("Info: constant %s on line %d aproximated to %.14f (error = %.14f)\n",text,line_num+1,mf,delta);
+    if (delta != 0.0 && num != 0.0) printf(MSG_INFO_CONST_APPROX,text,line_num+1,mf,delta);
 
     // adiciona na tabela -----------------------------------------------------
 

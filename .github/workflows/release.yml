@@ -57,7 +57,7 @@ jobs:
           gcc -O2 -o cmmcomp.exe \
               data_assign.c data_declar.c data_use.c itr.c diretivas.c \
               funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
-              variaveis.c array_index.c global.c macros.c y.tab.c
+              variaveis.c array_index.c global.c macros.c messages.c y.tab.c
           mv cmmcomp.exe ../../out/bin/
           rm -f lex.yy.c y.tab.c y.tab.h
           popd
@@ -65,7 +65,7 @@ jobs:
           # appcomp
           pushd APP/Sources
           flex -o app.c app.l
-          gcc -O2 -o appcomp.exe app.c eval.c variaveis.c
+          gcc -O2 -o appcomp.exe app.c eval.c variaveis.c messages.c
           mv appcomp.exe ../../out/bin/
           rm -f app.c
           popd
@@ -75,7 +75,7 @@ jobs:
           flex -o ASMComp.c ASMComp.l
           gcc -O2 -o asmcomp.exe \
               ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-              hdl.c simulacao.c array.c
+              hdl.c simulacao.c array.c messages.c
           mv asmcomp.exe ../../out/bin/
           rm -f ASMComp.c
           popd

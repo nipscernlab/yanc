@@ -2,6 +2,7 @@
 
 #include "..\Headers\eval.h"
 #include "..\Headers\hdl.h"
+#include "..\Headers\messages.h"
 
 #include <string.h>
 
@@ -195,6 +196,8 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 int main(int argc, char *argv[])
 {
+  parse_lang_flag(&argc, argv);                         // processa flag -en/-pt (remove de argv)
+
 	strcpy(proc_dir,argv[2]);                             // path da pasta do projeto
 	strcpy( hdl_dir,argv[3]);                             // path da pasta HDL
   strcpy( mac_dir,argv[4]);                             // path da pasta Macros
@@ -206,7 +209,7 @@ int main(int argc, char *argv[])
 	fclose(yyin);                                         // fecha o arquivo .asm
 	eval_finish();                                        // executa finalizacao do assembler
 
-  printf("Sucesso: o processador tá pronto pra uso.\n");
+  printf(MSG_OK_ASM_DONE);
 
   return 0;
 }

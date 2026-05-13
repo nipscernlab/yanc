@@ -62,6 +62,7 @@
 #include "..\Headers\data_declar.h" // declaracao de dados
 #include "..\Headers\data_assign.h" // atribuicao de dados
 #include "..\Headers\array_index.h" // tratamento de indice de array
+#include "..\Headers\messages.h"    // suporte bilingue PT/EN
 
 // variaveis obrigatorias do flex/bison ---------------------------------------
 
@@ -383,12 +384,14 @@ terminal : INUM                               {$$ = num2exp($1,1);}
 // ponto de inicio do programa
 int main(int argc, char *argv[])
 {
+    parse_lang_flag(&argc, argv);                                     // processa flag -en/-pt (remove de argv)
+
     parse_init(argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]); // inicializa o parser e as variaveis globais
     yyparse   ();                                                     // aqui a magica acontece!!
     parse_end (argv[2], argv[3]);                                     // finaliza o parser
 
     // mensagem final
-    printf("Sucesso: compilou! Agora é só descobrir por que não funciona.\n");
+    printf(MSG_OK_CMM_DONE);
 
     return 0;
 }
@@ -396,6 +399,6 @@ int main(int argc, char *argv[])
 // erro de sintaxes do bison
 void yyerror (char const *s)
 {
-    fprintf (stderr, "Erro de sintaxe na linha %d. Você é uma pessoa confusa!\n", line_num+1);
+    fprintf (stderr, MSG_ERR_SYNTAX, line_num+1);
     exit(EXIT_FAILURE);
 }
