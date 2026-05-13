@@ -2,8 +2,6 @@
 // routines for handling variables found in the .asm file ---------------------
 // ----------------------------------------------------------------------------
 
-#define NVARMAX 999999 // switch to dynamic arrays later
-
 // global includes
 #include  <stdio.h>
 #include <string.h>
@@ -17,9 +15,31 @@
 // local variables ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int  v_count = 0;
-char v_name[NVARMAX][512];
-int  v_val [NVARMAX];
+int          v_count = 0;
+static int   v_cap   = 0;
+static char (*v_name)[512] = NULL;
+static int  *v_val         = NULL;
+
+// ----------------------------------------------------------------------------
+// helpers --------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+static void var_grow(int needed)
+{
+    if (needed <= v_cap) return;
+    int new_cap = v_cap ? v_cap : 256;
+    while (new_cap < needed) new_cap *= 2;
+
+    void *t1 = realloc(v_name, (size_t)new_cap * sizeof(*v_name));
+    void *t2 = realloc(v_val , (size_t)new_cap * sizeof(*v_val ));
+    if (!t1 || !t2) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+
+    v_name = t1;
+    v_val  = t2;
+    memset(v_name + v_cap, 0, (size_t)(new_cap - v_cap) * sizeof(*v_name));
+    memset(v_val  + v_cap, 0, (size_t)(new_cap - v_cap) * sizeof(*v_val ));
+    v_cap = new_cap;
+}
 
 // ----------------------------------------------------------------------------
 // interface routines ---------------------------------------------------------
@@ -29,11 +49,7 @@ int  v_val [NVARMAX];
 // if the operand is a constant, converts its value to binary ...
 void var_add(char *var, int is_const)
 {
-    if (v_count == NVARMAX)
-    {
-        fprintf(stderr, MSG_ERR_TOO_MANY_VARS, NVARMAX);
-        exit(EXIT_FAILURE);
-    }
+    var_grow(v_count + 1);
 
     // turn char *var into int val
     int   val;
@@ -66,6 +82,6 @@ int var_find(char *val)
 	return ind;
 }
 
-void var_inc (int   val){v_count += val             ;} // increments the memory size (for arrays)
-int  var_val (char *var){return v_val[var_find(var)];} // returns the variable's value
-int  var_cnt (         ){return v_count             ;} // returns the number of variables
+void var_inc (int   val){var_grow(v_count + val); v_count += val;} // increments the memory size (for arrays)
+int  var_val (char *var){return v_val[var_find(var)];}             // returns the variable's value
+int  var_cnt (         ){return v_count             ;}             // returns the number of variables

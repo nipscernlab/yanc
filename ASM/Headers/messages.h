@@ -24,13 +24,9 @@ void parse_lang_flag(int *argc, char **argv);
 
 // general errors ------------------------------------------------------------
 
-#define MSG_ERR_TOO_MANY_VARS \
-    M("Erro: número de variáveis > %d", \
-      "Error: variable count blew past %d")
-
-#define MSG_ERR_TOO_MANY_LABELS \
-    M("Erro: número de labels > %d", \
-      "Error: label count blew past %d")
+#define MSG_ERR_OUT_OF_MEMORY \
+    M("Erro: memória insuficiente pra alocar a tabela de símbolos!\n", \
+      "Error: out of memory while growing the symbol table!\n")
 
 #define MSG_ERR_FILE_WHERE \
     M("Erro: cadê o arquivo %s?\n", \

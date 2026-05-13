@@ -14,16 +14,49 @@
 #include "..\Headers\diretivas.h"
 #include "..\Headers\messages.h"
 
-int  v_count = 0;          // stores the size of the table
-char v_name[NVARMAX][512]; // name of the variable or function
-int  v_isar[NVARMAX];      // whether the variable is an array
-int  v_type[NVARMAX];      // 0 -> unidentified, 1 -> int, 2 -> float
-int  v_fnid[NVARMAX];      // ID of the function the variable belongs to
-int  v_used[NVARMAX];      // whether the ID has already been used
-int  v_isco[NVARMAX];      // whether the variable is a constant
-int  v_fpar[NVARMAX];      // if the ID is a function, holds the parameter list
-int  v_size[NVARMAX];      // array size (when it is an array)
-int  v_siz2[NVARMAX];      // size of the j dimension (when it is a matrix)
+int          v_count = 0;  // stores the size of the table
+static int   v_cap   = 0;  // current capacity of the parallel arrays
+
+char (*v_name)[512] = NULL; // name of the variable or function
+int  *v_isar       = NULL; // whether the variable is an array
+int  *v_type       = NULL; // 0 -> unidentified, 1 -> int, 2 -> float
+int  *v_fnid       = NULL; // ID of the function the variable belongs to
+int  *v_used       = NULL; // whether the ID has already been used
+int  *v_isco       = NULL; // whether the variable is a constant
+int  *v_fpar       = NULL; // if the ID is a function, holds the parameter list
+int  *v_size       = NULL; // array size (when it is an array)
+int  *v_siz2       = NULL; // size of the j dimension (when it is a matrix)
+
+#define GROW(arr, old_cap, new_cap)                                       \
+    do {                                                                  \
+        void *_tmp = realloc((arr), (size_t)(new_cap) * sizeof(*(arr)));  \
+        if (!_tmp) {                                                      \
+            fprintf(stderr, MSG_ERR_OUT_OF_MEMORY);                       \
+            exit(EXIT_FAILURE);                                           \
+        }                                                                 \
+        (arr) = _tmp;                                                     \
+        memset((arr) + (old_cap), 0,                                      \
+               (size_t)((new_cap) - (old_cap)) * sizeof(*(arr)));         \
+    } while (0)
+
+static void var_grow(int needed)
+{
+    if (needed <= v_cap) return;
+    int new_cap = v_cap ? v_cap : 256;
+    while (new_cap < needed) new_cap *= 2;
+
+    GROW(v_name, v_cap, new_cap);
+    GROW(v_isar, v_cap, new_cap);
+    GROW(v_type, v_cap, new_cap);
+    GROW(v_fnid, v_cap, new_cap);
+    GROW(v_used, v_cap, new_cap);
+    GROW(v_isco, v_cap, new_cap);
+    GROW(v_fpar, v_cap, new_cap);
+    GROW(v_size, v_cap, new_cap);
+    GROW(v_siz2, v_cap, new_cap);
+
+    v_cap = new_cap;
+}
 
 // searches the table for the variable (-1 if not found)
 int find_var(char *val)
@@ -44,16 +77,9 @@ int find_var(char *val)
 // adds a variable to the table
 void add_var(char *var)
 {
-    if (v_count == NVARMAX)
-    {
-        fprintf (stderr, MSG_ERR_TOO_MANY_VARS, NVARMAX);
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        strcpy(v_name[v_count], var);
-        v_count++;
-    }
+    var_grow(v_count + 1);
+    strcpy(v_name[v_count], var);
+    v_count++;
 }
 
 // checks which variables and functions were used (at the end of the parse)

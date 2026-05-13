@@ -2,19 +2,17 @@
 // identifier table -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-#define NVARMAX 999999                   // maximum size of the symbol table
+// table elements (dynamically allocated, grow on demand) ---------------------
 
-// table elements -------------------------------------------------------------
-
-extern char v_name[NVARMAX][512];        // name of the variable or function
-extern int  v_type[NVARMAX];             // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 5 -> const comp
-extern int  v_used[NVARMAX];             // whether the ID has already been used
-extern int  v_fpar[NVARMAX];             // if the ID is a function, holds the parameter list
-extern int  v_fnid[NVARMAX];             // ID of the function the variable belongs to
-extern int  v_isar[NVARMAX];             // whether the variable is an array
-extern int  v_isco[NVARMAX];             // whether the variable is a constant
-extern int  v_size[NVARMAX];             // array size (when it is an array)
-extern int  v_siz2[NVARMAX];             // size of the j dimension (when it is a matrix)
+extern char (*v_name)[512];              // name of the variable or function
+extern int  *v_type;                     // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 5 -> const comp
+extern int  *v_used;                     // whether the ID has already been used
+extern int  *v_fpar;                     // if the ID is a function, holds the parameter list
+extern int  *v_fnid;                     // ID of the function the variable belongs to
+extern int  *v_isar;                     // whether the variable is an array
+extern int  *v_isco;                     // whether the variable is a constant
+extern int  *v_size;                     // array size (when it is an array)
+extern int  *v_siz2;                     // size of the j dimension (when it is a matrix)
 
 // table element manipulation -------------------------------------------------
 

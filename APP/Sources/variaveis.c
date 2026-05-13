@@ -9,10 +9,23 @@
 
 #include "..\Headers\messages.h"
 
-#define NVARMAX 999999 // switch to a dynamic array later
+int          v_count = 0;
+static int   v_cap   = 0;
+static char (*v_name)[512] = NULL;
 
-int  v_count = 0;
-char v_name[NVARMAX][512];
+static void var_grow(int needed)
+{
+    if (needed <= v_cap) return;
+    int new_cap = v_cap ? v_cap : 256;
+    while (new_cap < needed) new_cap *= 2;
+
+    void *t = realloc(v_name, (size_t)new_cap * sizeof(*v_name));
+    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+
+    v_name = t;
+    memset(v_name + v_cap, 0, (size_t)(new_cap - v_cap) * sizeof(*v_name));
+    v_cap = new_cap;
+}
 
 // helper functions -----------------------------------------------------------
 
@@ -37,11 +50,10 @@ void var_add(char *va, int size)
 {
     if (var_find(va) == -1)
     {
+        var_grow(v_count + size);
         strcpy(v_name[v_count], va);
         v_count += size;
     }
-
-    if (v_count > NVARMAX) {fprintf(stderr, MSG_ERR_TOO_MANY_VARS, NVARMAX); exit(EXIT_FAILURE);}
 }
 
 // returns the number of variables

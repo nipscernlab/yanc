@@ -2,8 +2,6 @@
 // label handling routines ----------------------------------------------------
 // ----------------------------------------------------------------------------
 
-#define NLABMAX 99999 // switch to dynamic arrays later
-
 // global includes
 #include <string.h>
 #include <stdlib.h>
@@ -18,28 +16,39 @@
 // local variables ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-char l_name[NLABMAX][512];
-int  l_val [NLABMAX];
-int  l_count;
+static int   l_cap   = 0;
+static char (*l_name)[512] = NULL;
+static int  *l_val         = NULL;
+int  l_count = 0;
 
 // ----------------------------------------------------------------------------
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+static void lab_grow(int needed)
+{
+    if (needed <= l_cap) return;
+    int new_cap = l_cap ? l_cap : 128;
+    while (new_cap < needed) new_cap *= 2;
+
+    void *t1 = realloc(l_name, (size_t)new_cap * sizeof(*l_name));
+    void *t2 = realloc(l_val , (size_t)new_cap * sizeof(*l_val ));
+    if (!t1 || !t2) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+
+    l_name = t1;
+    l_val  = t2;
+    memset(l_name + l_cap, 0, (size_t)(new_cap - l_cap) * sizeof(*l_name));
+    memset(l_val  + l_cap, 0, (size_t)(new_cap - l_cap) * sizeof(*l_val ));
+    l_cap = new_cap;
+}
+
 // appends a label to the label vector
 void add_label(char *la, int val)
 {
-    if (l_count == NLABMAX)
-    {
-        fprintf(stderr, MSG_ERR_TOO_MANY_LABELS, NLABMAX);
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        strcpy(l_name[l_count], la);
-        l_val[l_count] = val;
-        l_count++;
-    }
+    lab_grow(l_count + 1);
+    strcpy(l_name[l_count], la);
+    l_val[l_count] = val;
+    l_count++;
 }
 
 // ----------------------------------------------------------------------------
