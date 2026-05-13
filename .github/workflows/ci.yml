@@ -73,3 +73,50 @@ jobs:
           cd Scripts
           gcc -O2 -Wall -o comp2gtkw.exe comp2gtkw.c
           test -x comp2gtkw.exe
+
+      - name: Smoke test cmmcomp on all examples
+        shell: msys2 {0}
+        # For every .cmm in Exemplos/, copy the processor directory to a
+        # writable scratch area (so cmmcomp's outputs do not dirty the
+        # checkout) and invoke cmmcomp with the same argument shape that
+        # go_proc.bat uses: <file.cmm> <prname> <proc_dir> <mac_dir>
+        # <tmp_dir> <multi_proc_flag>. We then check that the expected
+        # <prname>.asm appeared and is non-empty. Failure of any example
+        # fails the job.
+        run: |
+          set -euo pipefail
+
+          ROOT="$(pwd)"
+          CMMCOMP="$ROOT/CMMComp/Sources/cmmcomp.exe"
+          MAC_DIR="$ROOT/Macros"
+          SCRATCH="$ROOT/.smoke"
+          rm -rf "$SCRATCH"
+          mkdir -p "$SCRATCH"
+
+          fail=0
+          while IFS= read -r cmm; do
+            proc_dir_rel="$(dirname "$(dirname "$cmm")")"  # strip /Software/file.cmm
+            prname="$(basename "$proc_dir_rel")"
+            filename="$(basename "$cmm")"
+
+            work_proc="$SCRATCH/proc/$prname"
+            tmp_dir="$SCRATCH/tmp/$prname"
+            mkdir -p "$tmp_dir"
+            cp -r "$proc_dir_rel" "$(dirname "$work_proc")/"
+
+            echo "=== smoke: $filename ==="
+            if ! "$CMMCOMP" -en "$filename" "$prname" "$work_proc" "$MAC_DIR" "$tmp_dir" 0; then
+              echo "FAIL: cmmcomp exited non-zero for $filename"
+              fail=1
+              continue
+            fi
+
+            out_asm="$work_proc/Software/$prname.asm"
+            if [ ! -s "$out_asm" ]; then
+              echo "FAIL: $out_asm is missing or empty"
+              fail=1
+            fi
+          done < <(find Exemplos -name '*.cmm' | sort)
+
+          rm -rf "$SCRATCH"
+          exit "$fail"
