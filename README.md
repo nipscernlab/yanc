@@ -154,11 +154,9 @@ yanc/
 
 ## Contributing
 
-Issues and pull requests are welcome. When opening a PR, please make sure:
-
-* All three compilers still build cleanly (`build.bat`).
-* New source comments are written in English.
-* User-facing strings keep the bilingual `MSG_*` macro pattern (`M("pt", "en")`).
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md)
+for the conventions on commits, comments, and the bilingual `MSG_*`
+diagnostic pattern.
 
 ## License
 
