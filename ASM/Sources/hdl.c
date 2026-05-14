@@ -153,7 +153,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     if (opc_inn())
     {
         // single port: hook it straight to proc_req_in
-        if (nuioin == 1) fprintf(f_veri, "assign req_in = proc_req_in;\n"                            , nuioin);
+        if (nuioin == 1) fprintf(f_veri, "assign req_in = proc_req_in;\n");
         else             fprintf(f_veri, "addr_dec #(%d) dec_in (proc_req_in, addr_in , req_in);\n"  , nuioin);
     }
 
@@ -161,7 +161,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     if (opc_out())
     {
         // single port: hook it straight to proc_out_en
-        if (nuioou == 1) fprintf(f_veri, "assign out_en = proc_out_en;\n\n"                          , nuioou);
+        if (nuioou == 1) fprintf(f_veri, "assign out_en = proc_out_en;\n\n");
         else             fprintf(f_veri, "addr_dec #(%d) dec_out(proc_out_en, addr_out, out_en);\n\n", nuioou);
     }
 
@@ -211,7 +211,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
             if (inn_used(i))
             {
                 fprintf(f_veri, "   if (req_in == %d) in_sim_%d = in;\n", (int)pow(2,i),i);
-                fprintf(f_veri, "   req_in_sim_%d = req_in == %d;\n",  i, (int)pow(2,i),i);
+                fprintf(f_veri, "   req_in_sim_%d = req_in == %d;\n",  i, (int)pow(2,i));
             }
             else printf(MSG_WARN_UNUSED_IN_PORT, i);
         }
@@ -227,7 +227,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
             if (out_used(i))
             {
                 fprintf(f_veri, "   if (out_en == %d) out_sig_%d <= out;\n", (int)pow(2,i),i);
-                fprintf(f_veri, "   out_en_sim_%d = out_en == %d;\n",     i, (int)pow(2,i),i);
+                fprintf(f_veri, "   out_en_sim_%d = out_en == %d;\n",     i, (int)pow(2,i));
             }
             else printf(MSG_WARN_UNUSED_OUT_PORT, i);
         }
@@ -464,7 +464,7 @@ void hdl_tb_file(int itr_addr)
     // header -----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_veri, "`timescale 1ns/1ps\n\n", prname);
+    fprintf(f_veri, "`timescale 1ns/1ps\n\n");
     fprintf(f_veri,    "module %s_tb();\n\n", prname);
 
     // ------------------------------------------------------------------------
@@ -571,7 +571,7 @@ void hdl_tb_file(int itr_addr)
         {
             fprintf(f_veri, "    // port %d decoding\n", i);
             fprintf(f_veri, "    if (proc_req_in == %d) proc_io_in = in_%d;\n", (int)pow(2,i),i);
-            fprintf(f_veri, "    req_in_%d = proc_req_in == %d;\n",                 i, (int)pow(2,i),i);
+            fprintf(f_veri, "    req_in_%d = proc_req_in == %d;\n",                 i, (int)pow(2,i));
         }
     }
     if (opc_inn()) fprintf(f_veri, "end\n\n");
@@ -639,7 +639,7 @@ void hdl_tb_file(int itr_addr)
         {
             fprintf(f_veri, "    // port %d decoding\n", i);
             fprintf(f_veri, "    if (proc_out_en == %d) out_sig_%d <= proc_io_out;\n", (int)pow(2,i),i);
-            fprintf(f_veri, "    out_en_%d = proc_out_en == %d;\n",                 i, (int)pow(2,i),i);
+            fprintf(f_veri, "    out_en_%d = proc_out_en == %d;\n",                 i, (int)pow(2,i));
         }
     }
     if (opc_out()) fprintf(f_veri, "end\n\n");
