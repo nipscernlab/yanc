@@ -734,7 +734,6 @@ int arr_1d2exp(int id, int et, int fft)
     // write the instructions -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char num[32];
     int  etr, eti;
     int  type = v_type[id];
 
@@ -923,7 +922,6 @@ int arr_2d2exp(int id, int et1, int et2)
     // write the instructions -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char num[32];
     int  etr, eti;
     int  type = v_type[id];
 

@@ -10,6 +10,8 @@ int  conta_linhas(char *texto); // for block comments
 
 %}
 
+%option nounput noinput
+
 LETRA  [A-Za-z_]
 WS     [ \t]+
 

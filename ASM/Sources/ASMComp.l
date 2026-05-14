@@ -8,6 +8,8 @@
 
 %}
 
+%option nounput noinput
+
 INNUM  [-+]?[0-9]+
 FLNUM  [-+]?(0|[1-9]+[0-9]*)\.?[0-9]*
 

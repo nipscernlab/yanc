@@ -455,7 +455,6 @@ void hdl_tb_file(int itr_addr)
     // create the .v file -----------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int     aux;
     char    tmp[512];
     sprintf(tmp, "%s/%s_tb.v", temp_dir, prname);
 

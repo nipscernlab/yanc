@@ -24,7 +24,6 @@
 int oper_neg(int et)
 {
     int   etr, eti;
-    char  num[128];
 
     char  neg[10]; if (acc_ok == 0) strcpy( neg,   "NEG_M"); else strcpy( neg,  "P_NEG_M");
     char fneg[10]; if (acc_ok == 0) strcpy(fneg, "F_NEG_M"); else strcpy(fneg, "PF_NEG_M");
@@ -2440,8 +2439,6 @@ int oper_mod(int et1, int et2)
 // - review to avoid unnecessary stack use!
 int oper_cmp(int et1, int et2, int type)
 {
-    int  etr, eti;
-
     char ld [10]; if (acc_ok == 0) strcpy(ld , "LOD" ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
@@ -3096,8 +3093,6 @@ int oper_lanor(int et1, int et2, int type)
         exit(EXIT_FAILURE);
     }
 
-    int etr, eti;
-
     char ld[10];
     if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
@@ -3147,8 +3142,6 @@ int oper_inv(int et)
 {
     if (get_type(et) > 1)
         {fprintf(stderr, MSG_ERR_INV_NON_INT, line_num+1); exit(EXIT_FAILURE);}
-
-    int etr, eti;
 
     char inv[10]; if (acc_ok == 0) strcpy(inv,"INV_M"); else strcpy(inv,"P_INV_M");
 
@@ -3240,8 +3233,6 @@ int oper_shift(int et1, int et2, int type)
         case  1: strcpy(op, "SHR"); break;
         case  2: strcpy(op, "SRS"); break;
     }
-
-    int etr, eti;
 
     char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
