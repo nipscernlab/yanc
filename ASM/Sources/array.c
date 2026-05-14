@@ -214,7 +214,10 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
 
     // now read the file ------------------------------------------------------
 
-    int  val;
+    // val = 0 defends against fil_typ outside {1,2,3,4}: the four ifs
+    // below set it for the expected types, but GCC cannot prove the
+    // domain so we initialize defensively.
+    int  val = 0;
     char linha[128];
     char real [64], imag[64];
 

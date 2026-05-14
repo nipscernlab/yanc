@@ -51,8 +51,9 @@ void var_add(char *var, int is_const)
 {
     var_grow(v_count + 1);
 
-    // turn char *var into int val
-    int   val;
+    // turn char *var into int val. val = 0 covers any is_const outside
+    // the {0,1,2} domain so we never propagate uninitialized memory.
+    int   val = 0;
     float delta;
     switch(is_const)
     {
