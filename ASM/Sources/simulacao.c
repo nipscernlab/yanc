@@ -48,7 +48,7 @@ int sim_is_var(char *va, int *tipo, int *is_global, char *nome)
 {
     // open the log file ------------------------------------------------------
 
-    char path[1024]; sprintf(path, "%s/cmm_log.txt", temp_dir);
+    char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
 
     // scan the file lines looking for the variable ---------------------------
@@ -99,7 +99,7 @@ int sim_is_arr(char *va, int *tipo, int *size, int *is_global, char *nome)
 {
     // open the log file ------------------------------------------------------
 
-    char path[1024]; sprintf(path, "%s/cmm_log.txt", temp_dir);
+    char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
 
     // scan the file lines looking for the variable --------------------------
@@ -160,8 +160,8 @@ int sim_multi  (){return sim_typ;} // returns the simulation type (single-proc o
 void sim_init(int clk, int clk_n, int s_typ)
 {
     // open the opcode translation file in the Temp folder
-    char path[1024];
-    sprintf(path, "%s/trad_opcode.txt", temp_dir);
+    char path[2048];
+    snprintf(path, sizeof(path), "%s/trad_opcode.txt", temp_dir);
     f_tran  = fopen(path, "w");
 
     clk_frq = clk;   // simulation clock frequency
@@ -229,7 +229,7 @@ void sim_regi_arr(char *va)
 // returns the memory contents
 void sim_mem(int addr, char *val)
 {
-    char aux[256]; sprintf(aux, "%s/Hardware/%s_data.mif", proc_dir, prname);
+    char aux[2048]; snprintf(aux, sizeof(aux), "%s/Hardware/%s_data.mif", proc_dir, prname);
     FILE *f_data = fopen(aux, "r");
 
     int i = 0;

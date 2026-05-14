@@ -74,7 +74,7 @@ int  nbopr;             // number of operand bits
 int eval_get(char *fname, char *var, char *val)
 {
     // open the log file
-    char path[1024]; sprintf(path, "%s/%s", temp_dir, fname);
+    char path[2048]; snprintf(path, sizeof(path), "%s/%s", temp_dir, fname);
     FILE *input = fopen(path , "r");
     if   (input == NULL) {fprintf(stderr, MSG_ERR_FILE_WHERE, path); exit(EXIT_FAILURE);}
 
@@ -192,7 +192,7 @@ void eval_init(int clk, int clk_n, int s_typ)
 
     // pull parameters from app_log.txt ---------------------------------------
 
-    char aux[256];
+    char aux[2048];
 
     eval_get("app_log.txt","prname", prname);                     // processor name
     eval_get("app_log.txt","n_ins" ,    aux); n_ins  = atoi(aux); // number of instructions added
@@ -213,8 +213,8 @@ void eval_init(int clk, int clk_n, int s_typ)
 
     // open the .mif files ----------------------------------------------------
 
-    sprintf(aux, "%s/Hardware/%s_data.mif", proc_dir, prname); f_data  = fopen(aux, "w");
-    sprintf(aux, "%s/Hardware/%s_inst.mif", proc_dir, prname); f_instr = fopen(aux, "w");
+    snprintf(aux, sizeof(aux), "%s/Hardware/%s_data.mif", proc_dir, prname); f_data  = fopen(aux, "w");
+    snprintf(aux, sizeof(aux), "%s/Hardware/%s_inst.mif", proc_dir, prname); f_instr = fopen(aux, "w");
 
     // initialize routines for iverilog simulation ----------------------------
 

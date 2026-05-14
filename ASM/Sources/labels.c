@@ -59,8 +59,8 @@ void add_label(char *la, int val)
 void lab_reg()
 {
     // open the log file
-    char path[1024];
-    sprintf(path, "%s/app_log.txt", temp_dir);
+    char path[2048];
+    snprintf(path, sizeof(path), "%s/app_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
 
     // scan the log file

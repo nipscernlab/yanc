@@ -107,10 +107,10 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 
     // create helper files ----------------------------------------------------
 
-    char path[1024];
+    char path[2048];
 
-    sprintf(path,   "%s/cmm_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
-    sprintf(path, "%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
+    snprintf(path, sizeof(path),   "%s/cmm_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
+    snprintf(path, sizeof(path), "%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
 
     // emit a NOP instruction at the start (try to remove this) ---------------
 
@@ -143,7 +143,7 @@ void parse_end(char *prname, char *d_proc)
 
     // generate the translation file for the cmm code -------------------------
 
-    char     path[1024]; sprintf(path    , "%s/%s", dir_tmp,     "trad_cmm.txt");
+    char     path[2048]; snprintf(path, sizeof(path), "%s/%s", dir_tmp, "trad_cmm.txt");
     char cmm_file[1024]; sprintf(cmm_file, "%s/Software/%s.cmm", d_proc, prname);
 
     FILE *output = fopen(path    , "w");

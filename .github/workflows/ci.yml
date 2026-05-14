@@ -37,7 +37,7 @@ jobs:
           cd CMMComp/Sources
           bison -y -d CMMComp.y
           flex CMMComp.l
-          gcc -O2 -Wall -o cmmcomp.exe \
+          gcc -O2 -Wall -Werror -o cmmcomp.exe \
               data_assign.c data_declar.c data_use.c itr.c diretivas.c \
               funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
               variaveis.c array_index.c global.c macros.c messages.c y.tab.c
@@ -50,7 +50,7 @@ jobs:
           set -euo pipefail
           cd APP/Sources
           flex -o app.c app.l
-          gcc -O2 -Wall -o appcomp.exe app.c eval.c variaveis.c messages.c
+          gcc -O2 -Wall -Werror -o appcomp.exe app.c eval.c variaveis.c messages.c
           test -x appcomp.exe
           rm -f app.c
 
@@ -60,7 +60,7 @@ jobs:
           set -euo pipefail
           cd ASM/Sources
           flex -o ASMComp.c ASMComp.l
-          gcc -O2 -Wall -o asmcomp.exe \
+          gcc -O2 -Wall -Werror -o asmcomp.exe \
               ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
               hdl.c simulacao.c array.c messages.c
           test -x asmcomp.exe
@@ -71,7 +71,7 @@ jobs:
         run: |
           set -euo pipefail
           cd Scripts
-          gcc -O2 -Wall -o comp2gtkw.exe comp2gtkw.c
+          gcc -O2 -Wall -Werror -o comp2gtkw.exe comp2gtkw.c
           test -x comp2gtkw.exe
 
       - name: Smoke test full pipeline on all examples

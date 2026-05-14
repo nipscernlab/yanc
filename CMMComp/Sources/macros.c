@@ -63,8 +63,8 @@ void mac_use(int ids, int global, int id_num)
     memmove(&f_name[idxToDel], &f_name[idxToDel+1], 1); // actually delete the trailing quote
     strcat ( file_name, f_name+1); // copy starting after the leading quote
 
-    char    mac_name[1024];
-    sprintf(mac_name, "%s/%s", dir_soft, file_name);
+    char    mac_name[2048];
+    snprintf(mac_name, sizeof(mac_name), "%s/%s", dir_soft, file_name);
 
     // copy the code from the asm file ----------------------------------------
 
@@ -142,26 +142,26 @@ void mac_copy(char *fasm)
 
     // copy what is needed at the end of the asm ------------------------------
 
-    char tasm[1024]; sprintf(tasm, "%s/%s", dir_tmp, "tasm.txt");
+    char tasm[2048]; snprintf(tasm, sizeof(tasm), "%s/%s", dir_tmp, "tasm.txt");
 
     if (fsqrt)
     {
         printf(MSG_INFO_SQRT_MACRO);
-        sprintf(tasm, "%s/float_sqrt.asm", dir_macro);
+        snprintf(tasm, sizeof(tasm), "%s/float_sqrt.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fatan)
     {
         printf(MSG_INFO_ATAN_MACRO);
-        sprintf(tasm, "%s/float_atan.asm", dir_macro);
+        snprintf(tasm, sizeof(tasm), "%s/float_atan.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fsin)
     {
         printf(MSG_INFO_SIN_MACRO);
-        sprintf(tasm, "%s/float_sin.asm", dir_macro);
+        snprintf(tasm, sizeof(tasm), "%s/float_sin.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 }

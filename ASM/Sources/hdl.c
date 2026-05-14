@@ -32,8 +32,8 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     // create the .v file for writing -----------------------------------------
     // ------------------------------------------------------------------------
 
-    char    tmp[512];
-    sprintf(tmp, "%s/Hardware/%s.v", proc_dir, prname);
+    char    tmp[2048];
+    snprintf(tmp, sizeof(tmp), "%s/Hardware/%s.v", proc_dir, prname);
 
     FILE *f_veri = fopen(tmp,"w");
 
@@ -135,7 +135,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     // finalize the processor instance ----------------------------------------
     // ------------------------------------------------------------------------
 
-    char path[1024]; sprintf(path, "%s/Hardware/%s", proc_dir, prname); force_rightbar(path);
+    char path[2048]; snprintf(path, sizeof(path), "%s/Hardware/%s", proc_dir, prname); force_rightbar(path);
 
     fprintf(f_veri, ".DFILE(\"%s_data.mif\"),\n"  , path);
     fprintf(f_veri, ".IFILE(\"%s_inst.mif\"))\n\n", path);
@@ -455,8 +455,8 @@ void hdl_tb_file(int itr_addr)
     // create the .v file -----------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char    tmp[512];
-    sprintf(tmp, "%s/%s_tb.v", temp_dir, prname);
+    char    tmp[2048];
+    snprintf(tmp, sizeof(tmp), "%s/%s_tb.v", temp_dir, prname);
 
     FILE *f_veri = fopen(tmp,"w");
 
