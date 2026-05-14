@@ -78,7 +78,7 @@ del  ASMComp.c
 
 cd %SRC_DIR%\Scripts
 
-%GCC% -o comp2gtkw.exe comp2gtkw.c
+%GCC% -mwindows -o comp2gtkw.exe comp2gtkw.c
 
 move comp2gtkw.exe  %BLD_DIR%\bin
 
