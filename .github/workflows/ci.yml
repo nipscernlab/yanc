@@ -40,7 +40,8 @@ jobs:
           gcc -O2 -Wall -Werror -o cmmcomp.exe \
               data_assign.c data_declar.c data_use.c itr.c diretivas.c \
               funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
-              variaveis.c array_index.c global.c macros.c messages.c y.tab.c
+              variaveis.c array_index.c global.c macros.c messages.c args.c \
+              y.tab.c
           test -x cmmcomp.exe
           rm -f lex.yy.c y.tab.c y.tab.h
 
@@ -50,7 +51,8 @@ jobs:
           set -euo pipefail
           cd APP/Sources
           flex -o app.c app.l
-          gcc -O2 -Wall -Werror -o appcomp.exe app.c eval.c variaveis.c messages.c
+          gcc -O2 -Wall -Werror -o appcomp.exe \
+              app.c eval.c variaveis.c messages.c args.c
           test -x appcomp.exe
           rm -f app.c
 
@@ -62,7 +64,7 @@ jobs:
           flex -o ASMComp.c ASMComp.l
           gcc -O2 -Wall -Werror -o asmcomp.exe \
               ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-              hdl.c simulacao.c array.c messages.c
+              hdl.c simulacao.c array.c messages.c args.c
           test -x asmcomp.exe
           rm -f ASMComp.c
 
@@ -86,7 +88,7 @@ jobs:
         #                                     + Hardware/<prname>_data.mif
         #                                     + Hardware/<prname>_inst.mif
         #
-        # Same argument shapes as go_proc.bat. The Hardware/ subdir is
+        # Same named-option shapes as go_proc.bat. The Hardware/ subdir is
         # created up front because asmcomp does not mkdir it itself. Any
         # non-zero exit or missing/empty expected artifact fails the job.
         run: |
@@ -118,17 +120,17 @@ jobs:
 
             echo "=== smoke: $filename ==="
 
-            if ! "$CMMCOMP" -en "$filename" "$prname" "$work_proc" "$MAC_DIR" "$tmp_dir" 0; then
+            if ! "$CMMCOMP" -en -i "$filename" -n "$prname" -p "$work_proc" -m "$MAC_DIR" -t "$tmp_dir"; then
               echo "FAIL: cmmcomp exited non-zero for $prname"; fail=1; continue
             fi
             [ -s "$asm_file" ] || { echo "FAIL: $asm_file missing/empty"; fail=1; continue; }
 
-            if ! "$APPCOMP" -en "$asm_file" "$tmp_dir"; then
+            if ! "$APPCOMP" -en -i "$asm_file" -t "$tmp_dir"; then
               echo "FAIL: appcomp exited non-zero for $prname"; fail=1; continue
             fi
             [ -s "$tmp_dir/app_log.txt" ] || { echo "FAIL: app_log.txt missing/empty"; fail=1; continue; }
 
-            if ! "$ASMCOMP" -en "$asm_file" "$work_proc" "$HDL_DIR" "$MAC_DIR" "$tmp_dir" 100 1000 0; then
+            if ! "$ASMCOMP" -en -i "$asm_file" -p "$work_proc" -d "$HDL_DIR" -m "$MAC_DIR" -t "$tmp_dir" -f 100 -c 1000; then
               echo "FAIL: asmcomp exited non-zero for $prname"; fail=1; continue
             fi
             for art in "$prname.v" "${prname}_data.mif" "${prname}_inst.mif"; do

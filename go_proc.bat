@@ -95,7 +95,7 @@ cd %ROOT_DIR%\CMMComp\Sources
 
 %BISON% -y -d CMMComp.y
 %FLEX%        CMMComp.l
-%GCC%      -o CMMComp.exe data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c y.tab.c
+%GCC%      -o CMMComp.exe data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c
 
 move CMMComp.exe %BIN_DIR%>%TMP_PRO%\log.txt
 del  lex.yy.c
@@ -107,7 +107,7 @@ del  y.tab.h
 cd %ROOT_DIR%\APP\Sources
 
 %FLEX% -o app.c app.l
-%GCC%  -o APP.exe app.c eval.c variaveis.c messages.c
+%GCC%  -o APP.exe app.c eval.c variaveis.c messages.c args.c
 
 move APP.exe %BIN_DIR%>%TMP_PRO%\log.txt
 del  app.c
@@ -117,7 +117,7 @@ del  app.c
 cd %ROOT_DIR%\ASM\Sources
 
 %FLEX% -o ASMComp.c ASMComp.l
-%GCC%  -o ASM.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c
+%GCC%  -o ASM.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c
 
 move ASM.exe %BIN_DIR%>%TMP_PRO%\log.txt
 del  ASMComp.c
@@ -136,7 +136,7 @@ echo #### Running the CMM compiler
 
 cd %BIN_DIR%
 
-CMMComp.exe %FNAM% %PROC% %PROC_DIR% %MAC_DIR% %TMP_PRO% 0
+CMMComp.exe -i %FNAM% -n %PROC% -p %PROC_DIR% -m %MAC_DIR% -t %TMP_PRO%
 
 :: Run the Assembler pre-processor --------------------------------------------
 
@@ -144,7 +144,7 @@ echo #### Running the Pre-assembler
 
 set ASM_FILE=%SOFT_DIR%\%PROC%.asm
 
-APP.exe %ASM_FILE% %TMP_PRO%
+APP.exe -i %ASM_FILE% -t %TMP_PRO%
 
 :: Run the Assembler compiler -------------------------------------------------
 
@@ -152,7 +152,7 @@ echo #### Running the Assembler
 
 set ASM_FILE=%SOFT_DIR%\%PROC%.asm
 
-ASM.exe %ASM_FILE% %PROC_DIR% %HDL_DIR% %MAC_DIR% %TMP_PRO% %FRE_CLK% %NUM_CLK% 0
+ASM.exe -i %ASM_FILE% -p %PROC_DIR% -d %HDL_DIR% -m %MAC_DIR% -t %TMP_PRO% -f %FRE_CLK% -c %NUM_CLK%
 
 :: Build the testbench with Icarus --------------------------------------------
 

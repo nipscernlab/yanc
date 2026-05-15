@@ -77,17 +77,30 @@ go_proj.bat       :: multi-processor project example
 
 ## CLI flags
 
-All three compilers (`cmmcomp`, `appcomp`, `asmcomp`) accept a language switch for diagnostic messages:
+All three compilers (`cmmcomp`, `appcomp`, `asmcomp`) take **named options**.
+Run any of them with `-h` / `--help` for the full per-tool synopsis, or
+`-V` / `--version` for the version string. Diagnostic messages are bilingual:
 
 ```
 -pt    Portuguese (default)
 -en    English
 ```
 
+Each tool's required options:
+
+```bat
+cmmcomp -i <file.cmm> -n <name> -p <proc-dir> -m <macros-dir> -t <temp-dir> [-P]
+appcomp -i <file.asm> -t <temp-dir>
+asmcomp -i <file.asm> -p <proc-dir> -d <hdl-dir> -m <macros-dir> -t <temp-dir> [-f <MHz>] [-c <clocks>] [-P]
+```
+
+`-P` / `--project` selects project mode (multiple processor instances).
+Every option also has a long form (`--input`, `--proc-dir`, `--temp-dir`, …).
+
 Example:
 
 ```bat
-cmmcomp.exe -en my_program.cmm proc_fft  ...
+cmmcomp -en -i my_program.cmm -n proc_fft -p C:\proj\proc_fft -m C:\Macros -t C:\Temp\proc_fft
 ```
 
 ## Example CMM

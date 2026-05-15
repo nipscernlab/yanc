@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to a loose semantic-versioning scheme on the `v*`
 tags consumed by Aurora.
 
-## [Unreleased]
+## [v3] – 2026-05-14
 
 ### Added
 - MIT `LICENSE` file (was previously "all rights reserved" by default).
@@ -19,8 +19,21 @@ tags consumed by Aurora.
   `Exemplos/`.
 - `MSG_ERR_OUT_OF_MEMORY` bilingual diagnostic (replaces
   `MSG_ERR_TOO_MANY_VARS` / `MSG_ERR_TOO_MANY_LABELS`).
+- `-h` / `--help` and `-V` / `--version` on all three compilers, plus
+  bilingual `MSG_CLI_*` / `MSG_ERR_CLI_*` diagnostics for malformed
+  command lines.
 
 ### Changed
+- All three compilers now take **named command-line options** instead of
+  bare positional arguments (`cmmcomp -i file.cmm -n name -p ... -m ... -t ...`,
+  `appcomp -i ... -t ...`,
+  `asmcomp -i ... -p ... -d ... -m ... -t ... -f ... -c ...`, with
+  `-P` / `--project` for project mode). Each compiler validates that every
+  required option is present — and `asmcomp` that `-f` / `-c` are integers —
+  printing a usage message and exiting instead of dereferencing a missing
+  `argv[]` slot. Parsing lives in a new per-compiler `args.c` / `args.h`.
+  `go_proc.bat`, `go_proj.bat`, `build.bat`, and the CI invocations were
+  updated to the new flag form.
 - Symbol and label tables in all three compilers are now grow-on-demand
   via `realloc` (starting at 256 entries, 128 for the label-nesting
   stack), instead of fixed `NVARMAX=999999` / `NLABMAX=99999` BSS
@@ -31,7 +44,9 @@ tags consumed by Aurora.
   `.bat` files, and the runnable examples in `Exemplos/`.
 - README expanded with pipeline diagram, component table, build
   instructions, CLI usage, a runnable CMM example, and project layout.
-- `release.yml` inline comments translated to English.
+- `release.yml` now links the new `args.c` into every compiler build
+  (was missing it, which would break the release link step); inline
+  comments translated to English.
 - `.gitignore` comments translated to English; added `/.smoke/` and
   `.vscode/`.
 
@@ -54,6 +69,7 @@ tags consumed by Aurora.
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v2...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v3...HEAD
+[v3]: https://github.com/nipscernlab/yanc/releases/tag/v3
 [v2]: https://github.com/nipscernlab/yanc/releases/tag/v2
 [v1]: https://github.com/nipscernlab/yanc/releases/tag/v1

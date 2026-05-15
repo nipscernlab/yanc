@@ -82,7 +82,7 @@ cd %ROOT_DIR%\CMMComp\Sources
 
 %BISON% -y -d CMMComp.y
 %FLEX%        CMMComp.l
-%GCC%      -o CMMComp.exe data_assign.c data_declar.c macros.c itr.c data_use.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c messages.c y.tab.c
+%GCC%      -o CMMComp.exe data_assign.c data_declar.c macros.c itr.c data_use.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c messages.c args.c y.tab.c
 
 move CMMComp.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 del lex.yy.c
@@ -94,7 +94,7 @@ del  y.tab.h
 cd %ROOT_DIR%\APP\Sources
 
 %FLEX% -o app.c app.l
-%GCC%  -o APP.exe app.c eval.c variaveis.c messages.c
+%GCC%  -o APP.exe app.c eval.c variaveis.c messages.c args.c
 
 move APP.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 del app.c
@@ -104,7 +104,7 @@ del app.c
 cd %ROOT_DIR%\ASM\Sources
 
 %FLEX% -o ASMComp.c ASMComp.l
-%GCC%  -o ASM.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c
+%GCC%  -o ASM.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c
 
 move ASM.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 del ASMComp.c
@@ -122,19 +122,19 @@ move comp2gtkw.exe  %BIN_DIR%>%TMP_DIR%\xcopy.txt
 cd  %BIN_DIR%
 
 (for %%i in (%PROC_LIST%) do (
-    CMMComp.exe %%i.cmm %%i %PROJ_DIR%\%%i %MAC_DIR% %TMP_DIR%\%%i 1
+    CMMComp.exe -i %%i.cmm -n %%i -p %PROJ_DIR%\%%i -m %MAC_DIR% -t %TMP_DIR%\%%i --project
 ))
 
 :: Run the Assembler pre-processor --------------------------------------------
 
 (for %%i in (%PROC_LIST%) do (
-    APP.exe %PROJ_DIR%\%%i\Software\%%i.asm %TMP_DIR%\%%i
+    APP.exe -i %PROJ_DIR%\%%i\Software\%%i.asm -t %TMP_DIR%\%%i
 ))
 
 :: Run the Assembler compiler -------------------------------------------------
 
 (for %%i in (%PROC_LIST%) do (
-    ASM.exe %PROJ_DIR%\%%i\Software\%%i.asm %PROJ_DIR%\%%i %HDL_DIR% %MAC_DIR% %TMP_DIR%\%%i 0 0 1
+    ASM.exe -i %PROJ_DIR%\%%i\Software\%%i.asm -p %PROJ_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0 --project
     cp %PROJ_DIR%\%%i\Hardware\%%i.v %TMP_DIR%\%%i
 ))
 

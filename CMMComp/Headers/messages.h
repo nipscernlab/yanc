@@ -550,4 +550,58 @@ void parse_lang_flag(int *argc, char **argv);
     M("Sucesso: compilou! Agora é só descobrir por que não funciona.\n", \
       "Sweet: it compiled! Now you just gotta figure out why it doesn't work.\n")
 
+// command-line interface ----------------------------------------------------
+
+#define MSG_ERR_CLI_NEEDS_VALUE \
+    M("Erro: a opção '%s' precisa de um valor.\n", \
+      "Error: option '%s' needs a value.\n")
+
+#define MSG_ERR_CLI_UNKNOWN_OPT \
+    M("Erro: opção desconhecida '%s'.\n", \
+      "Error: unknown option '%s'.\n")
+
+#define MSG_ERR_CLI_MISSING \
+    M("Erro: faltou a opção obrigatória '%s'.\n", \
+      "Error: missing required option '%s'.\n")
+
+#define MSG_CLI_VERSION \
+    M("cmmcomp (YANC) %s\n", \
+      "cmmcomp (YANC) %s\n")
+
+#define MSG_CLI_HELP \
+    M("cmmcomp - compilador front-end C± do YANC (%s)\n" \
+      "\n" \
+      "Uso:\n" \
+      "  cmmcomp [opções] -i <arq.cmm> -n <nome> -p <dir> -m <dir> -t <dir>\n" \
+      "\n" \
+      "Opções obrigatórias:\n" \
+      "  -i, --input <arq>       arquivo-fonte C± (dentro de <dir-proc>/Software)\n" \
+      "  -n, --name <nome>       nome do processador (base do .asm gerado)\n" \
+      "  -p, --proc-dir <dir>    diretório do processador\n" \
+      "  -m, --macros-dir <dir>  diretório de Macros\n" \
+      "  -t, --temp-dir <dir>    diretório Temp\n" \
+      "\n" \
+      "Outras opções:\n" \
+      "  -P, --project           modo projeto (array inicializado pela simulação)\n" \
+      "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
+      "  -h, --help              mostra esta ajuda e sai\n" \
+      "  -V, --version           mostra a versão e sai\n", \
+      "cmmcomp - YANC C± front-end compiler (%s)\n" \
+      "\n" \
+      "Usage:\n" \
+      "  cmmcomp [options] -i <file.cmm> -n <name> -p <dir> -m <dir> -t <dir>\n" \
+      "\n" \
+      "Required options:\n" \
+      "  -i, --input <file>      C± source file (inside <proc-dir>/Software)\n" \
+      "  -n, --name <name>       processor name (base name of the .asm output)\n" \
+      "  -p, --proc-dir <dir>    processor directory\n" \
+      "  -m, --macros-dir <dir>  Macros directory\n" \
+      "  -t, --temp-dir <dir>    Temp directory\n" \
+      "\n" \
+      "Other options:\n" \
+      "  -P, --project           project mode (array initialised by simulation)\n" \
+      "  -en, -pt                diagnostic message language (default: -pt)\n" \
+      "  -h, --help              show this help and exit\n" \
+      "  -V, --version           show version and exit\n")
+
 #endif

@@ -49,4 +49,50 @@ void parse_lang_flag(int *argc, char **argv);
     M("Sucesso: já sei a quantidade de memória! Vamo vê agora quais circuitos você precisa...\n", \
       "Sweet: got the memory count nailed down! Now let's see which circuits you'll need...\n")
 
+// command-line interface ----------------------------------------------------
+
+#define MSG_ERR_CLI_NEEDS_VALUE \
+    M("Erro: a opção '%s' precisa de um valor.\n", \
+      "Error: option '%s' needs a value.\n")
+
+#define MSG_ERR_CLI_UNKNOWN_OPT \
+    M("Erro: opção desconhecida '%s'.\n", \
+      "Error: unknown option '%s'.\n")
+
+#define MSG_ERR_CLI_MISSING \
+    M("Erro: faltou a opção obrigatória '%s'.\n", \
+      "Error: missing required option '%s'.\n")
+
+#define MSG_CLI_VERSION \
+    M("appcomp (YANC) %s\n", \
+      "appcomp (YANC) %s\n")
+
+#define MSG_CLI_HELP \
+    M("appcomp - pré-processador de assembly do YANC (%s)\n" \
+      "\n" \
+      "Uso:\n" \
+      "  appcomp [opções] -i <arq.asm> -t <dir>\n" \
+      "\n" \
+      "Opções obrigatórias:\n" \
+      "  -i, --input <arq>     arquivo-fonte assembly (caminho completo)\n" \
+      "  -t, --temp-dir <dir>  diretório Temp (recebe o app_log.txt)\n" \
+      "\n" \
+      "Outras opções:\n" \
+      "  -en, -pt              idioma das mensagens (padrão: -pt)\n" \
+      "  -h, --help            mostra esta ajuda e sai\n" \
+      "  -V, --version         mostra a versão e sai\n", \
+      "appcomp - YANC assembly pre-processor (%s)\n" \
+      "\n" \
+      "Usage:\n" \
+      "  appcomp [options] -i <file.asm> -t <dir>\n" \
+      "\n" \
+      "Required options:\n" \
+      "  -i, --input <file>    assembly source file (full path)\n" \
+      "  -t, --temp-dir <dir>  Temp directory (receives app_log.txt)\n" \
+      "\n" \
+      "Other options:\n" \
+      "  -en, -pt              diagnostic message language (default: -pt)\n" \
+      "  -h, --help            show this help and exit\n" \
+      "  -V, --version         show version and exit\n")
+
 #endif

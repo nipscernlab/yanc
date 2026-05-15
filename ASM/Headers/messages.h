@@ -304,4 +304,66 @@ void parse_lang_flag(int *argc, char **argv);
     M("Sucesso: o processador tá pronto pra uso.\n", \
       "Sweet: the processor is good to go.\n")
 
+// command-line interface ----------------------------------------------------
+
+#define MSG_ERR_CLI_NEEDS_VALUE \
+    M("Erro: a opção '%s' precisa de um valor.\n", \
+      "Error: option '%s' needs a value.\n")
+
+#define MSG_ERR_CLI_UNKNOWN_OPT \
+    M("Erro: opção desconhecida '%s'.\n", \
+      "Error: unknown option '%s'.\n")
+
+#define MSG_ERR_CLI_MISSING \
+    M("Erro: faltou a opção obrigatória '%s'.\n", \
+      "Error: missing required option '%s'.\n")
+
+#define MSG_ERR_CLI_BAD_INT \
+    M("Erro: a opção '%s' espera um inteiro não-negativo, recebeu '%s'.\n", \
+      "Error: option '%s' expects a non-negative integer, got '%s'.\n")
+
+#define MSG_CLI_VERSION \
+    M("asmcomp (YANC) %s\n", \
+      "asmcomp (YANC) %s\n")
+
+#define MSG_CLI_HELP \
+    M("asmcomp - compilador assembly→Verilog do YANC (%s)\n" \
+      "\n" \
+      "Uso:\n" \
+      "  asmcomp [opções] -i <arq.asm> -p <dir> -d <dir> -m <dir> -t <dir>\n" \
+      "\n" \
+      "Opções obrigatórias:\n" \
+      "  -i, --input <arq>       arquivo-fonte assembly (caminho completo)\n" \
+      "  -p, --proc-dir <dir>    diretório do processador\n" \
+      "  -d, --hdl-dir <dir>     diretório do HDL\n" \
+      "  -m, --macros-dir <dir>  diretório de Macros\n" \
+      "  -t, --temp-dir <dir>    diretório Temp\n" \
+      "\n" \
+      "Outras opções:\n" \
+      "  -f, --freq <MHz>        frequência de operação em MHz (padrão: 0)\n" \
+      "  -c, --clocks <n>        número de clocks a simular (padrão: 0)\n" \
+      "  -P, --project           modo projeto (várias instâncias)\n" \
+      "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
+      "  -h, --help              mostra esta ajuda e sai\n" \
+      "  -V, --version           mostra a versão e sai\n", \
+      "asmcomp - YANC assembly-to-Verilog compiler (%s)\n" \
+      "\n" \
+      "Usage:\n" \
+      "  asmcomp [options] -i <file.asm> -p <dir> -d <dir> -m <dir> -t <dir>\n" \
+      "\n" \
+      "Required options:\n" \
+      "  -i, --input <file>      assembly source file (full path)\n" \
+      "  -p, --proc-dir <dir>    processor directory\n" \
+      "  -d, --hdl-dir <dir>     HDL directory\n" \
+      "  -m, --macros-dir <dir>  Macros directory\n" \
+      "  -t, --temp-dir <dir>    Temp directory\n" \
+      "\n" \
+      "Other options:\n" \
+      "  -f, --freq <MHz>        operating frequency in MHz (default: 0)\n" \
+      "  -c, --clocks <n>        number of clocks to simulate (default: 0)\n" \
+      "  -P, --project           project mode (multiple instances)\n" \
+      "  -en, -pt                diagnostic message language (default: -pt)\n" \
+      "  -h, --help              show this help and exit\n" \
+      "  -V, --version           show version and exit\n")
+
 #endif

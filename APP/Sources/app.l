@@ -1,6 +1,7 @@
 %{
     #include "..\Headers\eval.h"
     #include "..\Headers\messages.h"
+    #include "..\Headers\args.h"
 %}
 
 %option nounput noinput
@@ -193,12 +194,15 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 int main(int argc, char *argv[])
 {
-    parse_lang_flag(&argc, argv);   // processes -en/-pt flag (removes from argv)
+    parse_lang_flag(&argc, argv);   // processes -en/-pt flag (removes it from argv)
 
-	  yyin = fopen(argv[1], "r"); // first argument is the input .asm file
-    eval_init   (argv[2]);      // second argument is the path to the log file
+    cli_args a;
+    cli_parse(argc, argv, &a);      // parses the named options (or exits with usage)
+
+    yyin = fopen(a.input, "r"); // -i is the input .asm file
+    eval_init   (a.temp_dir);   // -t is the directory holding the log file
     yylex();                    // run the lexer
-	  fclose(yyin);               // close the .asm file
+    fclose(yyin);               // close the .asm file
     eval_finish();              // finalize the log file
 
     printf(MSG_OK_APP_DONE);

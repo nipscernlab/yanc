@@ -3,6 +3,7 @@
 #include "..\Headers\eval.h"
 #include "..\Headers\hdl.h"
 #include "..\Headers\messages.h"
+#include "..\Headers\args.h"
 
 #include <string.h>
 
@@ -198,18 +199,21 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 int main(int argc, char *argv[])
 {
-  parse_lang_flag(&argc, argv);                         // processes -en/-pt flag (removes from argv)
+  parse_lang_flag(&argc, argv);              // processes -en/-pt flag (removes it from argv)
 
-	strcpy(proc_dir,argv[2]);                             // project folder path
-	strcpy( hdl_dir,argv[3]);                             // HDL folder path
-  strcpy( mac_dir,argv[4]);                             // Macros folder path
-	strcpy(temp_dir,argv[5]);                             // Temp folder path
+  cli_args a;
+  cli_parse(argc, argv, &a);                 // parses the named options (or exits with usage)
 
-  yyin = fopen(argv[1], "r");                           // first argument is the input .asm file
-	eval_init(atoi(argv[6]),atoi(argv[7]),atoi(argv[8])); // initialize the state variables
-  yylex();                                              // run the lexer
-	fclose(yyin);                                         // close the .asm file
-	eval_finish();                                        // finalize the assembler
+  strcpy(proc_dir, a.proc_dir);              // processor folder path
+  strcpy( hdl_dir, a.hdl_dir);               // HDL folder path
+  strcpy( mac_dir, a.macros_dir);            // Macros folder path
+  strcpy(temp_dir, a.temp_dir);              // Temp folder path
+
+  yyin = fopen(a.input, "r");                // -i is the input .asm file
+  eval_init(a.freq, a.clocks, a.project);    // initialize the state variables
+  yylex();                                   // run the lexer
+  fclose(yyin);                              // close the .asm file
+  eval_finish();                             // finalize the assembler
 
   printf(MSG_OK_ASM_DONE);
 

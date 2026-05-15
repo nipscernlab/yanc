@@ -63,6 +63,7 @@
 #include "..\Headers\data_assign.h" // data assignment
 #include "..\Headers\array_index.h" // array index handling
 #include "..\Headers\messages.h"    // PT/EN bilingual support
+#include "..\Headers\args.h"        // command-line argument parsing
 
 // required flex/bison variables ----------------------------------------------
 
@@ -384,11 +385,15 @@ terminal : INUM                               {$$ = num2exp($1,1);}
 // program entry point
 int main(int argc, char *argv[])
 {
-    parse_lang_flag(&argc, argv);                                     // processes -en/-pt flag (removes from argv)
+    parse_lang_flag(&argc, argv);   // processes -en/-pt flag (removes it from argv)
 
-    parse_init(argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]); // initializes the parser and global variables
-    yyparse   ();                                                     // here the magic happens!!
-    parse_end (argv[2], argv[3]);                                     // finalizes the parser
+    cli_args a;
+    cli_parse(argc, argv, &a);      // parses the named options (or exits with usage)
+
+    parse_init(a.input, a.name, a.proc_dir, a.macros_dir, a.temp_dir,
+               a.project ? "1" : "0"); // initializes the parser and global variables
+    yyparse   ();                       // here the magic happens!!
+    parse_end (a.name, a.proc_dir);     // finalizes the parser
 
     // final message
     printf(MSG_OK_CMM_DONE);

@@ -45,7 +45,7 @@ cd %SRC_DIR%\CMMComp\Sources
 
 bison -y -d CMMComp.y
 flex        CMMComp.l
-%GCC%    -o cmmcomp.exe data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c y.tab.c
+%GCC%    -o cmmcomp.exe data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c
 
 move cmmcomp.exe %BLD_DIR%\bin
 del  lex.yy.c
@@ -57,7 +57,7 @@ del  y.tab.h
 cd %SRC_DIR%\APP\Sources
 
 flex  -o app.c app.l
-%GCC% -o appcomp.exe app.c eval.c variaveis.c messages.c
+%GCC% -o appcomp.exe app.c eval.c variaveis.c messages.c args.c
 
 move appcomp.exe %BLD_DIR%\bin
 del  app.c
@@ -69,7 +69,7 @@ cd %SRC_DIR%
 cd %SRC_DIR%\ASM\Sources
 
 flex  -o ASMComp.c ASMComp.l
-%GCC% -o asmcomp.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c
+%GCC% -o asmcomp.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c
 
 move asmcomp.exe %BLD_DIR%\bin
 del  ASMComp.c
