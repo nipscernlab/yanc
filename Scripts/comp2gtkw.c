@@ -45,9 +45,6 @@ int main(int argc, char **argv)
 
     char  bufi[1025], bufo[1025];
     char  re  [64]  , im  [64];
-    int   dre,dim;
-    char *endp;
-    float fre,fim;
 
     while (!feof(stdin))
     {
