@@ -370,11 +370,11 @@ exp:       terminal                           {$$ = $1;}
          | exp   '|'   exp                    {$$ = expr_of_et(oper_bitw (expr_to_et($1), expr_to_et($3), 1));}
          | exp   '^'   exp                    {$$ = expr_of_et(oper_bitw (expr_to_et($1), expr_to_et($3), 2));}
          // arithmetic operators
-         | exp   '%'   exp                    {$$ = expr_of_et(oper_mod  (expr_to_et($1), expr_to_et($3)));}
-         | exp   '+'   exp                    {$$ = expr_of_et(oper_soma (expr_to_et($1), expr_to_et($3)));}
-         | exp   '-'   exp                    {$$ = expr_of_et(oper_subt (expr_to_et($1), expr_to_et($3)));}
-         | exp   '*'   exp                    {$$ = expr_of_et(oper_mult (expr_to_et($1), expr_to_et($3)));}
-         | exp   '/'   exp                    {$$ = expr_of_et(oper_divi (expr_to_et($1), expr_to_et($3)));}
+         | exp   '%'   exp                    {$$ = oper_mod ($1, $3);}
+         | exp   '+'   exp                    {$$ = oper_soma($1, $3);}
+         | exp   '-'   exp                    {$$ = oper_subt($1, $3);}
+         | exp   '*'   exp                    {$$ = oper_mult($1, $3);}
+         | exp   '/'   exp                    {$$ = oper_divi($1, $3);}
          // true/false operators
          | exp  LAN    exp                    {$$ = expr_of_et(oper_lanor(expr_to_et($1), expr_to_et($3), 0));}
          | exp  LOR    exp                    {$$ = expr_of_et(oper_lanor(expr_to_et($1), expr_to_et($3), 1));}

@@ -4,12 +4,12 @@
 // arithmetic operations ------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-expr oper_neg  (expr e);          //  -x
-int oper_soma (int et1, int et2); // x+y
-int oper_subt (int et1, int et2); // x-y
-int oper_mult (int et1, int et2); // x*y
-int oper_divi (int et1, int et2); // x/y
-int oper_mod  (int et1, int et2); // x%y
+expr oper_neg (expr e);          //  -x
+expr oper_soma(expr e1, expr e2); // x+y
+expr oper_subt(expr e1, expr e2); // x-y
+expr oper_mult(expr e1, expr e2); // x*y
+expr oper_divi(expr e1, expr e2); // x/y
+expr oper_mod (expr e1, expr e2); // x%y
 
 // ----------------------------------------------------------------------------
 // comparison operations ------------------------------------------------------

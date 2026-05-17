@@ -69,7 +69,7 @@ int pplus2exp(int id)
     // then the parser
     int et1 = expr_to_et(num2exp(lval, type));
     // then perform the addition
-    int ret = oper_soma(et,et1);
+    int ret = expr_to_et(oper_soma(expr_of_et(et), expr_of_et(et1)));
     // finally, assign back to id
     ass_set(id, ret);
 
@@ -95,7 +95,7 @@ int pplus1d2exp(int id, int ete)
     // then the parser
     int et1 = expr_to_et(num2exp(lval, type));
     // then perform the addition
-    int ret = oper_soma(et,et1);
+    int ret = expr_to_et(oper_soma(expr_of_et(et), expr_of_et(et1)));
     // reload the array index
     arr_1d_index(id, ete);
     // finally, assign back to id
@@ -123,7 +123,7 @@ int pplus2d2exp(int id, int et1, int et2)
     // then the parser
     int etx = expr_to_et(num2exp(lval, type));
     // then perform the addition
-    int ret = oper_soma(et,etx);
+    int ret = expr_to_et(oper_soma(expr_of_et(et), expr_of_et(etx)));
     // reload the array index
     arr_2d_index(id, et1, et2);
     // finally, assign back to id

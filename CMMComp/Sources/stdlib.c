@@ -976,32 +976,32 @@ int exec_mod2(int et)
     if (get_type(et) == 5)
     {
         get_cmp_cst(et ,&etr,&eti);     // get the et of each float constant
-        etr  = oper_mult(etr, etr);     // real part squared
-        eti  = oper_mult(eti, eti);     // imag part squared
-        etr  = oper_soma(etr, eti);     // sum of the squares
+        etr = expr_to_et(oper_mult(expr_of_et(etr), expr_of_et(etr)));     // real part squared
+        eti = expr_to_et(oper_mult(expr_of_et(eti), expr_of_et(eti)));     // imag part squared
+        etr = expr_to_et(oper_soma(expr_of_et(etr), expr_of_et(eti)));     // sum of the squares
     }
 
     // when it is in memory --------------------------------------------------
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
         get_cmp_ets(et ,&etr,&eti);     // get the et of each variable
-        etr  = oper_mult(etr, etr);     // real part squared
-        eti  = oper_mult(eti, eti);     // imag part squared
-        etr  = oper_soma(etr, eti);     // sum of the squares
+        etr = expr_to_et(oper_mult(expr_of_et(etr), expr_of_et(etr)));     // real part squared
+        eti = expr_to_et(oper_mult(expr_of_et(eti), expr_of_et(eti)));     // imag part squared
+        etr = expr_to_et(oper_soma(expr_of_et(etr), expr_of_et(eti)));     // sum of the squares
     }
 
     // when it is in the accumulator ------------------------------------------
     if ((get_type(et) == 3) && (et % OFST == 0))
     {
         add_instr("PSH\n");             // imag part stays in acc and on the stack
-        oper_mult(2*OFST,2*OFST );      // multiplica acc com pilha
+        oper_mult(expr_of_et(2*OFST), expr_of_et(2*OFST));      // multiplica acc com pilha
         add_instr("SET_P aux_var\n");   // save temp and fetch real part
 
         add_instr("PSH\n");             // real part stays in acc and on the stack
-        oper_mult(2*OFST,2*OFST );      // multiplica acc com pilha
+        oper_mult(expr_of_et(2*OFST), expr_of_et(2*OFST));      // multiplica acc com pilha
         add_instr("P_LOD aux_var\n");   // push the real-squared onto the stack and fetch the imag-squared
 
-        oper_soma(2*OFST,2*OFST);       // sum of the squares
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));       // sum of the squares
 
         etr = 2*OFST;                   // output must be an extended et for float in the acc
     }
@@ -1062,7 +1062,7 @@ int exec_fase(int et)
         et_i   = 2*OFST + id;
 
         add_instr("SET_P %s\n", v_name[id]);
-        oper_divi(et_i,2*OFST);
+        oper_divi(expr_of_et(et_i), expr_of_et(2*OFST));
     }
 
     exec_atan(2*OFST);

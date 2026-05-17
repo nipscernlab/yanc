@@ -87,8 +87,10 @@ expr oper_neg(expr e)
 }
 
 // adds two numbers
-int oper_soma(int et1, int et2)
+expr oper_soma(expr e1, expr e2)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
     int etr, eti;
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -561,12 +563,14 @@ int oper_soma(int et1, int et2)
          type = 2;
     else type = 1;
 
-    return type*OFST;
+    return expr_make(type, 0);
 }
 
 // subtraction between two numbers
-int oper_subt(int et1, int et2)
+expr oper_subt(expr e1, expr e2)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
     int etr, eti;
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -575,13 +579,13 @@ int oper_subt(int et1, int et2)
     // int var with int var
     if ((get_type(et1)==1) && (et1%OFST!=0) && (get_type(et2)==1) && (et2%OFST!=0))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // int var with int acc
     if ((get_type(et1)==1) && (et1%OFST!=0) && (get_type(et2)==1) && (et2%OFST==0))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // int var with float var
@@ -601,7 +605,7 @@ int oper_subt(int et1, int et2)
     // int var with comp const (probably never happens, but just in case...)
     if ((get_type(et1)==1) && (et1%OFST!=0) && (get_type(et2)==5))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // int var with comp var
@@ -626,13 +630,13 @@ int oper_subt(int et1, int et2)
     // int acc with int var
     if ((get_type(et1)==1) && (et1%OFST==0) && (get_type(et2)==1) && (et2%OFST!=0))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // int acc with int acc
     if ((get_type(et1)==1) && (et1%OFST==0) && (get_type(et2)==1) && (et2%OFST==0))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // int acc with float var
@@ -653,7 +657,7 @@ int oper_subt(int et1, int et2)
     // int acc with comp const
     if ((get_type(et1)==1) && (et1%OFST==0) && (get_type(et2)==5))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // int acc with comp var
@@ -706,7 +710,7 @@ int oper_subt(int et1, int et2)
     // float var with comp const (no negative comp const)
     if ((get_type(et1)==2) && (et1%OFST!=0) && (get_type(et2)==5))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // float var with comp var
@@ -756,7 +760,7 @@ int oper_subt(int et1, int et2)
     // float acc with comp const (does not happen)
     if ((get_type(et1)==2) && (et1%OFST==0) && (get_type(et2)==5))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // float acc with comp var
@@ -818,7 +822,7 @@ int oper_subt(int et1, int et2)
     // comp const with comp const (no comp const subtraction)
     if ((get_type(et1)==5) && (get_type(et2)==5))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // comp const with comp var
@@ -891,7 +895,7 @@ int oper_subt(int et1, int et2)
     // comp var with comp const (no comp const subtraction)
     if ((get_type(et1)==3) && (et1%OFST!=0) && (get_type(et2)==5))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // comp var with comp var
@@ -961,7 +965,7 @@ int oper_subt(int et1, int et2)
     // comp acc with comp const (no comp const subtraction)
     if ((get_type(et1)==3) && (et1%OFST==0) && (get_type(et2)==5))
     {
-        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
+        return oper_soma(expr_of_et(et1), oper_neg(expr_of_et(et2)));
     }
 
     // comp acc with comp var
@@ -997,12 +1001,14 @@ int oper_subt(int et1, int et2)
          type = 2;
     else type = 1;
 
-    return type*OFST;
+    return expr_make(type, 0);
 }
 
 // multiplies two numbers
-int oper_mult(int et1, int et2)
+expr oper_mult(expr e1, expr e2)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
     int etr, eti;
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -1567,12 +1573,14 @@ int oper_mult(int et1, int et2)
          type = 2;
     else type = 1;
 
-    return type*OFST;
+    return expr_make(type, 0);
 }
 
 // division between two numbers
-int oper_divi(int et1, int et2)
+expr oper_divi(expr e1, expr e2)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
     int etr, eti;
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -1613,20 +1621,20 @@ int oper_divi(int et1, int et2)
     {
         get_cmp_cst(et2,&etr,&eti);
 
-        oper_mult(etr,etr);           // parte real ao quadrado
-        oper_mult(eti,eti);           // parte imag ao quadrado
-        oper_soma(2*OFST,2*OFST);     // soma os quadrados
+        oper_mult(expr_of_et(etr), expr_of_et(etr));           // parte real ao quadrado
+        oper_mult(expr_of_et(eti), expr_of_et(eti));           // parte imag ao quadrado
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));     // soma os quadrados
         add_instr("SET aux_var\n");   // save the result
 
         acc_ok = 0;                   // libera acumulador
 
-        oper_mult(et1,etr);           // multiply int with real part
+        oper_mult(expr_of_et(et1), expr_of_et(etr));           // multiply int with real part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);     // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));     // faz a divisao
 
-        oper_mult(et1,eti);           // multiply int with imag part
+        oper_mult(expr_of_et(et1), expr_of_et(eti));           // multiply int with imag part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);     // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));     // faz a divisao
         oper_neg (expr_of_et(2*OFST));            // nega a parte imaginaria
     }
 
@@ -1635,20 +1643,20 @@ int oper_divi(int et1, int et2)
     {
         get_cmp_ets(et2,&etr,&eti);
 
-        oper_mult(etr,etr);           // parte real ao quadrado
-        oper_mult(eti,eti);           // parte imag ao quadrado
-        oper_soma(2*OFST,2*OFST);     // soma os quadrados
+        oper_mult(expr_of_et(etr), expr_of_et(etr));           // parte real ao quadrado
+        oper_mult(expr_of_et(eti), expr_of_et(eti));           // parte imag ao quadrado
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));     // soma os quadrados
         add_instr("SET aux_var\n");   // save the result
 
         acc_ok = 0;                   // libera acumulador
 
-        oper_mult(et1,etr);           // multiply int with real part
+        oper_mult(expr_of_et(et1), expr_of_et(etr));           // multiply int with real part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);     // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));     // faz a divisao
 
-        oper_mult(et1,eti);           // multiply int with imag part
+        oper_mult(expr_of_et(et1), expr_of_et(eti));           // multiply int with imag part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);     // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));     // faz a divisao
         oper_neg (expr_of_et(2*OFST));            // nega a parte imaginaria
     }
 
@@ -1668,12 +1676,12 @@ int oper_divi(int et1, int et2)
         add_instr("SET   aux_var3\n"); // save the float
         add_instr("F_MLT aux_var1\n");
         add_instr("P_LOD aux_var2\n"); // fetch the squared magnitude
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
 
         add_instr("P_LOD aux_var3\n"); // fetch the float
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var2\n"); // fetch the squared magnitude
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1716,20 +1724,20 @@ int oper_divi(int et1, int et2)
         add_instr("SET aux_var\n");
         acc_ok = 0;
 
-        oper_mult(etr,etr);            // parte real ao quadrado
-        oper_mult(eti,eti);            // parte imag ao quadrado
-        oper_soma(2*OFST,2*OFST);      // soma os quadrados
+        oper_mult(expr_of_et(etr), expr_of_et(etr));            // parte real ao quadrado
+        oper_mult(expr_of_et(eti), expr_of_et(eti));            // parte imag ao quadrado
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));      // soma os quadrados
         add_instr("SET   aux_var1\n"); // save the result
 
         add_instr("LOD   aux_var\n");
-        oper_mult(2*OFST,etr);         // multiply float with real part
+        oper_mult(expr_of_et(2*OFST), expr_of_et(etr));         // multiply float with real part
         add_instr("P_LOD aux_var1\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
 
         add_instr("P_LOD  aux_var\n");
-        oper_mult(2*OFST,eti);         // multiply float with imag part
+        oper_mult(expr_of_et(2*OFST), expr_of_et(eti));         // multiply float with imag part
         add_instr("P_LOD aux_var1\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1742,20 +1750,20 @@ int oper_divi(int et1, int et2)
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
-        oper_mult(etr,etr);             // parte real ao quadrado
-        oper_mult(eti,eti);             // parte imag ao quadrado
-        oper_soma(2*OFST,2*OFST);       // soma os quadrados
+        oper_mult(expr_of_et(etr), expr_of_et(etr));             // parte real ao quadrado
+        oper_mult(expr_of_et(eti), expr_of_et(eti));             // parte imag ao quadrado
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));       // soma os quadrados
         add_instr("SET   aux_var1\n");  // save the result
 
         add_instr("LOD   aux_var\n" );
-        oper_mult(2*OFST,etr);          // multiply float with real part
+        oper_mult(expr_of_et(2*OFST), expr_of_et(etr));          // multiply float with real part
         add_instr("P_LOD aux_var1\n");  // fetch the denominator
-        oper_divi(2*OFST,2*OFST);       // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));       // faz a divisao
 
         add_instr("P_LOD  aux_var\n" );
-        oper_mult(2*OFST,eti);          // multiply float with imag part
+        oper_mult(expr_of_et(2*OFST), expr_of_et(eti));          // multiply float with imag part
         add_instr("P_LOD  aux_var1\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);       // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));       // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1777,12 +1785,12 @@ int oper_divi(int et1, int et2)
         add_instr("LOD   aux_var2\n"); // load the float
         add_instr("F_MLT aux_var1\n");
         add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
 
         add_instr("P_LOD aux_var2\n"); // fetch the float
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1818,19 +1826,19 @@ int oper_divi(int et1, int et2)
     {
         get_cmp_cst(et2,&etr,&eti);
 
-        oper_mult(etr,etr);           // parte real ao quadrado
-        oper_mult(eti,eti);           // parte imag ao quadrado
-        oper_soma(2*OFST,2*OFST);     // soma os quadrados
+        oper_mult(expr_of_et(etr), expr_of_et(etr));           // parte real ao quadrado
+        oper_mult(expr_of_et(eti), expr_of_et(eti));           // parte imag ao quadrado
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));     // soma os quadrados
         add_instr("SET   aux_var\n"); // save the result
         acc_ok = 0;
 
-        oper_mult(et1,etr);           // multiply float with real part
+        oper_mult(expr_of_et(et1), expr_of_et(etr));           // multiply float with real part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);     // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));     // faz a divisao
 
-        oper_mult(et1,eti);           // multiply float with imag part
+        oper_mult(expr_of_et(et1), expr_of_et(eti));           // multiply float with imag part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);     // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));     // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1839,19 +1847,19 @@ int oper_divi(int et1, int et2)
     {
         get_cmp_ets(et2,&etr,&eti);
 
-        oper_mult(etr,etr);           // parte real ao quadrado
-        oper_mult(eti,eti);           // parte imag ao quadrado
-        oper_soma(2*OFST,2*OFST);     // soma os quadrados
+        oper_mult(expr_of_et(etr), expr_of_et(etr));           // parte real ao quadrado
+        oper_mult(expr_of_et(eti), expr_of_et(eti));           // parte imag ao quadrado
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));     // soma os quadrados
         add_instr("SET   aux_var\n"); // save the result
         acc_ok = 0;
 
-        oper_mult(et1,etr);           // multiply float with real part
+        oper_mult(expr_of_et(et1), expr_of_et(etr));           // multiply float with real part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);     // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));     // faz a divisao
 
-        oper_mult(et1,eti);           // multiply float with imag part
+        oper_mult(expr_of_et(et1), expr_of_et(eti));           // multiply float with imag part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);     // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));     // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1869,12 +1877,12 @@ int oper_divi(int et1, int et2)
         add_instr("LOD %s\n"  , v_name[et1%OFST]); // load the float
         add_instr("F_MLT aux_var1\n");
         add_instr("P_LOD aux_var2\n");             // fetch the squared magnitude
-        oper_divi(2*OFST,2*OFST);                  // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));                  // faz a divisao
 
         add_instr("P_LOD %s\n", v_name[et1%OFST]); // load the float
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var2\n");             // fetch the squared magnitude
-        oper_divi(2*OFST,2*OFST);                  // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));                  // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1913,20 +1921,20 @@ int oper_divi(int et1, int et2)
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
-        oper_mult(etr,etr);            // parte real ao quadrado
-        oper_mult(eti,eti);            // parte imag ao quadrado
-        oper_soma(2*OFST,2*OFST);      // soma os quadrados
+        oper_mult(expr_of_et(etr), expr_of_et(etr));            // parte real ao quadrado
+        oper_mult(expr_of_et(eti), expr_of_et(eti));            // parte imag ao quadrado
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));      // soma os quadrados
         add_instr("SET   aux_var1\n"); // save the result
 
         add_instr("LOD   aux_var \n");
-        oper_mult(2*OFST,etr);         // multiply float with real part
+        oper_mult(expr_of_et(2*OFST), expr_of_et(etr));         // multiply float with real part
         add_instr("P_LOD aux_var1\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
 
         add_instr("P_LOD aux_var \n");
-        oper_mult(2*OFST,eti);         // multiply float with imag part
+        oper_mult(expr_of_et(2*OFST), expr_of_et(eti));         // multiply float with imag part
         add_instr("P_LOD aux_var1\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1938,20 +1946,20 @@ int oper_divi(int et1, int et2)
         add_instr("SET aux_var\n");
         acc_ok = 0;
 
-        oper_mult(etr,etr);            // parte real ao quadrado
-        oper_mult(eti,eti);            // parte imag ao quadrado
-        oper_soma(2*OFST,2*OFST);      // soma os quadrados
+        oper_mult(expr_of_et(etr), expr_of_et(etr));            // parte real ao quadrado
+        oper_mult(expr_of_et(eti), expr_of_et(eti));            // parte imag ao quadrado
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));      // soma os quadrados
         add_instr("SET   aux_var1\n"); // save the result
 
         add_instr("LOD   aux_var\n");
-        oper_mult(2*OFST,etr);         // multiply float with real part
+        oper_mult(expr_of_et(2*OFST), expr_of_et(etr));         // multiply float with real part
         add_instr("P_LOD aux_var1\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
 
         add_instr("P_LOD aux_var\n");
-        oper_mult(2*OFST,eti);         // multiply float with imag part
+        oper_mult(expr_of_et(2*OFST), expr_of_et(eti));         // multiply float with imag part
         add_instr("P_LOD aux_var1\n"); // fetch the denominator
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1972,12 +1980,12 @@ int oper_divi(int et1, int et2)
         add_instr("LOD   aux_var2\n"); // load the float
         add_instr("F_MLT aux_var1\n");
         add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
 
         add_instr("P_LOD aux_var2\n"); // fetch the float
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
-        oper_divi(2*OFST,2*OFST);      // faz a divisao
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));      // faz a divisao
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -1986,8 +1994,8 @@ int oper_divi(int et1, int et2)
     {
         get_cmp_cst(et1,&etr,&eti);
 
-        oper_divi(etr,et2);
-        oper_divi(eti,et2);
+        oper_divi(expr_of_et(etr), expr_of_et(et2));
+        oper_divi(expr_of_et(eti), expr_of_et(et2));
     }
 
     // comp const with int acc
@@ -1997,9 +2005,9 @@ int oper_divi(int et1, int et2)
 
         add_instr("I2F\n");
         add_instr("SET   aux_var\n");
-        oper_divi(etr,2*OFST);
+        oper_divi(expr_of_et(etr), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(eti,2*OFST);
+        oper_divi(expr_of_et(eti), expr_of_et(2*OFST));
     }
 
     // comp const with float var
@@ -2007,8 +2015,8 @@ int oper_divi(int et1, int et2)
     {
         get_cmp_cst(et1,&etr,&eti);
 
-        oper_divi(etr,et2);
-        oper_divi(eti,et2);
+        oper_divi(expr_of_et(etr), expr_of_et(et2));
+        oper_divi(expr_of_et(eti), expr_of_et(et2));
     }
 
     // comp const with float acc
@@ -2017,9 +2025,9 @@ int oper_divi(int et1, int et2)
         get_cmp_cst(et1,&etr,&eti);
 
         add_instr("SET   aux_var\n");
-        oper_divi(etr,2*OFST);
+        oper_divi(expr_of_et(etr), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(eti,2*OFST);
+        oper_divi(expr_of_et(eti), expr_of_et(2*OFST));
     }
 
     // comp const with comp const
@@ -2031,23 +2039,23 @@ int oper_divi(int et1, int et2)
         get_cmp_cst(et1,&et1r,&et1i);
         get_cmp_cst(et2,&et2r,&et2i);
 
-        oper_mult(et2r,et2r);
-        oper_mult(et2i,et2i);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et2r), expr_of_et(et2r));
+        oper_mult(expr_of_et(et2i), expr_of_et(et2i));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
-        oper_mult(et1r,et2r);
-        oper_mult(et1i,et2i);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et1r), expr_of_et(et2r));
+        oper_mult(expr_of_et(et1i), expr_of_et(et2i));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
 
-        oper_mult(et1i,et2r);
-        oper_mult(et1r,et2i);
-        oper_subt(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et1i), expr_of_et(et2r));
+        oper_mult(expr_of_et(et1r), expr_of_et(et2i));
+        oper_subt(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp const with comp var
@@ -2059,23 +2067,23 @@ int oper_divi(int et1, int et2)
         get_cmp_cst(et1,&et1r,&et1i);
         get_cmp_ets(et2,&et2r,&et2i);
 
-        oper_mult(et2r,et2r);
-        oper_mult(et2i,et2i);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et2r), expr_of_et(et2r));
+        oper_mult(expr_of_et(et2i), expr_of_et(et2i));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("SET aux_var\n");
         acc_ok = 0;
 
-        oper_mult(et1r,et2r);
-        oper_mult(et1i,et2i);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et1r), expr_of_et(et2r));
+        oper_mult(expr_of_et(et1i), expr_of_et(et2i));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
 
-        oper_mult(et1i,et2r);
-        oper_mult(et1r,et2i);
-        oper_subt(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et1i), expr_of_et(et2r));
+        oper_mult(expr_of_et(et1r), expr_of_et(et2i));
+        oper_subt(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp const with comp acc
@@ -2088,24 +2096,24 @@ int oper_divi(int et1, int et2)
         add_instr("F_MLT aux_var1\n");
         add_instr("P_LOD aux_var \n");
         add_instr("F_MLT aux_var \n");
-        oper_soma(2*OFST,2*OFST);
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("SET   aux_var2\n");
 
         add_instr("LOD   aux_var1\n");
-        oper_mult(etr   ,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var \n");
-        oper_mult(eti   ,2*OFST);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(eti), expr_of_et(2*OFST));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var2\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
 
         add_instr("P_LOD aux_var1\n");
-        oper_mult(eti,2*OFST);
+        oper_mult(expr_of_et(eti), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var \n");
-        oper_mult(etr   ,2*OFST);
-        oper_subt(2*OFST,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(2*OFST));
+        oper_subt(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var2\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp var with int var
@@ -2113,8 +2121,8 @@ int oper_divi(int et1, int et2)
     {
         get_cmp_ets(et1,&etr,&eti);
 
-        oper_divi(etr,et2);
-        oper_divi(eti,et2);
+        oper_divi(expr_of_et(etr), expr_of_et(et2));
+        oper_divi(expr_of_et(eti), expr_of_et(et2));
     }
 
     // comp var with int acc
@@ -2124,9 +2132,9 @@ int oper_divi(int et1, int et2)
 
         add_instr("I2F\n");
         add_instr("SET   aux_var\n");
-        oper_divi(etr,2*OFST);
+        oper_divi(expr_of_et(etr), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(eti,2*OFST);
+        oper_divi(expr_of_et(eti), expr_of_et(2*OFST));
     }
 
     // comp var with float var
@@ -2134,8 +2142,8 @@ int oper_divi(int et1, int et2)
     {
         get_cmp_ets(et1,&etr,&eti);
 
-        oper_divi(etr,et2);
-        oper_divi(eti,et2);
+        oper_divi(expr_of_et(etr), expr_of_et(et2));
+        oper_divi(expr_of_et(eti), expr_of_et(et2));
     }
 
     // comp var with float acc
@@ -2144,9 +2152,9 @@ int oper_divi(int et1, int et2)
         get_cmp_ets(et1,&etr,&eti);
 
         add_instr("SET   aux_var\n");
-        oper_divi(etr,2*OFST);
+        oper_divi(expr_of_et(etr), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(eti,2*OFST);
+        oper_divi(expr_of_et(eti), expr_of_et(2*OFST));
     }
 
     // comp var with comp const
@@ -2158,23 +2166,23 @@ int oper_divi(int et1, int et2)
         get_cmp_ets(et1,&et1r,&et1i);
         get_cmp_cst(et2,&et2r,&et2i);
 
-        oper_mult(et2r,et2r);
-        oper_mult(et2i,et2i);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et2r), expr_of_et(et2r));
+        oper_mult(expr_of_et(et2i), expr_of_et(et2i));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
-        oper_mult(et1r,et2r);
-        oper_mult(et1i,et2i);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et1r), expr_of_et(et2r));
+        oper_mult(expr_of_et(et1i), expr_of_et(et2i));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
 
-        oper_mult(et1i,et2r);
-        oper_mult(et1r,et2i);
-        oper_subt(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et1i), expr_of_et(et2r));
+        oper_mult(expr_of_et(et1r), expr_of_et(et2i));
+        oper_subt(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp var with comp var
@@ -2186,23 +2194,23 @@ int oper_divi(int et1, int et2)
         get_cmp_ets(et1,&et1r,&et1i);
         get_cmp_ets(et2,&et2r,&et2i);
 
-        oper_mult(et2r,et2r);
-        oper_mult(et2i,et2i);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et2r), expr_of_et(et2r));
+        oper_mult(expr_of_et(et2i), expr_of_et(et2i));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
-        oper_mult(et1r,et2r);
-        oper_mult(et1i,et2i);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et1r), expr_of_et(et2r));
+        oper_mult(expr_of_et(et1i), expr_of_et(et2i));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
 
-        oper_mult(et1i,et2r);
-        oper_mult(et1r,et2i);
-        oper_subt(2*OFST,2*OFST);
+        oper_mult(expr_of_et(et1i), expr_of_et(et2r));
+        oper_mult(expr_of_et(et1r), expr_of_et(et2i));
+        oper_subt(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp var with comp acc
@@ -2215,24 +2223,24 @@ int oper_divi(int et1, int et2)
         add_instr("F_MLT aux_var1\n");
         add_instr("P_LOD aux_var \n");
         add_instr("F_MLT aux_var \n");
-        oper_soma(2*OFST,2*OFST);
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("SET   aux_var2\n");
 
         add_instr("LOD   aux_var1\n");
-        oper_mult(etr   ,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var \n");
-        oper_mult(eti   ,2*OFST);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(eti), expr_of_et(2*OFST));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var2\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
 
         add_instr("P_LOD aux_var1\n");
-        oper_mult(eti   ,2*OFST);
+        oper_mult(expr_of_et(eti), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var \n");
-        oper_mult(etr   ,2*OFST);
-        oper_subt(2*OFST,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(2*OFST));
+        oper_subt(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var2\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp acc with int var
@@ -2241,10 +2249,10 @@ int oper_divi(int et1, int et2)
         add_instr("SET_P aux_var \n");
         add_instr("P_I2F_M %s\n", v_name[et2%OFST]);
         add_instr("SET   aux_var1\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var \n");
         add_instr("P_LOD aux_var1\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp acc with int acc
@@ -2254,10 +2262,10 @@ int oper_divi(int et1, int et2)
         add_instr("SET_P aux_var \n");
         add_instr("SET_P aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp acc with float var
@@ -2265,10 +2273,10 @@ int oper_divi(int et1, int et2)
     {
         add_instr("SET_P aux_var\n");
         add_instr("P_LOD %s\n", v_name[et2%OFST]);
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD %s\n", v_name[et2%OFST]);
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp acc with float acc
@@ -2277,10 +2285,10 @@ int oper_divi(int et1, int et2)
         add_instr("SET_P aux_var \n");
         add_instr("SET_P aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
     }
 
     // comp acc with comp const
@@ -2292,26 +2300,26 @@ int oper_divi(int et1, int et2)
         add_instr("SET   aux_var1\n");
         acc_ok = 0;
 
-        oper_mult(etr,etr);
-        oper_mult(eti,eti);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(etr));
+        oper_mult(expr_of_et(eti), expr_of_et(eti));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("SET   aux_var2\n");
 
         add_instr("LOD   aux_var1\n");
-        oper_mult(etr   ,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var \n");
-        oper_mult(eti   ,2*OFST);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(eti), expr_of_et(2*OFST));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var2\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
 
         add_instr("P_LOD aux_var1\n");
-        oper_mult(eti   ,2*OFST);
+        oper_mult(expr_of_et(eti), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var \n");
-        oper_mult(etr   ,2*OFST);
-        oper_subt(2*OFST,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(2*OFST));
+        oper_subt(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var2\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -2324,26 +2332,26 @@ int oper_divi(int et1, int et2)
         add_instr("SET   aux_var1\n");
         acc_ok = 0;
 
-        oper_mult(etr,etr);
-        oper_mult(eti,eti);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(etr));
+        oper_mult(expr_of_et(eti), expr_of_et(eti));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("SET   aux_var2\n");
 
         add_instr("LOD   aux_var1\n");
-        oper_mult(etr   ,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var \n");
-        oper_mult(eti   ,2*OFST);
-        oper_soma(2*OFST,2*OFST);
+        oper_mult(expr_of_et(eti), expr_of_et(2*OFST));
+        oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var2\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
 
         add_instr("P_LOD aux_var1\n");
-        oper_mult(eti   ,2*OFST);
+        oper_mult(expr_of_et(eti), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var \n");
-        oper_mult(etr   ,2*OFST);
-        oper_subt(2*OFST,2*OFST);
+        oper_mult(expr_of_et(etr), expr_of_et(2*OFST));
+        oper_subt(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var2\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -2368,15 +2376,15 @@ int oper_divi(int et1, int et2)
         add_instr("F_MLT aux_var \n");
         add_instr("SF_ADD        \n");
         add_instr("P_LOD aux_var4\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
 
         add_instr("P_LOD aux_var3\n");
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var2\n");
         add_instr("F_MLT aux_var1\n");
-        oper_subt(2*OFST,2*OFST);
+        oper_subt(expr_of_et(2*OFST), expr_of_et(2*OFST));
         add_instr("P_LOD aux_var4\n");
-        oper_divi(2*OFST,2*OFST);
+        oper_divi(expr_of_et(2*OFST), expr_of_et(2*OFST));
         oper_neg (expr_of_et(2*OFST));
     }
 
@@ -2389,12 +2397,15 @@ int oper_divi(int et1, int et2)
          type = 2;
     else type = 1;
 
-    return type*OFST;
+    return expr_make(type, 0);
 }
 
 // division remainder
-int oper_mod(int et1, int et2)
+expr oper_mod(expr e1, expr e2)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
+
     if ((get_type(et1) > 1) || (get_type(et2) > 1))
         {fprintf(stderr, MSG_ERR_MOD_NON_INT, line_num+1); exit(EXIT_FAILURE);}
 
@@ -2428,7 +2439,7 @@ int oper_mod(int et1, int et2)
 
     acc_ok = 1;
 
-    return OFST; // retorna o id extendido de int
+    return expr_make(1, 0); // int in the accumulator
 }
 
 // ----------------------------------------------------------------------------
@@ -2491,7 +2502,7 @@ int oper_cmp(int et1, int et2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
         oper_cmp (OFST,2*OFST,type);
     }
@@ -2501,7 +2512,7 @@ int oper_cmp(int et1, int et2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
         oper_cmp (OFST,2*OFST,type);
     }
@@ -2515,7 +2526,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("SET   aux_var1\n");
         acc_ok = 0;
 
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(3*OFST);
@@ -2561,7 +2572,7 @@ int oper_cmp(int et1, int et2, int type)
 
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
         oper_cmp (OFST,2*OFST,type);
     }
@@ -2573,7 +2584,7 @@ int oper_cmp(int et1, int et2, int type)
 
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
         oper_cmp (OFST,2*OFST,type);
     }
@@ -2588,7 +2599,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("SET   aux_var2\n");
 
         add_instr("P_LOD aux_var2\n");
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(3*OFST);
@@ -2639,7 +2650,7 @@ int oper_cmp(int et1, int et2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
         oper_cmp (2*OFST,2*OFST,type);
     }
@@ -2649,7 +2660,7 @@ int oper_cmp(int et1, int et2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
         oper_cmp (2*OFST,2*OFST,type);
     }
@@ -2663,7 +2674,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("SET   aux_var1\n");
         acc_ok = 0;
 
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(3*OFST);
@@ -2707,7 +2718,7 @@ int oper_cmp(int et1, int et2, int type)
 
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
         oper_cmp (2*OFST,2*OFST,type);
     }
@@ -2719,7 +2730,7 @@ int oper_cmp(int et1, int et2, int type)
 
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
         oper_cmp (2*OFST,2*OFST,type);
     }
@@ -2734,7 +2745,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("SET   aux_var2\n");
 
         add_instr("P_LOD aux_var2\n");
-        oper_mult(et1,et1);
+        oper_mult(expr_of_et(et1), expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(3*OFST);
@@ -2747,7 +2758,7 @@ int oper_cmp(int et1, int et2, int type)
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         exec_mod2(et1);
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,OFST,type);
     }
 
@@ -2761,7 +2772,7 @@ int oper_cmp(int et1, int et2, int type)
         exec_mod2(et1);
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,OFST,type);
     }
 
@@ -2771,7 +2782,7 @@ int oper_cmp(int et1, int et2, int type)
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         exec_mod2(et1);
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,2*OFST,type);
     }
 
@@ -2785,7 +2796,7 @@ int oper_cmp(int et1, int et2, int type)
         exec_mod2(et1);
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,2*OFST,type);
     }
 
@@ -2830,7 +2841,7 @@ int oper_cmp(int et1, int et2, int type)
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         exec_mod2(et1);
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,OFST,type);
     }
 
@@ -2844,7 +2855,7 @@ int oper_cmp(int et1, int et2, int type)
         exec_mod2(et1);
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,OFST,type);
     }
 
@@ -2854,7 +2865,7 @@ int oper_cmp(int et1, int et2, int type)
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         exec_mod2(et1);
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,2*OFST,type);
     }
 
@@ -2868,7 +2879,7 @@ int oper_cmp(int et1, int et2, int type)
         exec_mod2(et1);
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,2*OFST,type);
     }
 
@@ -2913,7 +2924,7 @@ int oper_cmp(int et1, int et2, int type)
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,OFST,type);
     }
 
@@ -2926,7 +2937,7 @@ int oper_cmp(int et1, int et2, int type)
         exec_mod2(et1);
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,OFST,type);
     }
 
@@ -2936,7 +2947,7 @@ int oper_cmp(int et1, int et2, int type)
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         exec_mod2(et1);
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,2*OFST,type);
     }
 
@@ -2949,7 +2960,7 @@ int oper_cmp(int et1, int et2, int type)
         exec_mod2(et1);
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
-        oper_mult(et2,et2);
+        oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp (2*OFST,2*OFST,type);
     }
 
