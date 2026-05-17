@@ -9,6 +9,7 @@ TODO:
 
 #include <stdlib.h>
 
+#include "..\Headers\ast.h"
 #include "..\Headers\t2t.h"
 #include "..\Headers\oper.h"
 #include "..\Headers\labels.h"
@@ -123,10 +124,13 @@ void while_stmt()
 // emits a JMP to the end of the while
 void exec_break()
 {
-    // check whether the break is inside a while
+    // parse-time check: break must live inside a while
     if (get_while() == 0) {fprintf(stderr, MSG_ERR_BREAK_LOST, line_num+1); exit(EXIT_FAILURE);}
 
-    add_instr("JMP Lwh%dend\n", get_while());
+    // build a tiny AST node and ask it to emit itself
+    ast_node *n = ast_break();
+    ast_emit (n);
+    ast_free (n);
 }
 
 // the while keyword alone - emits a label here

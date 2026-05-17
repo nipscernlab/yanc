@@ -45,7 +45,7 @@ cd %SRC_DIR%\CMMComp\Sources
 
 bison -y -d CMMComp.y
 flex        CMMComp.l
-%GCC%    -o cmmcomp.exe data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c
+%GCC%    -o cmmcomp.exe ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c
 
 move cmmcomp.exe %BLD_DIR%\bin
 del  lex.yy.c

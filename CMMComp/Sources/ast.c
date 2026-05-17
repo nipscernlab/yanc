@@ -1,0 +1,122 @@
+// ----------------------------------------------------------------------------
+// AST nodes for statements (see ast.h for the design notes) ------------------
+// ----------------------------------------------------------------------------
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "..\Headers\ast.h"
+#include "..\Headers\global.h"
+#include "..\Headers\labels.h"
+#include "..\Headers\messages.h"
+
+// ----------------------------------------------------------------------------
+// helpers --------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+static ast_node *node_new(ast_kind k)
+{
+    ast_node *n = calloc(1, sizeof(*n));
+    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    n->kind = k;
+    n->line = line_num + 1;
+    return n;
+}
+
+// ----------------------------------------------------------------------------
+// constructors ---------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+ast_node *ast_raw(const char *text)
+{
+    ast_node *n = node_new(AST_RAW);
+    size_t len  = strlen(text);
+    n->text = malloc(len + 1);
+    if (!n->text) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    memcpy(n->text, text, len + 1);
+    return n;
+}
+
+ast_node *ast_block(void)
+{
+    return node_new(AST_BLOCK);
+}
+
+void ast_block_push(ast_node *blk, ast_node *kid)
+{
+    if (blk->kids_n + 1 > blk->kids_cap)
+    {
+        int new_cap = blk->kids_cap ? blk->kids_cap * 2 : 8;
+        ast_node **t = realloc(blk->kids, (size_t)new_cap * sizeof(*t));
+        if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        blk->kids     = t;
+        blk->kids_cap = new_cap;
+    }
+    blk->kids[blk->kids_n++] = kid;
+}
+
+ast_node *ast_if(ast_node *cond, ast_node *body, ast_node *els)
+{
+    ast_node *n = node_new(AST_IF);
+    n->cond = cond;
+    n->body = body;
+    n->els  = els;
+    return n;
+}
+
+ast_node *ast_while(ast_node *cond, ast_node *body)
+{
+    ast_node *n = node_new(AST_WHILE);
+    n->cond = cond;
+    n->body = body;
+    return n;
+}
+
+ast_node *ast_break(void)
+{
+    return node_new(AST_BREAK);
+}
+
+// ----------------------------------------------------------------------------
+// destructor -----------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+void ast_free(ast_node *n)
+{
+    if (!n) return;
+
+    free(n->text);
+    ast_free(n->cond);
+    ast_free(n->body);
+    ast_free(n->els );
+
+    for (int i = 0; i < n->kids_n; i++) ast_free(n->kids[i]);
+    free(n->kids);
+
+    free(n);
+}
+
+// ----------------------------------------------------------------------------
+// emit walker ----------------------------------------------------------------
+// ----------------------------------------------------------------------------
+//
+// Each node kind is migrated one at a time. The migrated cases turn the node
+// back into assembly. The default case aborts so we notice if an un-migrated
+// kind ever reaches here.
+
+void ast_emit(ast_node *n)
+{
+    if (!n) return;
+
+    switch (n->kind)
+    {
+        case AST_BREAK:
+            add_instr("JMP Lwh%dend\n", get_while());
+            break;
+
+        default:
+            fprintf(stderr, "ast_emit: node kind %d not implemented yet\n", n->kind);
+            exit(EXIT_FAILURE);
+    }
+}
