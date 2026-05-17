@@ -43,7 +43,7 @@ void ass_set(int id, expr e)
     // perform the assignment -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int etr, eti;
+    expr etr, eti;
 
     // left int and right int in memory ---------------------------------------
 
@@ -87,9 +87,9 @@ void ass_set(int id, expr e)
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("F2I_M %s\n", v_name[etr % OFST]);
+        add_instr("F2I_M %s\n", v_name[etr.id]);
         add_instr("SET %s\n"  , v_name[id        ]);
     }
 
@@ -155,9 +155,9 @@ void ass_set(int id, expr e)
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("LOD %s\n", v_name[etr%OFST]);
+        add_instr("LOD %s\n", v_name[etr.id]);
         add_instr("SET %s\n", v_name[id      ]);
     }
 
@@ -167,9 +167,9 @@ void ass_set(int id, expr e)
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
-        get_cmp_ets(et,&etr,&eti);
+        get_cmp_ets(e,&etr,&eti);
 
-        add_instr("LOD %s\n", v_name[etr%OFST]);
+        add_instr("LOD %s\n", v_name[etr.id]);
         add_instr("SET %s\n", v_name[id      ]);
     }
 
@@ -238,12 +238,12 @@ void ass_set(int id, expr e)
 
     if ((v_type[id] == 3) && (get_type(et) == 5))
     {
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("LOD %s\n",   v_name[etr%OFST]);
+        add_instr("LOD %s\n",   v_name[etr.id]);
         add_instr("SET %s\n",   v_name[id      ]);
 
-        add_instr("LOD %s\n",   v_name[eti%OFST]);
+        add_instr("LOD %s\n",   v_name[eti.id]);
         add_instr("SET %s_i\n", v_name[id      ]);
     }
 
@@ -251,12 +251,12 @@ void ass_set(int id, expr e)
 
     if ((v_type[id] == 3) && (get_type(et) == 3) && (et % OFST != 0))
     {
-        get_cmp_ets(et,&etr,&eti);
+        get_cmp_ets(e,&etr,&eti);
 
-        add_instr("LOD %s\n"  , v_name[etr%OFST]);
+        add_instr("LOD %s\n"  , v_name[etr.id]);
         add_instr("SET %s\n"  , v_name[id      ]);
 
-        add_instr("LOD %s\n"  , v_name[eti%OFST]);
+        add_instr("LOD %s\n"  , v_name[eti.id]);
         add_instr("SET %s_i\n", v_name[id      ]);
     }
 
@@ -293,7 +293,7 @@ void ass_array(int id, expr e, int fft)
     // perform the set --------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int  etr, eti;
+    expr  etr, eti;
 
     char set_type[16]; if (fft == 0) strcpy(set_type, "STI"); else strcpy(set_type, "ISI");
 
@@ -338,9 +338,9 @@ void ass_array(int id, expr e, int fft)
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("P_F2I_M %s\n", v_name[etr%OFST]);
+        add_instr("P_F2I_M %s\n", v_name[etr.id]);
         add_instr("%s %s\n", set_type,  v_name[id]);
     }
 
@@ -350,9 +350,9 @@ void ass_array(int id, expr e, int fft)
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
-        get_cmp_ets(et,&etr,&eti);
+        get_cmp_ets(e,&etr,&eti);
 
-        add_instr("P_F2I_M %s\n", v_name[etr%OFST]);
+        add_instr("P_F2I_M %s\n", v_name[etr.id]);
         add_instr("%s %s\n", set_type,  v_name[id]);
     }
 
@@ -408,9 +408,9 @@ void ass_array(int id, expr e, int fft)
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("P_LOD %s\n",  v_name[etr%OFST]);
+        add_instr("P_LOD %s\n",  v_name[etr.id]);
         add_instr("%s %s\n", set_type, v_name[id]);
     }
 
@@ -420,9 +420,9 @@ void ass_array(int id, expr e, int fft)
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
-        get_cmp_ets(et,&etr,&eti);
+        get_cmp_ets(e,&etr,&eti);
 
-        add_instr("P_LOD %s\n",  v_name[etr%OFST]);
+        add_instr("P_LOD %s\n",  v_name[etr.id]);
         add_instr("%s %s\n", set_type, v_name[id]);
     }
 
@@ -503,14 +503,14 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_type[id] == 3) && (get_type(et) == 5))
     {
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
         add_instr("SET   aux_var\n");
-        add_instr("P_LOD %s\n"  , v_name[etr%OFST]);
+        add_instr("P_LOD %s\n"  , v_name[etr.id]);
         add_instr("%s %s\n" , set_type, v_name[id]);
 
         add_instr("LOD   aux_var\n");
-        add_instr("P_LOD %s\n"   , v_name[eti%OFST]);
+        add_instr("P_LOD %s\n"   , v_name[eti.id]);
         add_instr("%s %s_i\n", set_type, v_name[id]);
     }
 
@@ -518,14 +518,14 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_type[id] == 3) && (get_type(et) == 3) && (et % OFST != 0))
     {
-        get_cmp_ets(et,&etr,&eti);
+        get_cmp_ets(e,&etr,&eti);
 
         add_instr("SET   aux_var\n");
-        add_instr("P_LOD %s\n"   , v_name[etr%OFST]);
+        add_instr("P_LOD %s\n"   , v_name[etr.id]);
         add_instr("%s %s\n"  , set_type, v_name[id]);
 
         add_instr("LOD   aux_var\n");
-        add_instr("P_LOD %s\n"   , v_name[eti%OFST]);
+        add_instr("P_LOD %s\n"   , v_name[eti.id]);
         add_instr("%s %s_i\n", set_type, v_name[id]);
     }
 

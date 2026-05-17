@@ -102,10 +102,10 @@ void if_exp(expr e)
     {
         fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
-        int etr,eti;
-        get_cmp_cst(et,&etr,&eti);
+        expr etr, eti;
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("F2I_M %s\n", v_name[etr%OFST]);
+        add_instr("F2I_M %s\n", v_name[etr.id]);
     }
 
     // comp var
@@ -232,10 +232,10 @@ void while_expexp(expr e)
     {
         fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
-        int etr,eti;
-        get_cmp_cst(et,&etr,&eti);
+        expr etr, eti;
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("F2I_M %s\n", v_name[etr%OFST]);
+        add_instr("F2I_M %s\n", v_name[etr.id]);
     }
 
     // comp var
@@ -352,10 +352,10 @@ void exec_switch(expr e)
     {
         fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
 
-        int etr,eti;
-        get_cmp_cst(et,&etr,&eti);
+        expr etr, eti;
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("F2I_M %s\n", v_name[etr%OFST]);
+        add_instr("F2I_M %s\n", v_name[etr.id]);
     }
 
     // comp var

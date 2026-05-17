@@ -49,8 +49,9 @@ int get_npar(int par)
 }
 
 // checks whether the argument passed to the function is ok
-void par_check(int et)
+void par_check(expr e)
 {
+    int et = expr_to_et(e);
     // get the original number of parameters
     int n_par = get_npar(v_fpar[fun_id]);
 
@@ -80,7 +81,7 @@ void par_check(int et)
     // check every combination ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int etr, eti;
+    expr etr, eti;
 
     // original is int and call is int var ------------------------------------
 
@@ -121,9 +122,9 @@ void par_check(int et)
     {
         fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_name[fun_id]);
 
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[etr%OFST]);
+        add_instr("%s %s\n", ld, v_name[etr.id]);
         add_instr("F2I\n");
     }
 
@@ -185,9 +186,9 @@ void par_check(int et)
     {
         fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_name[fun_id]);
 
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[etr%OFST]);
+        add_instr("%s %s\n", ld, v_name[etr.id]);
     }
 
     // original is float and call is comp var ---------------------------------
@@ -251,20 +252,20 @@ void par_check(int et)
 
     if ((t_fun == 3) && (t_cal == 5))
     {
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[etr%OFST]);
-        add_instr("P_LOD %s\n",  v_name[eti%OFST]);
+        add_instr("%s %s\n", ld, v_name[etr.id]);
+        add_instr("P_LOD %s\n",  v_name[eti.id]);
     }
 
     // original is comp and call is comp var ----------------------------------
 
     if ((t_fun == 3) && (t_cal == 3) && (et % OFST != 0))
     {
-        get_cmp_ets(et,&etr,&eti); // gets the extended IDs of the right side in memory
+        get_cmp_ets(e,&etr,&eti); // gets the extended IDs of the right side in memory
 
-        add_instr("%s %s\n" , ld, v_name[etr%OFST]);
-        add_instr("P_LOD %s\n",     v_name[eti%OFST]);
+        add_instr("%s %s\n" , ld, v_name[etr.id]);
+        add_instr("P_LOD %s\n",     v_name[eti.id]);
     }
 
     // original is comp and call is comp acc ----------------------------------
@@ -362,7 +363,7 @@ void declar_ret(expr e, int ret)
     // check every combination ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int etr, eti;
+    expr etr, eti;
     int left_type = v_type[fun_parse];
 
     // int with int var
@@ -397,9 +398,9 @@ void declar_ret(expr e, int ret)
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("F2I_M %s\n", v_name[etr % OFST]);
+        add_instr("F2I_M %s\n", v_name[etr.id]);
     }
 
     // int with comp var
@@ -407,9 +408,9 @@ void declar_ret(expr e, int ret)
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
-        get_cmp_ets(et,&etr,&eti);
+        get_cmp_ets(e,&etr,&eti);
 
-        add_instr("F2I_M %s\n", v_name[etr % OFST]);
+        add_instr("F2I_M %s\n", v_name[etr.id]);
     }
 
     // int with comp acc
@@ -454,9 +455,9 @@ void declar_ret(expr e, int ret)
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("LOD %s\n", v_name[etr % OFST]);
+        add_instr("LOD %s\n", v_name[etr.id]);
     }
 
     // float with comp var
@@ -464,9 +465,9 @@ void declar_ret(expr e, int ret)
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
-        get_cmp_ets(et,&etr,&eti);
+        get_cmp_ets(e,&etr,&eti);
 
-        add_instr("LOD %s\n", v_name[etr % OFST]);
+        add_instr("LOD %s\n", v_name[etr.id]);
     }
 
     // float with comp acc
@@ -515,19 +516,19 @@ void declar_ret(expr e, int ret)
     // comp with comp const
     if ((left_type == 9) && (get_type(et) == 5))
     {
-        get_cmp_cst(et,&etr,&eti);
+        get_cmp_cst(e,&etr,&eti);
 
-        add_instr("LOD %s\n"  , v_name[etr % OFST]);
-        add_instr("P_LOD %s\n", v_name[eti % OFST]);
+        add_instr("LOD %s\n"  , v_name[etr.id]);
+        add_instr("P_LOD %s\n", v_name[eti.id]);
     }
 
     // comp with comp var
     if ((left_type == 9) && (get_type(et) == 3) && (et%OFST!=0))
     {
-        get_cmp_ets(et,&etr,&eti);
+        get_cmp_ets(e,&etr,&eti);
 
-        add_instr("LOD %s\n"  , v_name[etr % OFST]);
-        add_instr("P_LOD %s\n", v_name[eti % OFST]);
+        add_instr("LOD %s\n"  , v_name[etr.id]);
+        add_instr("P_LOD %s\n", v_name[eti.id]);
     }
 
     // comp with comp acc
@@ -614,7 +615,7 @@ void par_exp(expr e)
     int et = expr_to_et(e);
     p_test = 0; // reset the p_test state
     p_test = p_test*10 + get_type(et);
-    par_check(et);
+    par_check(e);
     acc_ok = 1;
 }
 
@@ -623,7 +624,7 @@ void par_listexp(expr e)
 {
     int et = expr_to_et(e);
     p_test = p_test*10 + get_type(et);
-    par_check(et);
+    par_check(e);
 }
 
 // emits the CAL instruction for void-type functions (hence the v in vcall)

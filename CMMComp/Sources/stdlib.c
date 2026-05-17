@@ -868,10 +868,10 @@ expr exec_real(expr e)
     // comp const
     if (get_type(et) == 5)
     {
-        int et_r, et_i;
-        get_cmp_cst(et,&et_r,&et_i);
+        expr et_r, et_i;
+        get_cmp_cst(e,&et_r,&et_i);
 
-        add_instr("%s %s\n", ld, v_name[et_r%OFST]);
+        add_instr("%s %s\n", ld, v_name[et_r.id]);
     }
 
     // comp in memory
@@ -927,19 +927,19 @@ expr exec_imag(expr e)
     // comp const
     if (get_type(et) == 5)
     {
-        int et_r, et_i;
-        get_cmp_cst(et,&et_r,&et_i);
+        expr et_r, et_i;
+        get_cmp_cst(e,&et_r,&et_i);
 
-        add_instr("%s %s\n", ld, v_name[et_i%OFST]);
+        add_instr("%s %s\n", ld, v_name[et_i.id]);
     }
 
     // comp in memory
     if ((get_type(et) == 3) && (et%OFST != 0))
     {
-        int et_r, et_i;
-        get_cmp_ets(et,&et_r,&et_i);
+        expr et_r, et_i;
+        get_cmp_ets(e,&et_r,&et_i);
 
-        add_instr("%s %s\n", ld, v_name[et_i%OFST]);
+        add_instr("%s %s\n", ld, v_name[et_i.id]);
     }
 
     // comp in acc
@@ -981,7 +981,7 @@ expr exec_mod2(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int etr, eti;
+    expr etr, eti;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -990,19 +990,19 @@ expr exec_mod2(expr e)
     // when it is a constant -------------------------------------------------
     if (get_type(et) == 5)
     {
-        get_cmp_cst(et ,&etr,&eti);     // get the et of each float constant
-        etr = expr_to_et(oper_mult(expr_of_et(etr), expr_of_et(etr)));     // real part squared
-        eti = expr_to_et(oper_mult(expr_of_et(eti), expr_of_et(eti)));     // imag part squared
-        etr = expr_to_et(oper_soma(expr_of_et(etr), expr_of_et(eti)));     // sum of the squares
+        get_cmp_cst(e,&etr,&eti);     // get the et of each float constant
+        etr = oper_mult(etr, etr);     // real part squared
+        eti = oper_mult(eti, eti);     // imag part squared
+        etr = oper_soma(etr, eti);     // sum of the squares
     }
 
     // when it is in memory --------------------------------------------------
     if ((get_type(et) == 3) && (et % OFST != 0))
     {
-        get_cmp_ets(et ,&etr,&eti);     // get the et of each variable
-        etr = expr_to_et(oper_mult(expr_of_et(etr), expr_of_et(etr)));     // real part squared
-        eti = expr_to_et(oper_mult(expr_of_et(eti), expr_of_et(eti)));     // imag part squared
-        etr = expr_to_et(oper_soma(expr_of_et(etr), expr_of_et(eti)));     // sum of the squares
+        get_cmp_ets(e,&etr,&eti);     // get the et of each variable
+        etr = oper_mult(etr, etr);     // real part squared
+        eti = oper_mult(eti, eti);     // imag part squared
+        etr = oper_soma(etr, eti);     // sum of the squares
     }
 
     // when it is in the accumulator ------------------------------------------
@@ -1018,7 +1018,7 @@ expr exec_mod2(expr e)
 
         oper_soma(expr_of_et(2*OFST), expr_of_et(2*OFST));       // sum of the squares
 
-        etr = 2*OFST;                   // output must be an extended et for float in the acc
+        etr = expr_make(2, 0);          // output is a float in the accumulator
     }
 
     return expr_make(2, 0);
@@ -1051,7 +1051,7 @@ expr exec_fase(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
     
-    int et_r, et_i;
+    expr et_r, et_i;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1060,25 +1060,25 @@ expr exec_fase(expr e)
     // comp const
     if (get_type(et) == 5)
     {
-        get_cmp_cst(et,&et_i,&et_r);
-        oper_divi  (expr_of_et(et_r), expr_of_et(et_i));
+        get_cmp_cst(e,&et_i,&et_r);
+        oper_divi  (et_r, et_i);
     }
 
     // comp in memory
     if ((get_type(et) == 3) && (et%OFST != 0))
     {
-        get_cmp_ets(et,&et_i,&et_r);
-        oper_divi  (expr_of_et(et_r), expr_of_et(et_i));
+        get_cmp_ets(e,&et_i,&et_r);
+        oper_divi  (et_r, et_i);
     }
 
     // comp in acc
     if ((get_type(et) == 3) && (et%OFST == 0))
     {
         int id = exec_id("aux_var");
-        et_i   = 2*OFST + id;
+        et_i   = expr_make(2, id);
 
         add_instr("SET_P %s\n", v_name[id]);
-        oper_divi(expr_of_et(et_i), expr_of_et(2*OFST));
+        oper_divi(et_i, expr_of_et(2*OFST));
     }
 
     exec_atan(expr_of_et(2*OFST));
@@ -1130,14 +1130,14 @@ expr exec_comp(expr er, expr ei)
     // ------------------------------------------------------------------------
 
     // int in memory and int in memory
-    if ((get_type(etr) == 1) && (etr % OFST != 0) && (get_type(eti) == 1) && (eti % OFST != 0))
+    if ((get_type(etr) == 1) && (etr%OFST != 0) && (get_type(eti) == 1) && (eti%OFST != 0))
     {
         add_instr("%s %s\n", i2f, v_name[etr%OFST]);
         add_instr("P_I2F_M %s\n", v_name[eti%OFST]);
     }
 
     // int in memory and int in acc
-    if ((get_type(etr) == 1) && (etr % OFST != 0) && (get_type(eti) == 1) && (eti % OFST == 0))
+    if ((get_type(etr) == 1) && (etr%OFST != 0) && (get_type(eti) == 1) && (eti%OFST == 0))
     {
         add_instr("SET aux_var\n");
         add_instr("I2F_M %s\n", v_name[etr%OFST]);
@@ -1145,14 +1145,14 @@ expr exec_comp(expr er, expr ei)
     }
 
     // int in memory and float in memory
-    if ((get_type(etr) == 1) && (etr % OFST != 0) && (get_type(eti) == 2) && (eti % OFST != 0))
+    if ((get_type(etr) == 1) && (etr%OFST != 0) && (get_type(eti) == 2) && (eti%OFST != 0))
     {
         add_instr("%s %s\n", i2f, v_name[etr%OFST]);
         add_instr("P_LOD %s\n"  , v_name[eti%OFST]);
     }
 
     // int in memory and float in acc
-    if ((get_type(etr) == 1) && (etr % OFST != 0) && (get_type(eti) == 2) && (eti % OFST == 0))
+    if ((get_type(etr) == 1) && (etr%OFST != 0) && (get_type(eti) == 2) && (eti%OFST == 0))
     {
         add_instr("SET aux_var\n");
         add_instr("I2F_M %s\n", v_name[etr%OFST]);
@@ -1160,14 +1160,14 @@ expr exec_comp(expr er, expr ei)
     }
 
     // int in acc and int in memory
-    if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 1) && (eti % OFST != 0))
+    if ((get_type(etr) == 1) && (etr%OFST == 0) && (get_type(eti) == 1) && (eti%OFST != 0))
     {
         add_instr("I2F\n");
         add_instr("P_I2F_M %s\n", v_name[eti%OFST]);
     }
 
     // int in acc and int in acc
-    if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 1) && (eti % OFST == 0))
+    if ((get_type(etr) == 1) && (etr%OFST == 0) && (get_type(eti) == 1) && (eti%OFST == 0))
     {
         add_instr("SET_P aux_var\n");
         add_instr("I2F\n");
@@ -1175,14 +1175,14 @@ expr exec_comp(expr er, expr ei)
     }
 
     // int in acc and float in memory
-    if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 2) && (eti % OFST != 0))
+    if ((get_type(etr) == 1) && (etr%OFST == 0) && (get_type(eti) == 2) && (eti%OFST != 0))
     {
         add_instr("I2F\n");
         add_instr("P_LOD %s\n", v_name[eti%OFST]);
     }
 
     // int in acc and float in acc
-    if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 2) && (eti % OFST == 0))
+    if ((get_type(etr) == 1) && (etr%OFST == 0) && (get_type(eti) == 2) && (eti%OFST == 0))
     {
         add_instr("SET_P aux_var\n");
         add_instr("I2F\n");
@@ -1190,14 +1190,14 @@ expr exec_comp(expr er, expr ei)
     }
 
     // float in memory and int in memory
-    if ((get_type(etr) == 2) && (etr % OFST != 0) && (get_type(eti) == 1) && (eti % OFST != 0))
+    if ((get_type(etr) == 2) && (etr%OFST != 0) && (get_type(eti) == 1) && (eti%OFST != 0))
     {
         add_instr("%s %s\n",  ld, v_name[etr%OFST]);
         add_instr("P_I2F_M %s\n", v_name[eti%OFST]);
     }
 
     // float in memory and int in acc
-    if ((get_type(etr) == 2) && (etr % OFST != 0) && (get_type(eti) == 1) && (eti % OFST == 0))
+    if ((get_type(etr) == 2) && (etr%OFST != 0) && (get_type(eti) == 1) && (eti%OFST == 0))
     {
         add_instr("SET aux_var\n");
         add_instr("LOD %s\n", v_name[etr%OFST]);
@@ -1205,14 +1205,14 @@ expr exec_comp(expr er, expr ei)
     }
 
     // float in memory and float in memory
-    if ((get_type(etr) == 2) && (etr % OFST != 0) && (get_type(eti) == 2) && (eti % OFST != 0))
+    if ((get_type(etr) == 2) && (etr%OFST != 0) && (get_type(eti) == 2) && (eti%OFST != 0))
     {
         add_instr("%s %s\n", ld, v_name[etr%OFST]);
         add_instr("P_LOD %s\n" , v_name[eti%OFST]);
     }
 
     // float in memory and float in acc
-    if ((get_type(etr) == 2) && (etr % OFST != 0) && (get_type(eti) == 2) && (eti % OFST == 0))
+    if ((get_type(etr) == 2) && (etr%OFST != 0) && (get_type(eti) == 2) && (eti%OFST == 0))
     {
         add_instr("SET aux_var\n");
         add_instr("LOD %s\n", v_name[etr%OFST]);
@@ -1220,25 +1220,25 @@ expr exec_comp(expr er, expr ei)
     }
 
     // float in acc and int in memory
-    if ((get_type(etr) == 2) && (etr % OFST == 0) && (get_type(eti) == 1) && (eti % OFST != 0))
+    if ((get_type(etr) == 2) && (etr%OFST == 0) && (get_type(eti) == 1) && (eti%OFST != 0))
     {
         add_instr("P_I2F_M %s\n", v_name[eti%OFST]);
     }
 
     // float in acc and int in acc
-    if ((get_type(etr) == 2) && (etr % OFST == 0) && (get_type(eti) == 1) && (eti % OFST == 0))
+    if ((get_type(etr) == 2) && (etr%OFST == 0) && (get_type(eti) == 1) && (eti%OFST == 0))
     {
         add_instr("I2F\n");
     }
 
     // float in acc and float in memory
-    if ((get_type(etr) == 2) && (etr % OFST == 0) && (get_type(eti) == 2) && (eti % OFST != 0))
+    if ((get_type(etr) == 2) && (etr%OFST == 0) && (get_type(eti) == 2) && (eti%OFST != 0))
     {
         add_instr("P_LOD %s\n", v_name[eti%OFST]);
     }
 
     // float in acc and float in acc
-    if ((get_type(etr) == 1) && (etr % OFST == 0) && (get_type(eti) == 2) && (eti % OFST == 0))
+    if ((get_type(etr) == 1) && (etr%OFST == 0) && (get_type(eti) == 2) && (eti%OFST == 0))
     {
         // nothing to do
     }

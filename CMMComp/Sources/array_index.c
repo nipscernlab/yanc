@@ -45,7 +45,7 @@ void arr_1d_index(int id, expr e)
     // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int etr, eti;
+    expr etr, eti;
 
     // when int in memory -------------------------------------------------
 
@@ -85,9 +85,9 @@ void arr_1d_index(int id, expr e)
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
-        get_cmp_cst(et, &etr, &eti);
+        get_cmp_cst(e, &etr, &eti);
 
-        add_instr("F2I_M %s\n", v_name[etr % OFST]);
+        add_instr("F2I_M %s\n", v_name[etr.id]);
     }
 
     // when comp in acc ---------------------------------------------------
@@ -133,7 +133,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int etr, eti;
+    expr etr, eti;
 
     // int in acc and int in acc
     if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
@@ -176,10 +176,10 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-        get_cmp_cst(et2, &etr, &eti);
+        get_cmp_cst(e2, &etr, &eti);
 
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[etr % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
@@ -248,11 +248,11 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-        get_cmp_cst(et2, &etr, &eti);
+        get_cmp_cst(e2, &etr, &eti);
 
         add_instr("LOD     %s\n",  v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n",  v_name[etr % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
@@ -329,11 +329,11 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        get_cmp_cst(et2, &etr, &eti);
+        get_cmp_cst(e2, &etr, &eti);
 
         add_instr("F2I\n");
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[etr % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
@@ -408,11 +408,11 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        get_cmp_cst(et2, &etr, &eti);
+        get_cmp_cst(e2, &etr, &eti);
 
         add_instr("F2I_M   %s\n",  v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n",  v_name[etr % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
@@ -445,11 +445,11 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-        get_cmp_cst(et1, &etr, &eti);
+        get_cmp_cst(e1, &etr, &eti);
 
         add_instr("F2I\n");
         add_instr("SET   aux_var\n");
-        add_instr("F2I_M %s\n" , v_name[etr % OFST]);
+        add_instr("F2I_M %s\n" , v_name[etr.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
         add_instr("ADD   aux_var\n");
     }
@@ -459,9 +459,9 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-        get_cmp_cst(et1, &etr, &eti);
+        get_cmp_cst(e1, &etr, &eti);
 
-        add_instr("F2I_M %s\n" , v_name[etr % OFST]);
+        add_instr("F2I_M %s\n" , v_name[etr.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
         add_instr("ADD   %s\n",  v_name[et2 % OFST]);
     }
@@ -471,11 +471,11 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        get_cmp_cst(et1, &etr, &eti);
+        get_cmp_cst(e1, &etr, &eti);
 
         add_instr("F2I\n");
         add_instr("SET   aux_var\n");
-        add_instr("F2I_M %s\n" , v_name[etr % OFST]);
+        add_instr("F2I_M %s\n" , v_name[etr.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
         add_instr("ADD   aux_var\n");
     }
@@ -485,9 +485,9 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        get_cmp_cst(et1, &etr, &eti);
+        get_cmp_cst(e1, &etr, &eti);
 
-        add_instr("F2I_M   %s\n" , v_name[etr % OFST]);
+        add_instr("F2I_M   %s\n" , v_name[etr.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
         add_instr("S_ADD\n");
@@ -498,12 +498,12 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        get_cmp_cst(et1, &etr, &eti);
-        add_instr("F2I_M   %s\n" , v_name[etr % OFST]);
+        get_cmp_cst(e1, &etr, &eti);
+        add_instr("F2I_M   %s\n" , v_name[etr.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
 
-        get_cmp_cst(et2, &etr, &eti);
-        add_instr("P_F2I_M %s\n" , v_name[etr % OFST]);
+        get_cmp_cst(e2, &etr, &eti);
+        add_instr("P_F2I_M %s\n" , v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
@@ -512,12 +512,12 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        get_cmp_cst(et1, &etr, &eti);
+        get_cmp_cst(e1, &etr, &eti);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
         add_instr("SET   aux_var\n");
-        add_instr("F2I_M %s\n" , v_name[etr % OFST]);
+        add_instr("F2I_M %s\n" , v_name[etr.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
         add_instr("ADD   aux_var\n");
     }
@@ -527,9 +527,9 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        get_cmp_cst(et1, &etr, &eti);
+        get_cmp_cst(e1, &etr, &eti);
 
-        add_instr("F2I_M   %s\n" , v_name[etr % OFST]);
+        add_instr("F2I_M   %s\n" , v_name[etr.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
         add_instr("S_ADD\n");
@@ -588,12 +588,12 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        get_cmp_cst(et2, &etr, &eti);
+        get_cmp_cst(e2, &etr, &eti);
 
         add_instr("POP\n");
         add_instr("F2I\n");
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[etr % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
@@ -670,11 +670,11 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        get_cmp_cst(et2, &etr, &eti);
+        get_cmp_cst(e2, &etr, &eti);
 
         add_instr("F2I_M   %s\n" , v_name[et1 % OFST]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[etr % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
@@ -738,7 +738,7 @@ expr arr_1d2exp(int id, expr e, int fft)
     // write the instructions -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int  etr, eti;
+    expr  etr, eti;
     int  type = v_type[id];
 
     // left int/float ---------------------------------------------------------
@@ -781,9 +781,9 @@ expr arr_1d2exp(int id, expr e, int fft)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
-            get_cmp_cst(et, &etr, &eti);
+            get_cmp_cst(e, &etr, &eti);
 
-            add_instr("%s %s\n", f2i, v_name[etr % OFST]);
+            add_instr("%s %s\n", f2i, v_name[etr.id]);
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
@@ -858,9 +858,9 @@ expr arr_1d2exp(int id, expr e, int fft)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
-            get_cmp_cst(et, &etr, &eti);
+            get_cmp_cst(e, &etr, &eti);
 
-            add_instr("%s %s\n"  , f2i, v_name[etr % OFST]);
+            add_instr("%s %s\n"  , f2i, v_name[etr.id]);
             add_instr("SET aux_var\n");
             add_instr("%s %s\n"  , ldv, v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -928,7 +928,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     // write the instructions -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int  etr, eti;
+    expr  etr, eti;
     int  type = v_type[id];
 
     // left int/float ---------------------------------------------------------
@@ -980,10 +980,10 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv    , v_name[id]);
         }
@@ -1059,11 +1059,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
@@ -1147,11 +1147,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr("F2I\n");
             add_instr("MLT %s_arr_size\n"   , v_name[id]);
-            add_instr("P_F2I_M %s\n", v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n", v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr("%s %s\n", ldv        , v_name[id]);
         }
@@ -1235,11 +1235,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
@@ -1275,11 +1275,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n",  v_name[etr % OFST]);
+            add_instr("F2I_M %s\n",  v_name[etr.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_name[id]);
@@ -1290,9 +1290,9 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
-            add_instr( "%s %s\n", f2i, v_name[etr % OFST]);
+            add_instr( "%s %s\n", f2i, v_name[etr.id]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
             add_instr("ADD %s\n",      v_name[et2 % OFST]);
             add_instr( "%s %s\n", ldv        , v_name[id]);
@@ -1303,11 +1303,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n",  v_name[etr % OFST]);
+            add_instr("F2I_M %s\n",  v_name[etr.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_name[id]);
@@ -1318,9 +1318,9 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
-            add_instr( "%s     %s\n", f2i, v_name[etr % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[etr.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
             add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
             add_instr("S_ADD\n");
@@ -1332,12 +1332,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
-            add_instr("%s %s\n", f2i, v_name[etr % OFST]);
+            get_cmp_cst(e1, &etr, &eti);
+            add_instr("%s %s\n", f2i, v_name[etr.id]);
             add_instr("MLT %s_arr_size\n"   , v_name[id]);
 
-            get_cmp_cst(et2, &etr, &eti);
-            add_instr("P_F2I_M %s\n", v_name[etr % OFST]);
+            get_cmp_cst(e2, &etr, &eti);
+            add_instr("P_F2I_M %s\n", v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv   , v_name[id]);
         }
@@ -1347,12 +1347,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n",  v_name[etr % OFST]);
+            add_instr("F2I_M %s\n",  v_name[etr.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_name[id]);
@@ -1363,9 +1363,9 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
-            add_instr( "%s     %s\n", f2i, v_name[etr % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[etr.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
             add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
             add_instr("S_ADD\n");
@@ -1429,12 +1429,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr("POP\n");
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n",  v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n",  v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
@@ -1518,11 +1518,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
@@ -1615,10 +1615,10 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv  , v_name[id]);
@@ -1715,11 +1715,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv      , v_name[id]);
@@ -1824,11 +1824,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv  , v_name[id]);
@@ -1937,9 +1937,9 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr( "%s %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
-            add_instr("P_F2I_M %s\n", v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n", v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv , v_name[id]);
@@ -1984,11 +1984,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n" , v_name[etr % OFST]);
+            add_instr("F2I_M %s\n" , v_name[etr.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr("SET   aux_var\n");
@@ -2002,9 +2002,9 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
-            add_instr( "%s   %s\n", f2i, v_name[etr % OFST]);
+            add_instr( "%s   %s\n", f2i, v_name[etr.id]);
             add_instr("MLT   %s_arr_size\n"    , v_name[id]);
             add_instr("ADD   %s\n",      v_name[et2 % OFST]);
             add_instr("SET   aux_var\n");
@@ -2018,11 +2018,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n",  v_name[etr % OFST]);
+            add_instr("F2I_M %s\n",  v_name[etr.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr("SET   aux_var\n");
@@ -2036,9 +2036,9 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
-            add_instr( "%s     %s\n", f2i, v_name[etr % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[etr.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
             add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
             add_instr("S_ADD\n");
@@ -2053,12 +2053,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
-            add_instr( "%s %s\n", f2i, v_name[etr % OFST]);
+            get_cmp_cst(e1, &etr, &eti);
+            add_instr( "%s %s\n", f2i, v_name[etr.id]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
 
-            get_cmp_cst(et2, &etr, &eti);
-            add_instr("P_F2I_M %s\n", v_name[etr % OFST]);
+            get_cmp_cst(e2, &etr, &eti);
+            add_instr("P_F2I_M %s\n", v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv , v_name[id]);
@@ -2071,12 +2071,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n",  v_name[etr % OFST]);
+            add_instr("F2I_M %s\n",  v_name[etr.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr("SET   aux_var\n");
@@ -2090,9 +2090,9 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et1, &etr, &eti);
+            get_cmp_cst(e1, &etr, &eti);
 
-            add_instr("%s      %s\n", f2i, v_name[etr % OFST]);
+            add_instr("%s      %s\n", f2i, v_name[etr.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
             add_instr("P_F2I_M %s\n"     , v_name[et2 % OFST]);
             add_instr("S_ADD\n");
@@ -2171,12 +2171,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr("SET_P   aux_var\n");
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv  , v_name[id]);
@@ -2281,11 +2281,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            get_cmp_cst(et2, &etr, &eti);
+            get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[etr % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[etr.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv      , v_name[id]);

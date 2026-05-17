@@ -71,24 +71,24 @@ int get_img_id(int id)
 
 // splits the real and imaginary parts of a complex constant
 // generating two floating-point entries in the table
-void get_cmp_cst(int et, int *et_r, int *et_i)
+void get_cmp_cst(expr e, expr *er, expr *ei)
 {
     char  txt[64];
     float real, img;
 
-    sscanf(v_name[et % OFST],"%f %f",&real,&img);
+    sscanf(v_name[e.id], "%f %f", &real, &img);
 
-    sprintf(txt,"%f",real);
-    *et_r = 2*OFST + exec_fnum(txt);
+    sprintf(txt, "%f", real);
+    *er = expr_make(2, exec_fnum(txt));
 
-    sprintf(txt,"%f",img);
-    *et_i = 2*OFST + exec_fnum(txt);
+    sprintf(txt, "%f", img);
+    *ei = expr_make(2, exec_fnum(txt));
 }
 
-// generates the extended float IDs for the real and imag parts
+// generates the extended float exprs for the real and imag parts
 // of a complex number in memory
-void get_cmp_ets(int et, int *et_r, int *et_i)
+void get_cmp_ets(expr e, expr *er, expr *ei)
 {
-    *et_r = 2*OFST + (et % OFST);
-    *et_i = 2*OFST + get_img_id(et % OFST);
+    *er = expr_make(2, e.id);
+    *ei = expr_make(2, get_img_id(e.id));
 }
