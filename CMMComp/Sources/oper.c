@@ -21,8 +21,9 @@
 // ----------------------------------------------------------------------------
 
 // negates a number
-int oper_neg(int et)
+expr oper_neg(expr e)
 {
+    int   et = expr_to_et(e);
     int   etr, eti;
 
     char  neg[10]; if (acc_ok == 0) strcpy( neg,   "NEG_M"); else strcpy( neg,  "P_NEG_M");
@@ -82,7 +83,7 @@ int oper_neg(int et)
 
     if (get_type(et) == 5) et = 3*OFST;
 
-    return get_type(et)*OFST;
+    return expr_make(get_type(et), 0);
 }
 
 // adds two numbers
@@ -574,13 +575,13 @@ int oper_subt(int et1, int et2)
     // int var with int var
     if ((get_type(et1)==1) && (et1%OFST!=0) && (get_type(et2)==1) && (et2%OFST!=0))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // int var with int acc
     if ((get_type(et1)==1) && (et1%OFST!=0) && (get_type(et2)==1) && (et2%OFST==0))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // int var with float var
@@ -600,7 +601,7 @@ int oper_subt(int et1, int et2)
     // int var with comp const (probably never happens, but just in case...)
     if ((get_type(et1)==1) && (et1%OFST!=0) && (get_type(et2)==5))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // int var with comp var
@@ -625,13 +626,13 @@ int oper_subt(int et1, int et2)
     // int acc with int var
     if ((get_type(et1)==1) && (et1%OFST==0) && (get_type(et2)==1) && (et2%OFST!=0))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // int acc with int acc
     if ((get_type(et1)==1) && (et1%OFST==0) && (get_type(et2)==1) && (et2%OFST==0))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // int acc with float var
@@ -652,7 +653,7 @@ int oper_subt(int et1, int et2)
     // int acc with comp const
     if ((get_type(et1)==1) && (et1%OFST==0) && (get_type(et2)==5))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // int acc with comp var
@@ -705,7 +706,7 @@ int oper_subt(int et1, int et2)
     // float var with comp const (no negative comp const)
     if ((get_type(et1)==2) && (et1%OFST!=0) && (get_type(et2)==5))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // float var with comp var
@@ -755,7 +756,7 @@ int oper_subt(int et1, int et2)
     // float acc with comp const (does not happen)
     if ((get_type(et1)==2) && (et1%OFST==0) && (get_type(et2)==5))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // float acc with comp var
@@ -817,7 +818,7 @@ int oper_subt(int et1, int et2)
     // comp const with comp const (no comp const subtraction)
     if ((get_type(et1)==5) && (get_type(et2)==5))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // comp const with comp var
@@ -890,7 +891,7 @@ int oper_subt(int et1, int et2)
     // comp var with comp const (no comp const subtraction)
     if ((get_type(et1)==3) && (et1%OFST!=0) && (get_type(et2)==5))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // comp var with comp var
@@ -960,7 +961,7 @@ int oper_subt(int et1, int et2)
     // comp acc with comp const (no comp const subtraction)
     if ((get_type(et1)==3) && (et1%OFST==0) && (get_type(et2)==5))
     {
-        return oper_soma(et1,oper_neg(et2));
+        return oper_soma(et1, expr_to_et(oper_neg(expr_of_et(et2))));
     }
 
     // comp acc with comp var
@@ -1626,7 +1627,7 @@ int oper_divi(int et1, int et2)
         oper_mult(et1,eti);           // multiply int with imag part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
         oper_divi(2*OFST,2*OFST);     // faz a divisao
-        oper_neg (2*OFST);            // nega a parte imaginaria
+        oper_neg (expr_of_et(2*OFST));            // nega a parte imaginaria
     }
 
     // int var with comp var
@@ -1648,7 +1649,7 @@ int oper_divi(int et1, int et2)
         oper_mult(et1,eti);           // multiply int with imag part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
         oper_divi(2*OFST,2*OFST);     // faz a divisao
-        oper_neg (2*OFST);            // nega a parte imaginaria
+        oper_neg (expr_of_et(2*OFST));            // nega a parte imaginaria
     }
 
     // int var with comp acc
@@ -1673,7 +1674,7 @@ int oper_divi(int et1, int et2)
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var2\n"); // fetch the squared magnitude
         oper_divi(2*OFST,2*OFST);      // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // int acc with int var
@@ -1729,7 +1730,7 @@ int oper_divi(int et1, int et2)
         oper_mult(2*OFST,eti);         // multiply float with imag part
         add_instr("P_LOD aux_var1\n"); // fetch the denominator
         oper_divi(2*OFST,2*OFST);      // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // int acc with comp var
@@ -1755,7 +1756,7 @@ int oper_divi(int et1, int et2)
         oper_mult(2*OFST,eti);          // multiply float with imag part
         add_instr("P_LOD  aux_var1\n"); // fetch the denominator
         oper_divi(2*OFST,2*OFST);       // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // int acc with comp acc
@@ -1782,7 +1783,7 @@ int oper_divi(int et1, int et2)
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
         oper_divi(2*OFST,2*OFST);      // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // float var with int var
@@ -1830,7 +1831,7 @@ int oper_divi(int et1, int et2)
         oper_mult(et1,eti);           // multiply float with imag part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
         oper_divi(2*OFST,2*OFST);     // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // float var with comp var
@@ -1851,7 +1852,7 @@ int oper_divi(int et1, int et2)
         oper_mult(et1,eti);           // multiply float with imag part
         add_instr("P_LOD aux_var\n"); // fetch the denominator
         oper_divi(2*OFST,2*OFST);     // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // float var with comp acc
@@ -1874,7 +1875,7 @@ int oper_divi(int et1, int et2)
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var2\n");             // fetch the squared magnitude
         oper_divi(2*OFST,2*OFST);                  // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // float acc with int var
@@ -1926,7 +1927,7 @@ int oper_divi(int et1, int et2)
         oper_mult(2*OFST,eti);         // multiply float with imag part
         add_instr("P_LOD aux_var1\n"); // fetch the denominator
         oper_divi(2*OFST,2*OFST);      // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // float acc with comp var
@@ -1951,7 +1952,7 @@ int oper_divi(int et1, int et2)
         oper_mult(2*OFST,eti);         // multiply float with imag part
         add_instr("P_LOD aux_var1\n"); // fetch the denominator
         oper_divi(2*OFST,2*OFST);      // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // float acc with comp acc
@@ -1977,7 +1978,7 @@ int oper_divi(int et1, int et2)
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
         oper_divi(2*OFST,2*OFST);      // faz a divisao
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // comp const with int var
@@ -2311,7 +2312,7 @@ int oper_divi(int et1, int et2)
         oper_subt(2*OFST,2*OFST);
         add_instr("P_LOD aux_var2\n");
         oper_divi(2*OFST,2*OFST);
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // comp acc with comp var
@@ -2343,7 +2344,7 @@ int oper_divi(int et1, int et2)
         oper_subt(2*OFST,2*OFST);
         add_instr("P_LOD aux_var2\n");
         oper_divi(2*OFST,2*OFST);
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     // comp acc with comp acc
@@ -2376,7 +2377,7 @@ int oper_divi(int et1, int et2)
         oper_subt(2*OFST,2*OFST);
         add_instr("P_LOD aux_var4\n");
         oper_divi(2*OFST,2*OFST);
-        oper_neg (2*OFST);
+        oper_neg (expr_of_et(2*OFST));
     }
 
     acc_ok = 1;
@@ -2994,19 +2995,19 @@ int oper_cmp(int et1, int et2, int type)
 // compares greater-or-equal (opposite of less-than)
 int oper_greq(int et1, int et2)
 {
-    return oper_lin(oper_cmp(et1,et2,0));
+    return expr_to_et(oper_lin(expr_of_et(oper_cmp(et1, et2, 0))));
 }
 
 // compares less-or-equal (opposite of greater-than)
 int oper_leeq(int et1, int et2)
 {
-    return oper_lin(oper_cmp(et1,et2,1));
+    return expr_to_et(oper_lin(expr_of_et(oper_cmp(et1, et2, 1))));
 }
 
 // compares not-equal (opposite of equal-to)
 int oper_dife(int et1, int et2)
 {
-    return oper_lin(oper_cmp(et1,et2,2));
+    return expr_to_et(oper_lin(expr_of_et(oper_cmp(et1, et2, 2))));
 }
 
 // ----------------------------------------------------------------------------
@@ -3014,8 +3015,9 @@ int oper_dife(int et1, int et2)
 // ----------------------------------------------------------------------------
 
 // logical inversion (!)
-int oper_lin(int et)
+expr oper_lin(expr e)
 {
+    int et = expr_to_et(e);
     int etr, eti;
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -3084,7 +3086,7 @@ int oper_lin(int et)
 
     acc_ok = 1;
 
-    return OFST; // retorna o id extendido de int
+    return expr_make(1, 0); // int in the accumulator
 }
 
 // logical and/or (&& ||)
@@ -3141,8 +3143,10 @@ int oper_lanor(int et1, int et2, int type)
 // ----------------------------------------------------------------------------
 
 // inverter gate
-int oper_inv(int et)
+expr oper_inv(expr e)
 {
+    int et = expr_to_et(e);
+
     if (get_type(et) > 1)
         {fprintf(stderr, MSG_ERR_INV_NON_INT, line_num+1); exit(EXIT_FAILURE);}
 
@@ -3162,7 +3166,7 @@ int oper_inv(int et)
 
     acc_ok = 1;
 
-    return OFST; // retorna o id extendido de int
+    return expr_make(1, 0); // int in the accumulator
 }
 
 // two-input logical gates (& | ^)

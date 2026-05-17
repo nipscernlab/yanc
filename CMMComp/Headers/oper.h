@@ -1,8 +1,10 @@
+#include "ast.h"   // expr (for the migrated unary operators)
+
 // ----------------------------------------------------------------------------
 // arithmetic operations ------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int oper_neg  (int et);           //  -x
+expr oper_neg  (expr e);          //  -x
 int oper_soma (int et1, int et2); // x+y
 int oper_subt (int et1, int et2); // x-y
 int oper_mult (int et1, int et2); // x*y
@@ -22,14 +24,14 @@ int oper_dife (int et1, int et2);           // x!=y
 // logical operations (if else while) -----------------------------------------
 // ----------------------------------------------------------------------------
 
-int oper_lin  (int et);                     // !x
+expr oper_lin  (expr e);                    // !x
 int oper_lanor(int et1, int et2, int type); // x&&y, x||y
 
 // ----------------------------------------------------------------------------
 // bitwise logical-gate operations (~ & |) ------------------------------------
 // ----------------------------------------------------------------------------
 
-int oper_inv  (int et);                     // ~x
+expr oper_inv  (expr e);                    // ~x
 int oper_bitw (int et1, int et2, int type); // x&y, x|y, x^y
 
 // ----------------------------------------------------------------------------
