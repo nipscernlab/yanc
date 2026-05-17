@@ -306,13 +306,13 @@ assignment : ID  '=' exp ';'                          {ass_set($1, expr_to_et($3
            | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1, expr_to_et($3));}
            | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {ass_apl2d($1, expr_to_et($3), expr_to_et($6));}
            // regular array
-           | ID  '[' exp ']'  '='                     {arr_1d_index($1, expr_to_et($3));}
+           | ID  '[' exp ']'  '='                     {arr_1d_index($1, $3);}
                      exp ';'                          {ass_array ($1, expr_to_et($7), 0);}
            // reversed array
-           | ID  '[' exp ')'  '='                     {arr_1d_index($1, expr_to_et($3));}
+           | ID  '[' exp ')'  '='                     {arr_1d_index($1, $3);}
                      exp ';'                          {ass_array ($1, expr_to_et($7), 1);}
            // 2D array (to be completed)
-           | ID  '[' exp ']' '[' exp ']' '='          {arr_2d_index($1, expr_to_et($3), expr_to_et($6));}
+           | ID  '[' exp ']' '[' exp ']' '='          {arr_2d_index($1, $3, $6);}
                      exp ';'                          {ass_array   ($1, expr_to_et($10), 0);}
            // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
            | ID '#'     '|' ID '|' ID BRA ';'                    {exec_Mv   ($1,$4,$6);}                       // A # |B|a>
@@ -330,9 +330,9 @@ assignment : ID  '=' exp ';'                          {ass_set($1, expr_to_et($3
 
 exp:       terminal                           {$$ = $1;}
          // arrays
-         | ID '[' exp ']'                     {$$ = expr_of_et(arr_1d2exp($1, expr_to_et($3), 0));}
-         | ID '[' exp ')'                     {$$ = expr_of_et(arr_1d2exp($1, expr_to_et($3), 1));}
-         | ID '[' exp ']' '[' exp ']'         {$$ = expr_of_et(arr_2d2exp($1, expr_to_et($3), expr_to_et($6)));}
+         | ID '[' exp ']'                     {$$ = arr_1d2exp($1, $3, 0);}
+         | ID '[' exp ')'                     {$$ = arr_1d2exp($1, $3, 1);}
+         | ID '[' exp ']' '[' exp ']'         {$$ = arr_2d2exp($1, $3, $6);}
          // std library that returns values
          | std_in                             {$$ = $1;}
          | std_fin                            {$$ = $1;}
@@ -358,9 +358,9 @@ exp:       terminal                           {$$ = $1;}
          |    '-' exp                         {$$ = oper_neg($2);}
          |    '!' exp                         {$$ = oper_lin($2);}
          |    '~' exp                         {$$ = oper_inv($2);}
-         | ID                         PPLUS   {$$ = expr_of_et(pplus2exp  ($1));}
-         | ID '[' exp ']'             PPLUS   {$$ = expr_of_et(pplus1d2exp($1, expr_to_et($3)));}
-         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = expr_of_et(pplus2d2exp($1, expr_to_et($3), expr_to_et($6)));}
+         | ID                         PPLUS   {$$ = pplus2exp  ($1);}
+         | ID '[' exp ']'             PPLUS   {$$ = pplus1d2exp($1, $3);}
+         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = pplus2d2exp($1, $3, $6);}
          // shift operators
          | exp  SHIFTL exp                    {$$ = oper_shift($1, $3, 0);}
          | exp  SHIFTR exp                    {$$ = oper_shift($1, $3, 1);}

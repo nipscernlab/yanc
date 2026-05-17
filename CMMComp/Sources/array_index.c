@@ -26,8 +26,9 @@ TODO:
 // ----------------------------------------------------------------------------
 
 // loads the array index into the accumulator (1D array)
-void arr_1d_index(int id, int et)
+void arr_1d_index(int id, expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // argument check ---------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -112,8 +113,10 @@ void arr_1d_index(int id, int et)
 }
 
 // loads the array index into the accumulator (2D array)
-void arr_2d_index(int id, int et1, int et2)
+void arr_2d_index(int id, expr e1, expr e2)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
     // ------------------------------------------------------------------------
     // argument check ---------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -708,8 +711,9 @@ void arr_2d_index(int id, int et1, int et2)
 
 // turns a 1D array into an exp
 // the fft parameter tells whether to use the reversed index
-int arr_1d2exp(int id, int et, int fft)
+expr arr_1d2exp(int id, expr e, int fft)
 {
+    int et = expr_to_et(e);
     // consistency checks -----------------------------------------------------
 
     // test whether the variable has been declared
@@ -892,12 +896,14 @@ int arr_1d2exp(int id, int et, int fft)
     acc_ok     = 1;
     v_used[id] = 1;
 
-    return v_type[id]*OFST;
+    return expr_make(v_type[id], 0);
 }
 
 // transforma array 2D em exp
-int arr_2d2exp(int id, int et1, int et2)
+expr arr_2d2exp(int id, expr e1, expr e2)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
     // consistency checks -----------------------------------------------------
 
     // test whether the variable has been declared
@@ -2323,5 +2329,5 @@ int arr_2d2exp(int id, int et1, int et2)
     acc_ok     = 1;
     v_used[id] = 1;
 
-    return v_type[id]*OFST;
+    return expr_make(v_type[id], 0);
 }

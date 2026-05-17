@@ -51,83 +51,77 @@ expr id2exp(int id)
     return expr_make(v_type[id], id);
 }
 
-// ++ reduction into exp
-int pplus2exp(int id)
+// ++ reduction into expr
+expr pplus2exp(int id)
 {
     if (v_type[id] > 2)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalent to taking x in the expression (x+1)
-    int et = expr_to_et(id2exp(id));
+    expr e = id2exp(id);
 
-    // now turn the 1 into an exp
-    // first run the lexer on 1
+    // now turn the 1 into an expr (same data type as x)
     if (find_var("1") == -1) add_var("1");
-    int lval = find_var("1");
-    // decide whether it comes from INUM or FNUM
-    int type = get_type(et);
-    // then the parser
-    int et1 = expr_to_et(num2exp(lval, type));
+    int  lval = find_var("1");
+    expr e1   = num2exp(lval, e.type);
+
     // then perform the addition
-    int ret = expr_to_et(oper_soma(expr_of_et(et), expr_of_et(et1)));
-    // finally, assign back to id
-    ass_set(id, ret);
+    expr ret = oper_soma(e, e1);
+
+    // finally, assign back to id (ass_set still consumes int et)
+    ass_set(id, expr_to_et(ret));
 
     acc_ok = 1; // cannot free acc, since it is an exp
 
     return ret;
 }
 
-// ++ reduction into exp on a 1D array
-int pplus1d2exp(int id, int ete)
+// ++ reduction into expr on a 1D array
+expr pplus1d2exp(int id, expr ete)
 {
     if (v_type[id] > 2)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalent to taking x in the expression (x+1)
-    int et = arr_1d2exp(id,ete,0);
-    // now turn the 1 into an exp
-    // first run the lexer on 1
+    expr e = arr_1d2exp(id, ete, 0);
+
+    // now turn the 1 into an expr (same data type as x)
     if (find_var("1") == -1) add_var("1");
-    int lval = find_var("1");
-    // decide whether it comes from INUM or FNUM
-    int type = get_type(et);
-    // then the parser
-    int et1 = expr_to_et(num2exp(lval, type));
+    int  lval = find_var("1");
+    expr e1   = num2exp(lval, e.type);
+
     // then perform the addition
-    int ret = expr_to_et(oper_soma(expr_of_et(et), expr_of_et(et1)));
-    // reload the array index
+    expr ret = oper_soma(e, e1);
+
+    // reload the array index and assign back to id (ass_array still int)
     arr_1d_index(id, ete);
-    // finally, assign back to id
-    ass_array(id, ret, 0);
+    ass_array  (id, expr_to_et(ret), 0);
 
     acc_ok = 1; // cannot free acc, since it is an exp
 
     return ret;
 }
 
-// ++ reduction into exp on a 2D array
-int pplus2d2exp(int id, int et1, int et2)
+// ++ reduction into expr on a 2D array
+expr pplus2d2exp(int id, expr e1, expr e2)
 {
     if (v_type[id] > 2)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalent to taking x in the expression (x+1)
-    int et = arr_2d2exp(id,et1,et2);
-    // now turn the 1 into an exp
-    // first run the lexer on 1
+    expr e = arr_2d2exp(id, e1, e2);
+
+    // now turn the 1 into an expr (same data type as x)
     if (find_var("1") == -1) add_var("1");
-    int lval = find_var("1");
-    // decide whether it comes from INUM or FNUM
-    int type = get_type(et);
-    // then the parser
-    int etx = expr_to_et(num2exp(lval, type));
+    int  lval = find_var("1");
+    expr eone = num2exp(lval, e.type);
+
     // then perform the addition
-    int ret = expr_to_et(oper_soma(expr_of_et(et), expr_of_et(etx)));
-    // reload the array index
-    arr_2d_index(id, et1, et2);
-    // finally, assign back to id
-    ass_array(id, ret, 0);
+    expr ret = oper_soma(e, eone);
+
+    // reload the array index and assign back to id (ass_array still int)
+    arr_2d_index(id, e1, e2);
+    ass_array   (id, expr_to_et(ret), 0);
 
     acc_ok = 1; // cannot free acc, since it is an exp
 
