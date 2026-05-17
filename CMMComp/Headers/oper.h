@@ -31,11 +31,11 @@ expr oper_lanor(expr e1, expr e2, int type); // x&&y, x||y
 // bitwise logical-gate operations (~ & |) ------------------------------------
 // ----------------------------------------------------------------------------
 
-expr oper_inv  (expr e);                    // ~x
-int oper_bitw (int et1, int et2, int type); // x&y, x|y, x^y
+expr oper_inv (expr e);                      // ~x
+expr oper_bitw(expr e1, expr e2, int type);  // x&y, x|y, x^y
 
 // ----------------------------------------------------------------------------
 // bit-shift operations -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int oper_shift(int et1, int et2, int type); // x>>y, x<<y, x>>>y
+expr oper_shift(expr e1, expr e2, int type); // x>>y, x<<y, x>>>y

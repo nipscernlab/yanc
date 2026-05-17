@@ -3187,8 +3187,11 @@ expr oper_inv(expr e)
 }
 
 // two-input logical gates (& | ^)
-int oper_bitw(int et1, int et2, int type)
+expr oper_bitw(expr e1, expr e2, int type)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
+
     if (get_type(et1) > 2 || get_type(et2) > 2)
     {
         fprintf(stderr, MSG_ERR_BITWISE_COMPLEX, line_num+1);
@@ -3234,15 +3237,18 @@ int oper_bitw(int et1, int et2, int type)
 
     acc_ok = 1;
 
-    return OFST; // retorna o id extendido de int
+    return expr_make(1, 0); // int in the accumulator
 }
 
 // ----------------------------------------------------------------------------
 // bit-shift operations -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int oper_shift(int et1, int et2, int type)
+expr oper_shift(expr e1, expr e2, int type)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
+
     if (get_type(et1) > 2)
         {fprintf(stderr, MSG_ERR_SHIFT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
@@ -3326,5 +3332,5 @@ int oper_shift(int et1, int et2, int type)
 
     acc_ok = 1;
 
-    return OFST; // retorna o id extendido de int
+    return expr_make(1, 0); // int in the accumulator
 }

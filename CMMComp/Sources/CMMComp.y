@@ -362,13 +362,13 @@ exp:       terminal                           {$$ = $1;}
          | ID '[' exp ']'             PPLUS   {$$ = expr_of_et(pplus1d2exp($1, expr_to_et($3)));}
          | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = expr_of_et(pplus2d2exp($1, expr_to_et($3), expr_to_et($6)));}
          // shift operators
-         | exp  SHIFTL exp                    {$$ = expr_of_et(oper_shift(expr_to_et($1), expr_to_et($3), 0));}
-         | exp  SHIFTR exp                    {$$ = expr_of_et(oper_shift(expr_to_et($1), expr_to_et($3), 1));}
-         | exp SSHIFTR exp                    {$$ = expr_of_et(oper_shift(expr_to_et($1), expr_to_et($3), 2));}
+         | exp  SHIFTL exp                    {$$ = oper_shift($1, $3, 0);}
+         | exp  SHIFTR exp                    {$$ = oper_shift($1, $3, 1);}
+         | exp SSHIFTR exp                    {$$ = oper_shift($1, $3, 2);}
          // bitwise operators
-         | exp   '&'   exp                    {$$ = expr_of_et(oper_bitw (expr_to_et($1), expr_to_et($3), 0));}
-         | exp   '|'   exp                    {$$ = expr_of_et(oper_bitw (expr_to_et($1), expr_to_et($3), 1));}
-         | exp   '^'   exp                    {$$ = expr_of_et(oper_bitw (expr_to_et($1), expr_to_et($3), 2));}
+         | exp   '&'   exp                    {$$ = oper_bitw ($1, $3, 0);}
+         | exp   '|'   exp                    {$$ = oper_bitw ($1, $3, 1);}
+         | exp   '^'   exp                    {$$ = oper_bitw ($1, $3, 2);}
          // arithmetic operators
          | exp   '%'   exp                    {$$ = oper_mod ($1, $3);}
          | exp   '+'   exp                    {$$ = oper_soma($1, $3);}
