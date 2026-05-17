@@ -22,21 +22,21 @@ TODO:
 #include "..\Headers\array_index.h"
 #include "..\Headers\messages.h"
 
-// constant reduction into exp
+// constant reduction into expr
 // does not emit a load, just updates the variable state
-int num2exp(int id, int dtype)
+expr num2exp(int id, int dtype)
 {
     v_used[id] = 1;
     v_isco[id] = 1;
     v_isar[id] = 0;
     v_type[id] = dtype;
 
-    return dtype*OFST+id;
+    return expr_make(dtype, id);
 }
 
-// ID reduction into exp
+// ID reduction into expr
 // does not emit a load yet, just checks and updates the variable state
-int id2exp(int id)
+expr id2exp(int id)
 {
     // test whether the variable has already been declared
     if (v_type[id] == 0)
@@ -48,7 +48,7 @@ int id2exp(int id)
 
     v_used[id] = 1;
 
-    return v_type[id]*OFST+id;
+    return expr_make(v_type[id], id);
 }
 
 // ++ reduction into exp
@@ -58,7 +58,7 @@ int pplus2exp(int id)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalent to taking x in the expression (x+1)
-    int et = id2exp(id);
+    int et = expr_to_et(id2exp(id));
 
     // now turn the 1 into an exp
     // first run the lexer on 1
@@ -67,7 +67,7 @@ int pplus2exp(int id)
     // decide whether it comes from INUM or FNUM
     int type = get_type(et);
     // then the parser
-    int et1 = num2exp(lval,type);
+    int et1 = expr_to_et(num2exp(lval, type));
     // then perform the addition
     int ret = oper_soma(et,et1);
     // finally, assign back to id
@@ -93,7 +93,7 @@ int pplus1d2exp(int id, int ete)
     // decide whether it comes from INUM or FNUM
     int type = get_type(et);
     // then the parser
-    int et1 = num2exp(lval,type);
+    int et1 = expr_to_et(num2exp(lval, type));
     // then perform the addition
     int ret = oper_soma(et,et1);
     // reload the array index
@@ -121,7 +121,7 @@ int pplus2d2exp(int id, int et1, int et2)
     // decide whether it comes from INUM or FNUM
     int type = get_type(et);
     // then the parser
-    int etx = num2exp(lval,type);
+    int etx = expr_to_et(num2exp(lval, type));
     // then perform the addition
     int ret = oper_soma(et,etx);
     // reload the array index

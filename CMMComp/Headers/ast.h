@@ -1,6 +1,9 @@
 // ----------------------------------------------------------------------------
 // AST nodes for statements (incremental migration from inline codegen) -------
 // ----------------------------------------------------------------------------
+
+#ifndef YANC_AST_H
+#define YANC_AST_H
 //
 // Step 1 (this file): just the data structure. Not wired into the parser
 // nor into the emit path yet. Lets us look at the shape of the tree before
@@ -97,3 +100,5 @@ void      ast_free    (ast_node *n);
 // walks a node and emits the corresponding assembly via add_instr/add_sinst
 // (incomplete: only the migrated node kinds are handled, the rest abort)
 void      ast_emit    (ast_node *n);
+
+#endif // YANC_AST_H

@@ -390,11 +390,11 @@ exp:       terminal                           {$$ = $1;}
 // terminals used in reductions for expressions -------------------------------
 
          // constants
-terminal : INUM                               {$$ = expr_of_et(num2exp($1, 1));}
-         | FNUM                               {$$ = expr_of_et(num2exp($1, 2));}
-         | CNUM                               {$$ = expr_of_et(num2exp($1, 5));}
+terminal : INUM                               {$$ = num2exp($1, 1);}
+         | FNUM                               {$$ = num2exp($1, 2);}
+         | CNUM                               {$$ = num2exp($1, 5);}
          // variables
-         | ID                                 {$$ = expr_of_et( id2exp($1));}
+         | ID                                 {$$ =  id2exp($1);}
 
 %%
 

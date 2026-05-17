@@ -271,9 +271,9 @@ void case_test(int id, int type)
     add_sinst(0, "@sw_case_%d_%d ", swit_cnt, case_cnt);
 
     // build the exp for the case value
-    int et1 = num2exp(id,type);
+    int et1 = expr_to_et(num2exp(id, type));
     // build the exp for the control variable
-    int et2 =  id2exp(find_var("switch_exp"));
+    int et2 = expr_to_et( id2exp(find_var("switch_exp")));
     // run the comparison (2 = EQU; the historic '4' was a typo that fell
     // through oper_cmp's switch and emitted an uninitialized mnemonic)
     oper_cmp(et1,et2,2);
