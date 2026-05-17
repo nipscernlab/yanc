@@ -15,13 +15,13 @@ SET main_x
 LOD main_x
 SET switch_exp
 @sw_case_1_1 LOD switch_exp
-È 1
+EQU 1
 JIZ sw_case_1_2
 LOD 10
 SET main_y
 JMP switch_end_1
 @sw_case_1_2 LOD switch_exp
-È 2
+EQU 2
 JIZ sw_case_1_3
 LOD 20
 SET main_y

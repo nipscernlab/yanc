@@ -274,8 +274,9 @@ void case_test(int id, int type)
     int et1 = num2exp(id,type);
     // build the exp for the control variable
     int et2 =  id2exp(find_var("switch_exp"));
-    // run the comparison
-    oper_cmp(et1,et2,4);
+    // run the comparison (2 = EQU; the historic '4' was a typo that fell
+    // through oper_cmp's switch and emitted an uninitialized mnemonic)
+    oper_cmp(et1,et2,2);
 
     add_instr("JIZ sw_case_%d_%d\n", swit_cnt, case_cnt+1);
     acc_ok = 0;

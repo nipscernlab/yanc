@@ -2442,12 +2442,15 @@ int oper_cmp(int et1, int et2, int type)
     char ld [10]; if (acc_ok == 0) strcpy(ld , "LOD" ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
-    char op[16];
+    char op[16] = "";  // initialize so an unhandled 'type' produces a deterministic empty mnemonic instead of stack garbage
     switch (type)
     {
         case 0: strcpy(op, "LES"); break;
         case 1: strcpy(op, "GRE"); break;
         case 2: strcpy(op, "EQU"); break;
+        default:
+            fprintf(stderr, "oper_cmp: invalid type %d at line %d\n", type, line_num+1);
+            exit(EXIT_FAILURE);
     }
 
     // int var with int var
