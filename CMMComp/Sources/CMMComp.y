@@ -376,14 +376,14 @@ exp:       terminal                           {$$ = $1;}
          | exp   '*'   exp                    {$$ = oper_mult($1, $3);}
          | exp   '/'   exp                    {$$ = oper_divi($1, $3);}
          // true/false operators
-         | exp  LAN    exp                    {$$ = expr_of_et(oper_lanor(expr_to_et($1), expr_to_et($3), 0));}
-         | exp  LOR    exp                    {$$ = expr_of_et(oper_lanor(expr_to_et($1), expr_to_et($3), 1));}
-         | exp   '<'   exp                    {$$ = expr_of_et(oper_cmp  (expr_to_et($1), expr_to_et($3), 0));}
-         | exp   '>'   exp                    {$$ = expr_of_et(oper_cmp  (expr_to_et($1), expr_to_et($3), 1));}
-         | exp  EQU    exp                    {$$ = expr_of_et(oper_cmp  (expr_to_et($1), expr_to_et($3), 2));}
-         | exp  GREQU  exp                    {$$ = expr_of_et(oper_greq (expr_to_et($1), expr_to_et($3)));}
-         | exp  LESEQ  exp                    {$$ = expr_of_et(oper_leeq (expr_to_et($1), expr_to_et($3)));}
-         | exp  DIF    exp                    {$$ = expr_of_et(oper_dife (expr_to_et($1), expr_to_et($3)));}
+         | exp  LAN    exp                    {$$ = oper_lanor($1, $3, 0);}
+         | exp  LOR    exp                    {$$ = oper_lanor($1, $3, 1);}
+         | exp   '<'   exp                    {$$ = oper_cmp  ($1, $3, 0);}
+         | exp   '>'   exp                    {$$ = oper_cmp  ($1, $3, 1);}
+         | exp  EQU    exp                    {$$ = oper_cmp  ($1, $3, 2);}
+         | exp  GREQU  exp                    {$$ = oper_greq ($1, $3);}
+         | exp  LESEQ  exp                    {$$ = oper_leeq ($1, $3);}
+         | exp  DIF    exp                    {$$ = oper_dife ($1, $3);}
          // linear algebra with exp return (Dirac notation)
          | KET ID '|' ID BRA                  {$$ = expr_of_et(exec_vtv ($2, $4));}
 

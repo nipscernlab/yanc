@@ -2449,8 +2449,11 @@ expr oper_mod(expr e1, expr e2)
 // compares greater-than, less-than and equal-to
 // - separar o igual pra economizar clock
 // - review to avoid unnecessary stack use!
-int oper_cmp(int et1, int et2, int type)
+expr oper_cmp(expr e1, expr e2, int type)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
+
     char ld [10]; if (acc_ok == 0) strcpy(ld , "LOD" ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
@@ -2504,7 +2507,7 @@ int oper_cmp(int et1, int et2, int type)
 
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
-        oper_cmp (OFST,2*OFST,type);
+        oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
     // int var with comp var
@@ -2514,7 +2517,7 @@ int oper_cmp(int et1, int et2, int type)
 
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
-        oper_cmp (OFST,2*OFST,type);
+        oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
     // int var with comp acc
@@ -2530,7 +2533,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(3*OFST);
-        oper_cmp (OFST,2*OFST,type);
+        oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
     // int acc with int var
@@ -2574,7 +2577,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
-        oper_cmp (OFST,2*OFST,type);
+        oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
     // int acc with comp var
@@ -2586,7 +2589,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
-        oper_cmp (OFST,2*OFST,type);
+        oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
     // int acc with comp acc
@@ -2603,7 +2606,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(3*OFST);
-        oper_cmp (OFST,2*OFST,type);
+        oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
     // float var with int var
@@ -2652,7 +2655,7 @@ int oper_cmp(int et1, int et2, int type)
 
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // float var with comp var
@@ -2662,7 +2665,7 @@ int oper_cmp(int et1, int et2, int type)
 
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // float var with comp acc
@@ -2678,7 +2681,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(3*OFST);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // float acc with int var
@@ -2720,7 +2723,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // float acc with comp var
@@ -2732,7 +2735,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // float acc with comp acc
@@ -2749,7 +2752,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(3*OFST);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp const with int var
@@ -2759,7 +2762,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(OFST), type);
     }
 
     // comp const with int acc
@@ -2773,7 +2776,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(OFST), type);
     }
 
     // comp const with float var
@@ -2783,7 +2786,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp const with float acc
@@ -2797,7 +2800,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp const with comp const
@@ -2807,7 +2810,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp const with comp var
@@ -2817,7 +2820,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp const with comp acc
@@ -2832,7 +2835,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp var with int var
@@ -2842,7 +2845,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(OFST), type);
     }
 
     // comp var with int acc
@@ -2856,7 +2859,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(OFST), type);
     }
 
     // comp var with float var
@@ -2866,7 +2869,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp var with float acc
@@ -2880,7 +2883,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp var with comp const
@@ -2890,7 +2893,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp var with comp var
@@ -2900,7 +2903,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp var with comp acc
@@ -2915,7 +2918,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp acc with int var
@@ -2925,7 +2928,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(OFST), type);
     }
 
     // comp acc with int acc
@@ -2938,7 +2941,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(OFST), type);
     }
 
     // comp acc with float var
@@ -2948,7 +2951,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp acc with float acc
@@ -2961,7 +2964,7 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp acc with comp const
@@ -2971,7 +2974,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     // comp acc with comp var
@@ -2981,7 +2984,7 @@ int oper_cmp(int et1, int et2, int type)
 
         exec_mod2(et1);
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
     
     // comp acc with comp acc
@@ -2995,30 +2998,30 @@ int oper_cmp(int et1, int et2, int type)
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
         exec_mod2(et2);
-        oper_cmp (2*OFST,2*OFST,type);
+        oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
     acc_ok = 1;
 
-    return OFST;
+    return expr_make(1, 0); // int boolean in the accumulator
 }
 
 // compares greater-or-equal (opposite of less-than)
-int oper_greq(int et1, int et2)
+expr oper_greq(expr e1, expr e2)
 {
-    return expr_to_et(oper_lin(expr_of_et(oper_cmp(et1, et2, 0))));
+    return oper_lin(oper_cmp(e1, e2, 0));
 }
 
 // compares less-or-equal (opposite of greater-than)
-int oper_leeq(int et1, int et2)
+expr oper_leeq(expr e1, expr e2)
 {
-    return expr_to_et(oper_lin(expr_of_et(oper_cmp(et1, et2, 1))));
+    return oper_lin(oper_cmp(e1, e2, 1));
 }
 
 // compares not-equal (opposite of equal-to)
-int oper_dife(int et1, int et2)
+expr oper_dife(expr e1, expr e2)
 {
-    return expr_to_et(oper_lin(expr_of_et(oper_cmp(et1, et2, 2))));
+    return oper_lin(oper_cmp(e1, e2, 2));
 }
 
 // ----------------------------------------------------------------------------
@@ -3101,8 +3104,11 @@ expr oper_lin(expr e)
 }
 
 // logical and/or (&& ||)
-int oper_lanor(int et1, int et2, int type)
+expr oper_lanor(expr e1, expr e2, int type)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
+
     if ((get_type(et1) > 1) || (get_type(et2) > 1))
     {
         fprintf(stderr, MSG_ERR_LOGIC_NON_INT, line_num+1);
@@ -3146,7 +3152,7 @@ int oper_lanor(int et1, int et2, int type)
 
     acc_ok = 1;
 
-    return OFST;
+    return expr_make(1, 0); // int boolean in the accumulator
 }
 
 // ----------------------------------------------------------------------------
