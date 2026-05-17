@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "..\Headers\ast.h"
+#include "..\Headers\emit.h"
 #include "..\Headers\global.h"
 #include "..\Headers\labels.h"
 #include "..\Headers\messages.h"
@@ -56,20 +57,20 @@ void ast_block_push(ast_node *blk, ast_node *kid)
     blk->kids[blk->kids_n++] = kid;
 }
 
-ast_node *ast_if(ast_node *cond, ast_node *body, ast_node *els)
+ast_node *ast_if(int label, ast_node *body, ast_node *els)
 {
     ast_node *n = node_new(AST_IF);
-    n->cond = cond;
-    n->body = body;
-    n->els  = els;
+    n->label = label;
+    n->body  = body;
+    n->els   = els;
     return n;
 }
 
-ast_node *ast_while(ast_node *cond, ast_node *body)
+ast_node *ast_while(int label, ast_node *body)
 {
     ast_node *n = node_new(AST_WHILE);
-    n->cond = cond;
-    n->body = body;
+    n->label = label;
+    n->body  = body;
     return n;
 }
 
@@ -111,12 +112,38 @@ void ast_emit(ast_node *n)
 
     switch (n->kind)
     {
+        case AST_RAW:
+            // already-counted text: replay without re-doing f_lin / num_ins
+            emit_raw(n->text);
+            break;
+
+        case AST_BLOCK:
+            for (int i = 0; i < n->kids_n; i++) ast_emit(n->kids[i]);
+            break;
+
+        case AST_IF:
+            ast_emit(n->body); // replay then
+            if (n->els)
+            {
+                add_instr("JMP Lif%dend\n",  n->label);
+                add_sinst(0, "@Lif%delse ",  n->label);
+                ast_emit(n->els);
+                add_sinst(0, "@Lif%dend ",   n->label);
+            }
+            else
+            {
+                add_sinst(0, "@Lif%delse ",  n->label);
+            }
+            break;
+
+        case AST_WHILE:
+            ast_emit(n->body); // replay body
+            add_instr("JMP Lwh%d\n",     n->label);
+            add_sinst(0, "@Lwh%dend ",   n->label);
+            break;
+
         case AST_BREAK:
             add_instr("JMP Lwh%dend\n", get_while());
             break;
-
-        default:
-            fprintf(stderr, "ast_emit: node kind %d not implemented yet\n", n->kind);
-            exit(EXIT_FAILURE);
     }
 }

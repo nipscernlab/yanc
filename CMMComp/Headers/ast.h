@@ -21,6 +21,7 @@ typedef enum {
 typedef struct ast_node {
     ast_kind kind;
     int      line;            // source line where the node was built (1-based)
+    int      label;           // AST_IF / AST_WHILE: label number from push_if/push_while
 
     // AST_RAW ----------------------------------------------------------------
     char    *text;            // heap-owned, NUL-terminated assembly chunk
@@ -31,16 +32,21 @@ typedef struct ast_node {
     int      kids_cap;
 
     // AST_IF / AST_WHILE -----------------------------------------------------
-    struct ast_node *cond;    // chunk that loads the condition into the accumulator
+    // cond is currently always NULL: the condition is emitted inline before
+    // body capture starts, so it does not need its own node yet. Kept in the
+    // struct so a future pass that captures the cond as well has a slot.
+    struct ast_node *cond;
     struct ast_node *body;    // then-branch / while-body
     struct ast_node *els;     // else-branch (AST_IF only, NULL if absent)
 } ast_node;
 
-// constructors (all return a heap node owned by the caller)
+// constructors (all return a heap node owned by the caller).
+// For AST_IF / AST_WHILE: label is the number returned by push_if / push_while
+// at parse time, used by the emit walker to spell out @Lif%d / @Lwh%d markers.
 ast_node *ast_raw     (const char *text);
 ast_node *ast_block   (void);
-ast_node *ast_if      (ast_node *cond, ast_node *body, ast_node *els);
-ast_node *ast_while   (ast_node *cond, ast_node *body);
+ast_node *ast_if      (int label, ast_node *body, ast_node *els);
+ast_node *ast_while   (int label, ast_node *body);
 ast_node *ast_break   (void);
 
 // appends kid to a BLOCK node (takes ownership of kid)

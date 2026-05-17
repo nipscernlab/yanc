@@ -10,6 +10,7 @@ TODO:
 #include <stdlib.h>
 
 #include "..\Headers\ast.h"
+#include "..\Headers\emit.h"
 #include "..\Headers\t2t.h"
 #include "..\Headers\oper.h"
 #include "..\Headers\labels.h"
@@ -22,6 +23,44 @@ TODO:
 int switching = 0;
 int case_cnt  = 0;
 int swit_cnt  = 0;
+
+// ----------------------------------------------------------------------------
+// parked then-body stack -----------------------------------------------------
+// ----------------------------------------------------------------------------
+// During an if/else parse, the then-body captures finish (at the ELSE token)
+// before we know what the else-body looks like. We park the then-body's AST
+// node here until if_fim runs and can build the full AST_IF. The stack matches
+// bison's depth-first reduction for nested if/else.
+
+static ast_node **then_park     = NULL;
+static int        then_park_n   = 0;
+static int        then_park_cap = 0;
+
+static void park_then(ast_node *n)
+{
+    if (then_park_n + 1 > then_park_cap)
+    {
+        int new_cap = then_park_cap ? then_park_cap * 2 : 16;
+        ast_node **t = realloc(then_park, (size_t)new_cap * sizeof(*t));
+        if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        then_park     = t;
+        then_park_cap = new_cap;
+    }
+    then_park[then_park_n++] = n;
+}
+
+static ast_node *unpark_then(void)
+{
+    return then_park[--then_park_n];
+}
+
+// helper: build an AST_RAW node from a captured body, freeing the source text
+static ast_node *body_to_node(char *captured)
+{
+    ast_node *n = ast_raw(captured);   // ast_raw copies the text
+    free(captured);
+    return n;
+}
 
 // ----------------------------------------------------------------------------
 // if/else --------------------------------------------------------------------
@@ -88,37 +127,52 @@ void if_exp(int et)
     int n = push_if();
     add_instr("JIZ Lif%delse\n", n); // 0 -> if
     acc_ok = 0;
+
+    // start capturing the then-body; the captured text is wrapped into an
+    // AST_RAW leaf when the if/else reduction fires
+    emit_push_capture();
 }
 
-// creates the label at the end of an if-without-else
+// builds the AST for an if-without-else and emits it
 void if_stmt()
 {
-    int n = pop_if();
-    add_sinst(0, "@Lif%delse ", n);
+    ast_node *body  = body_to_node(emit_pop_capture());
+    int       label = pop_if();
+    ast_node *node  = ast_if(label, body, NULL);
+    ast_emit(node);
+    ast_free(node);
 }
 
-// before the else statements
+// between the then and the else: park the captured then, start capturing else
 void else_stmt()
 {
-    add_instr("JMP Lif%dend\n@Lif%delse ", get_if(), get_if());
+    park_then(body_to_node(emit_pop_capture()));
+    emit_push_capture();
 }
 
-// creates the label at the end of an if/else
+// builds the AST for a full if/else and emits it
 void if_fim()
 {
-    int n = pop_if();
-    add_sinst(0, "@Lif%dend ", n);
+    ast_node *els   = body_to_node(emit_pop_capture());
+    ast_node *body  = unpark_then();
+    int       label = pop_if();
+    ast_node *node  = ast_if(label, body, els);
+    ast_emit(node);
+    ast_free(node);
 }
 
 // ----------------------------------------------------------------------------
 // while ----------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// end of while. Emits a JMP back to the start and a label for the end right below
+// end of while: build the AST and emit it
 void while_stmt()
 {
-    int n = pop_while();
-    add_instr("JMP Lwh%d\n@Lwh%dend ",n,n);
+    ast_node *body  = body_to_node(emit_pop_capture());
+    int       label = pop_while();
+    ast_node *node  = ast_while(label, body);
+    ast_emit(node);
+    ast_free(node);
 }
 
 // emits a JMP to the end of the while
@@ -201,6 +255,9 @@ void while_expexp(int et)
 
     add_instr("JIZ Lwh%dend\n", get_while());
     acc_ok = 0;
+
+    // start capturing the while body
+    emit_push_capture();
 }
 
 // ----------------------------------------------------------------------------

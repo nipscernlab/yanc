@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "..\Headers\emit.h"
+#include "..\Headers\global.h"
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
@@ -89,4 +90,11 @@ void emit_append(const char *s)
     }
     memcpy(c->buf + c->len, s, (size_t)len + 1);
     c->len += len;
+}
+
+void emit_raw(const char *s)
+{
+    if (!s) return;
+    if (stk_n > 0) emit_append(s);
+    else           fprintf(f_asm, "%s", s);
 }

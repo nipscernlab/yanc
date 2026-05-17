@@ -30,3 +30,9 @@ char *emit_pop_capture (void);
 // used internally by add_instr/add_sinst once they are routed through here
 int   emit_is_capturing(void);
 void  emit_append      (const char *s);
+
+// writes raw text to the current sink (top capture buffer, or f_asm when
+// none) without doing the f_lin / num_ins bookkeeping. Used to *replay* a
+// previously captured body whose instructions were already counted when
+// they were first emitted via add_instr during body parsing.
+void  emit_raw         (const char *s);
