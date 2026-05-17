@@ -19,6 +19,36 @@ typedef enum {
     AST_SWITCH   // switch (cond) { cases }
 } ast_kind;
 
+// ----------------------------------------------------------------------------
+// expressions ----------------------------------------------------------------
+// ----------------------------------------------------------------------------
+//
+// Replaces the historic "int et" carrier that packed (type, id) via
+//     et = type * OFST + id
+// Now an expression value is just a tiny POD struct, passed by value through
+// the bison value stack. Helpers expr_to_et / expr_of_et bridge to the legacy
+// int representation so we can migrate consumers one by one without breaking
+// the codegen in oper.c / data_assign.c / saltos.c / funcoes.c / etc.
+//
+// type encoding (matches the old OFST scheme):
+//   0 = undefined / void
+//   1 = int
+//   2 = float
+//   3 = comp (real half / variable)
+//   4 = comp (imag half)
+//   5 = comp constant (e.g. 3+7.5i)
+//
+// id is the index into v_name; id == 0 means "the result lives in the
+// accumulator, not in a variable".
+typedef struct {
+    int type;
+    int id;
+} expr;
+
+expr expr_make (int type, int id);
+int  expr_to_et(expr e);   // pack to the legacy int et
+expr expr_of_et(int et);   // unpack from a legacy int et
+
 typedef struct ast_node {
     ast_kind kind;
     int      line;            // source line where the node was built (1-based)

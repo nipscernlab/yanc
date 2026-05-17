@@ -72,7 +72,16 @@ void  yyerror(char const *s);
 
 %}
 
-%union {int ival;} // value associated with a token
+// Bison emits the YYSTYPE union into y.tab.h as well, so types referenced
+// by %union must be declared before y.tab.h is included by the lexer.
+%code requires {
+    #include "..\Headers\ast.h"
+}
+
+%union {
+    int  ival;     // legacy: variable id, type code, packed et, INUM literal, etc.
+    expr eval;     // expression value carried by exp / terminal reductions
+}
 
 // tokens with no assignment --------------------------------------------------
 
