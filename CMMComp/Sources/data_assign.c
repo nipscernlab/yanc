@@ -22,8 +22,9 @@ TODO:
 #include "..\Headers\messages.h"
 
 // standard assignment, e.g. x = y;
-void ass_set(int id, int et)
+void ass_set(int id, expr e)
 {
+    int et = expr_to_et(e);
     // test whether it has been declared so an assignment is allowed
     if (v_type[id] == 0)
     {
@@ -271,8 +272,9 @@ void ass_set(int id, int et)
 }
 
 // array assignment, e.g. x[i] = y;
-void ass_array(int id, int et, int fft)
+void ass_array(int id, expr e, int fft)
 {
+    int et = expr_to_et(e);
     // test whether it has been declared so an assignment is allowed
     if (v_type[id] == 0)
     {
@@ -554,15 +556,15 @@ void ass_pplus(int id)
 }
 
 // ++ operator assignment on a 1D array
-void ass_aplus(int id, int et)
+void ass_aplus(int id, expr e)
 {
-    pplus1d2exp(id, expr_of_et(et));
+    pplus1d2exp(id, e);
     acc_ok = 0; // acc released
 }
 
 // ++ operator assignment on a 2D array
-void ass_apl2d(int id, int et1, int et2)
+void ass_apl2d(int id, expr e1, expr e2)
 {
-    pplus2d2exp(id, expr_of_et(et1), expr_of_et(et2));
+    pplus2d2exp(id, e1, e2);
     acc_ok = 0; // acc released
 }

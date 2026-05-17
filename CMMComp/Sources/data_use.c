@@ -69,7 +69,7 @@ expr pplus2exp(int id)
     expr ret = oper_soma(e, e1);
 
     // finally, assign back to id (ass_set still consumes int et)
-    ass_set(id, expr_to_et(ret));
+    ass_set(id, ret);
 
     acc_ok = 1; // cannot free acc, since it is an exp
 
@@ -95,7 +95,7 @@ expr pplus1d2exp(int id, expr ete)
 
     // reload the array index and assign back to id (ass_array still int)
     arr_1d_index(id, ete);
-    ass_array  (id, expr_to_et(ret), 0);
+    ass_array  (id, ret, 0);
 
     acc_ok = 1; // cannot free acc, since it is an exp
 
@@ -121,7 +121,7 @@ expr pplus2d2exp(int id, expr e1, expr e2)
 
     // reload the array index and assign back to id (ass_array still int)
     arr_2d_index(id, e1, e2);
-    ass_array   (id, expr_to_et(ret), 0);
+    ass_array   (id, ret, 0);
 
     acc_ok = 1; // cannot free acc, since it is an exp
 

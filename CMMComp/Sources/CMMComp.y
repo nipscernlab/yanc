@@ -125,10 +125,10 @@ void  yyerror(char const *s);
 // par_list still carries an int (the parameter id from declar_par)
 %type <ival> par_list
 
-// every reduction that historically returned an "et" now produces an expr.
-// Inside actions, expr_to_et / expr_of_et bridge to consumers that still
-// take/return the legacy int et. The bridges go away as those consumers
-// are migrated to take expr by value.
+// every reduction that historically returned an "et" now produces an expr,
+// and every consumer that historically took an "et" now takes an expr by
+// value. Actions read directly with $$ / $N - the codegen surface no
+// longer trafficks in packed int et at all.
 %type <eval> func_call
 %type <eval> std_in std_fin
 %type <eval> std_pst std_abs std_sign std_nrm
@@ -170,13 +170,13 @@ dire_inter : ITRADD             {dire_inter();}      // interrupt start point (u
          // list declaration (one or more uninitialized variables)
 declar : TYPE id_list                               ';'
          // declaration of a variable with initialization
-       | TYPE ID '=' exp ';'          {declar_var($2); ass_set($2, expr_to_et($4));}
+       | TYPE ID '=' exp ';'          {declar_var($2); ass_set($2, $4);}
          // array declaration with file initialization
        | TYPE ID '[' INUM ']'              STRING   ';' {declar_arr_1d($2,$4,$6    );}
        | TYPE ID '[' INUM ']' '[' INUM ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
          // array declaration with Dirac-notation initialization (on demand)
        | TYPE ID '[' INUM ']' '#' '|' ID '|' ID BRA ';' {declar_Mv    ($2,$4,$8,$10);}
-       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2,$4, expr_to_et($7), $9);}
+       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2, $4, $7, $9);}
 
 id_list : IID | id_list ',' IID
 
@@ -300,20 +300,20 @@ break      : BREAK ';'                     {exec_break  (  );}
 // assignments ----------------------------------------------------------------
 
            // standard assignment
-assignment : ID  '=' exp ';'                          {ass_set($1, expr_to_et($3));}
+assignment : ID  '=' exp ';'                          {ass_set($1, $3);}
            // increment
            | ID                          PPLUS ';'    {ass_pplus($1);}
-           | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1, expr_to_et($3));}
-           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {ass_apl2d($1, expr_to_et($3), expr_to_et($6));}
+           | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1, $3);}
+           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {ass_apl2d($1, $3, $6);}
            // regular array
            | ID  '[' exp ']'  '='                     {arr_1d_index($1, $3);}
-                     exp ';'                          {ass_array ($1, expr_to_et($7), 0);}
+                     exp ';'                          {ass_array ($1, $7, 0);}
            // reversed array
            | ID  '[' exp ')'  '='                     {arr_1d_index($1, $3);}
-                     exp ';'                          {ass_array ($1, expr_to_et($7), 1);}
+                     exp ';'                          {ass_array ($1, $7, 1);}
            // 2D array (to be completed)
            | ID  '[' exp ']' '[' exp ']' '='          {arr_2d_index($1, $3, $6);}
-                     exp ';'                          {ass_array   ($1, expr_to_et($10), 0);}
+                     exp ';'                          {ass_array   ($1, $10, 0);}
            // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
            | ID '#'     '|' ID '|' ID BRA ';'                    {exec_Mv   ($1,$4,$6);}                       // A # |B|a>
            | ID '#' exp '|' ID BRA ';'                           {exec_cv   ($1, $3, $5);}                     // a # c|b>
