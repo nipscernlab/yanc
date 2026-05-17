@@ -9,6 +9,7 @@
 
 // local includes
 #include "..\Headers\t2t.h"
+#include "..\Headers\emit.h"
 #include "..\Headers\macros.h"
 #include "..\Headers\global.h"
 #include "..\Headers\diretivas.h"
@@ -185,8 +186,16 @@ void add_instr(char *inst, ...)
     // ------------------------------------------------------------------------
     // append the instruction -------------------------------------------------
     // ------------------------------------------------------------------------
+    // emit_is_capturing() is true when a parent construct (e.g. an if body)
+    // is buffering its contents to be wrapped into an ast_node later.
+    // In that case the asm text goes into the capture buffer, not f_asm.
+    // f_lin / num_ins bookkeeping stays immediate either way.
 
-    if (mac_using == 0) fprintf(f_asm, "%s", str);
+    if (mac_using == 0)
+    {
+        if (emit_is_capturing()) emit_append(str);
+        else                     fprintf(f_asm, "%s", str);
+    }
 
     // table for the gtkwave assembly translator ------------------------------
 
@@ -209,12 +218,20 @@ void add_instr(char *inst, ...)
 // type = -3 -> END
 void add_sinst(int type, char *inst, ...)
 {
-    // append the instruction -------------------------------------------------
-
     va_list  args;
     va_start(args , inst);
-    if (mac_using == 0) vfprintf(f_asm, inst, args);
+
+    char     str[256];
+    vsprintf(str, inst, args);
     va_end  (args);
+
+    // append the instruction (capture buffer or f_asm, see add_instr) --------
+
+    if (mac_using == 0)
+    {
+        if (emit_is_capturing()) emit_append(str);
+        else                     fprintf(f_asm, "%s", str);
+    }
 
     // table for the gtkwave assembly translator ------------------------------
 
