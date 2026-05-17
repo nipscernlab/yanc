@@ -12,72 +12,78 @@
 // local variables ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int  stk_ind  = 0;
-int  lab_cnt  = 0;
-static int  stk_cap  = 0;          // capacity of lab_stk / lab_typ
-static int *lab_stk  = NULL;
-static int *lab_typ  = NULL;       // 0 for if/else and 1 for while
+static int  if_cnt    = 0;          // label counter for the if    stack
+static int  if_ind    = 0;          // top index   of the if    stack
+static int  if_cap    = 0;          // capacity    of the if    stack
+static int *if_stk    = NULL;
+
+static int  wh_cnt    = 0;          // label counter for the while stack
+static int  wh_ind    = 0;          // top index   of the while stack
+static int  wh_cap    = 0;          // capacity    of the while stack
+static int *wh_stk    = NULL;
 
 // ----------------------------------------------------------------------------
 // helpers --------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-static void stk_grow(int needed)
+static void stk_grow(int **stk, int *cap, int needed)
 {
-    if (needed <= stk_cap) return;
-    int new_cap = stk_cap ? stk_cap : 64;
+    if (needed <= *cap) return;
+    int new_cap = *cap ? *cap : 64;
     while (new_cap < needed) new_cap *= 2;
 
-    int *t1 = realloc(lab_stk, (size_t)new_cap * sizeof(*lab_stk));
-    int *t2 = realloc(lab_typ, (size_t)new_cap * sizeof(*lab_typ));
-    if (!t1 || !t2) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    int *t = realloc(*stk, (size_t)new_cap * sizeof(**stk));
+    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
 
-    lab_stk = t1;
-    lab_typ = t2;
-    memset(lab_stk + stk_cap, 0, (size_t)(new_cap - stk_cap) * sizeof(*lab_stk));
-    memset(lab_typ + stk_cap, 0, (size_t)(new_cap - stk_cap) * sizeof(*lab_typ));
-    stk_cap = new_cap;
+    *stk = t;
+    memset(*stk + *cap, 0, (size_t)(new_cap - *cap) * sizeof(**stk));
+    *cap = new_cap;
 }
 
 // ----------------------------------------------------------------------------
-// interface functions --------------------------------------------------------
+// if/else stack --------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int push_lab(int typ)
+int push_if()
 {
-    lab_cnt++;
-
-    stk_grow(stk_ind + 1);
-
-    lab_stk[stk_ind] = lab_cnt;
-    lab_typ[stk_ind] = typ;
-    stk_ind++;
-    return lab_cnt;
+    if_cnt++;
+    stk_grow(&if_stk, &if_cap, if_ind + 1);
+    if_stk[if_ind++] = if_cnt;
+    return if_cnt;
 }
 
-int pop_lab()
+int pop_if()
 {
-    stk_ind--;
-    return lab_stk[stk_ind];
+    return if_stk[--if_ind];
 }
 
-int get_lab()
-{
-    return lab_stk[stk_ind-1];
-}
-
-// returns the index of the most recent while on the stack (or 0 if none)
-int get_while()
-{
-    int i = stk_ind-1;
-    while ((lab_typ[i] != 1) && (i >= 0)) i--;
-    return i+1;
-}
-
-// returns the index of the most recent if/else on the stack (or 0 if none)
+// returns the top of the if stack (or 0 if empty)
 int get_if()
 {
-    int i = stk_ind-1;
-    while ((lab_typ[i] != 0) && (i >= 0)) i--;
-    return i+1;
+    if (if_ind == 0) return 0;
+    return if_stk[if_ind-1];
+}
+
+// ----------------------------------------------------------------------------
+// while stack ----------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+int push_while()
+{
+    wh_cnt++;
+    stk_grow(&wh_stk, &wh_cap, wh_ind + 1);
+    wh_stk[wh_ind++] = wh_cnt;
+    return wh_cnt;
+}
+
+int pop_while()
+{
+    return wh_stk[--wh_ind];
+}
+
+// returns the top of the while stack (or 0 if empty)
+int get_while()
+{
+    if (wh_ind == 0) return 0;
+    return wh_stk[wh_ind-1];
 }

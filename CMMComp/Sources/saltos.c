@@ -84,29 +84,29 @@ void if_exp(int et)
         add_instr("F2I\n");
     }
 
-    int n = push_lab(0);
-    add_instr("JIZ L%delse\n", n); // 0 -> if
+    int n = push_if();
+    add_instr("JIZ Lif%delse\n", n); // 0 -> if
     acc_ok = 0;
 }
 
 // creates the label at the end of an if-without-else
 void if_stmt()
 {
-    int n = pop_lab();
-    add_sinst(0, "@L%delse ", n);
+    int n = pop_if();
+    add_sinst(0, "@Lif%delse ", n);
 }
 
 // before the else statements
 void else_stmt()
 {
-    add_instr("JMP L%dend\n@L%delse ", get_lab(), get_lab());
+    add_instr("JMP Lif%dend\n@Lif%delse ", get_if(), get_if());
 }
 
 // creates the label at the end of an if/else
 void if_fim()
 {
-    int n = pop_lab();
-    add_sinst(0, "@L%dend ", n);
+    int n = pop_if();
+    add_sinst(0, "@Lif%dend ", n);
 }
 
 // ----------------------------------------------------------------------------
@@ -116,8 +116,8 @@ void if_fim()
 // end of while. Emits a JMP back to the start and a label for the end right below
 void while_stmt()
 {
-    int n = pop_lab();
-    add_instr("JMP L%d\n@L%dend ",n,n);
+    int n = pop_while();
+    add_instr("JMP Lwh%d\n@Lwh%dend ",n,n);
 }
 
 // emits a JMP to the end of the while
@@ -126,14 +126,14 @@ void exec_break()
     // check whether the break is inside a while
     if (get_while() == 0) {fprintf(stderr, MSG_ERR_BREAK_LOST, line_num+1); exit(EXIT_FAILURE);}
 
-    add_instr("JMP L%dend\n", get_while());
+    add_instr("JMP Lwh%dend\n", get_while());
 }
 
 // the while keyword alone - emits a label here
 void while_expp()
 {
-    int n = push_lab(1);
-    add_sinst(0, "@L%d ", n);
+    int n = push_while();
+    add_sinst(0, "@Lwh%d ", n);
 }
 
 // evaluates exp and emits a JIZ to decide whether to enter or not
@@ -195,7 +195,7 @@ void while_expexp(int et)
         add_instr("F2I\n");
     }
 
-    add_instr("JIZ L%dend\n", get_lab());
+    add_instr("JIZ Lwh%dend\n", get_while());
     acc_ok = 0;
 }
 
