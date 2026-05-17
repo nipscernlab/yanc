@@ -242,6 +242,6 @@ void declar_Mv(int id_name, int id_N, int id_M, int id_v)
 // declares a 1D array as a constant-vector product, e.g. float a[4] # c|a>;
 void declar_cv(int id_name, int id_N, int id_c, int id_v)
 {
-    declar_arr_1d(id_name,id_N,  -1);
-    exec_cv      (id_name,id_c,id_v);
+    declar_arr_1d(id_name, id_N, -1);
+    exec_cv      (id_name, expr_of_et(id_c), id_v);
 }

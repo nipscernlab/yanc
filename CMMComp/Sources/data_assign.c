@@ -556,13 +556,13 @@ void ass_pplus(int id)
 // ++ operator assignment on a 1D array
 void ass_aplus(int id, int et)
 {
-    pplus1d2exp(id,et);
+    pplus1d2exp(id, expr_of_et(et));
     acc_ok = 0; // acc released
 }
 
 // ++ operator assignment on a 2D array
 void ass_apl2d(int id, int et1, int et2)
 {
-    pplus2d2exp(id,et1,et2);
+    pplus2d2exp(id, expr_of_et(et1), expr_of_et(et2));
     acc_ok = 0; // acc released
 }

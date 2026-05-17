@@ -248,25 +248,25 @@ exp_list :                                                                  // m
 
 // Standard library -----------------------------------------------------------
 
-std_out  : OUT  '(' INUM ',' exp ')' ';'            {exec_out ($3, expr_to_et($5));}                     // data output
-std_fout : FOUT '(' INUM ',' exp ')' ';'            {exec_fout($3, expr_to_et($5));}                     // data output (converting to float)
-std_in   : INN  '(' INUM ')'                   {$$ = expr_of_et(exec_in  ($3));}                         // data input
-std_fin  : FIN  '(' INUM ')'                   {$$ = expr_of_et(exec_fin ($3));}                         // data input (converting to float)
-std_pst  : PST  '(' exp  ')'                   {$$ = expr_of_et(exec_pst (expr_to_et($3)));}             // function pset(x)      -> clears if negative
-std_abs  : ABS  '(' exp  ')'                   {$$ = expr_of_et(exec_abs (expr_to_et($3)));}             // function  abs(x)      -> absolute value of x
-std_sign : SGN  '(' exp  ',' exp ')'           {$$ = expr_of_et(exec_sign(expr_to_et($3), expr_to_et($5)));}  // function sign(x,y)    -> takes the sign of x and applies to y
-std_nrm  : NRM  '(' exp  ')'                   {$$ = expr_of_et(exec_norm(expr_to_et($3)));}             // function norm(x)      -> divides x by the NUGAIN constant
-std_copy : COPY '(' exp  ',' ID  ')' ';'       {     exec_copy(expr_to_et($3), $5);}                     // function copy(x,y)    -> copies the value of x into y (no type checking)
-std_sqrt : SQRT '(' exp  ')'                   {$$ = expr_of_et(exec_sqrt(expr_to_et($3)));}             // function sqrt(x)      -> square root
-std_atan : ATAN '(' exp  ')'                   {$$ = expr_of_et(exec_atan(expr_to_et($3)));}             // function atan(x)      -> arctangent
-std_sin  : SIN  '(' exp  ')'                   {$$ = expr_of_et(exec_sin (expr_to_et($3)));}             // function  sin(x)      -> sine    of x
-std_cos  : COS  '(' exp  ')'                   {$$ = expr_of_et(exec_cos (expr_to_et($3)));}             // function  cos(x)      -> cosine  of x
-std_real : REAL '(' exp  ')'                   {$$ = expr_of_et(exec_real(expr_to_et($3)));}             // function real(x)      -> returns the real part of a comp
-std_imag : IMAG '(' exp  ')'                   {$$ = expr_of_et(exec_imag(expr_to_et($3)));}             // function imag(x)      -> returns the imag part of a comp
-std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_of_et(exec_comp(expr_to_et($3), expr_to_et($5)));}  // function complex(x,y) -> creates a comp from 2 reals
-std_fase : FASE '(' exp  ')'                   {$$ = expr_of_et(exec_fase(expr_to_et($3)));}             // function fase(x)      -> returns the phase of a comp
-std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_of_et(exec_mod2(expr_to_et($3)));}             // function mod2(x)      -> returns the squared magnitude of a comp
-std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {exec_vout($3, expr_to_et($5), $7);}                 // data output with Dirac notation
+std_out  : OUT  '(' INUM ',' exp ')' ';'            {exec_out ($3, $5);}            // data output
+std_fout : FOUT '(' INUM ',' exp ')' ';'            {exec_fout($3, $5);}            // data output (converting to float)
+std_in   : INN  '(' INUM ')'                   {$$ = exec_in  ($3);}                // data input
+std_fin  : FIN  '(' INUM ')'                   {$$ = exec_fin ($3);}                // data input (converting to float)
+std_pst  : PST  '(' exp  ')'                   {$$ = exec_pst ($3);}                // function pset(x)      -> clears if negative
+std_abs  : ABS  '(' exp  ')'                   {$$ = exec_abs ($3);}                // function  abs(x)      -> absolute value of x
+std_sign : SGN  '(' exp  ',' exp ')'           {$$ = exec_sign($3, $5);}            // function sign(x,y)    -> takes the sign of x and applies to y
+std_nrm  : NRM  '(' exp  ')'                   {$$ = exec_norm($3);}                // function norm(x)      -> divides x by the NUGAIN constant
+std_copy : COPY '(' exp  ',' ID  ')' ';'       {     exec_copy($3, $5);}            // function copy(x,y)    -> copies the value of x into y (no type checking)
+std_sqrt : SQRT '(' exp  ')'                   {$$ = exec_sqrt($3);}                // function sqrt(x)      -> square root
+std_atan : ATAN '(' exp  ')'                   {$$ = exec_atan($3);}                // function atan(x)      -> arctangent
+std_sin  : SIN  '(' exp  ')'                   {$$ = exec_sin ($3);}                // function  sin(x)      -> sine    of x
+std_cos  : COS  '(' exp  ')'                   {$$ = exec_cos ($3);}                // function  cos(x)      -> cosine  of x
+std_real : REAL '(' exp  ')'                   {$$ = exec_real($3);}                // function real(x)      -> returns the real part of a comp
+std_imag : IMAG '(' exp  ')'                   {$$ = exec_imag($3);}                // function imag(x)      -> returns the imag part of a comp
+std_comp : COMP '(' exp  ',' exp ')'           {$$ = exec_comp($3, $5);}            // function complex(x,y) -> creates a comp from 2 reals
+std_fase : FASE '(' exp  ')'                   {$$ = exec_fase($3);}                // function fase(x)      -> returns the phase of a comp
+std_mod2 : MOD2 '(' exp  ')'                   {$$ = exec_mod2($3);}                // function mod2(x)      -> returns the squared magnitude of a comp
+std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {exec_vout($3, $5, $7);}        // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
 
@@ -316,15 +316,15 @@ assignment : ID  '=' exp ';'                          {ass_set($1, expr_to_et($3
                      exp ';'                          {ass_array   ($1, expr_to_et($10), 0);}
            // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
            | ID '#'     '|' ID '|' ID BRA ';'                    {exec_Mv   ($1,$4,$6);}                       // A # |B|a>
-           | ID '#' exp '|' ID BRA ';'                           {exec_cv   ($1, expr_to_et($3), $5);}         // a # c|b>
-           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {exec_apcb ($1, $4, expr_to_et($7), $9);}     // a # |b> + c|d>
-           | ID '#'     '|' ID BRA KET  ID '|' ';'               {exec_vvt  ($1,$4,$7);}                       // A # |a><b|
-           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {exec_Mmvvt($1,$4,$8,$11);}                   // A # B - |a><b|
-           | ID '#' exp '|' ID '|' ';'                           {exec_cM   ($1, expr_to_et($3), $5);}         // A # c|B|
-           | ID '#' exp     EYE ';'                              {exec_cI   ($1, expr_to_et($3));}             // A # c|I|
+           | ID '#' exp '|' ID BRA ';'                           {exec_cv   ($1, $3, $5);}                     // a # c|b>
+           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {exec_apcb ($1, $4, $7, $9);}                 // a # |b> + c|d>
+           | ID '#'     '|' ID BRA KET  ID '|' ';'               {exec_vvt  ($1, $4, $7);}                     // A # |a><b|
+           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {exec_Mmvvt($1, $4, $8, $11);}                // A # B - |a><b|
+           | ID '#' exp '|' ID '|' ';'                           {exec_cM   ($1, $3, $5);}                     // A # c|B|
+           | ID '#' exp     EYE ';'                              {exec_cI   ($1, $3);}                         // A # c|I|
            | ID '#'         VZERO ';'                            {exec_v0   ($1);}                             // a # |0>
-           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {exec_cvin ($1, expr_to_et($3), $7);}         // a # |in(0)>
-           | ID '#' exp '-' '>' '|' ID BRA ';'                   {exec_shift($1, expr_to_et($3), $7);}         // a # c -> |a>
+           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {exec_cvin ($1, $3, $7);}                     // a # |in(0)>
+           | ID '#' exp '-' '>' '|' ID BRA ';'                   {exec_shift($1, $3, $7);}                     // a # c -> |a>
 
 // expressions ----------------------------------------------------------------
 
@@ -385,7 +385,7 @@ exp:       terminal                           {$$ = $1;}
          | exp  LESEQ  exp                    {$$ = oper_leeq ($1, $3);}
          | exp  DIF    exp                    {$$ = oper_dife ($1, $3);}
          // linear algebra with exp return (Dirac notation)
-         | KET ID '|' ID BRA                  {$$ = expr_of_et(exec_vtv ($2, $4));}
+         | KET ID '|' ID BRA                  {$$ = exec_vtv($2, $4);}
 
 // terminals used in reductions for expressions -------------------------------
 

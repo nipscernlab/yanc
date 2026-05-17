@@ -2506,7 +2506,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         oper_mult(expr_of_et(et1), expr_of_et(et1));
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2516,7 +2516,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
         oper_mult(expr_of_et(et1), expr_of_et(et1));
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2532,7 +2532,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        exec_mod2(3*OFST);
+        exec_mod2(expr_of_et(3*OFST));
         oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2576,7 +2576,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et1), expr_of_et(et1));
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2588,7 +2588,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et1), expr_of_et(et1));
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2605,7 +2605,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        exec_mod2(3*OFST);
+        exec_mod2(expr_of_et(3*OFST));
         oper_cmp(expr_of_et(OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2654,7 +2654,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         oper_mult(expr_of_et(et1), expr_of_et(et1));
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2664,7 +2664,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
         oper_mult(expr_of_et(et1), expr_of_et(et1));
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2680,7 +2680,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        exec_mod2(3*OFST);
+        exec_mod2(expr_of_et(3*OFST));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2722,7 +2722,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et1), expr_of_et(et1));
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2734,7 +2734,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("SET   aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et1), expr_of_et(et1));
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2751,7 +2751,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         oper_mult(expr_of_et(et1), expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        exec_mod2(3*OFST);
+        exec_mod2(expr_of_et(3*OFST));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2760,7 +2760,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(OFST), type);
     }
@@ -2772,7 +2772,7 @@ expr oper_cmp(expr e1, expr e2, int type)
 
         add_instr("SET   aux_var\n");
         acc_ok = 0;
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
@@ -2784,7 +2784,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
@@ -2796,7 +2796,7 @@ expr oper_cmp(expr e1, expr e2, int type)
 
         add_instr("SET   aux_var\n");
         acc_ok = 0;
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
@@ -2808,8 +2808,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        exec_mod2(et1);
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et1));
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2818,8 +2818,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        exec_mod2(et1);
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et1));
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2831,10 +2831,10 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
         acc_ok = 0;
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2843,7 +2843,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(OFST), type);
     }
@@ -2855,7 +2855,7 @@ expr oper_cmp(expr e1, expr e2, int type)
 
         add_instr("SET   aux_var\n");
         acc_ok = 0;
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
@@ -2867,7 +2867,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
@@ -2879,7 +2879,7 @@ expr oper_cmp(expr e1, expr e2, int type)
 
         add_instr("SET   aux_var\n");
         acc_ok = 0;
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
@@ -2891,8 +2891,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        exec_mod2(et1);
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et1));
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2901,8 +2901,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        exec_mod2(et1);
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et1));
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2914,10 +2914,10 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
         acc_ok = 0;
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2926,7 +2926,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(OFST), type);
     }
@@ -2937,7 +2937,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         add_instr("SET_P aux_var\n");
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
@@ -2949,7 +2949,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         oper_mult(expr_of_et(et2), expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
@@ -2960,7 +2960,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
         add_instr("SET_P aux_var\n");
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         add_instr("P_LOD aux_var\n");
         add_instr("P_LOD aux_var\n");
         oper_mult(expr_of_et(et2), expr_of_et(et2));
@@ -2972,8 +2972,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        exec_mod2(et1);
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et1));
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 
@@ -2982,8 +2982,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        exec_mod2(et1);
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et1));
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
     
@@ -2994,10 +2994,10 @@ expr oper_cmp(expr e1, expr e2, int type)
 
         add_instr("SET_P aux_var \n");
         add_instr("SET_P aux_var1\n");
-        exec_mod2(et1);
+        exec_mod2(expr_of_et(et1));
         add_instr("P_LOD aux_var1\n");
         add_instr("P_LOD aux_var \n");
-        exec_mod2(et2);
+        exec_mod2(expr_of_et(et2));
         oper_cmp(expr_of_et(2*OFST), expr_of_et(2*OFST), type);
     }
 

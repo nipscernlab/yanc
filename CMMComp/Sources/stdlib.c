@@ -23,7 +23,7 @@
 // ----------------------------------------------------------------------------
 
 // input ex: int x = in(0);
-int exec_in(int id)
+expr exec_in(int id)
 {
     if (atoi(v_name[id]) >= nuioin) {fprintf(stderr, MSG_ERR_NO_IN_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
 
@@ -31,11 +31,11 @@ int exec_in(int id)
 
     acc_ok = 1;  // marks the acc as now holding a value
 
-    return OFST;
+    return expr_make(1, 0);
 }
 
 // input ex: float x = fin(0);
-int exec_fin(int id)
+expr exec_fin(int id)
 {
     if (atoi(v_name[id]) >= nuioin) {fprintf(stderr, MSG_ERR_NO_IN_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
 
@@ -43,12 +43,13 @@ int exec_fin(int id)
 
     acc_ok = 1;  // marks the acc as now holding a value
 
-    return 2*OFST;
+    return expr_make(2, 0);
 }
 
 // output ex: out(0,x);
-void exec_out(int id, int et)
+void exec_out(int id, expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -109,8 +110,9 @@ void exec_out(int id, int et)
 }
 
 // output ex: fout(0,x);
-void exec_fout(int id, int et)
+void exec_fout(int id, expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -173,8 +175,10 @@ void exec_fout(int id, int et)
 // ----------------------------------------------------------------------------
 
 // takes the sign of the first argument and applies it to the second
-int exec_sign(int et1, int et2)
+expr exec_sign(expr e1, expr e2)
 {
+    int et1 = expr_to_et(e1);
+    int et2 = expr_to_et(e2);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -317,12 +321,13 @@ int exec_sign(int et1, int et2)
 
     acc_ok = 1;
 
-    return get_type(et2)*OFST;
+    return expr_make(get_type(et2), 0);
 }
 
 // absolute value (int, float and comp)
-int exec_abs(int et)
+expr exec_abs(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -378,17 +383,18 @@ int exec_abs(int et)
     // comp const, in memory and in acc
     if ((get_type(et) == 3) || (get_type(et) == 5))
     {
-        et = exec_sqrt(exec_mod2(et));
+        et = expr_to_et(exec_sqrt(exec_mod2(expr_of_et(et))));
     }
 
     acc_ok = 1;
 
-    return get_type(et)*OFST;
+    return expr_make(get_type(et), 0);
 }
 
 // clears if negative
-int exec_pst(int et)
+expr exec_pst(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -450,12 +456,13 @@ int exec_pst(int et)
 
     acc_ok = 1;
 
-    return get_type(et)*OFST;
+    return expr_make(get_type(et), 0);
 }
 
 // division by constant
-int exec_norm(int et)
+expr exec_norm(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -499,11 +506,12 @@ int exec_norm(int et)
 
     acc_ok = 1;
 
-    return OFST;
+    return expr_make(1, 0);
 }
 
-void exec_copy(int et1, int id2)
+void exec_copy(expr e, int id2)
 {
+    int et1 = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -549,8 +557,9 @@ void exec_copy(int et1, int id2)
 // ----------------------------------------------------------------------------
 
 // square root
-int exec_sqrt(int et)
+expr exec_sqrt(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -610,12 +619,13 @@ int exec_sqrt(int et)
 
     acc_ok = 1;
 
-    return 2*OFST;
+    return expr_make(2, 0);
 }
 
 // arctangent
-int exec_atan(int et)
+expr exec_atan(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -675,12 +685,13 @@ int exec_atan(int et)
 
     acc_ok = 1;
 
-    return 2*OFST;
+    return expr_make(2, 0);
 }
 
 // sine
-int exec_sin(int et)
+expr exec_sin(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -740,12 +751,13 @@ int exec_sin(int et)
 
     acc_ok = 1;
 
-    return 2*OFST;
+    return expr_make(2, 0);
 }
 
 // cosine
-int exec_cos(int et)
+expr exec_cos(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -813,7 +825,7 @@ int exec_cos(int et)
 
     acc_ok = 1;
 
-    return 2*OFST;
+    return expr_make(2, 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -821,8 +833,9 @@ int exec_cos(int et)
 // ----------------------------------------------------------------------------
 
 // returns the real part of a comp
-int exec_real(int et)
+expr exec_real(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -875,12 +888,13 @@ int exec_real(int et)
 
     acc_ok = 1;
     
-    return 2*OFST;
+    return expr_make(2, 0);
 }
 
 // returns the imag part of a comp
-int exec_imag(int et)
+expr exec_imag(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -937,12 +951,13 @@ int exec_imag(int et)
 
     acc_ok = 1;
 
-    return 2*OFST;
+    return expr_make(2, 0);
 }
 
 // squared magnitude of a complex number
-int exec_mod2(int et)
+expr exec_mod2(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1006,12 +1021,13 @@ int exec_mod2(int et)
         etr = 2*OFST;                   // output must be an extended et for float in the acc
     }
 
-    return 2*OFST;
+    return expr_make(2, 0);
 }
 
 // computes the phase (in radians) of a complex number
-int exec_fase(int et)
+expr exec_fase(expr e)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1045,14 +1061,14 @@ int exec_fase(int et)
     if (get_type(et) == 5)
     {
         get_cmp_cst(et,&et_i,&et_r);
-        oper_divi  (et_r,et_i);
+        oper_divi  (expr_of_et(et_r), expr_of_et(et_i));
     }
 
     // comp in memory
     if ((get_type(et) == 3) && (et%OFST != 0))
     {
         get_cmp_ets(et,&et_i,&et_r);
-        oper_divi  (et_r,et_i);
+        oper_divi  (expr_of_et(et_r), expr_of_et(et_i));
     }
 
     // comp in acc
@@ -1065,15 +1081,17 @@ int exec_fase(int et)
         oper_divi(expr_of_et(et_i), expr_of_et(2*OFST));
     }
 
-    exec_atan(2*OFST);
+    exec_atan(expr_of_et(2*OFST));
 
     acc_ok = 1;
-    return 2*OFST;
+    return expr_make(2, 0);
 }
 
 // joins two real numbers into a complex
-int exec_comp(int etr, int eti)
+expr exec_comp(expr er, expr ei)
 {
+    int etr = expr_to_et(er);
+    int eti = expr_to_et(ei);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1226,7 +1244,7 @@ int exec_comp(int etr, int eti)
     }
 
     acc_ok = 1;
-    return 3*OFST;
+    return expr_make(3, 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -1237,7 +1255,7 @@ int exec_comp(int etr, int eti)
 
 // multiplication between two vectors, e.g. <a|b>
 // this routine produces an exp
-int exec_vtv(int id1, int id2)
+expr exec_vtv(int id1, int id2)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -1313,7 +1331,7 @@ int exec_vtv(int id1, int id2)
     }
 
     acc_ok = 1;
-    return v_type[id1]*OFST;
+    return expr_make(v_type[id1], 0);
 }
 
 // matrix-vector multiplication, e.g. A # |B|b>;
@@ -1415,8 +1433,9 @@ void exec_Mv(int idy, int idM, int idv)
 }
 
 // constant-vector multiplication, e.g. a # c|b>;
-void exec_cv(int idy, int et, int idv)
+void exec_cv(int idy, expr e, int idv)
 {
+    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1497,8 +1516,9 @@ void exec_cv(int idy, int et, int idv)
 
 // weighted sum into the second vector, e.g. a # |b> + c|d>;
 // added mainly for RLS use
-void exec_apcb(int idy, int ida, int etc, int idb)
+void exec_apcb(int idy, int ida, expr ec, int idb)
 {
+    int etc = expr_to_et(ec);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1753,8 +1773,9 @@ void exec_Mmvvt(int idA, int idB, int ida, int idb)
 }
 
 // product of constant and matrix, e.g. A # c|B|;
-void exec_cM(int idA, int etc, int idM)
+void exec_cM(int idA, expr ec, int idM)
 {
+    int etc = expr_to_et(ec);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1830,8 +1851,9 @@ void exec_cM(int idA, int etc, int idM)
 }
 
 // generates identity matrix with constant, e.g. A # c|I|;
-void exec_cI(int idM, int etc)
+void exec_cI(int idM, expr ec)
 {
+    int etc = expr_to_et(ec);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1936,8 +1958,9 @@ void exec_v0(int idv)
 }
 
 // reads input vector with weight c, e.g. a # c|in(0)>;
-void exec_cvin(int idv, int etc, int idp)
+void exec_cvin(int idv, expr ec, int idp)
 {
+    int etc = expr_to_et(ec);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -2002,8 +2025,9 @@ void exec_cvin(int idv, int etc, int idp)
 }
 
 // writes vector to output with weight c, e.g. out(0, c|a>);
-void exec_vout(int idp, int etc, int idv)
+void exec_vout(int idp, expr ec, int idv)
 {
+    int etc = expr_to_et(ec);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -2072,8 +2096,9 @@ void exec_vout(int idp, int etc, int idv)
 // performs a shift register on the vector with the value given on the left, e.g. a # b -> |c>;
 // a and c must be the same vector
 // create a new array type for shift register?
-void exec_shift(int ida, int etb, int idc)
+void exec_shift(int ida, expr eb, int idc)
 {
+    int etb = expr_to_et(eb);
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
