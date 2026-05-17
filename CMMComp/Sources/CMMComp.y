@@ -122,14 +122,19 @@ void  yyerror(char const *s);
 %left '*' '/' '%'
 %left '!' '~' PPLUS
 
-// reductions that need to produce an exp (et)
+// par_list still carries an int (the parameter id from declar_par)
 %type <ival> par_list
-%type <ival> func_call
-%type <ival> std_in std_fin
-%type <ival> std_pst std_abs std_sign std_nrm
-%type <ival> std_sqrt std_atan std_sin std_cos
-%type <ival> std_real std_imag std_comp std_fase std_mod2
-%type <ival> exp terminal
+
+// every reduction that historically returned an "et" now produces an expr.
+// Inside actions, expr_to_et / expr_of_et bridge to consumers that still
+// take/return the legacy int et. The bridges go away as those consumers
+// are migrated to take expr by value.
+%type <eval> func_call
+%type <eval> std_in std_fin
+%type <eval> std_pst std_abs std_sign std_nrm
+%type <eval> std_sqrt std_atan std_sin std_cos
+%type <eval> std_real std_imag std_comp std_fase std_mod2
+%type <eval> exp terminal
 
 %%
 
@@ -165,13 +170,13 @@ dire_inter : ITRADD             {dire_inter();}      // interrupt start point (u
          // list declaration (one or more uninitialized variables)
 declar : TYPE id_list                               ';'
          // declaration of a variable with initialization
-       | TYPE ID '=' exp ';'          {declar_var($2); ass_set($2,$4);}
+       | TYPE ID '=' exp ';'          {declar_var($2); ass_set($2, expr_to_et($4));}
          // array declaration with file initialization
        | TYPE ID '[' INUM ']'              STRING   ';' {declar_arr_1d($2,$4,$6    );}
        | TYPE ID '[' INUM ']' '[' INUM ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
          // array declaration with Dirac-notation initialization (on demand)
        | TYPE ID '[' INUM ']' '#' '|' ID '|' ID BRA ';' {declar_Mv    ($2,$4,$8,$10);}
-       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2,$4,$7,$9 );}
+       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2,$4, expr_to_et($7), $9);}
 
 id_list : IID | id_list ',' IID
 
@@ -196,7 +201,7 @@ par_list : TYPE ID                        {$$ = declar_par($1,$2);}
          | par_list ',' par_list          {        set_par($3   );} // pulls from the stack
 
 // function and void returns
-return_call : RET exp ';'                 {declar_ret($2,1);}
+return_call : RET exp ';'                 {declar_ret(expr_to_et($2), 1);}
             | RET     ';'                 {  void_ret(    );}
 
 // statement list in C --------------------------------------------------------
@@ -231,48 +236,48 @@ void_call   : ID '('            {fun_id   = $1 ;} // fun_id -> id of the called 
               exp_list ')' ';'  {vcall     ($1);} // we can already emit the void call
 // function with return value
 func_call   : ID '('            {fun_id   = $1 ;}
-              exp_list ')'      {$$ = fcall($1);} // emits the call and returns the final data type
+              exp_list ')'      {$$ = expr_of_et(fcall($1));} // emits the call and returns the final data type
 
 // parameters need to be pushed onto the stack
 // for each exp found, the resulting value is written to the stack with par_exp
 // the first parameter stays in the accumulator (parsing goes from last to first)
 // par_exp pushes parameters onto the stack and checks consistency
-exp_list :                                                           // may be empty (test it)
-         | exp                              {par_exp    ($1);}       // first parameter
-         | exp_list ',' exp                 {par_listexp($3);}       // remaining parameters
+exp_list :                                                                  // may be empty (test it)
+         | exp                              {par_exp    (expr_to_et($1));}  // first parameter
+         | exp_list ',' exp                 {par_listexp(expr_to_et($3));}  // remaining parameters
 
 // Standard library -----------------------------------------------------------
 
-std_out  : OUT  '(' INUM ',' exp ')' ';'            {exec_out ($3,$5   );} // data output
-std_fout : FOUT '(' INUM ',' exp ')' ';'            {exec_fout($3,$5   );} // data output (converting to float)
-std_in   : INN  '(' INUM ')'                   {$$ = exec_in  ($3      );} // data input
-std_fin  : FIN  '(' INUM ')'                   {$$ = exec_fin ($3      );} // data input (converting to float)
-std_pst  : PST  '(' exp  ')'                   {$$ = exec_pst ($3      );} // function pset(x)      -> clears if negative
-std_abs  : ABS  '(' exp  ')'                   {$$ = exec_abs ($3      );} // function  abs(x)      -> absolute value of x
-std_sign : SGN  '(' exp  ',' exp ')'           {$$ = exec_sign($3,$5   );} // function sign(x,y)    -> takes the sign of x and applies to y
-std_nrm  : NRM  '(' exp  ')'                   {$$ = exec_norm($3      );} // function norm(x)      -> divides x by the NUGAIN constant
-std_copy : COPY '(' exp  ',' ID  ')' ';'       {     exec_copy($3,$5   );} // function copy(x,y)    -> copies the value of x into y (no type checking)
-std_sqrt : SQRT '(' exp  ')'                   {$$ = exec_sqrt($3      );} // function sqrt(x)      -> square root
-std_atan : ATAN '(' exp  ')'                   {$$ = exec_atan($3      );} // function atan(x)      -> arctangent
-std_sin  : SIN  '(' exp  ')'                   {$$ = exec_sin ($3      );} // function  sin(x)      -> sine    of x
-std_cos  : COS  '(' exp  ')'                   {$$ = exec_cos ($3      );} // function  cos(x)      -> cosine  of x
-std_real : REAL '(' exp  ')'                   {$$ = exec_real($3      );} // function real(x)      -> returns the real part of a comp
-std_imag : IMAG '(' exp  ')'                   {$$ = exec_imag($3      );} // function imag(x)      -> returns the imag part of a comp
-std_comp : COMP '(' exp  ',' exp ')'           {$$ = exec_comp($3,$5   );} // function complex(x,y) -> creates a comp from 2 reals
-std_fase : FASE '(' exp  ')'                   {$$ = exec_fase($3      );} // function fase(x)      -> returns the phase of a comp
-std_mod2 : MOD2 '(' exp  ')'                   {$$ = exec_mod2($3      );} // function mod2(x)      -> returns the squared magnitude of a comp
-std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {exec_vout($3,$5,$7);} // data output with Dirac notation
+std_out  : OUT  '(' INUM ',' exp ')' ';'            {exec_out ($3, expr_to_et($5));}                     // data output
+std_fout : FOUT '(' INUM ',' exp ')' ';'            {exec_fout($3, expr_to_et($5));}                     // data output (converting to float)
+std_in   : INN  '(' INUM ')'                   {$$ = expr_of_et(exec_in  ($3));}                         // data input
+std_fin  : FIN  '(' INUM ')'                   {$$ = expr_of_et(exec_fin ($3));}                         // data input (converting to float)
+std_pst  : PST  '(' exp  ')'                   {$$ = expr_of_et(exec_pst (expr_to_et($3)));}             // function pset(x)      -> clears if negative
+std_abs  : ABS  '(' exp  ')'                   {$$ = expr_of_et(exec_abs (expr_to_et($3)));}             // function  abs(x)      -> absolute value of x
+std_sign : SGN  '(' exp  ',' exp ')'           {$$ = expr_of_et(exec_sign(expr_to_et($3), expr_to_et($5)));}  // function sign(x,y)    -> takes the sign of x and applies to y
+std_nrm  : NRM  '(' exp  ')'                   {$$ = expr_of_et(exec_norm(expr_to_et($3)));}             // function norm(x)      -> divides x by the NUGAIN constant
+std_copy : COPY '(' exp  ',' ID  ')' ';'       {     exec_copy(expr_to_et($3), $5);}                     // function copy(x,y)    -> copies the value of x into y (no type checking)
+std_sqrt : SQRT '(' exp  ')'                   {$$ = expr_of_et(exec_sqrt(expr_to_et($3)));}             // function sqrt(x)      -> square root
+std_atan : ATAN '(' exp  ')'                   {$$ = expr_of_et(exec_atan(expr_to_et($3)));}             // function atan(x)      -> arctangent
+std_sin  : SIN  '(' exp  ')'                   {$$ = expr_of_et(exec_sin (expr_to_et($3)));}             // function  sin(x)      -> sine    of x
+std_cos  : COS  '(' exp  ')'                   {$$ = expr_of_et(exec_cos (expr_to_et($3)));}             // function  cos(x)      -> cosine  of x
+std_real : REAL '(' exp  ')'                   {$$ = expr_of_et(exec_real(expr_to_et($3)));}             // function real(x)      -> returns the real part of a comp
+std_imag : IMAG '(' exp  ')'                   {$$ = expr_of_et(exec_imag(expr_to_et($3)));}             // function imag(x)      -> returns the imag part of a comp
+std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_of_et(exec_comp(expr_to_et($3), expr_to_et($5)));}  // function complex(x,y) -> creates a comp from 2 reals
+std_fase : FASE '(' exp  ')'                   {$$ = expr_of_et(exec_fase(expr_to_et($3)));}             // function fase(x)      -> returns the phase of a comp
+std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_of_et(exec_mod2(expr_to_et($3)));}             // function mod2(x)      -> returns the squared magnitude of a comp
+std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {exec_vout($3, expr_to_et($5), $7);}                 // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
 
 if_else_stmt : if_exp stmt_full ELSE             {else_stmt(  );} // complete if/else
                stmt_full                         {if_fim   (  );}
              | if_exp stmt_full     %prec THEN   {if_stmt  (  );} // if without else
-if_exp       : IF '(' exp ')'                    {if_exp   ($3);} // start (JIZ)
+if_exp       : IF '(' exp ')'                    {if_exp   (expr_to_et($3));} // start (JIZ)
 
 // switch/case ----------------------------------------------------------------
 
-switch_case : SWITCH '(' exp ')'  {exec_switch($3);}
+switch_case : SWITCH '(' exp ')'  {exec_switch(expr_to_et($3));}
               '{' cases '}'       { end_switch(  );}
 
 case_list   :           stmt_case
@@ -289,45 +294,45 @@ cases       : case | default | case cases
 
 while_stmt : while_exp stmt_full           {while_stmt  (  );}
 while_exp  : WHILE                         {while_expp  (  );}
-            '(' exp ')'                    {while_expexp($4);}
+            '(' exp ')'                    {while_expexp(expr_to_et($4));}
 break      : BREAK ';'                     {exec_break  (  );}
 
 // assignments ----------------------------------------------------------------
 
            // standard assignment
-assignment : ID  '=' exp ';'                          {ass_set($1,$3);}
+assignment : ID  '=' exp ';'                          {ass_set($1, expr_to_et($3));}
            // increment
-           | ID                          PPLUS ';'    {ass_pplus($1      );}
-           | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1,$3   );}
-           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {ass_apl2d($1,$3,$6);}
+           | ID                          PPLUS ';'    {ass_pplus($1);}
+           | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1, expr_to_et($3));}
+           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {ass_apl2d($1, expr_to_et($3), expr_to_et($6));}
            // regular array
-           | ID  '[' exp ']'  '='                     {arr_1d_index($1,$3);}
-                     exp ';'                          {ass_array ($1,$7,0);}
+           | ID  '[' exp ']'  '='                     {arr_1d_index($1, expr_to_et($3));}
+                     exp ';'                          {ass_array ($1, expr_to_et($7), 0);}
            // reversed array
-           | ID  '[' exp ')'  '='                     {arr_1d_index($1,$3);}
-                     exp ';'                          {ass_array ($1,$7,1);}
+           | ID  '[' exp ')'  '='                     {arr_1d_index($1, expr_to_et($3));}
+                     exp ';'                          {ass_array ($1, expr_to_et($7), 1);}
            // 2D array (to be completed)
-           | ID  '[' exp ']' '[' exp ']' '='          {arr_2d_index($1, $3,$6);}
-                     exp ';'                          {ass_array   ($1,$10, 0);}
+           | ID  '[' exp ']' '[' exp ']' '='          {arr_2d_index($1, expr_to_et($3), expr_to_et($6));}
+                     exp ';'                          {ass_array   ($1, expr_to_et($10), 0);}
            // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
-           | ID '#'     '|' ID '|' ID BRA ';'                    {exec_Mv   ($1,$4,$6    );} // A # |B|a>
-           | ID '#' exp '|' ID BRA ';'                           {exec_cv   ($1,$3,$5    );} // a # c|b>
-           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {exec_apcb ($1,$4,$7,$9 );} // a # |b> + c|d>
-           | ID '#'     '|' ID BRA KET  ID '|' ';'               {exec_vvt  ($1,$4,$7    );} // A # |a><b|
-           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {exec_Mmvvt($1,$4,$8,$11);} // A # B - |a><b|
-           | ID '#' exp '|' ID '|' ';'                           {exec_cM   ($1,$3,$5    );} // A # c|B|
-           | ID '#' exp     EYE ';'                              {exec_cI   ($1,$3       );} // A # c|I|
-           | ID '#'         VZERO ';'                            {exec_v0   ($1          );} // a # |0>
-           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {exec_cvin ($1,$3,$7    );} // a # |in(0)>
-           | ID '#' exp '-' '>' '|' ID BRA ';'                   {exec_shift($1,$3,$7    );} // a # c -> |a>
+           | ID '#'     '|' ID '|' ID BRA ';'                    {exec_Mv   ($1,$4,$6);}                       // A # |B|a>
+           | ID '#' exp '|' ID BRA ';'                           {exec_cv   ($1, expr_to_et($3), $5);}         // a # c|b>
+           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {exec_apcb ($1, $4, expr_to_et($7), $9);}     // a # |b> + c|d>
+           | ID '#'     '|' ID BRA KET  ID '|' ';'               {exec_vvt  ($1,$4,$7);}                       // A # |a><b|
+           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {exec_Mmvvt($1,$4,$8,$11);}                   // A # B - |a><b|
+           | ID '#' exp '|' ID '|' ';'                           {exec_cM   ($1, expr_to_et($3), $5);}         // A # c|B|
+           | ID '#' exp     EYE ';'                              {exec_cI   ($1, expr_to_et($3));}             // A # c|I|
+           | ID '#'         VZERO ';'                            {exec_v0   ($1);}                             // a # |0>
+           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {exec_cvin ($1, expr_to_et($3), $7);}         // a # |in(0)>
+           | ID '#' exp '-' '>' '|' ID BRA ';'                   {exec_shift($1, expr_to_et($3), $7);}         // a # c -> |a>
 
 // expressions ----------------------------------------------------------------
 
 exp:       terminal                           {$$ = $1;}
          // arrays
-         | ID '[' exp ']'                     {$$ = arr_1d2exp($1,$3, 0);}
-         | ID '[' exp ')'                     {$$ = arr_1d2exp($1,$3, 1);}
-         | ID '[' exp ']' '[' exp ']'         {$$ = arr_2d2exp($1,$3,$6);}
+         | ID '[' exp ']'                     {$$ = expr_of_et(arr_1d2exp($1, expr_to_et($3), 0));}
+         | ID '[' exp ')'                     {$$ = expr_of_et(arr_1d2exp($1, expr_to_et($3), 1));}
+         | ID '[' exp ']' '[' exp ']'         {$$ = expr_of_et(arr_2d2exp($1, expr_to_et($3), expr_to_et($6)));}
          // std library that returns values
          | std_in                             {$$ = $1;}
          | std_fin                            {$$ = $1;}
@@ -350,46 +355,46 @@ exp:       terminal                           {$$ = $1;}
          |    '(' exp ')'                     {$$ = $2;}
          |    '+' exp                         {$$ = $2;}
          // unary operators
-         |    '-' exp                         {$$ =    oper_neg($2      );}
-         |    '!' exp                         {$$ =   oper_lin ($2      );}
-         |    '~' exp                         {$$ =    oper_inv($2      );}
-         | ID                         PPLUS   {$$ =   pplus2exp($1      );}
-         | ID '[' exp ']'             PPLUS   {$$ = pplus1d2exp($1,$3   );}
-         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = pplus2d2exp($1,$3,$6);}
+         |    '-' exp                         {$$ = expr_of_et(oper_neg (expr_to_et($2)));}
+         |    '!' exp                         {$$ = expr_of_et(oper_lin (expr_to_et($2)));}
+         |    '~' exp                         {$$ = expr_of_et(oper_inv (expr_to_et($2)));}
+         | ID                         PPLUS   {$$ = expr_of_et(pplus2exp  ($1));}
+         | ID '[' exp ']'             PPLUS   {$$ = expr_of_et(pplus1d2exp($1, expr_to_et($3)));}
+         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = expr_of_et(pplus2d2exp($1, expr_to_et($3), expr_to_et($6)));}
          // shift operators
-         | exp  SHIFTL exp                    {$$ = oper_shift($1,$3, 0);}
-         | exp  SHIFTR exp                    {$$ = oper_shift($1,$3, 1);}
-         | exp SSHIFTR exp                    {$$ = oper_shift($1,$3, 2);}
+         | exp  SHIFTL exp                    {$$ = expr_of_et(oper_shift(expr_to_et($1), expr_to_et($3), 0));}
+         | exp  SHIFTR exp                    {$$ = expr_of_et(oper_shift(expr_to_et($1), expr_to_et($3), 1));}
+         | exp SSHIFTR exp                    {$$ = expr_of_et(oper_shift(expr_to_et($1), expr_to_et($3), 2));}
          // bitwise operators
-         | exp   '&'   exp                    {$$ = oper_bitw($1,$3, 0);}
-         | exp   '|'   exp                    {$$ = oper_bitw($1,$3, 1);}
-         | exp   '^'   exp                    {$$ = oper_bitw($1,$3, 2);}
+         | exp   '&'   exp                    {$$ = expr_of_et(oper_bitw (expr_to_et($1), expr_to_et($3), 0));}
+         | exp   '|'   exp                    {$$ = expr_of_et(oper_bitw (expr_to_et($1), expr_to_et($3), 1));}
+         | exp   '^'   exp                    {$$ = expr_of_et(oper_bitw (expr_to_et($1), expr_to_et($3), 2));}
          // arithmetic operators
-         | exp   '%'   exp                    {$$ = oper_mod ($1,$3);}
-         | exp   '+'   exp                    {$$ = oper_soma($1,$3);}
-         | exp   '-'   exp                    {$$ = oper_subt($1,$3);}
-         | exp   '*'   exp                    {$$ = oper_mult($1,$3);}
-         | exp   '/'   exp                    {$$ = oper_divi($1,$3);}
+         | exp   '%'   exp                    {$$ = expr_of_et(oper_mod  (expr_to_et($1), expr_to_et($3)));}
+         | exp   '+'   exp                    {$$ = expr_of_et(oper_soma (expr_to_et($1), expr_to_et($3)));}
+         | exp   '-'   exp                    {$$ = expr_of_et(oper_subt (expr_to_et($1), expr_to_et($3)));}
+         | exp   '*'   exp                    {$$ = expr_of_et(oper_mult (expr_to_et($1), expr_to_et($3)));}
+         | exp   '/'   exp                    {$$ = expr_of_et(oper_divi (expr_to_et($1), expr_to_et($3)));}
          // true/false operators
-         | exp  LAN    exp                    {$$ = oper_lanor($1,$3,0);}
-         | exp  LOR    exp                    {$$ = oper_lanor($1,$3,1);}
-         | exp   '<'   exp                    {$$ = oper_cmp  ($1,$3,0);}
-         | exp   '>'   exp                    {$$ = oper_cmp  ($1,$3,1);}
-         | exp  EQU    exp                    {$$ = oper_cmp  ($1,$3,2);}
-         | exp  GREQU  exp                    {$$ = oper_greq ($1,$3  );}
-         | exp  LESEQ  exp                    {$$ = oper_leeq ($1,$3  );}
-         | exp  DIF    exp                    {$$ = oper_dife ($1,$3  );}
+         | exp  LAN    exp                    {$$ = expr_of_et(oper_lanor(expr_to_et($1), expr_to_et($3), 0));}
+         | exp  LOR    exp                    {$$ = expr_of_et(oper_lanor(expr_to_et($1), expr_to_et($3), 1));}
+         | exp   '<'   exp                    {$$ = expr_of_et(oper_cmp  (expr_to_et($1), expr_to_et($3), 0));}
+         | exp   '>'   exp                    {$$ = expr_of_et(oper_cmp  (expr_to_et($1), expr_to_et($3), 1));}
+         | exp  EQU    exp                    {$$ = expr_of_et(oper_cmp  (expr_to_et($1), expr_to_et($3), 2));}
+         | exp  GREQU  exp                    {$$ = expr_of_et(oper_greq (expr_to_et($1), expr_to_et($3)));}
+         | exp  LESEQ  exp                    {$$ = expr_of_et(oper_leeq (expr_to_et($1), expr_to_et($3)));}
+         | exp  DIF    exp                    {$$ = expr_of_et(oper_dife (expr_to_et($1), expr_to_et($3)));}
          // linear algebra with exp return (Dirac notation)
-         | KET ID '|' ID BRA                  {$$ = exec_vtv ($2,$4);}
+         | KET ID '|' ID BRA                  {$$ = expr_of_et(exec_vtv ($2, $4));}
 
 // terminals used in reductions for expressions -------------------------------
 
          // constants
-terminal : INUM                               {$$ = num2exp($1,1);}
-         | FNUM                               {$$ = num2exp($1,2);}
-         | CNUM                               {$$ = num2exp($1,5);}
+terminal : INUM                               {$$ = expr_of_et(num2exp($1, 1));}
+         | FNUM                               {$$ = expr_of_et(num2exp($1, 2));}
+         | CNUM                               {$$ = expr_of_et(num2exp($1, 5));}
          // variables
-         | ID                                 {$$ =  id2exp($1  );}
+         | ID                                 {$$ = expr_of_et( id2exp($1));}
 
 %%
 
