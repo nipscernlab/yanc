@@ -15,6 +15,7 @@ void  declar_fst(int id);           // first/only parameter
 int   declar_par(int   t, int id ); // next parameter
 void     set_par(int id);           // SET on the parameter
 void  declar_ret(int  et, int ret); // a return keyword was found
+void func_body_begin(void);         // fires at the function's opening '{'
 void    func_ret(int id);           // end/return of the function
 void    void_ret(      );           // end of a void function
 

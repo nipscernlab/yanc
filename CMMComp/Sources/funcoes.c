@@ -7,6 +7,8 @@
 #include <stdlib.h>
 
 // local includes
+#include "..\Headers\ast.h"
+#include "..\Headers\emit.h"
 #include "..\Headers\t2t.h"
 #include "..\Headers\labels.h"
 #include "..\Headers\global.h"
@@ -545,9 +547,30 @@ void declar_ret(int et, int ret)
     ret_ok = 1; // the return keyword appeared properly in the function
 }
 
+// fires at the opening '{' of a function body. Starts capturing every
+// emission until the matching '}' so the body becomes one AST_RAW leaf
+// inside an AST_BLOCK, ready for the ast_emit walker.
+void func_body_begin(void)
+{
+    emit_push_capture();
+}
+
 // end of the parsing for a function declaration
 void func_ret(int id) // id -> id of the current function
 {
+    // pop the body capture and replay it through the AST walker. The body
+    // is still a single opaque chunk for now (one AST_RAW kid); future
+    // migrations can split it into per-statement kids without touching
+    // this code path.
+    char     *body_text = emit_pop_capture();
+    ast_node *body_raw  = ast_raw(body_text);
+    free(body_text);
+
+    ast_node *block = ast_block();
+    ast_block_push(block, body_raw);
+    ast_emit(block);
+    ast_free(block);
+
     // check whether the function had the return x; instruction
     if ((v_type[id] != 6) && (ret_ok == 0))
         {fprintf (stderr, MSG_ERR_FUNC_NO_RETURN, v_name[id]); exit(EXIT_FAILURE);}

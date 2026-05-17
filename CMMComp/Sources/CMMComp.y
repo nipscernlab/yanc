@@ -174,9 +174,11 @@ IID    : ID                           {declar_var   ($1         );}
 
 funcao : TYPE ID  '('                     {declar_fun($1,$2);} // start of a function declaration
          par_list ')'                     {declar_fst($5   );} // sets the first parameter in the matching variable
-         '{' stmt_list '}'                {func_ret  ($2   );} // checks that everything is ok
+         '{'                              {func_body_begin();} // open body capture for the AST walker
+         stmt_list '}'                    {func_ret  ($2   );} // close body capture, emit AST, finalize
        | TYPE ID  '('  ')'                {declar_fun($1,$2);} // function without parameters
-         '{' stmt_list '}'                {func_ret  ($2   );}
+         '{'                              {func_body_begin();}
+         stmt_list '}'                    {func_ret  ($2   );}
 
 // parameter list in the declaration
 // arrays are not yet allowed as function parameters
