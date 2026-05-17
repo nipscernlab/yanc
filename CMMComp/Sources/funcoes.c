@@ -347,8 +347,9 @@ void set_par(int id)
 }
 
 // when the return keyword is found
-void declar_ret(int et, int ret)
+void declar_ret(expr e, int ret)
 {
+    int et = expr_to_et(e);
     // check whether it really is a function, or void by mistake
     if (v_type[fun_parse] == 6)
         {fprintf (stderr, MSG_ERR_VOID_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
@@ -608,8 +609,9 @@ void void_ret()
 // emits LOD for the first parameter (if any)
 // get_type returns the parameter type (0, 1, 2, 3) -> (void, int, float, comp)
 // p_test holds the position and type of every parameter in the function call
-void par_exp(int et)
+void par_exp(expr e)
 {
+    int et = expr_to_et(e);
     p_test = 0; // reset the p_test state
     p_test = p_test*10 + get_type(et);
     par_check(et);
@@ -617,8 +619,9 @@ void par_exp(int et)
 }
 
 // emits LOD for the remaining parameters
-void par_listexp(int et)
+void par_listexp(expr e)
 {
+    int et = expr_to_et(e);
     p_test = p_test*10 + get_type(et);
     par_check(et);
 }
@@ -647,7 +650,7 @@ void vcall(int id)
 }
 
 // emits the CAL instruction for functions with a return value (hence the f in fcall)
-int fcall(int id)
+expr fcall(int id)
 {
     if (v_type[id] == 6)
     {
@@ -671,5 +674,5 @@ int fcall(int id)
     v_used[id] = 1;             // function has been used
     acc_ok     = 1;             // acc is busy
 
-    return (v_type[id]-6)*OFST; // returns the data type (void, int, float or comp)
+    return expr_make(v_type[id]-6, 0); // returns the data type (void, int, float or comp)
 }

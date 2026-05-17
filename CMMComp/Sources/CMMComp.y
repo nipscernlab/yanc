@@ -201,7 +201,7 @@ par_list : TYPE ID                        {$$ = declar_par($1,$2);}
          | par_list ',' par_list          {        set_par($3   );} // pulls from the stack
 
 // function and void returns
-return_call : RET exp ';'                 {declar_ret(expr_to_et($2), 1);}
+return_call : RET exp ';'                 {declar_ret($2, 1);}
             | RET     ';'                 {  void_ret(    );}
 
 // statement list in C --------------------------------------------------------
@@ -236,15 +236,15 @@ void_call   : ID '('            {fun_id   = $1 ;} // fun_id -> id of the called 
               exp_list ')' ';'  {vcall     ($1);} // we can already emit the void call
 // function with return value
 func_call   : ID '('            {fun_id   = $1 ;}
-              exp_list ')'      {$$ = expr_of_et(fcall($1));} // emits the call and returns the final data type
+              exp_list ')'      {$$ = fcall($1);} // emits the call and returns the final data type
 
 // parameters need to be pushed onto the stack
 // for each exp found, the resulting value is written to the stack with par_exp
 // the first parameter stays in the accumulator (parsing goes from last to first)
 // par_exp pushes parameters onto the stack and checks consistency
-exp_list :                                                                  // may be empty (test it)
-         | exp                              {par_exp    (expr_to_et($1));}  // first parameter
-         | exp_list ',' exp                 {par_listexp(expr_to_et($3));}  // remaining parameters
+exp_list :                                              // may be empty (test it)
+         | exp                              {par_exp    ($1);}  // first parameter
+         | exp_list ',' exp                 {par_listexp($3);}  // remaining parameters
 
 // Standard library -----------------------------------------------------------
 
