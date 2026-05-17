@@ -15,13 +15,18 @@ typedef enum {
     AST_BLOCK,   // sequence of child statements
     AST_IF,      // if (cond) body [else els]
     AST_WHILE,   // while (cond) body
-    AST_BREAK    // break;
+    AST_BREAK,   // break; (inside while)
+    AST_SWITCH   // switch (cond) { cases }
 } ast_kind;
 
 typedef struct ast_node {
     ast_kind kind;
     int      line;            // source line where the node was built (1-based)
-    int      label;           // AST_IF / AST_WHILE: label number from push_if/push_while
+
+    // AST_IF/AST_WHILE: label number from push_if/push_while
+    // AST_SWITCH:      swit_cnt (current switch's id)
+    int      label;
+    int      case_max;        // AST_SWITCH: highest case index used (case_cnt at end)
 
     // AST_RAW ----------------------------------------------------------------
     char    *text;            // heap-owned, NUL-terminated assembly chunk
@@ -31,23 +36,27 @@ typedef struct ast_node {
     int      kids_n;
     int      kids_cap;
 
-    // AST_IF / AST_WHILE -----------------------------------------------------
+    // AST_IF / AST_WHILE / AST_SWITCH ---------------------------------------
     // cond is currently always NULL: the condition is emitted inline before
     // body capture starts, so it does not need its own node yet. Kept in the
     // struct so a future pass that captures the cond as well has a slot.
     struct ast_node *cond;
-    struct ast_node *body;    // then-branch / while-body
+    struct ast_node *body;    // then-branch / while-body / switch-body
     struct ast_node *els;     // else-branch (AST_IF only, NULL if absent)
 } ast_node;
 
 // constructors (all return a heap node owned by the caller).
 // For AST_IF / AST_WHILE: label is the number returned by push_if / push_while
 // at parse time, used by the emit walker to spell out @Lif%d / @Lwh%d markers.
+// For AST_SWITCH:         swit_id is swit_cnt, case_max is case_cnt when the
+// closing brace was reduced; the walker uses them to spell out the trailing
+// @sw_case_<swit>_<case_max+1> and @switch_end_<swit> labels.
 ast_node *ast_raw     (const char *text);
 ast_node *ast_block   (void);
 ast_node *ast_if      (int label, ast_node *body, ast_node *els);
 ast_node *ast_while   (int label, ast_node *body);
 ast_node *ast_break   (void);
+ast_node *ast_switch  (int swit_id, int case_max, ast_node *body);
 
 // appends kid to a BLOCK node (takes ownership of kid)
 void      ast_block_push(ast_node *blk, ast_node *kid);

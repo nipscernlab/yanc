@@ -1,0 +1,40 @@
+#PRNAME sw_test
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Synthetic fixture: exercises switch / case / default / break
+// so regress.sh has something to lock down when the switch codegen
+// is migrated to AST. Not a real DSP example.
+
+void main()
+{
+    int x;
+    int y;
+
+    while (1)
+    {
+        x = in(0);
+
+        switch (x)
+        {
+            case 1:
+                y = 10;
+                break;
+
+            case 2:
+                y = 20;
+                break;
+
+            default:
+                y = 0;
+        }
+
+        out(0, y);
+    }
+}

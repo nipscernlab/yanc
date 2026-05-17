@@ -1,0 +1,34 @@
+NOP
+#PRNAME sw_test
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+@main @Lwh1 LOD 1
+JIZ Lwh1end
+INN 0
+SET main_x
+LOD main_x
+SET switch_exp
+@sw_case_1_1 LOD switch_exp
+È 1
+JIZ sw_case_1_2
+LOD 10
+SET main_y
+JMP switch_end_1
+@sw_case_1_2 LOD switch_exp
+È 2
+JIZ sw_case_1_3
+LOD 20
+SET main_y
+JMP switch_end_1
+@sw_case_1_3 LOD 0
+SET main_y
+@sw_case_1_4 @switch_end_1 LOD main_y
+OUT 0
+JMP Lwh1
+@Lwh1end @fim JMP fim

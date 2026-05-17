@@ -74,7 +74,7 @@ failed_names=()
 # globstar avoids depending on `find` (msys2's find may be shadowed by
 # Windows DOS find.exe in PATH when invoked from PowerShell)
 shopt -s globstar nullglob
-cmm_files=(Exemplos/**/*.cmm)
+cmm_files=(Exemplos/**/*.cmm Testes/fixtures/**/*.cmm)
 IFS=$'\n' cmm_sorted=($(printf '%s\n' "${cmm_files[@]}" | sort))
 
 for cmm in "${cmm_sorted[@]}"; do

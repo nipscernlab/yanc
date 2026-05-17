@@ -79,6 +79,15 @@ ast_node *ast_break(void)
     return node_new(AST_BREAK);
 }
 
+ast_node *ast_switch(int swit_id, int case_max, ast_node *body)
+{
+    ast_node *n = node_new(AST_SWITCH);
+    n->label    = swit_id;
+    n->case_max = case_max;
+    n->body     = body;
+    return n;
+}
+
 // ----------------------------------------------------------------------------
 // destructor -----------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -144,6 +153,12 @@ void ast_emit(ast_node *n)
 
         case AST_BREAK:
             add_instr("JMP Lwh%dend\n", get_while());
+            break;
+
+        case AST_SWITCH:
+            ast_emit(n->body);
+            add_sinst(0, "@sw_case_%d_%d ", n->label, n->case_max + 1);
+            add_sinst(0, "@switch_end_%d ", n->label);
             break;
     }
 }

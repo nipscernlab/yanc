@@ -379,12 +379,18 @@ void exec_switch(int et)
     switching  = 1;
     case_cnt   = 0;
     swit_cnt++;
+
+    // capture every case label, comparison, JIZ, body, and break that
+    // shows up between here and end_switch
+    emit_push_capture();
 }
 
-// switch-case end
+// switch-case end: build the AST and emit it
 void end_switch()
 {
-    add_sinst(0, "@sw_case_%d_%d ", swit_cnt, case_cnt+1);
-    add_sinst(0, "@switch_end_%d ", swit_cnt);
+    ast_node *body = body_to_node(emit_pop_capture());
+    ast_node *node = ast_switch(swit_cnt, case_cnt, body);
+    ast_emit(node);
+    ast_free(node);
     switching = 0;
 }
