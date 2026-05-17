@@ -95,7 +95,7 @@ cd %ROOT_DIR%\CMMComp\Sources
 
 %BISON% -y -d CMMComp.y
 %FLEX%        CMMComp.l
-%GCC%      -o CMMComp.exe data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c
+%GCC%      -o CMMComp.exe ast.c emit.c data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c
 
 move CMMComp.exe %BIN_DIR%>%TMP_PRO%\log.txt
 del  lex.yy.c
