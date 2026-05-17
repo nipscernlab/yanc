@@ -66,8 +66,9 @@ static ast_node *body_to_node(char *captured)
 // if/else --------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-void if_exp(int et)
+void if_exp(expr e)
 {
+    int et = expr_to_et(e);
     // int var
     if ((get_type(et) == 1) && (et%OFST!=0))
     {
@@ -195,8 +196,9 @@ void while_expp()
 }
 
 // evaluates exp and emits a JIZ to decide whether to enter or not
-void while_expexp(int et)
+void while_expexp(expr e)
 {
+    int et = expr_to_et(e);
     // int var
     if ((get_type(et) == 1) && (et%OFST!=0))
     {
@@ -296,8 +298,9 @@ void switch_break()
 }
 
 // switch-case start
-void exec_switch(int et)
+void exec_switch(expr e)
 {
+    int et = expr_to_et(e);
     if (switching == 1)
     {
         fprintf(stderr, MSG_ERR_NESTED_SWITCH, line_num+1);

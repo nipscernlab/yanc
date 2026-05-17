@@ -273,11 +273,11 @@ std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {exec_vout($3, $5, $7);}    
 if_else_stmt : if_exp stmt_full ELSE             {else_stmt(  );} // complete if/else
                stmt_full                         {if_fim   (  );}
              | if_exp stmt_full     %prec THEN   {if_stmt  (  );} // if without else
-if_exp       : IF '(' exp ')'                    {if_exp   (expr_to_et($3));} // start (JIZ)
+if_exp       : IF '(' exp ')'                    {if_exp   ($3);} // start (JIZ)
 
 // switch/case ----------------------------------------------------------------
 
-switch_case : SWITCH '(' exp ')'  {exec_switch(expr_to_et($3));}
+switch_case : SWITCH '(' exp ')'  {exec_switch($3);}
               '{' cases '}'       { end_switch(  );}
 
 case_list   :           stmt_case
@@ -294,7 +294,7 @@ cases       : case | default | case cases
 
 while_stmt : while_exp stmt_full           {while_stmt  (  );}
 while_exp  : WHILE                         {while_expp  (  );}
-            '(' exp ')'                    {while_expexp(expr_to_et($4));}
+            '(' exp ')'                    {while_expexp($4);}
 break      : BREAK ';'                     {exec_break  (  );}
 
 // assignments ----------------------------------------------------------------
