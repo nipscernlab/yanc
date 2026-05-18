@@ -394,10 +394,10 @@ exp:       terminal                           {$$ = $1;}
 
          // constants
 terminal : INUM                               {$$ = ast_emit_expr(expr_lit(1, $1));}
-         | FNUM                               {$$ = num2exp($1, 2); $$.node = expr_lit(2, $1);}
-         | CNUM                               {$$ = num2exp($1, 5); $$.node = expr_lit(5, $1);}
+         | FNUM                               {$$ = ast_emit_expr(expr_lit(2, $1));}
+         | CNUM                               {$$ = ast_emit_expr(expr_lit(5, $1));}
          // variables
-         | ID                                 {$$ =  id2exp($1);    $$.node = expr_var($$.type, $1);}
+         | ID                                 {$$ = ast_emit_expr(expr_var(v_type[$1], $1));}
 
 %%
 
