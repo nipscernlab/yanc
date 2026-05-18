@@ -103,7 +103,21 @@ typedef enum {
     OP_OR,    // x | y    (oper_bitw,  type=1)
     OP_XOR,   // x ^ y    (oper_bitw,  type=2)
     // stdlib calls (EXPR_STDLIB_CALL). port lives in id for IN/FIN/OUT.
-    OP_STD_IN,  // in(port)              -> int
+    OP_STD_IN,    // in(port)        -> int
+    OP_STD_FIN,   // fin(port)       -> float
+    OP_STD_PST,   // pst(x)          -> clears if negative
+    OP_STD_ABS,   // abs(x)          -> |x|
+    OP_STD_SIGN,  // sign(x, y)      -> y with sign of x
+    OP_STD_NRM,   // norm(x)         -> x / NUGAIN
+    OP_STD_SQRT,  // sqrt(x)
+    OP_STD_ATAN,  // atan(x)
+    OP_STD_SIN,   // sin(x)
+    OP_STD_COS,   // cos(x)
+    OP_STD_REAL,  // real(x)         -> real part of a comp
+    OP_STD_IMAG,  // imag(x)         -> imag part of a comp
+    OP_STD_COMP,  // complex(x, y)   -> x + y*i
+    OP_STD_FASE,  // fase(x)         -> phase of a comp (radians)
+    OP_STD_MOD2,  // mod2(x)         -> squared magnitude of a comp
 } expr_op;
 
 typedef struct expr_node {

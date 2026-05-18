@@ -251,21 +251,21 @@ exp_list :                                              // may be empty (test it
 std_out  : OUT  '(' INUM ',' exp ')' ';'            {exec_out ($3, $5);}            // data output
 std_fout : FOUT '(' INUM ',' exp ')' ';'            {exec_fout($3, $5);}            // data output (converting to float)
 std_in   : INN  '(' INUM ')'                   {$$ = exec_in  ($3); $$.node = expr_stdlib(OP_STD_IN, $$.type, $3, NULL, NULL);}  // data input
-std_fin  : FIN  '(' INUM ')'                   {$$ = exec_fin ($3);}                // data input (converting to float)
-std_pst  : PST  '(' exp  ')'                   {$$ = exec_pst ($3);}                // function pset(x)      -> clears if negative
-std_abs  : ABS  '(' exp  ')'                   {$$ = exec_abs ($3);}                // function  abs(x)      -> absolute value of x
-std_sign : SGN  '(' exp  ',' exp ')'           {$$ = exec_sign($3, $5);}            // function sign(x,y)    -> takes the sign of x and applies to y
-std_nrm  : NRM  '(' exp  ')'                   {$$ = exec_norm($3);}                // function norm(x)      -> divides x by the NUGAIN constant
-std_copy : COPY '(' exp  ',' ID  ')' ';'       {     exec_copy($3, $5);}            // function copy(x,y)    -> copies the value of x into y (no type checking)
-std_sqrt : SQRT '(' exp  ')'                   {$$ = exec_sqrt($3);}                // function sqrt(x)      -> square root
-std_atan : ATAN '(' exp  ')'                   {$$ = exec_atan($3);}                // function atan(x)      -> arctangent
-std_sin  : SIN  '(' exp  ')'                   {$$ = exec_sin ($3);}                // function  sin(x)      -> sine    of x
-std_cos  : COS  '(' exp  ')'                   {$$ = exec_cos ($3);}                // function  cos(x)      -> cosine  of x
-std_real : REAL '(' exp  ')'                   {$$ = exec_real($3);}                // function real(x)      -> returns the real part of a comp
-std_imag : IMAG '(' exp  ')'                   {$$ = exec_imag($3);}                // function imag(x)      -> returns the imag part of a comp
-std_comp : COMP '(' exp  ',' exp ')'           {$$ = exec_comp($3, $5);}            // function complex(x,y) -> creates a comp from 2 reals
-std_fase : FASE '(' exp  ')'                   {$$ = exec_fase($3);}                // function fase(x)      -> returns the phase of a comp
-std_mod2 : MOD2 '(' exp  ')'                   {$$ = exec_mod2($3);}                // function mod2(x)      -> returns the squared magnitude of a comp
+std_fin  : FIN  '(' INUM ')'                   {$$ = exec_fin ($3);     $$.node = expr_stdlib(OP_STD_FIN,  $$.type, $3, NULL,    NULL   );}  // float input
+std_pst  : PST  '(' exp  ')'                   {$$ = exec_pst ($3);     $$.node = expr_stdlib(OP_STD_PST,  $$.type, 0,  $3.node, NULL   );}  // clears if negative
+std_abs  : ABS  '(' exp  ')'                   {$$ = exec_abs ($3);     $$.node = expr_stdlib(OP_STD_ABS,  $$.type, 0,  $3.node, NULL   );}  // |x|
+std_sign : SGN  '(' exp  ',' exp ')'           {$$ = exec_sign($3, $5); $$.node = expr_stdlib(OP_STD_SIGN, $$.type, 0,  $3.node, $5.node);}  // y with sign of x
+std_nrm  : NRM  '(' exp  ')'                   {$$ = exec_norm($3);     $$.node = expr_stdlib(OP_STD_NRM,  $$.type, 0,  $3.node, NULL   );}  // x / NUGAIN
+std_copy : COPY '(' exp  ',' ID  ')' ';'       {     exec_copy($3, $5);}                                                                     // void: copies x into y (no AST node)
+std_sqrt : SQRT '(' exp  ')'                   {$$ = exec_sqrt($3);     $$.node = expr_stdlib(OP_STD_SQRT, $$.type, 0,  $3.node, NULL   );}  // sqrt(x)
+std_atan : ATAN '(' exp  ')'                   {$$ = exec_atan($3);     $$.node = expr_stdlib(OP_STD_ATAN, $$.type, 0,  $3.node, NULL   );}  // atan(x)
+std_sin  : SIN  '(' exp  ')'                   {$$ = exec_sin ($3);     $$.node = expr_stdlib(OP_STD_SIN,  $$.type, 0,  $3.node, NULL   );}  // sin(x)
+std_cos  : COS  '(' exp  ')'                   {$$ = exec_cos ($3);     $$.node = expr_stdlib(OP_STD_COS,  $$.type, 0,  $3.node, NULL   );}  // cos(x)
+std_real : REAL '(' exp  ')'                   {$$ = exec_real($3);     $$.node = expr_stdlib(OP_STD_REAL, $$.type, 0,  $3.node, NULL   );}  // real(comp)
+std_imag : IMAG '(' exp  ')'                   {$$ = exec_imag($3);     $$.node = expr_stdlib(OP_STD_IMAG, $$.type, 0,  $3.node, NULL   );}  // imag(comp)
+std_comp : COMP '(' exp  ',' exp ')'           {$$ = exec_comp($3, $5); $$.node = expr_stdlib(OP_STD_COMP, $$.type, 0,  $3.node, $5.node);}  // complex(x, y)
+std_fase : FASE '(' exp  ')'                   {$$ = exec_fase($3);     $$.node = expr_stdlib(OP_STD_FASE, $$.type, 0,  $3.node, NULL   );}  // phase(comp)
+std_mod2 : MOD2 '(' exp  ')'                   {$$ = exec_mod2($3);     $$.node = expr_stdlib(OP_STD_MOD2, $$.type, 0,  $3.node, NULL   );}  // |comp|^2
 std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {exec_vout($3, $5, $7);}        // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
