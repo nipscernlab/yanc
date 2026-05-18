@@ -87,6 +87,9 @@ expr_node *expr_unop (int op, int type, expr_node *operand);
 // frees the node and every descendant recursively
 void expr_free(expr_node *n);
 
+// dumps a human-readable indented tree to stderr (for debugging)
+void expr_dump(expr_node *n);
+
 typedef struct ast_node {
     ast_kind kind;
     int      line;            // source line where the node was built (1-based)

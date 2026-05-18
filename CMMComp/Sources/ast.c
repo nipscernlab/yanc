@@ -10,6 +10,7 @@
 #include "..\Headers\emit.h"
 #include "..\Headers\global.h"
 #include "..\Headers\labels.h"
+#include "..\Headers\variaveis.h"   // v_name[] for the dump
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
@@ -79,6 +80,59 @@ void expr_free(expr_node *n)
     expr_free(n->left);
     expr_free(n->right);
     free(n);
+}
+
+// ----------------------------------------------------------------------------
+// debugging dump -------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+static const char *kind_name(expr_kind k)
+{
+    switch (k) {
+        case EXPR_LITERAL: return "LITERAL";
+        case EXPR_VAR:     return "VAR";
+        case EXPR_BINOP:   return "BINOP";
+        case EXPR_UNOP:    return "UNOP";
+    }
+    return "?";
+}
+
+static const char *type_name(int t)
+{
+    switch (t) {
+        case 0: return "void";
+        case 1: return "int";
+        case 2: return "float";
+        case 3: return "comp";
+        case 4: return "comp_im";
+        case 5: return "comp_const";
+    }
+    return "?";
+}
+
+static void expr_dump_at(expr_node *n, int depth)
+{
+    if (!n) return;
+    for (int i = 0; i < depth; i++) fputs("  ", stderr);
+    fprintf(stderr, "%s type=%s line=%d", kind_name(n->kind), type_name(n->type), n->line);
+    switch (n->kind) {
+        case EXPR_LITERAL:
+        case EXPR_VAR:
+            fprintf(stderr, " id=%d (%s)", n->id, n->id ? v_name[n->id] : "<acc>");
+            break;
+        case EXPR_BINOP:
+        case EXPR_UNOP:
+            fprintf(stderr, " op=%d", n->op);
+            break;
+    }
+    fputc('\n', stderr);
+    expr_dump_at(n->left,  depth + 1);
+    expr_dump_at(n->right, depth + 1);
+}
+
+void expr_dump(expr_node *n)
+{
+    expr_dump_at(n, 0);
 }
 
 // ----------------------------------------------------------------------------
