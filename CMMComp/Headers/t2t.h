@@ -10,7 +10,6 @@ char* itob(int x, int w);                           // converts an integer to a 
 
 // helper functions for accessing terminal types ------------------------------
 
-int  get_type   (int et);                           // gets the data type
 int  get_img_id (int id);                           // gets the id of the imaginary part
 void get_cmp_cst(expr e, expr *er, expr *ei);       // generates exprs for a complex constant
 void get_cmp_ets(expr e, expr *er, expr *ei);       // gets the exprs of a complex variable

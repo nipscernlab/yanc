@@ -1,19 +1,7 @@
 // ----------------------------------------------------------------------------
 // routines for variable use (right-hand side) --------------------------------
-// reduces terminals into exp -------------------------------------------------
+// reduces terminals into expr ------------------------------------------------
 // ----------------------------------------------------------------------------
-
-// Legacy packing for the int-based "et" carrier still used by oper_*,
-// data_assign_*, exec_*, arr_*, etc. that have not been migrated to expr
-// yet. The bridges expr_to_et / expr_of_et in ast.h round-trip across it.
-//   OFST    -> reduced integer
-// 2*OFST    -> reduced float
-// 3*OFST    -> reduced comp
-//   OFST+id -> int identifier
-// 2*OFST+id -> float identifier
-// 3*OFST+id -> comp identifier
-// 5*OFST+id -> const comp identifier
-#define OFST 1000000
 
 #include "ast.h"   // expr
 

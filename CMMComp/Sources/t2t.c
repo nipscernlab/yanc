@@ -42,22 +42,6 @@ char *itob(int x, int w)
 // helper functions for accessing terminals -----------------------------------
 // ----------------------------------------------------------------------------
 
-// gets the variable type
-int get_type(int et)
-{
-    int t;
-
-         if (et <   OFST) t = 0; // undefined
-    else if (et < 2*OFST) t = 1; // int
-    else if (et < 3*OFST) t = 2; // float
-    else if (et < 4*OFST) t = 3; // comp real
-    else if (et < 5*OFST) t = 4; // comp img
-    else if (et < 6*OFST) t = 5; // comp const (e.g. 3+7.5i)
-    else                  t =-1;
-
-    return t;
-}
-
 // gets the id of the imag part of a complex var
 // the real part is in the id parameter
 int get_img_id(int id)

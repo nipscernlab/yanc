@@ -10,7 +10,6 @@
 #include "..\Headers\emit.h"
 #include "..\Headers\global.h"
 #include "..\Headers\labels.h"
-#include "..\Headers\data_use.h"   // OFST, for the expr <-> et bridge
 #include "..\Headers\messages.h"
 
 // ----------------------------------------------------------------------------
@@ -20,17 +19,6 @@
 expr expr_make(int type, int id)
 {
     expr e = {type, id};
-    return e;
-}
-
-int expr_to_et(expr e)
-{
-    return e.type * OFST + e.id;
-}
-
-expr expr_of_et(int et)
-{
-    expr e = {et / OFST, et % OFST};
     return e;
 }
 
