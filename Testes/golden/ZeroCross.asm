@@ -55,7 +55,6 @@ OUT 2
 #ITRAD
 F_INN 1
 SET sinal_entrada
-LOD sinal_entrada
 P_I2F_M 0
 S_EQU
 JIZ Lif1else

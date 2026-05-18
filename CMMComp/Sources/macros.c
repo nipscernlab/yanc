@@ -86,6 +86,11 @@ void mac_use(int ids, int global, int id_num)
     }
 
     mac_using = 1;
+
+    // We just copied an opaque macro body straight into f_asm. Anything the
+    // macro emitted is not visible to the peephole, so the previous SET in
+    // last_str is no longer adjacent. Reset to keep the optimization safe.
+    emit_peephole_reset();
 }
 
 // releases the parser to write to the assembler file -------------------------
@@ -94,6 +99,10 @@ void mac_end()
 {
     if (mac_using == 0) {fprintf(stderr, MSG_ERR_MACRO_NO_START, line_num+1); exit(EXIT_FAILURE);}
     mac_using = 0;
+
+    // Same reasoning as mac_use: a macro just executed opaquely, so the
+    // peephole window from before it is meaningless.
+    emit_peephole_reset();
 }
 
 // ----------------------------------------------------------------------------

@@ -166,7 +166,6 @@ MLT dtw_arr_size
 ADD j
 LDI dtw
 SET menor
-LOD menor
 OUT 2
 NEG_M 1
 ADD j
@@ -184,7 +183,6 @@ MLT   dtw_arr_size
 S_ADD
 LDI   dtw
 SET menor
-LOD menor
 OUT 2
 @Lif6else NEG_M 1
 ADD k
@@ -215,7 +213,6 @@ MLT   dtw_arr_size
 ADD   aux_var
 LDI   dtw
 SET menor
-LOD menor
 OUT 2
 @Lif7else LOD  k
 MLT  dtw_arr_size

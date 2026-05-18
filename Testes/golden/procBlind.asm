@@ -81,7 +81,6 @@ JMP Lwh3
 @Lwh3end LOD lipschitz_x_s
 F_MLT lipschitz_x_s
 SET lipschitz_x_L
-LOD lipschitz_x_L
 P_LOD 0.000000000001
 SF_LES
 JIZ Lif3else
@@ -352,10 +351,8 @@ SET fista_x_t
 LOD 0
 CAL lipschitz_x
 SET fista_x_L
-LOD fista_x_L
 F_DIV 1.0
 SET fista_x_step
-LOD fista_x_step
 F_MLT fista_x_lam
 SET fista_x_step_lam
 LOD 0
@@ -386,7 +383,6 @@ F_MLT fista_x_step
 SF_SU2
 F_SU1 fista_x_step_lam
 SET fista_x_v
-LOD fista_x_v
 P_LOD 0.0
 SF_LES
 JIZ Lif4else
@@ -468,7 +464,6 @@ EQU fista_x_have_prev
 JIZ Lif5else
 F_ABS_M fista_x_prev_obj
 SET fista_x_denom
-LOD fista_x_denom
 P_LOD 1.0
 SF_LES
 JIZ Lif6else
@@ -558,7 +553,6 @@ SET update_h_crss2
 LOD 0.5
 F_MLT update_h_crss2
 SET update_h_cdt
-LOD update_h_cdt
 P_LOD update_h_dt
 SF_GRE
 LIN
@@ -579,7 +573,6 @@ JMP Lwh27
 @Lwh27end LOD update_h_trial
 F_MLT 1.05
 SET update_h_step
-LOD update_h_step
 P_LOD 0.00001
 SF_GRE
 JIZ Lif9else
@@ -683,7 +676,6 @@ EQU fit_one_have_prev
 JIZ Lif11else
 F_ABS_M fit_one_prev_obj
 SET fit_one_denom
-LOD fit_one_denom
 P_LOD 1.0
 SF_LES
 JIZ Lif12else
@@ -712,7 +704,6 @@ JMP Lwh30
 RET
 @main LOD 1.0
 SET main_sigma
-LOD main_sigma
 F_MLT main_sigma
 SET main_noise_var
 LOD 6.913737
@@ -734,7 +725,6 @@ LOD main_li
 LDI lambda_grid
 F_MLT main_sigma
 SET main_lam
-LOD main_lam
 CAL fit_one
 SET main_dt
 LOD 2.0

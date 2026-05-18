@@ -34,6 +34,17 @@ int  line_num = 0;    // line number being parsed
 int  num_ins  = 0;    // number of instructions parsed
 int  sim_arr  = 0;    // tells whether the array is simulated or not
 
+// One-instruction window for the SET-then-LOD peephole. Holds the most
+// recent string passed to add_instr so the next call can detect a redundant
+// load. Cleared by every control-flow boundary (labels via add_sinst, capture
+// push/pop, macro start/end) so the drop only fires within a basic block.
+static char last_str[256] = "";
+
+void emit_peephole_reset(void)
+{
+    last_str[0] = '\0';
+}
+
 // ----------------------------------------------------------------------------
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -184,6 +195,30 @@ void add_instr(char *inst, ...)
     va_end  (args);
 
     // ------------------------------------------------------------------------
+    // peephole: drop "LOD x" right after "SET x" -----------------------------
+    // ------------------------------------------------------------------------
+    // SET stores acc to memory and leaves acc unchanged (instr_dec.v: opcode 4
+    // -> ula_op 0). So reloading the just-stored value is a no-op. Only fires
+    // when both lines are the plain SET / LOD opcodes (not SET_P / F_SET /
+    // P_LOD / etc.) and the variable names match. last_str is reset by
+    // add_sinst, the capture stack, and the macro hooks - so this never
+    // crosses a label, a basic-block boundary, or an opaque macro emit.
+
+    if (mac_using == 0 &&
+        strncmp(str,      "LOD ", 4) == 0 &&
+        strncmp(last_str, "SET ", 4) == 0)
+    {
+        char lod_var[100], set_var[100];
+        if (sscanf(str      + 4, "%99s", lod_var) == 1 &&
+            sscanf(last_str + 4, "%99s", set_var) == 1 &&
+            strcmp(lod_var, set_var) == 0)
+        {
+            last_str[0] = '\0';
+            return;
+        }
+    }
+
+    // ------------------------------------------------------------------------
     // append the instruction -------------------------------------------------
     // ------------------------------------------------------------------------
     // emit_is_capturing() is true when a parent construct (e.g. an if body)
@@ -209,6 +244,14 @@ void add_instr(char *inst, ...)
     if (find_opc("float_sqrt", str)) mac_add("fsqrt");
     if (find_opc("float_atan", str)) mac_add("fatan");
     if (find_opc("float_sin" , str)) mac_add("fsin" );
+
+    // remember this emit for the next peephole check (only when we actually
+    // appended to f_asm or a capture; otherwise the window stays as it was)
+    if (mac_using == 0)
+    {
+        strncpy(last_str, str, sizeof(last_str) - 1);
+        last_str[sizeof(last_str) - 1] = '\0';
+    }
 }
 
 // adds special instructions
@@ -218,6 +261,11 @@ void add_instr(char *inst, ...)
 // type = -3 -> END
 void add_sinst(int type, char *inst, ...)
 {
+    // Labels, directives and inline comments are control-flow / scaffolding
+    // boundaries: a label may be a jump target, so dropping a LOD that
+    // follows it would be unsafe. Reset the peephole window before emitting.
+    emit_peephole_reset();
+
     va_list  args;
     va_start(args , inst);
 

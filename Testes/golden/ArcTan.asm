@@ -32,7 +32,6 @@ F_MLT arctan_LUT_x
 SET arctan_LUT_idxf
 F2I_M arctan_LUT_idxf
 SET arctan_LUT_idx
-LOD arctan_LUT_idx
 LDI arctan_LUT_atan_lut
 SET arctan_LUT_x
 LOD arctan_LUT_idx
@@ -60,7 +59,6 @@ SET main_y
 LOD main_j
 LDI main_a
 SET main_t
-LOD main_t
 F_SU1 main_y
 SET main_e
 LOD main_j
@@ -79,7 +77,6 @@ SET main_y
 LOD main_j
 LDI main_a
 SET main_t
-LOD main_t
 F_SU1 main_y
 SET main_e
 LOD main_j

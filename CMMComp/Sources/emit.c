@@ -43,6 +43,12 @@ void emit_push_capture(void)
     stk[stk_n].len = 0;
     stk[stk_n].cap = 0;
     stk_n++;
+
+    // A new capture means we are entering a basic block whose first
+    // instruction is reached by a jump (if/while/switch body). The previous
+    // SET in the parent stream is no longer adjacent at runtime, so the
+    // peephole window must not carry across the boundary.
+    emit_peephole_reset();
 }
 
 char *emit_pop_capture(void)
@@ -63,6 +69,10 @@ char *emit_pop_capture(void)
     c->buf = NULL;
     c->len = 0;
     c->cap = 0;
+
+    // Same reason as in push: the next emit goes after the just-popped
+    // body, separated from anything before this capture by jumps / labels.
+    emit_peephole_reset();
     return r;
 }
 

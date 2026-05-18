@@ -36,29 +36,23 @@ S_SHL
 P_LOD 1
 S_SHR
 SET my_sqrt_v
-LOD my_sqrt_v
 SET my_sqrt_x
-LOD my_sqrt_x
 F_DIV my_sqrt_num
 F_ADD my_sqrt_x
 F_MLT 0.5
 SET my_sqrt_x
-LOD my_sqrt_x
 F_DIV my_sqrt_num
 F_ADD my_sqrt_x
 F_MLT 0.5
 SET my_sqrt_x
-LOD my_sqrt_x
 F_DIV my_sqrt_num
 F_ADD my_sqrt_x
 F_MLT 0.5
 SET my_sqrt_x
-LOD my_sqrt_x
 F_DIV my_sqrt_num
 F_ADD my_sqrt_x
 F_MLT 0.5
 SET my_sqrt_x
-LOD my_sqrt_x
 RET
 @main #arrays main_x 2 1000 "sqrt_x.txt"
 #arrays main_a 2 1000 "sqrt_y.txt"
@@ -74,7 +68,6 @@ SET main_y
 LOD main_j
 LDI main_a
 SET main_t
-LOD main_t
 F_SU1 main_y
 SET main_e
 LOD main_j
@@ -93,7 +86,6 @@ SET main_y
 LOD main_j
 LDI main_a
 SET main_t
-LOD main_t
 F_SU1 main_y
 SET main_e
 LOD main_j

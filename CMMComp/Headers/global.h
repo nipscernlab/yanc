@@ -37,3 +37,8 @@ void parse_end (char *prname, char *d_proc);
 // registers the assembly instructions
 void add_instr(char *inst, ...);           // standard
 void add_sinst(int type, char *inst, ...); // special
+
+// clears the one-instruction peephole window inside add_instr. Called at
+// every basic-block boundary (labels, capture push/pop, macro use/end) so the
+// "drop LOD x after SET x" optimization never crosses control flow.
+void emit_peephole_reset(void);

@@ -26,7 +26,6 @@ F_ABS
 SET seno_LUT_idxf
 F2I_M seno_LUT_idxf
 SET seno_LUT_idx
-LOD seno_LUT_idx
 LDI seno_LUT_Seno_LUT
 SET seno_LUT_v
 LOD seno_LUT_idx
@@ -54,7 +53,6 @@ SET main_y
 LOD main_j
 LDI main_a
 SET main_t
-LOD main_t
 F_SU1 main_y
 SET main_e
 LOD main_j
@@ -73,7 +71,6 @@ SET main_y
 LOD main_j
 LDI main_a
 SET main_t
-LOD main_t
 F_SU1 main_y
 SET main_e
 LOD main_j

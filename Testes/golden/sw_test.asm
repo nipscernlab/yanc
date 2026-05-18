@@ -12,7 +12,6 @@ NOP
 JIZ Lwh1end
 INN 0
 SET main_x
-LOD main_x
 SET switch_exp
 @sw_case_1_1 LOD switch_exp
 EQU 1
