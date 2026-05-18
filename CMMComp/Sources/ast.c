@@ -13,6 +13,13 @@
 #include "..\Headers\variaveis.h"   // v_name[] for the dump
 #include "..\Headers\messages.h"
 
+// needed by the expression-tree walker (ast_emit_expr) below
+#include "..\Headers\oper.h"
+#include "..\Headers\stdlib.h"
+#include "..\Headers\array_index.h"
+#include "..\Headers\data_use.h"
+#include "..\Headers\funcoes.h"
+
 // ----------------------------------------------------------------------------
 // expressions ----------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -208,6 +215,124 @@ static void expr_dump_at(expr_node *n, int depth)
 void expr_dump(expr_node *n)
 {
     expr_dump_at(n, 0);
+}
+
+// ----------------------------------------------------------------------------
+// expression tree walker (codegen via tree) ----------------------------------
+// ----------------------------------------------------------------------------
+// Recreates the emit that the grammar actions currently do inline. Calls the
+// same oper_*/exec_*/arr_*/pplus_*/num2exp/id2exp/par_exp/fcall helpers, so
+// running the walker over a built tree produces byte-identical assembly to
+// the inline path. NOT invoked yet - turning it on is a future step.
+
+expr ast_emit_expr(expr_node *n)
+{
+    if (!n) return expr_make(0, 0);
+
+    switch (n->kind)
+    {
+        case EXPR_LITERAL: return num2exp(n->id, n->type);
+        case EXPR_VAR:     return id2exp (n->id);
+
+        case EXPR_BINOP: {
+            expr a = ast_emit_expr(n->left );
+            expr b = ast_emit_expr(n->right);
+            switch (n->op) {
+                case OP_ADD:  return oper_soma (a, b);
+                case OP_SUB:  return oper_subt (a, b);
+                case OP_MUL:  return oper_mult (a, b);
+                case OP_DIV:  return oper_divi (a, b);
+                case OP_MOD:  return oper_mod  (a, b);
+                case OP_LT:   return oper_cmp  (a, b, 0);
+                case OP_GT:   return oper_cmp  (a, b, 1);
+                case OP_EQ:   return oper_cmp  (a, b, 2);
+                case OP_GE:   return oper_greq (a, b);
+                case OP_LE:   return oper_leeq (a, b);
+                case OP_NE:   return oper_dife (a, b);
+                case OP_LAN:  return oper_lanor(a, b, 0);
+                case OP_LOR:  return oper_lanor(a, b, 1);
+                case OP_SHL:  return oper_shift(a, b, 0);
+                case OP_SHR:  return oper_shift(a, b, 1);
+                case OP_SSHR: return oper_shift(a, b, 2);
+                case OP_AND:  return oper_bitw (a, b, 0);
+                case OP_OR:   return oper_bitw (a, b, 1);
+                case OP_XOR:  return oper_bitw (a, b, 2);
+                default: break;
+            }
+            break;
+        }
+
+        case EXPR_UNOP: {
+            expr a = ast_emit_expr(n->left);
+            switch (n->op) {
+                case OP_NEG: return oper_neg(a);
+                case OP_LIN: return oper_lin(a);
+                case OP_INV: return oper_inv(a);
+                default: break;
+            }
+            break;
+        }
+
+        case EXPR_ARRAY_INDEX: {
+            expr idx1 = ast_emit_expr(n->left);
+            if (n->right) {
+                expr idx2 = ast_emit_expr(n->right);
+                return arr_2d2exp(n->id, idx1, idx2);
+            }
+            return arr_1d2exp(n->id, idx1, n->op);  // op = reversed flag
+        }
+
+        case EXPR_PPLUS: {
+            if (!n->left)  return pplus2exp(n->id);
+            if (!n->right) {
+                expr idx = ast_emit_expr(n->left);
+                return pplus1d2exp(n->id, idx);
+            }
+            expr i1 = ast_emit_expr(n->left );
+            expr i2 = ast_emit_expr(n->right);
+            return pplus2d2exp(n->id, i1, i2);
+        }
+
+        case EXPR_STDLIB_CALL: {
+            switch (n->op) {
+                case OP_STD_IN:   return exec_in (n->id);
+                case OP_STD_FIN:  return exec_fin(n->id);
+                case OP_STD_PST:  { expr a = ast_emit_expr(n->left); return exec_pst (a); }
+                case OP_STD_ABS:  { expr a = ast_emit_expr(n->left); return exec_abs (a); }
+                case OP_STD_SIGN: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_sign(a, b); }
+                case OP_STD_NRM:  { expr a = ast_emit_expr(n->left); return exec_norm(a); }
+                case OP_STD_SQRT: { expr a = ast_emit_expr(n->left); return exec_sqrt(a); }
+                case OP_STD_ATAN: { expr a = ast_emit_expr(n->left); return exec_atan(a); }
+                case OP_STD_SIN:  { expr a = ast_emit_expr(n->left); return exec_sin (a); }
+                case OP_STD_COS:  { expr a = ast_emit_expr(n->left); return exec_cos (a); }
+                case OP_STD_REAL: { expr a = ast_emit_expr(n->left); return exec_real(a); }
+                case OP_STD_IMAG: { expr a = ast_emit_expr(n->left); return exec_imag(a); }
+                case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_comp(a, b); }
+                case OP_STD_FASE: { expr a = ast_emit_expr(n->left); return exec_fase(a); }
+                case OP_STD_MOD2: { expr a = ast_emit_expr(n->left); return exec_mod2(a); }
+                default: break;
+            }
+            break;
+        }
+
+        case EXPR_FUNC_CALL: {
+            args_frame_push();
+            for (int i = 0; i < n->n_args; i++) {
+                expr a = ast_emit_expr(n->args[i]);
+                if (i == 0) par_exp    (a);
+                else        par_listexp(a);
+            }
+            return fcall(n->id);
+        }
+
+        case EXPR_INNER: {
+            // left / right are EXPR_VAR children carrying the vector ids
+            return exec_vtv(n->left->id, n->right->id);
+        }
+    }
+    fprintf(stderr, "ast_emit_expr: unhandled kind=%d op=%d at line %d\n",
+            n->kind, n->op, n->line);
+    exit(EXIT_FAILURE);
 }
 
 // ----------------------------------------------------------------------------

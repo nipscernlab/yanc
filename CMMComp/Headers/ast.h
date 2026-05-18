@@ -168,6 +168,13 @@ void expr_free(expr_node *n);
 // dumps a human-readable indented tree to stderr (for debugging)
 void expr_dump(expr_node *n);
 
+// recursively walks an expression tree and emits the corresponding assembly
+// via the existing oper_* / exec_* / arr_* / pplus_* / num2exp / id2exp /
+// par_exp / fcall helpers. Returns the result POD the same way those helpers
+// do. NOT invoked yet - this is the future codegen path the parser will
+// switch to once every consumer reads .node instead of .type / .id.
+expr ast_emit_expr(expr_node *n);
+
 typedef struct ast_node {
     ast_kind kind;
     int      line;            // source line where the node was built (1-based)
