@@ -410,12 +410,19 @@ if [ "$UPDATE_SIZE" -eq 1 ]; then
         echo "# (excludes labels, directives and macros). regress.sh fails any run where"
         echo "# a count grows. To intentionally update after a refactor that shrinks"
         echo "# things, run: Scripts/regress.sh --update-size"
-        # `set -u` is fussy with associative array iteration when the array
-        # only got keys mid-script; guard the per-key expansion with a default.
-        for name in $(printf '%s\n' "${!SIZE_CURRENT[@]:-}" | sort); do
-            [ -n "$name" ] || continue
-            printf "%-10s %s\n" "$name" "${SIZE_CURRENT[$name]:-0}"
-        done
+        # bash's `set -u` raises "unbound variable" on ${assoc[$key]} even
+        # when the key is in ${!assoc[@]} (seen on bash 5.2). Build the
+        # output lines first, then sort, then print - keeps the lookup
+        # inside a single tight loop and avoids unrelated re-expansion.
+        if [ "${#SIZE_CURRENT[@]}" -gt 0 ]; then
+            set +u
+            lines=""
+            for name in "${!SIZE_CURRENT[@]}"; do
+                lines+=$(printf "%-10s %s" "$name" "${SIZE_CURRENT[$name]}")$'\n'
+            done
+            set -u
+            printf "%s" "$lines" | sort
+        fi
     } > "$SIZE_BASELINE_FILE"
     echo ""
     echo "===== size baseline rewritten ($SIZE_BASELINE_FILE) ====="
