@@ -236,4 +236,43 @@ void      ast_free    (ast_node *n);
 // (incomplete: only the migrated node kinds are handled, the rest abort)
 void      ast_emit    (ast_node *n);
 
+// ----------------------------------------------------------------------------
+// statement AST (fase 6 - structural statement tree) -------------------------
+// ----------------------------------------------------------------------------
+//
+// Each top-level statement reduces into a stmt_node. Today the grammar
+// builds-and-walks-immediately at parse time (stmt_emit_inline) so the emit
+// stream is byte-identical to the previous inline path. Subsequent commits
+// will migrate each statement type to a dedicated kind; once all are migrated
+// the per-body emit_push_capture / emit_pop_capture text path can be replaced
+// with a per-body stmt_node list walked at body close.
+
+typedef enum {
+    STMT_ASSIGN,  // id = exp;
+} stmt_kind;
+
+typedef struct stmt_node {
+    stmt_kind kind;
+    int       line;     // source line where the node was built (1-based)
+
+    int               id;   // STMT_ASSIGN: LHS variable index
+    struct expr_node *rhs;  // STMT_ASSIGN: RHS expression tree (owned)
+} stmt_node;
+
+// constructors (caller owns the returned node).
+stmt_node *stmt_assign(int id, struct expr_node *rhs);
+
+// walks a stmt_node and emits via the same helpers the inline grammar
+// actions used to call (ass_set, etc.).
+void       stmt_emit(stmt_node *n);
+
+// frees the node and every descendant (rhs included).
+void       stmt_free(stmt_node *n);
+
+// transitional helper: build + walk + free, all at parse time. Keeps emit
+// timing identical to the pre-fase-6 inline grammar actions while the rest
+// of the statement types are still inline. Will be replaced by per-body
+// stmt-list accumulation once every statement kind is migrated.
+void       stmt_emit_inline(stmt_node *n);
+
 #endif // YANC_AST_H

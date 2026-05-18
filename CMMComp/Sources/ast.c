@@ -20,6 +20,9 @@
 #include "..\Headers\data_use.h"
 #include "..\Headers\funcoes.h"
 
+// needed by the stmt_node walker
+#include "..\Headers\data_assign.h"
+
 // ----------------------------------------------------------------------------
 // expressions ----------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -521,4 +524,48 @@ void ast_emit(ast_node *n)
             add_sinst(0, "@switch_end_%d ", n->label);
             break;
     }
+}
+
+// ----------------------------------------------------------------------------
+// statement AST (fase 6) -----------------------------------------------------
+// ----------------------------------------------------------------------------
+//
+// First migrated kind: STMT_ASSIGN. Walker calls ass_set with the POD
+// returned by walking the RHS expression - exactly what the grammar action
+// `ass_set($1, EE($3))` used to do, just wrapped in a node.
+
+stmt_node *stmt_assign(int id, expr_node *rhs)
+{
+    stmt_node *n = calloc(1, sizeof(*n));
+    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    n->kind = STMT_ASSIGN;
+    n->line = line_num + 1;
+    n->id   = id;
+    n->rhs  = rhs;
+    return n;
+}
+
+void stmt_emit(stmt_node *n)
+{
+    if (!n) return;
+
+    switch (n->kind)
+    {
+        case STMT_ASSIGN:
+            ass_set(n->id, ast_emit_expr(n->rhs));
+            break;
+    }
+}
+
+void stmt_free(stmt_node *n)
+{
+    if (!n) return;
+    expr_free(n->rhs);
+    free(n);
+}
+
+void stmt_emit_inline(stmt_node *n)
+{
+    stmt_emit(n);
+    stmt_free(n);
 }

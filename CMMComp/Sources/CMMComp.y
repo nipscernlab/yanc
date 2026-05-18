@@ -175,7 +175,7 @@ dire_inter : ITRADD             {dire_inter();}      // interrupt start point (u
          // list declaration (one or more uninitialized variables)
 declar : TYPE id_list                               ';'
          // declaration of a variable with initialization
-       | TYPE ID '=' exp ';'          {declar_var($2); ass_set($2, EE($4));}
+       | TYPE ID '=' exp ';'          {declar_var($2); stmt_emit_inline(stmt_assign($2, $4));}
          // array declaration with file initialization
        | TYPE ID '[' INUM ']'              STRING   ';' {declar_arr_1d($2,$4,$6    );}
        | TYPE ID '[' INUM ']' '[' INUM ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
@@ -301,7 +301,7 @@ break      : BREAK ';'                     {exec_break  (  );}
 // assignments ----------------------------------------------------------------
 
            // standard assignment
-assignment : ID  '=' exp ';'                          {ass_set($1, EE($3));}
+assignment : ID  '=' exp ';'                          {stmt_emit_inline(stmt_assign($1, $3));}
            // increment
            | ID                          PPLUS ';'    {ass_pplus($1);}
            | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1, EE($3));}
