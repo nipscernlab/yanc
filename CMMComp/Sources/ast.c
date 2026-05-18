@@ -23,6 +23,65 @@ expr expr_make(int type, int id)
 }
 
 // ----------------------------------------------------------------------------
+// expression AST constructors / destructor -----------------------------------
+// ----------------------------------------------------------------------------
+// No callers yet. The bison stack still carries the flat `expr` POD; this
+// only puts the building blocks in place so a follow-up commit can start
+// returning expr_node * from terminal / exp reductions.
+
+static expr_node *enode_new(expr_kind k)
+{
+    expr_node *n = calloc(1, sizeof(*n));
+    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    n->kind = k;
+    n->line = line_num + 1;
+    return n;
+}
+
+expr_node *expr_lit(int type, int id)
+{
+    expr_node *n = enode_new(EXPR_LITERAL);
+    n->type = type;
+    n->id   = id;
+    return n;
+}
+
+expr_node *expr_var(int type, int id)
+{
+    expr_node *n = enode_new(EXPR_VAR);
+    n->type = type;
+    n->id   = id;
+    return n;
+}
+
+expr_node *expr_binop(int op, int type, expr_node *left, expr_node *right)
+{
+    expr_node *n = enode_new(EXPR_BINOP);
+    n->op    = op;
+    n->type  = type;
+    n->left  = left;
+    n->right = right;
+    return n;
+}
+
+expr_node *expr_unop(int op, int type, expr_node *operand)
+{
+    expr_node *n = enode_new(EXPR_UNOP);
+    n->op   = op;
+    n->type = type;
+    n->left = operand;
+    return n;
+}
+
+void expr_free(expr_node *n)
+{
+    if (!n) return;
+    expr_free(n->left);
+    expr_free(n->right);
+    free(n);
+}
+
+// ----------------------------------------------------------------------------
 // helpers --------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 

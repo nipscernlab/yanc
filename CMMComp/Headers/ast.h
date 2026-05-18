@@ -77,6 +77,16 @@ typedef struct expr_node {
     struct expr_node *left, *right;    // EXPR_BINOP: both; EXPR_UNOP: left only
 } expr_node;
 
+// constructors: type is passed in (no promotion logic yet - callers compute
+// it when they care). All return a heap node owned by the caller.
+expr_node *expr_lit  (int type, int id);
+expr_node *expr_var  (int type, int id);
+expr_node *expr_binop(int op, int type, expr_node *left, expr_node *right);
+expr_node *expr_unop (int op, int type, expr_node *operand);
+
+// frees the node and every descendant recursively
+void expr_free(expr_node *n);
+
 typedef struct ast_node {
     ast_kind kind;
     int      line;            // source line where the node was built (1-based)
