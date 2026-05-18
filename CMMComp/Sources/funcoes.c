@@ -34,6 +34,68 @@ int fun_parse;    // stores the id of the function being parsed
 int p_test;       // identifies parameters in function calls (similar to OFST but with value 10)
 
 // ----------------------------------------------------------------------------
+// arg-stack frames for nested function calls --------------------------------
+// ----------------------------------------------------------------------------
+// Every '(' at a call site pushes a marker; every par_exp / par_listexp
+// appends the arg's .node onto a global stack; the matching fcall / vcall
+// drains the slice since its marker into the expr_func_call node (or frees
+// the contents, for void calls).
+
+static expr_node **arg_stack    = NULL;
+static int arg_stack_n          = 0;
+static int arg_stack_cap        = 0;
+static int *frame_marks         = NULL;
+static int frame_marks_n        = 0;
+static int frame_marks_cap      = 0;
+
+static void args_grow_stack(int needed)
+{
+    if (needed <= arg_stack_cap) return;
+    int new_cap = arg_stack_cap ? arg_stack_cap * 2 : 8;
+    while (new_cap < needed) new_cap *= 2;
+    expr_node **t = realloc(arg_stack, (size_t)new_cap * sizeof(*t));
+    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    arg_stack     = t;
+    arg_stack_cap = new_cap;
+}
+
+static void args_grow_marks(int needed)
+{
+    if (needed <= frame_marks_cap) return;
+    int new_cap = frame_marks_cap ? frame_marks_cap * 2 : 8;
+    while (new_cap < needed) new_cap *= 2;
+    int *t = realloc(frame_marks, (size_t)new_cap * sizeof(*t));
+    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    frame_marks     = t;
+    frame_marks_cap = new_cap;
+}
+
+void args_frame_push(void)
+{
+    args_grow_marks(frame_marks_n + 1);
+    frame_marks[frame_marks_n++] = arg_stack_n;
+}
+
+static void args_push(expr_node *node)
+{
+    args_grow_stack(arg_stack_n + 1);
+    arg_stack[arg_stack_n++] = node;
+}
+
+// pops the current frame and returns a heap-owned args[] array (caller
+// owns both the array and the nodes). n_out is the arg count.
+static expr_node **args_frame_pop(int *n_out)
+{
+    int mark = frame_marks[--frame_marks_n];
+    int n    = arg_stack_n - mark;
+    expr_node **out = (n > 0) ? malloc((size_t)n * sizeof(*out)) : NULL;
+    if (n > 0) memcpy(out, arg_stack + mark, (size_t)n * sizeof(*out));
+    arg_stack_n = mark;
+    *n_out = n;
+    return out;
+}
+
+// ----------------------------------------------------------------------------
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
@@ -613,6 +675,7 @@ void par_exp(expr e)
     p_test = 0; // reset the p_test state
     p_test = p_test*10 + e.type;
     par_check(e);
+    args_push(e.node);   // record this arg's tree on the current call's frame
     acc_ok = 1;
 }
 
@@ -621,6 +684,7 @@ void par_listexp(expr e)
 {
     p_test = p_test*10 + e.type;
     par_check(e);
+    args_push(e.node);
 }
 
 // emits the CAL instruction for void-type functions (hence the v in vcall)
@@ -644,6 +708,11 @@ void vcall(int id)
 
     v_used[id] = 1; // function has been called
     acc_ok     = 0; // acc is free
+
+    // drain the arg frame; void calls discard their tree (no AST node)
+    int n; expr_node **a = args_frame_pop(&n);
+    for (int i = 0; i < n; i++) expr_free(a[i]);
+    free(a);
 }
 
 // emits the CAL instruction for functions with a return value (hence the f in fcall)
@@ -671,5 +740,9 @@ expr fcall(int id)
     v_used[id] = 1;             // function has been used
     acc_ok     = 1;             // acc is busy
 
-    return expr_make(v_type[id]-6, 0); // returns the data type (void, int, float or comp)
+    // drain the arg frame and wrap into the AST node before returning
+    expr e = expr_make(v_type[id]-6, 0); // returns the data type (void, int, float or comp)
+    int n; expr_node **a = args_frame_pop(&n);
+    e.node = expr_func_call(e.type, id, a, n);
+    return e;
 }

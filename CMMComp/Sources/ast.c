@@ -107,11 +107,23 @@ expr_node *expr_stdlib(int op, int type, int port, expr_node *a, expr_node *b)
     return n;
 }
 
+expr_node *expr_func_call(int type, int id, expr_node **args, int n_args)
+{
+    expr_node *n = enode_new(EXPR_FUNC_CALL);
+    n->type   = type;
+    n->id     = id;       // function's v_name index
+    n->args   = args;     // takes ownership
+    n->n_args = n_args;
+    return n;
+}
+
 void expr_free(expr_node *n)
 {
     if (!n) return;
     expr_free(n->left);
     expr_free(n->right);
+    for (int i = 0; i < n->n_args; i++) expr_free(n->args[i]);
+    free(n->args);
     free(n);
 }
 
@@ -129,6 +141,7 @@ static const char *kind_name(expr_kind k)
         case EXPR_ARRAY_INDEX: return "ARRAY_INDEX";
         case EXPR_PPLUS:       return "PPLUS";
         case EXPR_STDLIB_CALL: return "STDLIB_CALL";
+        case EXPR_FUNC_CALL:   return "FUNC_CALL";
     }
     return "?";
 }
@@ -169,10 +182,14 @@ static void expr_dump_at(expr_node *n, int depth)
         case EXPR_STDLIB_CALL:
             fprintf(stderr, " op=%d port=%d", n->op, n->id);
             break;
+        case EXPR_FUNC_CALL:
+            fprintf(stderr, " id=%d (%s) n_args=%d", n->id, v_name[n->id], n->n_args);
+            break;
     }
     fputc('\n', stderr);
     expr_dump_at(n->left,  depth + 1);
     expr_dump_at(n->right, depth + 1);
+    for (int i = 0; i < n->n_args; i++) expr_dump_at(n->args[i], depth + 1);
 }
 
 void expr_dump(expr_node *n)

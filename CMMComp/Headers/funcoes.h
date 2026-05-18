@@ -27,3 +27,9 @@ void  par_exp    (expr e);          // loads the first parameter (if any)
 void  par_listexp(expr e);          // loads the remaining parameters (if any)
 void  vcall      (int id );         // CAL of a void function
 expr  fcall      (int id );         // CAL of a function with return value
+
+// argument-stack frames for nested function calls. args_frame_push() is
+// called from the grammar mid-rule action right after 'ID ('; par_exp /
+// par_listexp push each evaluated arg's .node; fcall / vcall drain the
+// frame when ')' is reduced.
+void  args_frame_push(void);

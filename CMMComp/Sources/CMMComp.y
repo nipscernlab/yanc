@@ -232,11 +232,11 @@ stmt_case:        declar     // variable declarations
 // function calls -------------------------------------------------------------
 
 // void function
-void_call   : ID '('            {fun_id   = $1 ;} // fun_id -> id of the called function
-              exp_list ')' ';'  {vcall     ($1);} // we can already emit the void call
+void_call   : ID '('            {fun_id = $1; args_frame_push();}   // open arg frame for nested-call safety
+              exp_list ')' ';'  {vcall     ($1);}
 // function with return value
-func_call   : ID '('            {fun_id   = $1 ;}
-              exp_list ')'      {$$ = fcall($1);} // emits the call and returns the final data type
+func_call   : ID '('            {fun_id = $1; args_frame_push();}
+              exp_list ')'      {$$ = fcall($1);}
 
 // parameters need to be pushed onto the stack
 // for each exp found, the resulting value is written to the stack with par_exp

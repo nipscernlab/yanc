@@ -73,7 +73,8 @@ typedef enum {
     EXPR_UNOP,         // <op> a     (op in -, !, ~)
     EXPR_ARRAY_INDEX,  // array[idx]  (1D auto / reversed; 2D adds right)
     EXPR_PPLUS,        // postfix ++ (scalar id, or array[idx] / [idx][idx2])
-    EXPR_STDLIB_CALL   // in() / fin() / pst() / abs() / sign() / sqrt() / ... (op picks which)
+    EXPR_STDLIB_CALL,  // in() / fin() / pst() / abs() / sign() / sqrt() / ... (op picks which)
+    EXPR_FUNC_CALL     // user-defined function call f(a, b, ...) - args[] is n-ary
 } expr_kind;
 
 // Operator codes carried by EXPR_BINOP / EXPR_UNOP. Names mirror the
@@ -127,6 +128,8 @@ typedef struct expr_node {
     int id;                            // EXPR_LITERAL / EXPR_VAR: index into v_name
     int op;                            // EXPR_BINOP / EXPR_UNOP: operator code
     struct expr_node *left, *right;    // EXPR_BINOP: both; EXPR_UNOP: left only
+    struct expr_node **args;           // EXPR_FUNC_CALL: argument expressions (owned)
+    int n_args;                        // EXPR_FUNC_CALL: argument count
 } expr_node;
 
 // constructors: type is passed in (no promotion logic yet - callers compute
@@ -148,6 +151,11 @@ expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2);
 // generic stdlib call. `port` is the INUM port number for IN/FIN/OUT and
 // 0 for everything else. a/b are operand expressions (NULL if unused).
 expr_node *expr_stdlib(int op, int type, int port, expr_node *a, expr_node *b);
+
+// user-defined function call. id is the function's v_name index. args is a
+// heap array of length n_args; the node takes ownership of both the array
+// and the nodes it points at (expr_free recurses).
+expr_node *expr_func_call(int type, int id, expr_node **args, int n_args);
 
 // frees the node and every descendant recursively
 void expr_free(expr_node *n);
