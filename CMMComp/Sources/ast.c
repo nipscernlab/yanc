@@ -588,6 +588,23 @@ stmt_node *stmt_out(int port, expr_node *rhs, int fout_flag)
     return n;
 }
 
+stmt_node *stmt_copy(expr_node *rhs, int dst_id)
+{
+    stmt_node *n = snode_new(STMT_COPY);
+    n->id  = dst_id;
+    n->rhs = rhs;
+    return n;
+}
+
+stmt_node *stmt_vout(int port, expr_node *rhs, int vector_id)
+{
+    stmt_node *n = snode_new(STMT_VOUT);
+    n->id  = port;
+    n->id2 = vector_id;
+    n->rhs = rhs;
+    return n;
+}
+
 void stmt_emit(stmt_node *n)
 {
     if (!n) return;
@@ -623,6 +640,14 @@ void stmt_emit(stmt_node *n)
         case STMT_OUT:
             if (n->op) exec_fout(n->id, ast_emit_expr(n->rhs));
             else       exec_out (n->id, ast_emit_expr(n->rhs));
+            break;
+
+        case STMT_COPY:
+            exec_copy(ast_emit_expr(n->rhs), n->id);
+            break;
+
+        case STMT_VOUT:
+            exec_vout(n->id, ast_emit_expr(n->rhs), n->id2);
             break;
     }
 }

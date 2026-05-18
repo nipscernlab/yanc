@@ -253,15 +253,18 @@ typedef enum {
     STMT_ARRAY_ASSIGN,  // id[idx] = exp;  /  id[idx) = exp;  /  id[idx][idx2] = exp;
     STMT_RETURN,        // return exp;  (rhs set)  /  return;  (rhs NULL)
     STMT_OUT,           // out(port, exp);  (op=0)  /  fout(port, exp);  (op=1)
+    STMT_COPY,          // copy(exp, dst_id);
+    STMT_VOUT,          // out(port, exp | vector_id BRA);  Dirac vector output
 } stmt_kind;
 
 typedef struct stmt_node {
     stmt_kind kind;
     int       line;     // source line where the node was built (1-based)
 
-    int               id;    // LHS variable / array index
-    int               op;    // ARRAY_ASSIGN: fft flag (0 = [i], 1 = [i) bit-reversed)
-    struct expr_node *rhs;   // ASSIGN / ARRAY_ASSIGN: RHS expression tree (owned)
+    int               id;    // primary int (LHS variable / array / port / dst)
+    int               id2;   // secondary int (VOUT: vector id; future Dirac uses)
+    int               op;    // small flag (fft / fout / ...) per kind
+    struct expr_node *rhs;   // value/source expression (owned)
     struct expr_node *idx;   // PPLUS / ARRAY_ASSIGN: 1D/2D index (NULL for scalar)
     struct expr_node *idx2;  // PPLUS / ARRAY_ASSIGN: 2D second index (NULL otherwise)
 } stmt_node;
@@ -289,6 +292,12 @@ stmt_node *stmt_return(struct expr_node *rhs);
 // out(port, rhs)  -> fout_flag=0
 // fout(port, rhs) -> fout_flag=1
 stmt_node *stmt_out(int port, struct expr_node *rhs, int fout_flag);
+
+// copy(rhs, dst_id);   no AST node for the destination, just its var id.
+stmt_node *stmt_copy(struct expr_node *rhs, int dst_id);
+
+// out(port, rhs | vector_id BRA);  Dirac vector output.
+stmt_node *stmt_vout(int port, struct expr_node *rhs, int vector_id);
 
 // walks a stmt_node and emits via the same helpers the inline grammar
 // actions used to call (ass_set, etc.).

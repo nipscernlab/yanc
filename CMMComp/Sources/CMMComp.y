@@ -257,7 +257,7 @@ std_pst  : PST  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_PST,  0,
 std_abs  : ABS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ABS,  0, 0,  $3,   NULL);}  // |x|
 std_sign : SGN  '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_SIGN, 0, 0,  $3,   $5  );}  // y with sign of x
 std_nrm  : NRM  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_NRM,  0, 0,  $3,   NULL);}  // x / NUGAIN
-std_copy : COPY '(' exp  ',' ID  ')' ';'       {     exec_copy(EE($3),  $5);}                       // void: copies x into y (no AST node)
+std_copy : COPY '(' exp  ',' ID  ')' ';'       {stmt_emit_inline(stmt_copy($3, $5));}                // void: copies x into y
 std_sqrt : SQRT '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SQRT, 0, 0,  $3,   NULL);}  // sqrt(x)
 std_atan : ATAN '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ATAN, 0, 0,  $3,   NULL);}  // atan(x)
 std_sin  : SIN  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SIN,  0, 0,  $3,   NULL);}  // sin(x)
@@ -267,7 +267,7 @@ std_imag : IMAG '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_IMAG, 0,
 std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0, 0,  $3,   $5  );}  // complex(x, y)
 std_fase : FASE '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_FASE, 0, 0,  $3,   NULL);}  // phase(comp)
 std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_MOD2, 0, 0,  $3,   NULL);}  // |comp|^2
-std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {exec_vout($3, EE($5), $7);}        // data output with Dirac notation
+std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_emit_inline(stmt_vout($3, $5, $7));}  // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
 
