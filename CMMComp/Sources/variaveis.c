@@ -93,8 +93,14 @@ void check_var()
         // check whether a variable was declared but not used ...
         if (((v_type[i] == 1) || (v_type[i] == 2) || (v_type[i] == 3)) && (v_used[i] == 0))
         {
-            // check whether it is global or not
-            if (strcmp(v_name[v_fnid[i]], "") == 0)
+            // v_fnid records the variable's owning function: a valid v_name
+            // index for locals, or "" / -1 for globals. declar_arr_1d etc.
+            // call find_var(fname) which returns -1 when fname is the empty
+            // string and no "" entry exists in v_name yet - so treat any
+            // out-of-range v_fnid as the global case.
+            int is_global = (v_fnid[i] < 0) ||
+                            (strcmp(v_name[v_fnid[i]], "") == 0);
+            if (is_global)
                 fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_name[i]);
             else
                 fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, rem_fname(v_name[i], v_name[v_fnid[i]]), v_name[v_fnid[i]]);
