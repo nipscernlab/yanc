@@ -206,8 +206,8 @@ par_list : TYPE ID                        {$$ = declar_par($1,$2);}
          | par_list ',' par_list          {        set_par($3   );} // pulls from the stack
 
 // function and void returns
-return_call : RET exp ';'                 {declar_ret(EE($2), 1);}
-            | RET     ';'                 {  void_ret(    );}
+return_call : RET exp ';'                 {stmt_emit_inline(stmt_return($2  ));}
+            | RET     ';'                 {stmt_emit_inline(stmt_return(NULL));}
 
 // statement list in C --------------------------------------------------------
 

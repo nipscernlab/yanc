@@ -572,6 +572,13 @@ stmt_node *stmt_array_assign(int id, expr_node *idx, expr_node *idx2,
     return n;
 }
 
+stmt_node *stmt_return(expr_node *rhs)
+{
+    stmt_node *n = snode_new(STMT_RETURN);
+    n->rhs = rhs;
+    return n;
+}
+
 void stmt_emit(stmt_node *n)
 {
     if (!n) return;
@@ -597,6 +604,11 @@ void stmt_emit(stmt_node *n)
                                               ast_emit_expr(n->idx2));
             else         arr_1d_index(n->id, ast_emit_expr(n->idx));
             ass_array(n->id, ast_emit_expr(n->rhs), n->op);
+            break;
+
+        case STMT_RETURN:
+            if (n->rhs) declar_ret(ast_emit_expr(n->rhs), 1);
+            else        void_ret();
             break;
     }
 }
