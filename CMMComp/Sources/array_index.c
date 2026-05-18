@@ -28,7 +28,6 @@ TODO:
 // loads the array index into the accumulator (1D array)
 void arr_1d_index(int id, expr e)
 {
-    int et = expr_to_et(e);
     // ------------------------------------------------------------------------
     // argument check ---------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -49,30 +48,30 @@ void arr_1d_index(int id, expr e)
 
     // when int in memory -------------------------------------------------
 
-    if ((get_type(et) == 1) && (et % OFST != 0))
+    if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("LOD %s\n", v_name[et % OFST]);
+        add_instr("LOD %s\n", v_name[e.id]);
     }
 
     // when int in acc ----------------------------------------------------
 
-    if ((get_type(et) == 1) && (et % OFST == 0))
+    if ((e.type == 1) && (e.id == 0))
     {
         // nothing to do
     }
 
     // when float in memory -----------------------------------------
 
-    if ((get_type(et) == 2) && (et % OFST != 0))
+    if ((e.type == 2) && (e.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDX_FLOAT, line_num+1);
 
-        add_instr("F2I_M %s\n", v_name[et % OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
     }
 
     // when float in acc --------------------------------------------------
 
-    if ((get_type(et) == 2) && (et % OFST == 0))
+    if ((e.type == 2) && (e.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDX_FLOAT, line_num+1);
 
@@ -81,7 +80,7 @@ void arr_1d_index(int id, expr e)
 
     // when comp const in memory ------------------------------------------
 
-    if (get_type(et) == 5)
+    if (e.type == 5)
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -92,7 +91,7 @@ void arr_1d_index(int id, expr e)
 
     // when comp in acc ---------------------------------------------------
 
-    if ((get_type(et) == 3) && (et % OFST == 0))
+    if ((e.type == 3) && (e.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -102,11 +101,11 @@ void arr_1d_index(int id, expr e)
 
     // when comp in memory ------------------------------------------------
 
-    if ((get_type(et) == 3) && (et % OFST != 0))
+    if ((e.type == 3) && (e.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
-        add_instr("F2I_M %s\n", v_name[et % OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
     }
 
     acc_ok = 1; // acc carregado
@@ -115,8 +114,6 @@ void arr_1d_index(int id, expr e)
 // loads the array index into the accumulator (2D array)
 void arr_2d_index(int id, expr e1, expr e2)
 {
-    int et1 = expr_to_et(e1);
-    int et2 = expr_to_et(e2);
     // ------------------------------------------------------------------------
     // argument check ---------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -136,7 +133,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     expr etr, eti;
 
     // int in acc and int in acc
-    if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
     {
         add_instr("SET_P aux_var\n");
         add_instr("MLT   %s_arr_size\n", v_name[id]);
@@ -144,14 +141,14 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in acc and int in memory
-    if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
     {
         add_instr("MLT %s_arr_size\n", v_name[id]);
-        add_instr("ADD %s\n",  v_name[et2 % OFST]);
+        add_instr("ADD %s\n",  v_name[e2.id]);
     }
 
     // int in acc and float in acc
-    if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -162,17 +159,17 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in acc and float in memory
-    if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // int in acc and comp const in memory
-    if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -184,7 +181,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in acc and comp in acc
-    if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -196,92 +193,92 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in acc and comp in memory
-    if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // int in memory and int in acc
-    if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
     {
-        add_instr("P_LOD %s\n",  v_name[et1 % OFST]);
+        add_instr("P_LOD %s\n",  v_name[e1.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
         add_instr("S_ADD\n");
     }
 
     // int in memory and int in memory
-    if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
     {
-        add_instr("LOD  %s\n",  v_name[et1 % OFST]);
+        add_instr("LOD  %s\n",  v_name[e1.id]);
         add_instr("MLT  %s_arr_size\n", v_name[id]);
-        add_instr("ADD  %s\n",  v_name[et2 % OFST]);
+        add_instr("ADD  %s\n",  v_name[e2.id]);
     }
 
     // int in memory and float in acc
-    if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
         add_instr("F2I\n");
-        add_instr("P_LOD %s\n",  v_name[et1 % OFST]);
+        add_instr("P_LOD %s\n",  v_name[e1.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
         add_instr("S_ADD\n");
     }
 
     // int in memory and float in memory
-    if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
-        add_instr("LOD     %s\n",  v_name[et1 % OFST]);
+        add_instr("LOD     %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // int in memory and comp const in memory
-    if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         get_cmp_cst(e2, &etr, &eti);
 
-        add_instr("LOD     %s\n",  v_name[et1 % OFST]);
+        add_instr("LOD     %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("P_F2I_M %s\n",  v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
     // int in memory and comp in acc
-    if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
         add_instr("SET   aux_var\n");
-        add_instr("LOD   %s\n",  v_name[et1 % OFST]);
+        add_instr("LOD   %s\n",  v_name[e1.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
         add_instr("ADD   aux_var\n");
     }
 
     // int in memory and comp in memory
-    if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-        add_instr("LOD     %s\n",  v_name[et1 % OFST]);
+        add_instr("LOD     %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // float in acc and int in acc
-    if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -292,17 +289,17 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and int in memory
-    if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
         add_instr("F2I\n");
         add_instr("MLT %s_arr_size\n", v_name[id]);
-        add_instr("ADD %s\n",  v_name[et2 % OFST]);
+        add_instr("ADD %s\n",  v_name[e2.id]);
     }
 
     // float in acc and float in acc
-    if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
@@ -314,18 +311,18 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and float in memory
-    if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I\n");
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // float in acc and comp const in memory
-    if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -338,7 +335,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and comp in acc
-    if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -351,97 +348,97 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and comp in memory
-    if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I\n");
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // float in memory and int in acc
-    if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
-        add_instr("P_F2I_M %s\n" , v_name[et1 % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("S_ADD\n");
     }
 
     // float in memory and int in memory
-    if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
-        add_instr("F2I_M  %s\n",  v_name[et1 % OFST]);
+        add_instr("F2I_M  %s\n",  v_name[e1.id]);
         add_instr("MLT    %s_arr_size\n", v_name[id]);
-        add_instr("ADD    %s\n",  v_name[et2 % OFST]);
+        add_instr("ADD    %s\n",  v_name[e2.id]);
     }
 
     // float in memory and float in acc
-    if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
         add_instr("F2I\n");
-        add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("S_ADD\n");
     }
 
     // float in memory and float in memory
-    if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
-        add_instr("F2I_M   %s\n",  v_name[et1 % OFST]);
+        add_instr("F2I_M   %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // float in memory and comp const in memory
-    if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(e2, &etr, &eti);
 
-        add_instr("F2I_M   %s\n",  v_name[et1 % OFST]);
+        add_instr("F2I_M   %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("P_F2I_M %s\n",  v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
     // float in memory and comp in acc
-    if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
         add_instr("SET   aux_var\n");
-        add_instr("F2I_M %s\n",  v_name[et1 % OFST]);
+        add_instr("F2I_M %s\n",  v_name[e1.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
         add_instr("ADD   aux_var\n");
     }
 
     // float in memory and comp in memory
-    if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        add_instr("F2I_M   %s\n",  v_name[et1 % OFST]);
+        add_instr("F2I_M   %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // comp const in memory and int in acc
-    if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -455,7 +452,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and int in memory
-    if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -463,11 +460,11 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("F2I_M %s\n" , v_name[etr.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
-        add_instr("ADD   %s\n",  v_name[et2 % OFST]);
+        add_instr("ADD   %s\n",  v_name[e2.id]);
     }
 
     // comp const in memory and float in acc
-    if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -481,7 +478,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and float in memory
-    if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -489,12 +486,12 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("F2I_M   %s\n" , v_name[etr.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // comp const in memory and comp const in memory
-    if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -508,7 +505,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and comp in acc
-    if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -523,7 +520,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and comp in memory
-    if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -531,12 +528,12 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("F2I_M   %s\n" , v_name[etr.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // comp in acc and int in acc
-    if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -548,18 +545,18 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and int in memory
-    if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
         add_instr("MLT %s_arr_size\n", v_name[id]);
-        add_instr("ADD %s\n",  v_name[et2 % OFST]);
+        add_instr("ADD %s\n",  v_name[e2.id]);
     }
 
     // comp in acc and float in acc
-    if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -572,19 +569,19 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and float in memory
-    if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
         add_instr("MLT %s_arr_size\n"   , v_name[id]);
-        add_instr("P_F2I_M %s\n", v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n", v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // comp in acc and comp const in memory
-    if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -598,7 +595,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and comp in acc
-    if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -612,93 +609,93 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and comp in memory
-    if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // comp in memory and int in acc
-    if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-        add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("S_ADD\n");
     }
 
     // comp in memory and int in memory
-    if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-        add_instr("F2I_M %s\n",  v_name[et1 % OFST]);
+        add_instr("F2I_M %s\n",  v_name[e1.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
-        add_instr("ADD   %s\n",  v_name[et2 % OFST]);
+        add_instr("ADD   %s\n",  v_name[e2.id]);
     }
 
     // comp in memory and float in acc
-    if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I\n");
-        add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("S_ADD\n");
     }
 
     // comp in memory and float in memory
-    if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
     {
         fprintf(stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        add_instr("F2I_M   %s\n",  v_name[et1 % OFST]);
+        add_instr("F2I_M   %s\n",  v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n",  v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
     // comp in memory and comp const in memory
-    if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         get_cmp_cst(e2, &etr, &eti);
 
-        add_instr("F2I_M   %s\n" , v_name[et1 % OFST]);
+        add_instr("F2I_M   %s\n" , v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
         add_instr("P_F2I_M %s\n" , v_name[etr.id]);
         add_instr("S_ADD\n");
     }
 
     // comp in memory and comp in acc
-    if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("SET_P aux_var\n");
         add_instr("F2I\n");
         add_instr("SET   aux_var\n");
-        add_instr("F2I_M %s\n" , v_name[et1 % OFST]);
+        add_instr("F2I_M %s\n" , v_name[e1.id]);
         add_instr("MLT   %s_arr_size\n", v_name[id]);
         add_instr("ADD   aux_var\n");
     }
 
     // comp in memory and comp in memory
-    if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
     {
         fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-        add_instr("F2I_M   %s\n" , v_name[et1 % OFST]);
+        add_instr("F2I_M   %s\n" , v_name[e1.id]);
         add_instr("MLT     %s_arr_size\n", v_name[id]);
-        add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+        add_instr("P_F2I_M %s\n" , v_name[e2.id]);
         add_instr("S_ADD\n");
     }
 
@@ -713,7 +710,6 @@ void arr_2d_index(int id, expr e1, expr e2)
 // the fft parameter tells whether to use the reversed index
 expr arr_1d2exp(int id, expr e, int fft)
 {
-    int et = expr_to_et(e);
     // consistency checks -----------------------------------------------------
 
     // test whether the variable has been declared
@@ -746,20 +742,20 @@ expr arr_1d2exp(int id, expr e, int fft)
     if (type < 3)
     {
         // int in acc
-        if ((get_type(et) == 1) && (et % OFST == 0))
+        if ((e.type == 1) && (e.id == 0))
         {
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
         // int in memory
-        if ((get_type(et) == 1) && (et % OFST != 0))
+        if ((e.type == 1) && (e.id != 0))
         {
-            add_instr("%s %s\n", ldi, v_name[et % OFST]);
+            add_instr("%s %s\n", ldi, v_name[e.id]);
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
         // float in acc
-        if ((get_type(et) == 2) && (et % OFST == 0))
+        if ((e.type == 2) && (e.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
@@ -768,16 +764,16 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // float in memory
-        if ((get_type(et) == 2) && (et % OFST != 0))
+        if ((e.type == 2) && (e.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
-            add_instr("%s %s\n", f2i, v_name[et % OFST]);
+            add_instr("%s %s\n", f2i, v_name[e.id]);
             add_instr("%s %s\n", ldv, v_name[id]);
         }
 
         // comp const in memory
-        if ((get_type(et) == 5) && (et % OFST != 0))
+        if ((e.type == 5) && (e.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -788,7 +784,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp in acc
-        if ((get_type(et) == 3) && (et % OFST == 0))
+        if ((e.type == 3) && (e.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -798,11 +794,11 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp in memory
-        if ((get_type(et) == 3) && (et % OFST != 0))
+        if ((e.type == 3) && (e.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
-            add_instr("%s %s\n", f2i, v_name[et%OFST]);
+            add_instr("%s %s\n", f2i, v_name[e.id]);
             add_instr("%s %s\n", ldv, v_name[id]);
         }
     }
@@ -812,7 +808,7 @@ expr arr_1d2exp(int id, expr e, int fft)
     else
     {
         // int in acc
-        if ((get_type(et) == 1) && (et % OFST == 0))
+        if ((e.type == 1) && (e.id == 0))
         {
             add_instr("SET   aux_var\n");
             add_instr("%s %s\n"  , ldv, v_name[id]);
@@ -821,16 +817,16 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // int in memory
-        if ((get_type(et) == 1) && (et % OFST != 0))
+        if ((e.type == 1) && (e.id != 0))
         {
-            add_instr("%s %s\n"    , ldi, v_name[et % OFST]);
+            add_instr("%s %s\n"    , ldi, v_name[e.id]);
             add_instr("%s %s\n"    , ldv, v_name[id]);
-            add_instr("P_LOD %s\n" ,      v_name[et % OFST]);
+            add_instr("P_LOD %s\n" ,      v_name[e.id]);
             add_instr("%s %s_i\n"  , ldv, v_name[id]);
         }
 
         // float in acc
-        if ((get_type(et) == 2) && (et % OFST == 0))
+        if ((e.type == 2) && (e.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
@@ -842,11 +838,11 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // float in memory
-        if ((get_type(et) == 2) && (et % OFST != 0))
+        if ((e.type == 2) && (e.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
-            add_instr("%s %s\n"  , f2i, v_name[et % OFST]);
+            add_instr("%s %s\n"  , f2i, v_name[e.id]);
             add_instr("SET   aux_var\n");
             add_instr("%s %s\n"  , ldv, v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -854,7 +850,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp const in memory
-        if ((get_type(et) == 5) && (et % OFST != 0))
+        if ((e.type == 5) && (e.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -868,7 +864,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp in acc
-        if ((get_type(et) == 3) && (et % OFST == 0))
+        if ((e.type == 3) && (e.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -881,11 +877,11 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp in memory
-        if ((get_type(et) == 3) && (et % OFST != 0))
+        if ((e.type == 3) && (e.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
-            add_instr("%s %s\n"  , f2i, v_name[et%OFST]);
+            add_instr("%s %s\n"  , f2i, v_name[e.id]);
             add_instr("SET   aux_var\n");
             add_instr("%s %s\n"  , ldv, v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -902,8 +898,6 @@ expr arr_1d2exp(int id, expr e, int fft)
 // transforma array 2D em exp
 expr arr_2d2exp(int id, expr e1, expr e2)
 {
-    int et1 = expr_to_et(e1);
-    int et2 = expr_to_et(e2);
     // consistency checks -----------------------------------------------------
 
     // test whether the variable has been declared
@@ -936,7 +930,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     if (type < 3)
     {
         // int in acc and int in acc
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
         {
             add_instr("SET_P aux_var\n");
             add_instr("MLT   %s_arr_size\n", v_name[id]);
@@ -945,15 +939,15 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and int in memory
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
         {
             add_instr("MLT %s_arr_size\n", v_name[id]);
-            add_instr("ADD %s\n" , v_name[et2 % OFST]);
+            add_instr("ADD %s\n" , v_name[e2.id]);
             add_instr( "%s %s\n" , ldv   , v_name[id]);
         }
 
         // int in acc and float in acc
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -965,18 +959,18 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and float in memory
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv    , v_name[id]);
         }
 
         // int in acc and comp const in memory
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -989,7 +983,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp in acc
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1002,66 +996,66 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp in memory
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv    , v_name[id]);
         }
 
         // int in memory and int in acc
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
         {
-            add_instr("P_LOD %s\n" , v_name[et1 % OFST]);
+            add_instr("P_LOD %s\n" , v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
         // int in memory and int in memory
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
         {
-            add_instr( "%s %s\n", ldi, v_name[et1 % OFST]);
+            add_instr( "%s %s\n", ldi, v_name[e1.id]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
-            add_instr("ADD %s\n"     , v_name[et2 % OFST]);
+            add_instr("ADD %s\n"     , v_name[e2.id]);
             add_instr( "%s %s\n", ldv        , v_name[id]);
         }
 
         // int in memory and float in acc
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("P_LOD %s\n" , v_name[et1 % OFST]);
+            add_instr("P_LOD %s\n" , v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
         // int in memory and float in memory
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
-            add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", ldi, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
         // int in memory and comp const in memory
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
-            add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", ldi, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
             add_instr("P_F2I_M %s\n"     , v_name[etr.id]);
             add_instr("S_ADD\n");
@@ -1069,33 +1063,33 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp in acc
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("LOD   %s\n",  v_name[et1 % OFST]);
+            add_instr("LOD   %s\n",  v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
         // int in memory and comp in memory
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", ldi, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
         // float in acc and int in acc
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -1107,18 +1101,18 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and int in memory
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT %s_arr_size\n", v_name[id]);
-            add_instr("ADD %s\n" , v_name[et2 % OFST]);
+            add_instr("ADD %s\n" , v_name[e2.id]);
             add_instr( "%s %s\n" , ldv   , v_name[id]);
         }
 
         // float in acc and float in acc
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
@@ -1131,19 +1125,19 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and float in memory
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n" , ldv   , v_name[id]);
         }
 
         // float in acc and comp const in memory
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1157,7 +1151,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp in acc
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1171,73 +1165,73 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp in memory
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",  v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv,     v_name[id]);
         }
 
         // float in memory and int in acc
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n" ,   v_name[et1%OFST]);
+            add_instr("F2I_M %s\n" ,   v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr( "%s   %s\n" , ldv   , v_name[id]);
         }
 
         // float in memory and int in memory
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
-            add_instr( "%s %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s %s\n", f2i, v_name[e1.id]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
-            add_instr("ADD %s\n",      v_name[et2 % OFST]);
+            add_instr("ADD %s\n",      v_name[e2.id]);
             add_instr( "%s %s\n", ldv        , v_name[id]);
         }
 
         // float in memory and float in acc
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n",  v_name[et1 % OFST]);
+            add_instr("F2I_M %s\n",  v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_name[id]);
         }
 
         // float in memory and float in memory
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
         // float in memory and comp const in memory
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
-            add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
             add_instr("P_F2I_M %s\n",      v_name[etr.id]);
             add_instr("S_ADD\n");
@@ -1245,33 +1239,33 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp in acc
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s \n",   v_name[et1%OFST]);
+            add_instr("F2I_M %s \n",   v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr( "%s   %s\n", ldv     , v_name[id]);
         }
 
         // float in memory and comp in memory
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
         // comp const in memory and int in acc
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1286,7 +1280,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and int in memory
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1294,12 +1288,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr( "%s %s\n", f2i, v_name[etr.id]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
-            add_instr("ADD %s\n",      v_name[et2 % OFST]);
+            add_instr("ADD %s\n",      v_name[e2.id]);
             add_instr( "%s %s\n", ldv        , v_name[id]);
         }
 
         // comp const in memory and float in acc
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1314,7 +1308,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and float in memory
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1322,13 +1316,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr( "%s     %s\n", f2i, v_name[etr.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
         // comp const in memory and comp const in memory
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1343,7 +1337,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp in acc
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1359,7 +1353,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp in memory
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1367,13 +1361,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr( "%s     %s\n", f2i, v_name[etr.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_name[id]);
         }
 
         // comp in acc and int in acc
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1386,19 +1380,19 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and int in memory
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
             add_instr("MLT %s_arr_size\n", v_name[id]);
-            add_instr("ADD %s\n",  v_name[et2 % OFST]);
+            add_instr("ADD %s\n",  v_name[e2.id]);
             add_instr( "%s %s\n",  ldv   , v_name[id]);
         }
 
         // comp in acc and float in acc
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1412,20 +1406,20 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and float in memory
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",  v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
         // comp in acc and comp const in memory
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1440,7 +1434,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp in acc
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1455,72 +1449,72 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp in memory
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",  v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
         // comp in memory and int in acc
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
+            add_instr("P_F2I_M %s\n",  v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n", v_name[id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
         // comp in memory and int in memory
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            add_instr( "%s %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s %s\n", f2i, v_name[e1.id]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
-            add_instr("ADD %s\n",      v_name[et2 % OFST]);
+            add_instr("ADD %s\n",      v_name[e2.id]);
             add_instr( "%s %s\n", ldv        , v_name[id]);
         }
 
         // comp in memory and float in acc
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("P_F2I_M %s\n",  v_name[et1 % OFST]);
+            add_instr("P_F2I_M %s\n",  v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n", v_name[id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
         // comp in memory and float in memory
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            add_instr("%s %s\n", f2i,  v_name[et1 % OFST]);
+            add_instr("%s %s\n", f2i,  v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",  v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_name[id]);
         }
 
         // comp in memory and comp const in memory
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
-            add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
             add_instr("P_F2I_M %s\n",      v_name[etr.id]);
             add_instr("S_ADD\n");
@@ -1528,27 +1522,27 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp in acc
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n",  v_name[et1 % OFST]);
+            add_instr("F2I_M %s\n",  v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr( "%s   %s\n",  ldv   , v_name[id]);
         }
 
         // comp in memory and comp in memory
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            add_instr("%s      %s\n", f2i, v_name[et1 % OFST]);
+            add_instr("%s      %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr ("%s     %s\n", ldv        , v_name[id]);
         }
@@ -1559,7 +1553,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     else
     {
         // int in acc and int in acc
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
         {
             add_instr("SET_P aux_var\n");
             add_instr("MLT   %s_arr_size\n", v_name[id]);
@@ -1571,10 +1565,10 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and int in memory
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
         {
             add_instr("MLT   %s_arr_size\n" , v_name[id]);
-            add_instr("ADD   %s\n"  , v_name[et2 % OFST]);
+            add_instr("ADD   %s\n"  , v_name[e2.id]);
             add_instr("SET   aux_var\n");
             add_instr( "%s   %s\n"  , ldv   , v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -1582,7 +1576,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and float in acc
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -1597,12 +1591,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and float in memory
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv  , v_name[id]);
@@ -1611,7 +1605,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp const in memory
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1627,7 +1621,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp in acc
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1643,12 +1637,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp in memory
-        if ((get_type(et1) == 1) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n",  v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",  v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv  , v_name[id]);
@@ -1657,9 +1651,9 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and int in acc
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
         {
-            add_instr("P_LOD %s\n",  v_name[et1 % OFST]);
+            add_instr("P_LOD %s\n",  v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("S_ADD\n");
             add_instr("SET   aux_var\n");
@@ -1669,11 +1663,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and int in memory
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
         {
-            add_instr( "%s   %s\n", ldi, v_name[et1 % OFST]);
+            add_instr( "%s   %s\n", ldi, v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n"    , v_name[id]);
-            add_instr("ADD   %s\n",      v_name[et2 % OFST]);
+            add_instr("ADD   %s\n",      v_name[e2.id]);
             add_instr("SET   aux_var\n");
             add_instr( "%s   %s\n"  , ldv      , v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -1681,12 +1675,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and float in acc
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("P_LOD %s\n",  v_name[et1 % OFST]);
+            add_instr("P_LOD %s\n",  v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("S_ADD\n");
             add_instr("SET   aux_var\n");
@@ -1696,13 +1690,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and float in memory
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX2_FLOAT, line_num+1);
 
-            add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", ldi, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv      , v_name[id]);
@@ -1711,13 +1705,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp const in memory
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
-            add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", ldi, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
             add_instr("P_F2I_M %s\n"     , v_name[etr.id]);
             add_instr("S_ADD\n");
@@ -1728,14 +1722,14 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp in acc
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("LOD   %s\n",   v_name[et1 % OFST]);
+            add_instr("LOD   %s\n",   v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n" , v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr("SET   aux_var\n");
@@ -1745,13 +1739,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp in memory
-        if ((get_type(et1) == 1) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            add_instr( "%s     %s\n", ldi, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", ldi, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv      , v_name[id]);
@@ -1760,7 +1754,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and int in acc
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -1775,13 +1769,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and int in memory
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT   %s_arr_size\n", v_name[id]);
-            add_instr("ADD   %s\n" , v_name[et2 % OFST]);
+            add_instr("ADD   %s\n" , v_name[e2.id]);
             add_instr("SET   aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -1789,7 +1783,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and float in acc
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_FLOAT, line_num+1);
 
@@ -1805,13 +1799,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and float in memory
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv  , v_name[id]);
@@ -1820,7 +1814,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp const in memory
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1837,7 +1831,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp in acc
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1854,13 +1848,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp in memory
-        if ((get_type(et1) == 2) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv  , v_name[id]);
@@ -1869,13 +1863,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and int in acc
-        if ((get_type(et1) == 2) && (et1 % OFST != 1) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id != 1) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n" , v_name[et1 % OFST]);
+            add_instr("F2I_M %s\n" , v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr("SET   aux_var\n");
@@ -1885,13 +1879,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and int in memory
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            add_instr("%s    %s\n", f2i, v_name[et1 % OFST]);
+            add_instr("%s    %s\n", f2i, v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n"    , v_name[id]);
-            add_instr("ADD   %s\n"     , v_name[et2 % OFST]);
+            add_instr("ADD   %s\n"     , v_name[e2.id]);
             add_instr("SET   aux_var\n");
             add_instr( "%s   %s\n"  , ldv      , v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -1899,13 +1893,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and float in acc
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n" , v_name[et1 % OFST]);
+            add_instr("F2I_M %s\n" , v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr("SET   aux_var\n");
@@ -1915,13 +1909,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and float in memory
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr("%s      %s\n"  , ldv      , v_name[id]);
@@ -1930,11 +1924,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp const in memory
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            add_instr( "%s %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s %s\n", f2i, v_name[e1.id]);
             add_instr("MLT %s_arr_size\n"    , v_name[id]);
 
             get_cmp_cst(e2, &etr, &eti);
@@ -1948,14 +1942,14 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp in acc
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n" , v_name[et1 % OFST]);
+            add_instr("F2I_M %s\n" , v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr("SET   aux_var\n");
@@ -1965,13 +1959,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp in memory
-        if ((get_type(et1) == 2) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv      , v_name[id]);
@@ -1980,7 +1974,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and int in acc
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1998,7 +1992,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and int in memory
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -2006,7 +2000,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr( "%s   %s\n", f2i, v_name[etr.id]);
             add_instr("MLT   %s_arr_size\n"    , v_name[id]);
-            add_instr("ADD   %s\n",      v_name[et2 % OFST]);
+            add_instr("ADD   %s\n",      v_name[e2.id]);
             add_instr("SET   aux_var\n");
             add_instr( "%s   %s\n"  , ldv      , v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -2014,7 +2008,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and float in acc
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2032,7 +2026,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and float in memory
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2040,7 +2034,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr( "%s     %s\n", f2i, v_name[etr.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv      , v_name[id]);
@@ -2049,7 +2043,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp const in memory
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2067,7 +2061,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp in acc
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2086,7 +2080,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp in memory
-        if ((get_type(et1) == 5) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2094,7 +2088,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("%s      %s\n", f2i, v_name[etr.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv      , v_name[id]);
@@ -2103,7 +2097,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and int in acc
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -2119,14 +2113,14 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and int in memory
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
             add_instr("MLT   %s_arr_size\n", v_name[id]);
-            add_instr("ADD   %s\n" , v_name[et2 % OFST]);
+            add_instr("ADD   %s\n" , v_name[e2.id]);
             add_instr("SET   aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -2134,7 +2128,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and float in acc
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2151,14 +2145,14 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and float in memory
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P   aux_var\n");
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr ("%s     %s\n"  , ldv  , v_name[id]);
@@ -2167,7 +2161,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp const in memory
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2185,7 +2179,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp in acc
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2203,14 +2197,14 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp in memory
-        if ((get_type(et1) == 3) && (et1 % OFST == 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P   aux_var\n");
             add_instr("F2I\n");
             add_instr("MLT     %s_arr_size\n", v_name[id]);
-            add_instr("P_F2I_M %s\n" , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv  , v_name[id]);
@@ -2219,11 +2213,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and int in acc
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            add_instr("P_F2I_M %s\n" , v_name[et1 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n", v_name[id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
@@ -2233,13 +2227,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and int in memory
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 1) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            add_instr("%s    %s\n", f2i, v_name[et1 % OFST]);
+            add_instr("%s    %s\n", f2i, v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n"    , v_name[id]);
-            add_instr("ADD   %s\n",      v_name[et2 % OFST]);
+            add_instr("ADD   %s\n",      v_name[e2.id]);
             add_instr("SET   aux_var\n");
             add_instr( "%s   %s\n"  , ldv      , v_name[id]);
             add_instr("P_LOD aux_var\n");
@@ -2247,12 +2241,12 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and float in acc
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("P_F2I_M %s\n" , v_name[et1 % OFST]);
+            add_instr("P_F2I_M %s\n" , v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n", v_name[id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
@@ -2262,13 +2256,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and float in memory
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 2) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n",      v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n",      v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr( "%s     %s\n"  , ldv      , v_name[id]);
@@ -2277,13 +2271,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp const in memory
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 5) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
-            add_instr( "%s     %s\n", f2i, v_name[et1 % OFST]);
+            add_instr( "%s     %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
             add_instr("P_F2I_M %s\n",      v_name[etr.id]);
             add_instr("S_ADD\n");
@@ -2294,14 +2288,14 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp in acc
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST == 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("SET_P aux_var\n");
             add_instr("F2I\n");
             add_instr("SET   aux_var\n");
-            add_instr("F2I_M %s\n" , v_name[et1 % OFST]);
+            add_instr("F2I_M %s\n" , v_name[e1.id]);
             add_instr("MLT   %s_arr_size\n", v_name[id]);
             add_instr("ADD   aux_var\n");
             add_instr("SET   aux_var\n");
@@ -2311,13 +2305,13 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp in memory
-        if ((get_type(et1) == 3) && (et1 % OFST != 0) && (get_type(et2) == 3) && (et2 % OFST != 0))
+        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
         {
             fprintf (stdout, MSG_WARN_IDXS_MESS, line_num+1);
 
-            add_instr(" %s     %s\n", f2i, v_name[et1 % OFST]);
+            add_instr(" %s     %s\n", f2i, v_name[e1.id]);
             add_instr("MLT     %s_arr_size\n"    , v_name[id]);
-            add_instr("P_F2I_M %s\n"     , v_name[et2 % OFST]);
+            add_instr("P_F2I_M %s\n"     , v_name[e2.id]);
             add_instr("S_ADD\n");
             add_instr("SET     aux_var\n");
             add_instr(" %s     %s\n"  , ldv      , v_name[id]);

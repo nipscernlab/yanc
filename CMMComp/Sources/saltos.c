@@ -68,29 +68,28 @@ static ast_node *body_to_node(char *captured)
 
 void if_exp(expr e)
 {
-    int et = expr_to_et(e);
     // int var
-    if ((get_type(et) == 1) && (et%OFST!=0))
+    if ((e.type == 1) && (e.id!=0))
     {
-        add_instr("LOD %s\n", v_name[et%OFST]);
+        add_instr("LOD %s\n", v_name[e.id]);
     }
 
     // int acc
-    if ((get_type(et) == 1) && (et%OFST==0))
+    if ((e.type == 1) && (e.id==0))
     {
         // nothing to do
     }
 
     // float var
-    if ((get_type(et) == 2) && (et%OFST!=0))
+    if ((e.type == 2) && (e.id!=0))
     {
         fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
 
-        add_instr("F2I_M %s\n", v_name[et%OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
     }
 
     // float acc
-    if ((get_type(et) == 2) && (et%OFST==0))
+    if ((e.type == 2) && (e.id==0))
     {
         fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
 
@@ -98,7 +97,7 @@ void if_exp(expr e)
     }
 
     // comp const
-    if (get_type(et) == 5)
+    if (e.type == 5)
     {
         fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
@@ -109,15 +108,15 @@ void if_exp(expr e)
     }
 
     // comp var
-    if ((get_type(et) == 3) && (et % OFST != 0))
+    if ((e.type == 3) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
-        add_instr("F2I_M %s\n", v_name[et%OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
     }
 
     // comp acc
-    if ((get_type(et) == 3) && (et % OFST == 0))
+    if ((e.type == 3) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
@@ -198,29 +197,28 @@ void while_expp()
 // evaluates exp and emits a JIZ to decide whether to enter or not
 void while_expexp(expr e)
 {
-    int et = expr_to_et(e);
     // int var
-    if ((get_type(et) == 1) && (et%OFST!=0))
+    if ((e.type == 1) && (e.id!=0))
     {
-        add_instr("LOD %s\n", v_name[et%OFST]);
+        add_instr("LOD %s\n", v_name[e.id]);
     }
 
     // int acc
-    if ((get_type(et) == 1) && (et%OFST==0))
+    if ((e.type == 1) && (e.id==0))
     {
         // nothing to do
     }
 
     // float var
-    if ((get_type(et) == 2) && (et%OFST!=0))
+    if ((e.type == 2) && (e.id!=0))
     {
         fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
 
-        add_instr("F2I_M %s\n", v_name[et%OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
     }
 
     // float acc
-    if ((get_type(et) == 2) && (et%OFST==0))
+    if ((e.type == 2) && (e.id==0))
     {
         fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
 
@@ -228,7 +226,7 @@ void while_expexp(expr e)
     }
 
     // comp const
-    if (get_type(et) == 5)
+    if (e.type == 5)
     {
         fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
@@ -239,15 +237,15 @@ void while_expexp(expr e)
     }
 
     // comp var
-    if ((get_type(et) == 3) && (et % OFST != 0))
+    if ((e.type == 3) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
-        add_instr("F2I_M %s\n", v_name[et%OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
     }
 
     // comp acc
-    if ((get_type(et) == 3) && (et % OFST == 0))
+    if ((e.type == 3) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
 
@@ -300,7 +298,6 @@ void switch_break()
 // switch-case start
 void exec_switch(expr e)
 {
-    int et = expr_to_et(e);
     if (switching == 1)
     {
         fprintf(stderr, MSG_ERR_NESTED_SWITCH, line_num+1);
@@ -314,33 +311,33 @@ void exec_switch(expr e)
 
     // equivalent to declar_var -----------------------------------------------
 
-    v_type[id] = get_type(et);
+    v_type[id] = e.type;
     v_used[id] = 0;
 
     // equivalent to ass_set --------------------------------------------------
 
     // int var
-    if ((get_type(et) == 1) && (et%OFST!=0))
+    if ((e.type == 1) && (e.id!=0))
     {
-        add_instr("LOD %s\n", v_name[et%OFST]);
+        add_instr("LOD %s\n", v_name[e.id]);
     }
 
     // int acc
-    if ((get_type(et) == 1) && (et%OFST==0))
+    if ((e.type == 1) && (e.id==0))
     {
         // nothing to do
     }
 
     // float var
-    if ((get_type(et) == 2) && (et%OFST!=0))
+    if ((e.type == 2) && (e.id!=0))
     {
         fprintf(stdout, MSG_WARN_CASE_FLOAT, line_num+1);
 
-        add_instr("F2I_M %s\n", v_name[et%OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
     }
 
     // float acc
-    if ((get_type(et) == 2) && (et%OFST==0))
+    if ((e.type == 2) && (e.id==0))
     {
         fprintf(stdout, MSG_WARN_CASE_FLOAT, line_num+1);
 
@@ -348,7 +345,7 @@ void exec_switch(expr e)
     }
 
     // comp const
-    if (get_type(et) == 5)
+    if (e.type == 5)
     {
         fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
 
@@ -359,15 +356,15 @@ void exec_switch(expr e)
     }
 
     // comp var
-    if ((get_type(et) == 3) && (et % OFST != 0))
+    if ((e.type == 3) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
 
-        add_instr("F2I_M %s\n", v_name[et%OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
     }
 
     // comp acc
-    if ((get_type(et) == 3) && (et % OFST == 0))
+    if ((e.type == 3) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
 

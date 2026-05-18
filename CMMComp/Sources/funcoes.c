@@ -51,7 +51,6 @@ int get_npar(int par)
 // checks whether the argument passed to the function is ok
 void par_check(expr e)
 {
-    int et = expr_to_et(e);
     // get the original number of parameters
     int n_par = get_npar(v_fpar[fun_id]);
 
@@ -85,31 +84,31 @@ void par_check(expr e)
 
     // original is int and call is int var ------------------------------------
 
-    if ((t_fun == 1) && (t_cal == 1) && (et % OFST != 0))
+    if ((t_fun == 1) && (t_cal == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[et%OFST]);
+        add_instr("%s %s\n", ld, v_name[e.id]);
     }
 
     // original is int and call is int acc ------------------------------------
 
-    if ((t_fun == 1) && (t_cal == 1) && (et % OFST == 0))
+    if ((t_fun == 1) && (t_cal == 1) && (e.id == 0))
     {
         // nothing to do
     }
 
     // original is int and call is float var ----------------------------------
 
-    if ((t_fun == 1) && (t_cal == 2) && (et % OFST != 0))
+    if ((t_fun == 1) && (t_cal == 2) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_name[fun_id]);
 
-        add_instr("%s %s\n", ld, v_name[et%OFST]);
+        add_instr("%s %s\n", ld, v_name[e.id]);
         add_instr("F2I\n");
     }
 
     // original is int and call is float acc ----------------------------------
 
-    if ((t_fun == 1) && (t_cal == 2) && (et % OFST == 0))
+    if ((t_fun == 1) && (t_cal == 2) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_name[fun_id]);
 
@@ -130,17 +129,17 @@ void par_check(expr e)
 
     // original is int and call is comp var -----------------------------------
 
-    if ((t_fun == 1) && (t_cal == 3) && (et % OFST != 0))
+    if ((t_fun == 1) && (t_cal == 3) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_name[fun_id]);
 
-        add_instr("%s %s\n", ld, v_name[et%OFST]);
+        add_instr("%s %s\n", ld, v_name[e.id]);
         add_instr("F2I\n");
     }
 
     // original is int and call is comp acc -----------------------------------
 
-    if ((t_fun == 1) && (t_cal == 3) && (et % OFST == 0))
+    if ((t_fun == 1) && (t_cal == 3) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_name[fun_id]);
 
@@ -150,16 +149,16 @@ void par_check(expr e)
 
     // original is float and call is int var ----------------------------------
 
-    if ((t_fun == 2) && (t_cal == 1) && (et % OFST != 0))
+    if ((t_fun == 2) && (t_cal == 1) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_name[fun_id]);
 
-        add_instr("%s %s\n", i2f, v_name[et%OFST]);
+        add_instr("%s %s\n", i2f, v_name[e.id]);
     }
 
     // original is float and call is int acc ----------------------------------
 
-    if ((t_fun == 2) && (t_cal == 1) && (et % OFST == 0))
+    if ((t_fun == 2) && (t_cal == 1) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_name[fun_id]);
 
@@ -168,14 +167,14 @@ void par_check(expr e)
 
     // original is float and call is float var --------------------------------
 
-    if ((t_fun == 2) && (t_cal == 2) && (et % OFST != 0))
+    if ((t_fun == 2) && (t_cal == 2) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[et%OFST]);
+        add_instr("%s %s\n", ld, v_name[e.id]);
     }
 
     // original is float and call is float acc --------------------------------
 
-    if ((t_fun == 2) && (t_cal == 2) && (et % OFST == 0))
+    if ((t_fun == 2) && (t_cal == 2) && (e.id == 0))
     {
         // nothing to do
     }
@@ -193,16 +192,16 @@ void par_check(expr e)
 
     // original is float and call is comp var ---------------------------------
 
-    if ((t_fun == 2) && (t_cal == 3) && (et % OFST != 0))
+    if ((t_fun == 2) && (t_cal == 3) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_name[fun_id]);
 
-        add_instr("%s %s\n", ld, v_name[et%OFST]);
+        add_instr("%s %s\n", ld, v_name[e.id]);
     }
 
     // original is float and call is comp acc ---------------------------------
 
-    if ((t_fun == 2) && (t_cal == 3) && (et % OFST == 0))
+    if ((t_fun == 2) && (t_cal == 3) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_name[fun_id]);
 
@@ -211,17 +210,17 @@ void par_check(expr e)
 
     // original is comp and call is int var -----------------------------------
 
-    if ((t_fun == 3) && (t_cal == 1) && (et % OFST != 0))
+    if ((t_fun == 3) && (t_cal == 1) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_name[fun_id]);
 
-        add_instr("%s %s\n", i2f, v_name[et%OFST]);
+        add_instr("%s %s\n", i2f, v_name[e.id]);
         add_instr("P_LOD 0.0\n");
     }
 
     // original is comp and call is int acc -----------------------------------
 
-    if ((t_fun == 3) && (t_cal == 1) && (et % OFST == 0))
+    if ((t_fun == 3) && (t_cal == 1) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_name[fun_id]);
 
@@ -231,17 +230,17 @@ void par_check(expr e)
 
     // original is comp and call is float var ---------------------------------
 
-    if ((t_fun == 3) && (t_cal == 2) && (et % OFST != 0))
+    if ((t_fun == 3) && (t_cal == 2) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_name[fun_id]);
 
-        add_instr("%s %s\n", ld, v_name[et%OFST]);
+        add_instr("%s %s\n", ld, v_name[e.id]);
         add_instr("P_LOD 0.0\n");
     }
 
     // original is comp and call is float acc ---------------------------------
 
-    if ((t_fun == 3) && (t_cal == 2) && (et % OFST == 0))
+    if ((t_fun == 3) && (t_cal == 2) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_name[fun_id]);
 
@@ -260,7 +259,7 @@ void par_check(expr e)
 
     // original is comp and call is comp var ----------------------------------
 
-    if ((t_fun == 3) && (t_cal == 3) && (et % OFST != 0))
+    if ((t_fun == 3) && (t_cal == 3) && (e.id != 0))
     {
         get_cmp_ets(e,&etr,&eti); // gets the extended IDs of the right side in memory
 
@@ -270,7 +269,7 @@ void par_check(expr e)
 
     // original is comp and call is comp acc ----------------------------------
 
-    if ((t_fun == 3) && (t_cal == 3) && (et % OFST == 0))
+    if ((t_fun == 3) && (t_cal == 3) && (e.id == 0))
     {
         // nothing to do
     }
@@ -350,7 +349,6 @@ void set_par(int id)
 // when the return keyword is found
 void declar_ret(expr e, int ret)
 {
-    int et = expr_to_et(e);
     // check whether it really is a function, or void by mistake
     if (v_type[fun_parse] == 6)
         {fprintf (stderr, MSG_ERR_VOID_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
@@ -367,34 +365,34 @@ void declar_ret(expr e, int ret)
     int left_type = v_type[fun_parse];
 
     // int with int var
-    if ((left_type == 7) && (get_type(et) == 1) && (et%OFST!=0))
+    if ((left_type == 7) && (e.type == 1) && (e.id!=0))
     {
-        add_instr("LOD %s\n", v_name[et%OFST]);
+        add_instr("LOD %s\n", v_name[e.id]);
     }
 
     // int with int acc
-    if ((left_type == 7) && (get_type(et) == 1) && (et%OFST==0))
+    if ((left_type == 7) && (e.type == 1) && (e.id==0))
     {
         // nothing to do
     }
 
     // int with float var
-    if ((left_type == 7) && (get_type(et) == 2) && (et%OFST!=0))
+    if ((left_type == 7) && (e.type == 2) && (e.id!=0))
     {
         fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_name[fun_parse]);
 
-        add_instr("F2I_M %s\n", v_name[et%OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
     }
 
     // int with float acc
-    if ((left_type == 7) && (get_type(et) == 2) && (et%OFST==0))
+    if ((left_type == 7) && (e.type == 2) && (e.id==0))
     {
         fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_name[fun_parse]);
         add_instr("F2I\n");
     }
 
     // int with comp const
-    if ((left_type == 7) && (get_type(et) == 5))
+    if ((left_type == 7) && (e.type == 5))
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -404,7 +402,7 @@ void declar_ret(expr e, int ret)
     }
 
     // int with comp var
-    if ((left_type == 7) && (get_type(et) == 3) && (et%OFST!=0))
+    if ((left_type == 7) && (e.type == 3) && (e.id!=0))
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -414,7 +412,7 @@ void declar_ret(expr e, int ret)
     }
 
     // int with comp acc
-    if ((left_type == 7) && (get_type(et) == 3) && (et%OFST==0))
+    if ((left_type == 7) && (e.type == 3) && (e.id==0))
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -423,15 +421,15 @@ void declar_ret(expr e, int ret)
     }
 
     // float with int var
-    if ((left_type == 8) && (get_type(et) == 1) && (et%OFST!=0))
+    if ((left_type == 8) && (e.type == 1) && (e.id!=0))
     {
         fprintf(stdout, MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
-        add_instr("I2F_M %s\n", v_name[et % OFST]);
+        add_instr("I2F_M %s\n", v_name[e.id]);
     }
 
     // float with int acc
-    if ((left_type == 8) && (get_type(et) == 1) && (et%OFST==0))
+    if ((left_type == 8) && (e.type == 1) && (e.id==0))
     {
         fprintf(stdout, MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
@@ -439,19 +437,19 @@ void declar_ret(expr e, int ret)
     }
 
     // float with float var
-    if ((left_type == 8) && (get_type(et) == 2) && (et%OFST!=0))
+    if ((left_type == 8) && (e.type == 2) && (e.id!=0))
     {
-        add_instr("LOD %s\n", v_name[et % OFST]);
+        add_instr("LOD %s\n", v_name[e.id]);
     }
 
     // float with float acc
-    if ((left_type == 8) && (get_type(et) == 2) && (et%OFST==0))
+    if ((left_type == 8) && (e.type == 2) && (e.id==0))
     {
         // nothing to do
     }
 
     // float with comp const
-    if ((left_type == 8) && (get_type(et) == 5))
+    if ((left_type == 8) && (e.type == 5))
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -461,7 +459,7 @@ void declar_ret(expr e, int ret)
     }
 
     // float with comp var
-    if ((left_type == 8) && (get_type(et) == 3) && (et%OFST!=0))
+    if ((left_type == 8) && (e.type == 3) && (e.id!=0))
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -471,7 +469,7 @@ void declar_ret(expr e, int ret)
     }
 
     // float with comp acc
-    if ((left_type == 8) && (get_type(et) == 3) && (et%OFST==0))
+    if ((left_type == 8) && (e.type == 3) && (e.id==0))
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -479,16 +477,16 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with int var
-    if ((left_type == 9) && (get_type(et) == 1) && (et%OFST!=0))
+    if ((left_type == 9) && (e.type == 1) && (e.id!=0))
     {
         fprintf(stdout, MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
-        add_instr("I2F_M %s\n", v_name[et % OFST]);
+        add_instr("I2F_M %s\n", v_name[e.id]);
         add_instr("P_LOD 0.0\n");
     }
 
     // comp with int acc
-    if ((left_type == 9) && (get_type(et) == 1) && (et%OFST==0))
+    if ((left_type == 9) && (e.type == 1) && (e.id==0))
     {
         fprintf(stdout, MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
@@ -497,16 +495,16 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with float var
-    if ((left_type == 9) && (get_type(et) == 2) && (et%OFST!=0))
+    if ((left_type == 9) && (e.type == 2) && (e.id!=0))
     {
         fprintf(stdout, MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
-        add_instr("LOD %s\n", v_name[et % OFST]);
+        add_instr("LOD %s\n", v_name[e.id]);
         add_instr("P_LOD 0.0\n");
     }
 
     // comp with float acc
-    if ((left_type == 9) && (get_type(et) == 2) && (et%OFST==0))
+    if ((left_type == 9) && (e.type == 2) && (e.id==0))
     {
         fprintf(stdout, MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
@@ -514,7 +512,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with comp const
-    if ((left_type == 9) && (get_type(et) == 5))
+    if ((left_type == 9) && (e.type == 5))
     {
         get_cmp_cst(e,&etr,&eti);
 
@@ -523,7 +521,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with comp var
-    if ((left_type == 9) && (get_type(et) == 3) && (et%OFST!=0))
+    if ((left_type == 9) && (e.type == 3) && (e.id!=0))
     {
         get_cmp_ets(e,&etr,&eti);
 
@@ -532,7 +530,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with comp acc
-    if ((left_type == 9) && (get_type(et) == 3) && (et%OFST==0))
+    if ((left_type == 9) && (e.type == 3) && (e.id==0))
     {
         // nothing to do
     }
@@ -612,9 +610,8 @@ void void_ret()
 // p_test holds the position and type of every parameter in the function call
 void par_exp(expr e)
 {
-    int et = expr_to_et(e);
     p_test = 0; // reset the p_test state
-    p_test = p_test*10 + get_type(et);
+    p_test = p_test*10 + e.type;
     par_check(e);
     acc_ok = 1;
 }
@@ -622,8 +619,7 @@ void par_exp(expr e)
 // emits LOD for the remaining parameters
 void par_listexp(expr e)
 {
-    int et = expr_to_et(e);
-    p_test = p_test*10 + get_type(et);
+    p_test = p_test*10 + e.type;
     par_check(e);
 }
 

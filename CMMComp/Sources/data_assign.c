@@ -24,7 +24,6 @@ TODO:
 // standard assignment, e.g. x = y;
 void ass_set(int id, expr e)
 {
-    int et = expr_to_et(e);
     // test whether it has been declared so an assignment is allowed
     if (v_type[id] == 0)
     {
@@ -47,32 +46,32 @@ void ass_set(int id, expr e)
 
     // left int and right int in memory ---------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 1) && (et % OFST != 0))
+    if ((v_type[id] == 1) && (e.type == 1) && (e.id != 0))
     {
-        add_instr("LOD %s\n",  v_name[et % OFST]);
+        add_instr("LOD %s\n",  v_name[e.id]);
         add_instr("SET %s\n" , v_name[id       ]);
     }
 
     // left int and right int in the acc --------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 1) && (et % OFST == 0))
+    if ((v_type[id] == 1) && (e.type == 1) && (e.id == 0))
     {
         add_instr("SET %s\n", v_name[id]);
     }
 
     // left int and right float in memory -------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 2) && (et % OFST != 0))
+    if ((v_type[id] == 1) && (e.type == 2) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_name[id], fname));
 
-        add_instr("F2I_M %s\n", v_name[et % OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
         add_instr("SET %s\n"  , v_name[id       ]);
     }
 
     // left int and right float in the acc ------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 2) && (et % OFST == 0))
+    if ((v_type[id] == 1) && (e.type == 2) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_name[id], fname));
 
@@ -83,7 +82,7 @@ void ass_set(int id, expr e)
 
     // left int and right comp const ------------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 5))
+    if ((v_type[id] == 1) && (e.type == 5))
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -95,17 +94,17 @@ void ass_set(int id, expr e)
 
     // left int and right comp in memory --------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 3) && (et % OFST != 0))
+    if ((v_type[id] == 1) && (e.type == 3) && (e.id != 0))
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
-        add_instr("F2I_M %s\n", v_name[et % OFST]);
+        add_instr("F2I_M %s\n", v_name[e.id]);
         add_instr("SET %s\n"  , v_name[id       ]);
     }
 
     // left int and right comp in the acc -------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 3) && (et % OFST == 0))
+    if ((v_type[id] == 1) && (e.type == 3) && (e.id == 0))
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -116,17 +115,17 @@ void ass_set(int id, expr e)
 
     // left float and right int in memory -------------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 1) && (et % OFST != 0))
+    if ((v_type[id] == 2) && (e.type == 1) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_name[id], fname));
 
-        add_instr("I2F_M %s\n", v_name[et%OFST]);
+        add_instr("I2F_M %s\n", v_name[e.id]);
         add_instr("SET %s\n"  , v_name[id     ]);
     }
 
     // left float and right int in the acc ------------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 1) && (et % OFST == 0))
+    if ((v_type[id] == 2) && (e.type == 1) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_name[id], fname));
 
@@ -136,22 +135,22 @@ void ass_set(int id, expr e)
 
     // left float and right float in memory -----------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 2) && (et%OFST != 0))
+    if ((v_type[id] == 2) && (e.type == 2) && (e.id != 0))
     {
-        add_instr("LOD %s\n", v_name[et%OFST]);
+        add_instr("LOD %s\n", v_name[e.id]);
         add_instr("SET %s\n", v_name[id     ]);
     }
 
     // left float and right float in the acc ----------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 2) && (et % OFST == 0))
+    if ((v_type[id] == 2) && (e.type == 2) && (e.id == 0))
     {
         add_instr("SET %s\n", v_name[id]);
     }
 
     // left float and right comp const ----------------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 5))
+    if ((v_type[id] == 2) && (e.type == 5))
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -163,7 +162,7 @@ void ass_set(int id, expr e)
 
     // left float and right comp in memory ------------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 3) && (et % OFST != 0))
+    if ((v_type[id] == 2) && (e.type == 3) && (e.id != 0))
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -175,7 +174,7 @@ void ass_set(int id, expr e)
 
     // left float and right comp in the acc -----------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 3) && (et % OFST == 0))
+    if ((v_type[id] == 2) && (e.type == 3) && (e.id == 0))
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -185,11 +184,11 @@ void ass_set(int id, expr e)
 
     // left comp and right int in memory --------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 1) && (et % OFST != 0))
+    if ((v_type[id] == 3) && (e.type == 1) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_name[id], fname));
 
-        add_instr("I2F_M %s\n", v_name[et%OFST]);
+        add_instr("I2F_M %s\n", v_name[e.id]);
         add_instr("SET %s\n"  , v_name[id     ]);
 
         add_instr("LOD 0.0\n");
@@ -198,7 +197,7 @@ void ass_set(int id, expr e)
 
     // left comp and right int in the acc -------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 1) && (et % OFST == 0))
+    if ((v_type[id] == 3) && (e.type == 1) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_name[id], fname));
 
@@ -211,11 +210,11 @@ void ass_set(int id, expr e)
 
     // left comp and right float var in memory --------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 2) && (et % OFST != 0))
+    if ((v_type[id] == 3) && (e.type == 2) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_name[id], fname));
 
-        add_instr("LOD %s\n" , v_name[et%OFST]);
+        add_instr("LOD %s\n" , v_name[e.id]);
         add_instr("SET %s\n" , v_name[id     ]);
 
         add_instr("LOD 0.0\n");
@@ -224,7 +223,7 @@ void ass_set(int id, expr e)
 
     // left comp and right float in the acc -----------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 2) && (et % OFST == 0))
+    if ((v_type[id] == 3) && (e.type == 2) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_name[id], fname));
 
@@ -236,7 +235,7 @@ void ass_set(int id, expr e)
 
     // left comp and right comp const -----------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 5))
+    if ((v_type[id] == 3) && (e.type == 5))
     {
         get_cmp_cst(e,&etr,&eti);
 
@@ -249,7 +248,7 @@ void ass_set(int id, expr e)
 
     // left comp and right comp in memory -------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 3) && (et % OFST != 0))
+    if ((v_type[id] == 3) && (e.type == 3) && (e.id != 0))
     {
         get_cmp_ets(e,&etr,&eti);
 
@@ -262,7 +261,7 @@ void ass_set(int id, expr e)
 
     // left comp and right comp in the acc ------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 3) && (et % OFST == 0))
+    if ((v_type[id] == 3) && (e.type == 3) && (e.id == 0))
     {
         add_instr("SET_P %s_i\n", v_name[id]);
         add_instr("SET %s\n"    , v_name[id]);
@@ -274,7 +273,6 @@ void ass_set(int id, expr e)
 // array assignment, e.g. x[i] = y;
 void ass_array(int id, expr e, int fft)
 {
-    int et = expr_to_et(e);
     // test whether it has been declared so an assignment is allowed
     if (v_type[id] == 0)
     {
@@ -299,32 +297,32 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right int in memory ---------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 1) && (et % OFST != 0))
+    if ((v_type[id] == 1) && (e.type == 1) && (e.id != 0))
     {
-        add_instr("P_LOD %s\n",   v_name[et%OFST]);
+        add_instr("P_LOD %s\n",   v_name[e.id]);
         add_instr("%s %s\n", set_type, v_name[id]);
     }
 
     // left int and right int in the acc --------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 1) && (et % OFST == 0))
+    if ((v_type[id] == 1) && (e.type == 1) && (e.id == 0))
     {
         add_instr("%s %s\n", set_type, v_name[id]);
     }
 
     // left int and right float in memory -------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 2) && (et % OFST != 0))
+    if ((v_type[id] == 1) && (e.type == 2) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_name[id], fname));
 
-        add_instr("P_F2I_M %s\n", v_name[et%OFST]);
+        add_instr("P_F2I_M %s\n", v_name[e.id]);
         add_instr("%s %s\n", set_type, v_name[id]);
     }
 
     // left int and right float in the acc ------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 2) && (et % OFST == 0))
+    if ((v_type[id] == 1) && (e.type == 2) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_name[id], fname));
 
@@ -334,7 +332,7 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right comp const ------------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 5))
+    if ((v_type[id] == 1) && (e.type == 5))
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -346,7 +344,7 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right comp in memory --------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 3) && (et % OFST != 0))
+    if ((v_type[id] == 1) && (e.type == 3) && (e.id != 0))
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -358,7 +356,7 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right comp in the acc -------------------------------------
 
-    if ((v_type[id] == 1) && (get_type(et) == 3) && (et % OFST == 0))
+    if ((v_type[id] == 1) && (e.type == 3) && (e.id == 0))
     {
         fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -369,17 +367,17 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right int in memory -------------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 1) && (et % OFST != 0))
+    if ((v_type[id] == 2) && (e.type == 1) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_name[id], fname));
 
-        add_instr("P_I2F_M %s\n", v_name[et%OFST]);
+        add_instr("P_I2F_M %s\n", v_name[e.id]);
         add_instr("%s %s\n", set_type, v_name[id]);
     }
 
     // left float and right int in the acc ------------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 1) && (et % OFST == 0))
+    if ((v_type[id] == 2) && (e.type == 1) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_name[id], fname));
 
@@ -389,22 +387,22 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right float in memory -----------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 2) && (et % OFST != 0))
+    if ((v_type[id] == 2) && (e.type == 2) && (e.id != 0))
     {
-        add_instr("P_LOD %s\n",   v_name[et%OFST]);
+        add_instr("P_LOD %s\n",   v_name[e.id]);
         add_instr("%s %s\n", set_type, v_name[id]);
     }
 
     // left float and right float in the acc ----------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 2) && (et % OFST == 0))
+    if ((v_type[id] == 2) && (e.type == 2) && (e.id == 0))
     {
         add_instr("%s %s\n", set_type, v_name[id]);
     }
 
     // left float and right comp const ----------------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 5))
+    if ((v_type[id] == 2) && (e.type == 5))
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -416,7 +414,7 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right comp in memory ------------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 3) && (et % OFST != 0))
+    if ((v_type[id] == 2) && (e.type == 3) && (e.id != 0))
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -428,7 +426,7 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right comp in the acc -----------------------------------
 
-    if ((v_type[id] == 2) && (get_type(et) == 3) && (et % OFST == 0))
+    if ((v_type[id] == 2) && (e.type == 3) && (e.id == 0))
     {
         fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -438,12 +436,12 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right int in memory --------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 1) && (et % OFST != 0))
+    if ((v_type[id] == 3) && (e.type == 1) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_name[id], fname));
 
         add_instr("SET aux_var\n");
-        add_instr("P_I2F_M %s\n", v_name[et%OFST]);
+        add_instr("P_I2F_M %s\n", v_name[e.id]);
         add_instr("%s %s\n"  , set_type, v_name[id]);
 
         add_instr("LOD aux_var\n");
@@ -453,7 +451,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right int in the acc -------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 1) && (et % OFST == 0))
+    if ((v_type[id] == 3) && (e.type == 1) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_name[id], fname));
 
@@ -470,12 +468,12 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right float in memory ------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 2) && (et % OFST != 0))
+    if ((v_type[id] == 3) && (e.type == 2) && (e.id != 0))
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_name[id], fname));
 
         add_instr("SET   aux_var\n"         );
-        add_instr("P_LOD %s\n"  , v_name[et%OFST]);
+        add_instr("P_LOD %s\n"  , v_name[e.id]);
         add_instr("%s %s\n"  , set_type, v_name[id]);
 
         add_instr("LOD   aux_var\n"         );
@@ -485,7 +483,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right float in the acc -----------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 2) && (et % OFST == 0))
+    if ((v_type[id] == 3) && (e.type == 2) && (e.id == 0))
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_name[id], fname));
 
@@ -501,7 +499,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right comp const -----------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 5))
+    if ((v_type[id] == 3) && (e.type == 5))
     {
         get_cmp_cst(e,&etr,&eti);
 
@@ -516,7 +514,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right comp in memory -------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 3) && (et % OFST != 0))
+    if ((v_type[id] == 3) && (e.type == 3) && (e.id != 0))
     {
         get_cmp_ets(e,&etr,&eti);
 
@@ -531,7 +529,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right comp in the acc ------------------------------------
 
-    if ((v_type[id] == 3) && (get_type(et) == 3) && (et % OFST == 0))
+    if ((v_type[id] == 3) && (e.type == 3) && (e.id == 0))
     {
         add_instr("SET_P aux_var\n" );
         add_instr("SET_P aux_var2\n");
