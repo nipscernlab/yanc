@@ -391,10 +391,10 @@ exp:       terminal                           {$$ = $1;}
 
          // constants
 terminal : INUM                               {$$ = num2exp($1, 1); $$.node = expr_lit(1, $1);}
-         | FNUM                               {$$ = num2exp($1, 2);}
-         | CNUM                               {$$ = num2exp($1, 5);}
+         | FNUM                               {$$ = num2exp($1, 2); $$.node = expr_lit(2, $1);}
+         | CNUM                               {$$ = num2exp($1, 5); $$.node = expr_lit(5, $1);}
          // variables
-         | ID                                 {$$ =  id2exp($1);}
+         | ID                                 {$$ =  id2exp($1);    $$.node = expr_var($$.type, $1);}
 
 %%
 
