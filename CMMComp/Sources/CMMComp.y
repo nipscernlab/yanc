@@ -390,7 +390,7 @@ exp:       terminal                           {$$ = $1;}
 // terminals used in reductions for expressions -------------------------------
 
          // constants
-terminal : INUM                               {$$ = num2exp($1, 1);}
+terminal : INUM                               {$$ = num2exp($1, 1); $$.node = expr_lit(1, $1);}
          | FNUM                               {$$ = num2exp($1, 2);}
          | CNUM                               {$$ = num2exp($1, 5);}
          // variables
