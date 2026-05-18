@@ -376,14 +376,14 @@ exp:       terminal                           {$$ = $1;}
          | exp   '*'   exp                    {$$ = oper_mult($1, $3); $$.node = expr_binop(OP_MUL, $$.type, $1.node, $3.node);}
          | exp   '/'   exp                    {$$ = oper_divi($1, $3); $$.node = expr_binop(OP_DIV, $$.type, $1.node, $3.node);}
          // true/false operators
-         | exp  LAN    exp                    {$$ = oper_lanor($1, $3, 0);}
-         | exp  LOR    exp                    {$$ = oper_lanor($1, $3, 1);}
-         | exp   '<'   exp                    {$$ = oper_cmp  ($1, $3, 0);}
-         | exp   '>'   exp                    {$$ = oper_cmp  ($1, $3, 1);}
-         | exp  EQU    exp                    {$$ = oper_cmp  ($1, $3, 2);}
-         | exp  GREQU  exp                    {$$ = oper_greq ($1, $3);}
-         | exp  LESEQ  exp                    {$$ = oper_leeq ($1, $3);}
-         | exp  DIF    exp                    {$$ = oper_dife ($1, $3);}
+         | exp  LAN    exp                    {$$ = oper_lanor($1, $3, 0); $$.node = expr_binop(OP_LAN, $$.type, $1.node, $3.node);}
+         | exp  LOR    exp                    {$$ = oper_lanor($1, $3, 1); $$.node = expr_binop(OP_LOR, $$.type, $1.node, $3.node);}
+         | exp   '<'   exp                    {$$ = oper_cmp  ($1, $3, 0); $$.node = expr_binop(OP_LT,  $$.type, $1.node, $3.node);}
+         | exp   '>'   exp                    {$$ = oper_cmp  ($1, $3, 1); $$.node = expr_binop(OP_GT,  $$.type, $1.node, $3.node);}
+         | exp  EQU    exp                    {$$ = oper_cmp  ($1, $3, 2); $$.node = expr_binop(OP_EQ,  $$.type, $1.node, $3.node);}
+         | exp  GREQU  exp                    {$$ = oper_greq ($1, $3);    $$.node = expr_binop(OP_GE,  $$.type, $1.node, $3.node);}
+         | exp  LESEQ  exp                    {$$ = oper_leeq ($1, $3);    $$.node = expr_binop(OP_LE,  $$.type, $1.node, $3.node);}
+         | exp  DIF    exp                    {$$ = oper_dife ($1, $3);    $$.node = expr_binop(OP_NE,  $$.type, $1.node, $3.node);}
          // linear algebra with exp return (Dirac notation)
          | KET ID '|' ID BRA                  {$$ = exec_vtv($2, $4);}
 

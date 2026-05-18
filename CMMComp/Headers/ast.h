@@ -85,6 +85,14 @@ typedef enum {
     OP_MUL,   // x * y    (oper_mult)
     OP_DIV,   // x / y    (oper_divi)
     OP_MOD,   // x % y    (oper_mod)
+    OP_LT,    // x < y    (oper_cmp,  type=0)
+    OP_GT,    // x > y    (oper_cmp,  type=1)
+    OP_EQ,    // x == y   (oper_cmp,  type=2)
+    OP_GE,    // x >= y   (oper_greq)
+    OP_LE,    // x <= y   (oper_leeq)
+    OP_NE,    // x != y   (oper_dife)
+    OP_LAN,   // x && y   (oper_lanor, type=0)
+    OP_LOR,   // x || y   (oper_lanor, type=1)
 } expr_op;
 
 typedef struct expr_node {
