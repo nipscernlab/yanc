@@ -73,6 +73,15 @@ typedef enum {
     EXPR_UNOP       // <op> a     (op in -, !, ~)
 } expr_kind;
 
+// Operator codes carried by EXPR_BINOP / EXPR_UNOP. Names mirror the
+// historical oper_*() functions in oper.c so the migration of each
+// consumer reads as a one-to-one mapping. Grows as more rules switch.
+typedef enum {
+    OP_NEG,   // unary -  (oper_neg)
+    OP_LIN,   // unary !  (oper_lin, "logical inverter" in the ISA)
+    OP_INV,   // unary ~  (oper_inv)
+} expr_op;
+
 typedef struct expr_node {
     expr_kind kind;
     int line;                          // source line (1-based)

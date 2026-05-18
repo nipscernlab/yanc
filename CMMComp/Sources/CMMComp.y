@@ -355,9 +355,9 @@ exp:       terminal                           {$$ = $1;}
          |    '(' exp ')'                     {$$ = $2;}
          |    '+' exp                         {$$ = $2;}
          // unary operators
-         |    '-' exp                         {$$ = oper_neg($2);}
-         |    '!' exp                         {$$ = oper_lin($2);}
-         |    '~' exp                         {$$ = oper_inv($2);}
+         |    '-' exp                         {$$ = oper_neg($2); $$.node = expr_unop(OP_NEG, $$.type, $2.node);}
+         |    '!' exp                         {$$ = oper_lin($2); $$.node = expr_unop(OP_LIN, $$.type, $2.node);}
+         |    '~' exp                         {$$ = oper_inv($2); $$.node = expr_unop(OP_INV, $$.type, $2.node);}
          | ID                         PPLUS   {$$ = pplus2exp  ($1);}
          | ID '[' exp ']'             PPLUS   {$$ = pplus1d2exp($1, $3);}
          | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = pplus2d2exp($1, $3, $6);}
