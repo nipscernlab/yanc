@@ -252,6 +252,7 @@ typedef enum {
     STMT_PPLUS,         // id++; / id[idx]++; / id[idx][idx2]++;
     STMT_ARRAY_ASSIGN,  // id[idx] = exp;  /  id[idx) = exp;  /  id[idx][idx2] = exp;
     STMT_RETURN,        // return exp;  (rhs set)  /  return;  (rhs NULL)
+    STMT_OUT,           // out(port, exp);  (op=0)  /  fout(port, exp);  (op=1)
 } stmt_kind;
 
 typedef struct stmt_node {
@@ -284,6 +285,10 @@ stmt_node *stmt_array_assign(int id,
 
 // rhs=NULL -> void return; rhs=<expr> -> value return.
 stmt_node *stmt_return(struct expr_node *rhs);
+
+// out(port, rhs)  -> fout_flag=0
+// fout(port, rhs) -> fout_flag=1
+stmt_node *stmt_out(int port, struct expr_node *rhs, int fout_flag);
 
 // walks a stmt_node and emits via the same helpers the inline grammar
 // actions used to call (ass_set, etc.).

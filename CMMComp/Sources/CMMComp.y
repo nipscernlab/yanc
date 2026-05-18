@@ -249,8 +249,8 @@ exp_list :                              {args_frame_push();}
 
 // Standard library -----------------------------------------------------------
 
-std_out  : OUT  '(' INUM ',' exp ')' ';'            {exec_out ($3, EE($5));}            // data output
-std_fout : FOUT '(' INUM ',' exp ')' ';'            {exec_fout($3, EE($5));}            // data output (converting to float)
+std_out  : OUT  '(' INUM ',' exp ')' ';'            {stmt_emit_inline(stmt_out($3, $5, 0));}  // data output
+std_fout : FOUT '(' INUM ',' exp ')' ';'            {stmt_emit_inline(stmt_out($3, $5, 1));}  // data output (converting to float)
 std_in   : INN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_IN,   0, $3, NULL, NULL);}  // data input
 std_fin  : FIN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FIN,  0, $3, NULL, NULL);}  // float input
 std_pst  : PST  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_PST,  0, 0,  $3,   NULL);}  // clears if negative

@@ -579,6 +579,15 @@ stmt_node *stmt_return(expr_node *rhs)
     return n;
 }
 
+stmt_node *stmt_out(int port, expr_node *rhs, int fout_flag)
+{
+    stmt_node *n = snode_new(STMT_OUT);
+    n->id  = port;
+    n->rhs = rhs;
+    n->op  = fout_flag;
+    return n;
+}
+
 void stmt_emit(stmt_node *n)
 {
     if (!n) return;
@@ -609,6 +618,11 @@ void stmt_emit(stmt_node *n)
         case STMT_RETURN:
             if (n->rhs) declar_ret(ast_emit_expr(n->rhs), 1);
             else        void_ret();
+            break;
+
+        case STMT_OUT:
+            if (n->op) exec_fout(n->id, ast_emit_expr(n->rhs));
+            else       exec_out (n->id, ast_emit_expr(n->rhs));
             break;
     }
 }
