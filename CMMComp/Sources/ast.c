@@ -560,6 +560,18 @@ stmt_node *stmt_pplus(int id, expr_node *idx, expr_node *idx2)
     return n;
 }
 
+stmt_node *stmt_array_assign(int id, expr_node *idx, expr_node *idx2,
+                             expr_node *rhs, int fft)
+{
+    stmt_node *n = snode_new(STMT_ARRAY_ASSIGN);
+    n->id   = id;
+    n->idx  = idx;
+    n->idx2 = idx2;
+    n->rhs  = rhs;
+    n->op   = fft;
+    return n;
+}
+
 void stmt_emit(stmt_node *n)
 {
     if (!n) return;
@@ -575,6 +587,16 @@ void stmt_emit(stmt_node *n)
             else if (!n->idx2) ass_aplus(n->id, ast_emit_expr(n->idx));
             else               ass_apl2d(n->id, ast_emit_expr(n->idx),
                                                 ast_emit_expr(n->idx2));
+            break;
+
+        case STMT_ARRAY_ASSIGN:
+            // First emit the index calculation (leaves it in acc),
+            // then the walker on the RHS pushes that, computes the value,
+            // and ass_array emits the indexed-store.
+            if (n->idx2) arr_2d_index(n->id, ast_emit_expr(n->idx),
+                                              ast_emit_expr(n->idx2));
+            else         arr_1d_index(n->id, ast_emit_expr(n->idx));
+            ass_array(n->id, ast_emit_expr(n->rhs), n->op);
             break;
     }
 }
