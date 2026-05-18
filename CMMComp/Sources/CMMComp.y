@@ -362,13 +362,13 @@ exp:       terminal                           {$$ = $1;}
          | ID '[' exp ']'             PPLUS   {$$ = pplus1d2exp($1, $3);}
          | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = pplus2d2exp($1, $3, $6);}
          // shift operators
-         | exp  SHIFTL exp                    {$$ = oper_shift($1, $3, 0);}
-         | exp  SHIFTR exp                    {$$ = oper_shift($1, $3, 1);}
-         | exp SSHIFTR exp                    {$$ = oper_shift($1, $3, 2);}
+         | exp  SHIFTL exp                    {$$ = oper_shift($1, $3, 0); $$.node = expr_binop(OP_SHL,  $$.type, $1.node, $3.node);}
+         | exp  SHIFTR exp                    {$$ = oper_shift($1, $3, 1); $$.node = expr_binop(OP_SHR,  $$.type, $1.node, $3.node);}
+         | exp SSHIFTR exp                    {$$ = oper_shift($1, $3, 2); $$.node = expr_binop(OP_SSHR, $$.type, $1.node, $3.node);}
          // bitwise operators
-         | exp   '&'   exp                    {$$ = oper_bitw ($1, $3, 0);}
-         | exp   '|'   exp                    {$$ = oper_bitw ($1, $3, 1);}
-         | exp   '^'   exp                    {$$ = oper_bitw ($1, $3, 2);}
+         | exp   '&'   exp                    {$$ = oper_bitw ($1, $3, 0); $$.node = expr_binop(OP_AND,  $$.type, $1.node, $3.node);}
+         | exp   '|'   exp                    {$$ = oper_bitw ($1, $3, 1); $$.node = expr_binop(OP_OR,   $$.type, $1.node, $3.node);}
+         | exp   '^'   exp                    {$$ = oper_bitw ($1, $3, 2); $$.node = expr_binop(OP_XOR,  $$.type, $1.node, $3.node);}
          // arithmetic operators
          | exp   '%'   exp                    {$$ = oper_mod ($1, $3); $$.node = expr_binop(OP_MOD, $$.type, $1.node, $3.node);}
          | exp   '+'   exp                    {$$ = oper_soma($1, $3); $$.node = expr_binop(OP_ADD, $$.type, $1.node, $3.node);}

@@ -93,6 +93,12 @@ typedef enum {
     OP_NE,    // x != y   (oper_dife)
     OP_LAN,   // x && y   (oper_lanor, type=0)
     OP_LOR,   // x || y   (oper_lanor, type=1)
+    OP_SHL,   // x << y   (oper_shift, type=0)
+    OP_SHR,   // x >> y   (oper_shift, type=1)
+    OP_SSHR,  // x >>> y  (oper_shift, type=2)  signed shift right
+    OP_AND,   // x & y    (oper_bitw,  type=0)
+    OP_OR,    // x | y    (oper_bitw,  type=1)
+    OP_XOR,   // x ^ y    (oper_bitw,  type=2)
 } expr_op;
 
 typedef struct expr_node {
