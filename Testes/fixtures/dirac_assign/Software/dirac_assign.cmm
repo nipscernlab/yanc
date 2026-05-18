@@ -1,0 +1,40 @@
+#PRNAME dirac_assign
+#NUBITS 23
+#NDSTAC 10
+#SDEPTH 10
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 16
+#NBEXPO 6
+#NUGAIN 128
+
+// Synthetic fixture: exercises the four assignment-form Dirac rules that
+// no Exemplos/ program uses. The declaration-form variants appear in
+// proc_rls. Not a real DSP example.
+//
+//   a # |M|b>      -> exec_Mv
+//   a # c|b>       -> exec_cv
+//   A # |a><b|     -> exec_vvt
+//   a # c|in(p)>   -> exec_cvin
+
+float A[4][4];
+float B[4][4];
+float a[4];
+float b[4];
+
+void main()
+{
+    A # 1.0|I|;
+    B # 1.0|I|;
+    a # |0⟩;
+    b # |0⟩;
+
+    while (1)
+    {
+        a # |B|a⟩;           // exec_Mv:    a = B * a
+        a # 2.0|b⟩;          // exec_cv:    a = 2.0 * b
+        A # |a⟩⟨b|;          // exec_vvt:   A = a * b^T
+        a # 0.001|in(0)⟩;    // exec_cvin:  a = 0.001 * input(0)
+        out(0, 1);
+    }
+}

@@ -255,15 +255,33 @@ typedef enum {
     STMT_OUT,           // out(port, exp);  (op=0)  /  fout(port, exp);  (op=1)
     STMT_COPY,          // copy(exp, dst_id);
     STMT_VOUT,          // out(port, exp | vector_id BRA);  Dirac vector output
+    STMT_DIRAC,         // Dirac linear-algebra assignments (op discriminates)
 } stmt_kind;
+
+// Sub-operation for STMT_DIRAC. The 10 Dirac forms share enough structure
+// to live under one kind, dispatched by op in the walker.
+typedef enum {
+    DIRAC_MV,      // dst # |M|a⟩;             3 ids
+    DIRAC_CV,      // dst # c|b⟩;              2 ids + rhs (scalar c)
+    DIRAC_APCB,    // dst # |b⟩ + c|d⟩;        3 ids + rhs (scalar c)
+    DIRAC_VVT,     // dst # |a⟩⟨b|;            3 ids
+    DIRAC_MMVVT,   // dst # |B| - |a⟩⟨b|;      4 ids
+    DIRAC_CM,      // dst # c|B|;              2 ids + rhs (scalar c)
+    DIRAC_CI,      // dst # c|I|;              1 id  + rhs (scalar c)
+    DIRAC_V0,      // dst # |0⟩;               1 id
+    DIRAC_CVIN,    // dst # c|in(port)⟩;       2 ids + rhs (scalar c)
+    DIRAC_SHIFT,   // dst # c -> |a⟩;          2 ids + rhs (scalar c)
+} dirac_op;
 
 typedef struct stmt_node {
     stmt_kind kind;
     int       line;     // source line where the node was built (1-based)
 
     int               id;    // primary int (LHS variable / array / port / dst)
-    int               id2;   // secondary int (VOUT: vector id; future Dirac uses)
-    int               op;    // small flag (fft / fout / ...) per kind
+    int               id2;   // secondary int
+    int               id3;   // tertiary int (DIRAC: third var id)
+    int               id4;   // quaternary int (DIRAC_MMVVT only)
+    int               op;    // small flag (fft / fout / dirac_op / ...)
     struct expr_node *rhs;   // value/source expression (owned)
     struct expr_node *idx;   // PPLUS / ARRAY_ASSIGN: 1D/2D index (NULL for scalar)
     struct expr_node *idx2;  // PPLUS / ARRAY_ASSIGN: 2D second index (NULL otherwise)
@@ -298,6 +316,20 @@ stmt_node *stmt_copy(struct expr_node *rhs, int dst_id);
 
 // out(port, rhs | vector_id BRA);  Dirac vector output.
 stmt_node *stmt_vout(int port, struct expr_node *rhs, int vector_id);
+
+// Dirac linear-algebra assignments. One constructor per syntactic form; each
+// internally tags the stmt_node with the corresponding dirac_op. `c` is the
+// scalar factor expression where applicable (NULL otherwise).
+stmt_node *stmt_dirac_Mv    (int dst, int M, int a);
+stmt_node *stmt_dirac_cv    (int dst, struct expr_node *c, int b);
+stmt_node *stmt_dirac_apcb  (int dst, int b, struct expr_node *c, int d);
+stmt_node *stmt_dirac_vvt   (int dst, int a, int b);
+stmt_node *stmt_dirac_Mmvvt (int dst, int B, int a, int b);
+stmt_node *stmt_dirac_cM    (int dst, struct expr_node *c, int M);
+stmt_node *stmt_dirac_cI    (int dst, struct expr_node *c);
+stmt_node *stmt_dirac_v0    (int dst);
+stmt_node *stmt_dirac_cvin  (int dst, struct expr_node *c, int port);
+stmt_node *stmt_dirac_shift (int dst, struct expr_node *c, int a);
 
 // walks a stmt_node and emits via the same helpers the inline grammar
 // actions used to call (ass_set, etc.).

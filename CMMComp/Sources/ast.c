@@ -605,6 +605,106 @@ stmt_node *stmt_vout(int port, expr_node *rhs, int vector_id)
     return n;
 }
 
+// ----------------------------------------------------------------------------
+// Dirac linear-algebra constructors ------------------------------------------
+// ----------------------------------------------------------------------------
+
+static stmt_node *dirac_new(dirac_op op)
+{
+    stmt_node *n = snode_new(STMT_DIRAC);
+    n->op = op;
+    return n;
+}
+
+stmt_node *stmt_dirac_Mv(int dst, int M, int a)
+{
+    stmt_node *n = dirac_new(DIRAC_MV);
+    n->id  = dst;
+    n->id2 = M;
+    n->id3 = a;
+    return n;
+}
+
+stmt_node *stmt_dirac_cv(int dst, expr_node *c, int b)
+{
+    stmt_node *n = dirac_new(DIRAC_CV);
+    n->id  = dst;
+    n->id2 = b;
+    n->rhs = c;
+    return n;
+}
+
+stmt_node *stmt_dirac_apcb(int dst, int b, expr_node *c, int d)
+{
+    stmt_node *n = dirac_new(DIRAC_APCB);
+    n->id  = dst;
+    n->id2 = b;
+    n->id3 = d;
+    n->rhs = c;
+    return n;
+}
+
+stmt_node *stmt_dirac_vvt(int dst, int a, int b)
+{
+    stmt_node *n = dirac_new(DIRAC_VVT);
+    n->id  = dst;
+    n->id2 = a;
+    n->id3 = b;
+    return n;
+}
+
+stmt_node *stmt_dirac_Mmvvt(int dst, int B, int a, int b)
+{
+    stmt_node *n = dirac_new(DIRAC_MMVVT);
+    n->id  = dst;
+    n->id2 = B;
+    n->id3 = a;
+    n->id4 = b;
+    return n;
+}
+
+stmt_node *stmt_dirac_cM(int dst, expr_node *c, int M)
+{
+    stmt_node *n = dirac_new(DIRAC_CM);
+    n->id  = dst;
+    n->id2 = M;
+    n->rhs = c;
+    return n;
+}
+
+stmt_node *stmt_dirac_cI(int dst, expr_node *c)
+{
+    stmt_node *n = dirac_new(DIRAC_CI);
+    n->id  = dst;
+    n->rhs = c;
+    return n;
+}
+
+stmt_node *stmt_dirac_v0(int dst)
+{
+    stmt_node *n = dirac_new(DIRAC_V0);
+    n->id  = dst;
+    return n;
+}
+
+stmt_node *stmt_dirac_cvin(int dst, expr_node *c, int port)
+{
+    stmt_node *n = dirac_new(DIRAC_CVIN);
+    n->id  = dst;
+    n->id2 = port;
+    n->rhs = c;
+    return n;
+}
+
+stmt_node *stmt_dirac_shift(int dst, expr_node *c, int a)
+{
+    stmt_node *n = dirac_new(DIRAC_SHIFT);
+    n->id  = dst;
+    n->id2 = a;
+    n->rhs = c;
+    return n;
+}
+
 void stmt_emit(stmt_node *n)
 {
     if (!n) return;
@@ -648,6 +748,21 @@ void stmt_emit(stmt_node *n)
 
         case STMT_VOUT:
             exec_vout(n->id, ast_emit_expr(n->rhs), n->id2);
+            break;
+
+        case STMT_DIRAC:
+            switch (n->op) {
+                case DIRAC_MV:    exec_Mv   (n->id, n->id2, n->id3); break;
+                case DIRAC_CV:    exec_cv   (n->id, ast_emit_expr(n->rhs), n->id2); break;
+                case DIRAC_APCB:  exec_apcb (n->id, n->id2, ast_emit_expr(n->rhs), n->id3); break;
+                case DIRAC_VVT:   exec_vvt  (n->id, n->id2, n->id3); break;
+                case DIRAC_MMVVT: exec_Mmvvt(n->id, n->id2, n->id3, n->id4); break;
+                case DIRAC_CM:    exec_cM   (n->id, ast_emit_expr(n->rhs), n->id2); break;
+                case DIRAC_CI:    exec_cI   (n->id, ast_emit_expr(n->rhs)); break;
+                case DIRAC_V0:    exec_v0   (n->id); break;
+                case DIRAC_CVIN:  exec_cvin (n->id, ast_emit_expr(n->rhs), n->id2); break;
+                case DIRAC_SHIFT: exec_shift(n->id, ast_emit_expr(n->rhs), n->id2); break;
+            }
             break;
     }
 }

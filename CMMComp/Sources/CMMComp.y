@@ -313,16 +313,16 @@ assignment : ID  '=' exp ';'                          {stmt_emit_inline(stmt_ass
            // 2D array
            | ID  '[' exp ']' '[' exp ']' '=' exp ';'  {stmt_emit_inline(stmt_array_assign($1, $3, $6,   $9, 0));}
            // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
-           | ID '#'     '|' ID '|' ID BRA ';'                    {exec_Mv   ($1,$4,$6);}                       // A # |B|a>
-           | ID '#' exp '|' ID BRA ';'                           {exec_cv   ($1, EE($3), $5);}                 // a # c|b>
-           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {exec_apcb ($1, $4, EE($7), $9);}             // a # |b> + c|d>
-           | ID '#'     '|' ID BRA KET  ID '|' ';'               {exec_vvt  ($1, $4, $7);}                     // A # |a><b|
-           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {exec_Mmvvt($1, $4, $8, $11);}                // A # B - |a><b|
-           | ID '#' exp '|' ID '|' ';'                           {exec_cM   ($1, EE($3), $5);}                 // A # c|B|
-           | ID '#' exp     EYE ';'                              {exec_cI   ($1, EE($3));}                     // A # c|I|
-           | ID '#'         VZERO ';'                            {exec_v0   ($1);}                             // a # |0>
-           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {exec_cvin ($1, EE($3), $7);}                 // a # |in(0)>
-           | ID '#' exp '-' '>' '|' ID BRA ';'                   {exec_shift($1, EE($3), $7);}                 // a # c -> |a>
+           | ID '#'     '|' ID '|' ID BRA ';'                    {stmt_emit_inline(stmt_dirac_Mv   ($1, $4, $6));}        // A # |B|a>
+           | ID '#' exp '|' ID BRA ';'                           {stmt_emit_inline(stmt_dirac_cv   ($1, $3, $5));}        // a # c|b>
+           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {stmt_emit_inline(stmt_dirac_apcb ($1, $4, $7, $9));}    // a # |b> + c|d>
+           | ID '#'     '|' ID BRA KET  ID '|' ';'               {stmt_emit_inline(stmt_dirac_vvt  ($1, $4, $7));}        // A # |a><b|
+           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {stmt_emit_inline(stmt_dirac_Mmvvt($1, $4, $8, $11));}   // A # B - |a><b|
+           | ID '#' exp '|' ID '|' ';'                           {stmt_emit_inline(stmt_dirac_cM   ($1, $3, $5));}        // A # c|B|
+           | ID '#' exp     EYE ';'                              {stmt_emit_inline(stmt_dirac_cI   ($1, $3));}            // A # c|I|
+           | ID '#'         VZERO ';'                            {stmt_emit_inline(stmt_dirac_v0   ($1));}                // a # |0>
+           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {stmt_emit_inline(stmt_dirac_cvin ($1, $3, $7));}        // a # |in(0)>
+           | ID '#' exp '-' '>' '|' ID BRA ';'                   {stmt_emit_inline(stmt_dirac_shift($1, $3, $7));}        // a # c -> |a>
 
 // expressions ----------------------------------------------------------------
 
