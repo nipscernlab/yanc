@@ -370,11 +370,11 @@ exp:       terminal                           {$$ = $1;}
          | exp   '|'   exp                    {$$ = oper_bitw ($1, $3, 1);}
          | exp   '^'   exp                    {$$ = oper_bitw ($1, $3, 2);}
          // arithmetic operators
-         | exp   '%'   exp                    {$$ = oper_mod ($1, $3);}
-         | exp   '+'   exp                    {$$ = oper_soma($1, $3);}
-         | exp   '-'   exp                    {$$ = oper_subt($1, $3);}
-         | exp   '*'   exp                    {$$ = oper_mult($1, $3);}
-         | exp   '/'   exp                    {$$ = oper_divi($1, $3);}
+         | exp   '%'   exp                    {$$ = oper_mod ($1, $3); $$.node = expr_binop(OP_MOD, $$.type, $1.node, $3.node);}
+         | exp   '+'   exp                    {$$ = oper_soma($1, $3); $$.node = expr_binop(OP_ADD, $$.type, $1.node, $3.node);}
+         | exp   '-'   exp                    {$$ = oper_subt($1, $3); $$.node = expr_binop(OP_SUB, $$.type, $1.node, $3.node);}
+         | exp   '*'   exp                    {$$ = oper_mult($1, $3); $$.node = expr_binop(OP_MUL, $$.type, $1.node, $3.node);}
+         | exp   '/'   exp                    {$$ = oper_divi($1, $3); $$.node = expr_binop(OP_DIV, $$.type, $1.node, $3.node);}
          // true/false operators
          | exp  LAN    exp                    {$$ = oper_lanor($1, $3, 0);}
          | exp  LOR    exp                    {$$ = oper_lanor($1, $3, 1);}

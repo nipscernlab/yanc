@@ -80,6 +80,11 @@ typedef enum {
     OP_NEG,   // unary -  (oper_neg)
     OP_LIN,   // unary !  (oper_lin, "logical inverter" in the ISA)
     OP_INV,   // unary ~  (oper_inv)
+    OP_ADD,   // x + y    (oper_soma)
+    OP_SUB,   // x - y    (oper_subt)
+    OP_MUL,   // x * y    (oper_mult)
+    OP_DIV,   // x / y    (oper_divi)
+    OP_MOD,   // x % y    (oper_mod)
 } expr_op;
 
 typedef struct expr_node {
