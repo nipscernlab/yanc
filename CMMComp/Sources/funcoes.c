@@ -670,14 +670,14 @@ void void_ret()
 // Each arg's exp_list reduce just records the arg's tree node on the current
 // call's frame. The emit (subtree + par_check stage + CAL) happens later when
 // the walker reaches the EXPR_FUNC_CALL node at consumer-EE / vcall time.
-void par_exp(expr e)
+void par_exp(expr_node *n)
 {
-    args_push(e.node);
+    args_push(n);
 }
 
-void par_listexp(expr e)
+void par_listexp(expr_node *n)
 {
-    args_push(e.node);
+    args_push(n);
 }
 
 // void-call statement: pre-validates type / arity, builds an EXPR_FUNC_CALL
@@ -708,9 +708,9 @@ void vcall(int id)
 }
 
 // value-returning call: pre-validates and packages the call as an
-// EXPR_FUNC_CALL node, hands the POD up to whichever consumer reduces next.
+// EXPR_FUNC_CALL node, hands the node up to whichever consumer reduces next.
 // No emit at parse time - the walker emits when the consumer calls EE($N).
-expr fcall(int id)
+expr_node *fcall(int id)
 {
     if (v_type[id] == 6)
     {
@@ -733,7 +733,5 @@ expr fcall(int id)
 
     v_used[id] = 1;
 
-    expr e = expr_make(v_type[id]-6, 0);
-    e.node = expr_func_call(e.type, id, a, n);
-    return e;
+    return expr_func_call(v_type[id]-6, id, a, n);
 }

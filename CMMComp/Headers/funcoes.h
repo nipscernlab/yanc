@@ -28,13 +28,13 @@ void    void_ret(      );           // end of a void function
 
 // usage ----------------------------------------------------------------------
 
-void  par_exp    (expr e);          // loads the first parameter (if any)
-void  par_listexp(expr e);          // loads the remaining parameters (if any)
-void  vcall      (int id );         // CAL of a void function
-expr  fcall      (int id );         // CAL of a function with return value
+void       par_exp    (expr_node *n); // record first  arg's node on the frame
+void       par_listexp(expr_node *n); // record next-N arg's node on the frame
+void       vcall      (int id);       // void user call: builds node and walks it
+expr_node *fcall      (int id);       // value user call: builds and returns node
 
 // argument-stack frames for nested function calls. args_frame_push() is
 // called from the grammar mid-rule action right after 'ID ('; par_exp /
-// par_listexp push each evaluated arg's .node; fcall / vcall drain the
+// par_listexp push each arg's node onto the frame; fcall / vcall drain the
 // frame when ')' is reduced.
 void  args_frame_push(void);
