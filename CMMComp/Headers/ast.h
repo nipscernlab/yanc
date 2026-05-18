@@ -12,22 +12,14 @@
 //     order the parser used to reduce, which keeps the assembly stream
 //     byte-identical to the older inline-emit compiler.
 //
-//   - `ast_node` captures whole statements (blocks, if, while, switch, break)
-//     plus pass-through chunks of already-emitted assembly (AST_RAW). The
-//     function-body capture buffer turns each parsed statement into one of
-//     these and the body's walker replays them at func close-brace time.
+//   - `stmt_node` carries whole statements. Each function body and each
+//     compound body (if / while / switch) accumulates its statements in a
+//     STMT_BLOCK while parsing; the closing reduce hands the block to
+//     stmt_emit, which walks the tree and emits every instruction at body-
+//     close time (no parse-time emit, no textual replay).
 
 #ifndef YANC_AST_H
 #define YANC_AST_H
-
-typedef enum {
-    AST_RAW,     // verbatim assembly text (chunks emitted during parse)
-    AST_BLOCK,   // sequence of child statements
-    AST_IF,      // if (cond) body [else els]
-    AST_WHILE,   // while (cond) body
-    AST_BREAK,   // break; (inside while)
-    AST_SWITCH   // switch (cond) { cases }
-} ast_kind;
 
 // ----------------------------------------------------------------------------
 // expression result POD -------------------------------------------------------
@@ -187,65 +179,14 @@ void expr_dump(expr_node *n);
 // directly by vcall() for void statement-level function calls.
 expr ast_emit_expr(expr_node *n);
 
-typedef struct ast_node {
-    ast_kind kind;
-    int      line;            // source line where the node was built (1-based)
-
-    // AST_IF/AST_WHILE: label number from push_if/push_while
-    // AST_SWITCH:      swit_cnt (current switch's id)
-    int      label;
-    int      case_max;        // AST_SWITCH: highest case index used (case_cnt at end)
-
-    // AST_RAW ----------------------------------------------------------------
-    char    *text;            // heap-owned, NUL-terminated assembly chunk
-
-    // AST_BLOCK --------------------------------------------------------------
-    struct ast_node **kids;
-    int      kids_n;
-    int      kids_cap;
-
-    // AST_IF / AST_WHILE / AST_SWITCH ---------------------------------------
-    // cond is currently always NULL: the condition is emitted inline before
-    // body capture starts, so it does not need its own node yet. Kept in the
-    // struct so a future pass that captures the cond as well has a slot.
-    struct ast_node *cond;
-    struct ast_node *body;    // then-branch / while-body / switch-body
-    struct ast_node *els;     // else-branch (AST_IF only, NULL if absent)
-} ast_node;
-
-// constructors (all return a heap node owned by the caller).
-// For AST_IF / AST_WHILE: label is the number returned by push_if / push_while
-// at parse time, used by the emit walker to spell out @Lif%d / @Lwh%d markers.
-// For AST_SWITCH:         swit_id is swit_cnt, case_max is case_cnt when the
-// closing brace was reduced; the walker uses them to spell out the trailing
-// @sw_case_<swit>_<case_max+1> and @switch_end_<swit> labels.
-ast_node *ast_raw     (const char *text);
-ast_node *ast_block   (void);
-ast_node *ast_if      (int label, ast_node *body, ast_node *els);
-ast_node *ast_while   (int label, ast_node *body);
-ast_node *ast_break   (void);
-ast_node *ast_switch  (int swit_id, int case_max, ast_node *body);
-
-// appends kid to a BLOCK node (takes ownership of kid)
-void      ast_block_push(ast_node *blk, ast_node *kid);
-
-// frees the node and every descendant recursively
-void      ast_free    (ast_node *n);
-
-// walks a node and emits the corresponding assembly via add_instr/add_sinst
-// (incomplete: only the migrated node kinds are handled, the rest abort)
-void      ast_emit    (ast_node *n);
-
 // ----------------------------------------------------------------------------
-// statement AST (fase 6 - structural statement tree) -------------------------
+// statement AST --------------------------------------------------------------
 // ----------------------------------------------------------------------------
 //
-// Each top-level statement reduces into a stmt_node. Today the grammar
-// builds-and-walks-immediately at parse time (stmt_emit_inline) so the emit
-// stream is byte-identical to the previous inline path. Subsequent commits
-// will migrate each statement type to a dedicated kind; once all are migrated
-// the per-body emit_push_capture / emit_pop_capture text path can be replaced
-// with a per-body stmt_node list walked at body close.
+// Each top-level statement reduces into a stmt_node and the grammar appends
+// it to the current body's STMT_BLOCK via stmt_emit_inline. The walker fires
+// at body close (func_ret / if_stmt / if_fim / while_stmt / end_switch) and
+// emits every kid in source order.
 
 typedef enum {
     STMT_ASSIGN,        // id = exp;
@@ -258,8 +199,6 @@ typedef enum {
     STMT_DIRAC,         // Dirac linear-algebra assignments (op discriminates)
     STMT_VOID_CALL,     // f(args);  user-defined void function call statement
     STMT_DIRE_INTER,    // #INTERPOINT directive (interrupt return target)
-    STMT_AST_WRAP,      // wraps an ast_node (if / while / switch / break) so
-                        // every statement reaches codegen through stmt_emit
     STMT_BLOCK,         // ordered list of child stmt_nodes (function / if /
                         // while / switch body). Walker iterates kids.
     STMT_IF,            // if (cond) then_body [else else_body];  label = if id
@@ -305,7 +244,6 @@ typedef struct stmt_node {
     struct expr_node *rhs;   // value/source expression (owned)
     struct expr_node *idx;   // PPLUS / ARRAY_ASSIGN: 1D/2D index (NULL for scalar)
     struct expr_node *idx2;  // PPLUS / ARRAY_ASSIGN: 2D second index (NULL otherwise)
-    struct ast_node  *ast_inner;  // STMT_AST_WRAP: wrapped if/while/switch/break (owned)
 
     // STMT_RAW: heap-owned, NUL-terminated assembly chunk replayed via
     // emit_raw at walker time. Used by helpers (declar_arr_*, declar_Mv,
@@ -363,11 +301,6 @@ stmt_node *stmt_void_call (struct expr_node *call);
 
 // #INTERPOINT directive (interrupt entry-point marker) used inside funcs.
 stmt_node *stmt_dire_inter(void);
-
-// Bridge for compound statements that already build their own ast_node
-// (if / while / switch / break, all defined in saltos.c). The stmt_node
-// takes ownership; stmt_free recurses through ast_free.
-stmt_node *stmt_ast_wrap  (struct ast_node *inner);
 
 // Empty STMT_BLOCK; grow it with stmt_block_push.
 stmt_node *stmt_block     (void);

@@ -2,37 +2,28 @@
 // emit sink stack ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 //
-// Today add_instr/add_sinst write straight to f_asm. To migrate compound
-// constructs like if/while to AST, we need to capture the assembly text
-// emitted during the body parse, so we can stuff it into an ast_node and
-// re-emit it later (wrapped with labels/jumps).
+// add_instr / add_sinst write to f_asm by default. A stack of capture buffers
+// can be pushed on top to redirect output: while a buffer is active, the
+// emitting helpers append assembly text to it instead of f_asm. The captured
+// text is heap-owned and the caller picks it up via emit_pop_capture().
 //
-// The sink stack is the redirection layer:
+// The only remaining client today is data_declar.c: declar_arr_1d /
+// declar_arr_2d / declar_Mv / declar_cv all emit `#array ...` directives (and
+// in the 2D case, real LOD/SET instructions for the `_arr_size` helper) at
+// parse time. They wrap their emit in push/pop and route the captured text
+// through STMT_RAW so it lands in source order with the surrounding deferred
+// statements when the function body walker emits.
 //
-//   - When the stack is empty, add_instr keeps writing to f_asm exactly as
-//     before. This is the default (non-capturing) mode.
-//
-//   - emit_push_capture() pushes a fresh string buffer onto the stack.
-//     While that buffer is on top, add_instr appends the assembly text to
-//     it instead of f_asm. (f_lin and num_ins bookkeeping stay immediate.)
-//
-//   - emit_pop_capture() pops the top buffer and returns its content as a
-//     heap-owned NUL-terminated string. Caller is responsible for free()
-//     (or for handing it off to an ast_node via ast_raw, which copies it).
-//
-// This module is plumbing only - in this step it is not wired into
-// add_instr yet. The next step will route add_instr/add_sinst through
-// emit_is_capturing/emit_append.
+// emit_raw replays a previously captured chunk through the current sink
+// without re-counting f_lin / num_ins (the original add_instr calls already
+// did the bookkeeping when the text was first captured).
 
 void  emit_push_capture(void);
 char *emit_pop_capture (void);
 
-// used internally by add_instr/add_sinst once they are routed through here
+// queried by add_instr / add_sinst to pick between top capture and f_asm
 int   emit_is_capturing(void);
 void  emit_append      (const char *s);
 
-// writes raw text to the current sink (top capture buffer, or f_asm when
-// none) without doing the f_lin / num_ins bookkeeping. Used to *replay* a
-// previously captured body whose instructions were already counted when
-// they were first emitted via add_instr during body parsing.
+// replays a pre-captured chunk without re-counting num_ins / f_lin
 void  emit_raw         (const char *s);
