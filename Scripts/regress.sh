@@ -62,13 +62,24 @@ HDL="$ROOT/HDL"
 : "${IVERILOG:=/c/nipscern/Aurora/components/Packages/iverilog/bin/iverilog.exe}"
 : "${VVP:=/c/nipscern/Aurora/components/Packages/iverilog/bin/vvp.exe}"
 
-# Examples to exclude from the simulation phase:
+# Examples to exclude from the standalone simulation phase (still run cmmcomp
+# .asm compare AND appcomp/asmcomp so their .v + .mif are available for any
+# downstream project-level link):
 #   procBlind          - takes too long to simulate
 #   sw_test            - synthetic .cmm fixture; testbench would loop on while(1)
-#   ProcDTW/ZeroCross  - multi-proc DTW project, needs top-level wiring
-#   ArcTan/Seno/Sqrt   - Math benchmarks: compute internally with no out(...) calls,
-#                        so the auto-testbench has no output ports to log
-SIM_SKIP=("procBlind" "sw_test" "ProcDTW" "ZeroCross" "ArcTan" "Seno" "Sqrt")
+#   ArcTan/Seno/Sqrt   - Math benchmarks: compute internally with no out(...) calls
+#   ProcDTW/ZeroCross  - real testbench lives in the multi-proc DTW project pass
+SIM_SKIP=("procBlind" "sw_test" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross")
+
+# Examples to also skip the appcomp/asmcomp build for (their .v / .mif are
+# never consumed elsewhere - no standalone sim, no project link). Keeps the
+# regression cheap.
+BUILD_SKIP=("procBlind" "sw_test" "ArcTan" "Seno" "Sqrt")
+build_skipped() {
+    local name="$1"
+    for s in "${BUILD_SKIP[@]}"; do [ "$s" = "$name" ] && return 0; done
+    return 1
+}
 
 sim_skipped() {
     local name="$1"
@@ -166,7 +177,7 @@ for cmm in "${cmm_sorted[@]}"; do
 
     # simulation phase -----------------------------------------------------
 
-    if [ "$NO_SIM" -eq 1 ] || sim_skipped "$prname"; then
+    if [ "$NO_SIM" -eq 1 ] || build_skipped "$prname"; then
         echo "$asm_status ($prname)  [sim skipped]"
         pass=$((pass + 1))
         continue
@@ -182,6 +193,15 @@ for cmm in "${cmm_sorted[@]}"; do
     if ! "$ASMCOMP" -en -i "$asm_file" -p "$work_proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 100000 >/dev/null 2>&1; then
         echo "FAIL ($prname): asmcomp exited non-zero"
         fail=$((fail + 1)); failed_names+=("$prname"); continue
+    fi
+
+    # Procs whose real testbench lives at the project level (DTW) - build their
+    # .v/.mif here so the project pass below can link them, but stop short of
+    # standalone iverilog/vvp (would link the wrong testbench).
+    if sim_skipped "$prname"; then
+        echo "$asm_status ($prname)  [standalone sim skipped]"
+        pass=$((pass + 1))
+        continue
     fi
 
     uproc="$work_proc/Hardware/$prname"
@@ -250,6 +270,89 @@ for cmm in "${cmm_sorted[@]}"; do
         fail=$((fail + 1)); failed_names+=("$prname")
     fi
 done
+
+# ---- 3. project pass: multi-proc DTW with top-level testbench --------------
+
+if [ "$NO_SIM" -eq 0 ]; then
+    proj="DTW"
+    proj_top="$ROOT/Exemplos/$proj/TopLevel"
+    proj_tmp="$TMP_DIR/$proj"
+    golden_proj="$GOLDEN_SIM_DIR/$proj"
+    procs=("ProcDTW" "ZeroCross")
+
+    rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"
+
+    # collect each proc's .v + .mif into the project scratch dir
+    project_ok=1
+    proc_vs=()
+    for p in "${procs[@]}"; do
+        if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+            echo "FAIL ($proj): $p artifacts missing - did its build pass?"
+            project_ok=0; break
+        fi
+        proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
+        cp "$WORK_DIR/$p/Hardware/$p.v"          "$proj_tmp/"
+        cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$proj_tmp/"
+        cp "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+    done
+
+    if [ "$project_ok" -eq 1 ]; then
+        # input .txt for the testbench ($fopen uses relative paths)
+        cp "$proj_top"/*.txt "$proj_tmp/" 2>/dev/null || true
+
+        # iverilog: HDL core + proc .v files + every .v under TopLevel/
+        if ! "$IVERILOG" -s top_level_tb -o "$proj_tmp/$proj.vvp" \
+                "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                "$HDL/core.v" "$HDL/ula.v" "$HDL/myFIFO.v" \
+                "${proc_vs[@]}" \
+                "$proj_top"/*.v >/dev/null 2>&1; then
+            echo "FAIL ($proj): iverilog exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+        fi
+    fi
+
+    if [ "$project_ok" -eq 1 ]; then
+        pushd "$proj_tmp" >/dev/null
+        "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
+        vvp_status=$?
+        popd >/dev/null
+        if [ $vvp_status -ne 0 ]; then
+            echo "FAIL ($proj): vvp exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+        fi
+    fi
+
+    if [ "$project_ok" -eq 1 ]; then
+        out_files=("$proj_tmp"/output_*.txt)
+        if [ "${#out_files[@]}" -eq 0 ] || [ ! -e "${out_files[0]}" ]; then
+            echo "FAIL ($proj): testbench produced no output_*.txt"
+            fail=$((fail + 1)); failed_names+=("$proj")
+        elif [ "$UPDATE" -eq 1 ]; then
+            rm -rf "$golden_proj"; mkdir -p "$golden_proj"
+            for f in "${out_files[@]}"; do cp "$f" "$golden_proj/"; done
+            echo "UPDATED ($proj)  [sim UPDATED, ${#out_files[@]} file(s)]"
+            pass=$((pass + 1))
+        elif [ ! -d "$golden_proj" ]; then
+            echo "FAIL ($proj): no sim golden at $golden_proj (run --update?)"
+            fail=$((fail + 1)); failed_names+=("$proj")
+        else
+            sim_fail=0
+            for f in "${out_files[@]}"; do
+                base="$(basename "$f")"
+                if ! cmp -s "$f" "$golden_proj/$base"; then
+                    echo "FAIL ($proj): $base differs from sim golden"
+                    sim_fail=1
+                fi
+            done
+            if [ $sim_fail -eq 0 ]; then
+                echo "PASS ($proj)  [sim OK]"
+                pass=$((pass + 1))
+            else
+                fail=$((fail + 1)); failed_names+=("$proj")
+            fi
+        fi
+    fi
+fi
 
 echo ""
 echo "===== $pass passed, $fail failed ====="

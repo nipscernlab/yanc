@@ -30,8 +30,19 @@ fork
 join
 
 integer i, data_in1;
+integer fd_zc_1, fd_zc_2, fd_zc_3, fd_zc_4, fd_dtw_1, fd_dtw_2;
+reg [4:0] out_en_dly     = 5'd0;
+reg [2:0] out_en_DTW_dly = 3'd0;
+
 initial begin
 	data_in1 = $fopen("sinal_harm_q.txt", "r");
+	// per-port logs used by regress.sh as goldens (relative paths -> vvp cwd)
+	fd_zc_1  = $fopen("output_zc_1.txt" , "w");
+	fd_zc_2  = $fopen("output_zc_2.txt" , "w");
+	fd_zc_3  = $fopen("output_zc_3.txt" , "w");
+	fd_zc_4  = $fopen("output_zc_4.txt" , "w");
+	fd_dtw_1 = $fopen("output_dtw_1.txt", "w");
+	fd_dtw_2 = $fopen("output_dtw_2.txt", "w");
 	$dumpfile("top_level_tb.vcd");
 	$dumpvars(0,top_level_tb);
     for (i = 10; i <= 100; i = i + 10) begin
@@ -40,6 +51,19 @@ initial begin
     end
     $display("Simulation Complete!");
     $finish;
+end
+
+// log each port the cycle after its enable was asserted (when outN holds the
+// latched value driven by the wrapper module's nonblocking assignment)
+always @(posedge clk) begin
+    out_en_dly     <= out_en;
+    out_en_DTW_dly <= out_en_DTW;
+    if (out_en_dly[1])     $fdisplay(fd_zc_1 , "%0d", out1);
+    if (out_en_dly[2])     $fdisplay(fd_zc_2 , "%0d", out2);
+    if (out_en_dly[3])     $fdisplay(fd_zc_3 , "%0d", out3);
+    if (out_en_dly[4])     $fdisplay(fd_zc_4 , "%0d", out4);
+    if (out_en_DTW_dly[1]) $fdisplay(fd_dtw_1, "%0d", out1_DTW);
+    if (out_en_DTW_dly[2]) $fdisplay(fd_dtw_2, "%0d", out2_DTW);
 end
 
 integer scan_result;
