@@ -410,8 +410,11 @@ if [ "$UPDATE_SIZE" -eq 1 ]; then
         echo "# (excludes labels, directives and macros). regress.sh fails any run where"
         echo "# a count grows. To intentionally update after a refactor that shrinks"
         echo "# things, run: Scripts/regress.sh --update-size"
-        for name in $(printf '%s\n' "${!SIZE_CURRENT[@]}" | sort); do
-            printf "%-10s %s\n" "$name" "${SIZE_CURRENT[$name]}"
+        # `set -u` is fussy with associative array iteration when the array
+        # only got keys mid-script; guard the per-key expansion with a default.
+        for name in $(printf '%s\n' "${!SIZE_CURRENT[@]:-}" | sort); do
+            [ -n "$name" ] || continue
+            printf "%-10s %s\n" "$name" "${SIZE_CURRENT[$name]:-0}"
         done
     } > "$SIZE_BASELINE_FILE"
     echo ""
