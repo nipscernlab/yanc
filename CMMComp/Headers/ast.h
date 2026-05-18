@@ -39,9 +39,14 @@ typedef enum {
 //
 // id is the index into v_name; id == 0 means "the result lives in the
 // accumulator, not in a variable".
+// forward declared because expr carries an optional pointer to its AST view
+struct expr_node;
+
 typedef struct {
     int type;
     int id;
+    struct expr_node *node;  // optional AST: populated as producers migrate,
+                             // NULL while a reduction hasn't been ported yet
 } expr;
 
 expr expr_make(int type, int id);

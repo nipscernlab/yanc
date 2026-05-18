@@ -19,7 +19,7 @@
 
 expr expr_make(int type, int id)
 {
-    expr e = {type, id};
+    expr e = {type, id, NULL};
     return e;
 }
 
