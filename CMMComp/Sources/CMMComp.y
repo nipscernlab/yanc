@@ -311,14 +311,11 @@ assignment : ID  '=' exp ';'                          {ass_set($1, EE($3));}
            | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1, EE($3));}
            | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {ass_apl2d($1, EE($3), EE($6));}
            // regular array
-           | ID  '[' exp ']'  '='                     {arr_1d_index($1, EE($3));}
-                     exp ';'                          {ass_array ($1, EE($7), 0);}
+           | ID  '[' exp ']'  '='     exp ';'         {arr_1d_index($1, EE($3));        ass_array($1, EE($6), 0);}
            // reversed array
-           | ID  '[' exp ')'  '='                     {arr_1d_index($1, EE($3));}
-                     exp ';'                          {ass_array ($1, EE($7), 1);}
+           | ID  '[' exp ')'  '='     exp ';'         {arr_1d_index($1, EE($3));        ass_array($1, EE($6), 1);}
            // 2D array (to be completed)
-           | ID  '[' exp ']' '[' exp ']' '='          {arr_2d_index($1, EE($3), EE($6));}
-                     exp ';'                          {ass_array   ($1, EE($10), 0);}
+           | ID  '[' exp ']' '[' exp ']' '=' exp ';'  {arr_2d_index($1, EE($3), EE($6)); ass_array($1, EE($9), 0);}
            // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
            | ID '#'     '|' ID '|' ID BRA ';'                    {exec_Mv   ($1,$4,$6);}                       // A # |B|a>
            | ID '#' exp '|' ID BRA ';'                           {exec_cv   ($1, EE($3), $5);}                 // a # c|b>
