@@ -4,12 +4,13 @@
 # a count grows. To intentionally update after a refactor that shrinks
 # things, run: Scripts/regress.sh --update-size
 ArcTan     74
-ProcDTW    271
-Seno       68
-Sqrt       84
-ZeroCross  140
-procBlind  797
+empty_call 16
 proc_fft   325
 proc_rls   334
 proc_sim   97
+procBlind  797
+ProcDTW    271
+Seno       68
+Sqrt       84
 sw_test    24
+ZeroCross  140

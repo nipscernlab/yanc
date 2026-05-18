@@ -236,20 +236,16 @@ stmt_case:        declar     // variable declarations
 
 // function calls -------------------------------------------------------------
 
-// void function
-void_call   : ID '('            {fun_id = $1; args_frame_push();}   // open arg frame for nested-call safety
-              exp_list ')' ';'  {vcall     ($1);}
-// function with return value
-func_call   : ID '('            {fun_id = $1; args_frame_push();}
-              exp_list ')'      {$$ = fcall($1);}
+void_call   : ID '(' exp_list ')' ';'  {vcall     ($1);}
+func_call   : ID '(' exp_list ')'      {$$ = fcall($1);}
 
-// parameters need to be pushed onto the stack
-// for each exp found, the resulting value is written to the stack with par_exp
-// the first parameter stays in the accumulator (parsing goes from last to first)
-// par_exp pushes parameters onto the stack and checks consistency
-exp_list :                                              // may be empty (test it)
-         | exp                              {par_exp    ($1);}  // first parameter (just records node; walker emits)
-         | exp_list ',' exp                 {par_listexp($3);}  // remaining parameters
+// Each call's arg frame opens at the FIRST reduction of its own exp_list
+// (or at the empty alternative for f()), so nested calls each get their own
+// frame without a mid-rule action. par_exp / par_listexp then record each
+// arg's tree node onto the current top frame.
+exp_list :                              {args_frame_push();}
+         | exp                          {args_frame_push(); par_exp($1);}
+         | exp_list ',' exp             {par_listexp($3);}
 
 // Standard library -----------------------------------------------------------
 

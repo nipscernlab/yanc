@@ -1,0 +1,34 @@
+#PRNAME empty_call
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Synthetic fixture: exercises the parameterless user-function call paths
+// (both value-returning and void). Locks down the exp_list "empty"
+// alternative that opens the arg frame in func_call / void_call rules.
+// Not a real DSP example.
+
+int answer()
+{
+    return 42;
+}
+
+void emit_one()
+{
+    out(0, 1);
+}
+
+void main()
+{
+    while (1)
+    {
+        int y = answer();   // empty-arg value call as RHS of declaration
+        emit_one();          // empty-arg void call at statement level
+        out(0, y);
+    }
+}
