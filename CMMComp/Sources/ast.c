@@ -33,9 +33,8 @@ expr expr_make(int type, int id)
 // ----------------------------------------------------------------------------
 // expression AST constructors / destructor -----------------------------------
 // ----------------------------------------------------------------------------
-// No callers yet. The bison stack still carries the flat `expr` POD; this
-// only puts the building blocks in place so a follow-up commit can start
-// returning expr_node * from terminal / exp reductions.
+// Every `exp` reduction in CMMComp.y calls one of these to build the subtree
+// it just parsed. Codegen happens later in the walker.
 
 static expr_node *enode_new(expr_kind k)
 {
@@ -218,17 +217,18 @@ void expr_dump(expr_node *n)
 }
 
 // ----------------------------------------------------------------------------
-// expression tree walker (codegen via tree) ----------------------------------
+// expression tree walker (codegen) -------------------------------------------
 // ----------------------------------------------------------------------------
-// Recreates the emit that the grammar actions currently do inline. Calls the
-// same oper_*/exec_*/arr_*/pplus_*/num2exp/id2exp/par_exp/fcall helpers, so
-// running the walker over a built tree produces byte-identical assembly to
-// the inline path.
+// Single entry point for expression codegen. Dispatches on n->kind, recurses
+// into children, and calls the existing oper_*/exec_*/arr_*/pplus_*/num2exp/
+// id2exp/par_check helpers in left-to-right post-order. The traversal order
+// matches what the parser used to reduce, so the emit stream is byte-identical
+// to the previous inline-emit compiler.
 //
-// The public entry point preserves the original tree pointer on the
-// returned POD so callers (grammar actions, downstream tree consumers) can
-// chain emit-and-attach in a single statement:
-//     $$ = ast_emit_expr(expr_lit(1, $1));
+// Result POD carries the freshly-emitted value's location: id == 0 means
+// "in the accumulator", id > 0 means "in v_name[id]". The public wrapper
+// stamps the returned POD with the original node pointer so callers can
+// keep chasing the tree through the result.
 
 static expr ast_emit_expr_impl(expr_node *n);
 
@@ -470,9 +470,10 @@ void ast_free(ast_node *n)
 // emit walker ----------------------------------------------------------------
 // ----------------------------------------------------------------------------
 //
-// Each node kind is migrated one at a time. The migrated cases turn the node
-// back into assembly. The default case aborts so we notice if an un-migrated
-// kind ever reaches here.
+// Replays a statement subtree's assembly. AST_RAW chunks were captured during
+// parse and go straight through emit_raw (no re-counting); the structural
+// kinds (BLOCK/IF/WHILE/SWITCH/BREAK) recurse into their children and emit
+// the surrounding labels / jumps that close out the construct.
 
 void ast_emit(ast_node *n)
 {

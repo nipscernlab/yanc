@@ -131,10 +131,9 @@ void  yyerror(char const *s);
 // par_list still carries an int (the parameter id from declar_par)
 %type <ival> par_list
 
-// every reduction that historically returned an "et" now produces an expr,
-// and every consumer that historically took an "et" now takes an expr by
-// value. Actions read directly with $$ / $N - the codegen surface no
-// longer trafficks in packed int et at all.
+// expressions ride the bison stack as expr_node *. Each producer builds the
+// subtree it just parsed; codegen happens when a statement-level consumer
+// hits EE($N), which runs ast_emit_expr() over the subtree.
 %type <eval> func_call
 %type <eval> std_in std_fin
 %type <eval> std_pst std_abs std_sign std_nrm

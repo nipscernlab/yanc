@@ -1,20 +1,27 @@
 // ----------------------------------------------------------------------------
-// AST nodes for statements (incremental migration from inline codegen) -------
+// AST types for cmmcomp's expression and statement codegen -------------------
 // ----------------------------------------------------------------------------
+//
+// Two parallel tree shapes live here:
+//
+//   - `expr_node` carries the expression subtrees the parser builds while
+//     reducing `exp`. The bison %union holds `expr_node *` directly. Codegen
+//     is deferred: when a statement-level consumer calls ast_emit_expr(), the
+//     walker traverses the tree and dispatches to the existing oper_*/exec_*/
+//     arr_*/pplus_*/id2exp/num2exp helpers in post-order DFS - exactly the
+//     order the parser used to reduce, which keeps the assembly stream
+//     byte-identical to the older inline-emit compiler.
+//
+//   - `ast_node` captures whole statements (blocks, if, while, switch, break)
+//     plus pass-through chunks of already-emitted assembly (AST_RAW). The
+//     function-body capture buffer turns each parsed statement into one of
+//     these and the body's walker replays them at func close-brace time.
 
 #ifndef YANC_AST_H
 #define YANC_AST_H
-//
-// Step 1 (this file): just the data structure. Not wired into the parser
-// nor into the emit path yet. Lets us look at the shape of the tree before
-// we start touching CMMComp.y.
-//
-// Only statements/blocks live in the tree for now. Expressions stay as the
-// existing "et" integer tag - migrating them is a much bigger job and is
-// not part of this step.
 
 typedef enum {
-    AST_RAW,     // verbatim assembly text (escape hatch for not-yet-migrated emits)
+    AST_RAW,     // verbatim assembly text (chunks emitted during parse)
     AST_BLOCK,   // sequence of child statements
     AST_IF,      // if (cond) body [else els]
     AST_WHILE,   // while (cond) body
@@ -23,11 +30,12 @@ typedef enum {
 } ast_kind;
 
 // ----------------------------------------------------------------------------
-// expressions ----------------------------------------------------------------
+// expression result POD -------------------------------------------------------
 // ----------------------------------------------------------------------------
 //
-// Carries an expression value through the bison stack and into every codegen
-// consumer. Passed by value (small POD), no heap.
+// Returned by ast_emit_expr() and by the oper_*/exec_*/id2exp/num2exp/arr_*/
+// pplus_* helpers inside the walker. Carries enough to describe where the
+// freshly-emitted value lives so the next emit helper can dispatch.
 //
 // type encoding:
 //   0 = undefined / void
@@ -39,32 +47,27 @@ typedef enum {
 //
 // id is the index into v_name; id == 0 means "the result lives in the
 // accumulator, not in a variable".
-// forward declared because expr carries an optional pointer to its AST view
+// node points back at the originating tree node (set by the public walker
+// wrapper, used by the idempotency cache - see expr_node::cached).
 struct expr_node;
 
 typedef struct {
     int type;
     int id;
-    struct expr_node *node;  // optional AST: populated as producers migrate,
-                             // NULL while a reduction hasn't been ported yet
+    struct expr_node *node;
 } expr;
 
 expr expr_make(int type, int id);
 
 // ----------------------------------------------------------------------------
-// expression AST (tree form, used by the upcoming codegen-pass refactor) ----
+// expression AST nodes -------------------------------------------------------
 // ----------------------------------------------------------------------------
 //
-// Coexists with the flat `expr` POD above. Today the parser still emits
-// assembly inline as it reduces `exp`, and the bison stack carries `expr`.
-// The plan is to switch the bison stack to `expr_node *`, defer codegen
-// until parse is done, and run analysis/optimization passes (constant
-// folding, peephole, dead code, etc.) over the tree before emitting.
-//
-// This first step only declares the types - no constructors, no walker,
-// no parser changes. The struct is intentionally flat (no union); per-node
-// memory overhead is a few ints, in exchange for `n->id` / `n->left`
-// staying simple at every call site.
+// Each `exp` reduction builds one of these and hands it up the bison stack
+// without emitting assembly. The struct is intentionally flat (no union);
+// per-node overhead is a few ints, in exchange for `n->left` / `n->id`
+// staying simple at every call site. Codegen happens later through
+// ast_emit_expr().
 
 typedef enum {
     EXPR_LITERAL,      // INUM / FNUM / CNUM materialized into v_name
@@ -139,8 +142,11 @@ typedef struct expr_node {
     expr cached;
 } expr_node;
 
-// constructors: type is passed in (no promotion logic yet - callers compute
-// it when they care). All return a heap node owned by the caller.
+// constructors. `type` is what the producer rule already knows: for leaves
+// (literals, vars, array reads, pplus, func_call) it's the real result type;
+// for binary/unary/inner/stdlib nodes it's left 0 because the result type
+// is determined by the helpers the walker calls during emit. All return a
+// heap node owned by the caller; expr_free() recurses through children.
 expr_node *expr_lit  (int type, int id);
 expr_node *expr_var  (int type, int id);
 expr_node *expr_binop(int op, int type, expr_node *left, expr_node *right);
