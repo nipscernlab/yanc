@@ -725,9 +725,62 @@ stmt_node *stmt_dirac_shift(int dst, expr_node *c, int a)
     return n;
 }
 
+// ----------------------------------------------------------------------------
+// STMT_BLOCK + stmt_list scaffold stack --------------------------------------
+// ----------------------------------------------------------------------------
+
+stmt_node *stmt_block(void)
+{
+    return snode_new(STMT_BLOCK);
+}
+
+void stmt_block_push(stmt_node *blk, stmt_node *kid)
+{
+    if (blk->kids_n + 1 > blk->kids_cap)
+    {
+        int new_cap = blk->kids_cap ? blk->kids_cap * 2 : 8;
+        stmt_node **t = realloc(blk->kids, (size_t)new_cap * sizeof(*t));
+        if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        blk->kids     = t;
+        blk->kids_cap = new_cap;
+    }
+    blk->kids[blk->kids_n++] = kid;
+}
+
+static stmt_node **stmt_list_stack     = NULL;
+static int         stmt_list_stack_n   = 0;
+static int         stmt_list_stack_cap = 0;
+
+void stmt_list_open(void)
+{
+    if (stmt_list_stack_n + 1 > stmt_list_stack_cap)
+    {
+        int new_cap = stmt_list_stack_cap ? stmt_list_stack_cap * 2 : 8;
+        stmt_node **t = realloc(stmt_list_stack, (size_t)new_cap * sizeof(*t));
+        if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        stmt_list_stack     = t;
+        stmt_list_stack_cap = new_cap;
+    }
+    stmt_list_stack[stmt_list_stack_n++] = stmt_block();
+}
+
+stmt_node *stmt_list_close(void)
+{
+    if (stmt_list_stack_n == 0) return NULL;
+    return stmt_list_stack[--stmt_list_stack_n];
+}
+
+// ----------------------------------------------------------------------------
+// statement walker -----------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 void stmt_emit(stmt_node *n)
 {
-    if (!n) return;
+    // Idempotent: scaffold-recorded nodes are walked at body close but their
+    // textual emit already ran via stmt_emit_inline; the flag stops a
+    // double emit. The follow-up commit removes inline emit and lets the
+    // walker do the work for real.
+    if (!n || n->emitted) return;
 
     switch (n->kind)
     {
@@ -796,7 +849,13 @@ void stmt_emit(stmt_node *n)
         case STMT_AST_WRAP:
             ast_emit(n->ast_inner);
             break;
+
+        case STMT_BLOCK:
+            for (int i = 0; i < n->kids_n; i++) stmt_emit(n->kids[i]);
+            break;
     }
+
+    n->emitted = 1;
 }
 
 void stmt_free(stmt_node *n)
@@ -806,11 +865,22 @@ void stmt_free(stmt_node *n)
     expr_free(n->idx);
     expr_free(n->idx2);
     ast_free (n->ast_inner);
+    for (int i = 0; i < n->kids_n; i++) stmt_free(n->kids[i]);
+    free(n->kids);
     free(n);
 }
 
 void stmt_emit_inline(stmt_node *n)
 {
     stmt_emit(n);
-    stmt_free(n);
+    if (stmt_list_stack_n > 0)
+    {
+        // a body capture is in progress: hand the just-emitted node to the
+        // top STMT_BLOCK so the structural-emit migration can walk it later
+        stmt_block_push(stmt_list_stack[stmt_list_stack_n - 1], n);
+    }
+    else
+    {
+        stmt_free(n);
+    }
 }

@@ -129,8 +129,11 @@ void if_exp(expr e)
     acc_ok = 0;
 
     // start capturing the then-body; the captured text is wrapped into an
-    // AST_RAW leaf when the if/else reduction fires
+    // AST_RAW leaf when the if/else reduction fires. The parallel stmt_list
+    // collects each migrated statement so a follow-up commit can swap the
+    // text capture for a true stmt_node walk.
     emit_push_capture();
+    stmt_list_open();
 }
 
 // builds the AST for an if-without-else. Caller owns the returned node and
@@ -139,6 +142,7 @@ ast_node *if_stmt()
 {
     ast_node *body  = body_to_node(emit_pop_capture());
     int       label = pop_if();
+    stmt_free(stmt_list_close());   // scaffold mirror, discarded for now
     return    ast_if(label, body, NULL);
 }
 
@@ -146,7 +150,9 @@ ast_node *if_stmt()
 void else_stmt()
 {
     park_then(body_to_node(emit_pop_capture()));
+    stmt_free(stmt_list_close());   // scaffold mirror of the then-body
     emit_push_capture();
+    stmt_list_open();               // scaffold mirror for the else-body
 }
 
 // builds the AST for a full if/else. Returns the node; caller drives codegen.
@@ -155,6 +161,7 @@ ast_node *if_fim()
     ast_node *els   = body_to_node(emit_pop_capture());
     ast_node *body  = unpark_then();
     int       label = pop_if();
+    stmt_free(stmt_list_close());   // scaffold mirror of the else-body
     return    ast_if(label, body, els);
 }
 
@@ -167,6 +174,7 @@ ast_node *while_stmt()
 {
     ast_node *body  = body_to_node(emit_pop_capture());
     int       label = pop_while();
+    stmt_free(stmt_list_close());   // scaffold mirror, discarded for now
     return    ast_while(label, body);
 }
 
@@ -246,8 +254,9 @@ void while_expexp(expr e)
     add_instr("JIZ Lwh%dend\n", get_while());
     acc_ok = 0;
 
-    // start capturing the while body
+    // start capturing the while body (text + parallel stmt_list scaffold)
     emit_push_capture();
+    stmt_list_open();
 }
 
 // ----------------------------------------------------------------------------
@@ -372,8 +381,9 @@ void exec_switch(expr e)
     swit_cnt++;
 
     // capture every case label, comparison, JIZ, body, and break that
-    // shows up between here and end_switch
+    // shows up between here and end_switch (text + parallel stmt_list)
     emit_push_capture();
+    stmt_list_open();
 }
 
 // switch-case end: build the AST. Caller drives codegen.
@@ -381,6 +391,7 @@ ast_node *end_switch()
 {
     ast_node *body = body_to_node(emit_pop_capture());
     ast_node *node = ast_switch(swit_cnt, case_cnt, body);
+    stmt_free(stmt_list_close());   // scaffold mirror, discarded for now
     switching = 0;
     return node;
 }

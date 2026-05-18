@@ -260,6 +260,8 @@ typedef enum {
     STMT_DIRE_INTER,    // #INTERPOINT directive (interrupt return target)
     STMT_AST_WRAP,      // wraps an ast_node (if / while / switch / break) so
                         // every statement reaches codegen through stmt_emit
+    STMT_BLOCK,         // ordered list of child stmt_nodes (function / if /
+                        // while / switch body). Walker iterates kids.
 } stmt_kind;
 
 // Sub-operation for STMT_DIRAC. The 10 Dirac forms share enough structure
@@ -280,6 +282,9 @@ typedef enum {
 typedef struct stmt_node {
     stmt_kind kind;
     int       line;     // source line where the node was built (1-based)
+    int       emitted;  // walker no-ops when set; stmt_emit_inline marks the
+                        // node after the inline emit so the scaffold-built
+                        // STMT_BLOCK can be walked later without re-emitting
 
     int               id;    // primary int (LHS variable / array / port / dst)
     int               id2;   // secondary int
@@ -290,6 +295,11 @@ typedef struct stmt_node {
     struct expr_node *idx;   // PPLUS / ARRAY_ASSIGN: 1D/2D index (NULL for scalar)
     struct expr_node *idx2;  // PPLUS / ARRAY_ASSIGN: 2D second index (NULL otherwise)
     struct ast_node  *ast_inner;  // STMT_AST_WRAP: wrapped if/while/switch/break (owned)
+
+    // STMT_BLOCK: child statements (owned via stmt_free recursion)
+    struct stmt_node **kids;
+    int                kids_n;
+    int                kids_cap;
 } stmt_node;
 
 // constructors (caller owns the returned node).
@@ -332,6 +342,20 @@ stmt_node *stmt_dire_inter(void);
 // (if / while / switch / break, all defined in saltos.c). The stmt_node
 // takes ownership; stmt_free recurses through ast_free.
 stmt_node *stmt_ast_wrap  (struct ast_node *inner);
+
+// Empty STMT_BLOCK; grow it with stmt_block_push.
+stmt_node *stmt_block     (void);
+void       stmt_block_push(stmt_node *blk, stmt_node *kid);
+
+// Scaffold stack for the upcoming text-capture -> stmt_list migration.
+// stmt_list_open() pushes a fresh STMT_BLOCK onto the stack; while the
+// stack is non-empty, stmt_emit_inline records each just-emitted stmt_node
+// on the top block instead of freeing it. stmt_list_close() pops the top
+// block and hands it back to the caller. Today the closed block is freed
+// without being walked - the textual emit_push_capture path still drives
+// codegen. The follow-up commit replaces text capture with the block walk.
+void       stmt_list_open (void);
+stmt_node *stmt_list_close(void);
 
 // Dirac linear-algebra assignments. One constructor per syntactic form; each
 // internally tags the stmt_node with the corresponding dirac_op. `c` is the

@@ -611,10 +611,14 @@ void declar_ret(expr e, int ret)
 
 // fires at the opening '{' of a function body. Starts capturing every
 // emission until the matching '}' so the body becomes one AST_RAW leaf
-// inside an AST_BLOCK, ready for the ast_emit walker.
+// inside an AST_BLOCK, ready for the ast_emit walker. ALSO opens a parallel
+// stmt_list - every stmt_emit_inline call inside the body appends to it. The
+// list isn't used for codegen yet (a follow-up commit replaces text capture
+// with the list walk); it just gets freed after the textual replay.
 void func_body_begin(void)
 {
     emit_push_capture();
+    stmt_list_open();
 }
 
 // end of the parsing for a function declaration
@@ -632,6 +636,10 @@ void func_ret(int id) // id -> id of the current function
     ast_block_push(block, body_raw);
     ast_emit(block);
     ast_free(block);
+
+    // scaffold STMT_BLOCK mirrors the just-replayed AST_RAW. Drop it for now
+    // - the next commit will replace the textual capture path with the walk.
+    stmt_free(stmt_list_close());
 
     // check whether the function had the return x; instruction
     if ((v_type[id] != 6) && (ret_ok == 0))
