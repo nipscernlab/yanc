@@ -22,6 +22,7 @@
 
 // needed by the stmt_node walker
 #include "..\Headers\data_assign.h"
+#include "..\Headers\itr.h"
 
 // ----------------------------------------------------------------------------
 // expressions ----------------------------------------------------------------
@@ -605,6 +606,25 @@ stmt_node *stmt_vout(int port, expr_node *rhs, int vector_id)
     return n;
 }
 
+stmt_node *stmt_void_call(int id)
+{
+    stmt_node *n = snode_new(STMT_VOID_CALL);
+    n->id = id;
+    return n;
+}
+
+stmt_node *stmt_dire_inter(void)
+{
+    return snode_new(STMT_DIRE_INTER);
+}
+
+stmt_node *stmt_ast_wrap(ast_node *inner)
+{
+    stmt_node *n = snode_new(STMT_AST_WRAP);
+    n->ast_inner = inner;
+    return n;
+}
+
 // ----------------------------------------------------------------------------
 // Dirac linear-algebra constructors ------------------------------------------
 // ----------------------------------------------------------------------------
@@ -764,6 +784,18 @@ void stmt_emit(stmt_node *n)
                 case DIRAC_SHIFT: exec_shift(n->id, ast_emit_expr(n->rhs), n->id2); break;
             }
             break;
+
+        case STMT_VOID_CALL:
+            vcall(n->id);
+            break;
+
+        case STMT_DIRE_INTER:
+            dire_inter();
+            break;
+
+        case STMT_AST_WRAP:
+            ast_emit(n->ast_inner);
+            break;
     }
 }
 
@@ -773,6 +805,7 @@ void stmt_free(stmt_node *n)
     expr_free(n->rhs);
     expr_free(n->idx);
     expr_free(n->idx2);
+    ast_free (n->ast_inner);
     free(n);
 }
 

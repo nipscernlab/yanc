@@ -256,6 +256,10 @@ typedef enum {
     STMT_COPY,          // copy(exp, dst_id);
     STMT_VOUT,          // out(port, exp | vector_id BRA);  Dirac vector output
     STMT_DIRAC,         // Dirac linear-algebra assignments (op discriminates)
+    STMT_VOID_CALL,     // f(args);  user-defined void function call statement
+    STMT_DIRE_INTER,    // #INTERPOINT directive (interrupt return target)
+    STMT_AST_WRAP,      // wraps an ast_node (if / while / switch / break) so
+                        // every statement reaches codegen through stmt_emit
 } stmt_kind;
 
 // Sub-operation for STMT_DIRAC. The 10 Dirac forms share enough structure
@@ -285,6 +289,7 @@ typedef struct stmt_node {
     struct expr_node *rhs;   // value/source expression (owned)
     struct expr_node *idx;   // PPLUS / ARRAY_ASSIGN: 1D/2D index (NULL for scalar)
     struct expr_node *idx2;  // PPLUS / ARRAY_ASSIGN: 2D second index (NULL otherwise)
+    struct ast_node  *ast_inner;  // STMT_AST_WRAP: wrapped if/while/switch/break (owned)
 } stmt_node;
 
 // constructors (caller owns the returned node).
@@ -316,6 +321,17 @@ stmt_node *stmt_copy(struct expr_node *rhs, int dst_id);
 
 // out(port, rhs | vector_id BRA);  Dirac vector output.
 stmt_node *stmt_vout(int port, struct expr_node *rhs, int vector_id);
+
+// statement-form user void call: f(args);
+stmt_node *stmt_void_call (int id);
+
+// #INTERPOINT directive (interrupt entry-point marker) used inside funcs.
+stmt_node *stmt_dire_inter(void);
+
+// Bridge for compound statements that already build their own ast_node
+// (if / while / switch / break, all defined in saltos.c). The stmt_node
+// takes ownership; stmt_free recurses through ast_free.
+stmt_node *stmt_ast_wrap  (struct ast_node *inner);
 
 // Dirac linear-algebra assignments. One constructor per syntactic form; each
 // internally tags the stmt_node with the corresponding dirac_op. `c` is the

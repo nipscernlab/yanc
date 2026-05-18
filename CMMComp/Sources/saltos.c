@@ -133,14 +133,13 @@ void if_exp(expr e)
     emit_push_capture();
 }
 
-// builds the AST for an if-without-else and emits it
-void if_stmt()
+// builds the AST for an if-without-else. Caller owns the returned node and
+// is expected to drive it through stmt_emit_inline(stmt_ast_wrap(...)).
+ast_node *if_stmt()
 {
     ast_node *body  = body_to_node(emit_pop_capture());
     int       label = pop_if();
-    ast_node *node  = ast_if(label, body, NULL);
-    ast_emit(node);
-    ast_free(node);
+    return    ast_if(label, body, NULL);
 }
 
 // between the then and the else: park the captured then, start capturing else
@@ -150,41 +149,32 @@ void else_stmt()
     emit_push_capture();
 }
 
-// builds the AST for a full if/else and emits it
-void if_fim()
+// builds the AST for a full if/else. Returns the node; caller drives codegen.
+ast_node *if_fim()
 {
     ast_node *els   = body_to_node(emit_pop_capture());
     ast_node *body  = unpark_then();
     int       label = pop_if();
-    ast_node *node  = ast_if(label, body, els);
-    ast_emit(node);
-    ast_free(node);
+    return    ast_if(label, body, els);
 }
 
 // ----------------------------------------------------------------------------
 // while ----------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// end of while: build the AST and emit it
-void while_stmt()
+// end of while: build the AST. Caller drives codegen.
+ast_node *while_stmt()
 {
     ast_node *body  = body_to_node(emit_pop_capture());
     int       label = pop_while();
-    ast_node *node  = ast_while(label, body);
-    ast_emit(node);
-    ast_free(node);
+    return    ast_while(label, body);
 }
 
-// emits a JMP to the end of the while
-void exec_break()
+// parse-time check + AST node for `break;` inside a while. Caller drives.
+ast_node *exec_break()
 {
-    // parse-time check: break must live inside a while
     if (get_while() == 0) {fprintf(stderr, MSG_ERR_BREAK_LOST, line_num+1); exit(EXIT_FAILURE);}
-
-    // build a tiny AST node and ask it to emit itself
-    ast_node *n = ast_break();
-    ast_emit (n);
-    ast_free (n);
+    return ast_break();
 }
 
 // the while keyword alone - emits a label here
@@ -386,12 +376,11 @@ void exec_switch(expr e)
     emit_push_capture();
 }
 
-// switch-case end: build the AST and emit it
-void end_switch()
+// switch-case end: build the AST. Caller drives codegen.
+ast_node *end_switch()
 {
     ast_node *body = body_to_node(emit_pop_capture());
     ast_node *node = ast_switch(swit_cnt, case_cnt, body);
-    ast_emit(node);
-    ast_free(node);
     switching = 0;
+    return node;
 }
