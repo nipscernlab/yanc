@@ -131,6 +131,14 @@ typedef struct expr_node {
     struct expr_node *left, *right;    // EXPR_BINOP: both; EXPR_UNOP: left only
     struct expr_node **args;           // EXPR_FUNC_CALL: argument expressions (owned)
     int n_args;                        // EXPR_FUNC_CALL: argument count
+
+    // Cache for the incremental walker migration. When a grammar action still
+    // does inline codegen, it calls expr_mark_emitted() to record the POD it
+    // already produced. The walker, when invoked over such a node, returns
+    // the cached POD instead of re-emitting. As each kind migrates to the
+    // walker, its rule drops the mark_emitted call and the cache stays unset.
+    int  emitted;
+    expr cached;
 } expr_node;
 
 // constructors: type is passed in (no promotion logic yet - callers compute
@@ -174,6 +182,10 @@ void expr_dump(expr_node *n);
 // do. NOT invoked yet - this is the future codegen path the parser will
 // switch to once every consumer reads .node instead of .type / .id.
 expr ast_emit_expr(expr_node *n);
+
+// Records the POD a grammar action just produced inline so the walker can
+// skip re-emitting that node. Each kind drops this call as it migrates.
+void expr_mark_emitted(expr_node *n, expr e);
 
 typedef struct ast_node {
     ast_kind kind;

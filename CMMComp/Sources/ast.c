@@ -232,10 +232,27 @@ void expr_dump(expr_node *n)
 
 static expr ast_emit_expr_impl(expr_node *n);
 
+void expr_mark_emitted(expr_node *n, expr e)
+{
+    if (!n) return;
+    n->emitted = 1;
+    n->cached  = e;
+}
+
+// Idempotent: a second call over the same node returns the cached POD instead
+// of re-emitting. Producers (grammar actions still doing inline codegen) get
+// the same property by calling expr_mark_emitted() with the POD they just
+// built, so wrapping any consumer in ast_emit_expr(node) is a no-op until
+// that producer is migrated.
 expr ast_emit_expr(expr_node *n)
 {
+    if (n && n->emitted) return n->cached;
     expr e = ast_emit_expr_impl(n);
     e.node = n;
+    if (n) {
+        n->emitted = 1;
+        n->cached  = e;
+    }
     return e;
 }
 

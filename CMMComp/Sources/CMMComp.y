@@ -70,6 +70,12 @@
 int   yylex  (void);
 void  yyerror(char const *s);
 
+// Walker invocation shorthand. Used by every action that consumes an `exp`
+// value: today each producer caches its POD via expr_mark_emitted(), so the
+// walker is a no-op and returns that cached POD. As each producer is
+// migrated to walker-only codegen, the call becomes the actual emit.
+#define EE(POD) ast_emit_expr((POD).node)
+
 %}
 
 // Bison emits the YYSTYPE union into y.tab.h as well, so types referenced
@@ -170,13 +176,13 @@ dire_inter : ITRADD             {dire_inter();}      // interrupt start point (u
          // list declaration (one or more uninitialized variables)
 declar : TYPE id_list                               ';'
          // declaration of a variable with initialization
-       | TYPE ID '=' exp ';'          {declar_var($2); ass_set($2, $4);}
+       | TYPE ID '=' exp ';'          {declar_var($2); ass_set($2, EE($4));}
          // array declaration with file initialization
        | TYPE ID '[' INUM ']'              STRING   ';' {declar_arr_1d($2,$4,$6    );}
        | TYPE ID '[' INUM ']' '[' INUM ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
          // array declaration with Dirac-notation initialization (on demand)
        | TYPE ID '[' INUM ']' '#' '|' ID '|' ID BRA ';' {declar_Mv    ($2,$4,$8,$10);}
-       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2, $4, $7, $9);}
+       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2, $4, EE($7), $9);}
 
 id_list : IID | id_list ',' IID
 
@@ -201,7 +207,7 @@ par_list : TYPE ID                        {$$ = declar_par($1,$2);}
          | par_list ',' par_list          {        set_par($3   );} // pulls from the stack
 
 // function and void returns
-return_call : RET exp ';'                 {declar_ret($2, 1);}
+return_call : RET exp ';'                 {declar_ret(EE($2), 1);}
             | RET     ';'                 {  void_ret(    );}
 
 // statement list in C --------------------------------------------------------
@@ -243,41 +249,41 @@ func_call   : ID '('            {fun_id = $1; args_frame_push();}
 // the first parameter stays in the accumulator (parsing goes from last to first)
 // par_exp pushes parameters onto the stack and checks consistency
 exp_list :                                              // may be empty (test it)
-         | exp                              {par_exp    ($1);}  // first parameter
-         | exp_list ',' exp                 {par_listexp($3);}  // remaining parameters
+         | exp                              {par_exp    (EE($1));}  // first parameter
+         | exp_list ',' exp                 {par_listexp(EE($3));}  // remaining parameters
 
 // Standard library -----------------------------------------------------------
 
-std_out  : OUT  '(' INUM ',' exp ')' ';'            {exec_out ($3, $5);}            // data output
-std_fout : FOUT '(' INUM ',' exp ')' ';'            {exec_fout($3, $5);}            // data output (converting to float)
-std_in   : INN  '(' INUM ')'                   {$$ = exec_in  ($3); $$.node = expr_stdlib(OP_STD_IN, $$.type, $3, NULL, NULL);}  // data input
-std_fin  : FIN  '(' INUM ')'                   {$$ = exec_fin ($3);     $$.node = expr_stdlib(OP_STD_FIN,  $$.type, $3, NULL,    NULL   );}  // float input
-std_pst  : PST  '(' exp  ')'                   {$$ = exec_pst ($3);     $$.node = expr_stdlib(OP_STD_PST,  $$.type, 0,  $3.node, NULL   );}  // clears if negative
-std_abs  : ABS  '(' exp  ')'                   {$$ = exec_abs ($3);     $$.node = expr_stdlib(OP_STD_ABS,  $$.type, 0,  $3.node, NULL   );}  // |x|
-std_sign : SGN  '(' exp  ',' exp ')'           {$$ = exec_sign($3, $5); $$.node = expr_stdlib(OP_STD_SIGN, $$.type, 0,  $3.node, $5.node);}  // y with sign of x
-std_nrm  : NRM  '(' exp  ')'                   {$$ = exec_norm($3);     $$.node = expr_stdlib(OP_STD_NRM,  $$.type, 0,  $3.node, NULL   );}  // x / NUGAIN
-std_copy : COPY '(' exp  ',' ID  ')' ';'       {     exec_copy($3, $5);}                                                                     // void: copies x into y (no AST node)
-std_sqrt : SQRT '(' exp  ')'                   {$$ = exec_sqrt($3);     $$.node = expr_stdlib(OP_STD_SQRT, $$.type, 0,  $3.node, NULL   );}  // sqrt(x)
-std_atan : ATAN '(' exp  ')'                   {$$ = exec_atan($3);     $$.node = expr_stdlib(OP_STD_ATAN, $$.type, 0,  $3.node, NULL   );}  // atan(x)
-std_sin  : SIN  '(' exp  ')'                   {$$ = exec_sin ($3);     $$.node = expr_stdlib(OP_STD_SIN,  $$.type, 0,  $3.node, NULL   );}  // sin(x)
-std_cos  : COS  '(' exp  ')'                   {$$ = exec_cos ($3);     $$.node = expr_stdlib(OP_STD_COS,  $$.type, 0,  $3.node, NULL   );}  // cos(x)
-std_real : REAL '(' exp  ')'                   {$$ = exec_real($3);     $$.node = expr_stdlib(OP_STD_REAL, $$.type, 0,  $3.node, NULL   );}  // real(comp)
-std_imag : IMAG '(' exp  ')'                   {$$ = exec_imag($3);     $$.node = expr_stdlib(OP_STD_IMAG, $$.type, 0,  $3.node, NULL   );}  // imag(comp)
-std_comp : COMP '(' exp  ',' exp ')'           {$$ = exec_comp($3, $5); $$.node = expr_stdlib(OP_STD_COMP, $$.type, 0,  $3.node, $5.node);}  // complex(x, y)
-std_fase : FASE '(' exp  ')'                   {$$ = exec_fase($3);     $$.node = expr_stdlib(OP_STD_FASE, $$.type, 0,  $3.node, NULL   );}  // phase(comp)
-std_mod2 : MOD2 '(' exp  ')'                   {$$ = exec_mod2($3);     $$.node = expr_stdlib(OP_STD_MOD2, $$.type, 0,  $3.node, NULL   );}  // |comp|^2
-std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {exec_vout($3, $5, $7);}        // data output with Dirac notation
+std_out  : OUT  '(' INUM ',' exp ')' ';'            {exec_out ($3, EE($5));}            // data output
+std_fout : FOUT '(' INUM ',' exp ')' ';'            {exec_fout($3, EE($5));}            // data output (converting to float)
+std_in   : INN  '(' INUM ')'                   {$$ = exec_in  ($3);                $$.node = expr_stdlib(OP_STD_IN,   $$.type, $3, NULL,    NULL   ); expr_mark_emitted($$.node, $$);}  // data input
+std_fin  : FIN  '(' INUM ')'                   {$$ = exec_fin ($3);                $$.node = expr_stdlib(OP_STD_FIN,  $$.type, $3, NULL,    NULL   ); expr_mark_emitted($$.node, $$);}  // float input
+std_pst  : PST  '(' exp  ')'                   {$$ = exec_pst (EE($3));            $$.node = expr_stdlib(OP_STD_PST,  $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // clears if negative
+std_abs  : ABS  '(' exp  ')'                   {$$ = exec_abs (EE($3));            $$.node = expr_stdlib(OP_STD_ABS,  $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // |x|
+std_sign : SGN  '(' exp  ',' exp ')'           {$$ = exec_sign(EE($3),    EE($5)); $$.node = expr_stdlib(OP_STD_SIGN, $$.type, 0,  $3.node, $5.node); expr_mark_emitted($$.node, $$);}  // y with sign of x
+std_nrm  : NRM  '(' exp  ')'                   {$$ = exec_norm(EE($3));            $$.node = expr_stdlib(OP_STD_NRM,  $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // x / NUGAIN
+std_copy : COPY '(' exp  ',' ID  ')' ';'       {     exec_copy(EE($3),       $5);}                                                                                                       // void: copies x into y (no AST node)
+std_sqrt : SQRT '(' exp  ')'                   {$$ = exec_sqrt(EE($3));            $$.node = expr_stdlib(OP_STD_SQRT, $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // sqrt(x)
+std_atan : ATAN '(' exp  ')'                   {$$ = exec_atan(EE($3));            $$.node = expr_stdlib(OP_STD_ATAN, $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // atan(x)
+std_sin  : SIN  '(' exp  ')'                   {$$ = exec_sin (EE($3));            $$.node = expr_stdlib(OP_STD_SIN,  $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // sin(x)
+std_cos  : COS  '(' exp  ')'                   {$$ = exec_cos (EE($3));            $$.node = expr_stdlib(OP_STD_COS,  $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // cos(x)
+std_real : REAL '(' exp  ')'                   {$$ = exec_real(EE($3));            $$.node = expr_stdlib(OP_STD_REAL, $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // real(comp)
+std_imag : IMAG '(' exp  ')'                   {$$ = exec_imag(EE($3));            $$.node = expr_stdlib(OP_STD_IMAG, $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // imag(comp)
+std_comp : COMP '(' exp  ',' exp ')'           {$$ = exec_comp(EE($3),    EE($5)); $$.node = expr_stdlib(OP_STD_COMP, $$.type, 0,  $3.node, $5.node); expr_mark_emitted($$.node, $$);}  // complex(x, y)
+std_fase : FASE '(' exp  ')'                   {$$ = exec_fase(EE($3));            $$.node = expr_stdlib(OP_STD_FASE, $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // phase(comp)
+std_mod2 : MOD2 '(' exp  ')'                   {$$ = exec_mod2(EE($3));            $$.node = expr_stdlib(OP_STD_MOD2, $$.type, 0,  $3.node, NULL   ); expr_mark_emitted($$.node, $$);}  // |comp|^2
+std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {exec_vout($3, EE($5), $7);}        // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
 
 if_else_stmt : if_exp stmt_full ELSE             {else_stmt(  );} // complete if/else
                stmt_full                         {if_fim   (  );}
              | if_exp stmt_full     %prec THEN   {if_stmt  (  );} // if without else
-if_exp       : IF '(' exp ')'                    {if_exp   ($3);} // start (JIZ)
+if_exp       : IF '(' exp ')'                    {if_exp   (EE($3));} // start (JIZ)
 
 // switch/case ----------------------------------------------------------------
 
-switch_case : SWITCH '(' exp ')'  {exec_switch($3);}
+switch_case : SWITCH '(' exp ')'  {exec_switch(EE($3));}
               '{' cases '}'       { end_switch(  );}
 
 case_list   :           stmt_case
@@ -294,45 +300,45 @@ cases       : case | default | case cases
 
 while_stmt : while_exp stmt_full           {while_stmt  (  );}
 while_exp  : WHILE                         {while_expp  (  );}
-            '(' exp ')'                    {while_expexp($4);}
+            '(' exp ')'                    {while_expexp(EE($4));}
 break      : BREAK ';'                     {exec_break  (  );}
 
 // assignments ----------------------------------------------------------------
 
            // standard assignment
-assignment : ID  '=' exp ';'                          {ass_set($1, $3);}
+assignment : ID  '=' exp ';'                          {ass_set($1, EE($3));}
            // increment
            | ID                          PPLUS ';'    {ass_pplus($1);}
-           | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1, $3);}
-           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {ass_apl2d($1, $3, $6);}
+           | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1, EE($3));}
+           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {ass_apl2d($1, EE($3), EE($6));}
            // regular array
-           | ID  '[' exp ']'  '='                     {arr_1d_index($1, $3);}
-                     exp ';'                          {ass_array ($1, $7, 0);}
+           | ID  '[' exp ']'  '='                     {arr_1d_index($1, EE($3));}
+                     exp ';'                          {ass_array ($1, EE($7), 0);}
            // reversed array
-           | ID  '[' exp ')'  '='                     {arr_1d_index($1, $3);}
-                     exp ';'                          {ass_array ($1, $7, 1);}
+           | ID  '[' exp ')'  '='                     {arr_1d_index($1, EE($3));}
+                     exp ';'                          {ass_array ($1, EE($7), 1);}
            // 2D array (to be completed)
-           | ID  '[' exp ']' '[' exp ']' '='          {arr_2d_index($1, $3, $6);}
-                     exp ';'                          {ass_array   ($1, $10, 0);}
+           | ID  '[' exp ']' '[' exp ']' '='          {arr_2d_index($1, EE($3), EE($6));}
+                     exp ';'                          {ass_array   ($1, EE($10), 0);}
            // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
            | ID '#'     '|' ID '|' ID BRA ';'                    {exec_Mv   ($1,$4,$6);}                       // A # |B|a>
-           | ID '#' exp '|' ID BRA ';'                           {exec_cv   ($1, $3, $5);}                     // a # c|b>
-           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {exec_apcb ($1, $4, $7, $9);}                 // a # |b> + c|d>
+           | ID '#' exp '|' ID BRA ';'                           {exec_cv   ($1, EE($3), $5);}                 // a # c|b>
+           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {exec_apcb ($1, $4, EE($7), $9);}             // a # |b> + c|d>
            | ID '#'     '|' ID BRA KET  ID '|' ';'               {exec_vvt  ($1, $4, $7);}                     // A # |a><b|
            | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {exec_Mmvvt($1, $4, $8, $11);}                // A # B - |a><b|
-           | ID '#' exp '|' ID '|' ';'                           {exec_cM   ($1, $3, $5);}                     // A # c|B|
-           | ID '#' exp     EYE ';'                              {exec_cI   ($1, $3);}                         // A # c|I|
+           | ID '#' exp '|' ID '|' ';'                           {exec_cM   ($1, EE($3), $5);}                 // A # c|B|
+           | ID '#' exp     EYE ';'                              {exec_cI   ($1, EE($3));}                     // A # c|I|
            | ID '#'         VZERO ';'                            {exec_v0   ($1);}                             // a # |0>
-           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {exec_cvin ($1, $3, $7);}                     // a # |in(0)>
-           | ID '#' exp '-' '>' '|' ID BRA ';'                   {exec_shift($1, $3, $7);}                     // a # c -> |a>
+           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {exec_cvin ($1, EE($3), $7);}                 // a # |in(0)>
+           | ID '#' exp '-' '>' '|' ID BRA ';'                   {exec_shift($1, EE($3), $7);}                 // a # c -> |a>
 
 // expressions ----------------------------------------------------------------
 
 exp:       terminal                           {$$ = $1;}
          // arrays
-         | ID '[' exp ']'                     {$$ = arr_1d2exp($1, $3, 0); $$.node = expr_array_index($$.type, $1, 0, $3.node, NULL);}
-         | ID '[' exp ')'                     {$$ = arr_1d2exp($1, $3, 1); $$.node = expr_array_index($$.type, $1, 1, $3.node, NULL);}
-         | ID '[' exp ']' '[' exp ']'         {$$ = arr_2d2exp($1, $3, $6); $$.node = expr_array_index($$.type, $1, 0, $3.node, $6.node);}
+         | ID '[' exp ']'                     {$$ = arr_1d2exp($1, $3, 0);  $$.node = expr_array_index($$.type, $1, 0, $3.node, NULL);    expr_mark_emitted($$.node, $$);}
+         | ID '[' exp ')'                     {$$ = arr_1d2exp($1, $3, 1);  $$.node = expr_array_index($$.type, $1, 1, $3.node, NULL);    expr_mark_emitted($$.node, $$);}
+         | ID '[' exp ']' '[' exp ']'         {$$ = arr_2d2exp($1, $3, $6); $$.node = expr_array_index($$.type, $1, 0, $3.node, $6.node); expr_mark_emitted($$.node, $$);}
          // std library that returns values
          | std_in                             {$$ = $1;}
          | std_fin                            {$$ = $1;}
@@ -355,40 +361,41 @@ exp:       terminal                           {$$ = $1;}
          |    '(' exp ')'                     {$$ = $2;}
          |    '+' exp                         {$$ = $2;}
          // unary operators
-         |    '-' exp                         {$$ = oper_neg($2); $$.node = expr_unop(OP_NEG, $$.type, $2.node);}
-         |    '!' exp                         {$$ = oper_lin($2); $$.node = expr_unop(OP_LIN, $$.type, $2.node);}
-         |    '~' exp                         {$$ = oper_inv($2); $$.node = expr_unop(OP_INV, $$.type, $2.node);}
-         | ID                         PPLUS   {$$ = pplus2exp  ($1);         $$.node = expr_pplus($$.type, $1, NULL,    NULL   );}
-         | ID '[' exp ']'             PPLUS   {$$ = pplus1d2exp($1, $3);     $$.node = expr_pplus($$.type, $1, $3.node, NULL   );}
-         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = pplus2d2exp($1, $3, $6); $$.node = expr_pplus($$.type, $1, $3.node, $6.node);}
+         |    '-' exp                         {$$ = oper_neg($2); $$.node = expr_unop(OP_NEG, $$.type, $2.node); expr_mark_emitted($$.node, $$);}
+         |    '!' exp                         {$$ = oper_lin($2); $$.node = expr_unop(OP_LIN, $$.type, $2.node); expr_mark_emitted($$.node, $$);}
+         |    '~' exp                         {$$ = oper_inv($2); $$.node = expr_unop(OP_INV, $$.type, $2.node); expr_mark_emitted($$.node, $$);}
+         | ID                         PPLUS   {$$ = pplus2exp  ($1);         $$.node = expr_pplus($$.type, $1, NULL,    NULL   ); expr_mark_emitted($$.node, $$);}
+         | ID '[' exp ']'             PPLUS   {$$ = pplus1d2exp($1, $3);     $$.node = expr_pplus($$.type, $1, $3.node, NULL   ); expr_mark_emitted($$.node, $$);}
+         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = pplus2d2exp($1, $3, $6); $$.node = expr_pplus($$.type, $1, $3.node, $6.node); expr_mark_emitted($$.node, $$);}
          // shift operators
-         | exp  SHIFTL exp                    {$$ = oper_shift($1, $3, 0); $$.node = expr_binop(OP_SHL,  $$.type, $1.node, $3.node);}
-         | exp  SHIFTR exp                    {$$ = oper_shift($1, $3, 1); $$.node = expr_binop(OP_SHR,  $$.type, $1.node, $3.node);}
-         | exp SSHIFTR exp                    {$$ = oper_shift($1, $3, 2); $$.node = expr_binop(OP_SSHR, $$.type, $1.node, $3.node);}
+         | exp  SHIFTL exp                    {$$ = oper_shift($1, $3, 0); $$.node = expr_binop(OP_SHL,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp  SHIFTR exp                    {$$ = oper_shift($1, $3, 1); $$.node = expr_binop(OP_SHR,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp SSHIFTR exp                    {$$ = oper_shift($1, $3, 2); $$.node = expr_binop(OP_SSHR, $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
          // bitwise operators
-         | exp   '&'   exp                    {$$ = oper_bitw ($1, $3, 0); $$.node = expr_binop(OP_AND,  $$.type, $1.node, $3.node);}
-         | exp   '|'   exp                    {$$ = oper_bitw ($1, $3, 1); $$.node = expr_binop(OP_OR,   $$.type, $1.node, $3.node);}
-         | exp   '^'   exp                    {$$ = oper_bitw ($1, $3, 2); $$.node = expr_binop(OP_XOR,  $$.type, $1.node, $3.node);}
+         | exp   '&'   exp                    {$$ = oper_bitw ($1, $3, 0); $$.node = expr_binop(OP_AND,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp   '|'   exp                    {$$ = oper_bitw ($1, $3, 1); $$.node = expr_binop(OP_OR,   $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp   '^'   exp                    {$$ = oper_bitw ($1, $3, 2); $$.node = expr_binop(OP_XOR,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
          // arithmetic operators
-         | exp   '%'   exp                    {$$ = oper_mod ($1, $3); $$.node = expr_binop(OP_MOD, $$.type, $1.node, $3.node);}
-         | exp   '+'   exp                    {$$ = oper_soma($1, $3); $$.node = expr_binop(OP_ADD, $$.type, $1.node, $3.node);}
-         | exp   '-'   exp                    {$$ = oper_subt($1, $3); $$.node = expr_binop(OP_SUB, $$.type, $1.node, $3.node);}
-         | exp   '*'   exp                    {$$ = oper_mult($1, $3); $$.node = expr_binop(OP_MUL, $$.type, $1.node, $3.node);}
-         | exp   '/'   exp                    {$$ = oper_divi($1, $3); $$.node = expr_binop(OP_DIV, $$.type, $1.node, $3.node);}
+         | exp   '%'   exp                    {$$ = oper_mod ($1, $3); $$.node = expr_binop(OP_MOD, $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp   '+'   exp                    {$$ = oper_soma($1, $3); $$.node = expr_binop(OP_ADD, $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp   '-'   exp                    {$$ = oper_subt($1, $3); $$.node = expr_binop(OP_SUB, $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp   '*'   exp                    {$$ = oper_mult($1, $3); $$.node = expr_binop(OP_MUL, $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp   '/'   exp                    {$$ = oper_divi($1, $3); $$.node = expr_binop(OP_DIV, $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
          // true/false operators
-         | exp  LAN    exp                    {$$ = oper_lanor($1, $3, 0); $$.node = expr_binop(OP_LAN, $$.type, $1.node, $3.node);}
-         | exp  LOR    exp                    {$$ = oper_lanor($1, $3, 1); $$.node = expr_binop(OP_LOR, $$.type, $1.node, $3.node);}
-         | exp   '<'   exp                    {$$ = oper_cmp  ($1, $3, 0); $$.node = expr_binop(OP_LT,  $$.type, $1.node, $3.node);}
-         | exp   '>'   exp                    {$$ = oper_cmp  ($1, $3, 1); $$.node = expr_binop(OP_GT,  $$.type, $1.node, $3.node);}
-         | exp  EQU    exp                    {$$ = oper_cmp  ($1, $3, 2); $$.node = expr_binop(OP_EQ,  $$.type, $1.node, $3.node);}
-         | exp  GREQU  exp                    {$$ = oper_greq ($1, $3);    $$.node = expr_binop(OP_GE,  $$.type, $1.node, $3.node);}
-         | exp  LESEQ  exp                    {$$ = oper_leeq ($1, $3);    $$.node = expr_binop(OP_LE,  $$.type, $1.node, $3.node);}
-         | exp  DIF    exp                    {$$ = oper_dife ($1, $3);    $$.node = expr_binop(OP_NE,  $$.type, $1.node, $3.node);}
+         | exp  LAN    exp                    {$$ = oper_lanor($1, $3, 0); $$.node = expr_binop(OP_LAN, $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp  LOR    exp                    {$$ = oper_lanor($1, $3, 1); $$.node = expr_binop(OP_LOR, $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp   '<'   exp                    {$$ = oper_cmp  ($1, $3, 0); $$.node = expr_binop(OP_LT,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp   '>'   exp                    {$$ = oper_cmp  ($1, $3, 1); $$.node = expr_binop(OP_GT,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp  EQU    exp                    {$$ = oper_cmp  ($1, $3, 2); $$.node = expr_binop(OP_EQ,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp  GREQU  exp                    {$$ = oper_greq ($1, $3);    $$.node = expr_binop(OP_GE,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp  LESEQ  exp                    {$$ = oper_leeq ($1, $3);    $$.node = expr_binop(OP_LE,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
+         | exp  DIF    exp                    {$$ = oper_dife ($1, $3);    $$.node = expr_binop(OP_NE,  $$.type, $1.node, $3.node); expr_mark_emitted($$.node, $$);}
          // linear algebra with exp return (Dirac notation)
          | KET ID '|' ID BRA                  {$$ = exec_vtv($2, $4);
                                                 $$.node = expr_inner($$.type,
                                                             expr_var(v_type[$2], $2),
-                                                            expr_var(v_type[$4], $4));}
+                                                            expr_var(v_type[$4], $4));
+                                                expr_mark_emitted($$.node, $$);}
 
 // terminals used in reductions for expressions -------------------------------
 

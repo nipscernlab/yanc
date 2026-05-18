@@ -744,5 +744,6 @@ expr fcall(int id)
     expr e = expr_make(v_type[id]-6, 0); // returns the data type (void, int, float or comp)
     int n; expr_node **a = args_frame_pop(&n);
     e.node = expr_func_call(e.type, id, a, n);
+    expr_mark_emitted(e.node, e); // cache: walker is a no-op until fcall is migrated
     return e;
 }
