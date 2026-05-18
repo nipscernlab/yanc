@@ -303,9 +303,9 @@ break      : BREAK ';'                     {exec_break  (  );}
            // standard assignment
 assignment : ID  '=' exp ';'                          {stmt_emit_inline(stmt_assign($1, $3));}
            // increment
-           | ID                          PPLUS ';'    {ass_pplus($1);}
-           | ID  '[' exp ']'             PPLUS ';'    {ass_aplus($1, EE($3));}
-           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {ass_apl2d($1, EE($3), EE($6));}
+           | ID                          PPLUS ';'    {stmt_emit_inline(stmt_pplus($1, NULL, NULL));}
+           | ID  '[' exp ']'             PPLUS ';'    {stmt_emit_inline(stmt_pplus($1, $3,   NULL));}
+           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {stmt_emit_inline(stmt_pplus($1, $3,   $6  ));}
            // regular array
            | ID  '[' exp ']'  '='     exp ';'         {arr_1d_index($1, EE($3));        ass_array($1, EE($6), 0);}
            // reversed array

@@ -534,14 +534,29 @@ void ast_emit(ast_node *n)
 // returned by walking the RHS expression - exactly what the grammar action
 // `ass_set($1, EE($3))` used to do, just wrapped in a node.
 
-stmt_node *stmt_assign(int id, expr_node *rhs)
+static stmt_node *snode_new(stmt_kind k)
 {
     stmt_node *n = calloc(1, sizeof(*n));
     if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
-    n->kind = STMT_ASSIGN;
+    n->kind = k;
     n->line = line_num + 1;
+    return n;
+}
+
+stmt_node *stmt_assign(int id, expr_node *rhs)
+{
+    stmt_node *n = snode_new(STMT_ASSIGN);
+    n->id  = id;
+    n->rhs = rhs;
+    return n;
+}
+
+stmt_node *stmt_pplus(int id, expr_node *idx, expr_node *idx2)
+{
+    stmt_node *n = snode_new(STMT_PPLUS);
     n->id   = id;
-    n->rhs  = rhs;
+    n->idx  = idx;
+    n->idx2 = idx2;
     return n;
 }
 
@@ -554,6 +569,13 @@ void stmt_emit(stmt_node *n)
         case STMT_ASSIGN:
             ass_set(n->id, ast_emit_expr(n->rhs));
             break;
+
+        case STMT_PPLUS:
+            if      (!n->idx ) ass_pplus(n->id);
+            else if (!n->idx2) ass_aplus(n->id, ast_emit_expr(n->idx));
+            else               ass_apl2d(n->id, ast_emit_expr(n->idx),
+                                                ast_emit_expr(n->idx2));
+            break;
     }
 }
 
@@ -561,6 +583,8 @@ void stmt_free(stmt_node *n)
 {
     if (!n) return;
     expr_free(n->rhs);
+    expr_free(n->idx);
+    expr_free(n->idx2);
     free(n);
 }
 

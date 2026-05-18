@@ -1,0 +1,29 @@
+#PRNAME pplus_arr
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Synthetic fixture: exercises the 1D (x[i]++) and 2D (x[i][j]++) post-
+// increment statements, which no Exemplos/ program uses. Locks down the
+// STMT_PPLUS walker branches that dispatch to ass_aplus / ass_apl2d.
+// Not a real DSP example.
+
+void main()
+{
+    int a[4];
+    int b[4][4];
+    int idx;
+
+    while (1)
+    {
+        idx = in(0);
+        a[idx]++;          // STMT_PPLUS, 1D branch -> ass_aplus
+        b[idx][idx]++;     // STMT_PPLUS, 2D branch -> ass_apl2d
+        out(0, a[idx]);
+    }
+}

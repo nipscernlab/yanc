@@ -5,6 +5,7 @@
 # things, run: Scripts/regress.sh --update-size
 ArcTan     74
 empty_call 16
+pplus_arr  25
 proc_fft   325
 proc_rls   334
 proc_sim   97

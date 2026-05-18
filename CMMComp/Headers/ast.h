@@ -249,18 +249,26 @@ void      ast_emit    (ast_node *n);
 
 typedef enum {
     STMT_ASSIGN,  // id = exp;
+    STMT_PPLUS,   // id++; / id[idx]++; / id[idx][idx2]++;
 } stmt_kind;
 
 typedef struct stmt_node {
     stmt_kind kind;
     int       line;     // source line where the node was built (1-based)
 
-    int               id;   // STMT_ASSIGN: LHS variable index
-    struct expr_node *rhs;  // STMT_ASSIGN: RHS expression tree (owned)
+    int               id;    // ASSIGN/PPLUS: LHS variable index
+    struct expr_node *rhs;   // ASSIGN: RHS expression tree (owned)
+    struct expr_node *idx;   // PPLUS: 1D/2D index (NULL for scalar id++)
+    struct expr_node *idx2;  // PPLUS: 2D second index (NULL otherwise)
 } stmt_node;
 
 // constructors (caller owns the returned node).
 stmt_node *stmt_assign(int id, struct expr_node *rhs);
+
+// scalar id++:    idx=NULL,    idx2=NULL
+// 1D    id[i]++:  idx=<index>, idx2=NULL
+// 2D    id[i][j]++: idx=<i>,   idx2=<j>
+stmt_node *stmt_pplus (int id, struct expr_node *idx, struct expr_node *idx2);
 
 // walks a stmt_node and emits via the same helpers the inline grammar
 // actions used to call (ass_set, etc.).
