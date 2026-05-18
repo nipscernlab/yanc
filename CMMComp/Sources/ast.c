@@ -223,9 +223,23 @@ void expr_dump(expr_node *n)
 // Recreates the emit that the grammar actions currently do inline. Calls the
 // same oper_*/exec_*/arr_*/pplus_*/num2exp/id2exp/par_exp/fcall helpers, so
 // running the walker over a built tree produces byte-identical assembly to
-// the inline path. NOT invoked yet - turning it on is a future step.
+// the inline path.
+//
+// The public entry point preserves the original tree pointer on the
+// returned POD so callers (grammar actions, downstream tree consumers) can
+// chain emit-and-attach in a single statement:
+//     $$ = ast_emit_expr(expr_lit(1, $1));
+
+static expr ast_emit_expr_impl(expr_node *n);
 
 expr ast_emit_expr(expr_node *n)
+{
+    expr e = ast_emit_expr_impl(n);
+    e.node = n;
+    return e;
+}
+
+static expr ast_emit_expr_impl(expr_node *n)
 {
     if (!n) return expr_make(0, 0);
 
