@@ -96,6 +96,17 @@ expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2)
     return n;
 }
 
+expr_node *expr_stdlib(int op, int type, int port, expr_node *a, expr_node *b)
+{
+    expr_node *n = enode_new(EXPR_STDLIB_CALL);
+    n->op    = op;
+    n->type  = type;
+    n->id    = port;      // INUM port for IN/FIN/OUT, 0 for compute-only calls
+    n->left  = a;
+    n->right = b;
+    return n;
+}
+
 void expr_free(expr_node *n)
 {
     if (!n) return;
@@ -117,6 +128,7 @@ static const char *kind_name(expr_kind k)
         case EXPR_UNOP:        return "UNOP";
         case EXPR_ARRAY_INDEX: return "ARRAY_INDEX";
         case EXPR_PPLUS:       return "PPLUS";
+        case EXPR_STDLIB_CALL: return "STDLIB_CALL";
     }
     return "?";
 }
@@ -153,6 +165,9 @@ static void expr_dump_at(expr_node *n, int depth)
             break;
         case EXPR_PPLUS:
             fprintf(stderr, " id=%d (%s)", n->id, v_name[n->id]);
+            break;
+        case EXPR_STDLIB_CALL:
+            fprintf(stderr, " op=%d port=%d", n->op, n->id);
             break;
     }
     fputc('\n', stderr);

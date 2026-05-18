@@ -250,7 +250,7 @@ exp_list :                                              // may be empty (test it
 
 std_out  : OUT  '(' INUM ',' exp ')' ';'            {exec_out ($3, $5);}            // data output
 std_fout : FOUT '(' INUM ',' exp ')' ';'            {exec_fout($3, $5);}            // data output (converting to float)
-std_in   : INN  '(' INUM ')'                   {$$ = exec_in  ($3);}                // data input
+std_in   : INN  '(' INUM ')'                   {$$ = exec_in  ($3); $$.node = expr_stdlib(OP_STD_IN, $$.type, $3, NULL, NULL);}  // data input
 std_fin  : FIN  '(' INUM ')'                   {$$ = exec_fin ($3);}                // data input (converting to float)
 std_pst  : PST  '(' exp  ')'                   {$$ = exec_pst ($3);}                // function pset(x)      -> clears if negative
 std_abs  : ABS  '(' exp  ')'                   {$$ = exec_abs ($3);}                // function  abs(x)      -> absolute value of x

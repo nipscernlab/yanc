@@ -67,12 +67,13 @@ expr expr_make(int type, int id);
 // staying simple at every call site.
 
 typedef enum {
-    EXPR_LITERAL,     // INUM / FNUM / CNUM materialized into v_name
-    EXPR_VAR,         // reference to a declared variable
-    EXPR_BINOP,       // a <op> b   (op in +, -, *, /, %, &, |, ^, <<, >>, comparisons, &&, ||, ...)
-    EXPR_UNOP,        // <op> a     (op in -, !, ~)
-    EXPR_ARRAY_INDEX, // array[idx]  (1D auto / reversed; 2D adds right)
-    EXPR_PPLUS        // postfix ++ (scalar id, or array[idx] / [idx][idx2])
+    EXPR_LITERAL,      // INUM / FNUM / CNUM materialized into v_name
+    EXPR_VAR,          // reference to a declared variable
+    EXPR_BINOP,        // a <op> b   (op in +, -, *, /, %, &, |, ^, <<, >>, comparisons, &&, ||, ...)
+    EXPR_UNOP,         // <op> a     (op in -, !, ~)
+    EXPR_ARRAY_INDEX,  // array[idx]  (1D auto / reversed; 2D adds right)
+    EXPR_PPLUS,        // postfix ++ (scalar id, or array[idx] / [idx][idx2])
+    EXPR_STDLIB_CALL   // in() / fin() / pst() / abs() / sign() / sqrt() / ... (op picks which)
 } expr_kind;
 
 // Operator codes carried by EXPR_BINOP / EXPR_UNOP. Names mirror the
@@ -101,6 +102,8 @@ typedef enum {
     OP_AND,   // x & y    (oper_bitw,  type=0)
     OP_OR,    // x | y    (oper_bitw,  type=1)
     OP_XOR,   // x ^ y    (oper_bitw,  type=2)
+    // stdlib calls (EXPR_STDLIB_CALL). port lives in id for IN/FIN/OUT.
+    OP_STD_IN,  // in(port)              -> int
 } expr_op;
 
 typedef struct expr_node {
@@ -127,6 +130,10 @@ expr_node *expr_array_index(int type, int id, int reversed,
 // id is the variable being post-incremented. idx / idx2 are NULL for a
 // scalar id++; 1D id[i]++ has idx and NULL; 2D id[i][j]++ has both.
 expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2);
+
+// generic stdlib call. `port` is the INUM port number for IN/FIN/OUT and
+// 0 for everything else. a/b are operand expressions (NULL if unused).
+expr_node *expr_stdlib(int op, int type, int port, expr_node *a, expr_node *b);
 
 // frees the node and every descendant recursively
 void expr_free(expr_node *n);
