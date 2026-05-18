@@ -67,10 +67,11 @@ expr expr_make(int type, int id);
 // staying simple at every call site.
 
 typedef enum {
-    EXPR_LITERAL,   // INUM / FNUM / CNUM materialized into v_name
-    EXPR_VAR,       // reference to a declared variable
-    EXPR_BINOP,     // a <op> b   (op in +, -, *, /, %, &, |, ^, <<, >>, comparisons, &&, ||, ...)
-    EXPR_UNOP       // <op> a     (op in -, !, ~)
+    EXPR_LITERAL,     // INUM / FNUM / CNUM materialized into v_name
+    EXPR_VAR,         // reference to a declared variable
+    EXPR_BINOP,       // a <op> b   (op in +, -, *, /, %, &, |, ^, <<, >>, comparisons, &&, ||, ...)
+    EXPR_UNOP,        // <op> a     (op in -, !, ~)
+    EXPR_ARRAY_INDEX  // array[idx]  (1D auto / reversed; 2D adds right)
 } expr_kind;
 
 // Operator codes carried by EXPR_BINOP / EXPR_UNOP. Names mirror the
@@ -116,6 +117,11 @@ expr_node *expr_lit  (int type, int id);
 expr_node *expr_var  (int type, int id);
 expr_node *expr_binop(int op, int type, expr_node *left, expr_node *right);
 expr_node *expr_unop (int op, int type, expr_node *operand);
+
+// id is the array's v_name index. reversed = 0 for x[i] (auto),
+// 1 for x[i) (FFT bit-reversed). idx2 is NULL for 1D access.
+expr_node *expr_array_index(int type, int id, int reversed,
+                            expr_node *idx, expr_node *idx2);
 
 // frees the node and every descendant recursively
 void expr_free(expr_node *n);

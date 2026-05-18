@@ -330,8 +330,8 @@ assignment : ID  '=' exp ';'                          {ass_set($1, $3);}
 
 exp:       terminal                           {$$ = $1;}
          // arrays
-         | ID '[' exp ']'                     {$$ = arr_1d2exp($1, $3, 0);}
-         | ID '[' exp ')'                     {$$ = arr_1d2exp($1, $3, 1);}
+         | ID '[' exp ']'                     {$$ = arr_1d2exp($1, $3, 0); $$.node = expr_array_index($$.type, $1, 0, $3.node, NULL);}
+         | ID '[' exp ')'                     {$$ = arr_1d2exp($1, $3, 1); $$.node = expr_array_index($$.type, $1, 1, $3.node, NULL);}
          | ID '[' exp ']' '[' exp ']'         {$$ = arr_2d2exp($1, $3, $6);}
          // std library that returns values
          | std_in                             {$$ = $1;}

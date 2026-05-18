@@ -74,6 +74,18 @@ expr_node *expr_unop(int op, int type, expr_node *operand)
     return n;
 }
 
+expr_node *expr_array_index(int type, int id, int reversed,
+                            expr_node *idx, expr_node *idx2)
+{
+    expr_node *n = enode_new(EXPR_ARRAY_INDEX);
+    n->type  = type;
+    n->id    = id;        // array variable index
+    n->op    = reversed;  // 0=x[i], 1=x[i)
+    n->left  = idx;
+    n->right = idx2;      // NULL for 1D
+    return n;
+}
+
 void expr_free(expr_node *n)
 {
     if (!n) return;
@@ -89,10 +101,11 @@ void expr_free(expr_node *n)
 static const char *kind_name(expr_kind k)
 {
     switch (k) {
-        case EXPR_LITERAL: return "LITERAL";
-        case EXPR_VAR:     return "VAR";
-        case EXPR_BINOP:   return "BINOP";
-        case EXPR_UNOP:    return "UNOP";
+        case EXPR_LITERAL:     return "LITERAL";
+        case EXPR_VAR:         return "VAR";
+        case EXPR_BINOP:       return "BINOP";
+        case EXPR_UNOP:        return "UNOP";
+        case EXPR_ARRAY_INDEX: return "ARRAY_INDEX";
     }
     return "?";
 }
@@ -123,6 +136,9 @@ static void expr_dump_at(expr_node *n, int depth)
         case EXPR_BINOP:
         case EXPR_UNOP:
             fprintf(stderr, " op=%d", n->op);
+            break;
+        case EXPR_ARRAY_INDEX:
+            fprintf(stderr, " id=%d (%s) reversed=%d", n->id, v_name[n->id], n->op);
             break;
     }
     fputc('\n', stderr);
