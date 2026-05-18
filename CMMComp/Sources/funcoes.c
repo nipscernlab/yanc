@@ -667,55 +667,49 @@ void void_ret()
 // usage ----------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// emits LOD for the first parameter (if any)
-// get_type returns the parameter type (0, 1, 2, 3) -> (void, int, float, comp)
-// p_test holds the position and type of every parameter in the function call
+// Each arg's exp_list reduce just records the arg's tree node on the current
+// call's frame. The emit (subtree + par_check stage + CAL) happens later when
+// the walker reaches the EXPR_FUNC_CALL node at consumer-EE / vcall time.
 void par_exp(expr e)
 {
-    p_test = 0; // reset the p_test state
-    p_test = p_test*10 + e.type;
-    par_check(e);
-    args_push(e.node);   // record this arg's tree on the current call's frame
-    acc_ok = 1;
-}
-
-// emits LOD for the remaining parameters
-void par_listexp(expr e)
-{
-    p_test = p_test*10 + e.type;
-    par_check(e);
     args_push(e.node);
 }
 
-// emits the CAL instruction for void-type functions (hence the v in vcall)
+void par_listexp(expr e)
+{
+    args_push(e.node);
+}
+
+// void-call statement: pre-validates type / arity, builds an EXPR_FUNC_CALL
+// with type=0 (void), drives the walker (which emits args + par_check + CAL),
+// then frees the throwaway node.
 void vcall(int id)
 {
-    // can also be used with a non-void function call, so test everything here
     if  (v_type[id] < 6)
     {
         fprintf(stderr, MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
     }
 
-    // check the number of parameters
-    if (get_npar(p_test) != get_npar(v_fpar[id])) // p_test has the call's param list, v_fpar has the declaration's
+    int n; expr_node **a = args_frame_pop(&n);
+
+    if (n != get_npar(v_fpar[id]))
     {
         fprintf(stderr, MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
     }
 
-    add_instr("CAL %s\n", v_name[id]);
+    v_used[id] = 1;
 
-    v_used[id] = 1; // function has been called
-    acc_ok     = 0; // acc is free
-
-    // drain the arg frame; void calls discard their tree (no AST node)
-    int n; expr_node **a = args_frame_pop(&n);
-    for (int i = 0; i < n; i++) expr_free(a[i]);
-    free(a);
+    // type=0 for void: walker leaves acc_ok=0 after CAL
+    expr_node *node = expr_func_call(0, id, a, n);
+    ast_emit_expr(node);
+    expr_free(node);
 }
 
-// emits the CAL instruction for functions with a return value (hence the f in fcall)
+// value-returning call: pre-validates and packages the call as an
+// EXPR_FUNC_CALL node, hands the POD up to whichever consumer reduces next.
+// No emit at parse time - the walker emits when the consumer calls EE($N).
 expr fcall(int id)
 {
     if (v_type[id] == 6)
@@ -729,21 +723,17 @@ expr fcall(int id)
         exit(EXIT_FAILURE);
     }
 
-    if (get_npar(p_test) != get_npar(v_fpar[id]))
+    int n; expr_node **a = args_frame_pop(&n);
+
+    if (n != get_npar(v_fpar[id]))
     {
         fprintf(stderr, MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_name[id]);
         exit(EXIT_FAILURE);
     }
 
-    add_instr("CAL %s\n",v_name[id]);
+    v_used[id] = 1;
 
-    v_used[id] = 1;             // function has been used
-    acc_ok     = 1;             // acc is busy
-
-    // drain the arg frame and wrap into the AST node before returning
-    expr e = expr_make(v_type[id]-6, 0); // returns the data type (void, int, float or comp)
-    int n; expr_node **a = args_frame_pop(&n);
+    expr e = expr_make(v_type[id]-6, 0);
     e.node = expr_func_call(e.type, id, a, n);
-    expr_mark_emitted(e.node, e); // cache: walker is a no-op until fcall is migrated
     return e;
 }

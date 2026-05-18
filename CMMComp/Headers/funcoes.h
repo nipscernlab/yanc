@@ -9,6 +9,11 @@
 extern char fname[512];             // name of the function currently being parsed
 extern int  mainok;                 // main function status: 0 -> undefined, 1 -> resolved (how it will be called)
 extern int  fun_id;                 // stores the id of the function being used
+extern int  p_test;                 // packed param-type list for the call currently being walked
+
+// type-checks one argument against the expected parameter and emits LOD/SET
+// to stage it for the upcoming CAL. Read by the EXPR_FUNC_CALL walker.
+void par_check(expr e);
 
 // declaration ----------------------------------------------------------------
 

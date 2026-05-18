@@ -132,11 +132,9 @@ typedef struct expr_node {
     struct expr_node **args;           // EXPR_FUNC_CALL: argument expressions (owned)
     int n_args;                        // EXPR_FUNC_CALL: argument count
 
-    // Cache for the incremental walker migration. When a grammar action still
-    // does inline codegen, it calls expr_mark_emitted() to record the POD it
-    // already produced. The walker, when invoked over such a node, returns
-    // the cached POD instead of re-emitting. As each kind migrates to the
-    // walker, its rule drops the mark_emitted call and the cache stays unset.
+    // Idempotency cache: the walker auto-marks a node after it emits it, so
+    // calling ast_emit_expr() twice on the same node returns the first
+    // result instead of re-emitting. Producers never set these by hand.
     int  emitted;
     expr cached;
 } expr_node;
@@ -177,15 +175,11 @@ void expr_free(expr_node *n);
 void expr_dump(expr_node *n);
 
 // recursively walks an expression tree and emits the corresponding assembly
-// via the existing oper_* / exec_* / arr_* / pplus_* / num2exp / id2exp /
-// par_exp / fcall helpers. Returns the result POD the same way those helpers
-// do. NOT invoked yet - this is the future codegen path the parser will
-// switch to once every consumer reads .node instead of .type / .id.
+// via the existing oper_* / exec_* / arr_* / pplus_* / num2exp / id2exp
+// helpers. Returns the result POD the same way those helpers do. Driven by
+// every consumer of an exp value (via the EE() macro in CMMComp.y), plus
+// directly by vcall() for void statement-level function calls.
 expr ast_emit_expr(expr_node *n);
-
-// Records the POD a grammar action just produced inline so the walker can
-// skip re-emitting that node. Each kind drops this call as it migrates.
-void expr_mark_emitted(expr_node *n, expr e);
 
 typedef struct ast_node {
     ast_kind kind;

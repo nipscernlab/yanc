@@ -232,18 +232,10 @@ void expr_dump(expr_node *n)
 
 static expr ast_emit_expr_impl(expr_node *n);
 
-void expr_mark_emitted(expr_node *n, expr e)
-{
-    if (!n) return;
-    n->emitted = 1;
-    n->cached  = e;
-}
-
-// Idempotent: a second call over the same node returns the cached POD instead
-// of re-emitting. Producers (grammar actions still doing inline codegen) get
-// the same property by calling expr_mark_emitted() with the POD they just
-// built, so wrapping any consumer in ast_emit_expr(node) is a no-op until
-// that producer is migrated.
+// Idempotent: a second call over the same node returns the first result
+// instead of re-emitting. This guards against double-emission if a tree ever
+// gets walked twice (shouldn't happen in the grammar today, but cheap to
+// keep as a safety net).
 expr ast_emit_expr(expr_node *n)
 {
     if (n && n->emitted) return n->cached;
@@ -347,13 +339,26 @@ static expr ast_emit_expr_impl(expr_node *n)
         }
 
         case EXPR_FUNC_CALL: {
-            args_frame_push();
+            // save/restore the per-call globals so nested calls behave
+            int saved_fun_id = fun_id;
+            int saved_p_test = p_test;
+            fun_id = n->id;
+            p_test = 0;
+
             for (int i = 0; i < n->n_args; i++) {
                 expr a = ast_emit_expr(n->args[i]);
-                if (i == 0) par_exp    (a);
-                else        par_listexp(a);
+                p_test = p_test * 10 + a.type;
+                par_check(a);
+                acc_ok = 1;
             }
-            return fcall(n->id);
+
+            add_instr("CAL %s\n", v_name[n->id]);
+            v_used[n->id] = 1;
+            acc_ok = (n->type == 0) ? 0 : 1;
+
+            fun_id = saved_fun_id;
+            p_test = saved_p_test;
+            return expr_make(n->type, 0);
         }
 
         case EXPR_INNER: {
