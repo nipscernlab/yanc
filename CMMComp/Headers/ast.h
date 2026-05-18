@@ -74,7 +74,8 @@ typedef enum {
     EXPR_ARRAY_INDEX,  // array[idx]  (1D auto / reversed; 2D adds right)
     EXPR_PPLUS,        // postfix ++ (scalar id, or array[idx] / [idx][idx2])
     EXPR_STDLIB_CALL,  // in() / fin() / pst() / abs() / sign() / sqrt() / ... (op picks which)
-    EXPR_FUNC_CALL     // user-defined function call f(a, b, ...) - args[] is n-ary
+    EXPR_FUNC_CALL,    // user-defined function call f(a, b, ...) - args[] is n-ary
+    EXPR_INNER         // Dirac inner product <a|b> ; left/right are the two vector refs
 } expr_kind;
 
 // Operator codes carried by EXPR_BINOP / EXPR_UNOP. Names mirror the
@@ -156,6 +157,10 @@ expr_node *expr_stdlib(int op, int type, int port, expr_node *a, expr_node *b);
 // heap array of length n_args; the node takes ownership of both the array
 // and the nodes it points at (expr_free recurses).
 expr_node *expr_func_call(int type, int id, expr_node **args, int n_args);
+
+// Dirac inner product <a|b>. a and b are vector references (typically built
+// via expr_var() with the array's v_name index).
+expr_node *expr_inner(int type, expr_node *a, expr_node *b);
 
 // frees the node and every descendant recursively
 void expr_free(expr_node *n);

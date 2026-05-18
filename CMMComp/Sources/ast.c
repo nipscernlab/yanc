@@ -117,6 +117,15 @@ expr_node *expr_func_call(int type, int id, expr_node **args, int n_args)
     return n;
 }
 
+expr_node *expr_inner(int type, expr_node *a, expr_node *b)
+{
+    expr_node *n = enode_new(EXPR_INNER);
+    n->type  = type;
+    n->left  = a;
+    n->right = b;
+    return n;
+}
+
 void expr_free(expr_node *n)
 {
     if (!n) return;
@@ -142,6 +151,7 @@ static const char *kind_name(expr_kind k)
         case EXPR_PPLUS:       return "PPLUS";
         case EXPR_STDLIB_CALL: return "STDLIB_CALL";
         case EXPR_FUNC_CALL:   return "FUNC_CALL";
+        case EXPR_INNER:       return "INNER";
     }
     return "?";
 }
@@ -184,6 +194,9 @@ static void expr_dump_at(expr_node *n, int depth)
             break;
         case EXPR_FUNC_CALL:
             fprintf(stderr, " id=%d (%s) n_args=%d", n->id, v_name[n->id], n->n_args);
+            break;
+        case EXPR_INNER:
+            /* left/right (vector refs) get printed by the recursive walk */
             break;
     }
     fputc('\n', stderr);

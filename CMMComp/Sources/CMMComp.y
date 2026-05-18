@@ -385,7 +385,10 @@ exp:       terminal                           {$$ = $1;}
          | exp  LESEQ  exp                    {$$ = oper_leeq ($1, $3);    $$.node = expr_binop(OP_LE,  $$.type, $1.node, $3.node);}
          | exp  DIF    exp                    {$$ = oper_dife ($1, $3);    $$.node = expr_binop(OP_NE,  $$.type, $1.node, $3.node);}
          // linear algebra with exp return (Dirac notation)
-         | KET ID '|' ID BRA                  {$$ = exec_vtv($2, $4);}
+         | KET ID '|' ID BRA                  {$$ = exec_vtv($2, $4);
+                                                $$.node = expr_inner($$.type,
+                                                            expr_var(v_type[$2], $2),
+                                                            expr_var(v_type[$4], $4));}
 
 // terminals used in reductions for expressions -------------------------------
 
