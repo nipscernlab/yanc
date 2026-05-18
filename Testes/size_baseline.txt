@@ -1,0 +1,15 @@
+# num_ins ratchet: each line is "<prname> <count>".
+# Captures the number of real instructions cmmcomp emits per example
+# (excludes labels, directives and macros). regress.sh fails any run where
+# a count grows. To intentionally update after a refactor that shrinks
+# things, run: Scripts/regress.sh --update-size
+ArcTan     77
+ProcDTW    274
+Seno       71
+Sqrt       92
+ZeroCross  141
+procBlind  807
+proc_fft   325
+proc_rls   334
+proc_sim   97
+sw_test    25

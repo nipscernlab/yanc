@@ -13,6 +13,7 @@
 # Usage (from repo root, in msys2/git-bash on Windows):
 #   Scripts/regress.sh                check against goldens (exit 0 = pass)
 #   Scripts/regress.sh --update       regenerate goldens (review diff!)
+#   Scripts/regress.sh --update-size  ratchet down Testes/size_baseline.txt
 #   Scripts/regress.sh --skip-build   reuse binaries already in .smoke/bin
 #   Scripts/regress.sh --no-sim       skip the simulation phase entirely
 
@@ -26,13 +27,15 @@ if [ -z "${TMPDIR:-}" ] && [ -z "${TMP:-}" ] && [ -z "${TEMP:-}" ]; then
 fi
 
 UPDATE=0
+UPDATE_SIZE=0
 SKIP_BUILD=0
 NO_SIM=0
 for arg in "$@"; do
     case "$arg" in
-        --update)     UPDATE=1 ;;
-        --skip-build) SKIP_BUILD=1 ;;
-        --no-sim)     NO_SIM=1 ;;
+        --update)      UPDATE=1 ;;
+        --update-size) UPDATE_SIZE=1 ;;
+        --skip-build)  SKIP_BUILD=1 ;;
+        --no-sim)      NO_SIM=1 ;;
         -h|--help)
             sed -n '1,/^$/p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
@@ -57,6 +60,20 @@ APPCOMP="$BIN_DIR/appcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
 MACROS="$ROOT/Macros"
 HDL="$ROOT/HDL"
+SIZE_BASELINE_FILE="$ROOT/Testes/size_baseline.txt"
+
+# load the size ratchet (prname -> num_ins). Lines starting with '#' are skipped.
+declare -A SIZE_BASELINE
+if [ -f "$SIZE_BASELINE_FILE" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+        [ -z "$line" ] && continue
+        [ "${line:0:1}" = "#" ] && continue
+        name=$(echo "$line" | awk '{print $1}')
+        val=$(echo "$line"  | awk '{print $2}')
+        [ -n "$name" ] && [ -n "$val" ] && SIZE_BASELINE[$name]="$val"
+    done < "$SIZE_BASELINE_FILE"
+fi
+declare -A SIZE_CURRENT
 
 # iverilog / vvp paths can be overridden via env (CI will need different ones)
 : "${IVERILOG:=/c/nipscern/Aurora/components/Packages/iverilog/bin/iverilog.exe}"
@@ -159,6 +176,30 @@ for cmm in "${cmm_sorted[@]}"; do
     fi
     [ -s "$asm_file" ] || { echo "FAIL ($prname): asm missing/empty"; fail=$((fail+1)); failed_names+=("$prname"); continue; }
 
+    # size ratchet ---------------------------------------------------------
+    # cmmcomp writes "num_ins N" at the end of cmm_log.txt - the real
+    # instruction count (labels, directives and macros excluded). Compare to
+    # the per-example baseline; refactors that grow num_ins for any example
+    # are rejected unless --update-size is passed explicitly.
+    num_ins=$(grep "^num_ins " "$tmp/cmm_log.txt" 2>/dev/null | awk '{print $2}')
+    SIZE_CURRENT[$prname]="${num_ins:-0}"
+    baseline="${SIZE_BASELINE[$prname]:-}"
+    size_grew=0
+    if [ -z "$baseline" ]; then
+        size_msg="  [size: ${num_ins:-?}, no baseline]"
+    elif [ "${num_ins:-0}" -gt "$baseline" ]; then
+        size_msg="  [size: $num_ins, GREW +$((num_ins - baseline)) vs $baseline]"
+        size_grew=1
+    elif [ "${num_ins:-0}" -lt "$baseline" ]; then
+        size_msg="  [size: $num_ins, -$((baseline - num_ins)) vs $baseline]"
+    else
+        size_msg="  [size: $num_ins]"
+    fi
+    if [ "$size_grew" -eq 1 ] && [ "$UPDATE_SIZE" -eq 0 ]; then
+        echo "FAIL ($prname):$size_msg"
+        fail=$((fail + 1)); failed_names+=("$prname"); continue
+    fi
+
     # golden .asm capture or compare ---------------------------------------
 
     if [ "$UPDATE" -eq 1 ]; then
@@ -178,7 +219,7 @@ for cmm in "${cmm_sorted[@]}"; do
     # simulation phase -----------------------------------------------------
 
     if [ "$NO_SIM" -eq 1 ] || build_skipped "$prname"; then
-        echo "$asm_status ($prname)  [sim skipped]"
+        echo "$asm_status ($prname)  [sim skipped]$size_msg"
         pass=$((pass + 1))
         continue
     fi
@@ -199,7 +240,7 @@ for cmm in "${cmm_sorted[@]}"; do
     # .v/.mif here so the project pass below can link them, but stop short of
     # standalone iverilog/vvp (would link the wrong testbench).
     if sim_skipped "$prname"; then
-        echo "$asm_status ($prname)  [standalone sim skipped]"
+        echo "$asm_status ($prname)  [standalone sim skipped]$size_msg"
         pass=$((pass + 1))
         continue
     fi
@@ -245,7 +286,7 @@ for cmm in "${cmm_sorted[@]}"; do
         rm -rf "$golden_sim"
         mkdir -p "$golden_sim"
         for f in "${out_files[@]}"; do cp "$f" "$golden_sim/"; done
-        echo "$asm_status ($prname)  [sim UPDATED, ${#out_files[@]} file(s)]"
+        echo "$asm_status ($prname)  [sim UPDATED, ${#out_files[@]} file(s)]$size_msg"
         pass=$((pass + 1))
         continue
     fi
@@ -264,7 +305,7 @@ for cmm in "${cmm_sorted[@]}"; do
         fi
     done
     if [ $sim_fail -eq 0 ]; then
-        echo "$asm_status ($prname)  [sim OK]"
+        echo "$asm_status ($prname)  [sim OK]$size_msg"
         pass=$((pass + 1))
     else
         fail=$((fail + 1)); failed_names+=("$prname")
@@ -359,5 +400,21 @@ echo "===== $pass passed, $fail failed ====="
 if [ "$fail" -ne 0 ]; then
     echo "failed: ${failed_names[*]}"
     exit 1
+fi
+
+# write the new baseline if --update-size was requested
+if [ "$UPDATE_SIZE" -eq 1 ]; then
+    {
+        echo "# num_ins ratchet: each line is \"<prname> <count>\"."
+        echo "# Captures the number of real instructions cmmcomp emits per example"
+        echo "# (excludes labels, directives and macros). regress.sh fails any run where"
+        echo "# a count grows. To intentionally update after a refactor that shrinks"
+        echo "# things, run: Scripts/regress.sh --update-size"
+        for name in $(printf '%s\n' "${!SIZE_CURRENT[@]}" | sort); do
+            printf "%-10s %s\n" "$name" "${SIZE_CURRENT[$name]}"
+        done
+    } > "$SIZE_BASELINE_FILE"
+    echo ""
+    echo "===== size baseline rewritten ($SIZE_BASELINE_FILE) ====="
 fi
 exit 0
