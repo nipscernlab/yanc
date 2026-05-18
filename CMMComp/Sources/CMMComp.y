@@ -358,9 +358,9 @@ exp:       terminal                           {$$ = $1;}
          |    '-' exp                         {$$ = oper_neg($2); $$.node = expr_unop(OP_NEG, $$.type, $2.node);}
          |    '!' exp                         {$$ = oper_lin($2); $$.node = expr_unop(OP_LIN, $$.type, $2.node);}
          |    '~' exp                         {$$ = oper_inv($2); $$.node = expr_unop(OP_INV, $$.type, $2.node);}
-         | ID                         PPLUS   {$$ = pplus2exp  ($1);}
-         | ID '[' exp ']'             PPLUS   {$$ = pplus1d2exp($1, $3);}
-         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = pplus2d2exp($1, $3, $6);}
+         | ID                         PPLUS   {$$ = pplus2exp  ($1);         $$.node = expr_pplus($$.type, $1, NULL,    NULL   );}
+         | ID '[' exp ']'             PPLUS   {$$ = pplus1d2exp($1, $3);     $$.node = expr_pplus($$.type, $1, $3.node, NULL   );}
+         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = pplus2d2exp($1, $3, $6); $$.node = expr_pplus($$.type, $1, $3.node, $6.node);}
          // shift operators
          | exp  SHIFTL exp                    {$$ = oper_shift($1, $3, 0); $$.node = expr_binop(OP_SHL,  $$.type, $1.node, $3.node);}
          | exp  SHIFTR exp                    {$$ = oper_shift($1, $3, 1); $$.node = expr_binop(OP_SHR,  $$.type, $1.node, $3.node);}

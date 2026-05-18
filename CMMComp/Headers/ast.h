@@ -71,7 +71,8 @@ typedef enum {
     EXPR_VAR,         // reference to a declared variable
     EXPR_BINOP,       // a <op> b   (op in +, -, *, /, %, &, |, ^, <<, >>, comparisons, &&, ||, ...)
     EXPR_UNOP,        // <op> a     (op in -, !, ~)
-    EXPR_ARRAY_INDEX  // array[idx]  (1D auto / reversed; 2D adds right)
+    EXPR_ARRAY_INDEX, // array[idx]  (1D auto / reversed; 2D adds right)
+    EXPR_PPLUS        // postfix ++ (scalar id, or array[idx] / [idx][idx2])
 } expr_kind;
 
 // Operator codes carried by EXPR_BINOP / EXPR_UNOP. Names mirror the
@@ -122,6 +123,10 @@ expr_node *expr_unop (int op, int type, expr_node *operand);
 // 1 for x[i) (FFT bit-reversed). idx2 is NULL for 1D access.
 expr_node *expr_array_index(int type, int id, int reversed,
                             expr_node *idx, expr_node *idx2);
+
+// id is the variable being post-incremented. idx / idx2 are NULL for a
+// scalar id++; 1D id[i]++ has idx and NULL; 2D id[i][j]++ has both.
+expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2);
 
 // frees the node and every descendant recursively
 void expr_free(expr_node *n);

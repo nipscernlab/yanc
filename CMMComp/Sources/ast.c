@@ -86,6 +86,16 @@ expr_node *expr_array_index(int type, int id, int reversed,
     return n;
 }
 
+expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2)
+{
+    expr_node *n = enode_new(EXPR_PPLUS);
+    n->type  = type;
+    n->id    = id;        // variable being post-incremented
+    n->left  = idx;       // NULL for scalar id++
+    n->right = idx2;      // NULL unless 2D
+    return n;
+}
+
 void expr_free(expr_node *n)
 {
     if (!n) return;
@@ -106,6 +116,7 @@ static const char *kind_name(expr_kind k)
         case EXPR_BINOP:       return "BINOP";
         case EXPR_UNOP:        return "UNOP";
         case EXPR_ARRAY_INDEX: return "ARRAY_INDEX";
+        case EXPR_PPLUS:       return "PPLUS";
     }
     return "?";
 }
@@ -139,6 +150,9 @@ static void expr_dump_at(expr_node *n, int depth)
             break;
         case EXPR_ARRAY_INDEX:
             fprintf(stderr, " id=%d (%s) reversed=%d", n->id, v_name[n->id], n->op);
+            break;
+        case EXPR_PPLUS:
+            fprintf(stderr, " id=%d (%s)", n->id, v_name[n->id]);
             break;
     }
     fputc('\n', stderr);
