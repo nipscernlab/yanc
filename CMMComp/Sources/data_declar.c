@@ -14,6 +14,8 @@ TODO:
 
 // local includes
 #include "..\Headers\t2t.h"
+#include "..\Headers\ast.h"
+#include "..\Headers\emit.h"
 #include "..\Headers\global.h"
 #include "..\Headers\stdlib.h"
 #include "..\Headers\funcoes.h"
@@ -67,7 +69,10 @@ void declar_var(int id)
     if (type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, rem_fname(v_name[id], fname));
 }
 
-// declares a 1D array
+// declares a 1D array. v_table side effects happen immediately; the #array
+// directive emit is captured into a temp buffer and routed through STMT_RAW
+// so it lands in source order with the surrounding deferred statements when
+// the function-body walker runs (see ast.c / stmt_emit_inline).
 void declar_arr_1d(int id_var, int id_arg, int id_fname)
 {
     // consistency check ------------------------------------------------------
@@ -77,6 +82,8 @@ void declar_arr_1d(int id_var, int id_arg, int id_fname)
         fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id_var], fname));
         exit(EXIT_FAILURE);
     }
+
+    emit_push_capture();
 
     // update the array status ------------------------------------------------
 
@@ -148,9 +155,15 @@ void declar_arr_1d(int id_var, int id_arg, int id_fname)
 
         printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var],fname), line_num+1);
     }
+
+    char *text = emit_pop_capture();
+    stmt_emit_inline(stmt_raw(text));
+    free(text);
 }
 
-// declares a 2D array
+// declares a 2D array. Same STMT_RAW wrap pattern as declar_arr_1d, except the
+// arr_size helper init (LOD/SET) are real instructions and need to land in
+// source order too - they're captured along with the #array directive.
 void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
 {
     int idi;
@@ -163,6 +176,8 @@ void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
         fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id_var], fname));
         exit(EXIT_FAILURE);
     }
+
+    emit_push_capture();
 
     v_type[id_var] = type_tmp;           // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
     v_used[id_var] = 0;                  // just declared, so not used yet
@@ -224,6 +239,10 @@ void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
     // create a helper variable to store the size of the x dimension
     add_instr("LOD %s\n",          v_name[id_y  ]);
     add_instr("SET %s_arr_size\n", v_name[id_var]);
+
+    char *text = emit_pop_capture();
+    stmt_emit_inline(stmt_raw(text));
+    free(text);
 }
 
 // ----------------------------------------------------------------------------
@@ -232,16 +251,29 @@ void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
 
 // added on demand
 
-// declares a 1D array as a matrix-vector product, e.g. float A[4,4] # |B|a>;
+// declares a 1D array as a matrix-vector product, e.g. float v[4] # |M|u>;
+// declar_arr_1d emits its #array via its own STMT_RAW wrap; we wrap exec_Mv
+// in a separate STMT_RAW so its parse-time emit also lands in source order
+// with the surrounding deferred statements.
 void declar_Mv(int id_name, int id_N, int id_M, int id_v)
 {
     declar_arr_1d(id_name,id_N,  -1);
-    exec_Mv      (id_name,id_M,id_v);
+
+    emit_push_capture();
+    exec_Mv(id_name, id_M, id_v);
+    char *text = emit_pop_capture();
+    stmt_emit_inline(stmt_raw(text));
+    free(text);
 }
 
-// declares a 1D array as a constant-vector product, e.g. float a[4] # c|a>;
+// declares a 1D array as a constant-vector product, e.g. float a[4] # c|b>;
 void declar_cv(int id_name, int id_N, expr ec, int id_v)
 {
     declar_arr_1d(id_name, id_N, -1);
-    exec_cv      (id_name, ec, id_v);
+
+    emit_push_capture();
+    exec_cv(id_name, ec, id_v);
+    char *text = emit_pop_capture();
+    stmt_emit_inline(stmt_raw(text));
+    free(text);
 }

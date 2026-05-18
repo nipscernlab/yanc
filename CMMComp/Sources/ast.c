@@ -23,6 +23,7 @@
 // needed by the stmt_node walker
 #include "..\Headers\data_assign.h"
 #include "..\Headers\itr.h"
+#include "..\Headers\t2t.h"      // get_cmp_cst for complex cond loads
 
 // ----------------------------------------------------------------------------
 // expressions ----------------------------------------------------------------
@@ -606,10 +607,10 @@ stmt_node *stmt_vout(int port, expr_node *rhs, int vector_id)
     return n;
 }
 
-stmt_node *stmt_void_call(int id)
+stmt_node *stmt_void_call(expr_node *call)
 {
     stmt_node *n = snode_new(STMT_VOID_CALL);
-    n->id = id;
+    n->rhs = call;
     return n;
 }
 
@@ -770,16 +771,133 @@ stmt_node *stmt_list_close(void)
     return stmt_list_stack[--stmt_list_stack_n];
 }
 
+stmt_node *stmt_list_top(void)
+{
+    if (stmt_list_stack_n == 0) return NULL;
+    return stmt_list_stack[stmt_list_stack_n - 1];
+}
+
+// ----------------------------------------------------------------------------
+// compound control-flow constructors -----------------------------------------
+// ----------------------------------------------------------------------------
+
+stmt_node *stmt_if(int label, expr_node *cond, stmt_node *then_body, stmt_node *else_body)
+{
+    stmt_node *n = snode_new(STMT_IF);
+    n->id        = label;
+    n->cond      = cond;
+    n->then_body = then_body;
+    n->else_body = else_body;
+    return n;
+}
+
+stmt_node *stmt_while(int label, expr_node *cond, stmt_node *body)
+{
+    stmt_node *n = snode_new(STMT_WHILE);
+    n->id   = label;
+    n->cond = cond;
+    n->body = body;
+    return n;
+}
+
+stmt_node *stmt_switch(int swit_id, int case_max, expr_node *cond, stmt_node *body)
+{
+    stmt_node *n = snode_new(STMT_SWITCH);
+    n->id   = swit_id;
+    n->id2  = case_max;
+    n->cond = cond;
+    n->body = body;
+    return n;
+}
+
+stmt_node *stmt_case_label(int swit_id, int case_idx, int val_id, int val_type)
+{
+    stmt_node *n = snode_new(STMT_CASE_LABEL);
+    n->id  = swit_id;
+    n->id2 = case_idx;
+    n->id3 = val_id;
+    n->id4 = val_type;
+    return n;
+}
+
+stmt_node *stmt_default_label(int swit_id, int case_idx)
+{
+    stmt_node *n = snode_new(STMT_DEFAULT_LABEL);
+    n->id  = swit_id;
+    n->id2 = case_idx;
+    return n;
+}
+
+stmt_node *stmt_switch_break(int swit_id)
+{
+    stmt_node *n = snode_new(STMT_SWITCH_BREAK);
+    n->id = swit_id;
+    return n;
+}
+
+stmt_node *stmt_break_while(int while_label)
+{
+    stmt_node *n = snode_new(STMT_BREAK_WHILE);
+    n->id = while_label;
+    return n;
+}
+
+stmt_node *stmt_raw(const char *text)
+{
+    stmt_node *n = snode_new(STMT_RAW);
+    size_t len = strlen(text);
+    n->text = malloc(len + 1);
+    if (!n->text) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    memcpy(n->text, text, len + 1);
+    return n;
+}
+
 // ----------------------------------------------------------------------------
 // statement walker -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+// Shared cond-to-int load used by STMT_IF / STMT_WHILE / STMT_SWITCH walker
+// cases. Mirrors the if_exp / while_expexp / exec_switch parse-time code from
+// the pre-fase-6 saltos.c. The flag selects between MSG_WARN_COND_* (if /
+// while) and MSG_WARN_CASE_* (switch) for the float / comp warnings.
+static void emit_cond_int_load(expr e, int is_switch)
+{
+    const char *msg_float = is_switch ? MSG_WARN_CASE_FLOAT : MSG_WARN_COND_FLOAT;
+    const char *msg_comp  = is_switch ? MSG_WARN_CASE_COMP  : MSG_WARN_COND_COMP;
+
+    if ((e.type == 1) && (e.id != 0)) add_instr("LOD %s\n", v_name[e.id]);
+    // int acc: nothing
+
+    if ((e.type == 2) && (e.id != 0)) {
+        fprintf(stdout, msg_float, line_num+1);
+        add_instr("F2I_M %s\n", v_name[e.id]);
+    }
+    if ((e.type == 2) && (e.id == 0)) {
+        fprintf(stdout, msg_float, line_num+1);
+        add_instr("F2I\n");
+    }
+    if (e.type == 5) {
+        fprintf(stdout, msg_comp, line_num+1);
+        expr etr, eti;
+        get_cmp_cst(e, &etr, &eti);
+        add_instr("F2I_M %s\n", v_name[etr.id]);
+    }
+    if ((e.type == 3) && (e.id != 0)) {
+        fprintf(stdout, msg_comp, line_num+1);
+        add_instr("F2I_M %s\n", v_name[e.id]);
+    }
+    if ((e.type == 3) && (e.id == 0)) {
+        fprintf(stdout, msg_comp, line_num+1);
+        add_instr("POP\n");
+        add_instr("F2I\n");
+    }
+}
+
 void stmt_emit(stmt_node *n)
 {
-    // Idempotent: scaffold-recorded nodes are walked at body close but their
-    // textual emit already ran via stmt_emit_inline; the flag stops a
-    // double emit. The follow-up commit removes inline emit and lets the
-    // walker do the work for real.
+    // Idempotent guard: once a node has been emitted, subsequent walker
+    // calls on it are no-ops. Useful when an outer block walker reaches
+    // a kid that has already been emitted by a prior pass.
     if (!n || n->emitted) return;
 
     switch (n->kind)
@@ -839,7 +957,7 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_VOID_CALL:
-            vcall(n->id);
+            ast_emit_expr(n->rhs);  // walks the EXPR_FUNC_CALL: par_check + CAL
             break;
 
         case STMT_DIRE_INTER:
@@ -853,6 +971,88 @@ void stmt_emit(stmt_node *n)
         case STMT_BLOCK:
             for (int i = 0; i < n->kids_n; i++) stmt_emit(n->kids[i]);
             break;
+
+        case STMT_IF: {
+            emit_cond_int_load(ast_emit_expr(n->cond), 0);
+            add_instr("JIZ Lif%delse\n", n->id);
+            acc_ok = 0;
+
+            stmt_emit(n->then_body);
+
+            if (n->else_body)
+            {
+                add_instr("JMP Lif%dend\n",  n->id);
+                add_sinst(0, "@Lif%delse ",  n->id);
+                stmt_emit(n->else_body);
+                add_sinst(0, "@Lif%dend ",   n->id);
+            }
+            else
+            {
+                add_sinst(0, "@Lif%delse ",  n->id);
+            }
+            break;
+        }
+
+        case STMT_WHILE: {
+            add_sinst(0, "@Lwh%d ", n->id);
+            emit_cond_int_load(ast_emit_expr(n->cond), 0);
+            add_instr("JIZ Lwh%dend\n", n->id);
+            acc_ok = 0;
+
+            stmt_emit(n->body);
+
+            add_instr("JMP Lwh%d\n",   n->id);
+            add_sinst(0, "@Lwh%dend ", n->id);
+            break;
+        }
+
+        case STMT_SWITCH: {
+            // ensure the implicit `switch_exp` var exists and matches the
+            // cond's type; case_test rebuilds an expr against it later.
+            expr cond_e = ast_emit_expr(n->cond);
+            if (find_var("switch_exp") == -1) add_var("switch_exp");
+            int sw_id = find_var("switch_exp");
+            v_type[sw_id] = cond_e.type;
+            v_used[sw_id] = 0;
+
+            emit_cond_int_load(cond_e, 1);
+            add_instr("SET switch_exp\n");
+            acc_ok = 0;
+
+            stmt_emit(n->body);
+
+            add_sinst(0, "@sw_case_%d_%d ", n->id, n->id2 + 1);
+            add_sinst(0, "@switch_end_%d ", n->id);
+            break;
+        }
+
+        case STMT_CASE_LABEL: {
+            // n->id  = swit_id, n->id2 = case_idx, n->id3 = val_id, n->id4 = val_type
+            add_sinst(0, "@sw_case_%d_%d ", n->id, n->id2);
+            expr e1 = num2exp(n->id3, n->id4);
+            expr e2 = id2exp (find_var("switch_exp"));
+            oper_cmp(e1, e2, 2);
+            add_instr("JIZ sw_case_%d_%d\n", n->id, n->id2 + 1);
+            acc_ok = 0;
+            break;
+        }
+
+        case STMT_DEFAULT_LABEL:
+            add_sinst(0, "@sw_case_%d_%d ", n->id, n->id2);
+            break;
+
+        case STMT_SWITCH_BREAK:
+            add_instr("JMP switch_end_%d\n", n->id);
+            break;
+
+        case STMT_BREAK_WHILE:
+            add_instr("JMP Lwh%dend\n", n->id);
+            break;
+
+        case STMT_RAW:
+            // already-counted assembly text captured at parse time
+            emit_raw(n->text);
+            break;
     }
 
     n->emitted = 1;
@@ -864,23 +1064,32 @@ void stmt_free(stmt_node *n)
     expr_free(n->rhs);
     expr_free(n->idx);
     expr_free(n->idx2);
+    expr_free(n->cond);
     ast_free (n->ast_inner);
+    stmt_free(n->then_body);
+    stmt_free(n->else_body);
+    stmt_free(n->body);
     for (int i = 0; i < n->kids_n; i++) stmt_free(n->kids[i]);
     free(n->kids);
+    free(n->text);
     free(n);
 }
 
 void stmt_emit_inline(stmt_node *n)
 {
-    stmt_emit(n);
     if (stmt_list_stack_n > 0)
     {
-        // a body capture is in progress: hand the just-emitted node to the
-        // top STMT_BLOCK so the structural-emit migration can walk it later
+        // A body is open: defer codegen by parking the node on the top
+        // STMT_BLOCK. The body's closer (func_ret / if_fim / while_stmt /
+        // end_switch ...) walks the block and emits each kid in source order.
         stmt_block_push(stmt_list_stack[stmt_list_stack_n - 1], n);
     }
     else
     {
+        // No body active (a stmt reduces outside any function context): walk
+        // immediately so the emit reaches f_asm at parse time. Not exercised
+        // by the current grammar but cheap to keep as a safety net.
+        stmt_emit(n);
         stmt_free(n);
     }
 }

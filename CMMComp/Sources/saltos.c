@@ -1,21 +1,19 @@
 // ----------------------------------------------------------------------------
 // routines for jump implementation -------------------------------------------
 // ----------------------------------------------------------------------------
-
-/*
-TODO:
-1- review switch case
-*/
+//
+// Each compound statement (if / while / switch) is built incrementally as the
+// parser sees its parts. We push a partial stmt_node onto a pending stack at
+// the opening token, fill in the body / else / etc. as the inner statements
+// reduce, and pop the completed node at the closing reduce. The grammar then
+// hands the node to stmt_emit_inline, which appends it to the enclosing
+// stmt_list. The walker emits the cond, labels and body at body-close time.
 
 #include <stdlib.h>
 
 #include "..\Headers\ast.h"
-#include "..\Headers\emit.h"
-#include "..\Headers\t2t.h"
-#include "..\Headers\oper.h"
 #include "..\Headers\labels.h"
 #include "..\Headers\global.h"
-#include "..\Headers\data_use.h"
 #include "..\Headers\variaveis.h"
 #include "..\Headers\messages.h"
 
@@ -25,277 +23,114 @@ int case_cnt  = 0;
 int swit_cnt  = 0;
 
 // ----------------------------------------------------------------------------
-// parked then-body stack -----------------------------------------------------
+// pending compound-statement stack -------------------------------------------
 // ----------------------------------------------------------------------------
-// During an if/else parse, the then-body captures finish (at the ELSE token)
-// before we know what the else-body looks like. We park the then-body's AST
-// node here until if_fim runs and can build the full AST_IF. The stack matches
-// bison's depth-first reduction for nested if/else.
 
-static ast_node **then_park     = NULL;
-static int        then_park_n   = 0;
-static int        then_park_cap = 0;
+static stmt_node **pending_stack     = NULL;
+static int         pending_stack_n   = 0;
+static int         pending_stack_cap = 0;
 
-static void park_then(ast_node *n)
+static void pending_push(stmt_node *n)
 {
-    if (then_park_n + 1 > then_park_cap)
+    if (pending_stack_n + 1 > pending_stack_cap)
     {
-        int new_cap = then_park_cap ? then_park_cap * 2 : 16;
-        ast_node **t = realloc(then_park, (size_t)new_cap * sizeof(*t));
+        int new_cap = pending_stack_cap ? pending_stack_cap * 2 : 8;
+        stmt_node **t = realloc(pending_stack, (size_t)new_cap * sizeof(*t));
         if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
-        then_park     = t;
-        then_park_cap = new_cap;
+        pending_stack     = t;
+        pending_stack_cap = new_cap;
     }
-    then_park[then_park_n++] = n;
+    pending_stack[pending_stack_n++] = n;
 }
 
-static ast_node *unpark_then(void)
+static stmt_node *pending_pop(void)
 {
-    return then_park[--then_park_n];
-}
-
-// helper: build an AST_RAW node from a captured body, freeing the source text
-static ast_node *body_to_node(char *captured)
-{
-    ast_node *n = ast_raw(captured);   // ast_raw copies the text
-    free(captured);
-    return n;
+    return pending_stack[--pending_stack_n];
 }
 
 // ----------------------------------------------------------------------------
 // if/else --------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-void if_exp(expr e)
+void if_exp(expr_node *cond)
 {
-    // int var
-    if ((e.type == 1) && (e.id!=0))
-    {
-        add_instr("LOD %s\n", v_name[e.id]);
-    }
-
-    // int acc
-    if ((e.type == 1) && (e.id==0))
-    {
-        // nothing to do
-    }
-
-    // float var
-    if ((e.type == 2) && (e.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
-
-        add_instr("F2I_M %s\n", v_name[e.id]);
-    }
-
-    // float acc
-    if ((e.type == 2) && (e.id==0))
-    {
-        fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
-
-        add_instr("F2I\n");
-    }
-
-    // comp const
-    if (e.type == 5)
-    {
-        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
-
-        expr etr, eti;
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("F2I_M %s\n", v_name[etr.id]);
-    }
-
-    // comp var
-    if ((e.type == 3) && (e.id != 0))
-    {
-        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
-
-        add_instr("F2I_M %s\n", v_name[e.id]);
-    }
-
-    // comp acc
-    if ((e.type == 3) && (e.id == 0))
-    {
-        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
-
-        add_instr("POP\n");
-        add_instr("F2I\n");
-    }
-
-    int n = push_if();
-    add_instr("JIZ Lif%delse\n", n); // 0 -> if
-    acc_ok = 0;
-
-    // start capturing the then-body; the captured text is wrapped into an
-    // AST_RAW leaf when the if/else reduction fires. The parallel stmt_list
-    // collects each migrated statement so a follow-up commit can swap the
-    // text capture for a true stmt_node walk.
-    emit_push_capture();
-    stmt_list_open();
+    int label = push_if();
+    stmt_node *partial = stmt_if(label, cond, NULL, NULL);
+    pending_push(partial);
+    stmt_list_open();  // accumulate the then-body
 }
 
-// builds the AST for an if-without-else. Caller owns the returned node and
-// is expected to drive it through stmt_emit_inline(stmt_ast_wrap(...)).
-ast_node *if_stmt()
+stmt_node *if_stmt()
 {
-    ast_node *body  = body_to_node(emit_pop_capture());
-    int       label = pop_if();
-    stmt_free(stmt_list_close());   // scaffold mirror, discarded for now
-    return    ast_if(label, body, NULL);
+    stmt_node *then_body = stmt_list_close();
+    pop_if();
+    stmt_node *partial   = pending_pop();
+    partial->then_body   = then_body;
+    return partial;
 }
 
-// between the then and the else: park the captured then, start capturing else
 void else_stmt()
 {
-    park_then(body_to_node(emit_pop_capture()));
-    stmt_free(stmt_list_close());   // scaffold mirror of the then-body
-    emit_push_capture();
-    stmt_list_open();               // scaffold mirror for the else-body
+    stmt_node *then_body = stmt_list_close();
+    stmt_node *partial   = pending_pop();
+    partial->then_body   = then_body;
+    pending_push(partial);  // keep open until if_fim
+    stmt_list_open();       // accumulate the else-body
 }
 
-// builds the AST for a full if/else. Returns the node; caller drives codegen.
-ast_node *if_fim()
+stmt_node *if_fim()
 {
-    ast_node *els   = body_to_node(emit_pop_capture());
-    ast_node *body  = unpark_then();
-    int       label = pop_if();
-    stmt_free(stmt_list_close());   // scaffold mirror of the else-body
-    return    ast_if(label, body, els);
+    stmt_node *else_body = stmt_list_close();
+    pop_if();
+    stmt_node *partial   = pending_pop();
+    partial->else_body   = else_body;
+    return partial;
 }
 
 // ----------------------------------------------------------------------------
 // while ----------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// end of while: build the AST. Caller drives codegen.
-ast_node *while_stmt()
-{
-    ast_node *body  = body_to_node(emit_pop_capture());
-    int       label = pop_while();
-    stmt_free(stmt_list_close());   // scaffold mirror, discarded for now
-    return    ast_while(label, body);
-}
-
-// parse-time check + AST node for `break;` inside a while. Caller drives.
-ast_node *exec_break()
-{
-    if (get_while() == 0) {fprintf(stderr, MSG_ERR_BREAK_LOST, line_num+1); exit(EXIT_FAILURE);}
-    return ast_break();
-}
-
-// the while keyword alone - emits a label here
 void while_expp()
 {
-    int n = push_while();
-    add_sinst(0, "@Lwh%d ", n);
+    int label = push_while();
+    stmt_node *partial = stmt_while(label, NULL, NULL);
+    pending_push(partial);
+    // cond comes in while_expexp; body list opens there too
 }
 
-// evaluates exp and emits a JIZ to decide whether to enter or not
-void while_expexp(expr e)
+void while_expexp(expr_node *cond)
 {
-    // int var
-    if ((e.type == 1) && (e.id!=0))
+    stmt_node *partial = pending_pop();
+    partial->cond      = cond;
+    pending_push(partial);
+    stmt_list_open();  // accumulate the body
+}
+
+stmt_node *while_stmt()
+{
+    stmt_node *body    = stmt_list_close();
+    pop_while();
+    stmt_node *partial = pending_pop();
+    partial->body      = body;
+    return partial;
+}
+
+stmt_node *exec_break()
+{
+    if (get_while() == 0)
     {
-        add_instr("LOD %s\n", v_name[e.id]);
+        fprintf(stderr, MSG_ERR_BREAK_LOST, line_num+1);
+        exit(EXIT_FAILURE);
     }
-
-    // int acc
-    if ((e.type == 1) && (e.id==0))
-    {
-        // nothing to do
-    }
-
-    // float var
-    if ((e.type == 2) && (e.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
-
-        add_instr("F2I_M %s\n", v_name[e.id]);
-    }
-
-    // float acc
-    if ((e.type == 2) && (e.id==0))
-    {
-        fprintf(stdout, MSG_WARN_COND_FLOAT, line_num+1);
-
-        add_instr("F2I\n");
-    }
-
-    // comp const
-    if (e.type == 5)
-    {
-        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
-
-        expr etr, eti;
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("F2I_M %s\n", v_name[etr.id]);
-    }
-
-    // comp var
-    if ((e.type == 3) && (e.id != 0))
-    {
-        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
-
-        add_instr("F2I_M %s\n", v_name[e.id]);
-    }
-
-    // comp acc
-    if ((e.type == 3) && (e.id == 0))
-    {
-        fprintf(stdout, MSG_WARN_COND_COMP, line_num+1);
-
-        add_instr("POP\n");
-        add_instr("F2I\n");
-    }
-
-    add_instr("JIZ Lwh%dend\n", get_while());
-    acc_ok = 0;
-
-    // start capturing the while body (text + parallel stmt_list scaffold)
-    emit_push_capture();
-    stmt_list_open();
+    return stmt_break_while(get_while());
 }
 
 // ----------------------------------------------------------------------------
 // switch/case ----------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// emits case x: of the switch-case
-void case_test(int id, int type)
-{
-    case_cnt++;
-    add_sinst(0, "@sw_case_%d_%d ", swit_cnt, case_cnt);
-
-    // build the exp for the case value
-    expr e1 = num2exp(id, type);
-    // build the exp for the control variable
-    expr e2 = id2exp(find_var("switch_exp"));
-    // run the comparison (2 = EQU; the historic '4' was a typo that fell
-    // through oper_cmp's switch and emitted an uninitialized mnemonic)
-    oper_cmp(e1, e2, 2);
-
-    add_instr("JIZ sw_case_%d_%d\n", swit_cnt, case_cnt+1);
-    acc_ok = 0;
-}
-
-// emits default of the switch-case
-void defaut_test()
-{
-    case_cnt++;
-    add_sinst(0, "@sw_case_%d_%d ", swit_cnt, case_cnt);
-}
-
-// emits break of the switch-case
-void switch_break()
-{
-    add_instr("JMP switch_end_%d\n", swit_cnt);
-}
-
-// switch-case start
-void exec_switch(expr e)
+void exec_switch(expr_node *cond)
 {
     if (switching == 1)
     {
@@ -303,95 +138,46 @@ void exec_switch(expr e)
         exit(EXIT_FAILURE);
     }
 
-    // find the switch_exp variable (lexer) -----------------------------------
-
+    // pre-declare the implicit switch_exp variable so case_test (at parse
+    // time) can record its case_idx referencing it; the walker fills in
+    // v_type at emit time once it knows the cond's evaluated type.
     if (find_var("switch_exp") == -1) add_var("switch_exp");
-    int id = find_var("switch_exp");
 
-    // equivalent to declar_var -----------------------------------------------
-
-    v_type[id] = e.type;
-    v_used[id] = 0;
-
-    // equivalent to ass_set --------------------------------------------------
-
-    // int var
-    if ((e.type == 1) && (e.id!=0))
-    {
-        add_instr("LOD %s\n", v_name[e.id]);
-    }
-
-    // int acc
-    if ((e.type == 1) && (e.id==0))
-    {
-        // nothing to do
-    }
-
-    // float var
-    if ((e.type == 2) && (e.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CASE_FLOAT, line_num+1);
-
-        add_instr("F2I_M %s\n", v_name[e.id]);
-    }
-
-    // float acc
-    if ((e.type == 2) && (e.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CASE_FLOAT, line_num+1);
-
-        add_instr("F2I\n");
-    }
-
-    // comp const
-    if (e.type == 5)
-    {
-        fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
-
-        expr etr, eti;
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("F2I_M %s\n", v_name[etr.id]);
-    }
-
-    // comp var
-    if ((e.type == 3) && (e.id != 0))
-    {
-        fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
-
-        add_instr("F2I_M %s\n", v_name[e.id]);
-    }
-
-    // comp acc
-    if ((e.type == 3) && (e.id == 0))
-    {
-        fprintf(stdout, MSG_WARN_CASE_COMP, line_num+1);
-
-        add_instr("POP\n");
-        add_instr("F2I\n");
-    }
-
-    add_instr("SET switch_exp\n");
-
-    // finalize ---------------------------------------------------------------
-
-    acc_ok     = 0;
-    switching  = 1;
-    case_cnt   = 0;
     swit_cnt++;
+    case_cnt  = 0;
+    switching = 1;
 
-    // capture every case label, comparison, JIZ, body, and break that
-    // shows up between here and end_switch (text + parallel stmt_list)
-    emit_push_capture();
-    stmt_list_open();
+    stmt_node *partial = stmt_switch(swit_cnt, /*case_max=*/0, cond, NULL);
+    pending_push(partial);
+    stmt_list_open();  // accumulate body (case labels, stmts, breaks, defaults)
 }
 
-// switch-case end: build the AST. Caller drives codegen.
-ast_node *end_switch()
+void case_test(int val_id, int val_type)
 {
-    ast_node *body = body_to_node(emit_pop_capture());
-    ast_node *node = ast_switch(swit_cnt, case_cnt, body);
-    stmt_free(stmt_list_close());   // scaffold mirror, discarded for now
+    case_cnt++;
+    stmt_node *top = stmt_list_top();
+    if (top) stmt_block_push(top, stmt_case_label(swit_cnt, case_cnt, val_id, val_type));
+}
+
+void defaut_test()
+{
+    case_cnt++;
+    stmt_node *top = stmt_list_top();
+    if (top) stmt_block_push(top, stmt_default_label(swit_cnt, case_cnt));
+}
+
+void switch_break()
+{
+    stmt_node *top = stmt_list_top();
+    if (top) stmt_block_push(top, stmt_switch_break(swit_cnt));
+}
+
+stmt_node *end_switch()
+{
+    stmt_node *body    = stmt_list_close();
+    stmt_node *partial = pending_pop();
+    partial->body      = body;
+    partial->id2       = case_cnt;  // case_max for the trailing label
     switching = 0;
-    return node;
+    return partial;
 }

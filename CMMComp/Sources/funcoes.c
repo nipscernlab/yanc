@@ -609,37 +609,30 @@ void declar_ret(expr e, int ret)
     ret_ok = 1; // the return keyword appeared properly in the function
 }
 
-// fires at the opening '{' of a function body. Starts capturing every
-// emission until the matching '}' so the body becomes one AST_RAW leaf
-// inside an AST_BLOCK, ready for the ast_emit walker. ALSO opens a parallel
-// stmt_list - every stmt_emit_inline call inside the body appends to it. The
-// list isn't used for codegen yet (a follow-up commit replaces text capture
-// with the list walk); it just gets freed after the textual replay.
+// fires at the opening '{' of a function body. Opens the stmt_list that
+// collects every statement reduced inside the body. The matching '}' (in
+// func_ret) closes the list and walks it through stmt_emit, producing the
+// function body's assembly all at once. No text capture is in play - every
+// emit happens at walker time.
+//
+// Also resets the SET-then-LOD peephole window: a function's first body
+// instruction is a fresh basic block and shouldn't fuse with whatever
+// declar_fst emitted as the parameter SET.
 void func_body_begin(void)
 {
-    emit_push_capture();
     stmt_list_open();
+    emit_peephole_reset();
 }
 
 // end of the parsing for a function declaration
 void func_ret(int id) // id -> id of the current function
 {
-    // pop the body capture and replay it through the AST walker. The body
-    // is still a single opaque chunk for now (one AST_RAW kid); future
-    // migrations can split it into per-statement kids without touching
-    // this code path.
-    char     *body_text = emit_pop_capture();
-    ast_node *body_raw  = ast_raw(body_text);
-    free(body_text);
-
-    ast_node *block = ast_block();
-    ast_block_push(block, body_raw);
-    ast_emit(block);
-    ast_free(block);
-
-    // scaffold STMT_BLOCK mirrors the just-replayed AST_RAW. Drop it for now
-    // - the next commit will replace the textual capture path with the walk.
-    stmt_free(stmt_list_close());
+    // walk the function body's stmt_node list (each kid runs through the
+    // stmt_emit dispatcher, which calls the same helpers the old inline
+    // path used to call - same emit order, byte-identical assembly).
+    stmt_node *body = stmt_list_close();
+    stmt_emit(body);
+    stmt_free(body);
 
     // check whether the function had the return x; instruction
     if ((v_type[id] != 6) && (ret_ok == 0))
@@ -688,10 +681,14 @@ void par_listexp(expr_node *n)
     args_push(n);
 }
 
-// void-call statement: pre-validates type / arity, builds an EXPR_FUNC_CALL
-// with type=0 (void), drives the walker (which emits args + par_check + CAL),
-// then frees the throwaway node.
-void vcall(int id)
+// void-call statement: pre-validates type / arity, pops this call's frame,
+// and packages the args into an EXPR_FUNC_CALL (type=0). The grammar wraps
+// the returned stmt_node into the enclosing body via stmt_emit_inline; the
+// walker emits par_check + CAL at body-close time. Popping the frame here
+// (instead of inside the walker) keeps each call's args bound at parse time
+// - waiting until walker time would draw frames in LIFO order while the
+// walker visits the calls in source order, swapping arg lists.
+stmt_node *vcall(int id)
 {
     if  (v_type[id] < 6)
     {
@@ -710,9 +707,7 @@ void vcall(int id)
     v_used[id] = 1;
 
     // type=0 for void: walker leaves acc_ok=0 after CAL
-    expr_node *node = expr_func_call(0, id, a, n);
-    ast_emit_expr(node);
-    expr_free(node);
+    return stmt_void_call(expr_func_call(0, id, a, n));
 }
 
 // value-returning call: pre-validates and packages the call as an

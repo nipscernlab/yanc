@@ -236,7 +236,7 @@ stmt_case:        declar     // variable declarations
 
 // function calls -------------------------------------------------------------
 
-void_call   : ID '(' exp_list ')' ';'  {stmt_emit_inline(stmt_void_call($1));}
+void_call   : ID '(' exp_list ')' ';'  {stmt_emit_inline(vcall($1));}
 func_call   : ID '(' exp_list ')'      {$$ = fcall($1);}
 
 // Each call's arg frame opens at the FIRST reduction of its own exp_list
@@ -272,14 +272,14 @@ std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_emit_inline(stmt_vout(
 // if/else --------------------------------------------------------------------
 
 if_else_stmt : if_exp stmt_full ELSE             {else_stmt(  );} // complete if/else
-               stmt_full                         {stmt_emit_inline(stmt_ast_wrap(if_fim ()));}
-             | if_exp stmt_full     %prec THEN   {stmt_emit_inline(stmt_ast_wrap(if_stmt()));} // if without else
-if_exp       : IF '(' exp ')'                    {if_exp   (EE($3));} // start (JIZ)
+               stmt_full                         {stmt_emit_inline(if_fim ());}
+             | if_exp stmt_full     %prec THEN   {stmt_emit_inline(if_stmt());} // if without else
+if_exp       : IF '(' exp ')'                    {if_exp   ($3);} // build pending STMT_IF
 
 // switch/case ----------------------------------------------------------------
 
-switch_case : SWITCH '(' exp ')'  {exec_switch(EE($3));}
-              '{' cases '}'       {stmt_emit_inline(stmt_ast_wrap(end_switch()));}
+switch_case : SWITCH '(' exp ')'  {exec_switch($3);}
+              '{' cases '}'       {stmt_emit_inline(end_switch());}
 
 case_list   :           stmt_case
             | case_list stmt_case
@@ -293,10 +293,10 @@ cases       : case | default | case cases
 
 // while ----------------------------------------------------------------------
 
-while_stmt : while_exp stmt_full           {stmt_emit_inline(stmt_ast_wrap(while_stmt()));}
+while_stmt : while_exp stmt_full           {stmt_emit_inline(while_stmt());}
 while_exp  : WHILE                         {while_expp  (  );}
-            '(' exp ')'                    {while_expexp(EE($4));}
-break      : BREAK ';'                     {stmt_emit_inline(stmt_ast_wrap(exec_break()));}
+            '(' exp ')'                    {while_expexp($4);}
+break      : BREAK ';'                     {stmt_emit_inline(exec_break());}
 
 // assignments ----------------------------------------------------------------
 

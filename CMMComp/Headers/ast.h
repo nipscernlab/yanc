@@ -262,6 +262,17 @@ typedef enum {
                         // every statement reaches codegen through stmt_emit
     STMT_BLOCK,         // ordered list of child stmt_nodes (function / if /
                         // while / switch body). Walker iterates kids.
+    STMT_IF,            // if (cond) then_body [else else_body];  label = if id
+    STMT_WHILE,         // while (cond) body;  label = while id
+    STMT_SWITCH,        // switch (cond) body;  id=swit_id, id2=case_max
+    STMT_CASE_LABEL,    // case <val>:   id=swit_id, id2=case_idx, id3=val_id, id4=val_type
+    STMT_DEFAULT_LABEL, // default:      id=swit_id, id2=case_idx
+    STMT_SWITCH_BREAK,  // break; inside a switch case (id=swit_id)
+    STMT_BREAK_WHILE,   // break; inside a while loop  (id=enclosing while label)
+    STMT_RAW,           // pre-captured assembly chunk replayed by the walker
+                        // (used for declarations whose emit still happens at
+                        // parse time but needs to land in source order with
+                        // the surrounding deferred statements)
 } stmt_kind;
 
 // Sub-operation for STMT_DIRAC. The 10 Dirac forms share enough structure
@@ -296,10 +307,24 @@ typedef struct stmt_node {
     struct expr_node *idx2;  // PPLUS / ARRAY_ASSIGN: 2D second index (NULL otherwise)
     struct ast_node  *ast_inner;  // STMT_AST_WRAP: wrapped if/while/switch/break (owned)
 
+    // STMT_RAW: heap-owned, NUL-terminated assembly chunk replayed via
+    // emit_raw at walker time. Used by helpers (declar_arr_*, declar_Mv,
+    // declar_cv) whose emit happens at parse time but must land in source
+    // order with the surrounding deferred statements.
+    char *text;
+
     // STMT_BLOCK: child statements (owned via stmt_free recursion)
     struct stmt_node **kids;
     int                kids_n;
     int                kids_cap;
+
+    // compound control flow (IF / WHILE / SWITCH): cond is the condition
+    // expression evaluated at walker time. then_body/else_body/body are
+    // STMT_BLOCKs owned by this node.
+    struct expr_node *cond;
+    struct stmt_node *then_body;
+    struct stmt_node *else_body;
+    struct stmt_node *body;
 } stmt_node;
 
 // constructors (caller owns the returned node).
@@ -332,8 +357,9 @@ stmt_node *stmt_copy(struct expr_node *rhs, int dst_id);
 // out(port, rhs | vector_id BRA);  Dirac vector output.
 stmt_node *stmt_vout(int port, struct expr_node *rhs, int vector_id);
 
-// statement-form user void call: f(args);
-stmt_node *stmt_void_call (int id);
+// statement-form user void call: f(args);  inner is the EXPR_FUNC_CALL with
+// the popped args already bound. Walker invokes ast_emit_expr on it.
+stmt_node *stmt_void_call (struct expr_node *call);
 
 // #INTERPOINT directive (interrupt entry-point marker) used inside funcs.
 stmt_node *stmt_dire_inter(void);
@@ -347,15 +373,33 @@ stmt_node *stmt_ast_wrap  (struct ast_node *inner);
 stmt_node *stmt_block     (void);
 void       stmt_block_push(stmt_node *blk, stmt_node *kid);
 
-// Scaffold stack for the upcoming text-capture -> stmt_list migration.
-// stmt_list_open() pushes a fresh STMT_BLOCK onto the stack; while the
-// stack is non-empty, stmt_emit_inline records each just-emitted stmt_node
-// on the top block instead of freeing it. stmt_list_close() pops the top
-// block and hands it back to the caller. Today the closed block is freed
-// without being walked - the textual emit_push_capture path still drives
-// codegen. The follow-up commit replaces text capture with the block walk.
-void       stmt_list_open (void);
-stmt_node *stmt_list_close(void);
+// Compound control-flow constructors (cond/body trees are owned).
+stmt_node *stmt_if          (int label, struct expr_node *cond,
+                             stmt_node *then_body, stmt_node *else_body);
+stmt_node *stmt_while       (int label, struct expr_node *cond, stmt_node *body);
+stmt_node *stmt_switch      (int swit_id, int case_max,
+                             struct expr_node *cond, stmt_node *body);
+stmt_node *stmt_case_label  (int swit_id, int case_idx, int val_id, int val_type);
+stmt_node *stmt_default_label(int swit_id, int case_idx);
+stmt_node *stmt_switch_break(int swit_id);
+stmt_node *stmt_break_while (int while_label);
+
+// Wraps a copy of `text` in a STMT_RAW so a parse-time emit can be replayed
+// at walker time. The node owns the heap copy (stmt_free releases it).
+stmt_node *stmt_raw         (const char *text);
+
+// Body-list stack. stmt_list_open() pushes a fresh STMT_BLOCK; every
+// stmt_emit_inline call while the stack is non-empty records the just-built
+// stmt_node on the top block. stmt_list_close() pops the top block and
+// returns ownership to the caller. The walker (driven by the consumer that
+// closes a body) emits the block's children in source order, producing the
+// same assembly the textual emit_push_capture path used to produce.
+void       stmt_list_open       (void);
+stmt_node *stmt_list_close      (void);
+
+// Read the current top STMT_BLOCK without popping it. Helpers like
+// case_test / switch_break append directly to it.
+stmt_node *stmt_list_top        (void);
 
 // Dirac linear-algebra assignments. One constructor per syntactic form; each
 // internally tags the stmt_node with the corresponding dirac_op. `c` is the

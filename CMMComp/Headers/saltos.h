@@ -2,28 +2,28 @@
 // routines for jump implementation -------------------------------------------
 // ----------------------------------------------------------------------------
 
-#include "ast.h"   // expr
+#include "ast.h"   // expr / expr_node / stmt_node
 
 // if/else --------------------------------------------------------------------
-// if_stmt / if_fim return the freshly built AST node; the grammar wraps it
-// in stmt_emit_inline(stmt_ast_wrap(...)) so codegen flows through stmt_emit.
+// if_stmt / if_fim hand the freshly built STMT_IF back to the grammar, which
+// wraps it via stmt_emit_inline so it joins the enclosing body's stmt_list.
 
-void       if_exp (expr e);          // if start
-ast_node *if_stmt();                 // if without else (returns its AST_IF)
-void     else_stmt();                // before the else stmts
-ast_node *if_fim ();                 // end of if/else (returns its AST_IF)
+void       if_exp   (expr_node *cond);   // if (cond) opens its pending STMT_IF
+stmt_node *if_stmt  (void);              // if without else (returns STMT_IF)
+void       else_stmt(void);              // between then and else: switch body lists
+stmt_node *if_fim   (void);              // if/else (returns the completed STMT_IF)
 
 // while ----------------------------------------------------------------------
 
-void       while_expp();             // the while keyword alone - emits a label here
-void       while_expexp(expr e);     // evaluates exp and emits a JIZ to decide whether to enter or not
-ast_node *while_stmt();              // end of while (returns its AST_WHILE)
-ast_node *exec_break();              // break; inside a while (returns its AST_BREAK)
+void       while_expp  (void);              // WHILE keyword: pending STMT_WHILE
+void       while_expexp(expr_node *cond);   // cond + body-list open
+stmt_node *while_stmt  (void);              // returns the STMT_WHILE
+stmt_node *exec_break  (void);              // STMT_BREAK_WHILE for break;
 
 // switch/case ----------------------------------------------------------------
 
-void       case_test (int id, int type); // tests whether this is the correct case
-void     defaut_test ();             // tests whether this is the default
-void     switch_break();             // a switch/case break was found
-void     exec_switch (expr e);       // switch/case start
-ast_node *end_switch ();             // switch/case end (returns its AST_SWITCH)
+void       case_test   (int val_id, int val_type); // builds STMT_CASE_LABEL
+void       defaut_test (void);                     // builds STMT_DEFAULT_LABEL
+void       switch_break(void);                     // builds STMT_SWITCH_BREAK
+void       exec_switch (expr_node *cond);          // opens STMT_SWITCH
+stmt_node *end_switch  (void);                     // returns the STMT_SWITCH

@@ -30,7 +30,7 @@ void    void_ret(      );           // end of a void function
 
 void       par_exp    (expr_node *n); // record first  arg's node on the frame
 void       par_listexp(expr_node *n); // record next-N arg's node on the frame
-void       vcall      (int id);       // void user call: builds node and walks it
+stmt_node *vcall      (int id);       // void user call: packages args into a STMT_VOID_CALL
 expr_node *fcall      (int id);       // value user call: builds and returns node
 
 // argument-stack frames for nested function calls. args_frame_push() is
