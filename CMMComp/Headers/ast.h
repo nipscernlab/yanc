@@ -46,6 +46,37 @@ typedef struct {
 
 expr expr_make(int type, int id);
 
+// ----------------------------------------------------------------------------
+// expression AST (tree form, used by the upcoming codegen-pass refactor) ----
+// ----------------------------------------------------------------------------
+//
+// Coexists with the flat `expr` POD above. Today the parser still emits
+// assembly inline as it reduces `exp`, and the bison stack carries `expr`.
+// The plan is to switch the bison stack to `expr_node *`, defer codegen
+// until parse is done, and run analysis/optimization passes (constant
+// folding, peephole, dead code, etc.) over the tree before emitting.
+//
+// This first step only declares the types - no constructors, no walker,
+// no parser changes. The struct is intentionally flat (no union); per-node
+// memory overhead is a few ints, in exchange for `n->id` / `n->left`
+// staying simple at every call site.
+
+typedef enum {
+    EXPR_LITERAL,   // INUM / FNUM / CNUM materialized into v_name
+    EXPR_VAR,       // reference to a declared variable
+    EXPR_BINOP,     // a <op> b   (op in +, -, *, /, %, &, |, ^, <<, >>, comparisons, &&, ||, ...)
+    EXPR_UNOP       // <op> a     (op in -, !, ~)
+} expr_kind;
+
+typedef struct expr_node {
+    expr_kind kind;
+    int line;                          // source line (1-based)
+    int type;                          // data type (1=int, 2=float, 3=comp, 5=comp const)
+    int id;                            // EXPR_LITERAL / EXPR_VAR: index into v_name
+    int op;                            // EXPR_BINOP / EXPR_UNOP: operator code
+    struct expr_node *left, *right;    // EXPR_BINOP: both; EXPR_UNOP: left only
+} expr_node;
+
 typedef struct ast_node {
     ast_kind kind;
     int      line;            // source line where the node was built (1-based)
