@@ -38,7 +38,7 @@ void declar_var(int id)
 
     if (v_table[id].type != 0)
     {
-        fprintf(stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id], fname));
+        fprintf(stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_table[id].name, fname));
         exit(EXIT_FAILURE);
     }
 
@@ -63,9 +63,9 @@ void declar_var(int id)
     // save the function it belongs to
     char func[256]; if (strcmp(fname,"")==0) strcpy(func, "global"); else strcpy(func, fname);
     // save the data in the log file
-    fprintf(f_log, "%s %s %d\n", func, rem_fname(v_name[id], fname), type_tmp);
+    fprintf(f_log, "%s %s %d\n", func, rem_fname(v_table[id].name, fname), type_tmp);
     // if comp, save the imaginary part too
-    if (type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, rem_fname(v_name[id], fname));
+    if (type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, rem_fname(v_table[id].name, fname));
 }
 
 // Parse-time half of declar_arr_1d: v_table update + log / info messages.
@@ -74,7 +74,7 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
 {
     if (v_table[id_var].type != 0)
     {
-        fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id_var], fname));
+        fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_table[id_var].name, fname));
         exit(EXIT_FAILURE);
     }
 
@@ -82,22 +82,22 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
     v_table[id_var].used       = 0;
     v_table[id_var].fnid = find_var(fname);
     v_table[id_var].isar       = 1;
-    v_table[id_var].size       = atoi(v_name[id_arg]);
+    v_table[id_var].size       = atoi(v_table[id_arg].name);
 
     int type = type_tmp;
 
     char func[256]; if (strcmp(fname,"")==0) strcpy(func, "global"); else strcpy(func, fname);
     if (sim_arr == 1)
     {
-                       fprintf(f_log, "%s %s   %d %s\n", func, rem_fname(v_name[id_var], fname), type_tmp, v_name[id_arg]);
-        if (type == 3) fprintf(f_log, "%s %s_i %d %s\n", func, rem_fname(v_name[id_var], fname), type_tmp, v_name[id_arg]);
+                       fprintf(f_log, "%s %s   %d %s\n", func, rem_fname(v_table[id_var].name, fname), type_tmp, v_table[id_arg].name);
+        if (type == 3) fprintf(f_log, "%s %s_i %d %s\n", func, rem_fname(v_table[id_var].name, fname), type_tmp, v_table[id_arg].name);
     }
 
     // for comp, mark the imaginary half as a 1D array too
     if (type == 3) v_table[get_img_id(id_var)].isar = 1;
 
     if (id_fname != -1)
-        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var], fname), line_num+1);
+        printf(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, rem_fname(v_table[id_var].name, fname), line_num+1);
 }
 
 // Walker-time half: only the `#array` / `#arrays` directives.
@@ -107,26 +107,26 @@ void declar_arr_1d_emit(int id_var, int id_arg, int id_fname)
 
     if (type == 1)
     {
-        if (id_fname == -1) add_sinst(0, "#array %s 1 %s\n",     v_name[id_var], v_name[id_arg]);
-        else                add_sinst(0, "#arrays %s 1 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
+        if (id_fname == -1) add_sinst(0, "#array %s 1 %s\n",     v_table[id_var].name, v_table[id_arg].name);
+        else                add_sinst(0, "#arrays %s 1 %s %s\n", v_table[id_var].name, v_table[id_arg].name, v_table[id_fname].name);
     }
     else if (type == 2)
     {
-        if (id_fname == -1) add_sinst(0, "#array %s 2 %s\n",     v_name[id_var], v_name[id_arg]);
-        else                add_sinst(0, "#arrays %s 2 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
+        if (id_fname == -1) add_sinst(0, "#array %s 2 %s\n",     v_table[id_var].name, v_table[id_arg].name);
+        else                add_sinst(0, "#arrays %s 2 %s %s\n", v_table[id_var].name, v_table[id_arg].name, v_table[id_fname].name);
     }
     else if (type == 3)
     {
         int idi = get_img_id(id_var);
         if (id_fname == -1)
         {
-            add_sinst(0, "#array %s 3 %s\n", v_name[id_var], v_name[id_arg]);
-            add_sinst(0, "#array %s 4 %s\n", v_name[idi],    v_name[id_arg]);
+            add_sinst(0, "#array %s 3 %s\n", v_table[id_var].name, v_table[id_arg].name);
+            add_sinst(0, "#array %s 4 %s\n", v_table[idi].name,    v_table[id_arg].name);
         }
         else
         {
-            add_sinst(0, "#arrays %s 3 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
-            add_sinst(0, "#arrays %s 4 %s %s\n", v_name[idi],    v_name[id_arg], v_name[id_fname]);
+            add_sinst(0, "#arrays %s 3 %s %s\n", v_table[id_var].name, v_table[id_arg].name, v_table[id_fname].name);
+            add_sinst(0, "#arrays %s 4 %s %s\n", v_table[idi].name,    v_table[id_arg].name, v_table[id_fname].name);
         }
     }
 }
@@ -143,7 +143,7 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 {
     if (v_table[id_var].type != 0)
     {
-        fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id_var], fname));
+        fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_table[id_var].name, fname));
         exit(EXIT_FAILURE);
     }
 
@@ -151,51 +151,51 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
     v_table[id_var].used       = 0;
     v_table[id_var].fnid = find_var(fname);
     v_table[id_var].isar       = 2;
-    v_table[id_var].size       = atoi(v_name[id_x]);
-    v_table[id_var].siz2 = atoi(v_name[id_y]);
+    v_table[id_var].size       = atoi(v_table[id_x].name);
+    v_table[id_var].siz2 = atoi(v_table[id_y].name);
 
     int type = type_tmp;
 
     if (type == 3) v_table[get_img_id(id_var)].isar = 2;  // comp imag also 2D
 
     if (id_fname != -1)
-        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var], fname), line_num+1);
+        printf(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, rem_fname(v_table[id_var].name, fname), line_num+1);
 }
 
 // Walker-time half: `#array` directive + the LOD/SET arr_size helper instrs.
 void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
 {
     int type = v_table[id_var].type;
-    int size = atoi(v_name[id_x]) * atoi(v_name[id_y]);
+    int size = atoi(v_table[id_x].name) * atoi(v_table[id_y].name);
 
     if (type == 1)
     {
-        if (id_fname == -1) add_sinst(0, "#array %s 1 %d\n",     v_name[id_var], size);
-        else                add_sinst(0, "#arrays %s 1 %d %s\n", v_name[id_var], size, v_name[id_fname]);
+        if (id_fname == -1) add_sinst(0, "#array %s 1 %d\n",     v_table[id_var].name, size);
+        else                add_sinst(0, "#arrays %s 1 %d %s\n", v_table[id_var].name, size, v_table[id_fname].name);
     }
     else if (type == 2)
     {
-        if (id_fname == -1) add_sinst(0, "#array %s 2 %d\n",     v_name[id_var], size);
-        else                add_sinst(0, "#arrays %s 2 %d %s\n", v_name[id_var], size, v_name[id_fname]);
+        if (id_fname == -1) add_sinst(0, "#array %s 2 %d\n",     v_table[id_var].name, size);
+        else                add_sinst(0, "#arrays %s 2 %d %s\n", v_table[id_var].name, size, v_table[id_fname].name);
     }
     else if (type == 3)
     {
         int idi = get_img_id(id_var);
         if (id_fname == -1)
         {
-            add_sinst(0, "#array %s 3 %d\n", v_name[id_var], size);
-            add_sinst(0, "#array %s 4 %d\n", v_name[idi],    size);
+            add_sinst(0, "#array %s 3 %d\n", v_table[id_var].name, size);
+            add_sinst(0, "#array %s 4 %d\n", v_table[idi].name,    size);
         }
         else
         {
-            add_sinst(0, "#arrays %s 3 %d %s\n", v_name[id_var], size, v_name[id_fname]);
-            add_sinst(0, "#arrays %s 4 %d %s\n", v_name[idi],    size, v_name[id_fname]);
+            add_sinst(0, "#arrays %s 3 %d %s\n", v_table[id_var].name, size, v_table[id_fname].name);
+            add_sinst(0, "#arrays %s 4 %d %s\n", v_table[idi].name,    size, v_table[id_fname].name);
         }
     }
 
     // helper variable: x-dimension size, used by 2D index flattening
-    add_instr("LOD %s\n",          v_name[id_y  ]);
-    add_instr("SET %s_arr_size\n", v_name[id_var]);
+    add_instr("LOD %s\n",          v_table[id_y  ].name);
+    add_instr("SET %s_arr_size\n", v_table[id_var].name);
 }
 
 // Public entry.

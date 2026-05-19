@@ -147,7 +147,7 @@ void par_check(expr e)
 
     if ((t_fun == 1) && (t_cal == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
     }
 
     // original is int and call is int acc ------------------------------------
@@ -161,9 +161,9 @@ void par_check(expr e)
 
     if ((t_fun == 1) && (t_cal == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("F2I\n");
     }
 
@@ -171,7 +171,7 @@ void par_check(expr e)
 
     if ((t_fun == 1) && (t_cal == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("F2I\n");
     }
@@ -180,11 +180,11 @@ void par_check(expr e)
 
     if ((t_fun == 1) && (t_cal == 5))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[etr.id]);
+        add_instr("%s %s\n", ld, v_table[etr.id].name);
         add_instr("F2I\n");
     }
 
@@ -192,9 +192,9 @@ void par_check(expr e)
 
     if ((t_fun == 1) && (t_cal == 3) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("F2I\n");
     }
 
@@ -202,7 +202,7 @@ void par_check(expr e)
 
     if ((t_fun == 1) && (t_cal == 3) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -212,16 +212,16 @@ void par_check(expr e)
 
     if ((t_fun == 2) && (t_cal == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
-        add_instr("%s %s\n", i2f, v_name[e.id]);
+        add_instr("%s %s\n", i2f, v_table[e.id].name);
     }
 
     // original is float and call is int acc ----------------------------------
 
     if ((t_fun == 2) && (t_cal == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("I2F\n");
     }
@@ -230,7 +230,7 @@ void par_check(expr e)
 
     if ((t_fun == 2) && (t_cal == 2) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
     }
 
     // original is float and call is float acc --------------------------------
@@ -244,27 +244,27 @@ void par_check(expr e)
 
     if ((t_fun == 2) && (t_cal == 5))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[etr.id]);
+        add_instr("%s %s\n", ld, v_table[etr.id].name);
     }
 
     // original is float and call is comp var ---------------------------------
 
     if ((t_fun == 2) && (t_cal == 3) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
     }
 
     // original is float and call is comp acc ---------------------------------
 
     if ((t_fun == 2) && (t_cal == 3) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("POP\n");
     }
@@ -273,9 +273,9 @@ void par_check(expr e)
 
     if ((t_fun == 3) && (t_cal == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
-        add_instr("%s %s\n", i2f, v_name[e.id]);
+        add_instr("%s %s\n", i2f, v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
     }
 
@@ -283,7 +283,7 @@ void par_check(expr e)
 
     if ((t_fun == 3) && (t_cal == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
@@ -293,9 +293,9 @@ void par_check(expr e)
 
     if ((t_fun == 3) && (t_cal == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
     }
 
@@ -303,7 +303,7 @@ void par_check(expr e)
 
     if ((t_fun == 3) && (t_cal == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_name[fun_id]);
+        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("P_LOD 0.0\n");
     }
@@ -314,8 +314,8 @@ void par_check(expr e)
     {
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[etr.id]);
-        add_instr("P_LOD %s\n",  v_name[eti.id]);
+        add_instr("%s %s\n", ld, v_table[etr.id].name);
+        add_instr("P_LOD %s\n",  v_table[eti.id].name);
     }
 
     // original is comp and call is comp var ----------------------------------
@@ -324,8 +324,8 @@ void par_check(expr e)
     {
         get_cmp_ets(e,&etr,&eti); // gets the extended IDs of the right side in memory
 
-        add_instr("%s %s\n" , ld, v_name[etr.id]);
-        add_instr("P_LOD %s\n",     v_name[eti.id]);
+        add_instr("%s %s\n" , ld, v_table[etr.id].name);
+        add_instr("P_LOD %s\n",     v_table[eti.id].name);
     }
 
     // original is comp and call is comp acc ----------------------------------
@@ -346,7 +346,7 @@ void declar_fun(int id1, int id2) //id1 -> type, id2 -> name index
     // enter this if the first declared function is not main
     // in that case a JMP to main is needed first
     // because main must be the first function after reset
-    if ((mainok == 0) && (strcmp(v_name[id2], "main") != 0))
+    if ((mainok == 0) && (strcmp(v_table[id2].name, "main") != 0))
     {
         add_sinst(-2, "JMP main\n");
 
@@ -355,14 +355,14 @@ void declar_fun(int id1, int id2) //id1 -> type, id2 -> name index
     // enter this if the first declared function is main
     // no JMP needed here
     // just record that the question is resolved in mainok
-    else if ((mainok == 0) && (strcmp(v_name[id2], "main") == 0))
+    else if ((mainok == 0) && (strcmp(v_table[id2].name, "main") == 0))
     {
         mainok = 1; // defined how the main function will be used
     }
 
-    add_sinst(0, "@%s ", v_name[id2]);
+    add_sinst(0, "@%s ", v_table[id2].name);
 
-    strcpy(fname, v_name[id2]); // set the fname state to the function being analyzed
+    strcpy(fname, v_table[id2].name); // set the fname state to the function being analyzed
     v_table[id2].type = id1+6       ; // v_type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
     fun_parse   = id2         ; // set the fun_parse state to the function's name id
     ret_ok      = 0           ; // set ret_ok to zero (function parsing starts)
@@ -376,12 +376,12 @@ void declar_fst(int id)
     {
         // first take the img from the stack
         int idi = get_img_id(id);
-        add_instr("SET_P %s\n", v_name[idi]);
+        add_instr("SET_P %s\n", v_table[idi].name);
     }
 
     // the first function parameter uses SET (since it is the last to be called)
     // the remaining ones (if any) use SET_P in another function
-    add_instr("SET %s\n", v_name[id]);
+    add_instr("SET %s\n", v_table[id].name);
 }
 
 // picks up the second parameter and onwards
@@ -402,9 +402,9 @@ void set_par(int id)
     if (v_table[id].type > 2)
     {
         int idi = get_img_id(id);
-        add_instr("SET_P %s\n", v_name[idi]);
+        add_instr("SET_P %s\n", v_table[idi].name);
     }
-        add_instr("SET_P %s\n", v_name[id] );
+        add_instr("SET_P %s\n", v_table[id].name );
 }
 
 // when the return keyword is found
@@ -428,7 +428,7 @@ void declar_ret(expr e, int ret)
     // int with int var
     if ((left_type == 7) && (e.type == 1) && (e.id!=0))
     {
-        add_instr("LOD %s\n", v_name[e.id]);
+        add_instr("LOD %s\n", v_table[e.id].name);
     }
 
     // int with int acc
@@ -440,15 +440,15 @@ void declar_ret(expr e, int ret)
     // int with float var
     if ((left_type == 7) && (e.type == 2) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_name[fun_parse]);
+        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
 
-        add_instr("F2I_M %s\n", v_name[e.id]);
+        add_instr("F2I_M %s\n", v_table[e.id].name);
     }
 
     // int with float acc
     if ((left_type == 7) && (e.type == 2) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_name[fun_parse]);
+        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
         add_instr("F2I\n");
     }
 
@@ -459,7 +459,7 @@ void declar_ret(expr e, int ret)
 
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("F2I_M %s\n", v_name[etr.id]);
+        add_instr("F2I_M %s\n", v_table[etr.id].name);
     }
 
     // int with comp var
@@ -469,7 +469,7 @@ void declar_ret(expr e, int ret)
 
         get_cmp_ets(e,&etr,&eti);
 
-        add_instr("F2I_M %s\n", v_name[etr.id]);
+        add_instr("F2I_M %s\n", v_table[etr.id].name);
     }
 
     // int with comp acc
@@ -486,7 +486,7 @@ void declar_ret(expr e, int ret)
     {
         fprintf(stdout, MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
-        add_instr("I2F_M %s\n", v_name[e.id]);
+        add_instr("I2F_M %s\n", v_table[e.id].name);
     }
 
     // float with int acc
@@ -500,7 +500,7 @@ void declar_ret(expr e, int ret)
     // float with float var
     if ((left_type == 8) && (e.type == 2) && (e.id!=0))
     {
-        add_instr("LOD %s\n", v_name[e.id]);
+        add_instr("LOD %s\n", v_table[e.id].name);
     }
 
     // float with float acc
@@ -516,7 +516,7 @@ void declar_ret(expr e, int ret)
 
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("LOD %s\n", v_name[etr.id]);
+        add_instr("LOD %s\n", v_table[etr.id].name);
     }
 
     // float with comp var
@@ -526,7 +526,7 @@ void declar_ret(expr e, int ret)
 
         get_cmp_ets(e,&etr,&eti);
 
-        add_instr("LOD %s\n", v_name[etr.id]);
+        add_instr("LOD %s\n", v_table[etr.id].name);
     }
 
     // float with comp acc
@@ -542,7 +542,7 @@ void declar_ret(expr e, int ret)
     {
         fprintf(stdout, MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
-        add_instr("I2F_M %s\n", v_name[e.id]);
+        add_instr("I2F_M %s\n", v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
     }
 
@@ -560,7 +560,7 @@ void declar_ret(expr e, int ret)
     {
         fprintf(stdout, MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
-        add_instr("LOD %s\n", v_name[e.id]);
+        add_instr("LOD %s\n", v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
     }
 
@@ -577,8 +577,8 @@ void declar_ret(expr e, int ret)
     {
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("LOD %s\n"  , v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("LOD %s\n"  , v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp with comp var
@@ -586,8 +586,8 @@ void declar_ret(expr e, int ret)
     {
         get_cmp_ets(e,&etr,&eti);
 
-        add_instr("LOD %s\n"  , v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("LOD %s\n"  , v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp with comp acc
@@ -635,10 +635,10 @@ void func_ret(int id) // id -> id of the current function
 
     // check whether the function had the return x; instruction
     if ((v_table[id].type != 6) && (ret_ok == 0))
-        {fprintf (stderr, MSG_ERR_FUNC_NO_RETURN, v_name[id]); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_FUNC_NO_RETURN, v_table[id].name); exit(EXIT_FAILURE);}
 
     // if it is the main function, emit a JMP fim
-    if (strcmp(v_name[id], "main") == 0)
+    if (strcmp(v_table[id].name, "main") == 0)
     {
         add_sinst(-3, "@fim JMP fim\n");
 
@@ -691,7 +691,7 @@ stmt_node *vcall(int id)
 {
     if  (v_table[id].type < 6)
     {
-        fprintf(stderr, MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_name[id], fname));
+        fprintf(stderr, MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name, fname));
         exit(EXIT_FAILURE);
     }
 
@@ -699,7 +699,7 @@ stmt_node *vcall(int id)
 
     if (n != get_npar(v_table[id].fpar))
     {
-        fprintf(stderr, MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_name[id], fname));
+        fprintf(stderr, MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name, fname));
         exit(EXIT_FAILURE);
     }
 
@@ -716,12 +716,12 @@ expr_node *fcall(int id)
 {
     if (v_table[id].type == 6)
     {
-        fprintf (stderr, MSG_ERR_VOID_FUNC_USE, line_num+1, v_name[id]);
+        fprintf (stderr, MSG_ERR_VOID_FUNC_USE, line_num+1, v_table[id].name);
         exit(EXIT_FAILURE);
     }
     else if (v_table[id].type < 6)
     {
-        fprintf (stderr, MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_name[id], fname));
+        fprintf (stderr, MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name, fname));
         exit(EXIT_FAILURE);
     }
 
@@ -729,7 +729,7 @@ expr_node *fcall(int id)
 
     if (n != get_npar(v_table[id].fpar))
     {
-        fprintf(stderr, MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_name[id]);
+        fprintf(stderr, MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_table[id].name);
         exit(EXIT_FAILURE);
     }
 

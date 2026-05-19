@@ -54,7 +54,7 @@ int find_var(char *val)
 
 	for (i = 0; i < v_count; i++)
 	{
-		if (strcmp(val, v_name[i]) == 0)
+		if (strcmp(val, v_table[i].name) == 0)
 		{
 			ind = i;
 			break;
@@ -67,7 +67,8 @@ int find_var(char *val)
 void add_var(char *var)
 {
     var_grow(v_count + 1);
-    strcpy(v_name[v_count], var);
+    strcpy(v_table[v_count].name, var);
+    strcpy(v_name[v_count],       var); // legacy SoA dual-write, retired in B6
     v_count++;
 }
 
@@ -88,16 +89,16 @@ void check_var()
             // empty string and no "" entry exists in v_name yet - so treat any
             // out-of-range fnid as the global case.
             int fnid = v_table[i].fnid;
-            int is_global = (fnid < 0) || (strcmp(v_name[fnid], "") == 0);
+            int is_global = (fnid < 0) || (strcmp(v_table[fnid].name, "") == 0);
             if (is_global)
-                fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_name[i]);
+                fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name);
             else
-                fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, rem_fname(v_name[i], v_name[fnid]), v_name[fnid]);
+                fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, rem_fname(v_table[i].name, v_table[fnid].name), v_table[fnid].name);
         }
 
         // check whether a function was declared but not used
         if (((v_table[i].type == 5) || (v_table[i].type == 6) || (v_table[i].type == 7)) && v_table[i].used == 0)
-            fprintf (stdout, MSG_WARN_UNUSED_FUNCTION, v_name[i]);
+            fprintf (stdout, MSG_WARN_UNUSED_FUNCTION, v_table[i].name);
     }
 }
 

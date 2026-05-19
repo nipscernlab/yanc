@@ -47,7 +47,7 @@ char *itob(int x, int w)
 int get_img_id(int id)
 {
        char name[1024];
-    sprintf(name, "%s_i", v_name[id]);
+    sprintf(name, "%s_i", v_table[id].name);
 
        if (find_var(name) == -1) add_var(name);
     return find_var(name);
@@ -60,7 +60,7 @@ void get_cmp_cst(expr e, expr *er, expr *ei)
     char  txt[64];
     float real, img;
 
-    sscanf(v_name[e.id], "%f %f", &real, &img);
+    sscanf(v_table[e.id].name, "%f %f", &real, &img);
 
     sprintf(txt, "%f", real);
     *er = expr_make(2, exec_fnum(txt));

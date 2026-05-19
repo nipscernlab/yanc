@@ -8,7 +8,7 @@
 
 #include "..\Headers\ast.h"
 #include "..\Headers\global.h"
-#include "..\Headers\variaveis.h"   // v_name[] for the dump
+#include "..\Headers\variaveis.h"   // v_table[].name for the dump
 #include "..\Headers\messages.h"
 
 // needed by the expression-tree walker (ast_emit_expr) below
@@ -187,23 +187,23 @@ static void expr_dump_at(expr_node *n, int depth)
     switch (n->kind) {
         case EXPR_LITERAL:
         case EXPR_VAR:
-            fprintf(stderr, " id=%d (%s)", n->id, n->id ? v_name[n->id] : "<acc>");
+            fprintf(stderr, " id=%d (%s)", n->id, n->id ? v_table[n->id].name : "<acc>");
             break;
         case EXPR_BINOP:
         case EXPR_UNOP:
             fprintf(stderr, " op=%d", n->op);
             break;
         case EXPR_ARRAY_INDEX:
-            fprintf(stderr, " id=%d (%s) reversed=%d", n->id, v_name[n->id], n->op);
+            fprintf(stderr, " id=%d (%s) reversed=%d", n->id, v_table[n->id].name, n->op);
             break;
         case EXPR_PPLUS:
-            fprintf(stderr, " id=%d (%s)", n->id, v_name[n->id]);
+            fprintf(stderr, " id=%d (%s)", n->id, v_table[n->id].name);
             break;
         case EXPR_STDLIB_CALL:
             fprintf(stderr, " op=%d port=%d", n->op, n->id);
             break;
         case EXPR_FUNC_CALL:
-            fprintf(stderr, " id=%d (%s) n_args=%d", n->id, v_name[n->id], n->n_args);
+            fprintf(stderr, " id=%d (%s) n_args=%d", n->id, v_table[n->id].name, n->n_args);
             break;
         case EXPR_INNER:
             /* left/right (vector refs) get printed by the recursive walk */
@@ -230,7 +230,7 @@ void expr_dump(expr_node *n)
 // to the previous inline-emit compiler.
 //
 // Result POD carries the freshly-emitted value's location: id == 0 means
-// "in the accumulator", id > 0 means "in v_name[id]". The public wrapper
+// "in the accumulator", id > 0 means "in v_table[id].name". The public wrapper
 // stamps the returned POD with the original node pointer so callers can
 // keep chasing the tree through the result.
 
@@ -356,7 +356,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                 acc_ok = 1;
             }
 
-            add_instr("CAL %s\n", v_name[n->id]);
+            add_instr("CAL %s\n", v_table[n->id].name);
             v_table[n->id].used = 1;
             acc_ok = (n->type == 0) ? 0 : 1;
 
@@ -735,12 +735,12 @@ static void emit_cond_int_load(expr e, int is_switch)
     const char *msg_float = is_switch ? MSG_WARN_CASE_FLOAT : MSG_WARN_COND_FLOAT;
     const char *msg_comp  = is_switch ? MSG_WARN_CASE_COMP  : MSG_WARN_COND_COMP;
 
-    if ((e.type == 1) && (e.id != 0)) add_instr("LOD %s\n", v_name[e.id]);
+    if ((e.type == 1) && (e.id != 0)) add_instr("LOD %s\n", v_table[e.id].name);
     // int acc: nothing
 
     if ((e.type == 2) && (e.id != 0)) {
         fprintf(stdout, msg_float, line_num+1);
-        add_instr("F2I_M %s\n", v_name[e.id]);
+        add_instr("F2I_M %s\n", v_table[e.id].name);
     }
     if ((e.type == 2) && (e.id == 0)) {
         fprintf(stdout, msg_float, line_num+1);
@@ -750,11 +750,11 @@ static void emit_cond_int_load(expr e, int is_switch)
         fprintf(stdout, msg_comp, line_num+1);
         expr etr, eti;
         get_cmp_cst(e, &etr, &eti);
-        add_instr("F2I_M %s\n", v_name[etr.id]);
+        add_instr("F2I_M %s\n", v_table[etr.id].name);
     }
     if ((e.type == 3) && (e.id != 0)) {
         fprintf(stdout, msg_comp, line_num+1);
-        add_instr("F2I_M %s\n", v_name[e.id]);
+        add_instr("F2I_M %s\n", v_table[e.id].name);
     }
     if ((e.type == 3) && (e.id == 0)) {
         fprintf(stdout, msg_comp, line_num+1);

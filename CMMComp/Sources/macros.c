@@ -41,7 +41,7 @@ void mac_use(int ids, int global, int id_num)
     if (mac_using == 1)
         {fprintf(stderr, MSG_ERR_NESTED_MACRO, line_num+1); exit(EXIT_FAILURE);}
 
-    printf(MSG_INFO_USER_MACRO, v_name[ids], line_num+1);
+    printf(MSG_INFO_USER_MACRO, v_table[ids].name, line_num+1);
 
     // global: check whether main still needs to be called --------------------
     if ((mainok == 0) && (global == 1))
@@ -55,7 +55,7 @@ void mac_use(int ids, int global, int id_num)
     // switch to simpler code like the one in array.c -------------------------
 
     char f_name[64];
-    strcpy(f_name, v_name[ids]);
+    strcpy(f_name, v_table[ids].name);
     char file_name[512];
     int  tamanho = strlen(f_name); // string length
     int idxToDel = tamanho-1;      // index to delete, in this case the trailing quote
@@ -78,7 +78,7 @@ void mac_use(int ids, int global, int id_num)
 
     // fill the cmm-code table with -1 (INTERNAL) -----------------------------
 
-    int n = atoi(v_name[id_num]);
+    int n = atoi(v_table[id_num].name);
     for (int i = 0; i < n; i++)
     {
         num_ins++;

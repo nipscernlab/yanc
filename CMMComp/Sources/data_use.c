@@ -40,11 +40,11 @@ expr id2exp(int id)
 {
     // test whether the variable has already been declared
     if (v_table[id].type == 0)
-        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
 
     // if it is an array, the index is missing
     if (v_table[id].isar > 0)
-        {fprintf (stderr, MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
+        {fprintf (stderr, MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
 
     v_table[id].used = 1;
 
