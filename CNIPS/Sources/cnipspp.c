@@ -223,6 +223,116 @@ static char *expand_str(const char *src, int depth)
     return out.p;
 }
 
+// ---- #if constant-expression evaluator -------------------------------------
+// Evaluates a preprocessor constant expression to a long. `defined X` /
+// `defined(X)` are resolved first, then macros are expanded, then a standard
+// C integer-expression grammar is parsed. Identifiers left over after expansion
+// evaluate to 0 (per the C standard).
+
+static char *resolve_defined(const char *line)
+{
+    sbuf out; sb_init(&out);
+    const char *p = line;
+    while (*p) {
+        if (is_ident_start(*p)) {
+            const char *s = p; while (is_ident_cont(*p)) p++;
+            if ((p - s) == 7 && strncmp(s, "defined", 7) == 0) {
+                while (*p == ' ' || *p == '\t') p++;
+                int paren = 0;
+                if (*p == '(') { paren = 1; p++; while (*p == ' ' || *p == '\t') p++; }
+                char nm[128]; int j = 0;
+                while (is_ident_cont(*p) && j < (int)sizeof(nm)-1) nm[j++] = *p++;
+                nm[j] = 0;
+                if (paren) { while (*p == ' ' || *p == '\t') p++; if (*p == ')') p++; }
+                sb_putc(&out, macro_find(nm) ? '1' : '0');
+            } else {
+                sb_putn(&out, s, p - s);
+            }
+            continue;
+        }
+        sb_putc(&out, *p++);
+    }
+    return out.p;
+}
+
+static long pp_expr(const char **pp);
+static void pp_ws(const char **pp) { while (**pp == ' ' || **pp == '\t') (*pp)++; }
+
+static long pp_primary(const char **pp)
+{
+    pp_ws(pp);
+    char c = **pp;
+    if (c == '(') { (*pp)++; long v = pp_expr(pp); pp_ws(pp); if (**pp == ')') (*pp)++; return v; }
+    if (c == '\'') {                      // char constant
+        (*pp)++;
+        long v;
+        if (**pp == '\\') { (*pp)++; char e = **pp; (*pp)++;
+            v = (e=='n')?'\n':(e=='t')?'\t':(e=='r')?'\r':(e=='0')?0:e; }
+        else { v = (unsigned char)**pp; (*pp)++; }
+        if (**pp == '\'') (*pp)++;
+        return v;
+    }
+    if (isdigit((unsigned char)c)) {
+        char *end; long v;
+        if (c == '0' && ((*pp)[1] == 'x' || (*pp)[1] == 'X')) v = strtol(*pp, &end, 16);
+        else                                                 v = strtol(*pp, &end, 10);
+        *pp = end;
+        while (**pp=='u'||**pp=='U'||**pp=='l'||**pp=='L') (*pp)++;   // ignore suffixes
+        return v;
+    }
+    if (is_ident_start(c)) { while (is_ident_cont(**pp)) (*pp)++; return 0; }  // undefined -> 0
+    return 0;
+}
+
+static long pp_unary(const char **pp)
+{
+    pp_ws(pp);
+    if (**pp == '!') { (*pp)++; return !pp_unary(pp); }
+    if (**pp == '~') { (*pp)++; return ~pp_unary(pp); }
+    if (**pp == '-') { (*pp)++; return -pp_unary(pp); }
+    if (**pp == '+') { (*pp)++; return  pp_unary(pp); }
+    return pp_primary(pp);
+}
+static long pp_mul(const char **pp){ long v=pp_unary(pp); for(;;){ pp_ws(pp); char c=**pp;
+    if(c=='*'){(*pp)++; v*=pp_unary(pp);} else if(c=='/'){(*pp)++; long d=pp_unary(pp); v = d?v/d:0;}
+    else if(c=='%'){(*pp)++; long d=pp_unary(pp); v = d?v%d:0;} else break;} return v; }
+static long pp_add(const char **pp){ long v=pp_mul(pp); for(;;){ pp_ws(pp); char c=**pp;
+    if(c=='+'){(*pp)++; v+=pp_mul(pp);} else if(c=='-'){(*pp)++; v-=pp_mul(pp);} else break;} return v; }
+static long pp_shift(const char **pp){ long v=pp_add(pp); for(;;){ pp_ws(pp);
+    if(**pp=='<'&&(*pp)[1]=='<'){(*pp)+=2; v<<=pp_add(pp);} else if(**pp=='>'&&(*pp)[1]=='>'){(*pp)+=2; v>>=pp_add(pp);} else break;} return v; }
+static long pp_rel(const char **pp){ long v=pp_shift(pp); for(;;){ pp_ws(pp);
+    if(**pp=='<'&&(*pp)[1]=='='){(*pp)+=2; v=(v<=pp_shift(pp));}
+    else if(**pp=='>'&&(*pp)[1]=='='){(*pp)+=2; v=(v>=pp_shift(pp));}
+    else if(**pp=='<'){(*pp)++; v=(v<pp_shift(pp));}
+    else if(**pp=='>'){(*pp)++; v=(v>pp_shift(pp));} else break;} return v; }
+static long pp_eq(const char **pp){ long v=pp_rel(pp); for(;;){ pp_ws(pp);
+    if(**pp=='='&&(*pp)[1]=='='){(*pp)+=2; v=(v==pp_rel(pp));}
+    else if(**pp=='!'&&(*pp)[1]=='='){(*pp)+=2; v=(v!=pp_rel(pp));} else break;} return v; }
+static long pp_band(const char **pp){ long v=pp_eq(pp); for(;;){ pp_ws(pp);
+    if(**pp=='&'&&(*pp)[1]!='&'){(*pp)++; v&=pp_eq(pp);} else break;} return v; }
+static long pp_bxor(const char **pp){ long v=pp_band(pp); for(;;){ pp_ws(pp);
+    if(**pp=='^'){(*pp)++; v^=pp_band(pp);} else break;} return v; }
+static long pp_bor(const char **pp){ long v=pp_bxor(pp); for(;;){ pp_ws(pp);
+    if(**pp=='|'&&(*pp)[1]!='|'){(*pp)++; v|=pp_bxor(pp);} else break;} return v; }
+static long pp_land(const char **pp){ long v=pp_bor(pp); for(;;){ pp_ws(pp);
+    if(**pp=='&'&&(*pp)[1]=='&'){(*pp)+=2; long r=pp_bor(pp); v=(v&&r);} else break;} return v; }
+static long pp_lor(const char **pp){ long v=pp_land(pp); for(;;){ pp_ws(pp);
+    if(**pp=='|'&&(*pp)[1]=='|'){(*pp)+=2; long r=pp_land(pp); v=(v||r);} else break;} return v; }
+static long pp_expr(const char **pp){ long c=pp_lor(pp); pp_ws(pp);
+    if(**pp=='?'){(*pp)++; long a=pp_expr(pp); pp_ws(pp); if(**pp==':')(*pp)++; long b=pp_expr(pp); return c?a:b;}
+    return c; }
+
+// evaluate a full `#if` / `#elif` expression line
+static int eval_if(const char *text)
+{
+    char *d = resolve_defined(text);
+    char *x = expand_str(d, 0);
+    const char *cur = x;
+    long v = pp_expr(&cur);
+    free(d); free(x);
+    return v != 0;
+}
+
 static FILE *out_f;
 static int   depth = 0;
 
@@ -367,6 +477,31 @@ static void process_file(const char *path)
                 cond_stk[cond_n] = active;
                 cond_seen_true[cond_n] = active;
                 cond_n++;
+                free(orig); continue;
+            }
+
+            // ---- #if <expr> ----
+            if (strncmp(p, "if", 2) == 0 && (p[2] == ' ' || p[2] == '\t' || p[2] == '(')) {
+                p += 2;
+                int active = eval_if(p);
+                if (cond_n >= MAX_COND) { fprintf(stderr, "cnipspp: #if nesting too deep\n"); exit(1); }
+                cond_stk[cond_n] = active;
+                cond_seen_true[cond_n] = active;
+                cond_n++;
+                free(orig); continue;
+            }
+
+            // ---- #elif <expr> ----
+            if (strncmp(p, "elif", 4) == 0 && (p[4] == ' ' || p[4] == '\t' || p[4] == '(')) {
+                if (cond_n == 0) { fprintf(stderr, "cnipspp: stray #elif\n"); exit(1); }
+                p += 4;
+                if (cond_seen_true[cond_n-1]) {
+                    cond_stk[cond_n-1] = 0;          // an earlier branch already won
+                } else {
+                    int active = eval_if(p);
+                    cond_stk[cond_n-1] = active;
+                    if (active) cond_seen_true[cond_n-1] = 1;
+                }
                 free(orig); continue;
             }
 
