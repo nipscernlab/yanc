@@ -668,25 +668,50 @@ static void gen_expr(expr *e)
 
 // ---- statement codegen -----------------------------------------------------
 
+// emit element-by-element stores for an aggregate initialiser {a,b,c}.
+// `base` is the array/struct base name as it appears in the asm (declared via
+// #array). Handles a 1-D scalar array or a struct of scalar fields; each store
+// is `LOD <offset>; PSH; <value>; STI base` (mem[base+offset] = value).
+static void emit_aggregate_init(const char *base, type *t, expr **list, int n)
+{
+    if (t->kind == TY_ARRAY) {
+        int elem = type_size_words(t->base);
+        for (int k = 0; k < n; k++) {
+            emit("LOD %d", k * elem);
+            emit("PSH");
+            infer_type(list[k]);
+            gen_expr(list[k]);
+            emit("STI %s", base);
+        }
+    } else if (t->kind == TY_STRUCT) {
+        strct_field *f = t->fields;
+        for (int k = 0; k < n && f; k++, f = f->next) {
+            emit("LOD %d", f->offset);
+            emit("PSH");
+            infer_type(list[k]);
+            gen_expr(list[k]);
+            emit("STI %s", base);
+        }
+    } else {
+        msg_error(list[0]->line, "aggregate initializer requires an array or struct");
+    }
+}
+
 static void declare_local(decl *d)
 {
     char *aname = mangle_local(d->name);
-    sym *s = st_add(SK_LOCAL_VAR, d->name, aname, d->dtype);
-    (void)s;
+    st_add(SK_LOCAL_VAR, d->name, aname, d->dtype);
     int arr_words = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
     log_var(cur_func_name ? cur_func_name : "global", d->name,
             innermost_code(d->dtype), arr_words);
     if (d->dtype && d->dtype->kind == TY_ARRAY) {
-        char *real = mangle_local(d->name);
         // multi-dim arrays flatten to total word count; element type is the innermost scalar
-        if (d->init_file) emit("#arrays %s %d %d \"%s\"", real, innermost_code(d->dtype), arr_words, d->init_file);
-        else              emit("#array %s %d %d",         real, innermost_code(d->dtype), arr_words);
-        free(real);
+        if (d->init_file) emit("#arrays %s %d %d \"%s\"", aname, innermost_code(d->dtype), arr_words, d->init_file);
+        else              emit("#array %s %d %d",         aname, innermost_code(d->dtype), arr_words);
+        if (d->init_list) emit_aggregate_init(aname, d->dtype, d->init_list, d->n_init);
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
-        // reserve N words for the struct using #array (treat it as N ints)
-        char *real = mangle_local(d->name);
-        emit("#array %s 1 %d", real, type_size_words(d->dtype));
-        free(real);
+        emit("#array %s 1 %d", aname, type_size_words(d->dtype));
+        if (d->init_list) emit_aggregate_init(aname, d->dtype, d->init_list, d->n_init);
     } else if (d->init) {
         infer_type(d->init);
         gen_expr(d->init);
@@ -920,7 +945,10 @@ static void emit_global_scalar_inits(unit *u)
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
         if (!d->dtype) continue;
-        if (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT) continue;
+        if (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT) {
+            if (d->init_list) emit_aggregate_init(d->name, d->dtype, d->init_list, d->n_init);
+            continue;
+        }
         if (!d->init) continue;
         infer_type(d->init);
         gen_expr(d->init);

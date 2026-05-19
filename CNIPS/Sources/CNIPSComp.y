@@ -131,7 +131,7 @@ static decl *make_decl(type *base, int stars, char *name, const int *dims, int n
 %type <exp>   bit_or_expr bit_xor_expr bit_and_expr equality_expr relational_expr
 %type <exp>   shift_expr additive_expr multiplicative_expr cast_expr unary_expr
 %type <exp>   postfix_expr primary_expr opt_expr
-%type <exp>   initializer
+%type <elist> init_item_list
 %type <st>    stmt compound_stmt selection_stmt iteration_stmt jump_stmt
 %type <st>    expr_stmt labeled_stmt block_item local_decl
 %type <slist> block_item_list
@@ -339,9 +339,19 @@ init_declarator:
               $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
           }
       }
-    | pointers IDENT array_suffix '=' initializer {
+    | pointers IDENT array_suffix '=' assignment_expr {
           if (ts_typedef) msg_error(yylineno, "typedef cannot have an initializer");
           $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, $5);
+      }
+    | pointers IDENT array_suffix '=' '{' '}' {
+          /* empty brace init — leave memory at its .mif default (zero) */
+          $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
+      }
+    | pointers IDENT array_suffix '=' '{' init_item_list '}' {
+          /* aggregate initialiser: array or struct, one value per slot/field */
+          decl *d = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
+          d->init_list = $6.arr; d->n_init = $6.n;
+          $$ = d;
       }
     | pointers IDENT array_suffix STRING_LIT {
           /* `int arr[N] "file.txt";` — initialise the array from a data file at synth time */
@@ -363,15 +373,14 @@ init_declarator:
       }
     ;
 
-initializer:
-      assignment_expr                        { $$ = $1; }
-    | '{' '}'                                { $$ = NULL; /* zero-init array (not fully supported yet) */ }
-    | '{' initializer_list '}'               { $$ = NULL; /* TODO: aggregate init */ }
-    ;
-
-initializer_list:
-      initializer
-    | initializer_list ',' initializer
+/* comma-separated scalar initialisers inside { } (no nested braces in v1) */
+init_item_list:
+      assignment_expr                          { $$.arr = malloc(sizeof(expr*)); $$.arr[0] = $1; $$.n = 1; }
+    | init_item_list ',' assignment_expr       {
+          $$.arr = realloc($1.arr, sizeof(expr*) * ($1.n + 1));
+          $$.arr[$1.n] = $3;
+          $$.n = $1.n + 1;
+      }
     ;
 
 /* ----- function definition ------------------------------------------------ */
