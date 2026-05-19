@@ -15,7 +15,6 @@ TODO:
 // local includes
 #include "..\Headers\t2t.h"
 #include "..\Headers\ast.h"
-#include "..\Headers\emit.h"
 #include "..\Headers\global.h"
 #include "..\Headers\stdlib.h"
 #include "..\Headers\funcoes.h"
@@ -69,180 +68,141 @@ void declar_var(int id)
     if (type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, rem_fname(v_name[id], fname));
 }
 
-// declares a 1D array. v_table side effects happen immediately; the #array
-// directive emit is captured into a temp buffer and routed through STMT_RAW
-// so it lands in source order with the surrounding deferred statements when
-// the function-body walker runs (see ast.c / stmt_emit_inline).
-void declar_arr_1d(int id_var, int id_arg, int id_fname)
+// Parse-time half of declar_arr_1d: v_table update + log / info messages.
+// Called immediately so subsequent declarations can resolve this var.
+static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
 {
-    // consistency check ------------------------------------------------------
-
-    if (v_type[id_var] != 0) // variable already exists
+    if (v_type[id_var] != 0)
     {
         fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id_var], fname));
         exit(EXIT_FAILURE);
     }
 
-    emit_push_capture();
-
-    // update the array status ------------------------------------------------
-
-    v_type[id_var] = type_tmp;               // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
-    v_used[id_var] = 0;                      // just declared, so not used yet
-    v_fnid[id_var] = find_var(fname);        // record the function it belongs to
-    v_isar[id_var] = 1;                      // variable is a 1D array
-    v_size[id_var] = atoi(v_name[id_arg]);   // record the array size
-
-    // register the array in the log file -------------------------------------
+    v_type[id_var] = type_tmp;
+    v_used[id_var] = 0;
+    v_fnid[id_var] = find_var(fname);
+    v_isar[id_var] = 1;
+    v_size[id_var] = atoi(v_name[id_arg]);
 
     int type = type_tmp;
 
-    // save the function it belongs to
     char func[256]; if (strcmp(fname,"")==0) strcpy(func, "global"); else strcpy(func, fname);
-    // save the data in the log file
     if (sim_arr == 1)
     {
                        fprintf(f_log, "%s %s   %d %s\n", func, rem_fname(v_name[id_var], fname), type_tmp, v_name[id_arg]);
         if (type == 3) fprintf(f_log, "%s %s_i %d %s\n", func, rem_fname(v_name[id_var], fname), type_tmp, v_name[id_arg]);
     }
 
-    // emit --------------------------------------------------------------------
+    // for comp, mark the imaginary half as a 1D array too
+    if (type == 3) v_isar[get_img_id(id_var)] = 1;
 
-    // int type, no file
-    if ((type == 1) && (id_fname == -1))
-    {
-        add_sinst(0, "#array %s 1 %s\n", v_name[id_var], v_name[id_arg]);
-    }
-
-    // int type, with file
-    if ((type == 1) && (id_fname != -1))
-    {
-        add_sinst(0, "#arrays %s 1 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
-        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var],fname), line_num+1);
-    }
-
-    // float type, no file
-    if ((type == 2) && (id_fname == -1))
-    {
-        add_sinst(0, "#array %s 2 %s\n", v_name[id_var], v_name[id_arg]);
-    }
-
-    // float type, with file
-    if ((type == 2) && (id_fname != -1))
-    {
-        add_sinst(0, "#arrays %s 2 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
-        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var],fname), line_num+1);
-    }
-
-    // comp type, no file
-    if ((type == 3) && (id_fname == -1))
-    {
-        add_sinst(0, "#array %s 3 %s\n", v_name[id_var], v_name[id_arg]);
-        id_var = get_img_id(id_var);
-        add_sinst(0, "#array %s 4 %s\n", v_name[id_var], v_name[id_arg]);
-
-        v_isar[id_var] = 1; // variable is a 1D array
-    }
-
-    // comp type, with file
-    if ((type == 3) && (id_fname != -1))
-    {
-        add_sinst(0, "#arrays %s 3 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
-        id_var = get_img_id(id_var);
-        add_sinst(0, "#arrays %s 4 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
-
-        v_isar[id_var] = 1; // variable is a 1D array
-
-        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var],fname), line_num+1);
-    }
-
-    char *text = emit_pop_capture();
-    stmt_emit_inline(stmt_raw(text));
-    free(text);
+    if (id_fname != -1)
+        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var], fname), line_num+1);
 }
 
-// declares a 2D array. Same STMT_RAW wrap pattern as declar_arr_1d, except the
-// arr_size helper init (LOD/SET) are real instructions and need to land in
-// source order too - they're captured along with the #array directive.
-void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
+// Walker-time half: only the `#array` / `#arrays` directives.
+void declar_arr_1d_emit(int id_var, int id_arg, int id_fname)
 {
-    int idi;
+    int type = v_type[id_var];
 
-    // size of the equivalent 1D array
-    int size = atoi(v_name[id_x])*atoi(v_name[id_y]);
+    if (type == 1)
+    {
+        if (id_fname == -1) add_sinst(0, "#array %s 1 %s\n",     v_name[id_var], v_name[id_arg]);
+        else                add_sinst(0, "#arrays %s 1 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
+    }
+    else if (type == 2)
+    {
+        if (id_fname == -1) add_sinst(0, "#array %s 2 %s\n",     v_name[id_var], v_name[id_arg]);
+        else                add_sinst(0, "#arrays %s 2 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
+    }
+    else if (type == 3)
+    {
+        int idi = get_img_id(id_var);
+        if (id_fname == -1)
+        {
+            add_sinst(0, "#array %s 3 %s\n", v_name[id_var], v_name[id_arg]);
+            add_sinst(0, "#array %s 4 %s\n", v_name[idi],    v_name[id_arg]);
+        }
+        else
+        {
+            add_sinst(0, "#arrays %s 3 %s %s\n", v_name[id_var], v_name[id_arg], v_name[id_fname]);
+            add_sinst(0, "#arrays %s 4 %s %s\n", v_name[idi],    v_name[id_arg], v_name[id_fname]);
+        }
+    }
+}
 
-    if (v_type[id_var] != 0) // variable already exists
+// Public entry: parse-time work + defer the directive emit via STMT_DECLAR_ARR_1D.
+void declar_arr_1d(int id_var, int id_arg, int id_fname)
+{
+    declar_arr_1d_parse(id_var, id_arg, id_fname);
+    stmt_emit_inline(stmt_declar_arr_1d(id_var, id_arg, id_fname));
+}
+
+// Parse-time half of declar_arr_2d.
+static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
+{
+    if (v_type[id_var] != 0)
     {
         fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id_var], fname));
         exit(EXIT_FAILURE);
     }
 
-    emit_push_capture();
-
-    v_type[id_var] = type_tmp;           // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
-    v_used[id_var] = 0;                  // just declared, so not used yet
-    v_fnid[id_var] = find_var(fname);    // record the function it belongs to
-    v_isar[id_var] = 2;                  // variable is a 2D array
-    v_size[id_var] = atoi(v_name[id_x]); // record the i dimension size
-    v_siz2[id_var] = atoi(v_name[id_y]); // record the j dimension size
+    v_type[id_var] = type_tmp;
+    v_used[id_var] = 0;
+    v_fnid[id_var] = find_var(fname);
+    v_isar[id_var] = 2;
+    v_size[id_var] = atoi(v_name[id_x]);
+    v_siz2[id_var] = atoi(v_name[id_y]);
 
     int type = type_tmp;
 
-    // int type, no file
-    if ((type == 1) && (id_fname == -1))
+    if (type == 3) v_isar[get_img_id(id_var)] = 2;  // comp imag also 2D
+
+    if (id_fname != -1)
+        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var], fname), line_num+1);
+}
+
+// Walker-time half: `#array` directive + the LOD/SET arr_size helper instrs.
+void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
+{
+    int type = v_type[id_var];
+    int size = atoi(v_name[id_x]) * atoi(v_name[id_y]);
+
+    if (type == 1)
     {
-        add_sinst(0, "#array %s 1 %d\n", v_name[id_var], size);
+        if (id_fname == -1) add_sinst(0, "#array %s 1 %d\n",     v_name[id_var], size);
+        else                add_sinst(0, "#arrays %s 1 %d %s\n", v_name[id_var], size, v_name[id_fname]);
+    }
+    else if (type == 2)
+    {
+        if (id_fname == -1) add_sinst(0, "#array %s 2 %d\n",     v_name[id_var], size);
+        else                add_sinst(0, "#arrays %s 2 %d %s\n", v_name[id_var], size, v_name[id_fname]);
+    }
+    else if (type == 3)
+    {
+        int idi = get_img_id(id_var);
+        if (id_fname == -1)
+        {
+            add_sinst(0, "#array %s 3 %d\n", v_name[id_var], size);
+            add_sinst(0, "#array %s 4 %d\n", v_name[idi],    size);
+        }
+        else
+        {
+            add_sinst(0, "#arrays %s 3 %d %s\n", v_name[id_var], size, v_name[id_fname]);
+            add_sinst(0, "#arrays %s 4 %d %s\n", v_name[idi],    size, v_name[id_fname]);
+        }
     }
 
-    // int type, with file
-    if ((type == 1) && (id_fname != -1))
-    {
-        add_sinst(0, "#arrays %s 1 %d %s\n", v_name[id_var], size, v_name[id_fname]);
-        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var],fname), line_num+1);
-    }
-
-    // float type, no file
-    if ((type == 2) && (id_fname == -1))
-    {
-        add_sinst(0, "#array %s 2 %d\n", v_name[id_var], size);
-    }
-
-    // float type, with file
-    if ((type == 2) && (id_fname != -1))
-    {
-        add_sinst(0, "#arrays %s 2 %d %s\n", v_name[id_var], size, v_name[id_fname]);
-        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var],fname), line_num+1);
-    }
-
-    // comp type, no file
-    if ((type == 3) && (id_fname == -1))
-    {
-        add_sinst(0, "#array %s 3 %d\n", v_name[id_var], size);
-        idi = get_img_id(id_var);
-        add_sinst(0, "#array %s 4 %d\n", v_name[idi]   , size);
-
-        v_isar[idi] = 2; // variable is a 2D array
-    }
-
-    // comp type, with file
-    if ((type == 3) && (id_fname != -1))
-    {
-        add_sinst(0, "#arrays %s 3 %d %s\n", v_name[id_var], size, v_name[id_fname]);
-        idi = get_img_id(id_var);
-        add_sinst(0, "#arrays %s 4 %d %s\n", v_name[idi]   , size, v_name[id_fname]);
-
-        v_isar[idi] = 2; // variable is a 2D array
-
-        printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var],fname), line_num+1);
-    }
-
-    // create a helper variable to store the size of the x dimension
+    // helper variable: x-dimension size, used by 2D index flattening
     add_instr("LOD %s\n",          v_name[id_y  ]);
     add_instr("SET %s_arr_size\n", v_name[id_var]);
+}
 
-    char *text = emit_pop_capture();
-    stmt_emit_inline(stmt_raw(text));
-    free(text);
+// Public entry.
+void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
+{
+    declar_arr_2d_parse(id_var, id_x, id_y, id_fname);
+    stmt_emit_inline(stmt_declar_arr_2d(id_var, id_x, id_y, id_fname));
 }
 
 // ----------------------------------------------------------------------------
@@ -252,28 +212,20 @@ void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
 // added on demand
 
 // declares a 1D array as a matrix-vector product, e.g. float v[4] # |M|u>;
-// declar_arr_1d emits its #array via its own STMT_RAW wrap; we wrap exec_Mv
-// in a separate STMT_RAW so its parse-time emit also lands in source order
-// with the surrounding deferred statements.
+// Parse-time work is identical to a plain `float v[N]` declaration; the
+// walker (STMT_DECLAR_MV case in ast.c) emits the #array directive plus the
+// exec_Mv codegen for the matrix product.
 void declar_Mv(int id_name, int id_N, int id_M, int id_v)
 {
-    declar_arr_1d(id_name,id_N,  -1);
-
-    emit_push_capture();
-    exec_Mv(id_name, id_M, id_v);
-    char *text = emit_pop_capture();
-    stmt_emit_inline(stmt_raw(text));
-    free(text);
+    declar_arr_1d_parse(id_name, id_N, -1);
+    stmt_emit_inline(stmt_declar_Mv(id_name, id_N, id_M, id_v));
 }
 
 // declares a 1D array as a constant-vector product, e.g. float a[4] # c|b>;
-void declar_cv(int id_name, int id_N, expr ec, int id_v)
+// Takes the coefficient as a raw expr_node so the walker (STMT_DECLAR_CV)
+// drives the scalar's codegen at body-close time, in source order.
+void declar_cv(int id_name, int id_N, expr_node *c, int id_v)
 {
-    declar_arr_1d(id_name, id_N, -1);
-
-    emit_push_capture();
-    exec_cv(id_name, ec, id_v);
-    char *text = emit_pop_capture();
-    stmt_emit_inline(stmt_raw(text));
-    free(text);
+    declar_arr_1d_parse(id_name, id_N, -1);
+    stmt_emit_inline(stmt_declar_cv(id_name, id_N, c, id_v));
 }

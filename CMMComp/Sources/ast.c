@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "..\Headers\ast.h"
-#include "..\Headers\emit.h"
 #include "..\Headers\global.h"
 #include "..\Headers\variaveis.h"   // v_name[] for the dump
 #include "..\Headers\messages.h"
@@ -21,6 +20,7 @@
 
 // needed by the stmt_node walker
 #include "..\Headers\data_assign.h"
+#include "..\Headers\data_declar.h"  // declar_arr_*_emit for STMT_DECLAR_* walker
 #include "..\Headers\itr.h"
 #include "..\Headers\t2t.h"      // get_cmp_cst for complex cond loads
 
@@ -683,13 +683,42 @@ stmt_node *stmt_break_while(int while_label)
     return n;
 }
 
-stmt_node *stmt_raw(const char *text)
+stmt_node *stmt_declar_arr_1d(int id_var, int id_arg, int id_fname)
 {
-    stmt_node *n = snode_new(STMT_RAW);
-    size_t len = strlen(text);
-    n->text = malloc(len + 1);
-    if (!n->text) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
-    memcpy(n->text, text, len + 1);
+    stmt_node *n = snode_new(STMT_DECLAR_ARR_1D);
+    n->id  = id_var;
+    n->id2 = id_arg;
+    n->id3 = id_fname;
+    return n;
+}
+
+stmt_node *stmt_declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
+{
+    stmt_node *n = snode_new(STMT_DECLAR_ARR_2D);
+    n->id  = id_var;
+    n->id2 = id_x;
+    n->id3 = id_y;
+    n->id4 = id_fname;
+    return n;
+}
+
+stmt_node *stmt_declar_Mv(int id_var, int id_N, int id_M, int id_v)
+{
+    stmt_node *n = snode_new(STMT_DECLAR_MV);
+    n->id  = id_var;
+    n->id2 = id_N;
+    n->id3 = id_M;
+    n->id4 = id_v;
+    return n;
+}
+
+stmt_node *stmt_declar_cv(int id_var, int id_N, expr_node *c, int id_v)
+{
+    stmt_node *n = snode_new(STMT_DECLAR_CV);
+    n->id  = id_var;
+    n->id2 = id_N;
+    n->id3 = id_v;
+    n->rhs = c;
     return n;
 }
 
@@ -886,9 +915,25 @@ void stmt_emit(stmt_node *n)
             add_instr("JMP Lwh%dend\n", n->id);
             break;
 
-        case STMT_RAW:
-            // already-counted assembly text captured at parse time
-            emit_raw(n->text);
+        case STMT_DECLAR_ARR_1D:
+            declar_arr_1d_emit(n->id, n->id2, n->id3);
+            break;
+
+        case STMT_DECLAR_ARR_2D:
+            declar_arr_2d_emit(n->id, n->id2, n->id3, n->id4);
+            break;
+
+        case STMT_DECLAR_MV:
+            // base array #array directive(s), then Mv codegen.
+            declar_arr_1d_emit(n->id, n->id2, -1);
+            exec_Mv(n->id, n->id3, n->id4);
+            break;
+
+        case STMT_DECLAR_CV:
+            // base array #array directive(s), then walk the scalar coeff
+            // and let exec_cv do the c|v⟩ codegen.
+            declar_arr_1d_emit(n->id, n->id2, -1);
+            exec_cv(n->id, ast_emit_expr(n->rhs), n->id3);
             break;
     }
 
@@ -907,7 +952,6 @@ void stmt_free(stmt_node *n)
     stmt_free(n->body);
     for (int i = 0; i < n->kids_n; i++) stmt_free(n->kids[i]);
     free(n->kids);
-    free(n->text);
     free(n);
 }
 

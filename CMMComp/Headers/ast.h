@@ -208,10 +208,10 @@ typedef enum {
     STMT_DEFAULT_LABEL, // default:      id=swit_id, id2=case_idx
     STMT_SWITCH_BREAK,  // break; inside a switch case (id=swit_id)
     STMT_BREAK_WHILE,   // break; inside a while loop  (id=enclosing while label)
-    STMT_RAW,           // pre-captured assembly chunk replayed by the walker
-                        // (used for declarations whose emit still happens at
-                        // parse time but needs to land in source order with
-                        // the surrounding deferred statements)
+    STMT_DECLAR_ARR_1D, // int/float/comp x[N];  or with file init  id=id_var, id2=id_arg, id3=id_fname
+    STMT_DECLAR_ARR_2D, // int/float/comp x[N][M];  id=id_var, id2=id_x, id3=id_y, id4=id_fname
+    STMT_DECLAR_MV,     // float a[N] # |M|v⟩;     id=id_var, id2=id_N, id3=id_M, id4=id_v
+    STMT_DECLAR_CV,     // float a[N] # c|v⟩;      id=id_var, id2=id_N, id3=id_v, rhs=c expression
 } stmt_kind;
 
 // Sub-operation for STMT_DIRAC. The 10 Dirac forms share enough structure
@@ -244,12 +244,6 @@ typedef struct stmt_node {
     struct expr_node *rhs;   // value/source expression (owned)
     struct expr_node *idx;   // PPLUS / ARRAY_ASSIGN: 1D/2D index (NULL for scalar)
     struct expr_node *idx2;  // PPLUS / ARRAY_ASSIGN: 2D second index (NULL otherwise)
-
-    // STMT_RAW: heap-owned, NUL-terminated assembly chunk replayed via
-    // emit_raw at walker time. Used by helpers (declar_arr_*, declar_Mv,
-    // declar_cv) whose emit happens at parse time but must land in source
-    // order with the surrounding deferred statements.
-    char *text;
 
     // STMT_BLOCK: child statements (owned via stmt_free recursion)
     struct stmt_node **kids;
@@ -317,9 +311,18 @@ stmt_node *stmt_default_label(int swit_id, int case_idx);
 stmt_node *stmt_switch_break(int swit_id);
 stmt_node *stmt_break_while (int while_label);
 
-// Wraps a copy of `text` in a STMT_RAW so a parse-time emit can be replayed
-// at walker time. The node owns the heap copy (stmt_free releases it).
-stmt_node *stmt_raw         (const char *text);
+// Array declarations. The v_table side effects (v_type / v_isar / v_size /
+// v_fnid + f_log writes) already ran at parse time when the constructor was
+// called; the stmt_node only carries what the walker needs to emit the
+// `#array` directive (and, for 2D, the LOD/SET arr_size helper instructions).
+stmt_node *stmt_declar_arr_1d(int id_var, int id_arg, int id_fname);
+stmt_node *stmt_declar_arr_2d(int id_var, int id_x, int id_y, int id_fname);
+
+// Dirac-initialized 1D array declarations. The base array's #array directive
+// is emitted by the same code path as stmt_declar_arr_1d; the Mv / cv stuff
+// is then walked through exec_Mv / exec_cv.
+stmt_node *stmt_declar_Mv   (int id_var, int id_N, int id_M, int id_v);
+stmt_node *stmt_declar_cv   (int id_var, int id_N, struct expr_node *c, int id_v);
 
 // Body-list stack. stmt_list_open() pushes a fresh STMT_BLOCK; every
 // stmt_emit_inline call while the stack is non-empty records the just-built

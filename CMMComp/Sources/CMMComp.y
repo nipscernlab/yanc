@@ -181,7 +181,7 @@ declar : TYPE id_list                               ';'
        | TYPE ID '[' INUM ']' '[' INUM ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
          // array declaration with Dirac-notation initialization (on demand)
        | TYPE ID '[' INUM ']' '#' '|' ID '|' ID BRA ';' {declar_Mv    ($2,$4,$8,$10);}
-       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2, $4, EE($7), $9);}
+       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2, $4, $7, $9);}
 
 id_list : IID | id_list ',' IID
 
