@@ -212,6 +212,8 @@ type_specifier:
     | KW_INT                                 { $$ = t_int();   }
     | KW_FLOAT                               { $$ = t_float(); }
     | KW_CHAR                                { $$ = t_char();  }
+    | KW_UNSIGNED KW_INT                     { $$ = t_uint();  }   /* unsigned int */
+    | KW_SIGNED   KW_INT                     { $$ = t_int();   }   /* signed int   */
     | KW_UNSIGNED                            { $$ = t_uint();  }   /* `unsigned` == unsigned int */
     | KW_SIGNED                              { $$ = t_int();   }
     | struct_specifier                       { $$ = $1;        }

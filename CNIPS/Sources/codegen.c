@@ -28,6 +28,7 @@
 static FILE *out_f;
 static int   ins_count = 0;
 static int   label_n   = 0;
+static int   g_nubits  = 16;     // effective word width (for unsigned compares)
 static char *cur_func_name = NULL;
 static type *cur_func_ret  = NULL;
 
@@ -601,6 +602,28 @@ static void gen_expr(expr *e)
     case E_BINOP: {
         op_kind op = e->op;
         int is_float = (e->etype && e->etype->kind == TY_FLOAT);
+        // operand signedness (for >> and comparisons)
+        type *lt = infer_type(e->a);
+        type *rt = infer_type(e->b);
+        int lhs_uns = lt && lt->kind == TY_INT && !lt->is_signed;
+        int uns_cmp = (lhs_uns) || (rt && rt->kind == TY_INT && !rt->is_signed);
+
+        // unsigned comparison: map to signed order by flipping the sign bit of
+        // both operands (XOR with 1<<(NUBITS-1)), then do the signed compare.
+        if (uns_cmp && !is_float &&
+            (op == OP_LT || op == OP_GT || op == OP_LE || op == OP_GE)) {
+            long sbit = 1L << (g_nubits - 1);
+            gen_expr(e->a); emit("XOR %ld", sbit); emit("PSH");
+            gen_expr(e->b); emit("XOR %ld", sbit);
+            switch (op) {
+                case OP_LT: emit("S_LES"); break;
+                case OP_GT: emit("S_GRE"); break;
+                case OP_LE: emit("S_GRE"); emit("LIN"); break;
+                case OP_GE: emit("S_LES"); emit("LIN"); break;
+                default: break;
+            }
+            return;
+        }
 
         // logical &&/|| as a value: short-circuit, result normalised to 0/1.
         if (op == OP_LAND) {
@@ -666,7 +689,7 @@ static void gen_expr(expr *e)
             case OP_BOR:  emit("S_ORR"); return;
             case OP_BXOR: emit("S_XOR"); return;
             case OP_SHL:  emit("S_SHL"); return;
-            case OP_SHR:  emit("S_SRS"); return;
+            case OP_SHR:  emit(lhs_uns ? "S_SHR" : "S_SRS"); return;  // unsigned: logical; signed: arithmetic
             case OP_LT:   emit(is_float ? "SF_LES" : "S_LES"); return;
             case OP_GT:   emit(is_float ? "SF_GRE" : "S_GRE"); return;
             case OP_LE:   emit(is_float ? "SF_GRE" : "S_GRE"); emit("LIN"); return;
@@ -1226,6 +1249,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 {
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
+    g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
 
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
