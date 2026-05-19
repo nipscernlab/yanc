@@ -227,26 +227,14 @@ static void emit_load_float(double v)
     emit("LOD %s", buf);
 }
 
-// ---- bool normalisation ----------------------------------------------------
-
-static int produces_boolean(expr *e)
-{
-    if (e->kind == E_BINOP) {
-        switch (e->op) {
-            case OP_EQ: case OP_NE: case OP_LT: case OP_GT: case OP_LE: case OP_GE:
-            case OP_LAND: case OP_LOR: return 1;
-            default: return 0;
-        }
-    }
-    if (e->kind == E_UNOP && e->op == OP_LNOT) return 1;
-    if (e->kind == E_INT_LIT) return 1;
-    return 0;
-}
+// ---- conditional branch ----------------------------------------------------
+// JIZ tests the whole accumulator word (HDL: if_acc = |ula_out), so any value's
+// C truthiness is honoured directly. No LIN;LIN normalisation needed — emit the
+// expression and branch.
 
 static void gen_bool(expr *e, const char *jz_target)
 {
     gen_expr(e);
-    if (!produces_boolean(e)) { emit("LIN"); emit("LIN"); }
     emit("JIZ %s", jz_target);
 }
 
