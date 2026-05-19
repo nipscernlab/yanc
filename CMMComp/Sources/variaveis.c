@@ -27,6 +27,11 @@ int  *v_fpar       = NULL; // if the ID is a function, holds the parameter list
 int  *v_size       = NULL; // array size (when it is an array)
 int  *v_siz2       = NULL; // size of the j dimension (when it is a matrix)
 
+// AoS shadow storage, grown alongside the SoA arrays above. Not yet read or
+// written by anyone — subsequent commits cut each field over from v_X[i] to
+// v_table[i].X, after which the matching SoA pointer is retired.
+symbol *v_table    = NULL;
+
 #define GROW(arr, old_cap, new_cap)                                       \
     do {                                                                  \
         void *_tmp = realloc((arr), (size_t)(new_cap) * sizeof(*(arr)));  \
@@ -45,15 +50,16 @@ static void var_grow(int needed)
     int new_cap = v_cap ? v_cap : 256;
     while (new_cap < needed) new_cap *= 2;
 
-    GROW(v_name, v_cap, new_cap);
-    GROW(v_isar, v_cap, new_cap);
-    GROW(v_type, v_cap, new_cap);
-    GROW(v_fnid, v_cap, new_cap);
-    GROW(v_used, v_cap, new_cap);
-    GROW(v_isco, v_cap, new_cap);
-    GROW(v_fpar, v_cap, new_cap);
-    GROW(v_size, v_cap, new_cap);
-    GROW(v_siz2, v_cap, new_cap);
+    GROW(v_name,  v_cap, new_cap);
+    GROW(v_isar,  v_cap, new_cap);
+    GROW(v_type,  v_cap, new_cap);
+    GROW(v_fnid,  v_cap, new_cap);
+    GROW(v_used,  v_cap, new_cap);
+    GROW(v_isco,  v_cap, new_cap);
+    GROW(v_fpar,  v_cap, new_cap);
+    GROW(v_size,  v_cap, new_cap);
+    GROW(v_siz2,  v_cap, new_cap);
+    GROW(v_table, v_cap, new_cap);
 
     v_cap = new_cap;
 }
