@@ -90,6 +90,14 @@ void eval_opernd(char *va)
         case 21:                            n_ins++; state =  0; break; // output operations
         case 22:                                     state = 23; break; // prepare constant offset
         case 23:                            n_ins++; state =  0; break; // instr with constant offset
+        case 24: {                                                       // LEA <name>: target + synthetic addr-of constant
+            var_add(va,1);
+            char syn[600]; snprintf(syn, sizeof(syn), "__addr_%s", va);
+            var_add(syn,1);
+            n_ins++;
+            state = 0;
+            break;
+        }
     }
 }
 

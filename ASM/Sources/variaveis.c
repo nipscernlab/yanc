@@ -86,3 +86,13 @@ int var_find(char *val)
 void var_inc (int   val){var_grow(v_count + val); v_count += val;} // increments the memory size (for arrays)
 int  var_val (char *var){return v_val[var_find(var)];}             // returns the variable's value
 int  var_cnt (         ){return v_count             ;}             // returns the number of variables
+
+// adds a variable whose initial value is provided explicitly (rather than
+// derived from its name). used by LEA to materialise &target as a constant.
+void var_add_with_val(char *var, int val)
+{
+    var_grow(v_count + 1);
+    strcpy(v_name [v_count], var);
+    v_val [v_count] = val;
+    v_count++;
+}

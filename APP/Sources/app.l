@@ -166,8 +166,15 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "SF_SU1"   eval_opcode( 0); // floating-point subtraction with stack at input 1
 "SF_SU2"   eval_opcode( 0); // floating-point subtraction with stack at input 2
 
+   /* base-less indirect addressing (runtime pointers / array params) */
+
+   "LDA"   eval_opcode( 0); // acc = mem[acc]
+   "STA"   eval_opcode( 0); // mem[stack_top] = acc, pop
+
    /* pseudo instructions */
    /* avoids indirect addressing */
+
+   "LEA"   eval_opcode(24); // load-effective-address; counts as 1 var (the target) + 1 synthetic constant (the materialised address)
 
    "LOD_V" eval_opcode(22); //   LOD with constant offset
  "P_LOD_V" eval_opcode(22); // P_LOD with constant offset

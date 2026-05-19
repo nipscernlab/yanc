@@ -255,7 +255,11 @@ module processor
 	parameter  F_SU1   = 0,    // floating-point subtraction at input 1
 	parameter  F_SU2   = 0,    // floating-point subtraction at input 2
 	parameter SF_SU1   = 0,    // floating-point subtraction at input 1 with stack
-	parameter SF_SU2   = 0     // floating-point subtraction at input 2 with stack
+	parameter SF_SU2   = 0,    // floating-point subtraction at input 2 with stack
+
+	// base-less indirect addressing (runtime pointers / array params)
+	parameter    LDA   = 0,    // acc = mem[acc]
+	parameter    STA   = 0     // mem[stack_top] = acc, pop
 )(
 	input               clk     , rst,
 	input  [NUBITS-1:0] io_in   ,
@@ -405,7 +409,9 @@ core #(.NBOPCO ( NBOPCO ),
 	   .F_SU1  ( F_SU1  ),
 	   .F_SU2  ( F_SU2  ),
 	   .SF_SU1 (SF_SU1  ),
-	   .SF_SU2 (SF_SU2  )) core(clk, rst,
+	   .SF_SU2 (SF_SU2  ),
+	   .LDA    (   LDA  ),
+	   .STA    (   STA  )) core(clk, rst,
                                 instr, instr_addr,
                                 mem_wr, mem_addr_rd, mem_addr_wr, mem_data_in, mem_data_out,
                                 io_in, addr_in, addr_out, req_in, out_en, itr

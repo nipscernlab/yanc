@@ -152,6 +152,37 @@ void instr_arr(char *va)
     sim_regi_arr(va   ); // registers the array in the simulator (looks up info in cmm_log.txt)
 }
 
+// LEA <name>: load-effective-address pseudo-instruction
+// resolves <name> to its data-memory address, materialises that address as a
+// numeric constant cell, then emits a plain LOD pointing to that cell. The
+// callee at runtime gets the array's base as a value in the accumulator and
+// can use ADD + LDA / STA on it. opc_idx must already be 0 (LOD) by the time
+// this is called (set by eval_opcode("LEA", ...)).
+void instr_lea(char *va)
+{
+    int addr = var_find(va);
+    if (addr == -1)
+    {
+        fprintf(stderr, "Error: LEA referencing undeclared variable '%s'\n", va);
+        exit(1);
+    }
+    // materialise &va as a constant cell named "__addr_<va>". using a name
+    // distinct from any plain integer literal avoids the dedup collision
+    // that the literal "<addr>" would have with a later LOD <addr>, which
+    // would make asmcomp and appcomp disagree on n_dat.
+    char syn[600];
+    snprintf(syn, sizeof(syn), "__addr_%s", va);
+    if (var_find(syn) == -1)
+    {
+        var_add_with_val(syn, addr);                  // value = address of va
+        sim_regi(syn);                                // pass through the sim registry, harmless if not a user var
+        fprintf(f_data, "%s\n", itob(addr, nubits));  // emit the constant value into the data .mif
+    }
+    // emit LOD <syn> (opc_idx is already 0 — LOD — set by eval_opcode("LEA",0,...))
+    fprintf(f_instr, "%s%s\n", itob(opc_idx, NBITS_OPC), itob(var_find(syn), nbopr));
+    sim_add(opc_name, va); // log "LEA va" in the trace
+}
+
 // generates an instruction with address va_name + va (pseudo instruction)
 void instr_oft(char *va)
 {
@@ -277,6 +308,7 @@ void eval_opernd(char *va, int is_const)
         case 21: instr_out     (va);                    state =  0; break; // output operations
         case 22: strcpy(va_name,va);                    state = 23; break; // prepare constant offset
         case 23: instr_oft     (va);                    state =  0; break; // instr with constant offset
+        case 24: instr_lea     (va);                    state =  0; break; // load-effective-address pseudo (LEA -> LOD <const>)
     }
 }
 
