@@ -80,6 +80,13 @@ static int type_code_for(const type *t)
     return 1;        // int, ptr, char all type-code 1 for asmcomp's simulator
 }
 
+// type code of the innermost scalar element (peels array nesting)
+static int innermost_code(const type *t)
+{
+    while (t && t->kind == TY_ARRAY) t = t->base;
+    return type_code_for(t);
+}
+
 // ---- loop-context stack (break/continue) -----------------------------------
 
 typedef struct { char *cont_l; char *break_l; } loop_ctx;
@@ -378,6 +385,12 @@ static void gen_expr(expr *e)
         return;
 
     case E_INDEX: {
+        // array decay: a[i] whose element is itself an array (multi-dim) or a
+        // struct produces the *address* of the sub-object, not a loaded word.
+        if (e->etype && (e->etype->kind == TY_ARRAY || e->etype->kind == TY_STRUCT)) {
+            gen_addr(e);
+            return;
+        }
         // fast path: regular scalar-array with scalar element
         type *bt = infer_type(e->a);
         if (bt && bt->kind == TY_ARRAY && type_size_words(bt->base) == 1
@@ -396,6 +409,11 @@ static void gen_expr(expr *e)
 
     case E_MEMBER:
     case E_PMEMBER:
+        // a field of array/struct type decays to its address (no load)
+        if (e->etype && (e->etype->kind == TY_ARRAY || e->etype->kind == TY_STRUCT)) {
+            gen_addr(e);
+            return;
+        }
         gen_addr(e);
         emit("LDA");
         return;
@@ -597,12 +615,14 @@ static void declare_local(decl *d)
     char *aname = mangle_local(d->name);
     sym *s = st_add(SK_LOCAL_VAR, d->name, aname, d->dtype);
     (void)s;
+    int arr_words = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
     log_var(cur_func_name ? cur_func_name : "global", d->name,
-            type_code_for(d->dtype), d->dtype && d->dtype->kind == TY_ARRAY ? d->dtype->arr_size : 0);
+            innermost_code(d->dtype), arr_words);
     if (d->dtype && d->dtype->kind == TY_ARRAY) {
         char *real = mangle_local(d->name);
-        if (d->init_file) emit("#arrays %s %d %d \"%s\"", real, type_code_for(d->dtype->base), d->dtype->arr_size, d->init_file);
-        else              emit("#array %s %d %d",         real, type_code_for(d->dtype->base), d->dtype->arr_size);
+        // multi-dim arrays flatten to total word count; element type is the innermost scalar
+        if (d->init_file) emit("#arrays %s %d %d \"%s\"", real, innermost_code(d->dtype), arr_words, d->init_file);
+        else              emit("#array %s %d %d",         real, innermost_code(d->dtype), arr_words);
         free(real);
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
         // reserve N words for the struct using #array (treat it as N ints)
@@ -826,10 +846,11 @@ static void emit_global_arrays(unit *u)
         decl *d = u->globals[i];
         if (!d->dtype) continue;
         if (d->dtype->kind == TY_ARRAY) {
+            int arr_words = type_size_words(d->dtype);
             if (d->init_file)
-                emit("#arrays %s %d %d \"%s\"", d->name, type_code_for(d->dtype->base), d->dtype->arr_size, d->init_file);
+                emit("#arrays %s %d %d \"%s\"", d->name, innermost_code(d->dtype), arr_words, d->init_file);
             else
-                emit("#array %s %d %d", d->name, type_code_for(d->dtype->base), d->dtype->arr_size);
+                emit("#array %s %d %d", d->name, innermost_code(d->dtype), arr_words);
         } else if (d->dtype->kind == TY_STRUCT) {
             emit("#array %s 1 %d", d->name, type_size_words(d->dtype));
         }
@@ -914,8 +935,8 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
         st_add(SK_GLOBAL_VAR, d->name, d->name, d->dtype);
-        log_var("global", d->name, type_code_for(d->dtype),
-                d->dtype && d->dtype->kind == TY_ARRAY ? d->dtype->arr_size : 0);
+        int gw = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
+        log_var("global", d->name, innermost_code(d->dtype), gw);
     }
     for (int i = 0; i < u->n_funcs; i++) {
         func *f = u->funcs[i];

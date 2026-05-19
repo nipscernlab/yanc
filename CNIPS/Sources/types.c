@@ -70,6 +70,14 @@ type *t_make_struct(char *tag)
     t->tag  = xstrdup(tag);
     t->fields = NULL;
     t->size = -1;            // -1 = incomplete until t_struct_seal
+    t->is_union = 0;
+    return t;
+}
+
+type *t_make_union(char *tag)
+{
+    type *t = t_make_struct(tag);
+    t->is_union = 1;
     return t;
 }
 
@@ -90,12 +98,23 @@ void t_struct_add_field(type *st, char *name, type *ft)
 
 type *t_struct_seal(type *st)
 {
-    int off = 0;
-    for (strct_field *f = st->fields; f; f = f->next) {
-        f->offset = off;
-        off += type_size_words(f->ftype);
+    if (st->is_union) {
+        // every member overlaps at offset 0; size is the widest member
+        int max = 0;
+        for (strct_field *f = st->fields; f; f = f->next) {
+            f->offset = 0;
+            int sz = type_size_words(f->ftype);
+            if (sz > max) max = sz;
+        }
+        st->size = max;
+    } else {
+        int off = 0;
+        for (strct_field *f = st->fields; f; f = f->next) {
+            f->offset = off;
+            off += type_size_words(f->ftype);
+        }
+        st->size = off;
     }
-    st->size = off;
     return st;
 }
 

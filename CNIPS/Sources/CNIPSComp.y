@@ -72,11 +72,20 @@ static void unit_add_func(func *f)
 // wrap base type with N levels of pointer
 static type *apply_pointers(type *base, int stars) { while (stars-- > 0) base = t_ptr(base); return base; }
 
+// wrap base type with the given array dimensions, innermost-last (row-major):
+// dims [3,4] over int  ->  array(3, array(4, int))
+static type *build_array_type(type *base, const int *dims, int n)
+{
+    type *t = base;
+    for (int i = n - 1; i >= 0; i--) t = t_array(t, dims[i]);
+    return t;
+}
+
 // process a fully-typed declarator and produce a decl node
-static decl *make_decl(type *base, int stars, char *name, int arr_size, int line, expr *init)
+static decl *make_decl(type *base, int stars, char *name, const int *dims, int ndims, int line, expr *init)
 {
     type *t = apply_pointers(base, stars);
-    if (arr_size >= 0) t = t_array(t, arr_size);
+    t = build_array_type(t, dims, ndims);
     decl *d = ast_decl(t, name, init, line);
     d->sclass = ts_sclass;
     return d;
@@ -97,6 +106,7 @@ static decl *make_decl(type *base, int stars, char *name, int arr_size, int line
     struct { expr **arr; int n; } elist;
     struct { stmt **arr; int n; } slist;
     struct { decl  *head; int n; } dlist;
+    struct { int dims[8]; int n; } dimlist;
 }
 
 %token <ival>  INT_LIT CHAR_LIT
@@ -106,7 +116,7 @@ static decl *make_decl(type *base, int stars, char *name, int arr_size, int line
 %token KW_VOID KW_INT KW_FLOAT KW_CHAR KW_UNSIGNED KW_SIGNED
 %token KW_IF KW_ELSE KW_WHILE KW_FOR KW_DO KW_SWITCH KW_CASE KW_DEFAULT
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
-%token KW_STRUCT KW_TYPEDEF KW_ENUM KW_SIZEOF
+%token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF
 %token KW_STATIC KW_EXTERN KW_CONST
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -115,7 +125,7 @@ static decl *make_decl(type *base, int stars, char *name, int arr_size, int line
 %token TOK_AMPEQ TOK_PIPEEQ TOK_CARETEQ TOK_SHLEQ TOK_SHREQ
 %token TOK_ARROW TOK_ELLIPSIS
 
-%type <typ>   type_specifier struct_specifier enum_specifier base_type
+%type <typ>   type_specifier struct_specifier union_specifier enum_specifier base_type
 %type <intval> pointers storage_or_qual_list storage_or_qual
 %type <exp>   expr assignment_expr conditional_expr logical_or_expr logical_and_expr
 %type <exp>   bit_or_expr bit_xor_expr bit_and_expr equality_expr relational_expr
@@ -127,7 +137,7 @@ static decl *make_decl(type *base, int stars, char *name, int arr_size, int line
 %type <slist> block_item_list
 %type <dlist> init_declarator_list param_list non_empty_param_list
 %type <dcl>   init_declarator param_declarator
-%type <intval> array_suffix
+%type <dimlist> array_suffix
 %type <elist> argument_list non_empty_argument_list
 %type <opkind> assign_op
 
@@ -205,6 +215,7 @@ type_specifier:
     | KW_FLOAT                               { $$ = t_float(); }
     | KW_CHAR                                { $$ = t_char();  }
     | struct_specifier                       { $$ = $1;        }
+    | union_specifier                        { $$ = $1;        }
     | enum_specifier                         { $$ = $1;        }
     | TYPEDEF_NAME                           {
           sym *s = st_find($1);
@@ -235,6 +246,26 @@ struct_specifier:
       }
     ;
 
+union_specifier:
+      KW_UNION IDENT '{' { cur_struct = t_make_union($2); st_add_tag($2, cur_struct); } field_list '}' {
+          t_struct_seal(cur_struct);
+          $$ = cur_struct;
+          cur_struct = NULL;
+          free($2);
+      }
+    | KW_UNION IDENT {
+          sym *s = st_find_tag($2);
+          if (!s) {
+              type *t = t_make_union($2);
+              st_add_tag($2, t);
+              $$ = t;
+          } else {
+              $$ = s->struct_t;
+          }
+          free($2);
+      }
+    ;
+
 field_list:
       field_decl
     | field_list field_decl
@@ -252,7 +283,7 @@ field_declarator_list:
 field_declarator:
       pointers IDENT array_suffix {
           type *ft = apply_pointers(cur_base, $1);
-          if ($3 >= 0) ft = t_array(ft, $3);
+          ft = build_array_type(ft, $3.dims, $3.n);
           t_struct_add_field(cur_struct, $2, ft);
           free($2);
       }
@@ -281,10 +312,11 @@ pointers:
     | pointers '*'        { $$ = $1 + 1; }
     ;
 
+/* zero or more [N] suffixes, in source order (row-major). n==0 means scalar. */
 array_suffix:
-      /* empty */                 { $$ = -1; }   /* -1 = no [] */
-    | '[' ']'                     { $$ = 0;  }   /* unsized — only legal in params */
-    | '[' INT_LIT ']'             { $$ = (int)$2; }
+      /* empty */                 { $$.n = 0; }
+    | array_suffix '[' ']'        { $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = 0;        }  /* unsized — params only */
+    | array_suffix '[' INT_LIT ']'{ $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)$3;  }
     ;
 
 init_declarator_list:
@@ -299,21 +331,21 @@ init_declarator:
       pointers IDENT array_suffix {
           if (ts_typedef) {
               type *t = apply_pointers(cur_base, $1);
-              if ($3 >= 0) t = t_array(t, $3);
+              t = build_array_type(t, $3.dims, $3.n);
               st_add_typedef($2, t);
               /* still produce a decl so list grouping works; it'll be ignored at the declaration level */
               $$ = ast_decl(t, $2, NULL, yylineno);
           } else {
-              $$ = make_decl(cur_base, $1, $2, $3, yylineno, NULL);
+              $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
           }
       }
     | pointers IDENT array_suffix '=' initializer {
           if (ts_typedef) msg_error(yylineno, "typedef cannot have an initializer");
-          $$ = make_decl(cur_base, $1, $2, $3, yylineno, $5);
+          $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, $5);
       }
     | pointers IDENT array_suffix STRING_LIT {
           /* `int arr[N] "file.txt";` — initialise the array from a data file at synth time */
-          decl *d = make_decl(cur_base, $1, $2, $3, yylineno, NULL);
+          decl *d = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
           d->init_file = $4;
           $$ = d;
       }
@@ -401,7 +433,7 @@ non_empty_param_list:
 param_declarator:
       base_type pointers IDENT array_suffix {
           type *t = apply_pointers($1, $2);
-          if ($4 >= 0) t = t_array(t, $4);
+          t = build_array_type(t, $4.dims, $4.n);
           $$ = ast_decl(t, $3, NULL, yylineno);
       }
     ;

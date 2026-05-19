@@ -31,9 +31,10 @@ struct type {
     int       is_signed;   // for TY_INT
 
     // struct-specific
-    char         *tag;     // struct tag name (e.g. "point")
+    char         *tag;     // struct/union tag name (e.g. "point")
     strct_field  *fields;  // linked list, in declaration order
-    int           size;    // struct size in words (set when fields are sealed)
+    int           size;    // struct/union size in words (set when fields are sealed)
+    int           is_union;// 1 = union (all fields share offset 0, size = max field)
 
     // function-specific
     type **params;
@@ -58,8 +59,9 @@ type *t_ptr  (type *to);
 type *t_array(type *of, int n);
 
 type *t_make_struct(char *tag);                                  // forward decl
+type *t_make_union (char *tag);                                  // union variant
 void  t_struct_add_field(type *st, char *name, type *ft);        // returns offset via update
-type *t_struct_seal(type *st);                                   // computes total size
+type *t_struct_seal(type *st);                                   // computes total size (struct or union)
 strct_field *t_struct_find(type *st, const char *name);
 
 // helpers

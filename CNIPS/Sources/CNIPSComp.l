@@ -164,6 +164,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "goto"                   { return KW_GOTO;     }
 
 "struct"                 { return KW_STRUCT;   }
+"union"                  { return KW_UNION;    }
 "typedef"                { return KW_TYPEDEF;  }
 "enum"                   { return KW_ENUM;     }
 "sizeof"                 { return KW_SIZEOF;   }
