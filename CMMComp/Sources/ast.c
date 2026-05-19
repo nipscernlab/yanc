@@ -234,6 +234,16 @@ void expr_dump(expr_node *n)
 
 static expr ast_emit_expr_impl(expr_node *n);
 
+// True iff n is an EXPR_LITERAL whose numeric value equals `want` (e.g. 0 or
+// 1). Used by the algebraic-identity folder in ast_emit_expr_impl. The
+// literal text is whatever the lexer matched ("0", "0.0", "1", "1.0", ...);
+// atof() gives an exact result for these inputs, so == comparison is safe.
+static int is_const_value(expr_node *n, double want)
+{
+    if (!n || n->kind != EXPR_LITERAL) return 0;
+    return atof(v_table[n->id].name) == want;
+}
+
 // Typecheck pass: walks bottom-up and annotates n->type on composite nodes
 // whose type the parser leaves at 0 (BINOP / UNOP today; INNER / STDLIB_CALL
 // pending follow-up commits). Leaves (LITERAL / VAR / ARRAY_INDEX / PPLUS /
@@ -337,6 +347,27 @@ static expr ast_emit_expr_impl(expr_node *n)
         case EXPR_VAR:     return id2exp (n->id);
 
         case EXPR_BINOP: {
+            // Algebraic identity folding (constant operand drops out, surviving
+            // subtree is emitted directly). Only fire when the surviving
+            // operand's type matches the binop's result type - otherwise a
+            // hidden int->float / float->comp promotion would be lost.
+            switch (n->op) {
+                case OP_ADD:
+                    if (is_const_value(n->right, 0.0) && n->left ->type == n->type) return ast_emit_expr(n->left );
+                    if (is_const_value(n->left , 0.0) && n->right->type == n->type) return ast_emit_expr(n->right);
+                    break;
+                case OP_SUB:
+                    if (is_const_value(n->right, 0.0) && n->left ->type == n->type) return ast_emit_expr(n->left );
+                    break;
+                case OP_MUL:
+                    if (is_const_value(n->right, 1.0) && n->left ->type == n->type) return ast_emit_expr(n->left );
+                    if (is_const_value(n->left , 1.0) && n->right->type == n->type) return ast_emit_expr(n->right);
+                    break;
+                case OP_DIV:
+                    if (is_const_value(n->right, 1.0) && n->left ->type == n->type) return ast_emit_expr(n->left );
+                    break;
+            }
+
             expr a = ast_emit_expr(n->left );
             expr b = ast_emit_expr(n->right);
             switch (n->op) {

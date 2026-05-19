@@ -1,0 +1,41 @@
+#PRNAME algsimp
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Synthetic fixture for the algebraic-identity folder in
+// ast_emit_expr_impl's EXPR_BINOP dispatch. Each statement triggers one of:
+//   x + 0 -> x      0 + x -> x       x - 0 -> x
+//   x * 1 -> x      1 * x -> x       x / 1 -> x
+// The folder fires only when the surviving operand's type already matches
+// the BINOP's result type, so the dropped constant cannot have caused a
+// hidden int->float promotion. Locks down that codegen for these patterns
+// emits only the surviving subtree's instructions - no ADD/SUB/MUL/DIV
+// against the constant.
+
+void main()
+{
+    while (1)
+    {
+        int  v = in(0);
+
+        int  a = v + 0;
+        int  b = 0 + v;
+        int  c = v - 0;
+        int  d = v * 1;
+        int  e = 1 * v;
+        int  f = v / 1;
+
+        out(0, a);
+        out(0, b);
+        out(0, c);
+        out(0, d);
+        out(0, e);
+        out(0, f);
+    }
+}

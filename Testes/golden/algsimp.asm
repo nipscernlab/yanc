@@ -1,0 +1,39 @@
+NOP
+#PRNAME algsimp
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+@main @Lwh1 LOD 1
+JIZ Lwh1end
+INN 0
+SET main_v
+SET main_a
+LOD main_v
+SET main_b
+LOD main_v
+SET main_c
+LOD main_v
+SET main_d
+LOD main_v
+SET main_e
+LOD main_v
+SET main_f
+LOD main_a
+OUT 0
+LOD main_b
+OUT 0
+LOD main_c
+OUT 0
+LOD main_d
+OUT 0
+LOD main_e
+OUT 0
+LOD main_f
+OUT 0
+JMP Lwh1
+@Lwh1end @fim JMP fim
