@@ -65,21 +65,22 @@ expr_node *expr_var(int type, int id)
     return n;
 }
 
-expr_node *expr_binop(int op, int type, expr_node *left, expr_node *right)
+// type is intentionally not a parameter: composite nodes carry n->type = 0
+// out of enode_new (calloc), and typecheck_expr fills it bottom-up before
+// codegen runs.
+expr_node *expr_binop(int op, expr_node *left, expr_node *right)
 {
     expr_node *n = enode_new(EXPR_BINOP);
     n->op    = op;
-    n->type  = type;
     n->left  = left;
     n->right = right;
     return n;
 }
 
-expr_node *expr_unop(int op, int type, expr_node *operand)
+expr_node *expr_unop(int op, expr_node *operand)
 {
     expr_node *n = enode_new(EXPR_UNOP);
     n->op   = op;
-    n->type = type;
     n->left = operand;
     return n;
 }
@@ -106,11 +107,10 @@ expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2)
     return n;
 }
 
-expr_node *expr_stdlib(int op, int type, int port, expr_node *a, expr_node *b)
+expr_node *expr_stdlib(int op, int port, expr_node *a, expr_node *b)
 {
     expr_node *n = enode_new(EXPR_STDLIB_CALL);
     n->op    = op;
-    n->type  = type;
     n->id    = port;      // INUM port for IN/FIN/OUT, 0 for compute-only calls
     n->left  = a;
     n->right = b;
@@ -127,10 +127,9 @@ expr_node *expr_func_call(int type, int id, expr_node **args, int n_args)
     return n;
 }
 
-expr_node *expr_inner(int type, expr_node *a, expr_node *b)
+expr_node *expr_inner(expr_node *a, expr_node *b)
 {
     expr_node *n = enode_new(EXPR_INNER);
-    n->type  = type;
     n->left  = a;
     n->right = b;
     return n;

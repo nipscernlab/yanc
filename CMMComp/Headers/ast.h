@@ -129,15 +129,15 @@ typedef struct expr_node {
     expr cached;
 } expr_node;
 
-// constructors. `type` is what the producer rule already knows: for leaves
-// (literals, vars, array reads, pplus, func_call) it's the real result type;
-// for binary/unary/inner/stdlib nodes it's left 0 because the result type
-// is determined by the helpers the walker calls during emit. All return a
-// heap node owned by the caller; expr_free() recurses through children.
+// constructors. Leaf nodes (literal, var, array_index, pplus, func_call)
+// take the result type from the producer rule that already knows it.
+// Composite nodes (binop, unop, stdlib, inner) do NOT - typecheck_expr
+// fills n->type bottom-up before codegen runs. All return a heap node
+// owned by the caller; expr_free() recurses through children.
 expr_node *expr_lit  (int type, int id);
 expr_node *expr_var  (int type, int id);
-expr_node *expr_binop(int op, int type, expr_node *left, expr_node *right);
-expr_node *expr_unop (int op, int type, expr_node *operand);
+expr_node *expr_binop(int op, expr_node *left, expr_node *right);
+expr_node *expr_unop (int op, expr_node *operand);
 
 // id is the array's v_table index. reversed = 0 for x[i] (auto),
 // 1 for x[i) (FFT bit-reversed). idx2 is NULL for 1D access.
@@ -150,7 +150,7 @@ expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2);
 
 // generic stdlib call. `port` is the INUM port number for IN/FIN/OUT and
 // 0 for everything else. a/b are operand expressions (NULL if unused).
-expr_node *expr_stdlib(int op, int type, int port, expr_node *a, expr_node *b);
+expr_node *expr_stdlib(int op, int port, expr_node *a, expr_node *b);
 
 // user-defined function call. id is the function's v_table index. args is a
 // heap array of length n_args; the node takes ownership of both the array
@@ -159,7 +159,7 @@ expr_node *expr_func_call(int type, int id, expr_node **args, int n_args);
 
 // Dirac inner product <a|b>. a and b are vector references (typically built
 // via expr_var() with the array's v_table index).
-expr_node *expr_inner(int type, expr_node *a, expr_node *b);
+expr_node *expr_inner(expr_node *a, expr_node *b);
 
 // frees the node and every descendant recursively
 void expr_free(expr_node *n);

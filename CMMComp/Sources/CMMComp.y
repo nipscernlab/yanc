@@ -251,22 +251,22 @@ exp_list :                              {args_frame_push();}
 
 std_out  : OUT  '(' INUM ',' exp ')' ';'            {stmt_emit_inline(stmt_out($3, $5, 0));}  // data output
 std_fout : FOUT '(' INUM ',' exp ')' ';'            {stmt_emit_inline(stmt_out($3, $5, 1));}  // data output (converting to float)
-std_in   : INN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_IN,   0, $3, NULL, NULL);}  // data input
-std_fin  : FIN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FIN,  0, $3, NULL, NULL);}  // float input
-std_pst  : PST  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_PST,  0, 0,  $3,   NULL);}  // clears if negative
-std_abs  : ABS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ABS,  0, 0,  $3,   NULL);}  // |x|
-std_sign : SGN  '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_SIGN, 0, 0,  $3,   $5  );}  // y with sign of x
-std_nrm  : NRM  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_NRM,  0, 0,  $3,   NULL);}  // x / NUGAIN
+std_in   : INN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_IN, $3, NULL, NULL);}  // data input
+std_fin  : FIN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FIN, $3, NULL, NULL);}  // float input
+std_pst  : PST  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_PST, 0,  $3,   NULL);}  // clears if negative
+std_abs  : ABS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ABS, 0,  $3,   NULL);}  // |x|
+std_sign : SGN  '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_SIGN, 0,  $3,   $5  );}  // y with sign of x
+std_nrm  : NRM  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_NRM, 0,  $3,   NULL);}  // x / NUGAIN
 std_copy : COPY '(' exp  ',' ID  ')' ';'       {stmt_emit_inline(stmt_copy($3, $5));}                // void: copies x into y
-std_sqrt : SQRT '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SQRT, 0, 0,  $3,   NULL);}  // sqrt(x)
-std_atan : ATAN '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ATAN, 0, 0,  $3,   NULL);}  // atan(x)
-std_sin  : SIN  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SIN,  0, 0,  $3,   NULL);}  // sin(x)
-std_cos  : COS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_COS,  0, 0,  $3,   NULL);}  // cos(x)
-std_real : REAL '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_REAL, 0, 0,  $3,   NULL);}  // real(comp)
-std_imag : IMAG '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_IMAG, 0, 0,  $3,   NULL);}  // imag(comp)
-std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0, 0,  $3,   $5  );}  // complex(x, y)
-std_fase : FASE '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_FASE, 0, 0,  $3,   NULL);}  // phase(comp)
-std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_MOD2, 0, 0,  $3,   NULL);}  // |comp|^2
+std_sqrt : SQRT '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SQRT, 0,  $3,   NULL);}  // sqrt(x)
+std_atan : ATAN '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ATAN, 0,  $3,   NULL);}  // atan(x)
+std_sin  : SIN  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SIN, 0,  $3,   NULL);}  // sin(x)
+std_cos  : COS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_COS, 0,  $3,   NULL);}  // cos(x)
+std_real : REAL '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_REAL, 0,  $3,   NULL);}  // real(comp)
+std_imag : IMAG '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_IMAG, 0,  $3,   NULL);}  // imag(comp)
+std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0,  $3,   $5  );}  // complex(x, y)
+std_fase : FASE '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_FASE, 0,  $3,   NULL);}  // phase(comp)
+std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_MOD2, 0,  $3,   NULL);}  // |comp|^2
 std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_emit_inline(stmt_vout($3, $5, $7));}  // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
@@ -353,38 +353,37 @@ exp:       terminal                           {$$ = $1;}
          |    '(' exp ')'                     {$$ = $2;}
          |    '+' exp                         {$$ = $2;}
          // unary operators
-         |    '-' exp                         {$$ = expr_unop(OP_NEG, 0, $2);}
-         |    '!' exp                         {$$ = expr_unop(OP_LIN, 0, $2);}
-         |    '~' exp                         {$$ = expr_unop(OP_INV, 0, $2);}
+         |    '-' exp                         {$$ = expr_unop(OP_NEG, $2);}
+         |    '!' exp                         {$$ = expr_unop(OP_LIN, $2);}
+         |    '~' exp                         {$$ = expr_unop(OP_INV, $2);}
          | ID                         PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, NULL, NULL);}
          | ID '[' exp ']'             PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, $3,   NULL);}
          | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, $3,   $6  );}
          // shift operators
-         | exp  SHIFTL exp                    {$$ = expr_binop(OP_SHL,  0, $1, $3);}
-         | exp  SHIFTR exp                    {$$ = expr_binop(OP_SHR,  0, $1, $3);}
-         | exp SSHIFTR exp                    {$$ = expr_binop(OP_SSHR, 0, $1, $3);}
+         | exp  SHIFTL exp                    {$$ = expr_binop(OP_SHL, $1, $3);}
+         | exp  SHIFTR exp                    {$$ = expr_binop(OP_SHR, $1, $3);}
+         | exp SSHIFTR exp                    {$$ = expr_binop(OP_SSHR, $1, $3);}
          // bitwise operators
-         | exp   '&'   exp                    {$$ = expr_binop(OP_AND,  0, $1, $3);}
-         | exp   '|'   exp                    {$$ = expr_binop(OP_OR,   0, $1, $3);}
-         | exp   '^'   exp                    {$$ = expr_binop(OP_XOR,  0, $1, $3);}
+         | exp   '&'   exp                    {$$ = expr_binop(OP_AND, $1, $3);}
+         | exp   '|'   exp                    {$$ = expr_binop(OP_OR, $1, $3);}
+         | exp   '^'   exp                    {$$ = expr_binop(OP_XOR, $1, $3);}
          // arithmetic operators
-         | exp   '%'   exp                    {$$ = expr_binop(OP_MOD, 0, $1, $3);}
-         | exp   '+'   exp                    {$$ = expr_binop(OP_ADD, 0, $1, $3);}
-         | exp   '-'   exp                    {$$ = expr_binop(OP_SUB, 0, $1, $3);}
-         | exp   '*'   exp                    {$$ = expr_binop(OP_MUL, 0, $1, $3);}
-         | exp   '/'   exp                    {$$ = expr_binop(OP_DIV, 0, $1, $3);}
+         | exp   '%'   exp                    {$$ = expr_binop(OP_MOD, $1, $3);}
+         | exp   '+'   exp                    {$$ = expr_binop(OP_ADD, $1, $3);}
+         | exp   '-'   exp                    {$$ = expr_binop(OP_SUB, $1, $3);}
+         | exp   '*'   exp                    {$$ = expr_binop(OP_MUL, $1, $3);}
+         | exp   '/'   exp                    {$$ = expr_binop(OP_DIV, $1, $3);}
          // true/false operators
-         | exp  LAN    exp                    {$$ = expr_binop(OP_LAN, 0, $1, $3);}
-         | exp  LOR    exp                    {$$ = expr_binop(OP_LOR, 0, $1, $3);}
-         | exp   '<'   exp                    {$$ = expr_binop(OP_LT,  0, $1, $3);}
-         | exp   '>'   exp                    {$$ = expr_binop(OP_GT,  0, $1, $3);}
-         | exp  EQU    exp                    {$$ = expr_binop(OP_EQ,  0, $1, $3);}
-         | exp  GREQU  exp                    {$$ = expr_binop(OP_GE,  0, $1, $3);}
-         | exp  LESEQ  exp                    {$$ = expr_binop(OP_LE,  0, $1, $3);}
-         | exp  DIF    exp                    {$$ = expr_binop(OP_NE,  0, $1, $3);}
+         | exp  LAN    exp                    {$$ = expr_binop(OP_LAN, $1, $3);}
+         | exp  LOR    exp                    {$$ = expr_binop(OP_LOR, $1, $3);}
+         | exp   '<'   exp                    {$$ = expr_binop(OP_LT, $1, $3);}
+         | exp   '>'   exp                    {$$ = expr_binop(OP_GT, $1, $3);}
+         | exp  EQU    exp                    {$$ = expr_binop(OP_EQ, $1, $3);}
+         | exp  GREQU  exp                    {$$ = expr_binop(OP_GE, $1, $3);}
+         | exp  LESEQ  exp                    {$$ = expr_binop(OP_LE, $1, $3);}
+         | exp  DIF    exp                    {$$ = expr_binop(OP_NE, $1, $3);}
          // linear algebra with exp return (Dirac notation)
-         | KET ID '|' ID BRA                  {$$ = expr_inner(0,
-                                                            expr_var(v_table[$2].type, $2),
+         | KET ID '|' ID BRA                  {$$ = expr_inner(expr_var(v_table[$2].type, $2),
                                                             expr_var(v_table[$4].type, $4));}
 
 // terminals used in reductions for expressions -------------------------------
