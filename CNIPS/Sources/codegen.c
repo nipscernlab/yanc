@@ -104,6 +104,15 @@ static void loop_pop(void) { loop_top--; }
 static char *sw_break_stk[MAX_LOOPS];
 static int   sw_top = 0;
 
+// ---- string-literal pool ---------------------------------------------------
+// Each "..." becomes a global char array _str<N> (1 word per char + NUL),
+// declared up front and filled at main entry. The expression value is the
+// array's base address (C array-to-pointer decay).
+typedef struct { char *label; char *bytes; int len; } strlit;
+#define STRLIT_MAX 256
+static strlit strtab[STRLIT_MAX];
+static int    strtab_n = 0;
+
 // ---- forward decls ---------------------------------------------------------
 
 static void gen_expr (expr *e);
@@ -112,6 +121,40 @@ static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
 static void gen_bool (expr *e, const char *jz_target);
 static type *infer_type(expr *e);
+
+// ---- string-literal pre-scan (assigns each "..." a global label) -----------
+
+static void scan_strings_stmt(stmt *s);
+
+static void scan_strings_expr(expr *e)
+{
+    if (!e) return;
+    if (e->kind == E_STRING_LIT && !e->member) {
+        if (strtab_n >= STRLIT_MAX) msg_internal("too many string literals");
+        char lbl[32]; snprintf(lbl, sizeof(lbl), "_str%d", strtab_n);
+        e->member = strdup(lbl);
+        strtab[strtab_n].label = e->member;
+        strtab[strtab_n].bytes = e->sval;
+        strtab[strtab_n].len   = e->slen;
+        strtab_n++;
+    }
+    scan_strings_expr(e->a);
+    scan_strings_expr(e->b);
+    scan_strings_expr(e->c);
+    for (int i = 0; i < e->n_args; i++) scan_strings_expr(e->args[i]);
+}
+
+static void scan_strings_stmt(stmt *s)
+{
+    if (!s) return;
+    scan_strings_expr(s->e1); scan_strings_expr(s->e2); scan_strings_expr(s->e3);
+    scan_strings_stmt(s->body); scan_strings_stmt(s->body2); scan_strings_stmt(s->init_stmt);
+    for (int i = 0; i < s->n_items; i++) scan_strings_stmt(s->items[i]);
+    for (decl *d = s->decls; d; d = d->next) {
+        scan_strings_expr(d->init);
+        for (int i = 0; i < d->n_init; i++) scan_strings_expr(d->init_list[i]);
+    }
+}
 
 // ---- type inference (lightweight; fills e->etype bottom-up) ----------------
 
@@ -365,7 +408,9 @@ static void gen_expr(expr *e)
     case E_INT_LIT: case E_CHAR_LIT: emit_load_int(e->ival); return;
     case E_FLOAT_LIT:                emit_load_float(e->fval); return;
     case E_STRING_LIT:
-        msg_error(e->line, "string literals as values not supported in v1");
+        // decays to the base address of its materialised global char array
+        if (!e->member) msg_internal("string literal not pre-scanned");
+        emit("LEA %s", e->member);
         return;
 
     case E_IDENT: {
@@ -940,6 +985,31 @@ static void emit_global_arrays(unit *u)
     }
 }
 
+// declare a global char array per string literal (1 word/char + NUL)
+static void emit_string_arrays(void)
+{
+    for (int i = 0; i < strtab_n; i++)
+        emit("#array %s 1 %d", strtab[i].label, strtab[i].len + 1);
+}
+
+// fill each string array at main entry: byte-by-byte stores + NUL terminator
+static void emit_string_inits(void)
+{
+    for (int i = 0; i < strtab_n; i++) {
+        for (int k = 0; k < strtab[i].len; k++) {
+            emit("LOD %d", k);
+            emit("PSH");
+            emit("LOD %d", (unsigned char)strtab[i].bytes[k]);
+            emit("STI %s", strtab[i].label);
+        }
+        // NUL terminator at index len (memory defaults to 0, but be explicit)
+        emit("LOD %d", strtab[i].len);
+        emit("PSH");
+        emit("LOD 0");
+        emit("STI %s", strtab[i].label);
+    }
+}
+
 static void emit_global_scalar_inits(unit *u)
 {
     for (int i = 0; i < u->n_globals; i++) {
@@ -985,7 +1055,7 @@ static void emit_function(func *f, unit *u, int is_main)
         }
     }
 
-    if (is_main) emit_global_scalar_inits(u);
+    if (is_main) { emit_string_inits(); emit_global_scalar_inits(u); }
 
     gen_stmt(f->body);
 
@@ -1015,7 +1085,7 @@ static void write_cmm_log(const char *tmp_dir)
 void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 {
     out_f = out_file;
-    ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0;
+    ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0;
 
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
@@ -1034,8 +1104,17 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     }
     if (!has_main) msg_error(0, "program has no main() function");
 
+    // pre-scan every function body and global initialiser for string literals,
+    // assigning each a global label before any codegen emits a reference.
+    for (int i = 0; i < u->n_funcs; i++) scan_strings_stmt(u->funcs[i]->body);
+    for (int i = 0; i < u->n_globals; i++) {
+        scan_strings_expr(u->globals[i]->init);
+        for (int k = 0; k < u->globals[i]->n_init; k++) scan_strings_expr(u->globals[i]->init_list[k]);
+    }
+
     emit_header(u);
     emit_global_arrays(u);
+    emit_string_arrays();
     emit("JMP main");
 
     for (int i = 0; i < u->n_funcs; i++) {
