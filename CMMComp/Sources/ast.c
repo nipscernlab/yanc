@@ -283,7 +283,30 @@ void typecheck_expr(expr_node *n)
             }
             break;
 
-        // EXPR_INNER, EXPR_STDLIB_CALL: not yet typechecked (n->type stays 0)
+        case EXPR_STDLIB_CALL:
+            switch (n->op)
+            {
+                case OP_STD_IN:                                  n->type = 1;  break;
+                case OP_STD_FIN:                                 n->type = 2;  break;
+                case OP_STD_PST: case OP_STD_ABS:                n->type = lt; break;
+                case OP_STD_SIGN:                                n->type = rt; break;
+                case OP_STD_NRM:                                 n->type = 1;  break;
+                case OP_STD_SQRT: case OP_STD_ATAN:
+                case OP_STD_SIN:  case OP_STD_COS:               n->type = 2;  break;
+                case OP_STD_REAL: case OP_STD_IMAG:
+                case OP_STD_FASE: case OP_STD_MOD2:              n->type = 2;  break;
+                case OP_STD_COMP:                                n->type = 3;  break;
+                default: break;
+            }
+            break;
+
+        case EXPR_INNER:
+            // <a|b> reduces via exec_vtv, which returns the element type of
+            // the first operand. left is an EXPR_VAR whose type already
+            // carries v_table[id].type, so just propagate.
+            n->type = lt;
+            break;
+
         default: break;
     }
 }
