@@ -129,6 +129,10 @@ void  yyerror(char const *s);
 
 // par_list / par_items have no semantic value (declar_par appends ids to the
 // deferred func_params[] array; func_body_begin consumes them).
+//
+// func_intro carries the function's v_table id up to funcao so func_ret can
+// finalize the function without a mid-rule on `TYPE ID`.
+%type <ival> func_intro
 
 // expressions ride the bison stack as expr_node *. Each producer builds the
 // subtree it just parsed; codegen happens when a statement-level consumer
@@ -185,10 +189,15 @@ IID    : ID                           {declar_var   ($1         );}
 
 // Function declaration -------------------------------------------------------
 
-funcao : TYPE ID '('                      {declar_fun($1,$2);} // state setup must precede par_list (declar_par needs fname/fun_parse)
-         par_list ')' '{'                                       // par_list's end-action runs func_body_begin
-         stmt_list '}'                    {func_ret($2);}       // close body, walker emits everything
-       ;
+funcao : func_intro par_list ')' '{' stmt_list '}' {func_ret($1);} // $1 = func_intro's ID; walker emits everything
+
+// State-setup phase of a function declaration. Pulled into its own named
+// non-terminal so the action is a clean end-action - no mid-rule sitting
+// between TYPE ID '(' and par_list. declar_fun records fname / fun_parse /
+// the JMP-main flag / the parameter collector reset; par_list / declar_par
+// run afterwards and depend on that state being in place.
+func_intro : TYPE ID '('                  {declar_fun($1,$2); $$ = $2;}
+           ;
 
 // Parameter list. par_list always reduces, even when empty - its end-action
 // is the natural place to build the STMT_FUNC_HEADER (param count is final)
@@ -266,31 +275,34 @@ std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_emit_inline(stmt_vout(
 
 // if/else --------------------------------------------------------------------
 
-if_else_stmt : if_exp stmt_full ELSE             {else_stmt(  );} // complete if/else
-               stmt_full                         {stmt_emit_inline(if_fim ());}
-             | if_exp stmt_full     %prec THEN   {stmt_emit_inline(if_stmt());} // if without else
-if_exp       : IF '(' exp ')'                    {if_exp   ($3);} // build pending STMT_IF
+if_else_stmt : if_exp stmt_full else_intro stmt_full {stmt_emit_inline(if_fim());}  // complete if/else
+             | if_exp stmt_full %prec THEN           {stmt_emit_inline(if_stmt());} // if without else
+if_exp       : IF '(' exp ')'                        {if_exp($3);}                  // build pending STMT_IF
+else_intro   : ELSE                                  {else_stmt();}                 // close then-body, open else-body
 
 // switch/case ----------------------------------------------------------------
 
-switch_case : SWITCH '(' exp ')'  {exec_switch($3);}
-              '{' cases '}'       {stmt_emit_inline(end_switch());}
+switch_case   : switch_intro '{' cases '}' {stmt_emit_inline(end_switch());}
+switch_intro  : SWITCH '(' exp ')'         {exec_switch($3);}
 
-case_list   :           stmt_case
-            | case_list stmt_case
-            | case_list BREAK ';' {switch_break();} // case has its own break (different from while and for)
+case_list     :           stmt_case
+              | case_list stmt_case
+              | case_list BREAK ';'        {switch_break();} // case-local break (distinct from while)
 
-case        : CASE INUM ':'       {  case_test($2,1);} case_list
-            | CASE FNUM ':'       {  case_test($2,2);} case_list
-default     : DEFAULT   ':'       {defaut_test(    );} case_list
+case          : case_label    case_list
+case_label    : CASE INUM ':' {case_test($2,1);}
+              | CASE FNUM ':' {case_test($2,2);}
 
-cases       : case | default | case cases
+default       : default_label case_list
+default_label : DEFAULT   ':' {defaut_test();}
+
+cases         : case | default | case cases
 
 // while ----------------------------------------------------------------------
 
-while_stmt : while_exp stmt_full           {stmt_emit_inline(while_stmt());}
-while_exp  : WHILE                         {while_expp  (  );}
-            '(' exp ')'                    {while_expexp($4);}
+while_stmt  : while_exp stmt_full {stmt_emit_inline(while_stmt());}
+while_exp   : while_intro '(' exp ')' {while_expexp($3);}
+while_intro : WHILE               {while_expp();}
 break      : BREAK ';'                     {stmt_emit_inline(exec_break());}
 
 // assignments ----------------------------------------------------------------
