@@ -827,6 +827,17 @@ stmt_node *stmt_declar_cv(int id_var, int id_N, expr_node *c, int id_v)
     return n;
 }
 
+stmt_node *stmt_func_header(int func_id, int needs_jmp_main,
+                            int *params, int n_params)
+{
+    stmt_node *n = snode_new(STMT_FUNC_HEADER);
+    n->id       = func_id;
+    n->op       = needs_jmp_main;
+    n->params   = params;
+    n->n_params = n_params;
+    return n;
+}
+
 // ----------------------------------------------------------------------------
 // statement walker -----------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -1040,6 +1051,39 @@ void stmt_emit(stmt_node *n)
             declar_arr_1d_emit(n->id, n->id2, -1);
             exec_cv(n->id, ast_emit_expr(n->rhs), n->id3);
             break;
+
+        case STMT_FUNC_HEADER: {
+            // Function prologue. Emits, in order:
+            //   - JMP main\n             (only when this is the first non-main
+            //                             function: control falls through at
+            //                             reset, so we redirect to main)
+            //   - @<funcname>            (label)
+            //   - SET_P <p[k]>           (last-to-second param, with imag
+            //                             half first when the param is comp)
+            //   - SET   <p[0]>           (first param)
+            // Mirrors the pre-AST pattern that declar_fun / declar_fst /
+            // set_par used to do inline at parse time.
+            if (n->op) add_sinst(-2, "JMP main\n");
+            add_sinst(0, "@%s ", v_table[n->id].name);
+            for (int i = n->n_params - 1; i >= 1; i--)
+            {
+                int pid = n->params[i];
+                if (v_table[pid].type > 2)
+                    add_instr("SET_P %s\n", v_table[get_img_id(pid)].name);
+                add_instr("SET_P %s\n", v_table[pid].name);
+            }
+            if (n->n_params >= 1)
+            {
+                int pid = n->params[0];
+                if (v_table[pid].type > 2)
+                    add_instr("SET_P %s\n", v_table[get_img_id(pid)].name);
+                add_instr("SET %s\n", v_table[pid].name);
+            }
+            // The function entry is a basic-block boundary: the body's first
+            // instruction cannot fuse with the parameter SET via the peephole.
+            emit_peephole_reset();
+            break;
+        }
     }
 
     n->emitted = 1;
@@ -1057,6 +1101,7 @@ void stmt_free(stmt_node *n)
     stmt_free(n->body);
     for (int i = 0; i < n->kids_n; i++) stmt_free(n->kids[i]);
     free(n->kids);
+    free(n->params);
     free(n);
 }
 

@@ -11,6 +11,7 @@ ZeroCross  140
 algsimp    30
 dirac_assign 177
 empty_call 16
+multiparam 32
 pplus_arr  25
 procBlind  797
 proc_fft   325

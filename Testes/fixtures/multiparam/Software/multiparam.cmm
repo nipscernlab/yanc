@@ -1,0 +1,39 @@
+#PRNAME multiparam
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Synthetic fixture: exercises STMT_FUNC_HEADER for functions with 2 and 3
+// parameters. The walker is supposed to emit `SET_P pN ... SET_P p1` for
+// every parameter after the first (last-to-second in declaration order) and
+// `SET p0` for the first - mirroring what the old declar_fst + set_par mid-
+// rules used to emit at parse time. No existing fixture covered this path.
+
+int add(int a, int b)
+{
+    return a + b;
+}
+
+int triple_sum(int x, int y, int z)
+{
+    return x + y + z;
+}
+
+void main()
+{
+    while (1)
+    {
+        int v = in(0);
+
+        int two   = add       (v, 1);
+        int three = triple_sum(v, 1, 2);
+
+        out(0, two);
+        out(0, three);
+    }
+}

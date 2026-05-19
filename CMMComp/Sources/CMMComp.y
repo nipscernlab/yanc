@@ -186,18 +186,19 @@ IID    : ID                           {declar_var   ($1         );}
 // Function declaration -------------------------------------------------------
 
 funcao : TYPE ID  '('                     {declar_fun($1,$2);} // start of a function declaration
-         par_list ')'                     {declar_fst($5   );} // sets the first parameter in the matching variable
-         '{'                              {func_body_begin();} // open body capture for the AST walker
-         stmt_list '}'                    {func_ret  ($2   );} // close body capture, emit AST, finalize
+         par_list ')'
+         '{'                              {func_body_begin();} // open body capture, build STMT_FUNC_HEADER
+         stmt_list '}'                    {func_ret  ($2   );} // close body, run walker, finalize
        | TYPE ID  '('  ')'                {declar_fun($1,$2);} // function without parameters
          '{'                              {func_body_begin();}
          stmt_list '}'                    {func_ret  ($2   );}
 
-// parameter list in the declaration
-// arrays are not yet allowed as function parameters
-// returns the parameter id
-par_list : TYPE ID                        {$$ = declar_par($1,$2);}
-         | par_list ',' par_list          {        set_par($3   );} // pulls from the stack
+// parameter list in the declaration. declar_par records each parameter in
+// the deferred func_params[] collector; the SET / SET_P emits live in
+// the STMT_FUNC_HEADER walker case.
+// arrays are not yet allowed as function parameters.
+par_list : TYPE ID                        {declar_par($1,$2);}
+         | par_list ',' par_list
 
 // function and void returns
 return_call : RET exp ';'                 {stmt_emit_inline(stmt_return($2  ));}

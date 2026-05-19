@@ -32,6 +32,18 @@ int ret_ok;       // tells whether the function returned correctly
 int fun_parse;    // stores the id of the function being parsed
 int p_test;       // identifies parameters in function calls (similar to OFST but with value 10)
 
+// Parameter ids collected by declar_par for the function currently being
+// declared. func_body_begin moves these into a STMT_FUNC_HEADER node, then
+// resets the count. Fixed-size: parameter lists never get large.
+#define FUNC_MAX_PARAMS 16
+static int func_params[FUNC_MAX_PARAMS];
+static int func_nparams = 0;
+
+// Set by declar_fun when it decides the current function needs a `JMP main`
+// prologue (the first non-main function in source order). Consumed by
+// func_body_begin when it builds the STMT_FUNC_HEADER, then resets.
+static int func_jmp_main = 0;
+
 // ----------------------------------------------------------------------------
 // arg-stack frames for nested function calls --------------------------------
 // ----------------------------------------------------------------------------
@@ -341,50 +353,34 @@ void par_check(expr e)
 // ----------------------------------------------------------------------------
 
 // declares a function
-void declar_fun(int id1, int id2) //id1 -> type, id2 -> name index
+// Records the function entry in v_table + decides whether a `JMP main`
+// prologue will be needed once this function gets emitted. No codegen
+// happens here - the @label, the optional JMP main and the per-parameter
+// SET / SET_P all live in the walker case for STMT_FUNC_HEADER and fire
+// only when func_body_begin builds that node.
+void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
 {
-    // enter this if the first declared function is not main
-    // in that case a JMP to main is needed first
-    // because main must be the first function after reset
-    if ((mainok == 0) && (strcmp(v_table[id2].name, "main") != 0))
+    int is_main = (strcmp(v_table[id2].name, "main") == 0);
+    if (mainok == 0)
     {
-        add_sinst(-2, "JMP main\n");
-
-        mainok = 1; // main-function question resolved
+        func_jmp_main = !is_main; // walker emits JMP main before the @label
+        mainok        = 1;        // first function resolves the main question
     }
-    // enter this if the first declared function is main
-    // no JMP needed here
-    // just record that the question is resolved in mainok
-    else if ((mainok == 0) && (strcmp(v_table[id2].name, "main") == 0))
+    else
     {
-        mainok = 1; // defined how the main function will be used
+        func_jmp_main = 0;
     }
-
-    add_sinst(0, "@%s ", v_table[id2].name);
 
     strcpy(fname, v_table[id2].name); // set the fname state to the function being analyzed
     v_table[id2].type = id1+6       ; // v_type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
-    fun_parse   = id2         ; // set the fun_parse state to the function's name id
-    ret_ok      = 0           ; // set ret_ok to zero (function parsing starts)
+    fun_parse    = id2; // set the fun_parse state to the function's name id
+    ret_ok       = 0;   // set ret_ok to zero (function parsing starts)
+    func_nparams = 0;   // reset param collection for the new function
 }
 
-// picks up the first parameter
-void declar_fst(int id)
-{
-    // if comp ...
-    if (v_table[id].type > 2)
-    {
-        // first take the img from the stack
-        int idi = get_img_id(id);
-        add_instr("SET_P %s\n", v_table[idi].name);
-    }
-
-    // the first function parameter uses SET (since it is the last to be called)
-    // the remaining ones (if any) use SET_P in another function
-    add_instr("SET %s\n", v_table[id].name);
-}
-
-// picks up the second parameter and onwards
+// Records a parameter. Each declar_par call appends to func_params in
+// declaration order; the emit (SET / SET_P) is deferred to the walker
+// via STMT_FUNC_HEADER built in func_body_begin.
 int declar_par(int type, int id)
 {
     declar_var(id); // arrays cannot be passed as function parameters
@@ -392,19 +388,10 @@ int declar_par(int type, int id)
     // store info about every parameter's data type in a single number
     v_table[fun_parse].fpar = v_table[fun_parse].fpar*10 + type;
 
-    return id;
-}
+    if (func_nparams < FUNC_MAX_PARAMS)
+        func_params[func_nparams++] = id;
 
-// emits SET_P on each parameter as we walk through them
-void set_par(int id)
-{
-    // if comp
-    if (v_table[id].type > 2)
-    {
-        int idi = get_img_id(id);
-        add_instr("SET_P %s\n", v_table[idi].name);
-    }
-        add_instr("SET_P %s\n", v_table[id].name );
+    return id;
 }
 
 // when the return keyword is found
@@ -609,18 +596,29 @@ void declar_ret(expr e, int ret)
 }
 
 // fires at the opening '{' of a function body. Opens the stmt_list that
-// collects every statement reduced inside the body. The matching '}' (in
+// collects every statement reduced inside the body, then drops a
+// STMT_FUNC_HEADER on top of it so the walker emits @label / JMP main /
+// per-parameter SET[_P] before the body's stmts. The matching '}' (in
 // func_ret) closes the list and walks it through stmt_emit, producing the
-// function body's assembly all at once. No text capture is in play - every
-// emit happens at walker time.
-//
-// Also resets the SET-then-LOD peephole window: a function's first body
-// instruction is a fresh basic block and shouldn't fuse with whatever
-// declar_fst emitted as the parameter SET.
+// function body's assembly all at once.
 void func_body_begin(void)
 {
     stmt_list_open();
     emit_peephole_reset();
+
+    // Hand the collected param ids over to the header node; reset the
+    // collector for the next function.
+    int *params = NULL;
+    if (func_nparams > 0)
+    {
+        params = malloc(sizeof(int) * func_nparams);
+        if (!params) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        memcpy(params, func_params, sizeof(int) * func_nparams);
+    }
+    stmt_emit_inline(stmt_func_header(fun_parse, func_jmp_main,
+                                      params, func_nparams));
+    func_nparams = 0;
+    func_jmp_main = 0;
 }
 
 // end of the parsing for a function declaration

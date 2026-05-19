@@ -17,12 +17,10 @@ void par_check(expr e);
 
 // declaration ----------------------------------------------------------------
 
-void  declar_fun(int id1, int id2); // type and name
-void  declar_fst(int id);           // first/only parameter
-int   declar_par(int   t, int id ); // next parameter
-void     set_par(int id);           // SET on the parameter
+void  declar_fun(int id1, int id2); // type and name (state only - emit is deferred)
+int   declar_par(int   t, int id ); // appends to the deferred STMT_FUNC_HEADER param list
 void  declar_ret(expr e , int ret); // a return keyword was found
-void func_body_begin(void);         // fires at the function's opening '{'
+void func_body_begin(void);         // fires at the function's '{', builds STMT_FUNC_HEADER
 void    func_ret(int id);           // end/return of the function
 void    void_ret(      );           // end of a void function
 

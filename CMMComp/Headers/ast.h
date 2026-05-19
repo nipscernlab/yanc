@@ -208,6 +208,9 @@ typedef enum {
     STMT_DECLAR_ARR_2D, // int/float/comp x[N][M];  id=id_var, id2=id_x, id3=id_y, id4=id_fname
     STMT_DECLAR_MV,     // float a[N] # |M|v⟩;     id=id_var, id2=id_N, id3=id_M, id4=id_v
     STMT_DECLAR_CV,     // float a[N] # c|v⟩;      id=id_var, id2=id_N, id3=id_v, rhs=c expression
+    STMT_FUNC_HEADER,   // @label + optional JMP main + per-param SET[_P];
+                        // id=func v_table index, op=needs_jmp_main flag,
+                        // params[]/n_params=param ids in declaration order
 } stmt_kind;
 
 // Sub-operation for STMT_DIRAC. The 10 Dirac forms share enough structure
@@ -245,6 +248,10 @@ typedef struct stmt_node {
     struct stmt_node **kids;
     int                kids_n;
     int                kids_cap;
+
+    // STMT_FUNC_HEADER: parameter ids in declaration order (owned, freed by stmt_free)
+    int               *params;
+    int                n_params;
 
     // compound control flow (IF / WHILE / SWITCH): cond is the condition
     // expression evaluated at walker time. then_body/else_body/body are
@@ -319,6 +326,12 @@ stmt_node *stmt_declar_arr_2d(int id_var, int id_x, int id_y, int id_fname);
 // is then walked through exec_Mv / exec_cv.
 stmt_node *stmt_declar_Mv   (int id_var, int id_N, int id_M, int id_v);
 stmt_node *stmt_declar_cv   (int id_var, int id_N, struct expr_node *c, int id_v);
+
+// Function prologue: @label + optional JMP main (when this is the first
+// non-main function) + per-parameter SET[_P]. params[] is consumed (takes
+// ownership of the heap array; freed by stmt_free).
+stmt_node *stmt_func_header (int func_id, int needs_jmp_main,
+                             int *params, int n_params);
 
 // Body-list stack. stmt_list_open() pushes a fresh STMT_BLOCK; every
 // stmt_emit_inline call while the stack is non-empty records the just-built
