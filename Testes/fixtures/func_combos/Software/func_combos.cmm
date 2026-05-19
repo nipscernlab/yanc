@@ -1,0 +1,75 @@
+#PRNAME func_combos
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Function-call ABI coverage. Each user function exercises a distinct
+// declar_par / STMT_FUNC_HEADER configuration:
+//   - 0 params, void return (noargs_void)
+//   - 0 params, int  return (noargs_int)
+//   - 1 int   param        (one_int)
+//   - 1 float param        (one_float)
+//   - 1 comp  param        (exercises the imag-half SET_P prologue)
+//   - 3 mixed-type params  (int, float, comp - exercises SET_P cascade
+//                           across types in a single header)
+// main() calls each at least once so par_check / fcall / vcall codegen
+// is exercised for every parameter-type combination too.
+
+void noargs_void()
+{
+    out(0, 7);
+}
+
+int noargs_int()
+{
+    return 42;
+}
+
+int one_int(int a)
+{
+    return a + 1;
+}
+
+float one_float(float b)
+{
+    return b + 0.5;
+}
+
+comp one_comp(comp c)
+{
+    return c;
+}
+
+int three_mixed(int p, float q, comp r)
+{
+    out (0, p);
+    fout(0, q);
+    fout(0, real(r));
+    return p;
+}
+
+void main()
+{
+    while (1)
+    {
+        noargs_void();
+        int v1 = noargs_int();
+
+        int   v2 = one_int  (5);
+        float v3 = one_float(2.5);
+        comp  v4 = one_comp (1.0+2.0i);
+
+        int v5 = three_mixed(7, 3.5, 6.0+7.0i);
+
+        out (0, v1);
+        out (0, v2);
+        fout(0, v3);
+        fout(0, real(v4));
+        out (0, v5);
+    }
+}
