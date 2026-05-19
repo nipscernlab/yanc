@@ -24,7 +24,6 @@ extern symbol *v_table;                  // AoS storage, indexed by ID 0..v_coun
 // hasn't been cut over yet.
 
 extern char (*v_name)[512];              // name of the variable or function
-extern int  *v_type;                     // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 5 -> const comp
 
 // table element manipulation -------------------------------------------------
 

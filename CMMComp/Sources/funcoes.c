@@ -363,7 +363,7 @@ void declar_fun(int id1, int id2) //id1 -> type, id2 -> name index
     add_sinst(0, "@%s ", v_name[id2]);
 
     strcpy(fname, v_name[id2]); // set the fname state to the function being analyzed
-    v_type[id2] = id1+6       ; // v_type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
+    v_table[id2].type = id1+6       ; // v_type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
     fun_parse   = id2         ; // set the fun_parse state to the function's name id
     ret_ok      = 0           ; // set ret_ok to zero (function parsing starts)
 }
@@ -372,7 +372,7 @@ void declar_fun(int id1, int id2) //id1 -> type, id2 -> name index
 void declar_fst(int id)
 {
     // if comp ...
-    if (v_type[id] > 2)
+    if (v_table[id].type > 2)
     {
         // first take the img from the stack
         int idi = get_img_id(id);
@@ -399,7 +399,7 @@ int declar_par(int type, int id)
 void set_par(int id)
 {
     // if comp
-    if (v_type[id] > 2)
+    if (v_table[id].type > 2)
     {
         int idi = get_img_id(id);
         add_instr("SET_P %s\n", v_name[idi]);
@@ -411,11 +411,11 @@ void set_par(int id)
 void declar_ret(expr e, int ret)
 {
     // check whether it really is a function, or void by mistake
-    if (v_type[fun_parse] == 6)
+    if (v_table[fun_parse].type == 6)
         {fprintf (stderr, MSG_ERR_VOID_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
 
     // test whether it is inside an if/else
-    //if ((get_if() > 0) && (v_type[fun_parse] != 6))
+    //if ((get_if() > 0) && (v_table[fun_parse].type != 6))
         //fprintf(stdout, "Heads up on line %d: using return inside if/else can break if you forget it somewhere!\n", line_num+1);
 
     // ------------------------------------------------------------------------
@@ -423,7 +423,7 @@ void declar_ret(expr e, int ret)
     // ------------------------------------------------------------------------
 
     expr etr, eti;
-    int left_type = v_type[fun_parse];
+    int left_type = v_table[fun_parse].type;
 
     // int with int var
     if ((left_type == 7) && (e.type == 1) && (e.id!=0))
@@ -634,7 +634,7 @@ void func_ret(int id) // id -> id of the current function
     stmt_free(body);
 
     // check whether the function had the return x; instruction
-    if ((v_type[id] != 6) && (ret_ok == 0))
+    if ((v_table[id].type != 6) && (ret_ok == 0))
         {fprintf (stderr, MSG_ERR_FUNC_NO_RETURN, v_name[id]); exit(EXIT_FAILURE);}
 
     // if it is the main function, emit a JMP fim
@@ -644,7 +644,7 @@ void func_ret(int id) // id -> id of the current function
 
         v_table[id].used = 1; // main was used (avoid the warning of main declared but not used)
     }
-    else if (v_type[id] == 6) {add_instr("RET\n");} // void type still needs a RET
+    else if (v_table[id].type == 6) {add_instr("RET\n");} // void type still needs a RET
 
     // env variable fname becomes empty (left a function)
     strcpy(fname, "");
@@ -654,7 +654,7 @@ void func_ret(int id) // id -> id of the current function
 void void_ret()
 {
     // check whether it really is void, or a non-void by mistake
-    if (v_type[fun_parse] != 6)
+    if (v_table[fun_parse].type != 6)
         {fprintf (stderr, MSG_ERR_NO_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
 
     // if main, use JMP fim instead of RET
@@ -689,7 +689,7 @@ void par_listexp(expr_node *n)
 // walker visits the calls in source order, swapping arg lists.
 stmt_node *vcall(int id)
 {
-    if  (v_type[id] < 6)
+    if  (v_table[id].type < 6)
     {
         fprintf(stderr, MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
@@ -714,12 +714,12 @@ stmt_node *vcall(int id)
 // No emit at parse time - the walker emits when the consumer calls EE($N).
 expr_node *fcall(int id)
 {
-    if (v_type[id] == 6)
+    if (v_table[id].type == 6)
     {
         fprintf (stderr, MSG_ERR_VOID_FUNC_USE, line_num+1, v_name[id]);
         exit(EXIT_FAILURE);
     }
-    else if (v_type[id] < 6)
+    else if (v_table[id].type < 6)
     {
         fprintf (stderr, MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
@@ -735,5 +735,5 @@ expr_node *fcall(int id)
 
     v_table[id].used = 1;
 
-    return expr_func_call(v_type[id]-6, id, a, n);
+    return expr_func_call(v_table[id].type-6, id, a, n);
 }

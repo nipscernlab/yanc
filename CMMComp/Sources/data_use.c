@@ -29,7 +29,7 @@ expr num2exp(int id, int dtype)
     v_table[id].used          = 1;
     v_table[id].isco    = 1;
     v_table[id].isar          = 0;
-    v_type[id]          = dtype;
+    v_table[id].type          = dtype;
 
     return expr_make(dtype, id);
 }
@@ -39,7 +39,7 @@ expr num2exp(int id, int dtype)
 expr id2exp(int id)
 {
     // test whether the variable has already been declared
-    if (v_type[id] == 0)
+    if (v_table[id].type == 0)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // if it is an array, the index is missing
@@ -48,13 +48,13 @@ expr id2exp(int id)
 
     v_table[id].used = 1;
 
-    return expr_make(v_type[id], id);
+    return expr_make(v_table[id].type, id);
 }
 
 // ++ reduction into expr
 expr pplus2exp(int id)
 {
-    if (v_type[id] > 2)
+    if (v_table[id].type > 2)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalent to taking x in the expression (x+1)
@@ -79,7 +79,7 @@ expr pplus2exp(int id)
 // ++ reduction into expr on a 1D array
 expr pplus1d2exp(int id, expr ete)
 {
-    if (v_type[id] > 2)
+    if (v_table[id].type > 2)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalent to taking x in the expression (x+1)
@@ -105,7 +105,7 @@ expr pplus1d2exp(int id, expr ete)
 // ++ reduction into expr on a 2D array
 expr pplus2d2exp(int id, expr e1, expr e2)
 {
-    if (v_type[id] > 2)
+    if (v_table[id].type > 2)
         {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // equivalent to taking x in the expression (x+1)

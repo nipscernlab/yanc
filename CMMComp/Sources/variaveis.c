@@ -18,11 +18,10 @@ int          v_count = 0;  // stores the size of the table
 static int   v_cap   = 0;  // current capacity of the parallel arrays
 
 char (*v_name)[512] = NULL; // name of the variable or function
-int  *v_type       = NULL; // 0 -> unidentified, 1 -> int, 2 -> float
 
-// AoS storage. Only v_name / v_type remain on SoA; everything else now
-// lives in v_table[i].{used,isar,size,fpar,fnid,isco,siz2}.
-symbol *v_table    = NULL;
+// AoS storage. Only v_name remains on SoA (separate because of the fixed
+// 512-byte row size); everything else lives in v_table[i].{...}.
+symbol *v_table     = NULL;
 
 #define GROW(arr, old_cap, new_cap)                                       \
     do {                                                                  \
@@ -43,7 +42,6 @@ static void var_grow(int needed)
     while (new_cap < needed) new_cap *= 2;
 
     GROW(v_name,  v_cap, new_cap);
-    GROW(v_type,  v_cap, new_cap);
     GROW(v_table, v_cap, new_cap);
 
     v_cap = new_cap;
@@ -82,7 +80,7 @@ void check_var()
     for (int i = 0; i < v_count; i++)
     {
         // check whether a variable was declared but not used ...
-        if (((v_type[i] == 1) || (v_type[i] == 2) || (v_type[i] == 3)) && (v_table[i].used == 0))
+        if (((v_table[i].type == 1) || (v_table[i].type == 2) || (v_table[i].type == 3)) && (v_table[i].used == 0))
         {
             // v_table[i].fnid records the variable's owning function: a valid
             // v_name index for locals, or "" / -1 for globals. declar_arr_1d
@@ -98,7 +96,7 @@ void check_var()
         }
 
         // check whether a function was declared but not used
-        if (((v_type[i] == 5) || (v_type[i] == 6) || (v_type[i] == 7)) && v_table[i].used == 0)
+        if (((v_table[i].type == 5) || (v_table[i].type == 6) || (v_table[i].type == 7)) && v_table[i].used == 0)
             fprintf (stdout, MSG_WARN_UNUSED_FUNCTION, v_name[i]);
     }
 }

@@ -878,7 +878,7 @@ void stmt_emit(stmt_node *n)
             expr cond_e = ast_emit_expr(n->cond);
             if (find_var("switch_exp") == -1) add_var("switch_exp");
             int sw_id = find_var("switch_exp");
-            v_type[sw_id] = cond_e.type;
+            v_table[sw_id].type = cond_e.type;
             v_table[sw_id].used = 0;
 
             emit_cond_int_load(cond_e, 1);

@@ -713,7 +713,7 @@ expr arr_1d2exp(int id, expr e, int fft)
     // consistency checks -----------------------------------------------------
 
     // test whether the variable has been declared
-    if (v_type[id] == 0)
+    if (v_table[id].type == 0)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // must check that it really is an array
@@ -735,7 +735,7 @@ expr arr_1d2exp(int id, expr e, int fft)
     // ------------------------------------------------------------------------
 
     expr  etr, eti;
-    int  type = v_type[id];
+    int  type = v_table[id].type;
 
     // left int/float ---------------------------------------------------------
 
@@ -892,7 +892,7 @@ expr arr_1d2exp(int id, expr e, int fft)
     acc_ok     = 1;
     v_table[id].used = 1;
 
-    return expr_make(v_type[id], 0);
+    return expr_make(v_table[id].type, 0);
 }
 
 // transforma array 2D em exp
@@ -901,7 +901,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     // consistency checks -----------------------------------------------------
 
     // test whether the variable has been declared
-    if (v_type[id] == 0)
+    if (v_table[id].type == 0)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // must check that it really is a 2D array
@@ -923,7 +923,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     // ------------------------------------------------------------------------
 
     expr  etr, eti;
-    int  type = v_type[id];
+    int  type = v_table[id].type;
 
     // left int/float ---------------------------------------------------------
 
@@ -2323,5 +2323,5 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     acc_ok     = 1;
     v_table[id].used = 1;
 
-    return expr_make(v_type[id], 0);
+    return expr_make(v_table[id].type, 0);
 }

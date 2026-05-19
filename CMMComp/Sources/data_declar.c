@@ -36,7 +36,7 @@ void declar_var(int id)
 {
     // consistency check ------------------------------------------------------
 
-    if (v_type[id] != 0)
+    if (v_table[id].type != 0)
     {
         fprintf(stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
@@ -44,7 +44,7 @@ void declar_var(int id)
 
     // update the variable status ---------------------------------------------
 
-    v_type[id]          = type_tmp;            // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
+    v_table[id].type          = type_tmp;            // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
     v_table[id].used          = 0;                   // just declared, so not used yet
     v_table[id].fnid    = find_var(fname);     // record the function it belongs to
 
@@ -53,7 +53,7 @@ void declar_var(int id)
     if (type_tmp > 2)
     {
         int idi              = get_img_id(id);
-        v_type[idi]          = 4; // use type 4 for the imaginary part
+        v_table[idi].type          = 4; // use type 4 for the imaginary part
         v_table[idi].used          = 0;
         v_table[idi].fnid    = find_var(fname);
     }
@@ -72,13 +72,13 @@ void declar_var(int id)
 // Called immediately so subsequent declarations can resolve this var.
 static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
 {
-    if (v_type[id_var] != 0)
+    if (v_table[id_var].type != 0)
     {
         fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id_var], fname));
         exit(EXIT_FAILURE);
     }
 
-    v_type[id_var]       = type_tmp;
+    v_table[id_var].type       = type_tmp;
     v_table[id_var].used       = 0;
     v_table[id_var].fnid = find_var(fname);
     v_table[id_var].isar       = 1;
@@ -103,7 +103,7 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
 // Walker-time half: only the `#array` / `#arrays` directives.
 void declar_arr_1d_emit(int id_var, int id_arg, int id_fname)
 {
-    int type = v_type[id_var];
+    int type = v_table[id_var].type;
 
     if (type == 1)
     {
@@ -141,13 +141,13 @@ void declar_arr_1d(int id_var, int id_arg, int id_fname)
 // Parse-time half of declar_arr_2d.
 static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 {
-    if (v_type[id_var] != 0)
+    if (v_table[id_var].type != 0)
     {
         fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_name[id_var], fname));
         exit(EXIT_FAILURE);
     }
 
-    v_type[id_var]       = type_tmp;
+    v_table[id_var].type       = type_tmp;
     v_table[id_var].used       = 0;
     v_table[id_var].fnid = find_var(fname);
     v_table[id_var].isar       = 2;
@@ -165,7 +165,7 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 // Walker-time half: `#array` directive + the LOD/SET arr_size helper instrs.
 void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
 {
-    int type = v_type[id_var];
+    int type = v_table[id_var].type;
     int size = atoi(v_name[id_x]) * atoi(v_name[id_y]);
 
     if (type == 1)
