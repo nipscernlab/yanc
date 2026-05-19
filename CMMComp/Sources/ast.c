@@ -838,6 +838,22 @@ stmt_node *stmt_func_header(int func_id, int needs_jmp_main,
     return n;
 }
 
+stmt_node *stmt_directive(const char *dir, int id)
+{
+    stmt_node *n = snode_new(STMT_DIRECTIVE);
+    n->dir_str  = dir;
+    n->id       = id;
+    return n;
+}
+
+stmt_node *stmt_func(int func_id, stmt_node *body)
+{
+    stmt_node *n = snode_new(STMT_FUNC);
+    n->id       = func_id;
+    n->body     = body;
+    return n;
+}
+
 // ----------------------------------------------------------------------------
 // statement walker -----------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -1082,6 +1098,47 @@ void stmt_emit(stmt_node *n)
             // The function entry is a basic-block boundary: the body's first
             // instruction cannot fuse with the parameter SET via the peephole.
             emit_peephole_reset();
+            break;
+        }
+
+        case STMT_DIRECTIVE:
+            // Pre-function configuration line. Goes straight into the asm
+            // header (no instruction slot, no f_lin entry).
+            add_sinst(0, "%s %s\n", n->dir_str, v_table[n->id].name);
+            break;
+
+        case STMT_FUNC: {
+            // Full function definition. Resets ret_ok (set by STMT_RETURN
+            // walker when a `return` statement fires) and stashes the
+            // current function id into the global fun_parse so declar_ret
+            // - reached at walker time from STMT_RETURN - can validate the
+            // return type against the enclosing function. Then walks the
+            // body, validates that a non-void function actually emitted a
+            // return somewhere, and finally emits the trailing exit
+            // instruction (@fim JMP fim for main, RET for void).
+            // Non-void/non-main functions rely on the explicit `return
+            // exp;` inside the body to emit their own RET.
+            int saved_fun_parse = fun_parse;
+            fun_parse = n->id;
+            ret_ok    = 0;
+            stmt_emit(n->body);
+            fun_parse = saved_fun_parse;
+
+            if ((v_table[n->id].type != 6) && (ret_ok == 0))
+            {
+                fprintf(stderr, MSG_ERR_FUNC_NO_RETURN, v_table[n->id].name);
+                exit(EXIT_FAILURE);
+            }
+
+            if (strcmp(v_table[n->id].name, "main") == 0)
+            {
+                add_sinst(-3, "@fim JMP fim\n");
+                v_table[n->id].used = 1;
+            }
+            else if (v_table[n->id].type == 6)
+            {
+                add_instr("RET\n");
+            }
             break;
         }
     }

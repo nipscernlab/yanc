@@ -123,9 +123,24 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
     snprintf(path, sizeof(path),   "%s/cmm_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
     snprintf(path, sizeof(path), "%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
 
-    // emit a NOP instruction at the start (try to remove this) ---------------
+    // Open the top-level stmt_list collector. Every directive, declaration
+    // and function reduce appends a stmt_node here; nothing reaches f_asm
+    // until prog_emit() runs the walker at `fim`.
+    stmt_list_open();
+}
 
-    add_sinst(-1,"NOP\n");
+// Fires from the `fim : prog` action once parsing is complete. The whole
+// program is now an AST in the global stmt_list; this is where it gets
+// flattened into assembly. NOP is emitted as a fixed prefix (the processor
+// expects instruction address 0 to be a no-op) and then every top-level
+// stmt is walked in source order: directives, declarations, function bodies.
+void prog_emit(void)
+{
+    add_sinst(-1, "NOP\n");
+
+    stmt_node *prog = stmt_list_close();
+    stmt_emit(prog);
+    stmt_free(prog);
 }
 
 void parse_end(char *prname, char *d_proc)

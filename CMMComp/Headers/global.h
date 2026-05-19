@@ -32,6 +32,7 @@ extern int  sim_arr ;            // tells whether the array is simulated or not
 
 // parser start and end
 void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d_tmp, char *d_array);
+void prog_emit (void);                              // fires from `fim : prog` action after parsing completes
 void parse_end (char *prname, char *d_proc);
 
 // registers the assembly instructions

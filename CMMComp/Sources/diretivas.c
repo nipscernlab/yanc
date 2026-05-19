@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 // local includes
+#include "..\Headers\ast.h"
 #include "..\Headers\t2t.h"
 #include "..\Headers\global.h"
 #include "..\Headers\funcoes.h"
@@ -26,11 +27,12 @@ int  nuioou  =  1; // number of output ports
 // Directive handling ---------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// writes the compilation directives to the asm file
+// Updates parse-time compiler state for the directive (every subsequent rule
+// reads these globals to make decisions before the AST walker runs), then
+// appends a STMT_DIRECTIVE to the open stmt_list so the emit fires from
+// the global walker at `fim`.
 void dire_exec(char *dir, int id, int t)
 {
-    add_sinst(0, "%s %s\n", dir, v_table[id].name);
-
     int ival = atoi(v_table[id].name);
 
     // action to take depending on the directive
@@ -43,4 +45,6 @@ void dire_exec(char *dir, int id, int t)
         case  7: nuioin = ival             ; break;
         case  8: nuioou = ival             ; break;
     }
+
+    stmt_emit_inline(stmt_directive(dir, id));
 }

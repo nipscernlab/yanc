@@ -147,8 +147,13 @@ void  yyerror(char const *s);
 %%
 
 // Program and its elements ---------------------------------------------------
+//
+// Each prog_elements reduce appends a stmt_node to the global stmt_list
+// opened by parse_init. The `fim : prog` end-action fires once parsing
+// completes and runs the walker over the whole program. No codegen
+// reaches f_asm before this point.
 
-fim           : prog
+fim           : prog {prog_emit();}
 prog          : prog_elements | prog prog_elements
 prog_elements : direct | declar | funcao
 

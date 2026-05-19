@@ -211,6 +211,12 @@ typedef enum {
     STMT_FUNC_HEADER,   // @label + optional JMP main + per-param SET[_P];
                         // id=func v_table index, op=needs_jmp_main flag,
                         // params[]/n_params=param ids in declaration order
+    STMT_DIRECTIVE,     // #PRNAME / #NUBITS / ... ; dir_str=directive token,
+                        // id=v_table index of the operand value
+    STMT_FUNC,          // a full function definition: walks body (which begins
+                        // with STMT_FUNC_HEADER) then emits the trailing
+                        // @fim JMP fim (main) or RET (void). id=func v_table
+                        // index, body=function body stmt_list
 } stmt_kind;
 
 // Sub-operation for STMT_DIRAC. The 10 Dirac forms share enough structure
@@ -252,6 +258,11 @@ typedef struct stmt_node {
     // STMT_FUNC_HEADER: parameter ids in declaration order (owned, freed by stmt_free)
     int               *params;
     int                n_params;
+
+    // STMT_DIRECTIVE: directive token like "#PRNAME" / "#NUBITS" / ...
+    // Pointed at a string literal (the grammar's dire_exec call site), so
+    // not owned and not freed.
+    const char        *dir_str;
 
     // compound control flow (IF / WHILE / SWITCH): cond is the condition
     // expression evaluated at walker time. then_body/else_body/body are
@@ -332,6 +343,16 @@ stmt_node *stmt_declar_cv   (int id_var, int id_N, struct expr_node *c, int id_v
 // ownership of the heap array; freed by stmt_free).
 stmt_node *stmt_func_header (int func_id, int needs_jmp_main,
                              int *params, int n_params);
+
+// Top-level directive (#PRNAME / #NUBITS / ...). The dir argument is a
+// string literal kept by reference (not freed). id is the v_table index
+// of the operand (the value that follows the directive in source).
+stmt_node *stmt_directive   (const char *dir, int id);
+
+// Full function definition: walks body then emits the trailing JMP fim
+// (for main) or RET (for void). id = function's v_table index. body is
+// owned (freed by stmt_free).
+stmt_node *stmt_func        (int func_id, stmt_node *body);
 
 // Body-list stack. stmt_list_open() pushes a fresh STMT_BLOCK; every
 // stmt_emit_inline call while the stack is non-empty records the just-built

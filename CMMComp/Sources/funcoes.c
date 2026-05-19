@@ -621,28 +621,16 @@ void func_body_begin(void)
     func_jmp_main = 0;
 }
 
-// end of the parsing for a function declaration
+// end of the parsing for a function declaration. Closes the body stmt_list
+// and hands it up wrapped in a STMT_FUNC. Codegen for the function (walking
+// the body, validating return-reached for non-void, emitting JMP fim / RET)
+// happens later in the STMT_FUNC walker case, fired from the global `fim`
+// walk - by then the body has been walked and ret_ok reflects whether a
+// `return` statement actually fired.
 void func_ret(int id) // id -> id of the current function
 {
-    // walk the function body's stmt_node list (each kid runs through the
-    // stmt_emit dispatcher, which calls the same helpers the old inline
-    // path used to call - same emit order, byte-identical assembly).
     stmt_node *body = stmt_list_close();
-    stmt_emit(body);
-    stmt_free(body);
-
-    // check whether the function had the return x; instruction
-    if ((v_table[id].type != 6) && (ret_ok == 0))
-        {fprintf (stderr, MSG_ERR_FUNC_NO_RETURN, v_table[id].name); exit(EXIT_FAILURE);}
-
-    // if it is the main function, emit a JMP fim
-    if (strcmp(v_table[id].name, "main") == 0)
-    {
-        add_sinst(-3, "@fim JMP fim\n");
-
-        v_table[id].used = 1; // main was used (avoid the warning of main declared but not used)
-    }
-    else if (v_table[id].type == 6) {add_instr("RET\n");} // void type still needs a RET
+    stmt_emit_inline(stmt_func(id, body));
 
     // env variable fname becomes empty (left a function)
     strcpy(fname, "");
@@ -655,8 +643,11 @@ void void_ret()
     if (v_table[fun_parse].type != 6)
         {fprintf (stderr, MSG_ERR_NO_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
 
-    // if main, use JMP fim instead of RET
-    if ((strcmp(fname, "main") == 0))
+    // if main, use JMP fim instead of RET. Reads the function name from
+    // v_table via fun_parse (set by the STMT_FUNC walker before walking
+    // the body) - the parse-time `fname` is "" by now since walker time
+    // happens after parse_end of every function.
+    if (strcmp(v_table[fun_parse].name, "main") == 0)
          add_sinst(-3, "@fim JMP fim\n");
     else add_instr(             "RET\n");
 }
