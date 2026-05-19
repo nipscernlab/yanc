@@ -96,7 +96,7 @@ void  yyerror(char const *s);
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
 %token SQRT ATAN SIN COS                                               // stdlib (non-linear functions)
 %token REAL IMAG COMP FASE MOD2                                        // stdlib (complex numbers)
-%token WHILE IF THEN ELSE SWITCH CASE DEFAULT RET BREAK                // jumps
+%token WHILE FOR IF THEN ELSE SWITCH CASE DEFAULT RET BREAK            // jumps
 %token SHIFTL SHIFTR SSHIFTR                                           // bit shift
 %token GREQU LESEQ EQU DIF LAN LOR                                     // two-symbol logical operators
 %token PPLUS                                                           // ++ operator. can be used both to reduce exp and for assignments
@@ -235,6 +235,7 @@ stmt_full: '{' stmt_list '}' // statement block
 stmt_case:        declar     // variable declarations
          |    assignment     // expression assignment to a variable
          |    while_stmt     // while loop
+         |      for_stmt     // for loop (desugared to while + init/step)
          |  if_else_stmt     // if/else
          |       std_out     // stdlib data output
          |      std_fout     // stdlib data output (converting to float)
@@ -309,6 +310,31 @@ while_stmt  : while_exp stmt_full {stmt_append(while_stmt());}
 while_exp   : while_intro '(' exp ')' {while_expexp($3);}
 while_intro : WHILE               {while_expp();}
 break      : BREAK ';'                     {stmt_append(exec_break());}
+
+// for -----------------------------------------------------------------------
+//
+// for (init; cond; step) body  desugars at parse-time into:
+//     init;
+//     while (cond) { body; step; }
+//
+// for_init_clause / for_step_clause stash their stmt_node into static state
+// in saltos.c (for_init_set / for_step_set). for_intro reads the cond and
+// pulls the stashed init/step into the pending stmt_while's then_body /
+// else_body slots so nested fors can each carry their own. for_finish
+// closes the body block, appends step at its tail, attaches the body to
+// the partial while, appends init to the parent stmt_list, and returns
+// the while_node which the rule's end-action appends right after init.
+
+for_stmt        : for_intro stmt_full                  {stmt_append(for_finish());}
+for_intro       : FOR '(' for_init_clause ';' exp ';' for_step_clause ')' {for_open($5);}
+
+for_init_clause : /* empty */                          {for_init_set(NULL);}
+                | ID  '=' exp                          {for_init_set(stmt_assign($1, $3));}
+                | TYPE ID '=' exp                      {declar_var($2); for_init_set(stmt_assign($2, $4));}
+
+for_step_clause : /* empty */                          {for_step_set(NULL);}
+                | ID  '=' exp                          {for_step_set(stmt_assign($1, $3));}
+                | ID PPLUS                             {for_step_set(stmt_pplus($1, NULL, NULL));}
 
 // assignments ----------------------------------------------------------------
 

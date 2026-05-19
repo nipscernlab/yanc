@@ -20,6 +20,18 @@ void       while_expexp(expr_node *cond);   // cond + body-list open
 stmt_node *while_stmt  (void);              // returns the STMT_WHILE
 stmt_node *exec_break  (void);              // STMT_BREAK_WHILE for break;
 
+// for ------------------------------------------------------------------------
+//
+// for (init; cond; step) body desugars to: init; while(cond) { body; step; }
+// for_init_set / for_step_set stash the init / step stmt_node in saltos.c
+// statics; for_open consumes them into the pending while's then_body /
+// else_body fields so nested fors don't trample each other.
+
+void       for_init_set(stmt_node *init);   // for (init; ...) clause; NULL for empty
+void       for_step_set(stmt_node *step);   // for (...; step) clause; NULL for empty
+void       for_open    (expr_node *cond);   // FOR ( ... )  - pending STMT_WHILE + body-list open
+stmt_node *for_finish  (void);              // returns the desugared STMT_WHILE
+
 // switch/case ----------------------------------------------------------------
 
 void       case_test   (int val_id, int val_type); // builds STMT_CASE_LABEL

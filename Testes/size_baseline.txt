@@ -12,6 +12,7 @@ algsimp    30
 ctrl_flow  106
 dirac_assign 177
 empty_call 16
+for_loop   90
 func_combos 68
 multiparam 32
 pplus_arr  25

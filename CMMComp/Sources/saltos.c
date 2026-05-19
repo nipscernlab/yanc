@@ -116,6 +116,63 @@ stmt_node *while_stmt()
     return partial;
 }
 
+// ----------------------------------------------------------------------------
+// for ------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+//
+// for (init; cond; step) body
+//   desugars at parse time into:
+//     init;
+//     while (cond) { body; step; }
+//
+// for_init_clause / for_step_clause stash their stmt_node in these globals;
+// for_open pulls them into the pending stmt_while's then_body / else_body
+// slots (those fields are unused for while), so nested fors each carry
+// their own init/step without colliding.
+
+static stmt_node *for_saved_init = NULL;
+static stmt_node *for_saved_step = NULL;
+
+void for_init_set(stmt_node *init) {for_saved_init = init;}
+void for_step_set(stmt_node *step) {for_saved_step = step;}
+
+void for_open(expr_node *cond)
+{
+    int label = push_while();
+    stmt_node *partial = stmt_while(label, cond, NULL);
+    // Park init/step on the pending while so a nested for can reuse the
+    // globals freely. for_finish reads them back.
+    partial->then_body = for_saved_init;
+    partial->else_body = for_saved_step;
+    pending_push(partial);
+    stmt_list_open();
+
+    for_saved_init = NULL;
+    for_saved_step = NULL;
+}
+
+stmt_node *for_finish()
+{
+    stmt_node *body    = stmt_list_close();
+    pop_while();
+    stmt_node *partial = pending_pop();
+
+    stmt_node *init = partial->then_body;
+    stmt_node *step = partial->else_body;
+    partial->then_body = NULL;
+    partial->else_body = NULL;
+
+    if (step) stmt_block_push(body, step);
+    partial->body = body;
+
+    // Insert init BEFORE the while into the parent stmt_list. The grammar's
+    // rule end-action appends the returned while right after, so the final
+    // sequence on the parent list is: init then while.
+    if (init) stmt_append(init);
+
+    return partial;
+}
+
 stmt_node *exec_break()
 {
     if (get_while() == 0)

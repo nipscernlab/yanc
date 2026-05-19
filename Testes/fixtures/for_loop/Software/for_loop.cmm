@@ -1,0 +1,74 @@
+#PRNAME for_loop
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// for-loop coverage. The grammar desugars
+//     for (init; cond; step) body
+// at parse time into
+//     init; while (cond) { body; step; }
+// so the asm walks through stmt_assign + stmt_while + body + step, plus the
+// trailing JMP back to the while's label.
+//
+// Each block below targets one for-loop shape; conditions are < comparisons
+// so JIZ always sees the 0/1 boolean from oper_cmp (sidestepping the
+// hw-jiz-bit0 bug for `while (counter)` patterns).
+
+void main()
+{
+    int idx;
+    int cnt;
+    int outer;
+    int inner;
+
+    while (1)
+    {
+        // 1. for with assignment-style step
+        for (idx = 0; idx < 3; idx = idx + 1)
+        {
+            out(0, 10 + idx);
+        }
+
+        // 2. for with PPLUS step
+        for (cnt = 0; cnt < 3; cnt++)
+        {
+            out(0, 20 + cnt);
+        }
+
+        // 3. for with declaration in init (a NEW variable scoped to main)
+        for (int kk = 0; kk < 3; kk++)
+        {
+            out(0, 30 + kk);
+        }
+
+        // 4. nested for - outer 2 iters * inner 2 iters
+        for (outer = 0; outer < 2; outer++)
+        {
+            for (inner = 0; inner < 2; inner++)
+            {
+                out(0, 40 + outer * 10 + inner);
+            }
+        }
+
+        // 5. empty init clause (init done above by prior for-loop's terminal value)
+        idx = 0;
+        for ( ; idx < 2; idx++)
+        {
+            out(0, 60 + idx);
+        }
+
+        // 6. empty step clause (body does the increment)
+        for (idx = 0; idx < 2; )
+        {
+            out(0, 70 + idx);
+            idx = idx + 1;
+        }
+
+        out(0, 99);
+    }
+}

@@ -63,6 +63,7 @@ COMEN  "//"[^\n]*
 "mod2"        return MOD2;
 
 "while"       return WHILE;
+"for"         return FOR;
 "break"       return BREAK;
 "if"          return IF;
 "else"        return ELSE;
