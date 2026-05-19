@@ -846,7 +846,11 @@ reg signed [NUBITS-1:0] racc;
 always @ (posedge clk or posedge rst) if (rst) racc <= 0; else racc <= ula_out;
 
 assign uic_acc = racc;
-assign  if_acc = ula_out[0];
+// JIZ branch decision: if_acc must reflect "accumulator is non-zero" across the
+// WHOLE word, not just bit 0. Using ula_out[0] alone made `while (x)` / `if (x)`
+// misbehave for any multi-bit value with a clear LSB (e.g. 2, 4, ...). The
+// OR-reduction gives true C truthiness; JIZ jumps iff the word is exactly zero.
+assign  if_acc = |ula_out;
 
 // Indirect Addressing --------------------------------------------------------
 
