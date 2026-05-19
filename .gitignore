@@ -16,10 +16,13 @@
 APP/Sources/app.c
 ASM/Sources/ASMComp.c
 CMMComp/Sources/lex.yy.c
+CNIPS/Sources/lex.yy.c
 
 # bison outputs (.y -> .c/.h)
 CMMComp/Sources/y.tab.c
 CMMComp/Sources/y.tab.h
+CNIPS/Sources/y.tab.c
+CNIPS/Sources/y.tab.h
 
 # ============================================================================
 # Runtime logs and state files -----------------------------------------------
@@ -76,3 +79,6 @@ $RECYCLE.BIN/
 *~
 .idea/
 .vscode/
+
+# Claude Code local memory / settings (per-developer, not shared)
+.claude/
