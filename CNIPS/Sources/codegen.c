@@ -234,6 +234,26 @@ static void emit_load_float(double v)
 
 static void gen_bool(expr *e, const char *jz_target)
 {
+    // short-circuit && / || directly into the branch (no 0/1 materialisation):
+    //   a && b  : jump to jz if either side is false
+    //   a || b  : jump to jz only if BOTH sides are false
+    if (e->kind == E_BINOP && e->op == OP_LAND) {
+        gen_bool(e->a, jz_target);
+        gen_bool(e->b, jz_target);
+        return;
+    }
+    if (e->kind == E_BINOP && e->op == OP_LOR) {
+        char *tcont = fresh_label("or_t");   // condition-true continuation
+        char *chkb  = fresh_label("or_b");
+        gen_expr(e->a);
+        emit("JIZ %s", chkb);                // a == 0 -> must test b
+        emit("JMP %s", tcont);               // a != 0 -> whole OR is true
+        emit("@%s NOP", chkb);
+        gen_bool(e->b, jz_target);           // b == 0 -> jz; else fall through
+        emit("@%s NOP", tcont);
+        free(tcont); free(chkb);
+        return;
+    }
     gen_expr(e);
     emit("JIZ %s", jz_target);
 }
@@ -417,11 +437,30 @@ static void gen_expr(expr *e)
         op_kind op = e->op;
         int is_float = (e->etype && e->etype->kind == TY_FLOAT);
 
-        // logical &&/|| via stack version (no short-circuit yet)
-        if (op == OP_LAND || op == OP_LOR) {
-            gen_expr(e->a); emit("PSH");
-            gen_expr(e->b);
-            emit("%s", op == OP_LAND ? "S_LAN" : "S_LOR");
+        // logical &&/|| as a value: short-circuit, result normalised to 0/1.
+        if (op == OP_LAND) {
+            char *lz = fresh_label("and_z");
+            char *le = fresh_label("and_e");
+            gen_expr(e->a); emit("JIZ %s", lz);   // a == 0 -> 0
+            gen_expr(e->b); emit("JIZ %s", lz);   // b == 0 -> 0
+            emit("LOD 1"); emit("JMP %s", le);
+            emit("@%s NOP", lz); emit("LOD 0");
+            emit("@%s NOP", le);
+            free(lz); free(le);
+            return;
+        }
+        if (op == OP_LOR) {
+            char *l1 = fresh_label("or_1");
+            char *lz = fresh_label("or_z");
+            char *le = fresh_label("or_e");
+            gen_expr(e->a); emit("JIZ %s", l1);   // a == 0 -> test b; else true
+            emit("LOD 1"); emit("JMP %s", le);
+            emit("@%s NOP", l1);
+            gen_expr(e->b); emit("JIZ %s", lz);   // b == 0 -> 0
+            emit("LOD 1"); emit("JMP %s", le);
+            emit("@%s NOP", lz); emit("LOD 0");
+            emit("@%s NOP", le);
+            free(l1); free(lz); free(le);
             return;
         }
 
@@ -488,48 +527,79 @@ static void gen_expr(expr *e)
         return;
 
     case E_PREINC: case E_PREDEC: {
-        // ++lv: lv = lv + 1, result = new lv
-        // for simple scalar IDENT, emit cheap form
+        // ++lv / --lv : modify in place, result is the NEW value.
         expr *lv = e->a;
         int is_float = lv->etype && lv->etype->kind == TY_FLOAT;
+        // step: 1 for scalars; sizeof(pointee) for pointers (pointer arithmetic)
+        int step = (lv->etype && lv->etype->kind == TY_PTR) ? type_size_words(lv->etype->base) : 1;
+        int delta = (e->kind == E_PREDEC) ? -step : step;
+        // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
             sym *s = st_find(lv->sval);
-            if (s && s->stype && s->stype->kind != TY_ARRAY) {
-                if (is_float) emit("LOD 1.0"); else emit("LOD 1");
-                if (e->kind == E_PREDEC) emit(is_float ? "F_NEG" : "NEG");
-                emit(is_float ? "F_ADD %s" : "ADD %s", s->asm_name);
+            if (s && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
+                emit("LOD %s", s->asm_name);
+                if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
+                else          emit("ADD %d", delta);
                 emit("SET %s", s->asm_name);
                 return;
             }
         }
-        // general: addr-based
-        gen_addr(lv); emit("PSH");        // stack: &lv
-        gen_addr(lv); emit("LDA");        // acc = *lv  (old)
-        if (is_float) emit("LOD 1.0"); else emit("LOD 1");
-        if (e->kind == E_PREDEC) emit(is_float ? "F_NEG" : "NEG");
-        emit(is_float ? "F_ADD %s" : "ADD %s", "0");  // BUG: we'd need to add the loaded old value
-        // ↑ This branch is incomplete; in practice ++/-- on complex lvalues is rare.
-        msg_error(e->line, "++/-- on complex lvalue not supported in v1");
+        // general lvalue: &lv computed once, read-modify-write via LDA/STA
+        gen_addr(lv);                                    // acc = &lv
+        emit("PSH");                                     // stack: [&lv]
+        emit("LDA");                                     // acc = *lv
+        if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
+        else          emit("ADD %d", delta);             // acc = new
+        emit("STA");                                     // mem[&lv] = new ; acc = new
         return;
     }
     case E_POSTINC: case E_POSTDEC: {
+        // lv++ / lv-- : modify in place, result is the OLD value.
         expr *lv = e->a;
         int is_float = lv->etype && lv->etype->kind == TY_FLOAT;
+        int step = (lv->etype && lv->etype->kind == TY_PTR) ? type_size_words(lv->etype->base) : 1;
+        int delta = (e->kind == E_POSTDEC) ? -step : step;
+        // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
             sym *s = st_find(lv->sval);
-            if (s && s->stype && s->stype->kind != TY_ARRAY) {
+            if (s && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
                 emit("LOD %s", s->asm_name);
-                emit("PSH");                         // stack: old value (the result)
-                if (is_float) emit("LOD 1.0"); else emit("LOD 1");
-                if (e->kind == E_POSTDEC) emit(is_float ? "F_NEG" : "NEG");
-                emit(is_float ? "F_ADD %s" : "ADD %s", s->asm_name);
+                emit("PSH");                             // stack: [old]  (result)
+                if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
+                else          emit("ADD %d", delta);
                 emit("SET %s", s->asm_name);
-                emit("POP");                          // acc = old
+                emit("POP");                             // acc = old
                 return;
             }
         }
-        msg_error(e->line, "++/-- on complex lvalue not supported in v1");
-        return;
+        if (!is_float) {
+            // integer: recover old by undoing the delta (exact in integer math)
+            gen_addr(lv);                                // acc = &lv
+            emit("PSH");                                 // stack: [&lv]
+            emit("LDA");                                 // acc = old
+            emit("ADD %d", delta);                       // acc = new
+            emit("STA");                                 // mem[&lv] = new ; acc = new
+            emit("ADD %d", -delta);                      // acc = new - delta = old
+            return;
+        }
+        // float: re-add would round; preserve old in a temp instead
+        {
+            char tn[64]; snprintf(tn, sizeof(tn), "_pf%d", ++label_n);
+            char *ta = mangle_local(tn);
+            st_add(SK_LOCAL_VAR, tn, ta, t_int());
+            log_var(cur_func_name ? cur_func_name : "global", tn, 1, 0);
+            gen_addr(lv);                                // acc = &lv
+            emit("SET %s", ta);                          // _pf = &lv
+            emit("LDA");                                 // acc = old (mem[&lv])
+            emit("PSH");                                 // stack: [old]  (result)
+            emit("LOD %s", ta); emit("PSH");             // stack: [old, &lv]
+            emit("LOD %s", ta); emit("LDA");             // acc = old (re-read)
+            emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");// acc = new
+            emit("STA");                                 // mem[&lv] = new ; stack: [old]
+            emit("POP");                                 // acc = old
+            free(ta);
+            return;
+        }
     }
 
     case E_CAST: {
