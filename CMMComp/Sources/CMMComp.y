@@ -127,8 +127,8 @@ void  yyerror(char const *s);
 %left '*' '/' '%'
 %left '!' '~' PPLUS
 
-// par_list still carries an int (the parameter id from declar_par)
-%type <ival> par_list
+// par_list / par_items have no semantic value (declar_par appends ids to the
+// deferred func_params[] array; func_body_begin consumes them).
 
 // expressions ride the bison stack as expr_node *. Each producer builds the
 // subtree it just parsed; codegen happens when a statement-level consumer
@@ -185,20 +185,22 @@ IID    : ID                           {declar_var   ($1         );}
 
 // Function declaration -------------------------------------------------------
 
-funcao : TYPE ID  '('                     {declar_fun($1,$2);} // start of a function declaration
-         par_list ')'
-         '{'                              {func_body_begin();} // open body capture, build STMT_FUNC_HEADER
-         stmt_list '}'                    {func_ret  ($2   );} // close body, run walker, finalize
-       | TYPE ID  '('  ')'                {declar_fun($1,$2);} // function without parameters
-         '{'                              {func_body_begin();}
-         stmt_list '}'                    {func_ret  ($2   );}
+funcao : TYPE ID '('                      {declar_fun($1,$2);} // state setup must precede par_list (declar_par needs fname/fun_parse)
+         par_list ')' '{'                                       // par_list's end-action runs func_body_begin
+         stmt_list '}'                    {func_ret($2);}       // close body, walker emits everything
+       ;
 
-// parameter list in the declaration. declar_par records each parameter in
-// the deferred func_params[] collector; the SET / SET_P emits live in
-// the STMT_FUNC_HEADER walker case.
-// arrays are not yet allowed as function parameters.
-par_list : TYPE ID                        {declar_par($1,$2);}
-         | par_list ',' par_list
+// Parameter list. par_list always reduces, even when empty - its end-action
+// is the natural place to build the STMT_FUNC_HEADER (param count is final)
+// and open the body's stmt_list collector. declar_par records each parameter
+// id in the deferred func_params[] array; the actual SET / SET_P emits live
+// in the STMT_FUNC_HEADER walker case. Arrays are not allowed as parameters.
+par_list  : /* empty */                   {func_body_begin();}
+          | par_items                     {func_body_begin();}
+          ;
+
+par_items : TYPE ID                       {declar_par($1,$2);}
+          | par_items ',' TYPE ID         {declar_par($3,$4);}
 
 // function and void returns
 return_call : RET exp ';'                 {stmt_emit_inline(stmt_return($2  ));}
