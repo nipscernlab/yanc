@@ -234,6 +234,60 @@ void expr_dump(expr_node *n)
 
 static expr ast_emit_expr_impl(expr_node *n);
 
+// Typecheck pass: walks bottom-up and annotates n->type on composite nodes
+// whose type the parser leaves at 0 (BINOP / UNOP today; INNER / STDLIB_CALL
+// pending follow-up commits). Leaves (LITERAL / VAR / ARRAY_INDEX / PPLUS /
+// FUNC_CALL) already carry the correct type, so the early-return makes the
+// walk idempotent: a second call over the same subtree is O(1) per node.
+//
+// Codegen does not consume the annotation yet - this commit just stages the
+// data. Subsequent commits cut oper_* / exec_* helpers over to trust
+// n->type, removing the per-helper "compute result type" tail.
+void typecheck_expr(expr_node *n)
+{
+    if (!n)           return;
+    if (n->type != 0) return;  // already typed (leaf, or prior pass)
+
+    typecheck_expr(n->left);
+    typecheck_expr(n->right);
+    for (int i = 0; i < n->n_args; i++) typecheck_expr(n->args[i]);
+
+    int lt = n->left  ? n->left->type  : 0;
+    int rt = n->right ? n->right->type : 0;
+
+    switch (n->kind)
+    {
+        case EXPR_BINOP:
+            switch (n->op)
+            {
+                // arithmetic: result type is max(left, right) where comp(3) > float(2) > int(1)
+                case OP_ADD: case OP_SUB: case OP_MUL: case OP_DIV: case OP_MOD:
+                    n->type = (lt > rt) ? lt : rt; break;
+                // comparisons / logical / bitwise / shifts all yield int
+                case OP_LT:  case OP_GT:  case OP_EQ:
+                case OP_GE:  case OP_LE:  case OP_NE:
+                case OP_LAN: case OP_LOR:
+                case OP_SHL: case OP_SHR: case OP_SSHR:
+                case OP_AND: case OP_OR:  case OP_XOR:
+                    n->type = 1; break;
+                default: break;
+            }
+            break;
+
+        case EXPR_UNOP:
+            switch (n->op)
+            {
+                case OP_NEG:              n->type = lt; break;   // preserves operand type
+                case OP_LIN: case OP_INV: n->type = 1;  break;   // int result
+                default: break;
+            }
+            break;
+
+        // EXPR_INNER, EXPR_STDLIB_CALL: not yet typechecked (n->type stays 0)
+        default: break;
+    }
+}
+
 // Idempotent: a second call over the same node returns the first result
 // instead of re-emitting. This guards against double-emission if a tree ever
 // gets walked twice (shouldn't happen in the grammar today, but cheap to
@@ -241,6 +295,7 @@ static expr ast_emit_expr_impl(expr_node *n);
 expr ast_emit_expr(expr_node *n)
 {
     if (n && n->emitted) return n->cached;
+    typecheck_expr(n);  // annotate composite n->type before codegen
     expr e = ast_emit_expr_impl(n);
     if (n) {
         n->emitted = 1;

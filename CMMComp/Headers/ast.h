@@ -173,6 +173,7 @@ void expr_dump(expr_node *n);
 // every consumer of an exp value (via the EE() macro in CMMComp.y), plus
 // directly by vcall() for void statement-level function calls.
 expr ast_emit_expr(expr_node *n);
+void typecheck_expr(expr_node *n);   // bottom-up: fills n->type on composites
 
 // ----------------------------------------------------------------------------
 // statement AST --------------------------------------------------------------
