@@ -230,9 +230,7 @@ void expr_dump(expr_node *n)
 // to the previous inline-emit compiler.
 //
 // Result POD carries the freshly-emitted value's location: id == 0 means
-// "in the accumulator", id > 0 means "in v_table[id].name". The public wrapper
-// stamps the returned POD with the original node pointer so callers can
-// keep chasing the tree through the result.
+// "in the accumulator", id > 0 means "in v_table[id].name".
 
 static expr ast_emit_expr_impl(expr_node *n);
 
@@ -244,7 +242,6 @@ expr ast_emit_expr(expr_node *n)
 {
     if (n && n->emitted) return n->cached;
     expr e = ast_emit_expr_impl(n);
-    e.node = n;
     if (n) {
         n->emitted = 1;
         n->cached  = e;

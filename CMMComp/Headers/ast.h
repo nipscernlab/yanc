@@ -39,14 +39,9 @@
 //
 // id is the index into v_table; id == 0 means "the result lives in the
 // accumulator, not in a variable".
-// node points back at the originating tree node (set by the public walker
-// wrapper, used by the idempotency cache - see expr_node::cached).
-struct expr_node;
-
 typedef struct {
     int type;
     int id;
-    struct expr_node *node;
 } expr;
 
 expr expr_make(int type, int id);
