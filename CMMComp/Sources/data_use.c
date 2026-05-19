@@ -26,10 +26,10 @@ TODO:
 // does not emit a load, just updates the variable state
 expr num2exp(int id, int dtype)
 {
-    v_used[id] = 1;
-    v_isco[id] = 1;
-    v_isar[id] = 0;
-    v_type[id] = dtype;
+    v_used[id]          = 1;
+    v_table[id].isco    = 1;
+    v_isar[id]          = 0;
+    v_type[id]          = dtype;
 
     return expr_make(dtype, id);
 }

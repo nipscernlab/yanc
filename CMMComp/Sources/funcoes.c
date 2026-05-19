@@ -113,7 +113,7 @@ int get_npar(int par)
 void par_check(expr e)
 {
     // get the original number of parameters
-    int n_par = get_npar(v_fpar[fun_id]);
+    int n_par = get_npar(v_table[fun_id].fpar);
 
     // get the type and position of the current parameter being called
     int  t_cal = p_test; // will hold the parameter type (0, 1, 2 or 3)
@@ -129,7 +129,7 @@ void par_check(expr e)
     }
 
     // get the type of the current parameter in the original function
-    int t_fun = v_fpar[fun_id];
+    int t_fun = v_table[fun_id].fpar;
     int i;
     for (i = 1; i < id_cal; i++) t_fun = t_fun/10;
     t_fun = t_fun % 10;
@@ -390,7 +390,7 @@ int declar_par(int type, int id)
     declar_var(id); // arrays cannot be passed as function parameters
 
     // store info about every parameter's data type in a single number
-    v_fpar[fun_parse] = v_fpar[fun_parse]*10 + type;
+    v_table[fun_parse].fpar = v_table[fun_parse].fpar*10 + type;
 
     return id;
 }
@@ -697,7 +697,7 @@ stmt_node *vcall(int id)
 
     int n; expr_node **a = args_frame_pop(&n);
 
-    if (n != get_npar(v_fpar[id]))
+    if (n != get_npar(v_table[id].fpar))
     {
         fprintf(stderr, MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
@@ -727,7 +727,7 @@ expr_node *fcall(int id)
 
     int n; expr_node **a = args_frame_pop(&n);
 
-    if (n != get_npar(v_fpar[id]))
+    if (n != get_npar(v_table[id].fpar))
     {
         fprintf(stderr, MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_name[id]);
         exit(EXIT_FAILURE);

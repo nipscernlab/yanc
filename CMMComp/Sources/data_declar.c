@@ -44,18 +44,18 @@ void declar_var(int id)
 
     // update the variable status ---------------------------------------------
 
-    v_type[id] = type_tmp;               // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
-    v_used[id] = 0;                      // just declared, so not used yet
-    v_fnid[id] = find_var(fname);        // record the function it belongs to
+    v_type[id]          = type_tmp;            // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
+    v_used[id]          = 0;                   // just declared, so not used yet
+    v_table[id].fnid    = find_var(fname);     // record the function it belongs to
 
     // declare the imaginary part if comp -------------------------------------
 
     if (type_tmp > 2)
     {
-        int idi     = get_img_id(id);
-        v_type[idi] = 4; // use type 4 for the imaginary part
-        v_used[idi] = 0;
-        v_fnid[idi] = find_var(fname);
+        int idi              = get_img_id(id);
+        v_type[idi]          = 4; // use type 4 for the imaginary part
+        v_used[idi]          = 0;
+        v_table[idi].fnid    = find_var(fname);
     }
 
     // register the variable in the log file ----------------------------------
@@ -78,11 +78,11 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
         exit(EXIT_FAILURE);
     }
 
-    v_type[id_var] = type_tmp;
-    v_used[id_var] = 0;
-    v_fnid[id_var] = find_var(fname);
-    v_isar[id_var] = 1;
-    v_size[id_var] = atoi(v_name[id_arg]);
+    v_type[id_var]       = type_tmp;
+    v_used[id_var]       = 0;
+    v_table[id_var].fnid = find_var(fname);
+    v_isar[id_var]       = 1;
+    v_size[id_var]       = atoi(v_name[id_arg]);
 
     int type = type_tmp;
 
@@ -147,12 +147,12 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
         exit(EXIT_FAILURE);
     }
 
-    v_type[id_var] = type_tmp;
-    v_used[id_var] = 0;
-    v_fnid[id_var] = find_var(fname);
-    v_isar[id_var] = 2;
-    v_size[id_var] = atoi(v_name[id_x]);
-    v_siz2[id_var] = atoi(v_name[id_y]);
+    v_type[id_var]       = type_tmp;
+    v_used[id_var]       = 0;
+    v_table[id_var].fnid = find_var(fname);
+    v_isar[id_var]       = 2;
+    v_size[id_var]       = atoi(v_name[id_x]);
+    v_table[id_var].siz2 = atoi(v_name[id_y]);
 
     int type = type_tmp;
 

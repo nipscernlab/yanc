@@ -1351,7 +1351,7 @@ void exec_Mv(int idy, int idM, int idv)
     if (v_size[idy] != v_size[idM]) {fprintf(stderr, MSG_ERR_MATRIX_ROW_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
     // check size between matrix and vector
-    if (v_size[idv] != v_siz2[idM]) {fprintf(stderr, MSG_ERR_MATRIX_COL_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_size[idv] != v_table[idM].siz2) {fprintf(stderr, MSG_ERR_MATRIX_COL_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -1365,7 +1365,7 @@ void exec_Mv(int idy, int idM, int idv)
     // ------------------------------------------------------------------------
 
     int N = v_size[idM];
-    int M = v_siz2[idM];
+    int M = v_table[idM].siz2;
 
     // ------------------------------------------------------------------------
     // implements the matrix-vector product -----------------------------------
@@ -1701,7 +1701,7 @@ void exec_Mmvvt(int idA, int idB, int ida, int idb)
     if (v_isar[idb] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
     // check size between elements
-    if (v_size[idA] != v_siz2[idA] || v_size[idA] != v_size[idB] || v_size[idA] != v_siz2[idB] || v_size[idA] != v_size[ida] || 
+    if (v_size[idA] != v_table[idA].siz2 || v_size[idA] != v_size[idB] || v_size[idA] != v_table[idB].siz2 || v_size[idA] != v_size[ida] ||
         v_size[idA] != v_size[idb]) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
@@ -1784,7 +1784,7 @@ void exec_cM(int idA, expr ec, int idM)
     if (v_isar[idM] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
     // check size between elements
-    if (v_size[idA] != v_size[idM] || v_siz2[idA] != v_siz2[idM]) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
+    if (v_size[idA] != v_size[idM] || v_table[idA].siz2 != v_table[idM].siz2) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -1798,7 +1798,7 @@ void exec_cM(int idA, expr ec, int idM)
     // ------------------------------------------------------------------------
 
     int N = v_size[idM];
-    int M = v_siz2[idM];
+    int M = v_table[idM].siz2;
 
     char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[ec.id]);
 

@@ -19,17 +19,15 @@ typedef struct symbol {
 
 extern symbol *v_table;                  // AoS storage, indexed by ID 0..v_count
 
-// table elements (dynamically allocated, grow on demand) ---------------------
+// Legacy SoA pointers (being retired field-by-field). The matching
+// struct member already lives in v_table; what remains here is what
+// hasn't been cut over yet.
 
 extern char (*v_name)[512];              // name of the variable or function
 extern int  *v_type;                     // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 5 -> const comp
 extern int  *v_used;                     // whether the ID has already been used
-extern int  *v_fpar;                     // if the ID is a function, holds the parameter list
-extern int  *v_fnid;                     // ID of the function the variable belongs to
 extern int  *v_isar;                     // whether the variable is an array
-extern int  *v_isco;                     // whether the variable is a constant
 extern int  *v_size;                     // array size (when it is an array)
-extern int  *v_siz2;                     // size of the j dimension (when it is a matrix)
 
 // table element manipulation -------------------------------------------------
 

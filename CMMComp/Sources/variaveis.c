@@ -20,16 +20,11 @@ static int   v_cap   = 0;  // current capacity of the parallel arrays
 char (*v_name)[512] = NULL; // name of the variable or function
 int  *v_isar       = NULL; // whether the variable is an array
 int  *v_type       = NULL; // 0 -> unidentified, 1 -> int, 2 -> float
-int  *v_fnid       = NULL; // ID of the function the variable belongs to
 int  *v_used       = NULL; // whether the ID has already been used
-int  *v_isco       = NULL; // whether the variable is a constant
-int  *v_fpar       = NULL; // if the ID is a function, holds the parameter list
 int  *v_size       = NULL; // array size (when it is an array)
-int  *v_siz2       = NULL; // size of the j dimension (when it is a matrix)
 
-// AoS shadow storage, grown alongside the SoA arrays above. Not yet read or
-// written by anyone — subsequent commits cut each field over from v_X[i] to
-// v_table[i].X, after which the matching SoA pointer is retired.
+// AoS storage. Fields fpar/fnid/isco/siz2 already live here; the SoA arrays
+// above are progressively cut over and retired in subsequent commits.
 symbol *v_table    = NULL;
 
 #define GROW(arr, old_cap, new_cap)                                       \
@@ -53,12 +48,8 @@ static void var_grow(int needed)
     GROW(v_name,  v_cap, new_cap);
     GROW(v_isar,  v_cap, new_cap);
     GROW(v_type,  v_cap, new_cap);
-    GROW(v_fnid,  v_cap, new_cap);
     GROW(v_used,  v_cap, new_cap);
-    GROW(v_isco,  v_cap, new_cap);
-    GROW(v_fpar,  v_cap, new_cap);
     GROW(v_size,  v_cap, new_cap);
-    GROW(v_siz2,  v_cap, new_cap);
     GROW(v_table, v_cap, new_cap);
 
     v_cap = new_cap;
@@ -99,17 +90,17 @@ void check_var()
         // check whether a variable was declared but not used ...
         if (((v_type[i] == 1) || (v_type[i] == 2) || (v_type[i] == 3)) && (v_used[i] == 0))
         {
-            // v_fnid records the variable's owning function: a valid v_name
-            // index for locals, or "" / -1 for globals. declar_arr_1d etc.
-            // call find_var(fname) which returns -1 when fname is the empty
-            // string and no "" entry exists in v_name yet - so treat any
-            // out-of-range v_fnid as the global case.
-            int is_global = (v_fnid[i] < 0) ||
-                            (strcmp(v_name[v_fnid[i]], "") == 0);
+            // v_table[i].fnid records the variable's owning function: a valid
+            // v_name index for locals, or "" / -1 for globals. declar_arr_1d
+            // etc. call find_var(fname) which returns -1 when fname is the
+            // empty string and no "" entry exists in v_name yet - so treat any
+            // out-of-range fnid as the global case.
+            int fnid = v_table[i].fnid;
+            int is_global = (fnid < 0) || (strcmp(v_name[fnid], "") == 0);
             if (is_global)
                 fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_name[i]);
             else
-                fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, rem_fname(v_name[i], v_name[v_fnid[i]]), v_name[v_fnid[i]]);
+                fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, rem_fname(v_name[i], v_name[fnid]), v_name[fnid]);
         }
 
         // check whether a function was declared but not used
@@ -169,7 +160,7 @@ int exec_inum(char *text)
 
     int id = find_var(text);
 
-    v_isco[id] = 1;
+    v_table[id].isco = 1;
 
     return id;
 }
@@ -241,7 +232,7 @@ int exec_fnum(char *text)
 
     int id = find_var(text);
 
-    v_isco[id] = 1;
+    v_table[id].isco = 1;
 
     return id;
 }
