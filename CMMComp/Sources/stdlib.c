@@ -25,9 +25,9 @@
 // input ex: int x = in(0);
 expr exec_in(int id)
 {
-    if (atoi(v_name[id]) >= nuioin) {fprintf(stderr, MSG_ERR_NO_IN_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
+    if (atoi(v_table[id].name) >= nuioin) {fprintf(stderr, MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name); exit(EXIT_FAILURE);}
 
-    if (acc_ok == 0) add_instr("INN %s\n", v_name[id]); else add_instr("P_INN %s\n", v_name[id]);
+    if (acc_ok == 0) add_instr("INN %s\n", v_table[id].name); else add_instr("P_INN %s\n", v_table[id].name);
 
     acc_ok = 1;  // marks the acc as now holding a value
 
@@ -37,9 +37,9 @@ expr exec_in(int id)
 // input ex: float x = fin(0);
 expr exec_fin(int id)
 {
-    if (atoi(v_name[id]) >= nuioin) {fprintf(stderr, MSG_ERR_NO_IN_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
+    if (atoi(v_table[id].name) >= nuioin) {fprintf(stderr, MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name); exit(EXIT_FAILURE);}
 
-    if (acc_ok == 0) add_instr("F_INN %s\n", v_name[id]); else add_instr("PF_INN %s\n", v_name[id]);
+    if (acc_ok == 0) add_instr("F_INN %s\n", v_table[id].name); else add_instr("PF_INN %s\n", v_table[id].name);
 
     acc_ok = 1;  // marks the acc as now holding a value
 
@@ -54,16 +54,16 @@ void exec_out(int id, expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_PICK_COMP_INFO, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check port range
-    if (atoi(v_name[id]) >= nuioou) {fprintf(stderr, MSG_ERR_NO_OUT_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
+    if (atoi(v_table[id].name) >= nuioou) {fprintf(stderr, MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -78,7 +78,7 @@ void exec_out(int id, expr e)
     // int var
     if ((e.type == 1) && (e.id!=0))
     {
-       if (acc_ok == 0) add_instr("LOD %s\n", v_name[e.id]); else add_instr("P_LOD %s\n", v_name[e.id]);
+       if (acc_ok == 0) add_instr("LOD %s\n", v_table[e.id].name); else add_instr("P_LOD %s\n", v_table[e.id].name);
     }
 
     // int acc
@@ -92,7 +92,7 @@ void exec_out(int id, expr e)
     {
         fprintf(stdout, MSG_WARN_USE_FOUT, line_num+1);
 
-        if (acc_ok == 0) add_instr("F2I_M %s\n", v_name[e.id]); else add_instr("P_F2I_M %s\n", v_name[e.id]);
+        if (acc_ok == 0) add_instr("F2I_M %s\n", v_table[e.id].name); else add_instr("P_F2I_M %s\n", v_table[e.id].name);
     }
 
     // float acc
@@ -103,7 +103,7 @@ void exec_out(int id, expr e)
         add_instr("F2I\n");
     }
 
-    add_instr("OUT %s\n", v_name[id]);
+    add_instr("OUT %s\n", v_table[id].name);
 
     acc_ok = 0; // libera acc    
 }
@@ -116,16 +116,16 @@ void exec_fout(int id, expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_PICK_COMP_INFO, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check port range
-    if (atoi(v_name[id]) >= nuioou) {fprintf(stderr, MSG_ERR_NO_OUT_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
+    if (atoi(v_table[id].name) >= nuioou) {fprintf(stderr, MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -142,7 +142,7 @@ void exec_fout(int id, expr e)
     {
         fprintf(stdout, MSG_WARN_USE_OUT, line_num+1);
 
-        if (acc_ok == 0) add_instr("LOD %s\n", v_name[e.id]); else add_instr("P_LOD %s\n", v_name[e.id]);
+        if (acc_ok == 0) add_instr("LOD %s\n", v_table[e.id].name); else add_instr("P_LOD %s\n", v_table[e.id].name);
     }
 
     // int acc
@@ -154,7 +154,7 @@ void exec_fout(int id, expr e)
     // float var
     if ((e.type == 2) && (e.id!=0))
     {
-        if (acc_ok == 0) add_instr("F2I_M %s\n", v_name[e.id]); else add_instr("P_F2I_M %s\n", v_name[e.id]);
+        if (acc_ok == 0) add_instr("F2I_M %s\n", v_table[e.id].name); else add_instr("P_F2I_M %s\n", v_table[e.id].name);
     }
 
     // float acc
@@ -163,7 +163,7 @@ void exec_fout(int id, expr e)
         add_instr("F2I\n");
     }
 
-    add_instr("OUT %s\n", v_name[id]);
+    add_instr("OUT %s\n", v_table[id].name);
 
     acc_ok = 0; // libera acc    
 }
@@ -180,16 +180,16 @@ expr exec_sign(expr e1, expr e2)
     // ------------------------------------------------------------------------
 
     // check whether et1 was declared
-    if (e1.id != 0 && v_table[e1.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e1.id], fname)); exit(EXIT_FAILURE);}
+    if (e1.id != 0 && v_table[e1.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e1.id].name, fname)); exit(EXIT_FAILURE);}
     
     // check whether et2 was declared
-    if (e2.id != 0 && v_table[e2.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e2.id], fname)); exit(EXIT_FAILURE);}
+    if (e2.id != 0 && v_table[e2.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e2.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et1 is a variable
-    if (e1.id != 0 && v_table[e1.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e1.id], fname)); exit(EXIT_FAILURE);}
+    if (e1.id != 0 && v_table[e1.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e1.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et2 is a variable
-    if (e2.id != 0 && v_table[e2.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e2.id], fname)); exit(EXIT_FAILURE);}
+    if (e2.id != 0 && v_table[e2.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e2.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether there is a comp
     if ((e1.type > 2) || (e2.type > 2)) {fprintf (stderr, MSG_ERR_SIGN_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -214,33 +214,33 @@ expr exec_sign(expr e1, expr e2)
     // int in memory and int in memory
     if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("SGN %s\n"   , v_name[e1.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("SGN %s\n"   , v_table[e1.id].name);
     }
 
     // int in memory and int in acc
     if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
     {
-        add_instr("SGN %s\n", v_name[e1.id]);
+        add_instr("SGN %s\n", v_table[e1.id].name);
     }
 
     // int in memory and float var in memory
     if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("F_SGN %s\n" , v_name[e1.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("F_SGN %s\n" , v_table[e1.id].name);
     }
 
     // int in memory and float in acc
     if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
     {
-        add_instr("F_SGN %s\n", v_name[e1.id]);
+        add_instr("F_SGN %s\n", v_table[e1.id].name);
     }
 
     // int in acc and int in memory
     if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
         add_instr("S_SGN\n");
     }
 
@@ -253,7 +253,7 @@ expr exec_sign(expr e1, expr e2)
     // int in acc and float var in memory
     if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
     {
-        add_instr("P_LOD %s\n", v_name[e2.id]  );
+        add_instr("P_LOD %s\n", v_table[e2.id].name  );
         add_instr("SF_SGN\n");
     }
 
@@ -266,33 +266,33 @@ expr exec_sign(expr e1, expr e2)
     // float var and int var
     if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("SGN %s\n"   , v_name[e1.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("SGN %s\n"   , v_table[e1.id].name);
     }
 
     // float var and int in acc
     if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
     {
-        add_instr("SGN %s\n"  , v_name[e1.id]);
+        add_instr("SGN %s\n"  , v_table[e1.id].name);
     }
 
     // float var and float var
     if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("F_SGN %s\n" , v_name[e1.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("F_SGN %s\n" , v_table[e1.id].name);
     }
 
     // float var and float in acc
     if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
     {
-        add_instr("F_SGN %s\n" , v_name[e1.id]);
+        add_instr("F_SGN %s\n" , v_table[e1.id].name);
     }
 
     // float in acc and int in memory
     if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
         add_instr("S_SGN\n");
     }
 
@@ -305,7 +305,7 @@ expr exec_sign(expr e1, expr e2)
     // float in acc and float var in memory
     if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
     {
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         add_instr("SF_SGN\n");
     }
 
@@ -328,10 +328,10 @@ expr exec_abs(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -354,7 +354,7 @@ expr exec_abs(expr e)
     // int in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", abs, v_name[e.id]);
+        add_instr("%s %s\n", abs, v_table[e.id].name);
     }
 
     // int in acc
@@ -366,7 +366,7 @@ expr exec_abs(expr e)
     // float in memory
     if ((e.type == 2) && (e.id != 0))
     {
-        add_instr("%s %s\n", fabs, v_name[e.id]);
+        add_instr("%s %s\n", fabs, v_table[e.id].name);
     }
 
     // float in acc
@@ -394,10 +394,10 @@ expr exec_pst(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -420,7 +420,7 @@ expr exec_pst(expr e)
     // int in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", pst, v_name[e.id]);
+        add_instr("%s %s\n", pst, v_table[e.id].name);
     }
 
     // int in acc
@@ -432,7 +432,7 @@ expr exec_pst(expr e)
     // float in memory
     if ((e.type == 2)  && (e.id != 0))
     {
-        add_instr("%s %s\n", fpst, v_name[e.id]);
+        add_instr("%s %s\n", fpst, v_table[e.id].name);
     }
 
     // float in acc
@@ -461,10 +461,10 @@ expr exec_norm(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is int
     if (e.type != 1) {fprintf (stderr, MSG_ERR_NORM_NON_INT, line_num+1); exit(EXIT_FAILURE);}
@@ -488,7 +488,7 @@ expr exec_norm(expr e)
     // int in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", nrm, v_name[e.id]);
+        add_instr("%s %s\n", nrm, v_table[e.id].name);
     }
 
     // int in acc
@@ -509,16 +509,16 @@ void exec_copy(expr e, int id2)
     // ------------------------------------------------------------------------
 
     // check whether the source expression was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether the source is a plain variable (not an array)
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether id2 was declared
-    if (v_table[id2].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
+    if (v_table[id2].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[id2].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether id2 is a variable
-    if (v_table[id2].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
+    if (v_table[id2].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[id2].name, fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -533,14 +533,14 @@ void exec_copy(expr e, int id2)
     // from var to var
     if (e.id != 0)
     {
-        add_instr("LOD %s\n", v_name[e.id]);
-        add_instr("SET %s\n", v_name[id2] );
+        add_instr("LOD %s\n", v_table[e.id].name);
+        add_instr("SET %s\n", v_table[id2].name );
     }
 
     // from acc to var
     if (e.id == 0)
     {
-        add_instr("SET %s\n", v_name[id2]);
+        add_instr("SET %s\n", v_table[id2].name);
     }
 }
 
@@ -556,10 +556,10 @@ expr exec_sqrt(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -584,7 +584,7 @@ expr exec_sqrt(expr e)
     // int in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", i2f, v_name[e.id]);
+        add_instr("%s %s\n", i2f, v_table[e.id].name);
         add_instr("CAL float_sqrt\n");
     }
 
@@ -598,7 +598,7 @@ expr exec_sqrt(expr e)
     // float in memory
     if ((e.type == 2) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("CAL float_sqrt\n");
     }
 
@@ -621,10 +621,10 @@ expr exec_atan(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -649,7 +649,7 @@ expr exec_atan(expr e)
     // int in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", i2f, v_name[e.id]);
+        add_instr("%s %s\n", i2f, v_table[e.id].name);
         add_instr("CAL float_atan\n");
     }
 
@@ -663,7 +663,7 @@ expr exec_atan(expr e)
     // float in memory
     if ((e.type == 2) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("CAL float_atan\n");
     }
 
@@ -686,10 +686,10 @@ expr exec_sin(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -714,7 +714,7 @@ expr exec_sin(expr e)
     // int in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", i2f, v_name[e.id]);
+        add_instr("%s %s\n", i2f, v_table[e.id].name);
         add_instr("CAL float_sin\n");
     }
 
@@ -728,7 +728,7 @@ expr exec_sin(expr e)
     // float in memory
     if ((e.type == 2) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("CAL float_sin\n");
     }
 
@@ -751,10 +751,10 @@ expr exec_cos(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -779,7 +779,7 @@ expr exec_cos(expr e)
     // int in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", i2f, v_name[e.id]);
+        add_instr("%s %s\n", i2f, v_table[e.id].name);
         add_instr("F_NEG\n");
         add_instr("F_ADD 1.570796327");
         add_instr("CAL float_sin\n");
@@ -797,7 +797,7 @@ expr exec_cos(expr e)
     // float in memory
     if ((e.type == 2) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("F_NEG\n");
         add_instr("F_ADD 1.570796327");
         add_instr("CAL float_sin\n");
@@ -828,10 +828,10 @@ expr exec_real(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type < 3) {fprintf (stderr, MSG_ERR_REAL_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
@@ -858,13 +858,13 @@ expr exec_real(expr e)
         expr et_r, et_i;
         get_cmp_cst(e,&et_r,&et_i);
 
-        add_instr("%s %s\n", ld, v_name[et_r.id]);
+        add_instr("%s %s\n", ld, v_table[et_r.id].name);
     }
 
     // comp in memory
     if ((e.type == 3) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e.id]);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
     }
 
     // comp in acc
@@ -886,10 +886,10 @@ expr exec_imag(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type < 3) {fprintf (stderr, MSG_ERR_IMAG_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
@@ -916,7 +916,7 @@ expr exec_imag(expr e)
         expr et_r, et_i;
         get_cmp_cst(e,&et_r,&et_i);
 
-        add_instr("%s %s\n", ld, v_name[et_i.id]);
+        add_instr("%s %s\n", ld, v_table[et_i.id].name);
     }
 
     // comp in memory
@@ -925,7 +925,7 @@ expr exec_imag(expr e)
         expr et_r, et_i;
         get_cmp_ets(e,&et_r,&et_i);
 
-        add_instr("%s %s\n", ld, v_name[et_i.id]);
+        add_instr("%s %s\n", ld, v_table[et_i.id].name);
     }
 
     // comp in acc
@@ -948,10 +948,10 @@ expr exec_mod2(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type < 3) {fprintf (stderr, MSG_ERR_MOD2_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
@@ -1017,10 +1017,10 @@ expr exec_fase(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type < 3) {fprintf (stderr, MSG_ERR_FASE_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
@@ -1061,7 +1061,7 @@ expr exec_fase(expr e)
         int id = exec_id("aux_var");
         et_i   = expr_make(2, id);
 
-        add_instr("SET_P %s\n", v_name[id]);
+        add_instr("SET_P %s\n", v_table[id].name);
         oper_divi(et_i, expr_make(2, 0));
     }
 
@@ -1079,16 +1079,16 @@ expr exec_comp(expr er, expr ei)
     // ------------------------------------------------------------------------
 
     // check whether etr was declared
-    if (er.id != 0 && v_table[er.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[er.id], fname)); exit(EXIT_FAILURE);}
+    if (er.id != 0 && v_table[er.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[er.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether eti was declared
-    if (ei.id != 0 && v_table[ei.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ei.id], fname)); exit(EXIT_FAILURE);}
+    if (ei.id != 0 && v_table[ei.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ei.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etr is a variable
-    if (er.id != 0 && v_table[er.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[er.id], fname)); exit(EXIT_FAILURE);}
+    if (er.id != 0 && v_table[er.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[er.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (ei.id != 0 && v_table[ei.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ei.id], fname)); exit(EXIT_FAILURE);}
+    if (ei.id != 0 && v_table[ei.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ei.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (er.type > 2 || ei.type > 2) {fprintf (stderr, MSG_ERR_COMPLEX_OF_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -1114,30 +1114,30 @@ expr exec_comp(expr er, expr ei)
     // int in memory and int in memory
     if ((er.type == 1) && (er.id != 0) && (ei.type == 1) && (ei.id != 0))
     {
-        add_instr("%s %s\n", i2f, v_name[er.id]);
-        add_instr("P_I2F_M %s\n", v_name[ei.id]);
+        add_instr("%s %s\n", i2f, v_table[er.id].name);
+        add_instr("P_I2F_M %s\n", v_table[ei.id].name);
     }
 
     // int in memory and int in acc
     if ((er.type == 1) && (er.id != 0) && (ei.type == 1) && (ei.id == 0))
     {
         add_instr("SET aux_var\n");
-        add_instr("I2F_M %s\n", v_name[er.id]);
+        add_instr("I2F_M %s\n", v_table[er.id].name);
         add_instr("P_I2F_M aux_var\n");
     }
 
     // int in memory and float in memory
     if ((er.type == 1) && (er.id != 0) && (ei.type == 2) && (ei.id != 0))
     {
-        add_instr("%s %s\n", i2f, v_name[er.id]);
-        add_instr("P_LOD %s\n"  , v_name[ei.id]);
+        add_instr("%s %s\n", i2f, v_table[er.id].name);
+        add_instr("P_LOD %s\n"  , v_table[ei.id].name);
     }
 
     // int in memory and float in acc
     if ((er.type == 1) && (er.id != 0) && (ei.type == 2) && (ei.id == 0))
     {
         add_instr("SET aux_var\n");
-        add_instr("I2F_M %s\n", v_name[er.id]);
+        add_instr("I2F_M %s\n", v_table[er.id].name);
         add_instr("P_LOD aux_var\n");
     }
 
@@ -1145,7 +1145,7 @@ expr exec_comp(expr er, expr ei)
     if ((er.type == 1) && (er.id == 0) && (ei.type == 1) && (ei.id != 0))
     {
         add_instr("I2F\n");
-        add_instr("P_I2F_M %s\n", v_name[ei.id]);
+        add_instr("P_I2F_M %s\n", v_table[ei.id].name);
     }
 
     // int in acc and int in acc
@@ -1160,7 +1160,7 @@ expr exec_comp(expr er, expr ei)
     if ((er.type == 1) && (er.id == 0) && (ei.type == 2) && (ei.id != 0))
     {
         add_instr("I2F\n");
-        add_instr("P_LOD %s\n", v_name[ei.id]);
+        add_instr("P_LOD %s\n", v_table[ei.id].name);
     }
 
     // int in acc and float in acc
@@ -1174,37 +1174,37 @@ expr exec_comp(expr er, expr ei)
     // float in memory and int in memory
     if ((er.type == 2) && (er.id != 0) && (ei.type == 1) && (ei.id != 0))
     {
-        add_instr("%s %s\n",  ld, v_name[er.id]);
-        add_instr("P_I2F_M %s\n", v_name[ei.id]);
+        add_instr("%s %s\n",  ld, v_table[er.id].name);
+        add_instr("P_I2F_M %s\n", v_table[ei.id].name);
     }
 
     // float in memory and int in acc
     if ((er.type == 2) && (er.id != 0) && (ei.type == 1) && (ei.id == 0))
     {
         add_instr("SET aux_var\n");
-        add_instr("LOD %s\n", v_name[er.id]);
+        add_instr("LOD %s\n", v_table[er.id].name);
         add_instr("P_I2F_M aux_var\n");
     }
 
     // float in memory and float in memory
     if ((er.type == 2) && (er.id != 0) && (ei.type == 2) && (ei.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[er.id]);
-        add_instr("P_LOD %s\n" , v_name[ei.id]);
+        add_instr("%s %s\n", ld, v_table[er.id].name);
+        add_instr("P_LOD %s\n" , v_table[ei.id].name);
     }
 
     // float in memory and float in acc
     if ((er.type == 2) && (er.id != 0) && (ei.type == 2) && (ei.id == 0))
     {
         add_instr("SET aux_var\n");
-        add_instr("LOD %s\n", v_name[er.id]);
+        add_instr("LOD %s\n", v_table[er.id].name);
         add_instr("P_LOD aux_var\n");
     }
 
     // float in acc and int in memory
     if ((er.type == 2) && (er.id == 0) && (ei.type == 1) && (ei.id != 0))
     {
-        add_instr("P_I2F_M %s\n", v_name[ei.id]);
+        add_instr("P_I2F_M %s\n", v_table[ei.id].name);
     }
 
     // float in acc and int in acc
@@ -1216,7 +1216,7 @@ expr exec_comp(expr er, expr ei)
     // float in acc and float in memory
     if ((er.type == 2) && (er.id == 0) && (ei.type == 2) && (ei.id != 0))
     {
-        add_instr("P_LOD %s\n", v_name[ei.id]);
+        add_instr("P_LOD %s\n", v_table[ei.id].name);
     }
 
     // float in acc and float in acc
@@ -1244,10 +1244,10 @@ expr exec_vtv(int id1, int id2)
     // ------------------------------------------------------------------------
 
     // check whether id1 was declared
-    if (v_table[id1].type == 0) {fprintf(stderr, MSG_ERR_VAR_NOT_FOUND, line_num+1, rem_fname(v_name[id1], fname)); exit(EXIT_FAILURE);}
+    if (v_table[id1].type == 0) {fprintf(stderr, MSG_ERR_VAR_NOT_FOUND, line_num+1, rem_fname(v_table[id1].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether id2 was declared
-    if (v_table[id2].type == 0) {fprintf(stderr, MSG_ERR_VAR_NOT_FOUND, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
+    if (v_table[id2].type == 0) {fprintf(stderr, MSG_ERR_VAR_NOT_FOUND, line_num+1, rem_fname(v_table[id2].name, fname)); exit(EXIT_FAILURE);}
 
     // check that they really are vectors
     if (v_table[id1].isar != 1 || v_table[id2].isar != 1) {fprintf(stderr, MSG_ERR_INNER_NEEDS_VECTORS, line_num+1); exit(EXIT_FAILURE);}
@@ -1287,13 +1287,13 @@ expr exec_vtv(int id1, int id2)
     // int with int
     if ((v_table[id1].type == 1) && (v_table[id2].type == 1))
     {
-        add_instr( "%s %s\n", ld, v_name[id1]);
-        add_instr("MLT %s\n",     v_name[id2]);
+        add_instr( "%s %s\n", ld, v_table[id1].name);
+        add_instr("MLT %s\n",     v_table[id2].name);
 
         for (int i = 1; i < N; i++)
         {
-            add_instr("P_LOD_V %s %d\n", v_name[id1], i);
-            add_instr(  "MLT_V %s %d\n", v_name[id2], i);
+            add_instr("P_LOD_V %s %d\n", v_table[id1].name, i);
+            add_instr(  "MLT_V %s %d\n", v_table[id2].name, i);
             add_instr("S_ADD\n");
         }
     }
@@ -1301,13 +1301,13 @@ expr exec_vtv(int id1, int id2)
     // float with float
     if ((v_table[id1].type == 2) && (v_table[id2].type == 2))
     {
-        add_instr(   "%s %s\n", ld, v_name[id1]);
-        add_instr("F_MLT %s\n",     v_name[id2]);
+        add_instr(   "%s %s\n", ld, v_table[id1].name);
+        add_instr("F_MLT %s\n",     v_table[id2].name);
 
         for (int i = 1; i < N; i++)
         {
-            add_instr("P_LOD_V %s %d\n", v_name[id1], i);
-            add_instr("F_MLT_V %s %d\n", v_name[id2], i);
+            add_instr("P_LOD_V %s %d\n", v_table[id1].name, i);
+            add_instr("F_MLT_V %s %d\n", v_table[id2].name, i);
             add_instr("SF_ADD\n");
         }
     }
@@ -1324,13 +1324,13 @@ void exec_Mv(int idy, int idM, int idv)
     // ------------------------------------------------------------------------
 
     // check whether idy was declared
-    if (v_table[idy].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idy].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idM was declared
-    if (v_table[idM].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idM].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idv was declared
-    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // check that the types match
     if (v_table[idy].type != v_table[idM].type || v_table[idy].type != v_table[idv].type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
@@ -1339,19 +1339,19 @@ void exec_Mv(int idy, int idM, int idv)
     if (v_table[idy].type == 3 || v_table[idM].type == 3 || v_table[idv].type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idy is a vector
-    if (v_table[idy].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idy].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idM is a matrix
-    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX2, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX2, line_num+1, rem_fname(v_table[idM].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idv is a vector
-    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // check size between output and matrix
-    if (v_table[idy].size != v_table[idM].size) {fprintf(stderr, MSG_ERR_MATRIX_ROW_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].size != v_table[idM].size) {fprintf(stderr, MSG_ERR_MATRIX_ROW_MISMATCH, line_num+1, rem_fname(v_table[idM].name, fname), rem_fname(v_table[idy].name, fname)); exit(EXIT_FAILURE);}
 
     // check size between matrix and vector
-    if (v_table[idv].size != v_table[idM].siz2) {fprintf(stderr, MSG_ERR_MATRIX_COL_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].size != v_table[idM].siz2) {fprintf(stderr, MSG_ERR_MATRIX_COL_MISMATCH, line_num+1, rem_fname(v_table[idM].name, fname), rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -1380,17 +1380,17 @@ void exec_Mv(int idy, int idM, int idv)
     {
         for (int i = 0; i < N; i++)
         {
-            add_instr("LOD_V %s %d\n", v_name[idM], i*M);
-            add_instr("MLT %s\n"     , v_name[idv]);
+            add_instr("LOD_V %s %d\n", v_table[idM].name, i*M);
+            add_instr("MLT %s\n"     , v_table[idv].name);
 
             for (int j = 1; j < M; j++)
             {
-                add_instr("P_LOD_V %s %d\n", v_name[idM], i*M+j);
-                add_instr(  "MLT_V %s %d\n", v_name[idv],     j);
+                add_instr("P_LOD_V %s %d\n", v_table[idM].name, i*M+j);
+                add_instr(  "MLT_V %s %d\n", v_table[idv].name,     j);
                 add_instr("S_ADD\n");
             }
 
-            add_instr("SET_V %s %d\n", v_name[idy], i);
+            add_instr("SET_V %s %d\n", v_table[idy].name, i);
         }
     }
 
@@ -1399,17 +1399,17 @@ void exec_Mv(int idy, int idM, int idv)
     {
         for (int i = 0; i < N; i++)
         {
-            add_instr("LOD_V %s %d\n", v_name[idM], i*M);
-            add_instr("F_MLT %s\n"   , v_name[idv]);
+            add_instr("LOD_V %s %d\n", v_table[idM].name, i*M);
+            add_instr("F_MLT %s\n"   , v_table[idv].name);
 
             for (int j = 1; j < M; j++)
             {
-                add_instr("P_LOD_V %s %d\n", v_name[idM], i*M+j);
-                add_instr("F_MLT_V %s %d\n", v_name[idv],     j);
+                add_instr("P_LOD_V %s %d\n", v_table[idM].name, i*M+j);
+                add_instr("F_MLT_V %s %d\n", v_table[idv].name,     j);
                 add_instr("SF_ADD\n");
             }
 
-            add_instr("SET_V %s %d\n", v_name[idy], i);
+            add_instr("SET_V %s %d\n", v_table[idy].name, i);
         }
     }
 }
@@ -1422,13 +1422,13 @@ void exec_cv(int idy, expr e, int idv)
     // ------------------------------------------------------------------------
 
     // check whether idy was declared
-    if (v_table[idy].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idy].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idv was declared
-    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // check that the types match
     if (v_table[idy].type != e.type || v_table[idy].type != v_table[idv].type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
@@ -1437,13 +1437,13 @@ void exec_cv(int idy, expr e, int idv)
     if (v_table[idy].type == 3 || e.type == 3 || v_table[idv].type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idy is a vector
-    if (v_table[idy].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idy].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idv is a vector
-    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // check size between vectors
     if (v_table[idy].size != v_table[idv].size) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
@@ -1461,7 +1461,7 @@ void exec_cv(int idy, expr e, int idv)
 
     int N = v_table[idv].size;
 
-    char g[64]; if (e.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[e.id]);
+    char g[64]; if (e.id==0) strcpy(g,"aux_var"); else strcpy(g,v_table[e.id].name);
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1475,7 +1475,7 @@ void exec_cv(int idy, expr e, int idv)
 
     for (int i = 0; i < N; i++)
     {
-        add_instr("LOD_V %s %d\n", v_name[idv], i);
+        add_instr("LOD_V %s %d\n", v_table[idv].name, i);
 
         // int with int
         if (v_table[idy].type == 1)
@@ -1489,7 +1489,7 @@ void exec_cv(int idy, expr e, int idv)
             add_instr("F_MLT %s\n", g);
         }
 
-        add_instr("SET_V %s %d\n", v_name[idy], i);
+        add_instr("SET_V %s %d\n", v_table[idy].name, i);
     }
 
     acc_ok = 0;
@@ -1504,16 +1504,16 @@ void exec_apcb(int idy, int ida, expr ec, int idb)
     // ------------------------------------------------------------------------
 
     // check whether idy was declared
-    if (v_table[idy].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idy].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether ida was declared
-    if (v_table[ida].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ida].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etc was declared
-    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
     
     // check whether idb was declared
-    if (v_table[idb].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idb].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idb].name, fname)); exit(EXIT_FAILURE);}
 
     // check that the types match
     if (v_table[idy].type != v_table[ida].type || v_table[idy].type != ec.type || v_table[idy].type != v_table[idb].type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
@@ -1522,16 +1522,16 @@ void exec_apcb(int idy, int ida, expr ec, int idb)
     if (v_table[idy].type == 3 || v_table[ida].type == 3 || ec.type == 3 || v_table[idb].type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idy is a vector
-    if (v_table[idy].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idy].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether ida is a vector
-    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[ida].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idb is a vector
-    if (v_table[idb].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idb].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idb].name, fname)); exit(EXIT_FAILURE);}
 
     // check size between vectors
     if (v_table[idy].size != v_table[ida].size) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
@@ -1555,7 +1555,7 @@ void exec_apcb(int idy, int ida, expr ec, int idb)
 
     int N = v_table[idy].size;
 
-    char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[ec.id]);
+    char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_table[ec.id].name);
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1565,23 +1565,23 @@ void exec_apcb(int idy, int ida, expr ec, int idb)
 
     for (int i = 0; i < N; i++)
     {
-        add_instr("LOD_V %s %d\n", v_name[idb], i);
+        add_instr("LOD_V %s %d\n", v_table[idb].name, i);
 
         // int
         if (v_table[idy].type == 1)
         {
             add_instr("MLT %s\n", g);
-            add_instr("ADD_V %s %d\n", v_name[ida], i);
+            add_instr("ADD_V %s %d\n", v_table[ida].name, i);
         }
 
         // float
         if (v_table[idy].type == 2)
         {
             add_instr("F_MLT %s\n", g);
-            add_instr("F_ADD_V %s %d\n", v_name[ida], i);
+            add_instr("F_ADD_V %s %d\n", v_table[ida].name, i);
         }
 
-        add_instr("SET_V %s %d\n", v_name[idy], i);
+        add_instr("SET_V %s %d\n", v_table[idy].name, i);
     }
 
     acc_ok = 0;
@@ -1595,13 +1595,13 @@ void exec_vvt(int idM, int ida, int idb)
     // ------------------------------------------------------------------------
 
     // check whether idM was declared
-    if (v_table[idM].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idM].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether ida was declared
-    if (v_table[ida].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ida].name, fname)); exit(EXIT_FAILURE);}
     
     // check whether idb was declared
-    if (v_table[idb].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idb].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idb].name, fname)); exit(EXIT_FAILURE);}
 
     // check that the types match
     if (v_table[idM].type != v_table[ida].type || v_table[idM].type != v_table[idb].type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
@@ -1610,13 +1610,13 @@ void exec_vvt(int idM, int ida, int idb)
     if (v_table[idM].type == 3 || v_table[ida].type == 3 || v_table[idb].type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idM is a matrix
-    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_table[idM].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether ida is a vector
-    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[ida].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idb is a vector
-    if (v_table[idb].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idb].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idb].name, fname)); exit(EXIT_FAILURE);}
 
     // check size between elements
     if (v_table[idM].size != v_table[ida].size || v_table[idM].size != v_table[idb].size) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
@@ -1644,21 +1644,21 @@ void exec_vvt(int idM, int ida, int idb)
     {
         for (int j = 0; j < N; j++)
         {
-            add_instr("LOD_V %s %d\n", v_name[ida], i);
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i);
 
             // int
             if (v_table[idM].type == 1)
             {
-                add_instr("MLT_V %s %d\n", v_name[idb], j);
+                add_instr("MLT_V %s %d\n", v_table[idb].name, j);
             }
 
             // float
             if (v_table[idM].type == 2)
             {
-                add_instr("F_MLT_V %s %d\n", v_name[idb], j);
+                add_instr("F_MLT_V %s %d\n", v_table[idb].name, j);
             }
 
-            add_instr("SET_V %s %d\n", v_name[idM], N*j+i);
+            add_instr("SET_V %s %d\n", v_table[idM].name, N*j+i);
         }
     }
 }
@@ -1672,16 +1672,16 @@ void exec_Mmvvt(int idA, int idB, int ida, int idb)
     // ------------------------------------------------------------------------
 
     // check whether idA was declared
-    if (v_table[idA].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idA].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idA].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idA was declared
-    if (v_table[idB].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idB], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idB].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idB].name, fname)); exit(EXIT_FAILURE);}
     
     // check whether ida was declared
-    if (v_table[ida].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ida].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idb was declared
-    if (v_table[idb].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idb].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idb].name, fname)); exit(EXIT_FAILURE);}
 
     // check that the types match
     if (v_table[idA].type != v_table[idB].type || v_table[idA].type != v_table[ida].type || v_table[idA].type != v_table[idb].type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
@@ -1689,16 +1689,16 @@ void exec_Mmvvt(int idA, int idB, int ida, int idb)
     // check that it is not comp
     if (v_table[idA].type == 3 || v_table[idB].type == 3 || v_table[ida].type == 3 || v_table[idb].type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
     // check whether idA is a matrix
-    if (v_table[idA].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idA].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_table[idA].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idB is a matrix
-    if (v_table[idB].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idB], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idB].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_table[idB].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether ida is a vector
-    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[ida].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idb is a vector
-    if (v_table[idb].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idb].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idb].name, fname)); exit(EXIT_FAILURE);}
 
     // check size between elements
     if (v_table[idA].size != v_table[idA].siz2 || v_table[idA].size != v_table[idB].size || v_table[idA].size != v_table[idB].siz2 || v_table[idA].size != v_table[ida].size ||
@@ -1729,25 +1729,25 @@ void exec_Mmvvt(int idA, int idB, int ida, int idb)
     {
         for (int j = 0; j < N; j++)
         {
-            add_instr("LOD_V %s %d\n", v_name[ida], i);
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i);
 
             // int
             if (v_table[idA].type == 1)
             {
-                add_instr("MLT_V %s %d\n", v_name[idb],     j);
+                add_instr("MLT_V %s %d\n", v_table[idb].name,     j);
                 add_instr("NEG\n");
-                add_instr("ADD_V %s %d\n", v_name[idB], N*j+i);
+                add_instr("ADD_V %s %d\n", v_table[idB].name, N*j+i);
             }
 
             // float
             if (v_table[idA].type == 2)
             {
-                add_instr("F_MLT_V %s %d\n", v_name[idb],     j);
+                add_instr("F_MLT_V %s %d\n", v_table[idb].name,     j);
                 add_instr("F_NEG\n");
-                add_instr("F_ADD_V %s %d\n", v_name[idB], N*j+i);
+                add_instr("F_ADD_V %s %d\n", v_table[idB].name, N*j+i);
             }
 
-            add_instr("SET_V %s %d\n", v_name[idA], N*j+i);
+            add_instr("SET_V %s %d\n", v_table[idA].name, N*j+i);
         }
     }
 }
@@ -1760,13 +1760,13 @@ void exec_cM(int idA, expr ec, int idM)
     // ------------------------------------------------------------------------
 
     // check whether idA was declared
-    if (v_table[idA].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idA].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idA].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etc was declared
-    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
     
     // check whether idM was declared
-    if (v_table[idM].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idM].name, fname)); exit(EXIT_FAILURE);}
 
     // check that the types match
     if (v_table[idA].type != ec.type || v_table[idA].type != v_table[idM].type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
@@ -1775,13 +1775,13 @@ void exec_cM(int idA, expr ec, int idM)
     if (v_table[idA].type == 3 || ec.type == 3 || v_table[idM].type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idA is a matrix
-    if (v_table[idA].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idA].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_table[idA].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etc is a variable
-    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idM is a matrix
-    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_table[idM].name, fname)); exit(EXIT_FAILURE);}
 
     // check size between elements
     if (v_table[idA].size != v_table[idM].size || v_table[idA].siz2 != v_table[idM].siz2) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
@@ -1800,7 +1800,7 @@ void exec_cM(int idA, expr ec, int idM)
     int N = v_table[idM].size;
     int M = v_table[idM].siz2;
 
-    char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[ec.id]);
+    char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_table[ec.id].name);
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1814,7 +1814,7 @@ void exec_cM(int idA, expr ec, int idM)
     {
         for (int j = 0; j < M; j++)
         {
-            add_instr("LOD_V %s %d\n", v_name[idM], M*i+j);
+            add_instr("LOD_V %s %d\n", v_table[idM].name, M*i+j);
 
             // int
             if (v_table[idA].type == 1) add_instr("MLT %s\n", g);
@@ -1822,7 +1822,7 @@ void exec_cM(int idA, expr ec, int idM)
             // float
             if (v_table[idA].type == 2) add_instr("F_MLT %s\n", g);
             
-            add_instr("SET_V %s %d\n", v_name[idA], M*i+j);
+            add_instr("SET_V %s %d\n", v_table[idA].name, M*i+j);
         }
     }
 
@@ -1837,10 +1837,10 @@ void exec_cI(int idM, expr ec)
     // ------------------------------------------------------------------------
 
     // check whether idM was declared
-    if (v_table[idM].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idM].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etc was declared
-    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check that the types match
     if (v_table[idM].type != ec.type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
@@ -1848,10 +1848,10 @@ void exec_cI(int idM, expr ec)
     // check that it is not comp
     if (v_table[idM].type == 3 || ec.type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
     // check whether idM is a matrix
-    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_table[idM].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etc is a variable
-    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -1871,13 +1871,13 @@ void exec_cI(int idM, expr ec)
 
     printf(MSG_INFO_DIRAC_CM, line_num+1);
 
-    if (ec.id!=0) add_instr("LOD %s\n",v_name[ec.id]);
+    if (ec.id!=0) add_instr("LOD %s\n",v_table[ec.id].name);
 
     for (int i = 0; i < N; i++)
     {
         for (int j = 0; j < N; j++)
         {
-            if (i == j) add_instr("SET_V %s %d\n", v_name[idM], N*i+j);
+            if (i == j) add_instr("SET_V %s %d\n", v_table[idM].name, N*i+j);
         }
     }
 
@@ -1891,7 +1891,7 @@ void exec_cI(int idM, expr ec)
     {
         for (int j = 0; j < N; j++)
         {
-            if (i != j) add_instr("SET_V %s %d\n", v_name[idM], N*i+j);
+            if (i != j) add_instr("SET_V %s %d\n", v_table[idM].name, N*i+j);
         }
     }
 
@@ -1906,13 +1906,13 @@ void exec_v0(int idv)
     // ------------------------------------------------------------------------
 
     // check whether idv was declared
-    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // check that it is not comp
     if (v_table[idv].type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
     
     // check whether idv is a vector
-    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -1932,7 +1932,7 @@ void exec_v0(int idv)
     // float
     if (v_table[idv].type == 2) add_instr("LOD 0.0\n");
 
-    for (int i = 0; i < N; i++) add_instr("SET_V %s %d\n", v_name[idv], i);
+    for (int i = 0; i < N; i++) add_instr("SET_V %s %d\n", v_table[idv].name, i);
 }
 
 // reads input vector with weight c, e.g. a # c|in(0)>;
@@ -1943,19 +1943,19 @@ void exec_cvin(int idv, expr ec, int idp)
     // ------------------------------------------------------------------------
 
     // check whether idv was declared
-    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etc was declared
-    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check that it is not comp
     if (v_table[idv].type == 3 || ec.type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idv is a vector
-    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etc is a variable
-    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -1969,7 +1969,7 @@ void exec_cvin(int idv, expr ec, int idp)
 
     int N = v_table[idv].size;
 
-    char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[ec.id]);
+    char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_table[ec.id].name);
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1984,18 +1984,18 @@ void exec_cvin(int idv, expr ec, int idp)
         // int
         if (v_table[idv].type == 1)
         {
-            add_instr("INN %s\n", v_name[idp]);
+            add_instr("INN %s\n", v_table[idp].name);
             add_instr("MLT %s\n",g);
         }
 
         // float
         if (v_table[idv].type == 2)
         {
-            add_instr("F_INN %s\n", v_name[idp]);
+            add_instr("F_INN %s\n", v_table[idp].name);
             add_instr("F_MLT %s\n",g);
         }
 
-        add_instr("SET_V %s %d\n", v_name[idv], i);
+        add_instr("SET_V %s %d\n", v_table[idv].name, i);
     }
 
     acc_ok = 0;
@@ -2009,19 +2009,19 @@ void exec_vout(int idp, expr ec, int idv)
     // ------------------------------------------------------------------------
 
     // check whether idv was declared
-    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etc was declared
-    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check that it is not comp
     if (v_table[idv].type == 3 || ec.type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idv is a vector
-    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[idv].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etc is a variable
-    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ec.id].name, fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -2036,7 +2036,7 @@ void exec_vout(int idp, expr ec, int idv)
 
     int N = v_table[idv].size;
 
-    char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[ec.id]);
+    char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_table[ec.id].name);
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -2048,7 +2048,7 @@ void exec_vout(int idp, expr ec, int idv)
 
     for (int i = 0; i < N; i++)
     {
-        add_instr("LOD_V %s %d\n", v_name[idv], i);
+        add_instr("LOD_V %s %d\n", v_table[idv].name, i);
 
         // int
         if (v_table[idv].type == 1)
@@ -2063,7 +2063,7 @@ void exec_vout(int idp, expr ec, int idv)
             add_instr("F2I\n");
         }
 
-        add_instr("OUT %s\n", v_name[idp]);
+        add_instr("OUT %s\n", v_table[idp].name);
     }
 
     acc_ok = 0;
@@ -2079,10 +2079,10 @@ void exec_shift(int ida, expr eb, int idc)
     // ------------------------------------------------------------------------
 
     // check whether ida was declared
-    if (v_table[ida].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ida].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etb was declared
-    if (eb.id != 0 && v_table[eb.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[eb.id], fname)); exit(EXIT_FAILURE);}
+    if (eb.id != 0 && v_table[eb.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[eb.id].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether idc equals ida
     if (idc != ida) {fprintf(stderr, MSG_ERR_SHIFT_VEC_SELF, line_num+1); exit(EXIT_FAILURE);}
@@ -2094,10 +2094,10 @@ void exec_shift(int ida, expr eb, int idc)
     //if (v_table[ida].type != v_table[eb.id].type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
     
     // check whether ida is a vector
-    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[ida].name, fname)); exit(EXIT_FAILURE);}
 
     // check whether etb is a variable
-    if (eb.id != 0 && v_table[eb.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[eb.id], fname)); exit(EXIT_FAILURE);}
+    if (eb.id != 0 && v_table[eb.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[eb.id].name, fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -2115,19 +2115,19 @@ void exec_shift(int ida, expr eb, int idc)
     // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    printf(MSG_INFO_DIRAC_SHIFT, v_name[ida], line_num+1);
+    printf(MSG_INFO_DIRAC_SHIFT, v_table[ida].name, line_num+1);
 
     // ida int and etb int in memory
     if (v_table[ida].type == 1 && eb.type == 1 && eb.id != 0)
     {
         for (int i = N-1; i > 0; i--)
         {
-            add_instr("LOD_V %s %d\n", v_name[ida], i-1);
-            add_instr("SET_V %s %d\n", v_name[ida], i);
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i-1);
+            add_instr("SET_V %s %d\n", v_table[ida].name, i);
         }
 
-        add_instr("LOD %s\n", v_name[eb.id]);
-        add_instr("SET %s\n", v_name[ida]);
+        add_instr("LOD %s\n", v_table[eb.id].name);
+        add_instr("SET %s\n", v_table[ida].name);
     }
 
     // ida float e etb int no acc
@@ -2137,12 +2137,12 @@ void exec_shift(int ida, expr eb, int idc)
 
         for (int i = N-1; i > 0; i--)
         {
-            add_instr("LOD_V %s %d\n", v_name[ida], i-1);
-            add_instr("SET_V %s %d\n", v_name[ida], i);
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i-1);
+            add_instr("SET_V %s %d\n", v_table[ida].name, i);
         }
 
         add_instr("I2F_M aux_var\n");
-        add_instr("SET %s\n", v_name[ida]);
+        add_instr("SET %s\n", v_table[ida].name);
     }
 
     // ida float and etb float in memory
@@ -2150,12 +2150,12 @@ void exec_shift(int ida, expr eb, int idc)
     {
         for (int i = N-1; i > 0; i--)
         {
-            add_instr("LOD_V %s %d\n", v_name[ida], i-1);
-            add_instr("SET_V %s %d\n", v_name[ida], i);
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i-1);
+            add_instr("SET_V %s %d\n", v_table[ida].name, i);
         }
 
-        add_instr("LOD %s\n", v_name[eb.id]);
-        add_instr("SET %s\n", v_name[ida]);
+        add_instr("LOD %s\n", v_table[eb.id].name);
+        add_instr("SET %s\n", v_table[ida].name);
     }
 
     // ida float e etb float no acc
@@ -2165,12 +2165,12 @@ void exec_shift(int ida, expr eb, int idc)
 
         for (int i = N-1; i > 0; i--)
         {
-            add_instr("LOD_V %s %d\n", v_name[ida], i-1);
-            add_instr("SET_V %s %d\n", v_name[ida], i);
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i-1);
+            add_instr("SET_V %s %d\n", v_table[ida].name, i);
         }
 
         add_instr("LOD aux_var\n");
-        add_instr("SET %s\n", v_name[ida]);
+        add_instr("SET %s\n", v_table[ida].name);
     }
 
     acc_ok = 0;

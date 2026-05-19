@@ -121,7 +121,7 @@ expr_node *expr_func_call(int type, int id, expr_node **args, int n_args)
 {
     expr_node *n = enode_new(EXPR_FUNC_CALL);
     n->type   = type;
-    n->id     = id;       // function's v_name index
+    n->id     = id;       // function's v_table index
     n->args   = args;     // takes ownership
     n->n_args = n_args;
     return n;

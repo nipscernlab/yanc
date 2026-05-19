@@ -2,9 +2,7 @@
 // identifier table -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// One row of the symbol table. Currently allocated in parallel with the
-// legacy SoA arrays below (v_name/v_type/...); cutover happens field-by-field
-// in subsequent commits, after which v_table becomes the sole storage.
+// One row of the symbol table.
 typedef struct symbol {
     char name[512];   // name of the variable or function
     int  type;        // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 5 -> const comp
@@ -18,12 +16,6 @@ typedef struct symbol {
 } symbol;
 
 extern symbol *v_table;                  // AoS storage, indexed by ID 0..v_count
-
-// Legacy SoA pointers (being retired field-by-field). The matching
-// struct member already lives in v_table; what remains here is what
-// hasn't been cut over yet.
-
-extern char (*v_name)[512];              // name of the variable or function
 
 // table element manipulation -------------------------------------------------
 

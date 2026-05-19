@@ -31,7 +31,7 @@ expr oper_neg(expr e)
     // when it is an int variable in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", neg, v_name[e.id]);
+        add_instr("%s %s\n", neg, v_table[e.id].name);
     }
 
     // when it is an int in the acc
@@ -43,7 +43,7 @@ expr oper_neg(expr e)
     // when it is a float variable in memory
     if ((e.type == 2) && (e.id != 0))
     {
-        add_instr("%s %s\n", fneg, v_name[e.id]);
+        add_instr("%s %s\n", fneg, v_table[e.id].name);
     }
 
     // when it is a float in the acc
@@ -57,8 +57,8 @@ expr oper_neg(expr e)
     {
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", fneg, v_name[etr.id]);
-        add_instr("PF_NEG_M %s\n", v_name[eti.id]);
+        add_instr("%s %s\n", fneg, v_table[etr.id].name);
+        add_instr("PF_NEG_M %s\n", v_table[eti.id].name);
     }
 
     // when it is a comp variable in memory
@@ -66,8 +66,8 @@ expr oper_neg(expr e)
     {
         get_cmp_ets(e,&etr,&eti);
 
-        add_instr("%s %s\n", fneg, v_name[etr.id]);
-        add_instr("PF_NEG_M %s\n", v_name[eti.id]);
+        add_instr("%s %s\n", fneg, v_table[etr.id].name);
+        add_instr("PF_NEG_M %s\n", v_table[eti.id].name);
     }
 
     // when it is a comp in the acc
@@ -97,27 +97,27 @@ expr oper_soma(expr e1, expr e2)
     // int var with int var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n" , ld, v_name[e1.id]);
-        add_instr("ADD %s\n",     v_name[e2.id]);
+        add_instr("%s %s\n" , ld, v_table[e1.id].name);
+        add_instr("ADD %s\n",     v_table[e2.id].name);
     }
 
     // int var with int acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
-        add_instr("ADD %s\n", v_name[e1.id]);
+        add_instr("ADD %s\n", v_table[e1.id].name);
     }
 
     // int var with float var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n", i2f, v_name[e1.id]);
-        add_instr("F_ADD %s\n"  , v_name[e2.id]);
+        add_instr("%s %s\n", i2f, v_table[e1.id].name);
+        add_instr("F_ADD %s\n"  , v_table[e2.id].name);
     }
 
     // int var with float acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("P_I2F_M %s\n", v_name[e1.id]);
+        add_instr("P_I2F_M %s\n", v_table[e1.id].name);
         add_instr("SF_ADD\n");
     }
 
@@ -126,9 +126,9 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("%s %s\n" , i2f, v_name[e1.id]);
-        add_instr("F_ADD %s\n"   , v_name[etr.id]);
-        add_instr("P_LOD %s\n"   , v_name[eti.id]);
+        add_instr("%s %s\n" , i2f, v_table[e1.id].name);
+        add_instr("F_ADD %s\n"   , v_table[etr.id].name);
+        add_instr("P_LOD %s\n"   , v_table[eti.id].name);
     }
 
     // int var with comp var
@@ -136,16 +136,16 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("%s %s\n", i2f, v_name[e1.id]);
-        add_instr("F_ADD %s\n"  , v_name[etr.id]);
-        add_instr("P_LOD  %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", i2f, v_table[e1.id].name);
+        add_instr("F_ADD %s\n"  , v_table[etr.id].name);
+        add_instr("P_LOD  %s\n" , v_table[eti.id].name);
     }
 
     // int var with comp acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
         add_instr("SET aux_var\n");                 // temporarily save the imaginary part
-        add_instr("I2F_M %s\n", v_name[e1.id]);  // fetch the int while converting to float
+        add_instr("I2F_M %s\n", v_table[e1.id].name);  // fetch the int while converting to float
         add_instr("SF_ADD\n");                      // add acc with stack
         add_instr("P_LOD aux_var\n");               // push the result onto the stack while bringing the imag back
     }
@@ -153,7 +153,7 @@ expr oper_soma(expr e1, expr e2)
     // int acc with int var
     if ((e1.type==1) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("ADD %s\n", v_name[e2.id]);
+        add_instr("ADD %s\n", v_table[e2.id].name);
     }
 
     // int acc with int acc
@@ -166,7 +166,7 @@ expr oper_soma(expr e1, expr e2)
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_name[e2.id]);
+        add_instr("F_ADD %s\n", v_table[e2.id].name);
     }
 
     // int acc with float acc
@@ -183,8 +183,8 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_cst(e2,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // int acc with comp var
@@ -193,8 +193,8 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // int acc with comp acc
@@ -210,28 +210,28 @@ expr oper_soma(expr e1, expr e2)
     // float var with int var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n",i2f, v_name[e2.id]);
-        add_instr("F_ADD %s\n" , v_name[e1.id]);
+        add_instr("%s %s\n",i2f, v_table[e2.id].name);
+        add_instr("F_ADD %s\n" , v_table[e1.id].name);
     }
 
     // float var with int acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
         add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_name[e1.id]);
+        add_instr("F_ADD %s\n", v_table[e1.id].name);
     }
 
     // float var with float var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld, v_name[e1.id]);
-        add_instr("F_ADD %s\n" , v_name[e2.id]);
+        add_instr("%s %s\n", ld, v_table[e1.id].name);
+        add_instr("F_ADD %s\n" , v_table[e2.id].name);
     }
 
     // float var with float acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("F_ADD %s\n", v_name[e1.id]);
+        add_instr("F_ADD %s\n", v_table[e1.id].name);
     }
 
     // float var with comp const
@@ -239,9 +239,9 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e1.id]);
-        add_instr("F_ADD %s\n" , v_name[etr.id]);
-        add_instr("P_LOD %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", ld, v_table[e1.id].name);
+        add_instr("F_ADD %s\n" , v_table[etr.id].name);
+        add_instr("P_LOD %s\n" , v_table[eti.id].name);
     }
 
     // float var with comp var
@@ -249,23 +249,23 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e1.id]);
-        add_instr("F_ADD %s\n" , v_name[etr.id]);
-        add_instr("P_LOD %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", ld, v_table[e1.id].name);
+        add_instr("F_ADD %s\n" , v_table[etr.id].name);
+        add_instr("P_LOD %s\n" , v_table[eti.id].name);
     }
 
     // float var with comp acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("F_ADD %s\n", v_name[e1.id]);
+        add_instr("F_ADD %s\n", v_table[e1.id].name);
         add_instr("P_LOD aux_var\n");
     }
 
     // float acc with int var
     if ((e1.type==2) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SF_ADD\n");
     }
 
@@ -279,7 +279,7 @@ expr oper_soma(expr e1, expr e2)
     // float acc with float var
     if ((e1.type==2) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("F_ADD %s\n", v_name[e2.id]);
+        add_instr("F_ADD %s\n", v_table[e2.id].name);
     }
 
     // float acc with float acc
@@ -293,8 +293,8 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("F_ADD %s\n" , v_name[etr.id]);
-        add_instr("P_LOD %s\n" , v_name[eti.id]);
+        add_instr("F_ADD %s\n" , v_table[etr.id].name);
+        add_instr("P_LOD %s\n" , v_table[eti.id].name);
     }
 
     // float acc with comp var
@@ -302,8 +302,8 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("F_ADD %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // float acc with comp acc
@@ -319,9 +319,9 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("%s %s\n", i2f, v_name[e2.id]);
-        add_instr("F_ADD %s\n"  , v_name[etr.id]);
-        add_instr("P_LOD %s\n"  , v_name[eti.id]);
+        add_instr("%s %s\n", i2f, v_table[e2.id].name);
+        add_instr("F_ADD %s\n"  , v_table[etr.id].name);
+        add_instr("P_LOD %s\n"  , v_table[eti.id].name);
     }
 
     // comp const with int acc
@@ -330,8 +330,8 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_cst(e1,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp const with float var
@@ -339,9 +339,9 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("F_ADD %s\n" , v_name[etr.id]);
-        add_instr("P_LOD %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("F_ADD %s\n" , v_table[etr.id].name);
+        add_instr("P_LOD %s\n" , v_table[eti.id].name);
     }
 
     // comp const with float acc
@@ -349,8 +349,8 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("F_ADD %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp const with comp const
@@ -362,11 +362,11 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_cst(e1,&et1r,&et1i);
         get_cmp_cst(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_ADD %s\n" , v_name[et2r.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_ADD %s\n" , v_table[et2r.id].name);
 
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_ADD %s\n" , v_name[et2i.id]);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_ADD %s\n" , v_table[et2i.id].name);
     }
 
     // comp const with comp var
@@ -378,11 +378,11 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_cst(e1,&et1r,&et1i);
         get_cmp_ets(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_ADD %s\n" , v_name[et2r.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_ADD %s\n" , v_table[et2r.id].name);
 
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_ADD %s\n" , v_name[et2i.id]);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_ADD %s\n" , v_table[et2i.id].name);
     }
 
     // comp const with comp acc
@@ -391,9 +391,9 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_cst(e1,&etr,&eti);
 
         add_instr("SET_P aux_var\n");
-        add_instr("F_ADD %s\n", v_name[etr.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
 
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
         add_instr("F_ADD aux_var\n");
     }
 
@@ -402,9 +402,9 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("%s  %s\n", i2f, v_name[e2.id]);
-        add_instr("F_ADD %s\n"    , v_name[etr.id]);
-        add_instr("P_LOD  %s\n"    , v_name[eti.id]);
+        add_instr("%s  %s\n", i2f, v_table[e2.id].name);
+        add_instr("F_ADD %s\n"    , v_table[etr.id].name);
+        add_instr("P_LOD  %s\n"    , v_table[eti.id].name);
     }
 
     // comp var with int acc
@@ -413,8 +413,8 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_ets(e1,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp var with float var
@@ -422,9 +422,9 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("F_ADD %s\n" , v_name[etr.id]);
-        add_instr("P_LOD %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("F_ADD %s\n" , v_table[etr.id].name);
+        add_instr("P_LOD %s\n" , v_table[eti.id].name);
     }
 
     // comp var with float acc
@@ -432,8 +432,8 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("F_ADD %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp var with comp const
@@ -445,11 +445,11 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_ets(e1,&et1r,&et1i);
         get_cmp_cst(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_ADD %s\n" , v_name[et2r.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_ADD %s\n" , v_table[et2r.id].name);
 
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_ADD %s\n" , v_name[et2i.id]);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_ADD %s\n" , v_table[et2i.id].name);
     }
 
     // comp var with comp var
@@ -461,11 +461,11 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_ets(e1,&et1r,&et1i);
         get_cmp_ets(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_ADD %s\n" , v_name[et2r.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_ADD %s\n" , v_table[et2r.id].name);
 
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_ADD %s\n" , v_name[et2i.id]);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_ADD %s\n" , v_table[et2i.id].name);
     }
 
     // comp var with comp acc
@@ -474,9 +474,9 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_ets(e1,&etr,&eti);
 
         add_instr("SET_P aux_var\n");
-        add_instr("F_ADD %s\n", v_name[etr.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
 
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
         add_instr("F_ADD aux_var\n");
     }
 
@@ -484,7 +484,7 @@ expr oper_soma(expr e1, expr e2)
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SF_ADD\n");
         add_instr("P_LOD aux_var\n");
     }
@@ -503,7 +503,7 @@ expr oper_soma(expr e1, expr e2)
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("F_ADD %s\n", v_name[e2.id]);
+        add_instr("F_ADD %s\n", v_table[e2.id].name);
         add_instr("P_LOD aux_var\n");
     }
 
@@ -522,10 +522,10 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_cst(e2,&etr,&eti);
 
         add_instr("SET_P aux_var\n");
-        add_instr("F_ADD %s\n", v_name[etr.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
 
         add_instr("P_LOD aux_var\n");
-        add_instr("F_ADD %s\n", v_name[eti.id]);
+        add_instr("F_ADD %s\n", v_table[eti.id].name);
     }
 
     // comp acc with comp var
@@ -534,10 +534,10 @@ expr oper_soma(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         add_instr("SET_P aux_var\n");
-        add_instr("F_ADD %s\n", v_name[etr.id]);
+        add_instr("F_ADD %s\n", v_table[etr.id].name);
 
         add_instr("P_LOD aux_var\n");
-        add_instr("F_ADD %s\n", v_name[eti.id]);
+        add_instr("F_ADD %s\n", v_table[eti.id].name);
     }
 
     // comp acc with comp acc
@@ -587,14 +587,14 @@ expr oper_subt(expr e1, expr e2)
     // int var with float var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n", i2f, v_name[e1.id]);
-        add_instr("F_SU1 %s\n"  , v_name[e2.id]);
+        add_instr("%s %s\n", i2f, v_table[e1.id].name);
+        add_instr("F_SU1 %s\n"  , v_table[e2.id].name);
     }
 
     // int var with float acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("%s %s\n", i2f, v_name[e1.id]);
+        add_instr("%s %s\n", i2f, v_table[e1.id].name);
         add_instr("SF_SU1\n");
     }
 
@@ -609,16 +609,16 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("%s %s\n", i2f   , v_name[e1.id]);
-        add_instr("F_SU1 %s\n"     , v_name[etr.id]);
-        add_instr("PF_NEG_M  %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", i2f   , v_table[e1.id].name);
+        add_instr("F_SU1 %s\n"     , v_table[etr.id].name);
+        add_instr("PF_NEG_M  %s\n" , v_table[eti.id].name);
     }
 
     // int var with comp acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
         add_instr("SET aux_var\n");                 // temporarily save the imaginary part
-        add_instr("I2F_M %s\n", v_name[e1.id]);  // fetch the int while converting to float
+        add_instr("I2F_M %s\n", v_table[e1.id].name);  // fetch the int while converting to float
         add_instr("SF_SU1\n");                      // add acc with stack
         add_instr("PF_NEG_M aux_var\n");            // push the result onto the stack while bringing the imag back
     }
@@ -639,7 +639,7 @@ expr oper_subt(expr e1, expr e2)
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("I2F\n");
-        add_instr("F_SU1 %s\n", v_name[e2.id]);
+        add_instr("F_SU1 %s\n", v_table[e2.id].name);
     }
 
     // int acc with float acc
@@ -662,8 +662,8 @@ expr oper_subt(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("F_SU1 %s\n"   , v_name[etr.id]);
-        add_instr("PF_NEG_M %s\n", v_name[eti.id]);
+        add_instr("F_SU1 %s\n"   , v_table[etr.id].name);
+        add_instr("PF_NEG_M %s\n", v_table[eti.id].name);
     }
 
     // int acc with comp acc
@@ -679,28 +679,28 @@ expr oper_subt(expr e1, expr e2)
     // float var with int var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n",i2f, v_name[e2.id]);
-        add_instr("F_SU2 %s\n" , v_name[e1.id]);
+        add_instr("%s %s\n",i2f, v_table[e2.id].name);
+        add_instr("F_SU2 %s\n" , v_table[e1.id].name);
     }
 
     // float var with int acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
         add_instr("I2F\n");
-        add_instr("F_SU2 %s\n", v_name[e1.id]);
+        add_instr("F_SU2 %s\n", v_table[e1.id].name);
     }
 
     // float var with float var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld, v_name[e1.id]);
-        add_instr("F_SU1 %s\n" , v_name[e2.id]);
+        add_instr("%s %s\n", ld, v_table[e1.id].name);
+        add_instr("F_SU1 %s\n" , v_table[e2.id].name);
     }
 
     // float var with float acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("F_SU2 %s\n", v_name[e1.id]);
+        add_instr("F_SU2 %s\n", v_table[e1.id].name);
     }
 
     // float var with comp const (no negative comp const)
@@ -714,23 +714,23 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("%s %s\n",    ld, v_name[e1.id]);
-        add_instr("F_SU1 %s\n"    , v_name[etr.id]);
-        add_instr("PF_NEG_M %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n",    ld, v_table[e1.id].name);
+        add_instr("F_SU1 %s\n"    , v_table[etr.id].name);
+        add_instr("PF_NEG_M %s\n" , v_table[eti.id].name);
     }
 
     // float var with comp acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("F_SU2 %s\n", v_name[e1.id]);
+        add_instr("F_SU2 %s\n", v_table[e1.id].name);
         add_instr("PF_NEG_M aux_var\n");
     }
 
     // float acc with int var
     if ((e1.type==2) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SF_SU2\n");
     }
 
@@ -744,7 +744,7 @@ expr oper_subt(expr e1, expr e2)
     // float acc with float var
     if ((e1.type==2) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("F_SU1 %s\n", v_name[e2.id]);
+        add_instr("F_SU1 %s\n", v_table[e2.id].name);
     }
 
     // float acc with float acc
@@ -764,8 +764,8 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("F_SU1 %s\n", v_name[etr.id]);
-        add_instr("PF_NEG_M %s\n", v_name[eti.id]);
+        add_instr("F_SU1 %s\n", v_table[etr.id].name);
+        add_instr("PF_NEG_M %s\n", v_table[eti.id].name);
     }
 
     // float acc with comp acc
@@ -781,9 +781,9 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("%s %s\n", i2f, v_name[e2.id]);
-        add_instr("F_SU2 %s\n"  , v_name[etr.id]);
-        add_instr("P_LOD %s\n"  , v_name[eti.id]);
+        add_instr("%s %s\n", i2f, v_table[e2.id].name);
+        add_instr("F_SU2 %s\n"  , v_table[etr.id].name);
+        add_instr("P_LOD %s\n"  , v_table[eti.id].name);
     }
 
     // comp const with int acc
@@ -792,8 +792,8 @@ expr oper_subt(expr e1, expr e2)
         get_cmp_cst(e1,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("F_SU2 %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_SU2 %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp const with float var
@@ -801,9 +801,9 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("F_SU2 %s\n" , v_name[etr.id]);
-        add_instr("P_LOD %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("F_SU2 %s\n" , v_table[etr.id].name);
+        add_instr("P_LOD %s\n" , v_table[eti.id].name);
     }
 
     // comp const with float acc
@@ -811,8 +811,8 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("F_SU2 %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_SU2 %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp const with comp const (no comp const subtraction)
@@ -830,11 +830,11 @@ expr oper_subt(expr e1, expr e2)
         get_cmp_cst(e1,&et1r,&et1i);
         get_cmp_ets(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_SU1 %s\n" , v_name[et2r.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_SU1 %s\n" , v_table[et2r.id].name);
 
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_SU1 %s\n" , v_name[et2i.id]);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_SU1 %s\n" , v_table[et2i.id].name);
     }
 
     // comp const with comp acc
@@ -843,9 +843,9 @@ expr oper_subt(expr e1, expr e2)
         get_cmp_cst(e1,&etr,&eti);
 
         add_instr("SET_P aux_var\n");
-        add_instr("F_SU2 %s\n", v_name[etr.id]);
+        add_instr("F_SU2 %s\n", v_table[etr.id].name);
 
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
         add_instr("F_SU1 aux_var\n");
     }
 
@@ -854,9 +854,9 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("%s  %s\n", i2f, v_name[e2.id]);
-        add_instr("F_SU2 %s\n"   , v_name[etr.id]);
-        add_instr("P_LOD %s\n"   , v_name[eti.id]);
+        add_instr("%s  %s\n", i2f, v_table[e2.id].name);
+        add_instr("F_SU2 %s\n"   , v_table[etr.id].name);
+        add_instr("P_LOD %s\n"   , v_table[eti.id].name);
     }
 
     // comp var with int acc
@@ -865,8 +865,8 @@ expr oper_subt(expr e1, expr e2)
         get_cmp_ets(e1,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("F_SU2 %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_SU2 %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp var with float var
@@ -874,9 +874,9 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("F_SU2 %s\n" , v_name[etr.id]);
-        add_instr("P_LOD %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("F_SU2 %s\n" , v_table[etr.id].name);
+        add_instr("P_LOD %s\n" , v_table[eti.id].name);
     }
 
     // comp var with float acc
@@ -884,8 +884,8 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("F_SU2 %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_SU2 %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
     // comp var with comp const (no comp const subtraction)
@@ -903,11 +903,11 @@ expr oper_subt(expr e1, expr e2)
         get_cmp_ets(e1,&et1r,&et1i);
         get_cmp_ets(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_SU1 %s\n" , v_name[et2r.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_SU1 %s\n" , v_table[et2r.id].name);
 
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_SU1 %s\n" , v_name[et2i.id]);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_SU1 %s\n" , v_table[et2i.id].name);
     }
 
     // comp var with comp acc
@@ -916,9 +916,9 @@ expr oper_subt(expr e1, expr e2)
         get_cmp_ets(e1,&etr,&eti);
 
         add_instr("SET_P aux_var\n");
-        add_instr("F_SU2 %s\n", v_name[etr.id]);
+        add_instr("F_SU2 %s\n", v_table[etr.id].name);
 
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
         add_instr("F_SU1 aux_var\n");
     }
 
@@ -926,7 +926,7 @@ expr oper_subt(expr e1, expr e2)
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SF_SU2\n");
         add_instr("P_LOD aux_var\n");
     }
@@ -945,7 +945,7 @@ expr oper_subt(expr e1, expr e2)
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("F_SU1 %s\n", v_name[e2.id]);
+        add_instr("F_SU1 %s\n", v_table[e2.id].name);
         add_instr("P_LOD aux_var\n");
     }
 
@@ -970,10 +970,10 @@ expr oper_subt(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         add_instr("SET_P aux_var\n");
-        add_instr("F_SU1 %s\n", v_name[etr.id]);
+        add_instr("F_SU1 %s\n", v_table[etr.id].name);
 
         add_instr("P_LOD aux_var\n");
-        add_instr("F_SU1 %s\n", v_name[eti.id]);
+        add_instr("F_SU1 %s\n", v_table[eti.id].name);
     }
 
     // comp acc with comp acc
@@ -1011,27 +1011,27 @@ expr oper_mult(expr e1, expr e2)
     // int var with int var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n" , ld, v_name[e1.id]);
-        add_instr("MLT %s\n",     v_name[e2.id]);
+        add_instr("%s %s\n" , ld, v_table[e1.id].name);
+        add_instr("MLT %s\n",     v_table[e2.id].name);
     }
 
     // int var with int acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
-        add_instr("MLT %s\n", v_name[e1.id]);
+        add_instr("MLT %s\n", v_table[e1.id].name);
     }
 
     // int var with float var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n", i2f, v_name[e1.id]);
-        add_instr("F_MLT %s\n"  , v_name[e2.id]);
+        add_instr("%s %s\n", i2f, v_table[e1.id].name);
+        add_instr("F_MLT %s\n"  , v_table[e2.id].name);
     }
 
     // int var with float acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("P_I2F_M %s\n", v_name[e1.id]);
+        add_instr("P_I2F_M %s\n", v_table[e1.id].name);
         add_instr("SF_MLT\n");
     }
 
@@ -1040,11 +1040,11 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("%s %s\n", i2f, v_name[e1.id]);
-        add_instr("F_MLT %s\n"  , v_name[etr.id]);
+        add_instr("%s %s\n", i2f, v_table[e1.id].name);
+        add_instr("F_MLT %s\n"  , v_table[etr.id].name);
 
-        add_instr("P_I2F_M %s\n", v_name[e1.id]);
-        add_instr("F_MLT %s\n"  , v_name[eti.id]);
+        add_instr("P_I2F_M %s\n", v_table[e1.id].name);
+        add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
     // int var with comp var
@@ -1052,29 +1052,29 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("%s %s\n", i2f, v_name[e1.id]);
-        add_instr("F_MLT %s\n"  , v_name[etr.id]);
+        add_instr("%s %s\n", i2f, v_table[e1.id].name);
+        add_instr("F_MLT %s\n"  , v_table[etr.id].name);
 
-        add_instr("P_I2F_M %s\n", v_name[e1.id]);
-        add_instr("F_MLT %s\n"  , v_name[eti.id]);
+        add_instr("P_I2F_M %s\n", v_table[e1.id].name);
+        add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
     // int var with comp acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("P_I2F_M %s\n", v_name[e1.id]);
+        add_instr("P_I2F_M %s\n", v_table[e1.id].name);
         add_instr("SF_MLT\n");
 
         add_instr("P_LOD aux_var\n");
-        add_instr("P_I2F_M %s\n", v_name[e1.id]);
+        add_instr("P_I2F_M %s\n", v_table[e1.id].name);
         add_instr("SF_MLT\n");
     }
 
     // int acc with int var
     if ((e1.type==1) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("MLT %s\n", v_name[e2.id]);
+        add_instr("MLT %s\n", v_table[e2.id].name);
     }
 
     // int acc with int acc
@@ -1087,7 +1087,7 @@ expr oper_mult(expr e1, expr e2)
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("I2F\n");
-        add_instr("F_MLT %s\n", v_name[e2.id]);
+        add_instr("F_MLT %s\n", v_table[e2.id].name);
     }
 
     // int acc with float acc
@@ -1105,9 +1105,9 @@ expr oper_mult(expr e1, expr e2)
 
         add_instr("I2F\n");
         add_instr("SET   aux_var\n");
-        add_instr("F_MLT %s\n", v_name[etr.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD aux_var\n");
-        add_instr("F_MLT %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[eti.id].name);
     }
 
     // int acc with comp var
@@ -1117,9 +1117,9 @@ expr oper_mult(expr e1, expr e2)
 
         add_instr("I2F\n");
         add_instr("SET   aux_var\n");
-        add_instr("F_MLT %s\n", v_name[etr.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD aux_var\n");
-        add_instr("F_MLT %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[eti.id].name);
     }
 
     // int acc with comp acc
@@ -1137,28 +1137,28 @@ expr oper_mult(expr e1, expr e2)
     // float var with int var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n" ,i2f, v_name[e2.id]);
-        add_instr("F_MLT %s\n",   v_name[e1.id]);
+        add_instr("%s %s\n" ,i2f, v_table[e2.id].name);
+        add_instr("F_MLT %s\n",   v_table[e1.id].name);
     }
 
     // float var with int acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
         add_instr("I2F\n");
-        add_instr("F_MLT %s\n", v_name[e1.id]);
+        add_instr("F_MLT %s\n", v_table[e1.id].name);
     }
 
     // float var with float var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld, v_name[e1.id]);
-        add_instr("F_MLT %s\n",  v_name[e2.id]);
+        add_instr("%s %s\n", ld, v_table[e1.id].name);
+        add_instr("F_MLT %s\n",  v_table[e2.id].name);
     }
 
     // float var with float acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("F_MLT %s\n", v_name[e1.id]);
+        add_instr("F_MLT %s\n", v_table[e1.id].name);
     }
 
     // float var with comp const
@@ -1166,11 +1166,11 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e1.id]);
-        add_instr("F_MLT %s\n",  v_name[etr.id]);
+        add_instr("%s %s\n", ld, v_table[e1.id].name);
+        add_instr("F_MLT %s\n",  v_table[etr.id].name);
 
-        add_instr("P_LOD %s\n",  v_name[e1.id]);
-        add_instr("F_MLT %s\n",  v_name[eti.id]);
+        add_instr("P_LOD %s\n",  v_table[e1.id].name);
+        add_instr("F_MLT %s\n",  v_table[eti.id].name);
     }
 
     // float var with comp var
@@ -1178,26 +1178,26 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e1.id]);
-        add_instr("F_MLT %s\n",  v_name[etr.id]);
+        add_instr("%s %s\n", ld, v_table[e1.id].name);
+        add_instr("F_MLT %s\n",  v_table[etr.id].name);
 
-        add_instr("P_LOD %s\n",  v_name[e1.id]);
-        add_instr("F_MLT %s\n",  v_name[eti.id]);
+        add_instr("P_LOD %s\n",  v_table[e1.id].name);
+        add_instr("F_MLT %s\n",  v_table[eti.id].name);
     }
 
     // float var with comp acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("F_MLT %s\n", v_name[e1.id]);
+        add_instr("F_MLT %s\n", v_table[e1.id].name);
         add_instr("P_LOD aux_var\n");
-        add_instr("F_MLT %s\n", v_name[e1.id]);
+        add_instr("F_MLT %s\n", v_table[e1.id].name);
     }
 
     // float acc with int var
     if ((e1.type==2) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SF_MLT\n");
     }
 
@@ -1211,7 +1211,7 @@ expr oper_mult(expr e1, expr e2)
     // float acc with float var
     if ((e1.type==2) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("F_MLT %s\n", v_name[e2.id]);
+        add_instr("F_MLT %s\n", v_table[e2.id].name);
     }
 
     // float acc with float acc
@@ -1226,8 +1226,8 @@ expr oper_mult(expr e1, expr e2)
         get_cmp_cst(e2,&etr,&eti);
 
         add_instr("SET   aux_var\n");
-        add_instr("F_MLT %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
         add_instr("F_MLT aux_var\n");
     }
 
@@ -1237,8 +1237,8 @@ expr oper_mult(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         add_instr("SET   aux_var\n");
-        add_instr("F_MLT %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
         add_instr("F_MLT aux_var\n");
     }
 
@@ -1258,10 +1258,10 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("%s %s\n", i2f, v_name[e2.id]);
-        add_instr("F_MLT %s\n"  , v_name[etr.id]);
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
-        add_instr("F_MLT %s\n"  , v_name[eti.id]);
+        add_instr("%s %s\n", i2f, v_table[e2.id].name);
+        add_instr("F_MLT %s\n"  , v_table[etr.id].name);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
+        add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
     // comp const with int acc
@@ -1271,9 +1271,9 @@ expr oper_mult(expr e1, expr e2)
 
         add_instr("I2F\n");
         add_instr("SET   aux_var\n");
-        add_instr("F_MLT %s\n"  , v_name[etr.id]);
+        add_instr("F_MLT %s\n"  , v_table[etr.id].name);
         add_instr("P_LOD aux_var\n");
-        add_instr("F_MLT %s\n"  , v_name[eti.id]);
+        add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
     // comp const with float var
@@ -1281,10 +1281,10 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("F_MLT %s\n" , v_name[etr.id]);
-        add_instr("P_LOD %s\n" , v_name[e2.id]);
-        add_instr("F_MLT %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("F_MLT %s\n" , v_table[etr.id].name);
+        add_instr("P_LOD %s\n" , v_table[e2.id].name);
+        add_instr("F_MLT %s\n" , v_table[eti.id].name);
     }
 
     // comp const with float acc
@@ -1293,9 +1293,9 @@ expr oper_mult(expr e1, expr e2)
         get_cmp_cst(e1,&etr,&eti);
 
         add_instr("SET   aux_var\n");
-        add_instr("F_MLT %s\n"  , v_name[etr.id]);
+        add_instr("F_MLT %s\n"  , v_table[etr.id].name);
         add_instr("P_LOD aux_var\n");
-        add_instr("F_MLT %s\n"  , v_name[eti.id]);
+        add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
     // comp const with comp const
@@ -1304,16 +1304,16 @@ expr oper_mult(expr e1, expr e2)
         expr et1r, et1i; get_cmp_cst(e1,&et1r,&et1i);
         expr et2r, et2i; get_cmp_cst(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_MLT %s\n" , v_name[et2r.id]);
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_MLT %s\n" , v_name[et2i.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
         add_instr("SF_SU2\n");
 
-        add_instr("P_LOD %s\n" , v_name[et1r.id]);
-        add_instr("F_MLT %s\n" , v_name[et2i.id]);
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_MLT %s\n" , v_name[et2r.id]);
+        add_instr("P_LOD %s\n" , v_table[et1r.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
         add_instr("SF_ADD\n");
     }
 
@@ -1323,16 +1323,16 @@ expr oper_mult(expr e1, expr e2)
         expr et1r, et1i; get_cmp_cst(e1,&et1r,&et1i);
         expr et2r, et2i; get_cmp_ets(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_MLT %s\n" , v_name[et2r.id]);
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_MLT %s\n" , v_name[et2i.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
         add_instr("SF_SU2\n");
 
-        add_instr("P_LOD %s\n" , v_name[et1r.id]);
-        add_instr("F_MLT %s\n" , v_name[et2i.id]);
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_MLT %s\n" , v_name[et2r.id]);
+        add_instr("P_LOD %s\n" , v_table[et1r.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
         add_instr("SF_ADD\n");
     }
 
@@ -1344,14 +1344,14 @@ expr oper_mult(expr e1, expr e2)
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
 
-        add_instr("F_MLT %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
         add_instr("F_MLT aux_var \n");
         add_instr("SF_SU2\n");
 
-        add_instr("P_LOD %s\n" , v_name[etr.id]);
+        add_instr("P_LOD %s\n" , v_table[etr.id].name);
         add_instr("F_MLT aux_var \n");
-        add_instr("P_LOD %s\n" , v_name[eti.id]);
+        add_instr("P_LOD %s\n" , v_table[eti.id].name);
         add_instr("F_MLT aux_var1\n");
         add_instr("SF_ADD\n");
     }
@@ -1361,10 +1361,10 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("%s %s\n", i2f, v_name[e2.id]);
-        add_instr("F_MLT %s\n"  , v_name[etr.id]);
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
-        add_instr("F_MLT %s\n"  , v_name[eti.id]);
+        add_instr("%s %s\n", i2f, v_table[e2.id].name);
+        add_instr("F_MLT %s\n"  , v_table[etr.id].name);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
+        add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
     // comp var with int acc
@@ -1374,9 +1374,9 @@ expr oper_mult(expr e1, expr e2)
 
         add_instr("I2F\n");
         add_instr("SET   aux_var\n");
-        add_instr("F_MLT %s\n"  , v_name[etr.id]);
+        add_instr("F_MLT %s\n"  , v_table[etr.id].name);
         add_instr("P_LOD aux_var\n");
-        add_instr("F_MLT %s\n"  , v_name[eti.id]);
+        add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
     // comp var with float var
@@ -1384,10 +1384,10 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("F_MLT %s\n" , v_name[etr.id]);
-        add_instr("P_LOD %s\n" , v_name[e2.id]);
-        add_instr("F_MLT %s\n" , v_name[eti.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("F_MLT %s\n" , v_table[etr.id].name);
+        add_instr("P_LOD %s\n" , v_table[e2.id].name);
+        add_instr("F_MLT %s\n" , v_table[eti.id].name);
     }
 
     // comp var with float acc
@@ -1396,9 +1396,9 @@ expr oper_mult(expr e1, expr e2)
         get_cmp_ets(e1,&etr,&eti);
 
         add_instr("SET   aux_var\n");
-        add_instr("F_MLT %s\n"  , v_name[etr.id]);
+        add_instr("F_MLT %s\n"  , v_table[etr.id].name);
         add_instr("P_LOD aux_var\n");
-        add_instr("F_MLT %s\n"  , v_name[eti.id]);
+        add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
     // comp var with comp const
@@ -1407,16 +1407,16 @@ expr oper_mult(expr e1, expr e2)
         expr et1r, et1i; get_cmp_ets(e1,&et1r,&et1i);
         expr et2r, et2i; get_cmp_cst(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_MLT %s\n" , v_name[et2r.id]);
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_MLT %s\n" , v_name[et2i.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
         add_instr("SF_SU2\n");
 
-        add_instr("P_LOD %s\n" , v_name[et1r.id]);
-        add_instr("F_MLT %s\n" , v_name[et2i.id]);
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_MLT %s\n" , v_name[et2r.id]);
+        add_instr("P_LOD %s\n" , v_table[et1r.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
         add_instr("SF_ADD\n");
     }
 
@@ -1426,16 +1426,16 @@ expr oper_mult(expr e1, expr e2)
         expr et1r, et1i; get_cmp_ets(e1,&et1r,&et1i);
         expr et2r, et2i; get_cmp_ets(e2,&et2r,&et2i);
 
-        add_instr("%s %s\n", ld, v_name[et1r.id]);
-        add_instr("F_MLT %s\n" , v_name[et2r.id]);
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_MLT %s\n" , v_name[et2i.id]);
+        add_instr("%s %s\n", ld, v_table[et1r.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
         add_instr("SF_SU2\n");
 
-        add_instr("P_LOD %s\n" , v_name[et1r.id]);
-        add_instr("F_MLT %s\n" , v_name[et2i.id]);
-        add_instr("P_LOD %s\n" , v_name[et1i.id]);
-        add_instr("F_MLT %s\n" , v_name[et2r.id]);
+        add_instr("P_LOD %s\n" , v_table[et1r.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
+        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
+        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
         add_instr("SF_ADD\n");
     }
 
@@ -1447,14 +1447,14 @@ expr oper_mult(expr e1, expr e2)
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
 
-        add_instr("F_MLT %s\n", v_name[etr.id]);
-        add_instr("P_LOD %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
+        add_instr("P_LOD %s\n", v_table[eti.id].name);
         add_instr("F_MLT aux_var \n");
         add_instr("SF_SU2\n");
 
-        add_instr("P_LOD %s\n" , v_name[etr.id]);
+        add_instr("P_LOD %s\n" , v_table[etr.id].name);
         add_instr("F_MLT aux_var \n");
-        add_instr("P_LOD %s\n" , v_name[eti.id]);
+        add_instr("P_LOD %s\n" , v_table[eti.id].name);
         add_instr("F_MLT aux_var1\n");
         add_instr("SF_ADD\n");
     }
@@ -1463,7 +1463,7 @@ expr oper_mult(expr e1, expr e2)
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
         add_instr("SET_P aux_var\n" );
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SET   aux_var1\n");
         add_instr("SF_MLT\n");
         add_instr("P_LOD aux_var\n" );
@@ -1485,9 +1485,9 @@ expr oper_mult(expr e1, expr e2)
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("F_MLT %s\n", v_name[e2.id]);
+        add_instr("F_MLT %s\n", v_table[e2.id].name);
         add_instr("P_LOD aux_var\n");
-        add_instr("F_MLT %s\n", v_name[e2.id]);
+        add_instr("F_MLT %s\n", v_table[e2.id].name);
     }
 
     // comp acc with float acc
@@ -1507,15 +1507,15 @@ expr oper_mult(expr e1, expr e2)
 
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
-        add_instr("F_MLT %s\n", v_name[etr.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[eti.id].name);
         add_instr("SF_SU2\n");
 
         add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT %s\n", v_name[etr.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD aux_var1\n");
-        add_instr("F_MLT %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[eti.id].name);
         add_instr("SF_ADD\n");
     }
 
@@ -1526,15 +1526,15 @@ expr oper_mult(expr e1, expr e2)
 
         add_instr("SET_P aux_var \n");
         add_instr("SET   aux_var1\n");
-        add_instr("F_MLT %s\n", v_name[etr.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[eti.id].name);
         add_instr("SF_SU2\n");
 
         add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT %s\n", v_name[etr.id]);
+        add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD aux_var1\n");
-        add_instr("F_MLT %s\n", v_name[eti.id]);
+        add_instr("F_MLT %s\n", v_table[eti.id].name);
         add_instr("SF_ADD\n");
     }
 
@@ -1581,21 +1581,21 @@ expr oper_divi(expr e1, expr e2)
     // int var with int var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n" , ld, v_name[e2.id]);
-        add_instr("DIV %s\n",     v_name[e1.id]);    
+        add_instr("%s %s\n" , ld, v_table[e2.id].name);
+        add_instr("DIV %s\n",     v_table[e1.id].name);    
     }
 
     // int var with int acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
-        add_instr("DIV %s\n", v_name[e1.id]);
+        add_instr("DIV %s\n", v_table[e1.id].name);
     }
 
     // int var with float var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n" , i2f, v_name[e1.id]);
-        add_instr("P_LOD %s\n"   , v_name[e2.id]);
+        add_instr("%s %s\n" , i2f, v_table[e1.id].name);
+        add_instr("P_LOD %s\n"   , v_table[e2.id].name);
         add_instr("SF_DIV\n");
     }
 
@@ -1603,7 +1603,7 @@ expr oper_divi(expr e1, expr e2)
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
         add_instr("SET   aux_var\n");
-        add_instr("I2F_M %s\n", v_name[e1.id]);
+        add_instr("I2F_M %s\n", v_table[e1.id].name);
         add_instr("P_LOD aux_var\n");
         add_instr("SF_DIV\n");
     }
@@ -1664,7 +1664,7 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SF_ADD        \n"); // soma os quadrados
         add_instr("SET   aux_var2\n"); // save the squared magnitude
 
-        add_instr("I2F_M %s\n", v_name[e1.id]); 
+        add_instr("I2F_M %s\n", v_table[e1.id].name); 
         add_instr("SET   aux_var3\n"); // save the float
         add_instr("F_MLT aux_var1\n");
         add_instr("P_LOD aux_var2\n"); // fetch the squared magnitude
@@ -1680,7 +1680,7 @@ expr oper_divi(expr e1, expr e2)
     // int acc with int var
     if ((e1.type==1) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
         add_instr("S_DIV\n");
     }
 
@@ -1694,7 +1694,7 @@ expr oper_divi(expr e1, expr e2)
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("I2F\n");
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         add_instr("SF_DIV\n");
     }
 
@@ -1789,28 +1789,28 @@ expr oper_divi(expr e1, expr e2)
     // float var with int var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n", i2f, v_name[e2.id]);
-        add_instr("F_DIV %s\n"  , v_name[e1.id]);
+        add_instr("%s %s\n", i2f, v_table[e2.id].name);
+        add_instr("F_DIV %s\n"  , v_table[e1.id].name);
     }
 
     // float var with int acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
         add_instr("I2F\n");
-        add_instr("F_DIV %s\n", v_name[e1.id]);
+        add_instr("F_DIV %s\n", v_table[e1.id].name);
     }
 
     // float var with float var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n" , ld, v_name[e2.id]);
-        add_instr("F_DIV %s\n"  , v_name[e1.id]);
+        add_instr("%s %s\n" , ld, v_table[e2.id].name);
+        add_instr("F_DIV %s\n"  , v_table[e1.id].name);
     }
 
     // float var with float acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("F_DIV %s\n", v_name[e1.id]);
+        add_instr("F_DIV %s\n", v_table[e1.id].name);
     }
 
     // float var with comp const
@@ -1866,12 +1866,12 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SF_ADD        \n");
         add_instr("SET   aux_var2\n");             // save the squared magnitude
 
-        add_instr("LOD %s\n"  , v_name[e1.id]); // load the float
+        add_instr("LOD %s\n"  , v_table[e1.id].name); // load the float
         add_instr("F_MLT aux_var1\n");
         add_instr("P_LOD aux_var2\n");             // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));                  // faz a divisao
 
-        add_instr("P_LOD %s\n", v_name[e1.id]); // load the float
+        add_instr("P_LOD %s\n", v_table[e1.id].name); // load the float
         add_instr("F_MLT aux_var \n");
         add_instr("P_LOD aux_var2\n");             // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));                  // faz a divisao
@@ -1881,7 +1881,7 @@ expr oper_divi(expr e1, expr e2)
     // float acc with int var
     if ((e1.type==2) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SF_DIV\n");
     }
 
@@ -1895,7 +1895,7 @@ expr oper_divi(expr e1, expr e2)
     // float acc with float var
     if ((e1.type==2) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         add_instr("SF_DIV\n");
     }
 
@@ -2239,7 +2239,7 @@ expr oper_divi(expr e1, expr e2)
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
         add_instr("SET_P aux_var \n");
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SET   aux_var1\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
         add_instr("P_LOD aux_var \n");
@@ -2264,10 +2264,10 @@ expr oper_divi(expr e1, expr e2)
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("SET_P aux_var\n");
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         oper_divi(expr_make(2, 0), expr_make(2, 0));
         add_instr("P_LOD aux_var\n");
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
@@ -2404,20 +2404,20 @@ expr oper_mod(expr e1, expr e2)
     // int var with int var
     if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
     {
-        add_instr("%s %s\n" , ld, v_name[e2.id]);
-        add_instr("MOD %s\n",     v_name[e1.id]);
+        add_instr("%s %s\n" , ld, v_table[e2.id].name);
+        add_instr("MOD %s\n",     v_table[e1.id].name);
     }
 
     // int var with int acc
     if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
     {
-        add_instr("MOD %s\n", v_name[e1.id]);
+        add_instr("MOD %s\n", v_table[e1.id].name);
     }
 
     // int acc with int var
     if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
     {
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         add_instr("S_MOD\n");
     }
 
@@ -2459,21 +2459,21 @@ expr oper_cmp(expr e1, expr e2, int type)
     // int var with int var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // int var with int acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // int var with float var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n", i2f, v_name[e1.id]);
-        add_instr("P_LOD %s\n"  , v_name[e2.id]);
+        add_instr("%s %s\n", i2f, v_table[e1.id].name);
+        add_instr("P_LOD %s\n"  , v_table[e2.id].name);
 
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
@@ -2482,7 +2482,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
         add_instr("SET   aux_var\n");
-        add_instr("I2F_M %s\n", v_name[e1.id]);
+        add_instr("I2F_M %s\n", v_table[e1.id].name);
         add_instr("P_LOD aux_var\n");
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
@@ -2527,7 +2527,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     // int acc with int var
     if ((e1.type==1) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
         add_instr("S_%s\n", op);
     }
 
@@ -2541,7 +2541,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("I2F\n");
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
@@ -2600,8 +2600,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     // float var with int var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld , v_name[e1.id]);
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("%s %s\n", ld , v_table[e1.id].name);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
@@ -2611,7 +2611,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         add_instr("I2F\n");
         add_instr("SET   aux_var\n");
-        add_instr("LOD %s\n", v_name[e1.id]);
+        add_instr("LOD %s\n", v_table[e1.id].name);
         add_instr("P_LOD aux_var\n");
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
@@ -2620,8 +2620,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     // float var with float var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n"   , ld, v_name[e1.id]);
-        add_instr("P_LOD %s\n",     v_name[e2.id]);
+        add_instr("%s %s\n"   , ld, v_table[e1.id].name);
+        add_instr("P_LOD %s\n",     v_table[e2.id].name);
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
@@ -2630,7 +2630,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
         add_instr("SET   aux_var\n");
-        add_instr("LOD %s\n", v_name[e1.id]);
+        add_instr("LOD %s\n", v_table[e1.id].name);
         add_instr("P_LOD aux_var\n");
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
@@ -2675,7 +2675,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     // float acc with int var
     if ((e1.type==2) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("P_I2F_M %s\n", v_name[e2.id]);
+        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
@@ -2691,7 +2691,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     // float acc with float var
     if ((e1.type==2) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
@@ -3028,7 +3028,7 @@ expr oper_lin(expr e)
     // when it is an int in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", lin, v_name[e.id]);
+        add_instr("%s %s\n", lin, v_table[e.id].name);
     }
 
     // when it is an int in the acc
@@ -3042,7 +3042,7 @@ expr oper_lin(expr e)
     {
         fprintf(stdout, MSG_WARN_LOGIC_FLOAT, line_num+1);
 
-        add_instr("%s %s\n", f2i, v_name[e.id]);
+        add_instr("%s %s\n", f2i, v_table[e.id].name);
         add_instr("LIN\n");
     }
 
@@ -3062,7 +3062,7 @@ expr oper_lin(expr e)
 
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", f2i, v_name[etr.id]);
+        add_instr("%s %s\n", f2i, v_table[etr.id].name);
         add_instr("LIN\n");
     }
 
@@ -3071,7 +3071,7 @@ expr oper_lin(expr e)
     {
         fprintf(stdout, MSG_WARN_LOGIC_COMP, line_num+1);
 
-        add_instr("%s %s\n", f2i, v_name[e.id]);
+        add_instr("%s %s\n", f2i, v_table[e.id].name);
         add_instr("LIN\n");
     }
 
@@ -3113,20 +3113,20 @@ expr oper_lanor(expr e1, expr e2, int type)
     // int var with int var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // int var with int acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // int acc with int var
     if ((e1.type==1) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n", op, v_name[e2.id]);
+        add_instr("%s %s\n", op, v_table[e2.id].name);
     }
 
     // int acc with int acc
@@ -3156,7 +3156,7 @@ expr oper_inv(expr e)
     // when it is an int in memory
     if ((e.type == 1) && (e.id != 0))
     {
-        add_instr("%s %s\n", inv, v_name[e.id]);
+        add_instr("%s %s\n", inv, v_table[e.id].name);
     }
 
     // when it is an int in the acc
@@ -3194,20 +3194,20 @@ expr oper_bitw(expr e1, expr e2, int type)
     // var with var
     if ((e1.id != 0) && (e2.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // var with acc
     if ((e1.id != 0) && (e2.id == 0))
     {
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // acc with var
     if ((e1.id == 0) && (e2.id != 0))
     {
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         add_instr("S_%s\n", op);
     }
 
@@ -3249,14 +3249,14 @@ expr oper_shift(expr e1, expr e2, int type)
     // int/float var with int var
     if ((e1.id != 0) && (e2.type == 1) && (e2.id != 0))
     {
-        add_instr("%s %s\n", ld, v_name[e2.id]);
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // int/float var with int acc
     if ((e1.id != 0) && (e2.type == 1) && (e2.id == 0))
     {
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // int/float var with float var
@@ -3264,9 +3264,9 @@ expr oper_shift(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
-        add_instr("%s %s\n", ld, v_name[e2.id]);
+        add_instr("%s %s\n", ld, v_table[e2.id].name);
         add_instr("F2I\n");
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // int/float var with float acc
@@ -3275,13 +3275,13 @@ expr oper_shift(expr e1, expr e2, int type)
         fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
         add_instr("F2I\n");
-        add_instr("%s %s\n", op, v_name[e1.id]);
+        add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
     // int/float acc with int var
     if ((e1.id == 0) && (e2.type == 1) && (e2.id != 0))
     {
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         add_instr("S_%s\n", op);
     }
 
@@ -3296,7 +3296,7 @@ expr oper_shift(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
-        add_instr("P_LOD %s\n", v_name[e2.id]);
+        add_instr("P_LOD %s\n", v_table[e2.id].name);
         add_instr("F2I\n");
         add_instr("S_%s\n", op);
     }

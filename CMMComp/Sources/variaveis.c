@@ -17,11 +17,9 @@
 int          v_count = 0;  // stores the size of the table
 static int   v_cap   = 0;  // current capacity of the parallel arrays
 
-char (*v_name)[512] = NULL; // name of the variable or function
-
-// AoS storage. Only v_name remains on SoA (separate because of the fixed
-// 512-byte row size); everything else lives in v_table[i].{...}.
-symbol *v_table     = NULL;
+// AoS storage: one row per identifier. All attributes (name, type, used,
+// isar, isco, size, siz2, fpar, fnid) live here. Grown on demand by var_grow.
+symbol *v_table = NULL;
 
 #define GROW(arr, old_cap, new_cap)                                       \
     do {                                                                  \
@@ -41,7 +39,6 @@ static void var_grow(int needed)
     int new_cap = v_cap ? v_cap : 256;
     while (new_cap < needed) new_cap *= 2;
 
-    GROW(v_name,  v_cap, new_cap);
     GROW(v_table, v_cap, new_cap);
 
     v_cap = new_cap;
@@ -68,7 +65,6 @@ void add_var(char *var)
 {
     var_grow(v_count + 1);
     strcpy(v_table[v_count].name, var);
-    strcpy(v_name[v_count],       var); // legacy SoA dual-write, retired in B6
     v_count++;
 }
 
@@ -84,10 +80,10 @@ void check_var()
         if (((v_table[i].type == 1) || (v_table[i].type == 2) || (v_table[i].type == 3)) && (v_table[i].used == 0))
         {
             // v_table[i].fnid records the variable's owning function: a valid
-            // v_name index for locals, or "" / -1 for globals. declar_arr_1d
+            // v_table index for locals, or "" / -1 for globals. declar_arr_1d
             // etc. call find_var(fname) which returns -1 when fname is the
-            // empty string and no "" entry exists in v_name yet - so treat any
-            // out-of-range fnid as the global case.
+            // empty string and no "" entry exists in v_table yet - so treat
+            // any out-of-range fnid as the global case.
             int fnid = v_table[i].fnid;
             int is_global = (fnid < 0) || (strcmp(v_table[fnid].name, "") == 0);
             if (is_global)
