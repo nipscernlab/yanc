@@ -37,11 +37,13 @@ static type *make_basic(type_kind k, int is_signed)
 
 static type *T_VOID  = NULL;
 static type *T_INT   = NULL;
+static type *T_UINT  = NULL;
 static type *T_FLOAT = NULL;
 static type *T_CHAR  = NULL;
 
 type *t_void (void) { if (!T_VOID)  T_VOID  = make_basic(TY_VOID,  0); return T_VOID;  }
 type *t_int  (void) { if (!T_INT)   T_INT   = make_basic(TY_INT,   1); return T_INT;   }
+type *t_uint (void) { if (!T_UINT)  T_UINT  = make_basic(TY_INT,   0); return T_UINT;  }
 type *t_float(void) { if (!T_FLOAT) T_FLOAT = make_basic(TY_FLOAT, 1); return T_FLOAT; }
 type *t_char (void) { if (!T_CHAR)  T_CHAR  = make_basic(TY_INT,   1); return T_CHAR;  }
 
@@ -81,39 +83,56 @@ type *t_make_union(char *tag)
     return t;
 }
 
-void t_struct_add_field(type *st, char *name, type *ft)
+static strct_field *append_field(type *st, char *name, type *ft)
 {
     strct_field *f = (strct_field*)xcalloc(sizeof(strct_field));
-    f->name   = xstrdup(name);
-    f->ftype  = ft;
-    f->offset = 0; // set on seal
-    f->next   = NULL;
+    f->name = xstrdup(name);
+    f->ftype = ft;
+    f->next = NULL;
     if (!st->fields) st->fields = f;
-    else {
-        strct_field *p = st->fields;
-        while (p->next) p = p->next;
-        p->next = f;
-    }
+    else { strct_field *p = st->fields; while (p->next) p = p->next; p->next = f; }
+    return f;
 }
 
-type *t_struct_seal(type *st)
+void t_struct_add_field(type *st, char *name, type *ft) { append_field(st, name, ft); }
+
+void t_struct_add_bitfield(type *st, char *name, type *ft, int width)
 {
+    strct_field *f = append_field(st, name, ft);
+    f->is_bitfield = 1;
+    f->bit_width   = width;
+}
+
+type *t_struct_seal(type *st, int word_bits)
+{
+    if (word_bits <= 0) word_bits = 16;
     if (st->is_union) {
         // every member overlaps at offset 0; size is the widest member
         int max = 0;
         for (strct_field *f = st->fields; f; f = f->next) {
-            f->offset = 0;
-            int sz = type_size_words(f->ftype);
+            f->offset = 0; f->bit_pos = 0;
+            int sz = f->is_bitfield ? 1 : type_size_words(f->ftype);
             if (sz > max) max = sz;
         }
         st->size = max;
     } else {
-        int off = 0;
+        int word = 0;   // current word index
+        int bit  = 0;   // next free bit in the current word
         for (strct_field *f = st->fields; f; f = f->next) {
-            f->offset = off;
-            off += type_size_words(f->ftype);
+            if (f->is_bitfield) {
+                if (f->bit_width == 0) { if (bit > 0) { word++; bit = 0; } continue; } // zero-width: align
+                if (bit + f->bit_width > word_bits) { word++; bit = 0; }                // doesn't fit -> next word
+                f->offset  = word;
+                f->bit_pos = bit;
+                bit += f->bit_width;
+            } else {
+                if (bit > 0) { word++; bit = 0; }   // flush a partially-filled word
+                f->offset = word;
+                word += type_size_words(f->ftype);
+            }
         }
-        st->size = off;
+        if (bit > 0) word++;
+        st->size = word;
     }
     return st;
 }

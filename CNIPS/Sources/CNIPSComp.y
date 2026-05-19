@@ -200,8 +200,6 @@ storage_or_qual:
     | KW_EXTERN    { ts_sclass = SC_EXTERN; $$ = 0; }
     | KW_TYPEDEF   { ts_typedef = 1; $$ = 0; }
     | KW_CONST     { ts_is_const = 1; $$ = 0; }
-    | KW_SIGNED    { $$ = 0; }
-    | KW_UNSIGNED  { $$ = 0; }
     ;
 
 /* base_type stashes the resolved type in a static so init_declarators can grab it */
@@ -214,6 +212,8 @@ type_specifier:
     | KW_INT                                 { $$ = t_int();   }
     | KW_FLOAT                               { $$ = t_float(); }
     | KW_CHAR                                { $$ = t_char();  }
+    | KW_UNSIGNED                            { $$ = t_uint();  }   /* `unsigned` == unsigned int */
+    | KW_SIGNED                              { $$ = t_int();   }
     | struct_specifier                       { $$ = $1;        }
     | union_specifier                        { $$ = $1;        }
     | enum_specifier                         { $$ = $1;        }
@@ -227,7 +227,7 @@ type_specifier:
 
 struct_specifier:
       KW_STRUCT IDENT '{' { cur_struct = t_make_struct($2); st_add_tag($2, cur_struct); } field_list '}' {
-          t_struct_seal(cur_struct);
+          t_struct_seal(cur_struct, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
           $$ = cur_struct;
           cur_struct = NULL;
           free($2);
@@ -248,7 +248,7 @@ struct_specifier:
 
 union_specifier:
       KW_UNION IDENT '{' { cur_struct = t_make_union($2); st_add_tag($2, cur_struct); } field_list '}' {
-          t_struct_seal(cur_struct);
+          t_struct_seal(cur_struct, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
           $$ = cur_struct;
           cur_struct = NULL;
           free($2);
@@ -286,6 +286,15 @@ field_declarator:
           ft = build_array_type(ft, $3.dims, $3.n);
           t_struct_add_field(cur_struct, $2, ft);
           free($2);
+      }
+    | IDENT ':' INT_LIT {
+          /* bitfield `name : width` (e.g. unsigned flags : 3) */
+          t_struct_add_bitfield(cur_struct, $1, cur_base, (int)$3);
+          free($1);
+      }
+    | ':' INT_LIT {
+          /* anonymous bitfield (padding / alignment) */
+          t_struct_add_bitfield(cur_struct, "", cur_base, (int)$2);
       }
     ;
 

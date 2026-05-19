@@ -423,10 +423,49 @@ static void gen_addr(expr *e)
     }
 }
 
+// returns the struct field a member-access refers to, or NULL
+static strct_field *member_field(expr *e)
+{
+    if (e->kind == E_MEMBER) {
+        type *st = infer_type(e->a);
+        if (st && st->kind == TY_STRUCT) return t_struct_find(st, e->member);
+    } else if (e->kind == E_PMEMBER) {
+        type *pt = infer_type(e->a);
+        if (pt && pt->base && pt->base->kind == TY_STRUCT) return t_struct_find(pt->base, e->member);
+    }
+    return NULL;
+}
+
 // ---- store: lv = val -------------------------------------------------------
 
 static void gen_store(expr *lv, expr *val)
 {
+    // bitfield store: read-modify-write the containing word
+    {
+        strct_field *bf = (lv->kind == E_MEMBER || lv->kind == E_PMEMBER) ? member_field(lv) : NULL;
+        if (bf && bf->is_bitfield) {
+            long mask  = (1L << bf->bit_width) - 1;
+            long clear = ~(mask << bf->bit_pos);
+            char tn[64]; snprintf(tn, sizeof(tn), "_bf%d", ++label_n);
+            char *ta = mangle_local(tn);
+            st_add(SK_LOCAL_VAR, tn, ta, t_int());
+            log_var(cur_func_name ? cur_func_name : "global", tn, 1, 0);
+            gen_addr(lv);  emit("SET %s", ta);     // ta = &word
+            emit("LOD %s", ta); emit("PSH");        // stack: [&word]  (STA address)
+            emit("LOD %s", ta); emit("LDA");        // acc = old word
+            emit("AND %ld", clear);                 // clear the field's bits
+            emit("PSH");                            // stack: [&word, cleared]
+            gen_expr(val);
+            emit("AND %ld", mask);                  // value & field-mask
+            if (bf->bit_pos > 0) {                  // shift left by bit_pos (stack form)
+                emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHL");
+            }
+            emit("S_ORR");                          // cleared | shifted
+            emit("STA");                            // mem[&word] = result
+            free(ta);
+            return;
+        }
+    }
     // fast path: simple scalar IDENT
     if (lv->kind == E_IDENT) {
         sym *s = st_find(lv->sval);
@@ -530,7 +569,18 @@ static void gen_expr(expr *e)
     }
 
     case E_MEMBER:
-    case E_PMEMBER:
+    case E_PMEMBER: {
+        // bitfield read: load the word, shift the field down, mask it off
+        strct_field *bf = member_field(e);
+        if (bf && bf->is_bitfield) {
+            gen_addr(e);                    // &word (gen_addr adds the word offset)
+            emit("LDA");                    // word value
+            if (bf->bit_pos > 0) {          // logical shift right by bit_pos (stack form)
+                emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHR");
+            }
+            emit("AND %ld", (1L << bf->bit_width) - 1);
+            return;
+        }
         // a field of array/struct type decays to its address (no load)
         if (e->etype && (e->etype->kind == TY_ARRAY || e->etype->kind == TY_STRUCT)) {
             gen_addr(e);
@@ -539,6 +589,7 @@ static void gen_expr(expr *e)
         gen_addr(e);
         emit("LDA");
         return;
+    }
 
     case E_ASSIGN:
         gen_store(e->a, e->b);
@@ -578,30 +629,28 @@ static void gen_expr(expr *e)
             return;
         }
 
-        // rhs is a simple scalar identifier → use _M form
+        // rhs is a simple scalar identifier → use the memory-operand form.
+        // ONLY for ops where mem-as-in1 / acc-as-in2 gives the right answer:
+        // commutative ops, and the comparisons (verified below). Non-commutative
+        // ops (SUB, DIV, MOD, SHL, SHR) compute `mem OP acc` = `rhs OP lhs` in
+        // this form, which is reversed — they fall through to the stack path.
         if (e->b->kind == E_IDENT) {
             sym *r = st_find(e->b->sval);
             if (r && r->stype && r->stype->kind != TY_ARRAY && r->stype->kind != TY_STRUCT) {
                 gen_expr(e->a);
                 switch (op) {
                     case OP_ADD: emit(is_float ? "F_ADD %s" : "ADD %s", r->asm_name); return;
-                    case OP_SUB: if (is_float) emit("F_SU1 %s", r->asm_name);
-                                 else        { emit("NEG"); emit("ADD %s", r->asm_name); } return;
                     case OP_MUL: emit(is_float ? "F_MLT %s" : "MLT %s", r->asm_name); return;
-                    case OP_DIV: emit(is_float ? "F_DIV %s" : "DIV %s", r->asm_name); return;
-                    case OP_MOD: emit("MOD %s", r->asm_name); return;
                     case OP_BAND: emit("AND %s", r->asm_name); return;
                     case OP_BOR:  emit("ORR %s", r->asm_name); return;
                     case OP_BXOR: emit("XOR %s", r->asm_name); return;
-                    case OP_SHL:  emit("SHL %s", r->asm_name); return;
-                    case OP_SHR:  emit("SRS %s", r->asm_name); return;
-                    case OP_LT:   emit(is_float ? "F_GRE %s" : "GRE %s", r->asm_name); return;
-                    case OP_GT:   emit(is_float ? "F_LES %s" : "LES %s", r->asm_name); return;
+                    case OP_LT:   emit(is_float ? "F_GRE %s" : "GRE %s", r->asm_name); return; // mem>acc == lhs<rhs
+                    case OP_GT:   emit(is_float ? "F_LES %s" : "LES %s", r->asm_name); return; // mem<acc == lhs>rhs
                     case OP_LE:   emit(is_float ? "F_LES %s" : "LES %s", r->asm_name); emit("LIN"); return;
                     case OP_GE:   emit(is_float ? "F_GRE %s" : "GRE %s", r->asm_name); emit("LIN"); return;
                     case OP_EQ:   emit("EQU %s", r->asm_name); return;
                     case OP_NE:   emit("EQU %s", r->asm_name); emit("LIN"); return;
-                    default: break;
+                    default: break;   // SUB/DIV/MOD/SHL/SHR -> stack path (correct order)
                 }
             }
         }

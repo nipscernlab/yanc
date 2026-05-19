@@ -45,13 +45,17 @@ struct type {
 struct strct_field {
     char        *name;
     type        *ftype;
-    int          offset;  // in words, from the start of the struct
+    int          offset;     // word offset from the start of the struct
+    int          is_bitfield;// 1 = packed bitfield
+    int          bit_pos;    // start bit within the word (bitfields only)
+    int          bit_width;  // width in bits (bitfields only)
     strct_field *next;
 };
 
 // canonical singletons
 type *t_void(void);
 type *t_int (void);
+type *t_uint(void);    // unsigned int (is_signed = 0)
 type *t_float(void);
 type *t_char(void);    // 1-word signed (CHAR_BIT == NUBITS on this target)
 
@@ -61,7 +65,8 @@ type *t_array(type *of, int n);
 type *t_make_struct(char *tag);                                  // forward decl
 type *t_make_union (char *tag);                                  // union variant
 void  t_struct_add_field(type *st, char *name, type *ft);        // returns offset via update
-type *t_struct_seal(type *st);                                   // computes total size (struct or union)
+void  t_struct_add_bitfield(type *st, char *name, type *ft, int width); // packed bitfield
+type *t_struct_seal(type *st, int word_bits);                    // lays out fields/bitfields, computes size
 strct_field *t_struct_find(type *st, const char *name);
 
 // helpers
