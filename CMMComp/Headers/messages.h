@@ -446,19 +446,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção: função '%s' não está sendo usada. Economize memória!\n", \
       "Heads up: function '%s' isn't being used. Save some memory, will ya!\n")
 
-// macros / interrupcao -------------------------------------------------------
-
-#define MSG_ERR_NESTED_MACRO \
-    M("Erro na linha %d: tá chamando uma macro dentro da outra. você é uma pessoa confusa!\n", \
-      "Error on line %d: you're calling a macro inside another one. You're a confused soul, aren't you!\n")
-
-#define MSG_ERR_MACRO_NOT_FOUND \
-    M("Erro na linha %d: cadê a macro %s? Tinha que estar na pasta Software!\n", \
-      "Error on line %d: where's the macro %s? Was supposed to be in the Software folder!\n")
-
-#define MSG_ERR_MACRO_NO_START \
-    M("Erro na linha %d: não estou achando o começo da macro\n", \
-      "Error on line %d: can't find the start of the macro\n")
+// interrupcao ----------------------------------------------------------------
 
 #define MSG_ERR_DUP_INTERRUPT \
     M("Erro na linha %d: já tem uma interrupção rolando em outro ponto antes desse!\n", \
@@ -477,10 +465,6 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_INFO_CONST_APPROX \
     M("Info: constante %s na linha %d aproximada para %.14f (erro = %.14f)\n", \
       "Info: constant %s on line %d aproximated to %.14f (error = %.14f)\n")
-
-#define MSG_INFO_USER_MACRO \
-    M("Info: substituindo código C± pela macro do usuário %s na linha %d\n", \
-      "Info: replacing C± code by user macro %s at line %d\n")
 
 #define MSG_INFO_SQRT_MACRO \
     M("Info: adicionando macro assembly para cálculo de raiz quadrada\n", \

@@ -38,8 +38,6 @@ COMEN  "//"[^\n]*
 "#NUGAIN"     return NUGAIN;
 "#FFTSIZ"     return FFTSIZ;
 
-"#USEMAC"     return USEMAC;
-"#ENDMAC"     return ENDMAC;
 "#INTERPOINT" return ITRADD;
 
 "in"          return INN;

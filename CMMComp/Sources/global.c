@@ -164,7 +164,6 @@ void parse_end(char *prname, char *d_proc)
     fputs("-1 INTERNAL\n"    , output); // code for the file start
     fputs("-2 void main();\n", output); // code for CAL main
     fputs("-3 END\n"         , output); // code for @fim JMP fim
-    fputs("-4 User Macro\n"  , output); // user-supplied asm code (#USEMAC)
 
     int cnt = 1;
     while(fgets(texto, 1001, input) != NULL)
@@ -200,11 +199,9 @@ void add_instr(char *inst, ...)
     // -> ula_op 0). So reloading the just-stored value is a no-op. Only fires
     // when both lines are the plain SET / LOD opcodes (not SET_P / F_SET /
     // P_LOD / etc.) and the variable names match. last_str is reset by
-    // add_sinst, the capture stack, and the macro hooks - so this never
-    // crosses a label, a basic-block boundary, or an opaque macro emit.
+    // add_sinst so this never crosses a label or basic-block boundary.
 
-    if (mac_using == 0 &&
-        strncmp(str,      "LOD ", 4) == 0 &&
+    if (strncmp(str,      "LOD ", 4) == 0 &&
         strncmp(last_str, "SET ", 4) == 0)
     {
         char lod_var[100], set_var[100];
@@ -221,12 +218,12 @@ void add_instr(char *inst, ...)
     // append the instruction -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (mac_using == 0) fprintf(f_asm, "%s", str);
+    fprintf(f_asm, "%s", str);
 
     // table for the gtkwave assembly translator ------------------------------
 
-    if (mac_using == 0) num_ins++;
-    if (mac_using == 0) fprintf(f_lin, "%s\n", itob(line_num+1,20));
+    num_ins++;
+    fprintf(f_lin, "%s\n", itob(line_num+1,20));
 
     // ------------------------------------------------------------------------
     // check whether the instruction needs a special macro --------------------
@@ -236,13 +233,9 @@ void add_instr(char *inst, ...)
     if (find_opc("float_atan", str)) mac_add("fatan");
     if (find_opc("float_sin" , str)) mac_add("fsin" );
 
-    // remember this emit for the next peephole check (only when we actually
-    // appended to f_asm or a capture; otherwise the window stays as it was)
-    if (mac_using == 0)
-    {
-        strncpy(last_str, str, sizeof(last_str) - 1);
-        last_str[sizeof(last_str) - 1] = '\0';
-    }
+    // remember this emit for the next peephole check
+    strncpy(last_str, str, sizeof(last_str) - 1);
+    last_str[sizeof(last_str) - 1] = '\0';
 }
 
 // adds special instructions
@@ -266,13 +259,13 @@ void add_sinst(int type, char *inst, ...)
 
     // append the instruction -------------------------------------------------
 
-    if (mac_using == 0) fprintf(f_asm, "%s", str);
+    fprintf(f_asm, "%s", str);
 
     // table for the gtkwave assembly translator ------------------------------
 
     if (type != 0)
     {
-        if (mac_using == 0) num_ins++;
-        if (mac_using == 0) fprintf(f_lin, "%s\n", itob(type,20));
+        num_ins++;
+        fprintf(f_lin, "%s\n", itob(type,20));
     }
 }

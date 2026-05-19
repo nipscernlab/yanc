@@ -1,7 +1,6 @@
 /*
     Features unique to C+-
 
-    - Directives #USEMAC #ENDMAC: select code chunks to be replaced by Macros optimized in assembly
     - Directive  #INTERPOINT    : marks the return point for a reset on the itr pin
 
     - comp data type (for complex numbers): e.g. comp a = 3+4i;
@@ -92,7 +91,7 @@ void  yyerror(char const *s);
 // tokens with no assignment --------------------------------------------------
 
 %token PRNAME NUBITS NBMANT NBEXPO NDSTAC SDEPTH                       // directives
-%token NUIOIN NUIOOU NUGAIN USEMAC ENDMAC FFTSIZ ITRADD                // directives
+%token NUIOIN NUIOOU NUGAIN FFTSIZ ITRADD                              // directives
 %token INN FIN OUT FOUT                                                // stdlib (I/O)
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
 %token SQRT ATAN SIN COS                                               // stdlib (non-linear functions)
@@ -162,13 +161,8 @@ direct : PRNAME   ID   {dire_exec("#PRNAME",$2, 1);} // processor name
        | NUGAIN INUM   {dire_exec("#NUGAIN",$2, 0);} // division constant (norm(.))
        | FFTSIZ INUM   {dire_exec("#FFTSIZ",$2, 0);} // FFT size (2^FFTSIZ)
 
-       | USEMAC STRING INUM {mac_use($2,1,$3);}      // replaces a code section with an assembly macro (outside a function)
-       | ENDMAC             {mac_end();}             // end point of the macro usage
-
 // Behavioral directives ------------------------------------------------------
 
-mac_use    : USEMAC STRING INUM {mac_use($2,0,$3);}  // uses a .asm macro in place of the compiler (inside a function)
-mac_end    : ENDMAC             {mac_end();}         // macro usage end point
 dire_inter : ITRADD             {stmt_emit_inline(stmt_dire_inter());} // interrupt start point
 
 // Variable declaration -------------------------------------------------------
@@ -231,8 +225,6 @@ stmt_case:        declar     // variable declarations
          |      std_copy     // copies the value of the first argument into the second (no type checking)
          |     void_call     // subroutine call
          |   return_call     // function return
-         |       mac_use     // declares the use of a macro until ENDMAC is found
-         |       mac_end     // ends an assembler-macro call
 
 // function calls -------------------------------------------------------------
 

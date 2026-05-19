@@ -8,7 +8,6 @@
 #NBEXPO 8
 #NUGAIN 128
 
-//#USEMAC "atan_teste.asm" 40
 float arctan_LUT(float x)
 {
     float atan_lut[49] "Arctan_LUT.txt";
@@ -30,9 +29,8 @@ float arctan_LUT(float x)
     x = atan_lut[idx];
     return sign(signo, v0 - (x + (atan_lut[idx+1] - x) * (idxf - idx)));
 }
-//#ENDMAC
 
-void main() 
+void main()
 {
     float x[1000] "atan_x.txt";
     float a[1000] "atan_y.txt";
