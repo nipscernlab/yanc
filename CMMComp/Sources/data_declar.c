@@ -45,7 +45,7 @@ void declar_var(int id)
     // update the variable status ---------------------------------------------
 
     v_type[id]          = type_tmp;            // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
-    v_used[id]          = 0;                   // just declared, so not used yet
+    v_table[id].used          = 0;                   // just declared, so not used yet
     v_table[id].fnid    = find_var(fname);     // record the function it belongs to
 
     // declare the imaginary part if comp -------------------------------------
@@ -54,7 +54,7 @@ void declar_var(int id)
     {
         int idi              = get_img_id(id);
         v_type[idi]          = 4; // use type 4 for the imaginary part
-        v_used[idi]          = 0;
+        v_table[idi].used          = 0;
         v_table[idi].fnid    = find_var(fname);
     }
 
@@ -79,10 +79,10 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
     }
 
     v_type[id_var]       = type_tmp;
-    v_used[id_var]       = 0;
+    v_table[id_var].used       = 0;
     v_table[id_var].fnid = find_var(fname);
-    v_isar[id_var]       = 1;
-    v_size[id_var]       = atoi(v_name[id_arg]);
+    v_table[id_var].isar       = 1;
+    v_table[id_var].size       = atoi(v_name[id_arg]);
 
     int type = type_tmp;
 
@@ -94,7 +94,7 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
     }
 
     // for comp, mark the imaginary half as a 1D array too
-    if (type == 3) v_isar[get_img_id(id_var)] = 1;
+    if (type == 3) v_table[get_img_id(id_var)].isar = 1;
 
     if (id_fname != -1)
         printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var], fname), line_num+1);
@@ -148,15 +148,15 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
     }
 
     v_type[id_var]       = type_tmp;
-    v_used[id_var]       = 0;
+    v_table[id_var].used       = 0;
     v_table[id_var].fnid = find_var(fname);
-    v_isar[id_var]       = 2;
-    v_size[id_var]       = atoi(v_name[id_x]);
+    v_table[id_var].isar       = 2;
+    v_table[id_var].size       = atoi(v_name[id_x]);
     v_table[id_var].siz2 = atoi(v_name[id_y]);
 
     int type = type_tmp;
 
-    if (type == 3) v_isar[get_img_id(id_var)] = 2;  // comp imag also 2D
+    if (type == 3) v_table[get_img_id(id_var)].isar = 2;  // comp imag also 2D
 
     if (id_fname != -1)
         printf(MSG_INFO_ARRAY_FILE_INIT, v_name[id_fname], rem_fname(v_name[id_var], fname), line_num+1);

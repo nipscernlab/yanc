@@ -60,7 +60,7 @@ void exec_out(int id, expr e)
     if (e.type > 2) {fprintf (stderr, MSG_ERR_PICK_COMP_INFO, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check port range
     if (atoi(v_name[id]) >= nuioou) {fprintf(stderr, MSG_ERR_NO_OUT_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
@@ -69,7 +69,7 @@ void exec_out(int id, expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -122,7 +122,7 @@ void exec_fout(int id, expr e)
     if (e.type > 2) {fprintf (stderr, MSG_ERR_PICK_COMP_INFO, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check port range
     if (atoi(v_name[id]) >= nuioou) {fprintf(stderr, MSG_ERR_NO_OUT_PORT, line_num+1, v_name[id]); exit(EXIT_FAILURE);}
@@ -131,7 +131,7 @@ void exec_fout(int id, expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -186,10 +186,10 @@ expr exec_sign(expr e1, expr e2)
     if (e2.id != 0 && v_type[e2.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e2.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et1 is a variable
-    if (e1.id != 0 && v_isar[e1.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e1.id], fname)); exit(EXIT_FAILURE);}
+    if (e1.id != 0 && v_table[e1.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e1.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et2 is a variable
-    if (e2.id != 0 && v_isar[e2.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e2.id], fname)); exit(EXIT_FAILURE);}
+    if (e2.id != 0 && v_table[e2.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e2.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether there is a comp
     if ((e1.type > 2) || (e2.type > 2)) {fprintf (stderr, MSG_ERR_SIGN_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -198,8 +198,8 @@ expr exec_sign(expr e1, expr e2)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e1.id != 0) v_used[e1.id] = 1;
-    if (e2.id != 0) v_used[e2.id] = 1;
+    if (e1.id != 0) v_table[e1.id].used = 1;
+    if (e2.id != 0) v_table[e2.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -331,13 +331,13 @@ expr exec_abs(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -397,13 +397,13 @@ expr exec_pst(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -464,7 +464,7 @@ expr exec_norm(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is int
     if (e.type != 1) {fprintf (stderr, MSG_ERR_NORM_NON_INT, line_num+1); exit(EXIT_FAILURE);}
@@ -473,7 +473,7 @@ expr exec_norm(expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -512,19 +512,19 @@ void exec_copy(expr e, int id2)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether the source is a plain variable (not an array)
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether id2 was declared
     if (v_type[id2] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
 
     // check whether id2 is a variable
-    if (v_isar[id2] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
+    if (v_table[id2].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -559,7 +559,7 @@ expr exec_sqrt(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -568,7 +568,7 @@ expr exec_sqrt(expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -624,7 +624,7 @@ expr exec_atan(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -633,7 +633,7 @@ expr exec_atan(expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -689,7 +689,7 @@ expr exec_sin(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -698,7 +698,7 @@ expr exec_sin(expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -754,7 +754,7 @@ expr exec_cos(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -763,7 +763,7 @@ expr exec_cos(expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -831,7 +831,7 @@ expr exec_real(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type < 3) {fprintf (stderr, MSG_ERR_REAL_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
@@ -840,7 +840,7 @@ expr exec_real(expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -889,7 +889,7 @@ expr exec_imag(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type < 3) {fprintf (stderr, MSG_ERR_IMAG_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
@@ -898,7 +898,7 @@ expr exec_imag(expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -951,7 +951,7 @@ expr exec_mod2(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type < 3) {fprintf (stderr, MSG_ERR_MOD2_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
@@ -960,7 +960,7 @@ expr exec_mod2(expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -1020,7 +1020,7 @@ expr exec_fase(expr e)
     if (e.id != 0 && v_type[e.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (e.type < 3) {fprintf (stderr, MSG_ERR_FASE_ARG_COMP, line_num+1); exit(EXIT_FAILURE);}
@@ -1029,7 +1029,7 @@ expr exec_fase(expr e)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -1085,10 +1085,10 @@ expr exec_comp(expr er, expr ei)
     if (ei.id != 0 && v_type[ei.id] == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_name[ei.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether etr is a variable
-    if (er.id != 0 && v_isar[er.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[er.id], fname)); exit(EXIT_FAILURE);}
+    if (er.id != 0 && v_table[er.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[er.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (ei.id != 0 && v_isar[ei.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ei.id], fname)); exit(EXIT_FAILURE);}
+    if (ei.id != 0 && v_table[ei.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ei.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether it is comp
     if (er.type > 2 || ei.type > 2) {fprintf (stderr, MSG_ERR_COMPLEX_OF_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
@@ -1097,8 +1097,8 @@ expr exec_comp(expr er, expr ei)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (er.id != 0) v_used[er.id] = 1;
-    if (ei.id != 0) v_used[ei.id] = 1;
+    if (er.id != 0) v_table[er.id].used = 1;
+    if (ei.id != 0) v_table[ei.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -1250,10 +1250,10 @@ expr exec_vtv(int id1, int id2)
     if (v_type[id2] == 0) {fprintf(stderr, MSG_ERR_VAR_NOT_FOUND, line_num+1, rem_fname(v_name[id2], fname)); exit(EXIT_FAILURE);}
 
     // check that they really are vectors
-    if (v_isar[id1] != 1 || v_isar[id2] != 1) {fprintf(stderr, MSG_ERR_INNER_NEEDS_VECTORS, line_num+1); exit(EXIT_FAILURE);}
+    if (v_table[id1].isar != 1 || v_table[id2].isar != 1) {fprintf(stderr, MSG_ERR_INNER_NEEDS_VECTORS, line_num+1); exit(EXIT_FAILURE);}
 
     // check that the sizes match
-    if (v_size[id1] != v_size[id2]) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF, line_num+1); exit(EXIT_FAILURE);}
+    if (v_table[id1].size != v_table[id2].size) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF, line_num+1); exit(EXIT_FAILURE);}
 
     // check that they are the same type
     if (v_type[id1] != v_type[id2]) {fprintf(stderr, MSG_ERR_TYPE_DIFF, line_num+1); exit(EXIT_FAILURE);}
@@ -1265,14 +1265,14 @@ expr exec_vtv(int id1, int id2)
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    v_used[id1] = 1;
-    v_used[id2] = 1;
+    v_table[id1].used = 1;
+    v_table[id2].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[id1];
+    int N = v_table[id1].size;
 
     char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
@@ -1339,32 +1339,32 @@ void exec_Mv(int idy, int idM, int idv)
     if (v_type[idy] == 3 || v_type[idM] == 3 || v_type[idv] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idy is a vector
-    if (v_isar[idy] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
     // check whether idM is a matrix
-    if (v_isar[idM] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX2, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX2, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
     // check whether idv is a vector
-    if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
     // check size between output and matrix
-    if (v_size[idy] != v_size[idM]) {fprintf(stderr, MSG_ERR_MATRIX_ROW_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].size != v_table[idM].size) {fprintf(stderr, MSG_ERR_MATRIX_ROW_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
     // check size between matrix and vector
-    if (v_size[idv] != v_table[idM].siz2) {fprintf(stderr, MSG_ERR_MATRIX_COL_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].size != v_table[idM].siz2) {fprintf(stderr, MSG_ERR_MATRIX_COL_MISMATCH, line_num+1, rem_fname(v_name[idM], fname), rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    v_used[idM] = 1;
-    v_used[idv] = 1;
+    v_table[idM].used = 1;
+    v_table[idv].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[idM];
+    int N = v_table[idM].size;
     int M = v_table[idM].siz2;
 
     // ------------------------------------------------------------------------
@@ -1437,29 +1437,29 @@ void exec_cv(int idy, expr e, int idv)
     if (v_type[idy] == 3 || e.type == 3 || v_type[idv] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idy is a vector
-    if (v_isar[idy] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (e.id != 0 && v_isar[e.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[e.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether idv is a vector
-    if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
     // check size between vectors
-    if (v_size[idy] != v_size[idv]) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
+    if (v_table[idy].size != v_table[idv].size) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0) v_used[e.id] = 1;
-    v_used[idv] = 1;
+    if (e.id != 0) v_table[e.id].used = 1;
+    v_table[idv].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[idv];
+    int N = v_table[idv].size;
 
     char g[64]; if (e.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[e.id]);
 
@@ -1522,30 +1522,30 @@ void exec_apcb(int idy, int ida, expr ec, int idb)
     if (v_type[idy] == 3 || v_type[ida] == 3 || ec.type == 3 || v_type[idb] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idy is a vector
-    if (v_isar[idy] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idy].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idy], fname)); exit(EXIT_FAILURE);}
 
     // check whether ida is a vector
-    if (v_isar[ida] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
     // check whether et is a variable
-    if (ec.id != 0 && v_isar[ec.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether idb is a vector
-    if (v_isar[idb] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idb].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
     // check size between vectors
-    if (v_size[idy] != v_size[ida]) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
+    if (v_table[idy].size != v_table[ida].size) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
 
     // check size between vectors
-    if (v_size[idy] != v_size[idb]) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
+    if (v_table[idy].size != v_table[idb].size) {fprintf(stderr, MSG_ERR_VECTOR_SIZE_DIFF2, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    v_used[ida] = 1;
-    if (ec.id != 0) v_used[ec.id] = 1;
-    v_used[idb] = 1;
+    v_table[ida].used = 1;
+    if (ec.id != 0) v_table[ec.id].used = 1;
+    v_table[idb].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -1553,7 +1553,7 @@ void exec_apcb(int idy, int ida, expr ec, int idb)
 
     printf(MSG_INFO_DIRAC_VECTOR_SUM, line_num+1);
 
-    int N = v_size[idy];
+    int N = v_table[idy].size;
 
     char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[ec.id]);
 
@@ -1610,29 +1610,29 @@ void exec_vvt(int idM, int ida, int idb)
     if (v_type[idM] == 3 || v_type[ida] == 3 || v_type[idb] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idM is a matrix
-    if (v_isar[idM] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
     // check whether ida is a vector
-    if (v_isar[ida] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
     // check whether idb is a vector
-    if (v_isar[idb] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idb].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
     // check size between elements
-    if (v_size[idM] != v_size[ida] || v_size[idM] != v_size[idb]) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
+    if (v_table[idM].size != v_table[ida].size || v_table[idM].size != v_table[idb].size) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    v_used[ida] = 1;
-    v_used[idb] = 1;
+    v_table[ida].used = 1;
+    v_table[idb].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[ida];
+    int N = v_table[ida].size;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1689,34 +1689,34 @@ void exec_Mmvvt(int idA, int idB, int ida, int idb)
     // check that it is not comp
     if (v_type[idA] == 3 || v_type[idB] == 3 || v_type[ida] == 3 || v_type[idb] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
     // check whether idA is a matrix
-    if (v_isar[idA] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idA].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
 
     // check whether idB is a matrix
-    if (v_isar[idB] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idB], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idB].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idB], fname)); exit(EXIT_FAILURE);}
 
     // check whether ida is a vector
-    if (v_isar[ida] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
     // check whether idb is a vector
-    if (v_isar[idb] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idb].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idb], fname)); exit(EXIT_FAILURE);}
 
     // check size between elements
-    if (v_size[idA] != v_table[idA].siz2 || v_size[idA] != v_size[idB] || v_size[idA] != v_table[idB].siz2 || v_size[idA] != v_size[ida] ||
-        v_size[idA] != v_size[idb]) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
+    if (v_table[idA].size != v_table[idA].siz2 || v_table[idA].size != v_table[idB].size || v_table[idA].size != v_table[idB].siz2 || v_table[idA].size != v_table[ida].size ||
+        v_table[idA].size != v_table[idb].size) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    v_used[idB] = 1;
-    v_used[ida] = 1;
-    v_used[idb] = 1;
+    v_table[idB].used = 1;
+    v_table[ida].used = 1;
+    v_table[idb].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[ida];
+    int N = v_table[ida].size;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1775,29 +1775,29 @@ void exec_cM(int idA, expr ec, int idM)
     if (v_type[idA] == 3 || ec.type == 3 || v_type[idM] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idA is a matrix
-    if (v_isar[idA] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idA].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idA], fname)); exit(EXIT_FAILURE);}
 
     // check whether etc is a variable
-    if (ec.id != 0 && v_isar[ec.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
 
     // check whether idM is a matrix
-    if (v_isar[idM] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
     // check size between elements
-    if (v_size[idA] != v_size[idM] || v_table[idA].siz2 != v_table[idM].siz2) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
+    if (v_table[idA].size != v_table[idM].size || v_table[idA].siz2 != v_table[idM].siz2) {fprintf(stderr, MSG_ERR_DIM_MISMATCH, line_num+1); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (ec.id != 0) v_used[ec.id] = 1;
-    v_used[idM] = 1;
+    if (ec.id != 0) v_table[ec.id].used = 1;
+    v_table[idM].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[idM];
+    int N = v_table[idM].size;
     int M = v_table[idM].siz2;
 
     char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[ec.id]);
@@ -1848,22 +1848,22 @@ void exec_cI(int idM, expr ec)
     // check that it is not comp
     if (v_type[idM] == 3 || ec.type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
     // check whether idM is a matrix
-    if (v_isar[idM] != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idM].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, line_num+1, rem_fname(v_name[idM], fname)); exit(EXIT_FAILURE);}
 
     // check whether etc is a variable
-    if (ec.id != 0 && v_isar[ec.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (ec.id != 0) v_used[ec.id] = 1;
+    if (ec.id != 0) v_table[ec.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[idM];
+    int N = v_table[idM].size;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1912,13 +1912,13 @@ void exec_v0(int idv)
     if (v_type[idv] == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
     
     // check whether idv is a vector
-    if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[idv];
+    int N = v_table[idv].size;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1952,22 +1952,22 @@ void exec_cvin(int idv, expr ec, int idp)
     if (v_type[idv] == 3 || ec.type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idv is a vector
-    if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
     // check whether etc is a variable
-    if (ec.id != 0 && v_isar[ec.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (ec.id != 0) v_used[ec.id] = 1;
+    if (ec.id != 0) v_table[ec.id].used = 1;
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[idv];
+    int N = v_table[idv].size;
 
     char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[ec.id]);
 
@@ -2018,23 +2018,23 @@ void exec_vout(int idp, expr ec, int idv)
     if (v_type[idv] == 3 || ec.type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check whether idv is a vector
-    if (v_isar[idv] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
+    if (v_table[idv].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[idv], fname)); exit(EXIT_FAILURE);}
 
     // check whether etc is a variable
-    if (ec.id != 0 && v_isar[ec.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
+    if (ec.id != 0 && v_table[ec.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[ec.id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (ec.id != 0) v_used[ec.id] = 1;
-    v_used[idv] = 1;
+    if (ec.id != 0) v_table[ec.id].used = 1;
+    v_table[idv].used = 1;
     
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[idv];
+    int N = v_table[idv].size;
 
     char g[64]; if (ec.id==0) strcpy(g,"aux_var"); else strcpy(g,v_name[ec.id]);
 
@@ -2094,22 +2094,22 @@ void exec_shift(int ida, expr eb, int idc)
     //if (v_type[ida] != v_type[eb.id]) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}
     
     // check whether ida is a vector
-    if (v_isar[ida] != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
+    if (v_table[ida].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_name[ida], fname)); exit(EXIT_FAILURE);}
 
     // check whether etb is a variable
-    if (eb.id != 0 && v_isar[eb.id] > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[eb.id], fname)); exit(EXIT_FAILURE);}
+    if (eb.id != 0 && v_table[eb.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_name[eb.id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (eb.id != 0) v_used[eb.id] = 1;
+    if (eb.id != 0) v_table[eb.id].used = 1;
     
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    int N = v_size[ida];
+    int N = v_table[ida].size;
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------

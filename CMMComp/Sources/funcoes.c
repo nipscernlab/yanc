@@ -642,7 +642,7 @@ void func_ret(int id) // id -> id of the current function
     {
         add_sinst(-3, "@fim JMP fim\n");
 
-        v_used[id] = 1; // main was used (avoid the warning of main declared but not used)
+        v_table[id].used = 1; // main was used (avoid the warning of main declared but not used)
     }
     else if (v_type[id] == 6) {add_instr("RET\n");} // void type still needs a RET
 
@@ -703,7 +703,7 @@ stmt_node *vcall(int id)
         exit(EXIT_FAILURE);
     }
 
-    v_used[id] = 1;
+    v_table[id].used = 1;
 
     // type=0 for void: walker leaves acc_ok=0 after CAL
     return stmt_void_call(expr_func_call(0, id, a, n));
@@ -733,7 +733,7 @@ expr_node *fcall(int id)
         exit(EXIT_FAILURE);
     }
 
-    v_used[id] = 1;
+    v_table[id].used = 1;
 
     return expr_func_call(v_type[id]-6, id, a, n);
 }

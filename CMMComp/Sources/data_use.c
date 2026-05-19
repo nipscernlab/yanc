@@ -26,9 +26,9 @@ TODO:
 // does not emit a load, just updates the variable state
 expr num2exp(int id, int dtype)
 {
-    v_used[id]          = 1;
+    v_table[id].used          = 1;
     v_table[id].isco    = 1;
-    v_isar[id]          = 0;
+    v_table[id].isar          = 0;
     v_type[id]          = dtype;
 
     return expr_make(dtype, id);
@@ -43,10 +43,10 @@ expr id2exp(int id)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // if it is an array, the index is missing
-    if (v_isar[id] > 0)
+    if (v_table[id].isar > 0)
         {fprintf (stderr, MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
-    v_used[id] = 1;
+    v_table[id].used = 1;
 
     return expr_make(v_type[id], id);
 }

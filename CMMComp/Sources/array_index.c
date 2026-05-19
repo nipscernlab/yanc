@@ -33,11 +33,11 @@ void arr_1d_index(int id, expr e)
     // ------------------------------------------------------------------------
 
     // must check that it really is an array
-    if (v_isar[id] == 0)
+    if (v_table[id].isar == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // must check that it really is a 1D array
-    if (v_isar[id] == 2)
+    if (v_table[id].isar == 2)
         {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
@@ -119,11 +119,11 @@ void arr_2d_index(int id, expr e1, expr e2)
     // ------------------------------------------------------------------------
 
     // must check that it really is an array
-    if (v_isar[id] == 0)
+    if (v_table[id].isar == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // must check that it is not a 1D array
-    if (v_isar[id] == 1)
+    if (v_table[id].isar == 1)
         {fprintf (stderr, MSG_ERR_ARRAY_1D, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // ------------------------------------------------------------------------
@@ -717,11 +717,11 @@ expr arr_1d2exp(int id, expr e, int fft)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // must check that it really is an array
-    if (v_isar[id] == 0)
+    if (v_table[id].isar == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // must check that it really is a 1D array
-    if (v_isar[id] == 2)
+    if (v_table[id].isar == 2)
         {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // prepare the LOD commands ----------------------------------------------
@@ -890,7 +890,7 @@ expr arr_1d2exp(int id, expr e, int fft)
     }
 
     acc_ok     = 1;
-    v_used[id] = 1;
+    v_table[id].used = 1;
 
     return expr_make(v_type[id], 0);
 }
@@ -905,11 +905,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // must check that it really is a 2D array
-    if (v_isar[id] == 0)
+    if (v_table[id].isar == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // must check that it is not a 1D array
-    if (v_isar[id] == 1)
+    if (v_table[id].isar == 1)
         {fprintf (stderr, MSG_ERR_ARRAY_1D , line_num+1, rem_fname(v_name[id], fname)); exit(EXIT_FAILURE);}
 
     // prepare the LOD commands -----------------------------------------------
@@ -2321,7 +2321,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     }
 
     acc_ok     = 1;
-    v_used[id] = 1;
+    v_table[id].used = 1;
 
     return expr_make(v_type[id], 0);
 }

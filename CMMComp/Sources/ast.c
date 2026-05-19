@@ -357,7 +357,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             }
 
             add_instr("CAL %s\n", v_name[n->id]);
-            v_used[n->id] = 1;
+            v_table[n->id].used = 1;
             acc_ok = (n->type == 0) ? 0 : 1;
 
             fun_id = saved_fun_id;
@@ -879,7 +879,7 @@ void stmt_emit(stmt_node *n)
             if (find_var("switch_exp") == -1) add_var("switch_exp");
             int sw_id = find_var("switch_exp");
             v_type[sw_id] = cond_e.type;
-            v_used[sw_id] = 0;
+            v_table[sw_id].used = 0;
 
             emit_cond_int_load(cond_e, 1);
             add_instr("SET switch_exp\n");

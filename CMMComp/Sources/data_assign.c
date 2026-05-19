@@ -32,7 +32,7 @@ void ass_set(int id, expr e)
     }
 
     // test whether it is an array missing its index
-    if (v_isar[id] > 0)
+    if (v_table[id].isar > 0)
     {
         fprintf (stderr, MSG_ERR_ARRAY_NEEDS_IDX, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
@@ -281,7 +281,7 @@ void ass_array(int id, expr e, int fft)
     }
 
     // array vs non-array check
-    if (v_isar[id] == 0)
+    if (v_table[id].isar == 0)
     {
         fprintf (stderr, MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_name[id], fname));
         exit(EXIT_FAILURE);
