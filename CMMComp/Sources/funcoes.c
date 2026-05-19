@@ -615,7 +615,7 @@ void func_body_begin(void)
         if (!params) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
         memcpy(params, func_params, sizeof(int) * func_nparams);
     }
-    stmt_emit_inline(stmt_func_header(fun_parse, func_jmp_main,
+    stmt_append(stmt_func_header(fun_parse, func_jmp_main,
                                       params, func_nparams));
     func_nparams = 0;
     func_jmp_main = 0;
@@ -630,7 +630,7 @@ void func_body_begin(void)
 void func_ret(int id) // id -> id of the current function
 {
     stmt_node *body = stmt_list_close();
-    stmt_emit_inline(stmt_func(id, body));
+    stmt_append(stmt_func(id, body));
 
     // env variable fname becomes empty (left a function)
     strcpy(fname, "");
@@ -671,7 +671,7 @@ void par_listexp(expr_node *n)
 
 // void-call statement: pre-validates type / arity, pops this call's frame,
 // and packages the args into an EXPR_FUNC_CALL (type=0). The grammar wraps
-// the returned stmt_node into the enclosing body via stmt_emit_inline; the
+// the returned stmt_node into the enclosing body via stmt_append; the
 // walker emits par_check + CAL at body-close time. Popping the frame here
 // (instead of inside the walker) keeps each call's args bound at parse time
 // - waiting until walker time would draw frames in LIFO order while the

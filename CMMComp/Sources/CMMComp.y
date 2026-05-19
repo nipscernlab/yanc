@@ -172,13 +172,13 @@ direct : PRNAME   ID   {dire_exec("#PRNAME",$2, 1);} // processor name
 
 // Behavioral directives ------------------------------------------------------
 
-dire_inter : ITRADD             {stmt_emit_inline(stmt_dire_inter());} // interrupt start point
+dire_inter : ITRADD             {stmt_append(stmt_dire_inter());} // interrupt start point
 
 // Variable declaration -------------------------------------------------------
          // list declaration (one or more uninitialized variables)
 declar : TYPE id_list                               ';'
          // declaration of a variable with initialization
-       | TYPE ID '=' exp ';'          {declar_var($2); stmt_emit_inline(stmt_assign($2, $4));}
+       | TYPE ID '=' exp ';'          {declar_var($2); stmt_append(stmt_assign($2, $4));}
          // array declaration with file initialization
        | TYPE ID '[' INUM ']'              STRING   ';' {declar_arr_1d($2,$4,$6    );}
        | TYPE ID '[' INUM ']' '[' INUM ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
@@ -217,8 +217,8 @@ par_items : TYPE ID                       {declar_par($1,$2);}
           | par_items ',' TYPE ID         {declar_par($3,$4);}
 
 // function and void returns
-return_call : RET exp ';'                 {stmt_emit_inline(stmt_return($2  ));}
-            | RET     ';'                 {stmt_emit_inline(stmt_return(NULL));}
+return_call : RET exp ';'                 {stmt_append(stmt_return($2  ));}
+            | RET     ';'                 {stmt_append(stmt_return(NULL));}
 
 // statement list in C --------------------------------------------------------
 
@@ -245,7 +245,7 @@ stmt_case:        declar     // variable declarations
 
 // function calls -------------------------------------------------------------
 
-void_call   : ID '(' exp_list ')' ';'  {stmt_emit_inline(vcall($1));}
+void_call   : ID '(' exp_list ')' ';'  {stmt_append(vcall($1));}
 func_call   : ID '(' exp_list ')'      {$$ = fcall($1);}
 
 // Each call's arg frame opens at the FIRST reduction of its own exp_list
@@ -258,15 +258,15 @@ exp_list :                              {args_frame_push();}
 
 // Standard library -----------------------------------------------------------
 
-std_out  : OUT  '(' INUM ',' exp ')' ';'            {stmt_emit_inline(stmt_out($3, $5, 0));}  // data output
-std_fout : FOUT '(' INUM ',' exp ')' ';'            {stmt_emit_inline(stmt_out($3, $5, 1));}  // data output (converting to float)
+std_out  : OUT  '(' INUM ',' exp ')' ';'            {stmt_append(stmt_out($3, $5, 0));}  // data output
+std_fout : FOUT '(' INUM ',' exp ')' ';'            {stmt_append(stmt_out($3, $5, 1));}  // data output (converting to float)
 std_in   : INN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_IN, $3, NULL, NULL);}  // data input
 std_fin  : FIN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FIN, $3, NULL, NULL);}  // float input
 std_pst  : PST  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_PST, 0,  $3,   NULL);}  // clears if negative
 std_abs  : ABS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ABS, 0,  $3,   NULL);}  // |x|
 std_sign : SGN  '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_SIGN, 0,  $3,   $5  );}  // y with sign of x
 std_nrm  : NRM  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_NRM, 0,  $3,   NULL);}  // x / NUGAIN
-std_copy : COPY '(' exp  ',' ID  ')' ';'       {stmt_emit_inline(stmt_copy($3, $5));}                // void: copies x into y
+std_copy : COPY '(' exp  ',' ID  ')' ';'       {stmt_append(stmt_copy($3, $5));}                // void: copies x into y
 std_sqrt : SQRT '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SQRT, 0,  $3,   NULL);}  // sqrt(x)
 std_atan : ATAN '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ATAN, 0,  $3,   NULL);}  // atan(x)
 std_sin  : SIN  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SIN, 0,  $3,   NULL);}  // sin(x)
@@ -276,18 +276,18 @@ std_imag : IMAG '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_IMAG, 0,
 std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0,  $3,   $5  );}  // complex(x, y)
 std_fase : FASE '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_FASE, 0,  $3,   NULL);}  // phase(comp)
 std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_MOD2, 0,  $3,   NULL);}  // |comp|^2
-std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_emit_inline(stmt_vout($3, $5, $7));}  // data output with Dirac notation
+std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_append(stmt_vout($3, $5, $7));}  // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
 
-if_else_stmt : if_exp stmt_full else_intro stmt_full {stmt_emit_inline(if_fim());}  // complete if/else
-             | if_exp stmt_full %prec THEN           {stmt_emit_inline(if_stmt());} // if without else
+if_else_stmt : if_exp stmt_full else_intro stmt_full {stmt_append(if_fim());}  // complete if/else
+             | if_exp stmt_full %prec THEN           {stmt_append(if_stmt());} // if without else
 if_exp       : IF '(' exp ')'                        {if_exp($3);}                  // build pending STMT_IF
 else_intro   : ELSE                                  {else_stmt();}                 // close then-body, open else-body
 
 // switch/case ----------------------------------------------------------------
 
-switch_case   : switch_intro '{' cases '}' {stmt_emit_inline(end_switch());}
+switch_case   : switch_intro '{' cases '}' {stmt_append(end_switch());}
 switch_intro  : SWITCH '(' exp ')'         {exec_switch($3);}
 
 case_list     :           stmt_case
@@ -305,36 +305,36 @@ cases         : case | default | case cases
 
 // while ----------------------------------------------------------------------
 
-while_stmt  : while_exp stmt_full {stmt_emit_inline(while_stmt());}
+while_stmt  : while_exp stmt_full {stmt_append(while_stmt());}
 while_exp   : while_intro '(' exp ')' {while_expexp($3);}
 while_intro : WHILE               {while_expp();}
-break      : BREAK ';'                     {stmt_emit_inline(exec_break());}
+break      : BREAK ';'                     {stmt_append(exec_break());}
 
 // assignments ----------------------------------------------------------------
 
            // standard assignment
-assignment : ID  '=' exp ';'                          {stmt_emit_inline(stmt_assign($1, $3));}
+assignment : ID  '=' exp ';'                          {stmt_append(stmt_assign($1, $3));}
            // increment
-           | ID                          PPLUS ';'    {stmt_emit_inline(stmt_pplus($1, NULL, NULL));}
-           | ID  '[' exp ']'             PPLUS ';'    {stmt_emit_inline(stmt_pplus($1, $3,   NULL));}
-           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {stmt_emit_inline(stmt_pplus($1, $3,   $6  ));}
+           | ID                          PPLUS ';'    {stmt_append(stmt_pplus($1, NULL, NULL));}
+           | ID  '[' exp ']'             PPLUS ';'    {stmt_append(stmt_pplus($1, $3,   NULL));}
+           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {stmt_append(stmt_pplus($1, $3,   $6  ));}
            // regular array
-           | ID  '[' exp ']'  '='     exp ';'         {stmt_emit_inline(stmt_array_assign($1, $3, NULL, $6, 0));}
+           | ID  '[' exp ']'  '='     exp ';'         {stmt_append(stmt_array_assign($1, $3, NULL, $6, 0));}
            // reversed array
-           | ID  '[' exp ')'  '='     exp ';'         {stmt_emit_inline(stmt_array_assign($1, $3, NULL, $6, 1));}
+           | ID  '[' exp ')'  '='     exp ';'         {stmt_append(stmt_array_assign($1, $3, NULL, $6, 1));}
            // 2D array
-           | ID  '[' exp ']' '[' exp ']' '=' exp ';'  {stmt_emit_inline(stmt_array_assign($1, $3, $6,   $9, 0));}
+           | ID  '[' exp ']' '[' exp ']' '=' exp ';'  {stmt_append(stmt_array_assign($1, $3, $6,   $9, 0));}
            // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
-           | ID '#'     '|' ID '|' ID BRA ';'                    {stmt_emit_inline(stmt_dirac_Mv   ($1, $4, $6));}        // A # |B|a>
-           | ID '#' exp '|' ID BRA ';'                           {stmt_emit_inline(stmt_dirac_cv   ($1, $3, $5));}        // a # c|b>
-           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {stmt_emit_inline(stmt_dirac_apcb ($1, $4, $7, $9));}    // a # |b> + c|d>
-           | ID '#'     '|' ID BRA KET  ID '|' ';'               {stmt_emit_inline(stmt_dirac_vvt  ($1, $4, $7));}        // A # |a><b|
-           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {stmt_emit_inline(stmt_dirac_Mmvvt($1, $4, $8, $11));}   // A # B - |a><b|
-           | ID '#' exp '|' ID '|' ';'                           {stmt_emit_inline(stmt_dirac_cM   ($1, $3, $5));}        // A # c|B|
-           | ID '#' exp     EYE ';'                              {stmt_emit_inline(stmt_dirac_cI   ($1, $3));}            // A # c|I|
-           | ID '#'         VZERO ';'                            {stmt_emit_inline(stmt_dirac_v0   ($1));}                // a # |0>
-           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {stmt_emit_inline(stmt_dirac_cvin ($1, $3, $7));}        // a # |in(0)>
-           | ID '#' exp '-' '>' '|' ID BRA ';'                   {stmt_emit_inline(stmt_dirac_shift($1, $3, $7));}        // a # c -> |a>
+           | ID '#'     '|' ID '|' ID BRA ';'                    {stmt_append(stmt_dirac_Mv   ($1, $4, $6));}        // A # |B|a>
+           | ID '#' exp '|' ID BRA ';'                           {stmt_append(stmt_dirac_cv   ($1, $3, $5));}        // a # c|b>
+           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {stmt_append(stmt_dirac_apcb ($1, $4, $7, $9));}    // a # |b> + c|d>
+           | ID '#'     '|' ID BRA KET  ID '|' ';'               {stmt_append(stmt_dirac_vvt  ($1, $4, $7));}        // A # |a><b|
+           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {stmt_append(stmt_dirac_Mmvvt($1, $4, $8, $11));}   // A # B - |a><b|
+           | ID '#' exp '|' ID '|' ';'                           {stmt_append(stmt_dirac_cM   ($1, $3, $5));}        // A # c|B|
+           | ID '#' exp     EYE ';'                              {stmt_append(stmt_dirac_cI   ($1, $3));}            // A # c|I|
+           | ID '#'         VZERO ';'                            {stmt_append(stmt_dirac_v0   ($1));}                // a # |0>
+           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {stmt_append(stmt_dirac_cvin ($1, $3, $7));}        // a # |in(0)>
+           | ID '#' exp '-' '>' '|' ID BRA ';'                   {stmt_append(stmt_dirac_shift($1, $3, $7));}        // a # c -> |a>
 
 // expressions ----------------------------------------------------------------
 

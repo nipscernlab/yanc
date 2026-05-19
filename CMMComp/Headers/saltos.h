@@ -6,7 +6,7 @@
 
 // if/else --------------------------------------------------------------------
 // if_stmt / if_fim hand the freshly built STMT_IF back to the grammar, which
-// wraps it via stmt_emit_inline so it joins the enclosing body's stmt_list.
+// wraps it via stmt_append so it joins the enclosing body's stmt_list.
 
 void       if_exp   (expr_node *cond);   // if (cond) opens its pending STMT_IF
 stmt_node *if_stmt  (void);              // if without else (returns STMT_IF)

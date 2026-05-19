@@ -46,5 +46,5 @@ void dire_exec(char *dir, int id, int t)
         case  8: nuioou = ival             ; break;
     }
 
-    stmt_emit_inline(stmt_directive(dir, id));
+    stmt_append(stmt_directive(dir, id));
 }

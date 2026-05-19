@@ -180,7 +180,7 @@ void typecheck_expr(expr_node *n);   // bottom-up: fills n->type on composites
 // ----------------------------------------------------------------------------
 //
 // Each top-level statement reduces into a stmt_node and the grammar appends
-// it to the current body's STMT_BLOCK via stmt_emit_inline. The walker fires
+// it to the current body's STMT_BLOCK via stmt_append. The walker fires
 // at body close (func_ret / if_stmt / if_fim / while_stmt / end_switch) and
 // emits every kid in source order.
 
@@ -237,7 +237,7 @@ typedef enum {
 typedef struct stmt_node {
     stmt_kind kind;
     int       line;     // source line where the node was built (1-based)
-    int       emitted;  // walker no-ops when set; stmt_emit_inline marks the
+    int       emitted;  // walker no-ops when set; stmt_append marks the
                         // node after the inline emit so the scaffold-built
                         // STMT_BLOCK can be walked later without re-emitting
 
@@ -355,11 +355,13 @@ stmt_node *stmt_directive   (const char *dir, int id);
 stmt_node *stmt_func        (int func_id, stmt_node *body);
 
 // Body-list stack. stmt_list_open() pushes a fresh STMT_BLOCK; every
-// stmt_emit_inline call while the stack is non-empty records the just-built
-// stmt_node on the top block. stmt_list_close() pops the top block and
-// returns ownership to the caller. The walker (driven by the consumer that
-// closes a body) emits the block's children in source order, producing the
-// same assembly the textual emit_push_capture path used to produce.
+// stmt_append call records the just-built stmt_node on the top block.
+// stmt_list_close() pops the top block and returns ownership to the
+// caller. parse_init opens the bottom of the stack (the program-wide
+// list); the walker fires from prog_emit at `fim` and emits the block's
+// children in source order. Nested blocks (function body, if-then /
+// if-else, while body, switch body, case body) are pushed by their
+// opening reduce and popped by the matching closer.
 void       stmt_list_open       (void);
 stmt_node *stmt_list_close      (void);
 
@@ -392,6 +394,6 @@ void       stmt_free(stmt_node *n);
 // timing identical to the pre-fase-6 inline grammar actions while the rest
 // of the statement types are still inline. Will be replaced by per-body
 // stmt-list accumulation once every statement kind is migrated.
-void       stmt_emit_inline(stmt_node *n);
+void       stmt_append(stmt_node *n);
 
 #endif // YANC_AST_H

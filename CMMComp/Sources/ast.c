@@ -485,7 +485,7 @@ static expr ast_emit_expr_impl(expr_node *n)
 // ----------------------------------------------------------------------------
 //
 // Each top-level statement reduces into a stmt_node and the grammar appends
-// it to the current body's STMT_BLOCK via stmt_emit_inline. The walker fires
+// it to the current body's STMT_BLOCK via stmt_append. The walker fires
 // at body close (func_ret / if_stmt / if_fim / while_stmt / end_switch) and
 // emits every kid in source order.
 
@@ -1162,21 +1162,12 @@ void stmt_free(stmt_node *n)
     free(n);
 }
 
-void stmt_emit_inline(stmt_node *n)
+// Appends a stmt_node to the currently-open STMT_BLOCK. The stack always
+// has at least the global stmt_list opened by parse_init, so the top is
+// never empty - every reduce that builds a statement just parks the node
+// here and lets the walker (driven by `fim : prog` -> prog_emit, or by
+// an enclosing if_fim / while_stmt / end_switch closer) emit it later.
+void stmt_append(stmt_node *n)
 {
-    if (stmt_list_stack_n > 0)
-    {
-        // A body is open: defer codegen by parking the node on the top
-        // STMT_BLOCK. The body's closer (func_ret / if_fim / while_stmt /
-        // end_switch ...) walks the block and emits each kid in source order.
-        stmt_block_push(stmt_list_stack[stmt_list_stack_n - 1], n);
-    }
-    else
-    {
-        // No body active (a stmt reduces outside any function context): walk
-        // immediately so the emit reaches f_asm at parse time. Not exercised
-        // by the current grammar but cheap to keep as a safety net.
-        stmt_emit(n);
-        stmt_free(n);
-    }
+    stmt_block_push(stmt_list_stack[stmt_list_stack_n - 1], n);
 }

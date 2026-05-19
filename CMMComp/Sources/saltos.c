@@ -6,7 +6,7 @@
 // parser sees its parts. We push a partial stmt_node onto a pending stack at
 // the opening token, fill in the body / else / etc. as the inner statements
 // reduce, and pop the completed node at the closing reduce. The grammar then
-// hands the node to stmt_emit_inline, which appends it to the enclosing
+// hands the node to stmt_append, which appends it to the enclosing
 // stmt_list. The walker emits the cond, labels and body at body-close time.
 
 #include <stdlib.h>
