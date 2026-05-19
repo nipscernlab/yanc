@@ -113,6 +113,26 @@ typedef struct { char *label; char *bytes; int len; } strlit;
 static strlit strtab[STRLIT_MAX];
 static int    strtab_n = 0;
 
+// ---- function-pointer dispatch table ---------------------------------------
+// Every address-taken function gets an integer ID = its index here. A function
+// pointer holds that ID; an indirect call sets _fp_id and CALs _dispatch, which
+// CALs the matching function. (CAL takes an immediate target, hence the table.)
+#define FPTAB_MAX 256
+static char *fptab[FPTAB_MAX];
+static int   fptab_n = 0;
+
+static int fp_id_of(const char *name)
+{
+    for (int i = 0; i < fptab_n; i++) if (strcmp(fptab[i], name) == 0) return i;
+    return -1;
+}
+static void fp_add(const char *name)
+{
+    if (fp_id_of(name) >= 0) return;
+    if (fptab_n >= FPTAB_MAX) msg_internal("too many address-taken functions");
+    fptab[fptab_n++] = strdup(name);
+}
+
 // ---- forward decls ---------------------------------------------------------
 
 static void gen_expr (expr *e);
@@ -153,6 +173,47 @@ static void scan_strings_stmt(stmt *s)
     for (decl *d = s->decls; d; d = d->next) {
         scan_strings_expr(d->init);
         for (int i = 0; i < d->n_init; i++) scan_strings_expr(d->init_list[i]);
+    }
+}
+
+// ---- address-taken-function pre-scan ---------------------------------------
+// Any function name used as a value (not as the immediate callee of a direct
+// call) is address-taken and needs a dispatch-table slot.
+
+static void scan_fp_stmt(stmt *s);
+
+static void scan_fp_expr(expr *e)
+{
+    if (!e) return;
+    if (e->kind == E_CALL) {
+        // a direct call's callee (a plain function name) is NOT address-taken
+        if (e->a && e->a->kind == E_IDENT) {
+            sym *s = st_find(e->a->sval);
+            if (!s || s->kind != SK_FUNC) scan_fp_expr(e->a);   // indirect target var
+        } else {
+            scan_fp_expr(e->a);
+        }
+        for (int i = 0; i < e->n_args; i++) scan_fp_expr(e->args[i]);
+        return;
+    }
+    if (e->kind == E_IDENT) {
+        sym *s = st_find(e->sval);
+        if (s && s->kind == SK_FUNC) fp_add(e->sval);
+        return;
+    }
+    scan_fp_expr(e->a); scan_fp_expr(e->b); scan_fp_expr(e->c);
+    for (int i = 0; i < e->n_args; i++) scan_fp_expr(e->args[i]);
+}
+
+static void scan_fp_stmt(stmt *s)
+{
+    if (!s) return;
+    scan_fp_expr(s->e1); scan_fp_expr(s->e2); scan_fp_expr(s->e3);
+    scan_fp_stmt(s->body); scan_fp_stmt(s->body2); scan_fp_stmt(s->init_stmt);
+    for (int i = 0; i < s->n_items; i++) scan_fp_stmt(s->items[i]);
+    for (decl *d = s->decls; d; d = d->next) {
+        scan_fp_expr(d->init);
+        for (int i = 0; i < d->n_init; i++) scan_fp_expr(d->init_list[i]);
     }
 }
 
@@ -219,7 +280,8 @@ static type *infer_type(expr *e)
             if (s) e->etype = s->stype;
             else { msg_error(e->line, "undefined function '%s'", fn); }
         } else {
-            infer_type(e->a);
+            // indirect call via (*fp)(...) — the callee holds a function ID, not
+            // a dereferenceable pointer, so don't type-check the deref itself.
             e->etype = t_int();
         }
         break;
@@ -416,6 +478,13 @@ static void gen_expr(expr *e)
     case E_IDENT: {
         sym *s = st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
+        if (s->kind == SK_FUNC) {
+            // function used as a value -> its dispatch-table ID (function ptr)
+            int id = fp_id_of(e->sval);
+            if (id < 0) msg_internal("function '%s' not in dispatch table", e->sval);
+            emit("LOD %d", id);
+            return;
+        }
         if (s->stype && s->stype->kind == TY_ARRAY) {
             // array decays to base address
             if (s->kind == SK_PARAM) emit("LOD %s", s->asm_name);
@@ -681,7 +750,7 @@ static void gen_expr(expr *e)
         return;
 
     case E_CALL: {
-        // builtins: in(port), out(port, val)
+        // direct call to a named function (or in()/out() builtins)
         if (e->a->kind == E_IDENT) {
             const char *fn = e->a->sval;
             if (!strcmp(fn, "in")) {
@@ -696,16 +765,38 @@ static void gen_expr(expr *e)
                 emit("OUT %ld", e->args[0]->ival); return;
             }
             sym *s = st_find(fn);
-            if (!s || s->kind != SK_FUNC) msg_error(e->line, "undefined function '%s'", fn);
-            for (int i = 0; i < e->n_args; i++) {
-                gen_expr(e->args[i]);
-                emit("PSH");
+            if (s && s->kind == SK_FUNC) {
+                for (int i = 0; i < e->n_args; i++) { gen_expr(e->args[i]); emit("PSH"); }
+                emit("CAL %s", s->asm_name);
+                return;
             }
-            emit("CAL %s", s->asm_name);
+            // fall through: callee is a variable holding a function ID -> indirect
+        }
+        // indirect call: callee is a function-pointer value (a variable, or *fp).
+        // Inline the dispatch as a chain of direct CALs guarded by EQU/JIZ. Each
+        // CAL is a depth-1 call straight from this caller (the same shape as a
+        // normal call), so the target's RET returns here — avoiding the nested
+        // CAL-under-conditional that the prefetch mishandles.
+        {
+            expr *fpv = (e->a->kind == E_DEREF) ? e->a->a : e->a;
+            for (int i = 0; i < e->n_args; i++) { gen_expr(e->args[i]); emit("PSH"); }
+            gen_expr(fpv);                          // acc = function ID
+            emit("SET _fp_id");
+            char *done = fresh_label("ic_done");
+            for (int i = 0; i < fptab_n; i++) {
+                char *skip = fresh_label("ic_s");
+                emit("LOD _fp_id");
+                emit("EQU %d", i);                  // 1 if this ID matches
+                emit("JIZ %s", skip);               // no match -> next candidate
+                emit("CAL %s", fptab[i]);           // match -> direct (depth-1) call
+                emit("JMP %s", done);
+                emit("@%s NOP", skip);
+                free(skip);
+            }
+            emit("@%s NOP", done);                  // result (if any) left in acc
+            free(done);
             return;
         }
-        msg_error(e->line, "indirect function calls not supported in v1");
-        return;
     }
     }
     msg_internal("unhandled expr kind %d", e->kind);
@@ -1085,7 +1176,7 @@ static void write_cmm_log(const char *tmp_dir)
 void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 {
     out_f = out_file;
-    ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0;
+    ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
 
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
@@ -1104,12 +1195,13 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     }
     if (!has_main) msg_error(0, "program has no main() function");
 
-    // pre-scan every function body and global initialiser for string literals,
-    // assigning each a global label before any codegen emits a reference.
-    for (int i = 0; i < u->n_funcs; i++) scan_strings_stmt(u->funcs[i]->body);
+    // pre-scan every function body and global initialiser for string literals
+    // and address-taken functions before any codegen emits a reference.
+    for (int i = 0; i < u->n_funcs; i++) { scan_strings_stmt(u->funcs[i]->body); scan_fp_stmt(u->funcs[i]->body); }
     for (int i = 0; i < u->n_globals; i++) {
         scan_strings_expr(u->globals[i]->init);
-        for (int k = 0; k < u->globals[i]->n_init; k++) scan_strings_expr(u->globals[i]->init_list[k]);
+        scan_fp_expr(u->globals[i]->init);
+        for (int k = 0; k < u->globals[i]->n_init; k++) { scan_strings_expr(u->globals[i]->init_list[k]); scan_fp_expr(u->globals[i]->init_list[k]); }
     }
 
     emit_header(u);

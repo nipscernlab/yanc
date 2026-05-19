@@ -359,6 +359,11 @@ init_declarator:
           d->init_file = $4;
           $$ = d;
       }
+    | '(' '*' IDENT ')' '(' param_list ')' {
+          /* function-pointer variable `ret (*fp)(params)` — held as an int
+             function ID; the param signature is accepted but not enforced */
+          $$ = ast_decl(t_int(), $3, NULL, yylineno);
+      }
     | pointers IDENT '(' param_list ')' {
           /* function declaration (prototype) — register, attach signature */
           type *ret = apply_pointers(cur_base, $1);
@@ -427,8 +432,11 @@ function_def:
 
 param_list:
       /* empty */                            { $$.head = NULL; $$.n = 0; }
-    | KW_VOID                                { $$.head = NULL; $$.n = 0; }
-    | non_empty_param_list                   { $$ = $1; }
+    | non_empty_param_list                   {
+          /* `(void)` parses as a single abstract void param — normalise to 0 */
+          if ($1.n == 1 && $1.head->dtype && $1.head->dtype->kind == TY_VOID) { $$.head = NULL; $$.n = 0; }
+          else $$ = $1;
+      }
     ;
 
 non_empty_param_list:
@@ -444,6 +452,14 @@ param_declarator:
           type *t = apply_pointers($1, $2);
           t = build_array_type(t, $4.dims, $4.n);
           $$ = ast_decl(t, $3, NULL, yylineno);
+      }
+    | base_type pointers {
+          /* abstract (unnamed) parameter — e.g. the `int` in `int (*f)(int)` */
+          $$ = ast_decl(apply_pointers($1, $2), "_anon", NULL, yylineno);
+      }
+    | base_type '(' '*' IDENT ')' '(' param_list ')' {
+          /* function-pointer parameter — int function ID */
+          $$ = ast_decl(t_int(), $4, NULL, yylineno);
       }
     ;
 
