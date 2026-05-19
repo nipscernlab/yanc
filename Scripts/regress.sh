@@ -110,6 +110,16 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     echo "==> building cmmcomp + appcomp + asmcomp"
     mkdir -p "$BIN_DIR"
 
+    # Wipe any stale binaries first: a silently-failing gcc must NOT leave the
+    # previous build in place to fool the regress into testing dead code.
+    rm -f "$CMMCOMP" "$APPCOMP" "$ASMCOMP"
+
+    # `set -e` here so each tool's non-zero exit aborts the script. Without
+    # this, a gcc -Werror failure would print to the terminal but the regress
+    # would happily continue and run all examples against the (now-missing)
+    # binary, hiding the real problem.
+    set -e
+
     pushd "$ROOT/CMMComp/Sources" >/dev/null
     bison -y -d CMMComp.y
     flex CMMComp.l
@@ -135,6 +145,8 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         hdl.c simulacao.c array.c messages.c args.c
     rm -f ASMComp.c
     popd >/dev/null
+
+    set +e
 fi
 
 # ---- 2. run on each example and compare -----------------------------------

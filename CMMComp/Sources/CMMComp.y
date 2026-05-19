@@ -328,9 +328,9 @@ assignment : ID  '=' exp ';'                          {stmt_emit_inline(stmt_ass
 
 exp:       terminal                           {$$ = $1;}
          // arrays
-         | ID '[' exp ']'                     {$$ = expr_array_index(v_type[$1], $1, 0, $3, NULL);}
-         | ID '[' exp ')'                     {$$ = expr_array_index(v_type[$1], $1, 1, $3, NULL);}
-         | ID '[' exp ']' '[' exp ']'         {$$ = expr_array_index(v_type[$1], $1, 0, $3, $6  );}
+         | ID '[' exp ']'                     {$$ = expr_array_index(v_table[$1].type, $1, 0, $3, NULL);}
+         | ID '[' exp ')'                     {$$ = expr_array_index(v_table[$1].type, $1, 1, $3, NULL);}
+         | ID '[' exp ']' '[' exp ']'         {$$ = expr_array_index(v_table[$1].type, $1, 0, $3, $6  );}
          // std library that returns values
          | std_in                             {$$ = $1;}
          | std_fin                            {$$ = $1;}
@@ -356,9 +356,9 @@ exp:       terminal                           {$$ = $1;}
          |    '-' exp                         {$$ = expr_unop(OP_NEG, 0, $2);}
          |    '!' exp                         {$$ = expr_unop(OP_LIN, 0, $2);}
          |    '~' exp                         {$$ = expr_unop(OP_INV, 0, $2);}
-         | ID                         PPLUS   {$$ = expr_pplus(v_type[$1], $1, NULL, NULL);}
-         | ID '[' exp ']'             PPLUS   {$$ = expr_pplus(v_type[$1], $1, $3,   NULL);}
-         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = expr_pplus(v_type[$1], $1, $3,   $6  );}
+         | ID                         PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, NULL, NULL);}
+         | ID '[' exp ']'             PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, $3,   NULL);}
+         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, $3,   $6  );}
          // shift operators
          | exp  SHIFTL exp                    {$$ = expr_binop(OP_SHL,  0, $1, $3);}
          | exp  SHIFTR exp                    {$$ = expr_binop(OP_SHR,  0, $1, $3);}
@@ -384,8 +384,8 @@ exp:       terminal                           {$$ = $1;}
          | exp  DIF    exp                    {$$ = expr_binop(OP_NE,  0, $1, $3);}
          // linear algebra with exp return (Dirac notation)
          | KET ID '|' ID BRA                  {$$ = expr_inner(0,
-                                                            expr_var(v_type[$2], $2),
-                                                            expr_var(v_type[$4], $4));}
+                                                            expr_var(v_table[$2].type, $2),
+                                                            expr_var(v_table[$4].type, $4));}
 
 // terminals used in reductions for expressions -------------------------------
 // Pure tree-construction: no emit, no walker call. The expression's emit
@@ -397,7 +397,7 @@ terminal : INUM                               {$$ = expr_lit(1, $1);}
          | FNUM                               {$$ = expr_lit(2, $1);}
          | CNUM                               {$$ = expr_lit(5, $1);}
          // variables
-         | ID                                 {$$ = expr_var(v_type[$1], $1);}
+         | ID                                 {$$ = expr_var(v_table[$1].type, $1);}
 
 %%
 
