@@ -9,6 +9,7 @@ Seno       68
 Sqrt       84
 ZeroCross  140
 algsimp    30
+ctrl_flow  106
 dirac_assign 177
 empty_call 16
 func_combos 68

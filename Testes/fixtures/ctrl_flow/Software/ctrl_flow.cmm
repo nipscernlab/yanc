@@ -1,0 +1,134 @@
+#PRNAME ctrl_flow
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Control-flow grammar coverage. Each block exercises one combination of
+// if / else / while:
+//   1. if without else, condition true        -> body fires
+//   2. if without else, condition false       -> body skipped
+//   3. if-else, condition true                -> then branch
+//   4. if-else, condition false               -> else branch
+//   5. if nested inside another if's then     -> two-level then nesting
+//   6. if nested inside an else                -> else->if pattern
+//   7. while inside if                         -> loop emitted in the then body
+//   8. if inside while                         -> if emitted in the loop body
+//   9. while inside while                      -> nested loops, distinct labels
+//  10. break inside while (under if)           -> early exit from loop
+//
+// Literal conditions (if (1) / if (0)) keep the output deterministic so the
+// vvp simulation locks down BOTH the asm shape and the runtime semantics.
+
+void main()
+{
+    while (1)
+    {
+        // 1. if-without-else, taken
+        if (1)
+        {
+            out(0, 11);
+        }
+
+        // 2. if-without-else, not taken
+        if (0)
+        {
+            out(0, 12);
+        }
+
+        // 3. if-else, then branch
+        if (1)
+        {
+            out(0, 21);
+        }
+        else
+        {
+            out(0, 22);
+        }
+
+        // 4. if-else, else branch
+        if (0)
+        {
+            out(0, 31);
+        }
+        else
+        {
+            out(0, 32);
+        }
+
+        // 5. nested if in then
+        if (1)
+        {
+            if (1)
+            {
+                out(0, 41);
+            }
+        }
+
+        // 6. nested if in else
+        if (0)
+        {
+            out(0, 51);
+        }
+        else
+        {
+            if (1)
+            {
+                out(0, 52);
+            }
+        }
+
+        // 7. while inside if
+        if (1)
+        {
+            int wc = 3;
+            while (wc)
+            {
+                out(0, 60 + wc);
+                wc = wc - 1;
+            }
+        }
+
+        // 8. if inside while
+        int ic = 2;
+        while (ic)
+        {
+            if (ic)
+            {
+                out(0, 70 + ic);
+            }
+            ic = ic - 1;
+        }
+
+        // 9. nested while
+        int outer = 2;
+        while (outer)
+        {
+            int inner = 2;
+            while (inner)
+            {
+                out(0, 80 + outer * 10 + inner);
+                inner = inner - 1;
+            }
+            outer = outer - 1;
+        }
+
+        // 10. break inside while (gated by an if)
+        int bc = 5;
+        while (bc)
+        {
+            if (bc == 3)
+            {
+                break;
+            }
+            out(0, 100 + bc);
+            bc = bc - 1;
+        }
+
+        out(0, 0);    // per-iteration sentinel
+    }
+}
