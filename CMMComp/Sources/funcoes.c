@@ -8,7 +8,6 @@
 
 // local includes
 #include "..\Headers\ast.h"
-#include "..\Headers\emit.h"
 #include "..\Headers\t2t.h"
 #include "..\Headers\labels.h"
 #include "..\Headers\global.h"
