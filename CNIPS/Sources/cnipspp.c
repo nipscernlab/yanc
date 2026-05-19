@@ -21,23 +21,54 @@
 static const char *incdirs[MAX_INCDIRS];
 static int         n_incdirs = 0;
 
-typedef struct macro { char *name; char *body; struct macro *next; } macro;
+#define MAX_MPARAMS 16
+typedef struct macro {
+    char *name;
+    char *body;
+    int   is_func;                 // 1 = function-like macro
+    char *params[MAX_MPARAMS];
+    int   n_params;
+    struct macro *next;
+} macro;
 static macro *macros = NULL;
+
+static macro *macro_find(const char *name)
+{
+    for (macro *m = macros; m; m = m->next) if (strcmp(m->name, name) == 0) return m;
+    return NULL;
+}
+
+static void macro_free_params(macro *m)
+{
+    for (int i = 0; i < m->n_params; i++) free(m->params[i]);
+    m->n_params = 0; m->is_func = 0;
+}
+
+static macro *macro_get_or_new(const char *name)
+{
+    macro *m = macro_find(name);
+    if (m) { free(m->body); m->body = NULL; macro_free_params(m); return m; }
+    m = calloc(1, sizeof(macro));
+    m->name = strdup(name);
+    m->next = macros;
+    macros = m;
+    return m;
+}
 
 static void macro_define(const char *name, const char *body)
 {
-    for (macro *m = macros; m; m = m->next) {
-        if (strcmp(m->name, name) == 0) {
-            free(m->body);
-            m->body = strdup(body ? body : "");
-            return;
-        }
-    }
-    macro *m = malloc(sizeof(macro));
-    m->name = strdup(name);
+    macro *m = macro_get_or_new(name);
     m->body = strdup(body ? body : "");
-    m->next = macros;
-    macros = m;
+    m->is_func = 0;
+}
+
+static void macro_define_func(const char *name, char **params, int np, const char *body)
+{
+    macro *m = macro_get_or_new(name);
+    m->body = strdup(body ? body : "");
+    m->is_func = 1;
+    m->n_params = np;
+    for (int i = 0; i < np; i++) m->params[i] = strdup(params[i]);
 }
 
 static void macro_undef(const char *name)
@@ -47,7 +78,7 @@ static void macro_undef(const char *name)
         if (strcmp((*pp)->name, name) == 0) {
             macro *dead = *pp;
             *pp = dead->next;
-            free(dead->name); free(dead->body); free(dead);
+            free(dead->name); free(dead->body); macro_free_params(dead); free(dead);
             return;
         }
         pp = &(*pp)->next;
@@ -56,8 +87,8 @@ static void macro_undef(const char *name)
 
 static const char *macro_lookup(const char *name)
 {
-    for (macro *m = macros; m; m = m->next) if (strcmp(m->name, name) == 0) return m->body;
-    return NULL;
+    macro *m = macro_find(name);
+    return m ? (m->body ? m->body : "") : NULL;
 }
 
 #define MAX_COND 64
@@ -74,46 +105,122 @@ static int cond_active(void)
 static int is_ident_start(char c) { return isalpha((unsigned char)c) || c == '_'; }
 static int is_ident_cont (char c) { return isalnum((unsigned char)c) || c == '_'; }
 
-static char *expand_line(const char *line)
-{
-    size_t cap = strlen(line) + 1, len = 0;
-    char *buf = malloc(cap);
-    buf[0] = 0;
+// ---- growable string buffer ------------------------------------------------
 
-    const char *p = line;
+typedef struct { char *p; size_t len, cap; } sbuf;
+static void sb_init(sbuf *b) { b->cap = 64; b->p = malloc(b->cap); b->p[0] = 0; b->len = 0; }
+static void sb_putc(sbuf *b, char c) {
+    if (b->len + 2 >= b->cap) { b->cap *= 2; b->p = realloc(b->p, b->cap); }
+    b->p[b->len++] = c; b->p[b->len] = 0;
+}
+static void sb_puts(sbuf *b, const char *s) { while (*s) sb_putc(b, *s++); }
+static void sb_putn(sbuf *b, const char *s, size_t n) { for (size_t i = 0; i < n; i++) sb_putc(b, s[i]); }
+
+static char *dupn(const char *s, size_t n) { char *r = malloc(n + 1); memcpy(r, s, n); r[n] = 0; return r; }
+
+// trim leading/trailing whitespace, returning a fresh string
+static char *dup_trim(const char *s, size_t n)
+{
+    while (n > 0 && (*s == ' ' || *s == '\t')) { s++; n--; }
+    while (n > 0 && (s[n-1] == ' ' || s[n-1] == '\t')) n--;
+    return dupn(s, n);
+}
+
+static char *expand_str(const char *src, int depth);
+
+// substitute call args into a function-macro body (args are pre-expanded)
+static char *macro_subst(macro *m, char **args, int na)
+{
+    char *eargs[MAX_MPARAMS];
+    for (int i = 0; i < na && i < MAX_MPARAMS; i++) eargs[i] = expand_str(args[i], 1);
+
+    sbuf out; sb_init(&out);
+    const char *b = m->body;
+    while (*b) {
+        if (*b == '"' || *b == '\'') {
+            char q = *b; sb_putc(&out, *b++);
+            while (*b && *b != q) { if (*b == '\\' && b[1]) sb_putc(&out, *b++); sb_putc(&out, *b++); }
+            if (*b) sb_putc(&out, *b++);
+            continue;
+        }
+        if (is_ident_start(*b)) {
+            const char *s = b; while (is_ident_cont(*b)) b++;
+            size_t l = b - s;
+            char id[256]; size_t cl = l < sizeof(id)-1 ? l : sizeof(id)-1;
+            memcpy(id, s, cl); id[cl] = 0;
+            int pi = -1;
+            for (int i = 0; i < m->n_params; i++) if (strcmp(id, m->params[i]) == 0) { pi = i; break; }
+            if (pi >= 0 && pi < na) sb_puts(&out, eargs[pi]);
+            else sb_putn(&out, s, l);
+            continue;
+        }
+        sb_putc(&out, *b++);
+    }
+    for (int i = 0; i < na && i < MAX_MPARAMS; i++) free(eargs[i]);
+    return out.p;
+}
+
+// fully expand object- and function-like macros in src; returns malloc'd result
+static char *expand_str(const char *src, int depth)
+{
+    sbuf out; sb_init(&out);
+    if (depth > 64) { sb_puts(&out, src); return out.p; }   // recursion guard
+
+    const char *p = src;
     while (*p) {
         if (*p == '"' || *p == '\'') {
-            char q = *p;
-            const char *start = p++;
-            while (*p && *p != q) { if (*p == '\\' && p[1]) p++; p++; }
-            if (*p) p++;
-            size_t sz = p - start;
-            if (len + sz + 1 >= cap) { cap = (len + sz + 1) * 2; buf = realloc(buf, cap); }
-            memcpy(buf + len, start, sz); len += sz; buf[len] = 0;
+            char q = *p; sb_putc(&out, *p++);
+            while (*p && *p != q) { if (*p == '\\' && p[1]) sb_putc(&out, *p++); sb_putc(&out, *p++); }
+            if (*p) sb_putc(&out, *p++);
             continue;
         }
         if (is_ident_start(*p)) {
-            const char *s = p;
-            while (is_ident_cont(*p)) p++;
+            const char *s = p; while (is_ident_cont(*p)) p++;
             size_t idlen = p - s;
-            char idbuf[256];
-            if (idlen >= sizeof(idbuf)) idlen = sizeof(idbuf) - 1;
-            memcpy(idbuf, s, idlen); idbuf[idlen] = 0;
-            const char *body = macro_lookup(idbuf);
-            if (body) {
-                size_t bl = strlen(body);
-                if (len + bl + 1 >= cap) { cap = (len + bl + 1) * 2; buf = realloc(buf, cap); }
-                memcpy(buf + len, body, bl); len += bl; buf[len] = 0;
-            } else {
-                if (len + idlen + 1 >= cap) { cap = (len + idlen + 1) * 2; buf = realloc(buf, cap); }
-                memcpy(buf + len, s, idlen); len += idlen; buf[len] = 0;
+            char id[256]; size_t cl = idlen < sizeof(id)-1 ? idlen : sizeof(id)-1;
+            memcpy(id, s, cl); id[cl] = 0;
+            macro *m = macro_find(id);
+            if (m && m->is_func) {
+                const char *q = p; while (*q == ' ' || *q == '\t') q++;
+                if (*q == '(') {
+                    q++;                               // consume '('
+                    char *args[MAX_MPARAMS]; int na = 0;
+                    int dep = 1; const char *as = q;
+                    while (*q && dep > 0) {
+                        if (*q == '(') dep++;
+                        else if (*q == ')') { dep--; if (dep == 0) break; }
+                        else if (*q == ',' && dep == 1) {
+                            if (na < MAX_MPARAMS) args[na++] = dup_trim(as, q - as);
+                            as = q + 1;
+                        }
+                        q++;
+                    }
+                    if (na < MAX_MPARAMS) args[na++] = dup_trim(as, q - as);
+                    if (*q == ')') q++;
+                    // FOO() with a 0-param macro: drop the single empty arg
+                    if (m->n_params == 0 && na == 1 && args[0][0] == 0) { free(args[0]); na = 0; }
+                    char *subst = macro_subst(m, args, na);
+                    char *rec   = expand_str(subst, depth + 1);
+                    sb_puts(&out, rec);
+                    free(rec); free(subst);
+                    for (int i = 0; i < na; i++) free(args[i]);
+                    p = q;
+                    continue;
+                }
+                sb_putn(&out, s, idlen);               // func macro name without '(' — literal
+                continue;
             }
+            if (m) {                                    // object-like
+                char *rec = expand_str(m->body ? m->body : "", depth + 1);
+                sb_puts(&out, rec); free(rec);
+                continue;
+            }
+            sb_putn(&out, s, idlen);
             continue;
         }
-        if (len + 2 >= cap) { cap = (len + 2) * 2; buf = realloc(buf, cap); }
-        buf[len++] = *p++; buf[len] = 0;
+        sb_putc(&out, *p++);
     }
-    return buf;
+    return out.p;
 }
 
 static FILE *out_f;
@@ -203,15 +310,34 @@ static void process_file(const char *path)
                 free(orig); continue;
             }
 
-            // ---- #define ----
+            // ---- #define (object-like or function-like) ----
             if (strncmp(p, "define", 6) == 0 && (p[6] == ' ' || p[6] == '\t')) {
                 if (!cond_active()) { free(orig); continue; }
                 p += 6; while (*p == ' ' || *p == '\t') p++;
                 char name[128]; int i = 0;
                 while ((isalnum((unsigned char)*p) || *p == '_') && i < (int)sizeof(name)-1) name[i++] = *p++;
                 name[i] = 0;
-                while (*p == ' ' || *p == '\t') p++;
-                macro_define(name, p);
+                if (*p == '(') {
+                    // function-like: '(' must be glued to the name (no space)
+                    p++;
+                    char *params[MAX_MPARAMS]; int np = 0;
+                    while (*p && *p != ')') {
+                        while (*p == ' ' || *p == '\t') p++;
+                        char pn[64]; int j = 0;
+                        while ((isalnum((unsigned char)*p) || *p == '_') && j < (int)sizeof(pn)-1) pn[j++] = *p++;
+                        pn[j] = 0;
+                        if (j > 0 && np < MAX_MPARAMS) params[np++] = strdup(pn);
+                        while (*p == ' ' || *p == '\t') p++;
+                        if (*p == ',') p++;
+                    }
+                    if (*p == ')') p++;
+                    while (*p == ' ' || *p == '\t') p++;
+                    macro_define_func(name, params, np, p);
+                    for (int k = 0; k < np; k++) free(params[k]);
+                } else {
+                    while (*p == ' ' || *p == '\t') p++;
+                    macro_define(name, p);
+                }
                 free(orig); continue;
             }
 
@@ -271,7 +397,7 @@ static void process_file(const char *path)
         }
 
         if (cond_active()) {
-            char *expanded = expand_line(line);
+            char *expanded = expand_str(line, 0);
             fputs(expanded, out_f);
             free(expanded);
         }
