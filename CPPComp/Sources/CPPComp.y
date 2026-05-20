@@ -276,6 +276,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM KW_NEW KW_DELETE
 %token KW_CLASS KW_THIS KW_PUBLIC KW_PRIVATE KW_PROTECTED
+%token KW_NAMESPACE KW_USING TOK_SCOPE
 %token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT KW_GENERIC
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -284,6 +285,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token TOK_AMPEQ TOK_PIPEEQ TOK_CARETEQ TOK_SHLEQ TOK_SHREQ
 %token TOK_ARROW TOK_ELLIPSIS
 
+%type <sval>  qualified_id
 %type <typ>   type_specifier struct_specifier class_specifier union_specifier enum_specifier base_type decl_specifiers
 %type <intval> pointers storage_or_qual_list storage_or_qual
 %type <intval> builtin_spec builtin_type_seq
@@ -318,8 +320,19 @@ translation_unit:
 external_decl:
       function_def
     | declaration                   { /* declaration's action adds it to globals (or registers typedef) */ }
+    | KW_NAMESPACE IDENT '{' translation_unit '}' { free($2); }   /* transparent namespace */
+    | KW_NAMESPACE IDENT '{' '}'                   { free($2); }
+    | KW_USING KW_NAMESPACE qualified_id ';'       { free($3); }  /* using-directive (no-op) */
+    | KW_USING KW_NAMESPACE IDENT ';'              { free($3); }
     | KW_STATIC_ASSERT '(' conditional_expr ',' STRING_LIT ')' ';' { check_static_assert($3, $5, yylineno); }
     | KW_STATIC_ASSERT '(' conditional_expr ')' ';'                { check_static_assert($3, NULL, yylineno); }
+    ;
+
+/* a namespace-qualified name N::x (or A::B::x); namespaces are transparent on
+   this target, so qualification collapses to the final name. */
+qualified_id:
+      IDENT TOK_SCOPE IDENT          { free($1); $$ = $3; }
+    | qualified_id TOK_SCOPE IDENT   { free($1); $$ = $3; }
     ;
 
 /* ----- declarations ------------------------------------------------------- */
@@ -393,6 +406,14 @@ type_specifier:
           if (!s || s->kind != SK_TYPEDEF) { msg_error(yylineno, "unknown type '%s'", $1); }
           $$ = s->stype;
           free($1);
+      }
+    | IDENT TOK_SCOPE TYPEDEF_NAME           {
+          /* namespace-qualified type N::Type (transparent -> resolve Type) */
+          free($1);
+          sym *s = st_find($3);
+          if (!s || s->kind != SK_TYPEDEF) { msg_error(yylineno, "unknown type '%s'", $3); }
+          $$ = s->stype;
+          free($3);
       }
     ;
 
@@ -1117,6 +1138,11 @@ primary_expr:
     | CHAR_LIT                               { $$ = ast_char_lit($1, yylineno); }
     | STRING_LIT                             { $$ = ast_string_lit($1, g_str_len, yylineno); }
     | '(' expr ')'                           { $$ = $2; }
+    | qualified_id                           {
+          sym *s = st_find($1);
+          if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); free($1); }
+          else $$ = ast_ident($1, yylineno);
+      }
     | KW_THIS                                { $$ = ast_ident(strdup("this"), yylineno); }
     | KW_GENERIC '(' assignment_expr ',' generic_assoc_list ')' {
           $$ = ast_generic($3, $5.ts, $5.es, $5.n, yylineno);

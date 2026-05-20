@@ -182,6 +182,8 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "sizeof"                 { return KW_SIZEOF;   }
 "new"                    { return KW_NEW;      }
 "delete"                 { return KW_DELETE;   }
+"namespace"              { return KW_NAMESPACE; }
+"using"                  { return KW_USING;    }
 "true"                   { yylval.ival = 1; return INT_LIT; }
 "false"                  { yylval.ival = 0; return INT_LIT; }
 "nullptr"                { yylval.ival = 0; return INT_LIT; }
@@ -247,6 +249,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "|="                     { return TOK_PIPEEQ; }
 "^="                     { return TOK_CARETEQ;}
 "->"                     { return TOK_ARROW;  }
+"::"                     { return TOK_SCOPE;  }
 "..."                    { return TOK_ELLIPSIS; }
 
   /* single-char punctuation, returned by literal ASCII value ----------- */
