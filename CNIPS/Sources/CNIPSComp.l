@@ -163,6 +163,8 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "return"                 { return KW_RETURN;   }
 "goto"                   { return KW_GOTO;     }
 
+"asm"                    { return KW_ASM;      }
+"__asm__"                { return KW_ASM;      }
 "struct"                 { return KW_STRUCT;   }
 "union"                  { return KW_UNION;    }
 "typedef"                { return KW_TYPEDEF;  }

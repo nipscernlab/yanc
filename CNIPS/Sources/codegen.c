@@ -1047,6 +1047,26 @@ static void gen_stmt(stmt *s)
         gen_stmt(s->body);
         return;
 
+    case S_ASM: {
+        // emit the inline-asm text verbatim, one .asm line per '\n'
+        const char *t = s->label ? s->label : "";
+        const char *start = t;
+        for (const char *p = t; ; p++) {
+            if (*p == '\n' || *p == 0) {
+                int n = (int)(p - start);
+                if (n > 0) {
+                    char buf[512];
+                    if (n >= (int)sizeof(buf)) n = sizeof(buf) - 1;
+                    memcpy(buf, start, n); buf[n] = 0;
+                    emit("%s", buf);     // "%s" -> no format-injection from user text
+                }
+                if (*p == 0) break;
+                start = p + 1;
+            }
+        }
+        return;
+    }
+
     case S_SWITCH: {
         // chain-of-ifs implementation: evaluate discriminant once into a temp,
         // emit one EQU per case, fall through naturally.

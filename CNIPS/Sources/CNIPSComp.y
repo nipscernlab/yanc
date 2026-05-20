@@ -121,7 +121,7 @@ static decl *make_decl(type *base, int stars, char *name, const int *dims, int n
 %token KW_VOID KW_INT KW_FLOAT KW_CHAR KW_UNSIGNED KW_SIGNED
 %token KW_IF KW_ELSE KW_WHILE KW_FOR KW_DO KW_SWITCH KW_CASE KW_DEFAULT
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
-%token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF
+%token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM
 %token KW_STATIC KW_EXTERN KW_CONST
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -498,6 +498,11 @@ stmt:
     | jump_stmt                              { $$ = $1; }
     | labeled_stmt                           { $$ = $1; }
     | expr_stmt                              { $$ = $1; }
+    | KW_ASM '(' STRING_LIT ')' ';'          {
+          /* basic inline assembly: the string is emitted verbatim into the
+             .asm (split on '\n'). Operands must use asm-level names. */
+          stmt *s = ast_stmt(S_ASM, yylineno); s->label = $3; $$ = s;
+      }
     ;
 
 compound_stmt:

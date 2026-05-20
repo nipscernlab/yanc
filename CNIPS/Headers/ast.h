@@ -71,7 +71,7 @@ typedef enum {
     S_IF, S_WHILE, S_DOWHILE, S_FOR,
     S_SWITCH, S_CASE, S_DEFAULT,
     S_BREAK, S_CONTINUE, S_RETURN, S_GOTO, S_LABEL,
-    S_DECL
+    S_DECL, S_ASM
 } stmt_kind;
 
 struct stmt {
