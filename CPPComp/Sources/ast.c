@@ -46,6 +46,19 @@ expr *ast_generic (expr *ctrl, type **ts, expr **es, int n, int line)
     expr *e = new_expr(E_GENERIC, line);
     e->a = ctrl; e->gtypes = ts; e->args = es; e->n_args = n; return e;
 }
+// new T / new T(args) / new T[count]: target_t=elem type, args=ctor args,
+// a=array-count expr (NULL for a scalar new).
+expr *ast_new(type *t, expr **args, int nargs, expr *count, int line)
+{
+    expr *e = new_expr(E_NEW, line);
+    e->target_t = t; e->args = args; e->n_args = nargs; e->a = count; return e;
+}
+// delete p / delete[] p: a=operand, ival=1 for the array form.
+expr *ast_delete(expr *p, int is_array, int line)
+{
+    expr *e = new_expr(E_DELETE, line);
+    e->a = p; e->ival = is_array; return e;
+}
 
 stmt *ast_stmt(stmt_kind k, int line)
 {

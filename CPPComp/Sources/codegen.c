@@ -284,6 +284,7 @@ static void scan_heap_expr(expr *e)
 {
     if (!e) return;
     if (e->kind == E_COMPOUND) { scan_heap_initz(e->cinit); return; }
+    if (e->kind == E_NEW || e->kind == E_DELETE) g_uses_heap = 1;
     if (e->kind == E_CALL && e->a && e->a->kind == E_IDENT &&
         (!strcmp(e->a->sval, "malloc") || !strcmp(e->a->sval, "free")))
         g_uses_heap = 1;
@@ -482,6 +483,8 @@ static type *infer_type(expr *e)
     case E_PREINC: case E_PREDEC: case E_POSTINC: case E_POSTDEC:
         e->etype = infer_type(e->a); break;
     case E_CAST: infer_type(e->a); e->etype = e->target_t; break;
+    case E_NEW:    e->etype = t_ptr(e->target_t); break;
+    case E_DELETE: infer_type(e->a); e->etype = t_void(); break;
     case E_COMPOUND: e->etype = e->target_t; break;
     case E_GENERIC: e->etype = infer_type(generic_select(e)); break;
     case E_SIZEOF_T: e->etype = t_int(); break;
@@ -1105,6 +1108,43 @@ static void gen_expr(expr *e)
             else if (type_is_float(from) && type_is_int(to)) emit("F2I");
             /* other casts are bit-reinterpret: no-op */
         }
+        return;
+    }
+
+    case E_NEW: {
+        type *t = e->target_t;
+        int words = type_size_words(t);
+        if (e->a) {                                   // new T[n] -> malloc(n*words)
+            gen_expr(e->a);
+            if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
+            emit("PSH"); emit("CAL malloc");
+            return;
+        }
+        emit("LOD %d", words); emit("PSH"); emit("CAL malloc");   // acc = ptr
+        if (t->kind == TY_STRUCT && t->tag) {
+            char *ctor = cg_mangle_method(t->tag, "ctor");
+            sym *cs = st_find(ctor);
+            if (cs && cs->kind == SK_FUNC) {
+                emit("PSH");                  // keep ptr (return value) at stack bottom
+                emit("PSH");                  // ptr as `this` (ctor pops it)
+                for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
+                emit("CAL %s", ctor);
+                emit("POP");                  // acc = the kept ptr
+            }
+            free(ctor);
+        }
+        return;
+    }
+    case E_DELETE: {
+        type *pt = infer_type(e->a);
+        type *t = pt ? pt->base : NULL;
+        if (!e->ival && t && t->kind == TY_STRUCT && t->tag) {
+            char *dtor = cg_mangle_method(t->tag, "dtor");
+            sym *ds = st_find(dtor);
+            if (ds && ds->kind == SK_FUNC) { gen_expr(e->a); emit("PSH"); emit("CAL %s", dtor); }
+            free(dtor);
+        }
+        gen_expr(e->a); emit("PSH"); emit("CAL free");
         return;
     }
 

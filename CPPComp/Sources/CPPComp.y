@@ -475,6 +475,25 @@ member:
       access_label
     | field_decl
     | method_def
+    | ctor_def
+    | dtor_def
+    ;
+
+/* constructor: `ClassName(params) { body }` — the class name lexes as a
+   TYPEDEF_NAME inside its own body. Lowered to method `Class__ctor`. */
+ctor_def:
+      TYPEDEF_NAME '(' param_list ')'
+          { method_enter(t_void(), "ctor", $3.head, $3.n); }
+      compound_stmt
+          { method_finish(t_void(), "ctor", $6); free($1); }
+    ;
+
+/* destructor: `~ClassName() { body }` -> method `Class__dtor`. */
+dtor_def:
+      '~' TYPEDEF_NAME '(' ')'
+          { method_enter(t_void(), "dtor", NULL, 0); }
+      compound_stmt
+          { method_finish(t_void(), "dtor", $6); free($2); }
     ;
 
 access_label:
@@ -1031,18 +1050,19 @@ unary_expr:
           $$ = ast_sizeof_t(t, yylineno);
       }
     | KW_NEW base_type pointers              {
-          /* new T  ->  (T*)malloc(sizeof(T))  (ctor wiring comes with classes) */
           type *t = apply_pointers($2, $3);
-          $$ = ast_cast(t_ptr(t), mk_call1("malloc", ast_sizeof_t(t, yylineno), yylineno), yylineno);
+          $$ = ast_new(t, NULL, 0, NULL, yylineno);          /* new T (default ctor) */
+      }
+    | KW_NEW base_type pointers '(' argument_list ')' {
+          type *t = apply_pointers($2, $3);
+          $$ = ast_new(t, $5.arr, $5.n, NULL, yylineno);     /* new T(args) */
       }
     | KW_NEW base_type pointers '[' expr ']' {
-          /* new T[n]  ->  (T*)malloc(n * sizeof(T)) */
           type *t = apply_pointers($2, $3);
-          expr *sz = ast_binop(OP_MUL, $5, ast_sizeof_t(t, yylineno), yylineno);
-          $$ = ast_cast(t_ptr(t), mk_call1("malloc", sz, yylineno), yylineno);
+          $$ = ast_new(t, NULL, 0, $5, yylineno);            /* new T[n] */
       }
-    | KW_DELETE cast_expr                    { $$ = mk_call1("free", $2, yylineno); }
-    | KW_DELETE '[' ']' cast_expr            { $$ = mk_call1("free", $4, yylineno); }
+    | KW_DELETE cast_expr                    { $$ = ast_delete($2, 0, yylineno); }
+    | KW_DELETE '[' ']' cast_expr            { $$ = ast_delete($4, 1, yylineno); }
     ;
 
 postfix_expr:
