@@ -855,6 +855,11 @@ cast_expr:
           type *t = apply_pointers($2, $3);
           $$ = ast_cast(t, $5, yylineno);
       }
+    | '(' base_type pointers ')' '{' init_item_list '}' {
+          /* C99 compound literal (struct/scalar/pointer type) */
+          type *t = apply_pointers($2, $3);
+          $$ = ast_compound(t, $6, yylineno);
+      }
     ;
 
 unary_expr:

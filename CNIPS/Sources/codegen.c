@@ -138,6 +138,7 @@ static void fp_add(const char *name)
 // ---- forward decls ---------------------------------------------------------
 
 static void gen_expr (expr *e);
+static void emit_initz(const char *base, int off, type *t, initz *z);
 static void gen_addr (expr *e);
 static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
@@ -147,6 +148,7 @@ static type *infer_type(expr *e);
 // ---- string-literal pre-scan (assigns each "..." a global label) -----------
 
 static void scan_strings_stmt(stmt *s);
+static void scan_strings_initz(initz *z);
 
 static void scan_strings_expr(expr *e)
 {
@@ -160,6 +162,7 @@ static void scan_strings_expr(expr *e)
         strtab[strtab_n].len   = e->slen;
         strtab_n++;
     }
+    if (e->kind == E_COMPOUND) { scan_strings_initz(e->cinit); return; }
     scan_strings_expr(e->a);
     scan_strings_expr(e->b);
     scan_strings_expr(e->c);
@@ -190,10 +193,12 @@ static void scan_strings_stmt(stmt *s)
 // call) is address-taken and needs a dispatch-table slot.
 
 static void scan_fp_stmt(stmt *s);
+static void scan_fp_initz(initz *z);
 
 static void scan_fp_expr(expr *e)
 {
     if (!e) return;
+    if (e->kind == E_COMPOUND) { scan_fp_initz(e->cinit); return; }
     if (e->kind == E_CALL) {
         // a direct call's callee (a plain function name) is NOT address-taken
         if (e->a && e->a->kind == E_IDENT) {
@@ -359,6 +364,7 @@ static type *infer_type(expr *e)
     case E_PREINC: case E_PREDEC: case E_POSTINC: case E_POSTDEC:
         e->etype = infer_type(e->a); break;
     case E_CAST: infer_type(e->a); e->etype = e->target_t; break;
+    case E_COMPOUND: e->etype = e->target_t; break;
     case E_SIZEOF_T: e->etype = t_int(); break;
     case E_SIZEOF_E: infer_type(e->a); e->etype = t_int(); break;
     case E_TERNARY: infer_type(e->a); infer_type(e->b); infer_type(e->c); e->etype = e->b->etype; break;
@@ -936,6 +942,21 @@ static void gen_expr(expr *e)
 
     case E_SIZEOF_T: emit_load_int(type_size_words(e->target_t)); return;
     case E_SIZEOF_E: emit_load_int(type_size_words(infer_type(e->a))); return;
+
+    case E_COMPOUND: {
+        // materialise an unnamed block, initialise it, and yield it: aggregates
+        // decay to the block's address; a scalar literal yields its value.
+        type *t = e->target_t;
+        char nm[32]; snprintf(nm, sizeof(nm), "_cl%d", ++label_n);
+        char *an = mangle_local(nm);
+        if (t->kind == TY_ARRAY) emit("#array %s %d %d", an, innermost_code(t), type_size_words(t));
+        else                     emit("#array %s 1 %d", an, type_size_words(t));
+        emit_initz(an, 0, t, e->cinit);
+        emit("LEA %s", an);
+        if (t->kind != TY_ARRAY && t->kind != TY_STRUCT) emit("LDA");  // scalar value
+        free(an);
+        return;
+    }
 
     case E_TERNARY: {
         char *else_l = fresh_label("ter_else");

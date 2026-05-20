@@ -27,7 +27,8 @@ typedef enum {
     E_SIZEOF_T,           // sizeof(T)
     E_SIZEOF_E,           // sizeof(expr)
     E_TERNARY,            // a ? b : c
-    E_COMMA               // a, b
+    E_COMMA,              // a, b
+    E_COMPOUND            // (T){ init }  — C99 compound literal
 } expr_kind;
 
 typedef enum {
@@ -58,8 +59,9 @@ struct expr {
     expr     *a, *b, *c; // generic children (lhs, rhs, third)
     expr    **args;      // CALL args
     int       n_args;
-    type     *target_t;  // CAST target / SIZEOF_T target
+    type     *target_t;  // CAST target / SIZEOF_T target / COMPOUND type
     char     *member;    // MEMBER / PMEMBER field name
+    struct initz *cinit; // COMPOUND literal initializer
 };
 
 // ----------------------------------------------------------------------------
@@ -168,6 +170,7 @@ expr *ast_deref    (expr *p, int line);
 expr *ast_xfix     (expr_kind k, expr *operand, int line);
 expr *ast_cast     (type *t, expr *e, int line);
 expr *ast_sizeof_t (type *t, int line);
+expr *ast_compound (type *t, struct initz *z, int line);   // (T){ init }
 expr *ast_sizeof_e (expr *e, int line);
 expr *ast_ternary  (expr *c, expr *a, expr *b, int line);
 expr *ast_comma    (expr *a, expr *b, int line);
