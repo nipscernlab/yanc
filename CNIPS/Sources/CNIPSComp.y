@@ -124,6 +124,70 @@ static type *resolve_builtin(int f)
     if (f & TS_CHAR)                 return (f & TS_UNSIGN) ? t_uint() : t_char();
     return (f & TS_UNSIGN) ? t_uint() : t_int();         // short/int/long/long long
 }
+
+// compile-time integer constant evaluator (for _Static_assert). Handles int/
+// char literals, sizeof(type) (= words on this target), enum constants, casts,
+// and the integer operators. Returns 0 if the expression isn't a constant.
+static int const_eval(expr *e, long *out)
+{
+    if (!e) return 0;
+    long a, b;
+    switch (e->kind) {
+    case E_INT_LIT: case E_CHAR_LIT: *out = e->ival; return 1;
+    case E_SIZEOF_T: *out = type_size_words(e->target_t); return 1;
+    case E_CAST:     return const_eval(e->a, out);
+    case E_IDENT: {
+        sym *s = st_find(e->sval);
+        if (s && s->kind == SK_ENUM_CONST) { *out = s->enum_val; return 1; }
+        return 0;
+    }
+    case E_UNOP:
+        if (!const_eval(e->a, &a)) return 0;
+        switch (e->op) {
+        case OP_NEG: *out = -a; return 1;
+        case OP_POS: *out =  a; return 1;
+        case OP_BNOT:*out = ~a; return 1;
+        case OP_LNOT:*out = !a; return 1;
+        default: return 0;
+        }
+    case E_TERNARY:
+        if (!const_eval(e->a, &a)) return 0;
+        return const_eval(a ? e->b : e->c, out);
+    case E_BINOP:
+        if (!const_eval(e->a, &a) || !const_eval(e->b, &b)) return 0;
+        switch (e->op) {
+        case OP_ADD: *out = a + b; return 1;
+        case OP_SUB: *out = a - b; return 1;
+        case OP_MUL: *out = a * b; return 1;
+        case OP_DIV: *out = b ? a / b : 0; return 1;
+        case OP_MOD: *out = b ? a % b : 0; return 1;
+        case OP_BAND:*out = a & b; return 1;
+        case OP_BOR: *out = a | b; return 1;
+        case OP_BXOR:*out = a ^ b; return 1;
+        case OP_SHL: *out = a << b; return 1;
+        case OP_SHR: *out = a >> b; return 1;
+        case OP_EQ:  *out = (a == b); return 1;
+        case OP_NE:  *out = (a != b); return 1;
+        case OP_LT:  *out = (a <  b); return 1;
+        case OP_GT:  *out = (a >  b); return 1;
+        case OP_LE:  *out = (a <= b); return 1;
+        case OP_GE:  *out = (a >= b); return 1;
+        case OP_LAND:*out = (a && b); return 1;
+        case OP_LOR: *out = (a || b); return 1;
+        default: return 0;
+        }
+    default: return 0;
+    }
+}
+
+static void check_static_assert(expr *cond, const char *msg, int line)
+{
+    long v;
+    if (!const_eval(cond, &v))
+        msg_error(line, "_Static_assert requires a constant integer expression");
+    if (v == 0)
+        msg_error(line, "static assertion failed%s%s", msg ? ": " : "", msg ? msg : "");
+}
 %}
 
 %union {
@@ -154,7 +218,7 @@ static type *resolve_builtin(int f)
 %token KW_IF KW_ELSE KW_WHILE KW_FOR KW_DO KW_SWITCH KW_CASE KW_DEFAULT
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM
-%token KW_STATIC KW_EXTERN KW_CONST
+%token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
 %token TOK_INC TOK_DEC
@@ -194,6 +258,8 @@ translation_unit:
 external_decl:
       function_def
     | declaration                   { /* declaration's action adds it to globals (or registers typedef) */ }
+    | KW_STATIC_ASSERT '(' conditional_expr ',' STRING_LIT ')' ';' { check_static_assert($3, $5, yylineno); }
+    | KW_STATIC_ASSERT '(' conditional_expr ')' ';'                { check_static_assert($3, NULL, yylineno); }
     ;
 
 /* ----- declarations ------------------------------------------------------- */
@@ -574,6 +640,8 @@ stmt:
              .asm (split on '\n'). Operands must use asm-level names. */
           stmt *s = ast_stmt(S_ASM, yylineno); s->label = $3; $$ = s;
       }
+    | KW_STATIC_ASSERT '(' conditional_expr ',' STRING_LIT ')' ';' { check_static_assert($3, $5, yylineno);  $$ = ast_stmt(S_NULL, yylineno); }
+    | KW_STATIC_ASSERT '(' conditional_expr ')' ';'                { check_static_assert($3, NULL, yylineno); $$ = ast_stmt(S_NULL, yylineno); }
     ;
 
 compound_stmt:
