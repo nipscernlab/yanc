@@ -204,6 +204,8 @@ static void check_static_assert(expr *cond, const char *msg, int line)
     struct { expr **arr; int n; } elist;
     initz *iz;
     struct { initz *z; init_desig d; } iitem;
+    struct { type *t; expr *e; } gassoc;
+    struct { type **ts; expr **es; int n; } galist;
     struct { stmt **arr; int n; } slist;
     struct { decl  *head; int n; } dlist;
     struct { int dims[8]; int n; } dimlist;
@@ -218,7 +220,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token KW_IF KW_ELSE KW_WHILE KW_FOR KW_DO KW_SWITCH KW_CASE KW_DEFAULT
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM
-%token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT
+%token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT KW_GENERIC
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
 %token TOK_INC TOK_DEC
@@ -235,6 +237,8 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %type <exp>   postfix_expr primary_expr opt_expr
 %type <iz>    init_item_list init_val
 %type <iitem> init_item
+%type <gassoc> generic_assoc
+%type <galist> generic_assoc_list
 %type <st>    stmt compound_stmt selection_stmt iteration_stmt jump_stmt
 %type <st>    expr_stmt labeled_stmt block_item local_decl
 %type <slist> block_item_list
@@ -915,6 +919,27 @@ primary_expr:
     | CHAR_LIT                               { $$ = ast_char_lit($1, yylineno); }
     | STRING_LIT                             { $$ = ast_string_lit($1, g_str_len, yylineno); }
     | '(' expr ')'                           { $$ = $2; }
+    | KW_GENERIC '(' assignment_expr ',' generic_assoc_list ')' {
+          $$ = ast_generic($3, $5.ts, $5.es, $5.n, yylineno);
+      }
+    ;
+
+/* C11 type-generic selection associations */
+generic_assoc:
+      base_type pointers ':' assignment_expr   { $$.t = apply_pointers($1, $2); $$.e = $4; }
+    | KW_DEFAULT ':' assignment_expr           { $$.t = NULL; $$.e = $3; }   /* default */
+    ;
+
+generic_assoc_list:
+      generic_assoc {
+          $$.ts = malloc(sizeof(type*)); $$.es = malloc(sizeof(expr*));
+          $$.ts[0] = $1.t; $$.es[0] = $1.e; $$.n = 1;
+      }
+    | generic_assoc_list ',' generic_assoc {
+          $$.ts = realloc($1.ts, sizeof(type*) * ($1.n + 1));
+          $$.es = realloc($1.es, sizeof(expr*) * ($1.n + 1));
+          $$.ts[$1.n] = $3.t; $$.es[$1.n] = $3.e; $$.n = $1.n + 1;
+      }
     ;
 
 %%

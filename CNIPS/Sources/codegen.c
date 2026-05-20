@@ -268,6 +268,37 @@ static void collect_statics_stmt(const char *fn, stmt *s)
     }
 }
 
+// ---- _Generic selection ----------------------------------------------------
+// type compatibility for _Generic: same kind, matching signedness for ints and
+// matching pointee for pointers. (No integer promotion; arrays don't decay.)
+static int type_match(type *a, type *b)
+{
+    if (!a || !b) return 0;
+    if (a->kind != b->kind) return 0;
+    switch (a->kind) {
+    case TY_INT:   return a->is_signed == b->is_signed;
+    case TY_PTR:
+    case TY_ARRAY: return type_match(a->base, b->base);
+    case TY_STRUCT:return a == b;
+    default:       return 1;        // float, char, void
+    }
+}
+
+// pick the association whose type matches the controlling expression's type,
+// else the `default:` association. Errors if neither exists.
+static expr *generic_select(expr *e)
+{
+    type *ct = infer_type(e->a);
+    expr *deflt = NULL;
+    for (int i = 0; i < e->n_args; i++) {
+        if (!e->gtypes[i]) { deflt = e->args[i]; continue; }
+        if (type_match(ct, e->gtypes[i])) return e->args[i];
+    }
+    if (deflt) return deflt;
+    msg_error(e->line, "_Generic: no association matches the controlling type");
+    return e->args[0];
+}
+
 // ---- type inference (lightweight; fills e->etype bottom-up) ----------------
 
 static type *infer_type(expr *e)
@@ -365,6 +396,7 @@ static type *infer_type(expr *e)
         e->etype = infer_type(e->a); break;
     case E_CAST: infer_type(e->a); e->etype = e->target_t; break;
     case E_COMPOUND: e->etype = e->target_t; break;
+    case E_GENERIC: e->etype = infer_type(generic_select(e)); break;
     case E_SIZEOF_T: e->etype = t_int(); break;
     case E_SIZEOF_E: infer_type(e->a); e->etype = t_int(); break;
     case E_TERNARY: infer_type(e->a); infer_type(e->b); infer_type(e->c); e->etype = e->b->etype; break;
@@ -942,6 +974,8 @@ static void gen_expr(expr *e)
 
     case E_SIZEOF_T: emit_load_int(type_size_words(e->target_t)); return;
     case E_SIZEOF_E: emit_load_int(type_size_words(infer_type(e->a))); return;
+
+    case E_GENERIC: gen_expr(generic_select(e)); return;  // controlling expr not evaluated
 
     case E_COMPOUND: {
         // materialise an unnamed block, initialise it, and yield it: aggregates

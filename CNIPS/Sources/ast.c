@@ -41,6 +41,11 @@ expr *ast_sizeof_e(expr *e2, int line) { expr *e = new_expr(E_SIZEOF_E, line); e
 expr *ast_ternary (expr *c, expr *a, expr *b, int line) { expr *e = new_expr(E_TERNARY, line); e->a = c; e->b = a; e->c = b; return e; }
 expr *ast_comma   (expr *a, expr *b, int line) { expr *e = new_expr(E_COMMA, line); e->a = a; e->b = b; return e; }
 expr *ast_compound(type *t, initz *z, int line) { expr *e = new_expr(E_COMPOUND, line); e->target_t = t; e->cinit = z; return e; }
+expr *ast_generic (expr *ctrl, type **ts, expr **es, int n, int line)
+{
+    expr *e = new_expr(E_GENERIC, line);
+    e->a = ctrl; e->gtypes = ts; e->args = es; e->n_args = n; return e;
+}
 
 stmt *ast_stmt(stmt_kind k, int line)
 {

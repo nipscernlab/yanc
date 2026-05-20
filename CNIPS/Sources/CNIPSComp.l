@@ -175,6 +175,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "enum"                   { return KW_ENUM;     }
 "sizeof"                 { return KW_SIZEOF;   }
 
+"_Generic"               { return KW_GENERIC; }
 "_Static_assert"         { return KW_STATIC_ASSERT; }
 "static_assert"          { return KW_STATIC_ASSERT; }   /* C23 / <assert.h> spelling */
 "static"                 { return KW_STATIC;   }
