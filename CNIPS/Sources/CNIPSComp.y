@@ -47,8 +47,12 @@ static void params_append(decl *d)
 
 // staged "current base type" used by declarators after `base_type` is reduced
 static type *cur_base = NULL;
-// staged struct being assembled by struct_specifier
-static type *cur_struct = NULL;
+// stack of structs/unions currently being assembled (supports nested inline defs)
+static type *cur_struct_stk[16];
+static int   cur_struct_sp = 0;
+static type *cur_struct = NULL;            // == top of the stack (or NULL)
+static void cur_struct_push(type *t) { cur_struct_stk[cur_struct_sp++] = cur_struct; cur_struct = t; }
+static void cur_struct_pop (void)    { cur_struct = cur_struct_stk[--cur_struct_sp]; }
 // enum counter (reset per enum_specifier)
 static long  enum_counter = 0;
 
@@ -228,10 +232,11 @@ type_specifier:
     ;
 
 struct_specifier:
-      KW_STRUCT IDENT '{' { cur_struct = t_make_struct($2); st_add_tag($2, cur_struct); } field_list '}' {
-          t_struct_seal(cur_struct, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
-          $$ = cur_struct;
-          cur_struct = NULL;
+      KW_STRUCT IDENT '{' { cur_struct_push(t_make_struct($2)); st_add_tag($2, cur_struct); } field_list '}' {
+          type *done = cur_struct;
+          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          cur_struct_pop();          // restore the enclosing struct (nested defs)
+          $$ = done;
           free($2);
       }
     | KW_STRUCT IDENT {
@@ -249,10 +254,11 @@ struct_specifier:
     ;
 
 union_specifier:
-      KW_UNION IDENT '{' { cur_struct = t_make_union($2); st_add_tag($2, cur_struct); } field_list '}' {
-          t_struct_seal(cur_struct, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
-          $$ = cur_struct;
-          cur_struct = NULL;
+      KW_UNION IDENT '{' { cur_struct_push(t_make_union($2)); st_add_tag($2, cur_struct); } field_list '}' {
+          type *done = cur_struct;
+          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          cur_struct_pop();
+          $$ = done;
           free($2);
       }
     | KW_UNION IDENT {
@@ -282,11 +288,19 @@ field_declarator_list:
     | field_declarator_list ',' field_declarator
     ;
 
+/* explicit alternatives (no nullable pointers/array_suffix) so the bitfield
+   `IDENT : N` form doesn't clash with a plain `IDENT` field on lookahead */
 field_declarator:
-      pointers IDENT array_suffix {
-          type *ft = apply_pointers(cur_base, $1);
-          ft = build_array_type(ft, $3.dims, $3.n);
-          t_struct_add_field(cur_struct, $2, ft);
+      IDENT {
+          t_struct_add_field(cur_struct, $1, cur_base);
+          free($1);
+      }
+    | IDENT '[' INT_LIT ']' {
+          t_struct_add_field(cur_struct, $1, t_array(cur_base, (int)$3));
+          free($1);
+      }
+    | '*' IDENT {
+          t_struct_add_field(cur_struct, $2, t_ptr(cur_base));
           free($2);
       }
     | IDENT ':' INT_LIT {
