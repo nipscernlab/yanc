@@ -4,7 +4,8 @@
 // Standalone binary that runs before cnips.exe. Handles:
 //   #include "name"          (relative to current file + -I paths)
 //   #include <name>          (-I paths only)
-//   #define NAME body        (object-like macros — no function macros yet)
+//   #define NAME body        (object- and function-like macros, incl.
+//                             variadic `...`/__VA_ARGS__, # stringize, ## paste)
 //   #undef NAME
 //   #ifdef NAME / #ifndef NAME / #else / #endif
 //   #pragma yanc ...         (passed through verbatim)
@@ -21,13 +22,14 @@
 static const char *incdirs[MAX_INCDIRS];
 static int         n_incdirs = 0;
 
-#define MAX_MPARAMS 16
+#define MAX_MPARAMS 32
 typedef struct macro {
     char *name;
     char *body;
     int   is_func;                 // 1 = function-like macro
+    int   is_variadic;             // 1 = trailing `...` (use __VA_ARGS__ in body)
     char *params[MAX_MPARAMS];
-    int   n_params;
+    int   n_params;                // named params (excludes `...`)
     struct macro *next;
 } macro;
 static macro *macros = NULL;
@@ -41,7 +43,7 @@ static macro *macro_find(const char *name)
 static void macro_free_params(macro *m)
 {
     for (int i = 0; i < m->n_params; i++) free(m->params[i]);
-    m->n_params = 0; m->is_func = 0;
+    m->n_params = 0; m->is_func = 0; m->is_variadic = 0;
 }
 
 static macro *macro_get_or_new(const char *name)
@@ -62,11 +64,12 @@ static void macro_define(const char *name, const char *body)
     m->is_func = 0;
 }
 
-static void macro_define_func(const char *name, char **params, int np, const char *body)
+static void macro_define_func(const char *name, char **params, int np, int variadic, const char *body)
 {
     macro *m = macro_get_or_new(name);
     m->body = strdup(body ? body : "");
     m->is_func = 1;
+    m->is_variadic = variadic;
     m->n_params = np;
     for (int i = 0; i < np; i++) m->params[i] = strdup(params[i]);
 }
@@ -128,19 +131,88 @@ static char *dup_trim(const char *s, size_t n)
 
 static char *expand_str(const char *src, int depth);
 
-// substitute call args into a function-macro body (args are pre-expanded)
+// append the string-literal form of `raw` to out: wrap in quotes, collapse
+// internal whitespace runs to one space, escape embedded " and \ (C `#`).
+static void sb_stringize(sbuf *out, const char *raw)
+{
+    if (!raw) raw = "";
+    while (*raw == ' ' || *raw == '\t') raw++;       // trim leading
+    sb_putc(out, '"');
+    int pend = 0;
+    for (const char *s = raw; *s; s++) {
+        if (*s == ' ' || *s == '\t') { pend = 1; continue; }
+        if (pend) { sb_putc(out, ' '); pend = 0; }   // collapse runs, drop trailing
+        if (*s == '"' || *s == '\\') sb_putc(out, '\\');
+        sb_putc(out, *s);
+    }
+    sb_putc(out, '"');
+}
+
+static void sb_rstrip(sbuf *b) {                      // drop trailing spaces/tabs
+    while (b->len > 0 && (b->p[b->len-1] == ' ' || b->p[b->len-1] == '\t')) b->p[--b->len] = 0;
+}
+
+#define IS_VA(id) (strcmp((id), "__VA_ARGS__") == 0)
+
+// substitute call args into a function-macro body. Handles # (stringize),
+// ## (token paste), and __VA_ARGS__ for variadic macros, plus the common
+// GNU `, ##__VA_ARGS__` comma-elision when the variadic part is empty.
+// Operands of # and ## use the RAW (unexpanded) argument; elsewhere the
+// argument is macro-expanded first.
 static char *macro_subst(macro *m, char **args, int na)
 {
     char *eargs[MAX_MPARAMS];
     for (int i = 0; i < na && i < MAX_MPARAMS; i++) eargs[i] = expand_str(args[i], 1);
 
+    // build the variadic tail (raw and expanded), joined with ", "
+    sbuf vr; sb_init(&vr); sbuf ve; sb_init(&ve);
+    if (m->is_variadic) {
+        for (int i = m->n_params; i < na && i < MAX_MPARAMS; i++) {
+            if (i > m->n_params) { sb_puts(&vr, ", "); sb_puts(&ve, ", "); }
+            sb_puts(&vr, args[i]); sb_puts(&ve, eargs[i]);
+        }
+    }
+    int va_empty = (vr.p[0] == 0);
+
     sbuf out; sb_init(&out);
     const char *b = m->body;
+    int prev_paste = 0;                              // the next token follows ##
     while (*b) {
         if (*b == '"' || *b == '\'') {
             char q = *b; sb_putc(&out, *b++);
             while (*b && *b != q) { if (*b == '\\' && b[1]) sb_putc(&out, *b++); sb_putc(&out, *b++); }
             if (*b) sb_putc(&out, *b++);
+            prev_paste = 0;
+            continue;
+        }
+        // stringize: # <param>  or  # __VA_ARGS__
+        if (*b == '#' && b[1] != '#') {
+            const char *q = b + 1; while (*q == ' ' || *q == '\t') q++;
+            if (is_ident_start(*q)) {
+                const char *is = q; while (is_ident_cont(*q)) q++;
+                char id[256]; size_t l = q - is, cl = l < sizeof(id)-1 ? l : sizeof(id)-1;
+                memcpy(id, is, cl); id[cl] = 0;
+                int pi = -1;
+                for (int i = 0; i < m->n_params; i++) if (strcmp(id, m->params[i]) == 0) { pi = i; break; }
+                if (pi >= 0)               { sb_stringize(&out, pi < na ? args[pi] : ""); b = q; prev_paste = 0; continue; }
+                if (m->is_variadic && IS_VA(id)) { sb_stringize(&out, vr.p);              b = q; prev_paste = 0; continue; }
+            }
+            sb_putc(&out, '#'); b++; continue;       // stray # -> literal
+        }
+        // token paste
+        if (*b == '#' && b[1] == '#') {
+            b += 2;
+            sb_rstrip(&out);
+            while (*b == ' ' || *b == '\t') b++;
+            // GNU elision: `, ##__VA_ARGS__` with empty tail drops the comma
+            if (m->is_variadic && va_empty && is_ident_start(*b)) {
+                const char *is = b, *q = b; while (is_ident_cont(*q)) q++;
+                if ((size_t)(q - is) == 11 && strncmp(is, "__VA_ARGS__", 11) == 0) {
+                    sb_rstrip(&out);
+                    if (out.len > 0 && out.p[out.len-1] == ',') out.p[--out.len] = 0;
+                }
+            }
+            prev_paste = 1;
             continue;
         }
         if (is_ident_start(*b)) {
@@ -148,15 +220,23 @@ static char *macro_subst(macro *m, char **args, int na)
             size_t l = b - s;
             char id[256]; size_t cl = l < sizeof(id)-1 ? l : sizeof(id)-1;
             memcpy(id, s, cl); id[cl] = 0;
+            const char *q = b; while (*q == ' ' || *q == '\t') q++;
+            int next_paste = (*q == '#' && q[1] == '#');
+            int raw = prev_paste || next_paste;      // operands of ## are unexpanded
             int pi = -1;
             for (int i = 0; i < m->n_params; i++) if (strcmp(id, m->params[i]) == 0) { pi = i; break; }
-            if (pi >= 0 && pi < na) sb_puts(&out, eargs[pi]);
-            else sb_putn(&out, s, l);
+            if (pi >= 0)                     sb_puts(&out, pi < na ? (raw ? args[pi] : eargs[pi]) : "");
+            else if (m->is_variadic && IS_VA(id)) sb_puts(&out, raw ? vr.p : ve.p);
+            else                             sb_putn(&out, s, l);
+            prev_paste = 0;
             continue;
         }
-        sb_putc(&out, *b++);
+        char c = *b++;
+        sb_putc(&out, c);
+        if (c != ' ' && c != '\t') prev_paste = 0;
     }
     for (int i = 0; i < na && i < MAX_MPARAMS; i++) free(eargs[i]);
+    free(vr.p); free(ve.p);
     return out.p;
 }
 
@@ -430,9 +510,14 @@ static void process_file(const char *path)
                 if (*p == '(') {
                     // function-like: '(' must be glued to the name (no space)
                     p++;
-                    char *params[MAX_MPARAMS]; int np = 0;
+                    char *params[MAX_MPARAMS]; int np = 0; int variadic = 0;
                     while (*p && *p != ')') {
                         while (*p == ' ' || *p == '\t') p++;
+                        if (*p == '.' && p[1] == '.' && p[2] == '.') {  // C99 `...`
+                            p += 3; variadic = 1;
+                            while (*p == ' ' || *p == '\t') p++;
+                            break;
+                        }
                         char pn[64]; int j = 0;
                         while ((isalnum((unsigned char)*p) || *p == '_') && j < (int)sizeof(pn)-1) pn[j++] = *p++;
                         pn[j] = 0;
@@ -442,7 +527,7 @@ static void process_file(const char *path)
                     }
                     if (*p == ')') p++;
                     while (*p == ' ' || *p == '\t') p++;
-                    macro_define_func(name, params, np, p);
+                    macro_define_func(name, params, np, variadic, p);
                     for (int k = 0; k < np; k++) free(params[k]);
                 } else {
                     while (*p == ' ' || *p == '\t') p++;
