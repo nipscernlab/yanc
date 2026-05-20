@@ -36,6 +36,7 @@ struct type {
     strct_field  *fields;  // linked list, in declaration order
     int           size;    // struct/union size in words (set when fields are sealed)
     int           is_union;// 1 = union (all fields share offset 0, size = max field)
+    type         *base_class; // C++ single inheritance: the parent class (or NULL)
 
     // function-specific
     type **params;

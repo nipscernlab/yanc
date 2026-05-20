@@ -62,6 +62,20 @@ static char *cg_mangle_method(const char *cls, const char *name)
     return m;
 }
 
+// find method `m` in `cls` or an ancestor (single inheritance); returns its
+// mangled asm name (malloc'd, = the SK_FUNC's name) or NULL.
+static char *resolve_method(type *cls, const char *m)
+{
+    for (type *c = cls; c; c = c->base_class) {
+        if (!c->tag) continue;
+        char *mm = cg_mangle_method(c->tag, m);
+        sym *s = st_find(mm);
+        if (s && s->kind == SK_FUNC) return mm;
+        free(mm);
+    }
+    return NULL;
+}
+
 // Assign each function its emitted label. A name shared by more than one
 // definition is overloaded -> append `_O` + per-param type codes (kept to the
 // [A-Za-z0-9_] charset the assembler accepts); unique names stay plain.
@@ -1188,8 +1202,8 @@ static void gen_expr(expr *e)
         }
         emit("LOD %d", words); emit("PSH"); emit("CAL malloc");   // acc = ptr
         if (t->kind == TY_STRUCT && t->tag) {
-            char *ctor = cg_mangle_method(t->tag, "ctor");
-            sym *cs = st_find(ctor);
+            char *ctor = resolve_method(t, "ctor");
+            sym *cs = ctor ? st_find(ctor) : NULL;
             if (cs && cs->kind == SK_FUNC) {
                 emit("PSH");                  // keep ptr (return value) at stack bottom
                 emit("PSH");                  // ptr as `this` (ctor pops it)
@@ -1205,8 +1219,8 @@ static void gen_expr(expr *e)
         type *pt = infer_type(e->a);
         type *t = pt ? pt->base : NULL;
         if (!e->ival && t && t->kind == TY_STRUCT && t->tag) {
-            char *dtor = cg_mangle_method(t->tag, "dtor");
-            sym *ds = st_find(dtor);
+            char *dtor = resolve_method(t, "dtor");
+            sym *ds = dtor ? st_find(dtor) : NULL;
             if (ds && ds->kind == SK_FUNC) { gen_expr(e->a); emit("PSH"); emit("CAL %s", dtor); }
             free(dtor);
         }
@@ -1260,7 +1274,8 @@ static void gen_expr(expr *e)
             if (e->a->kind == E_PMEMBER) ct = ct ? ct->base : NULL;
             if (!ct || ct->kind != TY_STRUCT || !ct->tag)
                 msg_error(e->line, "method call on non-class value");
-            char *masm = cg_mangle_method(ct->tag, e->a->member);
+            char *masm = resolve_method(ct, e->a->member);
+            if (!masm) msg_error(e->line, "no method '%s' in class '%s'", e->a->member, ct->tag);
             sym *ms = st_find(masm);
             if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // this
             emit("PSH");

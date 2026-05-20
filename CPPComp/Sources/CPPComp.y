@@ -301,7 +301,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token TOK_ARROW TOK_ELLIPSIS
 
 %type <sval>  qualified_id
-%type <typ>   type_specifier struct_specifier class_specifier union_specifier enum_specifier base_type decl_specifiers
+%type <typ>   type_specifier struct_specifier class_specifier union_specifier enum_specifier base_type decl_specifiers base_clause
 %type <intval> pointers storage_or_qual_list storage_or_qual
 %type <intval> builtin_spec builtin_type_seq
 %type <exp>   expr assignment_expr conditional_expr logical_or_expr logical_and_expr
@@ -485,12 +485,17 @@ struct_specifier:
    functions taking an implicit `this`; inline method bodies see members
    declared above them (single-pass). */
 class_specifier:
-      KW_CLASS IDENT '{' {
+      KW_CLASS IDENT base_clause '{' {
           type *t = t_make_struct($2);
           cur_struct_push(t);
           st_add_tag($2, t);
           st_add_typedef($2, t);          // bare class name usable as a type
           cur_class = t;
+          if ($3) {                       // single inheritance: lay the base first
+              t->base_class = $3;
+              for (strct_field *f = $3->fields; f; f = f->next)
+                  t_struct_add_field(t, f->name, f->ftype);
+          }
       } member_list '}' {
           type *done = cur_struct;
           t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
@@ -505,6 +510,24 @@ class_specifier:
           else    { $$ = s->struct_t; }
           free($2);
       }
+    ;
+
+/* optional base-class clause `: [public|private|protected] Base` */
+base_clause:
+      /* empty */                  { $$ = NULL; }
+    | ':' access_opt TYPEDEF_NAME  {
+          sym *s = st_find($3);
+          if (!s || s->kind != SK_TYPEDEF) msg_error(yylineno, "unknown base class '%s'", $3);
+          $$ = s ? s->stype : NULL;
+          free($3);
+      }
+    ;
+
+access_opt:
+      /* empty */     {}
+    | KW_PUBLIC       {}
+    | KW_PRIVATE      {}
+    | KW_PROTECTED    {}
     ;
 
 member_list:
