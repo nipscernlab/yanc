@@ -139,6 +139,8 @@ struct func {
     stmt   *body;            // a compound stmt
     storage_class sclass;
     int     line;
+    int     is_recursive;    // participates in a call-graph cycle -> needs frames
+    int     frame_size;      // words of stack frame (when is_recursive)
 };
 
 typedef struct {

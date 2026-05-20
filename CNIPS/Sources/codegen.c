@@ -30,6 +30,10 @@ static int   ins_count = 0;
 static int   label_n   = 0;
 static int   g_nubits  = 32;     // effective word width (for unsigned compares)
 static int   g_uses_udiv = 0;    // an unsigned / or % was emitted -> emit _udivmod
+static int   g_any_recursive = 0; // some function needs stack frames
+static int   cur_fn_recursive = 0; // emitting a recursive function right now
+static int   cur_frame_cursor = 0; // next free frame offset while emitting it
+#define CSTK_SIZE 1024            // software call-stack depth (words)
 static char *cur_func_name = NULL;
 static type *cur_func_ret  = NULL;
 
@@ -145,6 +149,7 @@ static void fp_add(const char *name)
 
 static void gen_expr (expr *e);
 static void emit_initz(const char *base, int off, type *t, initz *z);
+static void emit_fn_return(void);
 static void gen_addr (expr *e);
 static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
@@ -461,6 +466,11 @@ static void gen_addr(expr *e)
     case E_IDENT: {
         sym *s = st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
+        // frame local/param of a recursive function: address is __fp + offset
+        if (s->is_frame) {
+            emit("LOD __fp"); if (s->frame_off) emit("ADD %d", s->frame_off);
+            return;
+        }
         // array/struct params hold the address of the object, so loading the
         // variable's value yields that address; everything else is addressed
         // by name via LEA.
@@ -652,7 +662,7 @@ static void gen_store(expr *lv, expr *val)
     // fast path: simple scalar IDENT
     if (lv->kind == E_IDENT) {
         sym *s = st_find(lv->sval);
-        if (s && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
+        if (s && !s->is_frame && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
             gen_expr_num(val, s->stype->kind == TY_FLOAT);
             emit("SET %s", s->asm_name);
             return;
@@ -710,6 +720,9 @@ static void gen_expr(expr *e)
             emit("LOD %d", id);
             return;
         }
+        // frame scalar/pointer local: load mem[__fp + off] (arrays/structs in a
+        // recursive function are rejected at declaration time)
+        if (s->is_frame) { gen_addr(e); emit("LDA"); return; }
         if (s->stype && s->stype->kind == TY_ARRAY) {
             // array decays to base address
             if (s->kind == SK_PARAM) emit("LOD %s", s->asm_name);
@@ -851,7 +864,7 @@ static void gen_expr(expr *e)
         // this form, which is reversed — they fall through to the stack path.
         if (e->b->kind == E_IDENT && lf == rf) {   // mem-form needs matching types
             sym *r = st_find(e->b->sval);
-            if (r && r->stype && r->stype->kind != TY_ARRAY && r->stype->kind != TY_STRUCT) {
+            if (r && !r->is_frame && r->stype && r->stype->kind != TY_ARRAY && r->stype->kind != TY_STRUCT) {
                 gen_expr(e->a);
                 switch (op) {
                     case OP_ADD: emit(is_float ? "F_ADD %s" : "ADD %s", r->asm_name); return;
@@ -923,7 +936,7 @@ static void gen_expr(expr *e)
         // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
             sym *s = st_find(lv->sval);
-            if (s && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
+            if (s && !s->is_frame && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
                 emit("LOD %s", s->asm_name);
                 if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
                 else          emit("ADD %d", delta);
@@ -949,7 +962,7 @@ static void gen_expr(expr *e)
         // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
             sym *s = st_find(lv->sval);
-            if (s && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
+            if (s && !s->is_frame && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
                 emit("LOD %s", s->asm_name);
                 emit("PSH");                             // stack: [old]  (result)
                 if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
@@ -1162,6 +1175,22 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
 
 static void declare_local(decl *d)
 {
+    // recursive function: the local lives in the stack frame at __fp + offset
+    if (cur_fn_recursive && d->sclass != SC_STATIC) {
+        if (d->dtype && (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT))
+            msg_error(d->line, "array/struct local in a recursive function is not supported");
+        sym *ls = st_add(SK_LOCAL_VAR, d->name, NULL, d->dtype);
+        ls->is_const = d->is_const;
+        ls->is_frame = 1; ls->frame_off = cur_frame_cursor;
+        cur_frame_cursor += d->dtype ? type_size_words(d->dtype) : 1;
+        if (d->init) {                                  // store init into the frame slot
+            emit("LOD __fp"); if (ls->frame_off) emit("ADD %d", ls->frame_off); emit("PSH");
+            gen_expr_num(d->init, d->dtype && d->dtype->kind == TY_FLOAT);
+            emit("STA");
+        }
+        return;
+    }
+
     char *aname = mangle_local(d->name);
     { sym *ls = st_add(SK_LOCAL_VAR, d->name, aname, d->dtype); ls->is_const = d->is_const; }
     int arr_words = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
@@ -1322,11 +1351,11 @@ static void gen_stmt(stmt *s)
                 copy_to_block(rb, s->e1, type_size_words(cur_func_ret));
                 emit("LEA %s", rb);
             } else {
-                gen_expr(s->e1);
+                gen_expr_num(s->e1, cur_func_ret && cur_func_ret->kind == TY_FLOAT);
             }
         }
         if (cur_func_name && strcmp(cur_func_name, "main") == 0) emit("JMP fim");
-        else emit("RET");
+        else emit_fn_return();
         return;
 
     case S_GOTO:
@@ -1516,49 +1545,99 @@ static void emit_static_inits(void)
     }
 }
 
+// total words of all local declarations in a body (for sizing a stack frame)
+static int count_frame_locals(stmt *s)
+{
+    if (!s) return 0;
+    int sum = 0;
+    for (decl *d = s->decls; d; d = d->next) sum += d->dtype ? type_size_words(d->dtype) : 1;
+    sum += count_frame_locals(s->body);
+    sum += count_frame_locals(s->body2);
+    sum += count_frame_locals(s->init_stmt);
+    for (int i = 0; i < s->n_items; i++) sum += count_frame_locals(s->items[i]);
+    return sum;
+}
+
+// emit a function return: for a recursive function, restore the caller's frame
+// (SP=FP; FP=mem[FP]) around the return value, then RET.
+static void emit_fn_return(void)
+{
+    if (cur_fn_recursive) {
+        emit("SET __ret");                                  // preserve the return value
+        emit("LOD __fp"); emit("SET __sp");                 // free this frame: SP = FP
+        emit("LOD __fp"); emit("LDA"); emit("SET __fp");    // FP = caller FP (saved at frame base)
+        emit("LOD __ret");
+    }
+    emit("RET");
+}
+
 static void emit_function(func *f, unit *u, int is_main)
 {
-    cur_func_name = f->name;
-    cur_func_ret  = f->ret;
+    cur_func_name    = f->name;
+    cur_func_ret     = f->ret;
+    cur_fn_recursive = f->is_recursive;
     st_enter_func(f->name);
     st_push_scope();
 
-    // register params in local scope with mangled names
-    for (decl *p = f->params; p; p = p->next) {
-        char *aname = mangle_local(p->name);
-        st_add(SK_PARAM, p->name, aname, p->dtype);
-        log_var(f->name, p->name, type_code_for(p->dtype),
-                p->dtype && p->dtype->kind == TY_ARRAY ? p->dtype->arr_size : 0);
-        free(aname);
+    decl *plist[64]; int np = 0;
+    for (decl *p = f->params; p && np < 64; p = p->next) plist[np++] = p;
+
+    if (cur_fn_recursive) {
+        // frame layout: [0] = saved FP, [1..np] = params, [np+1..] = locals
+        f->frame_size = 1 + np + count_frame_locals(f->body);
+        cur_frame_cursor = 1 + np;
+        for (int i = 0; i < np; i++) {
+            sym *s = st_add(SK_PARAM, plist[i]->name, NULL, plist[i]->dtype);
+            s->is_frame = 1; s->frame_off = 1 + i;
+        }
+    } else {
+        for (int i = 0; i < np; i++) {
+            char *aname = mangle_local(plist[i]->name);
+            st_add(SK_PARAM, plist[i]->name, aname, plist[i]->dtype);
+            log_var(f->name, plist[i]->name, type_code_for(plist[i]->dtype),
+                    plist[i]->dtype && plist[i]->dtype->kind == TY_ARRAY ? plist[i]->dtype->arr_size : 0);
+            free(aname);
+        }
     }
 
     emit("@%s NOP", f->name);
 
-    // static result block for a struct-returning function (filled by `return`)
     if (!is_main && f->ret && f->ret->kind == TY_STRUCT)
         emit("#array _ret_%s 1 %d", f->name, type_size_words(f->ret));
 
-    // pop args in reverse order (caller pushes left-to-right)
-    if (f->n_params > 0) {
-        decl *plist[64]; int np = 0;
-        for (decl *p = f->params; p && np < 64; p = p->next) plist[np++] = p;
+    if (cur_fn_recursive) {
+        // prologue: push a new frame
+        emit("LOD __sp"); emit("PSH"); emit("LOD __fp"); emit("STA");      // mem[SP] = FP
+        emit("LOD __sp"); emit("SET __fp");                                // FP = SP
+        emit("LOD __sp"); emit("ADD %d", f->frame_size); emit("SET __sp"); // SP += frame_size
+        for (int i = np - 1; i >= 0; i--) {                                // args -> frame slots
+            sym *sy = st_find(plist[i]->name);
+            emit("POP"); emit("SET __argv");
+            emit("LOD __fp"); if (sy->frame_off) emit("ADD %d", sy->frame_off); emit("PSH");
+            emit("LOD __argv"); emit("STA");
+        }
+    } else if (np > 0) {
         for (int i = np - 1; i >= 0; i--) {
             sym *sy = st_find(plist[i]->name);
-            emit("POP");
-            emit("SET %s", sy->asm_name);
+            emit("POP"); emit("SET %s", sy->asm_name);
         }
     }
 
-    if (is_main) { emit_string_inits(); emit_global_scalar_inits(u); emit_static_inits(); }
+    if (is_main) {
+        if (g_any_recursive) { emit("LEA __cstk"); emit("SET __sp"); }   // init the call stack
+        emit_string_inits(); emit_global_scalar_inits(u); emit_static_inits();
+    }
 
     gen_stmt(f->body);
 
-    if (!is_main) emit("RET");
+    if (is_main)        ; /* falls through to @fim */
+    else                emit_fn_return();   // fall-off-end return (void)
 
     st_pop_scope();
     st_leave_func();
     cur_func_name = NULL;
     cur_func_ret  = NULL;
+    cur_fn_recursive = 0;
 }
 
 // software unsigned divide: caller pushes n then d; returns quotient in acc and
@@ -1613,6 +1692,65 @@ static void write_cmm_log(const char *tmp_dir)
     fclose(f);
 }
 
+// ---- recursion analysis (hybrid frames) ------------------------------------
+// A function needs a stack frame iff it can reach itself in the call graph.
+// Edges: a direct call F->G; an indirect (function-pointer) call in F adds an
+// edge F->A for EVERY address-taken function A (conservative: an fp could call
+// any of them). Non-recursive functions keep fast fixed-address locals.
+static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect)
+{
+    if (!e) return;
+    if (e->kind == E_CALL) {
+        if (e->a && e->a->kind == E_IDENT) {
+            int hit = 0;
+            for (int j = 0; j < u->n_funcs; j++)
+                if (strcmp(u->funcs[j]->name, e->a->sval) == 0) { row[j] = 1; hit = 1; break; }
+            if (!hit && e->a->sval && strcmp(e->a->sval, "in") && strcmp(e->a->sval, "out"))
+                *indirect = 1;                 // a variable holding a function id
+        } else {
+            *indirect = 1;
+            collect_calls_expr(e->a, u, row, indirect);
+        }
+        for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect);
+        return;
+    }
+    collect_calls_expr(e->a, u, row, indirect);
+    collect_calls_expr(e->b, u, row, indirect);
+    collect_calls_expr(e->c, u, row, indirect);
+    for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect);
+}
+
+static void collect_calls_stmt(stmt *s, unit *u, char *row, int *indirect)
+{
+    if (!s) return;
+    collect_calls_expr(s->e1, u, row, indirect);
+    collect_calls_expr(s->e2, u, row, indirect);
+    collect_calls_expr(s->e3, u, row, indirect);
+    collect_calls_stmt(s->body, u, row, indirect);
+    collect_calls_stmt(s->body2, u, row, indirect);
+    collect_calls_stmt(s->init_stmt, u, row, indirect);
+    for (int i = 0; i < s->n_items; i++) collect_calls_stmt(s->items[i], u, row, indirect);
+    for (decl *d = s->decls; d; d = d->next) collect_calls_expr(d->init, u, row, indirect);
+}
+
+static void analyze_recursion(unit *u)
+{
+    int n = u->n_funcs;
+    if (n <= 0) return;
+    char *adj = calloc((size_t)n * n, 1);
+    int  *ind = calloc(n, sizeof(int));
+    for (int i = 0; i < n; i++) collect_calls_stmt(u->funcs[i]->body, u, &adj[(size_t)i*n], &ind[i]);
+    for (int i = 0; i < n; i++) if (ind[i])
+        for (int j = 0; j < n; j++)
+            if (fp_id_of(u->funcs[j]->name) >= 0) adj[(size_t)i*n + j] = 1;
+    // transitive closure: adj[i][i] becomes 1 iff i lies on a cycle
+    for (int k = 0; k < n; k++)
+        for (int i = 0; i < n; i++) if (adj[(size_t)i*n + k])
+            for (int j = 0; j < n; j++) if (adj[(size_t)k*n + j]) adj[(size_t)i*n + j] = 1;
+    for (int i = 0; i < n; i++) u->funcs[i]->is_recursive = adj[(size_t)i*n + i];
+    free(adj); free(ind);
+}
+
 void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 {
     out_f = out_file;
@@ -1651,9 +1789,14 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
         scan_fp_initz(u->globals[i]->binit);
     }
 
+    analyze_recursion(u);
+    g_any_recursive = 0;
+    for (int i = 0; i < u->n_funcs; i++) if (u->funcs[i]->is_recursive) g_any_recursive = 1;
+
     emit_header(u);
     emit_global_arrays(u);
     emit_string_arrays();
+    if (g_any_recursive) emit("#array __cstk 0 %d", CSTK_SIZE);  // software call stack
     emit("JMP main");
 
     for (int i = 0; i < u->n_funcs; i++) {

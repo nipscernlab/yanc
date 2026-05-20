@@ -31,6 +31,10 @@ typedef struct sym {
     long     enum_val;    // for SK_ENUM_CONST
     type    *struct_t;    // for SK_STRUCT_TAG
 
+    // for a local/param of a recursive function: lives in the stack frame
+    int      is_frame;    // 1 = address is __fp + frame_off (not a fixed name)
+    int      frame_off;   // word offset within the frame
+
     // function metadata
     int       n_params;
     type    **param_types;
