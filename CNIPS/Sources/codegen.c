@@ -852,7 +852,9 @@ static void gen_expr(expr *e)
         gen_expr(e->a); emit("PSH"); gen_expr(e->b);
         switch (op) {
             case OP_ADD: emit(is_float ? "SF_ADD" : "S_ADD"); return;
-            case OP_SUB: if (is_float) emit("SF_SU1"); else { emit("NEG"); emit("S_ADD"); } return;
+            // stack=lhs (in1), acc=rhs (in2). SF_SU2 inverts in2 -> in1-in2 = lhs-rhs.
+            // (SF_SU1 inverts in1 -> rhs-lhs, which is reversed.)
+            case OP_SUB: if (is_float) emit("SF_SU2"); else { emit("NEG"); emit("S_ADD"); } return;
             case OP_MUL: emit(is_float ? "SF_MLT" : "S_MLT"); return;
             // unsigned div/mod: stack=[n], acc=d -> push d, call the software
             // unsigned divider (the ULA's DIV/MOD are signed). q in acc, r in _ud_r.
