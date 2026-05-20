@@ -12,9 +12,10 @@ REM ---------------------------------------------------------------------------
 
 setlocal
 
-if not defined CFG_NUBITS set CFG_NUBITS=16
-if not defined CFG_NBMANT set CFG_NBMANT=10
-if not defined CFG_NBEXPO set CFG_NBEXPO=5
+REM default target: 32-bit / IEEE-754 single (float format derived from NUBITS)
+if not defined CFG_NUBITS set CFG_NUBITS=32
+if not defined CFG_NBMANT set CFG_NBMANT=23
+if not defined CFG_NBEXPO set CFG_NBEXPO=8
 if not defined CFG_NUGAIN set CFG_NUGAIN=128
 if not defined CFG_NDSTAC set CFG_NDSTAC=8
 if not defined CFG_SDEPTH set CFG_SDEPTH=8

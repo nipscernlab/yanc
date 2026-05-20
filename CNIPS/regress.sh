@@ -38,8 +38,10 @@ GOLDEN="$CNIPS/Testes/golden"
 HDL="$ROOT/HDL"
 MACROS="$ROOT/Macros"
 
-# YANC target defaults baked into cnips.exe (overridable per-source via #pragma)
-: "${CFG_NUBITS:=16}"; : "${CFG_NBMANT:=10}"; : "${CFG_NBEXPO:=5}"
+# YANC target defaults baked into cnips.exe (overridable per-source via #pragma).
+# Default is 32-bit / IEEE-754 single; the float format (NBMANT/NBEXPO) is
+# derived from NUBITS in codegen, so CFG_NBMANT/CFG_NBEXPO are vestigial.
+: "${CFG_NUBITS:=32}"; : "${CFG_NBMANT:=23}"; : "${CFG_NBEXPO:=8}"
 : "${CFG_NUGAIN:=128}"; : "${CFG_NDSTAC:=8}"; : "${CFG_SDEPTH:=8}"
 : "${CFG_NUIOIN:=1}";   : "${CFG_NUIOOU:=1}"; : "${CFG_FFTSIZ:=3}"
 DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NBMANT=$CFG_NBMANT -DCFG_NBEXPO=$CFG_NBEXPO \

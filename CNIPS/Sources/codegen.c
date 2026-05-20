@@ -28,7 +28,7 @@
 static FILE *out_f;
 static int   ins_count = 0;
 static int   label_n   = 0;
-static int   g_nubits  = 16;     // effective word width (for unsigned compares)
+static int   g_nubits  = 32;     // effective word width (for unsigned compares)
 static int   g_uses_udiv = 0;    // an unsigned / or % was emitted -> emit _udivmod
 static char *cur_func_name = NULL;
 static type *cur_func_ret  = NULL;
@@ -1383,17 +1383,42 @@ static void gen_stmt(stmt *s)
 
 static int has_main = 0;
 
+// IEEE-754 float layout for a given word width: the standard interchange
+// formats for 16/32/64 bits, and a sensible split otherwise (overridable per
+// source with `#pragma yanc nbmant/nbexpo`). The compiler is width-parametric,
+// so picking nubits selects the matching float format automatically — a program
+// with no pragmas defaults to 32-bit / IEEE-754 single.
+static void derive_ieee(int w, int *mant, int *expo)
+{
+    switch (w) {
+    case 16: *expo = 5;  *mant = 10; return;   // binary16 (half)
+    case 32: *expo = 8;  *mant = 23; return;   // binary32 (single)
+    case 64: *expo = 11; *mant = 52; return;   // binary64 (double)
+    default:
+        *expo = (w >= 32) ? 8 : 5;             // best effort for odd widths
+        *mant = w - 1 - *expo;
+        if (*mant < 1) { *mant = 1; *expo = w - 2; }
+        return;
+    }
+}
+
 static void emit_header(unit *u)
 {
+    int nb = u->nubits >= 0 ? u->nubits : CFG_NUBITS;
+    int mant, expo;
+    derive_ieee(nb, &mant, &expo);
+    if (u->nbmant >= 0) mant = u->nbmant;      // explicit pragma overrides
+    if (u->nbexpo >= 0) expo = u->nbexpo;
+
     emit("NOP");
     emit("#PRNAME %s", u->prname ? u->prname : "prog");
-    emit("#NUBITS %d", u->nubits >= 0 ? u->nubits : CFG_NUBITS);
+    emit("#NUBITS %d", nb);
     emit("#NDSTAC %d", u->ndstac >= 0 ? u->ndstac : CFG_NDSTAC);
     emit("#SDEPTH %d", u->sdepth >= 0 ? u->sdepth : CFG_SDEPTH);
     emit("#NUIOIN %d", u->nuioin >= 0 ? u->nuioin : CFG_NUIOIN);
     emit("#NUIOOU %d", u->nuioou >= 0 ? u->nuioou : CFG_NUIOOU);
-    emit("#NBMANT %d", u->nbmant >= 0 ? u->nbmant : CFG_NBMANT);
-    emit("#NBEXPO %d", u->nbexpo >= 0 ? u->nbexpo : CFG_NBEXPO);
+    emit("#NBMANT %d", mant);
+    emit("#NBEXPO %d", expo);
     emit("#NUGAIN %d", u->nugain >= 0 ? u->nugain : CFG_NUGAIN);
 }
 
