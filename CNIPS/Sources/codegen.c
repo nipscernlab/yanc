@@ -1187,6 +1187,36 @@ static void declare_local(decl *d)
     free(aname);
 }
 
+// ---- switch dispatch -------------------------------------------------------
+// A switch's case/default labels may appear ANYWHERE in its body (even nested
+// inside a loop, e.g. Duff's device), so we walk the body, mint a label per
+// case (stored on the node), and emit the EQU/JIZ dispatch chain. We do NOT
+// descend into a nested switch — its cases belong to it.
+static stmt *g_sw_default;
+static void switch_dispatch(stmt *s, const char *tmp_name)
+{
+    if (!s || s->kind == S_SWITCH) return;
+    if (s->kind == S_CASE) {
+        s->label = fresh_label("case");
+        emit("LOD %s", tmp_name);
+        emit("EQU %ld", s->e1->ival);
+        emit("LIN");
+        emit("JIZ %s", s->label);      // jump to this case when discriminant matches
+        switch_dispatch(s->body, tmp_name);
+        return;
+    }
+    if (s->kind == S_DEFAULT) {
+        s->label = fresh_label("default");
+        g_sw_default = s;
+        switch_dispatch(s->body, tmp_name);
+        return;
+    }
+    switch_dispatch(s->body, tmp_name);
+    switch_dispatch(s->body2, tmp_name);
+    switch_dispatch(s->init_stmt, tmp_name);
+    for (int i = 0; i < s->n_items; i++) switch_dispatch(s->items[i], tmp_name);
+}
+
 static void gen_stmt(stmt *s)
 {
     if (!s) return;
@@ -1329,10 +1359,10 @@ static void gen_stmt(stmt *s)
     }
 
     case S_SWITCH: {
-        // chain-of-ifs implementation: evaluate discriminant once into a temp,
-        // emit one EQU per case, fall through naturally.
+        // evaluate the discriminant once into a temp, emit the dispatch chain
+        // (cases may be nested anywhere — Duff's device), then emit the body
+        // normally; each case/default emits its minted label inline.
         infer_type(s->e1);
-        // allocate a temp local for the discriminant
         char tmp[64]; snprintf(tmp, sizeof(tmp), "_sw_%d", ++label_n);
         char *tmp_name = mangle_local(tmp);
         st_add(SK_LOCAL_VAR, tmp, tmp_name, t_int());
@@ -1343,58 +1373,29 @@ static void gen_stmt(stmt *s)
         char *end = fresh_label("sw_end");
         brk_push(end);
 
-        // first pass: collect cases (and default) labels, emit the dispatch chain
-        // we expect s->body to be a block of items (or a single stmt).
-        // walk block items: for each S_CASE or S_DEFAULT we mint a label;
-        // for non-case stmts inside, we emit them inline AFTER the dispatch.
-        // Approach: split body into (case_match_chain) + (body with @case_X labels)
-        stmt *body = s->body;
-        stmt **items; int n_items;
-        if (body && body->kind == S_BLOCK) { items = body->items; n_items = body->n_items; }
-        else { items = &body; n_items = body ? 1 : 0; }
+        stmt *saved_default = g_sw_default;
+        g_sw_default = NULL;
+        switch_dispatch(s->body, tmp_name);            // mint labels + EQU/JIZ chain
+        if (g_sw_default) emit("JMP %s", g_sw_default->label);
+        else              emit("JMP %s", end);
+        g_sw_default = saved_default;
 
-        // pre-mint labels
-        char **case_labels = calloc(n_items, sizeof(char*));
-        char *default_label = NULL;
-        for (int i = 0; i < n_items; i++) {
-            if (items[i]->kind == S_CASE) case_labels[i] = fresh_label("case");
-            else if (items[i]->kind == S_DEFAULT) { default_label = fresh_label("default"); case_labels[i] = default_label; }
-        }
-        // dispatch chain
-        for (int i = 0; i < n_items; i++) {
-            if (items[i]->kind == S_CASE) {
-                emit("LOD %s", tmp_name);
-                emit("EQU %ld", items[i]->e1->ival);
-                emit("LIN");
-                emit("JIZ %s", case_labels[i]);
-                // double-LIN means it inverts twice; after EQU, value is already 0/1. After single LIN, 1↔0. So `JIZ case` jumps when LIN→0, i.e., when EQU was 1, i.e., when equal. ✓
-            }
-        }
-        if (default_label) emit("JMP %s", default_label);
-        else               emit("JMP %s", end);
-
-        // bodies, with labels at case points; fallthrough is automatic
         st_push_scope();
-        for (int i = 0; i < n_items; i++) {
-            if (items[i]->kind == S_CASE || items[i]->kind == S_DEFAULT) {
-                emit("@%s NOP", case_labels[i]);
-                gen_stmt(items[i]->body);
-            } else {
-                gen_stmt(items[i]);
-            }
-        }
+        gen_stmt(s->body);                             // body; cases emit @label inline
         st_pop_scope();
 
         emit("@%s NOP", end);
         brk_pop();
-        free(case_labels);
         free(end);
         free(tmp_name);
         return;
     }
 
     case S_CASE: case S_DEFAULT:
-        msg_error(s->line, "case/default outside switch");
+        // reached while emitting a switch body: emit the label minted by
+        // switch_dispatch, then the labelled statement (fall-through is natural).
+        if (s->label) { emit("@%s NOP", s->label); gen_stmt(s->body); }
+        else          msg_error(s->line, "case/default outside switch");
         return;
     }
 }
