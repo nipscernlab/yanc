@@ -92,7 +92,10 @@ static decl *make_decl(type *base, int stars, char *name, const int *dims, int n
     t = build_array_type(t, dims, ndims);
     decl *d = ast_decl(t, name, init, line);
     d->sclass = ts_sclass;
-    d->is_const = ts_is_const;
+    // `const T *p` qualifies the pointee, not the pointer — the variable stays
+    // writable (pointee-constness isn't enforced on this single-word target).
+    // `const T x` / `const T a[]` still marks the object itself const.
+    d->is_const = (stars > 0) ? 0 : ts_is_const;
     return d;
 }
 
@@ -481,6 +484,7 @@ enum_item:
 pointers:
       /* empty */         { $$ = 0; }
     | pointers '*'        { $$ = $1 + 1; }
+    | pointers KW_CONST   { $$ = $1; }   /* `T * const` — const ptr, ignored */
     ;
 
 /* zero or more [N] suffixes, in source order (row-major). n==0 means scalar. */
@@ -650,7 +654,8 @@ non_empty_param_list:
     ;
 
 param_declarator:
-      base_type pointers IDENT array_suffix {
+      KW_CONST param_declarator              { $$ = $2; }   /* `const T ...` — ignored */
+    | base_type pointers IDENT array_suffix {
           type *t = apply_pointers($1, $2);
           t = build_array_type(t, $4.dims, $4.n);
           $$ = ast_decl(t, $3, NULL, yylineno);

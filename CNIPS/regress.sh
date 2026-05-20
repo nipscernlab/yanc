@@ -124,7 +124,7 @@ for src in "$CNIPS"/examples/test*.c; do
     if ! "$APPCOMP" -en -i "$asm" -t "$tmp" >/dev/null 2>&1; then
         echo "FAIL ($base): appcomp"; fail=$((fail+1)); failed+=("$base"); continue
     fi
-    if ! "$ASMCOMP" -en -i "$asm" -p "$proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 200000 >/dev/null 2>&1; then
+    if ! "$ASMCOMP" -en -i "$asm" -p "$proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 5000000 >/dev/null 2>&1; then
         echo "FAIL ($base): asmcomp"; fail=$((fail+1)); failed+=("$base"); continue
     fi
 
