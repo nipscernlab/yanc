@@ -209,8 +209,18 @@ declaration:
                   if (existing && existing->kind == SK_FUNC) {
                       /* nothing more to do */
                   } else {
-                      unit_add_global(d);
-                      st_add(SK_GLOBAL_VAR, d->name, d->name, d->dtype);
+                      int is_def = (d->sclass != SC_EXTERN);   // `extern x;` is only a declaration
+                      if (existing && existing->kind == SK_GLOBAL_VAR) {
+                          if (is_def && existing->defined)
+                              msg_error(d->line, "redefinition of global '%s' "
+                                  "(if this comes from a header, guard it with #ifndef or #pragma once)", d->name);
+                          if (is_def) { existing->defined = 1; unit_add_global(d); }
+                          /* extern re-declaration of a known global: nothing to emit */
+                      } else {
+                          sym *gs = st_add(SK_GLOBAL_VAR, d->name, d->name, d->dtype);
+                          gs->defined = is_def;
+                          if (is_def) unit_add_global(d);   /* extern-only: declared, no storage */
+                      }
                   }
                   d = nx;
               }
@@ -479,6 +489,11 @@ function_def:
              clobbered by the params' and body's own base_type reductions. */
           type *ret = apply_pointers($1, $2);
           sym *s = st_find($3);
+          if (s && s->kind == SK_FUNC && s->defined)
+              msg_error(yylineno, "redefinition of function '%s'%s", $3,
+                  strcmp($3, "main") == 0 ? " (a program has exactly one main)" : "");
+          if (s && s->kind != SK_FUNC)
+              msg_error(yylineno, "'%s' redeclared as a function (already a variable)", $3);
           if (!s) {
               s = st_add(SK_FUNC, $3, $3, ret);
               s->n_params = $5.n;

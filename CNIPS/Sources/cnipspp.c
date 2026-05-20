@@ -8,6 +8,7 @@
 //                             variadic `...`/__VA_ARGS__, # stringize, ## paste)
 //   #undef NAME
 //   #ifdef NAME / #ifndef NAME / #else / #endif
+//   #pragma once             (skip the file on any later #include)
 //   #pragma yanc ...         (passed through verbatim)
 //
 // usage:  cnipspp -i input.c [-o out.c] [-I dir]*
@@ -21,6 +22,44 @@
 #define MAX_INCDIRS 32
 static const char *incdirs[MAX_INCDIRS];
 static int         n_incdirs = 0;
+
+// files marked `#pragma once`: canonical paths to skip on any later #include.
+#define MAX_ONCE 1024
+static char *once_paths[MAX_ONCE];
+static int   n_once = 0;
+
+// canonicalise a path so the same file reached via different #include spellings
+// compares equal (absolute, forward slashes, lowercased — Windows is
+// case-insensitive). Falls back to the input on failure.
+static void path_canon(const char *in, char *out, size_t sz)
+{
+    char tmp[2048];
+#ifdef _WIN32
+    if (_fullpath(tmp, in, sizeof(tmp))) {
+        size_t i = 0;
+        for (; tmp[i] && i < sz - 1; i++) {
+            char c = tmp[i] == '\\' ? '/' : (char)tolower((unsigned char)tmp[i]);
+            out[i] = c;
+        }
+        out[i] = 0;
+        return;
+    }
+#else
+    if (realpath(in, tmp)) { snprintf(out, sz, "%s", tmp); return; }
+#endif
+    snprintf(out, sz, "%s", in);
+}
+
+static int once_seen(const char *canon)
+{
+    for (int i = 0; i < n_once; i++) if (strcmp(once_paths[i], canon) == 0) return 1;
+    return 0;
+}
+static void once_mark(const char *canon)
+{
+    if (once_seen(canon) || n_once >= MAX_ONCE) return;
+    once_paths[n_once++] = strdup(canon);
+}
 
 #define MAX_MPARAMS 32
 typedef struct macro {
@@ -486,7 +525,8 @@ static void process_file(const char *path)
                     FILE *inc = open_include(target, dir, resolved, sizeof(resolved));
                     if (!inc) { fprintf(stderr, "cnipspp: can't find #include \"%s\"\n", target); exit(1); }
                     fclose(inc);
-                    process_file(resolved);
+                    char canon[2048]; path_canon(resolved, canon, sizeof(canon));
+                    if (!once_seen(canon)) process_file(resolved);
                 } else if (*p == '<') {
                     p++; int i = 0;
                     while (*p && *p != '>' && i < (int)sizeof(target)-1) target[i++] = *p++;
@@ -495,7 +535,8 @@ static void process_file(const char *path)
                     FILE *inc = open_include(target, NULL, resolved, sizeof(resolved));
                     if (!inc) { fprintf(stderr, "cnipspp: can't find #include <%s>\n", target); exit(1); }
                     fclose(inc);
-                    process_file(resolved);
+                    char canon[2048]; path_canon(resolved, canon, sizeof(canon));
+                    if (!once_seen(canon)) process_file(resolved);
                 }
                 free(orig); continue;
             }
@@ -605,9 +646,17 @@ static void process_file(const char *path)
                 free(orig); continue;
             }
 
-            // ---- #pragma yanc passthrough ----
+            // ---- #pragma once (consumed) / others (passthrough, e.g. yanc) ----
             if (strncmp(p, "pragma", 6) == 0) {
-                if (cond_active()) fprintf(out_f, "%s", line);
+                const char *q = p + 6; while (*q == ' ' || *q == '\t') q++;
+                if (strncmp(q, "once", 4) == 0 && (q[4] == 0 || isspace((unsigned char)q[4]))) {
+                    if (cond_active()) {
+                        char canon[2048]; path_canon(path, canon, sizeof(canon));
+                        once_mark(canon);
+                    }
+                    free(orig); continue;          // don't emit `#pragma once`
+                }
+                if (cond_active()) fprintf(out_f, "%s", line);   // e.g. #pragma yanc
                 free(orig); continue;
             }
 
