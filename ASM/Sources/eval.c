@@ -163,8 +163,15 @@ void instr_lea(char *va)
     int addr = var_find(va);
     if (addr == -1)
     {
-        fprintf(stderr, "Error: LEA referencing undeclared variable '%s'\n", va);
-        exit(1);
+        // address-taken-only variable (e.g. `int v; f(&v);` where v is never
+        // read/written by name): allocate it now exactly as instr_ula would —
+        // table entry + a zero-initialised data cell (asmcomp is single-pass,
+        // so the cell must be appended to the .mif in first-seen order).
+        var_add(va, 0);
+        int type = sim_regi(va);
+        if (type > 1) fprintf(f_data, "%s\n", itob(f2mf("0.0", NULL), nubits)); // float
+        else          fprintf(f_data, "%s\n", itob(0, nubits));                 // int
+        addr = var_find(va);
     }
     // materialise &va as a constant cell named "__addr_<va>". using a name
     // distinct from any plain integer literal avoids the dedup collision
