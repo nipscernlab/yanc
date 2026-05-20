@@ -503,6 +503,9 @@ init_declarator:
           /* aggregate initialiser: array or struct, one value per slot/field */
           decl *d = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
           d->binit = $6;
+          /* infer an unsized outer dimension `[]` from the initializer count */
+          if (d->dtype && d->dtype->kind == TY_ARRAY && d->dtype->arr_size == 0 && $6 && $6->is_list)
+              d->dtype->arr_size = $6->n;
           $$ = d;
       }
     | pointers IDENT array_suffix STRING_LIT {

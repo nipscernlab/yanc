@@ -93,8 +93,8 @@ HEXIT   [0-9a-fA-F]
 LETTER  [a-zA-Z_]
 ALNUM   [a-zA-Z0-9_]
 
-INT_DEC {DIGIT}+
-INT_HEX 0[xX]{HEXIT}+
+INT_DEC {DIGIT}+[uUlL]*
+INT_HEX 0[xX]{HEXIT}+[uUlL]*
 FLOAT1  {DIGIT}+\.{DIGIT}*([eE][+-]?{DIGIT}+)?
 FLOAT2  \.{DIGIT}+([eE][+-]?{DIGIT}+)?
 FLOAT3  {DIGIT}+[eE][+-]?{DIGIT}+
@@ -195,8 +195,8 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 
   /* literals ----------------------------------------------------------- */
 
-{INT_HEX}                { yylval.ival = strtol(yytext, NULL, 16); return INT_LIT; }
-{INT_DEC}                { yylval.ival = strtol(yytext, NULL, 10); return INT_LIT; }
+{INT_HEX}                { yylval.ival = (long)strtoull(yytext, NULL, 16); return INT_LIT; }  /* truncates to the target word; suffixes ignored */
+{INT_DEC}                { yylval.ival = (long)strtoull(yytext, NULL, 10); return INT_LIT; }
 {FLOAT}f?                { yylval.fval = strtod(yytext, NULL);     return FLOAT_LIT; }
 {CHRLIT}                 { yylval.ival = unescape_char(yytext);    return CHAR_LIT; }
 {STRLIT}                 {

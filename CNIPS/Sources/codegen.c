@@ -95,16 +95,22 @@ typedef struct { char *cont_l; char *break_l; } loop_ctx;
 #define MAX_LOOPS 32
 static loop_ctx loop_stk[MAX_LOOPS];
 static int      loop_top = 0;
+
+// unified break-target stack: BOTH loops and switches push here in nesting
+// order, so `break` targets the innermost enclosing loop-or-switch (a `break`
+// inside a switch nested in a loop must leave the switch, not the loop).
+static char *brk_stk[MAX_LOOPS * 2];
+static int   brk_top = 0;
+static void  brk_push(char *b) { if (brk_top < MAX_LOOPS*2) brk_stk[brk_top++] = b; }
+static void  brk_pop (void)    { if (brk_top > 0) brk_top--; }
+
 static void loop_push(char *c, char *b)
 {
     if (loop_top >= MAX_LOOPS) msg_internal("loop nesting too deep");
     loop_stk[loop_top].cont_l = c; loop_stk[loop_top].break_l = b; loop_top++;
+    brk_push(b);
 }
-static void loop_pop(void) { loop_top--; }
-
-// switches need their own break stack (continue isn't allowed but pop expects same)
-static char *sw_break_stk[MAX_LOOPS];
-static int   sw_top = 0;
+static void loop_pop(void) { loop_top--; brk_pop(); }
 
 // ---- string-literal pool ---------------------------------------------------
 // Each "..." becomes a global char array _str<N> (1 word per char + NUL),
@@ -1244,8 +1250,7 @@ static void gen_stmt(stmt *s)
     }
 
     case S_BREAK:
-        if (loop_top > 0)      emit("JMP %s", loop_stk[loop_top-1].break_l);
-        else if (sw_top > 0)   emit("JMP %s", sw_break_stk[sw_top-1]);
+        if (brk_top > 0) emit("JMP %s", brk_stk[brk_top-1]);
         else msg_error(s->line, "break outside of loop/switch");
         return;
     case S_CONTINUE:
@@ -1314,7 +1319,7 @@ static void gen_stmt(stmt *s)
         emit("SET %s", tmp_name);
 
         char *end = fresh_label("sw_end");
-        sw_break_stk[sw_top++] = end;
+        brk_push(end);
 
         // first pass: collect cases (and default) labels, emit the dispatch chain
         // we expect s->body to be a block of items (or a single stmt).
@@ -1359,7 +1364,7 @@ static void gen_stmt(stmt *s)
         st_pop_scope();
 
         emit("@%s NOP", end);
-        sw_top--;
+        brk_pop();
         free(case_labels);
         free(end);
         free(tmp_name);
