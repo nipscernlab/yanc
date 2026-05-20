@@ -88,6 +88,19 @@ static char *resolve_method(type *cls, const char *m)
     return NULL;
 }
 
+// overloadable binary operator -> method name (matches the parser's op_name)
+static const char *op_method_name(op_kind op)
+{
+    switch (op) {
+        case OP_ADD: return "op_add"; case OP_SUB: return "op_sub";
+        case OP_MUL: return "op_mul"; case OP_DIV: return "op_div";
+        case OP_EQ:  return "op_eq";  case OP_NE:  return "op_ne";
+        case OP_LT:  return "op_lt";  case OP_GT:  return "op_gt";
+        case OP_LE:  return "op_le";  case OP_GE:  return "op_ge";
+        default: return NULL;
+    }
+}
+
 // Assign each function its emitted label. A name shared by more than one
 // definition is overloaded -> append `_O` + per-param type codes (kept to the
 // [A-Za-z0-9_] charset the assembler accepts); unique names stay plain.
@@ -484,6 +497,12 @@ static type *infer_type(expr *e)
     case E_BINOP: {
         type *lt = infer_type(e->a);
         type *rt = infer_type(e->b);
+        if (lt && lt->kind == TY_STRUCT) {       // overloaded operator -> its return type
+            const char *opm = op_method_name(e->op);
+            char *masm = opm ? resolve_method(lt, opm) : NULL;
+            if (masm) { sym *ms = st_find(masm); free(masm);
+                        e->etype = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int(); break; }
+        }
         switch (e->op) {
             case OP_EQ: case OP_NE: case OP_LT: case OP_GT: case OP_LE: case OP_GE:
             case OP_LAND: case OP_LOR:
@@ -950,6 +969,11 @@ static void gen_expr(expr *e)
         return;
 
     case E_DEREF:
+        // a struct/array rvalue decays to its address (no load), like a[i] below
+        if (e->etype && (e->etype->kind == TY_STRUCT || e->etype->kind == TY_ARRAY)) {
+            gen_addr(e);
+            return;
+        }
         gen_expr(e->a);
         emit("LDA");
         return;
@@ -1011,6 +1035,20 @@ static void gen_expr(expr *e)
         op_kind op = e->op;
         type *lt = infer_type(e->a);
         type *rt = infer_type(e->b);
+        // operator overloading: lhs is a class with operator<OP> -> a.op(b)
+        if (lt && lt->kind == TY_STRUCT) {
+            const char *opm = op_method_name(op);
+            char *masm = opm ? resolve_method(lt, opm) : NULL;
+            if (masm) {
+                sym *ms = st_find(masm);
+                gen_addr(e->a); emit("PSH");                  // this = &lhs
+                type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
+                gen_arg(e->b, pt);                            // the rhs operand
+                emit("CAL %s", masm);
+                free(masm);
+                return;
+            }
+        }
         int lf = lt && lt->kind == TY_FLOAT;
         int rf = rt && rt->kind == TY_FLOAT;
         int is_float = lf || rf;     // operate in float if EITHER operand is float

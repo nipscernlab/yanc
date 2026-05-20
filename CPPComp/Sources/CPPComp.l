@@ -174,6 +174,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "class"                  { return KW_CLASS;    }
 "this"                   { return KW_THIS;     }
 "virtual"                { return KW_VIRTUAL;  }
+"operator"               { return KW_OPERATOR; }
 "public"                 { return KW_PUBLIC;    }
 "private"                { return KW_PRIVATE;   }
 "protected"              { return KW_PROTECTED; }

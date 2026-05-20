@@ -71,6 +71,10 @@ static void cur_struct_push(type *t) { cur_struct_stk[cur_struct_sp++] = cur_str
 static void cur_struct_pop (void)    { cur_struct = cur_struct_stk[--cur_struct_sp]; }
 // the class whose body we are currently parsing (for `this` + method mangling)
 static type *cur_class = NULL;
+// constructor member-initializer list, lowered to `member = expr` statements
+// prepended to the ctor body
+static stmt *g_ctor_inits[32];
+static int   g_n_ctor_inits = 0;
 // mangle a method name: Class::name -> "Class__name" (asm-level symbol)
 static char *mangle_method(const char *cls, const char *name)
 {
@@ -300,7 +304,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM KW_NEW KW_DELETE
 %token KW_CLASS KW_THIS KW_PUBLIC KW_PRIVATE KW_PROTECTED
-%token KW_NAMESPACE KW_USING TOK_SCOPE KW_VIRTUAL
+%token KW_NAMESPACE KW_USING TOK_SCOPE KW_VIRTUAL KW_OPERATOR
 %token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT KW_GENERIC
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -309,7 +313,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token TOK_AMPEQ TOK_PIPEEQ TOK_CARETEQ TOK_SHLEQ TOK_SHREQ
 %token TOK_ARROW TOK_ELLIPSIS
 
-%type <sval>  qualified_id
+%type <sval>  qualified_id op_name
 %type <typ>   type_specifier struct_specifier class_specifier union_specifier enum_specifier base_type decl_specifiers base_clause
 %type <intval> pointers storage_or_qual_list storage_or_qual
 %type <intval> builtin_spec builtin_type_seq
@@ -564,10 +568,37 @@ member:
 /* constructor: `ClassName(params) { body }` — the class name lexes as a
    TYPEDEF_NAME inside its own body. Lowered to method `Class__ctor`. */
 ctor_def:
-      TYPEDEF_NAME '(' param_list ')'
+      TYPEDEF_NAME '(' param_list ')' { g_n_ctor_inits = 0; } ctor_init_opt
           { method_enter(t_void(), "ctor", $3.head, $3.n); }
       compound_stmt
-          { method_finish(t_void(), "ctor", $6); free($1); }
+          {
+              stmt *body = $8;
+              if (g_n_ctor_inits > 0 && body) {     // prepend `member = expr;` stmts
+                  int total = g_n_ctor_inits + body->n_items;
+                  stmt **arr = malloc(sizeof(stmt*) * total);
+                  for (int i = 0; i < g_n_ctor_inits; i++) arr[i] = g_ctor_inits[i];
+                  for (int j = 0; j < body->n_items; j++) arr[g_n_ctor_inits + j] = body->items[j];
+                  body->items = arr; body->n_items = total;
+              }
+              method_finish(t_void(), "ctor", body); free($1);
+          }
+    ;
+
+/* optional member-initializer list `: x(a), y(b)` */
+ctor_init_opt:
+      /* empty */
+    | ':' mem_init_list
+    ;
+mem_init_list:
+      mem_init
+    | mem_init_list ',' mem_init
+    ;
+mem_init:
+      IDENT '(' assignment_expr ')' {
+          stmt *s = ast_stmt(S_EXPR, yylineno);
+          s->e1 = ast_assign(ast_ident($1, yylineno), $3, yylineno);
+          if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
+      }
     ;
 
 /* destructor: `~ClassName() { body }` -> method `Class__dtor`. */
@@ -606,6 +637,24 @@ method_def:
           { add_vmethod(cur_class, $4); method_enter(t_ptr($2), $4, $6.head, $6.n); }
       compound_stmt
           { method_finish(t_ptr($2), $4, $9); free($4); }
+    | base_type KW_OPERATOR op_name '(' param_list ')'
+          { method_enter($1, $3, $5.head, $5.n); }
+      compound_stmt
+          { method_finish($1, $3, $8); }
+    ;
+
+/* overloadable binary operators -> a stable method name (asm-label charset) */
+op_name:
+      '+'    { $$ = "op_add"; }
+    | '-'    { $$ = "op_sub"; }
+    | '*'    { $$ = "op_mul"; }
+    | '/'    { $$ = "op_div"; }
+    | TOK_EQ { $$ = "op_eq";  }
+    | TOK_NE { $$ = "op_ne";  }
+    | '<'    { $$ = "op_lt";  }
+    | '>'    { $$ = "op_gt";  }
+    | TOK_LE { $$ = "op_le";  }
+    | TOK_GE { $$ = "op_ge";  }
     ;
 
 union_specifier:
