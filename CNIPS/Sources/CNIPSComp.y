@@ -378,6 +378,13 @@ struct_specifier:
           }
           free($2);
       }
+    | KW_STRUCT '{' { cur_struct_push(t_make_struct("")); } field_list '}' {
+          /* anonymous struct (e.g. a struct-typed field with no tag) */
+          type *done = cur_struct;
+          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          cur_struct_pop();
+          $$ = done;
+      }
     ;
 
 union_specifier:
@@ -398,6 +405,13 @@ union_specifier:
               $$ = s->struct_t;
           }
           free($2);
+      }
+    | KW_UNION '{' { cur_struct_push(t_make_union("")); } field_list '}' {
+          /* anonymous union (e.g. a union-typed field with no tag) */
+          type *done = cur_struct;
+          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          cur_struct_pop();
+          $$ = done;
       }
     ;
 
@@ -438,6 +452,11 @@ field_declarator:
     | ':' INT_LIT {
           /* anonymous bitfield (padding / alignment) */
           t_struct_add_bitfield(cur_struct, "", cur_base, (int)$2);
+      }
+    | '(' '*' IDENT ')' '(' param_list ')' {
+          /* function-pointer field `ret (*name)(params)` — an int function id */
+          t_struct_add_field(cur_struct, $3, t_int());
+          free($3);
       }
     ;
 
