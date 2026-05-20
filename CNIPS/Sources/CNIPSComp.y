@@ -92,6 +92,7 @@ static decl *make_decl(type *base, int stars, char *name, const int *dims, int n
     t = build_array_type(t, dims, ndims);
     decl *d = ast_decl(t, name, init, line);
     d->sclass = ts_sclass;
+    d->is_const = ts_is_const;
     return d;
 }
 %}

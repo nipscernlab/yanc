@@ -27,6 +27,7 @@ typedef struct sym {
     char    *asm_name;    // name as it appears in the emitted .asm
 
     type    *stype;       // for variables: declared type; for funcs: return type
+    int      is_const;    // variable declared `const`
     long     enum_val;    // for SK_ENUM_CONST
     type    *struct_t;    // for SK_STRUCT_TAG
 

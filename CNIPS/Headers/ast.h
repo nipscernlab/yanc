@@ -100,6 +100,7 @@ struct decl {
     expr  **init_list;       // for arrays/structs initialised with {a,b,c}
     int     n_init;
     storage_class sclass;
+    int     is_const;        // declared `const` — assignment to it is an error
     decl   *next;            // chain within one declaration statement
     int     line;
 };

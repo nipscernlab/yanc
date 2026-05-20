@@ -441,6 +441,11 @@ static strct_field *member_field(expr *e)
 
 static void gen_store(expr *lv, expr *val)
 {
+    // reject assignment to a const variable (direct, by-name)
+    if (lv->kind == E_IDENT) {
+        sym *cs = st_find(lv->sval);
+        if (cs && cs->is_const) msg_error(lv->line, "assignment to const '%s'", lv->sval);
+    }
     // bitfield store: read-modify-write the containing word
     {
         strct_field *bf = (lv->kind == E_MEMBER || lv->kind == E_PMEMBER) ? member_field(lv) : NULL;
@@ -908,7 +913,7 @@ static void emit_aggregate_init(const char *base, type *t, expr **list, int n)
 static void declare_local(decl *d)
 {
     char *aname = mangle_local(d->name);
-    st_add(SK_LOCAL_VAR, d->name, aname, d->dtype);
+    { sym *ls = st_add(SK_LOCAL_VAR, d->name, aname, d->dtype); ls->is_const = d->is_const; }
     int arr_words = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
     log_var(cur_func_name ? cur_func_name : "global", d->name,
             innermost_code(d->dtype), arr_words);
@@ -1254,7 +1259,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
-        st_add(SK_GLOBAL_VAR, d->name, d->name, d->dtype);
+        { sym *gs = st_add(SK_GLOBAL_VAR, d->name, d->name, d->dtype); gs->is_const = d->is_const; }
         int gw = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
         log_var("global", d->name, innermost_code(d->dtype), gw);
     }
