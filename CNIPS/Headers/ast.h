@@ -93,18 +93,30 @@ struct stmt {
 typedef enum { SC_NONE = 0, SC_STATIC, SC_EXTERN, SC_TYPEDEF } storage_class;
 
 // one initializer designator: positional, `.field`, or `[index]` (C99).
-// Single level only; chains like `.a.x` are not represented.
+// Single level per element; chains like `.a.x` are not represented (but the
+// element it designates may itself be a nested brace list).
 enum { DESIG_NONE = 0, DESIG_FIELD = 1, DESIG_INDEX = 2 };
 typedef struct { int kind; char *name; int idx; } init_desig;
+
+// recursive aggregate initializer: a braced list whose items are either scalar
+// expressions or further braced lists (so `{{1,2},{3,4}}` nests). Each item
+// carries an optional single-level designator.
+typedef struct initz initz;
+struct initz {
+    int          is_list;    // 1 = braced { ... }; 0 = scalar expr in `e`
+    expr        *e;          // when !is_list
+    initz      **items;      // when is_list
+    init_desig  *desigs;     // parallel to items
+    int          n;
+    int          line;
+};
 
 struct decl {
     type   *dtype;
     char   *name;
     expr   *init;
     char   *init_file;       // for arrays initialised from "file.txt"
-    expr  **init_list;       // for arrays/structs initialised with {a,b,c}
-    init_desig *desigs;      // parallel to init_list (NULL = all positional)
-    int     n_init;
+    initz  *binit;           // for aggregates initialised with { ... }
     storage_class sclass;
     int     is_const;        // declared `const` — assignment to it is an error
     decl   *next;            // chain within one declaration statement
@@ -162,6 +174,10 @@ expr *ast_comma    (expr *a, expr *b, int line);
 
 stmt *ast_stmt     (stmt_kind k, int line);
 decl *ast_decl     (type *t, char *n, expr *init, int line);
+
+initz *ast_initz_expr(expr *e, int line);            // scalar initializer
+initz *ast_initz_list(int line);                     // empty braced list
+void   initz_add     (initz *z, initz *item, init_desig d);
 func *ast_func     (type *ret, char *n, decl *params, int np, stmt *body, int line);
 unit *ast_unit     (void);
 

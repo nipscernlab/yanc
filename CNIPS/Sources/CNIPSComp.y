@@ -138,8 +138,8 @@ static type *resolve_builtin(int f)
     int     intval;
     op_kind opkind;
     struct { expr **arr; int n; } elist;
-    struct { expr **arr; init_desig *des; int n; } ilist;
-    struct { expr *e; init_desig d; } iitem;
+    initz *iz;
+    struct { initz *z; init_desig d; } iitem;
     struct { stmt **arr; int n; } slist;
     struct { decl  *head; int n; } dlist;
     struct { int dims[8]; int n; } dimlist;
@@ -169,7 +169,7 @@ static type *resolve_builtin(int f)
 %type <exp>   bit_or_expr bit_xor_expr bit_and_expr equality_expr relational_expr
 %type <exp>   shift_expr additive_expr multiplicative_expr cast_expr unary_expr
 %type <exp>   postfix_expr primary_expr opt_expr
-%type <ilist> init_item_list
+%type <iz>    init_item_list init_val
 %type <iitem> init_item
 %type <st>    stmt compound_stmt selection_stmt iteration_stmt jump_stmt
 %type <st>    expr_stmt labeled_stmt block_item local_decl
@@ -432,7 +432,7 @@ init_declarator:
     | pointers IDENT array_suffix '=' '{' init_item_list '}' {
           /* aggregate initialiser: array or struct, one value per slot/field */
           decl *d = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
-          d->init_list = $6.arr; d->desigs = $6.des; d->n_init = $6.n;
+          d->binit = $6;
           $$ = d;
       }
     | pointers IDENT array_suffix STRING_LIT {
@@ -460,25 +460,23 @@ init_declarator:
       }
     ;
 
-/* comma-separated initialisers inside { } (no nested braces in v1). Each item
-   may carry one C99 designator: `.field = v` or `[index] = v`. */
+/* comma-separated initialisers inside { }. Each value is a scalar expression
+   or a nested brace list, optionally prefixed by one C99 designator
+   (`.field =` / `[index] =`). */
+init_val:
+      assignment_expr               { $$ = ast_initz_expr($1, yylineno); }
+    | '{' init_item_list '}'        { $$ = $2; }
+    ;
+
 init_item:
-      assignment_expr               { $$.e = $1; $$.d.kind = DESIG_NONE; $$.d.name = NULL; $$.d.idx = 0; }
-    | '.' IDENT '=' assignment_expr { $$.e = $4; $$.d.kind = DESIG_FIELD; $$.d.name = $2; $$.d.idx = 0; }
-    | '[' INT_LIT ']' '=' assignment_expr { $$.e = $5; $$.d.kind = DESIG_INDEX; $$.d.name = NULL; $$.d.idx = (int)$2; }
+      init_val                          { $$.z = $1; $$.d.kind = DESIG_NONE;  $$.d.name = NULL; $$.d.idx = 0; }
+    | '.' IDENT '=' init_val            { $$.z = $4; $$.d.kind = DESIG_FIELD; $$.d.name = $2;   $$.d.idx = 0; }
+    | '[' INT_LIT ']' '=' init_val      { $$.z = $5; $$.d.kind = DESIG_INDEX; $$.d.name = NULL; $$.d.idx = (int)$2; }
     ;
 
 init_item_list:
-      init_item {
-          $$.arr = malloc(sizeof(expr*));
-          $$.des = malloc(sizeof(init_desig));
-          $$.arr[0] = $1.e; $$.des[0] = $1.d; $$.n = 1;
-      }
-    | init_item_list ',' init_item {
-          $$.arr = realloc($1.arr, sizeof(expr*)   * ($1.n + 1));
-          $$.des = realloc($1.des, sizeof(init_desig) * ($1.n + 1));
-          $$.arr[$1.n] = $3.e; $$.des[$1.n] = $3.d; $$.n = $1.n + 1;
-      }
+      init_item                       { $$ = ast_initz_list(yylineno); initz_add($$, $1.z, $1.d); }
+    | init_item_list ',' init_item    { $$ = $1; initz_add($$, $3.z, $3.d); }
     ;
 
 /* ----- function definition ------------------------------------------------ */

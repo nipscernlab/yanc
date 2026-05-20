@@ -53,6 +53,25 @@ decl *ast_decl(type *t, char *n, expr *init, int line)
     d->dtype = t; d->name = n; d->init = init; d->line = line; return d;
 }
 
+initz *ast_initz_expr(expr *e, int line)
+{
+    initz *z = (initz*)xcalloc(sizeof(initz));
+    z->is_list = 0; z->e = e; z->line = line; return z;
+}
+
+initz *ast_initz_list(int line)
+{
+    initz *z = (initz*)xcalloc(sizeof(initz));
+    z->is_list = 1; z->line = line; return z;
+}
+
+void initz_add(initz *z, initz *item, init_desig d)
+{
+    z->items  = (initz**)realloc(z->items,  sizeof(initz*)    * (z->n + 1));
+    z->desigs = (init_desig*)realloc(z->desigs, sizeof(init_desig) * (z->n + 1));
+    z->items[z->n] = item; z->desigs[z->n] = d; z->n++;
+}
+
 func *ast_func(type *ret, char *n, decl *params, int np, stmt *body, int line)
 {
     func *f = (func*)xcalloc(sizeof(func));

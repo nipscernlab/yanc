@@ -166,6 +166,13 @@ static void scan_strings_expr(expr *e)
     for (int i = 0; i < e->n_args; i++) scan_strings_expr(e->args[i]);
 }
 
+static void scan_strings_initz(initz *z)
+{
+    if (!z) return;
+    if (!z->is_list) { scan_strings_expr(z->e); return; }
+    for (int i = 0; i < z->n; i++) scan_strings_initz(z->items[i]);
+}
+
 static void scan_strings_stmt(stmt *s)
 {
     if (!s) return;
@@ -174,7 +181,7 @@ static void scan_strings_stmt(stmt *s)
     for (int i = 0; i < s->n_items; i++) scan_strings_stmt(s->items[i]);
     for (decl *d = s->decls; d; d = d->next) {
         scan_strings_expr(d->init);
-        for (int i = 0; i < d->n_init; i++) scan_strings_expr(d->init_list[i]);
+        scan_strings_initz(d->binit);
     }
 }
 
@@ -207,6 +214,13 @@ static void scan_fp_expr(expr *e)
     for (int i = 0; i < e->n_args; i++) scan_fp_expr(e->args[i]);
 }
 
+static void scan_fp_initz(initz *z)
+{
+    if (!z) return;
+    if (!z->is_list) { scan_fp_expr(z->e); return; }
+    for (int i = 0; i < z->n; i++) scan_fp_initz(z->items[i]);
+}
+
 static void scan_fp_stmt(stmt *s)
 {
     if (!s) return;
@@ -215,7 +229,7 @@ static void scan_fp_stmt(stmt *s)
     for (int i = 0; i < s->n_items; i++) scan_fp_stmt(s->items[i]);
     for (decl *d = s->decls; d; d = d->next) {
         scan_fp_expr(d->init);
-        for (int i = 0; i < d->n_init; i++) scan_fp_expr(d->init_list[i]);
+        scan_fp_initz(d->binit);
     }
 }
 
@@ -966,54 +980,69 @@ static void gen_expr(expr *e)
 
 // ---- statement codegen -----------------------------------------------------
 
-// emit element-by-element stores for an aggregate initialiser {a,b,c}.
-// `base` is the array/struct base name as it appears in the asm (declared via
-// #array). Handles a 1-D scalar array or a struct of scalar fields; each store
-// is `LOD <offset>; PSH; <value>; STI base` (mem[base+offset] = value). Items
-// may carry a single C99 designator (.field / [index]); positional items use a
-// running cursor that a designator resets. Slots not written stay at the .mif
-// default (zero), matching C's partial-initialisation semantics.
-static void emit_aggregate_init(const char *base, type *t, expr **list,
-                                init_desig *des, int n)
+// emit stores for an aggregate initializer into block `base` (declared via
+// #array) at word offset `off`, recursing into nested brace lists. `t` is the
+// type of the sub-object being initialised. A scalar slot takes a value; an
+// array/struct slot initialised by a non-braced expression is copied word-by-
+// word (the expression yields the object's address). Items carry an optional
+// single-level designator (.field / [index]); positional items use a running
+// cursor that a designator resets. Slots not written keep the .mif zero default.
+static void emit_initz(const char *base, int off, type *t, initz *z)
 {
-    if (t->kind == TY_ARRAY) {
-        int elem = type_size_words(t->base);
-        int cursor = 0;                              // next element index
-        for (int k = 0; k < n; k++) {
-            int idx = cursor;
-            if (des && des[k].kind == DESIG_FIELD)
-                msg_error(list[k]->line, "field designator in array initializer");
-            if (des && des[k].kind == DESIG_INDEX) idx = des[k].idx;
-            cursor = idx + 1;
-            emit("LOD %d", idx * elem);
-            emit("PSH");
-            infer_type(list[k]);
-            gen_expr(list[k]);
+    if (!z) return;
+    if (!z->is_list) {
+        infer_type(z->e);
+        int agg = t && (t->kind == TY_ARRAY || t->kind == TY_STRUCT);
+        if (!agg) {
+            emit("LOD %d", off); emit("PSH");
+            gen_expr(z->e);
             emit("STI %s", base);
-        }
-    } else if (t->kind == TY_STRUCT) {
-        strct_field *f = t->fields;                  // positional cursor
-        for (int k = 0; k < n; k++) {
-            strct_field *target;
-            if (des && des[k].kind == DESIG_INDEX)
-                msg_error(list[k]->line, "array designator in struct initializer");
-            if (des && des[k].kind == DESIG_FIELD) {
-                target = t_struct_find(t, des[k].name);
-                if (!target) msg_error(list[k]->line, "no field '%s' in initializer", des[k].name);
-                f = target->next;                    // positional resumes after it
-            } else {
-                if (!f) msg_error(list[k]->line, "too many initializers");
-                target = f;
-                f = f->next;
+        } else {
+            int n = type_size_words(t);
+            char sn[32]; snprintf(sn, sizeof(sn), "_izs%d", ++label_n);
+            char *st = mangle_local(sn);
+            st_add(SK_LOCAL_VAR, sn, st, t_int());
+            log_var(cur_func_name ? cur_func_name : "global", sn, 1, 0);
+            gen_expr(z->e); emit("SET %s", st);          // st = &src
+            for (int i = 0; i < n; i++) {
+                emit("LOD %d", off + i); emit("PSH");
+                emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDA");
+                emit("STI %s", base);
             }
-            emit("LOD %d", target->offset);
-            emit("PSH");
-            infer_type(list[k]);
-            gen_expr(list[k]);
-            emit("STI %s", base);
+            free(st);
+        }
+        return;
+    }
+    if (t && t->kind == TY_ARRAY) {
+        int esz = type_size_words(t->base);
+        int cursor = 0;
+        for (int k = 0; k < z->n; k++) {
+            int idx = cursor;
+            if (z->desigs[k].kind == DESIG_FIELD)
+                msg_error(z->line, "field designator in array initializer");
+            if (z->desigs[k].kind == DESIG_INDEX) idx = z->desigs[k].idx;
+            cursor = idx + 1;
+            emit_initz(base, off + idx * esz, t->base, z->items[k]);
+        }
+    } else if (t && t->kind == TY_STRUCT) {
+        strct_field *f = t->fields;
+        for (int k = 0; k < z->n; k++) {
+            strct_field *target;
+            if (z->desigs[k].kind == DESIG_INDEX)
+                msg_error(z->line, "array designator in struct initializer");
+            if (z->desigs[k].kind == DESIG_FIELD) {
+                target = t_struct_find(t, z->desigs[k].name);
+                if (!target) msg_error(z->line, "no field '%s' in initializer", z->desigs[k].name);
+                f = target->next;
+            } else {
+                if (!f) msg_error(z->line, "too many initializers");
+                target = f; f = f->next;
+            }
+            emit_initz(base, off + target->offset, target->ftype, z->items[k]);
         }
     } else {
-        msg_error(list[0]->line, "aggregate initializer requires an array or struct");
+        // braced list wrapping a scalar, e.g. `{ x }` -> take the first element
+        if (z->n > 0) emit_initz(base, off, t, z->items[0]);
     }
 }
 
@@ -1028,10 +1057,10 @@ static void declare_local(decl *d)
         // multi-dim arrays flatten to total word count; element type is the innermost scalar
         if (d->init_file) emit("#arrays %s %d %d \"%s\"", aname, innermost_code(d->dtype), arr_words, d->init_file);
         else              emit("#array %s %d %d",         aname, innermost_code(d->dtype), arr_words);
-        if (d->init_list) emit_aggregate_init(aname, d->dtype, d->init_list, d->desigs, d->n_init);
+        if (d->binit) emit_initz(aname, 0, d->dtype, d->binit);
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
         emit("#array %s 1 %d", aname, type_size_words(d->dtype));
-        if (d->init_list)  emit_aggregate_init(aname, d->dtype, d->init_list, d->desigs, d->n_init);
+        if (d->binit)      emit_initz(aname, 0, d->dtype, d->binit);
         else if (d->init)  copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
     } else if (d->init) {
         infer_type(d->init);
@@ -1320,7 +1349,7 @@ static void emit_global_scalar_inits(unit *u)
         decl *d = u->globals[i];
         if (!d->dtype) continue;
         if (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT) {
-            if (d->init_list) emit_aggregate_init(d->name, d->dtype, d->init_list, d->desigs, d->n_init);
+            if (d->binit) emit_initz(d->name, 0, d->dtype, d->binit);
             continue;
         }
         if (!d->init) continue;
@@ -1457,7 +1486,8 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     for (int i = 0; i < u->n_globals; i++) {
         scan_strings_expr(u->globals[i]->init);
         scan_fp_expr(u->globals[i]->init);
-        for (int k = 0; k < u->globals[i]->n_init; k++) { scan_strings_expr(u->globals[i]->init_list[k]); scan_fp_expr(u->globals[i]->init_list[k]); }
+        scan_strings_initz(u->globals[i]->binit);
+        scan_fp_initz(u->globals[i]->binit);
     }
 
     emit_header(u);
