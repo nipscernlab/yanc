@@ -149,6 +149,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "long"                   { return KW_LONG;     }
 "double"                 { return KW_DOUBLE;   }
 "_Bool"                  { return KW_BOOL;     }
+"bool"                   { return KW_BOOL;     }
 "unsigned"               { return KW_UNSIGNED; }
 "signed"                 { return KW_SIGNED;   }
 "__signed"               { return KW_SIGNED;   }
@@ -170,12 +171,20 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "asm"                    { return KW_ASM;      }
 "__asm__"                { return KW_ASM;      }
 "struct"                 { return KW_STRUCT;   }
+"class"                  { return KW_CLASS;    }
+"this"                   { return KW_THIS;     }
+"public"                 { return KW_PUBLIC;    }
+"private"                { return KW_PRIVATE;   }
+"protected"              { return KW_PROTECTED; }
 "union"                  { return KW_UNION;    }
 "typedef"                { return KW_TYPEDEF;  }
 "enum"                   { return KW_ENUM;     }
 "sizeof"                 { return KW_SIZEOF;   }
 "new"                    { return KW_NEW;      }
 "delete"                 { return KW_DELETE;   }
+"true"                   { yylval.ival = 1; return INT_LIT; }
+"false"                  { yylval.ival = 0; return INT_LIT; }
+"nullptr"                { yylval.ival = 0; return INT_LIT; }
 
 "_Generic"               { return KW_GENERIC; }
 "_Static_assert"         { return KW_STATIC_ASSERT; }

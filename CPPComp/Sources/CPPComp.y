@@ -38,6 +38,7 @@ static decl  *param_head = NULL;
 static decl  *param_tail = NULL;
 static int    param_count = 0;
 
+static void unit_add_func(func *f);   // defined below; used by method_finish
 static void params_reset(void) { param_head = param_tail = NULL; param_count = 0; }
 static void params_append(decl *d)
 {
@@ -53,6 +54,44 @@ static int   cur_struct_sp = 0;
 static type *cur_struct = NULL;            // == top of the stack (or NULL)
 static void cur_struct_push(type *t) { cur_struct_stk[cur_struct_sp++] = cur_struct; cur_struct = t; }
 static void cur_struct_pop (void)    { cur_struct = cur_struct_stk[--cur_struct_sp]; }
+// the class whose body we are currently parsing (for `this` + method mangling)
+static type *cur_class = NULL;
+// mangle a method name: Class::name -> "Class__name" (asm-level symbol)
+static char *mangle_method(const char *cls, const char *name)
+{
+    char *m = malloc(strlen(cls) + strlen(name) + 3);
+    sprintf(m, "%s__%s", cls, name);
+    return m;
+}
+
+// open a method's scope: register the mangled symbol, inject `this` as param 0,
+// stage the declared params. Called from method_def's mid-rule action.
+static void method_enter(type *ret, const char *name, decl *params, int nparams)
+{
+    char *mname = mangle_method(cur_class->tag, name);
+    sym *s = st_find(mname);
+    if (!s) s = st_add(SK_FUNC, mname, mname, ret);
+    s->defined = 1;
+    st_enter_func(mname);
+    st_push_scope();
+    decl *thisd = ast_decl(t_ptr(cur_class), strdup("this"), NULL, 0);
+    thisd->next = params;
+    st_add(SK_PARAM, "this", NULL, t_ptr(cur_class));
+    for (decl *p = params; p; p = p->next) st_add(SK_PARAM, p->name, NULL, p->dtype);
+    param_head = thisd; param_tail = NULL; param_count = nparams + 1;
+    ts_sclass = SC_NONE; ts_is_const = 0;
+}
+
+// finalize a method into a free function tagged with its class.
+static void method_finish(type *ret, const char *name, stmt *body)
+{
+    func *f = ast_func(ret, mangle_method(cur_class->tag, name), param_head, param_count, body, yylineno);
+    f->method_of = cur_class;
+    unit_add_func(f);
+    st_pop_scope();
+    st_leave_func();
+    params_reset();
+}
 // enum counter (reset per enum_specifier)
 static long  enum_counter = 0;
 
@@ -231,6 +270,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token KW_IF KW_ELSE KW_WHILE KW_FOR KW_DO KW_SWITCH KW_CASE KW_DEFAULT
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM KW_NEW KW_DELETE
+%token KW_CLASS KW_THIS KW_PUBLIC KW_PRIVATE KW_PROTECTED
 %token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT KW_GENERIC
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -239,7 +279,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token TOK_AMPEQ TOK_PIPEEQ TOK_CARETEQ TOK_SHLEQ TOK_SHREQ
 %token TOK_ARROW TOK_ELLIPSIS
 
-%type <typ>   type_specifier struct_specifier union_specifier enum_specifier base_type decl_specifiers
+%type <typ>   type_specifier struct_specifier class_specifier union_specifier enum_specifier base_type decl_specifiers
 %type <intval> pointers storage_or_qual_list storage_or_qual
 %type <intval> builtin_spec builtin_type_seq
 %type <exp>   expr assignment_expr conditional_expr logical_or_expr logical_and_expr
@@ -340,6 +380,7 @@ base_type:
 type_specifier:
       builtin_type_seq                       { $$ = resolve_builtin($1); }
     | struct_specifier                       { $$ = $1;        }
+    | class_specifier                        { $$ = $1;        }
     | union_specifier                        { $$ = $1;        }
     | enum_specifier                         { $$ = $1;        }
     | TYPEDEF_NAME                           {
@@ -396,6 +437,66 @@ struct_specifier:
           cur_struct_pop();
           $$ = done;
       }
+    ;
+
+/* A class is a struct that may also contain member functions and access
+   labels, and whose bare name is usable as a type. Methods lower to free
+   functions taking an implicit `this`; inline method bodies see members
+   declared above them (single-pass). */
+class_specifier:
+      KW_CLASS IDENT '{' {
+          type *t = t_make_struct($2);
+          cur_struct_push(t);
+          st_add_tag($2, t);
+          st_add_typedef($2, t);          // bare class name usable as a type
+          cur_class = t;
+      } member_list '}' {
+          type *done = cur_struct;
+          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          cur_struct_pop();
+          cur_class = NULL;
+          $$ = done;
+          free($2);
+      }
+    | KW_CLASS IDENT {
+          sym *s = st_find_tag($2);
+          if (!s) { type *t = t_make_struct($2); st_add_tag($2, t); st_add_typedef($2, t); $$ = t; }
+          else    { $$ = s->struct_t; }
+          free($2);
+      }
+    ;
+
+member_list:
+      /* empty */
+    | member_list member
+    ;
+
+member:
+      access_label
+    | field_decl
+    | method_def
+    ;
+
+access_label:
+      KW_PUBLIC    ':'   { /* access control is cosmetic on this target */ }
+    | KW_PRIVATE   ':'   { }
+    | KW_PROTECTED ':'   { }
+    ;
+
+/* inline method: `ret name(params) { body }` inside a class body. Lowered to a
+   free function `Class__name` with an implicit leading `this` parameter. The
+   prefix `base_type IDENT` is shared with field_decl (no nullable `pointers`)
+   so the field/method choice is decided by the `(` after the name. A leading
+   `*` gives a pointer-return method. */
+method_def:
+      base_type IDENT '(' param_list ')'
+          { method_enter($1, $2, $4.head, $4.n); }
+      compound_stmt
+          { method_finish($1, $2, $7); free($2); }
+    | base_type '*' IDENT '(' param_list ')'
+          { method_enter(t_ptr($1), $3, $5.head, $5.n); }
+      compound_stmt
+          { method_finish(t_ptr($1), $3, $8); free($3); }
     ;
 
 union_specifier:
@@ -980,6 +1081,7 @@ primary_expr:
     | CHAR_LIT                               { $$ = ast_char_lit($1, yylineno); }
     | STRING_LIT                             { $$ = ast_string_lit($1, g_str_len, yylineno); }
     | '(' expr ')'                           { $$ = $2; }
+    | KW_THIS                                { $$ = ast_ident(strdup("this"), yylineno); }
     | KW_GENERIC '(' assignment_expr ',' generic_assoc_list ')' {
           $$ = ast_generic($3, $5.ts, $5.es, $5.n, yylineno);
       }

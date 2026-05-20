@@ -141,6 +141,7 @@ struct func {
     int     line;
     int     is_recursive;    // participates in a call-graph cycle -> needs frames
     int     frame_size;      // words of stack frame (when is_recursive)
+    type   *method_of;       // non-NULL: this is a class method; its class type
 };
 
 typedef struct {

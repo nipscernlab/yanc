@@ -40,6 +40,25 @@ static int   cur_frame_cursor = 0; // next free frame offset while emitting it
 #define CSTK_SIZE 1024            // software call-stack depth (words)
 static char *cur_func_name = NULL;
 static type *cur_func_ret  = NULL;
+static type *cur_method_class = NULL;   // class type when emitting a method body
+
+// inside a method, an unqualified name that isn't a local/param but IS a data
+// member of the enclosing class resolves to `this->member`. Returns the field
+// (and tells the caller to address it relative to the `this` param).
+static strct_field *cur_class_member(const char *name)
+{
+    if (!cur_method_class) return NULL;
+    if (st_find_local(name)) return NULL;     // a local/param shadows a member
+    return t_struct_find(cur_method_class, name);
+}
+
+// mangle Class::name -> "Class__name" (must match the parser's scheme)
+static char *cg_mangle_method(const char *cls, const char *name)
+{
+    char *m = malloc(strlen(cls) + strlen(name) + 3);
+    sprintf(m, "%s__%s", cls, name);
+    return m;
+}
 
 static void emit(const char *fmt, ...)
 {
@@ -363,6 +382,8 @@ static type *infer_type(expr *e)
     case E_FLOAT_LIT: e->etype = t_float(); break;
     case E_STRING_LIT: e->etype = t_ptr(t_char()); break;
     case E_IDENT: {
+        strct_field *mf = cur_class_member(e->sval);
+        if (mf) { e->etype = mf->ftype; break; }    // unqualified data member
         sym *s = st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
         if (s->kind == SK_FUNC) e->etype = s->stype;
@@ -406,6 +427,17 @@ static type *infer_type(expr *e)
     }
     case E_CALL: {
         for (int i = 0; i < e->n_args; i++) infer_type(e->args[i]);
+        if (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER) {
+            // method call: return type comes from the mangled method symbol
+            type *ct = infer_type(e->a->a);
+            if (e->a->kind == E_PMEMBER) ct = ct ? ct->base : NULL;
+            if (ct && ct->kind == TY_STRUCT && ct->tag) {
+                char *masm = cg_mangle_method(ct->tag, e->a->member);
+                sym *s = st_find(masm); free(masm);
+                e->etype = (s && s->kind == SK_FUNC) ? s->stype : t_int();
+            } else e->etype = t_int();
+            break;
+        }
         if (e->a->kind == E_IDENT) {
             const char *fn = e->a->sval;
             // builtins: in() returns int, out() returns void; both are not "declared" identifiers
@@ -504,10 +536,21 @@ static void gen_bool(expr *e, const char *jz_target)
 
 // ---- lvalue address: leaves &lv in accumulator -----------------------------
 
+// load the `this` pointer's VALUE (the current object's address) into acc
+static void gen_load_this(void)
+{
+    sym *th = st_find("this");
+    if (!th) { msg_internal("`this` outside a method"); return; }
+    if (th->is_frame) { emit("LOD __fp"); if (th->frame_off) emit("ADD %d", th->frame_off); emit("LDA"); }
+    else emit("LOD %s", th->asm_name);
+}
+
 static void gen_addr(expr *e)
 {
     switch (e->kind) {
     case E_IDENT: {
+        strct_field *mf = cur_class_member(e->sval);
+        if (mf) { gen_load_this(); if (mf->offset > 0) emit("ADD %d", mf->offset); return; }
         sym *s = st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
         // frame local/param of a recursive function: address is __fp + offset
@@ -755,6 +798,13 @@ static void gen_expr(expr *e)
         return;
 
     case E_IDENT: {
+        strct_field *mf = cur_class_member(e->sval);
+        if (mf) {                              // unqualified data member -> this->member
+            gen_load_this();
+            if (mf->offset > 0) emit("ADD %d", mf->offset);
+            emit("LDA");
+            return;
+        }
         sym *s = st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
         if (s->kind == SK_FUNC) {
@@ -1097,6 +1147,21 @@ static void gen_expr(expr *e)
         return;
 
     case E_CALL: {
+        // method call: obj.m(args) -> Class__m(&obj, args); p->m(args) -> Class__m(p, args)
+        if (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER) {
+            expr *obj = e->a->a;
+            type *ct = infer_type(obj);
+            if (e->a->kind == E_PMEMBER) ct = ct ? ct->base : NULL;
+            if (!ct || ct->kind != TY_STRUCT || !ct->tag)
+                msg_error(e->line, "method call on non-class value");
+            char *masm = cg_mangle_method(ct->tag, e->a->member);
+            if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // this
+            emit("PSH");
+            for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
+            emit("CAL %s", masm);
+            free(masm);
+            return;
+        }
         // direct call to a named function (or in()/out() builtins)
         if (e->a->kind == E_IDENT) {
             const char *fn = e->a->sval;
@@ -1630,6 +1695,7 @@ static void emit_function(func *f, unit *u, int is_main)
     cur_func_name    = f->name;
     cur_func_ret     = f->ret;
     cur_fn_recursive = f->is_recursive;
+    cur_method_class = f->method_of;
     st_enter_func(f->name);
     st_push_scope();
 
@@ -1695,6 +1761,7 @@ static void emit_function(func *f, unit *u, int is_main)
     st_pop_scope();
     st_leave_func();
     cur_func_name = NULL;
+    cur_method_class = NULL;
     cur_func_ret  = NULL;
     cur_fn_recursive = 0;
 }
