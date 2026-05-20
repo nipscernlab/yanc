@@ -72,6 +72,11 @@ static void method_enter(type *ret, const char *name, decl *params, int nparams)
     sym *s = st_find(mname);
     if (!s) s = st_add(SK_FUNC, mname, mname, ret);
     s->defined = 1;
+    /* param_types = [this, declared...] so call sites can spot reference params */
+    s->n_params = nparams + 1;
+    s->param_types = malloc(sizeof(type*) * s->n_params);
+    s->param_types[0] = t_ptr(cur_class);
+    { int i = 1; for (decl *p = params; p; p = p->next, i++) s->param_types[i] = p->dtype; }
     st_enter_func(mname);
     st_push_scope();
     decl *thisd = ast_decl(t_ptr(cur_class), strdup("this"), NULL, 0);
@@ -635,7 +640,14 @@ init_declarator_list:
     ;
 
 init_declarator:
-      pointers IDENT array_suffix {
+      '&' IDENT '=' assignment_expr {
+          /* reference variable `T& r = lvalue;` — r binds to the address of the
+             initializer and auto-derefs on every use */
+          decl *d = ast_decl(t_ref(cur_base), $2, $4, yylineno);
+          d->sclass = ts_sclass;
+          $$ = d;
+      }
+    | pointers IDENT array_suffix {
           if (ts_typedef) {
               type *t = apply_pointers(cur_base, $1);
               t = build_array_type(t, $3.dims, $3.n);
@@ -787,6 +799,10 @@ param_declarator:
           type *t = apply_pointers($1, $2);
           t = build_array_type(t, $4.dims, $4.n);
           $$ = ast_decl(t, $3, NULL, yylineno);
+      }
+    | base_type '&' IDENT {
+          /* reference parameter `T& name` — pass-by-address, auto-deref on use */
+          $$ = ast_decl(t_ref($1), $3, NULL, yylineno);
       }
     | base_type pointers {
           /* abstract (unnamed) parameter — e.g. the `int` in `int (*f)(int)` */

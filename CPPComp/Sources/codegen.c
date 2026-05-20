@@ -387,8 +387,8 @@ static type *infer_type(expr *e)
         if (mf) { e->etype = mf->ftype; break; }    // unqualified data member
         sym *s = st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
-        if (s->kind == SK_FUNC) e->etype = s->stype;
-        else                    e->etype = s->stype;
+        if (s->stype && s->stype->is_ref) e->etype = s->stype->base;   // peel reference
+        else                              e->etype = s->stype;
         break;
     }
     case E_BINOP: {
@@ -556,6 +556,12 @@ static void gen_addr(expr *e)
         if (mf) { gen_load_this(); if (mf->offset > 0) emit("ADD %d", mf->offset); return; }
         sym *s = st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
+        // reference: its lvalue address is the address it stores (the referent)
+        if (s->stype && s->stype->is_ref) {
+            if (s->is_frame) { emit("LOD __fp"); if (s->frame_off) emit("ADD %d", s->frame_off); emit("LDA"); }
+            else emit("LOD %s", s->asm_name);
+            return;
+        }
         // frame local/param of a recursive function: address is __fp + offset
         if (s->is_frame) {
             emit("LOD __fp"); if (s->frame_off) emit("ADD %d", s->frame_off);
@@ -706,6 +712,14 @@ static void gen_push_arg(expr *arg)
     }
 }
 
+// push one call argument, honouring a reference parameter (T&): pass the
+// address of the argument lvalue rather than its value.
+static void gen_arg(expr *arg, type *ptype)
+{
+    if (ptype && ptype->is_ref) { gen_addr(arg); emit("PSH"); }
+    else gen_push_arg(arg);
+}
+
 // ---- store: lv = val -------------------------------------------------------
 
 static void gen_store(expr *lv, expr *val)
@@ -752,7 +766,8 @@ static void gen_store(expr *lv, expr *val)
     // fast path: simple scalar IDENT
     if (lv->kind == E_IDENT) {
         sym *s = st_find(lv->sval);
-        if (s && !s->is_frame && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
+        if (s && !s->is_frame && s->stype && !s->stype->is_ref &&
+            s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
             gen_expr_num(val, s->stype->kind == TY_FLOAT);
             emit("SET %s", s->asm_name);
             return;
@@ -810,6 +825,7 @@ static void gen_expr(expr *e)
         }
         sym *s = st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
+        if (s->stype && s->stype->is_ref) { gen_addr(e); emit("LDA"); return; }  // auto-deref
         if (s->kind == SK_FUNC) {
             // function used as a value -> its dispatch-table ID (function ptr)
             int id = fp_id_of(e->sval);
@@ -1195,9 +1211,13 @@ static void gen_expr(expr *e)
             if (!ct || ct->kind != TY_STRUCT || !ct->tag)
                 msg_error(e->line, "method call on non-class value");
             char *masm = cg_mangle_method(ct->tag, e->a->member);
+            sym *ms = st_find(masm);
             if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // this
             emit("PSH");
-            for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
+            for (int i = 0; i < e->n_args; i++) {            // param i+1 (this is param 0)
+                type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
+                gen_arg(e->args[i], pt);
+            }
             emit("CAL %s", masm);
             free(masm);
             return;
@@ -1228,7 +1248,10 @@ static void gen_expr(expr *e)
             }
             sym *s = st_find(fn);
             if (s && s->kind == SK_FUNC) {
-                for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
+                for (int i = 0; i < e->n_args; i++) {
+                    type *pt = (s->param_types && i < s->n_params) ? s->param_types[i] : NULL;
+                    gen_arg(e->args[i], pt);
+                }
                 emit("CAL %s", s->asm_name);
                 return;
             }
@@ -1344,7 +1367,8 @@ static void declare_local(decl *d)
         cur_frame_cursor += d->dtype ? type_size_words(d->dtype) : 1;
         if (d->init) {                                  // store init into the frame slot
             emit("LOD __fp"); if (ls->frame_off) emit("ADD %d", ls->frame_off); emit("PSH");
-            gen_expr_num(d->init, d->dtype && d->dtype->kind == TY_FLOAT);
+            if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
+            else gen_expr_num(d->init, d->dtype && d->dtype->kind == TY_FLOAT);
             emit("STA");
         }
         return;
@@ -1369,7 +1393,8 @@ static void declare_local(decl *d)
         else if (d->binit)      emit_initz(aname, 0, d->dtype, d->binit);
         else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
     } else if (d->init && !is_static) {
-        gen_expr_num(d->init, d->dtype && d->dtype->kind == TY_FLOAT);
+        if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
+        else gen_expr_num(d->init, d->dtype && d->dtype->kind == TY_FLOAT);
         emit("SET %s", aname);
     }
     free(aname);

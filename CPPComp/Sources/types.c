@@ -54,6 +54,13 @@ type *t_ptr(type *to)
     return t;
 }
 
+type *t_ref(type *to)
+{
+    type *t = t_ptr(to);
+    t->is_ref = 1;
+    return t;
+}
+
 type *t_array(type *of, int n)
 {
     type *t = (type*)xcalloc(sizeof(type));

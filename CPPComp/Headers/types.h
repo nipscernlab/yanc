@@ -29,6 +29,7 @@ struct type {
     int       arr_size;    // ARRAY length (0 = unknown — only legal in params)
     int       is_const;
     int       is_signed;   // for TY_INT
+    int       is_ref;      // C++ reference: a TY_PTR that auto-derefs on use
 
     // struct-specific
     char         *tag;     // struct/union tag name (e.g. "point")
@@ -60,6 +61,7 @@ type *t_float(void);
 type *t_char(void);    // 1-word signed (CHAR_BIT == NUBITS on this target)
 
 type *t_ptr  (type *to);
+type *t_ref  (type *to);   // C++ T& — a pointer flagged is_ref (auto-deref)
 type *t_array(type *of, int n);
 
 type *t_make_struct(char *tag);                                  // forward decl
