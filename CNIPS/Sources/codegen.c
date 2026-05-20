@@ -29,6 +29,7 @@ static FILE *out_f;
 static int   ins_count = 0;
 static int   label_n   = 0;
 static int   g_nubits  = 16;     // effective word width (for unsigned compares)
+static int   g_uses_udiv = 0;    // an unsigned / or % was emitted -> emit _udivmod
 static char *cur_func_name = NULL;
 static type *cur_func_ret  = NULL;
 
@@ -688,8 +689,15 @@ static void gen_expr(expr *e)
             case OP_ADD: emit(is_float ? "SF_ADD" : "S_ADD"); return;
             case OP_SUB: if (is_float) emit("SF_SU1"); else { emit("NEG"); emit("S_ADD"); } return;
             case OP_MUL: emit(is_float ? "SF_MLT" : "S_MLT"); return;
-            case OP_DIV: emit(is_float ? "SF_DIV" : "S_DIV"); return;
-            case OP_MOD: emit("S_MOD"); return;
+            // unsigned div/mod: stack=[n], acc=d -> push d, call the software
+            // unsigned divider (the ULA's DIV/MOD are signed). q in acc, r in _ud_r.
+            case OP_DIV:
+                if (is_float) { emit("SF_DIV"); return; }
+                if (uns_cmp)  { emit("PSH"); emit("CAL udivmod"); g_uses_udiv = 1; return; }
+                emit("S_DIV"); return;
+            case OP_MOD:
+                if (uns_cmp)  { emit("PSH"); emit("CAL udivmod"); emit("LOD udm_r"); g_uses_udiv = 1; return; }
+                emit("S_MOD"); return;
             case OP_BAND: emit("S_AND"); return;
             case OP_BOR:  emit("S_ORR"); return;
             case OP_BXOR: emit("S_XOR"); return;
@@ -1255,6 +1263,43 @@ static void emit_function(func *f, unit *u, int is_main)
     cur_func_ret  = NULL;
 }
 
+// software unsigned divide: caller pushes n then d; returns quotient in acc and
+// leaves the remainder in the global udm_r. Shift-subtract, NUBITS iterations.
+// The ULA's DIV/MOD are signed, so this is the unsigned path. `>=u` uses the
+// sign-bit-flip trick (XOR sb, then signed compare).
+// NOTE: the assembler's label/identifier grammar rejects a leading underscore
+// (it is silently dropped), so jump/call targets must start with a letter.
+static void emit_udivmod(void)
+{
+    long sb = 1L << (g_nubits - 1);
+    emit("@udivmod NOP");
+    emit("POP"); emit("SET udm_d");          // divisor
+    emit("POP"); emit("SET udm_n");          // dividend
+    emit("LOD 0"); emit("SET udm_q");
+    emit("LOD 0"); emit("SET udm_r");
+    emit("LOD 0"); emit("SET udm_c");
+    emit("@udm_top NOP");
+    emit("LOD udm_c"); emit("PSH"); emit("LOD %d", g_nubits); emit("S_LES"); emit("JIZ udm_end"); // while c < NUBITS
+    // r = (r<<1) | (n >> (NUBITS-1))
+    emit("LOD udm_r"); emit("PSH"); emit("LOD 1"); emit("S_SHL"); emit("PSH");           // (r<<1) on stack
+    emit("LOD udm_n"); emit("PSH"); emit("LOD %d", g_nubits - 1); emit("S_SHR");          // top bit of n
+    emit("S_ORR"); emit("SET udm_r");
+    // n <<= 1 ; q <<= 1
+    emit("LOD udm_n"); emit("PSH"); emit("LOD 1"); emit("S_SHL"); emit("SET udm_n");
+    emit("LOD udm_q"); emit("PSH"); emit("LOD 1"); emit("S_SHL"); emit("SET udm_q");
+    // if (r >=u d) { r -= d; q += 1 }
+    emit("LOD udm_r"); emit("XOR %ld", sb); emit("PSH");
+    emit("LOD udm_d"); emit("XOR %ld", sb); emit("S_LES"); emit("LIN"); emit("JIZ udm_noif"); // !(r<u d) -> r>=u d
+    emit("LOD udm_d"); emit("NEG"); emit("ADD udm_r"); emit("SET udm_r");   // r = r - d
+    emit("LOD udm_q"); emit("ADD 1"); emit("SET udm_q");                    // q += 1 (low bit was 0)
+    emit("@udm_noif NOP");
+    emit("LOD udm_c"); emit("ADD 1"); emit("SET udm_c");
+    emit("JMP udm_top");
+    emit("@udm_end NOP");
+    emit("LOD udm_q");                       // return quotient
+    emit("RET");
+}
+
 static void write_cmm_log(const char *tmp_dir)
 {
     char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", tmp_dir);
@@ -1274,6 +1319,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 {
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
+    g_uses_udiv = 0;
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
 
     // file-scope symtab: globals + function signatures
@@ -1315,6 +1361,10 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     }
 
     emit("@fim JMP fim");
+
+    // emitted after @fim so main falls through into the halt loop, not the
+    // helper; the helper is only ever entered through CAL.
+    if (g_uses_udiv) emit_udivmod();
 
     if (tmp_dir) write_cmm_log(tmp_dir);
 }

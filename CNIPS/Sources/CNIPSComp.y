@@ -95,6 +95,35 @@ static decl *make_decl(type *base, int stars, char *name, const int *dims, int n
     d->is_const = ts_is_const;
     return d;
 }
+
+// builtin type-specifier accumulator -----------------------------------------
+// C lets the keywords appear in any multiplicity/order (e.g. `long unsigned
+// int`, `unsigned long long`). We OR a flag per keyword (counting `long`),
+// then collapse to the few storage types the YANC actually has: every signed
+// integer -> one int word, every unsigned integer -> one uint word, every
+// floating type -> the one float word. char keeps its own (signed) word.
+enum {
+    TS_VOID   = 1<<0, TS_CHAR  = 1<<1, TS_INT    = 1<<2, TS_FLOAT = 1<<3,
+    TS_DOUBLE = 1<<4, TS_SIGN  = 1<<5, TS_UNSIGN = 1<<6, TS_SHORT = 1<<7,
+    TS_BOOL   = 1<<8, TS_LONG1 = 1<<9, TS_LONG2  = 1<<10,
+    TS_LONG   = 1<<11   // sentinel returned by the `long` spec; folded by ts_add
+};
+
+static int ts_add(int acc, int spec)
+{
+    if (spec == TS_LONG)
+        return acc | ((acc & TS_LONG1) ? TS_LONG2 : TS_LONG1);
+    return acc | spec;
+}
+
+static type *resolve_builtin(int f)
+{
+    if (f & TS_VOID)                 return t_void();
+    if (f & (TS_FLOAT | TS_DOUBLE))  return t_float();   // float/double/long double
+    if (f & TS_BOOL)                 return t_uint();
+    if (f & TS_CHAR)                 return (f & TS_UNSIGN) ? t_uint() : t_char();
+    return (f & TS_UNSIGN) ? t_uint() : t_int();         // short/int/long/long long
+}
 %}
 
 %union {
@@ -119,6 +148,7 @@ static decl *make_decl(type *base, int stars, char *name, const int *dims, int n
 %token <sval>  IDENT TYPEDEF_NAME STRING_LIT
 
 %token KW_VOID KW_INT KW_FLOAT KW_CHAR KW_UNSIGNED KW_SIGNED
+%token KW_SHORT KW_LONG KW_DOUBLE KW_BOOL
 %token KW_IF KW_ELSE KW_WHILE KW_FOR KW_DO KW_SWITCH KW_CASE KW_DEFAULT
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM
@@ -132,6 +162,7 @@ static decl *make_decl(type *base, int stars, char *name, const int *dims, int n
 
 %type <typ>   type_specifier struct_specifier union_specifier enum_specifier base_type
 %type <intval> pointers storage_or_qual_list storage_or_qual
+%type <intval> builtin_spec builtin_type_seq
 %type <exp>   expr assignment_expr conditional_expr logical_or_expr logical_and_expr
 %type <exp>   bit_or_expr bit_xor_expr bit_and_expr equality_expr relational_expr
 %type <exp>   shift_expr additive_expr multiplicative_expr cast_expr unary_expr
@@ -213,14 +244,7 @@ base_type:
     ;
 
 type_specifier:
-      KW_VOID                                { $$ = t_void();  }
-    | KW_INT                                 { $$ = t_int();   }
-    | KW_FLOAT                               { $$ = t_float(); }
-    | KW_CHAR                                { $$ = t_char();  }
-    | KW_UNSIGNED KW_INT                     { $$ = t_uint();  }   /* unsigned int */
-    | KW_SIGNED   KW_INT                     { $$ = t_int();   }   /* signed int   */
-    | KW_UNSIGNED                            { $$ = t_uint();  }   /* `unsigned` == unsigned int */
-    | KW_SIGNED                              { $$ = t_int();   }
+      builtin_type_seq                       { $$ = resolve_builtin($1); }
     | struct_specifier                       { $$ = $1;        }
     | union_specifier                        { $$ = $1;        }
     | enum_specifier                         { $$ = $1;        }
@@ -230,6 +254,25 @@ type_specifier:
           $$ = s->stype;
           free($1);
       }
+    ;
+
+/* one or more builtin keywords in any order, folded into flags (see ts_add) */
+builtin_type_seq:
+      builtin_spec                           { $$ = ts_add(0, $1); }
+    | builtin_type_seq builtin_spec          { $$ = ts_add($1, $2); }
+    ;
+
+builtin_spec:
+      KW_VOID      { $$ = TS_VOID;   }
+    | KW_CHAR      { $$ = TS_CHAR;   }
+    | KW_INT       { $$ = TS_INT;    }
+    | KW_SHORT     { $$ = TS_SHORT;  }
+    | KW_LONG      { $$ = TS_LONG;   }
+    | KW_FLOAT     { $$ = TS_FLOAT;  }
+    | KW_DOUBLE    { $$ = TS_DOUBLE; }
+    | KW_BOOL      { $$ = TS_BOOL;   }
+    | KW_SIGNED    { $$ = TS_SIGN;   }
+    | KW_UNSIGNED  { $$ = TS_UNSIGN; }
     ;
 
 struct_specifier:

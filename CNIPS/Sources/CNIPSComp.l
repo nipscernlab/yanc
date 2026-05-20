@@ -145,10 +145,14 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "int"                    { return KW_INT;      }
 "float"                  { return KW_FLOAT;    }
 "char"                   { return KW_CHAR;     }
-"short"                  { return KW_INT;      }   /* aliases of int on this target */
-"long"                   { return KW_INT;      }
+"short"                  { return KW_SHORT;    }
+"long"                   { return KW_LONG;     }
+"double"                 { return KW_DOUBLE;   }
+"_Bool"                  { return KW_BOOL;     }
 "unsigned"               { return KW_UNSIGNED; }
 "signed"                 { return KW_SIGNED;   }
+"__signed"               { return KW_SIGNED;   }
+"__signed__"             { return KW_SIGNED;   }
 
 "if"                     { return KW_IF;       }
 "else"                   { return KW_ELSE;     }
@@ -175,8 +179,16 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "extern"                 { return KW_EXTERN;   }
 "const"                  { return KW_CONST;    }
 "inline"                 { /* ignored — every fn is potentially inlined */ }
+"__inline"               { /* ignored */ }
+"__inline__"             { /* ignored */ }
 "register"               { /* ignored */ }
+"auto"                   { /* ignored — classic-C storage class */ }
 "volatile"               { /* ignored — relevant only for INN/OUT, which are explicit */ }
+"__volatile__"           { /* ignored */ }
+"restrict"               { /* ignored — no aliasing model on this target */ }
+"__restrict"             { /* ignored */ }
+"__restrict__"           { /* ignored */ }
+"_Noreturn"              { /* ignored */ }
 
   /* literals ----------------------------------------------------------- */
 
