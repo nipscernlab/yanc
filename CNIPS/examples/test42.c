@@ -14,9 +14,8 @@ int on_green(void)  { return YELLOW; }
 int on_yellow(void) { return RED; }
 int on_red(void)    { reds = reds + 1; return GREEN; }
 
-// a function pointer is an int (dispatch id) on this target, so the handler
-// table is an int array seeded with the functions; handlers[s]() calls indirectly
-int handlers[3] = { on_green, on_yellow, on_red };
+// table of state handlers, indexed by the current state
+int (*handlers[NSTATES])(void) = { on_green, on_yellow, on_red };
 
 void main(void) {
     int state = GREEN;

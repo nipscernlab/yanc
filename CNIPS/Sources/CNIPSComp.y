@@ -468,7 +468,11 @@ pointers:
 array_suffix:
       /* empty */                 { $$.n = 0; }
     | array_suffix '[' ']'        { $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = 0;        }  /* unsized — params only */
-    | array_suffix '[' INT_LIT ']'{ $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)$3;  }
+    | array_suffix '[' conditional_expr ']' {
+          long v;
+          if (!const_eval($3, &v)) msg_error(yylineno, "array size must be a constant expression");
+          $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)v;   /* enum/macro/sizeof/arith ok */
+      }
     ;
 
 init_declarator_list:
@@ -514,10 +518,19 @@ init_declarator:
           d->init_file = $4;
           $$ = d;
       }
-    | '(' '*' IDENT ')' '(' param_list ')' {
-          /* function-pointer variable `ret (*fp)(params)` — held as an int
-             function ID; the param signature is accepted but not enforced */
-          $$ = ast_decl(t_int(), $3, NULL, yylineno);
+    | '(' '*' IDENT array_suffix ')' '(' param_list ')' {
+          /* function pointer `ret (*fp)(params)` — held as an int function id;
+             with array_suffix, `ret (*arr[N])(params)` is an int array of ids */
+          type *t = build_array_type(t_int(), $4.dims, $4.n);
+          $$ = ast_decl(t, $3, NULL, yylineno);
+      }
+    | '(' '*' IDENT array_suffix ')' '(' param_list ')' '=' '{' init_item_list '}' {
+          /* `ret (*arr[N])(params) = { f, g, ... }` */
+          type *t = build_array_type(t_int(), $4.dims, $4.n);
+          decl *d = ast_decl(t, $3, NULL, yylineno);
+          d->binit = $11;
+          if (t->kind == TY_ARRAY && t->arr_size == 0 && $11->is_list) t->arr_size = $11->n;
+          $$ = d;
       }
     | pointers IDENT '(' param_list ')' {
           /* function declaration (prototype) — register, attach signature */
