@@ -160,7 +160,7 @@ static type *resolve_builtin(int f)
 %token TOK_AMPEQ TOK_PIPEEQ TOK_CARETEQ TOK_SHLEQ TOK_SHREQ
 %token TOK_ARROW TOK_ELLIPSIS
 
-%type <typ>   type_specifier struct_specifier union_specifier enum_specifier base_type
+%type <typ>   type_specifier struct_specifier union_specifier enum_specifier base_type decl_specifiers
 %type <intval> pointers storage_or_qual_list storage_or_qual
 %type <intval> builtin_spec builtin_type_seq
 %type <exp>   expr assignment_expr conditional_expr logical_or_expr logical_and_expr
@@ -221,9 +221,9 @@ declaration:
     ;
 
 decl_specifiers:
-      base_type                              { /* base type is staged via $$ in production below */ }
-    | storage_or_qual_list base_type         { }
-    | base_type storage_or_qual_list         { }
+      base_type                              { $$ = $1; }
+    | storage_or_qual_list base_type         { $$ = $2; }
+    | base_type storage_or_qual_list         { $$ = $1; }
     ;
 
 storage_or_qual_list:
@@ -461,8 +461,9 @@ init_item_list:
 
 function_def:
       decl_specifiers pointers IDENT '(' param_list ')' {
-          /* prepare: register the function, stage params, push scope, add params */
-          type *ret = apply_pointers(cur_base, $2);
+          /* return type comes from $1 (a stack value): cur_base would be
+             clobbered by the params' and body's own base_type reductions. */
+          type *ret = apply_pointers($1, $2);
           sym *s = st_find($3);
           if (!s) {
               s = st_add(SK_FUNC, $3, $3, ret);
@@ -490,8 +491,8 @@ function_def:
           ts_sclass = SC_NONE; ts_is_const = 0;
       }
       compound_stmt {
-          /* finalize the function */
-          func *f = ast_func(apply_pointers(cur_base, $2), $3, param_head, param_count, $8, yylineno);
+          /* finalize the function ($1 = decl_specifiers return type) */
+          func *f = ast_func(apply_pointers($1, $2), $3, param_head, param_count, $8, yylineno);
           unit_add_func(f);
           st_pop_scope();
           st_leave_func();

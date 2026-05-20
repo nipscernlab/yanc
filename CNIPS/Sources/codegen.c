@@ -373,9 +373,11 @@ static void gen_addr(expr *e)
     case E_IDENT: {
         sym *s = st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
-        // for an array param: the variable stores the address, so loading
-        // its value is &arr[0]
-        if (s->kind == SK_PARAM && s->stype && s->stype->kind == TY_ARRAY)
+        // array/struct params hold the address of the object, so loading the
+        // variable's value yields that address; everything else is addressed
+        // by name via LEA.
+        if (s->kind == SK_PARAM && s->stype &&
+            (s->stype->kind == TY_ARRAY || s->stype->kind == TY_STRUCT))
             emit("LOD %s", s->asm_name);
         else
             emit("LEA %s", s->asm_name);
@@ -438,6 +440,68 @@ static strct_field *member_field(expr *e)
     return NULL;
 }
 
+// copy an n-word struct: dest is an lvalue, src an expression that evaluates to
+// the struct's base address (a struct rvalue decays to its address). Leaves the
+// destination address in acc so a struct assignment yields the assigned object.
+// Src is evaluated first so a nested struct copy inside it can't clobber our
+// (freshly allocated) address temporaries.
+static void gen_struct_copy(expr *dest, expr *src, int nwords)
+{
+    char dn[32], sn[32];
+    snprintf(dn, sizeof(dn), "_scd%d", ++label_n);
+    snprintf(sn, sizeof(sn), "_scs%d", ++label_n);
+    char *dt = mangle_local(dn), *st = mangle_local(sn);
+    const char *fn = cur_func_name ? cur_func_name : "global";
+    st_add(SK_LOCAL_VAR, dn, dt, t_int()); log_var(fn, dn, 1, 0);
+    st_add(SK_LOCAL_VAR, sn, st, t_int()); log_var(fn, sn, 1, 0);
+
+    gen_expr(src);  emit("SET %s", st);     // st = &src
+    gen_addr(dest); emit("SET %s", dt);     // dt = &dest
+    for (int i = 0; i < nwords; i++) {
+        emit("LOD %s", dt); if (i) emit("ADD %d", i); emit("PSH");
+        emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDA");
+        emit("STA");
+    }
+    emit("LOD %s", dt);                      // result = &dest
+    free(dt); free(st);
+}
+
+// copy n words from src (which evaluates to a base address) into the named
+// block `dest` (declared via #array) at offsets 0..n-1.
+static void copy_to_block(const char *dest, expr *src, int n)
+{
+    char sn[32]; snprintf(sn, sizeof(sn), "_cbs%d", ++label_n);
+    char *st = mangle_local(sn);
+    const char *fn = cur_func_name ? cur_func_name : "global";
+    st_add(SK_LOCAL_VAR, sn, st, t_int()); log_var(fn, sn, 1, 0);
+    gen_expr(src); emit("SET %s", st);       // st = &src
+    for (int i = 0; i < n; i++) {
+        emit("LOD %d", i); emit("PSH");      // offset on stack
+        emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDA"); // acc = src[i]
+        emit("STI %s", dest);                // mem[dest+i] = acc
+    }
+    free(st);
+}
+
+// push one call argument. A struct is passed by value: copy it into a fresh
+// per-call-site block and push that block's address (the callee treats a struct
+// param like an array param — it holds the address). Scalars push their value.
+static void gen_push_arg(expr *arg)
+{
+    type *at = infer_type(arg);
+    if (at && at->kind == TY_STRUCT) {
+        int w = type_size_words(at);
+        char nm[32]; snprintf(nm, sizeof(nm), "_argt%d", ++label_n);
+        char *an = mangle_local(nm);
+        emit("#array %s 1 %d", an, w);
+        copy_to_block(an, arg, w);
+        emit("LEA %s", an); emit("PSH");
+        free(an);
+    } else {
+        gen_expr(arg); emit("PSH");
+    }
+}
+
 // ---- store: lv = val -------------------------------------------------------
 
 static void gen_store(expr *lv, expr *val)
@@ -446,6 +510,14 @@ static void gen_store(expr *lv, expr *val)
     if (lv->kind == E_IDENT) {
         sym *cs = st_find(lv->sval);
         if (cs && cs->is_const) msg_error(lv->line, "assignment to const '%s'", lv->sval);
+    }
+    // whole-struct assignment: copy all words (not a single STA)
+    {
+        type *lvt = infer_type(lv);
+        if (lvt && lvt->kind == TY_STRUCT) {
+            gen_struct_copy(lv, val, type_size_words(lvt));
+            return;
+        }
     }
     // bitfield store: read-modify-write the containing word
     {
@@ -537,8 +609,13 @@ static void gen_expr(expr *e)
             else                     emit("LEA %s", s->asm_name);
             return;
         }
-        if (s->stype && s->stype->kind == TY_STRUCT)
-            msg_error(e->line, "struct by-value not supported in v1");
+        if (s->stype && s->stype->kind == TY_STRUCT) {
+            // a struct rvalue decays to the base address of its storage block;
+            // a by-value struct param holds that address (caller's copy)
+            if (s->kind == SK_PARAM) emit("LOD %s", s->asm_name);
+            else                     emit("LEA %s", s->asm_name);
+            return;
+        }
         emit("LOD %s", s->asm_name);
         return;
     }
@@ -851,7 +928,7 @@ static void gen_expr(expr *e)
             }
             sym *s = st_find(fn);
             if (s && s->kind == SK_FUNC) {
-                for (int i = 0; i < e->n_args; i++) { gen_expr(e->args[i]); emit("PSH"); }
+                for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
                 emit("CAL %s", s->asm_name);
                 return;
             }
@@ -864,7 +941,7 @@ static void gen_expr(expr *e)
         // CAL-under-conditional that the prefetch mishandles.
         {
             expr *fpv = (e->a->kind == E_DEREF) ? e->a->a : e->a;
-            for (int i = 0; i < e->n_args; i++) { gen_expr(e->args[i]); emit("PSH"); }
+            for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
             gen_expr(fpv);                          // acc = function ID
             emit("SET _fp_id");
             char *done = fresh_label("ic_done");
@@ -932,7 +1009,8 @@ static void declare_local(decl *d)
         if (d->init_list) emit_aggregate_init(aname, d->dtype, d->init_list, d->n_init);
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
         emit("#array %s 1 %d", aname, type_size_words(d->dtype));
-        if (d->init_list) emit_aggregate_init(aname, d->dtype, d->init_list, d->n_init);
+        if (d->init_list)  emit_aggregate_init(aname, d->dtype, d->init_list, d->n_init);
+        else if (d->init)  copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
     } else if (d->init) {
         infer_type(d->init);
         gen_expr(d->init);
@@ -1040,7 +1118,15 @@ static void gen_stmt(stmt *s)
             if (cur_func_ret && cur_func_ret->kind == TY_VOID)
                 msg_error(s->line, "return value in void function");
             infer_type(s->e1);
-            gen_expr(s->e1);
+            if (cur_func_ret && cur_func_ret->kind == TY_STRUCT) {
+                // write the struct into this function's static result block and
+                // return its address (a struct rvalue == its base address)
+                char rb[80]; snprintf(rb, sizeof(rb), "_ret_%s", cur_func_name);
+                copy_to_block(rb, s->e1, type_size_words(cur_func_ret));
+                emit("LEA %s", rb);
+            } else {
+                gen_expr(s->e1);
+            }
         }
         if (cur_func_name && strcmp(cur_func_name, "main") == 0) emit("JMP fim");
         else emit("RET");
@@ -1239,6 +1325,10 @@ static void emit_function(func *f, unit *u, int is_main)
     }
 
     emit("@%s NOP", f->name);
+
+    // static result block for a struct-returning function (filled by `return`)
+    if (!is_main && f->ret && f->ret->kind == TY_STRUCT)
+        emit("#array _ret_%s 1 %d", f->name, type_size_words(f->ret));
 
     // pop args in reverse order (caller pushes left-to-right)
     if (f->n_params > 0) {
