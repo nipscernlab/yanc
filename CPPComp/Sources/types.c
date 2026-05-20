@@ -61,6 +61,13 @@ type *t_ref(type *to)
     return t;
 }
 
+type *t_auto(void)
+{
+    type *t = (type*)xcalloc(sizeof(type));
+    t->kind = TY_INT; t->is_signed = 1; t->is_auto = 1;
+    return t;
+}
+
 type *t_array(type *of, int n)
 {
     type *t = (type*)xcalloc(sizeof(type));

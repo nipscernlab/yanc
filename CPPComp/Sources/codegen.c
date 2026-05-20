@@ -1514,6 +1514,11 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
 
 static void declare_local(decl *d)
 {
+    // `auto x = init;` — deduce the variable's type from its initializer
+    if (d->dtype && d->dtype->is_auto && d->init) {
+        type *it = infer_type(d->init);
+        if (it) d->dtype = it;
+    }
     // recursive function: the local lives in the stack frame at __fp + offset
     if (cur_fn_recursive && d->sclass != SC_STATIC) {
         if (d->dtype && (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT))

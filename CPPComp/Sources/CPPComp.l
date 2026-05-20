@@ -175,6 +175,9 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "this"                   { return KW_THIS;     }
 "virtual"                { return KW_VIRTUAL;  }
 "operator"               { return KW_OPERATOR; }
+"template"               { return KW_TEMPLATE; }
+"typename"               { return KW_TYPENAME; }
+"auto"                   { return KW_AUTO;     }
 "public"                 { return KW_PUBLIC;    }
 "private"                { return KW_PRIVATE;   }
 "protected"              { return KW_PROTECTED; }
@@ -200,7 +203,6 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "__inline"               { /* ignored */ }
 "__inline__"             { /* ignored */ }
 "register"               { /* ignored */ }
-"auto"                   { /* ignored — classic-C storage class */ }
 "volatile"               { /* ignored — relevant only for INN/OUT, which are explicit */ }
 "__volatile__"           { /* ignored */ }
 "restrict"               { /* ignored — no aliasing model on this target */ }

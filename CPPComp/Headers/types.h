@@ -30,6 +30,7 @@ struct type {
     int       is_const;
     int       is_signed;   // for TY_INT
     int       is_ref;      // C++ reference: a TY_PTR that auto-derefs on use
+    int       is_auto;     // C++ `auto`: real type deduced from the initializer
 
     // struct-specific
     char         *tag;     // struct/union tag name (e.g. "point")
@@ -65,6 +66,7 @@ type *t_char(void);    // 1-word signed (CHAR_BIT == NUBITS on this target)
 
 type *t_ptr  (type *to);
 type *t_ref  (type *to);   // C++ T& — a pointer flagged is_ref (auto-deref)
+type *t_auto (void);       // C++ auto — placeholder, deduced from initializer
 type *t_array(type *of, int n);
 
 type *t_make_struct(char *tag);                                  // forward decl

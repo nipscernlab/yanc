@@ -106,6 +106,34 @@ static void method_enter(type *ret, const char *name, decl *params, int nparams)
     ts_sclass = SC_NONE; ts_is_const = 0;
 }
 
+// desugar `for (T x : arr) body` over a fixed-size array into an index loop:
+//   for (int __ri = 0; __ri < N; __ri = __ri+1) { T x = arr[__ri]; body }
+// `vt` may be `auto` (deduce element type) or a reference (bind to each element).
+static stmt *make_range_for(type *vt, char *var, char *container, stmt *body, int line)
+{
+    static int rc = 0;
+    sym *cs = st_find(container);
+    int   n    = (cs && cs->stype && cs->stype->kind == TY_ARRAY) ? cs->stype->arr_size : 0;
+    type *elem = (cs && cs->stype && cs->stype->kind == TY_ARRAY) ? cs->stype->base : t_int();
+    if (vt->is_auto)                       vt = elem;            // auto x
+    else if (vt->is_ref && vt->base && vt->base->is_auto) vt = t_ref(elem);  // auto& x
+    char ivar[24]; sprintf(ivar, "__ri%d", rc++);
+
+    decl *id = ast_decl(t_int(), strdup(ivar), ast_int_lit(0, line), line);
+    stmt *init = ast_stmt(S_DECL, line); init->decls = id;
+    expr *cond = ast_binop(OP_LT, ast_ident(strdup(ivar), line), ast_int_lit(n, line), line);
+    expr *step = ast_assign(ast_ident(strdup(ivar), line),
+                    ast_binop(OP_ADD, ast_ident(strdup(ivar), line), ast_int_lit(1, line), line), line);
+    decl *vd = ast_decl(vt, var,
+                    ast_index(ast_ident(strdup(container), line), ast_ident(strdup(ivar), line), line), line);
+    stmt *vdecl = ast_stmt(S_DECL, line); vdecl->decls = vd;
+    stmt *blk = ast_stmt(S_BLOCK, line);
+    blk->items = malloc(sizeof(stmt*) * 2); blk->items[0] = vdecl; blk->items[1] = body; blk->n_items = 2;
+    stmt *f = ast_stmt(S_FOR, line);
+    f->init_stmt = init; f->e1 = cond; f->e2 = step; f->body = blk;
+    return f;
+}
+
 // register a virtual method name into the class's vtable (override reuses slot)
 static void add_vmethod(type *cls, const char *name)
 {
@@ -305,6 +333,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM KW_NEW KW_DELETE
 %token KW_CLASS KW_THIS KW_PUBLIC KW_PRIVATE KW_PROTECTED
 %token KW_NAMESPACE KW_USING TOK_SCOPE KW_VIRTUAL KW_OPERATOR
+%token KW_TEMPLATE KW_TYPENAME KW_AUTO
 %token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT KW_GENERIC
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -348,12 +377,32 @@ translation_unit:
 external_decl:
       function_def
     | declaration                   { /* declaration's action adds it to globals (or registers typedef) */ }
+    | template_prefix function_def  /* function template (type-erased: T = 1 word) */
+    | template_prefix declaration   /* class template (type-erased) */
     | KW_NAMESPACE IDENT '{' translation_unit '}' { free($2); }   /* transparent namespace */
     | KW_NAMESPACE IDENT '{' '}'                   { free($2); }
     | KW_USING KW_NAMESPACE qualified_id ';'       { free($3); }  /* using-directive (no-op) */
     | KW_USING KW_NAMESPACE IDENT ';'              { free($3); }
     | KW_STATIC_ASSERT '(' conditional_expr ',' STRING_LIT ')' ';' { check_static_assert($3, $5, yylineno); }
     | KW_STATIC_ASSERT '(' conditional_expr ')' ';'                { check_static_assert($3, NULL, yylineno); }
+    ;
+
+/* Template prefix. On this 1-word target templates are type-erased: each type
+   parameter is bound to a single machine word (registered as a typedef to int),
+   so the templated function/class compiles ONCE and works for any 1-word type
+   (int/char/bool/pointer). Float type-arguments would use integer ops. */
+template_prefix:
+      KW_TEMPLATE '<' tparam_list '>'
+    ;
+tparam_list:
+      tparam
+    | tparam_list ',' tparam
+    ;
+tparam:    /* IDENT first time; TYPEDEF_NAME if this param name was used before */
+      KW_TYPENAME IDENT         { st_add_typedef($2, t_int()); free($2); }
+    | KW_CLASS    IDENT         { st_add_typedef($2, t_int()); free($2); }
+    | KW_TYPENAME TYPEDEF_NAME  { st_add_typedef($2, t_int()); free($2); }
+    | KW_CLASS    TYPEDEF_NAME  { st_add_typedef($2, t_int()); free($2); }
     ;
 
 /* a namespace-qualified name N::x (or A::B::x); namespaces are transparent on
@@ -443,6 +492,7 @@ type_specifier:
           $$ = s->stype;
           free($3);
       }
+    | KW_AUTO                                { $$ = t_auto(); }   /* deduced at codegen */
     ;
 
 /* one or more builtin keywords in any order, folded into flags (see ts_add) */
@@ -465,7 +515,7 @@ builtin_spec:
     ;
 
 struct_specifier:
-      KW_STRUCT IDENT '{' { cur_struct_push(t_make_struct($2)); st_add_tag($2, cur_struct); } field_list '}' {
+      KW_STRUCT IDENT '{' { cur_struct_push(t_make_struct($2)); st_add_tag($2, cur_struct); st_add_typedef($2, cur_struct); } field_list '}' {
           type *done = cur_struct;
           t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
           cur_struct_pop();          // restore the enclosing struct (nested defs)
@@ -482,6 +532,14 @@ struct_specifier:
           } else {
               $$ = s->struct_t;
           }
+          free($2);
+      }
+    | KW_STRUCT TYPEDEF_NAME {
+          /* `struct Tag` where Tag is also a typedef (e.g. a self-referential
+             struct, since we register the bare name as a type too) */
+          sym *s = st_find_tag($2);
+          if (!s) { type *t = t_make_struct($2); st_add_tag($2, t); $$ = t; }
+          else    { $$ = s->struct_t; }
           free($2);
       }
     | KW_STRUCT '{' { cur_struct_push(t_make_struct("")); } field_list '}' {
