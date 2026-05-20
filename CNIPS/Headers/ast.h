@@ -92,12 +92,18 @@ struct stmt {
 
 typedef enum { SC_NONE = 0, SC_STATIC, SC_EXTERN, SC_TYPEDEF } storage_class;
 
+// one initializer designator: positional, `.field`, or `[index]` (C99).
+// Single level only; chains like `.a.x` are not represented.
+enum { DESIG_NONE = 0, DESIG_FIELD = 1, DESIG_INDEX = 2 };
+typedef struct { int kind; char *name; int idx; } init_desig;
+
 struct decl {
     type   *dtype;
     char   *name;
     expr   *init;
     char   *init_file;       // for arrays initialised from "file.txt"
     expr  **init_list;       // for arrays/structs initialised with {a,b,c}
+    init_desig *desigs;      // parallel to init_list (NULL = all positional)
     int     n_init;
     storage_class sclass;
     int     is_const;        // declared `const` — assignment to it is an error

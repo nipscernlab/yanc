@@ -969,22 +969,44 @@ static void gen_expr(expr *e)
 // emit element-by-element stores for an aggregate initialiser {a,b,c}.
 // `base` is the array/struct base name as it appears in the asm (declared via
 // #array). Handles a 1-D scalar array or a struct of scalar fields; each store
-// is `LOD <offset>; PSH; <value>; STI base` (mem[base+offset] = value).
-static void emit_aggregate_init(const char *base, type *t, expr **list, int n)
+// is `LOD <offset>; PSH; <value>; STI base` (mem[base+offset] = value). Items
+// may carry a single C99 designator (.field / [index]); positional items use a
+// running cursor that a designator resets. Slots not written stay at the .mif
+// default (zero), matching C's partial-initialisation semantics.
+static void emit_aggregate_init(const char *base, type *t, expr **list,
+                                init_desig *des, int n)
 {
     if (t->kind == TY_ARRAY) {
         int elem = type_size_words(t->base);
+        int cursor = 0;                              // next element index
         for (int k = 0; k < n; k++) {
-            emit("LOD %d", k * elem);
+            int idx = cursor;
+            if (des && des[k].kind == DESIG_FIELD)
+                msg_error(list[k]->line, "field designator in array initializer");
+            if (des && des[k].kind == DESIG_INDEX) idx = des[k].idx;
+            cursor = idx + 1;
+            emit("LOD %d", idx * elem);
             emit("PSH");
             infer_type(list[k]);
             gen_expr(list[k]);
             emit("STI %s", base);
         }
     } else if (t->kind == TY_STRUCT) {
-        strct_field *f = t->fields;
-        for (int k = 0; k < n && f; k++, f = f->next) {
-            emit("LOD %d", f->offset);
+        strct_field *f = t->fields;                  // positional cursor
+        for (int k = 0; k < n; k++) {
+            strct_field *target;
+            if (des && des[k].kind == DESIG_INDEX)
+                msg_error(list[k]->line, "array designator in struct initializer");
+            if (des && des[k].kind == DESIG_FIELD) {
+                target = t_struct_find(t, des[k].name);
+                if (!target) msg_error(list[k]->line, "no field '%s' in initializer", des[k].name);
+                f = target->next;                    // positional resumes after it
+            } else {
+                if (!f) msg_error(list[k]->line, "too many initializers");
+                target = f;
+                f = f->next;
+            }
+            emit("LOD %d", target->offset);
             emit("PSH");
             infer_type(list[k]);
             gen_expr(list[k]);
@@ -1006,10 +1028,10 @@ static void declare_local(decl *d)
         // multi-dim arrays flatten to total word count; element type is the innermost scalar
         if (d->init_file) emit("#arrays %s %d %d \"%s\"", aname, innermost_code(d->dtype), arr_words, d->init_file);
         else              emit("#array %s %d %d",         aname, innermost_code(d->dtype), arr_words);
-        if (d->init_list) emit_aggregate_init(aname, d->dtype, d->init_list, d->n_init);
+        if (d->init_list) emit_aggregate_init(aname, d->dtype, d->init_list, d->desigs, d->n_init);
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
         emit("#array %s 1 %d", aname, type_size_words(d->dtype));
-        if (d->init_list)  emit_aggregate_init(aname, d->dtype, d->init_list, d->n_init);
+        if (d->init_list)  emit_aggregate_init(aname, d->dtype, d->init_list, d->desigs, d->n_init);
         else if (d->init)  copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
     } else if (d->init) {
         infer_type(d->init);
@@ -1298,7 +1320,7 @@ static void emit_global_scalar_inits(unit *u)
         decl *d = u->globals[i];
         if (!d->dtype) continue;
         if (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT) {
-            if (d->init_list) emit_aggregate_init(d->name, d->dtype, d->init_list, d->n_init);
+            if (d->init_list) emit_aggregate_init(d->name, d->dtype, d->init_list, d->desigs, d->n_init);
             continue;
         }
         if (!d->init) continue;
