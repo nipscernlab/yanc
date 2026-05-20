@@ -102,6 +102,15 @@ static void method_enter(type *ret, const char *name, decl *params, int nparams)
     ts_sclass = SC_NONE; ts_is_const = 0;
 }
 
+// register a virtual method name into the class's vtable (override reuses slot)
+static void add_vmethod(type *cls, const char *name)
+{
+    if (!cls) return;
+    for (int i = 0; i < cls->n_vtbl; i++) if (!strcmp(cls->vtbl[i], name)) return;
+    cls->vtbl = realloc(cls->vtbl, sizeof(char*) * (cls->n_vtbl + 1));
+    cls->vtbl[cls->n_vtbl++] = strdup(name);
+}
+
 // finalize a method into a free function tagged with its class.
 static void method_finish(type *ret, const char *name, stmt *body)
 {
@@ -291,7 +300,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM KW_NEW KW_DELETE
 %token KW_CLASS KW_THIS KW_PUBLIC KW_PRIVATE KW_PROTECTED
-%token KW_NAMESPACE KW_USING TOK_SCOPE
+%token KW_NAMESPACE KW_USING TOK_SCOPE KW_VIRTUAL
 %token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT KW_GENERIC
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -495,9 +504,18 @@ class_specifier:
               t->base_class = $3;
               for (strct_field *f = $3->fields; f; f = f->next)
                   t_struct_add_field(t, f->name, f->ftype);
+              t->n_vtbl = $3->n_vtbl;     // inherit the base's virtual slots
+              if (t->n_vtbl) {
+                  t->vtbl = malloc(sizeof(char*) * t->n_vtbl);
+                  for (int i = 0; i < t->n_vtbl; i++) t->vtbl[i] = strdup($3->vtbl[i]);
+              }
           }
       } member_list '}' {
           type *done = cur_struct;
+          /* a polymorphic class carries a vptr at offset 0 (inherited if the base
+             already provides one, else inserted now ahead of its own fields) */
+          if (done->n_vtbl > 0 && (!done->fields || strcmp(done->fields->name, "__vptr") != 0))
+              t_struct_prepend_field(done, "__vptr", t_int());
           t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
           cur_struct_pop();
           cur_class = NULL;
@@ -580,6 +598,14 @@ method_def:
           { method_enter(t_ptr($1), $3, $5.head, $5.n); }
       compound_stmt
           { method_finish(t_ptr($1), $3, $8); free($3); }
+    | KW_VIRTUAL base_type IDENT '(' param_list ')'
+          { add_vmethod(cur_class, $3); method_enter($2, $3, $5.head, $5.n); }
+      compound_stmt
+          { method_finish($2, $3, $8); free($3); }
+    | KW_VIRTUAL base_type '*' IDENT '(' param_list ')'
+          { add_vmethod(cur_class, $4); method_enter(t_ptr($2), $4, $6.head, $6.n); }
+      compound_stmt
+          { method_finish(t_ptr($2), $4, $9); free($4); }
     ;
 
 union_specifier:

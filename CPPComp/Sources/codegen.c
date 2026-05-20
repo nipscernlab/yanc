@@ -62,6 +62,18 @@ static char *cg_mangle_method(const char *cls, const char *name)
     return m;
 }
 
+// virtual-method bookkeeping: the polymorphic classes whose vtables we emit
+static type *poly_cls[64]; static int n_poly = 0;
+
+// slot of virtual method `name` in class `ct` (vtbl already includes inherited
+// slots), or -1 if `name` is not virtual.
+static int vtbl_slot(type *ct, const char *name)
+{
+    if (!ct) return -1;
+    for (int i = 0; i < ct->n_vtbl; i++) if (!strcmp(ct->vtbl[i], name)) return i;
+    return -1;
+}
+
 // find method `m` in `cls` or an ancestor (single inheritance); returns its
 // mangled asm name (malloc'd, = the SK_FUNC's name) or NULL.
 static char *resolve_method(type *cls, const char *m)
@@ -229,6 +241,20 @@ static void fp_add(const char *name)
     fptab[fptab_n++] = strdup(name);
 }
 
+// emit the inlined function-ID dispatch (assumes _fp_id is set and the args,
+// including any `this`, are already on the data stack)
+static void emit_dispatch_chain(void)
+{
+    char *done = fresh_label("ic_done");
+    for (int i = 0; i < fptab_n; i++) {
+        char *skip = fresh_label("ic_s");
+        emit("LOD _fp_id"); emit("EQU %d", i); emit("JIZ %s", skip);
+        emit("CAL %s", fptab[i]); emit("JMP %s", done);
+        emit("@%s NOP", skip); free(skip);
+    }
+    emit("@%s NOP", done); free(done);
+}
+
 // ---- forward decls ---------------------------------------------------------
 
 static void gen_expr (expr *e);
@@ -240,6 +266,8 @@ static void gen_stmt (stmt *s);
 static void gen_bool (expr *e, const char *jz_target);
 static type *infer_type(expr *e);
 static func *resolve_overload(const char *name, expr **args, int nargs);
+static void  emit_vtable_inits(void);
+static void  emit_dispatch_chain(void);
 
 // ---- string-literal pre-scan (assigns each "..." a global label) -----------
 
@@ -1201,18 +1229,28 @@ static void gen_expr(expr *e)
             return;
         }
         emit("LOD %d", words); emit("PSH"); emit("CAL malloc");   // acc = ptr
-        if (t->kind == TY_STRUCT && t->tag) {
-            char *ctor = resolve_method(t, "ctor");
-            sym *cs = ctor ? st_find(ctor) : NULL;
-            if (cs && cs->kind == SK_FUNC) {
-                emit("PSH");                  // keep ptr (return value) at stack bottom
-                emit("PSH");                  // ptr as `this` (ctor pops it)
-                for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
-                emit("CAL %s", ctor);
-                emit("POP");                  // acc = the kept ptr
-            }
-            free(ctor);
+        int poly = (t->kind == TY_STRUCT && t->n_vtbl > 0);
+        char *ctor = (t->kind == TY_STRUCT && t->tag) ? resolve_method(t, "ctor") : NULL;
+        sym  *cs   = ctor ? st_find(ctor) : NULL;
+        int has_ctor = cs && cs->kind == SK_FUNC;
+        if (!poly && !has_ctor) return;                            // plain alloc, ptr in acc
+        emit("SET __new_p");                                       // stash the new object
+        if (poly) {                                                // mem[obj+0] = &vtable
+            emit("LOD __new_p"); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STA");
         }
+        if (has_ctor) {
+            emit("LOD __new_p"); emit("PSH");                      // result (kept on stack bottom)
+            emit("LOD __new_p"); emit("PSH");                      // this (arg 0)
+            for (int i = 0; i < e->n_args; i++) {
+                type *pt = (cs->param_types && i + 1 < cs->n_params) ? cs->param_types[i + 1] : NULL;
+                gen_arg(e->args[i], pt);
+            }
+            emit("CAL %s", ctor);
+            emit("POP");                                           // acc = result
+        } else {
+            emit("LOD __new_p");                                   // acc = result
+        }
+        free(ctor);
         return;
     }
     case E_DELETE: {
@@ -1277,6 +1315,23 @@ static void gen_expr(expr *e)
             char *masm = resolve_method(ct, e->a->member);
             if (!masm) msg_error(e->line, "no method '%s' in class '%s'", e->a->member, ct->tag);
             sym *ms = st_find(masm);
+            int vslot = vtbl_slot(ct, e->a->member);
+            if (vslot >= 0) {
+                // virtual dispatch: fid = mem[mem[this] + slot], then indirect-call
+                if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // acc = this
+                emit("PSH");                                  // this -> arg 0 (kept on stack)
+                emit("LDA");                                  // acc = vptr = mem[this]
+                if (vslot) emit("ADD %d", vslot);
+                emit("LDA");                                  // acc = fid = mem[vptr+slot]
+                emit("SET _fp_id");
+                for (int i = 0; i < e->n_args; i++) {
+                    type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
+                    gen_arg(e->args[i], pt);
+                }
+                emit_dispatch_chain();
+                free(masm);
+                return;
+            }
             if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // this
             emit("PSH");
             for (int i = 0; i < e->n_args; i++) {            // param i+1 (this is param 0)
@@ -1343,19 +1398,7 @@ static void gen_expr(expr *e)
             for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
             gen_expr(fpv);                          // acc = function ID
             emit("SET _fp_id");
-            char *done = fresh_label("ic_done");
-            for (int i = 0; i < fptab_n; i++) {
-                char *skip = fresh_label("ic_s");
-                emit("LOD _fp_id");
-                emit("EQU %d", i);                  // 1 if this ID matches
-                emit("JIZ %s", skip);               // no match -> next candidate
-                emit("CAL %s", fptab[i]);           // match -> direct (depth-1) call
-                emit("JMP %s", done);
-                emit("@%s NOP", skip);
-                free(skip);
-            }
-            emit("@%s NOP", done);                  // result (if any) left in acc
-            free(done);
+            emit_dispatch_chain();
             return;
         }
     }
@@ -1892,6 +1935,7 @@ static void emit_function(func *f, unit *u, int is_main)
             emit("LEA __heap"); emit("ADD %d", CFG_HEAPSZ); emit("SET __hend");
             emit("LOD 0"); emit("SET __flist");                          // empty free list
         }
+        emit_vtable_inits();                                             // fill class vtables
         emit_string_inits(); emit_global_scalar_inits(u); emit_static_inits();
     }
 
@@ -2000,6 +2044,42 @@ static void emit_heap(void)
     emit("LOD __m_cur"); emit("SET __flist");                            // __flist=p
     emit("@free_ret NOP");
     emit("RET");
+}
+
+// collect the polymorphic classes (those with a vtable) and register each
+// vtable slot's implementation as address-taken so it joins the dispatch table.
+static void register_poly_classes(unit *u)
+{
+    n_poly = 0;
+    for (int i = 0; i < u->n_funcs; i++) {
+        type *c = u->funcs[i]->method_of;
+        if (!c || c->n_vtbl <= 0) continue;
+        int seen = 0;
+        for (int j = 0; j < n_poly; j++) if (poly_cls[j] == c) { seen = 1; break; }
+        if (!seen && n_poly < 64) poly_cls[n_poly++] = c;
+    }
+    for (int i = 0; i < n_poly; i++) {
+        type *c = poly_cls[i];
+        for (int s = 0; s < c->n_vtbl; s++) {
+            char *impl = resolve_method(c, c->vtbl[s]);
+            if (impl) { fp_add(impl); free(impl); }
+        }
+    }
+}
+
+// fill each class's vtable[slot] with the dispatch ID of its implementation
+static void emit_vtable_inits(void)
+{
+    for (int i = 0; i < n_poly; i++) {
+        type *c = poly_cls[i];
+        for (int s = 0; s < c->n_vtbl; s++) {
+            char *impl = resolve_method(c, c->vtbl[s]);
+            int id = impl ? fp_id_of(impl) : 0;
+            emit("LEA %s__vtable", c->tag); if (s) emit("ADD %d", s); emit("PSH");
+            emit("LOD %d", id); emit("STA");          // mem[vtable+slot] = id
+            if (impl) free(impl);
+        }
+    }
 }
 
 static void write_cmm_log(const char *tmp_dir)
@@ -2120,6 +2200,8 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
         scan_fp_initz(u->globals[i]->binit);
     }
 
+    register_poly_classes(u);   // address-take virtual impls before recursion analysis
+
     analyze_recursion(u);
     g_any_recursive = 0;
     for (int i = 0; i < u->n_funcs; i++) if (u->funcs[i]->is_recursive) g_any_recursive = 1;
@@ -2129,6 +2211,8 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     emit_string_arrays();
     if (g_any_recursive) emit("#array __cstk 0 %d", CSTK_SIZE);  // software call stack
     if (g_uses_heap)     emit("#array __heap 0 %d", CFG_HEAPSZ); // dynamic-alloc arena
+    for (int i = 0; i < n_poly; i++)                            // per-class virtual tables
+        emit("#array %s__vtable 1 %d", poly_cls[i]->tag, poly_cls[i]->n_vtbl);
     emit("JMP main");
 
     for (int i = 0; i < u->n_funcs; i++) {

@@ -103,6 +103,15 @@ static strct_field *append_field(type *st, char *name, type *ft)
 
 void t_struct_add_field(type *st, char *name, type *ft) { append_field(st, name, ft); }
 
+// insert a field at the FRONT (offset 0 after sealing) — used to place a vptr
+void t_struct_prepend_field(type *st, char *name, type *ft)
+{
+    strct_field *f = (strct_field*)xcalloc(sizeof(strct_field));
+    f->name = xstrdup(name); f->ftype = ft;
+    f->next = st->fields;
+    st->fields = f;
+}
+
 void t_struct_add_bitfield(type *st, char *name, type *ft, int width)
 {
     strct_field *f = append_field(st, name, ft);

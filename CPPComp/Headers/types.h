@@ -37,6 +37,8 @@ struct type {
     int           size;    // struct/union size in words (set when fields are sealed)
     int           is_union;// 1 = union (all fields share offset 0, size = max field)
     type         *base_class; // C++ single inheritance: the parent class (or NULL)
+    char        **vtbl;       // virtual method names by slot (polymorphic class)
+    int           n_vtbl;     // number of virtual slots (0 = not polymorphic)
 
     // function-specific
     type **params;
@@ -68,6 +70,7 @@ type *t_array(type *of, int n);
 type *t_make_struct(char *tag);                                  // forward decl
 type *t_make_union (char *tag);                                  // union variant
 void  t_struct_add_field(type *st, char *name, type *ft);        // returns offset via update
+void  t_struct_prepend_field(type *st, char *name, type *ft);    // insert at offset 0 (vptr)
 void  t_struct_add_bitfield(type *st, char *name, type *ft, int width); // packed bitfield
 type *t_struct_seal(type *st, int word_bits);                    // lays out fields/bitfields, computes size
 strct_field *t_struct_find(type *st, const char *name);
