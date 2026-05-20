@@ -76,6 +76,14 @@ static void unit_add_func(func *f)
 // wrap base type with N levels of pointer
 static type *apply_pointers(type *base, int stars) { while (stars-- > 0) base = t_ptr(base); return base; }
 
+// build a 1-argument call `fn(arg)` — used to desugar new/delete to malloc/free
+static expr *mk_call1(const char *fn, expr *arg, int line)
+{
+    expr **args = malloc(sizeof(expr*));
+    args[0] = arg;
+    return ast_call(ast_ident(strdup(fn), line), args, 1, line);
+}
+
 // wrap base type with the given array dimensions, innermost-last (row-major):
 // dims [3,4] over int  ->  array(3, array(4, int))
 static type *build_array_type(type *base, const int *dims, int n)
@@ -222,7 +230,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token KW_SHORT KW_LONG KW_DOUBLE KW_BOOL
 %token KW_IF KW_ELSE KW_WHILE KW_FOR KW_DO KW_SWITCH KW_CASE KW_DEFAULT
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
-%token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM
+%token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM KW_NEW KW_DELETE
 %token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT KW_GENERIC
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -921,6 +929,19 @@ unary_expr:
           type *t = apply_pointers($3, $4);
           $$ = ast_sizeof_t(t, yylineno);
       }
+    | KW_NEW base_type pointers              {
+          /* new T  ->  (T*)malloc(sizeof(T))  (ctor wiring comes with classes) */
+          type *t = apply_pointers($2, $3);
+          $$ = ast_cast(t_ptr(t), mk_call1("malloc", ast_sizeof_t(t, yylineno), yylineno), yylineno);
+      }
+    | KW_NEW base_type pointers '[' expr ']' {
+          /* new T[n]  ->  (T*)malloc(n * sizeof(T)) */
+          type *t = apply_pointers($2, $3);
+          expr *sz = ast_binop(OP_MUL, $5, ast_sizeof_t(t, yylineno), yylineno);
+          $$ = ast_cast(t_ptr(t), mk_call1("malloc", sz, yylineno), yylineno);
+      }
+    | KW_DELETE cast_expr                    { $$ = mk_call1("free", $2, yylineno); }
+    | KW_DELETE '[' ']' cast_expr            { $$ = mk_call1("free", $4, yylineno); }
     ;
 
 postfix_expr:

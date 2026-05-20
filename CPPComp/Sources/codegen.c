@@ -31,6 +31,10 @@ static int   label_n   = 0;
 static int   g_nubits  = 32;     // effective word width (for unsigned compares)
 static int   g_uses_udiv = 0;    // an unsigned / or % was emitted -> emit _udivmod
 static int   g_any_recursive = 0; // some function needs stack frames
+static int   g_uses_heap = 0;    // malloc/free/new/delete used -> emit heap runtime
+#ifndef CFG_HEAPSZ
+#define CFG_HEAPSZ 2048
+#endif
 static int   cur_fn_recursive = 0; // emitting a recursive function right now
 static int   cur_frame_cursor = 0; // next free frame offset while emitting it
 #define CSTK_SIZE 1024            // software call-stack depth (words)
@@ -249,6 +253,44 @@ static void scan_fp_stmt(stmt *s)
     }
 }
 
+// ---- heap-usage pre-scan ---------------------------------------------------
+// new/delete desugar to malloc/free calls, so spotting a call to either (in any
+// function body or initializer) tells us to declare __heap and emit the runtime
+// — this must be known before the header is emitted, hence a pre-pass.
+
+static void scan_heap_stmt(stmt *s);
+static void scan_heap_initz(initz *z);
+
+static void scan_heap_expr(expr *e)
+{
+    if (!e) return;
+    if (e->kind == E_COMPOUND) { scan_heap_initz(e->cinit); return; }
+    if (e->kind == E_CALL && e->a && e->a->kind == E_IDENT &&
+        (!strcmp(e->a->sval, "malloc") || !strcmp(e->a->sval, "free")))
+        g_uses_heap = 1;
+    scan_heap_expr(e->a); scan_heap_expr(e->b); scan_heap_expr(e->c);
+    for (int i = 0; i < e->n_args; i++) scan_heap_expr(e->args[i]);
+}
+
+static void scan_heap_initz(initz *z)
+{
+    if (!z) return;
+    if (!z->is_list) { scan_heap_expr(z->e); return; }
+    for (int i = 0; i < z->n; i++) scan_heap_initz(z->items[i]);
+}
+
+static void scan_heap_stmt(stmt *s)
+{
+    if (!s) return;
+    scan_heap_expr(s->e1); scan_heap_expr(s->e2); scan_heap_expr(s->e3);
+    scan_heap_stmt(s->body); scan_heap_stmt(s->body2); scan_heap_stmt(s->init_stmt);
+    for (int i = 0; i < s->n_items; i++) scan_heap_stmt(s->items[i]);
+    for (decl *d = s->decls; d; d = d->next) {
+        scan_heap_expr(d->init);
+        scan_heap_initz(d->binit);
+    }
+}
+
 // ---- static-local initializers ---------------------------------------------
 // A `static` local has fixed storage (like every local on this target), but its
 // initializer must run ONCE at program start, not on each function entry. We
@@ -369,6 +411,8 @@ static type *infer_type(expr *e)
             // builtins: in() returns int, out() returns void; both are not "declared" identifiers
             if (!strcmp(fn, "in"))       { e->etype = t_int();  break; }
             if (!strcmp(fn, "out"))      { e->etype = t_void(); break; }
+            if (!strcmp(fn, "malloc"))   { e->etype = t_ptr(t_void()); break; }
+            if (!strcmp(fn, "free"))     { e->etype = t_void(); break; }
             sym *s = st_find(fn);
             if (s) e->etype = s->stype;
             else { msg_error(e->line, "undefined function '%s'", fn); }
@@ -1067,6 +1111,16 @@ static void gen_expr(expr *e)
                 gen_expr(e->args[1]);
                 emit("OUT %ld", e->args[0]->ival); return;
             }
+            if (!strcmp(fn, "malloc")) {       // malloc(nwords) -> payload addr (0=OOM)
+                if (e->n_args != 1) msg_error(e->line, "malloc(nwords) takes 1 arg");
+                gen_expr(e->args[0]); emit("PSH"); emit("CAL malloc");
+                g_uses_heap = 1; return;
+            }
+            if (!strcmp(fn, "free")) {         // free(ptr)
+                if (e->n_args != 1) msg_error(e->line, "free(ptr) takes 1 arg");
+                gen_expr(e->args[0]); emit("PSH"); emit("CAL free");
+                g_uses_heap = 1; return;
+            }
             sym *s = st_find(fn);
             if (s && s->kind == SK_FUNC) {
                 for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
@@ -1625,6 +1679,11 @@ static void emit_function(func *f, unit *u, int is_main)
 
     if (is_main) {
         if (g_any_recursive) { emit("LEA __cstk"); emit("SET __sp"); }   // init the call stack
+        if (g_uses_heap) {                                               // init the heap
+            emit("LEA __heap"); emit("SET __hp");                        // bump = base
+            emit("LEA __heap"); emit("ADD %d", CFG_HEAPSZ); emit("SET __hend");
+            emit("LOD 0"); emit("SET __flist");                          // empty free list
+        }
         emit_string_inits(); emit_global_scalar_inits(u); emit_static_inits();
     }
 
@@ -1674,6 +1733,63 @@ static void emit_udivmod(void)
     emit("JMP udm_top");
     emit("@udm_end NOP");
     emit("LOD udm_q");                       // return quotient
+    emit("RET");
+}
+
+// First-fit free-list allocator over the __heap arena. Word-addressed, so
+// malloc(n) reserves n payload words. Block layout at address b: mem[b]=size
+// (payload words), payload = b+1..b+size; the returned/handled pointer is the
+// PAYLOAD addr p=b+1 (>=1, since b>=0), so 0 is an unambiguous NULL even when
+// __heap sits at data address 0. The free list (__flist) chains payload ptrs,
+// storing the next-free ptr in each freed block's first payload word (mem[p]).
+// __hp bumps for never-yet-allocated space; reuse is first-fit, no splitting or
+// coalescing. Returns 0 (NULL) on exhaustion.
+static void emit_heap(void)
+{
+    // ---- malloc(n) : payload words on the data stack -> payload addr in acc --
+    emit("@malloc NOP");
+    emit("POP"); emit("SET __m_sz");
+    emit("LOD 0");       emit("SET __m_prev");         // prev payload ptr (0=none)
+    emit("LOD __flist"); emit("SET __m_cur");          // cur payload ptr (0=end)
+    emit("@mal_loop NOP");
+    emit("LOD __m_cur"); emit("JIZ mal_bump");         // end of list -> bump-allocate
+    emit("LOD __m_cur"); emit("PSH"); emit("LOD 1"); emit("NEG"); emit("S_ADD"); emit("LDA");
+    emit("SET __m_csz");                               // csz = mem[cur-1] (block size)
+    // if (csz >= sz) reuse: !(csz < sz)
+    emit("LOD __m_csz"); emit("PSH"); emit("LOD __m_sz"); emit("S_LES"); emit("LIN");
+    emit("JIZ mal_next");
+    emit("LOD __m_cur"); emit("LDA"); emit("SET __m_lnk");          // link = mem[cur]
+    emit("LOD __m_prev"); emit("JIZ mal_head");
+    emit("LOD __m_prev"); emit("PSH"); emit("LOD __m_lnk"); emit("STA"); // mem[prev]=link
+    emit("JMP mal_reuse");
+    emit("@mal_head NOP");
+    emit("LOD __m_lnk"); emit("SET __flist");          // __flist = link
+    emit("@mal_reuse NOP");
+    emit("LOD __m_cur"); emit("RET");                  // return payload (cur)
+    emit("@mal_next NOP");
+    emit("LOD __m_cur"); emit("SET __m_prev");
+    emit("LOD __m_cur"); emit("LDA"); emit("SET __m_cur");          // cur = mem[cur] (next)
+    emit("JMP mal_loop");
+    // ---- bump-allocate: need = hp + sz + 1 ; require need <= hend -----------
+    emit("@mal_bump NOP");
+    emit("LOD __hp"); emit("PSH"); emit("LOD __m_sz"); emit("S_ADD"); emit("PSH"); emit("LOD 1"); emit("S_ADD");
+    emit("SET __m_need");
+    emit("LOD __m_need"); emit("PSH"); emit("LOD __hend"); emit("S_GRE"); emit("LIN"); // need<=hend
+    emit("JIZ mal_oom");
+    emit("LOD __hp"); emit("PSH"); emit("LOD __m_sz"); emit("STA");      // mem[hp]=sz
+    emit("LOD __hp"); emit("ADD 1"); emit("SET __m_ret");                // ret=hp+1 (payload)
+    emit("LOD __m_need"); emit("SET __hp");                              // hp=need
+    emit("LOD __m_ret"); emit("RET");
+    emit("@mal_oom NOP");
+    emit("LOD 0"); emit("RET");                                         // NULL
+
+    // ---- free(p) : push payload p onto the free list -----------------------
+    emit("@free NOP");
+    emit("POP"); emit("SET __m_cur");                  // p (payload addr)
+    emit("LOD __m_cur"); emit("JIZ free_ret");         // free(0) is a no-op
+    emit("LOD __m_cur"); emit("PSH"); emit("LOD __flist"); emit("STA");  // mem[p]=__flist
+    emit("LOD __m_cur"); emit("SET __flist");                            // __flist=p
+    emit("@free_ret NOP");
     emit("RET");
 }
 
@@ -1777,14 +1893,17 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 
     // pre-scan every function body and global initialiser for string literals
     // and address-taken functions before any codegen emits a reference.
+    g_uses_heap = 0;
     for (int i = 0; i < u->n_funcs; i++) {
         scan_strings_stmt(u->funcs[i]->body);
         scan_fp_stmt(u->funcs[i]->body);
+        scan_heap_stmt(u->funcs[i]->body);
         collect_statics_stmt(u->funcs[i]->name, u->funcs[i]->body);
     }
     for (int i = 0; i < u->n_globals; i++) {
         scan_strings_expr(u->globals[i]->init);
         scan_fp_expr(u->globals[i]->init);
+        scan_heap_expr(u->globals[i]->init);
         scan_strings_initz(u->globals[i]->binit);
         scan_fp_initz(u->globals[i]->binit);
     }
@@ -1797,6 +1916,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     emit_global_arrays(u);
     emit_string_arrays();
     if (g_any_recursive) emit("#array __cstk 0 %d", CSTK_SIZE);  // software call stack
+    if (g_uses_heap)     emit("#array __heap 0 %d", CFG_HEAPSZ); // dynamic-alloc arena
     emit("JMP main");
 
     for (int i = 0; i < u->n_funcs; i++) {
@@ -1811,6 +1931,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     // emitted after @fim so main falls through into the halt loop, not the
     // helper; the helper is only ever entered through CAL.
     if (g_uses_udiv) emit_udivmod();
+    if (g_uses_heap) emit_heap();
 
     if (tmp_dir) write_cmm_log(tmp_dir);
 }

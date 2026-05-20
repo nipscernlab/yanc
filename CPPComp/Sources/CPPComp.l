@@ -174,6 +174,8 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "typedef"                { return KW_TYPEDEF;  }
 "enum"                   { return KW_ENUM;     }
 "sizeof"                 { return KW_SIZEOF;   }
+"new"                    { return KW_NEW;      }
+"delete"                 { return KW_DELETE;   }
 
 "_Generic"               { return KW_GENERIC; }
 "_Static_assert"         { return KW_STATIC_ASSERT; }
