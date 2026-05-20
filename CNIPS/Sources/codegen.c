@@ -528,6 +528,22 @@ static strct_field *member_field(expr *e)
     return NULL;
 }
 
+// implicit int<->float conversion of the value already in acc, given its source
+// type `have` and whether the destination wants float.
+static void coerce_acc(type *have, int want_float)
+{
+    int hf = have && have->kind == TY_FLOAT;
+    if (want_float && !hf)      emit("I2F");
+    else if (!want_float && hf) emit("F2I");
+}
+
+// evaluate e into acc, then coerce to float (want_float) or int.
+static void gen_expr_num(expr *e, int want_float)
+{
+    gen_expr(e);
+    coerce_acc(infer_type(e), want_float);
+}
+
 // copy an n-word struct: dest is an lvalue, src an expression that evaluates to
 // the struct's base address (a struct rvalue decays to its address). Leaves the
 // destination address in acc so a struct assignment yields the assigned object.
@@ -637,7 +653,7 @@ static void gen_store(expr *lv, expr *val)
     if (lv->kind == E_IDENT) {
         sym *s = st_find(lv->sval);
         if (s && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
-            gen_expr(val);
+            gen_expr_num(val, s->stype->kind == TY_FLOAT);
             emit("SET %s", s->asm_name);
             return;
         }
@@ -651,17 +667,20 @@ static void gen_store(expr *lv, expr *val)
             if (elem_sz == 1) {
                 gen_expr(lv->b);              // index → acc
                 emit("PSH");
-                gen_expr(val);                // value → acc
+                gen_expr_num(val, bt->base && bt->base->kind == TY_FLOAT);
                 emit("STI %s", s->asm_name);
                 return;
             }
         }
     }
     // general path via STA
-    gen_addr(lv);
-    emit("PSH");
-    gen_expr(val);
-    emit("STA");
+    {
+        type *lvt = infer_type(lv);
+        gen_addr(lv);
+        emit("PSH");
+        gen_expr_num(val, lvt && lvt->kind == TY_FLOAT);
+        emit("STA");
+    }
 }
 
 // ---- main expression dispatcher -------------------------------------------
@@ -772,12 +791,14 @@ static void gen_expr(expr *e)
 
     case E_BINOP: {
         op_kind op = e->op;
-        int is_float = (e->etype && e->etype->kind == TY_FLOAT);
-        // operand signedness (for >> and comparisons)
         type *lt = infer_type(e->a);
         type *rt = infer_type(e->b);
+        int lf = lt && lt->kind == TY_FLOAT;
+        int rf = rt && rt->kind == TY_FLOAT;
+        int is_float = lf || rf;     // operate in float if EITHER operand is float
+        // operand signedness (for >> and comparisons; only when not float)
         int lhs_uns = lt && lt->kind == TY_INT && !lt->is_signed;
-        int uns_cmp = (lhs_uns) || (rt && rt->kind == TY_INT && !rt->is_signed);
+        int uns_cmp = !is_float && ((lhs_uns) || (rt && rt->kind == TY_INT && !rt->is_signed));
 
         // unsigned comparison: map to signed order by flipping the sign bit of
         // both operands (XOR with 1<<(NUBITS-1)), then do the signed compare.
@@ -828,7 +849,7 @@ static void gen_expr(expr *e)
         // commutative ops, and the comparisons (verified below). Non-commutative
         // ops (SUB, DIV, MOD, SHL, SHR) compute `mem OP acc` = `rhs OP lhs` in
         // this form, which is reversed — they fall through to the stack path.
-        if (e->b->kind == E_IDENT) {
+        if (e->b->kind == E_IDENT && lf == rf) {   // mem-form needs matching types
             sym *r = st_find(e->b->sval);
             if (r && r->stype && r->stype->kind != TY_ARRAY && r->stype->kind != TY_STRUCT) {
                 gen_expr(e->a);
@@ -848,8 +869,8 @@ static void gen_expr(expr *e)
                 }
             }
         }
-        // general path
-        gen_expr(e->a); emit("PSH"); gen_expr(e->b);
+        // general path (coerce each operand to float when operating in float)
+        gen_expr_num(e->a, is_float); emit("PSH"); gen_expr_num(e->b, is_float);
         switch (op) {
             case OP_ADD: emit(is_float ? "SF_ADD" : "S_ADD"); return;
             // stack=lhs (in1), acc=rhs (in2). SF_SU2 inverts in2 -> in1-in2 = lhs-rhs.
@@ -1088,7 +1109,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
         int agg = t && (t->kind == TY_ARRAY || t->kind == TY_STRUCT);
         if (!agg) {
             emit("LOD %d", off); emit("PSH");
-            gen_expr(z->e);
+            gen_expr_num(z->e, t && t->kind == TY_FLOAT);   // int<->float per slot
             emit("STI %s", base);
         } else {
             int n = type_size_words(t);
@@ -1160,8 +1181,7 @@ static void declare_local(decl *d)
         else if (d->binit)      emit_initz(aname, 0, d->dtype, d->binit);
         else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
     } else if (d->init && !is_static) {
-        infer_type(d->init);
-        gen_expr(d->init);
+        gen_expr_num(d->init, d->dtype && d->dtype->kind == TY_FLOAT);
         emit("SET %s", aname);
     }
     free(aname);
@@ -1474,8 +1494,7 @@ static void emit_global_scalar_inits(unit *u)
             continue;
         }
         if (!d->init) continue;
-        infer_type(d->init);
-        gen_expr(d->init);
+        gen_expr_num(d->init, d->dtype->kind == TY_FLOAT);
         emit("SET %s", d->name);
     }
 }
@@ -1490,8 +1509,7 @@ static void emit_static_inits(void)
         if (e->t && (e->t->kind == TY_ARRAY || e->t->kind == TY_STRUCT)) {
             copy_to_block(e->base, e->init, type_size_words(e->t));   // static aggregate = expr
         } else {
-            infer_type(e->init);
-            gen_expr(e->init);
+            gen_expr_num(e->init, e->t && e->t->kind == TY_FLOAT);
             emit("SET %s", e->base);
         }
     }
