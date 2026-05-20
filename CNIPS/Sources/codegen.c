@@ -233,6 +233,36 @@ static void scan_fp_stmt(stmt *s)
     }
 }
 
+// ---- static-local initializers ---------------------------------------------
+// A `static` local has fixed storage (like every local on this target), but its
+// initializer must run ONCE at program start, not on each function entry. We
+// collect them in a pre-pass and emit them at main's entry, like globals. The
+// stored base name is already mangled (<func>_<var>), matching declare_local.
+typedef struct { char *base; type *t; expr *init; initz *binit; } stinit_e;
+#define MAX_STINIT 256
+static stinit_e stinits[MAX_STINIT];
+static int      n_stinit = 0;
+
+static void collect_statics_stmt(const char *fn, stmt *s)
+{
+    if (!s) return;
+    collect_statics_stmt(fn, s->body);
+    collect_statics_stmt(fn, s->body2);
+    collect_statics_stmt(fn, s->init_stmt);
+    for (int i = 0; i < s->n_items; i++) collect_statics_stmt(fn, s->items[i]);
+    for (decl *d = s->decls; d; d = d->next) {
+        if (d->sclass == SC_STATIC && (d->init || d->binit) && n_stinit < MAX_STINIT) {
+            size_t n = strlen(fn) + strlen(d->name) + 2;
+            char *base = malloc(n); snprintf(base, n, "%s_%s", fn, d->name);
+            stinits[n_stinit].base  = base;
+            stinits[n_stinit].t     = d->dtype;
+            stinits[n_stinit].init  = d->init;
+            stinits[n_stinit].binit = d->binit;
+            n_stinit++;
+        }
+    }
+}
+
 // ---- type inference (lightweight; fills e->etype bottom-up) ----------------
 
 static type *infer_type(expr *e)
@@ -1053,16 +1083,20 @@ static void declare_local(decl *d)
     int arr_words = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
     log_var(cur_func_name ? cur_func_name : "global", d->name,
             innermost_code(d->dtype), arr_words);
+    // `static` locals keep fixed storage but are initialised ONCE at program
+    // start (collected pre-pass, emitted at main entry) — skip the inline init.
+    int is_static = (d->sclass == SC_STATIC);
     if (d->dtype && d->dtype->kind == TY_ARRAY) {
         // multi-dim arrays flatten to total word count; element type is the innermost scalar
         if (d->init_file) emit("#arrays %s %d %d \"%s\"", aname, innermost_code(d->dtype), arr_words, d->init_file);
         else              emit("#array %s %d %d",         aname, innermost_code(d->dtype), arr_words);
-        if (d->binit) emit_initz(aname, 0, d->dtype, d->binit);
+        if (!is_static && d->binit) emit_initz(aname, 0, d->dtype, d->binit);
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
         emit("#array %s 1 %d", aname, type_size_words(d->dtype));
-        if (d->binit)      emit_initz(aname, 0, d->dtype, d->binit);
-        else if (d->init)  copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
-    } else if (d->init) {
+        if (is_static)          { /* deferred to program start */ }
+        else if (d->binit)      emit_initz(aname, 0, d->dtype, d->binit);
+        else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
+    } else if (d->init && !is_static) {
         infer_type(d->init);
         gen_expr(d->init);
         emit("SET %s", aname);
@@ -1359,6 +1393,23 @@ static void emit_global_scalar_inits(unit *u)
     }
 }
 
+// emit the one-time initializers for `static` locals (collected pre-pass)
+static void emit_static_inits(void)
+{
+    for (int i = 0; i < n_stinit; i++) {
+        stinit_e *e = &stinits[i];
+        if (e->binit) { emit_initz(e->base, 0, e->t, e->binit); continue; }
+        if (!e->init) continue;
+        if (e->t && (e->t->kind == TY_ARRAY || e->t->kind == TY_STRUCT)) {
+            copy_to_block(e->base, e->init, type_size_words(e->t));   // static aggregate = expr
+        } else {
+            infer_type(e->init);
+            gen_expr(e->init);
+            emit("SET %s", e->base);
+        }
+    }
+}
+
 static void emit_function(func *f, unit *u, int is_main)
 {
     cur_func_name = f->name;
@@ -1392,7 +1443,7 @@ static void emit_function(func *f, unit *u, int is_main)
         }
     }
 
-    if (is_main) { emit_string_inits(); emit_global_scalar_inits(u); }
+    if (is_main) { emit_string_inits(); emit_global_scalar_inits(u); emit_static_inits(); }
 
     gen_stmt(f->body);
 
@@ -1460,7 +1511,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 {
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
-    g_uses_udiv = 0;
+    g_uses_udiv = 0; n_stinit = 0;
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
 
     // file-scope symtab: globals + function signatures
@@ -1482,7 +1533,11 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 
     // pre-scan every function body and global initialiser for string literals
     // and address-taken functions before any codegen emits a reference.
-    for (int i = 0; i < u->n_funcs; i++) { scan_strings_stmt(u->funcs[i]->body); scan_fp_stmt(u->funcs[i]->body); }
+    for (int i = 0; i < u->n_funcs; i++) {
+        scan_strings_stmt(u->funcs[i]->body);
+        scan_fp_stmt(u->funcs[i]->body);
+        collect_statics_stmt(u->funcs[i]->name, u->funcs[i]->body);
+    }
     for (int i = 0; i < u->n_globals; i++) {
         scan_strings_expr(u->globals[i]->init);
         scan_fp_expr(u->globals[i]->init);
