@@ -39,6 +39,21 @@ static decl  *param_tail = NULL;
 static int    param_count = 0;
 
 static void unit_add_func(func *f);   // defined below; used by method_finish
+
+// signature string (one type-code per param) for overload disambiguation
+static char *params_sig(decl *params)
+{
+    int n = 0; for (decl *p = params; p; p = p->next) n++;
+    char *s = malloc(n + 1); int i = 0;
+    for (decl *p = params; p; p = p->next) s[i++] = type_code(p->dtype);
+    s[i] = 0; return s;
+}
+static char *sym_sig(sym *s)
+{
+    char *str = malloc(s->n_params + 1);
+    for (int i = 0; i < s->n_params; i++) str[i] = type_code(s->param_types[i]);
+    str[s->n_params] = 0; return str;
+}
 static void params_reset(void) { param_head = param_tail = NULL; param_count = 0; }
 static void params_append(decl *d)
 {
@@ -757,12 +772,23 @@ function_def:
              clobbered by the params' and body's own base_type reductions. */
           type *ret = apply_pointers($1, $2);
           sym *s = st_find($3);
-          if (s && s->kind == SK_FUNC && s->defined)
-              msg_error(yylineno, "redefinition of function '%s'%s", $3,
-                  strcmp($3, "main") == 0 ? " (a program has exactly one main)" : "");
           if (s && s->kind != SK_FUNC)
               msg_error(yylineno, "'%s' redeclared as a function (already a variable)", $3);
-          if (!s) {
+          /* C++ overloading: a same-name function with a DIFFERENT signature is a
+             new overload; only an identical signature already-defined is an error. */
+          char *nsig = params_sig($5.head);
+          int reuse = 0;
+          if (s && s->kind == SK_FUNC) {
+              char *osig = sym_sig(s);
+              int same = (strcmp(osig, nsig) == 0);
+              free(osig);
+              if (same && s->defined)
+                  msg_error(yylineno, "redefinition of function '%s'%s", $3,
+                      strcmp($3, "main") == 0 ? " (a program has exactly one main)" : "");
+              if (same) reuse = 1;          /* matching prototype -> attach the body */
+          }
+          free(nsig);
+          if (!reuse) {
               s = st_add(SK_FUNC, $3, $3, ret);
               s->n_params = $5.n;
               if ($5.n > 0) {
@@ -824,6 +850,10 @@ param_declarator:
     | base_type '&' IDENT {
           /* reference parameter `T& name` — pass-by-address, auto-deref on use */
           $$ = ast_decl(t_ref($1), $3, NULL, yylineno);
+      }
+    | base_type pointers IDENT '=' assignment_expr {
+          /* default argument `T name = expr` — the default is the param's init */
+          $$ = ast_decl(apply_pointers($1, $2), $3, $5, yylineno);
       }
     | base_type pointers {
           /* abstract (unnamed) parameter — e.g. the `int` in `int (*f)(int)` */

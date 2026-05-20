@@ -41,6 +41,8 @@ static int   cur_frame_cursor = 0; // next free frame offset while emitting it
 static char *cur_func_name = NULL;
 static type *cur_func_ret  = NULL;
 static type *cur_method_class = NULL;   // class type when emitting a method body
+static unit *cg_unit = NULL;            // the translation unit (for overload resolution)
+static type *infer_type(expr *e);       // (also forward-declared below; needed early here)
 
 // inside a method, an unqualified name that isn't a local/param but IS a data
 // member of the enclosing class resolves to `this->member`. Returns the field
@@ -58,6 +60,51 @@ static char *cg_mangle_method(const char *cls, const char *name)
     char *m = malloc(strlen(cls) + strlen(name) + 3);
     sprintf(m, "%s__%s", cls, name);
     return m;
+}
+
+// Assign each function its emitted label. A name shared by more than one
+// definition is overloaded -> append `_O` + per-param type codes (kept to the
+// [A-Za-z0-9_] charset the assembler accepts); unique names stay plain.
+static void assign_overload_labels(unit *u)
+{
+    for (int i = 0; i < u->n_funcs; i++) {
+        func *f = u->funcs[i];
+        int dup = 0;
+        for (int j = 0; j < u->n_funcs; j++)
+            if (j != i && !strcmp(u->funcs[j]->name, f->name)) { dup = 1; break; }
+        if (!dup) { f->asm_label = f->name; continue; }
+        char *lbl = malloc(strlen(f->name) + f->n_params + 3);
+        int k = sprintf(lbl, "%s_O", f->name);
+        decl *p = f->params;
+        for (int a = 0; a < f->n_params && p; a++, p = p->next) lbl[k++] = type_code(p->dtype);
+        lbl[k] = 0;
+        f->asm_label = lbl;
+    }
+}
+
+// pick the best-matching overload of `name` for the argument types (exact code
+// match scores higher than an int<->float conversion); NULL if no such function.
+static func *resolve_overload(const char *name, expr **args, int nargs)
+{
+    if (!cg_unit) return NULL;
+    func *best = NULL; int best_score = -1;
+    for (int i = 0; i < cg_unit->n_funcs; i++) {
+        func *f = cg_unit->funcs[i];
+        if (f->method_of || strcmp(f->name, name)) continue;
+        int required = 0;                       // params without a default (assumed leading)
+        for (decl *p = f->params; p; p = p->next) if (!p->init) required++;
+        if (nargs < required || nargs > f->n_params) continue;   // default args fill the rest
+        int score = 0, ok = 1;
+        decl *p = f->params;
+        for (int a = 0; a < nargs && p; a++, p = p->next) {
+            char pc = type_code(p->dtype), ac = type_code(infer_type(args[a]));
+            if (pc == ac) score += 2;
+            else if ((pc == 'i' && ac == 'f') || (pc == 'f' && ac == 'i')) score += 1;
+            else { ok = 0; break; }
+        }
+        if (ok && score > best_score) { best_score = score; best = f; }
+    }
+    return best;
 }
 
 static void emit(const char *fmt, ...)
@@ -178,6 +225,7 @@ static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
 static void gen_bool (expr *e, const char *jz_target);
 static type *infer_type(expr *e);
+static func *resolve_overload(const char *name, expr **args, int nargs);
 
 // ---- string-literal pre-scan (assigns each "..." a global label) -----------
 
@@ -446,6 +494,8 @@ static type *infer_type(expr *e)
             if (!strcmp(fn, "out"))      { e->etype = t_void(); break; }
             if (!strcmp(fn, "malloc"))   { e->etype = t_ptr(t_void()); break; }
             if (!strcmp(fn, "free"))     { e->etype = t_void(); break; }
+            func *ov = resolve_overload(fn, e->args, e->n_args);
+            if (ov) { e->etype = ov->ret; break; }   // pick the matching overload's return type
             sym *s = st_find(fn);
             if (s) e->etype = s->stype;
             else { msg_error(e->line, "undefined function '%s'", fn); }
@@ -1246,6 +1296,17 @@ static void gen_expr(expr *e)
                 gen_expr(e->args[0]); emit("PSH"); emit("CAL free");
                 g_uses_heap = 1; return;
             }
+            func *ov = resolve_overload(fn, e->args, e->n_args);
+            if (ov) {                                  // resolved (overloaded or unique)
+                decl *p = ov->params;
+                for (int i = 0; i < e->n_args; i++) {
+                    gen_arg(e->args[i], p ? p->dtype : NULL);
+                    if (p) p = p->next;
+                }
+                for (; p; p = p->next) gen_arg(p->init, p->dtype);   // fill default arguments
+                emit("CAL %s", ov->asm_label);
+                return;
+            }
             sym *s = st_find(fn);
             if (s && s->kind == SK_FUNC) {
                 for (int i = 0; i < e->n_args; i++) {
@@ -1757,11 +1818,12 @@ static void emit_fn_return(void)
 
 static void emit_function(func *f, unit *u, int is_main)
 {
-    cur_func_name    = f->name;
+    if (!f->asm_label) f->asm_label = f->name;
+    cur_func_name    = f->asm_label;   // unique label keeps overloads' locals distinct
     cur_func_ret     = f->ret;
     cur_fn_recursive = f->is_recursive;
     cur_method_class = f->method_of;
-    st_enter_func(f->name);
+    st_enter_func(f->asm_label);
     st_push_scope();
 
     decl *plist[64]; int np = 0;
@@ -1785,10 +1847,10 @@ static void emit_function(func *f, unit *u, int is_main)
         }
     }
 
-    emit("@%s NOP", f->name);
+    emit("@%s NOP", f->asm_label);
 
     if (!is_main && f->ret && f->ret->kind == TY_STRUCT)
-        emit("#array _ret_%s 1 %d", f->name, type_size_words(f->ret));
+        emit("#array _ret_%s 1 %d", f->asm_label, type_size_words(f->ret));
 
     if (cur_fn_recursive) {
         // prologue: push a new frame
@@ -2022,6 +2084,9 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
         if (strcmp(f->name, "main") == 0) has_main = 1;
     }
     if (!has_main) msg_error(0, "program has no main() function");
+
+    cg_unit = u;
+    assign_overload_labels(u);
 
     // pre-scan every function body and global initialiser for string literals
     // and address-taken functions before any codegen emits a reference.

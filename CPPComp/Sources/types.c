@@ -176,6 +176,20 @@ int type_is_arith (const type *t) { return type_is_int(t) || type_is_float(t); }
 int type_is_ptr_or_arr(const type *t) { return t && (t->kind == TY_PTR || t->kind == TY_ARRAY); }
 int type_is_scalar(const type *t) { return t && t->kind != TY_STRUCT && t->kind != TY_ARRAY; }
 
+// one-char signature code for a parameter type, used to mangle overloaded
+// function names and to match a call's arguments to the right overload.
+char type_code(const type *t)
+{
+    if (!t) return 'i';
+    switch (t->kind) {
+        case TY_FLOAT:  return 'f';
+        case TY_PTR:    return 'p';   // covers references (a ref is a flagged ptr)
+        case TY_ARRAY:  return 'p';
+        case TY_STRUCT: return 'S';
+        default:        return 'i';   // int / char / bool / enum all fold to one word
+    }
+}
+
 int type_compatible(const type *a, const type *b)
 {
     if (a == b) return 1;
