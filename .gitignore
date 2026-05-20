@@ -46,6 +46,10 @@ pc_*_mem.txt
 # CI smoke scratch area
 /.smoke/
 
+# CNIPS regression scratch (binaries + per-example work dirs)
+/CNIPS/.bin/
+/CNIPS/.work/
+
 # ============================================================================
 # Simulation outputs (iverilog / gtkwave / vvp) ------------------------------
 # ============================================================================
