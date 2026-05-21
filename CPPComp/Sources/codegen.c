@@ -589,8 +589,15 @@ static type *infer_type(expr *e)
             func *ov = resolve_overload(fn, e->args, e->n_args);
             if (ov) { e->etype = ov->ret; break; }   // pick the matching overload's return type
             sym *s = st_find(fn);
-            if (s) e->etype = s->stype;
-            else { msg_error(e->line, "undefined function '%s'", fn); }
+            if (s) { e->etype = s->stype; break; }
+            if (cur_method_class) {                  // unqualified sibling-method call -> this->fn()
+                char *masm = resolve_method(cur_method_class, fn);
+                int vslot = vtbl_slot(cur_method_class, fn);
+                if (masm) { sym *ms = st_find(masm); free(masm);
+                            e->etype = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int(); break; }
+                if (vslot >= 0) { e->etype = t_int(); break; }
+            }
+            msg_error(e->line, "undefined function '%s'", fn);
         } else {
             // indirect call via (*fp)(...) — the callee holds a function ID, not
             // a dereferenceable pointer, so don't type-check the deref itself.
@@ -728,10 +735,10 @@ static void gen_addr(expr *e)
         type *bt = infer_type(e->a);
         int elem_sz = bt ? type_size_words(bt->base) : 1;
         // compute base address into acc
-        if (bt && bt->kind == TY_ARRAY && e->a->kind == E_IDENT) {
-            sym *s = st_find(e->a->sval);
-            if (s && s->kind == SK_PARAM) emit("LOD %s", s->asm_name);
-            else                          emit("LEA %s", s->asm_name);
+        if (bt && bt->kind == TY_ARRAY) {
+            // array lvalue: its address is the base (gen_addr handles a class
+            // member via implicit this, a global via LEA, a param via LOD)
+            gen_addr(e->a);
         } else {
             // pointer: its value IS the base address
             gen_expr(e->a);
@@ -1516,6 +1523,36 @@ static void gen_expr(expr *e)
                 }
                 emit("CAL %s", s->asm_name);
                 return;
+            }
+            // unqualified sibling-method call inside a method body -> this->fn(args)
+            if (cur_method_class) {
+                int vslot = vtbl_slot(cur_method_class, fn);
+                char *masm = resolve_method(cur_method_class, fn);
+                if (masm || vslot >= 0) {
+                    sym *ms = masm ? st_find(masm) : NULL;
+                    if (vslot >= 0) {
+                        gen_load_this(); emit("PSH");        // this -> arg 0
+                        emit("LDA");                          // acc = vptr = mem[this]
+                        if (vslot) emit("ADD %d", vslot);
+                        emit("LDA");                          // acc = fid = mem[vptr+slot]
+                        emit("SET _fp_id");
+                        for (int i = 0; i < e->n_args; i++) {
+                            type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
+                            gen_arg(e->args[i], pt);
+                        }
+                        emit_dispatch_chain();
+                        free(masm);
+                        return;
+                    }
+                    gen_load_this(); emit("PSH");
+                    for (int i = 0; i < e->n_args; i++) {
+                        type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
+                        gen_arg(e->args[i], pt);
+                    }
+                    emit("CAL %s", masm);
+                    free(masm);
+                    return;
+                }
             }
             // fall through: callee is a variable holding a function ID -> indirect
         }
