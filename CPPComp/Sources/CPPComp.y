@@ -793,6 +793,10 @@ op_name:
     | TOK_GE { $$ = "op_ge";  }
     | '='    { $$ = "op_assign"; }
     | '[' ']' { $$ = "op_index"; }
+    | TOK_PLUSEQ  { $$ = "op_addeq"; }
+    | TOK_MINUSEQ { $$ = "op_subeq"; }
+    | TOK_STAREQ  { $$ = "op_muleq"; }
+    | TOK_SLASHEQ { $$ = "op_diveq"; }
     ;
 
 union_specifier:
@@ -1270,12 +1274,11 @@ assignment_expr:
       conditional_expr                       { $$ = $1; }
     | unary_expr '=' assignment_expr         { $$ = ast_assign($1, $3, yylineno); }
     | unary_expr assign_op assignment_expr   {
-          /* a OP= b  ⇒  a = a OP b */
-          /* note: $1 is referenced twice — codegen treats this as if the lvalue
-             is evaluated exactly once. for simple lvalues (IDENT, ARRAY, MEMBER,
-             DEREF) this is safe semantically; for side-effecting lvalues it
-             would double-evaluate. v1 accepts the simpler model. */
-          $$ = ast_assign($1, ast_binop($2, $1, $3, yylineno), yylineno);
+          /* a OP= b  ⇒  a = a OP b (for class lhs, codegen may instead dispatch
+             a user-defined operatorOP=). $1 is referenced twice — codegen treats
+             the lvalue as evaluated once; safe for simple lvalues (IDENT, ARRAY,
+             MEMBER, DEREF). */
+          $$ = ast_assign_op($2, $1, $3, yylineno);
       }
     ;
 

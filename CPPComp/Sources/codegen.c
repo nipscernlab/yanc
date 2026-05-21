@@ -116,6 +116,16 @@ static const char *op_method_name(op_kind op)
     }
 }
 
+// compound-assignment operator -> method name (matches the parser's op_name)
+static const char *op_compound_method_name(op_kind op)
+{
+    switch (op) {
+        case OP_ADD: return "op_addeq"; case OP_SUB: return "op_subeq";
+        case OP_MUL: return "op_muleq"; case OP_DIV: return "op_diveq";
+        default: return NULL;
+    }
+}
+
 // Assign each function its emitted label. A name shared by more than one
 // definition is overloaded -> append `_O` + per-param type codes (kept to the
 // [A-Za-z0-9_] charset the assembler accepts); unique names stay plain.
@@ -158,6 +168,36 @@ static func *resolve_overload(const char *name, expr **args, int nargs)
         }
         if (ok && score > best_score) { best_score = score; best = f; }
     }
+    return best;
+}
+
+// pick the constructor overload of `cls` matching the call arguments. Ctors are
+// methods named "Class__ctor" with a leading implicit `this`; user args match
+// params[1..]. Returns the func (use its asm_label / params), or NULL.
+static func *resolve_ctor(type *cls, expr **args, int nargs)
+{
+    if (!cg_unit || !cls || !cls->tag) return NULL;
+    char *mn = cg_mangle_method(cls->tag, "ctor");
+    func *best = NULL; int best_score = -1;
+    for (int i = 0; i < cg_unit->n_funcs; i++) {
+        func *f = cg_unit->funcs[i];
+        if (!f->method_of || strcmp(f->name, mn)) continue;
+        decl *p0 = f->params ? f->params->next : NULL;     // skip `this`
+        int nuser = f->n_params - 1;
+        int required = 0;
+        for (decl *q = p0; q; q = q->next) if (!q->init) required++;
+        if (nargs < required || nargs > nuser) continue;
+        int score = 0, ok = 1;
+        decl *p = p0;
+        for (int a = 0; a < nargs && p; a++, p = p->next) {
+            char pc = type_code(p->dtype), ac = type_code(infer_type(args[a]));
+            if (pc == ac) score += 2;
+            else if ((pc == 'i' && ac == 'f') || (pc == 'f' && ac == 'i')) score += 1;
+            else { ok = 0; break; }
+        }
+        if (ok && score > best_score) { best_score = score; best = f; }
+    }
+    free(mn);
     return best;
 }
 
@@ -1106,6 +1146,23 @@ static void gen_expr(expr *e)
     }
 
     case E_ASSIGN:
+        // compound `a OP= b` on a class that overloads operatorOP= -> a.op_OPeq(b).
+        // (e->b is the desugared `a OP b`; its rhs operand is e->b->b.)
+        if (e->op != OP_NONE) {
+            type *lt = infer_type(e->a);
+            const char *opm = op_compound_method_name(e->op);
+            char *masm = (lt && lt->kind == TY_STRUCT && lt->tag && opm)
+                       ? resolve_method(lt, opm) : NULL;
+            if (masm) {
+                sym *ms = st_find(masm);
+                gen_addr(e->a); emit("PSH");                  // this = &lhs
+                type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
+                gen_arg(e->b->b, pt);                         // the rhs operand
+                emit("CAL %s", masm);
+                free(masm);
+                return;
+            }
+        }
         gen_store(e->a, e->b);
         // assignment expression yields the stored value; for v1 we leave acc
         // as it is after the store (which for SET-path is the value, for
@@ -1349,9 +1406,8 @@ static void gen_expr(expr *e)
         }
         emit("LOD %d", words); emit("PSH"); emit("CAL malloc");   // acc = ptr
         int poly = (t->kind == TY_STRUCT && t->n_vtbl > 0);
-        char *ctor = (t->kind == TY_STRUCT && t->tag) ? resolve_method(t, "ctor") : NULL;
-        sym  *cs   = ctor ? st_find(ctor) : NULL;
-        int has_ctor = cs && cs->kind == SK_FUNC;
+        func *cf = (t->kind == TY_STRUCT && t->tag) ? resolve_ctor(t, e->args, e->n_args) : NULL;
+        int has_ctor = cf != NULL;
         if (!poly && !has_ctor) return;                            // plain alloc, ptr in acc
         emit("SET __new_p");                                       // stash the new object
         if (poly) {                                                // mem[obj+0] = &vtable
@@ -1360,16 +1416,17 @@ static void gen_expr(expr *e)
         if (has_ctor) {
             emit("LOD __new_p"); emit("PSH");                      // result (kept on stack bottom)
             emit("LOD __new_p"); emit("PSH");                      // this (arg 0)
+            decl *p = cf->params ? cf->params->next : NULL;        // skip `this`
             for (int i = 0; i < e->n_args; i++) {
-                type *pt = (cs->param_types && i + 1 < cs->n_params) ? cs->param_types[i + 1] : NULL;
-                gen_arg(e->args[i], pt);
+                gen_arg(e->args[i], p ? p->dtype : NULL);
+                if (p) p = p->next;
             }
-            emit("CAL %s", ctor);
+            for (; p; p = p->next) gen_arg(p->init, p->dtype);     // default args
+            emit("CAL %s", cf->asm_label);
             emit("POP");                                           // acc = result
         } else {
             emit("LOD __new_p");                                   // acc = result
         }
-        free(ctor);
         return;
     }
     case E_DELETE: {
@@ -1514,6 +1571,40 @@ static void gen_expr(expr *e)
                 for (; p; p = p->next) gen_arg(p->init, p->dtype);   // fill default arguments
                 emit("CAL %s", ov->asm_label);
                 return;
+            }
+            // parser-emitted call to a mangled method name with an explicit
+            // leading `this` (e.g. a base-ctor init `Base__ctor(this, args)`).
+            // Resolve overloads by the args after `this` so an overloaded base
+            // constructor picks the right label rather than the bare name.
+            if (cg_unit) {
+                func *bestm = NULL; int bests = -1;
+                for (int i = 0; i < cg_unit->n_funcs; i++) {
+                    func *f = cg_unit->funcs[i];
+                    if (!f->method_of || strcmp(f->name, fn)) continue;
+                    decl *p0 = f->params ? f->params->next : NULL;   // skip `this`
+                    int required = 0;
+                    for (decl *q = p0; q; q = q->next) if (!q->init) required++;
+                    int nuser = e->n_args - 1;                       // args[0] is `this`
+                    if (nuser < required || nuser > f->n_params - 1) continue;
+                    int score = 0, ok = 1; decl *p = p0;
+                    for (int a = 1; a < e->n_args && p; a++, p = p->next) {
+                        char pc = type_code(p->dtype), ac = type_code(infer_type(e->args[a]));
+                        if (pc == ac) score += 2;
+                        else if ((pc == 'i' && ac == 'f') || (pc == 'f' && ac == 'i')) score += 1;
+                        else { ok = 0; break; }
+                    }
+                    if (ok && score > bests) { bests = score; bestm = f; }
+                }
+                if (bestm) {
+                    decl *p = bestm->params;
+                    for (int i = 0; i < e->n_args; i++) {
+                        gen_arg(e->args[i], p ? p->dtype : NULL);
+                        if (p) p = p->next;
+                    }
+                    for (; p; p = p->next) gen_arg(p->init, p->dtype);
+                    emit("CAL %s", bestm->asm_label);
+                    return;
+                }
             }
             sym *s = st_find(fn);
             if (s && s->kind == SK_FUNC) {
@@ -1689,21 +1780,17 @@ static void declare_local(decl *d)
             if (ct->n_vtbl > 0) {                                  // set vptr if polymorphic
                 emit("LEA %s", aname); emit("PSH"); emit("LEA %s__vtable", ct->tag); emit("STA");
             }
-            char *ctor = resolve_method(ct, "ctor");
-            sym *cs = ctor ? st_find(ctor) : NULL;
-            if (cs && cs->kind == SK_FUNC) {
-                if (d->ctor_args) {                                // T v(args)
-                    emit("LEA %s", aname); emit("PSH");            // this
-                    for (int i = 0; i < d->n_ctor_args; i++) {
-                        type *pt = (cs->param_types && i + 1 < cs->n_params) ? cs->param_types[i + 1] : NULL;
-                        gen_arg(d->ctor_args[i], pt);
-                    }
-                    emit("CAL %s", ctor);
-                } else if (cs->n_params == 1) {                    // default ctor (this only)
-                    emit("LEA %s", aname); emit("PSH"); emit("CAL %s", ctor);
+            func *cf = resolve_ctor(ct, d->ctor_args, d->n_ctor_args);  // overload by args
+            if (cf) {
+                emit("LEA %s", aname); emit("PSH");                // this
+                decl *p = cf->params ? cf->params->next : NULL;    // skip `this`
+                for (int i = 0; i < d->n_ctor_args; i++) {
+                    gen_arg(d->ctor_args[i], p ? p->dtype : NULL);
+                    if (p) p = p->next;
                 }
+                for (; p; p = p->next) gen_arg(p->init, p->dtype); // default args
+                emit("CAL %s", cf->asm_label);
             }
-            free(ctor);
         }
     } else if (d->init && !is_static) {
         if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address

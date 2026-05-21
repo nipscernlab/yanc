@@ -40,7 +40,8 @@ typedef enum {
     OP_SHL, OP_SHR,
     OP_EQ, OP_NE, OP_LT, OP_GT, OP_LE, OP_GE,
     OP_LAND, OP_LOR,
-    OP_NEG, OP_BNOT, OP_LNOT, OP_POS
+    OP_NEG, OP_BNOT, OP_LNOT, OP_POS,
+    OP_NONE                      // sentinel: a plain '=' (not a compound assign)
 } op_kind;
 
 typedef struct expr expr;
@@ -172,6 +173,7 @@ expr *ast_char_lit (long v, int line);
 expr *ast_string_lit(char *bytes, int len, int line);    // takes ownership of bytes
 expr *ast_ident    (char *n, int line);
 expr *ast_assign   (expr *l, expr *r, int line);
+expr *ast_assign_op(op_kind o, expr *l, expr *r, int line);   // compound `l OP= r`
 expr *ast_binop    (op_kind o, expr *l, expr *r, int line);
 expr *ast_unop     (op_kind o, expr *operand, int line);
 expr *ast_index    (expr *arr, expr *idx, int line);

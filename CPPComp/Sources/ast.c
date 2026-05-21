@@ -22,8 +22,12 @@ expr *ast_float_lit(double v, int line)          { expr *e = new_expr(E_FLOAT_LI
 expr *ast_char_lit (long v, int line)            { expr *e = new_expr(E_CHAR_LIT,   line); e->ival = v; return e; }
 expr *ast_string_lit(char *bytes, int len, int line) { expr *e = new_expr(E_STRING_LIT, line); e->sval = bytes; e->slen = len; return e; }
 expr *ast_ident    (char *n, int line)           { expr *e = new_expr(E_IDENT,      line); e->sval = n; return e; }
-expr *ast_assign   (expr *l, expr *r, int line)  { expr *e = new_expr(E_ASSIGN,     line); e->a = l; e->b = r; return e; }
+expr *ast_assign   (expr *l, expr *r, int line)  { expr *e = new_expr(E_ASSIGN,     line); e->a = l; e->b = r; e->op = OP_NONE; return e; }
 expr *ast_binop    (op_kind o, expr *l, expr *r, int line) { expr *e = new_expr(E_BINOP, line); e->op = o; e->a = l; e->b = r; return e; }
+/* compound `l OP= r`: keep the desugared `l = l OP r` shape (so scalars and the
+   default struct path are unchanged) but remember OP so codegen can dispatch to
+   a user-defined operatorOP= when the lhs is a class that overloads it. */
+expr *ast_assign_op(op_kind o, expr *l, expr *r, int line) { expr *e = new_expr(E_ASSIGN, line); e->a = l; e->b = ast_binop(o, l, r, line); e->op = o; return e; }
 expr *ast_unop     (op_kind o, expr *o2, int line) { expr *e = new_expr(E_UNOP, line); e->op = o; e->a = o2; return e; }
 expr *ast_index    (expr *arr, expr *idx, int line) { expr *e = new_expr(E_INDEX, line); e->a = arr; e->b = idx; return e; }
 expr *ast_call     (expr *callee, expr **args, int nargs, int line)
