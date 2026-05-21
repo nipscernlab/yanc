@@ -920,10 +920,11 @@ init_declarator:
           d->sclass = ts_sclass;
           $$ = d;
       }
-    | pointers IDENT '(' argument_list ')' {
-          /* direct-init `T v(args)` — stack construction running the ctor */
-          decl *d = make_decl(cur_base, $1, $2, NULL, 0, yylineno, NULL);
-          d->ctor_args = $4.arr; d->n_ctor_args = $4.n;
+    | pointers IDENT '(' { $<typ>$ = cur_base; } argument_list ')' {
+          /* direct-init `T v(args)` — capture the base type before the args (a
+             `new`/cast/sizeof inside them would otherwise clobber cur_base) */
+          decl *d = make_decl($<typ>4, $1, $2, NULL, 0, yylineno, NULL);
+          d->ctor_args = $5.arr; d->n_ctor_args = $5.n;
           $$ = d;
       }
     | pointers IDENT array_suffix {
