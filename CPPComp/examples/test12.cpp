@@ -20,4 +20,12 @@ void main(void) {
     out(0, y);                  // 15
     auto z = addv(100, 23);     // auto from a template call
     out(0, z);                  // 123
+
+    int arr[4];
+    arr[0] = 2; arr[1] = 4; arr[2] = 6; arr[3] = 8;
+    int sum = 0;
+    for (auto e : arr) sum = sum + e;     // range-for by value
+    out(0, sum);                          // 20
+    for (int& r : arr) r = r + 1;         // range-for by reference (mutates arr)
+    out(0, arr[3]);                       // 9
 }

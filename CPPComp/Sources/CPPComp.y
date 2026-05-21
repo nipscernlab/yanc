@@ -1133,6 +1133,12 @@ iteration_stmt:
           s->e1 = $4; s->e2 = $6; s->body = $8;
           $$ = s;
       }
+    | KW_FOR '(' decl_specifiers pointers IDENT ':' IDENT ')' stmt {  /* range-for, by value */
+          $$ = make_range_for(apply_pointers($3, $4), $5, $7, $9, yylineno); free($7);
+      }
+    | KW_FOR '(' decl_specifiers '&' IDENT ':' IDENT ')' stmt {       /* range-for, by reference */
+          $$ = make_range_for(t_ref($3), $5, $7, $9, yylineno); free($7);
+      }
     ;
 
 opt_expr:
