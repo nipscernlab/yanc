@@ -68,6 +68,13 @@ type *t_auto(void)
     return t;
 }
 
+type *t_tparam(int idx)
+{
+    type *t = (type*)xcalloc(sizeof(type));
+    t->kind = TY_INT; t->is_signed = 1; t->tparam = idx + 1;   // int-like until substituted
+    return t;
+}
+
 type *t_array(type *of, int n)
 {
     type *t = (type*)xcalloc(sizeof(type));

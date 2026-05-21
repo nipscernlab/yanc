@@ -147,6 +147,7 @@ struct func {
     int     frame_size;      // words of stack frame (when is_recursive)
     type   *method_of;       // non-NULL: this is a class method; its class type
     char   *asm_label;       // emitted symbol (mangled by signature when overloaded)
+    int     n_tparams;       // >0: a function template (params use t_tparam types)
 };
 
 typedef struct {
@@ -154,6 +155,8 @@ typedef struct {
     int     n_globals;
     func  **funcs;
     int     n_funcs;
+    func  **templates;       // captured function templates (instantiated on use)
+    int     n_templates;
 
     char   *prname;
     int     nubits, nbmant, nbexpo, nugain, ndstac, sdepth, nuioin, nuioou, fftsiz, itradd;

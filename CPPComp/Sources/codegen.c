@@ -296,6 +296,10 @@ static type *infer_type(expr *e);
 static func *resolve_overload(const char *name, expr **args, int nargs);
 static void  emit_vtable_inits(void);
 static void  emit_dispatch_chain(void);
+static func *find_template(const char *name);
+static func *get_instance(func *t, expr **cargs, int ncargs);
+static type *subst_type(type *t, type **a, int n);
+static void  deduce_targs(func *t, expr **cargs, int ncargs, type **targs);
 
 // ---- string-literal pre-scan (assigns each "..." a global label) -----------
 
@@ -577,6 +581,11 @@ static type *infer_type(expr *e)
             if (!strcmp(fn, "out"))      { e->etype = t_void(); break; }
             if (!strcmp(fn, "malloc"))   { e->etype = t_ptr(t_void()); break; }
             if (!strcmp(fn, "free"))     { e->etype = t_void(); break; }
+            func *tm = find_template(fn);            // template call: substituted return type
+            if (tm && tm->n_params == e->n_args) {
+                type *ta[8] = {0}; deduce_targs(tm, e->args, e->n_args, ta);
+                e->etype = subst_type(tm->ret, ta, tm->n_tparams); break;
+            }
             func *ov = resolve_overload(fn, e->args, e->n_args);
             if (ov) { e->etype = ov->ret; break; }   // pick the matching overload's return type
             sym *s = st_find(fn);
@@ -1477,6 +1486,17 @@ static void gen_expr(expr *e)
                 gen_expr(e->args[0]); emit("PSH"); emit("CAL free");
                 g_uses_heap = 1; return;
             }
+            func *tmpl = find_template(fn);            // function template -> monomorphize
+            if (tmpl && tmpl->n_params == e->n_args) {
+                func *inst = get_instance(tmpl, e->args, e->n_args);
+                decl *p = inst->params;
+                for (int i = 0; i < e->n_args; i++) {
+                    gen_arg(e->args[i], p ? p->dtype : NULL);
+                    if (p) p = p->next;
+                }
+                emit("CAL %s", inst->asm_label);
+                return;
+            }
             func *ov = resolve_overload(fn, e->args, e->n_args);
             if (ov) {                                  // resolved (overloaded or unique)
                 decl *p = ov->params;
@@ -2317,12 +2337,123 @@ static void analyze_recursion(unit *u)
     free(adj); free(ind);
 }
 
+// ---- function-template monomorphization ------------------------------------
+// Templates are captured (u->templates) with t_tparam placeholder types. A call
+// to a template deduces concrete types from its arguments and instantiates a
+// concrete clone (added to u->funcs as an overload named the same), so the
+// existing overload resolution/labeling picks the right instance per type.
+
+static type *subst_type(type *t, type **a, int n)
+{
+    if (!t) return t;
+    if (t->tparam > 0 && t->tparam <= n) return a[t->tparam - 1];
+    if (t->kind == TY_PTR || t->kind == TY_ARRAY) {
+        type *nb = subst_type(t->base, a, n);
+        if (nb == t->base) return t;
+        type *nt = (t->kind == TY_PTR) ? t_ptr(nb) : t_array(nb, t->arr_size);
+        nt->is_ref = t->is_ref;
+        return nt;
+    }
+    return t;
+}
+
+static expr *clone_expr(expr *e, type **a, int n)
+{
+    if (!e) return NULL;
+    expr *c = malloc(sizeof(expr)); *c = *e;       // shallow copy (strings shared)
+    c->etype = NULL;                                // re-infer per instance
+    c->target_t = subst_type(e->target_t, a, n);
+    c->a = clone_expr(e->a, a, n);
+    c->b = clone_expr(e->b, a, n);
+    c->c = clone_expr(e->c, a, n);
+    if (e->n_args) {
+        c->args = malloc(sizeof(expr*) * e->n_args);
+        for (int i = 0; i < e->n_args; i++) c->args[i] = clone_expr(e->args[i], a, n);
+    }
+    return c;
+}
+
+static decl *clone_decl(decl *d, type **a, int n)
+{
+    if (!d) return NULL;
+    decl *c = malloc(sizeof(decl)); *c = *d;
+    c->dtype = subst_type(d->dtype, a, n);
+    c->init  = clone_expr(d->init, a, n);
+    if (d->n_ctor_args) {
+        c->ctor_args = malloc(sizeof(expr*) * d->n_ctor_args);
+        for (int i = 0; i < d->n_ctor_args; i++) c->ctor_args[i] = clone_expr(d->ctor_args[i], a, n);
+    }
+    c->next = clone_decl(d->next, a, n);
+    return c;
+}
+
+static stmt *clone_stmt(stmt *s, type **a, int n)
+{
+    if (!s) return NULL;
+    stmt *c = malloc(sizeof(stmt)); *c = *s;
+    c->e1 = clone_expr(s->e1, a, n);
+    c->e2 = clone_expr(s->e2, a, n);
+    c->e3 = clone_expr(s->e3, a, n);
+    c->body = clone_stmt(s->body, a, n);
+    c->body2 = clone_stmt(s->body2, a, n);
+    c->init_stmt = clone_stmt(s->init_stmt, a, n);
+    if (s->n_items) {
+        c->items = malloc(sizeof(stmt*) * s->n_items);
+        for (int i = 0; i < s->n_items; i++) c->items[i] = clone_stmt(s->items[i], a, n);
+    }
+    c->decls = clone_decl(s->decls, a, n);
+    return c;
+}
+
+// instantiated template clones (each with a unique asm_label); their bodies are
+// emitted after @fim (reached only via CAL), draining the list as new instances
+// appear during emission.
+static func *g_inst[256]; static int g_n_inst = 0;
+
+static func *find_template(const char *name)
+{
+    for (int i = 0; i < cg_unit->n_templates; i++)
+        if (!strcmp(cg_unit->templates[i]->name, name)) return cg_unit->templates[i];
+    return NULL;
+}
+
+// deduce each type parameter of template `t` from the call's argument types
+static void deduce_targs(func *t, expr **cargs, int ncargs, type **targs)
+{
+    int j = 0;
+    for (decl *p = t->params; p && j < ncargs; p = p->next, j++)
+        if (p->dtype && p->dtype->tparam > 0 && p->dtype->tparam <= 8)
+            targs[p->dtype->tparam - 1] = infer_type(cargs[j]);
+    for (int i = 0; i < t->n_tparams; i++) if (!targs[i]) targs[i] = t_int();
+}
+
+// get (creating if needed) the concrete instance of `t` for these argument types
+static func *get_instance(func *t, expr **cargs, int ncargs)
+{
+    type *targs[8] = {0};
+    deduce_targs(t, cargs, ncargs, targs);
+    char lbl[96]; int k = sprintf(lbl, "%s_T", t->name);
+    for (decl *p = t->params; p && k < (int)sizeof(lbl) - 1; p = p->next)
+        lbl[k++] = type_code(subst_type(p->dtype, targs, t->n_tparams));
+    lbl[k] = 0;
+    for (int i = 0; i < g_n_inst; i++) if (!strcmp(g_inst[i]->asm_label, lbl)) return g_inst[i];
+    func *f = malloc(sizeof(func)); *f = *t;
+    f->n_tparams = 0;
+    f->ret    = subst_type(t->ret, targs, t->n_tparams);
+    f->params = clone_decl(t->params, targs, t->n_tparams);
+    f->body   = clone_stmt(t->body, targs, t->n_tparams);
+    f->asm_label = strdup(lbl);
+    if (g_n_inst < 256) g_inst[g_n_inst++] = f;
+    return f;
+}
+
 void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 {
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
-    g_uses_udiv = 0; n_stinit = 0;
+    g_uses_udiv = 0; n_stinit = 0; g_n_inst = 0;
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
+    cg_unit = u;
 
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
@@ -2389,6 +2520,10 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     // helper; the helper is only ever entered through CAL.
     if (g_uses_udiv) emit_udivmod();
     if (g_uses_heap) emit_heap();
+
+    // template instances (also reached only via CAL); the loop bound grows as
+    // emitting one instance discovers calls to further template instances
+    for (int i = 0; i < g_n_inst; i++) emit_function(g_inst[i], u, 0);
 
     if (tmp_dir) write_cmm_log(tmp_dir);
 }

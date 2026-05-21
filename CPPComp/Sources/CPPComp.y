@@ -175,6 +175,10 @@ static void method_finish(type *ret, const char *name, stmt *body)
 // enum counter (reset per enum_specifier)
 static long  enum_counter = 0;
 static char *cur_enum_prefix = NULL;   // set for `enum class E` -> enumerators are E__name
+// function-template capture: while parsing `template<...> ret f(...)`, type
+// parameters are t_tparam placeholders and the function is captured (not emitted)
+static int   g_in_template = 0;
+static int   g_tparam_n = 0;
 
 // helpers --------------------------------------------------------------------
 
@@ -191,6 +195,13 @@ static void unit_add_func(func *f)
 {
     g_unit->funcs = realloc(g_unit->funcs, sizeof(*g_unit->funcs) * (g_unit->n_funcs + 1));
     g_unit->funcs[g_unit->n_funcs++] = f;
+}
+
+static void unit_add_template(func *f)
+{
+    f->n_tparams = g_tparam_n;
+    g_unit->templates = realloc(g_unit->templates, sizeof(func*) * (g_unit->n_templates + 1));
+    g_unit->templates[g_unit->n_templates++] = f;
 }
 
 // wrap base type with N levels of pointer
@@ -397,8 +408,8 @@ translation_unit:
 external_decl:
       function_def
     | declaration                   { /* declaration's action adds it to globals (or registers typedef) */ }
-    | template_prefix function_def  /* function template (type-erased: T = 1 word) */
-    | template_prefix declaration   /* class template (type-erased) */
+    | template_prefix function_def  { g_in_template = 0; }  /* function template (monomorphized per use) */
+    | template_prefix declaration   { g_in_template = 0; }  /* class template (type-erased) */
     | KW_NAMESPACE IDENT '{' translation_unit '}' { free($2); }   /* transparent namespace */
     | KW_NAMESPACE IDENT '{' '}'                   { free($2); }
     | KW_USING KW_NAMESPACE qualified_id ';'       { free($3); }  /* using-directive (no-op) */
@@ -410,22 +421,22 @@ external_decl:
     | KW_STATIC_ASSERT '(' conditional_expr ')' ';'                { check_static_assert($3, NULL, yylineno); }
     ;
 
-/* Template prefix. On this 1-word target templates are type-erased: each type
-   parameter is bound to a single machine word (registered as a typedef to int),
-   so the templated function/class compiles ONCE and works for any 1-word type
-   (int/char/bool/pointer). Float type-arguments would use integer ops. */
+/* Template prefix. Each type parameter is a t_tparam placeholder (int-like until
+   substituted). FUNCTION templates are captured and monomorphized per concrete
+   argument type at the call site (so float instantiations use float ops). CLASS
+   templates stay type-erased: the placeholder behaves as one machine word. */
 template_prefix:
-      KW_TEMPLATE '<' tparam_list '>'
+      KW_TEMPLATE '<' { g_tparam_n = 0; } tparam_list '>' { g_in_template = 1; }
     ;
 tparam_list:
       tparam
     | tparam_list ',' tparam
     ;
 tparam:    /* IDENT first time; TYPEDEF_NAME if this param name was used before */
-      KW_TYPENAME IDENT         { st_add_typedef($2, t_int()); free($2); }
-    | KW_CLASS    IDENT         { st_add_typedef($2, t_int()); free($2); }
-    | KW_TYPENAME TYPEDEF_NAME  { st_add_typedef($2, t_int()); free($2); }
-    | KW_CLASS    TYPEDEF_NAME  { st_add_typedef($2, t_int()); free($2); }
+      KW_TYPENAME IDENT         { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
+    | KW_CLASS    IDENT         { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
+    | KW_TYPENAME TYPEDEF_NAME  { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
+    | KW_CLASS    TYPEDEF_NAME  { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
     ;
 
 /* a namespace-qualified name N::x (or A::B::x); namespaces are transparent on
@@ -1060,7 +1071,8 @@ function_def:
       compound_stmt {
           /* finalize the function ($1 = decl_specifiers return type) */
           func *f = ast_func(apply_pointers($1, $2), $3, param_head, param_count, $8, yylineno);
-          unit_add_func(f);
+          if (g_in_template) unit_add_template(f);   /* captured; instantiated per use */
+          else               unit_add_func(f);
           st_pop_scope();
           st_leave_func();
           params_reset();

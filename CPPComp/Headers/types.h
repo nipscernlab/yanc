@@ -31,6 +31,8 @@ struct type {
     int       is_signed;   // for TY_INT
     int       is_ref;      // C++ reference: a TY_PTR that auto-derefs on use
     int       is_auto;     // C++ `auto`: real type deduced from the initializer
+    int       tparam;      // >0: template type parameter (index+1); behaves as int
+                           // until substituted by a concrete type at instantiation
 
     // struct-specific
     char         *tag;     // struct/union tag name (e.g. "point")
@@ -69,6 +71,7 @@ type *t_char(void);    // 1-word signed (CHAR_BIT == NUBITS on this target)
 type *t_ptr  (type *to);
 type *t_ref  (type *to);   // C++ T& — a pointer flagged is_ref (auto-deref)
 type *t_auto (void);       // C++ auto — placeholder, deduced from initializer
+type *t_tparam(int idx);   // template type parameter #idx (int-like until substituted)
 type *t_array(type *of, int n);
 
 type *t_make_struct(char *tag);                                  // forward decl
