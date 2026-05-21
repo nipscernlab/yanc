@@ -931,9 +931,12 @@ init_declarator:
           d->sclass = ts_sclass;
           $$ = d;
       }
-    | pointers IDENT '(' { $<typ>$ = cur_base; } argument_list ')' {
+    | pointers IDENT '(' { $<typ>$ = cur_base; } non_empty_argument_list ')' {
           /* direct-init `T v(args)` — capture the base type before the args (a
-             `new`/cast/sizeof inside them would otherwise clobber cur_base) */
+             `new`/cast/sizeof inside them would otherwise clobber cur_base).
+             Requires >=1 arg: `T v()` is a function declaration (most vexing
+             parse), so the empty form must fall through to the prototype /
+             function-definition rules instead. */
           decl *d = make_decl($<typ>4, $1, $2, NULL, 0, yylineno, NULL);
           d->ctor_args = $5.arr; d->n_ctor_args = $5.n;
           $$ = d;
@@ -974,8 +977,10 @@ init_declarator:
       }
     | '(' '*' IDENT array_suffix ')' '(' param_list ')' {
           /* function pointer `ret (*fp)(params)` — held as an int function id;
-             with array_suffix, `ret (*arr[N])(params)` is an int array of ids */
+             with array_suffix, `ret (*arr[N])(params)` is an int array of ids.
+             As a typedef (`typedef ret (*Name)(params);`) Name aliases that type. */
           type *t = build_array_type(t_int(), $4.dims, $4.n);
+          if (ts_typedef) st_add_typedef($3, t);
           $$ = ast_decl(t, $3, NULL, yylineno);
       }
     | '(' '*' IDENT array_suffix ')' '(' param_list ')' '=' '{' init_item_list '}' {
