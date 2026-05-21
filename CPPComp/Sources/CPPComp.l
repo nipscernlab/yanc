@@ -174,6 +174,8 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "class"                  { return KW_CLASS;    }
 "this"                   { return KW_THIS;     }
 "virtual"                { return KW_VIRTUAL;  }
+"override"               { return KW_OVERRIDE; }
+"final"                  { return KW_FINAL;    }
 "operator"               { return KW_OPERATOR; }
 "template"               { return KW_TEMPLATE; }
 "typename"               { return KW_TYPENAME; }

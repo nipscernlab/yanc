@@ -333,7 +333,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM KW_NEW KW_DELETE
 %token KW_CLASS KW_THIS KW_PUBLIC KW_PRIVATE KW_PROTECTED
 %token KW_NAMESPACE KW_USING TOK_SCOPE KW_VIRTUAL KW_OPERATOR
-%token KW_TEMPLATE KW_TYPENAME KW_AUTO
+%token KW_TEMPLATE KW_TYPENAME KW_AUTO KW_OVERRIDE KW_FINAL
 %token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT KW_GENERIC
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -659,12 +659,17 @@ mem_init:
       }
     ;
 
-/* destructor: `~ClassName() { body }` -> method `Class__dtor`. */
+/* destructor: `~ClassName() { body }` -> method `Class__dtor`. A virtual dtor
+   adds a "dtor" vtable slot so `delete basePtr` dispatches to the derived one. */
 dtor_def:
       '~' TYPEDEF_NAME '(' ')'
           { method_enter(t_void(), "dtor", NULL, 0); }
       compound_stmt
           { method_finish(t_void(), "dtor", $6); free($2); }
+    | KW_VIRTUAL '~' TYPEDEF_NAME '(' ')'
+          { add_vmethod(cur_class, "dtor"); method_enter(t_void(), "dtor", NULL, 0); }
+      compound_stmt
+          { method_finish(t_void(), "dtor", $7); free($3); }
     ;
 
 access_label:
@@ -679,26 +684,36 @@ access_label:
    so the field/method choice is decided by the `(` after the name. A leading
    `*` gives a pointer-return method. */
 method_def:
-      base_type IDENT '(' param_list ')'
+      base_type IDENT '(' param_list ')' fn_quals
           { method_enter($1, $2, $4.head, $4.n); }
       compound_stmt
-          { method_finish($1, $2, $7); free($2); }
-    | base_type '*' IDENT '(' param_list ')'
+          { method_finish($1, $2, $8); free($2); }
+    | base_type '*' IDENT '(' param_list ')' fn_quals
           { method_enter(t_ptr($1), $3, $5.head, $5.n); }
       compound_stmt
-          { method_finish(t_ptr($1), $3, $8); free($3); }
-    | KW_VIRTUAL base_type IDENT '(' param_list ')'
+          { method_finish(t_ptr($1), $3, $9); free($3); }
+    | KW_VIRTUAL base_type IDENT '(' param_list ')' fn_quals
           { add_vmethod(cur_class, $3); method_enter($2, $3, $5.head, $5.n); }
       compound_stmt
-          { method_finish($2, $3, $8); free($3); }
-    | KW_VIRTUAL base_type '*' IDENT '(' param_list ')'
+          { method_finish($2, $3, $9); free($3); }
+    | KW_VIRTUAL base_type '*' IDENT '(' param_list ')' fn_quals
           { add_vmethod(cur_class, $4); method_enter(t_ptr($2), $4, $6.head, $6.n); }
       compound_stmt
-          { method_finish(t_ptr($2), $4, $9); free($4); }
-    | base_type KW_OPERATOR op_name '(' param_list ')'
+          { method_finish(t_ptr($2), $4, $10); free($4); }
+    | KW_VIRTUAL base_type IDENT '(' param_list ')' '=' INT_LIT ';'
+          { add_vmethod(cur_class, $3); free($3); }   /* pure virtual: vtable slot only */
+    | base_type KW_OPERATOR op_name '(' param_list ')' fn_quals
           { method_enter($1, $3, $5.head, $5.n); }
       compound_stmt
-          { method_finish($1, $3, $8); }
+          { method_finish($1, $3, $9); }
+    ;
+
+/* trailing method qualifiers — accepted and ignored (cosmetic on this target) */
+fn_quals:
+      /* empty */
+    | fn_quals KW_OVERRIDE
+    | fn_quals KW_FINAL
+    | fn_quals KW_CONST
     ;
 
 /* overloadable binary operators -> a stable method name (asm-label charset) */
@@ -837,6 +852,12 @@ init_declarator:
              initializer and auto-derefs on every use */
           decl *d = ast_decl(t_ref(cur_base), $2, $4, yylineno);
           d->sclass = ts_sclass;
+          $$ = d;
+      }
+    | pointers IDENT '(' argument_list ')' {
+          /* direct-init `T v(args)` — stack construction running the ctor */
+          decl *d = make_decl(cur_base, $1, $2, NULL, 0, yylineno, NULL);
+          d->ctor_args = $4.arr; d->n_ctor_args = $4.n;
           $$ = d;
       }
     | pointers IDENT array_suffix {

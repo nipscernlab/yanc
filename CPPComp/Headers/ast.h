@@ -125,6 +125,8 @@ struct decl {
     initz  *binit;           // for aggregates initialised with { ... }
     storage_class sclass;
     int     is_const;        // declared `const` — assignment to it is an error
+    expr  **ctor_args;       // `T v(args)` — stack construction arguments
+    int     n_ctor_args;
     decl   *next;            // chain within one declaration statement
     int     line;
 };

@@ -1295,10 +1295,18 @@ static void gen_expr(expr *e)
         type *pt = infer_type(e->a);
         type *t = pt ? pt->base : NULL;
         if (!e->ival && t && t->kind == TY_STRUCT && t->tag) {
-            char *dtor = resolve_method(t, "dtor");
-            sym *ds = dtor ? st_find(dtor) : NULL;
-            if (ds && ds->kind == SK_FUNC) { gen_expr(e->a); emit("PSH"); emit("CAL %s", dtor); }
-            free(dtor);
+            int dslot = vtbl_slot(t, "dtor");
+            if (dslot >= 0) {                       // virtual dtor: dispatch via the vptr
+                gen_expr(e->a); emit("PSH");        // this -> arg 0
+                emit("LDA"); if (dslot) emit("ADD %d", dslot); emit("LDA");
+                emit("SET _fp_id");
+                emit_dispatch_chain();
+            } else {
+                char *dtor = resolve_method(t, "dtor");
+                sym *ds = dtor ? st_find(dtor) : NULL;
+                if (ds && ds->kind == SK_FUNC) { gen_expr(e->a); emit("PSH"); emit("CAL %s", dtor); }
+                free(dtor);
+            }
         }
         gen_expr(e->a); emit("PSH"); emit("CAL free");
         return;
@@ -1350,10 +1358,10 @@ static void gen_expr(expr *e)
             if (e->a->kind == E_PMEMBER) ct = ct ? ct->base : NULL;
             if (!ct || ct->kind != TY_STRUCT || !ct->tag)
                 msg_error(e->line, "method call on non-class value");
-            char *masm = resolve_method(ct, e->a->member);
-            if (!masm) msg_error(e->line, "no method '%s' in class '%s'", e->a->member, ct->tag);
-            sym *ms = st_find(masm);
             int vslot = vtbl_slot(ct, e->a->member);
+            char *masm = resolve_method(ct, e->a->member);   // may be NULL for a pure virtual
+            if (!masm && vslot < 0) msg_error(e->line, "no method '%s' in class '%s'", e->a->member, ct->tag);
+            sym *ms = masm ? st_find(masm) : NULL;
             if (vslot >= 0) {
                 // virtual dispatch: fid = mem[mem[this] + slot], then indirect-call
                 if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // acc = this
@@ -1555,14 +1563,23 @@ static void declare_local(decl *d)
         if (is_static)          { /* deferred to program start */ }
         else if (d->binit)      emit_initz(aname, 0, d->dtype, d->binit);
         else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
-        else if (ct->tag) {     // default-construct a stack class object
+        else if (ct->tag) {     // construct a stack class object
             if (ct->n_vtbl > 0) {                                  // set vptr if polymorphic
                 emit("LEA %s", aname); emit("PSH"); emit("LEA %s__vtable", ct->tag); emit("STA");
             }
             char *ctor = resolve_method(ct, "ctor");
             sym *cs = ctor ? st_find(ctor) : NULL;
-            if (cs && cs->kind == SK_FUNC && cs->n_params == 1) {  // default ctor (this only)
-                emit("LEA %s", aname); emit("PSH"); emit("CAL %s", ctor);
+            if (cs && cs->kind == SK_FUNC) {
+                if (d->ctor_args) {                                // T v(args)
+                    emit("LEA %s", aname); emit("PSH");            // this
+                    for (int i = 0; i < d->n_ctor_args; i++) {
+                        type *pt = (cs->param_types && i + 1 < cs->n_params) ? cs->param_types[i + 1] : NULL;
+                        gen_arg(d->ctor_args[i], pt);
+                    }
+                    emit("CAL %s", ctor);
+                } else if (cs->n_params == 1) {                    // default ctor (this only)
+                    emit("LEA %s", aname); emit("PSH"); emit("CAL %s", ctor);
+                }
             }
             free(ctor);
         }
