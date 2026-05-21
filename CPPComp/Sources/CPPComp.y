@@ -800,11 +800,19 @@ op_name:
     ;
 
 union_specifier:
-      KW_UNION IDENT '{' { cur_struct_push(t_make_union($2)); st_add_tag($2, cur_struct); } field_list '}' {
+      KW_UNION IDENT '{' { cur_struct_push(t_make_union($2)); st_add_tag($2, cur_struct); st_add_typedef($2, cur_struct); } field_list '}' {
           type *done = cur_struct;
           t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
           cur_struct_pop();
           $$ = done;
+          free($2);
+      }
+    | KW_UNION TYPEDEF_NAME {
+          /* `union Tag` where Tag is also a typedef (we register the bare name
+             as a type too, mirroring struct) */
+          sym *s = st_find_tag($2);
+          if (!s) { type *t = t_make_union($2); st_add_tag($2, t); $$ = t; }
+          else    { $$ = s->struct_t; }
           free($2);
       }
     | KW_UNION IDENT {
