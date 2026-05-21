@@ -174,6 +174,7 @@ static void method_finish(type *ret, const char *name, stmt *body)
 }
 // enum counter (reset per enum_specifier)
 static long  enum_counter = 0;
+static char *cur_enum_prefix = NULL;   // set for `enum class E` -> enumerators are E__name
 
 // helpers --------------------------------------------------------------------
 
@@ -352,7 +353,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM KW_NEW KW_DELETE
 %token KW_CLASS KW_THIS KW_PUBLIC KW_PRIVATE KW_PROTECTED
 %token KW_NAMESPACE KW_USING TOK_SCOPE KW_VIRTUAL KW_OPERATOR
-%token KW_TEMPLATE KW_TYPENAME KW_AUTO KW_OVERRIDE KW_FINAL
+%token KW_TEMPLATE KW_TYPENAME KW_AUTO KW_OVERRIDE KW_FINAL KW_CPPCAST
 %token KW_STATIC KW_EXTERN KW_CONST KW_STATIC_ASSERT KW_GENERIC
 
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_SHL TOK_SHR TOK_LAND TOK_LOR
@@ -402,6 +403,9 @@ external_decl:
     | KW_NAMESPACE IDENT '{' '}'                   { free($2); }
     | KW_USING KW_NAMESPACE qualified_id ';'       { free($3); }  /* using-directive (no-op) */
     | KW_USING KW_NAMESPACE IDENT ';'              { free($3); }
+    | KW_USING IDENT '=' base_type pointers ';'    {            /* type alias `using T = U;` */
+          st_add_typedef($2, apply_pointers($4, $5)); free($2);
+      }
     | KW_STATIC_ASSERT '(' conditional_expr ',' STRING_LIT ')' ';' { check_static_assert($3, $5, yylineno); }
     | KW_STATIC_ASSERT '(' conditional_expr ')' ';'                { check_static_assert($3, NULL, yylineno); }
     ;
@@ -857,6 +861,12 @@ enum_specifier:
       KW_ENUM '{' { enum_counter = 0; } enum_list '}'              { $$ = t_int(); }
     | KW_ENUM IDENT '{' { enum_counter = 0; } enum_list '}'        { $$ = t_int(); free($2); }
     | KW_ENUM IDENT                                                { $$ = t_int(); free($2); }
+    | KW_ENUM KW_CLASS IDENT '{' { enum_counter = 0; cur_enum_prefix = $3; } enum_list '}' {
+          /* scoped enum: enumerators are E__name, accessed as E::name; E is a type */
+          st_add_typedef($3, t_int());
+          cur_enum_prefix = NULL;
+          $$ = t_int(); free($3);
+      }
     ;
 
 enum_list:
@@ -865,8 +875,14 @@ enum_list:
     ;
 
 enum_item:
-      IDENT                                  { st_add_enum($1, enum_counter++); free($1); }
-    | IDENT '=' INT_LIT                      { enum_counter = $3; st_add_enum($1, enum_counter++); free($1); }
+      IDENT {
+          char *nm = cur_enum_prefix ? mangle_method(cur_enum_prefix, $1) : strdup($1);
+          st_add_enum(nm, enum_counter++); free(nm); free($1);
+      }
+    | IDENT '=' INT_LIT {
+          char *nm = cur_enum_prefix ? mangle_method(cur_enum_prefix, $1) : strdup($1);
+          enum_counter = $3; st_add_enum(nm, enum_counter++); free(nm); free($1);
+      }
     ;
 
 /* ----- declarators -------------------------------------------------------- */
@@ -1336,6 +1352,10 @@ cast_expr:
 
 unary_expr:
       postfix_expr                           { $$ = $1; }
+    | KW_CPPCAST '<' base_type pointers '>' '(' expr ')' {
+          /* static_cast / reinterpret_cast / const_cast / dynamic_cast<T>(e) */
+          $$ = ast_cast(apply_pointers($3, $4), $7, yylineno);
+      }
     | TOK_INC unary_expr                     { $$ = ast_xfix(E_PREINC, $2, yylineno); }
     | TOK_DEC unary_expr                     { $$ = ast_xfix(E_PREDEC, $2, yylineno); }
     | '&' cast_expr                          { $$ = ast_addr($2, yylineno); }
@@ -1408,8 +1428,12 @@ primary_expr:
       }
     | KW_THIS                                { $$ = ast_ident(strdup("this"), yylineno); }
     | TYPEDEF_NAME TOK_SCOPE IDENT           {
-          /* Class::member — a static data member -> the shared global Class__member */
-          $$ = ast_ident(mangle_method($1, $3), yylineno); free($1); free($3);
+          /* Class::member — a scoped enumerator (E::name) or a static data member */
+          char *m = mangle_method($1, $3);
+          sym *s = st_find(m);
+          if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); free(m); }
+          else $$ = ast_ident(m, yylineno);
+          free($1); free($3);
       }
     | KW_GENERIC '(' assignment_expr ',' generic_assoc_list ')' {
           $$ = ast_generic($3, $5.ts, $5.es, $5.n, yylineno);

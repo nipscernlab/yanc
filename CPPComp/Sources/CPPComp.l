@@ -176,6 +176,12 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "virtual"                { return KW_VIRTUAL;  }
 "override"               { return KW_OVERRIDE; }
 "final"                  { return KW_FINAL;    }
+"static_cast"            { return KW_CPPCAST;  }
+"reinterpret_cast"       { return KW_CPPCAST;  }
+"const_cast"             { return KW_CPPCAST;  }
+"dynamic_cast"           { return KW_CPPCAST;  }
+"explicit"               { /* ignored */ }
+"mutable"                { /* ignored */ }
 "operator"               { return KW_OPERATOR; }
 "template"               { return KW_TEMPLATE; }
 "typename"               { return KW_TYPENAME; }
