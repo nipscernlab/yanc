@@ -77,10 +77,13 @@ static long unescape_char(const char *src)
     }
 }
 
+extern int tmpl_name_is(const char *n);   // function-template name -> TEMPLATE_NAME
+
 static int classify_ident(const char *name)
 {
     sym *s = st_find(name);
     if (s && s->kind == SK_TYPEDEF) return TYPEDEF_NAME;
+    if (tmpl_name_is(name)) return TEMPLATE_NAME;
     return IDENT;
 }
 

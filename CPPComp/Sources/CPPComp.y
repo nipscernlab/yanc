@@ -83,6 +83,21 @@ static char *mangle_method(const char *cls, const char *name)
     return m;
 }
 
+// Function-template names. The lexer returns TEMPLATE_NAME (not IDENT) for these
+// so the parser can accept explicit template arguments `name<T...>(args)` without
+// the `<` colliding with the comparison operator (a template name is never the
+// operand of `<`). Registered when a function template is defined.
+static char *g_tmpl_names[256];
+static int   g_n_tmpl_names = 0;
+static void tmpl_name_register(const char *n) {
+    for (int i = 0; i < g_n_tmpl_names; i++) if (!strcmp(g_tmpl_names[i], n)) return;
+    if (g_n_tmpl_names < 256) g_tmpl_names[g_n_tmpl_names++] = strdup(n);
+}
+int tmpl_name_is(const char *n) {   // consulted by the lexer (classify_ident)
+    for (int i = 0; i < g_n_tmpl_names; i++) if (!strcmp(g_tmpl_names[i], n)) return 1;
+    return 0;
+}
+
 // a unary operator overload shares the token of a binary one ('-' / '+'); a
 // zero-parameter operator-/operator+ is the unary form, given a distinct method
 // name (op_neg / op_pos) so it does not collide with the binary overload.
@@ -429,11 +444,12 @@ static void check_static_assert(expr *cond, const char *msg, int line)
     struct { stmt **arr; int n; } slist;
     struct { decl  *head; int n; } dlist;
     struct { int dims[8]; int n; } dimlist;
+    struct { type **arr; int n; } talist;
 }
 
 %token <ival>  INT_LIT CHAR_LIT
 %token <fval>  FLOAT_LIT
-%token <sval>  IDENT TYPEDEF_NAME STRING_LIT
+%token <sval>  IDENT TYPEDEF_NAME STRING_LIT TEMPLATE_NAME
 
 %token KW_VOID KW_INT KW_FLOAT KW_CHAR KW_UNSIGNED KW_SIGNED
 %token KW_SHORT KW_LONG KW_DOUBLE KW_BOOL
@@ -469,6 +485,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %type <dlist> init_declarator_list param_list non_empty_param_list
 %type <dcl>   init_declarator param_declarator
 %type <dimlist> array_suffix ct_arg_list
+%type <talist>  type_arg_list
 %type <elist> argument_list non_empty_argument_list
 %type <opkind> assign_op
 
@@ -824,14 +841,14 @@ mem_init:
 /* destructor: `~ClassName() { body }` -> method `Class__dtor`. A virtual dtor
    adds a "dtor" vtable slot so `delete basePtr` dispatches to the derived one. */
 dtor_def:
-      '~' TYPEDEF_NAME '(' ')'
+      '~' TYPEDEF_NAME '(' ')' fn_quals
           { method_enter(t_void(), "dtor", NULL, 0); }
       compound_stmt
-          { method_finish(t_void(), "dtor", $6); free($2); }
-    | KW_VIRTUAL '~' TYPEDEF_NAME '(' ')'
+          { method_finish(t_void(), "dtor", $7); free($2); }
+    | KW_VIRTUAL '~' TYPEDEF_NAME '(' ')' fn_quals
           { add_vmethod(cur_class, "dtor"); method_enter(t_void(), "dtor", NULL, 0); }
       compound_stmt
-          { method_finish(t_void(), "dtor", $7); free($3); }
+          { method_finish(t_void(), "dtor", $8); free($3); }
     ;
 
 access_label:
@@ -1034,6 +1051,17 @@ array_suffix:
       }
     ;
 
+/* explicit template TYPE arguments `<int>` / `<float, int>` for fn<T...>(args) */
+type_arg_list:
+      base_type pointers {
+          $$.arr = malloc(sizeof(type*)); $$.arr[0] = apply_pointers($1, $2); $$.n = 1;
+      }
+    | type_arg_list ',' base_type pointers {
+          $$ = $1; $$.arr = realloc($$.arr, sizeof(type*) * ($$.n + 1));
+          $$.arr[$$.n++] = apply_pointers($3, $4);
+      }
+    ;
+
 /* non-type template arguments `<4>` / `<4, 8>` — constant integer expressions.
    Uses shift_expr (below relational) so a closing `>` is not eaten as `operator>`. */
 ct_arg_list:
@@ -1163,6 +1191,7 @@ function_def:
           /* return type comes from $1 (a stack value): cur_base would be
              clobbered by the params' and body's own base_type reductions. */
           type *ret = apply_pointers($1, $2);
+          if (g_in_template) tmpl_name_register($3);   // lexer emits TEMPLATE_NAME for it
           sym *s = st_find($3);
           if (s && s->kind != SK_FUNC)
               msg_error(yylineno, "'%s' redeclared as a function (already a variable)", $3);
@@ -1576,6 +1605,21 @@ primary_expr:
           else $$ = ast_ident($1, yylineno);
       }
     | KW_THIS                                { $$ = ast_ident(strdup("this"), yylineno); }
+    | TEMPLATE_NAME                          { $$ = ast_ident($1, yylineno); }   /* deduced call / use */
+    | TEMPLATE_NAME '<' type_arg_list '>' '(' argument_list ')' {
+          /* explicit template arguments: fn<T...>(args) */
+          expr *c = ast_call(ast_ident($1, yylineno), $6.arr, $6.n, yylineno);
+          c->gtypes = $3.arr; c->n_gtypes = $3.n;
+          $$ = c;
+      }
+    | IDENT TOK_SCOPE TEMPLATE_NAME '<' type_arg_list '>' '(' argument_list ')' {
+          /* namespace-qualified explicit template call N::fn<T...>(args) */
+          free($1);
+          expr *c = ast_call(ast_ident($3, yylineno), $8.arr, $8.n, yylineno);
+          c->gtypes = $5.arr; c->n_gtypes = $5.n;
+          $$ = c;
+      }
+    | IDENT TOK_SCOPE TEMPLATE_NAME          { free($1); $$ = ast_ident($3, yylineno); }  /* N::fn deduced */
     | TYPEDEF_NAME '(' argument_list ')'     {
           /* T(args) — a temporary object constructed on the stack */
           sym *s = st_find($1);

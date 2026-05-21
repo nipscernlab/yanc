@@ -347,7 +347,7 @@ static func *resolve_overload(const char *name, expr **args, int nargs);
 static void  emit_vtable_inits(void);
 static void  emit_dispatch_chain(void);
 static func *find_template(const char *name);
-static func *get_instance(func *t, expr **cargs, int ncargs);
+static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int nexpl);
 static type *subst_type(type *t, type **a, int n);
 static void  deduce_targs(func *t, expr **cargs, int ncargs, type **targs);
 
@@ -634,6 +634,7 @@ static type *infer_type(expr *e)
             func *tm = find_template(fn);            // template call: substituted return type
             if (tm && tm->n_params == e->n_args) {
                 type *ta[8] = {0}; deduce_targs(tm, e->args, e->n_args, ta);
+                for (int i = 0; i < e->n_gtypes && i < 8; i++) ta[i] = e->gtypes[i];  // explicit args
                 e->etype = subst_type(tm->ret, ta, tm->n_tparams); break;
             }
             func *ov = resolve_overload(fn, e->args, e->n_args);
@@ -1620,7 +1621,7 @@ static void gen_expr(expr *e)
             }
             func *tmpl = find_template(fn);            // function template -> monomorphize
             if (tmpl && tmpl->n_params == e->n_args) {
-                func *inst = get_instance(tmpl, e->args, e->n_args);
+                func *inst = get_instance(tmpl, e->args, e->n_args, e->gtypes, e->n_gtypes);
                 decl *p = inst->params;
                 for (int i = 0; i < e->n_args; i++) {
                     gen_arg(e->args[i], p ? p->dtype : NULL);
@@ -2638,13 +2639,14 @@ static void deduce_targs(func *t, expr **cargs, int ncargs, type **targs)
 }
 
 // get (creating if needed) the concrete instance of `t` for these argument types
-static func *get_instance(func *t, expr **cargs, int ncargs)
+static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int nexpl)
 {
     type *targs[8] = {0};
     deduce_targs(t, cargs, ncargs, targs);
+    for (int i = 0; i < nexpl && i < 8; i++) targs[i] = expl[i];   // explicit args win
     char lbl[96]; int k = sprintf(lbl, "%s_T", t->name);
-    for (decl *p = t->params; p && k < (int)sizeof(lbl) - 1; p = p->next)
-        lbl[k++] = type_code(subst_type(p->dtype, targs, t->n_tparams));
+    for (int i = 0; i < t->n_tparams && k < (int)sizeof(lbl) - 1; i++)
+        lbl[k++] = type_code(targs[i]);          // label over ALL tparams (incl. explicit-only)
     lbl[k] = 0;
     for (int i = 0; i < g_n_inst; i++) if (!strcmp(g_inst[i]->asm_label, lbl)) return g_inst[i];
     func *f = malloc(sizeof(func)); *f = *t;

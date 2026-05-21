@@ -114,7 +114,7 @@ for src in "$CPP"/examples/test*.cpp; do
 
     asm="$proc/Software/$prname.asm"
 
-    if ! "$CPPPP" -i "$src" -o "$tmp/pp.cpp" >/dev/null 2>&1; then
+    if ! "$CPPPP" -i "$src" -o "$tmp/pp.cpp" -I "$CPP/include" >/dev/null 2>&1; then
         echo "FAIL ($base): cpppp"; fail=$((fail+1)); failed+=("$base"); continue
     fi
     if ! "$CPPC" -i "$tmp/pp.cpp" -o "$asm" -t "$tmp" >/dev/null 2>&1; then

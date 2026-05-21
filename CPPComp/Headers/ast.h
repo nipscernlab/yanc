@@ -67,7 +67,9 @@ struct expr {
     type     *target_t;  // CAST target / SIZEOF_T target / COMPOUND type
     char     *member;    // MEMBER / PMEMBER field name
     struct initz *cinit; // COMPOUND literal initializer
-    type    **gtypes;    // GENERIC: assoc types parallel to args (NULL = default)
+    type    **gtypes;    // GENERIC: assoc types parallel to args (NULL = default);
+                         // also CALL: explicit template type arguments fn<T...>(...)
+    int       n_gtypes;  // number of explicit template type args on a CALL
 };
 
 // ----------------------------------------------------------------------------
