@@ -653,9 +653,20 @@ mem_init_list:
     ;
 mem_init:
       IDENT '(' assignment_expr ')' {
+          /* data member: `member(expr)` -> `member = expr;` */
           stmt *s = ast_stmt(S_EXPR, yylineno);
           s->e1 = ast_assign(ast_ident($1, yylineno), $3, yylineno);
           if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
+      }
+    | TYPEDEF_NAME '(' argument_list ')' {
+          /* base-class init: `Base(args)` -> Base__ctor(this, args); */
+          expr **a = malloc(sizeof(expr*) * ($3.n + 1));
+          a[0] = ast_ident(strdup("this"), yylineno);
+          for (int i = 0; i < $3.n; i++) a[i + 1] = $3.arr[i];
+          expr *call = ast_call(ast_ident(mangle_method($1, "ctor"), yylineno), a, $3.n + 1, yylineno);
+          stmt *s = ast_stmt(S_EXPR, yylineno); s->e1 = call;
+          if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
+          free($1);
       }
     ;
 
