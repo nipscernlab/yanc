@@ -55,6 +55,14 @@ DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NBMANT=$CFG_NBMANT -DCFG_NBEXPO=$CFG_NBEXPO
 : "${IVERILOG:=/c/nipscern/Aurora/components/Packages/iverilog/bin/iverilog.exe}"
 : "${VVP:=/c/nipscern/Aurora/components/Packages/iverilog/bin/vvp.exe}"
 
+# Verilator is used for tests too heavy for iverilog: any examples/<name>.in
+# sidecar (an input vector) makes that test compile the synthesizable .v with
+# Verilator and drive in()/out() from a small C++ harness instead. Far faster.
+: "${VERILATOR:=verilator_bin.exe}"
+: "${VERILATOR_ROOT:=C:/packs/msys64/mingw64/share/verilator}"
+export VERILATOR_ROOT
+SIMMAIN="$CPP/Verilator/sim_main.cpp"
+
 CPPPP="$BIN/cpppp.exe"
 CPPC="$BIN/cppcomp.exe"
 APPCOMP="$BIN/appcomp.exe"
@@ -133,19 +141,34 @@ for src in "$CPP"/examples/test*.cpp; do
         echo "FAIL ($base): asmcomp artifacts missing"; fail=$((fail+1)); failed+=("$base"); continue
     fi
 
-    if ! "$IVERILOG" -s "${prname}_tb" -o "$tmp/$prname.vvp" \
-            "$tb" "$uproc.v" \
-            "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
-            "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1; then
-        echo "FAIL ($base): iverilog"; fail=$((fail+1)); failed+=("$base"); continue
-    fi
-
-    cp "${uproc}_data.mif" "${uproc}_inst.mif" "$tmp/" 2>/dev/null
-    pushd "$tmp" >/dev/null
-    "$VVP" "$tmp/$prname.vvp" >/dev/null 2>&1
-    popd >/dev/null
-
     out="$proc/Simulation/output_0.txt"
+    infile="$CPP/examples/$base.in"
+    if [ -f "$infile" ]; then
+        # heavy / input-driven test: simulate with Verilator (iverilog too slow).
+        gold="$GOLDEN/$base.txt"
+        exp=0; [ -f "$gold" ] && exp=$(grep -c '' "$gold")
+        if ! "$VERILATOR" --cc --exe --build --top-module "$prname" --prefix Vtop \
+                -o "sim_$prname" -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN \
+                -Wno-BLKANDNBLK -Wno-WIDTH -Wno-CASEINCOMPLETE -Wno-IMPLICIT \
+                -Wno-COMBDLY --no-timing --Mdir "$tmp/vl" \
+                "$SIMMAIN" "$uproc.v" "$HDL/processor.v" "$HDL/core.v" "$HDL/ula.v" \
+                "$HDL/addr_dec.v" "$HDL/instr_dec.v" >/dev/null 2>&1; then
+            echo "FAIL ($base): verilator"; fail=$((fail+1)); failed+=("$base"); continue
+        fi
+        "$tmp/vl/sim_$prname" "$infile" "$out" 200000000 "$exp" >/dev/null 2>&1
+    else
+        if ! "$IVERILOG" -s "${prname}_tb" -o "$tmp/$prname.vvp" \
+                "$tb" "$uproc.v" \
+                "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1; then
+            echo "FAIL ($base): iverilog"; fail=$((fail+1)); failed+=("$base"); continue
+        fi
+
+        cp "${uproc}_data.mif" "${uproc}_inst.mif" "$tmp/" 2>/dev/null
+        pushd "$tmp" >/dev/null
+        "$VVP" "$tmp/$prname.vvp" >/dev/null 2>&1
+        popd >/dev/null
+    fi
     if [ ! -f "$out" ]; then
         echo "FAIL ($base): no simulation output"; fail=$((fail+1)); failed+=("$base"); continue
     fi
