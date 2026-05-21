@@ -116,6 +116,16 @@ static const char *op_method_name(op_kind op)
     }
 }
 
+// overloadable unary operator -> method name (matches the parser's op_arity_name)
+static const char *op_unary_method_name(op_kind op)
+{
+    switch (op) {
+        case OP_NEG: return "op_neg";
+        case OP_POS: return "op_pos";
+        default: return NULL;
+    }
+}
+
 // compound-assignment operator -> method name (matches the parser's op_name)
 static const char *op_compound_method_name(op_kind op)
 {
@@ -673,6 +683,9 @@ static type *infer_type(expr *e)
         e->etype = infer_type(e->a); break;
     case E_CAST: infer_type(e->a); e->etype = e->target_t; break;
     case E_NEW:    e->etype = t_ptr(e->target_t); break;
+    case E_TEMPOBJ:
+        for (int i = 0; i < e->n_args; i++) infer_type(e->args[i]);
+        e->etype = e->target_t; break;
     case E_DELETE: infer_type(e->a); e->etype = t_void(); break;
     case E_COMPOUND: e->etype = e->target_t; break;
     case E_GENERIC: e->etype = infer_type(generic_select(e)); break;
@@ -1296,7 +1309,19 @@ static void gen_expr(expr *e)
         return;
     }
 
-    case E_UNOP:
+    case E_UNOP: {
+        // unary operator overload: -a / +a on a class with operator-()/operator+()
+        type *ot = infer_type(e->a);
+        if (ot && ot->kind == TY_STRUCT && ot->tag) {
+            const char *opm = op_unary_method_name(e->op);
+            char *masm = opm ? resolve_method(ot, opm) : NULL;
+            if (masm) {
+                gen_addr(e->a); emit("PSH");              // this = &operand
+                emit("CAL %s", masm);
+                free(masm);
+                return;
+            }
+        }
         gen_expr(e->a);
         switch (e->op) {
             case OP_POS: return;
@@ -1306,6 +1331,7 @@ static void gen_expr(expr *e)
             default: msg_internal("unhandled unop");
         }
         return;
+    }
 
     case E_PREINC: case E_PREDEC: {
         // ++lv / --lv : modify in place, result is the NEW value.
@@ -1427,6 +1453,33 @@ static void gen_expr(expr *e)
         } else {
             emit("LOD __new_p");                                   // acc = result
         }
+        return;
+    }
+    case E_TEMPOBJ: {
+        // T(args): build a hidden stack temporary, run its ctor, yield its address.
+        type *t = e->target_t;
+        if (!t || t->kind != TY_STRUCT || !t->tag) { msg_error(e->line, "T(args) on non-class type"); return; }
+        char nm[32]; snprintf(nm, sizeof(nm), "_tmp%d", ++label_n);
+        char *aname = mangle_local(nm);
+        st_add(SK_LOCAL_VAR, nm, aname, t);
+        log_var(cur_func_name ? cur_func_name : "global", nm, innermost_code(t), 0);
+        emit("#array %s 1 %d", aname, type_size_words(t));
+        if (t->n_vtbl > 0) {                                       // set vptr if polymorphic
+            emit("LEA %s", aname); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STA");
+        }
+        func *cf = resolve_ctor(t, e->args, e->n_args);
+        if (cf) {
+            emit("LEA %s", aname); emit("PSH");                    // this
+            decl *p = cf->params ? cf->params->next : NULL;        // skip `this`
+            for (int i = 0; i < e->n_args; i++) {
+                gen_arg(e->args[i], p ? p->dtype : NULL);
+                if (p) p = p->next;
+            }
+            for (; p; p = p->next) gen_arg(p->init, p->dtype);     // default args
+            emit("CAL %s", cf->asm_label);
+        }
+        emit("LEA %s", aname);                                     // result = &temporary
+        free(aname);
         return;
     }
     case E_DELETE: {

@@ -83,6 +83,18 @@ static char *mangle_method(const char *cls, const char *name)
     return m;
 }
 
+// a unary operator overload shares the token of a binary one ('-' / '+'); a
+// zero-parameter operator-/operator+ is the unary form, given a distinct method
+// name (op_neg / op_pos) so it does not collide with the binary overload.
+static const char *op_arity_name(const char *name, int nuser_params)
+{
+    if (nuser_params == 0) {
+        if (!strcmp(name, "op_sub")) return "op_neg";
+        if (!strcmp(name, "op_add")) return "op_pos";
+    }
+    return name;
+}
+
 // open a method's scope: register the mangled symbol, inject `this` as param 0,
 // stage the declared params. Called from method_def's mid-rule action.
 static void method_enter(type *ret, const char *name, decl *params, int nparams)
@@ -762,13 +774,13 @@ method_def:
     | KW_VIRTUAL base_type IDENT '(' param_list ')' '=' INT_LIT ';'
           { add_vmethod(cur_class, $3); free($3); }   /* pure virtual: vtable slot only */
     | base_type KW_OPERATOR op_name '(' param_list ')' fn_quals
-          { method_enter($1, $3, $5.head, $5.n); }
+          { method_enter($1, op_arity_name($3, $5.n), $5.head, $5.n); }
       compound_stmt
-          { method_finish($1, $3, $9); }
+          { method_finish($1, op_arity_name($3, $5.n), $9); }
     | base_type '&' KW_OPERATOR op_name '(' param_list ')' fn_quals
-          { method_enter(t_ref($1), $4, $6.head, $6.n); }
+          { method_enter(t_ref($1), op_arity_name($4, $6.n), $6.head, $6.n); }
       compound_stmt
-          { method_finish(t_ref($1), $4, $10); }
+          { method_finish(t_ref($1), op_arity_name($4, $6.n), $10); }
     ;
 
 /* trailing method qualifiers — accepted and ignored (cosmetic on this target) */
@@ -1456,6 +1468,14 @@ primary_expr:
           else $$ = ast_ident($1, yylineno);
       }
     | KW_THIS                                { $$ = ast_ident(strdup("this"), yylineno); }
+    | TYPEDEF_NAME '(' argument_list ')'     {
+          /* T(args) — a temporary object constructed on the stack */
+          sym *s = st_find($1);
+          type *t = (s && s->kind == SK_TYPEDEF) ? s->stype : NULL;
+          if (!t) msg_error(yylineno, "unknown type '%s'", $1);
+          $$ = ast_tempobj(t, $3.arr, $3.n, yylineno);
+          free($1);
+      }
     | TYPEDEF_NAME TOK_SCOPE IDENT           {
           /* Class::member — a scoped enumerator (E::name) or a static data member */
           char *m = mangle_method($1, $3);

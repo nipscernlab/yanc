@@ -57,6 +57,12 @@ expr *ast_new(type *t, expr **args, int nargs, expr *count, int line)
     expr *e = new_expr(E_NEW, line);
     e->target_t = t; e->args = args; e->n_args = nargs; e->a = count; return e;
 }
+// T(args) temporary: target_t = class type, args = ctor arguments.
+expr *ast_tempobj(type *t, expr **args, int nargs, int line)
+{
+    expr *e = new_expr(E_TEMPOBJ, line);
+    e->target_t = t; e->args = args; e->n_args = nargs; return e;
+}
 // delete p / delete[] p: a=operand, ival=1 for the array form.
 expr *ast_delete(expr *p, int is_array, int line)
 {

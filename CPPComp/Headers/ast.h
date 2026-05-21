@@ -31,7 +31,8 @@ typedef enum {
     E_COMPOUND,           // (T){ init }  — C99 compound literal
     E_GENERIC,            // _Generic(ctrl, T1: e1, ..., default: eD)  — C11
     E_NEW,                // new T / new T(args) / new T[n]  (C++)
-    E_DELETE              // delete p / delete[] p           (C++)
+    E_DELETE,             // delete p / delete[] p           (C++)
+    E_TEMPOBJ             // T(args) — a temporary object built on the stack (C++)
 } expr_kind;
 
 typedef enum {
@@ -187,6 +188,7 @@ expr *ast_cast     (type *t, expr *e, int line);
 expr *ast_sizeof_t (type *t, int line);
 expr *ast_compound (type *t, struct initz *z, int line);   // (T){ init }
 expr *ast_new      (type *t, expr **args, int nargs, expr *count, int line);  // new
+expr *ast_tempobj  (type *t, expr **args, int nargs, int line);              // T(args) temporary
 expr *ast_delete   (expr *p, int is_array, int line);                         // delete
 expr *ast_generic  (expr *ctrl, type **ts, expr **es, int n, int line);  // _Generic
 expr *ast_sizeof_e (expr *e, int line);
