@@ -134,6 +134,14 @@ static stmt *make_range_for(type *vt, char *var, char *container, stmt *body, in
     return f;
 }
 
+// record a static data-member name on the class (resolved as a shared global)
+static void add_static(type *cls, const char *name)
+{
+    if (!cls) return;
+    cls->statics = realloc(cls->statics, sizeof(char*) * (cls->n_statics + 1));
+    cls->statics[cls->n_statics++] = strdup(name);
+}
+
 // register a virtual method name into the class's vtable (override reuses slot)
 static void add_vmethod(type *cls, const char *name)
 {
@@ -621,6 +629,20 @@ member:
     | method_def
     | ctor_def
     | dtor_def
+    | static_member
+    ;
+
+/* static data member: a single shared global `Class__name` (not a per-object
+   field). In-class init is treated as its definition. */
+static_member:
+      KW_STATIC base_type IDENT ';' {
+          decl *d = ast_decl($2, mangle_method(cur_class->tag, $3), NULL, yylineno);
+          unit_add_global(d); add_static(cur_class, $3); free($3);
+      }
+    | KW_STATIC base_type IDENT '=' assignment_expr ';' {
+          decl *d = ast_decl($2, mangle_method(cur_class->tag, $3), $5, yylineno);
+          unit_add_global(d); add_static(cur_class, $3); free($3);
+      }
     ;
 
 /* constructor: `ClassName(params) { body }` — the class name lexes as a
@@ -1368,6 +1390,10 @@ primary_expr:
           else $$ = ast_ident($1, yylineno);
       }
     | KW_THIS                                { $$ = ast_ident(strdup("this"), yylineno); }
+    | TYPEDEF_NAME TOK_SCOPE IDENT           {
+          /* Class::member — a static data member -> the shared global Class__member */
+          $$ = ast_ident(mangle_method($1, $3), yylineno); free($1); free($3);
+      }
     | KW_GENERIC '(' assignment_expr ',' generic_assoc_list ')' {
           $$ = ast_generic($3, $5.ts, $5.es, $5.n, yylineno);
       }

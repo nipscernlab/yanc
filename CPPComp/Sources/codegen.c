@@ -74,6 +74,21 @@ static int vtbl_slot(type *ct, const char *name)
     return -1;
 }
 
+// inside a method, an unqualified name that is a static data member of the
+// enclosing class resolves to the shared global Class__name (unless shadowed by
+// a local). Returns that global's symbol, or NULL.
+static sym *cur_class_static(const char *name)
+{
+    if (!cur_method_class || st_find_local(name)) return NULL;
+    for (int i = 0; i < cur_method_class->n_statics; i++)
+        if (!strcmp(cur_method_class->statics[i], name)) {
+            char *gn = cg_mangle_method(cur_method_class->tag, name);
+            sym *s = st_find(gn); free(gn);
+            return s;
+        }
+    return NULL;
+}
+
 // find method `m` in `cls` or an ancestor (single inheritance); returns its
 // mangled asm name (malloc'd, = the SK_FUNC's name) or NULL.
 static char *resolve_method(type *cls, const char *m)
@@ -488,7 +503,8 @@ static type *infer_type(expr *e)
     case E_IDENT: {
         strct_field *mf = cur_class_member(e->sval);
         if (mf) { e->etype = mf->ftype; break; }    // unqualified data member
-        sym *s = st_find(e->sval);
+        sym *stat = cur_class_static(e->sval);
+        sym *s = stat ? stat : st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
         if (s->stype && s->stype->is_ref) e->etype = s->stype->base;   // peel reference
         else                              e->etype = s->stype;
@@ -665,7 +681,8 @@ static void gen_addr(expr *e)
     case E_IDENT: {
         strct_field *mf = cur_class_member(e->sval);
         if (mf) { gen_load_this(); if (mf->offset > 0) emit("ADD %d", mf->offset); return; }
-        sym *s = st_find(e->sval);
+        sym *stat = cur_class_static(e->sval);
+        sym *s = stat ? stat : st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
         // reference: its lvalue address is the address it stores (the referent)
         if (s->stype && s->stype->is_ref) {
@@ -934,7 +951,8 @@ static void gen_expr(expr *e)
             emit("LDA");
             return;
         }
-        sym *s = st_find(e->sval);
+        sym *stat = cur_class_static(e->sval);
+        sym *s = stat ? stat : st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
         if (s->stype && s->stype->is_ref) { gen_addr(e); emit("LDA"); return; }  // auto-deref
         if (s->kind == SK_FUNC) {

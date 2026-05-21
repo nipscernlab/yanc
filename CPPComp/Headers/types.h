@@ -40,6 +40,8 @@ struct type {
     type         *base_class; // C++ single inheritance: the parent class (or NULL)
     char        **vtbl;       // virtual method names by slot (polymorphic class)
     int           n_vtbl;     // number of virtual slots (0 = not polymorphic)
+    char        **statics;    // names of static data members (shared globals)
+    int           n_statics;
 
     // function-specific
     type **params;
