@@ -134,6 +134,17 @@ static stmt *make_range_for(type *vt, char *var, char *container, stmt *body, in
     return f;
 }
 
+// a copy constructor is a ctor taking exactly one parameter that is a reference
+// to its own class -> mangle it distinctly as "copyctor" (so it can coexist
+// with a regular "ctor"); otherwise it's the normal "ctor".
+static const char *ctor_kind(decl *params)
+{
+    if (params && !params->next && params->dtype && params->dtype->is_ref
+        && params->dtype->base == cur_class)
+        return "copyctor";
+    return "ctor";
+}
+
 // record a static data-member name on the class (resolved as a shared global)
 static void add_static(type *cls, const char *name)
 {
@@ -649,7 +660,7 @@ static_member:
    TYPEDEF_NAME inside its own body. Lowered to method `Class__ctor`. */
 ctor_def:
       TYPEDEF_NAME '(' param_list ')' { g_n_ctor_inits = 0; } ctor_init_opt
-          { method_enter(t_void(), "ctor", $3.head, $3.n); }
+          { method_enter(t_void(), ctor_kind($3.head), $3.head, $3.n); }
       compound_stmt
           {
               stmt *body = $8;
@@ -660,7 +671,7 @@ ctor_def:
                   for (int j = 0; j < body->n_items; j++) arr[g_n_ctor_inits + j] = body->items[j];
                   body->items = arr; body->n_items = total;
               }
-              method_finish(t_void(), "ctor", body); free($1);
+              method_finish(t_void(), ctor_kind($3.head), body); free($1);
           }
     ;
 
@@ -739,6 +750,10 @@ method_def:
           { method_enter($1, $3, $5.head, $5.n); }
       compound_stmt
           { method_finish($1, $3, $9); }
+    | base_type '&' KW_OPERATOR op_name '(' param_list ')' fn_quals
+          { method_enter(t_ref($1), $4, $6.head, $6.n); }
+      compound_stmt
+          { method_finish(t_ref($1), $4, $10); }
     ;
 
 /* trailing method qualifiers — accepted and ignored (cosmetic on this target) */
@@ -761,6 +776,8 @@ op_name:
     | '>'    { $$ = "op_gt";  }
     | TOK_LE { $$ = "op_le";  }
     | TOK_GE { $$ = "op_ge";  }
+    | '='    { $$ = "op_assign"; }
+    | '[' ']' { $$ = "op_index"; }
     ;
 
 union_specifier:

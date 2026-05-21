@@ -548,6 +548,12 @@ static type *infer_type(expr *e)
         type *bt = infer_type(e->a);
         infer_type(e->b);
         if (bt && (bt->kind == TY_PTR || bt->kind == TY_ARRAY)) e->etype = bt->base;
+        else if (bt && bt->kind == TY_STRUCT && bt->tag) {       // overloaded operator[]
+            char *masm = resolve_method(bt, "op_index");
+            if (masm) { sym *ms = st_find(masm); free(masm);
+                        e->etype = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int(); }
+            else msg_error(e->line, "subscript on non-array/non-pointer");
+        }
         else { msg_error(e->line, "subscript on non-array/non-pointer"); }
         break;
     }
@@ -808,6 +814,20 @@ static void gen_struct_copy(expr *dest, expr *src, int nwords)
 // block `dest` (declared via #array) at offsets 0..n-1.
 static void copy_to_block(const char *dest, expr *src, int n)
 {
+    // a user copy constructor overrides the default word-by-word copy
+    {
+        type *st = infer_type(src);
+        if (st && st->kind == TY_STRUCT && st->tag) {
+            char *cc = resolve_method(st, "copyctor");
+            if (cc) {
+                emit("LEA %s", dest); emit("PSH");   // this = &dest
+                gen_addr(src); emit("PSH");          // o = &src (reference param)
+                emit("CAL %s", cc);
+                free(cc);
+                return;
+            }
+        }
+    }
     char sn[32]; snprintf(sn, sizeof(sn), "_cbs%d", ++label_n);
     char *st = mangle_local(sn);
     const char *fn = cur_func_name ? cur_func_name : "global";
@@ -857,10 +877,21 @@ static void gen_store(expr *lv, expr *val)
         sym *cs = st_find(lv->sval);
         if (cs && cs->is_const) msg_error(lv->line, "assignment to const '%s'", lv->sval);
     }
-    // whole-struct assignment: copy all words (not a single STA)
+    // whole-struct assignment: a user operator= overrides the default memberwise
+    // copy; otherwise copy all words (not a single STA)
     {
         type *lvt = infer_type(lv);
         if (lvt && lvt->kind == TY_STRUCT) {
+            char *masm = lvt->tag ? resolve_method(lvt, "op_assign") : NULL;
+            if (masm) {
+                sym *ms = st_find(masm);
+                gen_addr(lv); emit("PSH");                    // this = &lv
+                type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
+                gen_arg(val, pt);                             // rhs operand
+                emit("CAL %s", masm);
+                free(masm);
+                return;
+            }
             gen_struct_copy(lv, val, type_size_words(lvt));
             return;
         }
@@ -997,6 +1028,22 @@ static void gen_expr(expr *e)
         return;
 
     case E_INDEX: {
+        // overloaded subscript: obj[i] on a class with operator[] -> obj.op_index(i)
+        {
+            type *bt0 = infer_type(e->a);
+            if (bt0 && bt0->kind == TY_STRUCT && bt0->tag) {
+                char *masm = resolve_method(bt0, "op_index");
+                if (masm) {
+                    sym *ms = st_find(masm);
+                    gen_addr(e->a); emit("PSH");              // this = &obj
+                    type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
+                    gen_arg(e->b, pt);
+                    emit("CAL %s", masm);
+                    free(masm);
+                    return;
+                }
+            }
+        }
         // array decay: a[i] whose element is itself an array (multi-dim) or a
         // struct produces the *address* of the sub-object, not a loaded word.
         if (e->etype && (e->etype->kind == TY_ARRAY || e->etype->kind == TY_STRUCT)) {
