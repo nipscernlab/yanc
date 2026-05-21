@@ -655,7 +655,9 @@ void hdl_tb_file(int itr_addr)
         if (out_used(i))
         {
             fprintf(f_veri, "    // write to port %d\n", i);
-            fprintf(f_veri, "    if (out_en_%d == 1'b1) $fdisplay(data_out_%d, \"%%0d\", out_sig_%d);\n", i,i,i);
+            // flush immediately so a produced value survives even if the sim is
+            // interrupted before $finish (heavy/long sims under I/O pressure)
+            fprintf(f_veri, "    if (out_en_%d == 1'b1) begin $fdisplay(data_out_%d, \"%%0d\", out_sig_%d); $fflush(data_out_%d); end\n", i,i,i,i);
         }
     }
     if (opc_out()) fprintf(f_veri, "end\n\n");
