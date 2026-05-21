@@ -339,6 +339,7 @@ static void gen_expr (expr *e);
 static void emit_initz(const char *base, int off, type *t, initz *z);
 static void emit_fn_return(void);
 static void gen_addr (expr *e);
+static void gen_arg  (expr *arg, type *ptype);
 static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
 static void gen_bool (expr *e, const char *jz_target);
@@ -605,7 +606,8 @@ static type *infer_type(expr *e)
         else if (bt && bt->kind == TY_STRUCT && bt->tag) {       // overloaded operator[]
             char *masm = resolve_method(bt, "op_index");
             if (masm) { sym *ms = st_find(masm); free(masm);
-                        e->etype = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int(); }
+                        type *rt = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int();
+                        e->etype = (rt && rt->is_ref) ? rt->base : rt; }  // peel reference
             else msg_error(e->line, "subscript on non-array/non-pointer");
         }
         else { msg_error(e->line, "subscript on non-array/non-pointer"); }
@@ -787,6 +789,22 @@ static void gen_addr(expr *e)
         return;
     case E_INDEX: {
         type *bt = infer_type(e->a);
+        // overloaded subscript returning a reference: the call yields the
+        // referent's address, which IS this lvalue's address.
+        if (bt && bt->kind == TY_STRUCT && bt->tag) {
+            char *masm = resolve_method(bt, "op_index");
+            if (masm) {
+                sym *ms = st_find(masm);
+                gen_addr(e->a); emit("PSH");              // this = &obj
+                type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
+                gen_arg(e->b, pt);
+                emit("CAL %s", masm);
+                free(masm);
+                return;
+            }
+            free(masm);
+            msg_error(e->line, "expression is not an lvalue");
+        }
         int elem_sz = bt ? type_size_words(bt->base) : 1;
         // compute base address into acc
         if (bt && bt->kind == TY_ARRAY) {
@@ -1105,11 +1123,17 @@ static void gen_expr(expr *e)
                 char *masm = resolve_method(bt0, "op_index");
                 if (masm) {
                     sym *ms = st_find(masm);
+                    type *rt = (ms && ms->kind == SK_FUNC) ? ms->stype : NULL;
                     gen_addr(e->a); emit("PSH");              // this = &obj
                     type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
                     gen_arg(e->b, pt);
                     emit("CAL %s", masm);
                     free(masm);
+                    // reference return to a scalar: the call yields an address;
+                    // load the referent to get the rvalue.
+                    if (rt && rt->is_ref && rt->base &&
+                        rt->base->kind != TY_STRUCT && rt->base->kind != TY_ARRAY)
+                        emit("LDA");
                     return;
                 }
             }
@@ -2027,6 +2051,8 @@ static void gen_stmt(stmt *s)
                 char rb[80]; snprintf(rb, sizeof(rb), "_ret_%s", cur_func_name);
                 copy_to_block(rb, s->e1, type_size_words(cur_func_ret));
                 emit("LEA %s", rb);
+            } else if (cur_func_ret && cur_func_ret->is_ref) {
+                gen_addr(s->e1);   // reference return: yield the referent's address
             } else {
                 gen_expr_num(s->e1, cur_func_ret && cur_func_ret->kind == TY_FLOAT);
             }
@@ -2671,15 +2697,17 @@ static void instantiate_ctmpl_methods(unit *u)
         int     plen = (int)strlen(ct->proto->tag) + 2;     // strip "Proto__"
         g_subst_nvals = ins->nvals;
         for (int v = 0; v < ins->nvals && v < 8; v++) g_subst_vals[v] = ins->vals[v];
+        type **ta = ins->ntargs ? ins->targs : NULL;        // type-parameter bindings
+        int    nta = ins->ntargs;
         for (int m = 0; m < ct->n_methods; m++) {
             func *src = ct->methods[m];
             func *f = malloc(sizeof(func)); *f = *src;
             f->n_tparams = 0;
             f->method_of = ins->concrete;
-            f->ret    = subst_type(src->ret, NULL, 0);
-            f->params = clone_decl(src->params, NULL, 0);
+            f->ret    = subst_type(src->ret, ta, nta);
+            f->params = clone_decl(src->params, ta, nta);
             if (f->params) f->params->dtype = t_ptr(ins->concrete);   // retype `this`
-            f->body   = clone_stmt(src->body, NULL, 0);
+            f->body   = clone_stmt(src->body, ta, nta);
             char *nm  = cg_mangle_method(ins->concrete->tag, src->name + plen);
             f->name = nm; f->asm_label = nm;
             sym *s = st_add(SK_FUNC, nm, nm, f->ret);

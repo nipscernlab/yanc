@@ -171,6 +171,7 @@ typedef struct ctmpl {
     struct func **methods;
     int     n_methods;
     int     n_tparams;
+    int     isval[8];        // per parameter: 1 = non-type (value), 0 = type
 } ctmpl;
 
 // A concrete instantiation request `Name<vals...>`: the codegen clones the
@@ -180,7 +181,9 @@ typedef struct ctinst {
     ctmpl  *tmpl;
     int     vals[8];
     int     nvals;
-    char   *suffix;          // e.g. "_T4" — appended to the tag and method labels
+    struct type *targs[8];   // type-parameter bindings (NULL for non-type slots)
+    int     ntargs;
+    char   *suffix;          // e.g. "_T4" / "_Tf" — appended to the tag and labels
     struct type *concrete;
 } ctinst;
 

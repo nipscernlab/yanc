@@ -204,10 +204,17 @@ static void method_finish(type *ret, const char *name, stmt *body)
 {
     func *f = ast_func(ret, mangle_method(cur_class->tag, name), param_head, param_count, body, yylineno);
     f->method_of = cur_class;
-    // a class template with non-type parameters is monomorphized for real: its
-    // methods are captured (not emitted) and cloned per instantiation.
-    if (g_in_template && g_ct_nontype) { if (g_n_ctm < 128) g_ctm[g_n_ctm++] = f; }
-    else                                 unit_add_func(f);
+    // class-template methods are captured for real monomorphization (cloned per
+    // instantiation Name<args>). A template with a non-type parameter cannot also
+    // be emitted type-erased (its fields carry sentinel array sizes); a pure
+    // type-parameter template is ALSO emitted erased so a bare use `Vector v;`
+    // (no explicit <T>) keeps working as before.
+    if (g_in_template) {
+        if (g_n_ctm < 128) g_ctm[g_n_ctm++] = f;
+        if (!g_ct_nontype) unit_add_func(f);
+    } else {
+        unit_add_func(f);
+    }
     st_pop_scope();
     st_leave_func();
     params_reset();
@@ -292,6 +299,70 @@ static type *instantiate_ctmpl(ctmpl *ct, int *vals, int nvals)
     ctinst *ins = calloc(1, sizeof(ctinst));
     ins->tmpl = ct; ins->nvals = nvals; ins->concrete = c; ins->suffix = xstrdup(suffix);
     for (int i = 0; i < nvals && i < 8; i++) ins->vals[i] = vals[i];
+    g_unit->ctinsts = realloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
+    g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
+    return c;
+}
+
+// substitute type parameters (t_tparam, carried as tparam>0) with their concrete
+// bindings, recursing through pointer/array/reference wrappers.
+static type *subst_tparam_type(type *t, type **targs, int ntargs)
+{
+    if (!t) return t;
+    if (t->tparam > 0 && t->tparam <= ntargs) return targs[t->tparam - 1];
+    if (t->kind == TY_PTR) {
+        type *nb = subst_tparam_type(t->base, targs, ntargs);
+        if (nb == t->base) return t;
+        type *nt = t_ptr(nb); nt->is_ref = t->is_ref; return nt;
+    }
+    if (t->kind == TY_ARRAY) {
+        type *nb = subst_tparam_type(t->base, targs, ntargs);
+        if (nb == t->base) return t;
+        return t_array(nb, t->arr_size);
+    }
+    return t;
+}
+
+// one-letter code per concrete type, for the instance tag suffix (must be stable
+// per type so call sites and emitted methods agree on the mangled name).
+static char ct_type_code(type *t)
+{
+    if (!t) return 'i';
+    if (t->kind == TY_FLOAT) return 'f';
+    if (t->kind == TY_PTR || t->kind == TY_ARRAY) return 'p';
+    if (t->kind == TY_STRUCT) return 'S';
+    return 'i';
+}
+
+// instantiate `Name<types...>` to a concrete class type: substitute the type
+// parameters into the proto's field types and record a codegen request so the
+// template's methods get cloned with the same bindings.
+static type *instantiate_ctmpl_t(ctmpl *ct, type **targs, int n)
+{
+    char suffix[32]; int p = 0;
+    p += snprintf(suffix + p, sizeof(suffix) - p, "_T");
+    for (int i = 0; i < n && p < (int)sizeof(suffix) - 1; i++) suffix[p++] = ct_type_code(targs[i]);
+    suffix[p] = 0;
+    char tag[128]; snprintf(tag, sizeof(tag), "%s%s", ct->name, suffix);
+
+    sym *ex = st_find(tag);
+    if (ex && ex->kind == SK_TYPEDEF) return ex->stype;   // already instantiated
+
+    type *c = t_make_struct(xstrdup(tag));
+    c->base_class = ct->proto->base_class;
+    c->n_vtbl = ct->proto->n_vtbl;
+    if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
+                     for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
+    for (strct_field *f = ct->proto->fields; f; f = f->next)
+        t_struct_add_field(c, f->name, subst_tparam_type(f->ftype, targs, n));
+    t_struct_seal(c, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+    st_add_tag(xstrdup(tag), c);
+    st_add_typedef(xstrdup(tag), c);
+
+    ctinst *ins = calloc(1, sizeof(ctinst));
+    ins->tmpl = ct; ins->nvals = 0; ins->concrete = c; ins->suffix = xstrdup(suffix);
+    ins->ntargs = n;
+    for (int i = 0; i < n && i < 8; i++) ins->targs[i] = targs[i];
     g_unit->ctinsts = realloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
     g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
     return c;
@@ -628,6 +699,21 @@ type_specifier:
           else     { $$ = instantiate_ctmpl(ct, $3.dims, $3.n); }
           free($1);
       }
+    | TYPEDEF_NAME '<' type_arg_list '>'     {
+          /* class-template instantiation `Name<types...>` (type arguments) */
+          ctmpl *ct = find_ctmpl($1);
+          if (!ct) { msg_error(yylineno, "'%s' is not a class template", $1); $$ = t_int(); }
+          else     { $$ = instantiate_ctmpl_t(ct, $3.arr, $3.n); }
+          free($1);
+      }
+    | IDENT TOK_SCOPE TYPEDEF_NAME '<' type_arg_list '>' {
+          /* namespace-qualified class-template instantiation `N::Name<types...>` */
+          free($1);
+          ctmpl *ct = find_ctmpl($3);
+          if (!ct) { msg_error(yylineno, "'%s' is not a class template", $3); $$ = t_int(); }
+          else     { $$ = instantiate_ctmpl_t(ct, $5.arr, $5.n); }
+          free($3);
+      }
     | IDENT TOK_SCOPE TYPEDEF_NAME           {
           /* namespace-qualified type N::Type (transparent -> resolve Type) */
           free($1);
@@ -725,11 +811,13 @@ class_specifier:
           t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
           cur_struct_pop();
           cur_class = NULL;
-          /* a class template with non-type parameters: capture it for real
-             monomorphization (its methods were collected, not emitted) */
-          if (g_in_template && g_ct_nontype) {
+          /* a class template: capture it for real monomorphization. Non-type
+             parameters bind to values (sentinels); type parameters bind to a
+             concrete type at each `Name<args>` use. */
+          if (g_in_template) {
               ctmpl *ct = calloc(1, sizeof(ctmpl));
               ct->name = xstrdup(done->tag); ct->proto = done; ct->n_tparams = g_tparam_n;
+              for (int i = 0; i < g_tparam_n && i < 8; i++) ct->isval[i] = g_tparam_isval[i];
               ct->n_methods = g_n_ctm;
               ct->methods = malloc(sizeof(func*) * (g_n_ctm ? g_n_ctm : 1));
               for (int i = 0; i < g_n_ctm; i++) ct->methods[i] = g_ctm[i];
