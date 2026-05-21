@@ -2520,14 +2520,22 @@ static void analyze_recursion(unit *u)
 // concrete clone (added to u->funcs as an overload named the same), so the
 // existing overload resolution/labeling picks the right instance per type.
 
+// non-type template parameter values for the instance currently being emitted
+// (a class-template method clone); indexed by parameter slot k.
+static int g_subst_vals[8]; static int g_subst_nvals = 0;
+
 static type *subst_type(type *t, type **a, int n)
 {
     if (!t) return t;
     if (t->tparam > 0 && t->tparam <= n) return a[t->tparam - 1];
     if (t->kind == TY_PTR || t->kind == TY_ARRAY) {
         type *nb = subst_type(t->base, a, n);
-        if (nb == t->base) return t;
-        type *nt = (t->kind == TY_PTR) ? t_ptr(nb) : t_array(nb, t->arr_size);
+        int sz = t->arr_size;
+        if (t->kind == TY_ARRAY && sz >= NTP_BASE) {        // non-type-param length
+            int k = sz - NTP_BASE; sz = (k < g_subst_nvals) ? g_subst_vals[k] : 0;
+        }
+        if (nb == t->base && sz == t->arr_size) return t;
+        type *nt = (t->kind == TY_PTR) ? t_ptr(nb) : t_array(nb, sz);
         nt->is_ref = t->is_ref;
         return nt;
     }
@@ -2539,6 +2547,10 @@ static expr *clone_expr(expr *e, type **a, int n)
     if (!e) return NULL;
     expr *c = malloc(sizeof(expr)); *c = *e;       // shallow copy (strings shared)
     c->etype = NULL;                                // re-infer per instance
+    // a non-type template parameter referenced in an expression is an int with a
+    // sentinel value — replace it with the concrete argument for this instance.
+    if (e->kind == E_INT_LIT && e->ival >= NTP_BASE && (e->ival - NTP_BASE) < g_subst_nvals)
+        c->ival = g_subst_vals[e->ival - NTP_BASE];
     c->target_t = subst_type(e->target_t, a, n);
     c->a = clone_expr(e->a, a, n);
     c->b = clone_expr(e->b, a, n);
@@ -2624,6 +2636,39 @@ static func *get_instance(func *t, expr **cargs, int ncargs)
     return f;
 }
 
+// Real class-template monomorphization: for each requested instance Name<vals>,
+// clone the template's methods with the non-type values substituted, retype
+// `this` to the concrete class, register the mangled symbols (so call sites
+// resolve) and queue them for emission (reusing the post-@fim instance list).
+static void instantiate_ctmpl_methods(unit *u)
+{
+    for (int ii = 0; ii < u->n_ctinsts; ii++) {
+        ctinst *ins = u->ctinsts[ii];
+        ctmpl  *ct  = ins->tmpl;
+        int     plen = (int)strlen(ct->proto->tag) + 2;     // strip "Proto__"
+        g_subst_nvals = ins->nvals;
+        for (int v = 0; v < ins->nvals && v < 8; v++) g_subst_vals[v] = ins->vals[v];
+        for (int m = 0; m < ct->n_methods; m++) {
+            func *src = ct->methods[m];
+            func *f = malloc(sizeof(func)); *f = *src;
+            f->n_tparams = 0;
+            f->method_of = ins->concrete;
+            f->ret    = subst_type(src->ret, NULL, 0);
+            f->params = clone_decl(src->params, NULL, 0);
+            if (f->params) f->params->dtype = t_ptr(ins->concrete);   // retype `this`
+            f->body   = clone_stmt(src->body, NULL, 0);
+            char *nm  = cg_mangle_method(ins->concrete->tag, src->name + plen);
+            f->name = nm; f->asm_label = nm;
+            sym *s = st_add(SK_FUNC, nm, nm, f->ret);
+            s->n_params = f->n_params;
+            s->param_types = malloc(sizeof(type*) * (f->n_params > 0 ? f->n_params : 1));
+            { int i = 0; for (decl *p = f->params; p; p = p->next, i++) s->param_types[i] = p->dtype; }
+            if (g_n_inst < 256) g_inst[g_n_inst++] = f;
+        }
+        g_subst_nvals = 0;
+    }
+}
+
 void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 {
     out_f = out_file;
@@ -2651,6 +2696,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
 
     cg_unit = u;
     assign_overload_labels(u);
+    instantiate_ctmpl_methods(u);   // clone class-template methods per instance
 
     // pre-scan every function body and global initialiser for string literals
     // and address-taken functions before any codegen emits a reference.

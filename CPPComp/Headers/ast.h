@@ -152,6 +152,36 @@ struct func {
     int     n_tparams;       // >0: a function template (params use t_tparam types)
 };
 
+// A non-type template parameter (e.g. `int N`) is referenced as an int with a
+// sentinel value NTP_BASE+k (k = the parameter index). Array sizes that depend
+// on it carry the same sentinel in `arr_size`. Substitution at instantiation
+// replaces the sentinel with the concrete argument value. The base is chosen
+// far above any realistic array length / constant.
+#define NTP_BASE  0x7F000000
+
+// A class template that has at least one NON-TYPE parameter is monomorphized for
+// real (type-param-only templates stay type-erased as before). `proto` is the
+// placeholder class (fields may carry sentinel array sizes); `methods` are the
+// captured, not-yet-emitted member functions.
+typedef struct ctmpl {
+    char   *name;
+    struct type *proto;
+    struct func **methods;
+    int     n_methods;
+    int     n_tparams;
+} ctmpl;
+
+// A concrete instantiation request `Name<vals...>`: the codegen clones the
+// template's methods with these values substituted and emits them under labels
+// suffixed by `suffix`.
+typedef struct ctinst {
+    ctmpl  *tmpl;
+    int     vals[8];
+    int     nvals;
+    char   *suffix;          // e.g. "_T4" — appended to the tag and method labels
+    struct type *concrete;
+} ctinst;
+
 typedef struct {
     decl  **globals;
     int     n_globals;
@@ -159,6 +189,10 @@ typedef struct {
     int     n_funcs;
     func  **templates;       // captured function templates (instantiated on use)
     int     n_templates;
+    ctmpl **ctmpls;          // captured class templates with non-type parameters
+    int     n_ctmpls;
+    ctinst **ctinsts;        // requested class-template instantiations
+    int     n_ctinsts;
 
     char   *prname;
     int     nubits, nbmant, nbexpo, nugain, ndstac, sdepth, nuioin, nuioou, fftsiz, itradd;

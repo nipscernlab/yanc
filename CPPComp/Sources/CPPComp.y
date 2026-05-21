@@ -174,12 +174,25 @@ static void add_vmethod(type *cls, const char *name)
     cls->vtbl[cls->n_vtbl++] = strdup(name);
 }
 
+// function-template capture: while parsing `template<...> ret f(...)`, type
+// parameters are t_tparam placeholders and the function is captured (not emitted)
+static int   g_in_template = 0;
+static int   g_tparam_n = 0;
+// non-type template parameter tracking (for real class-template monomorphization)
+static int   g_tparam_isval[16];   // per param: 1 = non-type (value) parameter
+static int   g_ct_nontype = 0;     // current template has >=1 non-type parameter
+static func *g_ctm[128];           // methods collected for the current class template
+static int   g_n_ctm = 0;
+
 // finalize a method into a free function tagged with its class.
 static void method_finish(type *ret, const char *name, stmt *body)
 {
     func *f = ast_func(ret, mangle_method(cur_class->tag, name), param_head, param_count, body, yylineno);
     f->method_of = cur_class;
-    unit_add_func(f);
+    // a class template with non-type parameters is monomorphized for real: its
+    // methods are captured (not emitted) and cloned per instantiation.
+    if (g_in_template && g_ct_nontype) { if (g_n_ctm < 128) g_ctm[g_n_ctm++] = f; }
+    else                                 unit_add_func(f);
     st_pop_scope();
     st_leave_func();
     params_reset();
@@ -187,10 +200,6 @@ static void method_finish(type *ret, const char *name, stmt *body)
 // enum counter (reset per enum_specifier)
 static long  enum_counter = 0;
 static char *cur_enum_prefix = NULL;   // set for `enum class E` -> enumerators are E__name
-// function-template capture: while parsing `template<...> ret f(...)`, type
-// parameters are t_tparam placeholders and the function is captured (not emitted)
-static int   g_in_template = 0;
-static int   g_tparam_n = 0;
 
 // helpers --------------------------------------------------------------------
 
@@ -214,6 +223,63 @@ static void unit_add_template(func *f)
     f->n_tparams = g_tparam_n;
     g_unit->templates = realloc(g_unit->templates, sizeof(func*) * (g_unit->n_templates + 1));
     g_unit->templates[g_unit->n_templates++] = f;
+}
+
+// register a class template (with non-type parameters) for real monomorphization
+static void unit_add_ctmpl(ctmpl *c)
+{
+    g_unit->ctmpls = realloc(g_unit->ctmpls, sizeof(ctmpl*) * (g_unit->n_ctmpls + 1));
+    g_unit->ctmpls[g_unit->n_ctmpls++] = c;
+}
+
+static ctmpl *find_ctmpl(const char *name)
+{
+    for (int i = 0; g_unit && i < g_unit->n_ctmpls; i++)
+        if (!strcmp(g_unit->ctmpls[i]->name, name)) return g_unit->ctmpls[i];
+    return NULL;
+}
+
+// replace a sentinel (non-type-parameter) array length with its concrete value
+static type *subst_field_type(type *t, int *vals, int nvals)
+{
+    if (!t) return t;
+    if (t->kind == TY_ARRAY && t->arr_size >= NTP_BASE) {
+        int k = t->arr_size - NTP_BASE;
+        int n = (k < nvals) ? vals[k] : 0;
+        return t_array(subst_field_type(t->base, vals, nvals), n);
+    }
+    return t;
+}
+
+// instantiate `Name<vals...>` to a concrete class type (built once, then reused);
+// records a codegen request so the template's methods get cloned + emitted.
+static type *instantiate_ctmpl(ctmpl *ct, int *vals, int nvals)
+{
+    char suffix[32]; int p = 0;
+    p += snprintf(suffix + p, sizeof(suffix) - p, "_T");
+    for (int i = 0; i < nvals; i++) p += snprintf(suffix + p, sizeof(suffix) - p, "%s%d", i ? "_" : "", vals[i]);
+    char tag[128]; snprintf(tag, sizeof(tag), "%s%s", ct->name, suffix);
+
+    sym *ex = st_find(tag);
+    if (ex && ex->kind == SK_TYPEDEF) return ex->stype;   // already instantiated
+
+    type *c = t_make_struct(xstrdup(tag));
+    c->base_class = ct->proto->base_class;
+    c->n_vtbl = ct->proto->n_vtbl;
+    if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
+                     for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
+    for (strct_field *f = ct->proto->fields; f; f = f->next)
+        t_struct_add_field(c, f->name, subst_field_type(f->ftype, vals, nvals));
+    t_struct_seal(c, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+    st_add_tag(xstrdup(tag), c);
+    st_add_typedef(xstrdup(tag), c);
+
+    ctinst *ins = calloc(1, sizeof(ctinst));
+    ins->tmpl = ct; ins->nvals = nvals; ins->concrete = c; ins->suffix = xstrdup(suffix);
+    for (int i = 0; i < nvals && i < 8; i++) ins->vals[i] = vals[i];
+    g_unit->ctinsts = realloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
+    g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
+    return c;
 }
 
 // wrap base type with N levels of pointer
@@ -402,7 +468,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %type <slist> block_item_list
 %type <dlist> init_declarator_list param_list non_empty_param_list
 %type <dcl>   init_declarator param_declarator
-%type <dimlist> array_suffix
+%type <dimlist> array_suffix ct_arg_list
 %type <elist> argument_list non_empty_argument_list
 %type <opkind> assign_op
 
@@ -438,7 +504,9 @@ external_decl:
    argument type at the call site (so float instantiations use float ops). CLASS
    templates stay type-erased: the placeholder behaves as one machine word. */
 template_prefix:
-      KW_TEMPLATE '<' { g_tparam_n = 0; } tparam_list '>' { g_in_template = 1; }
+      KW_TEMPLATE '<' { g_tparam_n = 0; g_ct_nontype = 0; g_n_ctm = 0;
+                        for (int i = 0; i < 16; i++) g_tparam_isval[i] = 0; }
+      tparam_list '>' { g_in_template = 1; }
     ;
 tparam_list:
       tparam
@@ -449,6 +517,12 @@ tparam:    /* IDENT first time; TYPEDEF_NAME if this param name was used before 
     | KW_CLASS    IDENT         { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
     | KW_TYPENAME TYPEDEF_NAME  { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
     | KW_CLASS    TYPEDEF_NAME  { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
+    | KW_INT IDENT              {   /* non-type parameter: N is an int constant
+                                       referenced via the NTP_BASE sentinel */
+          st_add_enum($2, NTP_BASE + g_tparam_n);
+          g_tparam_isval[g_tparam_n] = 1; g_ct_nontype = 1; g_tparam_n++;
+          free($2);
+      }
     ;
 
 /* a namespace-qualified name N::x (or A::B::x); namespaces are transparent on
@@ -528,6 +602,13 @@ type_specifier:
           sym *s = st_find($1);
           if (!s || s->kind != SK_TYPEDEF) { msg_error(yylineno, "unknown type '%s'", $1); }
           $$ = s->stype;
+          free($1);
+      }
+    | TYPEDEF_NAME '<' ct_arg_list '>'       {
+          /* class-template instantiation `Name<vals...>` (non-type arguments) */
+          ctmpl *ct = find_ctmpl($1);
+          if (!ct) { msg_error(yylineno, "'%s' is not a class template", $1); $$ = t_int(); }
+          else     { $$ = instantiate_ctmpl(ct, $3.dims, $3.n); }
           free($1);
       }
     | IDENT TOK_SCOPE TYPEDEF_NAME           {
@@ -627,6 +708,16 @@ class_specifier:
           t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
           cur_struct_pop();
           cur_class = NULL;
+          /* a class template with non-type parameters: capture it for real
+             monomorphization (its methods were collected, not emitted) */
+          if (g_in_template && g_ct_nontype) {
+              ctmpl *ct = calloc(1, sizeof(ctmpl));
+              ct->name = xstrdup(done->tag); ct->proto = done; ct->n_tparams = g_tparam_n;
+              ct->n_methods = g_n_ctm;
+              ct->methods = malloc(sizeof(func*) * (g_n_ctm ? g_n_ctm : 1));
+              for (int i = 0; i < g_n_ctm; i++) ct->methods[i] = g_ctm[i];
+              unit_add_ctmpl(ct);
+          }
           $$ = done;
           free($2);
       }
@@ -868,8 +959,12 @@ field_declarator:
           t_struct_add_field(cur_struct, $1, cur_base);
           free($1);
       }
-    | IDENT '[' INT_LIT ']' {
-          t_struct_add_field(cur_struct, $1, t_array(cur_base, (int)$3));
+    | IDENT '[' conditional_expr ']' {
+          /* size is any constant expression: a literal, an enum constant, or a
+             non-type template parameter (a sentinel int, resolved at instantiation) */
+          long v;
+          if (!const_eval($3, &v)) msg_error(yylineno, "array field size must be constant");
+          t_struct_add_field(cur_struct, $1, t_array(cur_base, (int)v));
           free($1);
       }
     | '*' IDENT {
@@ -936,6 +1031,19 @@ array_suffix:
           long v;
           if (!const_eval($3, &v)) msg_error(yylineno, "array size must be a constant expression");
           $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)v;   /* enum/macro/sizeof/arith ok */
+      }
+    ;
+
+/* non-type template arguments `<4>` / `<4, 8>` — constant integer expressions.
+   Uses shift_expr (below relational) so a closing `>` is not eaten as `operator>`. */
+ct_arg_list:
+      shift_expr {
+          long v; if (!const_eval($1, &v)) msg_error(yylineno, "template argument must be a constant");
+          $$.n = 0; if ($$.n < 8) $$.dims[$$.n++] = (int)v;
+      }
+    | ct_arg_list ',' shift_expr {
+          long v; if (!const_eval($3, &v)) msg_error(yylineno, "template argument must be a constant");
+          $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)v;
       }
     ;
 
