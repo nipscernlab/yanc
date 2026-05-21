@@ -1551,9 +1551,21 @@ static void declare_local(decl *d)
         if (!is_static && d->binit) emit_initz(aname, 0, d->dtype, d->binit);
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
         emit("#array %s 1 %d", aname, type_size_words(d->dtype));
+        type *ct = d->dtype;
         if (is_static)          { /* deferred to program start */ }
         else if (d->binit)      emit_initz(aname, 0, d->dtype, d->binit);
         else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
+        else if (ct->tag) {     // default-construct a stack class object
+            if (ct->n_vtbl > 0) {                                  // set vptr if polymorphic
+                emit("LEA %s", aname); emit("PSH"); emit("LEA %s__vtable", ct->tag); emit("STA");
+            }
+            char *ctor = resolve_method(ct, "ctor");
+            sym *cs = ctor ? st_find(ctor) : NULL;
+            if (cs && cs->kind == SK_FUNC && cs->n_params == 1) {  // default ctor (this only)
+                emit("LEA %s", aname); emit("PSH"); emit("CAL %s", ctor);
+            }
+            free(ctor);
+        }
     } else if (d->init && !is_static) {
         if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
         else gen_expr_num(d->init, d->dtype && d->dtype->kind == TY_FLOAT);
@@ -1592,6 +1604,29 @@ static void switch_dispatch(stmt *s, const char *tmp_name)
     for (int i = 0; i < s->n_items; i++) switch_dispatch(s->items[i], tmp_name);
 }
 
+// emit destructor calls for the class-typed locals declared directly in this
+// block, in reverse declaration order (RAII at normal block exit). Note: an
+// early return/break/continue inside the block bypasses these — a known gap.
+static void emit_block_dtors(stmt *block)
+{
+    for (int i = block->n_items - 1; i >= 0; i--) {
+        stmt *it = block->items[i];
+        if (!it || it->kind != S_DECL) continue;
+        decl *ds[32]; int n = 0;
+        for (decl *d = it->decls; d && n < 32; d = d->next) ds[n++] = d;
+        for (int j = n - 1; j >= 0; j--) {
+            decl *d = ds[j];
+            if (!d->dtype || d->dtype->kind != TY_STRUCT || !d->dtype->tag) continue;
+            char *dtor = resolve_method(d->dtype, "dtor");
+            if (dtor) {
+                char *an = mangle_local(d->name);
+                emit("LEA %s", an); emit("PSH"); emit("CAL %s", dtor);
+                free(an); free(dtor);
+            }
+        }
+    }
+}
+
 static void gen_stmt(stmt *s)
 {
     if (!s) return;
@@ -1601,6 +1636,7 @@ static void gen_stmt(stmt *s)
     case S_BLOCK:
         st_push_scope();
         for (int i = 0; i < s->n_items; i++) gen_stmt(s->items[i]);
+        emit_block_dtors(s);
         st_pop_scope();
         return;
 
