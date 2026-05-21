@@ -1485,21 +1485,36 @@ static void gen_expr(expr *e)
     case E_DELETE: {
         type *pt = infer_type(e->a);
         type *t = pt ? pt->base : NULL;
+        int   dslot = -1;
+        char *dtor  = NULL;
         if (!e->ival && t && t->kind == TY_STRUCT && t->tag) {
-            int dslot = vtbl_slot(t, "dtor");
+            dslot = vtbl_slot(t, "dtor");
+            if (dslot < 0) {
+                dtor = resolve_method(t, "dtor");
+                sym *ds = dtor ? st_find(dtor) : NULL;
+                if (!(ds && ds->kind == SK_FUNC)) { free(dtor); dtor = NULL; }
+            }
+        }
+        // Evaluate the operand ONCE. A virtual dtor reached here may recurse
+        // indirectly (e.g. ~P does `delete this->child`) and clobber a fixed-
+        // address `this`; re-evaluating `e->a` for the free() would then read a
+        // stale member and free the wrong object (a double-free). So keep one
+        // copy on the data stack for free() across the dtor call.
+        gen_expr(e->a);
+        if (dslot >= 0 || dtor) {
+            emit("PSH");                            // copy kept for free()
+            emit("PSH");                            // copy consumed as the dtor's `this`
             if (dslot >= 0) {                       // virtual dtor: dispatch via the vptr
-                gen_expr(e->a); emit("PSH");        // this -> arg 0
                 emit("LDA"); if (dslot) emit("ADD %d", dslot); emit("LDA");
                 emit("SET _fp_id");
                 emit_dispatch_chain();
             } else {
-                char *dtor = resolve_method(t, "dtor");
-                sym *ds = dtor ? st_find(dtor) : NULL;
-                if (ds && ds->kind == SK_FUNC) { gen_expr(e->a); emit("PSH"); emit("CAL %s", dtor); }
-                free(dtor);
+                emit("CAL %s", dtor); free(dtor);
             }
+            emit("CAL free");                       // consumes the kept copy
+        } else {
+            emit("PSH"); emit("CAL free");
         }
-        gen_expr(e->a); emit("PSH"); emit("CAL free");
         return;
     }
 
@@ -2463,6 +2478,12 @@ static void write_cmm_log(const char *tmp_dir)
 static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect)
 {
     if (!e) return;
+    // `delete p` dispatches p's (possibly virtual) destructor — an indirect call
+    // into the address-taken dtor impls, which can re-enter the same dtor (e.g. a
+    // tree dtor doing `delete child`). Treat it like an indirect call so such a
+    // dtor is detected as recursive and gets a stack frame (its `this` must not
+    // live at a fixed address that a nested dtor invocation would clobber).
+    if (e->kind == E_DELETE) { *indirect = 1; collect_calls_expr(e->a, u, row, indirect); return; }
     if (e->kind == E_CALL) {
         if (e->a && e->a->kind == E_IDENT) {
             int hit = 0;
