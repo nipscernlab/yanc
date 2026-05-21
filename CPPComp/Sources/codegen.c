@@ -705,9 +705,18 @@ static type *infer_type(expr *e)
 static void emit_load_int(long v)   { emit("LOD %ld", v); }
 static void emit_load_float(double v)
 {
-    char buf[64]; snprintf(buf, sizeof(buf), "%.15g", v);
-    int has_dot = 0; for (char *p = buf; *p; p++) if (*p == '.' || *p == 'e' || *p == 'E') { has_dot = 1; break; }
-    if (!has_dot) strcat(buf, ".0");
+    // Emit a DECIMAL literal with no exponent: the assembler's float-operand
+    // parser does not understand "1e-05"-style scientific notation (it yields 0),
+    // which silently zeroed small constants like 1e-5f. %f never uses an exponent;
+    // we keep many fraction digits (f2mf rounds to the target mantissa) and strip
+    // trailing zeros, leaving at least one digit after the dot.
+    char buf[96]; snprintf(buf, sizeof(buf), "%.20f", v);
+    char *dot = strchr(buf, '.');
+    if (!dot) { strcat(buf, ".0"); }
+    else {
+        char *end = buf + strlen(buf) - 1;
+        while (end > dot + 1 && *end == '0') *end-- = 0;
+    }
     emit("LOD %s", buf);
 }
 

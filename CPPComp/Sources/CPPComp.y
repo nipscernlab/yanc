@@ -646,6 +646,13 @@ declaration:
                           if (is_def) unit_add_global(d);   /* extern-only: declared, no storage */
                       }
                   }
+                  /* a const-qualified integer with a constant initializer is a
+                     compile-time constant (like C++): also register it as a
+                     constant so it folds in array bounds / constexprs */
+                  if (d->is_const && d->dtype && d->dtype->kind == TY_INT && d->init) {
+                      long cv;
+                      if (const_eval(d->init, &cv)) st_add_enum(d->name, cv);
+                  }
                   d = nx;
               }
           }
