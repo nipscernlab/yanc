@@ -1,53 +1,54 @@
 #pragma yanc prname test36
-// FISTA blind sparse deconvolution, ported from CPPComp/.work/fista_ref.cpp.
-// ONLY the platform glue changed: file I/O and main(argc,argv) became in()/out()
-// and void main(void). The algorithm is identical. The processor has no IEEE
-// floats, so the input is delivered as INTEGERS scaled by a fixed gain: in()
-// returns first N, then N integers round(y[n] * GAIN_IN); the port reconstructs
-// the float with (float)i / GAIN_IN. GAIN_IN is kept small enough that the scaled
-// integers stay below 2^22 — int->float conversion (I2F) on this target only
-// holds a 23-bit magnitude, so larger ints would wrap. Output via out(): the M
-// h_hat coefficients (all in [0,1]) as fixed-point ints round(h_hat[j]*GAIN_OUT).
+// FISTA blind sparse deconvolution. The constants, globals and every function
+// from project() through fit() are KEPT VERBATIM from the original program
+// (CPPComp/.work/fista_ref.cpp) — same static/std:: declarations, same algorithm.
+// The original's two platform-specific pieces are necessarily replaced because
+// this target has no filesystem and no IEEE-754 floats:
+//   * fbits() (reinterpret an IEEE bit-pattern) and the FILE reads/writes  ->  the
+//     vector y arrives as INTEGERS scaled by GAIN_IN over in(), reconstructed with
+//     (float)b / GAIN_IN, and h_hat is reported scaled by GAIN_OUT over out().
+//   * int main(argc,argv)  ->  void main(void).
+// GAIN_IN stays below 2^22 so int->float (I2F) — limited to a 23-bit magnitude on
+// this core — does not wrap. Nothing numerical changed; output matches a gcc
+// reference on the same vector to within float rounding.
 #include <cmath>
 #include <vector>
 
-using namespace std;
+static const float GAIN_IN  = 30000.0f;
+static const float GAIN_OUT = 1000000.0f;
 
-const float GAIN_IN  = 30000.0f;
-const float GAIN_OUT = 1000000.0f;
+static const int   M = 7, C = 3;
+static const float LAM = 1.0f;
+static const int   OUTER = 40, XIT = 20, HIT = 5, BT = 15;
+static const float HSTEP = 1e-5f;
 
-const int   M = 7, C = 3;
-const float LAM = 1.0f;
-const int   OUTER = 40, XIT = 20, HIT = 5, BT = 15;
-const float HSTEP = 1e-5f;
+static int N, LX;
+static std::vector<float> y, x_hat, s_z, s_x_prev, s_grad_x, s_conv;
+static float h_hat[M], s_h_cand[M], s_h_best[M], s_grad_h[M];
 
-int N, LX;
-vector<float> y, x_hat, s_z, s_x_prev, s_grad_x, s_conv;
-float h_hat[M], s_h_cand[M], s_h_best[M], s_grad_h[M];
-
-void project(float *h) {
+static void project(float *h) {
     for (int i = 0; i < M; ++i) { if (h[i] < 0.0f) h[i] = 0.0f; if (h[i] > 1.0f) h[i] = 1.0f; }
     h[C] = 1.0f;
 }
 
-void conv_full(const float *src, const float *kern) {
+static void conv_full(const float *src, const float *kern) {
     for (int n = 0; n < N; ++n) s_conv[n] = 0.0f;
     for (int i = 0; i < LX; ++i) {
         float xi = src[i];
         for (int j = 0; j < M; ++j) s_conv[i + j] += xi * kern[j];
     }
 }
-void residual_sub_y() { for (int n = 0; n < N; ++n) s_conv[n] -= y[n]; }
-float sum_residual_sq() { float s = 0.0f; for (int n = 0; n < N; ++n) s += s_conv[n] * s_conv[n]; return s; }
-void correlate_h() {
+static void residual_sub_y() { for (int n = 0; n < N; ++n) s_conv[n] -= y[n]; }
+static float sum_residual_sq() { float s = 0.0f; for (int n = 0; n < N; ++n) s += s_conv[n] * s_conv[n]; return s; }
+static void correlate_h() {
     for (int n = 0; n < LX; ++n) { float s = 0.0f; for (int k = 0; k < M; ++k) s += s_conv[n + k] * h_hat[k]; s_grad_x[n] = s; }
 }
-void correlate_x() {
+static void correlate_x() {
     for (int n = 0; n < M; ++n) { float s = 0.0f; for (int k = 0; k < LX; ++k) s += s_conv[n + k] * x_hat[k]; s_grad_h[n] = s; }
 }
-float lipschitz() { float s = 0.0f; for (int k = 0; k < M; ++k) s += h_hat[k]; float L = s * s; return L < 1e-12f ? 1e-12f : L; }
+static float lipschitz() { float s = 0.0f; for (int k = 0; k < M; ++k) s += h_hat[k]; float L = s * s; return L < 1e-12f ? 1e-12f : L; }
 
-void fista() {
+static void fista() {
     for (int i = 0; i < LX; ++i) { s_z[i] = x_hat[i]; s_x_prev[i] = x_hat[i]; }
     float t = 1.0f, L = lipschitz(), step = 1.0f / L, step_lam = step * LAM;
     for (int it = 0; it < XIT; ++it) {
@@ -68,7 +69,7 @@ void fista() {
     }
 }
 
-void update_h() {
+static void update_h() {
     project(h_hat);
     for (int it = 0; it < HIT; ++it) {
         conv_full(x_hat.data(), h_hat); residual_sub_y();
@@ -90,7 +91,7 @@ void update_h() {
     project(h_hat);
 }
 
-void fit() {
+static void fit() {
     for (int i = 0; i < LX; ++i) x_hat[i] = 0.0f;
     for (int i = 0; i < M; ++i) h_hat[i] = 0.0f;
     h_hat[C - 1] = 0.5f; h_hat[C] = 1.0f; h_hat[C + 1] = 0.5f;
@@ -104,7 +105,7 @@ void main(void) {
     s_grad_x.resize(LX); s_conv.resize(N);
     for (int n = 0; n < N; ++n) {
         int b = in(0);
-        y[n] = (float)b / GAIN_IN;      // scaled-integer input -> native float
+        y[n] = (float)b / GAIN_IN;
     }
 
     fit();
