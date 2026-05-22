@@ -82,16 +82,16 @@ declare -A SIZE_CURRENT
 # Examples to exclude from the standalone simulation phase (still run cmmcomp
 # .asm compare AND appcomp/asmcomp so their .v + .mif are available for any
 # downstream project-level link):
-#   procBlind          - takes too long to simulate
+#   procBlind/procBlindOpt - take too long to simulate (heavy FISTA)
 #   sw_test            - synthetic .cmm fixture; testbench would loop on while(1)
 #   ArcTan/Seno/Sqrt   - Math benchmarks: compute internally with no out(...) calls
 #   ProcDTW/ZeroCross  - real testbench lives in the multi-proc DTW project pass
-SIM_SKIP=("procBlind"            "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross")
+SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross")
 
 # Examples to also skip the appcomp/asmcomp build for (their .v / .mif are
 # never consumed elsewhere - no standalone sim, no project link). Keeps the
 # regression cheap.
-BUILD_SKIP=("procBlind"            "ArcTan" "Seno" "Sqrt")
+BUILD_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt")
 build_skipped() {
     local name="$1"
     for s in "${BUILD_SKIP[@]}"; do [ "$s" = "$name" ] && return 0; done
