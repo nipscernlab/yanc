@@ -611,9 +611,7 @@ ADD 1
 SET fit_it
 JMP Lwh31
 @Lwh31end RET
-@main INN 0
-SET main_junk
-LOD 0
+@main LOD 0
 SET main_n
 @Lwh32 LOD 40
 LES main_n

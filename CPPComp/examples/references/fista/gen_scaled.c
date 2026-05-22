@@ -9,8 +9,9 @@
 int main(int argc, char** argv) {
     FILE* in = fopen(argv[1], "r");
     FILE* out = fopen(argv[2], "w");
-    int N; fscanf(in, "%d", &N);
-    fprintf(out, "%d\n", N);
+    int N; fscanf(in, "%d", &N);                    // N comes from input40.txt's header
+    // emit only the N scaled samples - no leading count word (the YANC port and
+    // the gcc reference both fix N internally).
     for (int i = 0; i < N; i++) {
         int b; fscanf(in, "%d", &b);
         float f; memcpy(&f, &b, 4);                 // decode the supplied IEEE value

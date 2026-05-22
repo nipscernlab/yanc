@@ -1,7 +1,8 @@
-// gcc reference matching the YANC port's I/O exactly: reads N then N integers
-// (y * GAIN), reconstructs y = i / GAIN, runs the IDENTICAL FISTA algorithm, and
-// prints h_hat as round(h * GAIN). No IEEE bit-patterns anywhere. Algorithm body
-// is verbatim from fista_ref.cpp.
+// gcc reference matching the YANC port's I/O exactly: reads N integers
+// (y * GAIN) with N fixed at 40 (no leading count word), reconstructs
+// y = i / GAIN, runs the IDENTICAL FISTA algorithm, and prints h_hat as
+// round(h * GAIN). No IEEE bit-patterns anywhere. Algorithm body is verbatim
+// from fista_ref.cpp.
 #include <cstdio>
 #include <cmath>
 #include <vector>
@@ -69,7 +70,7 @@ static void fit() {
 }
 int main(int argc, char** argv) {
     FILE* f = std::fopen(argv[1], "r");
-    std::fscanf(f, "%d", &N);
+    N = 40;                          // fixed; input has no leading count word
     LX = N - M + 1;
     y.resize(N); x_hat.resize(LX); s_z.resize(LX); s_x_prev.resize(LX); s_grad_x.resize(LX); s_conv.resize(N);
     for (int n = 0; n < N; ++n) { int b; std::fscanf(f, "%d", &b); y[n] = (float)b / GAIN_IN; }

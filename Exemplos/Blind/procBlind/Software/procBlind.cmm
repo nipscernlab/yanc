@@ -17,9 +17,9 @@
 //   LX = 34   (sparse-sequence length, N - M + 1)
 //
 // I/O mirrors test36's in()/out() so the same Verilator harness drives it:
-//   input  : one leading count word (= N, consumed and ignored), then N samples
-//            scaled by GAIN_IN = 30000; reconstructed as fin(0) / 30000.0
-//            ( = (float)b / GAIN_IN in test36, fin does the int->float convert ).
+//   input  : N samples scaled by GAIN_IN = 30000, reconstructed as
+//            fin(0) / 30000.0 ( = (float)b / GAIN_IN in test36; fin does the
+//            int->float convert ). N is fixed at 40 - no leading count word.
 //   output : 7 words, h_hat[j] * GAIN_OUT + 0.5 truncated to int (F2I) on port 0
 //            ( = (int)(h_hat[j] * 1e6 + 0.5) in test36 ).
 //
@@ -345,8 +345,6 @@ void fit(int dummy)
 
 void main()
 {
-    int junk = in(0);              // leading count (= N); consumed and ignored
-
     int n = 0;
     while (n < 40)
     {

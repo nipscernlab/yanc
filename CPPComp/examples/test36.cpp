@@ -138,10 +138,11 @@ static void fit() {
 // ===== [port] platform I/O for the YANC target (replaces main() above) =======
 // No filesystem and no IEEE-754 floats: y arrives as integers scaled by GAIN_IN
 // (read with in(), reconstructed as (float)b / GAIN_IN; GAIN_IN < 2^22 so int->
-// float does not wrap) and h_hat leaves scaled by GAIN_OUT over out().
+// float does not wrap) and h_hat leaves scaled by GAIN_OUT over out(). N is
+// fixed at 40 - the input stream is just the N samples, no leading count word.
 static const float GAIN_IN = 30000.0f, GAIN_OUT = 1000000.0f;
 void main(void) {
-    N = in(0);
+    N = 40;                          // fixed; input file has no leading count word
     LX = N - M + 1;
     y.resize(N); x_hat.resize(LX); s_z.resize(LX); s_x_prev.resize(LX);
     s_grad_x.resize(LX); s_conv.resize(N);
