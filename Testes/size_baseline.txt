@@ -16,7 +16,7 @@ for_loop   90
 func_combos 68
 multiparam 32
 pplus_arr  25
-procBlind  797
+procBlind  630
 proc_fft   325
 proc_rls   334
 proc_sim   97

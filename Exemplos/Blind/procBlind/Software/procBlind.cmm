@@ -1,19 +1,35 @@
-// Blind sparse deconvolution port to CMM (SAPHO).
-// y[n] = sum_k h[k] x[n-k] + v[n]
-// Lambda selected by BIC over lambda = sigma * gamma.
+// Blind sparse deconvolution in C+- (SAPHO) for the procBlind processor.
 //
-// Fixed compile-time sizes:
-//   N  = 1006  (waveform length)
-//   M  = 7     (pulse length)
-//   C  = 3     (peak index, h[C] fixed at 1)
-//   LX = 1000  (sparse-sequence length, N - M + 1)
+// This is the C+- counterpart of CPPComp's examples/test36.cpp: the SAME
+// deterministic FISTA blind deconvolution, sample-for-sample. Both target the
+// YANC core (32-bit word, 23-bit mantissa, 8-bit exponent) and must produce the
+// same output on the same input:
 //
-// CMM restrictions handled:
-//   - arrays cannot be function parameters -> all arrays are global
-//   - no for loop                          -> only while
-//   - no +=, -=, *=                        -> explicit assignment
-//   - no log()                             -> log(1006) hardcoded
-//   - no exponent literals (1e-6)          -> written out long-form
+//   h_hat * 1e6  ->  9257 32370 470346 1000000 566933 149177 32725
+//
+// Algorithm (fixed, deterministic - no BIC sweep, no early stopping):
+//   M = 7, C = 3, LAM = 1, OUTER = 40, XIT = 20, HIT = 5, BT = 15, HSTEP = 1e-5.
+//   project clamps h to [0,1] and pins h[C] = 1; update_h backtracks keeping the
+//   best candidate (not first-improvement); shoulder seed h = [.. .5 1 .5 ..].
+//
+// Sizes (compile-time fixed; arrays cannot be function parameters in C+-):
+//   N  = 40   (waveform length)
+//   LX = 34   (sparse-sequence length, N - M + 1)
+//
+// I/O mirrors test36's in()/out() so the same Verilator harness drives it:
+//   input  : one leading count word (= N, consumed and ignored), then N samples
+//            scaled by GAIN_IN = 30000; reconstructed as fin(0) / 30000.0
+//            ( = (float)b / GAIN_IN in test36, fin does the int->float convert ).
+//   output : 7 words, h_hat[j] * GAIN_OUT + 0.5 truncated to int (F2I) on port 0
+//            ( = (int)(h_hat[j] * 1e6 + 0.5) in test36 ).
+//
+// C+- restrictions handled:
+//   - arrays cannot be function parameters -> all arrays are global, one helper
+//     per (source, kernel) pairing used by conv_full in test36.
+//   - no for-over-arrays / no +=, -=, *=    -> while loops, explicit assignment.
+//   - no (float)/(int) casts                -> fin() converts in; assigning a
+//     float expression to out()/an int does F2I.
+//   - no exponent literals (1e-5)           -> written long-form (0.00001).
 
 #PRNAME procBlind
 #NUBITS 32
@@ -22,60 +38,57 @@
 #NDSTAC 10
 #SDEPTH 10
 #NUIOIN 1
-#NUIOOU 4
+#NUIOOU 1
 
 // ----------------------------------------------------------------------------
 // Globals --------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// Input waveform, loaded at compile time.
-float y[1006] "y.txt";
+float y[40];          // input waveform, filled at runtime via fin()
 
-// Outputs.
-float x_hat[1000];
-float h_hat[7];
-float selected_lambda;
+float x_hat[34];      // sparse sequence estimate
+float h_hat[7];       // pulse estimate
 
-// Scratch buffers (no malloc; fixed sizes).
-float s_z     [1000];
-float s_x_prev[1000];
-float s_grad_x[1000];
-float s_conv  [1006];   // full convolution / residual
-float s_h_cand[7];
-float s_grad_h[7];
+float s_z     [34];   // FISTA momentum point
+float s_x_prev[34];   // previous x for momentum
+float s_grad_x[34];   // gradient wrt x
+float s_conv  [40];   // full convolution / residual scratch
 
-// BIC sweep grid: lambda candidates are sigma * lambda_grid[ii].
-float lambda_grid[12] "lambda_mult.txt";
+float s_h_cand[7];    // backtracking candidate pulse
+float s_h_best[7];    // best pulse found while backtracking
+float s_grad_h[7];    // gradient wrt h
 
 // ----------------------------------------------------------------------------
-// Projection: h[k] >= 0, h[c] = 1 ---------------------------------------------
+// Projection: clamp h to [0,1], pin h[C] = 1  (C = 3) -------------------------
 // ----------------------------------------------------------------------------
 
 void project_h_hat(int dummy)
 {
-    int ii = 0;
-    while (ii < 7)
+    int k = 0;
+    while (k < 7)
     {
-        if (h_hat[ii] < 0.0) h_hat[ii] = 0.0;
-        ii++;
+        if (h_hat[k] < 0.0) h_hat[k] = 0.0;
+        if (h_hat[k] > 1.0) h_hat[k] = 1.0;
+        k++;
     }
     h_hat[3] = 1.0;
 }
 
 void project_h_cand(int dummy)
 {
-    int ii = 0;
-    while (ii < 7)
+    int k = 0;
+    while (k < 7)
     {
-        if (s_h_cand[ii] < 0.0) s_h_cand[ii] = 0.0;
-        ii++;
+        if (s_h_cand[k] < 0.0) s_h_cand[k] = 0.0;
+        if (s_h_cand[k] > 1.0) s_h_cand[k] = 1.0;
+        k++;
     }
     s_h_cand[3] = 1.0;
 }
 
 // ----------------------------------------------------------------------------
-// Lipschitz constant for the gradient of 0.5 ||H x - y||^2 with respect to x.
-// For non-negative h, ||H||_op = ||h||_1, so L = (sum h)^2. No FFT needed.
+// Lipschitz constant of grad_x: for non-negative h, ||H||_op = ||h||_1,
+// so L = (sum h)^2, floored away from zero. ----------------------------------
 // ----------------------------------------------------------------------------
 
 float lipschitz_x(int dummy)
@@ -89,15 +102,16 @@ float lipschitz_x(int dummy)
 }
 
 // ----------------------------------------------------------------------------
-// Convolutions: s_conv <- conv_full(source_Lx, kernel_M), length N=1006 -------
+// Full convolution s_conv[0..N) = conv_full(source[0..LX), kernel[0..M)) ------
+// One helper per (source, kernel) pair test36's conv_full is called with. -----
 // ----------------------------------------------------------------------------
 
-void conv_zh(int dummy)
+void conv_zh(int dummy)               // conv_full(s_z, h_hat)
 {
     int n = 0;
-    while (n < 1006) { s_conv[n] = 0.0; n++; }
+    while (n < 40) { s_conv[n] = 0.0; n++; }
     int ii = 0;
-    while (ii < 1000)
+    while (ii < 34)
     {
         float zi = s_z[ii];
         int   j  = 0;
@@ -110,12 +124,12 @@ void conv_zh(int dummy)
     }
 }
 
-void conv_xh(int dummy)
+void conv_xh(int dummy)               // conv_full(x_hat, h_hat)
 {
     int n = 0;
-    while (n < 1006) { s_conv[n] = 0.0; n++; }
+    while (n < 40) { s_conv[n] = 0.0; n++; }
     int ii = 0;
-    while (ii < 1000)
+    while (ii < 34)
     {
         float xi = x_hat[ii];
         int   j  = 0;
@@ -128,12 +142,12 @@ void conv_xh(int dummy)
     }
 }
 
-void conv_x_hcand(int dummy)
+void conv_x_hcand(int dummy)          // conv_full(x_hat, s_h_cand)
 {
     int n = 0;
-    while (n < 1006) { s_conv[n] = 0.0; n++; }
+    while (n < 40) { s_conv[n] = 0.0; n++; }
     int ii = 0;
-    while (ii < 1000)
+    while (ii < 34)
     {
         float xi = x_hat[ii];
         int   j  = 0;
@@ -147,33 +161,33 @@ void conv_x_hcand(int dummy)
 }
 
 // ----------------------------------------------------------------------------
-// Subtract y from s_conv to obtain the residual --------------------------------
+// Residual: s_conv <- s_conv - y ---------------------------------------------
 // ----------------------------------------------------------------------------
 
 void residual_sub_y(int dummy)
 {
     int n = 0;
-    while (n < 1006) { s_conv[n] = s_conv[n] - y[n]; n++; }
+    while (n < 40) { s_conv[n] = s_conv[n] - y[n]; n++; }
 }
 
-// Returns sum(s_conv^2). Assumes residual already in s_conv.
+// sum(s_conv^2); assumes the residual is already in s_conv.
 float sum_residual_sq(int dummy)
 {
     float s = 0.0;
     int   n = 0;
-    while (n < 1006) { s = s + s_conv[n]*s_conv[n]; n++; }
+    while (n < 40) { s = s + s_conv[n]*s_conv[n]; n++; }
     return s;
 }
 
 // ----------------------------------------------------------------------------
-// Cross-correlation in valid mode --------------------------------------------
+// Valid-mode correlations ----------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// s_grad_x[0..LX) = correlate_valid(s_conv, h_hat).
+// s_grad_x[0..LX) = corr_valid(s_conv, h_hat)
 void correlate_residual_h(int dummy)
 {
     int n = 0;
-    while (n < 1000)
+    while (n < 34)
     {
         float s = 0.0;
         int   k = 0;
@@ -183,7 +197,7 @@ void correlate_residual_h(int dummy)
     }
 }
 
-// s_grad_h[0..M) = correlate_valid(s_conv, x_hat).
+// s_grad_h[0..M) = corr_valid(s_conv, x_hat)
 void correlate_residual_x(int dummy)
 {
     int n = 0;
@@ -191,40 +205,37 @@ void correlate_residual_x(int dummy)
     {
         float s = 0.0;
         int   k = 0;
-        while (k < 1000) { s = s + s_conv[n+k] * x_hat[k]; k++; }
+        while (k < 34) { s = s + s_conv[n+k] * x_hat[k]; k++; }
         s_grad_h[n] = s;
         n++;
     }
 }
 
 // ----------------------------------------------------------------------------
-// FISTA for x with fixed h ----------------------------------------------------
+// FISTA for x with fixed h: XIT fixed iterations, lambda = 1 ------------------
 // ----------------------------------------------------------------------------
 
-void fista_x(float lam)
+void fista_x(int dummy)
 {
     int ii = 0;
-    while (ii < 1000) { s_z[ii] = x_hat[ii]; s_x_prev[ii] = x_hat[ii]; ii++; }
+    while (ii < 34) { s_z[ii] = x_hat[ii]; s_x_prev[ii] = x_hat[ii]; ii++; }
 
     float t        = 1.0;
     float L        = lipschitz_x(0);
     float step     = 1.0 / L;
-    float step_lam = step * lam;
-
-    int   have_prev = 0;
-    float prev_obj  = 0.0;
+    float step_lam = step * 1.0;       // LAM = 1.0
 
     int it = 0;
-    while (it < 600)
+    while (it < 20)
     {
-        // Gradient at z: grad = corr_valid(conv(z, h) - y, h).
+        // gradient at z: grad_x = corr_valid(conv(z,h) - y, h)
         conv_zh(0);
         residual_sub_y(0);
         correlate_residual_h(0);
 
-        // Proximal step: x = max(0, z - step*grad - step*lam).
+        // proximal step: x = max(0, z - step*grad - step*lam)
         ii = 0;
-        while (ii < 1000)
+        while (ii < 34)
         {
             float v = s_z[ii] - step * s_grad_x[ii] - step_lam;
             if (v < 0.0) v = 0.0;
@@ -232,205 +243,124 @@ void fista_x(float lam)
             ii++;
         }
 
-        // Nesterov momentum.
+        // Nesterov momentum
         float tn  = 0.5 * (1.0 + sqrt(1.0 + 4.0 * t * t));
         float mom = (t - 1.0) / tn;
         ii = 0;
-        while (ii < 1000)
+        while (ii < 34)
         {
             float xi = x_hat[ii];
             s_z[ii]      = xi + mom * (xi - s_x_prev[ii]);
             s_x_prev[ii] = xi;
             ii++;
         }
-
-        // Objective at x for tolerance check.
-        conv_xh(0);
-        residual_sub_y(0);
-        float rss2 = sum_residual_sq(0);
-        float data = 0.5 * rss2;
-
-        float sx = 0.0;
-        ii = 0;
-        while (ii < 1000) { sx = sx + x_hat[ii]; ii++; }
-        float obj = data + lam * sx;
-
-        if (have_prev == 1)
-        {
-            float denom = abs(prev_obj);
-            if (denom < 1.0) denom = 1.0;
-            float diff = abs(prev_obj - obj);
-            if (diff / denom < 0.00001) return;
-        }
-        prev_obj  = obj;
-        have_prev = 1;
-        t         = tn;
+        t = tn;
 
         it++;
     }
 }
 
 // ----------------------------------------------------------------------------
-// Projected-gradient update of h with backtracking ----------------------------
+// Projected-gradient update of h with best-candidate backtracking ------------
 // ----------------------------------------------------------------------------
 
 void update_h(int dummy)
 {
     project_h_hat(0);
-    float step = 0.00001;
 
     int it = 0;
-    while (it < 80)
+    while (it < 5)
     {
-        // Residual and gradient of the data term wrt h.
+        // residual and gradient of the data term wrt h
         conv_xh(0);
         residual_sub_y(0);
-        float rss2 = sum_residual_sq(0);
-        float dt   = 0.5 * rss2;
+        float dt = 0.5 * sum_residual_sq(0);
 
         correlate_residual_x(0);
         s_grad_h[3] = 0.0;
 
-        float trial    = step;
-        int   accepted = 0;
-        int   bt       = 0;
-        while (bt < 30)
+        float best_dt = dt;
+        int   ii = 0;
+        while (ii < 7) { s_h_best[ii] = h_hat[ii]; ii++; }
+
+        float trial = 0.00001;         // HSTEP
+        int   bt    = 0;
+        while (bt < 15)
         {
-            int ii = 0;
-            while (ii < 7)
-            {
-                s_h_cand[ii] = h_hat[ii] - trial * s_grad_h[ii];
-                ii++;
-            }
+            ii = 0;
+            while (ii < 7) { s_h_cand[ii] = h_hat[ii] - trial * s_grad_h[ii]; ii++; }
             project_h_cand(0);
 
             conv_x_hcand(0);
             residual_sub_y(0);
-            float crss2 = sum_residual_sq(0);
-            float cdt   = 0.5 * crss2;
+            float cdt = 0.5 * sum_residual_sq(0);
 
-            if (cdt <= dt)
+            if (cdt < best_dt)
             {
+                best_dt = cdt;
                 ii = 0;
-                while (ii < 7) { h_hat[ii] = s_h_cand[ii]; ii++; }
-                step = trial * 1.05;
-                if (step > 0.00001) step = 0.00001;
-                accepted = 1;
-                break;
+                while (ii < 7) { s_h_best[ii] = s_h_cand[ii]; ii++; }
             }
             trial = trial * 0.5;
             bt++;
         }
-        if (accepted == 0) break;
+
+        ii = 0;
+        while (ii < 7) { h_hat[ii] = s_h_best[ii]; ii++; }
+
         it++;
     }
+
     project_h_hat(0);
 }
 
 // ----------------------------------------------------------------------------
-// Alternating minimization for one fixed lambda. Returns final data term. -----
+// Alternating minimization: OUTER passes of (fista_x, update_h) ---------------
 // ----------------------------------------------------------------------------
 
-float fit_one(float lam)
+void fit(int dummy)
 {
     int ii = 0;
-    while (ii < 1000) { x_hat[ii] = 0.0; ii++; }
+    while (ii < 34) { x_hat[ii] = 0.0; ii++; }
     ii = 0;
     while (ii < 7) { h_hat[ii] = 0.0; ii++; }
-    h_hat[3] = 1.0;
 
-    int   have_prev = 0;
-    float prev_obj  = 0.0;
-    float dt        = 0.0;
+    // shoulder seed: h[C-1] = 0.5, h[C] = 1.0, h[C+1] = 0.5  (C = 3)
+    h_hat[2] = 0.5;
+    h_hat[3] = 1.0;
+    h_hat[4] = 0.5;
 
     int it = 0;
-    while (it < 120)
+    while (it < 40)
     {
-        fista_x(lam);
+        fista_x(0);
         update_h(0);
-
-        conv_xh(0);
-        residual_sub_y(0);
-        float rss2 = sum_residual_sq(0);
-        dt = 0.5 * rss2;
-
-        float sx = 0.0;
-        ii = 0;
-        while (ii < 1000) { sx = sx + x_hat[ii]; ii++; }
-        float obj = dt + lam * sx;
-
-        if (have_prev == 1)
-        {
-            float denom = abs(prev_obj);
-            if (denom < 1.0) denom = 1.0;
-            float diff = abs(prev_obj - obj);
-            if (diff / denom < 0.000001) return dt;
-        }
-        prev_obj  = obj;
-        have_prev = 1;
-
         it++;
     }
-    return dt;
 }
 
 // ----------------------------------------------------------------------------
-// Top-level: BIC sweep then final fit ----------------------------------------
+// Top level: read input, fit, emit h_hat * 1e6 -------------------------------
 // ----------------------------------------------------------------------------
 
 void main()
 {
-    float sigma     = 1.0;
-    float noise_var = sigma * sigma;
-    float log_N     = 6.913737;  // log(1006)
+    int junk = in(0);              // leading count (= N); consumed and ignored
 
-    int   have_best = 0;
-    float best_bic  = 0.0;
-    float best_lam  = sigma * lambda_grid[0];
-
-    int li = 0;
-    while (li < 12)
+    int n = 0;
+    while (n < 40)
     {
-        float lam = sigma * lambda_grid[li];
-        float dt  = fit_one(lam);
-        float rss = 2.0 * dt;
-
-        int active = 0;
-        int k = 0;
-        while (k < 1000)
-        {
-            if (x_hat[k] > 0.001) active++;
-            k++;
-        }
-
-        float num_params = active + 6.0;
-        float bic        = rss / noise_var + num_params * log_N;
-
-        if (have_best == 0)
-        {
-            best_bic  = bic;
-            best_lam  = lam;
-            have_best = 1;
-        }
-        else
-        {
-            if (bic < best_bic)
-            {
-                best_bic = bic;
-                best_lam = lam;
-            }
-        }
-
-        li++;
+        y[n] = fin(0) / 30000.0;   // = (float)b / GAIN_IN
+        n++;
     }
 
-    fit_one(best_lam);
-    selected_lambda = best_lam;
+    fit(0);
 
-    // Dump results to output ports.
-    fout(0, selected_lambda);
     int j = 0;
-    while (j < 7) { fout(1, h_hat[j]); j++; }
-    j = 0;
-    while (j < 1000) { fout(2, x_hat[j]); j++; }
+    while (j < 7)
+    {
+        int r = h_hat[j] * 1000000.0 + 0.5;   // F2I truncates -> (int)(h*1e6 + 0.5)
+        out(0, r);
+        j++;
+    }
 }
