@@ -6,7 +6,13 @@
 //                    to the next value from the input file.
 //   - out_en == 1  : processor is writing an output word; the bench records `out`
 //                    on the posedge.
-// Runs until `expected` outputs are captured (plus a short drain) or a cycle cap.
+// Termination order:
+//   1. if Vtop exposes a `cheguei` pin (= the program has #TOAQUI), the harness
+//      ends the simulation the cycle that pin goes high (after capturing any
+//      output that posed in the same cycle).
+//   2. otherwise, runs until `expected` outputs are captured plus a short drain.
+//   3. otherwise, after 500k idle cycles with no output (heuristic).
+//   4. otherwise, the cycle cap.
 // Used by regress.sh for tests too heavy for iverilog (e.g. the FISTA port).
 //
 // Usage: sim <input.txt> <output.txt> <max_cycles> <expected_outputs>
@@ -17,6 +23,13 @@
 #include <vector>
 
 double sc_time_stamp() { return 0; }   // required by verilated.cpp when present
+
+// SFINAE: read top->cheguei if Verilator exposed it (program has #TOAQUI),
+// else return false. Lets the same harness drive any YANC program.
+template <typename T>
+auto read_cheguei(T* top, int) -> decltype(top->cheguei != 0) { return top->cheguei != 0; }
+template <typename T>
+bool read_cheguei(T*, ...) { return false; }
 
 int main(int argc, char** argv) {
     const char* in_path  = argc > 1 ? argv[1] : nullptr;
@@ -64,6 +77,11 @@ int main(int argc, char** argv) {
         } else if (!outputs.empty()) {
             ++idle;
         }
+
+        // cheguei -> end-of-program marker (#TOAQUI). Capture this cycle's
+        // output (above) then stop. SFINAE returns false when the program has
+        // no #TOAQUI (the pin doesn't exist on Vtop).
+        if (read_cheguei(top, 0)) break;
 
         if (drain > 0) { if (--drain == 0) break; }
         if (idle > 500000) break;     // no more output: the program has finished
