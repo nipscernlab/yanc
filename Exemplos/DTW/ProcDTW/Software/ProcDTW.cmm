@@ -31,7 +31,7 @@ void main()
         out(2,-122);
         return;
 
-#INTERPOINT
+#PRACA
 out(2,-123);
         k = 0;
 

@@ -194,7 +194,7 @@ typedef enum {
     STMT_VOUT,          // out(port, exp | vector_id BRA);  Dirac vector output
     STMT_DIRAC,         // Dirac linear-algebra assignments (op discriminates)
     STMT_VOID_CALL,     // f(args);  user-defined void function call statement
-    STMT_DIRE_INTER,    // #INTERPOINT directive (interrupt return target)
+    STMT_DIRE_INTER,    // #PRACA directive (interrupt return target)
     STMT_DIRE_TOAQUI,   // #TOAQUI directive (cheguei pin trigger address)
     STMT_BLOCK,         // ordered list of child stmt_nodes (function / if /
                         // while / switch body). Walker iterates kids.
@@ -308,7 +308,7 @@ stmt_node *stmt_vout(int port, struct expr_node *rhs, int vector_id);
 // the popped args already bound. Walker invokes ast_emit_expr on it.
 stmt_node *stmt_void_call (struct expr_node *call);
 
-// #INTERPOINT directive (interrupt entry-point marker) used inside funcs.
+// #PRACA directive (interrupt entry-point marker) used inside funcs.
 stmt_node *stmt_dire_inter(void);
 
 // #TOAQUI directive (PC tracker marker -> cheguei pin)

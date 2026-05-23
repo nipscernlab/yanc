@@ -63,7 +63,7 @@ int  n_ins	  = 0;      // number of instructions added
 int  n_dat    = 0;      // number of variables added
 int  i_used[256];       // marks which input was used
 int  o_used[256];       // marks which output was used
-int  itr_addr    = 0;   // interrupt address (#INTERPOINT)
+int  itr_addr    = 0;   // interrupt address (#PRACA)
 int  toaqui_addr = 0;   // #TOAQUI marker address (cheguei pin trigger)
 int  nbopr;             // number of operand bits
 

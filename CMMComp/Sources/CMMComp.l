@@ -38,7 +38,7 @@ COMEN  "//"[^\n]*
 "#NUGAIN"     return NUGAIN;
 "#FFTSIZ"     return FFTSIZ;
 
-"#INTERPOINT" return ITRADD;
+"#PRACA"      return ITRADD;
 "#TOAQUI"     return TOAQUI;
 
 "in"          return INN;

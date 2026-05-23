@@ -1,7 +1,7 @@
 /*
     Features unique to C+-
 
-    - Directive  #INTERPOINT    : marks the return point for a reset on the itr pin
+    - Directive  #PRACA         : marks the return point for a reset on the itr pin
     - Directive  #TOAQUI        : marks an address that the cheguei pin reflects (PC == addr)
 
     - comp data type (for complex numbers): e.g. comp a = 3+4i;
@@ -173,7 +173,7 @@ direct : PRNAME   ID   {dire_exec("#PRNAME",$2, 1);} // processor name
 
 // Behavioral directives ------------------------------------------------------
 
-dire_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt start point (#INTERPOINT)
+dire_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt start point (#PRACA)
            | TOAQUI             {stmt_append(stmt_dire_toaqui());} // PC tracker marker     (#TOAQUI -> cheguei pin)
 
 // Variable declaration -------------------------------------------------------
