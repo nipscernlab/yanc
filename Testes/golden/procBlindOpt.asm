@@ -612,7 +612,8 @@ LOD main_j
 ADD 1
 SET main_j
 JMP Lwh33
-@Lwh33end @fim JMP fim
+@Lwh33end #TOAQUI
+@fim JMP fim
 
 // sqrt function --------------------------------------------------------------
 

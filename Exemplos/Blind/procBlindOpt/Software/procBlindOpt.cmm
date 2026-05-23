@@ -344,4 +344,6 @@ void main()
         out(0, h_hat[j] * 1000000.0 + 0.5);   // out() does the F2I (truncates)
         j++;
     }
+
+#TOAQUI                                       // end-of-program marker -> cheguei pin
 }
