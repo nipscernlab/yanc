@@ -40,6 +40,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#arrays"  eval_direct(14);                         // array with initialization file
 
 "#ITRAD"                  ;                         // interrupt address point
+"#TOAQUI"                 ;                         // #TOAQUI marker (consumed by appcomp; ignored here)
 
    "LOD"   eval_opcode(  0,18, yytext,    "LOD"  ); // loads data from memory
  "P_LOD"   eval_opcode(  1,18, yytext,  "P_LOD"  ); // PUSH + LOD

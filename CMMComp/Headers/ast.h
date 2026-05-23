@@ -195,6 +195,7 @@ typedef enum {
     STMT_DIRAC,         // Dirac linear-algebra assignments (op discriminates)
     STMT_VOID_CALL,     // f(args);  user-defined void function call statement
     STMT_DIRE_INTER,    // #INTERPOINT directive (interrupt return target)
+    STMT_DIRE_TOAQUI,   // #TOAQUI directive (cheguei pin trigger address)
     STMT_BLOCK,         // ordered list of child stmt_nodes (function / if /
                         // while / switch body). Walker iterates kids.
     STMT_IF,            // if (cond) then_body [else else_body];  label = if id
@@ -309,6 +310,9 @@ stmt_node *stmt_void_call (struct expr_node *call);
 
 // #INTERPOINT directive (interrupt entry-point marker) used inside funcs.
 stmt_node *stmt_dire_inter(void);
+
+// #TOAQUI directive (PC tracker marker -> cheguei pin)
+stmt_node *stmt_dire_toaqui(void);
 
 // Empty STMT_BLOCK; grow it with stmt_block_push.
 stmt_node *stmt_block     (void);

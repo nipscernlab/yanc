@@ -572,6 +572,11 @@ stmt_node *stmt_dire_inter(void)
     return snode_new(STMT_DIRE_INTER);
 }
 
+stmt_node *stmt_dire_toaqui(void)
+{
+    return snode_new(STMT_DIRE_TOAQUI);
+}
+
 // ----------------------------------------------------------------------------
 // Dirac linear-algebra constructors ------------------------------------------
 // ----------------------------------------------------------------------------
@@ -964,6 +969,10 @@ void stmt_emit(stmt_node *n)
 
         case STMT_DIRE_INTER:
             dire_inter();
+            break;
+
+        case STMT_DIRE_TOAQUI:
+            dire_toaqui();
             break;
 
         case STMT_BLOCK:

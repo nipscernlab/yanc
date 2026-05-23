@@ -36,12 +36,13 @@ endmodule
 
 module prefetch
 #(
-	parameter              MINSTW = 8,
-	parameter              NBOPCO = 7,
-	parameter              NBOPER = 9,
-	parameter [MINSTW-1:0] ITRADD = 0,
-	parameter              CAL    = 0,
-	parameter              JIZ    = 0
+	parameter              MINSTW     = 8,
+	parameter              NBOPCO     = 7,
+	parameter              NBOPER     = 9,
+	parameter [MINSTW-1:0] ITRADD     = 0,
+	parameter [MINSTW-1:0] TOAQUIADDR = 0,
+	parameter              CAL        = 0,
+	parameter              JIZ        = 0
 )(
 	 input                        rst       ,
 	 input    [MINSTW       -1:0] pc_instr  ,
@@ -53,7 +54,8 @@ module prefetch
 	 input                        is_um     ,
 	output                        isp_push  ,
 	output                        isp_pop   ,
-	 input                        itr
+	 input                        itr       ,
+	output                        cheguei
 );
 
 wire wJMP;
@@ -101,6 +103,14 @@ assign pc_l       =         pc_load;
 assign instr_addr =                  (pc_load & ~rst) ? operand[MINSTW-1:0] : pc_instr;
 
 end endgenerate
+
+// #TOAQUI marker: asserts cheguei whenever the address being fetched equals
+// TOAQUIADDR - i.e. the instruction at the marker is about to be executed.
+// Using `instr_addr` (the address presented to instruction memory THIS cycle)
+// is the clean choice: pc_instr (the PC register) transiently passes over the
+// marker every loop back-edge because addr<=val+1 in the PC, which would cause
+// spurious cheguei pulses on plain JMPs.
+generate if (TOAQUIADDR>0) assign cheguei = (instr_addr == TOAQUIADDR); else assign cheguei = 1'b0; endgenerate
 
 endmodule
 
@@ -163,18 +173,20 @@ endmodule
 
 module instr_fetch
 #(
-	parameter NBINST = 8,
-	parameter MINSTW = 8,
-	parameter ITRADD = 0,
-	parameter NBOPCO = 7,
-	parameter NBOPER = 9,
-	parameter SDEPTH = 8,
+	parameter NBINST     = 8,
+	parameter MINSTW     = 8,
+	parameter ITRADD     = 0,
+	parameter TOAQUIADDR = 0,
+	parameter NBOPCO     = 7,
+	parameter NBOPER     = 9,
+	parameter SDEPTH     = 8,
 
 	parameter CAL    = 0,
 	parameter JIZ    = 0
 )(
 	input               clk, rst,
 	input               itr,
+	output              cheguei,
 
 	input  [NBINST-1:0] instr,
 	output [MINSTW-1:0] addr,
@@ -217,12 +229,13 @@ prefetch #(.MINSTW(MINSTW),
            .NBOPCO(NBOPCO),
            .NBOPER(NBOPER),
            .ITRADD(ITRADD),
+           .TOAQUIADDR(TOAQUIADDR),
 		   .CAL   (CAL   ),
 		   .JIZ   (JIZ   )) pf(rst, pc_addr, opcode, operand,
                                pf_instr, pf_addr,
                                pc_load , acc,
                                pf_isp_push, pf_isp_pop,
-                               itr);
+                               itr, cheguei);
 
 // Instruction stack
 
@@ -408,7 +421,8 @@ module core
 	// data flow
 	parameter  NBOPCO = 7,               // Number of opcode bits (do not change without updating the instr_decoder)
 	parameter  NBOPER = 9,               // Operand width (bits)
-	parameter  ITRADD = 0,               // Interrupt address
+	parameter  ITRADD     = 0,           // Interrupt address (PC jumps here while itr=1)
+	parameter  TOAQUIADDR = 0,           // #TOAQUI marker address (cheguei pulses when pc_instr == TOAQUIADDR)
 
 	// memories
 	parameter  MDATAW = 9,               // Number of address bits for data memory
@@ -601,7 +615,8 @@ module core
 	output              req_in,
 	output              out_en,
 
-	input               itr
+	input               itr,
+	output              cheguei
 
 `ifdef __ICARUS__ // ----------------------------------------------------------
  , output [MINSTW-1:0] pc_sim_val
@@ -615,16 +630,18 @@ wire [NBOPCO-1:0] if_opcode;
 wire [NBOPER-1:0] if_operand;
 
 instr_fetch #(
-	.NBINST (NBINST ),
-	.MINSTW (MINSTW ),
-	.ITRADD (ITRADD ),
-	.NBOPCO (NBOPCO ),
-	.NBOPER (NBOPER ),
-	.SDEPTH (SDEPTH ),
-	.CAL    (CAL    ),
-	.JIZ    (JIZ    )) instr_fetch (.clk    (clk       ),
+	.NBINST     (NBINST     ),
+	.MINSTW     (MINSTW     ),
+	.ITRADD     (ITRADD     ),
+	.TOAQUIADDR (TOAQUIADDR ),
+	.NBOPCO     (NBOPCO     ),
+	.NBOPER     (NBOPER     ),
+	.SDEPTH     (SDEPTH     ),
+	.CAL        (CAL        ),
+	.JIZ        (JIZ        )) instr_fetch (.clk    (clk       ),
 	                                .rst    (rst       ),
 	                                .itr    (itr       ),
+	                                .cheguei(cheguei   ),
 	                                .instr  (instr     ),
 	                                .addr   (instr_addr),
 	                                .acc    (if_acc    ),

@@ -26,7 +26,7 @@ void force_rightbar(char *str){while (*str) {if (*str == '\\') *str = '/'; str++
 // generates the verilog file with a processor instance -----------------------
 // ----------------------------------------------------------------------------
 
-void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
+void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 {
     // ------------------------------------------------------------------------
     // create the .v file for writing -----------------------------------------
@@ -55,22 +55,29 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     /*needs at least one output*/ fprintf(f_veri, "output signed [%d:0] out"   , nubits-1); comma = 0;
 
     // check whether anything else may come next, to add a trailing comma
-    if ((nuioin > 0 && opc_inn()) || (nuioou > 0 && opc_out()) || (itr_addr != 0)) {fprintf(f_veri, ",\n"); comma = 1;}
+    if ((nuioin > 0 && opc_inn()) || (nuioou > 0 && opc_out()) || (itr_addr != 0) || (toaqui_addr != 0)) {fprintf(f_veri, ",\n"); comma = 1;}
 
     // check whether input-port control needs to be added
     if (nuioin > 0 && opc_inn()) {fprintf(f_veri, "output [%d:0] req_in", nuioin-1); comma = 0;}
 
     // check whether anything else may come next, to add a trailing comma
-    if ((nuioou > 0 && opc_out()) || (itr_addr != 0)) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
+    if ((nuioou > 0 && opc_out()) || (itr_addr != 0) || (toaqui_addr != 0)) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
 
     // check whether output-port control needs to be added
     if (nuioou > 0 && opc_out()) {fprintf(f_veri, "output [%d:0] out_en", nuioou-1); comma = 0;}
 
     // check whether anything else may come next, to add a trailing comma
-    if ((itr_addr != 0)) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
+    if ((itr_addr != 0) || (toaqui_addr != 0)) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
 
     // check whether the interrupt pin needs to be added
-    if (itr_addr != 0) fprintf(f_veri, "input  itr);\n\n"); else fprintf(f_veri, ");\n\n");
+    if (itr_addr != 0) {fprintf(f_veri, "input  itr"); comma = 0;}
+
+    // check whether the #TOAQUI tracker pin needs to be added
+    if (toaqui_addr != 0) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
+    if (toaqui_addr != 0) {fprintf(f_veri, "output cheguei"); comma = 0;}
+
+    // close the port list
+    fprintf(f_veri, ");\n\n");
 
     // ------------------------------------------------------------------------
     // I/O interface wires ----------------------------------------------------
@@ -81,6 +88,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
 
     // no interrupt pin: a wire is needed for the processor connection
     if (itr_addr == 0) fprintf(f_veri, "wire itr = 1'b0;\n");
+
+    // no #TOAQUI marker: a local wire absorbs the processor's cheguei output
+    if (toaqui_addr == 0) fprintf(f_veri, "wire cheguei;\n");
 
     // always needed for the processor connection
     fprintf(f_veri, "wire proc_req_in, proc_out_en;\n");
@@ -121,6 +131,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     // if there's an interrupt, set its address on the processor
     if (itr_addr != 0) fprintf(f_veri, ".ITRADD(%d),\n", itr_addr);
 
+    // if there's a #TOAQUI marker, set its address on the processor
+    if (toaqui_addr != 0) fprintf(f_veri, ".TOAQUIADDR(%d),\n", toaqui_addr);
+
     // ------------------------------------------------------------------------
     // dynamic resource allocation --------------------------------------------
     // ------------------------------------------------------------------------
@@ -140,9 +153,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
     fprintf(f_veri, ".DFILE(\"%s_data.mif\"),\n"  , path);
     fprintf(f_veri, ".IFILE(\"%s_inst.mif\"))\n\n", path);
     fprintf(f_veri, "`ifdef __ICARUS__\n");
-    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
+    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
     fprintf(f_veri, "`else\n");
-    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr);\n", prname);
+    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei);\n", prname);
     fprintf(f_veri, "`endif\n\n");
 
     // ------------------------------------------------------------------------
@@ -449,7 +462,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr)
 // generates the verilog file with the processor's test-bench -----------------
 // ----------------------------------------------------------------------------
 
-void hdl_tb_file(int itr_addr)
+void hdl_tb_file(int itr_addr, int toaqui_addr)
 {
     // ------------------------------------------------------------------------
     // create the .v file -----------------------------------------------------
@@ -505,6 +518,8 @@ void hdl_tb_file(int itr_addr)
     if (nuioin > 0 && opc_inn()) fprintf(f_veri, "wire [%d:0] proc_req_in;\n"          , nuioin-1);
     // check whether output-port control needs to be added
     if (nuioou > 0 && opc_out()) fprintf(f_veri, "wire [%d:0] proc_out_en;\n\n"        , nuioou-1);
+    // declare the cheguei wire when the wrapper exposes it
+    if (toaqui_addr != 0)        fprintf(f_veri, "wire proc_cheguei;\n\n"              );
 
     // ------------------------------------------------------------------------
     // processor instance -----------------------------------------------------
@@ -522,6 +537,8 @@ void hdl_tb_file(int itr_addr)
     if (nuioou > 0 && opc_out()) fprintf(f_veri, ",proc_out_en");
     // check whether the interrupt pin needs to be added
     if (itr_addr != 0)           fprintf(f_veri, ",1'b0"       );
+    // check whether the cheguei output is exposed
+    if (toaqui_addr != 0)        fprintf(f_veri, ",proc_cheguei");
     // close the instance
                                  fprintf(f_veri, ");\n\n"      );
 

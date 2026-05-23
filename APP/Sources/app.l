@@ -35,6 +35,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#arrays"  eval_direct(14); // array with initialization file
 
 "#ITRAD"   eval_itrad (  ); // interrupt address point
+"#TOAQUI"  eval_toaqui(  ); // #TOAQUI marker (PC compared against this address -> cheguei pin)
 
    "LOD"   eval_opcode(18); // loads data from memory
  "P_LOD"   eval_opcode(18); // PUSH + LOD

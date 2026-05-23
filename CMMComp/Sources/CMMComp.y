@@ -2,6 +2,7 @@
     Features unique to C+-
 
     - Directive  #INTERPOINT    : marks the return point for a reset on the itr pin
+    - Directive  #TOAQUI        : marks an address that the cheguei pin reflects (PC == addr)
 
     - comp data type (for complex numbers): e.g. comp a = 3+4i;
 
@@ -91,7 +92,7 @@ void  yyerror(char const *s);
 // tokens with no assignment --------------------------------------------------
 
 %token PRNAME NUBITS NBMANT NBEXPO NDSTAC SDEPTH                       // directives
-%token NUIOIN NUIOOU NUGAIN FFTSIZ ITRADD                              // directives
+%token NUIOIN NUIOOU NUGAIN FFTSIZ ITRADD TOAQUI                       // directives
 %token INN FIN OUT FOUT                                                // stdlib (I/O)
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
 %token SQRT ATAN SIN COS                                               // stdlib (non-linear functions)
@@ -172,7 +173,8 @@ direct : PRNAME   ID   {dire_exec("#PRNAME",$2, 1);} // processor name
 
 // Behavioral directives ------------------------------------------------------
 
-dire_inter : ITRADD             {stmt_append(stmt_dire_inter());} // interrupt start point
+dire_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt start point (#INTERPOINT)
+           | TOAQUI             {stmt_append(stmt_dire_toaqui());} // PC tracker marker     (#TOAQUI -> cheguei pin)
 
 // Variable declaration -------------------------------------------------------
          // list declaration (one or more uninitialized variables)

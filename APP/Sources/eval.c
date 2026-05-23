@@ -55,6 +55,14 @@ void eval_itrad()
      printf(MSG_INFO_ITR_HANDLING);
 }
 
+// runs when the #TOAQUI directive is found
+// records the current instruction index so the hardware can compare PC against
+// it and pulse the cheguei pin
+void eval_toaqui()
+{
+    fprintf(f_log, "toaqui_addr %d\n", n_ins);
+}
+
 // runs when a new opcode is found
 void eval_opcode(int next_state)
 {

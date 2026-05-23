@@ -63,7 +63,8 @@ int  n_ins	  = 0;      // number of instructions added
 int  n_dat    = 0;      // number of variables added
 int  i_used[256];       // marks which input was used
 int  o_used[256];       // marks which output was used
-int  itr_addr = 0;      // interrupt address
+int  itr_addr    = 0;   // interrupt address (#INTERPOINT)
+int  toaqui_addr = 0;   // #TOAQUI marker address (cheguei pin trigger)
 int  nbopr;             // number of operand bits
 
 // ----------------------------------------------------------------------------
@@ -242,6 +243,9 @@ void eval_init(int clk, int clk_n, int s_typ)
     // if there's an interrupt, pull its address
     if (eval_get("app_log.txt","itr_addr", aux) == 1) itr_addr = atoi(aux); // interrupt address
 
+    // if there's a #TOAQUI marker, pull its address
+    if (eval_get("app_log.txt","toaqui_addr", aux) == 1) toaqui_addr = atoi(aux); // cheguei marker address
+
     lab_reg(); // register labels found in app_log.txt
 
     // determine the number of address bits for the operand (after the mnemonic)
@@ -337,6 +341,6 @@ void eval_finish()
 
     // generate hdl files -----------------------------------------------------
 
-    hdl_vv_file(n_ins,n_dat,nbopr,itr_addr); // top-level verilog file for the processor
-    hdl_tb_file(itr_addr);                   // verilog testbench file
+    hdl_vv_file(n_ins,n_dat,nbopr,itr_addr,toaqui_addr); // top-level verilog file for the processor
+    hdl_tb_file(itr_addr,toaqui_addr);                   // verilog testbench file
 }
