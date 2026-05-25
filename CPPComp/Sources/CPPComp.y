@@ -929,6 +929,17 @@ static_member:
           decl *d = ast_decl($2, mangle_method(cur_class->tag, $3), $5, yylineno);
           unit_add_global(d); add_static(cur_class, $3); free($3);
       }
+    /* `static const ...` forms: bison's shift/reduce default routes the KW_CONST
+       through field_decl's base_type otherwise, and field_decl has no
+       initializer slot, so `static const int X = N;` fails. Spell it out here. */
+    | KW_STATIC KW_CONST base_type IDENT ';' {
+          decl *d = ast_decl($3, mangle_method(cur_class->tag, $4), NULL, yylineno);
+          unit_add_global(d); add_static(cur_class, $4); free($4);
+      }
+    | KW_STATIC KW_CONST base_type IDENT '=' assignment_expr ';' {
+          decl *d = ast_decl($3, mangle_method(cur_class->tag, $4), $6, yylineno);
+          unit_add_global(d); add_static(cur_class, $4); free($4);
+      }
     ;
 
 /* constructor: `ClassName(params) { body }` — the class name lexes as a
