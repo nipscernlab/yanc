@@ -13,4 +13,14 @@ namespace std {
         return g;
     }
     inline float sqrtf(float x) { return sqrt(x); }
+
+    // YANC float has no NaN or infinity bit patterns (see [[yanc-float-format]]),
+    // so anything we can store is finite by construction. We still expose
+    // isfinite() as a no-op `true` so user code that defensively guards
+    // against non-finite results compiles and behaves like a finite-only
+    // domain. (The <limits>::infinity() shim returns a large-but-finite
+    // value too, consistent with this.)
+    inline int isfinite(float x) { (void)x; return 1; }
+    inline int isnan   (float x) { (void)x; return 0; }
+    inline int isinf   (float x) { (void)x; return 0; }
 }

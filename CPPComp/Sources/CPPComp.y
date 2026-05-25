@@ -279,6 +279,47 @@ static void method_finish(type *ret, const char *name, stmt *body)
     st_leave_func();
     params_reset();
 }
+
+// open a STATIC method's scope: like method_enter but WITHOUT injecting `this`.
+// A static method is conceptually a free function whose name happens to live
+// in the class's namespace; it has no per-instance state. We lower it to a
+// free function with mangled name `Class__name` and no implicit first arg.
+static void static_method_enter(type *ret, const char *name, decl *params, int nparams)
+{
+    char *mname = mangle_method(cur_class->tag, name);
+    sym *s = st_find(mname);
+    if (!s) s = st_add(SK_FUNC, mname, mname, ret);
+    s->defined = 1;
+    s->n_params = nparams;
+    if (nparams > 0) {
+        s->param_types = malloc(sizeof(type*) * nparams);
+        int i = 0;
+        for (decl *p = params; p; p = p->next, i++) s->param_types[i] = p->dtype;
+    }
+    st_enter_func(mname);
+    st_push_scope();
+    for (decl *p = params; p; p = p->next) st_add(SK_PARAM, p->name, NULL, p->dtype);
+    param_head = params; param_tail = NULL; param_count = nparams;
+    ts_sclass = SC_NONE; ts_is_const = 0;
+}
+
+// finalize a static method into a free function. method_of stays NULL so
+// codegen routes calls via the bare-name path (no implicit `this`).
+static void static_method_finish(type *ret, const char *name, stmt *body)
+{
+    func *f = ast_func(ret, mangle_method(cur_class->tag, name), param_head, param_count, body, yylineno);
+    /* method_of intentionally NULL: this is a static -- looks/acts like a free fn */
+    if (g_in_template) {
+        if (g_n_ctm < 128) g_ctm[g_n_ctm++] = f;
+        if (!g_ct_nontype) unit_add_func(f);
+    } else {
+        unit_add_func(f);
+    }
+    st_pop_scope();
+    st_leave_func();
+    params_reset();
+}
+
 // enum counter (reset per enum_specifier)
 static long  enum_counter = 0;
 static char *cur_enum_prefix = NULL;   // set for `enum class E` -> enumerators are E__name
@@ -1155,6 +1196,16 @@ method_def:
           { method_enter(t_ref($1), op_arity_name($4, $6.n), $6.head, $6.n); }
       compound_stmt
           { method_finish(t_ref($1), op_arity_name($4, $6.n), $10); }
+    /* static method: `static T name(params) { body }` — lowered to a free
+       function `Class__name` WITHOUT an implicit `this` param. */
+    | KW_STATIC base_type IDENT '(' param_list ')' fn_quals
+          { static_method_enter($2, $3, $5.head, $5.n); }
+      compound_stmt
+          { static_method_finish($2, $3, $9); free($3); }
+    | KW_STATIC base_type '*' IDENT '(' param_list ')' fn_quals
+          { static_method_enter(t_ptr($2), $4, $6.head, $6.n); }
+      compound_stmt
+          { static_method_finish(t_ptr($2), $4, $10); free($4); }
     ;
 
 /* trailing method qualifiers — accepted and ignored (cosmetic on this target) */
@@ -1754,8 +1805,16 @@ local_decl:
           } else {
               s->decls = $2.head;
               /* publish names in current local scope */
-              for (decl *d = $2.head; d; d = d->next)
+              for (decl *d = $2.head; d; d = d->next) {
                   st_add(SK_LOCAL_VAR, d->name, NULL, d->dtype);
+                  /* `const int X = expr;` / `constexpr int X = expr;` whose
+                     init folds to a constant: also publish as SK_ENUM_CONST so
+                     const_eval (array bounds, template args) accepts it. */
+                  if (ts_is_const && d->init && d->dtype && d->dtype->kind == TY_INT) {
+                      long v;
+                      if (const_eval(d->init, &v)) st_add_enum(d->name, v);
+                  }
+              }
           }
           ts_typedef = 0; ts_sclass = SC_NONE; ts_is_const = 0;
           $$ = s;
@@ -2046,6 +2105,33 @@ primary_expr:
           if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); free(m); }
           else $$ = ast_ident(m, yylineno);
           free($1); free($3);
+      }
+    | TYPEDEF_NAME '<' ct_mixed_arg_list '>' TOK_SCOPE IDENT '(' argument_list ')' {
+          /* `Class<args>::static_method(args)` — static call on a class-template
+             instantiation. Instantiate the class (so its cloned methods get the
+             concrete mangled tag), then build a call to `<concrete_tag>__method`. */
+          ctmpl *ct = find_ctmpl($1);
+          const char *cls_tag = $1;
+          if (ct) {
+              type *inst = instantiate_ctmpl_mixed(ct, $3.targs, $3.vals, $3.isval, $3.n);
+              if (inst && inst->tag) cls_tag = inst->tag;
+          }
+          char *mname = mangle_method(cls_tag, $6);
+          $$ = ast_call(ast_ident(mname, yylineno), $8.arr, $8.n, yylineno);
+          free($1); free($6);
+      }
+    | IDENT TOK_SCOPE TYPEDEF_NAME '<' ct_mixed_arg_list '>' TOK_SCOPE IDENT '(' argument_list ')' {
+          /* `N::Class<args>::static_method(args)` — namespace transparent. */
+          free($1);
+          ctmpl *ct = find_ctmpl($3);
+          const char *cls_tag = $3;
+          if (ct) {
+              type *inst = instantiate_ctmpl_mixed(ct, $5.targs, $5.vals, $5.isval, $5.n);
+              if (inst && inst->tag) cls_tag = inst->tag;
+          }
+          char *mname = mangle_method(cls_tag, $8);
+          $$ = ast_call(ast_ident(mname, yylineno), $10.arr, $10.n, yylineno);
+          free($3); free($8);
       }
     | KW_GENERIC '(' assignment_expr ',' generic_assoc_list ')' {
           $$ = ast_generic($3, $5.ts, $5.es, $5.n, yylineno);

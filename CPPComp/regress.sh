@@ -61,6 +61,14 @@ DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NBMANT=$CFG_NBMANT -DCFG_NBEXPO=$CFG_NBEXPO
 : "${VERILATOR:=verilator_bin.exe}"
 : "${VERILATOR_ROOT:=C:/packs/msys64/mingw64/share/verilator}"
 export VERILATOR_ROOT
+# Verilator-generated Makefile invokes `python3 verilator_includer C:/...`.
+# msys2 ships TWO python3 binaries: usr/bin/python3 (cygwin, path "/c/...")
+# and mingw64/bin/python3 (win32, path "C:/..."). With usr/bin first on PATH
+# (msys default), python3 rejects the Windows-style argument as "no such
+# file". Prepending mingw64/bin makes python3 resolve to the win32 build
+# that does understand `C:/...`. This is the fix that finally lets the
+# heavy Verilator-driven tests build on Windows.
+export PATH="C:/packs/msys64/mingw64/bin:$PATH"
 SIMMAIN="$CPP/Verilator/sim_main.cpp"
 
 CPPPP="$BIN/cpppp.exe"
@@ -180,7 +188,13 @@ for entry in "$CPP"/examples/test*.cpp "$CPP"/examples/test*/; do
                 "$HDL/addr_dec.v" "$HDL/instr_dec.v" >/dev/null 2>&1; then
             echo "FAIL ($base): verilator"; fail=$((fail+1)); failed+=("$base"); continue
         fi
-        "$tmp/vl/sim_$prname" "$infile" "$out" 200000000 "$exp" >/dev/null 2>&1
+        # cycle budget: optional .clocks sidecar next to the .in file lets
+        # per-test heavy programs (e.g. blind_deconvolve) override the default.
+        # Without a sidecar, 200M is enough for the FISTA-scale tests.
+        clocks_file="${infile%.in}.clocks"
+        clocks=200000000
+        [ -f "$clocks_file" ] && clocks=$(cat "$clocks_file" | tr -d '[:space:]')
+        "$tmp/vl/sim_$prname" "$infile" "$out" "$clocks" "$exp" >/dev/null 2>&1
     else
         if ! "$IVERILOG" -s "${prname}_tb" -o "$tmp/$prname.vvp" \
                 "$tb" "$uproc.v" \
