@@ -58,6 +58,7 @@ struct strct_field {
     int          is_bitfield;// 1 = packed bitfield
     int          bit_pos;    // start bit within the word (bitfields only)
     int          bit_width;  // width in bits (bitfields only)
+    void        *dinit;      // default member initializer (expr*); NULL when none
     strct_field *next;
 };
 

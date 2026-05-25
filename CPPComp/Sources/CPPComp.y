@@ -194,6 +194,33 @@ static stmt *make_range_for(type *vt, char *var, char *container, stmt *body, in
     return f;
 }
 
+// For each field with a default member initializer that the ctor's member-init
+// list does NOT already cover, append a synthesized `field = dinit;` statement
+// to g_ctor_inits. Called from each ctor finalization (in-class and out-of-class)
+// after ctor_init_opt populated g_ctor_inits and before it gets prepended to
+// the body. Scalar inits land here; aggregate `= {}` defaults are dropped during
+// parsing for now (see [[cppcomp-blind-port]]).
+static void inject_default_member_inits(type *cls)
+{
+    if (!cls || cls->kind != TY_STRUCT) return;
+    for (strct_field *f = cls->fields; f; f = f->next) {
+        if (!f->dinit) continue;
+        int already = 0;
+        for (int i = 0; i < g_n_ctor_inits; i++) {
+            stmt *s = g_ctor_inits[i];
+            if (s->kind == S_EXPR && s->e1 && s->e1->kind == E_ASSIGN &&
+                s->e1->a && s->e1->a->kind == E_IDENT &&
+                strcmp(s->e1->a->sval, f->name) == 0) {
+                already = 1; break;
+            }
+        }
+        if (already) continue;
+        stmt *s = ast_stmt(S_EXPR, yylineno);
+        s->e1 = ast_assign(ast_ident(strdup(f->name), yylineno), (expr*)f->dinit, yylineno);
+        if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
+    }
+}
+
 // a copy constructor is a ctor taking exactly one parameter that is a reference
 // to its own class -> mangle it distinctly as "copyctor" (so it can coexist
 // with a regular "ctor"); otherwise it's the normal "ctor".
@@ -524,6 +551,15 @@ static int const_eval(expr *e, long *out)
     case E_IDENT: {
         sym *s = st_find(e->sval);
         if (s && s->kind == SK_ENUM_CONST) { *out = s->enum_val; return 1; }
+        /* class-qualified fallback: inside a class body, a bare identifier
+           may refer to a `static const`/`static constexpr` member that was
+           registered under its mangled name `Class__name`. */
+        if (cur_class && cur_class->tag) {
+            char *mname = mangle_method(cur_class->tag, e->sval);
+            s = st_find(mname);
+            free(mname);
+            if (s && s->kind == SK_ENUM_CONST) { *out = s->enum_val; return 1; }
+        }
         return 0;
     }
     case E_UNOP:
@@ -951,6 +987,8 @@ member:
     | ctor_decl
     | dtor_def
     | static_member
+    | struct_specifier ';'   /* nested struct/class type declaration */
+    | enum_specifier ';'     /* nested enum / enum class declaration */
     ;
 
 /* in-class method declaration: prototype only, body provided out-of-class. */
@@ -959,6 +997,10 @@ method_decl:
           { register_method_decl($1, $2, $4.head, $4.n); free($2); }
     | base_type '*' IDENT '(' param_list ')' fn_quals ';'
           { register_method_decl(t_ptr($1), $3, $5.head, $5.n); free($3); }
+    | base_type '&' IDENT '(' param_list ')' fn_quals ';'
+          { register_method_decl(t_ref($1), $3, $5.head, $5.n); free($3); }
+    | KW_CONST base_type '&' IDENT '(' param_list ')' fn_quals ';'
+          { register_method_decl(t_ref($2), $4, $6.head, $6.n); free($4); }
     | KW_VIRTUAL base_type IDENT '(' param_list ')' fn_quals ';'
           { add_vmethod(cur_class, $3); register_method_decl($2, $3, $5.head, $5.n); free($3); }
     | KW_VIRTUAL base_type '*' IDENT '(' param_list ')' fn_quals ';'
@@ -990,8 +1032,16 @@ static_member:
           unit_add_global(d); add_static(cur_class, $4); free($4);
       }
     | KW_STATIC KW_CONST base_type IDENT '=' assignment_expr ';' {
-          decl *d = ast_decl($3, mangle_method(cur_class->tag, $4), $6, yylineno);
-          unit_add_global(d); add_static(cur_class, $4); free($4);
+          char *mname = mangle_method(cur_class->tag, $4);
+          decl *d = ast_decl($3, mname, $6, yylineno);
+          unit_add_global(d); add_static(cur_class, $4);
+          /* if the init folds to an int constant, also publish it as an enum
+             constant under the MANGLED name so const_eval (template args /
+             array sizes) can fold qualified `Class::X` AND, via cur_class
+             fallback, the bare `X` from inside the class body. */
+          long v;
+          if (const_eval($6, &v)) st_add_enum(mname, v);
+          free($4);
       }
     ;
 
@@ -1003,6 +1053,7 @@ ctor_def:
       compound_stmt
           {
               stmt *body = $8;
+              inject_default_member_inits(cur_class);   // DMI fields not in member-init list
               if (g_n_ctor_inits > 0 && body) {     // prepend `member = expr;` stmts
                   int total = g_n_ctor_inits + body->n_items;
                   stmt **arr = malloc(sizeof(stmt*) * total);
@@ -1075,6 +1126,17 @@ method_def:
           { method_enter(t_ptr($1), $3, $5.head, $5.n); }
       compound_stmt
           { method_finish(t_ptr($1), $3, $9); free($3); }
+    /* reference-return method: `T& name(params) { body }` and `const T& name(params) ...`.
+       The leading `const` is cosmetic on this target (same convention as fn_quals KW_CONST
+       and `KW_CONST param_declarator`). The return type becomes t_ref(T). */
+    | base_type '&' IDENT '(' param_list ')' fn_quals
+          { method_enter(t_ref($1), $3, $5.head, $5.n); }
+      compound_stmt
+          { method_finish(t_ref($1), $3, $9); free($3); }
+    | KW_CONST base_type '&' IDENT '(' param_list ')' fn_quals
+          { method_enter(t_ref($2), $4, $6.head, $6.n); }
+      compound_stmt
+          { method_finish(t_ref($2), $4, $10); free($4); }
     | KW_VIRTUAL base_type IDENT '(' param_list ')' fn_quals
           { add_vmethod(cur_class, $3); method_enter($2, $3, $5.head, $5.n); }
       compound_stmt
@@ -1166,6 +1228,7 @@ field_list:
 
 field_decl:
       base_type field_declarator_list ';'
+    | KW_CONST base_type field_declarator_list ';'   /* `const T x;` — const is cosmetic on this target */
     ;
 
 field_declarator_list:
@@ -1178,6 +1241,29 @@ field_declarator_list:
 field_declarator:
       IDENT {
           t_struct_add_field(cur_struct, $1, cur_base);
+          free($1);
+      }
+    | IDENT '=' assignment_expr {
+          /* default member initializer `T name = expr;` (C++11). The init is
+             attached to the field and replayed in every ctor body that doesn't
+             already write `name` via its member-init list. */
+          t_struct_add_field(cur_struct, $1, cur_base);
+          strct_field *f = t_struct_find(cur_struct, $1);
+          if (f) f->dinit = $3;
+          free($1);
+      }
+    | IDENT '=' '{' '}' {
+          /* default member initializer `T name = {};` — zero/value-init. For
+             scalar T we synthesize a zero literal as dinit; for array/struct
+             fields we leave dinit NULL (parse-and-drop, relying on the YANC
+             zero-init of static storage; heap allocations will see garbage). */
+          t_struct_add_field(cur_struct, $1, cur_base);
+          strct_field *f = t_struct_find(cur_struct, $1);
+          if (f && cur_base) {
+              if (cur_base->kind == TY_INT)        f->dinit = ast_int_lit(0, yylineno);
+              else if (cur_base->kind == TY_FLOAT) f->dinit = ast_float_lit(0.0f, yylineno);
+              /* arrays/structs/ptrs left NULL for now; see [[cppcomp-blind-port]] */
+          }
           free($1);
       }
     | IDENT '[' conditional_expr ']' {
@@ -1336,6 +1422,17 @@ init_declarator:
              function-definition rules instead. */
           decl *d = make_decl($<typ>4, $1, $2, NULL, 0, yylineno, NULL);
           d->ctor_args = $5.arr; d->n_ctor_args = $5.n;
+          $$ = d;
+      }
+    | pointers IDENT '{' '}' {
+          /* direct list-init `T v{};` — empty brace, value-init (zero fields) */
+          $$ = make_decl(cur_base, $1, $2, NULL, 0, yylineno, NULL);
+      }
+    | pointers IDENT '{' init_item_list '}' {
+          /* direct list-init `T v{a, b, ...};` — aggregate init without `=`,
+             same semantics as `T v = {a, b, ...}` (line 1446 below). */
+          decl *d = make_decl(cur_base, $1, $2, NULL, 0, yylineno, NULL);
+          d->binit = $4;
           $$ = d;
       }
     | pointers IDENT array_suffix {
@@ -1511,6 +1608,22 @@ function_def:
           cur_class = NULL;
           free($3); free($5);
       }
+    /* out-of-class reference-return method: `Ret& Class::method(...) { body }` and
+       `const Ret& Class::method(...) { body }`. decl_specifiers already absorbs a leading
+       `const`. The `&` between return-type and class becomes t_ref on the return. */
+    | decl_specifiers pointers '&' TYPEDEF_NAME TOK_SCOPE IDENT '(' param_list ')' fn_quals {
+          sym *cs = st_find_tag($4);
+          if (!cs || !cs->struct_t)
+              msg_error(yylineno, "out-of-class definition for unknown class '%s'", $4);
+          cur_class = cs->struct_t;
+          replay_method_defaults($4, $6, $8.head);
+          method_enter(t_ref(apply_pointers($1, $2)), $6, $8.head, $8.n);
+      }
+      compound_stmt {
+          method_finish(t_ref(apply_pointers($1, $2)), $6, $12);
+          cur_class = NULL;
+          free($4); free($6);
+      }
     /* out-of-class constructor: `Class::Class(params) fn_quals : inits { body }`.
        Both names lex as TYPEDEF_NAME; we require they match. */
     | TYPEDEF_NAME TOK_SCOPE TYPEDEF_NAME '(' param_list ')' fn_quals {
@@ -1529,6 +1642,7 @@ function_def:
       }
       compound_stmt {
           stmt *body = $11;
+          inject_default_member_inits(cur_class);   /* DMI fields not in member-init list */
           if (g_n_ctor_inits > 0 && body) {     /* prepend `member = expr;` stmts */
               int total = g_n_ctor_inits + body->n_items;
               stmt **arr = malloc(sizeof(stmt*) * total);
