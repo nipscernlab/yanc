@@ -110,6 +110,39 @@ static const char *op_arity_name(const char *name, int nuser_params)
     return name;
 }
 
+// register an in-class method declaration (prototype only, no body). Mirrors
+// the free-function prototype path: stashes param types AND default-arg
+// expressions on the sym so a later out-of-class definition can replay them.
+// Does NOT mark the sym defined and does NOT emit a func.
+static void register_method_decl(type *ret, const char *name, decl *params, int nparams)
+{
+    char *mname = mangle_method(cur_class->tag, name);
+    sym *s = st_find(mname);
+    if (!s) s = st_add(SK_FUNC, mname, mname, ret);
+    s->n_params = nparams + 1;
+    s->param_types = malloc(sizeof(type*) * s->n_params);
+    s->param_types[0] = t_ptr(cur_class);
+    { int i = 1; for (decl *p = params; p; p = p->next, i++) s->param_types[i] = p->dtype; }
+    s->param_defaults = malloc(sizeof(expr*) * s->n_params);
+    s->param_defaults[0] = NULL;   /* `this` has no default */
+    { int i = 1; for (decl *p = params; p; p = p->next, i++) s->param_defaults[i] = p->init; }
+}
+
+// replay default args recorded by a prior in-class declaration onto the
+// out-of-class definition's params (which by C++ rules cannot repeat them).
+// Index 0 in s->param_defaults is the implicit `this`; user params start at 1.
+static void replay_method_defaults(const char *cls_tag, const char *name, decl *params)
+{
+    char *mname = mangle_method(cls_tag, name);
+    sym *s = st_find(mname);
+    free(mname);
+    if (!s || !s->param_defaults) return;
+    decl *p = params; int i = 1;
+    for (; p && i < s->n_params; p = p->next, i++) {
+        if (!p->init && s->param_defaults[i]) p->init = s->param_defaults[i];
+    }
+}
+
 // open a method's scope: register the mangled symbol, inject `this` as param 0,
 // stage the declared params. Called from method_def's mid-rule action.
 static void method_enter(type *ret, const char *name, decl *params, int nparams)
@@ -913,9 +946,29 @@ member:
       access_label
     | field_decl
     | method_def
+    | method_decl
     | ctor_def
+    | ctor_decl
     | dtor_def
     | static_member
+    ;
+
+/* in-class method declaration: prototype only, body provided out-of-class. */
+method_decl:
+      base_type IDENT '(' param_list ')' fn_quals ';'
+          { register_method_decl($1, $2, $4.head, $4.n); free($2); }
+    | base_type '*' IDENT '(' param_list ')' fn_quals ';'
+          { register_method_decl(t_ptr($1), $3, $5.head, $5.n); free($3); }
+    | KW_VIRTUAL base_type IDENT '(' param_list ')' fn_quals ';'
+          { add_vmethod(cur_class, $3); register_method_decl($2, $3, $5.head, $5.n); free($3); }
+    | KW_VIRTUAL base_type '*' IDENT '(' param_list ')' fn_quals ';'
+          { add_vmethod(cur_class, $4); register_method_decl(t_ptr($2), $4, $6.head, $6.n); free($4); }
+    ;
+
+/* in-class ctor declaration: prototype only, body provided out-of-class. */
+ctor_decl:
+      TYPEDEF_NAME '(' param_list ')' fn_quals ';'
+          { register_method_decl(t_void(), ctor_kind($3.head), $3.head, $3.n); free($1); }
     ;
 
 /* static data member: a single shared global `Class__name` (not a per-object
@@ -1440,6 +1493,52 @@ function_def:
           st_pop_scope();
           st_leave_func();
           params_reset();
+      }
+    /* out-of-class regular method definition: `Ret Class::method(params) fn_quals { body }`.
+       The class must already exist (its body declared the prototype). Defaults from the
+       in-class declaration replay onto these params; the body sees `this` and member fields
+       via method_enter / method_finish's existing cur_class wiring. */
+    | decl_specifiers pointers TYPEDEF_NAME TOK_SCOPE IDENT '(' param_list ')' fn_quals {
+          sym *cs = st_find_tag($3);
+          if (!cs || !cs->struct_t)
+              msg_error(yylineno, "out-of-class definition for unknown class '%s'", $3);
+          cur_class = cs->struct_t;
+          replay_method_defaults($3, $5, $7.head);
+          method_enter(apply_pointers($1, $2), $5, $7.head, $7.n);
+      }
+      compound_stmt {
+          method_finish(apply_pointers($1, $2), $5, $11);
+          cur_class = NULL;
+          free($3); free($5);
+      }
+    /* out-of-class constructor: `Class::Class(params) fn_quals : inits { body }`.
+       Both names lex as TYPEDEF_NAME; we require they match. */
+    | TYPEDEF_NAME TOK_SCOPE TYPEDEF_NAME '(' param_list ')' fn_quals {
+          if (strcmp($1, $3) != 0)
+              msg_error(yylineno, "qualified id '%s::%s' is not a constructor", $1, $3);
+          sym *cs = st_find_tag($1);
+          if (!cs || !cs->struct_t)
+              msg_error(yylineno, "out-of-class ctor for unknown class '%s'", $1);
+          cur_class = cs->struct_t;
+          g_n_ctor_inits = 0;
+      }
+      ctor_init_opt {
+          const char *kind = ctor_kind($5.head);
+          replay_method_defaults($1, kind, $5.head);
+          method_enter(t_void(), kind, $5.head, $5.n);
+      }
+      compound_stmt {
+          stmt *body = $11;
+          if (g_n_ctor_inits > 0 && body) {     /* prepend `member = expr;` stmts */
+              int total = g_n_ctor_inits + body->n_items;
+              stmt **arr = malloc(sizeof(stmt*) * total);
+              for (int i = 0; i < g_n_ctor_inits; i++) arr[i] = g_ctor_inits[i];
+              for (int j = 0; j < body->n_items; j++) arr[g_n_ctor_inits + j] = body->items[j];
+              body->items = arr; body->n_items = total;
+          }
+          method_finish(t_void(), ctor_kind($5.head), body);
+          cur_class = NULL;
+          free($1); free($3);
       }
     ;
 
