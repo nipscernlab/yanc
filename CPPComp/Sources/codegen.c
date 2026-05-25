@@ -1076,6 +1076,10 @@ static void gen_expr(expr *e)
         if (mf) {                              // unqualified data member -> this->member
             gen_load_this();
             if (mf->offset > 0) emit("ADD %d", mf->offset);
+            // array/struct fields decay to their base address (the field IS
+            // the storage, not a pointer to it). LDA only for scalar fields.
+            if (mf->ftype && (mf->ftype->kind == TY_ARRAY || mf->ftype->kind == TY_STRUCT))
+                return;
             emit("LDA");
             return;
         }

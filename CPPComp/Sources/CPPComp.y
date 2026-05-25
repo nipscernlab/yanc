@@ -334,6 +334,52 @@ static char ct_type_code(type *t)
     return 'i';
 }
 
+// instantiate `Name<args...>` where each arg is either a type (targs[k] != NULL,
+// isval[k] == 0) or a non-type value (vals[k], isval[k] == 1). Subsumes the
+// pure-type and pure-value paths: subst_tparam_type substitutes the type-param
+// placeholders first, then subst_field_type rewrites the value-sentinels in
+// array sizes. The two passes are orthogonal on the proto's field types.
+static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *isval, int n)
+{
+    char suffix[64]; int p = 0;
+    p += snprintf(suffix + p, sizeof(suffix) - p, "_T");
+    for (int i = 0; i < n && p < (int)sizeof(suffix) - 16; i++) {
+        if (isval[i]) p += snprintf(suffix + p, sizeof(suffix) - p, "%s%d", i ? "_" : "", vals[i]);
+        else          suffix[p++] = ct_type_code(targs[i]);
+    }
+    suffix[p] = 0;
+    char tag[128]; snprintf(tag, sizeof(tag), "%s%s", ct->name, suffix);
+
+    sym *ex = st_find(tag);
+    if (ex && ex->kind == SK_TYPEDEF) return ex->stype;   // already instantiated
+
+    type *c = t_make_struct(xstrdup(tag));
+    c->base_class = ct->proto->base_class;
+    c->n_vtbl = ct->proto->n_vtbl;
+    if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
+                     for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
+    for (strct_field *f = ct->proto->fields; f; f = f->next) {
+        type *ft = f->ftype;
+        ft = subst_tparam_type(ft, targs, n);   // type-param placeholders -> concrete types
+        ft = subst_field_type (ft, vals,  n);   // NTP_BASE sentinels in arr_size -> concrete ints
+        t_struct_add_field(c, f->name, ft);
+    }
+    t_struct_seal(c, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+    st_add_tag(xstrdup(tag), c);
+    st_add_typedef(xstrdup(tag), c);
+
+    ctinst *ins = calloc(1, sizeof(ctinst));
+    ins->tmpl = ct; ins->concrete = c; ins->suffix = xstrdup(suffix);
+    ins->nvals  = n; ins->ntargs = n;          // total parameter count; isval[] distinguishes
+    for (int i = 0; i < n && i < 8; i++) {
+        ins->vals[i]  = isval[i] ? vals[i]  : 0;
+        ins->targs[i] = isval[i] ? NULL     : targs[i];
+    }
+    g_unit->ctinsts = realloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
+    g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
+    return c;
+}
+
 // instantiate `Name<types...>` to a concrete class type: substitute the type
 // parameters into the proto's field types and record a codegen request so the
 // template's methods get cloned with the same bindings.
@@ -516,6 +562,9 @@ static void check_static_assert(expr *cond, const char *msg, int line)
     struct { decl  *head; int n; } dlist;
     struct { int dims[8]; int n; } dimlist;
     struct { type **arr; int n; } talist;
+    /* mixed template-arg list: each slot is either a type (targs[k] != NULL,
+       isval[k] == 0) or a value (targs[k] == NULL, vals[k] = const, isval[k]==1). */
+    struct { type *targs[8]; int vals[8]; int isval[8]; int n; } mxlist;
 }
 
 %token <ival>  INT_LIT CHAR_LIT
@@ -557,6 +606,7 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 %type <dcl>   init_declarator param_declarator
 %type <dimlist> array_suffix ct_arg_list
 %type <talist>  type_arg_list
+%type <mxlist>  ct_mixed_arg ct_mixed_arg_list
 %type <elist> argument_list non_empty_argument_list
 %type <opkind> assign_op
 
@@ -699,26 +749,21 @@ type_specifier:
           $$ = s->stype;
           free($1);
       }
-    | TYPEDEF_NAME '<' ct_arg_list '>'       {
-          /* class-template instantiation `Name<vals...>` (non-type arguments) */
+    | TYPEDEF_NAME '<' ct_mixed_arg_list '>' {
+          /* class-template instantiation `Name<args...>` where each arg can be
+             a type or a non-type value (the ctmpl's isval[] dictates which slot
+             expects which; mismatches are caught by the substitution step). */
           ctmpl *ct = find_ctmpl($1);
           if (!ct) { msg_error(yylineno, "'%s' is not a class template", $1); $$ = t_int(); }
-          else     { $$ = instantiate_ctmpl(ct, $3.dims, $3.n); }
+          else     { $$ = instantiate_ctmpl_mixed(ct, $3.targs, $3.vals, $3.isval, $3.n); }
           free($1);
       }
-    | TYPEDEF_NAME '<' type_arg_list '>'     {
-          /* class-template instantiation `Name<types...>` (type arguments) */
-          ctmpl *ct = find_ctmpl($1);
-          if (!ct) { msg_error(yylineno, "'%s' is not a class template", $1); $$ = t_int(); }
-          else     { $$ = instantiate_ctmpl_t(ct, $3.arr, $3.n); }
-          free($1);
-      }
-    | IDENT TOK_SCOPE TYPEDEF_NAME '<' type_arg_list '>' {
-          /* namespace-qualified class-template instantiation `N::Name<types...>` */
+    | IDENT TOK_SCOPE TYPEDEF_NAME '<' ct_mixed_arg_list '>' {
+          /* namespace-qualified mixed-arg instantiation `N::Name<args...>` */
           free($1);
           ctmpl *ct = find_ctmpl($3);
           if (!ct) { msg_error(yylineno, "'%s' is not a class template", $3); $$ = t_int(); }
-          else     { $$ = instantiate_ctmpl_t(ct, $5.arr, $5.n); }
+          else     { $$ = instantiate_ctmpl_mixed(ct, $5.targs, $5.vals, $5.isval, $5.n); }
           free($3);
       }
     | IDENT TOK_SCOPE TYPEDEF_NAME           {
@@ -1167,6 +1212,39 @@ ct_arg_list:
     | ct_arg_list ',' shift_expr {
           long v; if (!const_eval($3, &v)) msg_error(yylineno, "template argument must be a constant");
           $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)v;
+      }
+    ;
+
+/* MIXED class-template arguments `<T, N>` / `<T>` / `<N>`. Each entry is either
+   a type or a constant int. Used by `Name<args>` to drive instantiate_ctmpl_mixed.
+   shift_expr (not relational_expr) keeps the closing '>' from being eaten as
+   the greater-than operator. */
+ct_mixed_arg:
+      base_type pointers {
+          $$.n = 1;
+          $$.targs[0] = apply_pointers($1, $2);
+          $$.vals[0]  = 0;
+          $$.isval[0] = 0;
+      }
+    | shift_expr {
+          long v;
+          if (!const_eval($1, &v)) msg_error(yylineno, "template argument must be a constant");
+          $$.n = 1;
+          $$.targs[0] = NULL;
+          $$.vals[0]  = (int)v;
+          $$.isval[0] = 1;
+      }
+    ;
+ct_mixed_arg_list:
+      ct_mixed_arg                            { $$ = $1; }
+    | ct_mixed_arg_list ',' ct_mixed_arg      {
+          $$ = $1;
+          if ($$.n < 8) {
+              $$.targs[$$.n] = $3.targs[0];
+              $$.vals [$$.n] = $3.vals [0];
+              $$.isval[$$.n] = $3.isval[0];
+              $$.n++;
+          }
       }
     ;
 
