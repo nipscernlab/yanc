@@ -11,7 +11,9 @@
 //      ends the simulation the cycle that pin goes high (after capturing any
 //      output that posed in the same cycle).
 //   2. otherwise, runs until `expected` outputs are captured plus a short drain.
-//   3. otherwise, after 500k idle cycles with no output (heuristic).
+//   3. otherwise, after IDLE_THRESHOLD cycles with no output (heuristic;
+//      scales with max_cycles so heavy computations between out() calls
+//      don't get mistaken for a finished program).
 //   4. otherwise, the cycle cap.
 // Used by regress.sh for tests too heavy for iverilog (e.g. the FISTA port).
 //
@@ -34,7 +36,10 @@ bool read_cheguei(T*, ...) { return false; }
 int main(int argc, char** argv) {
     const char* in_path  = argc > 1 ? argv[1] : nullptr;
     const char* out_path = argc > 2 ? argv[2] : "output_0.txt";
-    long max_cycles      = argc > 3 ? atol(argv[3]) : 200000000L;
+    // Use long long throughout: on Windows MSVC/MinGW `long` is 32-bit, so a
+    // budget > 2.1G overflows and the simulation exits with no output. Cycle
+    // budgets in the tens of G are now common (FISTA over a 1000-sample window).
+    long long max_cycles = argc > 3 ? atoll(argv[3]) : 200000000LL;
     int  expected        = argc > 4 ? atoi(argv[4]) : -1;
 
     std::vector<int> inputs;
@@ -50,10 +55,10 @@ int main(int argc, char** argv) {
     int  in_reg = 0;        // mirrors the bench `in_0` register (starts at 0)
     size_t idx  = 0;        // next unread input value
     std::vector<int> outputs;
-    long drain = -1;        // cycles left to run after reaching `expected`
-    long idle  = 0;         // cycles since the last output (program-finished detector)
+    long long drain = -1;        // cycles left to run after reaching `expected`
+    long long idle  = 0;         // cycles since the last output (program-finished detector)
 
-    for (long cyc = 0; cyc < max_cycles; ++cyc) {
+    for (long long cyc = 0; cyc < max_cycles; ++cyc) {
         if (cyc == 1) top->rst = 0;   // release reset after the first cycle (rst high ~10ns)
 
         // ---- negedge clk ----
@@ -84,7 +89,13 @@ int main(int argc, char** argv) {
         if (read_cheguei(top, 0)) break;
 
         if (drain > 0) { if (--drain == 0) break; }
-        if (idle > 500000) break;     // no more output: the program has finished
+        // idle threshold: scale with the cycle budget so heavy compute between
+        // out() calls (e.g. quickselect/FISTA over a 1000-sample window can take
+        // ~1G cycles) is not misread as "program finished". Floor at 500k for
+        // backward compat with the original short tests.
+        long long idle_threshold = max_cycles / 10;
+        if (idle_threshold < 500000LL) idle_threshold = 500000LL;
+        if (idle > idle_threshold) break;     // no more output: the program has finished
     }
 
     FILE* of = fopen(out_path, "w");

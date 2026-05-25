@@ -28,6 +28,7 @@
 #include "iter_mad.cpp"
 #include "inverse_fir.cpp"
 #include "dsp_kernels.cpp"
+#include "constants.cpp"
 
 static const float GAIN_IN  = 20000.0f;     // max|y| in [7000,8000) ~ 143 -> 2.9M < 2^22
 static const float GAIN_OUT = 1000000.0f;   // emit floats * 1e6 as ints
@@ -43,8 +44,14 @@ void main(void) {
         y_window[i] = (float)b / GAIN_IN;          // (float)b first then divide -- avoid the (float)in() codegen bug
     }
 
-    // Sentinel: input loop done; blind_deconvolve about to start.
+    // Sentinel: input loop done; iter_mad probe next.
     out(0, 7777);
+
+    // Probe iter_mad alone first (it's what blind_deconvolve calls first).
+    MadResult mad = iter_mad(y_window, WINDOW_LEN, scratch);
+    out(0, 1111);                              // iter_mad returned
+    out(0, (int)(mad.mu    * 1000.0f));
+    out(0, (int)(mad.sigma * 1000.0f));
 
     blind_deconvolve(y_window, result, scratch);
 
