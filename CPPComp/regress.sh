@@ -109,8 +109,27 @@ mkdir -p "$WORK" "$GOLDEN"
 pass=0; fail=0; failed=()
 
 shopt -s nullglob
-for src in "$CPP"/examples/test*.cpp; do
-    base="$(basename "$src" .cpp)"
+# Two test layouts coexist:
+#   examples/testN.cpp       - single-file test (most cases)
+#   examples/testN/testN.cpp - folder layout for multi-file tests; the entry is
+#                              testN/testN.cpp and the directory itself is on
+#                              the cpppp include path so the entry can `#include
+#                              "..."` its companion .hpp/.cpp files (amalgamation
+#                              into one translation unit; there is no linker).
+for entry in "$CPP"/examples/test*.cpp "$CPP"/examples/test*/; do
+    if [ -d "$entry" ]; then
+        base="$(basename "$entry")"
+        src="${entry%/}/$base.cpp"
+        if [ ! -f "$src" ]; then
+            echo "FAIL ($base): folder layout needs $base/$base.cpp as entry"
+            fail=$((fail+1)); failed+=("$base"); continue
+        fi
+        local_inc=("-I" "${entry%/}")
+    else
+        base="$(basename "$entry" .cpp)"
+        src="$entry"
+        local_inc=()
+    fi
 
     prname="$(grep -oE '#pragma[ \t]+yanc[ \t]+prname[ \t]+[A-Za-z0-9_]+' "$src" | awk '{print $NF}' | head -1)"
     [ -z "$prname" ] && prname="$base"
@@ -122,7 +141,7 @@ for src in "$CPP"/examples/test*.cpp; do
 
     asm="$proc/Software/$prname.asm"
 
-    if ! "$CPPPP" -i "$src" -o "$tmp/pp.cpp" -I "$CPP/include" >/dev/null 2>&1; then
+    if ! "$CPPPP" -i "$src" -o "$tmp/pp.cpp" -I "$CPP/include" "${local_inc[@]}" >/dev/null 2>&1; then
         echo "FAIL ($base): cpppp"; fail=$((fail+1)); failed+=("$base"); continue
     fi
     if ! "$CPPC" -i "$tmp/pp.cpp" -o "$asm" -t "$tmp" >/dev/null 2>&1; then
@@ -142,7 +161,13 @@ for src in "$CPP"/examples/test*.cpp; do
     fi
 
     out="$proc/Simulation/output_0.txt"
-    infile="$CPP/examples/$base.in"
+    # .in sidecar: examples/<base>.in for single-file tests, or
+    # examples/<base>/<base>.in for folder-layout tests.
+    if [ -d "$entry" ]; then
+        infile="${entry%/}/$base.in"
+    else
+        infile="$CPP/examples/$base.in"
+    fi
     if [ -f "$infile" ]; then
         # heavy / input-driven test: simulate with Verilator (iverilog too slow).
         gold="$GOLDEN/$base.txt"
