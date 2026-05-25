@@ -38,6 +38,7 @@ typedef struct sym {
     // function metadata
     int       n_params;
     type    **param_types;
+    expr    **param_defaults;   // declaration-site default-arg expressions; NULL when none
     int       defined;
 
     struct sym *next;

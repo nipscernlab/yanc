@@ -1336,14 +1336,21 @@ init_declarator:
           $$ = d;
       }
     | pointers IDENT '(' param_list ')' {
-          /* function declaration (prototype) — register, attach signature */
+          /* function declaration (prototype) — register, attach signature.
+             Default-arg expressions from the prototype are stashed on the
+             sym so the matching definition (which won't repeat them) can
+             pick them up. */
           type *ret = apply_pointers(cur_base, $1);
           sym *s = st_add(SK_FUNC, $2, $2, ret);
           s->n_params = $4.n;
           if ($4.n > 0) {
-              s->param_types = malloc(sizeof(type*) * $4.n);
+              s->param_types    = malloc(sizeof(type*) * $4.n);
+              s->param_defaults = malloc(sizeof(expr*) * $4.n);
               int i = 0;
-              for (decl *p = $4.head; p; p = p->next, i++) s->param_types[i] = p->dtype;
+              for (decl *p = $4.head; p; p = p->next, i++) {
+                  s->param_types[i]    = p->dtype;
+                  s->param_defaults[i] = p->init;
+              }
           }
           $$ = ast_decl(ret, $2, NULL, yylineno); /* placeholder; not registered as global var */
       }
@@ -1400,6 +1407,13 @@ function_def:
                   s->param_types = malloc(sizeof(type*) * $5.n);
                   int i = 0;
                   for (decl *p = $5.head; p; p = p->next, i++) s->param_types[i] = p->dtype;
+              }
+          } else if (s->param_defaults && $5.n == s->n_params) {
+              /* a prior prototype recorded default args — replay them onto the
+                 definition's params so call-site resolve_overload sees defaults. */
+              decl *p = $5.head; int i = 0;
+              for (; p && i < s->n_params; p = p->next, i++) {
+                  if (!p->init && s->param_defaults[i]) p->init = s->param_defaults[i];
               }
           }
           s->defined = 1;
