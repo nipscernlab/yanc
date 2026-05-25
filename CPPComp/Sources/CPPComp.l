@@ -210,11 +210,18 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "static"                 { return KW_STATIC;   }
 "extern"                 { return KW_EXTERN;   }
 "const"                  { return KW_CONST;    }
+"constexpr"              { return KW_CONST;    }  /* treat as const: int globals
+                                                     get the existing constant
+                                                     folding, float consts behave
+                                                     as runtime-initialised const */
 "inline"                 { /* ignored — every fn is potentially inlined */ }
 "__inline"               { /* ignored */ }
 "__inline__"             { /* ignored */ }
 "register"               { /* ignored */ }
 "volatile"               { /* ignored — relevant only for INN/OUT, which are explicit */ }
+"noexcept"               { /* ignored — no exceptions on this target; only the
+                              function-specifier form is recognised (noexcept(expr)
+                              would leave a dangling paren expression). */ }
 "__volatile__"           { /* ignored */ }
 "restrict"               { /* ignored — no aliasing model on this target */ }
 "__restrict"             { /* ignored */ }
