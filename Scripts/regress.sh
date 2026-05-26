@@ -447,8 +447,23 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                         sim_fail=1
                     fi
                 done
+
+                # Correctness anchor: a working DTW emits 459908 on its
+                # first DTW output port at @out_en. The byte-equal golden
+                # compare above catches regressions only if someone hasn't
+                # rerun --update; this assertion stays load-bearing even
+                # then, and gives a useful failure message tied to the
+                # algorithm rather than to a blob diff.
+                anchor_file="$proj_tmp/output_dtw_1.txt"
+                anchor_expect="459908"
+                anchor_got=$(tr -d '[:space:]' < "$anchor_file" 2>/dev/null)
+                if [ "$anchor_got" != "$anchor_expect" ]; then
+                    echo "FAIL ($proj): output_dtw_1 expected '$anchor_expect' got '$anchor_got'"
+                    sim_fail=1
+                fi
+
                 if [ $sim_fail -eq 0 ]; then
-                    echo "PASS ($proj)  [sim OK]"
+                    echo "PASS ($proj)  [sim OK, output_dtw_1=$anchor_expect]"
                     pass=$((pass + 1))
                 else
                     fail=$((fail + 1)); failed_names+=("$proj")
