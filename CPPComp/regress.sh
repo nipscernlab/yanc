@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # CPPComp/regress.sh - regression test for the CPPComp C++ compiler pipeline.
 #
-# For every CPPComp/examples/test*.cpp it runs the full toolchain
-#   cpppp -> cppcomp -> appcomp -> asmcomp -> iverilog -> vvp
+# For every CPPComp/Examples/testN/testN.cpp it runs the full toolchain
+#   cpppp -> cppcomp -> appcomp -> asmcomp -> iverilog -> vvp (or Verilator
+#   if testN/testN.in is present)
 # and compares the simulation output against CPPComp/Testes/golden/<name>.txt.
 #
 # Target is fixed: 32-bit word / IEEE-754 single float / sizeof()==1 /
@@ -63,7 +64,7 @@ DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NBMANT=$CFG_NBMANT -DCFG_NBEXPO=$CFG_NBEXPO
 : "${IVERILOG:=/c/nipscern/Aurora/components/Packages/iverilog/bin/iverilog.exe}"
 : "${VVP:=/c/nipscern/Aurora/components/Packages/iverilog/bin/vvp.exe}"
 
-# Verilator is used for tests too heavy for iverilog: any examples/<name>.in
+# Verilator is used for tests too heavy for iverilog: any Examples/<name>/<name>.in
 # sidecar (an input vector) makes that test compile the synthesizable .v with
 # Verilator and drive in()/out() from a small C++ harness instead. Far faster.
 : "${VERILATOR:=verilator_bin.exe}"
@@ -125,27 +126,27 @@ mkdir -p "$WORK" "$GOLDEN"
 pass=0; fail=0; failed=()
 
 shopt -s nullglob
-# Two test layouts coexist:
-#   examples/testN.cpp       - single-file test (most cases)
-#   examples/testN/testN.cpp - folder layout for multi-file tests; the entry is
-#                              testN/testN.cpp and the directory itself is on
-#                              the cpppp include path so the entry can `#include
-#                              "..."` its companion .hpp/.cpp files (amalgamation
-#                              into one translation unit; there is no linker).
-for entry in "$CPP"/examples/test*.cpp "$CPP"/examples/test*/; do
-    if [ -d "$entry" ]; then
-        base="$(basename "$entry")"
-        src="${entry%/}/$base.cpp"
-        if [ ! -f "$src" ]; then
-            echo "FAIL ($base): folder layout needs $base/$base.cpp as entry"
-            fail=$((fail+1)); failed+=("$base"); continue
-        fi
-        local_inc=("-I" "${entry%/}")
-    else
-        base="$(basename "$entry" .cpp)"
-        src="$entry"
-        local_inc=()
+# Every test lives in its own folder:
+#   Examples/testN/testN.cpp           - the entry point (always present)
+#   Examples/testN/<companion>.hpp/cpp - optional, included via "..." from
+#                                         the entry; the test's directory is
+#                                         on the cpppp include path so the
+#                                         amalgamation works (there is no
+#                                         linker).
+#   Examples/testN/testN.in            - optional sidecar: makes regress
+#                                         drive the test with Verilator
+#                                         instead of iverilog.
+#   Examples/testN/testN.clocks        - optional sidecar: overrides the
+#                                         default 200M cycle cap for the
+#                                         Verilator sim.
+for entry in "$CPP"/Examples/test*/; do
+    base="$(basename "$entry")"
+    src="${entry%/}/$base.cpp"
+    if [ ! -f "$src" ]; then
+        echo "FAIL ($base): folder layout needs $base/$base.cpp as entry"
+        fail=$((fail+1)); failed+=("$base"); continue
     fi
+    local_inc=("-I" "${entry%/}")
 
     prname="$(grep -oE '#pragma[ \t]+yanc[ \t]+prname[ \t]+[A-Za-z0-9_]+' "$src" | awk '{print $NF}' | head -1)"
     [ -z "$prname" ] && prname="$base"
@@ -177,13 +178,8 @@ for entry in "$CPP"/examples/test*.cpp "$CPP"/examples/test*/; do
     fi
 
     out="$proc/Simulation/output_0.txt"
-    # .in sidecar: examples/<base>.in for single-file tests, or
-    # examples/<base>/<base>.in for folder-layout tests.
-    if [ -d "$entry" ]; then
-        infile="${entry%/}/$base.in"
-    else
-        infile="$CPP/examples/$base.in"
-    fi
+    # .in sidecar (optional) lives next to the entry in the test's own folder.
+    infile="${entry%/}/$base.in"
     if [ -f "$infile" ]; then
         # heavy / input-driven test: simulate with Verilator (iverilog too slow).
         # The Verilator build chain (verilator -> make -> mingw g++) needs env
