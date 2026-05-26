@@ -71,7 +71,7 @@ mkdir %TESTE_DIR%
 
 :: Copy files into the test directories ---------------------------------------
 
-xcopy Exemplos %USER_DIR% /e /i /q>%TMP_DIR%\xcopy.txt
+xcopy CMMComp\Tests %USER_DIR% /e /i /q>%TMP_DIR%\xcopy.txt
 xcopy HDL %HDL_DIR% /q /y>%TMP_DIR%\xcopy.txt
 xcopy Macros %MAC_DIR% /q /y>%TMP_DIR%\xcopy.txt
 xcopy Scripts %SCR_DIR% /q /y>%TMP_DIR%\xcopy.txt
@@ -122,20 +122,20 @@ move comp2gtkw.exe  %BIN_DIR%>%TMP_DIR%\xcopy.txt
 cd  %BIN_DIR%
 
 (for %%i in (%PROC_LIST%) do (
-    cmmcomp.exe -i %%i.cmm -n %%i -p %PROJ_DIR%\%%i -m %MAC_DIR% -t %TMP_DIR%\%%i --array
+    cmmcomp.exe -i %%i.cmm -n %%i -p %USER_DIR%\%%i -m %MAC_DIR% -t %TMP_DIR%\%%i --array
 ))
 
 :: Run the Assembler pre-processor --------------------------------------------
 
 (for %%i in (%PROC_LIST%) do (
-    appcomp.exe -i %PROJ_DIR%\%%i\Software\%%i.asm -t %TMP_DIR%\%%i
+    appcomp.exe -i %USER_DIR%\%%i\Software\%%i.asm -t %TMP_DIR%\%%i
 ))
 
 :: Run the Assembler compiler -------------------------------------------------
 
 (for %%i in (%PROC_LIST%) do (
-    asmcomp.exe -i %PROJ_DIR%\%%i\Software\%%i.asm -p %PROJ_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0
-    cp %PROJ_DIR%\%%i\Hardware\%%i.v %TMP_DIR%\%%i
+    asmcomp.exe -i %USER_DIR%\%%i\Software\%%i.asm -p %USER_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0
+    cp %USER_DIR%\%%i\Hardware\%%i.v %TMP_DIR%\%%i
 ))
 
 :: Build the testbench with Icarus --------------------------------------------
@@ -157,14 +157,14 @@ for %%a in (%PROC_LIST%) do set "PRO_V=!PRO_V!%TMP_DIR%\%%a\%%a.v "
 
 %IVERILOG% -s %TB% -o %TMP_DIR%\%PROJET%.vvp %HDL_V% %PRO_V% %TOP_V%
 
-for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\%%a_tb.v %PROJ_DIR%\%%a\Simulation>%TMP_DIR%\xcopy.txt
+for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\%%a_tb.v %USER_DIR%\%%a\Simulation>%TMP_DIR%\xcopy.txt
 
 :: Run the testbench with vvp -------------------------------------------------
 
 dir %TOPL_DIR%\*.txt /b > f_list.txt
 for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do copy %TOPL_DIR%\%%a .\>%TMP_DIR%\xcopy.txt
-for %%a in (%PROC_LIST%) do copy %PROJ_DIR%\%%a\Hardware\%%a_inst.mif .\>%TMP_DIR%\xcopy.txt
-for %%a in (%PROC_LIST%) do copy %PROJ_DIR%\%%a\Hardware\%%a_data.mif .\>%TMP_DIR%\xcopy.txt
+for %%a in (%PROC_LIST%) do copy %USER_DIR%\%%a\Hardware\%%a_inst.mif .\>%TMP_DIR%\xcopy.txt
+for %%a in (%PROC_LIST%) do copy %USER_DIR%\%%a\Hardware\%%a_data.mif .\>%TMP_DIR%\xcopy.txt
 for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\pc_%%a_mem.txt .\>%TMP_DIR%\xcopy.txt
 
 endlocal

@@ -3,11 +3,12 @@
 #
 # Runs both compiler pipelines off a shared set of binaries:
 #
-#   1. CMM phase: for every .cmm in Exemplos/ (plus Testes/fixtures/) run
-#      cmmcomp and compare the produced .asm against Testes/golden/<prname>.asm.
-#      For the sim-enabled subset also run appcomp + asmcomp + iverilog +
-#      vvp and compare output_*.txt against Testes/golden_sim/<prname>/.
-#      Plus a project pass for the multi-proc DTW example.
+#   1. CMM phase: for every CMMComp/Tests/<prname>/Software/<prname>.cmm
+#      run cmmcomp and compare the produced .asm against
+#      CMMComp/Tests/<prname>/golden.asm. For the sim-enabled subset also
+#      run appcomp + asmcomp + iverilog + vvp and compare output_*.txt
+#      against CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
+#      the multi-proc DTW example (CMMComp/Tests/DTW/TopLevel/).
 #
 #   2. CPP phase: for every CPPComp/Tests/testN/Software/testN.cpp run
 #      cpppp -> cppcomp -> appcomp -> asmcomp -> iverilog (or Verilator
@@ -24,7 +25,7 @@
 # Usage (from repo root, in msys2/git-bash on Windows):
 #   Scripts/regress.sh                check against goldens (exit 0 = pass)
 #   Scripts/regress.sh --update       regenerate goldens (review diff!)
-#   Scripts/regress.sh --update-size  ratchet down Testes/size_baseline.txt
+#   Scripts/regress.sh --update-size  ratchet down CMMComp/Tests/size_baseline.txt
 #   Scripts/regress.sh --skip-build   reuse binaries already in .smoke/bin
 #   Scripts/regress.sh --no-sim       skip every simulation step
 #   Scripts/regress.sh --cmm-only     skip the CPP phase
@@ -79,8 +80,6 @@ BIN_DIR="$SCRATCH/bin"
 WORK_DIR="$SCRATCH/work"          # CMM phase scratch
 WORK_CPP="$SCRATCH/work_cpp"      # CPP phase scratch
 TMP_DIR="$SCRATCH/tmp"            # CMM phase tmps
-GOLDEN_DIR="$ROOT/Testes/golden"
-GOLDEN_SIM_DIR="$ROOT/Testes/golden_sim"
 
 CMMCOMP="$BIN_DIR/cmmcomp.exe"
 CPPPP="$BIN_DIR/cpppp.exe"
@@ -89,7 +88,8 @@ APPCOMP="$BIN_DIR/appcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
 MACROS="$ROOT/Macros"
 HDL="$ROOT/HDL"
-SIZE_BASELINE_FILE="$ROOT/Testes/size_baseline.txt"
+CMM_ROOT="$ROOT/CMMComp"
+SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"
 
 CPP_ROOT="$ROOT/CPPComp"
 SIMMAIN="$CPP_ROOT/Tests/Verilator/sim_main.cpp"
@@ -208,7 +208,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     set +e
 fi
 
-mkdir -p "$WORK_DIR" "$WORK_CPP" "$TMP_DIR" "$GOLDEN_DIR" "$GOLDEN_SIM_DIR"
+mkdir -p "$WORK_DIR" "$WORK_CPP" "$TMP_DIR"
 
 # Accumulators for the combined summary at the end.
 pass=0
@@ -221,10 +221,13 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
     echo "==> CMM phase"
 
-    # globstar avoids depending on `find` (msys2's find may be shadowed by
-    # Windows DOS find.exe in PATH when invoked from PowerShell)
+    # Each test lives in its own folder under CMMComp/Tests/<prname>/,
+    # mirroring the CPPComp/Tests/ layout: Software/<prname>.cmm is the
+    # entry, golden.asm + golden_sim/ live alongside. The multi-proc DTW
+    # and PulseSim entries (project-pass wrappers without a top-level .cmm)
+    # are filtered out by the Software/<prname>.cmm existence check below.
     shopt -s globstar nullglob
-    cmm_files=("$ROOT"/Exemplos/**/*.cmm "$ROOT"/Testes/fixtures/**/*.cmm)
+    cmm_files=("$CMM_ROOT"/Tests/*/Software/*.cmm)
     IFS=$'\n' cmm_sorted=($(printf '%s\n' "${cmm_files[@]}" | sort))
 
     for cmm in "${cmm_sorted[@]}"; do
@@ -241,7 +244,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         mkdir -p "$tmp"
 
         asm_file="$work_proc/Software/$prname.asm"
-        golden="$GOLDEN_DIR/$prname.asm"
+        golden="$proc_dir_rel/golden.asm"
 
         # cmmcomp step ------------------------------------------------------
         if ! "$CMMCOMP" -en -i "$filename" -n "$prname" -p "$work_proc" -m "$MACROS" -t "$tmp" >/dev/null 2>&1; then
@@ -335,7 +338,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
 
         sim_dir="$work_proc/Simulation"
-        golden_sim="$GOLDEN_SIM_DIR/$prname"
+        golden_sim="$proc_dir_rel/golden_sim"
         out_files=("$sim_dir"/output_*.txt)
         if [ "${#out_files[@]}" -eq 0 ] || [ ! -e "${out_files[0]}" ]; then
             echo "FAIL ($prname): testbench produced no output_*.txt"
@@ -376,9 +379,9 @@ if [ "$CPP_ONLY" -eq 0 ]; then
 
     if [ "$NO_SIM" -eq 0 ]; then
         proj="DTW"
-        proj_top="$ROOT/Exemplos/$proj/TopLevel"
+        proj_top="$CMM_ROOT/Tests/$proj/TopLevel"
         proj_tmp="$TMP_DIR/$proj"
-        golden_proj="$GOLDEN_SIM_DIR/$proj"
+        golden_proj="$CMM_ROOT/Tests/$proj/golden_sim"
         procs=("ProcDTW" "ZeroCross")
 
         rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"

@@ -45,7 +45,7 @@ Auxiliary content:
 * `HDL/` — reusable Verilog modules (processor core, ALU, instruction decoder, FIFO, ...)
 * `Macros/` — assembly macros and lookup tables (`float_sqrt`, `float_sin`, `float_atan`, ...)
 * `Scripts/` — Tcl scripts that set up the GTKWave view
-* `Exemplos/` — runnable example projects (Math, FFT, RLS, DTW, PulseSim)
+* `CMMComp/Tests/` — runnable .cmm example projects (Math, FFT, RLS, DTW, PulseSim, Blind)
 
 ## Quick start
 
@@ -146,19 +146,19 @@ void main()
 }
 ```
 
-More examples in `Exemplos/`.
+More examples in `CMMComp/Tests/`.
 
 ## Project layout
 
 ```
 yanc/
-├── APP/                  appcomp sources (Headers/ + Sources/)
-├── ASM/                  asmcomp sources
-├── CMMComp/              cmmcomp sources (Flex/Bison)
+├── APPComp/              appcomp sources (Headers/ + Sources/)
+├── ASMComp/              asmcomp sources
+├── CMMComp/              cmmcomp sources + Tests/ (per-proc example projects)
+├── CPPComp/              cppcomp sources + Tests/ (per-test C++ programs)
 ├── HDL/                  reusable Verilog modules
 ├── Macros/               assembly macros and LUTs
-├── Scripts/              comp2gtkw + Tcl viewers
-├── Exemplos/             runnable example projects
+├── Scripts/              regress.sh, comp2gtkw, Tcl viewers
 ├── build.bat             build all binaries locally
 ├── go_proc.bat           single-processor end-to-end pipeline
 ├── go_proj.bat           multi-processor project pipeline

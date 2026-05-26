@@ -78,7 +78,7 @@ jobs:
 
       - name: Smoke test full pipeline on all examples
         shell: msys2 {0}
-        # For every .cmm in Exemplos/, copy the processor directory to a
+        # For every .cmm in CMMComp/Tests/, copy the processor directory to a
         # writable scratch area (so generated files do not dirty the
         # checkout) and run the full toolchain end-to-end:
         #
@@ -136,7 +136,7 @@ jobs:
             for art in "$prname.v" "${prname}_data.mif" "${prname}_inst.mif"; do
               [ -s "$work_proc/Hardware/$art" ] || { echo "FAIL: Hardware/$art missing/empty"; fail=1; }
             done
-          done < <(find Exemplos -name '*.cmm' | sort)
+          done < <(find CMMComp/Tests -name '*.cmm' | sort)
 
           rm -rf "$SCRATCH"
           exit "$fail"

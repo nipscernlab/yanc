@@ -64,7 +64,7 @@ set TMP_DIR=%INST_DIR%\Temp
 
 :: project folder tree being executed
 set USER_DIR=%TESTE_DIR%\Projetos
-set PROC_DIR=%USER_DIR%\%PROJET%\%PROC%
+set PROC_DIR=%USER_DIR%\%PROC%
 set SOFT_DIR=%PROC_DIR%\Software
 set HARD_DIR=%PROC_DIR%\Hardware
 set SIMU_DIR=%PROC_DIR%\Simulation
@@ -84,7 +84,7 @@ mkdir %TESTE_DIR%
 
 :: Copy files into the test directories ---------------------------------------
 
-xcopy Exemplos %USER_DIR% /e /i /q>%TMP_PRO%\log.txt
+xcopy CMMComp\Tests %USER_DIR% /e /i /q>%TMP_PRO%\log.txt
 xcopy HDL      %HDL_DIR%  /q    /y>%TMP_PRO%\log.txt
 xcopy Macros   %MAC_DIR%  /q    /y>%TMP_PRO%\log.txt
 xcopy Scripts  %SCR_DIR%  /q    /y>%TMP_PRO%\log.txt
