@@ -86,7 +86,7 @@ mkdir %TESTE_DIR%
 
 xcopy CMMComp\Tests %USER_DIR% /e /i /q>%TMP_PRO%\log.txt
 xcopy HDL      %HDL_DIR%  /q    /y>%TMP_PRO%\log.txt
-xcopy Macros   %MAC_DIR%  /q    /y>%TMP_PRO%\log.txt
+xcopy CMMComp\Macros %MAC_DIR% /q /y>%TMP_PRO%\log.txt
 xcopy Scripts  %SCR_DIR%  /q    /y>%TMP_PRO%\log.txt
 
 :: Build the CMM compiler -----------------------------------------------------

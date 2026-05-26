@@ -14,7 +14,7 @@ $CPP   = Join-Path $ROOT "CPPComp"
 $BIN   = Join-Path $CPP  ".bin"
 $WORK  = Join-Path $CPP  ".work"
 $HDL   = Join-Path $ROOT "HDL"
-$MACROS= Join-Path $ROOT "Macros"
+$MACROS= Join-Path $ROOT "CMMComp/Macros"
 
 $env:TMP    = "C:/packs/msys64/tmp"
 $env:TEMP   = "C:/packs/msys64/tmp"
