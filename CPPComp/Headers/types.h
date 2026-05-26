@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// CNIPS — type system --------------------------------------------------------
+// CPPComp — type system --------------------------------------------------------
 // ----------------------------------------------------------------------------
 // All types reduce to one of a small set of base kinds. The processor only
 // has NUBITS-wide words, so int/char/short/long all share the int kind and
@@ -7,8 +7,8 @@
 // type. Structs are a named field list with offsets resolved at decl time.
 // ----------------------------------------------------------------------------
 
-#ifndef CNIPS_TYPES_H
-#define CNIPS_TYPES_H
+#ifndef CPPCOMP_TYPES_H
+#define CPPCOMP_TYPES_H
 
 typedef enum {
     TY_VOID  = 0,

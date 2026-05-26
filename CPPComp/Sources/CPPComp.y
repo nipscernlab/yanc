@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-   CNIPS — bison grammar for the YANC C subset
+   CPPComp — bison grammar for the YANC C subset
    ----------------------------------------------------------------------------
    Grammar is loosely C99, restricted to constructs the target can execute:
      - scalar types int/float/char/void, pointers, 1-D arrays, structs

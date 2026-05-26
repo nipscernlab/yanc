@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// CNIPS — diagnostics --------------------------------------------------------
+// CPPComp — diagnostics --------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-#ifndef CNIPS_MESSAGES_H
-#define CNIPS_MESSAGES_H
+#ifndef CPPCOMP_MESSAGES_H
+#define CPPCOMP_MESSAGES_H
 
 void msg_set_file(const char *name);
 void msg_error    (int line, const char *fmt, ...);    // prints and exits(1)

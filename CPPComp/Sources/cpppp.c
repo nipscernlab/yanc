@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// CNIPS — standalone C preprocessor ------------------------------------------
+// CPPComp — standalone C preprocessor ------------------------------------------
 // ----------------------------------------------------------------------------
-// Standalone binary that runs before cnips.exe. Handles:
+// Standalone binary that runs before cppcomp.exe. Handles:
 //   #include "name"          (relative to current file + -I paths)
 //   #include <name>          (-I paths only)
 //   #define NAME body        (object- and function-like macros, incl.
@@ -11,7 +11,7 @@
 //   #pragma once             (skip the file on any later #include)
 //   #pragma yanc ...         (passed through verbatim)
 //
-// usage:  cnipspp -i input.c [-o out.c] [-I dir]*
+// usage:  cpppp -i input.c [-o out.c] [-I dir]*
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -495,13 +495,13 @@ static char *trim_in_place(char *s)
 
 static void process_file(const char *path)
 {
-    if (depth > 32) { fprintf(stderr, "cnipspp: include too deep\n"); exit(1); }
+    if (depth > 32) { fprintf(stderr, "cpppp: include too deep\n"); exit(1); }
     depth++;
 
     char dir[2048]; dirname_of(path, dir, sizeof(dir));
 
     FILE *fp = fopen(path, "r");
-    if (!fp) { fprintf(stderr, "cnipspp: cannot open '%s'\n", path); exit(1); }
+    if (!fp) { fprintf(stderr, "cpppp: cannot open '%s'\n", path); exit(1); }
 
     char line[4096];
     while (fgets(line, sizeof(line), fp)) {
@@ -523,7 +523,7 @@ static void process_file(const char *path)
                     target[i] = 0;
                     char resolved[2048];
                     FILE *inc = open_include(target, dir, resolved, sizeof(resolved));
-                    if (!inc) { fprintf(stderr, "cnipspp: can't find #include \"%s\"\n", target); exit(1); }
+                    if (!inc) { fprintf(stderr, "cpppp: can't find #include \"%s\"\n", target); exit(1); }
                     fclose(inc);
                     char canon[2048]; path_canon(resolved, canon, sizeof(canon));
                     if (!once_seen(canon)) process_file(resolved);
@@ -533,7 +533,7 @@ static void process_file(const char *path)
                     target[i] = 0;
                     char resolved[2048];
                     FILE *inc = open_include(target, NULL, resolved, sizeof(resolved));
-                    if (!inc) { fprintf(stderr, "cnipspp: can't find #include <%s>\n", target); exit(1); }
+                    if (!inc) { fprintf(stderr, "cpppp: can't find #include <%s>\n", target); exit(1); }
                     fclose(inc);
                     char canon[2048]; path_canon(resolved, canon, sizeof(canon));
                     if (!once_seen(canon)) process_file(resolved);
@@ -599,7 +599,7 @@ static void process_file(const char *path)
                 name[i] = 0;
                 int defined = macro_lookup(name) != NULL;
                 int active = is_ifndef ? !defined : defined;
-                if (cond_n >= MAX_COND) { fprintf(stderr, "cnipspp: #ifdef nesting too deep\n"); exit(1); }
+                if (cond_n >= MAX_COND) { fprintf(stderr, "cpppp: #ifdef nesting too deep\n"); exit(1); }
                 cond_stk[cond_n] = active;
                 cond_seen_true[cond_n] = active;
                 cond_n++;
@@ -610,7 +610,7 @@ static void process_file(const char *path)
             if (strncmp(p, "if", 2) == 0 && (p[2] == ' ' || p[2] == '\t' || p[2] == '(')) {
                 p += 2;
                 int active = eval_if(p);
-                if (cond_n >= MAX_COND) { fprintf(stderr, "cnipspp: #if nesting too deep\n"); exit(1); }
+                if (cond_n >= MAX_COND) { fprintf(stderr, "cpppp: #if nesting too deep\n"); exit(1); }
                 cond_stk[cond_n] = active;
                 cond_seen_true[cond_n] = active;
                 cond_n++;
@@ -619,7 +619,7 @@ static void process_file(const char *path)
 
             // ---- #elif <expr> ----
             if (strncmp(p, "elif", 4) == 0 && (p[4] == ' ' || p[4] == '\t' || p[4] == '(')) {
-                if (cond_n == 0) { fprintf(stderr, "cnipspp: stray #elif\n"); exit(1); }
+                if (cond_n == 0) { fprintf(stderr, "cpppp: stray #elif\n"); exit(1); }
                 p += 4;
                 if (cond_seen_true[cond_n-1]) {
                     cond_stk[cond_n-1] = 0;          // an earlier branch already won
@@ -633,7 +633,7 @@ static void process_file(const char *path)
 
             // ---- #else ----
             if (strcmp(p, "else") == 0 || strncmp(p, "else ", 5) == 0 || strncmp(p, "else\t", 5) == 0) {
-                if (cond_n == 0) { fprintf(stderr, "cnipspp: stray #else\n"); exit(1); }
+                if (cond_n == 0) { fprintf(stderr, "cpppp: stray #else\n"); exit(1); }
                 cond_stk[cond_n-1] = !cond_seen_true[cond_n-1];
                 cond_seen_true[cond_n-1] = 1;
                 free(orig); continue;
@@ -641,7 +641,7 @@ static void process_file(const char *path)
 
             // ---- #endif ----
             if (strcmp(p, "endif") == 0 || strncmp(p, "endif ", 6) == 0 || strncmp(p, "endif\t", 6) == 0) {
-                if (cond_n == 0) { fprintf(stderr, "cnipspp: stray #endif\n"); exit(1); }
+                if (cond_n == 0) { fprintf(stderr, "cpppp: stray #endif\n"); exit(1); }
                 cond_n--;
                 free(orig); continue;
             }
@@ -680,8 +680,8 @@ static void process_file(const char *path)
 static void usage(void)
 {
     fprintf(stderr,
-        "cnipspp — C preprocessor for the CNIPS toolchain\n"
-        "usage: cnipspp -i <input.c> [-o <output.c>] [-I <dir>]* [-D NAME[=val]]*\n"
+        "cpppp — C preprocessor for the CPPComp toolchain\n"
+        "usage: cpppp -i <input.c> [-o <output.c>] [-I <dir>]* [-D NAME[=val]]*\n"
         "  -i <file>   input .c file\n"
         "  -o <file>   output preprocessed .c (default: stdout)\n"
         "  -I <dir>    add include search directory (repeatable)\n"
@@ -700,7 +700,7 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i], "-o") && i+1 < argc) out_path = argv[++i];
         else if (!strcmp(argv[i], "-I") && i+1 < argc) {
             if (n_incdirs < MAX_INCDIRS) incdirs[n_incdirs++] = argv[++i];
-            else { fprintf(stderr, "cnipspp: too many -I dirs\n"); exit(1); }
+            else { fprintf(stderr, "cpppp: too many -I dirs\n"); exit(1); }
         }
         else if (!strcmp(argv[i], "-D") && i+1 < argc) {
             char *eq = strchr(argv[++i], '=');
@@ -708,12 +708,12 @@ int main(int argc, char **argv)
             else    { macro_define(argv[i], "1"); }
         }
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) usage();
-        else { fprintf(stderr, "cnipspp: unknown option '%s'\n", argv[i]); usage(); }
+        else { fprintf(stderr, "cpppp: unknown option '%s'\n", argv[i]); usage(); }
     }
     if (!in_path) usage();
 
     out_f = out_path ? fopen(out_path, "w") : stdout;
-    if (!out_f) { fprintf(stderr, "cnipspp: cannot open '%s'\n", out_path); exit(1); }
+    if (!out_f) { fprintf(stderr, "cpppp: cannot open '%s'\n", out_path); exit(1); }
 
     process_file(in_path);
 

@@ -1,6 +1,6 @@
 %{
 // ----------------------------------------------------------------------------
-// CNIPS — flex lexer ---------------------------------------------------------
+// CPPComp — flex lexer ---------------------------------------------------------
 // ----------------------------------------------------------------------------
 // Tokenises a C99 subset for the YANC processor. The typedef-name hack is in
 // play: on each IDENT seen, the lexer consults the symbol table. If the name

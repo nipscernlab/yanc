@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------------
-// CNIPS — compiler entry point -----------------------------------------------
+// CPPComp — compiler entry point -----------------------------------------------
 // ----------------------------------------------------------------------------
-// usage: cnips -i <input.c> [-o <output.asm>] [-n <prname>] [-t <tmp>]
-// input is assumed to be already preprocessed (run cnipspp first).
+// usage: cppcomp -i <input.c> [-o <output.asm>] [-n <prname>] [-t <tmp>]
+// input is assumed to be already preprocessed (run cpppp first).
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -22,18 +22,18 @@ extern unit *g_unit;
 static void usage(void)
 {
     fprintf(stderr,
-        "CNIPS %s — C compiler for the YANC processor\n"
-        "usage: cnips -i <input.c> [-o <output.asm>] [-n <prname>] [-t <tmp>]\n"
+        "CPPComp %s — C compiler for the YANC processor\n"
+        "usage: cppcomp -i <input.c> [-o <output.asm>] [-n <prname>] [-t <tmp>]\n"
         "  -i <file>   input (preprocessed) .c file\n"
         "  -o <file>   output .asm file (default: <input>.asm)\n"
         "  -n <name>   #PRNAME embedded in output (default: input basename)\n"
-        "  -t <dir>    temp directory; cnips writes cmm_log.txt there for asmcomp\n"
+        "  -t <dir>    temp directory; cppcomp writes cmm_log.txt there for asmcomp\n"
         "  -h          this help\n"
         "\n"
-        "build-time defaults (override with -D when building cnips.exe):\n"
+        "build-time defaults (override with -D when building cppcomp.exe):\n"
         "  NUBITS=%d  NBMANT=%d  NBEXPO=%d  NUGAIN=%d\n"
         "  NDSTAC=%d  SDEPTH=%d  NUIOIN=%d  NUIOOU=%d  FFTSIZ=%d\n",
-        CNIPS_VERSION,
+        CPPCOMP_VERSION,
         CFG_NUBITS, CFG_NBMANT, CFG_NBEXPO, CFG_NUGAIN,
         CFG_NDSTAC, CFG_SDEPTH, CFG_NUIOIN, CFG_NUIOOU, CFG_FFTSIZ);
     exit(1);
@@ -66,19 +66,19 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i], "-n") && i+1 < argc) prname   = argv[++i];
         else if (!strcmp(argv[i], "-t") && i+1 < argc) tmp_dir  = argv[++i];
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) usage();
-        else { fprintf(stderr, "cnips: unknown option '%s'\n", argv[i]); usage(); }
+        else { fprintf(stderr, "cppcomp: unknown option '%s'\n", argv[i]); usage(); }
     }
     if (!in_path) usage();
 
     msg_set_file(in_path);
 
     yyin = fopen(in_path, "r");
-    if (!yyin) { fprintf(stderr, "cnips: cannot open '%s'\n", in_path); exit(1); }
+    if (!yyin) { fprintf(stderr, "cppcomp: cannot open '%s'\n", in_path); exit(1); }
 
     g_unit = ast_unit();
     st_init();
 
-    if (yyparse() != 0) { fprintf(stderr, "cnips: parse failed\n"); exit(2); }
+    if (yyparse() != 0) { fprintf(stderr, "cppcomp: parse failed\n"); exit(2); }
     fclose(yyin);
 
     if (!g_unit->prname) {
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 
     char *outp = out_path ? strdup(out_path) : derive_name(in_path, ".asm");
     FILE *fo = fopen(outp, "w");
-    if (!fo) { fprintf(stderr, "cnips: cannot open '%s' for writing\n", outp); exit(1); }
+    if (!fo) { fprintf(stderr, "cppcomp: cannot open '%s' for writing\n", outp); exit(1); }
 
     codegen(fo, g_unit, tmp_dir);
 

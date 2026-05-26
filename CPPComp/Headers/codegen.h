@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// CNIPS — code generator -----------------------------------------------------
+// CPPComp — code generator -----------------------------------------------------
 // ----------------------------------------------------------------------------
 
-#ifndef CNIPS_CODEGEN_H
-#define CNIPS_CODEGEN_H
+#ifndef CPPCOMP_CODEGEN_H
+#define CPPCOMP_CODEGEN_H
 
 #include <stdio.h>
 #include "ast.h"

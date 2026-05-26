@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// CNIPS — AST -> YANC .asm code generator ------------------------------------
+// CPPComp — AST -> YANC .asm code generator ------------------------------------
 // ----------------------------------------------------------------------------
 // Conventions:
 //   - Accumulator (racc) carries every expression result.
@@ -2499,7 +2499,7 @@ static void write_cmm_log(const char *tmp_dir)
 {
     char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", tmp_dir);
     FILE *f = fopen(path, "w");
-    if (!f) { fprintf(stderr, "cnips: cannot open %s\n", path); return; }
+    if (!f) { fprintf(stderr, "cppcomp: cannot open %s\n", path); return; }
     for (int i = 0; i < varlog_n; i++) {
         if (varlog[i].size > 0)
             fprintf(f, "%s %s %d %d\n", varlog[i].func, varlog[i].var, varlog[i].type_code, varlog[i].size);

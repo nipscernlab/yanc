@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # CPPComp/regress.sh - regression test for the CPPComp C++ compiler pipeline.
 #
-# For every CPPComp/Examples/testN/testN.cpp it runs the full toolchain
+# For every CPPComp/Tests/testN/testN.cpp it runs the full toolchain
 #   cpppp -> cppcomp -> appcomp -> asmcomp -> iverilog -> vvp (or Verilator
 #   if testN/testN.in is present)
-# and compares the simulation output against CPPComp/Testes/golden/<name>.txt.
+# and compares the simulation output against CPPComp/Tests/<name>/golden.txt.
 #
 # Target is fixed: 32-bit word / IEEE-754 single float / sizeof()==1 /
 # short&long fold to 32-bit / 4K-word data memory with a dynamic heap.
@@ -45,7 +45,6 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CPP="$ROOT/CPPComp"
 BIN="$CPP/.bin"
 WORK="$CPP/.work"
-GOLDEN="$CPP/Testes/golden"
 HDL="$ROOT/HDL"
 MACROS="$ROOT/Macros"
 
@@ -64,7 +63,7 @@ DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NBMANT=$CFG_NBMANT -DCFG_NBEXPO=$CFG_NBEXPO
 : "${IVERILOG:=/c/nipscern/Aurora/components/Packages/iverilog/bin/iverilog.exe}"
 : "${VVP:=/c/nipscern/Aurora/components/Packages/iverilog/bin/vvp.exe}"
 
-# Verilator is used for tests too heavy for iverilog: any Examples/<name>/<name>.in
+# Verilator is used for tests too heavy for iverilog: any Tests/<name>/<name>.in
 # sidecar (an input vector) makes that test compile the synthesizable .v with
 # Verilator and drive in()/out() from a small C++ harness instead. Far faster.
 : "${VERILATOR:=verilator_bin.exe}"
@@ -78,7 +77,7 @@ export VERILATOR_ROOT
 # that does understand `C:/...`. This is the fix that finally lets the
 # heavy Verilator-driven tests build on Windows.
 export PATH="C:/packs/msys64/mingw64/bin:$PATH"
-SIMMAIN="$CPP/Verilator/sim_main.cpp"
+SIMMAIN="$CPP/Tests/Verilator/sim_main.cpp"
 
 CPPPP="$BIN/cpppp.exe"
 CPPC="$BIN/cppcomp.exe"
@@ -122,24 +121,24 @@ fi
 
 # ---- 2. run each example ---------------------------------------------------
 
-mkdir -p "$WORK" "$GOLDEN"
+mkdir -p "$WORK"
 pass=0; fail=0; failed=()
 
 shopt -s nullglob
 # Every test lives in its own folder:
-#   Examples/testN/testN.cpp           - the entry point (always present)
-#   Examples/testN/<companion>.hpp/cpp - optional, included via "..." from
+#   Tests/testN/testN.cpp           - the entry point (always present)
+#   Tests/testN/<companion>.hpp/cpp - optional, included via "..." from
 #                                         the entry; the test's directory is
 #                                         on the cpppp include path so the
 #                                         amalgamation works (there is no
 #                                         linker).
-#   Examples/testN/testN.in            - optional sidecar: makes regress
+#   Tests/testN/testN.in            - optional sidecar: makes regress
 #                                         drive the test with Verilator
 #                                         instead of iverilog.
-#   Examples/testN/testN.clocks        - optional sidecar: overrides the
+#   Tests/testN/testN.clocks        - optional sidecar: overrides the
 #                                         default 200M cycle cap for the
 #                                         Verilator sim.
-for entry in "$CPP"/Examples/test*/; do
+for entry in "$CPP"/Tests/test*/; do
     base="$(basename "$entry")"
     src="${entry%/}/$base.cpp"
     if [ ! -f "$src" ]; then
@@ -186,13 +185,13 @@ for entry in "$CPP"/Examples/test*/; do
         # vars (TMP/TEMP/USERPROFILE) to find a writable temp dir. Some host
         # environments strip those at the bash->make boundary, so we delegate
         # this stage to a PowerShell helper which propagates env reliably.
-        gold="$GOLDEN/$base.txt"
+        gold="${entry%/}/golden.txt"
         exp=0; [ -f "$gold" ] && exp=$(grep -c '' "$gold")
         clocks_file="${infile%.in}.clocks"
         clocks=200000000
         [ -f "$clocks_file" ] && clocks=$(cat "$clocks_file" | tr -d '[:space:]')
         if ! powershell.exe -ExecutionPolicy Bypass -NoProfile \
-                -File "$CPP/Verilator/run_verilator_step.ps1" \
+                -File "$CPP/Tests/Verilator/run_verilator_step.ps1" \
                 -Prname  "$prname" \
                 -TmpDir  "$tmp" \
                 -UprocV  "$uproc.v" \
@@ -221,7 +220,7 @@ for entry in "$CPP"/Examples/test*/; do
         echo "FAIL ($base): no simulation output"; fail=$((fail+1)); failed+=("$base"); continue
     fi
 
-    gold="$GOLDEN/$base.txt"
+    gold="${entry%/}/golden.txt"
     if [ "$UPDATE" -eq 1 ]; then
         cp "$out" "$gold"
         echo "UPDATED ($base): $(tr '\n' ' ' < "$out")"

@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
-// CNIPS — symbol table -------------------------------------------------------
+// CPPComp — symbol table -------------------------------------------------------
 // ----------------------------------------------------------------------------
 // Lexical-scoped table: file scope at depth 0, function scope at 1, then
 // nested blocks. Each symbol carries its assigned asm-level name (mangled
 // for locals as <funcname>_<varname>).
 // ----------------------------------------------------------------------------
 
-#ifndef CNIPS_SYMTAB_H
-#define CNIPS_SYMTAB_H
+#ifndef CPPCOMP_SYMTAB_H
+#define CPPCOMP_SYMTAB_H
 
 #include "ast.h"
 

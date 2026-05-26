@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// CNIPS — abstract syntax tree -----------------------------------------------
+// CPPComp — abstract syntax tree -----------------------------------------------
 // ----------------------------------------------------------------------------
 
-#ifndef CNIPS_AST_H
-#define CNIPS_AST_H
+#ifndef CPPCOMP_AST_H
+#define CPPCOMP_AST_H
 
 #include "types.h"
 

@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
-// CNIPS — compile-time defaults for the YANC target --------------------------
+// CPPComp — compile-time defaults for the YANC target --------------------------
 // ----------------------------------------------------------------------------
-// Override via -D when building cnips.exe. These become the default header
+// Override via -D when building cppcomp.exe. These become the default header
 // directives emitted in every .asm. A user .c source can still override any
 // of them per-program with `#pragma yanc <name> <value>` at file scope.
 // ----------------------------------------------------------------------------
 
-#ifndef CNIPS_CONFIG_H
-#define CNIPS_CONFIG_H
+#ifndef CPPCOMP_CONFIG_H
+#define CPPCOMP_CONFIG_H
 
 #ifndef CFG_NUBITS
 #define CFG_NUBITS 16
@@ -37,6 +37,6 @@
 #define CFG_FFTSIZ 3
 #endif
 
-#define CNIPS_VERSION "0.1"
+#define CPPCOMP_VERSION "0.1"
 
 #endif

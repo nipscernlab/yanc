@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// CNIPS — diagnostics --------------------------------------------------------
+// CPPComp — diagnostics --------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -35,7 +35,7 @@ void msg_warning(int line, const char *fmt, ...)
 void msg_internal(const char *fmt, ...)
 {
     va_list ap;
-    fprintf(stderr, "cnips: internal error: ");
+    fprintf(stderr, "cppcomp: internal error: ");
     va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
     fputc('\n', stderr);
     abort();
