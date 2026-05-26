@@ -37,6 +37,6 @@
 #define CFG_FFTSIZ 3
 #endif
 
-#define CPPCOMP_VERSION "0.1"
+#include "../../yanc_version.h"   // YANC_VERSION shared across all four compilers
 
 #endif

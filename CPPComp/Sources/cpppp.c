@@ -19,6 +19,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "..\..\yanc_version.h"   // YANC_VERSION shared across all five binaries
+
 #define MAX_INCDIRS 32
 static const char *incdirs[MAX_INCDIRS];
 static int         n_incdirs = 0;
@@ -680,13 +682,15 @@ static void process_file(const char *path)
 static void usage(void)
 {
     fprintf(stderr,
-        "cpppp — C preprocessor for the CPPComp toolchain\n"
+        "cpppp %s — C preprocessor for the CPPComp toolchain\n"
         "usage: cpppp -i <input.c> [-o <output.c>] [-I <dir>]* [-D NAME[=val]]*\n"
-        "  -i <file>   input .c file\n"
-        "  -o <file>   output preprocessed .c (default: stdout)\n"
-        "  -I <dir>    add include search directory (repeatable)\n"
-        "  -D NAME=val pre-define a macro (repeatable)\n"
-        "  -h          show this help\n");
+        "  -i <file>        input .c file\n"
+        "  -o <file>        output preprocessed .c (default: stdout)\n"
+        "  -I <dir>         add include search directory (repeatable)\n"
+        "  -D NAME=val      pre-define a macro (repeatable)\n"
+        "  -h, --help       show this help\n"
+        "  -V, --version    show version and exit\n",
+        YANC_VERSION);
     exit(1);
 }
 
@@ -708,6 +712,10 @@ int main(int argc, char **argv)
             else    { macro_define(argv[i], "1"); }
         }
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) usage();
+        else if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--version")) {
+            printf("cpppp %s\n", YANC_VERSION);
+            return 0;
+        }
         else { fprintf(stderr, "cpppp: unknown option '%s'\n", argv[i]); usage(); }
     }
     if (!in_path) usage();

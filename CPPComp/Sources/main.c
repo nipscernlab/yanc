@@ -52,11 +52,12 @@ static void usage(void)
         "  -n, --name     <name>   #PRNAME embedded in output (default: input basename)\n"
         "  -t, --temp-dir <dir>    temp directory; cppcomp writes cmm_log.txt there for asmcomp\n"
         "  -h, --help              this help\n"
+        "  -V, --version           show version and exit\n"
         "\n"
         "build-time defaults (override with -D when building cppcomp.exe):\n"
         "  NUBITS=%d  NBMANT=%d  NBEXPO=%d  NUGAIN=%d\n"
         "  NDSTAC=%d  SDEPTH=%d  NUIOIN=%d  NUIOOU=%d  FFTSIZ=%d\n",
-        CPPCOMP_VERSION,
+        YANC_VERSION,
         CFG_NUBITS, CFG_NBMANT, CFG_NBEXPO, CFG_NUGAIN,
         CFG_NDSTAC, CFG_SDEPTH, CFG_NUIOIN, CFG_NUIOOU, CFG_FFTSIZ);
     exit(1);
@@ -89,6 +90,10 @@ int main(int argc, char **argv)
         else if ((!strcmp(argv[i], "-n") || !strcmp(argv[i], "--name"    )) && i+1 < argc) prname   = argv[++i];
         else if ((!strcmp(argv[i], "-t") || !strcmp(argv[i], "--temp-dir")) && i+1 < argc) tmp_dir  = argv[++i];
         else if ( !strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"    )) usage();
+        else if ( !strcmp(argv[i], "-V") || !strcmp(argv[i], "--version" )) {
+            printf("cppcomp %s\n", YANC_VERSION);
+            return 0;
+        }
         else { fprintf(stderr, "cppcomp: unknown option '%s'\n", argv[i]); usage(); }
     }
     if (!in_path || !proc_dir) usage();

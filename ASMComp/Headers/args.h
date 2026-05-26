@@ -10,8 +10,7 @@
 #ifndef ARGS_H
 #define ARGS_H
 
-// version string reported by --version (tracks the latest release tag)
-#define YANC_VERSION "v3"
+#include "../../yanc_version.h"   // version string reported by --version
 
 // parsed command-line arguments for asmcomp
 typedef struct
