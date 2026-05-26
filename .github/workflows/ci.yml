@@ -49,7 +49,7 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euo pipefail
-          cd APP/Sources
+          cd APPComp/Sources
           flex -o app.c app.l
           gcc -O2 -Wall -Werror -o appcomp.exe \
               app.c eval.c variaveis.c messages.c args.c
@@ -60,7 +60,7 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euo pipefail
-          cd ASM/Sources
+          cd ASMComp/Sources
           flex -o ASMComp.c ASMComp.l
           gcc -O2 -Wall -Werror -o asmcomp.exe \
               ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
@@ -96,8 +96,8 @@ jobs:
 
           ROOT="$(pwd)"
           CMMCOMP="$ROOT/CMMComp/Sources/cmmcomp.exe"
-          APPCOMP="$ROOT/APP/Sources/appcomp.exe"
-          ASMCOMP="$ROOT/ASM/Sources/asmcomp.exe"
+          APPCOMP="$ROOT/APPComp/Sources/appcomp.exe"
+          ASMCOMP="$ROOT/ASMComp/Sources/asmcomp.exe"
           MAC_DIR="$ROOT/Macros"
           HDL_DIR="$ROOT/HDL"
           SCRATCH="$ROOT/.smoke"

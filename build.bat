@@ -54,7 +54,7 @@ del  y.tab.h
 
 :: Build the Assembler pre-processor ------------------------------------------
 
-cd %SRC_DIR%\APP\Sources
+cd %SRC_DIR%\APPComp\Sources
 
 flex  -o app.c app.l
 %GCC% -o appcomp.exe app.c eval.c variaveis.c messages.c args.c
@@ -66,7 +66,7 @@ cd %SRC_DIR%
 
 :: Build the Assembler compiler -----------------------------------------------
 
-cd %SRC_DIR%\ASM\Sources
+cd %SRC_DIR%\ASMComp\Sources
 
 flex  -o ASMComp.c ASMComp.l
 %GCC% -o asmcomp.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c

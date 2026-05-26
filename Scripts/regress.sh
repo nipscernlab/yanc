@@ -131,14 +131,14 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
-    pushd "$ROOT/APP/Sources" >/dev/null
+    pushd "$ROOT/APPComp/Sources" >/dev/null
     flex -o app.c app.l
     gcc -O2 -Wall -Werror -o "$APPCOMP" \
         app.c eval.c variaveis.c messages.c args.c
     rm -f app.c
     popd >/dev/null
 
-    pushd "$ROOT/ASM/Sources" >/dev/null
+    pushd "$ROOT/ASMComp/Sources" >/dev/null
     flex -o ASMComp.c ASMComp.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
         ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \

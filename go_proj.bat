@@ -91,7 +91,7 @@ del  y.tab.h
 
 :: Build the Assembler pre-processor ------------------------------------------
 
-cd %ROOT_DIR%\APP\Sources
+cd %ROOT_DIR%\APPComp\Sources
 
 %FLEX% -o app.c app.l
 %GCC%  -o APP.exe app.c eval.c variaveis.c messages.c args.c
@@ -101,7 +101,7 @@ del app.c
 
 :: Build the Assembler compiler -----------------------------------------------
 
-cd %ROOT_DIR%\ASM\Sources
+cd %ROOT_DIR%\ASMComp\Sources
 
 %FLEX% -o ASMComp.c ASMComp.l
 %GCC%  -o ASM.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c

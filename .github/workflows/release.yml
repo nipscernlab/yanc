@@ -66,7 +66,7 @@ jobs:
           popd
 
           # appcomp
-          pushd APP/Sources
+          pushd APPComp/Sources
           flex -o app.c app.l
           gcc -O2 -o appcomp.exe \
               app.c eval.c variaveis.c messages.c args.c
@@ -75,7 +75,7 @@ jobs:
           popd
 
           # asmcomp
-          pushd ASM/Sources
+          pushd ASMComp/Sources
           flex -o ASMComp.c ASMComp.l
           gcc -O2 -o asmcomp.exe \
               ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
