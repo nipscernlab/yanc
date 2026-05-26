@@ -6,11 +6,9 @@
 
 int   sim_clk    ();                                // returns the simulation clock frequency
 int   sim_clk_num();                                // returns the number of clocks to simulate
-int   sim_array_mode();                             // 1 = expand each array element as its own GTKWave signal
-
 // translation file operations ------------------------------------------------
 
-void  sim_init   (int clk, int clk_n, int arr_sim); // creates the translation file
+void  sim_init   (int clk, int clk_n);              // creates the translation file
 void  sim_add    (char *opc, char *opr);            // adds an opcode and operand
 void  sim_set_fim(int   fim);                       // sets the @fim address
 int   sim_get_fim();                                // returns the @fim address

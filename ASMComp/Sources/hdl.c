@@ -439,21 +439,11 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "end\n\n");
 
-    // Per-proc $finish at the @fim address is disabled. The auto-generated
-    // testbench (in this same file, around the progress-bar block below)
-    // already has its own $finish hooked to the cycle budget, and the
-    // SAPHO top-level testbench supplies its own termination logic in
-    // multi-proc setups. Emitting a $finish inside the synthesizable proc
-    // .v was also a code-smell -- the .v is supposed to be synthesizable
-    // hardware, and $finish is a sim-only construct.
-    //
-    // if (sim_array_mode()==0)
-    // {
-    //     fprintf(f_veri, "always @ (posedge clk) if (valr10 == %d) begin\n", sim_get_fim());
-    //     fprintf(f_veri, "   $display(\"Info: end of program!\");\n");
-    //     fprintf(f_veri, "   $finish;\n");
-    //     fprintf(f_veri, "end\n\n");
-    // }
+    // No $finish in the synthesizable proc .v -- it would be a sim-only
+    // construct sneaking into hardware. The matching $finish at @fim now
+    // lives in the auto-generated _tb.v (hdl_tb_file below); multi-proc
+    // workflows that ship their own top-level testbench bypass the auto
+    // _tb.v and drive termination themselves.
 
     // ------------------------------------------------------------------------
     // finalize the file ------------------------------------------------------
@@ -693,16 +683,15 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // program has terminated, because the progress-bar block below uses
     // wall-clock #delays instead of monitoring the PC. valr10 is the
     // pipelined PC inside the <prname> module, reachable via the proc
-    // instance name. Skipped in --array mode because the SAPHO top-level
-    // testbench drives termination itself.
+    // instance name. This is in the AUTO-generated testbench, which is
+    // bypassed by multi-proc workflows that ship their own top-level
+    // testbench (e.g. DTW), so the unconditional $finish here is fine --
+    // the project's top-level testbench just ignores this _tb.v entirely.
 
-    if (sim_array_mode()==0)
-    {
-        fprintf(f_veri, "always @ (posedge clk) if (proc.valr10 == %d) begin\n", sim_get_fim());
-        fprintf(f_veri, "    $display(\"Info: end of program!\");\n");
-        fprintf(f_veri, "    $finish;\n");
-        fprintf(f_veri, "end\n\n");
-    }
+    fprintf(f_veri, "always @ (posedge clk) if (proc.valr10 == %d) begin\n", sim_get_fim());
+    fprintf(f_veri, "    $display(\"Info: end of program!\");\n");
+    fprintf(f_veri, "    $finish;\n");
+    fprintf(f_veri, "end\n\n");
 
     // ------------------------------------------------------------------------
     // progress and cycle-budget $finish generation ---------------------------

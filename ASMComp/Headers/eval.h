@@ -31,7 +31,7 @@ int out_used(int i);           // tells whether output port i was used
 
 // functions used in the lexer (.l) -------------------------------------------
 
-void eval_init  (int   clk  , int clk_n, int s_typ);
+void eval_init  (int   clk  , int clk_n);
 void eval_direct(int   next_state);
 void eval_opcode(int   op   , int next_state, char *text, char *nome);
 void eval_opernd(char *va   , int is_const);

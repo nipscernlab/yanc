@@ -17,7 +17,6 @@
 // simulation parameters
 int clk_frq;           // simulation clock frequency
 int clk_num;           // max number of clocks to simulate
-int array_sim;         // 1 = expand each array element as its own GTKWave signal
 
 // translation file
 FILE *f_tran;          // opcode translation file
@@ -149,7 +148,6 @@ int sim_is_arr(char *va, int *tipo, int *size, int *is_global, char *nome)
 
 int sim_clk    (){return clk_frq;} // returns the simulation clock frequency
 int sim_clk_num(){return clk_num;} // returns the number of clocks to simulate
-int sim_array_mode(){return array_sim;} // 1 = expand array elements as separate GTKWave signals
 
 // ----------------------------------------------------------------------------
 // routines for translation-file operations -----------------------------------
@@ -157,16 +155,15 @@ int sim_array_mode(){return array_sim;} // 1 = expand array elements as separate
 
 // creates the opcode translation file
 // and initializes the simulation variables
-void sim_init(int clk, int clk_n, int arr_sim)
+void sim_init(int clk, int clk_n)
 {
     // open the opcode translation file in the Temp folder
     char path[2048];
     snprintf(path, sizeof(path), "%s/trad_opcode.txt", temp_dir);
     f_tran  = fopen(path, "w");
 
-    clk_frq   = clk;     // simulation clock frequency
-    clk_num   = clk_n;   // number of clocks to simulate
-    array_sim = arr_sim; // 1 = expand each array element as its own GTKWave signal
+    clk_frq = clk;   // simulation clock frequency
+    clk_num = clk_n; // number of clocks to simulate
 }
 
 // appends an opcode and operand to the translation file

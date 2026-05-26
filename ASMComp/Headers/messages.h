@@ -342,7 +342,6 @@ void parse_lang_flag(int *argc, char **argv);
       "Outras opções:\n" \
       "  -f, --freq <MHz>        frequência de operação em MHz (padrão: 0)\n" \
       "  -c, --clocks <n>        número de clocks a simular (padrão: 0)\n" \
-      "  -A, --array             expande cada elemento do array como sinal individual no GTKWave\n" \
       "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
       "  -h, --help              mostra esta ajuda e sai\n" \
       "  -V, --version           mostra a versão e sai\n", \
@@ -361,7 +360,6 @@ void parse_lang_flag(int *argc, char **argv);
       "Other options:\n" \
       "  -f, --freq <MHz>        operating frequency in MHz (default: 0)\n" \
       "  -c, --clocks <n>        number of clocks to simulate (default: 0)\n" \
-      "  -A, --array             emit each array element as a separate GTKWave signal\n" \
       "  -en, -pt                diagnostic message language (default: -pt)\n" \
       "  -h, --help              show this help and exit\n" \
       "  -V, --version           show version and exit\n")

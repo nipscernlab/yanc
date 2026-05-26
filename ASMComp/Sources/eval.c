@@ -223,7 +223,7 @@ int out_used(int i) {return o_used[i];} // tells whether output port i was used
 // ----------------------------------------------------------------------------
 
 // runs before the lexer starts
-void eval_init(int clk, int clk_n, int s_typ)
+void eval_init(int clk, int clk_n)
 {
     // reset used I/O indices -------------------------------------------------
 
@@ -260,7 +260,7 @@ void eval_init(int clk, int clk_n, int s_typ)
 
     // initialize routines for iverilog simulation ----------------------------
 
-    sim_init(clk, clk_n, s_typ);
+    sim_init(clk, clk_n);
 }
 
 // runs when a directive is found

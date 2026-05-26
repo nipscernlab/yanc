@@ -134,7 +134,7 @@ cd  %BIN_DIR%
 :: Run the Assembler compiler -------------------------------------------------
 
 (for %%i in (%PROC_LIST%) do (
-    asmcomp.exe -i %PROJ_DIR%\%%i\Software\%%i.asm -p %PROJ_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0 --array
+    asmcomp.exe -i %PROJ_DIR%\%%i\Software\%%i.asm -p %PROJ_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0
     cp %PROJ_DIR%\%%i\Hardware\%%i.v %TMP_DIR%\%%i
 ))
 
