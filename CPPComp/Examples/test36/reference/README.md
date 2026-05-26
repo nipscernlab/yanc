@@ -1,4 +1,4 @@
-# FISTA reference material (for ../../test36/test36.cpp)
+# FISTA reference material (for ../test36.cpp)
 
 `Examples/test36/test36.cpp` is the YANC port of a hosted FISTA blind sparse
 deconvolution program. This folder keeps the original and the tooling used to
@@ -25,6 +25,6 @@ reference to within float rounding (e.g. `9257` vs `9258`).
 Reproduce (from this folder):
 ```
 g++ -O2 -o fista_ref.exe    fista_ref.cpp    && ./fista_ref.exe input40.txt
-gcc -O2 -o gen_scaled.exe   gen_scaled.c -lm && ./gen_scaled.exe input40.txt ../../test36/test36.in
-g++ -O2 -o fista_scaled.exe fista_scaled.cpp && ./fista_scaled.exe ../../test36/test36.in
+gcc -O2 -o gen_scaled.exe   gen_scaled.c -lm && ./gen_scaled.exe input40.txt ../test36.in
+g++ -O2 -o fista_scaled.exe fista_scaled.cpp && ./fista_scaled.exe ../test36.in
 ```
