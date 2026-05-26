@@ -13,17 +13,14 @@
 *.ilk
 
 # flex outputs (.l -> .c)
-APP/Sources/app.c
-ASM/Sources/ASMComp.c
+APPComp/Sources/app.c
+ASMComp/Sources/ASMComp.c
 CMMComp/Sources/lex.yy.c
-CNIPS/Sources/lex.yy.c
 CPPComp/Sources/lex.yy.c
 
 # bison outputs (.y -> .c/.h)
 CMMComp/Sources/y.tab.c
 CMMComp/Sources/y.tab.h
-CNIPS/Sources/y.tab.c
-CNIPS/Sources/y.tab.h
 CPPComp/Sources/y.tab.c
 CPPComp/Sources/y.tab.h
 
@@ -46,16 +43,9 @@ pc_*_mem.txt
 
 /Teste/
 
-# CI smoke scratch area
+# Regress scratch area (Scripts/regress.sh writes binaries, work dirs and
+# per-test tmps under .smoke/)
 /.smoke/
-
-# CNIPS regression scratch (binaries + per-example work dirs)
-/CNIPS/.bin/
-/CNIPS/.work/
-
-# CPPComp regression scratch (binaries + per-example work dirs)
-/CPPComp/.bin/
-/CPPComp/.work/
 
 # ============================================================================
 # Simulation outputs (iverilog / gtkwave / vvp) ------------------------------
