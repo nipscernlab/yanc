@@ -11,7 +11,8 @@
 static const float GAIN_IN  = 20000.0f;
 static const float GAIN_OUT = 1000000.0f;
 
-static const int N_PROBE = 1000;
+// Reduced from 1000 -- test50 covers full-scale numerical validation now.
+static const int N_PROBE = 100;
 static float y_window[N_PROBE];
 static float scratch[N_PROBE];
 

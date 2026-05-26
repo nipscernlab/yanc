@@ -22,7 +22,9 @@
 
 static const int   M = 7, C = 3;
 static const float LAM = 1.0f;
-static const int   OUTER = 40, XIT = 20, HIT = 5, BT = 15;
+// Reduced from OUTER=40, XIT=20, HIT=5, BT=15 -- test50 covers the
+// numerical validation now; this test only exercises the compile path.
+static const int   OUTER = 2, XIT = 3, HIT = 2, BT = 3;
 static const float HSTEP = 1e-5f;
 
 static int N, LX;
