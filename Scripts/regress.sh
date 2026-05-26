@@ -1,41 +1,59 @@
 #!/usr/bin/env bash
-# Scripts/regress.sh - regression test for the CMM compiler pipeline.
+# Scripts/regress.sh - single regression suite for the whole repo.
 #
-# For every .cmm in Exemplos/ (plus Testes/fixtures/) runs cmmcomp and
-# compares the produced .asm against Testes/golden/<prname>.asm.
+# Runs both compiler pipelines off a shared set of binaries:
 #
-# For a subset of examples it also runs appcomp + asmcomp + iverilog +
-# vvp and compares the testbench output files against
-# Testes/golden_sim/<prname>/output_*.txt. Catches behavioral
-# regressions that pure .asm comparison would miss after future
-# optimization-style refactors.
+#   1. CMM phase: for every .cmm in Exemplos/ (plus Testes/fixtures/) run
+#      cmmcomp and compare the produced .asm against Testes/golden/<prname>.asm.
+#      For the sim-enabled subset also run appcomp + asmcomp + iverilog +
+#      vvp and compare output_*.txt against Testes/golden_sim/<prname>/.
+#      Plus a project pass for the multi-proc DTW example.
+#
+#   2. CPP phase: for every CPPComp/Tests/testN/ run
+#      cpppp -> cppcomp -> appcomp -> asmcomp -> iverilog (or Verilator
+#      if testN.in is present) and compare output_0.txt against
+#      CPPComp/Tests/testN/golden.txt.
+#
+# Build phase builds all 5 binaries once (cmmcomp + cpppp + cppcomp +
+# appcomp + asmcomp), both phases reuse them.
 #
 # Usage (from repo root, in msys2/git-bash on Windows):
 #   Scripts/regress.sh                check against goldens (exit 0 = pass)
 #   Scripts/regress.sh --update       regenerate goldens (review diff!)
 #   Scripts/regress.sh --update-size  ratchet down Testes/size_baseline.txt
 #   Scripts/regress.sh --skip-build   reuse binaries already in .smoke/bin
-#   Scripts/regress.sh --no-sim       skip the simulation phase entirely
+#   Scripts/regress.sh --no-sim       skip every simulation step
+#   Scripts/regress.sh --cmm-only     skip the CPP phase
+#   Scripts/regress.sh --cpp-only     skip the CMM phase
 
 set -uo pipefail
 
-# When invoked from a non-interactive shell (e.g. PowerShell calling bash),
-# msys2 may not inherit TMP/TEMP and gcc/bison choke on C:\WINDOWS\. Pin
-# TMPDIR to a writable location if nothing usable is set.
-if [ -z "${TMPDIR:-}" ] && [ -z "${TMP:-}" ] && [ -z "${TEMP:-}" ]; then
-    export TMPDIR=/tmp
-fi
+# Force TMP/TEMP to a writable Windows path. mingw g++ -- invoked deep
+# inside Verilator's makefile (verilator -> make -> g++) -- needs a
+# Windows-style temp dir for its intermediate .s files; otherwise it
+# silently falls back to C:\WINDOWS\ where unprivileged users can't write
+# ("Cannot create temporary file in C:\WINDOWS\: Permission denied").
+# Setting all three unconditionally is the only thing that survives the
+# PowerShell -> bash -> make -> g++ env-inheritance chain.
+export TMP="C:/packs/msys64/tmp"
+export TEMP="C:/packs/msys64/tmp"
+export TMPDIR="C:/packs/msys64/tmp"
+mkdir -p "$TMP"
 
 UPDATE=0
 UPDATE_SIZE=0
 SKIP_BUILD=0
 NO_SIM=0
+CMM_ONLY=0
+CPP_ONLY=0
 for arg in "$@"; do
     case "$arg" in
-        --update)      UPDATE=1 ;;
-        --update-size) UPDATE_SIZE=1 ;;
-        --skip-build)  SKIP_BUILD=1 ;;
-        --no-sim)      NO_SIM=1 ;;
+        --update)       UPDATE=1 ;;
+        --update-size)  UPDATE_SIZE=1 ;;
+        --skip-build)   SKIP_BUILD=1 ;;
+        --no-sim)       NO_SIM=1 ;;
+        --cmm-only)     CMM_ONLY=1 ;;
+        --cpp-only)     CPP_ONLY=1 ;;
         -h|--help)
             sed -n '1,/^$/p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
@@ -47,20 +65,52 @@ for arg in "$@"; do
     esac
 done
 
-ROOT="$(pwd)"
+# Resolve repo root from the script's own location so it works no matter
+# where you invoke it from.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 SCRATCH="$ROOT/.smoke"
 BIN_DIR="$SCRATCH/bin"
-WORK_DIR="$SCRATCH/work"
-TMP_DIR="$SCRATCH/tmp"
+WORK_DIR="$SCRATCH/work"          # CMM phase scratch
+WORK_CPP="$SCRATCH/work_cpp"      # CPP phase scratch
+TMP_DIR="$SCRATCH/tmp"            # CMM phase tmps
 GOLDEN_DIR="$ROOT/Testes/golden"
 GOLDEN_SIM_DIR="$ROOT/Testes/golden_sim"
 
 CMMCOMP="$BIN_DIR/cmmcomp.exe"
+CPPPP="$BIN_DIR/cpppp.exe"
+CPPC="$BIN_DIR/cppcomp.exe"
 APPCOMP="$BIN_DIR/appcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
 MACROS="$ROOT/Macros"
 HDL="$ROOT/HDL"
 SIZE_BASELINE_FILE="$ROOT/Testes/size_baseline.txt"
+
+CPP_ROOT="$ROOT/CPPComp"
+SIMMAIN="$CPP_ROOT/Tests/Verilator/sim_main.cpp"
+
+# CPPComp build flags (target params burned into cppcomp.exe). Override
+# via env when building a non-default-target binary.
+: "${CFG_NUBITS:=32}"; : "${CFG_NBMANT:=23}"; : "${CFG_NBEXPO:=8}"
+: "${CFG_NUGAIN:=128}"; : "${CFG_NDSTAC:=128}"; : "${CFG_SDEPTH:=128}"
+: "${CFG_NUIOIN:=1}";   : "${CFG_NUIOOU:=1}"; : "${CFG_FFTSIZ:=3}"
+: "${CFG_HEAPSZ:=2048}"
+CPP_DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NBMANT=$CFG_NBMANT -DCFG_NBEXPO=$CFG_NBEXPO \
+          -DCFG_NUGAIN=$CFG_NUGAIN -DCFG_NDSTAC=$CFG_NDSTAC -DCFG_SDEPTH=$CFG_SDEPTH \
+          -DCFG_NUIOIN=$CFG_NUIOIN -DCFG_NUIOOU=$CFG_NUIOOU -DCFG_FFTSIZ=$CFG_FFTSIZ \
+          -DCFG_HEAPSZ=$CFG_HEAPSZ"
+
+# iverilog / vvp paths can be overridden via env (CI will need different ones)
+: "${IVERILOG:=/c/nipscern/Aurora/components/Packages/iverilog/bin/iverilog.exe}"
+: "${VVP:=/c/nipscern/Aurora/components/Packages/iverilog/bin/vvp.exe}"
+
+# Verilator (for CPP heavy tests) -- python3 must resolve to the mingw64
+# build, not usr/bin's cygwin one, or its makefile rejects Windows paths.
+: "${VERILATOR:=verilator_bin.exe}"
+: "${VERILATOR_ROOT:=C:/packs/msys64/mingw64/share/verilator}"
+export VERILATOR_ROOT
+export PATH="C:/packs/msys64/mingw64/bin:$PATH"
 
 # load the size ratchet (prname -> num_ins). Lines starting with '#' are skipped.
 declare -A SIZE_BASELINE
@@ -75,10 +125,6 @@ if [ -f "$SIZE_BASELINE_FILE" ]; then
 fi
 declare -A SIZE_CURRENT
 
-# iverilog / vvp paths can be overridden via env (CI will need different ones)
-: "${IVERILOG:=/c/nipscern/Aurora/components/Packages/iverilog/bin/iverilog.exe}"
-: "${VVP:=/c/nipscern/Aurora/components/Packages/iverilog/bin/vvp.exe}"
-
 # Examples to exclude from the standalone simulation phase (still run cmmcomp
 # .asm compare AND appcomp/asmcomp so their .v + .mif are available for any
 # downstream project-level link):
@@ -89,33 +135,31 @@ declare -A SIZE_CURRENT
 SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross")
 
 # Examples to also skip the appcomp/asmcomp build for (their .v / .mif are
-# never consumed elsewhere - no standalone sim, no project link). Keeps the
-# regression cheap.
+# never consumed elsewhere - no standalone sim, no project link).
 BUILD_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt")
 build_skipped() {
     local name="$1"
     for s in "${BUILD_SKIP[@]}"; do [ "$s" = "$name" ] && return 0; done
     return 1
 }
-
 sim_skipped() {
     local name="$1"
     for s in "${SIM_SKIP[@]}"; do [ "$s" = "$name" ] && return 0; done
     return 1
 }
 
-# ---- 1. build the three compilers -----------------------------------------
+# ---- 1. build all 5 binaries -----------------------------------------------
 
 if [ "$SKIP_BUILD" -eq 0 ]; then
-    echo "==> building cmmcomp + appcomp + asmcomp"
+    echo "==> building cmmcomp + cpppp + cppcomp + appcomp + asmcomp"
     mkdir -p "$BIN_DIR"
 
-    # Wipe any stale binaries first: a silently-failing gcc must NOT leave the
+    # Wipe stale binaries first: a silently-failing gcc must NOT leave the
     # previous build in place to fool the regress into testing dead code.
-    rm -f "$CMMCOMP" "$APPCOMP" "$ASMCOMP"
+    rm -f "$CMMCOMP" "$CPPPP" "$CPPC" "$APPCOMP" "$ASMCOMP"
 
-    # `set -e` here so each tool's non-zero exit aborts the script. Without
-    # this, a gcc -Werror failure would print to the terminal but the regress
+    # Per-binary `set -e` so a build error aborts the script. Without it,
+    # a gcc -Werror failure would print to the terminal but the regress
     # would happily continue and run all examples against the (now-missing)
     # binary, hiding the real problem.
     set -e
@@ -128,6 +172,17 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
         variaveis.c array_index.c global.c macros.c messages.c args.c \
         y.tab.c
+    rm -f lex.yy.c y.tab.c y.tab.h
+    popd >/dev/null
+
+    gcc -O2 -Wall -o "$CPPPP" "$CPP_ROOT/Sources/cpppp.c"
+
+    pushd "$CPP_ROOT/Sources" >/dev/null
+    bison -y -d CPPComp.y
+    flex CPPComp.l
+    gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
+        $CPP_DEFS -o "$CPPC" \
+        main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
@@ -149,263 +204,362 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     set +e
 fi
 
-# ---- 2. run on each example and compare -----------------------------------
+mkdir -p "$WORK_DIR" "$WORK_CPP" "$TMP_DIR" "$GOLDEN_DIR" "$GOLDEN_SIM_DIR"
 
-mkdir -p "$WORK_DIR" "$TMP_DIR" "$GOLDEN_DIR" "$GOLDEN_SIM_DIR"
-
+# Accumulators for the combined summary at the end.
 pass=0
 fail=0
 failed_names=()
 
-# globstar avoids depending on `find` (msys2's find may be shadowed by
-# Windows DOS find.exe in PATH when invoked from PowerShell)
-shopt -s globstar nullglob
-cmm_files=(Exemplos/**/*.cmm Testes/fixtures/**/*.cmm)
-IFS=$'\n' cmm_sorted=($(printf '%s\n' "${cmm_files[@]}" | sort))
+# ---- 2. CMM phase ----------------------------------------------------------
 
-for cmm in "${cmm_sorted[@]}"; do
-    proc_dir_rel="$(dirname "$(dirname "$cmm")")"
-    prname="$(basename "$proc_dir_rel")"
-    filename="$(basename "$cmm")"
+if [ "$CPP_ONLY" -eq 0 ]; then
+    echo ""
+    echo "==> CMM phase"
 
-    work_proc="$WORK_DIR/$prname"
-    rm -rf "$work_proc"
-    cp -r "$proc_dir_rel" "$work_proc"
-    mkdir -p "$work_proc/Hardware" "$work_proc/Simulation"
+    # globstar avoids depending on `find` (msys2's find may be shadowed by
+    # Windows DOS find.exe in PATH when invoked from PowerShell)
+    shopt -s globstar nullglob
+    cmm_files=("$ROOT"/Exemplos/**/*.cmm "$ROOT"/Testes/fixtures/**/*.cmm)
+    IFS=$'\n' cmm_sorted=($(printf '%s\n' "${cmm_files[@]}" | sort))
 
-    tmp="$TMP_DIR/$prname"
-    rm -rf "$tmp"
-    mkdir -p "$tmp"
+    for cmm in "${cmm_sorted[@]}"; do
+        proc_dir_rel="$(dirname "$(dirname "$cmm")")"
+        prname="$(basename "$proc_dir_rel")"
+        filename="$(basename "$cmm")"
 
-    asm_file="$work_proc/Software/$prname.asm"
-    golden="$GOLDEN_DIR/$prname.asm"
+        work_proc="$WORK_DIR/$prname"
+        rm -rf "$work_proc"
+        cp -r "$proc_dir_rel" "$work_proc"
 
-    # cmmcomp step ----------------------------------------------------------
+        tmp="$TMP_DIR/$prname"
+        rm -rf "$tmp"
+        mkdir -p "$tmp"
 
-    if ! "$CMMCOMP" -en -i "$filename" -n "$prname" -p "$work_proc" -m "$MACROS" -t "$tmp" >/dev/null 2>&1; then
-        echo "FAIL ($prname): cmmcomp exited non-zero"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-    [ -s "$asm_file" ] || { echo "FAIL ($prname): asm missing/empty"; fail=$((fail+1)); failed_names+=("$prname"); continue; }
+        asm_file="$work_proc/Software/$prname.asm"
+        golden="$GOLDEN_DIR/$prname.asm"
 
-    # size ratchet ---------------------------------------------------------
-    # cmmcomp writes "num_ins N" at the end of cmm_log.txt - the real
-    # instruction count (labels, directives and macros excluded). Compare to
-    # the per-example baseline; refactors that grow num_ins for any example
-    # are rejected unless --update-size is passed explicitly.
-    num_ins=$(grep "^num_ins " "$tmp/cmm_log.txt" 2>/dev/null | awk '{print $2}')
-    SIZE_CURRENT[$prname]="${num_ins:-0}"
-    baseline="${SIZE_BASELINE[$prname]:-}"
-    size_grew=0
-    if [ -z "$baseline" ]; then
-        size_msg="  [size: ${num_ins:-?}, no baseline]"
-    elif [ "${num_ins:-0}" -gt "$baseline" ]; then
-        size_msg="  [size: $num_ins, GREW +$((num_ins - baseline)) vs $baseline]"
-        size_grew=1
-    elif [ "${num_ins:-0}" -lt "$baseline" ]; then
-        size_msg="  [size: $num_ins, -$((baseline - num_ins)) vs $baseline]"
-    else
-        size_msg="  [size: $num_ins]"
-    fi
-    if [ "$size_grew" -eq 1 ] && [ "$UPDATE_SIZE" -eq 0 ]; then
-        echo "FAIL ($prname):$size_msg"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-
-    # golden .asm capture or compare ---------------------------------------
-
-    if [ "$UPDATE" -eq 1 ]; then
-        cp "$asm_file" "$golden"
-        asm_status="UPDATED"
-    elif [ ! -f "$golden" ]; then
-        echo "FAIL ($prname): no golden at $golden (run --update?)"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    elif cmp -s "$asm_file" "$golden"; then
-        asm_status="PASS"
-    else
-        echo "FAIL ($prname): asm differs from golden"
-        diff "$golden" "$asm_file" | head -20 | sed 's/^/    /'
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-
-    # simulation phase -----------------------------------------------------
-
-    if [ "$NO_SIM" -eq 1 ] || build_skipped "$prname"; then
-        echo "$asm_status ($prname)  [sim skipped]$size_msg"
-        pass=$((pass + 1))
-        continue
-    fi
-
-    # appcomp pre-processes the .asm in place
-    if ! "$APPCOMP" -en -i "$asm_file" -t "$tmp" >/dev/null 2>&1; then
-        echo "FAIL ($prname): appcomp exited non-zero"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-
-    # asmcomp generates <prname>.v, .mif and <prname>_tb.v
-    if ! "$ASMCOMP" -en -i "$asm_file" -p "$work_proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 100000 >/dev/null 2>&1; then
-        echo "FAIL ($prname): asmcomp exited non-zero"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-
-    # Procs whose real testbench lives at the project level (DTW) - build their
-    # .v/.mif here so the project pass below can link them, but stop short of
-    # standalone iverilog/vvp (would link the wrong testbench).
-    if sim_skipped "$prname"; then
-        echo "$asm_status ($prname)  [standalone sim skipped]$size_msg"
-        pass=$((pass + 1))
-        continue
-    fi
-
-    uproc="$work_proc/Hardware/$prname"
-    tb="$tmp/${prname}_tb.v"   # asmcomp drops the auto-testbench in the temp dir
-    if [ ! -s "$uproc.v" ] || [ ! -s "$tb" ]; then
-        echo "FAIL ($prname): asmcomp artifacts missing"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-
-    # iverilog: HDL core + generated processor .v + auto-testbench
-    if ! "$IVERILOG" -s "${prname}_tb" -o "$tmp/$prname.vvp" \
-            "$tb" "$uproc.v" \
-            "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
-            "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1; then
-        echo "FAIL ($prname): iverilog exited non-zero"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-
-    # vvp runs in tmp/ - .mif files must live there for $readmemh
-    cp "${uproc}_data.mif" "${uproc}_inst.mif" "$tmp/"
-    pushd "$tmp" >/dev/null
-    "$VVP" "$tmp/$prname.vvp" >/dev/null 2>&1
-    vvp_status=$?
-    popd >/dev/null
-    if [ $vvp_status -ne 0 ]; then
-        echo "FAIL ($prname): vvp exited non-zero"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-
-    # collect output_*.txt produced by the testbench
-    sim_dir="$work_proc/Simulation"
-    golden_sim="$GOLDEN_SIM_DIR/$prname"
-
-    out_files=("$sim_dir"/output_*.txt)
-    if [ "${#out_files[@]}" -eq 0 ] || [ ! -e "${out_files[0]}" ]; then
-        echo "FAIL ($prname): testbench produced no output_*.txt"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-
-    if [ "$UPDATE" -eq 1 ]; then
-        rm -rf "$golden_sim"
-        mkdir -p "$golden_sim"
-        for f in "${out_files[@]}"; do cp "$f" "$golden_sim/"; done
-        echo "$asm_status ($prname)  [sim UPDATED, ${#out_files[@]} file(s)]$size_msg"
-        pass=$((pass + 1))
-        continue
-    fi
-
-    if [ ! -d "$golden_sim" ]; then
-        echo "FAIL ($prname): no sim golden at $golden_sim (run --update?)"
-        fail=$((fail + 1)); failed_names+=("$prname"); continue
-    fi
-
-    sim_fail=0
-    for f in "${out_files[@]}"; do
-        base="$(basename "$f")"
-        if ! cmp -s "$f" "$golden_sim/$base"; then
-            echo "FAIL ($prname): $base differs from sim golden"
-            sim_fail=1
+        # cmmcomp step ------------------------------------------------------
+        if ! "$CMMCOMP" -en -i "$filename" -n "$prname" -p "$work_proc" -m "$MACROS" -t "$tmp" >/dev/null 2>&1; then
+            echo "FAIL ($prname): cmmcomp exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
-    done
-    if [ $sim_fail -eq 0 ]; then
-        echo "$asm_status ($prname)  [sim OK]$size_msg"
-        pass=$((pass + 1))
-    else
-        fail=$((fail + 1)); failed_names+=("$prname")
-    fi
-done
+        [ -s "$asm_file" ] || { echo "FAIL ($prname): asm missing/empty"; fail=$((fail+1)); failed_names+=("$prname"); continue; }
 
-# ---- 3. project pass: multi-proc DTW with top-level testbench --------------
-
-if [ "$NO_SIM" -eq 0 ]; then
-    proj="DTW"
-    proj_top="$ROOT/Exemplos/$proj/TopLevel"
-    proj_tmp="$TMP_DIR/$proj"
-    golden_proj="$GOLDEN_SIM_DIR/$proj"
-    procs=("ProcDTW" "ZeroCross")
-
-    rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"
-
-    # collect each proc's .v + .mif into the project scratch dir
-    project_ok=1
-    proc_vs=()
-    for p in "${procs[@]}"; do
-        if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
-            echo "FAIL ($proj): $p artifacts missing - did its build pass?"
-            project_ok=0; break
+        # size ratchet ------------------------------------------------------
+        num_ins=$(grep "^num_ins " "$tmp/cmm_log.txt" 2>/dev/null | awk '{print $2}')
+        SIZE_CURRENT[$prname]="${num_ins:-0}"
+        baseline="${SIZE_BASELINE[$prname]:-}"
+        size_grew=0
+        if [ -z "$baseline" ]; then
+            size_msg="  [size: ${num_ins:-?}, no baseline]"
+        elif [ "${num_ins:-0}" -gt "$baseline" ]; then
+            size_msg="  [size: $num_ins, GREW +$((num_ins - baseline)) vs $baseline]"
+            size_grew=1
+        elif [ "${num_ins:-0}" -lt "$baseline" ]; then
+            size_msg="  [size: $num_ins, -$((baseline - num_ins)) vs $baseline]"
+        else
+            size_msg="  [size: $num_ins]"
         fi
-        proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
-        cp "$WORK_DIR/$p/Hardware/$p.v"          "$proj_tmp/"
-        cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$proj_tmp/"
-        cp "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
-    done
+        if [ "$size_grew" -eq 1 ] && [ "$UPDATE_SIZE" -eq 0 ]; then
+            echo "FAIL ($prname):$size_msg"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
 
-    if [ "$project_ok" -eq 1 ]; then
-        # input .txt for the testbench ($fopen uses relative paths)
-        cp "$proj_top"/*.txt "$proj_tmp/" 2>/dev/null || true
+        # .asm capture or compare -------------------------------------------
+        if [ "$UPDATE" -eq 1 ]; then
+            cp "$asm_file" "$golden"
+            asm_status="UPDATED"
+        elif [ ! -f "$golden" ]; then
+            echo "FAIL ($prname): no golden at $golden (run --update?)"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        elif cmp -s "$asm_file" "$golden"; then
+            asm_status="PASS"
+        else
+            echo "FAIL ($prname): asm differs from golden"
+            diff "$golden" "$asm_file" | head -20 | sed 's/^/    /'
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
 
-        # iverilog: HDL core + proc .v files + every .v under TopLevel/
-        if ! "$IVERILOG" -s top_level_tb -o "$proj_tmp/$proj.vvp" \
+        # simulation phase --------------------------------------------------
+        if [ "$NO_SIM" -eq 1 ] || build_skipped "$prname"; then
+            echo "$asm_status ($prname)  [sim skipped]$size_msg"
+            pass=$((pass + 1))
+            continue
+        fi
+
+        if ! "$APPCOMP" -en -i "$asm_file" -t "$tmp" >/dev/null 2>&1; then
+            echo "FAIL ($prname): appcomp exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+        if ! "$ASMCOMP" -en -i "$asm_file" -p "$work_proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 100000 >/dev/null 2>&1; then
+            echo "FAIL ($prname): asmcomp exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+
+        # Procs whose real testbench lives at the project level (DTW): build their
+        # .v/.mif here for the project pass to link, skip standalone iverilog.
+        if sim_skipped "$prname"; then
+            echo "$asm_status ($prname)  [standalone sim skipped]$size_msg"
+            pass=$((pass + 1))
+            continue
+        fi
+
+        uproc="$work_proc/Hardware/$prname"
+        tb="$tmp/${prname}_tb.v"
+        if [ ! -s "$uproc.v" ] || [ ! -s "$tb" ]; then
+            echo "FAIL ($prname): asmcomp artifacts missing"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+
+        if ! "$IVERILOG" -s "${prname}_tb" -o "$tmp/$prname.vvp" \
+                "$tb" "$uproc.v" \
                 "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
-                "$HDL/core.v" "$HDL/ula.v" "$HDL/myFIFO.v" \
-                "${proc_vs[@]}" \
-                "$proj_top"/*.v >/dev/null 2>&1; then
-            echo "FAIL ($proj): iverilog exited non-zero"
-            fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+                "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1; then
+            echo "FAIL ($prname): iverilog exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
-    fi
 
-    if [ "$project_ok" -eq 1 ]; then
-        pushd "$proj_tmp" >/dev/null
-        "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
+        cp "${uproc}_data.mif" "${uproc}_inst.mif" "$tmp/"
+        pushd "$tmp" >/dev/null
+        "$VVP" "$tmp/$prname.vvp" >/dev/null 2>&1
         vvp_status=$?
         popd >/dev/null
         if [ $vvp_status -ne 0 ]; then
-            echo "FAIL ($proj): vvp exited non-zero"
-            fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+            echo "FAIL ($prname): vvp exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
-    fi
 
-    if [ "$project_ok" -eq 1 ]; then
-        out_files=("$proj_tmp"/output_*.txt)
+        sim_dir="$work_proc/Simulation"
+        golden_sim="$GOLDEN_SIM_DIR/$prname"
+        out_files=("$sim_dir"/output_*.txt)
         if [ "${#out_files[@]}" -eq 0 ] || [ ! -e "${out_files[0]}" ]; then
-            echo "FAIL ($proj): testbench produced no output_*.txt"
-            fail=$((fail + 1)); failed_names+=("$proj")
-        elif [ "$UPDATE" -eq 1 ]; then
-            rm -rf "$golden_proj"; mkdir -p "$golden_proj"
-            for f in "${out_files[@]}"; do cp "$f" "$golden_proj/"; done
-            echo "UPDATED ($proj)  [sim UPDATED, ${#out_files[@]} file(s)]"
+            echo "FAIL ($prname): testbench produced no output_*.txt"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+
+        if [ "$UPDATE" -eq 1 ]; then
+            rm -rf "$golden_sim"
+            mkdir -p "$golden_sim"
+            for f in "${out_files[@]}"; do cp "$f" "$golden_sim/"; done
+            echo "$asm_status ($prname)  [sim UPDATED, ${#out_files[@]} file(s)]$size_msg"
             pass=$((pass + 1))
-        elif [ ! -d "$golden_proj" ]; then
-            echo "FAIL ($proj): no sim golden at $golden_proj (run --update?)"
-            fail=$((fail + 1)); failed_names+=("$proj")
+            continue
+        fi
+
+        if [ ! -d "$golden_sim" ]; then
+            echo "FAIL ($prname): no sim golden at $golden_sim (run --update?)"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+
+        sim_fail=0
+        for f in "${out_files[@]}"; do
+            base="$(basename "$f")"
+            if ! cmp -s "$f" "$golden_sim/$base"; then
+                echo "FAIL ($prname): $base differs from sim golden"
+                sim_fail=1
+            fi
+        done
+        if [ $sim_fail -eq 0 ]; then
+            echo "$asm_status ($prname)  [sim OK]$size_msg"
+            pass=$((pass + 1))
         else
-            sim_fail=0
-            for f in "${out_files[@]}"; do
-                base="$(basename "$f")"
-                if ! cmp -s "$f" "$golden_proj/$base"; then
-                    echo "FAIL ($proj): $base differs from sim golden"
-                    sim_fail=1
-                fi
-            done
-            if [ $sim_fail -eq 0 ]; then
-                echo "PASS ($proj)  [sim OK]"
-                pass=$((pass + 1))
-            else
+            fail=$((fail + 1)); failed_names+=("$prname")
+        fi
+    done
+
+    # ---- 3. project pass: multi-proc DTW with top-level testbench ----------
+
+    if [ "$NO_SIM" -eq 0 ]; then
+        proj="DTW"
+        proj_top="$ROOT/Exemplos/$proj/TopLevel"
+        proj_tmp="$TMP_DIR/$proj"
+        golden_proj="$GOLDEN_SIM_DIR/$proj"
+        procs=("ProcDTW" "ZeroCross")
+
+        rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"
+
+        project_ok=1
+        proc_vs=()
+        for p in "${procs[@]}"; do
+            if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+                echo "FAIL ($proj): $p artifacts missing - did its build pass?"
+                project_ok=0; break
+            fi
+            proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
+            cp "$WORK_DIR/$p/Hardware/$p.v"          "$proj_tmp/"
+            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$proj_tmp/"
+            cp "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+        done
+
+        if [ "$project_ok" -eq 1 ]; then
+            cp "$proj_top"/*.txt "$proj_tmp/" 2>/dev/null || true
+
+            if ! "$IVERILOG" -s top_level_tb -o "$proj_tmp/$proj.vvp" \
+                    "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                    "$HDL/core.v" "$HDL/ula.v" "$HDL/myFIFO.v" \
+                    "${proc_vs[@]}" \
+                    "$proj_top"/*.v >/dev/null 2>&1; then
+                echo "FAIL ($proj): iverilog exited non-zero"
+                fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+            fi
+        fi
+
+        if [ "$project_ok" -eq 1 ]; then
+            pushd "$proj_tmp" >/dev/null
+            "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
+            vvp_status=$?
+            popd >/dev/null
+            if [ $vvp_status -ne 0 ]; then
+                echo "FAIL ($proj): vvp exited non-zero"
+                fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+            fi
+        fi
+
+        if [ "$project_ok" -eq 1 ]; then
+            out_files=("$proj_tmp"/output_*.txt)
+            if [ "${#out_files[@]}" -eq 0 ] || [ ! -e "${out_files[0]}" ]; then
+                echo "FAIL ($proj): testbench produced no output_*.txt"
                 fail=$((fail + 1)); failed_names+=("$proj")
+            elif [ "$UPDATE" -eq 1 ]; then
+                rm -rf "$golden_proj"; mkdir -p "$golden_proj"
+                for f in "${out_files[@]}"; do cp "$f" "$golden_proj/"; done
+                echo "UPDATED ($proj)  [sim UPDATED, ${#out_files[@]} file(s)]"
+                pass=$((pass + 1))
+            elif [ ! -d "$golden_proj" ]; then
+                echo "FAIL ($proj): no sim golden at $golden_proj (run --update?)"
+                fail=$((fail + 1)); failed_names+=("$proj")
+            else
+                sim_fail=0
+                for f in "${out_files[@]}"; do
+                    base="$(basename "$f")"
+                    if ! cmp -s "$f" "$golden_proj/$base"; then
+                        echo "FAIL ($proj): $base differs from sim golden"
+                        sim_fail=1
+                    fi
+                done
+                if [ $sim_fail -eq 0 ]; then
+                    echo "PASS ($proj)  [sim OK]"
+                    pass=$((pass + 1))
+                else
+                    fail=$((fail + 1)); failed_names+=("$proj")
+                fi
             fi
         fi
     fi
 fi
+
+# ---- 4. CPP phase ----------------------------------------------------------
+
+if [ "$CMM_ONLY" -eq 0 ]; then
+    echo ""
+    echo "==> CPP phase"
+
+    shopt -s nullglob
+    for entry in "$CPP_ROOT"/Tests/test*/; do
+        base="$(basename "$entry")"
+        src="${entry%/}/$base.cpp"
+        if [ ! -f "$src" ]; then
+            echo "FAIL ($base): folder layout needs $base/$base.cpp as entry"
+            fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
+        local_inc=("-I" "${entry%/}")
+
+        prname="$(grep -oE '#pragma[ \t]+yanc[ \t]+prname[ \t]+[A-Za-z0-9_]+' "$src" | awk '{print $NF}' | head -1)"
+        [ -z "$prname" ] && prname="$base"
+
+        proc="$WORK_CPP/$base"
+        tmp="$WORK_CPP/$base/_tmp"
+        rm -rf "$proc"
+        mkdir -p "$proc/Software" "$proc/Hardware" "$proc/Simulation" "$tmp"
+
+        asm="$proc/Software/$prname.asm"
+
+        if ! "$CPPPP" -i "$src" -o "$tmp/pp.cpp" -I "$CPP_ROOT/include" "${local_inc[@]}" >/dev/null 2>&1; then
+            echo "FAIL ($base): cpppp"; fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
+        if ! "$CPPC" -i "$tmp/pp.cpp" -o "$asm" -t "$tmp" >/dev/null 2>&1; then
+            echo "FAIL ($base): cppcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
+        if ! "$APPCOMP" -en -i "$asm" -t "$tmp" >/dev/null 2>&1; then
+            echo "FAIL ($base): appcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
+        if ! "$ASMCOMP" -en -i "$asm" -p "$proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 5000000 >/dev/null 2>&1; then
+            echo "FAIL ($base): asmcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
+
+        uproc="$proc/Hardware/$prname"
+        tb="$tmp/${prname}_tb.v"
+        if [ ! -s "$uproc.v" ] || [ ! -s "$tb" ]; then
+            echo "FAIL ($base): asmcomp artifacts missing"; fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
+
+        out="$proc/Simulation/output_0.txt"
+        infile="${entry%/}/$base.in"
+        if [ -f "$infile" ]; then
+            if [ "$NO_SIM" -eq 1 ]; then
+                echo "PASS ($base)  [verilator sim skipped]"
+                pass=$((pass+1)); continue
+            fi
+            # heavy / input-driven test: simulate with Verilator (iverilog too slow).
+            # Verilator's make->g++ chain wants env-propagated TMP/TEMP, which
+            # the bash->Win32 boundary sometimes strips; delegate to a
+            # PowerShell helper which propagates env reliably.
+            gold="${entry%/}/golden.txt"
+            exp=0; [ -f "$gold" ] && exp=$(grep -c '' "$gold")
+            clocks_file="${infile%.in}.clocks"
+            clocks=200000000
+            [ -f "$clocks_file" ] && clocks=$(cat "$clocks_file" | tr -d '[:space:]')
+            if ! powershell.exe -ExecutionPolicy Bypass -NoProfile \
+                    -File "$CPP_ROOT/Tests/Verilator/run_verilator_step.ps1" \
+                    -Prname  "$prname" \
+                    -TmpDir  "$tmp" \
+                    -UprocV  "$uproc.v" \
+                    -SimMain "$SIMMAIN" \
+                    -HdlDir  "$HDL" \
+                    -InFile  "$infile" \
+                    -OutFile "$out" \
+                    -Clocks  "$clocks" \
+                    -Expected "$exp" >/dev/null 2>&1; then
+                echo "FAIL ($base): verilator"; fail=$((fail+1)); failed_names+=("$base"); continue
+            fi
+        else
+            if ! "$IVERILOG" -s "${prname}_tb" -o "$tmp/$prname.vvp" \
+                    "$tb" "$uproc.v" \
+                    "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                    "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1; then
+                echo "FAIL ($base): iverilog"; fail=$((fail+1)); failed_names+=("$base"); continue
+            fi
+
+            cp "${uproc}_data.mif" "${uproc}_inst.mif" "$tmp/" 2>/dev/null
+            pushd "$tmp" >/dev/null
+            "$VVP" "$tmp/$prname.vvp" >/dev/null 2>&1
+            popd >/dev/null
+        fi
+        if [ ! -f "$out" ]; then
+            echo "FAIL ($base): no simulation output"; fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
+
+        gold="${entry%/}/golden.txt"
+        if [ "$UPDATE" -eq 1 ]; then
+            cp "$out" "$gold"
+            echo "UPDATED ($base): $(tr '\n' ' ' < "$out")"
+            pass=$((pass+1))
+        elif [ ! -f "$gold" ]; then
+            echo "FAIL ($base): no golden at $gold (run --update?)"; fail=$((fail+1)); failed_names+=("$base")
+        elif cmp -s "$out" "$gold"; then
+            echo "PASS ($base): $(tr '\n' ' ' < "$out")"
+            pass=$((pass+1))
+        else
+            echo "FAIL ($base): output differs from golden"
+            echo "    golden: $(tr '\n' ' ' < "$gold")"
+            echo "    got:    $(tr '\n' ' ' < "$out")"
+            fail=$((fail+1)); failed_names+=("$base")
+        fi
+    done
+fi
+
+# ---- 5. summary ------------------------------------------------------------
 
 echo ""
 echo "===== $pass passed, $fail failed ====="
@@ -424,8 +578,7 @@ if [ "$UPDATE_SIZE" -eq 1 ]; then
         echo "# things, run: Scripts/regress.sh --update-size"
         # bash's `set -u` raises "unbound variable" on ${assoc[$key]} even
         # when the key is in ${!assoc[@]} (seen on bash 5.2). Build the
-        # output lines first, then sort, then print - keeps the lookup
-        # inside a single tight loop and avoids unrelated re-expansion.
+        # output lines first, then sort, then print.
         if [ "${#SIZE_CURRENT[@]}" -gt 0 ]; then
             set +u
             lines=""

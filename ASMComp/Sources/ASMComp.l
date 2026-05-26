@@ -6,6 +6,29 @@
 #include "..\Headers\args.h"
 
 #include <string.h>
+#include <stdio.h>
+#include <errno.h>
+#include <sys/stat.h>
+
+/* Create a directory if it doesn't already exist. asmcomp writes its
+ * Verilog/MIF outputs into <proc_dir>/Hardware and <proc_dir>/Simulation;
+ * without these folders the subsequent fopen()s would crash with a NULL
+ * FILE* deref. Silently tolerate "already exists" so reruns don't fail. */
+static void ensure_dir(const char *path) {
+#ifdef _WIN32
+    /* mingw's <sys/stat.h> provides mkdir as a one-arg macro forwarding
+     * to _mkdir; the mode is ignored on Windows. */
+    if (mkdir(path) != 0 && errno != EEXIST) {
+        fprintf(stderr, "asmcomp: warning: could not create %s (errno=%d)\n",
+                path, errno);
+    }
+#else
+    if (mkdir(path, 0755) != 0 && errno != EEXIST) {
+        fprintf(stderr, "asmcomp: warning: could not create %s (errno=%d)\n",
+                path, errno);
+    }
+#endif
+}
 
 %}
 
@@ -216,6 +239,11 @@ int main(int argc, char *argv[])
   strcpy( hdl_dir, a.hdl_dir);               // HDL folder path
   strcpy( mac_dir, a.macros_dir);            // Macros folder path
   strcpy(temp_dir, a.temp_dir);              // Temp folder path
+
+  /* Make sure the output subfolders exist before any fopen() targets them. */
+  char outsub[2300];
+  snprintf(outsub, sizeof(outsub), "%s/Hardware",   proc_dir); ensure_dir(outsub);
+  snprintf(outsub, sizeof(outsub), "%s/Simulation", proc_dir); ensure_dir(outsub);
 
   yyin = fopen(a.input, "r");                // -i is the input .asm file
   eval_init(a.freq, a.clocks, a.project);    // initialize the state variables

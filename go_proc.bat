@@ -152,10 +152,6 @@ echo #### Running the Assembler
 
 set ASM_FILE=%SOFT_DIR%\%PROC%.asm
 
-:: asmcomp expects these output dirs to exist (does not create them)
-mkdir %PROC_DIR%\Hardware 2>nul
-mkdir %PROC_DIR%\Simulation 2>nul
-
 asmcomp.exe -i %ASM_FILE% -p %PROC_DIR% -d %HDL_DIR% -m %MAC_DIR% -t %TMP_PRO% -f %FRE_CLK% -c %NUM_CLK%
 
 :: Build the testbench with Icarus --------------------------------------------
