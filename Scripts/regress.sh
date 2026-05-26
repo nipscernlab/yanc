@@ -411,7 +411,12 @@ if [ "$CPP_ONLY" -eq 0 ]; then
 
         if [ "$project_ok" -eq 1 ]; then
             pushd "$proj_tmp" >/dev/null
-            "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
+            # -fst is the faster waveform format (vs default VCD); passed
+            # as a plusarg AFTER the .vvp file (vvp treats anything before
+            # the file as options and would reject -fst there). The DTW
+            # top-level testbench dumps a lot of signals and the VCD dump
+            # alone dominates the wall-clock without -fst.
+            "$VVP" "$proj_tmp/$proj.vvp" -fst >/dev/null 2>&1
             vvp_status=$?
             popd >/dev/null
             if [ $vvp_status -ne 0 ]; then

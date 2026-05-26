@@ -439,16 +439,21 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "end\n\n");
 
-    // hook $finish at the @fim address when the testbench is standalone.
-    // In --array mode the top-level testbench (e.g. SAPHO project) is
-    // expected to drive termination, so we skip the per-proc $finish.
-    if (sim_array_mode()==0)
-    {
-    fprintf(f_veri, "always @ (posedge clk) if (valr10 == %d) begin\n", sim_get_fim());
-    fprintf(f_veri, "   $display(\"Info: end of program!\");\n");
-    fprintf(f_veri, "   $finish;\n");
-    fprintf(f_veri, "end\n\n");
-    }
+    // Per-proc $finish at the @fim address is disabled. The auto-generated
+    // testbench (in this same file, around the progress-bar block below)
+    // already has its own $finish hooked to the cycle budget, and the
+    // SAPHO top-level testbench supplies its own termination logic in
+    // multi-proc setups. Emitting a $finish inside the synthesizable proc
+    // .v was also a code-smell -- the .v is supposed to be synthesizable
+    // hardware, and $finish is a sim-only construct.
+    //
+    // if (sim_array_mode()==0)
+    // {
+    //     fprintf(f_veri, "always @ (posedge clk) if (valr10 == %d) begin\n", sim_get_fim());
+    //     fprintf(f_veri, "   $display(\"Info: end of program!\");\n");
+    //     fprintf(f_veri, "   $finish;\n");
+    //     fprintf(f_veri, "end\n\n");
+    // }
 
     // ------------------------------------------------------------------------
     // finalize the file ------------------------------------------------------
@@ -682,7 +687,25 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (opc_out()) fprintf(f_veri, "end\n\n");
 
     // ------------------------------------------------------------------------
-    // progress and $finish generation ----------------------------------------
+    // early $finish when the proc reaches @fim (program end) -----------------
+    // ------------------------------------------------------------------------
+    // Without this the sim would run the full cycle budget even after the
+    // program has terminated, because the progress-bar block below uses
+    // wall-clock #delays instead of monitoring the PC. valr10 is the
+    // pipelined PC inside the <prname> module, reachable via the proc
+    // instance name. Skipped in --array mode because the SAPHO top-level
+    // testbench drives termination itself.
+
+    if (sim_array_mode()==0)
+    {
+        fprintf(f_veri, "always @ (posedge clk) if (proc.valr10 == %d) begin\n", sim_get_fim());
+        fprintf(f_veri, "    $display(\"Info: end of program!\");\n");
+        fprintf(f_veri, "    $finish;\n");
+        fprintf(f_veri, "end\n\n");
+    }
+
+    // ------------------------------------------------------------------------
+    // progress and cycle-budget $finish generation ---------------------------
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "// signal registration, progress bar and finish ------------------------------\n\n");
