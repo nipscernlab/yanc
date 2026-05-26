@@ -46,12 +46,12 @@ static void usage(void)
     fprintf(stderr,
         "CPPComp %s — C compiler for the YANC processor\n"
         "usage: cppcomp -i <input.c> -p <proc_dir> [-n <prname>] [-t <tmp>]\n"
-        "  -i <file>   input (preprocessed) .c file\n"
-        "  -p <dir>    proc-folder: writes .asm to <dir>/Software/<prname>.asm\n"
-        "              (creates Software/ if missing). Required.\n"
-        "  -n <name>   #PRNAME embedded in output (default: input basename)\n"
-        "  -t <dir>    temp directory; cppcomp writes cmm_log.txt there for asmcomp\n"
-        "  -h          this help\n"
+        "  -i, --input    <file>   input (preprocessed) .c file\n"
+        "  -p, --proc-dir <dir>    writes .asm to <dir>/Software/<prname>.asm\n"
+        "                          (creates Software/ if missing). Required.\n"
+        "  -n, --name     <name>   #PRNAME embedded in output (default: input basename)\n"
+        "  -t, --temp-dir <dir>    temp directory; cppcomp writes cmm_log.txt there for asmcomp\n"
+        "  -h, --help              this help\n"
         "\n"
         "build-time defaults (override with -D when building cppcomp.exe):\n"
         "  NUBITS=%d  NBMANT=%d  NBEXPO=%d  NUGAIN=%d\n"
@@ -84,11 +84,11 @@ int main(int argc, char **argv)
     const char *tmp_dir  = NULL;
 
     for (int i = 1; i < argc; i++) {
-        if      (!strcmp(argv[i], "-i") && i+1 < argc) in_path  = argv[++i];
-        else if (!strcmp(argv[i], "-p") && i+1 < argc) proc_dir = argv[++i];
-        else if (!strcmp(argv[i], "-n") && i+1 < argc) prname   = argv[++i];
-        else if (!strcmp(argv[i], "-t") && i+1 < argc) tmp_dir  = argv[++i];
-        else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) usage();
+        if      ((!strcmp(argv[i], "-i") || !strcmp(argv[i], "--input"   )) && i+1 < argc) in_path  = argv[++i];
+        else if ((!strcmp(argv[i], "-p") || !strcmp(argv[i], "--proc-dir")) && i+1 < argc) proc_dir = argv[++i];
+        else if ((!strcmp(argv[i], "-n") || !strcmp(argv[i], "--name"    )) && i+1 < argc) prname   = argv[++i];
+        else if ((!strcmp(argv[i], "-t") || !strcmp(argv[i], "--temp-dir")) && i+1 < argc) tmp_dir  = argv[++i];
+        else if ( !strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"    )) usage();
         else { fprintf(stderr, "cppcomp: unknown option '%s'\n", argv[i]); usage(); }
     }
     if (!in_path || !proc_dir) usage();
