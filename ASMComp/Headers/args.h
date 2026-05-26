@@ -23,7 +23,7 @@ typedef struct
     char *temp_dir;   // -t  Temp directory
     int   freq;       // -f  processor operating frequency in MHz
     int   clocks;     // -c  number of clocks to simulate
-    int   project;    // -P  project mode flag (0 = single processor)
+    int   array_sim;  // -A  emit each array element as its own GTKWave signal
 } cli_args;
 
 // parses argv into 'out'. on a missing/unknown/incomplete/non-numeric option

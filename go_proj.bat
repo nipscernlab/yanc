@@ -122,7 +122,7 @@ move comp2gtkw.exe  %BIN_DIR%>%TMP_DIR%\xcopy.txt
 cd  %BIN_DIR%
 
 (for %%i in (%PROC_LIST%) do (
-    cmmcomp.exe -i %%i.cmm -n %%i -p %PROJ_DIR%\%%i -m %MAC_DIR% -t %TMP_DIR%\%%i --project
+    cmmcomp.exe -i %%i.cmm -n %%i -p %PROJ_DIR%\%%i -m %MAC_DIR% -t %TMP_DIR%\%%i --array
 ))
 
 :: Run the Assembler pre-processor --------------------------------------------
@@ -134,7 +134,7 @@ cd  %BIN_DIR%
 :: Run the Assembler compiler -------------------------------------------------
 
 (for %%i in (%PROC_LIST%) do (
-    asmcomp.exe -i %PROJ_DIR%\%%i\Software\%%i.asm -p %PROJ_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0 --project
+    asmcomp.exe -i %PROJ_DIR%\%%i\Software\%%i.asm -p %PROJ_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0 --array
     cp %PROJ_DIR%\%%i\Hardware\%%i.v %TMP_DIR%\%%i
 ))
 

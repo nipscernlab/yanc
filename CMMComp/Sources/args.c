@@ -46,8 +46,8 @@ void cli_parse(int argc, char **argv, cli_args *out)
             out->macros_dir = opt_value(argc, argv, &i, arg);
         else if (!strcmp(arg, "-t") || !strcmp(arg, "--temp-dir"))
             out->temp_dir = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-P") || !strcmp(arg, "--project"))
-            out->project = 1;
+        else if (!strcmp(arg, "-A") || !strcmp(arg, "--array"))
+            out->array_sim = 1;
         else if (!strcmp(arg, "-h") || !strcmp(arg, "--help"))
         {
             cli_help(stdout);

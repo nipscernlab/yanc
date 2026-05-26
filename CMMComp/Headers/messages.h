@@ -566,7 +566,7 @@ void parse_lang_flag(int *argc, char **argv);
       "  -t, --temp-dir <dir>    diretório Temp\n" \
       "\n" \
       "Outras opções:\n" \
-      "  -P, --project           modo projeto (array inicializado pela simulação)\n" \
+      "  -A, --array             expande cada elemento do array como sinal individual no GTKWave\n" \
       "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
       "  -h, --help              mostra esta ajuda e sai\n" \
       "  -V, --version           mostra a versão e sai\n", \
@@ -583,7 +583,7 @@ void parse_lang_flag(int *argc, char **argv);
       "  -t, --temp-dir <dir>    Temp directory\n" \
       "\n" \
       "Other options:\n" \
-      "  -P, --project           project mode (array initialised by simulation)\n" \
+      "  -A, --array             emit each array element as a separate GTKWave signal       \n" \
       "  -en, -pt                diagnostic message language (default: -pt)\n" \
       "  -h, --help              show this help and exit\n" \
       "  -V, --version           show version and exit\n")

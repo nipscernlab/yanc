@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
   snprintf(outsub, sizeof(outsub), "%s/Simulation", proc_dir); ensure_dir(outsub);
 
   yyin = fopen(a.input, "r");                // -i is the input .asm file
-  eval_init(a.freq, a.clocks, a.project);    // initialize the state variables
+  eval_init(a.freq, a.clocks, a.array_sim);  // initialize the state variables
   yylex();                                   // run the lexer
   fclose(yyin);                              // close the .asm file
   eval_finish();                             // finalize the assembler

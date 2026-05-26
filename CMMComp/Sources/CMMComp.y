@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
     cli_parse(argc, argv, &a);      // parses the named options (or exits with usage)
 
     parse_init(a.input, a.name, a.proc_dir, a.macros_dir, a.temp_dir,
-               a.project ? "1" : "0"); // initializes the parser and global variables
+               a.array_sim ? "1" : "0"); // initializes the parser and global variables
     yyparse   ();                       // here the magic happens!!
     parse_end (a.name, a.proc_dir);     // finalizes the parser
 

@@ -439,8 +439,10 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "end\n\n");
 
-    // for single-proc simulations, hook $finish at the @fim address
-    if (sim_multi()==0)
+    // hook $finish at the @fim address when the testbench is standalone.
+    // In --array mode the top-level testbench (e.g. SAPHO project) is
+    // expected to drive termination, so we skip the per-proc $finish.
+    if (sim_array_mode()==0)
     {
     fprintf(f_veri, "always @ (posedge clk) if (valr10 == %d) begin\n", sim_get_fim());
     fprintf(f_veri, "   $display(\"Info: end of program!\");\n");

@@ -68,8 +68,8 @@ void cli_parse(int argc, char **argv, cli_args *out)
             out->freq = opt_int(opt_value(argc, argv, &i, arg), arg);
         else if (!strcmp(arg, "-c") || !strcmp(arg, "--clocks"))
             out->clocks = opt_int(opt_value(argc, argv, &i, arg), arg);
-        else if (!strcmp(arg, "-P") || !strcmp(arg, "--project"))
-            out->project = 1;
+        else if (!strcmp(arg, "-A") || !strcmp(arg, "--array"))
+            out->array_sim = 1;
         else if (!strcmp(arg, "-h") || !strcmp(arg, "--help"))
         {
             cli_help(stdout);
