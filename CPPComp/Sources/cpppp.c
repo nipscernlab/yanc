@@ -683,11 +683,10 @@ static void usage(void)
 {
     fprintf(stderr,
         "cpppp %s — C preprocessor for the CPPComp toolchain\n"
-        "usage: cpppp -i <input.c> [-o <output.c>] [-I <dir>]* [-D NAME[=val]]*\n"
+        "usage: cpppp -i <input.c> [-o <output.c>] [-I <dir>]*\n"
         "  -i <file>        input .c file\n"
         "  -o <file>        output preprocessed .c (default: stdout)\n"
         "  -I <dir>         add include search directory (repeatable)\n"
-        "  -D NAME=val      pre-define a macro (repeatable)\n"
         "  -h, --help       show this help\n"
         "  -V, --version    show version and exit\n",
         YANC_VERSION);
@@ -705,11 +704,6 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i], "-I") && i+1 < argc) {
             if (n_incdirs < MAX_INCDIRS) incdirs[n_incdirs++] = argv[++i];
             else { fprintf(stderr, "cpppp: too many -I dirs\n"); exit(1); }
-        }
-        else if (!strcmp(argv[i], "-D") && i+1 < argc) {
-            char *eq = strchr(argv[++i], '=');
-            if (eq) { *eq = 0; macro_define(argv[i], eq+1); }
-            else    { macro_define(argv[i], "1"); }
         }
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) usage();
         else if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--version")) {
