@@ -9,10 +9,14 @@
 #      vvp and compare output_*.txt against Testes/golden_sim/<prname>/.
 #      Plus a project pass for the multi-proc DTW example.
 #
-#   2. CPP phase: for every CPPComp/Tests/testN/ run
+#   2. CPP phase: for every CPPComp/Tests/testN/Software/testN.cpp run
 #      cpppp -> cppcomp -> appcomp -> asmcomp -> iverilog (or Verilator
-#      if testN.in is present) and compare output_0.txt against
-#      CPPComp/Tests/testN/golden.txt.
+#      if testN/Software/testN.in is present) and compare the resulting
+#      Simulation/output_0.txt against CPPComp/Tests/testN/golden.txt.
+#      Tests follow the cmmcomp pipeline layout: <proc>/Software/ for
+#      source, <proc>/Hardware/ for the generated .v/.mif, and
+#      <proc>/Simulation/ for the sim output (all three are created on
+#      demand by cppcomp + asmcomp).
 #
 # Build phase builds all 5 binaries once (cmmcomp + cpppp + cppcomp +
 # appcomp + asmcomp), both phases reuse them.
@@ -458,12 +462,13 @@ if [ "$CMM_ONLY" -eq 0 ]; then
     shopt -s nullglob
     for entry in "$CPP_ROOT"/Tests/test*/; do
         base="$(basename "$entry")"
-        src="${entry%/}/$base.cpp"
+        # Sources live in testN/Software/ to match the cmmcomp pipeline layout.
+        src="${entry%/}/Software/$base.cpp"
         if [ ! -f "$src" ]; then
-            echo "FAIL ($base): folder layout needs $base/$base.cpp as entry"
+            echo "FAIL ($base): folder layout needs $base/Software/$base.cpp as entry"
             fail=$((fail+1)); failed_names+=("$base"); continue
         fi
-        local_inc=("-I" "${entry%/}")
+        local_inc=("-I" "${entry%/}/Software")
 
         prname="$(grep -oE '#pragma[ \t]+yanc[ \t]+prname[ \t]+[A-Za-z0-9_]+' "$src" | awk '{print $NF}' | head -1)"
         [ -z "$prname" ] && prname="$base"
@@ -471,14 +476,16 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         proc="$WORK_CPP/$base"
         tmp="$WORK_CPP/$base/_tmp"
         rm -rf "$proc"
-        mkdir -p "$proc/Software" "$proc/Hardware" "$proc/Simulation" "$tmp"
+        mkdir -p "$tmp"      # cppcomp -p creates Software/, asmcomp creates Hardware/Simulation/
 
         asm="$proc/Software/$prname.asm"
 
         if ! "$CPPPP" -i "$src" -o "$tmp/pp.cpp" -I "$CPP_ROOT/include" "${local_inc[@]}" >/dev/null 2>&1; then
             echo "FAIL ($base): cpppp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
-        if ! "$CPPC" -i "$tmp/pp.cpp" -o "$asm" -t "$tmp" >/dev/null 2>&1; then
+        # cppcomp -p <proc> writes Software/<prname>.asm into the proc folder,
+        # creating Software/ if missing (cmmcomp-style pipeline layout).
+        if ! "$CPPC" -i "$tmp/pp.cpp" -p "$proc" -n "$prname" -t "$tmp" >/dev/null 2>&1; then
             echo "FAIL ($base): cppcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
         if ! "$APPCOMP" -en -i "$asm" -t "$tmp" >/dev/null 2>&1; then
@@ -495,7 +502,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         fi
 
         out="$proc/Simulation/output_0.txt"
-        infile="${entry%/}/$base.in"
+        infile="${entry%/}/Software/$base.in"
         if [ -f "$infile" ]; then
             if [ "$NO_SIM" -eq 1 ]; then
                 echo "PASS ($base)  [verilator sim skipped]"

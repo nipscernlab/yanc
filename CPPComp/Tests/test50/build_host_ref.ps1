@@ -24,18 +24,18 @@ if (-not (Test-Path $gpp)) {
 }
 
 $src = @(
-    "blind_core.cpp",
-    "iter_mad.cpp",
-    "inverse_fir.cpp",
-    "dsp_kernels.cpp",
-    "constants.cpp",
+    "Software/blind_core.cpp",
+    "Software/iter_mad.cpp",
+    "Software/inverse_fir.cpp",
+    "Software/dsp_kernels.cpp",
+    "Software/constants.cpp",
     "host_test_main.cpp"
 )
 
 $args = @(
     "-O3", "-std=c++14",
     "-fno-fast-math", "-ffp-contract=off",
-    "-I", $here
+    "-I", "$here/Software"
 ) + $src + @("-o", "host_ref.exe")
 
 Write-Host "Building host_ref.exe..."
