@@ -15,9 +15,17 @@
 
 set -uo pipefail
 
-if [ -z "${TMPDIR:-}" ] && [ -z "${TMP:-}" ] && [ -z "${TEMP:-}" ]; then
-    export TMPDIR=/tmp
-fi
+# Force TMP/TEMP to a writable Windows path. mingw g++ -- invoked deep
+# inside Verilator's makefile (verilator -> make -> g++) -- needs a
+# Windows-style temp dir for its intermediate .s files; otherwise it
+# silently falls back to C:\WINDOWS\ where unprivileged users can't write
+# ("Cannot create temporary file in C:\WINDOWS\: Permission denied").
+# Setting all three unconditionally is the only thing that survives the
+# PowerShell -> bash -> make -> g++ env-inheritance chain.
+export TMP="C:/packs/msys64/tmp"
+export TEMP="C:/packs/msys64/tmp"
+export TMPDIR="C:/packs/msys64/tmp"
+mkdir -p "$TMP"
 
 UPDATE=0
 SKIP_BUILD=0
@@ -178,23 +186,28 @@ for entry in "$CPP"/examples/test*.cpp "$CPP"/examples/test*/; do
     fi
     if [ -f "$infile" ]; then
         # heavy / input-driven test: simulate with Verilator (iverilog too slow).
+        # The Verilator build chain (verilator -> make -> mingw g++) needs env
+        # vars (TMP/TEMP/USERPROFILE) to find a writable temp dir. Some host
+        # environments strip those at the bash->make boundary, so we delegate
+        # this stage to a PowerShell helper which propagates env reliably.
         gold="$GOLDEN/$base.txt"
         exp=0; [ -f "$gold" ] && exp=$(grep -c '' "$gold")
-        if ! "$VERILATOR" --cc --exe --build --top-module "$prname" --prefix Vtop \
-                -o "sim_$prname" -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN \
-                -Wno-BLKANDNBLK -Wno-WIDTH -Wno-CASEINCOMPLETE -Wno-IMPLICIT \
-                -Wno-COMBDLY --no-timing --Mdir "$tmp/vl" \
-                "$SIMMAIN" "$uproc.v" "$HDL/processor.v" "$HDL/core.v" "$HDL/ula.v" \
-                "$HDL/addr_dec.v" "$HDL/instr_dec.v" >/dev/null 2>&1; then
-            echo "FAIL ($base): verilator"; fail=$((fail+1)); failed+=("$base"); continue
-        fi
-        # cycle budget: optional .clocks sidecar next to the .in file lets
-        # per-test heavy programs (e.g. blind_deconvolve) override the default.
-        # Without a sidecar, 200M is enough for the FISTA-scale tests.
         clocks_file="${infile%.in}.clocks"
         clocks=200000000
         [ -f "$clocks_file" ] && clocks=$(cat "$clocks_file" | tr -d '[:space:]')
-        "$tmp/vl/sim_$prname" "$infile" "$out" "$clocks" "$exp" >/dev/null 2>&1
+        if ! powershell.exe -ExecutionPolicy Bypass -NoProfile \
+                -File "$CPP/Verilator/run_verilator_step.ps1" \
+                -Prname  "$prname" \
+                -TmpDir  "$tmp" \
+                -UprocV  "$uproc.v" \
+                -SimMain "$SIMMAIN" \
+                -HdlDir  "$HDL" \
+                -InFile  "$infile" \
+                -OutFile "$out" \
+                -Clocks  "$clocks" \
+                -Expected "$exp" >/dev/null 2>&1; then
+            echo "FAIL ($base): verilator"; fail=$((fail+1)); failed+=("$base"); continue
+        fi
     else
         if ! "$IVERILOG" -s "${prname}_tb" -o "$tmp/$prname.vvp" \
                 "$tb" "$uproc.v" \

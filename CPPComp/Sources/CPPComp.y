@@ -1458,10 +1458,12 @@ init_declarator_list:
     ;
 
 init_declarator:
-      '&' IDENT '=' assignment_expr {
+      '&' IDENT '=' { $<typ>$ = cur_base; } assignment_expr {
           /* reference variable `T& r = lvalue;` — r binds to the address of the
-             initializer and auto-derefs on every use */
-          decl *d = ast_decl(t_ref(cur_base), $2, $4, yylineno);
+             initializer and auto-derefs on every use. Save cur_base before
+             the initializer in case a cast/sizeof/new inside it reduces a
+             new base_type and clobbers the global. */
+          decl *d = ast_decl(t_ref($<typ>4), $2, $5, yylineno);
           d->sclass = ts_sclass;
           $$ = d;
       }
@@ -1479,11 +1481,13 @@ init_declarator:
           /* direct list-init `T v{};` — empty brace, value-init (zero fields) */
           $$ = make_decl(cur_base, $1, $2, NULL, 0, yylineno, NULL);
       }
-    | pointers IDENT '{' init_item_list '}' {
+    | pointers IDENT '{' { $<typ>$ = cur_base; } init_item_list '}' {
           /* direct list-init `T v{a, b, ...};` — aggregate init without `=`,
-             same semantics as `T v = {a, b, ...}` (line 1446 below). */
-          decl *d = make_decl(cur_base, $1, $2, NULL, 0, yylineno, NULL);
-          d->binit = $4;
+             same semantics as `T v = {a, b, ...}` (line 1446 below). Save
+             cur_base before the list items in case a cast inside one of
+             them reduces a new base_type and clobbers the global. */
+          decl *d = make_decl($<typ>4, $1, $2, NULL, 0, yylineno, NULL);
+          d->binit = $5;
           $$ = d;
       }
     | pointers IDENT array_suffix {
@@ -1497,21 +1501,28 @@ init_declarator:
               $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
           }
       }
-    | pointers IDENT array_suffix '=' assignment_expr {
+    | pointers IDENT array_suffix '=' { $<typ>$ = cur_base; } assignment_expr {
+          /* Mid-rule save of cur_base: a cast / sizeof / new inside the
+             initializer would reduce its own `base_type` and clobber the
+             global cur_base, so capture the declarator's base type BEFORE
+             parsing the initializer. Same pattern as the direct-init form
+             at the top of init_declarator. */
           if (ts_typedef) msg_error(yylineno, "typedef cannot have an initializer");
-          $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, $5);
+          $$ = make_decl($<typ>5, $1, $2, $3.dims, $3.n, yylineno, $6);
       }
     | pointers IDENT array_suffix '=' '{' '}' {
           /* empty brace init — leave memory at its .mif default (zero) */
           $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
       }
-    | pointers IDENT array_suffix '=' '{' init_item_list '}' {
-          /* aggregate initialiser: array or struct, one value per slot/field */
-          decl *d = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
-          d->binit = $6;
+    | pointers IDENT array_suffix '=' '{' { $<typ>$ = cur_base; } init_item_list '}' {
+          /* aggregate initialiser: array or struct, one value per slot/field.
+             Same cur_base capture as above — designators / nested values may
+             contain casts that clobber the global. */
+          decl *d = make_decl($<typ>6, $1, $2, $3.dims, $3.n, yylineno, NULL);
+          d->binit = $7;
           /* infer an unsized outer dimension `[]` from the initializer count */
-          if (d->dtype && d->dtype->kind == TY_ARRAY && d->dtype->arr_size == 0 && $6 && $6->is_list)
-              d->dtype->arr_size = $6->n;
+          if (d->dtype && d->dtype->kind == TY_ARRAY && d->dtype->arr_size == 0 && $7 && $7->is_list)
+              d->dtype->arr_size = $7->n;
           $$ = d;
       }
     | pointers IDENT array_suffix STRING_LIT {
