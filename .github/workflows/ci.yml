@@ -98,7 +98,7 @@ jobs:
           CMMCOMP="$ROOT/CMMComp/Sources/cmmcomp.exe"
           APPCOMP="$ROOT/APPComp/Sources/appcomp.exe"
           ASMCOMP="$ROOT/ASMComp/Sources/asmcomp.exe"
-          MAC_DIR="$ROOT/CMMComp/Macros"
+          MAC_DIR="$ROOT/CMMComp/Includes"
           HDL_DIR="$ROOT/HDL"
           SCRATCH="$ROOT/.smoke"
           rm -rf "$SCRATCH"

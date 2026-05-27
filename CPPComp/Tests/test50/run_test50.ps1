@@ -14,7 +14,7 @@ $CPP   = Join-Path $ROOT "CPPComp"
 $BIN   = Join-Path $CPP  ".bin"
 $WORK  = Join-Path $CPP  ".work"
 $HDL   = Join-Path $ROOT "HDL"
-$MACROS= Join-Path $ROOT "CMMComp/Macros"
+$MACROS= Join-Path $ROOT "CMMComp/Includes"
 
 $env:TMP    = "C:/packs/msys64/tmp"
 $env:TEMP   = "C:/packs/msys64/tmp"
@@ -56,7 +56,7 @@ New-Item -ItemType Directory -Force "$proc/Software", "$proc/Hardware", "$proc/S
 $asm = "$proc/Software/$prname.asm"
 
 Write-Host "==> cpppp"
-& $CPPPP -i $src -o "$tmp/pp.cpp" -I "$CPP/include" -I $src_dir
+& $CPPPP -i $src -o "$tmp/pp.cpp" -I "$CPP/Includes" -I $src_dir
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> cppcomp"

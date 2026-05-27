@@ -86,7 +86,7 @@ CPPPP="$BIN_DIR/cpppp.exe"
 CPPC="$BIN_DIR/cppcomp.exe"
 APPCOMP="$BIN_DIR/appcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
-MACROS="$ROOT/CMMComp/Macros"
+MACROS="$ROOT/CMMComp/Includes"
 HDL="$ROOT/HDL"
 CMM_ROOT="$ROOT/CMMComp"
 SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"
@@ -503,7 +503,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
 
         asm="$proc/Software/$prname.asm"
 
-        if ! "$CPPPP" -i "$src" -o "$tmp/pp.cpp" -I "$CPP_ROOT/include" "${local_inc[@]}" >/dev/null 2>&1; then
+        if ! "$CPPPP" -i "$src" -o "$tmp/pp.cpp" -I "$CPP_ROOT/Includes" "${local_inc[@]}" >/dev/null 2>&1; then
             echo "FAIL ($base): cpppp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
         # cppcomp -p <proc> writes Software/<prname>.asm into the proc folder,

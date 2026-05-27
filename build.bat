@@ -89,7 +89,7 @@ move comp2gtkw.exe  %BLD_DIR%\bin
 cd %BLD_DIR%
 
 xcopy %SRC_DIR%\HDL HDL /q /y
-xcopy %SRC_DIR%\Macros Macros /q /y
+xcopy %SRC_DIR%\CMMComp\Includes Macros /q /y
 xcopy %SRC_DIR%\Scripts\*.* Scripts /q /y
 
 cd %SRC_DIR%
