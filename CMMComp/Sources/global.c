@@ -29,7 +29,8 @@ char dir_soft [1024]; // Software directory
 
 // state variables
 int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
-int  line_num = 0;    // line number being parsed
+int  line_num = 0;    // parser-time: line the lexer is currently reading
+int  emit_line= 1;    // emit-time: line the AST walker tags onto each instruction
 int  num_ins  = 0;    // number of instructions parsed
 int  sim_arr  = 0;    // tells whether the array is simulated or not
 
@@ -238,7 +239,7 @@ void add_instr(char *inst, ...)
     // table for the gtkwave assembly translator ------------------------------
 
     num_ins++;
-    fprintf(f_lin, "%s\n", itob(line_num+1,20));
+    fprintf(f_lin, "%s\n", itob(emit_line,20));
 
     // ------------------------------------------------------------------------
     // check whether the instruction needs a special macro --------------------

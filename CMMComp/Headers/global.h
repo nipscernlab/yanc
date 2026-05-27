@@ -22,7 +22,9 @@ extern char dir_tmp  [1024];     // Temp directory
 // ----------------------------------------------------------------------------
 
 extern int  acc_ok  ;            // 0 -> acc empty (use LOD), 1 -> acc loaded (use P_LOD)
-extern int  line_num;            // line number being parsed
+extern int  line_num;            // parser-time: line the lexer is currently reading (used by MSG_ERR_*)
+extern int  emit_line;           // emit-time:  line of the AST node generating the current instruction
+                                 //             (set by stmt_emit / ast_emit_expr; read by add_instr)
 extern int  num_ins ;            // number of parsed instructions (excluding final macros)
 extern int  sim_arr ;            // tells whether the array is simulated or not
 

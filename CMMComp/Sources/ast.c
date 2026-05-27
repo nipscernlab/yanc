@@ -327,12 +327,20 @@ void typecheck_expr(expr_node *n)
 expr ast_emit_expr(expr_node *n)
 {
     if (n && n->emitted) return n->cached;
+    // save/restore emit_line so that when this call returns, the caller's
+    // emit_line is what it set before recursing. That way an operator like
+    //   exec_add(ast_emit_expr(L), ast_emit_expr(R))
+    // emits the ADD with the binop's line, not whatever the last sub-walk
+    // left behind.
+    int saved_emit_line = emit_line;
+    if (n) emit_line = n->line;
     typecheck_expr(n);  // annotate composite n->type before codegen
     expr e = ast_emit_expr_impl(n);
     if (n) {
         n->emitted = 1;
         n->cached  = e;
     }
+    emit_line = saved_emit_line;
     return e;
 }
 
@@ -907,6 +915,16 @@ void stmt_emit(stmt_node *n)
     // a kid that has already been emitted by a prior pass.
     if (!n || n->emitted) return;
 
+    // Save/restore emit_line so nested ast_emit_expr / stmt_emit calls (which
+    // overwrite emit_line for their own sub-emissions) leave the statement's
+    // line in place for any direct add_instr / helper call that fires after
+    // the sub-walks return. Pre-AST, line_num was the lexer's current line
+    // at every grammar action, so f_lin entries automatically tracked source
+    // location. Post-AST the walker fires after parsing finishes, so we have
+    // to set emit_line explicitly from n->line here.
+    int saved_emit_line = emit_line;
+    emit_line = n->line;
+
     switch (n->kind)
     {
         case STMT_ASSIGN:
@@ -1153,6 +1171,7 @@ void stmt_emit(stmt_node *n)
     }
 
     n->emitted = 1;
+    emit_line  = saved_emit_line;
 }
 
 void stmt_free(stmt_node *n)
