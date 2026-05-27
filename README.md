@@ -93,10 +93,15 @@ Auxiliary content:
 
 **Option B — build from source.**
 
-Requirements (Windows + MSYS2):
+Requirements (Windows + [MSYS2](https://www.msys2.org/)):
 
-* [MSYS2](https://www.msys2.org/) with the `mingw-w64-x86_64-gcc`, `bison`, and `flex` packages
-* Optional, for simulation: [Icarus Verilog](http://iverilog.icarus.com/) and/or [Verilator](https://verilator.org/), plus [GTKWave](https://gtkwave.sourceforge.net/)
+* The MinGW-w64 cross toolchain — install with `pacman -S mingw-w64-x86_64-gcc`. The build calls `x86_64-w64-mingw32-gcc.exe` (the cross tuple, not plain `gcc.exe`) on purpose: it produces stand-alone Windows `.exe`s with no MSYS2 DLL runtime dependency, so the deployed binaries work on any Windows machine.
+* `bison` and `flex` — install with `pacman -S bison flex`.
+* These three tools must be reachable on your `PATH`. The script bails early with the exact line to add if any of them is missing. Typical setup:
+  ```
+  set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+  ```
+* Optional, only needed if you want to simulate generated Verilog: [Icarus Verilog](http://iverilog.icarus.com/) and/or [Verilator](https://verilator.org/), plus [GTKWave](https://gtkwave.sourceforge.net/) for waveform viewing.
 
 `Scripts/aurora.bat` builds all six binaries and deploys them into a sibling `Aurora/components/` checkout. It assumes the two repos sit side by side under a common parent — no absolute paths, no editing required:
 
