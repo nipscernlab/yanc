@@ -34,7 +34,7 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euo pipefail
-          cd CMMComp/Sources
+          cd Compilers/CMMComp/Sources
           bison -y -d CMMComp.y
           flex CMMComp.l
           gcc -O2 -Wall -Werror -o cmmcomp.exe \
@@ -49,7 +49,7 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euo pipefail
-          cd APPComp/Sources
+          cd Compilers/APPComp/Sources
           flex -o app.c app.l
           gcc -O2 -Wall -Werror -o appcomp.exe \
               app.c eval.c variaveis.c messages.c args.c
@@ -60,7 +60,7 @@ jobs:
         shell: msys2 {0}
         run: |
           set -euo pipefail
-          cd ASMComp/Sources
+          cd Compilers/ASMComp/Sources
           flex -o ASMComp.c ASMComp.l
           gcc -O2 -Wall -Werror -o asmcomp.exe \
               ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
@@ -78,7 +78,7 @@ jobs:
 
       - name: Smoke test full pipeline on all examples
         shell: msys2 {0}
-        # For every .cmm in CMMComp/Tests/, copy the processor directory to a
+        # For every .cmm in Compilers/CMMComp/Tests/, copy the processor directory to a
         # writable scratch area (so generated files do not dirty the
         # checkout) and run the full toolchain end-to-end:
         #
@@ -95,10 +95,10 @@ jobs:
           set -uo pipefail
 
           ROOT="$(pwd)"
-          CMMCOMP="$ROOT/CMMComp/Sources/cmmcomp.exe"
-          APPCOMP="$ROOT/APPComp/Sources/appcomp.exe"
-          ASMCOMP="$ROOT/ASMComp/Sources/asmcomp.exe"
-          MAC_DIR="$ROOT/CMMComp/Includes"
+          CMMCOMP="$ROOT/Compilers/CMMComp/Sources/cmmcomp.exe"
+          APPCOMP="$ROOT/Compilers/APPComp/Sources/appcomp.exe"
+          ASMCOMP="$ROOT/Compilers/ASMComp/Sources/asmcomp.exe"
+          MAC_DIR="$ROOT/Compilers/CMMComp/Includes"
           HDL_DIR="$ROOT/HDL"
           SCRATCH="$ROOT/.smoke"
           rm -rf "$SCRATCH"
@@ -136,7 +136,7 @@ jobs:
             for art in "$prname.v" "${prname}_data.mif" "${prname}_inst.mif"; do
               [ -s "$work_proc/Hardware/$art" ] || { echo "FAIL: Hardware/$art missing/empty"; fail=1; }
             done
-          done < <(find CMMComp/Tests -name '*.cmm' | sort)
+          done < <(find Compilers/CMMComp/Tests -name '*.cmm' | sort)
 
           rm -rf "$SCRATCH"
           exit "$fail"

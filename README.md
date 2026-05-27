@@ -56,18 +56,18 @@ Six binaries are produced from source — three compilers, two preprocessors, an
 
 **Compilers**
 
-| Binary       | Source dir   | Built with         | Role                                                |
-| ------------ | ------------ | ------------------ | --------------------------------------------------- |
-| `cmmcomp`    | `CMMComp/`   | Flex + Bison + GCC | CMM front-end → assembly                            |
-| `cppcomp`    | `CPPComp/`   | Flex + Bison + GCC | C++ front-end → assembly                            |
-| `asmcomp`    | `ASMComp/`   | Flex + GCC         | Back-end: assembly → Verilog HDL + memory images + testbench |
+| Binary       | Source dir              | Built with         | Role                                                |
+| ------------ | ----------------------- | ------------------ | --------------------------------------------------- |
+| `cmmcomp`    | `Compilers/CMMComp/`    | Flex + Bison + GCC | CMM front-end → assembly                            |
+| `cppcomp`    | `Compilers/CPPComp/`    | Flex + Bison + GCC | C++ front-end → assembly                            |
+| `asmcomp`    | `Compilers/ASMComp/`    | Flex + GCC         | Back-end: assembly → Verilog HDL + memory images + testbench |
 
 **Preprocessors**
 
-| Binary       | Source dir   | Built with    | Role                                                                |
-| ------------ | ------------ | ------------- | ------------------------------------------------------------------- |
-| `cpppp`      | `CPPComp/`   | GCC           | C++ preprocessor for `cppcomp` (`#include`, `#define`, `#if`, ...)  |
-| `appcomp`    | `APPComp/`   | Flex + GCC    | Assembly preprocessor for `asmcomp` (`#USEMAC`, macro expansion)    |
+| Binary       | Source dir              | Built with    | Role                                                                |
+| ------------ | ----------------------- | ------------- | ------------------------------------------------------------------- |
+| `cpppp`      | `Compilers/CPPComp/`    | GCC           | C++ preprocessor for `cppcomp` (`#include`, `#define`, `#if`, ...)  |
+| `appcomp`    | `Compilers/APPComp/`    | Flex + GCC    | Assembly preprocessor for `asmcomp` (`#USEMAC`, macro expansion)    |
 
 **Helper**
 
@@ -78,12 +78,12 @@ Six binaries are produced from source — three compilers, two preprocessors, an
 Auxiliary content:
 
 * `HDL/` — reusable Verilog modules (processor core, ALU, instruction decoder, FIFO, ...)
-* `CMMComp/Includes/` — assembly macros and lookup tables for `.cmm` programs (`float_sqrt`, `float_sin`, `float_atan`, ...)
-* `CPPComp/Includes/` — header shims that `.cpp` programs include
+* `Compilers/CMMComp/Includes/` — assembly macros and lookup tables for `.cmm` programs (`float_sqrt`, `float_sin`, `float_atan`, ...)
+* `Compilers/CPPComp/Includes/` — header shims that `.cpp` programs include
 * `Scripts/` — `regress.sh`, `comp2gtkw`, Tcl scripts that set up the GTKWave view
-* `CMMComp/Tests/` — runnable `.cmm` example projects (Math, FFT, RLS, DTW, PulseSim, Blind, ...)
-* `CPPComp/Tests/` — per-test C++ programs (`test1` … `test51`), plus the Verilator harness
-* `yanc_version.h` — single source of truth for the toolchain version, included by all five binaries (the three compilers + the two preprocessors)
+* `Compilers/CMMComp/Tests/` — runnable `.cmm` example projects (Math, FFT, RLS, DTW, PulseSim, Blind, ...)
+* `Compilers/CPPComp/Tests/` — per-test C++ programs (`test1` … `test51`), plus the Verilator harness
+* `Compilers/yanc_version.h` — single source of truth for the toolchain version, included by all five binaries (the three compilers + the two preprocessors)
 
 ## Quick start
 
@@ -242,13 +242,15 @@ More examples in `CMMComp/Tests/` and `CPPComp/Tests/`.
 
 ```
 yanc/
-├── APPComp/              appcomp sources (Headers/ + Sources/)
-├── ASMComp/              asmcomp sources (Headers/ + Sources/)
-├── CMMComp/              cmmcomp sources + Includes/ (macros) + Tests/ (per-proc projects)
-├── CPPComp/              cpppp + cppcomp sources + Includes/ (C++ shims) + Tests/ (per-test programs + Verilator/)
+├── Compilers/
+│   ├── APPComp/          appcomp sources (Headers/ + Sources/)
+│   ├── ASMComp/          asmcomp sources (Headers/ + Sources/)
+│   ├── CMMComp/          cmmcomp sources + Includes/ (macros) + Tests/ (per-proc projects)
+│   ├── CPPComp/          cpppp + cppcomp sources + Includes/ (C++ shims) + Tests/ (per-test programs + Verilator/)
+│   └── yanc_version.h    single-source-of-truth toolchain version
 ├── HDL/                  reusable Verilog modules (core, ALU, decoders, FIFO, ...)
 ├── Scripts/              regress.sh, comp2gtkw, Tcl viewers, fix.vcd
-├── yanc_version.h        single-source-of-truth toolchain version
+├── docs/images/          README assets (GTKWave screenshot, ...)
 ├── build.bat             build all six binaries + stage release tree
 ├── go_proc.bat           single-processor end-to-end pipeline
 ├── go_proj.bat           multi-processor project pipeline

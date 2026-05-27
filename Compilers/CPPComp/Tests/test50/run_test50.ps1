@@ -9,12 +9,12 @@
 
 $ErrorActionPreference = "Stop"
 
-$ROOT  = Resolve-Path "$PSScriptRoot\..\..\.." | Select-Object -ExpandProperty Path
-$CPP   = Join-Path $ROOT "CPPComp"
+$ROOT  = Resolve-Path "$PSScriptRoot\..\..\..\.." | Select-Object -ExpandProperty Path
+$CPP   = Join-Path $ROOT "Compilers/CPPComp"
 $BIN   = Join-Path $CPP  ".bin"
 $WORK  = Join-Path $CPP  ".work"
 $HDL   = Join-Path $ROOT "HDL"
-$MACROS= Join-Path $ROOT "CMMComp/Includes"
+$MACROS= Join-Path $ROOT "Compilers/CMMComp/Includes"
 
 $env:TMP    = "C:/packs/msys64/tmp"
 $env:TEMP   = "C:/packs/msys64/tmp"

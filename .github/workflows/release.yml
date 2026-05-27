@@ -53,7 +53,7 @@ jobs:
           mkdir -p out/bin
 
           # cmmcomp
-          pushd CMMComp/Sources
+          pushd Compilers/CMMComp/Sources
           bison -y -d CMMComp.y
           flex CMMComp.l
           gcc -O2 -o cmmcomp.exe \
@@ -61,26 +61,26 @@ jobs:
               funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
               variaveis.c array_index.c global.c macros.c messages.c args.c \
               y.tab.c
-          mv cmmcomp.exe ../../out/bin/
+          mv cmmcomp.exe ../../../out/bin/
           rm -f lex.yy.c y.tab.c y.tab.h
           popd
 
           # appcomp
-          pushd APPComp/Sources
+          pushd Compilers/APPComp/Sources
           flex -o app.c app.l
           gcc -O2 -o appcomp.exe \
               app.c eval.c variaveis.c messages.c args.c
-          mv appcomp.exe ../../out/bin/
+          mv appcomp.exe ../../../out/bin/
           rm -f app.c
           popd
 
           # asmcomp
-          pushd ASMComp/Sources
+          pushd Compilers/ASMComp/Sources
           flex -o ASMComp.c ASMComp.l
           gcc -O2 -o asmcomp.exe \
               ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
               hdl.c simulacao.c array.c messages.c args.c
-          mv asmcomp.exe ../../out/bin/
+          mv asmcomp.exe ../../../out/bin/
           rm -f ASMComp.c
           popd
 

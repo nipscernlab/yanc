@@ -13,16 +13,16 @@
 *.ilk
 
 # flex outputs (.l -> .c)
-APPComp/Sources/app.c
-ASMComp/Sources/ASMComp.c
-CMMComp/Sources/lex.yy.c
-CPPComp/Sources/lex.yy.c
+Compilers/APPComp/Sources/app.c
+Compilers/ASMComp/Sources/ASMComp.c
+Compilers/CMMComp/Sources/lex.yy.c
+Compilers/CPPComp/Sources/lex.yy.c
 
 # bison outputs (.y -> .c/.h)
-CMMComp/Sources/y.tab.c
-CMMComp/Sources/y.tab.h
-CPPComp/Sources/y.tab.c
-CPPComp/Sources/y.tab.h
+Compilers/CMMComp/Sources/y.tab.c
+Compilers/CMMComp/Sources/y.tab.h
+Compilers/CPPComp/Sources/y.tab.c
+Compilers/CPPComp/Sources/y.tab.h
 
 # ============================================================================
 # Runtime logs and state files -----------------------------------------------

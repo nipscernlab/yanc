@@ -3,17 +3,17 @@
 #
 # Runs both compiler pipelines off a shared set of binaries:
 #
-#   1. CMM phase: for every CMMComp/Tests/<prname>/Software/<prname>.cmm
+#   1. CMM phase: for every Compilers/CMMComp/Tests/<prname>/Software/<prname>.cmm
 #      run cmmcomp and compare the produced .asm against
-#      CMMComp/Tests/<prname>/golden.asm. For the sim-enabled subset also
+#      Compilers/CMMComp/Tests/<prname>/golden.asm. For the sim-enabled subset also
 #      run appcomp + asmcomp + iverilog + vvp and compare output_*.txt
-#      against CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
-#      the multi-proc DTW example (CMMComp/Tests/DTW/TopLevel/).
+#      against Compilers/Compilers/CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
+#      the multi-proc DTW example (Compilers/CMMComp/Tests/DTW/TopLevel/).
 #
-#   2. CPP phase: for every CPPComp/Tests/testN/Software/testN.cpp run
+#   2. CPP phase: for every Compilers/CPPComp/Tests/testN/Software/testN.cpp run
 #      cpppp -> cppcomp -> appcomp -> asmcomp -> iverilog (or Verilator
 #      if testN/Software/testN.in is present) and compare the resulting
-#      Simulation/output_0.txt against CPPComp/Tests/testN/golden.txt.
+#      Simulation/output_0.txt against Compilers/CPPComp/Tests/testN/golden.txt.
 #      Tests follow the cmmcomp pipeline layout: <proc>/Software/ for
 #      source, <proc>/Hardware/ for the generated .v/.mif, and
 #      <proc>/Simulation/ for the sim output (all three are created on
@@ -25,7 +25,7 @@
 # Usage (from repo root, in msys2/git-bash on Windows):
 #   Scripts/regress.sh                check against goldens (exit 0 = pass)
 #   Scripts/regress.sh --update       regenerate goldens (review diff!)
-#   Scripts/regress.sh --update-size  ratchet down CMMComp/Tests/size_baseline.txt
+#   Scripts/regress.sh --update-size  ratchet down Compilers/CMMComp/Tests/size_baseline.txt
 #   Scripts/regress.sh --skip-build   reuse binaries already in .smoke/bin
 #   Scripts/regress.sh --no-sim       skip every simulation step
 #   Scripts/regress.sh --cmm-only     skip the CPP phase
@@ -86,12 +86,12 @@ CPPPP="$BIN_DIR/cpppp.exe"
 CPPC="$BIN_DIR/cppcomp.exe"
 APPCOMP="$BIN_DIR/appcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
-MACROS="$ROOT/CMMComp/Includes"
+MACROS="$ROOT/Compilers/CMMComp/Includes"
 HDL="$ROOT/HDL"
-CMM_ROOT="$ROOT/CMMComp"
+CMM_ROOT="$ROOT/Compilers/CMMComp"
 SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"
 
-CPP_ROOT="$ROOT/CPPComp"
+CPP_ROOT="$ROOT/Compilers/CPPComp"
 SIMMAIN="$CPP_ROOT/Tests/Verilator/sim_main.cpp"
 
 # CPPComp build flags (target params burned into cppcomp.exe). Override
@@ -168,7 +168,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     # binary, hiding the real problem.
     set -e
 
-    pushd "$ROOT/CMMComp/Sources" >/dev/null
+    pushd "$ROOT/Compilers/CMMComp/Sources" >/dev/null
     bison -y -d CMMComp.y
     flex CMMComp.l
     gcc -O2 -Wall -Werror -o "$CMMCOMP" \
@@ -190,14 +190,14 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
-    pushd "$ROOT/APPComp/Sources" >/dev/null
+    pushd "$ROOT/Compilers/APPComp/Sources" >/dev/null
     flex -o app.c app.l
     gcc -O2 -Wall -Werror -o "$APPCOMP" \
         app.c eval.c variaveis.c messages.c args.c
     rm -f app.c
     popd >/dev/null
 
-    pushd "$ROOT/ASMComp/Sources" >/dev/null
+    pushd "$ROOT/Compilers/ASMComp/Sources" >/dev/null
     flex -o ASMComp.c ASMComp.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
         ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
@@ -221,8 +221,8 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
     echo "==> CMM phase"
 
-    # Each test lives in its own folder under CMMComp/Tests/<prname>/,
-    # mirroring the CPPComp/Tests/ layout: Software/<prname>.cmm is the
+    # Each test lives in its own folder under Compilers/CMMComp/Tests/<prname>/,
+    # mirroring the Compilers/CPPComp/Tests/ layout: Software/<prname>.cmm is the
     # entry, golden.asm + golden_sim/ live alongside. The multi-proc DTW
     # and PulseSim entries (project-pass wrappers without a top-level .cmm)
     # are filtered out by the Software/<prname>.cmm existence check below.

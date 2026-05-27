@@ -49,7 +49,7 @@ del %BLD_DIR%\bin\cppcomp.exe
 
 :: Build the CMM compiler -----------------------------------------------------
 
-cd %SRC_DIR%\CMMComp\Sources
+cd %SRC_DIR%\Compilers\CMMComp\Sources
 
 bison -y -d CMMComp.y
 flex        CMMComp.l
@@ -62,7 +62,7 @@ del  y.tab.h
 
 :: Build the Assembler pre-processor ------------------------------------------
 
-cd %SRC_DIR%\APPComp\Sources
+cd %SRC_DIR%\Compilers\APPComp\Sources
 
 flex  -o app.c app.l
 %GCC% -o appcomp.exe app.c eval.c variaveis.c messages.c args.c
@@ -74,7 +74,7 @@ cd %SRC_DIR%
 
 :: Build the Assembler compiler -----------------------------------------------
 
-cd %SRC_DIR%\ASMComp\Sources
+cd %SRC_DIR%\Compilers\ASMComp\Sources
 
 flex  -o ASMComp.c ASMComp.l
 %GCC% -o asmcomp.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c
@@ -84,7 +84,7 @@ del  ASMComp.c
 
 :: Build the CPP preprocessor ------------------------------------------------
 
-cd %SRC_DIR%\CPPComp\Sources
+cd %SRC_DIR%\Compilers\CPPComp\Sources
 
 %GCC% -O2 -Wall -o cpppp.exe cpppp.c
 
@@ -92,7 +92,7 @@ move cpppp.exe %BLD_DIR%\bin
 
 :: Build the CPP compiler ----------------------------------------------------
 
-cd %SRC_DIR%\CPPComp\Sources
+cd %SRC_DIR%\Compilers\CPPComp\Sources
 
 bison -y -d CPPComp.y
 flex        CPPComp.l
@@ -118,8 +118,8 @@ move comp2gtkw.exe  %BLD_DIR%\bin
 cd %BLD_DIR%
 
 xcopy %SRC_DIR%\HDL HDL /q /y
-xcopy %SRC_DIR%\CMMComp\Includes Macros /q /y
-xcopy %SRC_DIR%\CPPComp\Includes Header /q /y
+xcopy %SRC_DIR%\Compilers\CMMComp\Includes Macros /q /y
+xcopy %SRC_DIR%\Compilers\CPPComp\Includes Header /q /y
 xcopy %SRC_DIR%\Scripts\*.* Scripts /q /y
 
 cd %SRC_DIR%

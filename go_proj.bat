@@ -71,14 +71,14 @@ mkdir %TESTE_DIR%
 
 :: Copy files into the test directories ---------------------------------------
 
-xcopy CMMComp\Tests %USER_DIR% /e /i /q>%TMP_DIR%\xcopy.txt
+xcopy Compilers\CMMComp\Tests %USER_DIR% /e /i /q>%TMP_DIR%\xcopy.txt
 xcopy HDL %HDL_DIR% /q /y>%TMP_DIR%\xcopy.txt
-xcopy CMMComp\Includes %MAC_DIR% /q /y>%TMP_DIR%\xcopy.txt
+xcopy Compilers\CMMComp\Includes %MAC_DIR% /q /y>%TMP_DIR%\xcopy.txt
 xcopy Scripts %SCR_DIR% /q /y>%TMP_DIR%\xcopy.txt
 
 :: Build the CMM compiler -----------------------------------------------------
 
-cd %ROOT_DIR%\CMMComp\Sources
+cd %ROOT_DIR%\Compilers\CMMComp\Sources
 
 %BISON% -y -d CMMComp.y
 %FLEX%        CMMComp.l
@@ -91,7 +91,7 @@ del  y.tab.h
 
 :: Build the Assembler pre-processor ------------------------------------------
 
-cd %ROOT_DIR%\APPComp\Sources
+cd %ROOT_DIR%\Compilers\APPComp\Sources
 
 %FLEX% -o app.c app.l
 %GCC%  -o appcomp.exe app.c eval.c variaveis.c messages.c args.c
@@ -101,7 +101,7 @@ del app.c
 
 :: Build the Assembler compiler -----------------------------------------------
 
-cd %ROOT_DIR%\ASMComp\Sources
+cd %ROOT_DIR%\Compilers\ASMComp\Sources
 
 %FLEX% -o ASMComp.c ASMComp.l
 %GCC%  -o asmcomp.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c
