@@ -35,6 +35,22 @@ YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end co
 
 After `asmcomp`, the generated Verilog is simulated with **Icarus Verilog** (`iverilog` + `vvp`) — or, for heavy testbenches, with **Verilator** — and visualized in **GTKWave**. The provided `go_proc.bat` / `go_proj.bat` wire up the iverilog flow end-to-end.
 
+## What you see in GTKWave
+
+Because the toolchain emits a side-table mapping each PC value to its
+originating C+- source line (`trad_cmm.txt` from `cmmcomp`, dumped as
+the `linetabs` signal by `asmcomp`), GTKWave shows the executing C+-
+line, the assembly opcode, and every declared variable evolving in
+lockstep with the simulated clock — not just raw bus toggles:
+
+![GTKWave showing the executing C+- line, the assembly opcode, and live variable values in lockstep with the clock](docs/images/gtkwave-source-trace.png)
+
+The example above is `proc_fft` mid-run: the C+- track shows the
+`fout(0, 1000.0*real(data[2]));` statement, the assembly track shows
+the matching `LOD / F_MLT+ / F2I / OUT 0` sequence, and the
+declared variables (`N`, `ind`, `istep`, `j`, `k`, `m`, `mmax`,
+`sind`, `comp temp`) carry their live values.
+
 ## Components
 
 Six binaries are produced from source — three compilers, two preprocessors, and one helper:
