@@ -30,10 +30,18 @@ del %BLD_DIR%\HDL\*.* /q
 :: clean \Macros
 del %BLD_DIR%\Macros\*.* /q
 
+:: clean \Header (CPPComp/Includes shims that .cpp programs include)
+if not exist %BLD_DIR%\Header mkdir %BLD_DIR%\Header
+del %BLD_DIR%\Header\*.* /q
+
 :: clean \Scripts
 del %BLD_DIR%\Scripts\*.c
 del %BLD_DIR%\Scripts\*.tcl
 del %BLD_DIR%\Scripts\*.ys
+
+:: cppcomp + cpppp belong to bin/ too -- include them in the bin sweep
+del %BLD_DIR%\bin\cpppp.exe
+del %BLD_DIR%\bin\cppcomp.exe
 
 :: ----------------------------------------------------------------------------
 :: Populate the \bin folder with the executables ------------------------------
@@ -74,6 +82,27 @@ flex  -o ASMComp.c ASMComp.l
 move asmcomp.exe %BLD_DIR%\bin
 del  ASMComp.c
 
+:: Build the CPP preprocessor ------------------------------------------------
+
+cd %SRC_DIR%\CPPComp\Sources
+
+%GCC% -O2 -Wall -o cpppp.exe cpppp.c
+
+move cpppp.exe %BLD_DIR%\bin
+
+:: Build the CPP compiler ----------------------------------------------------
+
+cd %SRC_DIR%\CPPComp\Sources
+
+bison -y -d CPPComp.y
+flex        CPPComp.l
+%GCC% -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function -o cppcomp.exe main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c
+
+move cppcomp.exe %BLD_DIR%\bin
+del  lex.yy.c
+del  y.tab.c
+del  y.tab.h
+
 :: Build translators for GTKWave ----------------------------------------------
 
 cd %SRC_DIR%\Scripts
@@ -90,6 +119,7 @@ cd %BLD_DIR%
 
 xcopy %SRC_DIR%\HDL HDL /q /y
 xcopy %SRC_DIR%\CMMComp\Includes Macros /q /y
+xcopy %SRC_DIR%\CPPComp\Includes Header /q /y
 xcopy %SRC_DIR%\Scripts\*.* Scripts /q /y
 
 cd %SRC_DIR%
