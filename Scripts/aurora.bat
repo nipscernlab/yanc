@@ -24,7 +24,43 @@ echo off
 set SRC_DIR=%~dp0..
 set BLD_DIR=%~dp0..\..\Aurora\components
 
-set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
+:: ----------------------------------------------------------------------------
+:: Toolchain (MSYS2 mingw64) --------------------------------------------------
+:: ----------------------------------------------------------------------------
+::
+:: This script calls bison/flex from MSYS2's usr\bin and the MinGW cross
+:: compiler x86_64-w64-mingw32-gcc.exe from MSYS2's mingw64\bin. The cross
+:: tuple is intentional: it produces stand-alone .exes with no MSYS2 DLL
+:: dependency, so the binaries copied into Aurora\components\bin\ run on
+:: any Windows machine without needing MSYS2 installed.
+::
+:: If MSYS2 is already on your PATH, leave the next block commented.
+:: Otherwise uncomment + adjust to match your MSYS2 install root:
+::
+:: set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+:: set PATH=C:\packs\msys64\mingw64\bin;C:\packs\msys64\usr\bin;%PATH%
+
+:: Fail early with a clear message if the tools are not on PATH ---------------
+where x86_64-w64-mingw32-gcc.exe >nul 2>nul || (
+    echo ERROR: x86_64-w64-mingw32-gcc.exe not on PATH.
+    echo Install MSYS2 ^(https://www.msys2.org/^), then either add
+    echo     ^<msys64^>\mingw64\bin and ^<msys64^>\usr\bin
+    echo to your system PATH, or uncomment one of the "set PATH=..." lines
+    echo near the top of this script.
+    exit /b 1
+)
+where bison.exe >nul 2>nul || (
+    echo ERROR: bison.exe not on PATH. Install MSYS2's bison package
+    echo and ensure ^<msys64^>\usr\bin is on PATH.
+    exit /b 1
+)
+where flex.exe >nul 2>nul || (
+    echo ERROR: flex.exe not on PATH. Install MSYS2's flex package
+    echo and ensure ^<msys64^>\usr\bin is on PATH.
+    exit /b 1
+)
+
+set GCC=x86_64-w64-mingw32-gcc.exe
 
 :: ----------------------------------------------------------------------------
 :: Clean the folder tree ------------------------------------------------------
