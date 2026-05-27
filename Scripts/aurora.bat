@@ -82,10 +82,18 @@ del %BLD_DIR%\Macros\*.* /q
 if not exist %BLD_DIR%\Header mkdir %BLD_DIR%\Header
 del %BLD_DIR%\Header\*.* /q
 
-:: clean \Scripts
+:: clean \Scripts (deploy a curated subset; aurora.bat / regress.sh stay
+:: in the yanc repo and have no business under Aurora\components).
+:: Aurora's own scripts (copy-components.js, download-*.js, empty.gtkw,
+:: ...) are preserved -- they are not yanc artifacts.
 del %BLD_DIR%\Scripts\*.c
 del %BLD_DIR%\Scripts\*.tcl
 del %BLD_DIR%\Scripts\*.ys
+del %BLD_DIR%\Scripts\fix.vcd
+:: one-shot cleanup of files that earlier wildcard runs leaked here
+del %BLD_DIR%\Scripts\aurora.bat  2>nul
+del %BLD_DIR%\Scripts\regress.sh  2>nul
+del %BLD_DIR%\Scripts\build.bat   2>nul
 
 :: cppcomp + cpppp belong to bin/ too -- include them in the bin sweep
 del %BLD_DIR%\bin\cpppp.exe
@@ -168,6 +176,15 @@ cd %BLD_DIR%
 xcopy %SRC_DIR%\HDL HDL /q /y
 xcopy %SRC_DIR%\Compilers\CMMComp\Includes Macros /q /y
 xcopy %SRC_DIR%\Compilers\CPPComp\Includes Header /q /y
-xcopy %SRC_DIR%\Scripts\*.* Scripts /q /y
+
+:: Scripts: ship only the runtime assets Aurora consumes -- the GTKWave
+:: init / post Tcl scripts, the yosys synthesis script, the fix.vcd
+:: template that the Tcls patch, and comp2gtkw.c (kept for reference).
+:: Explicitly NOT shipped: aurora.bat and regress.sh, both of which are
+:: yanc-side build/test infrastructure.
+xcopy %SRC_DIR%\Scripts\*.tcl   Scripts /q /y
+xcopy %SRC_DIR%\Scripts\*.ys    Scripts /q /y
+xcopy %SRC_DIR%\Scripts\*.c     Scripts /q /y
+xcopy %SRC_DIR%\Scripts\fix.vcd Scripts /q /y
 
 cd %SRC_DIR%
