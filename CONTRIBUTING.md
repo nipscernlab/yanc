@@ -18,7 +18,7 @@ even if it's just a stripped-down example.
 
 See the **Build from source** section of the [README](README.md) — you'll
 need MSYS2 with `mingw-w64-x86_64-gcc`, `bison`, and `flex`. On a clean
-checkout, `build.bat` produces all four binaries.
+checkout, `Scripts/aurora.bat` produces all six binaries.
 
 ## Submitting changes
 

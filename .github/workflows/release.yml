@@ -44,7 +44,7 @@ jobs:
 
       - name: Build binaries
         shell: msys2 {0}
-        # Each compiler follows the same pattern as build.bat: run
+        # Each compiler follows the same pattern as Scripts/aurora.bat: run
         # bison/flex when applicable, gcc on the sources, then move the
         # .exe into out/bin. -O2 yields slightly leaner binaries than the
         # default.

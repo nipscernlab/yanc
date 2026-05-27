@@ -1,5 +1,15 @@
 :: ****************************************************************************
-:: Script to build the saphoCompmonents folder *********************************
+:: Build YANC and deploy into the sibling Aurora checkout.
+::
+:: Layout assumption (both repos side-by-side under a common parent):
+::
+::   <parent>\
+::      yanc\        (this repo; this script is at yanc\Scripts\aurora.bat)
+::      Aurora\
+::         components\   <-- BLD_DIR (deploy target)
+::
+:: Both SRC_DIR and BLD_DIR are derived from %~dp0 (the script's own
+:: directory), so it works no matter what the CWD was when invoked.
 :: ****************************************************************************
 
 :: ----------------------------------------------------------------------------
@@ -9,8 +19,10 @@
 cls
 echo off
 
-set SRC_DIR=%cd%
-set BLD_DIR=C:\nipscern\Aurora\components
+:: %~dp0 = "<repo>\Scripts\" (trailing backslash). Up one -> repo root,
+:: up two -> parent that holds Aurora\.
+set SRC_DIR=%~dp0..
+set BLD_DIR=%~dp0..\..\Aurora\components
 
 set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
 

@@ -98,13 +98,22 @@ Requirements (Windows + MSYS2):
 * [MSYS2](https://www.msys2.org/) with the `mingw-w64-x86_64-gcc`, `bison`, and `flex` packages
 * Optional, for simulation: [Icarus Verilog](http://iverilog.icarus.com/) and/or [Verilator](https://verilator.org/), plus [GTKWave](https://gtkwave.sourceforge.net/)
 
-`build.bat` is currently tailored for the Aurora install layout (it hardcodes `BLD_DIR=C:\nipscern\Aurora\components` and copies `HDL/`/`Macros/`/`Header/` next to the binaries). Edit `BLD_DIR` to point at your own staging dir and run:
+`Scripts/aurora.bat` builds all six binaries and deploys them into a sibling `Aurora/components/` checkout. It assumes the two repos sit side by side under a common parent — no absolute paths, no editing required:
 
-```bat
-build.bat
+```
+<parent>\
+   yanc\        (this repo)
+   Aurora\
+      components\   <-- deploy target
 ```
 
-A polished `make`-style entry-point is on the to-do list; for now this batch script is the supported path on Windows. If you only need the binaries, the relevant `gcc` invocations are visible inside `build.bat` — each compiler is a single `bison`/`flex` + `gcc` line.
+Run it from anywhere (it derives both paths from `%~dp0`):
+
+```bat
+Scripts\aurora.bat
+```
+
+A polished `make`-style entry-point is on the to-do list; for now this batch script is the supported path on Windows. If you only need the binaries, the relevant `gcc` invocations are visible inside `Scripts/aurora.bat` — each compiler is a single `bison`/`flex` + `gcc` line.
 
 ### 2. Run the pipeline standalone
 
@@ -249,9 +258,8 @@ yanc/
 │   ├── CPPComp/          cpppp + cppcomp sources + Includes/ (C++ shims) + Tests/ (per-test programs + Verilator/)
 │   └── yanc_version.h    single-source-of-truth toolchain version
 ├── HDL/                  reusable Verilog modules (core, ALU, decoders, FIFO, ...)
-├── Scripts/              regress.sh, comp2gtkw, Tcl viewers, fix.vcd
+├── Scripts/              aurora.bat (build + deploy), regress.sh, comp2gtkw, Tcl viewers
 ├── docs/images/          README assets (GTKWave screenshot, ...)
-├── build.bat             build all six binaries + stage release tree
 ├── go_proc.bat           single-processor end-to-end pipeline
 ├── go_proj.bat           multi-processor project pipeline
 └── .github/workflows/    CI (release on tag push)

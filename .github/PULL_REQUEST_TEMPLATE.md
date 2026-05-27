@@ -23,7 +23,7 @@ it's a refactor or feature, explain what motivated it.
 ## How it was tested
 
 <!--
-- [ ] build.bat succeeds locally
+- [ ] Scripts/aurora.bat succeeds locally
 - [ ] CI smoke (`.github/workflows/ci.yml`) passes
 - [ ] Manually exercised on examples: <which ones>
 - [ ] (For language/codegen changes) inspected the generated .asm / .v
