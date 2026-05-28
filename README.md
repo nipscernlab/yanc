@@ -67,7 +67,7 @@ Six binaries are produced from source — three compilers, two preprocessors, an
 | Binary       | Source dir              | Built with    | Role                                                                |
 | ------------ | ----------------------- | ------------- | ------------------------------------------------------------------- |
 | `cpppp`      | `Compilers/CPPComp/`    | GCC           | C++ preprocessor for `cppcomp` (`#include`, `#define`, `#if`, ...)  |
-| `appcomp`    | `Compilers/APPComp/`    | Flex + GCC    | Assembly preprocessor for `asmcomp` (`#USEMAC`, macro expansion)    |
+| `appcomp`    | `Compilers/APPComp/`    | Flex + GCC    | First pass over the `.asm`: records processor params + resolves variable/label addresses for `asmcomp` |
 
 **Helper**
 
@@ -146,7 +146,7 @@ mkdir %PROJ%\Software %PROJ%\Hardware %PROJ%\Simulation %TMP%
 :: ...or, for a .cmm source instead (no separate preprocess step needed):
 :: %BIN%\cmmcomp.exe -i %SRC% -n %NAME% -p %PROJ% -m %MAC% -t %TMP%
 
-:: --- 3. preprocess assembly (expand #USEMAC etc.) ------------------------
+:: --- 3. resolve addresses + processor params -> log read by asmcomp ------
 %BIN%\appcomp.exe -i %PROJ%\Software\%NAME%.asm -t %TMP%
 
 :: --- 4. compile assembly -> Verilog HDL + memory images + testbench ------
