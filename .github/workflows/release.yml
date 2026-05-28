@@ -84,6 +84,24 @@ jobs:
           rm -f ASMComp.c
           popd
 
+          # cpppp (C++ preprocessor, single TU)
+          pushd Compilers/CPPComp/Sources
+          gcc -O2 -Wall -o cpppp.exe cpppp.c
+          mv cpppp.exe ../../../out/bin/
+          popd
+
+          # cppcomp (C++ compiler)
+          pushd Compilers/CPPComp/Sources
+          bison -y -d CPPComp.y
+          flex CPPComp.l
+          gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable \
+              -Wno-unused-function -o cppcomp.exe \
+              main.c messages.c types.c symtab.c ast.c codegen.c \
+              lex.yy.c y.tab.c
+          mv cppcomp.exe ../../../out/bin/
+          rm -f lex.yy.c y.tab.c y.tab.h
+          popd
+
           # comp2gtkw
           pushd Scripts
           gcc -O2 -o comp2gtkw.exe comp2gtkw.c
@@ -92,23 +110,33 @@ jobs:
 
           ls -l out/bin
 
-      - name: Stage HDL + Macros
+      - name: Stage HDL + Macros + Header + Scripts
         shell: msys2 {0}
-        # Also bundle the SAPHO libraries (HDL/ — Verilog modules for
-        # processor/core/ula/etc — and Macros/ — float LUTs and helpers)
-        # alongside the binaries. Aurora downloads the zip and extracts
-        # it into components/, so bin/, HDL/ and Macros/ land in
-        # components/{bin,HDL,Macros}/ without any extra code on the
-        # Aurora side.
+        # Bundle the SAPHO runtime assets alongside the binaries. Aurora
+        # downloads the zip and extracts it into components/, so each
+        # staged folder lands directly at components/<folder>/ without
+        # any extra code on the Aurora side.
         #
-        # Scripts/ is left out because Aurora's components/Scripts/
-        # contains its own build files (copy-components.js,
-        # download-toolchain.js, download-yanc.js, etc.) mixed in with
-        # the SAPHO scripts. Overwriting wholesale would break the build.
+        #   HDL/     — Verilog modules (processor/core/ula/...)
+        #   Macros/  — CMM float LUTs and helpers (renamed from the
+        #              old root Macros/ to Compilers/CMMComp/Includes/)
+        #   Header/  — CPPComp standard-library shims that .cpp programs
+        #              #include (Compilers/CPPComp/Includes/)
+        #   Scripts/ — only proc2rtl.ys (yosys synthesis script). The
+        #              gtkwave init Tcls and fix.vcd are no longer
+        #              shipped: gen_gtkw emits a static .gtkw at run
+        #              time, so the Tcl-based init path is gone.
+        #
+        # Aurora's components/Scripts/ contains its own build files
+        # (copy-components.js, download-toolchain.js, ...) so we ship
+        # an explicit subset rather than a wholesale copy.
         run: |
           set -euo pipefail
-          cp -r HDL out/HDL
-          cp -r Macros out/Macros
+          cp -r HDL                          out/HDL
+          cp -r Compilers/CMMComp/Includes   out/Macros
+          cp -r Compilers/CPPComp/Includes   out/Header
+          mkdir -p out/Scripts
+          cp Scripts/proc2rtl.ys             out/Scripts/
           ls -l out
 
       - name: Determine artifact name
@@ -132,10 +160,11 @@ jobs:
         run: |
           set -euo pipefail
           cd out
-          # Zip bin/, HDL/ and Macros/ — extracting into components/
-          # produces components/{bin,HDL,Macros}/, which is exactly the
-          # layout Aurora expects.
-          zip -r "../${{ steps.artifact.outputs.name }}.zip" bin HDL Macros
+          # Zip bin/, HDL/, Macros/, Header/ and Scripts/ — extracting
+          # into components/ produces components/{bin,HDL,Macros,Header,
+          # Scripts}/, which is exactly the layout Aurora expects.
+          zip -r "../${{ steps.artifact.outputs.name }}.zip" \
+              bin HDL Macros Header Scripts
           ls -la "../${{ steps.artifact.outputs.name }}.zip"
 
       - name: Upload artifact (always)
