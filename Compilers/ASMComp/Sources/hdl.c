@@ -688,8 +688,15 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // testbench (e.g. DTW), so the unconditional $finish here is fine --
     // the project's top-level testbench just ignores this _tb.v entirely.
 
+    // progress is declared up here (before the early-$finish handler) so the
+    // handler can $fclose it. The initial block opens it at time 0, before
+    // the first posedge clk that can possibly trigger this always block, so
+    // the handle is guaranteed valid by the time we get here.
+    fprintf(f_veri, "integer progress, chrys;\n\n");
+
     fprintf(f_veri, "always @ (posedge clk) if (proc.valr10 == %d) begin\n", sim_get_fim());
     fprintf(f_veri, "    $display(\"Info: end of program!\");\n");
+    fprintf(f_veri, "    $fclose(progress);\n");
     fprintf(f_veri, "    $finish;\n");
     fprintf(f_veri, "end\n\n");
 
@@ -699,7 +706,6 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "// signal registration, progress bar and finish ------------------------------\n\n");
 
-    fprintf(f_veri, "integer progress, chrys;\n");
     fprintf(f_veri, "initial begin\n\n");
     // needed for iverilog to create the .vcd
     fprintf(f_veri, "    $dumpfile(\"%s_tb.vcd\");\n\n", prname);
