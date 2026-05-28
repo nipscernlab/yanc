@@ -110,7 +110,7 @@ jobs:
 
           ls -l out/bin
 
-      - name: Stage HDL + Macros + Header + Scripts
+      - name: Stage HDL + Macros + Header
         shell: msys2 {0}
         # Bundle the SAPHO runtime assets alongside the binaries. Aurora
         # downloads the zip and extracts it into components/, so each
@@ -118,25 +118,20 @@ jobs:
         # any extra code on the Aurora side.
         #
         #   HDL/     — Verilog modules (processor/core/ula/...)
-        #   Macros/  — CMM float LUTs and helpers (renamed from the
-        #              old root Macros/ to Compilers/CMMComp/Includes/)
+        #   Macros/  — CMM float LUTs and helpers (sourced from
+        #              Compilers/CMMComp/Includes/)
         #   Header/  — CPPComp standard-library shims that .cpp programs
         #              #include (Compilers/CPPComp/Includes/)
-        #   Scripts/ — only proc2rtl.ys (yosys synthesis script). The
-        #              gtkwave init Tcls and fix.vcd are no longer
-        #              shipped: gen_gtkw emits a static .gtkw at run
-        #              time, so the Tcl-based init path is gone.
         #
-        # Aurora's components/Scripts/ contains its own build files
-        # (copy-components.js, download-toolchain.js, ...) so we ship
-        # an explicit subset rather than a wholesale copy.
+        # Scripts/ is NOT shipped: Aurora manages its own scripts
+        # (copy-components.js, download-*.js, proc2rtl.ys, ...). The
+        # gtkwave init Tcls / fix.vcd path was replaced by gen_gtkw
+        # emitting a static .gtkw.
         run: |
           set -euo pipefail
           cp -r HDL                          out/HDL
           cp -r Compilers/CMMComp/Includes   out/Macros
           cp -r Compilers/CPPComp/Includes   out/Header
-          mkdir -p out/Scripts
-          cp Scripts/proc2rtl.ys             out/Scripts/
           ls -l out
 
       - name: Determine artifact name
@@ -160,11 +155,11 @@ jobs:
         run: |
           set -euo pipefail
           cd out
-          # Zip bin/, HDL/, Macros/, Header/ and Scripts/ — extracting
-          # into components/ produces components/{bin,HDL,Macros,Header,
-          # Scripts}/, which is exactly the layout Aurora expects.
+          # Zip bin/, HDL/, Macros/ and Header/ — extracting into
+          # components/ produces components/{bin,HDL,Macros,Header}/,
+          # which is exactly the layout Aurora expects.
           zip -r "../${{ steps.artifact.outputs.name }}.zip" \
-              bin HDL Macros Header Scripts
+              bin HDL Macros Header
           ls -la "../${{ steps.artifact.outputs.name }}.zip"
 
       - name: Upload artifact (always)

@@ -16,8 +16,8 @@
 :: Set up the environment -----------------------------------------------------
 :: ----------------------------------------------------------------------------
 
+@echo off
 cls
-echo off
 
 :: %~dp0 = "<repo>\Scripts\" (trailing backslash). Up one -> repo root,
 :: up two -> parent that holds Aurora\.
@@ -63,41 +63,39 @@ where flex.exe >nul 2>nul || (
 set GCC=x86_64-w64-mingw32-gcc.exe
 
 :: ----------------------------------------------------------------------------
-:: Clean the folder tree ------------------------------------------------------
+:: Clean the destination tree -------------------------------------------------
 :: ----------------------------------------------------------------------------
+::
+:: Nuke + re-create each yanc-managed folder so the subsequent move / xcopy
+:: steps always see a clean, empty destination directory. This survives any
+:: corrupted state from earlier interrupted runs (e.g. a stray "bin" FILE
+:: where the bin\ folder should be, which happens if `move foo.exe bin`
+:: runs while bin\ does not yet exist as a directory).
+::
+:: Each target is hit with rmdir (handles the directory case) AND del
+:: (handles the stray-file case); both are silenced so a fresh checkout
+:: where these folders don't exist yet doesn't print "file not found".
 
-:: clean \bin
-del %BLD_DIR%\bin\appcomp.exe
-del %BLD_DIR%\bin\asmcomp.exe
-del %BLD_DIR%\bin\cmmcomp.exe
-del %BLD_DIR%\bin\comp2gtkw.exe
+for %%D in (bin HDL Macros Header) do (
+    rmdir /s /q %BLD_DIR%\%%D 2>nul
+    del   /q    %BLD_DIR%\%%D 2>nul
+    mkdir       %BLD_DIR%\%%D
+)
 
-:: clean \HDL
-del %BLD_DIR%\HDL\*.* /q
-
-:: clean \Macros
-del %BLD_DIR%\Macros\*.* /q
-
-:: clean \Header (CPPComp/Includes shims that .cpp programs include)
-if not exist %BLD_DIR%\Header mkdir %BLD_DIR%\Header
-del %BLD_DIR%\Header\*.* /q
-
-:: clean \Scripts (deploy a curated subset; aurora.bat / regress.sh stay
-:: in the yanc repo and have no business under Aurora\components).
-:: Aurora's own scripts (copy-components.js, download-*.js, empty.gtkw,
-:: ...) are preserved -- they are not yanc artifacts.
-del %BLD_DIR%\Scripts\*.tcl
-del %BLD_DIR%\Scripts\*.ys
-del %BLD_DIR%\Scripts\fix.vcd
-:: one-shot cleanup of files that earlier wildcard runs leaked here
-del %BLD_DIR%\Scripts\aurora.bat  2>nul
-del %BLD_DIR%\Scripts\regress.sh  2>nul
-del %BLD_DIR%\Scripts\build.bat   2>nul
-del %BLD_DIR%\Scripts\comp2gtkw.c 2>nul
-
-:: cppcomp + cpppp belong to bin/ too -- include them in the bin sweep
-del %BLD_DIR%\bin\cpppp.exe
-del %BLD_DIR%\bin\cppcomp.exe
+:: Scripts/ -- yanc no longer ships anything here, but previously-deployed
+:: yanc artifacts (.tcl / .ys / fix.vcd / .bat / .sh / .c) may linger from
+:: older releases. Wipe them by name, not by nuking the folder: Aurora's
+:: own files (copy-components.js, download-*.js, empty.gtkw, ...) sit in
+:: the same folder and must be preserved.
+if exist %BLD_DIR%\Scripts (
+    del /q %BLD_DIR%\Scripts\*.tcl       2>nul
+    del /q %BLD_DIR%\Scripts\*.ys        2>nul
+    del /q %BLD_DIR%\Scripts\fix.vcd     2>nul
+    del /q %BLD_DIR%\Scripts\aurora.bat  2>nul
+    del /q %BLD_DIR%\Scripts\regress.sh  2>nul
+    del /q %BLD_DIR%\Scripts\build.bat   2>nul
+    del /q %BLD_DIR%\Scripts\comp2gtkw.c 2>nul
+)
 
 :: ----------------------------------------------------------------------------
 :: Populate the \bin folder with the executables ------------------------------
@@ -111,7 +109,7 @@ bison -y -d CMMComp.y
 flex        CMMComp.l
 %GCC%    -o cmmcomp.exe ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c
 
-move cmmcomp.exe %BLD_DIR%\bin
+move /Y cmmcomp.exe %BLD_DIR%\bin\
 del  lex.yy.c
 del  y.tab.c
 del  y.tab.h
@@ -123,7 +121,7 @@ cd %SRC_DIR%\Compilers\APPComp\Sources
 flex  -o app.c app.l
 %GCC% -o appcomp.exe app.c eval.c variaveis.c messages.c args.c
 
-move appcomp.exe %BLD_DIR%\bin
+move /Y appcomp.exe %BLD_DIR%\bin\
 del  app.c
 
 cd %SRC_DIR%
@@ -135,7 +133,7 @@ cd %SRC_DIR%\Compilers\ASMComp\Sources
 flex  -o ASMComp.c ASMComp.l
 %GCC% -o asmcomp.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c
 
-move asmcomp.exe %BLD_DIR%\bin
+move /Y asmcomp.exe %BLD_DIR%\bin\
 del  ASMComp.c
 
 :: Build the CPP preprocessor ------------------------------------------------
@@ -144,7 +142,7 @@ cd %SRC_DIR%\Compilers\CPPComp\Sources
 
 %GCC% -O2 -Wall -o cpppp.exe cpppp.c
 
-move cpppp.exe %BLD_DIR%\bin
+move /Y cpppp.exe %BLD_DIR%\bin\
 
 :: Build the CPP compiler ----------------------------------------------------
 
@@ -154,7 +152,7 @@ bison -y -d CPPComp.y
 flex        CPPComp.l
 %GCC% -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function -o cppcomp.exe main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c
 
-move cppcomp.exe %BLD_DIR%\bin
+move /Y cppcomp.exe %BLD_DIR%\bin\
 del  lex.yy.c
 del  y.tab.c
 del  y.tab.h
@@ -165,7 +163,7 @@ cd %SRC_DIR%\Scripts
 
 %GCC% -mwindows -o comp2gtkw.exe comp2gtkw.c
 
-move comp2gtkw.exe  %BLD_DIR%\bin
+move /Y comp2gtkw.exe %BLD_DIR%\bin\
 
 :: ----------------------------------------------------------------------------
 :: Copy HDL, Macros and Scripts folders ---------------------------------------
@@ -173,17 +171,16 @@ move comp2gtkw.exe  %BLD_DIR%\bin
 
 cd %BLD_DIR%
 
-xcopy %SRC_DIR%\HDL HDL /q /y
-xcopy %SRC_DIR%\Compilers\CMMComp\Includes Macros /q /y
-xcopy %SRC_DIR%\Compilers\CPPComp\Includes Header /q /y
+:: /I = treat destination as directory (suppress F/D prompt)
+:: /Q = quiet
+:: /Y = overwrite without prompting
+xcopy %SRC_DIR%\HDL                        HDL    /I /Q /Y
+xcopy %SRC_DIR%\Compilers\CMMComp\Includes Macros /I /Q /Y
+xcopy %SRC_DIR%\Compilers\CPPComp\Includes Header /I /Q /Y
 
-:: Scripts: ship only the runtime assets Aurora consumes -- the GTKWave
-:: init / post Tcl scripts, the yosys synthesis script, and the fix.vcd
-:: template that the Tcls patch. Explicitly NOT shipped: aurora.bat and
-:: regress.sh (yanc-side build/test), and comp2gtkw.c (Aurora uses the
-:: prebuilt comp2gtkw.exe from bin/, not the source).
-xcopy %SRC_DIR%\Scripts\*.tcl   Scripts /q /y
-xcopy %SRC_DIR%\Scripts\*.ys    Scripts /q /y
-xcopy %SRC_DIR%\Scripts\fix.vcd Scripts /q /y
+:: Scripts/ is intentionally NOT copied: Aurora manages its own scripts
+:: (copy-components.js, download-*.js, proc2rtl.ys, ...). The yanc-side
+:: Scripts/ here holds dev tooling (aurora.bat, regress.sh, comp2gtkw.c)
+:: that doesn't belong in the deploy.
 
 cd %SRC_DIR%
