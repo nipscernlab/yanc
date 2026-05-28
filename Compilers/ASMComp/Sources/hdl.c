@@ -642,6 +642,14 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (opc_out()) fprintf(f_veri, "end\n\n");
 
     // decode output ports
+    //
+    // Combinational with UNCONDITIONAL assignment to out_sig_N: the file-write
+    // block below gates on out_en_N at posedge clk and reads out_sig_N at the
+    // same instant, so what matters is that out_sig_N == proc_io_out exactly
+    // when out_en_N is high. The original form `if (proc_out_en == N) out_sig_N <= proc_io_out;`
+    // inferred a latch (no else) and used `<=` in combinational (COMBDLY).
+    // Both Verilator warnings go away with the unconditional `=` form, and
+    // the file output is unchanged because the gate is the same.
     if (opc_out())
     {
         fprintf(f_veri, "// decode output ports\n");
@@ -652,8 +660,8 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
         if (out_used(i))
         {
             fprintf(f_veri, "    // port %d decoding\n", i);
-            fprintf(f_veri, "    if (proc_out_en == %d) out_sig_%d <= proc_io_out;\n", (int)pow(2,i),i);
-            fprintf(f_veri, "    out_en_%d = proc_out_en == %d;\n",                 i, (int)pow(2,i));
+            fprintf(f_veri, "    out_sig_%d = proc_io_out;\n", i);
+            fprintf(f_veri, "    out_en_%d  = proc_out_en == %d;\n", i, (int)pow(2,i));
         }
     }
     if (opc_out()) fprintf(f_veri, "end\n\n");

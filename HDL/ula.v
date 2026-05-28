@@ -166,8 +166,9 @@ wire [MAN-1:0] m2_out = m2_in >> shift2;
 
 // compute the signed mantissas -----------------------------------------------
 
-always @ (*) sm1_out = (s1_in) ? -m1_out : m1_out;
-always @ (*) sm2_out = (s2_in) ? -m2_out : m2_out;
+// zero-pad m{1,2}_out (MAN bits) to match sm{1,2}_out's MAN+1-bit signed width
+always @ (*) sm1_out = (s1_in) ? -m1_out : {1'b0, m1_out};
+always @ (*) sm2_out = (s2_in) ? -m2_out : {1'b0, m2_out};
 
 endmodule
 
@@ -601,7 +602,10 @@ wire [MAN-1:0] m = in[MAN    -1:  0];
 wire        [EXP-1:0] shift = (e[EXP-1]) ? -e : e;
 // shift the magnitude (logical), then apply the sign — truncates toward zero,
 // as C/IEEE float->int conversion requires (a signed >>> would floor instead).
-wire        [MAN+EXP:0] mag = (e[EXP-1]) ? (m >> shift) : (m << shift);
+// m_ext widens m (MAN bits) to the final mag width (MAN+EXP+1) so the shift
+// operates at the destination width — Verilator otherwise warns WIDTHEXPAND.
+wire        [MAN+EXP:0] m_ext = {{(EXP+1){1'b0}}, m};
+wire        [MAN+EXP:0] mag   = (e[EXP-1]) ? (m_ext >> shift) : (m_ext << shift);
 
 always @ (*) out  = (s) ? -mag : mag;
 
@@ -735,7 +739,10 @@ module ula_les
 	output        [NUBITS-1:0] out
 );
 
-assign out = (in1 < in2);
+// zero-extend the 1-bit comparison result to NUBITS so Verilator does not
+// warn WIDTHEXPAND on the ASSIGNW. Semantics are unchanged: false -> all
+// zeros, true -> ...0001.
+assign out = {{(NUBITS-1){1'b0}}, (in1 < in2)};
 
 endmodule
 
@@ -750,7 +757,7 @@ module ula_fles
 	output        [NUBITS-1:0] out
 );
 
-assign out = in1 < in2;
+assign out = {{(NUBITS-1){1'b0}}, (in1 < in2)};
 
 endmodule
 
@@ -764,7 +771,7 @@ module ula_gre
 	output        [NUBITS-1:0] out
 );
 
-assign out = in1 > in2;
+assign out = {{(NUBITS-1){1'b0}}, (in1 > in2)};
 
 endmodule
 
@@ -779,7 +786,7 @@ module ula_fgre
 	output        [NUBITS-1:0] out
 );
 
-assign out = in1 > in2;
+assign out = {{(NUBITS-1){1'b0}}, (in1 > in2)};
 
 endmodule
 
@@ -793,7 +800,7 @@ module ula_equ
 	output   [NUBITS-1:0] out
 );
 
-assign out = in1 == in2;
+assign out = {{(NUBITS-1){1'b0}}, (in1 == in2)};
 
 endmodule
 
@@ -958,8 +965,10 @@ module ula
 
 wire signed [NBEXPO-1:0] e_out;                       // normalized exponent
 wire signed [NBMANT  :0] sm1_out, sm2_out;            // normalized mantissas
-wire					 su1 = F_SU1 & (op == 6'd47); // invert sign of in1 for F_SU1
-wire                     su2 = F_SU2 & (op == 6'd48); // invert sign of in2 for F_SU2
+// F_SU1/F_SU2 are 32-bit parameters; cast to 1 bit with `!= 0` so the AND
+// with the 1-bit op-equality stays 1 bit and matches the 1-bit su{1,2} LHS.
+wire					 su1 = (F_SU1 != 0) & (op == 6'd47); // invert sign of in1 for F_SU1
+wire                     su2 = (F_SU2 != 0) & (op == 6'd48); // invert sign of in2 for F_SU2
 
 generate if ((F_ADD | F_SU1 | F_SU2 | F_GRE | F_LES) != 0) ula_denorm #(NBMANT,NBEXPO) denorm(su1, su2, in1, in2, e_out, sm1_out, sm2_out); endgenerate
 
