@@ -677,21 +677,30 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (opc_out()) fprintf(f_veri, "end\n\n");
 
     // ------------------------------------------------------------------------
-    // early $finish when the proc reaches @fim (program end) -----------------
+    // signal registration, progress bar, and finish --------------------------
     // ------------------------------------------------------------------------
-    // Without this the sim would run the full cycle budget even after the
-    // program has terminated, because the progress-bar block below uses
-    // wall-clock #delays instead of monitoring the PC. valr10 is the
-    // pipelined PC inside the <prname> module, reachable via the proc
-    // instance name. This is in the AUTO-generated testbench, which is
-    // bypassed by multi-proc workflows that ship their own top-level
-    // testbench (e.g. DTW), so the unconditional $finish here is fine --
-    // the project's top-level testbench just ignores this _tb.v entirely.
+    // Everything below is the iverilog-only sim harness: $dumpfile / $dumpvars
+    // for the VCD, the progress-bar file, the wall-clock cycle-budget $finish,
+    // and the early $finish when the proc reaches @fim. Verilator runs from
+    // its own driver (CPPComp/.work/verilator/) and provides its own
+    // termination / tracing, so gating this with `ifdef __ICARUS__` keeps the
+    // generated _tb.v compatible with both back-ends.
+    //
+    // valr10 is the pipelined PC inside the <prname> module. The early-$finish
+    // handler is necessary because the progress-bar block uses wall-clock
+    // #delays instead of monitoring the PC, so without this the sim would run
+    // the full cycle budget even after the program has terminated. progress
+    // is declared above the handler so the handler can $fclose it; the initial
+    // block opens it at time 0, before any posedge clk can trigger the
+    // handler, so the handle is guaranteed valid by the time we get there.
+    // This is the AUTO-generated testbench, bypassed by multi-proc workflows
+    // that ship their own top-level testbench (e.g. DTW), so the unconditional
+    // $finish here is fine -- those projects ignore this _tb.v entirely.
 
-    // progress is declared up here (before the early-$finish handler) so the
-    // handler can $fclose it. The initial block opens it at time 0, before
-    // the first posedge clk that can possibly trigger this always block, so
-    // the handle is guaranteed valid by the time we get here.
+    fprintf(f_veri, "// signal registration, progress bar and finish ------------------------------\n\n");
+
+    fprintf(f_veri, "`ifdef __ICARUS__\n\n");
+
     fprintf(f_veri, "integer progress, chrys;\n\n");
 
     fprintf(f_veri, "always @ (posedge clk) if (proc.valr10 == %d) begin\n", sim_get_fim());
@@ -699,12 +708,6 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     fprintf(f_veri, "    $fclose(progress);\n");
     fprintf(f_veri, "    $finish;\n");
     fprintf(f_veri, "end\n\n");
-
-    // ------------------------------------------------------------------------
-    // progress and cycle-budget $finish generation ---------------------------
-    // ------------------------------------------------------------------------
-
-    fprintf(f_veri, "// signal registration, progress bar and finish ------------------------------\n\n");
 
     fprintf(f_veri, "initial begin\n\n");
     // needed for iverilog to create the .vcd
@@ -809,6 +812,8 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "    $finish;\n\n");
     fprintf(f_veri, "end\n\n"); // end of initial
+
+    fprintf(f_veri, "`endif\n\n"); // end of `ifdef __ICARUS__
 
     // ------------------------------------------------------------------------
     // finalize the file ------------------------------------------------------
