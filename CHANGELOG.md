@@ -6,6 +6,71 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to a loose semantic-versioning scheme on the `v*`
 tags consumed by Aurora.
 
+## [v4.2] – 2026-05-28
+
+### Fixed
+- **Verilator cleanliness across the HDL** — silence the warning
+  storm Verilator emits when running yanc HDL through `--lint-only`
+  or the FISTA / Aurora Verilator harness. Each fix is value-
+  preserving; iverilog regress stays 71/71 byte-identical.
+  - **WIDTHTRUNC in every `generate if`**: Verilog parameters
+    default to 32-bit integers, and the HDL uses dozens of
+    opcode-enable flags (`ADD`, `F_ADD`, `MLT`, `INN`, `JIZ`, ...)
+    as `generate if (FLAG)` conditions. Verilator's GENIF expects
+    1 bit. Rewrote every such site (and OR'd combinations like
+    `F_ADD | F_SU1 | F_SU2`) to `generate if ((EXPR) != 0)` —
+    `HDL/ula.v` (47), `HDL/core.v` (6), `HDL/instr_dec.v` (107).
+    Comparison-result conditions (`ITRADD > 0`, `TOAQUIADDR > 0`)
+    already produce 1 bit and were left alone.
+  - **`HDL/addr_dec.v`**: slice the integer loop variable to the
+    index width (`index == i[$clog2(NPORT)-1:0]`) so the EQ no
+    longer requires a 32-bit expand on the index side.
+  - **`HDL/ula.v` comparison modules** (`ula_les`, `ula_fles`,
+    `ula_gre`, `ula_fgre`, `ula_equ`): explicitly zero-extend the
+    1-bit comparison result to `NUBITS` (`{{(NUBITS-1){1'b0}}, cmp}`)
+    instead of letting an implicit ASSIGNW expand fire.
+  - **`ula_denorm`**: zero-pad the MAN-bit mantissas in the COND's
+    "false" branch so both ternary arms match the MAN+1-bit signed
+    target.
+  - **`ula_f2i`**: introduce `m_ext = {{(EXP+1){1'b0}}, m}` so the
+    shift operand has the same width as `mag` (MAN+EXP+1).
+  - **`su1` / `su2`**: cast the 32-bit `F_SU1` / `F_SU2` parameters
+    with `!= 0` so the AND with the 1-bit op-equality stays 1 bit
+    and matches the 1-bit LHS.
+
+- **COMBDLY + LATCH on the auto-generated testbench's output
+  decoder** — `Compilers/ASMComp/Sources/hdl.c` (`hdl_tb_file`)
+  used to emit
+  ```
+  always @ (*) begin
+      if (proc_out_en == N) out_sig_N <= proc_io_out;
+      out_en_N = proc_out_en == N;
+  end
+  ```
+  which Verilator flagged twice: `<=` inside a combinational always
+  (COMBDLY), and the conditional with no `else` inferred a latch on
+  `out_sig_N`. Switched to an unconditional combinational
+  `out_sig_N = proc_io_out;` — the file-write block below already
+  gates on `out_en_N`, so the captured per-cycle value is
+  byte-identical to before, just without the warnings.
+  The corresponding proc-side sim block in `hdl_vv_file` is left
+  alone: it sits inside `\`ifdef __ICARUS__`, so Verilator never
+  sees it, and switching it to the unconditional form broke the
+  multi-proc DTW project (its top-level testbench depends on the
+  latched per-port semantics of those signals).
+
+### Changed
+- The early-`@fim` `$finish` handler and the `integer progress, chrys;`
+  declaration now sit AFTER the `// signal registration, progress
+  bar and finish` comment in the generated `_tb.v`, grouped with
+  the rest of the sim harness. No behavior change — purely a
+  layout move so all the simulation-only constructs live in one
+  block.
+
+### Release packaging
+- `YANC_VERSION` bumped to `"4.2"`.
+- Zip content unchanged from v4.1 (25 files, no `Scripts/`).
+
 ## [v4.1] – 2026-05-28
 
 ### Fixed
@@ -197,7 +262,8 @@ tags consumed by Aurora.
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v4.1...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v4.2...HEAD
+[v4.2]: https://github.com/nipscernlab/yanc/releases/tag/v4.2
 [v4.1]: https://github.com/nipscernlab/yanc/releases/tag/v4.1
 [v4]: https://github.com/nipscernlab/yanc/releases/tag/v4
 [v3]: https://github.com/nipscernlab/yanc/releases/tag/v3
