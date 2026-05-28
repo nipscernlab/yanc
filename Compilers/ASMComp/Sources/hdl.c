@@ -679,13 +679,6 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // ------------------------------------------------------------------------
     // signal registration, progress bar, and finish --------------------------
     // ------------------------------------------------------------------------
-    // Everything below is the iverilog-only sim harness: $dumpfile / $dumpvars
-    // for the VCD, the progress-bar file, the wall-clock cycle-budget $finish,
-    // and the early $finish when the proc reaches @fim. Verilator runs from
-    // its own driver (CPPComp/.work/verilator/) and provides its own
-    // termination / tracing, so gating this with `ifdef __ICARUS__` keeps the
-    // generated _tb.v compatible with both back-ends.
-    //
     // valr10 is the pipelined PC inside the <prname> module. The early-$finish
     // handler is necessary because the progress-bar block uses wall-clock
     // #delays instead of monitoring the PC, so without this the sim would run
@@ -698,8 +691,6 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // $finish here is fine -- those projects ignore this _tb.v entirely.
 
     fprintf(f_veri, "// signal registration, progress bar and finish ------------------------------\n\n");
-
-    fprintf(f_veri, "`ifdef __ICARUS__\n\n");
 
     fprintf(f_veri, "integer progress, chrys;\n\n");
 
@@ -812,8 +803,6 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "    $finish;\n\n");
     fprintf(f_veri, "end\n\n"); // end of initial
-
-    fprintf(f_veri, "`endif\n\n"); // end of `ifdef __ICARUS__
 
     // ------------------------------------------------------------------------
     // finalize the file ------------------------------------------------------
