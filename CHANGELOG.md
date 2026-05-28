@@ -6,6 +6,45 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to a loose semantic-versioning scheme on the `v*`
 tags consumed by Aurora.
 
+## [v4.1] – 2026-05-28
+
+### Fixed
+- `asmcomp`-generated testbench now closes `progress.txt` on the
+  early-`@fim` `$finish` path. The testbench has two `$finish` paths
+  — an `always @(posedge clk)` block that fires when the program
+  reaches `@fim`, and an `initial` block that runs the cycle-budget
+  loop — and only the second one was closing the file handle. On
+  programs that actually reach `@fim` (the common case) the
+  simulation exited with the file still open. The `integer progress,
+  chrys;` declaration was moved above the `@fim` always block so the
+  handler can `$fclose` it.
+
+### Changed
+- `Scripts/` is no longer copied from yanc into Aurora. Neither the
+  local `aurora.bat` deploy nor the release zip ship anything under
+  `Scripts/` anymore. Aurora manages its own scripts (`proc2rtl.ys`,
+  `copy-components.js`, `download-*.js`, ...), and the GTKWave Tcl
+  init / `fix.vcd` path was replaced by `gen_gtkw` emitting a
+  static `.gtkw`.
+- `aurora.bat` hardened: the cleanup phase now `rmdir` + `del` +
+  `mkdir`s each yanc-managed folder (`bin`, `HDL`, `Macros`,
+  `Header`), so an interrupted previous run that left a stray FILE
+  named `bin` (where the directory should be) is auto-repaired on
+  the next invocation. All `move` commands got `/Y` and all `xcopy`
+  commands got `/I` so the script never prompts.
+
+### Docs
+- README dropped two stale `#USEMAC` references. `appcomp` never had
+  a `#USEMAC` directive — that was the CMM user-macro feature
+  removed in v4. The `appcomp` row now reads "first pass over the
+  `.asm`: records processor params + resolves variable/label
+  addresses for `asmcomp`", which is what it actually does.
+
+### Release packaging
+- `YANC_VERSION` bumped to `"4.1"`.
+- Release zip content shrinks from 31 to 25 entries: `bin/` (6) +
+  `HDL/` (6) + `Macros/` (5) + `Header/` (8). No `Scripts/`.
+
 ## [v4] – 2026-05-28
 
 ### Added
@@ -158,7 +197,8 @@ tags consumed by Aurora.
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v4...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v4.1...HEAD
+[v4.1]: https://github.com/nipscernlab/yanc/releases/tag/v4.1
 [v4]: https://github.com/nipscernlab/yanc/releases/tag/v4
 [v3]: https://github.com/nipscernlab/yanc/releases/tag/v3
 [v2]: https://github.com/nipscernlab/yanc/releases/tag/v2
