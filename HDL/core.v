@@ -2,6 +2,24 @@
 // Helper circuits ************************************************************
 // ****************************************************************************
 
+// Simulation-visibility guard: the program-counter tap (pc_sim_val) feeds the
+// waveform harness in the generated <proc>.v. It is compiled for Icarus
+// (predefines __ICARUS__) and for Verilator when the user passes
+// +define+YANC_TRACE, but never for synthesis. The stack-pointer flags and ULA
+// rounding-error blocks further down stay behind their own `ifdef __ICARUS__:
+// they use a self-referential combinational assignment / real modulo that
+// Verilator rejects, so they remain Icarus-only.
+`ifdef __ICARUS__
+ `ifndef YANC_SIM_VIS
+  `define YANC_SIM_VIS
+ `endif
+`endif
+`ifdef YANC_TRACE
+ `ifndef YANC_SIM_VIS
+  `define YANC_SIM_VIS
+ `endif
+`endif
+
 // program counter ------------------------------------------------------------
 
 module pc
@@ -13,7 +31,7 @@ module pc
 	 input     [NBITS-1:0] data,
 	output reg [NBITS-1:0] addr = 0
 
-`ifdef __ICARUS__ // ----------------------------------------------------------
+`ifdef YANC_SIM_VIS // --------------------------------------------------------
   , output     [NBITS-1:0] sim
 `endif // ---------------------------------------------------------------------
 );
@@ -26,7 +44,7 @@ always @ (posedge clk or posedge rst) begin
 	else     addr <= val + um;
 end
 
-`ifdef __ICARUS__ // ----------------------------------------------------------
+`ifdef YANC_SIM_VIS // --------------------------------------------------------
 assign sim = val;
 `endif // ---------------------------------------------------------------------
 
@@ -195,7 +213,7 @@ module instr_fetch
 	output [NBOPCO-1:0] opcode,
 	output [NBOPER-1:0] operand
 
-`ifdef __ICARUS__ // ----------------------------------------------------------
+`ifdef YANC_SIM_VIS // --------------------------------------------------------
  , output [MINSTW-1:0] pc_sim_val
 `endif // ---------------------------------------------------------------------
 );
@@ -212,7 +230,7 @@ generate
 	else          assign pcl = pc_lval;
 endgenerate
 
-`ifdef __ICARUS__ // ----------------------------------------------------------
+`ifdef YANC_SIM_VIS // --------------------------------------------------------
 pc #(MINSTW) pc (clk, rst, pc_load, pcl, pc_addr, pc_sim_val);
 `else
 pc #(MINSTW) pc (clk, rst, pc_load, pcl, pc_addr);
@@ -618,7 +636,7 @@ module core
 	input               itr,
 	output              cheguei
 
-`ifdef __ICARUS__ // ----------------------------------------------------------
+`ifdef YANC_SIM_VIS // --------------------------------------------------------
  , output [MINSTW-1:0] pc_sim_val
 `endif // ---------------------------------------------------------------------
 );
@@ -648,7 +666,7 @@ instr_fetch #(
 	                                .opcode (if_opcode ),
 	                                .operand(if_operand)
 	
-`ifdef __ICARUS__ // ----------------------------------------------------------
+`ifdef YANC_SIM_VIS // --------------------------------------------------------
                                , .pc_sim_val(pc_sim_val)
 `endif // ---------------------------------------------------------------------
 );

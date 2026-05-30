@@ -19,6 +19,13 @@
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+// Verilator drops internal signals that don't fan out to a port, and forbids a
+// hierarchical reference into a module (e.g. the _tb.v doing proc.valr10) unless
+// the target is public. Every declaration in the sim-visibility harness below
+// therefore carries this attribute so the signals survive Verilator's optimiser
+// and stay reachable for waveform viewing (GTKWave). To Icarus it is a comment.
+#define VPUB " /* verilator public_flat */"
+
 // replaces \ with / on a path
 void force_rightbar(char *str){while (*str) {if (*str == '\\') *str = '/'; str++;}}
 
@@ -103,7 +110,17 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // simulation interface wires ---------------------------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_veri, "`ifdef __ICARUS__\n");
+    // The simulation-visibility harness (mem/PC taps below, plus the user
+    // variable / array mirrors further down) is for waveform viewing only and
+    // must stay out of synthesis. It is compiled for Icarus -- which predefines
+    // __ICARUS__ -- and for Verilator when the user passes +define+YANC_TRACE
+    // (Verilator drops un-read signals, so each mirror is also tagged VPUB).
+    // Verilog `ifdef has no OR, so fold both triggers into one guard macro; the
+    // `ifndef keeps a multi-.v compile from warning on a second definition.
+    fprintf(f_veri, "`ifdef __ICARUS__\n `ifndef YANC_SIM_VIS\n  `define YANC_SIM_VIS\n `endif\n`endif\n");
+    fprintf(f_veri, "`ifdef YANC_TRACE\n `ifndef YANC_SIM_VIS\n  `define YANC_SIM_VIS\n `endif\n`endif\n\n");
+
+    fprintf(f_veri, "`ifdef YANC_SIM_VIS\n");
     // access to the variables in data memory
     fprintf(f_veri, "wire mem_wr;\n");
     fprintf(f_veri, "wire [%d:0] mem_addr_wr;\n" , (int)ceil(log2(n_dat)-1));
@@ -152,7 +169,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, ".DFILE(\"%s_data.mif\"),\n"  , path);
     fprintf(f_veri, ".IFILE(\"%s_inst.mif\"))\n\n", path);
-    fprintf(f_veri, "`ifdef __ICARUS__\n");
+    fprintf(f_veri, "`ifdef YANC_SIM_VIS\n");
     fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
     fprintf(f_veri, "`else\n");
     fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei);\n", prname);
@@ -179,14 +196,15 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     }
 
     // ------------------------------------------------------------------------
-    // simulation interface start (iverilog+gtkwave) --------------------------
+    // simulation interface start (iverilog/verilator + gtkwave) -------------
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "// ----------------------------------------------------------------------------\n");
     fprintf(f_veri, "// Simulation -----------------------------------------------------------------\n");
     fprintf(f_veri, "// ----------------------------------------------------------------------------\n\n");
 
-    fprintf(f_veri, "`ifdef __ICARUS__\n\n");
+    // YANC_SIM_VIS was defined up by the simulation-interface wires above.
+    fprintf(f_veri, "`ifdef YANC_SIM_VIS\n\n");
 
     // ------------------------------------------------------------------------
     // register I/O ports for the simulation ----------------------------------
@@ -199,8 +217,8 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     {
         if (inn_used(i))
         {
-            fprintf(f_veri, "reg signed [%d:0] in_sim_%d = 0;\n", nubits-1, i);
-            fprintf(f_veri, "reg req_in_sim_%d = 0;\n", i);
+            fprintf(f_veri, "reg signed [%d:0] in_sim_%d" VPUB " = 0;\n", nubits-1, i);
+            fprintf(f_veri, "reg req_in_sim_%d" VPUB " = 0;\n", i);
         }
     }
     if (opc_inn()) fprintf(f_veri,"\n");
@@ -210,8 +228,8 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     {
         if (out_used(i))
         {
-            fprintf(f_veri, "reg signed [%d:0] out_sig_%d = 0;\n", nubits-1, i);
-            fprintf(f_veri, "reg out_en_sim_%d = 0;\n", i);
+            fprintf(f_veri, "reg signed [%d:0] out_sig_%d" VPUB " = 0;\n", nubits-1, i);
+            fprintf(f_veri, "reg out_en_sim_%d" VPUB " = 0;\n", i);
         }
     }
 
@@ -260,7 +278,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
         // int: use the reg data type in the simulation
         if (sim_type(i) == 1)
         {
-            fprintf(f_veri, "reg [%d:0] %s = 0;\n", nubits-1, sim_name(i));
+            fprintf(f_veri, "reg [%d:0] %s" VPUB " = 0;\n", nubits-1, sim_name(i));
         }
 
         // float: use the real data type in the simulation
@@ -274,7 +292,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
                 fprintf(f_veri, "integer  e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]);\n"               , nbmant+nbexpo-1, nbmant);
             }
             // create the real variable with initial value 0.0
-            fprintf(f_veri, "real %s = 0.0;\n", sim_name(i));
+            fprintf(f_veri, "real %s" VPUB " = 0.0;\n", sim_name(i));
         }
 
         // comp: use reg in the simulation
@@ -282,7 +300,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
         {
             // currently using dx, but it should be the binary equivalent of 0.0
             // try it with itob(f2mf("0.0",NULL), nubits)
-            fprintf(f_veri, "reg [%d:0] %s = %d'dx;\n", nubits-1, sim_name(i), nubits-1);
+            fprintf(f_veri, "reg [%d:0] %s" VPUB " = %d'dx;\n", nubits-1, sim_name(i), nubits-1);
         }
     }
 
@@ -315,7 +333,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
                 sprintf(im, "%s_i", ni);
                 if (strcmp(nj,im) == 0)
-                    fprintf(f_veri,"wire [16+%d*2-1:0] comp_%s = {8'd%d, 8'd%d, %s, %s};\n", nubits, sim_name(i), nbmant, nbexpo, sim_name(i), sim_name(j));
+                    fprintf(f_veri,"wire [16+%d*2-1:0] comp_%s" VPUB " = {8'd%d, 8'd%d, %s, %s};\n", nubits, sim_name(i), nbmant, nbexpo, sim_name(i), sim_name(j));
             }
         }
     }
@@ -340,7 +358,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
             // int: use the reg data type in the simulation
             if (sim_type_arr(i) == 1)
             {
-                fprintf(f_veri, "reg [%d-1:0] %s%04d=%d'b%s;\n", nubits, sim_name_arr(i), j, nubits, val);
+                fprintf(f_veri, "reg [%d-1:0] %s%04d" VPUB "=%d'b%s;\n", nubits, sim_name_arr(i), j, nubits, val);
             }
 
             // float: use the real data type in the simulation
@@ -352,13 +370,13 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
                     fprintf(f_veri, "integer sm_me2; always @ (*) sm_me2 = (out[%d]) ? -out[%d:0] : out[%d:0];\n", nbmant+nbexpo  , nbmant-1, nbmant-1);
                     fprintf(f_veri, "integer  e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]);\n"               , nbmant+nbexpo-1, nbmant);
                 }
-                fprintf(f_veri, "real %s%04d = %f;\n", sim_name_arr(i), j, mf2f(val));
+                fprintf(f_veri, "real %s%04d" VPUB " = %f;\n", sim_name_arr(i), j, mf2f(val));
             }
 
             // comp: use reg in the simulation
             if (sim_type_arr(i) > 2)
             {
-                fprintf(f_veri, "reg [%d-1:0] %s%04d=%d'b%s;\n", nubits, sim_name_arr(i), j, nubits, val);
+                fprintf(f_veri, "reg [%d-1:0] %s%04d" VPUB "=%d'b%s;\n", nubits, sim_name_arr(i), j, nubits, val);
             }
         }
     }
@@ -394,7 +412,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
                 sprintf(im, "%s_i", ni);
                 if (strcmp(nj,im) == 0)
                     for (int k = 0; k < sim_size_arr(i); k++)
-                        fprintf(f_veri,"wire [16+%d*2-1:0] comp_%s%04d = {8'd%d, 8'd%d, %s%04d, %s%04d};\n", nubits, sim_name_arr(i), k, nbmant, nbexpo, sim_name_arr(i), k, sim_name_arr(j), k);
+                        fprintf(f_veri,"wire [16+%d*2-1:0] comp_%s%04d" VPUB " = {8'd%d, 8'd%d, %s%04d, %s%04d};\n", nubits, sim_name_arr(i), k, nbmant, nbexpo, sim_name_arr(i), k, sim_name_arr(j), k);
             }
         }
     }
@@ -409,7 +427,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     // create 10 registers to delay the @fim instruction
     int nreg = 10;
-    for (int i = 0; i < nreg; i++) fprintf(f_veri, "reg [%d:0] valr%d=0;\n", nubits-1, i+1);
+    for (int i = 0; i < nreg; i++) fprintf(f_veri, "reg [%d:0] valr%d" VPUB "=0;\n", nubits-1, i+1);
     fprintf(f_veri, "\n");
 
     int num_ins = get_n_ins();
@@ -417,8 +435,8 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // create the memory that will hold the instruction table
     fprintf(f_veri, "reg [19:0] min [0:%d-1];\n\n", num_ins);
     // create the interface to that memory
-    fprintf(f_veri, "reg signed [19:0] linetab =-1;\n"  );
-    fprintf(f_veri, "reg signed [19:0] linetabs=-1;\n\n");
+    fprintf(f_veri, "reg signed [19:0] linetab" VPUB " =-1;\n"  );
+    fprintf(f_veri, "reg signed [19:0] linetabs" VPUB "=-1;\n\n");
     // initialize the memory from the .txt file
     fprintf(f_veri, "initial	$readmemb(\"pc_%s_mem.txt\",min);\n\n"  , prname );
     // run the registers
@@ -449,7 +467,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // finalize the file ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_veri, "`endif\n\n");
+    fprintf(f_veri, "`endif\n\n");        // YANC_SIM_VIS
     fprintf(f_veri, "endmodule" );
 
     fclose(f_veri);
@@ -777,6 +795,15 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
         }
     }
 
+    // The stack-pointer flags and ULA rounding-error signals below live in the
+    // hand-written core/ula, behind their own `ifdef __ICARUS__. They use a
+    // self-referential combinational assignment (fl_max) and real modulo, which
+    // Verilator rejects, so they are NOT brought into the YANC_TRACE build --
+    // gate the dumps the same way so the Verilator tb never references signals
+    // that do not exist there. Under Verilator --trace everything surviving is
+    // dumped anyway, so the user's own variables (tagged VPUB) still show up.
+    fprintf(f_veri, "`ifdef __ICARUS__\n");
+
     // if there's a CAL, register the subroutine-stack flags ------------------
 
     if (opc_cal())
@@ -795,7 +822,9 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // register rounding-error flags ------------------------------------------
 
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_float);\n" , prname, prname);
-    fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_int);\n\n" , prname, prname);
+    fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_int);\n" , prname, prname);
+
+    fprintf(f_veri, "`endif\n\n");
 
     // progress bar -----------------------------------------------------------
 

@@ -6,6 +6,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to a loose semantic-versioning scheme on the `v*`
 tags consumed by Aurora.
 
+## [Unreleased]
+
+### Fixed
+- **Waveform visibility under Verilator (GTKWave)** — the simulation
+  harness that mirrors user variables/arrays and the PC pipeline
+  (`valr*`, `linetabs`, the I/O port mirrors) was gated behind
+  `` `ifdef __ICARUS__ ``, so Verilator never compiled it and the
+  signals vanished from the trace. The harness — and the
+  `pc_sim_val`/`mem_wr`/`mem_addr_wr` plumbing it needs in
+  `HDL/processor.v` and `HDL/core.v` — now also compiles when the
+  user passes `+define+YANC_TRACE` to Verilator (the new
+  `YANC_SIM_VIS` guard folds `__ICARUS__` *or* `YANC_TRACE`). Each
+  mirrored declaration in the generated `<proc>.v` is tagged
+  `/* verilator public_flat */` so Verilator does not optimise it
+  away and the `_tb.v` can still reach it hierarchically.
+  - The stack-pointer flags (`core.v`) and the ULA rounding-error
+    signals (`ula.v`) stay Icarus-only: they use a self-referential
+    combinational assignment (`fl_max`) and real modulo, both of
+    which Verilator rejects. The matching `$dumpvars` lines in the
+    generated `_tb.v` are gated the same way so the Verilator
+    testbench never references signals that do not exist there.
+  - Synthesis and the existing Verilator regression flow
+    (`sim_main.cpp`, no `YANC_TRACE`) are unchanged — the harness
+    stays excluded exactly as before.
+
 ## [v4.2] – 2026-05-28
 
 ### Fixed
