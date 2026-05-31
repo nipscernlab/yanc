@@ -532,13 +532,9 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "`timescale 1ns/1ps\n\n");
 
-    // Same YANC_SIM_VIS guard as <proc>.v / core.v / ula.v, so the stack + ULA
-    // rounding-error $dumpvars further down (gated `ifdef YANC_SIM_VIS) are
-    // emitted under Icarus AND under +define+YANC_TRACE. Defines do not reliably
-    // cross the bash command-line file order, so the tb defines its own.
-    fprintf(f_veri, "`ifdef __ICARUS__\n `ifndef YANC_SIM_VIS\n  `define YANC_SIM_VIS\n `endif\n`endif\n");
-    fprintf(f_veri, "`ifdef YANC_TRACE\n `ifndef YANC_SIM_VIS\n  `define YANC_SIM_VIS\n `endif\n`endif\n\n");
-
+    // No YANC_SIM_VIS guard needed here: the tb only references it through the
+    // hierarchical proc.<signal> dumps below, and those signals are gated inside
+    // <proc>.v by <proc>.v's own guard (driven by __ICARUS__ / +define+YANC_TRACE).
     fprintf(f_veri,    "module %s_tb();\n\n", prname);
 
     // ------------------------------------------------------------------------
@@ -856,11 +852,11 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     }
 
     // The stack-pointer flags and ULA rounding-error signals below live in the
-    // hand-written core/ula, gated by YANC_SIM_VIS (Icarus or +define+YANC_TRACE).
-    // The self-referential fl_max assignment and the real modulo they use compile
-    // and simulate fine under current Verilator, so gate the dumps the same way as
-    // the signals: present in both the Icarus and the YANC_TRACE Verilator builds.
-    fprintf(f_veri, "`ifdef YANC_SIM_VIS\n");
+    // hand-written core/ula, gated by YANC_SIM_VIS exactly like every mirror
+    // dumped above -- so they exist whenever this tb compiles at all (Icarus
+    // predefines __ICARUS__; the Verilator wave flow passes +define+YANC_TRACE).
+    // No `ifdef is needed here: the ungated dumps above already require
+    // YANC_SIM_VIS, so the tb never reaches this point without it.
 
     // if there's a CAL, register the subroutine-stack flags ------------------
 
@@ -880,9 +876,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // register rounding-error flags ------------------------------------------
 
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_float);\n" , prname, prname);
-    fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_int);\n" , prname, prname);
-
-    fprintf(f_veri, "`endif\n\n");
+    fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_int);\n\n" , prname, prname);
 
     // progress bar -----------------------------------------------------------
     //
