@@ -17,7 +17,7 @@
 
 ## What is YANC?
 
-YANC is the compilation backbone of the [SAPHO](https://github.com/nipscernlab) soft-processor ecosystem. It takes a high-level program — written in either **CMM** (a small C-like language with first-class fixed-point, floating-point, complex and Dirac-notation operators) or in **C++** — and compiles it all the way down to a synthesizable SAPHO core, its program/data memory images, and a ready-to-run testbench.
+YANC is the compilation backbone of the [SAPHO](https://github.com/nipscernlab) soft-processor ecosystem. It takes a high-level program — written in either **C±** (a small C-like language with first-class fixed-point, floating-point, complex and Dirac-notation operators) or in **C++** — and compiles it all the way down to a synthesizable SAPHO core, its program/data memory images, and a ready-to-run testbench.
 
 YANC is used by the **Aurora** desktop app, but it can also be used standalone — just call the binaries from a shell script that walks through the pipeline.
 
@@ -26,25 +26,25 @@ YANC is used by the **Aurora** desktop app, but it can also be used standalone �
 YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end compilers turn high-level source into assembly; a single back-end compiler turns that assembly into Verilog. Each compiler is preceded by an optional preprocessor (`cpppp` for C++, `appcomp` for assembly macros).
 
 ```
-  CMM:    foo.cmm  ─────────────────────►  cmmcomp  ─┐
+  C±:     foo.cmm  ─────────────────────►  cmmcomp  ─┐
                                                      ▼
                                                   foo.asm  ──►  appcomp  ──►  asmcomp  ──►  foo.v + *.mif + foo_tb.v
                                                      ▲
   C++:    foo.cpp  ──►  cpppp  ──►  cppcomp  ────────┘
 ```
 
-After `asmcomp`, the generated Verilog can be simulated with **Icarus Verilog** (`iverilog` + `vvp`) — or, for heavy testbenches, with **Verilator** — and visualized in **GTKWave**. The provided `go_proc.bat` / `go_proj.bat` wire up the iverilog flow end-to-end.
+After `asmcomp`, the generated Verilog can be simulated with **Icarus Verilog** (`iverilog` + `vvp`) or with **Verilator**, and visualized in **GTKWave**. Four pre-wired Windows scripts cover both backends end-to-end: `go_proc.bat` / `go_proj.bat` (Icarus) and `go_proc_vl.bat` / `go_proj_vl.bat` (Verilator).
 
 ## What you see in GTKWave
 
 Because the toolchain emits a side-table mapping each PC value to its
-originating C+- source line, GTKWave shows the executing C+- line,
+originating C± source line, GTKWave shows the executing C± line,
 the assembly opcode, and every declared variable evolving in lockstep
 with the simulated clock — not just raw bus toggles:
 
-![GTKWave showing the executing C+- line, the assembly opcode, and live variable values in lockstep with the clock](docs/images/gtkwave-source-trace.png)
+![GTKWave showing the executing C± line, the assembly opcode, and live variable values in lockstep with the clock](docs/images/gtkwave-source-trace.png)
 
-The example above is `proc_fft` mid-run: the C+- track shows the
+The example above is `proc_fft` mid-run: the C± track shows the
 `fout(0, 1000.0*real(data[2]));` statement, the assembly track shows
 the matching `LOD / F_MLT+ / F2I / OUT 0` sequence, and the
 declared variables (`N`, `ind`, `istep`, `j`, `k`, `m`, `mmax`,
@@ -58,7 +58,7 @@ Six binaries are produced from source — three compilers, two preprocessors, an
 
 | Binary       | Source dir              | Built with         | Role                                                |
 | ------------ | ----------------------- | ------------------ | --------------------------------------------------- |
-| `cmmcomp`    | `Compilers/CMMComp/`    | Flex + Bison + GCC | CMM front-end → assembly                            |
+| `cmmcomp`    | `Compilers/CMMComp/`    | Flex + Bison + GCC | C± front-end → assembly                            |
 | `cppcomp`    | `Compilers/CPPComp/`    | Flex + Bison + GCC | C++ front-end → assembly                            |
 | `asmcomp`    | `Compilers/ASMComp/`    | Flex + GCC         | Back-end: assembly → Verilog HDL + memory images + testbench |
 
@@ -89,7 +89,7 @@ Auxiliary content:
 
 ### 1. Get the binaries
 
-**Option A — pre-built (fastest).** Download the latest release zip from [Releases](https://github.com/nipscernlab/yanc/releases/latest) and extract it. The zip contains `bin/` (the six executables), `HDL/`, `Macros/` (CMM-side includes), and `Header/` (C++-side includes).
+**Option A — pre-built (fastest).** Download the latest release zip from [Releases](https://github.com/nipscernlab/yanc/releases/latest) and extract it. The zip contains `bin/` (the six executables), `HDL/`, `Macros/` (C±-side includes), and `Header/` (C++-side includes).
 
 **Option B — build from source.**
 
@@ -101,7 +101,10 @@ Requirements (Windows + [MSYS2](https://www.msys2.org/)):
   ```
   set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
   ```
-* Optional, only needed if you want to simulate generated Verilog: [Icarus Verilog](http://iverilog.icarus.com/) and/or [Verilator](https://verilator.org/), plus [GTKWave](https://gtkwave.sourceforge.net/) for waveform viewing.
+* Optional, only needed if you want to simulate the generated Verilog:
+  * [Icarus Verilog](http://iverilog.icarus.com/) (`iverilog` + `vvp`), and/or
+  * [Verilator](https://verilator.org/) **5.x** — on MSYS2: `pacman -S mingw-w64-x86_64-verilator`. Its `--binary` mode drives the MinGW `g++` and `python3` from your `mingw64` toolchain, so keep `…\mingw64\bin` on `PATH`.
+  * [GTKWave](https://gtkwave.sourceforge.net/) to view the waveform.
 
 `Scripts/aurora.bat` builds all six binaries and deploys them into a sibling `Aurora/components/` checkout. It assumes the two repos sit side by side under a common parent — no absolute paths, no editing required:
 
@@ -162,14 +165,37 @@ vvp %TMP%\%NAME%.vvp -fst
 gtkwave %TMP%\%NAME%_tb.fst
 ```
 
-You can stop at step 4 if all you want are the Verilog/memory artifacts (e.g. to feed your own simulator), or replace step 5 with **Verilator** for heavy testbenches — see `CPPComp/Tests/Verilator/` for a working harness.
+You can stop at step 4 if all you want are the Verilog/memory artifacts (e.g. to feed your own simulator), or swap steps 5–6 for **Verilator** (below).
 
-For convenience, two pre-wired Windows scripts are provided that bundle steps 1–6 with sensible defaults:
+### Simulating with Verilator
+
+Verilator 5 compiles the same generated `<proc>_tb.v` directly — `--timing` understands the testbench's clock and `#` delays, so no separate C++ driver is needed:
 
 ```bat
-go_proc.bat       :: single-processor example (edit PROJET / PROC / FNAM at the top)
-go_proj.bat       :: multi-processor project example
+:: --- 5b. simulate (Verilator) — alternative to steps 5–6 above ----------
+verilator --binary --timing --trace +define+YANC_TRACE --top-module %NAME%_tb ^
+          -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-COMBDLY -Wno-STMTDLY ^
+          -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir %TMP%\vl ^
+          %PROJ%\Simulation\%NAME%_tb.v %PROJ%\Hardware\%NAME%.v ^
+          %HDL%\processor.v %HDL%\core.v %HDL%\ula.v %HDL%\addr_dec.v %HDL%\instr_dec.v
+%TMP%\vl\V%NAME%_tb.exe          :: runs the sim, writes %NAME%_tb.vcd in the CWD
+gtkwave %NAME%_tb.vcd
 ```
+
+**The one thing to remember:** `+define+YANC_TRACE` is what makes your variables, arrays, the PC→C± line table and the assembly opcode appear in the waveform. Icarus gets them for free (it predefines `__ICARUS__`); Verilator only compiles that visibility harness when you pass the define. For big multi-millisecond project dumps, use `--trace-fst` instead of `--trace` (compact FST; the file is still named `<tb>.vcd` and GTKWave detects the format). The trace deliberately carries only the `<proc>`-level user signals — the CPU internals below each processor are fenced out with `/* verilator tracing_off */`.
+
+### Pre-wired scripts
+
+Four Windows scripts bundle steps 1–6 with sensible defaults — two per simulator backend:
+
+```bat
+go_proc.bat       :: one processor,       Icarus     (edit PROJET / PROC / FNAM at the top)
+go_proj.bat       :: multi-proc project,  Icarus
+go_proc_vl.bat    :: one processor,       Verilator
+go_proj_vl.bat    :: multi-proc project,  Verilator
+```
+
+> Each script has a **tool-paths block at the very top** (`BISON`, `FLEX`, `GCC`, `IVERILOG`/`VERILATOR`, `GTKWAVE`) pointing at the author's install locations. **Edit those lines to match where MSYS2, Verilator, Icarus and GTKWave live on your machine** before running — that one block is the only per-machine setup the scripts need.
 
 ## CLI flags
 
@@ -207,7 +233,7 @@ Example:
 cmmcomp -en -i my_program.cmm -n proc_fft -p C:\proj\proc_fft -m C:\Macros -t C:\Temp\proc_fft
 ```
 
-## Example CMM
+## Example C±
 
 ```c
 #PRNAME Sqrt
@@ -265,8 +291,10 @@ yanc/
 ├── HDL/                  reusable Verilog modules (core, ALU, decoders, FIFO, ...)
 ├── Scripts/              aurora.bat (build + deploy), regress.sh, comp2gtkw, Tcl viewers
 ├── docs/images/          README assets (GTKWave screenshot, ...)
-├── go_proc.bat           single-processor end-to-end pipeline
-├── go_proj.bat           multi-processor project pipeline
+├── go_proc.bat           single-processor pipeline, Icarus backend
+├── go_proj.bat           multi-processor project pipeline, Icarus backend
+├── go_proc_vl.bat        single-processor pipeline, Verilator backend
+├── go_proj_vl.bat        multi-processor project pipeline, Verilator backend
 └── .github/workflows/    CI (release on tag push)
 ```
 
