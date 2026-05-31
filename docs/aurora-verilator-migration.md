@@ -153,6 +153,32 @@ we will add it.
 
 ---
 
+## Follow-up (post-v4.3): progress moved to the terminal
+
+The auto-generated `<proc>_tb.v` no longer writes a `progress.txt` file. The
+progress loop now prints to **stdout** instead:
+
+```
+Progress: 10% complete
+Progress: 20% complete
+…
+Simulation Complete!
+```
+
+Each progress line is `$fflush`-ed so it streams live through the pipe (the
+final `Simulation Complete!` / `Info: end of program!` needs no flush — `$finish`
+exits normally and the C runtime flushes stdout).
+
+**Aurora impact:** `VVPProgressManager` detects `progress.txt` (the `chrys`
+10→100 loop) to drive the percentage overlay; the heuristic lives in
+`js/compilation/compilation_module.js`. With the file gone, that detection fails
+and the overlay no longer advances for YANC procs. To keep it, parse the
+terminal lines instead — you already stream/scan the simulator's stdout for
+`$display` output, so match `^Progress:\s*(\d+)%` and feed the captured
+percentage to the overlay; treat `Simulation Complete!` / `Info: end of
+program!` as 100%. The `progress.txt` detection + the file-size plumbing can
+then be deleted.
+
 ## Reference: the standalone commands
 
 The repo ships two end-to-end reference scripts that wire this exact flow:

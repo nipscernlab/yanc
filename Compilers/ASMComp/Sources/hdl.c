@@ -770,23 +770,19 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // signal registration, progress bar, and finish --------------------------
     // ------------------------------------------------------------------------
     // valr10 is the pipelined PC inside the <prname> module. The early-$finish
-    // handler is necessary because the progress-bar block uses wall-clock
-    // #delays instead of monitoring the PC, so without this the sim would run
-    // the full cycle budget even after the program has terminated. progress
-    // is declared above the handler so the handler can $fclose it; the initial
-    // block opens it at time 0, before any posedge clk can trigger the
-    // handler, so the handle is guaranteed valid by the time we get there.
+    // handler is necessary because the progress block uses wall-clock #delays
+    // instead of monitoring the PC, so without this the sim would run the full
+    // cycle budget even after the program has terminated.
     // This is the AUTO-generated testbench, bypassed by multi-proc workflows
     // that ship their own top-level testbench (e.g. DTW), so the unconditional
     // $finish here is fine -- those projects ignore this _tb.v entirely.
 
     fprintf(f_veri, "// signal registration, progress bar and finish ------------------------------\n\n");
 
-    fprintf(f_veri, "integer progress, chrys;\n\n");
+    fprintf(f_veri, "integer chrys;\n\n");
 
     fprintf(f_veri, "always @ (posedge clk) if (proc.valr10 == %d) begin\n", sim_get_fim());
     fprintf(f_veri, "    $display(\"Info: end of program!\");\n");
-    fprintf(f_veri, "    $fclose(progress);\n");
     fprintf(f_veri, "    $finish;\n");
     fprintf(f_veri, "end\n\n");
 
@@ -889,17 +885,22 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     fprintf(f_veri, "`endif\n\n");
 
     // progress bar -----------------------------------------------------------
+    //
+    // Print the progress to the terminal instead of a progress.txt file. The
+    // in-loop $fflush forces each line out live: when the simulator's stdout is
+    // a pipe (not a TTY) it is block-buffered, so without the flush the lines
+    // would only appear in lumps. The final "Simulation Complete!" needs no
+    // flush -- the $finish does a normal process exit, which flushes stdout.
 
-    fprintf(f_veri, "    progress = $fopen(\"progress.txt\", \"w\");\n" );
     fprintf(f_veri, "    for (chrys = 10; chrys <= 100; chrys = chrys + 10) begin\n");
-    fprintf(f_veri, "        #%f;\n"  , T*sim_clk_num()/10          );
-    fprintf(f_veri, "        $fdisplay(progress,\"%%0d\",chrys);\n");
-    fprintf(f_veri, "        $fflush(progress);\n");
+    fprintf(f_veri, "        #%f;  // wall-clock slice of the total sim time\n"  , T*sim_clk_num()/10);
+    fprintf(f_veri, "        $display(\"Progress: %%0d%%%% complete\", chrys);\n");
+    fprintf(f_veri, "        $fflush;\n");
     fprintf(f_veri, "    end\n\n");
-    fprintf(f_veri, "    $fclose(progress);\n");
 
     // end the simulation -----------------------------------------------------
 
+    fprintf(f_veri, "    $display(\"Simulation Complete!\");\n");
     fprintf(f_veri, "    $finish;\n\n");
     fprintf(f_veri, "end\n\n"); // end of initial
 

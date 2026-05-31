@@ -8,6 +8,14 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- The auto-generated `<proc>_tb.v` now reports progress to the **terminal**
+  (`$display "Progress: N% complete"` … `Simulation Complete!`, each in-loop
+  line flushed) instead of writing a `progress.txt` file. Tools that drove a
+  progress overlay off `progress.txt` (Aurora's `VVPProgressManager`) should
+  parse the terminal lines instead — see
+  [`docs/aurora-verilator-migration.md`](docs/aurora-verilator-migration.md).
+
 ## [v4.3] – 2026-05-31
 
 The Verilator waveform path now works end-to-end: the same
