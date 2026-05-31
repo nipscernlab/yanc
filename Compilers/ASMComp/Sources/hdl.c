@@ -236,14 +236,21 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // decode input ports
     if (opc_inn())
     {
-        if (nuioin > 0) fprintf(f_veri, "\nalways @ (*) begin\n");
+        // in_sim_N captures-and-holds the presented input -- that is state, so
+        // clock it (a conditional assign in always @(*) infers a latch that
+        // Verilator rejects). req_in_sim_N is an unconditional combinational
+        // mirror, so it never latches.
+        if (nuioin > 0) fprintf(f_veri, "\nalways @ (posedge clk) begin\n");
+        for(int i=0; i<nuioin; i++)
+            if (inn_used(i))
+                fprintf(f_veri, "   if (req_in == %d) in_sim_%d <= in;\n", (int)pow(2,i),i);
+        if (nuioin > 0) fprintf(f_veri, "end\n");
+
+        if (nuioin > 0) fprintf(f_veri, "always @ (*) begin\n");
         for(int i=0; i<nuioin; i++)
         {
             if (inn_used(i))
-            {
-                fprintf(f_veri, "   if (req_in == %d) in_sim_%d = in;\n", (int)pow(2,i),i);
                 fprintf(f_veri, "   req_in_sim_%d = req_in == %d;\n",  i, (int)pow(2,i));
-            }
             else printf(MSG_WARN_UNUSED_IN_PORT, i);
         }
         if (nuioin > 0) fprintf(f_veri, "end\n");
@@ -252,14 +259,21 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // decode output ports
     if (opc_out())
     {
-        if (nuioou > 0) fprintf(f_veri, "\nalways @ (*) begin\n");
+        // out_sig_N captures-and-holds the last written output -- that is state,
+        // so clock it (a conditional assign in always @(*) infers a latch that
+        // Verilator rejects). out_en_sim_N is an unconditional combinational
+        // mirror, so it never latches.
+        if (nuioou > 0) fprintf(f_veri, "\nalways @ (posedge clk) begin\n");
+        for(int i=0;i<nuioou;i++)
+            if (out_used(i))
+                fprintf(f_veri, "   if (out_en == %d) out_sig_%d <= out;\n", (int)pow(2,i),i);
+        if (nuioou > 0) fprintf(f_veri, "end\n");
+
+        if (nuioou > 0) fprintf(f_veri, "always @ (*) begin\n");
         for(int i=0;i<nuioou;i++)
         {
             if (out_used(i))
-            {
-                fprintf(f_veri, "   if (out_en == %d) out_sig_%d <= out;\n", (int)pow(2,i),i);
                 fprintf(f_veri, "   out_en_sim_%d = out_en == %d;\n",     i, (int)pow(2,i));
-            }
             else printf(MSG_WARN_UNUSED_OUT_PORT, i);
         }
         if (nuioou > 0) fprintf(f_veri, "end\n\n");
@@ -493,6 +507,14 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "`timescale 1ns/1ps\n\n");
+
+    // Same YANC_SIM_VIS guard as <proc>.v / core.v / ula.v, so the stack + ULA
+    // rounding-error $dumpvars further down (gated `ifdef YANC_SIM_VIS) are
+    // emitted under Icarus AND under +define+YANC_TRACE. Defines do not reliably
+    // cross the bash command-line file order, so the tb defines its own.
+    fprintf(f_veri, "`ifdef __ICARUS__\n `ifndef YANC_SIM_VIS\n  `define YANC_SIM_VIS\n `endif\n`endif\n");
+    fprintf(f_veri, "`ifdef YANC_TRACE\n `ifndef YANC_SIM_VIS\n  `define YANC_SIM_VIS\n `endif\n`endif\n\n");
+
     fprintf(f_veri,    "module %s_tb();\n\n", prname);
 
     // ------------------------------------------------------------------------
@@ -596,6 +618,11 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     {
         fprintf(f_veri, "// decode input ports\n");
         fprintf(f_veri, "always @ (*) begin\n");
+        // Default assignment so proc_io_in is driven on every path -- a bare
+        // `if (proc_req_in == N) proc_io_in = in_N;` with no else infers a latch
+        // under Verilator. The proc only samples `in` while req_in is asserted,
+        // so the otherwise-0 value is never read: behaviour is unchanged.
+        fprintf(f_veri, "    proc_io_in = 0;\n");
     }
     for(int i=0;i<nuioin;i++)
     {
@@ -796,13 +823,11 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     }
 
     // The stack-pointer flags and ULA rounding-error signals below live in the
-    // hand-written core/ula, behind their own `ifdef __ICARUS__. They use a
-    // self-referential combinational assignment (fl_max) and real modulo, which
-    // Verilator rejects, so they are NOT brought into the YANC_TRACE build --
-    // gate the dumps the same way so the Verilator tb never references signals
-    // that do not exist there. Under Verilator --trace everything surviving is
-    // dumped anyway, so the user's own variables (tagged VPUB) still show up.
-    fprintf(f_veri, "`ifdef __ICARUS__\n");
+    // hand-written core/ula, gated by YANC_SIM_VIS (Icarus or +define+YANC_TRACE).
+    // The self-referential fl_max assignment and the real modulo they use compile
+    // and simulate fine under current Verilator, so gate the dumps the same way as
+    // the signals: present in both the Icarus and the YANC_TRACE Verilator builds.
+    fprintf(f_veri, "`ifdef YANC_SIM_VIS\n");
 
     // if there's a CAL, register the subroutine-stack flags ------------------
 

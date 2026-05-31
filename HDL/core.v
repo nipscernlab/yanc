@@ -6,9 +6,9 @@
 // waveform harness in the generated <proc>.v. It is compiled for Icarus
 // (predefines __ICARUS__) and for Verilator when the user passes
 // +define+YANC_TRACE, but never for synthesis. The stack-pointer flags and ULA
-// rounding-error blocks further down stay behind their own `ifdef __ICARUS__:
-// they use a self-referential combinational assignment / real modulo that
-// Verilator rejects, so they remain Icarus-only.
+// rounding-error blocks further down are gated the same way (YANC_SIM_VIS): the
+// self-referential fl_max assignment and the real modulo they use compile and
+// simulate fine under current Verilator, so they ride along with the harness.
 `ifdef __ICARUS__
  `ifndef YANC_SIM_VIS
   `define YANC_SIM_VIS
@@ -173,15 +173,32 @@ always @ (posedge clk) if (push) mem[pointer] <= in;
 assign                     out = mem[pmenoum];
 
 // Flags
-`ifdef __ICARUS__ // ----------------------------------------------------------
+`ifdef YANC_SIM_VIS // --------------------------------------------------------
 
 reg             fl_full = 0;
-reg [NADDR-1:0] fl_max  = 0; // pointer overflowed
+reg [NADDR-1:0] fl_max  = 0; // pointer high-water mark
 integer         pointeri;
 
-always @ (*)      pointeri = pointer;
-always @ (*) if ((pointer >= DEPTH) || (pmaisum-pointer != 1)) fl_full = 1'b1;
-always @ (*) if ( pointer >  fl_max                          ) fl_max  = pointer;
+// pointeri is a pure combinational copy of the pointer -- no self-reference,
+// so it is fine under Verilator.
+always @ (*) pointeri = pointer;
+
+// fl_full ("stack ever overflowed", sticky) and fl_max (pointer high-water mark)
+// are STATE: an always @(*) that reads its own output is a latch / comb loop
+// that Verilator flags as UNOPTFLAT and may mis-evaluate. Register them on the
+// clock instead, but evaluate the conditions on the pointer's NEXT value
+// (pointer_nxt = exactly what the pointer register takes this same edge). The
+// flag/max update then lands in the SAME cycle the pointer changes -- bit-for-
+// bit the waveform the async version produced, identical across the Icarus and
+// the Verilator runs. They never reset, accumulating over the whole run (stats).
+wire [NADDR-1:0] pointer_nxt = rst  ? zero    :
+                               push ? pmaisum :
+                               pop  ? pmenoum : pointer;
+
+always @ (posedge clk) begin
+	if ((pointer_nxt >= DEPTH) || ((pointer_nxt+um)-pointer_nxt != 1)) fl_full <= 1'b1;
+	if ( pointer_nxt >  fl_max                                       ) fl_max  <= pointer_nxt;
+end
 
 `endif // ---------------------------------------------------------------------
 
