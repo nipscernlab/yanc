@@ -325,7 +325,10 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
         {
             // currently using dx, but it should be the binary equivalent of 0.0
             // try it with itob(f2mf("0.0",NULL), nubits)
-            fprintf(f_veri, "reg [%d:0] %s" VPUB " = %d'dx;\n", nubits-1, sim_name(i), nubits-1);
+            // The real/imag halves are joined into comp_<name> below and only that
+            // joined signal is shown, so keep the raw parts out of the Verilator
+            // trace (tracing_off) -- they still keep public_flat for the join.
+            fprintf(f_veri, "/* verilator tracing_off */ reg [%d:0] %s" VPUB " = %d'dx; /* verilator tracing_on */\n", nubits-1, sim_name(i), nubits-1);
         }
     }
 
@@ -452,7 +455,16 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     // create 10 registers to delay the @fim instruction
     int nreg = 10;
-    for (int i = 0; i < nreg; i++) fprintf(f_veri, "reg [%d:0] valr%d" VPUB "=0;\n", nubits-1, i+1);
+    // valr1 + valr3..valr10 are intermediate PC-delay stages: only valr2 is shown
+    // (the Assembly track) and valr10 is read hierarchically by the _tb.v for the
+    // $finish. Keep all but valr2 out of the Verilator trace -- they all keep
+    // /* verilator public_flat */ so the hierarchical valr10 reference still works.
+    for (int i = 0; i < nreg; i++)
+    {
+        int n = i + 1;
+        if (n == 2) fprintf(f_veri, "reg [%d:0] valr%d" VPUB "=0;\n", nubits-1, n);
+        else        fprintf(f_veri, "/* verilator tracing_off */ reg [%d:0] valr%d" VPUB "=0; /* verilator tracing_on */\n", nubits-1, n);
+    }
     fprintf(f_veri, "\n");
 
     int num_ins = get_n_ins();
