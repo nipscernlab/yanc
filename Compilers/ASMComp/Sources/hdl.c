@@ -313,9 +313,11 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
             if (has_float == 0)
             {
                 has_float = 1;
-                // float decode helpers -- not shown, keep them out of the trace
-                fprintf(f_veri, "/* verilator tracing_off */ integer sm_me2; always @ (*) sm_me2 = (out[%d]) ? -out[%d:0] : out[%d:0];\n", nbmant+nbexpo  , nbmant-1, nbmant-1);
-                fprintf(f_veri, "integer  e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]); /* verilator tracing_on */\n"               , nbmant+nbexpo-1, nbmant);
+                // float decode helpers -- not shown, kept out of the trace. Sized
+                // signed (sm_me2 = sign+mantissa, e_me2 = exponent) so the assigns
+                // are not width-mismatched (WIDTHEXPAND) under Verilator.
+                fprintf(f_veri, "/* verilator tracing_off */ reg signed [%d:0] sm_me2; always @ (*) sm_me2 = (out[%d]) ? -$signed({1'b0, out[%d:0]}) : $signed({1'b0, out[%d:0]});\n", nbmant, nbmant+nbexpo, nbmant-1, nbmant-1);
+                fprintf(f_veri, "reg signed [%d:0] e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]); /* verilator tracing_on */\n"                                                  , nbexpo-1, nbmant+nbexpo-1, nbmant);
             }
             // create the real variable with initial value 0.0
             fprintf(f_veri, "real %s" VPUB " = 0.0;\n", sim_name(i));
@@ -329,7 +331,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
             // The real/imag halves are joined into comp_<name> below and only that
             // joined signal is shown, so keep the raw parts out of the Verilator
             // trace (tracing_off) -- they still keep public_flat for the join.
-            fprintf(f_veri, "/* verilator tracing_off */ reg [%d:0] %s" VPUB " = %d'dx; /* verilator tracing_on */\n", nubits-1, sim_name(i), nubits-1);
+            fprintf(f_veri, "/* verilator tracing_off */ reg [%d:0] %s" VPUB " = %d'dx; /* verilator tracing_on */\n", nubits-1, sim_name(i), nubits);
         }
     }
 
@@ -396,8 +398,8 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
                 if (has_float == 0)
                 {
                     has_float = 1;
-                    fprintf(f_veri, "integer sm_me2; always @ (*) sm_me2 = (out[%d]) ? -out[%d:0] : out[%d:0];\n", nbmant+nbexpo  , nbmant-1, nbmant-1);
-                    fprintf(f_veri, "integer  e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]);\n"               , nbmant+nbexpo-1, nbmant);
+                    fprintf(f_veri, "/* verilator tracing_off */ reg signed [%d:0] sm_me2; always @ (*) sm_me2 = (out[%d]) ? -$signed({1'b0, out[%d:0]}) : $signed({1'b0, out[%d:0]});\n", nbmant, nbmant+nbexpo, nbmant-1, nbmant-1);
+                    fprintf(f_veri, "reg signed [%d:0] e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]); /* verilator tracing_on */\n"                                                  , nbexpo-1, nbmant+nbexpo-1, nbmant);
                 }
                 fprintf(f_veri, "real %s%04d" VPUB " = %f;\n", sim_name_arr(i), j, mf2f(val));
             }
@@ -481,7 +483,13 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     fprintf(f_veri, "always @ (posedge clk) begin\n");
     fprintf(f_veri, "if (pc_sim_val < %d) linetab <= min[pc_sim_val];\n", num_ins);
     fprintf(f_veri, "linetabs <= linetab;   \n");
-    fprintf(f_veri, "valr1    <= pc_sim_val;\n");
+    // pc_sim_val is the narrow PC; valr1..valr10 are nubits-wide. Zero-extend it
+    // explicitly so the assign is not a width mismatch (WIDTHEXPAND) on Verilator.
+    {
+        int pc_w = (int)ceil(log2(n_ins)-1) + 1;   // matches the pc_sim_val decl
+        if (nubits > pc_w) fprintf(f_veri, "valr1    <= {{(%d){1'b0}}, pc_sim_val};\n", nubits - pc_w);
+        else               fprintf(f_veri, "valr1    <= pc_sim_val;\n");
+    }
     // delay stages for @fim
     fprintf(f_veri, "valr2    <= valr1;\n");
     fprintf(f_veri, "valr3    <= valr2;\n");

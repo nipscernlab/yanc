@@ -8,6 +8,18 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Fixed
+- **Clean Verilator lint on the sim-visibility code** — the `YANC_SIM_VIS`
+  helper signals were assigned across mismatched widths, so Verilator flagged
+  `WIDTHEXPAND` (and `REALCVT` on a real `%`). Sized them explicitly with no
+  behaviour change (the traced values are identical): `core.v` stack
+  `pointeri`; `ula.v` signed mantissa/exponent helpers and the integer-remainder
+  `val_mod` (now an integer `%` instead of a real one); and in the generated
+  `<proc>.v` the `me2` float decode helpers, the `valr1 <= pc_sim_val` PC tap
+  (now zero-extended), and an off-by-one in the `me3` complex `'dx` initialiser.
+  The remaining warnings on a project come from user-side HDL (top level,
+  wrappers, hand-written testbench), not YANC.
+
 ### Changed
 - The auto-generated `<proc>_tb.v` now reports progress to the **terminal**
   (`$display "Progress: N% complete"` … `Simulation Complete!`, each in-loop
