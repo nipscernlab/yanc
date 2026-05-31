@@ -86,6 +86,13 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // close the port list
     fprintf(f_veri, ");\n\n");
 
+    // Fence everything that is not a <proc>-level user mirror out of the
+    // Verilator waveform: the I/O connection + tap wires below, the processor
+    // core, and the address decoders. Reopened with tracing_on right before the
+    // mirror block, so the trace carries only the signals the _tb.v $dumpvars.
+    // A no-op comment for Icarus and synthesis.
+    fprintf(f_veri, "/* verilator tracing_off */\n\n");
+
     // ------------------------------------------------------------------------
     // I/O interface wires ----------------------------------------------------
     // ------------------------------------------------------------------------
@@ -131,13 +138,6 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // ------------------------------------------------------------------------
     // processor parameters ---------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // Fence the instantiated submodules (the processor core + the I/O address
-    // decoders -- everything below this <proc> module) out of the Verilator
-    // waveform, so the trace carries only the <proc>-level user-variable
-    // mirrors. A no-op for Icarus and synthesis; reopened with tracing_on
-    // right before the mirror block below.
-    fprintf(f_veri, "/* verilator tracing_off */\n");
 
     fprintf(f_veri, "processor#(.NUBITS(%d),\n", nubits);
     fprintf(f_veri,            ".NBMANT(%d),\n", nbmant);
@@ -313,8 +313,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
             if (has_float == 0)
             {
                 has_float = 1;
-                fprintf(f_veri, "integer sm_me2; always @ (*) sm_me2 = (out[%d]) ? -out[%d:0] : out[%d:0];\n", nbmant+nbexpo  , nbmant-1, nbmant-1);
-                fprintf(f_veri, "integer  e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]);\n"               , nbmant+nbexpo-1, nbmant);
+                // float decode helpers -- not shown, keep them out of the trace
+                fprintf(f_veri, "/* verilator tracing_off */ integer sm_me2; always @ (*) sm_me2 = (out[%d]) ? -out[%d:0] : out[%d:0];\n", nbmant+nbexpo  , nbmant-1, nbmant-1);
+                fprintf(f_veri, "integer  e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]); /* verilator tracing_on */\n"               , nbmant+nbexpo-1, nbmant);
             }
             // create the real variable with initial value 0.0
             fprintf(f_veri, "real %s" VPUB " = 0.0;\n", sim_name(i));
@@ -472,7 +473,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // create the memory that will hold the instruction table
     fprintf(f_veri, "reg [19:0] min [0:%d-1];\n\n", num_ins);
     // create the interface to that memory
-    fprintf(f_veri, "reg signed [19:0] linetab" VPUB " =-1;\n"  );
+    fprintf(f_veri, "/* verilator tracing_off */ reg signed [19:0] linetab" VPUB " =-1; /* verilator tracing_on */\n");
     fprintf(f_veri, "reg signed [19:0] linetabs" VPUB "=-1;\n\n");
     // initialize the memory from the .txt file
     fprintf(f_veri, "initial	$readmemb(\"pc_%s_mem.txt\",min);\n\n"  , prname );
@@ -570,6 +571,12 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "// processor instance ---------------------------------------------------------\n\n");
 
+    // The tb connection wires + I/O-port plumbing + progress counters are not in
+    // the $dumpvars list, so fence the whole tb out of the Verilator trace from
+    // here on; it is reopened only around the proc instance below (so the proc's
+    // mirror signals still trace). clk/rst, declared above, stay traced.
+    fprintf(f_veri, "/* verilator tracing_off */\n\n");
+
     // check whether the 'in' input bus needs to be added
     if (nuioin > 0 && opc_inn()) fprintf(f_veri, "reg  signed [%d:0] proc_io_in = 0;\n", nubits-1);
     // always add the 'out' output bus
@@ -584,6 +591,9 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // ------------------------------------------------------------------------
     // processor instance -----------------------------------------------------
     // ------------------------------------------------------------------------
+
+    // reopen tracing just around the instance so the proc's mirror signals trace
+    fprintf(f_veri, "/* verilator tracing_on */\n");
 
     // the prologue is fixed
     fprintf(f_veri, "%s proc(clk,rst", prname);
@@ -601,6 +611,10 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (toaqui_addr != 0)        fprintf(f_veri, ",proc_cheguei");
     // close the instance
                                  fprintf(f_veri, ");\n\n"      );
+
+    // everything past the instance (I/O-port plumbing, progress counters, the
+    // $dumpvars/$finish blocks) is tb-internal -- keep it out of the trace.
+    fprintf(f_veri, "/* verilator tracing_off */\n\n");
 
     // ------------------------------------------------------------------------
     // input-port interface ---------------------------------------------------
