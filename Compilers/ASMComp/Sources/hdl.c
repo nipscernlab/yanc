@@ -132,6 +132,13 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // processor parameters ---------------------------------------------------
     // ------------------------------------------------------------------------
 
+    // Fence the instantiated submodules (the processor core + the I/O address
+    // decoders -- everything below this <proc> module) out of the Verilator
+    // waveform, so the trace carries only the <proc>-level user-variable
+    // mirrors. A no-op for Icarus and synthesis; reopened with tracing_on
+    // right before the mirror block below.
+    fprintf(f_veri, "/* verilator tracing_off */\n");
+
     fprintf(f_veri, "processor#(.NUBITS(%d),\n", nubits);
     fprintf(f_veri,            ".NBMANT(%d),\n", nbmant);
     fprintf(f_veri,            ".NBEXPO(%d),\n", nbexpo);
@@ -194,6 +201,10 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
         if (nuioou == 1) fprintf(f_veri, "assign out_en = proc_out_en;\n\n");
         else             fprintf(f_veri, "addr_dec #(%d) dec_out(proc_out_en, addr_out, out_en);\n\n", nuioou);
     }
+
+    // reopen tracing: from here on the <proc>-level mirror signals are the
+    // only thing Verilator should keep in the waveform.
+    fprintf(f_veri, "/* verilator tracing_on */\n\n");
 
     // ------------------------------------------------------------------------
     // simulation interface start (iverilog/verilator + gtkwave) -------------
