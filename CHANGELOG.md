@@ -8,28 +8,61 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v4.3] – 2026-05-31
+
+The Verilator waveform path now works end-to-end: the same
+variables/arrays/PC-line view the Icarus flow always had now appears under
+Verilator too. Downstream (Aurora) adopts it with two small changes — see
+[`docs/aurora-verilator-migration.md`](docs/aurora-verilator-migration.md).
+
+### Added
+- **`go_proc_vl.bat` / `go_proj_vl.bat`** — Verilator siblings of
+  `go_proc.bat` / `go_proj.bat`. They feed the generated `<proc>_tb.v` (or the
+  project's `top_level_tb`) to Verilator (`--binary --timing --trace[-fst]
+  +define+YANC_TRACE`), then open GTKWave the same way the Icarus scripts do,
+  keeping each processor's user variables in the waveform.
+- `docs/aurora-verilator-migration.md` — migration guide for the Aurora repo
+  (pass `+define+YANC_TRACE`; drop the `$finish`-strip workaround).
+- A **Simulating with Verilator** section in the README, plus the Verilator 5.x
+  MSYS2 install and the `+define+YANC_TRACE` rationale.
+
 ### Fixed
-- **Waveform visibility under Verilator (GTKWave)** — the simulation
-  harness that mirrors user variables/arrays and the PC pipeline
-  (`valr*`, `linetabs`, the I/O port mirrors) was gated behind
-  `` `ifdef __ICARUS__ ``, so Verilator never compiled it and the
-  signals vanished from the trace. The harness — and the
-  `pc_sim_val`/`mem_wr`/`mem_addr_wr` plumbing it needs in
-  `HDL/processor.v` and `HDL/core.v` — now also compiles when the
-  user passes `+define+YANC_TRACE` to Verilator (the new
-  `YANC_SIM_VIS` guard folds `__ICARUS__` *or* `YANC_TRACE`). Each
-  mirrored declaration in the generated `<proc>.v` is tagged
-  `/* verilator public_flat */` so Verilator does not optimise it
-  away and the `_tb.v` can still reach it hierarchically.
-  - The stack-pointer flags (`core.v`) and the ULA rounding-error
-    signals (`ula.v`) stay Icarus-only: they use a self-referential
-    combinational assignment (`fl_max`) and real modulo, both of
-    which Verilator rejects. The matching `$dumpvars` lines in the
-    generated `_tb.v` are gated the same way so the Verilator
-    testbench never references signals that do not exist there.
-  - Synthesis and the existing Verilator regression flow
-    (`sim_main.cpp`, no `YANC_TRACE`) are unchanged — the harness
-    stays excluded exactly as before.
+- **Waveform visibility under Verilator (GTKWave)** — the sim-visibility
+  harness (user variable/array mirrors, the PC→C± line table, the assembly
+  opcode tap, the I/O port mirrors) was gated behind `` `ifdef __ICARUS__ ``,
+  so Verilator never compiled it and the signals vanished from the trace. The
+  harness — and the `pc_sim_val`/`mem_wr`/`mem_addr_wr` plumbing it needs in
+  `HDL/processor.v` and `HDL/core.v` — now also compiles under
+  `+define+YANC_TRACE` (the new `YANC_SIM_VIS` guard folds `__ICARUS__` *or*
+  `YANC_TRACE`). Every mirrored declaration is tagged
+  `/* verilator public_flat */`, so Verilator keeps it and the `_tb.v` can
+  reach `proc.valr10` hierarchically — which means the **end-of-program
+  `$finish` now works under Verilator** (no more running the full cycle budget
+  on short programs).
+- The **stack-pointer flags** (`core.v`) and the **ULA rounding-error** signals
+  (`ula.v`) are no longer Icarus-only — the "Verilator rejects them" premise was
+  wrong. They are re-gated to `YANC_SIM_VIS`, so the Stack/ALU waveform groups
+  populate under Verilator too.
+- **Latch-free under Verilator** — signals that were modelled as
+  self-referential `always @(*)` (the `fl_max`/`fl_full` stack high-water marks
+  and the `in_sim_*`/`out_sig_*` capture mirrors) are now the clocked
+  accumulators / registers they actually are, so Verilator no longer infers
+  latches or combinational loops. `fl_max`/`fl_full` evaluate on the pointer's
+  next value, so the tracked values are bit-for-bit the same as before, on both
+  Icarus and Verilator.
+
+### Changed
+- **The Verilator trace now carries only the curated `$dumpvars` set.**
+  `--trace` would otherwise dump the whole hierarchy; the generated `<proc>.v`
+  and `_tb.v` now fence the CPU internals, the PC-delay intermediates
+  (`valr1`, `valr3..valr10`), the raw `comp` halves (`me3_*`), the float decode
+  helpers, `linetab`, and the testbench plumbing out of the trace with
+  `/* verilator tracing_off */` (no-op comments for Icarus). A `proc_fft` trace
+  drops from 1124 signals to 19 — the user variables, `valr2` (Assembly track),
+  `comp_*`, `linetabs` and the I/O mirrors. Synthesis and the Icarus flow are
+  unchanged.
+- Documentation: the language is referred to consistently as **C±** (was a mix
+  of "CMM" and "C+-"); the `CMMComp`/`cmmcomp`/`.cmm` names are untouched.
 
 ## [v4.2] – 2026-05-28
 
