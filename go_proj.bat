@@ -173,7 +173,9 @@ del f_list.txt
 del xcopy.txt
 
 ::start /b cmd /c %VVP% %PROJET%.vvp
-%VVP% %PROJET%.vvp -fst
+:: +WAVE enables the tb's $dumpvars (gated off by default so the regression's
+:: heavy multi-proc sim doesn't crash the FST writer); -fst is the dump format.
+%VVP% %PROJET%.vvp -fst +WAVE
 
 :: Run GtkWave ----------------------------------------------------------------
 

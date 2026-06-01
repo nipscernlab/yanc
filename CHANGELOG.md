@@ -8,6 +8,16 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Fixed
+- **Flaky DTW regression** — the multi-proc project pass dumped every signal of
+  the heavy `top_level_tb` sim through the FST writer, which intermittently
+  crashed `vvp` on Windows (exit 1, empty stderr) even though the design output
+  was correct and the regression never reads the waveform. The tb's `$dumpvars`
+  is now gated behind a `+WAVE` plusarg: `regress.sh` runs without it (no dump →
+  stable and faster), while `go_proj.bat` / `go_proj_vl.bat` pass `+WAVE` to
+  keep the GTKWave trace. Verified 0/25 sim failures and 3/3 green regress runs
+  (previously ~13% DTW failure rate).
+
 ## [v4.4] – 2026-05-31
 
 Verilator polish on top of v4.3: a clean lint pass, simulation progress on the

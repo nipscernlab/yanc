@@ -43,13 +43,25 @@ initial begin
 	fd_zc_4  = $fopen("output_zc_4.txt" , "w");
 	fd_dtw_1 = $fopen("output_dtw_1.txt", "w");
 	fd_dtw_2 = $fopen("output_dtw_2.txt", "w");
-	$dumpfile("top_level_tb.vcd");
-	$dumpvars(0,top_level_tb);
+	// waveform dump is opt-in via +WAVE. Dumping every signal of this heavy
+	// multi-proc sim through the FST writer intermittently crashed vvp on
+	// Windows (exit 1, no message) -- and the regression never reads the
+	// waveform, only the output_*.txt logs. go_proj(.bat)/go_proj_vl(.bat)
+	// pass +WAVE to get the GTKWave trace; regress runs without it.
+	if ($test$plusargs("WAVE")) begin
+		$dumpfile("top_level_tb.vcd");
+		$dumpvars(0,top_level_tb);
+	end
     for (i = 10; i <= 100; i = i + 10) begin
 		#450000;  // Simulate delay
         $display("Progress: %0d%% complete", i);
     end
     $display("Simulation Complete!");
+    // force the per-port logs to disk before exit -- on this heavy sim vvp
+    // does not always flush the file buffers on $finish, which left the
+    // golden outputs intermittently empty (regress DTW flake)
+    $fflush(fd_zc_1); $fflush(fd_zc_2); $fflush(fd_zc_3); $fflush(fd_zc_4);
+    $fflush(fd_dtw_1); $fflush(fd_dtw_2);
     $finish;
 end
 

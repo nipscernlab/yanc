@@ -210,7 +210,9 @@ del xcopy.txt
 
 echo #### Running the Verilator simulation
 
-%VL_DIR%\V%TB%.exe
+:: +WAVE enables the tb's $dumpvars (gated off by default so the regression's
+:: heavy multi-proc sim doesn't crash the waveform writer).
+%VL_DIR%\V%TB%.exe +WAVE
 
 :: Run GtkWave ----------------------------------------------------------------
 ::
