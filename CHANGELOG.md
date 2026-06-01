@@ -8,6 +8,12 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v4.4] – 2026-05-31
+
+Verilator polish on top of v4.3: a clean lint pass, simulation progress on the
+terminal instead of a file, and the visibility/performance trade-off spelled
+out.
+
 ### Fixed
 - **Clean Verilator lint on the sim-visibility code** — the `YANC_SIM_VIS`
   helper signals were assigned across mismatched widths, so Verilator flagged
@@ -27,6 +33,17 @@ tags consumed by Aurora.
   progress overlay off `progress.txt` (Aurora's `VVPProgressManager`) should
   parse the terminal lines instead — see
   [`docs/aurora-verilator-migration.md`](docs/aurora-verilator-migration.md).
+- **The stack/ULA monitor signals are intentionally not in the Verilator VCD.**
+  The stack-pointer flags and the ULA rounding-error taps (`fl_max`, `fl_full`,
+  `pointeri`, `delta_int`, `delta_float`) sit below the
+  `/* verilator tracing_off */` fence, so Verilator drops them — keeping them
+  alive would force it to evaluate the costly real-valued ULA monitoring logic
+  every cycle, defeating the speed that is the whole point of the Verilator
+  backend. They stay available under Icarus (the GTKWave Stack/ALU groups are an
+  Icarus-only feature). Documented in the README and the Aurora migration guide.
+- Dropped the redundant `YANC_SIM_VIS` guards from the generated testbench — the
+  tb is a sim-visibility artifact by definition, so those guards never changed
+  anything. No behaviour change.
 
 ## [v4.3] – 2026-05-31
 
