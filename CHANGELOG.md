@@ -27,6 +27,13 @@ tags consumed by Aurora.
   variable and array loops. Pure codegen tidy-up, identical behaviour: regress
   71/71 and the Verilator trace still carries `valr2` (not `valr1/3..10`) with the
   ULA monitors still dead-code-eliminated.
+- **`/* verilator public_flat */` only where it's needed** — it was stamped on
+  every mirror declaration; now it's dropped from the *traced* signals (the
+  waveform dump keeps those on its own) and kept only on the ones fenced out of
+  the trace and the hierarchically-referenced `valr10` (the `_tb.v` `$finish`).
+  Cuts the attribute roughly in half in the generated `<proc>.v`. Validated by a
+  byte-identical Verilator VCD signal diff (same 19 signals on proc_fft) and the
+  `$finish` still resolving `proc.valr10`.
 
 ## [v4.4] – 2026-05-31
 
