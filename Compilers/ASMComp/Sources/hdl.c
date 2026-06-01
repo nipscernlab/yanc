@@ -296,7 +296,21 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "// variables ------------------------------------------------------------------\n\n");
 
+    // Emit the float decode helpers once (if any float variable or array needs
+    // them), as a single block fenced out of the trace -- instead of inline-
+    // fencing them on the first float encountered (which also duplicated them
+    // across the variable and the array loops).
     int has_float = 0;
+    for (int i = 0; i < sim_cont();     i++) if (sim_type(i)     == 2) has_float = 1;
+    for (int i = 0; i < sim_cont_arr(); i++) if (sim_type_arr(i) == 2) has_float = 1;
+    if (has_float)
+    {
+        fprintf(f_veri, "/* verilator tracing_off */  // float decode helpers (not traced)\n");
+        fprintf(f_veri, "reg signed [%d:0] sm_me2; always @ (*) sm_me2 = (out[%d]) ? -$signed({1'b0, out[%d:0]}) : $signed({1'b0, out[%d:0]});\n", nbmant, nbmant+nbexpo, nbmant-1, nbmant-1);
+        fprintf(f_veri, "reg signed [%d:0] e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]);\n", nbexpo-1, nbmant+nbexpo-1, nbmant);
+        fprintf(f_veri, "/* verilator tracing_on */\n\n");
+    }
+
     // create a register for each found variable
     for (int i = 0; i < sim_cont(); i++)
     {
@@ -306,20 +320,10 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
             fprintf(f_veri, "reg [%d:0] %s" VPUB " = 0;\n", nubits-1, sim_name(i));
         }
 
-        // float: use the real data type in the simulation
+        // float: use the real data type in the simulation (the sm_me2/e_me2
+        // decode helpers were emitted once above)
         if (sim_type(i) == 2)
         {
-            // first float variable: emit the helpers
-            if (has_float == 0)
-            {
-                has_float = 1;
-                // float decode helpers -- not shown, kept out of the trace. Sized
-                // signed (sm_me2 = sign+mantissa, e_me2 = exponent) so the assigns
-                // are not width-mismatched (WIDTHEXPAND) under Verilator.
-                fprintf(f_veri, "/* verilator tracing_off */ reg signed [%d:0] sm_me2; always @ (*) sm_me2 = (out[%d]) ? -$signed({1'b0, out[%d:0]}) : $signed({1'b0, out[%d:0]});\n", nbmant, nbmant+nbexpo, nbmant-1, nbmant-1);
-                fprintf(f_veri, "reg signed [%d:0] e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]); /* verilator tracing_on */\n"                                                  , nbexpo-1, nbmant+nbexpo-1, nbmant);
-            }
-            // create the real variable with initial value 0.0
             fprintf(f_veri, "real %s" VPUB " = 0.0;\n", sim_name(i));
         }
 
@@ -395,12 +399,6 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
             // float: use the real data type in the simulation
             if (sim_type_arr(i) == 2)
             {
-                if (has_float == 0)
-                {
-                    has_float = 1;
-                    fprintf(f_veri, "/* verilator tracing_off */ reg signed [%d:0] sm_me2; always @ (*) sm_me2 = (out[%d]) ? -$signed({1'b0, out[%d:0]}) : $signed({1'b0, out[%d:0]});\n", nbmant, nbmant+nbexpo, nbmant-1, nbmant-1);
-                    fprintf(f_veri, "reg signed [%d:0] e_me2; always @ (*)  e_me2 = $signed(out[%d:%d]); /* verilator tracing_on */\n"                                                  , nbexpo-1, nbmant+nbexpo-1, nbmant);
-                }
                 fprintf(f_veri, "real %s%04d" VPUB " = %f;\n", sim_name_arr(i), j, mf2f(val));
             }
 
@@ -458,17 +456,19 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     // create 10 registers to delay the @fim instruction
     int nreg = 10;
-    // valr1 + valr3..valr10 are intermediate PC-delay stages: only valr2 is shown
-    // (the Assembly track) and valr10 is read hierarchically by the _tb.v for the
-    // $finish. Keep all but valr2 out of the Verilator trace -- they all keep
-    // /* verilator public_flat */ so the hierarchical valr10 reference still works.
+    // valr2 is the only shown stage (the Assembly track). valr1 + valr3..valr10
+    // are PC-delay stages, emitted as one block fenced out of the trace instead
+    // of fencing each line. valr10 is read hierarchically by _tb.v for the
+    // $finish, so every stage keeps /* verilator public_flat */ (VPUB).
+    fprintf(f_veri, "reg [%d:0] valr2" VPUB "=0;\n", nubits-1);
+    fprintf(f_veri, "/* verilator tracing_off */\n");
     for (int i = 0; i < nreg; i++)
     {
         int n = i + 1;
-        if (n == 2) fprintf(f_veri, "reg [%d:0] valr%d" VPUB "=0;\n", nubits-1, n);
-        else        fprintf(f_veri, "/* verilator tracing_off */ reg [%d:0] valr%d" VPUB "=0; /* verilator tracing_on */\n", nubits-1, n);
+        if (n == 2) continue;
+        fprintf(f_veri, "reg [%d:0] valr%d" VPUB "=0;\n", nubits-1, n);
     }
-    fprintf(f_veri, "\n");
+    fprintf(f_veri, "/* verilator tracing_on */\n\n");
 
     int num_ins = get_n_ins();
 

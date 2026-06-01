@@ -18,6 +18,16 @@ tags consumed by Aurora.
   keep the GTKWave trace. Verified 0/25 sim failures and 3/3 green regress runs
   (previously ~13% DTW failure rate).
 
+### Changed
+- **Less Verilator clutter in the generated `<proc>.v`** — the per-signal
+  `/* verilator tracing_off */ … /* verilator tracing_on */` wrappers on the
+  `valr` PC-delay registers are now one block fence (valr2 traced, valr1+valr3..10
+  fenced together), and the `sm_me2`/`e_me2` float decode helpers are emitted once
+  in a single fenced block instead of inline-fenced and duplicated across the
+  variable and array loops. Pure codegen tidy-up, identical behaviour: regress
+  71/71 and the Verilator trace still carries `valr2` (not `valr1/3..10`) with the
+  ULA monitors still dead-code-eliminated.
+
 ## [v4.4] – 2026-05-31
 
 Verilator polish on top of v4.3: a clean lint pass, simulation progress on the
