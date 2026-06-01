@@ -24,7 +24,9 @@ tags consumed by Aurora.
   `valr` PC-delay registers are now one block fence (valr2 traced, valr1+valr3..10
   fenced together), and the `sm_me2`/`e_me2` float decode helpers are emitted once
   in a single fenced block instead of inline-fenced and duplicated across the
-  variable and array loops. Pure codegen tidy-up, identical behaviour: regress
+  variable and array loops. The raw `comp` real/imag halves (joined into the
+  shown `comp_<name>` wire) are likewise emitted as one fenced block instead of
+  fencing each half inline. Pure codegen tidy-up, identical behaviour: regress
   71/71 and the Verilator trace still carries `valr2` (not `valr1/3..10`) with the
   ULA monitors still dead-code-eliminated.
 - **`/* verilator public_flat */` only where it's needed** — it was stamped on

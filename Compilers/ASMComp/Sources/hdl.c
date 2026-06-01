@@ -313,31 +313,32 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
         fprintf(f_veri, "/* verilator tracing_on */\n\n");
     }
 
-    // create a register for each found variable
+    // create a register for each found int / float variable
     for (int i = 0; i < sim_cont(); i++)
     {
         // int: use the reg data type in the simulation
         if (sim_type(i) == 1)
-        {
             fprintf(f_veri, "reg [%d:0] %s = 0;\n", nubits-1, sim_name(i));
-        }
 
-        // float: use the real data type in the simulation (the sm_me2/e_me2
-        // decode helpers were emitted once above)
+        // float: use the real data type (sm_me2/e_me2 decode helpers above)
         if (sim_type(i) == 2)
-        {
             fprintf(f_veri, "real %s = 0.0;\n", sim_name(i));
-        }
+    }
 
-        // comp: use reg in the simulation
-        if (sim_type(i) > 2)
+    // comp: the real/imag halves are joined into comp_<name> below and only that
+    // joined signal is shown, so emit all the raw halves as one block fenced out
+    // of the trace (they keep VPUB so the join wire can still read them). The init
+    // is 'dx for now; ideally the binary equivalent of 0.0 -- itob(f2mf("0.0",NULL),nubits).
+    {
+        int has_comp_raw = 0;
+        for (int i = 0; i < sim_cont(); i++) if (sim_type(i) > 2) has_comp_raw = 1;
+        if (has_comp_raw)
         {
-            // currently using dx, but it should be the binary equivalent of 0.0
-            // try it with itob(f2mf("0.0",NULL), nubits)
-            // The real/imag halves are joined into comp_<name> below and only that
-            // joined signal is shown, so keep the raw parts out of the Verilator
-            // trace (tracing_off) -- they still keep public_flat for the join.
-            fprintf(f_veri, "/* verilator tracing_off */ reg [%d:0] %s" VPUB " = %d'dx; /* verilator tracing_on */\n", nubits-1, sim_name(i), nubits);
+            fprintf(f_veri, "/* verilator tracing_off */  // comp raw halves (joined below, not traced)\n");
+            for (int i = 0; i < sim_cont(); i++)
+                if (sim_type(i) > 2)
+                    fprintf(f_veri, "reg [%d:0] %s" VPUB " = %d'dx;\n", nubits-1, sim_name(i), nubits);
+            fprintf(f_veri, "/* verilator tracing_on */\n");
         }
     }
 
