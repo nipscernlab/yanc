@@ -141,6 +141,17 @@ connection/plumbing wires out of the trace with `/* verilator tracing_off */`
 (no-op comments for Icarus). The result is a small FST that matches the Icarus
 waveform.
 
+**The stack/ULA monitor signals are intentionally absent from the Verilator
+trace.** The stack-pointer flags and the ULA rounding-error taps (`fl_max`,
+`fl_full`, `pointeri`, `delta_int`, `delta_float`) live deep inside the CPU,
+below the fence, so Verilator drops them. This is by design: Verilator is the
+**performance** backend, and keeping those taps alive would force it to evaluate
+the costly real-valued ULA rounding-error logic on every cycle. So in the
+Verilator wave flow the GTKWave **Stack** / **ALU** groups come up empty — those
+are an Icarus-only debug feature (`go_proc.bat` / `go_proj.bat`). Bringing them
+back under Verilator means paying that speed cost; ask and we can wire a per-proc
+`.vlt` opt-in.
+
 One interaction to be aware of for the **Wave Configuration picker**: those
 fences are unconditional in the generated `.v`, so under **Verilator** only the
 curated set is traceable. If a user overrides the dump list and picks a signal

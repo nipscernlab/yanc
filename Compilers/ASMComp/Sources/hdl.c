@@ -865,6 +865,15 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // predefines __ICARUS__; the Verilator wave flow passes +define+YANC_TRACE).
     // No `ifdef is needed here: the ungated dumps above already require
     // YANC_SIM_VIS, so the tb never reaches this point without it.
+    //
+    // NOTE on Verilator: these are deep inside the processor, below the
+    // /* verilator tracing_off */ fence in <proc>.v, so Verilator silently drops
+    // them from the trace -- the $dumpvars below are a no-op there. That is
+    // intentional: Verilator is chosen for SPEED, and keeping these monitoring
+    // taps alive would force it to evaluate the costly real-valued ULA
+    // rounding-error logic every cycle. So under Verilator the stack/ULA monitor
+    // signals are NOT in the VCD; they remain available under Icarus, where the
+    // CPU subtree is fully traced and speed is not the goal.
 
     // if there's a CAL, register the subroutine-stack flags ------------------
 
