@@ -8,6 +8,12 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v4.4.1] – 2026-06-01
+
+A maintenance release on top of v4.4: a flaky-test fix and a clutter pass over
+the Verilator harness in the generated `<proc>.v`. No simulation behaviour
+changes (Icarus and Verilator traces are identical to v4.4).
+
 ### Fixed
 - **Flaky DTW regression** — the multi-proc project pass dumped every signal of
   the heavy `top_level_tb` sim through the FST writer, which intermittently
