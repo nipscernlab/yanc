@@ -8,6 +8,18 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **`Scripts/gen_gtkw.c`** (groundwork, not yet wired) — a C tool that parses a
+  VCD header and emits a pre-formatted GTKWave `.gtkw` save file, porting the
+  proven logic of Aurora's wave pipeline. It classifies the harness signals by
+  name (I/O mirrors, the `valr2` Assembly / `linetabs` C+- tracks with their
+  translate files, int/float/comp variables and arrays, the Stack/ALU flag
+  groups) and writes the exact `.gtkw` opcodes. This is Phase A (single
+  processor); it replaces the runtime `gtk_proc_init.tcl` and lets us move to the
+  nipscern GTKWave v4 (which ignores `--script`), opened as `gtkwave <vcd> -a
+  <out.gtkw>`. The `go_*.bat` flows are unchanged for now — the tool is
+  standalone until Phases B (FST header-only dump) and C (multi-proc) land.
+
 ## [v4.4.1] – 2026-06-01
 
 A maintenance release on top of v4.4: a flaky-test fix and a clutter pass over
