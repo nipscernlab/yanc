@@ -826,6 +826,11 @@ wire [NUBITS-1:0] ula_data_in1;
 wire [NUBITS-1:0] ula_data_in2;
 wire [NUBITS-1:0] uic_acc;
 
+// Accumulator register, declared up here (ahead of the uic_in2 generate that
+// references it in its else arm) so the reference is backward. iverilog v13
+// rejects use-before-declaration; v12 tolerated it.
+reg signed [NUBITS-1:0] racc;
+
 // input in1
 ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1);
 
@@ -895,8 +900,7 @@ ula #(.NUBITS (NUBITS ),
 assign sp_in = ula_out;
 
 // Accumulator ----------------------------------------------------------------
-
-reg signed [NUBITS-1:0] racc;
+// (the racc reg itself is declared earlier, above the uic_in2 generate)
 
 always @ (posedge clk or posedge rst) if (rst) racc <= 0; else racc <= ula_out;
 
