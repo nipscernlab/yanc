@@ -12,7 +12,7 @@
 ::                 spot disturbances on the power grid.
 ::
 :: The circuit is several Verilog files -- the top level plus one generated
-:: <proc>.v per processor -- and is what you would synthesize onto an FPGA. The
+:: <proc>.v per processor -- and this project has been tested on an FPGA. The
 :: GTKWave view shows the top-level signals alongside the software execution of
 :: both processors in lockstep.
 ::
