@@ -19,7 +19,9 @@ set FLEX=C:\packs\msys64\usr\bin\flex.exe
 set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
 set IVERILOG=C:\nipscern\Aurora\components\Packages\iverilog\bin\iverilog.exe
 set VVP=C:\nipscern\Aurora\components\Packages\iverilog\bin\vvp.exe
-set GTKWAVE=C:\nipscern\Aurora\components\Packages\iverilog\gtkwave\bin\gtkwave.exe
+:: nipscern GTKWave v4 -- opened with a pre-generated .gtkw (gen_gtkw) via -a;
+:: it ignores --script, so the Tcl formatters are replaced by gen_gtkw.
+set GTKWAVE=C:\nipscern\Aurora\components\Packages\gtkwave-nipscern\gtkwave.exe
 
 set    TESTE_DIR=%ROOT_DIR%\Teste
 rmdir %TESTE_DIR% /s /q
@@ -122,13 +124,17 @@ cd %ROOT_DIR%\Compilers\ASMComp\Sources
 move asmcomp.exe %BIN_DIR%>%TMP_PRO%\log.txt
 del  ASMComp.c
 
-:: Build translators for GTKWave ----------------------------------------------
+:: Build the GTKWave tools ------------------------------------------------------
+:: comp2gtkw.exe = "comp" process filter; gen_gtkw.exe writes the formatted .gtkw
+:: from the VCD header (replaces the gtk_proc_init.tcl formatter).
 
 cd %SCR_DIR%
 
 %GCC% -o comp2gtkw.exe comp2gtkw.c
+%GCC% -o gen_gtkw.exe  gen_gtkw.c
 
-move comp2gtkw.exe  %BIN_DIR%>%TMP_PRO%\log.txt
+move comp2gtkw.exe %BIN_DIR%>%TMP_PRO%\log.txt
+move gen_gtkw.exe  %BIN_DIR%>%TMP_PRO%\log.txt
 
 :: Run the CMM compiler -------------------------------------------------------
 
@@ -179,21 +185,27 @@ copy %UPROC%_inst.mif %TMP_PRO%>%TMP_PRO%\log.txt
 
 cd  %TMP_PRO%
 
+:: header-only pass (no -fst -> text VCD): gives gen_gtkw the signal list fast.
+:: The generated <proc>_tb has the +HEADER_ONLY gate (#1; $dumpflush; $finish);
+:: a user testbench without it just runs normally and still yields a VCD header.
+%VVP% %PROC%.vvp +HEADER_ONLY
+copy %TB_MOD%.vcd %TB_MOD%_hdr.vcd>%TMP_PRO%\log.txt
+
+:: real run -> the FST waveform GTKWave opens
 %VVP% %PROC%.vvp -fst
 
 :: Run GtkWave ----------------------------------------------------------------
 
-echo #### Running GTKWave
+echo #### Generating the .gtkw layout and launching GTKWave
 
-echo %TMP_PRO%>tcl_infos.txt
-echo %BIN_DIR%>>tcl_infos.txt
-
-copy %SCR_DIR%\fix.vcd %TMP_PRO%>%TMP_PRO%\log.txt
-
+:: gen_gtkw reads the header VCD and writes the .gtkw layout; GTKWave then opens
+:: the FST waveform with -a. --zoom-fit fits the whole wave (the Tcl flow did
+:: Zoom_Best_Fit); the nipscern fork hides the SST pane, so no --rcvar.
 if exist %SIMU_DIR%\%GTKW% (
-    %GTKWAVE% --rcvar "hide_sst on" --dark %SIMU_DIR%\%GTKW%      --script=%SCR_DIR%\pos_gtkw.tcl
+    %GTKWAVE% --dark --zoom-fit --left-justify %TMP_PRO%\%TB_MOD%.vcd -a %SIMU_DIR%\%GTKW%
 ) else (
-    %GTKWAVE% --rcvar "hide_sst on" --dark %TMP_PRO%\%TB_MOD%.vcd --script=%SCR_DIR%\gtk_proc_init.tcl
+    %BIN_DIR%\gen_gtkw.exe %TMP_PRO%\%TB_MOD%_hdr.vcd %TMP_PRO%\%TB_MOD%.gtkw %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
+    %GTKWAVE% --dark --zoom-fit --left-justify %TMP_PRO%\%TB_MOD%.vcd -a %TMP_PRO%\%TB_MOD%.gtkw
 )
 
 cd %ROOT_DIR%

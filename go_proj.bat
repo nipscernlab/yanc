@@ -19,7 +19,9 @@ set FLEX=C:\packs\msys64\usr\bin\flex.exe
 set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
 set IVERILOG=C:\nipscern\Aurora\components\Packages\iverilog\bin\iverilog.exe
 set VVP=C:\nipscern\Aurora\components\Packages\iverilog\bin\vvp.exe
-set GTKWAVE=C:\nipscern\Aurora\components\Packages\iverilog\gtkwave\bin\gtkwave.exe
+:: nipscern GTKWave v4 -- opened with a pre-generated .gtkw (gen_gtkw) via -a;
+:: it ignores --script, so the Tcl formatters are replaced by gen_gtkw.
+set GTKWAVE=C:\nipscern\Aurora\components\Packages\gtkwave-nipscern\gtkwave.exe
 
 set    TESTE_DIR=%ROOT_DIR%\Teste
 rmdir %TESTE_DIR% /s /q
@@ -109,13 +111,17 @@ cd %ROOT_DIR%\Compilers\ASMComp\Sources
 move asmcomp.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 del ASMComp.c
 
-:: Build data translators -----------------------------------------------------
+:: Build the GTKWave tools -----------------------------------------------------
+:: comp2gtkw.exe = "comp" process filter; gen_gtkw.exe writes the formatted .gtkw
+:: from the VCD header (replaces the gtk_proj_init.tcl formatter).
 
 cd %SCR_DIR%
 
 %GCC% -o comp2gtkw.exe comp2gtkw.c
+%GCC% -o gen_gtkw.exe  gen_gtkw.c
 
-move comp2gtkw.exe  %BIN_DIR%>%TMP_DIR%\xcopy.txt
+move comp2gtkw.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
+move gen_gtkw.exe  %BIN_DIR%>%TMP_DIR%\xcopy.txt
 
 :: Run the CMM compiler -------------------------------------------------------
 
@@ -172,27 +178,26 @@ endlocal
 del f_list.txt
 del xcopy.txt
 
-::start /b cmd /c %VVP% %PROJET%.vvp
+:: header-only pass (no -fst -> tiny text VCD): gives gen_gtkw the full signal
+:: list in ~100 ms instead of converting the multi-GB body. top_level_tb gates
+:: this on +HEADER_ONLY (#1; $dumpflush; $finish).
+%VVP% %PROJET%.vvp +HEADER_ONLY
+copy %TB%.vcd %TB%_hdr.vcd>%TMP_DIR%\xcopy.txt
+
 :: +WAVE enables the tb's $dumpvars (gated off by default so the regression's
 :: heavy multi-proc sim doesn't crash the FST writer); -fst is the dump format.
 %VVP% %PROJET%.vvp -fst +WAVE
 
 :: Run GtkWave ----------------------------------------------------------------
 
-echo %INST_LIST%> tcl_infos.txt
-echo %PROC_TYPE%>>tcl_infos.txt
-echo %TMP_DIR%>>  tcl_infos.txt
-echo %BIN_DIR%>>  tcl_infos.txt
-echo %SCR_DIR%>>  tcl_infos.txt
-
-copy %SCR_DIR%\fix.vcd %TMP_DIR%>%TMP_DIR%\xcopy.txt
-
+:: gen_gtkw reads the header VCD and writes the multi-proc .gtkw (one section per
+:: instance owning valr2+linetabs); GTKWave opens the FST waveform with -a.
+:: --zoom-fit fits the whole wave; the nipscern fork hides the SST pane (no rcvar).
 if exist %TOPL_DIR%\%GTKW% (
-    ::start /b cmd /c %GTKWAVE% --rcvar "hide_sst on" --dark %TOPL_DIR%\%GTKW% --script=%SCR_DIR%\pos_gtkw.tcl
-    %GTKWAVE% --rcvar "hide_sst on" --dark %TOPL_DIR%\%GTKW% --script=%SCR_DIR%\pos_gtkw.tcl
+    %GTKWAVE% --dark --zoom-fit --left-justify %TMP_DIR%\%TB%.vcd -a %TOPL_DIR%\%GTKW%
 ) else (
-    ::start /b cmd /c %GTKWAVE% --rcvar "hide_sst on" --dark %TMP_DIR%\%TB%.vcd --script=%SCR_DIR%\gtk_proj_init.tcl
-    %GTKWAVE% --rcvar "hide_sst on" --dark %TMP_DIR%\%TB%.vcd --script=%SCR_DIR%\gtk_proj_init.tcl
+    %BIN_DIR%\gen_gtkw.exe %TMP_DIR%\%TB%_hdr.vcd %TMP_DIR%\%TB%.gtkw %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
+    %GTKWAVE% --dark --zoom-fit --left-justify %TMP_DIR%\%TB%.vcd -a %TMP_DIR%\%TB%.gtkw
 )
 
 cd %ROOT_DIR%
