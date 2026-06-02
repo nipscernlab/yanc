@@ -21,6 +21,44 @@ YANC is the compilation backbone of the [SAPHO](https://github.com/nipscernlab) 
 
 YANC is used by the **Aurora** desktop app, but it can also be used standalone — just call the binaries from a shell script that walks through the pipeline.
 
+## Dependencies
+
+YANC runs on **Windows**. What you need depends on how you obtained it:
+
+| Dependency | What it's for | When you need it |
+| ---------- | ------------- | ---------------- |
+| **MSYS2** + `mingw-w64-x86_64-gcc`, `bison`, `flex` | Compiling the YANC binaries from source | Only if you build from source (not if you use a release zip) |
+| **Icarus Verilog** (`iverilog` + `vvp`) | Simulating the generated Verilog | For the Icarus flow — `go_proc.bat` / `go_proj.bat` |
+| **Verilator** 5.x (`mingw-w64-x86_64-verilator`) | Faster simulation, all user variables in the wave | For the Verilator flow — `go_proc_vl.bat` / `go_proj_vl.bat` |
+| **GTKWave** — the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) | Viewing the waveform | To open the trace (any flow) |
+
+> **GTKWave must be the nipscernlab build** — the `go_*.bat` rely on its
+> waveform-formatting behaviour. The generic GTKWave will not work the same way.
+
+### Let the setup script resolve them for you
+
+You don't have to install and wire these up by hand. Run **once**:
+
+```bat
+Scripts\setup.bat
+```
+
+It **checks** every dependency and **helps you get the missing ones**:
+
+* finds (or, with MSYS2, offers to `pacman -S`) the `gcc` / `bison` / `flex`
+  build toolchain;
+* produces the YANC binaries in `bin\` — **either** keeping the `.exe` a release
+  zip already shipped / downloading the prebuilt ones from the latest release
+  (no build toolchain needed), **or** compiling them once from source;
+* locates Icarus and Verilator, and **downloads the nipscernlab GTKWave**
+  portable bundle if it isn't already present;
+* remembers every resolved path so the `go_*.bat` need no manual configuration.
+
+If something can't be auto-installed (e.g. Icarus, which has its own installer),
+setup prints the exact link and command to fix it, then you re-run it. See
+[Pre-wired scripts](#pre-wired-scripts) for the full description and the
+`--rebuild` / `--download` flags.
+
 ## Pipeline
 
 YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end compilers turn high-level source into assembly; a single back-end compiler turns that assembly into Verilog. Each compiler is preceded by an optional preprocessor (`cpppp` for C++, `appcomp` for assembly macros).
