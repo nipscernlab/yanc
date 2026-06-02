@@ -36,9 +36,9 @@ download GTKWave for you — see below.)
 
 | Dependency | `pacman` package / source | What it's for | When you need it |
 | ---------- | ------------------------- | ------------- | ---------------- |
-| **MSYS2 — build toolchain** | `mingw-w64-x86_64-gcc`, `bison`, `flex` | Compiling the YANC binaries from source | Only when building from source (not when using a release zip) |
-| **MSYS2 — Icarus Verilog** | `mingw-w64-x86_64-iverilog` | Simulating the generated Verilog | For the Icarus flow — `go_proc.bat` / `go_proj.bat` |
-| **MSYS2 — Verilator** 5.x | `mingw-w64-x86_64-verilator` | Faster simulation, all user variables in the wave | For the Verilator flow — `go_proc_vl.bat` / `go_proj_vl.bat` |
+| **MSYS2 — build toolchain** | `mingw-w64-x86_64-gcc`, `make`, `bison`, `flex` | Compiling the YANC binaries from source | Only when building from source (not when using a release zip) |
+| **MSYS2 — Icarus Verilog** | `mingw-w64-x86_64-iverilog` | Simulating the generated Verilog | Default flow — `go_proc.bat` / `go_proj.bat` |
+| **MSYS2 — Verilator** 5.x | `mingw-w64-x86_64-verilator` | Faster simulation, all user variables in the wave | `--sim verilator` flow — `go_proc.bat --sim verilator` |
 | **GTKWave** | the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) (separate download) | Viewing the waveform | To open the trace (any flow) |
 
 > **Why MSYS2 for the simulators too?** `iverilog` and `verilator` are both in
@@ -54,8 +54,8 @@ manager (`apt`, `dnf`, `pacman`, or `zypper`):
 | Package | What it's for |
 | ------- | ------------- |
 | `gcc`, `bison`, `flex` (Debian/Ubuntu: `build-essential bison flex`) | Compiling the YANC binaries |
-| `iverilog` | Icarus flow — `go_proc.sh` / `go_proj.sh` |
-| `verilator` | Verilator flow — `go_proc_vl.sh` / `go_proj_vl.sh` |
+| `iverilog` | Default flow — `go_proc.sh` / `go_proj.sh` |
+| `verilator` | `--sim verilator` flow — `go_proc.sh --sim verilator` |
 | `gtkwave` | Viewing the waveform |
 
 > **Note on Linux GTKWave:** there is no Linux build of the nipscernlab fork
@@ -110,7 +110,7 @@ YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end co
   C++:    foo.cpp  ──►  cpppp  ──►  cppcomp  ────────┘
 ```
 
-After `asmcomp`, the generated Verilog can be simulated with **Icarus Verilog** (`iverilog` + `vvp`) or with **Verilator**, and visualized in **GTKWave**. Four pre-wired Windows scripts cover both backends end-to-end: `go_proc.bat` / `go_proj.bat` (Icarus) and `go_proc_vl.bat` / `go_proj_vl.bat` (Verilator).
+After `asmcomp`, the generated Verilog can be simulated with **Icarus Verilog** (`iverilog` + `vvp`) or with **Verilator**, and visualized in **GTKWave**. Two pre-wired scripts cover the whole pipeline end-to-end — `go_proc.bat`/`go_proc.sh` (one processor) and `go_proj.bat`/`go_proj.sh` (multi-processor project) — each picking the simulator from a `--sim iverilog|verilator` flag (default Icarus).
 
 ## What you see in GTKWave
 
@@ -312,28 +312,31 @@ Because only the header is needed, the big project FST dumps don't have to be
 written in full first: run the sim once with the **`+HEADER_ONLY`** plusarg and
 the testbench dumps the header, advances one tick, flushes and `$finish`es — a
 tiny header VCD in milliseconds (Verilator's header FST is converted with
-`fst2vcd -f`). **The four `go_*.bat` scripts wire this whole sequence up
+`fst2vcd -f`). **The `go_*` scripts wire this whole sequence up
 correctly** (header pass → `gen_gtkw` → `gtkwave -a`), so they are the reference
 for using it in practice. `--zoom-fit` fits the whole trace to the window.
 
 ### Pre-wired scripts
 
-Four scripts bundle steps 1–6 with sensible defaults — two per simulator
-backend. Each has a Windows (`.bat`) and a Linux (`.sh`) version:
+Two scripts bundle steps 1–6 with sensible defaults — one per pipeline shape.
+Each has a Windows (`.bat`) and a Linux (`.sh`) version, and picks the simulator
+from a `--sim iverilog|verilator` flag (default Icarus):
 
 ```bat
-go_proc.bat / go_proc.sh       one processor,       Icarus    (edit PROJET / PROC / FNAM at the top)
-go_proj.bat / go_proj.sh       multi-proc project,  Icarus
-go_proc_vl.bat / go_proc_vl.sh one processor,       Verilator
-go_proj_vl.bat / go_proj_vl.sh multi-proc project,  Verilator
+go_proc.bat / go_proc.sh   one processor       (edit PROJET / PROC / FNAM at the top)
+go_proj.bat / go_proj.sh   multi-proc project
+
+  ... default (no flag)        -> Icarus Verilog (iverilog + vvp)
+  ... --sim verilator          -> Verilator (--binary --timing, +define+YANC_TRACE)
 ```
 
-On Linux make them executable once (`chmod +x go_*.sh`) and run `./go_proc.sh`.
+On Linux make them executable once (`chmod +x go_*.sh`) and run `./go_proc.sh`
+or `./go_proc.sh --sim verilator`.
 
 #### One-time setup — `setup.bat` / `setup.sh`
 
 The scripts have **no hardcoded tool paths** anymore. Run the setup script
-**once** and it prepares everything; the four runners then just run:
+**once** and it prepares everything; the runners then just run:
 
 ```bat
 Scripts\setup.bat      :: Windows
@@ -463,10 +466,8 @@ yanc/
 ├── Makefile              single source of truth for building the binaries (Linux + MSYS2)
 ├── Scripts/              setup.bat/.sh + env.bat/.sh, aurora.bat, regress.sh, comp2gtkw, gen_gtkw
 ├── docs/images/          README assets (GTKWave screenshot, ...)
-├── go_proc.bat/.sh       single-processor pipeline, Icarus backend
-├── go_proj.bat/.sh       multi-processor project pipeline, Icarus backend
-├── go_proc_vl.bat/.sh    single-processor pipeline, Verilator backend
-├── go_proj_vl.bat/.sh    multi-processor project pipeline, Verilator backend
+├── go_proc.bat/.sh       single-processor pipeline (--sim iverilog|verilator)
+├── go_proj.bat/.sh       multi-processor project pipeline (--sim iverilog|verilator)
 └── .github/workflows/    CI (Windows + Linux build/smoke; release on tag push)
 ```
 

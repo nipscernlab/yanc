@@ -1,5 +1,12 @@
 :: ****************************************************************************
-:: Script to emulate SAPHO when compiling a project with multiple procs
+:: Emulate SAPHO when compiling a multi-processor project and simulating it.
+::   go_proj.bat                  -> simulate with Icarus (default)
+::   go_proj.bat --sim verilator  -> simulate with Verilator (+define+YANC_TRACE)
+::
+:: --sim verilator feeds the same .v set to Verilator 5 (--binary --timing
+:: --trace-fst) with top_level_tb.v as the top; +define+YANC_TRACE keeps each
+:: processor's user variables / arrays in the waveform. Run Scripts\setup.bat
+:: once first.
 :: ****************************************************************************
 
 :: Set up the terminal --------------------------------------------------------
@@ -11,20 +18,25 @@ chcp 65001 >nul
 :: Set up the environment -----------------------------------------------------
 
 :: Resolve ROOT_DIR + the prebuilt binaries (YANC_BIN) and the tool locations
-:: (IVERILOG, VVP, GTKWAVE) with no hardcoded paths. Scripts\setup.bat builds /
-:: downloads everything once and caches the paths; env.bat loads them here.
+:: (IVERILOG, VVP, VERILATOR, GTKWAVE, FST2VCD) with no hardcoded paths.
+:: Scripts\setup.bat builds / downloads everything once and caches the paths;
+:: env.bat loads them here.
 call "%~dp0Scripts\env.bat"
 cd /d "%ROOT_DIR%"
 
-:: This Icarus flow needs the binaries plus iverilog/vvp and GTKWave ----------
+:: Pick the simulator (--sim iverilog|verilator, default iverilog) ------------
+set "SIM=iverilog"
+if /i "%~1"=="--sim" set "SIM=%~2"
+if /i "%~1"=="-h" goto :usage
+if /i "%~1"=="--help" goto :usage
+if /i "%SIM%"=="vl" set "SIM=verilator"
+if /i "%SIM%"=="icarus" set "SIM=iverilog"
+if /i not "%SIM%"=="iverilog" if /i not "%SIM%"=="verilator" goto :badsim
+
+:: Tools: binaries + GTKWave always, plus the chosen simulator ---------------
 if not exist "%YANC_BIN%\cmmcomp.exe" (
     echo [go_proj] YANC binaries missing in "%YANC_BIN%".
     echo            Run  Scripts\setup.bat  once to build or download them.
-    exit /b 1
-)
-if not defined IVERILOG (
-    echo [go_proj] Icarus Verilog not found - run Scripts\setup.bat, or install
-    echo            it from https://bleyer.org/icarus/ and re-run.
     exit /b 1
 )
 if not defined GTKWAVE (
@@ -32,9 +44,32 @@ if not defined GTKWAVE (
     echo            nipscernlab GTKWave build, then re-run.
     exit /b 1
 )
+if /i "%SIM%"=="verilator" (
+    if not defined VERILATOR (
+        echo [go_proj] Verilator not found - run Scripts\setup.bat, or install it
+        echo            with "pacman -S mingw-w64-x86_64-verilator" and re-run.
+        exit /b 1
+    )
+    if not defined FST2VCD (
+        echo [go_proj] fst2vcd not found - it ships with the nipscernlab GTKWave
+        echo            bundle. Re-run Scripts\setup.bat to fetch it.
+        exit /b 1
+    )
+) else (
+    if not defined IVERILOG (
+        echo [go_proj] Icarus Verilog not found - run Scripts\setup.bat, or install
+        echo            it from https://bleyer.org/icarus/ and re-run.
+        exit /b 1
+    )
+)
 
-:: When iverilog comes from MSYS2, vvp needs mingw64\bin on PATH for its DLLs.
+:: When iverilog/verilator come from MSYS2, their tools need mingw64\bin on PATH.
 if defined MINGW_BIN set "PATH=%MINGW_BIN%;%PATH%"
+
+:: Verilator warning suppressions: the design isn't lint-clean and the project
+:: mixes timescale'd top-level modules with non-timescale'd HDL; none of these
+:: affect the simulation, so silence them (Verilator escalates them otherwise).
+set VL_WARN=-Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH -Wno-CASEINCOMPLETE -Wno-IMPLICIT -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-SELRANGE -Wno-TIMESCALEMOD -Wno-INITIALDLY
 
 set    TESTE_DIR=%ROOT_DIR%\Teste
 rmdir %TESTE_DIR% /s /q
@@ -69,6 +104,9 @@ set USER_DIR=%TESTE_DIR%\Projetos
 set PROJ_DIR=%USER_DIR%\%PROJET%
 set TOPL_DIR=%PROJ_DIR%\TopLevel
 
+:: Verilator obj_dir (generated C++ model + the V<tb> sim exe)
+set VL_DIR=%TMP_DIR%\vl
+
 :: Create test directories ----------------------------------------------------
 
 mkdir %TESTE_DIR%
@@ -85,9 +123,8 @@ mkdir %TESTE_DIR%
 ))
 
 :: Point TMP/TEMP at this project's Temp dir. Without this, go_proj inherits
-:: whatever TMP a previous bat left in the cmd session (e.g. go_proc_vl sets it
-:: to its own Temp\<proc>, which go_proj's rmdir then deletes) -- leaving gcc /
-:: iverilog with no temp dir ("Cannot create temporary file ... check TMP").
+:: whatever TMP a previous run left in the cmd session, which its own rmdir then
+:: deletes -- leaving gcc / iverilog with no temp dir.
 set TMP=%TMP_DIR%
 set TEMP=%TMP_DIR%
 
@@ -126,7 +163,7 @@ cd  %BIN_DIR%
     cp %USER_DIR%\%%i\Hardware\%%i.v %TMP_DIR%\%%i
 ))
 
-:: Build the testbench with Icarus --------------------------------------------
+:: Build the simulation (gather the same .v set for both simulators) ----------
 
 cd %TMP_DIR%
 
@@ -143,38 +180,55 @@ for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do set "TOP_V=!TOP_V!%TOPL_DIR%\%
 :: list files of the processors found
 for %%a in (%PROC_LIST%) do set "PRO_V=!PRO_V!%TMP_DIR%\%%a\%%a.v "
 
-%IVERILOG% -s %TB% -o %TMP_DIR%\%PROJET%.vvp %HDL_V% %PRO_V% %TOP_V%
+if /i "%SIM%"=="verilator" goto :proj_build_vl
 
+echo #### Running Icarus
+%IVERILOG% -s %TB% -o %TMP_DIR%\%PROJET%.vvp !HDL_V! !PRO_V! !TOP_V!
+endlocal
+goto :proj_run_icarus
+
+:proj_build_vl
+echo #### Running Verilator (+define+YANC_TRACE, --binary --timing --trace-fst)
+%VERILATOR% --binary --timing --trace-fst +define+YANC_TRACE --top-module %TB% %VL_WARN% --Mdir %VL_DIR% !HDL_V! !PRO_V! !TOP_V!
+endlocal
+goto :proj_run_vl
+
+:: --- Icarus: stage the files vvp reads (relative to CWD), then run ----------
+:proj_run_icarus
 for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\%%a_tb.v %USER_DIR%\%%a\Simulation>%TMP_DIR%\xcopy.txt
-
-:: Run the testbench with vvp -------------------------------------------------
-
 dir %TOPL_DIR%\*.txt /b > f_list.txt
 for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do copy %TOPL_DIR%\%%a .\>%TMP_DIR%\xcopy.txt
 for %%a in (%PROC_LIST%) do copy %USER_DIR%\%%a\Hardware\%%a_inst.mif .\>%TMP_DIR%\xcopy.txt
 for %%a in (%PROC_LIST%) do copy %USER_DIR%\%%a\Hardware\%%a_data.mif .\>%TMP_DIR%\xcopy.txt
 for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\pc_%%a_mem.txt .\>%TMP_DIR%\xcopy.txt
-
-endlocal
-
 del f_list.txt
 del xcopy.txt
-
-:: header-only pass (no -fst -> tiny text VCD): gives gen_gtkw the full signal
-:: list in ~100 ms instead of converting the multi-GB body. top_level_tb gates
-:: this on +HEADER_ONLY (#1; $dumpflush; $finish).
+echo #### Running VVP
+:: header-only pass (tiny text VCD) then the real FST run (+WAVE arms $dumpvars)
 %VVP% %PROJET%.vvp +HEADER_ONLY
 copy %TB%.vcd %TB%_hdr.vcd>%TMP_DIR%\xcopy.txt
-
-:: +WAVE enables the tb's $dumpvars (gated off by default so the regression's
-:: heavy multi-proc sim doesn't crash the FST writer); -fst is the dump format.
 %VVP% %PROJET%.vvp -fst +WAVE
+goto :proj_gtkwave
+
+:: --- Verilator: stage the files the run reads, then run ---------------------
+:proj_run_vl
+dir %TOPL_DIR%\*.txt /b > f_list.txt
+for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do copy %TOPL_DIR%\%%a .\>%TMP_DIR%\xcopy.txt
+for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\pc_%%a_mem.txt .\>%TMP_DIR%\xcopy.txt
+del f_list.txt
+del xcopy.txt
+echo #### Running the Verilator simulation
+:: header-only pass -> tiny FST; fst2vcd extracts a text VCD for the formatter.
+%VL_DIR%\V%TB%.exe +HEADER_ONLY
+%FST2VCD% -f %TB%.vcd -o %TB%_hdr.vcd>%TMP_DIR%\xcopy.txt 2>&1
+:: +WAVE arms the tb's $dumpvars (off by default so the heavy sim doesn't crash).
+%VL_DIR%\V%TB%.exe +WAVE
 
 :: Run GtkWave ----------------------------------------------------------------
-
+:proj_gtkwave
+echo #### Generating the .gtkw layout and launching GTKWave
 :: gen_gtkw reads the header VCD and writes the multi-proc .gtkw (one section per
-:: instance owning valr2+linetabs); GTKWave opens the FST waveform with -a.
-:: --zoom-fit fits the whole wave; the nipscern fork hides the SST pane (no rcvar).
+:: instance owning valr2+linetabs); GTKWave opens the waveform with -a.
 if exist %TOPL_DIR%\%GTKW% (
     %GTKWAVE% --dark --zoom-fit --left-justify %TMP_DIR%\%TB%.vcd -a %TOPL_DIR%\%GTKW%
 ) else (
@@ -183,3 +237,12 @@ if exist %TOPL_DIR%\%GTKW% (
 )
 
 cd %ROOT_DIR%
+exit /b 0
+
+:usage
+echo usage: go_proj.bat [--sim iverilog^|verilator]
+exit /b 0
+
+:badsim
+echo [go_proj] --sim must be 'iverilog' or 'verilator' (got "%SIM%")
+exit /b 1

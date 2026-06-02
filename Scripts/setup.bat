@@ -201,7 +201,7 @@ if defined VERILATOR (
     echo [verilator] !VERILATOR!
 ) else (
     echo [verilator] NOT found - install MSYS2 + "pacman -S mingw-w64-x86_64-verilator"
-    echo             ^(needed only for the Verilator flow: go_proc_vl.bat / go_proj_vl.bat^)
+    echo             ^(needed only for the Verilator flow: go_proc.bat --sim verilator^)
 )
 
 :: GTKWave -- MUST be the nipscernlab build; auto-download the portable bundle -
@@ -246,10 +246,10 @@ echo  Setup complete. Paths cached in:
 echo    %CACHE%
 echo.
 echo  You can now run the examples, e.g.:
-echo    go_proc.bat        ^(one processor,      Icarus^)
-echo    go_proj.bat        ^(multi-proc project, Icarus^)
-echo    go_proc_vl.bat     ^(one processor,      Verilator^)
-echo    go_proj_vl.bat     ^(multi-proc project, Verilator^)
+echo    go_proc.bat                  ^(one processor,      Icarus^)
+echo    go_proj.bat                  ^(multi-proc project, Icarus^)
+echo    go_proc.bat --sim verilator  ^(one processor,      Verilator^)
+echo    go_proj.bat --sim verilator  ^(multi-proc project, Verilator^)
 echo ============================================================
 endlocal
 exit /b 0

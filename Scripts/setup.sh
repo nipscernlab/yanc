@@ -134,7 +134,7 @@ fi
 echo
 echo "--- Simulation tools ----------------------------------------------------"
 want iverilog  iverilog  optional "needed for the Icarus flow: go_proc.sh / go_proj.sh"   || true
-want verilator verilator optional "needed for the Verilator flow: go_proc_vl.sh / go_proj_vl.sh" || true
+want verilator verilator optional "needed for the Verilator flow: go_proc.sh --sim verilator" || true
 want gtkwave   gtkwave   optional "needed to view the waveform"                            || true
 
 command -v iverilog  >/dev/null 2>&1 && echo "[icarus]    $(command -v iverilog)"
@@ -164,8 +164,8 @@ echo " Setup complete. Paths cached in:"
 echo "   $CACHE"
 echo
 echo " You can now run the examples, e.g.:"
-echo "   ./go_proc.sh        (one processor,      Icarus)"
-echo "   ./go_proj.sh        (multi-proc project, Icarus)"
-echo "   ./go_proc_vl.sh     (one processor,      Verilator)"
-echo "   ./go_proj_vl.sh     (multi-proc project, Verilator)"
+echo "   ./go_proc.sh                   (one processor,      Icarus)"
+echo "   ./go_proj.sh                   (multi-proc project, Icarus)"
+echo "   ./go_proc.sh --sim verilator   (one processor,      Verilator)"
+echo "   ./go_proj.sh --sim verilator   (multi-proc project, Verilator)"
 echo "============================================================"
