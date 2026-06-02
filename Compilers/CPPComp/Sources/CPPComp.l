@@ -14,10 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "..\Headers\ast.h"
-#include "..\Headers\types.h"
-#include "..\Headers\symtab.h"
-#include "..\Headers\messages.h"
+#include "../Headers/ast.h"
+#include "../Headers/types.h"
+#include "../Headers/symtab.h"
+#include "../Headers/messages.h"
 
 #include "y.tab.h"
 

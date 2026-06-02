@@ -7,11 +7,11 @@
 #include <stdlib.h>
 
 // local includes
-#include "..\Headers\ast.h"
-#include "..\Headers\t2t.h"
-#include "..\Headers\global.h"
-#include "..\Headers\funcoes.h"
-#include "..\Headers\variaveis.h"
+#include "../Headers/ast.h"
+#include "../Headers/t2t.h"
+#include "../Headers/global.h"
+#include "../Headers/funcoes.h"
+#include "../Headers/variaveis.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------

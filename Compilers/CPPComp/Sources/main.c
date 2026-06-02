@@ -14,11 +14,11 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include "..\Headers\config.h"
-#include "..\Headers\ast.h"
-#include "..\Headers\symtab.h"
-#include "..\Headers\codegen.h"
-#include "..\Headers\messages.h"
+#include "../Headers/config.h"
+#include "../Headers/ast.h"
+#include "../Headers/symtab.h"
+#include "../Headers/codegen.h"
+#include "../Headers/messages.h"
 
 /* Create a directory if it doesn't already exist. Used by the -p
  * proc-folder mode to mkdir <proc>/Software when missing. Tolerates

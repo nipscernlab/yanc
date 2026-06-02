@@ -9,7 +9,7 @@
 #include   <math.h>
 
 // local includes
-#include "..\Headers\eval.h"
+#include "../Headers/eval.h"
 
 // converts the integer x to a binary string of length w
 // could be revised to support ints wider than 32 bits

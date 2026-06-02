@@ -23,7 +23,12 @@ YANC is used by the **Aurora** desktop app, but it can also be used standalone �
 
 ## Dependencies
 
-YANC runs on **Windows**, and almost everything comes from a single install:
+YANC runs on **Windows and Linux**, and a single setup script
+([`Scripts\setup.bat`](#let-the-setup-script-resolve-them-for-you) on Windows,
+`Scripts/setup.sh` on Linux) checks the dependencies and helps you get the
+missing ones.
+
+On **Windows**, almost everything comes from a single install:
 **[MSYS2](https://www.msys2.org/)**. Its `pacman` packages provide the build
 toolchain *and* both simulators, so in practice you only install **two things**:
 MSYS2 and the GTKWave build. (`setup.bat` can `pacman -S` the MSYS2 packages and
@@ -43,12 +48,30 @@ download GTKWave for you — see below.)
 > **GTKWave must be the nipscernlab build** — the `go_*.bat` rely on its
 > waveform-formatting behaviour; the generic GTKWave will not work the same way.
 
+On **Linux**, the same dependencies come from your distribution's package
+manager (`apt`, `dnf`, `pacman`, or `zypper`):
+
+| Package | What it's for |
+| ------- | ------------- |
+| `gcc`, `bison`, `flex` (Debian/Ubuntu: `build-essential bison flex`) | Compiling the YANC binaries |
+| `iverilog` | Icarus flow — `go_proc.sh` / `go_proj.sh` |
+| `verilator` | Verilator flow — `go_proc_vl.sh` / `go_proj_vl.sh` |
+| `gtkwave` | Viewing the waveform |
+
+> **Note on Linux GTKWave:** there is no Linux build of the nipscernlab fork
+> yet, so the Linux flow uses your distro's stock `gtkwave`. It still opens the
+> waveform and applies the generated `.gtkw` layout; only the panel chrome
+> (dark SST-less view) differs from the Windows fork.
+
 ### Let the setup script resolve them for you
 
 You don't have to install and wire these up by hand. Run **once**:
 
 ```bat
-Scripts\setup.bat
+Scripts\setup.bat      :: Windows
+```
+```sh
+bash Scripts/setup.sh  # Linux
 ```
 
 It **checks** every dependency and **helps you get the missing ones**:
@@ -63,6 +86,12 @@ It **checks** every dependency and **helps you get the missing ones**:
 * **downloads the nipscernlab GTKWave** portable bundle if it isn't already
   present;
 * remembers every resolved path so the `go_*.bat` need no manual configuration.
+
+On **Linux**, `setup.sh` does the equivalent through your package manager:
+it offers to install `gcc`/`bison`/`flex` and the simulators, compiles the
+binaries into `bin/` (there is no prebuilt Linux release, so it always builds
+from source), uses the distro `gtkwave`, and caches the paths in
+`Scripts/tools.local.sh` for the `go_*.sh`. Re-run with `--rebuild` to recompile.
 
 If something can't be resolved automatically (e.g. MSYS2 itself isn't installed
 yet), setup prints the exact link and command to fix it, then you re-run it. See
@@ -273,25 +302,36 @@ for using it in practice. `--zoom-fit` fits the whole trace to the window.
 
 ### Pre-wired scripts
 
-Four Windows scripts bundle steps 1–6 with sensible defaults — two per simulator backend:
+Four scripts bundle steps 1–6 with sensible defaults — two per simulator
+backend. Each has a Windows (`.bat`) and a Linux (`.sh`) version:
 
 ```bat
-go_proc.bat       :: one processor,       Icarus     (edit PROJET / PROC / FNAM at the top)
-go_proj.bat       :: multi-proc project,  Icarus
-go_proc_vl.bat    :: one processor,       Verilator
-go_proj_vl.bat    :: multi-proc project,  Verilator
+go_proc.bat / go_proc.sh       one processor,       Icarus    (edit PROJET / PROC / FNAM at the top)
+go_proj.bat / go_proj.sh       multi-proc project,  Icarus
+go_proc_vl.bat / go_proc_vl.sh one processor,       Verilator
+go_proj_vl.bat / go_proj_vl.sh multi-proc project,  Verilator
 ```
 
-#### One-time setup — `Scripts\setup.bat`
+On Linux make them executable once (`chmod +x go_*.sh`) and run `./go_proc.sh`.
 
-The scripts have **no hardcoded tool paths** anymore. Run `Scripts\setup.bat`
-**once** and it prepares everything; the four `go_*.bat` then just run:
+#### One-time setup — `setup.bat` / `setup.sh`
+
+The scripts have **no hardcoded tool paths** anymore. Run the setup script
+**once** and it prepares everything; the four runners then just run:
 
 ```bat
-Scripts\setup.bat
+Scripts\setup.bat      :: Windows
+```
+```sh
+bash Scripts/setup.sh  # Linux  (then ./go_proc.sh, ...)
 ```
 
-`setup.bat` covers both ways of getting YANC, and picks automatically:
+On **Linux** `setup.sh` installs the dependencies through your package manager,
+always compiles the binaries from source into `bin/` (no prebuilt Linux
+release), uses the distro `gtkwave`, and caches the paths in
+`Scripts/tools.local.sh` for `Scripts/env.sh`. The rest of this section
+describes the richer Windows `setup.bat`, which covers both ways of getting
+YANC and picks automatically:
 
 * **Binary mode** — if `bin\` already contains the `.exe` (e.g. you extracted a
   release zip), it keeps them; no `bison`/`flex`/`gcc` needed. If the build
@@ -404,13 +444,13 @@ yanc/
 │   ├── CPPComp/          cpppp + cppcomp sources + Includes/ (C++ shims) + Tests/ (per-test programs + Verilator/)
 │   └── yanc_version.h    single-source-of-truth toolchain version
 ├── HDL/                  reusable Verilog modules (core, ALU, decoders, FIFO, ...)
-├── Scripts/              aurora.bat (build + deploy), regress.sh, comp2gtkw, gen_gtkw
+├── Scripts/              setup.bat/.sh + env.bat/.sh, aurora.bat, regress.sh, comp2gtkw, gen_gtkw
 ├── docs/images/          README assets (GTKWave screenshot, ...)
-├── go_proc.bat           single-processor pipeline, Icarus backend
-├── go_proj.bat           multi-processor project pipeline, Icarus backend
-├── go_proc_vl.bat        single-processor pipeline, Verilator backend
-├── go_proj_vl.bat        multi-processor project pipeline, Verilator backend
-└── .github/workflows/    CI (release on tag push)
+├── go_proc.bat/.sh       single-processor pipeline, Icarus backend
+├── go_proj.bat/.sh       multi-processor project pipeline, Icarus backend
+├── go_proc_vl.bat/.sh    single-processor pipeline, Verilator backend
+├── go_proj_vl.bat/.sh    multi-processor project pipeline, Verilator backend
+└── .github/workflows/    CI (Windows + Linux build/smoke; release on tag push)
 ```
 
 ## Contributing

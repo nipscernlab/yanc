@@ -8,8 +8,8 @@
 #include <stdlib.h>
 
 // local includes
-#include "..\Headers\variaveis.h"
-#include "..\Headers\messages.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/messages.h"
 
 // ----------------------------------------------------------------------------
 // local variable declarations ------------------------------------------------

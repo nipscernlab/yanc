@@ -360,11 +360,12 @@ static void emit_proc_section(const Proc *p) {
     emit_io(p->inst, "out_en_sim_", FMT_BIN,        "out_en");
     emit_io(p->inst, "out_sig_",    FMT_SIGNED_DEC, "output");
 
-    // per-proc translate files at <tmp_base>/<type>/
+    // per-proc translate files at <tmp_base>/<type>/ (forward slashes work on
+    // both Windows and POSIX, and GTKWave accepts them in the .gtkw paths).
     char tradop[800] = "", tradcmm[800] = "";
     if (p->type[0]) {
-        snprintf(tradop,  sizeof tradop,  "%s\\%s\\trad_opcode.txt", g_tmp_base, p->type);
-        snprintf(tradcmm, sizeof tradcmm, "%s\\%s\\trad_cmm.txt",    g_tmp_base, p->type);
+        snprintf(tradop,  sizeof tradop,  "%s/%s/trad_opcode.txt", g_tmp_base, p->type);
+        snprintf(tradcmm, sizeof tradcmm, "%s/%s/trad_cmm.txt",    g_tmp_base, p->type);
     }
     emit_comment("Instructions *******");
     int vi = find_sig(p->inst, "valr2");

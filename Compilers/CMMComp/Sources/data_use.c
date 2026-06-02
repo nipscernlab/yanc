@@ -12,15 +12,15 @@ TODO:
 #include <stdlib.h>
 
 // local includes
-#include "..\Headers\t2t.h"
-#include "..\Headers\oper.h"
-#include "..\Headers\global.h"
-#include "..\Headers\funcoes.h"
-#include "..\Headers\data_use.h"
-#include "..\Headers\variaveis.h"
-#include "..\Headers\data_assign.h"
-#include "..\Headers\array_index.h"
-#include "..\Headers\messages.h"
+#include "../Headers/t2t.h"
+#include "../Headers/oper.h"
+#include "../Headers/global.h"
+#include "../Headers/funcoes.h"
+#include "../Headers/data_use.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/data_assign.h"
+#include "../Headers/array_index.h"
+#include "../Headers/messages.h"
 
 // constant reduction into expr
 // does not emit a load, just updates the variable state

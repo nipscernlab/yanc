@@ -4,7 +4,7 @@
 
 #include <string.h>
 
-#include "..\Headers\messages.h"
+#include "../Headers/messages.h"
 
 int lang_en = 0; // default: Portuguese
 

@@ -9,11 +9,11 @@
 #include   <math.h>
 
 // local includes
-#include "..\Headers\t2t.h"
-#include "..\Headers\eval.h"
-#include "..\Headers\array.h"
-#include "..\Headers\variaveis.h"
-#include "..\Headers\messages.h"
+#include "../Headers/t2t.h"
+#include "../Headers/eval.h"
+#include "../Headers/array.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/messages.h"
 
 // ----------------------------------------------------------------------------
 // helper functions -----------------------------------------------------------

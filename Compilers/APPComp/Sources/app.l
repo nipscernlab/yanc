@@ -1,7 +1,7 @@
 %{
-    #include "..\Headers\eval.h"
-    #include "..\Headers\messages.h"
-    #include "..\Headers\args.h"
+    #include "../Headers/eval.h"
+    #include "../Headers/messages.h"
+    #include "../Headers/args.h"
 %}
 
 %option nounput noinput

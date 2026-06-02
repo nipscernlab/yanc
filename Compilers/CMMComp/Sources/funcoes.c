@@ -7,14 +7,14 @@
 #include <stdlib.h>
 
 // local includes
-#include "..\Headers\ast.h"
-#include "..\Headers\t2t.h"
-#include "..\Headers\labels.h"
-#include "..\Headers\global.h"
-#include "..\Headers\data_use.h"
-#include "..\Headers\variaveis.h"
-#include "..\Headers\data_declar.h"
-#include "..\Headers\messages.h"
+#include "../Headers/ast.h"
+#include "../Headers/t2t.h"
+#include "../Headers/labels.h"
+#include "../Headers/global.h"
+#include "../Headers/data_use.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/data_declar.h"
+#include "../Headers/messages.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------

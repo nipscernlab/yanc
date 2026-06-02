@@ -8,11 +8,11 @@
 #include   <math.h>
 
 // local includes
-#include "..\Headers\global.h"
-#include "..\Headers\funcoes.h"
-#include "..\Headers\variaveis.h"
-#include "..\Headers\diretivas.h"
-#include "..\Headers\messages.h"
+#include "../Headers/global.h"
+#include "../Headers/funcoes.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/diretivas.h"
+#include "../Headers/messages.h"
 
 int          v_count = 0;  // stores the size of the table
 static int   v_cap   = 0;  // current capacity of the parallel arrays

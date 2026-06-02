@@ -27,10 +27,11 @@ Compilers/CPPComp/Sources/y.tab.h
 # Local binaries + tools produced by Scripts\setup.bat ----------------------
 # bin/   : YANC .exe (compiled from source or downloaded from a release)
 # tools/ : downloaded helper tools (e.g. the nipscernlab GTKWave bundle)
-# tools.local.bat : machine-specific tool paths cached by setup.bat
+# tools.local.* : machine-specific tool paths cached by setup.bat / setup.sh
 /bin/
 /tools/
 Scripts/tools.local.bat
+Scripts/tools.local.sh
 
 # ============================================================================
 # Runtime logs and state files -----------------------------------------------

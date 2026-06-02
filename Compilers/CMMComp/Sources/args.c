@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "..\Headers\args.h"
-#include "..\Headers\messages.h"
+#include "../Headers/args.h"
+#include "../Headers/messages.h"
 
 // prints the full help text to 'stream'
 static void cli_help(FILE *stream)

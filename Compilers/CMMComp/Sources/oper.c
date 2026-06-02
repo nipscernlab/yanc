@@ -7,14 +7,14 @@
 #include <stdlib.h>
 
 // local includes
-#include "..\Headers\t2t.h"
-#include "..\Headers\oper.h"
-#include "..\Headers\stdlib.h"
-#include "..\Headers\global.h"
-#include "..\Headers\data_use.h"
-#include "..\Headers\diretivas.h"
-#include "..\Headers\variaveis.h"
-#include "..\Headers\messages.h"
+#include "../Headers/t2t.h"
+#include "../Headers/oper.h"
+#include "../Headers/stdlib.h"
+#include "../Headers/global.h"
+#include "../Headers/data_use.h"
+#include "../Headers/diretivas.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/messages.h"
 
 // ----------------------------------------------------------------------------
 // arithmetic operations ------------------------------------------------------

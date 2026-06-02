@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "..\Headers\ast.h"
-#include "..\Headers\messages.h"
+#include "../Headers/ast.h"
+#include "../Headers/messages.h"
 
 static void *xcalloc(size_t n) { void *p = calloc(1, n); if (!p) msg_internal("oom"); return p; }
 

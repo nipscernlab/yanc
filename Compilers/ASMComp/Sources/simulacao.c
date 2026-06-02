@@ -7,8 +7,8 @@
 #include <string.h>
 
 // local includes
-#include "..\Headers\eval.h"
-#include "..\Headers\variaveis.h"
+#include "../Headers/eval.h"
+#include "../Headers/variaveis.h"
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------

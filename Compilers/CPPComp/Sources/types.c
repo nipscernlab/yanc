@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "..\Headers\types.h"
-#include "..\Headers\messages.h"
+#include "../Headers/types.h"
+#include "../Headers/messages.h"
 
 static void *xcalloc(size_t n)
 {

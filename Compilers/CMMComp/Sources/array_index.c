@@ -14,12 +14,12 @@ TODO:
 #include <stdlib.h>
 
 // local includes
-#include "..\Headers\t2t.h"
-#include "..\Headers\global.h"
-#include "..\Headers\funcoes.h"
-#include "..\Headers\data_use.h"
-#include "..\Headers\variaveis.h"
-#include "..\Headers\messages.h"
+#include "../Headers/t2t.h"
+#include "../Headers/global.h"
+#include "../Headers/funcoes.h"
+#include "../Headers/data_use.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/messages.h"
 
 // ----------------------------------------------------------------------------
 // array in assignment, e.g. x[i] = y; ----------------------------------------

@@ -12,15 +12,15 @@
 #include <stdlib.h>
 
 // local includes
-#include "..\Headers\t2t.h"
-#include "..\Headers\hdl.h"
-#include "..\Headers\eval.h"
-#include "..\Headers\array.h"
-#include "..\Headers\labels.h"
-#include "..\Headers\opcodes.h"
-#include "..\Headers\variaveis.h"
-#include "..\Headers\simulacao.h"
-#include "..\Headers\messages.h"
+#include "../Headers/t2t.h"
+#include "../Headers/hdl.h"
+#include "../Headers/eval.h"
+#include "../Headers/array.h"
+#include "../Headers/labels.h"
+#include "../Headers/opcodes.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/simulacao.h"
+#include "../Headers/messages.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------

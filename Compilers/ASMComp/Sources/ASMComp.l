@@ -1,9 +1,9 @@
 %{
 
-#include "..\Headers\eval.h"
-#include "..\Headers\hdl.h"
-#include "..\Headers\messages.h"
-#include "..\Headers\args.h"
+#include "../Headers/eval.h"
+#include "../Headers/hdl.h"
+#include "../Headers/messages.h"
+#include "../Headers/args.h"
 
 #include <string.h>
 #include <stdio.h>

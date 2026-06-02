@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "..\Headers\global.h"
-#include "..\Headers\messages.h"
+#include "../Headers/global.h"
+#include "../Headers/messages.h"
 
 int itr_ok    = 0; // tells whether an interrupt has already been used
 int toaqui_ok = 0; // tells whether a #TOAQUI marker has already been used

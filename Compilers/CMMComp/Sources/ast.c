@@ -6,23 +6,23 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "..\Headers\ast.h"
-#include "..\Headers\global.h"
-#include "..\Headers\variaveis.h"   // v_table[].name for the dump
-#include "..\Headers\messages.h"
+#include "../Headers/ast.h"
+#include "../Headers/global.h"
+#include "../Headers/variaveis.h"   // v_table[].name for the dump
+#include "../Headers/messages.h"
 
 // needed by the expression-tree walker (ast_emit_expr) below
-#include "..\Headers\oper.h"
-#include "..\Headers\stdlib.h"
-#include "..\Headers\array_index.h"
-#include "..\Headers\data_use.h"
-#include "..\Headers\funcoes.h"
+#include "../Headers/oper.h"
+#include "../Headers/stdlib.h"
+#include "../Headers/array_index.h"
+#include "../Headers/data_use.h"
+#include "../Headers/funcoes.h"
 
 // needed by the stmt_node walker
-#include "..\Headers\data_assign.h"
-#include "..\Headers\data_declar.h"  // declar_arr_*_emit for STMT_DECLAR_* walker
-#include "..\Headers\itr.h"
-#include "..\Headers\t2t.h"      // get_cmp_cst for complex cond loads
+#include "../Headers/data_assign.h"
+#include "../Headers/data_declar.h"  // declar_arr_*_emit for STMT_DECLAR_* walker
+#include "../Headers/itr.h"
+#include "../Headers/t2t.h"      // get_cmp_cst for complex cond loads
 
 // ----------------------------------------------------------------------------
 // expressions ----------------------------------------------------------------

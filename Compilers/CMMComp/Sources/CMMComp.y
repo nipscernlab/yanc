@@ -49,21 +49,21 @@
 
 #include <stdlib.h>
 
-#include "..\Headers\itr.h"         // interrupt handling
-#include "..\Headers\oper.h"        // ALU operations
-#include "..\Headers\stdlib.h"      // SAPHO standard library
-#include "..\Headers\saltos.h"      // jump management (if/else while)
-#include "..\Headers\global.h"      // global variables and functions
-#include "..\Headers\macros.h"      // assembler macros
-#include "..\Headers\funcoes.h"     // function creation and usage
-#include "..\Headers\data_use.h"    // data usage
-#include "..\Headers\variaveis.h"   // variable table
-#include "..\Headers\diretivas.h"   // compilation directives
-#include "..\Headers\data_declar.h" // data declaration
-#include "..\Headers\data_assign.h" // data assignment
-#include "..\Headers\array_index.h" // array index handling
-#include "..\Headers\messages.h"    // PT/EN bilingual support
-#include "..\Headers\args.h"        // command-line argument parsing
+#include "../Headers/itr.h"         // interrupt handling
+#include "../Headers/oper.h"        // ALU operations
+#include "../Headers/stdlib.h"      // SAPHO standard library
+#include "../Headers/saltos.h"      // jump management (if/else while)
+#include "../Headers/global.h"      // global variables and functions
+#include "../Headers/macros.h"      // assembler macros
+#include "../Headers/funcoes.h"     // function creation and usage
+#include "../Headers/data_use.h"    // data usage
+#include "../Headers/variaveis.h"   // variable table
+#include "../Headers/diretivas.h"   // compilation directives
+#include "../Headers/data_declar.h" // data declaration
+#include "../Headers/data_assign.h" // data assignment
+#include "../Headers/array_index.h" // array index handling
+#include "../Headers/messages.h"    // PT/EN bilingual support
+#include "../Headers/args.h"        // command-line argument parsing
 
 // required flex/bison variables ----------------------------------------------
 
@@ -81,7 +81,7 @@ void  yyerror(char const *s);
 // Bison emits the YYSTYPE union into y.tab.h as well, so types referenced
 // by %union must be declared before y.tab.h is included by the lexer.
 %code requires {
-    #include "..\Headers\ast.h"
+    #include "../Headers/ast.h"
 }
 
 %union {

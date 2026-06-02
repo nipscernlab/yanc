@@ -19,7 +19,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "..\..\yanc_version.h"   // YANC_VERSION shared across all five binaries
+#include "../../yanc_version.h"   // YANC_VERSION shared across all five binaries
 
 #define MAX_INCDIRS 32
 static const char *incdirs[MAX_INCDIRS];

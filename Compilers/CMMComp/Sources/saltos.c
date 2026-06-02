@@ -11,11 +11,11 @@
 
 #include <stdlib.h>
 
-#include "..\Headers\ast.h"
-#include "..\Headers\labels.h"
-#include "..\Headers\global.h"
-#include "..\Headers\variaveis.h"
-#include "..\Headers\messages.h"
+#include "../Headers/ast.h"
+#include "../Headers/labels.h"
+#include "../Headers/global.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/messages.h"
 
 // switch/case state variables
 int switching = 0;

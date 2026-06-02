@@ -8,8 +8,8 @@
 #include <stdlib.h>
 
 // local includes
-#include "..\Headers\t2t.h"
-#include "..\Headers\messages.h"
+#include "../Headers/t2t.h"
+#include "../Headers/messages.h"
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------

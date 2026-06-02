@@ -140,3 +140,74 @@ jobs:
 
           rm -rf "$SCRATCH"
           exit "$fail"
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install toolchain + Icarus
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc bison flex iverilog
+
+      - name: Build binaries via setup.sh
+        # Exercises Scripts/setup.sh end-to-end (toolchain detection + the
+        # native gcc/flex/bison build into bin/). stdin from /dev/null so the
+        # optional-tool prompts auto-skip.
+        run: bash Scripts/setup.sh --rebuild </dev/null
+
+      - name: Smoke test full pipeline on all examples
+        # Same end-to-end check as the Windows job, against the Linux binaries
+        # in bin/ (no .exe). Any non-zero exit or missing artifact fails.
+        run: |
+          set -uo pipefail
+
+          ROOT="$(pwd)"
+          CMMCOMP="$ROOT/bin/cmmcomp"
+          APPCOMP="$ROOT/bin/appcomp"
+          ASMCOMP="$ROOT/bin/asmcomp"
+          MAC_DIR="$ROOT/Compilers/CMMComp/Includes"
+          HDL_DIR="$ROOT/HDL"
+          SCRATCH="$ROOT/.smoke"
+          rm -rf "$SCRATCH"
+          mkdir -p "$SCRATCH"
+
+          fail=0
+          while IFS= read -r cmm; do
+            proc_dir_rel="$(dirname "$(dirname "$cmm")")"  # strip /Software/file.cmm
+            prname="$(basename "$proc_dir_rel")"
+            filename="$(basename "$cmm")"
+
+            work_proc="$SCRATCH/proc/$prname"
+            tmp_dir="$SCRATCH/tmp/$prname"
+            mkdir -p "$tmp_dir" "$(dirname "$work_proc")"
+            cp -r "$proc_dir_rel" "$work_proc"
+            mkdir -p "$work_proc/Hardware" "$work_proc/Simulation"
+
+            asm_file="$work_proc/Software/$prname.asm"
+
+            echo "=== smoke: $filename ==="
+
+            if ! "$CMMCOMP" -en -i "$filename" -n "$prname" -p "$work_proc" -m "$MAC_DIR" -t "$tmp_dir"; then
+              echo "FAIL: cmmcomp exited non-zero for $prname"; fail=1; continue
+            fi
+            [ -s "$asm_file" ] || { echo "FAIL: $asm_file missing/empty"; fail=1; continue; }
+
+            if ! "$APPCOMP" -en -i "$asm_file" -t "$tmp_dir"; then
+              echo "FAIL: appcomp exited non-zero for $prname"; fail=1; continue
+            fi
+            [ -s "$tmp_dir/app_log.txt" ] || { echo "FAIL: app_log.txt missing/empty"; fail=1; continue; }
+
+            if ! "$ASMCOMP" -en -i "$asm_file" -p "$work_proc" -d "$HDL_DIR" -m "$MAC_DIR" -t "$tmp_dir" -f 100 -c 1000; then
+              echo "FAIL: asmcomp exited non-zero for $prname"; fail=1; continue
+            fi
+            for art in "$prname.v" "${prname}_data.mif" "${prname}_inst.mif"; do
+              [ -s "$work_proc/Hardware/$art" ] || { echo "FAIL: Hardware/$art missing/empty"; fail=1; }
+            done
+          done < <(find Compilers/CMMComp/Tests -name '*.cmm' | sort)
+
+          rm -rf "$SCRATCH"
+          exit "$fail"

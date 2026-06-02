@@ -6,7 +6,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "..\Headers\messages.h"
+#include "../Headers/messages.h"
 
 static const char *g_file = "<input>";
 static int         g_errs = 0;

@@ -14,12 +14,12 @@ TODO:
 #include  <stdio.h>
 
 // local includes
-#include "..\Headers\t2t.h"
-#include "..\Headers\global.h"
-#include "..\Headers\funcoes.h"
-#include "..\Headers\data_use.h"
-#include "..\Headers\variaveis.h"
-#include "..\Headers\messages.h"
+#include "../Headers/t2t.h"
+#include "../Headers/global.h"
+#include "../Headers/funcoes.h"
+#include "../Headers/data_use.h"
+#include "../Headers/variaveis.h"
+#include "../Headers/messages.h"
 
 // standard assignment, e.g. x = y;
 void ass_set(int id, expr e)

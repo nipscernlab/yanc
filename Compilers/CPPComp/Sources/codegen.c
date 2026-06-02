@@ -18,10 +18,10 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "..\Headers\codegen.h"
-#include "..\Headers\config.h"
-#include "..\Headers\symtab.h"
-#include "..\Headers\messages.h"
+#include "../Headers/codegen.h"
+#include "../Headers/config.h"
+#include "../Headers/symtab.h"
+#include "../Headers/messages.h"
 
 // ---- output ----------------------------------------------------------------
 

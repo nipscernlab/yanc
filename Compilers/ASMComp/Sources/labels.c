@@ -8,9 +8,9 @@
 #include  <stdio.h>
 
 // local includes
-#include "..\Headers\eval.h"
-#include "..\Headers\simulacao.h"
-#include "..\Headers\messages.h"
+#include "../Headers/eval.h"
+#include "../Headers/simulacao.h"
+#include "../Headers/messages.h"
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------

@@ -6,8 +6,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "..\Headers\symtab.h"
-#include "..\Headers\messages.h"
+#include "../Headers/symtab.h"
+#include "../Headers/messages.h"
 
 #define MAX_SCOPES 64
 
