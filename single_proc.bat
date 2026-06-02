@@ -1,5 +1,16 @@
 :: ****************************************************************************
-:: Take a C+- (.cmm) processor all the way to a GTKWave waveform.
+:: single_proc - end-to-end example of the YANC single-processor pipeline.
+::
+:: It takes one C+- (.cmm) program and runs the full compile pipeline that
+:: turns it into the synthesizable Verilog (.v) of a SAPHO processor -- the
+:: core you would synthesize onto an FPGA to actually run this code in
+:: hardware. It then runs the simulate-and-view routines: the generated
+:: testbench is simulated and opened in GTKWave, where you can watch the
+:: processor execute its program instruction by instruction.
+::
+:: The bundled example (proc_fft) computes an order-8 FFT, using the C+-
+:: language's bit-reversed ("inverted") addressing for the FFT data.
+::
 ::   single_proc.bat                  -> simulate with Icarus (default)
 ::   single_proc.bat --sim verilator  -> simulate with Verilator (+define+YANC_TRACE)
 ::
