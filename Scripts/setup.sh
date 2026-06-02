@@ -104,6 +104,31 @@ if [ -x "$YANC_BIN/cmmcomp" ] && [ -x "$YANC_BIN/asmcomp" ] && \
     bins_present=1
 fi
 
+# C++ toolchain sanity (Verilator needs a working libstdc++) ------------------
+# MSYS2's mingw-w64-x86_64-gcc 16.1.0-5 shipped a broken libstdc++ whose
+# std::string move-constructor symbol is missing, so Verilator's verilated.cpp
+# fails to link. Probe it functionally (catches the real defect, not just one
+# version string) and warn loudly if broken. Non-fatal: the Icarus flow is fine.
+check_cxx_toolchain() {
+    command -v g++ >/dev/null 2>&1 || return 0
+    local t; t="${TMPDIR:-/tmp}/yanc_cxx_probe.$$"; mkdir -p "$t" 2>/dev/null
+    printf '#include <string>\nint main(){std::string a="x";std::string b=std::move(a)+"y";return b.size()?0:1;}\n' > "$t/probe.cpp"
+    if ! g++ -Os -o "$t/probe" "$t/probe.cpp" >/dev/null 2>&1; then
+        local ver; ver="$(g++ -dumpfullversion 2>/dev/null || echo '?')"
+        echo
+        echo "**************************************************************************"
+        echo " WARNING: g++ $ver cannot link std::string move -- the Verilator flow"
+        echo " WILL FAIL. MSYS2's mingw-w64-x86_64-gcc 16.1.0-5 ships a broken"
+        echo " libstdc++. Downgrade to a known-good gcc (15.1.0-5), e.g.:"
+        echo "   pacman -U /var/cache/pacman/pkg/mingw-w64-x86_64-gcc-15.1.0-5-any.pkg.tar.zst \\"
+        echo "             /var/cache/pacman/pkg/mingw-w64-x86_64-gcc-libs-15.1.0-5-any.pkg.tar.zst"
+        echo " Do NOT use gcc 16.1.0-5. (The Icarus flow is unaffected.)"
+        echo "**************************************************************************"
+    fi
+    rm -rf "$t" 2>/dev/null
+}
+check_cxx_toolchain
+
 # ---------------------------------------------------------------------------
 # 2) Build the binaries into <repo>/bin --------------------------------------
 # ---------------------------------------------------------------------------

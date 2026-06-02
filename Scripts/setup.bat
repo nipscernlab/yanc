@@ -77,6 +77,10 @@ if defined MSYS2_ROOT set "MINGW_BIN=%MSYS2_ROOT%\mingw64\bin"
 set "BIN_PRESENT="
 if exist "%YANC_BIN%\cmmcomp.exe" if exist "%YANC_BIN%\asmcomp.exe" if exist "%YANC_BIN%\appcomp.exe" if exist "%YANC_BIN%\gen_gtkw.exe" set "BIN_PRESENT=1"
 
+:: C++ toolchain sanity for the Verilator flow (gcc 16.1.0-5 has a broken
+:: libstdc++ -- see :check_cxx). Non-fatal; the Icarus flow is unaffected.
+call :check_cxx
+
 :: Offer to install the build tools via pacman if we are going to need them
 :: (binaries are not present yet and the user did not force a download).
 if not defined BIN_PRESENT if not "%FORCE%"=="download" if not defined BUILD_OK (
@@ -257,6 +261,33 @@ exit /b 0
 :: ===========================================================================
 :: Subroutines
 :: ===========================================================================
+
+:check_cxx
+:: MSYS2's mingw-w64-x86_64-gcc 16.1.0-5 shipped a broken libstdc++ (the
+:: std::string move-constructor symbol is missing), so Verilator's verilated.cpp
+:: fails to link. Probe it functionally -- compile a tiny std::string-move
+:: program with the same g++ Verilator uses -- and warn loudly if it breaks.
+:: Catches the real defect rather than matching one version string.
+set "GXX="
+if defined MINGW_BIN if exist "%MINGW_BIN%\g++.exe" set "GXX=%MINGW_BIN%\g++.exe"
+if not defined GXX for %%E in (g++.exe) do if not "%%~$PATH:E"=="" set "GXX=%%~$PATH:E"
+if not defined GXX exit /b 0
+> "%TEMP%\yanc_cxx_probe.cpp" echo #include ^<string^>
+>>"%TEMP%\yanc_cxx_probe.cpp" echo int main(){std::string a="x";std::string b=std::move(a)+"y";return b.size()?0:1;}
+"%GXX%" -Os -o "%TEMP%\yanc_cxx_probe.exe" "%TEMP%\yanc_cxx_probe.cpp" >nul 2>&1
+if errorlevel 1 (
+    echo.
+    echo **************************************************************************
+    echo  WARNING: this g++ cannot link std::string move -- the Verilator flow
+    echo  WILL FAIL. MSYS2's mingw-w64-x86_64-gcc 16.1.0-5 ships a broken
+    echo  libstdc++. Downgrade to a known-good gcc ^(15.1.0-5^) from the pacman
+    echo  cache ^(see README Dependencies for the full command^):
+    echo    pacman -U mingw-w64-x86_64-gcc-15.1.0-5-any.pkg.tar.zst mingw-w64-x86_64-gcc-libs-15.1.0-5-any.pkg.tar.zst
+    echo  Do NOT use gcc 16.1.0-5. ^(The Icarus flow is unaffected.^)
+    echo **************************************************************************
+)
+del "%TEMP%\yanc_cxx_probe.cpp" "%TEMP%\yanc_cxx_probe.exe" >nul 2>&1
+exit /b 0
 
 :build_bins
 :: Delegate to the top-level Makefile (single source of truth for the compile

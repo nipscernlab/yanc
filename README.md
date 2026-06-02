@@ -47,6 +47,18 @@ download GTKWave for you — see below.)
 >
 > **GTKWave must be the nipscernlab build** — the runner scripts rely on its
 > waveform-formatting behaviour; the generic GTKWave will not work the same way.
+>
+> ⚠️ **Avoid `mingw-w64-x86_64-gcc` 16.1.0-5.** That MSYS2 package shipped a
+> broken `libstdc++` (the `std::string` move constructor symbol is missing), so
+> Verilator's `verilated.cpp` fails to link and the `--sim verilator` flow dies
+> with `undefined reference to std::__cxx11::basic_string<...>::basic_string(...&&)`.
+> Use **gcc 15.1.0-5** (known good). `setup.bat`/`setup.sh` probe for this and
+> warn you. To downgrade from the pacman cache:
+> ```
+> pacman -U /var/cache/pacman/pkg/mingw-w64-x86_64-gcc-15.1.0-5-any.pkg.tar.zst \
+>           /var/cache/pacman/pkg/mingw-w64-x86_64-gcc-libs-15.1.0-5-any.pkg.tar.zst
+> ```
+> The Icarus flow is unaffected.
 
 On **Linux**, the same dependencies come from your distribution's package
 manager (`apt`, `dnf`, `pacman`, or `zypper`):
