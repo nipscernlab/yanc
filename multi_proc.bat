@@ -1,5 +1,25 @@
 :: ****************************************************************************
-:: Take a multi-processor C+- project all the way to a GTKWave waveform.
+:: multi_proc - end-to-end example of the YANC multi-processor pipeline.
+::
+:: It shows the pipeline of a top-level circuit that uses two SAPHO processors
+:: internally, taking each processor's C+- (.cmm) program through the compile
+:: pipeline to its synthesizable Verilog (.v):
+::
+::   * ZeroCross - FIR filters that smooth the 60 Hz mains (power-grid)
+::                 waveform and compute its zero crossings.
+::   * ProcDTW   - a DTW transform (2-D array) synchronized to the zero
+::                 crossings produced by ZeroCross, doing novelty detection to
+::                 spot disturbances on the power grid.
+::
+:: The circuit is several Verilog files -- the top level plus one generated
+:: <proc>.v per processor -- and is what you would synthesize onto an FPGA. The
+:: GTKWave view shows the top-level signals alongside the software execution of
+:: both processors in lockstep.
+::
+:: Because the processors run together under a top level, the testbench here is
+:: the user-written TopLevel\top_level_tb.v. The asm-generated testbench can
+:: only drive one processor in isolation -- that is the single_proc flow.
+::
 ::   multi_proc.bat                  -> simulate with Icarus (default)
 ::   multi_proc.bat --sim verilator  -> simulate with Verilator (+define+YANC_TRACE)
 ::
