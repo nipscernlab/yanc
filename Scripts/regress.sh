@@ -419,7 +419,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             # through the FST writer intermittently crashed vvp on Windows
             # (exit 1, empty stderr) -- a flaky DTW failure -- and the dump is
             # pure overhead since this pass only compares the output_*.txt logs,
-            # never the trace. go_proj (--sim iverilog|verilator) passes +WAVE
+            # never the trace. multi_proc (--sim iverilog|verilator) passes +WAVE
             # for the interactive GTKWave flow.
             "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
             vvp_status=$?

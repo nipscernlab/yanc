@@ -53,7 +53,7 @@ jobs:
         #                                     + Hardware/<prname>_data.mif
         #                                     + Hardware/<prname>_inst.mif
         #
-        # Same named-option shapes as go_proc.bat. The Hardware/ subdir is
+        # Same named-option shapes as single_proc.bat. The Hardware/ subdir is
         # created up front because asmcomp does not mkdir it itself. Any
         # non-zero exit or missing/empty expected artifact fails the job.
         run: |

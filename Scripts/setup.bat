@@ -1,8 +1,8 @@
 :: ****************************************************************************
-:: YANC setup -- one-time preparation for running the go_*.bat examples.
+:: YANC setup -- one-time prep for the single_proc.bat / multi_proc.bat runners.
 ::
 :: It removes the need for the per-machine path block that used to sit at the
-:: top of every go_*.bat. Run it once after cloning the repo (or after
+:: top of every runner. Run it once after cloning the repo (or after
 :: extracting a release) and it will:
 ::
 ::   1. Locate the build toolchain (x86_64-w64-mingw32-gcc / bison / flex) and,
@@ -16,7 +16,7 @@
 ::      GTKWave must be the nipscernlab build -- if it is missing, setup offers
 ::      to download the portable Windows bundle from that project's releases.
 ::   4. Cache every resolved path in Scripts\tools.local.bat, which the
-::      go_*.bat load through Scripts\env.bat. No path is hardcoded anywhere.
+::      runners load through Scripts\env.bat. No path is hardcoded anywhere.
 ::
 :: Flags:
 ::   setup.bat              auto: keep / build / download as described above
@@ -70,7 +70,7 @@ set "BUILD_OK="
 if defined GCC if defined BISON if defined FLEX set "BUILD_OK=1"
 
 :: MSYS2's mingw64\bin: provides iverilog/verilator and the DLLs they link
-:: against, so the go_*.bat must put it on PATH when the tools come from MSYS2.
+:: against, so the runners must put it on PATH when the tools come from MSYS2.
 set "MINGW_BIN="
 if defined MSYS2_ROOT set "MINGW_BIN=%MSYS2_ROOT%\mingw64\bin"
 
@@ -175,7 +175,7 @@ if defined IVERILOG (
     echo [icarus]    %IVERILOG%
 ) else (
     echo [icarus]    NOT found - install MSYS2 + "pacman -S mingw-w64-x86_64-iverilog"
-    echo             ^(or a standalone build; needed for go_proc.bat / go_proj.bat^)
+    echo             ^(or a standalone build; needed for single_proc.bat / multi_proc.bat^)
 )
 
 :: Verilator -- ships in MSYS2, so offer pacman if MSYS2 is present -----------
@@ -201,7 +201,7 @@ if defined VERILATOR (
     echo [verilator] !VERILATOR!
 ) else (
     echo [verilator] NOT found - install MSYS2 + "pacman -S mingw-w64-x86_64-verilator"
-    echo             ^(needed only for the Verilator flow: go_proc.bat --sim verilator^)
+    echo             ^(needed only for the Verilator flow: single_proc.bat --sim verilator^)
 )
 
 :: GTKWave -- MUST be the nipscernlab build; auto-download the portable bundle -
@@ -246,10 +246,10 @@ echo  Setup complete. Paths cached in:
 echo    %CACHE%
 echo.
 echo  You can now run the examples, e.g.:
-echo    go_proc.bat                  ^(one processor,      Icarus^)
-echo    go_proj.bat                  ^(multi-proc project, Icarus^)
-echo    go_proc.bat --sim verilator  ^(one processor,      Verilator^)
-echo    go_proj.bat --sim verilator  ^(multi-proc project, Verilator^)
+echo    single_proc.bat                  ^(one processor,      Icarus^)
+echo    multi_proc.bat                  ^(multi-proc project, Icarus^)
+echo    single_proc.bat --sim verilator  ^(one processor,      Verilator^)
+echo    multi_proc.bat --sim verilator  ^(multi-proc project, Verilator^)
 echo ============================================================
 endlocal
 exit /b 0

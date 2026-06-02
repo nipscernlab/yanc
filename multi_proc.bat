@@ -1,7 +1,7 @@
 :: ****************************************************************************
 :: Take a multi-processor C+- project all the way to a GTKWave waveform.
-::   go_proj.bat                  -> simulate with Icarus (default)
-::   go_proj.bat --sim verilator  -> simulate with Verilator (+define+YANC_TRACE)
+::   multi_proc.bat                  -> simulate with Icarus (default)
+::   multi_proc.bat --sim verilator  -> simulate with Verilator (+define+YANC_TRACE)
 ::
 :: Reads the HDL, macros and binaries straight from the repo; the only files it
 :: creates live under Teste\ (gitignored). Run Scripts\setup.bat once first.
@@ -29,29 +29,29 @@ if /i not "%SIM%"=="iverilog" if /i not "%SIM%"=="verilator" goto :badsim
 
 :: Tools: binaries + GTKWave always, plus the chosen simulator ---------------
 if not exist "%YANC_BIN%\cmmcomp.exe" (
-    echo [go_proj] YANC binaries missing in "%YANC_BIN%".
+    echo [multi_proc] YANC binaries missing in "%YANC_BIN%".
     echo            Run  Scripts\setup.bat  once to build or download them.
     exit /b 1
 )
 if not defined GTKWAVE (
-    echo [go_proj] GTKWave not found - run Scripts\setup.bat to fetch the
+    echo [multi_proc] GTKWave not found - run Scripts\setup.bat to fetch the
     echo            nipscernlab GTKWave build, then re-run.
     exit /b 1
 )
 if /i "%SIM%"=="verilator" (
     if not defined VERILATOR (
-        echo [go_proj] Verilator not found - run Scripts\setup.bat, or install it
+        echo [multi_proc] Verilator not found - run Scripts\setup.bat, or install it
         echo            with "pacman -S mingw-w64-x86_64-verilator" and re-run.
         exit /b 1
     )
     if not defined FST2VCD (
-        echo [go_proj] fst2vcd not found - it ships with the nipscernlab GTKWave
+        echo [multi_proc] fst2vcd not found - it ships with the nipscernlab GTKWave
         echo            bundle. Re-run Scripts\setup.bat to fetch it.
         exit /b 1
     )
 ) else (
     if not defined IVERILOG (
-        echo [go_proj] Icarus Verilog not found - run Scripts\setup.bat, or install
+        echo [multi_proc] Icarus Verilog not found - run Scripts\setup.bat, or install
         echo            it from https://bleyer.org/icarus/ and re-run.
         exit /b 1
     )
@@ -184,9 +184,9 @@ cd %ROOT_DIR%
 exit /b 0
 
 :usage
-echo usage: go_proj.bat [--sim iverilog^|verilator]
+echo usage: multi_proc.bat [--sim iverilog^|verilator]
 exit /b 0
 
 :badsim
-echo [go_proj] --sim must be 'iverilog' or 'verilator' (got "%SIM%")
+echo [multi_proc] --sim must be 'iverilog' or 'verilator' (got "%SIM%")
 exit /b 1

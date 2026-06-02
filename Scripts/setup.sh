@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ****************************************************************************
-# YANC setup (Linux) -- one-time preparation for running the go_*.sh examples.
+# YANC setup (Linux) -- one-time prep for the single_proc.sh / multi_proc.sh runners.
 #
 # POSIX counterpart of Scripts/setup.bat. Run it once after cloning the repo
 # and it will:
@@ -12,7 +12,7 @@
 #      source build is the path here.
 #   3. Locate the simulators (Icarus Verilog, Verilator) and GTKWave, offering
 #      to install the missing ones via the package manager.
-#   4. Cache every resolved path in Scripts/tools.local.sh, which the go_*.sh
+#   4. Cache every resolved path in Scripts/tools.local.sh, which the runners
 #      load through Scripts/env.sh. No path is hardcoded anywhere.
 #
 # Flags:
@@ -133,8 +133,8 @@ fi
 # ---------------------------------------------------------------------------
 echo
 echo "--- Simulation tools ----------------------------------------------------"
-want iverilog  iverilog  optional "needed for the Icarus flow: go_proc.sh / go_proj.sh"   || true
-want verilator verilator optional "needed for the Verilator flow: go_proc.sh --sim verilator" || true
+want iverilog  iverilog  optional "needed for the Icarus flow: single_proc.sh / multi_proc.sh"   || true
+want verilator verilator optional "needed for the Verilator flow: single_proc.sh --sim verilator" || true
 want gtkwave   gtkwave   optional "needed to view the waveform"                            || true
 
 command -v iverilog  >/dev/null 2>&1 && echo "[icarus]    $(command -v iverilog)"
@@ -164,8 +164,8 @@ echo " Setup complete. Paths cached in:"
 echo "   $CACHE"
 echo
 echo " You can now run the examples, e.g.:"
-echo "   ./go_proc.sh                   (one processor,      Icarus)"
-echo "   ./go_proj.sh                   (multi-proc project, Icarus)"
-echo "   ./go_proc.sh --sim verilator   (one processor,      Verilator)"
-echo "   ./go_proj.sh --sim verilator   (multi-proc project, Verilator)"
+echo "   ./single_proc.sh                   (one processor,      Icarus)"
+echo "   ./multi_proc.sh                   (multi-proc project, Icarus)"
+echo "   ./single_proc.sh --sim verilator   (one processor,      Verilator)"
+echo "   ./multi_proc.sh --sim verilator   (multi-proc project, Verilator)"
 echo "============================================================"

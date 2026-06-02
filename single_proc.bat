@@ -1,7 +1,7 @@
 :: ****************************************************************************
 :: Take a C+- (.cmm) processor all the way to a GTKWave waveform.
-::   go_proc.bat                  -> simulate with Icarus (default)
-::   go_proc.bat --sim verilator  -> simulate with Verilator (+define+YANC_TRACE)
+::   single_proc.bat                  -> simulate with Icarus (default)
+::   single_proc.bat --sim verilator  -> simulate with Verilator (+define+YANC_TRACE)
 ::
 :: Reads the HDL, macros and binaries straight from the repo; the only files it
 :: creates live under Teste\ (gitignored). Run Scripts\setup.bat once first.
@@ -29,24 +29,24 @@ if /i not "%SIM%"=="iverilog" if /i not "%SIM%"=="verilator" goto :badsim
 
 :: Tools: binaries + GTKWave always, plus the chosen simulator ---------------
 if not exist "%YANC_BIN%\cmmcomp.exe" (
-    echo [go_proc] YANC binaries missing in "%YANC_BIN%".
+    echo [single_proc] YANC binaries missing in "%YANC_BIN%".
     echo            Run  Scripts\setup.bat  once to build or download them.
     exit /b 1
 )
 if not defined GTKWAVE (
-    echo [go_proc] GTKWave not found - run Scripts\setup.bat to fetch the
+    echo [single_proc] GTKWave not found - run Scripts\setup.bat to fetch the
     echo            nipscernlab GTKWave build, then re-run.
     exit /b 1
 )
 if /i "%SIM%"=="verilator" (
     if not defined VERILATOR (
-        echo [go_proc] Verilator not found - run Scripts\setup.bat, or install it
+        echo [single_proc] Verilator not found - run Scripts\setup.bat, or install it
         echo            with "pacman -S mingw-w64-x86_64-verilator" and re-run.
         exit /b 1
     )
 ) else (
     if not defined IVERILOG (
-        echo [go_proc] Icarus Verilog not found - run Scripts\setup.bat, or install
+        echo [single_proc] Icarus Verilog not found - run Scripts\setup.bat, or install
         echo            it from https://bleyer.org/icarus/ and re-run.
         exit /b 1
     )
@@ -156,9 +156,9 @@ cd %ROOT_DIR%
 exit /b 0
 
 :usage
-echo usage: go_proc.bat [--sim iverilog^|verilator]
+echo usage: single_proc.bat [--sim iverilog^|verilator]
 exit /b 0
 
 :badsim
-echo [go_proc] --sim must be 'iverilog' or 'verilator' (got "%SIM%")
+echo [single_proc] --sim must be 'iverilog' or 'verilator' (got "%SIM%")
 exit /b 1

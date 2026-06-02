@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ****************************************************************************
 # Take a multi-processor C+- project all the way to a GTKWave waveform.
-#   ./go_proj.sh                 # simulate with Icarus (default)
-#   ./go_proj.sh --sim verilator # simulate with Verilator (+define+YANC_TRACE)
+#   ./multi_proc.sh                 # simulate with Icarus (default)
+#   ./multi_proc.sh --sim verilator # simulate with Verilator (+define+YANC_TRACE)
 #
 # Reads the HDL, macros and binaries straight from the repo; the only files it
 # creates live under Teste/ (gitignored). Run Scripts/setup.sh once first.
@@ -20,23 +20,23 @@ while [ $# -gt 0 ]; do
         --sim)     SIM="${2:-}"; shift 2 ;;
         --sim=*)   SIM="${1#--sim=}"; shift ;;
         -h|--help) echo "usage: ${0##*/} [--sim iverilog|verilator]"; exit 0 ;;
-        *) echo "[go_proj] unknown argument: $1 (try --sim iverilog|verilator)"; exit 1 ;;
+        *) echo "[multi_proc] unknown argument: $1 (try --sim iverilog|verilator)"; exit 1 ;;
     esac
 done
 case "$SIM" in
     iverilog|icarus) SIM=iverilog ;;
     verilator|vl)    SIM=verilator ;;
-    *) echo "[go_proj] --sim must be 'iverilog' or 'verilator' (got '$SIM')"; exit 1 ;;
+    *) echo "[multi_proc] --sim must be 'iverilog' or 'verilator' (got '$SIM')"; exit 1 ;;
 esac
 
 # --- Tools: binaries + GTKWave always, plus the chosen simulator ------------
-[ -x "$YANC_BIN/cmmcomp" ] || { echo "[go_proj] binaries missing in $YANC_BIN - run Scripts/setup.sh first."; exit 1; }
-[ -n "$GTKWAVE" ]          || { echo "[go_proj] gtkwave not found - run Scripts/setup.sh (or install gtkwave)."; exit 1; }
+[ -x "$YANC_BIN/cmmcomp" ] || { echo "[multi_proc] binaries missing in $YANC_BIN - run Scripts/setup.sh first."; exit 1; }
+[ -n "$GTKWAVE" ]          || { echo "[multi_proc] gtkwave not found - run Scripts/setup.sh (or install gtkwave)."; exit 1; }
 if [ "$SIM" = iverilog ]; then
-    [ -n "$IVERILOG" ] || { echo "[go_proj] iverilog not found - run Scripts/setup.sh (or install iverilog)."; exit 1; }
+    [ -n "$IVERILOG" ] || { echo "[multi_proc] iverilog not found - run Scripts/setup.sh (or install iverilog)."; exit 1; }
 else
-    [ -n "$VERILATOR" ] || { echo "[go_proj] verilator not found - run Scripts/setup.sh (or install verilator)."; exit 1; }
-    [ -n "$FST2VCD" ]   || { echo "[go_proj] fst2vcd not found - it ships with gtkwave; run Scripts/setup.sh."; exit 1; }
+    [ -n "$VERILATOR" ] || { echo "[multi_proc] verilator not found - run Scripts/setup.sh (or install verilator)."; exit 1; }
+    [ -n "$FST2VCD" ]   || { echo "[multi_proc] fst2vcd not found - it ships with gtkwave; run Scripts/setup.sh."; exit 1; }
 fi
 
 # --- What to simulate (a project under Compilers/CMMComp/Tests) -------------
