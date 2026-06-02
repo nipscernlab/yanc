@@ -221,11 +221,14 @@ cd %TMP_PRO%
 
 echo #### Generating the .gtkw layout and launching GTKWave
 
+:: --zoom-fit fits the whole wave to the window (the Tcl flow did this via
+:: Zoom_Best_Fit); --left-justify left-aligns the signal names. The nipscern fork
+:: hides the SST pane by default, so no --rcvar is needed.
 if exist %SIMU_DIR%\%GTKW% (
-    %GTKWAVE% --rcvar "hide_sst on" --dark %TMP_PRO%\%PROC%_tb.vcd -a %SIMU_DIR%\%GTKW%
+    %GTKWAVE% --dark --zoom-fit --left-justify %TMP_PRO%\%PROC%_tb.vcd -a %SIMU_DIR%\%GTKW%
 ) else (
     %BIN_DIR%\gen_gtkw.exe %TMP_PRO%\%PROC%_tb.vcd %TMP_PRO%\%PROC%_tb.gtkw %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
-    %GTKWAVE% --rcvar "hide_sst on" --dark %TMP_PRO%\%PROC%_tb.vcd -a %TMP_PRO%\%PROC%_tb.gtkw
+    %GTKWAVE% --dark --zoom-fit --left-justify %TMP_PRO%\%PROC%_tb.vcd -a %TMP_PRO%\%PROC%_tb.gtkw
 )
 
 cd %ROOT_DIR%
