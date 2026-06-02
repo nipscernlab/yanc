@@ -1,6 +1,6 @@
 name: Release YANC binaries
 
-# Builds the YANC compilers (cmmcomp, asmcomp, appcomp, comp2gtkw) on a
+# Builds the YANC compilers (cmmcomp, asmcomp, appcomp, comp2gtkw, gen_gtkw) on a
 # Windows runner with MSYS2 + MinGW-w64, packages everything as a zip,
 # and publishes it as a release asset.
 #
@@ -102,10 +102,11 @@ jobs:
           rm -f lex.yy.c y.tab.c y.tab.h
           popd
 
-          # comp2gtkw
+          # comp2gtkw + gen_gtkw (GTKWave helpers used by the go_*.bat flows)
           pushd Scripts
           gcc -O2 -o comp2gtkw.exe comp2gtkw.c
-          mv comp2gtkw.exe ../out/bin/
+          gcc -O2 -o gen_gtkw.exe  gen_gtkw.c
+          mv comp2gtkw.exe gen_gtkw.exe ../out/bin/
           popd
 
           ls -l out/bin

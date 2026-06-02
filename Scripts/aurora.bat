@@ -162,8 +162,10 @@ del  y.tab.h
 cd %SRC_DIR%\Scripts
 
 %GCC% -mwindows -o comp2gtkw.exe comp2gtkw.c
+%GCC%           -o gen_gtkw.exe  gen_gtkw.c
 
 move /Y comp2gtkw.exe %BLD_DIR%\bin\
+move /Y gen_gtkw.exe  %BLD_DIR%\bin\
 
 :: ----------------------------------------------------------------------------
 :: Copy HDL, Macros and Scripts folders ---------------------------------------

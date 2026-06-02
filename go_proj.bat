@@ -6,22 +6,32 @@
 
 cls
 echo off
-chcp 65001>%TMP_PRO%\log.txt
+chcp 65001 >nul
 
 :: Set up the environment -----------------------------------------------------
 
-:: current directory
-set ROOT_DIR=%cd%
+:: Resolve ROOT_DIR + the prebuilt binaries (YANC_BIN) and the tool locations
+:: (IVERILOG, VVP, GTKWAVE) with no hardcoded paths. Scripts\setup.bat builds /
+:: downloads everything once and caches the paths; env.bat loads them here.
+call "%~dp0Scripts\env.bat"
+cd /d "%ROOT_DIR%"
 
-:: required tools
-set BISON=C:\packs\msys64\usr\bin\bison.exe
-set FLEX=C:\packs\msys64\usr\bin\flex.exe
-set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
-set IVERILOG=C:\nipscern\Aurora\components\Packages\iverilog\bin\iverilog.exe
-set VVP=C:\nipscern\Aurora\components\Packages\iverilog\bin\vvp.exe
-:: nipscern GTKWave v4 -- opened with a pre-generated .gtkw (gen_gtkw) via -a;
-:: it ignores --script, so the Tcl formatters are replaced by gen_gtkw.
-set GTKWAVE=C:\nipscern\Aurora\components\Packages\gtkwave-nipscern\gtkwave.exe
+:: This Icarus flow needs the binaries plus iverilog/vvp and GTKWave ----------
+if not exist "%YANC_BIN%\cmmcomp.exe" (
+    echo [go_proj] YANC binaries missing in "%YANC_BIN%".
+    echo            Run  Scripts\setup.bat  once to build or download them.
+    exit /b 1
+)
+if not defined IVERILOG (
+    echo [go_proj] Icarus Verilog not found - run Scripts\setup.bat, or install
+    echo            it from https://bleyer.org/icarus/ and re-run.
+    exit /b 1
+)
+if not defined GTKWAVE (
+    echo [go_proj] GTKWave not found - run Scripts\setup.bat to fetch the
+    echo            nipscernlab GTKWave build, then re-run.
+    exit /b 1
+)
 
 set    TESTE_DIR=%ROOT_DIR%\Teste
 rmdir %TESTE_DIR% /s /q
@@ -85,50 +95,12 @@ xcopy HDL %HDL_DIR% /q /y>%TMP_DIR%\xcopy.txt
 xcopy Compilers\CMMComp\Includes %MAC_DIR% /q /y>%TMP_DIR%\xcopy.txt
 xcopy Scripts %SCR_DIR% /q /y>%TMP_DIR%\xcopy.txt
 
-:: Build the CMM compiler -----------------------------------------------------
+:: Stage the prebuilt YANC binaries -------------------------------------------
+:: No bison/flex/gcc here: cmmcomp/appcomp/asmcomp and the GTKWave helpers
+:: (comp2gtkw, gen_gtkw) were already built or downloaded into %YANC_BIN% by
+:: Scripts\setup.bat. Copy them into the sandbox bin the rest of the flow uses.
 
-cd %ROOT_DIR%\Compilers\CMMComp\Sources
-
-%BISON% -y -d CMMComp.y
-%FLEX%        CMMComp.l
-%GCC%      -o cmmcomp.exe ast.c data_assign.c data_declar.c macros.c itr.c data_use.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c messages.c args.c y.tab.c
-
-move cmmcomp.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
-del lex.yy.c
-del  y.tab.c
-del  y.tab.h
-
-:: Build the Assembler pre-processor ------------------------------------------
-
-cd %ROOT_DIR%\Compilers\APPComp\Sources
-
-%FLEX% -o app.c app.l
-%GCC%  -o appcomp.exe app.c eval.c variaveis.c messages.c args.c
-
-move appcomp.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
-del app.c
-
-:: Build the Assembler compiler -----------------------------------------------
-
-cd %ROOT_DIR%\Compilers\ASMComp\Sources
-
-%FLEX% -o ASMComp.c ASMComp.l
-%GCC%  -o asmcomp.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c
-
-move asmcomp.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
-del ASMComp.c
-
-:: Build the GTKWave tools -----------------------------------------------------
-:: comp2gtkw.exe = "comp" process filter; gen_gtkw.exe writes the formatted .gtkw
-:: from the VCD header (replaces the gtk_proj_init.tcl formatter).
-
-cd %SCR_DIR%
-
-%GCC% -o comp2gtkw.exe comp2gtkw.c
-%GCC% -o gen_gtkw.exe  gen_gtkw.c
-
-move comp2gtkw.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
-move gen_gtkw.exe  %BIN_DIR%>%TMP_DIR%\xcopy.txt
+copy %YANC_BIN%\*.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
 
 :: Run the CMM compiler -------------------------------------------------------
 

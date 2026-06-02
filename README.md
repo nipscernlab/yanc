@@ -90,7 +90,13 @@ Auxiliary content:
 
 ### 1. Get the binaries
 
-**Option A — pre-built (fastest).** Download the latest release zip from [Releases](https://github.com/nipscernlab/yanc/releases/latest) and extract it. The zip contains `bin/` (the six executables), `HDL/`, `Macros/` (C±-side includes), and `Header/` (C++-side includes).
+> **Easiest path (Windows):** clone the repo and run `Scripts\setup.bat` once.
+> It detects whether you have prebuilt `.exe` or the MSYS2 toolchain, then
+> downloads or compiles the binaries into `bin\` and wires up the simulators +
+> GTKWave for the `go_*.bat` scripts — see [Pre-wired scripts](#pre-wired-scripts).
+> The two options below are the manual equivalents.
+
+**Option A — pre-built (fastest).** Download the latest release zip from [Releases](https://github.com/nipscernlab/yanc/releases/latest) and extract it. The zip contains `bin/` (the executables incl. `comp2gtkw`/`gen_gtkw`), `HDL/`, `Macros/` (C±-side includes), and `Header/` (C++-side includes).
 
 **Option B — build from source.**
 
@@ -227,7 +233,35 @@ go_proc_vl.bat    :: one processor,       Verilator
 go_proj_vl.bat    :: multi-proc project,  Verilator
 ```
 
-> Each script has a **tool-paths block at the very top** (`BISON`, `FLEX`, `GCC`, `IVERILOG`/`VERILATOR`, `GTKWAVE`) pointing at the author's install locations. **Edit those lines to match where MSYS2, Verilator, Icarus and GTKWave live on your machine** before running — that one block is the only per-machine setup the scripts need.
+#### One-time setup — `Scripts\setup.bat`
+
+The scripts have **no hardcoded tool paths** anymore. Run `Scripts\setup.bat`
+**once** and it prepares everything; the four `go_*.bat` then just run:
+
+```bat
+Scripts\setup.bat
+```
+
+`setup.bat` covers both ways of getting YANC, and picks automatically:
+
+* **Binary mode** — if `bin\` already contains the `.exe` (e.g. you extracted a
+  release zip), it keeps them; no `bison`/`flex`/`gcc` needed. If the build
+  toolchain is *missing*, it offers to **download** the prebuilt binaries from
+  the latest GitHub release into `bin\`.
+* **Source mode** — if you cloned the repo and have the MSYS2 toolchain (or let
+  setup install it via `pacman`), it **compiles** the six binaries straight into
+  `bin\` once, so later runs never recompile.
+
+It then locates the simulators and **GTKWave** (which must be the
+[nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) —
+setup offers to download its portable Windows bundle if missing), and caches
+every resolved path in `Scripts\tools.local.bat` (gitignored). `Scripts\env.bat`
+loads that cache for each `go_*.bat`, falling back to a `PATH` lookup for
+anything not cached — so if the tools are already on your `PATH`, the scripts
+work even before running setup.
+
+Force a specific mode with `Scripts\setup.bat --rebuild` (recompile from source)
+or `Scripts\setup.bat --download` (refetch the prebuilt binaries).
 
 ## CLI flags
 
