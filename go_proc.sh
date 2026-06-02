@@ -41,8 +41,6 @@ fi
 # --- What to simulate (a project under Compilers/CMMComp/Tests) -------------
 PROC=proc_fft             # processor type / project folder to simulate
 FNAM=proc_fft.cmm         # cmm filename where the processor is defined
-TB=errado                 # testbench (without .v); if missing, the generated one is used
-GTKW=teste.gtkw           # gtkwave layout filename (if missing, gen_gtkw builds one)
 FRE_CLK=100               # processor operating frequency in MHz
 NUM_CLK=1000000           # number of clocks to simulate
 
@@ -56,7 +54,7 @@ SRC_PROC="$ROOT_DIR/Compilers/CMMComp/Tests/$PROC"
 WORK="$ROOT_DIR/Teste"
 rm -rf "$WORK"
 PROC_DIR="$WORK/$PROC"            # writable copy of the project (tools emit here)
-SOFT_DIR="$PROC_DIR/Software"; HARD_DIR="$PROC_DIR/Hardware"; SIMU_DIR="$PROC_DIR/Simulation"
+SOFT_DIR="$PROC_DIR/Software"; HARD_DIR="$PROC_DIR/Hardware"
 TMP_DIR="$WORK/Temp"; TMP_PRO="$TMP_DIR/$PROC"   # scratch (-t, sim cwd, trad_*.txt for gen_gtkw)
 VL_DIR="$TMP_PRO/vl"             # Verilator obj_dir
 
@@ -80,14 +78,10 @@ echo "#### Running the Assembler"
 UPROC="$HARD_DIR/$PROC"
 if [ "$SIM" = iverilog ]; then
     echo "#### Running Icarus"
-    # Use the user's testbench if present, else the one asmcomp generated.
-    if [ -f "$SIMU_DIR/$TB.v" ]; then
-        TB_MOD="$TB"; TB_SRC="$SIMU_DIR/$TB.v"
-    else
-        TB_MOD="${PROC}_tb"; TB_SRC="$TMP_PRO/${PROC}_tb.v"
-    fi
+    # The testbench asmcomp generated (<proc>_tb.v in Temp).
+    TB_MOD="${PROC}_tb"
     ( cd "$HDL_DIR" && "$IVERILOG" -s "$TB_MOD" -o "$TMP_PRO/$PROC.vvp" \
-        "$TB_SRC" "$UPROC.v" addr_dec.v instr_dec.v processor.v core.v ula.v )
+        "$TMP_PRO/${PROC}_tb.v" "$UPROC.v" addr_dec.v instr_dec.v processor.v core.v ula.v )
 
     echo "#### Running VVP"
     cp "${UPROC}_data.mif" "$TMP_PRO/"
@@ -121,13 +115,9 @@ else
     WAVE_VCD="$TMP_PRO/${PROC}_tb.vcd"; HDR_VCD="$WAVE_VCD"; GTKW_OUT="$TMP_PRO/${PROC}_tb.gtkw"
 fi
 
-# --- View in GTKWave --------------------------------------------------------
-echo "#### Generating the .gtkw layout and launching GTKWave"
-if [ -f "$SIMU_DIR/$GTKW" ]; then
-    "$GTKWAVE" --dark --zoom-fit --left-justify "$WAVE_VCD" -a "$SIMU_DIR/$GTKW"
-else
-    "$BIN_DIR/gen_gtkw" "$HDR_VCD" "$GTKW_OUT" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
-    "$GTKWAVE" --dark --zoom-fit --left-justify "$WAVE_VCD" -a "$GTKW_OUT"
-fi
+# --- View in GTKWave (layout built by gen_gtkw) -----------------------------
+echo "#### Generating the .gtkw layout (gen_gtkw) and launching GTKWave"
+"$BIN_DIR/gen_gtkw" "$HDR_VCD" "$GTKW_OUT" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
+"$GTKWAVE" --dark --zoom-fit --left-justify "$WAVE_VCD" -a "$GTKW_OUT"
 
 cd "$ROOT_DIR"

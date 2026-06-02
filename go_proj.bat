@@ -71,10 +71,8 @@ set VL_WARN=-Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH -Wno-CASEINCOM
 set PROJET=DTW
 :: processor types in the project (each a Tests\ subfolder we compile)
 set PROC_LIST=ProcDTW ZeroCross
-:: testbench name (without .v) to simulate, in the TopLevel folder
+:: top testbench name (without .v) to simulate, in the TopLevel folder
 set TB=top_level_tb
-:: gtkwave layout filename (if missing, gen_gtkw builds one)
-set GTKW=dtw.gtkw
 
 :: Repo sources, read in place (never written to) -----------------------------
 set HDL_DIR=%ROOT_DIR%\HDL
@@ -176,15 +174,11 @@ echo #### Running the Verilator simulation
 :: +WAVE arms the tb's $dumpvars (off by default so the heavy sim doesn't crash).
 %VL_DIR%\V%TB%.exe +WAVE
 
-:: View in GTKWave ------------------------------------------------------------
+:: View in GTKWave (layout built by gen_gtkw) ---------------------------------
 :proj_gtkwave
-echo #### Generating the .gtkw layout and launching GTKWave
-if exist %TOPL_DIR%\%GTKW% (
-    %GTKWAVE% --dark --zoom-fit --left-justify %TMP_DIR%\%TB%.vcd -a %TOPL_DIR%\%GTKW%
-) else (
-    %BIN_DIR%\gen_gtkw.exe %TMP_DIR%\%TB%_hdr.vcd %TMP_DIR%\%TB%.gtkw %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
-    %GTKWAVE% --dark --zoom-fit --left-justify %TMP_DIR%\%TB%.vcd -a %TMP_DIR%\%TB%.gtkw
-)
+echo #### Generating the .gtkw layout (gen_gtkw) and launching GTKWave
+%BIN_DIR%\gen_gtkw.exe %TMP_DIR%\%TB%_hdr.vcd %TMP_DIR%\%TB%.gtkw %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
+%GTKWAVE% --dark --zoom-fit --left-justify %TMP_DIR%\%TB%.vcd -a %TMP_DIR%\%TB%.gtkw
 
 cd %ROOT_DIR%
 exit /b 0

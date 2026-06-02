@@ -61,10 +61,6 @@ if defined MINGW_BIN set "PATH=%MINGW_BIN%;%PATH%"
 set PROC=proc_fft
 :: cmm filename where the processor is defined
 set FNAM=proc_fft.cmm
-:: test_bench (without .v), in the Simulation folder; if missing, the generated one is used
-set TB=errado
-:: gtkwave layout filename (if missing, gen_gtkw builds one)
-set GTKW=teste.gtkw
 :: processor operating frequency in MHz
 set FRE_CLK=100
 :: number of clocks to simulate
@@ -81,7 +77,6 @@ set WORK=%ROOT_DIR%\Teste
 set PROC_DIR=%WORK%\%PROC%
 set SOFT_DIR=%PROC_DIR%\Software
 set HARD_DIR=%PROC_DIR%\Hardware
-set SIMU_DIR=%PROC_DIR%\Simulation
 set TMP_DIR=%WORK%\Temp
 set TMP_PRO=%TMP_DIR%\%PROC%
 set VL_DIR=%TMP_PRO%\vl
@@ -113,16 +108,10 @@ if /i "%SIM%"=="verilator" goto :sim_verilator
 
 :: --- Icarus -----------------------------------------------------------------
 echo #### Running Icarus
-:: Use the user's testbench if present, else the one asmcomp generated.
-if exist %SIMU_DIR%\%TB%.v (
-    set TB_MOD=%TB%
-    set TB_SRC=%SIMU_DIR%\%TB%.v
-) else (
-    set TB_MOD=%PROC%_tb
-    set TB_SRC=%TMP_PRO%\%PROC%_tb.v
-)
+:: The testbench asmcomp generated (<proc>_tb.v in Temp).
+set TB_MOD=%PROC%_tb
 cd %HDL_DIR%
-%IVERILOG% -s %TB_MOD% -o %TMP_PRO%\%PROC%.vvp %TB_SRC% %UPROC%.v addr_dec.v instr_dec.v processor.v core.v ula.v
+%IVERILOG% -s %TB_MOD% -o %TMP_PRO%\%PROC%.vvp %TMP_PRO%\%PROC%_tb.v %UPROC%.v addr_dec.v instr_dec.v processor.v core.v ula.v
 
 echo #### Running VVP
 copy %UPROC%_data.mif %TMP_PRO%>%TMP_PRO%\log.txt
@@ -157,15 +146,11 @@ set WAVE=%TMP_PRO%\%PROC%_tb.vcd
 set HDR=%TMP_PRO%\%PROC%_tb.vcd
 set GTKWOUT=%TMP_PRO%\%PROC%_tb.gtkw
 
-:: View in GTKWave ------------------------------------------------------------
+:: View in GTKWave (layout built by gen_gtkw) ---------------------------------
 :run_gtkwave
-echo #### Generating the .gtkw layout and launching GTKWave
-if exist %SIMU_DIR%\%GTKW% (
-    %GTKWAVE% --dark --zoom-fit --left-justify %WAVE% -a %SIMU_DIR%\%GTKW%
-) else (
-    %BIN_DIR%\gen_gtkw.exe %HDR% %GTKWOUT% %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
-    %GTKWAVE% --dark --zoom-fit --left-justify %WAVE% -a %GTKWOUT%
-)
+echo #### Generating the .gtkw layout (gen_gtkw) and launching GTKWave
+%BIN_DIR%\gen_gtkw.exe %HDR% %GTKWOUT% %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
+%GTKWAVE% --dark --zoom-fit --left-justify %WAVE% -a %GTKWOUT%
 
 cd %ROOT_DIR%
 exit /b 0

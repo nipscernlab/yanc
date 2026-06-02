@@ -42,8 +42,7 @@ fi
 # --- What to simulate (a project under Compilers/CMMComp/Tests) -------------
 PROJET=DTW                        # project folder (holds TopLevel/ with the tb)
 PROC_LIST=(ProcDTW ZeroCross)     # processor types in the project
-TB=top_level_tb                   # testbench (without .v), in TopLevel/
-GTKW=dtw.gtkw                     # gtkwave layout (if missing, gen_gtkw builds one)
+TB=top_level_tb                   # top testbench (without .v), in TopLevel/
 
 # Verilator warning suppressions (the design is not lint-clean and mixes
 # timescale'd top modules with non-timescale'd HDL; none affect the sim).
@@ -124,13 +123,9 @@ else
     "$VL_DIR/V$TB" +WAVE
 fi
 
-# --- View in GTKWave --------------------------------------------------------
-echo "#### Generating the .gtkw layout and launching GTKWave"
-if [ -f "$TOPL_DIR/$GTKW" ]; then
-    "$GTKWAVE" --dark --zoom-fit --left-justify "$TMP_DIR/$TB.vcd" -a "$TOPL_DIR/$GTKW"
-else
-    "$BIN_DIR/gen_gtkw" "$TMP_DIR/${TB}_hdr.vcd" "$TMP_DIR/$TB.gtkw" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
-    "$GTKWAVE" --dark --zoom-fit --left-justify "$TMP_DIR/$TB.vcd" -a "$TMP_DIR/$TB.gtkw"
-fi
+# --- View in GTKWave (layout built by gen_gtkw) -----------------------------
+echo "#### Generating the .gtkw layout (gen_gtkw) and launching GTKWave"
+"$BIN_DIR/gen_gtkw" "$TMP_DIR/${TB}_hdr.vcd" "$TMP_DIR/$TB.gtkw" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
+"$GTKWAVE" --dark --zoom-fit --left-justify "$TMP_DIR/$TB.vcd" -a "$TMP_DIR/$TB.gtkw"
 
 cd "$ROOT_DIR"
