@@ -21,7 +21,15 @@ tags consumed by Aurora.
   is the N=1 case. Replaces the runtime `gtk_proc_init.tcl`/`gtk_proj_init.tcl`
   and lets us move to the nipscern GTKWave v4 (which ignores `--script`), opened
   as `gtkwave <vcd> -a <out.gtkw>`. The `go_*.bat` flows are unchanged for now —
-  standalone until the FST header-only dump and the `.bat` wiring land.
+  standalone until the `.bat` wiring lands.
+- **`+HEADER_ONLY` testbench instrumentation** — both the generated `<proc>_tb.v`
+  (hdl.c) and the DTW project `top_level_tb.v` now respond to a `+HEADER_ONLY`
+  plusarg: they dump, advance one tick, `$dumpflush` and `$finish`, producing a
+  VCD that carries only the header (the signal list `gen_gtkw` needs) without the
+  multi-gigabyte body. On the DTW project this is 109 KB in 130 ms instead of a
+  641 MB full dump, and the resulting `.gtkw` is byte-identical to the one built
+  from the full trace. Plusarg-gated, so normal and regression runs are
+  unaffected (regress 71/71).
 
 ## [v4.4.1] – 2026-06-01
 

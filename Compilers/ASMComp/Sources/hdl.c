@@ -898,6 +898,12 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_float);\n" , prname, prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_int);\n\n" , prname, prname);
 
+    // +HEADER_ONLY: dump just the VCD header (the signal list, for gen_gtkw's
+    // .gtkw formatter) and bail -- one tick + $dumpflush so the $var lines are
+    // emitted ($dumpvars at t=0 only registers scopes). A no-op without the
+    // plusarg, so normal/regression runs are unaffected.
+    fprintf(f_veri, "    if ($test$plusargs(\"HEADER_ONLY\")) begin #1; $dumpflush; $finish; end\n\n");
+
     // progress bar -----------------------------------------------------------
     //
     // Print the progress to the terminal instead of a progress.txt file. The
