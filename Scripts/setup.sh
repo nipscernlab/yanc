@@ -58,6 +58,7 @@ if [ -n "$PKG" ]; then echo "package manager: $PKG"; else echo "package manager:
 pkg_name() {
     case "$1" in
         gcc)       case "$PKG" in apt) echo build-essential ;; *) echo gcc ;; esac ;;
+        make)      case "$PKG" in apt) echo build-essential ;; *) echo make ;; esac ;;
         bison)     echo bison ;;
         flex)      echo flex ;;
         iverilog)  echo iverilog ;;
@@ -93,6 +94,7 @@ echo
 echo "--- Build toolchain -----------------------------------------------------"
 build_ok=1
 want gcc   gcc   required || build_ok=0
+want make  make  required || build_ok=0
 want bison bison required || build_ok=0
 want flex  flex  required || build_ok=0
 
@@ -105,51 +107,18 @@ fi
 # ---------------------------------------------------------------------------
 # 2) Build the binaries into <repo>/bin --------------------------------------
 # ---------------------------------------------------------------------------
+# The compile rules live in the top-level Makefile (single source of truth);
+# setup just drives it. $1 may be "clean all" to force a full rebuild.
 build_bins() {
-    echo "[build] Compiling YANC binaries into $YANC_BIN"
-    mkdir -p "$YANC_BIN"
-
-    ( cd "$ROOT_DIR/Compilers/CMMComp/Sources" \
-      && bison -y -d CMMComp.y && flex CMMComp.l \
-      && gcc -O2 -o "$YANC_BIN/cmmcomp" \
-            ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
-            funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
-            variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c \
-            -lm \
-      && rm -f lex.yy.c y.tab.c y.tab.h ) || return 1
-
-    ( cd "$ROOT_DIR/Compilers/APPComp/Sources" \
-      && flex -o app.c app.l \
-      && gcc -O2 -o "$YANC_BIN/appcomp" app.c eval.c variaveis.c messages.c args.c -lm \
-      && rm -f app.c ) || return 1
-
-    ( cd "$ROOT_DIR/Compilers/ASMComp/Sources" \
-      && flex -o ASMComp.c ASMComp.l \
-      && gcc -O2 -o "$YANC_BIN/asmcomp" \
-            ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c \
-            simulacao.c array.c messages.c args.c -lm \
-      && rm -f ASMComp.c ) || return 1
-
-    ( cd "$ROOT_DIR/Compilers/CPPComp/Sources" \
-      && gcc -O2 -Wall -o "$YANC_BIN/cpppp" cpppp.c \
-      && bison -y -d CPPComp.y && flex CPPComp.l \
-      && gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable \
-            -Wno-unused-function -o "$YANC_BIN/cppcomp" \
-            main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c -lm \
-      && rm -f lex.yy.c y.tab.c y.tab.h ) || return 1
-
-    ( cd "$ROOT_DIR/Scripts" \
-      && gcc -O2 -o "$YANC_BIN/comp2gtkw" comp2gtkw.c -lm \
-      && gcc -O2 -o "$YANC_BIN/gen_gtkw"  gen_gtkw.c  -lm ) || return 1
-
-    echo "[build] Done."
+    echo "[build] Building YANC binaries via make into $YANC_BIN"
+    make -C "$ROOT_DIR" BIN="$YANC_BIN" ${1:-all}
 }
 
 echo
 echo "--- YANC binaries -------------------------------------------------------"
 if [ "$FORCE" = build ]; then
     [ "$build_ok" = 1 ] || { echo "ERROR: cannot build - gcc/bison/flex missing."; exit 1; }
-    build_bins || { echo "ERROR: build failed."; exit 1; }
+    build_bins "clean all" || { echo "ERROR: build failed."; exit 1; }
 elif [ "$bins_present" = 1 ]; then
     echo "Binaries already present in $YANC_BIN - keeping them (use --rebuild to recompile)."
 elif [ "$build_ok" = 1 ]; then

@@ -38,77 +38,20 @@ jobs:
           update: false
           install: >-
             mingw-w64-x86_64-gcc
+            make
             bison
             flex
             zip
 
       - name: Build binaries
         shell: msys2 {0}
-        # Each compiler follows the same pattern as Scripts/aurora.bat: run
-        # bison/flex when applicable, gcc on the sources, then move the
-        # .exe into out/bin. -O2 yields slightly leaner binaries than the
-        # default.
+        # Build all seven binaries through the top-level Makefile (single source
+        # of truth, shared with the go_*.bat flows). $(OS)=Windows_NT here, so
+        # the Makefile emits .exe; BIN=out/bin lands them where the packaging
+        # steps below expect them.
         run: |
           set -euo pipefail
-          mkdir -p out/bin
-
-          # cmmcomp
-          pushd Compilers/CMMComp/Sources
-          bison -y -d CMMComp.y
-          flex CMMComp.l
-          gcc -O2 -o cmmcomp.exe \
-              ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
-              funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
-              variaveis.c array_index.c global.c macros.c messages.c args.c \
-              y.tab.c
-          mv cmmcomp.exe ../../../out/bin/
-          rm -f lex.yy.c y.tab.c y.tab.h
-          popd
-
-          # appcomp
-          pushd Compilers/APPComp/Sources
-          flex -o app.c app.l
-          gcc -O2 -o appcomp.exe \
-              app.c eval.c variaveis.c messages.c args.c
-          mv appcomp.exe ../../../out/bin/
-          rm -f app.c
-          popd
-
-          # asmcomp
-          pushd Compilers/ASMComp/Sources
-          flex -o ASMComp.c ASMComp.l
-          gcc -O2 -o asmcomp.exe \
-              ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-              hdl.c simulacao.c array.c messages.c args.c
-          mv asmcomp.exe ../../../out/bin/
-          rm -f ASMComp.c
-          popd
-
-          # cpppp (C++ preprocessor, single TU)
-          pushd Compilers/CPPComp/Sources
-          gcc -O2 -Wall -o cpppp.exe cpppp.c
-          mv cpppp.exe ../../../out/bin/
-          popd
-
-          # cppcomp (C++ compiler)
-          pushd Compilers/CPPComp/Sources
-          bison -y -d CPPComp.y
-          flex CPPComp.l
-          gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable \
-              -Wno-unused-function -o cppcomp.exe \
-              main.c messages.c types.c symtab.c ast.c codegen.c \
-              lex.yy.c y.tab.c
-          mv cppcomp.exe ../../../out/bin/
-          rm -f lex.yy.c y.tab.c y.tab.h
-          popd
-
-          # comp2gtkw + gen_gtkw (GTKWave helpers used by the go_*.bat flows)
-          pushd Scripts
-          gcc -O2 -o comp2gtkw.exe comp2gtkw.c
-          gcc -O2 -o gen_gtkw.exe  gen_gtkw.c
-          mv comp2gtkw.exe gen_gtkw.exe ../out/bin/
-          popd
-
+          make BIN=out/bin
           ls -l out/bin
 
       - name: Stage HDL + Macros + Header

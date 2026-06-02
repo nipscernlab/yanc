@@ -180,8 +180,8 @@ Auxiliary content:
 Requirements (Windows + [MSYS2](https://www.msys2.org/)):
 
 * The MinGW-w64 cross toolchain — install with `pacman -S mingw-w64-x86_64-gcc`. The build calls `x86_64-w64-mingw32-gcc.exe` (the cross tuple, not plain `gcc.exe`) on purpose: it produces stand-alone Windows `.exe`s with no MSYS2 DLL runtime dependency, so the deployed binaries work on any Windows machine.
-* `bison` and `flex` — install with `pacman -S bison flex`.
-* These three tools must be reachable on your `PATH`. The script bails early with the exact line to add if any of them is missing. Typical setup:
+* `make`, `bison` and `flex` — install with `pacman -S make bison flex`.
+* These tools must be reachable on your `PATH`. The script bails early with the exact line to add if any of them is missing. Typical setup:
   ```
   set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
   ```
@@ -191,7 +191,23 @@ Requirements (Windows + [MSYS2](https://www.msys2.org/)):
   * [Verilator](https://verilator.org/) **5.x** — `pacman -S mingw-w64-x86_64-verilator`. Its `--binary` mode drives the MinGW `g++` and `python3` from your `mingw64` toolchain, so keep `…\mingw64\bin` on `PATH`.
   * GTKWave — the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) to view the waveform.
 
-`Scripts/aurora.bat` builds all six binaries and deploys them into a sibling `Aurora/components/` checkout. It assumes the two repos sit side by side under a common parent — no absolute paths, no editing required:
+The actual compile commands live in a single top-level **`Makefile`** (the
+source of truth shared by the setup scripts, `aurora.bat`, and the CI/release
+workflows). To build the binaries by hand — on Linux, or on Windows under
+MSYS2:
+
+```sh
+make                              # build all into bin/
+make cmmcomp                      # build one
+make clean                        # remove bin/ and the flex/bison outputs
+make CC=x86_64-w64-mingw32-gcc    # Windows standalone .exe (no MSYS2 DLLs)
+```
+
+On Windows `make` emits `.exe` automatically (it keys off `$(OS)`); on Linux the
+binaries have no suffix. `Scripts/setup.bat` / `setup.sh` just drive this
+Makefile, so you normally don't call it directly.
+
+`Scripts/aurora.bat` builds all binaries (via the Makefile) and deploys them into a sibling `Aurora/components/` checkout. It assumes the two repos sit side by side under a common parent — no absolute paths, no editing required:
 
 ```
 <parent>\
@@ -444,6 +460,7 @@ yanc/
 │   ├── CPPComp/          cpppp + cppcomp sources + Includes/ (C++ shims) + Tests/ (per-test programs + Verilator/)
 │   └── yanc_version.h    single-source-of-truth toolchain version
 ├── HDL/                  reusable Verilog modules (core, ALU, decoders, FIFO, ...)
+├── Makefile              single source of truth for building the binaries (Linux + MSYS2)
 ├── Scripts/              setup.bat/.sh + env.bat/.sh, aurora.bat, regress.sh, comp2gtkw, gen_gtkw
 ├── docs/images/          README assets (GTKWave screenshot, ...)
 ├── go_proc.bat/.sh       single-processor pipeline, Icarus backend

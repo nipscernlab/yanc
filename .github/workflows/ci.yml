@@ -20,61 +20,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup MSYS2 (mingw64 + bison + flex)
+      - name: Setup MSYS2 (mingw64 + make + bison + flex)
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: false
           install: >-
             mingw-w64-x86_64-gcc
+            make
             bison
             flex
 
-      - name: Build cmmcomp
+      - name: Build binaries (make)
         shell: msys2 {0}
+        # Build all seven binaries through the top-level Makefile (single source
+        # of truth). $(OS)=Windows_NT here, so the Makefile emits .exe into bin/.
         run: |
           set -euo pipefail
-          cd Compilers/CMMComp/Sources
-          bison -y -d CMMComp.y
-          flex CMMComp.l
-          gcc -O2 -Wall -Werror -o cmmcomp.exe \
-              ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
-              funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
-              variaveis.c array_index.c global.c macros.c messages.c args.c \
-              y.tab.c
-          test -x cmmcomp.exe
-          rm -f lex.yy.c y.tab.c y.tab.h
-
-      - name: Build appcomp
-        shell: msys2 {0}
-        run: |
-          set -euo pipefail
-          cd Compilers/APPComp/Sources
-          flex -o app.c app.l
-          gcc -O2 -Wall -Werror -o appcomp.exe \
-              app.c eval.c variaveis.c messages.c args.c
-          test -x appcomp.exe
-          rm -f app.c
-
-      - name: Build asmcomp
-        shell: msys2 {0}
-        run: |
-          set -euo pipefail
-          cd Compilers/ASMComp/Sources
-          flex -o ASMComp.c ASMComp.l
-          gcc -O2 -Wall -Werror -o asmcomp.exe \
-              ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-              hdl.c simulacao.c array.c messages.c args.c
-          test -x asmcomp.exe
-          rm -f ASMComp.c
-
-      - name: Build comp2gtkw
-        shell: msys2 {0}
-        run: |
-          set -euo pipefail
-          cd Scripts
-          gcc -O2 -Wall -Werror -o comp2gtkw.exe comp2gtkw.c
-          test -x comp2gtkw.exe
+          make CFLAGS="-O2 -Wall"
+          ls -l bin
 
       - name: Smoke test full pipeline on all examples
         shell: msys2 {0}
@@ -95,9 +59,9 @@ jobs:
           set -uo pipefail
 
           ROOT="$(pwd)"
-          CMMCOMP="$ROOT/Compilers/CMMComp/Sources/cmmcomp.exe"
-          APPCOMP="$ROOT/Compilers/APPComp/Sources/appcomp.exe"
-          ASMCOMP="$ROOT/Compilers/ASMComp/Sources/asmcomp.exe"
+          CMMCOMP="$ROOT/bin/cmmcomp.exe"
+          APPCOMP="$ROOT/bin/appcomp.exe"
+          ASMCOMP="$ROOT/bin/asmcomp.exe"
           MAC_DIR="$ROOT/Compilers/CMMComp/Includes"
           HDL_DIR="$ROOT/HDL"
           SCRATCH="$ROOT/.smoke"
@@ -151,7 +115,7 @@ jobs:
       - name: Install toolchain + Icarus
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc bison flex iverilog
+          sudo apt-get install -y gcc make bison flex iverilog
 
       - name: Build binaries via setup.sh
         # Exercises Scripts/setup.sh end-to-end (toolchain detection + the

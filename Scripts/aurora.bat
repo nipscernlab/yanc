@@ -59,6 +59,11 @@ where flex.exe >nul 2>nul || (
     echo and ensure ^<msys64^>\usr\bin is on PATH.
     exit /b 1
 )
+where make.exe >nul 2>nul || (
+    echo ERROR: make.exe not on PATH. Install MSYS2's make package
+    echo and ensure ^<msys64^>\usr\bin is on PATH.
+    exit /b 1
+)
 
 set GCC=x86_64-w64-mingw32-gcc.exe
 
@@ -98,74 +103,20 @@ if exist %BLD_DIR%\Scripts (
 )
 
 :: ----------------------------------------------------------------------------
-:: Populate the \bin folder with the executables ------------------------------
+:: Build the binaries via the top-level Makefile (single source of truth) ------
 :: ----------------------------------------------------------------------------
+::
+:: make / sh / bison / flex come from MSYS2's usr\bin and the cross gcc from
+:: mingw64\bin -- both already required on PATH by the checks above. The cross
+:: tuple gives stand-alone .exe with no MSYS2 DLL dependency. Build into the
+:: repo-local bin\ (the Makefile's cwd-relative default, so no backslash path is
+:: passed into make/sh), then copy the .exe into the Aurora deploy bin\.
 
-:: Build the CMM compiler -----------------------------------------------------
+pushd %SRC_DIR%
+make CC=x86_64-w64-mingw32-gcc clean all
+popd
 
-cd %SRC_DIR%\Compilers\CMMComp\Sources
-
-bison -y -d CMMComp.y
-flex        CMMComp.l
-%GCC%    -o cmmcomp.exe ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c
-
-move /Y cmmcomp.exe %BLD_DIR%\bin\
-del  lex.yy.c
-del  y.tab.c
-del  y.tab.h
-
-:: Build the Assembler pre-processor ------------------------------------------
-
-cd %SRC_DIR%\Compilers\APPComp\Sources
-
-flex  -o app.c app.l
-%GCC% -o appcomp.exe app.c eval.c variaveis.c messages.c args.c
-
-move /Y appcomp.exe %BLD_DIR%\bin\
-del  app.c
-
-cd %SRC_DIR%
-
-:: Build the Assembler compiler -----------------------------------------------
-
-cd %SRC_DIR%\Compilers\ASMComp\Sources
-
-flex  -o ASMComp.c ASMComp.l
-%GCC% -o asmcomp.exe ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c
-
-move /Y asmcomp.exe %BLD_DIR%\bin\
-del  ASMComp.c
-
-:: Build the CPP preprocessor ------------------------------------------------
-
-cd %SRC_DIR%\Compilers\CPPComp\Sources
-
-%GCC% -O2 -Wall -o cpppp.exe cpppp.c
-
-move /Y cpppp.exe %BLD_DIR%\bin\
-
-:: Build the CPP compiler ----------------------------------------------------
-
-cd %SRC_DIR%\Compilers\CPPComp\Sources
-
-bison -y -d CPPComp.y
-flex        CPPComp.l
-%GCC% -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function -o cppcomp.exe main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c
-
-move /Y cppcomp.exe %BLD_DIR%\bin\
-del  lex.yy.c
-del  y.tab.c
-del  y.tab.h
-
-:: Build translators for GTKWave ----------------------------------------------
-
-cd %SRC_DIR%\Scripts
-
-%GCC% -mwindows -o comp2gtkw.exe comp2gtkw.c
-%GCC%           -o gen_gtkw.exe  gen_gtkw.c
-
-move /Y comp2gtkw.exe %BLD_DIR%\bin\
-move /Y gen_gtkw.exe  %BLD_DIR%\bin\
+xcopy %SRC_DIR%\bin\*.exe %BLD_DIR%\bin\ /I /Q /Y
 
 :: ----------------------------------------------------------------------------
 :: Copy HDL, Macros and Scripts folders ---------------------------------------

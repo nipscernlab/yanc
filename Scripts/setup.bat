@@ -259,42 +259,21 @@ exit /b 0
 :: ===========================================================================
 
 :build_bins
-:: Compile the seven binaries straight into <repo>\bin (mirrors Scripts\aurora.bat
-:: and the release workflow). Uses the cross compiler so the .exe have no MSYS2
-:: DLL dependency.
-echo [build] Compiling YANC binaries into "%YANC_BIN%"
-if not exist "%YANC_BIN%" mkdir "%YANC_BIN%"
+:: Delegate to the top-level Makefile (single source of truth for the compile
+:: rules). Put MSYS2's usr\bin (make, sh, bison, flex) and mingw64\bin (the
+:: cross gcc) on PATH so the MSYS2 make and its sh-based recipes resolve the
+:: toolchain, then build into the repo-local bin\. We cd into the repo and use
+:: the Makefile's default cwd-relative BIN=bin, so no Windows path (with
+:: backslashes) is ever passed into make / sh.
+echo [build] Building YANC binaries via make into "%YANC_BIN%"
+if defined MSYS2_ROOT set "PATH=%MSYS2_ROOT%\usr\bin;%MINGW_BIN%;%PATH%"
 
-pushd "%ROOT_DIR%\Compilers\CMMComp\Sources"
-"%BISON%" -y -d CMMComp.y || (popd & exit /b 1)
-"%FLEX%" CMMComp.l || (popd & exit /b 1)
-"%GCC%" -O2 -o "%YANC_BIN%\cmmcomp.exe" ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c macros.c messages.c args.c y.tab.c || (popd & exit /b 1)
-del /q lex.yy.c y.tab.c y.tab.h 2>nul
-popd
+:: Prefer the cross tuple (standalone .exe, no MSYS2 DLLs); fall back to gcc.
+set "CCNAME=gcc"
+echo %GCC% | find /i "x86_64-w64-mingw32-gcc" >nul && set "CCNAME=x86_64-w64-mingw32-gcc"
 
-pushd "%ROOT_DIR%\Compilers\APPComp\Sources"
-"%FLEX%" -o app.c app.l || (popd & exit /b 1)
-"%GCC%" -O2 -o "%YANC_BIN%\appcomp.exe" app.c eval.c variaveis.c messages.c args.c || (popd & exit /b 1)
-del /q app.c 2>nul
-popd
-
-pushd "%ROOT_DIR%\Compilers\ASMComp\Sources"
-"%FLEX%" -o ASMComp.c ASMComp.l || (popd & exit /b 1)
-"%GCC%" -O2 -o "%YANC_BIN%\asmcomp.exe" ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c array.c messages.c args.c || (popd & exit /b 1)
-del /q ASMComp.c 2>nul
-popd
-
-pushd "%ROOT_DIR%\Compilers\CPPComp\Sources"
-"%GCC%" -O2 -Wall -o "%YANC_BIN%\cpppp.exe" cpppp.c || (popd & exit /b 1)
-"%BISON%" -y -d CPPComp.y || (popd & exit /b 1)
-"%FLEX%" CPPComp.l || (popd & exit /b 1)
-"%GCC%" -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function -o "%YANC_BIN%\cppcomp.exe" main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c || (popd & exit /b 1)
-del /q lex.yy.c y.tab.c y.tab.h 2>nul
-popd
-
-pushd "%ROOT_DIR%\Scripts"
-"%GCC%" -O2 -o "%YANC_BIN%\comp2gtkw.exe" comp2gtkw.c || (popd & exit /b 1)
-"%GCC%" -O2 -o "%YANC_BIN%\gen_gtkw.exe"  gen_gtkw.c  || (popd & exit /b 1)
+pushd "%ROOT_DIR%"
+make CC=%CCNAME% clean all || (popd & exit /b 1)
 popd
 
 echo [build] Done.
