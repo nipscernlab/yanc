@@ -35,8 +35,8 @@ static int   n_once = 0;
 // case-insensitive). Falls back to the input on failure.
 static void path_canon(const char *in, char *out, size_t sz)
 {
-    char tmp[2048];
 #ifdef _WIN32
+    char tmp[2048];
     if (_fullpath(tmp, in, sizeof(tmp))) {
         size_t i = 0;
         for (; tmp[i] && i < sz - 1; i++) {
@@ -47,7 +47,10 @@ static void path_canon(const char *in, char *out, size_t sz)
         return;
     }
 #else
-    if (realpath(in, tmp)) { snprintf(out, sz, "%s", tmp); return; }
+    // realpath may write up to PATH_MAX bytes; let glibc allocate the buffer
+    // (realpath(in, NULL), POSIX.1-2008) instead of risking a fixed-size one.
+    char *rp = realpath(in, NULL);
+    if (rp) { snprintf(out, sz, "%s", rp); free(rp); return; }
 #endif
     snprintf(out, sz, "%s", in);
 }
