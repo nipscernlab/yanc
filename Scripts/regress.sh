@@ -537,18 +537,38 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             clocks_file="${infile%.in}.clocks"
             clocks=200000000
             [ -f "$clocks_file" ] && clocks=$(cat "$clocks_file" | tr -d '[:space:]')
-            if ! powershell.exe -ExecutionPolicy Bypass -NoProfile \
-                    -File "$CPP_ROOT/Tests/Verilator/run_verilator_step.ps1" \
-                    -Prname  "$prname" \
-                    -TmpDir  "$tmp" \
-                    -UprocV  "$uproc.v" \
-                    -SimMain "$SIMMAIN" \
-                    -HdlDir  "$HDL" \
-                    -InFile  "$infile" \
-                    -OutFile "$out" \
-                    -Clocks  "$clocks" \
-                    -Expected "$exp" >/dev/null 2>&1; then
-                echo "FAIL ($base): verilator"; fail=$((fail+1)); failed_names+=("$base"); continue
+            # On Windows the PowerShell helper works around bash->make env
+            # stripping under MSYS2; elsewhere (Linux) Verilator runs straight
+            # from bash -- no env boundary, no hardcoded paths.
+            if command -v powershell.exe >/dev/null 2>&1; then
+                if ! powershell.exe -ExecutionPolicy Bypass -NoProfile \
+                        -File "$CPP_ROOT/Tests/Verilator/run_verilator_step.ps1" \
+                        -Prname  "$prname" \
+                        -TmpDir  "$tmp" \
+                        -UprocV  "$uproc.v" \
+                        -SimMain "$SIMMAIN" \
+                        -HdlDir  "$HDL" \
+                        -InFile  "$infile" \
+                        -OutFile "$out" \
+                        -Clocks  "$clocks" \
+                        -Expected "$exp" >/dev/null 2>&1; then
+                    echo "FAIL ($base): verilator"; fail=$((fail+1)); failed_names+=("$base"); continue
+                fi
+            else
+                vldir="$tmp/vl"
+                if ! "$VERILATOR" --cc --exe --build --top-module "$prname" --prefix Vtop \
+                        -o "sim_$prname" -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN \
+                        -Wno-BLKANDNBLK -Wno-WIDTH -Wno-CASEINCOMPLETE -Wno-IMPLICIT \
+                        -Wno-COMBDLY --no-timing --Mdir "$vldir" \
+                        "$SIMMAIN" "$uproc.v" \
+                        "$HDL/processor.v" "$HDL/core.v" "$HDL/ula.v" \
+                        "$HDL/addr_dec.v" "$HDL/instr_dec.v" >/dev/null 2>&1 \
+                   || [ ! -x "$vldir/sim_$prname" ]; then
+                    echo "FAIL ($base): verilator"; fail=$((fail+1)); failed_names+=("$base"); continue
+                fi
+                # Output is compared separately; the sim's idle-detector can exit
+                # non-zero on programs that legitimately stall between out() calls.
+                "$vldir/sim_$prname" "$infile" "$out" "$clocks" "$exp" >/dev/null 2>&1 || true
             fi
         else
             if ! "$IVERILOG" -s "${prname}_tb" -o "$tmp/$prname.vvp" \
