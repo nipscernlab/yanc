@@ -135,14 +135,37 @@ Tudo abaixo é Windows-virgem. Checklist, do mais fundamental ao mais específic
    `C:/packs/msys64`, ajuste.
 
 ### 3.2 Fragilidade que ainda resta — build duplicado no `regress.sh`
-O `regress.sh` ainda **refaz o build com `gcc` próprio** (foi onde o `-lm`
-sumiu). O `-lm` é band-aid. O fix de raiz é fazer o regress **usar o `Makefile`**
-(fonte único). Nuances a resolver:
-- `cppcomp` precisa dos `-DCFG_*` (CPP_DEFS) — passar via `CFLAGS`.
-- `-Werror` é seletivo (cmm/app/asm sim; cpp não) — usar 2 invocações `make`
-  com `CFLAGS` diferentes.
-- nomes dos binários: o regress crava `.exe`; o Makefile usa `$(EXE)` (vazio no
-  Linux). Precisa computar o sufixo por OS no regress.
+O `regress.sh` ainda **refaz o build com `gcc` próprio** (uma linha por binário,
+lines ~166-201), em paralelo ao `Makefile`. São duas descrições do mesmo build
+que divergem — foi exatamente assim que o `-lm` sumiu só no regress. O `-lm` que
+adicionei é band-aid. O fix de raiz: o regress **chamar o `Makefile`** (fonte
+única). NÃO foi feito (mexe no build e não dá pra testar no Windows daqui).
+
+**Receita pronta (validar no Linux E no Windows depois):**
+
+A `.gitignore` já cobre `lex.yy.c`/`y.tab.c`/`*.exe`/`/.smoke/`, então o `make`
+não suja a árvore. Substituir o bloco de build (`if [ "$SKIP_BUILD" -eq 0 ]`)
+por algo como:
+
+```sh
+# sufixo .exe como o Makefile (ifeq $(OS),Windows_NT)
+[ "${OS:-}" = "Windows_NT" ] && EXE=.exe || EXE=
+rm -rf "$BIN_DIR"
+# -Werror só em cmm/app/asm; cpppp e cppcomp como o Makefile (sem -Werror);
+# CPP_DEFS (-DCFG_*) injetado via CFLAGS pro cppcomp.
+make -C "$ROOT" BIN="$BIN_DIR" CFLAGS="-O2 -Wall -Werror" cmmcomp appcomp asmcomp || exit 1
+make -C "$ROOT" BIN="$BIN_DIR" CFLAGS="-O2"               cpppp             || exit 1
+make -C "$ROOT" BIN="$BIN_DIR" CFLAGS="-O2 $CPP_DEFS"     cppcomp           || exit 1
+```
+
+E trocar os nomes dos binários (lines 84-88) de `.exe` cravado para o sufixo:
+```sh
+CMMCOMP="$BIN_DIR/cmmcomp$EXE"   # idem cpppp/cppcomp/appcomp/asmcomp
+```
+Por que 3 invocações: cada `make` usa um `CFLAGS`; o `-Werror` é seletivo e o
+`cppcomp` precisa dos `-DCFG_*`. Depois disso, o `-lm` band-aid pode sair (o
+Makefile já tem `LDLIBS=-lm`). Rodar `bash Scripts/regress.sh` → deve seguir
+71/71.
 
 ### 3.3 `.bat` dos runners — testar no Windows
 `single_proc.bat` e `multi_proc.bat` são espelhos mecânicos dos `.sh` validados,
