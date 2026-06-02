@@ -32,7 +32,9 @@ set GCC=C:\packs\msys64\mingw64\bin\x86_64-w64-mingw32-gcc.exe
 :: msys64\mingw64\bin on PATH, and VERILATOR_ROOT pointing at its share dir.
 set VERILATOR=C:\packs\msys64\mingw64\bin\verilator_bin.exe
 set VERILATOR_ROOT=C:/packs/msys64/mingw64/share/verilator
-set GTKWAVE=C:\nipscern\Aurora\components\Packages\iverilog\gtkwave\bin\gtkwave.exe
+:: nipscern GTKWave v4 -- opened with a pre-generated .gtkw (gen_gtkw) via -a;
+:: it ignores --script, so the Tcl formatters are replaced by gen_gtkw.
+set GTKWAVE=C:\nipscern\Aurora\components\Packages\gtkwave-nipscern\gtkwave.exe
 set PATH=C:\packs\msys64\mingw64\bin;%PATH%
 
 set    TESTE_DIR=%ROOT_DIR%\Teste
@@ -46,8 +48,8 @@ set PROJET=FFT
 set PROC=proc_fft
 :: cmm filename where the processor is defined
 set FNAM=proc_fft.cmm
-:: gtkwave layout filename: if Simulation\%GTKW% exists, it is opened via
-:: pos_gtkw.tcl; otherwise the default gtk_proc_init.tcl formats the signals
+:: gtkwave layout filename: if Simulation\%GTKW% exists it is applied via -a;
+:: otherwise gen_gtkw writes the layout from the VCD header
 set GTKW=teste.gtkw
 :: processor operating frequency in MHz
 set FRE_CLK=100
@@ -131,16 +133,19 @@ cd %ROOT_DIR%\Compilers\ASMComp\Sources
 move asmcomp.exe %BIN_DIR%>%TMP_PRO%\log.txt
 del  ASMComp.c
 
-:: Build translators for GTKWave ----------------------------------------------
+:: Build the GTKWave tools ------------------------------------------------------
 ::
-:: comp2gtkw.exe is the "comp" (complex number) translator the GTKWave init
-:: script installs for proc.comp_me3 / comp_arr_me3 signals.
+:: comp2gtkw.exe is the "comp" (complex number) process filter; gen_gtkw.exe
+:: reads the VCD header and writes the formatted .gtkw save file (replacing the
+:: gtk_proc_init.tcl formatter).
 
 cd %SCR_DIR%
 
 %GCC% -o comp2gtkw.exe comp2gtkw.c
+%GCC% -o gen_gtkw.exe  gen_gtkw.c
 
 move comp2gtkw.exe %BIN_DIR%>%TMP_PRO%\log.txt
+move gen_gtkw.exe  %BIN_DIR%>%TMP_PRO%\log.txt
 
 :: Run the CMM compiler -------------------------------------------------------
 
@@ -203,29 +208,24 @@ cd %TMP_PRO%
 
 :: Run GtkWave ----------------------------------------------------------------
 ::
-:: Called exactly like go_proc.bat: the gtk_proc_init.tcl script auto-adds and
-:: formats the signals (clk/rst, I/O ports, Assembly via trad_opcode.txt, C+-
-:: via trad_cmm.txt, the int/float/comp variable + array mirrors, and the
-:: Stack/ALU flag groups). It reads tcl_infos.txt (tmp_dir + bin_dir) and needs
-:: fix.vcd alongside, both written into the CWD (= %TMP_PRO%, where we already
-:: are after running the sim).
+:: gen_gtkw reads the <proc>_tb.vcd header and writes <proc>_tb.gtkw: the same
+:: layout the gtk_proc_init.tcl produced (clk/rst, I/O ports, Assembly via
+:: trad_opcode.txt, C+- via trad_cmm.txt, the int/float/comp variable + array
+:: mirrors, and the Stack/ALU flag groups), as a static save file. GTKWave then
+:: opens the VCD with -a <gtkw>. trad files live at %TMP_DIR%\<proc-type>\, so
+:: gen_gtkw takes %TMP_DIR% as its base.
 ::
-:: NOTE: the Stack (core.sp.*) and ALU (ula.delta_*) flag groups stay EMPTY
-:: under Verilator -- those signals are Icarus-only (self-referential fl_max /
-:: real modulo that Verilator rejects), so they are not in the trace. Every
-:: other group is formatted identically to the Icarus flow.
+:: NOTE: the Stack (core.sp.*) and ALU (ula.delta_*) flag groups are absent under
+:: Verilator -- those signals are fenced out of the trace (Icarus-only) -- so
+:: gen_gtkw simply omits them. Every other group is formatted as in the Icarus flow.
 
-echo #### Running GTKWave
-
-echo %TMP_PRO%>tcl_infos.txt
-echo %BIN_DIR%>>tcl_infos.txt
-
-copy %SCR_DIR%\fix.vcd %TMP_PRO%>%TMP_PRO%\log.txt
+echo #### Generating the .gtkw layout and launching GTKWave
 
 if exist %SIMU_DIR%\%GTKW% (
-    %GTKWAVE% --rcvar "hide_sst on" --dark %SIMU_DIR%\%GTKW%       --script=%SCR_DIR%\pos_gtkw.tcl
+    %GTKWAVE% --rcvar "hide_sst on" --dark %TMP_PRO%\%PROC%_tb.vcd -a %SIMU_DIR%\%GTKW%
 ) else (
-    %GTKWAVE% --rcvar "hide_sst on" --dark %TMP_PRO%\%PROC%_tb.vcd --script=%SCR_DIR%\gtk_proc_init.tcl
+    %BIN_DIR%\gen_gtkw.exe %TMP_PRO%\%PROC%_tb.vcd %TMP_PRO%\%PROC%_tb.gtkw %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
+    %GTKWAVE% --rcvar "hide_sst on" --dark %TMP_PRO%\%PROC%_tb.vcd -a %TMP_PRO%\%PROC%_tb.gtkw
 )
 
 cd %ROOT_DIR%
