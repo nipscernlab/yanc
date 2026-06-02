@@ -105,16 +105,11 @@ CPP_DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NBMANT=$CFG_NBMANT -DCFG_NBEXPO=$CFG_NB
           -DCFG_NUIOIN=$CFG_NUIOIN -DCFG_NUIOOU=$CFG_NUIOOU -DCFG_FFTSIZ=$CFG_FFTSIZ \
           -DCFG_HEAPSZ=$CFG_HEAPSZ"
 
-# iverilog / vvp paths can be overridden via env (CI will need different ones)
-: "${IVERILOG:=/c/nipscern/Aurora/components/Packages/iverilog/bin/iverilog.exe}"
-: "${VVP:=/c/nipscern/Aurora/components/Packages/iverilog/bin/vvp.exe}"
-
-# Verilator (for CPP heavy tests) -- python3 must resolve to the mingw64
-# build, not usr/bin's cygwin one, or its makefile rejects Windows paths.
-: "${VERILATOR:=verilator_bin.exe}"
-: "${VERILATOR_ROOT:=C:/packs/msys64/mingw64/share/verilator}"
-export VERILATOR_ROOT
-export PATH="C:/packs/msys64/mingw64/bin:$PATH"
+# Resolve iverilog / vvp / verilator the same way the runners do: Scripts/env.sh
+# loads the setup.sh cache (tools.local.sh) and falls back to a PATH lookup, so
+# there are no machine-specific hardcoded tool paths here. A pre-set env var
+# (e.g. CI, or a non-default Verilator) still wins.
+. "$ROOT/Scripts/env.sh"
 
 # load the size ratchet (prname -> num_ins). Lines starting with '#' are skipped.
 declare -A SIZE_BASELINE
@@ -175,25 +170,25 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
         funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
         variaveis.c array_index.c global.c macros.c messages.c args.c \
-        y.tab.c
+        y.tab.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
-    gcc -O2 -Wall -o "$CPPPP" "$CPP_ROOT/Sources/cpppp.c"
+    gcc -O2 -Wall -o "$CPPPP" "$CPP_ROOT/Sources/cpppp.c" -lm
 
     pushd "$CPP_ROOT/Sources" >/dev/null
     bison -y -d CPPComp.y
     flex CPPComp.l
     gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
         $CPP_DEFS -o "$CPPC" \
-        main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c
+        main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
     pushd "$ROOT/Compilers/APPComp/Sources" >/dev/null
     flex -o app.c app.l
     gcc -O2 -Wall -Werror -o "$APPCOMP" \
-        app.c eval.c variaveis.c messages.c args.c
+        app.c eval.c variaveis.c messages.c args.c -lm
     rm -f app.c
     popd >/dev/null
 
@@ -201,7 +196,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex -o ASMComp.c ASMComp.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
         ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-        hdl.c simulacao.c array.c messages.c args.c
+        hdl.c simulacao.c array.c messages.c args.c -lm
     rm -f ASMComp.c
     popd >/dev/null
 
