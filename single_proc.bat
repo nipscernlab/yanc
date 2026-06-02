@@ -92,9 +92,11 @@ set TMP_DIR=%WORK%\Temp
 set TMP_PRO=%TMP_DIR%\%PROC%
 set VL_DIR=%TMP_PRO%\vl
 
+:: The .cmm is the only input; cmmcomp/asmcomp create Software/Hardware outputs here.
 rmdir %WORK% /s /q
 mkdir %TMP_PRO%
-xcopy "%SRC_PROC%" "%PROC_DIR%\" /e /i /q /y>%TMP_PRO%\log.txt
+mkdir %SOFT_DIR%
+copy "%SRC_PROC%\Software\%FNAM%" "%SOFT_DIR%\">%TMP_PRO%\log.txt
 
 :: Verilator's g++ wants a writable TMP for its intermediate files
 set TMP=%TMP_PRO%

@@ -64,13 +64,14 @@ SRC_PROC="$ROOT_DIR/Compilers/CMMComp/Tests/$PROC"
 # --- Work area: the only files this script creates (Teste/ is gitignored) ---
 WORK="$ROOT_DIR/Teste"
 rm -rf "$WORK"
-PROC_DIR="$WORK/$PROC"            # writable copy of the project (tools emit here)
+PROC_DIR="$WORK/$PROC"            # writable project dir (tools read the .cmm and emit here)
 SOFT_DIR="$PROC_DIR/Software"; HARD_DIR="$PROC_DIR/Hardware"
 TMP_DIR="$WORK/Temp"; TMP_PRO="$TMP_DIR/$PROC"   # scratch (-t, sim cwd, trad_*.txt for gen_gtkw)
 VL_DIR="$TMP_PRO/vl"             # Verilator obj_dir
 
-mkdir -p "$TMP_PRO"
-cp -r "$SRC_PROC/." "$PROC_DIR/"
+# The .cmm is the only input; cmmcomp/asmcomp create Software/Hardware outputs here.
+mkdir -p "$TMP_PRO" "$SOFT_DIR"
+cp "$SRC_PROC/Software/$FNAM" "$SOFT_DIR/"
 
 # --- Compile: C+- -> asm -> Verilog -----------------------------------------
 echo "#### Running the CMM compiler"
