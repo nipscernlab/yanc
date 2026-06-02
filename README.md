@@ -23,17 +23,25 @@ YANC is used by the **Aurora** desktop app, but it can also be used standalone �
 
 ## Dependencies
 
-YANC runs on **Windows**. What you need depends on how you obtained it:
+YANC runs on **Windows**, and almost everything comes from a single install:
+**[MSYS2](https://www.msys2.org/)**. Its `pacman` packages provide the build
+toolchain *and* both simulators, so in practice you only install **two things**:
+MSYS2 and the GTKWave build. (`setup.bat` can `pacman -S` the MSYS2 packages and
+download GTKWave for you — see below.)
 
-| Dependency | What it's for | When you need it |
-| ---------- | ------------- | ---------------- |
-| **MSYS2** + `mingw-w64-x86_64-gcc`, `bison`, `flex` | Compiling the YANC binaries from source | Only if you build from source (not if you use a release zip) |
-| **Icarus Verilog** (`iverilog` + `vvp`) | Simulating the generated Verilog | For the Icarus flow — `go_proc.bat` / `go_proj.bat` |
-| **Verilator** 5.x (`mingw-w64-x86_64-verilator`) | Faster simulation, all user variables in the wave | For the Verilator flow — `go_proc_vl.bat` / `go_proj_vl.bat` |
-| **GTKWave** — the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) | Viewing the waveform | To open the trace (any flow) |
+| Dependency | `pacman` package / source | What it's for | When you need it |
+| ---------- | ------------------------- | ------------- | ---------------- |
+| **MSYS2 — build toolchain** | `mingw-w64-x86_64-gcc`, `bison`, `flex` | Compiling the YANC binaries from source | Only when building from source (not when using a release zip) |
+| **MSYS2 — Icarus Verilog** | `mingw-w64-x86_64-iverilog` | Simulating the generated Verilog | For the Icarus flow — `go_proc.bat` / `go_proj.bat` |
+| **MSYS2 — Verilator** 5.x | `mingw-w64-x86_64-verilator` | Faster simulation, all user variables in the wave | For the Verilator flow — `go_proc_vl.bat` / `go_proj_vl.bat` |
+| **GTKWave** | the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) (separate download) | Viewing the waveform | To open the trace (any flow) |
 
+> **Why MSYS2 for the simulators too?** `iverilog` and `verilator` are both in
+> MSYS2, so a single MSYS2 install covers building *and* simulating — no separate
+> Icarus/Verilator installers. The only piece outside MSYS2 is GTKWave.
+>
 > **GTKWave must be the nipscernlab build** — the `go_*.bat` rely on its
-> waveform-formatting behaviour. The generic GTKWave will not work the same way.
+> waveform-formatting behaviour; the generic GTKWave will not work the same way.
 
 ### Let the setup script resolve them for you
 
@@ -50,12 +58,14 @@ It **checks** every dependency and **helps you get the missing ones**:
 * produces the YANC binaries in `bin\` — **either** keeping the `.exe` a release
   zip already shipped / downloading the prebuilt ones from the latest release
   (no build toolchain needed), **or** compiling them once from source;
-* locates Icarus and Verilator, and **downloads the nipscernlab GTKWave**
-  portable bundle if it isn't already present;
+* finds the simulators, offering to `pacman -S` **Icarus** and/or **Verilator**
+  from MSYS2 if they're missing;
+* **downloads the nipscernlab GTKWave** portable bundle if it isn't already
+  present;
 * remembers every resolved path so the `go_*.bat` need no manual configuration.
 
-If something can't be auto-installed (e.g. Icarus, which has its own installer),
-setup prints the exact link and command to fix it, then you re-run it. See
+If something can't be resolved automatically (e.g. MSYS2 itself isn't installed
+yet), setup prints the exact link and command to fix it, then you re-run it. See
 [Pre-wired scripts](#pre-wired-scripts) for the full description and the
 `--rebuild` / `--download` flags.
 
@@ -146,10 +156,11 @@ Requirements (Windows + [MSYS2](https://www.msys2.org/)):
   ```
   set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
   ```
-* Optional, only needed if you want to simulate the generated Verilog:
-  * [Icarus Verilog](http://iverilog.icarus.com/) (`iverilog` + `vvp`), and/or
-  * [Verilator](https://verilator.org/) **5.x** — on MSYS2: `pacman -S mingw-w64-x86_64-verilator`. Its `--binary` mode drives the MinGW `g++` and `python3` from your `mingw64` toolchain, so keep `…\mingw64\bin` on `PATH`.
-  * [GTKWave](https://gtkwave.sourceforge.net/) to view the waveform.
+* Optional, only needed if you want to simulate the generated Verilog — both
+  are MSYS2 packages, so they install the same way as the build toolchain:
+  * [Icarus Verilog](http://iverilog.icarus.com/) (`iverilog` + `vvp`) — `pacman -S mingw-w64-x86_64-iverilog`, and/or
+  * [Verilator](https://verilator.org/) **5.x** — `pacman -S mingw-w64-x86_64-verilator`. Its `--binary` mode drives the MinGW `g++` and `python3` from your `mingw64` toolchain, so keep `…\mingw64\bin` on `PATH`.
+  * GTKWave — the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) to view the waveform.
 
 `Scripts/aurora.bat` builds all six binaries and deploys them into a sibling `Aurora/components/` checkout. It assumes the two repos sit side by side under a common parent — no absolute paths, no editing required:
 

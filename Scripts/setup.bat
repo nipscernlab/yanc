@@ -69,6 +69,11 @@ for %%R in ("C:\msys64" "C:\packs\msys64" "%SystemDrive%\msys64" "C:\tools\msys6
 set "BUILD_OK="
 if defined GCC if defined BISON if defined FLEX set "BUILD_OK=1"
 
+:: MSYS2's mingw64\bin: provides iverilog/verilator and the DLLs they link
+:: against, so the go_*.bat must put it on PATH when the tools come from MSYS2.
+set "MINGW_BIN="
+if defined MSYS2_ROOT set "MINGW_BIN=%MSYS2_ROOT%\mingw64\bin"
+
 set "BIN_PRESENT="
 if exist "%YANC_BIN%\cmmcomp.exe" if exist "%YANC_BIN%\asmcomp.exe" if exist "%YANC_BIN%\appcomp.exe" if exist "%YANC_BIN%\gen_gtkw.exe" set "BIN_PRESENT=1"
 
@@ -141,22 +146,36 @@ set "IVERILOG="
 set "VVP="
 set "VERILATOR="
 set "VERILATOR_ROOT="
-set "VL_MINGW_BIN="
 set "GTKWAVE="
 set "FST2VCD="
+:: (MINGW_BIN is resolved earlier, from MSYS2_ROOT - do not clear it here)
 
-:: Icarus Verilog (iverilog + vvp) -- installer-based, so detect only ---------
+:: Icarus Verilog (iverilog + vvp) -- ships in MSYS2, so offer pacman ---------
+:: (mingw-w64-x86_64-iverilog). A standalone install is still accepted if found.
 for %%E in (iverilog.exe) do if not "%%~$PATH:E"=="" set "IVERILOG=%%~$PATH:E"
 for %%E in (vvp.exe)      do if not "%%~$PATH:E"=="" set "VVP=%%~$PATH:E"
+if defined MSYS2_ROOT (
+    if not defined IVERILOG if exist "%MSYS2_ROOT%\mingw64\bin\iverilog.exe" set "IVERILOG=%MSYS2_ROOT%\mingw64\bin\iverilog.exe"
+    if not defined VVP      if exist "%MSYS2_ROOT%\mingw64\bin\vvp.exe"      set "VVP=%MSYS2_ROOT%\mingw64\bin\vvp.exe"
+)
 for %%D in ("C:\iverilog\bin" "C:\nipscern\Aurora\components\Packages\iverilog\bin") do (
     if not defined IVERILOG if exist "%%~D\iverilog.exe" set "IVERILOG=%%~D\iverilog.exe"
     if not defined VVP      if exist "%%~D\vvp.exe"      set "VVP=%%~D\vvp.exe"
 )
+if not defined IVERILOG if defined MSYS2_ROOT (
+    set "ans="
+    set /p "ans=[icarus] not found. Install it via pacman now? [y/N] "
+    if /i "!ans!"=="y" (
+        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm mingw-w64-x86_64-iverilog
+        if exist "!MSYS2_ROOT!\mingw64\bin\iverilog.exe" set "IVERILOG=!MSYS2_ROOT!\mingw64\bin\iverilog.exe"
+        if exist "!MSYS2_ROOT!\mingw64\bin\vvp.exe"      set "VVP=!MSYS2_ROOT!\mingw64\bin\vvp.exe"
+    )
+)
 if defined IVERILOG (
     echo [icarus]    %IVERILOG%
 ) else (
-    echo [icarus]    NOT found - install from https://bleyer.org/icarus/
-    echo             ^(needed only for the Icarus flow: go_proc.bat / go_proj.bat^)
+    echo [icarus]    NOT found - install MSYS2 + "pacman -S mingw-w64-x86_64-iverilog"
+    echo             ^(or a standalone build; needed for go_proc.bat / go_proj.bat^)
 )
 
 :: Verilator -- ships in MSYS2, so offer pacman if MSYS2 is present -----------
@@ -171,12 +190,14 @@ if not defined VERILATOR if defined MSYS2_ROOT (
     )
 )
 if defined VERILATOR (
-    :: VERILATOR_ROOT = ...\share\verilator ; VL_MINGW_BIN = the mingw64\bin that
-    :: Verilator's internal make -> g++ -> python3 chain needs on PATH.
-    for %%F in ("%VERILATOR%") do set "VL_MINGW_BIN=%%~dpF"
-    set "VL_MINGW_BIN=!VL_MINGW_BIN:~0,-1!"
-    for %%F in ("!VL_MINGW_BIN!\..") do set "VL_PREFIX=%%~fF"
-    if exist "!VL_PREFIX!\share\verilator" set "VERILATOR_ROOT=!VL_PREFIX!\share\verilator"
+    :: VERILATOR_ROOT = ...\share\verilator. MINGW_BIN (the mingw64\bin holding
+    :: Verilator's g++/python3 chain) is usually already set from MSYS2_ROOT; if
+    :: Verilator was found elsewhere on PATH, derive it from the exe location.
+    if not defined MINGW_BIN (
+        for %%F in ("%VERILATOR%") do set "MINGW_BIN=%%~dpF"
+        if "!MINGW_BIN:~-1!"=="\" set "MINGW_BIN=!MINGW_BIN:~0,-1!"
+    )
+    if not defined VERILATOR_ROOT for %%F in ("!MINGW_BIN!\..") do if exist "%%~fF\share\verilator" set "VERILATOR_ROOT=%%~fF\share\verilator"
     echo [verilator] !VERILATOR!
 ) else (
     echo [verilator] NOT found - install MSYS2 + "pacman -S mingw-w64-x86_64-verilator"
@@ -215,7 +236,7 @@ if defined IVERILOG       >>"%CACHE%" echo set "IVERILOG=%IVERILOG%"
 if defined VVP            >>"%CACHE%" echo set "VVP=%VVP%"
 if defined VERILATOR      >>"%CACHE%" echo set "VERILATOR=%VERILATOR%"
 if defined VERILATOR_ROOT >>"%CACHE%" echo set "VERILATOR_ROOT=%VERILATOR_ROOT%"
-if defined VL_MINGW_BIN   >>"%CACHE%" echo set "VL_MINGW_BIN=%VL_MINGW_BIN%"
+if defined MINGW_BIN      >>"%CACHE%" echo set "MINGW_BIN=%MINGW_BIN%"
 if defined GTKWAVE        >>"%CACHE%" echo set "GTKWAVE=%GTKWAVE%"
 if defined FST2VCD        >>"%CACHE%" echo set "FST2VCD=%FST2VCD%"
 

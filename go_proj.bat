@@ -33,6 +33,9 @@ if not defined GTKWAVE (
     exit /b 1
 )
 
+:: When iverilog comes from MSYS2, vvp needs mingw64\bin on PATH for its DLLs.
+if defined MINGW_BIN set "PATH=%MINGW_BIN%;%PATH%"
+
 set    TESTE_DIR=%ROOT_DIR%\Teste
 rmdir %TESTE_DIR% /s /q
 

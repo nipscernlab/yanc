@@ -15,7 +15,8 @@
 ::
 ::   ROOT_DIR    repo root           YANC_BIN   <repo>\bin (the prebuilt exes)
 ::   IVERILOG    iverilog.exe        VVP        vvp.exe
-::   VERILATOR   verilator_bin.exe   VERILATOR_ROOT / VL_MINGW_BIN  (Verilator)
+::   VERILATOR   verilator_bin.exe   VERILATOR_ROOT  (Verilator share dir)
+::   MINGW_BIN   MSYS2 mingw64\bin (on PATH for MSYS2-sourced iverilog/verilator)
 ::   GTKWAVE     gtkwave.exe         FST2VCD    fst2vcd.exe
 :: ****************************************************************************
 

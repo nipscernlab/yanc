@@ -21,7 +21,7 @@ echo off
 :: Set up the environment -----------------------------------------------------
 
 :: Resolve ROOT_DIR + the prebuilt binaries (YANC_BIN) and the tool locations
-:: (VERILATOR, VERILATOR_ROOT, VL_MINGW_BIN, GTKWAVE) with no hardcoded paths.
+:: (VERILATOR, VERILATOR_ROOT, MINGW_BIN, GTKWAVE) with no hardcoded paths.
 :: Scripts\setup.bat builds / downloads everything once and caches the paths;
 :: env.bat loads them here.
 call "%~dp0Scripts\env.bat"
@@ -45,7 +45,7 @@ if not defined GTKWAVE (
 )
 
 :: Verilator's internal make -> g++ -> python3 chain needs mingw64\bin on PATH.
-if defined VL_MINGW_BIN set "PATH=%VL_MINGW_BIN%;%PATH%"
+if defined MINGW_BIN set "PATH=%MINGW_BIN%;%PATH%"
 
 set    TESTE_DIR=%ROOT_DIR%\Teste
 rmdir %TESTE_DIR% /s /q
