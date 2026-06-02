@@ -78,15 +78,13 @@ module prefetch
 
 wire wJMP;
 
-generate if ((JIZ) != 0)
+generate if ((JIZ) != 0) begin : jmp_sel
 //             JMP                                        JIZ
 assign wJMP = (opcode == {{NBOPCO-5{1'b0}}, {5'd15}}) | ((opcode == {{NBOPCO-5{1'b0}}, {5'd16}}) & ~is_um);
-
-else
+end else begin : jmp_sel
 //             JMP
 assign wJMP = (opcode == {{NBOPCO-5{1'b0}}, {5'd15}});
-
-endgenerate
+end endgenerate
 
 wire pc_load;
 
@@ -128,7 +126,7 @@ end endgenerate
 // is the clean choice: pc_instr (the PC register) transiently passes over the
 // marker every loop back-edge because addr<=val+1 in the PC, which would cause
 // spurious cheguei pulses on plain JMPs.
-generate if (TOAQUIADDR>0) assign cheguei = (instr_addr == TOAQUIADDR); else assign cheguei = 1'b0; endgenerate
+generate if (TOAQUIADDR>0) begin : toaqui_pin assign cheguei = (instr_addr == TOAQUIADDR); end else begin : toaqui_pin assign cheguei = 1'b0; end endgenerate
 
 endmodule
 
@@ -245,8 +243,8 @@ wire [MINSTW-1:0] pc_addr;
 wire [MINSTW-1:0] pcl;
 
 generate
-	if (ITRADD>0) assign pcl = (itr) ? addr : pc_lval;
-	else          assign pcl = pc_lval;
+	if (ITRADD>0) begin : pcl_sel assign pcl = (itr) ? addr : pc_lval; end
+	else          begin : pcl_sel assign pcl = pc_lval;                 end
 endgenerate
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
@@ -290,10 +288,11 @@ endgenerate
 // External interface
 
 generate
-	if (CAL)
+	if (CAL) begin : ret_addr
 		assign addr = (pf_isp_pop) ? stack_out : pf_addr;
-	else
+	end else begin : ret_addr
 		assign addr =  pf_addr;
+	end
 endgenerate
 
 endmodule
@@ -405,13 +404,13 @@ rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ILI)) ra_wr(sti, fft, stk_o
 // Each mux is only synthesised when its instruction is actually enabled,
 // matching the rest of the core's "pay only for what you use" approach.
 generate
-	if (LDA) assign mem_addr_rd = lda ? ula[MDATAW-1:0] : rel_rd;
-	else     assign mem_addr_rd = rel_rd;
+	if (LDA) begin : rd_addr assign mem_addr_rd = lda ? ula[MDATAW-1:0] : rel_rd; end
+	else     begin : rd_addr assign mem_addr_rd = rel_rd;                          end
 endgenerate
 
 generate
-	if (STA) assign mem_addr_wr = sta ? stk_ofst        : rel_wr;
-	else     assign mem_addr_wr = rel_wr;
+	if (STA) begin : wr_addr assign mem_addr_wr = sta ? stk_ofst        : rel_wr; end
+	else     begin : wr_addr assign mem_addr_wr = rel_wr;                         end
 endgenerate
 
 endmodule
@@ -439,8 +438,8 @@ module io_ctrl
 	output reg [NBIOOU-1:0] addr_out
 );
 
-generate if ((INN | F_INN | P_INN | PF_INN) != 0) assign en_in   = req_in;           else assign en_in   =         1'b0  ; endgenerate
-generate if ((INN | F_INN | P_INN | PF_INN) != 0) assign addr_in = addr[NBIOIN-1:0]; else assign addr_in = {NBIOIN{1'b0}}; endgenerate
+generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : en_in_sel   assign en_in   = req_in;           end else begin : en_in_sel   assign en_in   =         1'b0  ; end endgenerate
+generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : addr_in_sel assign addr_in = addr[NBIOIN-1:0]; end else begin : addr_in_sel assign addr_in = {NBIOIN{1'b0}}; end endgenerate
 
 always @ (posedge clk) en_out   <= out_en;
 always @ (posedge clk) addr_out <= addr[NBIOOU-1:0];
@@ -831,9 +830,9 @@ wire [NUBITS-1:0] uic_acc;
 ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1);
 
 // input in2
-generate if ((INN | P_INN | F_INN | PF_INN) != 0)
+generate if ((INN | P_INN | F_INN | PF_INN) != 0) begin : uic_in2
 ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, id_req_in , uic_acc, io_in, ula_data_in2);
-else assign ula_data_in2 = racc;
+end else begin : uic_in2 assign ula_data_in2 = racc; end
 endgenerate
 
 // Arithmetic Logic Unit ------------------------------------------------------
@@ -933,7 +932,7 @@ endgenerate
 
 // I/O Control ----------------------------------------------------------------
 
-generate if ((INN | F_INN | P_INN | PF_INN | OUT) != 0)
+generate if ((INN | F_INN | P_INN | PF_INN | OUT) != 0) begin : io_ports
 io_ctrl #(.MDATAW(MDATAW),
           .NBIOIN(NBIOIN),
           .NBIOOU(NBIOOU),
@@ -943,7 +942,7 @@ io_ctrl #(.MDATAW(MDATAW),
 		  .PF_INN(PF_INN)) io(clk, id_req_in, id_out_en,
                               if_operand[MDATAW-1:0],
                               req_in, addr_in, out_en, addr_out);
-else begin
+end else begin : io_ports
 assign req_in   = 1'b0;
 assign out_en   = 1'b0;
 assign addr_in  = {NBIOIN{1'b0}};

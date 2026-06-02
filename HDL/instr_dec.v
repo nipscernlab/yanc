@@ -174,161 +174,161 @@ module instr_dec
 
 // implements memory read/write ----------------------------------------------
 
-wire    wLOD  ; generate if ((LOD) != 0) assign    wLOD   = opcode == 7'd00; else assign    wLOD   = 1'b0; endgenerate
-wire  wP_LOD  ; generate if ((P_LOD) != 0) assign  wP_LOD   = opcode == 7'd01; else assign  wP_LOD   = 1'b0; endgenerate
+wire    wLOD  ; generate if ((LOD) != 0) begin : dec_wlod assign wLOD = opcode == 7'd00; end else begin : dec_wlod assign wLOD = 1'b0; end endgenerate
+wire  wP_LOD  ; generate if ((P_LOD) != 0) begin : dec_wp_lod assign wP_LOD = opcode == 7'd01; end else begin : dec_wp_lod assign wP_LOD = 1'b0; end endgenerate
 
-wire    wLDI  ; generate if ((LDI) != 0) assign    wLDI   = opcode == 7'd02; else assign    wLDI   = 1'b0; endgenerate
-wire    wILI  ; generate if ((ILI) != 0) assign    wILI   = opcode == 7'd03; else assign    wILI   = 1'b0; endgenerate
+wire    wLDI  ; generate if ((LDI) != 0) begin : dec_wldi assign wLDI = opcode == 7'd02; end else begin : dec_wldi assign wLDI = 1'b0; end endgenerate
+wire    wILI  ; generate if ((ILI) != 0) begin : dec_wili assign wILI = opcode == 7'd03; end else begin : dec_wili assign wILI = 1'b0; end endgenerate
 
-wire    wSET  ; generate if ((SET) != 0) assign    wSET   = opcode == 7'd04; else assign    wSET   = 1'b0; endgenerate
-wire    wSET_P; generate if ((SET_P) != 0) assign    wSET_P = opcode == 7'd05; else assign    wSET_P = 1'b0; endgenerate
+wire    wSET  ; generate if ((SET) != 0) begin : dec_wset assign wSET = opcode == 7'd04; end else begin : dec_wset assign wSET = 1'b0; end endgenerate
+wire    wSET_P; generate if ((SET_P) != 0) begin : dec_wset_p assign wSET_P = opcode == 7'd05; end else begin : dec_wset_p assign wSET_P = 1'b0; end endgenerate
 
-wire    wSTI  ; generate if ((STI) != 0) assign    wSTI   = opcode == 7'd06; else assign    wSTI   = 1'b0; endgenerate
-wire    wISI  ; generate if ((ISI) != 0) assign    wISI   = opcode == 7'd07; else assign    wISI   = 1'b0; endgenerate
+wire    wSTI  ; generate if ((STI) != 0) begin : dec_wsti assign wSTI = opcode == 7'd06; end else begin : dec_wsti assign wSTI = 1'b0; end endgenerate
+wire    wISI  ; generate if ((ISI) != 0) begin : dec_wisi assign wISI = opcode == 7'd07; end else begin : dec_wisi assign wISI = 1'b0; end endgenerate
 
 // implements the data-stack interface ----------------------------------------
 
-wire    wPSH  ; generate if ((PSH) != 0) assign    wPSH   = opcode == 7'd08; else assign    wPSH   = 1'b0; endgenerate
-wire    wPOP  ; generate if ((POP) != 0) assign    wPOP   = opcode == 7'd09; else assign    wPOP   = 1'b0; endgenerate
+wire    wPSH  ; generate if ((PSH) != 0) begin : dec_wpsh assign wPSH = opcode == 7'd08; end else begin : dec_wpsh assign wPSH = 1'b0; end endgenerate
+wire    wPOP  ; generate if ((POP) != 0) begin : dec_wpop assign wPOP = opcode == 7'd09; end else begin : dec_wpop assign wPOP = 1'b0; end endgenerate
 
 // implements I/O ports -------------------------------------------------------
 
-wire    wINN  ; generate if ((INN) != 0) assign    wINN   = opcode == 7'd10; else assign    wINN   = 1'b0; endgenerate
-wire  wF_INN  ; generate if ((F_INN) != 0) assign  wF_INN   = opcode == 7'd11; else assign  wF_INN   = 1'b0; endgenerate
-wire  wP_INN  ; generate if ((P_INN) != 0) assign  wP_INN   = opcode == 7'd12; else assign  wP_INN   = 1'b0; endgenerate
-wire wPF_INN  ; generate if ((PF_INN) != 0) assign wPF_INN   = opcode == 7'd13; else assign wPF_INN   = 1'b0; endgenerate
+wire    wINN  ; generate if ((INN) != 0) begin : dec_winn assign wINN = opcode == 7'd10; end else begin : dec_winn assign wINN = 1'b0; end endgenerate
+wire  wF_INN  ; generate if ((F_INN) != 0) begin : dec_wf_inn assign wF_INN = opcode == 7'd11; end else begin : dec_wf_inn assign wF_INN = 1'b0; end endgenerate
+wire  wP_INN  ; generate if ((P_INN) != 0) begin : dec_wp_inn assign wP_INN = opcode == 7'd12; end else begin : dec_wp_inn assign wP_INN = 1'b0; end endgenerate
+wire wPF_INN  ; generate if ((PF_INN) != 0) begin : dec_wpf_inn assign wPF_INN = opcode == 7'd13; end else begin : dec_wpf_inn assign wPF_INN = 1'b0; end endgenerate
 
-wire    wOUT  ; generate if ((OUT) != 0) assign    wOUT   = opcode == 7'd14; else assign    wOUT   = 1'b0; endgenerate
+wire    wOUT  ; generate if ((OUT) != 0) begin : dec_wout assign wOUT = opcode == 7'd14; end else begin : dec_wout assign wOUT = 1'b0; end endgenerate
 
 // two-parameter arithmetic operations ----------------------------------------
 
-wire    wADD  ; generate if ((ADD) != 0) assign    wADD   = opcode == 7'd19; else assign    wADD   = 1'b0; endgenerate
-wire  wS_ADD  ; generate if ((S_ADD) != 0) assign  wS_ADD   = opcode == 7'd20; else assign  wS_ADD   = 1'b0; endgenerate
-wire  wF_ADD  ; generate if ((F_ADD) != 0) assign  wF_ADD   = opcode == 7'd21; else assign  wF_ADD   = 1'b0; endgenerate
-wire wSF_ADD  ; generate if ((SF_ADD) != 0) assign wSF_ADD   = opcode == 7'd22; else assign wSF_ADD   = 1'b0; endgenerate
+wire    wADD  ; generate if ((ADD) != 0) begin : dec_wadd assign wADD = opcode == 7'd19; end else begin : dec_wadd assign wADD = 1'b0; end endgenerate
+wire  wS_ADD  ; generate if ((S_ADD) != 0) begin : dec_ws_add assign wS_ADD = opcode == 7'd20; end else begin : dec_ws_add assign wS_ADD = 1'b0; end endgenerate
+wire  wF_ADD  ; generate if ((F_ADD) != 0) begin : dec_wf_add assign wF_ADD = opcode == 7'd21; end else begin : dec_wf_add assign wF_ADD = 1'b0; end endgenerate
+wire wSF_ADD  ; generate if ((SF_ADD) != 0) begin : dec_wsf_add assign wSF_ADD = opcode == 7'd22; end else begin : dec_wsf_add assign wSF_ADD = 1'b0; end endgenerate
 
-wire    wMLT  ; generate if ((MLT) != 0) assign    wMLT   = opcode == 7'd23; else assign    wMLT   = 1'b0; endgenerate
-wire  wS_MLT  ; generate if ((S_MLT) != 0) assign  wS_MLT   = opcode == 7'd24; else assign  wS_MLT   = 1'b0; endgenerate
-wire  wF_MLT  ; generate if ((F_MLT) != 0) assign  wF_MLT   = opcode == 7'd25; else assign  wF_MLT   = 1'b0; endgenerate
-wire wSF_MLT  ; generate if ((SF_MLT) != 0) assign wSF_MLT   = opcode == 7'd26; else assign wSF_MLT   = 1'b0; endgenerate
+wire    wMLT  ; generate if ((MLT) != 0) begin : dec_wmlt assign wMLT = opcode == 7'd23; end else begin : dec_wmlt assign wMLT = 1'b0; end endgenerate
+wire  wS_MLT  ; generate if ((S_MLT) != 0) begin : dec_ws_mlt assign wS_MLT = opcode == 7'd24; end else begin : dec_ws_mlt assign wS_MLT = 1'b0; end endgenerate
+wire  wF_MLT  ; generate if ((F_MLT) != 0) begin : dec_wf_mlt assign wF_MLT = opcode == 7'd25; end else begin : dec_wf_mlt assign wF_MLT = 1'b0; end endgenerate
+wire wSF_MLT  ; generate if ((SF_MLT) != 0) begin : dec_wsf_mlt assign wSF_MLT = opcode == 7'd26; end else begin : dec_wsf_mlt assign wSF_MLT = 1'b0; end endgenerate
 
-wire    wDIV  ; generate if ((DIV) != 0) assign    wDIV   = opcode == 7'd27; else assign    wDIV   = 1'b0; endgenerate
-wire  wS_DIV  ; generate if ((S_DIV) != 0) assign  wS_DIV   = opcode == 7'd28; else assign  wS_DIV   = 1'b0; endgenerate
-wire  wF_DIV  ; generate if ((F_DIV) != 0) assign  wF_DIV   = opcode == 7'd29; else assign  wF_DIV   = 1'b0; endgenerate
-wire wSF_DIV  ; generate if ((SF_DIV) != 0) assign wSF_DIV   = opcode == 7'd30; else assign wSF_DIV   = 1'b0; endgenerate
+wire    wDIV  ; generate if ((DIV) != 0) begin : dec_wdiv assign wDIV = opcode == 7'd27; end else begin : dec_wdiv assign wDIV = 1'b0; end endgenerate
+wire  wS_DIV  ; generate if ((S_DIV) != 0) begin : dec_ws_div assign wS_DIV = opcode == 7'd28; end else begin : dec_ws_div assign wS_DIV = 1'b0; end endgenerate
+wire  wF_DIV  ; generate if ((F_DIV) != 0) begin : dec_wf_div assign wF_DIV = opcode == 7'd29; end else begin : dec_wf_div assign wF_DIV = 1'b0; end endgenerate
+wire wSF_DIV  ; generate if ((SF_DIV) != 0) begin : dec_wsf_div assign wSF_DIV = opcode == 7'd30; end else begin : dec_wsf_div assign wSF_DIV = 1'b0; end endgenerate
 
-wire    wMOD  ; generate if ((MOD) != 0) assign    wMOD   = opcode == 7'd31; else assign    wMOD   = 1'b0; endgenerate
-wire  wS_MOD  ; generate if ((S_MOD) != 0) assign  wS_MOD   = opcode == 7'd32; else assign  wS_MOD   = 1'b0; endgenerate
+wire    wMOD  ; generate if ((MOD) != 0) begin : dec_wmod assign wMOD = opcode == 7'd31; end else begin : dec_wmod assign wMOD = 1'b0; end endgenerate
+wire  wS_MOD  ; generate if ((S_MOD) != 0) begin : dec_ws_mod assign wS_MOD = opcode == 7'd32; end else begin : dec_ws_mod assign wS_MOD = 1'b0; end endgenerate
 
-wire    wSGN  ; generate if ((SGN) != 0) assign    wSGN   = opcode == 7'd33; else assign    wSGN   = 1'b0; endgenerate
-wire  wS_SGN  ; generate if ((S_SGN) != 0) assign  wS_SGN   = opcode == 7'd34; else assign  wS_SGN   = 1'b0; endgenerate
-wire  wF_SGN  ; generate if ((F_SGN) != 0) assign  wF_SGN   = opcode == 7'd35; else assign  wF_SGN   = 1'b0; endgenerate
-wire wSF_SGN  ; generate if ((SF_SGN) != 0) assign wSF_SGN   = opcode == 7'd36; else assign wSF_SGN   = 1'b0; endgenerate
+wire    wSGN  ; generate if ((SGN) != 0) begin : dec_wsgn assign wSGN = opcode == 7'd33; end else begin : dec_wsgn assign wSGN = 1'b0; end endgenerate
+wire  wS_SGN  ; generate if ((S_SGN) != 0) begin : dec_ws_sgn assign wS_SGN = opcode == 7'd34; end else begin : dec_ws_sgn assign wS_SGN = 1'b0; end endgenerate
+wire  wF_SGN  ; generate if ((F_SGN) != 0) begin : dec_wf_sgn assign wF_SGN = opcode == 7'd35; end else begin : dec_wf_sgn assign wF_SGN = 1'b0; end endgenerate
+wire wSF_SGN  ; generate if ((SF_SGN) != 0) begin : dec_wsf_sgn assign wSF_SGN = opcode == 7'd36; end else begin : dec_wsf_sgn assign wSF_SGN = 1'b0; end endgenerate
 
 // one-parameter arithmetic operations ----------------------------------------
 
-wire    wNEG  ; generate if ((NEG) != 0) assign    wNEG   = opcode == 7'd37; else assign    wNEG   = 1'b0; endgenerate
-wire    wNEG_M; generate if ((NEG_M) != 0) assign    wNEG_M = opcode == 7'd38; else assign    wNEG_M = 1'b0; endgenerate
-wire  wP_NEG_M; generate if ((P_NEG_M) != 0) assign  wP_NEG_M = opcode == 7'd39; else assign  wP_NEG_M = 1'b0; endgenerate
-wire  wF_NEG  ; generate if ((F_NEG) != 0) assign  wF_NEG   = opcode == 7'd40; else assign  wF_NEG   = 1'b0; endgenerate
-wire  wF_NEG_M; generate if ((F_NEG_M) != 0) assign  wF_NEG_M = opcode == 7'd41; else assign  wF_NEG_M = 1'b0; endgenerate
-wire wPF_NEG_M; generate if ((PF_NEG_M) != 0) assign wPF_NEG_M = opcode == 7'd42; else assign wPF_NEG_M = 1'b0; endgenerate
+wire    wNEG  ; generate if ((NEG) != 0) begin : dec_wneg assign wNEG = opcode == 7'd37; end else begin : dec_wneg assign wNEG = 1'b0; end endgenerate
+wire    wNEG_M; generate if ((NEG_M) != 0) begin : dec_wneg_m assign wNEG_M = opcode == 7'd38; end else begin : dec_wneg_m assign wNEG_M = 1'b0; end endgenerate
+wire  wP_NEG_M; generate if ((P_NEG_M) != 0) begin : dec_wp_neg_m assign wP_NEG_M = opcode == 7'd39; end else begin : dec_wp_neg_m assign wP_NEG_M = 1'b0; end endgenerate
+wire  wF_NEG  ; generate if ((F_NEG) != 0) begin : dec_wf_neg assign wF_NEG = opcode == 7'd40; end else begin : dec_wf_neg assign wF_NEG = 1'b0; end endgenerate
+wire  wF_NEG_M; generate if ((F_NEG_M) != 0) begin : dec_wf_neg_m assign wF_NEG_M = opcode == 7'd41; end else begin : dec_wf_neg_m assign wF_NEG_M = 1'b0; end endgenerate
+wire wPF_NEG_M; generate if ((PF_NEG_M) != 0) begin : dec_wpf_neg_m assign wPF_NEG_M = opcode == 7'd42; end else begin : dec_wpf_neg_m assign wPF_NEG_M = 1'b0; end endgenerate
 
-wire    wABS  ; generate if ((ABS) != 0) assign    wABS   = opcode == 7'd43; else assign    wABS   = 1'b0; endgenerate
-wire    wABS_M; generate if ((ABS_M) != 0) assign    wABS_M = opcode == 7'd44; else assign    wABS_M = 1'b0; endgenerate
-wire  wP_ABS_M; generate if ((P_ABS_M) != 0) assign  wP_ABS_M = opcode == 7'd45; else assign  wP_ABS_M = 1'b0; endgenerate
-wire  wF_ABS  ; generate if ((F_ABS) != 0) assign  wF_ABS   = opcode == 7'd46; else assign  wF_ABS   = 1'b0; endgenerate
-wire  wF_ABS_M; generate if ((F_ABS_M) != 0) assign  wF_ABS_M = opcode == 7'd47; else assign  wF_ABS_M = 1'b0; endgenerate
-wire wPF_ABS_M; generate if ((PF_ABS_M) != 0) assign wPF_ABS_M = opcode == 7'd48; else assign wPF_ABS_M = 1'b0; endgenerate
+wire    wABS  ; generate if ((ABS) != 0) begin : dec_wabs assign wABS = opcode == 7'd43; end else begin : dec_wabs assign wABS = 1'b0; end endgenerate
+wire    wABS_M; generate if ((ABS_M) != 0) begin : dec_wabs_m assign wABS_M = opcode == 7'd44; end else begin : dec_wabs_m assign wABS_M = 1'b0; end endgenerate
+wire  wP_ABS_M; generate if ((P_ABS_M) != 0) begin : dec_wp_abs_m assign wP_ABS_M = opcode == 7'd45; end else begin : dec_wp_abs_m assign wP_ABS_M = 1'b0; end endgenerate
+wire  wF_ABS  ; generate if ((F_ABS) != 0) begin : dec_wf_abs assign wF_ABS = opcode == 7'd46; end else begin : dec_wf_abs assign wF_ABS = 1'b0; end endgenerate
+wire  wF_ABS_M; generate if ((F_ABS_M) != 0) begin : dec_wf_abs_m assign wF_ABS_M = opcode == 7'd47; end else begin : dec_wf_abs_m assign wF_ABS_M = 1'b0; end endgenerate
+wire wPF_ABS_M; generate if ((PF_ABS_M) != 0) begin : dec_wpf_abs_m assign wPF_ABS_M = opcode == 7'd48; end else begin : dec_wpf_abs_m assign wPF_ABS_M = 1'b0; end endgenerate
 
-wire    wPST  ; generate if ((PST) != 0) assign    wPST   = opcode == 7'd49; else assign    wPST   = 1'b0; endgenerate
-wire    wPST_M; generate if ((PST_M) != 0) assign    wPST_M = opcode == 7'd50; else assign    wPST_M = 1'b0; endgenerate
-wire  wP_PST_M; generate if ((P_PST_M) != 0) assign  wP_PST_M = opcode == 7'd51; else assign  wP_PST_M = 1'b0; endgenerate
-wire  wF_PST  ; generate if ((F_PST) != 0) assign  wF_PST   = opcode == 7'd52; else assign  wF_PST   = 1'b0; endgenerate
-wire  wF_PST_M; generate if ((F_PST_M) != 0) assign  wF_PST_M = opcode == 7'd53; else assign  wF_PST_M = 1'b0; endgenerate
-wire wPF_PST_M; generate if ((PF_PST_M) != 0) assign wPF_PST_M = opcode == 7'd54; else assign wPF_PST_M = 1'b0; endgenerate
+wire    wPST  ; generate if ((PST) != 0) begin : dec_wpst assign wPST = opcode == 7'd49; end else begin : dec_wpst assign wPST = 1'b0; end endgenerate
+wire    wPST_M; generate if ((PST_M) != 0) begin : dec_wpst_m assign wPST_M = opcode == 7'd50; end else begin : dec_wpst_m assign wPST_M = 1'b0; end endgenerate
+wire  wP_PST_M; generate if ((P_PST_M) != 0) begin : dec_wp_pst_m assign wP_PST_M = opcode == 7'd51; end else begin : dec_wp_pst_m assign wP_PST_M = 1'b0; end endgenerate
+wire  wF_PST  ; generate if ((F_PST) != 0) begin : dec_wf_pst assign wF_PST = opcode == 7'd52; end else begin : dec_wf_pst assign wF_PST = 1'b0; end endgenerate
+wire  wF_PST_M; generate if ((F_PST_M) != 0) begin : dec_wf_pst_m assign wF_PST_M = opcode == 7'd53; end else begin : dec_wf_pst_m assign wF_PST_M = 1'b0; end endgenerate
+wire wPF_PST_M; generate if ((PF_PST_M) != 0) begin : dec_wpf_pst_m assign wPF_PST_M = opcode == 7'd54; end else begin : dec_wpf_pst_m assign wPF_PST_M = 1'b0; end endgenerate
 
-wire    wNRM  ; generate if ((NRM) != 0) assign    wNRM   = opcode == 7'd55; else assign    wNRM   = 1'b0; endgenerate
-wire    wNRM_M; generate if ((NRM_M) != 0) assign    wNRM_M = opcode == 7'd56; else assign    wNRM_M = 1'b0; endgenerate
-wire  wP_NRM_M; generate if ((P_NRM_M) != 0) assign  wP_NRM_M = opcode == 7'd57; else assign  wP_NRM_M = 1'b0; endgenerate
+wire    wNRM  ; generate if ((NRM) != 0) begin : dec_wnrm assign wNRM = opcode == 7'd55; end else begin : dec_wnrm assign wNRM = 1'b0; end endgenerate
+wire    wNRM_M; generate if ((NRM_M) != 0) begin : dec_wnrm_m assign wNRM_M = opcode == 7'd56; end else begin : dec_wnrm_m assign wNRM_M = 1'b0; end endgenerate
+wire  wP_NRM_M; generate if ((P_NRM_M) != 0) begin : dec_wp_nrm_m assign wP_NRM_M = opcode == 7'd57; end else begin : dec_wp_nrm_m assign wP_NRM_M = 1'b0; end endgenerate
 
-wire    wI2F  ; generate if ((I2F) != 0) assign    wI2F   = opcode == 7'd58; else assign    wI2F   = 1'b0; endgenerate
-wire    wI2F_M; generate if ((I2F_M) != 0) assign    wI2F_M = opcode == 7'd59; else assign    wI2F_M = 1'b0; endgenerate
-wire  wP_I2F_M; generate if ((P_I2F_M) != 0) assign  wP_I2F_M = opcode == 7'd60; else assign  wP_I2F_M = 1'b0; endgenerate
+wire    wI2F  ; generate if ((I2F) != 0) begin : dec_wi2f assign wI2F = opcode == 7'd58; end else begin : dec_wi2f assign wI2F = 1'b0; end endgenerate
+wire    wI2F_M; generate if ((I2F_M) != 0) begin : dec_wi2f_m assign wI2F_M = opcode == 7'd59; end else begin : dec_wi2f_m assign wI2F_M = 1'b0; end endgenerate
+wire  wP_I2F_M; generate if ((P_I2F_M) != 0) begin : dec_wp_i2f_m assign wP_I2F_M = opcode == 7'd60; end else begin : dec_wp_i2f_m assign wP_I2F_M = 1'b0; end endgenerate
 
-wire    wF2I  ; generate if ((F2I) != 0) assign    wF2I   = opcode == 7'd61; else assign    wF2I   = 1'b0; endgenerate
-wire    wF2I_M; generate if ((F2I_M) != 0) assign    wF2I_M = opcode == 7'd62; else assign    wF2I_M = 1'b0; endgenerate
-wire  wP_F2I_M; generate if ((P_F2I_M) != 0) assign  wP_F2I_M = opcode == 7'd63; else assign  wP_F2I_M = 1'b0; endgenerate
+wire    wF2I  ; generate if ((F2I) != 0) begin : dec_wf2i assign wF2I = opcode == 7'd61; end else begin : dec_wf2i assign wF2I = 1'b0; end endgenerate
+wire    wF2I_M; generate if ((F2I_M) != 0) begin : dec_wf2i_m assign wF2I_M = opcode == 7'd62; end else begin : dec_wf2i_m assign wF2I_M = 1'b0; end endgenerate
+wire  wP_F2I_M; generate if ((P_F2I_M) != 0) begin : dec_wp_f2i_m assign wP_F2I_M = opcode == 7'd63; end else begin : dec_wp_f2i_m assign wP_F2I_M = 1'b0; end endgenerate
 
 // two-parameter logical operations -------------------------------------------
 
-wire    wAND  ; generate if ((AND) != 0) assign    wAND   = opcode == 7'd64; else assign    wAND   = 1'b0; endgenerate
-wire  wS_AND  ; generate if ((S_AND) != 0) assign  wS_AND   = opcode == 7'd65; else assign  wS_AND   = 1'b0; endgenerate
+wire    wAND  ; generate if ((AND) != 0) begin : dec_wand assign wAND = opcode == 7'd64; end else begin : dec_wand assign wAND = 1'b0; end endgenerate
+wire  wS_AND  ; generate if ((S_AND) != 0) begin : dec_ws_and assign wS_AND = opcode == 7'd65; end else begin : dec_ws_and assign wS_AND = 1'b0; end endgenerate
 
-wire    wORR  ; generate if ((ORR) != 0) assign    wORR   = opcode == 7'd66; else assign    wORR   = 1'b0; endgenerate
-wire  wS_ORR  ; generate if ((S_ORR) != 0) assign  wS_ORR   = opcode == 7'd67; else assign  wS_ORR   = 1'b0; endgenerate
+wire    wORR  ; generate if ((ORR) != 0) begin : dec_worr assign wORR = opcode == 7'd66; end else begin : dec_worr assign wORR = 1'b0; end endgenerate
+wire  wS_ORR  ; generate if ((S_ORR) != 0) begin : dec_ws_orr assign wS_ORR = opcode == 7'd67; end else begin : dec_ws_orr assign wS_ORR = 1'b0; end endgenerate
 
-wire    wXOR  ; generate if ((XOR) != 0) assign    wXOR   = opcode == 7'd68; else assign    wXOR   = 1'b0; endgenerate
-wire  wS_XOR  ; generate if ((S_XOR) != 0) assign  wS_XOR   = opcode == 7'd69; else assign  wS_XOR   = 1'b0; endgenerate
+wire    wXOR  ; generate if ((XOR) != 0) begin : dec_wxor assign wXOR = opcode == 7'd68; end else begin : dec_wxor assign wXOR = 1'b0; end endgenerate
+wire  wS_XOR  ; generate if ((S_XOR) != 0) begin : dec_ws_xor assign wS_XOR = opcode == 7'd69; end else begin : dec_ws_xor assign wS_XOR = 1'b0; end endgenerate
 
 // one-parameter logical operations -------------------------------------------
 
-wire    wINV  ; generate if ((INV) != 0) assign    wINV   = opcode == 7'd70; else assign    wINV   = 1'b0; endgenerate
-wire    wINV_M; generate if ((INV_M) != 0) assign    wINV_M = opcode == 7'd71; else assign    wINV_M = 1'b0; endgenerate
-wire  wP_INV_M; generate if ((P_INV_M) != 0) assign  wP_INV_M = opcode == 7'd72; else assign  wP_INV_M = 1'b0; endgenerate
+wire    wINV  ; generate if ((INV) != 0) begin : dec_winv assign wINV = opcode == 7'd70; end else begin : dec_winv assign wINV = 1'b0; end endgenerate
+wire    wINV_M; generate if ((INV_M) != 0) begin : dec_winv_m assign wINV_M = opcode == 7'd71; end else begin : dec_winv_m assign wINV_M = 1'b0; end endgenerate
+wire  wP_INV_M; generate if ((P_INV_M) != 0) begin : dec_wp_inv_m assign wP_INV_M = opcode == 7'd72; end else begin : dec_wp_inv_m assign wP_INV_M = 1'b0; end endgenerate
 
 // two-parameter conditional operations ---------------------------------------
 
-wire    wLAN  ; generate if ((LAN) != 0) assign    wLAN   = opcode == 7'd73; else assign    wLAN   = 1'b0; endgenerate
-wire  wS_LAN  ; generate if ((S_LAN) != 0) assign  wS_LAN   = opcode == 7'd74; else assign  wS_LAN   = 1'b0; endgenerate
+wire    wLAN  ; generate if ((LAN) != 0) begin : dec_wlan assign wLAN = opcode == 7'd73; end else begin : dec_wlan assign wLAN = 1'b0; end endgenerate
+wire  wS_LAN  ; generate if ((S_LAN) != 0) begin : dec_ws_lan assign wS_LAN = opcode == 7'd74; end else begin : dec_ws_lan assign wS_LAN = 1'b0; end endgenerate
 
-wire    wLOR  ; generate if ((LOR) != 0) assign    wLOR   = opcode == 7'd75; else assign    wLOR   = 1'b0; endgenerate
-wire  wS_LOR  ; generate if ((S_LOR) != 0) assign  wS_LOR   = opcode == 7'd76; else assign  wS_LOR   = 1'b0; endgenerate
+wire    wLOR  ; generate if ((LOR) != 0) begin : dec_wlor assign wLOR = opcode == 7'd75; end else begin : dec_wlor assign wLOR = 1'b0; end endgenerate
+wire  wS_LOR  ; generate if ((S_LOR) != 0) begin : dec_ws_lor assign wS_LOR = opcode == 7'd76; end else begin : dec_ws_lor assign wS_LOR = 1'b0; end endgenerate
 
 // one-parameter conditional operations ---------------------------------------
 
-wire    wLIN  ; generate if ((LIN) != 0) assign    wLIN   = opcode == 7'd77; else assign    wLIN   = 1'b0; endgenerate
-wire    wLIN_M; generate if ((LIN_M) != 0) assign    wLIN_M = opcode == 7'd78; else assign    wLIN_M = 1'b0; endgenerate
-wire  wP_LIN_M; generate if ((P_LIN_M) != 0) assign  wP_LIN_M = opcode == 7'd79; else assign  wP_LIN_M = 1'b0; endgenerate
+wire    wLIN  ; generate if ((LIN) != 0) begin : dec_wlin assign wLIN = opcode == 7'd77; end else begin : dec_wlin assign wLIN = 1'b0; end endgenerate
+wire    wLIN_M; generate if ((LIN_M) != 0) begin : dec_wlin_m assign wLIN_M = opcode == 7'd78; end else begin : dec_wlin_m assign wLIN_M = 1'b0; end endgenerate
+wire  wP_LIN_M; generate if ((P_LIN_M) != 0) begin : dec_wp_lin_m assign wP_LIN_M = opcode == 7'd79; end else begin : dec_wp_lin_m assign wP_LIN_M = 1'b0; end endgenerate
 
 // comparison operations ------------------------------------------------------
 
-wire    wLES  ; generate if ((LES) != 0) assign    wLES   = opcode == 7'd80; else assign    wLES   = 1'b0; endgenerate
-wire  wS_LES  ; generate if ((S_LES) != 0) assign  wS_LES   = opcode == 7'd81; else assign  wS_LES   = 1'b0; endgenerate
-wire  wF_LES  ; generate if ((F_LES) != 0) assign  wF_LES   = opcode == 7'd82; else assign  wF_LES   = 1'b0; endgenerate
-wire wSF_LES  ; generate if ((SF_LES) != 0) assign wSF_LES   = opcode == 7'd83; else assign wSF_LES   = 1'b0; endgenerate
+wire    wLES  ; generate if ((LES) != 0) begin : dec_wles assign wLES = opcode == 7'd80; end else begin : dec_wles assign wLES = 1'b0; end endgenerate
+wire  wS_LES  ; generate if ((S_LES) != 0) begin : dec_ws_les assign wS_LES = opcode == 7'd81; end else begin : dec_ws_les assign wS_LES = 1'b0; end endgenerate
+wire  wF_LES  ; generate if ((F_LES) != 0) begin : dec_wf_les assign wF_LES = opcode == 7'd82; end else begin : dec_wf_les assign wF_LES = 1'b0; end endgenerate
+wire wSF_LES  ; generate if ((SF_LES) != 0) begin : dec_wsf_les assign wSF_LES = opcode == 7'd83; end else begin : dec_wsf_les assign wSF_LES = 1'b0; end endgenerate
 
-wire    wGRE  ; generate if ((GRE) != 0) assign    wGRE   = opcode == 7'd84; else assign    wGRE   = 1'b0; endgenerate
-wire  wS_GRE  ; generate if ((S_GRE) != 0) assign  wS_GRE   = opcode == 7'd85; else assign  wS_GRE   = 1'b0; endgenerate
-wire  wF_GRE  ; generate if ((F_GRE) != 0) assign  wF_GRE   = opcode == 7'd86; else assign  wF_GRE   = 1'b0; endgenerate
-wire wSF_GRE  ; generate if ((SF_GRE) != 0) assign wSF_GRE   = opcode == 7'd87; else assign wSF_GRE   = 1'b0; endgenerate
+wire    wGRE  ; generate if ((GRE) != 0) begin : dec_wgre assign wGRE = opcode == 7'd84; end else begin : dec_wgre assign wGRE = 1'b0; end endgenerate
+wire  wS_GRE  ; generate if ((S_GRE) != 0) begin : dec_ws_gre assign wS_GRE = opcode == 7'd85; end else begin : dec_ws_gre assign wS_GRE = 1'b0; end endgenerate
+wire  wF_GRE  ; generate if ((F_GRE) != 0) begin : dec_wf_gre assign wF_GRE = opcode == 7'd86; end else begin : dec_wf_gre assign wF_GRE = 1'b0; end endgenerate
+wire wSF_GRE  ; generate if ((SF_GRE) != 0) begin : dec_wsf_gre assign wSF_GRE = opcode == 7'd87; end else begin : dec_wsf_gre assign wSF_GRE = 1'b0; end endgenerate
 
-wire    wEQU  ; generate if ((EQU) != 0) assign    wEQU   = opcode == 7'd88; else assign    wEQU   = 1'b0; endgenerate
-wire  wS_EQU  ; generate if ((S_EQU) != 0) assign  wS_EQU   = opcode == 7'd89; else assign  wS_EQU   = 1'b0; endgenerate
+wire    wEQU  ; generate if ((EQU) != 0) begin : dec_wequ assign wEQU = opcode == 7'd88; end else begin : dec_wequ assign wEQU = 1'b0; end endgenerate
+wire  wS_EQU  ; generate if ((S_EQU) != 0) begin : dec_ws_equ assign wS_EQU = opcode == 7'd89; end else begin : dec_ws_equ assign wS_EQU = 1'b0; end endgenerate
 
 // bit-shift operations -------------------------------------------------------
 
-wire    wSHL  ; generate if ((SHL) != 0) assign    wSHL   = opcode == 7'd90; else assign    wSHL   = 1'b0; endgenerate
-wire  wS_SHL  ; generate if ((S_SHL) != 0) assign  wS_SHL   = opcode == 7'd91; else assign  wS_SHL   = 1'b0; endgenerate
+wire    wSHL  ; generate if ((SHL) != 0) begin : dec_wshl assign wSHL = opcode == 7'd90; end else begin : dec_wshl assign wSHL = 1'b0; end endgenerate
+wire  wS_SHL  ; generate if ((S_SHL) != 0) begin : dec_ws_shl assign wS_SHL = opcode == 7'd91; end else begin : dec_ws_shl assign wS_SHL = 1'b0; end endgenerate
 
-wire    wSHR  ; generate if ((SHR) != 0) assign    wSHR   = opcode == 7'd92; else assign    wSHR   = 1'b0; endgenerate
-wire  wS_SHR  ; generate if ((S_SHR) != 0) assign  wS_SHR   = opcode == 7'd93; else assign  wS_SHR   = 1'b0; endgenerate
+wire    wSHR  ; generate if ((SHR) != 0) begin : dec_wshr assign wSHR = opcode == 7'd92; end else begin : dec_wshr assign wSHR = 1'b0; end endgenerate
+wire  wS_SHR  ; generate if ((S_SHR) != 0) begin : dec_ws_shr assign wS_SHR = opcode == 7'd93; end else begin : dec_ws_shr assign wS_SHR = 1'b0; end endgenerate
 
-wire    wSRS  ; generate if ((SRS) != 0) assign    wSRS   = opcode == 7'd94; else assign    wSRS   = 1'b0; endgenerate
-wire  wS_SRS  ; generate if ((S_SRS) != 0) assign  wS_SRS   = opcode == 7'd95; else assign  wS_SRS   = 1'b0; endgenerate
+wire    wSRS  ; generate if ((SRS) != 0) begin : dec_wsrs assign wSRS = opcode == 7'd94; end else begin : dec_wsrs assign wSRS = 1'b0; end endgenerate
+wire  wS_SRS  ; generate if ((S_SRS) != 0) begin : dec_ws_srs assign wS_SRS = opcode == 7'd95; end else begin : dec_ws_srs assign wS_SRS = 1'b0; end endgenerate
 
 // special operations (skips NOP) ---------------------------------------------
 
-wire  wF_ROT  ; generate if ((F_ROT) != 0) assign  wF_ROT   = opcode == 7'd97;  else assign   wF_ROT  = 1'b0; endgenerate
-wire  wF_SU1  ; generate if ((F_SU1) != 0) assign  wF_SU1   = opcode == 7'd98;  else assign   wF_SU1  = 1'b0; endgenerate
-wire  wF_SU2  ; generate if ((F_SU2) != 0) assign  wF_SU2   = opcode == 7'd99;  else assign   wF_SU2  = 1'b0; endgenerate
-wire wSF_SU1  ; generate if ((SF_SU1) != 0) assign wSF_SU1   = opcode == 7'd100; else assign  wSF_SU1  = 1'b0; endgenerate
-wire wSF_SU2  ; generate if ((SF_SU2) != 0) assign wSF_SU2   = opcode == 7'd101; else assign  wSF_SU2  = 1'b0; endgenerate
+wire  wF_ROT  ; generate if ((F_ROT) != 0) begin : dec_wf_rot assign wF_ROT = opcode == 7'd97; end else begin : dec_wf_rot assign wF_ROT = 1'b0; end endgenerate
+wire  wF_SU1  ; generate if ((F_SU1) != 0) begin : dec_wf_su1 assign wF_SU1 = opcode == 7'd98; end else begin : dec_wf_su1 assign wF_SU1 = 1'b0; end endgenerate
+wire  wF_SU2  ; generate if ((F_SU2) != 0) begin : dec_wf_su2 assign wF_SU2 = opcode == 7'd99; end else begin : dec_wf_su2 assign wF_SU2 = 1'b0; end endgenerate
+wire wSF_SU1  ; generate if ((SF_SU1) != 0) begin : dec_wsf_su1 assign wSF_SU1 = opcode == 7'd100; end else begin : dec_wsf_su1 assign wSF_SU1 = 1'b0; end endgenerate
+wire wSF_SU2  ; generate if ((SF_SU2) != 0) begin : dec_wsf_su2 assign wSF_SU2 = opcode == 7'd101; end else begin : dec_wsf_su2 assign wSF_SU2 = 1'b0; end endgenerate
 
 // base-less indirect addressing ----------------------------------------------
 
-wire    wLDA  ; generate if ((LDA) != 0) assign    wLDA   = opcode == 7'd102; else assign    wLDA   = 1'b0; endgenerate
-wire    wSTA  ; generate if ((STA) != 0) assign    wSTA   = opcode == 7'd103; else assign    wSTA   = 1'b0; endgenerate
+wire    wLDA  ; generate if ((LDA) != 0) begin : dec_wlda assign wLDA = opcode == 7'd102; end else begin : dec_wlda assign wLDA = 1'b0; end endgenerate
+wire    wSTA  ; generate if ((STA) != 0) begin : dec_wsta assign wSTA = opcode == 7'd103; end else begin : dec_wsta assign wSTA = 1'b0; end endgenerate
 
 // ----------------------------------------------------------------------------
 // control circuits -----------------------------------------------------------
@@ -336,186 +336,56 @@ wire    wSTA  ; generate if ((STA) != 0) assign    wSTA   = opcode == 7'd103; el
 
 // data input control circuit -------------------------------------------------
 
-generate if ((INN | F_INN | P_INN | PF_INN) != 0) assign req_in = wINN | wF_INN | wP_INN | wPF_INN; else assign req_in = 1'b0; endgenerate
+generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : dec_req_in assign req_in = wINN | wF_INN | wP_INN | wPF_INN; end else begin : dec_req_in assign req_in = 1'b0; end endgenerate
 
 // data output control circuit ------------------------------------------------
 
-generate if ((OUT) != 0) assign out_en = wOUT; else assign out_en = 1'b0; endgenerate
+generate if ((OUT) != 0) begin : dec_out_en assign out_en = wOUT; end else begin : dec_out_en assign out_en = 1'b0; end endgenerate
 
 // indirect addressing control circuits ---------------------------------------
 
-generate if ((LDI | ILI) != 0) assign ldi = wLDI |  wILI; else assign ldi = 1'b0; endgenerate
-generate if ((STI | ISI) != 0) assign sti = wSTI |  wISI; else assign sti = 1'b0; endgenerate
-generate if ((ILI | ISI) != 0) assign fft = wILI |  wISI; else assign fft = 1'b0; endgenerate
+generate if ((LDI | ILI) != 0) begin : dec_ldi assign ldi = wLDI | wILI; end else begin : dec_ldi assign ldi = 1'b0; end endgenerate
+generate if ((STI | ISI) != 0) begin : dec_sti assign sti = wSTI | wISI; end else begin : dec_sti assign sti = 1'b0; end endgenerate
+generate if ((ILI | ISI) != 0) begin : dec_fft assign fft = wILI | wISI; end else begin : dec_fft assign fft = 1'b0; end endgenerate
 
 // base-less indirect addressing control --------------------------------------
 
-generate if ((LDA) != 0) assign lda = wLDA; else assign lda = 1'b0; endgenerate
-generate if ((STA) != 0) assign sta = wSTA; else assign sta = 1'b0; endgenerate
+generate if ((LDA) != 0) begin : dec_lda assign lda = wLDA; end else begin : dec_lda assign lda = 1'b0; end endgenerate
+generate if ((STA) != 0) begin : dec_sta assign sta = wSTA; end else begin : dec_sta assign sta = 1'b0; end endgenerate
 
 // memory write control circuit -----------------------------------------------
 
-generate if ((SET | SET_P | STI | ISI | STA) != 0) assign mem_wr = wSET | wSET_P | wSTI | wISI | wSTA; else assign mem_wr = 1'b0; endgenerate
+generate if ((SET | SET_P | STI | ISI | STA) != 0) begin : dec_mem_wr assign mem_wr = wSET | wSET_P | wSTI | wISI | wSTA; end else begin : dec_mem_wr assign mem_wr = 1'b0; end endgenerate
 
 // data-stack write control circuit -------------------------------------------
 
-generate
-if (                P_LOD   |     PSH   |  P_INN   |  PF_INN   |  P_NEG_M |  PF_NEG_M |  P_ABS_M |  PF_ABS_M |
-                    P_PST_M |  PF_PST_M |  P_NRM_M |   P_I2F_M |  P_F2I_M |   P_INV_M |  P_LIN_M )
-     assign push = wP_LOD   |    wPSH   | wP_INN   | wPF_INN   | wP_NEG_M | wPF_NEG_M | wP_ABS_M | wPF_ABS_M |
-	               wP_PST_M | wPF_PST_M | wP_NRM_M |  wP_I2F_M | wP_F2I_M |  wP_INV_M | wP_LIN_M ;
-else assign push = 1'b0;
-endgenerate
+generate if (P_LOD | PSH | P_INN | PF_INN | P_NEG_M | PF_NEG_M | P_ABS_M | PF_ABS_M | P_PST_M | PF_PST_M | P_NRM_M | P_I2F_M | P_F2I_M | P_INV_M | P_LIN_M) begin : dec_push assign push = wP_LOD | wPSH | wP_INN | wPF_INN | wP_NEG_M | wPF_NEG_M | wP_ABS_M | wPF_ABS_M | wP_PST_M | wPF_PST_M | wP_NRM_M | wP_I2F_M | wP_F2I_M | wP_INV_M | wP_LIN_M; end else begin : dec_push assign push = 1'b0; end endgenerate
 
 // data-stack read control circuit --------------------------------------------
 
-generate
-if (               SET_P |    STI |     ISI |    POP |  S_ADD |  SF_ADD |   S_MLT |
-                SF_MLT   |  S_DIV |  SF_DIV |  S_MOD |  S_SGN |  SF_SGN |   S_AND |
-				 S_ORR   |  S_XOR |   S_LAN |  S_LOR |  S_LES |  SF_LES |   S_GRE |
-				SF_GRE   |  S_EQU |   S_SHL |  S_SHR |  S_SRS |  SF_SU1 |  SF_SU2 |
-                  STA    )
-     assign pop = wSET_P |   wSTI |    wISI |   wPOP | wS_ADD | wSF_ADD |  wS_MLT |
-	           wSF_MLT   | wS_DIV | wSF_DIV | wS_MOD | wS_SGN | wSF_SGN |  wS_AND |
-				wS_ORR   | wS_XOR |  wS_LAN | wS_LOR | wS_LES | wSF_LES |  wS_GRE |
-			   wSF_GRE   | wS_EQU |  wS_SHL | wS_SHR | wS_SRS | wSF_SU1 | wSF_SU2 |
-			      wSTA   ;
-else assign pop = 1'b0   ;
-endgenerate
+generate if (SET_P | STI | ISI | POP | S_ADD | SF_ADD | S_MLT | SF_MLT | S_DIV | SF_DIV | S_MOD | S_SGN | SF_SGN | S_AND | S_ORR | S_XOR | S_LAN | S_LOR | S_LES | SF_LES | S_GRE | SF_GRE | S_EQU | S_SHL | S_SHR | S_SRS | SF_SU1 | SF_SU2 | STA) begin : dec_pop assign pop = wSET_P | wSTI | wISI | wPOP | wS_ADD | wSF_ADD | wS_MLT | wSF_MLT | wS_DIV | wSF_DIV | wS_MOD | wS_SGN | wSF_SGN | wS_AND | wS_ORR | wS_XOR | wS_LAN | wS_LOR | wS_LES | wSF_LES | wS_GRE | wSF_GRE | wS_EQU | wS_SHL | wS_SHR | wS_SRS | wSF_SU1 | wSF_SU2 | wSTA; end else begin : dec_pop assign pop = 1'b0; end endgenerate
 
 // ALU operations control circuit ---------------------------------------------
 
 wire b5,b4,b3,b2,b1,b0;
 
 // logic for b5
-generate
-if (              INV |    INV_M |  P_INV_M |     LAN |   S_LAN |    LOR |  S_LOR |     LIN |    LIN_M |  P_LIN_M |
-                  LES |  S_LES   |  F_LES   |  SF_LES |     GRE |  S_GRE |  F_GRE |  SF_GRE |    EQU   |  S_EQU   |
-                  SHL |  S_SHL   |    SHR   |   S_SHR |     SRS |  S_SRS |
-                F_ROT |  F_SU1   |  F_SU2   |  SF_SU1 |  SF_SU2 )
-
-     assign b5 = wINV |   wINV_M | wP_INV_M |    wLAN |  wS_LAN |   wLOR | wS_LOR |    wLIN |   wLIN_M | wP_LIN_M |
-                 wLES | wS_LES   | wF_LES   | wSF_LES |    wGRE | wS_GRE | wF_GRE | wSF_GRE |   wEQU   | wS_EQU   |
-                 wSHL | wS_SHL   |   wSHR   |  wS_SHR |    wSRS | wS_SRS |
-               wF_ROT | wF_SU1   | wF_SU2   | wSF_SU1 | wSF_SU2 ;
-else assign b5 = 1'b0 ;
-endgenerate
+generate if (INV | INV_M | P_INV_M | LAN | S_LAN | LOR | S_LOR | LIN | LIN_M | P_LIN_M | LES | S_LES | F_LES | SF_LES | GRE | S_GRE | F_GRE | SF_GRE | EQU | S_EQU | SHL | S_SHL | SHR | S_SHR | SRS | S_SRS | F_ROT | F_SU1 | F_SU2 | SF_SU1 | SF_SU2) begin : dec_b5 assign b5 = wINV | wINV_M | wP_INV_M | wLAN | wS_LAN | wLOR | wS_LOR | wLIN | wLIN_M | wP_LIN_M | wLES | wS_LES | wF_LES | wSF_LES | wGRE | wS_GRE | wF_GRE | wSF_GRE | wEQU | wS_EQU | wSHL | wS_SHL | wSHR | wS_SHR | wSRS | wS_SRS | wF_ROT | wF_SU1 | wF_SU2 | wSF_SU1 | wSF_SU2; end else begin : dec_b5 assign b5 = 1'b0; end endgenerate
 
 // logic for b4
-generate
-if (              F_INN   |  PF_INN   |
-                    ABS_M |  P_ABS_M  |  F_ABS   |  F_ABS_M |  PF_ABS_M |
-                    PST   |    PST_M  |  P_PST_M |  F_PST   |  F_PST_M  |  PF_PST_M |
-                    NRM   |    NRM_M  |  P_NRM_M |
-                    I2F   |    I2F_M  |  P_I2F_M |    F2I   |    F2I_M  |   P_F2I_M |
-                    AND   |  S_AND    |    ORR   |  S_ORR   |    XOR    |   S_XOR   |
-                  F_SU2   | SF_SU2    )
-
-     assign b4 = wF_INN   | wPF_INN   |
-                   wABS_M |  wP_ABS_M | wF_ABS   | wF_ABS_M | wPF_ABS_M |
-                   wPST   |    wPST_M | wP_PST_M | wF_PST   |  wF_PST_M | wPF_PST_M |
-                   wNRM   |    wNRM_M | wP_NRM_M |
-                   wI2F   |    wI2F_M | wP_I2F_M |   wF2I   |    wF2I_M |  wP_F2I_M |
-                   wAND   |  wS_AND   |   wORR   | wS_ORR   |    wXOR   |  wS_XOR   |
-                 wF_SU2   | wSF_SU2   ;
-else assign b4 = 1'b0 ;
-endgenerate
+generate if (F_INN | PF_INN | ABS_M | P_ABS_M | F_ABS | F_ABS_M | PF_ABS_M | PST | PST_M | P_PST_M | F_PST | F_PST_M | PF_PST_M | NRM | NRM_M | P_NRM_M | I2F | I2F_M | P_I2F_M | F2I | F2I_M | P_F2I_M | AND | S_AND | ORR | S_ORR | XOR | S_XOR | F_SU2 | SF_SU2) begin : dec_b4 assign b4 = wF_INN | wPF_INN | wABS_M | wP_ABS_M | wF_ABS | wF_ABS_M | wPF_ABS_M | wPST | wPST_M | wP_PST_M | wF_PST | wF_PST_M | wPF_PST_M | wNRM | wNRM_M | wP_NRM_M | wI2F | wI2F_M | wP_I2F_M | wF2I | wF2I_M | wP_F2I_M | wAND | wS_AND | wORR | wS_ORR | wXOR | wS_XOR | wF_SU2 | wSF_SU2; end else begin : dec_b4 assign b4 = 1'b0; end endgenerate
 
 // logic for b3
-generate
-if               (F_INN | PF_INN    |
-                    MOD |  S_MOD    |    SGN    |   S_SGN |  F_SGN   |  SF_SGN   |
-                    NEG |    NEG_M  |   P_NEG_M |   F_NEG |  F_NEG_M |  PF_NEG_M |
-                    ABS |    NRM_M  |   P_NRM_M |
-                    I2F |    I2F_M  |   P_I2F_M |     F2I |    F2I_M |   P_F2I_M |
-                    AND |  S_AND    |     ORR   |   S_ORR |    XOR   |   S_XOR   |
-                    GRE |  S_GRE    |   F_GRE   |  SF_GRE |    EQU   |   S_EQU   |
-                    SHL |  S_SHL    |     SHR   |   S_SHR |    SRS   |   S_SRS   |
-                  F_ROT |  F_SU1    |  SF_SU1   )
-
-     assign b3 = wF_INN | wPF_INN   |
-                   wMOD |  wS_MOD   |    wSGN   |  wS_SGN | wF_SGN   | wSF_SGN   |
-                   wNEG |    wNEG_M |  wP_NEG_M |  wF_NEG | wF_NEG_M | wPF_NEG_M |
-                   wABS |    wNRM_M |  wP_NRM_M |
-                   wI2F |    wI2F_M |  wP_I2F_M |    wF2I |   wF2I_M |  wP_F2I_M |
-                   wAND |  wS_AND   |    wORR   |  wS_ORR |   wXOR   |  wS_XOR   |
-                   wGRE |  wS_GRE   |  wF_GRE   | wSF_GRE |   wEQU   |  wS_EQU   |
-                   wSHL |  wS_SHL   |    wSHR   |  wS_SHR |   wSRS   |  wS_SRS   |
-                 wF_ROT |  wF_SU1   | wSF_SU1   ;
-else assign b3 = 1'b0 ;
-endgenerate
+generate if (F_INN | PF_INN | MOD | S_MOD | SGN | S_SGN | F_SGN | SF_SGN | NEG | NEG_M | P_NEG_M | F_NEG | F_NEG_M | PF_NEG_M | ABS | NRM_M | P_NRM_M | I2F | I2F_M | P_I2F_M | F2I | F2I_M | P_F2I_M | AND | S_AND | ORR | S_ORR | XOR | S_XOR | GRE | S_GRE | F_GRE | SF_GRE | EQU | S_EQU | SHL | S_SHL | SHR | S_SHR | SRS | S_SRS | F_ROT | F_SU1 | SF_SU1) begin : dec_b3 assign b3 = wF_INN | wPF_INN | wMOD | wS_MOD | wSGN | wS_SGN | wF_SGN | wSF_SGN | wNEG | wNEG_M | wP_NEG_M | wF_NEG | wF_NEG_M | wPF_NEG_M | wABS | wNRM_M | wP_NRM_M | wI2F | wI2F_M | wP_I2F_M | wF2I | wF2I_M | wP_F2I_M | wAND | wS_AND | wORR | wS_ORR | wXOR | wS_XOR | wGRE | wS_GRE | wF_GRE | wSF_GRE | wEQU | wS_EQU | wSHL | wS_SHL | wSHR | wS_SHR | wSRS | wS_SRS | wF_ROT | wF_SU1 | wSF_SU1; end else begin : dec_b3 assign b3 = 1'b0; end endgenerate
 
 // logic for b2
-generate
-if (              MLT   | S_MLT    |   F_MLT   |  SF_MLT   |
-                  DIV   | S_DIV    |   F_DIV   |  SF_DIV   |
-                  NEG_M | P_NEG_M  |   F_NEG   |   F_NEG_M |  PF_NEG_M |   ABS |
-                  PST_M | P_PST_M  |   F_PST   |   F_PST_M |  PF_PST_M |   NRM |
-                  F2I_M | P_F2I_M  |
-                  AND   | S_AND    |     ORR   |   S_ORR   |     XOR   | S_XOR |
-                  LIN   |   LIN_M  |   P_LIN_M |     LES   |   S_LES   | F_LES |   SF_LES |
-                  SHR   | S_SHR    |     SRS   |   S_SRS   |
-                F_ROT   | F_SU1    |  SF_SU1   )
-
-     assign b2 = wMLT   | wS_MLT   |  wF_MLT   | wSF_MLT   |
-                 wDIV   | wS_DIV   |  wF_DIV   | wSF_DIV   |
-                 wNEG_M | wP_NEG_M |  wF_NEG   |  wF_NEG_M | wPF_NEG_M |   wABS |
-                 wPST_M | wP_PST_M |  wF_PST   |  wF_PST_M | wPF_PST_M |   wNRM |
-                 wF2I_M | wP_F2I_M |
-                 wAND   | wS_AND   |    wORR   |  wS_ORR   |    wXOR   | wS_XOR |
-                 wLIN   |   wLIN_M |  wP_LIN_M |    wLES   |  wS_LES   | wF_LES | wSF_LES |
-                 wSHR   | wS_SHR   |    wSRS   |  wS_SRS   |
-               wF_ROT   | wF_SU1   | wSF_SU1   ;
-else assign b2 = 1'b0 ;
-endgenerate
+generate if (MLT | S_MLT | F_MLT | SF_MLT | DIV | S_DIV | F_DIV | SF_DIV | NEG_M | P_NEG_M | F_NEG | F_NEG_M | PF_NEG_M | ABS | PST_M | P_PST_M | F_PST | F_PST_M | PF_PST_M | NRM | F2I_M | P_F2I_M | AND | S_AND | ORR | S_ORR | XOR | S_XOR | LIN | LIN_M | P_LIN_M | LES | S_LES | F_LES | SF_LES | SHR | S_SHR | SRS | S_SRS | F_ROT | F_SU1 | SF_SU1) begin : dec_b2 assign b2 = wMLT | wS_MLT | wF_MLT | wSF_MLT | wDIV | wS_DIV | wF_DIV | wSF_DIV | wNEG_M | wP_NEG_M | wF_NEG | wF_NEG_M | wPF_NEG_M | wABS | wPST_M | wP_PST_M | wF_PST | wF_PST_M | wPF_PST_M | wNRM | wF2I_M | wP_F2I_M | wAND | wS_AND | wORR | wS_ORR | wXOR | wS_XOR | wLIN | wLIN_M | wP_LIN_M | wLES | wS_LES | wF_LES | wSF_LES | wSHR | wS_SHR | wSRS | wS_SRS | wF_ROT | wF_SU1 | wSF_SU1; end else begin : dec_b2 assign b2 = 1'b0; end endgenerate
 
 // logic for b1
-generate
-if (              ADD |  S_ADD   |   F_ADD   |  SF_ADD   |
-                  DIV |  S_DIV   |   F_DIV   |  SF_DIV   |
-                                     F_SGN   |  SF_SGN   |
-                  NEG            |   F_NEG_M |  PF_NEG_M |
-                  ABS            |   F_ABS_M |  PF_ABS_M |
-                  PST            |   F_PST_M |  PF_PST_M |
-                  NRM |
-                                       I2F_M |   P_I2F_M |
-                  F2I |
-                  ORR |  S_ORR   |     XOR   |   S_XOR   |
-                  LAN |  S_LAN   |     LOR   |   S_LOR   |
-                  LES |  S_LES   |   F_LES   |  SF_LES   |
-                  EQU |  S_EQU   |     SHL   |   S_SHL   |
-                F_ROT |  F_SU1   |  SF_SU1   )
-
-     assign b1 = wADD | wS_ADD   |  wF_ADD   | wSF_ADD   |
-                 wDIV | wS_DIV   |  wF_DIV   | wSF_DIV   |
-                                    wF_SGN   | wSF_SGN   |
-                 wNEG            |  wF_NEG_M | wPF_NEG_M |
-                 wABS | wF_ABS_M | wPF_ABS_M |
-                 wPST | wF_PST_M | wPF_PST_M |
-                 wNRM |
-                                      wI2F_M |  wP_I2F_M |
-                 wF2I |
-                 wORR | wS_ORR   |    wXOR   |  wS_XOR   |
-                 wLAN | wS_LAN   |    wLOR   |  wS_LOR   |
-                 wLES | wS_LES   |  wF_LES   | wSF_LES   |
-                 wEQU | wS_EQU   |    wSHL   |  wS_SHL   |
-               wF_ROT | wF_SU1   | wSF_SU1   ;
-else assign b1 = 1'b0 ;
-endgenerate
+generate if (ADD | S_ADD | F_ADD | SF_ADD | DIV | S_DIV | F_DIV | SF_DIV | F_SGN | SF_SGN | NEG | F_NEG_M | PF_NEG_M | ABS | F_ABS_M | PF_ABS_M | PST | F_PST_M | PF_PST_M | NRM | I2F_M | P_I2F_M | F2I | ORR | S_ORR | XOR | S_XOR | LAN | S_LAN | LOR | S_LOR | LES | S_LES | F_LES | SF_LES | EQU | S_EQU | SHL | S_SHL | F_ROT | F_SU1 | SF_SU1) begin : dec_b1 assign b1 = wADD | wS_ADD | wF_ADD | wSF_ADD | wDIV | wS_DIV | wF_DIV | wSF_DIV | wF_SGN | wSF_SGN | wNEG | wF_NEG_M | wPF_NEG_M | wABS | wF_ABS_M | wPF_ABS_M | wPST | wF_PST_M | wPF_PST_M | wNRM | wI2F_M | wP_I2F_M | wF2I | wORR | wS_ORR | wXOR | wS_XOR | wLAN | wS_LAN | wLOR | wS_LOR | wLES | wS_LES | wF_LES | wSF_LES | wEQU | wS_EQU | wSHL | wS_SHL | wF_ROT | wF_SU1 | wSF_SU1; end else begin : dec_b1 assign b1 = 1'b0; end endgenerate
 
 // logic for b0
-generate
-if (              LOD |  P_LOD |  LDI   |    ILI   |    SET_P |     POP |  F_INN |  PF_INN |  F_ADD |  SF_ADD |  F_MLT |  SF_MLT |  F_DIV |  SF_DIV   |    SGN   |  S_SGN |
-                  NEG |  F_NEG |  ABS   |  F_ABS   |    PST   |   F_PST |    NRM |     I2F |    F2I |     AND |  S_AND |     XOR |  S_XOR |     INV_M |  P_INV_M |
-                  LOR |  S_LOR |  LIN_M |  P_LIN_M |  F_LES   |  SF_LES |  F_GRE |  SF_GRE |    SHL |   S_SHL |    SRS |   S_SRS |  F_SU1 |  SF_SU1   |
-                  LDA )
-
-     assign b0 = wLOD | wP_LOD | wLDI   |   wILI   |   wSET_P |    wPOP | wF_INN | wPF_INN | wF_ADD | wSF_ADD | wF_MLT | wSF_MLT | wF_DIV | wSF_DIV   |   wSGN   | wS_SGN |
-                 wNEG | wF_NEG | wABS   | wF_ABS   |   wPST   |  wF_PST |   wNRM |    wI2F |   wF2I |    wAND | wS_AND |    wXOR | wS_XOR |    wINV_M | wP_INV_M |
-                 wLOR | wS_LOR | wLIN_M | wP_LIN_M | wF_LES   | wSF_LES | wF_GRE | wSF_GRE |   wSHL |  wS_SHL |   wSRS |  wS_SRS | wF_SU1 | wSF_SU1   |
-                 wLDA ;
-else assign b0 = 1'b0 ;
-endgenerate
+generate if (LOD | P_LOD | LDI | ILI | SET_P | POP | F_INN | PF_INN | F_ADD | SF_ADD | F_MLT | SF_MLT | F_DIV | SF_DIV | SGN | S_SGN | NEG | F_NEG | ABS | F_ABS | PST | F_PST | NRM | I2F | F2I | AND | S_AND | XOR | S_XOR | INV_M | P_INV_M | LOR | S_LOR | LIN_M | P_LIN_M | F_LES | SF_LES | F_GRE | SF_GRE | SHL | S_SHL | SRS | S_SRS | F_SU1 | SF_SU1 | LDA) begin : dec_b0 assign b0 = wLOD | wP_LOD | wLDI | wILI | wSET_P | wPOP | wF_INN | wPF_INN | wF_ADD | wSF_ADD | wF_MLT | wSF_MLT | wF_DIV | wSF_DIV | wSGN | wS_SGN | wNEG | wF_NEG | wABS | wF_ABS | wPST | wF_PST | wNRM | wI2F | wF2I | wAND | wS_AND | wXOR | wS_XOR | wINV_M | wP_INV_M | wLOR | wS_LOR | wLIN_M | wP_LIN_M | wF_LES | wSF_LES | wF_GRE | wSF_GRE | wSHL | wS_SHL | wSRS | wS_SRS | wF_SU1 | wSF_SU1 | wLDA; end else begin : dec_b0 assign b0 = 1'b0; end endgenerate
 
 // combine logic into ula_op
 always @ (posedge clk) ula_op <= {b5,b4,b3,b2,b1,b0};
