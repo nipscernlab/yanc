@@ -74,13 +74,14 @@ Six binaries are produced from source — three compilers, two preprocessors, an
 | Binary       | Source dir   | Built with    | Role                                                |
 | ------------ | ------------ | ------------- | --------------------------------------------------- |
 | `comp2gtkw`  | `Scripts/`   | GCC           | Translator: complex-number bit pattern → GTKWave    |
+| `gen_gtkw`   | `Scripts/`   | GCC           | Reads a VCD header → writes a formatted `.gtkw` view |
 
 Auxiliary content:
 
 * `HDL/` — reusable Verilog modules (processor core, ALU, instruction decoder, FIFO, ...)
 * `Compilers/CMMComp/Includes/` — assembly macros and lookup tables for `.cmm` programs (`float_sqrt`, `float_sin`, `float_atan`, ...)
 * `Compilers/CPPComp/Includes/` — header shims that `.cpp` programs include
-* `Scripts/` — `regress.sh`, `comp2gtkw`, Tcl scripts that set up the GTKWave view
+* `Scripts/` — `regress.sh`, `comp2gtkw`, `gen_gtkw` (builds the formatted GTKWave view)
 * `Compilers/CMMComp/Tests/` — runnable `.cmm` example projects (Math, FFT, RLS, DTW, PulseSim, Blind, ...)
 * `Compilers/CPPComp/Tests/` — per-test C++ programs (`test1` … `test51`), plus the Verilator harness
 * `Compilers/yanc_version.h` — single source of truth for the toolchain version, included by all five binaries (the three compilers + the two preprocessors)
@@ -183,6 +184,37 @@ gtkwave %NAME%_tb.vcd
 ```
 
 **The one thing to remember:** `+define+YANC_TRACE` is what makes your variables, arrays, the PC→C± line table and the assembly opcode appear in the waveform. Icarus gets them for free (it predefines `__ICARUS__`); Verilator only compiles that visibility harness when you pass the define. For big multi-millisecond project dumps, use `--trace-fst` instead of `--trace` (compact FST; the file is still named `<tb>.vcd` and GTKWave detects the format). The trace deliberately carries only the `<proc>`-level user signals — the CPU internals below each processor are fenced out with `/* verilator tracing_off */`. **In particular the stack-monitoring flags and the ULA rounding-error taps (`fl_max`, `fl_full`, `pointeri`, `delta_int`, `delta_float`) are intentionally *not* in the Verilator VCD**: keeping them would force Verilator to evaluate the expensive real-valued ULA monitoring logic every cycle, which defeats the whole point of using Verilator (speed). Those debug signals remain available under the Icarus flow (`go_proc.bat` / `go_proj.bat`), where raw speed is not the goal.
+
+### Formatting the waveform — `gen_gtkw` (optional)
+
+After simulating with **either** Icarus or Verilator you have a raw `<tb>.vcd` /
+`.fst`: every signal, in scope order, unformatted. If you want the curated view
+instead — the **input/output ports**, the **Assembly** and **C±** instruction
+tracks (disassembled through their translate files), and the **internal
+variables and arrays** grouped per processor — build and run **`gen_gtkw`**, then
+re-open the waveform with it applied via `-a`:
+
+```bat
+gcc -o gen_gtkw.exe Scripts\gen_gtkw.c                      :: build once (sibling of comp2gtkw)
+gen_gtkw.exe %TMP%\%NAME%_tb.vcd %TMP%\%NAME%_tb.gtkw %TMP_BASE% comp2gtkw.exe
+gtkwave --dark --zoom-fit --left-justify %TMP%\%NAME%_tb.vcd -a %TMP%\%NAME%_tb.gtkw
+```
+
+`gen_gtkw` reads only the VCD **header** (the signal list), classifies each
+harness signal by name, and writes a formatted `.gtkw` save file: the right data
+format / colour / alias per signal, the `trad_opcode.txt` / `trad_cmm.txt`
+translators on the Assembly / C± tracks, `comp2gtkw.exe` on complex signals, and
+one section per processor — any scope that owns both `valr2` and `linetabs` — so
+the **same tool handles single- and multi-processor dumps**. `<tmp_base>` is the
+folder whose `<proc-type>/` subdirectories hold the translate files.
+
+Because only the header is needed, the big project FST dumps don't have to be
+written in full first: run the sim once with the **`+HEADER_ONLY`** plusarg and
+the testbench dumps the header, advances one tick, flushes and `$finish`es — a
+tiny header VCD in milliseconds (Verilator's header FST is converted with
+`fst2vcd -f`). **The four `go_*.bat` scripts wire this whole sequence up
+correctly** (header pass → `gen_gtkw` → `gtkwave -a`), so they are the reference
+for using it in practice. `--zoom-fit` fits the whole trace to the window.
 
 ### Pre-wired scripts
 
@@ -289,7 +321,7 @@ yanc/
 │   ├── CPPComp/          cpppp + cppcomp sources + Includes/ (C++ shims) + Tests/ (per-test programs + Verilator/)
 │   └── yanc_version.h    single-source-of-truth toolchain version
 ├── HDL/                  reusable Verilog modules (core, ALU, decoders, FIFO, ...)
-├── Scripts/              aurora.bat (build + deploy), regress.sh, comp2gtkw, Tcl viewers
+├── Scripts/              aurora.bat (build + deploy), regress.sh, comp2gtkw, gen_gtkw
 ├── docs/images/          README assets (GTKWave screenshot, ...)
 ├── go_proc.bat           single-processor pipeline, Icarus backend
 ├── go_proj.bat           multi-processor project pipeline, Icarus backend
