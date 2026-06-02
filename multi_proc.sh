@@ -84,11 +84,14 @@ TMP_DIR="$WORK/Temp"
 PROJ_DIR="$USER_DIR/$PROJET"; TOPL_DIR="$PROJ_DIR/TopLevel"
 VL_DIR="$TMP_DIR/vl"
 
-mkdir -p "$TMP_DIR" "$PROJ_DIR"
-cp -r "$TESTS_DIR/$PROJET/." "$PROJ_DIR/"          # the project (TopLevel/ + stimulus)
-for i in "${PROC_LIST[@]}"; do                     # each processor folder we compile
-    mkdir -p "$USER_DIR/$i" "$TMP_DIR/$i"
-    cp -r "$TESTS_DIR/$i/." "$USER_DIR/$i/"
+# Only the inputs are copied: the project's TopLevel/ (user testbench, top-level
+# Verilog and stimulus) and each processor's .cmm. The compilers create the
+# Software/Hardware outputs in the writable copies.
+mkdir -p "$TMP_DIR" "$TOPL_DIR"
+cp -r "$TESTS_DIR/$PROJET/TopLevel/." "$TOPL_DIR/"
+for i in "${PROC_LIST[@]}"; do
+    mkdir -p "$USER_DIR/$i/Software" "$TMP_DIR/$i"
+    cp "$TESTS_DIR/$i/Software/$i.cmm" "$USER_DIR/$i/Software/"
 done
 
 # --- Compile each processor: C+- -> asm -> Verilog --------------------------

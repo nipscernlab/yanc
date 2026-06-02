@@ -108,13 +108,17 @@ set PROJ_DIR=%USER_DIR%\%PROJET%
 set TOPL_DIR=%PROJ_DIR%\TopLevel
 set VL_DIR=%TMP_DIR%\vl
 
+:: Only the inputs are copied: the project's TopLevel\ (user testbench, top-level
+:: Verilog and stimulus) and each processor's .cmm. The compilers create the
+:: Software/Hardware outputs in the writable copies.
 rmdir %WORK% /s /q
 mkdir %TMP_DIR%
-mkdir %PROJ_DIR%
-xcopy "%TESTS_DIR%\%PROJET%" "%PROJ_DIR%\" /e /i /q /y>%TMP_DIR%\xcopy.txt
+mkdir %TOPL_DIR%
+xcopy "%TESTS_DIR%\%PROJET%\TopLevel" "%TOPL_DIR%\" /e /i /q /y>%TMP_DIR%\xcopy.txt
 (for %%i in (%PROC_LIST%) do (
+    mkdir %USER_DIR%\%%i\Software
     mkdir %TMP_DIR%\%%i
-    xcopy "%TESTS_DIR%\%%i" "%USER_DIR%\%%i\" /e /i /q /y>%TMP_DIR%\xcopy.txt
+    copy "%TESTS_DIR%\%%i\Software\%%i.cmm" "%USER_DIR%\%%i\Software\">%TMP_DIR%\xcopy.txt
 ))
 
 :: Verilator's g++ wants a writable TMP for its intermediate files
