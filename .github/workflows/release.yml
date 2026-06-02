@@ -124,9 +124,8 @@ jobs:
         #              #include (Compilers/CPPComp/Includes/)
         #
         # Scripts/ is NOT shipped: Aurora manages its own scripts
-        # (copy-components.js, download-*.js, proc2rtl.ys, ...). The
-        # gtkwave init Tcls / fix.vcd path was replaced by gen_gtkw
-        # emitting a static .gtkw.
+        # (copy-components.js, download-*.js, ...). The gtkwave init Tcls /
+        # fix.vcd path was replaced by gen_gtkw emitting a static .gtkw.
         run: |
           set -euo pipefail
           cp -r HDL                          out/HDL
