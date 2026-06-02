@@ -71,6 +71,13 @@ mkdir %TESTE_DIR%
     mkdir %TMP_DIR%\%%i
 ))
 
+:: Point TMP/TEMP at this project's Temp dir. Without this, go_proj inherits
+:: whatever TMP a previous bat left in the cmd session (e.g. go_proc_vl sets it
+:: to its own Temp\<proc>, which go_proj's rmdir then deletes) -- leaving gcc /
+:: iverilog with no temp dir ("Cannot create temporary file ... check TMP").
+set TMP=%TMP_DIR%
+set TEMP=%TMP_DIR%
+
 :: Copy files into the test directories ---------------------------------------
 
 xcopy Compilers\CMMComp\Tests %USER_DIR% /e /i /q>%TMP_DIR%\xcopy.txt
