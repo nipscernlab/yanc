@@ -882,9 +882,9 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
 
     if (opc_cal())
     {
-        fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.genblk2.isp.pointeri);\n", prname, prname);
-        fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.genblk2.isp.fl_max);\n"  , prname, prname);
-        fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.genblk2.isp.fl_full);\n" , prname, prname);
+        fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.isp_blk.isp.pointeri);\n", prname, prname);
+        fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.isp_blk.isp.fl_max);\n"  , prname, prname);
+        fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.isp_blk.isp.fl_full);\n" , prname, prname);
     }
 
     // register data-stack flags ----------------------------------------------

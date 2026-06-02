@@ -90,7 +90,7 @@ endgenerate
 
 wire pc_load;
 
-generate if ((CAL) != 0) begin
+generate if ((CAL) != 0) begin : call_ctrl
 
 wire wCAL = (opcode == {{NBOPCO-5{1'b0}}, {5'd17}});
 wire wRET = (opcode == {{NBOPCO-5{1'b0}}, {5'd18}});
@@ -99,7 +99,7 @@ assign pc_load    =  wJMP | wCAL | wRET;
 assign isp_push   =  wCAL;
 assign isp_pop    =  wRET;
 
-end else begin
+end else begin : call_ctrl
 
 assign pc_load    =  wJMP;
 assign isp_push   =  1'bx;
@@ -110,12 +110,12 @@ end endgenerate
 assign opcode     =  mem_instr[NBOPCO+NBOPER-1:NBOPER];
 assign operand    =  mem_instr[NBOPER       -1:     0];
 
-generate if (ITRADD>0) begin
+generate if (ITRADD>0) begin : itr_fetch
 
 assign pc_l       =  itr  | pc_load;
 assign instr_addr = (itr) ? ITRADD : (pc_load & ~rst) ? operand[MINSTW-1:0] : pc_instr;
 
-end else begin
+end else begin : itr_fetch
 
 assign pc_l       =         pc_load;
 assign instr_addr =                  (pc_load & ~rst) ? operand[MINSTW-1:0] : pc_instr;
@@ -279,11 +279,12 @@ prefetch #(.MINSTW(MINSTW),
 wire [MINSTW-1:0] stack_out;
 
 generate
-	if (CAL) begin
+	if (CAL) begin : isp_blk
 		stack #($clog2(SDEPTH), SDEPTH, MINSTW) isp(clk, rst, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
 		assign pc_lval = (pf_isp_pop) ? stack_out : instr[MINSTW-1:0];
-	end else
+	end else begin : isp_blk
 		assign pc_lval = instr[MINSTW-1:0];
+	end
 endgenerate
 
 // External interface
@@ -350,8 +351,8 @@ module rel_addr
 	output [MDATAW-1:0] out
 );
 
-generate 
-	if (USEFFT) begin
+generate
+	if (USEFFT) begin : fft_offset
 		reg [FFTSIZ-1:0] aux;
 
 		integer i;
@@ -360,8 +361,9 @@ generate
 		wire [MDATAW-1:0] add = (fft) ? {offset[MDATAW-1:FFTSIZ], aux} : offset;
 
 		assign out = (use_oft) ?    add + addr: addr;
-	end else
+	end else begin : fft_offset
 		assign out = (use_oft) ? offset + addr: addr;
+	end
 endgenerate
 
 endmodule
@@ -911,7 +913,7 @@ assign  if_acc = |ula_out;
 wire [MDATAW-1:0] rf;
 
 generate
-	if (STI | LDI | ILI | ISI | LDA | STA) begin
+	if (STI | LDI | ILI | ISI | LDA | STA) begin : mem_access
 		mem_ctrl #(.NUBITS(NUBITS),
 		           .MDATAW(MDATAW),
 		           .FFTSIZ(FFTSIZ),
@@ -921,7 +923,7 @@ generate
 		                                   ula_out,
 		                                   if_operand[MDATAW-1:0], sp_data[MDATAW-1:0],
 		                                   mem_wr, mem_addr_rd, mem_addr_wr, mem_data_wr);
-	end else begin
+	end else begin : mem_access
 		assign mem_wr      = id_wr;
 		assign mem_addr_rd = if_operand[MDATAW-1:0];
 		assign mem_addr_wr = if_operand[MDATAW-1:0];
