@@ -1,12 +1,10 @@
 :: ****************************************************************************
-:: Emulate SAPHO when compiling a multi-processor project and simulating it.
+:: Take a multi-processor C+- project all the way to a GTKWave waveform.
 ::   go_proj.bat                  -> simulate with Icarus (default)
 ::   go_proj.bat --sim verilator  -> simulate with Verilator (+define+YANC_TRACE)
 ::
-:: --sim verilator feeds the same .v set to Verilator 5 (--binary --timing
-:: --trace-fst) with top_level_tb.v as the top; +define+YANC_TRACE keeps each
-:: processor's user variables / arrays in the waveform. Run Scripts\setup.bat
-:: once first.
+:: Reads the HDL, macros and binaries straight from the repo; the only files it
+:: creates live under Teste\ (gitignored). Run Scripts\setup.bat once first.
 :: ****************************************************************************
 
 :: Set up the terminal --------------------------------------------------------
@@ -17,10 +15,6 @@ chcp 65001 >nul
 
 :: Set up the environment -----------------------------------------------------
 
-:: Resolve ROOT_DIR + the prebuilt binaries (YANC_BIN) and the tool locations
-:: (IVERILOG, VVP, VERILATOR, GTKWAVE, FST2VCD) with no hardcoded paths.
-:: Scripts\setup.bat builds / downloads everything once and caches the paths;
-:: env.bat loads them here.
 call "%~dp0Scripts\env.bat"
 cd /d "%ROOT_DIR%"
 
@@ -71,95 +65,54 @@ if defined MINGW_BIN set "PATH=%MINGW_BIN%;%PATH%"
 :: affect the simulation, so silence them (Verilator escalates them otherwise).
 set VL_WARN=-Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH -Wno-CASEINCOMPLETE -Wno-IMPLICIT -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-SELRANGE -Wno-TIMESCALEMOD -Wno-INITIALDLY
 
-set    TESTE_DIR=%ROOT_DIR%\Teste
-rmdir %TESTE_DIR% /s /q
+:: What to simulate (a project under Compilers\CMMComp\Tests) -----------------
 
-:: Parameters defined by the SAPHO user for compilation -----------------------
-
-:: project folder name
+:: project folder (holds TopLevel\ with the tb)
 set PROJET=DTW
-:: list of processor types in the project (names of the project subfolders)
+:: processor types in the project (each a Tests\ subfolder we compile)
 set PROC_LIST=ProcDTW ZeroCross
-:: list of instances to simulate (a single proc may have several instances)
-set INST_LIST=ZeroCross_inst DTWv4_inst
-:: list of processor types for each instance (must match the length of PROC_LIST)
-set PROC_TYPE=ZeroCross ProcDTW
-:: testbench name (without .v) to simulate (must be in the TopLevel folder)
+:: testbench name (without .v) to simulate, in the TopLevel folder
 set TB=top_level_tb
-:: gtkwave layout filename (if not found, uses the default script)
+:: gtkwave layout filename (if missing, gen_gtkw builds one)
 set GTKW=dtw.gtkw
 
-:: Parameters that SAPHO must know --------------------------------------------
+:: Repo sources, read in place (never written to) -----------------------------
+set HDL_DIR=%ROOT_DIR%\HDL
+set MAC_DIR=%ROOT_DIR%\Compilers\CMMComp\Includes
+set BIN_DIR=%YANC_BIN%
+set TESTS_DIR=%ROOT_DIR%\Compilers\CMMComp\Tests
 
-:: folder tree after installation
-set INST_DIR=%TESTE_DIR%\saphoComponents
-set BIN_DIR=%INST_DIR%\bin
-set HDL_DIR=%INST_DIR%\HDL
-set MAC_DIR=%INST_DIR%\Macros
-set SCR_DIR=%INST_DIR%\Scripts
-set TMP_DIR=%INST_DIR%\Temp
-
-:: project folder tree being executed
-set USER_DIR=%TESTE_DIR%\Projetos
+:: Work area: the only files this script creates (Teste\ is gitignored) -------
+set WORK=%ROOT_DIR%\Teste
+set USER_DIR=%WORK%\Projetos
+set TMP_DIR=%WORK%\Temp
 set PROJ_DIR=%USER_DIR%\%PROJET%
 set TOPL_DIR=%PROJ_DIR%\TopLevel
-
-:: Verilator obj_dir (generated C++ model + the V<tb> sim exe)
 set VL_DIR=%TMP_DIR%\vl
 
-:: Create test directories ----------------------------------------------------
-
-mkdir %TESTE_DIR%
-    mkdir %INST_DIR%
-        mkdir %BIN_DIR%
-        mkdir %HDL_DIR%
-        mkdir %MAC_DIR%
-        mkdir %SCR_DIR%
-        mkdir %TMP_DIR%
-    mkdir %USER_DIR%
-
+rmdir %WORK% /s /q
+mkdir %TMP_DIR%
+mkdir %PROJ_DIR%
+xcopy "%TESTS_DIR%\%PROJET%" "%PROJ_DIR%\" /e /i /q /y>%TMP_DIR%\xcopy.txt
 (for %%i in (%PROC_LIST%) do (
     mkdir %TMP_DIR%\%%i
+    xcopy "%TESTS_DIR%\%%i" "%USER_DIR%\%%i\" /e /i /q /y>%TMP_DIR%\xcopy.txt
 ))
 
-:: Point TMP/TEMP at this project's Temp dir. Without this, go_proj inherits
-:: whatever TMP a previous run left in the cmd session, which its own rmdir then
-:: deletes -- leaving gcc / iverilog with no temp dir.
+:: Verilator's g++ wants a writable TMP for its intermediate files
 set TMP=%TMP_DIR%
 set TEMP=%TMP_DIR%
 
-:: Copy files into the test directories ---------------------------------------
-
-xcopy Compilers\CMMComp\Tests %USER_DIR% /e /i /q>%TMP_DIR%\xcopy.txt
-xcopy HDL %HDL_DIR% /q /y>%TMP_DIR%\xcopy.txt
-xcopy Compilers\CMMComp\Includes %MAC_DIR% /q /y>%TMP_DIR%\xcopy.txt
-xcopy Scripts %SCR_DIR% /q /y>%TMP_DIR%\xcopy.txt
-
-:: Stage the prebuilt YANC binaries -------------------------------------------
-:: No bison/flex/gcc here: cmmcomp/appcomp/asmcomp and the GTKWave helpers
-:: (comp2gtkw, gen_gtkw) were already built or downloaded into %YANC_BIN% by
-:: Scripts\setup.bat. Copy them into the sandbox bin the rest of the flow uses.
-
-copy %YANC_BIN%\*.exe %BIN_DIR%>%TMP_DIR%\xcopy.txt
-
-:: Run the CMM compiler -------------------------------------------------------
-
-cd  %BIN_DIR%
+:: Compile each processor: C+- -> asm -> Verilog -----------------------------
 
 (for %%i in (%PROC_LIST%) do (
-    cmmcomp.exe -i %%i.cmm -n %%i -p %USER_DIR%\%%i -m %MAC_DIR% -t %TMP_DIR%\%%i --array
+    "%BIN_DIR%\cmmcomp.exe" -i %%i.cmm -n %%i -p %USER_DIR%\%%i -m %MAC_DIR% -t %TMP_DIR%\%%i --array
 ))
-
-:: Run the Assembler pre-processor --------------------------------------------
-
 (for %%i in (%PROC_LIST%) do (
-    appcomp.exe -i %USER_DIR%\%%i\Software\%%i.asm -t %TMP_DIR%\%%i
+    "%BIN_DIR%\appcomp.exe" -i %USER_DIR%\%%i\Software\%%i.asm -t %TMP_DIR%\%%i
 ))
-
-:: Run the Assembler compiler -------------------------------------------------
-
 (for %%i in (%PROC_LIST%) do (
-    asmcomp.exe -i %USER_DIR%\%%i\Software\%%i.asm -p %USER_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0
+    "%BIN_DIR%\asmcomp.exe" -i %USER_DIR%\%%i\Software\%%i.asm -p %USER_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0
     cp %USER_DIR%\%%i\Hardware\%%i.v %TMP_DIR%\%%i
 ))
 
@@ -195,7 +148,6 @@ goto :proj_run_vl
 
 :: --- Icarus: stage the files vvp reads (relative to CWD), then run ----------
 :proj_run_icarus
-for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\%%a_tb.v %USER_DIR%\%%a\Simulation>%TMP_DIR%\xcopy.txt
 dir %TOPL_DIR%\*.txt /b > f_list.txt
 for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do copy %TOPL_DIR%\%%a .\>%TMP_DIR%\xcopy.txt
 for %%a in (%PROC_LIST%) do copy %USER_DIR%\%%a\Hardware\%%a_inst.mif .\>%TMP_DIR%\xcopy.txt
@@ -224,11 +176,9 @@ echo #### Running the Verilator simulation
 :: +WAVE arms the tb's $dumpvars (off by default so the heavy sim doesn't crash).
 %VL_DIR%\V%TB%.exe +WAVE
 
-:: Run GtkWave ----------------------------------------------------------------
+:: View in GTKWave ------------------------------------------------------------
 :proj_gtkwave
 echo #### Generating the .gtkw layout and launching GTKWave
-:: gen_gtkw reads the header VCD and writes the multi-proc .gtkw (one section per
-:: instance owning valr2+linetabs); GTKWave opens the waveform with -a.
 if exist %TOPL_DIR%\%GTKW% (
     %GTKWAVE% --dark --zoom-fit --left-justify %TMP_DIR%\%TB%.vcd -a %TOPL_DIR%\%GTKW%
 ) else (

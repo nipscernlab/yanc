@@ -1,12 +1,10 @@
 :: ****************************************************************************
-:: Emulate SAPHO when compiling a single processor and simulating it.
+:: Take a C+- (.cmm) processor all the way to a GTKWave waveform.
 ::   go_proc.bat                  -> simulate with Icarus (default)
 ::   go_proc.bat --sim verilator  -> simulate with Verilator (+define+YANC_TRACE)
 ::
-:: --sim verilator feeds the SAME generated <proc>_tb.v to Verilator 5 in
-:: --binary --timing mode; +define+YANC_TRACE turns on the visibility harness
-:: inside <proc>.v so the waveform shows all the user variables / arrays / PC.
-:: Run Scripts\setup.bat once first.
+:: Reads the HDL, macros and binaries straight from the repo; the only files it
+:: creates live under Teste\ (gitignored). Run Scripts\setup.bat once first.
 :: ****************************************************************************
 
 :: Set up the terminal --------------------------------------------------------
@@ -17,9 +15,6 @@ chcp 65001 >nul
 
 :: Set up the environment -----------------------------------------------------
 
-:: Resolve ROOT_DIR + the prebuilt binaries (YANC_BIN) and the tool locations
-:: (IVERILOG, VVP, VERILATOR, GTKWAVE) with no hardcoded paths. Scripts\setup.bat
-:: builds / downloads everything once and caches the paths; env.bat loads them.
 call "%~dp0Scripts\env.bat"
 cd /d "%ROOT_DIR%"
 
@@ -60,99 +55,56 @@ if /i "%SIM%"=="verilator" (
 :: When iverilog/verilator come from MSYS2, their tools need mingw64\bin on PATH.
 if defined MINGW_BIN set "PATH=%MINGW_BIN%;%PATH%"
 
-set    TESTE_DIR=%ROOT_DIR%\Teste
-rmdir %TESTE_DIR% /s /q
+:: What to simulate (a project under Compilers\CMMComp\Tests) -----------------
 
-:: Parameters defined by the SAPHO user for compilation -----------------------
-
-:: project folder name
-set PROJET=FFT
-:: processor type name to simulate (a subfolder of the project)
+:: processor type / project folder to simulate
 set PROC=proc_fft
 :: cmm filename where the processor is defined
 set FNAM=proc_fft.cmm
-:: test_bench (without .v) to simulate, in the Simulation folder (Icarus only);
-:: if not found, the generated <proc>_tb is used
+:: test_bench (without .v), in the Simulation folder; if missing, the generated one is used
 set TB=errado
-:: gtkwave layout filename (if not found, uses the default script)
+:: gtkwave layout filename (if missing, gen_gtkw builds one)
 set GTKW=teste.gtkw
 :: processor operating frequency in MHz
 set FRE_CLK=100
 :: number of clocks to simulate
 set NUM_CLK=1000000
 
-:: Parameters that SAPHO must know --------------------------------------------
+:: Repo sources, read in place (never written to) -----------------------------
+set HDL_DIR=%ROOT_DIR%\HDL
+set MAC_DIR=%ROOT_DIR%\Compilers\CMMComp\Includes
+set BIN_DIR=%YANC_BIN%
+set SRC_PROC=%ROOT_DIR%\Compilers\CMMComp\Tests\%PROC%
 
-:: folder tree after installation
-set INST_DIR=%TESTE_DIR%\saphoComponents
-set BIN_DIR=%INST_DIR%\bin
-set HDL_DIR=%INST_DIR%\HDL
-set MAC_DIR=%INST_DIR%\Macros
-set SCR_DIR=%INST_DIR%\Scripts
-set TMP_DIR=%INST_DIR%\Temp
-
-:: project folder tree being executed
-set USER_DIR=%TESTE_DIR%\Projetos
-set PROC_DIR=%USER_DIR%\%PROC%
+:: Work area: the only files this script creates (Teste\ is gitignored) -------
+set WORK=%ROOT_DIR%\Teste
+set PROC_DIR=%WORK%\%PROC%
 set SOFT_DIR=%PROC_DIR%\Software
 set HARD_DIR=%PROC_DIR%\Hardware
 set SIMU_DIR=%PROC_DIR%\Simulation
+set TMP_DIR=%WORK%\Temp
 set TMP_PRO=%TMP_DIR%\%PROC%
-
-:: Verilator obj_dir (generated C++ model + the V<proc>_tb sim exe)
 set VL_DIR=%TMP_PRO%\vl
 
-:: Create test directories ----------------------------------------------------
-
-mkdir %TESTE_DIR%
-    mkdir %INST_DIR%
-        mkdir %BIN_DIR%
-        mkdir %HDL_DIR%
-        mkdir %MAC_DIR%
-        mkdir %SCR_DIR%
-        mkdir %TMP_DIR%
-            mkdir %TMP_PRO%
-    mkdir %USER_DIR%
+rmdir %WORK% /s /q
+mkdir %TMP_PRO%
+xcopy "%SRC_PROC%" "%PROC_DIR%\" /e /i /q /y>%TMP_PRO%\log.txt
 
 :: Verilator's g++ wants a writable TMP for its intermediate files
 set TMP=%TMP_PRO%
 set TEMP=%TMP_PRO%
 
-:: Copy files into the test directories ---------------------------------------
-
-xcopy Compilers\CMMComp\Tests %USER_DIR% /e /i /q>%TMP_PRO%\log.txt
-xcopy HDL      %HDL_DIR%  /q    /y>%TMP_PRO%\log.txt
-xcopy Compilers\CMMComp\Includes %MAC_DIR% /q /y>%TMP_PRO%\log.txt
-xcopy Scripts  %SCR_DIR%  /q    /y>%TMP_PRO%\log.txt
-
-:: Stage the prebuilt YANC binaries -------------------------------------------
-:: No bison/flex/gcc here: cmmcomp/appcomp/asmcomp and the GTKWave helpers
-:: (comp2gtkw, gen_gtkw) were already built or downloaded into %YANC_BIN% by
-:: Scripts\setup.bat. Copy them into the sandbox bin the rest of the flow uses.
-
-copy %YANC_BIN%\*.exe %BIN_DIR%>%TMP_PRO%\log.txt
-
-:: Run the CMM compiler -------------------------------------------------------
+:: Compile: C+- -> asm -> Verilog --------------------------------------------
 
 echo #### Running the CMM compiler
-
-cd %BIN_DIR%
-
-cmmcomp.exe -i %FNAM% -n %PROC% -p %PROC_DIR% -m %MAC_DIR% -t %TMP_PRO%
-
-:: Run the Assembler pre-processor --------------------------------------------
+"%BIN_DIR%\cmmcomp.exe" -i %FNAM% -n %PROC% -p %PROC_DIR% -m %MAC_DIR% -t %TMP_PRO%
 
 echo #### Running the Pre-assembler
-
 set ASM_FILE=%SOFT_DIR%\%PROC%.asm
-
-appcomp.exe -i %ASM_FILE% -t %TMP_PRO%
-
-:: Run the Assembler compiler -------------------------------------------------
+"%BIN_DIR%\appcomp.exe" -i %ASM_FILE% -t %TMP_PRO%
 
 echo #### Running the Assembler
-
-asmcomp.exe -i %ASM_FILE% -p %PROC_DIR% -d %HDL_DIR% -m %MAC_DIR% -t %TMP_PRO% -f %FRE_CLK% -c %NUM_CLK%
+"%BIN_DIR%\asmcomp.exe" -i %ASM_FILE% -p %PROC_DIR% -d %HDL_DIR% -m %MAC_DIR% -t %TMP_PRO% -f %FRE_CLK% -c %NUM_CLK%
 
 :: Build + run the simulation -------------------------------------------------
 
@@ -161,14 +113,16 @@ if /i "%SIM%"=="verilator" goto :sim_verilator
 
 :: --- Icarus -----------------------------------------------------------------
 echo #### Running Icarus
-cd %HDL_DIR%
+:: Use the user's testbench if present, else the one asmcomp generated.
 if exist %SIMU_DIR%\%TB%.v (
     set TB_MOD=%TB%
+    set TB_SRC=%SIMU_DIR%\%TB%.v
 ) else (
-    copy %TMP_PRO%\%PROC%_tb.v %SIMU_DIR%>%TMP_PRO%\log.txt
     set TB_MOD=%PROC%_tb
+    set TB_SRC=%TMP_PRO%\%PROC%_tb.v
 )
-%IVERILOG% -s %TB_MOD% -o %TMP_PRO%\%PROC%.vvp %SIMU_DIR%\%TB_MOD%.v %UPROC%.v addr_dec.v instr_dec.v processor.v core.v ula.v
+cd %HDL_DIR%
+%IVERILOG% -s %TB_MOD% -o %TMP_PRO%\%PROC%.vvp %TB_SRC% %UPROC%.v addr_dec.v instr_dec.v processor.v core.v ula.v
 
 echo #### Running VVP
 copy %UPROC%_data.mif %TMP_PRO%>%TMP_PRO%\log.txt
@@ -203,12 +157,9 @@ set WAVE=%TMP_PRO%\%PROC%_tb.vcd
 set HDR=%TMP_PRO%\%PROC%_tb.vcd
 set GTKWOUT=%TMP_PRO%\%PROC%_tb.gtkw
 
-:: Run GtkWave ----------------------------------------------------------------
+:: View in GTKWave ------------------------------------------------------------
 :run_gtkwave
 echo #### Generating the .gtkw layout and launching GTKWave
-:: gen_gtkw reads the header VCD and writes the .gtkw layout; GTKWave then opens
-:: the waveform with -a. --zoom-fit fits the whole wave; the nipscern fork hides
-:: the SST pane, so no --rcvar.
 if exist %SIMU_DIR%\%GTKW% (
     %GTKWAVE% --dark --zoom-fit --left-justify %WAVE% -a %SIMU_DIR%\%GTKW%
 ) else (

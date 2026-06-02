@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # ****************************************************************************
-# Emulate SAPHO when compiling a single processor and simulating it.
+# Take a C+- (.cmm) processor all the way to a GTKWave waveform.
 #   ./go_proc.sh                 # simulate with Icarus (default)
 #   ./go_proc.sh --sim verilator # simulate with Verilator (+define+YANC_TRACE)
-# Linux counterpart of go_proc.bat. Run Scripts/setup.sh once first.
+#
+# Reads the HDL, macros and binaries straight from the repo; the only files it
+# creates live under Teste/ (gitignored). Run Scripts/setup.sh once first.
 # ****************************************************************************
 set -uo pipefail
 
@@ -36,47 +38,39 @@ else
     [ -n "$VERILATOR" ] || { echo "[go_proc] verilator not found - run Scripts/setup.sh (or install verilator)."; exit 1; }
 fi
 
-TESTE_DIR="$ROOT_DIR/Teste"
-rm -rf "$TESTE_DIR"
-
-# --- Parameters defined by the SAPHO user for compilation -------------------
-PROJET=FFT                # project folder name
-PROC=proc_fft             # processor type to simulate (a project subfolder)
+# --- What to simulate (a project under Compilers/CMMComp/Tests) -------------
+PROC=proc_fft             # processor type / project folder to simulate
 FNAM=proc_fft.cmm         # cmm filename where the processor is defined
-TB=errado                 # testbench (without .v); if missing, default sim is used (Icarus only)
-GTKW=teste.gtkw           # gtkwave layout filename (if missing, gen_gtkw is used)
+TB=errado                 # testbench (without .v); if missing, the generated one is used
+GTKW=teste.gtkw           # gtkwave layout filename (if missing, gen_gtkw builds one)
 FRE_CLK=100               # processor operating frequency in MHz
 NUM_CLK=1000000           # number of clocks to simulate
 
-# --- Folder tree (mirrors the installed layout) -----------------------------
-INST_DIR="$TESTE_DIR/saphoComponents"
-BIN_DIR="$INST_DIR/bin"; HDL_DIR="$INST_DIR/HDL"; MAC_DIR="$INST_DIR/Macros"
-SCR_DIR="$INST_DIR/Scripts"; TMP_DIR="$INST_DIR/Temp"
-USER_DIR="$TESTE_DIR/Projetos"
-PROC_DIR="$USER_DIR/$PROC"; SOFT_DIR="$PROC_DIR/Software"
-HARD_DIR="$PROC_DIR/Hardware"; SIMU_DIR="$PROC_DIR/Simulation"
-TMP_PRO="$TMP_DIR/$PROC"
-VL_DIR="$TMP_PRO/vl"      # Verilator obj_dir (C++ model + V<proc>_tb sim exe)
+# --- Repo sources, read in place (never written to) -------------------------
+HDL_DIR="$ROOT_DIR/HDL"
+MAC_DIR="$ROOT_DIR/Compilers/CMMComp/Includes"
+BIN_DIR="$YANC_BIN"
+SRC_PROC="$ROOT_DIR/Compilers/CMMComp/Tests/$PROC"
 
-mkdir -p "$BIN_DIR" "$HDL_DIR" "$MAC_DIR" "$SCR_DIR" "$TMP_PRO" "$USER_DIR"
+# --- Work area: the only files this script creates (Teste/ is gitignored) ---
+WORK="$ROOT_DIR/Teste"
+rm -rf "$WORK"
+PROC_DIR="$WORK/$PROC"            # writable copy of the project (tools emit here)
+SOFT_DIR="$PROC_DIR/Software"; HARD_DIR="$PROC_DIR/Hardware"; SIMU_DIR="$PROC_DIR/Simulation"
+TMP_DIR="$WORK/Temp"; TMP_PRO="$TMP_DIR/$PROC"   # scratch (-t, sim cwd, trad_*.txt for gen_gtkw)
+VL_DIR="$TMP_PRO/vl"             # Verilator obj_dir
 
-# --- Stage example projects, HDL, macros and the prebuilt binaries ----------
-cp -r "$ROOT_DIR/Compilers/CMMComp/Tests/." "$USER_DIR/"
-cp -r "$ROOT_DIR/HDL/."                      "$HDL_DIR/"
-cp -r "$ROOT_DIR/Compilers/CMMComp/Includes/." "$MAC_DIR/"
-cp -r "$ROOT_DIR/Scripts/."                  "$SCR_DIR/"
-cp    "$YANC_BIN"/*                           "$BIN_DIR/"
+mkdir -p "$TMP_PRO"
+cp -r "$SRC_PROC/." "$PROC_DIR/"
 
-# --- Run the CMM compiler ---------------------------------------------------
+# --- Compile: C+- -> asm -> Verilog -----------------------------------------
 echo "#### Running the CMM compiler"
 "$BIN_DIR/cmmcomp" -i "$FNAM" -n "$PROC" -p "$PROC_DIR" -m "$MAC_DIR" -t "$TMP_PRO"
 
-# --- Run the Assembler pre-processor ----------------------------------------
 echo "#### Running the Pre-assembler"
 ASM_FILE="$SOFT_DIR/$PROC.asm"
 "$BIN_DIR/appcomp" -i "$ASM_FILE" -t "$TMP_PRO"
 
-# --- Run the Assembler compiler ---------------------------------------------
 echo "#### Running the Assembler"
 "$BIN_DIR/asmcomp" -i "$ASM_FILE" -p "$PROC_DIR" -d "$HDL_DIR" -m "$MAC_DIR" -t "$TMP_PRO" -f "$FRE_CLK" -c "$NUM_CLK"
 
@@ -86,14 +80,14 @@ echo "#### Running the Assembler"
 UPROC="$HARD_DIR/$PROC"
 if [ "$SIM" = iverilog ]; then
     echo "#### Running Icarus"
+    # Use the user's testbench if present, else the one asmcomp generated.
     if [ -f "$SIMU_DIR/$TB.v" ]; then
-        TB_MOD="$TB"
+        TB_MOD="$TB"; TB_SRC="$SIMU_DIR/$TB.v"
     else
-        cp "$TMP_PRO/${PROC}_tb.v" "$SIMU_DIR/"
-        TB_MOD="${PROC}_tb"
+        TB_MOD="${PROC}_tb"; TB_SRC="$TMP_PRO/${PROC}_tb.v"
     fi
     ( cd "$HDL_DIR" && "$IVERILOG" -s "$TB_MOD" -o "$TMP_PRO/$PROC.vvp" \
-        "$SIMU_DIR/$TB_MOD.v" "$UPROC.v" addr_dec.v instr_dec.v processor.v core.v ula.v )
+        "$TB_SRC" "$UPROC.v" addr_dec.v instr_dec.v processor.v core.v ula.v )
 
     echo "#### Running VVP"
     cp "${UPROC}_data.mif" "$TMP_PRO/"
@@ -127,7 +121,7 @@ else
     WAVE_VCD="$TMP_PRO/${PROC}_tb.vcd"; HDR_VCD="$WAVE_VCD"; GTKW_OUT="$TMP_PRO/${PROC}_tb.gtkw"
 fi
 
-# --- Run GTKWave ------------------------------------------------------------
+# --- View in GTKWave --------------------------------------------------------
 echo "#### Generating the .gtkw layout and launching GTKWave"
 if [ -f "$SIMU_DIR/$GTKW" ]; then
     "$GTKWAVE" --dark --zoom-fit --left-justify "$WAVE_VCD" -a "$SIMU_DIR/$GTKW"
