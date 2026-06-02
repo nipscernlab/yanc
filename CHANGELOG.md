@@ -14,11 +14,14 @@ tags consumed by Aurora.
   proven logic of Aurora's wave pipeline. It classifies the harness signals by
   name (I/O mirrors, the `valr2` Assembly / `linetabs` C+- tracks with their
   translate files, int/float/comp variables and arrays, the Stack/ALU flag
-  groups) and writes the exact `.gtkw` opcodes. This is Phase A (single
-  processor); it replaces the runtime `gtk_proc_init.tcl` and lets us move to the
-  nipscern GTKWave v4 (which ignores `--script`), opened as `gtkwave <vcd> -a
-  <out.gtkw>`. The `go_*.bat` flows are unchanged for now — the tool is
-  standalone until Phases B (FST header-only dump) and C (multi-proc) land.
+  groups) and writes the exact `.gtkw` opcodes. Handles **single and multiple
+  processors**: every VCD scope owning both `valr2` and `linetabs` is a proc
+  instance and gets its own section, with the type derived from the `p_<type>.core`
+  sub-scope (so per-type `trad_opcode.txt`/`trad_cmm.txt` resolve) — single-proc
+  is the N=1 case. Replaces the runtime `gtk_proc_init.tcl`/`gtk_proj_init.tcl`
+  and lets us move to the nipscern GTKWave v4 (which ignores `--script`), opened
+  as `gtkwave <vcd> -a <out.gtkw>`. The `go_*.bat` flows are unchanged for now —
+  standalone until the FST header-only dump and the `.bat` wiring land.
 
 ## [v4.4.1] – 2026-06-01
 
