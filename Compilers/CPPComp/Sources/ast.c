@@ -126,6 +126,7 @@ const char *op_name(op_kind o)
         case OP_LT: return "<";    case OP_GT: return ">";    case OP_LE: return "<="; case OP_GE: return ">=";
         case OP_LAND: return "&&"; case OP_LOR: return "||";
         case OP_NEG: return "-";   case OP_BNOT: return "~";  case OP_LNOT: return "!"; case OP_POS: return "+";
+        case OP_NONE: return "?";
     }
     return "?";
 }

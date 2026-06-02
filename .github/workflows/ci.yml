@@ -31,13 +31,14 @@ jobs:
             bison
             flex
 
-      - name: Build binaries (make)
+      - name: Build binaries (make, -Werror)
         shell: msys2 {0}
         # Build all seven binaries through the top-level Makefile (single source
         # of truth). $(OS)=Windows_NT here, so the Makefile emits .exe into bin/.
+        # -Werror gates new warnings (CI only; user/release builds stay lenient).
         run: |
           set -euo pipefail
-          make CFLAGS="-O2 -Wall"
+          make CFLAGS="-O2 -Wall -Werror"
           ls -l bin
 
       - name: Smoke test full pipeline on all examples
@@ -117,11 +118,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc make bison flex iverilog
 
-      - name: Build binaries via setup.sh
-        # Exercises Scripts/setup.sh end-to-end (toolchain detection + the
-        # native gcc/flex/bison build into bin/). stdin from /dev/null so the
-        # optional-tool prompts auto-skip.
-        run: bash Scripts/setup.sh --rebuild </dev/null
+      - name: Build binaries (make, -Werror)
+        # Same shared Makefile as Windows, gated with -Werror (CI only).
+        run: make CFLAGS="-O2 -Wall -Werror"
 
       - name: Smoke test full pipeline on all examples
         # Same end-to-end check as the Windows job, against the Linux binaries

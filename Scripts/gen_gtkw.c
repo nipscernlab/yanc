@@ -428,7 +428,9 @@ static void derive_core_and_type(Proc *p) {
         const char *seg_end = p->core + L - 5;            // points at ".core"
         const char *seg_start = seg_end;
         while (seg_start > p->core && *(seg_start - 1) != '.') seg_start--;
-        char seg[256]; size_t n = (size_t)(seg_end - seg_start);
+        // seg holds a (short) module-type name; size it to match p->type so the
+        // snprintf below cannot truncate (keeps -Wformat-truncation quiet).
+        char seg[sizeof ((Proc*)0)->type]; size_t n = (size_t)(seg_end - seg_start);
         if (n >= sizeof seg) n = sizeof seg - 1;
         memcpy(seg, seg_start, n); seg[n] = 0;
         if (strncmp(seg, "p_", 2) == 0) snprintf(p->type, sizeof p->type, "%s", seg + 2);
@@ -448,7 +450,9 @@ static void detect_procs(void) {
         int dup = 0;
         for (int k = 0; k < g_nproc; k++) if (strcmp(g_proc[k].inst, g_sig[i].scope) == 0) { dup = 1; break; }
         if (dup) continue;
-        snprintf(g_proc[g_nproc].inst, sizeof g_proc[g_nproc].inst, "%s", g_sig[i].scope);
+        // inst and scope are the same fixed size and scope is NUL-terminated,
+        // so a fixed-size copy is safe and avoids -Wformat-truncation.
+        memcpy(g_proc[g_nproc].inst, g_sig[i].scope, sizeof g_proc[g_nproc].inst);
         derive_core_and_type(&g_proc[g_nproc]);
         g_nproc++;
     }

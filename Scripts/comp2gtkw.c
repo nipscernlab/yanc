@@ -48,8 +48,7 @@ int main(int argc, char **argv)
 
     while (!feof(stdin))
     {
-        bufi[0] = 0;
-        fscanf(stdin, "%s", bufi);
+        if (fscanf(stdin, "%s", bufi) != 1) bufi[0] = 0;
         if (bufi[0])
         {
             // the first 16 bits encode nbm and nbe
