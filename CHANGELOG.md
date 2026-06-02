@@ -20,8 +20,7 @@ tags consumed by Aurora.
   sub-scope (so per-type `trad_opcode.txt`/`trad_cmm.txt` resolve) — single-proc
   is the N=1 case. Replaces the runtime `gtk_proc_init.tcl`/`gtk_proj_init.tcl`
   and lets us move to the nipscern GTKWave v4 (which ignores `--script`), opened
-  as `gtkwave <vcd> -a <out.gtkw>`. The `go_*.bat` flows are unchanged for now —
-  standalone until the `.bat` wiring lands.
+  as `gtkwave <vcd> -a <out.gtkw>`.
 - **`+HEADER_ONLY` testbench instrumentation** — both the generated `<proc>_tb.v`
   (hdl.c) and the DTW project `top_level_tb.v` now respond to a `+HEADER_ONLY`
   plusarg: they dump, advance one tick, `$dumpflush` and `$finish`, producing a
@@ -30,6 +29,26 @@ tags consumed by Aurora.
   641 MB full dump, and the resulting `.gtkw` is byte-identical to the one built
   from the full trace. Plusarg-gated, so normal and regression runs are
   unaffected (regress 71/71).
+
+### Changed
+- **All four `go_*.bat` flows now use gen_gtkw + the nipscern GTKWave v4.** Each
+  builds `gen_gtkw.exe`, writes the `.gtkw` layout from the (header-only) VCD, and
+  opens the waveform with `gtkwave --dark --zoom-fit --left-justify <vcd> -a
+  <gtkw>` (no `--script`, no `fix.vcd` tab hack, no `--rcvar` — the nipscern fork
+  hides the SST pane and reports that rcvar as not found). FST flows
+  (`go_proc`/`go_proj` Icarus, `go_proj_vl` Verilator) add a quick `+HEADER_ONLY`
+  pass — Icarus writes the header VCD directly; Verilator's tiny header FST is
+  converted with `fst2vcd -f`. The `--zoom-fit` restores the whole-wave view the
+  Tcl flow did via `Zoom_Best_Fit`.
+- **`go_proj.bat` now sets `TMP`/`TEMP`** to its own Temp dir (like `go_proj_vl`),
+  so it no longer inherits a stale temp path from a previous bat run in the same
+  cmd window (which broke gcc/iverilog with "cannot create temporary file").
+
+### Removed
+- **The runtime GTKWave Tcl formatters and their props** — `gtk_proc_init.tcl`,
+  `gtk_proj_init.tcl`, `gtk_almost_proj.tcl`, `pos_gtkw.tcl` and `fix.vcd` (the
+  empty-tab crash workaround) are gone, replaced by `gen_gtkw.c`. Also removed the
+  long-unused `proc2rtl.ys` Yosys script.
 
 ## [v4.4.1] – 2026-06-01
 

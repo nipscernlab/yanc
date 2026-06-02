@@ -228,10 +228,6 @@ echo #### Running the Verilator simulation
 %VL_DIR%\V%TB%.exe +WAVE
 
 :: Run GtkWave ----------------------------------------------------------------
-::
-:: Called exactly like go_proj.bat: gtk_proj_init.tcl reads tcl_infos.txt
-:: (instance list + proc types + dirs) and formats each processor's variables,
-:: arrays, Assembly and C+- under its own instance.
 
 echo #### Generating the .gtkw layout and launching GTKWave
 
