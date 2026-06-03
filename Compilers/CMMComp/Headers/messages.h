@@ -36,6 +36,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: cadê a função main()?\n", \
       "Error: yo, where's the main() function?\n")
 
+#define MSG_ERR_CANT_OPEN_FILE \
+    M("Erro: não rolou de abrir o arquivo '%s'!!\n", \
+      "Error: couldn't open the file '%s' for the life of me!!\n")
+
 // variable / number errors --------------------------------------------------
 
 #define MSG_ERR_RESERVED_I \

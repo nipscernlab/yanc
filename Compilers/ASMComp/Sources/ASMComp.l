@@ -246,6 +246,7 @@ int main(int argc, char *argv[])
   snprintf(outsub, sizeof(outsub), "%s/Simulation", proc_dir); ensure_dir(outsub);
 
   yyin = fopen(a.input, "r");                // -i is the input .asm file
+  if (yyin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
   eval_init(a.freq, a.clocks);               // initialize the state variables
   yylex();                                   // run the lexer
   fclose(yyin);                              // close the .asm file

@@ -31,6 +31,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: não deu pra criar o arquivo %s/app_log.txt.\n", \
       "Error: couldn't create the file %s/app_log.txt.\n")
 
+#define MSG_ERR_CANT_OPEN_FILE \
+    M("Erro: não rolou de abrir o arquivo '%s'!!\n", \
+      "Error: couldn't open the file '%s' for the life of me!!\n")
+
 #define MSG_ERR_USELESS_PROC \
     M("Erro: esse processador não serve pra nada. Você não tem nada útil pra fazer não?\n", \
       "Error: this processor is totally useless. Don't you have anything actually fun to do?\n")

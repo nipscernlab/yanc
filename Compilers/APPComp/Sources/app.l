@@ -208,6 +208,7 @@ int main(int argc, char *argv[])
     cli_parse(argc, argv, &a);      // parses the named options (or exits with usage)
 
     yyin = fopen(a.input, "r"); // -i is the input .asm file
+    if (yyin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
     eval_init   (a.temp_dir);   // -t is the directory holding the log file
     yylex();                    // run the lexer
     fclose(yyin);               // close the .asm file

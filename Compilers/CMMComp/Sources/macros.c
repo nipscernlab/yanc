@@ -30,7 +30,9 @@ TODO:
 void fcat2end(char *n_read, char *n_write)
 {
     FILE *f_in  = fopen(n_read , "r");
+    if (f_in  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, n_read);  exit(EXIT_FAILURE); }
     FILE *f_out = fopen(n_write, "a");
+    if (f_out == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, n_write); exit(EXIT_FAILURE); }
 
     char a;
     do {a = fgetc(f_in); if (a != EOF) fputc(a, f_out);} while (a != EOF);

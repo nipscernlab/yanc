@@ -4,6 +4,7 @@
 
 // global includes
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 #include  <ctype.h>
 
@@ -109,7 +110,9 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
     char asm_file[1024]; sprintf(asm_file, "%s/Software/%s.asm", d_proc, prname); // output .asm file name
 
     yyin  = fopen(cmm_file, "r"); // open the .cmm file
+    if (yyin  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_file); exit(EXIT_FAILURE); }
     f_asm = fopen(asm_file, "w"); // create the .asm file
+    if (f_asm == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, asm_file); exit(EXIT_FAILURE); }
 
     sprintf(dir_soft , "%s/Software", d_proc ); // record the Software directory
     strcpy (dir_macro,                d_macro); // record the Macro directory
@@ -122,7 +125,9 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
     char path[2048];
 
     snprintf(path, sizeof(path),   "%s/cmm_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
+    if (f_log == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path); exit(EXIT_FAILURE); }
     snprintf(path, sizeof(path), "%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
+    if (f_lin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path); exit(EXIT_FAILURE); }
 
     // Open the top-level stmt_list collector. Every directive, declaration
     // and function reduce appends a stmt_node here; nothing reaches f_asm
@@ -174,7 +179,9 @@ void parse_end(char *prname, char *d_proc)
     char cmm_file[1024]; sprintf(cmm_file, "%s/Software/%s.cmm", d_proc, prname);
 
     FILE *output = fopen(path    , "w");
+    if (output == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path);     exit(EXIT_FAILURE); }
     FILE *input  = fopen(cmm_file, "r");
+    if (input  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_file); exit(EXIT_FAILURE); }
 
     char linha[1001], texto[1001] = "";
     fputs("-1 INTERNAL\n"    , output); // code for the file start
