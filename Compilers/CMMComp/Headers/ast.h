@@ -238,9 +238,9 @@ typedef enum {
 typedef struct stmt_node {
     stmt_kind kind;
     int       line;     // source line where the node was built (1-based)
-    int       emitted;  // walker no-ops when set; stmt_append marks the
-                        // node after the inline emit so the scaffold-built
-                        // STMT_BLOCK can be walked later without re-emitting
+    int       emitted;  // idempotency guard: the walker sets it after emitting
+                        // the node and no-ops on a revisit (e.g. a for-loop's
+                        // init/step parked on two slots can be reached twice)
 
     int               id;    // primary int (LHS variable / array / port / dst)
     int               id2;   // secondary int
@@ -394,10 +394,12 @@ void       stmt_emit(stmt_node *n);
 // frees the node and every descendant (rhs included).
 void       stmt_free(stmt_node *n);
 
-// transitional helper: build + walk + free, all at parse time. Keeps emit
-// timing identical to the pre-fase-6 inline grammar actions while the rest
-// of the statement types are still inline. Will be replaced by per-body
-// stmt-list accumulation once every statement kind is migrated.
+// Appends a just-built stmt_node to the currently-open STMT_BLOCK (the top of
+// the body-list stack opened by stmt_list_open / parse_init). No codegen runs
+// here -- the node is walked later by stmt_emit, driven by prog_emit at `fim`
+// or by an enclosing body closer (if_fim / while_stmt / end_switch). The
+// statement -> deferred-AST migration is complete; every add_sinst now fires
+// from the walker, never from a parse-time action.
 void       stmt_append(stmt_node *n);
 
 #endif // YANC_AST_H
