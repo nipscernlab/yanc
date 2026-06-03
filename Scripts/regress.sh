@@ -19,8 +19,14 @@
 #      <proc>/Simulation/ for the sim output (all three are created on
 #      demand by cppcomp + asmcomp).
 #
+#   3. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
+#      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
+#      malformed program with a clean non-zero exit and the expected diagnostic
+#      -- never a crash, never a silent accept. Error-path coverage the golden
+#      phases don't give. (Runs with the CMM phase; skipped by --cpp-only.)
+#
 # Build phase builds all 5 binaries once (cmmcomp + cpppp + cppcomp +
-# appcomp + asmcomp), both phases reuse them.
+# appcomp + asmcomp), all phases reuse them.
 #
 # Usage (from repo root, in msys2/git-bash on Windows):
 #   Scripts/regress.sh                check against goldens (exit 0 = pass)
@@ -608,6 +614,47 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             fail=$((fail+1)); failed_names+=("$base")
         fi
     done
+fi
+
+# ---- 4b. CMM negative phase (error reporting) ------------------------------
+# Error-path coverage the golden phases lack: each fixture is a malformed
+# program that cmmcomp must REJECT with a clean non-zero exit and the right
+# diagnostic -- never a crash, never a silent accept. Fixtures live in
+# NegTests/ (a sibling of Tests/) so the CI smoke `find ... Tests ... .cmm`
+# never tries to compile them.
+if [ "$CPP_ONLY" -eq 0 ]; then
+    echo ""
+    echo "==> CMM negative phase (error reporting)"
+    neg_dir="$CMM_ROOT/NegTests"
+    neg_work="$SCRATCH/work_neg"
+    while IFS='|' read -r fixture expect; do
+        fixture="${fixture%$'\r'}"; expect="${expect%$'\r'}"   # tolerate CRLF manifest
+        case "$fixture" in ''|\#*) continue ;; esac            # skip blanks/comments
+        name="neg:${fixture%.cmm}"
+        if [ ! -f "$neg_dir/$fixture" ]; then
+            echo "FAIL ($name): fixture missing ($neg_dir/$fixture)"
+            fail=$((fail+1)); failed_names+=("$name"); continue
+        fi
+        rm -rf "$neg_work"; mkdir -p "$neg_work/Software" "$neg_work/tmp"
+        cp "$neg_dir/$fixture" "$neg_work/Software/p.cmm"
+        out="$("$CMMCOMP" -en -i p.cmm -n p -p "$neg_work" -m "$MACROS" -t "$neg_work/tmp" 2>&1)"
+        rc=$?
+        if [ "$rc" -eq 0 ]; then
+            echo "FAIL ($name): compiled (exit 0) but should have been rejected"
+            fail=$((fail+1)); failed_names+=("$name")
+        elif [ "$rc" -ge 128 ]; then
+            echo "FAIL ($name): crashed (exit $rc) instead of a clean error"
+            fail=$((fail+1)); failed_names+=("$name")
+        elif ! printf '%s' "$out" | grep -qF "$expect"; then
+            echo "FAIL ($name): exit $rc but missing diagnostic '$expect'"
+            echo "    got: $(printf '%s' "$out" | head -1)"
+            fail=$((fail+1)); failed_names+=("$name")
+        else
+            echo "PASS ($name): rejected (exit $rc) -- \"$expect\""
+            pass=$((pass+1))
+        fi
+    done < "$neg_dir/manifest.txt"
+    rm -rf "$neg_work"
 fi
 
 # ---- 5. summary ------------------------------------------------------------

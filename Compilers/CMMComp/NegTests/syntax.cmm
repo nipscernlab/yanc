@@ -1,0 +1,16 @@
+#PRNAME p
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Negative fixture: garbled declaration in the body must be a syntax error,
+// not a crash or a silent accept.
+void main()
+{
+    int a a a;
+}

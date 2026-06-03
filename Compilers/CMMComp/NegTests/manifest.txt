@@ -1,0 +1,15 @@
+# Negative test manifest for regress.sh's CMM negative phase.
+# Each fixture is a malformed .cmm that cmmcomp MUST reject with a clean
+# non-zero exit (never a crash, never a silent accept) and the listed
+# diagnostic substring (matched against -en output).
+#
+# format:  <fixture.cmm>|<expected substring>
+# (lines starting with '#' and blank lines are ignored)
+#
+# These live in NegTests/ — a sibling of Tests/ — on purpose: the CI smoke
+# test does `find Compilers/CMMComp/Tests -name '*.cmm'` and compiles every
+# hit, so a deliberately-broken .cmm under Tests/ would fail CI.
+syntax.cmm|Syntax error
+no_main.cmm|main() function
+garbage.cmm|Syntax error
+undeclared.cmm|declared the variable
