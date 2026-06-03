@@ -33,7 +33,7 @@ FILE *f_log;        // log file
 void eval_init(char *path)
 {
     char    file[1001];
-    sprintf(file, "%s/app_log.txt", path);
+    snprintf(file, sizeof(file), "%s/app_log.txt", path);
 
     f_log = fopen(file, "w");
 

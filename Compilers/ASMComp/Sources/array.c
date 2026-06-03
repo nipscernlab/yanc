@@ -205,9 +205,9 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
     char path[2048];
     // check if it's a LUT in the Macros folder
     if (f_name[0]=='$')
-        sprintf(path, "%s/%s"          , mac_dir, f_name+1);
+        snprintf(path, sizeof(path), "%s/%s"          , mac_dir, f_name+1);
     else
-        sprintf(path, "%s/Software/%s", proc_dir, f_name  );
+        snprintf(path, sizeof(path), "%s/Software/%s", proc_dir, f_name  );
 
     FILE *f_file =        fopen  (path  , "r");
     if   (f_file == NULL){fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path); exit(EXIT_FAILURE);}

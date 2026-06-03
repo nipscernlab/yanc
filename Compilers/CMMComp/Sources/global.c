@@ -106,15 +106,15 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 {
     // pick up the arguments --------------------------------------------------
 
-    char cmm_file[1024]; sprintf(cmm_file, "%s/Software/%s"    , d_proc, f_name); // input .cmm file name
-    char asm_file[1024]; sprintf(asm_file, "%s/Software/%s.asm", d_proc, prname); // output .asm file name
+    char cmm_file[1024]; snprintf(cmm_file, sizeof(cmm_file), "%s/Software/%s"    , d_proc, f_name); // input .cmm file name
+    char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/Software/%s.asm", d_proc, prname); // output .asm file name
 
     yyin  = fopen(cmm_file, "r"); // open the .cmm file
     if (yyin  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_file); exit(EXIT_FAILURE); }
     f_asm = fopen(asm_file, "w"); // create the .asm file
     if (f_asm == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, asm_file); exit(EXIT_FAILURE); }
 
-    sprintf(dir_soft , "%s/Software", d_proc ); // record the Software directory
+    snprintf(dir_soft, sizeof(dir_soft), "%s/Software", d_proc); // record the Software directory
     strcpy (dir_macro,                d_macro); // record the Macro directory
     strcpy (dir_tmp  ,                d_tmp  ); // record the Tmp directory
 
@@ -160,7 +160,7 @@ void parse_end(char *prname, char *d_proc)
 
     // check whether macros need to be appended to the .asm file --------------
 
-    char asm_file[1024]; sprintf(asm_file, "%s/Software/%s.asm", d_proc, prname);
+    char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/Software/%s.asm", d_proc, prname);
 
 	mac_copy(asm_file);
 
@@ -176,7 +176,7 @@ void parse_end(char *prname, char *d_proc)
     // generate the translation file for the cmm code -------------------------
 
     char     path[2048]; snprintf(path, sizeof(path), "%s/%s", dir_tmp, "trad_cmm.txt");
-    char cmm_file[1024]; sprintf(cmm_file, "%s/Software/%s.cmm", d_proc, prname);
+    char cmm_file[1024]; snprintf(cmm_file, sizeof(cmm_file), "%s/Software/%s.cmm", d_proc, prname);
 
     FILE *output = fopen(path    , "w");
     if (output == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path);     exit(EXIT_FAILURE); }
@@ -192,7 +192,7 @@ void parse_end(char *prname, char *d_proc)
     while(fgets(texto, 1001, input) != NULL)
     {
         substituir_braket(texto);
-        sprintf(linha, "%d %s", cnt++, texto);
+        snprintf(linha, sizeof(linha), "%d %s", cnt++, texto);
         fputs(linha, output);
         memset(texto, 0, sizeof(char) * 1001);
     }
