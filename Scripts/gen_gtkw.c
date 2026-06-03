@@ -206,7 +206,9 @@ static int split_func_var(const char *name, char *func, char *var) {
 }
 static void func_label(const char *func, char *out) {
     if (strcmp(func, "global") == 0) strcpy(out, "global");
-    else snprintf(out, 256, "%s()", func);
+    // Bound the func field so the "()" can never be truncated out of the
+    // 256-byte buffer (silences gcc -Werror=format-truncation): 253 + "()" + NUL.
+    else snprintf(out, 256, "%.253s()", func);
 }
 static void rng_suffix(const Sig *s, char *out) {
     if (s->range[0]) snprintf(out, 80, "[%s]", s->range);
