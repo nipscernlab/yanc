@@ -8,8 +8,34 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v5.0] – 2026-06-03
+
+YANC v5.0 is the **first cross-platform release** — a big milestone. The whole
+toolchain now builds and runs on both **Linux** (native `gcc`) and **Windows**
+(MSYS2 / MinGW-w64) from one shared top-level `Makefile`, verified on every push
+by CI on Ubuntu *and* Windows, with prebuilt binaries published for both
+platforms. It also lands the `gen_gtkw` wave-view generator (replacing the
+runtime Tcl formatters), named HDL generate blocks, and a batch of
+cross-platform build hardening.
+
 ### Added
-- **`Scripts/gen_gtkw.c`** (groundwork, not yet wired) — a C tool that parses a
+- **Cross-platform build from a single `Makefile`** — one top-level `Makefile`
+  is now the single source of truth for every binary (cmmcomp, appcomp, asmcomp,
+  cpppp, cppcomp, comp2gtkw, gen_gtkw). It emits `.exe` under Windows
+  (`$(OS)=Windows_NT`) and bare binaries on Linux, and CI builds + smoke-tests
+  the full pipeline on **both** Ubuntu and Windows/MSYS2 with `-Werror`.
+- **Per-OS setup + runners** — `Scripts/setup.sh` (Linux) and `Scripts/setup.bat`
+  (Windows) resolve the build / simulation / GTKWave tools and cache them via
+  `env.sh` / `env.bat`; the example runners ship as both `single_proc.{sh,bat}`
+  and `multi_proc.{sh,bat}` and pick the simulator with `--sim`. No hardcoded
+  tool paths anywhere.
+- **Prebuilt Linux binaries** — the release workflow now also builds on Ubuntu
+  and publishes `yanc-bin-linux-vX.tar.gz` alongside the Windows
+  `yanc-bin-vX.zip`.
+- **`.gitattributes`** pins the shell scripts to LF (and the Windows scripts to
+  CRLF), so a fresh checkout runs under MSYS2 / git-bash regardless of the
+  cloning machine's `core.autocrlf` setting.
+- **`Scripts/gen_gtkw.c`** — a C tool that parses a
   VCD header and emits a pre-formatted GTKWave `.gtkw` save file, porting the
   proven logic of Aurora's wave pipeline. It classifies the harness signals by
   name (I/O mirrors, the `valr2` Assembly / `linetabs` C+- tracks with their
@@ -31,24 +57,50 @@ tags consumed by Aurora.
   unaffected (regress 71/71).
 
 ### Changed
-- **All four `go_*.bat` flows now use gen_gtkw + the nipscern GTKWave v4.** Each
+- **Runners reorganised** — `go_proc` / `go_proj` are renamed to `single_proc` /
+  `multi_proc`, the per-simulator variants are merged behind a
+  `--sim {icarus,verilator}` flag, and each ships as both `.bat` and `.sh`. The
+  runners now copy only the inputs (the `.cmm` / project inputs), not the whole
+  project tree.
+- **Build hardening** — `make` is invoked with bare `BISON=bison FLEX=flex` so an
+  inherited backslash Windows path can't reach MSYS2's `/bin/sh`; `setup` probes
+  for the broken MSYS2 gcc 16.1.0-5 libstdc++ (which kills Verilator) and warns;
+  `regress.sh` resolves its tools through `env.sh` and links with `-lm` instead
+  of hardcoded paths.
+- **Named HDL generate blocks** — `core.v` and `instr_dec.v` name every
+  `generate` block, so the simulation hierarchy shows meaningful names instead of
+  `genblk2` / `genblkN`.
+- **The runner wave flows now use gen_gtkw + the nipscern GTKWave v4.** Each
   builds `gen_gtkw.exe`, writes the `.gtkw` layout from the (header-only) VCD, and
   opens the waveform with `gtkwave --dark --zoom-fit --left-justify <vcd> -a
   <gtkw>` (no `--script`, no `fix.vcd` tab hack, no `--rcvar` — the nipscern fork
   hides the SST pane and reports that rcvar as not found). FST flows
-  (`go_proc`/`go_proj` Icarus, `go_proj_vl` Verilator) add a quick `+HEADER_ONLY`
-  pass — Icarus writes the header VCD directly; Verilator's tiny header FST is
-  converted with `fst2vcd -f`. The `--zoom-fit` restores the whole-wave view the
+  (the Icarus `single_proc`/`multi_proc` runs and the Verilator `multi_proc
+  --sim verilator` run) add a quick `+HEADER_ONLY` pass — Icarus writes the
+  header VCD directly; Verilator's tiny header FST is converted with
+  `fst2vcd -f`. The `--zoom-fit` restores the whole-wave view the
   Tcl flow did via `Zoom_Best_Fit`.
-- **`go_proj.bat` now sets `TMP`/`TEMP`** to its own Temp dir (like `go_proj_vl`),
-  so it no longer inherits a stale temp path from a previous bat run in the same
-  cmd window (which broke gcc/iverilog with "cannot create temporary file").
+- **`multi_proc.bat` sets `TMP`/`TEMP`** to its own Temp dir, so it no longer
+  inherits a stale temp path from a previous bat run in the same cmd window
+  (which broke gcc/iverilog with "cannot create temporary file").
+
+### Fixed
+- **`cpppp` realpath buffer overflow** — `path_canon`'s POSIX branch could
+  overflow its buffer while canonicalising paths; fixed so the preprocessor is
+  safe on Linux.
+- **`racc` declared before use in the HDL** — `racc` is now declared ahead of the
+  `uic_in2` generate block that references it, so iverilog v13 (which rejects
+  forward references) builds the generated Verilog.
 
 ### Removed
 - **The runtime GTKWave Tcl formatters and their props** — `gtk_proc_init.tcl`,
   `gtk_proj_init.tcl`, `gtk_almost_proj.tcl`, `pos_gtkw.tcl` and `fix.vcd` (the
   empty-tab crash workaround) are gone, replaced by `gen_gtkw.c`. Also removed the
   long-unused `proc2rtl.ys` Yosys script.
+- **The old `go_*.bat` runners** (`go_proc` / `go_proj` / `go_proc_vl` /
+  `go_proj_vl`) — replaced by `single_proc` / `multi_proc` (`.bat` + `.sh`,
+  `--sim`-selected).
+- **`HANDOFF.md`** — the merged branch's working notes.
 
 ## [v4.4.1] – 2026-06-01
 
@@ -434,7 +486,11 @@ Verilator too. Downstream (Aurora) adopts it with two small changes — see
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v4.2...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v5.0...HEAD
+[v5.0]: https://github.com/nipscernlab/yanc/releases/tag/v5.0
+[v4.4.1]: https://github.com/nipscernlab/yanc/releases/tag/v4.4.1
+[v4.4]: https://github.com/nipscernlab/yanc/releases/tag/v4.4
+[v4.3]: https://github.com/nipscernlab/yanc/releases/tag/v4.3
 [v4.2]: https://github.com/nipscernlab/yanc/releases/tag/v4.2
 [v4.1]: https://github.com/nipscernlab/yanc/releases/tag/v4.1
 [v4]: https://github.com/nipscernlab/yanc/releases/tag/v4

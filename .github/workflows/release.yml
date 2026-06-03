@@ -1,15 +1,15 @@
 name: Release YANC binaries
 
-# Builds the YANC compilers (cmmcomp, asmcomp, appcomp, comp2gtkw, gen_gtkw) on a
-# Windows runner with MSYS2 + MinGW-w64, packages everything as a zip,
-# and publishes it as a release asset.
+# Builds the YANC binaries on BOTH a Windows runner (MSYS2 + MinGW-w64 -> .exe,
+# packaged as a .zip) and an Ubuntu runner (native gcc -> bare binaries,
+# packaged as a .tar.gz), and publishes both as release assets.
 #
 # Usage:
-#   - Pushing a v* tag (e.g. git tag v1 && git push origin v1) runs the
-#     workflow automatically, creates a "YANC v1" release, and attaches
-#     yanc-bin-v1.zip to it.
-#   - workflow_dispatch runs without creating a release; the zip is
-#     uploaded as an artifact for inspection.
+#   - Pushing a v* tag (e.g. git tag v5.0 && git push origin v5.0) runs the
+#     workflow automatically, creates a "YANC v5.0" release, and attaches both
+#     yanc-bin-v5.0.zip (Windows) and yanc-bin-linux-v5.0.tar.gz (Linux) to it.
+#   - workflow_dispatch runs without creating a release; both archives are
+#     uploaded as artifacts for inspection.
 #
 # Aurora consumes the asset via components/Scripts/download-yanc.js,
 # which pins the expected tag (update it there when a new tag goes up).
@@ -118,5 +118,92 @@ jobs:
         with:
           name: 'YANC ${{ github.ref_name }}'
           generate_release_notes: true
+          # The Linux binaries (yanc-bin-linux-<tag>.tar.gz) are attached to
+          # this same release by the build-linux job, which `needs: build` so
+          # the release already exists by the time it uploads.
+          body: |
+            **YANC ${{ github.ref_name }} — first cross-platform release.**
+
+            YANC now builds and runs on both **Linux** and **Windows** from one
+            shared top-level Makefile, verified on every push by CI (Ubuntu +
+            Windows/MSYS2). This release ships prebuilt binaries for **both**
+            platforms:
+
+            - `yanc-bin-${{ github.ref_name }}.zip` — Windows (MSYS2 / MinGW-w64) `.exe`
+            - `yanc-bin-linux-${{ github.ref_name }}.tar.gz` — Linux x86-64
+
+            Highlights: cross-platform `setup.sh` / `setup.bat` and
+            `single_proc` / `multi_proc` runners (`.sh` + `.bat`), the new
+            `gen_gtkw` wave-view generator (replacing the runtime Tcl
+            formatters), named HDL generate blocks, and a POSIX path fix in
+            `cpppp`. See CHANGELOG.md for the full list.
           files: |
             ${{ steps.artifact.outputs.name }}.zip
+
+  # Linux counterpart of the build job: compiles the same binaries with native
+  # gcc on Ubuntu, packages them as a .tar.gz, and (on a tag push) attaches the
+  # archive to the release the Windows job already created. `needs: build`
+  # serialises the two so they never race on creating the release.
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc make bison flex
+
+      - name: Build binaries
+        # Same shared Makefile as the Windows job. $(OS) is not Windows_NT here,
+        # so the Makefile emits bare (no .exe) binaries into out/bin.
+        run: |
+          set -euo pipefail
+          make BIN=out/bin
+          ls -l out/bin
+
+      - name: Stage HDL + Macros + Header
+        run: |
+          set -euo pipefail
+          cp -r HDL                          out/HDL
+          cp -r Compilers/CMMComp/Includes   out/Macros
+          cp -r Compilers/CPPComp/Includes   out/Header
+          ls -l out
+
+      - name: Determine artifact name
+        id: artifact
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            echo "name=yanc-bin-linux-${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=yanc-bin-linux-manual" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          cd out
+          # Mirror the Windows layout: bin/, HDL/, Macros/, Header/ at the
+          # archive root.
+          tar -czf "../${{ steps.artifact.outputs.name }}.tar.gz" \
+              bin HDL Macros Header
+          ls -la "../${{ steps.artifact.outputs.name }}.tar.gz"
+
+      - name: Upload artifact (always)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: ${{ steps.artifact.outputs.name }}.tar.gz
+          retention-days: 14
+
+      - name: Attach to release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        # files only: append the tarball to the existing release without
+        # touching its name / body / generated notes (set by the build job).
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.artifact.outputs.name }}.tar.gz

@@ -101,8 +101,9 @@ It **checks** every dependency and **helps you get the missing ones**:
 
 On **Linux**, `setup.sh` does the equivalent through your package manager:
 it offers to install `gcc`/`bison`/`flex` and the simulators, compiles the
-binaries into `bin/` (there is no prebuilt Linux release, so it always builds
-from source), uses the distro `gtkwave`, and caches the paths in
+binaries into `bin/` from source (since v5.0 a prebuilt Linux tarball also
+ships with each release, but `setup.sh` builds locally so the binaries match
+your distro), uses the distro `gtkwave`, and caches the paths in
 `Scripts/tools.local.sh` for the runners. Re-run with `--rebuild` to recompile.
 
 If something can't be resolved automatically (e.g. MSYS2 itself isn't installed
@@ -185,7 +186,7 @@ Auxiliary content:
 > GTKWave for the runner scripts — see [Pre-wired scripts](#pre-wired-scripts).
 > The two options below are the manual equivalents.
 
-**Option A — pre-built (fastest).** Download the latest release zip from [Releases](https://github.com/nipscernlab/yanc/releases/latest) and extract it. The zip contains `bin/` (the executables incl. `comp2gtkw`/`gen_gtkw`), `HDL/`, `Macros/` (C±-side includes), and `Header/` (C++-side includes).
+**Option A — pre-built (fastest).** Download the latest release from [Releases](https://github.com/nipscernlab/yanc/releases/latest) — `yanc-bin-v5.0.zip` on Windows or `yanc-bin-linux-v5.0.tar.gz` on Linux — and extract it. The archive contains `bin/` (the executables incl. `comp2gtkw`/`gen_gtkw`), `HDL/`, `Macros/` (C±-side includes), and `Header/` (C++-side includes).
 
 **Option B — build from source.**
 
@@ -358,8 +359,9 @@ bash Scripts/setup.sh  # Linux  (then ./single_proc.sh, ...)
 ```
 
 On **Linux** `setup.sh` installs the dependencies through your package manager,
-always compiles the binaries from source into `bin/` (no prebuilt Linux
-release), uses the distro `gtkwave`, and caches the paths in
+compiles the binaries from source into `bin/` (a prebuilt Linux tarball also
+ships with each release from v5.0, if you prefer to download it), uses the
+distro `gtkwave`, and caches the paths in
 `Scripts/tools.local.sh` for `Scripts/env.sh`. The rest of this section
 describes the richer Windows `setup.bat`, which covers both ways of getting
 YANC and picks automatically:
