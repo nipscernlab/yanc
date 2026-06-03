@@ -43,7 +43,11 @@ set -uo pipefail
 export TMP="C:/packs/msys64/tmp"
 export TEMP="C:/packs/msys64/tmp"
 export TMPDIR="C:/packs/msys64/tmp"
-mkdir -p "$TMP"
+# Create the dir via its POSIX form. MSYS mkdir reads the bare drive prefix
+# "C:" as a *relative* directory name and would leave a junk "./C:" folder
+# (the ':' shown as a box) in the repo root on every run -- cygpath turns the
+# Windows path into the mount path (here /tmp) so the real dir is used.
+mkdir -p "$(cygpath -u "$TMP" 2>/dev/null || echo "$TMP")"
 
 UPDATE=0
 UPDATE_SIZE=0
