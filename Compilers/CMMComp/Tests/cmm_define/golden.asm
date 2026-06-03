@@ -1,0 +1,23 @@
+NOP
+#PRNAME cmm_define
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+@main @Lwh1 LOD 1
+JIZ Lwh1end
+INN 0
+SET main_x
+ADD 3
+SET main_x
+OUT 0
+LOD main_x
+ADD 7
+SET main_x
+OUT 0
+JMP Lwh1
+@Lwh1end @fim JMP fim

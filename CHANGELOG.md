@@ -8,6 +8,28 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **Object-like `#define` in `cmmcomp`** — the C± lexer now handles
+  `#define NAME body` directly, with no separate preprocessor stage: a later use
+  of `NAME` is replaced by re-lexing its body (flex `yy_scan_string` + a buffer
+  stack), so `#define LIMIT 256` lets you write `LIMIT` anywhere the literal
+  would go. Nested defines expand; a self-referential define is expanded once
+  and then left alone (a per-macro active flag prevents an infinite loop).
+  Function-like macros, `#ifdef` and `#include` are out of scope. Locked down by
+  a positive asm-golden fixture (`cmm_define`) and a recursion-guard negative
+  test.
+- **CMM negative phase in `regress.sh`** — malformed programs (syntax error,
+  missing `main()`, undeclared variable, garbage, recursive `#define`) are now
+  asserted to be rejected with a clean non-zero exit and the right diagnostic,
+  never a crash or silent accept. Fixtures live in `Compilers/CMMComp/NegTests/`.
+  regress is 77/77.
+
+### Fixed
+- **Memory-safety pass over the older compilers** — every `fopen` in
+  cmmcomp/asmcomp/appcomp is now NULL-checked (a missing input file is a clean
+  error instead of a segfault), and the path-building `sprintf`s became
+  bounds-checked `snprintf`.
+
 ## [v5.0] – 2026-06-03
 
 YANC v5.0 is the **first cross-platform release** — a big milestone. The whole

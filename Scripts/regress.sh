@@ -141,11 +141,13 @@ declare -A SIZE_CURRENT
 #   sw_test            - synthetic .cmm fixture; testbench would loop on while(1)
 #   ArcTan/Seno/Sqrt   - Math benchmarks: compute internally with no out(...) calls
 #   ProcDTW/ZeroCross  - real testbench lives in the multi-proc DTW project pass
-SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross")
+#   cmm_define         - synthetic #define fixture; while(1) testbench loop,
+#                        asm-golden compare is enough to lock the lexer expansion
+SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross" "cmm_define")
 
 # Examples to also skip the appcomp/asmcomp build for (their .v / .mif are
 # never consumed elsewhere - no standalone sim, no project link).
-BUILD_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt")
+BUILD_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "cmm_define")
 build_skipped() {
     local name="$1"
     for s in "${BUILD_SKIP[@]}"; do [ "$s" = "$name" ] && return 0; done

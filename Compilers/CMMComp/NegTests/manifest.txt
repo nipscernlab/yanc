@@ -13,3 +13,4 @@ syntax.cmm|Syntax error
 no_main.cmm|main() function
 garbage.cmm|Syntax error
 undeclared.cmm|declared the variable
+define_recursive.cmm|declare the variable

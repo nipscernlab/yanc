@@ -1,0 +1,30 @@
+#PRNAME cmm_define
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Object-like #define fixture: the lexer expands SCALE and OFFSET before the
+// parser ever sees them, so this compiles exactly as if 3 and 7 were written
+// inline. If expansion regressed, SCALE/OFFSET would be undeclared variables
+// and cmmcomp would error -- so a clean golden.asm locks the feature down.
+// (asm-golden only; sim-skipped because of the while(1) testbench loop.)
+#define SCALE  3
+#define OFFSET 7
+
+void main()
+{
+    int x;
+    while (1)
+    {
+        x = in(0);
+        x = x + SCALE;
+        out(0, x);
+        x = x + OFFSET;
+        out(0, x);
+    }
+}
