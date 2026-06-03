@@ -7,17 +7,19 @@
 #
 #   1. Locate the build toolchain (gcc / bison / flex) and, if a supported
 #      package manager is present, offer to install whatever is missing.
-#   2. Compile the YANC binaries into <repo>/bin (kept if already built,
-#      unless --rebuild is given). There is no prebuilt Linux release, so the
-#      source build is the path here.
+#   2. Produce the YANC binaries in <repo>/bin :
+#        * if they are already there, keep them
+#        * else if the build toolchain is present, COMPILE them from source
+#        * else DOWNLOAD the prebuilt Linux binaries from the latest release
 #   3. Locate the simulators (Icarus Verilog, Verilator) and GTKWave, offering
 #      to install the missing ones via the package manager.
 #   4. Cache every resolved path in Scripts/tools.local.sh, which the runners
 #      load through Scripts/env.sh. No path is hardcoded anywhere.
 #
 # Flags:
-#   setup.sh             auto: build the binaries if they are not there yet
+#   setup.sh             auto: keep / build / download as described above
 #   setup.sh --rebuild   force a fresh compile from source
+#   setup.sh --download  force fetching the prebuilt Linux binaries
 #
 # NOTE on GTKWave: this uses your distro's gtkwave package. The Windows flow
 # expects the nipscernlab GTKWave fork; the stock gtkwave still opens the
@@ -34,9 +36,13 @@ CACHE="$SCRIPTS_DIR/tools.local.sh"
 FORCE=""
 case "${1:-}" in
     --rebuild|--build) FORCE=build ;;
+    --download)        FORCE=download ;;
     "" ) ;;
-    * ) echo "usage: $0 [--rebuild]"; exit 2 ;;
+    * ) echo "usage: $0 [--rebuild|--download]"; exit 2 ;;
 esac
+
+# Latest release on GitHub (prebuilt Linux tarball: yanc-bin-linux-*.tar.gz).
+RELEASE_API="https://api.github.com/repos/nipscernlab/yanc/releases/latest"
 
 echo "============================================================"
 echo " YANC setup (Linux)"
@@ -139,18 +145,72 @@ build_bins() {
     make -C "$ROOT_DIR" BIN="$YANC_BIN" ${1:-all}
 }
 
+# curl/wget shims so the download works with whichever is installed.
+_fetch_stdout() {  # $1=url -> body on stdout
+    if   command -v curl >/dev/null 2>&1; then curl -fsSL -H 'User-Agent: yanc-setup' "$1"
+    elif command -v wget >/dev/null 2>&1; then wget -q --header='User-Agent: yanc-setup' -O- "$1"
+    else return 1; fi
+}
+_fetch_file() {    # $1=url $2=dest
+    if   command -v curl >/dev/null 2>&1; then curl -fSL -H 'User-Agent: yanc-setup' -o "$2" "$1"
+    elif command -v wget >/dev/null 2>&1; then wget -q --header='User-Agent: yanc-setup' -O "$2" "$1"
+    else return 1; fi
+}
+
+# Pull the latest yanc-bin-linux-*.tar.gz release asset and unpack its bin/ into
+# <repo>/bin -- the Linux counterpart of setup.bat's :download_bins.
+download_bins() {
+    echo "[download] Fetching prebuilt Linux binaries from the latest GitHub release..."
+    if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
+        echo "[download] need curl or wget to download; install one, or use --rebuild to build from source."
+        return 1
+    fi
+    if ! command -v tar >/dev/null 2>&1; then
+        echo "[download] 'tar' not found; cannot unpack the release archive."
+        return 1
+    fi
+    # The browser_download_url carries the asset filename, so grep the URL directly.
+    local url
+    url="$(_fetch_stdout "$RELEASE_API" 2>/dev/null \
+           | grep -oE 'https://[^"]*yanc-bin-linux-[^"]*\.tar\.gz' | head -1)"
+    if [ -z "$url" ]; then
+        echo "[download] no yanc-bin-linux-*.tar.gz asset in the latest release."
+        echo "           Download one from https://github.com/nipscernlab/yanc/releases"
+        echo "           and extract its bin/ into $YANC_BIN."
+        return 1
+    fi
+    echo "[download] $url"
+    local tmp; tmp="$(mktemp -d)"
+    if ! _fetch_file "$url" "$tmp/yanc-linux.tar.gz"; then
+        echo "[download] download failed."; rm -rf "$tmp"; return 1
+    fi
+    if ! tar -xzf "$tmp/yanc-linux.tar.gz" -C "$tmp"; then
+        echo "[download] could not unpack the archive."; rm -rf "$tmp"; return 1
+    fi
+    if [ ! -d "$tmp/bin" ]; then
+        echo "[download] archive has no bin/ folder."; rm -rf "$tmp"; return 1
+    fi
+    mkdir -p "$YANC_BIN"
+    cp -f "$tmp"/bin/* "$YANC_BIN"/ || { echo "[download] copy into $YANC_BIN failed."; rm -rf "$tmp"; return 1; }
+    chmod +x "$YANC_BIN"/* 2>/dev/null || true
+    rm -rf "$tmp"
+    echo "[download] installed prebuilt binaries into $YANC_BIN"
+}
+
 echo
 echo "--- YANC binaries -------------------------------------------------------"
 if [ "$FORCE" = build ]; then
     [ "$build_ok" = 1 ] || { echo "ERROR: cannot build - gcc/bison/flex missing."; exit 1; }
     build_bins "clean all" || { echo "ERROR: build failed."; exit 1; }
+elif [ "$FORCE" = download ]; then
+    download_bins || { echo "ERROR: could not obtain the binaries."; exit 1; }
 elif [ "$bins_present" = 1 ]; then
-    echo "Binaries already present in $YANC_BIN - keeping them (use --rebuild to recompile)."
+    echo "Binaries already present in $YANC_BIN - keeping them (--rebuild recompiles, --download refetches)."
 elif [ "$build_ok" = 1 ]; then
     build_bins || { echo "ERROR: build failed."; exit 1; }
 else
-    echo "ERROR: binaries missing and gcc/bison/flex not available - install them and re-run."
-    exit 1
+    echo "No build toolchain (gcc/bison/flex) - falling back to the prebuilt Linux release."
+    download_bins || { echo "ERROR: no binaries, no toolchain, and download failed - install gcc/bison/flex or download manually."; exit 1; }
 fi
 
 # ---------------------------------------------------------------------------

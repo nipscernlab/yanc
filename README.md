@@ -99,12 +99,12 @@ It **checks** every dependency and **helps you get the missing ones**:
   present;
 * remembers every resolved path so the runners need no manual configuration.
 
-On **Linux**, `setup.sh` does the equivalent through your package manager:
-it offers to install `gcc`/`bison`/`flex` and the simulators, compiles the
-binaries into `bin/` from source (since v5.0 a prebuilt Linux tarball also
-ships with each release, but `setup.sh` builds locally so the binaries match
-your distro), uses the distro `gtkwave`, and caches the paths in
-`Scripts/tools.local.sh` for the runners. Re-run with `--rebuild` to recompile.
+On **Linux**, `setup.sh` does the equivalent through your package manager: it
+offers to install `gcc`/`bison`/`flex` and the simulators, and produces the
+binaries in `bin/` — building them from source when the toolchain is present, or
+downloading the prebuilt Linux tarball from the latest release when it isn't. It
+uses the distro `gtkwave` and caches the paths in `Scripts/tools.local.sh` for
+the runners. Re-run with `--rebuild` to recompile or `--download` to refetch.
 
 If something can't be resolved automatically (e.g. MSYS2 itself isn't installed
 yet), setup prints the exact link and command to fix it, then you re-run it. See
@@ -359,9 +359,9 @@ bash Scripts/setup.sh  # Linux  (then ./single_proc.sh, ...)
 ```
 
 On **Linux** `setup.sh` installs the dependencies through your package manager,
-compiles the binaries from source into `bin/` (a prebuilt Linux tarball also
-ships with each release from v5.0, if you prefer to download it), uses the
-distro `gtkwave`, and caches the paths in
+then builds the binaries from source into `bin/` (or downloads the prebuilt
+Linux tarball from the release when no toolchain is present; `--download` forces
+it), uses the distro `gtkwave`, and caches the paths in
 `Scripts/tools.local.sh` for `Scripts/env.sh`. The rest of this section
 describes the richer Windows `setup.bat`, which covers both ways of getting
 YANC and picks automatically:
