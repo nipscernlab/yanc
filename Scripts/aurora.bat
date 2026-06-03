@@ -111,9 +111,18 @@ if exist %BLD_DIR%\Scripts (
 :: tuple gives stand-alone .exe with no MSYS2 DLL dependency. Build into the
 :: repo-local bin\ (the Makefile's cwd-relative default, so no backslash path is
 :: passed into make/sh), then copy the .exe into the Aurora deploy bin\.
+::
+:: BISON=bison FLEX=flex are forced on the make command line so that a
+:: pre-existing BISON / FLEX environment variable holding a backslash Windows
+:: path (e.g. C:\packs\msys64\usr\bin\bison.exe -- which setup.bat may have
+:: exported) cannot leak in. The Makefile's "BISON ?= bison" is a *conditional*
+:: assignment and would NOT override such an inherited value; the backslashes
+:: would then be eaten by MSYS2's /bin/sh ("C:packs...bison.exe: not found").
+:: A make command-line assignment overrides the environment, and bison/flex are
+:: already on PATH (checked above), so sh resolves the bare names cleanly.
 
 pushd %SRC_DIR%
-make CC=x86_64-w64-mingw32-gcc clean all
+make CC=x86_64-w64-mingw32-gcc BISON=bison FLEX=flex clean all
 popd
 
 xcopy %SRC_DIR%\bin\*.exe %BLD_DIR%\bin\ /I /Q /Y

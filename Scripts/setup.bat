@@ -303,8 +303,15 @@ if defined MSYS2_ROOT set "PATH=%MSYS2_ROOT%\usr\bin;%MINGW_BIN%;%PATH%"
 set "CCNAME=gcc"
 echo %GCC% | find /i "x86_64-w64-mingw32-gcc" >nul && set "CCNAME=x86_64-w64-mingw32-gcc"
 
+:: Force BISON=bison FLEX=flex on the command line: this batch resolved BISON /
+:: FLEX above to full backslash Windows paths (e.g. ...\usr\bin\bison.exe) and
+:: exports them into make's environment. The Makefile's "BISON ?= bison" is a
+:: conditional assignment and would NOT override an inherited value, so the
+:: backslashes would be eaten by MSYS2's /bin/sh. The command-line assignment
+:: overrides the env var, and bison/flex are now on PATH, so sh resolves the
+:: bare names cleanly.
 pushd "%ROOT_DIR%"
-make CC=%CCNAME% clean all || (popd & exit /b 1)
+make CC=%CCNAME% BISON=bison FLEX=flex clean all || (popd & exit /b 1)
 popd
 
 echo [build] Done.

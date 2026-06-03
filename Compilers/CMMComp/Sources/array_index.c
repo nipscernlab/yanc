@@ -5,7 +5,6 @@
 /*
 TODO:
 1- usar instrucao virtual para evitar enderecamento idireto quando indice eh constante
-2- AST vai economizar muito codigo em array 2D
 */
 
 // global includes
