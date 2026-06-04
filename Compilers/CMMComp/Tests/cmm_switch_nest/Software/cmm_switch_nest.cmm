@@ -1,0 +1,62 @@
+#PRNAME cmm_switch_nest
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Nested switch + break-binding coverage. These two constructs used to be
+// impossible: a switch inside a case was a syntax error, and a `break` inside
+// an `if` inside a case jumped out of the enclosing WHILE instead of the
+// switch. The break-target stack (saltos.c) fixes both -- `break` now binds to
+// the innermost enclosing loop OR switch, and a case body is an ordinary
+// statement list, so a switch nests in a case. See cmm_switch for the flat
+// switch coverage; this fixture proves the nesting and the break binding by
+// value:
+//
+//   Part 1 (nested switch):  a=1,b=2
+//     - outer case 1 matches; its body opens an inner switch on b
+//     - inner case 2 matches      -> out 12
+//     - control returns to the outer case 1 body after the inner switch,
+//       then breaks the OUTER switch -> out 100
+//     (the inner switch reusing switch_exp does NOT corrupt the outer compare,
+//      because a matched case always breaks out before any later compare runs)
+//
+//   Part 2 (break in if in case): a=5
+//     - case 5 matches; `if (a) break;` must exit the SWITCH (not the while)
+//     - the post-break body (999) and the default (888) are skipped
+//     - out 50 runs every iteration -> proves the loop kept going, i.e. the
+//       break exited the switch, not the loop
+//
+// Expected outputs (repeating): 12 100 50
+
+void main()
+{
+    int a; int b;
+    while (1)
+    {
+        a = 1; b = 2;
+        switch (a) {
+            case 1:
+                switch (b) {
+                    case 2: out(0, 12); break;
+                    default: out(0, 19);
+                }
+                out(0, 100); break;
+            case 2: out(0, 200); break;
+            default: out(0, 99);
+        }
+
+        a = 5;
+        switch (a) {
+            case 5:
+                if (a) break;    // exits the switch, NOT the while
+                out(0, 999);     // skipped
+            default: out(0, 888);
+        }
+        out(0, 50);              // runs every iteration
+    }
+}

@@ -226,15 +226,14 @@ return_call : RET exp ';'                 {stmt_append(stmt_return($2  ));}
 
 stmt_list: stmt_full | stmt_list stmt_full
 
-// every statement that can be written inside a function
+// Every statement that can be written inside a function. There is no separate
+// "statements allowed in a case" tier any more: a case body is an ordinary
+// stmt_list, and `break` binds to the innermost enclosing loop OR switch via
+// the break-target stack in saltos.c (see exec_break). That single change is
+// what lets a switch nest inside a case, lets a `{ }` block live in a case, and
+// makes a `break` inside an if-in-a-case correctly exit the switch.
 stmt_full: '{' stmt_list '}' // statement block
-         |     stmt_case     // every statement type accepted inside a case
-         |   switch_case     // switch case
-         |         break     // break; inside a while
-         |    dire_inter     // interrupt point
-
-// statements that can be used inside a case:
-stmt_case:        declar     // variable declarations
+         |        declar     // variable declarations
          |    assignment     // expression assignment to a variable
          |    while_stmt     // while loop
          |      for_stmt     // for loop (desugared to while + init/step)
@@ -245,6 +244,9 @@ stmt_case:        declar     // variable declarations
          |      std_copy     // copies the value of the first argument into the second (no type checking)
          |     void_call     // subroutine call
          |   return_call     // function return
+         |   switch_case     // switch/case
+         |         break     // break; (innermost loop or switch)
+         |    dire_inter     // interrupt point
 
 // function calls -------------------------------------------------------------
 
@@ -293,9 +295,12 @@ else_intro   : ELSE                                  {else_stmt();}             
 switch_case   : switch_intro '{' cases '}' {stmt_append(end_switch());}
 switch_intro  : SWITCH '(' exp ')'         {exec_switch($3);}
 
-case_list     :           stmt_case
-              | case_list stmt_case
-              | case_list BREAK ';'        {switch_break();} // case-local break (distinct from while)
+// A case body is an ordinary statement list. `break` is now a normal statement
+// (stmt_full -> break), resolved to this switch by the break-target stack, so
+// it needs no special rule here -- and a nested switch / block / if-with-break
+// all parse and emit correctly.
+case_list     :           stmt_full
+              | case_list stmt_full
 
 case          : case_label    case_list
 case_label    : CASE INUM ':' {case_test($2,1);}

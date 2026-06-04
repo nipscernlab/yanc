@@ -36,6 +36,7 @@ stmt_node *for_finish  (void);              // returns the desugared STMT_WHILE
 
 void       case_test   (int val_id, int val_type); // builds STMT_CASE_LABEL
 void       defaut_test (void);                     // builds STMT_DEFAULT_LABEL
-void       switch_break(void);                     // builds STMT_SWITCH_BREAK
 void       exec_switch (expr_node *cond);          // opens STMT_SWITCH
 stmt_node *end_switch  (void);                     // returns the STMT_SWITCH
+// break (in a loop OR a case) is built by exec_break above via the break-target
+// stack -- there is no separate switch_break entry point any more.

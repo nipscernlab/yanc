@@ -9,6 +9,24 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **Nested `switch` and correct `break` binding (cmmcomp)** — a `switch` can now
+  appear inside a `case`, and `break` binds to the innermost enclosing loop *or*
+  switch (the standard C rule). Previously the grammar had a separate
+  "statements allowed in a case" tier (`stmt_case`) that omitted `switch`, so a
+  nested switch was a syntax error; worse, a `break` inside an `if` inside a
+  `case` was emitted as a loop break (`JMP Lwh<n>end`) and jumped out of the
+  enclosing `while` instead of the switch. The fix replaces the grammar tier
+  with a semantic **break-target stack** in `saltos.c`: every loop and switch
+  pushes one entry, and `exec_break` resolves to the top, so a case body is now
+  an ordinary statement list (blocks and nested switches included). Per-switch
+  case numbering moved onto the switch's `stmt_node` so nested switches no longer
+  share a global counter. **Byte-identical assembly** for every existing test
+  (flat switches, loops and breaks emit exactly as before — verified by a
+  zero-diff `--update` and the `size_baseline` ratchet); the new behaviour is
+  locked down by the `cmm_switch_nest` sim fixture (nested switch + a
+  break-in-if-in-case, output values checked against hand computation). Note:
+  fall-through (a case without `break`) remains a pre-existing limitation — this
+  compiler re-tests at each case label rather than falling through.
 - **Object-like `#define` in `cmmcomp`** — the C± lexer now handles
   `#define NAME body` directly, with no separate preprocessor stage: a later use
   of `NAME` is replaced by re-lexing its body (flex `yy_scan_string` + a buffer

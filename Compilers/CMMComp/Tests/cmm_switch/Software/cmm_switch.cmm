@@ -20,9 +20,9 @@
 //   s=20 -> middle of three cases  -> 42
 // Expected outputs: 11 22 39 42
 //
-// NOTE: a switch nested inside a case is NOT accepted -- the grammar's
-// stmt_case list (while/for/if/out/...) omits switch_case -- so it is left out
-// of this fixture. (if/while DO nest in a case.)
+// NOTE: this fixture is the FLAT switch coverage (each case is a direct
+// child of the switch). Nested switch (switch inside a case) and break-binding
+// inside an if-in-a-case are covered separately by cmm_switch_nest.
 
 void main()
 {

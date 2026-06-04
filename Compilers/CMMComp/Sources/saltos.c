@@ -17,9 +17,10 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
 
-// switch/case state variables
-int switching = 0;
-int case_cnt  = 0;
+// Monotonic switch id: a unique label namespace per switch (sw_case_<id>_* /
+// switch_end_<id>). Per-switch state -- the running case count -- lives on the
+// switch's stmt_node->id2; break routing lives on the break-target stack
+// below. Nested switches therefore share no mutable global counter.
 int swit_cnt  = 0;
 
 // ----------------------------------------------------------------------------
@@ -47,6 +48,67 @@ static stmt_node *pending_pop(void)
 {
     return pending_stack[--pending_stack_n];
 }
+
+// ----------------------------------------------------------------------------
+// break-target stack ---------------------------------------------------------
+// ----------------------------------------------------------------------------
+//
+// Every loop (while / for) and every switch pushes one entry while its body is
+// parsed; `break` (exec_break) resolves to the top, so it always exits the
+// innermost enclosing loop OR switch -- the standard C rule, done in the
+// semantic layer instead of via a grammar tier. A loop entry carries its while
+// label and emits `JMP Lwh<id>end`; a switch entry carries its swit id and
+// emits `JMP switch_end<id>`.
+
+typedef struct { int is_switch; int id; } brk_target;
+static brk_target *brk_stk  = NULL;
+static int         brk_n    = 0;
+static int         brk_cap  = 0;
+
+static void brk_push(int is_switch, int id)
+{
+    if (brk_n + 1 > brk_cap)
+    {
+        int new_cap = brk_cap ? brk_cap * 2 : 8;
+        brk_target *t = realloc(brk_stk, (size_t)new_cap * sizeof(*t));
+        if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        brk_stk  = t;
+        brk_cap  = new_cap;
+    }
+    brk_stk[brk_n].is_switch = is_switch;
+    brk_stk[brk_n].id        = id;
+    brk_n++;
+}
+
+static void brk_pop(void) {brk_n--;}
+
+// ----------------------------------------------------------------------------
+// active-switch stack --------------------------------------------------------
+// ----------------------------------------------------------------------------
+//
+// The switch currently collecting cases. case_test / defaut_test bump its
+// running case count (stmt_node->id2) and stamp each label with its swit id;
+// nested switches each get their own node, so the counts never collide.
+
+static stmt_node **sw_stk  = NULL;
+static int         sw_n    = 0;
+static int         sw_cap  = 0;
+
+static void sw_push(stmt_node *n)
+{
+    if (sw_n + 1 > sw_cap)
+    {
+        int new_cap = sw_cap ? sw_cap * 2 : 8;
+        stmt_node **t = realloc(sw_stk, (size_t)new_cap * sizeof(*t));
+        if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        sw_stk  = t;
+        sw_cap  = new_cap;
+    }
+    sw_stk[sw_n++] = n;
+}
+
+static stmt_node *sw_top(void) {return sw_n ? sw_stk[sw_n - 1] : NULL;}
+static void       sw_pop(void) {sw_n--;}
 
 // ----------------------------------------------------------------------------
 // if/else --------------------------------------------------------------------
@@ -96,6 +158,7 @@ void while_expp()
     int label = push_while();
     stmt_node *partial = stmt_while(label, NULL, NULL);
     pending_push(partial);
+    brk_push(0, label);  // break inside the body exits this loop
     // cond comes in while_expexp; body list opens there too
 }
 
@@ -110,6 +173,7 @@ void while_expexp(expr_node *cond)
 stmt_node *while_stmt()
 {
     stmt_node *body    = stmt_list_close();
+    brk_pop();
     pop_while();
     stmt_node *partial = pending_pop();
     partial->body      = body;
@@ -145,6 +209,7 @@ void for_open(expr_node *cond)
     partial->then_body = for_saved_init;
     partial->else_body = for_saved_step;
     pending_push(partial);
+    brk_push(0, label);  // break inside the body exits this loop
     stmt_list_open();
 
     for_saved_init = NULL;
@@ -154,6 +219,7 @@ void for_open(expr_node *cond)
 stmt_node *for_finish()
 {
     stmt_node *body    = stmt_list_close();
+    brk_pop();
     pop_while();
     stmt_node *partial = pending_pop();
 
@@ -175,12 +241,13 @@ stmt_node *for_finish()
 
 stmt_node *exec_break()
 {
-    if (get_while() == 0)
+    if (brk_n == 0)  // break with no enclosing loop or switch
     {
         fprintf(stderr, MSG_ERR_BREAK_LOST, line_num+1);
         exit(EXIT_FAILURE);
     }
-    return stmt_break_while(get_while());
+    brk_target t = brk_stk[brk_n - 1];  // innermost
+    return t.is_switch ? stmt_switch_break(t.id) : stmt_break_while(t.id);
 }
 
 // ----------------------------------------------------------------------------
@@ -189,52 +256,54 @@ stmt_node *exec_break()
 
 void exec_switch(expr_node *cond)
 {
-    if (switching == 1)
-    {
-        fprintf(stderr, MSG_ERR_NESTED_SWITCH, line_num+1);
-        exit(EXIT_FAILURE);
-    }
-
-    // pre-declare the implicit switch_exp variable so case_test (at parse
+    // Pre-declare the implicit switch_exp variable so case_test (at parse
     // time) can record its case_idx referencing it; the walker fills in
-    // v_type at emit time once it knows the cond's evaluated type.
+    // v_type at emit time once it knows the cond's evaluated type. The variable
+    // is shared across all switches, including nested ones: a matched case
+    // always breaks out before any later compare runs, so an inner switch
+    // reusing switch_exp never corrupts an enclosing compare. (Fall-through is
+    // a separate, pre-existing limitation -- this compiler re-tests at each
+    // case label rather than falling through -- so every case needs its break.)
     if (find_var("switch_exp") == -1) add_var("switch_exp");
 
     swit_cnt++;
-    case_cnt  = 0;
-    switching = 1;
-
     stmt_node *partial = stmt_switch(swit_cnt, /*case_max=*/0, cond, NULL);
     pending_push(partial);
-    stmt_list_open();  // accumulate body (case labels, stmts, breaks, defaults)
+    sw_push(partial);       // active switch for case_test / defaut_test
+    brk_push(1, swit_cnt);  // break inside a case exits this switch
+    stmt_list_open();       // accumulate body (case labels, stmts, breaks, defaults)
 }
 
 void case_test(int val_id, int val_type)
 {
-    case_cnt++;
+    stmt_node *sw  = sw_top();
     stmt_node *top = stmt_list_top();
-    if (top) stmt_block_push(top, stmt_case_label(swit_cnt, case_cnt, val_id, val_type));
+    if (sw && top)
+    {
+        sw->id2++;  // running case count (becomes case_max at end_switch)
+        stmt_block_push(top, stmt_case_label(sw->id, sw->id2, val_id, val_type));
+    }
 }
 
 void defaut_test()
 {
-    case_cnt++;
+    stmt_node *sw  = sw_top();
     stmt_node *top = stmt_list_top();
-    if (top) stmt_block_push(top, stmt_default_label(swit_cnt, case_cnt));
-}
-
-void switch_break()
-{
-    stmt_node *top = stmt_list_top();
-    if (top) stmt_block_push(top, stmt_switch_break(swit_cnt));
+    if (sw && top)
+    {
+        sw->id2++;
+        stmt_block_push(top, stmt_default_label(sw->id, sw->id2));
+    }
 }
 
 stmt_node *end_switch()
 {
     stmt_node *body    = stmt_list_close();
+    brk_pop();
+    sw_pop();
     stmt_node *partial = pending_pop();
     partial->body      = body;
-    partial->id2       = case_cnt;  // case_max for the trailing label
-    switching = 0;
+    // partial->id2 already holds the running case count (case_max) for the
+    // trailing @sw_case_<id>_<max+1> / @switch_end label the walker emits.
     return partial;
 }
