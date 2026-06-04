@@ -17,8 +17,9 @@
 //   100 - 37     -> 63  (folded)
 //   a + 3        -> 10  (NOT folded: a is a variable; runtime)
 //   a * (2 + 3)  -> 35  (operand 2+3 folds to 5, then runtime a*5)
-//   3 - 10       -> -7  (NOT folded: negative result; runtime)
-// Expected outputs: 5 20 63 10 35 -7
+//   3 - 10       -> -7  (folds to a negative -> emitted as NEG_M 7)
+//   (3 - 5) + 10 -> 8   (folds through a negative intermediate to a positive)
+// Expected outputs: 5 20 63 10 35 -7 8
 
 void main()
 {
@@ -32,5 +33,6 @@ void main()
         out(0, a + 3);
         out(0, a * (2 + 3));
         out(0, 3 - 10);
+        out(0, (3 - 5) + 10);
     }
 }

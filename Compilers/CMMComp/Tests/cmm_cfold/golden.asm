@@ -24,8 +24,9 @@ OUT 0
 LOD main_a
 MLT 5
 OUT 0
-NEG_M 10
-ADD 3
+NEG_M 7
+OUT 0
+LOD 8
 OUT 0
 JMP Lwh1
 @Lwh1end @fim JMP fim

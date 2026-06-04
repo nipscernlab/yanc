@@ -380,8 +380,22 @@ static int commutative_int_binop(const expr_node *n)
 static int const_eval(expr_node *n, long *val)
 {
     if (!n) return 0;
+    // Range that keeps the result both representable and emittable: a positive
+    // result becomes a literal, a negative one a NEG_M of its magnitude (a
+    // literal, so |r| must be <= max). max = signed NUBITS-bit max; min = -max.
+    long max = ((long)1 << (nbmant + nbexpo)) - 1;
+    long min = -max;
+
     if (n->kind == EXPR_LITERAL && n->type == 1) {
         *val = atol(v_table[n->id].name);
+        return 1;
+    }
+    if (n->kind == EXPR_UNOP && n->op == OP_NEG) {       // -(const)
+        long a;
+        if (!const_eval(n->left, &a)) return 0;
+        long r = -a;
+        if (r < min || r > max) return 0;
+        *val = r;
         return 1;
     }
     if (n->kind == EXPR_BINOP) {
@@ -391,13 +405,14 @@ static int const_eval(expr_node *n, long *val)
             case OP_ADD: r = a + b; break;
             case OP_SUB: r = a - b; break;
             case OP_MUL: r = a * b; break;
-            case OP_AND: r = a & b; break;
-            case OP_OR:  r = a | b; break;
-            case OP_XOR: r = a ^ b; break;
+            // bitwise only on non-negative operands -- a negative 2's-complement
+            // operand's high bits beyond NUBITS would not match the hardware
+            case OP_AND: if (a < 0 || b < 0) return 0; r = a & b; break;
+            case OP_OR:  if (a < 0 || b < 0) return 0; r = a | b; break;
+            case OP_XOR: if (a < 0 || b < 0) return 0; r = a ^ b; break;
             default: return 0;
         }
-        long max = ((long)1 << (nbmant + nbexpo)) - 1;   // signed NUBITS-bit max
-        if (r < 0 || r > max) return 0;
+        if (r < min || r > max) return 0;
         *val = r;
         return 1;
     }
@@ -460,13 +475,19 @@ static expr ast_emit_expr_impl(expr_node *n)
             }
 
             // Constant folding: a fully-constant int subtree collapses to one
-            // literal (exec_inum interns it, num2exp returns the reference).
+            // literal. A non-negative result is just that literal (num2exp,
+            // no emit); a negative one has no literal form, so it becomes a
+            // NEG_M of its magnitude via oper_neg (e.g. 3-5 -> NEG_M 2).
             {
                 long cval;
                 if (const_eval(n, &cval)) {
                     char buf[32];
-                    snprintf(buf, sizeof buf, "%ld", cval);
-                    return num2exp(exec_inum(buf), 1);
+                    if (cval >= 0) {
+                        snprintf(buf, sizeof buf, "%ld", cval);
+                        return num2exp(exec_inum(buf), 1);
+                    }
+                    snprintf(buf, sizeof buf, "%ld", -cval);
+                    return oper_neg(num2exp(exec_inum(buf), 1));
                 }
             }
 
