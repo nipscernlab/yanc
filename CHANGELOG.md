@@ -43,6 +43,17 @@ tags consumed by Aurora.
   fixture, which writes distinct values to distinct constant indices via `SET_V`
   and reads them back via `LOD_V` -- the readback values are checked against
   hand computation, so a wrong offset on either side would be caught.
+- **Integer constant folding (cmmcomp codegen)** — a fully-constant int
+  subexpression (`+ - * & | ^` of int literals) is evaluated at compile time and
+  emitted as a single literal, folding deeply through nesting (`(2+3)*4` -> 20).
+  Only when every intermediate stays non-negative and within the signed NUBITS
+  range, so the compile-time arithmetic matches the hardware; an overflowing or
+  negative result falls back to the runtime op (which does the NUBITS
+  wraparound / negation), e.g. `30000+30000` is left to the runtime. Float is
+  never folded (the YANC float is not IEEE-bit-compatible). Composes with the
+  constant-index array opt (`arr[2+3]` folds to `arr[5]`, then uses `LOD_V` /
+  `SET_V`). Validated by the `cmm_cfold` sim fixture (folded output values
+  checked against hand computation: 5 20 63 10 35 -7).
 
 ### Fixed
 - **Memory-safety pass over the older compilers** — every `fopen` in

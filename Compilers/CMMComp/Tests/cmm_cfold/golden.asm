@@ -1,0 +1,31 @@
+NOP
+#PRNAME cmm_cfold
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+@main @Lwh1 LOD 1
+JIZ Lwh1end
+LOD 7
+SET main_a
+LOD 5
+OUT 0
+LOD 20
+OUT 0
+LOD 63
+OUT 0
+LOD main_a
+ADD 3
+OUT 0
+LOD main_a
+MLT 5
+OUT 0
+NEG_M 10
+ADD 3
+OUT 0
+JMP Lwh1
+@Lwh1end @fim JMP fim

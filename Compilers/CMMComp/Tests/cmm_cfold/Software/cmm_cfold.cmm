@@ -1,0 +1,36 @@
+#PRNAME cmm_cfold
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Functional fixture for int constant folding (ast.c const_eval): a fully
+// constant int subtree collapses to one literal at compile time. Validated by
+// the SIMULATED OUTPUT VALUES, not golden.asm -- if folding ever computed a
+// wrong result it would show here. With a=7:
+//   2 + 3        -> 5   (folded)
+//   (2 + 3) * 4  -> 20  (folded, deep / nested)
+//   100 - 37     -> 63  (folded)
+//   a + 3        -> 10  (NOT folded: a is a variable; runtime)
+//   a * (2 + 3)  -> 35  (operand 2+3 folds to 5, then runtime a*5)
+//   3 - 10       -> -7  (NOT folded: negative result; runtime)
+// Expected outputs: 5 20 63 10 35 -7
+
+void main()
+{
+    int a;
+    while (1)
+    {
+        a = 7;
+        out(0, 2 + 3);
+        out(0, (2 + 3) * 4);
+        out(0, 100 - 37);
+        out(0, a + 3);
+        out(0, a * (2 + 3));
+        out(0, 3 - 10);
+    }
+}

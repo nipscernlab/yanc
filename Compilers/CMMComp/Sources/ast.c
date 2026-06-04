@@ -9,6 +9,7 @@
 #include "../Headers/ast.h"
 #include "../Headers/global.h"
 #include "../Headers/variaveis.h"   // v_table[].name for the dump
+#include "../Headers/diretivas.h"   // nbmant / nbexpo for the constant-fold range
 #include "../Headers/messages.h"
 
 // needed by the expression-tree walker (ast_emit_expr) below
@@ -367,6 +368,42 @@ static int commutative_int_binop(const expr_node *n)
     return n->type == 1 && (n->op == OP_ADD || n->op == OP_MUL);
 }
 
+// Constant folding. const_eval recursively evaluates a subtree as a
+// compile-time int constant: it succeeds (returns 1, sets *val) only for an int
+// literal, or +/-/*/&/|/^ of foldable constants whose result -- AT EVERY LEVEL
+// -- stays non-negative and within the signed NUBITS-bit range. That guard is
+// what makes the C-side arithmetic match the hardware: if any intermediate
+// would overflow or go negative, we bail and let the runtime op handle the
+// NUBITS wraparound / negation (so e.g. (30000+30000) is NOT folded). Float is
+// never folded (the YANC float is not IEEE-bit-compatible); div/mod/shift/
+// comparison/logical ops are left to the runtime too.
+static int const_eval(expr_node *n, long *val)
+{
+    if (!n) return 0;
+    if (n->kind == EXPR_LITERAL && n->type == 1) {
+        *val = atol(v_table[n->id].name);
+        return 1;
+    }
+    if (n->kind == EXPR_BINOP) {
+        long a, b, r;
+        if (!const_eval(n->left, &a) || !const_eval(n->right, &b)) return 0;
+        switch (n->op) {
+            case OP_ADD: r = a + b; break;
+            case OP_SUB: r = a - b; break;
+            case OP_MUL: r = a * b; break;
+            case OP_AND: r = a & b; break;
+            case OP_OR:  r = a | b; break;
+            case OP_XOR: r = a ^ b; break;
+            default: return 0;
+        }
+        long max = ((long)1 << (nbmant + nbexpo)) - 1;   // signed NUBITS-bit max
+        if (r < 0 || r > max) return 0;
+        *val = r;
+        return 1;
+    }
+    return 0;
+}
+
 // Idempotent: a second call over the same node returns the first result
 // instead of re-emitting. This guards against double-emission if a tree ever
 // gets walked twice (shouldn't happen in the grammar today, but cheap to
@@ -420,6 +457,17 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_DIV:
                     if (is_const_value(n->right, 1.0) && n->left ->type == n->type) return ast_emit_expr(n->left );
                     break;
+            }
+
+            // Constant folding: a fully-constant int subtree collapses to one
+            // literal (exec_inum interns it, num2exp returns the reference).
+            {
+                long cval;
+                if (const_eval(n, &cval)) {
+                    char buf[32];
+                    snprintf(buf, sizeof buf, "%ld", cval);
+                    return num2exp(exec_inum(buf), 1);
+                }
             }
 
             // Sethi-Ullman ordering: for a commutative int op, evaluate the
