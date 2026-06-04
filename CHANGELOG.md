@@ -22,7 +22,15 @@ tags consumed by Aurora.
   missing `main()`, undeclared variable, garbage, recursive `#define`) are now
   asserted to be rejected with a clean non-zero exit and the right diagnostic,
   never a crash or silent accept. Fixtures live in `Compilers/CMMComp/NegTests/`.
-  regress is 77/77.
+- **Sethi-Ullman operand ordering (cmmcomp codegen)** — when a commutative
+  integer `+` / `*` has two complex operands, the AST walker now evaluates the
+  heavier subtree first, so its result spends less time pushed on the shallow
+  NDSTAC hardware stack (fewer pushes / spills). The reorder is value-identical
+  (`S_ADD` / `S_MLT` are symmetric) and the AST is what makes it possible — the
+  old parse-order emit was locked left-to-right. Validated functionally by the
+  `cmm_reorder` sim fixture (output values checked against hand computation, not
+  golden.asm). Scoped to int `+`/`*` for now; float is excluded (reassociation
+  would change rounding).
 
 ### Fixed
 - **Memory-safety pass over the older compilers** — every `fopen` in

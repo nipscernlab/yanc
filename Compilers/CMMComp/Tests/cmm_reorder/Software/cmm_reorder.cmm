@@ -1,0 +1,35 @@
+#PRNAME cmm_reorder
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Functional fixture for the Sethi-Ullman operand-ordering optimization
+// (ast.c: commutative int +/* evaluate the heavier subtree first). The
+// optimization reorders the emitted instructions, so this test is validated
+// by the SIMULATED OUTPUT VALUES, not by golden.asm -- if reordering ever
+// changed the arithmetic, these numbers would move. Operands are distinct
+// constants so a miscompile is visible:
+//   a=7 b=3 c=5 d=11 e=2 f=13 g=4 h=6
+// Expected outputs (computed by hand):
+//   (a+b)+((c+d)+(e+f))            = 10 + (16+15)      = 41
+//   ((a+b)*(c+d))+((e+f)*(g+h))    = (10*16)+(15*10)   = 310
+//   (a*b)+((c*d)+(e*f))            = 21 + (55+26)      = 102
+//   a+b+c+d+e+f+g+h                = 51
+
+void main()
+{
+    int a; int b; int c; int d; int e; int f; int g; int h;
+    while (1)
+    {
+        a = 7; b = 3; c = 5; d = 11; e = 2; f = 13; g = 4; h = 6;
+        out(0, (a + b) + ((c + d) + (e + f)));
+        out(0, ((a + b) * (c + d)) + ((e + f) * (g + h)));
+        out(0, (a * b) + ((c * d) + (e * f)));
+        out(0, a + b + c + d + e + f + g + h);
+    }
+}

@@ -320,6 +320,53 @@ void typecheck_expr(expr_node *n)
     }
 }
 
+// Sethi-Ullman labelling: how many hardware-stack slots the subtree needs
+// while being evaluated. A leaf (var/literal) is a memory operand and needs
+// none; a binop with two complex children needs one extra slot to hold the
+// first result while the second is computed. Used only to choose the
+// evaluation order of a commutative op (heavier child first -> fewer pushes /
+// spills on the shallow NDSTAC stack). A heuristic: correctness never depends
+// on it, because reordering is restricted to commutative ops.
+static int is_expr_leaf(const expr_node *n)
+{
+    return n && (n->kind == EXPR_LITERAL || n->kind == EXPR_VAR);
+}
+
+static int stack_need(expr_node *n)
+{
+    if (!n) return 0;
+    switch (n->kind) {
+        case EXPR_LITERAL:
+        case EXPR_VAR:
+            return 0;
+        case EXPR_UNOP:
+            return stack_need(n->left);
+        case EXPR_BINOP: {
+            // A leaf operand is a memory operand (free); a non-leaf child must
+            // go through the acc, so two complex children force one slot to
+            // hold the first result while the second is computed -- even when
+            // each child's own need is 0 (e.g. (c+d)+(e+f) needs 1).
+            int leafL = is_expr_leaf(n->left), leafR = is_expr_leaf(n->right);
+            if (leafL && leafR) return 0;            // a OP b
+            if (leafR)          return stack_need(n->left);   // complexL OP leafR
+            if (leafL)          return stack_need(n->right);  // leafL OP complexR
+            int l = stack_need(n->left), r = stack_need(n->right);
+            return (l == r) ? l + 1 : (l > r ? l : r);
+        }
+        default:            // array index / pplus / stdlib / func call / Dirac
+            return 1;       // complex value -> conservatively one slot
+    }
+}
+
+// Commutative integer ops whose acc+acc codegen is a *symmetric* stack op
+// (S_ADD / S_MLT), so swapping operand evaluation order is value-preserving.
+// Deliberately NOT float (reassociation would change rounding) and NOT the
+// other commutative ops until their acc+acc paths are likewise confirmed.
+static int commutative_int_binop(const expr_node *n)
+{
+    return n->type == 1 && (n->op == OP_ADD || n->op == OP_MUL);
+}
+
 // Idempotent: a second call over the same node returns the first result
 // instead of re-emitting. This guards against double-emission if a tree ever
 // gets walked twice (shouldn't happen in the grammar today, but cheap to
@@ -375,8 +422,19 @@ static expr ast_emit_expr_impl(expr_node *n)
                     break;
             }
 
-            expr a = ast_emit_expr(n->left );
-            expr b = ast_emit_expr(n->right);
+            // Sethi-Ullman ordering: for a commutative int op, evaluate the
+            // heavier subtree first so its result spends less time pushed on
+            // the stack (fewer pushes / spills). a/b stay bound to left/right,
+            // so the dispatch below is unchanged; S_ADD / S_MLT are symmetric
+            // so the swapped acc+acc order yields the same value.
+            expr a, b;
+            if (commutative_int_binop(n) && stack_need(n->right) > stack_need(n->left)) {
+                b = ast_emit_expr(n->right);
+                a = ast_emit_expr(n->left );
+            } else {
+                a = ast_emit_expr(n->left );
+                b = ast_emit_expr(n->right);
+            }
             switch (n->op) {
                 case OP_ADD:  return oper_soma (a, b);
                 case OP_SUB:  return oper_subt (a, b);
