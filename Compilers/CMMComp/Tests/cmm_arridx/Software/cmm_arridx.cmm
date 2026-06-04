@@ -1,0 +1,38 @@
+#PRNAME cmm_arridx
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Functional fixture for the constant-index array store (ast.c routes
+// arr[const] = <int> to ass_array_const -> SET_V, a direct store with the
+// offset baked into the address, no indirect STI). Validated by the SIMULATED
+// READBACK VALUES, not by golden.asm: distinct values are written to distinct
+// constant indices and read back, so a wrong SET_V offset (or base) would make
+// a readback mismatch. The reads themselves still use the indirect LDI path.
+//   a=7 b=3
+//   v[0]=a=7  v[1]=b=3  v[3]=a+b=10  v[5]=a*b=21  v[7]=(a+b)+a=17
+// Expected outputs: 7 3 10 21 17
+
+void main()
+{
+    int v[8]; int a; int b;
+    while (1)
+    {
+        a = 7; b = 3;
+        v[0] = a;
+        v[1] = b;
+        v[3] = a + b;
+        v[5] = a * b;
+        v[7] = (a + b) + a;
+        out(0, v[0]);
+        out(0, v[1]);
+        out(0, v[3]);
+        out(0, v[5]);
+        out(0, v[7]);
+    }
+}

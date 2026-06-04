@@ -270,6 +270,19 @@ void ass_set(int id, expr e)
     acc_ok     = 0;  // acc released
 }
 
+// array assignment with a COMPILE-TIME-CONSTANT index, e.g. x[3] = y;
+// Stores into arr[k] directly with the SET_V pseudo-instruction (the assembler
+// bakes the offset k into a plain SET to arr_base+k), so there is no index to
+// materialise, no stack push and no indirect STI -- one fewer instruction than
+// the ass_array path. The walker routes only int-array / int-rhs / 1D-forward
+// assignments here; every other shape still goes through ass_array.
+void ass_array_const(int id, int k, expr e)
+{
+    if (e.id != 0) add_instr("LOD %s\n", v_table[e.id].name);  // rhs -> acc
+    add_instr("SET_V %s %d\n", v_table[id].name, k);
+    acc_ok = 0;  // acc released
+}
+
 // array assignment, e.g. x[i] = y;
 void ass_array(int id, expr e, int fft)
 {

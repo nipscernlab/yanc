@@ -472,6 +472,17 @@ static expr ast_emit_expr_impl(expr_node *n)
         }
 
         case EXPR_ARRAY_INDEX: {
+            // Constant 1D forward index into an int array: read directly with
+            // LOD_V (offset baked into the address), skipping the index
+            // materialise + indirect LDI. Other shapes (2D, reversed, float /
+            // comp array) fall through to the indirect path.
+            if (!n->right && n->op == 0
+                && n->left->kind == EXPR_LITERAL && v_table[n->id].type == 1)
+            {
+                typecheck_expr(n->left);
+                if (n->left->type == 1)
+                    return arr_1d2exp_const(n->id, atoi(v_table[n->left->id].name));
+            }
             expr idx1 = ast_emit_expr(n->left);
             if (n->right) {
                 expr idx2 = ast_emit_expr(n->right);
@@ -997,6 +1008,22 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_ARRAY_ASSIGN:
+            // Constant 1D forward index into an int array with an int RHS:
+            // store directly with SET_V (the assembler bakes the offset into a
+            // plain SET to arr_base+k), skipping the index materialise + stack
+            // push + indirect STI. Every other shape (2D, reversed array, or a
+            // float/comp array or RHS) falls through to the indirect path.
+            if (!n->idx2 && n->op == 0
+                && n->idx->kind == EXPR_LITERAL && v_table[n->id].type == 1)
+            {
+                typecheck_expr(n->idx);
+                typecheck_expr(n->rhs);
+                if (n->idx->type == 1 && n->rhs->type == 1) {
+                    int k = atoi(v_table[n->idx->id].name);
+                    ass_array_const(n->id, k, ast_emit_expr(n->rhs));
+                    break;
+                }
+            }
             // First emit the index calculation (leaves it in acc),
             // then the walker on the RHS pushes that, computes the value,
             // and ass_array emits the indexed-store.

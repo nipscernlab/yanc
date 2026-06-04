@@ -31,6 +31,18 @@ tags consumed by Aurora.
   `cmm_reorder` sim fixture (output values checked against hand computation, not
   golden.asm). Scoped to int `+`/`*` for now; float is excluded (reassociation
   would change rounding).
+- **Direct access for constant array indices (cmmcomp codegen)** — `arr[k]` with
+  a compile-time-constant index into an int array now uses the `SET_V` (store)
+  and `LOD_V` / `P_LOD_V` (read) pseudo-instructions: the assembler bakes the
+  offset into a plain `SET`/`LOD` at `arr_base + k`, so there is no index to
+  materialise, no stack push, and no indirect `STI`/`LDI` -- one fewer
+  instruction per access, no stack slot, no indirect addressing. The deferred
+  AST makes it clean: the index subtree is inspected before the access is
+  emitted. Scoped to 1D-forward int arrays (int RHS for stores); 2D / reversed /
+  float / comp fall back to the indirect path. Validated by the `cmm_arridx` sim
+  fixture, which writes distinct values to distinct constant indices via `SET_V`
+  and reads them back via `LOD_V` -- the readback values are checked against
+  hand computation, so a wrong offset on either side would be caught.
 
 ### Fixed
 - **Memory-safety pass over the older compilers** — every `fopen` in
