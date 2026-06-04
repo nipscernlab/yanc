@@ -1,0 +1,61 @@
+#PRNAME cmm_switch
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// switch/case coverage -- previously UNTESTED in the regress (ctrl_flow only
+// covers if/else/while/break). Validated by the SIMULATED OUTPUT VALUES: each
+// switch is driven by a known value, so a wrong match (or broken default /
+// break) would move the output. Codegen: each `case N:` compares N==switch_exp
+// and JIZ-jumps to the next case on mismatch; `break` jumps to switch_end;
+// `default` (no compare) runs when every case missed.
+//   s=1  -> first case            -> 11
+//   s=2  -> last (non-default)     -> 22
+//   s=7  -> no match -> default    -> 39
+//   s=20 -> middle of three cases  -> 42
+// Expected outputs: 11 22 39 42
+//
+// NOTE: a switch nested inside a case is NOT accepted -- the grammar's
+// stmt_case list (while/for/if/out/...) omits switch_case -- so it is left out
+// of this fixture. (if/while DO nest in a case.)
+
+void main()
+{
+    int s;
+    while (1)
+    {
+        s = 1;
+        switch (s) {
+            case 1: out(0, 11); break;
+            case 2: out(0, 12); break;
+            default: out(0, 19);
+        }
+
+        s = 2;
+        switch (s) {
+            case 1: out(0, 21); break;
+            case 2: out(0, 22); break;
+            default: out(0, 29);
+        }
+
+        s = 7;
+        switch (s) {
+            case 1: out(0, 31); break;
+            case 2: out(0, 32); break;
+            default: out(0, 39);
+        }
+
+        s = 20;
+        switch (s) {
+            case 10: out(0, 41); break;
+            case 20: out(0, 42); break;
+            case 30: out(0, 43); break;
+            default: out(0, 49);
+        }
+    }
+}
