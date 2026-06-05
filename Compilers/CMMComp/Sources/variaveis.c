@@ -101,6 +101,11 @@ void check_var()
 // strips the function name from the variable
 char* rem_fname(char *var, char *fname)
 {
+    // During the deferred AST walk the global fname is "" (reset at each
+    // function's end), so callers that pass it cannot strip the prefix. The
+    // walker keeps emit_fname pointed at the current function, so prefer it when
+    // set -- this is display-only and does not affect exec_id's naming.
+    if (emit_fname[0] != '\0') fname = emit_fname;
     if (strcmp(fname,"") == 0) return var;
     int    ind = 0;
     while (var[ind] == fname[ind]) ind++;

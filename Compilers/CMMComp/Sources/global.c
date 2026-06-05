@@ -32,6 +32,9 @@ char dir_soft [1024]; // Software directory
 int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
 int  line_num = 0;    // parser-time: line the lexer is currently reading
 int  emit_line= 1;    // emit-time: line the AST walker tags onto each instruction
+char emit_fname[512] = ""; // emit-time: name of the function whose body the AST
+                           // walker is in, for rem_fname() in diagnostics only
+                           // (exec_id keeps using the global fname). "" = global
 int  num_ins  = 0;    // number of instructions parsed
 int  sim_arr  = 0;    // tells whether the array is simulated or not
 

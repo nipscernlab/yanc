@@ -9,6 +9,23 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **Walker-time diagnostics report the right line and variable name (cmmcomp)** —
+  every warning / info message emitted during the deferred-AST walk (comp/float
+  conversions, complex array index, comp-in-condition, comp/float `RECV`, the
+  function-call parameter conversions, …) printed the **EOF line** and the
+  **mangled `<fn>_<var>`** name (e.g. `line 21: variable 'main_c' …` instead of
+  `line 15: variable 'c' …`). Both come from globals that are stale during the
+  walk: `line_num` (the lexer line) has run to EOF, and `fname` (the current
+  function, used by `rem_fname` to strip the prefix) was reset to `""` at each
+  function's end. Fix: the walker wrappers (`stmt_emit` / `ast_emit_expr`) now
+  keep `line_num` in sync with the node's source line (mirroring `emit_line`,
+  with save/restore so parse-time diagnostics are untouched), and the
+  `STMT_FUNC` walker sets a new display-only global `emit_fname` to the
+  function's name for `rem_fname`. `emit_fname` is display-only — `exec_id` still
+  keys off the global `fname`, so temp-variable names and the **assembly are
+  byte-identical**. Messages stay correctly bilingual (`-pt` / `-en`). Verified
+  byte-identical on the suite and by a probe in both languages (warnings now read
+  the real line and the bare local name).
 - **Arithmetic between two `comp` literals is no longer dropped (cmmcomp)** —
   `(1+2i)*(3+4i)` returned `3+4i` (and `(4+2i)/(1+1i)` returned `4+2i`, and
   `(0+2i)+(3+4i)` returned `3+4i`) instead of computing the operation. The

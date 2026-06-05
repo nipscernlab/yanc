@@ -25,6 +25,7 @@ extern int  acc_ok  ;            // 0 -> acc empty (use LOD), 1 -> acc loaded (u
 extern int  line_num;            // parser-time: line the lexer is currently reading (used by MSG_ERR_*)
 extern int  emit_line;           // emit-time:  line of the AST node generating the current instruction
                                  //             (set by stmt_emit / ast_emit_expr; read by add_instr)
+extern char emit_fname[512];     // emit-time:  function whose body the walker is in (rem_fname display only)
 extern int  num_ins ;            // number of parsed instructions (excluding final macros)
 extern int  sim_arr ;            // tells whether the array is simulated or not
 

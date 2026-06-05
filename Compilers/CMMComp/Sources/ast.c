@@ -438,6 +438,15 @@ expr ast_emit_expr(expr_node *n)
     // left behind.
     int saved_emit_line = emit_line;
     if (n) emit_line = n->line;
+    // line_num drives the warning / MSG_INFO prints inside the emit helpers
+    // (oper_*, exec_*, arr_*, par_check, ...). Keep it in lock-step with the
+    // node's source line during the walk so those messages report the right line
+    // instead of the lexer's EOF position. The helpers print `line_num + 1` and
+    // n->line was captured as `line_num + 1` at parse time, so set n->line - 1 to
+    // reproduce exactly what a parse-time print would have shown. Restored on the
+    // way out so parse-time diagnostics keep using the real lexer line.
+    int saved_line_num = line_num;
+    if (n) line_num = n->line - 1;
     typecheck_expr(n);  // annotate composite n->type before codegen
     expr e = ast_emit_expr_impl(n);
     if (n) {
@@ -445,6 +454,7 @@ expr ast_emit_expr(expr_node *n)
         n->cached  = e;
     }
     emit_line = saved_emit_line;
+    line_num  = saved_line_num;
     return e;
 }
 
@@ -1084,6 +1094,8 @@ void stmt_emit(stmt_node *n)
     // to set emit_line explicitly from n->line here.
     int saved_emit_line = emit_line;
     emit_line = n->line;
+    int saved_line_num = line_num;   // keep warning / MSG_INFO line in sync (see ast_emit_expr)
+    line_num = n->line - 1;
 
     switch (n->kind)
     {
@@ -1399,8 +1411,17 @@ void stmt_emit(stmt_node *n)
             // exp;` inside the body to emit their own RET.
             int saved_fun_parse = fun_parse;
             fun_parse = n->id;
+            // emit_fname carries this function's name through the body walk so
+            // rem_fname() can strip the "<fn>_" prefix from diagnostics. It is
+            // DISPLAY-ONLY: exec_id() still keys off the (empty-during-walk)
+            // global fname, so the temp-variable names -- and the assembly -- are
+            // unchanged. Globals (no prefix) are unaffected by rem_fname.
+            char saved_emit_fname[512];
+            strcpy(saved_emit_fname, emit_fname);
+            strcpy(emit_fname, v_table[n->id].name);
             ret_ok    = 0;
             stmt_emit(n->body);
+            strcpy(emit_fname, saved_emit_fname);
             fun_parse = saved_fun_parse;
 
             if ((v_table[n->id].type != 6) && (ret_ok == 0))
@@ -1424,6 +1445,7 @@ void stmt_emit(stmt_node *n)
 
     n->emitted = 1;
     emit_line  = saved_emit_line;
+    line_num   = saved_line_num;
 }
 
 void stmt_free(stmt_node *n)
