@@ -9,6 +9,28 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **`do { } while ()` loop (cmmcomp)** — C± gains the third C loop. The body runs
+  first and the condition is tested at the bottom, so it always executes at least
+  once. STMT_DO shares the `while` label namespace (`push_while`), so `break`
+  (-> `Lwh<n>end`) and `continue` (-> `Lwh<n>cont`, the bottom test) ride the
+  same break/continue stacks as while/for — a do-while continue re-evaluates the
+  condition. Uses only `JIZ`/`JMP`, no hardware change. Locked down by the
+  `cmm_dowhile` sim fixture (body-runs-once, normal loop, break, continue, and a
+  nested do-while). `goto` is now the only C control-flow keyword still missing
+  from C±.
+- **`continue` statement (cmmcomp)** — C± gains `continue`, binding to the
+  innermost enclosing loop (a `switch` does not catch it, matching C). It rides
+  the same machinery as `break`: a **continue-target stack** in `saltos.c` that
+  only loops push to. A `while`-continue jumps to the loop top (re-test the
+  condition); a `for`-continue jumps to a step label (`Lwh<n>cont`) placed just
+  before the step, so the step still runs and the index advances — a top jump
+  would hang the loop. The `for` step now lives on the while node's `else_body`
+  and is emitted after the body (instead of glued into it), and the
+  `Lwh<n>cont` label is emitted only when a `continue` actually targets that
+  loop, so **every existing test stays byte-identical**. Uses only `JMP` — no
+  hardware change. Locked down by the `cmm_continue` sim fixture (continue in
+  while, in for with the step-runs check, nested inner-only, and inside a switch
+  inside a for). `goto` and `do/while` remain unimplemented in C±.
 - **Real C `switch` fall-through (cmmcomp)** — a `case` without `break` now falls
   through into the next case body, and empty cases stack onto the following one
   (`case 1: case 2: case 3: foo();` runs `foo` for all three) — standard C

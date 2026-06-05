@@ -1,0 +1,60 @@
+#PRNAME cmm_continue
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Exhaustive `continue` coverage, validated by the SIMULATED OUTPUT VALUES.
+// continue binds to the innermost LOOP (a switch does NOT catch it), and a
+// for-continue MUST run the step before re-testing -- otherwise the index never
+// advances and the loop hangs. The codegen jumps a while-continue to the loop
+// top and a for-continue to the step label (Lwh<n>cont, just before the step).
+//
+//   C1 while  : skip k==3                          -> 1 2 4 5
+//   C2 for    : skip k==2 (step still runs!)        -> 10 11 13 14 15
+//   C3 nested : inner continue skips only the inner -> 20 22 30 32 40 42
+//   C4 switch : continue inside a switch-in-a-for
+//               binds to the FOR, so it skips the
+//               rest of the iteration (incl. the
+//               post-switch out) and runs the step  -> 50 60 51 61 53 63
+//                                                      (k==2 emits nothing)
+//
+// Expected per iteration:
+//   1 2 4 5 10 11 13 14 15 20 22 30 32 40 42 50 60 51 61 53 63
+
+void main()
+{
+    int k; int n;
+    while (1)
+    {
+        // C1 -- continue in a while loop
+        k = 0;
+        while (k < 5) { k = k + 1; if (k == 3) continue; out(0, k); }
+
+        // C2 -- continue in a for loop: the step (k = k + 1) must still run, so
+        // the index advances past 2 instead of hanging
+        for (k = 0; k < 6; k = k + 1) { if (k == 2) continue; out(0, 10 + k); }
+
+        // C3 -- nested for: the inner continue skips only the inner iteration
+        for (k = 0; k < 3; k = k + 1)
+        {
+            for (n = 0; n < 3; n = n + 1) { if (n == 1) continue; out(0, 20 + k * 10 + n); }
+        }
+
+        // C4 -- continue inside a switch inside a for: it binds to the FOR, so
+        // the switch is left and the rest of the iteration (the out below) is
+        // skipped, then the step runs
+        for (k = 0; k < 4; k = k + 1)
+        {
+            switch (k) {
+                case 2: continue;
+                default: out(0, 50 + k);
+            }
+            out(0, 60 + k);
+        }
+    }
+}

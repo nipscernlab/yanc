@@ -83,6 +83,40 @@ static void brk_push(int is_switch, int id)
 static void brk_pop(void) {brk_n--;}
 
 // ----------------------------------------------------------------------------
+// continue-target stack ------------------------------------------------------
+// ----------------------------------------------------------------------------
+//
+// Only loops push here (switches do not catch `continue`), so exec_continue
+// resolves to the innermost enclosing LOOP. Each entry keeps the loop's
+// stmt_node plus cont_lbl: a while-continue jumps to the loop top (re-test the
+// condition), while a for- or do-while-continue jumps to the Lwh<n>cont label
+// (the for runs its step there, the do-while re-evaluates its bottom test).
+// When such a loop is actually targeted, exec_continue sets node->op so the
+// walker emits that label -- loops without continue stay untouched.
+
+typedef struct { stmt_node *node; int cont_lbl; } cont_target;
+static cont_target *cont_stk = NULL;
+static int          cont_n   = 0;
+static int          cont_cap = 0;
+
+static void cont_push(stmt_node *node, int cont_lbl)
+{
+    if (cont_n + 1 > cont_cap)
+    {
+        int new_cap = cont_cap ? cont_cap * 2 : 8;
+        cont_target *t = realloc(cont_stk, (size_t)new_cap * sizeof(*t));
+        if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        cont_stk = t;
+        cont_cap = new_cap;
+    }
+    cont_stk[cont_n].node   = node;
+    cont_stk[cont_n].cont_lbl = cont_lbl;
+    cont_n++;
+}
+
+static void cont_pop(void) {cont_n--;}
+
+// ----------------------------------------------------------------------------
 // active-switch stack --------------------------------------------------------
 // ----------------------------------------------------------------------------
 //
@@ -158,7 +192,8 @@ void while_expp()
     int label = push_while();
     stmt_node *partial = stmt_while(label, NULL, NULL);
     pending_push(partial);
-    brk_push(0, label);  // break inside the body exits this loop
+    brk_push(0, label);          // break inside the body exits this loop
+    cont_push(partial, 0);       // continue jumps to the top (re-test cond)
     // cond comes in while_expexp; body list opens there too
 }
 
@@ -173,6 +208,7 @@ void while_expexp(expr_node *cond)
 stmt_node *while_stmt()
 {
     stmt_node *body    = stmt_list_close();
+    cont_pop();
     brk_pop();
     pop_while();
     stmt_node *partial = pending_pop();
@@ -187,12 +223,17 @@ stmt_node *while_stmt()
 // for (init; cond; step) body
 //   desugars at parse time into:
 //     init;
-//     while (cond) { body; step; }
+//     while (cond) { body; <step> }
+//
+// The step is NOT glued onto the end of the body block -- it is kept on the
+// while node's else_body and emitted by the STMT_WHILE walker right after the
+// body (and after the optional Lwh<n>cont label). That is what makes `continue`
+// in a for run the step before the next condition test. The emitted assembly is
+// identical to gluing it into the body when there is no continue.
 //
 // for_init_clause / for_step_clause stash their stmt_node in these globals;
-// for_open pulls them into the pending stmt_while's then_body / else_body
-// slots (those fields are unused for while), so nested fors each carry
-// their own init/step without colliding.
+// for_open pulls them into the pending stmt_while's then_body (init) and
+// else_body (step) slots, so nested fors each carry their own without colliding.
 
 static stmt_node *for_saved_init = NULL;
 static stmt_node *for_saved_step = NULL;
@@ -209,7 +250,8 @@ void for_open(expr_node *cond)
     partial->then_body = for_saved_init;
     partial->else_body = for_saved_step;
     pending_push(partial);
-    brk_push(0, label);  // break inside the body exits this loop
+    brk_push(0, label);          // break inside the body exits this loop
+    cont_push(partial, 1);       // continue jumps to the step label (Lwh<n>cont)
     stmt_list_open();
 
     for_saved_init = NULL;
@@ -219,16 +261,15 @@ void for_open(expr_node *cond)
 stmt_node *for_finish()
 {
     stmt_node *body    = stmt_list_close();
+    cont_pop();
     brk_pop();
     pop_while();
     stmt_node *partial = pending_pop();
 
     stmt_node *init = partial->then_body;
-    stmt_node *step = partial->else_body;
     partial->then_body = NULL;
-    partial->else_body = NULL;
-
-    if (step) stmt_block_push(body, step);
+    // The step stays on partial->else_body; the STMT_WHILE walker emits it after
+    // the body (where `continue` lands), so the step always runs.
     partial->body = body;
 
     // Insert init BEFORE the while into the parent stmt_list. The grammar's
@@ -236,6 +277,38 @@ stmt_node *for_finish()
     // sequence on the parent list is: init then while.
     if (init) stmt_append(init);
 
+    return partial;
+}
+
+// ----------------------------------------------------------------------------
+// do/while -------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+//
+// do { body } while (cond);  -- the body runs first and the condition is tested
+// at the bottom, so the body always executes at least once. It shares the
+// while label namespace (push_while), so break (-> Lwh<n>end) and continue (->
+// Lwh<n>cont) ride the same stacks as while/for; cont_lbl=1 because a continue
+// re-evaluates the bottom test, landing at the Lwh<n>cont label.
+
+void do_open()
+{
+    int label = push_while();
+    stmt_node *partial = stmt_do(label, NULL, NULL);
+    pending_push(partial);
+    brk_push(0, label);          // break exits this loop
+    cont_push(partial, 1);       // continue lands at Lwh<n>cont (re-test cond)
+    stmt_list_open();            // accumulate the body
+}
+
+stmt_node *do_finish(expr_node *cond)
+{
+    stmt_node *body    = stmt_list_close();
+    cont_pop();
+    brk_pop();
+    pop_while();
+    stmt_node *partial = pending_pop();
+    partial->cond = cond;
+    partial->body = body;
     return partial;
 }
 
@@ -248,6 +321,20 @@ stmt_node *exec_break()
     }
     brk_target t = brk_stk[brk_n - 1];  // innermost
     return t.is_switch ? stmt_switch_break(t.id) : stmt_break_while(t.id);
+}
+
+stmt_node *exec_continue()
+{
+    if (cont_n == 0)  // continue with no enclosing loop
+    {
+        fprintf(stderr, MSG_ERR_CONTINUE_LOST, line_num+1);
+        exit(EXIT_FAILURE);
+    }
+    cont_target t = cont_stk[cont_n - 1];  // innermost loop
+    // for / do-while need the Lwh<n>cont label emitted at the continue landing
+    // point; flag the loop node so its walker drops that label.
+    if (t.cont_lbl) t.node->op = 1;
+    return stmt_continue(t.node->id, t.cont_lbl);
 }
 
 // ----------------------------------------------------------------------------

@@ -200,11 +200,16 @@ typedef enum {
                         // while / switch body). Walker iterates kids.
     STMT_IF,            // if (cond) then_body [else else_body];  label = if id
     STMT_WHILE,         // while (cond) body;  label = while id
+    STMT_DO,            // do body while (cond);  label = while id (shares Lwh<n>
+                        // namespace); cond tested at the bottom, body runs >=1x;
+                        // op=1 emits the Lwh<n>cont continue label before the test
     STMT_SWITCH,        // switch (cond) body;  id=swit_id, id2=case_max
     STMT_CASE_LABEL,    // case <val>:   id=swit_id, id2=case_idx, id3=val_id, id4=val_type
     STMT_DEFAULT_LABEL, // default:      id=swit_id, id2=case_idx
     STMT_SWITCH_BREAK,  // break; inside a switch case (id=swit_id)
     STMT_BREAK_WHILE,   // break; inside a while loop  (id=enclosing while label)
+    STMT_CONTINUE,      // continue; (id=enclosing loop label, op=1 if a for -> jump
+                        // to its step label Lwh<id>cont, op=0 if a while -> jump to top)
     STMT_DECLAR_ARR_1D, // int/float/comp x[N];  or with file init  id=id_var, id2=id_arg, id3=id_fname
     STMT_DECLAR_ARR_2D, // int/float/comp x[N][M];  id=id_var, id2=id_x, id3=id_y, id4=id_fname
     STMT_DECLAR_MV,     // float a[N] # |M|v⟩;     id=id_var, id2=id_N, id3=id_M, id4=id_v
@@ -322,12 +327,18 @@ void       stmt_block_push(stmt_node *blk, stmt_node *kid);
 stmt_node *stmt_if          (int label, struct expr_node *cond,
                              stmt_node *then_body, stmt_node *else_body);
 stmt_node *stmt_while       (int label, struct expr_node *cond, stmt_node *body);
+stmt_node *stmt_do          (int label, struct expr_node *cond, stmt_node *body);
 stmt_node *stmt_switch      (int swit_id, int case_max,
                              struct expr_node *cond, stmt_node *body);
 stmt_node *stmt_case_label  (int swit_id, int case_idx, int val_id, int val_type);
 stmt_node *stmt_default_label(int swit_id, int case_idx);
 stmt_node *stmt_switch_break(int swit_id);
 stmt_node *stmt_break_while (int while_label);
+
+// continue; -- loop_label is the enclosing loop's while-label. cont_lbl picks the
+// jump target: a for or do-while jumps to Lwh<n>cont (the for runs its step there,
+// the do-while re-tests its bottom condition); a while jumps to the top (Lwh<n>).
+stmt_node *stmt_continue    (int loop_label, int cont_lbl);
 
 // Array declarations. The v_table side effects (v_type / v_isar / v_size /
 // v_fnid + f_log writes) already ran at parse time when the constructor was

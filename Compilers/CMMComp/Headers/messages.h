@@ -390,6 +390,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: esse brake aí tá perdido!\n", \
       "Error on line %d: that break is just hanging out lost!\n")
 
+#define MSG_ERR_CONTINUE_LOST \
+    M("Erro na linha %d: continue fora de um loop não vai a lugar nenhum!\n", \
+      "Error on line %d: a continue outside a loop goes nowhere!\n")
+
 #define MSG_WARN_CASE_FLOAT \
     M("Atenção na linha %d: índice do case dando float! Vou arredondar.\n", \
       "Heads up on line %d: case index came out float! Gonna round it.\n")

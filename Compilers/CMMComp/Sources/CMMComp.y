@@ -97,7 +97,7 @@ void  yyerror(char const *s);
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
 %token SQRT ATAN SIN COS                                               // stdlib (non-linear functions)
 %token REAL IMAG COMP FASE MOD2                                        // stdlib (complex numbers)
-%token WHILE FOR IF THEN ELSE SWITCH CASE DEFAULT RET BREAK            // jumps
+%token WHILE DO FOR IF THEN ELSE SWITCH CASE DEFAULT RET BREAK CONTINUE   // jumps
 %token SHIFTL SHIFTR SSHIFTR                                           // bit shift
 %token GREQU LESEQ EQU DIF LAN LOR                                     // two-symbol logical operators
 %token PPLUS                                                           // ++ operator. can be used both to reduce exp and for assignments
@@ -236,6 +236,7 @@ stmt_full: '{' stmt_list '}' // statement block
          |        declar     // variable declarations
          |    assignment     // expression assignment to a variable
          |    while_stmt     // while loop
+         |      do_while     // do { } while () loop
          |      for_stmt     // for loop (desugared to while + init/step)
          |  if_else_stmt     // if/else
          |       std_out     // stdlib data output
@@ -246,6 +247,7 @@ stmt_full: '{' stmt_list '}' // statement block
          |   return_call     // function return
          |   switch_case     // switch/case
          |         break     // break; (innermost loop or switch)
+         |      continue     // continue; (innermost loop)
          |    dire_inter     // interrupt point
 
 // function calls -------------------------------------------------------------
@@ -319,6 +321,13 @@ while_stmt  : while_exp stmt_full {stmt_append(while_stmt());}
 while_exp   : while_intro '(' exp ')' {while_expexp($3);}
 while_intro : WHILE               {while_expp();}
 break      : BREAK ';'                     {stmt_append(exec_break());}
+continue   : CONTINUE ';'                  {stmt_append(exec_continue());}
+
+// do { body } while (cond);  -- do_intro opens the loop (labels/break/continue
+// stacks + body list) before the body, so break/continue inside bind correctly;
+// do_finish takes the bottom-tested condition and returns the STMT_DO.
+do_while    : do_intro stmt_full WHILE '(' exp ')' ';' {stmt_append(do_finish($5));}
+do_intro    : DO                          {do_open();}
 
 // for -----------------------------------------------------------------------
 //

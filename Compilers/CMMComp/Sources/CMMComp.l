@@ -112,8 +112,10 @@ COMEN  "//"[^\n]*
 "mod2"        return MOD2;
 
 "while"       return WHILE;
+"do"          return DO;
 "for"         return FOR;
 "break"       return BREAK;
+"continue"    return CONTINUE;
 "if"          return IF;
 "else"        return ELSE;
 "switch"      return SWITCH;

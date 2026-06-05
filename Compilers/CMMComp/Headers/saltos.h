@@ -18,7 +18,12 @@ stmt_node *if_fim   (void);              // if/else (returns the completed STMT_
 void       while_expp  (void);              // WHILE keyword: pending STMT_WHILE
 void       while_expexp(expr_node *cond);   // cond + body-list open
 stmt_node *while_stmt  (void);              // returns the STMT_WHILE
-stmt_node *exec_break  (void);              // STMT_BREAK_WHILE for break;
+stmt_node *exec_break  (void);              // break; -> innermost loop or switch
+stmt_node *exec_continue(void);             // continue; -> innermost loop
+
+// do { body } while (cond); -- body runs once before the condition is tested.
+void       do_open     (void);              // DO keyword: pending STMT_DO + body list
+stmt_node *do_finish   (expr_node *cond);   // returns the STMT_DO
 
 // for ------------------------------------------------------------------------
 //

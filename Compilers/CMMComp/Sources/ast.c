@@ -897,6 +897,15 @@ stmt_node *stmt_while(int label, expr_node *cond, stmt_node *body)
     return n;
 }
 
+stmt_node *stmt_do(int label, expr_node *cond, stmt_node *body)
+{
+    stmt_node *n = snode_new(STMT_DO);
+    n->id   = label;
+    n->cond = cond;
+    n->body = body;
+    return n;
+}
+
 stmt_node *stmt_switch(int swit_id, int case_max, expr_node *cond, stmt_node *body)
 {
     stmt_node *n = snode_new(STMT_SWITCH);
@@ -936,6 +945,14 @@ stmt_node *stmt_break_while(int while_label)
 {
     stmt_node *n = snode_new(STMT_BREAK_WHILE);
     n->id = while_label;
+    return n;
+}
+
+stmt_node *stmt_continue(int loop_label, int cont_lbl)
+{
+    stmt_node *n = snode_new(STMT_CONTINUE);
+    n->id = loop_label;
+    n->op = cont_lbl;   // 1 -> jump to Lwh<n>cont (for step / do-while test); 0 -> loop top
     return n;
 }
 
@@ -1180,8 +1197,36 @@ void stmt_emit(stmt_node *n)
 
             stmt_emit(n->body);
 
+            // For a `for`, the step lives in else_body and is emitted here, after
+            // the body and before the back-edge -- this is where `continue`
+            // lands so the step still runs. The Lwh<n>cont label is only emitted
+            // when a continue actually targets this loop (op set by
+            // exec_continue), so loops without continue stay byte-identical.
+            if (n->op)        add_sinst(0, "@Lwh%dcont ", n->id);
+            if (n->else_body) stmt_emit(n->else_body);
+
             add_instr("JMP Lwh%d\n",   n->id);
             add_sinst(0, "@Lwh%dend ", n->id);
+            break;
+        }
+
+        case STMT_DO: {
+            // do { body } while (cond); -- body runs first, condition tested at
+            // the bottom, so the body always runs at least once. Shares the
+            // Lwh<n> label namespace, so break (-> Lwh<n>end) and continue (->
+            // Lwh<n>cont) ride the same stacks as while/for. continue lands at
+            // Lwh<n>cont, just before the test, so it re-evaluates the condition.
+            add_sinst(0, "@Lwh%d ", n->id);
+            acc_ok = 0;
+
+            stmt_emit(n->body);
+
+            if (n->op) add_sinst(0, "@Lwh%dcont ", n->id);   // continue target
+            emit_cond_int_load(ast_emit_expr(n->cond), 0);
+            add_instr("JIZ Lwh%dend\n", n->id);   // condition false -> exit
+            add_instr("JMP Lwh%d\n",    n->id);   // condition true  -> loop
+            add_sinst(0, "@Lwh%dend ",  n->id);
+            acc_ok = 0;
             break;
         }
 
@@ -1263,6 +1308,13 @@ void stmt_emit(stmt_node *n)
 
         case STMT_SWITCH_BREAK:
             add_instr("JMP switch_end_%d\n", n->id);
+            break;
+
+        case STMT_CONTINUE:
+            // for: jump to the step label (Lwh<n>cont) so the step runs before
+            // the next condition test; while: jump straight to the top.
+            if (n->op) add_instr("JMP Lwh%dcont\n", n->id);
+            else       add_instr("JMP Lwh%d\n",     n->id);
             break;
 
         case STMT_BREAK_WHILE:
