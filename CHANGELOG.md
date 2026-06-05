@@ -8,6 +8,21 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Fixed
+- **`fase()` (complex phase) is now a real `atan2` (cmmcomp)** — it previously
+  computed just `atan(imag/real)`, a 2-quadrant angle that was wrong for
+  `real < 0` (off by ±π) and **divided by zero when `real == 0`** (the sim
+  produced no output). `exec_fase` now emits proper `atan2(imag, real)`: it
+  branches on the signs of real and imag, computes `atan(imag/real)` only when
+  `real ≠ 0` (with the ±π quadrant correction for `real < 0`), and returns ±π/2
+  on the imaginary axis and 0 at the origin — correct in all four quadrants and
+  on the axes, no division by zero. Uses only existing opcodes (`F_LES`/`F_DIV`/
+  `F_ADD`/`CAL float_atan`/`LOD`/`JIZ`/`JMP`), no hardware change. `fase` was
+  unused by any test/example, so no golden changed. Locked down by the new
+  `cmm_comp_fase` sim fixture (all four quadrants, all four axes and the origin,
+  checked as `atan2×1000` against hand computation — e.g. `-2+0i → π`,
+  `0±2i → ±π/2`).
+
 ### Added
 - **`do { } while ()` loop (cmmcomp)** — C± gains the third C loop. The body runs
   first and the condition is tested at the bottom, so it always executes at least

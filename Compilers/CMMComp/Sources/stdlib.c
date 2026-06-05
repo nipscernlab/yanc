@@ -1035,37 +1035,89 @@ expr exec_fase(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
     
-    expr et_r, et_i;
-
     // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
+    // execute -- proper atan2(imag, real): correct in all four quadrants and on
+    // the axes, and never divides when real == 0.
     // ------------------------------------------------------------------------
 
-    // comp const
-    if (e.type == 5)
+    static int fase_lbl = 0;
+
+    // Resolve the real (R) and imag (M) parts to data-memory cell names. `pre`
+    // means a pending accumulator value must be preserved on the stack by the
+    // first load (P_LOD) -- only for const/mem inputs. An acc input *is* that
+    // pending value and is consumed into temps here, so pre stays 0.
+    const char *R, *M;
+    int pre = 0;
+    expr etr, eti;
+
+    if (e.type == 5)                          // comp constant
     {
-        get_cmp_cst(e,&et_i,&et_r);
-        oper_divi  (et_r, et_i);
+        get_cmp_cst(e, &etr, &eti);
+        R = v_table[etr.id].name; M = v_table[eti.id].name; pre = acc_ok;
+    }
+    else if (e.id != 0)                       // comp in memory
+    {
+        get_cmp_ets(e, &etr, &eti);
+        R = v_table[etr.id].name; M = v_table[eti.id].name; pre = acc_ok;
+    }
+    else                                      // comp in acc (acc=imag, stack top=real)
+    {
+        int im = exec_id("fase_im"), re = exec_id("fase_re");
+        add_instr("SET_P %s\n", v_table[im].name);   // fase_im = imag ; POP -> acc = real
+        add_instr("SET %s\n",   v_table[re].name);   // fase_re = real
+        R = v_table[re].name; M = v_table[im].name;
     }
 
-    // comp in memory
-    if ((e.type == 3) && (e.id != 0))
-    {
-        get_cmp_ets(e,&et_i,&et_r);
-        oper_divi  (et_r, et_i);
-    }
+    const char *t = v_table[exec_id("fase_t")].name;   // base atan result
+    int         n = ++fase_lbl;
 
-    // comp in acc
-    if ((e.type == 3) && (e.id == 0))
-    {
-        int id = exec_id("aux_var");
-        et_i   = expr_make(2, id);
+    add_instr("%s %s\n", pre ? "P_LOD" : "LOD", R);
+    add_instr("F_LES 0.0\n");                          // real < 0 ?
+    add_instr("JIZ Lfa%da\n", n);
 
-        add_instr("SET_P %s\n", v_table[id].name);
-        oper_divi(et_i, expr_make(2, 0));
-    }
+    // --- real < 0 (nonzero): atan(imag/real) +/- PI ---
+    add_instr("LOD %s\n", R);
+    add_instr("F_DIV %s\n", M);                        // imag/real  (F_DIV X = X/acc)
+    exec_atan(expr_make(2, 0));                         // atan(imag/real) -> acc
+    add_instr("SET %s\n", t);
+    add_instr("LOD %s\n", M);
+    add_instr("F_LES 0.0\n");                          // imag < 0 ?
+    add_instr("JIZ Lfa%db\n", n);
+    add_instr("LOD %s\n", t);
+    add_instr("F_ADD -3.14159265359\n");               // base - PI
+    add_instr("JMP Lfa%dz\n", n);
+    add_sinst(0, "@Lfa%db ", n);
+    add_instr("LOD %s\n", t);
+    add_instr("F_ADD 3.14159265359\n");                // base + PI
+    add_instr("JMP Lfa%dz\n", n);
 
+    // --- real >= 0 ---
+    add_sinst(0, "@Lfa%da ", n);
+    add_instr("LOD 0.0\n");
+    add_instr("F_LES %s\n", R);                        // real > 0 ?
+    add_instr("JIZ Lfa%dc\n", n);
+    add_instr("LOD %s\n", R);
+    add_instr("F_DIV %s\n", M);                        // imag/real
     exec_atan(expr_make(2, 0));
+    add_instr("JMP Lfa%dz\n", n);
+
+    // --- real == 0 : +/- PI/2 (0 if imag == 0) ---
+    add_sinst(0, "@Lfa%dc ", n);
+    add_instr("LOD 0.0\n");
+    add_instr("F_LES %s\n", M);                        // imag > 0 ?
+    add_instr("JIZ Lfa%dd\n", n);
+    add_instr("LOD 1.57079632679\n");                  // +PI/2
+    add_instr("JMP Lfa%dz\n", n);
+    add_sinst(0, "@Lfa%dd ", n);
+    add_instr("LOD %s\n", M);
+    add_instr("F_LES 0.0\n");                          // imag < 0 ?
+    add_instr("JIZ Lfa%de\n", n);
+    add_instr("LOD -1.57079632679\n");                 // -PI/2
+    add_instr("JMP Lfa%dz\n", n);
+    add_sinst(0, "@Lfa%de ", n);
+    add_instr("LOD 0.0\n");                            // imag == 0, real == 0 -> 0
+
+    add_sinst(0, "@Lfa%dz ", n);
 
     acc_ok = 1;
     return expr_make(2, 0);

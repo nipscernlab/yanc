@@ -1,0 +1,26 @@
+#PRNAME cmm_comp_fase
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// fase(c)*1000, atan2 conhecido (LUT ~ +-20):
+//  1+2i->1107  -1+2i->2034  -1-2i->-2034  1-2i->-1107
+//  2+0i->0     -2+0i->3141   0+2i->1570    0-2i->-1570   0+0i->0
+void main() {
+    comp c;
+    while (1) {
+        c = 1.0+2.0i;   fout(0, fase(c)*1000.0);
+        c = -1.0+2.0i;  fout(0, fase(c)*1000.0);
+        c = -1.0-2.0i;  fout(0, fase(c)*1000.0);
+        c = 1.0-2.0i;   fout(0, fase(c)*1000.0);
+        c = 2.0+0.0i;   fout(0, fase(c)*1000.0);
+        c = -2.0+0.0i;  fout(0, fase(c)*1000.0);
+        c = 0.0+2.0i;   fout(0, fase(c)*1000.0);
+        c = 0.0-2.0i;   fout(0, fase(c)*1000.0);
+        c = 0.0+0.0i;   fout(0, fase(c)*1000.0);
+    }
+}
