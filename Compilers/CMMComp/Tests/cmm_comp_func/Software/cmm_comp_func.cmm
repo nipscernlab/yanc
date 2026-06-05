@@ -1,0 +1,79 @@
+#PRNAME cmm_comp_func
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Exhaustive coverage of the `comp` (complex) type across function boundaries,
+// validated by the SIMULATED OUTPUT VALUES. A comp is two words (real + imag),
+// so passing/returning it stresses the 2-word ABI; func_combos only ever checked
+// the REAL half of one comp return, so this fixture checks BOTH halves and the
+// cross-type conversions (comp<->int, comp<->float) on both params and returns.
+// Integer-valued parts are used so fout prints them exactly.
+//
+//   echo(3+4i)             comp param + comp return, both halves   -> 3 4
+//   addc(1+2i, 3+4i)       two comp params + comp add + comp ret   -> 4 6
+//   mk(5, 9)               int params -> complex() -> comp return  -> 5 9
+//   sumri(10+5i)           comp param, uses BOTH halves (re+im)     -> 15
+//   echo(8)                int arg -> comp param  => comp(8, 0)     -> 8 0
+//   echo(5.0)              float arg -> comp param => comp(5, 0)    -> 5 0
+//   takesint(7+2i)         comp arg -> int param  => real part      -> 7
+//   midcomp(1, 11+22i, 2)  comp param BETWEEN two int params; emits
+//                          a, real, imag inside and returns b       -> 1 11 22 2
+//   echo(echo(6+7i))       comp return feeding a comp arg (nested)  -> 6 7
+//
+// Expected per iteration: 3 4 4 6 5 9 15 8 0 5 0 7 1 11 22 2 6 7
+
+comp echo(comp c) { return c; }
+
+comp addc(comp a, comp b) { return a + b; }
+
+comp mk(int re, int im) { return complex(re, im); }
+
+int sumri(comp c) { return real(c) + imag(c); }
+
+int takesint(int x) { return x; }
+
+// comp param NOT in the last position: verifies the surrounding int params keep
+// the right offsets across the 2-word comp (and that the comp itself is intact).
+int midcomp(int a, comp c, int b)
+{
+    out (0, a);
+    fout(0, real(c));
+    fout(0, imag(c));
+    return b;
+}
+
+void main()
+{
+    while (1)
+    {
+        comp e = echo(3.0 + 4.0i);
+        fout(0, real(e)); fout(0, imag(e));
+
+        comp s = addc(1.0 + 2.0i, 3.0 + 4.0i);
+        fout(0, real(s)); fout(0, imag(s));
+
+        comp m = mk(5, 9);
+        fout(0, real(m)); fout(0, imag(m));
+
+        out(0, sumri(10.0 + 5.0i));
+
+        comp ci = echo(8);
+        fout(0, real(ci)); fout(0, imag(ci));
+
+        comp cf = echo(5.0);
+        fout(0, real(cf)); fout(0, imag(cf));
+
+        out(0, takesint(7.0 + 2.0i));
+
+        out(0, midcomp(1, 11.0 + 22.0i, 2));
+
+        comp nest = echo(echo(6.0 + 7.0i));
+        fout(0, real(nest)); fout(0, imag(nest));
+    }
+}
