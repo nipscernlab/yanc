@@ -1,0 +1,80 @@
+#PRNAME cmm_return
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Exhaustive `return` coverage, validated by the SIMULATED OUTPUT VALUES. Covers
+// a plain value return, an early return from inside a loop, a return escaping
+// two nested loops, a return from inside a switch (must exit the FUNCTION, not
+// just the switch), multiple early returns, and a void early return (`return;`).
+//
+//   add5(10)        -> 15        (plain value return)
+//   firstHit(4)     -> 8         (early return from inside a for; k=4 -> k+k)
+//   nestedFind(23)  -> 203       (return out of two nested fors; a=2,b=3)
+//   classify(1/2/7) -> 11 22 99  (return from inside a switch -> leaves func)
+//   maybe(0)        -> (nothing) (void `return;` before the out)
+//   maybe(3)        -> 503       (no early return -> runs the out)
+//
+// Expected per iteration: 15 8 203 11 22 99 503 600
+
+int add5(int a)
+{
+    return a + 5;
+}
+
+int firstHit(int limit)
+{
+    int k;
+    for (k = 0; k < 100; k = k + 1) { if (k == limit) return k + k; }
+    return 0;   // unreached for limit < 100
+}
+
+int nestedFind(int target)
+{
+    int a; int b;
+    for (a = 0; a < 5; a = a + 1)
+    {
+        for (b = 0; b < 5; b = b + 1)
+        {
+            if (a * 10 + b == target) return a * 100 + b;
+        }
+    }
+    return 0;   // unreached when target is found
+}
+
+int classify(int x)
+{
+    switch (x) {
+        case 1: return 11;
+        case 2: return 22;
+        default: return 99;
+    }
+    return 0;   // unreachable: every case returns
+}
+
+void maybe(int x)
+{
+    if (x == 0) return;   // void early return: nothing is emitted
+    out(0, 500 + x);
+}
+
+void main()
+{
+    while (1)
+    {
+        out(0, add5(10));
+        out(0, firstHit(4));
+        out(0, nestedFind(23));
+        out(0, classify(1));
+        out(0, classify(2));
+        out(0, classify(7));
+        maybe(0);
+        maybe(3);
+        out(0, 600);
+    }
+}

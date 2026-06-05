@@ -1,0 +1,69 @@
+#PRNAME cmm_break
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Exhaustive `break` coverage, validated by the SIMULATED OUTPUT VALUES (a
+// mis-bound or missing break moves the sequence). Covers break in while, in
+// for, in nested loops (inner only), in a loop inside a switch (exits the loop,
+// not the switch), and in a switch inside a loop (exits the switch, loop goes
+// on). break-in-if-in-loop is exercised throughout (the `if (..) break;`).
+// Nested-switch and break-in-if-in-a-case live in cmm_switch_nest.
+//
+// Expected per iteration:
+//   B1 while break      : 0 1 2 100
+//   B2 for break        : 10 11 101
+//   B3 nested, inner only: 20 21 30 31 40 41 102
+//   B4 break in for-in-case (exits for, then switch-break): 50 51 59
+//   B5 break in switch-in-for (loop continues): 69 70 61 71 69 72
+// Full: 0 1 2 100 10 11 101 20 21 30 31 40 41 102 50 51 59 69 70 61 71 69 72
+
+void main()
+{
+    int k; int n;
+    while (1)
+    {
+        // B1 -- break in a while loop (break out of the if)
+        k = 0;
+        while (k < 10) { if (k == 3) break; out(0, k); k = k + 1; }
+        out(0, 100);
+
+        // B2 -- break in a for loop
+        for (k = 0; k < 10; k = k + 1) { if (k == 2) break; out(0, 10 + k); }
+        out(0, 101);
+
+        // B3 -- nested loops: the inner break exits only the inner loop
+        for (k = 0; k < 3; k = k + 1)
+        {
+            for (n = 0; n < 5; n = n + 1) { if (n == 2) break; out(0, 20 + k * 10 + n); }
+        }
+        out(0, 102);
+
+        // B4 -- break inside a for inside a switch case: exits the FOR, then
+        // the case's own break exits the switch
+        k = 1;
+        switch (k) {
+            case 1:
+                for (n = 0; n < 5; n = n + 1) { if (n == 2) break; out(0, 50 + n); }
+                out(0, 59);
+                break;
+            default: out(0, 99);
+        }
+
+        // B5 -- break inside a switch inside a for: the switch break exits the
+        // switch only; the for keeps iterating
+        for (k = 0; k < 3; k = k + 1)
+        {
+            switch (k) {
+                case 1: out(0, 61); break;
+                default: out(0, 69);
+            }
+            out(0, 70 + k);
+        }
+    }
+}
