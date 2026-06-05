@@ -292,24 +292,26 @@ else_intro   : ELSE                                  {else_stmt();}             
 
 // switch/case ----------------------------------------------------------------
 
-switch_case   : switch_intro '{' cases '}' {stmt_append(end_switch());}
-switch_intro  : SWITCH '(' exp ')'         {exec_switch($3);}
+switch_case   : switch_intro '{' sw_body '}' {stmt_append(end_switch());}
+switch_intro  : SWITCH '(' exp ')'           {exec_switch($3);}
 
-// A case body is an ordinary statement list. `break` is now a normal statement
-// (stmt_full -> break), resolved to this switch by the break-target stack, so
-// it needs no special rule here -- and a nested switch / block / if-with-break
-// all parse and emit correctly.
-case_list     :           stmt_full
-              | case_list stmt_full
+// The switch body is a flat sequence of case labels, the default label and
+// statements, in any order -- the C model (a label is just a marker, not a
+// container). case_test / defaut_test append a CASE_LABEL / DEFAULT_LABEL node;
+// the codegen (STMT_SWITCH walker) builds a dispatch block from the labels and
+// lays the bodies out contiguously, so a case without `break` falls through to
+// the next (real C fall-through) and an empty case stacks onto the following
+// one. `break` is an ordinary stmt_full, resolved to this switch by the
+// break-target stack.
+sw_body       : /* empty */
+              | sw_body case_label
+              | sw_body default_label
+              | sw_body stmt_full
 
-case          : case_label    case_list
 case_label    : CASE INUM ':' {case_test($2,1);}
               | CASE FNUM ':' {case_test($2,2);}
 
-default       : default_label case_list
 default_label : DEFAULT   ':' {defaut_test();}
-
-cases         : case | default | case cases
 
 // while ----------------------------------------------------------------------
 

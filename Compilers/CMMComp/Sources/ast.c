@@ -1187,7 +1187,7 @@ void stmt_emit(stmt_node *n)
 
         case STMT_SWITCH: {
             // ensure the implicit `switch_exp` var exists and matches the
-            // cond's type; case_test rebuilds an expr against it later.
+            // cond's type; the dispatch block below rebuilds an expr against it.
             expr cond_e = ast_emit_expr(n->cond);
             if (find_var("switch_exp") == -1) add_var("switch_exp");
             int sw_id = find_var("switch_exp");
@@ -1198,26 +1198,67 @@ void stmt_emit(stmt_node *n)
             add_instr("SET switch_exp\n");
             acc_ok = 0;
 
-            stmt_emit(n->body);
+            // The body is a flat block of CASE_LABEL / DEFAULT_LABEL markers and
+            // statements in source order. We emit it in two passes so the case
+            // bodies sit contiguously and a case without `break` falls through
+            // to the next -- real C semantics (the old single-pass scheme
+            // re-tested switch_exp at every label, which skipped instead of
+            // falling through).
+            stmt_node *body = n->body;
+            int def_idx = -1;  // case-index of the default label, if present
 
-            add_sinst(0, "@sw_case_%d_%d ", n->id, n->id2 + 1);
+            // Pass 1 -- dispatch: compare switch_exp against each case value and
+            // jump to that case's body when equal. With JIZ only, "jump if
+            // equal" is `JIZ <skip>` (taken when NOT equal) + `JMP <body>`.
+            for (int i = 0; body && i < body->kids_n; i++)
+            {
+                stmt_node *kid = body->kids[i];
+                if (kid->kind == STMT_CASE_LABEL)
+                {
+                    expr e1 = num2exp(kid->id3, kid->id4);
+                    expr e2 = id2exp(sw_id);
+                    oper_cmp(e1, e2, 2);                                 // acc = (val == switch_exp)
+                    add_instr("JIZ sw_disp_%d_%d\n", n->id, kid->id2);  // not equal -> next entry
+                    add_instr("JMP sw_body_%d_%d\n", n->id, kid->id2);  // equal     -> this body
+                    add_sinst(0, "@sw_disp_%d_%d ", n->id, kid->id2);
+                    acc_ok = 0;
+                }
+                else if (kid->kind == STMT_DEFAULT_LABEL)
+                {
+                    def_idx = kid->id2;
+                }
+            }
+            // nothing matched -> default body (if any), else the switch end.
+            if (def_idx >= 0) add_instr("JMP sw_body_%d_%d\n", n->id, def_idx);
+            else              add_instr("JMP switch_end_%d\n",  n->id);
+            acc_ok = 0;
+
+            // Pass 2 -- bodies, contiguous. A label node only drops its body
+            // label; everything else emits in order (statements, breaks, nested
+            // switches). No compare here, so control falls from one body into
+            // the next exactly like C.
+            for (int i = 0; body && i < body->kids_n; i++)
+            {
+                stmt_node *kid = body->kids[i];
+                if (kid->kind == STMT_CASE_LABEL || kid->kind == STMT_DEFAULT_LABEL)
+                {
+                    add_sinst(0, "@sw_body_%d_%d ", n->id, kid->id2);
+                    acc_ok = 0;
+                }
+                else
+                {
+                    stmt_emit(kid);
+                }
+            }
             add_sinst(0, "@switch_end_%d ", n->id);
-            break;
-        }
-
-        case STMT_CASE_LABEL: {
-            // n->id  = swit_id, n->id2 = case_idx, n->id3 = val_id, n->id4 = val_type
-            add_sinst(0, "@sw_case_%d_%d ", n->id, n->id2);
-            expr e1 = num2exp(n->id3, n->id4);
-            expr e2 = id2exp (find_var("switch_exp"));
-            oper_cmp(e1, e2, 2);
-            add_instr("JIZ sw_case_%d_%d\n", n->id, n->id2 + 1);
             acc_ok = 0;
             break;
         }
 
+        // CASE_LABEL / DEFAULT_LABEL are consumed directly by the enclosing
+        // STMT_SWITCH two-pass walk above; they never emit on their own.
+        case STMT_CASE_LABEL:
         case STMT_DEFAULT_LABEL:
-            add_sinst(0, "@sw_case_%d_%d ", n->id, n->id2);
             break;
 
         case STMT_SWITCH_BREAK:

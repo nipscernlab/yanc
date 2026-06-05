@@ -1,0 +1,58 @@
+#PRNAME cmm_switch_fall
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Real C switch fall-through coverage. The old codegen re-tested switch_exp at
+// every case label, so a case without `break` was SKIPPED instead of falling
+// through. The dispatch-block + contiguous-bodies codegen (STMT_SWITCH walker)
+// makes fall-through behave like C. Validated by the simulated output values:
+//
+//   (A) cascade  -- a matched case with no break falls through EVERY following
+//       case body and the default.  x=1 -> 1, 2, 3, 9
+//
+//   (B) empty-case stacking -- case 1/2/3 with empty bodies all map to the one
+//       body that follows.          x=2 -> 33
+//
+//   (C) partial fall-through -- case 2 has no break and falls into case 3,
+//       which does break.           x=2 -> 22, 33
+//
+// Under the OLD codegen (A) would give just 1, 9 and (B) would not even
+// compile (empty case = syntax error), so this fixture only passes with real
+// fall-through. Expected outputs (repeating): 1 2 3 9 33 22 33
+
+void main()
+{
+    int x;
+    while (1)
+    {
+        x = 1;
+        switch (x) {
+            case 1: out(0, 1);
+            case 2: out(0, 2);
+            case 3: out(0, 3);
+            default: out(0, 9);
+        }
+
+        x = 2;
+        switch (x) {
+            case 1:
+            case 2:
+            case 3: out(0, 33); break;
+            default: out(0, 99);
+        }
+
+        x = 2;
+        switch (x) {
+            case 1: out(0, 11); break;
+            case 2: out(0, 22);
+            case 3: out(0, 33); break;
+            default: out(0, 44);
+        }
+    }
+}

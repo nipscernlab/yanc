@@ -21,4 +21,4 @@ procBlindOpt 597
 proc_fft   325
 proc_rls   334
 proc_sim   97
-sw_test    24
+sw_test    26

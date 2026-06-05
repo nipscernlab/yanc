@@ -16,44 +16,48 @@ LOD 2
 SET main_b
 LOD main_a
 SET switch_exp
-@sw_case_1_1 LOD switch_exp
 EQU 1
-JIZ sw_case_1_2
-LOD main_b
-SET switch_exp
-@sw_case_2_1 LOD switch_exp
+JIZ sw_disp_1_1
+JMP sw_body_1_1
+@sw_disp_1_1 LOD switch_exp
 EQU 2
-JIZ sw_case_2_2
-LOD 12
+JIZ sw_disp_1_2
+JMP sw_body_1_2
+@sw_disp_1_2 JMP sw_body_1_3
+@sw_body_1_1 LOD main_b
+SET switch_exp
+EQU 2
+JIZ sw_disp_2_1
+JMP sw_body_2_1
+@sw_disp_2_1 JMP sw_body_2_2
+@sw_body_2_1 LOD 12
 OUT 0
 JMP switch_end_2
-@sw_case_2_2 LOD 19
+@sw_body_2_2 LOD 19
 OUT 0
-@sw_case_2_3 @switch_end_2 LOD 100
-OUT 0
-JMP switch_end_1
-@sw_case_1_2 LOD switch_exp
-EQU 2
-JIZ sw_case_1_3
-LOD 200
+@switch_end_2 LOD 100
 OUT 0
 JMP switch_end_1
-@sw_case_1_3 LOD 99
+@sw_body_1_2 LOD 200
 OUT 0
-@sw_case_1_4 @switch_end_1 LOD 5
+JMP switch_end_1
+@sw_body_1_3 LOD 99
+OUT 0
+@switch_end_1 LOD 5
 SET main_a
 SET switch_exp
-@sw_case_3_1 LOD switch_exp
 EQU 5
-JIZ sw_case_3_2
-LOD main_a
+JIZ sw_disp_3_1
+JMP sw_body_3_1
+@sw_disp_3_1 JMP sw_body_3_2
+@sw_body_3_1 LOD main_a
 JIZ Lif1else
 JMP switch_end_3
 @Lif1else LOD 999
 OUT 0
-@sw_case_3_2 LOD 888
+@sw_body_3_2 LOD 888
 OUT 0
-@sw_case_3_3 @switch_end_3 LOD 50
+@switch_end_3 LOD 50
 OUT 0
 JMP Lwh1
 @Lwh1end @fim JMP fim

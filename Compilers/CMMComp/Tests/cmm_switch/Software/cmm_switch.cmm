@@ -11,18 +11,18 @@
 // switch/case coverage -- previously UNTESTED in the regress (ctrl_flow only
 // covers if/else/while/break). Validated by the SIMULATED OUTPUT VALUES: each
 // switch is driven by a known value, so a wrong match (or broken default /
-// break) would move the output. Codegen: each `case N:` compares N==switch_exp
-// and JIZ-jumps to the next case on mismatch; `break` jumps to switch_end;
-// `default` (no compare) runs when every case missed.
+// break) would move the output. Codegen: a dispatch block compares switch_exp
+// against each case value and jumps to that case's body; `break` jumps to
+// switch_end; `default` runs when every case missed.
 //   s=1  -> first case            -> 11
 //   s=2  -> last (non-default)     -> 22
 //   s=7  -> no match -> default    -> 39
 //   s=20 -> middle of three cases  -> 42
 // Expected outputs: 11 22 39 42
 //
-// NOTE: this fixture is the FLAT switch coverage (each case is a direct
-// child of the switch). Nested switch (switch inside a case) and break-binding
-// inside an if-in-a-case are covered separately by cmm_switch_nest.
+// NOTE: this fixture is the FLAT, every-case-breaks coverage. Nested switch and
+// break-in-if-in-a-case are in cmm_switch_nest; real C fall-through (a case
+// without break) is in cmm_switch_fall.
 
 void main()
 {

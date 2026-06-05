@@ -9,6 +9,23 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **Real C `switch` fall-through (cmmcomp)** — a `case` without `break` now falls
+  through into the next case body, and empty cases stack onto the following one
+  (`case 1: case 2: case 3: foo();` runs `foo` for all three) — standard C
+  semantics. The old codegen re-tested `switch_exp` at every case label, so a
+  no-break case was *skipped* instead of falling through, and an empty case was
+  a syntax error. The `STMT_SWITCH` walker now emits a **dispatch block** (one
+  compare per case, jump to that case's body) followed by the **case bodies laid
+  out contiguously**, so control falls from one body into the next with no
+  re-test. The grammar's switch body became a flat `sw_body` (labels and
+  statements interleaved, the C model), which also allows the empty-case stack.
+  Uses only existing opcodes (`LOD`/`EQU`/`JIZ`/`JMP`) — no hardware change. Cost
+  is about one extra `JMP` per switch; the assembly is no longer byte-identical,
+  so the switch goldens and `size_baseline` were regenerated. Locked down by the
+  `cmm_switch_fall` sim fixture (cascade, empty-case stacking and partial
+  fall-through, output values checked against hand computation). Note: a jump
+  table (O(1) dispatch for large dense switches) would need an indirect jump,
+  which the ISA does not have — but that is an optimisation, not correctness.
 - **Nested `switch` and correct `break` binding (cmmcomp)** — a `switch` can now
   appear inside a `case`, and `break` binds to the innermost enclosing loop *or*
   switch (the standard C rule). Previously the grammar had a separate
@@ -24,9 +41,9 @@ tags consumed by Aurora.
   (flat switches, loops and breaks emit exactly as before — verified by a
   zero-diff `--update` and the `size_baseline` ratchet); the new behaviour is
   locked down by the `cmm_switch_nest` sim fixture (nested switch + a
-  break-in-if-in-case, output values checked against hand computation). Note:
-  fall-through (a case without `break`) remains a pre-existing limitation — this
-  compiler re-tests at each case label rather than falling through.
+  break-in-if-in-case, output values checked against hand computation).
+  (Fall-through was a limitation at this point; it is fixed by the
+  fall-through entry above.)
 - **Object-like `#define` in `cmmcomp`** — the C± lexer now handles
   `#define NAME body` directly, with no separate preprocessor stage: a later use
   of `NAME` is replaced by re-lexing its body (flex `yy_scan_string` + a buffer

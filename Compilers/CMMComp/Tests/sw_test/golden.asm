@@ -13,21 +13,23 @@ JIZ Lwh1end
 INN 0
 SET main_x
 SET switch_exp
-@sw_case_1_1 LOD switch_exp
 EQU 1
-JIZ sw_case_1_2
-LOD 10
-SET main_y
-JMP switch_end_1
-@sw_case_1_2 LOD switch_exp
+JIZ sw_disp_1_1
+JMP sw_body_1_1
+@sw_disp_1_1 LOD switch_exp
 EQU 2
-JIZ sw_case_1_3
-LOD 20
+JIZ sw_disp_1_2
+JMP sw_body_1_2
+@sw_disp_1_2 JMP sw_body_1_3
+@sw_body_1_1 LOD 10
 SET main_y
 JMP switch_end_1
-@sw_case_1_3 LOD 0
+@sw_body_1_2 LOD 20
 SET main_y
-@sw_case_1_4 @switch_end_1 LOD main_y
+JMP switch_end_1
+@sw_body_1_3 LOD 0
+SET main_y
+@switch_end_1 LOD main_y
 OUT 0
 JMP Lwh1
 @Lwh1end @fim JMP fim
