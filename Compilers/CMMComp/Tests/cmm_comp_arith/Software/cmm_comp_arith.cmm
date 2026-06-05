@@ -1,0 +1,30 @@
+#PRNAME cmm_comp_arith
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+// Arithmetic between two comp LITERALS. The algebraic-identity folder used to
+// mistake a comp literal whose real/imag half is 0 or 1 for the scalar 0/1 and
+// drop the op (e.g. (1+2i)*(3+4i) -> (3+4i)). Fixed in is_const_value.
+//   (1+2i)*(3+4i) = -5+10i        (left real 1 -> was folded 1*x)
+//   (4+2i)/(1+1i) = 3-1i          (right real 1 -> was folded x/1)
+//   (1+2i)+(3+4i) = 4+6i
+//   (0+2i)+(3+4i) = 3+6i          (left real 0 -> was folded 0+x)
+//   (1+2i)-(3+4i) = -2-2i
+//   x*y (vars)    = -5+10i        (always worked; regression)
+// Expected: -5 10 3 -1 4 6 3 6 -2 -2 -5 10
+void main() {
+    comp x; comp y; comp r;
+    while (1) {
+        r = (1.0+2.0i) * (3.0+4.0i);   fout(0, real(r)); fout(0, imag(r));
+        r = (4.0+2.0i) / (1.0+1.0i);   fout(0, real(r)); fout(0, imag(r));
+        r = (1.0+2.0i) + (3.0+4.0i);   fout(0, real(r)); fout(0, imag(r));
+        r = (0.0+2.0i) + (3.0+4.0i);   fout(0, real(r)); fout(0, imag(r));
+        r = (1.0+2.0i) - (3.0+4.0i);   fout(0, real(r)); fout(0, imag(r));
+        x = 1.0+2.0i; y = 3.0+4.0i; r = x * y;  fout(0, real(r)); fout(0, imag(r));
+    }
+}

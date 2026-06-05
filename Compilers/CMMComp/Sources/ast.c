@@ -241,6 +241,11 @@ static expr ast_emit_expr_impl(expr_node *n);
 static int is_const_value(expr_node *n, double want)
 {
     if (!n || n->kind != EXPR_LITERAL) return 0;
+    // Only a genuine scalar (int/float) literal can be the algebraic 0 or 1. A
+    // comp literal (type 3/4/5) is NOT -- e.g. 1+2i has real part 1 but is not
+    // the constant 1 -- so matching its real half here would wrongly fold
+    // 1*x / x/1 / x+0 and drop the operation (e.g. (1+2i)*(3+4i) -> (3+4i)).
+    if (n->type > 2) return 0;
     return atof(v_table[n->id].name) == want;
 }
 

@@ -9,6 +9,19 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **Arithmetic between two `comp` literals is no longer dropped (cmmcomp)** —
+  `(1+2i)*(3+4i)` returned `3+4i` (and `(4+2i)/(1+1i)` returned `4+2i`, and
+  `(0+2i)+(3+4i)` returned `3+4i`) instead of computing the operation. The
+  algebraic-identity folder (`x*1→x`, `x/1→x`, `x+0→x`) used `is_const_value`,
+  which only compared the literal's *real-part* cell against the scalar 0/1 — so
+  a comp literal like `1+2i` (real part 1) was mistaken for the constant 1 and
+  the operation was folded away. `is_const_value` now rejects non-scalar
+  literals (`n->type > 2`), so only a genuine int/float literal can be the
+  algebraic 0/1; comp literals go through the normal `oper_mult`/`oper_divi`/
+  `oper_soma` path. Scalar folding is unchanged (every existing test stays
+  byte-identical). Locked down by the new `cmm_comp_arith` fixture (`×`/`÷`/`+`/
+  `−` between comp literals, the `0+x`/`1*x` decoy cases, and a comp-variable
+  regression — output values checked against hand computation).
 - **`fase()` (complex phase) is now a real `atan2` (cmmcomp)** — it previously
   computed just `atan(imag/real)`, a 2-quadrant angle that was wrong for
   `real < 0` (off by ±π) and **divided by zero when `real == 0`** (the sim

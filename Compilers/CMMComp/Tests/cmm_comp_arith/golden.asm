@@ -1,0 +1,118 @@
+NOP
+#PRNAME cmm_comp_arith
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+@main @Lwh1 LOD 1
+JIZ Lwh1end
+LOD 1.000000
+F_MLT 3.000000
+P_LOD 2.000000
+F_MLT 4.000000
+SF_SU2
+P_LOD 1.000000
+F_MLT 4.000000
+P_LOD 2.000000
+F_MLT 3.000000
+SF_ADD
+SET_P main_r_i
+SET main_r
+F2I
+OUT 0
+LOD main_r_i
+F2I
+OUT 0
+LOD 1.000000
+F_MLT 1.000000
+P_LOD 1.000000
+F_MLT 1.000000
+SF_ADD
+SET   aux_var
+LOD 4.000000
+F_MLT 1.000000
+P_LOD 2.000000
+F_MLT 1.000000
+SF_ADD
+P_LOD aux_var
+SF_DIV
+P_LOD 2.000000
+F_MLT 1.000000
+P_LOD 4.000000
+F_MLT 1.000000
+SF_SU2
+P_LOD aux_var
+SF_DIV
+SET_P main_r_i
+SET main_r
+F2I
+OUT 0
+LOD main_r_i
+F2I
+OUT 0
+LOD 1.000000
+F_ADD 3.000000
+P_LOD 2.000000
+F_ADD 4.000000
+SET_P main_r_i
+SET main_r
+F2I
+OUT 0
+LOD main_r_i
+F2I
+OUT 0
+LOD 0.000000
+F_ADD 3.000000
+P_LOD 2.000000
+F_ADD 4.000000
+SET_P main_r_i
+SET main_r
+F2I
+OUT 0
+LOD main_r_i
+F2I
+OUT 0
+F_NEG_M 3.000000
+PF_NEG_M 4.000000
+SET_P aux_var
+F_ADD 1.000000
+P_LOD 2.000000
+F_ADD aux_var
+SET_P main_r_i
+SET main_r
+F2I
+OUT 0
+LOD main_r_i
+F2I
+OUT 0
+LOD 1.000000
+SET main_x
+LOD 2.000000
+SET main_x_i
+LOD 3.000000
+SET main_y
+LOD 4.000000
+SET main_y_i
+LOD main_x
+F_MLT main_y
+P_LOD main_x_i
+F_MLT main_y_i
+SF_SU2
+P_LOD main_x
+F_MLT main_y_i
+P_LOD main_x_i
+F_MLT main_y
+SF_ADD
+SET_P main_r_i
+SET main_r
+F2I
+OUT 0
+LOD main_r_i
+F2I
+OUT 0
+JMP Lwh1
+@Lwh1end @fim JMP fim
