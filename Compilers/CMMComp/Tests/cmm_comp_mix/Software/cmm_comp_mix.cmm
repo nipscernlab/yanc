@@ -1,0 +1,47 @@
+#PRNAME cmm_comp_mix
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Exhaustive comp <-> int/float arithmetic. A scalar n is promoted to comp(n,0).
+// 4 ops x 4 mixing directions, + comp-literal cases, + scalar-variable cases.
+// c=3+4i, c2=6+8i, ni=2, nf=2.0.  Each line: fout real ; fout imag.
+//   c+2=5+4i  c-2=1+4i  c*2=6+8i  c2/2=3+4i
+//   2+c=5+4i  2-c=-1-4i 2*c=6+8i  25/c=3-4i
+//   c+2.0=5+4i c-2.0=1+4i c*2.0=6+8i c2/2.0=3+4i
+//   2.0+c=5+4i 2.0-c=-1-4i 2.0*c=6+8i 25.0/c=3-4i
+//   (3+4i)+2=5+4i (3+4i)*2=6+8i (3+4i)*1=3+4i (3+4i)+0=3+4i
+//   c+ni=5+4i  nf*c=6+8i
+void main() {
+    comp c; comp c2; comp r;
+    int ni; float nf;
+    while (1) {
+        c = 3.0+4.0i; c2 = 6.0+8.0i; ni = 2; nf = 2.0;
+        r = c + 2;      fout(0, real(r)); fout(0, imag(r));
+        r = c - 2;      fout(0, real(r)); fout(0, imag(r));
+        r = c * 2;      fout(0, real(r)); fout(0, imag(r));
+        r = c2 / 2;     fout(0, real(r)); fout(0, imag(r));
+        r = 2 + c;      fout(0, real(r)); fout(0, imag(r));
+        r = 2 - c;      fout(0, real(r)); fout(0, imag(r));
+        r = 2 * c;      fout(0, real(r)); fout(0, imag(r));
+        r = 25 / c;     fout(0, real(r)); fout(0, imag(r));
+        r = c + 2.0;    fout(0, real(r)); fout(0, imag(r));
+        r = c - 2.0;    fout(0, real(r)); fout(0, imag(r));
+        r = c * 2.0;    fout(0, real(r)); fout(0, imag(r));
+        r = c2 / 2.0;   fout(0, real(r)); fout(0, imag(r));
+        r = 2.0 + c;    fout(0, real(r)); fout(0, imag(r));
+        r = 2.0 - c;    fout(0, real(r)); fout(0, imag(r));
+        r = 2.0 * c;    fout(0, real(r)); fout(0, imag(r));
+        r = 25.0 / c;   fout(0, real(r)); fout(0, imag(r));
+        r = (3.0+4.0i) + 2;  fout(0, real(r)); fout(0, imag(r));
+        r = (3.0+4.0i) * 2;  fout(0, real(r)); fout(0, imag(r));
+        r = (3.0+4.0i) * 1;  fout(0, real(r)); fout(0, imag(r));
+        r = (3.0+4.0i) + 0;  fout(0, real(r)); fout(0, imag(r));
+        r = c + ni;     fout(0, real(r)); fout(0, imag(r));
+        r = nf * c;     fout(0, real(r)); fout(0, imag(r));
+    }
+}
