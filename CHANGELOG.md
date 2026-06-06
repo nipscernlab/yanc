@@ -9,6 +9,19 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **Complex `sqrt(z)` (cmmcomp)** — `sqrt` now accepts a `comp` argument and
+  returns the principal complex square root, instead of rejecting it as an error.
+  The `comp` branch of `exec_sqrt` is composed entirely from existing real ops
+  (no new assembly instructions): with `z = a + b i` and `r = |z| = sqrt(a²+b²)`,
+  it emits `sqrt(z) = sqrt((r+a)/2) + sign(b)·sqrt((r-a)/2) i` (`F_SU1` for the
+  subtraction, `F_MLT 0.5` for the halving, `F_SGN` for the sign transfer). All
+  three argument forms are handled — `comp` constant, `comp` in memory, and a
+  `comp` already in the accumulator (spilled to temps with `SET_P`/`SET`, like
+  `exec_fase`). The accumulator peephole drops the redundant `LOD csqrt_r` /
+  `LOD csqrt_a` after each `SET`, so the live half stays in the acc. Locked down
+  by the new `cmm_comp_sqrt` fixture (by-value): `sqrt(3+4i)=2+1i`,
+  `sqrt(-3+4i)=1+2i`, `sqrt(z+w)=sqrt(3+4i)=2+1i` (acc path), and the real-axis
+  edges `sqrt(4)=2`, `sqrt(-4)=2i` (principal root; `F_SGN(0)` yields `+`).
 - **Accumulator-aware redundant-load elimination (cmmcomp codegen)** — the
   streaming peephole in `add_instr` now tracks which operand is in the
   accumulator (`acc_name`, set by a plain `LOD`/`P_LOD`/`SET`, cleared by every

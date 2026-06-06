@@ -561,14 +561,79 @@ expr exec_sqrt(expr e)
     // check whether et is a variable
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
-    // check whether it is comp
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // complex argument: principal square root, composed from real ops only ---
+    //   z = a + b i ;  r = |z| = sqrt(a² + b²)
+    //   sqrt(z) = sqrt((r + a)/2)  +  sign(b) * sqrt((r - a)/2) i
+    // ------------------------------------------------------------------------
+    if (e.type > 2)
+    {
+        expr etr, eti;                  // real (a) and imag (b) parts
+        const char *A, *B;
+        int pre = 0;                    // a pending acc value must be pushed first
+
+        if (e.type == 5)                            // comp constant
+        {
+            get_cmp_cst(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else if (e.id != 0)                         // comp in memory
+        {
+            get_cmp_ets(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else                                        // comp in acc (acc=imag, stack=real)
+        {
+            int ib = exec_id("csqrt_b"), ia = exec_id("csqrt_a");
+            add_instr("SET_P %s\n", v_table[ib].name);  // csqrt_b = imag; POP -> acc = real
+            add_instr("SET   %s\n", v_table[ia].name);  // csqrt_a = real
+            A = v_table[ia].name; B = v_table[ib].name;
+        }
+
+        const char *R  = v_table[exec_id("csqrt_r" )].name;   // |z|
+        const char *RE = v_table[exec_id("csqrt_re")].name;   // result real part
+        const char *IM = v_table[exec_id("csqrt_im")].name;   // result imag part
+
+        // r = |z| = sqrt(a² + b²)
+        add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
+        add_instr("F_MLT %s\n", A);                      // acc = a²
+        add_instr("PSH\n");                              // stack: a²
+        add_instr("LOD %s\n", B);                        // acc = b
+        add_instr("F_MLT %s\n", B);                      // acc = b²
+        add_instr("SF_ADD\n");                           // acc = a² + b²
+        exec_sqrt(expr_make(2, 0));                      // acc = r
+        add_instr("SET %s\n", R);
+
+        // re = sqrt((r + a)/2)
+        add_instr("LOD %s\n", R);                        // acc = r (peephole drops if redundant)
+        add_instr("F_ADD %s\n", A);                      // acc = r + a
+        add_instr("F_MLT 0.5\n");                        // acc = (r + a)/2
+        exec_sqrt(expr_make(2, 0));                      // acc = sqrt((r+a)/2)
+        add_instr("SET %s\n", RE);
+
+        // im = sign(b) * sqrt((r - a)/2)
+        add_instr("LOD %s\n", R);                        // acc = r
+        add_instr("F_SU1 %s\n", A);                      // acc = r - a   (F_SU1 X = acc - X)
+        add_instr("F_MLT 0.5\n");                        // acc = (r - a)/2
+        exec_sqrt(expr_make(2, 0));                      // acc = sqrt((r-a)/2)  (>= 0)
+        add_instr("F_SGN %s\n", B);                      // acc = magnitude with sign of b
+        add_instr("SET %s\n", IM);
+
+        // assemble the complex result: real in acc, imag on the stack
+        add_instr("LOD %s\n",   RE);                     // acc = re
+        add_instr("P_LOD %s\n", IM);                     // push re; acc = im -> comp in acc
+
+        acc_ok = 1;
+        return expr_make(3, 0);
+    }
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------

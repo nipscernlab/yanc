@@ -1,0 +1,24 @@
+#PRNAME cmm_comp_sqrt
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Principal complex square root sqrt(z) = sqrt((r+a)/2) + sign(b)*sqrt((r-a)/2) i,
+// composed from real ops only (r = |z|). Exercises the three argument forms:
+//   memory  : sqrt(z)            const : sqrt(-3.0+4.0i)     acc : sqrt(z + w)
+//   sqrt(3+4i) = 2+1i   sqrt(-3+4i) = 1+2i   sqrt(4+0i) = 2+0i   sqrt(-4+0i) = 0+2i
+// Esperado (real, imag por linha): 2 1   1 2   2 1   2 0   0 2
+void main() {
+    comp z; comp w; comp r;
+    while (1) {
+        z = 3.0+4.0i;                 r = sqrt(z);      fout(0, real(r)); fout(0, imag(r));
+        r = sqrt(-3.0+4.0i);                            fout(0, real(r)); fout(0, imag(r));
+        z = 1.0+2.0i;  w = 2.0+2.0i;  r = sqrt(z + w);  fout(0, real(r)); fout(0, imag(r));
+        z = 4.0+0.0i;                 r = sqrt(z);      fout(0, real(r)); fout(0, imag(r));
+        z = -4.0+0.0i;                r = sqrt(z);      fout(0, real(r)); fout(0, imag(r));
+    }
+}
