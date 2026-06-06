@@ -50,6 +50,8 @@ void fcat2end(char *n_read, char *n_write)
 int fatan = 0; // whether the arctangent macro is needed
 int fsqrt = 0; // whether the square-root macro is needed
 int fsin  = 0; // whether the sine macro is needed
+int fexp  = 0; // whether the exponential macro is needed
+int flog  = 0; // whether the natural-logarithm macro is needed
 
 // adds a flag for a predefined macro -----------------------------------------
 
@@ -58,6 +60,8 @@ void mac_add(char *name)
          if (strcmp(name, "fsqrt") == 0) fsqrt = 1; // square root
     else if (strcmp(name, "fatan") == 0) fatan = 1; // arctangent
     else if (strcmp(name, "fsin" ) == 0) fsin  = 1; // sine
+    else if (strcmp(name, "fexp" ) == 0) fexp  = 1; // exponential
+    else if (strcmp(name, "flog" ) == 0) flog  = 1; // natural logarithm
 }
 
 // copies the predefined macros at the end of the assembler file --------------
@@ -66,7 +70,7 @@ void mac_copy(char *fasm)
 {
     // bail out if there is nothing to do -------------------------------------
 
-    if (!(fsqrt || fatan || fsin)) return;
+    if (!(fsqrt || fatan || fsin || fexp || flog)) return;
 
     // copy what is needed at the end of the asm ------------------------------
 
@@ -90,6 +94,20 @@ void mac_copy(char *fasm)
     {
         printf(MSG_INFO_SIN_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_sin.asm", dir_macro);
+        fcat2end(tasm,fasm);
+    }
+
+    if (fexp)
+    {
+        printf(MSG_INFO_EXP_MACRO);
+        snprintf(tasm, sizeof(tasm), "%s/float_exp.asm", dir_macro);
+        fcat2end(tasm,fasm);
+    }
+
+    if (flog)
+    {
+        printf(MSG_INFO_LOG_MACRO);
+        snprintf(tasm, sizeof(tasm), "%s/float_log.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 }

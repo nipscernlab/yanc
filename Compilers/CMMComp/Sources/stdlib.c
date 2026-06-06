@@ -678,6 +678,136 @@ expr exec_sqrt(expr e)
     return expr_make(2, 0);
 }
 
+// exponential (e^x)
+expr exec_exp(expr e)
+{
+    // ------------------------------------------------------------------------
+    // consistency check ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // check whether et was declared
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // check whether et is a variable
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // check whether it is comp (complex exp is a later step)
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_EXP_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+
+    // ------------------------------------------------------------------------
+    // update variable status -------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // prepare local variables ------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (acc_ok == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
+
+    // ------------------------------------------------------------------------
+    // execute ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // int in memory
+    if ((e.type == 1) && (e.id != 0))
+    {
+        add_instr("%s %s\n", i2f, v_table[e.id].name);
+        add_instr("CAL float_exp\n");
+    }
+
+    // int in acc
+    if ((e.type == 1) && (e.id == 0))
+    {
+        add_instr("I2F\n");
+        add_instr("CAL float_exp\n");
+    }
+
+    // float in memory
+    if ((e.type == 2) && (e.id != 0))
+    {
+        add_instr("%s %s\n", ld, v_table[e.id].name);
+        add_instr("CAL float_exp\n");
+    }
+
+    // float in acc
+    if ((e.type == 2) && (e.id == 0))
+    {
+        add_instr("CAL float_exp\n");
+    }
+
+    acc_ok = 1;
+
+    return expr_make(2, 0);
+}
+
+// natural logarithm (ln x)
+expr exec_log(expr e)
+{
+    // ------------------------------------------------------------------------
+    // consistency check ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // check whether et was declared
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // check whether et is a variable
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // check whether it is comp (complex log is a later step)
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_LOG_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+
+    // ------------------------------------------------------------------------
+    // update variable status -------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // prepare local variables ------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (acc_ok == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
+
+    // ------------------------------------------------------------------------
+    // execute ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // int in memory
+    if ((e.type == 1) && (e.id != 0))
+    {
+        add_instr("%s %s\n", i2f, v_table[e.id].name);
+        add_instr("CAL float_log\n");
+    }
+
+    // int in acc
+    if ((e.type == 1) && (e.id == 0))
+    {
+        add_instr("I2F\n");
+        add_instr("CAL float_log\n");
+    }
+
+    // float in memory
+    if ((e.type == 2) && (e.id != 0))
+    {
+        add_instr("%s %s\n", ld, v_table[e.id].name);
+        add_instr("CAL float_log\n");
+    }
+
+    // float in acc
+    if ((e.type == 2) && (e.id == 0))
+    {
+        add_instr("CAL float_log\n");
+    }
+
+    acc_ok = 1;
+
+    return expr_make(2, 0);
+}
+
 // arctangent
 expr exec_atan(expr e)
 {

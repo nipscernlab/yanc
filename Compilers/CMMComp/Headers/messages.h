@@ -152,6 +152,14 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: não implementei raiz quadrada de número complexo ainda. Se vira!\n", \
       "Error on line %d: I haven't coded up complex square roots yet. You're on your own!\n")
 
+#define MSG_ERR_EXP_COMPLEX \
+    M("Erro na linha %d: exp(.) de número complexo ainda não foi implementado!\n", \
+      "Error on line %d: exp(.) of a complex number isn't implemented yet!\n")
+
+#define MSG_ERR_LOG_COMPLEX \
+    M("Erro na linha %d: log(.) de número complexo ainda não foi implementado!\n", \
+      "Error on line %d: log(.) of a complex number isn't implemented yet!\n")
+
 #define MSG_ERR_REAL_ARG_COMP \
     M("Erro na linha %d: argumento da função real(.) tem que ser complexo!\n", \
       "Error on line %d: argument of real(.) has gotta be complex!\n")
@@ -481,6 +489,14 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_INFO_SIN_MACRO \
     M("Info: adicionando macro assembly para cálculo de seno\n", \
       "Info: adding assembly macro for sin computation\n")
+
+#define MSG_INFO_EXP_MACRO \
+    M("Info: adicionando macro assembly para cálculo de exponencial\n", \
+      "Info: adding assembly macro for exponential computation\n")
+
+#define MSG_INFO_LOG_MACRO \
+    M("Info: adicionando macro assembly para cálculo de logaritmo natural\n", \
+      "Info: adding assembly macro for natural-logarithm computation\n")
 
 #define MSG_INFO_ARRAY_FILE_INIT \
     M("Info: inicialização de array com arquivo %s para variável '%s' na linha %d\n", \

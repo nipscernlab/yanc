@@ -1,0 +1,24 @@
+#PRNAME cmm_exp
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Exponential exp(x) = e^x via float_exp macro (range reduction by loop +
+// degree-8 Taylor). Exercises float-const, float-in-acc and round-trip paths.
+// fout() truncates to int, so values are scaled by 1000 to expose 3 decimals.
+//   exp(0)=1000   exp(1)=2718   exp(2)=7389   exp(-1)=367   log(exp(3))=2999
+// (round-trip ~3.000 floors to 2999: fout truncates toward zero)
+void main() {
+    float x; float r;
+    while (1) {
+        r = exp(0.0)  * 1000.0;        fout(0, r);   // 1000
+        r = exp(1.0)  * 1000.0;        fout(0, r);   // 2718  (e)
+        x = 1.0;  r = exp(x + 1.0) * 1000.0;  fout(0, r);   // 7389  (e², acc path)
+        x = -1.0; r = exp(x) * 1000.0; fout(0, r);   // 367   (1/e)
+        r = log(exp(3.0)) * 1000.0;    fout(0, r);   // 2999  (round-trip ~3.000)
+    }
+}

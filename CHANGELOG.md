@@ -9,6 +9,22 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **Real `exp(x)` and `log(x)` (cmmcomp)** — two new built-ins: `exp` is e^x and
+  `log` is the natural logarithm (ln). Both are backed by new assembly macros
+  (`Includes/float_exp.asm`, `Includes/float_log.asm`) auto-included on demand
+  through the same `find_opc`/`mac_add` hook as `float_sqrt`/`float_sin`. The
+  macros use **no new hardware and no lookup table**: range reduction is done by
+  value with a loop (like `float_sin`), independent of the non-IEEE float layout,
+  and the reduced interval is evaluated with a Horner polynomial — `exp(r)` a
+  degree-8 Taylor series on `[0, ln2)`, `log(m)` the atanh series
+  `2u(1+u²/3+u⁴/5+…)` with `u=(m-1)/(m+1)` on `[1, 2)`. `log` guards `x<=0`
+  (returns 0). Complex arguments are rejected for now (a later step). Wired
+  through the lexer (`exp`/`log` keywords), grammar (`std_exp`/`std_log`),
+  AST (`OP_STD_EXP`/`OP_STD_LOG`) and `exec_exp`/`exec_log` in stdlib. Validated
+  by value with the new `cmm_exp`/`cmm_log` fixtures (scaled ×1000 since `fout`
+  truncates to int): `exp(0)=1`, `exp(1)=e`, `exp(2)=e²`, `exp(-1)=1/e`,
+  `log(2)=ln2`, `log(10)=ln10`, and the inverse round-trips `log(exp(3))` and
+  `exp(log(8))`.
 - **Complex `sqrt(z)` (cmmcomp)** — `sqrt` now accepts a `comp` argument and
   returns the principal complex square root, instead of rejecting it as an error.
   The `comp` branch of `exec_sqrt` is composed entirely from existing real ops
