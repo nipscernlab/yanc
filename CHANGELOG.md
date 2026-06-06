@@ -8,6 +8,23 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **Accumulator-aware redundant-load elimination (cmmcomp codegen)** — the
+  streaming peephole in `add_instr` now tracks which operand is in the
+  accumulator (`acc_name`, set by a plain `LOD`/`P_LOD`/`SET`, cleared by every
+  other op) and drops a `LOD x` whenever the accumulator already holds `x`. This
+  generalises the old "`LOD x` right after `SET x`" drop to any basic-block
+  position; `acc_name` is reset at every control-flow boundary
+  (`emit_peephole_reset`), so a drop never crosses a label. Value-preserving and
+  byte-identical on the suite (the existing codegen had no extra redundant loads
+  to drop). To turn the new capability into a real win, the comp ÷ comp division
+  (`oper_divi`) now squares the half of the divisor that the accumulator already
+  holds first — `c²+d²` is commutative, so squaring `d²` first when `d` is live
+  lets the peephole drop its `LOD`. So `r = x / y` right after `y = …` is 21
+  instructions instead of 22. Locked down by the new `cmm_comp_div` fixture,
+  which also adds the first by-value coverage of `comp_var / comp_var`
+  ((4+2i)/(1+1i)=3-1i, (8+6i)/(1-1i)=1+7i, (6+8i)/(2+0i)=3+4i).
+
 ### Fixed
 - **Walker-time diagnostics report the right line and variable name (cmmcomp)** —
   every warning / info message emitted during the deferred-AST walk (comp/float

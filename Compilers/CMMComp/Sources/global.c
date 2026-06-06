@@ -44,9 +44,25 @@ int  sim_arr  = 0;    // tells whether the array is simulated or not
 // push/pop, macro start/end) so the drop only fires within a basic block.
 static char last_str[256] = "";
 
+// Name of the variable/constant currently sitting in the accumulator, or "" when
+// unknown. A plain LOD/P_LOD/SET of an operand leaves that operand's value in the
+// acc; every other op clobbers it. add_instr drops a "LOD x" whenever acc_name is
+// already x (the acc holds it), which generalises the old "LOD x after SET x"
+// peephole. Cleared at every basic-block boundary alongside last_str.
+static char acc_name[100] = "";
+
 void emit_peephole_reset(void)
 {
     last_str[0] = '\0';
+    acc_name[0] = '\0';
+}
+
+// True when the accumulator is known to currently hold variable `name`. Used by
+// the codegen (e.g. the comp c²+d² in oper_divi / exec_mod2) to square the
+// acc-resident half first, so its LOD is dropped by the peephole above.
+int acc_holds(const char *name)
+{
+    return name && name[0] && strcmp(acc_name, name) == 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -219,25 +235,22 @@ void add_instr(char *inst, ...)
     va_end  (args);
 
     // ------------------------------------------------------------------------
-    // peephole: drop "LOD x" right after "SET x" -----------------------------
+    // peephole: drop "LOD x" when the accumulator already holds x -------------
     // ------------------------------------------------------------------------
-    // SET stores acc to memory and leaves acc unchanged (instr_dec.v: opcode 4
-    // -> ula_op 0). So reloading the just-stored value is a no-op. Only fires
-    // when both lines are the plain SET / LOD opcodes (not SET_P / F_SET /
-    // P_LOD / etc.) and the variable names match. last_str is reset by
-    // add_sinst so this never crosses a label or basic-block boundary.
+    // acc_name tracks the operand currently in the acc: a plain LOD / P_LOD /
+    // SET of an operand leaves its value there (SET stores acc to memory and
+    // leaves acc unchanged -- instr_dec.v opcode 4 -> ula_op 0); every other op
+    // clobbers it. So a "LOD x" while acc_name == x is a no-op and is dropped.
+    // This subsumes the old "LOD x after SET x" case. Only the plain LOD is
+    // dropped -- P_LOD also pushes, so it must always run. acc_name is cleared
+    // at every basic-block boundary (emit_peephole_reset), so the drop never
+    // crosses a label or control-flow merge.
 
-    if (strncmp(str,      "LOD ", 4) == 0 &&
-        strncmp(last_str, "SET ", 4) == 0)
+    if (strncmp(str, "LOD ", 4) == 0)
     {
-        char lod_var[100], set_var[100];
-        if (sscanf(str      + 4, "%99s", lod_var) == 1 &&
-            sscanf(last_str + 4, "%99s", set_var) == 1 &&
-            strcmp(lod_var, set_var) == 0)
-        {
-            last_str[0] = '\0';
-            return;
-        }
+        char lod_var[100];
+        if (sscanf(str + 4, "%99s", lod_var) == 1 && strcmp(lod_var, acc_name) == 0)
+            return;   // acc already holds it -- acc_name / last_str stay valid
     }
 
     // ------------------------------------------------------------------------
@@ -258,6 +271,15 @@ void add_instr(char *inst, ...)
     if (find_opc("float_sqrt", str)) mac_add("fsqrt");
     if (find_opc("float_atan", str)) mac_add("fatan");
     if (find_opc("float_sin" , str)) mac_add("fsin" );
+
+    // track what is now in the accumulator: only a plain LOD / P_LOD / SET of an
+    // operand leaves that operand's value there; anything else clobbers it.
+    if      (strncmp(str, "LOD ", 4) == 0 || strncmp(str, "SET ", 4) == 0)
+        sscanf(str + 4, "%99s", acc_name);
+    else if (strncmp(str, "P_LOD ", 6) == 0)
+        sscanf(str + 6, "%99s", acc_name);
+    else
+        acc_name[0] = '\0';
 
     // remember this emit for the next peephole check
     strncpy(last_str, str, sizeof(last_str) - 1);

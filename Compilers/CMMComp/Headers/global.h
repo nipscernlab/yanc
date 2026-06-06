@@ -42,7 +42,12 @@ void parse_end (char *prname, char *d_proc);
 void add_instr(char *inst, ...);           // standard
 void add_sinst(int type, char *inst, ...); // special
 
-// clears the one-instruction peephole window inside add_instr. Called at
+// clears the peephole state inside add_instr (last_str + acc_name). Called at
 // every basic-block boundary (labels, capture push/pop, macro use/end) so the
-// "drop LOD x after SET x" optimization never crosses control flow.
+// "drop LOD x while the acc already holds x" optimization never crosses control
+// flow.
 void emit_peephole_reset(void);
+
+// true when the accumulator is known to currently hold variable `name` -- lets
+// codegen square the acc-resident half of c²+d² first so its LOD is dropped.
+int  acc_holds(const char *name);

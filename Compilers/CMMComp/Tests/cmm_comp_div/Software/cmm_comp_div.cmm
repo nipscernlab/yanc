@@ -1,0 +1,23 @@
+#PRNAME cmm_comp_div
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// comp_var / comp_var (antes sem teste por valor). Cada divisão vem logo após
+// o "y = ..." -> o acumulador segura a parte imag de y, então o codegen eleva
+// d² primeiro e o peephole dropa o LOD (otimização do acumulador). Os valores
+// têm que continuar certos:
+//   (4+2i)/(1+1i) = 3-1i      (8+6i)/(1-1i) = 1+7i      (6+8i)/(2+0i) = 3+4i
+// Esperado: 3 -1 1 7 3 4
+void main() {
+    comp x; comp y; comp r;
+    while (1) {
+        x = 4.0+2.0i; y = 1.0+1.0i; r = x / y;  fout(0, real(r)); fout(0, imag(r));
+        x = 8.0+6.0i; y = 1.0-1.0i; r = x / y;  fout(0, real(r)); fout(0, imag(r));
+        x = 6.0+8.0i; y = 2.0+0.0i; r = x / y;  fout(0, real(r)); fout(0, imag(r));
+    }
+}

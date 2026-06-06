@@ -2186,8 +2186,19 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e1,&et1r,&et1i);
         get_cmp_ets(e2,&et2r,&et2i);
 
-        oper_mult(et2r, et2r);
-        oper_mult(et2i, et2i);
+        // Denominator c²+d² is commutative, so square whichever half the
+        // accumulator already holds first -- its LOD is then dropped by the
+        // peephole (e.g. `r = x/y` right after `y = ...` leaves d in the acc).
+        if (acc_holds(v_table[et2i.id].name))
+        {
+            oper_mult(et2i, et2i);
+            oper_mult(et2r, et2r);
+        }
+        else
+        {
+            oper_mult(et2r, et2r);
+            oper_mult(et2i, et2i);
+        }
         oper_soma(expr_make(2, 0), expr_make(2, 0));
         add_instr("SET   aux_var\n");
         acc_ok = 0;
