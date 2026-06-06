@@ -17,13 +17,18 @@ tags consumed by Aurora.
   position; `acc_name` is reset at every control-flow boundary
   (`emit_peephole_reset`), so a drop never crosses a label. Value-preserving and
   byte-identical on the suite (the existing codegen had no extra redundant loads
-  to drop). To turn the new capability into a real win, the comp ÷ comp division
-  (`oper_divi`) now squares the half of the divisor that the accumulator already
-  holds first — `c²+d²` is commutative, so squaring `d²` first when `d` is live
-  lets the peephole drop its `LOD`. So `r = x / y` right after `y = …` is 21
-  instructions instead of 22. Locked down by the new `cmm_comp_div` fixture,
-  which also adds the first by-value coverage of `comp_var / comp_var`
-  ((4+2i)/(1+1i)=3-1i, (8+6i)/(1-1i)=1+7i, (6+8i)/(2+0i)=3+4i).
+  to drop). To turn the new capability into a real win, every `c²+d²` the codegen
+  builds — the denominator of all complex divisions (`oper_divi`: comp÷comp,
+  scalar÷comp and the acc variants) and the `|comp|²` in `mod2`/`abs`
+  (`exec_mod2`) — now goes through one `emit_sq_sum(er, ei)` helper that squares
+  the half the accumulator already holds first. `c²+d²` is commutative, so when
+  `d` is live (e.g. `r = x / y` or `mod2(x)` right after `x = …`) squaring `d²`
+  first lets the peephole drop its `LOD`. So `r = x / y` right after `y = …` is
+  21 instructions instead of 22. Value-preserving and byte-identical on the suite
+  (no existing test has the divisor/operand live in the acc at the operation).
+  Locked down by the new `cmm_comp_div` fixture, which also adds the first
+  by-value coverage of `comp_var / comp_var` ((4+2i)/(1+1i)=3-1i,
+  (8+6i)/(1-1i)=1+7i, (6+8i)/(2+0i)=3+4i).
 
 ### Fixed
 - **Walker-time diagnostics report the right line and variable name (cmmcomp)** —

@@ -10,6 +10,7 @@ expr oper_subt(expr e1, expr e2); // x-y
 expr oper_mult(expr e1, expr e2); // x*y
 expr oper_divi(expr e1, expr e2); // x/y
 expr oper_mod (expr e1, expr e2); // x%y
+void emit_sq_sum(expr er, expr ei); // er²+ei² in acc (|comp|²), acc-aware reorder
 
 // ----------------------------------------------------------------------------
 // comparison operations ------------------------------------------------------

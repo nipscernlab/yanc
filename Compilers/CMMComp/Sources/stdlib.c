@@ -976,18 +976,14 @@ expr exec_mod2(expr e)
     if (e.type == 5)
     {
         get_cmp_cst(e,&etr,&eti);     // get the et of each float constant
-        etr = oper_mult(etr, etr);     // real part squared
-        eti = oper_mult(eti, eti);     // imag part squared
-        etr = oper_soma(etr, eti);     // sum of the squares
+        emit_sq_sum(etr, eti);   // c²+d² (acc-aware: squares the live half first)
     }
 
     // when it is in memory --------------------------------------------------
     if ((e.type == 3) && (e.id != 0))
     {
         get_cmp_ets(e,&etr,&eti);     // get the et of each variable
-        etr = oper_mult(etr, etr);     // real part squared
-        eti = oper_mult(eti, eti);     // imag part squared
-        etr = oper_soma(etr, eti);     // sum of the squares
+        emit_sq_sum(etr, eti);   // c²+d² (acc-aware: squares the live half first)
     }
 
     // when it is in the accumulator ------------------------------------------

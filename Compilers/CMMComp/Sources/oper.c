@@ -1570,6 +1570,29 @@ expr oper_mult(expr e1, expr e2)
     return expr_make(type, 0);
 }
 
+// Emits er² + ei² into the accumulator -- the |comp|² used as the division
+// denominator and by mod2/abs. er/ei are the real/imag halves (data-memory
+// cells). The sum is commutative, so square whichever half the accumulator
+// already holds first: its LOD is then dropped by the add_instr peephole (e.g.
+// `r = x/y` right after `y = ...` leaves d live, so squaring d² first saves the
+// load). When neither half is live it falls to the original er²-first order, so
+// the emitted assembly is unchanged.
+void emit_sq_sum(expr er, expr ei)
+{
+    if (ei.id != 0 && acc_holds(v_table[ei.id].name) &&
+        !(er.id != 0 && acc_holds(v_table[er.id].name)))
+    {
+        oper_mult(ei, ei);
+        oper_mult(er, er);
+    }
+    else
+    {
+        oper_mult(er, er);
+        oper_mult(ei, ei);
+    }
+    oper_soma(expr_make(2, 0), expr_make(2, 0));
+}
+
 // division between two numbers
 expr oper_divi(expr e1, expr e2)
 {
@@ -1613,9 +1636,7 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        oper_mult(etr, etr);           // parte real ao quadrado
-        oper_mult(eti, eti);           // parte imag ao quadrado
-        oper_soma(expr_make(2, 0), expr_make(2, 0));     // soma os quadrados
+        emit_sq_sum(etr, eti);
         add_instr("SET aux_var\n");   // save the result
 
         acc_ok = 0;                   // libera acumulador
@@ -1635,9 +1656,7 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        oper_mult(etr, etr);           // parte real ao quadrado
-        oper_mult(eti, eti);           // parte imag ao quadrado
-        oper_soma(expr_make(2, 0), expr_make(2, 0));     // soma os quadrados
+        emit_sq_sum(etr, eti);
         add_instr("SET aux_var\n");   // save the result
 
         acc_ok = 0;                   // libera acumulador
@@ -1716,9 +1735,7 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET aux_var\n");
         acc_ok = 0;
 
-        oper_mult(etr, etr);            // parte real ao quadrado
-        oper_mult(eti, eti);            // parte imag ao quadrado
-        oper_soma(expr_make(2, 0), expr_make(2, 0));      // soma os quadrados
+        emit_sq_sum(etr, eti);
         add_instr("SET   aux_var1\n"); // save the result
 
         add_instr("LOD   aux_var\n");
@@ -1742,9 +1759,7 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
-        oper_mult(etr, etr);             // parte real ao quadrado
-        oper_mult(eti, eti);             // parte imag ao quadrado
-        oper_soma(expr_make(2, 0), expr_make(2, 0));       // soma os quadrados
+        emit_sq_sum(etr, eti);
         add_instr("SET   aux_var1\n");  // save the result
 
         add_instr("LOD   aux_var\n" );
@@ -1818,9 +1833,7 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        oper_mult(etr, etr);           // parte real ao quadrado
-        oper_mult(eti, eti);           // parte imag ao quadrado
-        oper_soma(expr_make(2, 0), expr_make(2, 0));     // soma os quadrados
+        emit_sq_sum(etr, eti);
         add_instr("SET   aux_var\n"); // save the result
         acc_ok = 0;
 
@@ -1839,9 +1852,7 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        oper_mult(etr, etr);           // parte real ao quadrado
-        oper_mult(eti, eti);           // parte imag ao quadrado
-        oper_soma(expr_make(2, 0), expr_make(2, 0));     // soma os quadrados
+        emit_sq_sum(etr, eti);
         add_instr("SET   aux_var\n"); // save the result
         acc_ok = 0;
 
@@ -1913,9 +1924,7 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
-        oper_mult(etr, etr);            // parte real ao quadrado
-        oper_mult(eti, eti);            // parte imag ao quadrado
-        oper_soma(expr_make(2, 0), expr_make(2, 0));      // soma os quadrados
+        emit_sq_sum(etr, eti);
         add_instr("SET   aux_var1\n"); // save the result
 
         add_instr("LOD   aux_var \n");
@@ -1938,9 +1947,7 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET aux_var\n");
         acc_ok = 0;
 
-        oper_mult(etr, etr);            // parte real ao quadrado
-        oper_mult(eti, eti);            // parte imag ao quadrado
-        oper_soma(expr_make(2, 0), expr_make(2, 0));      // soma os quadrados
+        emit_sq_sum(etr, eti);
         add_instr("SET   aux_var1\n"); // save the result
 
         add_instr("LOD   aux_var\n");
@@ -2031,9 +2038,7 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_cst(e1,&et1r,&et1i);
         get_cmp_cst(e2,&et2r,&et2i);
 
-        oper_mult(et2r, et2r);
-        oper_mult(et2i, et2i);
-        oper_soma(expr_make(2, 0), expr_make(2, 0));
+        emit_sq_sum(et2r, et2i);
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
@@ -2059,9 +2064,7 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_cst(e1,&et1r,&et1i);
         get_cmp_ets(e2,&et2r,&et2i);
 
-        oper_mult(et2r, et2r);
-        oper_mult(et2i, et2i);
-        oper_soma(expr_make(2, 0), expr_make(2, 0));
+        emit_sq_sum(et2r, et2i);
         add_instr("SET aux_var\n");
         acc_ok = 0;
 
@@ -2158,9 +2161,7 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e1,&et1r,&et1i);
         get_cmp_cst(e2,&et2r,&et2i);
 
-        oper_mult(et2r, et2r);
-        oper_mult(et2i, et2i);
-        oper_soma(expr_make(2, 0), expr_make(2, 0));
+        emit_sq_sum(et2r, et2i);
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
@@ -2186,20 +2187,7 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e1,&et1r,&et1i);
         get_cmp_ets(e2,&et2r,&et2i);
 
-        // Denominator c²+d² is commutative, so square whichever half the
-        // accumulator already holds first -- its LOD is then dropped by the
-        // peephole (e.g. `r = x/y` right after `y = ...` leaves d in the acc).
-        if (acc_holds(v_table[et2i.id].name))
-        {
-            oper_mult(et2i, et2i);
-            oper_mult(et2r, et2r);
-        }
-        else
-        {
-            oper_mult(et2r, et2r);
-            oper_mult(et2i, et2i);
-        }
-        oper_soma(expr_make(2, 0), expr_make(2, 0));
+        emit_sq_sum(et2r, et2i);
         add_instr("SET   aux_var\n");
         acc_ok = 0;
 
@@ -2303,9 +2291,7 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET   aux_var1\n");
         acc_ok = 0;
 
-        oper_mult(etr, etr);
-        oper_mult(eti, eti);
-        oper_soma(expr_make(2, 0), expr_make(2, 0));
+        emit_sq_sum(etr, eti);
         add_instr("SET   aux_var2\n");
 
         add_instr("LOD   aux_var1\n");
@@ -2335,9 +2321,7 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET   aux_var1\n");
         acc_ok = 0;
 
-        oper_mult(etr, etr);
-        oper_mult(eti, eti);
-        oper_soma(expr_make(2, 0), expr_make(2, 0));
+        emit_sq_sum(etr, eti);
         add_instr("SET   aux_var2\n");
 
         add_instr("LOD   aux_var1\n");
