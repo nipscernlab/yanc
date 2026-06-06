@@ -10,15 +10,15 @@
 // Natural logarithm log(x) = ln(x) via float_log macro (range reduction by
 // loop + atanh series). Exercises float-const, float-in-acc and round-trip.
 // fout() truncates to int, so values are scaled by 1000 to expose 3 decimals.
-//   log(1)=0   log(2)=693   log(10)=2302   exp(log(8))=7999   log(0)=0 (guard)
-// (round-trip ~8.000 floors to 7999: fout truncates toward zero)
+//   log(1)=0   log(2)=693   log(10)=2302   exp(log(8))=8000   log(0)=0 (guard)
+// (exact-exponent reduction via XPO/F_SCL makes the round-trip land on 8000)
 void main() {
     float x; float r;
     while (1) {
         r = log(1.0)  * 1000.0;        fout(0, r);   // 0
         r = log(2.0)  * 1000.0;        fout(0, r);   // 693   (ln2)
         x = 8.0;  r = log(x + 2.0) * 1000.0;  fout(0, r);   // 2302  (log10, acc path)
-        r = exp(log(8.0)) * 1000.0;    fout(0, r);   // 7999  (round-trip ~8.000)
+        r = exp(log(8.0)) * 1000.0;    fout(0, r);   // 8000  (round-trip, exact)
         r = log(0.0)  * 1000.0;        fout(0, r);   // 0     (guard, x<=0)
     }
 }

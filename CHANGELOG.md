@@ -8,6 +8,17 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **`float_exp` / `float_log` range reduction is now O(1) via `F_SCL`/`XPO`** — the
+  exp and log macros no longer reduce the argument with a value loop (subtract
+  `ln2` / halve repeatedly). `float_exp` computes `n = round(x/ln2)` directly and
+  scales `exp(r)` by `2^n` with one `F_SCL`; `float_log` gets the exponent with
+  `XPO` and the mantissa `m = x·2^-e` with one `F_SCL`. Both are now fixed-cost
+  (~25–33 instructions) regardless of argument magnitude, and the reduction is
+  exact (no bit loss from repeated halving), so the inverse round-trips land
+  cleaner — `exp(log(8))` now hits 8.000 exactly (was 7.999). `float_sqrt` keeps
+  its `F_ROT` estimate. Same values, regenerated `cmm_exp`/`cmm_log` goldens.
+
 ### Added
 - **ISA: `F_SCL`/`SF_SCL` and `XPO`/`XPO_M` — float exponent surgery (HW + assemblers)** —
   four new ULA operations. `F_SCL X` / `SF_SCL` scale a float by a power of two

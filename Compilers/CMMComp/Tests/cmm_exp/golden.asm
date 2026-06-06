@@ -48,106 +48,70 @@ JMP Lwh1
 @Lwh1end @fim JMP fim
 
 // Exponential function -------------------------------------------------------
-// exp(x) = 2^n * exp(r),  r = x - n*ln2 in [0, ln2).  Range reduction is done
-// by value (a loop, like float_sin) so it is independent of the float layout;
-// exp(r) is a degree-8 Taylor polynomial evaluated with Horner (no LUT).
-// NB: F_LES X is true when (acc > X) -- it tests "operand < accumulator".
+// exp(x) = 2^n * exp(r),  n = round(x/ln2),  r = x - n*ln2 in [-ln2/2, ln2/2].
+// O(1): n via F2I (round-to-nearest with a sign-half bias, since F2I truncates),
+// 2^n via a single F_SCL (no loop). exp(r) is a degree-6 Taylor polynomial.
 
 @float_exp  SET   exp_x                 // save x
-            LOD   1.0
-            SET   exp_2n                // scale factor 2^n, starts at 1
+            F_MLT 1.4426950409          // q = x / ln2   (1/ln2 = log2 e)
+            SET   exp_q
+            LOD   0.5
+            F_SGN exp_q                 // copysign(0.5, q)
+            F_ADD exp_q                 // q + copysign(0.5,q)
+            F2I                         // n = round(q)   (F2I truncates toward 0)
+            SET   exp_n
+            I2F                         // float(n)
+            F_MLT 0.6931471806          // n * ln2
+            F_SU2 exp_x                 // r = x - n*ln2   (F_SU2 X = X - acc)
+            SET   exp_r
 
-@L_exp_a    LOD   exp_x                 // while x > ln2: x -= ln2; scale *= 2
-            F_LES 0.6931471806          // (acc > ln2) -> true while x > ln2
-            JIZ   L_exp_b               // x <= ln2 -> stop reducing down
-            LOD   exp_x
-            F_SU1 0.6931471806          // x = x - ln2   (F_SU1 X = acc - X)
-            SET   exp_x
-            LOD   exp_2n
-            F_MLT 2.0
-            SET   exp_2n
-            JMP   L_exp_a
-
-@L_exp_b    LOD   0.0                   // while x < 0: x += ln2; scale *= 0.5
-            F_LES exp_x                 // (0 > x) -> true while x < 0
-            JIZ   L_exp_c               // x >= 0 -> reduced to [0, ln2)
-            LOD   exp_x
-            F_ADD 0.6931471806
-            SET   exp_x
-            LOD   exp_2n
-            F_MLT 0.5
-            SET   exp_2n
-            JMP   L_exp_b
-
-@L_exp_c    LOD   0.0000248016          // Horner, exp(r) = sum r^k / k! (k=0..8)
-            F_MLT exp_x                 // 1/8!
-            F_ADD 0.0001984127          // 1/7!
-            F_MLT exp_x
-            F_ADD 0.0013888889          // 1/6!
-            F_MLT exp_x
+            LOD   0.0013888889          // Horner, exp(r) = sum r^k/k! (k=0..6)
+            F_MLT exp_r                 // 1/6!
             F_ADD 0.0083333333          // 1/5!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 0.0416666667          // 1/4!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 0.1666666667          // 1/3!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 0.5                    // 1/2!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 1.0                    // 1/1!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 1.0                    // 1/0!  -> exp(r)
-            F_MLT exp_2n                 // * 2^n  -> exp(x)
+            F_SCL exp_n                  // * 2^n  -> exp(x)
             RET
 
 // Natural logarithm ----------------------------------------------------------
-// log(x) = e*ln2 + log(m),  x = m*2^e with m in [1, 2).  Range reduction is
-// done by value (a loop, like float_sin); log(m) uses the atanh series
-// log(m) = 2u(1 + u^2/3 + u^4/5 + u^6/7 + u^8/9), u = (m-1)/(m+1), evaluated
-// with Horner (no LUT). x <= 0 returns 0 (guards the loop against running away).
-// NB: F_LES X is true when (acc > X) -- it tests "operand < accumulator".
+// log(x) = e*ln2 + log(m),  e = XPO(x) = floor(log2 x),  m = x*2^-e in [1,2).
+// O(1): e via XPO, m via a single F_SCL (no halve/double loop). log(m) is the
+// atanh series 2u(1 + u^2/3 + u^4/5 + u^6/7 + u^8/9), u = (m-1)/(m+1).
+// x <= 0 returns 0.
 
-@float_log  SET   log_x                 // save x
-            LOD   log_x
-            F_LES 0.0                    // (x > 0) ?
+@float_log  SET   log_x                 // save x (acc still = x)
+            F_LES 0.0                    // (x > 0) ?   [F_LES true when acc > X]
             JIZ   L_log_zero             // x <= 0 -> bail out with 0
-            LOD   0.0
-            SET   log_acc                // accumulates e*ln2, starts at 0
 
-@L_log_a    LOD   log_x                  // while x > 2: x *= 0.5; acc += ln2
-            F_LES 2.0                    // (acc > 2) -> true while x > 2
-            JIZ   L_log_b                // x <= 2 -> stop halving
             LOD   log_x
-            F_MLT 0.5
-            SET   log_x
-            LOD   log_acc
-            F_ADD 0.6931471806
-            SET   log_acc
-            JMP   L_log_a
+            XPO                          // e = floor(log2 x)   (int)
+            SET   log_e
+            NEG                          // -e
+            SET   log_ne
+            LOD   log_x
+            F_SCL log_ne                 // m = x * 2^(-e)  -> [1,2)
+            SET   log_m
 
-@L_log_b    LOD   1.0                    // while x < 1: x *= 2; acc -= ln2
-            F_LES log_x                  // (1 > x) -> true while x < 1
-            JIZ   L_log_c                // x >= 1 -> reduced to [1, 2]
-            LOD   log_x
-            F_MLT 2.0
-            SET   log_x
-            LOD   log_acc
-            F_SU1 0.6931471806           // acc = acc - ln2
-            SET   log_acc
-            JMP   L_log_b
-
-@L_log_c    LOD   log_x                  // u = (m-1)/(m+1)
-            F_ADD 1.0
-            SET   log_t2                 // m+1
-            LOD   log_x
-            F_SU1 1.0                     // m-1   (acc - X)
+            F_ADD 1.0                    // m+1   (acc still = m)
+            SET   log_t2
+            LOD   log_m
+            F_SU1 1.0                    // m-1   (acc - X)
             SET   log_t1
             LOD   log_t2
-            F_DIV log_t1                  // F_DIV X = X/acc = (m-1)/(m+1) = u
+            F_DIV log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
             SET   log_u
             F_MLT log_u
-            SET   log_w                   // w = u^2
+            SET   log_w                  // w = u^2
 
-            LOD   0.1111111111            // Horner in w (1/9, 1/7, 1/5, 1/3, 1)
+            LOD   0.1111111111           // Horner in w (1/9, 1/7, 1/5, 1/3, 1)
             F_MLT log_w
             F_ADD 0.1428571429
             F_MLT log_w
@@ -156,9 +120,14 @@ JMP Lwh1
             F_ADD 0.3333333333
             F_MLT log_w
             F_ADD 1.0
-            F_MLT log_u                   // * u
-            F_MLT 2.0                      // * 2  -> log(m)
-            F_ADD log_acc                  // + e*ln2  -> log(x)
+            F_MLT log_u
+            F_MLT 2.0                     // log(m)
+            SET   log_lm
+
+            LOD   log_e
+            I2F                           // float(e)
+            F_MLT 0.6931471806            // e * ln2
+            F_ADD log_lm                  // + log(m)  -> log(x)
             RET
 
 @L_log_zero LOD   0.0

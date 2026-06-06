@@ -1,52 +1,34 @@
 
 // Exponential function -------------------------------------------------------
-// exp(x) = 2^n * exp(r),  r = x - n*ln2 in [0, ln2).  Range reduction is done
-// by value (a loop, like float_sin) so it is independent of the float layout;
-// exp(r) is a degree-8 Taylor polynomial evaluated with Horner (no LUT).
-// NB: F_LES X is true when (acc > X) -- it tests "operand < accumulator".
+// exp(x) = 2^n * exp(r),  n = round(x/ln2),  r = x - n*ln2 in [-ln2/2, ln2/2].
+// O(1): n via F2I (round-to-nearest with a sign-half bias, since F2I truncates),
+// 2^n via a single F_SCL (no loop). exp(r) is a degree-6 Taylor polynomial.
 
 @float_exp  SET   exp_x                 // save x
-            LOD   1.0
-            SET   exp_2n                // scale factor 2^n, starts at 1
+            F_MLT 1.4426950409          // q = x / ln2   (1/ln2 = log2 e)
+            SET   exp_q
+            LOD   0.5
+            F_SGN exp_q                 // copysign(0.5, q)
+            F_ADD exp_q                 // q + copysign(0.5,q)
+            F2I                         // n = round(q)   (F2I truncates toward 0)
+            SET   exp_n
+            I2F                         // float(n)
+            F_MLT 0.6931471806          // n * ln2
+            F_SU2 exp_x                 // r = x - n*ln2   (F_SU2 X = X - acc)
+            SET   exp_r
 
-@L_exp_a    LOD   exp_x                 // while x > ln2: x -= ln2; scale *= 2
-            F_LES 0.6931471806          // (acc > ln2) -> true while x > ln2
-            JIZ   L_exp_b               // x <= ln2 -> stop reducing down
-            LOD   exp_x
-            F_SU1 0.6931471806          // x = x - ln2   (F_SU1 X = acc - X)
-            SET   exp_x
-            LOD   exp_2n
-            F_MLT 2.0
-            SET   exp_2n
-            JMP   L_exp_a
-
-@L_exp_b    LOD   0.0                   // while x < 0: x += ln2; scale *= 0.5
-            F_LES exp_x                 // (0 > x) -> true while x < 0
-            JIZ   L_exp_c               // x >= 0 -> reduced to [0, ln2)
-            LOD   exp_x
-            F_ADD 0.6931471806
-            SET   exp_x
-            LOD   exp_2n
-            F_MLT 0.5
-            SET   exp_2n
-            JMP   L_exp_b
-
-@L_exp_c    LOD   0.0000248016          // Horner, exp(r) = sum r^k / k! (k=0..8)
-            F_MLT exp_x                 // 1/8!
-            F_ADD 0.0001984127          // 1/7!
-            F_MLT exp_x
-            F_ADD 0.0013888889          // 1/6!
-            F_MLT exp_x
+            LOD   0.0013888889          // Horner, exp(r) = sum r^k/k! (k=0..6)
+            F_MLT exp_r                 // 1/6!
             F_ADD 0.0083333333          // 1/5!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 0.0416666667          // 1/4!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 0.1666666667          // 1/3!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 0.5                    // 1/2!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 1.0                    // 1/1!
-            F_MLT exp_x
+            F_MLT exp_r
             F_ADD 1.0                    // 1/0!  -> exp(r)
-            F_MLT exp_2n                 // * 2^n  -> exp(x)
+            F_SCL exp_n                  // * 2^n  -> exp(x)
             RET
