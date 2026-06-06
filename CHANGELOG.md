@@ -9,6 +9,15 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **`float_sin` / `float_cos` now use a minimax polynomial instead of a LUT** — the
+  sine macro drops the 152-entry lookup table for a degree-7 odd minimax
+  polynomial (least-squares fit on `[0, π/2]`, max abs error ~1.6e-6, ~6 digits
+  vs the table's ~3). Range reduction folds to `[-π/2, π/2]` (`k = round(x/π)`,
+  `r = x - k·π`) and the `(-1)^k` sign is applied from the parity of `k`. Costs
+  just +3 instructions over the LUT version (31 vs 28) while freeing ~152 words
+  of data memory (`Sin_LUT.txt` removed), and uses only existing instructions (no
+  new HW). `cos` reuses it. `cmm_trig` golden updated (`cos(0)` now 999 — the
+  polynomial's uniform 0.9999975 vs the table's lucky-exact node).
 - **`float_sin` / `float_cos` range reduction is now O(1)** — the sine macro no
   longer subtracts `2π` in a loop to bring the argument into range; it computes
   `k = round(x/2π)` and does `x -= k·2π` in one shot (round-to-nearest via a

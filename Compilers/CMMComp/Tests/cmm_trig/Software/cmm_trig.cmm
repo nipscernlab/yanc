@@ -7,11 +7,12 @@
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-// sin/cos via float_sin (O(1) range reduction k=round(x/2pi); x-=k*2pi, + LUT).
-// cos(x) = sin(x + pi/2). Values scaled x1000 (fout truncates to int); the LUT
-// gives ~3-4 digits so endpoints land near +-999. A large argument (sin(100))
-// exercises the O(1) reduction (would have looped ~16x before).
-//   sin(0)=0  sin(pi/2)~1000  cos(0)~1000  sin(100rad)~-506  cos(pi)~-1000
+// sin/cos via float_sin (O(1) reduction k=round(x/pi) + degree-7 odd minimax
+// polynomial, max err ~1.6e-6). cos(x) = sin(x + pi/2). Values scaled x1000
+// (fout truncates to int) so the ~6-digit poly still shows 999 at the endpoints
+// (0.9999975 floors to 999). A large argument (sin(100)) exercises the O(1)
+// reduction (the old loop would have run ~16 times).
+//   sin(0)=0  sin(pi/2)=999  cos(0)=999  sin(100rad)=-506  cos(pi)=-999
 void main() {
     float r;
     while (1) {
