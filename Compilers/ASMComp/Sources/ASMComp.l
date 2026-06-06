@@ -195,6 +195,13 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "SF_SU1"   eval_opcode(100, 0, yytext, "SF_SU1"  ); // floating-point subtraction with stack at input 1
 "SF_SU2"   eval_opcode(101, 0, yytext, "SF_SU2"  ); // floating-point subtraction with stack at input 2
 
+   /* scale-by-2^k and exponent-extract */
+
+ "F_SCL"   eval_opcode(104,18, yytext,  "F_SCL"  ); // scale float by 2^k, k from memory
+"SF_SCL"   eval_opcode(105, 0, yytext, "SF_SCL"  ); // scale float by 2^k, k from stack
+   "XPO"   eval_opcode(106, 0, yytext,    "XPO"  ); // base-2 exponent of float (acc) as int
+ "XPO_M"   eval_opcode(107,18, yytext,  "XPO_M"  ); // base-2 exponent of float (memory) as int
+
    /* base-less indirect addressing (runtime pointers / array params) */
 
    "LDA"   eval_opcode(102, 0, yytext,    "LDA"  ); // acc = mem[acc]

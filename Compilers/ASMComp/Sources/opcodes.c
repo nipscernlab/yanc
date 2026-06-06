@@ -944,6 +944,42 @@ void opc_add(char *mne)
 			}
 		}
 
+		if (strcmp(mne, "F_SCL") == 0)
+		{
+			// if the scale-by-2^k circuit isn't there yet, write the info
+			if ((find_opc("F_SCL") == -1) && (find_opc("SF_SCL") == -1))
+			{
+				printf(MSG_INFO_FLOAT_SCL); u_count++;
+			}
+		}
+
+		if (strcmp(mne, "SF_SCL") == 0)
+		{
+			// if the scale-by-2^k circuit isn't there yet, write the info
+			if ((find_opc("F_SCL") == -1) && (find_opc("SF_SCL") == -1))
+			{
+				printf(MSG_INFO_FLOAT_SCL); u_count++;
+			}
+		}
+
+		if (strcmp(mne, "XPO") == 0)
+		{
+			// if the exponent-extract circuit isn't there yet, write the info
+			if ((find_opc("XPO") == -1) && (find_opc("XPO_M") == -1))
+			{
+				printf(MSG_INFO_FLOAT_XPO); u_count++;
+			}
+		}
+
+		if (strcmp(mne, "XPO_M") == 0)
+		{
+			// if the exponent-extract circuit isn't there yet, write the info
+			if ((find_opc("XPO") == -1) && (find_opc("XPO_M") == -1))
+			{
+				printf(MSG_INFO_FLOAT_XPO); u_count++;
+			}
+		}
+
 		// no message for   LOD_V
 		// no message for P_LOD_V
 		// no message for   SET_V

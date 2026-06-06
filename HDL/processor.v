@@ -273,6 +273,10 @@ module processor
 	parameter  F_SU2   = 0,    // floating-point subtraction at input 2
 	parameter SF_SU1   = 0,    // floating-point subtraction at input 1 with stack
 	parameter SF_SU2   = 0,    // floating-point subtraction at input 2 with stack
+	parameter  F_SCL   = 0,    // scale float by 2^k, k from memory
+	parameter SF_SCL   = 0,    // scale float by 2^k, k from stack
+	parameter    XPO   = 0,    // base-2 exponent of float (acc) as int
+	parameter  XPO_M   = 0,    // base-2 exponent of float (memory) as int
 
 	// base-less indirect addressing (runtime pointers / array params)
 	parameter    LDA   = 0,    // acc = mem[acc]
@@ -429,6 +433,10 @@ core #(.NBOPCO ( NBOPCO ),
 	   .F_SU2  ( F_SU2  ),
 	   .SF_SU1 (SF_SU1  ),
 	   .SF_SU2 (SF_SU2  ),
+	   .F_SCL  ( F_SCL  ),
+	   .SF_SCL (SF_SCL  ),
+	   .XPO    (   XPO  ),
+	   .XPO_M  ( XPO_M  ),
 	   .LDA    (   LDA  ),
 	   .STA    (   STA  )) core(clk, rst,
                                 instr, instr_addr,

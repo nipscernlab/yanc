@@ -632,6 +632,10 @@ module core
 	parameter  F_SU2   = 0,   // floating-point subtraction at input 2
 	parameter SF_SU1   = 0,   // floating-point subtraction at input 1 with stack
 	parameter SF_SU2   = 0,   // floating-point subtraction at input 2 with stack
+	parameter  F_SCL   = 0,   // scale float by 2^k, k from memory
+	parameter SF_SCL   = 0,   // scale float by 2^k, k from stack
+	parameter    XPO   = 0,   // base-2 exponent of float (acc) as int
+	parameter  XPO_M   = 0,   // base-2 exponent of float (memory) as int
 
 	// base-less indirect addressing (for runtime-dynamic pointers / array params)
 	parameter    LDA   = 0,   // acc = mem[acc]
@@ -800,6 +804,10 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
 			 .F_SU2  ( F_SU2  ),
 			.SF_SU1  (SF_SU1  ),
 			.SF_SU2  (SF_SU2  ),
+			 .F_SCL  ( F_SCL  ),
+			.SF_SCL  (SF_SCL  ),
+			   .XPO  (   XPO  ),
+			 .XPO_M  ( XPO_M  ),
 			   .LDA  (   LDA  ),
 			   .STA  (   STA  )) id(clk, rst,
                                     id_opcode,
@@ -895,7 +903,10 @@ ula #(.NUBITS (NUBITS ),
 		.SRS  (  SRS   |  S_SRS  ),	
 	  .F_ROT  (F_ROT             ),
 	  .F_SU1  (F_SU1   | SF_SU1  ),
-	  .F_SU2  (F_SU2   | SF_SU2  )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out);
+	  .F_SU2  (F_SU2   | SF_SU2  ),
+	  .F_SCL  (F_SCL   | SF_SCL  ),
+	  .XPO    (XPO              ),
+	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out);
 
 assign sp_in = ula_out;
 

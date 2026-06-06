@@ -298,6 +298,14 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: recurso da ULA -> aproximação de raiz quadrada para float\n", \
       "Info: ULA resource -> root-square approximation for float\n")
 
+#define MSG_INFO_FLOAT_SCL \
+    M("Info: recurso da ULA -> escala de float por potência de 2 (2^k)\n", \
+      "Info: ULA resource -> float scale by a power of two (2^k)\n")
+
+#define MSG_INFO_FLOAT_XPO \
+    M("Info: recurso da ULA -> extração do expoente base-2 de float\n", \
+      "Info: ULA resource -> base-2 exponent extraction of float\n")
+
 // success messages ----------------------------------------------------------
 
 #define MSG_OK_ASM_DONE \

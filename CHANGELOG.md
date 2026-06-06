@@ -9,6 +9,21 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **ISA: `F_SCL`/`SF_SCL` and `XPO`/`XPO_M` — float exponent surgery (HW + assemblers)** —
+  four new ULA operations. `F_SCL X` / `SF_SCL` scale a float by a power of two
+  (`acc·2^k`, k a signed int from memory or the stack) by adding k to the
+  exponent field (saturating); `XPO` / `XPO_M` extract the base-2 exponent of a
+  float as an int (`floor(log2|x|)`, from the accumulator or memory). They are
+  the `ldexp`/`frexp` primitives for O(1), exact range reduction in the
+  transcendental macros (the value-loop reductions in `float_exp`/`float_log` and
+  the `F_ROT` estimate in `float_sqrt` are being migrated to them). Implemented as
+  `ula_scl`/`ula_xpo` in `HDL/ula.v` (mux/params/decode in `instr_dec.v`,
+  `core.v`, `processor.v`; `F_ROT` kept for now), and taught to the assemblers
+  (`ASMComp.l`, `app.l`, with resource-report messages in `opcodes.c`). Verified
+  by value through the sim: `F_SCL(1,3)=8`, `F_SCL(8,-3)=1`, `XPO(8)=3`,
+  `XPO(16)=4`, `SF_SCL(1,3)=8`, `XPO_M(32)=5`. The exponent field is signed two's
+  complement (not IEEE-biased), which makes both ops a thin exponent-field add /
+  read.
 - **Real `exp(x)` and `log(x)` (cmmcomp)** — two new built-ins: `exp` is e^x and
   `log` is the natural logarithm (ln). Both are backed by new assembly macros
   (`Includes/float_exp.asm`, `Includes/float_log.asm`) auto-included on demand

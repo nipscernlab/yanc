@@ -55,6 +55,8 @@ module ula_mux
 	 input     [NUBITS-1:0] shl , shr , srs ,        // <<, >> and >>>
 	 // operations from the normalization circuit
 	 input     [NUBITS-1:0] smx ,                    // float-only with denorm.
+	 // special operations (exponent surgery)
+	 input     [NUBITS-1:0] fscl, xpo , xpom,        // F_SCL/SF_SCL, XPO, XPO_M
 	 // output
 	output reg [NUBITS-1:0] out
 );
@@ -129,6 +131,10 @@ always @ (*) case (op)
 	6'd46  : out =   smx ;   // F_ROT
 	6'd47  : out =   smx ;   // F_SU1
 	6'd48  : out =   smx ;   // F_SU2
+
+	6'd49  : out =  fscl ;   // F_SCL / SF_SCL
+	6'd50  : out =   xpo ;   // XPO
+	6'd51  : out =  xpom ;   // XPO_M
 
 	default: out = {NUBITS{1'bx}};
 endcase
@@ -893,6 +899,60 @@ assign out = {s_out, e_out, m_out};
 
 endmodule
 
+// F_SCL - scale a float by a power of two: out = in2 * 2^in1 -----------------
+// in1 is a signed integer k; the exponent field gets k added to it (value =
+// mantissa*2^e), saturating to the EXP-bit range. The mantissa is unchanged, so
+// a normalized input stays normalized (no re-normalization needed).
+
+module ula_scl
+#(
+	parameter MAN = 23,
+	parameter EXP =  8
+)(
+	 input  signed [MAN+EXP:0] in1,                 // k (signed integer)
+	 input         [MAN+EXP:0] in2,                 // x (normalized float)
+	output         [MAN+EXP:0] out
+);
+
+wire                  s = in2[MAN+EXP      ];
+wire signed [EXP-1:0] e = in2[MAN+EXP-1:MAN];
+wire        [MAN-1:0] m = in2[MAN    -1:0  ];
+
+wire signed [MAN+EXP:0] esum = $signed(e) + in1;            // e + k (wide signed)
+localparam signed [MAN+EXP:0] EMAX =  (1 <<< (EXP-1)) - 1;  //  127 for EXP=8
+localparam signed [MAN+EXP:0] EMIN = -(1 <<< (EXP-1));      // -128 for EXP=8
+wire signed [EXP-1:0] e_out = (esum > EMAX) ? EMAX[EXP-1:0] :
+                              (esum < EMIN) ? EMIN[EXP-1:0] : esum[EXP-1:0];
+
+assign out = {s, e_out, m};
+
+endmodule
+
+// XPO - base-2 exponent of a float as a signed int ---------------------------
+// value = mantissa_int * 2^e with mantissa_int in [2^(MAN-1),2^MAN) when
+// normalized, so floor(log2|x|) = e + (MAN-1). out is that integer (0 if x==0).
+
+module ula_xpo
+#(
+	parameter MAN = 23,
+	parameter EXP =  8
+)(
+	 input         [MAN+EXP:0] in,
+	output signed [MAN+EXP:0] out
+);
+
+wire signed [EXP-1:0]   e    = in[MAN+EXP-1:MAN];
+wire                    nz   = |in[MAN+EXP-1:0];            // nonzero magnitude
+wire signed [MAN+EXP:0] bias = MAN-1;                       // 22, full-width signed
+
+// compute the signed sum in its OWN signed wire first (like ula_scl's esum) so e
+// is sign-extended; doing it inside the ?: would pick up the unsigned else branch.
+wire signed [MAN+EXP:0] xval = $signed(e) + bias;          // e + (MAN-1)
+
+assign out = nz ? xval : {(MAN+EXP+1){1'b0}};
+
+endmodule
+
 // ****************************************************************************
 // Main Circuit ***************************************************************
 // ****************************************************************************
@@ -969,7 +1029,10 @@ module ula
 	// special operations
 	parameter F_ROT   = 0,
 	parameter F_SU1   = 0,
-	parameter F_SU2   = 0)
+	parameter F_SU2   = 0,
+	parameter F_SCL   = 0,
+	parameter XPO     = 0,
+	parameter XPO_M   = 0)
 (
 	input         [       5:0] op,
 	input  signed [NUBITS-1:0] in1, in2,
@@ -1257,6 +1320,21 @@ wire signed [NUBITS-1:0] frot;
 
 generate if ((F_ROT) != 0) begin : op_frot ula_frot #(NBMANT,NBEXPO) my_frot(in2, frot); end else begin : op_frot assign frot = {NUBITS{1'bx}}; end endgenerate
 
+// F_SCL / XPO / XPO_M --------------------------------------------------------
+// XPO reads in2 (acc), XPO_M reads in1 (memory) -- mirrors F2I/F2I_M.
+
+wire signed [NUBITS-1:0] fscl;
+
+generate if ((F_SCL) != 0) begin : op_fscl ula_scl #(NBMANT,NBEXPO) my_scl(in1, in2, fscl); end else begin : op_fscl assign fscl = {NUBITS{1'bx}}; end endgenerate
+
+wire signed [NUBITS-1:0] xpo;
+
+generate if ((XPO) != 0) begin : op_xpo ula_xpo #(NBMANT,NBEXPO) my_xpo(in2, xpo); end else begin : op_xpo assign xpo = {NUBITS{1'bx}}; end endgenerate
+
+wire signed [NUBITS-1:0] xpom;
+
+generate if ((XPO_M) != 0) begin : op_xpom ula_xpo #(NBMANT,NBEXPO) my_xpom(in1, xpom); end else begin : op_xpom assign xpom = {NUBITS{1'bx}}; end endgenerate
+
 // denormalization mux --------------------------------------------------------
 
 wire signed [NUBITS-1:0] smx;
@@ -1291,6 +1369,7 @@ ula_mux #(NUBITS) ula_mux (.op (op ),
                            .shr(shr),
                            .srs(srs),
                            .smx(smx),
+                           .fscl(fscl),.xpo(xpo),.xpom(xpom),
                            .out(out));
 
 // ----------------------------------------------------------------------------
