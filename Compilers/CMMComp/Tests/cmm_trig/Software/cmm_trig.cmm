@@ -12,7 +12,9 @@
 // (fout truncates to int) so the ~6-digit poly still shows 999 at the endpoints
 // (0.9999975 floors to 999). A large argument (sin(100)) exercises the O(1)
 // reduction (the old loop would have run ~16 times).
+// atan via float_atan (degree-11 odd minimax, 1/x fold for |x|>1, max err ~5e-6).
 //   sin(0)=0  sin(pi/2)=999  cos(0)=999  sin(100rad)=-506  cos(pi)=-999
+//   atan(1)=785 (pi/4)  atan(2)=1107 (1/x branch)  atan(-1)=-785 (sign)
 void main() {
     float r;
     while (1) {
@@ -21,5 +23,8 @@ void main() {
         r = cos(0.0)       * 1000.0;   fout(0, r);   // cos(0)=1
         r = sin(100.0)     * 1000.0;   fout(0, r);   // sin(100 rad) ~ -0.506  (O(1) reduction)
         r = cos(3.1415927) * 1000.0;   fout(0, r);   // cos(pi)=-1
+        r = atan(1.0)      * 1000.0;   fout(0, r);   // pi/4 = 785
+        r = atan(2.0)      * 1000.0;   fout(0, r);   // 1107  (1/x branch)
+        r = atan(-1.0)     * 1000.0;   fout(0, r);   // -785  (sign)
     }
 }

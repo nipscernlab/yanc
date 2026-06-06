@@ -9,6 +9,18 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **`float_atan` now uses a minimax polynomial instead of a LUT** — the arctangent
+  macro drops the 49-entry table for a degree-11 odd minimax polynomial
+  (least-squares fit on `[0,1]`, max abs error ~4.9e-6, ~6 digits vs the table's
+  ~4e-5). `|x|` is still folded into `[0,1]` with the `1/x` identity
+  (`atan(|x|)=π/2−atan(1/|x|)`), but now a single shared polynomial serves both
+  branches instead of duplicating the lookup — so the macro is actually *smaller*
+  in code (34 vs 39 instructions) while freeing ~98 words of data memory
+  (`Arctan_LUT.txt` removed). A few more instructions execute per call (a Horner
+  poly vs a table lookup), negligible on the single-cycle ULA. No new hardware.
+  `cmm_trig` gains `atan(1)=π/4`, `atan(2)` (the 1/x branch) and `atan(-1)` (sign);
+  `cmm_comp_fase` (atan via `fase`) is unchanged in value. With this, **no
+  transcendental macro uses a lookup table anymore**.
 - **`float_sin` / `float_cos` now use a minimax polynomial instead of a LUT** — the
   sine macro drops the 152-entry lookup table for a degree-7 odd minimax
   polynomial (least-squares fit on `[0, π/2]`, max abs error ~1.6e-6, ~6 digits
