@@ -1,83 +1,49 @@
 NOP
-#PRNAME Seno
+#PRNAME cmm_trig
 #NUBITS 32
-#NDSTAC 5
-#SDEPTH 5
+#NDSTAC 8
+#SDEPTH 8
 #NUIOIN 1
 #NUIOOU 1
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-JMP main
-@seno_LUT SET seno_LUT_x
-#arrays seno_LUT_Seno_LUT 2 152 "Seno_LUT.txt"
-@Lwh1 F_ABS_M seno_LUT_x
-P_LOD 3.141592653589793
-SF_GRE
+@main @Lwh1 LOD 1
 JIZ Lwh1end
-LOD 6.283185307
-F_SGN seno_LUT_x
-F_SU2 seno_LUT_x
-SET seno_LUT_x
-JMP Lwh1
-@Lwh1end LOD seno_LUT_x
-F_MLT 47.746482927568
-F_ABS
-SET seno_LUT_idxf
-F2I_M seno_LUT_idxf
-SET seno_LUT_idx
-LDI seno_LUT_Seno_LUT
-SET seno_LUT_v
-LOD seno_LUT_idx
-ADD 1
-LDI seno_LUT_Seno_LUT
-F_SU1 seno_LUT_v
-P_I2F_M seno_LUT_idx
-F_SU2 seno_LUT_idxf
-SF_MLT
-F_ADD seno_LUT_v
-F_SGN seno_LUT_x
-RET
-@main #arrays main_x 2 1000 "sin_x.txt"
-#arrays main_a 2 1000 "sin_y.txt"
-LOD 0
-SET main_j
-@Lwh2 LOD 1000
-LES main_j
-JIZ Lwh2end
-LOD main_j
-LDI main_x
-F_ADD 6.283185307
+LOD 0.0
 CAL float_sin
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP Lwh2
-@Lwh2end LOD 0
-SET main_j
-@Lwh3 LOD 1000
-LES main_j
-JIZ Lwh3end
-LOD main_j
-LDI main_x
-CAL seno_LUT
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP Lwh3
-@Lwh3end @fim JMP fim
+F_MLT 1000.0
+SET main_r
+F2I_M main_r
+OUT 0
+LOD 1.5707963
+CAL float_sin
+F_MLT 1000.0
+SET main_r
+F2I_M main_r
+OUT 0
+LOD 0.0
+F_NEG
+F_ADD 1.570796327CAL float_sin
+F_MLT 1000.0
+SET main_r
+F2I_M main_r
+OUT 0
+LOD 100.0
+CAL float_sin
+F_MLT 1000.0
+SET main_r
+F2I_M main_r
+OUT 0
+LOD 3.1415927
+F_NEG
+F_ADD 1.570796327CAL float_sin
+F_MLT 1000.0
+SET main_r
+F2I_M main_r
+OUT 0
+JMP Lwh1
+@Lwh1end @fim JMP fim
 
 // Sine function --------------------------------------------------------------
 // Range reduction is O(1): k = round(x/2pi); x -= k*2pi brings x into [-pi, pi]

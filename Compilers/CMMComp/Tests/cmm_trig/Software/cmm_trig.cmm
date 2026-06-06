@@ -1,0 +1,24 @@
+#PRNAME cmm_trig
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// sin/cos via float_sin (O(1) range reduction k=round(x/2pi); x-=k*2pi, + LUT).
+// cos(x) = sin(x + pi/2). Values scaled x1000 (fout truncates to int); the LUT
+// gives ~3-4 digits so endpoints land near +-999. A large argument (sin(100))
+// exercises the O(1) reduction (would have looped ~16x before).
+//   sin(0)=0  sin(pi/2)~1000  cos(0)~1000  sin(100rad)~-506  cos(pi)~-1000
+void main() {
+    float r;
+    while (1) {
+        r = sin(0.0)       * 1000.0;   fout(0, r);   // 0
+        r = sin(1.5707963) * 1000.0;   fout(0, r);   // sin(pi/2)=1
+        r = cos(0.0)       * 1000.0;   fout(0, r);   // cos(0)=1
+        r = sin(100.0)     * 1000.0;   fout(0, r);   // sin(100 rad) ~ -0.506  (O(1) reduction)
+        r = cos(3.1415927) * 1000.0;   fout(0, r);   // cos(pi)=-1
+    }
+}

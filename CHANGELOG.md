@@ -9,6 +9,15 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **`float_sin` / `float_cos` range reduction is now O(1)** — the sine macro no
+  longer subtracts `2π` in a loop to bring the argument into range; it computes
+  `k = round(x/2π)` and does `x -= k·2π` in one shot (round-to-nearest via a
+  sign-half bias, since `F2I` truncates), landing in `[-π, π]` before the usual
+  table lookup. `cos` reuses it (`sin(x+π/2)`), so both are now fixed-cost
+  regardless of argument magnitude — `sin(100 rad)` no longer loops ~16 times.
+  Same table, same ~3–4 digit precision; uses only existing instructions (no new
+  HW). First by-value sin/cos coverage added as the `cmm_trig` fixture
+  (`sin(0)=0`, `sin(π/2)≈1`, `cos(0)=1`, `sin(100)≈-0.506`, `cos(π)≈-1`).
 - **`float_exp` / `float_log` range reduction is now O(1) via `F_SCL`/`XPO`** — the
   exp and log macros no longer reduce the argument with a value loop (subtract
   `ln2` / halve repeatedly). `float_exp` computes `n = round(x/ln2)` directly and

@@ -1,21 +1,26 @@
 
 // Sine function --------------------------------------------------------------
+// Range reduction is O(1): k = round(x/2pi); x -= k*2pi brings x into [-pi, pi]
+// (no subtraction loop). Then the table lookup on |x| in [0, pi] with linear
+// interpolation, and the sign is applied at the end (sin is odd on [-pi, pi]).
+// NB: F2I truncates toward zero, so round-to-nearest uses a sign-half bias.
 
 #arrays sin_LUT 2 152 "$Sin_LUT.txt"
 
 @float_sin      SET   sin_x                 // save x
 
-@L_sin        F_ABS_M sin_x                 // check whether x < pi
-              F_LES   3.141592653589793     // compare on magnitude for float
-                JIZ   L_sin_end
-
-                LOD   6.283185307           // otherwise, keep subtracting 2pi
-              F_SGN   sin_x
-              F_SU2   sin_x
+              F_MLT   0.1591549431          // q = x / 2pi   (1/2pi)
+                SET   sin_q
+                LOD   0.5
+              F_SGN   sin_q                 // copysign(0.5, q)
+              F_ADD   sin_q                 // q + copysign(0.5,q)
+                F2I                         // k = round(q)   (F2I truncates)
+                I2F                         // float(k)
+              F_MLT   6.2831853072          // k * 2pi
+              F_SU2   sin_x                 // x - k*2pi  -> [-pi, pi]
                 SET   sin_x
-                JMP   L_sin
 
-@L_sin_end    F_ABS_M sin_x                 // method starts here
+              F_ABS_M sin_x                 // table method starts here, on |x|
 
               F_MLT   47.746482927568       // multiply by 150.0/pi to find the position in x
                 SET   sin_idxf              // save into idxf
