@@ -1253,6 +1253,185 @@ expr exec_cos(expr e)
 }
 
 // ----------------------------------------------------------------------------
+// rounding functions ---------------------------------------------------------
+// F2I truncates toward zero, so I2F(F2I(x)) = trunc(x). floor/ceil nudge that
+// by one in the single direction where trunc disagrees with them; round uses
+// the sign-half bias. All three take int/float and return an integral float.
+// ----------------------------------------------------------------------------
+
+// largest integral float <= x
+expr exec_floor(expr e)
+{
+    static int floor_lbl = 0;
+
+    // ------------------------------------------------------------------------
+    // consistency check ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+
+    if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // prepare local variables ------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+
+    // ------------------------------------------------------------------------
+    // execute -- bring x into the acc as a float (the four operand shapes) ----
+    // ------------------------------------------------------------------------
+
+    // int in memory
+    if ((e.type == 1) && (e.id != 0)) add_instr("%s %s\n", i2f, v_table[e.id].name);
+
+    // int in acc
+    if ((e.type == 1) && (e.id == 0)) add_instr("I2F\n");
+
+    // float in memory
+    if ((e.type == 2) && (e.id != 0)) add_instr("%s %s\n", ld , v_table[e.id].name);
+
+    // float in acc: already there
+
+    acc_ok = 1;
+
+    // floor(x) = trunc(x); if (trunc > x) trunc -= 1  (only for negative non-integers)
+    const char *X = v_table[exec_id("floor_x")].name;
+    const char *T = v_table[exec_id("floor_t")].name;
+    int n = ++floor_lbl;
+
+    add_instr("SET %s\n", X);              // stash x
+    add_instr("F2I\n");                    // trunc toward zero (int)
+    add_instr("I2F\n");                    // back to float
+    add_instr("SET %s\n", T);              // T = trunc(x)   (acc still = T)
+    add_instr("F_LES %s\n", X);            // trunc > x ?  [F_LES true when acc > X]
+    add_instr("JIZ Lflr%dend\n", n);
+    add_instr("LOD %s\n", T);
+    add_instr("F_ADD -1.0\n");
+    add_instr("SET %s\n", T);
+    add_sinst(0, "@Lflr%dend ", n);
+    add_instr("LOD %s\n", T);
+
+    acc_ok = 1;
+    return expr_make(2, 0);
+}
+
+// smallest integral float >= x
+expr exec_ceil(expr e)
+{
+    static int ceil_lbl = 0;
+
+    // ------------------------------------------------------------------------
+    // consistency check ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+
+    if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // prepare local variables ------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+
+    // ------------------------------------------------------------------------
+    // execute -- bring x into the acc as a float (the four operand shapes) ----
+    // ------------------------------------------------------------------------
+
+    // int in memory
+    if ((e.type == 1) && (e.id != 0)) add_instr("%s %s\n", i2f, v_table[e.id].name);
+
+    // int in acc
+    if ((e.type == 1) && (e.id == 0)) add_instr("I2F\n");
+
+    // float in memory
+    if ((e.type == 2) && (e.id != 0)) add_instr("%s %s\n", ld , v_table[e.id].name);
+
+    // float in acc: already there
+
+    acc_ok = 1;
+
+    // ceil(x) = trunc(x); if (trunc < x) trunc += 1  (only for positive non-integers)
+    const char *X = v_table[exec_id("ceil_x")].name;
+    const char *T = v_table[exec_id("ceil_t")].name;
+    int n = ++ceil_lbl;
+
+    add_instr("SET %s\n", X);              // stash x
+    add_instr("F2I\n");                    // trunc toward zero (int)
+    add_instr("I2F\n");                    // back to float
+    add_instr("SET %s\n", T);              // T = trunc(x)
+    add_instr("LOD %s\n", X);              // x back in the acc for the compare
+    add_instr("F_LES %s\n", T);            // x > trunc ?  (i.e. trunc < x)
+    add_instr("JIZ Lcel%dend\n", n);
+    add_instr("LOD %s\n", T);
+    add_instr("F_ADD 1.0\n");
+    add_instr("SET %s\n", T);
+    add_sinst(0, "@Lcel%dend ", n);
+    add_instr("LOD %s\n", T);
+
+    acc_ok = 1;
+    return expr_make(2, 0);
+}
+
+// nearest integral float, ties away from zero
+expr exec_round(expr e)
+{
+    // ------------------------------------------------------------------------
+    // consistency check ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+
+    if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // prepare local variables ------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+
+    // ------------------------------------------------------------------------
+    // execute -- bring x into the acc as a float (the four operand shapes) ----
+    // ------------------------------------------------------------------------
+
+    // int in memory
+    if ((e.type == 1) && (e.id != 0)) add_instr("%s %s\n", i2f, v_table[e.id].name);
+
+    // int in acc
+    if ((e.type == 1) && (e.id == 0)) add_instr("I2F\n");
+
+    // float in memory
+    if ((e.type == 2) && (e.id != 0)) add_instr("%s %s\n", ld , v_table[e.id].name);
+
+    // float in acc: already there
+
+    acc_ok = 1;
+
+    // round(x) = trunc(x + copysign(0.5, x))  -> ties away from zero
+    const char *X = v_table[exec_id("round_x")].name;
+
+    add_instr("SET %s\n", X);              // stash x
+    add_instr("LOD 0.5\n");
+    add_instr("F_SGN %s\n", X);            // copysign(0.5, x)
+    add_instr("F_ADD %s\n", X);            // x + copysign(0.5, x)
+    add_instr("F2I\n");                    // truncate toward zero
+    add_instr("I2F\n");                    // back to float
+
+    acc_ok = 1;
+    return expr_make(2, 0);
+}
+
+// ----------------------------------------------------------------------------
 // special functions for complex numbers --------------------------------------
 // ----------------------------------------------------------------------------
 

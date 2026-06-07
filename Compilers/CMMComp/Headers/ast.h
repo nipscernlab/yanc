@@ -109,6 +109,9 @@ typedef enum {
     OP_STD_EXP,   // exp(x)          -> e^x
     OP_STD_LOG,   // log(x)          -> natural logarithm (ln)
     OP_STD_POW,   // pow(x, y)       -> x^y  (int literal y: square-and-multiply; else exp(y*log x))
+    OP_STD_FLOOR, // floor(x)        -> largest integral float <= x
+    OP_STD_CEIL,  // ceil(x)         -> smallest integral float >= x
+    OP_STD_ROUND, // round(x)        -> nearest integral float, ties away from zero
     OP_STD_REAL,  // real(x)         -> real part of a comp
     OP_STD_IMAG,  // imag(x)         -> imag part of a comp
     OP_STD_COMP,  // complex(x, y)   -> x + y*i

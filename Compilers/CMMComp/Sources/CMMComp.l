@@ -108,6 +108,9 @@ COMEN  "//"[^\n]*
 "exp"         return EXP;
 "log"         return LOG;
 "pow"         return POW;
+"floor"       return FLOOR;
+"ceil"        return CEIL;
+"round"       return ROUND;
 
 "real"        return REAL;
 "imag"        return IMAG;

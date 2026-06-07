@@ -1,0 +1,29 @@
+#PRNAME cmm_round
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// floor / ceil / round. F2I truncates toward zero, so trunc(x)=I2F(F2I(x));
+// floor nudges -1 for negative non-integers, ceil +1 for positive ones, round
+// uses the sign-half bias (ties away from zero, like C round()). All return an
+// integral float, so fout() prints the exact integer (no scaling needed).
+//   floor(2.7)=2   floor(-2.3)=-3   ceil(2.3)=3   ceil(-2.3)=-2
+//   round(2.5)=3   round(-2.5)=-3   round(2.4)=2   floor(5.0)=5   ceil(-5.0)=-5
+void main() {
+    float r;
+    while (1) {
+        r = floor(2.7);    fout(0, r);   // 2
+        r = floor(-2.3);   fout(0, r);   // -3   (negative non-integer -> -1)
+        r = ceil(2.3);     fout(0, r);   // 3    (positive non-integer -> +1)
+        r = ceil(-2.3);    fout(0, r);   // -2
+        r = round(2.5);    fout(0, r);   // 3    (tie -> away from zero)
+        r = round(-2.5);   fout(0, r);   // -3   (tie -> away from zero)
+        r = round(2.4);    fout(0, r);   // 2
+        r = floor(5.0);    fout(0, r);   // 5    (integer -> unchanged)
+        r = ceil(-5.0);    fout(0, r);   // -5
+    }
+}

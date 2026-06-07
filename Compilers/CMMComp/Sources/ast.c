@@ -308,8 +308,8 @@ void typecheck_expr(expr_node *n)
                 case OP_STD_NRM:                                 n->type = 1;  break;
                 case OP_STD_SQRT: case OP_STD_ATAN:
                 case OP_STD_SIN:  case OP_STD_COS:  case OP_STD_TAN:
-                case OP_STD_EXP:  case OP_STD_LOG:
-                case OP_STD_POW:                                 n->type = 2;  break;
+                case OP_STD_EXP:  case OP_STD_LOG:  case OP_STD_POW:
+                case OP_STD_FLOOR: case OP_STD_CEIL: case OP_STD_ROUND: n->type = 2;  break;
                 case OP_STD_REAL: case OP_STD_IMAG:
                 case OP_STD_FASE: case OP_STD_MOD2:              n->type = 2;  break;
                 case OP_STD_COMP:                                n->type = 3;  break;
@@ -604,6 +604,9 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_STD_EXP:  { expr a = ast_emit_expr(n->left); return exec_exp (a); }
                 case OP_STD_LOG:  { expr a = ast_emit_expr(n->left); return exec_log (a); }
                 case OP_STD_POW:  { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_pow (a, b); }
+                case OP_STD_FLOOR:{ expr a = ast_emit_expr(n->left); return exec_floor(a); }
+                case OP_STD_CEIL: { expr a = ast_emit_expr(n->left); return exec_ceil (a); }
+                case OP_STD_ROUND:{ expr a = ast_emit_expr(n->left); return exec_round(a); }
                 case OP_STD_REAL: { expr a = ast_emit_expr(n->left); return exec_real(a); }
                 case OP_STD_IMAG: { expr a = ast_emit_expr(n->left); return exec_imag(a); }
                 case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_comp(a, b); }

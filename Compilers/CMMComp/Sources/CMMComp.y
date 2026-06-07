@@ -23,6 +23,9 @@
     - StdLib     exp(.)  : returns e^x (exponential). Produces a float
     - StdLib     log(.)  : returns the natural logarithm (ln). Produces a float
     - StdLib     pow(.,.): returns x^y. Const int exponent -> square-and-multiply; int var -> runtime loop; else exp(y*ln x)
+    - StdLib   floor(.)  : largest integral float <= x   (returns a float)
+    - StdLib    ceil(.)  : smallest integral float >= x  (returns a float)
+    - StdLib   round(.)  : nearest integral float, ties away from zero (returns a float)
     - StdLib    real(.)  : returns the real part of a complex number
     - StdLib    imag(.)  : returns the imag part of a complex number
     - StdLib    fase(.)  : returns the phase    of a complex number
@@ -100,6 +103,7 @@ void  yyerror(char const *s);
 %token INN FIN OUT FOUT                                                // stdlib (I/O)
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
 %token SQRT ATAN SIN COS TAN EXP LOG POW                               // stdlib (non-linear functions)
+%token FLOOR CEIL ROUND                                                // stdlib (rounding)
 %token REAL IMAG COMP FASE MOD2                                        // stdlib (complex numbers)
 %token WHILE DO FOR IF THEN ELSE SWITCH CASE DEFAULT RET BREAK CONTINUE   // jumps
 %token SHIFTL SHIFTR SSHIFTR                                           // bit shift
@@ -146,6 +150,7 @@ void  yyerror(char const *s);
 %type <eval> std_in std_fin
 %type <eval> std_pst std_abs std_sign std_nrm
 %type <eval> std_sqrt std_atan std_sin std_cos std_tan std_exp std_log std_pow
+%type <eval> std_floor std_ceil std_round
 %type <eval> std_real std_imag std_comp std_fase std_mod2
 %type <eval> exp terminal
 
@@ -286,6 +291,9 @@ std_tan  : TAN  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_TAN, 0, 
 std_exp  : EXP  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_EXP, 0,  $3,   NULL);}  // exp(x)
 std_log  : LOG  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_LOG, 0,  $3,   NULL);}  // log(x)
 std_pow  : POW  '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_POW, 0,  $3,   $5  );}  // pow(x, y) = x^y
+std_floor: FLOOR '(' exp ')'                   {$$ = expr_stdlib(OP_STD_FLOOR, 0,  $3,   NULL);}  // floor(x)
+std_ceil : CEIL '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_CEIL, 0,  $3,   NULL);}  // ceil(x)
+std_round: ROUND '(' exp ')'                   {$$ = expr_stdlib(OP_STD_ROUND, 0,  $3,   NULL);}  // round(x)
 std_real : REAL '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_REAL, 0,  $3,   NULL);}  // real(comp)
 std_imag : IMAG '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_IMAG, 0,  $3,   NULL);}  // imag(comp)
 std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0,  $3,   $5  );}  // complex(x, y)
@@ -410,6 +418,9 @@ exp:       terminal                           {$$ = $1;}
          | std_exp                            {$$ = $1;}
          | std_log                            {$$ = $1;}
          | std_pow                            {$$ = $1;}
+         | std_floor                          {$$ = $1;}
+         | std_ceil                           {$$ = $1;}
+         | std_round                          {$$ = $1;}
          | std_real                           {$$ = $1;}
          | std_imag                           {$$ = $1;}
          | std_comp                           {$$ = $1;}

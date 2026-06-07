@@ -37,6 +37,9 @@ expr exec_tan (expr e);           // tangent
 expr exec_exp (expr e);           // exponential (e^x)
 expr exec_log (expr e);           // natural logarithm (ln x)
 expr exec_pow (expr ex, expr ey); // power x^y (const int exp: square-and-multiply; int var: loop; else exp(y*ln x))
+expr exec_floor(expr e);          // largest integral float <= x
+expr exec_ceil (expr e);          // smallest integral float >= x
+expr exec_round(expr e);          // nearest integral float, ties away from zero
 
 // ----------------------------------------------------------------------------
 // special functions for complex numbers --------------------------------------
