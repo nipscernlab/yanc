@@ -12,8 +12,7 @@ NOP
 JIZ Lwh1end
 LOD 1.000000
 F_MLT 1.000000
-PSH
-LOD 0.000000
+P_LOD 0.000000
 F_MLT 0.000000
 SF_ADD
 CAL float_log
@@ -71,8 +70,7 @@ F2I
 OUT 0
 LOD 0.000000
 F_MLT 0.000000
-PSH
-LOD 1.000000
+P_LOD 1.000000
 F_MLT 1.000000
 SF_ADD
 CAL float_log
@@ -130,8 +128,7 @@ F2I
 OUT 0
 LOD -1.000000
 F_MLT -1.000000
-PSH
-LOD 0.000000
+P_LOD 0.000000
 F_MLT 0.000000
 SF_ADD
 CAL float_log
@@ -193,8 +190,7 @@ LOD 4.000000
 SET main_z_i
 LOD main_z
 F_MLT main_z
-PSH
-LOD main_z_i
+P_LOD main_z_i
 F_MLT main_z_i
 SF_ADD
 CAL float_log
@@ -265,8 +261,7 @@ F_ADD main_w_i
 SET_P clog_b
 SET   clog_a
 F_MLT clog_a
-PSH
-LOD clog_b
+P_LOD clog_b
 F_MLT clog_b
 SF_ADD
 CAL float_log

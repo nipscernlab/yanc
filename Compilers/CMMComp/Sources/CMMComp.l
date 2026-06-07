@@ -117,6 +117,7 @@ COMEN  "//"[^\n]*
 
 "real"        return REAL;
 "imag"        return IMAG;
+"conj"        return CONJ;
 "fase"        return FASE;
 "complex"     return COMP;
 "mod2"        return MOD2;

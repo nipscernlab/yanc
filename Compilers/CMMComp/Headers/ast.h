@@ -120,6 +120,7 @@ typedef enum {
     OP_STD_COMP,  // complex(x, y)   -> x + y*i
     OP_STD_FASE,  // fase(x)         -> phase of a comp (radians)
     OP_STD_MOD2,  // mod2(x)         -> squared magnitude of a comp
+    OP_STD_CONJ,  // conj(x)         -> complex conjugate (real -> x+0i); always comp
 } expr_op;
 
 typedef struct expr_node {

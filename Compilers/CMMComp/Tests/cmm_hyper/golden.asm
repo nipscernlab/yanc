@@ -14,8 +14,7 @@ LOD 0.0
 SET cosh_x
 CAL float_exp
 SET cosh_t
-LOD cosh_x
-F_NEG
+F_NEG_M cosh_x
 CAL float_exp
 F_ADD cosh_t
 F_MLT 0.5
@@ -27,8 +26,7 @@ LOD 1.0
 SET cosh_x
 CAL float_exp
 SET cosh_t
-LOD cosh_x
-F_NEG
+F_NEG_M cosh_x
 CAL float_exp
 F_ADD cosh_t
 F_MLT 0.5
@@ -40,8 +38,7 @@ F_NEG_M 1.0
 SET cosh_x
 CAL float_exp
 SET cosh_t
-LOD cosh_x
-F_NEG
+F_NEG_M cosh_x
 CAL float_exp
 F_ADD cosh_t
 F_MLT 0.5
@@ -53,8 +50,7 @@ LOD 0.0
 SET sinh_x
 CAL float_exp
 SET sinh_t
-LOD sinh_x
-F_NEG
+F_NEG_M sinh_x
 CAL float_exp
 F_SU2 sinh_t
 F_MLT 0.5
@@ -66,8 +62,7 @@ LOD 1.0
 SET sinh_x
 CAL float_exp
 SET sinh_t
-LOD sinh_x
-F_NEG
+F_NEG_M sinh_x
 CAL float_exp
 F_SU2 sinh_t
 F_MLT 0.5
@@ -79,8 +74,7 @@ F_NEG_M 1.0
 SET sinh_x
 CAL float_exp
 SET sinh_t
-LOD sinh_x
-F_NEG
+F_NEG_M sinh_x
 CAL float_exp
 F_SU2 sinh_t
 F_MLT 0.5

@@ -313,7 +313,7 @@ void typecheck_expr(expr_node *n)
                 case OP_STD_FLOOR: case OP_STD_CEIL: case OP_STD_ROUND: n->type = 2;  break;
                 case OP_STD_REAL: case OP_STD_IMAG:
                 case OP_STD_FASE: case OP_STD_MOD2:              n->type = 2;  break;
-                case OP_STD_COMP:                                n->type = 3;  break;
+                case OP_STD_COMP: case OP_STD_CONJ:              n->type = 3;  break;
                 default: break;
             }
             break;
@@ -616,6 +616,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_comp(a, b); }
                 case OP_STD_FASE: { expr a = ast_emit_expr(n->left); return exec_fase(a); }
                 case OP_STD_MOD2: { expr a = ast_emit_expr(n->left); return exec_mod2(a); }
+                case OP_STD_CONJ: { expr a = ast_emit_expr(n->left); return exec_conj(a); }
                 default: break;
             }
             break;

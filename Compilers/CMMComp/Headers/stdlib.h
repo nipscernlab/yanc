@@ -53,6 +53,7 @@ expr exec_imag(expr e);           // returns the imaginary part
 expr exec_mod2(expr e);           // squared magnitude (move to the parser)
 expr exec_fase(expr e);           // phase in radians
 expr exec_comp(expr er, expr ei); // combines two real numbers into a complex
+expr exec_conj(expr e);           // complex conjugate (a-bi); real x -> x+0i; always comp
 
 // ----------------------------------------------------------------------------
 // special functions for vector work ------------------------------------------

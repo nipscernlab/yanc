@@ -605,8 +605,7 @@ expr exec_sqrt(expr e)
         // r = |z| = sqrt(a² + b²)
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
         add_instr("F_MLT %s\n", A);                      // acc = a²
-        add_instr("PSH\n");                              // stack: a²
-        add_instr("LOD %s\n", B);                        // acc = b
+        add_instr("P_LOD %s\n", B);                      // push a²; acc = b  (P_LOD = PSH+LOD)
         add_instr("F_MLT %s\n", B);                      // acc = b²
         add_instr("SF_ADD\n");                           // acc = a² + b²
         exec_sqrt(expr_make(2, 0));                      // acc = r
@@ -858,8 +857,7 @@ expr exec_log(expr e)
         // re = 1/2 * ln(a² + b²)
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
         add_instr("F_MLT %s\n", A);                      // a²
-        add_instr("PSH\n");                              // stack: a²
-        add_instr("LOD %s\n", B);                        // acc = b
+        add_instr("P_LOD %s\n", B);                      // push a²; acc = b  (P_LOD = PSH+LOD)
         add_instr("F_MLT %s\n", B);                      // b²
         add_instr("SF_ADD\n");                           // a² + b²
         exec_log(expr_make(2, 0));                       // ln(a²+b²)
@@ -1068,7 +1066,7 @@ expr exec_pow(expr ex, expr ey)
         int m = ++pow_lbl;
 
         add_instr("LOD 1.0\n");   add_instr("SET %s\n", R);                          // r = 1
-        add_instr("LOD %s\n", Y); add_instr("F_ABS\n"); add_instr("SET %s\n", C);    // c = |y|
+        add_instr("F_ABS_M %s\n", Y); add_instr("SET %s\n", C);                      // c = |y|  (F_ABS_M = LOD Y abs)
 
         add_sinst(0, "@Lpow%d ", m);
         add_instr("LOD %s\n", C);
@@ -1639,8 +1637,7 @@ expr exec_cosh(expr e)
     add_instr("SET %s\n", X);              // stash x
     add_instr("CAL float_exp\n");          // exp(x)   (x was in acc)
     add_instr("SET %s\n", T);              // T = exp(x)
-    add_instr("LOD %s\n", X);
-    add_instr("F_NEG\n");                  // -x
+    add_instr("F_NEG_M %s\n", X);          // -x in one op (F_NEG_M = LOD X negated)
     add_instr("CAL float_exp\n");          // exp(-x)
     add_instr("F_ADD %s\n", T);            // exp(-x) + exp(x)
     add_instr("F_MLT 0.5\n");              // / 2
@@ -1693,8 +1690,7 @@ expr exec_sinh(expr e)
     add_instr("SET %s\n", X);              // stash x
     add_instr("CAL float_exp\n");          // exp(x)
     add_instr("SET %s\n", T);              // T = exp(x)
-    add_instr("LOD %s\n", X);
-    add_instr("F_NEG\n");                  // -x
+    add_instr("F_NEG_M %s\n", X);          // -x in one op (F_NEG_M = LOD X negated)
     add_instr("CAL float_exp\n");          // exp(-x)  (acc = exp(-x))
     add_instr("F_SU2 %s\n", T);            // T - acc = exp(x) - exp(-x)   (F_SU2 X = X - acc)
     add_instr("F_MLT 0.5\n");              // / 2
@@ -2400,6 +2396,96 @@ expr exec_comp(expr er, expr ei)
 
     acc_ok = 1;
     return expr_make(3, 0);
+}
+
+// complex conjugate: comp -> a - bi ; int/float -> x + 0i (always returns a comp)
+expr exec_conj(expr e)
+{
+    // ------------------------------------------------------------------------
+    // consistency check ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // check whether et was declared
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // check whether et is a variable
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // ------------------------------------------------------------------------
+    // update variable status -------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // prepare local variables ------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+
+    // ------------------------------------------------------------------------
+    // execute ----------------------------------------------------------------
+    // result is comp-in-acc: real on the stack, imag in the acc.
+    // ------------------------------------------------------------------------
+
+    // comp constant: a - bi
+    if (e.type == 5)
+    {
+        expr etr, eti;
+        get_cmp_cst(e, &etr, &eti);
+        add_instr("%s %s\n", ld, v_table[etr.id].name);     // acc = real (push pending if any)
+        add_instr("PF_NEG_M %s\n", v_table[eti.id].name);   // push real; acc = -imag  (PF_NEG_M = PSH + F_NEG_M)
+    }
+
+    // comp variable in memory: a - bi
+    if ((e.type == 3) && (e.id != 0))
+    {
+        expr etr, eti;
+        get_cmp_ets(e, &etr, &eti);
+        add_instr("%s %s\n", ld, v_table[etr.id].name);
+        add_instr("PF_NEG_M %s\n", v_table[eti.id].name);
+    }
+
+    // comp in the acc (acc=imag, stack=real): just negate the imaginary part
+    if ((e.type == 3) && (e.id == 0))
+    {
+        add_instr("F_NEG\n");                               // -imag in acc; real stays on the stack
+    }
+
+    // int in memory: x + 0i
+    if ((e.type == 1) && (e.id != 0))
+    {
+        fprintf(stdout, MSG_WARN_CONJ_REAL, line_num+1);
+        add_instr("%s %s\n", i2f, v_table[e.id].name);      // acc = (float) x
+        add_instr("P_LOD 0.0\n");                           // push x; acc = 0 (imag)
+    }
+
+    // int in acc: x + 0i
+    if ((e.type == 1) && (e.id == 0))
+    {
+        fprintf(stdout, MSG_WARN_CONJ_REAL, line_num+1);
+        add_instr("I2F\n");
+        add_instr("P_LOD 0.0\n");
+    }
+
+    // float in memory: x + 0i
+    if ((e.type == 2) && (e.id != 0))
+    {
+        fprintf(stdout, MSG_WARN_CONJ_REAL, line_num+1);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
+        add_instr("P_LOD 0.0\n");
+    }
+
+    // float in acc: x + 0i
+    if ((e.type == 2) && (e.id == 0))
+    {
+        fprintf(stdout, MSG_WARN_CONJ_REAL, line_num+1);
+        add_instr("P_LOD 0.0\n");                           // push x (acc); acc = 0
+    }
+
+    acc_ok = 1;
+    return expr_make(3, 0);                                 // always comp
 }
 
 // ----------------------------------------------------------------------------

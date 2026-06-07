@@ -16,8 +16,7 @@ LOD 4.000000
 SET main_z_i
 LOD main_z
 F_MLT main_z
-PSH
-LOD main_z_i
+P_LOD main_z_i
 F_MLT main_z_i
 SF_ADD
 CAL float_sqrt
@@ -43,8 +42,7 @@ F2I
 OUT 0
 LOD -3.000000
 F_MLT -3.000000
-PSH
-LOD 4.000000
+P_LOD 4.000000
 F_MLT 4.000000
 SF_ADD
 CAL float_sqrt
@@ -83,8 +81,7 @@ F_ADD main_w_i
 SET_P csqrt_b
 SET   csqrt_a
 F_MLT csqrt_a
-PSH
-LOD csqrt_b
+P_LOD csqrt_b
 F_MLT csqrt_b
 SF_ADD
 CAL float_sqrt
@@ -114,8 +111,7 @@ LOD 0.000000
 SET main_z_i
 LOD main_z
 F_MLT main_z
-PSH
-LOD main_z_i
+P_LOD main_z_i
 F_MLT main_z_i
 SF_ADD
 CAL float_sqrt
@@ -145,8 +141,7 @@ LOD 0.000000
 SET main_z_i
 LOD main_z
 F_MLT main_z
-PSH
-LOD main_z_i
+P_LOD main_z_i
 F_MLT main_z_i
 SF_ADD
 CAL float_sqrt

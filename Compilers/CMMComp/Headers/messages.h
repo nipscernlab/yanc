@@ -164,6 +164,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: elevar número complexo a uma potência? Tá viajando! Não fiz isso ainda, se vira!\n", \
       "Error on line %d: a complex number raised to a power? Dream on! Didn't build that yet, you're on your own!\n")
 
+#define MSG_WARN_CONJ_REAL \
+    M("Atenção na linha %d: conj de número real? É ele mesmo com zero imaginário, mas tá valendo!\n", \
+      "Warning on line %d: conj of a real number? It's just itself with a zero imaginary part, but ok!\n")
+
 #define MSG_ERR_REAL_ARG_COMP \
     M("Erro na linha %d: argumento da função real(.) tem que ser complexo!\n", \
       "Error on line %d: argument of real(.) has gotta be complex!\n")

@@ -1,0 +1,22 @@
+#PRNAME cmm_conj
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Complex conjugate conj(z): comp a+bi -> a-bi ; a real x -> x+0i (always comp).
+// Exercises const / memory / acc comp forms plus int and float inputs.
+//   conj(3+4i)=3-4i      conj(z=2+5i)=2-5i   conj(z+w)            conj(7.0)=7+0i
+void main() {
+    comp z; comp w; comp c;
+    while (1) {
+        c = conj(3.0+4.0i);                       fout(0, real(c)); fout(0, imag(c));   // 3, -4   (const)
+        c = conj(1.0-2.0i);                       fout(0, real(c)); fout(0, imag(c));   // 1, 2    (const)
+        z = 2.0+5.0i;        c = conj(z);         fout(0, real(c)); fout(0, imag(c));   // 2, -5   (memory)
+        z = 1.0+1.0i; w = 1.0+2.0i; c = conj(z+w); fout(0, real(c)); fout(0, imag(c));  // 2, -3   (acc)
+        c = conj(7.0);                            fout(0, real(c)); fout(0, imag(c));   // 7, 0    (float -> x+0i)
+    }
+}

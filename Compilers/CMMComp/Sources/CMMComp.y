@@ -34,6 +34,7 @@
     - StdLib    fase(.)  : returns the phase    of a complex number
     - StdLib    mod2(.)  : squared magnitude    of a complex number
     - StdLib complex(.,.): creates a complex number from two reals
+    - StdLib    conj(.)  : complex conjugate (a-bi); a real x becomes x+0i (always returns a comp)
 
     - Operator >>> : right shift with twos-complement (shift preserving the sign)
 
@@ -108,7 +109,7 @@ void  yyerror(char const *s);
 %token SQRT ATAN SIN COS TAN EXP LOG POW                               // stdlib (non-linear functions)
 %token COSH SINH TANH                                                  // stdlib (hyperbolic)
 %token FLOOR CEIL ROUND                                                // stdlib (rounding)
-%token REAL IMAG COMP FASE MOD2                                        // stdlib (complex numbers)
+%token REAL IMAG COMP FASE MOD2 CONJ                                   // stdlib (complex numbers)
 %token WHILE DO FOR IF THEN ELSE SWITCH CASE DEFAULT RET BREAK CONTINUE   // jumps
 %token SHIFTL SHIFTR SSHIFTR                                           // bit shift
 %token GREQU LESEQ EQU DIF LAN LOR                                     // two-symbol logical operators
@@ -156,7 +157,7 @@ void  yyerror(char const *s);
 %type <eval> std_sqrt std_atan std_sin std_cos std_tan std_exp std_log std_pow
 %type <eval> std_cosh std_sinh std_tanh
 %type <eval> std_floor std_ceil std_round
-%type <eval> std_real std_imag std_comp std_fase std_mod2
+%type <eval> std_real std_imag std_comp std_fase std_mod2 std_conj
 %type <eval> exp terminal
 
 %%
@@ -307,6 +308,7 @@ std_imag : IMAG '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_IMAG, 0,
 std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0,  $3,   $5  );}  // complex(x, y)
 std_fase : FASE '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_FASE, 0,  $3,   NULL);}  // phase(comp)
 std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_MOD2, 0,  $3,   NULL);}  // |comp|^2
+std_conj : CONJ '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_CONJ, 0,  $3,   NULL);}  // conjugate
 std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_append(stmt_vout($3, $5, $7));}  // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
@@ -437,6 +439,7 @@ exp:       terminal                           {$$ = $1;}
          | std_comp                           {$$ = $1;}
          | std_fase                           {$$ = $1;}
          | std_mod2                           {$$ = $1;}
+         | std_conj                           {$$ = $1;}
          // function call
          | func_call                          {$$ = $1;}
          // null operators

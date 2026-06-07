@@ -66,8 +66,7 @@ I2F_M pow_y
 SET pow_y
 LOD 1.0
 SET pow_r
-LOD pow_y
-F_ABS
+F_ABS_M pow_y
 SET pow_c
 @Lpow1 LOD pow_c
 F_LES 0.5
