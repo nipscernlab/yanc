@@ -1114,6 +1114,71 @@ expr exec_sin(expr e)
     return expr_make(2, 0);
 }
 
+// tangent
+expr exec_tan(expr e)
+{
+    // ------------------------------------------------------------------------
+    // consistency check ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // check whether et was declared
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // check whether et is a variable
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // check whether it is comp
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+
+    // ------------------------------------------------------------------------
+    // update variable status -------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // prepare local variables ------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+
+    // ------------------------------------------------------------------------
+    // execute ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // int in memory
+    if ((e.type == 1) && (e.id != 0))
+    {
+        add_instr("%s %s\n", i2f, v_table[e.id].name);
+        add_instr("CAL float_tan\n");
+    }
+
+    // int in acc
+    if ((e.type == 1) && (e.id == 0))
+    {
+        add_instr("I2F\n");
+        add_instr("CAL float_tan\n");
+    }
+
+    // float in memory
+    if ((e.type == 2) && (e.id != 0))
+    {
+        add_instr("%s %s\n", ld, v_table[e.id].name);
+        add_instr("CAL float_tan\n");
+    }
+
+    // float in acc
+    if ((e.type == 2) && (e.id == 0))
+    {
+        add_instr("CAL float_tan\n");
+    }
+
+    acc_ok = 1;
+
+    return expr_make(2, 0);
+}
+
 // cosine
 expr exec_cos(expr e)
 {

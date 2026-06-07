@@ -1,0 +1,27 @@
+#PRNAME cmm_tan
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// tan(x) via float_tan: dedicated macro (NOT sin/cos). Reduces mod pi to
+// [-pi/2, pi/2], folds to [0, pi/4] with the cotangent identity, degree-11 odd
+// minimax polynomial (max abs error ~6.5e-7). Values scaled x1000 (fout
+// truncates toward zero, so endpoints like tan(pi/4)=1 show 999).
+//   tan(0)=0   tan(pi/6)=577   tan(pi/4)=999 (~1)   tan(1)=1557 (fold)
+//   tan(-pi/4)=-999 (sign)   tan(2)=-2185 (mod-pi reduction)   tan(1.4)=5797 (near pole)
+void main() {
+    float r;
+    while (1) {
+        r = tan(0.0)       * 1000.0;   fout(0, r);   // 0
+        r = tan(0.5235988) * 1000.0;   fout(0, r);   // tan(pi/6) = 577    (inner branch)
+        r = tan(0.7853982) * 1000.0;   fout(0, r);   // tan(pi/4) ~ 1000   (boundary)
+        r = tan(1.0)       * 1000.0;   fout(0, r);   // 1557              (cotangent fold)
+        r = tan(-0.7853982)* 1000.0;   fout(0, r);   // -1000  (odd: sign of r)
+        r = tan(2.0)       * 1000.0;   fout(0, r);   // -2185  (k=1, r=2-pi, fold + sign)
+        r = tan(1.4)       * 1000.0;   fout(0, r);   // 5797   (near pi/2, cotangent branch)
+    }
+}

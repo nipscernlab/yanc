@@ -104,6 +104,7 @@ COMEN  "//"[^\n]*
 "atan"        return ATAN;
 "sin"         return SIN;
 "cos"         return COS;
+"tan"         return TAN;
 "exp"         return EXP;
 "log"         return LOG;
 "pow"         return POW;

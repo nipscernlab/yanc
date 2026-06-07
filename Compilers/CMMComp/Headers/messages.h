@@ -494,6 +494,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: adicionando macro assembly para cálculo de seno\n", \
       "Info: adding assembly macro for sin computation\n")
 
+#define MSG_INFO_TAN_MACRO \
+    M("Info: adicionando macro assembly para cálculo de tangente\n", \
+      "Info: adding assembly macro for tangent computation\n")
+
 #define MSG_INFO_EXP_MACRO \
     M("Info: adicionando macro assembly para cálculo de exponencial\n", \
       "Info: adding assembly macro for exponential computation\n")
