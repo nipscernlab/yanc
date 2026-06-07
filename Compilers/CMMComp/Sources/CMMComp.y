@@ -21,6 +21,7 @@
     - StdLib     cos(.)  : returns the cosine  of a number
     - StdLib     exp(.)  : returns e^x (exponential). Produces a float
     - StdLib     log(.)  : returns the natural logarithm (ln). Produces a float
+    - StdLib     pow(.,.): returns x^y. Const int exponent -> square-and-multiply; int var -> runtime loop; else exp(y*ln x)
     - StdLib    real(.)  : returns the real part of a complex number
     - StdLib    imag(.)  : returns the imag part of a complex number
     - StdLib    fase(.)  : returns the phase    of a complex number
@@ -97,7 +98,7 @@ void  yyerror(char const *s);
 %token NUIOIN NUIOOU NUGAIN FFTSIZ ITRADD TOAQUI                       // directives
 %token INN FIN OUT FOUT                                                // stdlib (I/O)
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
-%token SQRT ATAN SIN COS EXP LOG                                       // stdlib (non-linear functions)
+%token SQRT ATAN SIN COS EXP LOG POW                                   // stdlib (non-linear functions)
 %token REAL IMAG COMP FASE MOD2                                        // stdlib (complex numbers)
 %token WHILE DO FOR IF THEN ELSE SWITCH CASE DEFAULT RET BREAK CONTINUE   // jumps
 %token SHIFTL SHIFTR SSHIFTR                                           // bit shift
@@ -143,7 +144,7 @@ void  yyerror(char const *s);
 %type <eval> func_call
 %type <eval> std_in std_fin
 %type <eval> std_pst std_abs std_sign std_nrm
-%type <eval> std_sqrt std_atan std_sin std_cos std_exp std_log
+%type <eval> std_sqrt std_atan std_sin std_cos std_exp std_log std_pow
 %type <eval> std_real std_imag std_comp std_fase std_mod2
 %type <eval> exp terminal
 
@@ -282,6 +283,7 @@ std_sin  : SIN  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SIN, 0, 
 std_cos  : COS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_COS, 0,  $3,   NULL);}  // cos(x)
 std_exp  : EXP  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_EXP, 0,  $3,   NULL);}  // exp(x)
 std_log  : LOG  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_LOG, 0,  $3,   NULL);}  // log(x)
+std_pow  : POW  '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_POW, 0,  $3,   $5  );}  // pow(x, y) = x^y
 std_real : REAL '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_REAL, 0,  $3,   NULL);}  // real(comp)
 std_imag : IMAG '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_IMAG, 0,  $3,   NULL);}  // imag(comp)
 std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0,  $3,   $5  );}  // complex(x, y)
@@ -404,6 +406,7 @@ exp:       terminal                           {$$ = $1;}
          | std_cos                            {$$ = $1;}
          | std_exp                            {$$ = $1;}
          | std_log                            {$$ = $1;}
+         | std_pow                            {$$ = $1;}
          | std_real                           {$$ = $1;}
          | std_imag                           {$$ = $1;}
          | std_comp                           {$$ = $1;}

@@ -1,0 +1,31 @@
+#PRNAME cmm_pow
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// pow(x, y) = x^y. The exponent decides the path AT COMPILE TIME:
+//   - integer literal exponent (3, 10, 0, 1, -2, ...): exact square-and-multiply
+//     (a fixed chain of F_MLT; no exp/log macro is pulled in).
+//   - fractional / float-literal exponent (0.5): general x^y = exp(y*ln x), x>0.
+// fout() truncates toward zero, so the fractional cases are scaled by 1000.
+//   pow(2,3)=8        pow(2,10)=1024     pow(2,8)=256 (int base)   pow(3,0)=1
+//   pow(5,1)=5        pow(2,-2)=0.25     pow(1.5,2)=2.25           pow(9,0.5)=3
+//   pow(2,0.5)=1.4142
+void main() {
+    float r;
+    while (1) {
+        r = pow(2.0, 3);             fout(0, r);   // 8     (int exp -> square-and-multiply, exact)
+        r = pow(2.0, 10);            fout(0, r);   // 1024  (int exp, exact)
+        r = pow(2, 8);               fout(0, r);   // 256   (int base too -> I2F, exact)
+        r = pow(3.0, 0);             fout(0, r);   // 1     (x^0)
+        r = pow(5.0, 1);             fout(0, r);   // 5     (x^1)
+        r = pow(2.0, -2) * 1000.0;   fout(0, r);   // 250   (negative int exp -> reciprocal)
+        r = pow(1.5, 2)  * 1000.0;   fout(0, r);   // 2250  (fractional base, int exp, exact)
+        r = pow(9.0, 0.5) * 1000.0;  fout(0, r);   // ~3000 (float exp -> exp(0.5*ln 9))
+        r = pow(2.0, 0.5) * 1000.0;  fout(0, r);   // ~1414 (sqrt 2 via exp/log)
+    }
+}

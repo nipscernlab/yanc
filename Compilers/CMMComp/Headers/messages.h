@@ -160,6 +160,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: log(.) de número complexo ainda não foi implementado!\n", \
       "Error on line %d: log(.) of a complex number isn't implemented yet!\n")
 
+#define MSG_ERR_POW_COMPLEX \
+    M("Erro na linha %d: elevar número complexo a uma potência? Tá viajando! Não fiz isso ainda, se vira!\n", \
+      "Error on line %d: a complex number raised to a power? Dream on! Didn't build that yet, you're on your own!\n")
+
 #define MSG_ERR_REAL_ARG_COMP \
     M("Erro na linha %d: argumento da função real(.) tem que ser complexo!\n", \
       "Error on line %d: argument of real(.) has gotta be complex!\n")

@@ -35,6 +35,7 @@ expr exec_sin (expr e);           // sine
 expr exec_cos (expr e);           // cosine
 expr exec_exp (expr e);           // exponential (e^x)
 expr exec_log (expr e);           // natural logarithm (ln x)
+expr exec_pow (expr ex, expr ey); // power x^y (const int exp: square-and-multiply; int var: loop; else exp(y*ln x))
 
 // ----------------------------------------------------------------------------
 // special functions for complex numbers --------------------------------------

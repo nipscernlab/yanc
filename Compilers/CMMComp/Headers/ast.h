@@ -107,6 +107,7 @@ typedef enum {
     OP_STD_COS,   // cos(x)
     OP_STD_EXP,   // exp(x)          -> e^x
     OP_STD_LOG,   // log(x)          -> natural logarithm (ln)
+    OP_STD_POW,   // pow(x, y)       -> x^y  (int literal y: square-and-multiply; else exp(y*log x))
     OP_STD_REAL,  // real(x)         -> real part of a comp
     OP_STD_IMAG,  // imag(x)         -> imag part of a comp
     OP_STD_COMP,  // complex(x, y)   -> x + y*i

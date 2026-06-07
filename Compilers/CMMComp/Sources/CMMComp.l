@@ -106,6 +106,7 @@ COMEN  "//"[^\n]*
 "cos"         return COS;
 "exp"         return EXP;
 "log"         return LOG;
+"pow"         return POW;
 
 "real"        return REAL;
 "imag"        return IMAG;

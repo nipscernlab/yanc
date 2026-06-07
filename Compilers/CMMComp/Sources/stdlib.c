@@ -808,6 +808,182 @@ expr exec_log(expr e)
     return expr_make(2, 0);
 }
 
+// power x^y ------------------------------------------------------------------
+// The exponent's kind picks the strategy (tested here, the usual way):
+//   * int constant (isco)  -> square-and-multiply, unrolled at compile time
+//                             (exact; pulls in no exp/log macro). A literal is
+//                             always >= 0 (a leading '-' is a separate negate).
+//   * int variable / acc   -> runtime multiply loop: x folded |y| times, then
+//                             a reciprocal when y < 0 (so pow(x,-2) = 0.25 too).
+//   * float                -> general identity x^y = exp(y*ln x), needs x > 0.
+// The base is widened to float in every path; the result is a float in the acc.
+expr exec_pow(expr ex, expr ey)
+{
+    static int pow_lbl = 0;
+
+    // ------------------------------------------------------------------------
+    // consistency check ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // check whether the operands were declared
+    if (ex.id != 0 && v_table[ex.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ex.id].name, fname)); exit(EXIT_FAILURE);}
+    if (ey.id != 0 && v_table[ey.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ey.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // check whether the operands are plain variables (not arrays)
+    if (ex.id != 0 && v_table[ex.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ex.id].name, fname)); exit(EXIT_FAILURE);}
+    if (ey.id != 0 && v_table[ey.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ey.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // a complex base or exponent is not supported
+    if (ex.type > 2 || ey.type > 2) {fprintf(stderr, MSG_ERR_POW_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+
+    // ------------------------------------------------------------------------
+    // update variable status -------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    if (ex.id != 0) v_table[ex.id].used = 1;
+    if (ey.id != 0) v_table[ey.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // exponent is an integer CONSTANT -> square-and-multiply -----------------
+    // The literal is always non-negative, so the base is the only operand that
+    // can be live; widen it to float and unroll the binary exponentiation.
+    // ------------------------------------------------------------------------
+    if ((ey.type == 1) && (ey.id != 0) && (v_table[ey.id].isco == 1))
+    {
+        long n = atol(v_table[ey.id].name);
+
+        char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+        char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+
+        // x^0 = 1 (the base value is simply discarded)
+        if (n == 0) { add_instr("LOD 1.0\n"); acc_ok = 1; return expr_make(2, 0); }
+
+        // widen the base to a float in the acc (the four operand shapes)
+        if ((ex.type == 1) && (ex.id != 0)) add_instr("%s %s\n", i2f, v_table[ex.id].name);  // int in memory
+        if ((ex.type == 1) && (ex.id == 0)) add_instr("I2F\n");                               // int in acc
+        if ((ex.type == 2) && (ex.id != 0)) add_instr("%s %s\n", ld , v_table[ex.id].name);  // float in memory
+        // float in acc: already there
+        acc_ok = 1;
+
+        if (n == 1) return expr_make(2, 0);                  // x^1 = x
+
+        const char *B = v_table[exec_id("pow_b")].name;      // running square (x, x², x⁴, ...)
+        const char *R = v_table[exec_id("pow_r")].name;      // running product (the result)
+        add_instr("SET %s\n", B);                            // pow_b = base
+
+        int started = 0;                                     // has the result been seeded yet?
+        for (long e = n; e > 0; e >>= 1)
+        {
+            if (e & 1)                                       // bit set -> fold pow_b into the result
+            {
+                if (!started) { add_instr("LOD %s\n", B); started = 1; }
+                else          { add_instr("LOD %s\n", R); add_instr("F_MLT %s\n", B); }
+                add_instr("SET %s\n", R);
+            }
+            if (e >> 1)                                      // more bits remain -> square pow_b
+            {
+                add_instr("LOD %s\n", B);
+                add_instr("F_MLT %s\n", B);
+                add_instr("SET %s\n", B);
+            }
+        }
+        add_instr("LOD %s\n", R);                            // result -> acc (peephole drops if redundant)
+        acc_ok = 1;
+        return expr_make(2, 0);
+    }
+
+    // ------------------------------------------------------------------------
+    // normalize the base into pow_x and the exponent into pow_y (both float in
+    // memory), so the two runtime strategies below read plain operands. The
+    // only entangled position is "both in the acc" (base on the stack, exponent
+    // on top), spilled with SET_P exactly like exec_fase / the complex-sqrt
+    // branch.
+    // ------------------------------------------------------------------------
+    const char *X = v_table[exec_id("pow_x")].name;          // base     (float)
+    const char *Y = v_table[exec_id("pow_y")].name;          // exponent (float)
+
+    if (ey.id == 0)                       // exponent in the acc
+    {
+        if (ex.id == 0)                   // BOTH in the acc: acc = exponent, stack = base
+        {
+            add_instr("SET_P %s\n", Y);   // pow_y = exponent ; POP -> acc = base
+            if (ex.type == 1) add_instr("I2F\n");
+            add_instr("SET %s\n", X);
+        }
+        else                              // base in memory, exponent in the acc
+        {
+            add_instr("SET %s\n", Y);
+            if (ex.type == 1) add_instr("I2F_M %s\n", v_table[ex.id].name);
+            else              add_instr("LOD %s\n",   v_table[ex.id].name);
+            add_instr("SET %s\n", X);
+        }
+        if (ey.type == 1) { add_instr("I2F_M %s\n", Y); add_instr("SET %s\n", Y); }   // widen int exponent
+    }
+    else                                  // exponent in memory (variable)
+    {
+        char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+        char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+
+        if (ex.id == 0)                   // base in the acc
+        {
+            if (ex.type == 1) add_instr("I2F\n");
+            add_instr("SET %s\n", X);
+        }
+        else                              // base in memory
+        {
+            if (ex.type == 1) add_instr("%s %s\n", i2f, v_table[ex.id].name);
+            else              add_instr("%s %s\n", ld , v_table[ex.id].name);
+            add_instr("SET %s\n", X);
+        }
+        if (ey.type == 1) add_instr("I2F_M %s\n", v_table[ey.id].name);
+        else              add_instr("LOD %s\n",   v_table[ey.id].name);
+        add_instr("SET %s\n", Y);
+    }
+    acc_ok = 1;
+
+    // ------------------------------------------------------------------------
+    // exponent is an integer VARIABLE / acc -> runtime multiply loop ---------
+    //   c = |y| ; r = 1 ; while (c > 0) { r *= x ; c -= 1 } ; if (y < 0) r = 1/r
+    // (counter kept as a float so the F_LES / F_ADD test mirrors the macros)
+    // ------------------------------------------------------------------------
+    if (ey.type == 1)
+    {
+        const char *R = v_table[exec_id("pow_r")].name;      // running product
+        const char *C = v_table[exec_id("pow_c")].name;      // counter |y|
+        int m = ++pow_lbl;
+
+        add_instr("LOD 1.0\n");   add_instr("SET %s\n", R);                          // r = 1
+        add_instr("LOD %s\n", Y); add_instr("F_ABS\n"); add_instr("SET %s\n", C);    // c = |y|
+
+        add_sinst(0, "@Lpow%d ", m);
+        add_instr("LOD %s\n", C);
+        add_instr("F_LES 0.5\n");                                                     // c > 0 ? (F_LES true when acc > X)
+        add_instr("JIZ Lpow%dend\n", m);
+        add_instr("LOD %s\n", R); add_instr("F_MLT %s\n", X); add_instr("SET %s\n", R);   // r *= x
+        add_instr("LOD %s\n", C); add_instr("F_ADD -1.0\n");  add_instr("SET %s\n", C);   // c -= 1
+        add_instr("JMP Lpow%d\n", m);
+        add_sinst(0, "@Lpow%dend ", m);
+
+        add_instr("LOD 0.0\n"); add_instr("F_LES %s\n", Y);                          // y < 0 ?  (0 > y)
+        add_instr("JIZ Lpow%dpos\n", m);
+        add_instr("LOD %s\n", R); add_instr("F_DIV 1.0\n"); add_instr("SET %s\n", R);     // r = 1/r
+        add_sinst(0, "@Lpow%dpos ", m);
+        add_instr("LOD %s\n", R);
+        acc_ok = 1;
+        return expr_make(2, 0);
+    }
+
+    // ------------------------------------------------------------------------
+    // exponent is a FLOAT -> general identity x^y = exp(y * ln x), needs x > 0
+    // ------------------------------------------------------------------------
+    add_instr("LOD %s\n", X);
+    add_instr("CAL float_log\n");        // ln(x)
+    add_instr("F_MLT %s\n", Y);          // y * ln(x)
+    add_instr("CAL float_exp\n");        // exp(...)
+    acc_ok = 1;
+    return expr_make(2, 0);
+}
+
 // arctangent
 expr exec_atan(expr e)
 {
