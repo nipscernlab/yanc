@@ -1396,14 +1396,86 @@ expr exec_tan(expr e)
     // check whether et is a variable
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
-    // check whether it is comp
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // complex argument: tan(a+bi) = (sin 2a + i*sinh 2b) / (cos 2a + cosh 2b).
+    // The denominator D = cos 2a + cosh 2b is REAL, so no complex division is
+    // needed. cosh/sinh 2b come from a single exp(2b) + reciprocal (fast form).
+    // Mirrors the exec_exp/exec_log comp branch (a/b extraction + comp assembly).
+    // ------------------------------------------------------------------------
+    if (e.type > 2)
+    {
+        expr etr, eti;
+        const char *A, *B;
+        int pre = 0;
+
+        if (e.type == 5)                            // comp constant
+        {
+            get_cmp_cst(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else if (e.id != 0)                         // comp in memory
+        {
+            get_cmp_ets(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else                                        // comp in acc (acc=imag, stack=real)
+        {
+            int ib = exec_id("ctan_b"), ia = exec_id("ctan_a");
+            add_instr("SET_P %s\n", v_table[ib].name);  // ctan_b = imag; POP -> acc = real
+            add_instr("SET   %s\n", v_table[ia].name);  // ctan_a = real
+            A = v_table[ia].name; B = v_table[ib].name;
+        }
+
+        const char *TA  = v_table[exec_id("ctan_ta" )].name;   // 2a
+        const char *TB  = v_table[exec_id("ctan_tb" )].name;   // 2b
+        const char *S2A = v_table[exec_id("ctan_s2a")].name;   // sin 2a
+        const char *C2A = v_table[exec_id("ctan_c2a")].name;   // cos 2a
+        const char *EB  = v_table[exec_id("ctan_eb" )].name;   // e^(2b)
+        const char *EMB = v_table[exec_id("ctan_emb")].name;   // e^(-2b)
+        const char *CHB = v_table[exec_id("ctan_chb")].name;   // cosh 2b
+        const char *SHB = v_table[exec_id("ctan_shb")].name;   // sinh 2b
+        const char *D   = v_table[exec_id("ctan_d"  )].name;   // denominator
+        const char *RE  = v_table[exec_id("ctan_re" )].name;   // result real
+        const char *IM  = v_table[exec_id("ctan_im" )].name;   // result imag
+
+        // 2a, 2b
+        add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
+        add_instr("F_MLT 2.0\n");  add_instr("SET %s\n", TA);
+        add_instr("LOD %s\n", B);
+        add_instr("F_MLT 2.0\n");  add_instr("SET %s\n", TB);
+
+        // sin 2a, cos 2a
+        add_instr("LOD %s\n", TA); exec_sin(expr_make(2, 0)); add_instr("SET %s\n", S2A);
+        add_instr("LOD %s\n", TA); exec_cos(expr_make(2, 0)); add_instr("SET %s\n", C2A);
+
+        // e^(2b), e^(-2b) = 1/e^(2b); cosh 2b, sinh 2b
+        add_instr("LOD %s\n", TB); exec_exp(expr_make(2, 0)); add_instr("SET %s\n", EB);
+        add_instr("F_DIV 1.0\n");  add_instr("SET %s\n", EMB);                         // e^(-2b)
+        add_instr("LOD %s\n", EB); add_instr("F_ADD %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);
+        add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
+
+        // D = cos 2a + cosh 2b
+        add_instr("LOD %s\n", C2A); add_instr("F_ADD %s\n", CHB); add_instr("SET %s\n", D);
+
+        // Re = sin 2a / D ; Im = sinh 2b / D   (F_DIV X = X/acc)
+        add_instr("LOD %s\n", D); add_instr("F_DIV %s\n", S2A); add_instr("SET %s\n", RE);
+        add_instr("LOD %s\n", D); add_instr("F_DIV %s\n", SHB); add_instr("SET %s\n", IM);
+
+        // assemble the complex result: real in acc, imag on the stack
+        add_instr("LOD %s\n",   RE);
+        add_instr("P_LOD %s\n", IM);
+
+        acc_ok = 1;
+        return expr_make(3, 0);
+    }
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------

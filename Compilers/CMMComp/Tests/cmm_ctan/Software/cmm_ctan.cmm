@@ -1,0 +1,27 @@
+#PRNAME cmm_ctan
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Complex tangent tan(a+bi) = (sin 2a + i*sinh 2b) / (cos 2a + cosh 2b).
+// Real denominator -> no complex division; cosh/sinh from one exp(2b) + 1/exp.
+// Exercises const / memory / acc forms. Parts scaled x1000.
+//   tan(0+0i)=0           -> 0, 0
+//   tan(0+1i)=i*tanh(1)   -> 0, 761
+//   tan(1+1i)=0.2718+1.0839i -> 271, 1083   (memory)
+//   tan(0.5+0.5i + 0.5+0.5i)=tan(1+1i) -> 271, 1083   (acc)
+//   tan(pi/4 + 0i) ~ 1    -> ~999, 0
+void main() {
+    comp z; comp w; comp c;
+    while (1) {
+        c = tan(0.0+0.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        c = tan(0.0+1.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 1.0+1.0i;          c = tan(z);            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 0.5+0.5i;  w = 0.5+0.5i;  c = tan(z + w); fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        c = tan(0.7853982+0.0i);                      fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+    }
+}

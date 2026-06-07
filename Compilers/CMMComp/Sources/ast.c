@@ -306,10 +306,13 @@ void typecheck_expr(expr_node *n)
                 case OP_STD_PST: case OP_STD_ABS:                n->type = lt; break;
                 case OP_STD_SIGN:                                n->type = rt; break;
                 case OP_STD_NRM:                                 n->type = 1;  break;
+                // these accept comp: comp argument -> comp result, real arg -> float
                 case OP_STD_SQRT: case OP_STD_ATAN:
                 case OP_STD_SIN:  case OP_STD_COS:  case OP_STD_TAN:
+                case OP_STD_EXP:  case OP_STD_LOG:               n->type = (lt > 2) ? 3 : 2;  break;
+                // real-only (reject comp) -> always float
                 case OP_STD_COSH: case OP_STD_SINH: case OP_STD_TANH:
-                case OP_STD_EXP:  case OP_STD_LOG:  case OP_STD_POW:
+                case OP_STD_POW:
                 case OP_STD_FLOOR: case OP_STD_CEIL: case OP_STD_ROUND: n->type = 2;  break;
                 case OP_STD_REAL: case OP_STD_IMAG:
                 case OP_STD_FASE: case OP_STD_MOD2:              n->type = 2;  break;
