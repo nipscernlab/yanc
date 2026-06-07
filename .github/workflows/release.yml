@@ -122,21 +122,13 @@ jobs:
           # this same release by the build-linux job, which `needs: build` so
           # the release already exists by the time it uploads.
           body: |
-            **YANC ${{ github.ref_name }} — first cross-platform release.**
-
-            YANC now builds and runs on both **Linux** and **Windows** from one
-            shared top-level Makefile, verified on every push by CI (Ubuntu +
-            Windows/MSYS2). This release ships prebuilt binaries for **both**
-            platforms:
+            **YANC ${{ github.ref_name }}** — prebuilt binaries for both platforms:
 
             - `yanc-bin-${{ github.ref_name }}.zip` — Windows (MSYS2 / MinGW-w64) `.exe`
             - `yanc-bin-linux-${{ github.ref_name }}.tar.gz` — Linux x86-64
 
-            Highlights: cross-platform `setup.sh` / `setup.bat` and
-            `single_proc` / `multi_proc` runners (`.sh` + `.bat`), the new
-            `gen_gtkw` wave-view generator (replacing the runtime Tcl
-            formatters), named HDL generate blocks, and a POSIX path fix in
-            `cpppp`. See CHANGELOG.md for the full list.
+            See `CHANGELOG.md` for the full list of changes in this release; the
+            auto-generated notes below list every commit since the previous tag.
           files: |
             ${{ steps.artifact.outputs.name }}.zip
 

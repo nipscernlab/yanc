@@ -8,6 +8,53 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v5.1] – 2026-06-07
+
+### Added
+- **Math-library built-ins (`cmmcomp`)** — `pow(x, y)` (an integer-constant
+  exponent expands to exact square-and-multiply, an integer variable to a runtime
+  multiply loop, otherwise `exp(y·ln x)`); `tan(x)` (a dedicated degree-11 minimax
+  fit, range-reduced mod π with a cotangent fold for the pole — *not* `sin/cos`);
+  `floor` / `ceil` / `round` (inline via `F2I`, returning an integral float, ties
+  away from zero like C `round()`); and the hyperbolics `cosh` / `sinh` / `tanh`
+  (composed from the real exponential, `tanh` via the one-`exp` `(e^2x−1)/(e^2x+1)`
+  identity). Each is validated by value with a new fixture. No new hardware.
+- **Complex arguments across the transcendentals (`cmmcomp`)** — `exp`, `sin`,
+  `cos`, `tan`, `log` and `atan` now accept a `comp` argument and return a `comp`
+  (joining `sqrt`), composed from real ops via the canonical library identities:
+  `exp(a+bi)=eᵃ(cos b+i·sin b)`, `sin(a+bi)=sin a·cosh b+i·cos a·sinh b`,
+  `log(a+bi)=½·ln|z|²+i·arg z`, `tan` via the real-denominator closed form
+  `(sin 2a+i·sinh 2b)/(cos 2a+cosh 2b)`, and `atan` via
+  `½·atan2(2a,1−a²−b²)+i·¼·ln(…)`. The `cosh`/`sinh` of the imaginary part come
+  from a single `exp` + reciprocal. Also adds **`conj(z)`** (complex conjugate
+  `a−bi`; a real `x` becomes `x+0i`; always returns a `comp`). New `cmm_cexp` /
+  `cmm_csincos` / `cmm_clog` / `cmm_catan` / `cmm_ctan` / `cmm_conj` fixtures
+  validate every form (const / memory / accumulator) by value.
+
+### Fixed
+- **`fase()` / `atan2` returned the wrong quadrant (`cmmcomp`)** — all five `F_LES`
+  sign tests in `exec_fase` had been written assuming `F_LES X` is true when
+  `acc < X`, but the hardware semantics are `acc > X`, so the routine silently
+  computed `fase(−z)` (every quadrant off by ±π). It went unnoticed for a long
+  time because the `cmm_comp_fase` golden had been blessed with the wrong output
+  (the fixture's own comment had the right values). Fixed by swapping the operand
+  on each test; `cmm_comp_fase` now matches the true `atan2`
+  (`fase(1+2i)=1107`, `fase(2+0i)=0`, …), and complex `log` / `atan`, which build
+  on it, are correct.
+
+### Changed
+- **`comp` argument → `comp` result is now explicit in the type pass (`cmmcomp`)** —
+  the typecheck annotates `sqrt`/`exp`/`sin`/`cos`/`tan`/`log`/`atan` as `comp`
+  when the argument is `comp` (it always said `float` before). Cosmetic — codegen
+  already used the function's runtime return type, so no emitted code changed — but
+  it makes the rule "real argument → `float`, `comp` argument → `comp`" explicit.
+- **Codegen now uses the fused load+op instructions (`cmmcomp`)** — after a full
+  audit of the assembler ISA, wasteful `(P_)LOD`/`PSH` + op pairs were collapsed
+  into the single-cycle fused forms (`F_NEG_M`, `F_ABS_M`, `PF_NEG_M`, `P_LOD`,
+  `I2F_M`, …), shaving an instruction off `cosh`/`sinh`, the `pow` loop, and the
+  complex `sqrt`/`log` branches. Values are unchanged (the affected goldens only
+  grow — shorter code loops more times in the fixed sim window).
+
 ### Changed
 - **`float_atan` now uses a minimax polynomial instead of a LUT** — the arctangent
   macro drops the 49-entry table for a degree-11 odd minimax polynomial
