@@ -34,6 +34,9 @@ expr exec_atan(expr e);           // arctangent
 expr exec_sin (expr e);           // sine
 expr exec_cos (expr e);           // cosine
 expr exec_tan (expr e);           // tangent
+expr exec_cosh(expr e);           // hyperbolic cosine
+expr exec_sinh(expr e);           // hyperbolic sine
+expr exec_tanh(expr e);           // hyperbolic tangent
 expr exec_exp (expr e);           // exponential (e^x)
 expr exec_log (expr e);           // natural logarithm (ln x)
 expr exec_pow (expr ex, expr ey); // power x^y (const int exp: square-and-multiply; int var: loop; else exp(y*ln x))

@@ -20,6 +20,9 @@
     - StdLib     sin(.)  : returns the sine    of a number
     - StdLib     cos(.)  : returns the cosine  of a number
     - StdLib     tan(.)  : returns the tangent of a number (dedicated minimax, not sin/cos)
+    - StdLib    cosh(.)  : hyperbolic cosine (e^x+e^-x)/2
+    - StdLib    sinh(.)  : hyperbolic sine   (e^x-e^-x)/2
+    - StdLib    tanh(.)  : hyperbolic tangent (e^2x-1)/(e^2x+1)
     - StdLib     exp(.)  : returns e^x (exponential). Produces a float
     - StdLib     log(.)  : returns the natural logarithm (ln). Produces a float
     - StdLib     pow(.,.): returns x^y. Const int exponent -> square-and-multiply; int var -> runtime loop; else exp(y*ln x)
@@ -103,6 +106,7 @@ void  yyerror(char const *s);
 %token INN FIN OUT FOUT                                                // stdlib (I/O)
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
 %token SQRT ATAN SIN COS TAN EXP LOG POW                               // stdlib (non-linear functions)
+%token COSH SINH TANH                                                  // stdlib (hyperbolic)
 %token FLOOR CEIL ROUND                                                // stdlib (rounding)
 %token REAL IMAG COMP FASE MOD2                                        // stdlib (complex numbers)
 %token WHILE DO FOR IF THEN ELSE SWITCH CASE DEFAULT RET BREAK CONTINUE   // jumps
@@ -150,6 +154,7 @@ void  yyerror(char const *s);
 %type <eval> std_in std_fin
 %type <eval> std_pst std_abs std_sign std_nrm
 %type <eval> std_sqrt std_atan std_sin std_cos std_tan std_exp std_log std_pow
+%type <eval> std_cosh std_sinh std_tanh
 %type <eval> std_floor std_ceil std_round
 %type <eval> std_real std_imag std_comp std_fase std_mod2
 %type <eval> exp terminal
@@ -288,6 +293,9 @@ std_atan : ATAN '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ATAN, 0,
 std_sin  : SIN  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SIN, 0,  $3,   NULL);}  // sin(x)
 std_cos  : COS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_COS, 0,  $3,   NULL);}  // cos(x)
 std_tan  : TAN  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_TAN, 0,  $3,   NULL);}  // tan(x)
+std_cosh : COSH '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_COSH, 0,  $3,   NULL);}  // cosh(x)
+std_sinh : SINH '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_SINH, 0,  $3,   NULL);}  // sinh(x)
+std_tanh : TANH '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_TANH, 0,  $3,   NULL);}  // tanh(x)
 std_exp  : EXP  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_EXP, 0,  $3,   NULL);}  // exp(x)
 std_log  : LOG  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_LOG, 0,  $3,   NULL);}  // log(x)
 std_pow  : POW  '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_POW, 0,  $3,   $5  );}  // pow(x, y) = x^y
@@ -415,6 +423,9 @@ exp:       terminal                           {$$ = $1;}
          | std_sin                            {$$ = $1;}
          | std_cos                            {$$ = $1;}
          | std_tan                            {$$ = $1;}
+         | std_cosh                           {$$ = $1;}
+         | std_sinh                           {$$ = $1;}
+         | std_tanh                           {$$ = $1;}
          | std_exp                            {$$ = $1;}
          | std_log                            {$$ = $1;}
          | std_pow                            {$$ = $1;}

@@ -308,6 +308,7 @@ void typecheck_expr(expr_node *n)
                 case OP_STD_NRM:                                 n->type = 1;  break;
                 case OP_STD_SQRT: case OP_STD_ATAN:
                 case OP_STD_SIN:  case OP_STD_COS:  case OP_STD_TAN:
+                case OP_STD_COSH: case OP_STD_SINH: case OP_STD_TANH:
                 case OP_STD_EXP:  case OP_STD_LOG:  case OP_STD_POW:
                 case OP_STD_FLOOR: case OP_STD_CEIL: case OP_STD_ROUND: n->type = 2;  break;
                 case OP_STD_REAL: case OP_STD_IMAG:
@@ -601,6 +602,9 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_STD_SIN:  { expr a = ast_emit_expr(n->left); return exec_sin (a); }
                 case OP_STD_COS:  { expr a = ast_emit_expr(n->left); return exec_cos (a); }
                 case OP_STD_TAN:  { expr a = ast_emit_expr(n->left); return exec_tan (a); }
+                case OP_STD_COSH: { expr a = ast_emit_expr(n->left); return exec_cosh(a); }
+                case OP_STD_SINH: { expr a = ast_emit_expr(n->left); return exec_sinh(a); }
+                case OP_STD_TANH: { expr a = ast_emit_expr(n->left); return exec_tanh(a); }
                 case OP_STD_EXP:  { expr a = ast_emit_expr(n->left); return exec_exp (a); }
                 case OP_STD_LOG:  { expr a = ast_emit_expr(n->left); return exec_log (a); }
                 case OP_STD_POW:  { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_pow (a, b); }

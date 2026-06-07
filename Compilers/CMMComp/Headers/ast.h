@@ -106,6 +106,9 @@ typedef enum {
     OP_STD_SIN,   // sin(x)
     OP_STD_COS,   // cos(x)
     OP_STD_TAN,   // tan(x)
+    OP_STD_COSH,  // cosh(x)         -> hyperbolic cosine
+    OP_STD_SINH,  // sinh(x)         -> hyperbolic sine
+    OP_STD_TANH,  // tanh(x)         -> hyperbolic tangent
     OP_STD_EXP,   // exp(x)          -> e^x
     OP_STD_LOG,   // log(x)          -> natural logarithm (ln)
     OP_STD_POW,   // pow(x, y)       -> x^y  (int literal y: square-and-multiply; else exp(y*log x))

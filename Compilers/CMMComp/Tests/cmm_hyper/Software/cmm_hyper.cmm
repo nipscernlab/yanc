@@ -1,0 +1,30 @@
+#PRNAME cmm_hyper
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Hyperbolic cosh/sinh/tanh, composed from the real exponential.
+//   cosh(x)=(e^x+e^-x)/2   sinh(x)=(e^x-e^-x)/2   tanh(x)=(e^2x-1)/(e^2x+1)
+// Values scaled x1000 (fout truncates). cosh is even, sinh is odd; tanh
+// saturates to +-1.
+//   cosh(0)=1000  cosh(1)=1543  cosh(-1)=1543 (even)
+//   sinh(0)=0     sinh(1)=1175  sinh(-1)=-1175 (odd)
+//   tanh(0)=0     tanh(1)=761   tanh(3)=995 (saturating)
+void main() {
+    float r;
+    while (1) {
+        r = cosh(0.0)  * 1000.0;   fout(0, r);   // 1000
+        r = cosh(1.0)  * 1000.0;   fout(0, r);   // 1543
+        r = cosh(-1.0) * 1000.0;   fout(0, r);   // 1543  (even)
+        r = sinh(0.0)  * 1000.0;   fout(0, r);   // 0
+        r = sinh(1.0)  * 1000.0;   fout(0, r);   // 1175
+        r = sinh(-1.0) * 1000.0;   fout(0, r);   // -1175 (odd)
+        r = tanh(0.0)  * 1000.0;   fout(0, r);   // 0
+        r = tanh(1.0)  * 1000.0;   fout(0, r);   // 761
+        r = tanh(3.0)  * 1000.0;   fout(0, r);   // 995   (saturating)
+    }
+}

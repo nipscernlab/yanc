@@ -105,6 +105,9 @@ COMEN  "//"[^\n]*
 "sin"         return SIN;
 "cos"         return COS;
 "tan"         return TAN;
+"cosh"        return COSH;
+"sinh"        return SINH;
+"tanh"        return TANH;
 "exp"         return EXP;
 "log"         return LOG;
 "pow"         return POW;
