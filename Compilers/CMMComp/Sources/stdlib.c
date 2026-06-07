@@ -814,14 +814,71 @@ expr exec_log(expr e)
     // check whether et is a variable
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
-    // check whether it is comp (complex log is a later step)
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_LOG_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // complex argument: log(a+bi) = 1/2*ln(a²+b²) + i*fase(z). Real part is half
+    // the log of the squared magnitude (a²+b² inline); imaginary part is the
+    // phase, reusing exec_fase (the 4-quadrant atan2). Mirrors exec_exp's a/b
+    // extraction and comp-in-acc assembly.
+    // ------------------------------------------------------------------------
+    if (e.type > 2)
+    {
+        expr etr, eti;                  // real (a) and imag (b) parts
+        const char *A, *B;
+        int pre = 0;
+
+        if (e.type == 5)                            // comp constant
+        {
+            get_cmp_cst(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else if (e.id != 0)                         // comp in memory
+        {
+            get_cmp_ets(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else                                        // comp in acc (acc=imag, stack=real)
+        {
+            int ib = exec_id("clog_b"), ia = exec_id("clog_a");
+            add_instr("SET_P %s\n", v_table[ib].name);  // clog_b = imag; POP -> acc = real
+            add_instr("SET   %s\n", v_table[ia].name);  // clog_a = real
+            A = v_table[ia].name; B = v_table[ib].name;
+        }
+
+        const char *RE = v_table[exec_id("clog_re")].name;   // result real part
+        const char *IM = v_table[exec_id("clog_im")].name;   // result imag part
+
+        // re = 1/2 * ln(a² + b²)
+        add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
+        add_instr("F_MLT %s\n", A);                      // a²
+        add_instr("PSH\n");                              // stack: a²
+        add_instr("LOD %s\n", B);                        // acc = b
+        add_instr("F_MLT %s\n", B);                      // b²
+        add_instr("SF_ADD\n");                           // a² + b²
+        exec_log(expr_make(2, 0));                       // ln(a²+b²)
+        add_instr("F_MLT 0.5\n");                        // 1/2 * ln(...)
+        add_instr("SET %s\n", RE);
+
+        // im = fase(z) -- rebuild the comp in the acc (real on stack, imag in acc)
+        add_instr("LOD %s\n",   A);                      // acc = a (real)
+        add_instr("P_LOD %s\n", B);                      // push a; acc = b -> comp in acc
+        exec_fase(expr_make(3, 0));                      // arg(z)
+        add_instr("SET %s\n", IM);
+
+        // assemble the complex result: real in acc, imag on the stack
+        add_instr("LOD %s\n",   RE);
+        add_instr("P_LOD %s\n", IM);
+
+        acc_ok = 1;
+        return expr_make(3, 0);
+    }
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -2039,8 +2096,13 @@ expr exec_fase(expr e)
     const char *t = v_table[exec_id("fase_t")].name;   // base atan result
     int         n = ++fase_lbl;
 
-    add_instr("%s %s\n", pre ? "P_LOD" : "LOD", R);
-    add_instr("F_LES 0.0\n");                          // real < 0 ?
+    // F_LES X is true when acc > X, so every "v < 0" test is `LOD 0.0; F_LES v`
+    // (0 > v) and every "v > 0" test is `LOD v; F_LES 0.0` (v > 0). (This routine
+    // was originally written with the opposite F_LES polarity, which silently
+    // produced fase(-z) -- the cmm_comp_fase golden had been blessed with those
+    // wrong values.)
+    add_instr("%s\n", pre ? "P_LOD 0.0" : "LOD 0.0");
+    add_instr("F_LES %s\n", R);                        // real < 0 ?  (0 > real)
     add_instr("JIZ Lfa%da\n", n);
 
     // --- real < 0 (nonzero): atan(imag/real) +/- PI ---
@@ -2048,8 +2110,8 @@ expr exec_fase(expr e)
     add_instr("F_DIV %s\n", M);                        // imag/real  (F_DIV X = X/acc)
     exec_atan(expr_make(2, 0));                         // atan(imag/real) -> acc
     add_instr("SET %s\n", t);
-    add_instr("LOD %s\n", M);
-    add_instr("F_LES 0.0\n");                          // imag < 0 ?
+    add_instr("LOD 0.0\n");
+    add_instr("F_LES %s\n", M);                        // imag < 0 ?  (0 > imag)
     add_instr("JIZ Lfa%db\n", n);
     add_instr("LOD %s\n", t);
     add_instr("F_ADD -3.14159265359\n");               // base - PI
@@ -2061,8 +2123,8 @@ expr exec_fase(expr e)
 
     // --- real >= 0 ---
     add_sinst(0, "@Lfa%da ", n);
-    add_instr("LOD 0.0\n");
-    add_instr("F_LES %s\n", R);                        // real > 0 ?
+    add_instr("LOD %s\n", R);
+    add_instr("F_LES 0.0\n");                          // real > 0 ?
     add_instr("JIZ Lfa%dc\n", n);
     add_instr("LOD %s\n", R);
     add_instr("F_DIV %s\n", M);                        // imag/real
@@ -2071,14 +2133,14 @@ expr exec_fase(expr e)
 
     // --- real == 0 : +/- PI/2 (0 if imag == 0) ---
     add_sinst(0, "@Lfa%dc ", n);
-    add_instr("LOD 0.0\n");
-    add_instr("F_LES %s\n", M);                        // imag > 0 ?
+    add_instr("LOD %s\n", M);
+    add_instr("F_LES 0.0\n");                          // imag > 0 ?
     add_instr("JIZ Lfa%dd\n", n);
     add_instr("LOD 1.57079632679\n");                  // +PI/2
     add_instr("JMP Lfa%dz\n", n);
     add_sinst(0, "@Lfa%dd ", n);
-    add_instr("LOD %s\n", M);
-    add_instr("F_LES 0.0\n");                          // imag < 0 ?
+    add_instr("LOD 0.0\n");
+    add_instr("F_LES %s\n", M);                        // imag < 0 ?  (0 > imag)
     add_instr("JIZ Lfa%de\n", n);
     add_instr("LOD -1.57079632679\n");                 // -PI/2
     add_instr("JMP Lfa%dz\n", n);

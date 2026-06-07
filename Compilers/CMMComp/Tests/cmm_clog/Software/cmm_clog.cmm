@@ -1,0 +1,27 @@
+#PRNAME cmm_clog
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Complex logarithm log(a+bi) = 1/2*ln(a^2+b^2) + i*fase(z), composed from the
+// real log and the existing fase (4-quadrant atan2). Exercises const / memory /
+// acc argument forms. Parts scaled x1000.
+//   log(1+0i)=0          -> 0, 0
+//   log(0+1i)=i*pi/2     -> 0, 1570
+//   log(-1+0i)=i*pi      -> 0, 3141   (real<0 phase branch)
+//   log(3+4i)=ln5+i*atan(4/3) -> 1609, 927   (memory)
+//   log(1+2i + 2+2i)=log(3+4i) -> 1609, 927   (acc)
+void main() {
+    comp z; comp w; comp c;
+    while (1) {
+        c = log(1.0+0.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        c = log(0.0+1.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        c = log(-1.0+0.0i);                           fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 3.0+4.0i;          c = log(z);            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 1.0+2.0i;  w = 2.0+2.0i;  c = log(z + w); fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+    }
+}

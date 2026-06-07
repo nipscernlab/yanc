@@ -14,15 +14,15 @@ LOD 1.000000
 SET main_c
 LOD 2.000000
 SET main_c_i
-LOD main_c
-F_LES 0.0
+LOD 0.0
+F_LES main_c
 JIZ Lfa1a
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 SET fase_t
-LOD main_c_i
-F_LES 0.0
+LOD 0.0
+F_LES main_c_i
 JIZ Lfa1b
 LOD fase_t
 F_ADD -3.14159265359
@@ -30,20 +30,20 @@ JMP Lfa1z
 @Lfa1b LOD fase_t
 F_ADD 3.14159265359
 JMP Lfa1z
-@Lfa1a LOD 0.0
-F_LES main_c
+@Lfa1a LOD main_c
+F_LES 0.0
 JIZ Lfa1c
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 JMP Lfa1z
-@Lfa1c LOD 0.0
-F_LES main_c_i
+@Lfa1c LOD main_c_i
+F_LES 0.0
 JIZ Lfa1d
 LOD 1.57079632679
 JMP Lfa1z
-@Lfa1d LOD main_c_i
-F_LES 0.0
+@Lfa1d LOD 0.0
+F_LES main_c_i
 JIZ Lfa1e
 LOD -1.57079632679
 JMP Lfa1z
@@ -55,15 +55,15 @@ LOD -1.000000
 SET main_c
 LOD 2.000000
 SET main_c_i
-LOD main_c
-F_LES 0.0
+LOD 0.0
+F_LES main_c
 JIZ Lfa2a
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 SET fase_t
-LOD main_c_i
-F_LES 0.0
+LOD 0.0
+F_LES main_c_i
 JIZ Lfa2b
 LOD fase_t
 F_ADD -3.14159265359
@@ -71,20 +71,20 @@ JMP Lfa2z
 @Lfa2b LOD fase_t
 F_ADD 3.14159265359
 JMP Lfa2z
-@Lfa2a LOD 0.0
-F_LES main_c
+@Lfa2a LOD main_c
+F_LES 0.0
 JIZ Lfa2c
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 JMP Lfa2z
-@Lfa2c LOD 0.0
-F_LES main_c_i
+@Lfa2c LOD main_c_i
+F_LES 0.0
 JIZ Lfa2d
 LOD 1.57079632679
 JMP Lfa2z
-@Lfa2d LOD main_c_i
-F_LES 0.0
+@Lfa2d LOD 0.0
+F_LES main_c_i
 JIZ Lfa2e
 LOD -1.57079632679
 JMP Lfa2z
@@ -96,15 +96,15 @@ LOD -1.000000
 SET main_c
 LOD -2.000000
 SET main_c_i
-LOD main_c
-F_LES 0.0
+LOD 0.0
+F_LES main_c
 JIZ Lfa3a
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 SET fase_t
-LOD main_c_i
-F_LES 0.0
+LOD 0.0
+F_LES main_c_i
 JIZ Lfa3b
 LOD fase_t
 F_ADD -3.14159265359
@@ -112,20 +112,20 @@ JMP Lfa3z
 @Lfa3b LOD fase_t
 F_ADD 3.14159265359
 JMP Lfa3z
-@Lfa3a LOD 0.0
-F_LES main_c
+@Lfa3a LOD main_c
+F_LES 0.0
 JIZ Lfa3c
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 JMP Lfa3z
-@Lfa3c LOD 0.0
-F_LES main_c_i
+@Lfa3c LOD main_c_i
+F_LES 0.0
 JIZ Lfa3d
 LOD 1.57079632679
 JMP Lfa3z
-@Lfa3d LOD main_c_i
-F_LES 0.0
+@Lfa3d LOD 0.0
+F_LES main_c_i
 JIZ Lfa3e
 LOD -1.57079632679
 JMP Lfa3z
@@ -137,15 +137,15 @@ LOD 1.000000
 SET main_c
 LOD -2.000000
 SET main_c_i
-LOD main_c
-F_LES 0.0
+LOD 0.0
+F_LES main_c
 JIZ Lfa4a
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 SET fase_t
-LOD main_c_i
-F_LES 0.0
+LOD 0.0
+F_LES main_c_i
 JIZ Lfa4b
 LOD fase_t
 F_ADD -3.14159265359
@@ -153,20 +153,20 @@ JMP Lfa4z
 @Lfa4b LOD fase_t
 F_ADD 3.14159265359
 JMP Lfa4z
-@Lfa4a LOD 0.0
-F_LES main_c
+@Lfa4a LOD main_c
+F_LES 0.0
 JIZ Lfa4c
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 JMP Lfa4z
-@Lfa4c LOD 0.0
-F_LES main_c_i
+@Lfa4c LOD main_c_i
+F_LES 0.0
 JIZ Lfa4d
 LOD 1.57079632679
 JMP Lfa4z
-@Lfa4d LOD main_c_i
-F_LES 0.0
+@Lfa4d LOD 0.0
+F_LES main_c_i
 JIZ Lfa4e
 LOD -1.57079632679
 JMP Lfa4z
@@ -178,15 +178,15 @@ LOD 2.000000
 SET main_c
 LOD 0.000000
 SET main_c_i
-LOD main_c
-F_LES 0.0
+LOD 0.0
+F_LES main_c
 JIZ Lfa5a
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 SET fase_t
-LOD main_c_i
-F_LES 0.0
+LOD 0.0
+F_LES main_c_i
 JIZ Lfa5b
 LOD fase_t
 F_ADD -3.14159265359
@@ -194,20 +194,20 @@ JMP Lfa5z
 @Lfa5b LOD fase_t
 F_ADD 3.14159265359
 JMP Lfa5z
-@Lfa5a LOD 0.0
-F_LES main_c
+@Lfa5a LOD main_c
+F_LES 0.0
 JIZ Lfa5c
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 JMP Lfa5z
-@Lfa5c LOD 0.0
-F_LES main_c_i
+@Lfa5c LOD main_c_i
+F_LES 0.0
 JIZ Lfa5d
 LOD 1.57079632679
 JMP Lfa5z
-@Lfa5d LOD main_c_i
-F_LES 0.0
+@Lfa5d LOD 0.0
+F_LES main_c_i
 JIZ Lfa5e
 LOD -1.57079632679
 JMP Lfa5z
@@ -219,15 +219,15 @@ LOD -2.000000
 SET main_c
 LOD 0.000000
 SET main_c_i
-LOD main_c
-F_LES 0.0
+LOD 0.0
+F_LES main_c
 JIZ Lfa6a
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 SET fase_t
-LOD main_c_i
-F_LES 0.0
+LOD 0.0
+F_LES main_c_i
 JIZ Lfa6b
 LOD fase_t
 F_ADD -3.14159265359
@@ -235,20 +235,20 @@ JMP Lfa6z
 @Lfa6b LOD fase_t
 F_ADD 3.14159265359
 JMP Lfa6z
-@Lfa6a LOD 0.0
-F_LES main_c
+@Lfa6a LOD main_c
+F_LES 0.0
 JIZ Lfa6c
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 JMP Lfa6z
-@Lfa6c LOD 0.0
-F_LES main_c_i
+@Lfa6c LOD main_c_i
+F_LES 0.0
 JIZ Lfa6d
 LOD 1.57079632679
 JMP Lfa6z
-@Lfa6d LOD main_c_i
-F_LES 0.0
+@Lfa6d LOD 0.0
+F_LES main_c_i
 JIZ Lfa6e
 LOD -1.57079632679
 JMP Lfa6z
@@ -260,15 +260,15 @@ LOD 0.000000
 SET main_c
 LOD 2.000000
 SET main_c_i
-LOD main_c
-F_LES 0.0
+LOD 0.0
+F_LES main_c
 JIZ Lfa7a
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 SET fase_t
-LOD main_c_i
-F_LES 0.0
+LOD 0.0
+F_LES main_c_i
 JIZ Lfa7b
 LOD fase_t
 F_ADD -3.14159265359
@@ -276,20 +276,20 @@ JMP Lfa7z
 @Lfa7b LOD fase_t
 F_ADD 3.14159265359
 JMP Lfa7z
-@Lfa7a LOD 0.0
-F_LES main_c
+@Lfa7a LOD main_c
+F_LES 0.0
 JIZ Lfa7c
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 JMP Lfa7z
-@Lfa7c LOD 0.0
-F_LES main_c_i
+@Lfa7c LOD main_c_i
+F_LES 0.0
 JIZ Lfa7d
 LOD 1.57079632679
 JMP Lfa7z
-@Lfa7d LOD main_c_i
-F_LES 0.0
+@Lfa7d LOD 0.0
+F_LES main_c_i
 JIZ Lfa7e
 LOD -1.57079632679
 JMP Lfa7z
@@ -301,15 +301,15 @@ LOD 0.000000
 SET main_c
 LOD -2.000000
 SET main_c_i
-LOD main_c
-F_LES 0.0
+LOD 0.0
+F_LES main_c
 JIZ Lfa8a
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 SET fase_t
-LOD main_c_i
-F_LES 0.0
+LOD 0.0
+F_LES main_c_i
 JIZ Lfa8b
 LOD fase_t
 F_ADD -3.14159265359
@@ -317,20 +317,20 @@ JMP Lfa8z
 @Lfa8b LOD fase_t
 F_ADD 3.14159265359
 JMP Lfa8z
-@Lfa8a LOD 0.0
-F_LES main_c
+@Lfa8a LOD main_c
+F_LES 0.0
 JIZ Lfa8c
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 JMP Lfa8z
-@Lfa8c LOD 0.0
-F_LES main_c_i
+@Lfa8c LOD main_c_i
+F_LES 0.0
 JIZ Lfa8d
 LOD 1.57079632679
 JMP Lfa8z
-@Lfa8d LOD main_c_i
-F_LES 0.0
+@Lfa8d LOD 0.0
+F_LES main_c_i
 JIZ Lfa8e
 LOD -1.57079632679
 JMP Lfa8z
@@ -342,15 +342,15 @@ LOD 0.000000
 SET main_c
 LOD 0.000000
 SET main_c_i
-LOD main_c
-F_LES 0.0
+LOD 0.0
+F_LES main_c
 JIZ Lfa9a
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 SET fase_t
-LOD main_c_i
-F_LES 0.0
+LOD 0.0
+F_LES main_c_i
 JIZ Lfa9b
 LOD fase_t
 F_ADD -3.14159265359
@@ -358,20 +358,20 @@ JMP Lfa9z
 @Lfa9b LOD fase_t
 F_ADD 3.14159265359
 JMP Lfa9z
-@Lfa9a LOD 0.0
-F_LES main_c
+@Lfa9a LOD main_c
+F_LES 0.0
 JIZ Lfa9c
 LOD main_c
 F_DIV main_c_i
 CAL float_atan
 JMP Lfa9z
-@Lfa9c LOD 0.0
-F_LES main_c_i
+@Lfa9c LOD main_c_i
+F_LES 0.0
 JIZ Lfa9d
 LOD 1.57079632679
 JMP Lfa9z
-@Lfa9d LOD main_c_i
-F_LES 0.0
+@Lfa9d LOD 0.0
+F_LES main_c_i
 JIZ Lfa9e
 LOD -1.57079632679
 JMP Lfa9z
