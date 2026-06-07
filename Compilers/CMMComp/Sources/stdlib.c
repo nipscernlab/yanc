@@ -1112,14 +1112,105 @@ expr exec_atan(expr e)
     // check whether et is a variable
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
-    // check whether it is comp
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // complex argument: atan(a+bi) =
+    //   Re = 1/2 * atan2(2a, 1 - a² - b²)                          (uses fase)
+    //   Im = 1/4 * ln( (a²+(b+1)²) / (a²+(b-1)²) )                 (uses real log)
+    // Mirrors the exec_exp/exec_log comp branch (a/b extraction + comp-in-acc
+    // assembly). atan2 is built by reconstructing the comp (1-a²-b²) + (2a)i in
+    // the acc and calling exec_fase.
+    // ------------------------------------------------------------------------
+    if (e.type > 2)
+    {
+        expr etr, eti;                  // real (a) and imag (b) parts
+        const char *A, *B;
+        int pre = 0;
+
+        if (e.type == 5)                            // comp constant
+        {
+            get_cmp_cst(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else if (e.id != 0)                         // comp in memory
+        {
+            get_cmp_ets(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else                                        // comp in acc (acc=imag, stack=real)
+        {
+            int ib = exec_id("catan_b"), ia = exec_id("catan_a");
+            add_instr("SET_P %s\n", v_table[ib].name);  // catan_b = imag; POP -> acc = real
+            add_instr("SET   %s\n", v_table[ia].name);  // catan_a = real
+            A = v_table[ia].name; B = v_table[ib].name;
+        }
+
+        const char *A2  = v_table[exec_id("catan_a2" )].name;   // a²
+        const char *B2  = v_table[exec_id("catan_b2" )].name;   // b²
+        const char *WR  = v_table[exec_id("catan_wr" )].name;   // 1 - a² - b²
+        const char *WI  = v_table[exec_id("catan_wi" )].name;   // 2a
+        const char *BP  = v_table[exec_id("catan_bp" )].name;   // b+1
+        const char *BM  = v_table[exec_id("catan_bm" )].name;   // b-1
+        const char *NUM = v_table[exec_id("catan_num")].name;   // a²+(b+1)²
+        const char *DEN = v_table[exec_id("catan_den")].name;   // a²+(b-1)²
+        const char *RE  = v_table[exec_id("catan_re" )].name;   // result real
+        const char *IM  = v_table[exec_id("catan_im" )].name;   // result imag
+
+        // a², b²
+        add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
+        add_instr("F_MLT %s\n", A);                      // a²
+        add_instr("SET %s\n", A2);
+        add_instr("LOD %s\n", B);
+        add_instr("F_MLT %s\n", B);                      // b²
+        add_instr("SET %s\n", B2);
+
+        // Re = 1/2 * atan2(2a, 1 - a² - b²)
+        add_instr("LOD %s\n", A2);
+        add_instr("F_ADD %s\n", B2);                     // a² + b²
+        add_instr("F_SU2 1.0\n");                        // 1 - (a²+b²)   (F_SU2 X = X - acc)
+        add_instr("SET %s\n", WR);
+        add_instr("LOD %s\n", A);
+        add_instr("F_MLT 2.0\n");                        // 2a
+        add_instr("SET %s\n", WI);
+        add_instr("LOD %s\n",   WR);                     // rebuild the comp wr + wi*i in the acc
+        add_instr("P_LOD %s\n", WI);                     // acc = wi(imag), stack = wr(real)
+        exec_fase(expr_make(3, 0));                      // atan2(2a, 1-a²-b²)
+        add_instr("F_MLT 0.5\n");
+        add_instr("SET %s\n", RE);
+
+        // Im = 1/4 * ln( (a²+(b+1)²) / (a²+(b-1)²) )
+        add_instr("LOD %s\n", B);
+        add_instr("F_ADD 1.0\n");                        // b+1
+        add_instr("SET %s\n", BP);
+        add_instr("F_MLT %s\n", BP);                     // (b+1)²
+        add_instr("F_ADD %s\n", A2);                     // a² + (b+1)²
+        add_instr("SET %s\n", NUM);
+        add_instr("LOD %s\n", B);
+        add_instr("F_ADD -1.0\n");                       // b-1
+        add_instr("SET %s\n", BM);
+        add_instr("F_MLT %s\n", BM);                     // (b-1)²
+        add_instr("F_ADD %s\n", A2);                     // a² + (b-1)²
+        add_instr("SET %s\n", DEN);
+        add_instr("LOD %s\n", DEN);
+        add_instr("F_DIV %s\n", NUM);                    // num/den   (F_DIV X = X/acc)
+        exec_log(expr_make(2, 0));                       // ln(num/den)
+        add_instr("F_MLT 0.25\n");
+        add_instr("SET %s\n", IM);
+
+        // assemble the complex result: real in acc, imag on the stack
+        add_instr("LOD %s\n",   RE);
+        add_instr("P_LOD %s\n", IM);
+
+        acc_ok = 1;
+        return expr_make(3, 0);
+    }
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------

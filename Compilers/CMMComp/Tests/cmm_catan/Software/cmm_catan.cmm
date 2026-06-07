@@ -1,0 +1,26 @@
+#PRNAME cmm_catan
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Complex arctangent atan(a+bi):
+//   Re = 1/2 * atan2(2a, 1 - a^2 - b^2)            (uses the fase builtin)
+//   Im = 1/4 * ln( (a^2+(b+1)^2) / (a^2+(b-1)^2) ) (uses the real log)
+// Exercises const / memory / acc argument forms. Parts scaled x1000.
+//   atan(1+0i)=pi/4   -> 785, 0
+//   atan(0+0.5i)=i*atanh(0.5) -> 0, 549
+//   atan(1+1i)=1.0172+0.4024i -> 1017, 402   (memory)
+//   atan(0.5+0.5i + 0.5+0.5i)=atan(1+1i) -> 1017, 402   (acc)
+void main() {
+    comp z; comp w; comp c;
+    while (1) {
+        c = atan(1.0+0.0i);                           fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        c = atan(0.0+0.5i);                           fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 1.0+1.0i;          c = atan(z);           fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 0.5+0.5i;  w = 0.5+0.5i;  c = atan(z + w); fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+    }
+}
