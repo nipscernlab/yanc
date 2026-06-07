@@ -1,0 +1,28 @@
+#PRNAME cmm_cexp
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Complex exponential exp(a+bi) = exp(a)*(cos b + i*sin b) (Euler), composed from
+// the real exp/sin/cos. Exercises the three argument forms (memory / const / acc),
+// like cmm_comp_sqrt. Parts scaled x1000 (fout truncates). The ~1.6e-6 sin/cos
+// macro error shows as 999 where the true value is 1.
+//   exp(1+0i)=e        -> 2718, 0
+//   exp(0+(pi/2)i)=i   -> ~0, ~1000   (const form)
+//   exp(0+pi*i)=-1     -> ~-1000, ~0  (Euler)
+//   exp(1+(pi/2)i)=e*i -> ~0, 2718    (acc form, exp(z+w))
+//   exp(0+0i)=1        -> ~1000, 0
+void main() {
+    comp z; comp w; comp c;
+    while (1) {
+        z = 1.0+0.0i;                      c = exp(z);      fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        c = exp(0.0+1.5707963i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        c = exp(0.0+3.1415927i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 1.0+1.0i;  w = 0.0+0.5707963i; c = exp(z + w);  fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 0.0+0.0i;                      c = exp(z);      fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+    }
+}

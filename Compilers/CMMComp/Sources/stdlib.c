@@ -691,14 +691,72 @@ expr exec_exp(expr e)
     // check whether et is a variable
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
-    // check whether it is comp (complex exp is a later step)
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_EXP_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // complex argument: exp(a+bi) = exp(a)*(cos b + i*sin b), composed from the
+    // real exp/sin/cos. Mirrors the comp branch of exec_sqrt: same a/b extraction
+    // (const/mem/acc) and the same comp-in-acc result assembly (real in acc, imag
+    // pushed on the stack).
+    // ------------------------------------------------------------------------
+    if (e.type > 2)
+    {
+        expr etr, eti;                  // real (a) and imag (b) parts
+        const char *A, *B;
+        int pre = 0;                    // a pending acc value must be pushed first
+
+        if (e.type == 5)                            // comp constant
+        {
+            get_cmp_cst(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else if (e.id != 0)                         // comp in memory
+        {
+            get_cmp_ets(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else                                        // comp in acc (acc=imag, stack=real)
+        {
+            int ib = exec_id("cexp_b"), ia = exec_id("cexp_a");
+            add_instr("SET_P %s\n", v_table[ib].name);  // cexp_b = imag; POP -> acc = real
+            add_instr("SET   %s\n", v_table[ia].name);  // cexp_a = real
+            A = v_table[ia].name; B = v_table[ib].name;
+        }
+
+        const char *EA = v_table[exec_id("cexp_ea")].name;   // exp(a)
+        const char *RE = v_table[exec_id("cexp_re")].name;   // result real part
+        const char *IM = v_table[exec_id("cexp_im")].name;   // result imag part
+
+        // ea = exp(a)
+        add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
+        exec_exp(expr_make(2, 0));                       // acc = exp(a)
+        add_instr("SET %s\n", EA);
+
+        // im = exp(a) * sin(b)
+        add_instr("LOD %s\n", B);                        // acc = b
+        exec_sin(expr_make(2, 0));                       // acc = sin(b)
+        add_instr("F_MLT %s\n", EA);                     // acc = exp(a)*sin(b)
+        add_instr("SET %s\n", IM);
+
+        // re = exp(a) * cos(b)
+        add_instr("LOD %s\n", B);                        // acc = b
+        exec_cos(expr_make(2, 0));                       // acc = cos(b)
+        add_instr("F_MLT %s\n", EA);                     // acc = exp(a)*cos(b)
+        add_instr("SET %s\n", RE);
+
+        // assemble the complex result: real in acc, imag on the stack
+        add_instr("LOD %s\n",   RE);                     // acc = re
+        add_instr("P_LOD %s\n", IM);                     // push re; acc = im -> comp in acc
+
+        acc_ok = 1;
+        return expr_make(3, 0);
+    }
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
