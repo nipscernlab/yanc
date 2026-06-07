@@ -1,0 +1,27 @@
+#PRNAME cmm_csincos
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+// Complex sine/cosine:
+//   sin(a+bi) = sin a*cosh b + i*cos a*sinh b
+//   cos(a+bi) = cos a*cosh b - i*sin a*sinh b
+// Fast form: one exp gives e^b, e^-b = 1/e^b, so cosh/sinh from a single
+// exponential. Exercises const / memory / acc argument forms. Parts x1000.
+//   sin(0+1i)=i*sinh1 -> 0, 1175      cos(0+1i)=cosh1 -> 1543, 0   (const)
+//   sin(1+1i) -> 1298, 634            cos(1+1i) -> 833, -988       (memory)
+//   sin(0.5+0.5i + 0.5+0.5i)=sin(1+1i) -> 1298, 634               (acc)
+void main() {
+    comp z; comp w; comp c;
+    while (1) {
+        c = sin(0.0+1.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        c = cos(0.0+1.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 1.0+1.0i;         c = sin(z);             fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 1.0+1.0i;         c = cos(z);             fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+        z = 0.5+0.5i;  w = 0.5+0.5i;  c = sin(z + w); fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+    }
+}

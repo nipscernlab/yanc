@@ -1120,14 +1120,79 @@ expr exec_sin(expr e)
     // check whether et is a variable
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
-    // check whether it is comp
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // complex argument: sin(a+bi) = sin a*cosh b + i*cos a*sinh b. Fast form --
+    // ONE exp gives e^b; e^-b = 1/e^b (reciprocal), so cosh/sinh come from a
+    // single exponential instead of four exec_cosh/exec_sinh calls. Mirrors the
+    // exec_exp/exec_sqrt comp branch (a/b extraction + comp-in-acc assembly).
+    // ------------------------------------------------------------------------
+    if (e.type > 2)
+    {
+        expr etr, eti;                  // real (a) and imag (b) parts
+        const char *A, *B;
+        int pre = 0;
+
+        if (e.type == 5)                            // comp constant
+        {
+            get_cmp_cst(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else if (e.id != 0)                         // comp in memory
+        {
+            get_cmp_ets(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else                                        // comp in acc (acc=imag, stack=real)
+        {
+            int ib = exec_id("csin_b"), ia = exec_id("csin_a");
+            add_instr("SET_P %s\n", v_table[ib].name);  // csin_b = imag; POP -> acc = real
+            add_instr("SET   %s\n", v_table[ia].name);  // csin_a = real
+            A = v_table[ia].name; B = v_table[ib].name;
+        }
+
+        const char *EB  = v_table[exec_id("csin_eb" )].name;   // e^b
+        const char *EMB = v_table[exec_id("csin_emb")].name;   // e^-b
+        const char *CHB = v_table[exec_id("csin_chb")].name;   // cosh b
+        const char *SHB = v_table[exec_id("csin_shb")].name;   // sinh b
+        const char *SA  = v_table[exec_id("csin_sa" )].name;   // sin a
+        const char *CA  = v_table[exec_id("csin_ca" )].name;   // cos a
+        const char *RE  = v_table[exec_id("csin_re" )].name;   // result real
+        const char *IM  = v_table[exec_id("csin_im" )].name;   // result imag
+
+        // e^b (single exponential), e^-b = 1/e^b
+        add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
+        exec_exp(expr_make(2, 0));                       // acc = e^b
+        add_instr("SET %s\n", EB);
+        add_instr("F_DIV 1.0\n");                        // 1.0/e^b = e^-b  (F_DIV X = X/acc)
+        add_instr("SET %s\n", EMB);
+
+        // cosh b = (e^b + e^-b)/2 ; sinh b = (e^b - e^-b)/2
+        add_instr("LOD %s\n", EB); add_instr("F_ADD %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);
+        add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
+
+        // sin a, cos a
+        add_instr("LOD %s\n", A); exec_sin(expr_make(2, 0)); add_instr("SET %s\n", SA);
+        add_instr("LOD %s\n", A); exec_cos(expr_make(2, 0)); add_instr("SET %s\n", CA);
+
+        // re = sin a * cosh b ; im = cos a * sinh b
+        add_instr("LOD %s\n", SA); add_instr("F_MLT %s\n", CHB); add_instr("SET %s\n", RE);
+        add_instr("LOD %s\n", CA); add_instr("F_MLT %s\n", SHB); add_instr("SET %s\n", IM);
+
+        // assemble the complex result: real in acc, imag on the stack
+        add_instr("LOD %s\n",   RE);
+        add_instr("P_LOD %s\n", IM);
+
+        acc_ok = 1;
+        return expr_make(3, 0);
+    }
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
@@ -1250,14 +1315,79 @@ expr exec_cos(expr e)
     // check whether et is a variable
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
 
-    // check whether it is comp
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // complex argument: cos(a+bi) = cos a*cosh b - i*sin a*sinh b. Fast form --
+    // ONE exp gives e^b; e^-b = 1/e^b (reciprocal), so cosh/sinh come from a
+    // single exponential. Mirrors the exec_sin comp branch; only the real/imag
+    // assignment differs (re uses cos a, im is negated).
+    // ------------------------------------------------------------------------
+    if (e.type > 2)
+    {
+        expr etr, eti;                  // real (a) and imag (b) parts
+        const char *A, *B;
+        int pre = 0;
+
+        if (e.type == 5)                            // comp constant
+        {
+            get_cmp_cst(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else if (e.id != 0)                         // comp in memory
+        {
+            get_cmp_ets(e, &etr, &eti);
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+        }
+        else                                        // comp in acc (acc=imag, stack=real)
+        {
+            int ib = exec_id("ccos_b"), ia = exec_id("ccos_a");
+            add_instr("SET_P %s\n", v_table[ib].name);  // ccos_b = imag; POP -> acc = real
+            add_instr("SET   %s\n", v_table[ia].name);  // ccos_a = real
+            A = v_table[ia].name; B = v_table[ib].name;
+        }
+
+        const char *EB  = v_table[exec_id("ccos_eb" )].name;   // e^b
+        const char *EMB = v_table[exec_id("ccos_emb")].name;   // e^-b
+        const char *CHB = v_table[exec_id("ccos_chb")].name;   // cosh b
+        const char *SHB = v_table[exec_id("ccos_shb")].name;   // sinh b
+        const char *SA  = v_table[exec_id("ccos_sa" )].name;   // sin a
+        const char *CA  = v_table[exec_id("ccos_ca" )].name;   // cos a
+        const char *RE  = v_table[exec_id("ccos_re" )].name;   // result real
+        const char *IM  = v_table[exec_id("ccos_im" )].name;   // result imag
+
+        // e^b (single exponential), e^-b = 1/e^b
+        add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
+        exec_exp(expr_make(2, 0));                       // acc = e^b
+        add_instr("SET %s\n", EB);
+        add_instr("F_DIV 1.0\n");                        // 1.0/e^b = e^-b  (F_DIV X = X/acc)
+        add_instr("SET %s\n", EMB);
+
+        // cosh b = (e^b + e^-b)/2 ; sinh b = (e^b - e^-b)/2
+        add_instr("LOD %s\n", EB); add_instr("F_ADD %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);
+        add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
+
+        // sin a, cos a
+        add_instr("LOD %s\n", A); exec_sin(expr_make(2, 0)); add_instr("SET %s\n", SA);
+        add_instr("LOD %s\n", A); exec_cos(expr_make(2, 0)); add_instr("SET %s\n", CA);
+
+        // re = cos a * cosh b ; im = -(sin a * sinh b)
+        add_instr("LOD %s\n", CA); add_instr("F_MLT %s\n", CHB); add_instr("SET %s\n", RE);
+        add_instr("LOD %s\n", SA); add_instr("F_MLT %s\n", SHB); add_instr("F_NEG\n"); add_instr("SET %s\n", IM);
+
+        // assemble the complex result: real in acc, imag on the stack
+        add_instr("LOD %s\n",   RE);
+        add_instr("P_LOD %s\n", IM);
+
+        acc_ok = 1;
+        return expr_make(3, 0);
+    }
 
     // ------------------------------------------------------------------------
     // prepare local variables ------------------------------------------------
