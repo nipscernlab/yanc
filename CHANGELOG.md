@@ -65,6 +65,15 @@ tags consumed by Aurora.
   `LIN_M` / `F2I_M` / `I2F_M`) instead of `LOD x; <op>`, one instruction less
   each. Operands that aren't a plain memory variable (members, references, frame
   locals, expressions) keep the `LOD; <op>` path. Regress: 51/51 cpp.
+- **Post-emit peephole fuses `PSH` + load (`cppcomp`)** — cppcomp now buffers
+  emitted instructions and runs a peephole before writing them (the
+  instruction-selection layer it lacked; cmmcomp tracks the accumulator inline).
+  A bare `PSH` immediately followed by a load-class op, with no label between
+  them, fuses into the op's `P_` / `PF_` variant that pushes the accumulator as
+  part of the same instruction: `PSH; LOD x` → `P_LOD x`, `PSH; NEG_M x` →
+  `P_NEG_M x`, `PSH; F2I_M x` → `P_F2I_M x`, etc. Verbatim inline asm is never
+  fused, and the `pc_<proc>_mem.txt` line table is regenerated from the fused
+  stream so `num_ins` stays exact. Regress: 51/51 cpp.
 
 ## [v5.1] – 2026-06-07
 

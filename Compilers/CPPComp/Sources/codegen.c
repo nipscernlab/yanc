@@ -229,15 +229,38 @@ static void emit_pc_line(int v)
     fprintf(f_line, "%s\n", b);
 }
 
+// Emitted instructions are buffered (one entry per asm line) so a post-emit
+// peephole can fuse adjacent ops before they reach the file. nofuse marks a
+// line the peephole must leave alone (verbatim inline asm).
+typedef struct { char *text; int line; int nofuse; } ibuf_e;
+static ibuf_e *g_ibuf = NULL;
+static int     g_ibuf_n = 0, g_ibuf_cap = 0;
+
+static void ibuf_push(char *text, int line, int nofuse)
+{
+    if (g_ibuf_n == g_ibuf_cap) {
+        g_ibuf_cap = g_ibuf_cap ? g_ibuf_cap * 2 : 256;
+        g_ibuf = realloc(g_ibuf, (size_t)g_ibuf_cap * sizeof(ibuf_e));
+    }
+    g_ibuf[g_ibuf_n].text = text; g_ibuf[g_ibuf_n].line = line;
+    g_ibuf[g_ibuf_n].nofuse = nofuse; g_ibuf_n++;
+}
+
+// buffer one emitted asm line (formatted); flushed after the peephole runs.
 static void emit(const char *fmt, ...)
 {
-    // directives (#...) are not instructions: no ins_count bump, no pc line.
-    if (fmt[0] != '#') { ins_count++; emit_pc_line(cg_line); }
-    va_list ap; va_start(ap, fmt);
-    vfprintf(out_f, fmt, ap);
+    va_list ap, ap2;
+    va_start(ap, fmt); va_copy(ap2, ap);
+    int n = vsnprintf(NULL, 0, fmt, ap);
     va_end(ap);
-    fputc('\n', out_f);
+    char *s = malloc((size_t)n + 1);
+    vsnprintf(s, (size_t)n + 1, fmt, ap2);
+    va_end(ap2);
+    ibuf_push(s, cg_line, 0);
 }
+
+// like emit but the line is verbatim user inline asm: never peephole-fused.
+static void emit_verbatim(const char *text) { ibuf_push(strdup(text), cg_line, 1); }
 
 static char *fresh_label(const char *prefix)
 {
@@ -2212,7 +2235,7 @@ static void gen_stmt_inner(stmt *s)
                     char buf[512];
                     if (n >= (int)sizeof(buf)) n = sizeof(buf) - 1;
                     memcpy(buf, start, n); buf[n] = 0;
-                    emit("%s", buf);     // "%s" -> no format-injection from user text
+                    emit_verbatim(buf);  // user inline asm: verbatim, never fused
                 }
                 if (*p == 0) break;
                 start = p + 1;
@@ -2890,6 +2913,71 @@ static void instantiate_ctmpl_methods(unit *u)
     }
 }
 
+// ---- post-emit peephole ----------------------------------------------------
+// A bare PSH immediately followed by a load-class op (no label between them →
+// they always execute as a pair) fuses into the op's P_ / PF_ variant, which
+// pushes the accumulator as part of the same instruction. The list below is
+// exactly the ops that have such a fused opcode in the ISA.
+//   PSH; LOD x      -> P_LOD x        PSH; NEG_M x   -> P_NEG_M x
+//   PSH; F_NEG_M x  -> PF_NEG_M x     PSH; F2I_M x   -> P_F2I_M x   ...
+// Returns the fused text for the instruction that follows a PSH, or NULL.
+static char *fuse_after_psh(const char *t)
+{
+    static const char *fusable[] = {
+        "LOD","LOD_V","NEG_M","F_NEG_M","ABS_M","F_ABS_M","PST_M","F_PST_M",
+        "NRM_M","I2F_M","F2I_M","INV_M","LIN_M","INN","F_INN", NULL };
+    size_t mlen = strcspn(t, " ");           // first token = mnemonic
+    char mnem[16];
+    if (mlen == 0 || mlen >= sizeof(mnem)) return NULL;
+    memcpy(mnem, t, mlen); mnem[mlen] = 0;
+    int ok = 0;
+    for (int i = 0; fusable[i]; i++) if (!strcmp(mnem, fusable[i])) { ok = 1; break; }
+    if (!ok) return NULL;
+    // float ops (F_xxx) take the PF_ prefix (P + F_xxx); the rest take P_.
+    const char *pfx = (mnem[0] == 'F' && mnem[1] == '_') ? "P" : "P_";
+    const char *rest = t + mlen;             // operand part incl. leading space
+    size_t n = strlen(pfx) + mlen + strlen(rest) + 1;
+    char *r = malloc(n);
+    snprintf(r, n, "%s%s%s", pfx, mnem, rest);
+    return r;
+}
+
+static void peephole(void)
+{
+    int w = 0;
+    for (int r = 0; r < g_ibuf_n; r++) {
+        if (w > 0 && !g_ibuf[w-1].nofuse && !g_ibuf[r].nofuse
+            && !strcmp(g_ibuf[w-1].text, "PSH") && g_ibuf[r].text[0] != '@') {
+            char *fused = fuse_after_psh(g_ibuf[r].text);
+            if (fused) {                              // PSH + load -> P_<load>
+                free(g_ibuf[w-1].text);
+                g_ibuf[w-1].text = fused;
+                g_ibuf[w-1].line = g_ibuf[r].line;    // map to the load's source line
+                free(g_ibuf[r].text);
+                continue;                             // r folded into w-1
+            }
+        }
+        g_ibuf[w++] = g_ibuf[r];
+    }
+    g_ibuf_n = w;
+}
+
+// write the buffer to the .asm and the pc_<proc>_mem.txt (one 20-bit line per
+// instruction), setting the final ins_count. Run AFTER peephole().
+static void flush_ibuf(FILE *out)
+{
+    for (int i = 0; i < g_ibuf_n; i++) {
+        fputs(g_ibuf[i].text, out); fputc('\n', out);
+        if (g_ibuf[i].text[0] != '#') { ins_count++; emit_pc_line(g_ibuf[i].line); }
+    }
+}
+
+static void free_ibuf(void)
+{
+    for (int i = 0; i < g_ibuf_n; i++) free(g_ibuf[i].text);
+    free(g_ibuf); g_ibuf = NULL; g_ibuf_n = g_ibuf_cap = 0;
+}
+
 void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
 {
     out_f = out_file;
@@ -2980,6 +3068,12 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
     // template instances (also reached only via CAL); the loop bound grows as
     // emitting one instance discovers calls to further template instances
     for (int i = 0; i < g_n_inst; i++) emit_function(g_inst[i], u, 0);
+
+    // all instructions buffered: fuse, then write the .asm + pc_mem (ins_count
+    // is finalised here, after fusion, so num_ins matches the emitted program).
+    peephole();
+    flush_ibuf(out_file);
+    free_ibuf();
 
     if (f_line) { fclose(f_line); f_line = NULL; }
 
