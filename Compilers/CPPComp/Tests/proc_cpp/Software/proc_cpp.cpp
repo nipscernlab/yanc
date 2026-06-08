@@ -22,7 +22,23 @@ void main(void)
     int   sum  = a + g_count;   // main sum  1   -> 10
     float prod = b * g_gain;    // main prod 2   -> 3.75
 
+    // fixed-size arrays in a non-recursive function -> fixed data-memory
+    // addresses, so each element gets its own GTKWave mirror (data0000.. /
+    // coef0000..). cmm_log: "main data 1 4" and "main coef 2 3".
+    int   data[4];
+    float coef[3];
+
+    data[0] = a;                // 3
+    data[1] = sum;              // 10
+    data[2] = g_count;          // 7
+    data[3] = sum + a;          // 13
+
+    coef[0] = b;                // 1.5
+    coef[1] = prod;             // 3.75
+    coef[2] = g_gain;           // 2.5
+
     out(0, sum);          // 10
     out(0, (int)prod);    // 3  (out() sends an integer word; cast the float --
                           //     prod itself still shows as 3.75 in GTKWave)
+    out(0, data[3]);      // 13
 }
