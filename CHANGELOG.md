@@ -87,6 +87,10 @@ tags consumed by Aurora.
   no-op. This was pervasive — `int x = e; <use x>` emitted `<e>; SET x; LOD x;
   <use>` — and removing it shed ~470 instructions across the test suite (test50
   alone ~60). New peephole pass 0. Regress: 51/51 cpp.
+- **Dead `JMP` to the next line dropped (`cppcomp`)** — a bare `JMP L`
+  immediately followed by `@L` (exact label, not a prefix) just falls through,
+  so it is removed — e.g. the `JMP main` a helper-function-less program emits
+  right before `@main`. Regress: 51/51 cpp.
 
 ## [v5.1] – 2026-06-07
 

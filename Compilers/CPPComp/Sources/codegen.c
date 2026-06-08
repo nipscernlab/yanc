@@ -3005,6 +3005,18 @@ static void peephole(void)
     w = 0;
     for (int r = 0; r < g_ibuf_n; r++) {
         if (w > 0 && !g_ibuf[w-1].nofuse && !g_ibuf[r].nofuse) {
+            // a bare JMP to the label on the very next line just falls through:
+            // drop the JMP, keep the labelled line. (Exact label, not a prefix.)
+            if (!strncmp(g_ibuf[w-1].text, "JMP ", 4) && g_ibuf[r].text[0] == '@') {
+                const char *tgt = g_ibuf[w-1].text + 4;   // label after "JMP "
+                const char *lab = g_ibuf[r].text + 1;     // label after "@"
+                size_t tl = strlen(tgt);
+                if (!strncmp(tgt, lab, tl) && (lab[tl] == ' ' || lab[tl] == '\0')) {
+                    free(g_ibuf[w-1].text);
+                    g_ibuf[w-1] = g_ibuf[r];              // JMP dropped; label line takes its slot
+                    continue;
+                }
+            }
             // PSH followed by a load-class op -> the op's P_/PF_ variant
             if (!strcmp(g_ibuf[w-1].text, "PSH") && g_ibuf[r].text[0] != '@') {
                 char *fused = fuse_after_psh(g_ibuf[r].text);
