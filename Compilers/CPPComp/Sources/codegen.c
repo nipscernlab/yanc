@@ -1066,10 +1066,18 @@ static void gen_store(expr *lv, expr *val)
             type *bt = s->stype;
             int elem_sz = type_size_words(bt->base);
             if (elem_sz == 1) {
-                gen_expr(lv->b);              // index → acc
-                emit("PSH");
-                gen_expr_num(val, bt->base && bt->base->kind == TY_FLOAT);
-                emit("STI %s", s->asm_name);
+                int vf = bt->base && bt->base->kind == TY_FLOAT;
+                // constant index -> SET_V base k (offset baked in), no index
+                // compute / PSH / indirect STI.
+                if (lv->b->kind == E_INT_LIT && lv->b->ival >= 0) {
+                    gen_expr_num(val, vf);
+                    emit("SET_V %s %ld", s->asm_name, lv->b->ival);
+                } else {
+                    gen_expr(lv->b);              // index → acc
+                    emit("PSH");
+                    gen_expr_num(val, vf);
+                    emit("STI %s", s->asm_name);
+                }
                 return;
             }
         }
@@ -1193,8 +1201,14 @@ static void gen_expr(expr *e)
             && e->a->kind == E_IDENT) {
             sym *s = st_find(e->a->sval);
             if (s && s->kind != SK_PARAM) {
-                gen_expr(e->b);
-                emit("LDI %s", s->asm_name);
+                // constant index -> LOD_V base k (offset baked in) instead of
+                // computing the index and an indirect LDI.
+                if (e->b->kind == E_INT_LIT && e->b->ival >= 0)
+                    emit("LOD_V %s %ld", s->asm_name, e->b->ival);
+                else {
+                    gen_expr(e->b);
+                    emit("LDI %s", s->asm_name);
+                }
                 return;
             }
         }
