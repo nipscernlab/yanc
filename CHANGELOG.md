@@ -65,15 +65,19 @@ tags consumed by Aurora.
   `LIN_M` / `F2I_M` / `I2F_M`) instead of `LOD x; <op>`, one instruction less
   each. Operands that aren't a plain memory variable (members, references, frame
   locals, expressions) keep the `LOD; <op>` path. Regress: 51/51 cpp.
-- **Post-emit peephole fuses `PSH` + load (`cppcomp`)** — cppcomp now buffers
-  emitted instructions and runs a peephole before writing them (the
-  instruction-selection layer it lacked; cmmcomp tracks the accumulator inline).
-  A bare `PSH` immediately followed by a load-class op, with no label between
-  them, fuses into the op's `P_` / `PF_` variant that pushes the accumulator as
-  part of the same instruction: `PSH; LOD x` → `P_LOD x`, `PSH; NEG_M x` →
-  `P_NEG_M x`, `PSH; F2I_M x` → `P_F2I_M x`, etc. Verbatim inline asm is never
-  fused, and the `pc_<proc>_mem.txt` line table is regenerated from the fused
-  stream so `num_ins` stays exact. Regress: 51/51 cpp.
+- **Post-emit peephole (`cppcomp`)** — cppcomp now buffers emitted instructions
+  and runs a peephole before writing them (the instruction-selection layer it
+  lacked; cmmcomp tracks the accumulator inline). Two passes, no fusion across a
+  label or into verbatim inline asm, and the `pc_<proc>_mem.txt` line table is
+  regenerated from the fused stream so `num_ins` stays exact:
+    1. `LOD <var>; <unary>` → `<unary>_M <var>` — a unary acc op (NEG/ABS/PST/
+       NRM/I2F/F2I/INV/LIN and `F_` variants) after loading a *named* variable
+       reads it straight from memory. Literal loads (`LOD 5`) are left alone.
+    2. bare `PSH` + a load-class op → the op's `P_` / `PF_` variant that pushes
+       the accumulator as part of the same instruction (`PSH; LOD x` → `P_LOD x`,
+       `PSH; NEG_M x` → `P_NEG_M x`, ...).
+  Together they collapse e.g. `a - b` to `LOD a; P_NEG_M b; S_ADD` (3 instrs).
+  Regress: 51/51 cpp.
 
 ## [v5.1] – 2026-06-07
 

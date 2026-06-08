@@ -2942,9 +2942,50 @@ static char *fuse_after_psh(const char *t)
     return r;
 }
 
+// `LOD <name>` followed by a unary acc op (NEG/ABS/PST/NRM/I2F/F2I/INV/LIN and
+// their F_ variants) reads the operand straight from memory: <op>_M <name>.
+// ONLY a memory-NAME operand (not LOD_V, not a literal `LOD 5`) — the _M opcode
+// takes a data address, not a constant. Returns fused text, or NULL.
+static char *fuse_lod_unary(const char *lod, const char *un)
+{
+    if (strncmp(lod, "LOD ", 4) != 0) return NULL;     // not a plain LOD (excludes LOD_V)
+    const char *opnd = lod + 4;
+    if (!((opnd[0] >= 'a' && opnd[0] <= 'z') ||
+          (opnd[0] >= 'A' && opnd[0] <= 'Z') || opnd[0] == '_')) return NULL; // literal
+    static const struct { const char *acc, *mem; } u[] = {
+        {"NEG","NEG_M"},{"F_NEG","F_NEG_M"},{"ABS","ABS_M"},{"F_ABS","F_ABS_M"},
+        {"PST","PST_M"},{"F_PST","F_PST_M"},{"NRM","NRM_M"},{"I2F","I2F_M"},
+        {"F2I","F2I_M"},{"INV","INV_M"},{"LIN","LIN_M"}, {NULL,NULL} };
+    const char *mem = NULL;
+    for (int i = 0; u[i].acc; i++) if (!strcmp(un, u[i].acc)) { mem = u[i].mem; break; }
+    if (!mem) return NULL;
+    size_t n = strlen(mem) + 1 + strlen(opnd) + 1;
+    char *r = malloc(n);
+    snprintf(r, n, "%s %s", mem, opnd);
+    return r;
+}
+
 static void peephole(void)
 {
+    // pass 1: LOD <name>; <unary> -> <unary>_M <name>. Run first so the new _M
+    // op can then be picked up by the PSH pass below (PSH; NEG_M -> P_NEG_M).
     int w = 0;
+    for (int r = 0; r < g_ibuf_n; r++) {
+        if (w > 0 && !g_ibuf[w-1].nofuse && !g_ibuf[r].nofuse) {
+            char *fused = fuse_lod_unary(g_ibuf[w-1].text, g_ibuf[r].text);
+            if (fused) {
+                free(g_ibuf[w-1].text);
+                g_ibuf[w-1].text = fused;
+                g_ibuf[w-1].line = g_ibuf[r].line;
+                free(g_ibuf[r].text);
+                continue;
+            }
+        }
+        g_ibuf[w++] = g_ibuf[r];
+    }
+    g_ibuf_n = w;
+    // pass 2: PSH; <load> -> P_<load>
+    w = 0;
     for (int r = 0; r < g_ibuf_n; r++) {
         if (w > 0 && !g_ibuf[w-1].nofuse && !g_ibuf[r].nofuse
             && !strcmp(g_ibuf[w-1].text, "PSH") && g_ibuf[r].text[0] != '@') {
