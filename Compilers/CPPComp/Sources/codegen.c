@@ -1674,11 +1674,12 @@ static void gen_expr(expr *e)
                 if (e->n_args != 2) msg_error(e->line, "out(port,val) takes 2 args");
                 if (e->args[0]->kind != E_INT_LIT) msg_error(e->line, "out() port must be a literal int");
                 // the OUT port is an integer word: the hardware has no float
-                // output. Reject a float value so it is not silently shipped as
-                // a raw bit pattern; the caller must convert, e.g. out(p, (int)x).
+                // output, so a float value is shipped as its raw bit pattern --
+                // a wrong number. Warn (don't block; no implicit convert): the
+                // caller should cast, e.g. out(port, (int)x).
                 { type *vt = infer_type(e->args[1]);
                   if (vt && vt->kind == TY_FLOAT)
-                      msg_error(e->line, "out() sends an integer word; cast the float to int first, e.g. out(port, (int)x)"); }
+                      msg_warning(e->line, "out() sends an integer word; this float is output as its raw bit pattern (wrong value) -- cast to int, e.g. out(port, (int)x)"); }
                 gen_expr(e->args[1]);
                 emit("OUT %ld", e->args[0]->ival); return;
             }
