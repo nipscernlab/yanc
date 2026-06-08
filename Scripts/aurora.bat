@@ -142,7 +142,9 @@ xcopy %SRC_DIR%\Compilers\CPPComp\Includes Header /I /Q /Y
 
 :: Scripts/ is intentionally NOT copied: Aurora manages its own scripts
 :: (copy-components.js, download-*.js, proc2rtl.ys, ...). The yanc-side
-:: Scripts/ here holds dev tooling (aurora.bat, regress.sh, comp2gtkw.c)
-:: that doesn't belong in the deploy.
+:: Scripts/ here holds dev tooling (aurora.bat, regress.sh, comp2gtkw.c) and
+:: the standalone runner scripts (single_proc, multi_proc, single_proc_cpp;
+:: .bat + .sh) -- none of which belong in the deploy: Aurora drives the
+:: compile/simulate pipeline from its own UI, not from these runners.
 
 cd %SRC_DIR%
