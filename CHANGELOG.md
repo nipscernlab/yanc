@@ -75,7 +75,10 @@ tags consumed by Aurora.
        reads it straight from memory. Literal loads (`LOD 5`) are left alone.
     2. bare `PSH` + a load-class op → the op's `P_` / `PF_` variant that pushes
        the accumulator as part of the same instruction (`PSH; LOD x` → `P_LOD x`,
-       `PSH; NEG_M x` → `P_NEG_M x`, ...).
+       `PSH; NEG_M x` → `P_NEG_M x`, ...); and a plain `SET x; POP` →
+       `SET_P x` (store-then-pop fused), which collapses the argument-unpacking
+       in a function prologue (`POP; SET c; POP; SET b; POP; SET a` →
+       `POP; SET_P c; SET_P b; SET a`).
   Together they collapse e.g. `a - b` to `LOD a; P_NEG_M b; S_ADD` (3 instrs).
   Regress: 51/51 cpp.
 

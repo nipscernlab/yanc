@@ -2984,18 +2984,31 @@ static void peephole(void)
         g_ibuf[w++] = g_ibuf[r];
     }
     g_ibuf_n = w;
-    // pass 2: PSH; <load> -> P_<load>
+    // pass 2: PSH; <load> -> P_<load>   and   SET <x>; POP -> SET_P <x>
     w = 0;
     for (int r = 0; r < g_ibuf_n; r++) {
-        if (w > 0 && !g_ibuf[w-1].nofuse && !g_ibuf[r].nofuse
-            && !strcmp(g_ibuf[w-1].text, "PSH") && g_ibuf[r].text[0] != '@') {
-            char *fused = fuse_after_psh(g_ibuf[r].text);
-            if (fused) {                              // PSH + load -> P_<load>
+        if (w > 0 && !g_ibuf[w-1].nofuse && !g_ibuf[r].nofuse) {
+            // PSH followed by a load-class op -> the op's P_/PF_ variant
+            if (!strcmp(g_ibuf[w-1].text, "PSH") && g_ibuf[r].text[0] != '@') {
+                char *fused = fuse_after_psh(g_ibuf[r].text);
+                if (fused) {
+                    free(g_ibuf[w-1].text);
+                    g_ibuf[w-1].text = fused;
+                    g_ibuf[w-1].line = g_ibuf[r].line;   // map to the load's source line
+                    free(g_ibuf[r].text);
+                    continue;
+                }
+            }
+            // a plain SET followed by POP fuses into SET_P (store then pop).
+            // Not SET_V (no _V_P opcode); not a labeled POP.
+            if (!strcmp(g_ibuf[r].text, "POP") && !strncmp(g_ibuf[w-1].text, "SET ", 4)) {
+                const char *opnd = g_ibuf[w-1].text + 3;     // " <name>"
+                char *fused = malloc(5 + strlen(opnd) + 1);  // "SET_P" + " <name>"
+                sprintf(fused, "SET_P%s", opnd);
                 free(g_ibuf[w-1].text);
-                g_ibuf[w-1].text = fused;
-                g_ibuf[w-1].line = g_ibuf[r].line;    // map to the load's source line
+                g_ibuf[w-1].text = fused;                    // keep the SET's source line
                 free(g_ibuf[r].text);
-                continue;                             // r folded into w-1
+                continue;
             }
         }
         g_ibuf[w++] = g_ibuf[r];
