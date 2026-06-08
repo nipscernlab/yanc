@@ -8,6 +8,8 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v5.2] – 2026-06-08
+
 ### Added
 - **C++ simulation/GTKWave pipeline parity (`cppcomp`)** — a cppcomp-generated
   design now tracks its variables and source lines in the waveform exactly like a
@@ -32,6 +34,15 @@ tags consumed by Aurora.
   convention every existing test already follows is the explicit cast. (C±
   warns and truncates via `F2I` and offers `fout`; cppcomp warns without
   converting.)
+
+### Changed
+- **Runner scripts moved under `Scripts/`** — the single/multi-proc runners
+  (`single_proc.bat`/`.sh`, `multi_proc.bat`/`.sh`, `single_proc_cpp.bat`) now
+  live in `Scripts/` next to `env`/`setup` instead of the repo root, and a new
+  `Scripts/single_proc_cpp.sh` gives the C++ pipeline a Linux runner to match the
+  `.bat`. Aurora's deploy step (`Scripts/aurora.bat`) was trimmed to copy only the
+  binaries Aurora actually consumes (no `gen_gtkw`); the release archives are
+  unchanged.
 
 ### Fixed
 - **Runner scripts trusted phantom tool paths (`Scripts/env.bat`)** — an
