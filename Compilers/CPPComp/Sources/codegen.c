@@ -518,7 +518,7 @@ static void scan_heap_stmt(stmt *s)
 // initializer must run ONCE at program start, not on each function entry. We
 // collect them in a pre-pass and emit them at main's entry, like globals. The
 // stored base name is already mangled (<func>_<var>), matching declare_local.
-typedef struct { char *base; type *t; expr *init; initz *binit; } stinit_e;
+typedef struct { char *base; type *t; expr *init; initz *binit; int line; } stinit_e;
 #define MAX_STINIT 256
 static stinit_e stinits[MAX_STINIT];
 static int      n_stinit = 0;
@@ -538,6 +538,7 @@ static void collect_statics_stmt(const char *fn, stmt *s)
             stinits[n_stinit].t     = d->dtype;
             stinits[n_stinit].init  = d->init;
             stinits[n_stinit].binit = d->binit;
+            stinits[n_stinit].line  = d->line;
             n_stinit++;
         }
     }
@@ -2274,9 +2275,13 @@ static void emit_string_inits(void)
 
 static void emit_global_scalar_inits(unit *u)
 {
+    int saved = cg_line;
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
         if (!d->dtype) continue;
+        // map this global's init instructions to its declaration line, so they
+        // show as that C++ source line in GTKWave (not -1/INTERNAL scaffolding).
+        if (d->line > 0) cg_line = d->line;
         if (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT) {
             if (d->binit) emit_initz(d->name, 0, d->dtype, d->binit);
             continue;
@@ -2285,13 +2290,16 @@ static void emit_global_scalar_inits(unit *u)
         gen_expr_num(d->init, d->dtype->kind == TY_FLOAT);
         emit("SET %s", d->name);
     }
+    cg_line = saved;
 }
 
 // emit the one-time initializers for `static` locals (collected pre-pass)
 static void emit_static_inits(void)
 {
+    int saved = cg_line;
     for (int i = 0; i < n_stinit; i++) {
         stinit_e *e = &stinits[i];
+        if (e->line > 0) cg_line = e->line;   // map to the static local's decl line
         if (e->binit) { emit_initz(e->base, 0, e->t, e->binit); continue; }
         if (!e->init) continue;
         if (e->t && (e->t->kind == TY_ARRAY || e->t->kind == TY_STRUCT)) {
@@ -2301,6 +2309,7 @@ static void emit_static_inits(void)
             emit("SET %s", e->base);
         }
     }
+    cg_line = saved;
 }
 
 // total words of all local declarations in a body (for sizing a stack frame)
