@@ -1094,6 +1094,24 @@ static void gen_store(expr *lv, expr *val)
 
 // ---- main expression dispatcher -------------------------------------------
 
+// e is a plain scalar memory variable that gen_expr would load with a single
+// `LOD <asm_name>` (not a class member/static, reference, function, frame,
+// enum constant, array or struct) -> its sym, usable with a _M-form opcode
+// (NEG_M / ABS_M / I2F_M / ... read the operand straight from memory).
+static sym *simple_mem_var(expr *e)
+{
+    if (!e || e->kind != E_IDENT) return NULL;
+    if (cur_class_member(e->sval) || cur_class_static(e->sval)) return NULL;
+    sym *s = st_find(e->sval);
+    if (!s) return NULL;
+    if (s->kind != SK_GLOBAL_VAR && s->kind != SK_LOCAL_VAR && s->kind != SK_PARAM)
+        return NULL;
+    if (s->is_frame) return NULL;
+    if (!s->stype || s->stype->is_ref ||
+        s->stype->kind == TY_ARRAY || s->stype->kind == TY_STRUCT) return NULL;
+    return s;
+}
+
 static void gen_expr(expr *e)
 {
     if (!e) return;
@@ -1426,6 +1444,17 @@ static void gen_expr(expr *e)
                 return;
             }
         }
+        // operand is a plain memory variable -> read it straight from memory
+        // with the _M unary form instead of LOD x; <op>.
+        {
+            sym *mv = simple_mem_var(e->a);
+            if (mv) switch (e->op) {
+                case OP_NEG: emit(e->etype && e->etype->kind == TY_FLOAT ? "F_NEG_M %s" : "NEG_M %s", mv->asm_name); return;
+                case OP_BNOT: emit("INV_M %s", mv->asm_name); return;
+                case OP_LNOT: emit("LIN_M %s", mv->asm_name); return;
+                default: break;
+            }
+        }
         gen_expr(e->a);
         switch (e->op) {
             case OP_POS: return;
@@ -1514,14 +1543,17 @@ static void gen_expr(expr *e)
     }
 
     case E_CAST: {
-        gen_expr(e->a);
         type *from = infer_type(e->a);
         type *to   = e->target_t;
-        if (from && to) {
-            if (type_is_int(from) && type_is_float(to)) emit("I2F");
-            else if (type_is_float(from) && type_is_int(to)) emit("F2I");
-            /* other casts are bit-reinterpret: no-op */
-        }
+        int i2f = from && to && type_is_int(from)   && type_is_float(to);
+        int f2i = from && to && type_is_float(from) && type_is_int(to);
+        // int<->float cast of a plain memory variable -> the _M conversion form
+        sym *mv = (i2f || f2i) ? simple_mem_var(e->a) : NULL;
+        if (mv) { emit(i2f ? "I2F_M %s" : "F2I_M %s", mv->asm_name); return; }
+        gen_expr(e->a);
+        if (i2f)      emit("I2F");
+        else if (f2i) emit("F2I");
+        /* other casts are bit-reinterpret: no-op */
         return;
     }
 

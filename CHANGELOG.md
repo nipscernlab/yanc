@@ -59,6 +59,12 @@ tags consumed by Aurora.
   fused `ADD_V` / `MLT_V` (and float `F_ADD_V` / `F_MLT_V`) collapses load+op too
   (`g[0] + g[1]` → `LOD_V g 0; ADD_V g 1`, 6 → 2). Non-constant indices keep the
   indirect path. Same opcodes cmmcomp's constant-index path emits. Regress: 51/51 cpp.
+- **Unary ops / int↔float casts of a plain variable use the `_M` form (`cppcomp`)** —
+  `-x`, `~x`, `!x` and `(int)x` / `(float)x` on a simple scalar memory variable
+  now read the operand straight from memory (`NEG_M` / `F_NEG_M` / `INV_M` /
+  `LIN_M` / `F2I_M` / `I2F_M`) instead of `LOD x; <op>`, one instruction less
+  each. Operands that aren't a plain memory variable (members, references, frame
+  locals, expressions) keep the `LOD; <op>` path. Regress: 51/51 cpp.
 
 ## [v5.1] – 2026-06-07
 
