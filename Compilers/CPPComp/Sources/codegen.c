@@ -1364,6 +1364,22 @@ static void gen_expr(expr *e)
                 }
             }
         }
+        // rhs is arr[const] on a fixed-address scalar array → the _V form
+        // (base+offset baked in): ADD_V / MLT_V (+ float). Only ADD/MUL have a
+        // _V opcode; for other ops arr[const] falls through to the stack path.
+        if ((op == OP_ADD || op == OP_MUL) && lf == rf &&
+            e->b->kind == E_INDEX && e->b->a->kind == E_IDENT &&
+            e->b->b->kind == E_INT_LIT && e->b->b->ival >= 0) {
+            sym *r = st_find(e->b->a->sval);
+            if (r && r->kind != SK_PARAM && r->stype && r->stype->kind == TY_ARRAY
+                && type_size_words(r->stype->base) == 1) {
+                gen_expr(e->a);
+                long k = e->b->b->ival;
+                if (op == OP_ADD) emit(is_float ? "F_ADD_V %s %ld" : "ADD_V %s %ld", r->asm_name, k);
+                else              emit(is_float ? "F_MLT_V %s %ld" : "MLT_V %s %ld", r->asm_name, k);
+                return;
+            }
+        }
         // general path (coerce each operand to float when operating in float)
         gen_expr_num(e->a, is_float); emit("PSH"); gen_expr_num(e->b, is_float);
         switch (op) {

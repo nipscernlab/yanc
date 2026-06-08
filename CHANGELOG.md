@@ -51,12 +51,14 @@ tags consumed by Aurora.
   path which re-evaluated it: a dead `LOD` for a plain variable, and a genuine
   double-evaluation for a side-effecting left operand (`f() - b` called `f()`
   twice). Now gated on the operator, so the left operand is emitted exactly once.
-- **Constant-index array access uses `SET_V` / `LOD_V` (`cppcomp`)** — `arr[k]`
-  with a compile-time integer `k` now bakes the offset into the instruction
-  (`SET_V arr k` store / `LOD_V arr k` load) instead of computing the index and
-  going through the indirect `STI` / `LDI` path. A store drops from 4 to 2
-  instructions, a load from 2 to 1; non-constant indices keep the indirect path.
-  Matches what cmmcomp's constant-index store already emits. Regress: 51/51 cpp.
+- **Constant-index array access uses the `_V` (base+offset) opcodes (`cppcomp`)** —
+  `arr[k]` with a compile-time integer `k` now bakes the offset into the
+  instruction instead of computing the index and going through the indirect
+  `STI` / `LDI` path: a store `SET_V arr k` (4 → 2 instructions), a load
+  `LOD_V arr k` (2 → 1), and when `arr[k]` is the right operand of `+`/`*` the
+  fused `ADD_V` / `MLT_V` (and float `F_ADD_V` / `F_MLT_V`) collapses load+op too
+  (`g[0] + g[1]` → `LOD_V g 0; ADD_V g 1`, 6 → 2). Non-constant indices keep the
+  indirect path. Same opcodes cmmcomp's constant-index path emits. Regress: 51/51 cpp.
 
 ## [v5.1] – 2026-06-07
 
