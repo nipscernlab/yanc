@@ -30,7 +30,7 @@
 set -uo pipefail
 
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-. "$SELF_DIR/Scripts/env.sh"
+. "$SELF_DIR/env.sh"
 cd "$ROOT_DIR"
 
 # --- Pick the simulator (--sim iverilog|verilator, default iverilog) ---------

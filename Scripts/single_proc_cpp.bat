@@ -26,7 +26,7 @@ echo off
 chcp 65001 >nul
 
 :: Set up the environment -----------------------------------------------------
-call "%~dp0Scripts\env.bat"
+call "%~dp0env.bat"
 cd /d "%ROOT_DIR%"
 
 :: Args: --sim iverilog|verilator (default iverilog), --no-view ---------------

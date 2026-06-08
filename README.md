@@ -37,8 +37,8 @@ download GTKWave for you — see below.)
 | Dependency | `pacman` package / source | What it's for | When you need it |
 | ---------- | ------------------------- | ------------- | ---------------- |
 | **MSYS2 — build toolchain** | `mingw-w64-x86_64-gcc`, `make`, `bison`, `flex` | Compiling the YANC binaries from source | Only when building from source (not when using a release zip) |
-| **MSYS2 — Icarus Verilog** | `mingw-w64-x86_64-iverilog` | Simulating the generated Verilog | Default flow — `single_proc.bat` / `multi_proc.bat` |
-| **MSYS2 — Verilator** 5.x | `mingw-w64-x86_64-verilator` | Faster simulation, all user variables in the wave | `--sim verilator` flow — `single_proc.bat --sim verilator` |
+| **MSYS2 — Icarus Verilog** | `mingw-w64-x86_64-iverilog` | Simulating the generated Verilog | Default flow — `Scripts\single_proc.bat` / `multi_proc.bat` |
+| **MSYS2 — Verilator** 5.x | `mingw-w64-x86_64-verilator` | Faster simulation, all user variables in the wave | `--sim verilator` flow — `Scripts\single_proc.bat --sim verilator` |
 | **GTKWave** | the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) (separate download) | Viewing the waveform | To open the trace (any flow) |
 
 > **Why MSYS2 for the simulators too?** `iverilog` and `verilator` are both in
@@ -66,8 +66,8 @@ manager (`apt`, `dnf`, `pacman`, or `zypper`):
 | Package | What it's for |
 | ------- | ------------- |
 | `gcc`, `bison`, `flex` (Debian/Ubuntu: `build-essential bison flex`) | Compiling the YANC binaries |
-| `iverilog` | Default flow — `single_proc.sh` / `multi_proc.sh` |
-| `verilator` | `--sim verilator` flow — `single_proc.sh --sim verilator` |
+| `iverilog` | Default flow — `Scripts/single_proc.sh` / `multi_proc.sh` |
+| `verilator` | `--sim verilator` flow — `Scripts/single_proc.sh --sim verilator` |
 | `gtkwave` | Viewing the waveform |
 
 > **Note on Linux GTKWave:** there is no Linux build of the nipscernlab fork
@@ -123,7 +123,7 @@ YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end co
   C++:    foo.cpp  ──►  cpppp  ──►  cppcomp  ────────┘
 ```
 
-After `asmcomp`, the generated Verilog can be simulated with **Icarus Verilog** (`iverilog` + `vvp`) or with **Verilator**, and visualized in **GTKWave**. Two pre-wired scripts cover the whole pipeline end-to-end — `single_proc.bat`/`single_proc.sh` (one processor) and `multi_proc.bat`/`multi_proc.sh` (multi-processor project) — each picking the simulator from a `--sim iverilog|verilator` flag (default Icarus).
+After `asmcomp`, the generated Verilog can be simulated with **Icarus Verilog** (`iverilog` + `vvp`) or with **Verilator**, and visualized in **GTKWave**. Pre-wired scripts in `Scripts/` cover the whole pipeline end-to-end — `single_proc` (one C± processor), `multi_proc` (C± multi-processor project) and `single_proc_cpp` (one C++ processor), each with a `.bat` and a `.sh` and a `--sim iverilog|verilator` flag (default Icarus).
 
 ## What you see in GTKWave
 
@@ -239,7 +239,7 @@ A polished `make`-style entry-point is on the to-do list; for now this batch scr
 
 ### 2. Run the pipeline standalone
 
-The full flow is at most six self-contained CLI steps: alternating preprocess/compile passes that take the source down to Verilog, then the simulation and viewing. Here is a minimal end-to-end script that turns a C++ source file into a Verilog testbench and runs it under Icarus Verilog — no Aurora, no `single_proc.bat` needed:
+The full flow is at most six self-contained CLI steps: alternating preprocess/compile passes that take the source down to Verilog, then the simulation and viewing. Here is a minimal end-to-end script that turns a C++ source file into a Verilog testbench and runs it under Icarus Verilog — no Aurora, no `Scripts\single_proc.bat` needed:
 
 ```bat
 :: --- toolchain -----------------------------------------------------------
@@ -296,7 +296,7 @@ verilator --binary --timing --trace +define+YANC_TRACE --top-module %NAME%_tb ^
 gtkwave %NAME%_tb.vcd
 ```
 
-**The one thing to remember:** `+define+YANC_TRACE` is what makes your variables, arrays, the PC→C± line table and the assembly opcode appear in the waveform. Icarus gets them for free (it predefines `__ICARUS__`); Verilator only compiles that visibility harness when you pass the define. For big multi-millisecond project dumps, use `--trace-fst` instead of `--trace` (compact FST; the file is still named `<tb>.vcd` and GTKWave detects the format). The trace deliberately carries only the `<proc>`-level user signals — the CPU internals below each processor are fenced out with `/* verilator tracing_off */`. **In particular the stack-monitoring flags and the ULA rounding-error taps (`fl_max`, `fl_full`, `pointeri`, `delta_int`, `delta_float`) are intentionally *not* in the Verilator VCD**: keeping them would force Verilator to evaluate the expensive real-valued ULA monitoring logic every cycle, which defeats the whole point of using Verilator (speed). Those debug signals remain available under the Icarus flow (`single_proc.bat` / `multi_proc.bat`), where raw speed is not the goal.
+**The one thing to remember:** `+define+YANC_TRACE` is what makes your variables, arrays, the PC→C± line table and the assembly opcode appear in the waveform. Icarus gets them for free (it predefines `__ICARUS__`); Verilator only compiles that visibility harness when you pass the define. For big multi-millisecond project dumps, use `--trace-fst` instead of `--trace` (compact FST; the file is still named `<tb>.vcd` and GTKWave detects the format). The trace deliberately carries only the `<proc>`-level user signals — the CPU internals below each processor are fenced out with `/* verilator tracing_off */`. **In particular the stack-monitoring flags and the ULA rounding-error taps (`fl_max`, `fl_full`, `pointeri`, `delta_int`, `delta_float`) are intentionally *not* in the Verilator VCD**: keeping them would force Verilator to evaluate the expensive real-valued ULA monitoring logic every cycle, which defeats the whole point of using Verilator (speed). Those debug signals remain available under the Icarus flow (`Scripts\single_proc.bat` / `multi_proc.bat`), where raw speed is not the goal.
 
 ### Formatting the waveform — `gen_gtkw` (optional)
 
@@ -331,20 +331,37 @@ for using it in practice. `--zoom-fit` fits the whole trace to the window.
 
 ### Pre-wired scripts
 
-Two scripts bundle steps 1–6 with sensible defaults — one per pipeline shape.
-Each has a Windows (`.bat`) and a Linux (`.sh`) version, and picks the simulator
-from a `--sim iverilog|verilator` flag (default Icarus):
+Three scripts in `Scripts/` bundle steps 1–6 with sensible defaults. Each has a
+Windows (`.bat`) and a Linux (`.sh`) version, and picks the simulator from a
+`--sim iverilog|verilator` flag (default Icarus):
 
 ```bat
-single_proc.bat / single_proc.sh   one processor       (edit PROC / FNAM at the top)
-multi_proc.bat  / multi_proc.sh    multi-proc project
+Scripts\single_proc      .bat / .sh   one C± processor    (edit PROC / FNAM at the top)
+Scripts\multi_proc       .bat / .sh   C± multi-proc project
+Scripts\single_proc_cpp  .bat / .sh   one C++ processor   (front end: cpppp -> cppcomp)
 
   ... default (no flag)        -> Icarus Verilog (iverilog + vvp)
   ... --sim verilator          -> Verilator (--binary --timing, +define+YANC_TRACE)
+  ... --no-view                -> (single_proc_cpp) run the pipeline, skip GTKWave
 ```
 
-On Linux make them executable once (`chmod +x single_proc.sh multi_proc.sh`) and run `./single_proc.sh`
-or `./single_proc.sh --sim verilator`.
+On Linux make them executable once (`chmod +x Scripts/*.sh`) and run
+`Scripts/single_proc.sh` (or `Scripts/single_proc.sh --sim verilator`).
+
+**The C++ runner (`single_proc_cpp`)** feeds a `.cpp` program — the bundled
+`Compilers/CPPComp/Tests/proc_cpp` demo — through `cpppp -> cppcomp` instead of
+`cmmcomp`, then the *same* assemble / simulate / view back end. cppcomp now emits
+the same files cmmcomp does (the `.asm`, `cmm_log.txt`, the `pc_<proc>_mem.txt`
+PC→source line table and `trad_cmm.txt`), so the waveform looks just like the C±
+flow — **with one rule**: GTKWave only shows C++ variables that live at a **fixed
+data-memory address**, because the dump snoops a *constant* write address
+(`if (mem_addr_wr == X)`). That covers globals, the locals/params of
+non-recursive functions, and `static` locals — int shown as a raw word, float
+decoded, arrays element-by-element, exactly as in C±. Stack-frame locals of
+recursive functions (no fixed address), pointers (an address, not a value) and
+structs (a multi-word aggregate) are deliberately **not** traced. This mirrors
+C±, which — for optimization reasons — only ever allocates fixed-address
+variables anyway, so both flows show the same kind of thing.
 
 #### One-time setup — `setup.bat` / `setup.sh`
 
@@ -355,7 +372,7 @@ The scripts have **no hardcoded tool paths** anymore. Run the setup script
 Scripts\setup.bat      :: Windows
 ```
 ```sh
-bash Scripts/setup.sh  # Linux  (then ./single_proc.sh, ...)
+bash Scripts/setup.sh  # Linux  (then Scripts/single_proc.sh, ...)
 ```
 
 On **Linux** `setup.sh` installs the dependencies through your package manager,
@@ -478,10 +495,12 @@ yanc/
 │   └── yanc_version.h    single-source-of-truth toolchain version
 ├── HDL/                  reusable Verilog modules (core, ALU, decoders, FIFO, ...)
 ├── Makefile              single source of truth for building the binaries (Linux + MSYS2)
-├── Scripts/              setup.bat/.sh + env.bat/.sh, aurora.bat, regress.sh, comp2gtkw, gen_gtkw
+├── Scripts/              setup.bat/.sh + env.bat/.sh, aurora.bat, regress.sh,
+│                         comp2gtkw, gen_gtkw, and the pre-wired runner scripts:
+│                           single_proc     .bat/.sh  C± single-processor pipeline
+│                           multi_proc      .bat/.sh  C± multi-processor project
+│                           single_proc_cpp .bat/.sh  C++ single-processor pipeline
 ├── docs/images/          README assets (GTKWave screenshot, ...)
-├── single_proc.bat/.sh       single-processor pipeline (--sim iverilog|verilator)
-├── multi_proc.bat/.sh       multi-processor project pipeline (--sim iverilog|verilator)
 └── .github/workflows/    CI (Windows + Linux build/smoke; release on tag push)
 ```
 

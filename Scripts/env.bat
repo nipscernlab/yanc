@@ -22,8 +22,11 @@
 
 @echo off
 
-:: Repo root = parent of this Scripts\ folder (canonicalised, no trailing slash)
-pushd "%~dp0.." & set "ROOT_DIR=%CD%" & popd
+:: Repo root = parent of this Scripts\ folder (canonicalised, no trailing slash).
+:: Derive it from THIS file's location, not %CD% -- a `pushd .. & set=%CD%` line
+:: expands %CD% at parse time (before the pushd), so it would capture the
+:: caller's working directory instead. `%%~fI` canonicalises "<Scripts>\..".
+for %%I in ("%~dp0..") do set "ROOT_DIR=%%~fI"
 set "YANC_BIN=%ROOT_DIR%\bin"
 
 :: Resolved tool paths cached by Scripts\setup.bat (machine-specific, gitignored)
