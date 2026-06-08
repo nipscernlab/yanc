@@ -28,6 +28,13 @@
 static FILE *out_f;
 static int   ins_count = 0;
 static int   label_n   = 0;
+
+// pc_<proc>_mem.txt: one 20-bit word per emitted instruction = the source line
+// that produced it (negative codes are scaffolding, resolved via trad_cmm.txt).
+// f_line is written in lockstep with ins_count from inside emit(); cg_line holds
+// the line currently being emitted (-1 = INTERNAL, -3 = END, >=1 = source line).
+static FILE *f_line  = NULL;
+static int   cg_line = -1;
 static int   g_nubits  = 32;     // effective word width (for unsigned compares)
 static int   g_uses_udiv = 0;    // an unsigned / or % was emitted -> emit _udivmod
 static int   g_any_recursive = 0; // some function needs stack frames
@@ -211,9 +218,21 @@ static func *resolve_ctor(type *cls, expr **args, int nargs)
     return best;
 }
 
+// 20-bit two's-complement binary (MSB first), matching cmmcomp's f_lin format.
+static void emit_pc_line(int v)
+{
+    if (!f_line) return;
+    char b[21];
+    unsigned w = (unsigned)v & 0xFFFFF;   // keep low 20 bits
+    for (int i = 0; i < 20; i++) b[i] = ((w >> (19 - i)) & 1) ? '1' : '0';
+    b[20] = 0;
+    fprintf(f_line, "%s\n", b);
+}
+
 static void emit(const char *fmt, ...)
 {
-    if (fmt[0] != '#') ins_count++;
+    // directives (#...) are not instructions: no ins_count bump, no pc line.
+    if (fmt[0] != '#') { ins_count++; emit_pc_line(cg_line); }
     va_list ap; va_start(ap, fmt);
     vfprintf(out_f, fmt, ap);
     va_end(ap);
@@ -245,6 +264,7 @@ static int      varlog_n = 0;
 
 static void log_var(const char *func, const char *var, int type_code, int size)
 {
+    if (type_code == 0) return;   // ptr/struct/etc.: not published to cmm_log.txt
     if (varlog_n >= VARLOG_MAX) msg_internal("too many variables");
     varlog[varlog_n].func = strdup(func);
     varlog[varlog_n].var  = strdup(var);
@@ -253,11 +273,19 @@ static void log_var(const char *func, const char *var, int type_code, int size)
     varlog_n++;
 }
 
+// cmm_log.txt type code, used by asmcomp to mirror the variable into the .vcd
+// with the right gtkwave formatting. Only the two scalar kinds the dump path
+// can render faithfully are published: TY_INT -> 1 (raw word), TY_FLOAT -> 2
+// (decoded float). Everything else (ptr, struct, func, void) returns 0 = "do
+// not publish" so it never reaches log_var -- a wrong int mirror at a fixed
+// address is worse than no mirror. char/bool/unsigned are all TY_INT -> 1;
+// double is the same one-word float as float -> 2.
 static int type_code_for(const type *t)
 {
-    if (!t) return 1;
+    if (!t) return 0;
+    if (t->kind == TY_INT)   return 1;
     if (t->kind == TY_FLOAT) return 2;
-    return 1;        // int, ptr, char all type-code 1 for asmcomp's simulator
+    return 0;        // ptr/struct/func/void: no faithful int|float rendering yet
 }
 
 // type code of the innermost scalar element (peels array nesting)
@@ -336,6 +364,7 @@ static void emit_dispatch_chain(void)
 // ---- forward decls ---------------------------------------------------------
 
 static void gen_expr (expr *e);
+static void gen_stmt_inner(stmt *s);
 static void emit_initz(const char *base, int off, type *t, initz *z);
 static void emit_fn_return(void);
 static void gen_addr (expr *e);
@@ -1959,7 +1988,20 @@ static void emit_block_dtors(stmt *block)
     }
 }
 
+// Wrapper: stamp this statement's source line so every instruction it emits
+// maps back to it in pc_<proc>_mem.txt, then restore on exit so the enclosing
+// statement's line resumes after a nested block returns. The real dispatch is
+// in gen_stmt_inner (many early returns, hence the single-exit wrapper).
 static void gen_stmt(stmt *s)
+{
+    if (!s) return;
+    int saved_line = cg_line;
+    if (s->line > 0) cg_line = s->line;
+    gen_stmt_inner(s);
+    cg_line = saved_line;
+}
+
+static void gen_stmt_inner(stmt *s)
 {
     if (!s) return;
     switch (s->kind) {
@@ -2289,6 +2331,8 @@ static void emit_fn_return(void)
 
 static void emit_function(func *f, unit *u, int is_main)
 {
+    cg_line = -1;                      // prologue / @label NOP are INTERNAL; the
+                                       // body's gen_stmt stamps real source lines
     if (!f->asm_label) f->asm_label = f->name;
     cur_func_name    = f->asm_label;   // unique label keeps overloads' locals distinct
     cur_func_ret     = f->ret;
@@ -2312,7 +2356,11 @@ static void emit_function(func *f, unit *u, int is_main)
         for (int i = 0; i < np; i++) {
             char *aname = mangle_local(plist[i]->name);
             st_add(SK_PARAM, plist[i]->name, aname, plist[i]->dtype);
-            log_var(f->name, plist[i]->name, type_code_for(plist[i]->dtype),
+            // log under cur_func_name (== f->asm_label), the SAME prefix
+            // mangle_local stamps into the .asm operand, so asmcomp's
+            // sim_is_var reconstructs <func>_<var> and matches. For overloaded
+            // functions f->name != asm_label, so f->name would mismatch.
+            log_var(cur_func_name, plist[i]->name, type_code_for(plist[i]->dtype),
                     plist[i]->dtype && plist[i]->dtype->kind == TY_ARRAY ? plist[i]->dtype->arr_size : 0);
             free(aname);
         }
@@ -2508,6 +2556,31 @@ static void write_cmm_log(const char *tmp_dir)
     }
     fprintf(f, "num_ins %d\n", ins_count);
     fclose(f);
+}
+
+// trad_cmm.txt: the source the pc_<proc>_mem.txt line numbers index into, so
+// GTKWave can show the text for the line the processor is executing. Three
+// fixed header rows (the negative scaffolding codes) followed by every source
+// line numbered from 1. src_path is the file cppcomp actually compiled (the
+// preprocessed pp.cpp), so its line numbers match the AST's ->line stamps.
+static void write_trad_cmm(const char *tmp_dir, const char *src_path)
+{
+    char path[2048]; snprintf(path, sizeof(path), "%s/trad_cmm.txt", tmp_dir);
+    FILE *out = fopen(path, "w");
+    if (!out) { fprintf(stderr, "cppcomp: cannot open %s\n", path); return; }
+    FILE *in  = fopen(src_path, "r");
+    if (!in)  { fprintf(stderr, "cppcomp: cannot open %s\n", src_path); fclose(out); return; }
+
+    fputs("-1 INTERNAL\n"    , out);   // pc code -1: scaffolding (NOP, prologue)
+    fputs("-2 void main();\n", out);   // pc code -2: entry call
+    fputs("-3 END\n"         , out);   // pc code -3: @fim halt loop
+
+    char line[1024];
+    int  n = 1;
+    while (fgets(line, sizeof(line), in)) fprintf(out, "%d %s", n++, line);
+
+    fclose(in);
+    fclose(out);
 }
 
 // ---- recursion analysis (hybrid frames) ------------------------------------
@@ -2733,13 +2806,23 @@ static void instantiate_ctmpl_methods(unit *u)
     }
 }
 
-void codegen(FILE *out_file, unit *u, const char *tmp_dir)
+void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
 {
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
     g_uses_udiv = 0; n_stinit = 0; g_n_inst = 0;
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
     cg_unit = u;
+
+    // pc_<proc>_mem.txt: filled in lockstep with emit() from here on. Open it
+    // before emit_header so the leading NOP is logged too. cg_line starts at -1
+    // (INTERNAL): all program scaffolding before the first statement maps there.
+    cg_line = -1;
+    if (tmp_dir && u->prname) {
+        char path[2048];
+        snprintf(path, sizeof(path), "%s/pc_%s_mem.txt", tmp_dir, u->prname);
+        f_line = fopen(path, "w");
+    }
 
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
@@ -2801,7 +2884,9 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
         if (strcmp(u->funcs[i]->name, "main") == 0) emit_function(u->funcs[i], u, 1);
     }
 
+    cg_line = -3;                 // END marker (trad_cmm.txt row -3)
     emit("@fim JMP fim");
+    cg_line = -1;                 // post-@fim helpers are INTERNAL scaffolding
 
     // emitted after @fim so main falls through into the halt loop, not the
     // helper; the helper is only ever entered through CAL.
@@ -2812,5 +2897,8 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir)
     // emitting one instance discovers calls to further template instances
     for (int i = 0; i < g_n_inst; i++) emit_function(g_inst[i], u, 0);
 
+    if (f_line) { fclose(f_line); f_line = NULL; }
+
     if (tmp_dir) write_cmm_log(tmp_dir);
+    if (tmp_dir && src_path) write_trad_cmm(tmp_dir, src_path);
 }

@@ -125,7 +125,7 @@ int main(int argc, char **argv)
     FILE *fo = fopen(outp, "w");
     if (!fo) { fprintf(stderr, "cppcomp: cannot open '%s' for writing\n", outp); exit(1); }
 
-    codegen(fo, g_unit, tmp_dir);
+    codegen(fo, g_unit, tmp_dir, in_path);
 
     fclose(fo);
     if (msg_error_count() > 0) return 2;
