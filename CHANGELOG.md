@@ -45,6 +45,12 @@ tags consumed by Aurora.
   kept), and derives `MINGW_BIN` from a resolved tool when setup's cache is absent.
 - **`--version` printed `5.0`** — `yanc_version.h` was left at `5.0` after the v5.1
   release; bumped to match the tag and CHANGELOG.
+- **Dead / double-evaluated left operand on `-` `/` `%` `<<` `>>` (`cppcomp`)** —
+  the memory-operand fast path evaluated the left operand and only then found
+  these non-commutative ops aren't handled there, falling through to the stack
+  path which re-evaluated it: a dead `LOD` for a plain variable, and a genuine
+  double-evaluation for a side-effecting left operand (`f() - b` called `f()`
+  twice). Now gated on the operator, so the left operand is emitted exactly once.
 
 ## [v5.1] – 2026-06-07
 

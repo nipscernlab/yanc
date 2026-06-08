@@ -1323,8 +1323,14 @@ static void gen_expr(expr *e)
         // ONLY for ops where mem-as-in1 / acc-as-in2 gives the right answer:
         // commutative ops, and the comparisons (verified below). Non-commutative
         // ops (SUB, DIV, MOD, SHL, SHR) compute `mem OP acc` = `rhs OP lhs` in
-        // this form, which is reversed — they fall through to the stack path.
-        if (e->b->kind == E_IDENT && lf == rf) {   // mem-form needs matching types
+        // this form, which is reversed — they take the stack path instead.
+        // Gate on the op: otherwise the lhs is evaluated here (a LOD) and then
+        // re-evaluated by the stack path, leaving a dead LOD of the left operand.
+        int mem_form_op = (op == OP_ADD || op == OP_MUL || op == OP_BAND ||
+                           op == OP_BOR || op == OP_BXOR || op == OP_LT  ||
+                           op == OP_GT  || op == OP_LE   || op == OP_GE  ||
+                           op == OP_EQ  || op == OP_NE);
+        if (mem_form_op && e->b->kind == E_IDENT && lf == rf) {   // mem-form needs matching types
             sym *r = st_find(e->b->sval);
             if (r && !r->is_frame && r->stype && r->stype->kind != TY_ARRAY && r->stype->kind != TY_STRUCT) {
                 gen_expr(e->a);
