@@ -8,6 +8,37 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **C++ simulation/GTKWave pipeline parity (`cppcomp`)** — a cppcomp-generated
+  design now tracks its variables and source lines in the waveform exactly like a
+  C±-generated one. cppcomp emits the two GTKWave-support files cmmcomp always
+  produced: `pc_<proc>_mem.txt` (one 20-bit two's-complement source line per
+  instruction, written in lockstep with the instruction count; program scaffolding
+  tagged −1/−3) and `trad_cmm.txt` (the numbered preprocessed source those line
+  numbers index into). `cmm_log.txt` is now restricted to genuine scalar statics —
+  `int → 1`, `float → 2`, and anything else (pointer/struct/…) is no longer
+  published, so asmcomp never builds a wrong integer mirror at a fixed address; a
+  function parameter is logged under its asm label so overloaded-function params
+  still reconstruct to the `<func>_<var>` operand asmcomp matches. All of this is
+  simulation-only (behind `` `ifdef YANC_SIM_VIS `` in the generated core), so it
+  costs nothing in synthesis.
+- **`single_proc_cpp.bat`** — end-to-end C++ runner mirroring `single_proc.bat`
+  (cpppp → cppcomp → appcomp → asmcomp → iverilog/verilator → GTKWave), with
+  `--sim iverilog|verilator` and `--no-view`, plus a minimal `proc_cpp` demo.
+
+### Fixed
+- **Runner scripts trusted phantom tool paths (`Scripts/env.bat`)** — an
+  IDE/launcher (the VS Code integrated terminal under Aurora) can pre-set
+  `IVERILOG`/`VVP`/`GTKWAVE`/`MINGW_BIN` to bundled tools that are not actually
+  installed. env.bat only filled a tool *if not defined*, so it trusted those
+  non-existent paths and never reached its PATH fallback — every runner died at
+  `iverilog` with *"The system cannot find the path specified"* and never built the
+  `.vvp`. env.bat now drops any inherited tool path that does not exist (so the
+  PATH lookup finds the real MSYS2 tool while a present nipscernlab GTKWave is
+  kept), and derives `MINGW_BIN` from a resolved tool when setup's cache is absent.
+- **`--version` printed `5.0`** — `yanc_version.h` was left at `5.0` after the v5.1
+  release; bumped to match the tag and CHANGELOG.
+
 ## [v5.1] – 2026-06-07
 
 ### Added
