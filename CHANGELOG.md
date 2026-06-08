@@ -81,6 +81,12 @@ tags consumed by Aurora.
        `POP; SET_P c; SET_P b; SET a`).
   Together they collapse e.g. `a - b` to `LOD a; P_NEG_M b; S_ADD` (3 instrs).
   Regress: 51/51 cpp.
+- **Redundant store-then-reload elimination (`cppcomp`)** — a `LOD x` (or
+  `LOD_V a k`) immediately after a `SET x` (or `SET_V a k`) of the *same* cell
+  is dropped: `SET` leaves the value in the accumulator, so reloading it is a
+  no-op. This was pervasive — `int x = e; <use x>` emitted `<e>; SET x; LOD x;
+  <use>` — and removing it shed ~470 instructions across the test suite (test50
+  alone ~60). New peephole pass 0. Regress: 51/51 cpp.
 
 ## [v5.1] – 2026-06-07
 

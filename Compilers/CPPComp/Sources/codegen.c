@@ -2967,9 +2967,26 @@ static char *fuse_lod_unary(const char *lod, const char *un)
 
 static void peephole(void)
 {
+    int w;
+    // pass 0: a store immediately followed by a reload of the SAME cell is
+    // redundant -- SET leaves the value in the accumulator, so the LOD is a
+    // no-op. (Same operand, no label on the LOD.)
+    //   SET x;     LOD x      -> SET x
+    //   SET_V a k; LOD_V a k  -> SET_V a k
+    w = 0;
+    for (int r = 0; r < g_ibuf_n; r++) {
+        if (w > 0 && !g_ibuf[w-1].nofuse && !g_ibuf[r].nofuse) {
+            const char *s = g_ibuf[w-1].text, *l = g_ibuf[r].text;
+            int drop = (!strncmp(s,"SET ",4)   && !strncmp(l,"LOD ",4)   && !strcmp(s+4,l+4))
+                    || (!strncmp(s,"SET_V ",6) && !strncmp(l,"LOD_V ",6) && !strcmp(s+6,l+6));
+            if (drop) { free(g_ibuf[r].text); continue; }   // drop the reload, keep the store
+        }
+        g_ibuf[w++] = g_ibuf[r];
+    }
+    g_ibuf_n = w;
     // pass 1: LOD <name>; <unary> -> <unary>_M <name>. Run first so the new _M
     // op can then be picked up by the PSH pass below (PSH; NEG_M -> P_NEG_M).
-    int w = 0;
+    w = 0;
     for (int r = 0; r < g_ibuf_n; r++) {
         if (w > 0 && !g_ibuf[w-1].nofuse && !g_ibuf[r].nofuse) {
             char *fused = fuse_lod_unary(g_ibuf[w-1].text, g_ibuf[r].text);
