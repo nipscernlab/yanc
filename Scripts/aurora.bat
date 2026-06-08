@@ -125,7 +125,13 @@ pushd %SRC_DIR%
 make CC=x86_64-w64-mingw32-gcc BISON=bison FLEX=flex clean all
 popd
 
-xcopy %SRC_DIR%\bin\*.exe %BLD_DIR%\bin\ /I /Q /Y
+:: Copy only the binaries Aurora actually uses: the compile pipeline plus
+:: comp2gtkw (the complex-number -> GTKWave converter). gen_gtkw is a
+:: yanc-runner-only tool -- Aurora builds the GTKWave layout itself -- so it is
+:: deliberately NOT deployed.
+for %%E in (cmmcomp cppcomp cpppp appcomp asmcomp comp2gtkw) do (
+    copy /Y "%SRC_DIR%\bin\%%E.exe" "%BLD_DIR%\bin\" >nul
+)
 
 :: ----------------------------------------------------------------------------
 :: Copy HDL, Macros and Scripts folders ---------------------------------------
