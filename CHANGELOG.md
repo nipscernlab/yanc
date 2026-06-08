@@ -25,6 +25,12 @@ tags consumed by Aurora.
 - **`single_proc_cpp.bat`** — end-to-end C++ runner mirroring `single_proc.bat`
   (cpppp → cppcomp → appcomp → asmcomp → iverilog/verilator → GTKWave), with
   `--sim iverilog|verilator` and `--no-view`, plus a minimal `proc_cpp` demo.
+- **`out()` rejects a float value (`cppcomp`)** — the hardware OUT port is an
+  integer word; `out(port, x)` with a float `x` was silently shipping the raw
+  float bit pattern. It is now a compile error directing you to cast
+  (`out(port, (int)x)`) — the convention every existing test already follows.
+  (C± warns and truncates via `F2I` and offers `fout`; cppcomp has neither, so
+  rejecting is the safe match.)
 
 ### Fixed
 - **Runner scripts trusted phantom tool paths (`Scripts/env.bat`)** — an

@@ -22,6 +22,7 @@ void main(void)
     int   sum  = a + g_count;   // main sum  1   -> 10
     float prod = b * g_gain;    // main prod 2   -> 3.75
 
-    out(0, sum);     // 10
-    out(0, prod);    // 3.75
+    out(0, sum);          // 10
+    out(0, (int)prod);    // 3  (out() sends an integer word; cast the float --
+                          //     prod itself still shows as 3.75 in GTKWave)
 }
