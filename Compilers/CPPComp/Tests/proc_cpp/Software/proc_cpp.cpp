@@ -14,6 +14,8 @@
 int   g_count = 7;      // global int   -> cmm_log: global g_count 1
 float g_gain  = 2.5;    // global float -> cmm_log: global g_gain  2
 
+struct Point { int x; float y; };   // aggregate type (used below)
+
 void main(void)
 {
     int   a = 3;                // main a 1
@@ -37,8 +39,25 @@ void main(void)
     coef[1] = prod;             // 3.75
     coef[2] = g_gain;           // 2.5
 
+    // --- "complicated" data the dump must IGNORE (no GTKWave mirror) --------
+    // A pointer and a reference hold an ADDRESS, and a struct is a multi-word
+    // aggregate -> none of p / r / pt (nor pt.x / pt.y) get a cmm_log entry
+    // (type-code 0 = not published). They still WORK; they just must not show
+    // up as waveform variables. Only `target`, a plain int, is mirrored.
+    int   target = 0;
+    int*  p = &target;          // pointer   -> address value, not published
+    int&  r = target;           // reference -> address under the hood, not published
+    *p = 42;                    // write through the pointer
+    r  = r + 1;                 //   ... and the reference -> target = 43
+
+    Point pt;                   // struct aggregate -> not published
+    pt.x = a;                   // 3
+    pt.y = prod;                // 3.75
+
     out(0, sum);          // 10
     out(0, (int)prod);    // 3  (out() sends an integer word; cast the float --
                           //     prod itself still shows as 3.75 in GTKWave)
     out(0, data[3]);      // 13
+    out(0, target);       // 43  (pointer + reference worked; neither is mirrored)
+    out(0, pt.x);         // 3   (struct field worked; pt has no mirror)
 }
