@@ -11,8 +11,10 @@ $ErrorActionPreference = "Stop"
 
 $ROOT  = Resolve-Path "$PSScriptRoot\..\..\..\.." | Select-Object -ExpandProperty Path
 $CPP   = Join-Path $ROOT "Compilers/CPPComp"
-$BIN   = Join-Path $CPP  ".bin"
+$BIN   = Join-Path $ROOT "bin"
 $WORK  = Join-Path $CPP  ".work"
+$TEST  = $PSScriptRoot
+$SW    = Join-Path $TEST "Software"
 $HDL   = Join-Path $ROOT "HDL"
 $MACROS= Join-Path $ROOT "Compilers/CMMComp/Includes"
 
@@ -29,15 +31,15 @@ $CPPC    = Join-Path $BIN "cppcomp.exe"
 $APPCOMP = Join-Path $BIN "appcomp.exe"
 $ASMCOMP = Join-Path $BIN "asmcomp.exe"
 $VERILATOR = "C:/packs/msys64/mingw64/bin/verilator_bin.exe"
-$SIMMAIN = Join-Path $CPP "Verilator/sim_main.cpp"
+$SIMMAIN = Join-Path $CPP "Tests/Verilator/sim_main.cpp"
 
 foreach ($x in @($CPPPP, $CPPC, $APPCOMP, $ASMCOMP, $VERILATOR)) {
     if (-not (Test-Path $x)) { Write-Error "missing: $x"; exit 1 }
 }
 
 $base    = "test50"
-$src_dir = Join-Path $CPP "examples/$base"
-$src     = Join-Path $src_dir "$base.cpp"
+$src_dir = $SW
+$src     = Join-Path $SW "$base.cpp"
 $prname  = "test50"
 
 $proc = Join-Path $WORK $base
@@ -105,9 +107,9 @@ Write-Host "==> got $actual lines of output (expected $expected)"
 
 Write-Host "==> compare_to_reference.py"
 & "C:/packs/msys64/mingw64/bin/python3.exe" `
-    "$src_dir/compare_to_reference.py" `
+    "$TEST/compare_to_reference.py" `
     $out `
-    "$src_dir/host_ref_outputs" `
+    "$TEST/host_ref_outputs" `
     --gain-out 1000000 `
     --abs-tol 1e-2 `
     --rel-tol 5e-2 `
