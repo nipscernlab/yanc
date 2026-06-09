@@ -1027,6 +1027,7 @@ member:
     | ctor_def
     | ctor_decl
     | dtor_def
+    | dtor_decl
     | static_member
     | struct_specifier ';'   /* nested struct/class type declaration */
     | enum_specifier ';'     /* nested enum / enum class declaration */
@@ -1052,6 +1053,14 @@ method_decl:
 ctor_decl:
       TYPEDEF_NAME '(' param_list ')' fn_quals ';'
           { register_method_decl(t_void(), ctor_kind($3.head), $3.head, $3.n); free($1); }
+    ;
+
+/* in-class destructor declaration: prototype only, body provided out-of-class. */
+dtor_decl:
+      '~' TYPEDEF_NAME '(' ')' fn_quals ';'
+          { register_method_decl(t_void(), "dtor", NULL, 0); free($2); }
+    | KW_VIRTUAL '~' TYPEDEF_NAME '(' ')' fn_quals ';'
+          { add_vmethod(cur_class, "dtor"); register_method_decl(t_void(), "dtor", NULL, 0); free($3); }
     ;
 
 /* static data member: a single shared global `Class__name` (not a per-object
@@ -1715,6 +1724,23 @@ function_def:
           method_finish(t_void(), ctor_kind($5.head), body);
           cur_class = NULL;
           free($1); free($3);
+      }
+    /* out-of-class destructor: `Class::~Class() { body }`. Both names lex as
+       TYPEDEF_NAME; require they match. The in-class `~Class();` decl registers
+       the Class__dtor prototype; this supplies the body under that same symbol. */
+    | TYPEDEF_NAME TOK_SCOPE '~' TYPEDEF_NAME '(' ')' fn_quals {
+          if (strcmp($1, $4) != 0)
+              msg_error(yylineno, "qualified id '%s::~%s' is not a destructor", $1, $4);
+          sym *cs = st_find_tag($1);
+          if (!cs || !cs->struct_t)
+              msg_error(yylineno, "out-of-class dtor for unknown class '%s'", $1);
+          cur_class = cs->struct_t;
+          method_enter(t_void(), "dtor", NULL, 0);
+      }
+      compound_stmt {
+          method_finish(t_void(), "dtor", $9);
+          cur_class = NULL;
+          free($1); free($4);
       }
     ;
 
