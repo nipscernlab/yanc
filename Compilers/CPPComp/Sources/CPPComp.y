@@ -204,7 +204,7 @@ static void inject_default_member_inits(type *cls)
 {
     if (!cls || cls->kind != TY_STRUCT) return;
     for (strct_field *f = cls->fields; f; f = f->next) {
-        if (!f->dinit) continue;
+        if (!f->dinit && !f->dzero) continue;
         int already = 0;
         for (int i = 0; i < g_n_ctor_inits; i++) {
             stmt *s = g_ctor_inits[i];
@@ -216,7 +216,17 @@ static void inject_default_member_inits(type *cls)
         }
         if (already) continue;
         stmt *s = ast_stmt(S_EXPR, yylineno);
-        s->e1 = ast_assign(ast_ident(strdup(f->name), yylineno), (expr*)f->dinit, yylineno);
+        if (f->dinit) {
+            s->e1 = ast_assign(ast_ident(strdup(f->name), yylineno), (expr*)f->dinit, yylineno);
+        } else {
+            /* aggregate `= {}`: synthesize `__zerofill(&field, N)` (a codegen
+               builtin) so the ctor zero-fills the field's N words at runtime. */
+            int nwords = type_size_words(f->ftype);
+            expr **args = malloc(sizeof(expr*) * 2);
+            args[0] = ast_ident(strdup(f->name), yylineno);   /* codegen does gen_addr -> &field */
+            args[1] = ast_int_lit(nwords, yylineno);
+            s->e1 = ast_call(ast_ident(strdup("__zerofill"), yylineno), args, 2, yylineno);
+        }
         if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
     }
 }
@@ -1314,16 +1324,19 @@ field_declarator:
           free($1);
       }
     | IDENT '=' '{' '}' {
-          /* default member initializer `T name = {};` — zero/value-init. For
-             scalar T we synthesize a zero literal as dinit; for array/struct
-             fields we leave dinit NULL (parse-and-drop, relying on the YANC
-             zero-init of static storage; heap allocations will see garbage). */
+          /* default member initializer `T name = {};` — zero/value-init. Scalar
+             (and pointer) fields get a 0 dinit; aggregate (array/struct) fields
+             are flagged `dzero` so the ctor zero-fills every word, so heap objects
+             get zeroed too (not just .mif-backed static storage). */
           t_struct_add_field(cur_struct, $1, cur_base);
           strct_field *f = t_struct_find(cur_struct, $1);
           if (f && cur_base) {
-              if (cur_base->kind == TY_INT)        f->dinit = ast_int_lit(0, yylineno);
-              else if (cur_base->kind == TY_FLOAT) f->dinit = ast_float_lit(0.0f, yylineno);
-              /* arrays/structs/ptrs left NULL for now; see [[cppcomp-blind-port]] */
+              if (cur_base->kind == TY_INT || cur_base->kind == TY_PTR)
+                  f->dinit = ast_int_lit(0, yylineno);
+              else if (cur_base->kind == TY_FLOAT)
+                  f->dinit = ast_float_lit(0.0f, yylineno);
+              else
+                  f->dzero = 1;     /* array/struct aggregate: zero-fill at ctor time */
           }
           free($1);
       }

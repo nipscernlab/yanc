@@ -59,6 +59,7 @@ struct strct_field {
     int          bit_pos;    // start bit within the word (bitfields only)
     int          bit_width;  // width in bits (bitfields only)
     void        *dinit;      // default member initializer (expr*); NULL when none
+    int          dzero;      // 1 = aggregate `= {}` default: zero-fill all words in the ctor
     strct_field *next;
 };
 

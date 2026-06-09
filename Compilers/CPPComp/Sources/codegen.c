@@ -686,6 +686,7 @@ static type *infer_type(expr *e)
             if (!strcmp(fn, "out"))      { e->etype = t_void(); break; }
             if (!strcmp(fn, "malloc"))   { e->etype = t_ptr(t_void()); break; }
             if (!strcmp(fn, "free"))     { e->etype = t_void(); break; }
+            if (!strcmp(fn, "__zerofill")) { e->etype = t_void(); break; }   // synth DMI aggregate zero-fill
             func *tm = find_template(fn);            // template call: substituted return type
             if (tm && tm->n_params == e->n_args) {
                 type *ta[8] = {0}; deduce_targs(tm, e->args, e->n_args, ta);
@@ -1783,6 +1784,35 @@ static void gen_expr(expr *e)
                 if (e->n_args != 1) msg_error(e->line, "free(ptr) takes 1 arg");
                 gen_expr(e->args[0]); emit("PSH"); emit("CAL free");
                 g_uses_heap = 1; return;
+            }
+            if (!strcmp(fn, "__zerofill")) {   // synth: zero-fill N words at &field
+                // emitted for an aggregate `= {}` default member initializer so a
+                // heap object's array/struct field is zeroed (static storage is
+                // already .mif-zeroed). args: [0]=field ident (-> &field), [1]=N.
+                if (e->n_args != 2) msg_error(e->line, "__zerofill takes 2 args");
+                long nw = e->args[1]->ival;
+                if (nw <= 0) return;
+                gen_addr(e->args[0]);                      // acc = &field (this + offset)
+                int id = ++label_n;
+                char pn[32], kn[32];
+                snprintf(pn, sizeof(pn), "_zfp%d", id);
+                snprintf(kn, sizeof(kn), "_zfk%d", id);
+                char *zp = mangle_local(pn), *zk = mangle_local(kn);
+                st_add(SK_LOCAL_VAR, pn, zp, t_int());
+                st_add(SK_LOCAL_VAR, kn, zk, t_int());
+                log_var(cur_func_name ? cur_func_name : "global", pn, 1, 0);
+                log_var(cur_func_name ? cur_func_name : "global", kn, 1, 0);
+                emit("SET %s", zp);                        // zp = &field
+                emit("LOD %ld", nw); emit("SET %s", zk);   // zk = N
+                emit("@Lzf_t%d NOP", id);
+                emit("LOD %s", zk); emit("JIZ Lzf_e%d", id);                 // while zk != 0
+                emit("LOD %s", zp); emit("PSH"); emit("LOD 0"); emit("STA"); // *zp = 0
+                emit("LOD %s", zp); emit("P_LOD 1"); emit("S_ADD"); emit("SET %s", zp);          // zp++
+                emit("LOD %s", zk); emit("P_LOD 1"); emit("NEG"); emit("S_ADD"); emit("SET %s", zk); // zk--
+                emit("JMP Lzf_t%d", id);
+                emit("@Lzf_e%d NOP", id);
+                free(zp); free(zk);
+                return;
             }
             func *tmpl = find_template(fn);            // function template -> monomorphize
             if (tmpl && tmpl->n_params == e->n_args) {
