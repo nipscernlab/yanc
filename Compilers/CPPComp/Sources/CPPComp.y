@@ -740,6 +740,7 @@ external_decl:
     | KW_NAMESPACE IDENT '{' '}'                   { free($2); }
     | KW_USING KW_NAMESPACE qualified_id ';'       { free($3); }  /* using-directive (no-op) */
     | KW_USING KW_NAMESPACE IDENT ';'              { free($3); }
+    | KW_USING qualified_id ';'                    { free($2); }  /* using-declaration `using N::name;` -> no-op: namespaces are transparent so the name already resolves unqualified */
     | KW_USING IDENT '=' base_type pointers ';'    {            /* type alias `using T = U;` */
           st_add_typedef($2, apply_pointers($4, $5)); free($2);
       }
