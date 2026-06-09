@@ -330,12 +330,26 @@ static int      loop_top = 0;
 // inside a switch nested in a loop must leave the switch, not the loop).
 static char *brk_stk[MAX_LOOPS * 2];
 static int   brk_top = 0;
-static void  brk_push(char *b) { if (brk_top < MAX_LOOPS*2) brk_stk[brk_top++] = b; }
+
+// live class-typed locals (constructed, pending dtor) for early-exit RAII:
+// break/continue/return must run their dtors BEFORE jumping (the normal-exit
+// emit_block_dtors sits after the jump in the .asm, so it is skipped at runtime).
+// Parallel marks record the live depth at each loop/switch and at function entry
+// so each exit unwinds exactly the right span (LIFO).
+typedef struct { char *name; char *dtor; } live_local;
+#define MAX_LIVE 256
+static live_local g_live[MAX_LIVE];
+static int        g_live_n = 0;
+static int        brk_live[MAX_LOOPS * 2];   // g_live depth at each break boundary
+static int        loop_live[MAX_LOOPS];      // g_live depth at each loop (for continue)
+
+static void  brk_push(char *b) { if (brk_top < MAX_LOOPS*2) { brk_live[brk_top] = g_live_n; brk_stk[brk_top++] = b; } }
 static void  brk_pop (void)    { if (brk_top > 0) brk_top--; }
 
 static void loop_push(char *c, char *b)
 {
     if (loop_top >= MAX_LOOPS) msg_internal("loop nesting too deep");
+    loop_live[loop_top] = g_live_n;
     loop_stk[loop_top].cont_l = c; loop_stk[loop_top].break_l = b; loop_top++;
     brk_push(b);
 }
@@ -2117,6 +2131,28 @@ static void emit_block_dtors(stmt *block)
     }
 }
 
+// ---- early-exit RAII: live-local tracking + dtor emission ------------------
+static void live_push(const char *mangled, const char *dtor)
+{
+    if (g_live_n < MAX_LIVE) {
+        g_live[g_live_n].name = strdup(mangled);
+        g_live[g_live_n].dtor = strdup(dtor);
+        g_live_n++;
+    }
+}
+static void live_pop_to(int mark)
+{
+    while (g_live_n > mark) { g_live_n--; free(g_live[g_live_n].name); free(g_live[g_live_n].dtor); }
+}
+// emit dtor calls for live class locals from the top down to (not including)
+// `mark`, in reverse construction order. Does NOT pop g_live — the jump leaves;
+// the codegen-time pop happens at the enclosing block's normal exit.
+static void emit_live_dtors(int mark)
+{
+    for (int i = g_live_n - 1; i >= mark; i--)
+        { emit("LEA %s", g_live[i].name); emit("PSH"); emit("CAL %s", g_live[i].dtor); }
+}
+
 // Wrapper: stamp this statement's source line so every instruction it emits
 // maps back to it in pc_<proc>_mem.txt, then restore on exit so the enclosing
 // statement's line resumes after a nested block returns. The real dispatch is
@@ -2136,15 +2172,25 @@ static void gen_stmt_inner(stmt *s)
     switch (s->kind) {
     case S_NULL: return;
     case S_EXPR: if (s->e1) { infer_type(s->e1); gen_expr(s->e1); } return;
-    case S_BLOCK:
+    case S_BLOCK: {
         st_push_scope();
+        int live_mark = g_live_n;
         for (int i = 0; i < s->n_items; i++) gen_stmt(s->items[i]);
         emit_block_dtors(s);
+        live_pop_to(live_mark);     // pop this block's tracked live locals
         st_pop_scope();
         return;
+    }
 
     case S_DECL:
-        for (decl *d = s->decls; d; d = d->next) declare_local(d);
+        for (decl *d = s->decls; d; d = d->next) {
+            declare_local(d);
+            // track constructed class locals so an early exit can run their dtors
+            if (d->dtype && d->dtype->kind == TY_STRUCT && d->dtype->tag) {
+                char *dt = resolve_method(d->dtype, "dtor");
+                if (dt) { char *an = mangle_local(d->name); live_push(an, dt); free(an); free(dt); }
+            }
+        }
         return;
 
     case S_IF: {
@@ -2216,11 +2262,12 @@ static void gen_stmt_inner(stmt *s)
     }
 
     case S_BREAK:
-        if (brk_top > 0) emit("JMP %s", brk_stk[brk_top-1]);
+        if (brk_top > 0) { emit_live_dtors(brk_live[brk_top-1]); emit("JMP %s", brk_stk[brk_top-1]); }
         else msg_error(s->line, "break outside of loop/switch");
         return;
     case S_CONTINUE:
         if (loop_top == 0) msg_error(s->line, "continue outside of loop");
+        emit_live_dtors(loop_live[loop_top-1]);
         emit("JMP %s", loop_stk[loop_top-1].cont_l);
         return;
 
@@ -2240,6 +2287,19 @@ static void gen_stmt_inner(stmt *s)
             } else {
                 gen_expr_num(s->e1, cur_func_ret && cur_func_ret->kind == TY_FLOAT);
             }
+        }
+        if (g_live_n > 0) {                  // RAII: run dtors for in-scope class locals first
+            int hasval = s->e1 && cur_func_ret && cur_func_ret->kind != TY_VOID;
+            char *rs = NULL;
+            if (hasval) {                    // protect the return value across the dtor CALs
+                char rn[32]; snprintf(rn, sizeof(rn), "_rsv%d", ++label_n);
+                rs = mangle_local(rn);
+                st_add(SK_LOCAL_VAR, rn, rs, t_int());
+                log_var(cur_func_name ? cur_func_name : "global", rn, 1, 0);
+                emit("SET %s", rs);
+            }
+            emit_live_dtors(0);
+            if (hasval) { emit("LOD %s", rs); free(rs); }
         }
         if (cur_func_name && strcmp(cur_func_name, "main") == 0) emit("JMP fim");
         else emit_fn_return();
@@ -2475,6 +2535,7 @@ static void emit_function(func *f, unit *u, int is_main)
     cur_func_ret     = f->ret;
     cur_fn_recursive = f->is_recursive;
     cur_method_class = f->method_of;
+    live_pop_to(0);                    // fresh early-exit RAII tracking per function
     st_enter_func(f->asm_label);
     st_push_scope();
 
