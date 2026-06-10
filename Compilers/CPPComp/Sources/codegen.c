@@ -96,6 +96,21 @@ static sym *cur_class_static(const char *name)
     return NULL;
 }
 
+// if `member` is a static data member of struct type `t`, return its global
+// symbol (Class__member); else NULL. Lets `obj.member` / `ptr->member` resolve a
+// static the same way `Class::member` does (the object/pointer is not addressed).
+static sym *struct_static_sym(type *t, const char *member)
+{
+    if (!t || t->kind != TY_STRUCT || !t->tag) return NULL;
+    for (int i = 0; i < t->n_statics; i++)
+        if (!strcmp(t->statics[i], member)) {
+            char *gn = cg_mangle_method(t->tag, member);
+            sym *s = st_find(gn); free(gn);
+            return s;
+        }
+    return NULL;
+}
+
 // find method `m` in `cls` or an ancestor (single inheritance); returns its
 // mangled asm name (malloc'd, = the SK_FUNC's name) or NULL.
 static char *resolve_method(type *cls, const char *m)
@@ -736,6 +751,8 @@ static type *infer_type(expr *e)
     case E_MEMBER: {
         type *t = infer_type(e->a);
         if (!t || t->kind != TY_STRUCT) msg_error(e->line, "'.' on non-struct");
+        sym *stat = struct_static_sym(t, e->member);
+        if (stat) { e->etype = stat->stype; break; }     // static data member via instance
         strct_field *f = t_struct_find(t, e->member);
         if (!f) msg_error(e->line, "no such field '%s'", e->member);
         e->etype = f->ftype;
@@ -745,6 +762,8 @@ static type *infer_type(expr *e)
         type *t = infer_type(e->a);
         if (!t || t->kind != TY_PTR || !t->base || t->base->kind != TY_STRUCT)
             msg_error(e->line, "'->' on non-pointer-to-struct");
+        sym *stat = struct_static_sym(t->base, e->member);
+        if (stat) { e->etype = stat->stype; break; }     // static data member via pointer
         strct_field *f = t_struct_find(t->base, e->member);
         if (!f) msg_error(e->line, "no such field '%s'", e->member);
         e->etype = f->ftype;
@@ -899,17 +918,21 @@ static void gen_addr(expr *e)
         return;
     }
     case E_MEMBER: {
-        gen_addr(e->a);
         type *st = infer_type(e->a);
+        sym *stat = struct_static_sym(st, e->member);
+        if (stat) { emit("LEA %s", stat->asm_name); return; }   // static via instance (object not addressed)
+        gen_addr(e->a);
         strct_field *f = t_struct_find(st, e->member);
         if (!f) msg_error(e->line, "no field '%s'", e->member);
         if (f->offset > 0) emit("ADD %d", f->offset);
         return;
     }
     case E_PMEMBER: {
-        gen_expr(e->a);                           // ptr value
         type *st = infer_type(e->a);
         if (!st || !st->base) msg_error(e->line, "bad -> target");
+        sym *stat = struct_static_sym(st->base, e->member);
+        if (stat) { emit("LEA %s", stat->asm_name); return; }   // static via pointer (pointer not loaded)
+        gen_expr(e->a);                           // ptr value
         strct_field *f = t_struct_find(st->base, e->member);
         if (!f) msg_error(e->line, "no field '%s'", e->member);
         if (f->offset > 0) emit("ADD %d", f->offset);
