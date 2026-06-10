@@ -1361,9 +1361,11 @@ field_declarator:
           /* anonymous bitfield (padding / alignment) */
           t_struct_add_bitfield(cur_struct, "", cur_base, (int)$2);
       }
-    | '(' '*' IDENT ')' '(' param_list ')' {
-          /* function-pointer field `ret (*name)(params)` — an int function id */
-          t_struct_add_field(cur_struct, $3, t_int());
+    | '(' '*' IDENT array_suffix ')' '(' param_list ')' {
+          /* function-pointer field `ret (*name)(params)` — an int function id;
+             with array_suffix, `ret (*name[N])(params)` is an int[] of fn ids. */
+          type *t = build_array_type(t_int(), $4.dims, $4.n);
+          t_struct_add_field(cur_struct, $3, t);
           free($3);
       }
     ;
