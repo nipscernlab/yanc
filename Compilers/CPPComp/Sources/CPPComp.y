@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-   CPPComp ??? bison grammar for the YANC C subset
+   CPPComp — bison grammar for the YANC C subset
    ----------------------------------------------------------------------------
    Grammar is loosely C99, restricted to constructs the target can execute:
      - scalar types int/float/char/void, pointers, 1-D arrays, structs
@@ -153,7 +153,7 @@ static int  lambda_seq = 0;
 static char lambda_name[32];
 /* the enclosing declaration's specifier flags are LIVE while its initializer
    parses; the lambda body has its own declarations, so the flags must be
-   cleared on entry (like function_def does) and RESTORED on exit ??? the outer
+   cleared on entry (like function_def does) and RESTORED on exit — the outer
    declaration still reads them after the initializer. The outer `const` would
    otherwise leak onto body locals, publishing `int k = 1` as a foldable
    SK_ENUM_CONST and turning `++k` into `++1` (not an lvalue). */
@@ -617,7 +617,7 @@ static type *instantiate_ctmpl_t(ctmpl *ct, type **targs, int n)
 // wrap base type with N levels of pointer
 static type *apply_pointers(type *base, int stars) { while (stars-- > 0) base = t_ptr(base); return base; }
 
-// build a 1-argument call `fn(arg)` ??? used to desugar new/delete to malloc/free
+// build a 1-argument call `fn(arg)` — used to desugar new/delete to malloc/free
 static expr *mk_call1(const char *fn, expr *arg, int line)
 {
     expr **args = malloc(sizeof(expr*));
@@ -641,7 +641,7 @@ static decl *make_decl(type *base, int stars, char *name, const int *dims, int n
     t = build_array_type(t, dims, ndims);
     decl *d = ast_decl(t, name, init, line);
     d->sclass = ts_sclass;
-    // `const T *p` qualifies the pointee, not the pointer ??? the variable stays
+    // `const T *p` qualifies the pointee, not the pointer — the variable stays
     // writable (pointee-constness isn't enforced on this single-word target).
     // `const T x` / `const T a[]` still marks the object itself const.
     d->is_const = (stars > 0) ? 0 : ts_is_const;
@@ -888,7 +888,7 @@ declaration:
               for (decl *d = $2.head; d; ) {
                   decl *nx = d->next; d->next = NULL;
                   /* function prototypes have already been registered as SK_FUNC
-                     in init_declarator ??? skip adding them as globals here */
+                     in init_declarator — skip adding them as globals here */
                   sym *existing = st_find(d->name);
                   if (existing && existing->kind == SK_FUNC) {
                       /* nothing more to do */
@@ -1017,7 +1017,7 @@ struct_specifier:
     | KW_STRUCT IDENT {
           sym *s = st_find_tag($2);
           if (!s) {
-              /* forward-declare incomplete tag ??? caller better seal it before sizeof */
+              /* forward-declare incomplete tag — caller better seal it before sizeof */
               type *t = t_make_struct($2);
               st_add_tag($2, t);
               $$ = t;
@@ -1195,7 +1195,7 @@ static_member:
       }
     ;
 
-/* constructor: `ClassName(params) { body }` ??? the class name lexes as a
+/* constructor: `ClassName(params) { body }` — the class name lexes as a
    TYPEDEF_NAME inside its own body. Lowered to method `Class__ctor`. */
 ctor_def:
       TYPEDEF_NAME '(' param_list ')' { g_n_ctor_inits = 0; } ctor_init_opt
@@ -1305,7 +1305,7 @@ method_def:
           { method_enter(t_ref($1), op_arity_name($4, $6.n), $6.head, $6.n); }
       compound_stmt
           { method_finish(t_ref($1), op_arity_name($4, $6.n), $10); }
-    /* static method: `static T name(params) { body }` ??? lowered to a free
+    /* static method: `static T name(params) { body }` — lowered to a free
        function `Class__name` WITHOUT an implicit `this` param. */
     | KW_STATIC base_type IDENT '(' param_list ')' fn_quals
           { static_method_enter($2, $3, $5.head, $5.n); }
@@ -1317,7 +1317,7 @@ method_def:
           { static_method_finish(t_ptr($2), $4, $10); free($4); }
     ;
 
-/* trailing method qualifiers ??? accepted and ignored (cosmetic on this target) */
+/* trailing method qualifiers — accepted and ignored (cosmetic on this target) */
 fn_quals:
       /* empty */
     | fn_quals KW_OVERRIDE
@@ -1388,7 +1388,7 @@ field_list:
 
 field_decl:
       base_type field_declarator_list ';'
-    | KW_CONST base_type field_declarator_list ';'   /* `const T x;` ??? const is cosmetic on this target */
+    | KW_CONST base_type field_declarator_list ';'   /* `const T x;` — const is cosmetic on this target */
     ;
 
 field_declarator_list:
@@ -1413,7 +1413,7 @@ field_declarator:
           free($1);
       }
     | IDENT '=' '{' '}' {
-          /* default member initializer `T name = {};` ??? zero/value-init. Scalar
+          /* default member initializer `T name = {};` — zero/value-init. Scalar
              (and pointer) fields get a 0 dinit; aggregate (array/struct) fields
              are flagged `dzero` so the ctor zero-fills every word, so heap objects
              get zeroed too (not just .mif-backed static storage). */
@@ -1451,7 +1451,7 @@ field_declarator:
           t_struct_add_bitfield(cur_struct, "", cur_base, (int)$2);
       }
     | '(' '*' IDENT array_suffix ')' '(' param_list ')' {
-          /* function-pointer field `ret (*name)(params)` ??? an int function id;
+          /* function-pointer field `ret (*name)(params)` — an int function id;
              with array_suffix, `ret (*name[N])(params)` is an int[] of fn ids. */
           type *t = build_array_type(t_int(), $4.dims, $4.n);
           t_struct_add_field(cur_struct, $3, t);
@@ -1492,13 +1492,13 @@ enum_item:
 pointers:
       /* empty */         { $$ = 0; }
     | pointers '*'        { $$ = $1 + 1; }
-    | pointers KW_CONST   { $$ = $1; }   /* `T * const` ??? const ptr, ignored */
+    | pointers KW_CONST   { $$ = $1; }   /* `T * const` — const ptr, ignored */
     ;
 
 /* zero or more [N] suffixes, in source order (row-major). n==0 means scalar. */
 array_suffix:
       /* empty */                 { $$.n = 0; }
-    | array_suffix '[' ']'        { $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = 0;        }  /* unsized ??? params only */
+    | array_suffix '[' ']'        { $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = 0;        }  /* unsized — params only */
     | array_suffix '[' conditional_expr ']' {
           long v;
           if (!const_eval($3, &v)) msg_error(yylineno, "array size must be a constant expression");
@@ -1517,7 +1517,7 @@ type_arg_list:
       }
     ;
 
-/* non-type template arguments `<4>` / `<4, 8>` ??? constant integer expressions.
+/* non-type template arguments `<4>` / `<4, 8>` — constant integer expressions.
    Uses shift_expr (below relational) so a closing `>` is not eaten as `operator>`. */
 ct_arg_list:
       shift_expr {
@@ -1573,7 +1573,7 @@ init_declarator_list:
 
 init_declarator:
       '&' IDENT '=' { $<typ>$ = cur_base; } assignment_expr {
-          /* reference variable `T& r = lvalue;` ??? r binds to the address of the
+          /* reference variable `T& r = lvalue;` — r binds to the address of the
              initializer and auto-derefs on every use. Save cur_base before
              the initializer in case a cast/sizeof/new inside it reduces a
              new base_type and clobbers the global. */
@@ -1582,7 +1582,7 @@ init_declarator:
           $$ = d;
       }
     | pointers IDENT '(' { $<typ>$ = cur_base; } non_empty_argument_list ')' {
-          /* direct-init `T v(args)` ??? capture the base type before the args (a
+          /* direct-init `T v(args)` — capture the base type before the args (a
              `new`/cast/sizeof inside them would otherwise clobber cur_base).
              Requires >=1 arg: `T v()` is a function declaration (most vexing
              parse), so the empty form must fall through to the prototype /
@@ -1592,11 +1592,11 @@ init_declarator:
           $$ = d;
       }
     | pointers IDENT '{' '}' {
-          /* direct list-init `T v{};` ??? empty brace, value-init (zero fields) */
+          /* direct list-init `T v{};` — empty brace, value-init (zero fields) */
           $$ = make_decl(cur_base, $1, $2, NULL, 0, yylineno, NULL);
       }
     | pointers IDENT '{' { $<typ>$ = cur_base; } init_item_list '}' {
-          /* direct list-init `T v{a, b, ...};` ??? aggregate init without `=`,
+          /* direct list-init `T v{a, b, ...};` — aggregate init without `=`,
              same semantics as `T v = {a, b, ...}` (line 1446 below). Save
              cur_base before the list items in case a cast inside one of
              them reduces a new base_type and clobbers the global. */
@@ -1625,12 +1625,12 @@ init_declarator:
           $$ = make_decl($<typ>5, $1, $2, $3.dims, $3.n, yylineno, $6);
       }
     | pointers IDENT array_suffix '=' '{' '}' {
-          /* empty brace init ??? leave memory at its .mif default (zero) */
+          /* empty brace init — leave memory at its .mif default (zero) */
           $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
       }
     | pointers IDENT array_suffix '=' '{' { $<typ>$ = cur_base; } init_item_list '}' {
           /* aggregate initialiser: array or struct, one value per slot/field.
-             Same cur_base capture as above ??? designators / nested values may
+             Same cur_base capture as above — designators / nested values may
              contain casts that clobber the global. */
           decl *d = make_decl($<typ>6, $1, $2, $3.dims, $3.n, yylineno, NULL);
           d->binit = $7;
@@ -1640,13 +1640,13 @@ init_declarator:
           $$ = d;
       }
     | pointers IDENT array_suffix STRING_LIT {
-          /* `int arr[N] "file.txt";` ??? initialise the array from a data file at synth time */
+          /* `int arr[N] "file.txt";` — initialise the array from a data file at synth time */
           decl *d = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
           d->init_file = $4;
           $$ = d;
       }
     | '(' '*' IDENT array_suffix ')' '(' param_list ')' {
-          /* function pointer `ret (*fp)(params)` ??? held as an int function id;
+          /* function pointer `ret (*fp)(params)` — held as an int function id;
              with array_suffix, `ret (*arr[N])(params)` is an int array of ids.
              As a typedef (`typedef ret (*Name)(params);`) Name aliases that type. */
           type *t = build_array_type(t_int(), $4.dims, $4.n);
@@ -1662,7 +1662,7 @@ init_declarator:
           $$ = d;
       }
     | pointers IDENT '(' param_list ')' {
-          /* function declaration (prototype) ??? register, attach signature.
+          /* function declaration (prototype) — register, attach signature.
              Default-arg expressions from the prototype are stashed on the
              sym so the matching definition (which won't repeat them) can
              pick them up. */
@@ -1735,7 +1735,7 @@ function_def:
                   for (decl *p = $5.head; p; p = p->next, i++) s->param_types[i] = p->dtype;
               }
           } else if (s->param_defaults && $5.n == s->n_params) {
-              /* a prior prototype recorded default args ??? replay them onto the
+              /* a prior prototype recorded default args — replay them onto the
                  definition's params so call-site resolve_overload sees defaults. */
               decl *p = $5.head; int i = 0;
               for (; p && i < s->n_params; p = p->next, i++) {
@@ -1852,7 +1852,7 @@ function_def:
 param_list:
       /* empty */                            { $$.head = NULL; $$.n = 0; }
     | non_empty_param_list                   {
-          /* `(void)` parses as a single abstract void param ??? normalise to 0 */
+          /* `(void)` parses as a single abstract void param — normalise to 0 */
           if ($1.n == 1 && $1.head->dtype && $1.head->dtype->kind == TY_VOID) { $$.head = NULL; $$.n = 0; }
           else $$ = $1;
       }
@@ -1867,26 +1867,26 @@ non_empty_param_list:
     ;
 
 param_declarator:
-      KW_CONST param_declarator              { $$ = $2; }   /* `const T ...` ??? ignored */
+      KW_CONST param_declarator              { $$ = $2; }   /* `const T ...` — ignored */
     | base_type pointers IDENT array_suffix {
           type *t = apply_pointers($1, $2);
           t = build_array_type(t, $4.dims, $4.n);
           $$ = ast_decl(t, $3, NULL, yylineno);
       }
     | base_type '&' IDENT {
-          /* reference parameter `T& name` ??? pass-by-address, auto-deref on use */
+          /* reference parameter `T& name` — pass-by-address, auto-deref on use */
           $$ = ast_decl(t_ref($1), $3, NULL, yylineno);
       }
     | base_type pointers IDENT '=' assignment_expr {
-          /* default argument `T name = expr` ??? the default is the param's init */
+          /* default argument `T name = expr` — the default is the param's init */
           $$ = ast_decl(apply_pointers($1, $2), $3, $5, yylineno);
       }
     | base_type pointers {
-          /* abstract (unnamed) parameter ??? e.g. the `int` in `int (*f)(int)` */
+          /* abstract (unnamed) parameter — e.g. the `int` in `int (*f)(int)` */
           $$ = ast_decl(apply_pointers($1, $2), "_anon", NULL, yylineno);
       }
     | base_type '(' '*' IDENT ')' '(' param_list ')' {
-          /* function-pointer parameter ??? int function ID */
+          /* function-pointer parameter — int function ID */
           $$ = ast_decl(t_int(), $4, NULL, yylineno);
       }
     ;
@@ -2043,8 +2043,8 @@ assignment_expr:
       conditional_expr                       { $$ = $1; }
     | unary_expr '=' assignment_expr         { $$ = ast_assign($1, $3, yylineno); }
     | unary_expr assign_op assignment_expr   {
-          /* a OP= b  ???  a = a OP b (for class lhs, codegen may instead dispatch
-             a user-defined operatorOP=). $1 is referenced twice ??? codegen treats
+          /* a OP= b  ⇒  a = a OP b (for class lhs, codegen may instead dispatch
+             a user-defined operatorOP=). $1 is referenced twice — codegen treats
              the lvalue as evaluated once; safe for simple lvalues (IDENT, ARRAY,
              MEMBER, DEREF). */
           $$ = ast_assign_op($2, $1, $3, yylineno);
@@ -2237,7 +2237,7 @@ primary_expr:
       }
     | IDENT TOK_SCOPE TEMPLATE_NAME          { free($1); $$ = ast_ident($3, yylineno); }  /* N::fn deduced */
     | TYPEDEF_NAME '(' argument_list ')'     {
-          /* T(args) ??? a temporary object constructed on the stack */
+          /* T(args) — a temporary object constructed on the stack */
           sym *s = st_find($1);
           type *t = (s && s->kind == SK_TYPEDEF) ? s->stype : NULL;
           if (!t) msg_error(yylineno, "unknown type '%s'", $1);
@@ -2245,7 +2245,7 @@ primary_expr:
           free($1);
       }
     | TYPEDEF_NAME TOK_SCOPE IDENT           {
-          /* Class::member ??? a scoped enumerator (E::name) or a static data member */
+          /* Class::member — a scoped enumerator (E::name) or a static data member */
           char *m = mangle_method($1, $3);
           sym *s = st_find(m);
           if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); free(m); }
@@ -2253,7 +2253,7 @@ primary_expr:
           free($1); free($3);
       }
     | TYPEDEF_NAME '<' ct_mixed_arg_list '>' TOK_SCOPE IDENT '(' argument_list ')' {
-          /* `Class<args>::static_method(args)` ??? static call on a class-template
+          /* `Class<args>::static_method(args)` — static call on a class-template
              instantiation. Instantiate the class (so its cloned methods get the
              concrete mangled tag), then build a call to `<concrete_tag>__method`. */
           ctmpl *ct = find_ctmpl($1);
@@ -2267,7 +2267,7 @@ primary_expr:
           free($1); free($6);
       }
     | IDENT TOK_SCOPE TYPEDEF_NAME '<' ct_mixed_arg_list '>' TOK_SCOPE IDENT '(' argument_list ')' {
-          /* `N::Class<args>::static_method(args)` ??? namespace transparent. */
+          /* `N::Class<args>::static_method(args)` — namespace transparent. */
           free($1);
           ctmpl *ct = find_ctmpl($3);
           const char *cls_tag = $3;
@@ -2308,5 +2308,3 @@ void yyerror(const char *s)
 {
     msg_error(yylineno, "%s", s);
 }
-
-
