@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// CPPComp — AST -> YANC .asm code generator ------------------------------------
+// CPPComp ??? AST -> YANC .asm code generator ------------------------------------
 // ----------------------------------------------------------------------------
 // Conventions:
 //   - Accumulator (racc) carries every expression result.
@@ -529,7 +529,7 @@ static void scan_fp_stmt(stmt *s)
 // ---- heap-usage pre-scan ---------------------------------------------------
 // new/delete desugar to malloc/free calls, so spotting a call to either (in any
 // function body or initializer) tells us to declare __heap and emit the runtime
-// — this must be known before the header is emitted, hence a pre-pass.
+// ??? this must be known before the header is emitted, hence a pre-pass.
 
 static void scan_heap_stmt(stmt *s);
 static void scan_heap_initz(initz *z);
@@ -735,7 +735,7 @@ static type *infer_type(expr *e)
             }
             msg_error(e->line, "undefined function '%s'", fn);
         } else {
-            // indirect call via (*fp)(...) — the callee holds a function ID, not
+            // indirect call via (*fp)(...) ??? the callee holds a function ID, not
             // a dereferenceable pointer, so don't type-check the deref itself.
             e->etype = t_int();
         }
@@ -809,7 +809,7 @@ static void emit_load_float(double v)
 
 // ---- conditional branch ----------------------------------------------------
 // JIZ tests the whole accumulator word (HDL: if_acc = |ula_out), so any value's
-// C truthiness is honoured directly. No LIN;LIN normalisation needed — emit the
+// C truthiness is honoured directly. No LIN;LIN normalisation needed ??? emit the
 // expression and branch.
 
 static void gen_bool(expr *e, const char *jz_target)
@@ -1031,7 +1031,7 @@ static void copy_to_block(const char *dest, expr *src, int n)
 
 // push one call argument. A struct is passed by value: copy it into a fresh
 // per-call-site block and push that block's address (the callee treats a struct
-// param like an array param — it holds the address). Scalars push their value.
+// param like an array param ??? it holds the address). Scalars push their value.
 static void gen_push_arg(expr *arg)
 {
     type *at = infer_type(arg);
@@ -1134,7 +1134,7 @@ static void gen_store(expr *lv, expr *val)
                     gen_expr_num(val, vf);
                     emit("SET_V %s %ld", s->asm_name, lv->b->ival);
                 } else {
-                    gen_expr(lv->b);              // index → acc
+                    gen_expr(lv->b);              // index ??? acc
                     emit("PSH");
                     gen_expr_num(val, vf);
                     emit("STI %s", s->asm_name);
@@ -1412,11 +1412,11 @@ static void gen_expr(expr *e)
             return;
         }
 
-        // rhs is a simple scalar identifier → use the memory-operand form.
+        // rhs is a simple scalar identifier ??? use the memory-operand form.
         // ONLY for ops where mem-as-in1 / acc-as-in2 gives the right answer:
         // commutative ops, and the comparisons (verified below). Non-commutative
         // ops (SUB, DIV, MOD, SHL, SHR) compute `mem OP acc` = `rhs OP lhs` in
-        // this form, which is reversed — they take the stack path instead.
+        // this form, which is reversed ??? they take the stack path instead.
         // Gate on the op: otherwise the lhs is evaluated here (a LOD) and then
         // re-evaluated by the stack path, leaving a dead LOD of the left operand.
         int mem_form_op = (op == OP_ADD || op == OP_MUL || op == OP_BAND ||
@@ -1443,7 +1443,7 @@ static void gen_expr(expr *e)
                 }
             }
         }
-        // rhs is arr[const] on a fixed-address scalar array → the _V form
+        // rhs is arr[const] on a fixed-address scalar array ??? the _V form
         // (base+offset baked in): ADD_V / MLT_V (+ float). Only ADD/MUL have a
         // _V opcode; for other ops arr[const] falls through to the stack path.
         if ((op == OP_ADD || op == OP_MUL) && lf == rf &&
@@ -1951,7 +1951,7 @@ static void gen_expr(expr *e)
         // indirect call: callee is a function-pointer value (a variable, or *fp).
         // Inline the dispatch as a chain of direct CALs guarded by EQU/JIZ. Each
         // CAL is a depth-1 call straight from this caller (the same shape as a
-        // normal call), so the target's RET returns here — avoiding the nested
+        // normal call), so the target's RET returns here ??? avoiding the nested
         // CAL-under-conditional that the prefetch mishandles.
         {
             expr *fpv = (e->a->kind == E_DEREF) ? e->a->a : e->a;
@@ -2036,7 +2036,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
 
 static void declare_local(decl *d)
 {
-    // `auto x = init;` — deduce the variable's type from its initializer
+    // `auto x = init;` ??? deduce the variable's type from its initializer
     if (d->dtype && d->dtype->is_auto && d->init) {
         type *it = infer_type(d->init);
         if (it) d->dtype = it;
@@ -2064,7 +2064,7 @@ static void declare_local(decl *d)
     log_var(cur_func_name ? cur_func_name : "global", d->name,
             innermost_code(d->dtype), arr_words);
     // `static` locals keep fixed storage but are initialised ONCE at program
-    // start (collected pre-pass, emitted at main entry) — skip the inline init.
+    // start (collected pre-pass, emitted at main entry) ??? skip the inline init.
     int is_static = (d->sclass == SC_STATIC);
     if (d->dtype && d->dtype->kind == TY_ARRAY) {
         // multi-dim arrays flatten to total word count; element type is the innermost scalar
@@ -2105,7 +2105,7 @@ static void declare_local(decl *d)
 // A switch's case/default labels may appear ANYWHERE in its body (even nested
 // inside a loop, e.g. Duff's device), so we walk the body, mint a label per
 // case (stored on the node), and emit the EQU/JIZ dispatch chain. We do NOT
-// descend into a nested switch — its cases belong to it.
+// descend into a nested switch ??? its cases belong to it.
 static stmt *g_sw_default;
 static void switch_dispatch(stmt *s, const char *tmp_name)
 {
@@ -2133,7 +2133,7 @@ static void switch_dispatch(stmt *s, const char *tmp_name)
 
 // emit destructor calls for the class-typed locals declared directly in this
 // block, in reverse declaration order (RAII at normal block exit). Note: an
-// early return/break/continue inside the block bypasses these — a known gap.
+// early return/break/continue inside the block bypasses these ??? a known gap.
 static void emit_block_dtors(stmt *block)
 {
     for (int i = block->n_items - 1; i >= 0; i--) {
@@ -2168,7 +2168,7 @@ static void live_pop_to(int mark)
     while (g_live_n > mark) { g_live_n--; free(g_live[g_live_n].name); free(g_live[g_live_n].dtor); }
 }
 // emit dtor calls for live class locals from the top down to (not including)
-// `mark`, in reverse construction order. Does NOT pop g_live — the jump leaves;
+// `mark`, in reverse construction order. Does NOT pop g_live ??? the jump leaves;
 // the codegen-time pop happens at the enclosing block's normal exit.
 static void emit_live_dtors(int mark)
 {
@@ -2359,7 +2359,7 @@ static void gen_stmt_inner(stmt *s)
 
     case S_SWITCH: {
         // evaluate the discriminant once into a temp, emit the dispatch chain
-        // (cases may be nested anywhere — Duff's device), then emit the body
+        // (cases may be nested anywhere ??? Duff's device), then emit the body
         // normally; each case/default emits its minted label inline.
         infer_type(s->e1);
         char tmp[64]; snprintf(tmp, sizeof(tmp), "_sw_%d", ++label_n);
@@ -2406,7 +2406,7 @@ static int has_main = 0;
 // IEEE-754 float layout for a given word width: the standard interchange
 // formats for 16/32/64 bits, and a sensible split otherwise (overridable per
 // source with `#pragma yanc nbmant/nbexpo`). The compiler is width-parametric,
-// so picking nubits selects the matching float format automatically — a program
+// so picking nubits selects the matching float format automatically ??? a program
 // with no pragmas defaults to 32-bit / IEEE-754 single.
 static void derive_ieee(int w, int *mant, int *expo)
 {
@@ -2494,7 +2494,8 @@ static void emit_global_scalar_inits(unit *u)
         // show as that C++ source line in GTKWave (not -1/INTERNAL scaffolding).
         if (d->line > 0) cg_line = d->line;
         if (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT) {
-            if (d->binit) emit_initz(d->name, 0, d->dtype, d->binit);
+            if      (d->binit) emit_initz(d->name, 0, d->dtype, d->binit);
+            else if (d->init)  copy_to_block(d->name, d->init, type_size_words(d->dtype));
             continue;
         }
         if (!d->init) continue;
@@ -2812,7 +2813,7 @@ static void write_trad_cmm(const char *tmp_dir, const char *src_path)
 static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect)
 {
     if (!e) return;
-    // `delete p` dispatches p's (possibly virtual) destructor — an indirect call
+    // `delete p` dispatches p's (possibly virtual) destructor ??? an indirect call
     // into the address-taken dtor impls, which can re-enter the same dtor (e.g. a
     // tree dtor doing `delete child`). Treat it like an indirect call so such a
     // dtor is detected as recursive and gets a stack frame (its `this` must not
@@ -2903,7 +2904,7 @@ static expr *clone_expr(expr *e, type **a, int n)
     expr *c = malloc(sizeof(expr)); *c = *e;       // shallow copy (strings shared)
     c->etype = NULL;                                // re-infer per instance
     // a non-type template parameter referenced in an expression is an int with a
-    // sentinel value — replace it with the concrete argument for this instance.
+    // sentinel value ??? replace it with the concrete argument for this instance.
     if (e->kind == E_INT_LIT && e->ival >= NTP_BASE && (e->ival - NTP_BASE) < g_subst_nvals)
         c->ival = g_subst_vals[e->ival - NTP_BASE];
     c->target_t = subst_type(e->target_t, a, n);
@@ -3028,7 +3029,7 @@ static void instantiate_ctmpl_methods(unit *u)
 }
 
 // ---- post-emit peephole ----------------------------------------------------
-// A bare PSH immediately followed by a load-class op (no label between them →
+// A bare PSH immediately followed by a load-class op (no label between them ???
 // they always execute as a pair) fuses into the op's P_ / PF_ variant, which
 // pushes the accumulator as part of the same instruction. The list below is
 // exactly the ops that have such a fused opcode in the ISA.
@@ -3058,7 +3059,7 @@ static char *fuse_after_psh(const char *t)
 
 // `LOD <name>` followed by a unary acc op (NEG/ABS/PST/NRM/I2F/F2I/INV/LIN and
 // their F_ variants) reads the operand straight from memory: <op>_M <name>.
-// ONLY a memory-NAME operand (not LOD_V, not a literal `LOD 5`) — the _M opcode
+// ONLY a memory-NAME operand (not LOD_V, not a literal `LOD 5`) ??? the _M opcode
 // takes a data address, not a constant. Returns fused text, or NULL.
 static char *fuse_lod_unary(const char *lod, const char *un)
 {
@@ -3277,3 +3278,4 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
     if (tmp_dir) write_cmm_log(tmp_dir);
     if (tmp_dir && src_path) write_trad_cmm(tmp_dir, src_path);
 }
+
