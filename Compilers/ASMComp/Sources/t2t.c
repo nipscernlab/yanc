@@ -79,6 +79,12 @@ unsigned int f2mf(char *va, float *delta)
         if (carry) m = m+1; // round
     }
 
+    // renormalize: a round-up can overflow the mantissa field (all-ones + 1 ->
+    // 2^nbmant). The leading 1 is stored explicitly, so letting that bit carry
+    // into the exponent and leaving the mantissa at 0 would decode as 0.0.
+    // Shift the mantissa back into range and bump the exponent instead.
+    if (m >> nbmant) { m = m >> 1; e = e + 1; }
+
     // residual ---------------------------------------------------------------
 
     float num = (atof(va)<0.0) ? -atof(va) : atof(va); // absolute value of the number
