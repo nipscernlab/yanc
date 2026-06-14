@@ -11,7 +11,11 @@ $ErrorActionPreference = "Stop"
 
 $ROOT  = Resolve-Path "$PSScriptRoot\..\..\..\.." | Select-Object -ExpandProperty Path
 $CPP   = Join-Path $ROOT "Compilers/CPPComp"
-$BIN   = Join-Path $ROOT "bin"
+# Prefer the regress-built binaries: regress.sh burns the real 32-bit target
+# (CFG_NUBITS=32 etc.) into .smoke/bin, while a plain `make` leaves bin/ at
+# config.h's 16-bit default -- which would silently skew this comparison.
+$BIN   = Join-Path $ROOT ".smoke/bin"
+if (-not (Test-Path (Join-Path $BIN "cppcomp.exe"))) { $BIN = Join-Path $ROOT "bin" }
 $WORK  = Join-Path $CPP  ".work"
 $TEST  = $PSScriptRoot
 $SW    = Join-Path $TEST "Software"
@@ -62,7 +66,9 @@ Write-Host "==> cpppp"
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> cppcomp"
-& $CPPC -i "$tmp/pp.cpp" -o $asm -t $tmp
+# cppcomp >= v5.2 dropped -o for the cmmcomp-style layout: -p <proc> -n <prname>
+# writes Software/<prname>.asm into the proc folder ($asm above).
+& $CPPC -i "$tmp/pp.cpp" -p $proc -n $prname -t $tmp
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> appcomp"

@@ -333,6 +333,31 @@ static int innermost_code(const type *t)
     return type_code_for(t);
 }
 
+// Homogeneous scalar fill-code for an aggregate, used as the #array type code so
+// asmcomp zero-fills the data .mif with the correct encoding. YANC float 0.0 is
+// NOT all-zero bits (it is f2mf(0.0) = 0x40000000 on the 32-bit target), so a
+// float aggregate left at the int-0 default reads back as a bogus float — e.g.
+// `std::array<float,N> a = {};` (a struct wrapping float[N]) whose unwritten
+// slots then corrupt later float arithmetic. Returns 2 (float) only when EVERY
+// scalar word is float; int / pointer / mixed fall back to 1, whose all-zero
+// fill is a faithful int 0.
+static int agg_fill_code(const type *t)
+{
+    if (!t) return 1;
+    if (t->kind == TY_FLOAT) return 2;
+    if (t->kind == TY_ARRAY) return agg_fill_code(t->base);
+    if (t->kind == TY_STRUCT) {
+        int code = 0;
+        for (strct_field *f = t->fields; f; f = f->next) {
+            int c = agg_fill_code(f->ftype);
+            if (!code)       code = c;
+            else if (code != c) return 1;   // mixed -> int-0 default
+        }
+        return code ? code : 1;
+    }
+    return 1;   // pointer / func / void: int-0 default
+}
+
 // ---- loop-context stack (break/continue) -----------------------------------
 
 typedef struct { char *cont_l; char *break_l; } loop_ctx;
@@ -1660,7 +1685,7 @@ static void gen_expr(expr *e)
         char *aname = mangle_local(nm);
         st_add(SK_LOCAL_VAR, nm, aname, t);
         log_var(cur_func_name ? cur_func_name : "global", nm, innermost_code(t), 0);
-        emit("#array %s 1 %d", aname, type_size_words(t));
+        emit("#array %s %d %d", aname, agg_fill_code(t), type_size_words(t));
         if (t->n_vtbl > 0) {                                       // set vptr if polymorphic
             emit("LEA %s", aname); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STA");
         }
@@ -1727,7 +1752,7 @@ static void gen_expr(expr *e)
         char nm[32]; snprintf(nm, sizeof(nm), "_cl%d", ++label_n);
         char *an = mangle_local(nm);
         if (t->kind == TY_ARRAY) emit("#array %s %d %d", an, innermost_code(t), type_size_words(t));
-        else                     emit("#array %s 1 %d", an, type_size_words(t));
+        else                     emit("#array %s %d %d", an, agg_fill_code(t), type_size_words(t));
         emit_initz(an, 0, t, e->cinit);
         emit("LEA %s", an);
         if (t->kind != TY_ARRAY && t->kind != TY_STRUCT) emit("LDA");  // scalar value
@@ -2072,7 +2097,7 @@ static void declare_local(decl *d)
         else              emit("#array %s %d %d",         aname, innermost_code(d->dtype), arr_words);
         if (!is_static && d->binit) emit_initz(aname, 0, d->dtype, d->binit);
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
-        emit("#array %s 1 %d", aname, type_size_words(d->dtype));
+        emit("#array %s %d %d", aname, agg_fill_code(d->dtype), type_size_words(d->dtype));
         type *ct = d->dtype;
         if (is_static)          { /* deferred to program start */ }
         else if (d->binit)      emit_initz(aname, 0, d->dtype, d->binit);
@@ -2454,7 +2479,7 @@ static void emit_global_arrays(unit *u)
             else
                 emit("#array %s %d %d", d->name, innermost_code(d->dtype), arr_words);
         } else if (d->dtype->kind == TY_STRUCT) {
-            emit("#array %s 1 %d", d->name, type_size_words(d->dtype));
+            emit("#array %s %d %d", d->name, agg_fill_code(d->dtype), type_size_words(d->dtype));
         }
     }
 }
