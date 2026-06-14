@@ -1,0 +1,29 @@
+#PRNAME cmm_fbound
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Regression for the f2mf rounding-carry bug on the configurable (non-23/8)
+// target. At nbmant=10 the largest representable value below a power of two has
+// an all-ones mantissa; rounding carries it out of the 10-bit field. Without
+// renormalization the constant encoded as 0.0 -- e.g. 1.999999 (which rounds to
+// 2.0 at 10-bit precision) silently became 0. We output integer values derived
+// from such constants so the golden is exact.
+void main()
+{
+    float a, b, c;
+    while (1)
+    {
+        a = 1.999999;   // rounds to 2.0 at 10-bit; bug -> 0.0
+        b = 3.999999;   // rounds to 4.0;            bug -> 0.0
+        c = 0.999999;   // rounds to 1.0;            bug -> 0.0
+        out(0, a * 1000.0);   // 2000
+        out(0, b * 1000.0);   // 4000
+        out(0, c * 1000.0);   // 1000
+    }
+}

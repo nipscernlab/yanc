@@ -195,6 +195,12 @@ void f2mf(char *va, int *s, int *m, int *e)
         *m = *m >> sh;
         if (carry) *m = *m+1; // round
     }
+
+    // renormalize a rounding carry out of the nbmant-bit mantissa (mirrors
+    // asmcomp's t2t.c f2mf): the largest value below a power of two rounds from
+    // 0x7FFFFF to 0x800000; without this the approximation residual reported by
+    // exec_fnum would be computed from a bogus ~0 mantissa.
+    if (*m >> nbmant) { *m = *m >> 1; *e = *e + 1; }
 }
 
 // used when the lexer finds a float constant

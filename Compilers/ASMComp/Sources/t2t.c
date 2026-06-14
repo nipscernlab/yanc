@@ -79,6 +79,14 @@ unsigned int f2mf(char *va, float *delta)
         if (carry) m = m+1; // round
     }
 
+    // renormalize a rounding carry out of the nbmant-bit mantissa -------------
+    // For the largest value just below a power of two the mantissa is all ones
+    // (0x7FFFFF) and rounding pushes it to 0x800000, i.e. one bit past the
+    // field. Left as-is, that bit bleeds into the exponent in `s + e + m` below
+    // and zeroes the mantissa, encoding e.g. 2 - 2^-23 as 0.0. Shift it back
+    // and bump the exponent instead.
+    if (m >> nbmant) { m = m >> 1; e = e + 1; }
+
     // residual ---------------------------------------------------------------
 
     float num = (atof(va)<0.0) ? -atof(va) : atof(va); // absolute value of the number

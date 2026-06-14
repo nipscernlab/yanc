@@ -1,0 +1,32 @@
+NOP
+#PRNAME cmm_fbound
+#NUBITS 16
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+@main @Lwh1 LOD 1
+JIZ Lwh1end
+LOD 1.999999
+SET main_a
+LOD 3.999999
+SET main_b
+LOD 0.999999
+SET main_c
+LOD main_a
+F_MLT 1000.0
+F2I
+OUT 0
+LOD main_b
+F_MLT 1000.0
+F2I
+OUT 0
+LOD main_c
+F_MLT 1000.0
+F2I
+OUT 0
+JMP Lwh1
+@Lwh1end @fim JMP fim
