@@ -1499,9 +1499,17 @@ pointers:
 array_suffix:
       /* empty */                 { $$.n = 0; }
     | array_suffix '[' ']'        { $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = 0;        }  /* unsized — params only */
-    | array_suffix '[' conditional_expr ']' {
+    | array_suffix '[' { $<typ>$ = cur_base; } conditional_expr ']' {
+          /* A sizeof(T) / cast / new in the size expression reduces its own
+             base_type and clobbers the global cur_base that the enclosing
+             declarator reads afterwards -- e.g. `float a[sizeof(int)]` would
+             register `a` as int[]. Restore the declarator's base type captured
+             before the size expression. This makes array_suffix transparent to
+             cur_base for every rule that uses it (the init_declarator forms read
+             cur_base directly or via their own mid-rule capture). */
+          cur_base = $<typ>3;
           long v;
-          if (!const_eval($3, &v)) msg_error(yylineno, "array size must be a constant expression");
+          if (!const_eval($4, &v)) msg_error(yylineno, "array size must be a constant expression");
           $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)v;   /* enum/macro/sizeof/arith ok */
       }
     ;
