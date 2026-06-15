@@ -1,0 +1,10 @@
+name = "bughunt"
+version = "0.1.0"
+defaultTargets = ["bughunt"]
+
+[[lean_lib]]
+name = "Bughunt"
+
+[[lean_exe]]
+name = "bughunt"
+root = "Main"
