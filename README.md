@@ -21,6 +21,11 @@ YANC is the compilation backbone of the [SAPHO](https://github.com/nipscernlab) 
 
 YANC is used by the **Aurora** desktop app, but it can also be used standalone — just call the binaries from a shell script that walks through the pipeline.
 
+YANC is developed by [NIPS-CERN](https://www.nipscern.com), a research group at the
+[Universidade Federal de Juiz de Fora](https://www.ufjf.br) (UFJF) in Brazil, working
+in collaboration with CERN.
+Project page: [nipscern.com/projects/yanc](https://www.nipscern.com/projects/yanc).
+
 ## Dependencies
 
 YANC runs on **Windows and Linux**, and a single setup script
@@ -509,6 +514,41 @@ yanc/
 Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md)
 for the conventions on commits, comments, and the bilingual `MSG_*`
 diagnostic pattern.
+
+## About NIPS-CERN
+
+YANC is developed and maintained by **NIPS-CERN**, the research and development group
+of the Department of Electrical Engineering at the
+[Universidade Federal de Juiz de Fora](https://www.ufjf.br) (UFJF), Brazil.
+
+NIPS-CERN operates two laboratories: one at CERN in Geneva, Switzerland, and one in
+the PPEE (Graduate Program in Electrical Engineering) building at UFJF. Students and
+researchers work at both. UFJF's Department of Electrical Engineering is a
+[member institution of the ATLAS Collaboration](https://atlaspo.cern.ch/public/institutions/)
+at CERN, with system membership in the Tile Calorimeter and the Liquid-Argon
+Calorimeter.
+
+| | |
+|---|---|
+| Institutional website | [nipscern.com](https://www.nipscern.com) |
+| About the group | [nipscern.com/about](https://www.nipscern.com/about) |
+| University | [Universidade Federal de Juiz de Fora (UFJF)](https://www.ufjf.br) |
+| SAPHO project page | [nipscern.com/projects/sapho](https://www.nipscern.com/projects/sapho) |
+| YANC project page | [nipscern.com/projects/yanc](https://www.nipscern.com/projects/yanc) |
+| Publications | [nipscern.com/publications](https://www.nipscern.com/publications) |
+| Contact | contact@nipscern.com |
+
+### Citing SAPHO
+
+The SAPHO architecture is described in:
+
+> SAPHO, Scalable-Architecture Processor for Hardware Optimization: An FPGA
+> Customizable Implementation Approach. *IEEE*, 2026.
+> <https://ieeexplore.ieee.org/document/11345120/>
+
+Further publications on SAPHO, AURORA and YANC, including applications in
+high-energy physics instrumentation, are listed at
+[nipscern.com/publications](https://www.nipscern.com/publications).
 
 ## License
 
