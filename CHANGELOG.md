@@ -8,6 +8,55 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v5.3] – 2026-07-24
+
+### Changed
+- **Synchronous global reset across the whole HDL library** — FPGA-recommended
+  reset style: the async resets (`pc`, stack pointers, `racc`) became
+  synchronous, and every state register that had no reset at all is now linked
+  to the global `rst` — `ula_in1_ctrl` (`popr`/`stkr`), `ula_in2_ctrl`
+  (`req_inr`/`ior`), `io_ctrl` (`en_out`/`addr_out`, killing any spurious boot
+  `out_en` pulse) and `instr_dec`'s `ula_op` (its `rst` port was unused).
+  `myFIFO`'s delayed write strobe `wr` now clears on `sclr`. Deliberately left
+  without reset: memory arrays and their read-data registers (a reset there
+  blocks block-RAM inference) and the sim-only stack stats (`fl_full`/`fl_max`).
+  Testbenches already hold `rst` across a clock edge, so nothing changes on the
+  simulation side — all sim goldens are bit-identical.
+
+### Added
+- **C++ object-model features (`cppcomp`)** — out-of-class destructor
+  definition (`Class::~Class() { body }`), destructors running on early
+  `return`/`break`/`continue` (RAII), static data member access through an
+  instance or pointer (`obj.s`, `p->s`), array-of-function-pointers as a
+  struct field, zero-fill aggregate `= {}` default member initializers,
+  using-declaration (`using N::name;`), and lambda IIFE as a global
+  initializer (`[](){...}()`). Realistic fixtures test58–test61 (CRC-16/CCITT
+  telemetry link, debounced-input function-local statics, POD struct by-value
+  semantics, lambda-IIFE global init).
+- **Directed reset regression pass (`ResetCheck`)** — a fixture that emits a
+  deterministic output burst, parks in `while(1)`, gets a single-cycle `rst`
+  pulse mid-run from a dedicated testbench, and must repeat the burst
+  bit-identically (data memory is NOT reset, so the program re-assigns
+  everything it outputs). `regress.sh` grew pass 3b with a golden-independent
+  anchor: the first half of `output_reset.txt` must equal the second half, so
+  a blind `--update` cannot bless a broken reset.
+
+### Fixed
+- **`cur_base` clobbered by array-dimension size expressions (`cppcomp`)** —
+  a `base_type` reduction inside an array-size expression retyped the
+  declarator being built (the v5.2 `cur_base` bug class, now closed:
+  `array_suffix` saves/restores `cur_base`; locked by test64).
+- **`std::array<float>` zero-fill used int-0 bits (`cppcomp`)** — aggregate
+  zero-fill of a float array now emits float `0.0` in the YANC format instead
+  of an all-zeros integer word.
+- **`f2mf` rounding carry at power-of-two boundaries (`asmcomp`)** — the
+  float-to-mini-float conversion renormalizes the mantissa when the rounding
+  carry crosses a power of two, instead of shipping a doubled mantissa.
+- **`config.h` defaulted to a non-YANC target (`cppcomp`)** — the bundled
+  header now defaults to the fixed 32-bit/IEEE-sizes/4K YANC target.
+- **UTF-8 comment dashes mangled by an ASCII rewrite (`cppcomp`)** — restored
+  after the lambda-IIFE commit accidentally transcoded them.
+
 ## [v5.2] – 2026-06-08
 
 ### Added
