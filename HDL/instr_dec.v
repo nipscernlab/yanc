@@ -398,8 +398,9 @@ generate if (ADD | S_ADD | F_ADD | SF_ADD | DIV | S_DIV | F_DIV | SF_DIV | F_SGN
 // logic for b0
 generate if (LOD | P_LOD | LDI | ILI | SET_P | POP | F_INN | PF_INN | F_ADD | SF_ADD | F_MLT | SF_MLT | F_DIV | SF_DIV | SGN | S_SGN | NEG | F_NEG | ABS | F_ABS | PST | F_PST | NRM | I2F | F2I | AND | S_AND | XOR | S_XOR | INV_M | P_INV_M | LOR | S_LOR | LIN_M | P_LIN_M | F_LES | SF_LES | F_GRE | SF_GRE | SHL | S_SHL | SRS | S_SRS | F_SU1 | SF_SU1 | F_SCL | SF_SCL | XPO_M | LDA) begin : dec_b0 assign b0 = wLOD | wP_LOD | wLDI | wILI | wSET_P | wPOP | wF_INN | wPF_INN | wF_ADD | wSF_ADD | wF_MLT | wSF_MLT | wF_DIV | wSF_DIV | wSGN | wS_SGN | wNEG | wF_NEG | wABS | wF_ABS | wPST | wF_PST | wNRM | wI2F | wF2I | wAND | wS_AND | wXOR | wS_XOR | wINV_M | wP_INV_M | wLOR | wS_LOR | wLIN_M | wP_LIN_M | wF_LES | wSF_LES | wF_GRE | wSF_GRE | wSHL | wS_SHL | wSRS | wS_SRS | wF_SU1 | wSF_SU1 | wF_SCL | wSF_SCL | wXPO_M | wLDA; end else begin : dec_b0 assign b0 = 1'b0; end endgenerate
 
-// combine logic into ula_op
-always @ (posedge clk) ula_op <= {b5,b4,b3,b2,b1,b0};
+// combine logic into ula_op (synchronous reset to 0 = pass-acc, a harmless NOP
+// for the ULA while the rest of the pipeline is being reset)
+always @ (posedge clk) if (rst) ula_op <= 6'd0; else ula_op <= {b5,b4,b3,b2,b1,b0};
 
 endmodule
 

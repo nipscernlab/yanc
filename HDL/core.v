@@ -39,7 +39,9 @@ module pc
 wire [NBITS-1:0] um  = {{NBITS-1{1'b0}}, {1'b1}};
 wire [NBITS-1:0] val = (load) ? data : addr;
 
-always @ (posedge clk or posedge rst) begin
+// synchronous reset: FPGA-friendly (maps to the FF's dedicated sync clear, no
+// recovery/removal timing on the reset net)
+always @ (posedge clk) begin
 	if (rst) addr <= 0;
 	else     addr <= val + um;
 end
@@ -159,7 +161,7 @@ reg  [NADDR-1:0] pointer = 0; // ideal for monitoring
 wire [NADDR-1:0] pmaisum = pointer + um;
 wire [NADDR-1:0] pmenoum = pointer - um;
 
-always @ (posedge clk or posedge rst) begin
+always @ (posedge clk) begin // synchronous reset (FPGA-friendly)
 	if      (rst ) pointer <= zero;
 	else if (push) pointer <= pmaisum;
 	else if (pop ) pointer <= pmenoum;
@@ -304,13 +306,13 @@ module ula_in1_ctrl
 	parameter NUBITS = 8,
 	parameter NBOPCO = 7
 )(
-	input               clk, pop,
+	input               clk, rst, pop,
 	input  [NUBITS-1:0] mem, stack,
 	output [NUBITS-1:0] out
 );
 
-reg popr;              always @ (posedge clk) popr <= pop;
-reg [NUBITS-1:0] stkr; always @ (posedge clk) stkr <= stack;
+reg popr;              always @ (posedge clk) if (rst) popr <= 1'b0; else popr <= pop;
+reg [NUBITS-1:0] stkr; always @ (posedge clk) if (rst) stkr <= 0;    else stkr <= stack;
 
 assign out = (popr) ? stkr : mem;
 
@@ -323,14 +325,14 @@ module ula_in2_ctrl
 	parameter NUBITS = 8,
 	parameter NBOPCO = 7
 )(
-	input               clk,
+	input               clk, rst,
 	input               req_in,
 	input  [NUBITS-1:0] acc, io_in,
 	output [NUBITS-1:0] out
 );
 
-reg               req_inr; always @ (posedge clk) req_inr <= req_in;
-reg  [NUBITS-1:0] ior    ; always @ (posedge clk) ior     <=  io_in;
+reg               req_inr; always @ (posedge clk) if (rst) req_inr <= 1'b0; else req_inr <= req_in;
+reg  [NUBITS-1:0] ior    ; always @ (posedge clk) if (rst) ior     <= 0;    else ior     <=  io_in;
 
 assign out = (req_inr) ? ior : acc;
 
@@ -427,7 +429,7 @@ module io_ctrl
 	parameter  P_INN = 0,
 	parameter PF_INN = 0
 )(
-	input                   clk,
+	input                   clk, rst,
 	input                   req_in, out_en,
 	input      [MDATAW-1:0] addr,
 
@@ -441,8 +443,8 @@ module io_ctrl
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : en_in_sel   assign en_in   = req_in;           end else begin : en_in_sel   assign en_in   =         1'b0  ; end endgenerate
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : addr_in_sel assign addr_in = addr[NBIOIN-1:0]; end else begin : addr_in_sel assign addr_in = {NBIOIN{1'b0}}; end endgenerate
 
-always @ (posedge clk) en_out   <= out_en;
-always @ (posedge clk) addr_out <= addr[NBIOOU-1:0];
+always @ (posedge clk) if (rst) en_out   <= 1'b0; else en_out   <= out_en;
+always @ (posedge clk) if (rst) addr_out <= 0;    else addr_out <= addr[NBIOOU-1:0];
 
 endmodule
 
@@ -837,14 +839,14 @@ wire [NUBITS-1:0] uic_acc;
 // Accumulator register, declared up here (ahead of the uic_in2 generate that
 // references it in its else arm) so the reference is backward. iverilog v13
 // rejects use-before-declaration; v12 tolerated it.
-reg signed [NUBITS-1:0] racc;
+reg signed [NUBITS-1:0] racc = 0;
 
 // input in1
-ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1);
+ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, rst, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1);
 
 // input in2
 generate if ((INN | P_INN | F_INN | PF_INN) != 0) begin : uic_in2
-ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, id_req_in , uic_acc, io_in, ula_data_in2);
+ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_req_in , uic_acc, io_in, ula_data_in2);
 end else begin : uic_in2 assign ula_data_in2 = racc; end
 endgenerate
 
@@ -913,7 +915,7 @@ assign sp_in = ula_out;
 // Accumulator ----------------------------------------------------------------
 // (the racc reg itself is declared earlier, above the uic_in2 generate)
 
-always @ (posedge clk or posedge rst) if (rst) racc <= 0; else racc <= ula_out;
+always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out; // synchronous reset (FPGA-friendly)
 
 assign uic_acc = racc;
 // JIZ branch decision: if_acc must reflect "accumulator is non-zero" across the
@@ -954,7 +956,7 @@ io_ctrl #(.MDATAW(MDATAW),
 		     .INN(   INN),
 		   .F_INN( F_INN),
 		   .P_INN( P_INN),
-		  .PF_INN(PF_INN)) io(clk, id_req_in, id_out_en,
+		  .PF_INN(PF_INN)) io(clk, rst, id_req_in, id_out_en,
                               if_operand[MDATAW-1:0],
                               req_in, addr_in, out_en, addr_out);
 end else begin : io_ports

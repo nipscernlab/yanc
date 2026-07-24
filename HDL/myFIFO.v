@@ -25,7 +25,7 @@ reg [WORD-1:0]  mem  [LENGTH-1:0];
 reg [$clog2(LENGTH)-1:0] addr_w=0;
 reg [$clog2(LENGTH)-1:0] addr_r=0;
 
-reg wr=0; always @ (posedge clk) wr<= wrreq;
+reg wr=0; always @ (posedge clk) if (sclr) wr <= 1'b0; else wr <= wrreq; // sclr also clears the delayed write strobe
 
 always @ (posedge clk) begin
 	if (sclr)
