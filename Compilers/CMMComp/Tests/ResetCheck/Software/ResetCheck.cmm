@@ -1,0 +1,38 @@
+#PRNAME ResetCheck
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Directed reset fixture (tb at TopLevel/reset_tb.v): emits one deterministic
+// burst of outputs, then parks in while(1). The tb pulses rst for a single
+// clock cycle mid-run and requires the identical burst again -- locking in
+// that the synchronous global reset restarts the processor cleanly (PC back
+// to 0, stack pointers rewound, racc/ula_op/en_out cleared).
+//
+// Data memory is NOT reset (RAM keeps its contents), so every variable is
+// assigned at runtime before use: values surviving from the first run must
+// not change the second burst. `a` and `b` are deliberately mutated after
+// their first out() so the re-assignments are load-bearing.
+//
+// Expected burst: 3 43 -3 -129
+
+void main()
+{
+    int a;
+    int b;
+
+    a = 3;
+    b = 40;
+    out(0, a);          // 3
+    a = a + b;          // mutates a: proves dirty memory is rewritten
+    out(0, a);          // 43
+    b = b - a;          // mutates b (goes negative)
+    out(0, b);          // -3
+    out(0, a * b);      // -129
+    while (1) { b = a; }  // park with no further outputs until a reset
+}

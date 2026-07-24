@@ -143,7 +143,9 @@ declare -A SIZE_CURRENT
 #   ProcDTW/ZeroCross  - real testbench lives in the multi-proc DTW project pass
 #   cmm_define         - synthetic #define fixture; while(1) testbench loop,
 #                        asm-golden compare is enough to lock the lexer expansion
-SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross" "cmm_define")
+#   ResetCheck         - real testbench is the directed reset pass (pulses rst
+#                        mid-run); the generated standalone tb would idle in while(1)
+SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross" "cmm_define" "ResetCheck")
 
 # Examples to also skip the appcomp/asmcomp build for (their .v / .mif are
 # never consumed elsewhere - no standalone sim, no project link).
@@ -479,6 +481,97 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                     pass=$((pass + 1))
                 else
                     fail=$((fail + 1)); failed_names+=("$proj")
+                fi
+            fi
+        fi
+    fi
+
+    # ---- 3b. directed reset pass: single-cycle rst mid-run ------------------
+    # ResetCheck emits one deterministic burst then parks in while(1); its
+    # custom tb (TopLevel/reset_tb.v) pulses rst across exactly one posedge
+    # and requires the identical burst again -- the synchronous global reset
+    # must restart the processor cleanly (PC to 0, stacks rewound, racc /
+    # ula_op / en_out cleared, dirty data memory rewritten by the program).
+
+    if [ "$NO_SIM" -eq 0 ]; then
+        rname="ResetCheck"
+        rtest="reset"                                 # summary/failure label
+        rtop="$CMM_ROOT/Tests/$rname/TopLevel"
+        rtmp="$TMP_DIR/${rname}_proj"
+        golden_rst="$CMM_ROOT/Tests/$rname/golden_sim"
+
+        rm -rf "$rtmp"; mkdir -p "$rtmp"
+
+        reset_ok=1
+        if [ ! -s "$WORK_DIR/$rname/Hardware/$rname.v" ]; then
+            echo "FAIL ($rtest): $rname artifacts missing - did its build pass?"
+            fail=$((fail + 1)); failed_names+=("$rtest"); reset_ok=0
+        else
+            cp "$WORK_DIR/$rname/Hardware/$rname.v"          "$rtmp/"
+            cp "$WORK_DIR/$rname/Hardware/${rname}_data.mif" "$rtmp/"
+            cp "$WORK_DIR/$rname/Hardware/${rname}_inst.mif" "$rtmp/"
+        fi
+
+        if [ "$reset_ok" -eq 1 ]; then
+            if ! "$IVERILOG" -s reset_tb -o "$rtmp/$rname.vvp" \
+                    "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                    "$HDL/core.v" "$HDL/ula.v" \
+                    "$rtmp/$rname.v" \
+                    "$rtop/reset_tb.v" >/dev/null 2>&1; then
+                echo "FAIL ($rtest): iverilog exited non-zero"
+                fail=$((fail + 1)); failed_names+=("$rtest"); reset_ok=0
+            fi
+        fi
+
+        if [ "$reset_ok" -eq 1 ]; then
+            pushd "$rtmp" >/dev/null
+            "$VVP" "$rtmp/$rname.vvp" >/dev/null 2>&1
+            vvp_status=$?
+            popd >/dev/null
+            if [ $vvp_status -ne 0 ]; then
+                echo "FAIL ($rtest): vvp exited non-zero"
+                fail=$((fail + 1)); failed_names+=("$rtest"); reset_ok=0
+            fi
+        fi
+
+        if [ "$reset_ok" -eq 1 ]; then
+            out_f="$rtmp/output_reset.txt"
+            if [ ! -s "$out_f" ]; then
+                echo "FAIL ($rtest): testbench produced no output_reset.txt"
+                fail=$((fail + 1)); failed_names+=("$rtest")
+            else
+                # Correctness anchor, independent of the golden file (stays
+                # load-bearing even right after an --update): the post-reset
+                # burst must repeat the boot burst line-for-line. Plain temp
+                # files, not process substitution -- MSYS2 cmp cannot open the
+                # /proc/<pid>/fd/N paths <(...) expands to (exit 2, ENOENT).
+                nlines=$(grep -c '' "$out_f")
+                half=$((nlines / 2))
+                head -n "$half" "$out_f" > "$rtmp/burst_boot.txt"
+                tail -n "$half" "$out_f" > "$rtmp/burst_rst.txt"
+                anchor_ok=1
+                if [ "$nlines" -eq 0 ] || [ $((half * 2)) -ne "$nlines" ] \
+                   || ! cmp -s "$rtmp/burst_boot.txt" "$rtmp/burst_rst.txt"; then
+                    echo "FAIL ($rtest): post-reset burst differs from boot burst ($nlines lines)"
+                    fail=$((fail + 1)); failed_names+=("$rtest"); anchor_ok=0
+                fi
+
+                if [ "$anchor_ok" -eq 1 ]; then
+                    if [ "$UPDATE" -eq 1 ]; then
+                        mkdir -p "$golden_rst"
+                        cp "$out_f" "$golden_rst/"
+                        echo "UPDATED ($rtest)  [burst repeated after 1-cycle mid-run rst]"
+                        pass=$((pass + 1))
+                    elif [ ! -f "$golden_rst/output_reset.txt" ]; then
+                        echo "FAIL ($rtest): no golden at $golden_rst (run --update?)"
+                        fail=$((fail + 1)); failed_names+=("$rtest")
+                    elif cmp -s "$out_f" "$golden_rst/output_reset.txt"; then
+                        echo "PASS ($rtest)  [burst repeated after 1-cycle mid-run rst]"
+                        pass=$((pass + 1))
+                    else
+                        echo "FAIL ($rtest): output differs from sim golden"
+                        fail=$((fail + 1)); failed_names+=("$rtest")
+                    fi
                 fi
             fi
         fi
