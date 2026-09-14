@@ -40,6 +40,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: inconsistência no ponto flutuante. Tem que ser NUBITS = NBMANT + NBEXPO + 1.\n", \
       "Error: floating-point setup doesn't add up. You gotta have NUBITS = NBMANT + NBEXPO + 1.\n")
 
+#define MSG_ERR_FROUND_RANGE \
+    M("Erro: #FROUND só aceita 0 (legado), 1 (truncamento exato + saturação) ou 2 (arredondamento ao par).\n", \
+      "Error: #FROUND only takes 0 (legacy), 1 (exact truncation + saturation) or 2 (round to nearest even).\n")
+
 // errors when reading array initialization files ----------------------------
 
 #define MSG_ERR_EMPTY_LINE \

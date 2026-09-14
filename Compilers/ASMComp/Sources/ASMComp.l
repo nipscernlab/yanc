@@ -58,6 +58,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#NUIOOU"  eval_direct( 8);                         // number of output ports
 "#NUGAIN"  eval_direct( 9);                         // division constant for the norm() function
 "#FFTSIZ"  eval_direct(10);                         // FFT size (bits)
+"#FROUND"  eval_direct(25);                         // float rounding level (0, 1 or 2)
 
 "#array"   eval_direct(11);                         // regular array
 "#arrays"  eval_direct(14);                         // array with initialization file

@@ -46,6 +46,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: símbolo 'i' é reservado para indicar a parte imaginária de uma constante complexa.\n", \
       "Error on line %d: the symbol 'i' is reserved for the imaginary part of a complex constant. Hands off!\n")
 
+#define MSG_ERR_FROUND_RANGE \
+    M("Erro na linha %d: #FROUND só aceita 0 (legado), 1 (truncamento exato + saturação) ou 2 (arredondamento ao par).\n", \
+      "Error on line %d: #FROUND only takes 0 (legacy), 1 (exact truncation + saturation) or 2 (round to nearest even).\n")
+
 #define MSG_ERR_INT_MAX_OVERFLOW \
     M("Erro na linha %d: o maior número inteiro que pode ser representado é %d!\n", \
       "Error on line %d: the biggest integer this thing can hold is %d!\n")

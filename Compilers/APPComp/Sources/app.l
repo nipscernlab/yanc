@@ -30,6 +30,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#NUIOOU"  ;
 "#NUGAIN"  ;
 "#FFTSIZ"  ;
+"#FROUND"  ;
 
 "#array"   eval_direct(11); // regular array
 "#arrays"  eval_direct(14); // array with initialization file

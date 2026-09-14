@@ -488,6 +488,32 @@ void main()
 
 More examples in `CMMComp/Tests/` and `CPPComp/Tests/`.
 
+### Float rounding level (`#FROUND`)
+
+The float datapath of the ALU comes in three levels, selected per processor by
+the `#FROUND` directive (default `0`). Each level adds logic only to the float
+operators the program actually uses; the costs below are LUT4 counts measured
+with Yosys on a 32/23/8 processor that uses `F_ADD`, `F_MLT`, `I2F`, `F2I`,
+comparisons and the integer ALU (no `F_DIV`).
+
+| `#FROUND` | What the ALU does | Cost |
+|---|---|---|
+| `0` | Legacy datapath: operators truncate, one mantissa bit is lost before normalization whenever the result does not fill the top bit (so `(1+2^-22) - 1 == 0` and `x * 1.0` may differ from `x`), the exponent wraps on overflow/underflow, `-0.0 != 0.0`. Bit-identical to previous releases. | — |
+| `1` | Keeps that bit (exact truncation toward zero), saturates on overflow, flushes to zero on underflow, canonical `+0.0`. `x * 1.0 == x`, `a - b` is exact for `a/2 <= b <= 2a`. | ≈ +1.5 % |
+| `2` | Level 1 plus round to nearest, ties to even (guard/round/sticky bits through the adder, the multiplier and the divider). Rounding errors on varying data are unbiased. | ≈ +5 % (≈ +20 % of the float part) |
+
+With `F_DIV` also instantiated the whole ALU (19 integer + 12 float operators)
+goes from 8487 LUT4 to 8271 (level 1, within synthesis noise) and 8691 (level
+2, +2.4 %); the divider itself grows the most at level 2 (2682 → 3162, three
+extra quotient bits in a combinational divider).
+
+`cppcomp` always emits `#FROUND 2`. The fixtures `CMMComp/Tests/cmm_fround0`,
+`cmm_fround1` and `cmm_fround2` run the same program at each level; their
+1000-step accumulation of `0.001` ends 240 / 177 / 78 ULP away from `1.0`. Even
+at level 2 a **constant** addend drifts (the same bits are discarded every
+step, so the rounding is correlated) — keep phase/time accumulators in integer
+arithmetic regardless of the level.
+
 ## Project layout
 
 ```

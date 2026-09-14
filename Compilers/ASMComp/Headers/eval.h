@@ -22,6 +22,7 @@ extern int  nuioin;            // number of input ports
 extern int  nuioou;            // number of output ports
 extern int  nugain;            // division constant
 extern int  fftsiz;            // FFT size (bits)
+extern int  fround;            // float rounding level (0 legacy, 1 exact truncation + saturation, 2 nearest even)
 
 // global functions -----------------------------------------------------------
 

@@ -77,6 +77,7 @@ COMEN  "//"[^\n]*
 "#NUIOOU"     return NUIOOU;
 "#NUGAIN"     return NUGAIN;
 "#FFTSIZ"     return FFTSIZ;
+"#FROUND"     return FROUND;
 
 "#PRACA"      return ITRADD;
 "#TOAQUI"     return TOAQUI;

@@ -2465,6 +2465,7 @@ static void emit_header(unit *u)
     emit("#NBMANT %d", mant);
     emit("#NBEXPO %d", expo);
     emit("#NUGAIN %d", u->nugain >= 0 ? u->nugain : CFG_NUGAIN);
+    emit("#FROUND 2");   // C++ always gets the most precise float datapath (round to nearest even)
 }
 
 static void emit_global_arrays(unit *u)

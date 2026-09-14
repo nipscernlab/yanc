@@ -43,6 +43,7 @@ int  nuioin    =  1;    // number of input ports
 int  nuioou    =  1;    // number of output ports
 int  nugain    = 64;    // division constant
 int  fftsiz    =  8;    // FFT size (bits)
+int  fround    =  0;    // float rounding level (0 legacy, 1 exact truncation + saturation, 2 nearest even)
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------
@@ -320,6 +321,7 @@ void eval_opernd(char *va, int is_const)
         case 22: strcpy(va_name,va);                    state = 23; break; // prepare constant offset
         case 23: instr_oft     (va);                    state =  0; break; // instr with constant offset
         case 24: instr_lea     (va);                    state =  0; break; // load-effective-address pseudo (LEA -> LOD <const>)
+        case 25: fround =  atoi(va);                    state =  0; break; // float rounding level
     }
 }
 
@@ -334,6 +336,7 @@ void eval_finish()
     // check floating-point consistency ---------------------------------------
 
     if (nubits != nbmant+nbexpo+1) {fprintf(stderr, MSG_ERR_FP_INCONSISTENT); exit(EXIT_FAILURE);}
+    if (fround < 0 || fround > 2)  {fprintf(stderr, MSG_ERR_FROUND_RANGE  ); exit(EXIT_FAILURE);}
 
     // finalize simulation ----------------------------------------------------
 

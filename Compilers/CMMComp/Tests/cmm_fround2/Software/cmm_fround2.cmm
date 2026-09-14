@@ -1,0 +1,61 @@
+#PRNAME cmm_fround2
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+#FROUND 2
+// Float rounding level 2 (level 1 + round to nearest even with guard/round/
+// sticky bits). Same program as cmm_fround0 and
+// cmm_fround1 -- only the #FROUND directive differs, so the three goldens show
+// what each level buys. Every fout() prints an error in ULPs of 1.0 (2^-22)
+// unless noted; u = 1 ULP, h = half ULP, q = quarter ULP.
+//
+//   block 1 - a mantissa bit is lost before normalization (levels 1 and 2 fix it)
+//   block 2 - round to nearest even (level 2 only)
+//   block 3 - drift of a 1000-step accumulation of 0.001 (exact result 1.0). A
+//             constant addend drops the same bits every step, so the rounding
+//             is correlated and even level 2 drifts -- 3x less, other sign
+//   block 4 - overflow saturates / underflow flushes / -0.0 == 0.0 (levels 1 and 2)
+void main()
+{
+    float one  = 1.0;
+    float u    = 0.000000238418579101562500;               // 2^-22 = 1 ULP of 1.0
+    float h    = 0.000000119209289550781250;               // 2^-23 = half ULP
+    float q    = 0.000000059604644775390625;               // 2^-24 = quarter ULP
+    float hp   = 0.000000120140612125396728515625;         // 2^-23 + 2^-30 (just above half)
+    float big  = 1000000000000000000000000000000.0;        // 1e30
+    float tiny = 0.000000000000000000000000000001;         // 1e-30
+    float ulp  = 4194304.0;                                // 2^22: scales an error at 1.0 to ULPs
+    float x, y, z, acc;
+    int   k, flag;
+
+    while (1)
+    {
+        // block 1: lost bit ------------------------------------- level 0 / 1 / 2
+        x = (one + u) - one;  y = x * ulp;          fout(0, y);   //   0  /  1  /  1   (exact 1)
+        x = (one + u) * one;  y = (x - one) * ulp;  fout(0, y);   //   0  /  1  /  1   (exact 1)
+        x = one / 1.5;        y = x * 3.0 - 2.0;    y = y * ulp; fout(0, y); // 0 / -2 / 0 (exact 0; level 0 loses the residual itself)
+
+        // block 2: rounding ------------------------------------- level 0 / 1 / 2
+        x = one + q;          y = (x - one) * ulp;  fout(0, y);   //   0  /  0  /  0   (below half ULP)
+        x = one + h;          y = (x - one) * ulp;  fout(0, y);   //   0  /  0  /  0   (tie -> even)
+        x = one + hp;         y = (x - one) * ulp;  fout(0, y);   //   0  /  0  /  1   (above half)
+        x = (one + u) + h;    y = (x - one) * ulp;  fout(0, y);   //   0  /  1  /  2   (tie, odd -> up)
+        x = 1.5 * (one + u);  y = (x - 1.5) * ulp;  fout(0, y);   //   0  /  1  /  2   (tie, odd -> up)
+
+        // block 3: accumulation drift --------------------------- level 0 / 1 / 2
+        acc = 0.0;
+        for (k = 0; k < 1000; k = k + 1) acc = acc + 0.001;
+        y = (acc - one) * ulp;                      fout(0, y);   // -240 / -177 / 78  (exact 0)
+
+        // block 4: range and zero ------------------------------- level 0 / 1 / 2
+        y = big * big;   if (y > big)   flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = saturated)
+        y = tiny * tiny; if (y == 0.0)  flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = flushed to zero)
+        z = x - x;       y = -z;
+                         if (y == 0.0)  flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = -0.0 equals 0.0)
+    }
+}

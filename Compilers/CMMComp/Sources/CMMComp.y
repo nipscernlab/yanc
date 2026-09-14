@@ -103,7 +103,7 @@ void  yyerror(char const *s);
 // tokens with no assignment --------------------------------------------------
 
 %token PRNAME NUBITS NBMANT NBEXPO NDSTAC SDEPTH                       // directives
-%token NUIOIN NUIOOU NUGAIN FFTSIZ ITRADD TOAQUI                       // directives
+%token NUIOIN NUIOOU NUGAIN FFTSIZ FROUND ITRADD TOAQUI                // directives
 %token INN FIN OUT FOUT                                                // stdlib (I/O)
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
 %token SQRT ATAN SIN COS TAN EXP LOG POW                               // stdlib (non-linear functions)
@@ -185,6 +185,7 @@ direct : PRNAME   ID   {dire_exec("#PRNAME",$2, 1);} // processor name
        | NUIOOU INUM   {dire_exec("#NUIOOU",$2, 8);} // number of output ports
        | NUGAIN INUM   {dire_exec("#NUGAIN",$2, 0);} // division constant (norm(.))
        | FFTSIZ INUM   {dire_exec("#FFTSIZ",$2, 0);} // FFT size (2^FFTSIZ)
+       | FROUND INUM   {dire_exec("#FROUND",$2, 9);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
 
 // Behavioral directives ------------------------------------------------------
 

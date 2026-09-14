@@ -489,6 +489,7 @@ module core
 	// arithmetic constants
 	parameter  NUGAIN = 64,              // Value used to divide by a fixed number (NRM and NORMS)
 	parameter  FFTSIZ =  3,              // ILI size for bit reversal
+	parameter  FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 exact truncation + saturation, 2 round to nearest even
 
 	// -------------------------------------------------------------------------
 	// Dynamically configured parameters ---------------------------------------
@@ -858,6 +859,7 @@ ula #(.NUBITS (NUBITS ),
       .NBMANT (NBMANT ),
       .NBEXPO (NBEXPO ),
       .NUGAIN (NUGAIN ),
+      .FROUND (FROUND ),
 	  .NBOPCO (NBOPCO),
         .ADD  (  ADD   |  S_ADD  ),
 	  .F_ADD  (F_ADD   | SF_ADD  ),

@@ -1,0 +1,161 @@
+NOP
+#PRNAME cmm_fround1
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+#FROUND 1
+@main LOD 1.0
+SET main_one
+LOD 0.000000238418579101562500
+SET main_u
+LOD 0.000000119209289550781250
+SET main_h
+LOD 0.000000059604644775390625
+SET main_q
+LOD 0.000000120140612125396728515625
+SET main_hp
+LOD 1000000000000000000000000000000.0
+SET main_big
+LOD 0.000000000000000000000000000001
+SET main_tiny
+LOD 4194304.0
+SET main_ulp
+@Lwh1 LOD 1
+JIZ Lwh1end
+LOD main_one
+F_ADD main_u
+F_SU1 main_one
+SET main_x
+F_MLT main_ulp
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_one
+F_ADD main_u
+F_MLT main_one
+SET main_x
+F_SU1 main_one
+F_MLT main_ulp
+SET main_y
+F2I_M main_y
+OUT 0
+LOD 1.5
+F_DIV main_one
+SET main_x
+F_MLT 3.0
+F_SU1 2.0
+SET main_y
+F_MLT main_ulp
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_one
+F_ADD main_q
+SET main_x
+F_SU1 main_one
+F_MLT main_ulp
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_one
+F_ADD main_h
+SET main_x
+F_SU1 main_one
+F_MLT main_ulp
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_one
+F_ADD main_hp
+SET main_x
+F_SU1 main_one
+F_MLT main_ulp
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_one
+F_ADD main_u
+F_ADD main_h
+SET main_x
+F_SU1 main_one
+F_MLT main_ulp
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_one
+F_ADD main_u
+F_MLT 1.5
+SET main_x
+F_SU1 1.5
+F_MLT main_ulp
+SET main_y
+F2I_M main_y
+OUT 0
+LOD 0.0
+SET main_acc
+LOD 0
+SET main_k
+@Lwh2 LOD 1000
+LES main_k
+JIZ Lwh2end
+LOD main_acc
+F_ADD 0.001
+SET main_acc
+LOD main_k
+ADD 1
+SET main_k
+JMP Lwh2
+@Lwh2end LOD main_acc
+F_SU1 main_one
+F_MLT main_ulp
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_big
+F_MLT main_big
+SET main_y
+P_LOD main_big
+SF_GRE
+JIZ Lif1else
+LOD 1
+SET main_flag
+JMP Lif1end
+@Lif1else LOD 0
+SET main_flag
+@Lif1end LOD main_flag
+OUT 0
+LOD main_tiny
+F_MLT main_tiny
+SET main_y
+P_LOD 0.0
+S_EQU
+JIZ Lif2else
+LOD 1
+SET main_flag
+JMP Lif2end
+@Lif2else LOD 0
+SET main_flag
+@Lif2end LOD main_flag
+OUT 0
+LOD main_x
+F_SU1 main_x
+SET main_z
+F_NEG_M main_z
+SET main_y
+P_LOD 0.0
+S_EQU
+JIZ Lif3else
+LOD 1
+SET main_flag
+JMP Lif3end
+@Lif3else LOD 0
+SET main_flag
+@Lif3end LOD main_flag
+OUT 0
+JMP Lwh1
+@Lwh1end @fim JMP fim

@@ -153,6 +153,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     fprintf(f_veri,            ".NBIOIN(%d),\n", nbioin);
     fprintf(f_veri,            ".NBIOOU(%d),\n", nbioou);
     fprintf(f_veri,            ".FFTSIZ(%d),\n", fftsiz);
+    fprintf(f_veri,            ".FROUND(%d),\n", fround);
 
     // if there's an interrupt, set its address on the processor
     if (itr_addr != 0) fprintf(f_veri, ".ITRADD(%d),\n", itr_addr);

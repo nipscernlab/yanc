@@ -9,6 +9,22 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **`#FROUND` directive — float rounding level (0/1/2) of the ALU**, a
+  `FROUND` parameter of `processor.v`/`core.v`/`ula.v`. Level `0` (default)
+  is the legacy datapath, bit-identical to previous releases. Level `1`
+  keeps the mantissa bit that `F_ADD`/`F_MLT`/`F_DIV` used to drop before
+  normalization (so `(1+2^-22) - 1` is no longer 0 and `x * 1.0 == x`),
+  saturates the exponent on overflow instead of wrapping, flushes to zero
+  on underflow, and keeps zero canonical (`-0.0 == 0.0`). Level `2` adds
+  round to nearest, ties to even, with guard/round/sticky bits carried from
+  the denormalizer and the operators to a single rounding stage after the
+  normalizer. Each level only adds logic to the float operators the program
+  instantiates (Yosys LUT4, 32/23/8, int + float without `F_DIV`: level 1
+  ≈ +1.5 %, level 2 ≈ +5 %). `cmmcomp`, `appcomp` and `asmcomp` accept
+  `#FROUND` (0..2, validated); **`cppcomp` always emits `#FROUND 2`**, so
+  the C++ goldens moved to the rounded datapath. Fixtures
+  `cmm_fround0/1/2` run one program at each level (lost bit, tie cases,
+  1000-step accumulation drift, overflow/underflow/negative zero).
 - `docs/precision-and-width-review.md` — review of the float datapath and of
   every 32-bit assumption in the toolchain: what limits precision today (a
   mantissa bit lost before normalisation, truncation, exponent wrap, the

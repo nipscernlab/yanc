@@ -7,8 +7,10 @@ Open work items for YANC that are not tracked elsewhere. This file is the
 each item links to its section there. Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
-Items 1–4 are HDL, 5–6 toolchain, 7 HDL scaling, 8 libraries. The suggested
-order is 1 → 3 → 4 (one golden re-bless), then 2, then 5 → 6, then 7 → 8.
+Items 1–4 are HDL, 5–6 toolchain, 7 HDL scaling, 8 libraries. Items 1, 3
+and 4 landed as `#FROUND 1` and the rounding half of item 2 as `#FROUND 2`
+(see the CHANGELOG); the default level `0` keeps the legacy datapath, so no
+C± golden moved. Suggested order for the rest: 2 → 5 → 6 → 7 → 8.
 
 ---
 
@@ -25,62 +27,46 @@ order is 1 → 3 → 4 (one golden re-bless), then 2, then 5 → 6, then 7 → 8
 
 ## 1. Float operators drop one mantissa bit before normalisation
 
-**Status:** open · **Area:** `HDL/ula.v` · **Evidence:** [§1.1](docs/precision-and-width-review.md#11-one-mantissa-bit-is-thrown-away-before-normalisation-bug-verified)
+**Status:** landed as `#FROUND 1` (the legacy level `0` keeps the bug on
+purpose, for bit-identical hardware) · **Evidence:** [§1.1](docs/precision-and-width-review.md#11-one-mantissa-bit-is-thrown-away-before-normalisation-bug-verified)
 
-`ula_fadd`, `ula_fmlt` and `ula_fdiv` slice their wide intermediate at a fixed
-position and only then hand it to `ula_norm`, which shifts left and fills the
-LSB with 0. Whenever the result does not occupy the top bit (same-sign add
-without carry, every subtraction, half of all products, `m1 < m2` in a
-division) the operation effectively works with `NBMANT-1` bits. Measured:
-`(1+2^-22) - 1 = 0`, `(1+2^-22) * 1.0 = 1.0`, `1/1.5` low by ~1.3 ULP.
-Sterbenz's lemma fails, so a Kahan sum does not work either.
+Left open: nothing. The item stays listed until the next release notes
+mention it; remove it then.
 
-**Done when:** each operator keeps its full-width result and the normaliser
-picks the slice (a mux per operator; no incrementer, no critical-path cost);
-`x*1.0 == x` and `a - b` exact for `a/2 <= b <= 2a` in a new fixture; every
-float golden re-blessed once, together with items 3 and 4.
+## 2. Round-to-nearest mode + full-range `I2F` + saturating `F2I`
 
-## 2. Round-to-nearest mode (`#FROUND 1`) + full-range `I2F` + saturating `F2I`
+**Status:** rounding landed as `#FROUND 2`; `I2F` / `F2I` still open ·
+**Area:** `HDL/ula.v` · **Evidence:** [§1.2](docs/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
 
-**Status:** open · **Area:** `HDL/ula.v`, `cmmcomp`/`cppcomp` directive · **Evidence:** [§1.2](docs/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
+`I2F` reads only `in[NBMANT-1:0]`, so an `int` outside ±2^(NBMANT-1)
+converts to garbage, and `F2I` wraps for |x| ≥ 2^(NUBITS-1). Also still
+open from the rounding work: `F_DIV`'s sticky bit is approximated by a third
+extra quotient bit (an exact sticky needs the remainder, i.e. a second
+divider), and the `delta_float` monitor has not been checked for zero mean
+at level 2.
 
-Even after item 1 the operators truncate toward zero; the error is biased and
-grows linearly with the number of operations. Two group projects have hit it
-(a CNN kernel with same-sign residuals; a Farrow resampler whose phase error
-grows with run time at 60·2^-22 Hz ≈ 14 uHz). `I2F` also reads only
-`in[NBMANT-1:0]`, so an `int` outside ±2^(NBMANT-1) converts to garbage, and
-`F2I` wraps for |x| ≥ 2^(NUBITS-1).
-
-**Done when:** an opt-in `#FROUND 1` (default `0`, bit-identical to today's
-goldens) carries guard/round/sticky bits through `ula_denorm`, the product low
-half and the division remainder, rounds to nearest-even *after* normalisation
-with carry-out handling; `I2F` normalises the full `NUBITS` word and rounds
-the same way; `F2I` saturates. A fixture accumulates `x = x + c` for N steps
-with both settings against a double reference: `0` drifts ~N ULP, `1` has
-mean ≈ 0 and size ~sqrt(N) ULP; `delta_float` shows zero mean. README
-documents the directive and its cost.
+**Done when:** at `#FROUND 2`, `I2F` normalises the full `NUBITS` word and
+rounds it through the same stage as the operators, `F2I` saturates; a fixture
+covers ints beyond ±2^(NBMANT-1) and floats beyond ±2^(NUBITS-1); an
+accumulation of *varying* data (not the constant addend of `cmm_fround2`,
+whose rounding is correlated and still drifts +78 ULP at level 2) is
+compared against a double reference (mean ≈ 0, size ~sqrt(N) ULP).
 
 ## 3. Exponent overflow / underflow wraps silently
 
-**Status:** open · **Area:** `HDL/ula.v` · **Evidence:** [§1.3](docs/precision-and-width-review.md#13-exponent-overflow--underflow-silently-wraps-bug)
+**Status:** landed as `#FROUND 1` (saturate / flush to zero) · **Evidence:** [§1.3](docs/precision-and-width-review.md#13-exponent-overflow--underflow-silently-wraps-bug)
 
-Only `ula_scl` saturates. `ula_fmlt` (`e1+e2+MAN`), `ula_fdiv`, `ula_fadd`
-(`e+1`) and `ula_norm` (`exp-sh`) compute the exponent modulo 2^NBEXPO: the
-product of two small numbers (e ≈ -120 each) comes out with e = +39. With
-`#NBEXPO 5` (the 16-bit fixtures) the cliff is a few decades away.
-
-**Done when:** overflow saturates to the largest magnitude, underflow flushes
-to canonical zero, in every float operator; a fixture exercises both edges;
+Left open: the parameter guard
 `initial if (NUBITS != NBMANT+NBEXPO+1 || NBMANT >= 2**(NBEXPO-1)) $error`
-guards the parameters in `ula.v`.
+in `ula.v` (needs a form that every simulator and synthesizer in the flow
+accepts silently).
 
 ## 4. Negative zero is not equal to zero
 
-**Status:** open · **Area:** `HDL/ula.v` · **Evidence:** [§1.7](docs/precision-and-width-review.md#17-negative-zero-is-not-equal-to-zero)
+**Status:** landed as `#FROUND 1` (canonical `+0` out of `ula_norm`,
+`F_NEG`, `F_SGN`) · **Evidence:** [§1.7](docs/precision-and-width-review.md#17-negative-zero-is-not-equal-to-zero)
 
-`EQU` is bitwise; `F_NEG`/`F_SGN` produce `{1, 100…0, 0}`, so `-0.0 == 0.0`
-is false. **Done when:** zero is canonical out of every float operator (or
-`EQU` ignores the sign when the magnitude is zero) and a fixture checks it.
+Left open: nothing.
 
 ## 5. One shared, exact constant encoder
 
@@ -147,12 +133,12 @@ compare against a double reference at 32 and 64 bits.
 
 ---
 
-## Workarounds until items 1–2 land (worth a line in the README)
+## Workarounds at `#FROUND 0` (worth a line in the README)
 
 - Keep long-running accumulators (phase, time base, counters) in **integer /
   fixed point**: `ADD` is exact, and wrap-around modulo 2^NUBITS gives a free
   "mod 2*pi" for binary angles.
 - Accumulate **deviations** from a nominal value instead of absolute values.
 - Raise `#NBMANT` for the processor that accumulates (up to 23 — item 5).
-- A compensated (Kahan) sum does **not** help until item 1 is fixed: it relies
-  on `t - sum` being exact, which today loses a bit.
+- A compensated (Kahan) sum does **not** help at level 0: it relies on
+  `t - sum` being exact, which loses a bit there. It works from level 1 on.

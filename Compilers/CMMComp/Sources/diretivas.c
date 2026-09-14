@@ -12,6 +12,7 @@
 #include "../Headers/global.h"
 #include "../Headers/funcoes.h"
 #include "../Headers/variaveis.h"
+#include "../Headers/messages.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -36,7 +37,7 @@ void dire_exec(char *dir, int id, int t)
     int ival = atoi(v_table[id].name);
 
     // action to take depending on the directive
-    // only directives 1, 3 and 4 affect the cmm compiler
+    // only directives 1, 3, 4, 7 and 8 affect the cmm compiler; 9 is validated here
     switch(t)
     {
         case  1: strcpy (prname,v_table[id].name); break;
@@ -44,6 +45,7 @@ void dire_exec(char *dir, int id, int t)
         case  4: nbexpo = ival             ; break;
         case  7: nuioin = ival             ; break;
         case  8: nuioou = ival             ; break;
+        case  9: if (ival < 0 || ival > 2) {fprintf(stderr, MSG_ERR_FROUND_RANGE, line_num+1); exit(EXIT_FAILURE);} break; // #FROUND level
     }
 
     stmt_append(stmt_directive(dir, id));

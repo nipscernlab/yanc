@@ -151,13 +151,16 @@ endmodule
 module ula_denorm
 #(
 	parameter MAN = 23,
-	parameter EXP =  8
+	parameter EXP =  8,
+	parameter G   =  0                                  // extra low bits kept below the mantissa (3 = guard/round/sticky, FROUND 2)
 )(
 	 input                            neg1, neg2,       // invert the sign
 	 input            [MAN+EXP :0]     in1,  in2,
 	output reg signed [EXP-1   :0]   e_out,
-	output reg signed [MAN     :0] sm1_out, sm2_out
+	output reg signed [MAN+G   :0] sm1_out, sm2_out
 );
+
+localparam W = MAN+G;                                   // mantissa + extra bits
 
 // unpack the registered inputs -----------------------------------------------
 
@@ -182,14 +185,33 @@ always @ (*) e_out = (ege) ? e2_in : e1_in; // the final exponent is the larger
 
 // right-shift the mantissa with smaller exp ----------------------------------
 
-wire [MAN-1:0] m1_out = m1_in >> shift1;
-wire [MAN-1:0] m2_out = m2_in >> shift2;
+// the mantissa is widened by G zero bits before the shift, so what the shift
+// pushes out lands in the extra bits instead of being lost (G = 0: plain shift)
+wire [W-1:0] m1_ext, m2_ext;
+wire [W-1:0] m1_sh  = m1_ext >> shift1;
+wire [W-1:0] m2_sh  = m2_ext >> shift2;
+wire [W-1:0] m1_out, m2_out;
+
+generate if (G != 0) begin : sticky
+	assign m1_ext = {m1_in, {G{1'b0}}};
+	assign m2_ext = {m2_in, {G{1'b0}}};
+	// the lowest extra bit also collects every bit shifted past it (sticky)
+	wire st1 = (shift1 >= W) ? (m1_in != {MAN{1'b0}}) : ((m1_ext << (W - shift1)) != {W{1'b0}});
+	wire st2 = (shift2 >= W) ? (m2_in != {MAN{1'b0}}) : ((m2_ext << (W - shift2)) != {W{1'b0}});
+	assign m1_out = {m1_sh[W-1:1], m1_sh[0] | st1};
+	assign m2_out = {m2_sh[W-1:1], m2_sh[0] | st2};
+end else begin : plain
+	assign m1_ext = m1_in;
+	assign m2_ext = m2_in;
+	assign m1_out = m1_sh;
+	assign m2_out = m2_sh;
+end endgenerate
 
 // compute the signed mantissas -----------------------------------------------
 
-// zero-pad m{1,2}_out (MAN bits) to match sm{1,2}_out's MAN+1-bit signed width
-always @ (*) sm1_out = (s1_in) ? -m1_out : {1'b0, m1_out};
-always @ (*) sm2_out = (s2_in) ? -m2_out : {1'b0, m2_out};
+// zero-pad m{1,2}_out (W bits) to match sm{1,2}_out's W+1-bit signed width
+always @ (*) sm1_out = (s1_in) ? -{1'b0, m1_out} : {1'b0, m1_out};
+always @ (*) sm2_out = (s2_in) ? -{1'b0, m2_out} : {1'b0, m2_out};
 
 endmodule
 
@@ -213,33 +235,77 @@ endmodule
 // normalization of a floating-point number -----------------------------------
 // left-shift until the most significant bit of the mantissa is 1 -------------
 
+// The operators hand in an exponent 2 bits wider than the format, so an
+// overflow/underflow is still visible here. FROUND selects what to do with it:
+//   0 - legacy: the exponent wraps modulo 2^EXP, zero keeps the operand sign
+//   1 - saturate on overflow, flush to canonical zero on underflow (and on zero)
+//   2 - as 1, plus round to nearest even on the G extra bits of the mantissa
+
 module ula_norm
 #(
 	parameter MAN    = 23,
-	parameter EXP    =  8
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0                  // extra low bits carried by the mantissa (3 when FROUND = 2)
 )(
-	 input [MAN+EXP :0] in,
-	output [MAN+EXP :0] out
+	 input [MAN+EXP+G+2:0] in,             // {s, e[EXP+1:0], m[MAN+G-1:0]}
+	output [MAN+EXP    :0] out
 );
 
-wire                    sig = in[MAN+EXP      ];
-wire signed [EXP-1  :0] exp = in[MAN+EXP-1:MAN];
-wire        [MAN-1  :0] man = in[MAN    -1:  0];
+localparam W = MAN+G;
 
-wire [EXP-1:0] w [MAN-1:0];
+wire                    sig = in[MAN+EXP+G+2  ];
+wire signed [EXP+1  :0] exp = in[MAN+EXP+G+1:W];
+wire        [W-1    :0] man = in[W        -1:0];
 
-wire        [EXP-1:0] sh    =  w[MAN-2];
-wire                  out_s =  sig;
-wire signed [EXP-1:0] out_e = (man == {MAN{1'b0}}) ? {1'b1, {EXP-1{1'b0}}} : exp - sh;
-wire        [MAN-1:0] out_m =  man << sh;
+wire [EXP-1:0] w [W-1:0];
 
-ula_nmux #(1, EXP) mm1 (man[MAN-1], 1'b0, {{EXP-1{1'b0}}, {1'b1}}, {EXP{1'b0}}, w[0]);
+// normalize the W-bit word (the LSB of the mantissa field keeps weight 2^exp)
+wire        [EXP-1:0] sh    =  w[W-2];
+wire        [W-1  :0] nrm   =  man << sh;
+wire signed [EXP+1:0] e_nrm =  exp - {{2{1'b0}}, sh};
+
+localparam signed [EXP+1:0] EMAX  =  (1 <<< (EXP-1)) - 1;   // largest exponent
+localparam signed [EXP+1:0] EZERO = -(1 <<< (EXP-1));       // exponent of the zero encoding
+
+wire                  out_s;
+wire signed [EXP-1:0] out_e;
+wire        [MAN-1:0] out_m;
+
+generate if (FROUND == 0) begin : legacy
+	assign out_s = sig;
+	assign out_e = (man == {W{1'b0}}) ? EZERO[EXP-1:0] : e_nrm[EXP-1:0];
+	assign out_m = nrm[W-1:G];
+end else begin : ranged
+	// round to nearest even on the extra bits (nothing to do when G = 0)
+	wire        [MAN-1:0] mnt = nrm[W-1:G];
+	wire                  inc;
+	if (G != 0) begin : rne
+		wire grd = nrm[G-1];                                          // first bit below the mantissa
+		wire stk = |nrm[G-2:0];                                       // anything below it
+		assign inc = grd & (stk | mnt[0]);
+	end else begin : trunc
+		assign inc = 1'b0;
+	end
+	wire        [MAN  :0] rnd   = {1'b0, mnt} + {{MAN{1'b0}}, inc};
+	wire                  rc    = rnd[MAN];                           // carry out: mantissa was all ones
+	wire        [MAN-1:0] m_rnd = (rc) ? {1'b1, {MAN-1{1'b0}}} : rnd[MAN-1:0];
+	wire signed [EXP+1:0] e_rnd = e_nrm + {{EXP+1{1'b0}}, rc};
+	// canonical zero on a zero or underflowed result, saturate on overflow
+	wire                  zero  = (man == {W{1'b0}}) | (e_rnd < EZERO);
+	wire                  ovf   = (e_rnd > EMAX);
+	assign out_s = (zero) ? 1'b0 : sig;
+	assign out_e = (zero) ? EZERO[EXP-1:0] : (ovf) ? EMAX[EXP-1:0] : e_rnd[EXP-1:0];
+	assign out_m = (zero) ? {MAN{1'b0}}   : (ovf) ? {MAN{1'b1}}   : m_rnd;
+end endgenerate
+
+ula_nmux #(1, EXP) mm1 (man[W-1], 1'b0, {{EXP-1{1'b0}}, {1'b1}}, {EXP{1'b0}}, w[0]);
 
 genvar i;
 
 generate
-	for (i = 1; i < MAN-1; i = i+1) begin : norm
-		ula_nmux #(i+1, EXP) mm (man[MAN-1:MAN-1-i], {i+1{1'b0}}, i[EXP-1:0] + {{EXP-1{1'b0}}, {1'b1}}, w[i-1], w[i]);
+	for (i = 1; i < W-1; i = i+1) begin : norm
+		ula_nmux #(i+1, EXP) mm (man[W-1:W-1-i], {i+1{1'b0}}, i[EXP-1:0] + {{EXP-1{1'b0}}, {1'b1}}, w[i-1], w[i]);
 	end
 endgenerate
 
@@ -253,19 +319,21 @@ module norm_mux
 #(
 	parameter NUBITS = 32,
 	parameter NBMANT = 23,
-	parameter NBEXPO =  8
+	parameter NBEXPO =  8,
+	parameter FROUND =  0,
+	parameter G      =  0
 )(
-	 input [       5:0] op  ,
-	 input [NUBITS-1:0] fadd,
-	 input [NUBITS-1:0] fmlt,
-	 input [NUBITS-1:0] fdiv,
-	 input [NUBITS-1:0] i2f , i2fm,
-	 input [NUBITS-1:0] frot,
-	output [NUBITS-1:0] out
+	 input [         5:0] op  ,
+	 input [NUBITS+G+1:0] fadd,           // operator outputs carry a 2-bit-wider exponent and G extra mantissa bits
+	 input [NUBITS+G+1:0] fmlt,
+	 input [NUBITS+G+1:0] fdiv,
+	 input [NUBITS+G+1:0] i2f , i2fm,
+	 input [NUBITS+G+1:0] frot,
+	output [NUBITS  -1:0] out
 );
 
 // input multiplexer
-reg [NUBITS-1:0] imux_out;
+reg [NUBITS+G+1:0] imux_out;
 
 always @ (*) case (op)
 	6'd3   : imux_out =  fadd ;   // F_ADD
@@ -276,11 +344,11 @@ always @ (*) case (op)
 	6'd46  : imux_out =  frot ;   // F_ROT
 	6'd47  : imux_out =  fadd ;   // F_SU1 (uses the same addition circuit)
 	6'd48  : imux_out =  fadd ;   // F_SU2 (uses the same addition circuit)
-	default: imux_out = {NUBITS{1'bx}};
+	default: imux_out = {NUBITS+G+2{1'bx}};
 endcase
 
 // perform the normalization
-ula_norm #(NBMANT,NBEXPO) ula_norm (imux_out, out);
+ula_norm #(NBMANT,NBEXPO,FROUND,G) ula_norm (imux_out, out);
 
 endmodule
 
@@ -306,20 +374,40 @@ endmodule
 
 module ula_fadd
 #(
-	parameter MAN = 23,
-	parameter EXP =  8
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0
 )(
-	input  signed [EXP-1   :0] e_in,
-	input  signed [MAN     :0] sm1_in, sm2_in,                // already comes in with one extra sign bit
-	output        [MAN+EXP :0] out
+	input  signed [EXP-1     :0] e_in,
+	input  signed [MAN+G     :0] sm1_in, sm2_in,              // already comes in with one extra sign bit
+	output        [MAN+EXP+G+2:0] out                         // exponent 2 bits wider (see ula_norm)
 );
 
-wire signed [MAN+1:0] soma =  sm1_in + sm2_in;                // add one more bit to avoid overflow
-wire signed [MAN+1:0] m    = (soma[MAN+1]) ? -soma : soma;    // compute abs() of the mantissa
+localparam W = MAN+G;
 
-wire                  s_out = soma    [MAN+1];
-wire signed [EXP-1:0] e_out = e_in + {{EXP-1{1'b0}}, {1'b1}}; // add one to the exponent to compensate for the mantissa shift
-wire        [MAN-1:0] m_out = m       [MAN:1];                // this shift is because the sum may produce a number larger than the mantissa
+wire signed [W+1:0] soma  =  sm1_in + sm2_in;                 // add one more bit to avoid overflow
+wire signed [W+1:0] m     = (soma[W+1]) ? -soma : soma;       // compute abs() of the mantissa
+wire                carry =  m[W];                            // the sum outgrew the mantissa
+
+wire                  s_out  = soma[W+1];
+wire signed [EXP+1:0] e_wide = {{2{e_in[EXP-1]}}, e_in};
+wire signed [EXP+1:0] e_out;
+wire        [W-1  :0] m_out;
+
+generate if (FROUND == 0) begin : legacy
+	// always shift right by one: the LSB is lost even when there was no carry
+	assign e_out = e_wide + {{EXP+1{1'b0}}, 1'b1};
+	assign m_out = m[W:1];
+end else if (G == 0) begin : keep_lsb
+	// shift (and bump the exponent) only when the sum actually carried out
+	assign e_out = e_wide + {{EXP+1{1'b0}}, carry};
+	assign m_out = (carry) ? m[W:1] : m[W-1:0];
+end else begin : keep_lsb_sticky
+	// same, folding the bit that falls off the shift into the sticky bit
+	assign e_out = e_wide + {{EXP+1{1'b0}}, carry};
+	assign m_out = (carry) ? {m[W:2], m[1] | m[0]} : m[W-1:0];
+end endgenerate
 
 assign out = {s_out, e_out, m_out};
 
@@ -343,38 +431,66 @@ endmodule
 
 module ula_fmlt
 #(
-	parameter MAN = 23,
-	parameter EXP =  8
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0
 )(
 	 input     [MAN+EXP :0] in1, in2,
-	output reg [MAN+EXP :0] out
+	output     [MAN+EXP+G+2:0] out                            // exponent 2 bits wider (see ula_norm)
 );
+
+localparam W = MAN+G;
+localparam signed [EXP+1:0] EZERO = -(1 <<< (EXP-1));
 
 // separate the parts of the input signals ------------------------------------
 
 wire                  s1 = in1[MAN+EXP      ];
 wire                  s2 = in2[MAN+EXP      ];
-wire signed [EXP-1:0] e1 = in1[MAN+EXP-1:MAN];
-wire signed [EXP-1:0] e2 = in2[MAN+EXP-1:MAN];
+wire signed [EXP+1:0] e1 = {{2{in1[MAN+EXP-1]}}, in1[MAN+EXP-1:MAN]};
+wire signed [EXP+1:0] e2 = {{2{in2[MAN+EXP-1]}}, in2[MAN+EXP-1:MAN]};
 wire        [MAN-1:0] m1 = in1[MAN    -1:0  ];
 wire        [MAN-1:0] m2 = in2[MAN    -1:0  ];
 
 // compute the sign -----------------------------------------------------------
 
-wire s_out = (s1 != s2);
-
-// compute the exponent value -------------------------------------------------
-
-wire signed [EXP-1:0] e_out = e1 + e2 + MAN[EXP-1:0];
+wire s_mlt = (s1 != s2);
 
 // compute the mantissa value -------------------------------------------------
 
 wire [2*MAN-1:0] mult  = m1 * m2;
-wire [MAN  -1:0] m_out = mult[2*MAN-1:MAN];
+wire             top   = mult[2*MAN-1];                       // does the product occupy the top bit?
+
+// compute the exponent value (for a product that occupies the top bit) -------
+
+wire signed [EXP+1:0] e_top = e1 + e2 + MAN[EXP+1:0];
 
 // finalize -------------------------------------------------------------------
 
-always @ (*) if (m_out != {{MAN{1'b0}}}) out = {s_out, e_out, m_out}; else out = {1'b0, 1'b1, {{EXP-1{1'b0}}}, {{MAN{1'b0}}}};
+wire                  s_out;
+wire signed [EXP+1:0] e_out;
+wire        [W-1  :0] m_out;
+
+generate if (FROUND == 0) begin : legacy
+	// top MAN bits of the product; a zero product is encoded here directly
+	wire [MAN-1:0] m_top = mult[2*MAN-1:MAN];
+	wire           nz    = (m_top != {MAN{1'b0}});
+	assign s_out = (nz) ? s_mlt : 1'b0;
+	assign e_out = (nz) ? e_top : EZERO;
+	assign m_out = m_top;
+end else if (G == 0) begin : keep_lsb
+	// when the top bit is 0 take the slice one bit lower (and the exponent one less)
+	assign s_out = s_mlt;
+	assign e_out = e_top - {{EXP+1{1'b0}}, ~top};
+	assign m_out = (top) ? mult[2*MAN-1:MAN] : mult[2*MAN-2:MAN-1];
+end else begin : keep_lsb_sticky
+	// same, with two more product bits and the OR of the rest as sticky (G = 3)
+	assign s_out = s_mlt;
+	assign e_out = e_top - {{EXP+1{1'b0}}, ~top};
+	assign m_out = (top) ? {mult[2*MAN-1:MAN-2], |mult[MAN-3:0]} : {mult[2*MAN-2:MAN-3], |mult[MAN-4:0]};
+end endgenerate
+
+assign out = {s_out, e_out, m_out};
 
 endmodule
 
@@ -397,25 +513,50 @@ endmodule
 module ula_fdiv
 #(
 	parameter MAN    = 23,
-	parameter EXP    =  8
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0
 )(
 	 input [MAN+EXP :0] in1, in2,
-	output [MAN+EXP :0] out
+	output [MAN+EXP+G+2:0] out                                // exponent 2 bits wider (see ula_norm)
 );
+
+localparam W = MAN+G;
 
 wire                  s1 = in1[MAN+EXP      ];
 wire                  s2 = in2[MAN+EXP      ];
-wire signed [EXP-1:0] e1 = in1[MAN+EXP-1:MAN];
-wire signed [EXP-1:0] e2 = in2[MAN+EXP-1:MAN];
+wire signed [EXP+1:0] e1 = {{2{in1[MAN+EXP-1]}}, in1[MAN+EXP-1:MAN]};
+wire signed [EXP+1:0] e2 = {{2{in2[MAN+EXP-1]}}, in2[MAN+EXP-1:MAN]};
 wire        [MAN-1:0] m1 = in1[MAN    -1:0  ];
 wire        [MAN-1:0] m2 = in2[MAN    -1:0  ];
 
-wire [2*MAN-2:0] m1_ext = {m1, {MAN-1{1'b0}}};
-wire [2*MAN-2:0] div    =  m1_ext / m2;
-
 wire                  s_out = (s1 != s2);
-wire signed [EXP-1:0] e_out = e1 - e2 - MAN + {{EXP-1{1'b0}}, {1'b1}};
-wire        [MAN-1:0] m_out = div      [MAN-1:0];
+wire signed [EXP+1:0] e_dif = e1 - e2 - MAN[EXP+1:0];
+wire signed [EXP+1:0] e_out;
+wire        [W-1  :0] m_out;
+
+generate if (FROUND == 0) begin : legacy
+	// MAN quotient bits; when m1 < m2 the top one is 0 and the LSB is lost
+	wire [2*MAN-2:0] m1_ext = {m1, {MAN-1{1'b0}}};
+	wire [2*MAN-2:0] div    =  m1_ext / m2;
+	assign e_out = e_dif + {{EXP+1{1'b0}}, 1'b1};
+	assign m_out = div[MAN-1:0];
+end else if (G == 0) begin : keep_lsb
+	// one more quotient bit, so the slice can follow the top bit
+	wire [2*MAN-1:0] m1_ext = {m1, {MAN{1'b0}}};
+	wire [2*MAN-1:0] div    =  m1_ext / m2;                   // < 2^(MAN+1) for a normalized divisor
+	wire             top    =  div[MAN];
+	assign e_out = e_dif + {{EXP+1{1'b0}}, top};
+	assign m_out = (top) ? div[MAN:1] : div[MAN-1:0];
+end else begin : keep_lsb_sticky
+	// three more quotient bits: guard, round and a partial sticky (an exact
+	// sticky would need the remainder, i.e. a second divider)
+	wire [2*MAN+2:0] m1_ext = {m1, {MAN+3{1'b0}}};
+	wire [2*MAN+2:0] div    =  m1_ext / m2;                   // < 2^(MAN+4) for a normalized divisor
+	wire             top    =  div[MAN+3];
+	assign e_out = e_dif + {{EXP+1{1'b0}}, top};
+	assign m_out = (top) ? {div[MAN+3:2], div[1] | div[0]} : div[MAN+2:0];
+end endgenerate
 
 assign out = {s_out, e_out, m_out};
 
@@ -453,16 +594,18 @@ endmodule
 
 module ula_fsgn
 #(
-	parameter MAN = 23,
-	parameter EXP = 8
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0
 )(
 	 input [MAN+EXP:0] in1, in2,
 	output [MAN+EXP:0] out
 );
 
-wire                  s_out = in1[EXP+MAN];
 wire signed [EXP-1:0] e_out = in2[EXP+MAN-1:MAN];
 wire        [MAN-1:0] m_out = in2[MAN    -1:  0];
+wire                  zero  = (FROUND != 0) & (m_out == {MAN{1'b0}}); // FROUND >= 1: zero stays canonical (+0)
+wire                  s_out = (zero) ? 1'b0 : in1[EXP+MAN];
 
 assign out = {s_out, e_out, m_out};
 
@@ -490,8 +633,9 @@ endmodule
 
 module ula_fneg
 #(
-	parameter MAN = 23,
-	parameter EXP = 8
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0
 )(
 	 input [MAN+EXP:0] in,
 	output [MAN+EXP:0] out
@@ -501,7 +645,8 @@ wire                  s_in = in[MAN+EXP      ];
 wire signed [EXP-1:0] e_in = in[MAN+EXP-1:MAN];
 wire        [MAN-1:0] m_in = in[MAN    -1:0  ];
 
-wire                  s_out = ~s_in;
+wire                  zero  = (FROUND != 0) & (m_in == {MAN{1'b0}}); // FROUND >= 1: zero stays canonical (+0)
+wire                  s_out = (zero) ? 1'b0 : ~s_in;
 wire signed [EXP-1:0] e_out =  e_in;
 wire        [MAN-1:0] m_out =  m_in;
 
@@ -591,17 +736,22 @@ endmodule
 module ula_i2f
 #(
 	parameter MAN = 23,
-	parameter EXP = 8
+	parameter EXP =  8,
+	parameter G   =  0
 )(
-	input  signed [MAN-1  :0] in,
-	output        [MAN+EXP:0] out
+	input  signed [MAN-1      :0] in,
+	output        [MAN+EXP+G+2:0] out                         // exponent 2 bits wider, G extra mantissa bits (see ula_norm)
 );
 
 wire                  i2f_s = in[MAN-1];
-wire signed [EXP-1:0] i2f_e = 0;
+wire signed [EXP+1:0] i2f_e = 0;
 wire        [MAN-1:0] i2f_m = (i2f_s) ? -in : in;
+wire        [MAN+G-1:0] i2f_x;                               // exact: the G extra bits are zero
 
-assign out = {i2f_s, i2f_e, i2f_m};
+generate if (G != 0) begin : ext assign i2f_x = {i2f_m, {G{1'b0}}}; end
+         else            begin : nox assign i2f_x = i2f_m;             end endgenerate
+
+assign out = {i2f_s, i2f_e, i2f_x};
 
 endmodule
 
@@ -881,10 +1031,11 @@ endmodule
 module ula_frot
 #(
 	parameter MAN = 23,
-	parameter EXP = 8
+	parameter EXP =  8,
+	parameter G   =  0
 )(
-	 input [MAN+EXP:0] in,
-	output [MAN+EXP:0] out
+	 input [MAN+EXP    :0] in,
+	output [MAN+EXP+G+2:0] out                                // exponent 2 bits wider, G extra mantissa bits (see ula_norm)
 );
 
 wire                  s_in  = in[MAN+EXP      ];
@@ -892,8 +1043,13 @@ wire signed [EXP-1:0] e_in  = in[MAN+EXP-1:MAN];
 wire        [MAN-1:0] m_in  = in[MAN    -1:0  ];
 
 wire                  s_out = s_in;
-wire signed [EXP-1:0] e_out = (e_in+(MAN-1))/2;
-wire        [MAN-1:0] m_out = 1;
+wire signed [EXP-1:0] e_hlf = (e_in+(MAN-1))/2;
+wire signed [EXP+1:0] e_out = {{2{e_hlf[EXP-1]}}, e_hlf};
+wire        [MAN-1:0] m_one = 1;
+wire        [MAN+G-1:0] m_out;                               // exact: the G extra bits are zero
+
+generate if (G != 0) begin : ext assign m_out = {m_one, {G{1'b0}}}; end
+         else            begin : nox assign m_out = m_one;             end endgenerate
 
 assign out = {s_out, e_out, m_out};
 
@@ -965,6 +1121,10 @@ module ula
 	parameter                     NBEXPO =  8,
 	parameter signed [NUBITS-1:0] NUGAIN = 64,
 	parameter                     NBOPCO =  7,
+	// float rounding level (#FROUND): 0 legacy (truncate, exponent wraps, bit-identical
+	// to the original datapath), 1 keep the LSB before normalization + saturate/flush
+	// + canonical zero, 2 as 1 + round to nearest even (guard/round/sticky bits)
+	parameter                     FROUND =  0,
 
 	// two-parameter arithmetic operations
 	parameter   ADD   = 0,
@@ -1039,16 +1199,24 @@ module ula
 	output signed [NUBITS-1:0] out
 );
 
+// floating-point rounding level ----------------------------------------------
+
+// FROUND 2 carries G = 3 extra bits (guard, round, sticky) below the mantissa
+// from the denormalizer / operators up to the normalizer, which rounds them off.
+// The operators also hand the normalizer an exponent 2 bits wider than the
+// format (NUBITS+G+2 wires), so overflow/underflow can be detected there.
+localparam G = (FROUND == 2) ? 3 : 0;
+
 // floating-point denormalization circuit -------------------------------------
 
 wire signed [NBEXPO-1:0] e_out;                       // normalized exponent
-wire signed [NBMANT  :0] sm1_out, sm2_out;            // normalized mantissas
+wire signed [NBMANT+G:0] sm1_out, sm2_out;            // normalized mantissas (+ G extra bits)
 // F_SU1/F_SU2 are 32-bit parameters; cast to 1 bit with `!= 0` so the AND
 // with the 1-bit op-equality stays 1 bit and matches the 1-bit su{1,2} LHS.
 wire					 su1 = (F_SU1 != 0) & (op == 6'd47); // invert sign of in1 for F_SU1
 wire                     su2 = (F_SU2 != 0) & (op == 6'd48); // invert sign of in2 for F_SU2
 
-generate if ((F_ADD | F_SU1 | F_SU2 | F_GRE | F_LES) != 0) begin : op_denorm ula_denorm #(NBMANT,NBEXPO) denorm(su1, su2, in1, in2, e_out, sm1_out, sm2_out); end endgenerate
+generate if ((F_ADD | F_SU1 | F_SU2 | F_GRE | F_LES) != 0) begin : op_denorm ula_denorm #(NBMANT,NBEXPO,G) denorm(su1, su2, in1, in2, e_out, sm1_out, sm2_out); end endgenerate
 
 // ADD ------------------------------------------------------------------------
 
@@ -1058,9 +1226,9 @@ generate if ((ADD) != 0) begin : op_add ula_add #(NUBITS) my_add(in1, in2, add);
 
 // F_ADD ----------------------------------------------------------------------
 
-wire signed [NUBITS-1:0] fadd;
+wire signed [NUBITS+G+1:0] fadd;
 
-generate if ((F_ADD | F_SU1 | F_SU2) != 0) begin : op_fadd ula_fadd #(NBMANT,NBEXPO) my_fadd(e_out, sm1_out, sm2_out, fadd); end else begin : op_fadd assign fadd = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_ADD | F_SU1 | F_SU2) != 0) begin : op_fadd ula_fadd #(NBMANT,NBEXPO,FROUND,G) my_fadd(e_out, sm1_out, sm2_out, fadd); end else begin : op_fadd assign fadd = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // MLT ------------------------------------------------------------------------
 
@@ -1070,9 +1238,9 @@ generate if ((MLT) != 0) begin : op_mlt ula_mlt #(NUBITS) my_mlt(in1, in2, mlt);
 
 // F_MLT ----------------------------------------------------------------------
 
-wire signed [NUBITS-1:0] fmlt;
+wire signed [NUBITS+G+1:0] fmlt;
 
-generate if ((F_MLT) != 0) begin : op_fmlt ula_fmlt #(NBMANT,NBEXPO) my_fmlt(in1 ,in2 , fmlt); end else begin : op_fmlt assign fmlt = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_MLT) != 0) begin : op_fmlt ula_fmlt #(NBMANT,NBEXPO,FROUND,G) my_fmlt(in1 ,in2 , fmlt); end else begin : op_fmlt assign fmlt = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // DIV ------------------------------------------------------------------------
 
@@ -1082,9 +1250,9 @@ generate if ((DIV) != 0) begin : op_div ula_div #(NUBITS) my_div(in1, in2, div);
 
 // F_DIV ----------------------------------------------------------------------
 
-wire signed [NUBITS-1:0] fdiv;
+wire signed [NUBITS+G+1:0] fdiv;
 
-generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(NBMANT,NBEXPO) my_fdiv(in1, in2, fdiv); end else begin : op_fdiv assign fdiv = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(NBMANT,NBEXPO,FROUND,G) my_fdiv(in1, in2, fdiv); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // MOD ------------------------------------------------------------------------
 
@@ -1102,7 +1270,7 @@ generate if ((SGN) != 0) begin : op_sgn ula_sgn #(NUBITS) my_sgn(in1, in2, sgn);
 
 wire signed [NUBITS-1:0] fsgn;
 
-generate if ((F_SGN) != 0) begin : op_fsgn ula_fsgn #(NBMANT,NBEXPO) my_fsgn(in1, in2, fsgn); end else begin : op_fsgn assign fsgn = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_SGN) != 0) begin : op_fsgn ula_fsgn #(NBMANT,NBEXPO,FROUND) my_fsgn(in1, in2, fsgn); end else begin : op_fsgn assign fsgn = {NUBITS{1'bx}}; end endgenerate
 
 // NEG ------------------------------------------------------------------------
 
@@ -1120,13 +1288,13 @@ generate if ((NEG_M) != 0) begin : op_negm ula_neg #(NUBITS) my_negm(in1, negm )
 
 wire signed [NUBITS-1:0] fneg;
 
-generate if ((F_NEG) != 0) begin : op_fneg ula_fneg #(NBMANT,NBEXPO) my_fneg(in2, fneg); end else begin : op_fneg assign fneg = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_NEG) != 0) begin : op_fneg ula_fneg #(NBMANT,NBEXPO,FROUND) my_fneg(in2, fneg); end else begin : op_fneg assign fneg = {NUBITS{1'bx}}; end endgenerate
 
 // F_NEG_M --------------------------------------------------------------------
 
 wire signed [NUBITS-1:0] fnegm;
 
-generate if ((F_NEG_M) != 0) begin : op_fnegm ula_fneg #(NBMANT,NBEXPO) my_fnegm(in1, fnegm); end else begin : op_fnegm assign fnegm = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_NEG_M) != 0) begin : op_fnegm ula_fneg #(NBMANT,NBEXPO,FROUND) my_fnegm(in1, fnegm); end else begin : op_fnegm assign fnegm = {NUBITS{1'bx}}; end endgenerate
 
 // ABS ------------------------------------------------------------------------
 
@@ -1190,15 +1358,15 @@ generate if ((NRM_M) != 0) begin : op_nrmm ula_nrm #(NUBITS,NUGAIN) my_nrmm(in1,
 
 // I2F ------------------------------------------------------------------------
 
-wire signed [NUBITS-1:0] i2f;
+wire signed [NUBITS+G+1:0] i2f;
 
-generate if ((I2F) != 0) begin : op_i2f ula_i2f #(NBMANT,NBEXPO) my_i2f (in2[NBMANT-1:0], i2f); end else begin : op_i2f assign i2f = {NUBITS{1'bx}}; end endgenerate
+generate if ((I2F) != 0) begin : op_i2f ula_i2f #(NBMANT,NBEXPO,G) my_i2f (in2[NBMANT-1:0], i2f); end else begin : op_i2f assign i2f = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // I2F_M ----------------------------------------------------------------------
 
-wire signed [NUBITS-1:0] i2fm;
+wire signed [NUBITS+G+1:0] i2fm;
 
-generate if ((I2F_M) != 0) begin : op_i2fm ula_i2f #(NBMANT,NBEXPO) my_i2fm(in1[NBMANT-1:0], i2fm); end else begin : op_i2fm assign i2fm = {NUBITS{1'bx}}; end endgenerate
+generate if ((I2F_M) != 0) begin : op_i2fm ula_i2f #(NBMANT,NBEXPO,G) my_i2fm(in1[NBMANT-1:0], i2fm); end else begin : op_i2fm assign i2fm = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // F2I ------------------------------------------------------------------------
 
@@ -1276,7 +1444,7 @@ generate if ((LES) != 0) begin : op_les ula_les #(NUBITS) my_les(in1, in2, les);
 
 wire signed [NUBITS-1:0] fles;
 
-generate if ((F_LES) != 0) begin : op_fles ula_fles #(NUBITS,NBMANT) my_fles(sm1_out, sm2_out, fles); end else begin : op_fles assign fles = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_LES) != 0) begin : op_fles ula_fles #(NUBITS,NBMANT+G) my_fles(sm1_out, sm2_out, fles); end else begin : op_fles assign fles = {NUBITS{1'bx}}; end endgenerate
 
 // GRE ------------------------------------------------------------------------
 
@@ -1288,7 +1456,7 @@ generate if ((GRE) != 0) begin : op_gre ula_gre #(NUBITS) my_gre(in1, in2, gre);
 
 wire signed [NUBITS-1:0] fgre;
 
-generate if ((F_GRE) != 0) begin : op_fgre ula_fgre #(NUBITS,NBMANT) my_fgre(sm1_out, sm2_out, fgre); end else begin : op_fgre assign fgre = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_GRE) != 0) begin : op_fgre ula_fgre #(NUBITS,NBMANT+G) my_fgre(sm1_out, sm2_out, fgre); end else begin : op_fgre assign fgre = {NUBITS{1'bx}}; end endgenerate
 
 // EQU ------------------------------------------------------------------------
 
@@ -1316,9 +1484,9 @@ generate if ((SRS) != 0) begin : op_srs ula_srs #(NUBITS) my_srs(in1, in2, srs);
 
 // F_ROT ----------------------------------------------------------------------
 
-wire signed [NUBITS-1:0] frot;
+wire signed [NUBITS+G+1:0] frot;
 
-generate if ((F_ROT) != 0) begin : op_frot ula_frot #(NBMANT,NBEXPO) my_frot(in2, frot); end else begin : op_frot assign frot = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_ROT) != 0) begin : op_frot ula_frot #(NBMANT,NBEXPO,G) my_frot(in2, frot); end else begin : op_frot assign frot = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // F_SCL / XPO / XPO_M --------------------------------------------------------
 // XPO reads in2 (acc), XPO_M reads in1 (memory) -- mirrors F2I/F2I_M.
@@ -1339,7 +1507,7 @@ generate if ((XPO_M) != 0) begin : op_xpom ula_xpo #(NBMANT,NBEXPO) my_xpom(in1,
 
 wire signed [NUBITS-1:0] smx;
 
-generate if ((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_MLT | F_DIV | F_ROT) != 0) begin : op_smx norm_mux #(NUBITS,NBMANT,NBEXPO) norm_mux(op, fadd, fmlt, fdiv, i2f, i2fm, frot, smx); end else begin : op_smx assign smx = {NUBITS{1'bx}}; end endgenerate
+generate if ((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_MLT | F_DIV | F_ROT) != 0) begin : op_smx norm_mux #(NUBITS,NBMANT,NBEXPO,FROUND,G) norm_mux(op, fadd, fmlt, fdiv, i2f, i2fm, frot, smx); end else begin : op_smx assign smx = {NUBITS{1'bx}}; end endgenerate
 
 // main mux -------------------------------------------------------------------
 
