@@ -20,6 +20,9 @@
 //             constant addend drops the same bits every step, so the rounding
 //             is correlated and even level 2 drifts -- 3x less, other sign
 //   block 4 - overflow saturates / underflow flushes / -0.0 == 0.0 (levels 1 and 2)
+//   block 5 - I2F of ints beyond +-2^22 and F2I of floats beyond +-2^31 (level 0
+//             wraps both; level 1 converts the whole word truncating, level 2
+//             rounding; both saturate F2I)
 void main()
 {
     float one  = 1.0;
@@ -57,5 +60,15 @@ void main()
         y = tiny * tiny; if (y == 0.0)  flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = flushed to zero)
         z = x - x;       y = -z;
                          if (y == 0.0)  flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = -0.0 equals 0.0)
+
+        // block 5: I2F / F2I range -------------------------------- level 0 / 1 / 2
+        k = 4194303;          x = k;  fout(0, x);   // 4194303 / 4194303 / 4194303  (fits the mantissa)
+        k = 5000000;          x = k;  fout(0, x);   // -3388608 / 5000000 / 5000000  (bit 22 taken as the sign)
+        k = 16777217;         x = k;  fout(0, x);   // 1 / 16777216 / 16777216  (2^24+1: two bits dropped, 0.25 -> down)
+        k = 16777219;         x = k;  fout(0, x);   // 3 / 16777216 / 16777220  (2^24+3: two bits dropped, 0.75 -> up at level 2)
+        k = 2147483647;       x = k;  fout(0, x);   // -1 / 2147483392 / 2147483647  (level 2 rounds to 2^31, F2I saturates)
+        k = -2147483647 - 1;  x = k;  fout(0, x);   // 0 / -2147483648 / -2147483648  (low 23 bits are zero)
+        x = 3000000000.0;             out(0, x);    // -1294967296 / 2147483647 / 2147483647  (F2I saturates)
+        x = -3000000000.0;            out(0, x);    // 1294967296 / -2147483648 / -2147483648
     }
 }

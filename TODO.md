@@ -35,22 +35,19 @@ mention it; remove it then.
 
 ## 2. Round-to-nearest mode + full-range `I2F` + saturating `F2I`
 
-**Status:** rounding landed as `#FROUND 2`; `I2F` / `F2I` still open ·
-**Area:** `HDL/ula.v` · **Evidence:** [§1.2](docs/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
+**Status:** landed as `#FROUND 2` (rounding) and `#FROUND >= 1` (`I2F` on
+the whole word, `F2I` saturating); two loose ends · **Area:** `HDL/ula.v` ·
+**Evidence:** [§1.2](docs/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
 
-`I2F` reads only `in[NBMANT-1:0]`, so an `int` outside ±2^(NBMANT-1)
-converts to garbage, and `F2I` wraps for |x| ≥ 2^(NUBITS-1). Also still
-open from the rounding work: `F_DIV`'s sticky bit is approximated by a third
-extra quotient bit (an exact sticky needs the remainder, i.e. a second
-divider), and the `delta_float` monitor has not been checked for zero mean
-at level 2.
+Left open: `F_DIV`'s sticky bit is approximated by a third extra quotient
+bit (an exact sticky needs the remainder, i.e. a second divider), and the
+claim that level 2 is unbiased on *varying* data has only been checked on
+the host, not on the core (`cmm_fround2`'s constant addend is correlated
+and still drifts +78 ULP, exactly like IEEE `float` on a PC).
 
-**Done when:** at `#FROUND 2`, `I2F` normalises the full `NUBITS` word and
-rounds it through the same stage as the operators, `F2I` saturates; a fixture
-covers ints beyond ±2^(NBMANT-1) and floats beyond ±2^(NUBITS-1); an
-accumulation of *varying* data (not the constant addend of `cmm_fround2`,
-whose rounding is correlated and still drifts +78 ULP at level 2) is
-compared against a double reference (mean ≈ 0, size ~sqrt(N) ULP).
+**Done when:** an accumulation of varying data (e.g. a sine table) at level
+2 is compared against a double reference (mean ≈ 0, size ~sqrt(N) ULP), and
+`delta_float` shows zero mean on it.
 
 ## 3. Exponent overflow / underflow wraps silently
 
@@ -102,7 +99,13 @@ a fallback of **16**, not `CFG_NUBITS`. APPComp and the HDL need nothing.
 reads/writes `NUBITS`-bit words, `-Wno-WIDTH` is off while the work is done,
 and fixtures at 48/40/7 and 64/52/11 pass through both front ends under Icarus
 and Verilator, with a host-double reference for the 64-bit case (like
-`test50`).
+`test50`). Ships together with a **self-checking ULA unit testbench** (a
+directed regress pass like `ResetCheck`): every float operator, including
+`F_ROT`, `F_SGN`, `F_LES`/`F_GRE`, the `_M` variants, `I2F`/`F2I` at the
+range edges, at `FROUND` 0/1/2 and at 16/10/5, 32/23/8, 64/52/11, with the
+expected values derived in the testbench rather than blessed. Until then
+levels 1 and 2 are covered only by `cmm_fround1/2` and (level 2) the C++
+tests.
 
 ## 7. HDL scaling for wide mantissas
 

@@ -733,25 +733,58 @@ endmodule
 
 // I2F - converts int to float ------------------------------------------------
 
+// FROUND 0 converts only the low MAN bits of the word (an int beyond
+// +-2^(MAN-1) wraps silently). FROUND >= 1 converts the whole word: the
+// magnitude is pre-aligned here so that its top MAN bits (plus the G extra
+// bits) go to ula_norm, which truncates (level 1) or rounds (level 2) them.
+
 module ula_i2f
 #(
-	parameter MAN = 23,
-	parameter EXP =  8,
-	parameter G   =  0
+	parameter NUBITS = 32,
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0
 )(
-	input  signed [MAN-1      :0] in,
+	input  signed [NUBITS-1   :0] in,
 	output        [MAN+EXP+G+2:0] out                         // exponent 2 bits wider, G extra mantissa bits (see ula_norm)
 );
 
-wire                  i2f_s = in[MAN-1];
-wire signed [EXP+1:0] i2f_e = 0;
-wire        [MAN-1:0] i2f_m = (i2f_s) ? -in : in;
-wire        [MAN+G-1:0] i2f_x;                               // exact: the G extra bits are zero
+localparam W = MAN+G;
+localparam T = NUBITS-MAN;                                   // magnitude bits above the mantissa (= EXP+1)
 
-generate if (G != 0) begin : ext assign i2f_x = {i2f_m, {G{1'b0}}}; end
-         else            begin : nox assign i2f_x = i2f_m;             end endgenerate
+wire                  s_out;
+wire signed [EXP+1:0] e_out;
+wire        [W-1  :0] m_out;
 
-assign out = {i2f_s, i2f_e, i2f_x};
+generate if (FROUND == 0) begin : legacy
+	wire [MAN-1:0] lo = in[MAN-1:0];
+	wire [MAN-1:0] lm = (lo[MAN-1]) ? -lo : lo;
+	assign s_out = lo[MAN-1];
+	assign e_out = 0;
+	assign m_out = lm;                                       // G is 0 at this level
+end else begin : full
+	localparam LZW = $clog2(T+1);
+	wire [NUBITS-1:0] neg = -in;
+	wire [NUBITS-1:0] mag = (in[NUBITS-1]) ? neg : in;      // unsigned magnitude (2^(NUBITS-1) for the most negative int)
+	wire [T-1     :0] top = mag[NUBITS-1:MAN];
+	// leading zeros of the top field, saturating at T (int fits the mantissa)
+	integer k, lzi;
+	always @ (*) begin lzi = T; for (k = 0; k < T; k = k+1) if (top[k]) lzi = T-1-k; end
+	wire [LZW-1   :0] lz   = lzi[LZW-1:0];
+	wire [NUBITS-1:0] magn = mag << lz;                      // leading one at bit NUBITS-1 (or int << T when it fits)
+	wire [MAN-1   :0] mnt  = magn[NUBITS-1:T];
+	wire [T-1     :0] xtr  = magn[T-1:0];                    // the bits below the mantissa
+	assign s_out = in[NUBITS-1];
+	assign e_out = T[EXP+1:0] - {{(EXP+2-LZW){1'b0}}, lz};  // weight of mnt's LSB
+	if (G != 0) begin : rne
+		assign m_out = {mnt, xtr[T-1], xtr[T-2], |xtr[T-3:0]}; // guard, round, sticky
+	end else begin : trunc
+		assign m_out = mnt;
+	end
+end endgenerate
+
+assign out = {s_out, e_out, m_out};
 
 endmodule
 
@@ -759,8 +792,9 @@ endmodule
 
 module ula_f2i
 #(
-	parameter MAN = 23,
-	parameter EXP =  8
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0
 )(
 	input             [MAN+EXP :0] in,
 	output reg signed [MAN+EXP :0] out
@@ -777,8 +811,15 @@ wire        [EXP-1:0] shift = (e[EXP-1]) ? -e : e;
 // operates at the destination width — Verilator otherwise warns WIDTHEXPAND.
 wire        [MAN+EXP:0] m_ext = {{(EXP+1){1'b0}}, m};
 wire        [MAN+EXP:0] mag   = (e[EXP-1]) ? (m_ext >> shift) : (m_ext << shift);
+wire        [MAN+EXP:0] val   = (s) ? -mag : mag;
 
-always @ (*) out  = (s) ? -mag : mag;
+// FROUND >= 1: saturate instead of wrapping. A normalized mantissa is at least
+// 2^(MAN-1), so the value reaches 2^(MAN+EXP) as soon as e > EXP.
+localparam signed [EXP+1:0] EFIT = EXP;
+wire signed [EXP+1:0] ew  = {{2{e[EXP-1]}}, e};
+wire                  ovf = (FROUND != 0) & (ew > EFIT);
+
+always @ (*) out = (ovf) ? ((s) ? {1'b1, {(MAN+EXP){1'b0}}} : {1'b0, {(MAN+EXP){1'b1}}}) : val;
 
 endmodule
 
@@ -1360,25 +1401,25 @@ generate if ((NRM_M) != 0) begin : op_nrmm ula_nrm #(NUBITS,NUGAIN) my_nrmm(in1,
 
 wire signed [NUBITS+G+1:0] i2f;
 
-generate if ((I2F) != 0) begin : op_i2f ula_i2f #(NBMANT,NBEXPO,G) my_i2f (in2[NBMANT-1:0], i2f); end else begin : op_i2f assign i2f = {NUBITS+G+2{1'bx}}; end endgenerate
+generate if ((I2F) != 0) begin : op_i2f ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G) my_i2f (in2, i2f); end else begin : op_i2f assign i2f = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // I2F_M ----------------------------------------------------------------------
 
 wire signed [NUBITS+G+1:0] i2fm;
 
-generate if ((I2F_M) != 0) begin : op_i2fm ula_i2f #(NBMANT,NBEXPO,G) my_i2fm(in1[NBMANT-1:0], i2fm); end else begin : op_i2fm assign i2fm = {NUBITS+G+2{1'bx}}; end endgenerate
+generate if ((I2F_M) != 0) begin : op_i2fm ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G) my_i2fm(in1, i2fm); end else begin : op_i2fm assign i2fm = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // F2I ------------------------------------------------------------------------
 
 wire signed [NUBITS-1:0] f2i;
 
-generate if ((F2I) != 0) begin : op_f2i ula_f2i #(NBMANT,NBEXPO) my_f2i (in2, f2i); end else begin : op_f2i assign f2i = {NUBITS{1'bx}}; end endgenerate
+generate if ((F2I) != 0) begin : op_f2i ula_f2i #(NBMANT,NBEXPO,FROUND) my_f2i (in2, f2i); end else begin : op_f2i assign f2i = {NUBITS{1'bx}}; end endgenerate
 
 // F2I_M ----------------------------------------------------------------------
 
 wire signed [NUBITS-1:0] f2im;
 
-generate if ((F2I_M) != 0) begin : op_f2im ula_f2i #(NBMANT,NBEXPO) my_f2im (in1, f2im); end else begin : op_f2im assign f2im = {NUBITS{1'bx}}; end endgenerate
+generate if ((F2I_M) != 0) begin : op_f2im ula_f2i #(NBMANT,NBEXPO,FROUND) my_f2im (in1, f2im); end else begin : op_f2im assign f2im = {NUBITS{1'bx}}; end endgenerate
 
 // AND ------------------------------------------------------------------------
 

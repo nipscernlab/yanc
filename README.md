@@ -499,8 +499,8 @@ comparisons and the integer ALU (no `F_DIV`).
 | `#FROUND` | What the ALU does | Cost |
 |---|---|---|
 | `0` | Legacy datapath: operators truncate, one mantissa bit is lost before normalization whenever the result does not fill the top bit (so `(1+2^-22) - 1 == 0` and `x * 1.0` may differ from `x`), the exponent wraps on overflow/underflow, `-0.0 != 0.0`. Bit-identical to previous releases. | — |
-| `1` | Keeps that bit (exact truncation toward zero), saturates on overflow, flushes to zero on underflow, canonical `+0.0`. `x * 1.0 == x`, `a - b` is exact for `a/2 <= b <= 2a`. | ≈ +1.5 % |
-| `2` | Level 1 plus round to nearest, ties to even (guard/round/sticky bits through the adder, the multiplier and the divider). Rounding errors on varying data are unbiased. | ≈ +5 % (≈ +20 % of the float part) |
+| `1` | Keeps that bit (exact truncation toward zero), saturates on overflow, flushes to zero on underflow, canonical `+0.0`. `x * 1.0 == x`, `a - b` is exact for `a/2 <= b <= 2a`. `I2F` (and `fin()`) converts the whole `NUBITS` word instead of its low `NBMANT` bits — at level 0 an `int` beyond ±2^(NBMANT-1) converts to garbage — and `F2I` saturates to the `int` range instead of wrapping. | ≈ +1.5 % |
+| `2` | Level 1 plus round to nearest, ties to even (guard/round/sticky bits through the adder, the multiplier, the divider and `I2F`). Rounding errors on varying data are unbiased. | ≈ +5 % (≈ +20 % of the float part) |
 
 With `F_DIV` also instantiated the whole ALU (19 integer + 12 float operators)
 goes from 8487 LUT4 to 8271 (level 1, within synthesis noise) and 8691 (level

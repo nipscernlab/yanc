@@ -24,7 +24,15 @@ tags consumed by Aurora.
   `#FROUND` (0..2, validated); **`cppcomp` always emits `#FROUND 2`**, so
   the C++ goldens moved to the rounded datapath. Fixtures
   `cmm_fround0/1/2` run one program at each level (lost bit, tie cases,
-  1000-step accumulation drift, overflow/underflow/negative zero).
+  1000-step accumulation drift, overflow/underflow/negative zero, int/float
+  conversions out of range).
+- **`I2F` converts the whole word and `F2I` saturates at `#FROUND >= 1`.**
+  `I2F` (also behind `fin()`/`F_INN`) used to take only the low `NBMANT`
+  bits of the `int`, so `5000000` became `-3388608.0` and `2^24` became
+  `0.0`; it now pre-aligns the full magnitude (a leading-zero count on the
+  `NBEXPO+1` bits above the mantissa) and lets `ula_norm` truncate (level 1)
+  or round (level 2) it. `F2I` returns `INT_MAX`/`INT_MIN` instead of
+  wrapping for |x| >= 2^(NUBITS-1). Level 0 keeps both legacy behaviours.
 - `docs/precision-and-width-review.md` — review of the float datapath and of
   every 32-bit assumption in the toolchain: what limits precision today (a
   mantissa bit lost before normalisation, truncation, exponent wrap, the
