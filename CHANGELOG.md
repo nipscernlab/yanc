@@ -8,6 +8,19 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- `docs/precision-and-width-review.md` — review of the float datapath and of
+  every 32-bit assumption in the toolchain: what limits precision today (a
+  mantissa bit lost before normalisation, truncation, exponent wrap, the
+  host-`float` constant encoder) and what is needed to run any
+  `NBMANT`/`NBEXPO`. `TODO.md` is now the short list that points into it.
+
+### Removed
+- `docs/aurora-verilator-migration.md` — the v4.3 migration guide for Aurora.
+  Aurora adopted both changes (`+define+YANC_TRACE`, no `$finish` strip) and
+  the `go_proc_vl.bat`/`go_proj_vl.bat` scripts it referenced were folded into
+  `Scripts/single_proc.bat --sim verilator`. Still in git history.
+
 ## [v5.3] – 2026-07-24
 
 ### Changed
@@ -616,8 +629,8 @@ out.
   (`$display "Progress: N% complete"` … `Simulation Complete!`, each in-loop
   line flushed) instead of writing a `progress.txt` file. Tools that drove a
   progress overlay off `progress.txt` (Aurora's `VVPProgressManager`) should
-  parse the terminal lines instead — see
-  [`docs/aurora-verilator-migration.md`](docs/aurora-verilator-migration.md).
+  parse the terminal lines instead — see `docs/aurora-verilator-migration.md`
+  (removed after Aurora adopted it; in git history).
 - **The stack/ULA monitor signals are intentionally not in the Verilator VCD.**
   The stack-pointer flags and the ULA rounding-error taps (`fl_max`, `fl_full`,
   `pointeri`, `delta_int`, `delta_float`) sit below the
@@ -635,7 +648,8 @@ out.
 The Verilator waveform path now works end-to-end: the same
 variables/arrays/PC-line view the Icarus flow always had now appears under
 Verilator too. Downstream (Aurora) adopts it with two small changes — see
-[`docs/aurora-verilator-migration.md`](docs/aurora-verilator-migration.md).
+`docs/aurora-verilator-migration.md` (removed after Aurora adopted it; in git
+history).
 
 ### Added
 - **`go_proc_vl.bat` / `go_proj_vl.bat`** — Verilator siblings of

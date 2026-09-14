@@ -505,7 +505,8 @@ yanc/
 │                           single_proc     .bat/.sh  C± single-processor pipeline
 │                           multi_proc      .bat/.sh  C± multi-processor project
 │                           single_proc_cpp .bat/.sh  C++ single-processor pipeline
-├── docs/images/          README assets (GTKWave screenshot, ...)
+├── TODO.md               open work items (short list; evidence in docs/)
+├── docs/                 engineering notes (precision-and-width-review.md) + images/ (README assets)
 └── .github/workflows/    CI (Windows + Linux build/smoke; release on tag push)
 ```
 
