@@ -174,10 +174,11 @@ cheap structure and the ALU testbench of item 6 validates the final one.
 full regress green):
 1. sign-magnitude adder (dual subtractor, no two's-complement round trips),
    parallel `e1-e2`/`e2-e1`, one denormaliser shifter with operand swap;
-2. log-depth leading-zero tree; LZC + shift moved to the `F_ADD`/`I2F`
-   branch so `F_MLT`/`F_DIV` skip it; one folded exponent adder with
-   overflow/underflow decided in parallel; level-2 sticky by thermometer
-   mask and carry-select increment;
+2. LZC + shift moved to the `F_ADD`/`I2F` branch so `F_MLT`/`F_DIV` skip
+   it; one folded exponent adder with overflow/underflow decided in
+   parallel; level-2 sticky by thermometer mask and carry-select increment
+   (a log-depth leading-zero tree was measured and reverted: `abc` already
+   balances the chain — see §2.7);
 3. `F_LES`/`F_GRE` as a lexicographic compare (no denormaliser) — mind
    `-0.0` at level 0;
 4. explicit restoring divider arrays: `F_DIV` with `MAN+1+G` rows (exact

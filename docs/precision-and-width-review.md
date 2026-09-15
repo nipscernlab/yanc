@@ -264,12 +264,21 @@ Measured 2026-09-14 on the shipped `ula.v` (with `FROUND`), Yosys 0.56
 path in LUT4 levels; a technology-neutral proxy (on an FPGA the dividers map
 partly onto carry chains, which are faster per level than the rest).
 
+**Methodology caveat (found 2026-09-15):** Yosys' `synth` runs SAT-based
+resource sharing (`share`), which merges mutually exclusive operators — e.g.
+`F2I`'s shifters with the normaliser's — into one unit behind input muxes.
+That saves area but lengthens the path, and Quartus/Vivado do not do it. The
+table below was taken **with** sharing; the whole no-divider ALU at level 0 is
+40 levels with `synth -noshare` (not 47), and adding `F2I` to the normalised
+operators costs 0 levels instead of +11. Single-operator rows are unaffected
+(nothing to share). Re-measured figures without sharing are marked *(ns)*.
+
 | operators instantiated | LUT4 | depth L0 | depth L1 | depth L2 |
 |---|---|---|---|---|
 | `F_ADD` (+`F_SU1`/`F_SU2`) | 684 / 730 / 907 | 37 | 37 | **51** |
 | `F_MLT` | 1708 / 1725 / 1838 | 38 | 40 | **49** |
 | `MLT` (int) | 1476 | 23 | | |
-| int + float, no divider | 4117 | **47** | 57 | |
+| int + float, no divider | 4117 | **47** *(ns: 40)* | 57 | 56 |
 | int + float + `DIV`/`MOD` | 6012 | **385** | 385 | |
 | `DIV` + `MOD` alone | 1962 | **387** | | |
 | `F_DIV` alone | 2700 | **508** | | |
@@ -305,15 +314,17 @@ Reviewed 2026-09-14 after the depth measurements of §2.6. Everything below
 keeps level 0 bit-identical (the ~50 C± goldens are the proof); the gains are
 estimates to be confirmed with `ltp`/`stat` and, for Fmax, with Quartus.
 
-**Float add path (`ula_denorm` → `ula_fadd` → `ula_norm`)** — five adders in
-series where the arithmetic needs one, plus a linear leading-zero chain:
+**Float add path (`ula_denorm` → `ula_fadd` → `ula_norm`)** — measured per
+block at 32/23/8 (LUT4 levels, level 0 / level 2): `ula_denorm` 18 / 22,
+`ula_fadd` 16 / 22, `ula_norm` 8 / 18. The depth is in the denormaliser and
+the adder — five adders in series where the arithmetic needs one:
 
 | today | better | gain |
 |---|---|---|
 | `eme = e1-e2`, then `shift = -eme` in series (`ula.v` `ula_denorm`) | `e1-e2` and `e2-e1` in parallel, pick by sign | −1 adder level |
 | two W-bit barrel shifters, only one ever shifts | swap operands by the exponent sign, one shifter (F_SU*/compare fix the sign afterwards) | −15 % F_ADD area, −1 level |
 | both operands converted to two's complement (`sm = s ? -m : m`), added, converted back (`m = soma<0 ? -soma : soma`) | sign-magnitude adder: equal signs add magnitudes; different signs compute `a-b` and `b-a` in parallel and keep the positive one (sign from the carry) | −2 adder levels (≈ −8 LUT levels), −2 adders of area |
-| `ula_norm` leading-zero count = linear chain of W−1 `ula_nmux`, comparators of growing width (O(W²) inputs, O(W) depth) | log-depth priority tree (≈ log₂W levels); optionally a leading-zero anticipator in parallel with the adder | biggest single depth item of the normaliser |
+| `ula_norm` leading-zero count = linear chain of W−1 `ula_nmux` | **measured, not worth it**: `abc` already rebuilds the chain (constant data inputs) into a balanced priority encoder — `ula_norm` alone is 8 levels at 32/23/8. A log-depth tree was implemented and reverted: 32 bits ±0 levels, +1 % (level 0) / +7 % (`F_ADD`, level 2) area; 64 bits −4 levels, ±0 area. Revisit only with the 64-bit work | none at 32 bits |
 | `F_MLT` / `F_DIV` traverse the shared LZC through `norm_mux` although at levels ≥ 1 they arrive pre-aligned | LZC + shift only on the `F_ADD`/`I2F` branch, before the mux; `F_MLT`/`F_DIV` enter the shared round/saturate stage directly | −10…15 levels on `F_MLT`/`F_DIV` |
 | exponent: `e + carry` (fadd), `exp - sh`, `+ rc`, then `> EMAX` / `< EZERO` compares, all in series | one adder with folded operands; overflow/underflow decided from `exp` and `sh` in parallel with the shift | −3…4 levels (this is what the §2.6 47 → 57 step is) |
 | level-2 sticky = second barrel shifter (`m_ext << (W-shift)`) | thermometer mask of `shift`, AND, OR-reduce | −5 levels, −W·log W area |
@@ -354,9 +365,34 @@ operators, `LAN`/`LOR`/`LIN` zero detects, `SGN`/`ABS`/`NEG`, `F_SGN`/`F_ABS`/
 encoder), the `ula_fmlt` exponent (`e1+e2+MAN` is one 3-input adder after
 synthesis), the sim-only monitor block (never synthesised).
 
+**Step 1 done (2026-09-15, sign-magnitude adder, one shifter, parallel
+exponent differences, one comparison unit):** measured without sharing at
+32/23/8, level 0: `F_ADD` 684 / 37 → 628 / 35; `F_LES`+`F_GRE` 439 / 22 →
+314 / 20; whole no-divider ALU 4297 / 40 → 4209 / 36 (−10 % depth, −2 %
+area); level 2 `F_ADD` 902 / 51 → 812 / 50; 64/52/11 `F_ADD` 1636 / 64 →
+1519 / 52. Every golden unchanged at every level. The depth gain is smaller
+than the adder count suggested because `abc` already merged part of the
+two's-complement conversions into the carry logic.
+
+**Quartus confirmation (Prime Lite 24.1, Cyclone V 5CSEMA5F31C6 C6, slow
+85 °C model, `HIGH PERFORMANCE EFFORT`, generated `<proc>.v` + `.mif` as the
+top):**
+
+| processor (regress build) | operators | before | step 1 |
+|---|---|---|---|
+| `cmm_cexp` (complex exp: 18 `F_ADD`, 35 `F_MLT`, no divider) | float, no `F_DIV` | 45.09 MHz, 733 ALMs | **50.98 MHz** (+13 %), 713 ALMs |
+| `cmm_fround0` (has `one / 1.5`) | level 0 with `F_DIV` | 8.05 MHz, 1733 ALMs | 8.08 MHz, 1743 ALMs |
+| `cmm_fround2` | level 2 with `F_DIV` | — | 6.85 MHz, 2059 ALMs |
+
+The divider sets the clock exactly as §2.6 predicted: a processor that
+divides runs at ~8 MHz on this device, one that does not at ~50 MHz (5.5×);
+the adder work is invisible where `F_DIV` is present. Level 2 costs −15 %
+Fmax and +18 % ALMs on the dividing processor (the three extra quotient bits
+and the rounding stage are on the divider's path).
+
 **Expected total** for a typical float processor (F_ADD, F_MLT, I2F, F2I,
-comparisons, no divider): depth 47 (level 0) / 57 (level 1) / 56 (level 2) →
-≈ 30 at every level; area 4117 → ≈ 3500. With `F_DIV`: 546 → ≈ 300 levels.
+comparisons, no divider) after the remaining steps: ≈ 30 levels at every
+level; area ≈ −15 %. With `F_DIV`: ≈ half the divider's depth.
 
 ---
 

@@ -8,6 +8,23 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **Float adder restructured** (`ula_denorm`, `ula_fadd`): the operands are
+  ordered by exponent with both differences computed in parallel (no negation
+  in series), only the smaller mantissa goes through a barrel shifter (one
+  shifter instead of two), and the addition is done in sign-magnitude form —
+  equal signs add the magnitudes, different signs subtract both ways in
+  parallel and keep the non-negative one — instead of converting both operands
+  to two's complement, adding, and converting back. Same results bit for bit
+  at every `#FROUND` level (all goldens unchanged). `F_LES`/`F_GRE` now share
+  one comparison unit (`ula_fcmp`) working on the aligned sign-magnitude
+  operands instead of a subtraction each. Yosys LUT4 (32/23/8): `F_ADD`
+  684 → 628 (level 0), 907 → 812 (level 2); `F_LES`+`F_GRE` 439 → 314;
+  depth `F_ADD` 37 → 35 levels at 32 bits, 64 → 52 at 64/52/11. Quartus
+  (Cyclone V C6): a division-free float processor (`cmm_cexp`) goes from
+  45.1 to 51.0 MHz (+13 %) with 3 % fewer ALMs; processors that use
+  `F_DIV` stay at ~8 MHz, where the combinational divider sets the clock.
+
 ### Added
 - **`#FROUND` directive — float rounding level (0/1/2) of the ALU**, a
   `FROUND` parameter of `processor.v`/`core.v`/`ula.v`. Level `0` (default)

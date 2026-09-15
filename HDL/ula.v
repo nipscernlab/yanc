@@ -154,10 +154,12 @@ module ula_denorm
 	parameter EXP =  8,
 	parameter G   =  0                                  // extra low bits kept below the mantissa (3 = guard/round/sticky, FROUND 2)
 )(
-	 input                            neg1, neg2,       // invert the sign
-	 input            [MAN+EXP :0]     in1,  in2,
-	output reg signed [EXP-1   :0]   e_out,
-	output reg signed [MAN+G   :0] sm1_out, sm2_out
+	 input                    neg1, neg2,               // invert the sign
+	 input        [MAN+EXP:0]  in1,  in2,
+	output signed [EXP-1  :0] e_out,                    // the larger exponent
+	output                    swap,                     // in2 has the larger exponent: big = in2, small = in1
+	output                    s_big, s_small,           // signs of the two operands, big/small order
+	output        [MAN+G-1:0] m_big, m_small            // aligned magnitudes: m_big as is, m_small shifted right
 );
 
 localparam W = MAN+G;                                   // mantissa + extra bits
@@ -171,47 +173,42 @@ wire signed [EXP-1:0] e2_in = in2[MAN+EXP-1:MAN];
 wire        [MAN-1:0] m1_in = in1[MAN    -1:0  ];
 wire        [MAN-1:0] m2_in = in2[MAN    -1:0  ];
 
-// compute the shift ----------------------------------------------------------
-// the smaller exponent shifts to match the larger ----------------------------
+// order the operands by exponent ---------------------------------------------
+// both differences are computed in parallel (no negation in series); the one
+// that is non-negative is the shift of the smaller operand
 
-wire signed [EXP:0] eme    =  e1_in-e2_in;                           // subtraction e1-e2
-wire                ege    =  eme     [EXP];                         // save the sign of the subtraction
-wire        [EXP:0] shift2 = (ege) ?  {EXP+1{1'b0}} : eme;           // shift of input 2
-wire        [EXP:0] shift1 = (ege) ? -eme           : {EXP+1{1'b0}}; // shift of input 1
+wire signed [EXP:0] d12 = e1_in - e2_in;
+wire signed [EXP:0] d21 = e2_in - e1_in;
 
-// take the final exponent ----------------------------------------------------
+assign swap  = d12[EXP];                                // e1 < e2
+wire [EXP:0] shift = (swap) ? d21 : d12;                // |e1 - e2|
 
-always @ (*) e_out = (ege) ? e2_in : e1_in; // the final exponent is the larger
+assign e_out   = (swap) ? e2_in : e1_in;
+assign s_big   = (swap) ? s2_in : s1_in;
+assign s_small = (swap) ? s1_in : s2_in;
+wire [MAN-1:0] mb_in = (swap) ? m2_in : m1_in;
+wire [MAN-1:0] ms_in = (swap) ? m1_in : m2_in;
 
-// right-shift the mantissa with smaller exp ----------------------------------
+// right-shift the smaller mantissa (one shifter) -----------------------------
 
-// the mantissa is widened by G zero bits before the shift, so what the shift
-// pushes out lands in the extra bits instead of being lost (G = 0: plain shift)
-wire [W-1:0] m1_ext, m2_ext;
-wire [W-1:0] m1_sh  = m1_ext >> shift1;
-wire [W-1:0] m2_sh  = m2_ext >> shift2;
-wire [W-1:0] m1_out, m2_out;
+// the mantissas are widened by G zero bits, so what the shift pushes out lands
+// in the extra bits instead of being lost (G = 0: plain shift)
+wire [W-1:0] mb_ext, ms_ext;
+wire [W-1:0] ms_sh = ms_ext >> shift;
 
 generate if (G != 0) begin : sticky
-	assign m1_ext = {m1_in, {G{1'b0}}};
-	assign m2_ext = {m2_in, {G{1'b0}}};
+	assign mb_ext = {mb_in, {G{1'b0}}};
+	assign ms_ext = {ms_in, {G{1'b0}}};
 	// the lowest extra bit also collects every bit shifted past it (sticky)
-	wire st1 = (shift1 >= W) ? (m1_in != {MAN{1'b0}}) : ((m1_ext << (W - shift1)) != {W{1'b0}});
-	wire st2 = (shift2 >= W) ? (m2_in != {MAN{1'b0}}) : ((m2_ext << (W - shift2)) != {W{1'b0}});
-	assign m1_out = {m1_sh[W-1:1], m1_sh[0] | st1};
-	assign m2_out = {m2_sh[W-1:1], m2_sh[0] | st2};
+	wire st = (shift >= W) ? (ms_in != {MAN{1'b0}}) : ((ms_ext << (W - shift)) != {W{1'b0}});
+	assign m_small = {ms_sh[W-1:1], ms_sh[0] | st};
 end else begin : plain
-	assign m1_ext = m1_in;
-	assign m2_ext = m2_in;
-	assign m1_out = m1_sh;
-	assign m2_out = m2_sh;
+	assign mb_ext  = mb_in;
+	assign ms_ext  = ms_in;
+	assign m_small = ms_sh;
 end endgenerate
 
-// compute the signed mantissas -----------------------------------------------
-
-// zero-pad m{1,2}_out (W bits) to match sm{1,2}_out's W+1-bit signed width
-always @ (*) sm1_out = (s1_in) ? -{1'b0, m1_out} : {1'b0, m1_out};
-always @ (*) sm2_out = (s2_in) ? -{1'b0, m2_out} : {1'b0, m2_out};
+assign m_big = mb_ext;
 
 endmodule
 
@@ -380,17 +377,27 @@ module ula_fadd
 	parameter G      =  0
 )(
 	input  signed [EXP-1     :0] e_in,
-	input  signed [MAN+G     :0] sm1_in, sm2_in,              // already comes in with one extra sign bit
-	output        [MAN+EXP+G+2:0] out                         // exponent 2 bits wider (see ula_norm)
+	input                        s_big, s_small,          // operand signs (big = larger exponent)
+	input         [MAN+G-1   :0] m_big, m_small,          // aligned magnitudes
+	output        [MAN+EXP+G+2:0] out                     // exponent 2 bits wider (see ula_norm)
 );
 
 localparam W = MAN+G;
 
-wire signed [W+1:0] soma  =  sm1_in + sm2_in;                 // add one more bit to avoid overflow
-wire signed [W+1:0] m     = (soma[W+1]) ? -soma : soma;       // compute abs() of the mantissa
-wire                carry =  m[W];                            // the sum outgrew the mantissa
+// sign-magnitude addition: equal signs add the magnitudes; different signs
+// subtract both ways in parallel and keep the non-negative difference (the
+// borrow of big-small says which). One adder delay instead of three (the
+// two's-complement conversions of the operands and of the result).
+wire        same  = (s_big == s_small);
+wire [W:0]  sum   = {1'b0, m_big  } + {1'b0, m_small};
+wire [W:0]  dbs   = {1'b0, m_big  } - {1'b0, m_small};
+wire [W:0]  dsb   = {1'b0, m_small} - {1'b0, m_big  };
+wire        bneg  = dbs[W];                            // m_big < m_small
+wire [W:0]  m     = (same) ? sum : (bneg) ? dsb : dbs; // magnitude of the result (carry in bit W)
+wire        nz    = |m;
+wire        s_out = nz & ((same) ? s_big : (bneg) ? s_small : s_big); // an exact zero is +0
+wire        carry = m[W];                              // the sum outgrew the mantissa
 
-wire                  s_out  = soma[W+1];
 wire signed [EXP+1:0] e_wide = {{2{e_in[EXP-1]}}, e_in};
 wire signed [EXP+1:0] e_out;
 wire        [W-1  :0] m_out;
@@ -958,18 +965,30 @@ assign out = {{(NUBITS-1){1'b0}}, (in1 < in2)};
 
 endmodule
 
-// FLES - floating-point less than --------------------------------------------
+// F_LES / F_GRE - floating-point comparisons (one unit, in1 < in2 and in1 > in2)
 
-module ula_fles
+module ula_fcmp
 #(
 	parameter NUBITS = 32,
-	parameter NBMANT = 23
+	parameter W      = 23
 )(
-	 input signed [NBMANT  :0] in1, in2,
-	output        [NUBITS-1:0] out
+	 input              s_big, s_small, swap,
+	 input  [W-1:0]     m_big, m_small,
+	output [NUBITS-1:0] les, gre                          // in1 < in2, in1 > in2
 );
 
-assign out = {{(NUBITS-1){1'b0}}, (in1 < in2)};
+// order of two sign-magnitude numbers with aligned magnitudes; +0 and -0 are
+// equal, as they were when the comparison subtracted the two's-complement forms
+wire ltm = (m_big <  m_small);
+wire gtm = (m_big >  m_small);
+wire zz  = (m_big == {W{1'b0}}) & (m_small == {W{1'b0}});
+
+wire lt_bs = (s_big != s_small) ? (s_big   & ~zz) : (s_big) ? gtm : ltm; // big < small
+wire gt_bs = (s_big != s_small) ? (s_small & ~zz) : (s_big) ? ltm : gtm; // big > small
+
+// in1 is the big operand unless the denormalizer swapped them
+assign les = {{(NUBITS-1){1'b0}}, (swap) ? gt_bs : lt_bs};
+assign gre = {{(NUBITS-1){1'b0}}, (swap) ? lt_bs : gt_bs};
 
 endmodule
 
@@ -980,21 +999,6 @@ module ula_gre
 	parameter NUBITS = 32
 )(
 	 input signed [NUBITS-1:0] in1, in2,
-	output        [NUBITS-1:0] out
-);
-
-assign out = {{(NUBITS-1){1'b0}}, (in1 > in2)};
-
-endmodule
-
-// FGRE - floating-point greater than -----------------------------------------
-
-module ula_fgre
-#(
-	parameter NUBITS = 32,
-	parameter NBMANT = 23
-)(
-	 input signed [NBMANT  :0] in1, in2,
 	output        [NUBITS-1:0] out
 );
 
@@ -1250,14 +1254,16 @@ localparam G = (FROUND == 2) ? 3 : 0;
 
 // floating-point denormalization circuit -------------------------------------
 
-wire signed [NBEXPO-1:0] e_out;                       // normalized exponent
-wire signed [NBMANT+G:0] sm1_out, sm2_out;            // normalized mantissas (+ G extra bits)
+wire signed [NBEXPO-1:0] e_out;                       // the larger exponent
+wire                     dn_swap;                     // in2 had the larger exponent
+wire                     dn_s_big, dn_s_small;        // operand signs, big/small order
+wire      [NBMANT+G-1:0] dn_m_big, dn_m_small;        // aligned magnitudes (+ G extra bits)
 // F_SU1/F_SU2 are 32-bit parameters; cast to 1 bit with `!= 0` so the AND
 // with the 1-bit op-equality stays 1 bit and matches the 1-bit su{1,2} LHS.
 wire					 su1 = (F_SU1 != 0) & (op == 6'd47); // invert sign of in1 for F_SU1
 wire                     su2 = (F_SU2 != 0) & (op == 6'd48); // invert sign of in2 for F_SU2
 
-generate if ((F_ADD | F_SU1 | F_SU2 | F_GRE | F_LES) != 0) begin : op_denorm ula_denorm #(NBMANT,NBEXPO,G) denorm(su1, su2, in1, in2, e_out, sm1_out, sm2_out); end endgenerate
+generate if ((F_ADD | F_SU1 | F_SU2 | F_GRE | F_LES) != 0) begin : op_denorm ula_denorm #(NBMANT,NBEXPO,G) denorm(su1, su2, in1, in2, e_out, dn_swap, dn_s_big, dn_s_small, dn_m_big, dn_m_small); end endgenerate
 
 // ADD ------------------------------------------------------------------------
 
@@ -1269,7 +1275,7 @@ generate if ((ADD) != 0) begin : op_add ula_add #(NUBITS) my_add(in1, in2, add);
 
 wire signed [NUBITS+G+1:0] fadd;
 
-generate if ((F_ADD | F_SU1 | F_SU2) != 0) begin : op_fadd ula_fadd #(NBMANT,NBEXPO,FROUND,G) my_fadd(e_out, sm1_out, sm2_out, fadd); end else begin : op_fadd assign fadd = {NUBITS+G+2{1'bx}}; end endgenerate
+generate if ((F_ADD | F_SU1 | F_SU2) != 0) begin : op_fadd ula_fadd #(NBMANT,NBEXPO,FROUND,G) my_fadd(e_out, dn_s_big, dn_s_small, dn_m_big, dn_m_small, fadd); end else begin : op_fadd assign fadd = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // MLT ------------------------------------------------------------------------
 
@@ -1485,7 +1491,10 @@ generate if ((LES) != 0) begin : op_les ula_les #(NUBITS) my_les(in1, in2, les);
 
 wire signed [NUBITS-1:0] fles;
 
-generate if ((F_LES) != 0) begin : op_fles ula_fles #(NUBITS,NBMANT+G) my_fles(sm1_out, sm2_out, fles); end else begin : op_fles assign fles = {NUBITS{1'bx}}; end endgenerate
+// one comparator serves F_LES and F_GRE (in1 < in2 and in1 > in2 on the aligned operands)
+wire signed [NUBITS-1:0] fcmp_les, fcmp_gre;
+generate if ((F_LES | F_GRE) != 0) begin : op_fcmp ula_fcmp #(NUBITS,NBMANT+G) my_fcmp(dn_s_big, dn_s_small, dn_swap, dn_m_big, dn_m_small, fcmp_les, fcmp_gre); end else begin : op_fcmp assign fcmp_les = {NUBITS{1'bx}}; assign fcmp_gre = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_LES) != 0) begin : op_fles assign fles = fcmp_les; end else begin : op_fles assign fles = {NUBITS{1'bx}}; end endgenerate
 
 // GRE ------------------------------------------------------------------------
 
@@ -1497,7 +1506,7 @@ generate if ((GRE) != 0) begin : op_gre ula_gre #(NUBITS) my_gre(in1, in2, gre);
 
 wire signed [NUBITS-1:0] fgre;
 
-generate if ((F_GRE) != 0) begin : op_fgre ula_fgre #(NUBITS,NBMANT+G) my_fgre(sm1_out, sm2_out, fgre); end else begin : op_fgre assign fgre = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_GRE) != 0) begin : op_fgre assign fgre = fcmp_gre; end else begin : op_fgre assign fgre = {NUBITS{1'bx}}; end endgenerate
 
 // EQU ------------------------------------------------------------------------
 
