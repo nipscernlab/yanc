@@ -7,7 +7,8 @@ Open work items for YANC that are not tracked elsewhere. This file is the
 each item links to its section there. Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
-Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries.
+Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
+10 architecture hardening (from the HDL audit).
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
 moved. Suggested order for the rest: 8 → 5 → 6 (+ the ALU testbench) → 7 → 9.
@@ -201,6 +202,47 @@ set for > 23), constants carry ≥ 40 digits, and the transcendental fixtures
 compare against a double reference at 32 and 64 bits.
 
 ---
+
+## 10. Architecture hardening (HDL audit)
+
+**Status:** open · **Area:** `HDL/*`, tooling · **Evidence:** [`docs/hdl-architecture-audit.md`](docs/hdl-architecture-audit.md)
+
+The core is sound where it matters (opcode-driven allocation, one instruction
+per cycle, bypass by construction, single clock / sync reset — keep all of
+it). The audit found the weak points in the surroundings. In order:
+
+1. **ISS + random differential test** — an instruction-set simulator in C
+   and a random program generator; compare its trace against Icarus/Verilator
+   on thousands of programs. Catches control bugs the goldens cannot; home of
+   the ULA unit testbench planned with item 6.
+2. **Single-source ISA table** — mnemonic / opcode / ALU op / stack and I/O
+   effects in one file; generate `ASMComp.l` rules, `instr_dec.v` compares and
+   `ula_op` table, `opcodes.c` names and `docs/isa.md`; or at least a regress
+   check that the four hand-written copies agree (`core.v` also hard-codes
+   `JMP`/`JIZ`/`CAL`/`RET` as 5-bit literals).
+3. **Interrupt** — today a level-sensitive PC override: the vector instruction
+   re-executes every cycle the level is held, no PC save, no mask. Behind
+   `ITRADD`: one-shot edge detect, optional PC push so the handler can `RET`,
+   a mask bit.
+4. **Stacks sized by the compilers** (static call/expression depth) with
+   `#NDSTAC`/`#SDEPTH` as overrides the assembler validates, plus a sticky
+   overflow pin like `cheguei`.
+5. **Defined behaviour** for integer `DIV`/`MOD` by zero (with the shared
+   `DIV`+`MOD` array of item 8 step 4b), address and jump-target truncation,
+   documented.
+6. **I/O contract** documented; a status-port convention (`empty`/`full`
+   readable with `in()`); valid/ready with a global stall only as a parameter
+   option if streaming peripherals become a goal.
+7. **Hygiene** — one default parameter set, `NUGAIN` typed, unused `NBOPCO`
+   port of `ula`, invariant guard, lint-clean Verilator, `mem_instr`'s fake
+   write commented or removed, `myFIFO` with a registered read so it maps to
+   block RAM.
+8. **Registered-branch option** — only if Fmax ever matters more than the
+   one-cycle branch; an ISA change with compiler support, never the default.
+
+**Done when:** 1–7 landed; the ISA reference is generated, not hand-written;
+the interrupt and I/O contracts are in `docs/isa.md`; every undefined case in
+the audit's table has a defined, documented result.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

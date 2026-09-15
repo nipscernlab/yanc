@@ -532,7 +532,7 @@ yanc/
 │                           multi_proc      .bat/.sh  C± multi-processor project
 │                           single_proc_cpp .bat/.sh  C++ single-processor pipeline
 ├── TODO.md               open work items (short list; evidence in docs/)
-├── docs/                 engineering notes (precision-and-width-review.md) + images/ (README assets)
+├── docs/                 engineering notes (precision-and-width-review.md, hdl-architecture-audit.md) + images/ (README assets)
 └── .github/workflows/    CI (Windows + Linux build/smoke; release on tag push)
 ```
 
