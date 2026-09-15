@@ -257,6 +257,107 @@ the directives through as strings).
 | fixtures only exercise 16/10/5, 23/16/6, 32/23/8 — nothing above 32 | `Compilers/CMMComp/Tests/*/Software/*.cmm` |
 | project top-levels hard-code `[31:0]` (DTW, PulseSim, ResetCheck) — project-specific, leave | `Tests/DTW/TopLevel/*.v`, `Tests/PulseSim/TopLevel/generate_random_32.v` |
 
+### 2.6 Critical-path depth of the ALU
+
+Measured 2026-09-14 on the shipped `ula.v` (with `FROUND`), Yosys 0.56
+`synth -flatten; abc -lut 4; ltp -noff`, 32/23/8. Depth = longest topological
+path in LUT4 levels; a technology-neutral proxy (on an FPGA the dividers map
+partly onto carry chains, which are faster per level than the rest).
+
+| operators instantiated | LUT4 | depth L0 | depth L1 | depth L2 |
+|---|---|---|---|---|
+| `F_ADD` (+`F_SU1`/`F_SU2`) | 684 / 730 / 907 | 37 | 37 | **51** |
+| `F_MLT` | 1708 / 1725 / 1838 | 38 | 40 | **49** |
+| `MLT` (int) | 1476 | 23 | | |
+| int + float, no divider | 4117 | **47** | 57 | |
+| int + float + `DIV`/`MOD` | 6012 | **385** | 385 | |
+| `DIV` + `MOD` alone | 1962 | **387** | | |
+| `F_DIV` alone | 2700 | **508** | | |
+| int + float + every divider | 8531 | **546** | | |
+
+Two conclusions:
+
+- **The combinational dividers set the clock.** 47 levels without them, 385–546
+  with them: a processor that uses `DIV`/`MOD`/`F_DIV` runs at roughly a tenth
+  of the clock of one that does not (a 5–10× factor once carry chains are
+  accounted for). Because the ALU only instantiates the operators a program
+  uses, programs without division are unaffected. `ula_out` also drives the
+  `JIZ` decision (`if_acc = |ula_out`), the `LDI`/`LDA` address and the `SET`
+  data combinationally, so the ALU depth bounds the fetch path too. A
+  multi-cycle divider (global stall: enable on `pc`, `ula_op`, `racc`, both
+  stacks, `popr`/`stkr`, `req_inr`/`ior`, `en_out`/`addr_out`/`req_in`,
+  `mem_wr`, `pc_load`, `isp_push/pop`; interrupt held off during the stall)
+  would work architecturally and touch no compiler — the core has exactly one
+  instruction in execute and every consumer of `ula_out` is either a register
+  or a combinational function re-evaluated each cycle. It is ruled out by
+  design (the ALU stays combinational, TODO item 7).
+- **Level 2 costs depth, level 1 does not.** The round-to-nearest stage adds
+  ~14 levels to `F_ADD` and ~11 to `F_MLT` (+30–38 %): the sticky bit uses a
+  second barrel shifter in `ula_denorm` and the incrementer sits after the
+  normaliser. Level 1 is free on the isolated operators but the full
+  no-divider ALU goes 47 → 57, pointing at the saturation compares of
+  `ula_norm` (levels 1 and 2). Area was +5 %, depth is the real price — TODO
+  item 8.
+
+### 2.7 ALU efficiency review (area and depth, operator by operator)
+
+Reviewed 2026-09-14 after the depth measurements of §2.6. Everything below
+keeps level 0 bit-identical (the ~50 C± goldens are the proof); the gains are
+estimates to be confirmed with `ltp`/`stat` and, for Fmax, with Quartus.
+
+**Float add path (`ula_denorm` → `ula_fadd` → `ula_norm`)** — five adders in
+series where the arithmetic needs one, plus a linear leading-zero chain:
+
+| today | better | gain |
+|---|---|---|
+| `eme = e1-e2`, then `shift = -eme` in series (`ula.v` `ula_denorm`) | `e1-e2` and `e2-e1` in parallel, pick by sign | −1 adder level |
+| two W-bit barrel shifters, only one ever shifts | swap operands by the exponent sign, one shifter (F_SU*/compare fix the sign afterwards) | −15 % F_ADD area, −1 level |
+| both operands converted to two's complement (`sm = s ? -m : m`), added, converted back (`m = soma<0 ? -soma : soma`) | sign-magnitude adder: equal signs add magnitudes; different signs compute `a-b` and `b-a` in parallel and keep the positive one (sign from the carry) | −2 adder levels (≈ −8 LUT levels), −2 adders of area |
+| `ula_norm` leading-zero count = linear chain of W−1 `ula_nmux`, comparators of growing width (O(W²) inputs, O(W) depth) | log-depth priority tree (≈ log₂W levels); optionally a leading-zero anticipator in parallel with the adder | biggest single depth item of the normaliser |
+| `F_MLT` / `F_DIV` traverse the shared LZC through `norm_mux` although at levels ≥ 1 they arrive pre-aligned | LZC + shift only on the `F_ADD`/`I2F` branch, before the mux; `F_MLT`/`F_DIV` enter the shared round/saturate stage directly | −10…15 levels on `F_MLT`/`F_DIV` |
+| exponent: `e + carry` (fadd), `exp - sh`, `+ rc`, then `> EMAX` / `< EZERO` compares, all in series | one adder with folded operands; overflow/underflow decided from `exp` and `sh` in parallel with the shift | −3…4 levels (this is what the §2.6 47 → 57 step is) |
+| level-2 sticky = second barrel shifter (`m_ext << (W-shift)`) | thermometer mask of `shift`, AND, OR-reduce | −5 levels, −W·log W area |
+| level-2 increment in series after the shift | `mnt + 1` computed in parallel, carry-select on the rounding decision | −1 adder level |
+
+**Comparisons.** `F_LES`/`F_GRE` go through the denormaliser and a
+subtraction. With canonical (normalised) operands the order is lexicographic on
+`{sign, exponent, mantissa}` — no shifter, no adder. A program that only
+compares instantiates 439 LUT4 today; ≈ 60 would do. Watch `-0.0` at level 0
+(non-canonical there).
+
+**Dividers.** `ula_fdiv` uses `/` on a `2·MAN`-bit dividend, so the synthesiser
+builds a 45-row array and a 45-bit quotient — but a normalised divisor
+(`m2 ≥ 2^(MAN-1)`) guarantees the quotient fits `MAN+1(+G)` bits, so only
+`MAN+1+G` rows are ever non-trivial. An explicit restoring array with exactly
+those rows is ≈ half the area (2700 → ~1400 LUT4) and half the depth
+(508 → ~260 levels), and its last partial remainder is the exact sticky of
+§1.5 / TODO item 2(a) for free. The integer `DIV` and `MOD` are two separate
+`/` and `%` arrays (1962 LUT4 together); one explicit array yields both
+quotient and remainder — half the area, same depth.
+
+**Shifters.** `SHL`, `SHR`, `SRS` are three separate 32-bit barrel shifters
+(≈ 3 × 160 LUT4); `ula_f2i` has two (`<<` and `>>` selected by the exponent
+sign); `ula_denorm` has two (above). One right shifter with bit reversal on the
+way in and out (free wiring, one extra mux level) serves `SHL`/`SHR`/`SRS`;
+`F2I` needs one. ≈ −450 LUT4 on a processor that uses them all.
+
+**`ula_nrm` (`NRM`, `norm()`): `in / NUGAIN`.** A division by a *parameter*:
+with `NUGAIN` a power of two (128 everywhere today) it is a shift; with any
+other value the synthesiser infers a full 32-bit divider (≈ 390 levels, the
+whole-ALU critical path). Either document "power of two only" and validate it
+in `cmmcomp`/`asmcomp`, or implement it as a multiply by the reciprocal.
+
+**Fine as is.** `ula_mux` (a 52-way case per bit; unused inputs are `x` and get
+pruned, the synthesiser makes an AND-OR), the integer `ADD`/`MLT`/logic/compare
+operators, `LAN`/`LOR`/`LIN` zero detects, `SGN`/`ABS`/`NEG`, `F_SGN`/`F_ABS`/
+`F_PST`/`F_NEG`, `F_SCL`, `XPO`, `F_ROT`, the level ≥ 1 `I2F` (a 9-bit priority
+encoder), the `ula_fmlt` exponent (`e1+e2+MAN` is one 3-input adder after
+synthesis), the sim-only monitor block (never synthesised).
+
+**Expected total** for a typical float processor (F_ADD, F_MLT, I2F, F2I,
+comparisons, no divider): depth 47 (level 0) / 57 (level 1) / 56 (level 2) →
+≈ 30 at every level; area 4117 → ≈ 3500. With `F_DIV`: 546 → ≈ 300 levels.
+
 ---
 
 ## 3. Proposed plan

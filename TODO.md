@@ -7,10 +7,10 @@ Open work items for YANC that are not tracked elsewhere. This file is the
 each item links to its section there. Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
-Items 1–4 are HDL, 5–6 toolchain, 7 HDL scaling, 8 libraries. Items 1, 3
-and 4 landed as `#FROUND 1` and the rounding half of item 2 as `#FROUND 2`
-(see the CHANGELOG); the default level `0` keeps the legacy datapath, so no
-C± golden moved. Suggested order for the rest: 2 → 5 → 6 → 7 → 8.
+Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries.
+Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
+CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
+moved. Suggested order for the rest: 8 → 5 → 6 (+ the ALU testbench) → 7 → 9.
 
 ---
 
@@ -33,21 +33,36 @@ purpose, for bit-identical hardware) · **Evidence:** [§1.1](docs/precision-and
 Left open: nothing. The item stays listed until the next release notes
 mention it; remove it then.
 
-## 2. Round-to-nearest mode + full-range `I2F` + saturating `F2I`
+## 2. Round to nearest, full-range `I2F`, saturating `F2I`
 
-**Status:** landed as `#FROUND 2` (rounding) and `#FROUND >= 1` (`I2F` on
-the whole word, `F2I` saturating); two loose ends · **Area:** `HDL/ula.v` ·
-**Evidence:** [§1.2](docs/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
+**Status:** functionality landed; two verification/refinement leftovers ·
+**Area:** `HDL/ula.v` · **Evidence:** [§1.2](docs/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
 
-Left open: `F_DIV`'s sticky bit is approximated by a third extra quotient
-bit (an exact sticky needs the remainder, i.e. a second divider), and the
-claim that level 2 is unbiased on *varying* data has only been checked on
-the host, not on the core (`cmm_fround2`'s constant addend is correlated
-and still drifts +78 ULP, exactly like IEEE `float` on a PC).
+Done (commits `81f5f25`, `755b758`):
+- `#FROUND 2`: round to nearest even after normalisation, for `F_ADD`/`F_SU*`,
+  `F_MLT`, `F_DIV`, `I2F`. Verified by `cmm_fround2` (tie cases, sticky) and
+  by every C++ test (cppcomp always emits level 2); `I2F` matches host
+  `float` on the out-of-range cases.
+- `#FROUND >= 1`: `I2F` converts the whole `NUBITS` word (was: low `NBMANT`
+  bits, garbage beyond ±2^22); `F2I` saturates to `INT_MAX`/`INT_MIN` (was:
+  wrap).
 
-**Done when:** an accumulation of varying data (e.g. a sine table) at level
-2 is compared against a double reference (mean ≈ 0, size ~sqrt(N) ULP), and
-`delta_float` shows zero mean on it.
+Left open:
+- (a) **`F_DIV` sticky is approximate.** The divider produces three extra
+  quotient bits; the third stands in for the sticky. In ~1/16 of the
+  divisions (guard = 1, the next two bits = 0, remainder ≠ 0) the result is
+  rounded down instead of up: error ≤ 0.625 ULP instead of ≤ 0.5. The exact
+  sticky is `remainder != 0`, which the `/` operator hides; a `%` or a
+  multiply-back would cost 1000–2700 LUT4, so it waits for the explicit
+  divider array of item 8 (step 4), where the remainder is free.
+- (b) **"Unbiased on varying data" is only shown on the host.** The core was
+  checked with a constant addend (`cmm_fround2`, 1000 × 0.001), which is
+  correlated and drifts +78 ULP — exactly what IEEE `float` does on a PC.
+  A fixture accumulating varying data (e.g. a sine table) at level 2 should
+  show mean error ≈ 0 and size ~sqrt(N) ULP against a double reference, and
+  `delta_float` zero-mean on the waveform.
+
+**Done when:** (a) is closed by item 8 and (b) has its fixture.
 
 ## 3. Exponent overflow / underflow wraps silently
 
@@ -111,18 +126,70 @@ tests.
 
 **Status:** open · **Area:** `HDL/ula.v`, `HDL/core.v` · **Evidence:** [§2.1](docs/precision-and-width-review.md#21-hdl--parametric-with-a-handful-of-scaling-issues)
 
-`ula_norm` is a linear mux chain (depth O(MAN), area O(MAN²)); `ula_fdiv` is
-a combinational `(2·MAN-1)/MAN`-bit divider — neither closes timing at 52
-bits. `NUGAIN` is an untyped (32-bit) parameter in `processor.v`/`core.v`;
-the default parameter sets of `processor.v`, `core.v`, `ula.v` and the three
-tools disagree.
+The structural fixes that make a wide mantissa feasible at all (log-depth
+leading-zero tree, explicit divider arrays, single shifters) are item 8 and
+come first. What remains here is the wide-configuration follow-through:
+`NUGAIN` is an untyped (32-bit) parameter in `processor.v`/`core.v`; the
+default parameter sets of `processor.v`, `core.v`, `ula.v` and the three
+tools disagree; and nobody has yet synthesised a 52-bit mantissa.
 
-**Done when:** log-depth leading-zero count + barrel shifter; a multi-cycle
-divider behind a parameter (the combinational one stays for ≤ 32 bits to keep
-goldens); `NUGAIN` typed `signed [NUBITS-1:0]` everywhere; one default set;
-Fmax reported for 32/23/8 and 64/52/11.
+**Constraint:** the ALU is combinational by design — the processor pipeline
+assumes every operation completes in the cycle. No multi-cycle or iterative
+divider; wide mantissas pay in Fmax, not in cycles.
 
-## 8. Library accuracy keyed on `NBMANT`
+**Measured (Yosys `ltp`, 32/23/8, LUT4 levels):** the whole ALU without
+dividers is 47 levels deep; `DIV`+`MOD` alone are 387, `F_DIV` alone 508,
+the whole ALU with every divider 546 — the combinational dividers are ~10×
+deeper than everything else, so a processor that divides runs at roughly a
+tenth of the clock of one that does not. `ula_out` also feeds the `JIZ`
+decision and the `LDI`/`LDA` address combinationally, so the ALU depth
+bounds the fetch path too, not only `racc`. If the constraint is ever
+relaxed, a global-stall multi-cycle divider (only `DIV`/`MOD`/`F_DIV`) is
+feasible with an enable on ~10 registers of `core.v` and no compiler change
+(see [§2.6](docs/precision-and-width-review.md#26-critical-path-depth-of-the-alu)).
+
+**Done when:** with the item-8 structure in place, the 64/52/11 configuration
+is synthesised and its depth/Fmax reported next to 32/23/8 (the 105/52-bit
+divider array is the expected limit — its cost is the user's input for
+choosing `NBMANT` per project); `NUGAIN` typed `signed [NUBITS-1:0]`
+everywhere; one default parameter set across `processor.v`, `core.v`,
+`ula.v` and the three tools.
+
+## 8. ALU datapath restructuring (depth and area)
+
+**Status:** open · **Area:** `HDL/ula.v` · **Evidence:** [§2.6](docs/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
+
+The ALU is combinational, so its depth is the clock. Measured: the float
+path is 37 LUT4 levels for `F_ADD` at level 0, 51 at level 2; the whole
+no-divider ALU 47 / 57 / 56 (levels 0 / 1 / 2); with `F_DIV` 546. The
+efficiency review found five adders in series where one is needed, a linear
+leading-zero chain, three pairs of duplicated shifters, `F_MLT`/`F_DIV`
+needlessly crossing the leading-zero count, comparisons done by subtraction,
+and dividers with twice the rows they need. All of it can change with level
+0 staying bit-identical (the C± goldens are the proof). To be done
+**before** the 64-bit work (item 6), so the wide datapath is built on the
+cheap structure and the ALU testbench of item 6 validates the final one.
+
+**Done when**, in this order (each step measured with `ltp`/`stat` and the
+full regress green):
+1. sign-magnitude adder (dual subtractor, no two's-complement round trips),
+   parallel `e1-e2`/`e2-e1`, one denormaliser shifter with operand swap;
+2. log-depth leading-zero tree; LZC + shift moved to the `F_ADD`/`I2F`
+   branch so `F_MLT`/`F_DIV` skip it; one folded exponent adder with
+   overflow/underflow decided in parallel; level-2 sticky by thermometer
+   mask and carry-select increment;
+3. `F_LES`/`F_GRE` as a lexicographic compare (no denormaliser) — mind
+   `-0.0` at level 0;
+4. explicit restoring divider arrays: `F_DIV` with `MAN+1+G` rows (exact
+   sticky → closes item 2(a)), one array for `DIV`+`MOD`;
+5. one shared right shifter for `SHL`/`SHR`/`SRS`, one for `F2I`;
+6. `NUGAIN` restricted to a power of two, validated by `cmmcomp`/`asmcomp`
+   (a non-power-of-two infers a 32-bit divider in `ula_nrm`).
+
+Targets: full no-divider ALU ≈ 30 levels at every level, ≈ −15 % LUT4;
+`F_DIV` ≈ 260 levels, ≈ −50 % LUT4; every golden unchanged.
+
+## 9. Library accuracy keyed on `NBMANT`
 
 **Status:** open · **Area:** `CMMComp/Includes/float_*.asm`, `CMMComp/stdlib.c`, `CPPComp/Includes/cmath` · **Evidence:** [§1.6](docs/precision-and-width-review.md#16-library-accuracy-is-pinned-to-23-bits)
 
