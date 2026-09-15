@@ -246,50 +246,70 @@ module ula_norm
 	parameter MAN    = 23,
 	parameter EXP    =  8,
 	parameter FROUND =  0,
-	parameter G      =  0                  // extra low bits carried by the mantissa (3 when FROUND = 2)
+	parameter G      =  0,                 // extra low bits carried by the mantissa (3 when FROUND = 2)
+	parameter LZC    =  1,                 // some instantiated operator needs the leading-zero count (F_ADD, I2F, F_ROT; F_MLT/F_DIV at level 0)
+	parameter DIR    =  0                  // some instantiated operator takes the direct path (F_MLT/F_DIV at FROUND >= 1)
 )(
-	 input [MAN+EXP+G+2:0] in,             // {s, e[EXP+1:0], m[MAN+G-1:0]}: needs a leading-zero count (F_ADD, I2F, F_ROT)
-	 input [MAN+EXP+G+2:0] in_d,           // same format, already aligned to its top bit (F_MLT, F_DIV at FROUND >= 1)
+	 input [MAN+EXP+G+2:0] in,             // {s, e[EXP+1:0], m[MAN+G-1:0]}: needs a leading-zero count
+	 input [MAN+EXP+G+2:0] in_d,           // same format, already aligned to its top bit
 	 input                 use_d,          // take in_d (skips the leading-zero count)
 	output [MAN+EXP    :0] out
 );
 
 localparam W = MAN+G;
 
-// leading-zero path ----------------------------------------------------------
+// Only the paths some opcode of the program needs are built: a processor
+// that only multiplies at FROUND >= 1 carries no leading-zero counter, one
+// that only adds carries no direct path.
 
-wire                    sig_l = in[MAN+EXP+G+2  ];
-wire signed [EXP+1  :0] exp_l = in[MAN+EXP+G+1:W];
-wire        [W-1    :0] man_l = in[W        -1:0];
+wire                  sig;
+wire        [W-1  :0] nrm;                                            // the LSB of the mantissa field keeps weight 2^e_nrm
+wire signed [EXP+1:0] e_nrm;
+wire                  zman;
 
-wire [EXP-1:0] w [W-1:0];
+generate if (LZC != 0) begin : lzc
 
-wire        [EXP-1:0] sh    =  w[W-2];
-wire        [W-1  :0] nrm_l =  man_l << sh;
-wire signed [EXP+1:0] e_l   =  exp_l - {{2{1'b0}}, sh};
+	// leading-zero path ------------------------------------------------------
 
-ula_nmux #(1, EXP) mm1 (man_l[W-1], 1'b0, {{EXP-1{1'b0}}, {1'b1}}, {EXP{1'b0}}, w[0]);
+	wire                    sig_l = in[MAN+EXP+G+2  ];
+	wire signed [EXP+1  :0] exp_l = in[MAN+EXP+G+1:W];
+	wire        [W-1    :0] man_l = in[W        -1:0];
 
-genvar i;
+	wire [EXP-1:0] w [W-1:0];
 
-generate
+	wire        [EXP-1:0] sh    =  w[W-2];
+	wire        [W-1  :0] nrm_l =  man_l << sh;
+	wire signed [EXP+1:0] e_l   =  exp_l - {{2{1'b0}}, sh};
+
+	ula_nmux #(1, EXP) mm1 (man_l[W-1], 1'b0, {{EXP-1{1'b0}}, {1'b1}}, {EXP{1'b0}}, w[0]);
+
+	genvar i;
 	for (i = 1; i < W-1; i = i+1) begin : norm
 		ula_nmux #(i+1, EXP) mm (man_l[W-1:W-1-i], {i+1{1'b0}}, i[EXP-1:0] + {{EXP-1{1'b0}}, {1'b1}}, w[i-1], w[i]);
 	end
-endgenerate
 
-// direct path (no shift) ------------------------------------------------------
+	if (DIR != 0) begin : both
+		// direct path (no shift) beside it, selected per opcode
+		assign sig   = (use_d) ? in_d[MAN+EXP+G+2  ] : sig_l;
+		assign nrm   = (use_d) ? in_d[W        -1:0] : nrm_l;
+		assign e_nrm = (use_d) ? $signed(in_d[MAN+EXP+G+1:W]) : e_l;
+		assign zman  = (use_d) ? (in_d[W-1:0] == {W{1'b0}}) : (man_l == {W{1'b0}});
+	end else begin : only
+		assign sig   = sig_l;
+		assign nrm   = nrm_l;
+		assign e_nrm = e_l;
+		assign zman  = (man_l == {W{1'b0}});
+	end
 
-wire                    sig_d = in_d[MAN+EXP+G+2  ];
-wire signed [EXP+1  :0] exp_d = in_d[MAN+EXP+G+1:W];
-wire        [W-1    :0] man_d = in_d[W        -1:0];
+end else begin : direct
 
-// select --------------------------------------------------------------------
+	// direct path only: every normalized operator of this program arrives aligned
+	assign sig   = in_d[MAN+EXP+G+2  ];
+	assign nrm   = in_d[W        -1:0];
+	assign e_nrm = $signed(in_d[MAN+EXP+G+1:W]);
+	assign zman  = (in_d[W-1:0] == {W{1'b0}});
 
-wire                  sig   = (use_d) ? sig_d : sig_l;
-wire        [W-1  :0] nrm   = (use_d) ? man_d : nrm_l;                // the LSB of the mantissa field keeps weight 2^e_nrm
-wire signed [EXP+1:0] e_nrm = (use_d) ? exp_d : e_l;
-wire                  zman  = (use_d) ? (man_d == {W{1'b0}}) : (man_l == {W{1'b0}});
+end endgenerate
 
 localparam signed [EXP+1:0] EMAX  =  (1 <<< (EXP-1)) - 1;   // largest exponent
 localparam signed [EXP+1:0] EZERO = -(1 <<< (EXP-1));       // exponent of the zero encoding
@@ -345,7 +365,9 @@ module norm_mux
 	parameter NBMANT = 23,
 	parameter NBEXPO =  8,
 	parameter FROUND =  0,
-	parameter G      =  0
+	parameter G      =  0,
+	parameter LZC    =  1,                // see ula_norm
+	parameter DIR    =  0
 )(
 	 input [         5:0] op  ,
 	 input [NUBITS+G+1:0] fadd,           // operator outputs carry a 2-bit-wider exponent and G extra mantissa bits
@@ -384,7 +406,7 @@ always @ (*) case (op)
 endcase
 
 // perform the normalization
-ula_norm #(NBMANT,NBEXPO,FROUND,G) ula_norm (imux_l, imux_d, use_d, out);
+ula_norm #(NBMANT,NBEXPO,FROUND,G,LZC,DIR) ula_norm (imux_l, imux_d, use_d, out);
 
 endmodule
 
@@ -578,30 +600,64 @@ wire        [MAN-1:0] m2 = in2[MAN    -1:0  ];
 
 wire                  s_out = (s1 != s2);
 wire signed [EXP+1:0] e_dif = e1 - e2 - MAN[EXP+1:0];
+
+// restoring divider array ----------------------------------------------------
+// Quotient of the dividend m1 << K by m2, one row per quotient bit. The `/`
+// operator would build a row per dividend bit (2*MAN of them); with a
+// normalized divisor (m2 >= 2^(MAN-1)) the quotient has only K+1 bits, so the
+// array keeps K+1 rows: the top MAN-1 dividend bits go straight into the
+// first partial remainder (they are already below the divisor). The final
+// partial remainder is the division's remainder: nonzero means the quotient
+// was truncated, which is exactly the sticky bit level 2 needs.
+//   level 0:  K = MAN-1    -> MAN   quotient bits (the legacy slice)
+//   level 1:  K = MAN      -> MAN+1 bits, the top one says where the slice is
+//   level 2:  K = MAN+G-1  -> MAN+G bits: mantissa, guard, round (+ sticky from the remainder)
+
+localparam K = (FROUND == 0) ? MAN-1 : (G == 0) ? MAN : MAN+G-1;
+localparam R = K+1;                                       // quotient bits = rows
+
+wire [MAN  :0] rem [0:R];                                 // partial remainders (< m2 after each row)
+wire [R-1  :0] q;
+wire           stk;                                       // remainder != 0
+
+assign rem[0] = {2'b00, m1[MAN-1:1]};                     // top MAN-1 dividend bits
+
+genvar r;
+generate
+	for (r = 0; r < R; r = r+1) begin : row
+		wire           nb  = (r == 0) ? m1[0] : 1'b0;       // next dividend bit (zeros below m1)
+		wire [MAN+1:0] shr = {rem[r], nb};                 // remainder << 1 | bit
+		wire [MAN+1:0] dif = shr - {2'b00, m2};
+		assign q[R-1-r]  = ~dif[MAN+1];                    // no borrow: the divisor fits
+		assign rem[r+1]  = (q[R-1-r]) ? dif[MAN:0] : shr[MAN:0];
+	end
+endgenerate
+
+assign stk = |rem[R];
+
+// pick the slice ---------------------------------------------------------------
+
 wire signed [EXP+1:0] e_out;
 wire        [W-1  :0] m_out;
 
 generate if (FROUND == 0) begin : legacy
 	// MAN quotient bits; when m1 < m2 the top one is 0 and the LSB is lost
-	wire [2*MAN-2:0] m1_ext = {m1, {MAN-1{1'b0}}};
-	wire [2*MAN-2:0] div    =  m1_ext / m2;
 	assign e_out = e_dif + {{EXP+1{1'b0}}, 1'b1};
-	assign m_out = div[MAN-1:0];
-end else if (G == 0) begin : keep_lsb
-	// one more quotient bit, so the slice can follow the top bit
-	wire [2*MAN-1:0] m1_ext = {m1, {MAN{1'b0}}};
-	wire [2*MAN-1:0] div    =  m1_ext / m2;                   // < 2^(MAN+1) for a normalized divisor
-	wire             top    =  div[MAN];
-	assign e_out = e_dif + {{EXP+1{1'b0}}, top};
-	assign m_out = (top) ? div[MAN:1] : div[MAN-1:0];
-end else begin : keep_lsb_sticky
-	// three more quotient bits: guard, round and a partial sticky (an exact
-	// sticky would need the remainder, i.e. a second divider)
-	wire [2*MAN+2:0] m1_ext = {m1, {MAN+3{1'b0}}};
-	wire [2*MAN+2:0] div    =  m1_ext / m2;                   // < 2^(MAN+4) for a normalized divisor
-	wire             top    =  div[MAN+3];
-	assign e_out = e_dif + {{EXP+1{1'b0}}, top};
-	assign m_out = (top) ? {div[MAN+3:2], div[1] | div[0]} : div[MAN+2:0];
+	assign m_out = q[MAN-1:0];
+end else begin : ranged
+	wire top = q[R-1];                                     // quotient occupies its top bit
+	wire dz  = (m2 == {MAN{1'b0}});                         // division by zero: saturate (the ALU's +-infinity)
+	wire signed [EXP+1:0] e_q = e_dif + {{EXP+1{1'b0}}, top};
+	wire        [W-1  :0] m_q;
+	if (G == 0) begin : keep_lsb
+		assign m_q = (top) ? q[MAN:1] : q[MAN-1:0];
+	end else begin : keep_lsb_sticky
+		// guard and round are quotient bits; the sticky is the remainder (plus
+		// the quotient bit that falls off the slice when the top bit is set)
+		assign m_q = (top) ? {q[MAN+G-1:1], q[0] | stk} : {q[MAN+G-2:0], stk};
+	end
+	assign e_out = (dz) ? {1'b0, {(EXP+1){1'b1}}} : e_q;   // above every exponent -> ula_norm saturates
+	assign m_out = (dz) ? {W{1'b1}}                : m_q;
 end endgenerate
 
 assign out = {s_out, e_out, m_out};
@@ -1596,7 +1652,10 @@ generate if ((XPO_M) != 0) begin : op_xpom ula_xpo #(NBMANT,NBEXPO) my_xpom(in1,
 
 wire signed [NUBITS-1:0] smx;
 
-generate if ((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_MLT | F_DIV | F_ROT) != 0) begin : op_smx norm_mux #(NUBITS,NBMANT,NBEXPO,FROUND,G) norm_mux(op, fadd, fmlt, fdiv, i2f, i2fm, frot, smx); end else begin : op_smx assign smx = {NUBITS{1'bx}}; end endgenerate
+generate if ((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_MLT | F_DIV | F_ROT) != 0) begin : op_smx norm_mux #(NUBITS,NBMANT,NBEXPO,FROUND,G,
+	((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_ROT) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC: someone needs the leading-zero count
+	(FROUND != 0) && ((F_MLT | F_DIV) != 0))                                                            // DIR: someone takes the direct path
+	norm_mux(op, fadd, fmlt, fdiv, i2f, i2fm, frot, smx); end else begin : op_smx assign smx = {NUBITS{1'bx}}; end endgenerate
 
 // main mux -------------------------------------------------------------------
 

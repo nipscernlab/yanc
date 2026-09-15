@@ -48,13 +48,8 @@ Done (commits `81f5f25`, `755b758`):
   wrap).
 
 Left open:
-- (a) **`F_DIV` sticky is approximate.** The divider produces three extra
-  quotient bits; the third stands in for the sticky. In ~1/16 of the
-  divisions (guard = 1, the next two bits = 0, remainder ≠ 0) the result is
-  rounded down instead of up: error ≤ 0.625 ULP instead of ≤ 0.5. The exact
-  sticky is `remainder != 0`, which the `/` operator hides; a `%` or a
-  multiply-back would cost 1000–2700 LUT4, so it waits for the explicit
-  divider array of item 8 (step 4), where the remainder is free.
+- (a) ~~`F_DIV` sticky is approximate~~ — closed by the explicit divider
+  array (item 8 step 4): the remainder gives the exact sticky.
 - (b) **"Unbiased on varying data" is only shown on the host.** The core was
   checked with a constant addend (`cmm_fround2`, 1000 × 0.001), which is
   correlated and drifts +78 ULP — exactly what IEEE `float` does on a PC.
@@ -62,7 +57,7 @@ Left open:
   show mean error ≈ 0 and size ~sqrt(N) ULP against a double reference, and
   `delta_float` zero-mean on the waveform.
 
-**Done when:** (a) is closed by item 8 and (b) has its fixture.
+**Done when:** (b) has its fixture.
 
 ## 3. Exponent overflow / underflow wraps silently
 
@@ -183,8 +178,9 @@ full regress green):
 3. `F_LES`/`F_GRE` as a lexicographic compare (no denormaliser) — mind
    `-0.0` at level 0 (step 1 already merged them into one unit on the
    aligned operands, 439 → 314 LUT4);
-4. explicit restoring divider arrays: `F_DIV` with `MAN+1+G` rows (exact
-   sticky → closes item 2(a)), one array for `DIV`+`MOD`;
+4. ~~explicit restoring divider array for `F_DIV` (exact sticky → closes
+   item 2(a))~~ — **done**; still open: one array for `DIV`+`MOD` (area
+   only, ≈ −50 % for programs that use both);
 5. one shared right shifter for `SHL`/`SHR`/`SRS`, one for `F2I`;
 6. `NUGAIN` restricted to a power of two, validated by `cmmcomp`/`asmcomp`
    (a non-power-of-two infers a 32-bit divider in `ula_nrm`).

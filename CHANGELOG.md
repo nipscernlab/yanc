@@ -37,6 +37,28 @@ tags consumed by Aurora.
   the encoder entry below). Quartus (Cyclone V C6), `cmm_cexp` built at level 2:
   35.0 → 40.3 MHz (+15 %), 903 → 916 ALMs. The level-2 Fmax cost on a
   division-free processor drops from −31 % to −21 % of level 0 (51.0 MHz).
+- **`F_DIV` is an explicit restoring divider array** instead of the `/`
+  operator. With a normalised divisor the quotient has only `NBMANT+1(+G)`
+  bits, so the array keeps that many rows (23 / 24 / 26 at levels 0 / 1 / 2)
+  where `/` built one per dividend bit (45 / 46 / 49). Same quotient bit for
+  bit at levels 0 and 1 (20 000 random operands checked against `/`, at
+  32/23/8 and 16/10/5). At level 2 the array exposes the remainder, so the
+  sticky bit is exact (`remainder != 0`) and every division is correctly
+  rounded — the approximate third quotient bit is gone (goldens of level-2
+  divisions may move by 1 ULP, toward the exact value). Division by zero:
+  levels ≥ 1 saturate to ±max (the ALU's ±∞); level 0 gives a defined
+  all-ones quotient where `/` gave `x`. Quartus (Cyclone V C6), a processor
+  that divides (`cmm_fround0`): **8.1 → 14.3 MHz (+77 %)**, 1743 → 1323 ALMs
+  (−24 %). Yosys (32/23/8, no sharing): `F_DIV` 2678 / 511 → 1825 / 339 LUT4 /
+  levels at level 0, 2243 / 396 → 1983 / 384 at level 2.
+- **The normaliser only builds the paths some opcode needs.** The
+  leading-zero counter exists only if `F_ADD`/`F_SU*`/`I2F`/`F_ROT` (or, at
+  level 0, `F_MLT`/`F_DIV`) is instantiated, and the direct path only if
+  `F_MLT`/`F_DIV` at level ≥ 1 is. Before, an `F_MLT`-only processor at level
+  2 carried an unused counter the synthesiser did not prune: 1827 → 1658 LUT4,
+  50 → 38 levels (Yosys). Every float block of the ALU is now behind a
+  `generate` keyed on the opcodes of the program, as the integer ones always
+  were.
 
 ### Fixed
 - **Constants below the smallest normal float were mis-encoded by the

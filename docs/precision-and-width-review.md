@@ -408,7 +408,32 @@ below 0.0078 (integer mantissa, unbiased 5-bit exponent).
 
 Found on the way, fixed at every level: the encoder skipped the denormal shift
 for 23-bit mantissas (`1e-33` was encoded as `1.6e-32`) and shifted by 32+
-bits (undefined in C, garbage instead of 0) far below the range. To time
+bits (undefined in C, garbage instead of 0) far below the range.
+
+**Step 4 (F_DIV) done (2026-09-15):** explicit restoring array with
+`NBMANT+1(+G)` rows instead of `/` (one row per dividend bit). Yosys, no
+sharing, 32/23/8: level 0 2678 / 511 → 1825 / 339; level 2 2243 / 396 →
+1983 / 384. Less than the "half" estimated: each hand-written row maps a
+little deeper than the rows `/` infers, so the depth gain is ~1/3 rather than
+1/2 at level 0 and small at level 2 (where the rounding stage after the array
+also counts). Quotient identical to `/` at levels 0/1 on 20 000 random
+operands (32/23/8 and 16/10/5); at level 2 the remainder gives the exact
+sticky, closing TODO item 2(a). Division by zero saturates at levels ≥ 1.
+Quartus (Cyclone V C6), `cmm_fround0` (level 0, uses `F_DIV`): 8.08 →
+**14.34 MHz** (+77 %), 1743 → 1323 ALMs — on the FPGA the carry chains make
+the saved rows count more than the LUT-level proxy suggested.
+
+**"Pay only for what you use" audit (2026-09-15):** every float block is
+behind a `generate` on the program's opcodes — denormaliser, adder, comparator
+unit, multiplier, divider, `I2F`, `F_ROT`, the normaliser itself. One gap was
+found and closed: the leading-zero counter inside `ula_norm` existed even in
+processors whose only normalised operators take the direct path (`F_MLT` /
+`F_DIV` at levels ≥ 1), and the synthesiser did **not** prune it through the
+`x` inputs: an `F_MLT`-only processor at level 2 measured 1827 → 1658 LUT4,
+50 → 38 levels once the counter was gated by a parameter derived from the
+opcodes (`LZC`), with a matching `DIR` parameter for the direct path.
+Lesson: never rely on `x`-pruning for a block that has real inputs — gate it
+structurally. To time
 level 2 on a division-free processor, `cmm_cexp`'s generated top was rebuilt
 with `.FROUND(2)` (the `.mif` stay valid — `FROUND` does not change the
 encoding):
