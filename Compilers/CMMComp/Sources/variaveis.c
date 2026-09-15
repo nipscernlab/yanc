@@ -183,16 +183,22 @@ void f2mf(char *va, int *s, int *m, int *e)
     while (*e < -pow(2, nbexpo-1)) {*e = *e+1; sh = sh+1;}
 
     // mantissa ---------------------------------------------------------------
+    // same single shift as asmcomp's t2t.c f2mf (the nbmant == 23 case used to
+    // skip the denormal shift; 32+ bit shifts are undefined)
 
-    if (nbmant == 23)
+    int sht = (23-nbmant) + sh;
+    if (sht == 0)
     {
         if (*ifl & 0x00000001) *m = *m+1; // round
     }
+    else if (sht > 24)
+    {
+        *m = 0;                         // below half the smallest denormal
+    }
     else
     {
-        sh = 23-nbmant+sh;
-        int carry = (*m >> (sh-1)) & 0x00000001; // rounding carry
-        *m = *m >> sh;
+        int carry = (*m >> (sht-1)) & 0x00000001; // rounding carry
+        *m = *m >> sht;
         if (carry) *m = *m+1; // round
     }
 
@@ -201,6 +207,10 @@ void f2mf(char *va, int *s, int *m, int *e)
     // 0x7FFFFF to 0x800000; without this the approximation residual reported by
     // exec_fnum would be computed from a bogus ~0 mantissa.
     if (*m >> nbmant) { *m = *m >> 1; *e = *e + 1; }
+
+    // underflow, or a denormal at #FROUND >= 1: asmcomp encodes the canonical
+    // zero, so report 0 (the approximation message then shows the flush)
+    if (*m == 0 || (fround >= 1 && *m < (1 << (nbmant-1)))) { *m = 0; *e = 0; }
 }
 
 // used when the lexer finds a float constant
@@ -224,7 +234,11 @@ int exec_fnum(char *text)
     float mf    = (s) ? -m*pow(2,e) : m*pow(2,e);
     float delta = mf-num;
 
-    if (delta != 0.0 && num != 0.0) printf(MSG_INFO_CONST_APPROX,text,line_num+1,mf,delta);
+    // a nonzero constant flushed to zero (below the smallest normal number at
+    // #FROUND >= 1) is not an approximation the user can shrug off: warn
+    if (m == 0 && num != 0.0)
+        printf(MSG_WARN_CONST_FLUSHED, line_num+1, text, pow(2,nbmant-1)*pow(2,-pow(2,nbexpo-1)), fround);
+    else if (delta != 0.0 && num != 0.0) printf(MSG_INFO_CONST_APPROX,text,line_num+1,mf,delta);
 
     // add to the table -------------------------------------------------------
 

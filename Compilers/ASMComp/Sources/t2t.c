@@ -66,16 +66,25 @@ unsigned int f2mf(char *va, float *delta)
     }
 
     // mantissa ---------------------------------------------------------------
+    // one right shift takes the 23-bit mantissa down to nbmant bits plus `sh`
+    // more for a value below the smallest normal number (a denormal). The
+    // shift used to be skipped for nbmant == 23, so a tiny constant kept its
+    // full mantissa at the clamped exponent (1e-33 was encoded as 1.6e-32);
+    // and a shift of 32+ bits is undefined in C (garbage instead of 0).
 
-    if (nbmant == 23)
+    int sht = (23-nbmant) + sh;
+    if (sht == 0)
     {
-        if (*ifl & 0x00000001) m = m+1; // round
+        if (*ifl & 0x00000001) m = m+1; // round on the IEEE bit dropped above
+    }
+    else if (sht > 24)
+    {
+        m = 0;                          // below half the smallest denormal
     }
     else
     {
-        sh = 23-nbmant+sh;
-        int carry = (m >> (sh-1)) & 0x00000001; // rounding carry
-        m = m >> sh;
+        int carry = (m >> (sht-1)) & 0x00000001; // rounding carry
+        m = m >> sht;
         if (carry) m = m+1; // round
     }
 
@@ -90,6 +99,19 @@ unsigned int f2mf(char *va, float *delta)
     // residual ---------------------------------------------------------------
 
     float num = (atof(va)<0.0) ? -atof(va) : atof(va); // absolute value of the number
+
+    // underflow ----------------------------------------------------------------
+    // nothing left, or a denormal at #FROUND >= 1: encode the canonical zero.
+    // At those levels the ALU flushes every result below the smallest normal
+    // number to zero and its F_MLT/F_DIV assume normalised operands, so a
+    // denormal constant must not reach it.
+
+    if (m == 0 || (fround >= 1 && m < (1 << (nbmant-1))))
+    {
+        if (delta) *delta = -num;
+        return 1 << (nbmant + nbexpo -1);
+    }
+
     *delta = m*pow(2,e)-num;
 
     // assemble ---------------------------------------------------------------

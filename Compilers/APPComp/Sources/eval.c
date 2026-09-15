@@ -85,6 +85,7 @@ void eval_opernd(char *va)
         case  2: fprintf(f_log, "nubits %s\n", va ); state =  0; break; // ALU word width (bits)
         case  3: fprintf(f_log, "nbmant %s\n", va ); state =  0; break; // mantissa width (bits)
         case  4: fprintf(f_log, "nbexpo %s\n", va ); state =  0; break; // exponent width (bits)
+        case 25: fprintf(f_log, "fround %s\n", va ); state =  0; break; // float rounding level
         case 11: strcpy (name_arr,             va ); state = 12; break; // found an array without initialization
         case 12:                                     state = 13; break; // pick up data type (not needed in app)
         case 13: var_add(name_arr,        atoi(va)); state =  0; break; // declare array without initialization

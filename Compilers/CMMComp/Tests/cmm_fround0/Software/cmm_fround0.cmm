@@ -22,6 +22,8 @@
 //   block 5 - I2F of ints beyond +-2^22 and F2I of floats beyond +-2^31 (level 0
 //             wraps both; level 1 converts the whole word truncating, level 2
 //             rounding; both saturate F2I)
+//   block 6 - a constant below the smallest normal float (1.2e-32 at 32/23/8):
+//             a denormal at level 0, flushed to zero at levels 1/2
 void main()
 {
     float one  = 1.0;
@@ -32,6 +34,8 @@ void main()
     float big  = 1000000000000000000000000000000.0;        // 1e30
     float tiny = 0.000000000000000000000000000001;         // 1e-30
     float ulp  = 4194304.0;                                // 2^22: scales an error at 1.0 to ULPs
+    float d33  = 0.000000000000000000000000000000001;   // 1e-33
+    float b36  = 1000000000000000000000000000000000000.0;   // 1e36
     float x, y, z, acc;
     int   k, flag;
 
@@ -69,5 +73,9 @@ void main()
         k = -2147483647 - 1;  x = k;  fout(0, x);   // 0 / -2147483648 / -2147483648  (low 23 bits are zero)
         x = 3000000000.0;             out(0, x);    // -1294967296 / 2147483647 / 2147483647  (F2I saturates)
         x = -3000000000.0;            out(0, x);    // 1294967296 / -2147483648 / -2147483648
+
+        // block 6: constant below the smallest normal --------- level 0 / 1 / 2
+        x = d33 * b36;                fout(0, x);   // 999 / 0 / 0  (exact 1000, fout truncates 999.99; before the encoder fix
+                                                    //   level 0 saw 1e-33 as 1.6e-32 and printed ~16000)
     }
 }

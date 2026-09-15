@@ -30,7 +30,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#NUIOOU"  ;
 "#NUGAIN"  ;
 "#FFTSIZ"  ;
-"#FROUND"  ;
+"#FROUND"  eval_direct(25); // float rounding level (asmcomp needs it before encoding constants)
 
 "#array"   eval_direct(11); // regular array
 "#arrays"  eval_direct(14); // array with initialization file

@@ -241,6 +241,9 @@ void eval_init(int clk, int clk_n)
     eval_get("app_log.txt","nbmant",    aux); nbmant = atoi(aux); // mantissa width (bits)
     eval_get("app_log.txt","nbexpo",    aux); nbexpo = atoi(aux); // exponent width (bits)
 
+    // float rounding level: needed before the first constant is encoded (f2mf)
+    if (eval_get("app_log.txt","fround", aux) == 1) fround = atoi(aux);
+
     // if there's an interrupt, pull its address
     if (eval_get("app_log.txt","itr_addr", aux) == 1) itr_addr = atoi(aux); // interrupt address
 

@@ -24,6 +24,39 @@ tags consumed by Aurora.
   (Cyclone V C6): a division-free float processor (`cmm_cexp`) goes from
   45.1 to 51.0 MHz (+13 %) with 3 % fewer ALMs; processors that use
   `F_DIV` stay at ~8 MHz, where the combinational divider sets the clock.
+- **Shorter rounding path at `#FROUND 1/2`** (`norm_mux`, `ula_norm`,
+  `ula_denorm`): `F_MLT` and `F_DIV`, which their operators already align to
+  the top bit, bypass the leading-zero count and enter the rounding/range
+  stage directly; the exponent and the overflow/underflow checks are
+  evaluated for both outcomes of the rounding carry in parallel with the
+  increment (carry-select); the level-2 sticky bit of the denormaliser comes
+  from a thermometer mask instead of a second barrel shifter. Level 0 is
+  untouched (Quartus produces the identical netlist). At levels 1/2 the results
+  are the same bit for bit for normalised operands, which is everything the
+  ALU produces there; denormal constants no longer exist at those levels (see
+  the encoder entry below). Quartus (Cyclone V C6), `cmm_cexp` built at level 2:
+  35.0 → 40.3 MHz (+15 %), 903 → 916 ALMs. The level-2 Fmax cost on a
+  division-free processor drops from −31 % to −21 % of level 0 (51.0 MHz).
+
+### Fixed
+- **Constants below the smallest normal float were mis-encoded by the
+  assembler** (`asmcomp` `f2mf`, and the `cmmcomp` copy used for its
+  diagnostics). At 23-bit mantissas the denormal shift was skipped, so a
+  constant between 2.9e-39 and 1.2e-32 kept its full mantissa at the clamped
+  exponent (`1e-33` was encoded as `1.6e-32`, `1e-34` as `1.28e-32`); at any
+  width a constant far below the range needed a shift of 32+ bits, undefined in
+  C (`1e-32` at 16/10/5 came out as `7.6e-5` instead of 0). Normal constants
+  are encoded exactly as before.
+
+### Changed
+- **At `#FROUND >= 1` constants below the smallest normal float are encoded as
+  zero** (flush-to-zero, the constant counterpart of the ALU flushing any
+  result that small at those levels), and `cmmcomp` warns when a nonzero
+  literal is flushed. The bound depends on the format: 2^(NBMANT-1) ·
+  2^(-2^(NBEXPO-1)), i.e. 1.2e-32 at 32/23/8 but **0.0078 at 16/10/5** —
+  where `0.001` becomes 0; use `#FROUND 0` or a wider `#NBEXPO` there.
+  `appcomp` now records `#FROUND` in `app_log.txt` so `asmcomp` knows the
+  level before it encodes the first constant.
 
 ### Added
 - **`#FROUND` directive — float rounding level (0/1/2) of the ALU**, a

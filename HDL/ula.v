@@ -200,7 +200,10 @@ generate if (G != 0) begin : sticky
 	assign mb_ext = {mb_in, {G{1'b0}}};
 	assign ms_ext = {ms_in, {G{1'b0}}};
 	// the lowest extra bit also collects every bit shifted past it (sticky)
-	wire st = (shift >= W) ? (ms_in != {MAN{1'b0}}) : ((ms_ext << (W - shift)) != {W{1'b0}});
+	// bits below `shift` are the ones shifted out: select them with a thermometer
+	// mask (a decoder, not a second shifter) and OR them
+	wire [W-1:0] lost = ~({W{1'b1}} << shift);                // all ones when shift >= W
+	wire st = |(ms_ext & lost);
 	assign m_small = {ms_sh[W-1:1], ms_sh[0] | st};
 end else begin : plain
 	assign mb_ext  = mb_in;
@@ -245,22 +248,48 @@ module ula_norm
 	parameter FROUND =  0,
 	parameter G      =  0                  // extra low bits carried by the mantissa (3 when FROUND = 2)
 )(
-	 input [MAN+EXP+G+2:0] in,             // {s, e[EXP+1:0], m[MAN+G-1:0]}
+	 input [MAN+EXP+G+2:0] in,             // {s, e[EXP+1:0], m[MAN+G-1:0]}: needs a leading-zero count (F_ADD, I2F, F_ROT)
+	 input [MAN+EXP+G+2:0] in_d,           // same format, already aligned to its top bit (F_MLT, F_DIV at FROUND >= 1)
+	 input                 use_d,          // take in_d (skips the leading-zero count)
 	output [MAN+EXP    :0] out
 );
 
 localparam W = MAN+G;
 
-wire                    sig = in[MAN+EXP+G+2  ];
-wire signed [EXP+1  :0] exp = in[MAN+EXP+G+1:W];
-wire        [W-1    :0] man = in[W        -1:0];
+// leading-zero path ----------------------------------------------------------
+
+wire                    sig_l = in[MAN+EXP+G+2  ];
+wire signed [EXP+1  :0] exp_l = in[MAN+EXP+G+1:W];
+wire        [W-1    :0] man_l = in[W        -1:0];
 
 wire [EXP-1:0] w [W-1:0];
 
-// normalize the W-bit word (the LSB of the mantissa field keeps weight 2^exp)
 wire        [EXP-1:0] sh    =  w[W-2];
-wire        [W-1  :0] nrm   =  man << sh;
-wire signed [EXP+1:0] e_nrm =  exp - {{2{1'b0}}, sh};
+wire        [W-1  :0] nrm_l =  man_l << sh;
+wire signed [EXP+1:0] e_l   =  exp_l - {{2{1'b0}}, sh};
+
+ula_nmux #(1, EXP) mm1 (man_l[W-1], 1'b0, {{EXP-1{1'b0}}, {1'b1}}, {EXP{1'b0}}, w[0]);
+
+genvar i;
+
+generate
+	for (i = 1; i < W-1; i = i+1) begin : norm
+		ula_nmux #(i+1, EXP) mm (man_l[W-1:W-1-i], {i+1{1'b0}}, i[EXP-1:0] + {{EXP-1{1'b0}}, {1'b1}}, w[i-1], w[i]);
+	end
+endgenerate
+
+// direct path (no shift) ------------------------------------------------------
+
+wire                    sig_d = in_d[MAN+EXP+G+2  ];
+wire signed [EXP+1  :0] exp_d = in_d[MAN+EXP+G+1:W];
+wire        [W-1    :0] man_d = in_d[W        -1:0];
+
+// select --------------------------------------------------------------------
+
+wire                  sig   = (use_d) ? sig_d : sig_l;
+wire        [W-1  :0] nrm   = (use_d) ? man_d : nrm_l;                // the LSB of the mantissa field keeps weight 2^e_nrm
+wire signed [EXP+1:0] e_nrm = (use_d) ? exp_d : e_l;
+wire                  zman  = (use_d) ? (man_d == {W{1'b0}}) : (man_l == {W{1'b0}});
 
 localparam signed [EXP+1:0] EMAX  =  (1 <<< (EXP-1)) - 1;   // largest exponent
 localparam signed [EXP+1:0] EZERO = -(1 <<< (EXP-1));       // exponent of the zero encoding
@@ -270,8 +299,9 @@ wire signed [EXP-1:0] out_e;
 wire        [MAN-1:0] out_m;
 
 generate if (FROUND == 0) begin : legacy
+	// exponent wraps modulo 2^EXP, zero keeps the operand sign
 	assign out_s = sig;
-	assign out_e = (man == {W{1'b0}}) ? EZERO[EXP-1:0] : e_nrm[EXP-1:0];
+	assign out_e = (zman) ? EZERO[EXP-1:0] : e_nrm[EXP-1:0];
 	assign out_m = nrm[W-1:G];
 end else begin : ranged
 	// round to nearest even on the extra bits (nothing to do when G = 0)
@@ -287,24 +317,21 @@ end else begin : ranged
 	wire        [MAN  :0] rnd   = {1'b0, mnt} + {{MAN{1'b0}}, inc};
 	wire                  rc    = rnd[MAN];                           // carry out: mantissa was all ones
 	wire        [MAN-1:0] m_rnd = (rc) ? {1'b1, {MAN-1{1'b0}}} : rnd[MAN-1:0];
-	wire signed [EXP+1:0] e_rnd = e_nrm + {{EXP+1{1'b0}}, rc};
-	// canonical zero on a zero or underflowed result, saturate on overflow
-	wire                  zero  = (man == {W{1'b0}}) | (e_rnd < EZERO);
-	wire                  ovf   = (e_rnd > EMAX);
+	// exponent and range check for both outcomes of the rounding carry, in
+	// parallel with the increment; the carry only picks at the end (carry-select)
+	wire signed [EXP+1:0] e_r0  = e_nrm;
+	wire signed [EXP+1:0] e_r1  = e_nrm + {{EXP+1{1'b0}}, 1'b1};
+	wire                  zero0 = zman | (e_r0 < EZERO);
+	wire                  zero1 = zman | (e_r1 < EZERO);
+	wire                  ovf0  = (e_r0 > EMAX);
+	wire                  ovf1  = (e_r1 > EMAX);
+	wire signed [EXP+1:0] e_rnd = (rc) ? e_r1  : e_r0;
+	wire                  zero  = (rc) ? zero1 : zero0;               // canonical zero on a zero or underflowed result
+	wire                  ovf   = (rc) ? ovf1  : ovf0;                // saturate on overflow
 	assign out_s = (zero) ? 1'b0 : sig;
 	assign out_e = (zero) ? EZERO[EXP-1:0] : (ovf) ? EMAX[EXP-1:0] : e_rnd[EXP-1:0];
 	assign out_m = (zero) ? {MAN{1'b0}}   : (ovf) ? {MAN{1'b1}}   : m_rnd;
 end endgenerate
-
-ula_nmux #(1, EXP) mm1 (man[W-1], 1'b0, {{EXP-1{1'b0}}, {1'b1}}, {EXP{1'b0}}, w[0]);
-
-genvar i;
-
-generate
-	for (i = 1; i < W-1; i = i+1) begin : norm
-		ula_nmux #(i+1, EXP) mm (man[W-1:W-1-i], {i+1{1'b0}}, i[EXP-1:0] + {{EXP-1{1'b0}}, {1'b1}}, w[i-1], w[i]);
-	end
-endgenerate
 
 assign out = {out_s, out_e, out_m};
 
@@ -329,23 +356,35 @@ module norm_mux
 	output [NUBITS  -1:0] out
 );
 
-// input multiplexer
-reg [NUBITS+G+1:0] imux_out;
+// operands that need the leading-zero count (F_MLT/F_DIV too at level 0, where
+// the legacy path is kept bit for bit)
+reg [NUBITS+G+1:0] imux_l;
 
 always @ (*) case (op)
-	6'd3   : imux_out =  fadd ;   // F_ADD
-	6'd5   : imux_out =  fmlt ;   // F_MLT
-	6'd7   : imux_out =  fdiv ;   // F_DIV
-	6'd25  : imux_out =   i2f ;   //   I2F
-	6'd26  : imux_out =   i2fm;   //   I2F_M
-	6'd46  : imux_out =  frot ;   // F_ROT
-	6'd47  : imux_out =  fadd ;   // F_SU1 (uses the same addition circuit)
-	6'd48  : imux_out =  fadd ;   // F_SU2 (uses the same addition circuit)
-	default: imux_out = {NUBITS+G+2{1'bx}};
+	6'd3   : imux_l =  fadd ;   // F_ADD
+	6'd5   : imux_l =  fmlt ;   // F_MLT
+	6'd7   : imux_l =  fdiv ;   // F_DIV
+	6'd25  : imux_l =   i2f ;   //   I2F
+	6'd26  : imux_l =   i2fm;   //   I2F_M
+	6'd46  : imux_l =  frot ;   // F_ROT
+	6'd47  : imux_l =  fadd ;   // F_SU1 (uses the same addition circuit)
+	6'd48  : imux_l =  fadd ;   // F_SU2 (uses the same addition circuit)
+	default: imux_l = {NUBITS+G+2{1'bx}};
+endcase
+
+// operands already aligned to their top bit by the operator (FROUND >= 1):
+// they skip the leading-zero count and go straight to rounding/saturation
+reg [NUBITS+G+1:0] imux_d;
+wire               use_d = (FROUND != 0) & ((op == 6'd5) | (op == 6'd7));
+
+always @ (*) case (op)
+	6'd5   : imux_d =  fmlt ;   // F_MLT
+	6'd7   : imux_d =  fdiv ;   // F_DIV
+	default: imux_d = {NUBITS+G+2{1'bx}};
 endcase
 
 // perform the normalization
-ula_norm #(NBMANT,NBEXPO,FROUND,G) ula_norm (imux_out, out);
+ula_norm #(NBMANT,NBEXPO,FROUND,G) ula_norm (imux_l, imux_d, use_d, out);
 
 endmodule
 

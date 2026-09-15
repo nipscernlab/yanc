@@ -97,8 +97,10 @@ exponent) to `{s, e, m}` exactly, ties-to-even, with overflow/underflow
 flags, and produces the `.mif` bit string without a C integer ceiling; both
 `f2mf` copies, the `%f` complex split, the `%.20f` emission and the
 host-`float` range checks are gone; the lexers accept `1e-5`; asmcomp
-validates `NBMANT < 2^(NBEXPO-1)` and the supported ceiling; a fixture with
-`#NBMANT 40` shows constants correct to 40 bits.
+validates `NBMANT < 2^(NBEXPO-1)` and the supported ceiling; keeps the
+flush-to-zero of sub-normal constants at `#FROUND >= 1` (landed in the old
+`f2mf`, with the `cmmcomp` warning); a fixture with `#NBMANT 40` shows
+constants correct to 40 bits.
 
 ## 6. Word width beyond 32 bits (tier 1: up to 64)
 
@@ -172,15 +174,15 @@ cheap structure and the ALU testbench of item 6 validates the final one.
 
 **Done when**, in this order (each step measured with `ltp`/`stat` and the
 full regress green):
-1. sign-magnitude adder (dual subtractor, no two's-complement round trips),
-   parallel `e1-e2`/`e2-e1`, one denormaliser shifter with operand swap;
-2. LZC + shift moved to the `F_ADD`/`I2F` branch so `F_MLT`/`F_DIV` skip
-   it; one folded exponent adder with overflow/underflow decided in
-   parallel; level-2 sticky by thermometer mask and carry-select increment
-   (a log-depth leading-zero tree was measured and reverted: `abc` already
-   balances the chain — see §2.7);
+1. ~~sign-magnitude adder, parallel `e1-e2`/`e2-e1`, one denormaliser
+   shifter~~ — **done** (`58944d9`: level 0 45.1 → 51.0 MHz);
+2. ~~`F_MLT`/`F_DIV` skip the LZC; carry-select exponent and range check;
+   thermometer-mask sticky~~ — **done** (level 2 on a division-free
+   processor 35.0 → 40.3 MHz; a log-depth leading-zero tree was measured
+   and reverted — `abc` already balances the chain, see §2.7);
 3. `F_LES`/`F_GRE` as a lexicographic compare (no denormaliser) — mind
-   `-0.0` at level 0;
+   `-0.0` at level 0 (step 1 already merged them into one unit on the
+   aligned operands, 439 → 314 LUT4);
 4. explicit restoring divider arrays: `F_DIV` with `MAN+1+G` rows (exact
    sticky → closes item 2(a)), one array for `DIV`+`MOD`;
 5. one shared right shifter for `SHL`/`SHR`/`SRS`, one for `F2I`;

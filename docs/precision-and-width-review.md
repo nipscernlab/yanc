@@ -390,6 +390,42 @@ the adder work is invisible where `F_DIV` is present. Level 2 costs −15 %
 Fmax and +18 % ALMs on the dividing processor (the three extra quotient bits
 and the rounding stage are on the divider's path).
 
+**Step 2 done (2026-09-15):** `F_MLT`/`F_DIV` bypass the leading-zero count
+at levels ≥ 1, carry-select exponent and range check, thermometer-mask sticky.
+Level 0 is untouched by construction (all changes sit in `FROUND >= 1`
+branches) and Quartus confirms it: identical 713 ALMs / 50.98 MHz. At levels
+≥ 1 the bypass assumes normalised operands (then the product/quotient has at
+most one leading zero, which the operator's top-bit mux already removes).
+Every value the ALU produces at those levels is normalised or canonical zero;
+the only denormals were assembler-encoded constants / initial array data below
+the smallest normal number, 2^(NBMANT-1) · 2^(-2^(NBEXPO-1)) — 1.2e-32 at
+32/23/8, but **0.0078 at 16/10/5**. The encoder now flushes them to zero at
+levels ≥ 1 (and `cmmcomp` warns), so the bypass is correct by construction.
+The flush is the constant counterpart of what the ALU already does at those
+levels with any result below the smallest normal; at 16/10/5 it means
+constants like `0.001` become 0 — the format simply has no normal numbers
+below 0.0078 (integer mantissa, unbiased 5-bit exponent).
+
+Found on the way, fixed at every level: the encoder skipped the denormal shift
+for 23-bit mantissas (`1e-33` was encoded as `1.6e-32`) and shifted by 32+
+bits (undefined in C, garbage instead of 0) far below the range. To time
+level 2 on a division-free processor, `cmm_cexp`'s generated top was rebuilt
+with `.FROUND(2)` (the `.mif` stay valid — `FROUND` does not change the
+encoding):
+
+| `cmm_cexp`, Cyclone V C6 | Fmax | ALMs |
+|---|---|---|
+| level 0 | 50.98 MHz | 713 |
+| level 2, step 1 | 35.04 MHz | 903 |
+| level 2, step 2 | **40.28 MHz** | 916 |
+
+The level-2 cost on a division-free processor (every C++ processor) went from
+−31 % to −21 % Fmax, +28 % ALMs. **Yosys noise:** on the level-0 netlist,
+which Quartus proves identical before and after step 2, Yosys reported 4209 vs
+3827 LUT4 (−9 %) and `F_MLT` 1681 vs 1775 (+6 %): `abc` varies by up to ~10 %
+with the pre-optimisation netlist order. Yosys deltas under ~10 % are not
+evidence; Quartus is the reference.
+
 **Expected total** for a typical float processor (F_ADD, F_MLT, I2F, F2I,
 comparisons, no divider) after the remaining steps: ≈ 30 levels at every
 level; area ≈ −15 %. With `F_DIV`: ≈ half the divider's depth.

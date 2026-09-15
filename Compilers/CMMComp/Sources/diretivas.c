@@ -23,6 +23,7 @@ int  nbmant  = 16; // mantissa width (bits)
 int  nbexpo  =  6; // exponent width (bits)
 int  nuioin  =  1; // number of input ports
 int  nuioou  =  1; // number of output ports
+int  fround  =  0; // float rounding level (#FROUND)
 
 // ----------------------------------------------------------------------------
 // Directive handling ---------------------------------------------------------
@@ -45,7 +46,7 @@ void dire_exec(char *dir, int id, int t)
         case  4: nbexpo = ival             ; break;
         case  7: nuioin = ival             ; break;
         case  8: nuioou = ival             ; break;
-        case  9: if (ival < 0 || ival > 2) {fprintf(stderr, MSG_ERR_FROUND_RANGE, line_num+1); exit(EXIT_FAILURE);} break; // #FROUND level
+        case  9: if (ival < 0 || ival > 2) {fprintf(stderr, MSG_ERR_FROUND_RANGE, line_num+1); exit(EXIT_FAILURE);} fround = ival; break; // #FROUND level
     }
 
     stmt_append(stmt_directive(dir, id));

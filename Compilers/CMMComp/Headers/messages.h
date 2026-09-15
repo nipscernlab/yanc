@@ -486,6 +486,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: %d instruções assembly geradas\n", \
       "Info: %d assembly instructions generated\n")
 
+#define MSG_WARN_CONST_FLUSHED \
+    M("Atenção na linha %d: a constante %s é menor que o menor float normal (%g) e vira 0 com #FROUND %d. Use #FROUND 0 ou aumente #NBEXPO.\n", \
+      "Heads up on line %d: constant %s is below the smallest normal float (%g) and becomes 0 at #FROUND %d. Use #FROUND 0 or raise #NBEXPO.\n")
+
 #define MSG_INFO_CONST_APPROX \
     M("Info: constante %s na linha %d aproximada para %.14f (erro = %.14f)\n", \
       "Info: constant %s on line %d aproximated to %.14f (error = %.14f)\n")
