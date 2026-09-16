@@ -3,8 +3,11 @@
 Open work items for YANC that are not tracked elsewhere. This file is the
 **list**: what is wrong, why it matters, what "done" looks like. The evidence
 (file:line, measurements, the full inventory of 32-bit assumptions) lives in
-[`docs/precision-and-width-review.md`](docs/precision-and-width-review.md);
-each item links to its section there. Remove an item when it lands (the
+[`docs/precision-and-width-review.md`](docs/precision-and-width-review.md) and
+[`docs/hdl-architecture-audit.md`](docs/hdl-architecture-audit.md); each item
+links to its section there. The measurements themselves are reproducible with
+[`Scripts/hw/`](Scripts/hw/README.md) (elaboration, Yosys area/depth, Quartus
+Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
 Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,

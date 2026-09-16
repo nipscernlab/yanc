@@ -527,6 +527,7 @@ yanc/
 ├── HDL/                  reusable Verilog modules (core, ALU, decoders, FIFO, ...)
 ├── Makefile              single source of truth for building the binaries (Linux + MSYS2)
 ├── Scripts/              setup.bat/.sh + env.bat/.sh, aurora.bat, regress.sh,
+│                         hw/ (elaboration, Yosys area/depth, Quartus Fmax),
 │                         comp2gtkw, gen_gtkw, and the pre-wired runner scripts:
 │                           single_proc     .bat/.sh  C± single-processor pipeline
 │                           multi_proc      .bat/.sh  C± multi-processor project
