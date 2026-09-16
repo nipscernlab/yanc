@@ -179,9 +179,11 @@ full regress green):
    thermometer-mask sticky~~ — **done** (level 2 on a division-free
    processor 35.0 → 40.3 MHz; a log-depth leading-zero tree was measured
    and reverted — `abc` already balances the chain, see §2.7);
-3. `F_LES`/`F_GRE` as a lexicographic compare (no denormaliser) — mind
-   `-0.0` at level 0 (step 1 already merged them into one unit on the
-   aligned operands, 439 → 314 LUT4);
+3. ~~`F_LES`/`F_GRE` as a lexicographic compare (no denormaliser)~~ —
+   **done** (comparisons alone 314 → 132 LUT4 and 20 → 10 levels at level 0,
+   403 → 132 / 18 → 10 at level 2; the full float ALU pays ~2 % area at the
+   same depth. Levels 0/1 now order a value against a much larger one instead
+   of calling them equal after the alignment shifted it out);
 4. ~~explicit restoring divider array for `F_DIV` (exact sticky → closes
    item 2(a))~~ — **done**; still open: one array for `DIV`+`MOD` (area
    only, ≈ −50 % for programs that use both);

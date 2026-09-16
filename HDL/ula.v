@@ -157,7 +157,6 @@ module ula_denorm
 	 input                    neg1, neg2,               // invert the sign
 	 input        [MAN+EXP:0]  in1,  in2,
 	output signed [EXP-1  :0] e_out,                    // the larger exponent
-	output                    swap,                     // in2 has the larger exponent: big = in2, small = in1
 	output                    s_big, s_small,           // signs of the two operands, big/small order
 	output        [MAN+G-1:0] m_big, m_small            // aligned magnitudes: m_big as is, m_small shifted right
 );
@@ -180,7 +179,7 @@ wire        [MAN-1:0] m2_in = in2[MAN    -1:0  ];
 wire signed [EXP:0] d12 = e1_in - e2_in;
 wire signed [EXP:0] d21 = e2_in - e1_in;
 
-assign swap  = d12[EXP];                                // e1 < e2
+wire         swap  = d12[EXP];                          // e1 < e2
 wire [EXP:0] shift = (swap) ? d21 : d12;                // |e1 - e2|
 
 assign e_out   = (swap) ? e2_in : e1_in;
@@ -1062,28 +1061,44 @@ endmodule
 
 // F_LES / F_GRE - floating-point comparisons (one unit, in1 < in2 and in1 > in2)
 
+// Lexicographic compare of the raw words: no alignment, so a program that only
+// compares floats builds no denormalizer (and the compare no longer waits for
+// the shifter). The format has no hidden bit, so the mantissa of a normalized
+// value always has its top bit set and the magnitude order is the plain
+// unsigned order of {exponent, mantissa} - once the two's-complement exponent
+// is biased into unsigned order by flipping its sign bit. A zero mantissa is
+// the value zero whatever the exponent field carries (FROUND 0 does not
+// canonicalize zeros), so zeros are forced to the bottom of that order and
+// their sign bit is ignored: +0 == -0, as they were when the comparison
+// subtracted the aligned two's-complement forms.
+
 module ula_fcmp
 #(
 	parameter NUBITS = 32,
-	parameter W      = 23
+	parameter MAN    = 23,
+	parameter EXP    =  8
 )(
-	 input              s_big, s_small, swap,
-	 input  [W-1:0]     m_big, m_small,
+	 input  [NUBITS-1:0] in1, in2,
 	output [NUBITS-1:0] les, gre                          // in1 < in2, in1 > in2
 );
 
-// order of two sign-magnitude numbers with aligned magnitudes; +0 and -0 are
-// equal, as they were when the comparison subtracted the two's-complement forms
-wire ltm = (m_big <  m_small);
-wire gtm = (m_big >  m_small);
-wire zz  = (m_big == {W{1'b0}}) & (m_small == {W{1'b0}});
+wire z1 = (in1[MAN-1:0] == {MAN{1'b0}});                  // the value is zero
+wire z2 = (in2[MAN-1:0] == {MAN{1'b0}});
 
-wire lt_bs = (s_big != s_small) ? (s_big   & ~zz) : (s_big) ? gtm : ltm; // big < small
-wire gt_bs = (s_big != s_small) ? (s_small & ~zz) : (s_big) ? ltm : gtm; // big > small
+wire s1 = in1[MAN+EXP] & ~z1;                             // a zero is always +0
+wire s2 = in2[MAN+EXP] & ~z2;
 
-// in1 is the big operand unless the denormalizer swapped them
-assign les = {{(NUBITS-1){1'b0}}, (swap) ? gt_bs : lt_bs};
-assign gre = {{(NUBITS-1){1'b0}}, (swap) ? lt_bs : gt_bs};
+// magnitude key: exponent with its sign bit flipped, then the mantissa; a zero
+// sorts below every non-zero magnitude (its key cannot be 0 - the mantissa is
+// not zero)
+wire [MAN+EXP-1:0] k1 = (z1) ? {MAN+EXP{1'b0}} : {~in1[MAN+EXP-1], in1[MAN+EXP-2:0]};
+wire [MAN+EXP-1:0] k2 = (z2) ? {MAN+EXP{1'b0}} : {~in2[MAN+EXP-1], in2[MAN+EXP-2:0]};
+
+wire ltk = (k1 < k2);
+wire gtk = (k1 > k2);
+
+assign les = {{(NUBITS-1){1'b0}}, (s1 != s2) ? s1 : (s1) ? gtk : ltk};
+assign gre = {{(NUBITS-1){1'b0}}, (s1 != s2) ? s2 : (s1) ? ltk : gtk};
 
 endmodule
 
@@ -1350,7 +1365,6 @@ localparam G = (FROUND == 2) ? 3 : 0;
 // floating-point denormalization circuit -------------------------------------
 
 wire signed [NBEXPO-1:0] e_out;                       // the larger exponent
-wire                     dn_swap;                     // in2 had the larger exponent
 wire                     dn_s_big, dn_s_small;        // operand signs, big/small order
 wire      [NBMANT+G-1:0] dn_m_big, dn_m_small;        // aligned magnitudes (+ G extra bits)
 // F_SU1/F_SU2 are 32-bit parameters; cast to 1 bit with `!= 0` so the AND
@@ -1358,7 +1372,7 @@ wire      [NBMANT+G-1:0] dn_m_big, dn_m_small;        // aligned magnitudes (+ G
 wire					 su1 = (F_SU1 != 0) & (op == 6'd47); // invert sign of in1 for F_SU1
 wire                     su2 = (F_SU2 != 0) & (op == 6'd48); // invert sign of in2 for F_SU2
 
-generate if ((F_ADD | F_SU1 | F_SU2 | F_GRE | F_LES) != 0) begin : op_denorm ula_denorm #(NBMANT,NBEXPO,G) denorm(su1, su2, in1, in2, e_out, dn_swap, dn_s_big, dn_s_small, dn_m_big, dn_m_small); end endgenerate
+generate if ((F_ADD | F_SU1 | F_SU2) != 0) begin : op_denorm ula_denorm #(NBMANT,NBEXPO,G) denorm(su1, su2, in1, in2, e_out, dn_s_big, dn_s_small, dn_m_big, dn_m_small); end endgenerate
 
 // ADD ------------------------------------------------------------------------
 
@@ -1586,9 +1600,9 @@ generate if ((LES) != 0) begin : op_les ula_les #(NUBITS) my_les(in1, in2, les);
 
 wire signed [NUBITS-1:0] fles;
 
-// one comparator serves F_LES and F_GRE (in1 < in2 and in1 > in2 on the aligned operands)
+// one comparator serves F_LES and F_GRE (in1 < in2 and in1 > in2 on the raw words)
 wire signed [NUBITS-1:0] fcmp_les, fcmp_gre;
-generate if ((F_LES | F_GRE) != 0) begin : op_fcmp ula_fcmp #(NUBITS,NBMANT+G) my_fcmp(dn_s_big, dn_s_small, dn_swap, dn_m_big, dn_m_small, fcmp_les, fcmp_gre); end else begin : op_fcmp assign fcmp_les = {NUBITS{1'bx}}; assign fcmp_gre = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_LES | F_GRE) != 0) begin : op_fcmp ula_fcmp #(NUBITS,NBMANT,NBEXPO) my_fcmp(in1, in2, fcmp_les, fcmp_gre); end else begin : op_fcmp assign fcmp_les = {NUBITS{1'bx}}; assign fcmp_gre = {NUBITS{1'bx}}; end endgenerate
 generate if ((F_LES) != 0) begin : op_fles assign fles = fcmp_les; end else begin : op_fles assign fles = {NUBITS{1'bx}}; end endgenerate
 
 // GRE ------------------------------------------------------------------------

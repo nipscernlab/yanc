@@ -330,11 +330,10 @@ the adder — five adders in series where the arithmetic needs one:
 | level-2 sticky = second barrel shifter (`m_ext << (W-shift)`) | thermometer mask of `shift`, AND, OR-reduce | −5 levels, −W·log W area |
 | level-2 increment in series after the shift | `mnt + 1` computed in parallel, carry-select on the rounding decision | −1 adder level |
 
-**Comparisons.** `F_LES`/`F_GRE` go through the denormaliser and a
-subtraction. With canonical (normalised) operands the order is lexicographic on
-`{sign, exponent, mantissa}` — no shifter, no adder. A program that only
-compares instantiates 439 LUT4 today; ≈ 60 would do. Watch `-0.0` at level 0
-(non-canonical there).
+**Comparisons.** ~~`F_LES`/`F_GRE` go through the denormaliser and a
+subtraction.~~ **Done (step 3, below):** the order of canonical (normalised)
+operands is lexicographic on `{sign, exponent, mantissa}` — no shifter, no
+adder.
 
 **Dividers.** `ula_fdiv` uses `/` on a `2·MAN`-bit dividend, so the synthesiser
 builds a 45-row array and a 45-bit quotient — but a normalised divisor
@@ -409,6 +408,31 @@ below 0.0078 (integer mantissa, unbiased 5-bit exponent).
 Found on the way, fixed at every level: the encoder skipped the denormal shift
 for 23-bit mantissas (`1e-33` was encoded as `1.6e-32`) and shifted by 32+
 bits (undefined in C, garbage instead of 0) far below the range.
+
+**Step 3 done (2026-09-16):** `F_LES`/`F_GRE` compare the raw words
+lexicographically — the magnitude key is `{exponent with its sign bit flipped,
+mantissa}` (the format has no hidden bit, so every normalised mantissa has its
+top bit set and the unsigned order of that key is the order of the
+magnitudes), and the sign selects or reverses it. Zeros are handled before the
+key: a zero mantissa is the value zero whatever the exponent field carries
+(level 0 does not canonicalise zeros), so it is forced to the bottom of the
+order with its sign ignored — `+0 == -0`, as with the old subtraction. With no
+consumer left, the `swap` output of `ula_denorm` is gone and `F_LES`/`F_GRE`
+no longer instantiate the denormaliser at all. Yosys, no sharing, 32/23/8:
+comparisons alone 314 / 20 → **132 / 10** at level 0 and 403 / 18 → **132 /
+10** at level 2 (below the ≈ 60 LUT4 guess above only because the key compare
+is 31 bits wide, not the mantissa's 23); the whole float no-divider ALU pays
++1.8 % (level 0) / +2.3 % (level 2) LUT4 at the same depth, since there the
+comparator used to ride on the adder's denormaliser and was never the critical
+path. `F_ADD` alone measured 627 → 638 LUT4 for a logically identical netlist,
+which sizes the `abc` noise on these numbers. Every golden unchanged
+(125/125).
+
+One corner changes, in the right direction: at levels 0 and 1 (no G bits) the
+old compare aligned the smaller operand out of existence, so any value more
+than `NBMANT` binary orders below the other compared **equal** to it — most
+visibly `x < 0.0` was false for `|x| < 2^-NBMANT`. The lexicographic compare
+orders them. At level 2 the sticky bit already prevented it.
 
 **Step 4 (F_DIV) done (2026-09-15):** explicit restoring array with
 `NBMANT+1(+G)` rows instead of `/` (one row per dividend bit). Yosys, no

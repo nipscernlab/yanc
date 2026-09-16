@@ -8,6 +8,27 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **Float comparisons without the denormaliser** (`ula_fcmp`): `F_LES` and
+  `F_GRE` now compare the raw words lexicographically — the magnitude key is
+  the exponent with its sign bit flipped followed by the mantissa, and the
+  sign selects or reverses that order — instead of aligning both operands and
+  comparing the aligned magnitudes. A zero mantissa is still the value zero
+  whatever the exponent carries, so `+0 == -0` as before. A processor that
+  only compares floats no longer builds the alignment shifter: 314 → 132 LUT4
+  and 20 → 10 LUT4 levels at `#FROUND 0`, 403 → 132 / 18 → 10 at level 2
+  (Yosys, no resource sharing, 32/23/8). One that also adds floats pays ~2 %
+  more LUT4 at the same depth, because there the comparator used to ride on
+  the adder's denormaliser. Step 3 of the ALU restructuring (`TODO.md` item 8).
+
+### Fixed
+- **Comparison of a very small value against a much larger one** at `#FROUND`
+  0 and 1: the alignment shifted the smaller operand out of existence, so
+  anything more than `#NBMANT` binary orders below the other operand compared
+  **equal** to it — most visibly `x < 0.0` was false for `|x| < 2^-NBMANT`.
+  The lexicographic compare orders them. Level 2 was already correct (the
+  sticky bit kept the shifted-out operand visible).
+
 ## [v5.4] – 2026-09-15
 
 The floating-point datapath of the ALU, reworked. A new `#FROUND` directive
