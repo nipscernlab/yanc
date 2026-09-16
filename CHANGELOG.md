@@ -8,6 +8,18 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v5.4] – 2026-09-15
+
+The floating-point datapath of the ALU, reworked. A new `#FROUND` directive
+picks how precise the float operators are (0 = the v5.3 datapath, bit for
+bit; 1 = no bit lost, saturation, canonical zero; 2 = round to nearest even),
+and `cppcomp` always asks for level 2, so every C++ processor now rounds
+correctly. Along the way the adder, the comparators, the divider and the
+normaliser were restructured — same results, fewer LUTs, higher Fmax (a
+division-free float processor goes 45 → 51 MHz on a Cyclone V; one that
+divides, 8 → 14 MHz) — two old bugs in the constant encoder were fixed, and
+every float block is now gated by the opcodes the program uses.
+
 ### Changed
 - **Float adder restructured** (`ula_denorm`, `ula_fadd`): the operands are
   ordered by exponent with both differences computed in parallel (no negation

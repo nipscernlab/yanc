@@ -1,6 +1,6 @@
 # HDL architecture audit
 
-Date: 2026-09-16 · Scope: `HDL/processor.v`, `core.v`, `instr_dec.v`, `ula.v`,
+Date: 2026-09-15 · Scope: `HDL/processor.v`, `core.v`, `instr_dec.v`, `ula.v`,
 `myFIFO.v`, `addr_dec.v`, the generated `<proc>.v`/`<proc>_tb.v` (`hdl.c`),
 and the two programs that use the interrupt (`ZeroCross`, `ProcDTW`).
 Companion to [`precision-and-width-review.md`](precision-and-width-review.md)
