@@ -187,7 +187,12 @@ full regress green):
 4. ~~explicit restoring divider array for `F_DIV` (exact sticky → closes
    item 2(a))~~ — **done**; still open: one array for `DIV`+`MOD` (area
    only, ≈ −50 % for programs that use both);
-5. one shared right shifter for `SHL`/`SHR`/`SRS`, one for `F2I`;
+5. ~~one shared right shifter for `SHL`/`SHR`/`SRS`, one for `F2I`~~ —
+   **done** (`SHL`+`SHR`+`SRS` 504 → 363 LUT4 at the same depth; `F2I`
+   387 → 350; the integer no-divider ALU −5 %, the whole no-divider ALU
+   −3.5 % / −5.6 % at levels 0 / 2. A processor with a single shift opcode
+   builds exactly what it built before — the selects are parameter
+   constants then);
 6. `NUGAIN` restricted to a power of two, validated by `cmmcomp`/`asmcomp`
    (a non-power-of-two infers a 32-bit divider in `ula_nrm`).
 

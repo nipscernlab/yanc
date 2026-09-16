@@ -20,6 +20,17 @@ tags consumed by Aurora.
   (Yosys, no resource sharing, 32/23/8). One that also adds floats pays ~2 %
   more LUT4 at the same depth, because there the comparator used to ride on
   the adder's denormaliser. Step 3 of the ALU restructuring (`TODO.md` item 8).
+- **One shifter for `SHL`/`SHR`/`SRS`, one for `F2I`** (`ula_shift`,
+  `ula_f2i`): only one shift executes per cycle, so the three barrel shifters
+  are folded into one right shifter — a left shift is a right shift of the
+  bit-reversed word (the reversal is wiring), and the arithmetic shift only
+  changes the bit that enters from the top. `F2I`'s `<<`/`>>` pair is one
+  `>>` the same way. Same results bit for bit, including amounts beyond the
+  word width. A processor that uses the three shifts: 504 → 363 LUT4 at the
+  same depth; `F2I` 387 → 350; the whole division-free ALU −3.5 % (level 0) /
+  −5.6 % (level 2) LUT4 (Yosys, no resource sharing, 32/23/8). A processor
+  with a single shift opcode builds exactly what it built before. Step 5 of
+  the ALU restructuring.
 
 ### Fixed
 - **Comparison of a very small value against a much larger one** at `#FROUND`

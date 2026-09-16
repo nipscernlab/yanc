@@ -911,7 +911,18 @@ wire        [EXP-1:0] shift = (e[EXP-1]) ? -e : e;
 // m_ext widens m (MAN bits) to the final mag width (MAN+EXP+1) so the shift
 // operates at the destination width — Verilator otherwise warns WIDTHEXPAND.
 wire        [MAN+EXP:0] m_ext = {{(EXP+1){1'b0}}, m};
-wire        [MAN+EXP:0] mag   = (e[EXP-1]) ? (m_ext >> shift) : (m_ext << shift);
+// one shifter for both directions: the left shift (e >= 0) is a right shift
+// of the bit-reversed word, reversed again on the way out (the reversal is
+// wiring); the exponent sign selects
+wire        [MAN+EXP:0] m_rev, sh_out, sh_rev;
+genvar i;
+generate for (i = 0; i <= MAN+EXP; i = i+1) begin : rev
+	assign m_rev [i] = m_ext [MAN+EXP-i];
+	assign sh_rev[i] = sh_out[MAN+EXP-i];
+end endgenerate
+wire        [MAN+EXP:0] sh_in = (e[EXP-1]) ? m_ext  : m_rev;
+assign                  sh_out = sh_in >> shift;
+wire        [MAN+EXP:0] mag   = (e[EXP-1]) ? sh_out : sh_rev;
 wire        [MAN+EXP:0] val   = (s) ? -mag : mag;
 
 // FROUND >= 1: saturate instead of wrapping. A normalized mantissa is at least
@@ -1134,46 +1145,52 @@ endmodule
 // Bit-shift operations *******************************************************
 // ****************************************************************************
 
-// SHL - left shift -----------------------------------------------------------
+// SHL / SHR / SRS - one right shifter for the three shifts --------------------
 
-module ula_shl
+// Only one shift ever executes per cycle, so the three barrel shifters are
+// folded into one right shifter. A left shift is a right shift of the
+// bit-reversed word, reversed again on the way out - the reversal is wiring,
+// the two muxes it needs are one LUT level. SRS differs from SHR only in what
+// enters from the top: the sign bit instead of zero, which the shift of the
+// word widened by that one bit propagates as far as the amount asks - so an
+// amount >= NUBITS still gives all zeros (SHL, SHR) or all sign bits (SRS),
+// as `<<`, `>>` and `>>>` do. The muxes exist only for the opcodes the
+// program has (a program with one shift builds the plain shifter it built
+// before).
+
+module ula_shift
 #(
-	parameter   NUBITS = 32
+	parameter NUBITS = 32,
+	parameter SHL    = 0,
+	parameter SHR    = 0,
+	parameter SRS    = 0
 )(
-	 input     [NUBITS-1:0] in1, in2,
+	 input     [       5:0] op,
+	 input     [NUBITS-1:0] in1, in2,                         // word, amount
 	output     [NUBITS-1:0] out
 );
 
-assign out = in1 << in2;
+// each select is a parameter constant when its shift is the only one the
+// program has, so the muxes fold away and the plain shifter of that opcode
+// remains (measured: a dynamic select on an SHL-only processor cost +19 %)
+wire left  = (SHL != 0) & (((SHR | SRS) == 0) | (op == 6'd43));  // SHL: reverse in and out
+wire arith = (SRS != 0) & (((SHL | SHR) == 0) | (op == 6'd45));  // SRS: fill with the sign
 
-endmodule
+// bit reversal, both ways (wiring)
+wire [NUBITS-1:0] in1_r, y, y_r;
+genvar i;
+generate for (i = 0; i < NUBITS; i = i+1) begin : rev
+	assign in1_r[i] = in1[NUBITS-1-i];
+	assign y_r  [i] = y  [NUBITS-1-i];
+end endgenerate
 
-// SHR - right shift ----------------------------------------------------------
+wire        [NUBITS-1:0] x    = (left) ? in1_r : in1;
+wire                     fill = arith & in1[NUBITS-1];
+wire signed [NUBITS  :0] xe   = {fill, x};                    // one bit wider: the fill bit is its sign
+wire signed [NUBITS  :0] ye   = xe >>> in2;
+assign                   y    = ye[NUBITS-1:0];
 
-module ula_shr
-#(
-	parameter   NUBITS = 32
-)(
-	 input     [NUBITS-1:0] in1, in2,
-	output     [NUBITS-1:0] out
-);
-
-assign out = in1 >> in2;
-
-endmodule
-
-// SRS - arithmetic right shift -----------------------------------------------
-
-module ula_srs
-#(
-	parameter      NUBITS = 32
-)(
-	 input signed [NUBITS-1:0] in1,
-	 input        [NUBITS-1:0] in2,
-	output signed [NUBITS-1:0] out
-);
-
-assign out = in1 >>> in2;
+assign out = (left) ? y_r : y;
 
 endmodule
 
@@ -1623,23 +1640,16 @@ wire signed [NUBITS-1:0] equ;
 
 generate if ((EQU) != 0) begin : op_equ ula_equ #(NUBITS) my_equ(in1, in2, equ); end else begin : op_equ assign equ = {NUBITS{1'bx}}; end endgenerate
 
-// SHR ------------------------------------------------------------------------
+// SHL / SHR / SRS ------------------------------------------------------------
 
-wire signed [NUBITS-1:0] shr;
+// one right shifter serves the three shifts (see ula_shift); each opcode
+// still keeps its own mux input so an absent one stays x
+wire signed [NUBITS-1:0] shl, shr, srs, sh_out;
 
-generate if ((SHR) != 0) begin : op_shr ula_shr #(NUBITS) my_shr(in1, in2, shr); end else begin : op_shr assign shr = {NUBITS{1'bx}}; end endgenerate
-
-// SHL ------------------------------------------------------------------------
-
-wire signed [NUBITS-1:0] shl;
-
-generate if ((SHL) != 0) begin : op_shl ula_shl #(NUBITS) my_shl(in1, in2, shl); end else begin : op_shl assign shl = {NUBITS{1'bx}}; end endgenerate
-
-// SRS ------------------------------------------------------------------------
-
-wire signed [NUBITS-1:0] srs;
-
-generate if ((SRS) != 0) begin : op_srs ula_srs #(NUBITS) my_srs(in1, in2, srs); end else begin : op_srs assign srs = {NUBITS{1'bx}}; end endgenerate
+generate if ((SHL | SHR | SRS) != 0) begin : op_shift ula_shift #(NUBITS,SHL,SHR,SRS) my_shift(op, in1, in2, sh_out); end else begin : op_shift assign sh_out = {NUBITS{1'bx}}; end endgenerate
+generate if ((SHL) != 0) begin : op_shl assign shl = sh_out; end else begin : op_shl assign shl = {NUBITS{1'bx}}; end endgenerate
+generate if ((SHR) != 0) begin : op_shr assign shr = sh_out; end else begin : op_shr assign shr = {NUBITS{1'bx}}; end endgenerate
+generate if ((SRS) != 0) begin : op_srs assign srs = sh_out; end else begin : op_srs assign srs = {NUBITS{1'bx}}; end endgenerate
 
 // F_ROT ----------------------------------------------------------------------
 

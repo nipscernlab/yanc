@@ -345,11 +345,14 @@ those rows is ≈ half the area (2700 → ~1400 LUT4) and half the depth
 `/` and `%` arrays (1962 LUT4 together); one explicit array yields both
 quotient and remainder — half the area, same depth.
 
-**Shifters.** `SHL`, `SHR`, `SRS` are three separate 32-bit barrel shifters
-(≈ 3 × 160 LUT4); `ula_f2i` has two (`<<` and `>>` selected by the exponent
-sign); `ula_denorm` has two (above). One right shifter with bit reversal on the
-way in and out (free wiring, one extra mux level) serves `SHL`/`SHR`/`SRS`;
-`F2I` needs one. ≈ −450 LUT4 on a processor that uses them all.
+**Shifters.** ~~`SHL`, `SHR`, `SRS` are three separate 32-bit barrel
+shifters; `ula_f2i` has two (`<<` and `>>` selected by the exponent sign);
+`ula_denorm` has two.~~ **Done (steps 1 and 5, below):** one right shifter
+with bit reversal on the way in and out (free wiring) serves `SHL`/`SHR`/`SRS`,
+one serves `F2I`, one the denormaliser. The "≈ 3 × 160" estimate above was
+wrong in an instructive way: `abc` was already merging most of `SHR` and
+`SRS` and the shared "amount ≥ 32" detect, so the three separate shifters
+cost 504 LUT4, not 640, and the saving is −28 %, not −50 %.
 
 **`ula_nrm` (`NRM`, `norm()`): `in / NUGAIN`.** A division by a *parameter*:
 with `NUGAIN` a power of two (128 everywhere today) it is a shift; with any
@@ -446,6 +449,28 @@ sticky, closing TODO item 2(a). Division by zero saturates at levels ≥ 1.
 Quartus (Cyclone V C6), `cmm_fround0` (level 0, uses `F_DIV`): 8.08 →
 **14.34 MHz** (+77 %), 1743 → 1323 ALMs — on the FPGA the carry chains make
 the saved rows count more than the LUT-level proxy suggested.
+
+**Step 5 done (2026-09-16):** one right shifter for `SHL`/`SHR`/`SRS`
+(`ula_shift`): `SHL` reverses the word on the way in and out (wiring, two
+muxes), `SRS` differs from `SHR` only in the bit that enters from the top
+(the sign instead of zero), carried by widening the word by that one bit and
+shifting it as a signed value — so an amount ≥ `NUBITS` still gives all zeros
+or all sign bits, as `<<`/`>>`/`>>>` do. `ula_f2i`'s `<<`/`>>` pair became one
+`>>` with the same reversal, selected by the exponent sign. The selects are
+parameter constants whenever a shift is the program's only one, so the muxes
+fold and that processor builds exactly the shifter it built before — this was
+measured, not assumed: with a live `op == SHL` select an `SHL`-only processor
+cost +19 % (252 vs 211 LUT4); with the constant select 209. Yosys, no sharing,
+32/23/8, level 0: `SHL`+`SHR`+`SRS` 504 / 9 → **363 / 9**; each shift alone
+unchanged (`SHL` 211 → 209, `SHR` 213 → 213, `SRS` 273 → 273); `F2I` 387 / 19 →
+350 / 19 (level 2: 388 / 18 → 357 / 19, the input mux is not absorbed into the
+first shifter stage there — one level on a block that is 30 below the ALU's
+critical path); integer no-divider ALU 2227 / 23 → 2118 / 23; float
+no-divider ALU 2615 / 37 → 2541 / 37 (level 2: 3041 / 50 → 3004 / 51); whole
+no-divider ALU 4225 / 36 → 4075 / 36 (level 2: 4265 / 50 → 4024 / 51). The
+±1 level at level 2 on the full ALU is `abc` scatter, not the `F2I` change:
+the same tree with the old two-shifter `F2I` measured 4034 / 51 (and 3051 /
+**52** on the float set), i.e. equal or deeper. Every golden unchanged.
 
 **"Pay only for what you use" audit (2026-09-15):** every float block is
 behind a `generate` on the program's opcodes — denormaliser, adder, comparator
