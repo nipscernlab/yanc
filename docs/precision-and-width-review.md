@@ -437,6 +437,33 @@ than `NBMANT` binary orders below the other compared **equal** to it — most
 visibly `x < 0.0` was false for `|x| < 2^-NBMANT`. The lexicographic compare
 orders them. At level 2 the sticky bit already prevented it.
 
+**What the lexicographic order assumes (2026-09-16).** Every word the machine
+holds has a normalised mantissa **or** the minimum exponent: `ula_norm`
+normalises every result, and `f2mf` clamps every denormal to the same minimum
+exponent ([`t2t.c`](../Compilers/ASMComp/Sources/t2t.c) `while (e < -pow(2,
+nbexpo-1))`). That clamp is what keeps the order exact for denormals: sharing
+one exponent, they are ordered by mantissa, and any normal number at that
+exponent is larger than all of them. An unnormalised mantissa at a larger
+exponent would be misordered — the old aligned compare handled those, this one
+does not — but only an input port writing raw bits can produce one, and at
+`#FROUND >= 1` the same words already break `F_MLT`/`F_DIV`, which assume
+normalised operands (step 2). Measured with
+[`Scripts/hw/tb_alu.v`](../Scripts/hw/tb_alu.v), 4000 pairs per format against
+real-valued arithmetic: **0 errors in every format the machine can hold**
+(8/4/3, 16/10/5, 32/23/8, 64/52/11); on arbitrary words, the new compare
+disagrees with the true value 3–101 times per 4000 (and the old one 0–130 —
+worse than the new one at 8/4/3, where the alignment loses bits).
+
+**Unit testbench (2026-09-16).** [`Scripts/hw/tb_alu.sh`](../Scripts/hw/tb_alu.sh)
+runs the shared shifter, `F2I` and the comparison in four formats × three
+levels, against references derived in the testbench (`<<`/`>>`/`>>>`, a native
+two-direction shift model, real arithmetic) — never blessed output. Five
+injected mutants (SRS fill zeroed, output reversal dropped, `F2I` directions
+swapped, `-0` sign kept, exponent sign not flipped) are each caught, in the
+right block. This is the seed of the ALU testbench TODO item 6 asks for; the
+operators still covered only by goldens (`F_ADD`, `F_MLT`, `F_ROT`, `F_SGN`,
+`I2F`, the `_M` variants) are the work that remains there.
+
 **Step 4 (F_DIV) done (2026-09-15):** explicit restoring array with
 `NBMANT+1(+G)` rows instead of `/` (one row per dividend bit). Yosys, no
 sharing, 32/23/8: level 0 2678 / 511 → 1825 / 339; level 2 2243 / 396 →

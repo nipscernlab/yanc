@@ -20,6 +20,11 @@ tags consumed by Aurora.
   (Yosys, no resource sharing, 32/23/8). One that also adds floats pays ~2 %
   more LUT4 at the same depth, because there the comparator used to ride on
   the adder's denormaliser. Step 3 of the ALU restructuring (`TODO.md` item 8).
+  The order assumes what every word the machine holds satisfies — a normalised
+  mantissa, or the minimum exponent, which is what `ula_norm` produces and what
+  the constant encoder clamps denormals to; a raw unnormalised word from an
+  input port can be misordered, as it already breaks `F_MLT`/`F_DIV` at
+  `#FROUND >= 1`.
 - **One shifter for `SHL`/`SHR`/`SRS`, one for `F2I`** (`ula_shift`,
   `ula_f2i`): only one shift executes per cycle, so the three barrel shifters
   are folded into one right shifter — a left shift is a right shift of the
@@ -31,6 +36,16 @@ tags consumed by Aurora.
   −5.6 % (level 2) LUT4 (Yosys, no resource sharing, 32/23/8). A processor
   with a single shift opcode builds exactly what it built before. Step 5 of
   the ALU restructuring.
+
+### Added
+- **`Scripts/hw/tb_alu.sh`** — a self-checking unit testbench for the shared
+  shifter, `F2I` and the float comparison, in four formats (8/4/3 to 64/52/11)
+  and at every `#FROUND` level, with the expected values derived in the
+  testbench (`<<`/`>>`/`>>>`, a native two-direction shift model, real-valued
+  arithmetic) rather than blessed. Five injected bugs are each caught. It is
+  the seed of the ALU testbench `TODO.md` item 6 asks for. `elab.sh` now also
+  elaborates the shifts and both dividers, which its opcode list had never
+  covered.
 
 ### Fixed
 - **Comparison of a very small value against a much larger one** at `#FROUND`

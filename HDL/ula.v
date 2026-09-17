@@ -1082,6 +1082,18 @@ endmodule
 // canonicalize zeros), so zeros are forced to the bottom of that order and
 // their sign bit is ignored: +0 == -0, as they were when the comparison
 // subtracted the aligned two's-complement forms.
+//
+// This relies on a property of every word the machine holds: the mantissa is
+// normalized, or the exponent is the minimum one. ula_norm normalizes every
+// result, and the constant encoder (f2mf) clamps every denormal to the same
+// minimum exponent - which is what keeps the order exact for denormals too
+// (sharing the exponent, they are ordered by mantissa, and any normal number
+// at that exponent is larger than all of them). An unnormalized mantissa at a
+// larger exponent would be misordered, but only an input port writing raw bits
+// can produce one; at FROUND >= 1 the same words already break F_MLT/F_DIV,
+// which assume normalized operands. Scripts/hw/tb_alu.v checks the order
+// against real-valued arithmetic over the words the machine can hold, and
+// counts the out-of-format ones separately.
 
 module ula_fcmp
 #(

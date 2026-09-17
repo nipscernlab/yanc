@@ -7,6 +7,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 OPS="-Pula.F_ADD=1 -Pula.F_SU1=1 -Pula.F_SU2=1 -Pula.F_MLT=1 -Pula.F_DIV=1 -Pula.I2F=1 -Pula.I2F_M=1 -Pula.F2I=1 -Pula.F_NEG=1 -Pula.F_SGN=1 -Pula.F_LES=1 -Pula.F_GRE=1 -Pula.F_ROT=1 -Pula.ADD=1"
+OPS="$OPS -Pula.SHL=1 -Pula.SHR=1 -Pula.SRS=1 -Pula.DIV=1 -Pula.MOD=1"
 rc=0
 
 for L in 0 1 2; do

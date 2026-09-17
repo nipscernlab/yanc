@@ -9,11 +9,12 @@ All paths assume the repo at `/c/nipscern/yanc` under an **MSYS2 login shell**
 
 | script | needs | answers |
 |---|---|---|
-| `elab.sh` | iverilog, verilator | does the ALU still elaborate at every `#FROUND` level, at 32/23/8 and 16/10/5, and lint clean? |
+| `elab.sh` | iverilog, verilator | does the ALU still elaborate at every `#FROUND` level, at 32/23/8 and 16/10/5, and lint clean? (float ops, shifts and both dividers) |
 | `elab_single.sh` | iverilog | does each float operator still elaborate **alone** (one `generate` branch at a time)? Catches a block that stopped being gated by the opcodes |
 | `area.sh` | yosys | LUT4 count and critical-path depth per operator set |
 | `fmax.sh` | Quartus Prime Lite | real Fmax and ALMs of a processor the regress already built |
 | `tb_fdiv.v` | iverilog | the divider array against Verilog's `/` and `%`, 20000 random operands |
+| `tb_alu.sh` (`tb_alu.v`) | iverilog | the shared shifter, `F2I` and the float comparison against references derived in the testbench, in four formats (8/4/3 … 64/52/11) × three `#FROUND` levels. The place to add an operator whose only check today is a blessed golden |
 
 ## Typical use
 
@@ -25,7 +26,16 @@ NUBITS=64 NBMANT=52 NBEXPO=11 NOSHARE=1 bash Scripts/hw/area.sh 0 fadd
 bash Scripts/hw/fmax.sh cmm_cexp                            # after Scripts/regress.sh built it
 FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp              # same program forced to #FROUND 2
 iverilog -g2012 -s tb -o tb.vvp Scripts/hw/tb_fdiv.v HDL/ula.v && vvp -n tb.vvp
+bash Scripts/hw/tb_alu.sh                                   # after any ula.v edit
+bash Scripts/hw/tb_alu.sh 50000                             # longer run
 ```
+
+`tb_alu.v` prints an `info:` count of comparisons that disagree with the true
+value for words **outside** the float format's invariant (an unnormalized
+mantissa at a non-minimum exponent). Those are not failures: no operator and no
+constant produces such a word — see the comment on `ula_fcmp`. A non-zero count
+there is expected and roughly width-dependent (100/4000 at 8/4/3, 3/4000 at
+64/52/11).
 
 ## Two traps, both measured
 

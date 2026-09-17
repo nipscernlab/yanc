@@ -119,7 +119,11 @@ and Verilator, with a host-double reference for the 64-bit case (like
 directed regress pass like `ResetCheck`): every float operator, including
 `F_ROT`, `F_SGN`, `F_LES`/`F_GRE`, the `_M` variants, `I2F`/`F2I` at the
 range edges, at `FROUND` 0/1/2 and at 16/10/5, 32/23/8, 64/52/11, with the
-expected values derived in the testbench rather than blessed. Until then
+expected values derived in the testbench rather than blessed.
+[`Scripts/hw/tb_alu.sh`](Scripts/hw/tb_alu.sh) is the seed of it: shifts,
+`F2I` and the float comparison, four formats × three levels, references
+derived, mutation-checked. What is left for this item is the other operators
+and wiring it into `regress.sh`. Until then
 levels 1 and 2 are covered only by `cmm_fround1/2` and (level 2) the C++
 tests.
 
