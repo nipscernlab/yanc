@@ -1,6 +1,7 @@
 `timescale 1ns/1ps
 // Self-checking unit testbench for the ALU blocks that no golden covers on its
-// own: the shared shifter (SHL/SHR/SRS), F2I, and the float comparison. The
+// own: the shared shifter (SHL/SHR/SRS), the integer divider (DIV/MOD, at the
+// signed edges), F2I, and the float comparison. The
 // expected values are derived here, never blessed:
 //   - the shifts against Verilog's own <<, >> and >>>;
 //   - F2I against an independent model that shifts natively in both directions;
@@ -30,7 +31,7 @@ parameter N      = 4000;
 localparam signed [EXP:0] EMIN = (EXP >= 10) ? -300 : -(1 << (EXP-1));
 localparam signed [EXP:0] EMAX = (EXP >= 10) ?  300 :  (1 << (EXP-1)) - 1;
 
-integer errs_shift, errs_f2i, errs_cmp, info_cmp, k, pop;
+integer errs_shift, errs_div, errs_f2i, errs_cmp, info_cmp, k, pop;
 
 // ------------------------------------------------------------------ random --
 
@@ -66,6 +67,37 @@ function [NUBITS-1:0] ref_shift;
 			default: ref_shift = $signed(x) >>> n;
 		endcase
 	end
+endfunction
+
+// -------------------------------------------------------- DIV / MOD ---------
+
+reg signed [NUBITS-1:0] d1, d2;
+wire signed [NUBITS-1:0] dq, dr;
+
+ula_div #(NUBITS) dut_div (d1, d2, dq);
+ula_mod #(NUBITS) dut_mod (d1, d2, dr);
+
+// Verilog's own signed / and %. Division by zero is NOT checked: the operators
+// leave it undefined (x in simulation, whatever the inferred array gives in
+// hardware) and so does the ALU today -- see the audit's table of undefined
+// behaviours. Defining it is not free: a ternary around `/` and `%` costs +80 %
+// LUT4 on a processor that uses both, because it stops the synthesiser from
+// sharing one divider between them, and an unsigned operand in that ternary
+// silently turns the division UNSIGNED (Verilog makes the whole expression
+// unsigned), which is wrong for negative dividends. It has to come from one
+// explicit array that yields quotient and remainder together.
+//
+// The reference below runs in a procedural context on purpose: a 64-bit signed
+// divide inside a CONTINUOUS assign is miscomputed by Icarus (measured), so a
+// wire-based reference would test the simulator, not the design.
+function signed [NUBITS-1:0] ref_div;
+	input signed [NUBITS-1:0] a, b;
+	begin ref_div = a / b; end
+endfunction
+
+function signed [NUBITS-1:0] ref_mod;
+	input signed [NUBITS-1:0] a, b;
+	begin ref_mod = a % b; end
 endfunction
 
 // ------------------------------------------------------------------- F2I ---
@@ -145,7 +177,7 @@ endtask
 real v1, v2;
 
 initial begin
-	errs_shift = 0; errs_f2i = 0; errs_cmp = 0; info_cmp = 0;
+	errs_shift = 0; errs_div = 0; errs_f2i = 0; errs_cmp = 0; info_cmp = 0;
 
 	// shifts: random words, and every amount from 0 past the word width
 	for (k = 0; k < N; k = k + 1) begin
@@ -156,6 +188,22 @@ initial begin
 		if (sh !== ref_shift(op, a, b)) begin
 			errs_shift = errs_shift + 1;
 			if (errs_shift < 5) $display("  SHIFT op=%0d %h by %h -> %h expected %h", op, a, b, sh, ref_shift(op, a, b));
+		end
+	end
+
+	// DIV / MOD: random operands, the zero divisor, and the signed edges
+	for (k = 0; k < N; k = k + 1) begin
+		d1 = rnd(0);
+		d2 = rnd(0);
+		if (d2 == 0) d2 = {{(NUBITS-1){1'b0}}, 1'b1};             // by zero is undefined: skip it
+		if (k % 7 == 0) d2 = {{(NUBITS-1){1'b0}}, 1'b1};          // by 1
+		if (k % 11 == 0) d1 = {1'b1, {(NUBITS-1){1'b0}}};         // most negative dividend
+		if (k % 13 == 0) begin d1 = {1'b1, {(NUBITS-1){1'b0}}}; d2 = {NUBITS{1'b1}}; end // INT_MIN / -1
+		#1;
+		if (dq !== ref_div(d1, d2) || dr !== ref_mod(d1, d2)) begin
+			errs_div = errs_div + 1;
+			if (errs_div < 5) $display("  DIV/MOD %0d / %0d -> q=%0d r=%0d expected q=%0d r=%0d",
+			                           d1, d2, dq, dr, ref_div(d1, d2), ref_mod(d1, d2));
 		end
 	end
 
@@ -188,12 +236,12 @@ initial begin
 			end
 		end
 
-	if (errs_shift + errs_f2i + errs_cmp == 0)
-		$display("%0d/%0d/%0d FROUND=%0d: ok (shift %0d, f2i %0d, cmp %0d vectors; info: %0d of %0d out-of-format compares differ from the true value)",
-		         NUBITS, MAN, EXP, FROUND, N, N, N, info_cmp, N);
+	if (errs_shift + errs_div + errs_f2i + errs_cmp == 0)
+		$display("%0d/%0d/%0d FROUND=%0d: ok (shift %0d, div %0d, f2i %0d, cmp %0d vectors; info: %0d of %0d out-of-format compares differ from the true value)",
+		         NUBITS, MAN, EXP, FROUND, N, N, N, N, info_cmp, N);
 	else
-		$display("%0d/%0d/%0d FROUND=%0d: FAIL (shift %0d, f2i %0d, cmp %0d)",
-		         NUBITS, MAN, EXP, FROUND, errs_shift, errs_f2i, errs_cmp);
+		$display("%0d/%0d/%0d FROUND=%0d: FAIL (shift %0d, div %0d, f2i %0d, cmp %0d)",
+		         NUBITS, MAN, EXP, FROUND, errs_shift, errs_div, errs_f2i, errs_cmp);
 	$finish;
 end
 

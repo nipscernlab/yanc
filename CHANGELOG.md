@@ -45,7 +45,10 @@ tags consumed by Aurora.
   arithmetic) rather than blessed. Five injected bugs are each caught. It is
   the seed of the ALU testbench `TODO.md` item 6 asks for. `elab.sh` now also
   elaborates the shifts and both dividers, which its opcode list had never
-  covered.
+  covered. It also covers the integer `DIV`/`MOD` at the signed edges
+  (`INT_MIN`, `INT_MIN / -1`, division by one), where it caught a Verilog trap
+  worth knowing: a ternary with an unsigned operand turns a signed division
+  unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
 - **Comparison of a very small value against a much larger one** at `#FROUND`

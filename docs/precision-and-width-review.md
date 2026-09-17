@@ -341,9 +341,30 @@ builds a 45-row array and a 45-bit quotient — but a normalised divisor
 `MAN+1+G` rows are ever non-trivial. An explicit restoring array with exactly
 those rows is ≈ half the area (2700 → ~1400 LUT4) and half the depth
 (508 → ~260 levels), and its last partial remainder is the exact sticky of
-§1.5 / TODO item 2(a) for free. The integer `DIV` and `MOD` are two separate
-`/` and `%` arrays (1962 LUT4 together); one explicit array yields both
-quotient and remainder — half the area, same depth.
+§1.5 / TODO item 2(a) for free. ~~The integer `DIV` and `MOD` are two separate `/` and `%` arrays (1962 LUT4
+together); one explicit array yields both quotient and remainder — half the
+area, same depth.~~ **Measured 2026-09-17, and the estimate was wrong: they are
+not two arrays.** Yosys (no sharing pass) gives `DIV` alone 1796 LUT4 / 373
+levels, `MOD` alone 1863 / 385, and both together **1914 / 388** — the marginal
+cost of adding `MOD` to a processor that already divides is 118 LUT4 (6 %), not
+another array. The synthesiser already derives both from one structure, and
+Quartus is expected to do the same (its divider primitive emits quotient and
+remainder), though that is unverified. So step 4b buys no area.
+
+What it would still buy is **defined division by zero** (§1.6 of the audit),
+and that is not free either: guarding `/` and `%` with a ternary was measured
+at **+80 %** (`DIV`+`MOD` 1914 → 3436, the whole integer ALU 3983 → 5452),
+because the guard stops the tools from sharing the one divider. A defined
+by-zero therefore has to come from the explicit array itself, which yields
+quotient and remainder together and can mux both at one place.
+
+Two traps found while measuring, both recorded in `Scripts/hw/tb_alu.v`:
+a ternary whose other operand is unsigned (`{NUBITS{1'b1}}`) makes the whole
+expression unsigned, so `in1 / in2` silently becomes an UNSIGNED division —
+wrong for every negative dividend; and Icarus miscomputes a 64-bit signed
+divide in a CONTINUOUS assign while getting it right in a procedural block
+(`-1e12 / 7` came back as `(2^64 - 1e12) / 7`), which the 64-bit work of item 6
+needs to know.
 
 **Shifters.** ~~`SHL`, `SHR`, `SRS` are three separate 32-bit barrel
 shifters; `ula_f2i` has two (`<<` and `>>` selected by the exponent sign);

@@ -189,8 +189,12 @@ full regress green):
    same depth. Levels 0/1 now order a value against a much larger one instead
    of calling them equal after the alignment shifted it out);
 4. ~~explicit restoring divider array for `F_DIV` (exact sticky → closes
-   item 2(a))~~ — **done**; still open: one array for `DIV`+`MOD` (area
-   only, ≈ −50 % for programs that use both);
+   item 2(a))~~ — **done**. The follow-up "one array for `DIV`+`MOD`,
+   ≈ −50 %" is **withdrawn: measured, the tools already share one divider**
+   (`DIV` 1796 LUT4, `MOD` 1863, both 1914 — 6 % marginal). What an explicit
+   array would still buy is *defined division by zero*, which a cheap ternary
+   guard cannot give (+80 %: the guard breaks that sharing). Decide with
+   item 10.5, not here;
 5. ~~one shared right shifter for `SHL`/`SHR`/`SRS`, one for `F2I`~~ —
    **done** (`SHL`+`SHR`+`SRS` 504 → 363 LUT4 at the same depth; `F2I`
    387 → 350; the integer no-divider ALU −5 %, the whole no-divider ALU
