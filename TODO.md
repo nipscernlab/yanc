@@ -14,7 +14,15 @@ Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 10 architecture hardening (from the HDL audit).
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
-moved. Suggested order for the rest: 8 → 5 → 6 (+ the ALU testbench) → 7 → 9.
+moved.
+
+**Where the work stands (2026-09-18).** Item **8 is closed** — all six steps,
+each measured; step 4b was withdrawn by the measurement rather than done. The
+hygiene of item **7** (audit 1.7) is done except the invariant guard, which
+item 3 had parked for the same reason: it needs a form Icarus, Verilator,
+Yosys *and* Quartus all accept silently. **Next in the suggested order:
+5 → 6 → 7 → 9**, and item 5 is the big one — it cannot start before the two
+decisions immediately below, because the new encoder is born tied to them.
 
 ---
 
