@@ -34,15 +34,20 @@ char  mac_dir[1024];    // Macros folder directory
 
 // stores the directive values
 char prname   [128];    // processor name
-int  nubits    = 23;    // ALU word width (bits)
-int  nbmant    = 16;    // mantissa width (bits)
-int  nbexpo    =  6;    // exponent width (bits)
-int  ddepth    = 10;    // data stack depth
-int  sdepth    = 10;    // subroutine stack depth
+// Defaults: the one set shared with cmmcomp, cppcomp and the HDL (audit 1.7).
+// They only apply to a directive the program did not write; every C+- fixture
+// writes NUBITS/NBMANT/NBEXPO and the stack depths, and cppcomp emits all of
+// them, so what used to live here (23/16/6, a second float format) was reached
+// by nobody and agreed with nothing.
+int  nubits    = 32;    // ALU word width (bits) = nbmant + nbexpo + 1
+int  nbmant    = 23;    // mantissa width (bits)
+int  nbexpo    =  8;    // exponent width (bits)
+int  ddepth    = 128;   // data stack depth
+int  sdepth    = 128;   // subroutine stack depth
 int  nuioin    =  1;    // number of input ports
 int  nuioou    =  1;    // number of output ports
-int  nugain    = 64;    // division constant
-int  fftsiz    =  8;    // FFT size (bits)
+int  nugain    = 128;   // division constant (norm(); a power of two, checked in eval_finish)
+int  fftsiz    =  3;    // FFT size (bits)
 int  fround    =  0;    // float rounding level (0 legacy, 1 exact truncation + saturation, 2 nearest even)
 
 // ----------------------------------------------------------------------------

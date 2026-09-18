@@ -256,10 +256,15 @@ it). The audit found the weak points in the surroundings. In order:
 6. **I/O contract** documented; a status-port convention (`empty`/`full`
    readable with `in()`); valid/ready with a global stall only as a parameter
    option if streaming peripherals become a goal.
-7. **Hygiene** — one default parameter set, `NUGAIN` typed, unused `NBOPCO`
-   port of `ula`, invariant guard, lint-clean Verilator, `mem_instr`'s fake
-   write commented or removed, `myFIFO` with a registered read so it maps to
-   block RAM.
+7. **Hygiene** — ~~one default parameter set~~ (done: `cppcomp`'s set,
+   the one the 81 C++ tests actually run on, now in `asmcomp`, `cmmcomp` and
+   the three HDL files, named at the top of `processor.v`), ~~`NUGAIN`
+   typed~~, ~~unused `NBOPCO` parameter of `ula`~~; still open: the invariant
+   guard (`NUBITS == NBMANT+NBEXPO+1`, `NBMANT < 2^(NBEXPO-1)`, `NUGAIN` a
+   power of two — it needs a form every simulator *and* synthesizer in the
+   flow accepts silently, which is why item 3 parked it too), lint-clean
+   Verilator, `mem_instr`'s fake write commented or removed, `myFIFO` with a
+   registered read so it maps to block RAM.
 8. **Registered-branch option** — only if Fmax ever matters more than the
    one-cycle branch; an ISA change with compiler support, never the default.
 

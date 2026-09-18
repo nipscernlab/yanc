@@ -19,8 +19,10 @@
 // ----------------------------------------------------------------------------
 
 char prname[128] ; // processor name
-int  nbmant  = 16; // mantissa width (bits)
-int  nbexpo  =  6; // exponent width (bits)
+// Defaults: the one set shared with asmcomp, cppcomp and the HDL (audit 1.7);
+// only reached when the program omits the directive.
+int  nbmant  = 23; // mantissa width (bits)
+int  nbexpo  =  8; // exponent width (bits)
 int  nuioin  =  1; // number of input ports
 int  nuioou  =  1; // number of output ports
 int  fround  =  0; // float rounding level (#FROUND)

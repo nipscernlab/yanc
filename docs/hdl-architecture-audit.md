@@ -146,12 +146,17 @@ table fills.
 
 ### 1.7 Parameter hygiene and lint
 
-- Default parameter sets disagree: `processor.v` `NUBITS = 16`, `core.v` and
-  `ula.v` 32, `asmcomp` 23/16/6, `cmmcomp` 16/6, `cppcomp` 32/23/8. Harmless
-  while every flow passes explicit values; a trap for anyone instantiating by
-  hand. One set, everywhere.
-- `NUGAIN` is an untyped 32-bit parameter in `processor.v`/`core.v`, typed
-  `signed [NUBITS-1:0]` in `ula.v`; `NBOPCO` is passed to `ula` and unused.
+- ~~Default parameter sets disagree~~ — **done (2026-09-18):** one set
+  everywhere, and it is `cppcomp`'s, because that is the one actually
+  exercised (all 81 C++ tests omit every `#pragma` and run on it, while every
+  C± fixture writes its directives): `NUBITS 32 = NBMANT 23 + NBEXPO 8 + 1`,
+  `NUGAIN 128`, `SDEPTH`/`DDEPTH` 128, `FFTSIZ 3`, `FROUND 0`. It is named in
+  one comment block at the top of `processor.v`; `asmcomp` dropped its 23/16/6
+  (a second float format nobody reached) and `cmmcomp` its 16/6.
+- ~~`NUGAIN` is an untyped 32-bit parameter in `processor.v`/`core.v`~~ —
+  **done**, typed `signed [NUBITS-1:0]` in all three (with step 6 of item 8).
+  ~~`NBOPCO` is passed to `ula` and unused~~ — **done**, the parameter and the
+  connection are gone.
 - No invariant guard (`NUBITS == NBMANT+NBEXPO+1`, `NBMANT < 2^(NBEXPO-1)`,
   `NUGAIN` a power of two) — the assembler checks the first; the HDL checks
   nothing.

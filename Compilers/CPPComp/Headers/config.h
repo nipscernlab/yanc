@@ -12,6 +12,9 @@
 #define CPPCOMP_CONFIG_H
 
 #ifndef CFG_NUBITS
+// This is the project's ONE default parameter set (audit 1.7): asmcomp,
+// cmmcomp and the HDL now carry the same numbers. It lives here too because
+// every C++ test omits the #pragma yanc lines and runs on these.
 #define CFG_NUBITS 32
 #endif
 #ifndef CFG_NBMANT

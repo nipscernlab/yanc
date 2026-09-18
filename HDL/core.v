@@ -477,17 +477,18 @@ module core
 	parameter  NUBITS = 32,              // Data width (bits)
 	parameter  NBMANT = 23,              // Mantissa width (bits)
 	parameter  NBEXPO =  8,              // Exponent width (bits)
+	// defaults: the one set named at the top of processor.v
 
 	// memories
-	parameter  SDEPTH = 10,              // Instruction stack depth
-	parameter  DDEPTH = 10,              // Data stack depth
+	parameter  SDEPTH = 128,             // Instruction stack depth
+	parameter  DDEPTH = 128,             // Data stack depth
 
 	// inputs and Outputs
 	parameter  NBIOIN =  2,              // Number of IO address bits - input
 	parameter  NBIOOU =  2,              // Number of IO address bits - output
 
 	// arithmetic constants
-	parameter  signed [NUBITS-1:0] NUGAIN = 64, // norm() divisor (NRM/NRM_M): a power of two, asmcomp enforces it
+	parameter  signed [NUBITS-1:0] NUGAIN = 128, // norm() divisor (NRM/NRM_M): a power of two, asmcomp enforces it
 	parameter  FFTSIZ =  3,              // ILI size for bit reversal
 	parameter  FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 exact truncation + saturation, 2 round to nearest even
 
@@ -860,7 +861,6 @@ ula #(.NUBITS (NUBITS ),
       .NBEXPO (NBEXPO ),
       .NUGAIN (NUGAIN ),
       .FROUND (FROUND ),
-	  .NBOPCO (NBOPCO),
         .ADD  (  ADD   |  S_ADD  ),
 	  .F_ADD  (F_ADD   | SF_ADD  ),
         .MLT  (  MLT   |  S_MLT  ),

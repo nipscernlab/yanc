@@ -1308,8 +1308,7 @@ module ula
 	parameter                     NUBITS = 32,
 	parameter                     NBMANT = 23,
 	parameter                     NBEXPO =  8,
-	parameter signed [NUBITS-1:0] NUGAIN = 64,
-	parameter                     NBOPCO =  7,
+	parameter signed [NUBITS-1:0] NUGAIN = 128,   // defaults: the one set named at the top of processor.v
 	// float rounding level (#FROUND): 0 legacy (truncate, exponent wraps, bit-identical
 	// to the original datapath), 1 keep the LSB before normalization + saturate/flush
 	// + canonical zero, 2 as 1 + round to nearest even (guard/round/sticky bits)

@@ -83,6 +83,18 @@ endmodule
 // Main circuit ***************************************************************
 // ****************************************************************************
 
+// ONE default parameter set, shared by processor.v, core.v, ula.v, asmcomp,
+// cmmcomp and cppcomp (audit 1.7). It is cppcomp's set, because that is the one
+// actually exercised: all 81 C++ tests omit every #pragma and run on it, while
+// every C+- fixture sets the directives explicitly. The defaults only apply to
+// a hand instantiation or a directive nobody wrote -- the generated <proc>.v
+// always passes all of them -- which is exactly why they used to drift apart
+// unnoticed (this file said NUBITS 16 next to NBMANT 23 + NBEXPO 8, a format
+// that does not add up).
+//
+//   NUBITS 32 = NBMANT 23 + NBEXPO 8 + 1     NUGAIN 128 (a power of two)
+//   SDEPTH 128   DDEPTH 128   FFTSIZ 3       FROUND 0 (legacy datapath)
+//
 module processor
 #(
 	// -------------------------------------------------------------------------
@@ -112,21 +124,21 @@ module processor
 	// -------------------------------------------------------------------------
 
 	// data flow
-	parameter NUBITS = 16,              // Processor word width
+	parameter NUBITS = 32,              // Processor word width
 	parameter NBMANT = 23,              // Mantissa width (bits)
 	parameter NBEXPO =  8,              // Exponent width (bits)
-	parameter NBOPER =  7,              // Operand width (bits)
+	parameter NBOPER =  9,              // Operand width (bits)
 
 	// memories
-	parameter SDEPTH = 10,              // Instruction stack depth
-	parameter DDEPTH = 10,              // Data stack depth
+	parameter SDEPTH = 128,             // Instruction stack depth
+	parameter DDEPTH = 128,             // Data stack depth
 
 	// input and output
 	parameter NBIOIN =  2,              // Number of input-port bits
 	parameter NBIOOU =  2,              // Number of output-port bits
 
 	// arithmetic constants
-	parameter signed [NUBITS-1:0] NUGAIN = 64, // norm() divisor (NRM/NRM_M): a power of two, asmcomp enforces it
+	parameter signed [NUBITS-1:0] NUGAIN = 128, // norm() divisor (NRM/NRM_M): a power of two, asmcomp enforces it
 	parameter FFTSIZ =  3,              // ILI size for bit reversal
 	parameter FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 exact truncation + saturation, 2 round to nearest even
 

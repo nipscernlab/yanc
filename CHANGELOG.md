@@ -37,6 +37,19 @@ tags consumed by Aurora.
   with a single shift opcode builds exactly what it built before. Step 5 of
   the ALU restructuring.
 
+- **One default parameter set, everywhere** (audit 1.7). The defaults in
+  `processor.v`, `core.v`, `ula.v`, `asmcomp` and `cmmcomp` had drifted apart
+  — `processor.v` said `NUBITS 16` next to `NBMANT 23` + `NBEXPO 8`, a format
+  that does not add up, and `asmcomp`/`cmmcomp` carried a second float format
+  (23/16/6) that nothing reached. They now all carry `cppcomp`'s set, which is
+  the one actually exercised (every C++ test omits the `#pragma` lines and
+  runs on it): `NUBITS 32 = NBMANT 23 + NBEXPO 8 + 1`, `NUGAIN 128`,
+  `SDEPTH`/`DDEPTH` 128, `FFTSIZ 3`, `FROUND 0`, named in one comment block at
+  the top of `processor.v`. No generated processor changes: the `<proc>.v` the
+  assembler writes passes every parameter explicitly. What changes is a hand
+  instantiation, and a directive a program forgot to write. The unused
+  `NBOPCO` parameter of `ula` (and the connection feeding it) is gone.
+
 - **`#NUGAIN` must be a power of two.** `norm(x)` is `x / NUGAIN` in hardware;
   a power of two is a shift, anything else infers a constant divider that
   becomes the ALU's critical path (measured at 32 bits: 100 → 70 LUT4 levels,
