@@ -201,8 +201,13 @@ full regress green):
    −3.5 % / −5.6 % at levels 0 / 2. A processor with a single shift opcode
    builds exactly what it built before — the selects are parameter
    constants then);
-6. `NUGAIN` restricted to a power of two, validated by `cmmcomp`/`asmcomp`
-   (a non-power-of-two infers a 32-bit divider in `ula_nrm`).
+6. ~~`NUGAIN` restricted to a power of two, validated by `cmmcomp`/`asmcomp`~~
+   — **done**: `asmcomp` refuses it (the gate every front end passes
+   through) and `cmmcomp` refuses it with the source line; `NUGAIN` typed
+   `signed [NUBITS-1:0]` in `processor.v`/`core.v`/`ula_nrm`. Measured
+   before deciding: 64 → 152 LUT4 / 12 levels, 128 → 147 / 11, **100 → 406 /
+   70**, 3 → 264 / 38 — not the full divider feared, but 2–3× the depth of
+   the whole no-divider ALU (36), i.e. the clock halved.
 
 Targets: full no-divider ALU ≈ 30 levels at every level, ≈ −15 % LUT4;
 `F_DIV` ≈ 260 levels, ≈ −50 % LUT4; every golden unchanged.

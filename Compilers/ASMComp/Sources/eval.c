@@ -341,6 +341,18 @@ void eval_finish()
     if (nubits != nbmant+nbexpo+1) {fprintf(stderr, MSG_ERR_FP_INCONSISTENT); exit(EXIT_FAILURE);}
     if (fround < 0 || fround > 2)  {fprintf(stderr, MSG_ERR_FROUND_RANGE  ); exit(EXIT_FAILURE);}
 
+    // norm() divides by NUGAIN in hardware (ula_nrm: in / NUGAIN). A power of
+    // two is a shift; anything else infers a constant divider that becomes
+    // the ALU's critical path (Yosys, 32 bits: 100 -> 70 LUT levels, 3 -> 38,
+    // against 12 for 64). This is the one gate every front end passes through.
+    if (nugain <= 0 || (nugain & (nugain - 1)) != 0) {fprintf(stderr, MSG_ERR_NUGAIN_POW2, nugain); exit(EXIT_FAILURE);}
+
+    // norm() divides by NUGAIN in hardware (ula_nrm: in / NUGAIN). A power of
+    // two is a shift; anything else infers a constant divider that becomes
+    // the ALU's critical path (Yosys, 32 bits: 100 -> 70 LUT levels, 3 -> 38,
+    // against 12 for 64). This is the one gate every front end passes through.
+    if (nugain <= 0 || (nugain & (nugain - 1)) != 0) {fprintf(stderr, MSG_ERR_NUGAIN_POW2, nugain); exit(EXIT_FAILURE);}
+
     // finalize simulation ----------------------------------------------------
 
     sim_finish();

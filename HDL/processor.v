@@ -126,7 +126,7 @@ module processor
 	parameter NBIOOU =  2,              // Number of output-port bits
 
 	// arithmetic constants
-	parameter NUGAIN = 64,              // Value used to divide by a fixed number (NRM and NORMS)
+	parameter signed [NUBITS-1:0] NUGAIN = 64, // norm() divisor (NRM/NRM_M): a power of two, asmcomp enforces it
 	parameter FFTSIZ =  3,              // ILI size for bit reversal
 	parameter FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 exact truncation + saturation, 2 round to nearest even
 

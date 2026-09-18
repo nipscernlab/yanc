@@ -1,0 +1,19 @@
+#PRNAME p
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 100
+
+// Negative fixture: norm(x) is x / NUGAIN in hardware, and only a power of two
+// keeps it a shift. 100 would infer a constant divider that becomes the ALU's
+// critical path, so cmmcomp must refuse it (asmcomp refuses it too).
+
+void main()
+{
+    int x = 200;
+    out(0, norm(x));
+}

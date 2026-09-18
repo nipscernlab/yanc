@@ -819,10 +819,15 @@ endmodule
 
 // NRM - division by a constant -----------------------------------------------
 
+// NUGAIN is a power of two: asmcomp refuses anything else, because `/` by a
+// constant that is not one infers a divider (measured at 32 bits: 100 -> 406
+// LUT4 / 70 levels, 3 -> 264 / 38) where a power of two is a shift plus the
+// sign correction of a truncating division (64 -> 152 / 12).
+
 module ula_nrm
 #(
-	parameter         NUBITS = 32,
-	parameter signed  NUGAIN =  1
+	parameter                     NUBITS = 32,
+	parameter signed [NUBITS-1:0] NUGAIN =  1
 )(
 	 input    signed [NUBITS-1:0] in,
 	output    signed [NUBITS-1:0] out

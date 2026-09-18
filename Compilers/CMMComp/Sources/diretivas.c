@@ -38,7 +38,9 @@ void dire_exec(char *dir, int id, int t)
     int ival = atoi(v_table[id].name);
 
     // action to take depending on the directive
-    // only directives 1, 3, 4, 7 and 8 affect the cmm compiler; 9 is validated here
+    // only directives 1, 3, 4, 7 and 8 affect the cmm compiler; 9 and 10 are
+    // validated here (asmcomp validates them again: it is the gate every front
+    // end passes through; this one just knows the source line)
     switch(t)
     {
         case  1: strcpy (prname,v_table[id].name); break;
@@ -47,6 +49,7 @@ void dire_exec(char *dir, int id, int t)
         case  7: nuioin = ival             ; break;
         case  8: nuioou = ival             ; break;
         case  9: if (ival < 0 || ival > 2) {fprintf(stderr, MSG_ERR_FROUND_RANGE, line_num+1); exit(EXIT_FAILURE);} fround = ival; break; // #FROUND level
+        case 10: if (ival <= 0 || (ival & (ival - 1)) != 0) {fprintf(stderr, MSG_ERR_NUGAIN_POW2, line_num+1, ival); exit(EXIT_FAILURE);} break;
     }
 
     stmt_append(stmt_directive(dir, id));

@@ -1,7 +1,7 @@
 #!/bin/bash
 # LUT4 area and critical-path depth of HDL/ula.v per operator set (Yosys).
 #
-# Usage:  [NOSHARE=1] [NUBITS=.. NBMANT=.. NBEXPO=..] bash Scripts/hw/area.sh <fround> <config>...
+# Usage:  [NOSHARE=1] [NUBITS=.. NBMANT=.. NBEXPO=..] [NUGAIN=..] bash Scripts/hw/area.sh <fround> <config>...
 # e.g.    NOSHARE=1 bash Scripts/hw/area.sh 2 fadd fmlt all_nodiv
 #
 # ALWAYS pass NOSHARE=1 for numbers to compare: Yosys' `synth` runs SAT-based
@@ -33,6 +33,8 @@ run () {
     local label=$1; shift
     local tag="${NUBITS:-32}_${FR}_$label${NOSHARE:+_ns}"
     local cp="-chparam FROUND $FR -chparam NUBITS ${NUBITS:-32} -chparam NBMANT ${NBMANT:-23} -chparam NBEXPO ${NBEXPO:-8}"
+    # NUGAIN=<n> overrides the norm() divisor (a non-power-of-two infers a full divider in ula_nrm)
+    [ -n "${NUGAIN:-}" ] && cp="$cp -chparam NUGAIN $NUGAIN"
     local p; for p in "$@"; do cp="$cp -chparam $p 1"; done
     cat > "$OUT/$tag.ys" <<YS
 read_verilog -sv $ULA
@@ -60,6 +62,7 @@ for cfg in "$@"; do
         i2f)        run i2f       I2F ;;
         f2i)        run f2i       F2I ;;
         idiv)       run idiv      DIV MOD ;;
+        nrm)        run nrm${NUGAIN:+_g$NUGAIN} NRM NRM_M ;;
         div)        run div       DIV ;;
         mod)        run mod       MOD ;;
         shift)      run shift     SHL SHR SRS ;;
@@ -74,6 +77,6 @@ for cfg in "$@"; do
         all)        run all       $INT $FLT ;;
         all_nofdiv) run all_nofdiv $INT $FLT_NODIV ;;
         all_nodiv)  run all_nodiv $INT_NODIV $FLT_NODIV ;;
-        *) echo "unknown config: $cfg (fadd fmlt fdiv fcmp i2f f2i idiv div mod shift shl shr srs imlt int int_nodiv flt flt_nodiv all all_nofdiv all_nodiv)"; exit 1 ;;
+        *) echo "unknown config: $cfg (fadd fmlt fdiv fcmp i2f f2i idiv div mod nrm shift shl shr srs imlt int int_nodiv flt flt_nodiv all all_nofdiv all_nodiv)"; exit 1 ;;
     esac
 done

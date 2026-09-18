@@ -183,7 +183,7 @@ direct : PRNAME   ID   {dire_exec("#PRNAME",$2, 1);} // processor name
        | SDEPTH INUM   {dire_exec("#SDEPTH",$2, 0);} // subroutine stack depth
        | NUIOIN INUM   {dire_exec("#NUIOIN",$2, 7);} // number of input ports
        | NUIOOU INUM   {dire_exec("#NUIOOU",$2, 8);} // number of output ports
-       | NUGAIN INUM   {dire_exec("#NUGAIN",$2, 0);} // division constant (norm(.))
+       | NUGAIN INUM   {dire_exec("#NUGAIN",$2,10);} // division constant (norm(.)): a power of two (validated)
        | FFTSIZ INUM   {dire_exec("#FFTSIZ",$2, 0);} // FFT size (2^FFTSIZ)
        | FROUND INUM   {dire_exec("#FROUND",$2, 9);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
 

@@ -14,3 +14,4 @@ no_main.cmm|main() function
 garbage.cmm|Syntax error
 undeclared.cmm|declared the variable
 define_recursive.cmm|declare the variable
+nugain_not_pow2.cmm|power of two

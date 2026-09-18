@@ -37,6 +37,16 @@ tags consumed by Aurora.
   with a single shift opcode builds exactly what it built before. Step 5 of
   the ALU restructuring.
 
+- **`#NUGAIN` must be a power of two.** `norm(x)` is `x / NUGAIN` in hardware;
+  a power of two is a shift, anything else infers a constant divider that
+  becomes the ALU's critical path (measured at 32 bits: 100 → 70 LUT4 levels,
+  3 → 38, against 12 for 64 — the clock halved). `asmcomp` now refuses any
+  other value, so every front end is covered, and `cmmcomp` refuses it with
+  the source line. Every shipped example uses 128. `NUGAIN` is typed
+  `signed [NUBITS-1:0]` in `processor.v`, `core.v` and `ula_nrm` as it already
+  was at the ALU top. Step 6, the last of the ALU restructuring (`TODO.md`
+  item 8).
+
 ### Added
 - **`Scripts/hw/tb_alu.sh`** — a self-checking unit testbench for the shared
   shifter, `F2I` and the float comparison, in four formats (8/4/3 to 64/52/11)

@@ -375,11 +375,17 @@ wrong in an instructive way: `abc` was already merging most of `SHR` and
 `SRS` and the shared "amount ≥ 32" detect, so the three separate shifters
 cost 504 LUT4, not 640, and the saving is −28 %, not −50 %.
 
-**`ula_nrm` (`NRM`, `norm()`): `in / NUGAIN`.** A division by a *parameter*:
-with `NUGAIN` a power of two (128 everywhere today) it is a shift; with any
-other value the synthesiser infers a full 32-bit divider (≈ 390 levels, the
-whole-ALU critical path). Either document "power of two only" and validate it
-in `cmmcomp`/`asmcomp`, or implement it as a multiply by the reciprocal.
+**`ula_nrm` (`NRM`, `norm()`): `in / NUGAIN`.** A division by a *parameter*.
+~~With any other value the synthesiser infers a full 32-bit divider (≈ 390
+levels).~~ **Measured 2026-09-18 (Yosys, no sharing, 32 bits):** 64 → 152 LUT4
+/ 12 levels, 128 → 147 / 11; **100 → 406 / 70**, 3 → 264 / 38. Not the full
+divider (Yosys turns division by a constant into a reciprocal structure), but
+2–3× the depth of the whole no-divider ALU (36 levels), so a stray `#NUGAIN`
+would halve the clock. **Done (step 6):** `asmcomp` refuses a `NUGAIN` that is
+not a power of two — the one gate every front end passes through — and
+`cmmcomp` refuses it with the source line; the defaults are 64 in `asmcomp`
+and the HDL and 128 in `cppcomp` and every fixture, still to be unified (item
+7).
 
 **Fine as is.** `ula_mux` (a 52-way case per bit; unused inputs are `x` and get
 pruned, the synthesiser makes an AND-OR), the integer `ADD`/`MLT`/logic/compare
