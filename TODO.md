@@ -11,7 +11,7 @@ Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
 Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
-10 architecture hardening (from the HDL audit).
+10 architecture hardening (from the HDL audit), 11 consistency at 32 bits.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
 moved.
@@ -20,20 +20,28 @@ moved.
 each measured; step 4b was withdrawn by the measurement rather than done. The
 hygiene of item **7** (audit 1.7) is done except the invariant guard, which
 item 3 had parked for the same reason: it needs a form Icarus, Verilator,
-Yosys *and* Quartus all accept silently. **Next in the suggested order:
-5 → 6 → 7 → 9**, and item 5 is the big one — it cannot start before the two
-decisions immediately below, because the new encoder is born tied to them.
+Yosys *and* Quartus all accept silently. The two decisions below are taken:
+**YANC stays at 32 bits** and everything above it is parked. **Next in the
+suggested order: 11 → 5 → 6(a) → 9**, all of them about making 32 bits
+consistent.
 
 ---
 
-## Decisions needed before item 5
+## Decisions taken (2026-09-18)
 
-- **Word width tier.** Up to 64 bits (`long long` in the tools, float encoder
-  written without a C-type ceiling) or arbitrary from the start (bignum
-  integers too)? Recommended: 64 now, encoder future-proof. [§3, decision A]
-- **Hidden mantissa bit.** IEEE-style implicit one gives +1 bit at every width
-  but changes the format everywhere (HDL, encoder, decoders, all goldens).
-  Decide before the shared encoder is written. [§1.8]
+- **Word width: 32 bits, for now.** The width sweep
+  ([`Scripts/hw/width_sweep.sh`](Scripts/hw/width_sweep.sh)) found Icarus 13.0
+  miscomputing division above 32 bits: unsigned `/` from 36 bits up, signed `/`
+  in a procedural block above 64. The one form the HDL uses (signed `/` in a
+  continuous assign) is right at every width, but a design that only works
+  because it avoids three simulator bugs is not a base to build on. Nothing
+  above 32 bits is maintained until the simulators are fixed: item 6(b) and
+  item 7 are parked, and no code has to be written to be ready for them.
+  **Re-run the sweep whenever Icarus or Verilator is upgraded**; 64 bits
+  becomes possible when every operator at 64 comes back with 0 errors in both
+  simulators. [§3, decision A]
+- **Hidden mantissa bit: no.** The format keeps its explicit leading one.
+  [§1.8]
 
 ---
 
@@ -104,47 +112,60 @@ exponent) to `{s, e, m}` exactly, ties-to-even, with overflow/underflow
 flags, and produces the `.mif` bit string without a C integer ceiling; both
 `f2mf` copies, the `%f` complex split, the `%.20f` emission and the
 host-`float` range checks are gone; the lexers accept `1e-5`; asmcomp
-validates `NBMANT < 2^(NBEXPO-1)` and the supported ceiling; keeps the
+validates `NBMANT < 2^(NBEXPO-1)` and refuses `NUBITS > 32`; keeps the
 flush-to-zero of sub-normal constants at `#FROUND >= 1` (landed in the old
-`f2mf`, with the `cmmcomp` warning); a fixture with `#NBMANT 40` shows
-constants correct to 40 bits.
+`f2mf`, with the `cmmcomp` warning); a fixture shows constants correct to the
+last mantissa bit at 32/23/8, at a 32-bit format with more mantissa than a
+host `float` (e.g. 32/25/6), and at 16/10/5.
 
-## 6. Word width beyond 32 bits (tier 1: up to 64)
+## 6. ULA unit testbench (a); word width beyond 32 bits (b, parked)
 
-**Status:** open · **Area:** all four tools, Verilator harness, `Scripts/comp2gtkw.c` · **Evidence:** [§2.2–2.5](docs/precision-and-width-review.md#22-asmcomp--the-actual-ceiling)
+### 6(a). Self-checking ULA unit testbench
 
+**Status:** open · **Area:** `Scripts/hw/tb_alu.v`, `Scripts/regress.sh`
+
+A directed regress pass like `ResetCheck`: every float operator, including
+`F_ROT`, `F_SGN`, `F_LES`/`F_GRE`, the `_M` variants, `I2F`/`F2I` at the
+range edges, and the integer operators at their signed edges, at `FROUND`
+0/1/2 and at 16/10/5 and 32/23/8, with the expected values derived in the
+testbench rather than blessed.
+[`Scripts/hw/tb_alu.sh`](Scripts/hw/tb_alu.sh) is the seed of it: shifts,
+`F2I`, the float comparison, `DIV`/`MOD`, four formats × three levels,
+references derived, mutation-checked. What is left is the other operators and
+wiring it into `regress.sh`. Until then levels 1 and 2 are covered only by
+`cmm_fround1/2` and (level 2) the C++ tests.
+
+**Done when:** every ULA operator is in `tb_alu.v` and `regress.sh` runs it.
+
+### 6(b). Word width beyond 32 bits — parked
+
+**Status:** parked by decision (see *Decisions taken*): the simulators do not
+compute division right above 32 bits. Do not write code for it. **Watch:**
+re-run [`Scripts/hw/width_sweep.sh`](Scripts/hw/width_sweep.sh) after every
+Icarus or Verilator upgrade (last run: Icarus 13.0, Verilator 5.048,
+2026-09-18); reopen when 64 bits comes back with 0 errors in both. The
+evidence is in [§2.2–2.5](docs/precision-and-width-review.md#22-asmcomp--the-actual-ceiling)
+and [§2.7](docs/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator).
+
+What reopening it will involve, measured once so it need not be redone:
 `itob(int)`, `v_val` (`int`), cmmcomp's `long` constant folder, cppcomp's
 `long ival` / `(long)strtoull` / `1L << (g_nubits-1)`, `sim_main.cpp`'s
 `(int)top->out` and `comp2gtkw`'s `int` mantissa all cap the word at 32 bits
-(`long` is 32-bit on Windows). cppcomp also seals struct/bitfield layout with
-a fallback of **16**, not `CFG_NUBITS`. APPComp and the HDL need nothing.
-
-**Done when:** integers are `long long` end to end, the Verilator harness
-reads/writes `NUBITS`-bit words, `-Wno-WIDTH` is off while the work is done,
-and fixtures at 48/40/7 and 64/52/11 pass through both front ends under Icarus
-and Verilator, with a host-double reference for the 64-bit case (like
-`test50`). Ships together with a **self-checking ULA unit testbench** (a
-directed regress pass like `ResetCheck`): every float operator, including
-`F_ROT`, `F_SGN`, `F_LES`/`F_GRE`, the `_M` variants, `I2F`/`F2I` at the
-range edges, at `FROUND` 0/1/2 and at 16/10/5, 32/23/8, 64/52/11, with the
-expected values derived in the testbench rather than blessed.
-[`Scripts/hw/tb_alu.sh`](Scripts/hw/tb_alu.sh) is the seed of it: shifts,
-`F2I` and the float comparison, four formats × three levels, references
-derived, mutation-checked. What is left for this item is the other operators
-and wiring it into `regress.sh`. Until then
-levels 1 and 2 are covered only by `cmm_fround1/2` and (level 2) the C++
-tests.
+(`long` is 32-bit on Windows); cppcomp seals struct/bitfield layout with a
+fallback of **16**, not `CFG_NUBITS`; APPComp and the HDL need nothing.
+Fixtures at 48/40/7 and 64/52/11 through both front ends under both
+simulators, with a host-double reference like `test50`; `tb_alu.v`'s
+procedural division reference must be replaced above 64 bits.
 
 ## 7. HDL scaling for wide mantissas
 
-**Status:** open · **Area:** `HDL/ula.v`, `HDL/core.v` · **Evidence:** [§2.1](docs/precision-and-width-review.md#21-hdl--parametric-with-a-handful-of-scaling-issues)
+**Status:** parked with item 6(b) · **Area:** `HDL/ula.v`, `HDL/core.v` · **Evidence:** [§2.1](docs/precision-and-width-review.md#21-hdl--parametric-with-a-handful-of-scaling-issues)
 
 The structural fixes that make a wide mantissa feasible at all (log-depth
 leading-zero tree, explicit divider arrays, single shifters) are item 8 and
-come first. What remains here is the wide-configuration follow-through:
-`NUGAIN` is an untyped (32-bit) parameter in `processor.v`/`core.v`; the
-default parameter sets of `processor.v`, `core.v`, `ula.v` and the three
-tools disagree; and nobody has yet synthesised a 52-bit mantissa.
+are done; so are the typed `NUGAIN` and the one default parameter set
+(items 8.6 and 10.7). What remains only matters above 32 bits: nobody has yet
+synthesised a 52-bit mantissa.
 
 **Constraint:** the ALU is combinational by design — the processor pipeline
 assumes every operation completes in the cycle. No multi-cycle or iterative
@@ -161,12 +182,10 @@ relaxed, a global-stall multi-cycle divider (only `DIV`/`MOD`/`F_DIV`) is
 feasible with an enable on ~10 registers of `core.v` and no compiler change
 (see [§2.6](docs/precision-and-width-review.md#26-critical-path-depth-of-the-alu)).
 
-**Done when:** with the item-8 structure in place, the 64/52/11 configuration
-is synthesised and its depth/Fmax reported next to 32/23/8 (the 105/52-bit
-divider array is the expected limit — its cost is the user's input for
-choosing `NBMANT` per project); `NUGAIN` typed `signed [NUBITS-1:0]`
-everywhere; one default parameter set across `processor.v`, `core.v`,
-`ula.v` and the three tools.
+**Done when (on reopening):** the 64/52/11 configuration is synthesised and
+its depth/Fmax reported next to 32/23/8 (the 105/52-bit divider array is the
+expected limit — its cost is the user's input for choosing `NBMANT` per
+project).
 
 ## 8. ALU datapath restructuring (depth and area)
 
@@ -228,9 +247,10 @@ The polynomial fits are accurate to ~1e-6 (≈20 bits), π/e constants have
 10–12 digits, and cppcomp's `sqrt` runs a fixed 24 Newton iterations; cppcomp
 has no `exp/log/sin/cos/pow` at all.
 
-**Done when:** tables/iterations are selected by `nbmant` (a second, wider
-set for > 23), constants carry ≥ 40 digits, and the transcendental fixtures
-compare against a double reference at 32 and 64 bits.
+**Done when:** tables/iterations are selected by `nbmant` and accurate to the
+last mantissa bit of every 32-bit format (up to 32/25/6), constants carry
+enough digits for it, and the transcendental fixtures compare against a double
+reference at 32/23/8 and 16/10/5. Wider sets wait for item 6(b).
 
 ---
 
@@ -279,6 +299,35 @@ it). The audit found the weak points in the surroundings. In order:
 **Done when:** 1–7 landed; the ISA reference is generated, not hand-written;
 the interrupt and I/O contracts are in `docs/isa.md`; every undefined case in
 the audit's table has a defined, documented result.
+
+## 11. Everything consistent at 32 bits
+
+**Status:** open · **Area:** `HDL/ula.v`, `Compilers/CPPComp` · **Evidence:** [`Scripts/hw/width_sweep.sh`](Scripts/hw/width_sweep.sh), this item
+
+With the width fixed at 32 (see *Decisions taken*), 32 bits has to be right
+everywhere: both simulators, both front ends, the host reference. Known so far:
+
+- (a) **`DIV` of `INT_MIN` by `-1` differs between the simulators.** Icarus
+  returns `INT_MIN` (the wrapped quotient); Verilator returns `0` (its runtime
+  guards the host's divide trap at exactly 32 and 64 bits). Measured by the
+  width sweep at 32 bits. The same program therefore prints different results
+  under `--sim icarus` and `--sim verilator`. Pick one result and make the HDL
+  produce it on both simulators; decide together with the by-zero case of
+  item 10.5, since both are "defined behaviour for `DIV`".
+- (b) **To verify: cppcomp lays out bitfields in 16-bit words when the program
+  has no `#pragma yanc nubits`.** `g_unit->nubits` is `-1` without the pragma
+  and every `t_struct_seal` call (`CPPComp.y`, 8 sites; `types.c:138`) then
+  falls back to 16, while codegen uses `CFG_NUBITS` = 32. Reads and
+  writes agree with each other, so plain code works; a `union` of bitfields
+  and an `int` should differ from the host. Fixture first, then fall back to
+  `CFG_NUBITS`.
+- (c) **To verify: a 32-bit bitfield's mask is undefined behaviour in
+  cppcomp.** `(1L << bf->bit_width) - 1` (`codegen.c:1116`, `1334`) shifts a
+  32-bit `long` by 32 on Windows.
+
+**Done when:** (a) gives the same result under both simulators, with a
+fixture that runs under both; (b) and (c) are either shown harmless by a
+fixture or fixed with one.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

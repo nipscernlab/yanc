@@ -61,6 +61,15 @@ tags consumed by Aurora.
   item 8).
 
 ### Added
+- **`Scripts/hw/width_sweep.sh`** — checks whether Icarus and Verilator
+  compute every integer operator right at a given word width, in continuous
+  assigns and in procedural blocks, against a Python-bigint oracle. Its first
+  run (Icarus 13.0, Verilator 5.048) decided that YANC **stays at 32 bits**:
+  Icarus miscomputes unsigned `/` from 36 bits up and procedural signed `/`
+  above 64, so work beyond 32 bits is parked until a simulator upgrade passes
+  the sweep (`TODO.md` item 6(b)). At 32 bits it found one real inconsistency:
+  `DIV` of `INT_MIN` by `-1` is `INT_MIN` under Icarus and `0` under Verilator
+  (`TODO.md` item 11).
 - **`Scripts/hw/tb_alu.sh`** — a self-checking unit testbench for the shared
   shifter, `F2I` and the float comparison, in four formats (8/4/3 to 64/52/11)
   and at every `#FROUND` level, with the expected values derived in the

@@ -361,10 +361,21 @@ quotient and remainder together and can mux both at one place.
 Two traps found while measuring, both recorded in `Scripts/hw/tb_alu.v`:
 a ternary whose other operand is unsigned (`{NUBITS{1'b1}}`) makes the whole
 expression unsigned, so `in1 / in2` silently becomes an UNSIGNED division —
-wrong for every negative dividend; and Icarus miscomputes a 64-bit signed
-divide in a CONTINUOUS assign while getting it right in a procedural block
-(`-1e12 / 7` came back as `(2^64 - 1e12) / 7`), which the 64-bit work of item 6
-needs to know.
+wrong for every negative dividend (`-1e12 / 7` came back as
+`(2^64 - 1e12) / 7`). The same measurement first blamed Icarus for miscomputing a
+64-bit signed divide in a continuous assign; that was this trap, not Icarus.
+
+The width sweep (Icarus 13.0, Verilator 5.048, Python-bigint oracle, 3000
+vectors per width, every integer operator in both a continuous assign and a
+procedural block) found what Icarus really gets wrong: **unsigned `/`** from 36
+bits up in a continuous assign and from 64 bits up in a procedural one, and
+**procedural signed `/`** above 64 bits. Continuous signed `/`, the only
+division form the HDL uses (`ula_div`, `ula_nrm`; `F_DIV` is an explicit array),
+is right at 32/64/128/256, as is every other operator; procedural `/` is also
+the only slow one (~52 ms per 256-bit divide). Verilator is right everywhere
+except `INT_MIN / -1` at exactly 32 and 64 bits, which it returns as 0 (a guard
+against the host's divide trap) where Icarus returns `INT_MIN`, so the two
+simulators already disagree on that `DIV` today.
 
 **Shifters.** ~~`SHL`, `SHR`, `SRS` are three separate 32-bit barrel
 shifters; `ula_f2i` has two (`<<` and `>>` selected by the exponent sign);
@@ -575,7 +586,16 @@ Recommendation: Tier 1 now, with the float encoder written so that its
 mantissa width is not tied to a C type (it only ever produces a bit string),
 so Tier 2 later is a change in the *integer* paths only.
 
+**Decided (2026-09-18): neither — 32 bits for now.** The width sweep of §2.7
+(`Scripts/hw/width_sweep.sh`) showed Icarus miscomputing division above 32
+bits. YANC's own division form happens to be the one it gets right, but that
+is luck, not a guarantee. Tier 1, Tier 2 and steps 4–6 of the order of work
+below are parked until a re-run of the sweep after a simulator upgrade comes
+back clean at 64 bits (`TODO.md` item 6(b)).
+
 ### Decision B — hidden bit (1.8), yes or no, before anything else is touched.
+
+**Decided (2026-09-18): no.** The format keeps its explicit leading one.
 
 ### Order of work
 

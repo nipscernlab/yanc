@@ -14,6 +14,7 @@ All paths assume the repo at `/c/nipscern/yanc` under an **MSYS2 login shell**
 | `area.sh` | yosys | LUT4 count and critical-path depth per operator set |
 | `fmax.sh` | Quartus Prime Lite | real Fmax and ALMs of a processor the regress already built |
 | `tb_fdiv.v` | iverilog | the divider array against Verilog's `/` and `%`, 20000 random operands |
+| `width_sweep.sh` (`width_sweep/`) | iverilog, verilator, python3 | does each simulator compute every integer operator right at a given word width, in continuous assigns and in procedural blocks, against a Python-bigint oracle? Re-run after upgrading Icarus or Verilator: it decides when YANC may go beyond 32 bits (`TODO.md` item 6(b)) |
 | `tb_alu.sh` (`tb_alu.v`) | iverilog | the shared shifter, `F2I` and the float comparison against references derived in the testbench, in four formats (8/4/3 … 64/52/11) × three `#FROUND` levels. The place to add an operator whose only check today is a blessed golden |
 
 ## Typical use
@@ -28,6 +29,7 @@ FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp              # same program force
 iverilog -g2012 -s tb -o tb.vvp Scripts/hw/tb_fdiv.v HDL/ula.v && vvp -n tb.vvp
 bash Scripts/hw/tb_alu.sh                                   # after any ula.v edit
 bash Scripts/hw/tb_alu.sh 50000                             # longer run
+bash Scripts/hw/width_sweep.sh                              # after a simulator upgrade (32 64 128)
 ```
 
 `tb_alu.v` prints an `info:` count of comparisons that disagree with the true

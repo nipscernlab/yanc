@@ -87,9 +87,13 @@ ula_mod #(NUBITS) dut_mod (d1, d2, dr);
 // unsigned), which is wrong for negative dividends. It has to come from one
 // explicit array that yields quotient and remainder together.
 //
-// The reference below runs in a procedural context on purpose: a 64-bit signed
-// divide inside a CONTINUOUS assign is miscomputed by Icarus (measured), so a
-// wire-based reference would test the simulator, not the design.
+// The reference below is a procedural signed divide, which Icarus 13 computes
+// correctly up to 64 bits -- the widest format run here. Above 64 bits it does
+// not (a few quotients differ in their low 32 bits), while the continuous signed
+// divide ula_div uses stays right at any width; so a wider format needs another
+// reference. Never use an unsigned `/` in a check: Icarus gets it wrong from
+// 36 bits up in a continuous assign and from 64 bits up in a procedural one
+// (measured with a Python bigint oracle, 3000 vectors per width).
 function signed [NUBITS-1:0] ref_div;
 	input signed [NUBITS-1:0] a, b;
 	begin ref_div = a / b; end
