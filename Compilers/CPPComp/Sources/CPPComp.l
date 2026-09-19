@@ -258,6 +258,10 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 
   /* identifiers (typedef hack) ----------------------------------------- */
 
+{IDENTIF}/[ \t]*"::"     { /* a name followed by `::`: a type stays TYPEDEF_NAME */
+                           yylval.sval = xstrdup_n(yytext, yyleng);
+                           int t = classify_ident(yytext);
+                           return t == IDENT ? NS_IDENT : t; }
 {IDENTIF}                { yylval.sval = xstrdup_n(yytext, yyleng); return classify_ident(yytext); }
 
   /* multi-char operators ----------------------------------------------- */

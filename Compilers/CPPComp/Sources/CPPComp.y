@@ -920,6 +920,10 @@ static type *class_close(void)
 %token <ival>  INT_LIT CHAR_LIT
 %token <fval>  FLOAT_LIT
 %token <sval>  IDENT TYPEDEF_NAME STRING_LIT TEMPLATE_NAME
+/* an IDENT the lexer sees followed by `::` (a namespace, or an enum class's
+   name): only such a name can start a qualified type, so after `T x(` a plain
+   IDENT starts constructor arguments, not a parameter type -- `T x(v);` */
+%token <sval>  NS_IDENT
 
 %token KW_VOID KW_INT KW_FLOAT KW_CHAR KW_UNSIGNED KW_SIGNED
 %token KW_SHORT KW_LONG KW_DOUBLE KW_BOOL
@@ -937,7 +941,7 @@ static type *class_close(void)
 %token TOK_AMPEQ TOK_PIPEEQ TOK_CARETEQ TOK_SHLEQ TOK_SHREQ
 %token TOK_ARROW TOK_ELLIPSIS
 
-%type <sval>  qualified_id op_name
+%type <sval>  qualified_id op_name ns_name
 %type <typ>   type_specifier struct_specifier class_specifier union_specifier enum_specifier base_type decl_specifiers base_clause
 %type <intval> pointers storage_or_qual_list storage_or_qual
 %type <intval> builtin_spec builtin_type_seq
@@ -1017,8 +1021,14 @@ tparam:    /* IDENT first time; TYPEDEF_NAME if this param name was used before 
 /* a namespace-qualified name N::x (or A::B::x); namespaces are transparent on
    this target, so qualification collapses to the final name. */
 qualified_id:
-      IDENT TOK_SCOPE IDENT          { free($1); $$ = $3; }
-    | qualified_id TOK_SCOPE IDENT   { free($1); $$ = $3; }
+      ns_name TOK_SCOPE IDENT        { free($1); $$ = $3; }
+    ;
+
+/* the namespace part of a qualified name, `A` or `A::B` (each name lexed as
+   NS_IDENT, being followed by `::`); only the last name is kept */
+ns_name:
+      NS_IDENT                       { $$ = $1; }
+    | ns_name TOK_SCOPE NS_IDENT     { free($1); $$ = $3; }
     ;
 
 /* ----- declarations ------------------------------------------------------- */
@@ -1110,7 +1120,7 @@ type_specifier:
           else     { $$ = instantiate_ctmpl_mixed(ct, $3.targs, $3.vals, $3.isval, $3.n); }
           free($1);
       }
-    | IDENT TOK_SCOPE TYPEDEF_NAME '<' ct_mixed_arg_list '>' {
+    | ns_name TOK_SCOPE TYPEDEF_NAME '<' ct_mixed_arg_list '>' {
           /* namespace-qualified mixed-arg instantiation `N::Name<args...>` */
           free($1);
           ctmpl *ct = find_ctmpl($3);
@@ -1118,7 +1128,7 @@ type_specifier:
           else     { $$ = instantiate_ctmpl_mixed(ct, $5.targs, $5.vals, $5.isval, $5.n); }
           free($3);
       }
-    | IDENT TOK_SCOPE TYPEDEF_NAME           {
+    | ns_name TOK_SCOPE TYPEDEF_NAME        {
           /* namespace-qualified type N::Type (transparent -> resolve Type) */
           free($1);
           sym *s = st_find($3);
@@ -2359,14 +2369,14 @@ primary_expr:
           c->gtypes = $3.arr; c->n_gtypes = $3.n;
           $$ = c;
       }
-    | IDENT TOK_SCOPE TEMPLATE_NAME '<' type_arg_list '>' '(' argument_list ')' {
+    | ns_name TOK_SCOPE TEMPLATE_NAME '<' type_arg_list '>' '(' argument_list ')' {
           /* namespace-qualified explicit template call N::fn<T...>(args) */
           free($1);
           expr *c = ast_call(ast_ident($3, yylineno), $8.arr, $8.n, yylineno);
           c->gtypes = $5.arr; c->n_gtypes = $5.n;
           $$ = c;
       }
-    | IDENT TOK_SCOPE TEMPLATE_NAME          { free($1); $$ = ast_ident($3, yylineno); }  /* N::fn deduced */
+    | ns_name TOK_SCOPE TEMPLATE_NAME       { free($1); $$ = ast_ident($3, yylineno); }  /* N::fn deduced */
     | TYPEDEF_NAME '(' argument_list ')'     {
           /* T(args) — a temporary object constructed on the stack */
           sym *s = st_find($1);
@@ -2397,7 +2407,7 @@ primary_expr:
           $$ = ast_call(ast_ident(mname, yylineno), $8.arr, $8.n, yylineno);
           free($1); free($6);
       }
-    | IDENT TOK_SCOPE TYPEDEF_NAME '<' ct_mixed_arg_list '>' TOK_SCOPE IDENT '(' argument_list ')' {
+    | ns_name TOK_SCOPE TYPEDEF_NAME '<' ct_mixed_arg_list '>' TOK_SCOPE IDENT '(' argument_list ')' {
           /* `N::Class<args>::static_method(args)` — namespace transparent. */
           free($1);
           ctmpl *ct = find_ctmpl($3);

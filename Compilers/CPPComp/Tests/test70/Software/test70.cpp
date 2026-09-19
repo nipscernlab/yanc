@@ -67,7 +67,7 @@ void main(void) {
     Out ou;
     out(0, ou.inner.v);                         // 5: the member-init list's argument
     P2 q = {3, 4};
-    HasP hp = HasP(q);                          // (`HasP hp(q);` is TODO 11(e))
+    HasP hp(q);
     out(0, hp.pt.x + hp.pt.y);                  // 7
     Cfg *hc = new Cfg;
     out(0, hc->gain);                           // 5

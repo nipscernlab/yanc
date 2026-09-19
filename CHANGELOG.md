@@ -95,6 +95,17 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **`T x(v);` parses when the first argument starts with a variable**
+  (`cppcomp`): `Filter f(k);`, `Filter f(k + 1);` and `Filter g_f(g);` were
+  syntax errors, while a literal argument worked. After `T x(` an identifier
+  could still have begun a namespace-qualified parameter type
+  (`std::uint8_t`), so the parser took the function-prototype path. The
+  lexer now returns a name followed by `::` as a token of its own
+  (`NS_IDENT`), so a plain identifier there starts the arguments; qualified
+  names, chains like `blind::dsp::f` included, parse as before. A type name
+  as the first argument still reads as a prototype, as in C++; a
+  namespace-qualified variable there (`T x(N::v);`) does too, which C++
+  would not (`TODO.md` 11(e)). New fixture `test71`.
 - **Every C++ object is constructed** (`cppcomp`). A constructor ran only for
   a plain local object and `new T`; a global object (`Filter g_f;`,
   `G g2(9);`), a static local, an array element, `new T[n]` and a member

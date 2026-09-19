@@ -336,9 +336,9 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   globals, not when control first reaches its declaration. Only a constructor
   with side effects shows it (`test70` compares a construction count, not the
   order). C++'s rule needs a guard flag and a test at every entry.
-- (e) **`T x(v);` with a variable as the first argument is a syntax error**
-  (`HasP hp(q);`), while a literal works (`G g(9);`, `Point p(3, 4);`): the
-  parser takes the function-prototype path. `T x = T(v);` is the workaround.
+- (e) **`T x(N::v);` parses as a function prototype** when the first
+  argument is a namespace-qualified variable; C++ decides by name lookup and
+  declares an object. A plain variable (`T x(v);`) works since `test71`.
 
 **Done when:** (a) gives the same result under both simulators, with a
 fixture that runs under both; (b) and the choice in (c) are decided and
