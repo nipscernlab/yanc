@@ -314,32 +314,44 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   under `--sim icarus` and `--sim verilator`. Pick one result and make the HDL
   produce it on both simulators; decide together with the by-zero case of
   item 10.5, since both are "defined behaviour for `DIV`".
-- (b) **Signed bitfields lose their sign in cppcomp.** A read shifts the
-  word down and masks it, and never sign-extends, so `int s : 4` holding `-1`
-  reads `15` and `-8` reads `8` (host g++: `-1`, `-8`), and the error carries
-  into arithmetic. Measured 2026-09-18. The field type knows its signedness
-  (`type.is_signed`), so the read of a signed field narrower than the word
-  needs the extension (e.g. `(v ^ s) - s` with `s` the field's sign bit).
-- (c) **`unsigned` ↔ `float` conversions read the word as signed in cppcomp.**
+- (b) **`unsigned` ↔ `float` conversions read the word as signed in cppcomp.**
   The ULA is signed-only; cppcomp compensates everywhere else (comparisons
   flip bit 31 before the signed compare, `>>` picks `SHR` over `SRS`, `/` and
-  `%` call the software `udivmod`), but `coerce_acc` and the cast path
-  (`codegen.c:1001-1002`, `1650-1653`) emit a bare `I2F`/`F2I`. Measured
-  2026-09-18 against host g++: `float f = 3000000000u` gives `-1294967296.0`,
-  and `unsigned g = 4e9f` saturates to `2147483647`. Values below 2^31 are
-  unaffected. Needs an unsigned path only on those conversions (e.g. if bit 31
-  is set, convert `(u >> 1) | (u & 1)` and double it; subtract 2^31 before
-  `F2I` for floats at or above it).
-- (d) **Display: an `unsigned` at or above 2^31 prints negative.** The
-  testbench writes every output word as signed decimal (`hdl.c:772`
-  `%0d`; the Verilator harness `sim_main.cpp:102` `%d`), so
-  `out(0, 3000000000u)` puts `-1294967296` in `output_0.txt`. The bits are
-  right; a comparison with a host printout is not. Decide whether this is
-  documented or the port learns the signedness of what it prints.
+  `%` call the software `udivmod`; all covered by `test66`), but `coerce_acc`
+  and the cast path (`codegen.c:1001-1002`, `1650-1653`) emit a bare
+  `I2F`/`F2I`. Measured 2026-09-18 against host g++: `float f = 3000000000u`
+  gives `-1294967296.0`, and `unsigned g = 4e9f` saturates to `2147483647`.
+  Values below 2^31 are unaffected. Needs an unsigned path only on those
+  conversions (e.g. if bit 31 is set, convert `(u >> 1) | (u & 1)` and double
+  it; subtract 2^31 before `F2I` for floats at or above it).
+- (c) **I/O of an `unsigned` at or above 2^31.** The testbench writes every
+  output word as signed decimal (`hdl.c:772` `%0d`; the Verilator harness
+  `sim_main.cpp:102` `%d`), so `out(0, 3000000000u)` puts `-1294967296` in
+  `output_0.txt`: the bits are right, a comparison with a host printout is
+  not. Input is parsed with `%d` on both sides (`hdl.c:695` `$fscanf`,
+  `sim_main.cpp:48` `fscanf` into an `int`, undefined above `INT_MAX`), so
+  the two simulators may read such an input differently — to verify. Decide
+  whether this is documented or the port learns the signedness it carries.
+- (d) **8-, 16- and 64-bit integer types are 32-bit words.** `<cstdint>` maps
+  `int8_t`/`uint8_t`/`int16_t`/`uint16_t`/`int64_t`/`uint64_t` to `int`/
+  `unsigned`, and `char`, `short` and `long long` are one word too. Measured:
+  `uint8_t b = 255; b = b + 1` gives 256 (host 0), `int8_t` 127 + 1 gives 128
+  (host -128), `short` and `uint16_t` likewise, `long long` 3000000000 wraps.
+  A 32-bit `char`/`short` is legal C++ (a `CHAR_BIT == 32` target, like
+  several DSPs); an exact-width type that is not exact, and a 32-bit
+  `long long` (the standard requires at least 64), are not. Decide per type:
+  refuse it (a compile error instead of a silent difference) or emulate it
+  (mask or sign-extend on every store, paid only by programs that use it).
+  64-bit arithmetic itself belongs to item 6(b).
+- (e) **`bool` is not normalised to 0/1.** `bool` is an `unsigned` word and
+  a conversion stores the value as is: `bool b = 5` holds 5, and
+  `bool b = 0.5f` holds 0 because `F2I` truncates (host: 1 and 1). A
+  conversion to `bool` must be `!= 0`, and for a float a float comparison
+  with 0.0.
 
 **Done when:** (a) gives the same result under both simulators, with a
-fixture that runs under both; (b) and (c) match the host in fixtures like
-`test65`; (d) is decided and documented.
+fixture that runs under both; (b), (d) and (e) have their lines in `test66`,
+matching the host; (c) and the choice in (d) are decided and documented.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

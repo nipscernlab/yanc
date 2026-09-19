@@ -94,6 +94,18 @@ tags consumed by Aurora.
   whose bitfields fit in 16 bits get the same code as before. New fixture
   `test65`, against host g++ values (the old compiler got 8 of its 11 lines
   wrong).
+- **Signed C++ bitfields keep their sign** (`cppcomp`): a read shifted and
+  masked the field but never sign-extended it, so `int s : 4` holding `-1`
+  read `15` and `-8` read `8`, and the error carried into arithmetic. A read
+  of a signed field narrower than the word now ends with `(v ^ s) - s`, `s`
+  the field's sign bit (two instructions, only on such fields). New fixture
+  `test66`, the first test dedicated to signed/unsigned on the signed-only
+  ALU: besides the bitfields it pins the compensations cppcomp already made
+  for `unsigned` and had no test for (bit-31-flipped comparisons, the
+  software divider behind `/` and `%`, `SHR` vs `SRS`, C's int/unsigned
+  mixing). Expected values from host g++; the old compiler gets 10 of its 34
+  lines wrong. What still differs from the host is listed in `TODO.md`
+  item 11.
 - **Comparison of a very small value against a much larger one** at `#FROUND`
   0 and 1: the alignment shifted the smaller operand out of existence, so
   anything more than `#NBMANT` binary orders below the other operand compared

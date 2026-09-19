@@ -1344,6 +1344,12 @@ static void gen_expr(expr *e)
                 emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHR");
             }
             emit("AND %ld", bf_mask(bf));
+            if (bf->ftype && bf->ftype->kind == TY_INT && bf->ftype->is_signed &&
+                bf->bit_width < g_nubits) {         // signed field: sign-extend, (v ^ s) - s
+                long s = bf_word(1ULL << (bf->bit_width - 1));
+                emit("XOR %ld", s);
+                emit("ADD %ld", -s);
+            }
             return;
         }
         // a field of array/struct type decays to its address (no load)
