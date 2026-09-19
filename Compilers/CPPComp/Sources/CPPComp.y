@@ -27,6 +27,7 @@ void  yyerror(const char *s);
 
 unit *g_unit = NULL;    // populated as we parse, used by lexer for #pragma yanc
 int   g_str_len = 0;    // set by lexer alongside yylval.sval for STRING_LIT
+int   g_lit_uns = 0;    // set by lexer alongside yylval.ival for INT_LIT: an unsigned literal
 
 // Word width a struct packs its bitfields into: the program's `#pragma yanc
 // nubits`, else the build's target width -- the fallback codegen uses for
@@ -234,7 +235,7 @@ static expr *lambda_finish(stmt *body)
     type *ret = NULL;
     if (r) {
         if      (r->kind == E_IDENT)     ret = lambda_find_decl(body, r->sval);
-        else if (r->kind == E_INT_LIT)   ret = t_int();
+        else if (r->kind == E_INT_LIT)   ret = r->is_uns ? t_uint() : t_int();
         else if (r->kind == E_FLOAT_LIT) ret = t_float();
     }
     if (!ret)
@@ -694,7 +695,7 @@ static type *resolve_builtin(int f)
     if (f & TS_VOID)                 return t_void();
     if (f & TS_DOUBLE)               return t_double();  // double/long double: one float word
     if (f & TS_FLOAT)                return t_float();
-    if (f & TS_BOOL)                 return t_uint();
+    if (f & TS_BOOL)                 return t_bool();    // an unsigned word holding 0 or 1
     if (f & TS_CHAR)                 return (f & TS_UNSIGN) ? t_uint() : t_char();
     if (f & TS_LONG2)                return (f & TS_UNSIGN) ? t_ullong() : t_llong();  // one int word
     return (f & TS_UNSIGN) ? t_uint() : t_int();         // short/int/long
@@ -2249,7 +2250,7 @@ primary_expr:
           if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); free($1); }
           else $$ = ast_ident($1, yylineno);
       }
-    | INT_LIT                                { $$ = ast_int_lit($1, yylineno); }
+    | INT_LIT                                { $$ = ast_int_lit($1, yylineno); $$->is_uns = g_lit_uns; }
     | FLOAT_LIT                              { $$ = ast_float_lit($1, yylineno); }
     | CHAR_LIT                               { $$ = ast_char_lit($1, yylineno); }
     | STRING_LIT                             { $$ = ast_string_lit($1, g_str_len, yylineno); }

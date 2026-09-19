@@ -4,13 +4,26 @@
 // bit 31 of both operands before the signed compare, `/` and `%` call the
 // software divider (udivmod), `>>` picks SHR (logical) over SRS (arithmetic),
 // and int -> unsigned mixes follow C's usual arithmetic conversions. Expected
-// values come from host g++. Also signed bitfields, which were read without
-// sign extension (`int s : 4` holding -1 read 15).
-// Not here yet (TODO.md item 11): unsigned <-> float at or above 2^31, the
-// display of unsigned words at or above 2^31, 8/16/64-bit integer types and
-// bool normalisation. Each joins this test when it lands.
+// values come from host g++ (built with -Wno-narrowing: two initializer lists
+// below convert on purpose). Also signed bitfields, which were read without
+// sign extension (`int s : 4` holding -1 read 15), and every conversion site:
+// argument, return, cast, initializer, assignment, aggregate, bitfield store,
+// template instance. Arguments were never converted (a float passed to an int
+// parameter arrived as its raw bits), unsigned <-> float went through the
+// signed I2F/F2I, and bool held whatever was stored in it.
+// Not here yet (TODO.md item 11): the display of unsigned words at or above
+// 2^31 and the 8/16-bit integer types. Each joins this test when it lands.
 struct BF { int s : 4; unsigned u : 4; int one : 1; int mid : 7; };
 union  BU { unsigned raw; BF f; };
+struct BB { bool flag : 1; int n : 8; };
+
+float    twice_f(float x)  { return x * 2.0f; }
+int      plus1(int x)      { return x + 1; }
+bool     pass_b(bool b)    { return b; }
+bool     ret_b(void)       { return 7; }
+unsigned ret_u(float x)    { return x; }
+float    ret_f(unsigned u) { return u; }
+template <class T> float to_f(T v) { return v; }
 
 void main(void) {
     // comparisons
@@ -76,4 +89,51 @@ void main(void) {
     out(0, (int)b.raw);              // 14
     b.raw = 10;                      // bits 0..3 = 1010
     out(0, b.f.s);                   // -6
+
+    // conversions
+    float f35 = 3.5e9f; int i5 = 5;
+    out(0, (int)twice_f(-3));        // -6: int -> float argument
+    out(0, plus1(2.9f));             // 3: float -> int argument
+    out(0, (int)pass_b(5));          // 1: int -> bool argument
+    out(0, (int)ret_b());            // 1: int -> bool return
+    out(0, (int)(ret_u(f35) / 1000u));      // 3500000: float -> unsigned return
+    out(0, (int)(ret_f(big) / 1000.0f));    // 3000000: unsigned -> float return
+    out(0, (int)(to_f(big) / 1000.0f));     // 3000000: in a template instance
+    out(0, (int)((float)big / 1000.0f));    // 3000000: casts
+    out(0, (int)((unsigned)f35 / 1000u));   // 3500000
+    out(0, (int)(bool)i5);         // 1
+    out(0, (int)(bool)0.25f);        // 1
+    float fz = 0.0f;
+    out(0, (int)(bool)fz);           // 0
+    float fa = big;
+    out(0, (int)(fa / 1000.0f));     // 3000000: initializers and assignment
+    unsigned ua = f35;
+    out(0, (int)(ua / 1000u));       // 3500000
+    ua = 4.0e9f;
+    out(0, (int)(ua / 1000u));       // 4000000
+    fa = 4294967295u;
+    out(0, (int)(fa / 1000.0f));     // 4294967: rounds up to 2^32
+    unsigned odd = 2147483649u; float fo = odd;
+    out(0, (int)(fo / 1000.0f));     // 2147483: 2^31 + 1 rounds to 2^31
+    unsigned small = 16777217u; float fs = small;
+    out(0, (int)fs);                 // 16777216: the float rounding, not the conversion
+    bool ba = i5;
+    out(0, (int)ba);                 // 1
+    bool bf = 0.25f;
+    out(0, (int)bf);                 // 1
+    ba = 9;
+    out(0, (int)ba);                 // 1
+    ba = i5 > 9;
+    out(0, (int)ba);                 // 0
+    bool barr[2] = {5, 0};
+    out(0, (int)barr[0]);            // 1: aggregates
+    out(0, (int)barr[1]);            // 0
+    float farr[1] = {3000000000u};
+    out(0, (int)(farr[0] / 1000.0f)); // 3000000
+    float mix = big * 0.5f;
+    out(0, (int)(mix / 1000.0f));    // 1500000: an unsigned operand of a float operation
+    BB bb;
+    bb.flag = 2; bb.n = 2.7f;
+    out(0, (int)bb.flag);            // 1: bitfield stores
+    out(0, bb.n);                    // 2
 }

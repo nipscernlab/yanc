@@ -314,17 +314,7 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   under `--sim icarus` and `--sim verilator`. Pick one result and make the HDL
   produce it on both simulators; decide together with the by-zero case of
   item 10.5, since both are "defined behaviour for `DIV`".
-- (b) **`unsigned` ↔ `float` conversions read the word as signed in cppcomp.**
-  The ULA is signed-only; cppcomp compensates everywhere else (comparisons
-  flip bit 31 before the signed compare, `>>` picks `SHR` over `SRS`, `/` and
-  `%` call the software `udivmod`; all covered by `test66`), but `coerce_acc`
-  and the cast path (`codegen.c:1001-1002`, `1650-1653`) emit a bare
-  `I2F`/`F2I`. Measured 2026-09-18 against host g++: `float f = 3000000000u`
-  gives `-1294967296.0`, and `unsigned g = 4e9f` saturates to `2147483647`.
-  Values below 2^31 are unaffected. Needs an unsigned path only on those
-  conversions (e.g. if bit 31 is set, convert `(u >> 1) | (u & 1)` and double
-  it; subtract 2^31 before `F2I` for floats at or above it).
-- (c) **I/O of an `unsigned` at or above 2^31.** The testbench writes every
+- (b) **I/O of an `unsigned` at or above 2^31.** The testbench writes every
   output word as signed decimal (`hdl.c:772` `%0d`; the Verilator harness
   `sim_main.cpp:102` `%d`), so `out(0, 3000000000u)` puts `-1294967296` in
   `output_0.txt`: the bits are right, a comparison with a host printout is
@@ -332,7 +322,7 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   `sim_main.cpp:48` `fscanf` into an `int`, undefined above `INT_MAX`), so
   the two simulators may read such an input differently — to verify. Decide
   whether this is documented or the port learns the signedness it carries.
-- (d) **8- and 16-bit integer types are 32-bit words.** `<cstdint>` maps
+- (c) **8- and 16-bit integer types are 32-bit words.** `<cstdint>` maps
   `int8_t`/`uint8_t`/`int16_t`/`uint16_t` to `int`/`unsigned`, and `char` and
   `short` are one word too. Measured: `uint8_t b = 255; b = b + 1` gives 256
   (host 0), `int8_t` 127 + 1 gives 128 (host -128), `short` and `uint16_t`
@@ -342,16 +332,18 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   the 64-bit types, or emulate it (mask or sign-extend on every store, paid
   only by programs that use it). The 64-bit types are decided: one word, with
   a warning at every variable (`test67`).
-- (e) **`bool` is not normalised to 0/1.** `bool` is an `unsigned` word and
-  a conversion stores the value as is: `bool b = 5` holds 5, and
-  `bool b = 0.5f` holds 0 because `F2I` truncates (host: 1 and 1). A
-  conversion to `bool` must be `!= 0`, and for a float a float comparison
-  with 0.0.
+- (d) **Default member initializers need a user constructor.** In
+  `struct E { int k = 5; };`, `E e;` and `new E` leave `k` at 0 (host: 5); the
+  initializer is only replayed inside constructor bodies, and a class without
+  one gets none. Measured 2026-09-19.
+- (e) **A `struct` cannot declare a constructor**: `struct S { S() {} };` is a
+  syntax error, while the same body in a `class` compiles. C++ makes the two
+  keywords differ only in default access.
 
 **Done when:** (a) gives the same result under both simulators, with a
-fixture that runs under both; (b), (d) and (e) have their lines in `test66`
-(or, for (d), a warning or an error like `test67`'s), matching the host; (c)
-and the choice in (d) are decided and documented.
+fixture that runs under both; (b) and the choice in (c) are decided and
+documented, and (c) has its lines in `test66` (or a warning or an error like
+`test67`'s); (d) and (e) have fixtures that match the host.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

@@ -37,6 +37,9 @@ static FILE *f_line  = NULL;
 static int   cg_line = -1;
 static int   g_nubits  = 32;     // effective word width (for unsigned compares)
 static int   g_uses_udiv = 0;    // an unsigned / or % was emitted -> emit _udivmod
+static int   g_uses_u2f  = 0;    // an unsigned -> float conversion was emitted -> emit u2f
+static int   g_uses_f2u  = 0;    // a float -> unsigned conversion was emitted -> emit f2u
+static int   g_nbmant    = 23;   // mantissa width (a float is zero iff its mantissa is)
 static int   g_any_recursive = 0; // some function needs stack frames
 static int   g_uses_heap = 0;    // malloc/free/new/delete used -> emit heap runtime
 #ifndef CFG_HEAPSZ
@@ -659,7 +662,8 @@ static type *infer_type(expr *e)
     if (!e) return NULL;
     if (e->etype) return e->etype;
     switch (e->kind) {
-    case E_INT_LIT: case E_CHAR_LIT: e->etype = t_int(); break;
+    case E_INT_LIT:  e->etype = e->is_uns ? t_uint() : t_int(); break;
+    case E_CHAR_LIT: e->etype = t_int(); break;
     case E_FLOAT_LIT: e->etype = t_float(); break;
     case E_STRING_LIT: e->etype = t_ptr(t_char()); break;
     case E_IDENT: {
@@ -993,13 +997,34 @@ static long bf_word (unsigned long long v)    { return (long)(int)(unsigned)v; }
 static long bf_mask (const strct_field *bf)   { return bf_word(bf_ones(bf)); }                    // value bits, at bit 0
 static long bf_clear(const strct_field *bf)   { return bf_word(~(bf_ones(bf) << bf->bit_pos)); }  // all but the field's bits
 
-// implicit int<->float conversion of the value already in acc, given its source
-// type `have` and whether the destination wants float.
+// Convert the value in acc from type `have` to type `want` (either NULL:
+// nothing to do). The ULA's I2F/F2I are signed, so an unsigned word goes
+// through the u2f/f2u helpers (emitted once, only when used). A conversion to
+// bool is `!= 0`: an integer or pointer through LIN;LIN, a float by its
+// mantissa (a YANC float is zero exactly when its mantissa is).
+static void coerce_to(type *have, type *want)
+{
+    if (!have || !want || want->tparam || have->tparam) return;
+    int hf = have->kind == TY_FLOAT, wf = want->kind == TY_FLOAT;
+    if (want->is_bool) {
+        if (have->is_bool) return;
+        if (hf) emit("AND %ld", bf_word((1ULL << g_nbmant) - 1));
+        if (hf || have->kind == TY_INT || have->kind == TY_PTR) { emit("LIN"); emit("LIN"); }
+        return;
+    }
+    if (wf && !hf && have->kind == TY_INT) {
+        if (!have->is_signed && !have->is_bool) { emit("CAL u2f"); g_uses_u2f = 1; }
+        else emit("I2F");
+    } else if (!wf && hf && want->kind == TY_INT) {
+        if (!want->is_signed) { emit("CAL f2u"); g_uses_f2u = 1; }
+        else emit("F2I");
+    }
+}
+
+// the old two-way form, for operands: int -> float, or float -> int
 static void coerce_acc(type *have, int want_float)
 {
-    int hf = have && have->kind == TY_FLOAT;
-    if (want_float && !hf)      emit("I2F");
-    else if (!want_float && hf) emit("F2I");
+    coerce_to(have, want_float ? t_float() : t_int());
 }
 
 // evaluate e into acc, then coerce to float (want_float) or int.
@@ -1007,6 +1032,32 @@ static void gen_expr_num(expr *e, int want_float)
 {
     gen_expr(e);
     coerce_acc(infer_type(e), want_float);
+}
+
+// e already evaluates to 0 or 1: a comparison, a logical operator, a bool
+static int expr_is_01(expr *e)
+{
+    if (e->kind == E_BINOP)
+        return e->op == OP_EQ || e->op == OP_NE || e->op == OP_LT || e->op == OP_GT ||
+               e->op == OP_LE || e->op == OP_GE || e->op == OP_LAND || e->op == OP_LOR;
+    if (e->kind == E_UNOP) return e->op == OP_LNOT;
+    type *t = infer_type(e);
+    return t && t->is_bool;
+}
+
+// evaluate e into acc as a value of type `want` (the destination of an
+// assignment, initializer, argument or return)
+static void gen_expr_to(expr *e, type *want)
+{
+    if (want && want->is_bool) {
+        if (e->kind == E_INT_LIT)   { emit("LOD %d", e->ival != 0);  return; }  // folded
+        if (e->kind == E_FLOAT_LIT) { emit("LOD %d", e->fval != 0);  return; }
+        gen_expr(e);
+        if (!expr_is_01(e)) coerce_to(infer_type(e), want);
+        return;
+    }
+    gen_expr(e);
+    coerce_to(infer_type(e), want);
 }
 
 // copy an n-word struct: dest is an lvalue, src an expression that evaluates to
@@ -1089,8 +1140,15 @@ static void gen_push_arg(expr *arg)
 // address of the argument lvalue rather than its value.
 static void gen_arg(expr *arg, type *ptype)
 {
-    if (ptype && ptype->is_ref) { gen_addr(arg); emit("PSH"); }
-    else gen_push_arg(arg);
+    if (ptype && ptype->is_ref) { gen_addr(arg); emit("PSH"); return; }
+    type *at = infer_type(arg);
+    if (ptype && (ptype->kind == TY_INT || ptype->kind == TY_FLOAT) &&
+        at && at->kind != TY_STRUCT) {              // a scalar: convert it to the parameter's type
+        gen_expr_to(arg, ptype);
+        emit("PSH");
+        return;
+    }
+    gen_push_arg(arg);
 }
 
 // ---- store: lv = val -------------------------------------------------------
@@ -1136,7 +1194,7 @@ static void gen_store(expr *lv, expr *val)
             emit("LOD %s", ta); emit("LDA");        // acc = old word
             emit("AND %ld", clear);                 // clear the field's bits
             emit("PSH");                            // stack: [&word, cleared]
-            gen_expr(val);
+            gen_expr_to(val, bf->ftype);            // e.g. 2.7f -> 2, 5 -> 1 for a bool field
             emit("AND %ld", mask);                  // value & field-mask
             if (bf->bit_pos > 0) {                  // shift left by bit_pos (stack form)
                 emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHL");
@@ -1152,7 +1210,7 @@ static void gen_store(expr *lv, expr *val)
         sym *s = st_find(lv->sval);
         if (s && !s->is_frame && s->stype && !s->stype->is_ref &&
             s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
-            gen_expr_num(val, s->stype->kind == TY_FLOAT);
+            gen_expr_to(val, s->stype);
             emit("SET %s", s->asm_name);
             return;
         }
@@ -1164,16 +1222,15 @@ static void gen_store(expr *lv, expr *val)
             type *bt = s->stype;
             int elem_sz = type_size_words(bt->base);
             if (elem_sz == 1) {
-                int vf = bt->base && bt->base->kind == TY_FLOAT;
                 // constant index -> SET_V base k (offset baked in), no index
                 // compute / PSH / indirect STI.
                 if (lv->b->kind == E_INT_LIT && lv->b->ival >= 0) {
-                    gen_expr_num(val, vf);
+                    gen_expr_to(val, bt->base);
                     emit("SET_V %s %ld", s->asm_name, lv->b->ival);
                 } else {
                     gen_expr(lv->b);              // index → acc
                     emit("PSH");
-                    gen_expr_num(val, vf);
+                    gen_expr_to(val, bt->base);
                     emit("STI %s", s->asm_name);
                 }
                 return;
@@ -1185,7 +1242,7 @@ static void gen_store(expr *lv, expr *val)
         type *lvt = infer_type(lv);
         gen_addr(lv);
         emit("PSH");
-        gen_expr_num(val, lvt && lvt->kind == TY_FLOAT);
+        gen_expr_to(val, lvt);
         emit("STA");
     }
 }
@@ -1649,16 +1706,13 @@ static void gen_expr(expr *e)
     case E_CAST: {
         type *from = infer_type(e->a);
         type *to   = e->target_t;
-        int i2f = from && to && type_is_int(from)   && type_is_float(to);
-        int f2i = from && to && type_is_float(from) && type_is_int(to);
-        // int<->float cast of a plain memory variable -> the _M conversion form
+        // signed int<->float cast of a plain memory variable -> the _M form
+        int i2f = from && to && type_is_int(from) && from->is_signed && type_is_float(to);
+        int f2i = from && to && type_is_float(from) && type_is_int(to) && to->is_signed;
         sym *mv = (i2f || f2i) ? simple_mem_var(e->a) : NULL;
         if (mv) { emit(i2f ? "I2F_M %s" : "F2I_M %s", mv->asm_name); return; }
-        gen_expr(e->a);
-        if (i2f)      emit("I2F");
-        else if (f2i) emit("F2I");
-        /* other casts are bit-reinterpret: no-op */
-        return;
+        gen_expr_to(e->a, to);   // int<->float, unsigned via helpers, -> bool as != 0;
+        return;                  // any other cast reinterprets the bits: no-op
     }
 
     case E_NEW: {
@@ -2026,7 +2080,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
         int agg = t && (t->kind == TY_ARRAY || t->kind == TY_STRUCT);
         if (!agg) {
             emit("LOD %d", off); emit("PSH");
-            gen_expr_num(z->e, t && t->kind == TY_FLOAT);   // int<->float per slot
+            gen_expr_to(z->e, t);                            // convert per slot
             emit("STI %s", base);
         } else {
             int n = type_size_words(t);
@@ -2095,7 +2149,7 @@ static void declare_local(decl *d)
         if (d->init) {                                  // store init into the frame slot
             emit("LOD __fp"); if (ls->frame_off) emit("ADD %d", ls->frame_off); emit("PSH");
             if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
-            else gen_expr_num(d->init, d->dtype && d->dtype->kind == TY_FLOAT);
+            else gen_expr_to(d->init, d->dtype);
             emit("STA");
         }
         return;
@@ -2138,7 +2192,7 @@ static void declare_local(decl *d)
         }
     } else if (d->init && !is_static) {
         if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
-        else gen_expr_num(d->init, d->dtype && d->dtype->kind == TY_FLOAT);
+        else gen_expr_to(d->init, d->dtype);
         emit("SET %s", aname);
     }
     free(aname);
@@ -2351,7 +2405,7 @@ static void gen_stmt_inner(stmt *s)
             } else if (cur_func_ret && cur_func_ret->is_ref) {
                 gen_addr(s->e1);   // reference return: yield the referent's address
             } else {
-                gen_expr_num(s->e1, cur_func_ret && cur_func_ret->kind == TY_FLOAT);
+                gen_expr_to(s->e1, cur_func_ret);
             }
         }
         if (g_live_n > 0) {                  // RAII: run dtors for in-scope class locals first
@@ -2472,6 +2526,7 @@ static void emit_header(unit *u)
     derive_ieee(nb, &mant, &expo);
     if (u->nbmant >= 0) mant = u->nbmant;      // explicit pragma overrides
     if (u->nbexpo >= 0) expo = u->nbexpo;
+    g_nbmant = mant;
 
     emit("NOP");
     emit("#PRNAME %s", u->prname ? u->prname : "prog");
@@ -2543,7 +2598,7 @@ static void emit_global_scalar_inits(unit *u)
             continue;
         }
         if (!d->init) continue;
-        gen_expr_num(d->init, d->dtype->kind == TY_FLOAT);
+        gen_expr_to(d->init, d->dtype);
         emit("SET %s", d->name);
     }
     cg_line = saved;
@@ -2561,7 +2616,7 @@ static void emit_static_inits(void)
         if (e->t && (e->t->kind == TY_ARRAY || e->t->kind == TY_STRUCT)) {
             copy_to_block(e->base, e->init, type_size_words(e->t));   // static aggregate = expr
         } else {
-            gen_expr_num(e->init, e->t && e->t->kind == TY_FLOAT);
+            gen_expr_to(e->init, e->t);
             emit("SET %s", e->base);
         }
     }
@@ -2713,6 +2768,39 @@ static void emit_udivmod(void)
     emit("JMP udm_top");
     emit("@udm_end NOP");
     emit("LOD udm_q");                       // return quotient
+    emit("RET");
+}
+
+// unsigned -> float, value in acc both ways. I2F reads a signed word, so a
+// word with bit 31 set is halved first, keeping its lowest bit as a sticky bit
+// so the rounding stays exact, then converted and doubled.
+static void emit_u2f(void)
+{
+    emit("@u2f NOP");
+    emit("SET u2f_x");
+    emit("GRE 0"); emit("JIZ u2f_lo");                               // bit 31 clear: plain I2F
+    emit("LOD u2f_x"); emit("PSH"); emit("LOD 1"); emit("S_SHR");    // x >> 1, logical
+    emit("PSH"); emit("LOD u2f_x"); emit("AND 1"); emit("S_ORR");    // | (x & 1), the sticky bit
+    emit("I2F"); emit("F_MLT 2.0");
+    emit("RET");
+    emit("@u2f_lo NOP");
+    emit("LOD u2f_x"); emit("I2F");
+    emit("RET");
+}
+
+// float -> unsigned, value in acc both ways. F2I saturates at INT_MAX, so a
+// value at or above 2^31 is brought down by 2^31 (exact in that range),
+// converted, and given bit 31 back.
+static void emit_f2u(void)
+{
+    emit("@f2u NOP");
+    emit("SET f2u_f");
+    emit("F_GRE 2147483648.0"); emit("JIZ f2u_hi");                  // below 2^31: plain F2I
+    emit("LOD f2u_f"); emit("F2I");
+    emit("RET");
+    emit("@f2u_hi NOP");
+    emit("LOD f2u_f"); emit("F_ADD -2147483648.0"); emit("F2I");
+    emit("XOR %ld", bf_word(1ULL << (g_nubits - 1)));               // + 2^31
     emit("RET");
 }
 
@@ -3224,7 +3312,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
 {
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
-    g_uses_udiv = 0; n_stinit = 0; g_n_inst = 0;
+    g_uses_udiv = 0; g_uses_u2f = 0; g_uses_f2u = 0; n_stinit = 0; g_n_inst = 0;
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
     cg_unit = u;
 
@@ -3302,14 +3390,17 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
     emit("@fim JMP fim");
     cg_line = -1;                 // post-@fim helpers are INTERNAL scaffolding
 
-    // emitted after @fim so main falls through into the halt loop, not the
-    // helper; the helper is only ever entered through CAL.
-    if (g_uses_udiv) emit_udivmod();
-    if (g_uses_heap) emit_heap();
-
     // template instances (also reached only via CAL); the loop bound grows as
     // emitting one instance discovers calls to further template instances
     for (int i = 0; i < g_n_inst; i++) emit_function(g_inst[i], u, 0);
+
+    // helpers: after @fim so main falls through into the halt loop, not a
+    // helper (they are only ever entered through CAL), and after the template
+    // instances so a helper that only an instance uses is not missed.
+    if (g_uses_udiv) emit_udivmod();
+    if (g_uses_heap) emit_heap();
+    if (g_uses_u2f)  emit_u2f();
+    if (g_uses_f2u)  emit_f2u();
 
     // all instructions buffered: fuse, then write the .asm + pc_mem (ins_count
     // is finalised here, after fusion, so num_ins matches the emitted program).

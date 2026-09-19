@@ -48,6 +48,10 @@ type *t_uint (void) { if (!T_UINT)  T_UINT  = make_basic(TY_INT,   0); return T_
 type *t_float(void) { if (!T_FLOAT) T_FLOAT = make_basic(TY_FLOAT, 1); return T_FLOAT; }
 type *t_char (void) { if (!T_CHAR)  T_CHAR  = make_basic(TY_INT,   1); return T_CHAR;  }
 
+// bool: an unsigned word marked is_bool, so a conversion to it can test != 0
+static type *T_BOOL = NULL;
+type *t_bool (void) { if (!T_BOOL)  { T_BOOL = make_basic(TY_INT, 0); T_BOOL->is_bool = 1; } return T_BOOL; }
+
 // The 64-bit types get one word like everything else; they are distinct
 // singletons only to remember what the source asked for, so a declaration can
 // warn that the size is ignored (CPPComp.y warn_wide).

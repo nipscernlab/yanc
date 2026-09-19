@@ -56,6 +56,7 @@ struct expr {
     type     *etype;     // assigned during type-check
 
     long      ival;      // INT_LIT / CHAR_LIT
+    int       is_uns;    // INT_LIT: unsigned (a u/U suffix, or too big for int)
     double    fval;      // FLOAT_LIT
     char     *sval;      // IDENT name / STRING_LIT bytes
     int       slen;      // length of STRING_LIT (excludes terminator)

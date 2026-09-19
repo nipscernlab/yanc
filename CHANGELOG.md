@@ -118,6 +118,32 @@ tags consumed by Aurora.
   mixing). Expected values from host g++; the old compiler gets 10 of its 34
   lines wrong. What still differs from the host is listed in `TODO.md`
   item 11.
+- **C++ values are converted to the type they are stored in** (`cppcomp`).
+  Every destination — assignment, initializer, argument, `return`, cast,
+  aggregate slot, bitfield — now converts to its own type, where before only
+  int/float was converted and only at some of them:
+  - **arguments were never converted**: a float passed to an `int` parameter
+    arrived as its raw bits (`plus1(2.9f)` gave 1977404622, not 3); an int
+    passed to a `float` one only worked for small positive values, which
+    happen to read the same in the YANC float format;
+  - **`unsigned` ↔ `float`** went through the signed `I2F`/`F2I`, so
+    `float f = 3000000000u` gave `-1294967296.0` and `unsigned u = 4e9f`
+    saturated to `2147483647`. Two helpers, emitted only when used, fix it:
+    `u2f` halves a word with bit 31 set (keeping its low bit as a sticky bit,
+    so the rounding stays exact) and doubles the result; `f2u` takes 2^31 off
+    a value at or above it and puts bit 31 back;
+  - **`bool`** held whatever was stored in it (`bool b = 5` held 5,
+    `bool b = 0.25f` held 0); a conversion to `bool` is now `!= 0` — two
+    instructions for an integer, a mantissa test for a float — and none when
+    the value is already 0 or 1 (a comparison, `&&`, `!`, a literal);
+  - integer literals with a `u` suffix, or too big for `int`, are `unsigned`,
+    as in C++ (they were `int`, so `float f = 4294967295u` gave `-1.0`).
+
+  The runtime helpers (`udivmod`, the heap, `u2f`, `f2u`) are now emitted
+  after the template instances: an unsigned division used only inside a
+  template left `CAL udivmod` without its helper, and the program printed
+  nothing. `test66` grows to 62 lines (the old compiler gets 31 wrong); new
+  `test68` covers the helpers used only in templates.
 - **Comparison of a very small value against a much larger one** at `#FROUND`
   0 and 1: the alignment shifted the smaller operand out of existence, so
   anything more than `#NBMANT` binary orders below the other operand compared

@@ -22,6 +22,18 @@
 #include "y.tab.h"
 
 extern unit *g_unit;   // populated by parser/main, used here to record pragmas
+extern int  g_lit_uns; // set alongside yylval.ival for INT_LIT, read by the parser
+
+// An integer literal's value, truncated to the target word, and whether it is
+// unsigned: a u/U suffix, or a value too big for int. C++ makes an unsuffixed
+// hex literal unsigned that way; a decimal one would be long long, which is one
+// 32-bit word here too, so unsigned is what keeps its value.
+static long int_lit(const char *text, int base)
+{
+    unsigned long long v = strtoull(text, NULL, base);
+    g_lit_uns = strpbrk(text, "uU") != NULL || v > 0x7FFFFFFFULL;
+    return (long)v;
+}
 
 static char *xstrdup_n(const char *s, int n)
 {
@@ -200,9 +212,9 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "delete"                 { return KW_DELETE;   }
 "namespace"              { return KW_NAMESPACE; }
 "using"                  { return KW_USING;    }
-"true"                   { yylval.ival = 1; return INT_LIT; }
-"false"                  { yylval.ival = 0; return INT_LIT; }
-"nullptr"                { yylval.ival = 0; return INT_LIT; }
+"true"                   { yylval.ival = 1; g_lit_uns = 0; return INT_LIT; }
+"false"                  { yylval.ival = 0; g_lit_uns = 0; return INT_LIT; }
+"nullptr"                { yylval.ival = 0; g_lit_uns = 0; return INT_LIT; }
 
 "_Generic"               { return KW_GENERIC; }
 "_Static_assert"         { return KW_STATIC_ASSERT; }
@@ -230,8 +242,8 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 
   /* literals ----------------------------------------------------------- */
 
-{INT_HEX}                { yylval.ival = (long)strtoull(yytext, NULL, 16); return INT_LIT; }  /* truncates to the target word; suffixes ignored */
-{INT_DEC}                { yylval.ival = (long)strtoull(yytext, NULL, 10); return INT_LIT; }
+{INT_HEX}                { yylval.ival = int_lit(yytext, 16); return INT_LIT; }  /* truncates to the target word */
+{INT_DEC}                { yylval.ival = int_lit(yytext, 10); return INT_LIT; }
 {FLOAT}f?                { yylval.fval = strtod(yytext, NULL);     return FLOAT_LIT; }
 {CHRLIT}                 { yylval.ival = unescape_char(yytext);    return CHAR_LIT; }
 {STRLIT}                 {
