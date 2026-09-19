@@ -83,6 +83,17 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **C++ bitfields laid out and masked at the 32-bit word** (`cppcomp`). Without
+  `#pragma yanc nubits`, struct layout packed bitfields into 16-bit words
+  while everything else ran at 32: four 8-bit fields took two words, so a
+  `union` of them with an `unsigned` read `513` where the host reads
+  `67305985`. Layout now falls back to the target width, like the rest of the
+  compiler. And a field as wide as the word (`unsigned w : 32`) always read
+  and stored 0: its mask was `(1L << 32) - 1`, undefined with Windows' 32-bit
+  `long`, which came out as 0; masks are now computed in 64 bits. Programs
+  whose bitfields fit in 16 bits get the same code as before. New fixture
+  `test65`, against host g++ values (the old compiler got 8 of its 11 lines
+  wrong).
 - **Comparison of a very small value against a much larger one** at `#FROUND`
   0 and 1: the alignment shifted the smaller operand out of existence, so
   anything more than `#NBMANT` binary orders below the other operand compared

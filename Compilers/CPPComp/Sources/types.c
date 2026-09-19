@@ -8,6 +8,7 @@
 
 #include "../Headers/types.h"
 #include "../Headers/messages.h"
+#include "../Headers/config.h"
 
 static void *xcalloc(size_t n)
 {
@@ -135,7 +136,7 @@ void t_struct_add_bitfield(type *st, char *name, type *ft, int width)
 
 type *t_struct_seal(type *st, int word_bits)
 {
-    if (word_bits <= 0) word_bits = 16;
+    if (word_bits <= 0) word_bits = CFG_NUBITS;
     if (st->is_union) {
         // every member overlaps at offset 0; size is the widest member
         int max = 0;

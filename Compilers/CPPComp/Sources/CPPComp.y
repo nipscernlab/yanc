@@ -19,6 +19,7 @@
 #include "../Headers/types.h"
 #include "../Headers/symtab.h"
 #include "../Headers/messages.h"
+#include "../Headers/config.h"
 
 int   yylex  (void);
 extern int   yylineno;
@@ -26,6 +27,12 @@ void  yyerror(const char *s);
 
 unit *g_unit = NULL;    // populated as we parse, used by lexer for #pragma yanc
 int   g_str_len = 0;    // set by lexer alongside yylval.sval for STRING_LIT
+
+// Word width a struct packs its bitfields into: the program's `#pragma yanc
+// nubits`, else the build's target width -- the fallback codegen uses for
+// everything else. (It was 16, so without the pragma four 8-bit fields took
+// two words and a union with an `unsigned` saw only the first two.)
+static int seal_bits(void) { return g_unit && g_unit->nubits > 0 ? g_unit->nubits : CFG_NUBITS; }
 
 // staging state for declarations and functions ------------------------------
 
@@ -492,7 +499,7 @@ static type *instantiate_ctmpl(ctmpl *ct, int *vals, int nvals)
                      for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
     for (strct_field *f = ct->proto->fields; f; f = f->next)
         t_struct_add_field(c, f->name, subst_field_type(f->ftype, vals, nvals));
-    t_struct_seal(c, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+    t_struct_seal(c, seal_bits());
     st_add_tag(xstrdup(tag), c);
     st_add_typedef(xstrdup(tag), c);
 
@@ -564,7 +571,7 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
         ft = subst_field_type (ft, vals,  n);   // NTP_BASE sentinels in arr_size -> concrete ints
         t_struct_add_field(c, f->name, ft);
     }
-    t_struct_seal(c, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+    t_struct_seal(c, seal_bits());
     st_add_tag(xstrdup(tag), c);
     st_add_typedef(xstrdup(tag), c);
 
@@ -601,7 +608,7 @@ static type *instantiate_ctmpl_t(ctmpl *ct, type **targs, int n)
                      for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
     for (strct_field *f = ct->proto->fields; f; f = f->next)
         t_struct_add_field(c, f->name, subst_tparam_type(f->ftype, targs, n));
-    t_struct_seal(c, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+    t_struct_seal(c, seal_bits());
     st_add_tag(xstrdup(tag), c);
     st_add_typedef(xstrdup(tag), c);
 
@@ -1009,7 +1016,7 @@ builtin_spec:
 struct_specifier:
       KW_STRUCT IDENT '{' { cur_struct_push(t_make_struct($2)); st_add_tag($2, cur_struct); st_add_typedef($2, cur_struct); } field_list '}' {
           type *done = cur_struct;
-          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          t_struct_seal(done, seal_bits());
           cur_struct_pop();          // restore the enclosing struct (nested defs)
           $$ = done;
           free($2);
@@ -1037,7 +1044,7 @@ struct_specifier:
     | KW_STRUCT '{' { cur_struct_push(t_make_struct("")); } field_list '}' {
           /* anonymous struct (e.g. a struct-typed field with no tag) */
           type *done = cur_struct;
-          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          t_struct_seal(done, seal_bits());
           cur_struct_pop();
           $$ = done;
       }
@@ -1070,7 +1077,7 @@ class_specifier:
              already provides one, else inserted now ahead of its own fields) */
           if (done->n_vtbl > 0 && (!done->fields || strcmp(done->fields->name, "__vptr") != 0))
               t_struct_prepend_field(done, "__vptr", t_int());
-          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          t_struct_seal(done, seal_bits());
           cur_struct_pop();
           cur_class = NULL;
           /* a class template: capture it for real monomorphization. Non-type
@@ -1348,7 +1355,7 @@ op_name:
 union_specifier:
       KW_UNION IDENT '{' { cur_struct_push(t_make_union($2)); st_add_tag($2, cur_struct); st_add_typedef($2, cur_struct); } field_list '}' {
           type *done = cur_struct;
-          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          t_struct_seal(done, seal_bits());
           cur_struct_pop();
           $$ = done;
           free($2);
@@ -1375,7 +1382,7 @@ union_specifier:
     | KW_UNION '{' { cur_struct_push(t_make_union("")); } field_list '}' {
           /* anonymous union (e.g. a union-typed field with no tag) */
           type *done = cur_struct;
-          t_struct_seal(done, g_unit && g_unit->nubits > 0 ? g_unit->nubits : 16);
+          t_struct_seal(done, seal_bits());
           cur_struct_pop();
           $$ = done;
       }

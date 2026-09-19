@@ -981,6 +981,18 @@ static strct_field *member_field(expr *e)
     return NULL;
 }
 
+// A bitfield's masks, computed in 64 bits and emitted as the signed 32-bit
+// immediate the AND always took. In `long` (32 bits on Windows) a field as wide
+// as the word made `1L << 32`, undefined, which came out as mask 0: every
+// `unsigned x : 32` read as 0 and every write stored 0.
+static unsigned long long bf_ones(const strct_field *bf)
+{
+    return bf->bit_width >= 64 ? ~0ULL : (1ULL << bf->bit_width) - 1;
+}
+static long bf_word (unsigned long long v)    { return (long)(int)(unsigned)v; }
+static long bf_mask (const strct_field *bf)   { return bf_word(bf_ones(bf)); }                    // value bits, at bit 0
+static long bf_clear(const strct_field *bf)   { return bf_word(~(bf_ones(bf) << bf->bit_pos)); }  // all but the field's bits
+
 // implicit int<->float conversion of the value already in acc, given its source
 // type `have` and whether the destination wants float.
 static void coerce_acc(type *have, int want_float)
@@ -1113,8 +1125,8 @@ static void gen_store(expr *lv, expr *val)
     {
         strct_field *bf = (lv->kind == E_MEMBER || lv->kind == E_PMEMBER) ? member_field(lv) : NULL;
         if (bf && bf->is_bitfield) {
-            long mask  = (1L << bf->bit_width) - 1;
-            long clear = ~(mask << bf->bit_pos);
+            long mask  = bf_mask(bf);
+            long clear = bf_clear(bf);
             char tn[64]; snprintf(tn, sizeof(tn), "_bf%d", ++label_n);
             char *ta = mangle_local(tn);
             st_add(SK_LOCAL_VAR, tn, ta, t_int());
@@ -1331,7 +1343,7 @@ static void gen_expr(expr *e)
             if (bf->bit_pos > 0) {          // logical shift right by bit_pos (stack form)
                 emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHR");
             }
-            emit("AND %ld", (1L << bf->bit_width) - 1);
+            emit("AND %ld", bf_mask(bf));
             return;
         }
         // a field of array/struct type decays to its address (no load)

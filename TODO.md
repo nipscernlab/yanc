@@ -314,20 +314,32 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   under `--sim icarus` and `--sim verilator`. Pick one result and make the HDL
   produce it on both simulators; decide together with the by-zero case of
   item 10.5, since both are "defined behaviour for `DIV`".
-- (b) **To verify: cppcomp lays out bitfields in 16-bit words when the program
-  has no `#pragma yanc nubits`.** `g_unit->nubits` is `-1` without the pragma
-  and every `t_struct_seal` call (`CPPComp.y`, 8 sites; `types.c:138`) then
-  falls back to 16, while codegen uses `CFG_NUBITS` = 32. Reads and
-  writes agree with each other, so plain code works; a `union` of bitfields
-  and an `int` should differ from the host. Fixture first, then fall back to
-  `CFG_NUBITS`.
-- (c) **To verify: a 32-bit bitfield's mask is undefined behaviour in
-  cppcomp.** `(1L << bf->bit_width) - 1` (`codegen.c:1116`, `1334`) shifts a
-  32-bit `long` by 32 on Windows.
+- (b) **Signed bitfields lose their sign in cppcomp.** A read shifts the
+  word down and masks it, and never sign-extends, so `int s : 4` holding `-1`
+  reads `15` and `-8` reads `8` (host g++: `-1`, `-8`), and the error carries
+  into arithmetic. Measured 2026-09-18. The field type knows its signedness
+  (`type.is_signed`), so the read of a signed field narrower than the word
+  needs the extension (e.g. `(v ^ s) - s` with `s` the field's sign bit).
+- (c) **`unsigned` ↔ `float` conversions read the word as signed in cppcomp.**
+  The ULA is signed-only; cppcomp compensates everywhere else (comparisons
+  flip bit 31 before the signed compare, `>>` picks `SHR` over `SRS`, `/` and
+  `%` call the software `udivmod`), but `coerce_acc` and the cast path
+  (`codegen.c:1001-1002`, `1650-1653`) emit a bare `I2F`/`F2I`. Measured
+  2026-09-18 against host g++: `float f = 3000000000u` gives `-1294967296.0`,
+  and `unsigned g = 4e9f` saturates to `2147483647`. Values below 2^31 are
+  unaffected. Needs an unsigned path only on those conversions (e.g. if bit 31
+  is set, convert `(u >> 1) | (u & 1)` and double it; subtract 2^31 before
+  `F2I` for floats at or above it).
+- (d) **Display: an `unsigned` at or above 2^31 prints negative.** The
+  testbench writes every output word as signed decimal (`hdl.c:772`
+  `%0d`; the Verilator harness `sim_main.cpp:102` `%d`), so
+  `out(0, 3000000000u)` puts `-1294967296` in `output_0.txt`. The bits are
+  right; a comparison with a host printout is not. Decide whether this is
+  documented or the port learns the signedness of what it prints.
 
 **Done when:** (a) gives the same result under both simulators, with a
-fixture that runs under both; (b) and (c) are either shown harmless by a
-fixture or fixed with one.
+fixture that runs under both; (b) and (c) match the host in fixtures like
+`test65`; (d) is decided and documented.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
