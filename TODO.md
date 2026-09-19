@@ -332,18 +332,18 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   the 64-bit types, or emulate it (mask or sign-extend on every store, paid
   only by programs that use it). The 64-bit types are decided: one word, with
   a warning at every variable (`test67`).
-- (d) **Constructors run only for plain local objects and `new T`.** Never
-  for a global object (`G g;`, `G g2(9);`), a `static` local, an array
-  element (`G arr[2];`), `new T[n]`, or a member object; and a class without
-  a user constructor gets no implicit one, so its default member initializers
-  (`struct E { int k = 5; };`) are never applied, nor are they to the members
-  an aggregate initializer omits (`E e = {9}`). All of these read 0 where the
-  host reads the constructed value. Measured 2026-09-19.
+- (d) **A `static` local object is constructed at program start**, with the
+  globals, not when control first reaches its declaration. Only a constructor
+  with side effects shows it (`test70` compares a construction count, not the
+  order). C++'s rule needs a guard flag and a test at every entry.
+- (e) **`T x(v);` with a variable as the first argument is a syntax error**
+  (`HasP hp(q);`), while a literal works (`G g(9);`, `Point p(3, 4);`): the
+  parser takes the function-prototype path. `T x = T(v);` is the workaround.
 
 **Done when:** (a) gives the same result under both simulators, with a
 fixture that runs under both; (b) and the choice in (c) are decided and
 documented, and (c) has its lines in `test66` (or a warning or an error like
-`test67`'s); (d) has a fixture that matches the host in every context.
+`test67`'s); (d) and (e) have fixtures that match the host.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

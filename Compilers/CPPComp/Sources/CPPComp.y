@@ -97,6 +97,9 @@ static type *cur_class = NULL;
 // prepended to the ctor body
 static stmt *g_ctor_inits[32];
 static int   g_n_ctor_inits = 0;
+static int   g_ctor_base_named = 0;   // the member-init list constructs the base itself
+static char *g_ctor_members[32];      // member objects the member-init list constructs itself
+static int   g_n_ctor_members = 0;
 // mangle a method name: Class::name -> "Class__name" (asm-level symbol)
 static char *mangle_method(const char *cls, const char *name)
 {
@@ -138,6 +141,7 @@ static const char *op_arity_name(const char *name, int nuser_params)
 // Does NOT mark the sym defined and does NOT emit a func.
 static void register_method_decl(type *ret, const char *name, decl *params, int nparams)
 {
+    if (!strcmp(name, "ctor") || !strcmp(name, "copyctor")) cur_class->has_ctor = 1;
     char *mname = mangle_method(cur_class->tag, name);
     sym *s = st_find(mname);
     if (!s) s = st_add(SK_FUNC, mname, mname, ret);
@@ -258,6 +262,7 @@ static expr *lambda_finish(stmt *body)
 // stage the declared params. Called from method_def's mid-rule action.
 static void method_enter(type *ret, const char *name, decl *params, int nparams)
 {
+    if (!strcmp(name, "ctor") || !strcmp(name, "copyctor")) cur_class->has_ctor = 1;
     char *mname = mangle_method(cur_class->tag, name);
     sym *s = st_find(mname);
     if (!s) s = st_add(SK_FUNC, mname, mname, ret);
@@ -340,6 +345,29 @@ static void inject_default_member_inits(type *cls)
         }
         if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
     }
+}
+
+// Everything a constructor runs before its own body, in C++'s order: the base
+// (unless the member-init list constructs it) and the member objects (but the
+// ones the list constructs), through the codegen builtin
+// __construct_members(this, base_named, listed members...); then the
+// member-init list; then the default member initializers it does not cover.
+static void ctor_prologue(stmt *body)
+{
+    inject_default_member_inits(cur_class);
+    expr **a = malloc(sizeof(expr*) * (2 + g_n_ctor_members));
+    a[0] = ast_ident(strdup("this"), yylineno);
+    a[1] = ast_int_lit(g_ctor_base_named, yylineno);
+    for (int i = 0; i < g_n_ctor_members; i++)       // skipped: built by the list
+        a[2 + i] = ast_ident(strdup(g_ctor_members[i]), yylineno);
+    stmt *cm = ast_stmt(S_EXPR, yylineno);
+    cm->e1 = ast_call(ast_ident(strdup("__construct_members"), yylineno), a, 2 + g_n_ctor_members, yylineno);
+    int total = 1 + g_n_ctor_inits + body->n_items;
+    stmt **arr = malloc(sizeof(stmt*) * total);
+    arr[0] = cm;
+    for (int i = 0; i < g_n_ctor_inits; i++) arr[1 + i] = g_ctor_inits[i];
+    for (int j = 0; j < body->n_items; j++) arr[1 + g_n_ctor_inits + j] = body->items[j];
+    body->items = arr; body->n_items = total;
 }
 
 // a copy constructor is a ctor taking exactly one parameter that is a reference
@@ -510,10 +538,13 @@ static type *instantiate_ctmpl(ctmpl *ct, int *vals, int nvals)
     type *c = t_make_struct(xstrdup(tag));
     c->base_class = ct->proto->base_class;
     c->n_vtbl = ct->proto->n_vtbl;
+    c->has_ctor = ct->proto->has_ctor;
     if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
                      for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
-    for (strct_field *f = ct->proto->fields; f; f = f->next)
+    for (strct_field *f = ct->proto->fields; f; f = f->next) {
         t_struct_add_field(c, f->name, subst_field_type(f->ftype, vals, nvals));
+        t_struct_find(c, f->name)->inherited = f->inherited;
+    }
     t_struct_seal(c, seal_bits());
     st_add_tag(xstrdup(tag), c);
     st_add_typedef(xstrdup(tag), c);
@@ -578,6 +609,7 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
     type *c = t_make_struct(xstrdup(tag));
     c->base_class = ct->proto->base_class;
     c->n_vtbl = ct->proto->n_vtbl;
+    c->has_ctor = ct->proto->has_ctor;
     if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
                      for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
     for (strct_field *f = ct->proto->fields; f; f = f->next) {
@@ -585,6 +617,7 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
         ft = subst_tparam_type(ft, targs, n);   // type-param placeholders -> concrete types
         ft = subst_field_type (ft, vals,  n);   // NTP_BASE sentinels in arr_size -> concrete ints
         t_struct_add_field(c, f->name, ft);
+        t_struct_find(c, f->name)->inherited = f->inherited;
     }
     t_struct_seal(c, seal_bits());
     st_add_tag(xstrdup(tag), c);
@@ -619,10 +652,13 @@ static type *instantiate_ctmpl_t(ctmpl *ct, type **targs, int n)
     type *c = t_make_struct(xstrdup(tag));
     c->base_class = ct->proto->base_class;
     c->n_vtbl = ct->proto->n_vtbl;
+    c->has_ctor = ct->proto->has_ctor;
     if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
                      for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
-    for (strct_field *f = ct->proto->fields; f; f = f->next)
+    for (strct_field *f = ct->proto->fields; f; f = f->next) {
         t_struct_add_field(c, f->name, subst_tparam_type(f->ftype, targs, n));
+        t_struct_find(c, f->name)->inherited = f->inherited;
+    }
     t_struct_seal(c, seal_bits());
     st_add_tag(xstrdup(tag), c);
     st_add_typedef(xstrdup(tag), c);
@@ -790,14 +826,32 @@ static void class_open(char *tag, type *base)
     cur_class = t;
     if (base) {                         // single inheritance: lay the base first
         t->base_class = base;
-        for (strct_field *f = base->fields; f; f = f->next)
+        for (strct_field *f = base->fields; f; f = f->next) {
             t_struct_add_field(t, f->name, f->ftype);
+            t_struct_find(t, f->name)->inherited = 1;   // built by the base's ctor
+        }
         t->n_vtbl = base->n_vtbl;       // inherit the base's virtual slots
         if (t->n_vtbl) {
             t->vtbl = malloc(sizeof(char*) * t->n_vtbl);
             for (int i = 0; i < t->n_vtbl; i++) t->vtbl[i] = strdup(base->vtbl[i]);
         }
     }
+}
+
+// Does a class with no constructor of its own need the implicit default one?
+// Yes when there is something to run: a default member initializer, a member
+// object (or array of them) whose class constructs, or a base that does.
+static int class_needs_ctor(type *t)
+{
+    if (t->base_class && t->base_class->has_ctor) return 1;
+    for (strct_field *f = t->fields; f; f = f->next) {
+        if (f->inherited) continue;
+        if (f->dinit || f->dzero) return 1;
+        type *ft = f->ftype;
+        while (ft && ft->kind == TY_ARRAY) ft = ft->base;
+        if (ft && ft->kind == TY_STRUCT && (ft->has_ctor || ft->n_vtbl > 0)) return 1;
+    }
+    return 0;
 }
 
 static type *class_close(void)
@@ -808,6 +862,17 @@ static type *class_close(void)
     if (done->n_vtbl > 0 && (!done->fields || strcmp(done->fields->name, "__vptr") != 0))
         t_struct_prepend_field(done, "__vptr", t_int());
     t_struct_seal(done, seal_bits());
+    /* the implicit default constructor C++ gives a class that declares none.
+       Not for a class local to a function: a method cannot be opened while a
+       function body is being parsed. */
+    if (!done->has_ctor && !st_in_func() && class_needs_ctor(done)) {
+        g_n_ctor_inits = 0; g_ctor_base_named = 0; g_n_ctor_members = 0;
+        method_enter(t_void(), "ctor", NULL, 0);
+        stmt *body = ast_stmt(S_BLOCK, yylineno);
+        body->items = NULL; body->n_items = 0;
+        ctor_prologue(body);
+        method_finish(t_void(), "ctor", body);
+    }
     cur_struct_pop();
     cur_class = cur_class_stk[--cur_class_sp];
     /* a class template: capture it for real monomorphization. Non-type
@@ -1242,19 +1307,12 @@ static_member:
 /* constructor: `ClassName(params) { body }` — the class name lexes as a
    TYPEDEF_NAME inside its own body. Lowered to method `Class__ctor`. */
 ctor_def:
-      TYPEDEF_NAME '(' param_list ')' { g_n_ctor_inits = 0; } ctor_init_opt
+      TYPEDEF_NAME '(' param_list ')' { g_n_ctor_inits = 0; g_ctor_base_named = 0; g_n_ctor_members = 0; } ctor_init_opt
           { method_enter(t_void(), ctor_kind($3.head), $3.head, $3.n); }
       compound_stmt
           {
               stmt *body = $8;
-              inject_default_member_inits(cur_class);   // DMI fields not in member-init list
-              if (g_n_ctor_inits > 0 && body) {     // prepend `member = expr;` stmts
-                  int total = g_n_ctor_inits + body->n_items;
-                  stmt **arr = malloc(sizeof(stmt*) * total);
-                  for (int i = 0; i < g_n_ctor_inits; i++) arr[i] = g_ctor_inits[i];
-                  for (int j = 0; j < body->n_items; j++) arr[g_n_ctor_inits + j] = body->items[j];
-                  body->items = arr; body->n_items = total;
-              }
+              ctor_prologue(body);
               method_finish(t_void(), ctor_kind($3.head), body); free($1);
           }
     ;
@@ -1269,21 +1327,42 @@ mem_init_list:
     | mem_init_list ',' mem_init
     ;
 mem_init:
-      IDENT '(' assignment_expr ')' {
-          /* data member: `member(expr)` -> `member = expr;` */
+      IDENT '(' argument_list ')' {
+          /* A member object is constructed with the arguments, through the
+             codegen builtin __construct_at(member, args...), and skipped by
+             __construct_members. A scalar member: `member(expr)` ->
+             `member = expr;`, and `member()` -> `member = 0;`. */
+          strct_field *f = cur_class ? t_struct_find(cur_class, $1) : NULL;
           stmt *s = ast_stmt(S_EXPR, yylineno);
-          s->e1 = ast_assign(ast_ident($1, yylineno), $3, yylineno);
+          if (f && f->ftype && f->ftype->kind == TY_STRUCT) {
+              expr **a = malloc(sizeof(expr*) * ($3.n + 1));
+              a[0] = ast_ident(strdup($1), yylineno);
+              for (int i = 0; i < $3.n; i++) a[i + 1] = $3.arr[i];
+              s->e1 = ast_call(ast_ident(strdup("__construct_at"), yylineno), a, $3.n + 1, yylineno);
+              if (g_n_ctor_members < 32) g_ctor_members[g_n_ctor_members++] = strdup($1);
+          } else {
+              if ($3.n > 1) msg_error(yylineno, "member '%s' takes one initializer", $1);
+              s->e1 = ast_assign(ast_ident($1, yylineno),
+                                 $3.n ? $3.arr[0] : ast_int_lit(0, yylineno), yylineno);
+          }
           if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
       }
     | TYPEDEF_NAME '(' argument_list ')' {
-          /* base-class init: `Base(args)` -> Base__ctor(this, args); */
-          expr **a = malloc(sizeof(expr*) * ($3.n + 1));
-          a[0] = ast_ident(strdup("this"), yylineno);
-          for (int i = 0; i < $3.n; i++) a[i + 1] = $3.arr[i];
-          expr *call = ast_call(ast_ident(mangle_method($1, "ctor"), yylineno), a, $3.n + 1, yylineno);
-          stmt *s = ast_stmt(S_EXPR, yylineno); s->e1 = call;
-          if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
-          free($1);
+          /* base-class init: `Base(args)` -> Base__ctor(this, args); a base
+             without constructors has nothing to run for `Base()` */
+          sym *bs = st_find_tag($1);
+          if ($3.n == 0 && bs && bs->struct_t && !bs->struct_t->has_ctor) {
+              g_ctor_base_named = 1; free($1);
+          } else {
+              expr **a = malloc(sizeof(expr*) * ($3.n + 1));
+              a[0] = ast_ident(strdup("this"), yylineno);
+              for (int i = 0; i < $3.n; i++) a[i + 1] = $3.arr[i];
+              expr *call = ast_call(ast_ident(mangle_method($1, "ctor"), yylineno), a, $3.n + 1, yylineno);
+              stmt *s = ast_stmt(S_EXPR, yylineno); s->e1 = call;
+              if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
+              g_ctor_base_named = 1;
+              free($1);
+          }
       }
     ;
 
@@ -1865,7 +1944,7 @@ function_def:
           if (!cs || !cs->struct_t)
               msg_error(yylineno, "out-of-class ctor for unknown class '%s'", $1);
           cur_class = cs->struct_t;
-          g_n_ctor_inits = 0;
+          g_n_ctor_inits = 0; g_ctor_base_named = 0; g_n_ctor_members = 0;
       }
       ctor_init_opt {
           const char *kind = ctor_kind($5.head);
@@ -1874,14 +1953,7 @@ function_def:
       }
       compound_stmt {
           stmt *body = $11;
-          inject_default_member_inits(cur_class);   /* DMI fields not in member-init list */
-          if (g_n_ctor_inits > 0 && body) {     /* prepend `member = expr;` stmts */
-              int total = g_n_ctor_inits + body->n_items;
-              stmt **arr = malloc(sizeof(stmt*) * total);
-              for (int i = 0; i < g_n_ctor_inits; i++) arr[i] = g_ctor_inits[i];
-              for (int j = 0; j < body->n_items; j++) arr[g_n_ctor_inits + j] = body->items[j];
-              body->items = arr; body->n_items = total;
-          }
+          ctor_prologue(body);
           method_finish(t_void(), ctor_kind($5.head), body);
           cur_class = NULL;
           free($1); free($3);

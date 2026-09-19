@@ -50,6 +50,7 @@ void st_enter_func(const char *fn)
 }
 
 void st_leave_func(void) { if (cur_func) { free(cur_func); cur_func = NULL; } }
+int  st_in_func   (void) { return cur_func != NULL; }
 
 const char *st_current_func(void) { return cur_func; }
 

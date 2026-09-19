@@ -60,6 +60,7 @@ void  st_pop_scope  (void);
 
 void  st_enter_func (const char *fn);
 void  st_leave_func (void);
+int   st_in_func    (void);   // parsing inside a function body
 const char *st_current_func(void);
 
 #endif

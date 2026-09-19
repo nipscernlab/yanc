@@ -95,6 +95,24 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **Every C++ object is constructed** (`cppcomp`). A constructor ran only for
+  a plain local object and `new T`; a global object (`Filter g_f;`,
+  `G g2(9);`), a static local, an array element, `new T[n]` and a member
+  object all stayed zero — including a global polymorphic object, whose vptr
+  was never set. And a class without a constructor got no implicit one, so
+  its default member initializers (`struct Cfg { int gain = 5; };`) were
+  never applied. Now the implicit default constructor is synthesized when it
+  has something to run; every constructor first builds its base (unless its
+  member-init list does) and its member objects — one the member-init list
+  names with the list's arguments (`: inner(5)` lowered to `inner = 5`,
+  which copied the object at address 5); arrays and `new T[n]`
+  construct each element in a loop; globals are constructed at program
+  start, after every global value, in declaration order; static locals there
+  too. A braced initializer gives what it leaves out its default member
+  initializer or zero — also on a second call: a local keeps fixed storage,
+  so `float buf[8] = {0};` used to zero only `buf[0]` from the second call
+  on. New fixture `test70`, against host g++, counts constructions so a
+  missing or doubled one shows.
 - **A C++ `struct` is a class** (`cppcomp`): a tagged `struct` accepted
   nothing but fields, so a method, a constructor, a base class or an access
   label in it was a syntax error, and a `struct` template was never

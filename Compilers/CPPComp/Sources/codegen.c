@@ -449,6 +449,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z);
 static void emit_fn_return(void);
 static void gen_addr (expr *e);
 static void gen_arg  (expr *arg, type *ptype);
+static type *array_elems(type *t, int *n);
 static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
 static void gen_bool (expr *e, const char *jz_target);
@@ -598,7 +599,7 @@ static void scan_heap_stmt(stmt *s)
 // initializer must run ONCE at program start, not on each function entry. We
 // collect them in a pre-pass and emit them at main's entry, like globals. The
 // stored base name is already mangled (<func>_<var>), matching declare_local.
-typedef struct { char *base; type *t; expr *init; initz *binit; int line; } stinit_e;
+typedef struct { char *base; type *t; expr *init; initz *binit; int line; expr **args; int nargs; } stinit_e;
 #define MAX_STINIT 256
 static stinit_e stinits[MAX_STINIT];
 static int      n_stinit = 0;
@@ -611,7 +612,9 @@ static void collect_statics_stmt(const char *fn, stmt *s)
     collect_statics_stmt(fn, s->init_stmt);
     for (int i = 0; i < s->n_items; i++) collect_statics_stmt(fn, s->items[i]);
     for (decl *d = s->decls; d; d = d->next) {
-        if (d->sclass == SC_STATIC && (d->init || d->binit) && n_stinit < MAX_STINIT) {
+        int n_el; type *et = array_elems(d->dtype, &n_el);
+        int is_obj = et && et->kind == TY_STRUCT && et->tag;    // constructed at program start
+        if (d->sclass == SC_STATIC && (d->init || d->binit || is_obj) && n_stinit < MAX_STINIT) {
             size_t n = strlen(fn) + strlen(d->name) + 2;
             char *base = malloc(n); snprintf(base, n, "%s_%s", fn, d->name);
             stinits[n_stinit].base  = base;
@@ -619,6 +622,8 @@ static void collect_statics_stmt(const char *fn, stmt *s)
             stinits[n_stinit].init  = d->init;
             stinits[n_stinit].binit = d->binit;
             stinits[n_stinit].line  = d->line;
+            stinits[n_stinit].args  = d->ctor_args;
+            stinits[n_stinit].nargs = d->n_ctor_args;
             n_stinit++;
         }
     }
@@ -745,6 +750,8 @@ static type *infer_type(expr *e)
             if (!strcmp(fn, "malloc"))   { e->etype = t_ptr(t_void()); break; }
             if (!strcmp(fn, "free"))     { e->etype = t_void(); break; }
             if (!strcmp(fn, "__zerofill")) { e->etype = t_void(); break; }   // synth DMI aggregate zero-fill
+            if (!strcmp(fn, "__construct_members")) { e->etype = t_void(); break; }  // synth ctor prologue
+            if (!strcmp(fn, "__construct_at"))      { e->etype = t_void(); break; }  // synth member ctor call
             func *tm = find_template(fn);            // template call: substituted return type
             if (tm && tm->n_params == e->n_args) {
                 type *ta[8] = {0}; deduce_targs(tm, e->args, e->n_args, ta);
@@ -1149,6 +1156,98 @@ static void gen_arg(expr *arg, type *ptype)
         return;
     }
     gen_push_arg(arg);
+}
+
+// ---- object construction ---------------------------------------------------
+
+// a fresh one-word scratch variable of the current function (its asm name)
+static char *new_temp(const char *prefix)
+{
+    char nm[32]; snprintf(nm, sizeof(nm), "_%s%d", prefix, ++label_n);
+    char *an = mangle_local(nm);
+    st_add(SK_LOCAL_VAR, nm, an, t_int());
+    log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
+    return an;
+}
+
+// Where an object is, for constructing it: at a fixed symbol (`LEA name`) or at
+// the address a variable holds (`LOD name`).
+typedef struct { int in_var; const char *name; } objaddr;
+static void emit_objaddr(objaddr a) { emit(a.in_var ? "LOD %s" : "LEA %s", a.name); }
+
+// does creating an object of class t run code (a vptr to set, a ctor to call)?
+static int needs_construct(type *t)
+{
+    return t && t->kind == TY_STRUCT && t->tag && (t->n_vtbl > 0 || resolve_ctor(t, NULL, 0));
+}
+
+// call constructor cf on the object at a, with args and then the defaults
+static void emit_ctor_call(func *cf, objaddr a, expr **args, int nargs)
+{
+    emit_objaddr(a); emit("PSH");                             // this
+    decl *p = cf->params ? cf->params->next : NULL;           // skip `this`
+    for (int i = 0; i < nargs; i++) { gen_arg(args[i], p ? p->dtype : NULL); if (p) p = p->next; }
+    for (; p; p = p->next) gen_arg(p->init, p->dtype);        // default args
+    emit("CAL %s", cf->asm_label);
+}
+
+// Construct one object of class t at a: point a polymorphic object at its
+// vtable, then run the constructor its arguments select (the default one
+// when there are none), if the class has one.
+static void emit_construct(type *t, objaddr a, expr **args, int nargs)
+{
+    if (!t || t->kind != TY_STRUCT || !t->tag) return;
+    if (t->n_vtbl > 0) { emit_objaddr(a); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STA"); }
+    func *cf = resolve_ctor(t, args, nargs);
+    if (cf) emit_ctor_call(cf, a, args, nargs);
+}
+
+// Default-construct the n elements (class t) of the array at a, in a loop. The
+// count is n, or the variable n_var when it is only known at run time.
+static void emit_construct_n(type *t, objaddr a, int n, const char *n_var)
+{
+    if (!needs_construct(t) || (!n_var && n <= 0)) return;
+    if (!n_var && n == 1) { emit_construct(t, a, NULL, 0); return; }
+    int id = ++label_n;
+    char *cp = new_temp("cnp"), *ck = new_temp("cnk");
+    emit_objaddr(a); emit("SET %s", cp);                      // cp = &a[0]
+    if (n_var) emit("LOD %s", n_var); else emit("LOD %d", n);
+    emit("SET %s", ck);                                       // ck = n
+    emit("@Lcn_t%d NOP", id);
+    emit("LOD %s", ck); emit("JIZ Lcn_e%d", id);              // while ck != 0
+    objaddr el = { 1, cp };
+    emit_construct(t, el, NULL, 0);
+    emit("LOD %s", cp); emit("ADD %d", type_size_words(t)); emit("SET %s", cp);   // next element
+    emit("LOD %s", ck); emit("ADD -1"); emit("SET %s", ck);
+    emit("JMP Lcn_t%d", id);
+    emit("@Lcn_e%d NOP", id);
+    free(cp); free(ck);
+}
+
+// an array type's innermost element type, and how many of them it holds
+static type *array_elems(type *t, int *n)
+{
+    *n = 1;
+    while (t && t->kind == TY_ARRAY) { *n *= t->arr_size; t = t->base; }
+    return t;
+}
+
+// __construct_members' arguments after (this, base_named) name the member
+// objects the member-init list constructs itself
+static int listed_member(expr *call, const char *name)
+{
+    for (int i = 2; i < call->n_args; i++)
+        if (call->args[i]->kind == E_IDENT && !strcmp(call->args[i]->sval, name)) return 1;
+    return 0;
+}
+
+// construct a declared object or array of objects (a local at its declaration,
+// a global or a static local at program start)
+static void emit_construct_decl(type *t, const char *name, expr **args, int nargs)
+{
+    objaddr a = { 0, name };
+    if (t && t->kind == TY_ARRAY) { int n; type *et = array_elems(t, &n); emit_construct_n(et, a, n, NULL); }
+    else emit_construct(t, a, args, nargs);
 }
 
 // ---- store: lv = val -------------------------------------------------------
@@ -1718,6 +1817,17 @@ static void gen_expr(expr *e)
     case E_NEW: {
         type *t = e->target_t;
         int words = type_size_words(t);
+        if (e->a && needs_construct(t)) {             // new T[n] of objects: construct each
+            char *nv = new_temp("nwn"), *pv = new_temp("nwp");
+            gen_expr(e->a); emit("SET %s", nv);
+            if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
+            emit("PSH"); emit("CAL malloc"); emit("SET %s", pv);
+            objaddr a = { 1, pv };
+            emit_construct_n(t, a, 0, nv);
+            emit("LOD %s", pv);                                   // result: the array
+            free(nv); free(pv);
+            return;
+        }
         if (e->a) {                                   // new T[n] -> malloc(n*words)
             gen_expr(e->a);
             if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
@@ -1758,20 +1868,8 @@ static void gen_expr(expr *e)
         st_add(SK_LOCAL_VAR, nm, aname, t);
         log_var(cur_func_name ? cur_func_name : "global", nm, innermost_code(t), 0);
         emit("#array %s %d %d", aname, agg_fill_code(t), type_size_words(t));
-        if (t->n_vtbl > 0) {                                       // set vptr if polymorphic
-            emit("LEA %s", aname); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STA");
-        }
-        func *cf = resolve_ctor(t, e->args, e->n_args);
-        if (cf) {
-            emit("LEA %s", aname); emit("PSH");                    // this
-            decl *p = cf->params ? cf->params->next : NULL;        // skip `this`
-            for (int i = 0; i < e->n_args; i++) {
-                gen_arg(e->args[i], p ? p->dtype : NULL);
-                if (p) p = p->next;
-            }
-            for (; p; p = p->next) gen_arg(p->init, p->dtype);     // default args
-            emit("CAL %s", cf->asm_label);
-        }
+        objaddr a = { 0, aname };
+        emit_construct(t, a, e->args, e->n_args);
         emit("LEA %s", aname);                                     // result = &temporary
         free(aname);
         return;
@@ -1918,6 +2016,54 @@ static void gen_expr(expr *e)
                 if (e->n_args != 1) msg_error(e->line, "free(ptr) takes 1 arg");
                 gen_expr(e->args[0]); emit("PSH"); emit("CAL free");
                 g_uses_heap = 1; return;
+            }
+            if (!strcmp(fn, "__construct_members")) {
+                // synth, first thing in every constructor: construct the base
+                // (unless the member-init list does: args[1] = 1) and the member
+                // objects, in declaration order. args[0] = this. The base's ctor
+                // is called directly, so the vptr stays the derived class's.
+                type *cls = cur_method_class;
+                if (!cls || e->n_args < 2) return;
+                func *bc = (!e->args[1]->ival && cls->base_class) ? resolve_ctor(cls->base_class, NULL, 0) : NULL;
+                int any = bc != NULL;
+                #define LISTED(f) listed_member(e, (f)->name)
+                for (strct_field *f = cls->fields; f && !any; f = f->next) {
+                    int n; type *et = array_elems(f->ftype, &n);
+                    if (!f->inherited && !f->is_bitfield && !LISTED(f) && needs_construct(et)) any = 1;
+                }
+                if (!any) return;
+                char *tv = new_temp("cmt");
+                gen_expr(e->args[0]); emit("SET %s", tv);            // tv = this
+                objaddr self = { 1, tv };
+                if (bc) emit_ctor_call(bc, self, NULL, 0);
+                for (strct_field *f = cls->fields; f; f = f->next) {
+                    int n; type *et = array_elems(f->ftype, &n);
+                    if (f->inherited || f->is_bitfield || LISTED(f) || !needs_construct(et)) continue;
+                    char *fa = new_temp("cmf");
+                    emit("LOD %s", tv); if (f->offset) emit("ADD %d", f->offset); emit("SET %s", fa);
+                    objaddr m = { 1, fa };
+                    emit_construct_n(et, m, n, NULL);
+                    free(fa);
+                }
+                #undef LISTED
+                free(tv);
+                return;
+            }
+            if (!strcmp(fn, "__construct_at")) {
+                // synth, from a member-init list: construct member args[0]
+                // with the arguments that follow. With no constructor to take
+                // them, `member(x)` is the copy `member = x` it always was.
+                type *mt = infer_type(e->args[0]);
+                if (e->n_args == 2 && !resolve_ctor(mt, e->args + 1, 1)) {
+                    gen_store(e->args[0], e->args[1]);
+                    return;
+                }
+                char *ma = new_temp("cat");
+                gen_addr(e->args[0]); emit("SET %s", ma);
+                objaddr m = { 1, ma };
+                emit_construct(mt, m, e->args + 1, e->n_args - 1);
+                free(ma);
+                return;
             }
             if (!strcmp(fn, "__zerofill")) {   // synth: zero-fill N words at &field
                 // emitted for an aggregate `= {}` default member initializer so a
@@ -2071,7 +2217,60 @@ static void gen_expr(expr *e)
 // array/struct slot initialised by a non-braced expression is copied word-by-
 // word (the expression yields the object's address). Items carry an optional
 // single-level designator (.field / [index]); positional items use a running
-// cursor that a designator resets. Slots not written keep the .mif zero default.
+// cursor that a designator resets. What the list leaves out takes its default
+// member initializer, or zero (see emit_omitted).
+static void emit_initz(const char *base, int off, type *t, initz *z);
+
+// Set while a local's initializer is emitted: a local keeps fixed storage, so a
+// second call finds the first call's values there, and an omitted part must be
+// stored as zero. Static storage starts as the .mif's zeros and needs nothing.
+static int g_initz_fill = 0;
+
+// does value-initializing a t store anything besides zeros (a default member
+// initializer somewhere inside)?
+static int has_member_defaults(type *t)
+{
+    int n; t = array_elems(t, &n);
+    if (!t || t->kind != TY_STRUCT || t->is_union) return 0;
+    for (strct_field *f = t->fields; f; f = f->next)
+        if (f->dinit || has_member_defaults(f->ftype)) return 1;
+    return 0;
+}
+
+// zero n words of block base from word off: single stores, a loop for a run
+static void emit_zero_words(const char *base, int off, int n)
+{
+    if (n <= 0) return;
+    if (n <= 4) {
+        for (int i = 0; i < n; i++) { emit("LOD %d", off + i); emit("PSH"); emit("LOD 0"); emit("STI %s", base); }
+        return;
+    }
+    int id = ++label_n;
+    char *zi = new_temp("zwi"), *zk = new_temp("zwk");
+    emit("LOD %d", off); emit("SET %s", zi);
+    emit("LOD %d", n);   emit("SET %s", zk);
+    emit("@Lzw_t%d NOP", id);
+    emit("LOD %s", zk); emit("JIZ Lzw_e%d", id);                          // while zk != 0
+    emit("LOD %s", zi); emit("PSH"); emit("LOD 0"); emit("STI %s", base);
+    emit("LOD %s", zi); emit("ADD 1");  emit("SET %s", zi);
+    emit("LOD %s", zk); emit("ADD -1"); emit("SET %s", zk);
+    emit("JMP Lzw_t%d", id);
+    emit("@Lzw_e%d NOP", id);
+    free(zi); free(zk);
+}
+
+// a sub-object of type t at word off that the braced list left out: its default
+// member initializers, and zeros where there are none (stored for a local only)
+static void emit_omitted(const char *base, int off, type *t)
+{
+    if (has_member_defaults(t)) {
+        initz empty; memset(&empty, 0, sizeof empty); empty.is_list = 1;
+        emit_initz(base, off, t, &empty);
+    } else if (g_initz_fill) {
+        emit_zero_words(base, off, type_size_words(t));
+    }
+}
+
 static void emit_initz(const char *base, int off, type *t, initz *z)
 {
     if (!z) return;
@@ -2100,6 +2299,8 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
     }
     if (t && t->kind == TY_ARRAY) {
         int esz = type_size_words(t->base);
+        int n = t->arr_size;
+        char *done = calloc(n > 0 ? n : 1, 1);
         int cursor = 0;
         for (int k = 0; k < z->n; k++) {
             int idx = cursor;
@@ -2107,10 +2308,23 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
                 msg_error(z->line, "field designator in array initializer");
             if (z->desigs[k].kind == DESIG_INDEX) idx = z->desigs[k].idx;
             cursor = idx + 1;
+            if (idx >= 0 && idx < n) done[idx] = 1;
             emit_initz(base, off + idx * esz, t->base, z->items[k]);
         }
+        int defaults = has_member_defaults(t->base);
+        if (defaults || g_initz_fill) {
+            for (int i = 0; i < n; ) {                  // each run of omitted elements
+                if (done[i]) { i++; continue; }
+                int j = i; while (j < n && !done[j]) j++;
+                if (defaults) for (int k = i; k < j; k++) emit_omitted(base, off + k * esz, t->base);
+                else          emit_zero_words(base, off + i * esz, (j - i) * esz);
+                i = j;
+            }
+        }
+        free(done);
     } else if (t && t->kind == TY_STRUCT) {
         strct_field *f = t->fields;
+        strct_field **wr = calloc(z->n + 1, sizeof(strct_field*));
         for (int k = 0; k < z->n; k++) {
             strct_field *target;
             if (z->desigs[k].kind == DESIG_INDEX)
@@ -2123,8 +2337,27 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
                 if (!f) msg_error(z->line, "too many initializers");
                 target = f; f = f->next;
             }
+            wr[k] = target;
             emit_initz(base, off + target->offset, target->ftype, z->items[k]);
         }
+        if (t->is_union) {                              // members overlap: only an empty list fills
+            if (z->n == 0 && g_initz_fill) emit_zero_words(base, off, type_size_words(t));
+        } else {
+            for (strct_field *q = t->fields; q; q = q->next) {    // the members left out
+                int written = 0;
+                for (int k = 0; k < z->n; k++) if (wr[k] == q) written = 1;
+                if (written || q->is_bitfield) continue;
+                int scalar = q->ftype && q->ftype->kind != TY_ARRAY && q->ftype->kind != TY_STRUCT;
+                if (q->dinit && scalar) {               // its default member initializer
+                    emit("LOD %d", off + q->offset); emit("PSH");
+                    gen_expr_to((expr*)q->dinit, q->ftype);
+                    emit("STI %s", base);
+                } else {
+                    emit_omitted(base, off + q->offset, q->ftype);
+                }
+            }
+        }
+        free(wr);
     } else {
         // braced list wrapping a scalar, e.g. `{ x }` -> take the first element
         if (z->n > 0) emit_initz(base, off, t, z->items[0]);
@@ -2167,29 +2400,15 @@ static void declare_local(decl *d)
         // multi-dim arrays flatten to total word count; element type is the innermost scalar
         if (d->init_file) emit("#arrays %s %d %d \"%s\"", aname, innermost_code(d->dtype), arr_words, d->init_file);
         else              emit("#array %s %d %d",         aname, innermost_code(d->dtype), arr_words);
-        if (!is_static && d->binit) emit_initz(aname, 0, d->dtype, d->binit);
+        if (!is_static && d->binit) { g_initz_fill = 1; emit_initz(aname, 0, d->dtype, d->binit); g_initz_fill = 0; }
+        else if (!is_static)        emit_construct_decl(d->dtype, aname, NULL, 0);   // objects: each element
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
         emit("#array %s %d %d", aname, agg_fill_code(d->dtype), type_size_words(d->dtype));
         type *ct = d->dtype;
         if (is_static)          { /* deferred to program start */ }
-        else if (d->binit)      emit_initz(aname, 0, d->dtype, d->binit);
+        else if (d->binit)      { g_initz_fill = 1; emit_initz(aname, 0, d->dtype, d->binit); g_initz_fill = 0; }
         else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
-        else if (ct->tag) {     // construct a stack class object
-            if (ct->n_vtbl > 0) {                                  // set vptr if polymorphic
-                emit("LEA %s", aname); emit("PSH"); emit("LEA %s__vtable", ct->tag); emit("STA");
-            }
-            func *cf = resolve_ctor(ct, d->ctor_args, d->n_ctor_args);  // overload by args
-            if (cf) {
-                emit("LEA %s", aname); emit("PSH");                // this
-                decl *p = cf->params ? cf->params->next : NULL;    // skip `this`
-                for (int i = 0; i < d->n_ctor_args; i++) {
-                    gen_arg(d->ctor_args[i], p ? p->dtype : NULL);
-                    if (p) p = p->next;
-                }
-                for (; p; p = p->next) gen_arg(p->init, p->dtype); // default args
-                emit("CAL %s", cf->asm_label);
-            }
-        }
+        else if (ct->tag) emit_construct_decl(ct, aname, d->ctor_args, d->n_ctor_args);
     } else if (d->init && !is_static) {
         if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
         else gen_expr_to(d->init, d->dtype);
@@ -2601,6 +2820,15 @@ static void emit_global_scalar_inits(unit *u)
         gen_expr_to(d->init, d->dtype);
         emit("SET %s", d->name);
     }
+    // then the global objects' constructors, in declaration order: as in C++,
+    // a constructor runs after every global value above is in place
+    for (int i = 0; i < u->n_globals; i++) {
+        decl *d = u->globals[i];
+        if (!d->dtype || d->binit || d->init) continue;
+        if (d->dtype->kind != TY_ARRAY && d->dtype->kind != TY_STRUCT) continue;
+        if (d->line > 0) cg_line = d->line;
+        emit_construct_decl(d->dtype, d->name, d->ctor_args, d->n_ctor_args);
+    }
     cg_line = saved;
 }
 
@@ -2612,7 +2840,7 @@ static void emit_static_inits(void)
         stinit_e *e = &stinits[i];
         if (e->line > 0) cg_line = e->line;   // map to the static local's decl line
         if (e->binit) { emit_initz(e->base, 0, e->t, e->binit); continue; }
-        if (!e->init) continue;
+        if (!e->init) { emit_construct_decl(e->t, e->base, e->args, e->nargs); continue; }
         if (e->t && (e->t->kind == TY_ARRAY || e->t->kind == TY_STRUCT)) {
             copy_to_block(e->base, e->init, type_size_words(e->t));   // static aggregate = expr
         } else {

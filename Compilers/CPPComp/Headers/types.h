@@ -47,6 +47,7 @@ struct type {
     int           n_vtbl;     // number of virtual slots (0 = not polymorphic)
     char        **statics;    // names of static data members (shared globals)
     int           n_statics;
+    int           has_ctor;   // a constructor is declared, or the implicit one synthesized
 
     // function-specific
     type **params;
@@ -63,6 +64,7 @@ struct strct_field {
     int          bit_width;  // width in bits (bitfields only)
     void        *dinit;      // default member initializer (expr*); NULL when none
     int          dzero;      // 1 = aggregate `= {}` default: zero-fill all words in the ctor
+    int          inherited;  // copied from the base class (the base's constructor builds it)
     strct_field *next;
 };
 
