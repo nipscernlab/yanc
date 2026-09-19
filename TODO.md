@@ -332,18 +332,18 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   the 64-bit types, or emulate it (mask or sign-extend on every store, paid
   only by programs that use it). The 64-bit types are decided: one word, with
   a warning at every variable (`test67`).
-- (d) **Default member initializers need a user constructor.** In
-  `struct E { int k = 5; };`, `E e;` and `new E` leave `k` at 0 (host: 5); the
-  initializer is only replayed inside constructor bodies, and a class without
-  one gets none. Measured 2026-09-19.
-- (e) **A `struct` cannot declare a constructor**: `struct S { S() {} };` is a
-  syntax error, while the same body in a `class` compiles. C++ makes the two
-  keywords differ only in default access.
+- (d) **Constructors run only for plain local objects and `new T`.** Never
+  for a global object (`G g;`, `G g2(9);`), a `static` local, an array
+  element (`G arr[2];`), `new T[n]`, or a member object; and a class without
+  a user constructor gets no implicit one, so its default member initializers
+  (`struct E { int k = 5; };`) are never applied, nor are they to the members
+  an aggregate initializer omits (`E e = {9}`). All of these read 0 where the
+  host reads the constructed value. Measured 2026-09-19.
 
 **Done when:** (a) gives the same result under both simulators, with a
 fixture that runs under both; (b) and the choice in (c) are decided and
 documented, and (c) has its lines in `test66` (or a warning or an error like
-`test67`'s); (d) and (e) have fixtures that match the host.
+`test67`'s); (d) has a fixture that matches the host in every context.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

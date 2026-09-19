@@ -773,6 +773,58 @@ static void check_static_assert(expr *cond, const char *msg, int line)
     if (v == 0)
         msg_error(line, "static assertion failed%s%s", msg ? ": " : "", msg ? msg : "");
 }
+
+// A class body: `class Tag : Base { ... }`, or the same with `struct`, which
+// C++ tells apart only by the default access (not enforced here). A struct may
+// be defined inside a class, so the enclosing class is saved and restored.
+static type *cur_class_stk[16];
+static int   cur_class_sp = 0;
+
+static void class_open(char *tag, type *base)
+{
+    type *t = t_make_struct(tag);
+    cur_struct_push(t);
+    st_add_tag(tag, t);
+    st_add_typedef(tag, t);             // bare class name usable as a type
+    cur_class_stk[cur_class_sp++] = cur_class;
+    cur_class = t;
+    if (base) {                         // single inheritance: lay the base first
+        t->base_class = base;
+        for (strct_field *f = base->fields; f; f = f->next)
+            t_struct_add_field(t, f->name, f->ftype);
+        t->n_vtbl = base->n_vtbl;       // inherit the base's virtual slots
+        if (t->n_vtbl) {
+            t->vtbl = malloc(sizeof(char*) * t->n_vtbl);
+            for (int i = 0; i < t->n_vtbl; i++) t->vtbl[i] = strdup(base->vtbl[i]);
+        }
+    }
+}
+
+static type *class_close(void)
+{
+    type *done = cur_struct;
+    /* a polymorphic class carries a vptr at offset 0 (inherited if the base
+       already provides one, else inserted now ahead of its own fields) */
+    if (done->n_vtbl > 0 && (!done->fields || strcmp(done->fields->name, "__vptr") != 0))
+        t_struct_prepend_field(done, "__vptr", t_int());
+    t_struct_seal(done, seal_bits());
+    cur_struct_pop();
+    cur_class = cur_class_stk[--cur_class_sp];
+    /* a class template: capture it for real monomorphization. Non-type
+       parameters bind to values (sentinels); type parameters bind to a
+       concrete type at each `Name<args>` use. Only the outermost class: a
+       struct nested in a class template belongs to it. */
+    if (g_in_template && cur_class_sp == 0) {
+        ctmpl *ct = calloc(1, sizeof(ctmpl));
+        ct->name = xstrdup(done->tag); ct->proto = done; ct->n_tparams = g_tparam_n;
+        for (int i = 0; i < g_tparam_n && i < 8; i++) ct->isval[i] = g_tparam_isval[i];
+        ct->n_methods = g_n_ctm;
+        ct->methods = malloc(sizeof(func*) * (g_n_ctm ? g_n_ctm : 1));
+        for (int i = 0; i < g_n_ctm; i++) ct->methods[i] = g_ctm[i];
+        unit_add_ctmpl(ct);
+    }
+    return done;
+}
 %}
 
 %union {
@@ -1032,11 +1084,10 @@ builtin_spec:
     ;
 
 struct_specifier:
-      KW_STRUCT IDENT '{' { cur_struct_push(t_make_struct($2)); st_add_tag($2, cur_struct); st_add_typedef($2, cur_struct); } field_list '}' {
-          type *done = cur_struct;
-          t_struct_seal(done, seal_bits());
-          cur_struct_pop();          // restore the enclosing struct (nested defs)
-          $$ = done;
+      KW_STRUCT IDENT base_clause '{' { class_open($2, $3); } member_list '}' {
+          /* a tagged struct is a class (methods, ctors, a base...); only the
+             default access differs, and it is not enforced */
+          $$ = class_close();
           free($2);
       }
     | KW_STRUCT IDENT {
@@ -1073,44 +1124,8 @@ struct_specifier:
    functions taking an implicit `this`; inline method bodies see members
    declared above them (single-pass). */
 class_specifier:
-      KW_CLASS IDENT base_clause '{' {
-          type *t = t_make_struct($2);
-          cur_struct_push(t);
-          st_add_tag($2, t);
-          st_add_typedef($2, t);          // bare class name usable as a type
-          cur_class = t;
-          if ($3) {                       // single inheritance: lay the base first
-              t->base_class = $3;
-              for (strct_field *f = $3->fields; f; f = f->next)
-                  t_struct_add_field(t, f->name, f->ftype);
-              t->n_vtbl = $3->n_vtbl;     // inherit the base's virtual slots
-              if (t->n_vtbl) {
-                  t->vtbl = malloc(sizeof(char*) * t->n_vtbl);
-                  for (int i = 0; i < t->n_vtbl; i++) t->vtbl[i] = strdup($3->vtbl[i]);
-              }
-          }
-      } member_list '}' {
-          type *done = cur_struct;
-          /* a polymorphic class carries a vptr at offset 0 (inherited if the base
-             already provides one, else inserted now ahead of its own fields) */
-          if (done->n_vtbl > 0 && (!done->fields || strcmp(done->fields->name, "__vptr") != 0))
-              t_struct_prepend_field(done, "__vptr", t_int());
-          t_struct_seal(done, seal_bits());
-          cur_struct_pop();
-          cur_class = NULL;
-          /* a class template: capture it for real monomorphization. Non-type
-             parameters bind to values (sentinels); type parameters bind to a
-             concrete type at each `Name<args>` use. */
-          if (g_in_template) {
-              ctmpl *ct = calloc(1, sizeof(ctmpl));
-              ct->name = xstrdup(done->tag); ct->proto = done; ct->n_tparams = g_tparam_n;
-              for (int i = 0; i < g_tparam_n && i < 8; i++) ct->isval[i] = g_tparam_isval[i];
-              ct->n_methods = g_n_ctm;
-              ct->methods = malloc(sizeof(func*) * (g_n_ctm ? g_n_ctm : 1));
-              for (int i = 0; i < g_n_ctm; i++) ct->methods[i] = g_ctm[i];
-              unit_add_ctmpl(ct);
-          }
-          $$ = done;
+      KW_CLASS IDENT base_clause '{' { class_open($2, $3); } member_list '}' {
+          $$ = class_close();
           free($2);
       }
     | KW_CLASS IDENT {

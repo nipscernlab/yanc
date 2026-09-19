@@ -95,6 +95,13 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **A C++ `struct` is a class** (`cppcomp`): a tagged `struct` accepted
+  nothing but fields, so a method, a constructor, a base class or an access
+  label in it was a syntax error, and a `struct` template was never
+  instantiated. It now takes the same body as a `class` (C++ tells the two
+  apart only by the default access, which is not enforced); a struct defined
+  inside a class restores the enclosing class when it closes. Anonymous and
+  C-style structs are unchanged. New fixture `test69`, against host g++.
 - **C++ bitfields laid out and masked at the 32-bit word** (`cppcomp`). Without
   `#pragma yanc nubits`, struct layout packed bitfields into 16-bit words
   while everything else ran at 32: four 8-bit fields took two words, so a
