@@ -95,6 +95,21 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **C++ exact-width 8- and 16-bit integers wrap like on a PC** (`cppcomp`).
+  `int8_t`, `uint8_t`, `int16_t` and `uint16_t` were plain 32-bit words, so
+  `uint8_t b = 255; b++;` gave 256 and a `uint8_t` checksum never wrapped.
+  They are now types of their own (`<cstdint>` spells them with the builtin
+  `__yanc_int8` ... `__yanc_uint16`): a value stored in one — assignment,
+  initializer, argument, return, cast, `++`/`--`, `+=` — wraps to its width
+  (`AND 255`; a signed one is also sign-extended), a literal is wrapped at
+  compile time, and a value that already fits (from a narrower type) costs
+  nothing. In arithmetic they are ints, as C++ promotes them, so
+  `uint8_t x = 5; x > -1` is true, as on the host. `char` and `short` stay one
+  32-bit word, which C++ allows (a `CHAR_BIT == 32` target, like several
+  DSPs). Also fixed: `++`/`--` on a bitfield stepped the whole word that holds
+  it, carrying into the neighbouring fields (`x.b++` on a field above bit 0
+  changed `x.a`); it now steps the field. `test66` grows to 93 lines, against
+  host g++.
 - **`T x(v);` parses when the first argument starts with a variable**
   (`cppcomp`): `Filter f(k);`, `Filter f(k + 1);` and `Filter g_f(g);` were
   syntax errors, while a literal argument worked. After `T x(` an identifier

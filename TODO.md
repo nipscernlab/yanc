@@ -322,16 +322,6 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   `sim_main.cpp:48` `fscanf` into an `int`, undefined above `INT_MAX`), so
   the two simulators may read such an input differently — to verify. Decide
   whether this is documented or the port learns the signedness it carries.
-- (c) **8- and 16-bit integer types are 32-bit words.** `<cstdint>` maps
-  `int8_t`/`uint8_t`/`int16_t`/`uint16_t` to `int`/`unsigned`, and `char` and
-  `short` are one word too. Measured: `uint8_t b = 255; b = b + 1` gives 256
-  (host 0), `int8_t` 127 + 1 gives 128 (host -128), `short` and `uint16_t`
-  likewise. A 32-bit `char`/`short` is legal C++ (a `CHAR_BIT == 32` target,
-  like several DSPs); an exact-width type that is not exact is not. Decide per
-  type: refuse it (a compile error instead of a silent difference), warn like
-  the 64-bit types, or emulate it (mask or sign-extend on every store, paid
-  only by programs that use it). The 64-bit types are decided: one word, with
-  a warning at every variable (`test67`).
 - (d) **A `static` local object is constructed at program start**, with the
   globals, not when control first reaches its declaration. Only a constructor
   with side effects shows it (`test70` compares a construction count, not the
@@ -341,9 +331,8 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   declares an object. A plain variable (`T x(v);`) works since `test71`.
 
 **Done when:** (a) gives the same result under both simulators, with a
-fixture that runs under both; (b) and the choice in (c) are decided and
-documented, and (c) has its lines in `test66` (or a warning or an error like
-`test67`'s); (d) and (e) have fixtures that match the host.
+fixture that runs under both; (b) is decided and documented; (d) and (e) have
+fixtures that match the host.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

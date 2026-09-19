@@ -1004,6 +1004,29 @@ static long bf_word (unsigned long long v)    { return (long)(int)(unsigned)v; }
 static long bf_mask (const strct_field *bf)   { return bf_word(bf_ones(bf)); }                    // value bits, at bit 0
 static long bf_clear(const strct_field *bf)   { return bf_word(~(bf_ones(bf) << bf->bit_pos)); }  // all but the field's bits
 
+// Wrap the int in acc to the exact-width type t (int8_t, uint16_t...): keep
+// its low bits, sign-extended for a signed type -- (v & m) ^ s, minus s.
+static void emit_wrap(const type *t)
+{
+    unsigned long long m = (1ULL << t->nbits) - 1;
+    emit("AND %ld", (long)m);
+    if (!t->nbits_uns) {
+        long s = 1L << (t->nbits - 1);
+        emit("XOR %ld", s);
+        emit("ADD %ld", -s);
+    }
+}
+
+// the value range of an integer type: [lo, hi] (a full word: the int range)
+static void int_range(const type *t, long long *lo, long long *hi)
+{
+    if (t->is_bool)       { *lo = 0; *hi = 1; }
+    else if (t->nbits)    { if (t->nbits_uns) { *lo = 0; *hi = (1LL << t->nbits) - 1; }
+                            else { *lo = -(1LL << (t->nbits - 1)); *hi = (1LL << (t->nbits - 1)) - 1; } }
+    else if (t->is_signed){ *lo = -2147483648LL; *hi = 2147483647LL; }
+    else                  { *lo = 0; *hi = 4294967295LL; }
+}
+
 // Convert the value in acc from type `have` to type `want` (either NULL:
 // nothing to do). The ULA's I2F/F2I are signed, so an unsigned word goes
 // through the u2f/f2u helpers (emitted once, only when used). A conversion to
@@ -1025,6 +1048,14 @@ static void coerce_to(type *have, type *want)
     } else if (!wf && hf && want->kind == TY_INT) {
         if (!want->is_signed) { emit("CAL f2u"); g_uses_f2u = 1; }
         else emit("F2I");
+    }
+    // an exact-width int8_t/uint16_t/...: wrap, unless every value of `have`
+    // already fits
+    if (want->kind == TY_INT && want->nbits) {
+        long long wl, wh, hl = 1, hh = 0;
+        int_range(want, &wl, &wh);
+        if (have->kind == TY_INT) int_range(have, &hl, &hh);
+        if (!(have->kind == TY_INT && hl >= wl && hh <= wh)) emit_wrap(want);
     }
 }
 
@@ -1056,6 +1087,12 @@ static int expr_is_01(expr *e)
 // assignment, initializer, argument or return)
 static void gen_expr_to(expr *e, type *want)
 {
+    if (want && want->kind == TY_INT && want->nbits && e->kind == E_INT_LIT) {
+        long long v = (unsigned long long)e->ival & ((1ULL << want->nbits) - 1);   // folded wrap
+        if (!want->nbits_uns && v >= (1LL << (want->nbits - 1))) v -= 1LL << want->nbits;
+        emit("LOD %ld", (long)v);
+        return;
+    }
     if (want && want->is_bool) {
         if (e->kind == E_INT_LIT)   { emit("LOD %d", e->ival != 0);  return; }  // folded
         if (e->kind == E_FLOAT_LIT) { emit("LOD %d", e->fval != 0);  return; }
@@ -1248,6 +1285,28 @@ static void emit_construct_decl(type *t, const char *name, expr **args, int narg
     objaddr a = { 0, name };
     if (t && t->kind == TY_ARRAY) { int n; type *et = array_elems(t, &n); emit_construct_n(et, a, n, NULL); }
     else emit_construct(t, a, args, nargs);
+}
+
+// ++/-- on a bitfield: step the field, not the word that holds it (which also
+// carried into the neighbouring fields) -- read the field, store it back
+// through the masking bitfield store. Returns 0 when e's operand is not one.
+static int gen_bitfield_step(expr *e)
+{
+    expr *lv = e->a;
+    strct_field *bf = (lv->kind == E_MEMBER || lv->kind == E_PMEMBER) ? member_field(lv) : NULL;
+    if (!bf || !bf->is_bitfield) return 0;
+    int d = (e->kind == E_PREINC || e->kind == E_POSTINC) ? 1 : -1;
+    expr *nv = ast_binop(OP_ADD, lv, ast_int_lit(d, e->line), e->line);
+    if (e->kind == E_PREINC || e->kind == E_PREDEC) {
+        gen_store(lv, nv); gen_expr(lv);                 // result: the new value
+    } else {
+        char *ov = new_temp("bfo");
+        gen_expr(lv); emit("SET %s", ov);                // the old value
+        gen_store(lv, nv);
+        emit("LOD %s", ov);                              // result: the old value
+        free(ov);
+    }
+    return 1;
 }
 
 // ---- store: lv = val -------------------------------------------------------
@@ -1728,8 +1787,10 @@ static void gen_expr(expr *e)
 
     case E_PREINC: case E_PREDEC: {
         // ++lv / --lv : modify in place, result is the NEW value.
+        if (gen_bitfield_step(e)) return;
         expr *lv = e->a;
         int is_float = lv->etype && lv->etype->kind == TY_FLOAT;
+        int narrow = lv->etype && lv->etype->kind == TY_INT && lv->etype->nbits;   // wraps
         // step: 1 for scalars; sizeof(pointee) for pointers (pointer arithmetic)
         int step = (lv->etype && lv->etype->kind == TY_PTR) ? type_size_words(lv->etype->base) : 1;
         int delta = (e->kind == E_PREDEC) ? -step : step;
@@ -1740,6 +1801,7 @@ static void gen_expr(expr *e)
                 emit("LOD %s", s->asm_name);
                 if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
                 else          emit("ADD %d", delta);
+                if (narrow) emit_wrap(lv->etype);
                 emit("SET %s", s->asm_name);
                 return;
             }
@@ -1750,13 +1812,16 @@ static void gen_expr(expr *e)
         emit("LDA");                                     // acc = *lv
         if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
         else          emit("ADD %d", delta);             // acc = new
+        if (narrow) emit_wrap(lv->etype);
         emit("STA");                                     // mem[&lv] = new ; acc = new
         return;
     }
     case E_POSTINC: case E_POSTDEC: {
         // lv++ / lv-- : modify in place, result is the OLD value.
+        if (gen_bitfield_step(e)) return;
         expr *lv = e->a;
         int is_float = lv->etype && lv->etype->kind == TY_FLOAT;
+        int narrow = lv->etype && lv->etype->kind == TY_INT && lv->etype->nbits;   // wraps
         int step = (lv->etype && lv->etype->kind == TY_PTR) ? type_size_words(lv->etype->base) : 1;
         int delta = (e->kind == E_POSTDEC) ? -step : step;
         // fast path: simple scalar identifier
@@ -1767,12 +1832,13 @@ static void gen_expr(expr *e)
                 emit("PSH");                             // stack: [old]  (result)
                 if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
                 else          emit("ADD %d", delta);
+                if (narrow) emit_wrap(lv->etype);
                 emit("SET %s", s->asm_name);
                 emit("POP");                             // acc = old
                 return;
             }
         }
-        if (!is_float) {
+        if (!is_float && !narrow) {
             // integer: recover old by undoing the delta (exact in integer math)
             gen_addr(lv);                                // acc = &lv
             emit("PSH");                                 // stack: [&lv]
@@ -1782,7 +1848,8 @@ static void gen_expr(expr *e)
             emit("ADD %d", -delta);                      // acc = new - delta = old
             return;
         }
-        // float: re-add would round; preserve old in a temp instead
+        // float (re-adding would round) or a wrapping type (the old value cannot
+        // be recovered from the wrapped one): keep old in a temp instead
         {
             char tn[64]; snprintf(tn, sizeof(tn), "_pf%d", ++label_n);
             char *ta = mangle_local(tn);
@@ -1794,7 +1861,8 @@ static void gen_expr(expr *e)
             emit("PSH");                                 // stack: [old]  (result)
             emit("LOD %s", ta); emit("PSH");             // stack: [old, &lv]
             emit("LOD %s", ta); emit("LDA");             // acc = old (re-read)
-            emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");// acc = new
+            if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");   // acc = new
+            else        { emit("ADD %d", delta); emit_wrap(lv->etype); }
             emit("STA");                                 // mem[&lv] = new ; stack: [old]
             emit("POP");                                 // acc = old
             free(ta);

@@ -52,6 +52,17 @@ type *t_char (void) { if (!T_CHAR)  T_CHAR  = make_basic(TY_INT,   1); return T_
 static type *T_BOOL = NULL;
 type *t_bool (void) { if (!T_BOOL)  { T_BOOL = make_basic(TY_INT, 0); T_BOOL->is_bool = 1; } return T_BOOL; }
 
+// The exact-width 8- and 16-bit types: one word, but a value stored in one
+// wraps to its width (codegen coerce_to). In arithmetic it is an int, which
+// is what C++'s integer promotion makes of it, so it is marked signed.
+type *t_narrow(int bits, int uns)
+{
+    static type *cache[2][2];                       // [16-bit?][unsigned?]
+    type **c = &cache[bits == 16][uns != 0];
+    if (!*c) { *c = make_basic(TY_INT, 1); (*c)->nbits = bits; (*c)->nbits_uns = uns != 0; }
+    return *c;
+}
+
 // The 64-bit types get one word like everything else; they are distinct
 // singletons only to remember what the source asked for, so a declaration can
 // warn that the size is ignored (CPPComp.y warn_wide).

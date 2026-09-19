@@ -716,7 +716,8 @@ enum {
     TS_VOID   = 1<<0, TS_CHAR  = 1<<1, TS_INT    = 1<<2, TS_FLOAT = 1<<3,
     TS_DOUBLE = 1<<4, TS_SIGN  = 1<<5, TS_UNSIGN = 1<<6, TS_SHORT = 1<<7,
     TS_BOOL   = 1<<8, TS_LONG1 = 1<<9, TS_LONG2  = 1<<10,
-    TS_LONG   = 1<<11   // sentinel returned by the `long` spec; folded by ts_add
+    TS_LONG   = 1<<11,  // sentinel returned by the `long` spec; folded by ts_add
+    TS_I8     = 1<<12, TS_U8    = 1<<13, TS_I16    = 1<<14, TS_U16   = 1<<15
 };
 
 static int ts_add(int acc, int spec)
@@ -732,6 +733,10 @@ static type *resolve_builtin(int f)
     if (f & TS_DOUBLE)               return t_double();  // double/long double: one float word
     if (f & TS_FLOAT)                return t_float();
     if (f & TS_BOOL)                 return t_bool();    // an unsigned word holding 0 or 1
+    if (f & TS_I8)                   return t_narrow(8, 0);   // exact-width: wraps on store
+    if (f & TS_U8)                   return t_narrow(8, 1);
+    if (f & TS_I16)                  return t_narrow(16, 0);
+    if (f & TS_U16)                  return t_narrow(16, 1);
     if (f & TS_CHAR)                 return (f & TS_UNSIGN) ? t_uint() : t_char();
     if (f & TS_LONG2)                return (f & TS_UNSIGN) ? t_ullong() : t_llong();  // one int word
     return (f & TS_UNSIGN) ? t_uint() : t_int();         // short/int/long
@@ -926,7 +931,7 @@ static type *class_close(void)
 %token <sval>  NS_IDENT
 
 %token KW_VOID KW_INT KW_FLOAT KW_CHAR KW_UNSIGNED KW_SIGNED
-%token KW_SHORT KW_LONG KW_DOUBLE KW_BOOL
+%token KW_SHORT KW_LONG KW_DOUBLE KW_BOOL KW_I8 KW_U8 KW_I16 KW_U16
 %token KW_IF KW_ELSE KW_WHILE KW_FOR KW_DO KW_SWITCH KW_CASE KW_DEFAULT
 %token KW_BREAK KW_CONTINUE KW_RETURN KW_GOTO
 %token KW_STRUCT KW_UNION KW_TYPEDEF KW_ENUM KW_SIZEOF KW_ASM KW_NEW KW_DELETE
@@ -1154,6 +1159,10 @@ builtin_spec:
     | KW_FLOAT     { $$ = TS_FLOAT;  }
     | KW_DOUBLE    { $$ = TS_DOUBLE; }
     | KW_BOOL      { $$ = TS_BOOL;   }
+    | KW_I8        { $$ = TS_I8;     }
+    | KW_U8        { $$ = TS_U8;     }
+    | KW_I16       { $$ = TS_I16;    }
+    | KW_U16       { $$ = TS_U16;    }
     | KW_SIGNED    { $$ = TS_SIGN;   }
     | KW_UNSIGNED  { $$ = TS_UNSIGN; }
     ;

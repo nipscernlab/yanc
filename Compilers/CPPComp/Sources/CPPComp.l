@@ -165,6 +165,10 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "double"                 { return KW_DOUBLE;   }
 "_Bool"                  { return KW_BOOL;     }
 "bool"                   { return KW_BOOL;     }
+"__yanc_int8"            { return KW_I8;       }   /* <cstdint>'s exact-width types */
+"__yanc_uint8"           { return KW_U8;       }
+"__yanc_int16"           { return KW_I16;      }
+"__yanc_uint16"          { return KW_U16;      }
 "unsigned"               { return KW_UNSIGNED; }
 "signed"                 { return KW_SIGNED;   }
 "__signed"               { return KW_SIGNED;   }

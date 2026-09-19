@@ -34,6 +34,9 @@ struct type {
     int       tparam;      // >0: template type parameter (index+1); behaves as int
                            // until substituted by a concrete type at instantiation
     int       is_bool;     // bool: an unsigned word that only ever holds 0 or 1
+    int       nbits;       // int8_t/int16_t/...: the width a stored value wraps to
+    int       nbits_uns;   //   ... unsigned (uint8_t, uint16_t); 0 = signed. The value
+                           //   is still an int in arithmetic (C++'s promotion)
     int       req_bits;    // bits the source asked for when a word cannot hold them
                            // (long long, double: 64); 0 = the word is what it asked
 
@@ -75,6 +78,7 @@ type *t_uint(void);    // unsigned int (is_signed = 0)
 type *t_float(void);
 type *t_char(void);    // 1-word signed (CHAR_BIT == NUBITS on this target)
 type *t_bool  (void);  // bool: an unsigned word, 0 or 1 (conversions to it test != 0)
+type *t_narrow(int bits, int uns);  // int8_t / uint8_t / int16_t / uint16_t
 type *t_llong (void);  // long long: an int word that asked for 64 bits (req_bits)
 type *t_ullong(void);  // unsigned long long, likewise
 type *t_double(void);  // double / long double: a float word that asked for 64 bits
