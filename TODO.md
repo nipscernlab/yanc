@@ -332,17 +332,16 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   `sim_main.cpp:48` `fscanf` into an `int`, undefined above `INT_MAX`), so
   the two simulators may read such an input differently — to verify. Decide
   whether this is documented or the port learns the signedness it carries.
-- (d) **8-, 16- and 64-bit integer types are 32-bit words.** `<cstdint>` maps
-  `int8_t`/`uint8_t`/`int16_t`/`uint16_t`/`int64_t`/`uint64_t` to `int`/
-  `unsigned`, and `char`, `short` and `long long` are one word too. Measured:
-  `uint8_t b = 255; b = b + 1` gives 256 (host 0), `int8_t` 127 + 1 gives 128
-  (host -128), `short` and `uint16_t` likewise, `long long` 3000000000 wraps.
-  A 32-bit `char`/`short` is legal C++ (a `CHAR_BIT == 32` target, like
-  several DSPs); an exact-width type that is not exact, and a 32-bit
-  `long long` (the standard requires at least 64), are not. Decide per type:
-  refuse it (a compile error instead of a silent difference) or emulate it
-  (mask or sign-extend on every store, paid only by programs that use it).
-  64-bit arithmetic itself belongs to item 6(b).
+- (d) **8- and 16-bit integer types are 32-bit words.** `<cstdint>` maps
+  `int8_t`/`uint8_t`/`int16_t`/`uint16_t` to `int`/`unsigned`, and `char` and
+  `short` are one word too. Measured: `uint8_t b = 255; b = b + 1` gives 256
+  (host 0), `int8_t` 127 + 1 gives 128 (host -128), `short` and `uint16_t`
+  likewise. A 32-bit `char`/`short` is legal C++ (a `CHAR_BIT == 32` target,
+  like several DSPs); an exact-width type that is not exact is not. Decide per
+  type: refuse it (a compile error instead of a silent difference), warn like
+  the 64-bit types, or emulate it (mask or sign-extend on every store, paid
+  only by programs that use it). The 64-bit types are decided: one word, with
+  a warning at every variable (`test67`).
 - (e) **`bool` is not normalised to 0/1.** `bool` is an `unsigned` word and
   a conversion stores the value as is: `bool b = 5` holds 5, and
   `bool b = 0.5f` holds 0 because `F2I` truncates (host: 1 and 1). A
@@ -350,8 +349,9 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   with 0.0.
 
 **Done when:** (a) gives the same result under both simulators, with a
-fixture that runs under both; (b), (d) and (e) have their lines in `test66`,
-matching the host; (c) and the choice in (d) are decided and documented.
+fixture that runs under both; (b), (d) and (e) have their lines in `test66`
+(or, for (d), a warning or an error like `test67`'s), matching the host; (c)
+and the choice in (d) are decided and documented.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

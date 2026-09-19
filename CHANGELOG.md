@@ -61,6 +61,18 @@ tags consumed by Aurora.
   item 8).
 
 ### Added
+- **`cppcomp` warns when a variable asks for more than a word.** YANC stays at
+  32 bits, so `long long`, `unsigned long long`, `int64_t`, `uint64_t`,
+  `double` and `long double` are one 32-bit word, as they always were — but
+  now each variable declared with one (global, local, loop variable,
+  parameter, field, array, static member, or through a `typedef`) gets
+  `warning: 'x' asks for 64 bits, but a YANC word has 32: the requested size
+  is ignored and 'x' is a 32-bit integer` (or `float`). Pointers, typedefs,
+  casts and `sizeof` do not warn, nor does `long`, whose 32 bits are what C++
+  requires. `<cstdint>` defines `int64_t`/`uint64_t` through `long long` so
+  they warn too. New fixture `test67`, and `regress.sh` now checks compiler
+  warnings: a C++ test with a `warnings.txt` must produce exactly the warnings
+  listed there.
 - **`Scripts/hw/width_sweep.sh`** — checks whether Icarus and Verilator
   compute every integer operator right at a given word width, in continuous
   assigns and in procedural blocks, against a Python-bigint oracle. Its first

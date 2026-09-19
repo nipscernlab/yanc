@@ -48,6 +48,22 @@ type *t_uint (void) { if (!T_UINT)  T_UINT  = make_basic(TY_INT,   0); return T_
 type *t_float(void) { if (!T_FLOAT) T_FLOAT = make_basic(TY_FLOAT, 1); return T_FLOAT; }
 type *t_char (void) { if (!T_CHAR)  T_CHAR  = make_basic(TY_INT,   1); return T_CHAR;  }
 
+// The 64-bit types get one word like everything else; they are distinct
+// singletons only to remember what the source asked for, so a declaration can
+// warn that the size is ignored (CPPComp.y warn_wide).
+static type *make_wide(type_kind k, int is_signed)
+{
+    type *t = make_basic(k, is_signed);
+    t->req_bits = 64;
+    return t;
+}
+static type *T_LLONG  = NULL;
+static type *T_ULLONG = NULL;
+static type *T_DOUBLE = NULL;
+type *t_llong (void) { if (!T_LLONG)  T_LLONG  = make_wide(TY_INT,   1); return T_LLONG;  }
+type *t_ullong(void) { if (!T_ULLONG) T_ULLONG = make_wide(TY_INT,   0); return T_ULLONG; }
+type *t_double(void) { if (!T_DOUBLE) T_DOUBLE = make_wide(TY_FLOAT, 1); return T_DOUBLE; }
+
 type *t_ptr(type *to)
 {
     type *t = (type*)xcalloc(sizeof(type));

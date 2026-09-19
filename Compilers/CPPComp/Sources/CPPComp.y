@@ -34,6 +34,20 @@ int   g_str_len = 0;    // set by lexer alongside yylval.sval for STRING_LIT
 // two words and a union with an `unsigned` saw only the first two.)
 static int seal_bits(void) { return g_unit && g_unit->nubits > 0 ? g_unit->nubits : CFG_NUBITS; }
 
+// A variable whose type asks for more bits than a word holds (long long,
+// int64_t, double: 64) still gets one word: say so where it is declared. An
+// array warns for its elements; a pointer or reference does not (the object it
+// points to is declared, and warned about, where it lives).
+static void warn_wide(type *t, const char *name, int line)
+{
+    while (t && t->kind == TY_ARRAY) t = t->base;
+    int w = seal_bits();
+    if (!t || t->req_bits <= w) return;
+    msg_warning(line, "'%s' asks for %d bits, but a YANC word has %d: the requested size "
+                "is ignored and '%s' is a %d-bit %s", name, t->req_bits, w, name, w,
+                t->kind == TY_FLOAT ? "float" : "integer");
+}
+
 // staging state for declarations and functions ------------------------------
 
 static int            ts_typedef = 0;       // we're inside a `typedef ...;`
@@ -678,10 +692,12 @@ static int ts_add(int acc, int spec)
 static type *resolve_builtin(int f)
 {
     if (f & TS_VOID)                 return t_void();
-    if (f & (TS_FLOAT | TS_DOUBLE))  return t_float();   // float/double/long double
+    if (f & TS_DOUBLE)               return t_double();  // double/long double: one float word
+    if (f & TS_FLOAT)                return t_float();
     if (f & TS_BOOL)                 return t_uint();
     if (f & TS_CHAR)                 return (f & TS_UNSIGN) ? t_uint() : t_char();
-    return (f & TS_UNSIGN) ? t_uint() : t_int();         // short/int/long/long long
+    if (f & TS_LONG2)                return (f & TS_UNSIGN) ? t_ullong() : t_llong();  // one int word
+    return (f & TS_UNSIGN) ? t_uint() : t_int();         // short/int/long
 }
 
 // compile-time integer constant evaluator (for _Static_assert). Handles int/
@@ -901,6 +917,7 @@ declaration:
                       /* nothing more to do */
                   } else {
                       int is_def = (d->sclass != SC_EXTERN);   // `extern x;` is only a declaration
+                      if (is_def) warn_wide(d->dtype, d->name, d->line);
                       if (existing && existing->kind == SK_GLOBAL_VAR) {
                           if (is_def && existing->defined)
                               msg_error(d->line, "redefinition of global '%s' "
@@ -1174,10 +1191,12 @@ dtor_decl:
    field). In-class init is treated as its definition. */
 static_member:
       KW_STATIC base_type IDENT ';' {
+          warn_wide($2, $3, yylineno);
           decl *d = ast_decl($2, mangle_method(cur_class->tag, $3), NULL, yylineno);
           unit_add_global(d); add_static(cur_class, $3); free($3);
       }
     | KW_STATIC base_type IDENT '=' assignment_expr ';' {
+          warn_wide($2, $3, yylineno);
           decl *d = ast_decl($2, mangle_method(cur_class->tag, $3), $5, yylineno);
           unit_add_global(d); add_static(cur_class, $3); free($3);
       }
@@ -1185,10 +1204,12 @@ static_member:
        through field_decl's base_type otherwise, and field_decl has no
        initializer slot, so `static const int X = N;` fails. Spell it out here. */
     | KW_STATIC KW_CONST base_type IDENT ';' {
+          warn_wide($3, $4, yylineno);
           decl *d = ast_decl($3, mangle_method(cur_class->tag, $4), NULL, yylineno);
           unit_add_global(d); add_static(cur_class, $4); free($4);
       }
     | KW_STATIC KW_CONST base_type IDENT '=' assignment_expr ';' {
+          warn_wide($3, $4, yylineno);
           char *mname = mangle_method(cur_class->tag, $4);
           decl *d = ast_decl($3, mname, $6, yylineno);
           unit_add_global(d); add_static(cur_class, $4);
@@ -1407,6 +1428,7 @@ field_declarator_list:
    `IDENT : N` form doesn't clash with a plain `IDENT` field on lookahead */
 field_declarator:
       IDENT {
+          warn_wide(cur_base, $1, yylineno);
           t_struct_add_field(cur_struct, $1, cur_base);
           free($1);
       }
@@ -1414,6 +1436,7 @@ field_declarator:
           /* default member initializer `T name = expr;` (C++11). The init is
              attached to the field and replayed in every ctor body that doesn't
              already write `name` via its member-init list. */
+          warn_wide(cur_base, $1, yylineno);
           t_struct_add_field(cur_struct, $1, cur_base);
           strct_field *f = t_struct_find(cur_struct, $1);
           if (f) f->dinit = $3;
@@ -1424,6 +1447,7 @@ field_declarator:
              (and pointer) fields get a 0 dinit; aggregate (array/struct) fields
              are flagged `dzero` so the ctor zero-fills every word, so heap objects
              get zeroed too (not just .mif-backed static storage). */
+          warn_wide(cur_base, $1, yylineno);
           t_struct_add_field(cur_struct, $1, cur_base);
           strct_field *f = t_struct_find(cur_struct, $1);
           if (f && cur_base) {
@@ -1441,6 +1465,7 @@ field_declarator:
              non-type template parameter (a sentinel int, resolved at instantiation) */
           long v;
           if (!const_eval($3, &v)) msg_error(yylineno, "array field size must be constant");
+          warn_wide(cur_base, $1, yylineno);
           t_struct_add_field(cur_struct, $1, t_array(cur_base, (int)v));
           free($1);
       }
@@ -1886,6 +1911,7 @@ param_declarator:
     | base_type pointers IDENT array_suffix {
           type *t = apply_pointers($1, $2);
           t = build_array_type(t, $4.dims, $4.n);
+          warn_wide(t, $3, yylineno);
           $$ = ast_decl(t, $3, NULL, yylineno);
       }
     | base_type '&' IDENT {
@@ -1894,6 +1920,7 @@ param_declarator:
       }
     | base_type pointers IDENT '=' assignment_expr {
           /* default argument `T name = expr` — the default is the param's init */
+          warn_wide(apply_pointers($1, $2), $3, yylineno);
           $$ = ast_decl(apply_pointers($1, $2), $3, $5, yylineno);
       }
     | base_type pointers {
@@ -1964,6 +1991,7 @@ local_decl:
               /* publish names in current local scope */
               for (decl *d = $2.head; d; d = d->next) {
                   st_add(SK_LOCAL_VAR, d->name, NULL, d->dtype);
+                  warn_wide(d->dtype, d->name, d->line);
                   /* `const int X = expr;` / `constexpr int X = expr;` whose
                      init folds to a constant: also publish as SK_ENUM_CONST so
                      const_eval (array bounds, template args) accepts it. */

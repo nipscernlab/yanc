@@ -1,0 +1,10 @@
+'g_total' asks for 64 bits
+'sum' asks for 64 bits
+'scale' asks for 64 bits
+'hist' asks for 64 bits
+'ticks' asks for 64 bits
+'v' asks for 64 bits
+'u' asks for 64 bits
+'ld' asks for 64 bits
+'w' asks for 64 bits
+'i' asks for 64 bits

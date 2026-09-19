@@ -17,7 +17,9 @@
 #      Tests follow the cmmcomp pipeline layout: <proc>/Software/ for
 #      source, <proc>/Hardware/ for the generated .v/.mif, and
 #      <proc>/Simulation/ for the sim output (all three are created on
-#      demand by cppcomp + asmcomp).
+#      demand by cppcomp + asmcomp). An optional testN/warnings.txt lists
+#      the cppcomp warnings the test expects, one substring per line: each
+#      must appear, and no other warning may.
 #
 #   3. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
@@ -610,8 +612,23 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         fi
         # cppcomp -p <proc> writes Software/<prname>.asm into the proc folder,
         # creating Software/ if missing (cmmcomp-style pipeline layout).
-        if ! "$CPPC" -i "$tmp/pp.cpp" -p "$proc" -n "$prname" -t "$tmp" >/dev/null 2>&1; then
+        if ! "$CPPC" -i "$tmp/pp.cpp" -p "$proc" -n "$prname" -t "$tmp" >"$tmp/cppcomp.log" 2>&1; then
             echo "FAIL ($base): cppcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
+        # warnings.txt (optional): one expected cppcomp warning per line (a
+        # substring); every one must appear, and no other warning may.
+        wfile="${entry%/}/warnings.txt"
+        if [ -f "$wfile" ]; then
+            wbad=""
+            while IFS= read -r w || [ -n "$w" ]; do
+                w="${w%$'\r'}"; [ -z "$w" ] && continue
+                grep -qF -- "$w" "$tmp/cppcomp.log" || wbad="missing warning: $w"
+            done < "$wfile"
+            wexp=$(grep -c . "$wfile"); wgot=$(grep -c 'warning:' "$tmp/cppcomp.log")
+            [ -z "$wbad" ] && [ "$wgot" -ne "$wexp" ] && wbad="$wgot warnings, expected $wexp"
+            if [ -n "$wbad" ]; then
+                echo "FAIL ($base): $wbad"; fail=$((fail+1)); failed_names+=("$base"); continue
+            fi
         fi
         if ! "$APPCOMP" -en -i "$asm" -t "$tmp" >/dev/null 2>&1; then
             echo "FAIL ($base): appcomp"; fail=$((fail+1)); failed_names+=("$base"); continue

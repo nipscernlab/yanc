@@ -1,15 +1,17 @@
 #pragma once
 // CPPComp <cstdint>: fixed-width integer aliases. The target folds every integer
 // to one 32-bit word, so the widths are nominal — they all map to int/unsigned.
+// The 64-bit ones go through `long long`, so a variable declared with them gets
+// cppcomp's warning that the requested size is ignored.
 namespace std {
-    typedef int           int32_t;
-    typedef int           int16_t;
-    typedef int           int8_t;
-    typedef int           int64_t;
-    typedef unsigned int  uint32_t;
-    typedef unsigned int  uint16_t;
-    typedef unsigned int  uint8_t;
-    typedef unsigned int  uint64_t;
-    typedef int           intptr_t;
-    typedef unsigned int  uintptr_t;
+    typedef int                int32_t;
+    typedef int                int16_t;
+    typedef int                int8_t;
+    typedef long long          int64_t;
+    typedef unsigned int       uint32_t;
+    typedef unsigned int       uint16_t;
+    typedef unsigned int       uint8_t;
+    typedef unsigned long long uint64_t;
+    typedef int                intptr_t;
+    typedef unsigned int       uintptr_t;
 }
