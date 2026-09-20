@@ -1,0 +1,67 @@
+#PRNAME cmm_pplus
+#NUBITS 32
+#NDSTAC 16
+#SDEPTH 16
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// ++ in every form, against the same program compiled by gcc (the expected
+// values in the comments are C's). Three things used to go wrong here:
+//   - a float x++ added the INT literal 1 (F_ADD 1), whose bits the float
+//     adder read as an unnormalised number: 1.5 became 2.0;
+//   - an array element ++ reloaded the index into the acc AFTER the sum, and
+//     STI takes the index from the stack: the increment was lost and a stray
+//     word was stored somewhere (pplus_arr's golden had this frozen: all 0s);
+//   - x++ inside an expression gave the NEW value (pre-increment), so
+//     buf[n++] = v wrote one slot too far and while (k++ < 3) ran twice.
+// The statement form x++; costs what it did; the expression form pays one
+// instruction (SET_P / ADD -1), two for a float element (a copy in aux_var).
+// Expected: 6 25 2 35 5 6 2 0 6 2 35 0 1 3 3 15 25 2 3 13 4 2 7 9 0 3 4 1 3 0 2
+
+int   a[4];
+int   b[3][3];
+float f[2];
+int   hist[4];
+int   s[6];
+int   buf[4];
+
+void main()
+{
+    int k; int j; int r; int n; float x; float y;
+    while (1)
+    {
+        // scalars
+        k = 5; k++;                       out(0, k);                        // 6
+        x = 1.5; x++;                     fout(0, x * 10.0);                // 25
+        x = 2.5; r = x++;                 out(0, r); fout(0, x * 10.0);     // 2 35
+        n = 5; r = n++;                   out(0, r); out(0, n);             // 5 6
+        // array elements, statement form
+        a[0] = 0; a[1] = 0; a[2] = 0; a[3] = 0;
+        j = 2; a[j]++; a[j]++;            out(0, a[2]);                     // 2
+        out(0, a[0] + a[1] + a[3]);                                         // 0  (no stray store)
+        b[1][2] = 5; b[1][2]++;           out(0, b[1][2]);                  // 6
+        j = 1; b[j][j]++; b[j][j]++;      out(0, b[1][1]);                  // 2
+        f[1] = 2.5; f[1]++;               fout(0, f[1] * 10.0);             // 35
+        // array elements inside an expression: the old value
+        j = 3; r = a[j]++;                out(0, r); out(0, a[3]);          // 0 1
+        r = a[j]++ + a[j]++;              out(0, r); out(0, a[3]);          // 3 3
+        f[0] = 1.5; y = f[0]++;           fout(0, y * 10.0); fout(0, f[0] * 10.0);   // 15 25
+        r = b[1][1]++;                    out(0, r); out(0, b[1][1]);       // 2 3
+        k = 10; r = k + a[j]++;           out(0, r); out(0, a[3]);          // 13 4  (a live operand)
+        // idioms
+        n = 0; buf[0] = 0; buf[1] = 0; buf[2] = 0;
+        buf[n++] = 7; buf[n++] = 9;
+        out(0, n); out(0, buf[0]); out(0, buf[1]); out(0, buf[2]);          // 2 7 9 0
+        k = 0; r = 0;
+        while (k++ < 3) { r = r + 1; }
+        out(0, r); out(0, k);                                               // 3 4
+        hist[0] = 0; hist[1] = 0; hist[2] = 0; hist[3] = 0;
+        s[0] = 1; s[1] = 3; s[2] = 1; s[3] = 0; s[4] = 1; s[5] = 3;
+        j = 0;
+        while (j < 6) { hist[s[j]]++; j++; }
+        out(0, hist[0]); out(0, hist[1]); out(0, hist[2]); out(0, hist[3]); // 1 3 0 2  (a histogram)
+    }
+}

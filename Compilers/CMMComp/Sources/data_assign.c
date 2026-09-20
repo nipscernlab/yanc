@@ -562,20 +562,20 @@ void ass_array(int id, expr e, int fft)
 // ++ operator assignment
 void ass_pplus(int id)
 {
-    pplus2exp(id);
+    pplus2exp(id, 0);
     acc_ok = 0; // acc released
 }
 
 // ++ operator assignment on a 1D array
 void ass_aplus(int id, expr e)
 {
-    pplus1d2exp(id, e);
+    pplus1d2exp(id, e, 0);
     acc_ok = 0; // acc released
 }
 
 // ++ operator assignment on a 2D array
 void ass_apl2d(int id, expr e1, expr e2)
 {
-    pplus2d2exp(id, e1, e2);
+    pplus2d2exp(id, e1, e2, 0);
     acc_ok = 0; // acc released
 }

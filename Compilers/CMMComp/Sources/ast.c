@@ -582,14 +582,14 @@ static expr ast_emit_expr_impl(expr_node *n)
         }
 
         case EXPR_PPLUS: {
-            if (!n->left)  return pplus2exp(n->id);
+            if (!n->left)  return pplus2exp(n->id, 1);
             if (!n->right) {
                 expr idx = ast_emit_expr(n->left);
-                return pplus1d2exp(n->id, idx);
+                return pplus1d2exp(n->id, idx, 1);
             }
             expr i1 = ast_emit_expr(n->left );
             expr i2 = ast_emit_expr(n->right);
-            return pplus2d2exp(n->id, i1, i2);
+            return pplus2d2exp(n->id, i1, i2, 1);
         }
 
         case EXPR_STDLIB_CALL: {

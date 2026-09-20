@@ -95,6 +95,31 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **C± `++` on floats, on array elements, and inside expressions**
+  (`cmmcomp`, `data_use.c`). Three faults in one operator, found by a probe
+  of every conversion, arithmetic and I/O form against the same program
+  compiled by gcc (everything else matched):
+  - `x++` on a float added the *int* literal `1` (`F_ADD 1`): the assembler
+    encodes it as an integer, whose bits the float adder reads as an
+    unnormalised number, so `1.5` became `2.0`. The literal is now `1.0`.
+  - `a[i]++` and `m[i][j]++` reloaded the index into the accumulator *after*
+    the sum, but `STI` takes the index from the stack: the incremented value
+    was thrown away and a stray word was stored at whatever the stack held
+    (an `x` in simulation). A `hist[k]++` histogram stayed all zeros. The
+    index now goes to the acc and onto the stack (`PSH` keeps the acc) before
+    `LDI`, and `STI` finds it there — same length in 1-D, two instructions
+    shorter in 2-D, since the index is no longer computed twice. The
+    `pplus_arr` fixture had this frozen in its goldens (`0 0 0 …` where
+    `1 2 3 …` was due); they are re-blessed.
+  - `x++` inside an expression yielded the *new* value: `buf[n++] = v` wrote
+    one slot too far and `while (k++ < 3)` ran twice. It is now C's old
+    value, only in expression form: a scalar keeps a copy on the stack and
+    `SET_P` (SET + POP) brings it back (+1 instruction, int or float), an
+    int element re-subtracts (`ADD -1`, exact modulo 2^NUBITS, +1), a float
+    element keeps a copy in `aux_var` (+2). The statement form `x++;` — every
+    `++` the examples use — generates exactly what it did: the other 53 C±
+    goldens are byte-identical. New fixture `cmm_pplus`, expected values
+    from gcc.
 - **C++ exact-width 8- and 16-bit integers wrap like on a PC** (`cppcomp`).
   `int8_t`, `uint8_t`, `int16_t` and `uint16_t` were plain 32-bit words, so
   `uint8_t b = 255; b++;` gave 256 and a `uint8_t` checksum never wrapped.

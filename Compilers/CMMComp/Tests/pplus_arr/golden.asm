@@ -16,18 +16,16 @@ SET main_b_arr_size
 JIZ Lwh1end
 INN 0
 SET main_idx
+PSH
 LDI main_a
 ADD 1
-LOD main_idx
 STI main_a
-LOD main_idx
-MLT main_b_arr_size
-ADD main_idx
-LDI main_b
-ADD 1
 LOD  main_idx
 MLT  main_b_arr_size
 ADD  main_idx
+PSH
+LDI main_b
+ADD 1
 STI main_b
 LOD main_idx
 LDI main_a
