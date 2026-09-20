@@ -35,8 +35,7 @@ LOD three_mixed_p
 OUT 0
 F2I_M three_mixed_q
 OUT 0
-LOD three_mixed_r
-F2I
+F2I_M three_mixed_r
 OUT 0
 LOD three_mixed_p
 RET
@@ -68,8 +67,7 @@ LOD main_v2
 OUT 0
 F2I_M main_v3
 OUT 0
-LOD main_v4
-F2I
+F2I_M main_v4
 OUT 0
 LOD main_v5
 OUT 0

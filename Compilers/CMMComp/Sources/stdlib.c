@@ -2034,25 +2034,28 @@ expr exec_real(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
-
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // comp const
+    // comp const: its real part is a float constant, handed back as a memory
+    // operand -- no load here, so the consumer fuses it (F2I_M, F_ADD, ...)
     if (e.type == 5)
     {
         expr et_r, et_i;
         get_cmp_cst(e,&et_r,&et_i);
 
-        add_instr("%s %s\n", ld, v_table[et_r.id].name);
+        return et_r;
     }
 
-    // comp in memory
+    // comp in memory: its real part is the variable's own word (get_cmp_ets),
+    // handed back as a memory operand for the same reason
     if ((e.type == 3) && (e.id != 0))
     {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
+        expr et_r, et_i;
+        get_cmp_ets(e,&et_r,&et_i);
+
+        return et_r;
     }
 
     // comp in acc
@@ -2092,28 +2095,28 @@ expr exec_imag(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
-
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // comp const
+    // comp const: its imag part is a float constant, handed back as a memory
+    // operand -- no load here, so the consumer fuses it (F2I_M, F_ADD, ...)
     if (e.type == 5)
     {
         expr et_r, et_i;
         get_cmp_cst(e,&et_r,&et_i);
 
-        add_instr("%s %s\n", ld, v_table[et_i.id].name);
+        return et_i;
     }
 
-    // comp in memory
+    // comp in memory: its imag part is the variable's _i word (get_cmp_ets),
+    // handed back as a memory operand for the same reason
     if ((e.type == 3) && (e.id != 0))
     {
         expr et_r, et_i;
         get_cmp_ets(e,&et_r,&et_i);
 
-        add_instr("%s %s\n", ld, v_table[et_i.id].name);
+        return et_i;
     }
 
     // comp in acc

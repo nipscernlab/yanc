@@ -14,19 +14,17 @@ LOD 3.000000
 PF_NEG_M 4.000000
 SET_P main_c_i
 SET main_c
-F2I
+F2I_M main_c
 OUT 0
-LOD main_c_i
-F2I
+F2I_M main_c_i
 OUT 0
 LOD 1.000000
 PF_NEG_M -2.000000
 SET_P main_c_i
 SET main_c
-F2I
+F2I_M main_c
 OUT 0
-LOD main_c_i
-F2I
+F2I_M main_c_i
 OUT 0
 LOD 2.000000
 SET main_z
@@ -36,10 +34,9 @@ LOD main_z
 PF_NEG_M main_z_i
 SET_P main_c_i
 SET main_c
-F2I
+F2I_M main_c
 OUT 0
-LOD main_c_i
-F2I
+F2I_M main_c_i
 OUT 0
 LOD 1.000000
 SET main_z
@@ -56,19 +53,17 @@ F_ADD main_w_i
 F_NEG
 SET_P main_c_i
 SET main_c
-F2I
+F2I_M main_c
 OUT 0
-LOD main_c_i
-F2I
+F2I_M main_c_i
 OUT 0
 LOD 7.0
 P_LOD 0.0
 SET_P main_c_i
 SET main_c
-F2I
+F2I_M main_c
 OUT 0
-LOD main_c_i
-F2I
+F2I_M main_c_i
 OUT 0
 JMP Lwh1
 @Lwh1end @fim JMP fim

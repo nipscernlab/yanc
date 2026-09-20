@@ -9,6 +9,18 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **`real()` / `imag()` hand back a memory operand** (cmmcomp `stdlib.c`): for
+  a `comp` variable or constant, the half is returned as the variable's own
+  word (`c` / `c_i`) instead of being loaded into the accumulator, so the
+  consumer fuses it (`F2I_M c`, `F_NEG_M c_i`, `F_ADD c_i`, `F_MLT c`, ...).
+  `real(c*c)` (comp already in the accumulator) is unchanged. No output value
+  changes; a 45-context probe shrinks 350 → 325 instructions, and seven
+  fixtures shrink (`cmm_comp_arith` 109 → 103, `cmm_comp_div` 107 → 104,
+  `cmm_comp_func` 126 → 117, `cmm_comp_mix` 269 → 245, `cmm_comp_sqrt`
+  180 → 175, `cmm_conj` 65 → 60, `func_combos` 68 → 66), so their `golden.asm`
+  and `golden_sim` (more iterations in the same clock budget) were re-blessed.
+  One shape grows by two: `complex(real(d), expr)` now spills `expr` to
+  `aux_var` before loading `real(d)`.
 - **Float comparisons without the denormaliser** (`ula_fcmp`): `F_LES` and
   `F_GRE` now compare the raw words lexicographically — the magnitude key is
   the exponent with its sign bit flipped followed by the mantissa, and the

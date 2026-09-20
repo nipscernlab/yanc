@@ -35,10 +35,9 @@ LOD csqrt_re
 P_LOD csqrt_im
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD -3.000000
 F_MLT -3.000000
@@ -61,10 +60,9 @@ LOD csqrt_re
 P_LOD csqrt_im
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 1.000000
 SET main_z
@@ -100,10 +98,9 @@ LOD csqrt_re
 P_LOD csqrt_im
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 4.000000
 SET main_z
@@ -130,10 +127,9 @@ LOD csqrt_re
 P_LOD csqrt_im
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD -4.000000
 SET main_z
@@ -160,10 +156,9 @@ LOD csqrt_re
 P_LOD csqrt_im
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 JMP Lwh1
 @Lwh1end @fim JMP fim

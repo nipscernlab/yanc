@@ -27,20 +27,18 @@ F_ADD main_c
 P_LOD  main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 I2F_M  2
 F_SU2 main_c
 P_LOD main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 I2F_M 2
 F_MLT main_c
@@ -48,10 +46,9 @@ P_I2F_M 2
 F_MLT main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 I2F_M 2
 F_DIV main_c2
@@ -59,30 +56,27 @@ P_I2F_M 2
 F_DIV main_c2_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 I2F_M 2
 F_ADD main_c
 P_LOD  main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 I2F_M 2
 F_SU1 main_c
 PF_NEG_M  main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 I2F_M 2
 F_MLT main_c
@@ -90,10 +84,9 @@ P_I2F_M 2
 F_MLT main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD main_c
 F_MLT main_c
@@ -112,30 +105,27 @@ SF_DIV
 F_NEG
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 2.0
 F_ADD main_c
 P_LOD main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 2.0
 F_SU2 main_c
 P_LOD main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 2.0
 F_MLT main_c
@@ -143,10 +133,9 @@ P_LOD 2.0
 F_MLT main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 2.0
 F_DIV main_c2
@@ -154,30 +143,27 @@ P_LOD 2.0
 F_DIV main_c2_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 2.0
 F_ADD main_c
 P_LOD main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 2.0
 F_SU1 main_c
 PF_NEG_M main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 2.0
 F_MLT main_c
@@ -185,10 +171,9 @@ P_LOD 2.0
 F_MLT main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD main_c
 F_MLT main_c
@@ -207,20 +192,18 @@ SF_DIV
 F_NEG
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 I2F_M 2
 F_ADD 3.000000
 P_LOD 4.000000
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 I2F_M 2
 F_MLT 3.000000
@@ -228,40 +211,34 @@ P_I2F_M 2
 F_MLT 4.000000
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
-OUT 0
-LOD 3.000000
-SET main_r
-LOD 4.000000
-SET main_r_i
-LOD main_r
-F2I
-OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 3.000000
 SET main_r
 LOD 4.000000
 SET main_r_i
-LOD main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
+OUT 0
+LOD 3.000000
+SET main_r
+LOD 4.000000
+SET main_r_i
+F2I_M main_r
+OUT 0
+F2I_M main_r_i
 OUT 0
 I2F_M  main_ni
 F_ADD main_c
 P_LOD  main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD main_nf
 F_MLT main_c
@@ -269,10 +246,9 @@ P_LOD main_nf
 F_MLT main_c_i
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 JMP Lwh1
 @Lwh1end @fim JMP fim

@@ -31,8 +31,7 @@ RET
 @sumri SET_P sumri_c_i
 SET sumri_c
 LOD sumri_c
-P_LOD sumri_c_i
-SF_ADD
+F_ADD sumri_c_i
 F2I
 RET
 @takesint SET takesint_x
@@ -44,11 +43,9 @@ SET_P midcomp_c
 SET midcomp_a
 LOD midcomp_a
 OUT 0
-LOD midcomp_c
-F2I
+F2I_M midcomp_c
 OUT 0
-LOD midcomp_c_i
-F2I
+F2I_M midcomp_c_i
 OUT 0
 LOD midcomp_b
 RET
@@ -59,10 +56,9 @@ P_LOD 4.000000
 CAL echo
 SET_P main_e_i
 SET main_e
-F2I
+F2I_M main_e
 OUT 0
-LOD main_e_i
-F2I
+F2I_M main_e_i
 OUT 0
 LOD 1.000000
 P_LOD 2.000000
@@ -71,20 +67,18 @@ P_LOD 4.000000
 CAL addc
 SET_P main_s_i
 SET main_s
-F2I
+F2I_M main_s
 OUT 0
-LOD main_s_i
-F2I
+F2I_M main_s_i
 OUT 0
 LOD 5
 P_LOD 9
 CAL mk
 SET_P main_m_i
 SET main_m
-F2I
+F2I_M main_m
 OUT 0
-LOD main_m_i
-F2I
+F2I_M main_m_i
 OUT 0
 LOD 10.000000
 P_LOD 5.000000
@@ -95,20 +89,18 @@ P_LOD 0.0
 CAL echo
 SET_P main_ci_i
 SET main_ci
-F2I
+F2I_M main_ci
 OUT 0
-LOD main_ci_i
-F2I
+F2I_M main_ci_i
 OUT 0
 LOD 5.0
 P_LOD 0.0
 CAL echo
 SET_P main_cf_i
 SET main_cf
-F2I
+F2I_M main_cf
 OUT 0
-LOD main_cf_i
-F2I
+F2I_M main_cf_i
 OUT 0
 LOD 7.000000
 F2I
@@ -126,10 +118,9 @@ CAL echo
 CAL echo
 SET_P main_nest_i
 SET main_nest
-F2I
+F2I_M main_nest
 OUT 0
-LOD main_nest_i
-F2I
+F2I_M main_nest_i
 OUT 0
 JMP Lwh1
 @Lwh1end @fim JMP fim

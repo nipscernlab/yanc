@@ -39,10 +39,9 @@ P_LOD aux_var
 SF_DIV
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 8.000000
 SET main_x
@@ -73,10 +72,9 @@ P_LOD aux_var
 SF_DIV
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 6.000000
 SET main_x
@@ -107,10 +105,9 @@ P_LOD aux_var
 SF_DIV
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 JMP Lwh1
 @Lwh1end @fim JMP fim

@@ -22,10 +22,9 @@ F_MLT 3.000000
 SF_ADD
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 1.000000
 F_MLT 1.000000
@@ -49,10 +48,9 @@ P_LOD aux_var
 SF_DIV
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 1.000000
 F_ADD 3.000000
@@ -60,10 +58,9 @@ P_LOD 2.000000
 F_ADD 4.000000
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 0.000000
 F_ADD 3.000000
@@ -71,10 +68,9 @@ P_LOD 2.000000
 F_ADD 4.000000
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 F_NEG_M 3.000000
 PF_NEG_M 4.000000
@@ -84,10 +80,9 @@ P_LOD 2.000000
 F_ADD aux_var
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 LOD 1.000000
 SET main_x
@@ -109,10 +104,9 @@ F_MLT main_y
 SF_ADD
 SET_P main_r_i
 SET main_r
-F2I
+F2I_M main_r
 OUT 0
-LOD main_r_i
-F2I
+F2I_M main_r_i
 OUT 0
 JMP Lwh1
 @Lwh1end @fim JMP fim
