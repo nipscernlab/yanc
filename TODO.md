@@ -11,7 +11,8 @@ Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
 Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
-10 architecture hardening (from the HDL audit), 11 consistency at 32 bits.
+10 architecture hardening (from the HDL audit), 11 consistency at 32 bits,
+12 a run-time exception strobe (parked, noted 2026-09-20).
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
 moved.
@@ -333,6 +334,41 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
 **Done when:** (a) gives the same result under both simulators, with a
 fixture that runs under both; (b) is decided and documented; (d) and (e) have
 fixtures that match the host.
+
+## 12. Run-time exception strobe (pin + error code)
+
+**Status:** open, not now (noted 2026-09-20) · **Area:** `HDL/*`, `ASMComp`, both front ends · **Evidence:** this item
+
+Today a run-time failure is silent: `malloc`/`new` returns `0` when the
+`__heap` arena (fixed `CFG_HEAPSZ` = 2048 words, no analysis of what the
+program will allocate) is exhausted, the software call stack `__cstk` (fixed
+1024 words) and the hardware stacks (`#NDSTAC`/`#SDEPTH`) overflow without a
+trace, `DIV`/`MOD` by zero and exponent overflow (item 3) give whatever the
+datapath gives. Nothing outside the processor can tell that it happened.
+
+**Design (Luciano, 2026-09-20):** an output pair — a **strobe pin** high for
+exactly one clock cycle, and an **error-code word** valid on that cycle —
+decoding *which* exception occurred. One mechanism, many exceptions: heap
+exhausted, call-stack overflow, data/return-stack overflow (subsumes the
+sticky pin of item 10.4), integer divide by zero (item 10.5), float
+overflow/underflow, `F2I` saturation, ... each with its own code. It costs
+hardware (comparators, the code register, the pins), so it is **opt-in
+through a new directive** (`#EXCEPT`-style, default off): a processor that
+does not ask for it builds exactly what it builds today ([pay only for what
+you use](docs/hdl-architecture-audit.md)). Same spirit as `#TOAQUI`/`cheguei`.
+
+Points to settle when it is taken up: which exceptions are raised by the
+hardware (stack overflow, divide by zero, float range) and which by the
+runtime (heap exhausted — the compiler needs an instruction or an I/O
+convention to fire the strobe with a code from software); the code table,
+shared by the HDL and both compilers (goes into the single-source ISA table
+of item 10.2); whether the processor halts, traps to `ITRADD`, or just
+signals and continues; how the testbenches and the Verilator harness report
+it (an `output_err.txt`, or a line in `app_log.txt`); how Aurora shows it.
+
+**Done when:** the directive exists and is off by default; with it on, each
+listed exception fires the strobe once with its code in a fixture under both
+simulators; with it off, area and depth are unchanged (`Scripts/hw/area.sh`).
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
