@@ -320,9 +320,11 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   globals, not when control first reaches its declaration. Only a constructor
   with side effects shows it (`test70` compares a construction count, not the
   order). C++'s rule needs a guard flag and a test at every entry.
-- (e) **`T x(N::v);` parses as a function prototype** when the first
-  argument is a namespace-qualified variable; C++ decides by name lookup and
-  declares an object. A plain variable (`T x(v);`) works since `test71`.
+
+~~(e) `T x(N::v);` parses as a function prototype~~ — done: the lexer
+classifies the LAST component of a qualified chain, so the first name
+already tells the parser whether `T x(` is followed by an argument or by a
+parameter type. `test74` covers it, against a `g++` run of the same program.
 
 ~~(a) `DIV` of `INT_MIN` by `-1` differs between the simulators~~ — done:
 `ula_div` returns the wrapped quotient (`INT_MIN`) on both, `test72` pins it
@@ -331,8 +333,8 @@ question is untouched and still differs (`x` under Icarus, `0` under
 Verilator): it stays with item 10.5, which owns defined behaviour for
 `DIV`/`MOD` by zero.
 
-**Done when:** (b) is decided and documented; (d) and (e) have fixtures that
-match the host.
+**Done when:** (b) is decided and documented; (d) has a fixture that matches
+the host.
 
 ## 12. Run-time exception strobe (pin + error code)
 

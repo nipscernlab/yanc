@@ -262,7 +262,45 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 
   /* identifiers (typedef hack) ----------------------------------------- */
 
-{IDENTIF}/[ \t]*"::"     { /* a name followed by `::`: a type stays TYPEDEF_NAME */
+{IDENTIF}([ \t]*"::"[ \t]*{IDENTIF})+ {
+                           /* A whole qualified chain `A::b` / `A::B::c`. Which
+                              token the FIRST name gets depends on what the LAST
+                              one denotes, because after `T x(` the parser has
+                              one token of lookahead to choose between a
+                              parameter type and a constructor argument:
+                              `Filter f(std::uint8_t v)` is a prototype while
+                              `Filter f(geo::scale)` declares an object. Emit
+                              NS_IDENT when the chain ends in a type and
+                              NS_VIDENT when it ends in a value, then push
+                              everything after the first name back so the `::`
+                              and the remaining names lex as usual.
+                              A chain whose FIRST name is itself a type
+                              (`Color::Red`, `Filter::apply`) is left alone: it
+                              keeps returning TYPEDEF_NAME as before. */
+                           int fl = 0;
+                           while (fl < yyleng && (yytext[fl] == '_' ||
+                                  (yytext[fl] >= '0' && yytext[fl] <= '9') ||
+                                  (yytext[fl] >= 'a' && yytext[fl] <= 'z') ||
+                                  (yytext[fl] >= 'A' && yytext[fl] <= 'Z'))) fl++;
+                           int ls = yyleng;
+                           while (ls > 0 && (yytext[ls-1] == '_' ||
+                                  (yytext[ls-1] >= '0' && yytext[ls-1] <= '9') ||
+                                  (yytext[ls-1] >= 'a' && yytext[ls-1] <= 'z') ||
+                                  (yytext[ls-1] >= 'A' && yytext[ls-1] <= 'Z'))) ls--;
+                           char *first = xstrdup_n(yytext, fl);
+                           char *last  = xstrdup_n(yytext + ls, yyleng - ls);
+                           int ft = classify_ident(first);
+                           int lt = classify_ident(last);
+                           free(last);
+                           yyless(fl);                 /* keep only the first name */
+                           yylval.sval = first;
+                           if (ft != IDENT) return ft;
+                           return lt == IDENT ? NS_VIDENT : NS_IDENT; }
+
+{IDENTIF}/[ \t]*"::"     { /* a name followed by `::`: a type stays TYPEDEF_NAME.
+                              Reached when the chain is not a plain run of names
+                              (`N::Type<...>::x`, `Color::` before a template
+                              bracket, ...) — the rule above handles the rest. */
                            yylval.sval = xstrdup_n(yytext, yyleng);
                            int t = classify_ident(yytext);
                            return t == IDENT ? NS_IDENT : t; }

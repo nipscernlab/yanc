@@ -107,6 +107,20 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **`T x(N::v);` declares an object instead of failing to parse**
+  (`cppcomp`, `CPPComp.l`/`CPPComp.y`). With a namespace-qualified first
+  argument the declaration was a syntax error: after `T x(` the parser has
+  one token of lookahead, and a qualified name could still begin a parameter
+  *type* (`Filter f(std::uint8_t v)` is a prototype), so it took the
+  prototype path. The lexer now classifies the **last** component of a
+  qualified chain and hands the first name a token that already says which
+  it is — a chain ending in a type keeps `NS_IDENT`, one ending in a value
+  gets the new `NS_VIDENT` — so `Filter f(geo::scale)` and
+  `Filter f(outer::inner::k)` declare objects. A chain whose first name is
+  itself a type (`Color::Red`, `Filter::apply`) is untouched, and the
+  grammar keeps its 16 shift/reduce conflicts. `test74` covers the cases
+  against a `g++` run of the same program. `TODO.md` item 11(e); the plain
+  `T x(v);` form landed earlier as `test71`.
 - **`INT_MIN / -1` now gives the same answer under both simulators**
   (`HDL/ula.v`, `ula_div`). It is the one signed quotient that does not fit
   in a word: Verilog defines it as the wrapped result (`INT_MIN`), which is

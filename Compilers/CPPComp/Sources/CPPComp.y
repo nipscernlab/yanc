@@ -929,6 +929,10 @@ static type *class_close(void)
    name): only such a name can start a qualified type, so after `T x(` a plain
    IDENT starts constructor arguments, not a parameter type -- `T x(v);` */
 %token <sval>  NS_IDENT
+/* the same, for a chain that ends in a VALUE (`geo::scale`, `outer::inner::k`):
+   the lexer classifies the last component, so after `T x(` one token of
+   lookahead already says argument (NS_VIDENT) or parameter type (NS_IDENT) */
+%token <sval>  NS_VIDENT
 
 %token KW_VOID KW_INT KW_FLOAT KW_CHAR KW_UNSIGNED KW_SIGNED
 %token KW_SHORT KW_LONG KW_DOUBLE KW_BOOL KW_I8 KW_U8 KW_I16 KW_U16
@@ -946,7 +950,7 @@ static type *class_close(void)
 %token TOK_AMPEQ TOK_PIPEEQ TOK_CARETEQ TOK_SHLEQ TOK_SHREQ
 %token TOK_ARROW TOK_ELLIPSIS
 
-%type <sval>  qualified_id op_name ns_name
+%type <sval>  qualified_id op_name ns_name vns_name
 %type <typ>   type_specifier struct_specifier class_specifier union_specifier enum_specifier base_type decl_specifiers base_clause
 %type <intval> pointers storage_or_qual_list storage_or_qual
 %type <intval> builtin_spec builtin_type_seq
@@ -1026,7 +1030,7 @@ tparam:    /* IDENT first time; TYPEDEF_NAME if this param name was used before 
 /* a namespace-qualified name N::x (or A::B::x); namespaces are transparent on
    this target, so qualification collapses to the final name. */
 qualified_id:
-      ns_name TOK_SCOPE IDENT        { free($1); $$ = $3; }
+      vns_name TOK_SCOPE IDENT       { free($1); $$ = $3; }
     ;
 
 /* the namespace part of a qualified name, `A` or `A::B` (each name lexed as
@@ -1034,6 +1038,13 @@ qualified_id:
 ns_name:
       NS_IDENT                       { $$ = $1; }
     | ns_name TOK_SCOPE NS_IDENT     { free($1); $$ = $3; }
+    ;
+
+/* the namespace part of a qualified name that ends in a VALUE; every name in
+   the chain is lexed NS_VIDENT because the last component is not a type */
+vns_name:
+      NS_VIDENT                      { $$ = $1; }
+    | vns_name TOK_SCOPE NS_VIDENT   { free($1); $$ = $3; }
     ;
 
 /* ----- declarations ------------------------------------------------------- */
