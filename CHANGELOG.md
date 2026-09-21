@@ -107,6 +107,25 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **An input word at or above 2^31 keeps its bits under Verilator**
+  (`Compilers/CPPComp/Tests/Verilator/sim_main.cpp`). The harness read the
+  input file with `fscanf("%d")` into an `int`, which saturates at
+  `INT_MAX` on overflow: `3000000000`, `2^31` and `4294967295` all reached
+  the processor as `0x7fffffff`, three different words collapsed into one.
+  Icarus's `$fscanf` takes the low 32 bits instead, so the same input file
+  drove the two simulators differently. The harness now reads wide and
+  truncates to the word, matching Icarus. `cmm_bigin` (Icarus) and `test75`
+  (Verilator) feed the same six words and expect the same six results.
+  `TODO.md` item 11(b).
+- **The signed rendering of an output word is now written down** (not a
+  behaviour change): a port carries `NUBITS` raw bits and has no type, so
+  both testbenches print it as signed decimal and `out(0, 3000000000u)`
+  reads back as `-1294967296` — the same bits, the other rendering. The two
+  simulators always agreed here; what bites is comparing against a host run
+  printed with `%u`. The note sits where the value is written, in
+  `ASMComp/hdl.c` and in the Verilator harness. Giving the port a signedness
+  was considered and rejected: the same port can carry both kinds in one
+  program, so the information does not belong to it.
 - **`T x(N::v);` declares an object instead of failing to parse**
   (`cppcomp`, `CPPComp.l`/`CPPComp.y`). With a namespace-qualified first
   argument the declaration was a syntax error: after `T x(` the parser has

@@ -308,18 +308,24 @@ the audit's table has a defined, documented result.
 With the width fixed at 32 (see *Decisions taken*), 32 bits has to be right
 everywhere: both simulators, both front ends, the host reference. Known so far:
 
-- (b) **I/O of an `unsigned` at or above 2^31.** The testbench writes every
-  output word as signed decimal (`hdl.c:772` `%0d`; the Verilator harness
-  `sim_main.cpp:102` `%d`), so `out(0, 3000000000u)` puts `-1294967296` in
-  `output_0.txt`: the bits are right, a comparison with a host printout is
-  not. Input is parsed with `%d` on both sides (`hdl.c:695` `$fscanf`,
-  `sim_main.cpp:48` `fscanf` into an `int`, undefined above `INT_MAX`), so
-  the two simulators may read such an input differently — to verify. Decide
-  whether this is documented or the port learns the signedness it carries.
 - (d) **A `static` local object is constructed at program start**, with the
   globals, not when control first reaches its declaration. Only a constructor
   with side effects shows it (`test70` compares a construction count, not the
   order). C++'s rule needs a guard flag and a test at every entry.
+
+~~(b) I/O of an `unsigned` at or above 2^31~~ — done, and the two halves
+turned out to be different questions. **Input** was a real divergence: the
+Verilator harness read the file with `fscanf("%d")` into an `int`, which
+saturates at `INT_MAX`, so `3000000000`, `2^31` and `4294967295` all
+arrived as `0x7fffffff` — three words collapsed into one — while Icarus's
+`$fscanf` takes the low 32 bits. The harness now reads wide and truncates,
+so both deliver the same bits (`cmm_bigin` under Icarus, `test75` under
+Verilator, same six words). **Output** was never a divergence: both write
+signed decimal and agree with each other. The port carries raw bits and has
+no type, and the same port can carry both kinds in one program, so it does
+not learn a signedness — the convention is documented where the value is
+written (`ASMComp/hdl.c`, `sim_main.cpp`): compare against a host by
+printing the host value with `%d` as well.
 
 ~~(e) `T x(N::v);` parses as a function prototype~~ — done: the lexer
 classifies the LAST component of a qualified chain, so the first name
@@ -333,8 +339,7 @@ question is untouched and still differs (`x` under Icarus, `0` under
 Verilator): it stays with item 10.5, which owns defined behaviour for
 `DIV`/`MOD` by zero.
 
-**Done when:** (b) is decided and documented; (d) has a fixture that matches
-the host.
+**Done when:** (d) has a fixture that matches the host.
 
 ## 12. Run-time exception strobe (pin + error code)
 

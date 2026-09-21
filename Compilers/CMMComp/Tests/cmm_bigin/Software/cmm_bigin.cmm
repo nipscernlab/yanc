@@ -1,0 +1,30 @@
+#PRNAME cmm_bigin
+#NUBITS 32
+#NDSTAC 16
+#SDEPTH 16
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// An input word at or above 2^31 must arrive with its bits intact, and the
+// same word must come back out. The port carries 32 raw bits and has no type:
+// the testbench writes signed decimal, so 3000000000 reads back as
+// -1294967296 -- same bits, other rendering. This fixture pins the Icarus
+// side of TODO item 11(b); test75 pins the Verilator side with the same
+// numbers, after its harness stopped saturating them at INT_MAX.
+
+void main()
+{
+    int x;
+    int k;
+
+    k = 0;
+    while (k < 6)
+    {
+        x = in(0);
+        out(0, x);
+        k = k + 1;
+    }
+}

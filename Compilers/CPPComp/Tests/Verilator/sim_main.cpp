@@ -42,10 +42,21 @@ int main(int argc, char** argv) {
     long long max_cycles = argc > 3 ? atoll(argv[3]) : 200000000LL;
     int  expected        = argc > 4 ? atoi(argv[4]) : -1;
 
+    // An input word is NUBITS raw bits, and the file writes it as decimal with
+    // whatever sign the program that produced it had in mind. Read it wide and
+    // truncate: `fscanf("%d")` into an int saturates at INT_MAX on overflow, so
+    // 3000000000, 2^31 and 4294967295 all arrived as 0x7fffffff and the bits
+    // were lost. Icarus's $fscanf takes the low 32 bits instead, and that is
+    // the behaviour both simulators now share (TODO.md item 11(b)).
     std::vector<int> inputs;
     if (in_path) {
         FILE* f = fopen(in_path, "r");
-        if (f) { int v; while (fscanf(f, "%d", &v) == 1) inputs.push_back(v); fclose(f); }
+        if (f) {
+            long long v;
+            while (fscanf(f, "%lld", &v) == 1)
+                inputs.push_back((int)(unsigned int)(unsigned long long)v);
+            fclose(f);
+        }
     }
 
     Vtop* top = new Vtop;
@@ -98,6 +109,9 @@ int main(int argc, char** argv) {
         if (idle > idle_threshold) break;     // no more output: the program has finished
     }
 
+    // Signed decimal, matching the Icarus testbench's "%0d": the port carries
+    // NUBITS raw bits with no type, so an unsigned at or above 2^31 prints as
+    // the negative with the same bits. See the note in ASMComp/hdl.c.
     FILE* of = fopen(out_path, "w");
     if (of) { for (int v : outputs) fprintf(of, "%d\n", v); fclose(of); }
     for (int v : outputs) printf("%d ", v);
