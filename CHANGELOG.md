@@ -107,6 +107,20 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **A `static` local is built the first time control reaches it**
+  (`cppcomp`, `codegen.c`). Every static local used to be initialised at
+  program start together with the globals, so a function that was never
+  called still ran its static's constructor, an initialiser that reads a
+  global saw the value it had before `main` did anything, and the
+  construction order did not match C++. Each static now carries a `__once`
+  word, zeroed at `main` entry (so a reset starts over) and set after the
+  initialiser, which is emitted at the declaration instead. A static with
+  nothing to run keeps costing nothing. `test76` runs the timing cases —
+  never-called, first call, second call, a static inside a branch, an
+  initialiser reading a global, a brace-initialised array — against a `g++`
+  run of the same program. `test70` is unchanged: it compares how many
+  objects were built, which this timing does not alter. `TODO.md` item
+  11(d), the last one, so item 11 is closed.
 - **An input word at or above 2^31 keeps its bits under Verilator**
   (`Compilers/CPPComp/Tests/Verilator/sim_main.cpp`). The harness read the
   input file with `fscanf("%d")` into an `int`, which saturates at

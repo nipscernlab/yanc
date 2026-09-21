@@ -7,8 +7,9 @@
 // run; every constructor first builds its base (unless its member-init list
 // does) and its member objects (one the list names, with the list's
 // arguments: `: inner(5)` used to copy the object at address 5); globals are
-// constructed at program start after every global value, static locals there
-// too (not at first use: only their construction count is compared here).
+// constructed at program start after every global value. A static local is
+// built the first time control reaches it (test76); this test only compares
+// how many objects were built, which that timing does not change.
 // g_made counts constructions, so a missing or a doubled one shows. A braced
 // initializer gives what it leaves out its default member initializer, or
 // zero -- also on a second call, when a local's fixed storage still holds the

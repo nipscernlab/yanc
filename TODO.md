@@ -11,8 +11,9 @@ Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
 Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
-10 architecture hardening (from the HDL audit), 11 consistency at 32 bits,
-12 a run-time exception strobe (parked, noted 2026-09-20).
+10 architecture hardening (from the HDL audit), 12 a run-time exception
+strobe (parked, noted 2026-09-20). Item 11, consistency at 32 bits, is
+closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
 moved.
@@ -22,9 +23,11 @@ each measured; step 4b was withdrawn by the measurement rather than done. The
 hygiene of item **7** (audit 1.7) is done except the invariant guard, which
 item 3 had parked for the same reason: it needs a form Icarus, Verilator,
 Yosys *and* Quartus all accept silently. The two decisions below are taken:
-**YANC stays at 32 bits** and everything above it is parked. **Next in the
-suggested order: 11 → 5 → 6(a) → 9**, all of them about making 32 bits
-consistent.
+**YANC stays at 32 bits** and everything above it is parked. Item **11 is
+closed** (2026-09-21): `INT_MIN / -1` agrees on both simulators, an input
+word at or above 2^31 keeps its bits, `T x(N::v);` declares an object, and
+a `static` local is built on first use. **Next in the suggested order:
+5 → 6(a) → 9.**
 
 ---
 
@@ -300,46 +303,6 @@ it). The audit found the weak points in the surroundings. In order:
 **Done when:** 1–7 landed; the ISA reference is generated, not hand-written;
 the interrupt and I/O contracts are in `docs/isa.md`; every undefined case in
 the audit's table has a defined, documented result.
-
-## 11. Everything consistent at 32 bits
-
-**Status:** open · **Area:** `HDL/ula.v`, `Compilers/CPPComp` · **Evidence:** [`Scripts/hw/width_sweep.sh`](Scripts/hw/width_sweep.sh), this item
-
-With the width fixed at 32 (see *Decisions taken*), 32 bits has to be right
-everywhere: both simulators, both front ends, the host reference. Known so far:
-
-- (d) **A `static` local object is constructed at program start**, with the
-  globals, not when control first reaches its declaration. Only a constructor
-  with side effects shows it (`test70` compares a construction count, not the
-  order). C++'s rule needs a guard flag and a test at every entry.
-
-~~(b) I/O of an `unsigned` at or above 2^31~~ — done, and the two halves
-turned out to be different questions. **Input** was a real divergence: the
-Verilator harness read the file with `fscanf("%d")` into an `int`, which
-saturates at `INT_MAX`, so `3000000000`, `2^31` and `4294967295` all
-arrived as `0x7fffffff` — three words collapsed into one — while Icarus's
-`$fscanf` takes the low 32 bits. The harness now reads wide and truncates,
-so both deliver the same bits (`cmm_bigin` under Icarus, `test75` under
-Verilator, same six words). **Output** was never a divergence: both write
-signed decimal and agree with each other. The port carries raw bits and has
-no type, and the same port can carry both kinds in one program, so it does
-not learn a signedness — the convention is documented where the value is
-written (`ASMComp/hdl.c`, `sim_main.cpp`): compare against a host by
-printing the host value with `%d` as well.
-
-~~(e) `T x(N::v);` parses as a function prototype~~ — done: the lexer
-classifies the LAST component of a qualified chain, so the first name
-already tells the parser whether `T x(` is followed by an argument or by a
-parameter type. `test74` covers it, against a `g++` run of the same program.
-
-~~(a) `DIV` of `INT_MIN` by `-1` differs between the simulators~~ — done:
-`ula_div` returns the wrapped quotient (`INT_MIN`) on both, `test72` pins it
-under Icarus and `test73` under Verilator. The **by-zero** half of the same
-question is untouched and still differs (`x` under Icarus, `0` under
-Verilator): it stays with item 10.5, which owns defined behaviour for
-`DIV`/`MOD` by zero.
-
-**Done when:** (d) has a fixture that matches the host.
 
 ## 12. Run-time exception strobe (pin + error code)
 

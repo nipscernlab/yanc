@@ -2432,6 +2432,31 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
     }
 }
 
+// A `static` local is initialised the first time control reaches its
+// declaration, not at program start: C++ runs its initialiser (and its
+// constructor) on that first pass and never again, so a function that is
+// never called never builds its static. The word `<name>__once` guards it,
+// zeroed for every static at main entry (so a reset re-runs them) and set
+// after the initialiser. TODO.md item 11(d).
+static void emit_static_guard_open(const char *aname, char **l_done)
+{
+    char *l_init = fresh_label("st_init");
+    *l_done      = fresh_label("st_done");
+    emit("LOD %s__once", aname);
+    emit("JIZ %s", l_init);          // still zero -> first time here
+    emit("JMP %s", *l_done);
+    emit("@%s NOP", l_init);
+    free(l_init);
+}
+
+static void emit_static_guard_close(const char *aname, char *l_done)
+{
+    emit("LOD 1");
+    emit("SET %s__once", aname);
+    emit("@%s NOP", l_done);
+    free(l_done);
+}
+
 static void declare_local(decl *d)
 {
     // `auto x = init;` — deduce the variable's type from its initializer
@@ -2461,27 +2486,40 @@ static void declare_local(decl *d)
     int arr_words = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
     log_var(cur_func_name ? cur_func_name : "global", d->name,
             innermost_code(d->dtype), arr_words);
-    // `static` locals keep fixed storage but are initialised ONCE at program
-    // start (collected pre-pass, emitted at main entry) — skip the inline init.
+    // A `static` local keeps fixed storage, but its initialiser runs HERE, the
+    // first time control reaches the declaration, under its `__once` guard.
     int is_static = (d->sclass == SC_STATIC);
+    char *st_done = NULL;
+    if (is_static) {
+        int n_el; type *et = array_elems(d->dtype, &n_el);
+        int is_obj = et && et->kind == TY_STRUCT && et->tag;
+        if (d->init || d->binit || is_obj) emit_static_guard_open(aname, &st_done);
+        else is_static = 2;      /* nothing to run: storage only */
+    }
     if (d->dtype && d->dtype->kind == TY_ARRAY) {
         // multi-dim arrays flatten to total word count; element type is the innermost scalar
         if (d->init_file) emit("#arrays %s %d %d \"%s\"", aname, innermost_code(d->dtype), arr_words, d->init_file);
         else              emit("#array %s %d %d",         aname, innermost_code(d->dtype), arr_words);
-        if (!is_static && d->binit) { g_initz_fill = 1; emit_initz(aname, 0, d->dtype, d->binit); g_initz_fill = 0; }
+        if (st_done && d->binit)    emit_initz(aname, 0, d->dtype, d->binit);
+        else if (st_done)           emit_construct_decl(d->dtype, aname, NULL, 0);
+        else if (!is_static && d->binit) { g_initz_fill = 1; emit_initz(aname, 0, d->dtype, d->binit); g_initz_fill = 0; }
         else if (!is_static)        emit_construct_decl(d->dtype, aname, NULL, 0);   // objects: each element
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
         emit("#array %s %d %d", aname, agg_fill_code(d->dtype), type_size_words(d->dtype));
         type *ct = d->dtype;
-        if (is_static)          { /* deferred to program start */ }
+        if (st_done && d->binit)   emit_initz(aname, 0, d->dtype, d->binit);
+        else if (st_done && d->init) copy_to_block(aname, d->init, type_size_words(d->dtype));
+        else if (st_done)          emit_construct_decl(ct, aname, d->ctor_args, d->n_ctor_args);
+        else if (is_static)     { /* storage only, nothing to run */ }
         else if (d->binit)      { g_initz_fill = 1; emit_initz(aname, 0, d->dtype, d->binit); g_initz_fill = 0; }
         else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
         else if (ct->tag) emit_construct_decl(ct, aname, d->ctor_args, d->n_ctor_args);
-    } else if (d->init && !is_static) {
+    } else if (d->init && (!is_static || st_done)) {
         if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
         else gen_expr_to(d->init, d->dtype);
         emit("SET %s", aname);
     }
+    if (st_done) emit_static_guard_close(aname, st_done);
     free(aname);
 }
 
@@ -2901,20 +2939,18 @@ static void emit_global_scalar_inits(unit *u)
 }
 
 // emit the one-time initializers for `static` locals (collected pre-pass)
-static void emit_static_inits(void)
+// Zero every static local's `__once` guard at main entry. The initialisers
+// themselves run at their declarations (see emit_static_guard_open): all this
+// has to do is make a fresh start -- including after a reset, which re-runs
+// main but does not reload the data memory -- look like one.
+static void emit_static_once_flags(void)
 {
     int saved = cg_line;
     for (int i = 0; i < n_stinit; i++) {
         stinit_e *e = &stinits[i];
         if (e->line > 0) cg_line = e->line;   // map to the static local's decl line
-        if (e->binit) { emit_initz(e->base, 0, e->t, e->binit); continue; }
-        if (!e->init) { emit_construct_decl(e->t, e->base, e->args, e->nargs); continue; }
-        if (e->t && (e->t->kind == TY_ARRAY || e->t->kind == TY_STRUCT)) {
-            copy_to_block(e->base, e->init, type_size_words(e->t));   // static aggregate = expr
-        } else {
-            gen_expr_to(e->init, e->t);
-            emit("SET %s", e->base);
-        }
+        emit("LOD 0");
+        emit("SET %s__once", e->base);
     }
     cg_line = saved;
 }
@@ -3014,7 +3050,7 @@ static void emit_function(func *f, unit *u, int is_main)
             emit("LOD 0"); emit("SET __flist");                          // empty free list
         }
         emit_vtable_inits();                                             // fill class vtables
-        emit_string_inits(); emit_global_scalar_inits(u); emit_static_inits();
+        emit_string_inits(); emit_global_scalar_inits(u); emit_static_once_flags();
     }
 
     gen_stmt(f->body);
