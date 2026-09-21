@@ -308,13 +308,6 @@ the audit's table has a defined, documented result.
 With the width fixed at 32 (see *Decisions taken*), 32 bits has to be right
 everywhere: both simulators, both front ends, the host reference. Known so far:
 
-- (a) **`DIV` of `INT_MIN` by `-1` differs between the simulators.** Icarus
-  returns `INT_MIN` (the wrapped quotient); Verilator returns `0` (its runtime
-  guards the host's divide trap at exactly 32 and 64 bits). Measured by the
-  width sweep at 32 bits. The same program therefore prints different results
-  under `--sim icarus` and `--sim verilator`. Pick one result and make the HDL
-  produce it on both simulators; decide together with the by-zero case of
-  item 10.5, since both are "defined behaviour for `DIV`".
 - (b) **I/O of an `unsigned` at or above 2^31.** The testbench writes every
   output word as signed decimal (`hdl.c:772` `%0d`; the Verilator harness
   `sim_main.cpp:102` `%d`), so `out(0, 3000000000u)` puts `-1294967296` in
@@ -331,9 +324,15 @@ everywhere: both simulators, both front ends, the host reference. Known so far:
   argument is a namespace-qualified variable; C++ decides by name lookup and
   declares an object. A plain variable (`T x(v);`) works since `test71`.
 
-**Done when:** (a) gives the same result under both simulators, with a
-fixture that runs under both; (b) is decided and documented; (d) and (e) have
-fixtures that match the host.
+~~(a) `DIV` of `INT_MIN` by `-1` differs between the simulators~~ — done:
+`ula_div` returns the wrapped quotient (`INT_MIN`) on both, `test72` pins it
+under Icarus and `test73` under Verilator. The **by-zero** half of the same
+question is untouched and still differs (`x` under Icarus, `0` under
+Verilator): it stays with item 10.5, which owns defined behaviour for
+`DIV`/`MOD` by zero.
+
+**Done when:** (b) is decided and documented; (d) and (e) have fixtures that
+match the host.
 
 ## 12. Run-time exception strobe (pin + error code)
 

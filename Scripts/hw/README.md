@@ -14,7 +14,7 @@ All paths assume the repo at `/c/nipscern/yanc` under an **MSYS2 login shell**
 | `area.sh` | yosys | LUT4 count and critical-path depth per operator set |
 | `fmax.sh` | Quartus Prime Lite | real Fmax and ALMs of a processor the regress already built |
 | `tb_fdiv.v` | iverilog | the divider array against Verilog's `/` and `%`, 20000 random operands |
-| `width_sweep.sh` (`width_sweep/`) | iverilog, verilator, python3 | does each simulator compute every integer operator right at a given word width, in continuous assigns and in procedural blocks, against a Python-bigint oracle? Re-run after upgrading Icarus or Verilator: it decides when YANC may go beyond 32 bits (`TODO.md` item 6(b)) |
+| `width_sweep.sh` (`width_sweep/`) | iverilog, verilator, python3 | does each simulator compute every integer operator right at a given word width, in continuous assigns and in procedural blocks, against a Python-bigint oracle? Re-run after upgrading Icarus or Verilator: it decides when YANC may go beyond 32 bits (`TODO.md` item 6(b)). **Expected non-zero result:** Verilator still reports one `div` mismatch, `INT_MIN / -1` giving `0` instead of the wrapped `INT_MIN`. That is its runtime guarding the host divide trap, and it is a property of the simulator, not of YANC: `ula_div` names the case and forces the wrapped quotient, so the processor agrees on both (item 11(a), `test72`/`test73`) |
 | `tb_alu.sh` (`tb_alu.v`) | iverilog | the shared shifter, `F2I` and the float comparison against references derived in the testbench, in four formats (8/4/3 … 64/52/11) × three `#FROUND` levels. The place to add an operator whose only check today is a blessed golden |
 
 ## Typical use

@@ -571,7 +571,17 @@ module ula_div
 	output signed [NUBITS-1:0] out
 );
 
-assign out = in1 / in2;
+// INT_MIN / -1 is the one signed quotient that does not fit in NUBITS bits.
+// Verilog defines it as the wrapped result (INT_MIN), which is what Icarus
+// computes and what every other YANC integer operator does on overflow. The
+// C++ simulator disagreed: its runtime guards the host divide trap and
+// yielded 0, so the same program printed different numbers under the two
+// simulators. Name the case here so both -- and synthesis -- agree (TODO 11a).
+// (Do not start a comment line with the simulator's name: a leading
+// "verilator" word makes it parse the line as a pragma.)
+wire ovf = in1[NUBITS-1] & ~(|in1[NUBITS-2:0]) & (&in2);
+
+assign out = ovf ? in1 : in1 / in2;
 
 endmodule
 

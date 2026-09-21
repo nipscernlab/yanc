@@ -107,6 +107,20 @@ tags consumed by Aurora.
   unsigned. `area.sh` gains `div` and `mod` configurations.
 
 ### Fixed
+- **`INT_MIN / -1` now gives the same answer under both simulators**
+  (`HDL/ula.v`, `ula_div`). It is the one signed quotient that does not fit
+  in a word: Verilog defines it as the wrapped result (`INT_MIN`), which is
+  what Icarus computed and what every other YANC integer operator does on
+  overflow, while Verilator's runtime guards the host divide trap and
+  returned `0`. The same program therefore printed different numbers
+  depending on which simulator ran it. `ula_div` now names the case and
+  returns the wrapped quotient, so both simulators — and synthesis — agree.
+  Costs 8 LUT4 on a `DIV`-only processor (1796 → 1804) with the critical
+  path unchanged at depth 373 (Yosys, no resource sharing, 32/23/8); a
+  processor without `DIV` is untouched. `test72` (Icarus) and `test73`
+  (Verilator) run the same nine divisions and share a golden. `TODO.md`
+  item 11(a). Division **by zero** is still undefined and still differs
+  (`x` under Icarus, `0` under Verilator) — that is item 10.5.
 - **C± `++` on floats, on array elements, and inside expressions**
   (`cmmcomp`, `data_use.c`). Three faults in one operator, found by a probe
   of every conversion, arithmetic and I/O form against the same program
