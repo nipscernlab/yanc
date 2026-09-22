@@ -21,7 +21,12 @@
 #      the cppcomp warnings the test expects, one substring per line: each
 #      must appear, and no other warning may.
 #
-#   3. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
+#   3. ISA table: hold the hand-written copies of the instruction set
+#      (ASMComp.l, core.v) to Compilers/common/isa.tsv, so the four places
+#      that spell the ISA out cannot drift apart silently. See
+#      Scripts/check_isa.py.
+#
+#   4. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
 #      malformed program with a clean non-zero exit and the expected diagnostic
 #      -- never a crash, never a silent accept. Error-path coverage the golden
@@ -726,6 +731,24 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             fail=$((fail+1)); failed_names+=("$base")
         fi
     done
+fi
+
+# ---- 4a2. ISA table ---------------------------------------------------------
+# The instruction set is written down in four places that nothing keeps in
+# step; a disagreement between them is silent (a program assembles and then
+# runs as a different program). Hold them to Compilers/common/isa.tsv.
+# TODO.md item 10.2.
+if command -v python3 >/dev/null 2>&1; then
+    echo ""
+    echo "==> ISA table"
+    if python3 "$ROOT/Scripts/check_isa.py" "$ROOT"; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("isa-table")
+    fi
+else
+    echo ""
+    echo "==> ISA table  [skipped: no python3]"
 fi
 
 # ---- 4b. CMM negative phase (error reporting) ------------------------------

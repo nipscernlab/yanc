@@ -73,6 +73,22 @@ tags consumed by Aurora.
   item 8).
 
 ### Added
+- **The instruction set in one file** (`Compilers/common/isa.tsv`,
+  `Scripts/check_isa.py`, a regress phase). The ISA was written out in four
+  places that nothing kept in step -- `ASMComp.l`, `instr_dec.v`, `ula.v` and
+  `core.v` -- where a disagreement is silent: a program assembles and then
+  runs as a different program. The table lists all 116 mnemonics with their
+  opcode, operand class, and what each does to the accumulator, the stack,
+  the data word its operand names, the control flow and the ports. The
+  regress now holds `ASMComp.l` and `core.v` to it, and re-derives the effect
+  columns from the naming convention so a typo cannot survive. It
+  deliberately does not parse `instr_dec.v` or `ula.v` line by line: a regex
+  over Verilog breaks on innocuous edits, and generating all four copies from
+  the table is the real answer (the rest of `TODO.md` item 10.2). The effect
+  columns are a careful reading of the naming convention and of `ASMComp.l`'s
+  own comments, not a measurement -- the simulator of item 10.1 is what will
+  validate them. They are what a whole-program optimiser reads to know
+  whether an instruction can be removed.
 - **`cppcomp` warns when a variable asks for more than a word.** YANC stays at
   32 bits, so `long long`, `unsigned long long`, `int64_t`, `uint64_t`,
   `double` and `long double` are one 32-bit word, as they always were — but
