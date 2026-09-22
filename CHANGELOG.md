@@ -9,6 +9,20 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **A label rides on the next instruction, and unreachable code is gone**
+  (`cppcomp`, `codegen.c`). Two passes at the end of the peephole. A label
+  used to be carried by a `NOP` of its own (`@Cnt__ctor NOP`), which cost
+  one instruction -- one cycle, the ALU being combinational -- per label; it
+  now rides on the instruction that follows (`@Cnt__ctor POP`), which is how
+  `cmmcomp` has always written labels and what the assembler expects. And an
+  instruction that follows an unconditional `JMP` or a `RET` without carrying
+  a label cannot be reached, so it is dropped. Measured over eight C++ tests:
+  6307 -> 5577 instructions, **11.6 % fewer**, from 7.2 % (`test70`) to
+  13.0 % (`test46`). No output changes -- the same 141 tests pass. The new
+  passes run last, because the older ones match on a bare mnemonic that a
+  label in front would hide. C± assembly is unaffected: it never had either
+  pattern. `TODO.md` item 13 records what is left, which needs a separate
+  whole-program tool.
 - **`real()` / `imag()` hand back a memory operand** (cmmcomp `stdlib.c`): for
   a `comp` variable or constant, the half is returned as the variable's own
   word (`c` / `c_i`) instead of being loaded into the accumulator, so the

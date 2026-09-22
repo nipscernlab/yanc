@@ -12,7 +12,7 @@ history stays in git and in the CHANGELOG).
 
 Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 10 architecture hardening (from the HDL audit), 12 a run-time exception
-strobe (parked, noted 2026-09-20). Item 11, consistency at 32 bits, is
+strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer. Item 11, consistency at 32 bits, is
 closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
@@ -338,6 +338,66 @@ it (an `output_err.txt`, or a line in `app_log.txt`); how Aurora shows it.
 **Done when:** the directive exists and is off by default; with it on, each
 listed exception fires the strobe once with its code in a fixture under both
 simulators; with it off, area and depth are unchanged (`Scripts/hw/area.sh`).
+
+## 13. Pre-assembly optimizer (whole program), and reusing temporaries
+
+**Status:** open, wanted (Luciano, 2026-09-21) · **Area:** a new tool between the front ends and `appcomp` · **Evidence:** the measurements below
+
+A separate executable that reads a `.asm` -- from `cmmcomp` or from `cppcomp`,
+they meet there -- and removes whatever does not change what the program does.
+The peephole part of this belongs in the front ends and is being done there
+(a front end knows what the assembly has already forgotten). What genuinely
+needs a separate tool is the part that has to see the WHOLE program at once.
+
+**Reusing the memory of temporaries is the prize.** Every local of every
+function gets its own word today and never gives it back, so a program pays
+for locals that are never alive at the same time. Bounded by the call graph
+(two functions' locals can share a word only if neither can be running while
+the other is), measured on the current tests:
+
+| program | words of locals | call-graph peak | saving |
+|---|---|---|---|
+| `test46` | 202 | 100 | 102 |
+| `test44` | 186 | 153 | 33 |
+| `test70` | 48 | 21 | 27 |
+| `test33` | 17 | 9 | 8 |
+| `cmm_comp_sqrt`, `proc_fft`, `proc_rls` | 12, 13, 5 | same | 0 |
+
+C± programs are flat and have nothing to give back; the whole saving is on the
+C++ side, where it is about half the data memory.
+
+**The decision already taken (Luciano, 2026-09-21):** two source variables
+sharing one word cannot be shown separately in the waveform, because
+`cmm_log.txt` / `trad_cmm.txt` name one word per variable and that is how
+Aurora displays them. Do it anyway -- the memory is too expensive to keep
+paying for the viewer -- and find a way to keep the viewer working afterwards
+(a sharing map the sidecars can carry, or the optimisation behind a flag the
+IDE turns off). Do not let this block the work.
+
+**What makes it analysable at all:** the `.asm` is symbolic. Every variable is
+a NAME, not an address; `appcomp` assigns addresses later. So merging two
+names into one is all the tool has to do, and the memory saving follows.
+
+**What it has to respect:**
+- **Indirect addressing.** `LEA`/`LDA`/`STA`/`LDI`/`STI` make the touched cell
+  unknowable, so any name whose address is taken must be pinned. Measured:
+  109-144 indirect operations and 4-19 pinned names in the C++ tests, so the
+  analysable subset (a scalar whose address is never taken) is most of them.
+- **Verification.** A wrong live range corrupts a program silently, and the
+  golden tests may not exercise the path. The instruction-set simulator of
+  item 10.1 plus a random program generator is the harness this needs; build
+  it first or alongside.
+- **The instruction table.** `Compilers/common/isa.tsv` already says, per
+  mnemonic, what it does to the accumulator, the stack, the word its operand
+  names, the control flow and the ports. That is what the analysis reads.
+- **The line-mapping sidecars** (`pc_*_mem.txt`, `cmm_log.txt`,
+  `trad_cmm.txt`): one entry per instruction. Deleting or merging an
+  instruction invalidates them unless the tool rewrites them too.
+
+**Done when:** the tool reads a `.asm` and writes a smaller one that
+assembles and simulates identically on every fixture, under both simulators;
+temporaries share memory by liveness; and the instruction count and data-word
+count are reported per program so the saving is visible.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

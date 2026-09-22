@@ -3544,6 +3544,15 @@ static char *fuse_lod_unary(const char *lod, const char *un)
     return r;
 }
 
+// `@L NOP`, or `@L1 @L2 NOP`: a line whose only instruction is a NOP carrying
+// labels. Its labels can ride on the next instruction instead.
+static int is_label_only_nop(const char *t)
+{
+    size_t n = strlen(t);
+    if (n < 5 || strcmp(t + n - 4, " NOP")) return 0;
+    return t[0] == '@';
+}
+
 static void peephole(void)
 {
     int w;
@@ -3618,6 +3627,57 @@ static void peephole(void)
                 free(g_ibuf[r].text);
                 continue;
             }
+        }
+        g_ibuf[w++] = g_ibuf[r];
+    }
+    g_ibuf_n = w;
+    // pass 3: an instruction that follows an unconditional JMP or a RET, and
+    // carries no label, cannot be reached: control either falls through (it
+    // cannot, the jump took it away) or arrives at a label (it has none).
+    w = 0;
+    int dead = 0;
+    for (int r = 0; r < g_ibuf_n; r++) {
+        const char *t = g_ibuf[r].text;
+        if (t[0] == '@' || g_ibuf[r].nofuse) dead = 0;     // a label makes it live again
+        if (dead) { free(g_ibuf[r].text); continue; }
+        if (!g_ibuf[r].nofuse &&
+            (!strncmp(t, "JMP ", 4) || !strcmp(t, "RET"))) dead = 1;
+        g_ibuf[w++] = g_ibuf[r];
+    }
+    g_ibuf_n = w;
+    // pass 4: a label rides on the next instruction instead of on a NOP of its
+    // own, which is how cmmcomp writes labels (`@main @Lwh1 LOD 1`) and what
+    // the assembler expects. Emitting `@L NOP` cost one instruction -- one
+    // cycle -- per label, around a tenth of a C++ program. Runs LAST: the
+    // passes above match on a bare mnemonic, which a label in front would hide.
+    w = 0;
+    for (int r = 0; r < g_ibuf_n; r++) {
+        // collect a run of label-only NOPs, then hang their labels on whatever
+        // real instruction follows (if any, and if it is not verbatim asm)
+        int e = r;
+        while (e < g_ibuf_n && !g_ibuf[e].nofuse && g_ibuf[e].text[0] == '@' &&
+               is_label_only_nop(g_ibuf[e].text)) e++;
+        if (e > r && e < g_ibuf_n && !g_ibuf[e].nofuse) {
+            size_t n = 1;
+            for (int k = r; k <= e; k++) n += strlen(g_ibuf[k].text) + 1;
+            char *merged = malloc(n);
+            size_t at = 0;
+            for (int k = r; k < e; k++) {                 // the labels, NOP dropped
+                size_t len = strlen(g_ibuf[k].text) - 4;  // without the trailing " NOP"
+                memcpy(merged + at, g_ibuf[k].text, len);
+                at += len;
+                merged[at++] = ' ';
+                free(g_ibuf[k].text);
+            }
+            size_t ilen = strlen(g_ibuf[e].text);         // then the instruction
+            memcpy(merged + at, g_ibuf[e].text, ilen);
+            merged[at + ilen] = 0;
+            free(g_ibuf[e].text);
+            g_ibuf[w] = g_ibuf[e];                        // keep ITS source line
+            g_ibuf[w].text = merged;
+            w++;
+            r = e;
+            continue;
         }
         g_ibuf[w++] = g_ibuf[r];
     }
