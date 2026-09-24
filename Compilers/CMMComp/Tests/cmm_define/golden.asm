@@ -8,9 +8,7 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-INN 0
+@main @Lwh1 INN 0
 SET main_x
 ADD 3
 SET main_x

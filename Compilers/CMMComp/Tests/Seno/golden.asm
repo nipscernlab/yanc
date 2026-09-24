@@ -12,8 +12,7 @@ JMP main
 @seno_LUT SET seno_LUT_x
 #arrays seno_LUT_Seno_LUT 2 152 "Seno_LUT.txt"
 @Lwh1 F_ABS_M seno_LUT_x
-P_LOD 3.141592653589793
-SF_GRE
+F_LES 3.141592653589793
 JIZ Lwh1end
 LOD 6.283185307
 F_SGN seno_LUT_x

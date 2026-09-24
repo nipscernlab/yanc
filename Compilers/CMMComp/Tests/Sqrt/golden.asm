@@ -10,9 +10,7 @@ NOP
 #NUGAIN 128
 JMP main
 @my_sqrt SET my_sqrt_num
-LOD my_sqrt_num
-P_LOD 0.0
-S_EQU
+EQU 0.0
 JIZ Lif1else
 LOD 0.0
 RET

@@ -8,9 +8,7 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 2.7
+@main @Lwh1 LOD 2.7
 SET floor_x
 F2I
 I2F

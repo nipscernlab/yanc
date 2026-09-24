@@ -173,8 +173,7 @@ P_LOD k
 MLT   dtw_arr_size
 S_ADD
 LDI   dtw
-P_LOD menor
-S_LES
+GRE menor
 JIZ Lif6else
 NEG_M 1
 ADD j
@@ -201,8 +200,7 @@ SET_P aux_var
 MLT   dtw_arr_size
 ADD   aux_var
 LDI   dtw
-P_LOD menor
-S_LES
+GRE menor
 JIZ Lif7else
 NEG_M 1
 ADD k
@@ -256,8 +254,7 @@ SET_P aux_var
 MLT   dtw_arr_size
 ADD   aux_var
 LDI   dtw
-P_LOD 36000
-S_GRE
+LES 36000
 JIZ Lif8else
 LOD 0
 SET cont

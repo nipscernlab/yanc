@@ -9,8 +9,6 @@ NOP
 #NBEXPO 5
 #NUGAIN 128
 @main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 1
 JIZ Lif1else
 LOD 11
 OUT 0
@@ -99,10 +97,9 @@ SET main_bc
 @Lwh6 LOD main_bc
 JIZ Lwh6end
 LOD 3
-EQU main_bc
-JIZ Lif11else
-JMP Lwh6end
-@Lif11else LOD 100
+XOR main_bc
+JIZ Lwh6end
+LOD 100
 ADD main_bc
 OUT 0
 NEG_M 1

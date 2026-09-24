@@ -24,11 +24,8 @@ LOD 0.0
 SET main_r6
 LOD 0.0
 SET main_r7
-@Lwh1 LOD 1
-JIZ Lwh1end
-INN 0
-P_LOD 300
-S_LES
+@Lwh1 INN 0
+GRE 300
 JIZ Lif1else
 INN 0
 LDI main_ene

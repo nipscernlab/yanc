@@ -16,9 +16,7 @@ SET b_arr_size
 #array hist 1 4
 #array s 1 6
 #array buf 1 4
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 5
+@main @Lwh1 LOD 5
 SET main_k
 ADD 1
 SET main_k
@@ -240,8 +238,7 @@ SET main_r
 PSH
 ADD 1
 SET_P main_k
-P_LOD 3
-S_LES
+GRE 3
 JIZ Lwh2end
 LOD main_r
 ADD 1

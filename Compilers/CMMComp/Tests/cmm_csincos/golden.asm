@@ -8,9 +8,7 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 1.000000
+@main @Lwh1 LOD 1.000000
 CAL float_exp
 SET csin_eb
 F_DIV 1.0

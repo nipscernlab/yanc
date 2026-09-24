@@ -238,6 +238,29 @@ static expr ast_emit_expr_impl(expr_node *n);
 // 1). Used by the algebraic-identity folder in ast_emit_expr_impl. The
 // literal text is whatever the lexer matched ("0", "0.0", "1", "1.0", ...);
 // atof() gives an exact result for these inputs, so == comparison is safe.
+// is statement s nothing but a jump (break / continue / a switch's break, alone
+// or alone in a block)? Then write its target label into buf.
+static int jump_only_target(stmt_node *s, char *buf, size_t sz)
+{
+    while (s && s->kind == STMT_BLOCK && s->kids_n == 1) s = s->kids[0];
+    if (!s) return 0;
+    switch (s->kind) {
+        case STMT_BREAK_WHILE:  snprintf(buf, sz, "Lwh%dend", s->id); return 1;
+        case STMT_SWITCH_BREAK: snprintf(buf, sz, "switch_end_%d", s->id); return 1;
+        case STMT_CONTINUE:
+            if (s->op) snprintf(buf, sz, "Lwh%dcont", s->id);
+            else       snprintf(buf, sz, "Lwh%d", s->id);
+            return 1;
+        default: return 0;
+    }
+}
+
+// an int literal other than 0: a loop condition that is always true (while (1))
+static int is_const_true(expr_node *n)
+{
+    return n && n->kind == EXPR_LITERAL && n->type == 1 && atoll(v_table[n->id].name) != 0;
+}
+
 static int is_const_value(expr_node *n, double want)
 {
     if (!n || n->kind != EXPR_LITERAL) return 0;
@@ -1219,6 +1242,26 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_IF: {
+            // if (a == b) break;  /  if (a != b) continue;  ... : a body that is
+            // only a jump, under an int == or !=, becomes one JIZ straight to
+            // the jump's target: acc = a ^ b is zero exactly when a == b, and
+            // acc = (a == b) is zero exactly when a != b. Saves the JMP (and
+            // the != inversion) of the general form below.
+            char jt[48];
+            if (!n->else_body && jump_only_target(n->then_body, jt, sizeof jt)
+                && n->cond->kind == EXPR_BINOP && (n->cond->op == OP_EQ || n->cond->op == OP_NE))
+            {
+                typecheck_expr(n->cond);
+                if (n->cond->left->type == 1 && n->cond->right->type == 1)
+                {
+                    expr a = ast_emit_expr(n->cond->left);
+                    expr b = ast_emit_expr(n->cond->right);
+                    emit_cond_int_load(n->cond->op == OP_EQ ? oper_bitw(a, b, 2) : oper_cmp(a, b, 2), 0);
+                    add_instr("JIZ %s\n", jt);
+                    acc_ok = 0;
+                    break;
+                }
+            }
             emit_cond_int_load(ast_emit_expr(n->cond), 0);
             add_instr("JIZ Lif%delse\n", n->id);
             acc_ok = 0;
@@ -1241,8 +1284,10 @@ void stmt_emit(stmt_node *n)
 
         case STMT_WHILE: {
             add_sinst(0, "@Lwh%d ", n->id);
-            emit_cond_int_load(ast_emit_expr(n->cond), 0);
-            add_instr("JIZ Lwh%dend\n", n->id);
+            if (!is_const_true(n->cond)) {          // while (1): nothing to test
+                emit_cond_int_load(ast_emit_expr(n->cond), 0);
+                add_instr("JIZ Lwh%dend\n", n->id);
+            }
             acc_ok = 0;
 
             stmt_emit(n->body);
@@ -1272,8 +1317,10 @@ void stmt_emit(stmt_node *n)
             stmt_emit(n->body);
 
             if (n->op) add_sinst(0, "@Lwh%dcont ", n->id);   // continue target
-            emit_cond_int_load(ast_emit_expr(n->cond), 0);
-            add_instr("JIZ Lwh%dend\n", n->id);   // condition false -> exit
+            if (!is_const_true(n->cond)) {                     // while (1): no test
+                emit_cond_int_load(ast_emit_expr(n->cond), 0);
+                add_instr("JIZ Lwh%dend\n", n->id);           // condition false -> exit
+            }
             add_instr("JMP Lwh%d\n",    n->id);   // condition true  -> loop
             add_sinst(0, "@Lwh%dend ",  n->id);
             acc_ok = 0;
@@ -1281,9 +1328,60 @@ void stmt_emit(stmt_node *n)
         }
 
         case STMT_SWITCH: {
-            // ensure the implicit `switch_exp` var exists and matches the
-            // cond's type; the dispatch block below rebuilds an expr against it.
             expr cond_e = ast_emit_expr(n->cond);
+
+            // An int switch with int cases dispatches on differences, with the
+            // value kept in the acc (JIZ leaves it there): acc = s - v1 is zero
+            // exactly for case v1, then adding v1 - v2 makes it s - v2, and so
+            // on -- `ADD d; JIZ body` per case, no copy of s in memory. Word
+            // arithmetic wraps at NUBITS, so the differences are taken modulo
+            // 2^NUBITS too and every compare stays exact.
+            int int_cases = (cond_e.type == 1);
+            for (int i = 0; int_cases && n->body && i < n->body->kids_n; i++)
+                if (n->body->kids[i]->kind == STMT_CASE_LABEL && n->body->kids[i]->id4 != 1)
+                    int_cases = 0;
+            if (int_cases)
+            {
+                emit_cond_int_load(cond_e, 1);
+                int nub = nbmant + nbexpo + 1;
+                long long mod = 1LL << nub, prev = 0;
+                int def_idx = -1;
+                stmt_node *body = n->body;
+                for (int i = 0; body && i < body->kids_n; i++)
+                {
+                    stmt_node *kid = body->kids[i];
+                    if (kid->kind == STMT_CASE_LABEL)
+                    {
+                        long long v = atoll(v_table[kid->id3].name);
+                        long long d = ((prev - v) % mod + mod) % mod;    // acc += d
+                        if (d >= mod / 2) d -= mod;                        // as a signed word
+                        if (d) add_instr("ADD %lld\n", d);
+                        add_instr("JIZ sw_body_%d_%d\n", n->id, kid->id2);
+                        prev = v;
+                    }
+                    else if (kid->kind == STMT_DEFAULT_LABEL) def_idx = kid->id2;
+                }
+                if (def_idx >= 0) add_instr("JMP sw_body_%d_%d\n", n->id, def_idx);
+                else              add_instr("JMP switch_end_%d\n",  n->id);
+                acc_ok = 0;
+                for (int i = 0; body && i < body->kids_n; i++)
+                {
+                    stmt_node *kid = body->kids[i];
+                    if (kid->kind == STMT_CASE_LABEL || kid->kind == STMT_DEFAULT_LABEL)
+                    {
+                        add_sinst(0, "@sw_body_%d_%d ", n->id, kid->id2);
+                        acc_ok = 0;
+                    }
+                    else stmt_emit(kid);
+                }
+                add_sinst(0, "@switch_end_%d ", n->id);
+                acc_ok = 0;
+                break;
+            }
+
+            // General dispatch (a float switch or a float case): ensure the
+            // implicit `switch_exp` var exists and matches the cond's type;
+            // the dispatch block below rebuilds an expr against it.
             if (find_var("switch_exp") == -1) add_var("switch_exp");
             int sw_id = find_var("switch_exp");
             v_table[sw_id].type = cond_e.type;
@@ -1419,9 +1517,9 @@ void stmt_emit(stmt_node *n)
                     add_instr("SET_P %s\n", v_table[get_img_id(pid)].name);
                 add_instr("SET %s\n", v_table[pid].name);
             }
-            // The function entry is a basic-block boundary: the body's first
-            // instruction cannot fuse with the parameter SET via the peephole.
-            emit_peephole_reset();
+            // No reset here: the label is above the parameter SETs, so the body
+            // is reached only by falling through them, and the first
+            // parameter is still in the acc (the peephole drops a LOD of it).
             break;
         }
 

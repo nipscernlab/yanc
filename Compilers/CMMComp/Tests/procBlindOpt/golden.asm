@@ -25,16 +25,14 @@ LES project_h_hat_k
 JIZ Lwh1end
 LOD project_h_hat_k
 LDI h_hat
-P_LOD 0.0
-SF_LES
+F_GRE 0.0
 JIZ Lif1else
 LOD project_h_hat_k
 P_LOD 0.0
 STI h_hat
 @Lif1else LOD project_h_hat_k
 LDI h_hat
-P_LOD 1.0
-SF_GRE
+F_LES 1.0
 JIZ Lif2else
 LOD project_h_hat_k
 P_LOD 1.0
@@ -54,16 +52,14 @@ LES project_h_cand_k
 JIZ Lwh2end
 LOD project_h_cand_k
 LDI s_h_cand
-P_LOD 0.0
-SF_LES
+F_GRE 0.0
 JIZ Lif3else
 LOD project_h_cand_k
 P_LOD 0.0
 STI s_h_cand
 @Lif3else LOD project_h_cand_k
 LDI s_h_cand
-P_LOD 1.0
-SF_GRE
+F_LES 1.0
 JIZ Lif4else
 LOD project_h_cand_k
 P_LOD 1.0
@@ -94,8 +90,7 @@ JMP Lwh3
 @Lwh3end LOD lipschitz_x_s
 F_MLT lipschitz_x_s
 SET lipschitz_x_L
-P_LOD 0.000000000001
-SF_LES
+F_GRE 0.000000000001
 JIZ Lif5else
 LOD 0.000000000001
 SET lipschitz_x_L
@@ -379,8 +374,7 @@ F_MLT fista_x_step
 SF_SU2
 F_SU1 fista_x_step_lam
 SET fista_x_v
-P_LOD 0.0
-SF_LES
+F_GRE 0.0
 JIZ Lif6else
 LOD 0.0
 SET fista_x_v
@@ -493,8 +487,7 @@ CAL residual_sub_y
 CAL sum_residual_sq
 F_MLT 0.5
 SET update_h_cdt
-P_LOD update_h_best_dt
-SF_LES
+F_GRE update_h_best_dt
 JIZ Lif7else
 LOD update_h_cdt
 SET update_h_best_dt

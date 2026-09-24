@@ -18,8 +18,7 @@ SET arctan_LUT_x
 LOD 0.0
 SET arctan_LUT_v0
 LOD arctan_LUT_x
-P_LOD 1.0
-SF_GRE
+F_LES 1.0
 JIZ Lif1else
 I2F_M 1
 P_LOD arctan_LUT_x

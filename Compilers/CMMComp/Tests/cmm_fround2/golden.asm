@@ -29,9 +29,7 @@ LOD 0.000000000000000000000000000000001
 SET main_d33
 LOD 1000000000000000000000000000000000000.0
 SET main_b36
-@Lwh1 LOD 1
-JIZ Lwh1end
-LOD main_one
+@Lwh1 LOD main_one
 F_ADD main_u
 F_SU1 main_one
 SET main_x
@@ -123,8 +121,7 @@ OUT 0
 LOD main_big
 F_MLT main_big
 SET main_y
-P_LOD main_big
-SF_GRE
+F_LES main_big
 JIZ Lif1else
 LOD 1
 SET main_flag
@@ -136,8 +133,7 @@ OUT 0
 LOD main_tiny
 F_MLT main_tiny
 SET main_y
-P_LOD 0.0
-S_EQU
+EQU 0.0
 JIZ Lif2else
 LOD 1
 SET main_flag
@@ -151,8 +147,7 @@ F_SU1 main_x
 SET main_z
 F_NEG_M main_z
 SET main_y
-P_LOD 0.0
-S_EQU
+EQU 0.0
 JIZ Lif3else
 LOD 1
 SET main_flag

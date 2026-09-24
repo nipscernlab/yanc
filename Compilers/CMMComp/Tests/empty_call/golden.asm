@@ -14,9 +14,7 @@ RET
 @emit_one LOD 1
 OUT 0
 RET
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-CAL answer
+@main @Lwh1 CAL answer
 SET main_y
 CAL emit_one
 LOD main_y

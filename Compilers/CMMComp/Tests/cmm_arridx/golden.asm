@@ -9,9 +9,7 @@ NOP
 #NBEXPO 5
 #NUGAIN 128
 @main #array main_v 1 8
-@Lwh1 LOD 1
-JIZ Lwh1end
-LOD 7
+@Lwh1 LOD 7
 SET main_a
 LOD 3
 SET main_b

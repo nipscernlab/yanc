@@ -8,9 +8,7 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 10
+@main @Lwh1 LOD 10
 SET main_k
 @Lwh2 LOD main_k
 OUT 0
@@ -36,10 +34,9 @@ JMP Lwh3
 @Lwh3end LOD 0
 SET main_k
 @Lwh4 LOD 2
-EQU main_k
-JIZ Lif1else
-JMP Lwh4end
-@Lif1else LOD 30
+XOR main_k
+JIZ Lwh4end
+LOD 30
 ADD main_k
 OUT 0
 LOD main_k
@@ -55,10 +52,9 @@ SET main_k
 ADD 1
 SET main_k
 LOD 3
-EQU main_k
-JIZ Lif2else
-JMP Lwh5cont
-@Lif2else LOD 40
+XOR main_k
+JIZ Lwh5cont
+LOD 40
 ADD main_k
 OUT 0
 @Lwh5cont LOD 5
@@ -70,10 +66,9 @@ SET main_k
 @Lwh6 LOD 0
 SET main_n
 @Lwh7 LOD 2
-EQU main_n
-JIZ Lif3else
-JMP Lwh7end
-@Lif3else LOD main_k
+XOR main_n
+JIZ Lwh7end
+LOD main_k
 MLT 10
 ADD 50
 ADD main_n

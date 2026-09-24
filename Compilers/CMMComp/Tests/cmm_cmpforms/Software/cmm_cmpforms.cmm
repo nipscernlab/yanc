@@ -1,0 +1,101 @@
+#PRNAME cmm_cmpforms
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// Functional fixture for the memory-form comparisons of oper_cmp: an operand
+// already in the acc is compared against one in memory in a single
+// LES/GRE/EQU (int) or F_LES/F_GRE/EQU (float), the relation reversed when the
+// acc holds the LEFT operand (a < b == b > a). One function per operand shape;
+// each returns 1 for <, 2 for >, 4 for ==, and is called with a smaller, an
+// equal and a larger left operand. Every call must print 1 4 2.
+// Expected outputs: 1 4 2 repeated 8 times.
+
+int b1(int k, float f)              // int var   with float var
+{
+    int s; s = 0;
+    if (k < f) s = s + 1;
+    if (k > f) s = s + 2;
+    if (k == f) s = s + 4;
+    return s;
+}
+
+int b2(int k, int m)                // int acc   with int var
+{
+    int s; s = 0;
+    if ((k + 1) < m) s = s + 1;
+    if ((k + 1) > m) s = s + 2;
+    if ((k + 1) == m) s = s + 4;
+    return s;
+}
+
+int b3(int k, float f)              // int acc   with float var
+{
+    int s; s = 0;
+    if ((k + 1) < f) s = s + 1;
+    if ((k + 1) > f) s = s + 2;
+    if ((k + 1) == f) s = s + 4;
+    return s;
+}
+
+int b4(float f, int k)              // float var with int var
+{
+    int s; s = 0;
+    if (f < k) s = s + 1;
+    if (f > k) s = s + 2;
+    if (f == k) s = s + 4;
+    return s;
+}
+
+int b5(float f, int k)              // float var with int acc
+{
+    int s; s = 0;
+    if (f < (k + 1)) s = s + 1;
+    if (f > (k + 1)) s = s + 2;
+    if (f == (k + 1)) s = s + 4;
+    return s;
+}
+
+int b6(float f, float g)            // float var with float var
+{
+    int s; s = 0;
+    if (f < g) s = s + 1;
+    if (f > g) s = s + 2;
+    if (f == g) s = s + 4;
+    return s;
+}
+
+int b7(float f, float g)            // float var with float acc
+{
+    int s; s = 0;
+    if (f < (g + 0.5)) s = s + 1;
+    if (f > (g + 0.5)) s = s + 2;
+    if (f == (g + 0.5)) s = s + 4;
+    return s;
+}
+
+int b8(float f, float g)            // float acc with float var
+{
+    int s; s = 0;
+    if ((f + 0.5) < g) s = s + 1;
+    if ((f + 0.5) > g) s = s + 2;
+    if ((f + 0.5) == g) s = s + 4;
+    return s;
+}
+
+void main()
+{
+    out(0, b1(2, 3.0));   out(0, b1(2, 2.0));   out(0, b1(2, 1.0));
+    out(0, b2(2, 4));     out(0, b2(2, 3));     out(0, b2(2, 2));
+    out(0, b3(2, 4.0));   out(0, b3(2, 3.0));   out(0, b3(2, 2.0));
+    out(0, b4(1.0, 2));   out(0, b4(2.0, 2));   out(0, b4(3.0, 2));
+    out(0, b5(2.0, 2));   out(0, b5(3.0, 2));   out(0, b5(4.0, 2));
+    out(0, b6(1.0, 2.0)); out(0, b6(2.0, 2.0)); out(0, b6(3.0, 2.0));
+    out(0, b7(1.0, 1.0)); out(0, b7(1.5, 1.0)); out(0, b7(2.0, 1.0));
+    out(0, b8(1.0, 2.0)); out(0, b8(1.5, 2.0)); out(0, b8(2.0, 2.0));
+}

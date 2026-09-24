@@ -62,9 +62,7 @@ SET_V b 0
 SET_V b 1
 SET_V b 2
 SET_V b 3
-@Lwh1 LOD 1
-JIZ Lwh1end
-LOD_V B 0
+@Lwh1 LOD_V B 0
 F_MLT a
 P_LOD_V B 1
 F_MLT_V a 1

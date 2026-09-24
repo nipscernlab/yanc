@@ -1,0 +1,77 @@
+#PRNAME cmm_ctlforms
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// Functional fixture for the lean control-flow forms, validated by value:
+//  - while (1) / do ... while (1) emit no test at all;
+//  - if (a == b) break; / if (a != b) continue; ... is one JIZ to the target
+//    (acc = a ^ b, or acc = (a == b));
+//  - an int switch dispatches on case differences kept in the acc
+//    (ADD d; JIZ body), in any case order, with a break of the switch inside
+//    an if, and with case values far apart (the differences taken modulo
+//    2^NUBITS).
+// Expected outputs: 5 7 13 1 20 70 1000 -1 0 9 1 2 3
+
+int sw(int v)
+{
+    int r; r = 0;
+    switch (v) {
+        case 7:    r = 70;   break;
+        case 2:    r = 20;   break;
+        case 0:    r = 1;    break;
+        case 1000: r = 1000; break;
+        default:   r = -1;
+    }
+    return r;
+}
+
+int sw2(int v)
+{
+    int r; r = 0;
+    switch (v) {
+        case 5:
+            if (v == 5) break;      // leaves r at 0
+            r = 55;
+            break;
+        default: r = 9;
+    }
+    return r;
+}
+
+int sw3(int v)
+{
+    int r; r = 0;
+    switch (v) {
+        case 2147483647: r = 1; break;
+        case 0:          r = 2; break;
+        default:         r = 3;
+    }
+    return r;
+}
+
+void main()
+{
+    int k; int n; int s;
+
+    k = 0;
+    while (1) { k = k + 1; if (k == 5) break; }
+    out(0, k);                                  // 5
+
+    do { k = k + 1; if (k != 7) continue; break; } while (1);
+    out(0, k);                                  // 7
+
+    s = 0;
+    for (n = 0; n < 6; n = n + 1) { if (n == 2) continue; s = s + n; }
+    out(0, s);                                  // 0+1+3+4+5 = 13
+
+    out(0, sw(0));    out(0, sw(2));   out(0, sw(7));
+    out(0, sw(1000)); out(0, sw(3));            // 1 20 70 1000 -1
+    out(0, sw2(5));   out(0, sw2(6));           // 0 9
+    out(0, sw3(2147483647)); out(0, sw3(0)); out(0, sw3(0 - 5));   // 1 2 3
+}

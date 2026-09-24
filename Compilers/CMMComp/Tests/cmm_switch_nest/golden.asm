@@ -9,27 +9,19 @@ NOP
 #NBEXPO 5
 #NUGAIN 128
 @main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 1
 SET main_a
 LOD 2
 SET main_b
 LOD main_a
-SET switch_exp
-EQU 1
-JIZ sw_disp_1_1
-JMP sw_body_1_1
-@sw_disp_1_1 LOD switch_exp
-EQU 2
-JIZ sw_disp_1_2
-JMP sw_body_1_2
-@sw_disp_1_2 JMP sw_body_1_3
+ADD -1
+JIZ sw_body_1_1
+ADD -1
+JIZ sw_body_1_2
+JMP sw_body_1_3
 @sw_body_1_1 LOD main_b
-SET switch_exp
-EQU 2
-JIZ sw_disp_2_1
-JMP sw_body_2_1
-@sw_disp_2_1 JMP sw_body_2_2
+ADD -2
+JIZ sw_body_2_1
+JMP sw_body_2_2
 @sw_body_2_1 LOD 12
 OUT 0
 JMP switch_end_2
@@ -45,11 +37,9 @@ JMP switch_end_1
 OUT 0
 @switch_end_1 LOD 5
 SET main_a
-SET switch_exp
-EQU 5
-JIZ sw_disp_3_1
-JMP sw_body_3_1
-@sw_disp_3_1 JMP sw_body_3_2
+ADD -5
+JIZ sw_body_3_1
+JMP sw_body_3_2
 @sw_body_3_1 LOD main_a
 JIZ Lif1else
 JMP switch_end_3

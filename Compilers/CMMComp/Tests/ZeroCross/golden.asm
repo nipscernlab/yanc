@@ -55,8 +55,8 @@ OUT 2
 #ITRAD
 F_INN 1
 SET sinal_entrada
-P_I2F_M 0
-S_EQU
+I2F_M 0
+EQU sinal_entrada
 JIZ Lif1else
 LOD 0.0000001
 SET sinal_entrada
@@ -131,12 +131,10 @@ SET y3_n1
 F2I_M y3
 OUT 4
 LOD y3
-P_LOD 0.0000001
-SF_LES
+F_GRE 0.0000001
 JIZ Lif2else
 LOD amostra_anterior
-P_LOD 0.0000001
-SF_GRE
+F_LES 0.0000001
 JIZ Lif3else
 F2I_M 1.0
 OUT 1

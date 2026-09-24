@@ -10,7 +10,6 @@ NOP
 #NUGAIN 128
 JMP main
 @add5 SET add5_a
-LOD add5_a
 ADD 5
 RET
 @firstHit SET firstHit_limit
@@ -45,8 +44,7 @@ JIZ Lwh3end
 LOD nestedFind_a
 MLT 10
 ADD nestedFind_b
-P_LOD nestedFind_target
-S_EQU
+EQU nestedFind_target
 JIZ Lif2else
 LOD nestedFind_a
 MLT 100
@@ -63,16 +61,11 @@ JMP Lwh2
 @Lwh2end LOD 0
 RET
 @classify SET classify_x
-LOD classify_x
-SET switch_exp
-EQU 1
-JIZ sw_disp_1_1
-JMP sw_body_1_1
-@sw_disp_1_1 LOD switch_exp
-EQU 2
-JIZ sw_disp_1_2
-JMP sw_body_1_2
-@sw_disp_1_2 JMP sw_body_1_3
+ADD -1
+JIZ sw_body_1_1
+ADD -1
+JIZ sw_body_1_2
+JMP sw_body_1_3
 @sw_body_1_1 LOD 11
 RET
 @sw_body_1_2 LOD 22
@@ -90,9 +83,7 @@ RET
 ADD maybe_x
 OUT 0
 RET
-@main @Lwh4 LOD 1
-JIZ Lwh4end
-LOD 10
+@main @Lwh4 LOD 10
 CAL add5
 OUT 0
 LOD 4

@@ -8,9 +8,7 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 0.0
+@main @Lwh1 LOD 0.0
 SET cosh_x
 CAL float_exp
 SET cosh_t

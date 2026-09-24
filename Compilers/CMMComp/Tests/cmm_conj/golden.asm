@@ -8,9 +8,7 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 3.000000
+@main @Lwh1 LOD 3.000000
 PF_NEG_M 4.000000
 SET_P main_c_i
 SET main_c

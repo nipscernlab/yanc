@@ -8,9 +8,7 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 0
+@main @Lwh1 LOD 0
 SET main_idx
 @Lwh2 LOD 3
 LES main_idx

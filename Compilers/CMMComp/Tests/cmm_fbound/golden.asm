@@ -8,9 +8,7 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 1.999999
+@main @Lwh1 LOD 1.999999
 SET main_a
 LOD 3.999999
 SET main_b

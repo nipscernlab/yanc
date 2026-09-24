@@ -54,6 +54,26 @@ tags consumed by Aurora.
   must compile without a given message.
 
 ### Changed
+- **cmmcomp emits 209 fewer instructions over 53 examples, about 6.5 % of
+  its own output** (`ast.c`, `oper.c`; C±'s point is lean code):
+  - `while (1)` / `do ... while (1)` no longer test the constant (2
+    instructions, and 2 cycles a turn);
+  - an int `switch` dispatches on the differences between its cases with the
+    value kept in the accumulator (`ADD d; JIZ body` per case, taken modulo
+    2^NUBITS), with no copy in `switch_exp`: `cmm_switch` 88 -> 68;
+  - `if (a == b) break;`, `if (a != b) continue;` and the like, when the body
+    is only a jump, are one `JIZ` straight to its target (`acc = a ^ b`, or
+    `acc = (a == b)`);
+  - a comparison with one operand in the accumulator uses the memory form
+    (`X op acc`, the relation reversed when the acc holds the left operand):
+    `GRE b` for `P_LOD b; S_LES`, and a float against a float in the acc is
+    one instruction where it was four;
+  - the first parameter is not reloaded at the top of the function body.
+  Every simulated output is unchanged; 42 sim goldens grew because the loops
+  now fit more turns into the same number of cycles (checked: each new
+  output starts with the whole old one). New `cmm_cmpforms` (every operand
+  shape of the comparison, <, = and >) and `cmm_ctlforms` (the loops, the
+  jump-only ifs, switch cases out of order, a far case value at 32 bits).
 - **Zeroing what a local brace initializer leaves out takes 7 instructions a
   word instead of 12** (`cppcomp`, `emit_zero_words` in `codegen.c`). The loop
   kept two counters, an index going up and a count going down; it now keeps

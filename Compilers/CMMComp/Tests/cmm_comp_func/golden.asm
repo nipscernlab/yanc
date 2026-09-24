@@ -11,14 +11,12 @@ NOP
 JMP main
 @echo SET_P echo_c_i
 SET echo_c
-LOD echo_c
 P_LOD echo_c_i
 RET
 @addc SET_P addc_b_i
 SET_P addc_b
 SET_P addc_a_i
 SET addc_a
-LOD addc_a
 F_ADD addc_b
 P_LOD addc_a_i
 F_ADD addc_b_i
@@ -30,18 +28,15 @@ P_I2F_M mk_im
 RET
 @sumri SET_P sumri_c_i
 SET sumri_c
-LOD sumri_c
 F_ADD sumri_c_i
 F2I
 RET
 @takesint SET takesint_x
-LOD takesint_x
 RET
 @midcomp SET_P midcomp_b
 SET_P midcomp_c_i
 SET_P midcomp_c
 SET midcomp_a
-LOD midcomp_a
 OUT 0
 F2I_M midcomp_c
 OUT 0
@@ -49,9 +44,7 @@ F2I_M midcomp_c_i
 OUT 0
 LOD midcomp_b
 RET
-@main @Lwh1 LOD 1
-JIZ Lwh1end
-LOD 3.000000
+@main @Lwh1 LOD 3.000000
 P_LOD 4.000000
 CAL echo
 SET_P main_e_i

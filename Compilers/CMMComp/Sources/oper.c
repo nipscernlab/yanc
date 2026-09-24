@@ -2451,6 +2451,14 @@ expr oper_cmp(expr e1, expr e2, int type)
             exit(EXIT_FAILURE);
     }
 
+    // The memory forms compute `X op acc` (ula in1 = memory, in2 = acc), so an
+    // operand already in the acc is compared against one in memory in a single
+    // instruction: e1 in acc, e2 in memory is `rev e2` (a < b == b > a); e2 in
+    // acc, e1 in memory is `op e1`. EQU is one unit for int and float.
+    char rev [16]; strcpy(rev, type == 0 ? "GRE" : type == 1 ? "LES" : "EQU");
+    char fop [16]; if (type == 2) strcpy(fop , "EQU"); else sprintf(fop , "F_%s", op );
+    char frev[16]; if (type == 2) strcpy(frev, "EQU"); else sprintf(frev, "F_%s", rev);
+
     // int var with int var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
@@ -2467,10 +2475,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     // int var with float var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n", i2f, v_table[e1.id].name);
-        add_instr("P_LOD %s\n"  , v_table[e2.id].name);
-
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        add_instr("%s %s\n", i2f , v_table[e1.id].name);
+        add_instr("%s %s\n", frev, v_table[e2.id].name);
     }
 
     // int var with float acc
@@ -2522,8 +2528,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     // int acc with int var
     if ((e1.type==1) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld, v_table[e2.id].name);
-        add_instr("S_%s\n", op);
+        add_instr("%s %s\n", rev, v_table[e2.id].name);
     }
 
     // int acc with int acc
@@ -2536,9 +2541,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
         add_instr("I2F\n");
-        add_instr("P_LOD %s\n", v_table[e2.id].name);
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        add_instr("%s %s\n", frev, v_table[e2.id].name);
     }
 
     // int acc with float acc
@@ -2595,40 +2598,28 @@ expr oper_cmp(expr e1, expr e2, int type)
     // float var with int var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("%s %s\n", ld , v_table[e1.id].name);
-        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        add_instr("%s %s\n", i2f, v_table[e2.id].name);
+        add_instr("%s %s\n", fop, v_table[e1.id].name);
     }
 
     // float var with int acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
     {
         add_instr("I2F\n");
-        add_instr("SET   aux_var\n");
-        add_instr("LOD %s\n", v_table[e1.id].name);
-        add_instr("P_LOD aux_var\n");
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        add_instr("%s %s\n", fop, v_table[e1.id].name);
     }
 
     // float var with float var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("%s %s\n"   , ld, v_table[e1.id].name);
-        add_instr("P_LOD %s\n",     v_table[e2.id].name);
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        add_instr("%s %s\n", ld  , v_table[e1.id].name);
+        add_instr("%s %s\n", frev, v_table[e2.id].name);
     }
 
     // float var with float acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET   aux_var\n");
-        add_instr("LOD %s\n", v_table[e1.id].name);
-        add_instr("P_LOD aux_var\n");
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        add_instr("%s %s\n", fop, v_table[e1.id].name);
     }
 
     // float var with comp const
@@ -2686,9 +2677,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     // float acc with float var
     if ((e1.type==2) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("P_LOD %s\n", v_table[e2.id].name);
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        add_instr("%s %s\n", frev, v_table[e2.id].name);
     }
 
     // float acc with float acc
