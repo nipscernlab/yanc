@@ -9,6 +9,13 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **A C++ reference operand gives its referent's value** (`cppcomp`,
+  `codegen.c`). The memory-operand shortcuts for a binary op and for
+  `++`/`--` took a reference variable's word as the value, but that word
+  holds the referent's address: with `int& r = x;` (x = 5), `z + r` gave
+  104 for 105, `z * r` 400 for 500, and `++r` stepped the stored address,
+  leaving `x` alone and the reference pointing elsewhere. Those paths now
+  skip references, as the store path already did. `test79`.
 - **A program with 2 or fewer data words compiles** (`appcomp`, `asmcomp`).
   appcomp refused any program whose data memory had 2 words or fewer ("this
   processor is totally useless"), which caught the smallest real program, a

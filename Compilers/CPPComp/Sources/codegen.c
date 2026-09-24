@@ -1877,7 +1877,10 @@ static void gen_expr(expr *e)
                            op == OP_EQ  || op == OP_NE);
         if (mem_form_op && e->b->kind == E_IDENT && lf == rf) {   // mem-form needs matching types
             sym *r = st_find(e->b->sval);
-            if (r && !r->is_frame && r->stype && r->stype->kind != TY_ARRAY && r->stype->kind != TY_STRUCT) {
+            // not a reference: its word holds the referent's address, and the
+            // memory form would operate on that address (z + r gave z + &x)
+            if (r && !r->is_frame && r->stype && !r->stype->is_ref &&
+                r->stype->kind != TY_ARRAY && r->stype->kind != TY_STRUCT) {
                 gen_expr(e->a);
                 switch (op) {
                     case OP_ADD: emit(is_float ? "F_ADD %s" : "ADD %s", r->asm_name); return;
@@ -1991,7 +1994,8 @@ static void gen_expr(expr *e)
         // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
             sym *s = st_find(lv->sval);
-            if (s && !s->is_frame && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
+            if (s && !s->is_frame && s->stype && !s->stype->is_ref &&   // a reference steps its referent
+                s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
                 emit("LOD %s", s->asm_name);
                 if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
                 else          emit("ADD %d", delta);
@@ -2021,7 +2025,8 @@ static void gen_expr(expr *e)
         // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
             sym *s = st_find(lv->sval);
-            if (s && !s->is_frame && s->stype && s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
+            if (s && !s->is_frame && s->stype && !s->stype->is_ref &&   // a reference steps its referent
+                s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
                 emit("LOD %s", s->asm_name);
                 emit("PSH");                             // stack: [old]  (result)
                 if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
