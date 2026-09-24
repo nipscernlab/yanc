@@ -26,9 +26,13 @@ Compilers/CPPComp/Sources/y.tab.h
 
 # Local binaries + tools produced by Scripts\setup.bat ----------------------
 # bin/   : YANC .exe (compiled from source or downloaded from a release)
+# stage/ : `make stage` output (the deployable tree aurora.bat copies);
+#          out/ is the same tree when the release workflow builds it
 # tools/ : downloaded helper tools (e.g. the nipscernlab GTKWave bundle)
 # tools.local.* : machine-specific tool paths cached by setup.bat / setup.sh
 /bin/
+/stage/
+/out/
 /tools/
 Scripts/tools.local.bat
 Scripts/tools.local.sh

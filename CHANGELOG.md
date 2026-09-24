@@ -9,6 +9,17 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **`aurora.bat` deploys exactly what a release ships** (`Makefile`,
+  `release.yml`, `Scripts/aurora.bat`). The release built every binary and
+  copied HDL/, Macros/ and Header/ whole; `aurora.bat` copied a fixed list of
+  six executables (leaving `gen_gtkw` out, which the Aurora Intelligence
+  lists) and the folders without their subfolders. Both now use one recipe,
+  `make stage STAGE=<dir>`: every binary the Makefile builds plus the three
+  folders with `cp -r`, rebuilt from empty. `aurora.bat` copies that tree
+  whole (`xcopy /E`), and only wipes Aurora's folders after the build
+  succeeded (a failed build used to leave Aurora with no YANC). The Makefile
+  header documented a `make install` that did not exist; it documents
+  `stage` now. Checked: 27 files, the same set as `yanc-bin-v5.4.zip`.
 - **A C++ reference operand gives its referent's value** (`cppcomp`,
   `codegen.c`). The memory-operand shortcuts for a binary op and for
   `++`/`--` took a reference variable's word as the value, but that word

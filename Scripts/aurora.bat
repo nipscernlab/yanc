@@ -68,10 +68,44 @@ where make.exe >nul 2>nul || (
 set GCC=x86_64-w64-mingw32-gcc.exe
 
 :: ----------------------------------------------------------------------------
+:: Build and stage via the top-level Makefile (single source of truth) ---------
+:: ----------------------------------------------------------------------------
+::
+:: `make stage` is the SAME recipe the release uses (.github/workflows/
+:: release.yml): it builds every binary and copies HDL, Macros and Header into
+:: one tree, so this deploy carries exactly what a release built from this
+:: checkout would -- every executable the Makefile makes, every file and
+:: subfolder of the three folders -- with no list here to keep in step.
+::
+:: make / sh / bison / flex come from MSYS2's usr\bin and the cross gcc from
+:: mingw64\bin -- both already required on PATH by the checks above. The cross
+:: tuple gives stand-alone .exe with no MSYS2 DLL dependency. Stage into the
+:: repo-local stage\ (a cwd-relative path, so no backslash path is passed into
+:: make/sh), then copy the tree into Aurora.
+::
+:: BISON=bison FLEX=flex are forced on the make command line so that a
+:: pre-existing BISON / FLEX environment variable holding a backslash Windows
+:: path (e.g. C:\packs\msys64\usr\bin\bison.exe -- which setup.bat may have
+:: exported) cannot leak in. The Makefile's "BISON ?= bison" is a *conditional*
+:: assignment and would NOT override such an inherited value; the backslashes
+:: would then be eaten by MSYS2's /bin/sh ("C:packs...bison.exe: not found").
+:: A make command-line assignment overrides the environment, and bison/flex are
+:: already on PATH (checked above), so sh resolves the bare names cleanly.
+
+pushd %SRC_DIR%
+make CC=x86_64-w64-mingw32-gcc BISON=bison FLEX=flex clean stage STAGE=stage || (
+    popd
+    echo ERROR: make stage failed; nothing was deployed.
+    exit /b 1
+)
+popd
+
+:: ----------------------------------------------------------------------------
 :: Clean the destination tree -------------------------------------------------
 :: ----------------------------------------------------------------------------
 ::
-:: Nuke + re-create each yanc-managed folder so the subsequent move / xcopy
+:: Runs only after `make stage` succeeded, so a failed build leaves Aurora's
+:: current YANC in place. Nuke + re-create each yanc-managed folder so the xcopy
 :: steps always see a clean, empty destination directory. This survives any
 :: corrupted state from earlier interrupted runs (e.g. a stray "bin" FILE
 :: where the bin\ folder should be, which happens if `move foo.exe bin`
@@ -103,48 +137,15 @@ if exist %BLD_DIR%\Scripts (
 )
 
 :: ----------------------------------------------------------------------------
-:: Build the binaries via the top-level Makefile (single source of truth) ------
+:: Copy the staged tree into Aurora -------------------------------------------
 :: ----------------------------------------------------------------------------
 ::
-:: make / sh / bison / flex come from MSYS2's usr\bin and the cross gcc from
-:: mingw64\bin -- both already required on PATH by the checks above. The cross
-:: tuple gives stand-alone .exe with no MSYS2 DLL dependency. Build into the
-:: repo-local bin\ (the Makefile's cwd-relative default, so no backslash path is
-:: passed into make/sh), then copy the .exe into the Aurora deploy bin\.
-::
-:: BISON=bison FLEX=flex are forced on the make command line so that a
-:: pre-existing BISON / FLEX environment variable holding a backslash Windows
-:: path (e.g. C:\packs\msys64\usr\bin\bison.exe -- which setup.bat may have
-:: exported) cannot leak in. The Makefile's "BISON ?= bison" is a *conditional*
-:: assignment and would NOT override such an inherited value; the backslashes
-:: would then be eaten by MSYS2's /bin/sh ("C:packs...bison.exe: not found").
-:: A make command-line assignment overrides the environment, and bison/flex are
-:: already on PATH (checked above), so sh resolves the bare names cleanly.
+:: /E = subfolders too (even empty ones)  /I = destination is a directory
+:: /Q = quiet                             /Y = overwrite without prompting
 
-pushd %SRC_DIR%
-make CC=x86_64-w64-mingw32-gcc BISON=bison FLEX=flex clean all
-popd
-
-:: Copy only the binaries Aurora actually uses: the compile pipeline plus
-:: comp2gtkw (the complex-number -> GTKWave converter). gen_gtkw is a
-:: yanc-runner-only tool -- Aurora builds the GTKWave layout itself -- so it is
-:: deliberately NOT deployed.
-for %%E in (cmmcomp cppcomp cpppp appcomp asmcomp comp2gtkw) do (
-    copy /Y "%SRC_DIR%\bin\%%E.exe" "%BLD_DIR%\bin\" >nul
+for %%D in (bin HDL Macros Header) do (
+    xcopy "%SRC_DIR%\stage\%%D" "%BLD_DIR%\%%D" /E /I /Q /Y >nul
 )
-
-:: ----------------------------------------------------------------------------
-:: Copy HDL, Macros and Scripts folders ---------------------------------------
-:: ----------------------------------------------------------------------------
-
-cd %BLD_DIR%
-
-:: /I = treat destination as directory (suppress F/D prompt)
-:: /Q = quiet
-:: /Y = overwrite without prompting
-xcopy %SRC_DIR%\HDL                        HDL    /I /Q /Y
-xcopy %SRC_DIR%\Compilers\CMMComp\Includes Macros /I /Q /Y
-xcopy %SRC_DIR%\Compilers\CPPComp\Includes Header /I /Q /Y
 
 :: Scripts/ is intentionally NOT copied: Aurora manages its own scripts
 :: (copy-components.js, download-*.js, proc2rtl.ys, ...). The yanc-side

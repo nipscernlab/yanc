@@ -10,7 +10,11 @@
 #   make <name>         build one: cmmcomp appcomp asmcomp cpppp cppcomp
 #                       comp2gtkw gen_gtkw
 #   make clean          remove bin/ and the flex/bison generated files
-#   make install DESTDIR=<dir>   copy the binaries into <dir>/bin
+#   make stage STAGE=<dir>   the deployable tree in <dir>: bin/ (every binary
+#                       above), HDL/, Macros/, Header/. The ONE recipe both the
+#                       release (.github/workflows/release.yml) and
+#                       Scripts/aurora.bat use, so a local deploy and a
+#                       release cannot drift apart. Default STAGE=stage.
 #
 # Override the toolchain or output dir, e.g.:
 #   make CC=x86_64-w64-mingw32-gcc        # Windows standalone (no MSYS2 DLLs)
@@ -52,10 +56,22 @@ BINARIES := $(BIN)/cmmcomp$(EXE) $(BIN)/appcomp$(EXE) $(BIN)/asmcomp$(EXE) \
             $(BIN)/cpppp$(EXE) $(BIN)/cppcomp$(EXE) \
             $(BIN)/comp2gtkw$(EXE) $(BIN)/gen_gtkw$(EXE)
 
-.PHONY: all clean install \
+.PHONY: all clean stage \
         cmmcomp appcomp asmcomp cpppp cppcomp comp2gtkw gen_gtkw
 
 all: $(BINARIES)
+
+# The deployable tree (see the header). Rebuilt from empty each time, so
+# nothing left over from an earlier stage can ride along; the folders are
+# copied whole (cp -r), subfolders included. Command-line variables (CC,
+# BISON, FLEX) reach the inner make through MAKEFLAGS.
+STAGE ?= stage
+stage:
+	rm -rf $(STAGE)
+	$(MAKE) BIN=$(STAGE)/bin all
+	cp -r HDL                        $(STAGE)/HDL
+	cp -r Compilers/CMMComp/Includes $(STAGE)/Macros
+	cp -r Compilers/CPPComp/Includes $(STAGE)/Header
 
 # Short phony aliases so `make cmmcomp` works regardless of the .exe suffix.
 cmmcomp:   $(BIN)/cmmcomp$(EXE)

@@ -43,39 +43,25 @@ jobs:
             flex
             zip
 
-      - name: Build binaries
+      - name: Build and stage
         shell: msys2 {0}
-        # Build all seven binaries through the top-level Makefile (single source
-        # of truth, shared with the go_*.bat flows). $(OS)=Windows_NT here, so
-        # the Makefile emits .exe; BIN=out/bin lands them where the packaging
-        # steps below expect them.
-        run: |
-          set -euo pipefail
-          make BIN=out/bin
-          ls -l out/bin
-
-      - name: Stage HDL + Macros + Header
-        shell: msys2 {0}
-        # Bundle the SAPHO runtime assets alongside the binaries. Aurora
-        # downloads the zip and extracts it into components/, so each
-        # staged folder lands directly at components/<folder>/ without
-        # any extra code on the Aurora side.
+        # `make stage` is the one recipe for the deployable tree, shared with
+        # Scripts/aurora.bat so a local deploy and a release carry the same
+        # files. $(OS)=Windows_NT here, so the binaries are .exe. out/ gets:
         #
+        #   bin/     — every binary the Makefile builds
         #   HDL/     — Verilog modules (processor/core/ula/...)
-        #   Macros/  — CMM float LUTs and helpers (sourced from
-        #              Compilers/CMMComp/Includes/)
+        #   Macros/  — CMM float LUTs and helpers (Compilers/CMMComp/Includes/)
         #   Header/  — CPPComp standard-library shims that .cpp programs
         #              #include (Compilers/CPPComp/Includes/)
         #
-        # Scripts/ is NOT shipped: Aurora manages its own scripts
-        # (copy-components.js, download-*.js, ...). The gtkwave init Tcls /
-        # fix.vcd path was replaced by gen_gtkw emitting a static .gtkw.
+        # Aurora extracts the zip into components/, so each folder lands at
+        # components/<folder>/. Scripts/ is NOT shipped: Aurora manages its
+        # own scripts (copy-components.js, download-*.js, ...).
         run: |
           set -euo pipefail
-          cp -r HDL                          out/HDL
-          cp -r Compilers/CMMComp/Includes   out/Macros
-          cp -r Compilers/CPPComp/Includes   out/Header
-          ls -l out
+          make stage STAGE=out
+          ls -lR out
 
       - name: Determine artifact name
         id: artifact
@@ -149,21 +135,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc make bison flex
 
-      - name: Build binaries
-        # Same shared Makefile as the Windows job. $(OS) is not Windows_NT here,
-        # so the Makefile emits bare (no .exe) binaries into out/bin.
+      - name: Build and stage
+        # Same `make stage` as the Windows job and Scripts/aurora.bat. $(OS) is
+        # not Windows_NT here, so the binaries are bare (no .exe).
         run: |
           set -euo pipefail
-          make BIN=out/bin
-          ls -l out/bin
-
-      - name: Stage HDL + Macros + Header
-        run: |
-          set -euo pipefail
-          cp -r HDL                          out/HDL
-          cp -r Compilers/CMMComp/Includes   out/Macros
-          cp -r Compilers/CPPComp/Includes   out/Header
-          ls -l out
+          make stage STAGE=out
+          ls -lR out
 
       - name: Determine artifact name
         id: artifact
