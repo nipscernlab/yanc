@@ -9,6 +9,23 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **A tiny accessor is pasted at the call site instead of called** (`cppcomp`,
+  `codegen.c`). A call to a small function costs far more than the work it
+  does: `a[i]` through a class `operator[]` was four instructions at the call
+  site plus six in the callee. A non-virtual, non-recursive, non-template
+  function whose body is exactly one `return <expr>;` -- scalar parameters, no
+  call inside -- is now expanded in place, on the method-call path and on the
+  overloaded-subscript path. With **copy propagation**: an argument that is
+  already a plain scalar variable of exactly the parameter's type is not
+  copied, the parameter is bound to that variable's own word (only when the
+  body writes nothing). `this` is computed last, so the existing peephole
+  drops the body's reload of it. The access is now five instructions where
+  the call was ten. Measured on a loop of 3232 accesses, same output:
+  **79 003 -> 59 799 cycles, 24.3 % fewer, 1.32x**, closing 59 % of the gap
+  to a native array (46 703). The price is size where a call site runs once:
+  +19 instructions over eight C++ tests (0.34 %), all in `test21` and
+  `test23`; the other six are unchanged. Not yet expanded: `operator[]` of a
+  class template, and the write path `a[i] = x`. `TODO.md` item 14.
 - **A label rides on the next instruction, and unreachable code is gone**
   (`cppcomp`, `codegen.c`). Two passes at the end of the peephole. A label
   used to be carried by a `NOP` of its own (`@Cnt__ctor NOP`), which cost

@@ -1425,6 +1425,161 @@ static sym *simple_mem_var(expr *e)
     return s;
 }
 
+// ---- inlining a small leaf accessor ---------------------------------------
+// A call to a tiny function costs far more than the work it does. `a[i]`
+// through an `operator[]` is four instructions at the call site plus six in
+// the callee, where the same access on a native array is two. Measured on a
+// loop of 3232 accesses: 78991 cycles through the call against 46703 with the
+// access written out -- ten cycles each, 1.69x on the whole program.
+//
+// Only the shape that is safe to paste is taken: a non-virtual, non-recursive
+// function whose body is exactly one `return <expr>;`, whose parameters are
+// all scalars, and whose expression calls nothing itself. The call then
+// becomes: evaluate each argument into the callee's own parameter word (it has
+// fixed storage, like every non-recursive local), then emit the return
+// expression in the callee's scope. No stack traffic, no CAL, no RET. The
+// out-of-line copy is still emitted, because the dispatch chain and any call
+// this does not inline still reach it.
+
+static int expr_calls_anything(expr *e)
+{
+    if (!e) return 0;
+    if (e->kind == E_CALL || e->kind == E_NEW || e->kind == E_DELETE) return 1;
+    if (expr_calls_anything(e->a) || expr_calls_anything(e->b) ||
+        expr_calls_anything(e->c)) return 1;
+    for (int i = 0; i < e->n_args; i++)
+        if (expr_calls_anything(e->args[i])) return 1;
+    return 0;
+}
+
+// the one `return <expr>;` that is the whole body, or NULL
+static expr *inlinable_body(func *f)
+{
+    if (!f || f->is_recursive || f->n_tparams > 0 || !f->body) return NULL;
+    if (!f->ret || f->ret->kind == TY_VOID || f->ret->kind == TY_STRUCT) return NULL;
+    if (f->body->kind != S_BLOCK || f->body->n_items != 1) return NULL;
+    stmt *r = f->body->items[0];
+    if (!r || r->kind != S_RETURN || !r->e1) return NULL;
+    if (expr_calls_anything(r->e1)) return NULL;
+    for (decl *p = f->params; p; p = p->next) {
+        if (!p->dtype) return NULL;
+        if (p->dtype->kind == TY_ARRAY || p->dtype->kind == TY_STRUCT) return NULL;
+    }
+    return r->e1;
+}
+
+static func *func_by_label(const char *lbl)
+{
+    if (!cg_unit || !lbl) return NULL;
+    for (int i = 0; i < cg_unit->n_funcs; i++) {
+        func *f = cg_unit->funcs[i];
+        if (f->asm_label && !strcmp(f->asm_label, lbl) && f->body) return f;
+    }
+    return NULL;
+}
+
+// does evaluating e write to anything? (assignment, compound assignment --
+// the parser lowers `a += b` to `=` -- or an increment / decrement)
+static int expr_writes_anything(expr *e)
+{
+    if (!e) return 0;
+    if (e->kind == E_ASSIGN || e->kind == E_PREINC || e->kind == E_PREDEC ||
+        e->kind == E_POSTINC || e->kind == E_POSTDEC) return 1;
+    if (expr_writes_anything(e->a) || expr_writes_anything(e->b) ||
+        expr_writes_anything(e->c)) return 1;
+    for (int i = 0; i < e->n_args; i++)
+        if (expr_writes_anything(e->args[i])) return 1;
+    return 0;
+}
+
+// Two scalar types a parameter can alias without a conversion in between:
+// the same int kind at the same width and signedness, or both float. Anything
+// else (a narrowing to int8_t, an int passed to a float, a reference, a
+// pointer) goes through the ordinary copy, which converts.
+static int same_scalar(type *a, type *b)
+{
+    if (!a || !b || a->is_ref || b->is_ref || a->kind != b->kind) return 0;
+    if (a->kind == TY_FLOAT) return 1;
+    if (a->kind != TY_INT) return 0;
+    return a->is_signed == b->is_signed && a->is_bool == b->is_bool &&
+           a->nbits == b->nbits && a->nbits_uns == b->nbits_uns;
+}
+
+// Paste f's body here. `this_addr` is the object's address for a method (NULL
+// for a free function); args are the declared arguments, in order. Returns 1
+// when it emitted the call's value into the accumulator.
+static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_args)
+{
+    decl *plist[16]; int np = 0;
+    for (decl *p = f->params; p && np < 16; p = p->next) plist[np++] = p;
+    int first = this_addr ? 1 : 0;                  // param 0 is `this` on a method
+    if (np - first != n_args || np > 16) return 0;  // default args: leave it alone
+
+    // Copy propagation: an argument that is already a plain scalar variable of
+    // exactly the parameter's type is not copied at all -- the parameter is
+    // bound to that variable's own word, so `a[i]` reads `main_i` directly
+    // instead of storing it into `op_index_i` and loading it straight back.
+    // Only when the body writes nothing, so neither the caller's variable nor
+    // the parameter can change under it. Decided here, in OUR scope, where the
+    // argument's name means what the caller meant.
+    char *bound[16] = {0};
+    if (!expr_writes_anything(body)) {
+        for (int i = first; i < np; i++) {
+            expr *src = args[i - first];
+            sym *vs = simple_mem_var(src);
+            if (vs && vs->asm_name && same_scalar(infer_type(src), plist[i]->dtype))
+                bound[i] = strdup(vs->asm_name);
+        }
+    }
+
+    // the rest go into the callee's own words. `this` is computed LAST, so its
+    // address is still in the accumulator when the body opens with `LOD this`
+    // -- the peephole then drops that reload of the word just stored.
+    for (int i = first; i < np; i++) {
+        if (bound[i]) continue;
+        expr *src = args[i - first];
+        if (plist[i]->dtype && plist[i]->dtype->is_ref) gen_addr(src);
+        else gen_expr_to(src, plist[i]->dtype);
+        emit("SET %s_%s", f->asm_label, plist[i]->name);
+    }
+    if (first) {
+        gen_addr(this_addr);
+        emit("SET %s_%s", f->asm_label, plist[0]->name);
+    }
+
+    // then the body, in the CALLEE's scope, so its parameter names resolve to
+    // the words we just filled
+    char *sv_fn        = cur_func_name;
+    type *sv_ret       = cur_func_ret;
+    int   sv_rec       = cur_fn_recursive;
+    type *sv_cls       = cur_method_class;
+    const char *sv_stf = st_current_func();
+    char *keep = sv_stf ? strdup(sv_stf) : NULL;
+
+    cur_func_name    = f->asm_label;
+    cur_func_ret     = f->ret;
+    cur_fn_recursive = 0;
+    cur_method_class = f->method_of;
+    st_enter_func(f->asm_label);
+    st_push_scope();
+    for (int i = 0; i < np; i++) {
+        char nm[256];
+        if (bound[i]) snprintf(nm, sizeof(nm), "%s", bound[i]);
+        else          snprintf(nm, sizeof(nm), "%s_%s", f->asm_label, plist[i]->name);
+        st_add(SK_PARAM, plist[i]->name, nm, plist[i]->dtype);
+    }
+    for (int i = 0; i < np; i++) free(bound[i]);
+    if (f->ret->is_ref) gen_addr(body); else gen_expr_to(body, f->ret);
+    st_pop_scope();
+
+    cur_func_name    = sv_fn;
+    cur_func_ret     = sv_ret;
+    cur_fn_recursive = sv_rec;
+    cur_method_class = sv_cls;
+    if (keep) { st_enter_func(keep); free(keep); } else st_leave_func();
+    return 1;
+}
+
 static void gen_expr(expr *e)
 {
     if (!e) return;
@@ -1506,6 +1661,18 @@ static void gen_expr(expr *e)
                 if (masm) {
                     sym *ms = st_find(masm);
                     type *rt = (ms && ms->kind == SK_FUNC) ? ms->stype : NULL;
+                    {   // a tiny operator[] is pasted here instead of called:
+                        // this is the hot one, an element access inside a loop
+                        func *cf = func_by_label(masm);
+                        expr *bd = cf ? inlinable_body(cf) : NULL;
+                        if (bd && inline_call(cf, bd, e->a, &e->b, 1)) {
+                            free(masm);
+                            if (rt && rt->is_ref && rt->base &&
+                                rt->base->kind != TY_STRUCT && rt->base->kind != TY_ARRAY)
+                                emit("LDA");
+                            return;
+                        }
+                    }
                     gen_addr(e->a); emit("PSH");              // this = &obj
                     type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
                     gen_arg(e->b, pt);
@@ -2043,6 +2210,12 @@ static void gen_expr(expr *e)
                 emit_dispatch_chain();
                 free(masm);
                 return;
+            }
+            {   // a tiny accessor is pasted here instead of called
+                func *cf = func_by_label(masm);
+                expr *bd = cf ? inlinable_body(cf) : NULL;
+                if (bd && e->a->kind == E_MEMBER &&
+                    inline_call(cf, bd, obj, e->args, e->n_args)) { free(masm); return; }
             }
             if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // this
             emit("PSH");

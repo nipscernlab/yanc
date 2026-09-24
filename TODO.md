@@ -30,8 +30,8 @@ closed** (2026-09-21): `INT_MIN / -1` agrees on both simulators, an input
 word at or above 2^31 keeps its bits, `T x(N::v);` declares an object, and
 a `static` local is built on first use. **Next in the suggested order:
 15 → 14 → 5 → 6(a) → 9** — 15 first because until a run is repeatable no
-board tells a real regression from noise, and 14 is written and measured
-but unfinished (`c:/tmp/yanc-inliner/`).
+board tells a real regression from noise; 14's core landed (1.32x on
+element access) and only the template and write-path cases are left.
 
 ---
 
@@ -403,42 +403,35 @@ assembles and simulates identically on every fixture, under both simulators;
 temporaries share memory by liveness; and the instruction count and data-word
 count are reported per program so the saving is visible.
 
-## 14. Inline small leaf accessors (`cppcomp`)
+## 14. Inline small leaf accessors (`cppcomp`): the rest
 
-**Status:** written and measured, NOT finished, NOT committed (2026-09-22) · **Area:** `Compilers/CPPComp/Sources/codegen.c` · **Evidence:** below, and `c:/tmp/yanc-inliner/README.md`
+**Status:** the core LANDED (2026-09-23, see the CHANGELOG); two cases left · **Area:** `Compilers/CPPComp/Sources/codegen.c`
 
-A call to a tiny function costs far more than the work it does. Two programs
-doing the same 3232 element accesses and printing the same 49600:
+A tiny accessor is now pasted at the call site, with copy propagation for
+arguments that are plain scalar variables. Measured on a loop of 3232 element
+accesses: 79 003 -> 59 799 cycles, 1.32x, closing 59 % of the gap to a native
+array. Still calling instead of expanding:
 
-| variant | instructions | cycles |
-|---|---|---|
-| through a class `operator[]` | 61 | **78 991** |
-| native array | 48 | **46 703** |
+- **`operator[]` of a class TEMPLATE.** Only a plain class's method is
+  expanded. Either `func_by_label()` does not find the instantiated method or
+  `inlinable_body()` refuses it -- not yet known which. Class templates are
+  type-erased in cppcomp, so the instantiated method may not sit in
+  `cg_unit->funcs` under that asm label. `std::array`-style code, i.e. most
+  real C++, goes through this path, so it is the bigger of the two.
+- **The write path, `a[i] = x`.** It goes through `gen_addr`, which has its
+  own `op_index` call sites (search `codegen.c` for `"op_index"`).
 
-Ten cycles per access, 1.69x on the whole program. That is the bulk of the
-known "C± runs about 3x faster than C++ on the same algorithm".
+Also worth doing: the expanded access still stores `this` into a word nobody
+reads afterwards (`SET <fn>_this`). Dropping that dead store would take the
+access from five instructions to four.
 
-**What exists** (122 lines; patch and notes in `c:/tmp/yanc-inliner/`, also
-`git stash@{0}` in the local clone; applies cleanly on `167eca0`): a call to a
-non-virtual, non-recursive, non-template function whose body is exactly one
-`return <expr>;`, with scalar parameters and no call inside, is pasted at the
-call site instead of called. Hooked into the method-call path and the
-overloaded-subscript path. The 77 C++ tests compile and the hot loop loses
-its `CAL`.
+**Measure in cycles, not static instructions**: expansion grows code where a
+call site runs once and pays back only in loops. The benchmark and the
+cycle-counting harness are described in the CHANGELOG entry's history and in
+`c:/tmp/yanc-inliner/README.md`.
 
-**Why it is not finished.** The win is 20 %, not 80 %: the arguments still go
-through the callee's parameter words, so the body stores them and reloads them
-immediately. The missing piece is copy propagation -- when an argument is
-already a simple variable, bind the parameter to THAT name instead of copying
-(one `st_add` with the caller's asm name, guarded by the body not modifying
-the parameter). Two cases also still call: `operator[]` of a class TEMPLATE,
-and the write path `a[i] = i`, which goes through `gen_addr`'s own `op_index`
-sites. And the end-to-end speedup of what is written was never timed: the
-baseline run was interrupted.
-
-**Done when:** copy propagation lands, both remaining cases inline, the gain
-is measured in CYCLES (not static instructions) on a benchmark and on
-`test46`, and the full regress is green.
+**Done when:** both cases expand, the gain is measured in cycles on a real
+test (not only the benchmark), and the full regress is green.
 
 ## 15. The regress is not trustworthy on this machine
 
