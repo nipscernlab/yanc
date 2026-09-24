@@ -926,6 +926,40 @@ static void gen_jump_true(expr *e, const char *target)
     gen_bool(ast_unop(OP_LNOT, e, e->line), target);
 }
 
+// `for (k = c0; k OP c1; ...)` / `for (int k = c0; ...)` with int literals:
+// is the condition known to hold on entry? Then the entry test can go (the
+// loop tests only at the bottom): smaller and faster.
+static int for_entry_holds(stmt *s)
+{
+    const char *name = NULL; long c0 = 0;
+    stmt *in = s->init_stmt;
+    if (!in || !s->e1) return 0;
+    if (in->kind == S_DECL && in->decls && !in->decls->next && in->decls->init &&
+        in->decls->init->kind == E_INT_LIT && in->decls->dtype && in->decls->dtype->kind == TY_INT) {
+        name = in->decls->name; c0 = in->decls->init->ival;
+    } else if (in->kind == S_EXPR && in->e1 && in->e1->kind == E_ASSIGN && in->e1->op == OP_NONE &&
+               in->e1->a && in->e1->a->kind == E_IDENT && in->e1->b && in->e1->b->kind == E_INT_LIT) {
+        type *t = infer_type(in->e1->a);
+        if (!t || t->kind != TY_INT) return 0;
+        name = in->e1->a->sval; c0 = in->e1->b->ival;
+    } else return 0;
+    expr *c = s->e1;
+    if (c->kind != E_BINOP || !c->a || !c->b) return 0;
+    int op = c->op; long c1;
+    if (c->a->kind == E_IDENT && !strcmp(c->a->sval, name) && c->b->kind == E_INT_LIT) c1 = c->b->ival;
+    else if (c->b->kind == E_IDENT && !strcmp(c->b->sval, name) && c->a->kind == E_INT_LIT) {
+        c1 = c->a->ival;                                         // c OP k: mirror
+        if (op == OP_LT) op = OP_GT; else if (op == OP_GT) op = OP_LT;
+        else if (op == OP_LE) op = OP_GE; else if (op == OP_GE) op = OP_LE;
+    } else return 0;
+    switch (op) {
+        case OP_LT: return c0 <  c1;  case OP_LE: return c0 <= c1;
+        case OP_GT: return c0 >  c1;  case OP_GE: return c0 >= c1;
+        case OP_EQ: return c0 == c1;  case OP_NE: return c0 != c1;
+        default:    return 0;
+    }
+}
+
 // ---- lvalue address: leaves &lv in accumulator -----------------------------
 
 // load the `this` pointer's VALUE (the current object's address) into acc
@@ -3204,7 +3238,8 @@ static void gen_stmt_inner(stmt *s)
         // the peephole drops the test's reload of the just-stepped variable
         // (`k < 10`: LOD k; ADD 1; SET k; LES 9; JIZ top). `continue` still
         // lands on the step. Costs the condition's code once more.
-        if (s->e1) { infer_type(s->e1); gen_bool(s->e1, end); }
+        // (no entry test at all when `k = c0` already satisfies `k OP c1`)
+        if (s->e1 && !for_entry_holds(s)) { infer_type(s->e1); gen_bool(s->e1, end); }
         emit("@%s NOP", top);
         loop_push(cont, end);
         gen_stmt(s->body);

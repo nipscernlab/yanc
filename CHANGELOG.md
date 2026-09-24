@@ -145,7 +145,10 @@ tags consumed by Aurora.
   literal operand also takes the memory form now (`k < 24` was
   `P_LOD 24; S_LES`), and `a <= c` / `a >= c` become `a < c+1` / `a > c-1`
   with a literal, one instruction each. `test46`: **60 890 -> 56 415 cycles,
-  7.3 % fewer**, and smaller (1 682 -> 1 653 instructions). `test81` covers
+  7.3 % fewer**, and smaller (1 682 -> 1 653 instructions). When the init
+  gives the variable a literal that already satisfies a literal bound
+  (`for (int k = 0; k < 10; ...)`), the entry test is dropped too, as in
+  cmmcomp: test46 1 653 -> 1 635 instructions, 56 345 cycles. `test81` covers
   the loop shapes (every comparison, `continue`, `break`, `&&`/`||`, a call
   in the condition, float, nested, zero trips, a bound at `INT_MAX`),
   against host gcc.
