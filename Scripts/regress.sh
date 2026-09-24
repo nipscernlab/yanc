@@ -760,6 +760,42 @@ else
     echo "==> ISA table  [skipped: no python3]"
 fi
 
+# ---- 4a. every SAPHO block ---------------------------------------------------
+# sapho_all is a program written to instantiate every optional block of the
+# processor. Its sim golden ran in the CMM phase; here: (1) the generated .v
+# really sets every opcode parameter (bar the listed exceptions) plus FFT,
+# #PRACA and #TOAQUI, and (2) the sim golden is the value Tests/sapho_all/
+# model.py computes from the ULA's operator definitions, so it cannot be
+# re-blessed from a wrong run.
+if [ "$CPP_ONLY" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
+    echo ""
+    echo "==> SAPHO blocks (sapho_all)"
+    sa="$CMM_ROOT/Tests/sapho_all"
+    sa_v="$WORK_DIR/sapho_all/Hardware/sapho_all.v"
+    if [ ! -s "$sa_v" ]; then
+        echo "FAIL (sapho_all-blocks): $sa_v missing - did its build pass?"
+        fail=$((fail + 1)); failed_names+=("sapho_all-blocks")
+    elif python3 "$ROOT/Scripts/check_blocks.py" "$sa_v" "$HDL/processor.v" "$sa/blocks_except.txt"; then
+        pass=$((pass + 1))
+    else
+        echo "FAIL (sapho_all-blocks): a block is not instantiated (see above)"
+        fail=$((fail + 1)); failed_names+=("sapho_all-blocks")
+    fi
+    # one output line per turn of the program's while (1): every line must be
+    # the model's value
+    sa_in=$(head -n 1 "$sa/Simulation/input_0.txt" | tr -d '\r')
+    sa_want=$(python3 "$sa/model.py" "$sa_in")
+    sa_lines=$(grep -c '' "$sa/golden_sim/output_0.txt")
+    sa_other=$(tr -d '\r' < "$sa/golden_sim/output_0.txt" | grep -cvx -- "$sa_want")
+    if [ "$sa_lines" -gt 0 ] && [ "$sa_other" -eq 0 ]; then
+        echo "PASS (sapho_all-model): all $sa_lines golden lines = model.py($sa_in) = $sa_want"
+        pass=$((pass + 1))
+    else
+        echo "FAIL (sapho_all-model): $sa_other of $sa_lines golden lines differ from model.py($sa_in) = $sa_want"
+        fail=$((fail + 1)); failed_names+=("sapho_all-model")
+    fi
+fi
+
 # ---- 4b. CMM negative phase (error reporting) ------------------------------
 # Error-path coverage the golden phases lack: each fixture is a malformed
 # program that cmmcomp must REJECT with a clean non-zero exit and the right

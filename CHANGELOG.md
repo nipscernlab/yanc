@@ -54,6 +54,21 @@ tags consumed by Aurora.
   must compile without a given message.
 
 ### Added
+- **`sapho_all`: one program that instantiates every SAPHO block**
+  (`Compilers/CMMComp/Tests/sapho_all/`). At 32/23/8, `#FROUND 2`, it makes
+  the processor generate 100 of the 104 opcode blocks (every int and float
+  operator in its memory, stack and push+memory forms, the conversions, both
+  input reads), the data and instruction stacks, FFT addressing, the
+  `#PRACA` interrupt entry (pin tied to 0 in simulation) and the `#TOAQUI`
+  pin. Inside a `while (1)` it reads a constant (7) from port 0, folds every
+  result into a 32-bit sum and outputs it reduced to 4 bits (XOR of its
+  nibbles), for a board with four LEDs: `4` every turn. The expected value
+  comes from `model.py`, written from the operator definitions in
+  `HDL/ula.v`, not from a run. `Scripts/check_blocks.py` checks the
+  generated `.v`: every opcode parameter set except the four with no C±
+  form (`SF_SCL`, `XPO_M`, `LDA`, `STA`, listed in `blocks_except.txt`), and
+  it also fails if one of those becomes instantiated. `regress.sh` step 4a
+  runs it and requires every sim-golden line to equal the model's value.
 - **cmmcomp warns when a local array is initialized from a file**
   (`int t[4] "t.txt";` inside a function, `main` included). The file is
   `.mif` content, loaded once, so the array keeps what the function wrote

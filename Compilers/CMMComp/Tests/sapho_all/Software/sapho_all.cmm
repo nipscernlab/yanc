@@ -1,0 +1,182 @@
+#PRNAME sapho_all
+#NUBITS 32
+#NDSTAC 16
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+#FFTSIZ 3
+#FROUND 2
+
+// Whole-processor fixture: one program that makes SAPHO instantiate every
+// optional block -- every opcode's decoder and ULA generate (int, float at
+// #FROUND 2, the memory / stack / push+memory forms of each), the data stack,
+// the instruction stack (CAL/RET, SET_P), bit-reversed FFT addressing
+// (ILI/ISI), the #PRACA interrupt entry and the #TOAQUI pin. It reads one
+// constant from port 0 (the input file repeats it for each read) and folds
+// every result into s. The 32 bits of s are folded into 4 (XOR of its eight
+// nibbles), for a board that shows the result on four LEDs, and sent to the
+// output once per turn of its while (1): every line must be the same value.
+//  - regress.sh checks the generated .v with Scripts/check_blocks.py: every
+//    opcode parameter set except the four in ../blocks_except.txt, which have
+//    no C+- form.
+//  - The expected value is NOT blessed from a run: ../model.py computes it
+//    from the operator definitions in HDL/ula.v, and regress checks that the
+//    sim golden equals the model's value for the input file's constant.
+//  - Floats go to s scaled by 2^22 (exact), so the whole mantissa of every
+//    value >= 1 reaches the integer sum.
+//  - sqrt / exp / log are called only to instantiate F_ROT / F_SCL / XPO,
+//    with arguments whose result is exact (2, 1, 0).
+
+int   ia[8];
+float fa[8];
+int   s;
+
+int twice(int v)
+{
+    return v + v;
+}
+
+int diff(int a, int b)              // a second parameter: SET_P
+{
+    return a - b;
+}
+
+void main()
+{
+    int x; int y; int z; int w; int t;
+    float fx; float fy; float fz; float fw;
+
+#PRACA
+    while (1)
+    {
+        s = 0; w = 0;
+        x = in(0);                      // INN
+        fx = fin(0);                    // F_INN
+        y = x - 4;                      // 3
+        z = 0 - x;                      // -7
+        fy = fx * 0.5;                  // 3.5
+        fz = fx - 10.0;                 // -3.0
+
+        // ---- int with memory operand
+        t = x + y;       s = s + t;
+        t = x * y;       s = s + t;
+        t = z / y;       s = s + t;
+        t = z % y;       s = s + t;
+        t = x & y;       s = s + t;
+        t = x | y;       s = s + t;
+        t = x ^ y;       s = s + t;
+        t = x && y;      s = s + t;
+        t = x || w;      s = s + t;
+        t = x << y;      s = s + t;
+        t = z >> y;      s = s + t;
+        t = z >>> y;     s = s + t;
+        t = sign(y, z);  s = s + t;
+        if (x < y) s = s + 1;
+        if (x > y) s = s + 2;
+        if (x == y) s = s + 4;
+
+        // ---- int, both operands computed (stack forms)
+        t = (x + 1) + (y * 2);    s = s + t;
+        t = (x + 1) * (y + 2);    s = s + t;
+        t = (z - 1) / (y + 1);    s = s + t;
+        t = (z - 1) % (y + 1);    s = s + t;
+        t = (x + 1) & (y + 2);    s = s + t;
+        t = (x + 1) | (y + 2);    s = s + t;
+        t = (x + 1) ^ (y + 2);    s = s + t;
+        t = (x + 1) && (y - 3);   s = s + t;
+        t = (x - 7) || (y + 2);   s = s + t;
+        t = (x + 1) << (y - 1);   s = s + t;
+        t = (z - 1) >> (y - 1);   s = s + t;
+        t = (z - 1) >>> (y - 1);  s = s + t;
+        t = sign((y + 1), (z - 1));   s = s + t;
+        if ((x + 1) < (y + 2)) s = s + 8;
+        if ((x + 1) > (y + 2)) s = s + 16;
+        if ((x + 1) == (y + 5)) s = s + 32;
+
+        // ---- int unary: acc, memory, push+memory
+        t = -(x + y);          s = s + t;
+        t = -x;                s = s + t;
+        t = (y + 1) - -x;      s = s + t;
+        t = abs(z - 1);        s = s + t;
+        t = abs(z);            s = s + t;
+        t = (y + 1) - abs(z);  s = s + t;
+        t = pset(z - 1);        s = s + t;
+        t = pset(x);            s = s + t;
+        t = (y + 1) - pset(z); s = s + t;
+        t = norm(x * 1000);    s = s + t;
+        t = norm(z);           s = s + t;
+        t = (y + 1) - norm(x); s = s + t;
+        t = ~(x + y);          s = s + t;
+        t = ~x;                s = s + t;
+        t = (y + 1) - ~x;      s = s + t;
+        t = !(x - 7);          s = s + t;
+        t = !x;                s = s + t;
+        t = (y + 1) - !x;      s = s + t;
+
+        // ---- float with memory operand, and computed
+        fw = fx + fy;     t = fw * 4194304.0;  s = s + t;
+        fw = fx * fy;     t = fw * 4194304.0;  s = s + t;
+        fw = fx / fy;     t = fw * 4194304.0;  s = s + t;
+        fw = fx - fy;     t = fw * 4194304.0;  s = s + t;
+        fw = sign(fy, fz);    t = fw * 4194304.0;  s = s + t;
+        fw = (fx + 1.0) + (fy * 2.0);   t = fw * 4194304.0;  s = s + t;
+        fw = (fx + 1.0) * (fy + 2.0);   t = fw * 4194304.0;  s = s + t;
+        fw = (fx + 1.0) / (fy + 2.0);   t = fw * 4194304.0;  s = s + t;
+        fw = (fx + 1.0) - (fy + 2.0);   t = fw * 4194304.0;  s = s + t;
+        fw = fy - (fx * 2.0);           t = fw * 4194304.0;  s = s + t;
+        fw = sign((fy + 1.0), (fz - 1.0));   t = fw * 4194304.0;  s = s + t;
+        if (fx < fy) s = s + 64;
+        if (fx > fy) s = s + 128;
+        if ((fx + 1.0) < (fy + 2.0)) s = s + 256;
+        if ((fx + 1.0) > (fy + 2.0)) s = s + 512;
+
+        // ---- float unary
+        fw = -(fx + fy);   t = fw * 4194304.0;  s = s + t;
+        fw = -fx;          t = fw * 4194304.0;  s = s + t;
+        fw = (fy + 1.0) - -fx;     t = fw * 4194304.0;  s = s + t;
+        fw = abs(fz - 1.0);   t = fw * 4194304.0;  s = s + t;
+        fw = abs(fz);         t = fw * 4194304.0;  s = s + t;
+        fw = (fy + 1.0) - abs(fz); t = fw * 4194304.0;  s = s + t;
+        fw = pset(fz - 1.0);   t = fw * 4194304.0;  s = s + t;
+        fw = pset(fx);         t = fw * 4194304.0;  s = s + t;
+        fw = (fy + 1.0) - pset(fz); t = fw * 4194304.0;  s = s + t;
+
+        // ---- conversions
+        fw = x + y;        t = fw * 4194304.0;  s = s + t;     // I2F (acc)
+        fw = x;            t = fw * 4194304.0;  s = s + t;     // I2F_M
+        fw = (fy + 1.0) - x;  t = fw * 4194304.0;  s = s + t;  // P_I2F_M
+        fw = x - (fy + 1.0);  t = fw * 4194304.0;  s = s + t;  // SF_SU1
+        t = fx + fy;       s = s + t;                       // F2I (acc)
+        t = fy;            s = s + t;                       // F2I_M
+        t = (y + 1) - fy;  s = s + t;                       // int - float
+        t = (y + 1) - !fy; s = s + t;                       // P_F2I_M
+
+        // ---- input with a live accumulator
+        t = (y + 1) - in(0);        s = s + t;              // P_INN
+        fw = (fy + 1.0) - fin(0);  t = fw * 4194304.0;  s = s + t;   // PF_INN
+
+        // ---- arrays: indexed and bit-reversed (FFT) addressing
+        ia[y] = x;         t = ia[y];   s = s + t;          // STI / LDI
+        ia[y) = z;         t = ia[y);   s = s + t;          // ISI / ILI
+        fa[y] = fx;        fw = fa[y];  t = fw * 4194304.0;  s = s + t;
+
+        // ---- a call (instruction stack) and the library blocks
+        t = twice(x);      s = s + t;                       // CAL / RET
+        t = diff(x, y);    s = s + t;                       // SET_P
+        t = ia[complex(2.0, 1.0) + complex(1.0, 0.0)];   s = s + t;   // POP (comp index)
+        fw = sqrt(4.0);    t = fw * 4194304.0;  s = s + t;     // F_ROT
+        fw = exp(0.0);     t = fw * 4194304.0;  s = s + t;     // F_SCL
+        fw = log(1.0);     t = fw * 4194304.0;  s = s + t;     // XPO
+
+        // fold the 32 bits of s into 4 (four LEDs): XOR of its eight nibbles,
+        // so a wrong bit anywhere in s changes what the LEDs show
+        t = s ^ (s >> 16);
+        t = t ^ (t >> 8);
+        t = t ^ (t >> 4);
+        out(0, t & 15);
+#TOAQUI
+    }
+}

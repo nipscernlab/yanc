@@ -1,0 +1,6 @@
+# Opcode blocks sapho_all cannot instantiate: C+- has no source form for them.
+# Scripts/check_blocks.py fails if one of these IS instantiated (stale list).
+SF_SCL   F_SCL is reached only inside the exp/log macros, always with a memory operand
+XPO_M    XPO is reached only inside the log macro, always on the accumulator
+LDA      indirect load through an address in the acc: C+- has no pointers (cppcomp emits it)
+STA      indirect store through an address on the stack: C+- has no pointers (cppcomp emits it)
