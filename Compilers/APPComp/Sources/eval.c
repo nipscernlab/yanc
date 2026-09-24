@@ -124,8 +124,9 @@ void eval_finish()
     fprintf(f_log, "n_dat %d\n", var_cnt());
     fclose (f_log);
 
-    // checks whether data memory can be created
-    if (var_cnt() <= 2) {fprintf(stderr, MSG_ERR_USELESS_PROC); exit(EXIT_FAILURE);}
+    // no minimum here: a program with 2 or fewer data words (a button-to-LED
+    // loop) is valid, and asmcomp pads the data memory to the 2 words the
+    // hardware needs (ASMComp eval_init)
 
     printf(MSG_INFO_INS_VAR_FOUND, n_ins, var_cnt());
 }

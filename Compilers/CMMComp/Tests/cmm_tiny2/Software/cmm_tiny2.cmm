@@ -1,0 +1,25 @@
+#PRNAME cmm_tiny2
+#NUBITS 23
+#NDSTAC 5
+#SDEPTH 5
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 16
+#NBEXPO 6
+#NUGAIN 128
+
+// Smallest useful program, from a first task on the board (button -> LED):
+// 2 data words (main_x and the constant 1). appcomp refused any program with
+// 2 or fewer data words; asmcomp now pads the data memory to the 2-word
+// minimum the hardware needs. Input 5..10, then the port holds 10.
+// Expected outputs: 1 0 1 0 1 0, then 0 on every further turn.
+void main()
+{
+    int x;
+
+    while (1)
+    {
+        x = in(0);
+        out(0, x & 1);
+    }
+}

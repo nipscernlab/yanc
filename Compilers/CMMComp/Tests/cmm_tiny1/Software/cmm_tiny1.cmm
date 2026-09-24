@@ -1,0 +1,24 @@
+#PRNAME cmm_tiny1
+#NUBITS 23
+#NDSTAC 5
+#SDEPTH 5
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 16
+#NBEXPO 6
+#NUGAIN 128
+
+// 1 data word (main_x): below the 2-word minimum, so asmcomp pads the data
+// memory with a zero word the program never addresses (without it the data
+// address bus would be 0 bits wide, [-1:0]).
+// Expected outputs: 5 6 7 8 9 10, then 10 on every further turn.
+void main()
+{
+    int x;
+
+    while (1)
+    {
+        x = in(0);
+        out(0, x);
+    }
+}

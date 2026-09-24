@@ -66,7 +66,8 @@ int  arr_tam;           // stores the array size
 
 // helper variables
 int  n_ins	  = 0;      // number of instructions added
-int  n_dat    = 0;      // number of variables added
+int  n_dat    = 0;      // number of variables added (padded to the 2-word minimum)
+int  n_dat_used = 0;    // number of variables the program actually has
 int  i_used[256];       // marks which input was used
 int  o_used[256];       // marks which output was used
 int  itr_addr    = 0;   // interrupt address (#PRACA)
@@ -242,6 +243,14 @@ void eval_init(int clk, int clk_n)
     eval_get("app_log.txt","prname", prname);                     // processor name
     eval_get("app_log.txt","n_ins" ,    aux); n_ins  = atoi(aux); // number of instructions added
     eval_get("app_log.txt","n_dat" ,    aux); n_dat  = atoi(aux); // number of variables added
+
+    // A data memory needs at least 2 words: its address is $clog2(MDATAS)
+    // bits wide (processor.v), and 1 word would make that 0 bits -- a [-1:0]
+    // bus the simulators and synthesis refuse. A program that uses fewer (a
+    // button-to-LED loop uses 2, `out(0, in(0))` none) gets the memory padded
+    // with zero words the program never addresses; eval_finish writes them.
+    n_dat_used = n_dat;
+    if (n_dat < 2) n_dat = 2;
     eval_get("app_log.txt","nubits",    aux); nubits = atoi(aux); // ALU word width (bits)
     eval_get("app_log.txt","nbmant",    aux); nbmant = atoi(aux); // mantissa width (bits)
     eval_get("app_log.txt","nbexpo",    aux); nbexpo = atoi(aux); // exponent width (bits)
@@ -338,6 +347,8 @@ void eval_finish()
 {
     // close the .mif files ---------------------------------------------------
 
+    for (int i = n_dat_used; i < n_dat; i++) fprintf(f_data, "%s\n", itob(0, nubits));   // padding (see eval_init)
+
     fclose(f_instr);
     fclose(f_data );
 
@@ -345,12 +356,6 @@ void eval_finish()
 
     if (nubits != nbmant+nbexpo+1) {fprintf(stderr, MSG_ERR_FP_INCONSISTENT); exit(EXIT_FAILURE);}
     if (fround < 0 || fround > 2)  {fprintf(stderr, MSG_ERR_FROUND_RANGE  ); exit(EXIT_FAILURE);}
-
-    // norm() divides by NUGAIN in hardware (ula_nrm: in / NUGAIN). A power of
-    // two is a shift; anything else infers a constant divider that becomes
-    // the ALU's critical path (Yosys, 32 bits: 100 -> 70 LUT levels, 3 -> 38,
-    // against 12 for 64). This is the one gate every front end passes through.
-    if (nugain <= 0 || (nugain & (nugain - 1)) != 0) {fprintf(stderr, MSG_ERR_NUGAIN_POW2, nugain); exit(EXIT_FAILURE);}
 
     // norm() divides by NUGAIN in hardware (ula_nrm: in / NUGAIN). A power of
     // two is a shift; anything else infers a constant divider that becomes

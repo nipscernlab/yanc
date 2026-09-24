@@ -9,6 +9,18 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **A program with 2 or fewer data words compiles** (`appcomp`, `asmcomp`).
+  appcomp refused any program whose data memory had 2 words or fewer ("this
+  processor is totally useless"), which caught the smallest real program, a
+  button-to-LED loop (`main_x` and the constant `1`), on a new student's
+  first task. The limit was off by one and in the wrong tool: 2 words work
+  in hardware; what breaks is 1 or 0, where the data address,
+  `$clog2(MDATAS)` bits, would be 0 bits wide (`[-1:0]`, refused by Icarus).
+  asmcomp now pads the data memory to 2 words with zeros the program never
+  addresses, so every size compiles, and the check and its message are
+  gone. New `cmm_tiny2` (the reported program), `cmm_tiny1` and `cmm_tiny0`
+  (no data word at all), checked by value. Found by Sabrina Amaral and
+  Pedro Henrique. Also: asmcomp ran the `#NUGAIN` power-of-two check twice.
 - **A value-initialized local is zeroed on every call** (`cppcomp`,
   `CPPComp.y` + `codegen.c`, TODO 16). `int a[8] = {};`, `P q = {};`,
   `P p{};`, `int x{};` and `float f{};` as locals emitted nothing: the grammar
