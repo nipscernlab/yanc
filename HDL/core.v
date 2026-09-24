@@ -110,15 +110,20 @@ end endgenerate
 assign opcode     =  mem_instr[NBOPCO+NBOPER-1:NBOPER];
 assign operand    =  mem_instr[NBOPER       -1:     0];
 
+// During rst the fetch address is 0, not the PC: instruction memory reads
+// synchronously, so the word fetched on the reset edge is the first one
+// executed afterwards. Fetching at the old PC let a JMP / JIZ / CAL sitting
+// there run right after a mid-run reset and send the program back where it
+// was. At boot the PC is already 0, so this makes every reset a boot.
 generate if (ITRADD>0) begin : itr_fetch
 
 assign pc_l       =  itr  | pc_load;
-assign instr_addr = (itr) ? ITRADD : (pc_load & ~rst) ? operand[MINSTW-1:0] : pc_instr;
+assign instr_addr = (rst) ? {MINSTW{1'b0}} : (itr) ? ITRADD : (pc_load) ? operand[MINSTW-1:0] : pc_instr;
 
 end else begin : itr_fetch
 
 assign pc_l       =         pc_load;
-assign instr_addr =                  (pc_load & ~rst) ? operand[MINSTW-1:0] : pc_instr;
+assign instr_addr = (rst) ? {MINSTW{1'b0}} :                  (pc_load) ? operand[MINSTW-1:0] : pc_instr;
 
 end endgenerate
 

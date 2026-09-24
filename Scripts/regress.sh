@@ -552,28 +552,37 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                 # burst must repeat the boot burst line-for-line. Plain temp
                 # files, not process substitution -- MSYS2 cmp cannot open the
                 # /proc/<pid>/fd/N paths <(...) expands to (exit 2, ENOENT).
+                # six bursts: the boot one and one after each of the tb's five
+                # resets, every reset at a different phase of the spin loop
+                nbursts=6
                 nlines=$(grep -c '' "$out_f")
-                half=$((nlines / 2))
-                head -n "$half" "$out_f" > "$rtmp/burst_boot.txt"
-                tail -n "$half" "$out_f" > "$rtmp/burst_rst.txt"
+                blen=$((nlines / nbursts))
                 anchor_ok=1
-                if [ "$nlines" -eq 0 ] || [ $((half * 2)) -ne "$nlines" ] \
-                   || ! cmp -s "$rtmp/burst_boot.txt" "$rtmp/burst_rst.txt"; then
-                    echo "FAIL ($rtest): post-reset burst differs from boot burst ($nlines lines)"
-                    fail=$((fail + 1)); failed_names+=("$rtest"); anchor_ok=0
+                if [ "$nlines" -eq 0 ] || [ $((blen * nbursts)) -ne "$nlines" ]; then
+                    anchor_ok=0
+                else
+                    head -n "$blen" "$out_f" > "$rtmp/burst_boot.txt"
+                    for k in $(seq 2 $nbursts); do
+                        head -n $((blen * k)) "$out_f" | tail -n "$blen" > "$rtmp/burst_rst.txt"
+                        cmp -s "$rtmp/burst_boot.txt" "$rtmp/burst_rst.txt" || anchor_ok=0
+                    done
+                fi
+                if [ "$anchor_ok" -eq 0 ]; then
+                    echo "FAIL ($rtest): a post-reset burst differs from the boot burst ($nlines lines)"
+                    fail=$((fail + 1)); failed_names+=("$rtest")
                 fi
 
                 if [ "$anchor_ok" -eq 1 ]; then
                     if [ "$UPDATE" -eq 1 ]; then
                         mkdir -p "$golden_rst"
                         cp "$out_f" "$golden_rst/"
-                        echo "UPDATED ($rtest)  [burst repeated after 1-cycle mid-run rst]"
+                        echo "UPDATED ($rtest)  [burst repeated after 5 one-cycle mid-run resets]"
                         pass=$((pass + 1))
                     elif [ ! -f "$golden_rst/output_reset.txt" ]; then
                         echo "FAIL ($rtest): no golden at $golden_rst (run --update?)"
                         fail=$((fail + 1)); failed_names+=("$rtest")
                     elif cmp -s "$out_f" "$golden_rst/output_reset.txt"; then
-                        echo "PASS ($rtest)  [burst repeated after 1-cycle mid-run rst]"
+                        echo "PASS ($rtest)  [burst repeated after 5 one-cycle mid-run resets]"
                         pass=$((pass + 1))
                     else
                         echo "FAIL ($rtest): output differs from sim golden"

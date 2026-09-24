@@ -9,6 +9,18 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **A mid-run reset now restarts the program in every case** (`HDL/core.v`,
+  `prefetch`). Instruction memory reads synchronously, so the word fetched on
+  the reset edge is the first one executed after it -- and during `rst` the
+  fetch address was the old PC. When that word was a `JMP` / taken `JIZ` /
+  `CAL` / `RET`, it ran right after the reset and sent the program back where
+  it was (typically into its `while (1)`). The fetch address is now 0 while
+  `rst` is high, so every reset behaves like the boot one. Measured before the
+  fix: `ResetCheck` failed in 3 of the 5 phases of its spin loop and passed
+  only because its single reset happened to land on a good one. Its
+  testbench now resets five times, one cycle later each time, and the regress
+  requires all six bursts equal. Fmax not re-measured (one extra term on the
+  instruction-address mux).
 - **A call with no argument no longer overwrites a partial result**
   (`cmmcomp`, `EXPR_FUNC_CALL` in `ast.c`). An argument's load pushes a live
   accumulator (`P_LOD`); with no argument nothing did, so `(x+5) - f()` lost

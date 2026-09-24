@@ -2,15 +2,15 @@
 
 // Directed reset fixture: run ResetCheck to the end of its output burst
 // (program then spins in while(1)), pulse rst for ONE clock cycle, and
-// require the exact same burst again. Locks in:
+// require the exact same burst again, five times at five loop phases. Locks in:
 //   - the synchronous global reset works from a single-cycle pulse
 //   - PC restarts from 0, instruction/data stack pointers rewind
 //   - racc / ula_op / en_out reset cleanly (a spurious out_en would log a
 //     stray value and break the golden compare)
 // Data memory is NOT reset (RAM keeps contents) -- the program only outputs
 // values it assigns at runtime before use, so the second burst must be
-// bit-identical to the first. regress.sh additionally asserts first half ==
-// second half of output_reset.txt, independent of the golden file.
+// bit-identical to the first. regress.sh additionally asserts that every
+// sixth of output_reset.txt equals the first, independent of the golden file.
 
 module reset_tb();
 
@@ -27,6 +27,7 @@ integer fd;
 integer nout   = 0;   // outputs seen in total
 integer quiet  = 0;   // clock cycles since the last output
 integer bursts = 1;   // resets issued so far (1 = the boot reset)
+integer armed  = 0;   // an output since the last reset: the next quiet spell may reset
 
 initial begin
     fd  = $fopen("output_reset.txt", "w");
@@ -46,19 +47,25 @@ always @ (posedge clk) begin
         $fdisplay(fd, "%0d", out);
         nout  = nout + 1;
         quiet = 0;
+        armed = 1;
     end else begin
         quiet = quiet + 1;
     end
 end
 
-// Once the program has been quiet for 100 cycles after a burst (spinning in
-// while(1)), pulse rst across exactly one posedge; after the second burst
-// goes quiet, finish. Driving on negedge keeps the pulse cleanly centered on
-// a single rising edge -- the minimal stimulus a synchronous reset must obey.
+// Once the program has been quiet after a burst (spinning in while(1)), pulse
+// rst across exactly one posedge; after the sixth burst goes quiet, finish.
+// Each reset waits one cycle longer (100, 101, ... 104), so the pulse lands on
+// a different instruction of the spin loop every time: a reset used to fetch
+// at the old PC, and when that word was the loop's JMP the program went back
+// to spinning -- a single fixed delay caught it only in some loop phases.
+// Driving on negedge keeps the pulse cleanly centered on a single rising edge
+// -- the minimal stimulus a synchronous reset must obey.
 always @ (negedge clk) begin
-    if (quiet == 100) begin
-        if (bursts == 2) begin
-            $display("Info: two bursts captured (%0d outputs)", nout);
+    if (armed && quiet == 99 + bursts) begin
+        armed = 0;       // quiet keeps counting past the pulse: fire once per burst
+        if (bursts == 6) begin
+            $display("Info: six bursts captured (%0d outputs)", nout);
             $fflush(fd);   // vvp does not always flush buffers on $finish
             $finish;
         end
