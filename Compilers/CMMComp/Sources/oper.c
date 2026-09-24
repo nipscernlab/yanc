@@ -1497,7 +1497,7 @@ expr oper_mult(expr e1, expr e2)
         add_instr("SET_P aux_var1\n");
         add_instr("F_MLT aux_var\n" );
         add_instr("P_LOD aux_var1\n");
-        add_instr("F_MLT aux_var\n ");
+        add_instr("F_MLT aux_var\n");
     }
 
     // comp acc with comp const

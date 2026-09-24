@@ -379,6 +379,18 @@ static int commutative_int_binop(const expr_node *n)
     return n->type == 1 && (n->op == OP_ADD || n->op == OP_MUL);
 }
 
+// does evaluating the subtree do something besides compute a value (a user
+// call, a ++, an input read)? Swapping it with its sibling would then change
+// what either side sees: C+- evaluates left to right.
+static int has_side_effect(const expr_node *n)
+{
+    if (!n) return 0;
+    if (n->kind == EXPR_FUNC_CALL || n->kind == EXPR_PPLUS) return 1;
+    if (n->kind == EXPR_STDLIB_CALL && (n->op == OP_STD_IN || n->op == OP_STD_FIN)) return 1;
+    for (int k = 0; k < n->n_args; k++) if (has_side_effect(n->args[k])) return 1;
+    return has_side_effect(n->left) || has_side_effect(n->right);
+}
+
 // Constant folding. const_eval recursively evaluates a subtree as a
 // compile-time int constant: it succeeds (returns 1, sets *val) only for an int
 // literal, or +/-/*/&/|/^ of foldable constants whose result -- AT EVERY LEVEL
@@ -518,7 +530,8 @@ static expr ast_emit_expr_impl(expr_node *n)
             // so the dispatch below is unchanged; S_ADD / S_MLT are symmetric
             // so the swapped acc+acc order yields the same value.
             expr a, b;
-            if (commutative_int_binop(n) && stack_need(n->right) > stack_need(n->left)) {
+            if (commutative_int_binop(n) && stack_need(n->right) > stack_need(n->left)
+                && !has_side_effect(n->left) && !has_side_effect(n->right)) {
                 b = ast_emit_expr(n->right);
                 a = ast_emit_expr(n->left );
             } else {
@@ -639,6 +652,9 @@ static expr ast_emit_expr_impl(expr_node *n)
                 acc_ok = 1;
             }
 
+            // no argument pushed the acc: a live partial result (x+5 in
+            // (x+5) - f()) must be pushed by hand, or the call overwrites it
+            if (n->n_args == 0 && acc_ok) add_instr("PSH\n");
             add_instr("CAL %s\n", v_table[n->id].name);
             v_table[n->id].used = 1;
             acc_ok = (n->type == 0) ? 0 : 1;

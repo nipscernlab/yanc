@@ -283,6 +283,8 @@ void ass_array_const(int id, int k, expr e)
         {fprintf (stderr, MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
     if (v_table[id].isar == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+    if (v_table[id].isar == 2)   // arr_1d_index refuses it on the general path
+        {fprintf (stderr, MSG_ERR_ARRAY_2D, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
 
     if (e.id != 0) add_instr("LOD %s\n", v_table[e.id].name);  // rhs -> acc
     add_instr("SET_V %s %d\n", v_table[id].name, k);

@@ -28,7 +28,8 @@ CAL float_sin
 SET csin_sa
 LOD 0.000000
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET csin_ca
 LOD csin_sa
 F_MLT csin_chb
@@ -65,7 +66,8 @@ CAL float_sin
 SET ccos_sa
 LOD 0.000000
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET ccos_ca
 F_MLT ccos_chb
 SET ccos_re
@@ -105,7 +107,8 @@ CAL float_sin
 SET csin_sa
 LOD main_z
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET csin_ca
 LOD csin_sa
 F_MLT csin_chb
@@ -145,7 +148,8 @@ CAL float_sin
 SET ccos_sa
 LOD main_z
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET ccos_ca
 F_MLT ccos_chb
 SET ccos_re
@@ -196,7 +200,8 @@ CAL float_sin
 SET csin_sa
 LOD csin_a
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET csin_ca
 LOD csin_sa
 F_MLT csin_chb

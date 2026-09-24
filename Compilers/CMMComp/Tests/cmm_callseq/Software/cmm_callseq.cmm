@@ -1,0 +1,49 @@
+#PRNAME cmm_callseq
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// Functional fixture for user calls inside an expression, validated by the
+// SIMULATED values (derived by hand below, not blessed):
+//  (1) a call with no argument while the acc holds a partial result: nothing
+//      pushed it, so CAL overwrote it -- (x+5) - f0() gave -100.
+//  (2) calls run in source order: the Sethi-Ullman reorder of a commutative
+//      int op must not move a call across its sibling -- f(1) + (f(2)+1)*...
+//      ran f(2), f(3), f(1). (A plain variable operand is still read as the
+//      op's memory operand, after the calls: `g + f(1)` sees f's write to g.
+//      C leaves that order unspecified, and loading g first would cost code.)
+// Expected outputs: -95 105 124 1613 123
+
+int g;
+
+int f0()
+{
+    return 100;
+}
+
+int f(int q)
+{
+    g = g * 10 + q;
+    return g;
+}
+
+void main()
+{
+    int x; int r;
+    x = 0;
+    r = (x + 5) - f0();                              // 5 - 100
+    out(0, r);
+    r = (x + 5) + f0();                              // 5 + 100
+    out(0, r);
+    r = f0() + ((x + 1) * (x + 2)) * ((x + 3) * (x + 4));   // 100 + 2*12
+    out(0, r);
+    g = 0;
+    r = f(1) + (f(2) + 1) * (f(3) + 1);             // g: 1, 12, 123 -> 1 + 13*124
+    out(0, r);
+    out(0, g);
+}

@@ -21,7 +21,8 @@ CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
 CAL float_exp
@@ -66,7 +67,8 @@ CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
 CAL float_exp
@@ -115,7 +117,8 @@ CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
 CAL float_exp
@@ -173,7 +176,8 @@ CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
 CAL float_exp
@@ -218,7 +222,8 @@ CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
 CAL float_exp

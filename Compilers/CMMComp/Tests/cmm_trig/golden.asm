@@ -24,7 +24,8 @@ F2I_M main_r
 OUT 0
 LOD 0.0
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 F_MLT 1000.0
 SET main_r
 F2I_M main_r
@@ -37,7 +38,8 @@ F2I_M main_r
 OUT 0
 LOD 3.1415927
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 F_MLT 1000.0
 SET main_r
 F2I_M main_r

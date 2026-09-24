@@ -23,7 +23,8 @@ F_MLT cexp_ea
 SET cexp_im
 LOD main_z_i
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 F_MLT cexp_ea
 SET cexp_re
 P_LOD cexp_im
@@ -45,7 +46,8 @@ F_MLT cexp_ea
 SET cexp_im
 LOD 1.570796
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 F_MLT cexp_ea
 SET cexp_re
 P_LOD cexp_im
@@ -67,7 +69,8 @@ F_MLT cexp_ea
 SET cexp_im
 LOD 3.141593
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 F_MLT cexp_ea
 SET cexp_re
 P_LOD cexp_im
@@ -102,7 +105,8 @@ F_MLT cexp_ea
 SET cexp_im
 LOD cexp_b
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 F_MLT cexp_ea
 SET cexp_re
 P_LOD cexp_im
@@ -128,7 +132,8 @@ F_MLT cexp_ea
 SET cexp_im
 LOD main_z_i
 F_NEG
-F_ADD 1.570796327CAL float_sin
+F_ADD 1.570796327
+CAL float_sin
 F_MLT cexp_ea
 SET cexp_re
 P_LOD cexp_im

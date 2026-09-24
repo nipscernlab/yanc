@@ -18,3 +18,4 @@ nugain_not_pow2.cmm|power of two
 const_idx_scalar_read.cmm|ain't an array
 const_idx_2d_read.cmm|has two dimensions
 const_idx_scalar_write.cmm|isn't an array
+const_idx_2d_write.cmm|has two dimensions

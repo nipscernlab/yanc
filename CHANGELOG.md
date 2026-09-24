@@ -9,6 +9,26 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **A call with no argument no longer overwrites a partial result**
+  (`cmmcomp`, `EXPR_FUNC_CALL` in `ast.c`). An argument's load pushes a live
+  accumulator (`P_LOD`); with no argument nothing did, so `(x+5) - f()` lost
+  `x+5` and popped garbage: -100 instead of -95. A `PSH` now goes before the
+  `CAL` when the accumulator is live. Older than the optimisations below.
+- **The Sethi-Ullman reorder no longer moves a call across its sibling**
+  (`cmmcomp`, `ast.c`, from `75d18d2`). `f(1) + (f(2)+1)*(f(3)+1)` ran the
+  calls as f(2), f(3), f(1), so a callee with a side effect gave 303 instead
+  of 1613; and moving a call after a heavy subtree ran it with a live
+  accumulator (the bug above). Operands are no longer swapped when either
+  side has a call, a `++` or an `in()`/`fin()`. A plain variable next to a
+  call is still read as the op's memory operand, after the call: `g + f(1)`
+  sees f's write to g, as gcc does (C leaves that order unspecified).
+  `cmm_callseq` checks both by value.
+- **`m[1] = 5` on a 2D array is refused** with a constant index too
+  (`ass_array_const`, the store half of the entry below).
+- **`cos()` wrote two instructions on one asm line** (`exec_cos` in
+  `stdlib.c`: `F_ADD 1.570796327CAL float_sin`, four missing `\n`; the
+  assembler's lexer happened to split them, so the result was right). Also a
+  stray space after a `\n` in `oper.c`.
 - **An array read only through constant indices is no longer reported as
   unused, and a constant index is checked like a variable one** (`cmmcomp`,
   `arr_1d2exp_const` in `array_index.c`, `ass_array_const` in

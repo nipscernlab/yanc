@@ -1,0 +1,67 @@
+NOP
+#PRNAME cmm_callseq
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+JMP main
+@f0 LOD 100
+RET
+@f SET f_q
+LOD g
+MLT 10
+ADD f_q
+SET g
+RET
+@main LOD 0
+SET main_x
+ADD 5
+PSH
+CAL f0
+NEG
+S_ADD
+SET main_r
+OUT 0
+LOD main_x
+ADD 5
+PSH
+CAL f0
+S_ADD
+SET main_r
+OUT 0
+CAL f0
+P_LOD main_x
+ADD 1
+P_LOD main_x
+ADD 2
+S_MLT
+P_LOD main_x
+ADD 3
+P_LOD main_x
+ADD 4
+S_MLT
+S_MLT
+S_ADD
+SET main_r
+OUT 0
+LOD 0
+SET g
+LOD 1
+CAL f
+P_LOD 2
+CAL f
+ADD 1
+P_LOD 3
+CAL f
+ADD 1
+S_MLT
+S_ADD
+SET main_r
+OUT 0
+LOD g
+OUT 0
+@fim JMP fim

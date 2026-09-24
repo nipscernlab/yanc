@@ -1,0 +1,19 @@
+#PRNAME p
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Negative fixture: one constant index stored into a 2D array. The
+// constant-index store (SET_V, ass_array_const) must reject it like the
+// general path (arr_1d_index).
+void main()
+{
+    int m[2][2];
+    m[1] = 5;
+    out(0, m[0][0]);
+}

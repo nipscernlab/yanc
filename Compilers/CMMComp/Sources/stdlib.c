@@ -1623,7 +1623,7 @@ expr exec_cos(expr e)
     {
         add_instr("%s %s\n", i2f, v_table[e.id].name);
         add_instr("F_NEG\n");
-        add_instr("F_ADD 1.570796327");
+        add_instr("F_ADD 1.570796327\n");
         add_instr("CAL float_sin\n");
     }
 
@@ -1632,7 +1632,7 @@ expr exec_cos(expr e)
     {
         add_instr("I2F\n");
         add_instr("F_NEG\n");
-        add_instr("F_ADD 1.570796327");
+        add_instr("F_ADD 1.570796327\n");
         add_instr("CAL float_sin\n");
     }
 
@@ -1641,7 +1641,7 @@ expr exec_cos(expr e)
     {
         add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("F_NEG\n");
-        add_instr("F_ADD 1.570796327");
+        add_instr("F_ADD 1.570796327\n");
         add_instr("CAL float_sin\n");
     }
 
@@ -1649,7 +1649,7 @@ expr exec_cos(expr e)
     if ((e.type == 2) && (e.id == 0))
     {
         add_instr("F_NEG\n");
-        add_instr("F_ADD 1.570796327");
+        add_instr("F_ADD 1.570796327\n");
         add_instr("CAL float_sin\n");
     }
 
