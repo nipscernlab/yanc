@@ -1,0 +1,34 @@
+#PRNAME cmm_forbottom
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// A for with literal start and bound whose entry test holds tests only at the
+// bottom (for_bottom_test in ast.c): after the step, JIZ back while the
+// condition holds, the test built to be zero exactly then. One loop per
+// comparison, a mirrored one, one whose entry test FAILS (it must keep the top
+// test and run zero times), and continue / break inside a rotated loop. A test
+// with the wrong sense, one turn too many or too few, changes the sum.
+// Expected outputs (derived by hand):
+//   45 25 44 42 15 7 0 55 27 15
+
+void main()
+{
+    int k; int s;
+
+    s = 0; for (k = 0; k < 10; k++) { s = s + k; }            out(0, s);   // 0+..+9 = 45
+    s = 0; for (k = 3; k <= 7; k++) { s = s + k; }            out(0, s);   // 3+..+7 = 25
+    s = 0; for (k = 9; k >= 2; k = k - 1) { s = s + k; }      out(0, s);   // 9+..+2 = 44
+    s = 0; for (k = 9; k > 2; k = k - 1) { s = s + k; }       out(0, s);   // 9+..+3 = 42
+    s = 0; for (k = 0; k != 6; k++) { s = s + k; }            out(0, s);   // 0+..+5 = 15
+    s = 0; for (k = 0; k == 0; k++) { s = s + 7; }            out(0, s);   // one turn: 7
+    s = 0; for (k = 5; k < 3; k++) { s = s + 100; }           out(0, s);   // entry false: 0
+    s = 0; for (k = 1; 10 >= k; k++) { s = s + k; }           out(0, s);   // mirrored: 1+..+10 = 55
+    s = 0; for (k = 0; k < 10; k++) { if (k % 3 == 0) continue; s = s + k; }  out(0, s);  // 1+2+4+5+7+8 = 27
+    s = 0; for (k = 0; k < 10; k++) { if (k == 6) break; s = s + k; }         out(0, s);  // 0+..+5 = 15
+}

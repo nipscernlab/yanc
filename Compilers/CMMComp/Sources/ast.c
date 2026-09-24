@@ -255,6 +255,49 @@ static int jump_only_target(stmt_node *s, char *buf, size_t sz)
     }
 }
 
+// `for (k = c0; k OP c1; step)` with int literals c0, c1 and c0 OP c1 true:
+// the test on entry is known to pass, so the loop can test at the BOTTOM
+// only, right after the step, and jump back while the condition holds -- no
+// entry test, no JMP per turn. JIZ jumps on zero, so the bottom test is an
+// expression that is zero exactly when the condition holds, with k as the
+// RIGHT operand: oper_cmp then loads k first, and the peephole drops that
+// LOD because the step's SET k left k in the acc (k < 10: LES 9; JIZ).
+//   k < c  ->  (c-1) < k        k <= c  ->  c < k
+//   k > c  ->  (c+1) > k        k >= c  ->  c > k
+//   k != c ->  c == k           k == c  ->  c ^ k
+// NULL when the loop is not of that form (the walker keeps the top test).
+static expr_node *for_bottom_test(stmt_node *n)
+{
+    stmt_node *init = n->then_body;
+    expr_node *c = n->cond;
+    if (!init || init->kind != STMT_ASSIGN || !n->else_body || !c || c->kind != EXPR_BINOP) return NULL;
+    if (!init->rhs || init->rhs->kind != EXPR_LITERAL || v_table[init->id].type != 1) return NULL;
+    expr_node *var = c->left, *lit = c->right; int op = c->op;
+    if (var && var->kind == EXPR_LITERAL && lit && lit->kind == EXPR_VAR) {   // c OP k: mirror
+        expr_node *t = var; var = lit; lit = t;
+        if      (op == OP_LT) op = OP_GT; else if (op == OP_GT) op = OP_LT;
+        else if (op == OP_LE) op = OP_GE; else if (op == OP_GE) op = OP_LE;
+    }
+    if (!var || var->kind != EXPR_VAR || var->id != init->id || !lit || lit->kind != EXPR_LITERAL) return NULL;
+    typecheck_expr(init->rhs); typecheck_expr(lit);
+    if (init->rhs->type != 1 || lit->type != 1) return NULL;
+    long long c0 = atoll(v_table[init->rhs->id].name), c1 = atoll(v_table[lit->id].name);
+    long long max = (1LL << (nbmant + nbexpo)) - 1;          // largest int of the word
+    int holds; long long k2; int op2;
+    switch (op) {
+        case OP_LT: holds = c0 <  c1; op2 = OP_LT;  k2 = c1 - 1; break;
+        case OP_LE: holds = c0 <= c1; op2 = OP_LT;  k2 = c1;     break;
+        case OP_GT: holds = c0 >  c1; op2 = OP_GT;  k2 = c1 + 1; break;
+        case OP_GE: holds = c0 >= c1; op2 = OP_GT;  k2 = c1;     break;
+        case OP_NE: holds = c0 != c1; op2 = OP_EQ;  k2 = c1;     break;
+        case OP_EQ: holds = c0 == c1; op2 = OP_XOR; k2 = c1;     break;
+        default: return NULL;
+    }
+    if (!holds || k2 < 0 || k2 > max) return NULL;           // a literal has no negative form
+    char buf[32]; snprintf(buf, sizeof buf, "%lld", k2);
+    return expr_binop(op2, expr_lit(1, exec_inum(buf)), expr_var(1, var->id));
+}
+
 // an int literal other than 0: a loop condition that is always true (while (1))
 static int is_const_true(expr_node *n)
 {
@@ -1283,6 +1326,20 @@ void stmt_emit(stmt_node *n)
         }
 
         case STMT_WHILE: {
+            expr_node *bt = for_bottom_test(n);
+            if (bt) {                                // for (k = c0; k < c1; ...): see for_bottom_test
+                add_sinst(0, "@Lwh%d ", n->id);
+                acc_ok = 0;
+                stmt_emit(n->body);
+                if (n->op) add_sinst(0, "@Lwh%dcont ", n->id);
+                stmt_emit(n->else_body);
+                emit_cond_int_load(ast_emit_expr(bt), 0);
+                add_instr("JIZ Lwh%d\n",   n->id);   // condition holds -> next turn
+                add_sinst(0, "@Lwh%dend ", n->id);
+                acc_ok = 0;
+                expr_free(bt);
+                break;
+            }
             add_sinst(0, "@Lwh%d ", n->id);
             if (!is_const_true(n->cond)) {          // while (1): nothing to test
                 emit_cond_int_load(ast_emit_expr(n->cond), 0);
@@ -1586,7 +1643,7 @@ void stmt_free(stmt_node *n)
     expr_free(n->idx);
     expr_free(n->idx2);
     expr_free(n->cond);
-    stmt_free(n->then_body);
+    if (n->kind != STMT_WHILE) stmt_free(n->then_body);   // a while's is only a reference to its for-init
     stmt_free(n->else_body);
     stmt_free(n->body);
     for (int i = 0; i < n->kids_n; i++) stmt_free(n->kids[i]);

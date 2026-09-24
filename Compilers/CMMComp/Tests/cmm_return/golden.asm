@@ -15,10 +15,7 @@ RET
 @firstHit SET firstHit_limit
 LOD 0
 SET firstHit_k
-@Lwh1 LOD 100
-LES firstHit_k
-JIZ Lwh1end
-LOD firstHit_limit
+@Lwh1 LOD firstHit_limit
 EQU firstHit_k
 JIZ Lif1else
 LOD firstHit_k
@@ -27,21 +24,16 @@ RET
 @Lif1else LOD firstHit_k
 ADD 1
 SET firstHit_k
-JMP Lwh1
+LES 99
+JIZ Lwh1
 @Lwh1end LOD 0
 RET
 @nestedFind SET nestedFind_target
 LOD 0
 SET nestedFind_a
-@Lwh2 LOD 5
-LES nestedFind_a
-JIZ Lwh2end
-LOD 0
+@Lwh2 LOD 0
 SET nestedFind_b
-@Lwh3 LOD 5
-LES nestedFind_b
-JIZ Lwh3end
-LOD nestedFind_a
+@Lwh3 LOD nestedFind_a
 MLT 10
 ADD nestedFind_b
 EQU nestedFind_target
@@ -53,11 +45,13 @@ RET
 @Lif2else LOD nestedFind_b
 ADD 1
 SET nestedFind_b
-JMP Lwh3
+LES 4
+JIZ Lwh3
 @Lwh3end LOD nestedFind_a
 ADD 1
 SET nestedFind_a
-JMP Lwh2
+LES 4
+JIZ Lwh2
 @Lwh2end LOD 0
 RET
 @classify SET classify_x

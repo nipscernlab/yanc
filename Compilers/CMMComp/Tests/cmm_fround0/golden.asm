@@ -102,16 +102,14 @@ LOD 0.0
 SET main_acc
 LOD 0
 SET main_k
-@Lwh2 LOD 1000
-LES main_k
-JIZ Lwh2end
-LOD main_acc
+@Lwh2 LOD main_acc
 F_ADD 0.001
 SET main_acc
 LOD main_k
 ADD 1
 SET main_k
-JMP Lwh2
+LES 999
+JIZ Lwh2
 @Lwh2end LOD main_acc
 F_SU1 main_one
 F_MLT main_ulp

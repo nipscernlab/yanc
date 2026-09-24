@@ -99,10 +99,7 @@ LOD 0
 SET main_s
 LOD 0
 SET main_n
-@Lwh3 LOD 6
-LES main_n
-JIZ Lwh3end
-LOD 2
+@Lwh3 LOD 2
 XOR main_n
 JIZ Lwh3cont
 LOD main_s
@@ -111,7 +108,8 @@ SET main_s
 @Lwh3cont LOD main_n
 ADD 1
 SET main_n
-JMP Lwh3
+LES 5
+JIZ Lwh3
 @Lwh3end LOD main_s
 OUT 0
 LOD 0

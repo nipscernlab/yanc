@@ -10,51 +10,39 @@ NOP
 #NUGAIN 128
 @main @Lwh1 LOD 0
 SET main_idx
-@Lwh2 LOD 3
-LES main_idx
-JIZ Lwh2end
-LOD 10
+@Lwh2 LOD 10
 ADD main_idx
 OUT 0
 LOD main_idx
 ADD 1
 SET main_idx
-JMP Lwh2
+LES 2
+JIZ Lwh2
 @Lwh2end LOD 0
 SET main_cnt
-@Lwh3 LOD 3
-LES main_cnt
-JIZ Lwh3end
-LOD 20
+@Lwh3 LOD 20
 ADD main_cnt
 OUT 0
 LOD main_cnt
 ADD 1
 SET main_cnt
-JMP Lwh3
+LES 2
+JIZ Lwh3
 @Lwh3end LOD 0
 SET main_kk
-@Lwh4 LOD 3
-LES main_kk
-JIZ Lwh4end
-LOD 30
+@Lwh4 LOD 30
 ADD main_kk
 OUT 0
 LOD main_kk
 ADD 1
 SET main_kk
-JMP Lwh4
+LES 2
+JIZ Lwh4
 @Lwh4end LOD 0
 SET main_outer
-@Lwh5 LOD 2
-LES main_outer
-JIZ Lwh5end
-LOD 0
+@Lwh5 LOD 0
 SET main_inner
-@Lwh6 LOD 2
-LES main_inner
-JIZ Lwh6end
-LOD main_outer
+@Lwh6 LOD main_outer
 MLT 10
 ADD 40
 ADD main_inner
@@ -62,11 +50,13 @@ OUT 0
 LOD main_inner
 ADD 1
 SET main_inner
-JMP Lwh6
+LES 1
+JIZ Lwh6
 @Lwh6end LOD main_outer
 ADD 1
 SET main_outer
-JMP Lwh5
+LES 1
+JIZ Lwh5
 @Lwh5end LOD 0
 SET main_idx
 @Lwh7 LOD 2

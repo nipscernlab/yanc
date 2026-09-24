@@ -24,10 +24,7 @@ OUT 0
 JMP Lwh2
 @Lwh2end LOD 0
 SET main_k
-@Lwh3 LOD 6
-LES main_k
-JIZ Lwh3end
-LOD 2
+@Lwh3 LOD 2
 XOR main_k
 JIZ Lwh3cont
 LOD 10
@@ -36,18 +33,13 @@ OUT 0
 @Lwh3cont LOD main_k
 ADD 1
 SET main_k
-JMP Lwh3
+LES 5
+JIZ Lwh3
 @Lwh3end LOD 0
 SET main_k
-@Lwh4 LOD 3
-LES main_k
-JIZ Lwh4end
-LOD 0
+@Lwh4 LOD 0
 SET main_n
-@Lwh5 LOD 3
-LES main_n
-JIZ Lwh5end
-LOD 1
+@Lwh5 LOD 1
 XOR main_n
 JIZ Lwh5cont
 LOD main_k
@@ -58,17 +50,16 @@ OUT 0
 @Lwh5cont LOD main_n
 ADD 1
 SET main_n
-JMP Lwh5
+LES 2
+JIZ Lwh5
 @Lwh5end LOD main_k
 ADD 1
 SET main_k
-JMP Lwh4
+LES 2
+JIZ Lwh4
 @Lwh4end LOD 0
 SET main_k
-@Lwh6 LOD 4
-LES main_k
-JIZ Lwh6end
-LOD main_k
+@Lwh6 LOD main_k
 ADD -2
 JIZ sw_body_1_1
 JMP sw_body_1_2
@@ -82,6 +73,7 @@ OUT 0
 @Lwh6cont LOD main_k
 ADD 1
 SET main_k
-JMP Lwh6
+LES 3
+JIZ Lwh6
 @Lwh6end JMP Lwh1
 @Lwh1end @fim JMP fim

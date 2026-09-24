@@ -267,7 +267,10 @@ stmt_node *for_finish()
     stmt_node *partial = pending_pop();
 
     stmt_node *init = partial->then_body;
-    partial->then_body = NULL;
+    // then_body keeps a REFERENCE to the init (the parent list emits it, the
+    // STMT_WHILE walker never does): with `for (k = c0; k < c1; ...)` it lets
+    // the walker see that the entry test holds and drop it (for_bottom_test)
+    partial->then_body = init;
     // The step stays on partial->else_body; the STMT_WHILE walker emits it after
     // the body (where `continue` lands), so the step always runs.
     partial->body = body;

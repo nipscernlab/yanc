@@ -125,6 +125,17 @@ tags consumed by Aurora.
   valid program that must print that text (two fixtures, local and global).
 
 ### Changed
+- **A C± `for` with a literal start and bound tests only at the bottom**
+  (`cmmcomp`, `for_bottom_test` in `ast.c`). For `for (k = c0; k OP c1; ...)`
+  with int literals and `c0 OP c1` true, the entry test is known to pass, so
+  the loop drops it and tests right after the step, jumping back while the
+  condition holds: `k < 10` is `LES 9; JIZ top`, with the `LOD k` dropped by
+  the peephole. Smaller AND faster, and only then: any other loop keeps its
+  top test, so no program grows (a rotation of every loop would have cost
+  one instruction each). 8 examples shrink, 42 instructions in all
+  (`for_loop` 88 -> 78, `cmm_break` 110 -> 100), 2 cycles fewer per turn;
+  7 sim goldens grew because more turns fit the cycle budget (each checked
+  to start with the whole old output). New `cmm_forbottom`, values by hand.
 - **A C++ `for` tests its condition at the bottom** (`cppcomp`, `S_FOR` +
   `gen_jump_true`). The condition is checked once on entry and then right
   after the step, jumping back while it holds: no `JMP` per turn, and with
