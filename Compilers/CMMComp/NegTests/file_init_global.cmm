@@ -1,0 +1,16 @@
+#PRNAME p
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// No-warning fixture: a GLOBAL array initialized from a file is fine.
+int t[4] "t.txt";
+void main()
+{
+    out(0, t[1]);
+}

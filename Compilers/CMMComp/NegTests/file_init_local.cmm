@@ -1,0 +1,22 @@
+#PRNAME p
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Warning fixture: a local array initialized from a file is .mif content,
+// loaded once, so it keeps its values across calls -- cmmcomp must say so.
+int f(int v)
+{
+    int t[4] "t.txt";
+    t[0] = v;
+    return t[1];
+}
+void main()
+{
+    out(0, f(3));
+}

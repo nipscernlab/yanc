@@ -310,6 +310,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: variável '%s' é int, mas recebe float.\n", \
       "Heads up on line %d: variable '%s' is int, but getting a float.\n")
 
+#define MSG_WARN_ARRAY_FILE_LOCAL \
+    M("Atenção na linha %d: o array local '%s' é inicializado pelo arquivo %s uma vez só, quando a memória é carregada; de uma chamada para outra ele guarda o que a função escreveu nele (como um static em C).\n", \
+      "Heads up on line %d: local array '%s' is initialized from file %s only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).\n")
+
 #define MSG_WARN_FLOAT_RECV_INT \
     M("Atenção na linha %d: variável '%s' é float, mas recebe int.\n", \
       "Heads up on line %d: variable '%s' is float, but getting an int.\n")

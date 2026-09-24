@@ -799,23 +799,28 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
     done < "$neg_dir/manifest.txt"
     # the reverse: a valid program that must compile WITHOUT a given message
-    # (a spurious warning), format <fixture.cmm>|<forbidden substring>
+    # (a spurious warning), format <fixture.cmm>|<forbidden substring>; or
+    # WITH one (a warning that must fire), format <fixture.cmm>|+<substring>
     while IFS='|' read -r fixture forbid; do
         fixture="${fixture%$'\r'}"; forbid="${forbid%$'\r'}"
         case "$fixture" in ''|\#*) continue ;; esac
-        name="nowarn:${fixture%.cmm}"
+        name="warn:${fixture%.cmm}"
+        want=0; case "$forbid" in +*) want=1; forbid="${forbid#+}" ;; esac
         rm -rf "$neg_work"; mkdir -p "$neg_work/Software" "$neg_work/tmp"
         cp "$neg_dir/$fixture" "$neg_work/Software/p.cmm"
         out="$("$CMMCOMP" -en -i p.cmm -n p -p "$neg_work" -m "$MACROS" -t "$neg_work/tmp" 2>&1)"
         rc=$?
+        printed=0; printf '%s' "$out" | grep -qF "$forbid" && printed=1
         if [ "$rc" -ne 0 ]; then
             echo "FAIL ($name): rejected (exit $rc), should compile"
             fail=$((fail+1)); failed_names+=("$name")
-        elif printf '%s' "$out" | grep -qF "$forbid"; then
-            echo "FAIL ($name): printed '$forbid'"
+        elif [ "$printed" -ne "$want" ]; then
+            if [ "$want" -eq 1 ]; then echo "FAIL ($name): did not print '$forbid'"
+            else                       echo "FAIL ($name): printed '$forbid'"; fi
             fail=$((fail+1)); failed_names+=("$name")
         else
-            echo "PASS ($name): compiled without \"$forbid\""
+            if [ "$want" -eq 1 ]; then echo "PASS ($name): printed \"$forbid\""
+            else                       echo "PASS ($name): compiled without \"$forbid\""; fi
             pass=$((pass+1))
         fi
     done < "$neg_dir/nowarn.txt"

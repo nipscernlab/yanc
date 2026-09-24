@@ -53,6 +53,14 @@ tags consumed by Aurora.
   fixtures and a second manifest, `NegTests/nowarn.txt`: valid programs that
   must compile without a given message.
 
+### Added
+- **cmmcomp warns when a local array is initialized from a file**
+  (`int t[4] "t.txt";` inside a function, `main` included). The file is
+  `.mif` content, loaded once, so the array keeps what the function wrote
+  into it from one call to the next, like a C `static`. A global array
+  gives no warning. `NegTests/nowarn.txt` now also takes `|+<text>`: a
+  valid program that must print that text (two fixtures, local and global).
+
 ### Changed
 - **cmmcomp emits 209 fewer instructions over 53 examples, about 6.5 % of
   its own output** (`ast.c`, `oper.c`; C±'s point is lean code):

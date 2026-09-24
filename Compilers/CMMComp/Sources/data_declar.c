@@ -98,6 +98,9 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
 
     if (id_fname != -1)
         printf(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, rem_fname(v_table[id_var].name, fname), line_num+1);
+    // the file is .mif content, loaded once: a local keeps state across calls
+    if (id_fname != -1 && strcmp(fname, "") != 0)
+        printf(MSG_WARN_ARRAY_FILE_LOCAL, line_num+1, rem_fname(v_table[id_var].name, fname), v_table[id_fname].name);
 }
 
 // Walker-time half: only the `#array` / `#arrays` directives.
@@ -160,6 +163,9 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 
     if (id_fname != -1)
         printf(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, rem_fname(v_table[id_var].name, fname), line_num+1);
+    // the file is .mif content, loaded once: a local keeps state across calls
+    if (id_fname != -1 && strcmp(fname, "") != 0)
+        printf(MSG_WARN_ARRAY_FILE_LOCAL, line_num+1, rem_fname(v_table[id_var].name, fname), v_table[id_fname].name);
 }
 
 // Walker-time half: `#array` directive + the LOD/SET arr_size helper instrs.
