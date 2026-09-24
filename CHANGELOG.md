@@ -125,6 +125,19 @@ tags consumed by Aurora.
   valid program that must print that text (two fixtures, local and global).
 
 ### Changed
+- **A C++ `for` tests its condition at the bottom** (`cppcomp`, `S_FOR` +
+  `gen_jump_true`). The condition is checked once on entry and then right
+  after the step, jumping back while it holds: no `JMP` per turn, and with
+  no label between the step and the test the peephole drops the reload of
+  the stepped variable. The ISA only has `JIZ`, so the bottom test is the
+  inverted comparison (`k < 10` tests `k >= 10`, i.e. `LES 9`). An int
+  literal operand also takes the memory form now (`k < 24` was
+  `P_LOD 24; S_LES`), and `a <= c` / `a >= c` become `a < c+1` / `a > c-1`
+  with a literal, one instruction each. `test46`: **60 890 -> 56 415 cycles,
+  7.3 % fewer**, and smaller (1 682 -> 1 653 instructions). `test81` covers
+  the loop shapes (every comparison, `continue`, `break`, `&&`/`||`, a call
+  in the condition, float, nested, zero trips, a bound at `INT_MAX`),
+  against host gcc.
 - **A loop-invariant address is computed once, before the `for`** (`cppcomp`,
   `lih_*` in `codegen.c`). In `for (...) s -= a[i*n + k] * a[j*n + k];` the
   part `a + i*n` does not change while `k` runs; it is now hoisted into a

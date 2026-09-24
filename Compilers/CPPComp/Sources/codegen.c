@@ -886,6 +886,46 @@ static void gen_bool(expr *e, const char *jz_target)
     emit("JIZ %s", jz_target);
 }
 
+// Jump to target when e is TRUE (the test at the bottom of a loop). The ISA
+// only has JIZ (jump if zero), so the value tested must be zero when e holds:
+// an int comparison is inverted (a < b tests a >= b, one instruction with a
+// literal bound), a == b tests a ^ b, a != b tests a == b; && and || are
+// split; anything else (float, a plain value) tests !e.
+static void gen_jump_true(expr *e, const char *target)
+{
+    if (e->kind == E_BINOP && e->op == OP_LOR) {
+        gen_jump_true(e->a, target);
+        gen_jump_true(e->b, target);
+        return;
+    }
+    if (e->kind == E_BINOP && e->op == OP_LAND) {
+        char *skip = fresh_label("and_f");
+        gen_bool(e->a, skip);                   // a false -> the whole && is false
+        gen_jump_true(e->b, target);
+        emit("@%s NOP", skip);
+        free(skip);
+        return;
+    }
+    if (e->kind == E_BINOP) {
+        type *lt = infer_type(e->a), *rt = infer_type(e->b);
+        int ints = lt && rt && lt->kind == TY_INT && rt->kind == TY_INT;
+        int inv = -1;
+        switch (e->op) {
+            case OP_LT: inv = OP_GE; break;  case OP_GE: inv = OP_LT; break;
+            case OP_GT: inv = OP_LE; break;  case OP_LE: inv = OP_GT; break;
+            case OP_NE: inv = OP_EQ; break;
+            case OP_EQ: inv = OP_BXOR; break;          // zero exactly when a == b
+            default: break;
+        }
+        if (ints && inv >= 0) {
+            expr ne = *e; ne.op = (op_kind)inv; ne.etype = NULL;
+            gen_bool(&ne, target);                     // jumps when !e is false
+            return;
+        }
+    }
+    gen_bool(ast_unop(OP_LNOT, e, e->line), target);
+}
+
 // ---- lvalue address: leaves &lv in accumulator -----------------------------
 
 // load the `this` pointer's VALUE (the current object's address) into acc
@@ -1890,27 +1930,42 @@ static void gen_expr(expr *e)
                            op == OP_BOR || op == OP_BXOR || op == OP_LT  ||
                            op == OP_GT  || op == OP_LE   || op == OP_GE  ||
                            op == OP_EQ  || op == OP_NE);
+        // The operand is a plain scalar variable, or an int literal against an
+        // int left side (the assembler places a numeric operand in data
+        // memory). With a literal c, <= and >= are one instruction too:
+        // a <= c is a < c+1, a >= c is a > c-1 (unsigned compares took the
+        // sign-flip path above, so this is signed), guarded at the ends.
+        const char *opnd = NULL; char litb[32]; long lit = 0; int is_lit = 0;
         if (mem_form_op && e->b->kind == E_IDENT && lf == rf) {   // mem-form needs matching types
             sym *r = st_find(e->b->sval);
             // not a reference: its word holds the referent's address, and the
             // memory form would operate on that address (z + r gave z + &x)
             if (r && !r->is_frame && r->stype && !r->stype->is_ref &&
-                r->stype->kind != TY_ARRAY && r->stype->kind != TY_STRUCT) {
-                gen_expr(e->a);
-                switch (op) {
-                    case OP_ADD: emit(is_float ? "F_ADD %s" : "ADD %s", r->asm_name); return;
-                    case OP_MUL: emit(is_float ? "F_MLT %s" : "MLT %s", r->asm_name); return;
-                    case OP_BAND: emit("AND %s", r->asm_name); return;
-                    case OP_BOR:  emit("ORR %s", r->asm_name); return;
-                    case OP_BXOR: emit("XOR %s", r->asm_name); return;
-                    case OP_LT:   emit(is_float ? "F_GRE %s" : "GRE %s", r->asm_name); return; // mem>acc == lhs<rhs
-                    case OP_GT:   emit(is_float ? "F_LES %s" : "LES %s", r->asm_name); return; // mem<acc == lhs>rhs
-                    case OP_LE:   emit(is_float ? "F_LES %s" : "LES %s", r->asm_name); emit("LIN"); return;
-                    case OP_GE:   emit(is_float ? "F_GRE %s" : "GRE %s", r->asm_name); emit("LIN"); return;
-                    case OP_EQ:   emit("EQU %s", r->asm_name); return;
-                    case OP_NE:   emit("EQU %s", r->asm_name); emit("LIN"); return;
-                    default: break;   // SUB/DIV/MOD/SHL/SHR -> stack path (correct order)
-                }
+                r->stype->kind != TY_ARRAY && r->stype->kind != TY_STRUCT) opnd = r->asm_name;
+        } else if (mem_form_op && e->b->kind == E_INT_LIT && !is_float && lt && lt->kind == TY_INT) {
+            lit = e->b->ival; is_lit = 1;
+            snprintf(litb, sizeof litb, "%ld", lit); opnd = litb;
+        }
+        if (opnd) {
+            long lmax = (1L << (g_nubits - 1)) - 1, lmin = -lmax - 1;
+            gen_expr(e->a);
+            switch (op) {
+                case OP_ADD: emit(is_float ? "F_ADD %s" : "ADD %s", opnd); return;
+                case OP_MUL: emit(is_float ? "F_MLT %s" : "MLT %s", opnd); return;
+                case OP_BAND: emit("AND %s", opnd); return;
+                case OP_BOR:  emit("ORR %s", opnd); return;
+                case OP_BXOR: emit("XOR %s", opnd); return;
+                case OP_LT:   emit(is_float ? "F_GRE %s" : "GRE %s", opnd); return; // mem>acc == lhs<rhs
+                case OP_GT:   emit(is_float ? "F_LES %s" : "LES %s", opnd); return; // mem<acc == lhs>rhs
+                case OP_LE:
+                    if (is_lit && lit < lmax) { emit("GRE %ld", lit + 1); return; }   // a < c+1
+                    emit(is_float ? "F_LES %s" : "LES %s", opnd); emit("LIN"); return;
+                case OP_GE:
+                    if (is_lit && lit > lmin) { emit("LES %ld", lit - 1); return; }   // a > c-1
+                    emit(is_float ? "F_GRE %s" : "GRE %s", opnd); emit("LIN"); return;
+                case OP_EQ:   emit("EQU %s", opnd); return;
+                case OP_NE:   emit("EQU %s", opnd); emit("LIN"); return;
+                default: break;   // SUB/DIV/MOD/SHL/SHR -> stack path (correct order)
             }
         }
         // rhs is arr[const] on a fixed-address scalar array → the _V form
@@ -3143,14 +3198,21 @@ static void gen_stmt_inner(stmt *s)
         st_push_scope();
         if (s->init_stmt) gen_stmt(s->init_stmt);
         lih_for(s);                                  // loop-invariant addresses, once
-        emit("@%s NOP", top);
+        // Test at the bottom: the condition is checked once on entry, then
+        // right after the step, jumping back when it holds -- no JMP per
+        // turn, and with nothing (no label) between the step and the test
+        // the peephole drops the test's reload of the just-stepped variable
+        // (`k < 10`: LOD k; ADD 1; SET k; LES 9; JIZ top). `continue` still
+        // lands on the step. Costs the condition's code once more.
         if (s->e1) { infer_type(s->e1); gen_bool(s->e1, end); }
+        emit("@%s NOP", top);
         loop_push(cont, end);
         gen_stmt(s->body);
         loop_pop();
         emit("@%s NOP", cont);
         if (s->e2) { infer_type(s->e2); gen_expr(s->e2); }
-        emit("JMP %s", top);
+        if (s->e1) gen_jump_true(s->e1, top);
+        else       emit("JMP %s", top);
         emit("@%s NOP", end);
         st_pop_scope();
         free(top); free(cont); free(end);
