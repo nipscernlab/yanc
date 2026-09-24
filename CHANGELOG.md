@@ -114,6 +114,21 @@ tags consumed by Aurora.
   valid program that must print that text (two fixtures, local and global).
 
 ### Changed
+- **A loop-invariant address is computed once, before the `for`** (`cppcomp`,
+  `lih_*` in `codegen.c`). In `for (...) s -= a[i*n + k] * a[j*n + k];` the
+  part `a + i*n` does not change while `k` runs; it is now hoisted into a
+  pointer temporary and the access becomes `t[k]`. Only when provably safe:
+  a plain pointer local or parameter, an invariant part of int locals /
+  parameters and literals with `+ - *` (and at least one operator), none of
+  them written in the loop (assignment, `++`, declared inside, passed to a
+  call, address taken) or escaping the function; never in a recursive
+  function or one with `goto` / labels / inline asm. And a one-word element
+  indexed by a literal or a plain int variable is now `base; ADD idx`
+  instead of the push / load / `S_ADD` path. `test46` (blind deconvolution):
+  **64 184 -> 60 890 cycles, 5.1 % fewer**; its Cholesky inner loop 7 280
+  -> 4 550. `test80` covers the cases that must NOT be hoisted (the variable
+  written in the loop, through a pointer, through a reference call, the base
+  pointer moved), plus a zero-trip and a nested loop, against host gcc.
 - **A 2D array index multiplies by the row size as a constant** (`cmmcomp`,
   `array_index.c`, `data_declar.c`). Each 2D array had a data word
   `<name>_arr_size`, filled at run time where the array was declared

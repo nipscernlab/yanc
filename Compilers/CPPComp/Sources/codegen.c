@@ -958,6 +958,21 @@ static void gen_addr(expr *e)
             msg_error(e->line, "expression is not an lvalue");
         }
         int elem_sz = bt ? type_size_words(bt->base) : 1;
+        // one-word elements and an index that is a literal or a plain int
+        // variable: `base; ADD idx` (the memory-operand form) where the stack
+        // path took PSH, the index load and S_ADD
+        if (elem_sz == 1 && e->b && (e->b->kind == E_INT_LIT || e->b->kind == E_IDENT)) {
+            sym *r = e->b->kind == E_IDENT ? st_find(e->b->sval) : NULL;
+            int ok = e->b->kind == E_INT_LIT ||
+                     (r && (r->kind == SK_LOCAL_VAR || r->kind == SK_PARAM || r->kind == SK_GLOBAL_VAR) &&
+                      !r->is_frame && r->stype && r->stype->kind == TY_INT && !r->stype->is_ref);
+            if (ok) {
+                if (bt && bt->kind == TY_ARRAY) gen_addr(e->a); else gen_expr(e->a);
+                if (e->b->kind == E_INT_LIT) { if (e->b->ival) emit("ADD %ld", e->b->ival); }
+                else emit("ADD %s", r->asm_name);
+                return;
+            }
+        }
         // compute base address into acc
         if (bt && bt->kind == TY_ARRAY) {
             // array lvalue: its address is the base (gen_addr handles a class
@@ -2835,6 +2850,204 @@ static void emit_live_dtors(int mark)
         { emit("LEA %s", g_live[i].name); emit("PSH"); emit("CAL %s", g_live[i].dtor); }
 }
 
+// ---- loop-invariant address hoisting ----------------------------------------
+// In `for (...) ... p[i*n + k] ...` the address part p + i*n does not change
+// inside the loop when p, i and n are not written there: it is computed once,
+// before the loop, into a pointer temporary t, and the access becomes t[k]
+// (3 instructions where the multiply-add form took 6). This is the Cholesky
+// inner loop of test46. Only what is provably safe is touched:
+//   - p is a plain pointer local or parameter (not a reference, not in a
+//     stack frame), and the invariant part is int literals and int locals /
+//     parameters combined with + - *, containing at least one operator (a
+//     lone variable does not pay for the temporary);
+//   - none of those names is written in the loop (assignment, ++/--, a
+//     declaration inside it, passed as a call argument, address taken), nor
+//     escapes anywhere in the function (address taken, passed to a call,
+//     bound to a reference), so no alias can write it either;
+//   - not in a recursive function (its locals live in a frame), nor in one
+//     with goto / labels / inline asm.
+// The hoisted add runs even when the loop runs zero times: it is pure int
+// arithmetic, with nothing to trap or observe.
+
+typedef struct { const char **v; int n, cap; } nameset;
+static void ns_add(nameset *s, const char *n)
+{
+    if (!n) return;
+    for (int i = 0; i < s->n; i++) if (!strcmp(s->v[i], n)) return;
+    if (s->n == s->cap) { s->cap = s->cap ? 2 * s->cap : 16; s->v = realloc(s->v, s->cap * sizeof *s->v); }
+    s->v[s->n++] = n;
+}
+static int ns_has(const nameset *s, const char *n)
+{
+    for (int i = 0; i < s->n; i++) if (!strcmp(s->v[i], n)) return 1;
+    return 0;
+}
+
+static stmt   *lih_body     = NULL;   // body of the function being emitted
+static int     lih_ready    = 0;      // lih_escaped / lih_off computed for it
+static int     lih_off      = 0;      // goto / label / asm / recursion: no hoisting
+static nameset lih_escaped  = {0};
+
+// written == 1: collect what a loop may write (assignments, ++/--, names it
+// declares, call arguments, address taken). written == 0: what escapes in the
+// whole function (address taken, call arguments, reference bindings).
+static void lih_scan_initz(initz *z, nameset *s, int written);
+static void lih_scan_expr(expr *e, nameset *s, int written)
+{
+    if (!e) return;
+    switch (e->kind) {
+    case E_ASSIGN:
+        if (written && e->a && e->a->kind == E_IDENT) ns_add(s, e->a->sval);
+        break;
+    case E_PREINC: case E_PREDEC: case E_POSTINC: case E_POSTDEC:
+        if (written && e->a && e->a->kind == E_IDENT) ns_add(s, e->a->sval);
+        break;
+    case E_ADDR:
+        if (e->a && e->a->kind == E_IDENT) ns_add(s, e->a->sval);
+        break;
+    case E_CALL:
+        for (int i = 0; i < e->n_args; i++)
+            if (e->args[i] && e->args[i]->kind == E_IDENT) ns_add(s, e->args[i]->sval);
+        if (e->a && (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER) && e->a->a && e->a->a->kind == E_IDENT)
+            ns_add(s, e->a->a->sval);                         // obj.method(): may write obj
+        break;
+    default: break;
+    }
+    lih_scan_expr(e->a, s, written); lih_scan_expr(e->b, s, written); lih_scan_expr(e->c, s, written);
+    for (int i = 0; i < e->n_args; i++) lih_scan_expr(e->args[i], s, written);
+    if (e->cinit) lih_scan_initz(e->cinit, s, written);
+}
+static void lih_scan_initz(initz *z, nameset *s, int written)
+{
+    if (!z) return;
+    if (!z->is_list) { lih_scan_expr(z->e, s, written); return; }
+    for (int i = 0; i < z->n; i++) lih_scan_initz(z->items[i], s, written);
+}
+static void lih_scan_stmt(stmt *st, nameset *s, int written)
+{
+    if (!st) return;
+    if (st->kind == S_GOTO || st->kind == S_LABEL || st->kind == S_ASM) lih_off = 1;
+    for (decl *d = st->kind == S_DECL ? st->decls : NULL; d; d = d->next) {
+        if (written) ns_add(s, d->name);
+        else if (d->dtype && d->dtype->is_ref && d->init && d->init->kind == E_IDENT) ns_add(s, d->init->sval);
+        lih_scan_expr(d->init, s, written);
+        lih_scan_initz(d->binit, s, written);
+        for (int i = 0; i < d->n_ctor_args; i++) {
+            lih_scan_expr(d->ctor_args[i], s, written);
+            if (d->ctor_args[i] && d->ctor_args[i]->kind == E_IDENT) ns_add(s, d->ctor_args[i]->sval);
+        }
+    }
+    lih_scan_expr(st->e1, s, written); lih_scan_expr(st->e2, s, written); lih_scan_expr(st->e3, s, written);
+    lih_scan_stmt(st->init_stmt, s, written);
+    lih_scan_stmt(st->body, s, written); lih_scan_stmt(st->body2, s, written);
+    for (int i = 0; i < st->n_items; i++) lih_scan_stmt(st->items[i], s, written);
+}
+
+// a plain local / parameter of type k, not a reference, not in a frame, not
+// written in the loop, not escaping the function
+static int lih_plain_var(expr *e, const nameset *w, type_kind k)
+{
+    if (!e || e->kind != E_IDENT) return 0;
+    sym *s = st_find(e->sval);
+    if (!s || (s->kind != SK_LOCAL_VAR && s->kind != SK_PARAM) || s->is_frame) return 0;
+    if (!s->stype || s->stype->kind != k || s->stype->is_ref) return 0;
+    return !ns_has(w, e->sval) && !ns_has(&lih_escaped, e->sval);
+}
+static int lih_invariant(expr *e, const nameset *w)
+{
+    if (!e) return 0;
+    if (e->kind == E_INT_LIT) return 1;
+    if (e->kind == E_IDENT) return lih_plain_var(e, w, TY_INT);
+    if (e->kind == E_BINOP && (e->op == OP_ADD || e->op == OP_SUB || e->op == OP_MUL))
+        return lih_invariant(e->a, w) && lih_invariant(e->b, w);
+    return 0;
+}
+static int lih_expr_eq(expr *x, expr *y)
+{
+    if (!x || !y) return x == y;
+    if (x->kind != y->kind) return 0;
+    if (x->kind == E_INT_LIT) return x->ival == y->ival;
+    if (x->kind == E_IDENT)   return !strcmp(x->sval, y->sval);
+    if (x->kind == E_BINOP)   return x->op == y->op && lih_expr_eq(x->a, y->a) && lih_expr_eq(x->b, y->b);
+    return 0;
+}
+static void lih_flatten(expr *e, expr **t, int *n)       // the terms of an ADD chain
+{
+    if (e && e->kind == E_BINOP && e->op == OP_ADD && *n < 14) { lih_flatten(e->a, t, n); lih_flatten(e->b, t, n); }
+    else if (*n < 16) t[(*n)++] = e;
+}
+
+typedef struct { const char *base; expr *inv; char *tmp; } lih_hoist;
+static lih_hoist lih_h[16]; static int lih_nh;
+
+static void lih_rewrite_expr(expr *e, const nameset *w)
+{
+    if (!e) return;
+    lih_rewrite_expr(e->a, w); lih_rewrite_expr(e->b, w); lih_rewrite_expr(e->c, w);
+    for (int i = 0; i < e->n_args; i++) lih_rewrite_expr(e->args[i], w);
+    if (e->kind != E_INDEX || !lih_plain_var(e->a, w, TY_PTR)) return;
+    expr *t[16]; int n = 0, has_op = 0;
+    lih_flatten(e->b, t, &n);
+    expr *inv = NULL, *var = NULL;
+    for (int i = 0; i < n; i++) {
+        if (lih_invariant(t[i], w)) { if (t[i]->kind == E_BINOP) has_op = 1; inv = inv ? ast_binop(OP_ADD, inv, t[i], e->line) : t[i]; }
+        else                        var = var ? ast_binop(OP_ADD, var, t[i], e->line) : t[i];
+    }
+    if (!inv || !has_op) return;
+    const char *tmp = NULL;
+    for (int i = 0; i < lih_nh; i++)
+        if (!strcmp(lih_h[i].base, e->a->sval) && lih_expr_eq(lih_h[i].inv, inv)) tmp = lih_h[i].tmp;
+    if (!tmp) {
+        if (lih_nh == 16) return;
+        char nm[32]; snprintf(nm, sizeof nm, "_lip%d", ++label_n);
+        char *an = mangle_local(nm);
+        st_add(SK_LOCAL_VAR, nm, an, st_find(e->a->sval)->stype);
+        log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
+        free(an);
+        lih_h[lih_nh].base = e->a->sval; lih_h[lih_nh].inv = inv; lih_h[lih_nh].tmp = strdup(nm);
+        tmp = lih_h[lih_nh++].tmp;
+    }
+    e->a = ast_ident((char *)tmp, e->line);
+    e->b = var ? var : ast_int_lit(0, e->line);
+    e->etype = NULL;
+}
+static void lih_rewrite_stmt(stmt *st, const nameset *w)
+{
+    if (!st) return;
+    for (decl *d = st->kind == S_DECL ? st->decls : NULL; d; d = d->next) {
+        lih_rewrite_expr(d->init, w);
+        for (int i = 0; i < d->n_ctor_args; i++) lih_rewrite_expr(d->ctor_args[i], w);
+    }
+    lih_rewrite_expr(st->e1, w); lih_rewrite_expr(st->e2, w); lih_rewrite_expr(st->e3, w);
+    lih_rewrite_stmt(st->init_stmt, w);
+    lih_rewrite_stmt(st->body, w); lih_rewrite_stmt(st->body2, w);
+    for (int i = 0; i < st->n_items; i++) lih_rewrite_stmt(st->items[i], w);
+}
+
+// called at a `for`, after its init: emit the hoisted addresses, rewrite the
+// accesses that use them
+static void lih_for(stmt *s)
+{
+    if (!lih_ready) {
+        lih_ready = 1; lih_escaped.n = 0;
+        lih_off = cur_fn_recursive;
+        lih_scan_stmt(lih_body, &lih_escaped, 0);
+    }
+    if (lih_off) return;
+    nameset w = {0};
+    lih_scan_expr(s->e1, &w, 1); lih_scan_expr(s->e2, &w, 1);
+    lih_scan_stmt(s->body, &w, 1);
+    lih_nh = 0;
+    lih_rewrite_expr(s->e1, &w); lih_rewrite_expr(s->e2, &w);
+    lih_rewrite_stmt(s->body, &w);
+    for (int i = 0; i < lih_nh; i++) {
+        expr *base = ast_ident((char *)lih_h[i].base, s->line);
+        expr *as = ast_assign(ast_ident(lih_h[i].tmp, s->line), ast_binop(OP_ADD, base, lih_h[i].inv, s->line), s->line);
+        infer_type(as); gen_expr(as);
+    }
+    free(w.v);
+}
+
 // Wrapper: stamp this statement's source line so every instruction it emits
 // maps back to it in pc_<proc>_mem.txt, then restore on exit so the enclosing
 // statement's line resumes after a nested block returns. The real dispatch is
@@ -2929,6 +3142,7 @@ static void gen_stmt_inner(stmt *s)
         char *end  = fresh_label("for_end");
         st_push_scope();
         if (s->init_stmt) gen_stmt(s->init_stmt);
+        lih_for(s);                                  // loop-invariant addresses, once
         emit("@%s NOP", top);
         if (s->e1) { infer_type(s->e1); gen_bool(s->e1, end); }
         loop_push(cont, end);
@@ -3227,6 +3441,7 @@ static void emit_function(func *f, unit *u, int is_main)
     cur_func_ret     = f->ret;
     cur_fn_recursive = f->is_recursive;
     cur_method_class = f->method_of;
+    lih_body = f->body; lih_ready = 0; // loop-invariant hoisting analyses this body lazily
     live_pop_to(0);                    // fresh early-exit RAII tracking per function
     st_enter_func(f->asm_label);
     st_push_scope();

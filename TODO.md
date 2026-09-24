@@ -31,8 +31,8 @@ word at or above 2^31 keeps its bits, `T x(N::v);` declares an object, and
 a `static` local is built on first use. **Next in the suggested order:
 15 → 14 → 5 → 6(a) → 9** — 15 first because until a run is repeatable no
 board tells a real regression from noise. 14: the cycle profile of test46
-is done and paid 15.8 % at once (the zero-fill loop); the next candidate it
-names is the Cholesky inner loop of `solve_spd`, a third of the run now.
+is done and paid 15.8 % at once (the zero-fill loop), then 5.1 % more (the
+Cholesky inner loop, hoisted); the loop control of every `for` is next.
 Item 16 (value-initialized locals not re-zeroed) landed 2026-09-24 with
 `test78`; see the CHANGELOG.
 
@@ -463,11 +463,14 @@ cycle bench (`build_prof.sh`, `prof_report.py`). Of 76 311 cycles:
 The zero-fill loop was 12 instructions a word and is now 7: 76 261 -> 64 184
 cycles, 15.8 %, in one small change -- against 0.13 % for the whole inliner.
 
-**Next, if wanted:** the Cholesky inner loop `s -= a[i*n+k] * a[j*n+k]` is 20
-instructions an iteration and recomputes `i*n` and `j*n` for every `k`.
-Hoisting the loop-invariant products (or stepping a pointer) belongs with the
-pre-assembly optimizer, item 13. `sqrt` is the user's own code: nothing for
-the compiler there.
+**Done 2026-09-24:** the Cholesky inner loop recomputed `i*n` and `j*n` for
+every `k`. A `for` now hoists a loop-invariant address `p + i*n` into a
+temporary (`lih_*` in codegen.c), and a one-word element indexed by a plain
+variable is `base; ADD idx`: 64 184 -> 60 890 cycles (-5.1 %), the inner
+loop 7 280 -> 4 550. **Next:** the loop control itself, 7 instructions a turn
+(test at the top, `JMP` back); testing at the bottom, after the step, drops
+the `JMP` and the reload -- in cppcomp and, the same pattern, cmmcomp.
+`sqrt` is the user's own code: nothing for the compiler there.
 
 **Also possible, small:** the expanded access still stores `this` into a word
 nobody reads afterwards (`SET <fn>_this`); dropping that dead store takes an
