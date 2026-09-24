@@ -1757,8 +1757,10 @@ init_declarator:
           $$ = d;
       }
     | pointers IDENT '{' '}' {
-          /* direct list-init `T v{};` — empty brace, value-init (zero fields) */
+          /* direct list-init `T v{};` — empty brace, value-init (zero fields;
+             codegen stores the zeros for a local, see decl.vinit) */
           $$ = make_decl(cur_base, $1, $2, NULL, 0, yylineno, NULL);
+          $$->vinit = 1;
       }
     | pointers IDENT '{' { $<typ>$ = cur_base; } init_item_list '}' {
           /* direct list-init `T v{a, b, ...};` — aggregate init without `=`,
@@ -1790,8 +1792,11 @@ init_declarator:
           $$ = make_decl($<typ>5, $1, $2, $3.dims, $3.n, yylineno, $6);
       }
     | pointers IDENT array_suffix '=' '{' '}' {
-          /* empty brace init — leave memory at its .mif default (zero) */
+          /* empty brace init `T v[N] = {};` / `T v = {};` — value-init. Static
+             storage starts at the .mif's zero; a local keeps fixed storage,
+             so codegen stores the zeros on every entry (decl.vinit). */
           $$ = make_decl(cur_base, $1, $2, $3.dims, $3.n, yylineno, NULL);
+          $$->vinit = 1;
       }
     | pointers IDENT array_suffix '=' '{' { $<typ>$ = cur_base; } init_item_list '}' {
           /* aggregate initialiser: array or struct, one value per slot/field.

@@ -128,6 +128,7 @@ struct decl {
     expr   *init;
     char   *init_file;       // for arrays initialised from "file.txt"
     initz  *binit;           // for aggregates initialised with { ... }
+    int     vinit;           // `T v{};` / `T v[N] = {};` / `T v = {};`: value-initialised
     storage_class sclass;
     int     is_const;        // declared `const` — assignment to it is an error
     expr  **ctor_args;       // `T v(args)` — stack construction arguments

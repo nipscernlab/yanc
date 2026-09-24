@@ -14,7 +14,7 @@ Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 10 architecture hardening (from the HDL audit), 12 a run-time exception
 strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
 small accessors in cppcomp, 15 the regress not being trustworthy on this
-machine, 16 value-initialized locals in cppcomp. Item 11, consistency at 32 bits, is
+machine. Item 11, consistency at 32 bits, is
 closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
@@ -33,8 +33,8 @@ a `static` local is built on first use. **Next in the suggested order:
 board tells a real regression from noise. 14: the cycle profile of test46
 is done and paid 15.8 % at once (the zero-fill loop); the next candidate it
 names is the Cholesky inner loop of `solve_spd`, a third of the run now.
-16 is a correctness bug the profile work turned up: a local `= {}` / `{}`
-is not re-zeroed on the second call.
+Item 16 (value-initialized locals not re-zeroed) landed 2026-09-24 with
+`test78`; see the CHANGELOG.
 
 ---
 
@@ -472,26 +472,6 @@ the compiler there.
 **Also possible, small:** the expanded access still stores `this` into a word
 nobody reads afterwards (`SET <fn>_this`); dropping that dead store takes an
 access from five instructions to four.
-
-## 16. A value-initialized local is not re-zeroed (`cppcomp`)
-
-**Status:** found 2026-09-24, not fixed · **Area:** `Compilers/CPPComp/Sources/CPPComp.y`, `codegen.c`
-
-`int a[8] = {};`, `P q = {};` and `P p{};` as locals emit no code: the
-grammar rules build the declaration with no initializer ("leave memory at its
-.mif default"). A local keeps fixed storage, so that holds only on the first
-call; the second call finds the previous call's values. Measured with a
-function called twice: all three forms keep the old values. A list with at
-least one item (`= {0}`) is correct -- the omitted words are zeroed.
-
-The fix must not skip a user-written default constructor: `T v{}` on a class
-with one still has to call it. Plan: mark the declaration as value-initialized
-in the parser; in the codegen, zero the storage of a non-static local before
-constructing it when the type has no user constructor. A `static` local and a
-global need nothing (the .mif is zero).
-
-**Done when:** the three forms re-zero on every call, a class with a default
-constructor still runs it, and a fixture covers both.
 
 ## 15. The regress is not trustworthy on this machine
 

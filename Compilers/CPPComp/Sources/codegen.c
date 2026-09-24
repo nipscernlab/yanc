@@ -223,8 +223,11 @@ static func *resolve_ctor(type *cls, expr **args, int nargs)
     if (!cg_unit || !cls || !cls->tag) return NULL;
     char *mn = cg_mangle_method(cls->tag, "ctor");
     func *best = NULL; int best_score = -1;
-    for (int i = 0; i < cg_unit->n_funcs; i++) {
-        func *f = cg_unit->funcs[i];
+    // a class template's constructors are clones in g_inst, not in the unit's
+    // function list: without them, `TC<int> t;` and `TA<int> u(5);` ran no
+    // constructor at all
+    for (int i = 0; i < cg_unit->n_funcs + g_n_inst; i++) {
+        func *f = (i < cg_unit->n_funcs) ? cg_unit->funcs[i] : g_inst[i - cg_unit->n_funcs];
         if (!f->method_of || strcmp(f->name, mn)) continue;
         decl *p0 = f->params ? f->params->next : NULL;     // skip `this`
         int nuser = f->n_params - 1;
@@ -2502,12 +2505,17 @@ static int has_member_defaults(type *t)
     return 0;
 }
 
-// zero n words of block base from word off: single stores, a loop for a run
-static void emit_zero_words(const char *base, int off, int n)
+// zero n words of block base from word off: single stores, a loop for a run.
+// The zero of a float is the 0.0 constant, not the word 0 (the encoder gives
+// 0.0 the most negative exponent, and EQU compares words): t, the type the
+// run belongs to, picks it the way agg_fill_code picks the .mif fill of a
+// global, so a local and a global of the same type hold the same zero.
+static void emit_zero_words(const char *base, int off, int n, const type *t)
 {
     if (n <= 0) return;
+    const char *zero = (agg_fill_code(t) == 2) ? "0.0" : "0";
     if (n <= 4) {
-        for (int i = 0; i < n; i++) { emit("LOD %d", off + i); emit("PSH"); emit("LOD 0"); emit("STI %s", base); }
+        for (int i = 0; i < n; i++) { emit("LOD %d", off + i); emit("PSH"); emit("LOD %s", zero); emit("STI %s", base); }
         return;
     }
     // one index, walking down from the last word to `off`, and the loop enters
@@ -2517,7 +2525,7 @@ static void emit_zero_words(const char *base, int off, int n)
     char *zi = new_temp("zwi");
     emit("LOD %d", off + n - 1); emit("SET %s", zi);
     emit("@Lzw_t%d NOP", id);
-    emit("PSH"); emit("LOD 0"); emit("STI %s", base);                      // base[zi] = 0
+    emit("PSH"); emit("LOD %s", zero); emit("STI %s", base);               // base[zi] = 0
     emit("LOD %s", zi);
     if (off) emit("ADD %d", -off);
     emit("JIZ Lzw_e%d", id);                                               // until zi == off
@@ -2528,6 +2536,24 @@ static void emit_zero_words(const char *base, int off, int n)
     free(zi);
 }
 
+// value-initialise a local aggregate or array (`T v{};`, `T v[N] = {};`): a
+// local keeps fixed storage, so the zeros must be stored on every entry. A
+// class that is constructed (a constructor, or a vtable) is zeroed first and
+// then constructed as usual, so a user default constructor still runs; any
+// other type goes through the empty braced list, which stores the zeros and
+// the default member initializers.
+static void emit_value_init(const char *base, type *t)
+{
+    int n; type *et = array_elems(t, &n);
+    if (needs_construct(et)) {
+        emit_zero_words(base, 0, type_size_words(t), t);
+        emit_construct_decl(t, base, NULL, 0);
+    } else {
+        initz empty; memset(&empty, 0, sizeof empty); empty.is_list = 1;
+        g_initz_fill = 1; emit_initz(base, 0, t, &empty); g_initz_fill = 0;
+    }
+}
+
 // a sub-object of type t at word off that the braced list left out: its default
 // member initializers, and zeros where there are none (stored for a local only)
 static void emit_omitted(const char *base, int off, type *t)
@@ -2536,7 +2562,7 @@ static void emit_omitted(const char *base, int off, type *t)
         initz empty; memset(&empty, 0, sizeof empty); empty.is_list = 1;
         emit_initz(base, off, t, &empty);
     } else if (g_initz_fill) {
-        emit_zero_words(base, off, type_size_words(t));
+        emit_zero_words(base, off, type_size_words(t), t);
     }
 }
 
@@ -2586,7 +2612,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
                 if (done[i]) { i++; continue; }
                 int j = i; while (j < n && !done[j]) j++;
                 if (defaults) for (int k = i; k < j; k++) emit_omitted(base, off + k * esz, t->base);
-                else          emit_zero_words(base, off + i * esz, (j - i) * esz);
+                else          emit_zero_words(base, off + i * esz, (j - i) * esz, t->base);
                 i = j;
             }
         }
@@ -2610,7 +2636,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
             emit_initz(base, off + target->offset, target->ftype, z->items[k]);
         }
         if (t->is_union) {                              // members overlap: only an empty list fills
-            if (z->n == 0 && g_initz_fill) emit_zero_words(base, off, type_size_words(t));
+            if (z->n == 0 && g_initz_fill) emit_zero_words(base, off, type_size_words(t), t);
         } else {
             for (strct_field *q = t->fields; q; q = q->next) {    // the members left out
                 int written = 0;
@@ -2704,6 +2730,7 @@ static void declare_local(decl *d)
         if (st_done && d->binit)    emit_initz(aname, 0, d->dtype, d->binit);
         else if (st_done)           emit_construct_decl(d->dtype, aname, NULL, 0);
         else if (!is_static && d->binit) { g_initz_fill = 1; emit_initz(aname, 0, d->dtype, d->binit); g_initz_fill = 0; }
+        else if (!is_static && d->vinit) emit_value_init(aname, d->dtype);           // T v[N] = {};
         else if (!is_static)        emit_construct_decl(d->dtype, aname, NULL, 0);   // objects: each element
     } else if (d->dtype && d->dtype->kind == TY_STRUCT) {
         emit("#array %s %d %d", aname, agg_fill_code(d->dtype), type_size_words(d->dtype));
@@ -2714,11 +2741,15 @@ static void declare_local(decl *d)
         else if (is_static)     { /* storage only, nothing to run */ }
         else if (d->binit)      { g_initz_fill = 1; emit_initz(aname, 0, d->dtype, d->binit); g_initz_fill = 0; }
         else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
+        else if (d->vinit)      emit_value_init(aname, d->dtype);                         // T v{}; / T v = {};
         else if (ct->tag) emit_construct_decl(ct, aname, d->ctor_args, d->n_ctor_args);
     } else if (d->init && (!is_static || st_done)) {
         if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
         else gen_expr_to(d->init, d->dtype);
         emit("SET %s", aname);
+    } else if (d->vinit && !is_static) {
+        // int x{}; float f{}; T *p{}: the float zero is the 0.0 constant
+        emit("LOD %s", agg_fill_code(d->dtype) == 2 ? "0.0" : "0"); emit("SET %s", aname);
     }
     if (st_done) emit_static_guard_close(aname, st_done);
     free(aname);
