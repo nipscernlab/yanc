@@ -153,4 +153,30 @@ xcopy %SRC_DIR%\Compilers\CPPComp\Includes Header /I /Q /Y
 :: .bat + .sh) -- none of which belong in the deploy: Aurora drives the
 :: compile/simulate pipeline from its own UI, not from these runners.
 
+:: ----------------------------------------------------------------------------
+:: Stamp the deploy with Aurora's pinned YANC tag ------------------------------
+:: ----------------------------------------------------------------------------
+::
+:: The deploy above wipes bin\, and with it bin\.yanc-version. Without that
+:: marker, the next `npm start` in Aurora runs download-yanc.js, finds no stamp
+:: matching its pinned YANC_TAG, re-downloads that release and silently
+:: overwrites the build we just deployed. Writing the pinned tag here makes
+:: Aurora treat the local build as already installed, so the build from this
+:: checkout survives every `npm start`.
+::
+:: The tag is read from Aurora's own download-yanc.js, so this keeps working
+:: when Aurora bumps the pin. If Aurora bumps it after this script ran, the
+:: next `npm start` re-downloads the release once; run this script again.
+
+set YANC_PIN=
+for /f "tokens=2 delims='" %%T in ('findstr /r /c:"^const YANC_TAG" "%BLD_DIR%\Scripts\download-yanc.js"') do set YANC_PIN=%%T
+
+if defined YANC_PIN (
+    >"%BLD_DIR%\bin\.yanc-version" echo %YANC_PIN%
+    echo Stamped bin\.yanc-version with Aurora's pinned tag %YANC_PIN%.
+) else (
+    echo WARNING: could not read YANC_TAG from %BLD_DIR%\Scripts\download-yanc.js.
+    echo          The next `npm start` may replace this build with the pinned release.
+)
+
 cd %SRC_DIR%
