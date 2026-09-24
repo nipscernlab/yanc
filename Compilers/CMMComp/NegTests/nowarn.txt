@@ -1,0 +1,6 @@
+# No-warning manifest for regress.sh's CMM negative phase: each fixture is a
+# VALID .cmm that cmmcomp must compile (exit 0) without printing the listed
+# substring -- a spurious diagnostic.
+#
+# format:  <fixture.cmm>|<forbidden substring>
+const_idx_read_used.cmm|isn't being used

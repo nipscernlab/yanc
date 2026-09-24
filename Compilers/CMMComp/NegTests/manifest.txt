@@ -15,3 +15,6 @@ garbage.cmm|Syntax error
 undeclared.cmm|declared the variable
 define_recursive.cmm|declare the variable
 nugain_not_pow2.cmm|power of two
+const_idx_scalar_read.cmm|ain't an array
+const_idx_2d_read.cmm|has two dimensions
+const_idx_scalar_write.cmm|isn't an array

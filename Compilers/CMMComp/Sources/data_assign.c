@@ -278,6 +278,12 @@ void ass_set(int id, expr e)
 // assignments here; every other shape still goes through ass_array.
 void ass_array_const(int id, int k, expr e)
 {
+    // the same checks as ass_array (a write does not mark the array used)
+    if (v_table[id].type == 0)
+        {fprintf (stderr, MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+    if (v_table[id].isar == 0)
+        {fprintf (stderr, MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+
     if (e.id != 0) add_instr("LOD %s\n", v_table[e.id].name);  // rhs -> acc
     add_instr("SET_V %s %d\n", v_table[id].name, k);
     acc_ok = 0;  // acc released

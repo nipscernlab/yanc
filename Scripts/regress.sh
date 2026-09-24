@@ -789,6 +789,27 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             pass=$((pass+1))
         fi
     done < "$neg_dir/manifest.txt"
+    # the reverse: a valid program that must compile WITHOUT a given message
+    # (a spurious warning), format <fixture.cmm>|<forbidden substring>
+    while IFS='|' read -r fixture forbid; do
+        fixture="${fixture%$'\r'}"; forbid="${forbid%$'\r'}"
+        case "$fixture" in ''|\#*) continue ;; esac
+        name="nowarn:${fixture%.cmm}"
+        rm -rf "$neg_work"; mkdir -p "$neg_work/Software" "$neg_work/tmp"
+        cp "$neg_dir/$fixture" "$neg_work/Software/p.cmm"
+        out="$("$CMMCOMP" -en -i p.cmm -n p -p "$neg_work" -m "$MACROS" -t "$neg_work/tmp" 2>&1)"
+        rc=$?
+        if [ "$rc" -ne 0 ]; then
+            echo "FAIL ($name): rejected (exit $rc), should compile"
+            fail=$((fail+1)); failed_names+=("$name")
+        elif printf '%s' "$out" | grep -qF "$forbid"; then
+            echo "FAIL ($name): printed '$forbid'"
+            fail=$((fail+1)); failed_names+=("$name")
+        else
+            echo "PASS ($name): compiled without \"$forbid\""
+            pass=$((pass+1))
+        fi
+    done < "$neg_dir/nowarn.txt"
     rm -rf "$neg_work"
 fi
 

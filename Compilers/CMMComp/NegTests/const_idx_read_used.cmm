@@ -1,0 +1,18 @@
+#PRNAME p
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// No-warning fixture: an array read only through constant indices (LOD_V,
+// arr_1d2exp_const) is used and must not be reported as unused.
+void main()
+{
+    int a[4];
+    a[0] = 5;
+    out(0, a[0]);
+}

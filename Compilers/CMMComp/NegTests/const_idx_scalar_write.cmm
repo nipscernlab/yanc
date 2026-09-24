@@ -1,0 +1,18 @@
+#PRNAME p
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Negative fixture: a store with a constant index into a scalar. The
+// constant-index store (SET_V, ass_array_const) must reject it like ass_array.
+void main()
+{
+    int x;
+    x[0] = 5;
+    out(0, x);
+}

@@ -8,6 +8,19 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Fixed
+- **An array read only through constant indices is no longer reported as
+  unused, and a constant index is checked like a variable one** (`cmmcomp`,
+  `arr_1d2exp_const` in `array_index.c`, `ass_array_const` in
+  `data_assign.c`). The direct-addressing fast path (`LOD_V`/`SET_V`, commit
+  `d4d9f06`) copied only the emit of the general path: it never set
+  `v_table[].used`, so `out(0, a[0])` warned that `a` was unused, and it
+  skipped the checks, so `x[0]` on a scalar and `m[1]` on a 2D array compiled
+  silently where `x[k]` and `m[k]` are refused. The assembly of a valid program
+  is unchanged. The CMM negative phase of `regress.sh` gains three rejected
+  fixtures and a second manifest, `NegTests/nowarn.txt`: valid programs that
+  must compile without a given message.
+
 ### Changed
 - **Zeroing what a local brace initializer leaves out takes 7 instructions a
   word instead of 12** (`cppcomp`, `emit_zero_words` in `codegen.c`). The loop

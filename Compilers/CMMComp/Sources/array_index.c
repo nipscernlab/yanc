@@ -714,6 +714,15 @@ void arr_2d_index(int id, expr e1, expr e2)
 // choice. The walker routes only int-array / 1D-forward reads here.
 expr arr_1d2exp_const(int id, int k)
 {
+    // the same checks and use mark as arr_1d2exp
+    if (v_table[id].type == 0)
+        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+    if (v_table[id].isar == 0)
+        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+    if (v_table[id].isar == 2)
+        {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+    v_table[id].used = 1;
+
     if (acc_ok) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);
     else        add_instr(  "LOD_V %s %d\n", v_table[id].name, k);
     acc_ok = 1;  // value now in the accumulator

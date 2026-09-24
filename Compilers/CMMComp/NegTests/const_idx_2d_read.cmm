@@ -1,0 +1,18 @@
+#PRNAME p
+#NUBITS 16
+#NDSTAC 4
+#SDEPTH 4
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// Negative fixture: one constant index on a 2D array. The constant-index
+// read (LOD_V, arr_1d2exp_const) must reject it like the variable-index path.
+void main()
+{
+    int m[2][2];
+    m[0][0] = 1;
+    out(0, m[1]);
+}
