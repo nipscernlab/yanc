@@ -9,6 +9,15 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **Zeroing what a local brace initializer leaves out takes 7 instructions a
+  word instead of 12** (`cppcomp`, `emit_zero_words` in `codegen.c`). The loop
+  kept two counters, an index going up and a count going down; it now keeps
+  one index walking down to the first word, entering the loop in the
+  accumulator (`SET`, `STI` and `JIZ` leave it alone): 7 instructions a word
+  when the run starts at word 0 or 1, 8 otherwise. Found by a cycle profile
+  of `test46`, where `float scratch[2400] = {0.0f}` was 38 % of the run:
+  **76 261 -> 64 184 cycles, 15.8 % fewer**, same output, 14 instructions
+  smaller. `test77` covers the three shapes of the exit test.
 - **The inliner also expands a class template's `operator[]`, and the write
   side `a[i] = x`** (`cppcomp`, `codegen.c`). A class template's methods are
   clones kept in `g_inst[]`, not in the unit's function list, so the lookup

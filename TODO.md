@@ -14,7 +14,7 @@ Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 10 architecture hardening (from the HDL audit), 12 a run-time exception
 strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
 small accessors in cppcomp, 15 the regress not being trustworthy on this
-machine. Item 11, consistency at 32 bits, is
+machine, 16 value-initialized locals in cppcomp. Item 11, consistency at 32 bits, is
 closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
@@ -30,9 +30,11 @@ closed** (2026-09-21): `INT_MIN / -1` agrees on both simulators, an input
 word at or above 2^31 keeps its bits, `T x(N::v);` declares an object, and
 a `static` local is built on first use. **Next in the suggested order:
 15 → 14 → 5 → 6(a) → 9** — 15 first because until a run is repeatable no
-board tells a real regression from noise. 14: the inliner is complete; it
-gains 0.13 % on test46, so the real next step there is a cycle profile of
-test46 to find where its time actually goes.
+board tells a real regression from noise. 14: the cycle profile of test46
+is done and paid 15.8 % at once (the zero-fill loop); the next candidate it
+names is the Cholesky inner loop of `solve_spd`, a third of the run now.
+16 is a correctness bug the profile work turned up: a local `= {}` / `{}`
+is not re-zeroed on the second call.
 
 ---
 
@@ -407,7 +409,7 @@ count are reported per program so the saving is visible.
 ## 14. Inline small leaf accessors (`cppcomp`): what is left
 
 **Status:** both landed -- the core in `fdcc070`, the two remaining cases on
-2026-09-24; what is left is the profile below · **Area:** `Compilers/CPPComp/Sources/codegen.c`
+2026-09-24; the profile is done, what is left is below · **Area:** `Compilers/CPPComp/Sources/codegen.c`
 
 `fdcc070` expands a tiny accessor at the call site, with copy propagation:
 1.32x on a loop of element accesses. Two cases still called; both are now
@@ -444,18 +446,52 @@ isolate a cost overstates the gain. Measure on a real program, in cycles.
 The cycle-counting bench is in `c:/tmp/yanc-inliner/cycle-bench/` (README
 there); it is a candidate for `Scripts/hw/` if it keeps being useful.
 
-**Next step, and the one that finds real gains:** a per-instruction PROFILE
-of `test46` -- how many times each program address executes, mapped to the
-source line through `pc_*_mem.txt` / `trad_cmm.txt`. The Verilator harness
-sees the program counter every cycle, so it is a counter array in
-`sim_cyc.cpp`. That says where the 76 000 cycles actually go, instead of
-guessing at what to expand next.
+**The profile of `test46` (2026-09-24).** A Verilator harness counts the
+cycles the fetch address (`pc_sim_val`, exposed with `+define+YANC_TRACE`)
+spends on each program word; a script maps the words to functions and source
+lines through the `.asm`, `pc_*_mem.txt` and `trad_cmm.txt`. Both are in the
+cycle bench (`build_prof.sh`, `prof_report.py`). Of 76 311 cycles:
+
+| function | before | after the zero-fill fix |
+|---|---|---|
+| `main`, all of it `float scratch[2400] = {0.0f}` | 38.2 % | 26.6 % |
+| `solve_spd` (Cholesky) | 28.0 % | 33.2 % |
+| `inverse_tikhonov_calibrated` | 15.2 % | 18.0 % |
+| `sqrt` (the user's 24-step Newton loop) | 9.0 % | 10.7 % |
+| `convolve_full` | 7.9 % | 9.4 % |
+
+The zero-fill loop was 12 instructions a word and is now 7: 76 261 -> 64 184
+cycles, 15.8 %, in one small change -- against 0.13 % for the whole inliner.
+
+**Next, if wanted:** the Cholesky inner loop `s -= a[i*n+k] * a[j*n+k]` is 20
+instructions an iteration and recomputes `i*n` and `j*n` for every `k`.
+Hoisting the loop-invariant products (or stepping a pointer) belongs with the
+pre-assembly optimizer, item 13. `sqrt` is the user's own code: nothing for
+the compiler there.
 
 **Also possible, small:** the expanded access still stores `this` into a word
 nobody reads afterwards (`SET <fn>_this`); dropping that dead store takes an
 access from five instructions to four.
 
-**Done when:** the profile of `test46` has named where its time goes.
+## 16. A value-initialized local is not re-zeroed (`cppcomp`)
+
+**Status:** found 2026-09-24, not fixed · **Area:** `Compilers/CPPComp/Sources/CPPComp.y`, `codegen.c`
+
+`int a[8] = {};`, `P q = {};` and `P p{};` as locals emit no code: the
+grammar rules build the declaration with no initializer ("leave memory at its
+.mif default"). A local keeps fixed storage, so that holds only on the first
+call; the second call finds the previous call's values. Measured with a
+function called twice: all three forms keep the old values. A list with at
+least one item (`= {0}`) is correct -- the omitted words are zeroed.
+
+The fix must not skip a user-written default constructor: `T v{}` on a class
+with one still has to call it. Plan: mark the declaration as value-initialized
+in the parser; in the codegen, zero the storage of a non-static local before
+constructing it when the type has no user constructor. A `static` local and a
+global need nothing (the .mif is zero).
+
+**Done when:** the three forms re-zero on every call, a class with a default
+constructor still runs it, and a fixture covers both.
 
 ## 15. The regress is not trustworthy on this machine
 

@@ -2510,18 +2510,22 @@ static void emit_zero_words(const char *base, int off, int n)
         for (int i = 0; i < n; i++) { emit("LOD %d", off + i); emit("PSH"); emit("LOD 0"); emit("STI %s", base); }
         return;
     }
+    // one index, walking down from the last word to `off`, and the loop enters
+    // with it in acc (SET, STI and JIZ leave acc alone): 7 instructions a word
+    // when off == 0, 8 otherwise, where two counters took 12
     int id = ++label_n;
-    char *zi = new_temp("zwi"), *zk = new_temp("zwk");
-    emit("LOD %d", off); emit("SET %s", zi);
-    emit("LOD %d", n);   emit("SET %s", zk);
+    char *zi = new_temp("zwi");
+    emit("LOD %d", off + n - 1); emit("SET %s", zi);
     emit("@Lzw_t%d NOP", id);
-    emit("LOD %s", zk); emit("JIZ Lzw_e%d", id);                          // while zk != 0
-    emit("LOD %s", zi); emit("PSH"); emit("LOD 0"); emit("STI %s", base);
-    emit("LOD %s", zi); emit("ADD 1");  emit("SET %s", zi);
-    emit("LOD %s", zk); emit("ADD -1"); emit("SET %s", zk);
+    emit("PSH"); emit("LOD 0"); emit("STI %s", base);                      // base[zi] = 0
+    emit("LOD %s", zi);
+    if (off) emit("ADD %d", -off);
+    emit("JIZ Lzw_e%d", id);                                               // until zi == off
+    if (off != 1) emit("ADD %d", off - 1);
+    emit("SET %s", zi);
     emit("JMP Lzw_t%d", id);
     emit("@Lzw_e%d NOP", id);
-    free(zi); free(zk);
+    free(zi);
 }
 
 // a sub-object of type t at word off that the braced list left out: its default
