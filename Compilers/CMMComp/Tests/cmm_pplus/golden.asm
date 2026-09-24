@@ -10,8 +10,6 @@ NOP
 #NUGAIN 128
 #array a 1 4
 #array b 1 9
-LOD 3
-SET b_arr_size
 #array f 2 2
 #array hist 1 4
 #array s 1 6
@@ -77,39 +75,39 @@ P_LOD_V a 3
 S_ADD
 OUT 0
 LOD  1
-MLT  b_arr_size
+MLT  3
 ADD  2
 P_LOD 5
 STI b
 LOD  1
-MLT  b_arr_size
+MLT  3
 ADD  2
 PSH
 LDI b
 ADD 1
 STI b
 LOD 1
-MLT b_arr_size
+MLT 3
 ADD 2
 LDI b
 OUT 0
 LOD 1
 SET main_j
-MLT  b_arr_size
+MLT  3
 ADD  main_j
 PSH
 LDI b
 ADD 1
 STI b
 LOD  main_j
-MLT  b_arr_size
+MLT  3
 ADD  main_j
 PSH
 LDI b
 ADD 1
 STI b
 LOD 1
-MLT b_arr_size
+MLT 3
 ADD 1
 LDI b
 OUT 0
@@ -175,7 +173,7 @@ F_MLT 10.0
 F2I
 OUT 0
 LOD  1
-MLT  b_arr_size
+MLT  3
 ADD  1
 PSH
 LDI b
@@ -185,7 +183,7 @@ ADD -1
 SET main_r
 OUT 0
 LOD 1
-MLT b_arr_size
+MLT 3
 ADD 1
 LDI b
 OUT 0

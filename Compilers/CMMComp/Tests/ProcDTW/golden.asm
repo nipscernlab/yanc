@@ -8,8 +8,6 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #array dtw 1 5625
-LOD 75
-SET dtw_arr_size
 #array data_ref 1 75
 #array data 1 75
 @main LOD 75
@@ -80,7 +78,7 @@ EQU j
 S_LAN
 JIZ Lif2else
 LOD  k
-MLT  dtw_arr_size
+MLT  75
 ADD  j
 P_LOD k
 LDI data
@@ -91,7 +89,7 @@ S_ADD
 ABS
 STI dtw
 LOD k
-MLT dtw_arr_size
+MLT 75
 ADD j
 LDI dtw
 OUT 2
@@ -103,7 +101,7 @@ GRE j
 S_LAN
 JIZ Lif3else
 LOD  k
-MLT  dtw_arr_size
+MLT  75
 ADD  j
 P_LOD k
 LDI data
@@ -115,13 +113,13 @@ ABS
 P_NEG_M 1
 ADD j
 P_LOD k
-MLT   dtw_arr_size
+MLT   75
 S_ADD
 LDI   dtw
 S_ADD
 STI dtw
 LOD k
-MLT dtw_arr_size
+MLT 75
 ADD j
 LDI dtw
 OUT 2
@@ -132,7 +130,7 @@ EQU j
 S_LAN
 JIZ Lif4else
 LOD  k
-MLT  dtw_arr_size
+MLT  75
 ADD  j
 P_LOD k
 LDI data
@@ -143,13 +141,13 @@ S_ADD
 ABS
 P_NEG_M 1
 ADD k
-MLT dtw_arr_size
+MLT 75
 ADD j
 LDI dtw
 S_ADD
 STI dtw
 LOD k
-MLT dtw_arr_size
+MLT 75
 ADD j
 LDI dtw
 OUT 2
@@ -162,7 +160,7 @@ S_LAN
 JIZ Lif5else
 NEG_M 1
 ADD k
-MLT dtw_arr_size
+MLT 75
 ADD j
 LDI dtw
 SET menor
@@ -170,7 +168,7 @@ OUT 2
 NEG_M 1
 ADD j
 P_LOD k
-MLT   dtw_arr_size
+MLT   75
 S_ADD
 LDI   dtw
 GRE menor
@@ -178,7 +176,7 @@ JIZ Lif6else
 NEG_M 1
 ADD j
 P_LOD k
-MLT   dtw_arr_size
+MLT   75
 S_ADD
 LDI   dtw
 SET menor
@@ -188,7 +186,7 @@ ADD k
 P_NEG_M 1
 ADD j
 SET_P aux_var
-MLT   dtw_arr_size
+MLT   75
 ADD   aux_var
 LDI   dtw
 OUT 2
@@ -197,7 +195,7 @@ ADD k
 P_NEG_M 1
 ADD j
 SET_P aux_var
-MLT   dtw_arr_size
+MLT   75
 ADD   aux_var
 LDI   dtw
 GRE menor
@@ -207,13 +205,13 @@ ADD k
 P_NEG_M 1
 ADD j
 SET_P aux_var
-MLT   dtw_arr_size
+MLT   75
 ADD   aux_var
 LDI   dtw
 SET menor
 OUT 2
 @Lif7else LOD  k
-MLT  dtw_arr_size
+MLT  75
 ADD  j
 P_LOD k
 LDI data
@@ -225,7 +223,7 @@ ABS
 ADD menor
 STI dtw
 LOD k
-MLT dtw_arr_size
+MLT 75
 ADD j
 LDI dtw
 OUT 2
@@ -242,7 +240,7 @@ ADD k
 P_NEG_M 1
 ADD j
 SET_P aux_var
-MLT   dtw_arr_size
+MLT   75
 ADD   aux_var
 LDI   dtw
 SET val_final
@@ -251,7 +249,7 @@ ADD k
 P_NEG_M 1
 ADD j
 SET_P aux_var
-MLT   dtw_arr_size
+MLT   75
 ADD   aux_var
 LDI   dtw
 LES 36000

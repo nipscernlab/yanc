@@ -10,8 +10,6 @@ NOP
 #array x 2 4
 #array w 2 4
 #array P 2 16
-LOD 4
-SET P_arr_size
 JMP main
 @rls_update SET rls_update_d
 LOD w

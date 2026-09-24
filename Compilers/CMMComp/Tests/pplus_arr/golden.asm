@@ -10,8 +10,6 @@ NOP
 #NUGAIN 128
 @main #array main_a 1 4
 #array main_b 1 16
-LOD 4
-SET main_b_arr_size
 @Lwh1 INN 0
 SET main_idx
 PSH
@@ -19,7 +17,7 @@ LDI main_a
 ADD 1
 STI main_a
 LOD  main_idx
-MLT  main_b_arr_size
+MLT  4
 ADD  main_idx
 PSH
 LDI main_b

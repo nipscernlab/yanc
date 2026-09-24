@@ -9,11 +9,7 @@ NOP
 #NBEXPO 6
 #NUGAIN 128
 #array A 2 16
-LOD 4
-SET A_arr_size
 #array B 2 16
-LOD 4
-SET B_arr_size
 #array a 2 4
 #array b 2 4
 @main LOD 1.0

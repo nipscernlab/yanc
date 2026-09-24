@@ -9,6 +9,24 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **A value-initialized local is zeroed on every call** (`cppcomp`,
+  `CPPComp.y` + `codegen.c`, TODO 16). `int a[8] = {};`, `P q = {};`,
+  `P p{};`, `int x{};` and `float f{};` as locals emitted nothing: the grammar
+  left them to the `.mif`'s zero, which a local, with its fixed storage, only
+  has on the first call. The declaration is now marked value-initialized; a
+  type that is constructed (a constructor, or a vtable) is zeroed and then
+  constructed, so a user default constructor still runs; any other type goes
+  through the empty braced list (zeros plus default member initializers).
+- **A float zeroed by a brace initializer equals `0.0f`** (`cppcomp`,
+  `emit_zero_words`). The zero-fill stored the integer word 0, which is zero
+  in arithmetic but not the `0.0` constant (the encoder gives it the most
+  negative exponent, and `EQU` compares words): in `float a[6] = {1.0f};`,
+  `a[3] == 0.0f` was false. The fill now picks the zero the way the `.mif`
+  of a global does (`agg_fill_code`), so a local and a global agree.
+- **A class template's constructor runs for a local** (`cppcomp`,
+  `resolve_ctor`). Its constructors are clones in `g_inst`, which the lookup
+  did not search: `TC<int> t;` and `TA<int> u(5);` ran no constructor at all.
+  `test78` covers the three.
 - **A mid-run reset now restarts the program in every case** (`HDL/core.v`,
   `prefetch`). Instruction memory reads synchronously, so the word fetched on
   the reset edge is the first one executed after it -- and during `rst` the
@@ -77,6 +95,14 @@ tags consumed by Aurora.
   valid program that must print that text (two fixtures, local and global).
 
 ### Changed
+- **A 2D array index multiplies by the row size as a constant** (`cmmcomp`,
+  `array_index.c`, `data_declar.c`). Each 2D array had a data word
+  `<name>_arr_size`, filled at run time where the array was declared
+  (`LOD 75; SET dtw_arr_size`), and every index read it (`MLT dtw_arr_size`).
+  The row size is a constant of the declaration, so the index now multiplies
+  by it directly (`MLT 75`): two instructions and one data word fewer per 2D
+  array, no cycle more per access. In `dirac_assign` and `proc_rls` the word
+  was filled and never read.
 - **cmmcomp emits 209 fewer instructions over 53 examples, about 6.5 % of
   its own output** (`ast.c`, `oper.c`; C±'s point is lean code):
   - `while (1)` / `do ... while (1)` no longer test the constant (2

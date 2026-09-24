@@ -168,7 +168,7 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
         printf(MSG_WARN_ARRAY_FILE_LOCAL, line_num+1, rem_fname(v_table[id_var].name, fname), v_table[id_fname].name);
 }
 
-// Walker-time half: `#array` directive + the LOD/SET arr_size helper instrs.
+// Walker-time half: the `#array` directive.
 void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
 {
     int type = v_table[id_var].type;
@@ -198,10 +198,8 @@ void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
             add_sinst(0, "#arrays %s 4 %d %s\n", v_table[idi].name,    size, v_table[id_fname].name);
         }
     }
-
-    // helper variable: x-dimension size, used by 2D index flattening
-    add_instr("LOD %s\n",          v_table[id_y  ].name);
-    add_instr("SET %s_arr_size\n", v_table[id_var].name);
+    // no helper variable: 2D index flattening multiplies by the row size as
+    // a constant (MLT <siz2>), so the declaration emits no instruction
 }
 
 // Public entry.
