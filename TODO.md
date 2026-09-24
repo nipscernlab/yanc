@@ -12,7 +12,9 @@ history stays in git and in the CHANGELOG).
 
 Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 10 architecture hardening (from the HDL audit), 12 a run-time exception
-strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer. Item 11, consistency at 32 bits, is
+strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
+small accessors in cppcomp, 15 the regress not being trustworthy on this
+machine. Item 11, consistency at 32 bits, is
 closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
@@ -27,7 +29,9 @@ Yosys *and* Quartus all accept silently. The two decisions below are taken:
 closed** (2026-09-21): `INT_MIN / -1` agrees on both simulators, an input
 word at or above 2^31 keeps its bits, `T x(N::v);` declares an object, and
 a `static` local is built on first use. **Next in the suggested order:
-5 → 6(a) → 9.**
+15 → 14 → 5 → 6(a) → 9** — 15 first because until a run is repeatable no
+board tells a real regression from noise, and 14 is written and measured
+but unfinished (`c:/tmp/yanc-inliner/`).
 
 ---
 
@@ -398,6 +402,79 @@ names into one is all the tool has to do, and the memory saving follows.
 assembles and simulates identically on every fixture, under both simulators;
 temporaries share memory by liveness; and the instruction count and data-word
 count are reported per program so the saving is visible.
+
+## 14. Inline small leaf accessors (`cppcomp`)
+
+**Status:** written and measured, NOT finished, NOT committed (2026-09-22) · **Area:** `Compilers/CPPComp/Sources/codegen.c` · **Evidence:** below, and `c:/tmp/yanc-inliner/README.md`
+
+A call to a tiny function costs far more than the work it does. Two programs
+doing the same 3232 element accesses and printing the same 49600:
+
+| variant | instructions | cycles |
+|---|---|---|
+| through a class `operator[]` | 61 | **78 991** |
+| native array | 48 | **46 703** |
+
+Ten cycles per access, 1.69x on the whole program. That is the bulk of the
+known "C± runs about 3x faster than C++ on the same algorithm".
+
+**What exists** (122 lines; patch and notes in `c:/tmp/yanc-inliner/`, also
+`git stash@{0}` in the local clone; applies cleanly on `167eca0`): a call to a
+non-virtual, non-recursive, non-template function whose body is exactly one
+`return <expr>;`, with scalar parameters and no call inside, is pasted at the
+call site instead of called. Hooked into the method-call path and the
+overloaded-subscript path. The 77 C++ tests compile and the hot loop loses
+its `CAL`.
+
+**Why it is not finished.** The win is 20 %, not 80 %: the arguments still go
+through the callee's parameter words, so the body stores them and reloads them
+immediately. The missing piece is copy propagation -- when an argument is
+already a simple variable, bind the parameter to THAT name instead of copying
+(one `st_add` with the caller's asm name, guarded by the body not modifying
+the parameter). Two cases also still call: `operator[]` of a class TEMPLATE,
+and the write path `a[i] = i`, which goes through `gen_addr`'s own `op_index`
+sites. And the end-to-end speedup of what is written was never timed: the
+baseline run was interrupted.
+
+**Done when:** copy propagation lands, both remaining cases inline, the gain
+is measured in CYCLES (not static instructions) on a benchmark and on
+`test46`, and the full regress is green.
+
+## 15. The regress is not trustworthy on this machine
+
+**Status:** characterised, not fixed (2026-09-22) · **Area:** `Scripts/regress.sh`, the machine · **Evidence:** below
+
+Seven full runs in one session; only ONE came back clean. Each other run
+failed on a DIFFERENT set of 3-8 heavy float tests, with `vvp exited non-zero`
+or empty/truncated output. That matters beyond the annoyance: a run no longer
+distinguishes a real regression from noise, and the whole-program optimiser of
+item 13 is exactly the kind of change that can miscompile silently.
+
+What is known, measured:
+- the same `.vvp`, re-run in the same directory, alternates exit 0 / exit 1;
+- nothing on stderr and no Icarus error, so the process is dying, not failing;
+- a failed run leaves the VCD truncated (`cmm_tan`: 4.47 MB of the 5.36 MB a
+  good run writes), i.e. it dies mid-simulation;
+- it tracks machine memory: the one clean run was with the machine free (19
+  min for 134 tests); the bad ones had 1-2 GB free of 15.5 GB and a single
+  simulation took 70 s, about 8x slower.
+
+**NOT the waveform writer, measured:** the same testbench with all 16
+`$dumpvars` commented out runs in the same time (69.9/69.0 s against
+72.0/68.2 s). Gating the dump behind `+WAVE` would save 215 MB of disk per run
+and nothing else. The truncated VCD is a symptom of dying mid-run, not the
+cause; do not repeat that inference.
+
+**Related, and free:** the working tree carries 288 MB that is not versioned
+and regenerates: `.smoke/` (284 MB, of which 215 MB is 118 VCD files nobody
+reads), `Teste/`, and `bin/`. `bin/` is worse than bloat: it goes stale (an
+`appcomp` from June against sources from September) and then silently
+mis-assembles, which has already cost one wrong investigation.
+
+**Meanwhile:** re-run a failing heavy test on its own; if it passes, it is
+this. Free memory on the machine before trusting a board.
+
+**Done when:** a full run is repeatable, or the cause is found and named.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
