@@ -52,6 +52,15 @@ static char *cur_func_name = NULL;
 static type *cur_func_ret  = NULL;
 static type *cur_method_class = NULL;   // class type when emitting a method body
 static unit *cg_unit = NULL;            // the translation unit (for overload resolution)
+// instantiated template clones -- a class template's methods and a function
+// template's instances -- each with a unique asm_label. Filled by
+// get_instance() / instantiate_ctmpl_methods(), emitted after @fim.
+static func *g_inst[256]; static int g_n_inst = 0;
+// the inliner (defined further down, next to gen_expr) is also used by
+// gen_addr, which comes first in this file
+static func *func_by_label(const char *lbl);
+static expr *inlinable_body(func *f);
+static int   inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_args);
 static type *infer_type(expr *e);       // (also forward-declared below; needed early here)
 
 // inside a method, an unqualified name that isn't a local/param but IS a data
@@ -927,6 +936,14 @@ static void gen_addr(expr *e)
             char *masm = resolve_method(bt, "op_index");
             if (masm) {
                 sym *ms = st_find(masm);
+                {   // the WRITE side of a tiny operator[] (`a[i] = x`): the
+                    // expanded body of a reference-returning accessor yields
+                    // the element's address, which is this lvalue's address
+                    func *cf = func_by_label(masm);
+                    expr *bd = cf ? inlinable_body(cf) : NULL;
+                    if (bd && cf->ret && cf->ret->is_ref &&
+                        inline_call(cf, bd, e->a, &e->b, 1)) { free(masm); return; }
+                }
                 gen_addr(e->a); emit("PSH");              // this = &obj
                 type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
                 gen_arg(e->b, pt);
@@ -1473,6 +1490,13 @@ static func *func_by_label(const char *lbl)
     if (!cg_unit || !lbl) return NULL;
     for (int i = 0; i < cg_unit->n_funcs; i++) {
         func *f = cg_unit->funcs[i];
+        if (f->asm_label && !strcmp(f->asm_label, lbl) && f->body) return f;
+    }
+    // a class template's methods (and function-template instances) are
+    // clones kept in g_inst, not in the unit's function list: without this,
+    // `std::array`-style code never had its operator[] expanded
+    for (int i = 0; i < g_n_inst; i++) {
+        func *f = g_inst[i];
         if (f->asm_label && !strcmp(f->asm_label, lbl) && f->body) return f;
     }
     return NULL;
@@ -3590,7 +3614,8 @@ static stmt *clone_stmt(stmt *s, type **a, int n)
 // instantiated template clones (each with a unique asm_label); their bodies are
 // emitted after @fim (reached only via CAL), draining the list as new instances
 // appear during emission.
-static func *g_inst[256]; static int g_n_inst = 0;
+// (g_inst / g_n_inst are declared near cg_unit, at the top: the inliner
+//  looks instances up long before this point in the file)
 
 static func *find_template(const char *name)
 {

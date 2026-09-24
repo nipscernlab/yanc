@@ -9,6 +9,19 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **The inliner also expands a class template's `operator[]`, and the write
+  side `a[i] = x`** (`cppcomp`, `codegen.c`). A class template's methods are
+  clones kept in `g_inst[]`, not in the unit's function list, so the lookup
+  never found them: identical code was expanded for a plain class and called
+  for a template, which is the form real C++ uses. The address path
+  (`gen_addr`) had its own subscript call site; a reference-returning
+  accessor's expanded body yields the element's address, which is the
+  lvalue's. On a template benchmark: 78 991 -> 59 791 cycles. On `test46`
+  (the blind deconvolution): all five `operator[]` calls are gone for +2
+  instructions, but **76 360 -> 76 261 cycles, only 0.13 %** -- that program
+  spends its time in float arithmetic, the linear solve and the convolution,
+  not in element access. Kept for the consistency; a cycle profile of
+  `test46` is the next step (`TODO.md` item 14).
 - **A tiny accessor is pasted at the call site instead of called** (`cppcomp`,
   `codegen.c`). A call to a small function costs far more than the work it
   does: `a[i]` through a class `operator[]` was four instructions at the call

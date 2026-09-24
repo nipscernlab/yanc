@@ -30,8 +30,9 @@ closed** (2026-09-21): `INT_MIN / -1` agrees on both simulators, an input
 word at or above 2^31 keeps its bits, `T x(N::v);` declares an object, and
 a `static` local is built on first use. **Next in the suggested order:
 15 → 14 → 5 → 6(a) → 9** — 15 first because until a run is repeatable no
-board tells a real regression from noise; 14's core landed (1.32x on
-element access) and only the template and write-path cases are left.
+board tells a real regression from noise. 14: the inliner is complete; it
+gains 0.13 % on test46, so the real next step there is a cycle profile of
+test46 to find where its time actually goes.
 
 ---
 
@@ -403,35 +404,58 @@ assembles and simulates identically on every fixture, under both simulators;
 temporaries share memory by liveness; and the instruction count and data-word
 count are reported per program so the saving is visible.
 
-## 14. Inline small leaf accessors (`cppcomp`): the rest
+## 14. Inline small leaf accessors (`cppcomp`): what is left
 
-**Status:** the core LANDED (2026-09-23, see the CHANGELOG); two cases left · **Area:** `Compilers/CPPComp/Sources/codegen.c`
+**Status:** both landed -- the core in `fdcc070`, the two remaining cases on
+2026-09-24; what is left is the profile below · **Area:** `Compilers/CPPComp/Sources/codegen.c`
 
-A tiny accessor is now pasted at the call site, with copy propagation for
-arguments that are plain scalar variables. Measured on a loop of 3232 element
-accesses: 79 003 -> 59 799 cycles, 1.32x, closing 59 % of the gap to a native
-array. Still calling instead of expanding:
+`fdcc070` expands a tiny accessor at the call site, with copy propagation:
+1.32x on a loop of element accesses. Two cases still called; both are now
+fixed:
 
-- **`operator[]` of a class TEMPLATE.** Only a plain class's method is
-  expanded. Either `func_by_label()` does not find the instantiated method or
-  `inlinable_body()` refuses it -- not yet known which. Class templates are
-  type-erased in cppcomp, so the instantiated method may not sit in
-  `cg_unit->funcs` under that asm label. `std::array`-style code, i.e. most
-  real C++, goes through this path, so it is the bigger of the two.
-- **The write path, `a[i] = x`.** It goes through `gen_addr`, which has its
-  own `op_index` call sites (search `codegen.c` for `"op_index"`).
+- **`operator[]` of a class template.** The instantiated methods are clones
+  kept in `g_inst[]`, not in `cg_unit->funcs`, so `func_by_label()` never
+  found them. Fix: search `g_inst` too (its declaration moves up next to
+  `cg_unit`, and the three inliner helpers get forward declarations).
+- **The write path, `a[i] = x`.** `gen_addr`'s own overloaded-subscript site
+  now expands too: a reference-returning accessor yields the element's
+  address, which is exactly the lvalue's.
 
-Also worth doing: the expanded access still stores `this` into a word nobody
-reads afterwards (`SET <fn>_this`). Dropping that dead store would take the
+Regress with it: the C++ phase 76/76; three C± failures that passed when
+re-run (item 15 -- cmmcomp is untouched by this change).
+
+**The measurement that matters:**
+
+| program | before | after |
+|---|---|---|
+| template benchmark, 3232 accesses | 78 991 cycles | 59 791 |
+| `test46` (blind deconvolution), real | 76 360 cycles | **76 261 (-0.13 %)** |
+
+`test46` loses all five `operator[]` calls for +2 instructions, but gains
+almost nothing: it spends its time in float arithmetic, the linear solve and
+the convolution, and its five accesses sit in loops of fifteen. The change is
+correct and nearly free, and it removes a real inconsistency (identical code
+expanded for a plain class and not for a template, which is the form real C++
+uses) -- but as an optimisation it does not pay on the one real program
+measured. Committed for the consistency, with the 0.13 % stated.
+
+**The lesson for every optimisation after this one:** a benchmark written to
+isolate a cost overstates the gain. Measure on a real program, in cycles.
+The cycle-counting bench is in `c:/tmp/yanc-inliner/cycle-bench/` (README
+there); it is a candidate for `Scripts/hw/` if it keeps being useful.
+
+**Next step, and the one that finds real gains:** a per-instruction PROFILE
+of `test46` -- how many times each program address executes, mapped to the
+source line through `pc_*_mem.txt` / `trad_cmm.txt`. The Verilator harness
+sees the program counter every cycle, so it is a counter array in
+`sim_cyc.cpp`. That says where the 76 000 cycles actually go, instead of
+guessing at what to expand next.
+
+**Also possible, small:** the expanded access still stores `this` into a word
+nobody reads afterwards (`SET <fn>_this`); dropping that dead store takes an
 access from five instructions to four.
 
-**Measure in cycles, not static instructions**: expansion grows code where a
-call site runs once and pays back only in loops. The benchmark and the
-cycle-counting harness are described in the CHANGELOG entry's history and in
-`c:/tmp/yanc-inliner/README.md`.
-
-**Done when:** both cases expand, the gain is measured in cycles on a real
-test (not only the benchmark), and the full regress is green.
+**Done when:** the profile of `test46` has named where its time goes.
 
 ## 15. The regress is not trustworthy on this machine
 
@@ -463,6 +487,17 @@ and regenerates: `.smoke/` (284 MB, of which 215 MB is 118 VCD files nobody
 reads), `Teste/`, and `bin/`. `bin/` is worse than bloat: it goes stale (an
 `appcomp` from June against sources from September) and then silently
 mis-assembles, which has already cost one wrong investigation.
+
+**Latest (2026-09-24), and what the machine looked like:** another run, three
+C± failures (`cmm_fround1`, `cmm_fround2`, `cmm_hyper`), all passing when
+re-run. At that moment the whole machine used about 3 % of its 22 cores, but
+had **1.0 GB free of 15.5 GB**: the slowness is paging, not CPU. What held the
+memory: VS Code 4.6 GB (41 processes, five windows), Claude Code 2.6 GB (20
+processes: seven sessions in VS Code plus the desktop app), `node` 2.2 GB,
+Chrome 1.2 GB. Some of it was idle for hours -- the desktop app (619 MB) and
+two old sessions, found by the last-write time of each session's transcript
+under `~/.claude/projects/<folder>/<session-id>.jsonl`. That is the quickest
+way to see which sessions are only holding memory.
 
 **Meanwhile:** re-run a failing heavy test on its own; if it passes, it is
 this. Free memory on the machine before trusting a board.
