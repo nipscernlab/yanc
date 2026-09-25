@@ -51,7 +51,7 @@ SET pow_r
 SET main_r
 F2I_M main_r
 OUT 0
-I2F_M 2
+LOD 2.0
 SET pow_b
 F_MLT pow_b
 SET pow_b

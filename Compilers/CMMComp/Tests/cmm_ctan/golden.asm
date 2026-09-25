@@ -11,9 +11,7 @@ NOP
 #SHARE ctan_eb ctan_tb
 #SHARE ctan_chb ctan_ta
 #SHARE ctan_shb ctan_tb
-#SHARE ctan_d ctan_emb
-#SHARE ctan_re ctan_ta
-#SHARE ctan_im ctan_tb
+#SHARE ctan_d ctan_ta
 #SHARE main_c_i ctan_ta
 #SHARE main_c ctan_tb
 #SHARE main_z ctan_ta
@@ -40,8 +38,7 @@ LOD ctan_ta
 CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
@@ -49,8 +46,7 @@ CAL float_exp
 SET ctan_eb
 F_DIV 1.0
 SET ctan_emb
-LOD ctan_eb
-F_ADD ctan_emb
+F_ADD ctan_eb
 F_MLT 0.5
 SET ctan_chb
 LOD ctan_eb
@@ -61,12 +57,8 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
-SET ctan_re
-LOD ctan_d
+P_LOD ctan_d
 F_DIV ctan_shb
-SET ctan_im
-LOD ctan_re
-P_LOD ctan_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -86,8 +78,7 @@ LOD ctan_ta
 CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
@@ -95,8 +86,7 @@ CAL float_exp
 SET ctan_eb
 F_DIV 1.0
 SET ctan_emb
-LOD ctan_eb
-F_ADD ctan_emb
+F_ADD ctan_eb
 F_MLT 0.5
 SET ctan_chb
 LOD ctan_eb
@@ -107,12 +97,8 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
-SET ctan_re
-LOD ctan_d
+P_LOD ctan_d
 F_DIV ctan_shb
-SET ctan_im
-LOD ctan_re
-P_LOD ctan_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -136,8 +122,7 @@ LOD ctan_ta
 CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
@@ -145,8 +130,7 @@ CAL float_exp
 SET ctan_eb
 F_DIV 1.0
 SET ctan_emb
-LOD ctan_eb
-F_ADD ctan_emb
+F_ADD ctan_eb
 F_MLT 0.5
 SET ctan_chb
 LOD ctan_eb
@@ -157,12 +141,8 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
-SET ctan_re
-LOD ctan_d
+P_LOD ctan_d
 F_DIV ctan_shb
-SET ctan_im
-LOD ctan_re
-P_LOD ctan_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -195,8 +175,7 @@ LOD ctan_ta
 CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
@@ -204,8 +183,7 @@ CAL float_exp
 SET ctan_eb
 F_DIV 1.0
 SET ctan_emb
-LOD ctan_eb
-F_ADD ctan_emb
+F_ADD ctan_eb
 F_MLT 0.5
 SET ctan_chb
 LOD ctan_eb
@@ -216,12 +194,8 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
-SET ctan_re
-LOD ctan_d
+P_LOD ctan_d
 F_DIV ctan_shb
-SET ctan_im
-LOD ctan_re
-P_LOD ctan_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -241,8 +215,7 @@ LOD ctan_ta
 CAL float_sin
 SET ctan_s2a
 LOD ctan_ta
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 SET ctan_c2a
 LOD ctan_tb
@@ -250,8 +223,7 @@ CAL float_exp
 SET ctan_eb
 F_DIV 1.0
 SET ctan_emb
-LOD ctan_eb
-F_ADD ctan_emb
+F_ADD ctan_eb
 F_MLT 0.5
 SET ctan_chb
 LOD ctan_eb
@@ -262,12 +234,8 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
-SET ctan_re
-LOD ctan_d
+P_LOD ctan_d
 F_DIV ctan_shb
-SET ctan_im
-LOD ctan_re
-P_LOD ctan_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0

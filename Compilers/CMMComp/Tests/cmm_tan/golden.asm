@@ -37,7 +37,7 @@ F_MLT 1000.0
 SET main_r
 F2I_M main_r
 OUT 0
-F_NEG_M 0.7853982
+LOD -0.7853982
 CAL float_tan
 F_MLT 1000.0
 SET main_r

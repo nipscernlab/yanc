@@ -37,7 +37,7 @@ F_MLT 1000.0
 SET main_r
 F2I_M main_r
 OUT 0
-F_NEG_M 1.0
+LOD -1.0
 SET cosh_x
 CAL float_exp
 SET cosh_t
@@ -73,7 +73,7 @@ F_MLT 1000.0
 SET main_r
 F2I_M main_r
 OUT 0
-F_NEG_M 1.0
+LOD -1.0
 SET sinh_x
 CAL float_exp
 SET sinh_t

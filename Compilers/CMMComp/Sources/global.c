@@ -240,6 +240,20 @@ void add_instr(char *inst, ...)
     va_end  (args);
 
     // ------------------------------------------------------------------------
+    // an int literal converted at run time is just a float literal ------------
+    // ------------------------------------------------------------------------
+    // "I2F_M 3" -> "LOD 3.0" (and the P_ form): same word, no conversion, and a
+    // program that converts nothing else no longer needs the I2F block. Only
+    // below 2^NBMANT, where the conversion is exact at every #FROUND level.
+
+    {
+        int  p = (strncmp(str, "P_I2F_M ", 8) == 0) ? 8 : (strncmp(str, "I2F_M ", 6) == 0) ? 6 : 0;
+        long n; char end[8];
+        if (p && sscanf(str + p, "%ld%7s", &n, end) == 1 && labs(n) < (1L << nbmant))
+            snprintf(str, sizeof(str), "%s %ld.0\n", p == 8 ? "P_LOD" : "LOD", n);
+    }
+
+    // ------------------------------------------------------------------------
     // peephole: drop "LOD x" when the accumulator already holds x -------------
     // ------------------------------------------------------------------------
     // acc_name tracks the operand currently in the acc: a plain LOD / P_LOD /

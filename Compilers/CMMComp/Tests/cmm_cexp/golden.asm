@@ -8,7 +8,6 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE cexp_re main_z
 #SHARE main_c_i main_z
 #SHARE main_w cexp_b
 #SHARE main_w_i main_c
@@ -34,11 +33,9 @@ CAL float_sin
 F_MLT cexp_ea
 SET cexp_im
 LOD main_z_i
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 F_MLT cexp_ea
-SET cexp_re
 P_LOD cexp_im
 SET_P main_c_i
 SET main_c
@@ -57,11 +54,9 @@ CAL float_sin
 F_MLT cexp_ea
 SET cexp_im
 LOD 1.570796
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 F_MLT cexp_ea
-SET cexp_re
 P_LOD cexp_im
 SET_P main_c_i
 SET main_c
@@ -80,11 +75,9 @@ CAL float_sin
 F_MLT cexp_ea
 SET cexp_im
 LOD 3.141593
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 F_MLT cexp_ea
-SET cexp_re
 P_LOD cexp_im
 SET_P main_c_i
 SET main_c
@@ -116,11 +109,9 @@ CAL float_sin
 F_MLT cexp_ea
 SET cexp_im
 LOD cexp_b
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 F_MLT cexp_ea
-SET cexp_re
 P_LOD cexp_im
 SET_P main_c_i
 SET main_c
@@ -143,11 +134,9 @@ CAL float_sin
 F_MLT cexp_ea
 SET cexp_im
 LOD main_z_i
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 F_MLT cexp_ea
-SET cexp_re
 P_LOD cexp_im
 SET_P main_c_i
 SET main_c

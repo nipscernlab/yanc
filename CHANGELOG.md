@@ -8,6 +8,23 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **Shorter hand-written templates in cmmcomp, complex math above all.**
+  Same values, fewer instructions: 154 fewer over the C± tests (1.5 %;
+  `proc_fft` -36, `cmm_csincos` -38, `cmm_ctan` -30). A float or comp literal
+  is negated at compile time (`x - (3+4i)` adds `-3-4i` instead of negating
+  both parts at run time; never an int literal, which the compiler keeps
+  non-negative, and never a zero part, whose sign F_NEG would set); `I2F_M` of
+  an int literal below 2^NBMANT becomes a float literal (no I2F block needed
+  for it); the constant-index `LOD_V`/`SET_V` path now covers float and comp
+  arrays (reading `ca[2]` 4 -> 2 instructions, storing 7 -> 4); complex
+  `exp`/`sin`/`cos`/`tan`/`atan` build their result without temporaries
+  (`sin(z)` 31 -> 23) and `cos(x)` is `F_SU2 pi/2` (one instruction less).
+  Checked by simulating 137 changed templates against the old compiler on
+  random inputs (outputs and every user variable's value sequence equal);
+  the seven C± sim goldens that grew only gained lines at the end, because
+  their `while (1)` loops fit more iterations in the same clock budget.
+
 ### Added
 - **Scalars that are never alive at the same time share one data word**
   (TODO 13, C± first). cmmcomp runs a whole-program liveness pass on the

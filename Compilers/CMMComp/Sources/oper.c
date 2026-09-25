@@ -28,6 +28,31 @@ expr oper_neg(expr e)
     char  neg[10]; if (acc_ok == 0) strcpy( neg,   "NEG_M"); else strcpy( neg,  "P_NEG_M");
     char fneg[10]; if (acc_ok == 0) strcpy(fneg, "F_NEG_M"); else strcpy(fneg, "PF_NEG_M");
 
+    // a float or comp literal needs no instruction: its negation is another
+    // literal (-2.5 is loaded as such, x - (3+4i) adds -3-4i). Not an int one: the
+    // compiler holds int literals non-negative (exec_inum, exec_pow's exponent
+    // loop). Not when a float part is zero either: "-0.0" encodes as +0, and
+    // F_NEG_M 0.0 gives -0 (TODO.md item 4)
+    if (e.type == 2 && e.id != 0 && v_table[e.id].isco)
+    {
+        char *nm = v_table[e.id].name, txt[sizeof(v_table[0].name) + 2];
+        if (atof(nm) != 0.0)
+        {
+            if (nm[0] == '-') snprintf(txt, sizeof txt, "%s" , nm + 1);
+            else              snprintf(txt, sizeof txt, "-%s", nm    );
+            return num2exp(exec_fnum(txt), 2);
+        }
+    }
+    if (e.type == 5)
+    {
+        float re, im; char txt[64];
+        if (sscanf(v_table[e.id].name, "%f %f", &re, &im) == 2 && re != 0.0 && im != 0.0)
+        {
+            snprintf(txt, sizeof txt, "%f%+fi", -re, -im);
+            return num2exp(exec_cnum(txt), 5);
+        }
+    }
+
     // when it is an int variable in memory
     if ((e.type == 1) && (e.id != 0))
     {

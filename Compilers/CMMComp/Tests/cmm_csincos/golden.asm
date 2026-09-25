@@ -9,35 +9,28 @@ NOP
 #NBEXPO 8
 #NUGAIN 128
 #SHARE csin_eb csin_shb
-#SHARE csin_re csin_emb
-#SHARE csin_im csin_ca
 #SHARE main_c_i csin_emb
-#SHARE main_c csin_ca
 #SHARE ccos_eb ccos_shb
 #SHARE ccos_emb csin_emb
-#SHARE ccos_ca main_z
-#SHARE ccos_re main_z
-#SHARE ccos_im csin_emb
 #SHARE main_z_i csin_emb
 #SHARE main_w csin_a
-#SHARE main_w_i csin_ca
+#SHARE main_w_i main_c
 #SHARE csin_b csin_emb
-#SHARE sin_x csin_ca
+#SHARE sin_x main_c
 #SHARE sin_q csin_emb
 #SHARE sin_k csin_emb
-#SHARE sin_r csin_ca
-#SHARE sin_p csin_ca
+#SHARE sin_r main_c
+#SHARE sin_p main_c
 #SHARE exp_x csin_emb
-#SHARE exp_q csin_ca
-#SHARE exp_n csin_ca
+#SHARE exp_q main_c
+#SHARE exp_n main_c
 #SHARE exp_r csin_emb
 @main @Lwh1 LOD 1.000000
 CAL float_exp
 SET csin_eb
 F_DIV 1.0
 SET csin_emb
-LOD csin_eb
-F_ADD csin_emb
+F_ADD csin_eb
 F_MLT 0.5
 SET csin_chb
 LOD csin_eb
@@ -45,21 +38,14 @@ F_SU1 csin_emb
 F_MLT 0.5
 SET csin_shb
 LOD 0.000000
-CAL float_sin
-SET csin_sa
-LOD 0.000000
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 SET csin_ca
-LOD csin_sa
+LOD 0.000000
+CAL float_sin
 F_MLT csin_chb
-SET csin_re
-LOD csin_ca
+P_LOD csin_ca
 F_MLT csin_shb
-SET csin_im
-LOD csin_re
-P_LOD csin_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -74,8 +60,7 @@ CAL float_exp
 SET ccos_eb
 F_DIV 1.0
 SET ccos_emb
-LOD ccos_eb
-F_ADD ccos_emb
+F_ADD ccos_eb
 F_MLT 0.5
 SET ccos_chb
 LOD ccos_eb
@@ -86,18 +71,12 @@ LOD 0.000000
 CAL float_sin
 SET ccos_sa
 LOD 0.000000
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
-SET ccos_ca
 F_MLT ccos_chb
-SET ccos_re
-LOD ccos_sa
+P_LOD ccos_sa
 F_MLT ccos_shb
 F_NEG
-SET ccos_im
-LOD ccos_re
-P_LOD ccos_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -115,8 +94,7 @@ CAL float_exp
 SET csin_eb
 F_DIV 1.0
 SET csin_emb
-LOD csin_eb
-F_ADD csin_emb
+F_ADD csin_eb
 F_MLT 0.5
 SET csin_chb
 LOD csin_eb
@@ -124,21 +102,14 @@ F_SU1 csin_emb
 F_MLT 0.5
 SET csin_shb
 LOD main_z
-CAL float_sin
-SET csin_sa
-LOD main_z
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 SET csin_ca
-LOD csin_sa
+LOD main_z
+CAL float_sin
 F_MLT csin_chb
-SET csin_re
-LOD csin_ca
+P_LOD csin_ca
 F_MLT csin_shb
-SET csin_im
-LOD csin_re
-P_LOD csin_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -156,8 +127,7 @@ CAL float_exp
 SET ccos_eb
 F_DIV 1.0
 SET ccos_emb
-LOD ccos_eb
-F_ADD ccos_emb
+F_ADD ccos_eb
 F_MLT 0.5
 SET ccos_chb
 LOD ccos_eb
@@ -168,18 +138,12 @@ LOD main_z
 CAL float_sin
 SET ccos_sa
 LOD main_z
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
-SET ccos_ca
 F_MLT ccos_chb
-SET ccos_re
-LOD ccos_sa
+P_LOD ccos_sa
 F_MLT ccos_shb
 F_NEG
-SET ccos_im
-LOD ccos_re
-P_LOD ccos_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -208,8 +172,7 @@ CAL float_exp
 SET csin_eb
 F_DIV 1.0
 SET csin_emb
-LOD csin_eb
-F_ADD csin_emb
+F_ADD csin_eb
 F_MLT 0.5
 SET csin_chb
 LOD csin_eb
@@ -217,21 +180,14 @@ F_SU1 csin_emb
 F_MLT 0.5
 SET csin_shb
 LOD csin_a
-CAL float_sin
-SET csin_sa
-LOD csin_a
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 SET csin_ca
-LOD csin_sa
+LOD csin_a
+CAL float_sin
 F_MLT csin_chb
-SET csin_re
-LOD csin_ca
+P_LOD csin_ca
 F_MLT csin_shb
-SET csin_im
-LOD csin_re
-P_LOD csin_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0

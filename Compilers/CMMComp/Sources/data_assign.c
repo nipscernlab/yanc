@@ -274,8 +274,10 @@ void ass_set(int id, expr e)
 // Stores into arr[k] directly with the SET_V pseudo-instruction (the assembler
 // bakes the offset k into a plain SET to arr_base+k), so there is no index to
 // materialise, no stack push and no indirect STI -- one fewer instruction than
-// the ass_array path. The walker routes only int-array / int-rhs / 1D-forward
-// assignments here; every other shape still goes through ass_array.
+// the ass_array path. The walker routes only 1D-forward assignments whose rhs
+// has the array's own type here (comp: a variable, a literal or the acc, whose
+// imag half is stored first and then popped off the real half); every other
+// shape still goes through ass_array.
 void ass_array_const(int id, int k, expr e)
 {
     // the same checks as ass_array (a write does not mark the array used)
@@ -285,6 +287,27 @@ void ass_array_const(int id, int k, expr e)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
     if (v_table[id].isar == 2)   // arr_1d_index refuses it on the general path
         {fprintf (stderr, MSG_ERR_ARRAY_2D, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+
+    if (v_table[id].type == 3)
+    {
+        if (e.id != 0)                                          // comp var or literal
+        {
+            expr er, ei;
+            if (e.type == 5) get_cmp_cst(e, &er, &ei); else get_cmp_ets(e, &er, &ei);
+            add_instr("LOD %s\n"     , v_table[er.id].name);
+            add_instr("SET_V %s %d\n", v_table[id].name, k);
+            add_instr("LOD %s\n"     , v_table[ei.id].name);
+            add_instr("SET_V %s_i %d\n", v_table[id].name, k);
+        }
+        else                                                    // comp in the acc
+        {
+            add_instr("SET_V %s_i %d\n", v_table[id].name, k);
+            add_instr("POP\n");
+            add_instr("SET_V %s %d\n", v_table[id].name, k);
+        }
+        acc_ok = 0;  // acc released
+        return;
+    }
 
     if (e.id != 0) add_instr("LOD %s\n", v_table[e.id].name);  // rhs -> acc
     add_instr("SET_V %s %d\n", v_table[id].name, k);

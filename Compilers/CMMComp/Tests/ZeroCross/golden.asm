@@ -60,7 +60,7 @@ OUT 2
 #ITRAD
 F_INN 1
 SET sinal_entrada
-I2F_M 0
+LOD 0.0
 EQU sinal_entrada
 JIZ Lif1else
 LOD 0.0000001

@@ -729,7 +729,6 @@ expr exec_exp(expr e)
         }
 
         const char *EA = v_table[exec_id("cexp_ea")].name;   // exp(a)
-        const char *RE = v_table[exec_id("cexp_re")].name;   // result real part
         const char *IM = v_table[exec_id("cexp_im")].name;   // result imag part
 
         // ea = exp(a)
@@ -746,11 +745,9 @@ expr exec_exp(expr e)
         // re = exp(a) * cos(b)
         add_instr("LOD %s\n", B);                        // acc = b
         exec_cos(expr_make(2, 0));                       // acc = cos(b)
-        add_instr("F_MLT %s\n", EA);                     // acc = exp(a)*cos(b)
-        add_instr("SET %s\n", RE);
+        add_instr("F_MLT %s\n", EA);                     // acc = re = exp(a)*cos(b)
 
-        // assemble the complex result: real in acc, imag on the stack
-        add_instr("LOD %s\n",   RE);                     // acc = re
+        // assemble the complex result: real on the stack, imag in acc
         add_instr("P_LOD %s\n", IM);                     // push re; acc = im -> comp in acc
 
         acc_ok = 1;
@@ -1152,8 +1149,6 @@ expr exec_atan(expr e)
 
         const char *A2  = v_table[exec_id("catan_a2" )].name;   // a²
         const char *B2  = v_table[exec_id("catan_b2" )].name;   // b²
-        const char *WR  = v_table[exec_id("catan_wr" )].name;   // 1 - a² - b²
-        const char *WI  = v_table[exec_id("catan_wi" )].name;   // 2a
         const char *BP  = v_table[exec_id("catan_bp" )].name;   // b+1
         const char *BM  = v_table[exec_id("catan_bm" )].name;   // b-1
         const char *NUM = v_table[exec_id("catan_num")].name;   // a²+(b+1)²
@@ -1170,15 +1165,10 @@ expr exec_atan(expr e)
         add_instr("SET %s\n", B2);
 
         // Re = 1/2 * atan2(2a, 1 - a² - b²)
-        add_instr("LOD %s\n", A2);
-        add_instr("F_ADD %s\n", B2);                     // a² + b²
-        add_instr("F_SU2 1.0\n");                        // 1 - (a²+b²)   (F_SU2 X = X - acc)
-        add_instr("SET %s\n", WR);
-        add_instr("LOD %s\n", A);
-        add_instr("F_MLT 2.0\n");                        // 2a
-        add_instr("SET %s\n", WI);
-        add_instr("LOD %s\n",   WR);                     // rebuild the comp wr + wi*i in the acc
-        add_instr("P_LOD %s\n", WI);                     // acc = wi(imag), stack = wr(real)
+        add_instr("F_ADD %s\n", A2);                     // b² + a² (acc holds b²; both >= 0, so the order is free)
+        add_instr("F_SU2 1.0\n");                        // wr = 1 - (a²+b²)   (F_SU2 X = X - acc)
+        add_instr("P_LOD %s\n", A);                      // push wr (real); acc = a
+        add_instr("F_MLT 2.0\n");                        // wi = 2a (imag) -> comp wr + wi*i in the acc
         exec_fase(expr_make(3, 0));                      // atan2(2a, 1-a²-b²)
         add_instr("F_MLT 0.5\n");
         add_instr("SET %s\n", RE);
@@ -1308,10 +1298,7 @@ expr exec_sin(expr e)
         const char *EMB = v_table[exec_id("csin_emb")].name;   // e^-b
         const char *CHB = v_table[exec_id("csin_chb")].name;   // cosh b
         const char *SHB = v_table[exec_id("csin_shb")].name;   // sinh b
-        const char *SA  = v_table[exec_id("csin_sa" )].name;   // sin a
         const char *CA  = v_table[exec_id("csin_ca" )].name;   // cos a
-        const char *RE  = v_table[exec_id("csin_re" )].name;   // result real
-        const char *IM  = v_table[exec_id("csin_im" )].name;   // result imag
 
         // e^b (single exponential), e^-b = 1/e^b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
@@ -1321,20 +1308,16 @@ expr exec_sin(expr e)
         add_instr("SET %s\n", EMB);
 
         // cosh b = (e^b + e^-b)/2 ; sinh b = (e^b - e^-b)/2
-        add_instr("LOD %s\n", EB); add_instr("F_ADD %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);
+        add_instr("F_ADD %s\n", EB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);  // acc holds e^-b already
         add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
 
-        // sin a, cos a
-        add_instr("LOD %s\n", A); exec_sin(expr_make(2, 0)); add_instr("SET %s\n", SA);
+        // cos a first, so sin a is still in the acc for the real part
         add_instr("LOD %s\n", A); exec_cos(expr_make(2, 0)); add_instr("SET %s\n", CA);
+        add_instr("LOD %s\n", A); exec_sin(expr_make(2, 0));
 
-        // re = sin a * cosh b ; im = cos a * sinh b
-        add_instr("LOD %s\n", SA); add_instr("F_MLT %s\n", CHB); add_instr("SET %s\n", RE);
-        add_instr("LOD %s\n", CA); add_instr("F_MLT %s\n", SHB); add_instr("SET %s\n", IM);
-
-        // assemble the complex result: real in acc, imag on the stack
-        add_instr("LOD %s\n",   RE);
-        add_instr("P_LOD %s\n", IM);
+        // re = sin a * cosh b, pushed; im = cos a * sinh b -> comp in acc
+        add_instr("F_MLT %s\n", CHB);
+        add_instr("P_LOD %s\n", CA); add_instr("F_MLT %s\n", SHB);
 
         acc_ok = 1;
         return expr_make(3, 0);
@@ -1443,8 +1426,6 @@ expr exec_tan(expr e)
         const char *CHB = v_table[exec_id("ctan_chb")].name;   // cosh 2b
         const char *SHB = v_table[exec_id("ctan_shb")].name;   // sinh 2b
         const char *D   = v_table[exec_id("ctan_d"  )].name;   // denominator
-        const char *RE  = v_table[exec_id("ctan_re" )].name;   // result real
-        const char *IM  = v_table[exec_id("ctan_im" )].name;   // result imag
 
         // 2a, 2b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -1459,19 +1440,15 @@ expr exec_tan(expr e)
         // e^(2b), e^(-2b) = 1/e^(2b); cosh 2b, sinh 2b
         add_instr("LOD %s\n", TB); exec_exp(expr_make(2, 0)); add_instr("SET %s\n", EB);
         add_instr("F_DIV 1.0\n");  add_instr("SET %s\n", EMB);                         // e^(-2b)
-        add_instr("LOD %s\n", EB); add_instr("F_ADD %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);
+        add_instr("F_ADD %s\n", EB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);  // acc holds e^-b already
         add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
 
         // D = cos 2a + cosh 2b
         add_instr("LOD %s\n", C2A); add_instr("F_ADD %s\n", CHB); add_instr("SET %s\n", D);
 
-        // Re = sin 2a / D ; Im = sinh 2b / D   (F_DIV X = X/acc)
-        add_instr("LOD %s\n", D); add_instr("F_DIV %s\n", S2A); add_instr("SET %s\n", RE);
-        add_instr("LOD %s\n", D); add_instr("F_DIV %s\n", SHB); add_instr("SET %s\n", IM);
-
-        // assemble the complex result: real in acc, imag on the stack
-        add_instr("LOD %s\n",   RE);
-        add_instr("P_LOD %s\n", IM);
+        // Re = sin 2a / D, pushed; Im = sinh 2b / D -> comp in acc   (F_DIV X = X/acc)
+        add_instr("LOD %s\n", D);   add_instr("F_DIV %s\n", S2A);
+        add_instr("P_LOD %s\n", D); add_instr("F_DIV %s\n", SHB);
 
         acc_ok = 1;
         return expr_make(3, 0);
@@ -1576,9 +1553,6 @@ expr exec_cos(expr e)
         const char *CHB = v_table[exec_id("ccos_chb")].name;   // cosh b
         const char *SHB = v_table[exec_id("ccos_shb")].name;   // sinh b
         const char *SA  = v_table[exec_id("ccos_sa" )].name;   // sin a
-        const char *CA  = v_table[exec_id("ccos_ca" )].name;   // cos a
-        const char *RE  = v_table[exec_id("ccos_re" )].name;   // result real
-        const char *IM  = v_table[exec_id("ccos_im" )].name;   // result imag
 
         // e^b (single exponential), e^-b = 1/e^b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
@@ -1588,20 +1562,18 @@ expr exec_cos(expr e)
         add_instr("SET %s\n", EMB);
 
         // cosh b = (e^b + e^-b)/2 ; sinh b = (e^b - e^-b)/2
-        add_instr("LOD %s\n", EB); add_instr("F_ADD %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);
+        add_instr("F_ADD %s\n", EB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);  // acc holds e^-b already
         add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
 
-        // sin a, cos a
+        // sin a first, so cos a is still in the acc for the real part
         add_instr("LOD %s\n", A); exec_sin(expr_make(2, 0)); add_instr("SET %s\n", SA);
-        add_instr("LOD %s\n", A); exec_cos(expr_make(2, 0)); add_instr("SET %s\n", CA);
+        add_instr("LOD %s\n", A); exec_cos(expr_make(2, 0));
 
-        // re = cos a * cosh b ; im = -(sin a * sinh b)
-        add_instr("LOD %s\n", CA); add_instr("F_MLT %s\n", CHB); add_instr("SET %s\n", RE);
-        add_instr("LOD %s\n", SA); add_instr("F_MLT %s\n", SHB); add_instr("F_NEG\n"); add_instr("SET %s\n", IM);
-
-        // assemble the complex result: real in acc, imag on the stack
-        add_instr("LOD %s\n",   RE);
-        add_instr("P_LOD %s\n", IM);
+        // re = cos a * cosh b, pushed; im = -(sin a * sinh b) -> comp in acc
+        // (negated after the product, not before: a zero product is +0 and
+        // F_NEG makes it -0, as the old code did)
+        add_instr("F_MLT %s\n", CHB);
+        add_instr("P_LOD %s\n", SA); add_instr("F_MLT %s\n", SHB); add_instr("F_NEG\n");
 
         acc_ok = 1;
         return expr_make(3, 0);
@@ -1622,8 +1594,7 @@ expr exec_cos(expr e)
     if ((e.type == 1) && (e.id != 0))
     {
         add_instr("%s %s\n", i2f, v_table[e.id].name);
-        add_instr("F_NEG\n");
-        add_instr("F_ADD 1.570796327\n");
+        add_instr("F_SU2 1.570796327\n");   // pi/2 - x (F_SU2 X = X - acc, the adder with acc's sign flipped)
         add_instr("CAL float_sin\n");
     }
 
@@ -1631,8 +1602,7 @@ expr exec_cos(expr e)
     if ((e.type == 1) && (e.id == 0))
     {
         add_instr("I2F\n");
-        add_instr("F_NEG\n");
-        add_instr("F_ADD 1.570796327\n");
+        add_instr("F_SU2 1.570796327\n");   // pi/2 - x (F_SU2 X = X - acc, the adder with acc's sign flipped)
         add_instr("CAL float_sin\n");
     }
 
@@ -1640,16 +1610,14 @@ expr exec_cos(expr e)
     if ((e.type == 2) && (e.id != 0))
     {
         add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("F_NEG\n");
-        add_instr("F_ADD 1.570796327\n");
+        add_instr("F_SU2 1.570796327\n");   // pi/2 - x (F_SU2 X = X - acc, the adder with acc's sign flipped)
         add_instr("CAL float_sin\n");
     }
 
     // float in acc
     if ((e.type == 2) && (e.id == 0))
     {
-        add_instr("F_NEG\n");
-        add_instr("F_ADD 1.570796327\n");
+        add_instr("F_SU2 1.570796327\n");   // pi/2 - x (F_SU2 X = X - acc, the adder with acc's sign flipped)
         add_instr("CAL float_sin\n");
     }
 

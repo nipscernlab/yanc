@@ -711,7 +711,8 @@ void arr_2d_index(int id, expr e1, expr e2)
 // no index to materialise and no indirect LDI -- one fewer instruction than
 // arr_1d2exp. P_LOD_V when the accumulator already holds a live value (this
 // read is an operand of a larger expression), mirroring arr_1d2exp's LOD/P_LOD
-// choice. The walker routes only int-array / 1D-forward reads here.
+// choice. A comp array loads the real half, then pushes it and loads the imag
+// half (the comp-in-acc layout). The walker routes only 1D-forward reads here.
 expr arr_1d2exp_const(int id, int k)
 {
     // the same checks and use mark as arr_1d2exp
@@ -725,6 +726,7 @@ expr arr_1d2exp_const(int id, int k)
 
     if (acc_ok) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);
     else        add_instr(  "LOD_V %s %d\n", v_table[id].name, k);
+    if (v_table[id].type == 3) add_instr("P_LOD_V %s_i %d\n", v_table[id].name, k);
     acc_ok = 1;  // value now in the accumulator
     return expr_make(v_table[id].type, 0);
 }

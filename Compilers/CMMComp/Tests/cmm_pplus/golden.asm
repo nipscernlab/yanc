@@ -115,16 +115,14 @@ MLT 3
 ADD 1
 LDI b
 OUT 0
-LOD 1
-P_LOD 2.5
-STI f
+LOD 2.5
+SET_V f 1
 LOD 1
 PSH
 LDI f
 F_ADD 1.0
 STI f
-LOD 1
-LDI f
+LOD_V f 1
 F_MLT 10.0
 F2I
 OUT 0
@@ -157,9 +155,8 @@ SET main_r
 OUT 0
 LOD_V a 3
 OUT 0
-LOD 0
-P_LOD 1.5
-STI f
+LOD 1.5
+SET_V f 0
 LOD 0
 PSH
 LDI f
@@ -171,8 +168,7 @@ SET main_y
 F_MLT 10.0
 F2I
 OUT 0
-LOD 0
-LDI f
+LOD_V f 0
 F_MLT 10.0
 F2I
 OUT 0

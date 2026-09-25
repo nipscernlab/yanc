@@ -115,90 +115,54 @@ JMP Lwh2
 SET fft_mmax
 JMP Lwh1
 @Lwh1end RET
-@main LOD 0
-SET   aux_var
-P_LOD 1.000000
-STI wpv
-LOD   aux_var
-P_LOD 0.000000
-STI wpv_i
-LOD 1
-SET   aux_var
-P_LOD 0.707107
-STI wpv
-LOD   aux_var
-P_LOD 0.707107
-STI wpv_i
-LOD 2
-SET   aux_var
-P_LOD 0.000000
-STI wpv
-LOD   aux_var
-P_LOD 1.000000
-STI wpv_i
-LOD 3
-SET   aux_var
-P_LOD -0.707107
-STI wpv
-LOD   aux_var
-P_LOD 0.707107
-STI wpv_i
-LOD 0
-SET   aux_var
-P_LOD 1.000000
-STI data
-LOD   aux_var
-P_LOD 0.000000
-STI data_i
-LOD 1
-SET   aux_var
-P_LOD 2.000000
-STI data
-LOD   aux_var
-P_LOD 0.000000
-STI data_i
-LOD 2
-SET   aux_var
-P_LOD 3.000000
-STI data
-LOD   aux_var
-P_LOD 0.000000
-STI data_i
-LOD 3
-SET   aux_var
-P_LOD 4.000000
-STI data
-LOD   aux_var
-P_LOD 0.000000
-STI data_i
-LOD 4
-SET   aux_var
-P_LOD 5.000000
-STI data
-LOD   aux_var
-P_LOD 0.000000
-STI data_i
-LOD 5
-SET   aux_var
-P_LOD 6.000000
-STI data
-LOD   aux_var
-P_LOD 0.000000
-STI data_i
-LOD 6
-SET   aux_var
-P_LOD 7.000000
-STI data
-LOD   aux_var
-P_LOD 0.000000
-STI data_i
-LOD 7
-SET   aux_var
-P_LOD 8.000000
-STI data
-LOD   aux_var
-P_LOD 0.000000
-STI data_i
+@main LOD 1.000000
+SET_V wpv 0
+LOD 0.000000
+SET_V wpv_i 0
+LOD 0.707107
+SET_V wpv 1
+LOD 0.707107
+SET_V wpv_i 1
+LOD 0.000000
+SET_V wpv 2
+LOD 1.000000
+SET_V wpv_i 2
+LOD -0.707107
+SET_V wpv 3
+LOD 0.707107
+SET_V wpv_i 3
+LOD 1.000000
+SET_V data 0
+LOD 0.000000
+SET_V data_i 0
+LOD 2.000000
+SET_V data 1
+LOD 0.000000
+SET_V data_i 1
+LOD 3.000000
+SET_V data 2
+LOD 0.000000
+SET_V data_i 2
+LOD 4.000000
+SET_V data 3
+LOD 0.000000
+SET_V data_i 3
+LOD 5.000000
+SET_V data 4
+LOD 0.000000
+SET_V data_i 4
+LOD 6.000000
+SET_V data 5
+LOD 0.000000
+SET_V data_i 5
+LOD 7.000000
+SET_V data 6
+LOD 0.000000
+SET_V data_i 6
+LOD 8.000000
+SET_V data 7
+LOD 0.000000
+SET_V data_i 7
 LOD 8
 CAL fft
 LOD 0

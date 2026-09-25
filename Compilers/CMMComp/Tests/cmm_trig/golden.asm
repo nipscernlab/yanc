@@ -30,8 +30,7 @@ SET main_r
 F2I_M main_r
 OUT 0
 LOD 0.0
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 F_MLT 1000.0
 SET main_r
@@ -44,8 +43,7 @@ SET main_r
 F2I_M main_r
 OUT 0
 LOD 3.1415927
-F_NEG
-F_ADD 1.570796327
+F_SU2 1.570796327
 CAL float_sin
 F_MLT 1000.0
 SET main_r
@@ -63,7 +61,7 @@ F_MLT 1000.0
 SET main_r
 F2I_M main_r
 OUT 0
-F_NEG_M 1.0
+LOD -1.0
 CAL float_atan
 F_MLT 1000.0
 SET main_r

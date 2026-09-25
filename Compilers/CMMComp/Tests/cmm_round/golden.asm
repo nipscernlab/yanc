@@ -26,7 +26,7 @@ SET floor_t
 SET main_r
 F2I_M main_r
 OUT 0
-F_NEG_M 2.3
+LOD -2.3
 SET floor_x
 F2I
 I2F
@@ -55,7 +55,7 @@ SET ceil_t
 SET main_r
 F2I_M main_r
 OUT 0
-F_NEG_M 2.3
+LOD -2.3
 SET ceil_x
 F2I
 I2F
@@ -80,7 +80,7 @@ I2F
 SET main_r
 F2I_M main_r
 OUT 0
-F_NEG_M 2.5
+LOD -2.5
 SET round_x
 LOD 0.5
 F_SGN round_x
@@ -114,7 +114,7 @@ SET floor_t
 SET main_r
 F2I_M main_r
 OUT 0
-F_NEG_M 5.0
+LOD -5.0
 SET ceil_x
 F2I
 I2F

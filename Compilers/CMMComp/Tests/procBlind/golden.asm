@@ -91,9 +91,8 @@ STI h_hat
 ADD 1
 SET project_h_hat_k
 JMP Lwh1
-@Lwh1end LOD 3
-P_LOD 1.0
-STI h_hat
+@Lwh1end LOD 1.0
+SET_V h_hat 3
 RET
 @project_h_cand SET project_h_cand_dummy
 LOD 0
@@ -119,9 +118,8 @@ STI s_h_cand
 ADD 1
 SET project_h_cand_k
 JMP Lwh2
-@Lwh2end LOD 3
-P_LOD 1.0
-STI s_h_cand
+@Lwh2end LOD 1.0
+SET_V s_h_cand 3
 RET
 @lipschitz_x SET lipschitz_x_dummy
 LOD 0.0
@@ -509,9 +507,8 @@ F_MLT 0.5
 SET update_h_dt
 LOD 0
 CAL correlate_residual_x
-LOD 3
-P_LOD 0.0
-STI s_grad_h
+LOD 0.0
+SET_V s_grad_h 3
 LOD update_h_dt
 SET update_h_best_dt
 LOD 0
@@ -630,15 +627,12 @@ LOD fit_ii
 ADD 1
 SET fit_ii
 JMP Lwh30
-@Lwh30end LOD 2
-P_LOD 0.5
-STI h_hat
-LOD 3
-P_LOD 1.0
-STI h_hat
-LOD 4
-P_LOD 0.5
-STI h_hat
+@Lwh30end LOD 0.5
+SET_V h_hat 2
+LOD 1.0
+SET_V h_hat 3
+LOD 0.5
+SET_V h_hat 4
 LOD 0
 SET fit_it
 @Lwh31 LOD 40

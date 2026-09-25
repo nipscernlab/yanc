@@ -8,8 +8,6 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE catan_wr catan_b2
-#SHARE fase_im catan_wi
 #SHARE fase_re catan_b2
 #SHARE fase_t catan_re
 #SHARE catan_bp catan_b2
@@ -17,11 +15,11 @@ NOP
 #SHARE catan_den catan_bm
 #SHARE catan_im catan_a2
 #SHARE main_c_i catan_a2
-#SHARE main_c catan_wi
-#SHARE main_z catan_wi
+#SHARE main_c fase_im
+#SHARE main_z fase_im
 #SHARE main_w catan_b
 #SHARE main_w_i catan_a2
-#SHARE catan_a catan_wi
+#SHARE catan_a fase_im
 #SHARE atan_x catan_b2
 #SHARE atan_big catan_bm
 #SHARE atan_t atan_ax
@@ -41,15 +39,10 @@ SET catan_a2
 LOD 0.000000
 F_MLT 0.000000
 SET catan_b2
-LOD catan_a2
-F_ADD catan_b2
+F_ADD catan_a2
 F_SU2 1.0
-SET catan_wr
-LOD 1.000000
+P_LOD 1.000000
 F_MLT 2.0
-SET catan_wi
-LOD catan_wr
-P_LOD catan_wi
 SET_P fase_im
 SET fase_re
 LOD 0.0
@@ -121,15 +114,10 @@ SET catan_a2
 LOD 0.500000
 F_MLT 0.500000
 SET catan_b2
-LOD catan_a2
-F_ADD catan_b2
+F_ADD catan_a2
 F_SU2 1.0
-SET catan_wr
-LOD 0.000000
+P_LOD 0.000000
 F_MLT 2.0
-SET catan_wi
-LOD catan_wr
-P_LOD catan_wi
 SET_P fase_im
 SET fase_re
 LOD 0.0
@@ -205,15 +193,10 @@ SET catan_a2
 LOD main_z_i
 F_MLT main_z_i
 SET catan_b2
-LOD catan_a2
-F_ADD catan_b2
+F_ADD catan_a2
 F_SU2 1.0
-SET catan_wr
-LOD main_z
+P_LOD main_z
 F_MLT 2.0
-SET catan_wi
-LOD catan_wr
-P_LOD catan_wi
 SET_P fase_im
 SET fase_re
 LOD 0.0
@@ -298,15 +281,10 @@ SET catan_a2
 LOD catan_b
 F_MLT catan_b
 SET catan_b2
-LOD catan_a2
-F_ADD catan_b2
+F_ADD catan_a2
 F_SU2 1.0
-SET catan_wr
-LOD catan_a
+P_LOD catan_a
 F_MLT 2.0
-SET catan_wi
-LOD catan_wr
-P_LOD catan_wi
 SET_P fase_im
 SET fase_re
 LOD 0.0

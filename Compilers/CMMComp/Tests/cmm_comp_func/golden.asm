@@ -100,7 +100,7 @@ LOD 10.000000
 P_LOD 5.000000
 CAL sumri
 OUT 0
-I2F_M 8
+LOD 8.0
 P_LOD 0.0
 CAL echo
 SET_P main_ci_i

@@ -73,12 +73,10 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-F_NEG_M 3.000000
-PF_NEG_M 4.000000
-SET_P aux_var
-F_ADD 1.000000
+LOD 1.000000
+F_ADD -3.000000
 P_LOD 2.000000
-F_ADD aux_var
+F_ADD -4.000000
 SET_P main_r_i
 SET main_r
 F2I_M main_r
