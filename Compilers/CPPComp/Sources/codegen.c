@@ -886,6 +886,68 @@ static void gen_bool(expr *e, const char *jz_target)
     emit("JIZ %s", jz_target);
 }
 
+// Constant folding: an int expression of literals only (a constexpr like
+// `L >> 1` or `FL - 1` arrives as literals) is computed here, in the word's
+// arithmetic -- NUBITS-bit two's complement, wrapping; / and % truncate; >>
+// on a signed int is arithmetic. Not folded: unsigned literals, division by
+// zero, INT_MIN / -1, a shift out of 0..NUBITS-1. The node itself becomes the
+// literal, so a memory-operand form upstream sees a literal too.
+static long cf_wrap(long long v)
+{
+    unsigned long long m = (g_nubits >= 64) ? ~0ULL : ((1ULL << g_nubits) - 1);
+    unsigned long long u = (unsigned long long)v & m;
+    if (g_nubits < 64 && (u >> (g_nubits - 1)) & 1) return (long)(long long)(u | ~m);
+    return (long)u;
+}
+static int cfold(expr *e, long *v)
+{
+    if (!e) return 0;
+    if (e->kind == E_INT_LIT || e->kind == E_CHAR_LIT) {
+        if (e->is_uns) return 0;
+        *v = e->ival; return 1;
+    }
+    long a, b;
+    if (e->kind == E_UNOP) {
+        if (!cfold(e->a, &a)) return 0;
+        switch (e->op) {
+            case OP_NEG:  *v = cf_wrap(-(long long)a); return 1;
+            case OP_POS:  *v = a;                      return 1;
+            case OP_BNOT: *v = cf_wrap(~(long long)a); return 1;
+            case OP_LNOT: *v = !a;                     return 1;
+            default: return 0;
+        }
+    }
+    if (e->kind != E_BINOP || !cfold(e->a, &a) || !cfold(e->b, &b)) return 0;
+    long lmin = -(1L << (g_nubits - 1));
+    switch (e->op) {
+        case OP_ADD:  *v = cf_wrap((long long)a + b); return 1;
+        case OP_SUB:  *v = cf_wrap((long long)a - b); return 1;
+        case OP_MUL:  *v = cf_wrap((long long)a * b); return 1;
+        case OP_DIV:  if (b == 0 || (a == lmin && b == -1)) return 0; *v = a / b; return 1;
+        case OP_MOD:  if (b == 0 || (a == lmin && b == -1)) return 0; *v = a % b; return 1;
+        case OP_BAND: *v = a & b; return 1;
+        case OP_BOR:  *v = a | b; return 1;
+        case OP_BXOR: *v = a ^ b; return 1;
+        case OP_SHL:  if (b < 0 || b >= g_nubits) return 0; *v = cf_wrap((long long)((unsigned long long)a << b)); return 1;
+        case OP_SHR:  if (b < 0 || b >= g_nubits) return 0; *v = a >> b; return 1;
+        case OP_EQ:   *v = a == b; return 1;  case OP_NE: *v = a != b; return 1;
+        case OP_LT:   *v = a <  b; return 1;  case OP_GT: *v = a >  b; return 1;
+        case OP_LE:   *v = a <= b; return 1;  case OP_GE: *v = a >= b; return 1;
+        case OP_LAND: *v = a && b; return 1;  case OP_LOR: *v = a || b; return 1;
+        default: return 0;
+    }
+}
+// fold e in place when it is a literal-only int expression
+static int cfold_node(expr *e)
+{
+    long v;
+    if (!e || (e->kind != E_BINOP && e->kind != E_UNOP) || !cfold(e, &v)) return 0;
+    type *t = infer_type(e);
+    if (!t || t->kind != TY_INT) return 0;
+    e->kind = E_INT_LIT; e->ival = v; e->is_uns = 0; e->a = e->b = NULL;
+    return 1;
+}
+
 // Jump to target when e is TRUE (the test at the bottom of a loop). The ISA
 // only has JIZ (jump if zero), so the value tested must be zero when e holds:
 // an int comparison is inverted (a < b tests a >= b, one instruction with a
@@ -1700,6 +1762,7 @@ static void gen_expr(expr *e)
 {
     if (!e) return;
     infer_type(e);
+    cfold_node(e);                        // literal-only int expression -> a literal
 
     switch (e->kind) {
 
@@ -1970,6 +2033,7 @@ static void gen_expr(expr *e)
         // a <= c is a < c+1, a >= c is a > c-1 (unsigned compares took the
         // sign-flip path above, so this is signed), guarded at the ends.
         const char *opnd = NULL; char litb[32]; long lit = 0; int is_lit = 0;
+        cfold_node(e->b);                     // FL - 1 -> 28: then the literal memory form
         if (mem_form_op && e->b->kind == E_IDENT && lf == rf) {   // mem-form needs matching types
             sym *r = st_find(e->b->sval);
             // not a reference: its word holds the referent's address, and the
