@@ -125,6 +125,21 @@ tags consumed by Aurora.
   valid program that must print that text (two fixtures, local and global).
 
 ### Changed
+- **Integer constant expressions are folded** (`cppcomp`, `cfold`). An int
+  expression of literals only -- a `constexpr` like `L >> 1` or `FL - 1`
+  arrives as literals -- is computed at compile time in the word's
+  arithmetic (32-bit two's complement, wrapping; `/` `%` truncate; signed
+  `>>` arithmetic) and becomes one literal, so a compare against it takes
+  the memory form too (`k < FL - 1` is `GRE 28`). Left to the ALU: division
+  by zero, `INT_MIN / -1`, shifts out of range, unsigned literals. `test46`
+  1 667 -> 1 628 instructions. `test83` checks the edges against host gcc.
+- **The loop-invariant hoist sees more loops** (`cppcomp`, `lih_*`). A
+  variable passed to a function whose parameter is by value can no longer be
+  written by it, so it does not block the hoist (only a reference parameter,
+  or an unknown callee, does); and a lone invariant variable next to a
+  varying part is hoisted too (`h[k + d]` -> `t[k]`). `test46`: 51 540 ->
+  49 710 cycles, 3.5 % fewer (the Toeplitz build and the autocorrelation).
+  `test80` gains a by-value call in the loop and a lone-variable index.
 - **Zeroing a large local brace initializer stores four words a turn**
   (`cppcomp`, `emit_zero_words`). From 16 words up, the `n % 4` lowest words
   are stored singly and the loop covers groups of four top-down, paying its

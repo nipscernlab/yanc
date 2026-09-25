@@ -46,6 +46,19 @@ int sum_empty(int* a, int n, int i)          // zero-trip loop: the hoist runs, 
     for (int k = 0; k < 0; ++k) s += a[i * n + k];
     return s;
 }
+int ident(int v) { return v; }
+int sum_byval(int* a, int n, int i)          // i passed BY VALUE in the loop: hoisted
+{
+    int s = 0;
+    for (int k = 0; k < n; ++k) s += a[i * n + k] + ident(i);
+    return s;
+}
+int sum_lone(int* a, int n, int i)           // a lone invariant variable: a + i hoisted
+{
+    int s = 0;
+    for (int k = 0; k < n; ++k) s += a[k + i];
+    return s;
+}
 int sum_nested(int* a, int n)                // a + j*n hoisted out of both loops
 {
     int s = 0;
@@ -65,4 +78,6 @@ void main(void)
     out(0, sum_base   (M, 6, 2));
     out(0, sum_empty  (M, 6, 2));
     out(0, sum_nested (M, 6));
+    out(0, sum_byval  (M, 6, 2));
+    out(0, sum_lone   (M, 6, 5));
 }

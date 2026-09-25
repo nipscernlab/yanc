@@ -2972,12 +2972,14 @@ static void emit_live_dtors(int mark)
 // inner loop of test46. Only what is provably safe is touched:
 //   - p is a plain pointer local or parameter (not a reference, not in a
 //     stack frame), and the invariant part is int literals and int locals /
-//     parameters combined with + - *, containing at least one operator (a
-//     lone variable does not pay for the temporary);
+//     parameters combined with + - *, with a variable or an operator in it
+//     (a bare literal costs nothing each turn); a lone invariant variable
+//     needs a varying part next to it (h[k + d] -> t[k], t = h + d);
 //   - none of those names is written in the loop (assignment, ++/--, a
-//     declaration inside it, passed as a call argument, address taken), nor
-//     escapes anywhere in the function (address taken, passed to a call,
-//     bound to a reference), so no alias can write it either;
+//     declaration inside it, passed to a reference parameter or to a callee
+//     whose parameters are unknown, address taken), nor escapes anywhere in
+//     the function (the same, or bound to a reference), so no alias can
+//     write it either;
 //   - not in a recursive function (its locals live in a frame), nor in one
 //     with goto / labels / inline asm.
 // The hoisted add runs even when the loop runs zero times: it is pure int
@@ -3019,12 +3021,22 @@ static void lih_scan_expr(expr *e, nameset *s, int written)
     case E_ADDR:
         if (e->a && e->a->kind == E_IDENT) ns_add(s, e->a->sval);
         break;
-    case E_CALL:
-        for (int i = 0; i < e->n_args; i++)
-            if (e->args[i] && e->args[i]->kind == E_IDENT) ns_add(s, e->args[i]->sval);
+    case E_CALL: {
+        // an argument can be written by the callee only through a reference
+        // parameter: a known function whose parameter is by value leaves the
+        // caller's variable alone (an unknown callee is assumed to write)
+        sym *fs = (e->a && e->a->kind == E_IDENT) ? st_find(e->a->sval) : NULL;
+        if (fs && (fs->kind != SK_FUNC || fs->n_params != e->n_args)) fs = NULL;   // another overload: unknown
+        for (int i = 0; i < e->n_args; i++) {
+            if (!e->args[i] || e->args[i]->kind != E_IDENT) continue;
+            int by_value = fs && fs->param_types && i < fs->n_params &&
+                           fs->param_types[i] && !fs->param_types[i]->is_ref;
+            if (!by_value) ns_add(s, e->args[i]->sval);
+        }
         if (e->a && (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER) && e->a->a && e->a->a->kind == E_IDENT)
             ns_add(s, e->a->a->sval);                         // obj.method(): may write obj
         break;
+    }
     default: break;
     }
     lih_scan_expr(e->a, s, written); lih_scan_expr(e->b, s, written); lih_scan_expr(e->c, s, written);
@@ -3104,10 +3116,13 @@ static void lih_rewrite_expr(expr *e, const nameset *w)
     lih_flatten(e->b, t, &n);
     expr *inv = NULL, *var = NULL;
     for (int i = 0; i < n; i++) {
-        if (lih_invariant(t[i], w)) { if (t[i]->kind == E_BINOP) has_op = 1; inv = inv ? ast_binop(OP_ADD, inv, t[i], e->line) : t[i]; }
+        if (lih_invariant(t[i], w)) { if (t[i]->kind != E_INT_LIT) has_op = 1; inv = inv ? ast_binop(OP_ADD, inv, t[i], e->line) : t[i]; }
         else                        var = var ? ast_binop(OP_ADD, var, t[i], e->line) : t[i];
     }
-    if (!inv || !has_op) return;
+    // worth a temporary when the invariant part costs something each turn
+    // (a variable or an operation, not a bare literal) and something varies
+    // (h[k + d] -> t[k] with t = h + d); a whole-invariant index needs an op
+    if (!inv || !has_op || (!var && inv->kind != E_BINOP)) return;
     const char *tmp = NULL;
     for (int i = 0; i < lih_nh; i++)
         if (!strcmp(lih_h[i].base, e->a->sval) && lih_expr_eq(lih_h[i].inv, inv)) tmp = lih_h[i].tmp;
