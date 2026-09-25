@@ -36,9 +36,13 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: não rolou de abrir o arquivo '%s'!!\n", \
       "Error: couldn't open the file '%s' for the life of me!!\n")
 
-#define MSG_ERR_NUGAIN_POW2 \
-    M("Erro: #NUGAIN %d não é potência de dois. norm(x) é x / NUGAIN em hardware: potência de dois vira um deslocamento (~12 níveis de LUT); qualquer outro valor vira um divisor por constante (38 a 70 níveis, medido), o caminho crítico da ALU inteira.\n", \
-      "Error: #NUGAIN %d is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift (~12 LUT levels); anything else becomes a constant divider (38 to 70 levels, measured), the critical path of the whole ALU.\n")
+#define MSG_ERR_BAD_FLOAT \
+    M("Erro: a constante '%s' não é um número.\n", \
+      "Error: the constant '%s' is not a number.\n")
+
+#define MSG_ERR_FLOAT_OVERFLOW \
+    M("Erro: a constante %s não cabe no ponto flutuante do processador (NBMANT %d, NBEXPO %d): o expoente passa do máximo.\n", \
+      "Error: the constant %s does not fit the processor's float (NBMANT %d, NBEXPO %d): its exponent is past the maximum.\n")
 
 #define MSG_ERR_NUGAIN_POW2 \
     M("Erro: #NUGAIN %d não é potência de dois. norm(x) é x / NUGAIN em hardware: potência de dois vira um deslocamento (~12 níveis de LUT); qualquer outro valor vira um divisor por constante (38 a 70 níveis, medido), o caminho crítico da ALU inteira.\n", \

@@ -11,6 +11,6 @@ template <class T> T from_f(T like, float f) { return f; }
 void main(void) {
     unsigned x = 4000000000u;
     out(0, (int)(half(x) >> 16));             // 30517: 2000000000 >> 16
-    out(0, (int)(to_f(x) * 0.001f));          // 4000000
+    out(0, (int)(to_f(x) * 0.001f));          // 3999999: 0.001f's nearest SAPHO value is just below 0.001
     out(0, (int)(from_f(x, 3.5e9f) >> 16));   // 53405: 3500000000 >> 16
 }

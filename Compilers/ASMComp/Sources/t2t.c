@@ -10,6 +10,8 @@
 
 // local includes
 #include "../Headers/eval.h"
+#include "../Headers/messages.h"
+#include "../../common/yanc_num.h"
 
 // converts the integer x to a binary string of length w
 // could be revised to support ints wider than 32 bits
@@ -34,92 +36,27 @@ char *itob(int x, int w)
     return b;
 }
 
-// converts an IEEE-754 32-bit float to "my float"
-// could be revised to convert 64-bit floats too
+// encodes decimal text as a "my float" word: Compilers/common/yanc_num.c
+// reads it exactly (big integers, no host float) and rounds to nearest, ties
+// to even; below the smallest normal the exponent is held at its minimum and
+// the mantissa shifted, flushed to zero at #FROUND >= 1 (the ALU there
+// assumes normalised operands). This used to go through atof: a 24-bit host
+// float first, then a half-up rounding of one more bit -- rounded twice, and
+// one unit high in the last bit for about 1 constant in 6 (pi/2 at 23 bits).
+// *delta (if given) = encoded - exact, for the precision warnings.
 unsigned int f2mf(char *va, float *delta)
 {
-    float f = atof(va);
-
-    if (f == 0.0) return 1 << (nbmant + nbexpo -1);
-
-    int *ifl = (int*)&f;
-
-    // unpack standard IEEE ---------------------------------------------------
-
-    int s =  (*ifl >> 31) & 0x00000001;
-    int e = ((*ifl >> 23) & 0xFF) - 127 - 22;
-    int m = ((*ifl & 0x007FFFFF) + 0x00800000) >> 1;
-
-    // sign -------------------------------------------------------------------
-
-    s = s << (nbmant + nbexpo);
-
-    // exponent ---------------------------------------------------------------
-
-    e = e + (23-nbmant);
-
-    int sh = 0;
-    while (e < -pow(2, nbexpo-1))
-    {
-        e   = e+1;
-        sh = sh+1;
+    yn_float r;
+    if (!yn_encode(va, nbmant, nbexpo, fround, &r)) {
+        fprintf(stderr, MSG_ERR_BAD_FLOAT, va);
+        exit(EXIT_FAILURE);
     }
-
-    // mantissa ---------------------------------------------------------------
-    // one right shift takes the 23-bit mantissa down to nbmant bits plus `sh`
-    // more for a value below the smallest normal number (a denormal). The
-    // shift used to be skipped for nbmant == 23, so a tiny constant kept its
-    // full mantissa at the clamped exponent (1e-33 was encoded as 1.6e-32);
-    // and a shift of 32+ bits is undefined in C (garbage instead of 0).
-
-    int sht = (23-nbmant) + sh;
-    if (sht == 0)
-    {
-        if (*ifl & 0x00000001) m = m+1; // round on the IEEE bit dropped above
+    if (r.overflow) {
+        fprintf(stderr, MSG_ERR_FLOAT_OVERFLOW, va, nbmant, nbexpo);
+        exit(EXIT_FAILURE);
     }
-    else if (sht > 24)
-    {
-        m = 0;                          // below half the smallest denormal
-    }
-    else
-    {
-        int carry = (m >> (sht-1)) & 0x00000001; // rounding carry
-        m = m >> sht;
-        if (carry) m = m+1; // round
-    }
-
-    // renormalize a rounding carry out of the nbmant-bit mantissa -------------
-    // For the largest value just below a power of two the mantissa is all ones
-    // (0x7FFFFF) and rounding pushes it to 0x800000, i.e. one bit past the
-    // field. Left as-is, that bit bleeds into the exponent in `s + e + m` below
-    // and zeroes the mantissa, encoding e.g. 2 - 2^-23 as 0.0. Shift it back
-    // and bump the exponent instead.
-    if (m >> nbmant) { m = m >> 1; e = e + 1; }
-
-    // residual ---------------------------------------------------------------
-
-    float num = (atof(va)<0.0) ? -atof(va) : atof(va); // absolute value of the number
-
-    // underflow ----------------------------------------------------------------
-    // nothing left, or a denormal at #FROUND >= 1: encode the canonical zero.
-    // At those levels the ALU flushes every result below the smallest normal
-    // number to zero and its F_MLT/F_DIV assume normalised operands, so a
-    // denormal constant must not reach it.
-
-    if (m == 0 || (fround >= 1 && m < (1 << (nbmant-1))))
-    {
-        if (delta) *delta = -num;
-        return 1 << (nbmant + nbexpo -1);
-    }
-
-    *delta = m*pow(2,e)-num;
-
-    // assemble ---------------------------------------------------------------
-
-    e = e & ((int)(pow(2,nbexpo)-1));
-    e = e << nbmant;
-
-    return s + e + m;
+    if (delta) *delta = (float)r.delta;
+    return (unsigned int)strtoul(r.bits, NULL, 2);
 }
 
 // converts "my float" (as ascii) back to float

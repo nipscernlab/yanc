@@ -231,7 +231,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex -o ASMComp.c ASMComp.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
         ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-        hdl.c simulacao.c array.c messages.c args.c -lm
+        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c -lm
     rm -f ASMComp.c
     popd >/dev/null
 

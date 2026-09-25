@@ -8,6 +8,26 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Fixed
+- **asmcomp encodes float constants exactly** (TODO 5, step 2 of 5). `f2mf`
+  now calls `yanc_num` instead of `atof`: one rounding, to nearest, ties to
+  even, from the decimal text, where the old path rounded to a 24-bit host
+  float and then half-up once more -- one unit high in the last mantissa bit
+  for 45 of the 264 constants in the test programs (pi/2, 0.001, 0.2, 1/3,
+  the library polynomial coefficients...). A constant that is not a number,
+  or too large for the format, is now an error (it used to become 0, or
+  garbage bits). Outputs that moved, each checked: `cmm_tan`
+  `tan(0.7853982)` 999 -> 1000 (the argument is 3.4e-8 above pi/4, and the
+  test's own comment expects ~1000); `test63` 2000 1000 4000 500 1999 ->
+  1999 999 4000 499 1999 (each decimal rounded once, straight to the 23-bit
+  mantissa, e.g. 1.99999988 is nearer 2 - 2^-22 than 2); `test68` 4000000 ->
+  3999999 (`0.001f`'s nearest value is just below 0.001, and `(int)`
+  truncates); one value of the DTW project 4993 -> 4994; four library tests
+  keep their values and fit a few more turns. Also removes asmcomp's second,
+  identical `MSG_ERR_NUGAIN_POW2`, and puts back the `make install` line of
+  the Makefile header (and `install` in `.PHONY`), which `c5b09f5` removed
+  on the false premise that the target did not exist -- it does.
+
 ### Added
 - **An exact constant encoder, `Compilers/common/yanc_num.c`** (TODO 5,
   step 1 of 5; not wired into any compiler yet). It reads decimal text (with
@@ -43,8 +63,7 @@ tags consumed by Aurora.
   folders with `cp -r`, rebuilt from empty. `aurora.bat` copies that tree
   whole (`xcopy /E`), and only wipes Aurora's folders after the build
   succeeded (a failed build used to leave Aurora with no YANC). The Makefile
-  header documented a `make install` that did not exist; it documents
-  `stage` now. Checked: 27 files, the same set as `yanc-bin-v5.4.zip`.
+  header documents `stage` too. Checked: 27 files, the same set as `yanc-bin-v5.4.zip`.
 - **A C++ reference operand gives its referent's value** (`cppcomp`,
   `codegen.c`). The memory-operand shortcuts for a binary op and for
   `++`/`--` took a reference variable's word as the value, but that word
