@@ -125,6 +125,13 @@ tags consumed by Aurora.
   valid program that must print that text (two fixtures, local and global).
 
 ### Changed
+- **Zeroing a large local brace initializer stores four words a turn**
+  (`cppcomp`, `emit_zero_words`). From 16 words up, the `n % 4` lowest words
+  are stored singly and the loop covers groups of four top-down, paying its
+  control once per four stores: 5 instructions a word where one a turn took 7.
+  `test46` (`float scratch[2400] = {0.0f}`): **56 345 -> 51 540 cycles, 8.5 %
+  fewer**, for 22 more instructions. `test82` covers the four remainders,
+  several start words, int and float, and the words next to the run.
 - **A C± `for` with a literal start and bound tests only at the bottom**
   (`cmmcomp`, `for_bottom_test` in `ast.c`). For `for (k = c0; k OP c1; ...)`
   with int literals and `c0 OP c1` true, the entry test is known to pass, so

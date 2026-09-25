@@ -2627,6 +2627,31 @@ static void emit_zero_words(const char *base, int off, int n, const type *t)
         for (int i = 0; i < n; i++) { emit("LOD %d", off + i); emit("PSH"); emit("LOD %s", zero); emit("STI %s", base); }
         return;
     }
+    if (n >= 16) {
+        // four words a turn: the loop control (the test on zi, its step, the
+        // JMP back) is paid once per four stores, 5 instructions a word where
+        // one a turn takes 7. The n % 4 lowest words are stored singly first;
+        // the loop then covers [lo, off+n-1] top-down, zi the top of a group.
+        int r = n % 4, lo = off + r;
+        for (int i = 0; i < r; i++) { emit("LOD %d", off + i); emit("PSH"); emit("LOD %s", zero); emit("STI %s", base); }
+        int id = ++label_n;
+        char *zi = new_temp("zwi");
+        emit("LOD %d", off + n - 1); emit("SET %s", zi);
+        emit("@Lzw_t%d NOP", id);
+        emit("PSH"); emit("LOD %s", zero); emit("STI %s", base);           // base[zi]   = 0 (acc = zi)
+        for (int j = 1; j < 4; j++) {                                      // base[zi-j] = 0
+            emit("LOD %s", zi); emit("ADD %d", -j);
+            emit("PSH"); emit("LOD %s", zero); emit("STI %s", base);
+        }
+        emit("LOD %s", zi); emit("ADD %d", -(lo + 3));
+        emit("JIZ Lzw_e%d", id);                                           // until zi - 3 == lo
+        emit("ADD %d", lo + 3 - 4);                                        // acc = zi - 4
+        emit("SET %s", zi);
+        emit("JMP Lzw_t%d", id);
+        emit("@Lzw_e%d NOP", id);
+        free(zi);
+        return;
+    }
     // one index, walking down from the last word to `off`, and the loop enters
     // with it in acc (SET, STI and JIZ leave acc alone): 7 instructions a word
     // when off == 0, 8 otherwise, where two counters took 12
