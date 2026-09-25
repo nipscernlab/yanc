@@ -8,6 +8,21 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **An exact constant encoder, `Compilers/common/yanc_num.c`** (TODO 5,
+  step 1 of 5; not wired into any compiler yet). It reads decimal text (with
+  an exponent: `1e-8`, `.5`, `-2.5e-3`) as a ratio of big integers and
+  encodes it into the SAPHO word `{s, e, m}` rounded to nearest, ties to
+  even, with no host `float`/`double` on the way and no C integer ceiling
+  (the word comes out as a bit string); it flags overflow, underflow,
+  denormals and the `#FROUND >= 1` flush. `Scripts/check_yanc_num.py` holds
+  it to an exact Python model (3 750 cases over 32/23/8, 32/25/6, 16/10/5
+  and two narrow formats, including constructed ties and the denormal and
+  overflow edges); `regress.sh` runs it. Measured on the constants of the
+  test programs: 45 of 264 come out one unit lower in the last mantissa bit
+  than today's `f2mf`, which rounds twice (to a host float, then half-up) --
+  e.g. pi/2 at 23 bits is 6 588 397.33 * 2^-22, and `f2mf` gives 6 588 398.
+
 ### Fixed
 - **The regress tells a real failure from a simulation that died**
   (`Scripts/regress.sh`, TODO 15). On a machine short of memory vvp can die

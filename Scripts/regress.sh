@@ -789,6 +789,24 @@ else
     echo "==> ISA table  [skipped: no python3]"
 fi
 
+# ---- 4a1. the exact constant encoder ------------------------------------------
+# Compilers/common/yanc_num.c (TODO.md item 5) against an exact Python model:
+# fixed constants, constructed ties, the denormal / overflow edges and random
+# decimal text, at 32/23/8, 32/25/6, 16/10/5 and two narrow formats.
+if command -v python3 >/dev/null 2>&1; then
+    echo ""
+    echo "==> Constant encoder (yanc_num)"
+    yn_exe="$SCRATCH/yanc_num_test.exe"
+    if gcc -O2 -Wall -Werror -o "$yn_exe" "$ROOT/Compilers/common/yanc_num.c" \
+            "$ROOT/Compilers/common/yanc_num_test.c" >/dev/null 2>&1 \
+       && python3 "$ROOT/Scripts/check_yanc_num.py" "$yn_exe" 3000; then
+        pass=$((pass + 1))
+    else
+        echo "FAIL (yanc_num): the encoder disagrees with the exact model (or did not build)"
+        fail=$((fail + 1)); failed_names+=("yanc_num")
+    fi
+fi
+
 # ---- 4a. every SAPHO block ---------------------------------------------------
 # sapho_all is a program written to instantiate every optional block of the
 # processor. Its sim golden ran in the CMM phase; here: (1) the generated .v
