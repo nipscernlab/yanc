@@ -141,6 +141,20 @@ if [ -f "$SIZE_BASELINE_FILE" ]; then
 fi
 declare -A SIZE_CURRENT
 
+# Up to two retries for a simulation that DIED (TODO.md item 15). On a
+# machine short of memory vvp can die mid-run with no message; the same .vvp
+# re-run then passes (twice in a row was seen once). A simulation that exits
+# non-zero -- or, in the C++ phase, leaves an empty or truncated output (a
+# prefix of the golden) -- is run again; a wrong but complete output fails at
+# once, never retried. Every retried test is listed at the end, so a flake
+# stays visible without failing the board.
+retried_names=()
+vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice at most), 0 if it exits 0
+    retried_names+=("$1")
+    "$VVP" "$2" >/dev/null 2>&1 && return 0
+    "$VVP" "$2" >/dev/null 2>&1
+}
+
 # Examples to exclude from the standalone simulation phase (still run cmmcomp
 # .asm compare AND appcomp/asmcomp so their .v + .mif are available for any
 # downstream project-level link):
@@ -347,6 +361,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         pushd "$tmp" >/dev/null
         "$VVP" "$tmp/$prname.vvp" >/dev/null 2>&1
         vvp_status=$?
+        if [ $vvp_status -ne 0 ]; then vvp_once_more "$prname" "$tmp/$prname.vvp"; vvp_status=$?; fi
         popd >/dev/null
         if [ $vvp_status -ne 0 ]; then
             echo "FAIL ($prname): vvp exited non-zero"
@@ -439,6 +454,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             # for the interactive GTKWave flow.
             "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
             vvp_status=$?
+            if [ $vvp_status -ne 0 ]; then vvp_once_more "$proj" "$proj_tmp/$proj.vvp"; vvp_status=$?; fi
             popd >/dev/null
             if [ $vvp_status -ne 0 ]; then
                 echo "FAIL ($proj): vvp exited non-zero"
@@ -534,6 +550,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             pushd "$rtmp" >/dev/null
             "$VVP" "$rtmp/$rname.vvp" >/dev/null 2>&1
             vvp_status=$?
+            if [ $vvp_status -ne 0 ]; then vvp_once_more "$rtest" "$rtmp/$rname.vvp"; vvp_status=$?; fi
             popd >/dev/null
             if [ $vvp_status -ne 0 ]; then
                 echo "FAIL ($rtest): vvp exited non-zero"
@@ -717,6 +734,18 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             cp "${uproc}_data.mif" "${uproc}_inst.mif" "$tmp/" 2>/dev/null
             pushd "$tmp" >/dev/null
             "$VVP" "$tmp/$prname.vvp" >/dev/null 2>&1
+            vvp_status=$?
+            # died: non-zero, or an empty / truncated output (a strict prefix
+            # of the golden) -- once more (item 15)
+            gold_c="${entry%/}/golden.txt"
+            died=0
+            [ $vvp_status -ne 0 ] && died=1
+            [ ! -s "$out" ] && died=1
+            if [ $died -eq 0 ] && [ -f "$gold_c" ]; then
+                osz=$(wc -c < "$out"); gsz=$(wc -c < "$gold_c")
+                if [ "$osz" -lt "$gsz" ] && head -c "$osz" "$gold_c" | cmp -s - "$out"; then died=1; fi
+            fi
+            [ $died -eq 1 ] && vvp_once_more "$base" "$tmp/$prname.vvp"
             popd >/dev/null
         fi
         if [ ! -f "$out" ]; then
@@ -866,9 +895,12 @@ fi
 # ---- 5. summary ------------------------------------------------------------
 
 echo ""
+if [ "${#retried_names[@]}" -gt 0 ]; then
+    echo "retried (simulation died, TODO.md item 15): $(printf '%s ' "${retried_names[@]}")"
+fi
 echo "===== $pass passed, $fail failed ====="
 if [ "$fail" -ne 0 ]; then
-    echo "failed: ${failed_names[*]}"
+    echo "failed: $(printf '%s ' "${failed_names[@]}")"
     exit 1
 fi
 

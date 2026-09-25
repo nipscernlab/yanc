@@ -29,8 +29,8 @@ Yosys *and* Quartus all accept silently. The two decisions below are taken:
 closed** (2026-09-21): `INT_MIN / -1` agrees on both simulators, an input
 word at or above 2^31 keeps its bits, `T x(N::v);` declares an object, and
 a `static` local is built on first use. **Next in the suggested order:
-15 → 14 → 5 → 6(a) → 9** — 15 first because until a run is repeatable no
-board tells a real regression from noise. 14: the cycle profile of test46
+14 → 5 → 6(a) → 9** — 15 is mitigated (the regress retries a simulation that
+died and lists it), so a board tells a real regression from noise again. 14: the cycle profile of test46
 is done and paid 15.8 % at once (the zero-fill loop), then 5.1 % more (the
 Cholesky inner loop, hoisted); the loop control of every `for` is next.
 Item 16 (value-initialized locals not re-zeroed) landed 2026-09-24 with
@@ -478,7 +478,7 @@ access from five instructions to four.
 
 ## 15. The regress is not trustworthy on this machine
 
-**Status:** characterised, not fixed (2026-09-22) · **Area:** `Scripts/regress.sh`, the machine · **Evidence:** below
+**Status:** mitigated 2026-09-25, cause not fixed · **Area:** `Scripts/regress.sh`, the machine · **Evidence:** below
 
 Seven full runs in one session; only ONE came back clean. Each other run
 failed on a DIFFERENT set of 3-8 heavy float tests, with `vvp exited non-zero`
@@ -517,6 +517,16 @@ Chrome 1.2 GB. Some of it was idle for hours -- the desktop app (619 MB) and
 two old sessions, found by the last-write time of each session's transcript
 under `~/.claude/projects/<folder>/<session-id>.jsonl`. That is the quickest
 way to see which sessions are only holding memory.
+
+**Mitigated (2026-09-25):** `regress.sh` now re-runs a simulation that DIED
+-- vvp exiting non-zero, or in the C++ phase an empty or truncated output (a
+strict prefix of the golden) -- up to twice, and lists every retried test in
+the summary (`retried (simulation died, TODO.md item 15): ...`). A wrong but
+complete output still fails at once. Tested with a fake vvp: a test that dies
+once passes and is listed, one that always dies fails. Two deaths in a row
+were seen once, hence two retries. The board is repeatable again; the cause
+(memory pressure) is not fixed, so a long `retried` list still means: free
+memory before trusting timings.
 
 **Meanwhile:** re-run a failing heavy test on its own; if it passes, it is
 this. Free memory on the machine before trusting a board.

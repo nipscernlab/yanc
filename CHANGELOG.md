@@ -9,6 +9,16 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **The regress tells a real failure from a simulation that died**
+  (`Scripts/regress.sh`, TODO 15). On a machine short of memory vvp can die
+  mid-run with no message, and a different 3-8 heavy tests failed each run.
+  A simulation that died -- vvp exiting non-zero, or in the C++ phase an
+  empty or truncated output (a strict prefix of the golden) -- is now run
+  again, up to twice, and every retried test is listed in the summary; a
+  wrong but complete output fails at once. Tested with a fake `VVP` that dies
+  once (the test passes and is listed) or always (it fails). Also: the
+  summary's `failed:` list printed one name per line (a global `IFS`); both
+  lists are one line now. The cause (memory pressure) is not fixed.
 - **`aurora.bat` deploys exactly what a release ships** (`Makefile`,
   `release.yml`, `Scripts/aurora.bat`). The release built every binary and
   copied HDL/, Macros/ and Header/ whole; `aurora.bat` copied a fixed list of
