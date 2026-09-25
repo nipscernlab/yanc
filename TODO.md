@@ -108,7 +108,37 @@ Left open: nothing.
 
 ## 5. One shared, exact constant encoder
 
-**Status:** open · **Area:** `ASMComp/t2t.c`, `CMMComp/{variaveis,t2t}.c`, `CPPComp/codegen.c`, the three lexers · **Evidence:** [§1.5](docs/precision-and-width-review.md#15-constant-encoding-on-the-host-loses-bits-today)
+**Status:** steps 1-3 of 5 done (2026-09-25), 4-5 left · **Area:** `ASMComp/t2t.c`, `CMMComp/{variaveis,t2t}.c`, `CPPComp/codegen.c`, the three lexers · **Evidence:** [§1.5](docs/precision-and-width-review.md#15-constant-encoding-on-the-host-loses-bits-today)
+
+**Where it stands.**
+1. Done (`bbb8278`): `Compilers/common/yanc_num.{c,h}`, the exact encoder --
+   decimal text with an exponent -> `{s, e, m}` through big integers, to
+   nearest, ties to even, flags for overflow / underflow / denormal / flush,
+   the word as a bit string. Held to an exact Python model by
+   `Scripts/check_yanc_num.py` (3 750 cases, 5 formats), a regress step.
+   Limits: `NBMANT <= 63`, `|decimal exponent| <= 1200`.
+2. Done (`ed20b8c`): asmcomp's `f2mf` calls it. 45 of 264 test constants
+   moved one unit down (the old path rounded twice); the moved outputs were
+   each explained (`cmm_tan`, `test63`, `test68`, one DTW value). A
+   non-number or an overflowing constant is an error now.
+3. Done (`1e8ca03`): the asmcomp and appcomp lexers read an exponent;
+   cppcomp prints `%.17g` instead of `%.20f` (`test84`).
+
+**Left, step 4 -- cmmcomp (Luciano's compiler: show the diff first):**
+`CMMComp.l:60` `FLNUM` has no exponent (C± cannot write `1e-8`);
+`CMMComp/Sources/t2t.c:63-68` splits a complex literal through
+`sscanf("%f %f")` + `sprintf("%f")` -- 6 decimals, `(1e-8, 2e-8)` becomes
+`(0, 0)`: split the source TEXT instead; `CMMComp/Sources/variaveis.c:164-204`
+is a second `f2mf` (diagnostics: precision warnings, the `#FROUND` flush
+warning) -- make it call `yanc_num` so both tools agree bit for bit. cmmcomp
+builds from the Makefile's `CMMCOMP_C` and from `regress.sh`'s own gcc line:
+add `Compilers/common/yanc_num.c` to both, as for asmcomp.
+
+**Left, step 5:** asmcomp refuses `NBMANT >= 2^(NBEXPO-1)` and `NUBITS > 32`
+(`f2mf` still returns an `unsigned int`, and `itob` takes an `int`); drop the
+host-`float` range checks in the front ends; a fixture that runs the same
+constants end to end at 32/23/8, 32/25/6 and 16/10/5 and checks them to the
+last mantissa bit (the `.mif` words against `check_yanc_num.py`'s model).
 
 The only encoder, `f2mf`, starts from a host `float` (24 bits) — `#NBMANT`
 above 23 gains nothing, below 23 rounds twice — rounds half-up without sticky
@@ -401,6 +431,12 @@ names into one is all the tool has to do, and the memory saving follows.
   `trad_cmm.txt`): one entry per instruction. Deleting or merging an
   instruction invalidates them unless the tool rewrites them too.
 
+**Small leftovers found on the way (2026-09-24, cmmcomp goldens):** a
+`JMP`/`JIZ` that lands on a `JMP` (13 cases; cycles only), the same index
+computed twice in `s[e] = s[e] + ...` (6 cases), `CAL f; RET` -> `JMP f` (2,
+procBlind). They fit here or as front-end peepholes;
+`Scripts/perf/asm_waste.py Compilers/CMMComp/Tests` is the scanner that found them.
+
 **Done when:** the tool reads a `.asm` and writes a smaller one that
 assembles and simulates identically on every fixture, under both simulators;
 temporaries share memory by liveness; and the instruction count and data-word
@@ -443,8 +479,9 @@ measured. Committed for the consistency, with the 0.13 % stated.
 
 **The lesson for every optimisation after this one:** a benchmark written to
 isolate a cost overstates the gain. Measure on a real program, in cycles.
-The cycle-counting bench is in `c:/tmp/yanc-inliner/cycle-bench/` (README
-there); it is a candidate for `Scripts/hw/` if it keeps being useful.
+The cycle-counting tools are in [`Scripts/perf/`](Scripts/perf/README.md)
+(`cycles.sh`, the per-address profile, `prof_report.py`, and the test46
+recipe and history).
 
 **The profile of `test46` (2026-09-24).** A Verilator harness counts the
 cycles the fetch address (`pc_sim_val`, exposed with `+define+YANC_TRACE`)
@@ -467,14 +504,30 @@ cycles, 15.8 %, in one small change -- against 0.13 % for the whole inliner.
 every `k`. A `for` now hoists a loop-invariant address `p + i*n` into a
 temporary (`lih_*` in codegen.c), and a one-word element indexed by a plain
 variable is `base; ADD idx`: 64 184 -> 60 890 cycles (-5.1 %), the inner
-loop 7 280 -> 4 550. **Next:** the loop control itself, 7 instructions a turn
-(test at the top, `JMP` back); testing at the bottom, after the step, drops
-the `JMP` and the reload -- in cppcomp and, the same pattern, cmmcomp.
-`sqrt` is the user's own code: nothing for the compiler there.
+loop 7 280 -> 4 550.
 
-**Also possible, small:** the expanded access still stores `this` into a word
-nobody reads afterwards (`SET <fn>_this`); dropping that dead store takes an
-access from five instructions to four.
+**Also done 2026-09-24/25** (each in the CHANGELOG): the `for` tests at the
+bottom (cppcomp always; cmmcomp only when a literal start already satisfies a
+literal bound, so C± code never grows -- Luciano's choice); an int literal
+takes the memory form; the zero-fill stores four words a turn; the hoist sees
+by-value calls and lone variables; integer constant folding. **test46:
+76 261 -> 49 684 cycles (-35 %), 1 754 -> 1 628 instructions.**
+
+**Where test46 spends its 49 734 cycles now** (`Scripts/perf/cycles.sh ...
+prof`): `solve_spd` 35 %, `main` 25 % (the `scratch[2400]` zero-fill, 5
+instructions a word), `inverse_tikhonov_calibrated` 18 %, `sqrt` 11 % (the
+user's 24-step Newton loop: nothing for the compiler), `convolve_full` 9 %.
+
+**Next candidates, smallest first:**
+- the expanded accessor still stores `this` into a word nobody reads
+  afterwards (`SET <fn>_this`): an access from five instructions to four;
+- the backward solve `a[k*n + i]` (k inside the product): step a pointer by
+  `n` each turn instead of `MLT` (strength reduction), ~1 instruction a turn;
+- the zero-fill at 8 words a turn: ~4.5 instructions a word, for more code;
+- the Cholesky inner loop is 16 instructions a turn and near the floor of
+  this ISA: `k < j` with a variable bound needs `GRE j; LIN; JIZ` (only JIZ).
+Declined, do not propose again: SHL for a power-of-two 2D row size
+(Luciano: the multiplier is in most programs anyway).
 
 ## 15. The regress is not trustworthy on this machine
 
