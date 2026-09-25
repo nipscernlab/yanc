@@ -9,6 +9,12 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Fixed
+- **Float constants far from 1 reach the assembler** (TODO 5, step 3 of 5).
+  cppcomp printed float constants with `%.20f` because the asmcomp and
+  appcomp lexers rejected an exponent: `1e-25f` became 0, and anything above
+  ~1e75 overflowed the buffer. Both lexers now read `[eE][-+]?[0-9]+`, and
+  cppcomp prints `%.17g` (the double exactly), which `yanc_num` rounds once.
+  `test84` checks 1e-25, 1e30 and small products by robust results.
 - **asmcomp encodes float constants exactly** (TODO 5, step 2 of 5). `f2mf`
   now calls `yanc_num` instead of `atof`: one rounding, to nearest, ties to
   even, from the decimal text, where the old path rounded to a 24-bit host

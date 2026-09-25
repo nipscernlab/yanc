@@ -840,18 +840,14 @@ static type *infer_type(expr *e)
 static void emit_load_int(long v)   { emit("LOD %ld", v); }
 static void emit_load_float(double v)
 {
-    // Emit a DECIMAL literal with no exponent: the assembler's float-operand
-    // parser does not understand "1e-05"-style scientific notation (it yields 0),
-    // which silently zeroed small constants like 1e-5f. %f never uses an exponent;
-    // we keep many fraction digits (f2mf rounds to the target mantissa) and strip
-    // trailing zeros, leaving at least one digit after the dot.
-    char buf[96]; snprintf(buf, sizeof(buf), "%.20f", v);
-    char *dot = strchr(buf, '.');
-    if (!dot) { strcat(buf, ".0"); }
-    else {
-        char *end = buf + strlen(buf) - 1;
-        while (end > dot + 1 && *end == '0') *end-- = 0;
-    }
+    // 17 significant digits reproduce the double exactly, and the assembler
+    // now reads an exponent (its encoder, yanc_num, rounds that text once to
+    // the target mantissa): %.20f, used while the lexers rejected "1e-05",
+    // turned everything below ~1e-20 into 0.0 and overflowed the buffer above
+    // ~1e75. A text with neither '.' nor an exponent would read as an int
+    // constant, so it gets ".0".
+    char buf[40]; snprintf(buf, sizeof(buf), "%.17g", v);
+    if (!strpbrk(buf, ".eE")) strcat(buf, ".0");
     emit("LOD %s", buf);
 }
 
