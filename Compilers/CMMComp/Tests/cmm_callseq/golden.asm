@@ -8,6 +8,7 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE main_r f_q
 JMP main
 @f0 LOD 100
 RET

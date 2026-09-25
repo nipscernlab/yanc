@@ -42,12 +42,38 @@ int var_find(char *val)
 	return ind;
 }
 
+// #SHARE <name> <home>: <name> has no word of its own, it uses <home>'s
+// (asm_share, in Compilers/common, decides which variables can)
+static int    sh_count = 0;
+static char (*sh_name)[512] = NULL;
+static char (*sh_home)[512] = NULL;
+
+static char *var_home(char *va)
+{
+    for (int i = 0; i < sh_count; i++)
+        if (strcmp(va, sh_name[i]) == 0) return sh_home[i];
+    return va;
+}
+
 // global interface functions -------------------------------------------------
+
+// records that va shares home's word
+void var_share(char *va, char *home)
+{
+    sh_name = realloc(sh_name, (size_t)(sh_count + 1) * sizeof(*sh_name));
+    sh_home = realloc(sh_home, (size_t)(sh_count + 1) * sizeof(*sh_home));
+    if (!sh_name || !sh_home) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    snprintf(sh_name[sh_count], sizeof(*sh_name), "%s", va  );
+    snprintf(sh_home[sh_count], sizeof(*sh_home), "%s", home);
+    sh_count++;
+}
 
 // adds a new variable to the table
 // may be a vector with size > 1
 void var_add(char *va, int size)
 {
+    va = var_home(va); // a shared name takes its home's word
+
     if (var_find(va) == -1)
     {
         var_grow(v_count + size);

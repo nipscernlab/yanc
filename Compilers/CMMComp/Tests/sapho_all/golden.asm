@@ -12,6 +12,27 @@ NOP
 #FROUND 2
 #array ia 1 8
 #array fa 2 8
+#SHARE diff_b twice_v
+#SHARE main_fx twice_v
+#SHARE main_z diff_a
+#SHARE main_fw main_w
+#SHARE aux_var twice_v
+#SHARE aux_var1 diff_a
+#SHARE aux_var2 main_fy
+#SHARE sqrt_num twice_v
+#SHARE exp_x twice_v
+#SHARE exp_q diff_a
+#SHARE exp_n diff_a
+#SHARE exp_r twice_v
+#SHARE log_x diff_a
+#SHARE log_e twice_v
+#SHARE log_ne main_fy
+#SHARE log_m main_fy
+#SHARE log_t2 diff_a
+#SHARE log_t1 main_fy
+#SHARE log_u diff_a
+#SHARE log_w main_fy
+#SHARE log_lm diff_a
 JMP main
 @twice SET twice_v
 ADD twice_v

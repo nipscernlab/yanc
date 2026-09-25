@@ -8,6 +8,7 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
+#SHARE main_y main_x
 @main @Lwh1 INN 0
 SET main_x
 ADD -1

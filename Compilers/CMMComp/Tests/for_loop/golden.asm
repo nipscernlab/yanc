@@ -8,6 +8,9 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
+#SHARE main_cnt main_idx
+#SHARE main_kk main_idx
+#SHARE main_outer main_idx
 @main @Lwh1 LOD 0
 SET main_idx
 @Lwh2 LOD 10

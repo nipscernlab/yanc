@@ -8,6 +8,13 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE sw2_v sw_v
+#SHARE sw2_r sw_r
+#SHARE sw3_v sw_v
+#SHARE sw3_r sw_r
+#SHARE main_k sw_v
+#SHARE main_s sw_v
+#SHARE main_n sw_r
 JMP main
 @sw SET sw_v
 LOD 0

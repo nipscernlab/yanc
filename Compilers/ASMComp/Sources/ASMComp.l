@@ -65,6 +65,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 "#ITRAD"                  ;                         // interrupt address point
 "#TOAQUI"                 ;                         // #TOAQUI marker (consumed by appcomp; ignored here)
+"#SHARE"   eval_direct(26);                         // #SHARE <name> <home>: <name> uses the data word of <home>
 
    "LOD"   eval_opcode(  0,18, yytext,    "LOD"  ); // loads data from memory
  "P_LOD"   eval_opcode(  1,18, yytext,  "P_LOD"  ); // PUSH + LOD

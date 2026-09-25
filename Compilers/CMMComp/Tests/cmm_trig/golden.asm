@@ -8,6 +8,15 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE atan_x main_r
+#SHARE atan_t atan_ax
+#SHARE atan_p atan_ax
+#SHARE sin_x atan_big
+#SHARE sin_q main_r
+#SHARE sin_k main_r
+#SHARE sin_r atan_big
+#SHARE sin_w atan_ax
+#SHARE sin_p atan_big
 @main @Lwh1 LOD 0.0
 CAL float_sin
 F_MLT 1000.0

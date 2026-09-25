@@ -21,6 +21,12 @@ char* sim_name   (int    i);                        // gets the variable name
 int   sim_addr   (int    i);                        // gets the variable address
 int   sim_type   (int    i);                        // gets the variable type
 int   sim_cont   (        );                        // gets the number of registered variables
+int   sim_regi_at(char *va, int addr);              // registers a variable whose word is at addr (#SHARE)
+int   sim_has    (char *va);                        // whether a variable is already registered
+void  sim_store  (char *va);                        // the next instruction writes va (#SHARE groups)
+int   sim_shared (int    i);                        // whether the variable is in a #SHARE group
+int   sim_nstore (int    i);                        // how many SETs write it
+int   sim_store_at(int i, int k);                   // instruction index of the k-th SET
 void  sim_mem    (int addr, char *var);             // gets the memory contents
 
 // user array operations ------------------------------------------------------

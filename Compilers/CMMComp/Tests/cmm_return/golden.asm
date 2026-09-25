@@ -8,6 +8,11 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
+#SHARE firstHit_limit add5_a
+#SHARE nestedFind_target add5_a
+#SHARE nestedFind_a firstHit_k
+#SHARE classify_x add5_a
+#SHARE maybe_x add5_a
 JMP main
 @add5 SET add5_a
 ADD 5

@@ -8,6 +8,29 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE csin_eb csin_shb
+#SHARE csin_re csin_emb
+#SHARE csin_im csin_ca
+#SHARE main_c_i csin_emb
+#SHARE main_c csin_ca
+#SHARE ccos_eb ccos_shb
+#SHARE ccos_emb csin_emb
+#SHARE ccos_ca main_z
+#SHARE ccos_re main_z
+#SHARE ccos_im csin_emb
+#SHARE main_z_i csin_emb
+#SHARE main_w csin_a
+#SHARE main_w_i csin_ca
+#SHARE csin_b csin_emb
+#SHARE sin_x csin_ca
+#SHARE sin_q csin_emb
+#SHARE sin_k csin_emb
+#SHARE sin_r csin_ca
+#SHARE sin_p csin_ca
+#SHARE exp_x csin_emb
+#SHARE exp_q csin_ca
+#SHARE exp_n csin_ca
+#SHARE exp_r csin_emb
 @main @Lwh1 LOD 1.000000
 CAL float_exp
 SET csin_eb

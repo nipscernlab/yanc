@@ -10,6 +10,8 @@ NOP
 #array x 2 4
 #array w 2 4
 #array P 2 16
+#SHARE rls_update_e rls_update_d
+#SHARE aux_var rls_update_d
 JMP main
 @rls_update SET rls_update_d
 LOD w

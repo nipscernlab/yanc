@@ -8,6 +8,11 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE tan_x main_r
+#SHARE tan_r main_r
+#SHARE tan_fold tan_q
+#SHARE tan_u tan_a
+#SHARE tan_p tan_a
 @main @Lwh1 LOD 0.0
 CAL float_tan
 F_MLT 1000.0

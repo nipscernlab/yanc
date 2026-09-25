@@ -8,6 +8,11 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE tanh_e main_r
+#SHARE exp_x main_r
+#SHARE exp_q tanh_n
+#SHARE exp_n tanh_n
+#SHARE exp_r main_r
 @main @Lwh1 LOD 0.0
 SET cosh_x
 CAL float_exp

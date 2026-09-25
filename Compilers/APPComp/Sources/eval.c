@@ -18,6 +18,7 @@
 // helper variables for the array lexer
 int   tam_arr;      // array size
 char name_arr[128]; // name of the array currently being read
+char name_sh [512]; // name of the #SHARE variable currently being read
 
 // state variables
 int  n_ins = 0;     // number of instructions
@@ -86,6 +87,8 @@ void eval_opernd(char *va)
         case  3: fprintf(f_log, "nbmant %s\n", va ); state =  0; break; // mantissa width (bits)
         case  4: fprintf(f_log, "nbexpo %s\n", va ); state =  0; break; // exponent width (bits)
         case 25: fprintf(f_log, "fround %s\n", va ); state =  0; break; // float rounding level
+        case 26: snprintf(name_sh, sizeof(name_sh), "%s", va); state = 27; break; // #SHARE: the name
+        case 27: var_share(name_sh,            va ); state =  0; break; // #SHARE: the home it uses
         case 11: strcpy (name_arr,             va ); state = 12; break; // found an array without initialization
         case 12:                                     state = 13; break; // pick up data type (not needed in app)
         case 13: var_add(name_arr,        atoi(va)); state =  0; break; // declare array without initialization

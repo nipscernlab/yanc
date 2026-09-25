@@ -7,6 +7,11 @@ NOP
 #SDEPTH 5
 #NUIOIN 2
 #NUIOOU 5
+#SHARE x1 sinal_entrada
+#SHARE x2 sinal_entrada
+#SHARE x3 sinal_entrada
+#SHARE y2 y1
+#SHARE y3 y1
 @main NEG_M 126
 OUT 2
 LOD 0.0

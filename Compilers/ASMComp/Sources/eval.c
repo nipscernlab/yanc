@@ -63,6 +63,7 @@ char  va_name[64];      // stores the current variable name
 int  opc_idx;           // stores the current opcode index
 int  arr_typ;           // stores the array type
 int  arr_tam;           // stores the array size
+char  sh_var[512];      // stores the name of the #SHARE being read
 
 // helper variables
 int  n_ins	  = 0;      // number of instructions added
@@ -103,21 +104,29 @@ int eval_get(char *fname, char *var, char *val)
 // finally, places the instruction in instruction memory
 void instr_ula(char *va, int is_const)
 {
+    // #SHARE: va may live in another name's word (its home)
+    char *home = var_home(va);
+
     // if it's the first time the var shows up, register it
-    if (var_find(va) == -1)
+    if (var_find(home) == -1)
     {
-        var_add (va, is_const);  // adds the variable to the table
-        int type = sim_regi(va); // registers the variable in the simulator (if it belongs to the user)
+        var_add (home, is_const);  // adds the variable to the table
+        int type = sim_regi(home); // registers the variable in the simulator (if it belongs to the user)
 
         // if it's a float variable, initialize with zero
         if (!is_const && type > 1)
             fprintf (f_data, "%s\n", itob(f2mf("0.0",NULL), nubits)); // adds variable to data memory
         else
-            fprintf (f_data, "%s\n", itob(var_val(va     ), nubits)); // adds variable to data memory
+            fprintf (f_data, "%s\n", itob(var_val(home   ), nubits)); // adds variable to data memory
     }
 
+    // a shared name is still shown on its own in the waveform, at its home's
+    // address, and follows only the instructions that write it (hdl.c)
+    if (home != va && !sim_has(va)) sim_regi_at(va, var_find(home));
+    if (var_shared(va) && (strcmp(opc_name, "SET") == 0 || strcmp(opc_name, "SET_P") == 0)) sim_store(va);
+
     // write the new instruction
-    fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(var_find(va),nbopr));
+    fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(var_find(home),nbopr));
     // also register it in the simulation translator
     sim_add(opc_name,va);
 }
@@ -339,6 +348,8 @@ void eval_opernd(char *va, int is_const)
         case 23: instr_oft     (va);                    state =  0; break; // instr with constant offset
         case 24: instr_lea     (va);                    state =  0; break; // load-effective-address pseudo (LEA -> LOD <const>)
         case 25: fround =  atoi(va);                    state =  0; break; // float rounding level
+        case 26: snprintf(sh_var, sizeof(sh_var), "%s", va); state = 27; break; // #SHARE: the name
+        case 27: var_share(sh_var, va);                 state =  0; break; // #SHARE: the home it uses
     }
 }
 

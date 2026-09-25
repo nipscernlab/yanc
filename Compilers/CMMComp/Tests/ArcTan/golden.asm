@@ -8,6 +8,15 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE main_y arctan_LUT_x
+#SHARE main_t arctan_LUT_signo
+#SHARE main_e arctan_LUT_x
+#SHARE atan_x arctan_LUT_x
+#SHARE atan_ax arctan_LUT_v0
+#SHARE atan_big arctan_LUT_signo
+#SHARE atan_t arctan_LUT_v0
+#SHARE atan_w arctan_LUT_idxf
+#SHARE atan_p arctan_LUT_v0
 JMP main
 @arctan_LUT SET arctan_LUT_x
 #arrays arctan_LUT_atan_lut 2 49 "Arctan_LUT.txt"

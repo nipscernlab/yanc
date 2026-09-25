@@ -8,6 +8,29 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
+#SHARE addc_b_i echo_c_i
+#SHARE addc_b echo_c
+#SHARE mk_im echo_c_i
+#SHARE mk_re echo_c
+#SHARE sumri_c_i echo_c_i
+#SHARE sumri_c echo_c
+#SHARE takesint_x echo_c_i
+#SHARE midcomp_b echo_c_i
+#SHARE midcomp_c_i echo_c
+#SHARE midcomp_c addc_a_i
+#SHARE midcomp_a addc_a
+#SHARE main_e_i echo_c_i
+#SHARE main_e echo_c
+#SHARE main_s_i echo_c_i
+#SHARE main_s echo_c
+#SHARE main_m_i echo_c_i
+#SHARE main_m echo_c
+#SHARE main_ci_i echo_c_i
+#SHARE main_ci echo_c
+#SHARE main_cf_i echo_c_i
+#SHARE main_cf echo_c
+#SHARE main_nest_i echo_c_i
+#SHARE main_nest echo_c
 JMP main
 @echo SET_P echo_c_i
 SET echo_c

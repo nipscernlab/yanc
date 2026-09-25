@@ -9,6 +9,9 @@ NOP
 #NBEXPO 8
 #NUGAIN 128
 #FROUND 1
+#SHARE main_acc main_y
+#SHARE main_flag main_y
+#SHARE main_z main_x
 @main LOD 1.0
 SET main_one
 LOD 0.000000238418579101562500

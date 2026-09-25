@@ -378,7 +378,7 @@ simulators; with it off, area and depth are unchanged (`Scripts/hw/area.sh`).
 
 ## 13. Pre-assembly optimizer (whole program), and reusing temporaries
 
-**Status:** open, wanted (Luciano, 2026-09-21) · **Area:** a new tool between the front ends and `appcomp` · **Evidence:** the measurements below
+**Status:** open; data-word sharing DONE for C± scalars (2026-09-25, see "What landed" below) · **Area:** `Compilers/common/asm_share.c` (sharing), a whole-program pass for the rest · **Evidence:** the measurements below
 
 A separate executable that reads a `.asm` -- from `cmmcomp` or from `cppcomp`,
 they meet there -- and removes whatever does not change what the program does.
@@ -400,16 +400,32 @@ the other is), measured on the current tests:
 | `test33` | 17 | 9 | 8 |
 | `cmm_comp_sqrt`, `proc_fft`, `proc_rls` | 12, 13, 5 | same | 0 |
 
-C± programs are flat and have nothing to give back; the whole saving is on the
-C++ side, where it is about half the data memory.
+That table only counts sharing ACROSS functions. Liveness inside a function
+is where C± gains: on the C± tests it saves 302 data words over 39 programs
+(`sapho_all` 79 -> 58, `cmm_catan` 62 -> 35, `cmm_comp_func` 44 -> 21).
 
-**The decision already taken (Luciano, 2026-09-21):** two source variables
-sharing one word cannot be shown separately in the waveform, because
-`cmm_log.txt` / `trad_cmm.txt` name one word per variable and that is how
-Aurora displays them. Do it anyway -- the memory is too expensive to keep
-paying for the viewer -- and find a way to keep the viewer working afterwards
-(a sharing map the sidecars can carry, or the optimisation behind a flag the
-IDE turns off). Do not let this block the work.
+**What landed (2026-09-25).** `asm_share` runs inside cmmcomp on the finished
+`.asm` (after the macros are appended) and writes `#SHARE <name> <home>`;
+appcomp and asmcomp give `<name>` the address of `<home>`. No instruction is
+renamed, added or moved, so the sidecars stay valid, and the waveform is
+transparent: asmcomp follows a shared variable by the SETs that write it
+(`mem_wr && pc_sim_val == SET+1`), not by its address. Checked by comparing
+the user-variable traces of the same `.asm` with and without `#SHARE`
+(identical, change by change, Icarus and Verilator). What is left:
+- **cppcomp**: call `asm_share` on its output too (the big saving is there,
+  table above). Check first that its scalars written through a pointer (STA)
+  are pinned: they are touched through an address the pass never sees
+  named.
+- **Local arrays** of functions that are never active together could share
+  too. None of the C± tests has a local array outside `main`; measure the
+  C++ tests first. It needs a language decision: today a local array keeps
+  its contents between calls (the `file_init_local` warning says so), and
+  sharing ends that.
+- **An interrupt landing on the cycle of a write** forces the PC to `#ITRAD`,
+  and the mirror of a shared variable could miss that one update (the
+  program itself is unaffected). Not checked.
+- The group keeps the name read before any write, else the first seen; the
+  choice no longer shows in the waveform.
 
 **What makes it analysable at all:** the `.asm` is symbolic. Every variable is
 a NAME, not an address; `appcomp` assigns addresses later. So merging two
@@ -439,8 +455,9 @@ procBlind). They fit here or as front-end peepholes;
 
 **Done when:** the tool reads a `.asm` and writes a smaller one that
 assembles and simulates identically on every fixture, under both simulators;
-temporaries share memory by liveness; and the instruction count and data-word
-count are reported per program so the saving is visible.
+temporaries share memory by liveness (done for C± scalars; cppcomp next); and
+the instruction count and data-word count are reported per program so the
+saving is visible.
 
 ## 14. Inline small leaf accessors (`cppcomp`): what is left
 

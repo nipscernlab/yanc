@@ -8,6 +8,10 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE fase_t main_c
+#SHARE atan_x main_c
+#SHARE atan_t atan_ax
+#SHARE atan_p atan_ax
 @main @Lwh1 LOD 1.000000
 SET main_c
 LOD 2.000000

@@ -8,6 +8,10 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE main_r floor_x
+#SHARE ceil_x floor_x
+#SHARE ceil_t floor_t
+#SHARE round_x floor_x
 @main @Lwh1 LOD 2.7
 SET floor_x
 F2I

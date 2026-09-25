@@ -8,6 +8,7 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
+#SHARE main_f main_v
 @main @Lwh1 INN 0
 SET main_v
 SET main_a

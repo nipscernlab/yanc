@@ -13,6 +13,7 @@ NOP
 #array data_i 4 8
 #array wpv 3 4
 #array wpv_i 4 4
+#SHARE fft_temp_i aux_var1
 JMP main
 @fft SET fft_N
 LOD 1

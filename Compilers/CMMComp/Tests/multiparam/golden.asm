@@ -8,6 +8,9 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
+#SHARE triple_sum_z add_b
+#SHARE triple_sum_y add_a
+#SHARE main_three main_v
 JMP main
 @add SET_P add_b
 SET add_a

@@ -8,6 +8,18 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE main_x main_r
+#SHARE exp_x main_r
+#SHARE exp_n exp_q
+#SHARE exp_r main_r
+#SHARE log_x exp_q
+#SHARE log_e main_r
+#SHARE log_m log_ne
+#SHARE log_t2 exp_q
+#SHARE log_t1 log_ne
+#SHARE log_u exp_q
+#SHARE log_w log_ne
+#SHARE log_lm exp_q
 @main @Lwh1 LOD 1.0
 CAL float_log
 F_MLT 1000.0

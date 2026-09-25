@@ -8,6 +8,15 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE main_y seno_LUT_x
+#SHARE main_t seno_LUT_idxf
+#SHARE main_e seno_LUT_x
+#SHARE sin_x seno_LUT_idxf
+#SHARE sin_q seno_LUT_x
+#SHARE sin_k seno_LUT_x
+#SHARE sin_r seno_LUT_idxf
+#SHARE sin_w seno_LUT_idx
+#SHARE sin_p seno_LUT_idxf
 JMP main
 @seno_LUT SET seno_LUT_x
 #arrays seno_LUT_Seno_LUT 2 152 "Seno_LUT.txt"

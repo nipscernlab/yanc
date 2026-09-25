@@ -8,6 +8,13 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
+#SHARE one_float_b one_int_a
+#SHARE one_comp_c_i one_int_a
+#SHARE three_mixed_r_i one_int_a
+#SHARE three_mixed_r one_int_a
+#SHARE three_mixed_q one_comp_c
+#SHARE main_v4_i main_v4
+#SHARE main_v5 one_int_a
 JMP main
 @noargs_void LOD 7
 OUT 0

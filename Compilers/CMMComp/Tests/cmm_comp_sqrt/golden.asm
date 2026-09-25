@@ -8,6 +8,10 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE main_r_i csqrt_im
+#SHARE main_w csqrt_b
+#SHARE main_w_i csqrt_a
+#SHARE sqrt_num csqrt_im
 @main @Lwh1 LOD 3.000000
 SET main_z
 LOD 4.000000

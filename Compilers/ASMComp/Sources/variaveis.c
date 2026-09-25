@@ -87,6 +87,36 @@ void var_inc (int   val){var_grow(v_count + val); v_count += val;} // increments
 int  var_val (char *var){return v_val[var_find(var)];}             // returns the variable's value
 int  var_cnt (         ){return v_count             ;}             // returns the number of variables
 
+// #SHARE <name> <home>: <name> has no word of its own, it uses <home>'s
+// (asm_share, in Compilers/common, decides which variables can). The code
+// keeps using <name>; only the address it resolves to is shared.
+static int    sh_count = 0;
+static char (*sh_name)[512] = NULL;
+static char (*sh_home)[512] = NULL;
+
+void var_share(char *var, char *home)
+{
+    sh_name = realloc(sh_name, (size_t)(sh_count + 1) * sizeof(*sh_name));
+    sh_home = realloc(sh_home, (size_t)(sh_count + 1) * sizeof(*sh_home));
+    if (!sh_name || !sh_home) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    snprintf(sh_name[sh_count], sizeof(*sh_name), "%s", var );
+    snprintf(sh_home[sh_count], sizeof(*sh_home), "%s", home);
+    sh_count++;
+}
+
+char *var_home(char *var)
+{
+    for (int i = 0; i < sh_count; i++) if (strcmp(var, sh_name[i]) == 0) return sh_home[i];
+    return var;
+}
+
+int var_shared(char *var)
+{
+    for (int i = 0; i < sh_count; i++)
+        if (strcmp(var, sh_name[i]) == 0 || strcmp(var, sh_home[i]) == 0) return 1;
+    return 0;
+}
+
 // adds a variable whose initial value is provided explicitly (rather than
 // derived from its name). used by LEA to materialise &target as a constant.
 void var_add_with_val(char *var, int val)

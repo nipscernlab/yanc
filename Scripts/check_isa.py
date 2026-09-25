@@ -18,7 +18,9 @@ literal, which is the part that stays true when the HDL is edited:
   5. core.v's four hard-coded literals are the table's JMP/JIZ/CAL/RET,
   6. every row's effect columns follow the naming convention (prefix P_/PF_
      pushes, S_/SF_ pops, suffix _M reads the operand from memory, _V is its
-     base with a constant offset) and agree with the operand class.
+     base with a constant offset) and agree with the operand class,
+  7. the copy in Compilers/common/asm_share.c (operand class, operand effect,
+     flow) is the table's.
 
 It does NOT try to verify instr_dec.v or ula.v line by line: matching their
 comparisons to opcodes with a regular expression breaks on innocuous edits,
@@ -250,13 +252,30 @@ def main():
         if cls == 'out' and got and got[4] != 'out':
             bad.append(f'{mn}: writes an output port but the table says io={got[4]}')
 
+    # 7: asm_share.c's copy of the operand class, operand effect and flow
+    share_p = os.path.join(root, 'Compilers', 'common', 'asm_share.c')
+    if os.path.exists(share_p):
+        text = open(share_p, encoding='utf-8', errors='replace').read()
+        rows = {m.group(1): (m.group(2), m.group(3), m.group(4)) for m in re.finditer(
+            r'\{"([A-Z_0-9]+)",\s*"([a-z]+)",\s*"([a-z_-]+)",\s*"([a-z-]+)"\}', text)}
+        for mn in sorted(set(table) | set(rows)):
+            if mn not in rows:
+                bad.append(f'{mn}: in the table but not in asm_share.c')
+            elif mn not in table:
+                bad.append(f'{mn}: in asm_share.c but not in the table')
+            else:
+                want = (table[mn][1], effects[mn][2], effects[mn][3])
+                if rows[mn] != want:
+                    bad.append(f'{mn}: asm_share.c says {"/".join(rows[mn])}, '
+                               f'the table says {"/".join(want)}')
+
     if bad:
         print('check_isa: the instruction set does not agree with itself', file=sys.stderr)
         for b in bad:
             print(f'  {b}', file=sys.stderr)
         return 1
     print(f'check_isa: {len(table)} mnemonics, {len(opcodes)} opcodes '
-          f'(0..{opcodes[-1]}); ASMComp.l, core.v and the effect columns agree')
+          f'(0..{opcodes[-1]}); ASMComp.l, core.v, asm_share.c and the effect columns agree')
     return 0
 
 

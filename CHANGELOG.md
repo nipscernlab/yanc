@@ -8,6 +8,23 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **Scalars that are never alive at the same time share one data word**
+  (TODO 13, C± first). cmmcomp runs a whole-program liveness pass on the
+  finished `.asm` (`Compilers/common/asm_share.c`: a RET returns to every
+  call site, `#ITRAD` is an edge from every instruction, anything touched
+  through an address is left alone) and writes `#SHARE <name> <home>` ahead
+  of the code; appcomp and asmcomp give `<name>` the address of `<home>`.
+  The code keeps every name, so the listing reads as written, and the
+  waveform still shows each variable on its own: asmcomp follows a shared
+  variable by the SETs that write it (`pc_sim_val`, one past the SET while
+  the write registers) instead of by its address. 302 data words fewer over
+  39 of the C± tests (`sapho_all` 79 -> 58, `cmm_comp_func` 44 -> 21); no
+  simulated output moved, and the user-variable traces of the same `.asm`
+  with and without `#SHARE` are identical, change by change, under Icarus
+  and Verilator. `check_isa.py` now also holds the pass's instruction table
+  to `isa.tsv`.
+
 ### Fixed
 - **Float constants far from 1 reach the assembler** (TODO 5, step 3 of 5).
   cppcomp printed float constants with `%.20f` because the asmcomp and

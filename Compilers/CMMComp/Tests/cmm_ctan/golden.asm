@@ -8,6 +8,28 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE ctan_eb ctan_tb
+#SHARE ctan_chb ctan_ta
+#SHARE ctan_shb ctan_tb
+#SHARE ctan_d ctan_emb
+#SHARE ctan_re ctan_ta
+#SHARE ctan_im ctan_tb
+#SHARE main_c_i ctan_ta
+#SHARE main_c ctan_tb
+#SHARE main_z ctan_ta
+#SHARE main_z_i ctan_tb
+#SHARE main_w ctan_emb
+#SHARE ctan_b ctan_tb
+#SHARE ctan_a ctan_ta
+#SHARE sin_x main_w_i
+#SHARE sin_q ctan_emb
+#SHARE sin_k ctan_emb
+#SHARE sin_r main_w_i
+#SHARE sin_p main_w_i
+#SHARE exp_x ctan_emb
+#SHARE exp_q main_w_i
+#SHARE exp_n main_w_i
+#SHARE exp_r ctan_emb
 @main @Lwh1 LOD 0.000000
 F_MLT 2.0
 SET ctan_ta

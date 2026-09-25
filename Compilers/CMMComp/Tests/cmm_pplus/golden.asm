@@ -14,6 +14,10 @@ NOP
 #array hist 1 4
 #array s 1 6
 #array buf 1 4
+#SHARE main_n main_x
+#SHARE main_j main_x
+#SHARE aux_var main_r
+#SHARE main_y main_r
 @main @Lwh1 LOD 5
 SET main_k
 ADD 1

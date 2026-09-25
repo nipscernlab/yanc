@@ -15,6 +15,7 @@
 #include "../Headers/diretivas.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../../common/asm_share.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -182,6 +183,10 @@ void parse_end(char *prname, char *d_proc)
     char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/Software/%s.asm", d_proc, prname);
 
 	mac_copy(asm_file);
+
+	// variables that are never alive at the same time share a data word ------
+
+	asm_share(asm_file);
 
 	// check consistency of all variables and functions -----------------------
 

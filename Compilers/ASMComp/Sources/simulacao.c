@@ -5,10 +5,12 @@
 // global includes
 #include  <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 // local includes
 #include "../Headers/eval.h"
 #include "../Headers/variaveis.h"
+#include "../Headers/simulacao.h"
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------
@@ -28,6 +30,10 @@ int  s_count  = 0;     // number of registered variables
 char s_name[1000][64]; // name     of the found variable
 int  s_addr[1000];     // address  of the found variable
 int  s_type[1000];     // type     of the found variable
+char s_raw [1000][64]; // name as the .asm spells it
+int  s_shar[1000];     // in a #SHARE group: followed by its writes, not its address
+int *s_st  [1000];     // instruction indices of the SETs that write it (if shared)
+int  s_nst [1000];     // how many
 
 // user-declared arrays
 int  s_count_arr  = 0;     // number of registered arrays
@@ -184,6 +190,12 @@ void sim_finish (       ){fclose(f_tran);} // closes the translation file
 // if so, registers it for display in the simulator
 int sim_regi(char *va)
 {
+    return sim_regi_at(va, var_cnt()-1);
+}
+
+// same, for a variable whose word is at addr (a #SHARE name uses its home's)
+int sim_regi_at(char *va, int addr)
+{
     int  tipo;
     int  is_global;
     char var_name[128];
@@ -194,12 +206,35 @@ int sim_regi(char *va)
             sprintf(s_name[s_count], "me%d_f_global_v_%s_e_", tipo, va);
         else
             sprintf(s_name[s_count], "me%d_f_%s_e_", tipo, var_name);
-        s_addr[s_count] = var_cnt()-1;
+        snprintf(s_raw[s_count], sizeof(s_raw[0]), "%s", va);
+        s_addr[s_count] = addr;
         s_type[s_count] = tipo;
+        s_shar[s_count] = var_shared(va);
+        s_st  [s_count] = NULL;
+        s_nst [s_count] = 0;
         s_count++;
     }
 
     return tipo;
+}
+
+// whether va is already registered
+int sim_has(char *va)
+{
+    for (int i = 0; i < s_count; i++) if (strcmp(s_raw[i], va) == 0) return 1;
+    return 0;
+}
+
+// the instruction about to be added (sim_n_opc) writes va
+void sim_store(char *va)
+{
+    for (int i = 0; i < s_count; i++) if (strcmp(s_raw[i], va) == 0)
+    {
+        s_st[i] = realloc(s_st[i], (size_t)(s_nst[i] + 1) * sizeof(int));
+        if (!s_st[i]) {fprintf(stderr, "asmcomp: out of memory\n"); exit(EXIT_FAILURE);}
+        s_st[i][s_nst[i]++] = sim_n_opc;
+        return;
+    }
 }
 
 // checks cmm_log.txt to see whether it's an array declared in the .cmm code
@@ -248,6 +283,9 @@ char* sim_name    (int i){return s_name    [i];} // returns the variable name
 int   sim_addr    (int i){return s_addr    [i];} // returns the variable address
 int   sim_type    (int i){return s_type    [i];} // returns the variable type
 int   sim_cont    (     ){return s_count      ;} // returns the number of registered variables
+int   sim_shared  (int i){return s_shar    [i];} // returns whether the variable is in a #SHARE group
+int   sim_nstore  (int i){return s_nst     [i];} // returns how many SETs write it
+int   sim_store_at(int i, int k){return s_st[i][k];} // returns the instruction index of the k-th
 
 char* sim_name_arr(int i){return s_name_arr[i];} // returns the array name
 int   sim_addr_arr(int i){return s_addr_arr[i];} // returns the array address

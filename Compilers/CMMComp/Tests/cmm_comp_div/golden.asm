@@ -8,6 +8,8 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE main_r_i main_x
+#SHARE main_r main_x_i
 @main @Lwh1 LOD 4.000000
 SET main_x
 LOD 2.000000

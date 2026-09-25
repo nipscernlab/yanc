@@ -8,6 +8,20 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE cexp_re main_z
+#SHARE main_c_i main_z
+#SHARE main_w cexp_b
+#SHARE main_w_i main_c
+#SHARE cexp_a main_z
+#SHARE sin_x main_c
+#SHARE sin_q main_z
+#SHARE sin_k main_z
+#SHARE sin_r main_c
+#SHARE sin_p main_c
+#SHARE exp_x main_z
+#SHARE exp_q main_c
+#SHARE exp_n main_c
+#SHARE exp_r main_z
 @main @Lwh1 LOD 1.000000
 SET main_z
 LOD 0.000000

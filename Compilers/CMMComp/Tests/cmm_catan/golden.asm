@@ -8,6 +8,33 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE catan_wr catan_b2
+#SHARE fase_im catan_wi
+#SHARE fase_re catan_b2
+#SHARE fase_t catan_re
+#SHARE catan_bp catan_b2
+#SHARE catan_num catan_b2
+#SHARE catan_den catan_bm
+#SHARE catan_im catan_a2
+#SHARE main_c_i catan_a2
+#SHARE main_c catan_wi
+#SHARE main_z catan_wi
+#SHARE main_w catan_b
+#SHARE main_w_i catan_a2
+#SHARE catan_a catan_wi
+#SHARE atan_x catan_b2
+#SHARE atan_big catan_bm
+#SHARE atan_t atan_ax
+#SHARE atan_p atan_ax
+#SHARE log_x catan_bm
+#SHARE log_e catan_b2
+#SHARE log_ne atan_ax
+#SHARE log_m atan_ax
+#SHARE log_t2 catan_bm
+#SHARE log_t1 atan_ax
+#SHARE log_u catan_bm
+#SHARE log_w atan_ax
+#SHARE log_lm catan_bm
 @main @Lwh1 LOD 1.000000
 F_MLT 1.000000
 SET catan_a2

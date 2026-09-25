@@ -8,6 +8,8 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE main_z main_c_i
+#SHARE main_z_i main_c
 @main @Lwh1 LOD 3.000000
 PF_NEG_M 4.000000
 SET_P main_c_i

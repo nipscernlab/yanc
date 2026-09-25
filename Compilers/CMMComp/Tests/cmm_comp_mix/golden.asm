@@ -8,6 +8,7 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE aux_var main_r_i
 @main @Lwh1 LOD 3.000000
 SET main_c
 LOD 4.000000

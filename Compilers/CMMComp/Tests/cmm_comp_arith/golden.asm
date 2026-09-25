@@ -8,6 +8,9 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
+#SHARE aux_var main_r_i
+#SHARE main_x main_r_i
+#SHARE main_x_i main_r
 @main @Lwh1 LOD 1.000000
 F_MLT 3.000000
 P_LOD 2.000000

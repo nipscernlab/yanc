@@ -17,6 +17,41 @@ NOP
 #array s_h_cand 2 7
 #array s_h_best 2 7
 #array s_grad_h 2 7
+#SHARE project_h_cand_k project_h_hat_k
+#SHARE lipschitz_x_s project_h_hat_k
+#SHARE lipschitz_x_L project_h_hat_k
+#SHARE conv_zh_n project_h_hat_k
+#SHARE conv_zh_ii project_h_hat_k
+#SHARE conv_zh_zi lipschitz_x_k
+#SHARE conv_xh_n project_h_hat_k
+#SHARE conv_xh_ii project_h_hat_k
+#SHARE conv_xh_xi lipschitz_x_k
+#SHARE conv_xh_j conv_zh_j
+#SHARE conv_x_hcand_n project_h_hat_k
+#SHARE conv_x_hcand_ii project_h_hat_k
+#SHARE conv_x_hcand_xi lipschitz_x_k
+#SHARE conv_x_hcand_j conv_zh_j
+#SHARE residual_sub_y_n project_h_hat_k
+#SHARE sum_residual_sq_s project_h_hat_k
+#SHARE sum_residual_sq_n lipschitz_x_k
+#SHARE correlate_residual_h_n project_h_hat_k
+#SHARE correlate_residual_h_s lipschitz_x_k
+#SHARE correlate_residual_h_k conv_zh_j
+#SHARE correlate_residual_x_n project_h_hat_k
+#SHARE correlate_residual_x_s lipschitz_x_k
+#SHARE correlate_residual_x_k conv_zh_j
+#SHARE fista_x_ii project_h_hat_k
+#SHARE fista_x_L fista_x_step
+#SHARE fista_x_v lipschitz_x_k
+#SHARE fista_x_tn lipschitz_x_k
+#SHARE fista_x_mom fista_x_t
+#SHARE fista_x_xi conv_zh_j
+#SHARE update_h_ii project_h_hat_k
+#SHARE update_h_cdt project_h_hat_k
+#SHARE fit_it fit_ii
+#SHARE main_n fit_ii
+#SHARE main_j update_h_it
+#SHARE sqrt_num project_h_hat_k
 JMP main
 @project_h_hat LOD 0
 SET project_h_hat_k

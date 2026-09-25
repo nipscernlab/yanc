@@ -345,12 +345,27 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     // begin the always block that registers the variables
     fprintf(f_veri, "\nalways @ (posedge clk) begin\n");
-    // register each variable based on its address
+    // register each variable based on its address. A variable in a #SHARE
+    // group shares its word with others, so the address would also catch
+    // their writes: it follows the SETs that write IT instead. While the
+    // write is registered pc_sim_val is already one past the SET (measured).
     for (int i = 0; i < sim_cont(); i++)
     {
-        if (sim_type(i) == 1) fprintf(f_veri, "   if (mem_addr_wr == %d && mem_wr) %s <= out;\n"                   , sim_addr(i), sim_name(i));
-        if (sim_type(i) == 2) fprintf(f_veri, "   if (mem_addr_wr == %d && mem_wr) %s <= sm_me2*$pow(2.0,e_me2);\n", sim_addr(i), sim_name(i));
-        if (sim_type(i) >  2) fprintf(f_veri, "   if (mem_addr_wr == %d && mem_wr) %s <= out;\n"                   , sim_addr(i), sim_name(i));
+        char *cond = malloc(64 + 32 * (size_t)sim_nstore(i));
+        if (!cond) {fprintf(stderr, "asmcomp: out of memory\n"); exit(EXIT_FAILURE);}
+        if (!sim_shared(i)) sprintf(cond, "mem_addr_wr == %d && mem_wr", sim_addr(i));
+        else if (sim_nstore(i) == 0) sprintf(cond, "1'b0");
+        else
+        {
+            int p = sprintf(cond, "mem_wr && (");
+            for (int k = 0; k < sim_nstore(i); k++)
+                p += sprintf(cond + p, "%spc_sim_val == %d", k ? " || " : "", sim_store_at(i, k) + 1);
+            sprintf(cond + p, ")");
+        }
+        if (sim_type(i) == 1) fprintf(f_veri, "   if (%s) %s <= out;\n"                   , cond, sim_name(i));
+        if (sim_type(i) == 2) fprintf(f_veri, "   if (%s) %s <= sm_me2*$pow(2.0,e_me2);\n", cond, sim_name(i));
+        if (sim_type(i) >  2) fprintf(f_veri, "   if (%s) %s <= out;\n"                   , cond, sim_name(i));
+        free(cond);
     }
     fprintf(f_veri, "end\n\n");
 

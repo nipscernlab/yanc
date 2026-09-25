@@ -10,6 +10,7 @@ NOP
 #FFTSIZ 3
 #NUGAIN 128
 @main #arrays main_ene 2 512 "Valores_Interpolados_Canal_A12-L_512bins.txt"
+#SHARE main_xl main_x
 LOD 0.0
 SET main_r1
 LOD 0.0

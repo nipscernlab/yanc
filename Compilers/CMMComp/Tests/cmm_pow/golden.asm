@@ -8,6 +8,21 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE main_r pow_b
+#SHARE pow_y pow_b
+#SHARE exp_x pow_r
+#SHARE exp_q pow_x
+#SHARE exp_n pow_x
+#SHARE exp_r pow_r
+#SHARE log_x pow_x
+#SHARE log_e pow_r
+#SHARE log_ne pow_c
+#SHARE log_m pow_c
+#SHARE log_t2 pow_x
+#SHARE log_t1 pow_c
+#SHARE log_u pow_x
+#SHARE log_w pow_c
+#SHARE log_lm pow_x
 @main @Lwh1 LOD 2.0
 SET pow_b
 SET pow_r

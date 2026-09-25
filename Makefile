@@ -90,9 +90,10 @@ $(BIN):
 # --- cmmcomp (flex + bison) -------------------------------------------------
 $(BIN)/cmmcomp$(EXE): $(addprefix $(CMM)/,$(CMMCOMP_C)) \
                       $(CMM)/CMMComp.l $(CMM)/CMMComp.y \
+                      $(COMMON)/asm_share.c $(COMMON)/asm_share.h \
                       $(wildcard Compilers/CMMComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(CMM) && $(BISON) -y -d CMMComp.y && $(FLEX) CMMComp.l
-	$(CC) $(CFLAGS) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(LDLIBS)
+	$(CC) $(CFLAGS) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(COMMON)/asm_share.c $(LDLIBS)
 
 # --- appcomp (flex) ---------------------------------------------------------
 $(BIN)/appcomp$(EXE): $(addprefix $(APP)/,$(APPCOMP_C)) $(APP)/app.l \

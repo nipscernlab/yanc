@@ -8,6 +8,9 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
+#SHARE main_ic main_wc
+#SHARE main_outer main_wc
+#SHARE main_bc main_wc
 @main @Lwh1 LOD 1
 JIZ Lif1else
 LOD 11

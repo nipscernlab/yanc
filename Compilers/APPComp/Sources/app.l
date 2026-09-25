@@ -37,6 +37,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 "#ITRAD"   eval_itrad (  ); // interrupt address point
 "#TOAQUI"  eval_toaqui(  ); // #TOAQUI marker (PC compared against this address -> cheguei pin)
+"#SHARE"   eval_direct(26); // #SHARE <name> <home>: <name> uses the data word of <home>
 
    "LOD"   eval_opcode(18); // loads data from memory
  "P_LOD"   eval_opcode(18); // PUSH + LOD

@@ -8,6 +8,27 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE b2_m b1_f
+#SHARE b2_k b1_k
+#SHARE b2_s b1_s
+#SHARE b3_f b1_f
+#SHARE b3_k b1_k
+#SHARE b3_s b1_s
+#SHARE b4_k b1_f
+#SHARE b4_f b1_k
+#SHARE b4_s b1_s
+#SHARE b5_k b1_f
+#SHARE b5_f b1_k
+#SHARE b5_s b1_s
+#SHARE b6_g b1_f
+#SHARE b6_f b1_k
+#SHARE b6_s b1_s
+#SHARE b7_g b1_f
+#SHARE b7_f b1_k
+#SHARE b7_s b1_s
+#SHARE b8_g b1_f
+#SHARE b8_f b1_k
+#SHARE b8_s b1_s
 JMP main
 @b1 SET_P b1_f
 SET b1_k

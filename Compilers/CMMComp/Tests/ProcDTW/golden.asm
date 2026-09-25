@@ -10,6 +10,8 @@ NOP
 #array dtw 1 5625
 #array data_ref 1 75
 #array data 1 75
+#SHARE aux_var cont
+#SHARE val_final menor
 @main LOD 75
 SET len_ref
 LOD 0

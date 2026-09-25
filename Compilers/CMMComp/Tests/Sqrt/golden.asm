@@ -8,6 +8,11 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE my_sqrt_x my_sqrt_v
+#SHARE main_y my_sqrt_num
+#SHARE main_t my_sqrt_v
+#SHARE main_e my_sqrt_num
+#SHARE sqrt_num my_sqrt_num
 JMP main
 @my_sqrt SET my_sqrt_num
 EQU 0.0

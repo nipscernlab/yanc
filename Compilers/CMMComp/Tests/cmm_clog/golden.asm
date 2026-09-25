@@ -8,6 +8,24 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
+#SHARE fase_t fase_re
+#SHARE clog_im fase_re
+#SHARE main_c_i fase_re
+#SHARE main_w clog_b
+#SHARE main_w_i clog_a
+#SHARE atan_x fase_re
+#SHARE atan_big main_c
+#SHARE atan_t atan_ax
+#SHARE atan_p atan_ax
+#SHARE log_x main_c
+#SHARE log_e fase_re
+#SHARE log_ne atan_ax
+#SHARE log_m atan_ax
+#SHARE log_t2 main_c
+#SHARE log_t1 atan_ax
+#SHARE log_u main_c
+#SHARE log_w atan_ax
+#SHARE log_lm main_c
 @main @Lwh1 LOD 1.000000
 F_MLT 1.000000
 P_LOD 0.000000
