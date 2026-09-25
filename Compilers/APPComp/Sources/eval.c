@@ -6,6 +6,7 @@
 #include  <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include  <ctype.h>
 
 // local includes
 #include "../Headers/variaveis.h"
@@ -89,6 +90,9 @@ void eval_opernd(char *va)
         case 25: fprintf(f_log, "fround %s\n", va ); state =  0; break; // float rounding level
         case 26: snprintf(name_sh, sizeof(name_sh), "%s", va); state = 27; break; // #SHARE: the name
         case 27: var_share(name_sh,            va ); state =  0; break; // #SHARE: the home it uses
+        case 28: if (!isdigit((unsigned char)va[0]) && va[0] != '-' && va[0] != '+')
+                     var_add(va,1);                                          // LDI/STI <array>: a data operand
+                 n_ins++;                            state =  0; break; // LDI/STI <number>: raw base, no data word
         case 11: strcpy (name_arr,             va ); state = 12; break; // found an array without initialization
         case 12:                                     state = 13; break; // pick up data type (not needed in app)
         case 13: var_add(name_arr,        atoi(va)); state =  0; break; // declare array without initialization

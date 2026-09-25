@@ -289,11 +289,7 @@ module processor
 	parameter  F_SCL   = 0,    // scale float by 2^k, k from memory
 	parameter SF_SCL   = 0,    // scale float by 2^k, k from stack
 	parameter    XPO   = 0,    // base-2 exponent of float (acc) as int
-	parameter  XPO_M   = 0,    // base-2 exponent of float (memory) as int
-
-	// base-less indirect addressing (runtime pointers / array params)
-	parameter    LDA   = 0,    // acc = mem[acc]
-	parameter    STA   = 0     // mem[stack_top] = acc, pop
+	parameter  XPO_M   = 0     // base-2 exponent of float (memory) as int
 )(
 	input               clk     , rst,
 	input  [NUBITS-1:0] io_in   ,
@@ -450,9 +446,7 @@ core #(.NBOPCO ( NBOPCO ),
 	   .F_SCL  ( F_SCL  ),
 	   .SF_SCL (SF_SCL  ),
 	   .XPO    (   XPO  ),
-	   .XPO_M  ( XPO_M  ),
-	   .LDA    (   LDA  ),
-	   .STA    (   STA  )) core(clk, rst,
+	   .XPO_M  ( XPO_M  )) core(clk, rst,
                                 instr, instr_addr,
                                 mem_wr, mem_addr_rd, mem_addr_wr, mem_data_in, mem_data_out,
                                 io_in, addr_in, addr_out, req_in, out_en, itr, cheguei

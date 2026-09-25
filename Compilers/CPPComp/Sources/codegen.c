@@ -10,7 +10,7 @@
 //   - Conditional jumps run through LIN;LIN to normalise the value to {0,1}
 //     unless the expression's top operator is already comparison/logic.
 //   - Lvalue accesses (arr[i], s.f, *p, p->f) compute &lv into the accumulator
-//     and use LDA/STA to dereference. Simple scalar idents use LOD/SET fast.
+//     and use LDI 0 / STI 0 to dereference. Simple scalar idents use LOD/SET fast.
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -1025,7 +1025,7 @@ static void gen_load_this(void)
 {
     sym *th = st_find("this");
     if (!th) { msg_internal("`this` outside a method"); return; }
-    if (th->is_frame) { emit("LOD __fp"); if (th->frame_off) emit("ADD %d", th->frame_off); emit("LDA"); }
+    if (th->is_frame) { emit("LOD __fp"); if (th->frame_off) emit("ADD %d", th->frame_off); emit("LDI 0"); }
     else emit("LOD %s", th->asm_name);
 }
 
@@ -1040,7 +1040,7 @@ static void gen_addr(expr *e)
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
         // reference: its lvalue address is the address it stores (the referent)
         if (s->stype && s->stype->is_ref) {
-            if (s->is_frame) { emit("LOD __fp"); if (s->frame_off) emit("ADD %d", s->frame_off); emit("LDA"); }
+            if (s->is_frame) { emit("LOD __fp"); if (s->frame_off) emit("ADD %d", s->frame_off); emit("LDI 0"); }
             else emit("LOD %s", s->asm_name);
             return;
         }
@@ -1290,8 +1290,8 @@ static void gen_struct_copy(expr *dest, expr *src, int nwords)
     gen_addr(dest); emit("SET %s", dt);     // dt = &dest
     for (int i = 0; i < nwords; i++) {
         emit("LOD %s", dt); if (i) emit("ADD %d", i); emit("PSH");
-        emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDA");
-        emit("STA");
+        emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDI 0");
+        emit("STI 0");
     }
     emit("LOD %s", dt);                      // result = &dest
     free(dt); free(st);
@@ -1322,7 +1322,7 @@ static void copy_to_block(const char *dest, expr *src, int n)
     gen_expr(src); emit("SET %s", st);       // st = &src
     for (int i = 0; i < n; i++) {
         emit("LOD %d", i); emit("PSH");      // offset on stack
-        emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDA"); // acc = src[i]
+        emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDI 0"); // acc = src[i]
         emit("STI %s", dest);                // mem[dest+i] = acc
     }
     free(st);
@@ -1401,7 +1401,7 @@ static void emit_ctor_call(func *cf, objaddr a, expr **args, int nargs)
 static void emit_construct(type *t, objaddr a, expr **args, int nargs)
 {
     if (!t || t->kind != TY_STRUCT || !t->tag) return;
-    if (t->n_vtbl > 0) { emit_objaddr(a); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STA"); }
+    if (t->n_vtbl > 0) { emit_objaddr(a); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STI 0"); }
     func *cf = resolve_ctor(t, args, nargs);
     if (cf) emit_ctor_call(cf, a, args, nargs);
 }
@@ -1486,7 +1486,7 @@ static void gen_store(expr *lv, expr *val)
         if (cs && cs->is_const) msg_error(lv->line, "assignment to const '%s'", lv->sval);
     }
     // whole-struct assignment: a user operator= overrides the default memberwise
-    // copy; otherwise copy all words (not a single STA)
+    // copy; otherwise copy all words (not a single STI 0)
     {
         type *lvt = infer_type(lv);
         if (lvt && lvt->kind == TY_STRUCT) {
@@ -1515,8 +1515,8 @@ static void gen_store(expr *lv, expr *val)
             st_add(SK_LOCAL_VAR, tn, ta, t_int());
             log_var(cur_func_name ? cur_func_name : "global", tn, 1, 0);
             gen_addr(lv);  emit("SET %s", ta);     // ta = &word
-            emit("LOD %s", ta); emit("PSH");        // stack: [&word]  (STA address)
-            emit("LOD %s", ta); emit("LDA");        // acc = old word
+            emit("LOD %s", ta); emit("PSH");        // stack: [&word]  (STI 0 address)
+            emit("LOD %s", ta); emit("LDI 0");        // acc = old word
             emit("AND %ld", clear);                 // clear the field's bits
             emit("PSH");                            // stack: [&word, cleared]
             gen_expr_to(val, bf->ftype);            // e.g. 2.7f -> 2, 5 -> 1 for a bool field
@@ -1525,7 +1525,7 @@ static void gen_store(expr *lv, expr *val)
                 emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHL");
             }
             emit("S_ORR");                          // cleared | shifted
-            emit("STA");                            // mem[&word] = result
+            emit("STI 0");                            // mem[&word] = result
             free(ta);
             return;
         }
@@ -1562,13 +1562,13 @@ static void gen_store(expr *lv, expr *val)
             }
         }
     }
-    // general path via STA
+    // general path via STI 0
     {
         type *lvt = infer_type(lv);
         gen_addr(lv);
         emit("PSH");
         gen_expr_to(val, lvt);
-        emit("STA");
+        emit("STI 0");
     }
 }
 
@@ -1776,16 +1776,16 @@ static void gen_expr(expr *e)
             gen_load_this();
             if (mf->offset > 0) emit("ADD %d", mf->offset);
             // array/struct fields decay to their base address (the field IS
-            // the storage, not a pointer to it). LDA only for scalar fields.
+            // the storage, not a pointer to it). LDI 0 only for scalar fields.
             if (mf->ftype && (mf->ftype->kind == TY_ARRAY || mf->ftype->kind == TY_STRUCT))
                 return;
-            emit("LDA");
+            emit("LDI 0");
             return;
         }
         sym *stat = cur_class_static(e->sval);
         sym *s = stat ? stat : st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
-        if (s->stype && s->stype->is_ref) { gen_addr(e); emit("LDA"); return; }  // auto-deref
+        if (s->stype && s->stype->is_ref) { gen_addr(e); emit("LDI 0"); return; }  // auto-deref
         if (s->kind == SK_FUNC) {
             // function used as a value -> its dispatch-table ID (function ptr)
             int id = fp_id_of(e->sval);
@@ -1795,7 +1795,7 @@ static void gen_expr(expr *e)
         }
         // frame scalar/pointer local: load mem[__fp + off] (arrays/structs in a
         // recursive function are rejected at declaration time)
-        if (s->is_frame) { gen_addr(e); emit("LDA"); return; }
+        if (s->is_frame) { gen_addr(e); emit("LDI 0"); return; }
         if (s->stype && s->stype->kind == TY_ARRAY) {
             // array decays to base address
             if (s->kind == SK_PARAM) emit("LOD %s", s->asm_name);
@@ -1824,7 +1824,7 @@ static void gen_expr(expr *e)
             return;
         }
         gen_expr(e->a);
-        emit("LDA");
+        emit("LDI 0");
         return;
 
     case E_INDEX: {
@@ -1844,7 +1844,7 @@ static void gen_expr(expr *e)
                             free(masm);
                             if (rt && rt->is_ref && rt->base &&
                                 rt->base->kind != TY_STRUCT && rt->base->kind != TY_ARRAY)
-                                emit("LDA");
+                                emit("LDI 0");
                             return;
                         }
                     }
@@ -1857,7 +1857,7 @@ static void gen_expr(expr *e)
                     // load the referent to get the rvalue.
                     if (rt && rt->is_ref && rt->base &&
                         rt->base->kind != TY_STRUCT && rt->base->kind != TY_ARRAY)
-                        emit("LDA");
+                        emit("LDI 0");
                     return;
                 }
             }
@@ -1886,7 +1886,7 @@ static void gen_expr(expr *e)
             }
         }
         gen_addr(e);
-        emit("LDA");
+        emit("LDI 0");
         return;
     }
 
@@ -1896,7 +1896,7 @@ static void gen_expr(expr *e)
         strct_field *bf = member_field(e);
         if (bf && bf->is_bitfield) {
             gen_addr(e);                    // &word (gen_addr adds the word offset)
-            emit("LDA");                    // word value
+            emit("LDI 0");                    // word value
             if (bf->bit_pos > 0) {          // logical shift right by bit_pos (stack form)
                 emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHR");
             }
@@ -1915,7 +1915,7 @@ static void gen_expr(expr *e)
             return;
         }
         gen_addr(e);
-        emit("LDA");
+        emit("LDI 0");
         return;
     }
 
@@ -1940,7 +1940,7 @@ static void gen_expr(expr *e)
         gen_store(e->a, e->b);
         // assignment expression yields the stored value; for v1 we leave acc
         // as it is after the store (which for SET-path is the value, for
-        // STA-path is also the value)
+        // STI 0-path is also the value)
         return;
 
     case E_BINOP: {
@@ -2168,14 +2168,14 @@ static void gen_expr(expr *e)
                 return;
             }
         }
-        // general lvalue: &lv computed once, read-modify-write via LDA/STA
+        // general lvalue: &lv computed once, read-modify-write via LDI 0 / STI 0
         gen_addr(lv);                                    // acc = &lv
         emit("PSH");                                     // stack: [&lv]
-        emit("LDA");                                     // acc = *lv
+        emit("LDI 0");                                     // acc = *lv
         if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");
         else          emit("ADD %d", delta);             // acc = new
         if (narrow) emit_wrap(lv->etype);
-        emit("STA");                                     // mem[&lv] = new ; acc = new
+        emit("STI 0");                                     // mem[&lv] = new ; acc = new
         return;
     }
     case E_POSTINC: case E_POSTDEC: {
@@ -2205,9 +2205,9 @@ static void gen_expr(expr *e)
             // integer: recover old by undoing the delta (exact in integer math)
             gen_addr(lv);                                // acc = &lv
             emit("PSH");                                 // stack: [&lv]
-            emit("LDA");                                 // acc = old
+            emit("LDI 0");                                 // acc = old
             emit("ADD %d", delta);                       // acc = new
-            emit("STA");                                 // mem[&lv] = new ; acc = new
+            emit("STI 0");                                 // mem[&lv] = new ; acc = new
             emit("ADD %d", -delta);                      // acc = new - delta = old
             return;
         }
@@ -2220,13 +2220,13 @@ static void gen_expr(expr *e)
             log_var(cur_func_name ? cur_func_name : "global", tn, 1, 0);
             gen_addr(lv);                                // acc = &lv
             emit("SET %s", ta);                          // _pf = &lv
-            emit("LDA");                                 // acc = old (mem[&lv])
+            emit("LDI 0");                                 // acc = old (mem[&lv])
             emit("PSH");                                 // stack: [old]  (result)
             emit("LOD %s", ta); emit("PSH");             // stack: [old, &lv]
-            emit("LOD %s", ta); emit("LDA");             // acc = old (re-read)
+            emit("LOD %s", ta); emit("LDI 0");             // acc = old (re-read)
             if (is_float) emit("F_ADD %s", delta < 0 ? "-1.0" : "1.0");   // acc = new
             else        { emit("ADD %d", delta); emit_wrap(lv->etype); }
-            emit("STA");                                 // mem[&lv] = new ; stack: [old]
+            emit("STI 0");                                 // mem[&lv] = new ; stack: [old]
             emit("POP");                                 // acc = old
             free(ta);
             return;
@@ -2272,7 +2272,7 @@ static void gen_expr(expr *e)
         if (!poly && !has_ctor) return;                            // plain alloc, ptr in acc
         emit("SET __new_p");                                       // stash the new object
         if (poly) {                                                // mem[obj+0] = &vtable
-            emit("LOD __new_p"); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STA");
+            emit("LOD __new_p"); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STI 0");
         }
         if (has_ctor) {
             emit("LOD __new_p"); emit("PSH");                      // result (kept on stack bottom)
@@ -2328,7 +2328,7 @@ static void gen_expr(expr *e)
             emit("PSH");                            // copy kept for free()
             emit("PSH");                            // copy consumed as the dtor's `this`
             if (dslot >= 0) {                       // virtual dtor: dispatch via the vptr
-                emit("LDA"); if (dslot) emit("ADD %d", dslot); emit("LDA");
+                emit("LDI 0"); if (dslot) emit("ADD %d", dslot); emit("LDI 0");
                 emit("SET _fp_id");
                 emit_dispatch_chain();
             } else {
@@ -2356,7 +2356,7 @@ static void gen_expr(expr *e)
         else                     emit("#array %s %d %d", an, agg_fill_code(t), type_size_words(t));
         emit_initz(an, 0, t, e->cinit);
         emit("LEA %s", an);
-        if (t->kind != TY_ARRAY && t->kind != TY_STRUCT) emit("LDA");  // scalar value
+        if (t->kind != TY_ARRAY && t->kind != TY_STRUCT) emit("LDI 0");  // scalar value
         free(an);
         return;
     }
@@ -2395,9 +2395,9 @@ static void gen_expr(expr *e)
                 // virtual dispatch: fid = mem[mem[this] + slot], then indirect-call
                 if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // acc = this
                 emit("PSH");                                  // this -> arg 0 (kept on stack)
-                emit("LDA");                                  // acc = vptr = mem[this]
+                emit("LDI 0");                                  // acc = vptr = mem[this]
                 if (vslot) emit("ADD %d", vslot);
-                emit("LDA");                                  // acc = fid = mem[vptr+slot]
+                emit("LDI 0");                                  // acc = fid = mem[vptr+slot]
                 emit("SET _fp_id");
                 for (int i = 0; i < e->n_args; i++) {
                     type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
@@ -2523,7 +2523,7 @@ static void gen_expr(expr *e)
                 emit("LOD %ld", nw); emit("SET %s", zk);   // zk = N
                 emit("@Lzf_t%d NOP", id);
                 emit("LOD %s", zk); emit("JIZ Lzf_e%d", id);                 // while zk != 0
-                emit("LOD %s", zp); emit("PSH"); emit("LOD 0"); emit("STA"); // *zp = 0
+                emit("LOD %s", zp); emit("PSH"); emit("LOD 0"); emit("STI 0"); // *zp = 0
                 emit("LOD %s", zp); emit("P_LOD 1"); emit("S_ADD"); emit("SET %s", zp);          // zp++
                 emit("LOD %s", zk); emit("P_LOD 1"); emit("NEG"); emit("S_ADD"); emit("SET %s", zk); // zk--
                 emit("JMP Lzf_t%d", id);
@@ -2604,9 +2604,9 @@ static void gen_expr(expr *e)
                     sym *ms = masm ? st_find(masm) : NULL;
                     if (vslot >= 0) {
                         gen_load_this(); emit("PSH");        // this -> arg 0
-                        emit("LDA");                          // acc = vptr = mem[this]
+                        emit("LDI 0");                          // acc = vptr = mem[this]
                         if (vslot) emit("ADD %d", vslot);
-                        emit("LDA");                          // acc = fid = mem[vptr+slot]
+                        emit("LDI 0");                          // acc = fid = mem[vptr+slot]
                         emit("SET _fp_id");
                         for (int i = 0; i < e->n_args; i++) {
                             type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
@@ -2779,7 +2779,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
             gen_expr(z->e); emit("SET %s", st);          // st = &src
             for (int i = 0; i < n; i++) {
                 emit("LOD %d", off + i); emit("PSH");
-                emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDA");
+                emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDI 0");
                 emit("STI %s", base);
             }
             free(st);
@@ -2897,7 +2897,7 @@ static void declare_local(decl *d)
             emit("LOD __fp"); if (ls->frame_off) emit("ADD %d", ls->frame_off); emit("PSH");
             if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
             else gen_expr_to(d->init, d->dtype);
-            emit("STA");
+            emit("STI 0");
         }
         return;
     }
@@ -3623,7 +3623,7 @@ static void emit_fn_return(void)
     if (cur_fn_recursive) {
         emit("SET __ret");                                  // preserve the return value
         emit("LOD __fp"); emit("SET __sp");                 // free this frame: SP = FP
-        emit("LOD __fp"); emit("LDA"); emit("SET __fp");    // FP = caller FP (saved at frame base)
+        emit("LOD __fp"); emit("LDI 0"); emit("SET __fp");    // FP = caller FP (saved at frame base)
         emit("LOD __ret");
     }
     emit("RET");
@@ -3675,14 +3675,14 @@ static void emit_function(func *f, unit *u, int is_main)
 
     if (cur_fn_recursive) {
         // prologue: push a new frame
-        emit("LOD __sp"); emit("PSH"); emit("LOD __fp"); emit("STA");      // mem[SP] = FP
+        emit("LOD __sp"); emit("PSH"); emit("LOD __fp"); emit("STI 0");      // mem[SP] = FP
         emit("LOD __sp"); emit("SET __fp");                                // FP = SP
         emit("LOD __sp"); emit("ADD %d", f->frame_size); emit("SET __sp"); // SP += frame_size
         for (int i = np - 1; i >= 0; i--) {                                // args -> frame slots
             sym *sy = st_find(plist[i]->name);
             emit("POP"); emit("SET __argv");
             emit("LOD __fp"); if (sy->frame_off) emit("ADD %d", sy->frame_off); emit("PSH");
-            emit("LOD __argv"); emit("STA");
+            emit("LOD __argv"); emit("STI 0");
         }
     } else if (np > 0) {
         for (int i = np - 1; i >= 0; i--) {
@@ -3802,14 +3802,14 @@ static void emit_heap(void)
     emit("LOD __flist"); emit("SET __m_cur");          // cur payload ptr (0=end)
     emit("@mal_loop NOP");
     emit("LOD __m_cur"); emit("JIZ mal_bump");         // end of list -> bump-allocate
-    emit("LOD __m_cur"); emit("PSH"); emit("LOD 1"); emit("NEG"); emit("S_ADD"); emit("LDA");
+    emit("LOD __m_cur"); emit("PSH"); emit("LOD 1"); emit("NEG"); emit("S_ADD"); emit("LDI 0");
     emit("SET __m_csz");                               // csz = mem[cur-1] (block size)
     // if (csz >= sz) reuse: !(csz < sz)
     emit("LOD __m_csz"); emit("PSH"); emit("LOD __m_sz"); emit("S_LES"); emit("LIN");
     emit("JIZ mal_next");
-    emit("LOD __m_cur"); emit("LDA"); emit("SET __m_lnk");          // link = mem[cur]
+    emit("LOD __m_cur"); emit("LDI 0"); emit("SET __m_lnk");          // link = mem[cur]
     emit("LOD __m_prev"); emit("JIZ mal_head");
-    emit("LOD __m_prev"); emit("PSH"); emit("LOD __m_lnk"); emit("STA"); // mem[prev]=link
+    emit("LOD __m_prev"); emit("PSH"); emit("LOD __m_lnk"); emit("STI 0"); // mem[prev]=link
     emit("JMP mal_reuse");
     emit("@mal_head NOP");
     emit("LOD __m_lnk"); emit("SET __flist");          // __flist = link
@@ -3817,7 +3817,7 @@ static void emit_heap(void)
     emit("LOD __m_cur"); emit("RET");                  // return payload (cur)
     emit("@mal_next NOP");
     emit("LOD __m_cur"); emit("SET __m_prev");
-    emit("LOD __m_cur"); emit("LDA"); emit("SET __m_cur");          // cur = mem[cur] (next)
+    emit("LOD __m_cur"); emit("LDI 0"); emit("SET __m_cur");          // cur = mem[cur] (next)
     emit("JMP mal_loop");
     // ---- bump-allocate: need = hp + sz + 1 ; require need <= hend -----------
     emit("@mal_bump NOP");
@@ -3825,7 +3825,7 @@ static void emit_heap(void)
     emit("SET __m_need");
     emit("LOD __m_need"); emit("PSH"); emit("LOD __hend"); emit("S_GRE"); emit("LIN"); // need<=hend
     emit("JIZ mal_oom");
-    emit("LOD __hp"); emit("PSH"); emit("LOD __m_sz"); emit("STA");      // mem[hp]=sz
+    emit("LOD __hp"); emit("PSH"); emit("LOD __m_sz"); emit("STI 0");      // mem[hp]=sz
     emit("LOD __hp"); emit("ADD 1"); emit("SET __m_ret");                // ret=hp+1 (payload)
     emit("LOD __m_need"); emit("SET __hp");                              // hp=need
     emit("LOD __m_ret"); emit("RET");
@@ -3836,7 +3836,7 @@ static void emit_heap(void)
     emit("@free NOP");
     emit("POP"); emit("SET __m_cur");                  // p (payload addr)
     emit("LOD __m_cur"); emit("JIZ free_ret");         // free(0) is a no-op
-    emit("LOD __m_cur"); emit("PSH"); emit("LOD __flist"); emit("STA");  // mem[p]=__flist
+    emit("LOD __m_cur"); emit("PSH"); emit("LOD __flist"); emit("STI 0");  // mem[p]=__flist
     emit("LOD __m_cur"); emit("SET __flist");                            // __flist=p
     emit("@free_ret NOP");
     emit("RET");
@@ -3872,7 +3872,7 @@ static void emit_vtable_inits(void)
             char *impl = resolve_method(c, c->vtbl[s]);
             int id = impl ? fp_id_of(impl) : 0;
             emit("LEA %s__vtable", c->tag); if (s) emit("ADD %d", s); emit("PSH");
-            emit("LOD %d", id); emit("STA");          // mem[vtable+slot] = id
+            emit("LOD %d", id); emit("STI 0");          // mem[vtable+slot] = id
             if (impl) free(impl);
         }
     }
@@ -4276,6 +4276,36 @@ static void peephole(void)
                 g_ibuf[w-1].text = fused;                    // keep the SET's source line
                 free(g_ibuf[r].text);
                 continue;
+            }
+        }
+        g_ibuf[w++] = g_ibuf[r];
+    }
+    g_ibuf_n = w;
+    // pass 2b: a constant offset added to a pointer just before it is
+    // dereferenced rides in the raw base of the LDI / STI instead (the
+    // hardware adds the base to the acc / to the stack top):
+    //   ADD k; LDI 0        -> LDI k          reads mem[p + k]
+    //   ADD k; P_x; STI 0   -> P_x; STI k     the P_ op now pushes p, STI adds k
+    // k a non-negative integer literal; no label between, no verbatim asm.
+    w = 0;
+    for (int r = 0; r < g_ibuf_n; r++) {
+        int k; char end;
+        if (!g_ibuf[r].nofuse && sscanf(g_ibuf[r].text, "ADD %d%c", &k, &end) == 1 && k >= 0
+            && r + 1 < g_ibuf_n && !g_ibuf[r+1].nofuse) {
+            const char *n1 = g_ibuf[r+1].text;
+            if (!strcmp(n1, "LDI 0")) {
+                char *f = malloc(24); snprintf(f, 24, "LDI %d", k);
+                free(g_ibuf[r].text); free(g_ibuf[r+1].text);
+                g_ibuf[w] = g_ibuf[r+1]; g_ibuf[w].text = f; w++;
+                r += 1; continue;
+            }
+            if (r + 2 < g_ibuf_n && !g_ibuf[r+2].nofuse && n1[0] == 'P' && (n1[1] == '_' || n1[1] == 'F')
+                && !strcmp(g_ibuf[r+2].text, "STI 0")) {
+                char *f = malloc(24); snprintf(f, 24, "STI %d", k);
+                free(g_ibuf[r].text); free(g_ibuf[r+2].text);
+                g_ibuf[w++] = g_ibuf[r+1];
+                g_ibuf[w] = g_ibuf[r+2]; g_ibuf[w].text = f; w++;
+                r += 2; continue;
             }
         }
         g_ibuf[w++] = g_ibuf[r];

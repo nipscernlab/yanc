@@ -291,7 +291,7 @@ Two conclusions:
   of the clock of one that does not (a 5–10× factor once carry chains are
   accounted for). Because the ALU only instantiates the operators a program
   uses, programs without division are unaffected. `ula_out` also drives the
-  `JIZ` decision (`if_acc = |ula_out`), the `LDI`/`LDA` address and the `SET`
+  `JIZ` decision (`if_acc = |ula_out`), the `LDI` address and the `SET`
   data combinationally, so the ALU depth bounds the fetch path too. A
   multi-cycle divider (global stall: enable on `pc`, `ula_op`, `racc`, both
   stacks, `popr`/`stkr`, `req_inr`/`ior`, `en_out`/`addr_out`/`req_in`,

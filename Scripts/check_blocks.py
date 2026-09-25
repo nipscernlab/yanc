@@ -3,7 +3,7 @@
 Usage: python3 Scripts/check_blocks.py <proc.v> <HDL/processor.v> [exceptions]
 
 Every opcode parameter of `processor` (the ones that gate a `generate` block:
-P_LOD .. STA) must be passed as (1) in the generated top, and FFTSIZ,
+from P_LOD to the last one) must be passed as (1) in the generated top, and FFTSIZ,
 ITRADD and TOAQUIADDR must be set, unless the parameter is listed in the
 exceptions file (`NAME  reason`, '#' comments). An exception that IS
 instantiated is also an error, so the list cannot go stale. Used by
@@ -24,7 +24,7 @@ hdl = open(hdl_v, encoding='utf-8').read()
 head = hdl[hdl.index('module processor'):]
 head = head[:head.index(');')]
 params = re.findall(r'parameter\s+(\w+)\s*=', head)
-ops = params[params.index('P_LOD'):params.index('STA') + 1]
+ops = params[params.index('P_LOD'):]
 
 top = open(proc_v, encoding='utf-8').read()
 given = dict(re.findall(r'\.(\w+)\s*\(\s*([^)]*?)\s*\)', top))

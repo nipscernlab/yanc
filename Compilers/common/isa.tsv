@@ -2,12 +2,18 @@
 # Scripts/check_isa.py holds the hand-written copies to. The ISA is spelled out
 # in four places that nothing keeps in step -- ASMComp.l (mnemonic -> opcode +
 # operand class), instr_dec.v and ula.v (opcode -> control signals and ALU
-# operation) and core.v (which hard-codes the flow-control opcodes as 5-bit
-# literals) -- and a disagreement between them is silent: a program assembles
-# and then runs as a different program. TODO.md item 10.2.
+# operation) and core.v (which names the flow-control opcodes in localparams)
+# -- and a disagreement between them is silent: a program assembles and then
+# runs as a different program. TODO.md item 10.2.
+#
+# The opcodes are numbered by family: NOP, memory and stack, I/O, flow control
+# (kept below 32), int arithmetic, float arithmetic, int unary, float unary,
+# conversions, logic, comparisons, shifts.
 #
 # operand: none    no operand
-#          data    an address in data memory
+#          data    an address in data memory (LDI/ILI/STI/ISI also take a
+#                  number, used as the raw base address: LDI 0 reads mem[acc],
+#                  LDI 3 reads mem[acc + 3] -- how a pointer is dereferenced)
 #          code    an address in instruction memory
 #          in      an input port
 #          out     an output port
@@ -27,134 +33,131 @@
 # io:      in, out or -
 #
 # Several mnemonics share one opcode and differ only in how the assembler reads
-# the operand: LOD, LEA and LOD_V are all opcode 0.
+# the operand: LOD, LEA and LOD_V are all opcode 1.
 #
 # WHERE THE EFFECT COLUMNS COME FROM, and how far to trust them. They are
 # derived from the naming convention the ISA follows without exception --
 # prefix P_/PF_ pushes the accumulator first, prefix S_/SF_ takes the second
 # operand off the stack, suffix _M reads the operand from memory instead of the
 # accumulator, suffix _V adds a constant offset -- plus the per-mnemonic
-# comments in ASMComp.l, which is where LDA, STA, LEA and the indirect forms
-# come from. check_isa.py re-derives them from the names and fails on any row
+# comments in ASMComp.l, which is where LEA and the indirect forms come from. check_isa.py re-derives them from the names and fails on any row
 # that breaks the convention, so a typo cannot survive here. What that does NOT
 # give is execution: no instruction has been run to confirm its effect. The
 # instruction-set simulator of TODO item 10.1 is what will validate these
 # columns; until it exists they are a careful reading, not a measurement.
 #
 # mnemonic	opcode	operand	acc	stack	opnd	flow	io	description
-LOD	0	data	w	-	r	-	-	loads data from memory
-P_LOD	1	data	rw	push	r	-	-	PUSH + LOD
-LDI	2	data	rw	-	base_r	-	-	LOD with indirect addressing (index in acc)
-ILI	3	data	rw	-	base_r	-	-	LOD with reverse indirect addressing (FFT)
-SET	4	data	r	-	w	-	-	stores data in memory
-SET_P	5	data	rw	pop	w	-	-	SET + POP
-STI	6	data	r	pop	base_w	-	-	SET with indirect addressing (index on stack)
-ISI	7	data	r	pop	base_w	-	-	SET with reverse indirect addressing (FFT)
-PSH	8	none	r	push	-	-	-	pushes data onto the stack
-POP	9	none	w	pop	-	-	-	pops data from the stack
-INN	10	in	w	-	-	-	in	data input
-F_INN	11	in	w	-	-	-	in	floating-point data input
-P_INN	12	in	rw	push	-	-	in	PUSH +   INN
-PF_INN	13	in	rw	push	-	-	in	PUSH + F_INN
-OUT	14	out	r	-	-	-	out	data output
-JMP	15	code	-	-	-	jmp	-	unconditional jump
-JIZ	16	code	r	-	-	jz	-	jump if acc is zero
-CAL	17	code	-	-	-	call	-	subroutine call
-RET	18	none	-	-	-	ret	-	subroutine return
-ADD	19	data	rw	-	r	-	-	fixed-point addition with memory
-S_ADD	20	none	rw	pop	-	-	-	fixed-point addition with stack
-F_ADD	21	data	rw	-	r	-	-	floating-point addition with memory
-SF_ADD	22	none	rw	pop	-	-	-	floating-point addition with stack
-MLT	23	data	rw	-	r	-	-	fixed-point multiplication with memory
-S_MLT	24	none	rw	pop	-	-	-	fixed-point multiplication with stack
-F_MLT	25	data	rw	-	r	-	-	floating-point multiplication with memory
-SF_MLT	26	none	rw	pop	-	-	-	floating-point multiplication with stack
-DIV	27	data	rw	-	r	-	-	fixed-point division with memory
-S_DIV	28	none	rw	pop	-	-	-	fixed-point division with stack
-F_DIV	29	data	rw	-	r	-	-	floating-point division with memory
-SF_DIV	30	none	rw	pop	-	-	-	floating-point division with stack
-MOD	31	data	rw	-	r	-	-	fixed-point remainder with memory
-S_MOD	32	none	rw	pop	-	-	-	fixed-point remainder with stack
-SGN	33	data	rw	-	r	-	-	fixed-point sign with memory
-S_SGN	34	none	rw	pop	-	-	-	fixed-point sign with stack
-F_SGN	35	data	rw	-	r	-	-	floating-point sign with memory
-SF_SGN	36	none	rw	pop	-	-	-	floating-point sign with stack
-NEG	37	none	rw	-	-	-	-	fixed-point negation with acc
-NEG_M	38	data	w	-	r	-	-	fixed-point negation with memory
-P_NEG_M	39	data	rw	push	r	-	-	PUSH +   NEG_M
-F_NEG	40	none	rw	-	-	-	-	floating-point negation with acc
-F_NEG_M	41	data	w	-	r	-	-	floating-point negation with memory
-PF_NEG_M	42	data	rw	push	r	-	-	PUSH + F_NEG_M
-ABS	43	none	rw	-	-	-	-	fixed-point abs with acc
-ABS_M	44	data	w	-	r	-	-	fixed-point abs with memory
-P_ABS_M	45	data	rw	push	r	-	-	PUSH +   ABS_M
-F_ABS	46	none	rw	-	-	-	-	floating-point abs with acc
-F_ABS_M	47	data	w	-	r	-	-	floating-point abs with memory
-PF_ABS_M	48	data	rw	push	r	-	-	PUSH + F_ABS_M
-PST	49	none	rw	-	-	-	-	clears if negative, fixed-point with acc
-PST_M	50	data	w	-	r	-	-	clears if negative, fixed-point with memory
-P_PST_M	51	data	rw	push	r	-	-	PUSH +   PST_M
-F_PST	52	none	rw	-	-	-	-	clears if negative, floating-point with acc
-F_PST_M	53	data	w	-	r	-	-	clears if negative, floating-point with memory
-PF_PST_M	54	data	rw	push	r	-	-	PUSH + F_PST_M
-NRM	55	none	rw	-	-	-	-	divides by constant, fixed-point with acc
-NRM_M	56	data	w	-	r	-	-	divides by constant, fixed-point with memory
-P_NRM_M	57	data	rw	push	r	-	-	PUSH +   NRM_M
-I2F	58	none	rw	-	-	-	-	int2float with acc
-I2F_M	59	data	w	-	r	-	-	int2float with mem
-P_I2F_M	60	data	rw	push	r	-	-	PUSH + I2F_M
-F2I	61	none	rw	-	-	-	-	float2int with acc
-F2I_M	62	data	w	-	r	-	-	float2int with mem
-P_F2I_M	63	data	rw	push	r	-	-	PUSH + F2I_M
-AND	64	data	rw	-	r	-	-	and with memory
-S_AND	65	none	rw	pop	-	-	-	and with stack
-ORR	66	data	rw	-	r	-	-	or  with memory
-S_ORR	67	none	rw	pop	-	-	-	or  with stack
-XOR	68	data	rw	-	r	-	-	xor with memory
-S_XOR	69	none	rw	pop	-	-	-	xor with stack
-INV	70	none	rw	-	-	-	-	not with acc
-INV_M	71	data	w	-	r	-	-	not with mem
-P_INV_M	72	data	rw	push	r	-	-	PUSH + INV_M
-LAN	73	data	rw	-	r	-	-	logical and with memory
-S_LAN	74	none	rw	pop	-	-	-	logical and with stack
-LOR	75	data	rw	-	r	-	-	logical or  with memory
-S_LOR	76	none	rw	pop	-	-	-	logical or  with stack
-LIN	77	none	rw	-	-	-	-	logical inversion with acc
-LIN_M	78	data	w	-	r	-	-	logical inversion with mem
-P_LIN_M	79	data	rw	push	r	-	-	PUSH + LIN_M
-LES	80	data	rw	-	r	-	-	less than, fixed-point with memory
-S_LES	81	none	rw	pop	-	-	-	less than, fixed-point with stack
-F_LES	82	data	rw	-	r	-	-	less than, floating-point with memory
-SF_LES	83	none	rw	pop	-	-	-	less than, floating-point with stack
-GRE	84	data	rw	-	r	-	-	greater than, fixed-point with memory
-S_GRE	85	none	rw	pop	-	-	-	greater than, fixed-point with stack
-F_GRE	86	data	rw	-	r	-	-	greater than, floating-point with memory
-SF_GRE	87	none	rw	pop	-	-	-	greater than, floating-point with stack
-EQU	88	data	rw	-	r	-	-	equal to, with memory
-S_EQU	89	none	rw	pop	-	-	-	equal to, with stack
-SHL	90	data	rw	-	r	-	-	shift left  with memory
-S_SHL	91	none	rw	pop	-	-	-	shift left  with stack
-SHR	92	data	rw	-	r	-	-	shift right with memory
-S_SHR	93	none	rw	pop	-	-	-	shift right with stack
-SRS	94	data	rw	-	r	-	-	arithmetic shift right with memory
-S_SRS	95	none	rw	pop	-	-	-	arithmetic shift right with stack
-NOP	96	none	-	-	-	-	-	no operation
-F_ROT	97	none	rw	-	-	-	-	nearest power-of-two square-root approximation (with ACC)
-F_SU1	98	data	rw	-	r	-	-	floating-point subtraction with memory at input 1
-F_SU2	99	data	rw	-	r	-	-	floating-point subtraction with memory at input 2
-SF_SU1	100	none	rw	pop	-	-	-	floating-point subtraction with stack at input 1
-SF_SU2	101	none	rw	pop	-	-	-	floating-point subtraction with stack at input 2
-F_SCL	104	data	rw	-	r	-	-	scale float by 2^k, k from memory
-SF_SCL	105	none	rw	pop	-	-	-	scale float by 2^k, k from stack
-XPO	106	none	rw	-	-	-	-	base-2 exponent of float (acc) as int
-XPO_M	107	data	w	-	r	-	-	base-2 exponent of float (memory) as int
-LDA	102	none	rw	-	-	-	-	acc = mem[acc]
-STA	103	none	r	pop	-	-	-	mem[stack_top] = acc, pop
-LEA	0	lea	w	-	addr	-	-	load-effective-address: acc = &var (pseudo, expands to LOD <const>)
-LOD_V	0	offset	w	-	r	-	-	LOD with constant offset
-P_LOD_V	1	offset	rw	push	r	-	-	P_LOD with constant offset
-SET_V	4	offset	r	-	w	-	-	SET with constant offset
-ADD_V	19	offset	rw	-	r	-	-	ADD with constant offset
-F_ADD_V	21	offset	rw	-	r	-	-	F_ADD with constant offset
-MLT_V	23	offset	rw	-	r	-	-	MLT with constant offset
-F_MLT_V	25	offset	rw	-	r	-	-	F_MLT with constant offset
+NOP	0	none	-	-	-	-	-	no operation
+LOD	1	data	w	-	r	-	-	loads data from memory
+P_LOD	2	data	rw	push	r	-	-	PUSH + LOD
+LDI	3	data	rw	-	base_r	-	-	LOD with indirect addressing (index in acc)
+ILI	4	data	rw	-	base_r	-	-	LOD with reverse indirect addressing (FFT)
+SET	5	data	r	-	w	-	-	stores data in memory
+SET_P	6	data	rw	pop	w	-	-	SET + POP
+STI	7	data	r	pop	base_w	-	-	SET with indirect addressing (index on stack)
+ISI	8	data	r	pop	base_w	-	-	SET with reverse indirect addressing (FFT)
+PSH	9	none	r	push	-	-	-	pushes data onto the stack
+POP	10	none	w	pop	-	-	-	pops data from the stack
+INN	11	in	w	-	-	-	in	data input
+F_INN	12	in	w	-	-	-	in	floating-point data input
+P_INN	13	in	rw	push	-	-	in	PUSH +   INN
+PF_INN	14	in	rw	push	-	-	in	PUSH + F_INN
+OUT	15	out	r	-	-	-	out	data output
+JMP	16	code	-	-	-	jmp	-	unconditional jump
+JIZ	17	code	r	-	-	jz	-	jump if acc is zero
+CAL	18	code	-	-	-	call	-	subroutine call
+RET	19	none	-	-	-	ret	-	subroutine return
+ADD	20	data	rw	-	r	-	-	fixed-point addition with memory
+S_ADD	21	none	rw	pop	-	-	-	fixed-point addition with stack
+MLT	22	data	rw	-	r	-	-	fixed-point multiplication with memory
+S_MLT	23	none	rw	pop	-	-	-	fixed-point multiplication with stack
+DIV	24	data	rw	-	r	-	-	fixed-point division with memory
+S_DIV	25	none	rw	pop	-	-	-	fixed-point division with stack
+MOD	26	data	rw	-	r	-	-	fixed-point remainder with memory
+S_MOD	27	none	rw	pop	-	-	-	fixed-point remainder with stack
+SGN	28	data	rw	-	r	-	-	fixed-point sign with memory
+S_SGN	29	none	rw	pop	-	-	-	fixed-point sign with stack
+F_ADD	30	data	rw	-	r	-	-	floating-point addition with memory
+SF_ADD	31	none	rw	pop	-	-	-	floating-point addition with stack
+F_SU1	32	data	rw	-	r	-	-	floating-point subtraction with memory at input 1
+F_SU2	33	data	rw	-	r	-	-	floating-point subtraction with memory at input 2
+SF_SU1	34	none	rw	pop	-	-	-	floating-point subtraction with stack at input 1
+SF_SU2	35	none	rw	pop	-	-	-	floating-point subtraction with stack at input 2
+F_MLT	36	data	rw	-	r	-	-	floating-point multiplication with memory
+SF_MLT	37	none	rw	pop	-	-	-	floating-point multiplication with stack
+F_DIV	38	data	rw	-	r	-	-	floating-point division with memory
+SF_DIV	39	none	rw	pop	-	-	-	floating-point division with stack
+F_SGN	40	data	rw	-	r	-	-	floating-point sign with memory
+SF_SGN	41	none	rw	pop	-	-	-	floating-point sign with stack
+F_SCL	42	data	rw	-	r	-	-	scale float by 2^k, k from memory
+SF_SCL	43	none	rw	pop	-	-	-	scale float by 2^k, k from stack
+NEG	44	none	rw	-	-	-	-	fixed-point negation with acc
+NEG_M	45	data	w	-	r	-	-	fixed-point negation with memory
+P_NEG_M	46	data	rw	push	r	-	-	PUSH +   NEG_M
+ABS	47	none	rw	-	-	-	-	fixed-point abs with acc
+ABS_M	48	data	w	-	r	-	-	fixed-point abs with memory
+P_ABS_M	49	data	rw	push	r	-	-	PUSH +   ABS_M
+PST	50	none	rw	-	-	-	-	clears if negative, fixed-point with acc
+PST_M	51	data	w	-	r	-	-	clears if negative, fixed-point with memory
+P_PST_M	52	data	rw	push	r	-	-	PUSH +   PST_M
+NRM	53	none	rw	-	-	-	-	divides by constant, fixed-point with acc
+NRM_M	54	data	w	-	r	-	-	divides by constant, fixed-point with memory
+P_NRM_M	55	data	rw	push	r	-	-	PUSH +   NRM_M
+INV	56	none	rw	-	-	-	-	not with acc
+INV_M	57	data	w	-	r	-	-	not with mem
+P_INV_M	58	data	rw	push	r	-	-	PUSH + INV_M
+LIN	59	none	rw	-	-	-	-	logical inversion with acc
+LIN_M	60	data	w	-	r	-	-	logical inversion with mem
+P_LIN_M	61	data	rw	push	r	-	-	PUSH + LIN_M
+F_NEG	62	none	rw	-	-	-	-	floating-point negation with acc
+F_NEG_M	63	data	w	-	r	-	-	floating-point negation with memory
+PF_NEG_M	64	data	rw	push	r	-	-	PUSH + F_NEG_M
+F_ABS	65	none	rw	-	-	-	-	floating-point abs with acc
+F_ABS_M	66	data	w	-	r	-	-	floating-point abs with memory
+PF_ABS_M	67	data	rw	push	r	-	-	PUSH + F_ABS_M
+F_PST	68	none	rw	-	-	-	-	clears if negative, floating-point with acc
+F_PST_M	69	data	w	-	r	-	-	clears if negative, floating-point with memory
+PF_PST_M	70	data	rw	push	r	-	-	PUSH + F_PST_M
+F_ROT	71	none	rw	-	-	-	-	nearest power-of-two square-root approximation (with ACC)
+XPO	72	none	rw	-	-	-	-	base-2 exponent of float (acc) as int
+XPO_M	73	data	w	-	r	-	-	base-2 exponent of float (memory) as int
+I2F	74	none	rw	-	-	-	-	int2float with acc
+I2F_M	75	data	w	-	r	-	-	int2float with mem
+P_I2F_M	76	data	rw	push	r	-	-	PUSH + I2F_M
+F2I	77	none	rw	-	-	-	-	float2int with acc
+F2I_M	78	data	w	-	r	-	-	float2int with mem
+P_F2I_M	79	data	rw	push	r	-	-	PUSH + F2I_M
+AND	80	data	rw	-	r	-	-	and with memory
+S_AND	81	none	rw	pop	-	-	-	and with stack
+ORR	82	data	rw	-	r	-	-	or  with memory
+S_ORR	83	none	rw	pop	-	-	-	or  with stack
+XOR	84	data	rw	-	r	-	-	xor with memory
+S_XOR	85	none	rw	pop	-	-	-	xor with stack
+LAN	86	data	rw	-	r	-	-	logical and with memory
+S_LAN	87	none	rw	pop	-	-	-	logical and with stack
+LOR	88	data	rw	-	r	-	-	logical or  with memory
+S_LOR	89	none	rw	pop	-	-	-	logical or  with stack
+LES	90	data	rw	-	r	-	-	less than, fixed-point with memory
+S_LES	91	none	rw	pop	-	-	-	less than, fixed-point with stack
+GRE	92	data	rw	-	r	-	-	greater than, fixed-point with memory
+S_GRE	93	none	rw	pop	-	-	-	greater than, fixed-point with stack
+EQU	94	data	rw	-	r	-	-	equal to, with memory
+S_EQU	95	none	rw	pop	-	-	-	equal to, with stack
+F_LES	96	data	rw	-	r	-	-	less than, floating-point with memory
+SF_LES	97	none	rw	pop	-	-	-	less than, floating-point with stack
+F_GRE	98	data	rw	-	r	-	-	greater than, floating-point with memory
+SF_GRE	99	none	rw	pop	-	-	-	greater than, floating-point with stack
+SHL	100	data	rw	-	r	-	-	shift left  with memory
+S_SHL	101	none	rw	pop	-	-	-	shift left  with stack
+SHR	102	data	rw	-	r	-	-	shift right with memory
+S_SHR	103	none	rw	pop	-	-	-	shift right with stack
+SRS	104	data	rw	-	r	-	-	arithmetic shift right with memory
+S_SRS	105	none	rw	pop	-	-	-	arithmetic shift right with stack
+LEA	1	lea	w	-	addr	-	-	load-effective-address: acc = &var (pseudo, expands to LOD <const>)
+LOD_V	1	offset	w	-	r	-	-	LOD with constant offset
+P_LOD_V	2	offset	rw	push	r	-	-	P_LOD with constant offset
+SET_V	5	offset	r	-	w	-	-	SET with constant offset
+ADD_V	20	offset	rw	-	r	-	-	ADD with constant offset
+F_ADD_V	30	offset	rw	-	r	-	-	F_ADD with constant offset
+MLT_V	22	offset	rw	-	r	-	-	MLT with constant offset
+F_MLT_V	36	offset	rw	-	r	-	-	F_MLT with constant offset

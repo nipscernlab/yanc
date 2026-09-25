@@ -217,7 +217,7 @@ dividers is 47 levels deep; `DIV`+`MOD` alone are 387, `F_DIV` alone 508,
 the whole ALU with every divider 546 — the combinational dividers are ~10×
 deeper than everything else, so a processor that divides runs at roughly a
 tenth of the clock of one that does not. `ula_out` also feeds the `JIZ`
-decision and the `LDI`/`LDA` address combinationally, so the ALU depth
+decision and the `LDI` address combinationally, so the ALU depth
 bounds the fetch path too, not only `racc`. If the constraint is ever
 relaxed, a global-stall multi-cycle divider (only `DIV`/`MOD`/`F_DIV`) is
 feasible with an enable on ~10 registers of `core.v` and no compiler change
@@ -413,7 +413,7 @@ transparent: asmcomp follows a shared variable by the SETs that write it
 the user-variable traces of the same `.asm` with and without `#SHARE`
 (identical, change by change, Icarus and Verilator). What is left:
 - **cppcomp**: call `asm_share` on its output too (the big saving is there,
-  table above). Check first that its scalars written through a pointer (STA)
+  table above). Check first that its scalars written through a pointer (`STI 0`)
   are pinned: they are touched through an address the pass never sees
   named.
 - **Local arrays** of functions that are never active together could share
@@ -432,7 +432,7 @@ a NAME, not an address; `appcomp` assigns addresses later. So merging two
 names into one is all the tool has to do, and the memory saving follows.
 
 **What it has to respect:**
-- **Indirect addressing.** `LEA`/`LDA`/`STA`/`LDI`/`STI` make the touched cell
+- **Indirect addressing.** `LEA`/`LDI`/`STI` make the touched cell
   unknowable, so any name whose address is taken must be pinned. Measured:
   109-144 indirect operations and 4-19 pinned names in the C++ tests, so the
   analysable subset (a scalar whose address is never taken) is most of them.

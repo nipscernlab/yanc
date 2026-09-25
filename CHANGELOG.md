@@ -9,6 +9,25 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **The ISA loses `LDA`/`STA` and is renumbered by family.** `LDI`/`STI`
+  already read and write `base + acc` / `base + stack top`, so a pointer is
+  dereferenced with a raw numeric base: `LDI 0` / `STI 0` do what `LDA`/`STA`
+  did, and a constant offset rides in the base (`ADD 3; LDA` -> `LDI 3`).
+  appcomp and asmcomp take a number as the operand of `LDI`/`ILI`/`STI`/`ISI`
+  (no data word behind it); cppcomp emits it and folds `ADD k` into the base:
+  720 fewer instructions over the C++ tests (2.7 %; `test50` -128, `test48`
+  -106). The opcodes now run by family -- NOP 0, memory and stack 1-10, I/O
+  11-15, flow control 16-19, int and float arithmetic, int and float unary,
+  conversions, logic, comparisons, shifts -- 106 of them, 0..105. `core.v`
+  names the flow-control opcodes in opcode-wide localparams (the 5-bit
+  literals would have silently truncated any opcode above 31). `instr_dec.v`
+  is now the decode table itself, one guarded row per opcode, replacing the
+  six hand-expanded OR lists (same function: exhaustive comparison over all
+  128 opcodes; Quartus, sapho_all: decoder 76 -> 31 ALUTs, no RAM inferred),
+  and `check_isa.py` holds its rows to `isa.tsv` (rule 8). The `.asm` of every
+  program is unchanged and no simulated output moved; only the encoding
+  changed, so an HDL and an asmcomp from different sides of this change do
+  not mix.
 - **Shorter hand-written templates in cmmcomp, complex math above all.**
   Same values, fewer instructions: 154 fewer over the C± tests (1.5 %;
   `proc_fft` -36, `cmm_csincos` -38, `cmm_ctan` -30). A float or comp literal

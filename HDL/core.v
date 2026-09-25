@@ -78,22 +78,26 @@ module prefetch
 	output                        cheguei
 );
 
+// flow-control opcodes, as numbered in Compilers/common/isa.tsv (check_isa.py
+// holds these four to the table)
+localparam [NBOPCO-1:0] OP_JMP = 16, OP_JIZ = 17, OP_CAL = 18, OP_RET = 19;
+
 wire wJMP;
 
 generate if ((JIZ) != 0) begin : jmp_sel
 //             JMP                                        JIZ
-assign wJMP = (opcode == {{NBOPCO-5{1'b0}}, {5'd15}}) | ((opcode == {{NBOPCO-5{1'b0}}, {5'd16}}) & ~is_um);
+assign wJMP = (opcode == OP_JMP) | ((opcode == OP_JIZ) & ~is_um);
 end else begin : jmp_sel
 //             JMP
-assign wJMP = (opcode == {{NBOPCO-5{1'b0}}, {5'd15}});
+assign wJMP = (opcode == OP_JMP);
 end endgenerate
 
 wire pc_load;
 
 generate if ((CAL) != 0) begin : call_ctrl
 
-wire wCAL = (opcode == {{NBOPCO-5{1'b0}}, {5'd17}});
-wire wRET = (opcode == {{NBOPCO-5{1'b0}}, {5'd18}});
+wire wCAL = (opcode == OP_CAL);
+wire wRET = (opcode == OP_RET);
 
 assign pc_load    =  wJMP | wCAL | wRET;
 assign isp_push   =  wCAL;
@@ -383,13 +387,9 @@ module mem_ctrl
 	parameter FFTSIZ = 3,
 
 	parameter ISI    = 0,
-	parameter ILI    = 0,
-
-	parameter LDA    = 0,
-	parameter STA    = 0
+	parameter ILI    = 0
 )(
 	input               sti, ldi, fft, wr,
-	input               lda, sta,                  // base-less indirect (acc/stack-only)
 	input  [NUBITS-1:0] ula,
 	input  [MDATAW-1:0] base_addr, stk_ofst,
 
@@ -401,24 +401,12 @@ module mem_ctrl
 assign mem_data_wr = ula;
 assign mem_wr      = wr;
 
-wire [MDATAW-1:0] rel_rd, rel_wr;
-rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ISI)) ra_rd(ldi, fft, ula[MDATAW-1:0], base_addr, rel_rd);
-rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ILI)) ra_wr(sti, fft, stk_ofst       , base_addr, rel_wr);
-
-// LDA/STA bypass the operand-base entirely: address comes straight from acc
-// (read) or from the data-stack top (write). Enables passing arrays as
-// function parameters — caller pushes &arr, callee derefs at runtime.
-// Each mux is only synthesised when its instruction is actually enabled,
-// matching the rest of the core's "pay only for what you use" approach.
-generate
-	if (LDA) begin : rd_addr assign mem_addr_rd = lda ? ula[MDATAW-1:0] : rel_rd; end
-	else     begin : rd_addr assign mem_addr_rd = rel_rd;                          end
-endgenerate
-
-generate
-	if (STA) begin : wr_addr assign mem_addr_wr = sta ? stk_ofst        : rel_wr; end
-	else     begin : wr_addr assign mem_addr_wr = rel_wr;                         end
-endgenerate
+// the address is always base + index: the operand field plus the acc (read)
+// or plus the data-stack top (write). A pointer is dereferenced with a raw
+// base of 0 in the operand field (LDI 0 / STI 0), or of the constant offset
+// it is read at (LDI 3 = mem[acc + 3]).
+rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ISI)) ra_rd(ldi, fft, ula[MDATAW-1:0], base_addr, mem_addr_rd);
+rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ILI)) ra_wr(sti, fft, stk_ofst       , base_addr, mem_addr_wr);
 
 endmodule
 
@@ -644,11 +632,7 @@ module core
 	parameter  F_SCL   = 0,   // scale float by 2^k, k from memory
 	parameter SF_SCL   = 0,   // scale float by 2^k, k from stack
 	parameter    XPO   = 0,   // base-2 exponent of float (acc) as int
-	parameter  XPO_M   = 0,   // base-2 exponent of float (memory) as int
-
-	// base-less indirect addressing (for runtime-dynamic pointers / array params)
-	parameter    LDA   = 0,   // acc = mem[acc]
-	parameter    STA   = 0    // mem[stack_top] = acc, pop
+	parameter  XPO_M   = 0    // base-2 exponent of float (memory) as int
 )(
 	input               clk, rst,
 
@@ -711,7 +695,6 @@ wire [NBOPCO-1:0] id_opcode  = if_opcode;
 wire [       5:0] id_ula_op;
 wire              id_dsp_push, id_dsp_pop;
 wire              id_sti, id_ldi, id_fft, id_wr;
-wire              id_lda, id_sta;
 wire              id_req_in, id_out_en;
 
 instr_dec #(.NBOPCO  ( NBOPCO ),
@@ -816,16 +799,13 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
 			 .F_SCL  ( F_SCL  ),
 			.SF_SCL  (SF_SCL  ),
 			   .XPO  (   XPO  ),
-			 .XPO_M  ( XPO_M  ),
-			   .LDA  (   LDA  ),
-			   .STA  (   STA  )) id(clk, rst,
+			 .XPO_M  ( XPO_M  )) id(clk, rst,
                                     id_opcode,
                                     id_dsp_push, id_dsp_pop,
                                     id_ula_op,
                                     id_wr,
                                     id_req_in, id_out_en,
-                                    id_ldi, id_sti, id_fft,
-                                    id_lda, id_sta);
+                                    id_ldi, id_sti, id_fft);
 
 // Data stack -----------------------------------------------------------------
 
@@ -936,13 +916,11 @@ assign  if_acc = |ula_out;
 wire [MDATAW-1:0] rf;
 
 generate
-	if (STI | LDI | ILI | ISI | LDA | STA) begin : mem_access
+	if (STI | LDI | ILI | ISI) begin : mem_access
 		mem_ctrl #(.NUBITS(NUBITS),
 		           .MDATAW(MDATAW),
 		           .FFTSIZ(FFTSIZ),
-		           .ILI(ILI),.ISI(ISI),
-		           .LDA(LDA),.STA(STA)) ac(id_sti, id_ldi, id_fft, id_wr,
-		                                   id_lda, id_sta,
+		           .ILI(ILI),.ISI(ISI)) ac(id_sti, id_ldi, id_fft, id_wr,
 		                                   ula_out,
 		                                   if_operand[MDATAW-1:0], sp_data[MDATAW-1:0],
 		                                   mem_wr, mem_addr_rd, mem_addr_wr, mem_data_wr);

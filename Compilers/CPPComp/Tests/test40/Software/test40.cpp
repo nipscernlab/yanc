@@ -21,7 +21,7 @@ void main(void) {
     out(0, (int)(s * 100.0f));                           // 750
 
     // .data() now returns the field's actual address (was previously emitting
-    // an extra LDA, returning the value at offset 0 instead). Writes through
+    // an extra dereference, returning the value at offset 0 instead). Writes through
     // the returned pointer must propagate back to the array.
     float* p = v.data();
     p[1] = 9.0f;

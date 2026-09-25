@@ -4,7 +4,7 @@
 The ISA is written down in four places that nothing keeps in step: the
 assembler's lexer (mnemonic -> opcode + operand class), `instr_dec.v` and
 `ula.v` (opcode -> control signals and ALU operation) and `core.v` (which
-hard-codes the four flow-control opcodes as 5-bit literals). A disagreement
+names the four flow-control opcodes in localparams). A disagreement
 between them is silent: a program assembles and then runs as a different
 program. TODO.md item 10.2.
 
@@ -15,17 +15,18 @@ literal, which is the part that stays true when the HDL is edited:
   2. with the same opcode and the same operand class,
   3. the opcodes form a gap-free range starting at 0,
   4. mnemonics that share an opcode differ only in operand class,
-  5. core.v's four hard-coded literals are the table's JMP/JIZ/CAL/RET,
+  5. core.v's OP_JMP/OP_JIZ/OP_CAL/OP_RET are the table's JMP/JIZ/CAL/RET,
   6. every row's effect columns follow the naming convention (prefix P_/PF_
      pushes, S_/SF_ pops, suffix _M reads the operand from memory, _V is its
      base with a constant offset) and agree with the operand class,
   7. the copy in Compilers/common/asm_share.c (operand class, operand effect,
-     flow) is the table's.
+     flow) is the table's,
+  8. every row of instr_dec.v's decode table (`7'dN : if (NAME)`) carries its
+     mnemonic's opcode, and every decoded mnemonic of the table has a row.
 
-It does NOT try to verify instr_dec.v or ula.v line by line: matching their
-comparisons to opcodes with a regular expression breaks on innocuous edits,
-which would make the check noise rather than a guard. Generating all four
-copies from the table is the rest of item 10.2.
+It does NOT verify what each row of instr_dec.v does (its ALU operation and
+control lines) nor ula.v: that is execution, the instruction-set simulator of
+item 10.1. Generating all four copies from the table is the rest of item 10.2.
 
 usage: python3 Scripts/check_isa.py [repo-root]     (exit 1 on any mismatch)
 """
@@ -34,7 +35,8 @@ import re
 import sys
 
 CLASS_OF_STATE = {0: 'none', 18: 'data', 19: 'code', 20: 'in',
-                  21: 'out', 22: 'offset', 24: 'lea'}
+                  21: 'out', 22: 'offset', 24: 'lea',
+                  28: 'data'}   # 28: LDI/ILI/STI/ISI, a data name or a raw base number
 FLOW = ('JMP', 'JIZ', 'CAL', 'RET')
 
 
@@ -89,8 +91,6 @@ IRREGULAR = {
     'ILI':   ('rw', '-', 'base_r', '-', '-'),
     'STI':   ('r', 'pop', 'base_w', '-', '-'),
     'ISI':   ('r', 'pop', 'base_w', '-', '-'),
-    'LDA':   ('rw', '-', '-', '-', '-'),
-    'STA':   ('r', 'pop', '-', '-', '-'),
     'LEA':   ('w', '-', 'addr', '-', '-'),
     'INN':   ('w', '-', '-', '-', 'in'),
     'F_INN': ('w', '-', '-', '-', 'in'),
@@ -162,14 +162,18 @@ def read_lexer(path):
 
 
 def read_core_flow(path):
-    """core.v: the 5-bit literals it compares the opcode against, in order."""
+    """core.v: its flow-control opcode localparams, name -> value."""
     text = open(path, encoding='utf-8', errors='replace').read()
-    seen = []
-    for m in re.finditer(r"5'd(\d+)", text):
-        v = int(m.group(1))
-        if v not in seen:
-            seen.append(v)
-    return seen
+    return {m.group(1): int(m.group(2)) for m in re.finditer(r"\bOP_(JMP|JIZ|CAL|RET)\s*=\s*(\d+)", text)}
+
+
+def read_decoder(path):
+    """instr_dec.v: its decode table, mnemonic -> the opcode of its row."""
+    text = open(path, encoding='utf-8', errors='replace').read()
+    rows = {}
+    for m in re.finditer(r"7'd(\d+)\s*:\s*if\s*\(\s*(\w+)\s*\)", text):
+        rows.setdefault(m.group(2), []).append(int(m.group(1)))
+    return rows
 
 
 def main():
@@ -178,7 +182,8 @@ def main():
     table_p = os.path.join(root, 'Compilers', 'common', 'isa.tsv')
     lexer_p = os.path.join(root, 'Compilers', 'ASMComp', 'Sources', 'ASMComp.l')
     core_p = os.path.join(root, 'HDL', 'core.v')
-    for p in (table_p, lexer_p, core_p):
+    dec_p = os.path.join(root, 'HDL', 'instr_dec.v')
+    for p in (table_p, lexer_p, core_p, dec_p):
         if not os.path.exists(p):
             sys.exit(f'check_isa: missing {p}')
 
@@ -216,14 +221,32 @@ def main():
             bad.append(f'opcode {op}: {names} share an opcode AND an operand '
                        f'class, so the assembler cannot tell them apart')
 
-    # 5: core.v's flow-control literals
-    want = [table[m][0] for m in FLOW if m in table]
+    # 5: core.v's flow-control localparams
     got = read_core_flow(core_p)
-    if len(want) != len(FLOW):
-        bad.append(f'the table is missing one of {", ".join(FLOW)}')
-    elif sorted(got) != sorted(want):
-        bad.append(f'core.v compares the opcode against {sorted(got)}, but the '
-                   f'table puts {", ".join(FLOW)} at {want}')
+    for m in FLOW:
+        if m not in table:
+            bad.append(f'the table is missing {m}')
+        elif got.get(m) != table[m][0]:
+            bad.append(f'core.v has OP_{m} = {got.get(m)}, the table puts {m} at {table[m][0]}')
+    for m in FLOW:
+        if m in table and table[m][0] >= 32:
+            bad.append(f'{m} is opcode {table[m][0]}: keep flow control below 32')
+
+    # 8: instr_dec.v's decode table
+    rows = read_decoder(dec_p)
+    for mn, ops in sorted(rows.items()):
+        if mn not in table:
+            bad.append(f'instr_dec.v decodes {mn}, which is not in the table')
+        elif len(ops) != 1:
+            bad.append(f'instr_dec.v has {len(ops)} rows for {mn}')
+        elif ops[0] != table[mn][0]:
+            bad.append(f'instr_dec.v decodes {mn} at {ops[0]}, the table puts it at {table[mn][0]}')
+    decoded_in_core = set(FLOW) | {'NOP'}
+    for mn, (op, cls) in sorted(table.items()):
+        if cls in ('lea', 'offset') or mn in decoded_in_core:
+            continue                       # share a base opcode / decoded in core.v
+        if mn not in rows:
+            bad.append(f'{mn} (opcode {op}) has no row in instr_dec.v')
 
     # 6: the effect columns must be what the mnemonic's own name implies, and
     # must agree with the operand class
@@ -275,7 +298,7 @@ def main():
             print(f'  {b}', file=sys.stderr)
         return 1
     print(f'check_isa: {len(table)} mnemonics, {len(opcodes)} opcodes '
-          f'(0..{opcodes[-1]}); ASMComp.l, core.v, asm_share.c and the effect columns agree')
+          f'(0..{opcodes[-1]}); ASMComp.l, core.v, instr_dec.v, asm_share.c and the effect columns agree')
     return 0
 
 

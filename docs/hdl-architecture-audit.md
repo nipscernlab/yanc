@@ -28,7 +28,7 @@ cycle N+1 : ula_op and mem_data_rd arrive together, the ALU computes, racc <= ul
 While instruction N executes in N+1, instruction N+1 is being decoded — and
 four of its decisions consume `ula_out` **combinationally, the cycle it is
 produced**: the `JIZ` branch (`if_acc = |ula_out` → `pc_load` → instruction
-address), the `LDI`/`LDA` read address (`ula_out[MDATAW-1:0]`), the `SET`
+address), the `LDI` read address (`ula_out[MDATAW-1:0]`), the `SET`
 data (`mem_data_wr = ula_out`) and the `PSH` data (`sp_in = ula_out`). That is
 a full bypass network: **no data hazard, no control hazard, no branch
 penalty, every instruction exactly one cycle**. The price is that the ALU's
@@ -111,7 +111,7 @@ division-free float program runs at ~51 MHz (level 0), ~40 MHz (level 2); a
 program that divides at 14 MHz (was 8 before the explicit divider). Nothing
 short of an ISA change (a registered branch: `JIZ` tests `racc`, one cycle
 late, and the compiler schedules a NOP or an independent instruction) moves
-the branch decision off the ALU path — and even then `LDI`/`LDA` addresses
+the branch decision off the ALU path — and even then `LDI` addresses
 would need the same treatment. Recommendation: **document, do not change**.
 Revisit only if Fmax becomes the limiting resource for a real project; it
 would be a parameter (`REGISTERED_BRANCH`) with compiler support, never the
@@ -138,7 +138,7 @@ table fills.
 | case | today | proposal |
 |---|---|---|
 | integer `DIV`/`MOD` by zero | `x` in simulation, whatever the array gives in hardware | define (quotient 0 / remainder = dividend, or saturate) — item 8 step 4b, when `DIV`+`MOD` share one array |
-| `LDI`/`LDA`/`STI`/`STA` address ≥ `MDATAS` | truncated to `MDATAW` bits, wraps | document; optional overflow flag pin |
+| `LDI`/`STI` address ≥ `MDATAS` | truncated to `MDATAW` bits, wraps | document; optional overflow flag pin |
 | `JMP`/`JIZ`/`CAL` target ≥ `MINSTS` | truncated | document (the assembler can already reject it) |
 | shift by ≥ `NUBITS` | Verilog semantics (0 / sign) | document |
 | stack over/underflow | silent wrap | 1.3 |

@@ -4,7 +4,7 @@
    Grammar is loosely C99, restricted to constructs the target can execute:
      - scalar types int/float/char/void, pointers, 1-D arrays, structs
      - all expression operators, all looping/conditional constructs
-     - functions with array/pointer params (passed via LEA + LDA/STA)
+     - functions with array/pointer params (passed via LEA, read with LDI 0 / STI 0)
      - typedef, enum, const, static (storage class is mostly cosmetic here)
    What's intentionally omitted from v1: function pointers, variadic args,
    unions, multi-D arrays, VLAs.
@@ -1920,7 +1920,7 @@ function_def:
               type *pt = p->dtype;
               if (pt->kind == TY_ARRAY) {
                   /* arrays decay to pointers in param position, but we keep the array
-                     flavour so codegen can route LDA/STA correctly. The runtime
+                     flavour so codegen can route the indirect load/store correctly. The runtime
                      value is the base address either way. */
               }
               st_add(SK_PARAM, p->name, NULL, pt);

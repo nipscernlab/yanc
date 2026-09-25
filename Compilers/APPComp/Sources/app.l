@@ -41,13 +41,13 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    "LOD"   eval_opcode(18); // loads data from memory
  "P_LOD"   eval_opcode(18); // PUSH + LOD
-   "LDI"   eval_opcode(18); // LOD with indirect addressing (index in acc)
-   "ILI"   eval_opcode(18); // LOD with reverse indirect addressing (FFT)
+   "LDI"   eval_opcode(28); // LOD with indirect addressing (index in acc)
+   "ILI"   eval_opcode(28); // LOD with reverse indirect addressing (FFT)
 
    "SET"   eval_opcode(18); // stores data in memory
    "SET_P" eval_opcode(18); // SET + POP
-   "STI"   eval_opcode(18); // SET with indirect addressing (index on stack)
-   "ISI"   eval_opcode(18); // SET with reverse indirect addressing (FFT)
+   "STI"   eval_opcode(28); // SET with indirect addressing (index on stack)
+   "ISI"   eval_opcode(28); // SET with reverse indirect addressing (FFT)
 
    "PSH"   eval_opcode( 0); // pushes data onto the stack
    "POP"   eval_opcode( 0); // pops data from the stack
@@ -175,11 +175,6 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "SF_SCL"   eval_opcode( 0); // scale float by 2^k, k from stack
    "XPO"   eval_opcode( 0); // base-2 exponent of float (acc) as int
  "XPO_M"   eval_opcode(18); // base-2 exponent of float (memory) as int
-
-   /* base-less indirect addressing (runtime pointers / array params) */
-
-   "LDA"   eval_opcode( 0); // acc = mem[acc]
-   "STA"   eval_opcode( 0); // mem[stack_top] = acc, pop
 
    /* pseudo instructions */
    /* avoids indirect addressing */

@@ -173,8 +173,8 @@ void instr_arr(char *va)
 // resolves <name> to its data-memory address, materialises that address as a
 // numeric constant cell, then emits a plain LOD pointing to that cell. The
 // callee at runtime gets the array's base as a value in the accumulator and
-// can use ADD + LDA / STA on it. opc_idx must already be 0 (LOD) by the time
-// this is called (set by eval_opcode("LEA", ...)).
+// dereferences it with LDI 0 / STI 0 (a raw base, see instr_ind). opc_idx must
+// already be LOD's by the time this is called (set by eval_opcode("LEA", ...)).
 void instr_lea(char *va)
 {
     int addr = var_find(va);
@@ -202,9 +202,23 @@ void instr_lea(char *va)
         sim_regi(syn);                                // pass through the sim registry, harmless if not a user var
         fprintf(f_data, "%s\n", itob(addr, nubits));  // emit the constant value into the data .mif
     }
-    // emit LOD <syn> (opc_idx is already 0 — LOD — set by eval_opcode("LEA",0,...))
+    // emit LOD <syn> (opc_idx is already LOD's, set by eval_opcode("LEA",...))
     fprintf(f_instr, "%s%s\n", itob(opc_idx, NBITS_OPC), itob(var_find(syn), nbopr));
     sim_add(opc_name, va); // log "LEA va" in the trace
+}
+
+// LDI / ILI / STI / ISI <name | number>: a name is an array base, resolved like
+// any data operand; a number is the raw base address itself, written straight
+// into the operand field with no data word behind it. The hardware adds the
+// base to the acc (LDI) or to the stack top (STI), so LDI 0 reads mem[acc] and
+// LDI 3 reads mem[acc + 3]: how a pointer is dereferenced.
+void instr_ind(char *va, int is_const)
+{
+    if (is_const == 0) { instr_ula(va, 0); return; }
+    if (is_const != 1) {fprintf(stderr, MSG_ERR_IND_BASE_INT, opc_name, va); exit(EXIT_FAILURE);}
+
+    fprintf(f_instr, "%s%s\n", itob(opc_idx, NBITS_OPC), itob(atoi(va), nbopr));
+    sim_add(opc_name, va);
 }
 
 // generates an instruction with address va_name + va (pseudo instruction)
@@ -350,6 +364,7 @@ void eval_opernd(char *va, int is_const)
         case 25: fround =  atoi(va);                    state =  0; break; // float rounding level
         case 26: snprintf(sh_var, sizeof(sh_var), "%s", va); state = 27; break; // #SHARE: the name
         case 27: var_share(sh_var, va);                 state =  0; break; // #SHARE: the home it uses
+        case 28: instr_ind     (va,is_const);           state =  0; break; // indirect load/store: array name or raw base
     }
 }
 

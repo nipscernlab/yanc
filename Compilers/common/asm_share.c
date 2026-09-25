@@ -120,8 +120,6 @@ static const as_isa isa[] = {
     {"SF_SCL", "none", "-", "-"},
     {"XPO", "none", "-", "-"},
     {"XPO_M", "data", "r", "-"},
-    {"LDA", "none", "-", "-"},
-    {"STA", "none", "-", "-"},
     {"LEA", "lea", "addr", "-"},
     {"LOD_V", "offset", "r", "-"},
     {"P_LOD_V", "offset", "r", "-"},

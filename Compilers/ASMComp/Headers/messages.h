@@ -52,6 +52,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: inconsistência no ponto flutuante. Tem que ser NUBITS = NBMANT + NBEXPO + 1.\n", \
       "Error: floating-point setup doesn't add up. You gotta have NUBITS = NBMANT + NBEXPO + 1.\n")
 
+#define MSG_ERR_IND_BASE_INT \
+    M("Erro: %s %s: o operando de LDI/ILI/STI/ISI é o nome de um array ou um endereço base inteiro.\n", \
+      "Error: %s %s: the operand of LDI/ILI/STI/ISI is an array name or an integer base address.\n")
+
 #define MSG_ERR_FROUND_RANGE \
     M("Erro: #FROUND só aceita 0 (legado), 1 (truncamento exato + saturação) ou 2 (arredondamento ao par).\n", \
       "Error: #FROUND only takes 0 (legacy), 1 (exact truncation + saturation) or 2 (round to nearest even).\n")
