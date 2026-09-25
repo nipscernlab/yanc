@@ -8,6 +8,8 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v5.5] – 2026-09-25
+
 ### Changed
 - **The ISA loses `LDA`/`STA` and is renumbered by family.** `LDI`/`STI`
   already read and write `base + acc` / `base + stack top`, so a pointer is
