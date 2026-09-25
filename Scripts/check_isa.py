@@ -22,7 +22,9 @@ literal, which is the part that stays true when the HDL is edited:
   7. the copy in Compilers/common/asm_share.c (operand class, operand effect,
      flow) is the table's,
   8. every row of instr_dec.v's decode table (`7'dN : if (NAME)`) carries its
-     mnemonic's opcode, and every decoded mnemonic of the table has a row.
+     mnemonic's opcode, and every decoded mnemonic of the table has a row,
+  9. asmcomp's usage totals (ISA_PARAMS, ULA_BLOCKS in opcodes.c) are the
+     number of opcode parameters in ASMComp.l and of ALU blocks in opcodes.c.
 
 It does NOT verify what each row of instr_dec.v does (its ALU operation and
 control lines) nor ula.v: that is execution, the instruction-set simulator of
@@ -291,6 +293,19 @@ def main():
                 if rows[mn] != want:
                     bad.append(f'{mn}: asm_share.c says {"/".join(rows[mn])}, '
                                f'the table says {"/".join(want)}')
+
+    # 9: the totals asmcomp's usage report divides by
+    opc_p = os.path.join(root, 'Compilers', 'ASMComp', 'Sources', 'opcodes.c')
+    lex = open(lexer_p, encoding='utf-8', errors='replace').read()
+    opc = open(opc_p, encoding='utf-8', errors='replace').read()
+    n_par = len(set(re.findall(r'eval_opcode\(\s*\d+\s*,\s*\d+\s*,\s*yytext\s*,\s*"(\w+)"', lex)))
+    n_blk = len(set(re.findall(r'printf\((MSG_INFO_\w+)\);\s*u_count\+\+', opc)))
+    for name, want in (('ISA_PARAMS', n_par), ('ULA_BLOCKS', n_blk)):
+        m = re.search(r'#define\s+' + name + r'\s+(\d+)', opc)
+        if not m:
+            bad.append(f'opcodes.c defines no {name}')
+        elif int(m.group(1)) != want:
+            bad.append(f'opcodes.c has {name} {m.group(1)}, the code has {want}')
 
     if bad:
         print('check_isa: the instruction set does not agree with itself', file=sys.stderr)

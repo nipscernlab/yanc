@@ -14,6 +14,12 @@
 // local variables ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+// the totals the usage report divides by; Scripts/check_isa.py holds them to
+// the code (rule 9), so adding an opcode or an ALU block without updating them
+// fails the regress instead of printing a wrong percentage
+#define ISA_PARAMS 103   // distinct opcode parameters in ASMComp.l (eval_opcode's last argument)
+#define ULA_BLOCKS  36   // distinct ALU blocks opc_add can instantiate (its MSG_INFO_*; u_count++ lines)
+
 int  u_count = 0;	      // ALU operations counter
 int  m_count = 0;         // opcode counter (parameter)
 char m_name[NMNEMAX][64]; // opcode name    (parameter)
@@ -47,6 +53,8 @@ int find_opc(char *val)
 char* opc_get(int i){return m_name[i];} // returns the opcode at index i
 int   opc_cnt(     ){return m_count  ;} // returns the number of registered opcodes
 int   opc_ucnt(    ){return u_count  ;} // returns the number of registered ALU operations
+int   opc_total(   ){return ISA_PARAMS;} // returns how many opcode parameters exist
+int   opc_utotal(  ){return ULA_BLOCKS;} // returns how many ALU blocks exist
 
 // adds a new opcode to the table
 // mne can be empty (instructions that don't add resources, e.g. JMP)

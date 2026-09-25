@@ -62,6 +62,12 @@ tags consumed by Aurora.
   to `isa.tsv`.
 
 ### Fixed
+- **asmcomp's usage report divides by the real totals.** "using N % of the
+  Assembly Instruction Set / of the ULA operations" divided by 102 and by 34,
+  numbers written by hand long ago, so a program using every ALU block read
+  105 %. The totals are now named in `opcodes.c` (103 opcode parameters, 36
+  ALU blocks) and `check_isa.py` (rule 9) holds them to the lexer and to
+  `opc_add`, so the next opcode or block cannot leave them stale.
 - **Float constants far from 1 reach the assembler** (TODO 5, step 3 of 5).
   cppcomp printed float constants with `%.20f` because the asmcomp and
   appcomp lexers rejected an exponent: `1e-25f` became 0, and anything above

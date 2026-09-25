@@ -167,9 +167,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     for (int i = 0; i < opc_cnt(); i++) fprintf(f_veri, ".%s(1),\n", opc_get(i));
 
-    // this estimate is rough, but it's better than nothing
-    printf(MSG_INFO_ISA_USAGE, opc_cnt()*100/102);
-    printf(MSG_INFO_ULA_USAGE, opc_ucnt()*100/(49-15)); // 49 in the mux, 15 duplicated or unused
+    // how much of the optional hardware this program switches on
+    printf(MSG_INFO_ISA_USAGE, opc_cnt()*100/opc_total());
+    printf(MSG_INFO_ULA_USAGE, opc_ucnt()*100/opc_utotal());
 
     // ------------------------------------------------------------------------
     // finalize the processor instance ----------------------------------------
