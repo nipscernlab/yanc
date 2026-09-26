@@ -19,6 +19,7 @@
 #include "../Headers/symtab.h"
 #include "../Headers/codegen.h"
 #include "../Headers/messages.h"
+#include "../../common/asm_share.h"
 
 /* Create a directory if it doesn't already exist. Used by the -p
  * proc-folder mode to mkdir <proc>/Software when missing. Tolerates
@@ -129,5 +130,9 @@ int main(int argc, char **argv)
 
     fclose(fo);
     if (msg_error_count() > 0) return 2;
+
+    // scalars never alive together share one data word (#SHARE lines ahead of
+    // the code; the instructions and the pc_<proc>_mem.txt map are untouched)
+    asm_share(outp);
     return 0;
 }

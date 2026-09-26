@@ -8,6 +8,16 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **C++ scalars never alive together share one data word** (TODO 13).
+  cppcomp runs the same `asm_share` pass cmmcomp got in v5.5 on the `.asm` it
+  writes, so `#SHARE` lines now come out of both front ends. Over the 84 C++
+  tests, 76 need less data memory: 49 375 -> 47 665 words in total (-1 710;
+  `test50` -241, `test48` -222, `test46` -170, `test44` 291 -> 143). No
+  instruction changes, and the waveform still shows every variable with its
+  own values; a pointer shows a different number only because the arrays it
+  points into now sit lower.
+
 ### Fixed
 - **The control lines are 0, not X, from the first cycle under Icarus.**
   v5.5's decode table was an `always @ (*)`, which Icarus runs only when a

@@ -216,7 +216,8 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex CPPComp.l
     gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
         $CPP_DEFS -o "$CPPC" \
-        main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c -lm
+        main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c \
+        ../../common/asm_share.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 

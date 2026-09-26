@@ -40,13 +40,15 @@ Item 16 (value-initialized locals not re-zeroed) landed 2026-09-24 with
 C± (`#SHARE`, transparent in the waveform); cmmcomp's hand-written templates
 got shorter; `LDA`/`STA` left the ISA (`LDI`/`STI` with a raw base), the
 opcodes were renumbered by family and `instr_dec.v` became the decode table
-(item 10.2's check part). **Aurora still pins v5.4**: the changes it needs
-(version pin, `sapho_rules.json` resync with the lexer's new state 28, the
-AI system prompt, the PRISM skins, the tech-reference .tex, removing the
-obsolete `yanc-*-mode` scripts) are written up for its repo; until they land,
-test a local build with `Scripts/aurora.bat`. Next here: item 13 for cppcomp
-(call `asm_share` on its output; the C++ side is where half the data memory
-is), then the order above.
+(item 10.2's check part). Aurora pins v5.5 since its side landed.
+
+**2026-09-26 (after v5.5, on main).** `instr_dec.v`'s table became a function
+(its `always @ (*)` left the control lines X after reset under cocotb on
+Icarus, found by Aurora's toolchain test). cppcomp now runs `asm_share` too
+(item 13): -1710 data words over the C++ tests. Every yanc change is deployed
+into Aurora with `Scripts/aurora.bat` without a release, so Aurora's tests run
+against main. Next here: the rest of item 13 (local arrays, measured on the
+C++ tests first), then the order above.
 
 ---
 
@@ -394,7 +396,7 @@ simulators; with it off, area and depth are unchanged (`Scripts/hw/area.sh`).
 
 ## 13. Pre-assembly optimizer (whole program), and reusing temporaries
 
-**Status:** open; data-word sharing DONE for C± scalars (2026-09-25, see "What landed" below) · **Area:** `Compilers/common/asm_share.c` (sharing), a whole-program pass for the rest · **Evidence:** the measurements below
+**Status:** open; data-word sharing DONE for C± scalars (2026-09-25) and C++ scalars (2026-09-26), see "What landed" below · **Area:** `Compilers/common/asm_share.c` (sharing), a whole-program pass for the rest · **Evidence:** the measurements below
 
 A separate executable that reads a `.asm` -- from `cmmcomp` or from `cppcomp`,
 they meet there -- and removes whatever does not change what the program does.
@@ -428,10 +430,16 @@ transparent: asmcomp follows a shared variable by the SETs that write it
 (`mem_wr && pc_sim_val == SET+1`), not by its address. Checked by comparing
 the user-variable traces of the same `.asm` with and without `#SHARE`
 (identical, change by change, Icarus and Verilator). What is left:
-- **cppcomp**: call `asm_share` on its output too (the big saving is there,
-  table above). Check first that its scalars written through a pointer (`STI 0`)
-  are pinned: they are touched through an address the pass never sees
-  named.
+- **cppcomp**: DONE 2026-09-26. cppcomp calls `asm_share` on the `.asm` it
+  writes: 84 C++ tests, 76 of them smaller, data memory 49375 -> 47665 words
+  (-1710; `test50` -241, `test48` -222, `test46` -170, `test44` 291 -> 143).
+  A scalar reached through a pointer is safe because cppcomp takes every
+  address with `LEA` (pinned); objects, arrays, `__cstk` and `__heap` are
+  `#array` (pinned); indirect calls go through `CAL _dispatch`, so the flow
+  graph is complete. The same `.asm` with and without `#SHARE` (test29, 39,
+  44, 66, 70, Icarus) gives the same output and the same trace for every
+  variable except the pointers, which move by a constant (the arrays they
+  point into sit lower).
 - **Local arrays** of functions that are never active together could share
   too. None of the C± tests has a local array outside `main`; measure the
   C++ tests first. It needs a language decision: today a local array keeps

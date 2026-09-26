@@ -114,11 +114,12 @@ $(BIN)/cpppp$(EXE): $(CPP)/cpppp.c $(VERSION_H) | $(BIN)
 # --- cppcomp (flex + bison) -------------------------------------------------
 $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \
                       $(CPP)/CPPComp.l $(CPP)/CPPComp.y \
+                      $(COMMON)/asm_share.c $(COMMON)/asm_share.h \
                       $(wildcard Compilers/CPPComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(CPP) && $(BISON) -y -d CPPComp.y && $(FLEX) CPPComp.l
 	$(CC) $(CFLAGS) -Wall -Wno-unused-but-set-variable -Wno-unused-variable \
 	      -Wno-unused-function -o $@ $(addprefix $(CPP)/,$(CPPCOMP_C)) \
-	      $(CPP)/lex.yy.c $(CPP)/y.tab.c $(LDLIBS)
+	      $(CPP)/lex.yy.c $(CPP)/y.tab.c $(COMMON)/asm_share.c $(LDLIBS)
 
 # --- GTKWave helpers --------------------------------------------------------
 $(BIN)/comp2gtkw$(EXE): $(SCR)/comp2gtkw.c | $(BIN)
