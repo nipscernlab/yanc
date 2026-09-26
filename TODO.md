@@ -47,8 +47,9 @@ opcodes were renumbered by family and `instr_dec.v` became the decode table
 Icarus, found by Aurora's toolchain test). cppcomp now runs `asm_share` too
 (item 13): -1710 data words over the C++ tests. Every yanc change is deployed
 into Aurora with `Scripts/aurora.bat` without a release, so Aurora's tests run
-against main. Next here: the rest of item 13 (local arrays, measured on the
-C++ tests first), then the order above.
+against main. Item 13's local-array sharing was measured and closed (48
+words over the C++ tests); the C++ memory is in the fixed 2048-word heap
+arena instead (item 13). Next here: the order above.
 
 ---
 
@@ -440,11 +441,19 @@ the user-variable traces of the same `.asm` with and without `#SHARE`
   44, 66, 70, Icarus) gives the same output and the same trace for every
   variable except the pointers, which move by a constant (the arrays they
   point into sit lower).
-- **Local arrays** of functions that are never active together could share
-  too. None of the C± tests has a local array outside `main`; measure the
-  C++ tests first. It needs a language decision: today a local array keeps
-  its contents between calls (the `file_init_local` warning says so), and
-  sharing ends that.
+- **Local arrays**: CLOSED 2026-09-26, measured and not worth it. Over the 84
+  C++ tests the automatic local arrays and structs are 3114 words; sharing
+  them between functions never active together (call graph, greedy) leaves
+  3066, 48 saved (0.1 % of the data memory; `test50` -33, `test48` -13). The
+  big ones sit in `main`, which is always active (`test46` alone has 2448).
+  None of the C± tests has a local array outside `main`. It would also have
+  cost a language change (a local array without an initializer starts at 0
+  and keeps its contents between calls today; 32 of the 48 words are such)
+  and a waveform one (a shared array would show the other's writes).
+  Where the C++ data memory is instead: the `__heap` arena, a fixed
+  `CFG_HEAPSZ` = 2048 words in every program that allocates -- 18 of the 84
+  tests, 36864 words, 77 % of their data memory. Sizing it (a pragma, or from
+  the program's measured use) is the saving worth having; not started.
 - **An interrupt landing on the cycle of a write** forces the PC to `#ITRAD`,
   and the mirror of a shared variable could miss that one update (the
   program itself is unaffected). Not checked.
