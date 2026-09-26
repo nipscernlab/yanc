@@ -1,6 +1,6 @@
 # Hardware measurement scripts
 
-Reproducible measurements for changes to `HDL/`. None of them is part of the
+Reproducible measurements for changes to `SAPHO/`. None of them is part of the
 regress (they need Yosys or Quartus); run them by hand when a change should
 not alter behaviour but may alter cost or timing.
 
@@ -26,7 +26,7 @@ NOSHARE=1 bash Scripts/hw/area.sh 2 fadd fmlt all_nodiv     # level 2, three con
 NUBITS=64 NBMANT=52 NBEXPO=11 NOSHARE=1 bash Scripts/hw/area.sh 0 fadd
 bash Scripts/hw/fmax.sh cmm_cexp                            # after Scripts/regress.sh built it
 FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp              # same program forced to #FROUND 2
-iverilog -g2012 -s tb -o tb.vvp Scripts/hw/tb_fdiv.v HDL/ula.v && vvp -n tb.vvp
+iverilog -g2012 -s tb -o tb.vvp Scripts/hw/tb_fdiv.v SAPHO/ula.v && vvp -n tb.vvp
 bash Scripts/hw/tb_alu.sh                                   # after any ula.v edit
 bash Scripts/hw/tb_alu.sh 50000                             # longer run
 bash Scripts/hw/width_sweep.sh                              # after a simulator upgrade (32 64 128)
@@ -48,7 +48,7 @@ there is expected and roughly width-dependent (100/4000 at 8/4/3, 3/4000 at
 - **`abc` is heuristic**: on a netlist Quartus proves identical, Yosys reported
   4209 vs 3827 LUT4. Deltas under ~10 % are noise; Quartus is the reference.
 
-`area.sh` works on a copy of `HDL/ula.v` (in `.smoke/hw/`, gitignored, where
+`area.sh` works on a copy of `SAPHO/ula.v` (in `.smoke/hw/`, gitignored, where
 every result also lands) with the `I2F` part-selects routed through named
 wires: Yosys 0.56 asserts (`modules_.count(...) == 0`) when a part-select
 feeds a parameterised instance directly. Yosys is a native Windows build, so

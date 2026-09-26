@@ -79,7 +79,7 @@ set FRE_CLK=100
 set NUM_CLK=1000000
 
 :: Repo sources, read in place (never written to) -----------------------------
-set HDL_DIR=%ROOT_DIR%\HDL
+set HDL_DIR=%ROOT_DIR%\SAPHO
 set MAC_DIR=%ROOT_DIR%\Compilers\CMMComp\Includes
 set BIN_DIR=%YANC_BIN%
 set SRC_PROC=%ROOT_DIR%\Compilers\CMMComp\Tests\%PROC%

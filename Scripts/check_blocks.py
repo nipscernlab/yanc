@@ -1,6 +1,6 @@
 """Check that a generated processor instantiates every optional block.
 
-Usage: python3 Scripts/check_blocks.py <proc.v> <HDL/processor.v> [exceptions]
+Usage: python3 Scripts/check_blocks.py <proc.v> <SAPHO/processor.v> [exceptions]
 
 Every opcode parameter of `processor` (the ones that gate a `generate` block:
 from P_LOD to the last one) must be passed as (1) in the generated top, and FFTSIZ,

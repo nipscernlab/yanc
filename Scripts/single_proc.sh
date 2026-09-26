@@ -57,7 +57,7 @@ FRE_CLK=100               # processor operating frequency in MHz
 NUM_CLK=1000000           # number of clocks to simulate
 
 # --- Repo sources, read in place (never written to) -------------------------
-HDL_DIR="$ROOT_DIR/HDL"
+HDL_DIR="$ROOT_DIR/SAPHO"
 MAC_DIR="$ROOT_DIR/Compilers/CMMComp/Includes"
 BIN_DIR="$YANC_BIN"
 SRC_PROC="$ROOT_DIR/Compilers/CMMComp/Tests/$PROC"

@@ -23,7 +23,7 @@
 //    opcode parameter set except the four in ../blocks_except.txt, which have
 //    no C+- form.
 //  - The expected value is NOT blessed from a run: ../model.py computes it
-//    from the operator definitions in HDL/ula.v, and regress checks that the
+//    from the operator definitions in SAPHO/ula.v, and regress checks that the
 //    sim golden equals the model's value for the input file's constant.
 //  - Floats go to s scaled by 2^22 (exact), so the whole mantissa of every
 //    value >= 1 reaches the integer sum.

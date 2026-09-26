@@ -1,5 +1,5 @@
 #!/bin/bash
-# LUT4 area and critical-path depth of HDL/ula.v per operator set (Yosys).
+# LUT4 area and critical-path depth of SAPHO/ula.v per operator set (Yosys).
 #
 # Usage:  [NOSHARE=1] [NUBITS=.. NBMANT=.. NBEXPO=..] [NUGAIN=..] bash Scripts/hw/area.sh <fround> <config>...
 # e.g.    NOSHARE=1 bash Scripts/hw/area.sh 2 fadd fmlt all_nodiv
@@ -22,7 +22,7 @@ FR=$1; shift || { echo "usage: area.sh <fround> <config>..."; exit 1; }
 # /c/..., so everything below runs with the scratch dir as cwd and plain
 # relative file names.
 ULA=ula_area.v
-sed 's|my_i2f (in2, i2f)|my_i2f (in2_w, i2f)|; s|my_i2fm(in1, i2fm)|my_i2fm(in1_w, i2fm)|; s|^// I2F ------|wire signed [NUBITS-1:0] in2_w = in2; wire signed [NUBITS-1:0] in1_w = in1; // yosys part-select workaround\n// I2F ------|' "$ROOT/HDL/ula.v" > "$OUT/$ULA"
+sed 's|my_i2f (in2, i2f)|my_i2f (in2_w, i2f)|; s|my_i2fm(in1, i2fm)|my_i2fm(in1_w, i2fm)|; s|^// I2F ------|wire signed [NUBITS-1:0] in2_w = in2; wire signed [NUBITS-1:0] in1_w = in1; // yosys part-select workaround\n// I2F ------|' "$ROOT/SAPHO/ula.v" > "$OUT/$ULA"
 
 INT='ADD MLT DIV MOD NEG ABS AND ORR XOR INV LAN LOR LIN LES GRE EQU SHL SHR SRS'
 INT_NODIV='ADD MLT NEG ABS AND ORR XOR INV LAN LOR LIN LES GRE EQU SHL SHR SRS'

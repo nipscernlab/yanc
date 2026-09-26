@@ -104,7 +104,7 @@ CPPC="$BIN_DIR/cppcomp.exe"
 APPCOMP="$BIN_DIR/appcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
 MACROS="$ROOT/Compilers/CMMComp/Includes"
-HDL="$ROOT/HDL"
+HDL="$ROOT/SAPHO"
 CMM_ROOT="$ROOT/Compilers/CMMComp"
 SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"
 

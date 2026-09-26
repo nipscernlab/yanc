@@ -52,7 +52,7 @@ FRE_CLK=100               # processor operating frequency in MHz
 NUM_CLK=100000            # number of clocks to simulate
 
 # --- Repo sources, read in place (never written to) -------------------------
-HDL_DIR="$ROOT_DIR/HDL"
+HDL_DIR="$ROOT_DIR/SAPHO"
 MAC_DIR="$ROOT_DIR/Compilers/CMMComp/Includes"      # asmcomp macros (shared)
 INC_DIR="$ROOT_DIR/Compilers/CPPComp/Includes"      # C++ headers
 BIN_DIR="$YANC_BIN"

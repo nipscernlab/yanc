@@ -173,7 +173,7 @@ Six binaries are produced from source — three compilers, two preprocessors, an
 
 Auxiliary content:
 
-* `HDL/` — reusable Verilog modules (processor core, ALU, instruction decoder, FIFO, ...)
+* `SAPHO/` — the SAPHO processor itself, in Verilog (core, ALU, instruction decoder, FIFO, ...); asmcomp instantiates it with the parameters each program needs. Releases also carry a copy named `HDL/`, its old name, while Aurora moves to the new one
 * `Compilers/CMMComp/Includes/` — assembly macros and lookup tables for `.cmm` programs (`float_sqrt`, `float_sin`, `float_atan`, ...)
 * `Compilers/CPPComp/Includes/` — header shims that `.cpp` programs include
 * `Scripts/` — `regress.sh`, `comp2gtkw`, `gen_gtkw` (builds the formatted GTKWave view)
@@ -191,7 +191,7 @@ Auxiliary content:
 > GTKWave for the runner scripts — see [Pre-wired scripts](#pre-wired-scripts).
 > The two options below are the manual equivalents.
 
-**Option A — pre-built (fastest).** Download the latest release from [Releases](https://github.com/nipscernlab/yanc/releases/latest) — the `yanc-bin-<tag>.zip` asset on Windows or `yanc-bin-linux-<tag>.tar.gz` on Linux — and extract it. The archive contains `bin/` (the executables incl. `comp2gtkw`/`gen_gtkw`), `HDL/`, `Macros/` (C±-side includes), and `Header/` (C++-side includes).
+**Option A — pre-built (fastest).** Download the latest release from [Releases](https://github.com/nipscernlab/yanc/releases/latest) — the `yanc-bin-<tag>.zip` asset on Windows or `yanc-bin-linux-<tag>.tar.gz` on Linux — and extract it. The archive contains `bin/` (the executables incl. `comp2gtkw`/`gen_gtkw`), `SAPHO/` (the processor, plus a copy named `HDL/` for now), `Macros/` (C±-side includes), and `Header/` (C++-side includes).
 
 **Option B — build from source.**
 
@@ -249,7 +249,7 @@ The full flow is at most six self-contained CLI steps: alternating preprocess/co
 ```bat
 :: --- toolchain -----------------------------------------------------------
 set BIN=C:\path\to\yanc\bin
-set HDL=C:\path\to\yanc\HDL
+set HDL=C:\path\to\yanc\SAPHO
 set MAC=C:\path\to\yanc\Macros
 set HDR=C:\path\to\yanc\Header
 
@@ -524,7 +524,7 @@ yanc/
 │   ├── CMMComp/          cmmcomp sources + Includes/ (macros) + Tests/ (per-proc projects)
 │   ├── CPPComp/          cpppp + cppcomp sources + Includes/ (C++ shims) + Tests/ (per-test programs + Verilator/)
 │   └── yanc_version.h    single-source-of-truth toolchain version
-├── HDL/                  reusable Verilog modules (core, ALU, decoders, FIFO, ...)
+├── SAPHO/                the SAPHO processor, in Verilog (core, ALU, decoders, FIFO, ...)
 ├── Makefile              single source of truth for building the binaries (Linux + MSYS2)
 ├── Scripts/              setup.bat/.sh + env.bat/.sh, aurora.bat, regress.sh,
 │                         hw/ (elaboration, Yosys area/depth, Quartus Fmax),

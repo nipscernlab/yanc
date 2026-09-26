@@ -15,7 +15,7 @@ for FMT in "8 4 3" "16 10 5" "32 23 8" "64 52 11"; do
     set -- $FMT
     for L in 0 1 2; do
         if iverilog -g2012 -s tb -Ptb.NUBITS=$1 -Ptb.MAN=$2 -Ptb.EXP=$3 -Ptb.FROUND=$L -Ptb.N=$N \
-                    -o "$TMP/tb.vvp" Scripts/hw/tb_alu.v HDL/ula.v 2>"$TMP/e.log"; then
+                    -o "$TMP/tb.vvp" Scripts/hw/tb_alu.v SAPHO/ula.v 2>"$TMP/e.log"; then
             out=$(vvp -n "$TMP/tb.vvp" | grep -v '\$finish')
             echo "$out"
             case $out in *FAIL*) rc=1 ;; esac

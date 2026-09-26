@@ -12,7 +12,8 @@
 #   make clean          remove bin/ and the flex/bison generated files
 #   make install DESTDIR=<dir>   copy the binaries into <dir>/bin
 #   make stage STAGE=<dir>   the deployable tree in <dir>: bin/ (every binary
-#                       above), HDL/, Macros/, Header/. The ONE recipe both the
+#                       above), SAPHO/ (and, for now, a copy of it as HDL/),
+#                       Macros/, Header/. The ONE recipe both the
 #                       release (.github/workflows/release.yml) and
 #                       Scripts/aurora.bat use, so a local deploy and a
 #                       release cannot drift apart. Default STAGE=stage.
@@ -71,7 +72,11 @@ STAGE ?= stage
 stage:
 	rm -rf $(STAGE)
 	$(MAKE) BIN=$(STAGE)/bin all
-	cp -r HDL                        $(STAGE)/HDL
+	cp -r SAPHO                      $(STAGE)/SAPHO
+	# TRANSITION: the same processor under its old name, for Aurora, which
+	# still reads components/HDL. Drop this line (and HDL from the zip/tar in
+	# release.yml and from Scripts/aurora.bat) once Aurora reads SAPHO/.
+	cp -r SAPHO                      $(STAGE)/HDL
 	cp -r Compilers/CMMComp/Includes $(STAGE)/Macros
 	cp -r Compilers/CPPComp/Includes $(STAGE)/Header
 

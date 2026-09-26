@@ -28,7 +28,7 @@ cd "$R"
 a="$p/proc/Software/$v.asm"
 echo "instructions: $(grep -vc '^#' "$a")"
 "$B/appcomp.exe" -en -i "$a" -t "$p" > /dev/null 2>&1 || { echo "appcomp failed"; exit 1; }
-"$B/asmcomp.exe" -en -i "$a" -p "$p/proc" -d HDL -m Compilers/CMMComp/Includes -t "$p" -f 100 -c 5000000 > /dev/null 2>&1 || { echo "asmcomp failed"; exit 1; }
+"$B/asmcomp.exe" -en -i "$a" -p "$p/proc" -d SAPHO -m Compilers/CMMComp/Includes -t "$p" -f 100 -c 5000000 > /dev/null 2>&1 || { echo "asmcomp failed"; exit 1; }
 if [ "$mode" = prof ]; then
     sed "s/PCSIG/${v}__DOT__pc_sim_val/" "$P/sim_prof.cpp" > "$p/sim_prof_$v.cpp"
     harness="$p/sim_prof_$v.cpp"; extra="+define+YANC_TRACE --public-flat-rw"
@@ -39,7 +39,7 @@ verilator --cc --exe --build --top-module "$v" --prefix Vtop -o "sim_$v" $extra 
   -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH \
   -Wno-CASEINCOMPLETE -Wno-IMPLICIT -Wno-COMBDLY --no-timing --Mdir "$p/vl" \
   "$harness" "$p/proc/Hardware/$v.v" \
-  HDL/processor.v HDL/core.v HDL/ula.v HDL/addr_dec.v HDL/instr_dec.v \
+  SAPHO/processor.v SAPHO/core.v SAPHO/ula.v SAPHO/addr_dec.v SAPHO/instr_dec.v \
   > "$p/vl.log" 2>&1 || { echo "verilator failed (see $p/vl.log)"; exit 1; }
 cd "$p"
 "$p/vl/sim_$v" "$D/in.txt" "$p/out.txt" 20000000 "$nout" 2>/dev/null | grep CYCLES

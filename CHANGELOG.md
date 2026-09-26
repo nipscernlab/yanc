@@ -9,6 +9,14 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **The processor's folder is `SAPHO/`, not `HDL/`.** It holds the SAPHO
+  processor itself, the one the IEEE paper describes, which asmcomp
+  instantiates with the parameters each program needs; yanc is the compiler
+  suite around it. Every script, the CI and the docs use the new path. The
+  release zip and tar, and `Scripts/aurora.bat`, carry `SAPHO/` and, for now,
+  the same files as `HDL/` too, so Aurora keeps working until it reads
+  `SAPHO/`; the copy then goes (one line in the Makefile's `stage`, the folder
+  lists in `release.yml` and `aurora.bat`).
 - **C++ scalars never alive together share one data word** (TODO 13).
   cppcomp runs the same `asm_share` pass cmmcomp got in v5.5 on the `.asm` it
   writes, so `#SHARE` lines now come out of both front ends. Over the 84 C++

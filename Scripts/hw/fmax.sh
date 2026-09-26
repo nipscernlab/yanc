@@ -30,7 +30,7 @@ rm -rf "$DIR"; mkdir -p "$DIR"; cd "$DIR"
 cp "$WORK/$PROC.v" .
 [ -n "$FR" ] && sed -i "s/\.FROUND([0-9])/.FROUND($FR)/" "$PROC.v"
 
-HDLW=$(cygpath -m "$ROOT/HDL" 2>/dev/null || echo "$ROOT/HDL")
+HDLW=$(cygpath -m "$ROOT/SAPHO" 2>/dev/null || echo "$ROOT/SAPHO")
 
 cat > clk.sdc <<EOF
 create_clock -period 10.000 -name clk [get_ports clk]

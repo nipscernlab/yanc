@@ -95,7 +95,7 @@ set PROC_LIST=ProcDTW ZeroCross
 set TB=top_level_tb
 
 :: Repo sources, read in place (never written to) -----------------------------
-set HDL_DIR=%ROOT_DIR%\HDL
+set HDL_DIR=%ROOT_DIR%\SAPHO
 set MAC_DIR=%ROOT_DIR%\Compilers\CMMComp\Includes
 set BIN_DIR=%YANC_BIN%
 set TESTS_DIR=%ROOT_DIR%\Compilers\CMMComp\Tests

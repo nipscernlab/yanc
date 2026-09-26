@@ -1,7 +1,7 @@
 """Reference model of Software/sapho_all.cmm: the 4-bit value its out(0, ...) prints
 every turn (the 32-bit sum s folded by XOR of its eight nibbles).
 
-Written from the operator definitions in HDL/ula.v, NOT by running YANC:
+Written from the operator definitions in SAPHO/ula.v, NOT by running YANC:
   - int: NUBITS-bit two's complement, wrapping; / and % truncate toward zero
     (Verilog signed, as C); >> is logical, >>> arithmetic, << logical;
     && || ! give 0/1; sign(a, b) is b with the sign of a (by negation);

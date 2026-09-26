@@ -50,7 +50,9 @@ jobs:
         # files. $(OS)=Windows_NT here, so the binaries are .exe. out/ gets:
         #
         #   bin/     — every binary the Makefile builds
-        #   HDL/     — Verilog modules (processor/core/ula/...)
+        #   SAPHO/   — the SAPHO processor, Verilog (processor/core/ula/...)
+        #   HDL/     — TRANSITION: a copy of SAPHO/ under its old name, for
+        #              Aurora until it reads SAPHO/ (see the Makefile stage)
         #   Macros/  — CMM float LUTs and helpers (Compilers/CMMComp/Includes/)
         #   Header/  — CPPComp standard-library shims that .cpp programs
         #              #include (Compilers/CPPComp/Includes/)
@@ -84,11 +86,11 @@ jobs:
         run: |
           set -euo pipefail
           cd out
-          # Zip bin/, HDL/, Macros/ and Header/ — extracting into
-          # components/ produces components/{bin,HDL,Macros,Header}/,
-          # which is exactly the layout Aurora expects.
+          # Zip bin/, SAPHO/ (+ its HDL/ copy), Macros/ and Header/ — extracting into
+          # components/ produces components/{bin,SAPHO,HDL,Macros,Header}/,
+          # the layout Aurora expects (it still reads HDL/).
           zip -r "../${{ steps.artifact.outputs.name }}.zip" \
-              bin HDL Macros Header
+              bin SAPHO HDL Macros Header
           ls -la "../${{ steps.artifact.outputs.name }}.zip"
 
       - name: Upload artifact (always)
@@ -156,10 +158,10 @@ jobs:
         run: |
           set -euo pipefail
           cd out
-          # Mirror the Windows layout: bin/, HDL/, Macros/, Header/ at the
+          # Mirror the Windows layout: bin/, SAPHO/, HDL/, Macros/, Header/ at the
           # archive root.
           tar -czf "../${{ steps.artifact.outputs.name }}.tar.gz" \
-              bin HDL Macros Header
+              bin SAPHO HDL Macros Header
           ls -la "../${{ steps.artifact.outputs.name }}.tar.gz"
 
       - name: Upload artifact (always)

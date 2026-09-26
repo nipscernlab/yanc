@@ -19,7 +19,7 @@ if (-not (Test-Path (Join-Path $BIN "cppcomp.exe"))) { $BIN = Join-Path $ROOT "b
 $WORK  = Join-Path $CPP  ".work"
 $TEST  = $PSScriptRoot
 $SW    = Join-Path $TEST "Software"
-$HDL   = Join-Path $ROOT "HDL"
+$HDL   = Join-Path $ROOT "SAPHO"
 $MACROS= Join-Path $ROOT "Compilers/CMMComp/Includes"
 
 $env:TMP    = "C:/packs/msys64/tmp"

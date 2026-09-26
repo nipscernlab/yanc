@@ -1,6 +1,6 @@
 # Precision and word-width review
 
-Date: 2026-09-14 · Scope: `HDL/*.v`, `Compilers/{CMMComp,CPPComp,APPComp,ASMComp}`,
+Date: 2026-09-14 · Scope: `SAPHO/*.v`, `Compilers/{CMMComp,CPPComp,APPComp,ASMComp}`,
 `Scripts/`, the Verilator harness. This is the evidence behind the items in
 [`TODO.md`](../TODO.md); the list of work and the "done when" criteria live
 there, not here.
@@ -34,7 +34,7 @@ with `%.20f` (`CPPComp/Sources/codegen.c:825`). The **only** encoder is
 `ASMComp/Sources/t2t.c:39 f2mf()`, and it is the 32-bit ceiling of the whole
 chain. The HDL itself has no literal 32 on the datapath.
 
-Format reminder (`HDL/ula.v`): value = `m · 2^e`, `m` an explicit `NBMANT`-bit
+Format reminder (`SAPHO/ula.v`): value = `m · 2^e`, `m` an explicit `NBMANT`-bit
 magnitude normalised to `[2^(NBMANT-1), 2^NBMANT)`, `e` a two's-complement
 `NBEXPO`-bit exponent (no bias), sign-magnitude. There is **no hidden bit**, so
 the default 23/8 format carries 22 fractional bits where IEEE binary32 carries

@@ -72,7 +72,7 @@ set GCC=x86_64-w64-mingw32-gcc.exe
 :: ----------------------------------------------------------------------------
 ::
 :: `make stage` is the SAME recipe the release uses (.github/workflows/
-:: release.yml): it builds every binary and copies HDL, Macros and Header into
+:: release.yml): it builds every binary and copies SAPHO (and its HDL copy), Macros and Header into
 :: one tree, so this deploy carries exactly what a release built from this
 :: checkout would -- every executable the Makefile makes, every file and
 :: subfolder of the three folders -- with no list here to keep in step.
@@ -115,7 +115,7 @@ popd
 :: (handles the stray-file case); both are silenced so a fresh checkout
 :: where these folders don't exist yet doesn't print "file not found".
 
-for %%D in (bin HDL Macros Header) do (
+for %%D in (bin SAPHO HDL Macros Header) do (
     rmdir /s /q %BLD_DIR%\%%D 2>nul
     del   /q    %BLD_DIR%\%%D 2>nul
     mkdir       %BLD_DIR%\%%D
@@ -143,7 +143,7 @@ if exist %BLD_DIR%\Scripts (
 :: /E = subfolders too (even empty ones)  /I = destination is a directory
 :: /Q = quiet                             /Y = overwrite without prompting
 
-for %%D in (bin HDL Macros Header) do (
+for %%D in (bin SAPHO HDL Macros Header) do (
     xcopy "%SRC_DIR%\stage\%%D" "%BLD_DIR%\%%D" /E /I /Q /Y >nul
 )
 

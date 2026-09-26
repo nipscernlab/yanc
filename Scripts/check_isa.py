@@ -183,8 +183,8 @@ def main():
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     table_p = os.path.join(root, 'Compilers', 'common', 'isa.tsv')
     lexer_p = os.path.join(root, 'Compilers', 'ASMComp', 'Sources', 'ASMComp.l')
-    core_p = os.path.join(root, 'HDL', 'core.v')
-    dec_p = os.path.join(root, 'HDL', 'instr_dec.v')
+    core_p = os.path.join(root, 'SAPHO', 'core.v')
+    dec_p = os.path.join(root, 'SAPHO', 'instr_dec.v')
     for p in (table_p, lexer_p, core_p, dec_p):
         if not os.path.exists(p):
             sys.exit(f'check_isa: missing {p}')

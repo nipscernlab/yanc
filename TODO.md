@@ -82,7 +82,7 @@ mention it; remove it then.
 ## 2. Round to nearest, full-range `I2F`, saturating `F2I`
 
 **Status:** functionality landed; two verification/refinement leftovers ·
-**Area:** `HDL/ula.v` · **Evidence:** [§1.2](docs/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
+**Area:** `SAPHO/ula.v` · **Evidence:** [§1.2](docs/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
 
 Done (commits `81f5f25`, `755b758`):
 - `#FROUND 2`: round to nearest even after normalisation, for `F_ADD`/`F_SU*`,
@@ -215,7 +215,7 @@ procedural division reference must be replaced above 64 bits.
 
 ## 7. HDL scaling for wide mantissas
 
-**Status:** parked with item 6(b) · **Area:** `HDL/ula.v`, `HDL/core.v` · **Evidence:** [§2.1](docs/precision-and-width-review.md#21-hdl--parametric-with-a-handful-of-scaling-issues)
+**Status:** parked with item 6(b) · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.1](docs/precision-and-width-review.md#21-hdl--parametric-with-a-handful-of-scaling-issues)
 
 The structural fixes that make a wide mantissa feasible at all (log-depth
 leading-zero tree, explicit divider arrays, single shifters) are item 8 and
@@ -245,7 +245,7 @@ project).
 
 ## 8. ALU datapath restructuring (depth and area)
 
-**Status:** open · **Area:** `HDL/ula.v` · **Evidence:** [§2.6](docs/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
+**Status:** open · **Area:** `SAPHO/ula.v` · **Evidence:** [§2.6](docs/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
 
 The ALU is combinational, so its depth is the clock. Measured: the float
 path is 37 LUT4 levels for `F_ADD` at level 0, 51 at level 2; the whole
@@ -312,7 +312,7 @@ reference at 32/23/8 and 16/10/5. Wider sets wait for item 6(b).
 
 ## 10. Architecture hardening (HDL audit)
 
-**Status:** open · **Area:** `HDL/*`, tooling · **Evidence:** [`docs/hdl-architecture-audit.md`](docs/hdl-architecture-audit.md)
+**Status:** open · **Area:** `SAPHO/*`, tooling · **Evidence:** [`docs/hdl-architecture-audit.md`](docs/hdl-architecture-audit.md)
 
 The core is sound where it matters (opcode-driven allocation, one instruction
 per cycle, bypass by construction, single clock / sync reset — keep all of
@@ -362,7 +362,7 @@ the audit's table has a defined, documented result.
 
 ## 12. Run-time exception strobe (pin + error code)
 
-**Status:** open, not now (noted 2026-09-20) · **Area:** `HDL/*`, `ASMComp`, both front ends · **Evidence:** this item
+**Status:** open, not now (noted 2026-09-20) · **Area:** `SAPHO/*`, `ASMComp`, both front ends · **Evidence:** this item
 
 Today a run-time failure is silent: `malloc`/`new` returns `0` when the
 `__heap` arena (fixed `CFG_HEAPSZ` = 2048 words, no analysis of what the
