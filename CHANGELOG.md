@@ -8,6 +8,18 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Fixed
+- **The control lines are 0, not X, from the first cycle under Icarus.**
+  v5.5's decode table was an `always @ (*)`, which Icarus runs only when a
+  signal it reads changes. When a cocotb testbench drives the processor, the
+  opcode is already 0 at t=0 and stays 0 through the reset, so the block never
+  ran: `req_in`, `out_en`, `push`, `pop`, `mem_wr`, `ldi`, `sti` and `fft` were
+  X for the first two or three cycles after reset, and Aurora's cocotb test
+  failed reading `req_in`. The table is now a function driven by a continuous
+  assignment, which every simulator evaluates at t=0. It is the same function
+  (exhaustive comparison over all 128 opcodes and 260 parameter sets) and the
+  same hardware (Quartus, sapho_all: 31 ALUTs for the decoder, as before).
+
 ## [v5.5] – 2026-09-25
 
 ### Changed
