@@ -36,6 +36,18 @@ Cholesky inner loop, hoisted); the loop control of every `for` is next.
 Item 16 (value-initialized locals not re-zeroed) landed 2026-09-24 with
 `test78`; see the CHANGELOG.
 
+**2026-09-25/26 (released as v5.5).** Item 13's data-word sharing landed for
+C± (`#SHARE`, transparent in the waveform); cmmcomp's hand-written templates
+got shorter; `LDA`/`STA` left the ISA (`LDI`/`STI` with a raw base), the
+opcodes were renumbered by family and `instr_dec.v` became the decode table
+(item 10.2's check part). **Aurora still pins v5.4**: the changes it needs
+(version pin, `sapho_rules.json` resync with the lexer's new state 28, the
+AI system prompt, the PRISM skins, the tech-reference .tex, removing the
+obsolete `yanc-*-mode` scripts) are written up for its repo; until they land,
+test a local build with `Scripts/aurora.bat`. Next here: item 13 for cppcomp
+(call `asm_share` on its output; the C++ side is where half the data memory
+is), then the order above.
+
 ---
 
 ## Decisions taken (2026-09-18)
@@ -309,9 +321,13 @@ it). The audit found the weak points in the surroundings. In order:
    the ULA unit testbench planned with item 6.
 2. **Single-source ISA table** — mnemonic / opcode / ALU op / stack and I/O
    effects in one file; generate `ASMComp.l` rules, `instr_dec.v` compares and
-   `ula_op` table, `opcodes.c` names and `docs/isa.md`; or at least a regress
-   check that the four hand-written copies agree (`core.v` also hard-codes
-   `JMP`/`JIZ`/`CAL`/`RET` as 5-bit literals).
+   `ula_op` table, `opcodes.c` names and `docs/isa.md`. The regress check part
+   is done (2026-09-25, v5.5): `check_isa.py` holds `ASMComp.l`, the
+   `core.v` `OP_*` localparams, every row of `instr_dec.v`'s decode table,
+   the `asm_share.c` copy and asmcomp's usage totals to `isa.tsv`. Left: what
+   each decode row DOES (its `ula_op` and control lines) is still hand-written
+   and checked only by execution; generating it from `isa.tsv` needs the ALU
+   operation as a column there.
 3. **Interrupt** — today a level-sensitive PC override: the vector instruction
    re-executes every cycle the level is held, no PC save, no mask. Behind
    `ITRADD`: one-shot edge detect, optional PC push so the handler can `RET`,
