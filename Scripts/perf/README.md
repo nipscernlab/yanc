@@ -40,3 +40,5 @@ History of test46 (the blind-deconvolution inverse filter, 4 outputs):
 | zero-fill four words a turn (f614e65) | 51 540 | 1 657 |
 | hoist sees by-value calls and lone variables (d838f52) | 49 710 | 1 667 |
 | integer constant folding (0e61b60) | 49 684 | 1 628 |
+| v5.5 and #SHARE, measured at 0b9db20 | 49 678 | 1 613 |
+| dead stores of `this` dropped | 49 661 | 1 581 |

@@ -569,8 +569,12 @@ instructions a word), `inverse_tikhonov_calibrated` 18 %, `sqrt` 11 % (the
 user's 24-step Newton loop: nothing for the compiler), `convolve_full` 9 %.
 
 **Next candidates, smallest first:**
-- the expanded accessor still stores `this` into a word nobody reads
-  afterwards (`SET <fn>_this`): an access from five instructions to four;
+- DONE 2026-09-26: a `<fn>_this` word nothing reads loses every SET (peephole
+  pass 0b). It covered the out-of-line methods too (`POP; SET <fn>_this;
+  LDI k; RET`), not only the expanded accessors: 384 instructions fewer over
+  the C++ tests (26 173 -> 25 789, 37 programs), 12 data words; test46 1 613 ->
+  1 581 instructions but 49 678 -> 49 661 cycles, its accessors are not in
+  the hot loops;
 - the backward solve `a[k*n + i]` (k inside the product): step a pointer by
   `n` each turn instead of `MLT` (strength reduction), ~1 instruction a turn;
 - the zero-fill at 8 words a turn: ~4.5 instructions a word, for more code;

@@ -17,6 +17,14 @@ tags consumed by Aurora.
   instruction changes, and the waveform still shows every variable with its
   own values; a pointer shows a different number only because the arrays it
   points into now sit lower.
+- **cppcomp drops the stores of `this` that nothing reads.** A method took
+  `this` off the stack into `<fn>_this`, and an expanded accessor stored it
+  there too, even when the body used it only while it was still in the
+  accumulator. When no instruction reads the word, every SET of it goes (a
+  new peephole pass), and the word with it: 384 instructions fewer over the
+  C++ tests (26 173 -> 25 789, 37 programs). In cycles it is small (`test46`
+  49 678 -> 49 661); `this` never showed in the waveform, so nothing there
+  changes.
 
 ### Fixed
 - **The control lines are 0, not X, from the first cycle under Icarus.**

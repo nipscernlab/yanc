@@ -4222,6 +4222,51 @@ static void peephole(void)
         g_ibuf[w++] = g_ibuf[r];
     }
     g_ibuf_n = w;
+    // pass 0b: a method's `this` word that nothing ever reads. A method takes
+    // `this` off the stack into <fn>_this, and an expanded accessor stores it
+    // there too, but when the body uses it only while it is still in the
+    // accumulator (pass 0 dropped that reload) no instruction reads the word:
+    // every SET of it is dead, and so is the word. SET leaves the accumulator
+    // as it was, so dropping it changes nothing else. Only `this`: a user
+    // variable nobody reads still shows in the waveform, `this` never does.
+    {
+        int nread = 0, cap = 64;
+        char **read = malloc(cap * sizeof(char *));
+        for (int r = 0; r < g_ibuf_n; r++) {           // every name read anywhere
+            const char *t = g_ibuf[r].text;
+            int is_set = !g_ibuf[r].nofuse && !strncmp(t, "SET ", 4);
+            for (const char *p = t; *p; ) {
+                while (*p == ' ' || *p == '\t') p++;
+                const char *q = p;
+                while (*q && *q != ' ' && *q != '\t') q++;
+                size_t len = (size_t)(q - p);
+                if (len > 5 && !strncmp(q - 5, "_this", 5) && !(is_set && p == t + 4)) {
+                    if (nread == cap) { cap *= 2; read = realloc(read, cap * sizeof(char *)); }
+                    char *nm = malloc(len + 1);
+                    memcpy(nm, p, len); nm[len] = 0;
+                    read[nread++] = nm;
+                }
+                p = q;
+            }
+        }
+        w = 0;
+        for (int r = 0; r < g_ibuf_n; r++) {
+            const char *t = g_ibuf[r].text;
+            if (!g_ibuf[r].nofuse && !strncmp(t, "SET ", 4)) {
+                size_t len = strlen(t + 4);
+                int used = 1;
+                if (len > 5 && !strcmp(t + 4 + len - 5, "_this")) {
+                    used = 0;
+                    for (int k = 0; k < nread && !used; k++) used = !strcmp(read[k], t + 4);
+                }
+                if (!used) { free(g_ibuf[r].text); continue; }
+            }
+            g_ibuf[w++] = g_ibuf[r];
+        }
+        g_ibuf_n = w;
+        for (int k = 0; k < nread; k++) free(read[k]);
+        free(read);
+    }
     // pass 1: LOD <name>; <unary> -> <unary>_M <name>. Run first so the new _M
     // op can then be picked up by the PSH pass below (PSH; NEG_M -> P_NEG_M).
     w = 0;
