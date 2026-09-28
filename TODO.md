@@ -14,7 +14,8 @@ Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 10 architecture hardening (from the HDL audit), 12 a run-time exception
 strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
 small accessors in cppcomp, 15 the regress not being trustworthy on this
-machine. Item 11, consistency at 32 bits, is
+machine, 17 faster array fill/copy (hardware options), 18 a latent swap of
+the FFT addressing parameters. Item 11, consistency at 32 bits, is
 closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
@@ -645,6 +646,80 @@ memory before trusting timings.
 this. Free memory on the machine before trusting a board.
 
 **Done when:** a full run is repeatable, or the cause is found and named.
+
+## 17. Filling and copying arrays faster (hardware options)
+
+**Status:** open, design discussion (2026-09-28); nothing measured, every
+number below is deduced from the `.asm` · **Area:** `SAPHO/core.v`
+(`mem_ctrl`, `rel_addr`), `SAPHO/processor.v` (`mem_data`), `instr_dec.v`,
+the ISA, cppcomp · **Evidence:** test46's profile (item 14)
+
+**Why.** `float scratch[2400] = {0.0f}` is 24 % of test46's cycles (11 991 of
+49 711). The zero-fill loop is 20 instructions for 4 words, 5 a word, because
+`STI` writes `mem[base + stack top] <= acc` and POPS: every word reloads the
+index, adds its offset, pushes it and loads the zero again. A copy
+`b[i] = a[i]` is `LOD i; PSH; LDI a; STI b`, 4 a word.
+
+**The memory's limit.** `mem_data` is a simple dual-port RAM: one registered
+read port and one write port, separate addresses. One read and one write a
+cycle, so a copy can never beat one word a cycle.
+
+**Options, smallest hardware first** (instructions a word, fill / copy):
+
+| option | hardware | fill | copy |
+|---|---|---|---|
+| today | -- | 5 | 4 |
+| cppcomp: 8 words a turn | none | ~4.5 | 4 |
+| assembler: `array+k` operands (LDI/STI take a name OR a number today) | none | ~3.75 | 4 |
+| new store, address from the acc, data from the stack, NO pop | write-address mux (stack/acc) + write-data mux (acc/stack), generated only if used | ~1.6 | none (the stack grows) |
+| the same with POP (a second decode row, same datapath) | as above | ~3 | 3 |
+| index register `X` with post-increment (`SETX`, `LDX a`: acc <= mem[a+X], `STX b`: mem[b+X] <= acc, X++) | an MDATAW register, an incrementer, a third index source in both address adders | 1 (`LOD 0` once, then `STX`) | 2 |
+| pipelined copy instruction (read now, write the read word next cycle) | a data pipeline register, the destination base from the stack or a second register, overlap and flush care | -- | 1 (the RAM's limit) |
+
+**Rejected: redefining `STI` as address-from-acc, data-from-stack.** Plain
+stores tie, but a read-modify-write at a COMPUTED address needs the address
+in a temporary and reloaded: +1 instruction and +1 word each time, in loops.
+test46's `out[i + j] += ai * b[j]` (convolution, 5.4 % of its cycles) is
+exactly that. Keep `STI`; any new store is a separate opcode.
+
+**Two full memory ports (true dual-port).** Do not speed a copy (a word is
+still one read + one write, two accesses a cycle either way). They give two
+writes a cycle (fill at 2 words a cycle) or two READS a cycle, the DSP dual
+data bus: `acc += mem[a + X] * mem[b + Y]` for FIR / convolution / dot
+product, which needs two index registers and a two-address instruction (the
+operand field holds one base). Cost on Cyclone V: an M10K is 256x40 in simple
+dual-port but 512x20 in true dual-port, so 32-bit memories up to 256 words
+take 2 blocks instead of 1 (512 words: 2 either way). A read on the second
+port cannot share a cycle with a write, and the mixed-port read-during-write
+behaviour has to be defined.
+
+**Compiler side.** Loops cppcomp writes itself (the `{0}` fill,
+`copy_to_block`) can use any of these directly. User loops need the
+compiler to see that `i` walks the array and replace it with `X` (the
+induction-variable elimination item 14 found expensive).
+
+**Recommendation (not decided, 2026-09-28):** if the goal is only fill and copy, the
+store options; if SAPHO is to be stronger at DSP, the index register `X`
+first (it covers fill, copy and sequential loops, and later a modulo mode
+for circular FIR buffers), then `Y` with two full ports if the MAC loops of
+real group programs are the bottleneck. Each step measured first: ALUTs and
+Fmax in Quartus (a program that uses it and one that must pay nothing), and
+test46's cycles.
+
+## 18. `rel_addr` FFT parameters look swapped (latent)
+
+**Status:** open, found reading the code 2026-09-28, not tested · **Area:**
+`SAPHO/core.v`, `mem_ctrl`
+
+`ra_rd` (the READ address, `LDI`/`ILI`) is instantiated with
+`.USEFFT(ISI)`, and `ra_wr` (the WRITE address, `STI`/`ISI`) with
+`.USEFFT(ILI)`. The bit reversal of the read path is generated when the
+program uses the FFT STORE, and the other way round. It never showed: the
+only programs with FFT addressing, `proc_fft` and `sapho_all`, use both
+`ILI` and `ISI`. A program using only `ILI` would read without the bit
+reversal. Fix: swap the two parameters, with a fixture that uses `ILI` alone
+(and one with `ISI` alone). Came in with `e5d89a1c` (2025-05-14, "FFT always
+implemented").
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
