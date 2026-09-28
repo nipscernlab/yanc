@@ -575,8 +575,14 @@ user's 24-step Newton loop: nothing for the compiler), `convolve_full` 9 %.
   the C++ tests (26 173 -> 25 789, 37 programs), 12 data words; test46 1 613 ->
   1 581 instructions but 49 678 -> 49 661 cycles, its accessors are not in
   the hot loops;
-- the backward solve `a[k*n + i]` (k inside the product): step a pointer by
-  `n` each turn instead of `MLT` (strength reduction), ~1 instruction a turn;
+- ~~the backward solve `a[k*n + i]`: step a pointer by `n` instead of `MLT`~~
+  -- measured 2026-09-26, not worth it. The inner loop is 18 instructions a
+  turn; a pointer stepped by `n` costs the same five as `P_LOD k; MLT n;
+  S_ADD` plus the load (the ALU is combinational, `MLT` is one cycle like
+  `ADD`). One instruction a turn comes only by also replacing `b[k]` with a
+  pointer and eliminating `k` (the end test on the pointer): 18 -> 17, 105
+  turns at n = 15, ~105 of test46's 49 711 cycles (0.2 %), for an induction
+  variable elimination in cppcomp;
 - the zero-fill at 8 words a turn: ~4.5 instructions a word, for more code;
 - the Cholesky inner loop is 16 instructions a turn and near the floor of
   this ISA: `k < j` with a variable bound needs `GRE j; LIN; JIZ` (only JIZ).
