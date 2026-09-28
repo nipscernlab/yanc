@@ -8,6 +8,8 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v5.6] – 2026-09-28
+
 ### Changed
 - **README: what SAPHO is, what YANC makes, and a Quick start that runs.**
   The opening says SAPHO is the processor (with the IEEE paper) and YANC the

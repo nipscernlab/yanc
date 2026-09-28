@@ -42,7 +42,7 @@ got shorter; `LDA`/`STA` left the ISA (`LDI`/`STI` with a raw base), the
 opcodes were renumbered by family and `instr_dec.v` became the decode table
 (item 10.2's check part). Aurora pins v5.5 since its side landed.
 
-**2026-09-26 (after v5.5, on main).** `instr_dec.v`'s table became a function
+**2026-09-26/28 (released as v5.6).** `instr_dec.v`'s table became a function
 (its `always @ (*)` left the control lines X after reset under cocotb on
 Icarus, found by Aurora's toolchain test). cppcomp now runs `asm_share` too
 (item 13): -1710 data words over the C++ tests. Every yanc change is deployed
@@ -50,6 +50,7 @@ into Aurora with `Scripts/aurora.bat` without a release, so Aurora's tests run
 against main. Item 13's local-array sharing was measured and closed (48
 words over the C++ tests); the C++ memory is in the fixed 2048-word heap
 arena instead (item 13). Next here: the order above.
+Also in v5.6: the FFT bit-reversal parameters swapped back (`cmm_fft_rd`, `cmm_fft_wr`), `HDL/` renamed `SAPHO/` (with an `HDL/` copy until Aurora reads `SAPHO/`), UTF-8 messages on a Windows console, the README rewritten with a Quick start the CI runs, and a README + example in the release package.
 
 ---
 
