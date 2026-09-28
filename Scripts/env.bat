@@ -59,3 +59,10 @@ if not defined MINGW_BIN if defined IVERILOG  for %%I in ("%IVERILOG%")  do set 
 if not defined MINGW_BIN if defined VVP       for %%I in ("%VVP%")       do set "MINGW_BIN=%%~dpI"
 if not defined MINGW_BIN if defined VERILATOR for %%I in ("%VERILATOR%") do set "MINGW_BIN=%%~dpI"
 if not defined MINGW_BIN if defined GTKWAVE   for %%I in ("%GTKWAVE%")   do set "MINGW_BIN=%%~dpI"
+
+:: VERILATOR_ROOT: MSYS2's verilator_bin.exe has /mingw64/share/verilator built
+:: in, a path only MSYS2 resolves, so run from cmd it cannot find its include
+:: files (verilated_std.sv). setup.bat caches the Windows path; without the
+:: cache, derive it from the tool's folder (<prefix>\bin -> <prefix>\share\verilator).
+if defined VERILATOR_ROOT if not exist "%VERILATOR_ROOT%" set "VERILATOR_ROOT="
+if not defined VERILATOR_ROOT if defined VERILATOR for %%I in ("%VERILATOR%") do if exist "%%~dpI..\share\verilator" for %%R in ("%%~dpI..\share\verilator") do set "VERILATOR_ROOT=%%~fR"

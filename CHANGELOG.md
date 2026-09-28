@@ -54,6 +54,20 @@ tags consumed by Aurora.
   changes.
 
 ### Fixed
+- **The `.bat` runners simulate with Verilator without running setup first.**
+  MSYS2's `verilator_bin.exe` has `/mingw64/share/verilator` built in, a path
+  only MSYS2 resolves, so from `cmd` it could not find `verilated_std.sv` and
+  stopped. `setup.bat` caches the Windows `VERILATOR_ROOT`; `env.bat` now
+  derives it from Verilator's own folder when the cache is absent, as the
+  README says the runners work with the tools just on `PATH`. All twelve
+  runner cases (`single_proc`, `single_proc_cpp`, `multi_proc`; `.sh` and
+  `.bat`; Icarus and Verilator) run to the end and hand GTKWave its `.gtkw`.
+- **README: the `gen_gtkw` step works with the Quick start's folders.** It
+  read the translate files from a `%TMP_BASE%` the Quick start never set, and
+  `gen_gtkw` looks for them in `<base>\<processor>\`; the Quick start now uses
+  `tmp\<name>\` (what the runner scripts do), step 6 opens the formatted view,
+  and the release's own `bin\gen_gtkw` is used instead of compiling it. The
+  `sh` block the CI runs now builds the `.gtkw` too.
 - **Accents show right on a Windows console.** The Portuguese messages are
   UTF-8, and a Windows console decodes with its own code page (850 or 1252),
   so "instruções" came out as "instruÃ§Ãµes". Every compiler now switches the

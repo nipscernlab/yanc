@@ -293,7 +293,9 @@ set SAPHO=%YANC%\SAPHO
 set SRC=my_program.cpp
 set NAME=my_proc
 set PROJ=%CD%\out\%NAME%
-set TMP=%CD%\tmp
+:: one temp folder per processor, which gen_gtkw reads (no comment after a
+:: set: cmd would make it part of the value)
+set TMP=%CD%\tmp\%NAME%
 mkdir %PROJ%\Software %PROJ%\Hardware %PROJ%\Simulation %TMP%
 
 :: --- 1. preprocess the C++ source (skip for a .cmm source) --------------
@@ -317,8 +319,9 @@ iverilog -s %NAME%_tb -o %TMP%\%NAME%.vvp %TMP%\%NAME%_tb.v %PROJ%\Hardware\%NAM
 pushd %TMP% & vvp %NAME%.vvp & popd
 type %PROJ%\Simulation\output_0.txt
 
-:: --- 6. view the waveform ------------------------------------------------
-gtkwave %TMP%\%NAME%_tb.vcd
+:: --- 6. view the waveform (formatted: see gen_gtkw below) -----------------
+%YANC%\bin\gen_gtkw.exe %TMP%\%NAME%_tb.vcd %TMP%\%NAME%_tb.gtkw %CD%\tmp %YANC%\bin\comp2gtkw.exe
+gtkwave %TMP%\%NAME%_tb.vcd -a %TMP%\%NAME%_tb.gtkw
 ```
 
 **Linux** (or MSYS2 on Windows), with the release unpacked in `$YANC`. This
@@ -332,7 +335,7 @@ YANC=${YANC:-/path/to/yanc}                 # the unpacked release
 SAPHO=$YANC/SAPHO
 NAME=my_proc
 PROJ=$PWD/out/$NAME
-TMP=$PWD/tmp
+TMP=$PWD/tmp/$NAME                          # one folder per processor (gen_gtkw reads it)
 mkdir -p "$PROJ/Software" "$PROJ/Hardware" "$PROJ/Simulation" "$TMP"
 
 cat > my_program.cpp <<'EOF'
@@ -355,7 +358,9 @@ iverilog -s ${NAME}_tb -o "$TMP/$NAME.vvp" "$TMP/${NAME}_tb.v" "$PROJ/Hardware/$
 (cd "$TMP" && vvp -n $NAME.vvp)
 tr -d '\r' < "$PROJ/Simulation/output_0.txt"      # 55
 [ "$(tr -d '\r' < "$PROJ/Simulation/output_0.txt")" = 55 ]
-# gtkwave "$TMP/${NAME}_tb.vcd"                  # to look at the waveform
+"$YANC/bin/gen_gtkw" "$TMP/${NAME}_tb.vcd" "$TMP/${NAME}_tb.gtkw" "$PWD/tmp" "$YANC/bin/comp2gtkw"
+test -s "$TMP/${NAME}_tb.gtkw"
+# gtkwave "$TMP/${NAME}_tb.vcd" -a "$TMP/${NAME}_tb.gtkw"   # to look at the waveform
 ```
 
 What lands where:
@@ -365,10 +370,11 @@ What lands where:
 | `out/my_proc/Software/my_proc.asm` | cppcomp / cmmcomp | the program in SAPHO assembly |
 | `out/my_proc/Hardware/my_proc.v` | asmcomp | the Verilog top: SAPHO instantiated with this program's parameters |
 | `out/my_proc/Hardware/my_proc_inst.mif`, `_data.mif` | asmcomp | instruction and data memory images |
-| `tmp/my_proc_tb.v` | asmcomp | the testbench |
-| `tmp/pc_my_proc_mem.txt`, `trad_cmm.txt`, `trad_opcode.txt`, `cmm_log.txt` | the compilers | the tables the waveform view uses (PC to source line, opcode names, variables) |
+| `tmp/my_proc/my_proc_tb.v` | asmcomp | the testbench |
+| `tmp/my_proc/pc_my_proc_mem.txt`, `trad_cmm.txt`, `trad_opcode.txt`, `cmm_log.txt` | the compilers | the tables the waveform view uses (PC to source line, opcode names, variables) |
 | `out/my_proc/Simulation/output_0.txt` | the simulation | what the program wrote to output port 0 (`input_N.txt` there feeds input port N) |
-| `tmp/my_proc_tb.vcd` | the simulation | the waveform |
+| `tmp/my_proc/my_proc_tb.vcd` | the simulation | the waveform |
+| `tmp/my_proc/my_proc_tb.gtkw` | gen_gtkw | the formatted GTKWave view of it |
 
 You can stop at step 4 if all you want are the Verilog and the memory images
 (to synthesize, or to feed your own simulator), or swap step 5 for
@@ -397,12 +403,12 @@ After simulating with **either** Icarus or Verilator you have a raw `<tb>.vcd` /
 `.fst`: every signal, in scope order, unformatted. If you want the curated view
 instead — the **input/output ports**, the **Assembly** and **C±** instruction
 tracks (disassembled through their translate files), and the **internal
-variables and arrays** grouped per processor — build and run **`gen_gtkw`**, then
-re-open the waveform with it applied via `-a`:
+variables and arrays** grouped per processor — run **`gen_gtkw`** (it is in the
+release's `bin/`), then open the waveform with it applied via `-a`. With the
+Quick start's folders:
 
 ```bat
-gcc -o gen_gtkw.exe Scripts\gen_gtkw.c                      :: build once (sibling of comp2gtkw)
-gen_gtkw.exe %TMP%\%NAME%_tb.vcd %TMP%\%NAME%_tb.gtkw %TMP_BASE% comp2gtkw.exe
+%YANC%\bin\gen_gtkw.exe %TMP%\%NAME%_tb.vcd %TMP%\%NAME%_tb.gtkw %CD%\tmp %YANC%\bin\comp2gtkw.exe
 gtkwave --dark --zoom-fit --left-justify %TMP%\%NAME%_tb.vcd -a %TMP%\%NAME%_tb.gtkw
 ```
 
@@ -411,8 +417,10 @@ harness signal by name, and writes a formatted `.gtkw` save file: the right data
 format / colour / alias per signal, the `trad_opcode.txt` / `trad_cmm.txt`
 translators on the Assembly / C± tracks, `comp2gtkw.exe` on complex signals, and
 one section per processor — any scope that owns both `valr2` and `linetabs` — so
-the **same tool handles single- and multi-processor dumps**. `<tmp_base>` is the
-folder whose `<proc-type>/` subdirectories hold the translate files.
+the **same tool handles single- and multi-processor dumps**. Its third argument
+is the folder that holds one subfolder per processor type, each with that
+processor's translate files (`tmp\` in the Quick start, where `tmp\my_proc\`
+is the one processor).
 
 Because only the header is needed, the big project FST dumps don't have to be
 written in full first: run the sim once with the **`+HEADER_ONLY`** plusarg and
