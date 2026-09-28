@@ -404,9 +404,11 @@ assign mem_wr      = wr;
 // the address is always base + index: the operand field plus the acc (read)
 // or plus the data-stack top (write). A pointer is dereferenced with a raw
 // base of 0 in the operand field (LDI 0 / STI 0), or of the constant offset
-// it is read at (LDI 3 = mem[acc + 3]).
-rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ISI)) ra_rd(ldi, fft, ula[MDATAW-1:0], base_addr, mem_addr_rd);
-rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ILI)) ra_wr(sti, fft, stk_ofst       , base_addr, mem_addr_wr);
+// it is read at (LDI 3 = mem[acc + 3]). The FFT bit reversal of the index
+// (x[k) in C+-) is built into the read path when the program uses ILI and
+// into the write path when it uses ISI (cmm_fft_rd / cmm_fft_wr).
+rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ILI)) ra_rd(ldi, fft, ula[MDATAW-1:0], base_addr, mem_addr_rd);
+rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ISI)) ra_wr(sti, fft, stk_ofst       , base_addr, mem_addr_wr);
 
 endmodule
 

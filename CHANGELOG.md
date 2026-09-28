@@ -35,6 +35,16 @@ tags consumed by Aurora.
   changes.
 
 ### Fixed
+- **A program that only reads, or only writes, with `x[k)` gets the bit
+  reversal.** The FFT index reversal is generated per path, and the two
+  parameters were swapped: the read path carried it when the program used the
+  bit-reversed STORE (`ISI`) and the write path when it used the bit-reversed
+  LOAD (`ILI`). `proc_fft` and `sapho_all` use both, so nothing showed; a
+  program with `ILI` alone (or `ISI` alone) got the natural order, silently.
+  In since `e5d89a1c` (2025-05-14). New fixtures `cmm_fft_rd` and
+  `cmm_fft_wr`, whose goldens (0 4 2 6 1 5 3 7) were written by hand, fail on
+  the old `core.v` and pass on the new one. `proc_fft` is the same hardware
+  (Quartus: 738 ALUTs before and after).
 - **The control lines are 0, not X, from the first cycle under Icarus.**
   v5.5's decode table was an `always @ (*)`, which Icarus runs only when a
   signal it reads changes. When a cocotb testbench drives the processor, the

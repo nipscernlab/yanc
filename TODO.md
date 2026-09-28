@@ -14,8 +14,7 @@ Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 10 architecture hardening (from the HDL audit), 12 a run-time exception
 strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
 small accessors in cppcomp, 15 the regress not being trustworthy on this
-machine, 17 faster array fill/copy (hardware options), 18 a latent swap of
-the FFT addressing parameters. Item 11, consistency at 32 bits, is
+machine, 17 faster array fill/copy (hardware options). Item 11, consistency at 32 bits, is
 closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
@@ -705,21 +704,6 @@ for circular FIR buffers), then `Y` with two full ports if the MAC loops of
 real group programs are the bottleneck. Each step measured first: ALUTs and
 Fmax in Quartus (a program that uses it and one that must pay nothing), and
 test46's cycles.
-
-## 18. `rel_addr` FFT parameters look swapped (latent)
-
-**Status:** open, found reading the code 2026-09-28, not tested · **Area:**
-`SAPHO/core.v`, `mem_ctrl`
-
-`ra_rd` (the READ address, `LDI`/`ILI`) is instantiated with
-`.USEFFT(ISI)`, and `ra_wr` (the WRITE address, `STI`/`ISI`) with
-`.USEFFT(ILI)`. The bit reversal of the read path is generated when the
-program uses the FFT STORE, and the other way round. It never showed: the
-only programs with FFT addressing, `proc_fft` and `sapho_all`, use both
-`ILI` and `ISI`. A program using only `ILI` would read without the bit
-reversal. Fix: swap the two parameters, with a fixture that uses `ILI` alone
-(and one with `ISI` alone). Came in with `e5d89a1c` (2025-05-14, "FFT always
-implemented").
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

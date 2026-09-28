@@ -1,0 +1,25 @@
+#PRNAME cmm_fft_rd
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#FFTSIZ 3
+#NUGAIN 128
+
+// Bit-reversed READ alone (ILI, no ISI in the program): writes x[k] = k in
+// natural order and reads x[k), so the output is the 3-bit reversal of
+// 0..7: 0 4 2 6 1 5 3 7. The read address must carry the reversal even when
+// no bit-reversed store is present (TODO.md item 18: it did not).
+
+int x[8];
+
+void main()
+{
+    int k = 0;
+    while (k < 8) { x[k] = k; k++; }
+    k = 0;
+    while (k < 8) { int v = x[k); out(0, v); k++; }
+}

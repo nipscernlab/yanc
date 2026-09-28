@@ -1,0 +1,25 @@
+#PRNAME cmm_fft_wr
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#FFTSIZ 3
+#NUGAIN 128
+
+// Bit-reversed WRITE alone (ISI, no ILI in the program): writes x[k) = k and
+// reads x[k] in natural order, so x[j] holds the reversal of j and the
+// output is 0 4 2 6 1 5 3 7. The write address must carry the reversal even
+// when no bit-reversed load is present (TODO.md item 18: it did not).
+
+int x[8];
+
+void main()
+{
+    int k = 0;
+    while (k < 8) { x[k) = k; k++; }
+    k = 0;
+    while (k < 8) { int v = x[k]; out(0, v); k++; }
+}
