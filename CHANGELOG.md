@@ -35,6 +35,16 @@ tags consumed by Aurora.
   changes.
 
 ### Fixed
+- **Accents show right on a Windows console.** The Portuguese messages are
+  UTF-8, and a Windows console decodes with its own code page (850 or 1252),
+  so "instruções" came out as "instruÃ§Ãµes". Every compiler now switches the
+  console to UTF-8 at start and puts the old code page back on exit (the
+  setting belongs to the console window, and would otherwise stay on for
+  whatever runs next in it): `Compilers/common/console_utf8.c`, called from
+  the `main` of cmmcomp, appcomp, asmcomp, cppcomp and cpppp. Output to a
+  file or a pipe, as in Aurora and the regress, is byte for byte the same.
+  No `<windows.h>`: its macros (`IN`, `OUT`, ...) collide with the compilers'
+  names, so the two kernel32 calls are declared by hand.
 - **A program that only reads, or only writes, with `x[k)` gets the bit
   reversal.** The FFT index reversal is generated per path, and the two
   parameters were swapped: the read path carried it when the program used the

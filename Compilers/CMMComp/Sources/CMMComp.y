@@ -75,6 +75,7 @@
 #include "../Headers/array_index.h" // array index handling
 #include "../Headers/messages.h"    // PT/EN bilingual support
 #include "../Headers/args.h"        // command-line argument parsing
+#include "../../common/console_utf8.h" // UTF-8 messages on a Windows console
 
 // required flex/bison variables ----------------------------------------------
 
@@ -497,6 +498,7 @@ terminal : INUM                               {$$ = expr_lit(1, $1);}
 // program entry point
 int main(int argc, char *argv[])
 {
+    console_utf8();                 // the PT messages are UTF-8 (Windows console)
     parse_lang_flag(&argc, argv);   // processes -en/-pt flag (removes it from argv)
 
     cli_args a;

@@ -2,6 +2,7 @@
     #include "../Headers/eval.h"
     #include "../Headers/messages.h"
     #include "../Headers/args.h"
+    #include "../../common/console_utf8.h"
 %}
 
 %option nounput noinput
@@ -206,6 +207,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 int main(int argc, char *argv[])
 {
+    console_utf8();                 // the PT messages are UTF-8 (Windows console)
     parse_lang_flag(&argc, argv);   // processes -en/-pt flag (removes it from argv)
 
     cli_args a;

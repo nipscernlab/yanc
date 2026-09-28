@@ -20,6 +20,7 @@
 #include <ctype.h>
 
 #include "../../yanc_version.h"   // YANC_VERSION shared across all five binaries
+#include "../../common/console_utf8.h"
 
 #define MAX_INCDIRS 32
 static const char *incdirs[MAX_INCDIRS];
@@ -698,6 +699,7 @@ static void usage(void)
 
 int main(int argc, char **argv)
 {
+    console_utf8();                 // the help text is UTF-8 (Windows console)
     const char *in_path  = NULL;
     const char *out_path = NULL;
 

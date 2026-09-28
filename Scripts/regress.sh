@@ -205,11 +205,11 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
         funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
         variaveis.c array_index.c global.c macros.c messages.c args.c \
-        y.tab.c ../../common/asm_share.c -lm
+        y.tab.c ../../common/asm_share.c ../../common/console_utf8.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
-    gcc -O2 -Wall -o "$CPPPP" "$CPP_ROOT/Sources/cpppp.c" -lm
+    gcc -O2 -Wall -o "$CPPPP" "$CPP_ROOT/Sources/cpppp.c" "$ROOT/Compilers/common/console_utf8.c" -lm
 
     pushd "$CPP_ROOT/Sources" >/dev/null
     bison -y -d CPPComp.y
@@ -217,14 +217,14 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
         $CPP_DEFS -o "$CPPC" \
         main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c \
-        ../../common/asm_share.c -lm
+        ../../common/asm_share.c ../../common/console_utf8.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
     pushd "$ROOT/Compilers/APPComp/Sources" >/dev/null
     flex -o app.c app.l
     gcc -O2 -Wall -Werror -o "$APPCOMP" \
-        app.c eval.c variaveis.c messages.c args.c -lm
+        app.c eval.c variaveis.c messages.c args.c ../../common/console_utf8.c -lm
     rm -f app.c
     popd >/dev/null
 
@@ -232,7 +232,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex -o ASMComp.c ASMComp.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
         ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c -lm
+        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/console_utf8.c -lm
     rm -f ASMComp.c
     popd >/dev/null
 

@@ -20,6 +20,7 @@
 #include "../Headers/codegen.h"
 #include "../Headers/messages.h"
 #include "../../common/asm_share.h"
+#include "../../common/console_utf8.h"
 
 /* Create a directory if it doesn't already exist. Used by the -p
  * proc-folder mode to mkdir <proc>/Software when missing. Tolerates
@@ -80,6 +81,7 @@ static char *derive_name(const char *path, const char *new_ext)
 
 int main(int argc, char **argv)
 {
+    console_utf8();                 // the help text is UTF-8 (Windows console)
     const char *in_path  = NULL;
     const char *proc_dir = NULL;
     const char *prname   = NULL;
