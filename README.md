@@ -533,14 +533,22 @@ cmmcomp -en -i my_program.cmm -n proc_fft -p C:\proj\proc_fft -m C:\Macros -t C:
 
 ## Example C±
 
+A hand-written square root against the built-in one. The program is the
+`Sqrt` test (`Compilers/CMMComp/Tests/Sqrt/`), which also holds the two data
+files: 1000 inputs and their exact square roots.
+
 ```c
 #PRNAME Sqrt
 #NUBITS 32
-#NBMANT 23
-#NBEXPO 8
+#NDSTAC 5
+#SDEPTH 5
 #NUIOIN 1
 #NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
 
+// square root by Newton-Raphson, from a first guess built on the exponent
 float my_sqrt(float num)
 {
     if (num == 0.0) return 0.0;
@@ -548,7 +556,7 @@ float my_sqrt(float num)
     int v = (((num << 1) >>> 24) + 22) >>> 1;         // get the exponent
         v = ((((v-22) << 23) + (1 << 22)) << 1) >> 1; // build the float
 
-    float x; copy(v,x);
+    float x; copy(v,x);                               // the same bits, as a float
 
     x = 0.5 * (x + num/x);   // 4 Newton-Raphson iterations
     x = 0.5 * (x + num/x);
@@ -560,19 +568,37 @@ float my_sqrt(float num)
 
 void main()
 {
-    float x[1000] "sqrt_x.txt";
-    float a[1000] "sqrt_y.txt";
+    float x[1000] "sqrt_x.txt";   // the inputs, loaded into data memory
+    float a[1000] "sqrt_y.txt";   // their exact square roots
     float y, t, e;
-    int   j = 0;
-    while (j < 1000)
+
+    int j = 0;
+    while (j < 1000)              // the built-in sqrt (macro in Includes/float_sqrt.asm)
     {
-        y = sqrt(x[j]);     // built-in (uses macro from CMMComp/Includes/float_sqrt.asm)
+        y = sqrt(x[j]);
         t = a[j];
-        e = t - y;
+        e = t - y;                // its error
+        j++;
+    }
+
+    j = 0;
+    while (j < 1000)              // the hand-written one
+    {
+        y = my_sqrt(x[j]);
+        t = a[j];
+        e = t - y;                // its error
         j++;
     }
 }
 ```
+
+Nothing is written to an output port: the result is read in the waveform,
+where `e` shows the error of each version, sample by sample, next to the
+source line being executed. The header sets the processor: word width
+(`#NUBITS`), float format (`#NBMANT`, `#NBEXPO`), depth of the data stack
+(`#NDSTAC`) and of the instruction stack (`#SDEPTH`), number of input and
+output ports (`#NUIOIN`, `#NUIOOU`), and the divisor of `norm()`
+(`#NUGAIN`, a power of two).
 
 More examples in `CMMComp/Tests/` and `CPPComp/Tests/`.
 
