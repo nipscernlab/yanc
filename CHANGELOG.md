@@ -9,6 +9,25 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **README: what SAPHO is, what YANC makes, and a Quick start that runs.**
+  The opening says SAPHO is the processor (with the IEEE paper) and YANC the
+  compiler suite that generates its Verilog, memory images and testbench, and
+  names AURORA as the IDE built on it, without requiring it. The standalone
+  Quick start ran into two errors on Windows (`%HDL%\*.v`, which `cmd` does
+  not expand, and a testbench looked for in `Simulation\` while asmcomp writes
+  it to the temp folder) and opened a `.fst` that is not produced; it is
+  rewritten for `cmd` and for `sh`, with `-en` and a table of what lands
+  where, and both were run end to end from a `make stage` tree (output 55).
+  Stale counts fixed (seven binaries, 84 C++ tests).
+- **The release package carries a README and an example.** `make stage` adds
+  `README.md` (what each folder is, where the commands are) and `example/`
+  (the Quick start program in C++ and in C±) from the new `release/` folder;
+  `release.yml` puts both in the zip and the tar. `aurora.bat` does not copy
+  them.
+- **The CI runs the README's Quick start.** The Linux job builds the release
+  tree with `make stage`, extracts the `sh` block after the
+  `<!-- quickstart-sh -->` marker and runs it as written; the block checks its
+  own output, so the documented commands cannot drift again.
 - **The processor's folder is `SAPHO/`, not `HDL/`.** It holds the SAPHO
   processor itself, the one the IEEE paper describes, which asmcomp
   instantiates with the parameters each program needs; yanc is the compiler

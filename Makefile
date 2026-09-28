@@ -13,7 +13,8 @@
 #   make install DESTDIR=<dir>   copy the binaries into <dir>/bin
 #   make stage STAGE=<dir>   the deployable tree in <dir>: bin/ (every binary
 #                       above), SAPHO/ (and, for now, a copy of it as HDL/),
-#                       Macros/, Header/. The ONE recipe both the
+#                       Macros/, Header/, and the package README.md +
+#                       example/ from release/. The ONE recipe both the
 #                       release (.github/workflows/release.yml) and
 #                       Scripts/aurora.bat use, so a local deploy and a
 #                       release cannot drift apart. Default STAGE=stage.
@@ -81,6 +82,8 @@ stage:
 	cp -r SAPHO                      $(STAGE)/HDL
 	cp -r Compilers/CMMComp/Includes $(STAGE)/Macros
 	cp -r Compilers/CPPComp/Includes $(STAGE)/Header
+	cp    release/README.md             $(STAGE)/README.md
+	cp -r release/example              $(STAGE)/example
 
 # Short phony aliases so `make cmmcomp` works regardless of the .exe suffix.
 cmmcomp:   $(BIN)/cmmcomp$(EXE)

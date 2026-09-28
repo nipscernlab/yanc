@@ -174,3 +174,16 @@ jobs:
 
           rm -rf "$SCRATCH"
           exit "$fail"
+
+      - name: README Quick start, as written
+        # The sh block after the <!-- quickstart-sh --> marker in README.md,
+        # run verbatim on the release layout (make stage), so the documented
+        # commands cannot drift from what the tools do. The block checks its
+        # own output (55).
+        run: |
+          set -euo pipefail
+          make stage STAGE="$RUNNER_TEMP/yanc"
+          awk '/<!-- quickstart-sh/{f=1;next} f&&/^```sh/{p=1;next} p&&/^```/{exit} p' README.md > "$RUNNER_TEMP/quickstart.sh"
+          test -s "$RUNNER_TEMP/quickstart.sh"
+          mkdir -p "$RUNNER_TEMP/qs" && cd "$RUNNER_TEMP/qs"
+          YANC="$RUNNER_TEMP/yanc" bash "$RUNNER_TEMP/quickstart.sh"

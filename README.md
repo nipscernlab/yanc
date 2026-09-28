@@ -17,9 +17,31 @@
 
 ## What is YANC?
 
-YANC is the compilation backbone of the [SAPHO](https://github.com/nipscernlab) soft-processor ecosystem. It takes a high-level program — written in either **C±** (a small C-like language with first-class fixed-point, floating-point, complex and Dirac-notation operators) or in **C++** — and compiles it all the way down to a synthesizable SAPHO core, its program/data memory images, and a ready-to-run testbench.
+**SAPHO** (Scalable-Architecture Processor for Hardware Optimization) is a
+soft-core processor for FPGAs whose hardware is built to fit the program it
+runs: only the instructions and ALU operators the program uses are
+synthesized. Its Verilog is the [`SAPHO/`](SAPHO/) folder of this repository,
+and it is described in the
+[IEEE paper](https://ieeexplore.ieee.org/document/11345120/) (see
+[Citing SAPHO](#citing-sapho)).
 
-YANC is used by the **Aurora** desktop app, but it can also be used standalone — just call the binaries from a shell script that walks through the pipeline.
+**YANC is the compiler suite for SAPHO.** It takes a program written in
+**C±** ("C plus-minus", a C-like language with integers, floats in SAPHO's own
+32-bit format, native complex numbers and Dirac notation) or in **C++**, and
+produces:
+
+* the Verilog top that instantiates SAPHO with the parameters this program
+  needs, and its instruction and data memory images (`.mif`), ready to
+  synthesize;
+* a testbench for that processor;
+* the tables that let a waveform viewer show, cycle by cycle, the source line
+  being executed, the assembly instruction and every variable.
+
+YANC runs on its own, from the command line (see [Quick start](#quick-start)).
+It is also the compiler inside **[AURORA](https://github.com/nipscernlab/aurora)**,
+the NIPS-CERN IDE for SAPHO, whose Windows installer ships YANC, the
+simulators and the waveform viewer together
+([SAPHO releases](https://github.com/nipscernlab/sapho/releases/latest)).
 
 YANC is developed by [NIPS-CERN](https://www.nipscern.com), a research group at the
 [Universidade Federal de Juiz de Fora](https://www.ufjf.br) (UFJF) in Brazil, working
@@ -147,7 +169,7 @@ declared variables (`N`, `ind`, `istep`, `j`, `k`, `m`, `mmax`,
 
 ## Components
 
-Six binaries are produced from source — three compilers, two preprocessors, and one helper:
+Seven binaries are produced from source — three compilers, two preprocessors, and two helpers:
 
 **Compilers**
 
@@ -178,8 +200,8 @@ Auxiliary content:
 * `Compilers/CPPComp/Includes/` — header shims that `.cpp` programs include
 * `Scripts/` — `regress.sh`, `comp2gtkw`, `gen_gtkw` (builds the formatted GTKWave view)
 * `Compilers/CMMComp/Tests/` — runnable `.cmm` example projects (Math, FFT, RLS, DTW, PulseSim, Blind, ...)
-* `Compilers/CPPComp/Tests/` — per-test C++ programs (`test1` … `test51`), plus the Verilator harness
-* `Compilers/yanc_version.h` — single source of truth for the toolchain version, included by all five binaries (the three compilers + the two preprocessors)
+* `Compilers/CPPComp/Tests/` — per-test C++ programs (`test1` … `test84`), plus the Verilator harness
+* `Compilers/yanc_version.h` — single source of truth for the toolchain version, included by the five compiler binaries (the three compilers + the two preprocessors)
 
 ## Quick start
 
@@ -191,7 +213,7 @@ Auxiliary content:
 > GTKWave for the runner scripts — see [Pre-wired scripts](#pre-wired-scripts).
 > The two options below are the manual equivalents.
 
-**Option A — pre-built (fastest).** Download the latest release from [Releases](https://github.com/nipscernlab/yanc/releases/latest) — the `yanc-bin-<tag>.zip` asset on Windows or `yanc-bin-linux-<tag>.tar.gz` on Linux — and extract it. The archive contains `bin/` (the executables incl. `comp2gtkw`/`gen_gtkw`), `SAPHO/` (the processor, plus a copy named `HDL/` for now), `Macros/` (C±-side includes), and `Header/` (C++-side includes).
+**Option A — pre-built (fastest).** Download the latest release from [Releases](https://github.com/nipscernlab/yanc/releases/latest) — the `yanc-bin-<tag>.zip` asset on Windows or `yanc-bin-linux-<tag>.tar.gz` on Linux — and extract it. The archive contains `bin/` (the executables incl. `comp2gtkw`/`gen_gtkw`), `SAPHO/` (the processor, plus a copy named `HDL/` for now), `Macros/` (C±-side includes), `Header/` (C++-side includes), a short `README.md` and `example/` (the Quick start program, in C++ and in C±).
 
 **Option B — build from source.**
 
@@ -240,18 +262,32 @@ Run it from anywhere (it derives both paths from `%~dp0`):
 Scripts\aurora.bat
 ```
 
-A polished `make`-style entry-point is on the to-do list; for now this batch script is the supported path on Windows. If you only need the binaries, the relevant `gcc` invocations are visible inside `Scripts/aurora.bat` — each compiler is a single `bison`/`flex` + `gcc` line.
+It runs `make stage`, the same recipe the release uses, so a local deploy carries exactly what a release would.
 
 ### 2. Run the pipeline standalone
 
-The full flow is at most six self-contained CLI steps: alternating preprocess/compile passes that take the source down to Verilog, then the simulation and viewing. Here is a minimal end-to-end script that turns a C++ source file into a Verilog testbench and runs it under Icarus Verilog — no Aurora, no `Scripts\single_proc.bat` needed:
+Four commands take a source file down to the processor's Verilog and its
+testbench; a simulator and a viewer do the rest. Only those two need anything
+installed (Icarus Verilog here, GTKWave to look at the result). The compilers
+print in Portuguese by default; `-en` switches them to English.
+
+The example program, `my_program.cpp`:
+
+```cpp
+int main() {
+    int acc = 0;
+    for (int k = 1; k <= 10; ++k) acc += k;
+    out(0, acc);            // writes 55 to output port 0
+    return 0;
+}
+```
+
+**Windows** (`cmd`), with the release unpacked in `C:\path\to\yanc`:
 
 ```bat
-:: --- toolchain -----------------------------------------------------------
-set BIN=C:\path\to\yanc\bin
-set HDL=C:\path\to\yanc\SAPHO
-set MAC=C:\path\to\yanc\Macros
-set HDR=C:\path\to\yanc\Header
+:: --- toolchain (the unpacked release) -----------------------------------
+set YANC=C:\path\to\yanc
+set SAPHO=%YANC%\SAPHO
 
 :: --- user input ----------------------------------------------------------
 set SRC=my_program.cpp
@@ -260,45 +296,97 @@ set PROJ=%CD%\out\%NAME%
 set TMP=%CD%\tmp
 mkdir %PROJ%\Software %PROJ%\Hardware %PROJ%\Simulation %TMP%
 
-:: --- 1. preprocess C++ source (skip this for .cmm sources) ---------------
-%BIN%\cpppp.exe   -i %SRC% -o %TMP%\pp.cpp -I %HDR%
+:: --- 1. preprocess the C++ source (skip for a .cmm source) --------------
+%YANC%\bin\cpppp.exe -i %SRC% -o %TMP%\pp.cpp -I %YANC%\Header
 
-:: --- 2. compile source -> assembly ---------------------------------------
-%BIN%\cppcomp.exe -i %TMP%\pp.cpp -n %NAME% -p %PROJ% -t %TMP%
-:: ...or, for a .cmm source instead (no separate preprocess step needed):
-:: %BIN%\cmmcomp.exe -i %SRC% -n %NAME% -p %PROJ% -m %MAC% -t %TMP%
+:: --- 2. compile the source -> assembly -----------------------------------
+%YANC%\bin\cppcomp.exe -i %TMP%\pp.cpp -n %NAME% -p %PROJ% -t %TMP%
+:: ...or, for a .cmm source (it goes in %PROJ%\Software\ first):
+:: %YANC%\bin\cmmcomp.exe -en -i %NAME%.cmm -n %NAME% -p %PROJ% -m %YANC%\Macros -t %TMP%
 
-:: --- 3. resolve addresses + processor params -> log read by asmcomp ------
-%BIN%\appcomp.exe -i %PROJ%\Software\%NAME%.asm -t %TMP%
+:: --- 3. addresses and processor parameters (log read by asmcomp) --------
+%YANC%\bin\appcomp.exe -en -i %PROJ%\Software\%NAME%.asm -t %TMP%
 
-:: --- 4. compile assembly -> Verilog HDL + memory images + testbench ------
-%BIN%\asmcomp.exe -i %PROJ%\Software\%NAME%.asm -p %PROJ% ^
-                  -d %HDL% -m %MAC% -t %TMP% -f 100 -c 1000000
+:: --- 4. assembly -> processor Verilog + memory images + testbench --------
+%YANC%\bin\asmcomp.exe -en -i %PROJ%\Software\%NAME%.asm -p %PROJ% ^
+                       -d %SAPHO% -m %YANC%\Macros -t %TMP% -f 100 -c 10000
 
-:: --- 5. simulate (Icarus) ------------------------------------------------
-iverilog -s %NAME%_tb -o %TMP%\%NAME%.vvp ^
-         %HDL%\*.v %PROJ%\Hardware\%NAME%.v %PROJ%\Simulation\%NAME%_tb.v
-vvp %TMP%\%NAME%.vvp -fst
+:: --- 5. simulate (Icarus): the testbench is in %TMP%, the dump lands there
+iverilog -s %NAME%_tb -o %TMP%\%NAME%.vvp %TMP%\%NAME%_tb.v %PROJ%\Hardware\%NAME%.v ^
+         %SAPHO%\processor.v %SAPHO%\core.v %SAPHO%\ula.v %SAPHO%\addr_dec.v %SAPHO%\instr_dec.v
+pushd %TMP% & vvp %NAME%.vvp & popd
+type %PROJ%\Simulation\output_0.txt
 
-:: --- 6. view waveform ----------------------------------------------------
-gtkwave %TMP%\%NAME%_tb.fst
+:: --- 6. view the waveform ------------------------------------------------
+gtkwave %TMP%\%NAME%_tb.vcd
 ```
 
-You can stop at step 4 if all you want are the Verilog/memory artifacts (e.g. to feed your own simulator), or swap steps 5–6 for **Verilator** (below).
+**Linux** (or MSYS2 on Windows), with the release unpacked in `$YANC`. This
+block writes the example program itself and checks the output, so it can be
+pasted as is (the CI runs it on every push):
+
+<!-- quickstart-sh: .github/workflows/ci.yml runs the next block -->
+```sh
+set -e
+YANC=${YANC:-/path/to/yanc}                 # the unpacked release
+SAPHO=$YANC/SAPHO
+NAME=my_proc
+PROJ=$PWD/out/$NAME
+TMP=$PWD/tmp
+mkdir -p "$PROJ/Software" "$PROJ/Hardware" "$PROJ/Simulation" "$TMP"
+
+cat > my_program.cpp <<'EOF'
+int main() {
+    int acc = 0;
+    for (int k = 1; k <= 10; ++k) acc += k;
+    out(0, acc);            // writes 55 to output port 0
+    return 0;
+}
+EOF
+
+"$YANC/bin/cpppp"   -i my_program.cpp -o "$TMP/pp.cpp" -I "$YANC/Header"
+"$YANC/bin/cppcomp" -i "$TMP/pp.cpp" -n $NAME -p "$PROJ" -t "$TMP"
+"$YANC/bin/appcomp" -en -i "$PROJ/Software/$NAME.asm" -t "$TMP"
+"$YANC/bin/asmcomp" -en -i "$PROJ/Software/$NAME.asm" -p "$PROJ" \
+                    -d "$SAPHO" -m "$YANC/Macros" -t "$TMP" -f 100 -c 10000
+
+iverilog -s ${NAME}_tb -o "$TMP/$NAME.vvp" "$TMP/${NAME}_tb.v" "$PROJ/Hardware/$NAME.v" \
+         "$SAPHO/processor.v" "$SAPHO/core.v" "$SAPHO/ula.v" "$SAPHO/addr_dec.v" "$SAPHO/instr_dec.v"
+(cd "$TMP" && vvp -n $NAME.vvp)
+tr -d '\r' < "$PROJ/Simulation/output_0.txt"      # 55
+[ "$(tr -d '\r' < "$PROJ/Simulation/output_0.txt")" = 55 ]
+# gtkwave "$TMP/${NAME}_tb.vcd"                  # to look at the waveform
+```
+
+What lands where:
+
+| file | written by | what it is |
+|---|---|---|
+| `out/my_proc/Software/my_proc.asm` | cppcomp / cmmcomp | the program in SAPHO assembly |
+| `out/my_proc/Hardware/my_proc.v` | asmcomp | the Verilog top: SAPHO instantiated with this program's parameters |
+| `out/my_proc/Hardware/my_proc_inst.mif`, `_data.mif` | asmcomp | instruction and data memory images |
+| `tmp/my_proc_tb.v` | asmcomp | the testbench |
+| `tmp/pc_my_proc_mem.txt`, `trad_cmm.txt`, `trad_opcode.txt`, `cmm_log.txt` | the compilers | the tables the waveform view uses (PC to source line, opcode names, variables) |
+| `out/my_proc/Simulation/output_0.txt` | the simulation | what the program wrote to output port 0 (`input_N.txt` there feeds input port N) |
+| `tmp/my_proc_tb.vcd` | the simulation | the waveform |
+
+You can stop at step 4 if all you want are the Verilog and the memory images
+(to synthesize, or to feed your own simulator), or swap step 5 for
+**Verilator** (below).
 
 ### Simulating with Verilator
 
 Verilator 5 compiles the same generated `<proc>_tb.v` directly — `--timing` understands the testbench's clock and `#` delays, so no separate C++ driver is needed:
 
 ```bat
-:: --- 5b. simulate (Verilator) — alternative to steps 5–6 above ----------
+:: --- 5b. simulate (Verilator) — alternative to step 5 above -------------
 verilator --binary --timing --trace +define+YANC_TRACE --top-module %NAME%_tb ^
           -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-COMBDLY -Wno-STMTDLY ^
           -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir %TMP%\vl ^
-          %PROJ%\Simulation\%NAME%_tb.v %PROJ%\Hardware\%NAME%.v ^
-          %HDL%\processor.v %HDL%\core.v %HDL%\ula.v %HDL%\addr_dec.v %HDL%\instr_dec.v
-%TMP%\vl\V%NAME%_tb.exe          :: runs the sim, writes %NAME%_tb.vcd in the CWD
-gtkwave %NAME%_tb.vcd
+          %TMP%\%NAME%_tb.v %PROJ%\Hardware\%NAME%.v ^
+          %SAPHO%\processor.v %SAPHO%\core.v %SAPHO%\ula.v %SAPHO%\addr_dec.v %SAPHO%\instr_dec.v
+pushd %TMP% & vl\V%NAME%_tb.exe & popd   :: runs the sim, writes %NAME%_tb.vcd in %TMP%
+gtkwave %TMP%\%NAME%_tb.vcd
 ```
 
 **The one thing to remember:** `+define+YANC_TRACE` is what makes your variables, arrays, the PC→C± line table and the assembly opcode appear in the waveform. Icarus gets them for free (it predefines `__ICARUS__`); Verilator only compiles that visibility harness when you pass the define. For big multi-millisecond project dumps, use `--trace-fst` instead of `--trace` (compact FST; the file is still named `<tb>.vcd` and GTKWave detects the format). The trace deliberately carries only the `<proc>`-level user signals — the CPU internals below each processor are fenced out with `/* verilator tracing_off */`. **In particular the stack-monitoring flags and the ULA rounding-error taps (`fl_max`, `fl_full`, `pointeri`, `delta_int`, `delta_float`) are intentionally *not* in the Verilator VCD**: keeping them would force Verilator to evaluate the expensive real-valued ULA monitoring logic every cycle, which defeats the whole point of using Verilator (speed). Those debug signals remain available under the Icarus flow (`Scripts\single_proc.bat` / `multi_proc.bat`), where raw speed is not the goal.
@@ -409,7 +497,7 @@ or `Scripts\setup.bat --download` (refetch the prebuilt binaries).
 
 ## CLI flags
 
-All five binaries accept **named options** with short and long forms.
+The five compiler binaries accept **named options** with short and long forms.
 Run any of them with `-h` / `--help` for the per-tool synopsis, or
 `-V` / `--version` for the version string.
 
@@ -526,6 +614,7 @@ yanc/
 │   └── yanc_version.h    single-source-of-truth toolchain version
 ├── SAPHO/                the SAPHO processor, in Verilog (core, ALU, decoders, FIFO, ...)
 ├── Makefile              single source of truth for building the binaries (Linux + MSYS2)
+├── release/              the package README.md and example/ that make stage adds to every release
 ├── Scripts/              setup.bat/.sh + env.bat/.sh, aurora.bat, regress.sh,
 │                         hw/ (elaboration, Yosys area/depth, Quartus Fmax),
 │                         comp2gtkw, gen_gtkw, and the pre-wired runner scripts:

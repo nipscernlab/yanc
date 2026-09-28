@@ -90,7 +90,7 @@ jobs:
           # components/ produces components/{bin,SAPHO,HDL,Macros,Header}/,
           # the layout Aurora expects (it still reads HDL/).
           zip -r "../${{ steps.artifact.outputs.name }}.zip" \
-              bin SAPHO HDL Macros Header
+              bin SAPHO HDL Macros Header README.md example
           ls -la "../${{ steps.artifact.outputs.name }}.zip"
 
       - name: Upload artifact (always)
@@ -161,7 +161,7 @@ jobs:
           # Mirror the Windows layout: bin/, SAPHO/, HDL/, Macros/, Header/ at the
           # archive root.
           tar -czf "../${{ steps.artifact.outputs.name }}.tar.gz" \
-              bin SAPHO HDL Macros Header
+              bin SAPHO HDL Macros Header README.md example
           ls -la "../${{ steps.artifact.outputs.name }}.tar.gz"
 
       - name: Upload artifact (always)

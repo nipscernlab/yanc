@@ -1,0 +1,21 @@
+#PRNAME my_program
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// The C± version of my_program.cpp: writes 55 to output port 0.
+// The header sets the processor: word width (#NUBITS), float format
+// (#NBMANT, #NBEXPO), stack depths (#NDSTAC, #SDEPTH), number of I/O ports.
+
+void main()
+{
+    int acc = 0;
+    int k;
+    for (k = 1; k <= 10; k++) acc = acc + k;
+    out(0, acc);
+}
