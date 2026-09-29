@@ -52,6 +52,27 @@ words over the C++ tests); the C++ memory is in the fixed 2048-word heap
 arena instead (item 13). Next here: the order above.
 Also in v5.6: the FFT bit-reversal parameters swapped back (`cmm_fft_rd`, `cmm_fft_wr`), `HDL/` renamed `SAPHO/` (with an `HDL/` copy until Aurora reads `SAPHO/`), UTF-8 messages on a Windows console, the README rewritten with a Quick start the CI runs, and a README + example in the release package.
 
+**After v5.6 (on main, 2026-09-29) -- where to pick up.** The `HDL/` copy
+left the package (`0a885db`): Aurora's main pins v5.6 and reads only
+`components/SAPHO`. When the next release is out, tell Aurora: it then bumps
+`YANC_TAG`, drops `components/HDL/` from its `.gitignore` and converts three
+`.js` that cite HDL (`main/paths.js`, `scripts/verify-components.js`,
+`scripts/capture-media.js`). Check that the published zip and tar have no
+`HDL/`. The Aurora installer (nipscernlab/sapho v6.20.0) still ships yanc
+v5.4 until Aurora releases. Open here, in the order they were queued:
+- item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
+  item (the strength-reduction candidate was measured and dropped);
+- item 17: faster fill/copy in hardware, a design discussion with nothing
+  measured; recommended first step is measuring the index register `X`
+  (Quartus ALUTs/Fmax, test46 cycles) before any ISA decision;
+- item 5, steps 4-5: the exact constant encoder in cmmcomp (Luciano's code:
+  show the diff first);
+- the heap arena (item 13): 77 % of the C++ data memory, not started, needs a
+  decision (a pragma or sizing from measured use).
+Parked by Luciano: reorganizing the runner/setup scripts and the dependency
+lists (seeing the code run in GTKWave is too valuable to drop). Not started:
+a macOS build in `release.yml`.
+
 ---
 
 ## Decisions taken (2026-09-18)
