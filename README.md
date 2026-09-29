@@ -195,7 +195,7 @@ Seven binaries are produced from source — three compilers, two preprocessors, 
 
 Auxiliary content:
 
-* `SAPHO/` — the SAPHO processor itself, in Verilog (core, ALU, instruction decoder, FIFO, ...); asmcomp instantiates it with the parameters each program needs. Releases also carry a copy named `HDL/`, its old name, while Aurora moves to the new one
+* `SAPHO/` — the SAPHO processor itself, in Verilog (core, ALU, instruction decoder, FIFO, ...); asmcomp instantiates it with the parameters each program needs. Up to v5.6 the folder was called `HDL/` (v5.6 ships both names)
 * `Compilers/CMMComp/Includes/` — assembly macros and lookup tables for `.cmm` programs (`float_sqrt`, `float_sin`, `float_atan`, ...)
 * `Compilers/CPPComp/Includes/` — header shims that `.cpp` programs include
 * `Scripts/` — `regress.sh`, `comp2gtkw`, `gen_gtkw` (builds the formatted GTKWave view)
@@ -213,7 +213,7 @@ Auxiliary content:
 > GTKWave for the runner scripts — see [Pre-wired scripts](#pre-wired-scripts).
 > The two options below are the manual equivalents.
 
-**Option A — pre-built (fastest).** Download the latest release from [Releases](https://github.com/nipscernlab/yanc/releases/latest) — the `yanc-bin-<tag>.zip` asset on Windows or `yanc-bin-linux-<tag>.tar.gz` on Linux — and extract it. The archive contains `bin/` (the executables incl. `comp2gtkw`/`gen_gtkw`), `SAPHO/` (the processor, plus a copy named `HDL/` for now), `Macros/` (C±-side includes), `Header/` (C++-side includes), a short `README.md` and `example/` (the Quick start program, in C++ and in C±).
+**Option A — pre-built (fastest).** Download the latest release from [Releases](https://github.com/nipscernlab/yanc/releases/latest) — the `yanc-bin-<tag>.zip` asset on Windows or `yanc-bin-linux-<tag>.tar.gz` on Linux — and extract it. The archive contains `bin/` (the executables incl. `comp2gtkw`/`gen_gtkw`), `SAPHO/` (the processor), `Macros/` (C±-side includes), `Header/` (C++-side includes), a short `README.md` and `example/` (the Quick start program, in C++ and in C±).
 
 **Option B — build from source.**
 

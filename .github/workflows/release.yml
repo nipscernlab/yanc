@@ -51,8 +51,6 @@ jobs:
         #
         #   bin/     — every binary the Makefile builds
         #   SAPHO/   — the SAPHO processor, Verilog (processor/core/ula/...)
-        #   HDL/     — TRANSITION: a copy of SAPHO/ under its old name, for
-        #              Aurora until it reads SAPHO/ (see the Makefile stage)
         #   Macros/  — CMM float LUTs and helpers (Compilers/CMMComp/Includes/)
         #   Header/  — CPPComp standard-library shims that .cpp programs
         #              #include (Compilers/CPPComp/Includes/)
@@ -86,11 +84,11 @@ jobs:
         run: |
           set -euo pipefail
           cd out
-          # Zip bin/, SAPHO/ (+ its HDL/ copy), Macros/ and Header/ — extracting into
-          # components/ produces components/{bin,SAPHO,HDL,Macros,Header}/,
-          # the layout Aurora expects (it still reads HDL/).
+          # Zip bin/, SAPHO/, Macros/, Header/, README.md and example/ —
+          # extracting into components/ produces components/{bin,SAPHO,Macros,Header}/,
+          # the layout Aurora expects.
           zip -r "../${{ steps.artifact.outputs.name }}.zip" \
-              bin SAPHO HDL Macros Header README.md example
+              bin SAPHO Macros Header README.md example
           ls -la "../${{ steps.artifact.outputs.name }}.zip"
 
       - name: Upload artifact (always)
@@ -158,10 +156,10 @@ jobs:
         run: |
           set -euo pipefail
           cd out
-          # Mirror the Windows layout: bin/, SAPHO/, HDL/, Macros/, Header/ at the
+          # Mirror the Windows layout: bin/, SAPHO/, Macros/, Header/ at the
           # archive root.
           tar -czf "../${{ steps.artifact.outputs.name }}.tar.gz" \
-              bin SAPHO HDL Macros Header README.md example
+              bin SAPHO Macros Header README.md example
           ls -la "../${{ steps.artifact.outputs.name }}.tar.gz"
 
       - name: Upload artifact (always)

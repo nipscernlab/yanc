@@ -8,6 +8,13 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **The package no longer carries the `HDL/` copy.** Aurora's main pins v5.6
+  and reads the processor only from `components/SAPHO` (its commits 766f0498
+  and 1ae6f631), so the transition copy goes: `make stage`, the zip and tar
+  in `release.yml` and `Scripts/aurora.bat` ship `SAPHO/` alone. v5.6 keeps
+  both folders; every older Aurora pins a tag that still has `HDL/`.
+
 ## [v5.6] – 2026-09-28
 
 ### Changed

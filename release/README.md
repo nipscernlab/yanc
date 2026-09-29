@@ -11,7 +11,6 @@ memory images and a testbench. Full documentation:
 |---|---|
 | `bin/` | the compilers (`cmmcomp`, `cppcomp`, `asmcomp`), the preprocessors (`cpppp`, `appcomp`) and two waveform helpers (`comp2gtkw`, `gen_gtkw`). `-h` on any of them shows its options, `-V` its version |
 | `SAPHO/` | the SAPHO processor, in Verilog: asmcomp instantiates it with each program's parameters, and a simulator or a synthesizer reads it from here |
-| `HDL/` | the same files under the folder's old name, kept for a while for tools that still look for `HDL/` |
 | `Macros/` | assembly macros and tables used by C± programs (`-m` of cmmcomp and asmcomp) |
 | `Header/` | the C++ headers the programs include (`-I` of cpppp) |
 | `example/` | one small program, in C++ (`my_program.cpp`) and in C± (`my_program.cmm`) |
