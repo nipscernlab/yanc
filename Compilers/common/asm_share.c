@@ -459,3 +459,277 @@ done:
     st_free(&names); st_free(&labels); st_free(&lines);
     return saved;
 }
+
+// ---- asm_reach: drop the code no path from the entry gets to ---------------------
+// See asm_share.h. One record per line of the file, one per instruction.
+
+enum { RL_OTHER, RL_INS, RL_IFLIVE, RL_ENDLIVE, RL_ARRAY };
+
+typedef struct {
+    int kind;       // RL_*
+    int ins;        // RL_INS: its index; any other line: the next instruction's
+    int lab0, nlab; // its labels: lab_of[lab0 .. lab0+nlab-1]
+    int rest;       // offset where the text after the labels starts
+    int name;       // RL_ARRAY: the array it declares
+} rl_line;
+
+typedef struct {
+    int op, name;   // row of isa[] (-1: unknown), data name (-1: none)
+    int target;     // label index of a jump or call (-1: none)
+    int region;     // the #IFLIVE block it sits in (-1: none)
+} rl_ins;
+
+static void *grow(void *p, int *cap, int need, size_t sz)   // room for index `need`
+{
+    if (need < *cap) return p;
+    int nc = *cap ? *cap : 64;
+    while (nc <= need) nc *= 2;
+    p = realloc(p, nc * sz);
+    *cap = nc;
+    return p;
+}
+
+static int lab_add(strtab *labels, int **at, int *cap, const char *s)
+{
+    int li = st_add(labels, s);
+    if (li >= *cap)
+    {
+        int old = *cap;
+        *at = grow(*at, cap, li, sizeof(int));
+        for (int k = old; k < *cap; k++) (*at)[k] = -1;   // -1: not defined (yet)
+    }
+    return li;
+}
+
+static void read_lines(FILE *f, strtab *t)
+{
+    char buf[4096];
+    while (fgets(buf, sizeof(buf), f))
+    {
+        if (t->n == t->cap)
+        {
+            t->cap = t->cap ? 2 * t->cap : 1024;
+            t->s   = realloc(t->s, t->cap * sizeof(char *));
+        }
+        t->s[t->n++] = strdup(buf);
+    }
+}
+
+int asm_reach(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    strtab   labels = {0}, names = {0}, pc = {0};
+    int     *lab_at  = NULL, lab_cap  = 0;              // label -> instruction it points at
+    int     *lab_of  = NULL, lof_n = 0, lof_cap = 0;    // the labels of every line, in order
+    int     *reg_lab = NULL, nreg  = 0, reg_cap = 0;    // #IFLIVE block -> the label it waits for
+    int     *roots   = NULL, nroot = 0, root_cap = 0;
+    rl_line *L   = calloc(lines.n + 1, sizeof(rl_line));
+    rl_ins  *ins = NULL; int n = 0, cap = 0;
+    int      ok = 1, region = -1, markers = 0, removed = 0;
+    char    *live = NULL, *used = NULL, *needed = NULL;
+    int     *work = NULL, *next_live = NULL, *carry = NULL;
+
+    // parse ----------------------------------------------------------------------
+
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        char *text = lines.s[ln];
+        int   end  = (int)strlen(text);
+        char *cm   = strstr(text, "//");
+        if (cm) end = (int)(cm - text);
+
+        int ts[8], tl[8], nt = 0;
+        for (int p = 0; p < end && nt < 8; )
+        {
+            while (p < end && isspace((unsigned char)text[p])) p++;
+            if (p >= end) break;
+            ts[nt] = p;
+            while (p < end && !isspace((unsigned char)text[p])) p++;
+            tl[nt] = p - ts[nt]; nt++;
+        }
+
+        char tok[256];
+        #define TOK(k) (snprintf(tok, sizeof(tok), "%.*s", tl[k], text + ts[k]), tok)
+
+        rl_line *l = &L[ln];
+        l->kind = RL_OTHER; l->lab0 = lof_n; l->name = -1;
+        int t = 0;
+        for (; t < nt && text[ts[t]] == '@'; t++)          // labels point at the next instruction
+        {
+            snprintf(tok, sizeof(tok), "%.*s", tl[t] - 1, text + ts[t] + 1);
+            int li = lab_add(&labels, &lab_at, &lab_cap, tok);
+            lab_at[li] = n;
+            lab_of = grow(lab_of, &lof_cap, lof_n, sizeof(int));
+            lab_of[lof_n++] = li;
+            l->nlab++;
+        }
+        l->rest = t > 0 ? ts[t - 1] + tl[t - 1] : 0;
+        l->ins  = n;
+        if (t >= nt) continue;
+
+        if (text[ts[t]] == '#')
+        {
+            TOK(t);
+            if (strcmp(tok, "#ITRAD") == 0 || strcmp(tok, "#TOAQUI") == 0)
+            {
+                roots = grow(roots, &root_cap, nroot, sizeof(int));
+                roots[nroot++] = n;                        // the interrupt, and the marked address
+            }
+            else if (strcmp(tok, "#IFLIVE") == 0)
+            {
+                markers = 1; l->kind = RL_IFLIVE;
+                if (region >= 0 || t + 1 >= nt) { ok = 0; continue; }
+                reg_lab = grow(reg_lab, &reg_cap, nreg, sizeof(int));
+                reg_lab[nreg] = lab_add(&labels, &lab_at, &lab_cap, TOK(t + 1));
+                region = nreg++;
+            }
+            else if (strcmp(tok, "#ENDLIVE") == 0)
+            {
+                markers = 1; l->kind = RL_ENDLIVE;
+                if (region < 0) ok = 0;
+                region = -1;
+            }
+            else if ((strcmp(tok, "#array") == 0 || strcmp(tok, "#arrays") == 0) && t + 1 < nt)
+            {
+                l->kind = RL_ARRAY;
+                l->name = st_add(&names, TOK(t + 1));
+            }
+            continue;
+        }
+
+        ins = grow(ins, &cap, n, sizeof(rl_ins));
+        rl_ins *x = &ins[n++];
+        x->op = isa_find(TOK(t)); x->name = -1; x->target = -1; x->region = region;
+        l->kind = RL_INS;
+        if (x->op < 0) { ok = 0; continue; }               // not ours to guess
+
+        const char *cls = isa[x->op].cls;
+        if (strcmp(cls, "code") == 0)
+        {
+            if (t + 1 >= nt) { ok = 0; continue; }
+            x->target = lab_add(&labels, &lab_at, &lab_cap, TOK(t + 1));
+        }
+        else if ((strcmp(cls, "data") == 0 || strcmp(cls, "offset") == 0 || strcmp(cls, "lea") == 0) && t + 1 < nt)
+        {
+            if (!is_literal(TOK(t + 1))) x->name = st_add(&names, tok);
+        }
+        if (region >= 0 && strcmp(isa[x->op].flow, "-") != 0) ok = 0;   // a block is straight-line code
+        #undef TOK
+    }
+    if (region >= 0) ok = 0;
+    for (int i = 0; i < n && ok; i++)
+        if (ins[i].target >= 0 && lab_at[ins[i].target] < 0) ok = 0;   // a jump to a label that is not there
+
+    // the map the waveform reads: one line per instruction of the program part
+    if (pc_path && (f = fopen(pc_path, "r")))
+    {
+        read_lines(f, &pc);
+        fclose(f);
+        if (pc.n > n) ok = 0;                              // not the map of this file
+    }
+
+    // reach: from the entry, the interrupt, #TOAQUI and @fim ------------------------
+
+    live = calloc(n + 1, 1);
+    used = calloc(names.n + 1, 1);
+    work = malloc((n + 1) * sizeof(int));
+    int nw = 0, fim = st_find(&labels, "fim");
+    #define VISIT(k) do { int k_ = (k); if (k_ >= 0 && k_ < n && !live[k_]) { live[k_] = 1; work[nw++] = k_; } } while (0)
+    if (ok)
+    {
+        VISIT(0);
+        for (int r = 0; r < nroot; r++) VISIT(roots[r]);
+        if (fim >= 0) VISIT(lab_at[fim]);
+        while (nw > 0)
+        {
+            int i = work[--nw];
+            const char *fl = isa[ins[i].op].flow;
+            int tg = ins[i].target >= 0 ? lab_at[ins[i].target] : -1;
+            if      (strcmp(fl, "jmp") == 0) VISIT(tg);
+            else if (strcmp(fl, "jz") == 0 || strcmp(fl, "call") == 0) { VISIT(tg); VISIT(i + 1); }
+            else if (strcmp(fl, "ret") != 0) VISIT(i + 1);
+        }
+        for (int i = 0; i < n; i++)                        // a block whose label nothing reaches goes too
+        {
+            int r = ins[i].region;
+            if (r < 0) continue;
+            int at = lab_at[reg_lab[r]];
+            if (at < 0 || at >= n || !live[at]) live[i] = 0;
+        }
+    }
+    #undef VISIT
+
+    // every label a kept jump needs keeps an instruction to sit on
+    needed    = calloc(labels.n + 1, 1);
+    next_live = malloc((n + 1) * sizeof(int));
+    next_live[n] = -1;
+    for (int i = n - 1; i >= 0; i--) next_live[i] = live[i] ? i : next_live[i + 1];
+    for (int i = 0; i < n; i++) if (live[i] && ins[i].target >= 0) needed[ins[i].target] = 1;
+    if (fim >= 0) needed[fim] = 1;
+    for (int li = 0; li < labels.n && ok; li++)
+        if (needed[li] && lab_at[li] >= 0 && lab_at[li] < n && next_live[lab_at[li]] < 0) ok = 0;
+    if (!ok) memset(live, 1, n);                           // anything unclear: keep every instruction
+
+    for (int i = 0; i < n; i++) if (live[i] && ins[i].name >= 0) used[ins[i].name] = 1;
+    int dead = 0, arrays_gone = 0;
+    for (int i = 0; i < n; i++) dead += !live[i];
+    for (int ln = 0; ln < lines.n && ok; ln++) if (L[ln].kind == RL_ARRAY && !used[L[ln].name]) arrays_gone++;
+    if (dead == 0 && arrays_gone == 0 && !markers) goto done;
+
+    // rewrite: dead lines, the arrays only they used and the #IFLIVE/#ENDLIVE
+    // markers leave; a label a kept jump needs moves to the next kept instruction
+
+    f = fopen(asm_path, "w");
+    if (!f) { removed = -1; goto done; }
+    carry = malloc((lof_n + 1) * sizeof(int));
+    int nc = 0;
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        rl_line *l = &L[ln];
+        char *text = lines.s[ln];
+        int drop = (l->kind == RL_INS && !live[l->ins]) || l->kind == RL_IFLIVE || l->kind == RL_ENDLIVE
+                || (l->kind == RL_ARRAY && ok && !used[l->name]);
+        int move = drop || (l->kind != RL_INS && l->nlab > 0 && l->ins < n && !live[l->ins]);
+        if (move)
+            for (int k = 0; k < l->nlab; k++)
+            {
+                int li = lab_of[l->lab0 + k];
+                if (needed[li] || (l->ins < n && live[l->ins])) carry[nc++] = li;
+            }
+        if (drop) continue;
+        if (move)
+        {
+            const char *r = text + l->rest;
+            while (*r == ' ' || *r == '\t') r++;
+            if (*r != '\n' && *r != '\r' && *r != 0) fputs(r, f);   // else the line only held labels
+            continue;
+        }
+        if (l->kind == RL_INS && nc > 0)
+        {
+            for (int k = 0; k < nc; k++) fprintf(f, "@%s ", labels.s[carry[k]]);
+            nc = 0;
+        }
+        fputs(text, f);
+    }
+    fclose(f);
+
+    if (pc.n > 0 && dead > 0)
+    {
+        f = fopen(pc_path, "w");
+        if (!f) { removed = -1; goto done; }
+        for (int i = 0; i < pc.n; i++) { if (live[i]) fputs(pc.s[i], f); else removed++; }
+        fclose(f);
+    }
+    if (dead > 0) printf("Info: %d unreachable instructions removed\n", dead);
+
+done:
+    free(carry); free(needed); free(next_live); free(work); free(used); free(live);
+    free(L); free(ins); free(lab_at); free(lab_of); free(reg_lab); free(roots);
+    st_free(&labels); st_free(&names); st_free(&lines); st_free(&pc);
+    return removed;
+}

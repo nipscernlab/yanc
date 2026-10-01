@@ -1,0 +1,56 @@
+#PRNAME cmm_reach
+#NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// asm_reach (Compilers/common/asm_share.h): code no path from the entry gets
+// to leaves the .asm, and the operators only it used leave the hardware
+// (hardware.txt: no F_DIV, no MLT, no SHL).
+//
+//   fdead       never called                     -> gone, and with it F_DIV
+//   chain, mid  mid is called only by chain, and
+//               nobody calls chain                -> both gone, and MLT
+//   tab         array only chain writes           -> its #array gone
+//   rare        called only when in(0) == 12345: the
+//               walk follows the program, not the data -> stays
+//   live1       called every turn, writes buf     -> stays
+//   main        while (1): nothing falls into @fim, which stays anyway
+//
+// Expected outputs: in + 2 for every input (rare's branch never runs).
+
+int tab[4];
+int buf[3];
+
+float fdead(float u, float v) { return u / v; }
+
+int mid(int u) { return u * 3; }
+
+int chain(int u)
+{
+    tab[1] = mid(u);
+    return tab[1] << 2;
+}
+
+int rare(int u) { return u - 7; }
+
+int live1(int u)
+{
+    buf[1] = u;
+    return buf[1] + 2;
+}
+
+void main()
+{
+    while (1)
+    {
+        int x = in(0);
+        int y = live1(x);
+        if (x == 12345) y = rare(y);
+        out(0, y);
+    }
+}

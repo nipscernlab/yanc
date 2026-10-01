@@ -19,7 +19,8 @@
 #      <proc>/Simulation/ for the sim output (all three are created on
 #      demand by cppcomp + asmcomp). An optional testN/warnings.txt lists
 #      the cppcomp warnings the test expects, one substring per line: each
-#      must appear, and no other warning may.
+#      must appear, and no other warning may. An optional hardware.txt (in
+#      both phases) holds the generated processor's parameters: see hw_check.
 #
 #   3. ISA table: hold the hand-written copies of the instruction set
 #      (ASMComp.l, core.v) to Compilers/common/isa.tsv, so the four places
@@ -182,6 +183,27 @@ sim_skipped() {
     return 1
 }
 
+# hardware.txt (optional, next to a test's golden): one "<PARAM> <value>" per
+# line, held to the parameters the generated top passes the processor (an
+# opcode parameter left out of the top counts as 0); "<N" asks for less than
+# N. It says what hardware the program must (not) get, e.g. "F_DIV 0" for a
+# float division nobody calls, "MDATAS <64" for a heap that must not be there.
+# Prints the first mismatch and returns 1, or returns 0.
+hw_check() {   # hw_check <hardware.txt> <top.v>
+    [ -f "$1" ] || return 0
+    local p want got
+    while IFS=' ' read -r p want || [ -n "$p" ]; do   # the caller may have IFS=newline
+        want="${want%$'\r'}"; [ -z "$p" ] && continue
+        got=$(grep -oE "\.$p *\( *[0-9]+ *\)" "$2" | head -1 | sed -E 's/.*\( *([0-9]+) *\)/\1/')
+        if [ "${want#<}" != "$want" ]; then                 # "<N": below N
+            [ "${got:-0}" -lt "${want#<}" ] || { echo "hardware: $p is ${got:-0}, expected $want"; return 1; }
+        else
+            [ "${got:-0}" = "$want" ] || { echo "hardware: $p is ${got:-0}, expected $want"; return 1; }
+        fi
+    done < "$1"
+    return 0
+}
+
 # ---- 1. build all 5 binaries -----------------------------------------------
 
 if [ "$SKIP_BUILD" -eq 0 ]; then
@@ -332,6 +354,10 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
         if ! "$ASMCOMP" -en -i "$asm_file" -p "$work_proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 100000 >/dev/null 2>&1; then
             echo "FAIL ($prname): asmcomp exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+        if ! hw_msg=$(hw_check "$proc_dir_rel/hardware.txt" "$work_proc/Hardware/$prname.v"); then
+            echo "FAIL ($prname): $hw_msg"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
 
@@ -667,6 +693,9 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         fi
         if ! "$ASMCOMP" -en -i "$asm" -p "$proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 5000000 >/dev/null 2>&1; then
             echo "FAIL ($base): asmcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
+        if ! hw_msg=$(hw_check "${entry%/}/hardware.txt" "$proc/Hardware/$prname.v"); then
+            echo "FAIL ($base): $hw_msg"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
 
         uproc="$proc/Hardware/$prname"

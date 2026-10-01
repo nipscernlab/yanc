@@ -8,6 +8,37 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **Code no path reaches is no longer in the program, nor in the hardware.**
+  asmcomp builds an operator for every opcode the `.asm` holds, and both
+  compilers emitted every function defined: a float division in a function
+  nobody calls turned on the divider (the block that sets Fmax), and in C++
+  an unused `#include <cmath>` brought float operators, `CAL`, `PSH`, and an
+  unused `#include <vector>` the 2048-word heap arena. A new pass,
+  `asm_reach` (`Compilers/common/asm_share.c`), walks the `.asm` from the
+  entry, the `#ITRAD` interrupt, `#TOAQUI` and `@fim` along fall-through,
+  `JMP`, `JIZ` and `CAL`, and drops what it never reaches, with the arrays
+  only that code used; `pc_<proc>_mem.txt` and `num_ins` follow, so the
+  waveform's source lines stay right. The ISA has no indirect jump, so the
+  walk is exact (function pointers and virtual calls are chains of direct
+  `CAL`s). cppcomp brackets its heap set-up in `main` with
+  `#IFLIVE malloc` / `#ENDLIVE`, kept only when `malloc` is reached. Both
+  compilers run it before `asm_share`; the call chain Aurora runs is
+  unchanged. Measured: `<cmath>` unused 92 → 17 asm lines, `<vector>` unused
+  235 → 17 lines and 2067 → 2 data words. Fixtures `cmm_reach` and `test85`.
+- **`hardware.txt` in the regress.** An optional file next to a test's golden
+  lists processor parameters the generated top must have (`F_DIV 0`,
+  `MDATAS <64`), in both phases, so a test can say what hardware a program
+  must not get.
+
+### Fixed
+- **C++: `int (*fp)(int) = f;` compiles,** global or local (only the forms
+  without an initializer, and `= { ... }` for arrays, were in the grammar).
+- **C++: `&f` is the function `f`.** It emitted `LEA f`, taking the
+  function's name for a data word, so a call through the pointer gave 0
+  (measured: `fp(4)` with `fp = &add3` printed 0, not 7), with no error.
+  `test85`.
+
 ### Changed
 - **The package no longer carries the `HDL/` copy.** Aurora's main pins v5.6
   and reads the processor only from `components/SAPHO` (its commits 766f0498

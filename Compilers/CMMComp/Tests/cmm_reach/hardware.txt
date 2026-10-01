@@ -1,0 +1,5 @@
+F_DIV 0
+MLT 0
+SHL 0
+CAL 1
+ADD 1

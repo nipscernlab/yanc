@@ -1823,6 +1823,12 @@ init_declarator:
           if (ts_typedef) st_add_typedef($3, t);
           $$ = ast_decl(t, $3, NULL, yylineno);
       }
+    | '(' '*' IDENT array_suffix ')' '(' param_list ')' '=' assignment_expr {
+          /* `ret (*fp)(params) = f;` — the id of f, or any expression giving one */
+          if (ts_typedef) msg_error(yylineno, "typedef cannot have an initializer");
+          if ($4.n > 0) msg_error(yylineno, "an array of function pointers takes a { ... } initializer");
+          $$ = ast_decl(t_int(), $3, $10, yylineno);
+      }
     | '(' '*' IDENT array_suffix ')' '(' param_list ')' '=' '{' init_item_list '}' {
           /* `ret (*arr[N])(params) = { f, g, ... }` */
           type *t = build_array_type(t_int(), $4.dims, $4.n);

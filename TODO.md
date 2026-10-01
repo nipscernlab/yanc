@@ -14,8 +14,8 @@ Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 10 architecture hardening (from the HDL audit), 12 a run-time exception
 strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
 small accessors in cppcomp, 15 the regress not being trustworthy on this
-machine, 17 faster array fill/copy (hardware options), 18 hardware paid for code
-that never runs. Item 11, consistency at 32 bits, is
+machine, 17 faster array fill/copy (hardware options), 18 what is left after the
+reachability pass. Item 11, consistency at 32 bits, is
 closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
@@ -728,38 +728,26 @@ real group programs are the bottleneck. Each step measured first: ALUTs and
 Fmax in Quartus (a program that uses it and one that must pay nothing), and
 test46's cycles.
 
-## 18. Hardware paid for code that never runs
+## 18. Hardware paid for code that never runs: what is left
 
-**Status:** open, measured 2026-10-01 (bin built from `de9a7c7`), nothing
-changed yet · **Area:** both front ends, a pass in `Compilers/common/`
+**Status:** the reachability pass landed (2026-10-01, `asm_reach` in
+`Compilers/common/asm_share.c`, fixtures `cmm_reach` and `test85`, see the
+CHANGELOG); three follow-ups below · **Area:** cppcomp, `SAPHO/core.v`
 
-**Why.** asmcomp turns on an operator for every opcode present in the
-`.asm`, whatever the front end, and both compilers emit every function
-defined, called or not. Measured with `in`/`out` programs (enabled
-parameters of the generated top):
+Measured before and after, `in`/`out` programs:
 
 | program | asm lines | MDATAS | operators beyond INN/SET/ADD/OUT |
 |---|---|---|---|
-| C++, nothing else | 16 | 2 | -- |
-| C++, plus two functions never called (`u / v` float, `u * v` int) | 31 | 3 | SF_DIV, MLT, POP, SET_P, P_LOD |
-| C+-, the same two dead functions | 28 | 3 | F_DIV, MLT, LOD, SET_P |
-| C++, `#include <cmath>`, nothing used | 92 | 9 | SF_DIV, SF_MLT, SF_ADD, SF_LES, SF_GRE, F_NEG_M, LES, CAL, PSH, ... |
-| C++, `#include <vector>`, nothing used | 235 | 2067 | MLT, the 2048-word heap arena, CAL, PSH, LDI/STI, comparators |
+| C++, two functions never called (`u / v` float, `u * v` int) | 31 -> 17 | 3 -> 2 | SF_DIV, MLT, ... -> none |
+| C+-, the same two dead functions | 28 -> 16 | 3 -> 2 | F_DIV, MLT, ... -> none |
+| C++, `#include <cmath>`, nothing used | 92 -> 17 | 9 -> 2 | SF_DIV, SF_MLT, SF_ADD, CAL, ... -> none |
+| C++, `#include <vector>`, nothing used | 235 -> 17 | 2067 -> 2 | MLT, heap arena, CAL, ... -> none |
 
-The float divider is the one that sets Fmax (item 8's numbers). In C++ the
-header case is the common one: every inline function of a header is
-emitted, and `g_uses_heap` (`codegen.c`) is set by a `new` in an unused
-`vector` member, so the arena comes along.
-
-**Plan.** One reachability pass over the `.asm`, shared by both front ends
-(next to `asm_share.c`; cmmcomp untouched): start at the entry and at
-`ITRADD`, follow fall-through, jumps and `CAL`, and count every other use of
-a label as a reference (C++ vtables and function pointers take addresses);
-drop unreached functions and the data words and `#array`s only they used,
-the heap arena included. Done when the five rows above give the first row's
-hardware, and the full regress passes with goldens unchanged except asm size.
-
-**Also measured, decide after the pass:**
+Left:
+- **The recursion stack.** cppcomp sets up `__cstk` in `main` when any
+  function is recursive (`g_any_recursive`), even one nobody calls. The same
+  `#IFLIVE` bracket fits, but it waits for one label and here any recursive
+  function will do: an `#IFLIVE a b c` (any of) is the small extension.
 - **Stack depths.** cppcomp always writes `#SDEPTH 128` / `#NDSTAC 128`
   (`config.h`); C+- takes them by hand. For a program without recursion
   both depths can be computed from the call graph. The data stack is not

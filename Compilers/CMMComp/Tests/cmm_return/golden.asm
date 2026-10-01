@@ -71,8 +71,6 @@ RET
 RET
 @sw_body_1_3 LOD 99
 RET
-@switch_end_1 LOD 0
-RET
 @maybe SET maybe_x
 LOD 0
 EQU maybe_x

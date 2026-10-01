@@ -1038,6 +1038,14 @@ static void gen_addr(expr *e)
         sym *stat = cur_class_static(e->sval);
         sym *s = stat ? stat : st_find(e->sval);
         if (!s) msg_error(e->line, "undefined '%s'", e->sval);
+        // `&f` is f itself: its dispatch-table id, the value a function pointer
+        // holds (LEA would take f's name for a data word, a 0)
+        if (s->kind == SK_FUNC) {
+            int id = fp_id_of(e->sval);
+            if (id < 0) msg_internal("function '%s' not in dispatch table", e->sval);
+            emit("LOD %d", id);
+            return;
+        }
         // reference: its lvalue address is the address it stores (the referent)
         if (s->stype && s->stype->is_ref) {
             if (s->is_frame) { emit("LOD __fp"); if (s->frame_off) emit("ADD %d", s->frame_off); emit("LDI 0"); }
@@ -3693,10 +3701,12 @@ static void emit_function(func *f, unit *u, int is_main)
 
     if (is_main) {
         if (g_any_recursive) { emit("LEA __cstk"); emit("SET __sp"); }   // init the call stack
-        if (g_uses_heap) {                                               // init the heap
+        if (g_uses_heap) {                                               // init the heap, kept
+            emit("#IFLIVE malloc");                                      // only if malloc is reached
             emit("LEA __heap"); emit("SET __hp");                        // bump = base
             emit("LEA __heap"); emit("ADD %d", CFG_HEAPSZ); emit("SET __hend");
             emit("LOD 0"); emit("SET __flist");                          // empty free list
+            emit("#ENDLIVE");                                            // (asm_reach, asm_share.h)
         }
         emit_vtable_inits();                                             // fill class vtables
         emit_string_inits(); emit_global_scalar_inits(u); emit_static_once_flags();
@@ -4382,9 +4392,13 @@ static void peephole(void)
         int e = r;
         while (e < g_ibuf_n && !g_ibuf[e].nofuse && g_ibuf[e].text[0] == '@' &&
                is_label_only_nop(g_ibuf[e].text)) e++;
-        if (e > r && e < g_ibuf_n && !g_ibuf[e].nofuse) {
-            size_t n = 1;
-            for (int k = r; k <= e; k++) n += strlen(g_ibuf[k].text) + 1;
+        // A directive between the labels and that instruction (#IFLIVE) stays
+        // ahead of it: the labels point at the next instruction either way.
+        int d = e;
+        while (d < g_ibuf_n && g_ibuf[d].text[0] == '#') d++;
+        if (e > r && d < g_ibuf_n && !g_ibuf[d].nofuse) {
+            size_t n = strlen(g_ibuf[d].text) + 1;
+            for (int k = r; k < e; k++) n += strlen(g_ibuf[k].text) + 1;
             char *merged = malloc(n);
             size_t at = 0;
             for (int k = r; k < e; k++) {                 // the labels, NOP dropped
@@ -4394,14 +4408,15 @@ static void peephole(void)
                 merged[at++] = ' ';
                 free(g_ibuf[k].text);
             }
-            size_t ilen = strlen(g_ibuf[e].text);         // then the instruction
-            memcpy(merged + at, g_ibuf[e].text, ilen);
+            size_t ilen = strlen(g_ibuf[d].text);         // then the instruction
+            memcpy(merged + at, g_ibuf[d].text, ilen);
             merged[at + ilen] = 0;
-            free(g_ibuf[e].text);
-            g_ibuf[w] = g_ibuf[e];                        // keep ITS source line
-            g_ibuf[w].text = merged;
-            w++;
-            r = e;
+            free(g_ibuf[d].text);
+            ibuf_e ins = g_ibuf[d];                       // keep ITS source line
+            ins.text = merged;
+            for (int k = e; k < d; k++) g_ibuf[w++] = g_ibuf[k];   // w <= r < e: already read
+            g_ibuf[w++] = ins;
+            r = d;
             continue;
         }
         g_ibuf[w++] = g_ibuf[r];
@@ -4415,7 +4430,9 @@ static void flush_ibuf(FILE *out)
 {
     for (int i = 0; i < g_ibuf_n; i++) {
         fputs(g_ibuf[i].text, out); fputc('\n', out);
-        if (g_ibuf[i].text[0] != '#') { ins_count++; emit_pc_line(g_ibuf[i].line); }
+        const char *t = g_ibuf[i].text;                   // past any labels: a directive is
+        while (*t == '@') { while (*t && *t != ' ') t++; while (*t == ' ') t++; }   // no instruction
+        if (*t && *t != '#') { ins_count++; emit_pc_line(g_ibuf[i].line); }
     }
 }
 

@@ -184,6 +184,12 @@ void parse_end(char *prname, char *d_proc)
 
 	mac_copy(asm_file);
 
+	// code no path reaches leaves the program, and with it its hardware -----
+
+	char pc_file[2048]; snprintf(pc_file, sizeof(pc_file), "%s/pc_%s_mem.txt", dir_tmp, prname);
+	int  gone = asm_reach(asm_file, pc_file);
+	if  (gone > 0) num_ins -= gone;
+
 	// variables that are never alive at the same time share a data word ------
 
 	asm_share(asm_file);

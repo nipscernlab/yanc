@@ -39,6 +39,25 @@ static void ensure_dir(const char *path) {
 #endif
 }
 
+/* asm_reach dropped `gone` instructions the pc map covered: cmm_log.txt's
+ * "num_ins" line, already written by codegen, drops by as much. */
+static void lower_num_ins(const char *tmp_dir, int gone) {
+    char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", tmp_dir);
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+    char *text = NULL; size_t len = 0, cap = 0; char line[1024];
+    while (fgets(line, sizeof(line), f)) {
+        int v;
+        if (sscanf(line, "num_ins %d", &v) == 1) snprintf(line, sizeof(line), "num_ins %d\n", v - gone);
+        size_t k = strlen(line);
+        if (len + k + 1 > cap) { cap = 2 * (len + k + 1); text = realloc(text, cap); }
+        memcpy(text + len, line, k + 1); len += k;
+    }
+    fclose(f);
+    if ((f = fopen(path, "w"))) { if (text) fputs(text, f); fclose(f); }
+    free(text);
+}
+
 extern int yyparse(void);
 extern FILE *yyin;
 extern unit *g_unit;
@@ -132,6 +151,14 @@ int main(int argc, char **argv)
 
     fclose(fo);
     if (msg_error_count() > 0) return 2;
+
+    // code no path reaches leaves the program, and its hardware with it (the
+    // pc_<proc>_mem.txt map and cmm_log's num_ins follow)
+    if (tmp_dir) {
+        char pc[2048]; snprintf(pc, sizeof(pc), "%s/pc_%s_mem.txt", tmp_dir, g_unit->prname);
+        int gone = asm_reach(outp, pc);
+        if (gone > 0) lower_num_ins(tmp_dir, gone);
+    } else asm_reach(outp, NULL);
 
     // scalars never alive together share one data word (#SHARE lines ahead of
     // the code; the instructions and the pc_<proc>_mem.txt map are untouched)
