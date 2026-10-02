@@ -59,8 +59,9 @@ left the package (`0a885db`). Aurora already made its side of the switch
 `components/SAPHO`; what it still cites of `HDL/` is text only (a dead
 `.gitignore` line, three comments/labels), handed to Aurora to clean. When the
 next release is out, Aurora only bumps `YANC_TAG`; check that the published
-zip and tar have no `HDL/`. The Aurora installer (nipscernlab/sapho v6.20.0) still ships yanc
-v5.4 until Aurora releases. Open here, in the order they were queued:
+zip and tar have no `HDL/`. Aurora v6.21.0 (released 2026-10-02, installer
+published) ships yanc v5.6; everything here since v5.6 reaches its users
+only with the next yanc tag and Aurora's YANC_TAG bump. Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
   item (the strength-reduction candidate was measured and dropped);
 - item 17: faster fill/copy in hardware, a design discussion with nothing
