@@ -19,3 +19,4 @@ const_idx_scalar_read.cmm|ain't an array
 const_idx_2d_read.cmm|has two dimensions
 const_idx_scalar_write.cmm|isn't an array
 const_idx_2d_write.cmm|has two dimensions
+recursion.cmm|calls itself (fact -> fact)

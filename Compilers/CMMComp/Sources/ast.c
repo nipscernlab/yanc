@@ -723,6 +723,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             if (n->n_args == 0 && acc_ok) add_instr("PSH\n");
             add_instr("CAL %s\n", v_table[n->id].name);
             v_table[n->id].used = 1;
+            fun_call_edge(emit_fid, n->id, emit_line);   // for check_rec (funcoes.c)
             acc_ok = (n->type == 0) ? 0 : 1;
 
             fun_id = saved_fun_id;
@@ -1610,8 +1611,11 @@ void stmt_emit(stmt_node *n)
             char saved_emit_fname[512];
             strcpy(saved_emit_fname, emit_fname);
             strcpy(emit_fname, v_table[n->id].name);
+            int saved_emit_fid = emit_fid;   // the caller of every CAL in the body
+            emit_fid  = n->id;
             ret_ok    = 0;
             stmt_emit(n->body);
+            emit_fid  = saved_emit_fid;
             strcpy(emit_fname, saved_emit_fname);
             fun_parse = saved_fun_parse;
 

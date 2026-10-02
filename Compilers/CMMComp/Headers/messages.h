@@ -482,6 +482,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção: função '%s' não está sendo usada. Economize memória!\n", \
       "Heads up: function '%s' isn't being used. Save some memory, will ya!\n")
 
+#define MSG_ERR_RECURSION \
+    M("Erro na linha %d: a função '%s' chama ela mesma (%s). Recursão não rola em C±. Quer recursão mesmo? Usa o compilador C++ do SAPHO.\n", \
+      "Error on line %d: function '%s' calls itself (%s). Recursion doesn't fly in C±. Really want recursion? Use SAPHO's C++ compiler.\n")
+
 // interrupcao ----------------------------------------------------------------
 
 #define MSG_ERR_DUP_INTERRUPT \

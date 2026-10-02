@@ -748,12 +748,6 @@ Left:
   function is recursive (`g_any_recursive`), even one nobody calls. The same
   `#IFLIVE` bracket fits, but it waits for one label and here any recursive
   function will do: an `#IFLIVE a b c` (any of) is the small extension.
-- **Stack depths: measure the saving.** Done in asmcomp for every front end
-  (2026-10-02): an undeclared `#SDEPTH`/`#NDSTAC` is worked out from the
-  `.asm`. Not measured yet: what the smaller stacks save in LUTs/registers
-  (`Scripts/hw/`; the data stack is not under `generate` and reads
-  asynchronously, so likely registers). C± fixtures still declare 8/8 or
-  more; dropping the directives there is the user's call.
 - **The stack overflow flag misses a wrap.** `core.v`, `stack`: `fl_full`
   tests `pointer_nxt >= DEPTH` and `(pointer_nxt+um)-pointer_nxt != 1`; the
   second is evaluated at 32 bits, so with DEPTH a power of two the pointer

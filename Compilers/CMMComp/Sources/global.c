@@ -15,6 +15,7 @@
 #include "../Headers/diretivas.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../Headers/funcoes.h"
 #include "../../common/asm_share.h"
 
 // ----------------------------------------------------------------------------
@@ -33,6 +34,7 @@ char dir_soft [1024]; // Software directory
 int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
 int  line_num = 0;    // parser-time: line the lexer is currently reading
 int  emit_line= 1;    // emit-time: line the AST walker tags onto each instruction
+int  emit_fid = -1;   // emit-time: id of the function whose body the walker is in (-1: none)
 char emit_fname[512] = ""; // emit-time: name of the function whose body the AST
                            // walker is in, for rem_fname() in diagnostics only
                            // (exec_id keeps using the global fname). "" = global
@@ -181,6 +183,10 @@ void parse_end(char *prname, char *d_proc)
     // check whether macros need to be appended to the .asm file --------------
 
     char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/Software/%s.asm", d_proc, prname);
+
+	// a function that calls itself back would run over its own locals ------
+
+	check_rec(); // (funcoes.c)
 
 	mac_copy(asm_file);
 

@@ -56,6 +56,14 @@ tags consumed by Aurora.
   must not get.
 
 ### Fixed
+- **C±: a recursive function is an error, not a wrong program.** C± gives
+  every local a fixed data address, so a call to a function still running
+  overwrote its values: a recursive factorial compiled without a word and
+  printed 1 1 1 for 1!, 3!, 5!. cmmcomp now records every call the walker
+  emits and stops on a cycle (`check_rec`, `funcoes.c`): "Error on line N:
+  function 'fact' calls itself (fact -> fact). Recursion doesn't fly in C±.
+  Really want recursion? Use SAPHO's C++ compiler." (PT and EN).
+  NegTests `recursion.cmm`.
 - **C++: `int (*fp)(int) = f;` compiles,** global or local (only the forms
   without an initializer, and `= { ... }` for arrays, were in the grammar).
 - **C++: `&f` is the function `f`.** It emitted `LEA f`, taking the

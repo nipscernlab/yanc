@@ -726,3 +726,71 @@ expr_node *fcall(int id)
 
     return expr_func_call(v_table[id].type-6, id, a, n);
 }
+
+// ----------------------------------------------------------------------------
+// recursion check ------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// C+- gives every local a fixed data address, so a function that is still
+// running when it is called again gets its values overwritten (a recursive
+// factorial printed 1 1 1). The walker records every CAL as an edge, and a
+// depth-first walk over them stops the build on the first cycle it finds:
+// direct (fact -> fact), or through other functions (a -> b -> a), which C+-
+// cannot spell today (a call needs its callee defined above it).
+
+static int *ce_from = NULL, *ce_to = NULL, *ce_line = NULL, ce_n = 0, ce_cap = 0;
+
+void fun_call_edge(int caller, int callee, int line)
+{
+    if (caller < 0 || callee < 0) return;          // a call outside any function body
+    for (int k = 0; k < ce_n; k++) if (ce_from[k] == caller && ce_to[k] == callee) return;
+    if (ce_n == ce_cap)
+    {
+        ce_cap  = ce_cap ? 2 * ce_cap : 64;
+        ce_from = realloc(ce_from, ce_cap * sizeof(int));
+        ce_to   = realloc(ce_to  , ce_cap * sizeof(int));
+        ce_line = realloc(ce_line, ce_cap * sizeof(int));
+    }
+    ce_from[ce_n] = caller; ce_to[ce_n] = callee; ce_line[ce_n] = line; ce_n++;
+}
+
+static int rec_dfs(int f, char *state, int *path, int depth)
+{
+    state[f] = 1;                                  // on the current path
+    path[depth] = f;
+    for (int k = 0; k < ce_n; k++)
+    {
+        if (ce_from[k] != f) continue;
+        int g = ce_to[k];
+        if (state[g] == 1)                         // back to a function still open
+        {
+            int at = 0; while (path[at] != g) at++;
+            char chain[1024] = "";
+            for (int i = at; i <= depth; i++)
+            {
+                strncat(chain, v_table[path[i]].name, sizeof(chain) - strlen(chain) - 1);
+                strncat(chain, " -> ", sizeof(chain) - strlen(chain) - 1);
+            }
+            strncat(chain, v_table[g].name, sizeof(chain) - strlen(chain) - 1);
+            fprintf(stderr, MSG_ERR_RECURSION, ce_line[k], v_table[g].name, chain);
+            exit(EXIT_FAILURE);
+        }
+        if (state[g] == 0 && rec_dfs(g, state, path, depth + 1)) return 1;
+    }
+    state[f] = 2;                                  // done, no cycle through it
+    return 0;
+}
+
+void check_rec(void)
+{
+    int top = 0;
+    for (int k = 0; k < ce_n; k++)
+    {
+        if (ce_from[k] > top) top = ce_from[k];
+        if (ce_to[k]   > top) top = ce_to[k];
+    }
+    char *state = calloc(top + 1, 1);
+    int  *path  = malloc((ce_n + 2) * sizeof(int));
+    for (int k = 0; k < ce_n; k++)
+        if (state[ce_from[k]] == 0) rec_dfs(ce_from[k], state, path, 0);
+    free(state); free(path);
+}

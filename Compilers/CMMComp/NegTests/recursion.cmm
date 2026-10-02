@@ -1,0 +1,16 @@
+// Recursion: C+- locals live at fixed addresses, so fact(n - 1) runs over
+// the n of the call still open (this printed 1 1 1 for 1! 3! 5!). cmmcomp
+// must stop with an error naming the cycle (check_rec, funcoes.c).
+#PRNAME recursion
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+int fact(int n)
+{
+    if (n < 2) return 1;
+    return n * fact(n - 1);
+}
+void main() { out(0, fact(in(0))); }

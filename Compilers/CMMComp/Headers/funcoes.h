@@ -17,6 +17,12 @@ extern int  fun_parse;              // function being walked (set by STMT_FUNC w
 // to stage it for the upcoming CAL. Read by the EXPR_FUNC_CALL walker.
 void par_check(expr e);
 
+// call graph: every CAL the walker emits is an edge caller -> callee, and
+// check_rec() stops the build on a cycle -- C+- locals live at fixed
+// addresses, so a recursive call runs over its caller's values
+void fun_call_edge(int caller, int callee, int line);
+void check_rec(void);
+
 // declaration ----------------------------------------------------------------
 
 void  declar_fun(int id1, int id2); // type and name (state only - emit is deferred)
