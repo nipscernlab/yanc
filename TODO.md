@@ -294,11 +294,18 @@ so its Fmax is the global answer (the MHz in steps 1-2 come from it), but it
 prints only the number, not the path.
 
 **Next:** make `fmax.sh` also report the worst paths (Quartus `report_timing`:
-from register, to register, levels, delay) and run it on a few processors
-(integer only, float without divider at levels 0 and 2, float with `F_DIV`).
-Only then decide whether the ALU is still where the clock is lost, and what
-to restructure next. The targets below were set on the ALU alone and should
-be restated against the whole-processor Fmax.
+from register, to register, levels, delay) and run it on **`sapho_all`**, the
+processor in which every `generate` is reached: every opcode's decoder and
+ALU block (all but `SF_SCL`/`XPO_M`, which C± cannot spell, see its
+`blocks_except.txt`), both stacks, FFT addressing, the `#PRACA` interrupt and
+`#TOAQUI`. A processor that leaves blocks out can hide the path that sets the
+clock once they are in (Luciano, 2026-10-02). Run it at `FR=0`, `1` and `2`
+(`sapho_all` is written at level 2). Decide also at which sizes: the data
+memory, the instruction memory and the stacks set the depth of their read
+multiplexers (with asmcomp's computed depths `sapho_all` gets stacks of 3
+and 7; at 128 the stack read is deeper). Only then decide whether the ALU is
+still where the clock is lost, and what to restructure next. The targets
+below were set on the ALU alone and should be restated against that Fmax.
 
 **The steps, in the order they were done** (each measured with `ltp`/`stat` and
 the full regress green):
