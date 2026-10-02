@@ -43,10 +43,11 @@ int asm_share(const char *asm_path);
 // #arrays that only those used. The ISA has no indirect jump, so the walk is
 // exact: C++'s function pointers and virtual calls are chains of direct CALs.
 //
-// A front end may put straight-line code that exists only for a routine
-// between "#IFLIVE <label>" and "#ENDLIVE" (cppcomp's heap set-up in main,
-// for malloc): the block stays only if <label> is reached. The marker lines
-// always leave the file.
+// A front end may put straight-line code that exists only for some routines
+// between "#IFLIVE <label> [<label> ...]" and "#ENDLIVE" (cppcomp's heap
+// set-up in main, for malloc; its recursion stack, for the recursive
+// functions): the block stays only if one of the labels is reached. The
+// marker lines always leave the file.
 //
 // pc_path (pc_<proc>_mem.txt, one line per instruction of the program part,
 // may be NULL) loses the lines of the dropped instructions in lockstep. A

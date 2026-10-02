@@ -56,6 +56,22 @@ tags consumed by Aurora.
   must not get.
 
 ### Fixed
+- **C++: a recursive function nobody calls costs no data memory.** cppcomp
+  set up its software call stack (`__cstk`, 1024 words) in `main` whenever a
+  function was recursive, even one never called, and asm_reach could not
+  drop the set-up. It now sits in `#IFLIVE <the recursive functions>` /
+  `#ENDLIVE`; `#IFLIVE` takes a list and keeps its block when any of the
+  labels is reached. A dead recursive `fact` now leaves 2 data words, not
+  1027. `test88` (dead: no `__cstk`), `test89` (one of two recursive
+  functions reached through a pointer: the stack stays; without its set-up
+  the frames land on a global array and the test fails).
+- **The simulation's stack overflow flag catches a wrapping pointer.**
+  `core.v`, `stack`: `fl_full` tested `pointer_nxt >= DEPTH`, which a
+  power-of-two DEPTH never reaches (its pointer wraps to 0), and a wrap test
+  evaluated at 32 bits that never fired, so a forced NDSTAC 2 gave wrong
+  outputs with the flag at 0. It now tests the pointer before the edge: a
+  push at DEPTH-1 or a pop at 0. Same flag as before for any other DEPTH;
+  `YANC_SIM_VIS` only, the synthesized processor is unchanged.
 - **C±: a recursive function is an error, not a wrong program.** C± gives
   every local a fixed data address, so a call to a function still running
   overwrote its values: a recursive factorial compiled without a word and

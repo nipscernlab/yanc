@@ -3727,7 +3727,16 @@ static void emit_function(func *f, unit *u, int is_main)
     }
 
     if (is_main) {
-        if (g_any_recursive) { emit("LEA __cstk"); emit("SET __sp"); }   // init the call stack
+        if (g_any_recursive) {                                           // init the call stack, kept
+            char lst[4096]; size_t at = 0;                               // only if a recursive
+            for (int i = 0; i < u->n_funcs && at < sizeof(lst) - 1; i++) // function is reached
+                if (u->funcs[i]->is_recursive)
+                    at += snprintf(lst + at, sizeof(lst) - at, " %s",
+                                   u->funcs[i]->asm_label ? u->funcs[i]->asm_label : u->funcs[i]->name);
+            if (at < sizeof(lst) - 1) emit("#IFLIVE%s", lst);            // (too many: always kept)
+            emit("LEA __cstk"); emit("SET __sp");
+            if (at < sizeof(lst) - 1) emit("#ENDLIVE");
+        }
         if (g_uses_heap) {                                               // init the heap, kept
             emit("#IFLIVE malloc");                                      // only if malloc is reached
             emit("LEA __heap"); emit("SET __hp");                        // bump = base

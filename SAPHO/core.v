@@ -206,8 +206,13 @@ wire [NADDR-1:0] pointer_nxt = rst  ? zero    :
                                push ? pmaisum :
                                pop  ? pmenoum : pointer;
 
+// fl_full looks at the pointer BEFORE the edge: a push at DEPTH-1 (the stack
+// reaches DEPTH) or a pop at 0. Testing pointer_nxt >= DEPTH missed a
+// power-of-two DEPTH, whose NADDR-bit pointer wraps to 0 instead of reaching
+// DEPTH (the old wrap test, (pointer_nxt+um)-pointer_nxt != 1, is evaluated at
+// 32 bits and never fired). fl_max still wraps there: it is a display aid.
 always @ (posedge clk) begin
-	if ((pointer_nxt >= DEPTH) || ((pointer_nxt+um)-pointer_nxt != 1)) fl_full <= 1'b1;
+	if (!rst && ((push && pointer == DEPTH-1) || (!push && pop && pointer == zero))) fl_full <= 1'b1;
 	if ( pointer_nxt >  fl_max                                       ) fl_max  <= pointer_nxt;
 end
 

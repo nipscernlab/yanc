@@ -528,7 +528,8 @@ int asm_reach(const char *asm_path, const char *pc_path)
     strtab   labels = {0}, names = {0}, pc = {0};
     int     *lab_at  = NULL, lab_cap  = 0;              // label -> instruction it points at
     int     *lab_of  = NULL, lof_n = 0, lof_cap = 0;    // the labels of every line, in order
-    int     *reg_lab = NULL, nreg  = 0, reg_cap = 0;    // #IFLIVE block -> the label it waits for
+    int     *reg_lab0 = NULL, *reg_nlab = NULL, nreg = 0, reg_cap = 0, reg_cap2 = 0;  // #IFLIVE block -> its labels:
+    int     *reg_lab  = NULL, nrl = 0, rl_cap = 0;      //   reg_lab[reg_lab0[r] ..], reg_nlab[r] of them
     int     *roots   = NULL, nroot = 0, root_cap = 0;
     rl_line *L   = calloc(lines.n + 1, sizeof(rl_line));
     rl_ins  *ins = NULL; int n = 0, cap = 0;
@@ -545,8 +546,8 @@ int asm_reach(const char *asm_path, const char *pc_path)
         char *cm   = strstr(text, "//");
         if (cm) end = (int)(cm - text);
 
-        int ts[8], tl[8], nt = 0;
-        for (int p = 0; p < end && nt < 8; )
+        int ts[256], tl[256], nt = 0;      // #IFLIVE may list many labels
+        for (int p = 0; p < end && nt < 256; )
         {
             while (p < end && isspace((unsigned char)text[p])) p++;
             if (p >= end) break;
@@ -586,8 +587,15 @@ int asm_reach(const char *asm_path, const char *pc_path)
             {
                 markers = 1; l->kind = RL_IFLIVE;
                 if (region >= 0 || t + 1 >= nt) { ok = 0; continue; }
-                reg_lab = grow(reg_lab, &reg_cap, nreg, sizeof(int));
-                reg_lab[nreg] = lab_add(&labels, &lab_at, &lab_cap, TOK(t + 1));
+                reg_lab0 = grow(reg_lab0, &reg_cap,  nreg, sizeof(int));
+                reg_nlab = grow(reg_nlab, &reg_cap2, nreg, sizeof(int));
+                reg_lab0[nreg] = nrl; reg_nlab[nreg] = 0;
+                for (int k = t + 1; k < nt; k++)       // the block stays if ANY of them is reached
+                {
+                    int li = lab_add(&labels, &lab_at, &lab_cap, TOK(k));
+                    reg_lab = grow(reg_lab, &rl_cap, nrl, sizeof(int));
+                    reg_lab[nrl++] = li; reg_nlab[nreg]++;
+                }
                 region = nreg++;
             }
             else if (strcmp(tok, "#ENDLIVE") == 0)
@@ -656,12 +664,16 @@ int asm_reach(const char *asm_path, const char *pc_path)
             else if (strcmp(fl, "jz") == 0 || strcmp(fl, "call") == 0) { VISIT(tg); VISIT(i + 1); }
             else if (strcmp(fl, "ret") != 0) VISIT(i + 1);
         }
-        for (int i = 0; i < n; i++)                        // a block whose label nothing reaches goes too
+        for (int i = 0; i < n; i++)                        // a block none of whose labels is reached goes too
         {
-            int r = ins[i].region;
+            int r = ins[i].region, reached = 0;
             if (r < 0) continue;
-            int at = lab_at[reg_lab[r]];
-            if (at < 0 || at >= n || !live[at]) live[i] = 0;
+            for (int k = 0; k < reg_nlab[r] && !reached; k++)
+            {
+                int at = lab_at[reg_lab[reg_lab0[r] + k]];
+                reached = at >= 0 && at < n && live[at];
+            }
+            if (!reached) live[i] = 0;
         }
     }
     #undef VISIT
@@ -731,7 +743,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
 
 done:
     free(carry); free(needed); free(next_live); free(work); free(used); free(live);
-    free(L); free(ins); free(lab_at); free(lab_of); free(reg_lab); free(roots);
+    free(L); free(ins); free(lab_at); free(lab_of); free(reg_lab); free(reg_lab0); free(reg_nlab); free(roots);
     st_free(&labels); st_free(&names); st_free(&lines); st_free(&pc);
     return removed;
 }
