@@ -50,6 +50,13 @@ tags consumed by Aurora.
   included) and calls the last one without a test: shorter code, and every
   path pops the same words, which `asm_depth` needs. Only a call through an
   invalid pointer behaves differently, and that is undefined in C++.
+- **The regress holds the stack depths on every simulation.** Each Icarus
+  run, C± and C++, now fails when a stack reached its depth (`fl_full` in the
+  VCD, `stack_check`), so a stack too small shows up even when the outputs
+  happen to match. The C± fixtures no longer declare `#NDSTAC`/`#SDEPTH`
+  (66 of them; `cmm_reach` keeps 8/8 for the declared path), so asmcomp
+  sizes their stacks: their `golden.asm` lose those two lines and nothing
+  else, the outputs are unchanged.
 - **`hardware.txt` in the regress.** An optional file next to a test's golden
   lists processor parameters the generated top must have (`F_DIV 0`,
   `MDATAS <64`), in both phases, so a test can say what hardware a program

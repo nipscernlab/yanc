@@ -21,6 +21,8 @@
 #      the cppcomp warnings the test expects, one substring per line: each
 #      must appear, and no other warning may. An optional hardware.txt (in
 #      both phases) holds the generated processor's parameters: see hw_check.
+#      Every Icarus run, in both phases, also fails when a stack reached its
+#      depth (fl_full in the VCD): see stack_check.
 #
 #   3. ISA table: hold the hand-written copies of the instruction set
 #      (ASMComp.l, core.v) to Compilers/common/isa.tsv, so the four places
@@ -202,6 +204,20 @@ hw_check() {   # hw_check <hardware.txt> <top.v>
         fi
     done < "$1"
     return 0
+}
+
+# A stack that reaches its depth in an Icarus run: the simulation's fl_full
+# (core.v, stack; it catches a wrapping pointer too) went to 1 in the VCD.
+# With the depths asmcomp works out (peak + 1) it never should; a declared
+# depth that is too small shows up here even when the outputs happen to match.
+# Returns 1 when a flag fired, 0 otherwise (and when there is no VCD).
+stack_check() {   # stack_check <tb.vcd>
+    [ -f "$1" ] || return 0
+    awk '{ sub(/\r$/, "") }
+         !hdr && $1 == "$var" && $5 == "fl_full" { id[$4] = 1; next }
+         $1 == "$enddefinitions"                 { hdr = 1; next }
+         hdr && substr($0, 1, 1) == "1" && (substr($0, 2) in id) { fired = 1; exit }
+         END { exit fired ? 1 : 0 }' "$1"
 }
 
 # ---- 1. build all 5 binaries -----------------------------------------------
@@ -392,6 +408,10 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         popd >/dev/null
         if [ $vvp_status -ne 0 ]; then
             echo "FAIL ($prname): vvp exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+        if ! stack_check "$tmp/${prname}_tb.vcd"; then
+            echo "FAIL ($prname): a stack reached its depth in the simulation (fl_full)"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
 
@@ -777,6 +797,10 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             fi
             [ $died -eq 1 ] && vvp_once_more "$base" "$tmp/$prname.vvp"
             popd >/dev/null
+            if ! stack_check "$tmp/${prname}_tb.vcd"; then
+                echo "FAIL ($base): a stack reached its depth in the simulation (fl_full)"
+                fail=$((fail+1)); failed_names+=("$base"); continue
+            fi
         fi
         if [ ! -f "$out" ]; then
             echo "FAIL ($base): no simulation output"; fail=$((fail+1)); failed_names+=("$base"); continue
