@@ -806,7 +806,7 @@ static void dp_walk(dp_ctx *c, int r, int start)
     free(dep); free(work);
 }
 
-int asm_depth(const char *asm_path, int set_sdepth, int set_ddepth, int *sdepth, int *ddepth)
+int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
 {
     FILE *f = fopen(asm_path, "r");
     if (!f) return -1;
@@ -898,27 +898,9 @@ int asm_depth(const char *asm_path, int set_sdepth, int set_ddepth, int *sdepth,
         // stack's pointer has $clog2(DEPTH) bits
         *ddepth = d + 1 < 2 ? 2 : d + 1;
         *sdepth = s + 1 < 2 ? 2 : s + 1;
-
-        if (set_sdepth || set_ddepth)
-        {
-            f = fopen(asm_path, "w");
-            if (!f) ret = -1;
-            else
-            {
-                for (int ln = 0; ln < lines.n; ln++)
-                {
-                    const char *l = lines.s[ln];
-                    while (*l == ' ' || *l == '\t') l++;
-                    if      (set_sdepth && strncmp(l, "#SDEPTH", 7) == 0 && isspace((unsigned char)l[7])) fprintf(f, "#SDEPTH %d\n", *sdepth);
-                    else if (set_ddepth && strncmp(l, "#NDSTAC", 7) == 0 && isspace((unsigned char)l[7])) fprintf(f, "#NDSTAC %d\n", *ddepth);
-                    else fputs(lines.s[ln], f);
-                }
-                fclose(f);
-                ret = 1;
-            }
-        }
+        ret = 1;
     }
-    else if (why) printf("Info: stack depths kept as declared: %s\n", why);
+    else if (why) printf("Info: stack depths not worked out from the program, the default stays: %s\n", why);
 
     free(c.tgt); free(c.entry); free(c.state); free(c.net); free(c.maxd); free(c.maxc);
     free(op); free(tgl); free(lab_at);

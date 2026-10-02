@@ -44,6 +44,8 @@ int  nbmant    = 23;    // mantissa width (bits)
 int  nbexpo    =  8;    // exponent width (bits)
 int  ddepth    = 128;   // data stack depth
 int  sdepth    = 128;   // subroutine stack depth
+int  ddepth_set = 0;    // #NDSTAC was in the .asm (else the depth is worked out, main)
+int  sdepth_set = 0;    // #SDEPTH was in the .asm
 int  nuioin    =  1;    // number of input ports
 int  nuioou    =  1;    // number of output ports
 int  nugain    = 128;   // division constant (norm(); a power of two, checked in eval_finish)
@@ -341,8 +343,8 @@ void eval_opernd(char *va, int is_const)
 {
     switch (state)
     {
-        case  5: ddepth =  atoi(va);                    state =  0; break; // data stack depth
-        case  6: sdepth =  atoi(va);                    state =  0; break; // instruction stack depth
+        case  5: ddepth =  atoi(va); ddepth_set = 1;    state =  0; break; // data stack depth
+        case  6: sdepth =  atoi(va); sdepth_set = 1;    state =  0; break; // instruction stack depth
         case  7: nuioin =  atoi(va);                    state =  0; break; // number of input addresses
         case  8: nuioou =  atoi(va);                    state =  0; break; // number of output addresses
         case  9: nugain =  atoi(va);                    state =  0; break; // normalization value

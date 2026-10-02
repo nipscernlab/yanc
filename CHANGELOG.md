@@ -26,19 +26,22 @@ tags consumed by Aurora.
   compilers run it before `asm_share`; the call chain Aurora runs is
   unchanged. Measured: `<cmath>` unused 92 → 17 asm lines, `<vector>` unused
   235 → 17 lines and 2067 → 2 data words. Fixtures `cmm_reach` and `test85`.
-- **C++: each stack as deep as the program goes.** cppcomp wrote
-  `#SDEPTH 128` and `#NDSTAC 128` for every program. A new pass,
-  `asm_depth` (`asm_share.c`), works out from the `.asm` how deep the
-  return-address stack (one word per nested `CAL`) and the data stack
-  (isa.tsv's `stack` column) get: routine by routine, the callee first, the
-  depth the same on every path into an instruction, a callee's net effect
-  at `RET`, the `#ITRAD` routine's peaks on top. Each depth is the peak + 1,
-  at least 2; a `#pragma yanc sdepth` / `ndstac` still wins, and recursion
-  keeps the defaults (an Info line says why). Over the C++ tests, 84 of 85
-  get depths of 2 to 8 instead of 128 (test33 recurses). Every Icarus test
-  was simulated again with both stacks at 128: no real high-water mark
-  passes the depth written. The table copy in `asm_share.c` gains the stack
-  column, held to isa.tsv by `check_isa.py`. `test86`.
+- **Each stack as deep as the program goes, in any front end.** Left out of
+  the `.asm`, `#SDEPTH` and `#NDSTAC` were 128 in asmcomp, and cppcomp wrote
+  128 for every program. Now asmcomp works an undeclared depth out from the
+  `.asm` (`asm_depth`, `asm_share.c`): the return-address stack (one word per
+  nested `CAL`) and the data stack (isa.tsv's `stack` column), routine by
+  routine, the callee first, the depth the same on every path into an
+  instruction, a callee's net effect at `RET`, the `#ITRAD` routine's peaks
+  on top. Each depth is the peak + 1, at least 2. A declared depth stays (a
+  C± directive, a C++ `#pragma yanc sdepth` / `ndstac`; cppcomp now writes the
+  directive only then), and recursion keeps 128 with an Info line saying
+  why. Over the C++ tests, 84 of 85 get depths of 2 to 8 (test33 recurses);
+  every Icarus test was simulated again with both stacks at 128 and no real
+  high-water mark passes the depth worked out. The table copy in
+  `asm_share.c` gains the stack column, held to isa.tsv by `check_isa.py`.
+  Fixtures `cmm_depth` (C±, no directives), `test86` (pragma wins);
+  `hardware.txt` of `cmm_reach`, `test33`, `test85` hold the depths.
 - **C++: an indirect call tests only the functions it can reach.** The
   dispatch chain of a virtual call or a call through a function pointer
   compared the id with every address-taken function, of any signature, and

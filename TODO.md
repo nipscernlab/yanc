@@ -748,13 +748,12 @@ Left:
   function is recursive (`g_any_recursive`), even one nobody calls. The same
   `#IFLIVE` bracket fits, but it waits for one label and here any recursive
   function will do: an `#IFLIVE a b c` (any of) is the small extension.
-- **Stack depths in C+-.** Done for C++ (`asm_depth`, 2026-10-01: 84 of 85
-  tests get 2 to 8 instead of 128, checked against the real high-water marks
-  of a run at 128). C+- still takes `#SDEPTH`/`#NDSTAC` by hand; the same
-  call in cmmcomp's `parse_end` would size them when the directive is left
-  out (cmmcomp is Luciano's: diff first). Not measured yet: what the smaller
-  stacks save in LUTs/registers (`Scripts/hw/`, the data stack is not under
-  `generate` and reads asynchronously, so likely registers).
+- **Stack depths: measure the saving.** Done in asmcomp for every front end
+  (2026-10-02): an undeclared `#SDEPTH`/`#NDSTAC` is worked out from the
+  `.asm`. Not measured yet: what the smaller stacks save in LUTs/registers
+  (`Scripts/hw/`; the data stack is not under `generate` and reads
+  asynchronously, so likely registers). C± fixtures still declare 8/8 or
+  more; dropping the directives there is the user's call.
 - **The stack overflow flag misses a wrap.** `core.v`, `stack`: `fl_full`
   tests `pointer_nxt >= DEPTH` and `(pointer_nxt+um)-pointer_nxt != 1`; the
   second is evaluated at 32 bits, so with DEPTH a power of two the pointer

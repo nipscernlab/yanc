@@ -77,10 +77,11 @@ static void usage(void)
         "\n"
         "build-time defaults (override with -D when building cppcomp.exe):\n"
         "  NUBITS=%d  NBMANT=%d  NBEXPO=%d  NUGAIN=%d\n"
-        "  NDSTAC=%d  SDEPTH=%d  NUIOIN=%d  NUIOOU=%d  FFTSIZ=%d\n",
+        "  NUIOIN=%d  NUIOOU=%d  FFTSIZ=%d\n"
+        "stack depths (NDSTAC, SDEPTH): worked out by asmcomp unless a pragma sets them\n",
         YANC_VERSION,
         CFG_NUBITS, CFG_NBMANT, CFG_NBEXPO, CFG_NUGAIN,
-        CFG_NDSTAC, CFG_SDEPTH, CFG_NUIOIN, CFG_NUIOOU, CFG_FFTSIZ);
+        CFG_NUIOIN, CFG_NUIOOU, CFG_FFTSIZ);
     exit(1);
 }
 
@@ -159,15 +160,6 @@ int main(int argc, char **argv)
         int gone = asm_reach(outp, pc);
         if (gone > 0) lower_num_ins(tmp_dir, gone);
     } else asm_reach(outp, NULL);
-
-    // each stack as deep as the program goes, unless a pragma set it
-    {
-        int sd, dd;
-        int set_s = g_unit->sdepth < 0, set_d = g_unit->ndstac < 0;
-        if (asm_depth(outp, set_s, set_d, &sd, &dd) > 0)
-            printf("Info: stack depths from the program: SDEPTH %d, NDSTAC %d\n",
-                   set_s ? sd : g_unit->sdepth, set_d ? dd : g_unit->ndstac);
-    }
 
     // scalars never alive together share one data word (#SHARE lines ahead of
     // the code; the instructions and the pc_<proc>_mem.txt map are untouched)

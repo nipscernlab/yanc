@@ -73,11 +73,12 @@ int asm_reach(const char *asm_path, const char *pc_path);
 // Each depth written is the peak + 1 (the simulation's overflow flag fires
 // when the pointer reaches DEPTH), at least 2.
 //
-// Recursion, an unknown instruction, or two paths that disagree on the depth:
-// nothing is written, and an Info line says why. Run it after asm_reach.
-// *sdepth / *ddepth get the depths (0 when they could not be worked out);
-// the #SDEPTH / #NDSTAC lines are rewritten only where set_* is non-zero.
-// Returns 1 when the file was rewritten, 0 when not, -1 on an I/O error.
-int asm_depth(const char *asm_path, int set_sdepth, int set_ddepth, int *sdepth, int *ddepth);
+// asmcomp calls it for a stack the .asm does not declare (#SDEPTH / #NDSTAC
+// left out, in any front end or by hand); a declared depth stays. Recursion,
+// an unknown instruction, or two paths that disagree on the depth: no depth,
+// an Info line says why, and asmcomp keeps its default (128).
+// Returns 1 with *sdepth / *ddepth set, 0 when they could not be worked out
+// (both 0), -1 on an I/O error.
+int asm_depth(const char *asm_path, int *sdepth, int *ddepth);
 
 #endif

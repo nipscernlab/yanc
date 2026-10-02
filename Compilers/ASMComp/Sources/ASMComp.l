@@ -5,6 +5,7 @@
 #include "../Headers/messages.h"
 #include "../Headers/args.h"
 #include "../../common/console_utf8.h"
+#include "../../common/asm_share.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -256,6 +257,20 @@ int main(int argc, char *argv[])
   eval_init(a.freq, a.clocks);               // initialize the state variables
   yylex();                                   // run the lexer
   fclose(yyin);                              // close the .asm file
+
+  // a stack the .asm leaves undeclared is as deep as the program goes
+  // (asm_depth, Compilers/common/asm_share.h); recursion keeps the default
+  if (!sdepth_set || !ddepth_set)
+  {
+    int s, d;
+    if (asm_depth(a.input, &s, &d) > 0)
+    {
+      if (!sdepth_set) sdepth = s;
+      if (!ddepth_set) ddepth = d;
+      printf("Info: stack depths from the program: SDEPTH %d, NDSTAC %d\n", sdepth, ddepth);
+    }
+  }
+
   eval_finish();                             // finalize the assembler
 
   printf(MSG_OK_ASM_DONE);

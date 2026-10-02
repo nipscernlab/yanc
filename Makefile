@@ -109,9 +109,10 @@ $(BIN)/appcomp$(EXE): $(addprefix $(APP)/,$(APPCOMP_C)) $(APP)/app.l $(CONSOLE) 
 
 # --- asmcomp (flex) ---------------------------------------------------------
 $(BIN)/asmcomp$(EXE): $(addprefix $(ASM)/,$(ASMCOMP_C)) $(ASM)/ASMComp.l $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(CONSOLE) \
+                      $(COMMON)/asm_share.c $(COMMON)/asm_share.h \
                       $(wildcard Compilers/ASMComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(ASM) && $(FLEX) -o ASMComp.c ASMComp.l
-	$(CC) $(CFLAGS) -o $@ $(ASM)/ASMComp.c $(addprefix $(ASM)/,$(ASMCOMP_C)) $(COMMON)/yanc_num.c $(COMMON)/console_utf8.c $(LDLIBS)
+	$(CC) $(CFLAGS) -o $@ $(ASM)/ASMComp.c $(addprefix $(ASM)/,$(ASMCOMP_C)) $(COMMON)/yanc_num.c $(COMMON)/asm_share.c $(COMMON)/console_utf8.c $(LDLIBS)
 
 # --- cpppp (single TU) ------------------------------------------------------
 $(BIN)/cpppp$(EXE): $(CPP)/cpppp.c $(CONSOLE) $(VERSION_H) | $(BIN)

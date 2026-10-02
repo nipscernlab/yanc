@@ -3537,8 +3537,10 @@ static void emit_header(unit *u)
     emit("NOP");
     emit("#PRNAME %s", u->prname ? u->prname : "prog");
     emit("#NUBITS %d", nb);
-    emit("#NDSTAC %d", u->ndstac >= 0 ? u->ndstac : CFG_NDSTAC);
-    emit("#SDEPTH %d", u->sdepth >= 0 ? u->sdepth : CFG_SDEPTH);
+    // the stack depths only when a pragma sets them: left out, asmcomp makes
+    // each stack as deep as the program goes (asm_depth, asm_share.h)
+    if (u->ndstac >= 0) emit("#NDSTAC %d", u->ndstac);
+    if (u->sdepth >= 0) emit("#SDEPTH %d", u->sdepth);
     emit("#NUIOIN %d", u->nuioin >= 0 ? u->nuioin : CFG_NUIOIN);
     emit("#NUIOOU %d", u->nuioou >= 0 ? u->nuioou : CFG_NUIOOU);
     emit("#NBMANT %d", mant);

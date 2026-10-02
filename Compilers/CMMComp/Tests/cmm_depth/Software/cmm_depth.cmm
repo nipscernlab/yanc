@@ -1,0 +1,27 @@
+#PRNAME cmm_depth
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// No #SDEPTH, no #NDSTAC: asmcomp works both stack depths out from the .asm
+// (asm_depth, Compilers/common/asm_share.h). main -> top -> mid -> leaf is
+// three calls deep: SDEPTH 3 + 1 = 4. At the deepest point two arguments
+// wait on the data stack: NDSTAC 2 + 1 = 3. hardware.txt holds both.
+//
+// Expected outputs: top(x, 2, 3) = (x + 1) + (x + 2) + 2 + 3 = 2x + 8.
+
+int leaf(int a, int b) { return a + b; }
+int mid(int a) { return leaf(a, 1) + leaf(a, 2); }
+int top(int a, int b, int c) { return mid(a) + b + c; }
+
+void main()
+{
+    while (1)
+    {
+        int x = in(0);
+        out(0, top(x, 2, 3));
+    }
+}

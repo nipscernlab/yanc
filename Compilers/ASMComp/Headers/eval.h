@@ -18,6 +18,8 @@ extern int  nbmant;            // mantissa width (bits)
 extern int  nbexpo;            // exponent width (bits)
 extern int  ddepth;            // data stack depth
 extern int  sdepth;            // subroutine stack depth
+extern int  ddepth_set;        // #NDSTAC was in the .asm
+extern int  sdepth_set;        // #SDEPTH was in the .asm
 extern int  nuioin;            // number of input ports
 extern int  nuioou;            // number of output ports
 extern int  nugain;            // division constant
