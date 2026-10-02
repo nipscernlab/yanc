@@ -269,21 +269,39 @@ project).
 
 ## 8. ALU datapath restructuring (depth and area)
 
-**Status:** open · **Area:** `SAPHO/ula.v` · **Evidence:** [§2.6](docs/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
+**Status:** the six planned steps are done (below); what is left is to
+measure where the critical path of the whole processor lies now, and decide
+from that · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.6](docs/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
 
-The ALU is combinational, so its depth is the clock. Measured: the float
-path is 37 LUT4 levels for `F_ADD` at level 0, 51 at level 2; the whole
-no-divider ALU 47 / 57 / 56 (levels 0 / 1 / 2); with `F_DIV` 546. The
-efficiency review found five adders in series where one is needed, a linear
-leading-zero chain, three pairs of duplicated shifters, `F_MLT`/`F_DIV`
-needlessly crossing the leading-zero count, comparisons done by subtraction,
-and dividers with twice the rows they need. All of it can change with level
-0 staying bit-identical (the C± goldens are the proof). To be done
-**before** the 64-bit work (item 6), so the wide datapath is built on the
-cheap structure and the ALU testbench of item 6 validates the final one.
+The ALU is combinational and every instruction takes one cycle, so the ALU
+sits on the path that sets the clock. Measured before the steps (Yosys,
+`area.sh`, the ALU alone): the float path was 37 LUT4 levels for `F_ADD` at
+level 0, 51 at level 2; the whole no-divider ALU 47 / 57 / 56 (levels 0 / 1 /
+2); with `F_DIV` 546. The efficiency review found five adders in series where
+one is needed, a linear leading-zero chain, three pairs of duplicated
+shifters, `F_MLT`/`F_DIV` needlessly crossing the leading-zero count,
+comparisons done by subtraction, and dividers with twice the rows they need.
+Level 0 stayed bit-identical through all of it (the C± goldens are the proof).
 
-**Done when**, in this order (each step measured with `ltp`/`stat` and the
-full regress green):
+**The ALU alone is a proxy, not the measure.** The clock is set by the worst
+register-to-register path of the whole processor: before the ALU the operand
+select (data memory, stack top, constant) and the instruction decode, after
+it the accumulator write, the bypass and the jump / call logic. A path that is
+the worst inside the ALU need not be the worst once those are added, and a
+path that never crosses the ALU can be the real one. `area.sh` counts levels
+inside `ula.v` only; `fmax.sh` runs Quartus on a processor the regress built,
+so its Fmax is the global answer (the MHz in steps 1-2 come from it), but it
+prints only the number, not the path.
+
+**Next:** make `fmax.sh` also report the worst paths (Quartus `report_timing`:
+from register, to register, levels, delay) and run it on a few processors
+(integer only, float without divider at levels 0 and 2, float with `F_DIV`).
+Only then decide whether the ALU is still where the clock is lost, and what
+to restructure next. The targets below were set on the ALU alone and should
+be restated against the whole-processor Fmax.
+
+**The steps, in the order they were done** (each measured with `ltp`/`stat` and
+the full regress green):
 1. ~~sign-magnitude adder, parallel `e1-e2`/`e2-e1`, one denormaliser
    shifter~~ — **done** (`58944d9`: level 0 45.1 → 51.0 MHz);
 2. ~~`F_MLT`/`F_DIV` skip the LZC; carry-select exponent and range check;
@@ -316,8 +334,9 @@ full regress green):
    70**, 3 → 264 / 38 — not the full divider feared, but 2–3× the depth of
    the whole no-divider ALU (36), i.e. the clock halved.
 
-Targets: full no-divider ALU ≈ 30 levels at every level, ≈ −15 % LUT4;
-`F_DIV` ≈ 260 levels, ≈ −50 % LUT4; every golden unchanged.
+Targets set on the ALU alone (not yet re-measured after the steps): full
+no-divider ALU ≈ 30 levels at every level, ≈ −15 % LUT4; `F_DIV` ≈ 260
+levels, ≈ −50 % LUT4; every golden unchanged.
 
 ## 9. Library accuracy keyed on `NBMANT`
 
