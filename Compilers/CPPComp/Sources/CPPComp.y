@@ -2305,6 +2305,11 @@ cast_expr:
           type *t = apply_pointers($2, $3);
           $$ = ast_cast(t, $5, yylineno);
       }
+    | '(' KW_CONST base_type pointers ')' cast_expr {
+          /* `(const T*)e` -- const is cosmetic on this target, as everywhere else */
+          type *t = apply_pointers($3, $4);
+          $$ = ast_cast(t, $6, yylineno);
+      }
     | '(' base_type pointers ')' '{' init_item_list '}' {
           /* C99 compound literal (struct/scalar/pointer type) */
           type *t = apply_pointers($2, $3);
@@ -2317,6 +2322,10 @@ unary_expr:
     | KW_CPPCAST '<' base_type pointers '>' '(' expr ')' {
           /* static_cast / reinterpret_cast / const_cast / dynamic_cast<T>(e) */
           $$ = ast_cast(apply_pointers($3, $4), $7, yylineno);
+      }
+    | KW_CPPCAST '<' KW_CONST base_type pointers '>' '(' expr ')' {
+          /* the same with `const T` (cosmetic) */
+          $$ = ast_cast(apply_pointers($4, $5), $8, yylineno);
       }
     | TOK_INC unary_expr                     { $$ = ast_xfix(E_PREINC, $2, yylineno); }
     | TOK_DEC unary_expr                     { $$ = ast_xfix(E_PREDEC, $2, yylineno); }

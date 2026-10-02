@@ -753,9 +753,6 @@ Left:
   second is evaluated at 32 bits, so with DEPTH a power of two the pointer
   wraps and the flag stays 0 (seen: a forced NDSTAC 2 gave wrong outputs
   and no flag). Simulation-only (`YANC_SIM_VIS`); fix with the HDL scripts.
-- **`<cstring>` does not compile.** `(const int*)src` is a syntax error in
-  CPPComp.y (`(int*)src` works); no test includes the header. Fix and add a
-  test that uses `memcpy`/`memset`.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

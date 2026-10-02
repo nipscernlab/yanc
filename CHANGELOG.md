@@ -64,6 +64,14 @@ tags consumed by Aurora.
   function 'fact' calls itself (fact -> fact). Recursion doesn't fly in C±.
   Really want recursion? Use SAPHO's C++ compiler." (PT and EN).
   NegTests `recursion.cmm`.
+- **C++: `<cstring>` compiles, and counts words.** `(const int*)src` in the
+  header was a syntax error (a cast took no `const`), and no test included
+  it. The grammar takes `(const T*)e` and `static_cast<const T*>(e)` (const
+  is cosmetic on this target). The header turned the size into `n / 4`
+  words, but `sizeof` is in words here (`sizeof(int) == 1`), so
+  `memcpy(b, a, sizeof(a))` copied a quarter of the array: `memcpy` and
+  `memset` now take `n` words. `memset` writes `v` to each word, which C
+  matches only for `v == 0`. `test87`.
 - **C++: `int (*fp)(int) = f;` compiles,** global or local (only the forms
   without an initializer, and `= { ... }` for arrays, were in the grammar).
 - **C++: `&f` is the function `f`.** It emitted `LEA f`, taking the
