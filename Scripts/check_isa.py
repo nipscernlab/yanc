@@ -20,7 +20,7 @@ literal, which is the part that stays true when the HDL is edited:
      pushes, S_/SF_ pops, suffix _M reads the operand from memory, _V is its
      base with a constant offset) and agree with the operand class,
   7. the copy in Compilers/common/asm_share.c (operand class, operand effect,
-     flow) is the table's,
+     flow, data stack) is the table's,
   8. every row of instr_dec.v's decode table (`7'dN : if (NAME)`) carries its
      mnemonic's opcode, and every decoded mnemonic of the table has a row,
   9. asmcomp's usage totals (ISA_PARAMS, ULA_BLOCKS in opcodes.c) are the
@@ -277,19 +277,19 @@ def main():
         if cls == 'out' and got and got[4] != 'out':
             bad.append(f'{mn}: writes an output port but the table says io={got[4]}')
 
-    # 7: asm_share.c's copy of the operand class, operand effect and flow
+    # 7: asm_share.c's copy of the operand class, operand effect, flow and stack
     share_p = os.path.join(root, 'Compilers', 'common', 'asm_share.c')
     if os.path.exists(share_p):
         text = open(share_p, encoding='utf-8', errors='replace').read()
-        rows = {m.group(1): (m.group(2), m.group(3), m.group(4)) for m in re.finditer(
-            r'\{"([A-Z_0-9]+)",\s*"([a-z]+)",\s*"([a-z_-]+)",\s*"([a-z-]+)"\}', text)}
+        rows = {m.group(1): (m.group(2), m.group(3), m.group(4), m.group(5)) for m in re.finditer(
+            r'\{"([A-Z_0-9]+)",\s*"([a-z]+)",\s*"([a-z_-]+)",\s*"([a-z-]+)",\s*"([a-z-]+)"\}', text)}
         for mn in sorted(set(table) | set(rows)):
             if mn not in rows:
                 bad.append(f'{mn}: in the table but not in asm_share.c')
             elif mn not in table:
                 bad.append(f'{mn}: in asm_share.c but not in the table')
             else:
-                want = (table[mn][1], effects[mn][2], effects[mn][3])
+                want = (table[mn][1], effects[mn][2], effects[mn][3], effects[mn][1])
                 if rows[mn] != want:
                     bad.append(f'{mn}: asm_share.c says {"/".join(rows[mn])}, '
                                f'the table says {"/".join(want)}')

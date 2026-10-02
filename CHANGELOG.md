@@ -26,6 +26,27 @@ tags consumed by Aurora.
   compilers run it before `asm_share`; the call chain Aurora runs is
   unchanged. Measured: `<cmath>` unused 92 → 17 asm lines, `<vector>` unused
   235 → 17 lines and 2067 → 2 data words. Fixtures `cmm_reach` and `test85`.
+- **C++: each stack as deep as the program goes.** cppcomp wrote
+  `#SDEPTH 128` and `#NDSTAC 128` for every program. A new pass,
+  `asm_depth` (`asm_share.c`), works out from the `.asm` how deep the
+  return-address stack (one word per nested `CAL`) and the data stack
+  (isa.tsv's `stack` column) get: routine by routine, the callee first, the
+  depth the same on every path into an instruction, a callee's net effect
+  at `RET`, the `#ITRAD` routine's peaks on top. Each depth is the peak + 1,
+  at least 2; a `#pragma yanc sdepth` / `ndstac` still wins, and recursion
+  keeps the defaults (an Info line says why). Over the C++ tests, 84 of 85
+  get depths of 2 to 8 instead of 128 (test33 recurses). Every Icarus test
+  was simulated again with both stacks at 128: no real high-water mark
+  passes the depth written. The table copy in `asm_share.c` gains the stack
+  column, held to isa.tsv by `check_isa.py`. `test86`.
+- **C++: an indirect call tests only the functions it can reach.** The
+  dispatch chain of a virtual call or a call through a function pointer
+  compared the id with every address-taken function, of any signature, and
+  fell through with the arguments still on the stack when none matched. It
+  now tests only the functions with the call's parameter count (`this`
+  included) and calls the last one without a test: shorter code, and every
+  path pops the same words, which `asm_depth` needs. Only a call through an
+  invalid pointer behaves differently, and that is undefined in C++.
 - **`hardware.txt` in the regress.** An optional file next to a test's golden
   lists processor parameters the generated top must have (`F_DIV 0`,
   `MDATAS <64`), in both phases, so a test can say what hardware a program

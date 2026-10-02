@@ -425,6 +425,7 @@ static int    strtab_n = 0;
 // CALs the matching function. (CAL takes an immediate target, hence the table.)
 #define FPTAB_MAX 256
 static char *fptab[FPTAB_MAX];
+static int   fptab_np[FPTAB_MAX];   // its parameter count, `this` included (-1: unknown)
 static int   fptab_n = 0;
 
 static int fp_id_of(const char *name)
@@ -436,21 +437,45 @@ static void fp_add(const char *name)
 {
     if (fp_id_of(name) >= 0) return;
     if (fptab_n >= FPTAB_MAX) msg_internal("too many address-taken functions");
+    sym *s = st_find(name);
+    fptab_np[fptab_n] = (s && s->kind == SK_FUNC) ? s->n_params : -1;
     fptab[fptab_n++] = strdup(name);
 }
 
 // emit the inlined function-ID dispatch (assumes _fp_id is set and the args,
-// including any `this`, are already on the data stack)
-static void emit_dispatch_chain(void)
+// including any `this`, are already on the data stack). Only the functions
+// that take np parameters (`this` included; -1: any) can be the target, and
+// the last of them needs no test: an id that matches none is a call through
+// an invalid pointer. So every path pops the same arguments, which is what
+// asm_depth needs to size the data stack (asm_share.h).
+static void emit_dispatch_chain(int np)
 {
+    int cand[FPTAB_MAX], nc = 0;
+    for (int i = 0; i < fptab_n; i++)
+        if (np < 0 || fptab_np[i] < 0 || fptab_np[i] == np) cand[nc++] = i;
+    if (nc == 0) for (int i = 0; i < fptab_n; i++) cand[nc++] = i;
     char *done = fresh_label("ic_done");
-    for (int i = 0; i < fptab_n; i++) {
+    for (int k = 0; k < nc; k++) {
+        int i = cand[k];
+        if (k == nc - 1) { emit("CAL %s", fptab[i]); break; }
         char *skip = fresh_label("ic_s");
         emit("LOD _fp_id"); emit("EQU %d", i); emit("JIZ %s", skip);
         emit("CAL %s", fptab[i]); emit("JMP %s", done);
         emit("@%s NOP", skip); free(skip);
     }
     emit("@%s NOP", done); free(done);
+}
+
+// parameter count (`this` included) of the method a virtual call names: its
+// resolved body's, else the class's own declaration, else (a pure virtual has
+// no symbol, so no default arguments either) the arguments passed + `this`
+static int vcall_np(type *ct, const char *member, sym *ms, int nargs)
+{
+    if (ms) return ms->n_params;
+    char *nm = cg_mangle_method(ct->tag, member);
+    sym *d = st_find(nm);
+    free(nm);
+    return (d && d->kind == SK_FUNC) ? d->n_params : nargs + 1;
 }
 
 // ---- forward decls ---------------------------------------------------------
@@ -468,7 +493,7 @@ static void gen_bool (expr *e, const char *jz_target);
 static type *infer_type(expr *e);
 static func *resolve_overload(const char *name, expr **args, int nargs);
 static void  emit_vtable_inits(void);
-static void  emit_dispatch_chain(void);
+static void  emit_dispatch_chain(int np);
 static func *find_template(const char *name);
 static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int nexpl);
 static type *subst_type(type *t, type **a, int n);
@@ -2338,7 +2363,7 @@ static void gen_expr(expr *e)
             if (dslot >= 0) {                       // virtual dtor: dispatch via the vptr
                 emit("LDI 0"); if (dslot) emit("ADD %d", dslot); emit("LDI 0");
                 emit("SET _fp_id");
-                emit_dispatch_chain();
+                emit_dispatch_chain(1);             // a destructor takes `this` alone
             } else {
                 emit("CAL %s", dtor); free(dtor);
             }
@@ -2411,7 +2436,7 @@ static void gen_expr(expr *e)
                     type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
                     gen_arg(e->args[i], pt);
                 }
-                emit_dispatch_chain();
+                emit_dispatch_chain(vcall_np(ct, e->a->member, ms, e->n_args));
                 free(masm);
                 return;
             }
@@ -2620,7 +2645,7 @@ static void gen_expr(expr *e)
                             type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
                             gen_arg(e->args[i], pt);
                         }
-                        emit_dispatch_chain();
+                        emit_dispatch_chain(vcall_np(cur_method_class, fn, ms, e->n_args));
                         free(masm);
                         return;
                     }
@@ -2646,7 +2671,7 @@ static void gen_expr(expr *e)
             for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
             gen_expr(fpv);                          // acc = function ID
             emit("SET _fp_id");
-            emit_dispatch_chain();
+            emit_dispatch_chain(e->n_args);         // no `this`, no default arguments
             return;
         }
     }

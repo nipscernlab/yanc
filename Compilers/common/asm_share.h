@@ -58,4 +58,26 @@ int asm_share(const char *asm_path);
 // instruction count drops by that much), -1 on an I/O error.
 int asm_reach(const char *asm_path, const char *pc_path);
 
+// ****************************************************************************
+// asm_depth -- each stack as deep as the program goes, not a fixed 128 -------
+// ****************************************************************************
+//
+// Works out from the .asm how deep the data stack (#NDSTAC) and the return-
+// address stack (#SDEPTH, one word per CAL) get. A routine is the code a CAL
+// target reaches until its RETs, plus address 0 and the #ITRAD point. Each is
+// walked once, after the routines it calls: the data-stack depth must be the
+// same on every path into an instruction (isa.tsv's stack column: push / pop),
+// a callee's net effect is its depth at RET (negative: it pops its
+// arguments), and a call adds the callee's peak to the caller's depth there.
+// The interrupt can arrive anywhere, so its peaks add to the program's.
+// Each depth written is the peak + 1 (the simulation's overflow flag fires
+// when the pointer reaches DEPTH), at least 2.
+//
+// Recursion, an unknown instruction, or two paths that disagree on the depth:
+// nothing is written, and an Info line says why. Run it after asm_reach.
+// *sdepth / *ddepth get the depths (0 when they could not be worked out);
+// the #SDEPTH / #NDSTAC lines are rewritten only where set_* is non-zero.
+// Returns 1 when the file was rewritten, 0 when not, -1 on an I/O error.
+int asm_depth(const char *asm_path, int set_sdepth, int set_ddepth, int *sdepth, int *ddepth);
+
 #endif

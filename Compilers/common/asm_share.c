@@ -5,129 +5,131 @@
 #include <string.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <limits.h>
 #include "asm_share.h"
 
 // ---- what each mnemonic does to its operand and to the flow -----------------
-// A copy of four columns of isa.tsv (mnemonic, operand class, effect on the
-// word the operand names, flow); Scripts/check_isa.py holds it to the table.
+// A copy of five columns of isa.tsv (mnemonic, operand class, effect on the
+// word the operand names, flow, data stack); Scripts/check_isa.py holds it
+// to the table.
 
-typedef struct { const char *mn, *cls, *opnd, *flow; } as_isa;
+typedef struct { const char *mn, *cls, *opnd, *flow, *stk; } as_isa;
 
 static const as_isa isa[] = {
-    {"LOD", "data", "r", "-"},
-    {"P_LOD", "data", "r", "-"},
-    {"LDI", "data", "base_r", "-"},
-    {"ILI", "data", "base_r", "-"},
-    {"SET", "data", "w", "-"},
-    {"SET_P", "data", "w", "-"},
-    {"STI", "data", "base_w", "-"},
-    {"ISI", "data", "base_w", "-"},
-    {"PSH", "none", "-", "-"},
-    {"POP", "none", "-", "-"},
-    {"INN", "in", "-", "-"},
-    {"F_INN", "in", "-", "-"},
-    {"P_INN", "in", "-", "-"},
-    {"PF_INN", "in", "-", "-"},
-    {"OUT", "out", "-", "-"},
-    {"JMP", "code", "-", "jmp"},
-    {"JIZ", "code", "-", "jz"},
-    {"CAL", "code", "-", "call"},
-    {"RET", "none", "-", "ret"},
-    {"ADD", "data", "r", "-"},
-    {"S_ADD", "none", "-", "-"},
-    {"F_ADD", "data", "r", "-"},
-    {"SF_ADD", "none", "-", "-"},
-    {"MLT", "data", "r", "-"},
-    {"S_MLT", "none", "-", "-"},
-    {"F_MLT", "data", "r", "-"},
-    {"SF_MLT", "none", "-", "-"},
-    {"DIV", "data", "r", "-"},
-    {"S_DIV", "none", "-", "-"},
-    {"F_DIV", "data", "r", "-"},
-    {"SF_DIV", "none", "-", "-"},
-    {"MOD", "data", "r", "-"},
-    {"S_MOD", "none", "-", "-"},
-    {"SGN", "data", "r", "-"},
-    {"S_SGN", "none", "-", "-"},
-    {"F_SGN", "data", "r", "-"},
-    {"SF_SGN", "none", "-", "-"},
-    {"NEG", "none", "-", "-"},
-    {"NEG_M", "data", "r", "-"},
-    {"P_NEG_M", "data", "r", "-"},
-    {"F_NEG", "none", "-", "-"},
-    {"F_NEG_M", "data", "r", "-"},
-    {"PF_NEG_M", "data", "r", "-"},
-    {"ABS", "none", "-", "-"},
-    {"ABS_M", "data", "r", "-"},
-    {"P_ABS_M", "data", "r", "-"},
-    {"F_ABS", "none", "-", "-"},
-    {"F_ABS_M", "data", "r", "-"},
-    {"PF_ABS_M", "data", "r", "-"},
-    {"PST", "none", "-", "-"},
-    {"PST_M", "data", "r", "-"},
-    {"P_PST_M", "data", "r", "-"},
-    {"F_PST", "none", "-", "-"},
-    {"F_PST_M", "data", "r", "-"},
-    {"PF_PST_M", "data", "r", "-"},
-    {"NRM", "none", "-", "-"},
-    {"NRM_M", "data", "r", "-"},
-    {"P_NRM_M", "data", "r", "-"},
-    {"I2F", "none", "-", "-"},
-    {"I2F_M", "data", "r", "-"},
-    {"P_I2F_M", "data", "r", "-"},
-    {"F2I", "none", "-", "-"},
-    {"F2I_M", "data", "r", "-"},
-    {"P_F2I_M", "data", "r", "-"},
-    {"AND", "data", "r", "-"},
-    {"S_AND", "none", "-", "-"},
-    {"ORR", "data", "r", "-"},
-    {"S_ORR", "none", "-", "-"},
-    {"XOR", "data", "r", "-"},
-    {"S_XOR", "none", "-", "-"},
-    {"INV", "none", "-", "-"},
-    {"INV_M", "data", "r", "-"},
-    {"P_INV_M", "data", "r", "-"},
-    {"LAN", "data", "r", "-"},
-    {"S_LAN", "none", "-", "-"},
-    {"LOR", "data", "r", "-"},
-    {"S_LOR", "none", "-", "-"},
-    {"LIN", "none", "-", "-"},
-    {"LIN_M", "data", "r", "-"},
-    {"P_LIN_M", "data", "r", "-"},
-    {"LES", "data", "r", "-"},
-    {"S_LES", "none", "-", "-"},
-    {"F_LES", "data", "r", "-"},
-    {"SF_LES", "none", "-", "-"},
-    {"GRE", "data", "r", "-"},
-    {"S_GRE", "none", "-", "-"},
-    {"F_GRE", "data", "r", "-"},
-    {"SF_GRE", "none", "-", "-"},
-    {"EQU", "data", "r", "-"},
-    {"S_EQU", "none", "-", "-"},
-    {"SHL", "data", "r", "-"},
-    {"S_SHL", "none", "-", "-"},
-    {"SHR", "data", "r", "-"},
-    {"S_SHR", "none", "-", "-"},
-    {"SRS", "data", "r", "-"},
-    {"S_SRS", "none", "-", "-"},
-    {"NOP", "none", "-", "-"},
-    {"F_ROT", "none", "-", "-"},
-    {"F_SU1", "data", "r", "-"},
-    {"F_SU2", "data", "r", "-"},
-    {"SF_SU1", "none", "-", "-"},
-    {"SF_SU2", "none", "-", "-"},
-    {"F_SCL", "data", "r", "-"},
-    {"SF_SCL", "none", "-", "-"},
-    {"XPO", "none", "-", "-"},
-    {"XPO_M", "data", "r", "-"},
-    {"LEA", "lea", "addr", "-"},
-    {"LOD_V", "offset", "r", "-"},
-    {"P_LOD_V", "offset", "r", "-"},
-    {"SET_V", "offset", "w", "-"},
-    {"ADD_V", "offset", "r", "-"},
-    {"F_ADD_V", "offset", "r", "-"},
-    {"MLT_V", "offset", "r", "-"},
-    {"F_MLT_V", "offset", "r", "-"},
+    {"LOD", "data", "r", "-", "-"},
+    {"P_LOD", "data", "r", "-", "push"},
+    {"LDI", "data", "base_r", "-", "-"},
+    {"ILI", "data", "base_r", "-", "-"},
+    {"SET", "data", "w", "-", "-"},
+    {"SET_P", "data", "w", "-", "pop"},
+    {"STI", "data", "base_w", "-", "pop"},
+    {"ISI", "data", "base_w", "-", "pop"},
+    {"PSH", "none", "-", "-", "push"},
+    {"POP", "none", "-", "-", "pop"},
+    {"INN", "in", "-", "-", "-"},
+    {"F_INN", "in", "-", "-", "-"},
+    {"P_INN", "in", "-", "-", "push"},
+    {"PF_INN", "in", "-", "-", "push"},
+    {"OUT", "out", "-", "-", "-"},
+    {"JMP", "code", "-", "jmp", "-"},
+    {"JIZ", "code", "-", "jz", "-"},
+    {"CAL", "code", "-", "call", "-"},
+    {"RET", "none", "-", "ret", "-"},
+    {"ADD", "data", "r", "-", "-"},
+    {"S_ADD", "none", "-", "-", "pop"},
+    {"F_ADD", "data", "r", "-", "-"},
+    {"SF_ADD", "none", "-", "-", "pop"},
+    {"MLT", "data", "r", "-", "-"},
+    {"S_MLT", "none", "-", "-", "pop"},
+    {"F_MLT", "data", "r", "-", "-"},
+    {"SF_MLT", "none", "-", "-", "pop"},
+    {"DIV", "data", "r", "-", "-"},
+    {"S_DIV", "none", "-", "-", "pop"},
+    {"F_DIV", "data", "r", "-", "-"},
+    {"SF_DIV", "none", "-", "-", "pop"},
+    {"MOD", "data", "r", "-", "-"},
+    {"S_MOD", "none", "-", "-", "pop"},
+    {"SGN", "data", "r", "-", "-"},
+    {"S_SGN", "none", "-", "-", "pop"},
+    {"F_SGN", "data", "r", "-", "-"},
+    {"SF_SGN", "none", "-", "-", "pop"},
+    {"NEG", "none", "-", "-", "-"},
+    {"NEG_M", "data", "r", "-", "-"},
+    {"P_NEG_M", "data", "r", "-", "push"},
+    {"F_NEG", "none", "-", "-", "-"},
+    {"F_NEG_M", "data", "r", "-", "-"},
+    {"PF_NEG_M", "data", "r", "-", "push"},
+    {"ABS", "none", "-", "-", "-"},
+    {"ABS_M", "data", "r", "-", "-"},
+    {"P_ABS_M", "data", "r", "-", "push"},
+    {"F_ABS", "none", "-", "-", "-"},
+    {"F_ABS_M", "data", "r", "-", "-"},
+    {"PF_ABS_M", "data", "r", "-", "push"},
+    {"PST", "none", "-", "-", "-"},
+    {"PST_M", "data", "r", "-", "-"},
+    {"P_PST_M", "data", "r", "-", "push"},
+    {"F_PST", "none", "-", "-", "-"},
+    {"F_PST_M", "data", "r", "-", "-"},
+    {"PF_PST_M", "data", "r", "-", "push"},
+    {"NRM", "none", "-", "-", "-"},
+    {"NRM_M", "data", "r", "-", "-"},
+    {"P_NRM_M", "data", "r", "-", "push"},
+    {"I2F", "none", "-", "-", "-"},
+    {"I2F_M", "data", "r", "-", "-"},
+    {"P_I2F_M", "data", "r", "-", "push"},
+    {"F2I", "none", "-", "-", "-"},
+    {"F2I_M", "data", "r", "-", "-"},
+    {"P_F2I_M", "data", "r", "-", "push"},
+    {"AND", "data", "r", "-", "-"},
+    {"S_AND", "none", "-", "-", "pop"},
+    {"ORR", "data", "r", "-", "-"},
+    {"S_ORR", "none", "-", "-", "pop"},
+    {"XOR", "data", "r", "-", "-"},
+    {"S_XOR", "none", "-", "-", "pop"},
+    {"INV", "none", "-", "-", "-"},
+    {"INV_M", "data", "r", "-", "-"},
+    {"P_INV_M", "data", "r", "-", "push"},
+    {"LAN", "data", "r", "-", "-"},
+    {"S_LAN", "none", "-", "-", "pop"},
+    {"LOR", "data", "r", "-", "-"},
+    {"S_LOR", "none", "-", "-", "pop"},
+    {"LIN", "none", "-", "-", "-"},
+    {"LIN_M", "data", "r", "-", "-"},
+    {"P_LIN_M", "data", "r", "-", "push"},
+    {"LES", "data", "r", "-", "-"},
+    {"S_LES", "none", "-", "-", "pop"},
+    {"F_LES", "data", "r", "-", "-"},
+    {"SF_LES", "none", "-", "-", "pop"},
+    {"GRE", "data", "r", "-", "-"},
+    {"S_GRE", "none", "-", "-", "pop"},
+    {"F_GRE", "data", "r", "-", "-"},
+    {"SF_GRE", "none", "-", "-", "pop"},
+    {"EQU", "data", "r", "-", "-"},
+    {"S_EQU", "none", "-", "-", "pop"},
+    {"SHL", "data", "r", "-", "-"},
+    {"S_SHL", "none", "-", "-", "pop"},
+    {"SHR", "data", "r", "-", "-"},
+    {"S_SHR", "none", "-", "-", "pop"},
+    {"SRS", "data", "r", "-", "-"},
+    {"S_SRS", "none", "-", "-", "pop"},
+    {"NOP", "none", "-", "-", "-"},
+    {"F_ROT", "none", "-", "-", "-"},
+    {"F_SU1", "data", "r", "-", "-"},
+    {"F_SU2", "data", "r", "-", "-"},
+    {"SF_SU1", "none", "-", "-", "pop"},
+    {"SF_SU2", "none", "-", "-", "pop"},
+    {"F_SCL", "data", "r", "-", "-"},
+    {"SF_SCL", "none", "-", "-", "pop"},
+    {"XPO", "none", "-", "-", "-"},
+    {"XPO_M", "data", "r", "-", "-"},
+    {"LEA", "lea", "addr", "-", "-"},
+    {"LOD_V", "offset", "r", "-", "-"},
+    {"P_LOD_V", "offset", "r", "-", "push"},
+    {"SET_V", "offset", "w", "-", "-"},
+    {"ADD_V", "offset", "r", "-", "-"},
+    {"F_ADD_V", "offset", "r", "-", "-"},
+    {"MLT_V", "offset", "r", "-", "-"},
+    {"F_MLT_V", "offset", "r", "-", "-"},
 };
 
 #define N_ISA ((int)(sizeof(isa) / sizeof(isa[0])))
@@ -732,4 +734,194 @@ done:
     free(L); free(ins); free(lab_at); free(lab_of); free(reg_lab); free(roots);
     st_free(&labels); st_free(&names); st_free(&lines); st_free(&pc);
     return removed;
+}
+
+// ---- asm_depth: how deep the two stacks get -----------------------------------------
+// See asm_share.h. A routine is the code a CAL target reaches until its RETs
+// (plus the entry at address 0 and the interrupt point). For each one, once
+// the routines it calls are known: the data-stack depth it reaches above its
+// entry, its net effect at RET (a callee pops its arguments: negative), and
+// how many calls deep it goes.
+
+typedef struct {
+    int  n;            // instructions
+    int *op, *tgt;     // row of isa[]; instruction a jump or call goes to (-1: none)
+    int *entry;        // instruction -> routine index (-1: not an entry)
+    int *state;        // routine: 0 not yet, 1 being walked (a call back to it: recursion), 2 done
+    int *net, *maxd, *maxc;
+    const char *why;   // why the depths could not be worked out (NULL: they could)
+} dp_ctx;
+
+static void dp_walk(dp_ctx *c, int r, int start)
+{
+    if (c->why) return;
+    if (c->state[r] == 1) { c->why = "a routine calls itself back (recursion)"; return; }
+    if (c->state[r] == 2) return;
+    c->state[r] = 1;
+
+    int n = c->n, unset = INT_MIN;
+    int *dep  = malloc((n + 1) * sizeof(int));
+    int *work = malloc((n + 1) * sizeof(int)), nw = 0;
+    for (int i = 0; i < n; i++) dep[i] = unset;
+    int net = unset, maxd = 0, maxc = 0;
+
+    #define GO(k, v) do { int k_ = (k), v_ = (v);                                     \
+        if (k_ < 0 || k_ >= n)   { c->why = "the code runs off the end"; break; }      \
+        if (dep[k_] == unset)    { dep[k_] = v_; work[nw++] = k_; }                    \
+        else if (dep[k_] != v_)  { c->why = "two paths reach one instruction with different stack depths"; } \
+    } while (0)
+
+    GO(start, 0);
+    while (nw > 0 && !c->why)
+    {
+        int i = work[--nw], d = dep[i];
+        const as_isa *x = &isa[c->op[i]];
+        if      (strcmp(x->stk, "push") == 0) d++;
+        else if (strcmp(x->stk, "pop")  == 0) d--;
+        if (d > maxd) maxd = d;
+        if      (strcmp(x->flow, "jmp") == 0) GO(c->tgt[i], d);
+        else if (strcmp(x->flow, "jz")  == 0) { GO(c->tgt[i], d); GO(i + 1, d); }
+        else if (strcmp(x->flow, "call") == 0)
+        {
+            int q = c->entry[c->tgt[i]];
+            dp_walk(c, q, c->tgt[i]);
+            if (c->why) break;
+            if (d + c->maxd[q] > maxd) maxd = d + c->maxd[q];
+            if (1 + c->maxc[q] > maxc) maxc = 1 + c->maxc[q];
+            GO(i + 1, d + c->net[q]);
+        }
+        else if (strcmp(x->flow, "ret") == 0)
+        {
+            if (net == unset) net = d;
+            else if (net != d) c->why = "two RETs of one routine leave different stack depths";
+        }
+        else GO(i + 1, d);
+    }
+    #undef GO
+
+    c->net[r]  = net == unset ? 0 : net;
+    c->maxd[r] = maxd;
+    c->maxc[r] = maxc;
+    c->state[r] = 2;
+    free(dep); free(work);
+}
+
+int asm_depth(const char *asm_path, int set_sdepth, int set_ddepth, int *sdepth, int *ddepth)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, labels = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    int *lab_at = NULL, lab_cap = 0, n = 0, itr = -1, ret = 0;
+    int *op = NULL, *tgl = NULL, tgl_cap = 0, op_cap = 0;
+    const char *why = NULL;
+    *sdepth = *ddepth = 0;
+
+    for (int ln = 0; ln < lines.n && !why; ln++)       // parse: labels, #ITRAD, instructions
+    {
+        char *text = lines.s[ln];
+        int   end  = (int)strlen(text);
+        char *cm   = strstr(text, "//");
+        if (cm) end = (int)(cm - text);
+        int ts[8], tl[8], nt = 0;
+        for (int p = 0; p < end && nt < 8; )
+        {
+            while (p < end && isspace((unsigned char)text[p])) p++;
+            if (p >= end) break;
+            ts[nt] = p;
+            while (p < end && !isspace((unsigned char)text[p])) p++;
+            tl[nt] = p - ts[nt]; nt++;
+        }
+        char tok[256];
+        int t = 0;
+        for (; t < nt && text[ts[t]] == '@'; t++)
+        {
+            snprintf(tok, sizeof(tok), "%.*s", tl[t] - 1, text + ts[t] + 1);
+            int li = lab_add(&labels, &lab_at, &lab_cap, tok);   // may move lab_at
+            lab_at[li] = n;
+        }
+        if (t >= nt) continue;
+        snprintf(tok, sizeof(tok), "%.*s", tl[t], text + ts[t]);
+        if (tok[0] == '#') { if (strcmp(tok, "#ITRAD") == 0) itr = n; continue; }
+
+        op  = grow(op,  &op_cap,  n, sizeof(int));
+        tgl = grow(tgl, &tgl_cap, n, sizeof(int));
+        op[n] = isa_find(tok); tgl[n] = -1;
+        if (op[n] < 0) { why = "an instruction it does not know"; break; }
+        if (strcmp(isa[op[n]].cls, "code") == 0 && t + 1 < nt)
+        {
+            snprintf(tok, sizeof(tok), "%.*s", tl[t + 1], text + ts[t + 1]);
+            tgl[n] = lab_add(&labels, &lab_at, &lab_cap, tok);
+        }
+        n++;
+    }
+
+    dp_ctx c = {0};
+    c.n = n;
+    c.op = op;
+    c.tgt = malloc((n + 1) * sizeof(int));
+    c.entry = malloc((n + 1) * sizeof(int));
+    for (int i = 0; i < n && !why; i++)
+    {
+        c.tgt[i] = tgl[i] >= 0 ? lab_at[tgl[i]] : -1;
+        if (tgl[i] >= 0 && (c.tgt[i] < 0 || c.tgt[i] >= n)) why = "a jump to a label that is not there";
+        c.entry[i] = -1;
+    }
+    int nr = 0;
+    if (!why && n > 0)
+    {
+        c.entry[0] = nr++;
+        if (itr >= 0 && itr < n && c.entry[itr] < 0) c.entry[itr] = nr++;
+        for (int i = 0; i < n; i++)
+            if (strcmp(isa[op[i]].flow, "call") == 0 && c.entry[c.tgt[i]] < 0) c.entry[c.tgt[i]] = nr++;
+    }
+    c.state = calloc(nr + 1, sizeof(int));
+    c.net   = calloc(nr + 1, sizeof(int));
+    c.maxd  = calloc(nr + 1, sizeof(int));
+    c.maxc  = calloc(nr + 1, sizeof(int));
+    c.why   = why;
+    if (!c.why && n > 0)
+    {
+        dp_walk(&c, 0, 0);
+        if (itr >= 0 && itr < n) dp_walk(&c, c.entry[itr], itr);
+    }
+    why = c.why;
+
+    if (!why && n > 0)
+    {
+        int d = c.maxd[0], s = c.maxc[0];
+        if (itr >= 0 && itr < n) { d += c.maxd[c.entry[itr]]; s += c.maxc[c.entry[itr]]; }  // on top of any point
+        // one word more than the deepest point: the simulation's overflow flag
+        // (core.v, stack) fires when the pointer reaches DEPTH; at least 2, the
+        // stack's pointer has $clog2(DEPTH) bits
+        *ddepth = d + 1 < 2 ? 2 : d + 1;
+        *sdepth = s + 1 < 2 ? 2 : s + 1;
+
+        if (set_sdepth || set_ddepth)
+        {
+            f = fopen(asm_path, "w");
+            if (!f) ret = -1;
+            else
+            {
+                for (int ln = 0; ln < lines.n; ln++)
+                {
+                    const char *l = lines.s[ln];
+                    while (*l == ' ' || *l == '\t') l++;
+                    if      (set_sdepth && strncmp(l, "#SDEPTH", 7) == 0 && isspace((unsigned char)l[7])) fprintf(f, "#SDEPTH %d\n", *sdepth);
+                    else if (set_ddepth && strncmp(l, "#NDSTAC", 7) == 0 && isspace((unsigned char)l[7])) fprintf(f, "#NDSTAC %d\n", *ddepth);
+                    else fputs(lines.s[ln], f);
+                }
+                fclose(f);
+                ret = 1;
+            }
+        }
+    }
+    else if (why) printf("Info: stack depths kept as declared: %s\n", why);
+
+    free(c.tgt); free(c.entry); free(c.state); free(c.net); free(c.maxd); free(c.maxc);
+    free(op); free(tgl); free(lab_at);
+    st_free(&labels); st_free(&lines);
+    return ret;
 }

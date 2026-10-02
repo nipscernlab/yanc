@@ -732,7 +732,7 @@ test46's cycles.
 
 **Status:** the reachability pass landed (2026-10-01, `asm_reach` in
 `Compilers/common/asm_share.c`, fixtures `cmm_reach` and `test85`, see the
-CHANGELOG); three follow-ups below · **Area:** cppcomp, `SAPHO/core.v`
+CHANGELOG); the follow-ups below · **Area:** cppcomp, `SAPHO/core.v`
 
 Measured before and after, `in`/`out` programs:
 
@@ -748,12 +748,18 @@ Left:
   function is recursive (`g_any_recursive`), even one nobody calls. The same
   `#IFLIVE` bracket fits, but it waits for one label and here any recursive
   function will do: an `#IFLIVE a b c` (any of) is the small extension.
-- **Stack depths.** cppcomp always writes `#SDEPTH 128` / `#NDSTAC 128`
-  (`config.h`); C+- takes them by hand. For a program without recursion
-  both depths can be computed from the call graph. The data stack is not
-  under `generate` and reads asynchronously (`core.v`, `stack`), so a deep
-  one is likely registers, not block RAM: deduced, to measure with
-  `Scripts/hw/` before changing anything.
+- **Stack depths in C+-.** Done for C++ (`asm_depth`, 2026-10-01: 84 of 85
+  tests get 2 to 8 instead of 128, checked against the real high-water marks
+  of a run at 128). C+- still takes `#SDEPTH`/`#NDSTAC` by hand; the same
+  call in cmmcomp's `parse_end` would size them when the directive is left
+  out (cmmcomp is Luciano's: diff first). Not measured yet: what the smaller
+  stacks save in LUTs/registers (`Scripts/hw/`, the data stack is not under
+  `generate` and reads asynchronously, so likely registers).
+- **The stack overflow flag misses a wrap.** `core.v`, `stack`: `fl_full`
+  tests `pointer_nxt >= DEPTH` and `(pointer_nxt+um)-pointer_nxt != 1`; the
+  second is evaluated at 32 bits, so with DEPTH a power of two the pointer
+  wraps and the flag stays 0 (seen: a forced NDSTAC 2 gave wrong outputs
+  and no flag). Simulation-only (`YANC_SIM_VIS`); fix with the HDL scripts.
 - **`<cstring>` does not compile.** `(const int*)src` is a syntax error in
   CPPComp.y (`(int*)src` works); no test includes the header. Fix and add a
   test that uses `memcpy`/`memset`.
