@@ -15,7 +15,8 @@ Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
 small accessors in cppcomp, 15 the regress not being trustworthy on this
 machine, 17 faster array fill/copy (hardware options). Item 18 (hardware paid for
-code that never runs) is closed (2026-10-02): see the CHANGELOG. Item 11, consistency at 32 bits, is
+code that never runs) is closed (2026-10-02): see the CHANGELOG. 19 an optional
+pipeline with a global pause (analysis). Item 11, consistency at 32 bits, is
 closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
@@ -766,6 +767,48 @@ for circular FIR buffers), then `Y` with two full ports if the MAC loops of
 real group programs are the bottleneck. Each step measured first: ALUTs and
 Fmax in Quartus (a program that uses it and one that must pay nothing), and
 test46's cycles.
+
+## 19. Optional pipeline with a global pause (`#PIPE`-style directive)
+
+**Status:** analysis only (2026-10-03), nothing built, needs Luciano's decision
+· **Area:** `SAPHO/core.v`, `SAPHO/ula.v`, `instr_dec.v`, asmcomp (one
+directive and one parameter); the compilers do not change
+
+**Idea.** Off by default (today's processor, bit-identical). On: the slow
+operators get pipeline registers inside them (generated only for the
+operators the program uses), and while one of them runs the whole core
+pauses -- an enable on every state register (`pc`, `ula_op`, `racc`, both
+stacks, `popr`/`stkr`, `req_inr`/`ior`, `en_out`/`addr_out`/`req_in`,
+`mem_wr`, `pc_load`, `isp_push/pop`, the data memory's read enable; the
+interrupt held off), as listed in `docs/precision-and-width-review.md` §2.6.
+Each operation's latency is a fixed number of cycles, so the cycle count of
+a program stays known at compile time. This relaxes the 2026-09-14 rule
+"the ALU stays combinational" only behind the directive.
+
+**Stages for ~50 MHz** (20 ns; ~18 ns of logic per stage after clock and
+setup, measured on `sapho_all`, item 8). k = ceil(worst register-to-register
+delay through the operation / 18 ns), the delay taken from `report_timing
+-through` each operator on `sapho_all` (`#FROUND 2`). Deduced, not built: the
+cut points have to be placed and re-timed.
+- 1 cycle: `LOD`, `ADD`, bitwise, sign flips;
+- 2: `MLT`, int compares, `ABS`, `NRM`, `F2I`, shifts, `LAN`/`LOR`,
+  `F_ROT`/`F_SCL`/`XPO` (these last at 19-20 ns: 1 cycle at ~45 MHz);
+- 3: `F_ADD`/`F_SU*` (cut after the denormaliser and inside the normaliser,
+  between the leading-zero count and the shift / round), `F_MLT`, `I2F`,
+  float compares;
+- 5-6: `DIV`, `MOD`, `F_DIV` (the divider arrays split in row groups).
+The last stage of every operation also carries the ALU output mux, the jump
+decision and the PC adder (~7 ns).
+
+**Cost in cycles**, from the ALU operation each cycle executes, counted in
+151 regress programs (Icarus, a probe on `id_ula_op`, stopped at `@fim`):
+C++ median +7 % (mean +12 %); C± median +18 % (mean +38 %, the float-library
+fixtures +90..146 %); real programs: blind deconvolution (test48/50) +25..28 %,
+FISTA (test46) +26 %, `proc_fft` +27 %, `ProcDTW` +10 %, `sapho_all` +43 %.
+Net, for a processor with a divider (10.7 -> ~50 MHz, 4.7x the clock) at
++25 % cycles: ~3.7x faster; for one without (~21.5 -> 50 MHz) at +25 %:
+~1.9x. The tools (probe, op-mix run, cost model) are in the session scratch;
+move them to `Scripts/hw/` if the item goes ahead.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
