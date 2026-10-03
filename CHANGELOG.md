@@ -8,7 +8,17 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v5.7] – 2026-10-03
+
 ### Added
+- **Where the clock is lost, and what a paused pipeline would cost.**
+  `Scripts/hw/fmax.sh` also writes the 10 worst register-to-register paths
+  of the processor and prints the worst one grouped by block
+  (`path_blocks.py`); `sapho_all` timed at 10.66 MHz, every worst path from
+  the data memory to the PC (TODO item 8). `Scripts/hw/opmix/` counts the
+  ALU operation of every cycle in the regress programs and prices an
+  optional pipeline with a global pause (TODO item 19). Developer tools,
+  not in the package.
 - **Code no path reaches is no longer in the program, nor in the hardware.**
   asmcomp builds an operator for every opcode the `.asm` holds, and both
   compilers emitted every function defined: a float division in a function
