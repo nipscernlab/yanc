@@ -807,8 +807,8 @@ fixtures +90..146 %); real programs: blind deconvolution (test48/50) +25..28 %,
 FISTA (test46) +26 %, `proc_fft` +27 %, `ProcDTW` +10 %, `sapho_all` +43 %.
 Net, for a processor with a divider (10.7 -> ~50 MHz, 4.7x the clock) at
 +25 % cycles: ~3.7x faster; for one without (~21.5 -> 50 MHz) at +25 %:
-~1.9x. The tools (probe, op-mix run, cost model) are in the session scratch;
-move them to `Scripts/hw/` if the item goes ahead.
+~1.9x. Reproduce with `Scripts/hw/opmix/` (`run_mix.sh` after a regress, then
+`cost.py 18`).
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
