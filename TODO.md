@@ -800,6 +800,28 @@ cut points have to be placed and re-timed.
 The last stage of every operation also carries the ALU output mux, the jump
 decision and the PC adder (~7 ns).
 
+**A chip-agnostic frequency estimate** (Luciano, 2026-10-03: base it on the
+current Altera and Xilinx families, and say so). `Scripts/hw/est/`:
+`sapho_all` variants (the light operators, plus one heavy group), worst path
+over the base variant's. Yosys (cell delays, no routing), with the memories
+modelled as block RAM:
+
+| group | iCE40 | Xilinx 7 | Xilinx 7 + routing 0.3-0.8 ns/net |
+|---|---|---|---|
+| base | 1.00 (17.3 ns) | 1.00 (9.4 ns) | 1.00 |
+| `F_ADD` | 1.13 | 1.21 | 1.17-1.18 |
+| `F_MLT` | 1.16 | 1.24 | 1.24 |
+| `DIV`/`MOD` | 9.0 | 6.1 | 4.5-5.1 |
+| `F_DIV` | 6.1 | 4.6 | 3.6-4.0 |
+| the rest | 0.93-1.07 | 0.93-1.07 | ~1 |
+
+Cyclone V, real (Quartus, same variants): base **53.8 MHz** (751 ALMs); the
+`F_ADD`, `DIV`, `F_DIV` variants were running when this was written. The
+`report_timing -through` numbers per operator above overstate the light
+ones: a path "through" `NEG_M` is really `I2F_M`'s (shared logic). ECP5 and
+Gowin are out (no carry timing in Yosys 0.56); Vivado 2025.2 (ZYBO,
+Zynq-7000) is being installed for a real Xilinx point.
+
 **Cost in cycles**, from the ALU operation each cycle executes, counted in
 151 regress programs (Icarus, a probe on `id_ula_op`, stopped at `@fim`):
 C++ median +7 % (mean +12 %); C± median +18 % (mean +38 %, the float-library
