@@ -50,6 +50,14 @@ tags consumed by Aurora.
   included) and calls the last one without a test: shorter code, and every
   path pops the same words, which `asm_depth` needs. Only a call through an
   invalid pointer behaves differently, and that is undefined in C++.
+- **`sapho_all` also fills both stacks.** The fixture that instantiates
+  every block now declares `#SDEPTH 8` / `#NDSTAC 8` and uses 7 of each: a
+  chain of seven nested calls (`n1` -> ... -> `n7`) and a right-nested chain
+  of subtractions that leaves seven words waiting on the data stack (both
+  peaks read from the simulation). It is the processor to time the whole
+  design on (TODO item 8). The depths are declared because `#PRACA` is the
+  top of `main`: asmcomp adds the interrupt's peaks to the program's.
+  `model.py` computes the two new terms; `hardware.txt` holds 8/8.
 - **The regress holds the stack depths on every simulation.** Each Icarus
   run, C± and C++, now fails when a stack reached its depth (`fl_full` in the
   VCD, `stack_check`), so a stack too small shows up even when the outputs

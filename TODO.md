@@ -299,11 +299,12 @@ processor in which every `generate` is reached: every opcode's decoder and
 ALU block (all but `SF_SCL`/`XPO_M`, which C± cannot spell, see its
 `blocks_except.txt`), both stacks, FFT addressing, the `#PRACA` interrupt and
 `#TOAQUI`. A processor that leaves blocks out can hide the path that sets the
-clock once they are in (Luciano, 2026-10-02). Run it at `FR=0`, `1` and `2`
-(`sapho_all` is written at level 2). Decide also at which sizes: the data
-memory, the instruction memory and the stacks set the depth of their read
-multiplexers (with asmcomp's computed depths `sapho_all` gets stacks of 3
-and 7; at 128 the stack read is deeper). Only then decide whether the ALU is
+clock once they are in (Luciano, 2026-10-02). Run it at `#FROUND 2`, as
+`sapho_all` is written: the level that builds the most hardware (Luciano,
+2026-10-02). `sapho_all` has both stacks 8 deep and
+uses 7 of each (seven nested calls, seven words waiting on the data stack;
+Luciano, 2026-10-02); the data and instruction memories are as large as its
+program makes them. Only then decide whether the ALU is
 still where the clock is lost, and what to restructure next. The targets
 below were set on the ALU alone and should be restated against that Fmax.
 

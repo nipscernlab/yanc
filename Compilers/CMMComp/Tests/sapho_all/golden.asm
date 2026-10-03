@@ -1,6 +1,8 @@
 NOP
 #PRNAME sapho_all
 #NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
 #NUIOIN 1
 #NUIOOU 1
 #NBMANT 23
@@ -11,6 +13,13 @@ NOP
 #array ia 1 8
 #array fa 2 8
 #SHARE diff_b twice_v
+#SHARE n7_v twice_v
+#SHARE n6_v twice_v
+#SHARE n5_v twice_v
+#SHARE n4_v twice_v
+#SHARE n3_v twice_v
+#SHARE n2_v twice_v
+#SHARE n1_v twice_v
 #SHARE main_fx twice_v
 #SHARE main_z diff_a
 #SHARE main_fw main_w
@@ -39,6 +48,33 @@ RET
 SET diff_a
 NEG_M diff_b
 ADD diff_a
+RET
+@n7 SET n7_v
+ADD 1
+RET
+@n6 SET n6_v
+CAL n7
+ADD 1
+RET
+@n5 SET n5_v
+CAL n6
+ADD 1
+RET
+@n4 SET n4_v
+CAL n5
+ADD 1
+RET
+@n3 SET n3_v
+CAL n4
+ADD 1
+RET
+@n2 SET n2_v
+CAL n3
+ADD 1
+RET
+@n1 SET n1_v
+CAL n2
+ADD 1
 RET
 @main #ITRAD
 @Lwh1 LOD 0
@@ -833,6 +869,46 @@ CAL float_log
 SET main_fw
 F_MLT 4194304.0
 F2I
+SET main_t
+LOD s
+ADD main_t
+SET s
+LOD main_x
+CAL n1
+SET main_t
+LOD s
+ADD main_t
+SET s
+LOD main_x
+ADD 1
+P_LOD main_y
+ADD 1
+P_LOD main_x
+ADD 2
+P_LOD main_y
+ADD 2
+P_LOD main_x
+ADD 3
+P_LOD main_y
+ADD 3
+P_LOD main_x
+ADD 4
+P_LOD main_y
+ADD 4
+NEG
+S_ADD
+NEG
+S_ADD
+NEG
+S_ADD
+NEG
+S_ADD
+NEG
+S_ADD
+NEG
+S_ADD
+NEG
+S_ADD
 SET main_t
 LOD s
 ADD main_t

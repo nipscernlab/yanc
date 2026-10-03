@@ -1,5 +1,7 @@
 #PRNAME sapho_all
 #NUBITS 32
+#NDSTAC 8
+#SDEPTH 8
 #NUIOIN 1
 #NUIOOU 1
 #NBMANT 23
@@ -12,7 +14,11 @@
 // optional block -- every opcode's decoder and ULA generate (int, float at
 // #FROUND 2, the memory / stack / push+memory forms of each), the data stack,
 // the instruction stack (CAL/RET, SET_P), bit-reversed FFT addressing
-// (ILI/ISI), the #PRACA interrupt entry and the #TOAQUI pin. It reads one
+// (ILI/ISI), the #PRACA interrupt entry and the #TOAQUI pin, with both stacks
+// 8 deep and used to 7: seven nested calls (n1 -> ... -> n7) and seven words
+// waiting on the data stack (a right-nested chain of subtractions). The
+// depths are declared: #PRACA is the top of main, so asmcomp would add the
+// interrupt's peaks to the program's (2 * 7 + 1). It reads one
 // constant from port 0 (the input file repeats it for each read) and folds
 // every result into s. The 32 bits of s are folded into 4 (XOR of its eight
 // nibbles), for a board that shows the result on four LEDs, and sent to the
@@ -41,6 +47,16 @@ int diff(int a, int b)              // a second parameter: SET_P
 {
     return a - b;
 }
+
+// seven calls deep from main: the instruction stack reaches 7 of its 8 words
+// (a C+- function can only call one defined above it)
+int n7(int v) { return v + 1; }
+int n6(int v) { return n7(v) + 1; }
+int n5(int v) { return n6(v) + 1; }
+int n4(int v) { return n5(v) + 1; }
+int n3(int v) { return n4(v) + 1; }
+int n2(int v) { return n3(v) + 1; }
+int n1(int v) { return n2(v) + 1; }
 
 void main()
 {
@@ -168,6 +184,12 @@ void main()
         fw = sqrt(4.0);    t = fw * 4194304.0;  s = s + t;     // F_ROT
         fw = exp(0.0);     t = fw * 4194304.0;  s = s + t;     // F_SCL
         fw = log(1.0);     t = fw * 4194304.0;  s = s + t;     // XPO
+
+        // ---- both stacks 7 deep (of 8): the call chain, and seven partial
+        // results waiting on the data stack, (x+1) - ((y+1) - ((x+2) - ...))
+        t = n1(x);         s = s + t;                       // x + 7
+        t = (x + 1) - ((y + 1) - ((x + 2) - ((y + 2) - ((x + 3) - ((y + 3) - ((x + 4) - (y + 4)))))));
+        s = s + t;                                          // 4 * (x - y)
 
         // fold the 32 bits of s into 4 (four LEDs): XOR of its eight nibbles,
         // so a wrong bit anywhere in s changes what the LEDs show
