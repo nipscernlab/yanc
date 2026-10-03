@@ -54,15 +54,15 @@ words over the C++ tests); the C++ memory is in the fixed 2048-word heap
 arena instead (item 13). Next here: the order above.
 Also in v5.6: the FFT bit-reversal parameters swapped back (`cmm_fft_rd`, `cmm_fft_wr`), `HDL/` renamed `SAPHO/` (with an `HDL/` copy until Aurora reads `SAPHO/`), UTF-8 messages on a Windows console, the README rewritten with a Quick start the CI runs, and a README + example in the release package.
 
-**After v5.6 (on main, 2026-09-29) -- where to pick up.** The `HDL/` copy
-left the package (`0a885db`). Aurora already made its side of the switch
-(`766f0498`, checked 2026-09-30): its main pins v5.6 and reads only
-`components/SAPHO`; what it still cites of `HDL/` is text only (a dead
-`.gitignore` line, three comments/labels), handed to Aurora to clean. When the
-next release is out, Aurora only bumps `YANC_TAG`; check that the published
-zip and tar have no `HDL/`. Aurora v6.21.0 (released 2026-10-02, installer
-published) ships yanc v5.6; everything here since v5.6 reaches its users
-only with the next yanc tag and Aurora's YANC_TAG bump. Open here, in the order they were queued:
+**v5.7 (released 2026-10-03).** Item 18 (hardware paid for code that
+never runs, stack depths from the program) closed; C± recursion an error;
+C++ `<cstring>`, function-pointer initializers and `&f` fixed; the package
+is `SAPHO/` only (zip and tar checked, binaries say 5.7). Aurora v6.21.0
+ships yanc v5.6; the text for Aurora's bump to v5.7 (YANC_TAG, and what its
+AI prompt and answer key must now say about stack depths and C±
+recursion) is in `C:	mpurora_yanc_v5.7.md`. Next here: item 19 (the
+paused pipeline, a large change, decided after this release), and the
+queue below. Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
   item (the strength-reduction candidate was measured and dropped);
 - item 17: faster fill/copy in hardware, a design discussion with nothing
