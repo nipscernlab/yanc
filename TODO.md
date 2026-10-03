@@ -293,20 +293,31 @@ inside `ula.v` only; `fmax.sh` runs Quartus on a processor the regress built,
 so its Fmax is the global answer (the MHz in steps 1-2 come from it), but it
 prints only the number, not the path.
 
-**Next:** make `fmax.sh` also report the worst paths (Quartus `report_timing`:
-from register, to register, levels, delay) and run it on **`sapho_all`**, the
-processor in which every `generate` is reached: every opcode's decoder and
-ALU block (all but `SF_SCL`/`XPO_M`, which C± cannot spell, see its
-`blocks_except.txt`), both stacks, FFT addressing, the `#PRACA` interrupt and
-`#TOAQUI`. A processor that leaves blocks out can hide the path that sets the
-clock once they are in (Luciano, 2026-10-02). Run it at `#FROUND 2`, as
-`sapho_all` is written: the level that builds the most hardware (Luciano,
-2026-10-02). `sapho_all` has both stacks 8 deep and
-uses 7 of each (seven nested calls, seven words waiting on the data stack;
-Luciano, 2026-10-02); the data and instruction memories are as large as its
-program makes them. Only then decide whether the ALU is
-still where the clock is lost, and what to restructure next. The targets
-below were set on the ALU alone and should be restated against that Fmax.
+**Measured 2026-10-02 on `sapho_all`** (`#FROUND 2`, both stacks 8 deep,
+Cyclone V 5CSEMA5F31C6, `fmax.sh`, which now prints the worst paths and the
+worst one by block): **Fmax 10.66 MHz, 3759 ALMs (12 %)**. Every worst path
+starts at the data memory's read port and ends at the **PC**, not at the
+accumulator: `ula_out` drives the `JIZ` decision in the same cycle, so the
+jump logic and the PC adder sit in series with the whole operation. Cutting
+the dividers with `set_false_path` (timing analysis only, no new fit) gives
+the next layers:
+
+| worst path | delay | equivalent clock |
+|---|---|---|
+| through `F_DIV` | 91.8 ns | 10.7 MHz (the real Fmax) |
+| without `F_DIV`: integer `DIV` | 87.0 ns | ~11 MHz |
+| without any divider: `F_ADD` | 44.4 ns | ~21.5 MHz |
+
+The `F_ADD` path by block: memory read + operand select 4.4 ns (10 %),
+denormaliser 11.5 (26 %), adder 3.0 (7 %), normalise + round 19.1 (43 %),
+ALU output mux 2.9 (7 %), jump decision + PC adder 4.2 (9 %): about 19 % of
+it is outside the ALU. Each divider alone is ~76 ns, twice everything else;
+while a program divides, nothing else in the ALU moves the clock.
+
+**Next:** decide from these numbers (the two dividers; the level-2
+normaliser; the jump decision in series with the ALU). The targets below
+were set on the ALU alone and should be restated against the whole-processor
+Fmax. Re-time with `bash Scripts/hw/fmax.sh sapho_all` after any change.
 
 **The steps, in the order they were done** (each measured with `ltp`/`stat` and
 the full regress green):

@@ -11,6 +11,10 @@
 # .mif stay valid -- the level does not change the instruction encoding), which
 # is how a C+- program gets timed at a level its source did not ask for.
 #
+# Besides the Fmax it writes the 10 worst paths (worst_paths.txt) and the
+# worst one in full (worst_path_full.txt) in the project folder, and prints
+# that one grouped by block (path_blocks.py): where the clock is lost.
+#
 # One fit takes 20 min to 2 h. RUN ONE AT A TIME: three in parallel brought a
 # 22-thread machine to its knees. Results are appended to .smoke/hw/fmax.txt.
 set -e
@@ -64,3 +68,23 @@ ALM=$(grep -m1 -E 'Logic utilization \(in ALMs\)|Total logic elements' $PROC.fit
 FMAX=$(grep -A6 'Slow 1100mV 85C Model Fmax Summary\|Slow 1200mV 85C Model Fmax Summary' $PROC.sta.rpt \
        | grep -m1 'MHz' | awk -F';' '{print $2}' | tr -d ' ')
 echo "$PROC $DEV${FR:+ FROUND=$FR}${TAG:+ ($TAG)}: Fmax=$FMAX logic=$ALM" | tee -a "$OUT/fmax.txt"
+
+# Where the clock is lost: the worst register-to-register paths of the WHOLE
+# processor (the ALU alone is a proxy, TODO.md item 8). worst_paths.txt lists
+# the 10 worst (slack, from, to); worst_path_full.txt details the worst one,
+# cell by cell, through the operand select, the ALU and the write-back.
+cat > paths.tcl <<EOF
+project_open $PROC
+create_timing_netlist
+read_sdc clk.sdc
+update_timing_netlist
+report_timing -setup -npaths 10 -detail summary   -file worst_paths.txt
+report_timing -setup -npaths 1  -detail full_path -file worst_path_full.txt
+delete_timing_netlist
+project_close
+EOF
+"$QUARTUS/quartus_sta" -t paths.tcl > paths.log 2>&1 || { echo "$PROC: PATH REPORT FAILED"; grep -m5 'Error' paths.log; exit 1; }
+echo "worst paths: $DIR/worst_paths.txt, worst in full: $DIR/worst_path_full.txt"
+echo "the worst path, by block:"
+PY=$(command -v python3 || command -v python)
+"$PY" "$ROOT/Scripts/hw/path_blocks.py" worst_path_full.txt | tee -a "$OUT/fmax.txt"
