@@ -60,7 +60,7 @@ C++ `<cstring>`, function-pointer initializers and `&f` fixed; the package
 is `SAPHO/` only (zip and tar checked, binaries say 5.7). Aurora v6.21.0
 ships yanc v5.6; the text for Aurora's bump to v5.7 (YANC_TAG, and what its
 AI prompt and answer key must now say about stack depths and C±
-recursion) is in `C:	mpurora_yanc_v5.7.md`. Next here: item 19 (the
+recursion) is in `C:\tmp\aurora_yanc_v5.7.md`. Next here: item 19 (the
 paused pipeline, a large change, decided after this release), and the
 queue below. Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
