@@ -815,8 +815,14 @@ modelled as block RAM:
 | `F_DIV` | 6.1 | 4.6 | 3.6-4.0 |
 | the rest | 0.93-1.07 | 0.93-1.07 | ~1 |
 
-Cyclone V, real (Quartus, same variants): base **53.8 MHz** (751 ALMs); the
-`F_ADD`, `DIV`, `F_DIV` variants were running when this was written. The
+Cyclone V, real (Quartus, same variants, routing included): base **53.8 MHz**
+(751 ALMs), `F_ADD` **33.8 MHz** (1.59x the base's period), `DIV` **12.0 MHz**
+(4.47x), `F_DIV` **10.6 MHz** (5.07x). The two current families agree on the
+dividers (Cyclone V 4.5 / 5.1, Xilinx 7 with routing 4.5-5.1 / 3.6-4.0) and
+not on `F_ADD` (1.6 vs 1.2): routing, which Yosys does not see, weighs more on
+LUT paths (the normaliser) than on carry chains. iCE40 (old LUT4) is off the
+curve, as expected. The Cyclone V base is not purely light: it keeps the
+float normaliser (through the simple float operations left in it). The
 `report_timing -through` numbers per operator above overstate the light
 ones: a path "through" `NEG_M` is really `I2F_M`'s (shared logic). ECP5 and
 Gowin are out (no carry timing in Yosys 0.56); Vivado 2025.2 (ZYBO,
