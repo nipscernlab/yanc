@@ -825,8 +825,28 @@ curve, as expected. The Cyclone V base is not purely light: it keeps the
 float normaliser (through the simple float operations left in it). The
 `report_timing -through` numbers per operator above overstate the light
 ones: a path "through" `NEG_M` is really `I2F_M`'s (shared logic). ECP5 and
-Gowin are out (no carry timing in Yosys 0.56); Vivado 2025.2 (ZYBO,
-Zynq-7000) is being installed for a real Xilinx point.
+Gowin are out (no carry timing in Yosys 0.56).
+
+**Measured on the two current families, routing included** (2026-10-03;
+memories in block RAM on both; `Scripts/hw/fmax.sh` and `vfmax.sh`):
+
+| variant | Cyclone V 5CSEMA5F31C6 | Zynq-7010 xc7z010clg400-1 (ZYBO) | period / base, CV / Zynq |
+|---|---|---|---|
+| base | 53.8 MHz | 45.4 MHz | 1.00 / 1.00 |
+| `F_ADD` | 33.8 | 32.4 | 1.59 / 1.40 |
+| `DIV` | 12.0 | 9.5 | 4.47 / 4.78 |
+| `F_DIV` | 10.6 | 9.7 | 5.07 / 4.67 |
+| full `sapho_all` | 10.7 | 9.0 | 5.05 / 5.06 |
+
+They agree within ~10 % (5.05 vs 5.06 on the full processor); Yosys alone
+does not (routing is 70-75 % of a LUT path's delay on the Zynq, ~40 % of a
+carry path's). **Estimate, stated as based on current Altera and Xilinx
+families:** period = base period x the factor of the slowest operator the
+program uses -- light 1, `F_ADD`/`F_SU` ~1.5, `DIV`/`MOD` ~4.6, `F_DIV`
+~4.9. The paused pipeline cuts the heavy operators, not the base, so its
+clock is about the base's (~54 MHz Cyclone V, ~45 MHz Zynq-7010) and the
+frequency gain is about that factor. Not yet measured on the real tools:
+`F_MLT`, conversions, compares (Yosys: 0.93-1.24).
 
 **Cost in cycles**, from the ALU operation each cycle executes, counted in
 151 regress programs (Icarus, a probe on `id_ula_op`, stopped at `@fim`):
