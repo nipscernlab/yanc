@@ -78,13 +78,19 @@ With the clock at about the base's period, an operation's latency is
 k = ceil(its path / the base path), from the table measured on the current
 families (period over the base's, Cyclone V / Zynq-7010):
 
-| operation | factor | k |
+| operation | factor (larger of Cyclone V / Zynq-7010) | k |
 |---|---|---|
-| light (`LOD`, `ADD`, logic, ...) | 1 | 1 |
-| `F_ADD`, `F_SU*` | 1.59 / 1.40 | 2 |
-| `DIV`, `MOD` | 4.47 / 4.78 | 5 |
-| `F_DIV` | 5.07 / 4.67 | 5 or 6 (6 for a margin on the Cyclone V) |
-| `F_MLT`, conversions, compares, shifts, `NRM`, `SGN`, `F_ROT` | measured overnight 2026-10-03/04 | 1 or 2 |
+| light (`LOD`, `ADD`, logic), `SGN`, `F2I`, shifts, compares, `NRM`, `MLT`, float compares | 1.00-1.09 | 1 |
+| `F_ROT` / `F_SCL` / `XPO`, `I2F` | 1.11 / 1.17 | 2 |
+| `F_MLT` | 1.26 | 2 |
+| `F_ADD`, `F_SU*` | 1.59 | 2 |
+| `DIV`, `MOD`, `F_DIV` | 4.78 / 4.86 / 5.07 | 5 |
+
+With 1 cycle up to a factor of 1.09 (a 10 % tolerance for the run-to-run
+spread of a fit), the clock is base / 1.09: ~49.5 MHz on the Cyclone V,
+~41.7 MHz on the Zynq-7010. Extra cycles over the regress programs: C++
+median +0 %, C± median +2 %, the real applications +7..11 %
+(`Scripts/hw/opmix/pipeln_cost.py`).
 
 asmcomp writes the latency table into the generated top as a parameter (one
 k per ALU operation code); the counter reads it. A k of 1 for every operation

@@ -847,8 +847,20 @@ families:** period = base period x the factor of the slowest operator the
 program uses -- light 1, `F_ADD`/`F_SU` ~1.5, `DIV`/`MOD` ~4.6, `F_DIV`
 ~4.9. The paused pipeline cuts the heavy operators, not the base, so its
 clock is about the base's (~54 MHz Cyclone V, ~45 MHz Zynq-7010) and the
-frequency gain is about that factor. Not yet measured on the real tools:
-`F_MLT`, conversions, compares (Yosys: 0.93-1.24).
+frequency gain is about that factor.
+
+**The whole table, both families measured** (2026-10-04 overnight; factor =
+the larger of Cyclone V / Zynq-7010): `SGN` 1.02, `F2I` 1.03, shifts 1.03,
+int compares 1.04, `NRM` 1.05, `MLT` 1.09, float compares 1.09, `F_ROT`/
+`F_SCL`/`XPO` 1.11, `I2F` 1.17, `F_MLT` 1.26, `F_ADD` 1.59, `DIV` 4.78,
+`MOD` 4.86, `F_DIV` 5.07 (MHz in `.smoke/hw/fmax.txt` and `vfmax.txt`).
+With a 10 % tolerance (`Scripts/hw/opmix/pipeln_cost.py 1.10`): 1 cycle up
+to 1.09, the clock at base / 1.09 (~49.5 MHz Cyclone V, ~41.7 MHz Zynq-7010);
+2 cycles for `F_ROT` group, `I2F`, `F_MLT`, `F_ADD`; 5 for the dividers.
+Cycle cost over the regress programs: C++ median +0 % (mean +4 %), C± median
++2 % (mean +16 %), test48/50/46 and `proc_fft` +7..11 %, worst +94 % (a
+float-library fixture). This replaces the +25 % estimated from an 18 ns
+stage budget below.
 
 **Cost in cycles**, from the ALU operation each cycle executes, counted in
 151 regress programs (Icarus, a probe on `id_ula_op`, stopped at `@fim`):
