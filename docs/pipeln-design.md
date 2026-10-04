@@ -121,12 +121,16 @@ Time = cycles / clock, for both modes.
 - **Choice**: mode 1 if cycles(1) x period(1) < cycles(0) x period(0) by a
   margin (say 10 %); within the margin, mode 0 and a message that it is close.
 
-Where it runs: asmcomp builds the top before the simulation exists. Two
-options: (i) asmcomp decides from the static estimate (operation set, loop
-bodies) and prints it; (ii) the decision is a step after the simulation
-(Aurora, `single_proc*` scripts) that rewrites `PIPELN` in the top, which
-changes no instruction and no memory image, only a parameter. Decision:
-Luciano.
+Where it runs (decided, Luciano 2026-10-04): **in asmcomp**, from the static
+estimate, so the user gets a direction when the processor is built. The
+cycle side weights each slow operation by the loops it sits in (asmcomp sees
+a loop as a jump back to an earlier label; an operation inside n nested loops
+counts as if it ran 10^n times, a stated heuristic), the frequency side uses
+the factors above. asmcomp prints both estimates and the mode it picked, in
+the same message style as its other Info lines, e.g. "#PIPELN 2: chose 1 --
+clock ~4.4x (estimate based on current Altera/Xilinx families), cycles ~+8 %
+(static estimate); simulate with #PIPELN 0 and 1 to compare". The user can
+then simulate both modes and keep or override the choice.
 
 ## What changes where
 
