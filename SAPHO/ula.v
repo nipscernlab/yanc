@@ -592,10 +592,19 @@ module ula_fdiv
 	parameter MAN    = 23,
 	parameter EXP    =  8,
 	parameter FROUND =  0,
-	parameter G      =  0
+	parameter G      =  0,
+	parameter STG    =  1,                                    // cycles it takes (#PIPELN): 1 = combinational
+	// #PIPELN: the logic in the same register-to-register path outside the
+	// array, in tenths of an array row: before it (data memory read, operand
+	// select) and after it (slice, normaliser, ALU output mux, jump decision,
+	// PC). Measured on the Cyclone V (TODO.md item 19): ~2.6 ns and ~11.3 ns
+	// against ~3.1 ns a row.
+	parameter PRE10  =  8,
+	parameter POST10 = 36
 )(
-	 input [MAN+EXP :0] in1, in2,
-	output [MAN+EXP+G+2:0] out                                // exponent 2 bits wider (see ula_norm)
+	 input [MAN+EXP    :0] in1, in2,
+	output [MAN+EXP+G+2:0] out,                               // exponent 2 bits wider (see ula_norm)
+	 input                 clk                                // used only when STG > 1
 );
 
 localparam W = MAN+G;
@@ -608,7 +617,7 @@ wire        [MAN-1:0] m1 = in1[MAN    -1:0  ];
 wire        [MAN-1:0] m2 = in2[MAN    -1:0  ];
 
 wire                  s_out = (s1 != s2);
-wire signed [EXP+1:0] e_dif = e1 - e2 - MAN[EXP+1:0];
+wire signed [EXP+1:0] e_dif =  e1 -  e2 - MAN[EXP+1:0];
 
 // restoring divider array ----------------------------------------------------
 // Quotient of the dividend m1 << K by m2, one row per quotient bit. The `/`
@@ -623,10 +632,36 @@ wire signed [EXP+1:0] e_dif = e1 - e2 - MAN[EXP+1:0];
 //   level 2:  K = MAN+G-1  -> MAN+G bits: mantissa, guard, round (+ sticky from the remainder)
 
 localparam K = (FROUND == 0) ? MAN-1 : (G == 0) ? MAN : MAN+G-1;
-localparam R = K+1;                                       // quotient bits = rows
+localparam R = K+1;                                             // quotient bits = rows
+
+// #PIPELN groups (below): the first row of group s (group 0 starts at row 0),
+// chosen so that every cycle carries the same logic, the outside logic
+// included: with PRE + R rows + POST in all, group s starts where s/STG of it
+// is behind, round(s*(PRE+R+POST)/STG - PRE) rows into the array (kept within
+// it and one row apart); and the group a row falls in
+function integer first_row(input integer s);
+	integer b10, b;
+	begin
+		b10 = (s * (PRE10 + 10*R + POST10)) / STG - PRE10;     // tenths of a row
+		b   = (b10 + 5) / 10;
+		if (b < s)         b = s;                              // at least one row a group
+		if (b > R-(STG-s)) b = R-(STG-s);
+		first_row = (s <= 0) ? 0 : b;
+	end
+endfunction
+
+function integer group_of(input integer row);
+	integer i;
+	begin
+		group_of = 0;
+		for (i = 1; i < STG; i = i+1) if (row >= first_row(i)) group_of = i;
+	end
+endfunction
 
 wire [MAN  :0] rem [0:R];                                 // partial remainders (< m2 after each row)
-wire [R-1  :0] q;
+wire [MAN  :0] rin [0:R-1];                               // the remainder each row starts from
+wire [R-1  :0] qc;                                        // quotient bits as each row computes them
+wire [R-1  :0] q;                                         // quotient bits as the slice reads them
 wire           stk;                                       // remainder != 0
 
 assign rem[0] = {2'b00, m1[MAN-1:1]};                     // top MAN-1 dividend bits
@@ -634,13 +669,57 @@ assign rem[0] = {2'b00, m1[MAN-1:1]};                     // top MAN-1 dividend 
 genvar r;
 generate
 	for (r = 0; r < R; r = r+1) begin : row
-		wire           nb  = (r == 0) ? m1[0] : 1'b0;       // next dividend bit (zeros below m1)
-		wire [MAN+1:0] shr = {rem[r], nb};                 // remainder << 1 | bit
+		wire           nb  = (r == 0) ? m1[0] : 1'b0;     // next dividend bit (zeros below m1)
+		wire [MAN+1:0] shr = {rin[r], nb};                // remainder << 1 | bit
 		wire [MAN+1:0] dif = shr - {2'b00, m2};
-		assign q[R-1-r]  = ~dif[MAN+1];                    // no borrow: the divisor fits
-		assign rem[r+1]  = (q[R-1-r]) ? dif[MAN:0] : shr[MAN:0];
+
+		assign  qc[R-1-r] = ~dif[MAN+1];                  // no borrow: the divisor fits
+		assign rem[r+1  ] = (qc[R-1-r]) ? dif[MAN:0] : shr[MAN:0];
 	end
 endgenerate
+
+// #PIPELN: the rows split into STG groups with a register between two groups
+// (the remainder and every quotient bit found so far), so each group fits in
+// a cycle. The core pauses STG-1 cycles and holds in1/in2 meanwhile, so the
+// registers need no enable: with stable inputs they settle one group per
+// cycle and the slice is right on the STG-th. Where the groups start: see
+// first_row (the first and last groups are shorter, they share their cycle
+// with the logic outside the array).
+generate if (STG <= 1) begin : comb
+	for (r = 0; r < R; r = r+1) begin : link
+		assign rin[r] = rem[r];
+	end
+	assign q = qc;
+end else begin : staged
+	genvar s;
+	for (s = 1; s < STG; s = s+1) begin : cut                 // the register in front of group s
+		localparam integer B  = first_row(s  );               // its first row
+		localparam integer BP = first_row(s-1);               // the previous group's first row
+		reg  [MAN:0] rreg;                                    // the remainder entering row B
+		reg  [R-1:0] qreg;                                    // quotient bits of rows [0, B)
+		wire [R-1:0] qprev;
+		if (s == 1) begin : none assign qprev = {R{1'b0}};     end
+		else        begin : some assign qprev = cut[s-1].qreg; end
+		integer k;
+		always @ (posedge clk) begin
+			rreg <= rem[B];
+			for (k = 0; k < R; k = k+1)                        // rows [BP, B) from this group, [0, BP) carried
+				qreg[R-1-k] <= (k < BP) ? qprev[R-1-k] : (k < B) ? qc[R-1-k] : 1'b0;
+		end
+	end
+	for (r = 0; r < R; r = r+1) begin : link
+		localparam integer GR = group_of(r);
+		if (GR > 0 && r == first_row(GR)) begin : starts
+			assign rin[r] = cut[GR].rreg;
+		end else begin : plain
+			assign rin[r] = rem[r];
+		end
+	end
+	for (r = 0; r < R; r = r+1) begin : qsel
+		if (r < first_row(STG-1)) begin : early assign q[R-1-r] = cut[STG-1].qreg[R-1-r]; end
+		else                      begin : late  assign q[R-1-r] = qc[R-1-r];              end
+	end
+end endgenerate
 
 assign stk = |rem[R];
 
@@ -654,7 +733,7 @@ generate if (FROUND == 0) begin : legacy
 	assign e_out = e_dif + {{EXP+1{1'b0}}, 1'b1};
 	assign m_out = q[MAN-1:0];
 end else begin : ranged
-	wire top = q[R-1];                                     // quotient occupies its top bit
+	wire top = q[R-1];                                      // quotient occupies its top bit
 	wire dz  = (m2 == {MAN{1'b0}});                         // division by zero: saturate (the ALU's +-infinity)
 	wire signed [EXP+1:0] e_q = e_dif + {{EXP+1{1'b0}}, top};
 	wire        [W-1  :0] m_q;
@@ -665,8 +744,8 @@ end else begin : ranged
 		// the quotient bit that falls off the slice when the top bit is set)
 		assign m_q = (top) ? {q[MAN+G-1:1], q[0] | stk} : {q[MAN+G-2:0], stk};
 	end
-	assign e_out = (dz) ? {1'b0, {(EXP+1){1'b1}}} : e_q;   // above every exponent -> ula_norm saturates
-	assign m_out = (dz) ? {W{1'b1}}                : m_q;
+	assign e_out = (dz) ? {1'b0, {(EXP+1){1'b1}}} : e_q;    // above every exponent -> ula_norm saturates
+	assign m_out = (dz) ? {W{1'b1}}               : m_q;
 end endgenerate
 
 assign out = {s_out, e_out, m_out};
@@ -1315,14 +1394,17 @@ endmodule
 module ula
 #(
 	// General
-	parameter                     NUBITS = 32,
-	parameter                     NBMANT = 23,
-	parameter                     NBEXPO =  8,
+	parameter                     NUBITS =  32,
+	parameter                     NBMANT =  23,
+	parameter                     NBEXPO =   8,
 	parameter signed [NUBITS-1:0] NUGAIN = 128,   // defaults: the one set named at the top of processor.v
 	// float rounding level (#FROUND): 0 legacy (truncate, exponent wraps, bit-identical
 	// to the original datapath), 1 keep the LSB before normalization + saturate/flush
 	// + canonical zero, 2 as 1 + round to nearest even (guard/round/sticky bits)
-	parameter                     FROUND =  0,
+	parameter                     FROUND =   0,
+	// #PIPELN: the cycles F_DIV takes, 1 = combinational; the core passes it
+	// (core.v, LAT_FDIV) and pauses for as many (lat())
+	parameter                     STG_FDIV = 1,
 
 	// two-parameter arithmetic operations
 	parameter   ADD   = 0,
@@ -1394,7 +1476,8 @@ module ula
 (
 	input         [       5:0] op,
 	input  signed [NUBITS-1:0] in1, in2,
-	output signed [NUBITS-1:0] out
+	output signed [NUBITS-1:0] out,
+	input                      clk                     // used only by a staged operator (#PIPELN 1)
 );
 
 // floating-point rounding level ----------------------------------------------
@@ -1451,7 +1534,7 @@ generate if ((DIV) != 0) begin : op_div ula_div #(NUBITS) my_div(in1, in2, div);
 
 wire signed [NUBITS+G+1:0] fdiv;
 
-generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(NBMANT,NBEXPO,FROUND,G) my_fdiv(in1, in2, fdiv); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'bx}}; end endgenerate
+generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(NBMANT,NBEXPO,FROUND,G,STG_FDIV) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // MOD ------------------------------------------------------------------------
 

@@ -27,6 +27,7 @@ module pc
 	parameter NBITS = 8
 )(
 	 input                 clk , rst,
+	 input                 en,                                // #PIPELN: low while the core pauses
 	 input                 load,
 	 input     [NBITS-1:0] data,
 	output reg [NBITS-1:0] addr = 0
@@ -42,8 +43,8 @@ wire [NBITS-1:0] val = (load) ? data : addr;
 // synchronous reset: FPGA-friendly (maps to the FF's dedicated sync clear, no
 // recovery/removal timing on the reset net)
 always @ (posedge clk) begin
-	if (rst) addr <= 0;
-	else     addr <= val + um;
+	if      (rst) addr <= 0;
+	else if (en ) addr <= val + um;
 end
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
@@ -236,6 +237,7 @@ module instr_fetch
 	parameter JIZ    = 0
 )(
 	input               clk, rst,
+	input               run,                              // #PIPELN: low while the core pauses
 	input               itr,
 	output              cheguei,
 
@@ -258,22 +260,30 @@ wire [MINSTW-1:0] pc_lval;
 wire [MINSTW-1:0] pc_addr;
 wire [MINSTW-1:0] pcl;
 
+// #PIPELN: while the core pauses, the instruction being decoded must not jump,
+// call, return or take the interrupt yet (it does on the cycle run is back),
+// and the #TOAQUI pin waits with it. run is 1 at #PIPELN 0: no change.
+wire pf_load, pf_push, pf_pop, pf_cheguei;
+wire itr_run = itr & run;
+assign pc_load     = pf_load    & run;
+assign cheguei     = pf_cheguei & run;
+
 generate
-	if (ITRADD>0) begin : pcl_sel assign pcl = (itr) ? addr : pc_lval; end
-	else          begin : pcl_sel assign pcl = pc_lval;                 end
+	if (ITRADD>0) begin : pcl_sel assign pcl = (itr_run) ? addr : pc_lval; end
+	else          begin : pcl_sel assign pcl = pc_lval;                     end
 endgenerate
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
-pc #(MINSTW) pc (clk, rst, pc_load, pcl, pc_addr, pc_sim_val);
+pc #(MINSTW) pc (clk, rst, run, pc_load, pcl, pc_addr, pc_sim_val);
 `else
-pc #(MINSTW) pc (clk, rst, pc_load, pcl, pc_addr);
+pc #(MINSTW) pc (clk, rst, run, pc_load, pcl, pc_addr);
 `endif // ---------------------------------------------------------------------
 
 // Instruction prefetch
 
 wire [NBINST-1:0] pf_instr = instr;
-wire              pf_isp_push;
-wire              pf_isp_pop;
+wire              pf_isp_push = pf_push & run;
+wire              pf_isp_pop  = pf_pop  & run;
 wire [MINSTW-1:0] pf_addr;
 
 prefetch #(.MINSTW(MINSTW),
@@ -284,9 +294,9 @@ prefetch #(.MINSTW(MINSTW),
 		   .CAL   (CAL   ),
 		   .JIZ   (JIZ   )) pf(rst, pc_addr, opcode, operand,
                                pf_instr, pf_addr,
-                               pc_load , acc,
-                               pf_isp_push, pf_isp_pop,
-                               itr, cheguei);
+                               pf_load , acc,
+                               pf_push, pf_pop,
+                               itr_run, pf_cheguei);
 
 // Instruction stack
 
@@ -322,11 +332,12 @@ module ula_in1_ctrl
 )(
 	input               clk, rst, pop,
 	input  [NUBITS-1:0] mem, stack,
-	output [NUBITS-1:0] out
+	output [NUBITS-1:0] out,
+	input               en                                // #PIPELN: low while the core pauses
 );
 
-reg popr;              always @ (posedge clk) if (rst) popr <= 1'b0; else popr <= pop;
-reg [NUBITS-1:0] stkr; always @ (posedge clk) if (rst) stkr <= 0;    else stkr <= stack;
+reg popr;              always @ (posedge clk) if (rst) popr <= 1'b0; else if (en) popr <= pop;
+reg [NUBITS-1:0] stkr; always @ (posedge clk) if (rst) stkr <= 0;    else if (en) stkr <= stack;
 
 assign out = (popr) ? stkr : mem;
 
@@ -342,11 +353,12 @@ module ula_in2_ctrl
 	input               clk, rst,
 	input               req_in,
 	input  [NUBITS-1:0] acc, io_in,
-	output [NUBITS-1:0] out
+	output [NUBITS-1:0] out,
+	input               en                                // #PIPELN: low while the core pauses
 );
 
-reg               req_inr; always @ (posedge clk) if (rst) req_inr <= 1'b0; else req_inr <= req_in;
-reg  [NUBITS-1:0] ior    ; always @ (posedge clk) if (rst) ior     <= 0;    else ior     <=  io_in;
+reg               req_inr; always @ (posedge clk) if (rst) req_inr <= 1'b0; else if (en) req_inr <= req_in;
+reg  [NUBITS-1:0] ior    ; always @ (posedge clk) if (rst) ior     <= 0;    else if (en) ior     <=  io_in;
 
 assign out = (req_inr) ? ior : acc;
 
@@ -430,21 +442,22 @@ module io_ctrl
 	parameter PF_INN = 0
 )(
 	input                   clk, rst,
-	input                   req_in, out_en,
+	input                   req_in, out_en,               // already low while the core pauses
 	input      [MDATAW-1:0] addr,
 
 	output                  en_in,
 	output     [NBIOIN-1:0] addr_in,
 
 	output reg              en_out,
-	output reg [NBIOOU-1:0] addr_out
+	output reg [NBIOOU-1:0] addr_out,
+	input                   en                            // #PIPELN: low while the core pauses
 );
 
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : en_in_sel   assign en_in   = req_in;           end else begin : en_in_sel   assign en_in   =         1'b0  ; end endgenerate
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : addr_in_sel assign addr_in = addr[NBIOIN-1:0]; end else begin : addr_in_sel assign addr_in = {NBIOIN{1'b0}}; end endgenerate
 
 always @ (posedge clk) if (rst) en_out   <= 1'b0; else en_out   <= out_en;
-always @ (posedge clk) if (rst) addr_out <= 0;    else addr_out <= addr[NBIOOU-1:0];
+always @ (posedge clk) if (rst) addr_out <= 0;    else if (en) addr_out <= addr[NBIOOU-1:0];
 
 endmodule
 
@@ -491,6 +504,7 @@ module core
 	parameter  signed [NUBITS-1:0] NUGAIN = 128, // norm() divisor (NRM/NRM_M): a power of two, asmcomp enforces it
 	parameter  FFTSIZ =  3,              // ILI size for bit reversal
 	parameter  FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 exact truncation + saturation, 2 round to nearest even
+	parameter  PIPELN =  0,              // #PIPELN: 0 one cycle per instruction, 1 the core pauses for the slow operations
 
 	// -------------------------------------------------------------------------
 	// Dynamically configured parameters ---------------------------------------
@@ -658,12 +672,46 @@ module core
 	output              out_en,
 
 	input               itr,
-	output              cheguei
+	output              cheguei,
+	output              run                              // #PIPELN: low while the core pauses (the memories hold)
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
  , output [MINSTW-1:0] pc_sim_val
 `endif // ---------------------------------------------------------------------
 );
+
+// #PIPELN: pause ---------------------------------------------------------------
+// An operation that takes k > 1 cycles (a register-staged operator in ula.v)
+// pauses the core for k-1 cycles from the one it enters execution (id_ula_op
+// just loaded): run is low, every state register holds and every effect of the
+// instruction being decoded waits (memory and stack writes, jumps, calls, I/O
+// strobes, the interrupt). The operands stay put meanwhile, which is what the
+// staged operator needs. On the k-th cycle run is high and everything happens
+// once, as at #PIPELN 0, where run is the constant 1 and all of this vanishes.
+
+wire [5:0] id_ula_op;
+
+localparam integer LAT_FDIV = 5;                    // F_DIV (ula_op 7): measured, TODO.md item 19
+
+function integer lat(input [5:0] op);
+	lat = (PIPELN == 0) ? 1 : (op == 6'd7) ? LAT_FDIV : 1;
+endfunction
+
+generate if (PIPELN != 0) begin : pause
+	reg       first = 1'b1;                          // id_ula_op was loaded at the last edge
+	reg [3:0] left  = 4'd0;                          // paused cycles still to come after this one
+	wire      start = first && (lat(id_ula_op) > 1);
+	assign run = ~start && (left == 4'd0);
+	always @ (posedge clk)
+		if (rst) begin first <= 1'b1; left <= 4'd0; end
+		else begin
+			first <= run;
+			if      (start      ) left <= lat(id_ula_op) - 2;
+			else if (left != 4'd0) left <= left - 4'd1;
+		end
+end else begin : pause
+	assign run = 1'b1;
+end endgenerate
 
 // Instruction fetch ----------------------------------------------------------
 
@@ -680,8 +728,10 @@ instr_fetch #(
 	.NBOPER     (NBOPER     ),
 	.SDEPTH     (SDEPTH     ),
 	.CAL        (CAL        ),
-	.JIZ        (JIZ        )) instr_fetch (.clk    (clk       ),
+	.JIZ        (JIZ        )) instr_fetch (
+									.clk    (clk       ),
 	                                .rst    (rst       ),
+	                                .run    (run       ),
 	                                .itr    (itr       ),
 	                                .cheguei(cheguei   ),
 	                                .instr  (instr     ),
@@ -699,7 +749,6 @@ instr_fetch #(
 
 wire [NBOPCO-1:0] id_opcode  = if_opcode;
 
-wire [       5:0] id_ula_op;
 wire              id_dsp_push, id_dsp_pop;
 wire              id_sti, id_ldi, id_fft, id_wr;
 wire              id_req_in, id_out_en;
@@ -812,12 +861,12 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
                                     id_ula_op,
                                     id_wr,
                                     id_req_in, id_out_en,
-                                    id_ldi, id_sti, id_fft);
+                                    id_ldi, id_sti, id_fft, run);
 
 // Data stack -----------------------------------------------------------------
 
-wire              sp_push = id_dsp_push;
-wire              sp_pop  = id_dsp_pop;
+wire              sp_push = id_dsp_push & run;
+wire              sp_pop  = id_dsp_pop  & run;
 wire [NUBITS-1:0] sp_in, sp_data;
 
 stack #(.NADDR($clog2(DDEPTH)),
@@ -836,11 +885,11 @@ wire [NUBITS-1:0] uic_acc;
 reg signed [NUBITS-1:0] racc = 0;
 
 // input in1
-ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, rst, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1);
+ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, rst, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1, run);
 
 // input in2
 generate if ((INN | P_INN | F_INN | PF_INN) != 0) begin : uic_in2
-ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_req_in , uic_acc, io_in, ula_data_in2);
+ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_req_in , uic_acc, io_in, ula_data_in2, run);
 end else begin : uic_in2 assign ula_data_in2 = racc; end
 endgenerate
 
@@ -853,6 +902,7 @@ ula #(.NUBITS (NUBITS ),
       .NBEXPO (NBEXPO ),
       .NUGAIN (NUGAIN ),
       .FROUND (FROUND ),
+    .STG_FDIV ((PIPELN != 0) ? LAT_FDIV : 1),
         .ADD  (  ADD   |  S_ADD  ),
 	  .F_ADD  (F_ADD   | SF_ADD  ),
         .MLT  (  MLT   |  S_MLT  ),
@@ -901,15 +951,15 @@ ula #(.NUBITS (NUBITS ),
 	  .F_SU1  (F_SU1   | SF_SU1  ),
 	  .F_SU2  (F_SU2   | SF_SU2  ),
 	  .F_SCL  (F_SCL   | SF_SCL  ),
-	  .XPO    (XPO              ),
-	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out);
+	  .XPO    (XPO               ),
+	  .XPO_M  (XPO_M             )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out, clk);
 
 assign sp_in = ula_out;
 
 // Accumulator ----------------------------------------------------------------
 // (the racc reg itself is declared earlier, above the uic_in2 generate)
 
-always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out; // synchronous reset (FPGA-friendly)
+always @ (posedge clk) if (rst) racc <= 0; else if (run) racc <= ula_out; // synchronous reset (FPGA-friendly)
 
 assign uic_acc = racc;
 // JIZ branch decision: if_acc must reflect "accumulator is non-zero" across the
@@ -927,12 +977,12 @@ generate
 		mem_ctrl #(.NUBITS(NUBITS),
 		           .MDATAW(MDATAW),
 		           .FFTSIZ(FFTSIZ),
-		           .ILI(ILI),.ISI(ISI)) ac(id_sti, id_ldi, id_fft, id_wr,
+		           .ILI(ILI),.ISI(ISI)) ac(id_sti, id_ldi, id_fft, id_wr & run,
 		                                   ula_out,
 		                                   if_operand[MDATAW-1:0], sp_data[MDATAW-1:0],
 		                                   mem_wr, mem_addr_rd, mem_addr_wr, mem_data_wr);
 	end else begin : mem_access
-		assign mem_wr      = id_wr;
+		assign mem_wr      = id_wr & run;
 		assign mem_addr_rd = if_operand[MDATAW-1:0];
 		assign mem_addr_wr = if_operand[MDATAW-1:0];
 		assign mem_data_wr = ula_out;
@@ -948,9 +998,9 @@ io_ctrl #(.MDATAW(MDATAW),
 		     .INN(   INN),
 		   .F_INN( F_INN),
 		   .P_INN( P_INN),
-		  .PF_INN(PF_INN)) io(clk, rst, id_req_in, id_out_en,
+		  .PF_INN(PF_INN)) io(clk, rst, id_req_in & run, id_out_en & run,
                               if_operand[MDATAW-1:0],
-                              req_in, addr_in, out_en, addr_out);
+                              req_in, addr_in, out_en, addr_out, run);
 end else begin : io_ports
 assign req_in   = 1'b0;
 assign out_en   = 1'b0;

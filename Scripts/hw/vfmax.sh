@@ -31,8 +31,14 @@ W() { cygpath -m "$1" 2>/dev/null || echo "$1"; }
 cp "$ROOT"/SAPHO/*.v hdl/
 sed -i 's/^reg \[NBDATA-1:0\] mem \[0:NADDRE-1\];/(* ram_style = "block", rom_style = "block" *) reg [NBDATA-1:0] mem [0:NADDRE-1];/' hdl/processor.v
 [ "$(grep -c 'rom_style = "block"' hdl/processor.v)" = 2 ] || { echo "vfmax: could not mark the memories"; exit 1; }
-cmd //c "$(W "$VIVADO")" -mode batch -nojournal -log vivado.log \
-    -source "$(W "$ROOT/Scripts/hw/vfmax.tcl")" \
-    -tclargs "$PROC" "$(W "$TOP")" "$(W "$DIR/hdl")" "$PART" "$(W "$DIR")" > run.log 2>&1 \
-    || { echo "$PROC: VIVADO FAILED"; grep -m5 'ERROR' vivado.log; exit 1; }
+# Vivado 2025.2 sometimes stops in opt_design with an empty "[Synth 20-411]"
+# (seen 3 times in 2026-10; the same run went through when repeated): up to 3
+# attempts on that error only.
+for try in 1 2 3; do
+    cmd //c "$(W "$VIVADO")" -mode batch -nojournal -log vivado.log \
+        -source "$(W "$ROOT/Scripts/hw/vfmax.tcl")" \
+        -tclargs "$PROC" "$(W "$TOP")" "$(W "$DIR/hdl")" "$PART" "$(W "$DIR")" > run.log 2>&1 && break
+    grep -q 'Synth 20-411' vivado.log && [ $try -lt 3 ] && { echo "$PROC: Synth 20-411, again ($try)"; continue; }
+    echo "$PROC: VIVADO FAILED"; grep -m5 'ERROR' vivado.log; exit 1
+done
 cat result.txt | tee -a "$OUT/vfmax.txt"

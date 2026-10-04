@@ -770,6 +770,48 @@ test46's cycles.
 
 ## 19. Optional pipeline with a global pause (`#PIPELN 0|1|2`)
 
+**Where it stands (2026-10-04, end of session): step 1 of 4 done** (the
+order is in the design doc's last section and below):
+1. DONE -- the pause and `F_DIV` staged. `SAPHO/core.v` (parameter `PIPELN`,
+   the `pause` block: `run`, `first`, `left`, `lat()`; `run` gates every
+   state register and masks every effect: PC, instruction / data memory
+   reads (`processor.v`), `id_ula_op` (`instr_dec.v`), `popr`/`stkr`,
+   `req_inr`/`ior`, the accumulator, `addr_out`; data memory write, data
+   stack push/pop, CAL/RET/jump, `itr`, `cheguei`, `en_in`, `en_out`).
+   `SAPHO/ula.v`: `ula_fdiv` takes `STG` stages (registers between row
+   groups, the remainder and the quotient bits so far, no enable: the
+   operands are held), cut points from `first_row()` with `PRE10`/`POST10`
+   (the logic outside the array, tenths of a row); the core passes
+   `STG_FDIV = LAT_FDIV = 5`. Proof: regress at `PIPELN 0` 177/177 (the
+   processor of anyone not using the directive is unchanged);
+   `Scripts/hw/tb_fdiv.v` staged 2/3/5/6 == combinational over 20000
+   divisions; the `F_DIV` fixtures at `PIPELN 1` (the parameter forced in the
+   generated top) give the golden outputs (or an exact prefix when the
+   testbench's clock budget ends first); one `F_DIV` costs exactly 4 more
+   cycles (`cmm_fround2`, the opmix probe). Zynq-7010 (`vfmax.sh`): the
+   `F_DIV`-only `sapho_all` variant 9.7 -> **43.1 MHz**; per stage (Vivado,
+   `Scripts/hw/vstages.tcl`) 19.6 / 20.4 / 20.6 / 22.5 / 21.6 ns, all within
+   the base path (22.5 ns), which is again the worst. Every stage also
+   starts at the operand (the divisor enters every row), not only at the
+   previous cut. Cyclone V (`fmax.sh`): 10.6 -> **41.6 MHz**; the worst path
+   is a base one too (accumulator -> I2F -> float normaliser -> PC, 24 ns),
+   longer than in the pure base variant (18.6 ns): the divider shares the
+   normaliser's mux and moves the placement -- look at it in step 2.
+2. NEXT -- stage the other slow operators the same way, one at a time, each
+   measured: `DIV`/`MOD` (k 5), `F_ADD`/`F_SU*` (k 2: a register after the
+   denormaliser), `F_MLT` (k 2: after the multiplier), `I2F` and the
+   `F_ROT`/`F_SCL`/`XPO` group (k 2). Each: its `STG_*` parameter in
+   `ula.v`, its entry in `lat()` in `core.v`, a staged-vs-combinational
+   testbench like `tb_fdiv.v`, the fixtures that use it at `PIPELN 1`.
+3. The directive end to end: `#PIPELN` in asmcomp (parameter + latency
+   table), cmmcomp (Luciano's code: diff first), the `pipeln` pragma in
+   cppcomp; a regress pass at `PIPELN 1` (outputs compared as prefixes:
+   pauses produce fewer outputs within the same clock budget); a directed
+   test with input / output / interrupt during a pause.
+4. `#PIPELN 2` in asmcomp (static estimate, message).
+Luciano saw the step 1 diff (2026-10-04) and wants to judge, operator by
+operator, whether the added structure is worth it.
+
 **Design for review:** [`docs/pipeln-design.md`](docs/pipeln-design.md) (2026-10-04: directive `#PIPELN`, 0 off / 1 on / 2 automatic, Luciano; option B decided, register stages inside the slow operators, so a fit's Fmax stays the global truth).
 
 **Status:** analysis only (2026-10-03), nothing built, needs Luciano's decision

@@ -29,7 +29,8 @@ module mem_instr
 (
 	input                           clk,
 	input      [$clog2(NADDRE)-1:0] addr,
-	output reg [NBDATA        -1:0] data = 0
+	output reg [NBDATA        -1:0] data = 0,
+	input                           en                 // #PIPELN: low while the core pauses (data holds)
 );
 
 reg [NBDATA-1:0] mem [0:NADDRE-1];
@@ -43,7 +44,7 @@ reg [NBDATA-1:0] mem [0:NADDRE-1];
 wire wr = 0; // avoid unnecessary warnings
 
 always @ (posedge clk) begin
-	data <= mem[addr];
+	if (en) data <= mem[addr];
 	if (wr) mem[addr] <= 0;
 end
 
@@ -61,7 +62,8 @@ module mem_data
 	input                                  wr,
 	input             [$clog2(NADDRE)-1:0] addr_rd, addr_wr,
 	input      signed [NBDATA        -1:0] data_in,
-	output reg signed [NBDATA        -1:0] data_out
+	output reg signed [NBDATA        -1:0] data_out,
+	input                                  en          // #PIPELN: low while the core pauses (data_out holds)
 );
 
 reg [NBDATA-1:0] mem [0:NADDRE-1];
@@ -74,7 +76,7 @@ reg [NBDATA-1:0] mem [0:NADDRE-1];
 
 always @ (posedge clk) begin
 	if (wr)     mem[addr_wr] <= data_in;
-	data_out <= mem[addr_rd];
+	if (en)     data_out     <= mem[addr_rd];
 end
 
 endmodule
@@ -141,6 +143,7 @@ module processor
 	parameter signed [NUBITS-1:0] NUGAIN = 128, // norm() divisor (NRM/NRM_M): a power of two, asmcomp enforces it
 	parameter FFTSIZ =  3,              // ILI size for bit reversal
 	parameter FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 exact truncation + saturation, 2 round to nearest even
+	parameter PIPELN =  0,              // #PIPELN: 0 one cycle per instruction, 1 the core pauses for the slow operations
 
 	// -------------------------------------------------------------------------
 	// Resource-allocation parameters ------------------------------------------
@@ -323,6 +326,7 @@ wire        [MINSTW-1:0] instr_addr;
 wire signed [NUBITS-1:0] mem_data_in;
 wire signed [NUBITS-1:0] mem_data_out;
 wire sw, mem_wrb;
+wire run;                                   // #PIPELN: low while the core pauses
 
 assign io_out = mem_data_out;
 
@@ -344,6 +348,7 @@ core #(.NBOPCO ( NBOPCO ),
        .NUGAIN ( NUGAIN ),
        .FFTSIZ ( FFTSIZ ),
        .FROUND ( FROUND ),
+       .PIPELN ( PIPELN ),
 	     .LOD  (   LOD  ),
 	   .P_LOD  ( P_LOD  ),
          .LDI  (   LDI  ),
@@ -449,7 +454,7 @@ core #(.NBOPCO ( NBOPCO ),
 	   .XPO_M  ( XPO_M  )) core(clk, rst,
                                 instr, instr_addr,
                                 mem_wr, mem_addr_rd, mem_addr_wr, mem_data_in, mem_data_out,
-                                io_in, addr_in, addr_out, req_in, out_en, itr, cheguei
+                                io_in, addr_in, addr_out, req_in, out_en, itr, cheguei, run
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
@@ -462,12 +467,12 @@ core #(.NBOPCO ( NBOPCO ),
 
 mem_instr # (.NADDRE(MINSTS       ),
              .NBDATA(NBOPCO+NBOPER),
-             .FNAME (IFILE        )) minstr(clk, instr_addr, instr);
+             .FNAME (IFILE        )) minstr(clk, instr_addr, instr, run);
 
 // data memory ----------------------------------------------------------------
 
 mem_data # (.NADDRE(MDATAS),
             .NBDATA(NUBITS),
-            .FNAME (DFILE )) mdata(clk, mem_wr, mem_addr_rd, mem_addr_wr, mem_data_out, mem_data_in);
+            .FNAME (DFILE )) mdata(clk, mem_wr, mem_addr_rd, mem_addr_wr, mem_data_out, mem_data_in, run);
 
 endmodule

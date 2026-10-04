@@ -9,9 +9,19 @@ reg  [MAN+EXP:0] a, b;
 wire [MAN+EXP+2:0] o0, o1;          // levels 0/1: {s, e[EXP+1:0], m[MAN-1:0]}
 wire [MAN+EXP+5:0] o2;              // level 2:    {s, e[EXP+1:0], m[MAN+2:0]}
 
-ula_fdiv #(MAN,EXP,0,0) d0 (a, b, o0);
-ula_fdiv #(MAN,EXP,1,0) d1 (a, b, o1);
-ula_fdiv #(MAN,EXP,2,3) d2 (a, b, o2);
+ula_fdiv #(MAN,EXP,0,0) d0 (a, b, o0, 1'b0);
+ula_fdiv #(MAN,EXP,1,0) d1 (a, b, o1, 1'b0);
+ula_fdiv #(MAN,EXP,2,3) d2 (a, b, o2, 1'b0);
+
+// #PIPELN: the same divider split into STG register stages must give the
+// combinational result after STG-1 clock edges with the operands held
+reg clk = 0; always #5 clk = ~clk;
+wire [MAN+EXP+2:0] p0s2, p1s3;  wire [MAN+EXP+5:0] p2s2, p2s5, p2s6;
+ula_fdiv #(MAN,EXP,0,0,2) e0s2 (a, b, p0s2, clk);
+ula_fdiv #(MAN,EXP,1,0,3) e1s3 (a, b, p1s3, clk);
+ula_fdiv #(MAN,EXP,2,3,2) e2s2 (a, b, p2s2, clk);
+ula_fdiv #(MAN,EXP,2,3,5) e2s5 (a, b, p2s5, clk);
+ula_fdiv #(MAN,EXP,2,3,6) e2s6 (a, b, p2s6, clk);
 
 integer n, errs;
 reg [MAN-1:0] m1, m2;
@@ -49,6 +59,12 @@ begin
 		if (o1[MAN+EXP+1:MAN] !== {1'b0, {(EXP+1){1'b1}}} || o1[MAN-1:0] !== {MAN{1'b1}}) begin errs = errs + 1; $display("L1 div-by-zero: %h", o1); end
 		if (o2[MAN+EXP+4:W2]  !== {1'b0, {(EXP+1){1'b1}}} || o2[W2-1:0]  !== {W2{1'b1}})  begin errs = errs + 1; $display("L2 div-by-zero: %h", o2); end
 	end
+		// the staged dividers, operands held for 5 edges (the deepest needs STG-1 = 5)
+		repeat (5) @(posedge clk); #1;
+		if ({p0s2, p1s3} !== {o0, o1} || {p2s2, p2s5, p2s6} !== {o2, o2, o2}) begin
+			errs = errs + 1;
+			if (errs < 6) $display("staged mismatch a=%h b=%h: %h %h %h %h %h vs %h %h %h", a, b, p0s2, p1s3, p2s2, p2s5, p2s6, o0, o1, o2);
+		end
 end
 endtask
 
@@ -64,7 +80,7 @@ initial begin
 	end
 	a = 0; a[MAN+EXP-1:MAN] = 8'h80; b = $random; b[MAN-1] = 1; check;   // 0 / x
 	a = $random; a[MAN-1] = 1; b = 0; check;                              // x / 0 (levels >= 1)
-	if (errs == 0) $display("PASS: %0d random divisions, 3 levels, %0d/%0d", n, MAN, EXP); else $display("FAIL: %0d mismatches", errs);
+	if (errs == 0) $display("PASS: %0d random divisions, 3 levels, %0d/%0d, staged 2/3/5/6 equal", n, MAN, EXP); else $display("FAIL: %0d mismatches", errs);
 	$finish;
 end
 endmodule
