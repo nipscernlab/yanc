@@ -770,7 +770,7 @@ test46's cycles.
 
 ## 19. Optional pipeline with a global pause (`#PIPELN 0|1|2`)
 
-**Design for review:** [`docs/pipeln-design.md`](docs/pipeln-design.md) (2026-10-04: directive `#PIPELN`, 0 off / 1 on / 2 automatic, Luciano; option A, multicycle paths with the ALU kept combinational, recommended over B, pipeline registers).
+**Design for review:** [`docs/pipeln-design.md`](docs/pipeln-design.md) (2026-10-04: directive `#PIPELN`, 0 off / 1 on / 2 automatic, Luciano; option B decided, register stages inside the slow operators, so a fit's Fmax stays the global truth).
 
 **Status:** analysis only (2026-10-03), nothing built, needs Luciano's decision
 · **Area:** `SAPHO/core.v`, `SAPHO/ula.v`, `instr_dec.v`, asmcomp (one

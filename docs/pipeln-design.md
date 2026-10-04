@@ -50,7 +50,7 @@ input register) stay unchanged for the k cycles.
 
 ## Two ways to give the slow operator its k cycles
 
-**A. Multicycle paths (recommended).** The ALU stays combinational, as it is
+**A. Multicycle paths (rejected, see below).** The ALU stays combinational, as it is
 (and as decided on 2026-09-14). Its inputs are stable for k cycles, so the
 operator only has to settle within k clock periods. No register is added to
 any operator; the new hardware is the counter and the enables. The synthesis
@@ -61,7 +61,7 @@ program instantiates. A user who leaves the file out gets a timing report
 that fails on those paths, though the hardware works if the real delay fits
 in k periods.
 
-**B. Pipeline registers inside the operators.** Each slow operator gets k - 1
+**B. Pipeline registers inside the operators (chosen).** Each slow operator gets k - 1
 register stages at measured cut points (inside the divider arrays, after the
 float denormaliser, between the leading-zero count and the shift / round).
 No constraint file; the tools see plain one-cycle paths. Costs registers in
@@ -69,8 +69,15 @@ every slow operator and an operator-by-operator design of the cut points, and
 it makes the ALU sequential (the 2026-09-14 rule relaxed behind the
 directive).
 
-A is a fraction of B's work and of its hardware, and keeps the ALU as it is;
-B is the conventional, constraint-free form. Decision: Luciano.
+**Decided: B** (Luciano, 2026-10-04). With A the Fmax a fit reports depends on
+the multicycle constraints being right and being in the user's project; a
+missing or wrong one makes the report wrong without anyone noticing, and the
+fit of the whole design is no longer the global answer (it is what checks
+the automatic estimate). And breaking long logic with the registers every
+logic cell already carries is the conventional design, the one the tools
+optimise best. Whoever turns `#PIPELN` on is after a high clock. Cuts are
+explicit, at the measured points, not left to the tools' retiming (portable,
+predictable).
 
 ## Latencies
 
@@ -126,9 +133,10 @@ Luciano.
 - `SAPHO/core.v`: the counter, `run`, the enables and masks above, under
   `generate` on `PIPELN` (absent at 0).
 - `SAPHO/processor.v`: the two memories get a read enable (used only at 1).
-- `SAPHO/ula.v`: nothing in option A.
-- asmcomp: the directive, the parameter, the latency table, the `.sdc`/`.xdc`
-  (option A), the messages of mode 2.
+- `SAPHO/ula.v`: the register stages inside the slow operators, under
+  `generate` on `PIPELN`.
+- asmcomp: the directive, the parameter, the latency table, the messages of
+  mode 2.
 - cmmcomp / cppcomp: pass the directive / pragma through (as `#FROUND`).
 - Simulation: cycle counts change at 1; the waveform shows `run`.
 - Tests: every regress program at `PIPELN 1` must give the same outputs as at
