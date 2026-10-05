@@ -1,7 +1,8 @@
 """Read a Quartus `report_timing -detail full_path` file and print its data
 path grouped by block: memory read, operand select, each ALU operator, the
 ALU output mux, the jump decision, the PC. A path of 900 cells reads as a
-handful of stages, each with the time it takes. Used by fmax.sh.
+handful of stages, each with the time it takes, split into interconnect (ic,
+the routing) and cell (the logic) with the cells it crosses. Used by fmax.sh.
 
 usage: python3 path_blocks.py <worst_path_full.txt>
 """
@@ -41,21 +42,31 @@ def main(path):
             continue
         if not in_data or '|' not in f[7]:
             continue
-        rows.append((float(f[1]), f[7]))
+        rows.append((float(f[1]), f[7], float(f[2]), f[4]))
     if not rows:
         print('path_blocks: no data path in', path)
         return 1
-    stages, prev, t0 = [], None, rows[0][0]
-    for t, e in rows:
+    # a stage ends at the arrival of the next block's first element, so that
+    # element's increment (the wire or cell delay into it) is the stage's own
+    stages, prev, t0, ic, cell, ncell = [], None, rows[0][0], 0.0, 0.0, 0
+    for t, e, inc, kind in rows:
         b = block(e)
+        if prev is not None:
+            if kind == 'IC':
+                ic += inc
+            elif kind == 'CELL':
+                cell += inc; ncell += 1
         if b != prev:
             if prev is not None:
-                stages.append((prev, t0, t))
-            prev, t0 = b, t
-    stages.append((prev, t0, rows[-1][0]))
+                stages.append((prev, t0, t, ic, cell, ncell))
+            prev, t0, ic, cell, ncell = b, t, 0.0, 0.0, 0
+    stages.append((prev, t0, rows[-1][0], ic, cell, ncell))
     total = rows[-1][0] - rows[0][0]
-    for b, a, z in stages:
-        print('  %8.3f -> %8.3f  %7.3f ns  %3.0f %%  %s' % (a, z, z - a, 100 * (z - a) / total, b))
+    for b, a, z, i, c, n in stages:
+        print('  %8.3f -> %8.3f  %7.3f ns  %3.0f %%  ic %6.3f  cell %6.3f (%2d)  %s'
+              % (a, z, z - a, 100 * (z - a) / total, i, c, n, b))
+    ti = sum(x[3] for x in stages); tc = sum(x[4] for x in stages)
+    print('  total %.3f ns: ic %.3f, cell %.3f' % (total, ti, tc))
     return 0
 
 

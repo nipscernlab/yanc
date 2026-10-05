@@ -156,8 +156,7 @@ module instr_dec
 
     output                  mem_wr,
     output                  req_in, out_en,
-    output                  ldi, sti, fft,
-    input                   en                    // #PIPELN: low while the core pauses (ula_op holds)
+    output                  ldi, sti, fft
 );
 
 // {ula_op, push, pop, mem_wr, req_in, out_en, ldi, sti, fft}
@@ -288,6 +287,6 @@ assign {push, pop, mem_wr, req_in, out_en, ldi, sti, fft} = ctl[7:0];
 
 // the ALU operation is registered; a synchronous reset to 0 = pass-acc is a
 // harmless NOP for the ALU while the rest of the pipeline is being reset
-always @ (posedge clk) if (rst) ula_op <= 6'd0; else if (en) ula_op <= ctl[13:8];
+always @ (posedge clk) if (rst) ula_op <= 6'd0; else ula_op <= ctl[13:8];
 
 endmodule

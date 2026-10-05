@@ -15,8 +15,9 @@ Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
 small accessors in cppcomp, 15 the regress not being trustworthy on this
 machine, 17 faster array fill/copy (hardware options). Item 18 (hardware paid for
-code that never runs) is closed (2026-10-02): see the CHANGELOG. 19 an optional
-pipeline with a global pause (analysis). Item 11, consistency at 32 bits, is
+code that never runs) is closed (2026-10-02): see the CHANGELOG. 19 the slow
+dividers (a paused pipeline was built and dropped; options open). Item 11,
+consistency at 32 bits, is
 closed (2026-09-21): see the CHANGELOG for its four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
@@ -60,9 +61,10 @@ C++ `<cstring>`, function-pointer initializers and `&f` fixed; the package
 is `SAPHO/` only (zip and tar checked, binaries say 5.7). Aurora v6.21.0
 ships yanc v5.6; the text for Aurora's bump to v5.7 (YANC_TAG, and what its
 AI prompt and answer key must now say about stack depths and C±
-recursion) is in `C:\tmp\aurora_yanc_v5.7.md`. Next here: item 19 (the
-paused pipeline, a large change, decided after this release), and the
-queue below. Open here, in the order they were queued:
+recursion) is in `C:\tmp\aurora_yanc_v5.7.md`. Item 19 (2026-10-03 to
+10-05): a paused pipeline was built for the dividers, measured and dropped;
+`SAPHO/` is back at 954c853 and the dividers' options wait for a decision.
+Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
   item (the strength-reduction candidate was measured and dropped);
 - item 17: faster fill/copy in hardware, a design discussion with nothing
@@ -768,151 +770,24 @@ real group programs are the bottleneck. Each step measured first: ALUTs and
 Fmax in Quartus (a program that uses it and one that must pay nothing), and
 test46's cycles.
 
-## 19. Optional pipeline with a global pause (`#PIPELN 0|1|2`)
+## 19. The slow dividers (`DIV`, `MOD`, `F_DIV`)
 
-**Where it stands (2026-10-04, end of session): step 1 of 4 done** (the
-order is in the design doc's last section and below):
-1. DONE -- the pause and `F_DIV` staged. `SAPHO/core.v` (parameter `PIPELN`,
-   the `pause` block: `run`, `first`, `left`, `lat()`; `run` gates every
-   state register and masks every effect: PC, instruction / data memory
-   reads (`processor.v`), `id_ula_op` (`instr_dec.v`), `popr`/`stkr`,
-   `req_inr`/`ior`, the accumulator, `addr_out`; data memory write, data
-   stack push/pop, CAL/RET/jump, `itr`, `cheguei`, `en_in`, `en_out`).
-   `SAPHO/ula.v`: `ula_fdiv` takes `STG` stages (registers between row
-   groups, the remainder and the quotient bits so far, no enable: the
-   operands are held), cut points from `first_row()` with `PRE10`/`POST10`
-   (the logic outside the array, tenths of a row); the core passes
-   `STG_FDIV = LAT_FDIV = 5`. Proof: regress at `PIPELN 0` 177/177 (the
-   processor of anyone not using the directive is unchanged);
-   `Scripts/hw/tb_fdiv.v` staged 2/3/5/6 == combinational over 20000
-   divisions; the `F_DIV` fixtures at `PIPELN 1` (the parameter forced in the
-   generated top) give the golden outputs (or an exact prefix when the
-   testbench's clock budget ends first); one `F_DIV` costs exactly 4 more
-   cycles (`cmm_fround2`, the opmix probe). Zynq-7010 (`vfmax.sh`): the
-   `F_DIV`-only `sapho_all` variant 9.7 -> **43.1 MHz**; per stage (Vivado,
-   `Scripts/hw/vstages.tcl`) 19.6 / 20.4 / 20.6 / 22.5 / 21.6 ns, all within
-   the base path (22.5 ns), which is again the worst. Every stage also
-   starts at the operand (the divisor enters every row), not only at the
-   previous cut. Cyclone V (`fmax.sh`): 10.6 -> **41.6 MHz**; the worst path
-   is a base one too (accumulator -> I2F -> float normaliser -> PC, 24 ns),
-   longer than in the pure base variant (18.6 ns): the divider shares the
-   normaliser's mux and moves the placement -- look at it in step 2.
-2. NEXT -- stage the other slow operators the same way, one at a time, each
-   measured: `DIV`/`MOD` (k 5), `F_ADD`/`F_SU*` (k 2: a register after the
-   denormaliser), `F_MLT` (k 2: after the multiplier), `I2F` and the
-   `F_ROT`/`F_SCL`/`XPO` group (k 2). Each: its `STG_*` parameter in
-   `ula.v`, its entry in `lat()` in `core.v`, a staged-vs-combinational
-   testbench like `tb_fdiv.v`, the fixtures that use it at `PIPELN 1`.
-3. The directive end to end: `#PIPELN` in asmcomp (parameter + latency
-   table), cmmcomp (Luciano's code: diff first), the `pipeln` pragma in
-   cppcomp; a regress pass at `PIPELN 1` (outputs compared as prefixes:
-   pauses produce fewer outputs within the same clock budget); a directed
-   test with input / output / interrupt during a pause.
-4. `#PIPELN 2` in asmcomp (static estimate, message).
-Luciano saw the step 1 diff (2026-10-04) and wants to judge, operator by
-operator, whether the added structure is worth it.
+**Status:** open, a decision for Luciano; nothing in `SAPHO/` (2026-10-05)
+· **Area:** `SAPHO/core.v`, `SAPHO/ula.v`, maybe asmcomp
 
-**Design for review:** [`docs/pipeln-design.md`](docs/pipeln-design.md) (2026-10-04: directive `#PIPELN`, 0 off / 1 on / 2 automatic, Luciano; option B decided, register stages inside the slow operators, so a fit's Fmax stays the global truth).
-
-**Status:** analysis only (2026-10-03), nothing built, needs Luciano's decision
-· **Area:** `SAPHO/core.v`, `SAPHO/ula.v`, `instr_dec.v`, asmcomp (one
-directive and one parameter); the compilers do not change
-
-**Idea.** Off by default (today's processor, bit-identical). On: the slow
-operators get pipeline registers inside them (generated only for the
-operators the program uses), and while one of them runs the whole core
-pauses -- an enable on every state register (`pc`, `ula_op`, `racc`, both
-stacks, `popr`/`stkr`, `req_inr`/`ior`, `en_out`/`addr_out`/`req_in`,
-`mem_wr`, `pc_load`, `isp_push/pop`, the data memory's read enable; the
-interrupt held off), as listed in `docs/precision-and-width-review.md` §2.6.
-Each operation's latency is a fixed number of cycles, so the cycle count of
-a program stays known at compile time. This relaxes the 2026-09-14 rule
-"the ALU stays combinational" only behind the directive.
-
-**Stages for ~50 MHz** (20 ns; ~18 ns of logic per stage after clock and
-setup, measured on `sapho_all`, item 8). k = ceil(worst register-to-register
-delay through the operation / 18 ns), the delay taken from `report_timing
--through` each operator on `sapho_all` (`#FROUND 2`). Deduced, not built: the
-cut points have to be placed and re-timed.
-- 1 cycle: `LOD`, `ADD`, bitwise, sign flips;
-- 2: `MLT`, int compares, `ABS`, `NRM`, `F2I`, shifts, `LAN`/`LOR`,
-  `F_ROT`/`F_SCL`/`XPO` (these last at 19-20 ns: 1 cycle at ~45 MHz);
-- 3: `F_ADD`/`F_SU*` (cut after the denormaliser and inside the normaliser,
-  between the leading-zero count and the shift / round), `F_MLT`, `I2F`,
-  float compares;
-- 5-6: `DIV`, `MOD`, `F_DIV` (the divider arrays split in row groups).
-The last stage of every operation also carries the ALU output mux, the jump
-decision and the PC adder (~7 ns).
-
-**A chip-agnostic frequency estimate** (Luciano, 2026-10-03: base it on the
-current Altera and Xilinx families, and say so). `Scripts/hw/est/`:
-`sapho_all` variants (the light operators, plus one heavy group), worst path
-over the base variant's. Yosys (cell delays, no routing), with the memories
-modelled as block RAM:
-
-| group | iCE40 | Xilinx 7 | Xilinx 7 + routing 0.3-0.8 ns/net |
-|---|---|---|---|
-| base | 1.00 (17.3 ns) | 1.00 (9.4 ns) | 1.00 |
-| `F_ADD` | 1.13 | 1.21 | 1.17-1.18 |
-| `F_MLT` | 1.16 | 1.24 | 1.24 |
-| `DIV`/`MOD` | 9.0 | 6.1 | 4.5-5.1 |
-| `F_DIV` | 6.1 | 4.6 | 3.6-4.0 |
-| the rest | 0.93-1.07 | 0.93-1.07 | ~1 |
-
-Cyclone V, real (Quartus, same variants, routing included): base **53.8 MHz**
-(751 ALMs), `F_ADD` **33.8 MHz** (1.59x the base's period), `DIV` **12.0 MHz**
-(4.47x), `F_DIV` **10.6 MHz** (5.07x). The two current families agree on the
-dividers (Cyclone V 4.5 / 5.1, Xilinx 7 with routing 4.5-5.1 / 3.6-4.0) and
-not on `F_ADD` (1.6 vs 1.2): routing, which Yosys does not see, weighs more on
-LUT paths (the normaliser) than on carry chains. iCE40 (old LUT4) is off the
-curve, as expected. The Cyclone V base is not purely light: it keeps the
-float normaliser (through the simple float operations left in it). The
-`report_timing -through` numbers per operator above overstate the light
-ones: a path "through" `NEG_M` is really `I2F_M`'s (shared logic). ECP5 and
-Gowin are out (no carry timing in Yosys 0.56).
-
-**Measured on the two current families, routing included** (2026-10-03;
-memories in block RAM on both; `Scripts/hw/fmax.sh` and `vfmax.sh`):
-
-| variant | Cyclone V 5CSEMA5F31C6 | Zynq-7010 xc7z010clg400-1 (ZYBO) | period / base, CV / Zynq |
-|---|---|---|---|
-| base | 53.8 MHz | 45.4 MHz | 1.00 / 1.00 |
-| `F_ADD` | 33.8 | 32.4 | 1.59 / 1.40 |
-| `DIV` | 12.0 | 9.5 | 4.47 / 4.78 |
-| `F_DIV` | 10.6 | 9.7 | 5.07 / 4.67 |
-| full `sapho_all` | 10.7 | 9.0 | 5.05 / 5.06 |
-
-They agree within ~10 % (5.05 vs 5.06 on the full processor); Yosys alone
-does not (routing is 70-75 % of a LUT path's delay on the Zynq, ~40 % of a
-carry path's). **Estimate, stated as based on current Altera and Xilinx
-families:** period = base period x the factor of the slowest operator the
-program uses -- light 1, `F_ADD`/`F_SU` ~1.5, `DIV`/`MOD` ~4.6, `F_DIV`
-~4.9. The paused pipeline cuts the heavy operators, not the base, so its
-clock is about the base's (~54 MHz Cyclone V, ~45 MHz Zynq-7010) and the
-frequency gain is about that factor.
-
-**The whole table, both families measured** (2026-10-04 overnight; factor =
-the larger of Cyclone V / Zynq-7010): `SGN` 1.02, `F2I` 1.03, shifts 1.03,
-int compares 1.04, `NRM` 1.05, `MLT` 1.09, float compares 1.09, `F_ROT`/
-`F_SCL`/`XPO` 1.11, `I2F` 1.17, `F_MLT` 1.26, `F_ADD` 1.59, `DIV` 4.78,
-`MOD` 4.86, `F_DIV` 5.07 (MHz in `.smoke/hw/fmax.txt` and `vfmax.txt`).
-With a 10 % tolerance (`Scripts/hw/opmix/pipeln_cost.py 1.10`): 1 cycle up
-to 1.09, the clock at base / 1.09 (~49.5 MHz Cyclone V, ~41.7 MHz Zynq-7010);
-2 cycles for `F_ROT` group, `I2F`, `F_MLT`, `F_ADD`; 5 for the dividers.
-Cycle cost over the regress programs: C++ median +0 % (mean +4 %), C± median
-+2 % (mean +16 %), test48/50/46 and `proc_fft` +7..11 %, worst +94 % (a
-float-library fixture). This replaces the +25 % estimated from an 18 ns
-stage budget below.
-
-**Cost in cycles**, from the ALU operation each cycle executes, counted in
-151 regress programs (Icarus, a probe on `id_ula_op`, stopped at `@fim`):
-C++ median +7 % (mean +12 %); C± median +18 % (mean +38 %, the float-library
-fixtures +90..146 %); real programs: blind deconvolution (test48/50) +25..28 %,
-FISTA (test46) +26 %, `proc_fft` +27 %, `ProcDTW` +10 %, `sapho_all` +43 %.
-Net, for a processor with a divider (10.7 -> ~50 MHz, 4.7x the clock) at
-+25 % cycles: ~3.7x faster; for one without (~21.5 -> 50 MHz) at +25 %:
-~1.9x. Reproduce with `Scripts/hw/opmix/` (`run_mix.sh` after a regress, then
-`cost.py 18`).
+The three dividers set the clock of any program that uses them at ~5x the
+base period (Cyclone V 12.0 / 11.9 / 10.6 MHz against a 53.8 MHz base;
+Zynq-7010 9.5 / 9.3 / 9.7 against 45.4). A paused pipeline (`#PIPELN`) was
+built for them and measured, then dropped: it confused the core, the next
+operators to stage (`F_ADD`, `F_MLT`) would cost cycles everywhere, and the
+Cyclone V stayed at ~43 MHz. `SAPHO/` is back at the processor of 954c853.
+Left to decide, for the dividers alone: one iterative co-processor out of
+the ALU (its results into the ALU's division inputs, the float one through
+the normaliser), the program waiting for it by (A) a small stall in the
+core, (B) NOPs inserted by asmcomp and a new instruction that reads the
+result, or (C) no hardware, a software routine. The whole record, the
+measurements, and the pros and cons of each:
+[`docs/pipeln-and-division.md`](docs/pipeln-and-division.md).
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

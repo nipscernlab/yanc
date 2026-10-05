@@ -1,15 +1,20 @@
 #!/bin/bash
 # Real Fmax and ALM count of a generated processor, through Quartus Prime Lite.
 #
-# Usage:  [FR=<0|1|2>] [TAG=<name>] bash Scripts/hw/fmax.sh <proc> [device] [family]
+# Usage:  [FR=<0|1|2>] [TAG=<name>] [SEED=<n>] bash Scripts/hw/fmax.sh <proc> [device] [family]
 # e.g.    bash Scripts/hw/fmax.sh cmm_cexp
 #         FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp
 #
 # <proc> is a processor the regress already built: it reads
 # .smoke/work/<proc>/Hardware/<proc>.v, whose .mif paths are absolute, so the
-# memories initialise. FR rewrites the .FROUND() parameter of that top (the
-# .mif stay valid -- the level does not change the instruction encoding), which
-# is how a C+- program gets timed at a level its source did not ask for.
+# memories initialise. SEED is the fitter's placement seed (default 1): a
+# single fit can be off by several per cent, compare across seeds (give each
+# its own TAG). The optimization mode below already runs the fitter's
+# physical synthesis, retiming included (docs/pipeln-and-division.md): there
+# is nothing more to switch on there. FR rewrites the .FROUND() parameter of
+# that top (the .mif stay valid -- the level does not change the instruction
+# encoding), which is how a C+- program gets timed at a level its source did
+# not ask for.
 #
 # Besides the Fmax it writes the 10 worst paths (worst_paths.txt) and the
 # worst one in full (worst_path_full.txt) in the project folder, and prints
@@ -55,6 +60,7 @@ set_global_assignment -name VERILOG_FILE $HDLW/addr_dec.v
 set_global_assignment -name SDC_FILE clk.sdc
 set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
 set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
+set_global_assignment -name SEED ${SEED:-1}
 export_assignments
 project_close
 EOF
@@ -67,7 +73,7 @@ EOF
 ALM=$(grep -m1 -E 'Logic utilization \(in ALMs\)|Total logic elements' $PROC.fit.summary | sed 's/^[^:]*: *//')
 FMAX=$(grep -A6 'Slow 1100mV 85C Model Fmax Summary\|Slow 1200mV 85C Model Fmax Summary' $PROC.sta.rpt \
        | grep -m1 'MHz' | awk -F';' '{print $2}' | tr -d ' ')
-echo "$PROC $DEV${FR:+ FROUND=$FR}${TAG:+ ($TAG)}: Fmax=$FMAX logic=$ALM" | tee -a "$OUT/fmax.txt"
+echo "$PROC $DEV${FR:+ FROUND=$FR}${TAG:+ ($TAG)}${SEED:+ seed $SEED}: Fmax=$FMAX logic=$ALM" | tee -a "$OUT/fmax.txt"
 
 # Where the clock is lost: the worst register-to-register paths of the WHOLE
 # processor (the ALU alone is a proxy, TODO.md item 8). worst_paths.txt lists
