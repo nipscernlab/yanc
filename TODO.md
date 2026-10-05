@@ -15,10 +15,13 @@ Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
 strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
 small accessors in cppcomp, 15 the regress not being trustworthy on this
 machine, 17 faster array fill/copy (hardware options). Item 18 (hardware paid for
-code that never runs) is closed (2026-10-02): see the CHANGELOG. 19 the slow
-dividers (a paused pipeline was built and dropped; options open). Item 11,
-consistency at 32 bits, is
-closed (2026-09-21): see the CHANGELOG for its four fixes.
+code that never runs) is closed (2026-10-02): see the CHANGELOG. Item 19
+(the slow dividers) is closed (2026-10-05) without a change: a paused
+pipeline was built and dropped, a dividers co-processor discussed and
+dropped, the processor stays combinational; the record is in
+[`docs/pipeln-and-division.md`](docs/pipeln-and-division.md). Item 11,
+consistency at 32 bits, is closed (2026-09-21): see the CHANGELOG for its
+four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
 moved.
@@ -62,8 +65,9 @@ is `SAPHO/` only (zip and tar checked, binaries say 5.7). Aurora v6.21.0
 ships yanc v5.6; the text for Aurora's bump to v5.7 (YANC_TAG, and what its
 AI prompt and answer key must now say about stack depths and C±
 recursion) is in `C:\tmp\aurora_yanc_v5.7.md`. Item 19 (2026-10-03 to
-10-05): a paused pipeline was built for the dividers, measured and dropped;
-`SAPHO/` is back at 954c853 and the dividers' options wait for a decision.
+10-05): a paused pipeline was built for the dividers, measured and dropped,
+and a dividers co-processor discussed and dropped; `SAPHO/` is back at
+954c853, all combinational (a program that divides runs at ~10-12 MHz).
 Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
   item (the strength-reduction candidate was measured and dropped);
@@ -769,25 +773,6 @@ for circular FIR buffers), then `Y` with two full ports if the MAC loops of
 real group programs are the bottleneck. Each step measured first: ALUTs and
 Fmax in Quartus (a program that uses it and one that must pay nothing), and
 test46's cycles.
-
-## 19. The slow dividers (`DIV`, `MOD`, `F_DIV`)
-
-**Status:** open, a decision for Luciano; nothing in `SAPHO/` (2026-10-05)
-· **Area:** `SAPHO/core.v`, `SAPHO/ula.v`, maybe asmcomp
-
-The three dividers set the clock of any program that uses them at ~5x the
-base period (Cyclone V 12.0 / 11.9 / 10.6 MHz against a 53.8 MHz base;
-Zynq-7010 9.5 / 9.3 / 9.7 against 45.4). A paused pipeline (`#PIPELN`) was
-built for them and measured, then dropped: it confused the core, the next
-operators to stage (`F_ADD`, `F_MLT`) would cost cycles everywhere, and the
-Cyclone V stayed at ~43 MHz. `SAPHO/` is back at the processor of 954c853.
-Left to decide, for the dividers alone: one iterative co-processor out of
-the ALU (its results into the ALU's division inputs, the float one through
-the normaliser), the program waiting for it by (A) a small stall in the
-core, (B) NOPs inserted by asmcomp and a new instruction that reads the
-result, or (C) no hardware, a software routine. The whole record, the
-measurements, and the pros and cons of each:
-[`docs/pipeln-and-division.md`](docs/pipeln-and-division.md).
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

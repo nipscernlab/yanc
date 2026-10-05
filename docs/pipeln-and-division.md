@@ -1,12 +1,16 @@
-# The slow operators: what was tried, and the options left for division
+# The slow operators: what was tried for a faster clock, and dropped
 
 Record of TODO item 19 (2026-10-03 to 2026-10-05). The goal was a higher
 clock for programs that use the slow ALU operators. A paused pipeline was
 designed, built for the three dividers and measured on two FPGA families;
 Luciano then dropped it (2026-10-05) and `SAPHO/` went back to the processor
 before it (commit 954c853). **Nothing of what is described here is in
-`SAPHO/` today.** What stays is the measurements below, the measurement
-tools, and three options for the dividers alone, not decided.
+`SAPHO/` today.** A co-processor for the dividers alone (section 3) was
+discussed next and dropped too (Luciano, 2026-10-05): the processor stays
+all combinational, and a program that divides runs at the divider's clock
+(~10-12 MHz). What stays is the measurements below and the measurement
+tools; section 3 keeps the co-processor options as they were discussed, in
+case the question comes back.
 
 The code that was built stays in the history of main: step 1 is commit
 e2ca31b, step 2 is commit 3fe1967 (`git show 3fe1967`), and the commit that
@@ -180,7 +184,10 @@ not proven.
   clock would need (it is 37 % of the base path), adds a cycle to every float
   operation: rejected.
 
-## 3. Options for the dividers alone (open)
+## 3. Options for the dividers alone (discussed, dropped)
+
+Dropped by Luciano on 2026-10-05, before any code: none of these is planned.
+Kept as they were weighed.
 
 The idea that replaced the pipeline: take the three dividers out of the ALU
 into one sequential block, a co-processor with a single iterative core
