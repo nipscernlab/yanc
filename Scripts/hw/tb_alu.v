@@ -74,8 +74,19 @@ endfunction
 reg signed [NUBITS-1:0] d1, d2;
 wire signed [NUBITS-1:0] dq, dr;
 
-ula_div #(NUBITS) dut_div (d1, d2, dq);
-ula_mod #(NUBITS) dut_mod (d1, d2, dr);
+ula_div #(NUBITS) dut_div (d1, d2, dq, 1'b0);
+ula_mod #(NUBITS) dut_mod (d1, d2, dr, 1'b0);
+
+// #PIPELN: the same operators split into STG register stages (div_array) must
+// give the reference after STG-1 clock edges with the operands held
+reg clk = 0; always #5 clk = ~clk;
+wire signed [NUBITS-1:0] dq2, dq3, dq5, dr2, dr3, dr5;
+ula_div #(NUBITS,2) dut_div2 (d1, d2, dq2, clk);
+ula_div #(NUBITS,3) dut_div3 (d1, d2, dq3, clk);
+ula_div #(NUBITS,5) dut_div5 (d1, d2, dq5, clk);
+ula_mod #(NUBITS,2) dut_mod2 (d1, d2, dr2, clk);
+ula_mod #(NUBITS,3) dut_mod3 (d1, d2, dr3, clk);
+ula_mod #(NUBITS,5) dut_mod5 (d1, d2, dr5, clk);
 
 // Verilog's own signed / and %. Division by zero is NOT checked: the operators
 // leave it undefined (x in simulation, whatever the inferred array gives in
@@ -208,6 +219,12 @@ initial begin
 			errs_div = errs_div + 1;
 			if (errs_div < 5) $display("  DIV/MOD %0d / %0d -> q=%0d r=%0d expected q=%0d r=%0d",
 			                           d1, d2, dq, dr, ref_div(d1, d2), ref_mod(d1, d2));
+		end
+		repeat (4) @(posedge clk); #1;                            // the deepest needs STG-1 = 4 edges
+		if ({dq2, dq3, dq5} !== {3{ref_div(d1, d2)}} || {dr2, dr3, dr5} !== {3{ref_mod(d1, d2)}}) begin
+			errs_div = errs_div + 1;
+			if (errs_div < 5) $display("  staged DIV/MOD %0d / %0d -> q=%0d %0d %0d r=%0d %0d %0d expected q=%0d r=%0d",
+			                           d1, d2, dq2, dq3, dq5, dr2, dr3, dr5, ref_div(d1, d2), ref_mod(d1, d2));
 		end
 	end
 

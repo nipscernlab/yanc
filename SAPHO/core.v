@@ -692,9 +692,11 @@ module core
 wire [5:0] id_ula_op;
 
 localparam integer LAT_FDIV = 5;                    // F_DIV (ula_op 7): measured, TODO.md item 19
+localparam integer LAT_DIV  = 6;                    //   DIV (ula_op 6)
+localparam integer LAT_MOD  = 6;                    //   MOD (ula_op 8)
 
 function integer lat(input [5:0] op);
-	lat = (PIPELN == 0) ? 1 : (op == 6'd7) ? LAT_FDIV : 1;
+	lat = (PIPELN == 0) ? 1 : (op == 6'd7) ? LAT_FDIV : (op == 6'd6) ? LAT_DIV : (op == 6'd8) ? LAT_MOD : 1;
 endfunction
 
 generate if (PIPELN != 0) begin : pause
@@ -903,6 +905,8 @@ ula #(.NUBITS (NUBITS ),
       .NUGAIN (NUGAIN ),
       .FROUND (FROUND ),
     .STG_FDIV ((PIPELN != 0) ? LAT_FDIV : 1),
+    .STG_DIV  ((PIPELN != 0) ? LAT_DIV  : 1),
+    .STG_MOD  ((PIPELN != 0) ? LAT_MOD  : 1),
         .ADD  (  ADD   |  S_ADD  ),
 	  .F_ADD  (F_ADD   | SF_ADD  ),
         .MLT  (  MLT   |  S_MLT  ),
