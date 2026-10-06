@@ -182,6 +182,12 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    "LEA"   eval_opcode(24); // load-effective-address; counts as 1 var (the target) + 1 synthetic constant (the materialised address)
 
+   /* the read of a division's result: the third word of `<div> x; NOP; <read>` */
+
+   "QUO"   eval_opcode( 0); // integer quotient of the division two words before
+   "REM"   eval_opcode( 0); // remainder of the division two words before
+ "F_QUO"   eval_opcode( 0); // float quotient of the division two words before
+
    "LOD_V" eval_opcode(22); //   LOD with constant offset
  "P_LOD_V" eval_opcode(22); // P_LOD with constant offset
    "SET_V" eval_opcode(22); //   SET with constant offset

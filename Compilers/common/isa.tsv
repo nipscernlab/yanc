@@ -158,6 +158,9 @@ LOD_V	1	offset	w	-	r	-	-	LOD with constant offset
 P_LOD_V	2	offset	rw	push	r	-	-	P_LOD with constant offset
 SET_V	5	offset	r	-	w	-	-	SET with constant offset
 ADD_V	20	offset	rw	-	r	-	-	ADD with constant offset
+QUO	24	none	w	-	-	-	-	integer quotient of the division two words before (alias of DIV, operand 0)
+REM	26	none	w	-	-	-	-	remainder of the division two words before (alias of MOD, operand 0)
+F_QUO	38	none	w	-	-	-	-	float quotient of the division two words before (alias of F_DIV, operand 0)
 F_ADD_V	30	offset	rw	-	r	-	-	F_ADD with constant offset
 MLT_V	22	offset	rw	-	r	-	-	MLT with constant offset
 F_MLT_V	36	offset	rw	-	r	-	-	F_MLT with constant offset

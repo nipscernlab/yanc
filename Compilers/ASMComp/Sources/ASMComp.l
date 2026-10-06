@@ -211,6 +211,13 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    "LEA"   eval_opcode(  1,24, yytext,    "LOD"  ); // load-effective-address: acc = &var (pseudo, expands to LOD <const>)
 
+   /* the read of a division's result: the third word of `<div> x; NOP; <read>`, */
+   /* an alias of the division's own opcode with operand 0 (docs/pipeln-and-division.md, section 4) */
+
+   "QUO"   eval_opcode( 24, 0, yytext,    "DIV"  ); // integer quotient of the division two words before
+   "REM"   eval_opcode( 26, 0, yytext,    "MOD"  ); // remainder of the division two words before
+ "F_QUO"   eval_opcode( 38, 0, yytext,  "F_DIV"  ); // float quotient of the division two words before
+
    "LOD_V" eval_opcode(  1,22, yytext,    "LOD"  ); //   LOD with constant offset
  "P_LOD_V" eval_opcode(  2,22, yytext,  "P_LOD"  ); // P_LOD with constant offset
    "SET_V" eval_opcode(  5,22, yytext,    "SET"  ); //   SET with constant offset

@@ -104,7 +104,15 @@ IRREGULAR = {
     'CAL':   ('-', '-', '-', 'call', '-'),
     'RET':   ('-', '-', '-', 'ret', '-'),
     'NOP':   ('-', '-', '-', '-', '-'),
+    # the reads of a division's result (docs/pipeln-and-division.md section 4):
+    # they write the accumulator and name no data word
+    'QUO':   ('w', '-', '-', '-', '-'),
+    'REM':   ('w', '-', '-', '-', '-'),
+    'F_QUO': ('w', '-', '-', '-', '-'),
 }
+# operand-less aliases of an opcode that has its own decode row in
+# instr_dec.v (the division it reads): they need no row of their own
+ALIASES = ('QUO', 'REM', 'F_QUO')
 
 
 def derive(mn, cls):
@@ -247,6 +255,8 @@ def main():
     for mn, (op, cls) in sorted(table.items()):
         if cls in ('lea', 'offset') or mn in decoded_in_core:
             continue                       # share a base opcode / decoded in core.v
+        if mn in ALIASES and any(table.get(r, (None,))[0] == op for r in rows):
+            continue                       # the division's row decodes it
         if mn not in rows:
             bad.append(f'{mn} (opcode {op}) has no row in instr_dec.v')
 

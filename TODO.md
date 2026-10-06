@@ -81,6 +81,11 @@ Open here, in the order they were queued:
   show the diff first);
 - the heap arena (item 13): 77 % of the C++ data memory, not started, needs a
   decision (a pragma or sizing from measured use).
+- a global named like a mnemonic breaks the assembly (seen 2026-10-05,
+  adding `QUO`/`REM`/`F_QUO`): globals reach the `.asm` unprefixed (`SET s`)
+  and the assembler lexes `ADD`, `OUT`, `REM`... as instructions. Nothing
+  guards it in cmmcomp (only `i` is reserved); not measured in cppcomp.
+  Needs a check (reject, or prefix the name) and a negative fixture.
 Parked by Luciano: reorganizing the runner/setup scripts and the dependency
 lists (seeing the code run in GTKWave is too valuable to drop). Not started:
 a macOS build in `release.yml`.
