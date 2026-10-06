@@ -66,10 +66,34 @@ C++ `<cstring>`, function-pointer initializers and `&f` fixed; the package
 is `SAPHO/` only (zip and tar checked, binaries say 5.7). Aurora v6.21.0
 ships yanc v5.6; the text for Aurora's bump to v5.7 (YANC_TAG, and what its
 AI prompt and answer key must now say about stack depths and C±
-recursion) is in `C:\tmp\aurora_yanc_v5.7.md`. Item 19 (2026-10-03 to
-10-05): a paused pipeline was built for the dividers, measured and dropped,
-and a dividers co-processor discussed and dropped; `SAPHO/` is back at
-954c853, all combinational (a program that divides runs at ~10-12 MHz).
+recursion) is in `C:\tmp\aurora_yanc_v5.7.md`.
+
+**2026-10-03 to 10-06 (item 19, not released).** A paused pipeline was
+built for the dividers, measured and dropped; a dividers co-processor was
+discussed and dropped. What stayed (a862a9e, with the aliases of 3637b60):
+each divider cut by two registers, every division written by the compilers
+as `<div> x; NOP; <read>` (`QUO`/`REM`/`F_QUO`); everything else is still
+one combinational cycle. Record: `docs/pipeln-and-division.md`. Next here,
+in this order:
+- **time it** (heavy: Quartus/Vivado use every core, 20 min to 2 h a fit;
+  Luciano works on a laptop, so on mains power only): after
+  `Scripts/regress.sh`, `bash Scripts/hw/fmax.sh sapho_all` and
+  `bash Scripts/hw/vfmax.sh sapho_all`. Before: 10.66 MHz (Cyclone V),
+  8.97 MHz (Zynq-7010), worst path through `F_DIV`. Expected (estimate):
+  the worst path becomes `F_ADD` (44.4 ns, ~21.5 MHz on the Cyclone V) or
+  a divider part if the ~31-33 ns per part is off. Compare a few seeds
+  (`SEED=n TAG=sN`). Record the numbers in the doc's section 4, the
+  CHANGELOG entry and this paragraph;
+- refresh `Compilers/CMMComp/Tests/size_baseline.txt` in its own commit:
+  it lists 19 programs of the 68 and most values are above today's sizes
+  (`bash Scripts/regress.sh --update-size`, then check the diff is only
+  ratchets down and new rows);
+- for the next release, the Aurora text (`C:\tmp\aurora_yanc_<ver>.md`)
+  must say: the ISA gained `QUO`/`REM`/`F_QUO`; a hand-written `.asm`
+  must write every division as `<div> x; NOP; <read>` (asmcomp rejects it
+  otherwise); a program that divides takes 2 more words and cycles per
+  division, so cycle counts and fixed-budget outputs move.
+
 Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
   item (the strength-reduction candidate was measured and dropped);
