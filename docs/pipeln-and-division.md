@@ -10,7 +10,10 @@ discussed next and dropped too (Luciano, 2026-10-05): the processor stays
 all combinational, and a program that divides runs at the divider's clock
 (~10-12 MHz). What stays is the measurements below and the measurement
 tools; section 3 keeps the co-processor options as they were discussed, in
-case the question comes back.
+case the question comes back. Section 4 is a candidate for the dividers
+worked out afterwards, on paper only: two register cuts inside the divider and a
+fixed three-instruction sequence from asmcomp, with no pause and no new
+circuit outside the dividers.
 
 The code that was built stays in the history of main: step 1 is commit
 e2ca31b, step 2 is commit 3fe1967 (`git show 3fe1967`), and the commit that
@@ -265,7 +268,132 @@ Any of the three changes the cycle count of every program that divides, so
 the goldens of the fixtures with a fixed clock budget, the C++ `.clocks`
 sidecars and Aurora's cycle counts move once.
 
-## 4. Tools kept from this work
+## 4. A candidate for the dividers: two cuts and a sequence from asmcomp (theory)
+
+Worked out with Luciano on 2026-10-05, after everything above was dropped.
+Nothing is built or simulated; every number is an estimate from the
+step 1 delays (Cyclone V: ~2.6 ns before the array, ~3.1 ns a row, ~11.3 ns
+after it). He considers it a clean candidate for the `F_DIV` problem.
+
+**Where to cut.** The `F_DIV` path of `sapho_all` is 91.8 ns (measured; ~94
+by the sum above): data memory -> operand select -> 26-row restoring array
+(`#FROUND 2`, 32 bits) -> slice -> normaliser -> ALU mux -> jump decision ->
+PC. The next path, `F_ADD`, is 44.4 ns. One cut cannot bring both halves
+under it (two halves of at most 44.4 ns add up to 88.8 < 94), so **two cuts,
+both inside `ula_fdiv`**, three parts of ~31-33 ns:
+
+| part | contents | estimate |
+|---|---|---|
+| 1 | memory + operand select + rows 0-8 | ~30.5 ns |
+| cut 1, before row 9 | | |
+| 2 | rows 9-18 | ~31 ns |
+| cut 2, before row 19 | | |
+| 3 | rows 19-25 + slice + normaliser + ALU mux + jump + PC | ~33 ns |
+
+The slack under 44.4 ns covers each cut's own cost (register and routing,
+not negligible: section 2). The cut rows follow the width: rows R = 23 / 24 /
+26 at `#FROUND` 0 / 1 / 2 (32 bits), cut s at about
+(s x (PRE + R x row + POST) / 3 - PRE) / row, as `first_row()` computed in
+3fe1967; the number of cuts stays two.
+
+**What each cut registers.** Without a pause the core does not hold the
+operands: in the two cycles after `F_DIV`, `in1` is what the data memory gives
+the next instructions and `in2` is the accumulator, already overwritten. So
+everything the later parts use travels with the data, a plain pipeline: the
+partial remainder (24 bits), the quotient bits found so far (up to 26), the
+divisor (23), and the result's sign (1), exponent (10) and divide-by-zero
+flag (1), the last three computed once in part 1. ~85 flip-flops a cut.
+On an FPGA they take the flip-flops next to the LUTs, mostly idle: in step 1
+four cuts in `F_DIV` left the area unchanged (1552 -> 1524 ALMs).
+
+**The sequence.** asmcomp writes every `F_DIV x` as
+
+```
+F_DIV x     ; cycle t:   part 1 with the right operands
+NOP         ; cycle t+1: part 2
+GDV         ; cycle t+2: part 3; the result reaches the accumulator
+```
+
+`GDV` is an **assembler alias of `F_DIV`** (same opcode, as `LOD`, `LEA` and
+`LOD_V` share opcode 1), written for readability, with any data address as
+its operand. It works because the ALU, executing an `F_DIV` at t+2, shows
+part 3's output, which is the first division's result; the division `GDV`
+itself starts (from the overwritten accumulator) is never read. The
+accumulator receives garbage at t and t+1, which does no harm: part 1
+consumed the operands at t. The instruction after `GDV` sees the result
+through `ula_out` in the same cycle, as today (`SET`, `JIZ` right after
+work). A following division reads the result from the accumulator at t+3.
+The stack form cannot be repeated (it would pop again): `SF_DIV; NOP; GDV`,
+with `GDV` the memory form; a program that only had `SF_DIV` then also gets
+the `F_DIV` decode row (small; the divider is shared by both forms).
+
+- circuit outside `ula_fdiv`: none (no decoder row, no flip-flop, no mux);
+- ISA: unchanged (one alias in asmcomp); cmmcomp and cppcomp unchanged;
+  asmcomp also expands the hand-written `Includes/*.asm` (`float_sqrt.asm`
+  has 4 `F_DIV`s);
+- cost: 3 cycles and 3 program words per `F_DIV`; the cycle counts of the
+  fixtures with `F_DIV`, the C++ `.clocks` sidecars and Aurora's numbers move
+  once.
+
+Two other ways to deliver the result were weighed and are worse: two
+flip-flops remembering "an `F_DIV` two cycles ago" that force the ALU mux to
+the divider at t+2 (plain `NOP`s, but new logic in the core), or a new opcode
+(a decoder row and an ISA change).
+
+**The interrupt.** Today's interrupt is a level-sensitive restart to
+`ITRADD` with no return (`docs/hdl-architecture-audit.md` 1.1): an
+interrupted division is never resumed, so it does not matter that it is
+lost, and with the alias nothing writes the accumulator behind the handler's
+back. Nothing to do. Holding the interrupt off for the two cycles would be
+wrong today (a short level would be lost: nothing latches it). If the
+interrupt becomes a real one (edge latched, PC saved, return), the
+sequence must not be split: hold it off from `F_DIV` to `GDV` then.
+
+**`DIV` and `MOD`: one shared circuit, the same treatment.** Every operation
+above the `F_ADD` path (44.4 ns in `sapho_all`) is a divider: with the
+dividers taken out of the timing analysis, `F_ADD` is the worst path left,
+and in the per-operator table nothing else is above its factor 1.59
+(`F_MLT` 1.26 is the next). `F_ADD` itself runs too often to cut. So the
+idea covers exactly `F_DIV`, `DIV` and `MOD`.
+
+`DIV` and `MOD` share one restoring array on the operands' magnitudes: the
+quotient comes out of the rows, the remainder is what the last row leaves.
+Two cuts (32 rows of 33 bits, 87 ns, no normaliser after it: parts of
+~29-31 ns): part 1 takes the magnitudes and the first rows, part 3 the last
+rows and the sign fix (the quotient negated when the signs differ, the
+remainder with the dividend's sign). Each cut carries the partial
+remainder, the quotient bits so far, the divisor magnitude and both signs.
+Part 3 drives the ALU's existing `div` and `mod` inputs; `INT_MIN / -1`
+wraps by itself (as in 3fe1967). Today they are Verilog `/` and `%`, which
+cannot be cut: the explicit array is needed.
+
+The **third instruction chooses** quotient or remainder, by its ALU code (6
+or 8), so the first one only starts the shared circuit:
+
+```
+DIV x ; NOP ; <alias of DIV>   -> quotient
+MOD x ; NOP ; <alias of MOD>   -> remainder
+```
+
+The quotient and the remainder of the same division cannot both be read
+from one sequence (the cut registers load something new every cycle); a
+program that needs both runs it twice.
+
+**Aliases: one per operation, three in all** (an alias of `F_DIV`, of `DIV`
+and of `MOD`), not one per instruction: the read always uses the memory
+form, since repeating a stack form (`SF_DIV`, `S_DIV`, `S_MOD`) would pop
+again. `F_DIV` keeps its own array: through the 32-row integer one it would
+get longer (23-26 rows of 24 bits today) and need an input mux.
+
+**Left out.** At `#FROUND 0` the `F_ADD` path is shorter and whether
+`F_MLT` then passes it was not measured; at narrower widths the dividers
+shrink faster than the adder (fewer and shorter rows), expected to stay
+above it (deduced). To verify before trusting it: a fit of `sapho_all` with
+the cuts (placement moves every number), a cycle-by-cycle simulation of the
+sequences, back-to-back divisions, the stack forms, and every `#FROUND`
+level against `tb_fdiv.v` (and `tb_alu.v` for `DIV`/`MOD`).
+
+## 5. Tools kept from this work
 
 - `Scripts/hw/fmax.sh`: `SEED=<n>` (compare a change across seeds: one fit
   is off by a few per cent);

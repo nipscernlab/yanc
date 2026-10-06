@@ -19,7 +19,10 @@ code that never runs) is closed (2026-10-02): see the CHANGELOG. Item 19
 (the slow dividers) is closed (2026-10-05) without a change: a paused
 pipeline was built and dropped, a dividers co-processor discussed and
 dropped, the processor stays combinational; the record is in
-[`docs/pipeln-and-division.md`](docs/pipeln-and-division.md). Item 11,
+[`docs/pipeln-and-division.md`](docs/pipeln-and-division.md), whose section
+4 notes a candidate for the dividers worked out on paper (two cuts inside
+each divider, `DIV`/`MOD` sharing one, `F_DIV x; NOP; <alias>` from
+asmcomp, no circuit outside them). Item 11,
 consistency at 32 bits, is closed (2026-09-21): see the CHANGELOG for its
 four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
