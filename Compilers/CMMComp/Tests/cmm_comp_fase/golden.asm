@@ -19,6 +19,8 @@ F_LES main_c
 JIZ Lfa1a
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -35,6 +37,8 @@ F_LES 0.0
 JIZ Lfa1c
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa1z
 @Lfa1c LOD main_c_i
@@ -60,6 +64,8 @@ F_LES main_c
 JIZ Lfa2a
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -76,6 +82,8 @@ F_LES 0.0
 JIZ Lfa2c
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa2z
 @Lfa2c LOD main_c_i
@@ -101,6 +109,8 @@ F_LES main_c
 JIZ Lfa3a
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -117,6 +127,8 @@ F_LES 0.0
 JIZ Lfa3c
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa3z
 @Lfa3c LOD main_c_i
@@ -142,6 +154,8 @@ F_LES main_c
 JIZ Lfa4a
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -158,6 +172,8 @@ F_LES 0.0
 JIZ Lfa4c
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa4z
 @Lfa4c LOD main_c_i
@@ -183,6 +199,8 @@ F_LES main_c
 JIZ Lfa5a
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -199,6 +217,8 @@ F_LES 0.0
 JIZ Lfa5c
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa5z
 @Lfa5c LOD main_c_i
@@ -224,6 +244,8 @@ F_LES main_c
 JIZ Lfa6a
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -240,6 +262,8 @@ F_LES 0.0
 JIZ Lfa6c
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa6z
 @Lfa6c LOD main_c_i
@@ -265,6 +289,8 @@ F_LES main_c
 JIZ Lfa7a
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -281,6 +307,8 @@ F_LES 0.0
 JIZ Lfa7c
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa7z
 @Lfa7c LOD main_c_i
@@ -306,6 +334,8 @@ F_LES main_c
 JIZ Lfa8a
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -322,6 +352,8 @@ F_LES 0.0
 JIZ Lfa8c
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa8z
 @Lfa8c LOD main_c_i
@@ -347,6 +379,8 @@ F_LES main_c
 JIZ Lfa9a
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -363,6 +397,8 @@ F_LES 0.0
 JIZ Lfa9c
 LOD main_c
 F_DIV main_c_i
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa9z
 @Lfa9c LOD main_c_i
@@ -396,6 +432,8 @@ JMP Lwh1
             JIZ   L_atan_small
             LOD   atan_ax                // big branch: t = 1/ax
             F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
+NOP
+F_QUO
             JMP   L_atan_haveT
 @L_atan_small LOD atan_ax               // small branch: t = ax
 @L_atan_haveT SET atan_t

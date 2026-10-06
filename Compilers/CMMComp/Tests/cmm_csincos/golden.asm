@@ -27,6 +27,8 @@ NOP
 CAL float_exp
 SET csin_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET csin_emb
 F_ADD csin_eb
 F_MLT 0.5
@@ -57,6 +59,8 @@ LOD 1.000000
 CAL float_exp
 SET ccos_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET ccos_emb
 F_ADD ccos_eb
 F_MLT 0.5
@@ -91,6 +95,8 @@ SET main_z_i
 CAL float_exp
 SET csin_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET csin_emb
 F_ADD csin_eb
 F_MLT 0.5
@@ -124,6 +130,8 @@ SET main_z_i
 CAL float_exp
 SET ccos_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET ccos_emb
 F_ADD ccos_eb
 F_MLT 0.5
@@ -169,6 +177,8 @@ LOD csin_b
 CAL float_exp
 SET csin_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET csin_emb
 F_ADD csin_eb
 F_MLT 0.5

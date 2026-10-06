@@ -107,6 +107,8 @@ JMP Lwh1
             JIZ   L_tan_done             // a <= pi/4 -> tan = P
             LOD   tan_p                  // a > pi/4  -> tan = 1/P  (cotangent)
             F_DIV 1.0                    // 1.0 / P   (F_DIV X = X/acc)
+NOP
+F_QUO
             JMP   L_tan_sign
 @L_tan_done LOD  tan_p
 @L_tan_sign F_SGN tan_r                  // tan is odd -> apply the sign of r

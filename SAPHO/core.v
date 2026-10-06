@@ -902,7 +902,7 @@ ula #(.NUBITS (NUBITS ),
 	  .F_SU2  (F_SU2   | SF_SU2  ),
 	  .F_SCL  (F_SCL   | SF_SCL  ),
 	  .XPO    (XPO              ),
-	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out);
+	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out, clk);
 
 assign sp_in = ula_out;
 

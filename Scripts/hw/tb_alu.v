@@ -74,24 +74,20 @@ endfunction
 reg signed [NUBITS-1:0] d1, d2;
 wire signed [NUBITS-1:0] dq, dr;
 
-ula_div #(NUBITS) dut_div (d1, d2, dq);
-ula_mod #(NUBITS) dut_mod (d1, d2, dr);
+// one divider for both (ula_idiv): three cycles, a new pair may enter every
+// cycle, the results come out two cycles later -- as QUO / REM read them
+reg clk = 0; always #5 clk = ~clk;
+ula_idiv #(NUBITS) dut_idiv (d1, d2, dq, dr, clk);
+reg signed [NUBITS-1:0] hq [0:1], hr [0:1], h1 [0:1], h2 [0:1];   // expected, oldest first
 
-// Verilog's own signed / and %. Division by zero is NOT checked: the operators
-// leave it undefined (x in simulation, whatever the inferred array gives in
-// hardware) and so does the ALU today -- see the audit's table of undefined
-// behaviours. Defining it is not free: a ternary around `/` and `%` costs +80 %
-// LUT4 on a processor that uses both, because it stops the synthesiser from
-// sharing one divider between them, and an unsigned operand in that ternary
-// silently turns the division UNSIGNED (Verilog makes the whole expression
-// unsigned), which is wrong for negative dividends. It has to come from one
-// explicit array that yields quotient and remainder together.
+// The reference: Verilog's own signed / and %. Division by zero is NOT
+// checked: it stays undefined (the array gives an all-ones quotient, TODO
+// 10.5) -- see the audit's table of undefined behaviours.
 //
-// The reference below is a procedural signed divide, which Icarus 13 computes
+// The reference is a procedural signed divide, which Icarus 13 computes
 // correctly up to 64 bits -- the widest format run here. Above 64 bits it does
-// not (a few quotients differ in their low 32 bits), while the continuous signed
-// divide ula_div uses stays right at any width; so a wider format needs another
-// reference. Never use an unsigned `/` in a check: Icarus gets it wrong from
+// not (a few quotients differ in their low 32 bits), so a wider format needs
+// another reference. Never use an unsigned `/` in a check: Icarus gets it wrong from
 // 36 bits up in a continuous assign and from 64 bits up in a procedural one
 // (measured with a Python bigint oracle, 3000 vectors per width).
 function signed [NUBITS-1:0] ref_div;
@@ -195,20 +191,25 @@ initial begin
 		end
 	end
 
-	// DIV / MOD: random operands, the zero divisor, and the signed edges
-	for (k = 0; k < N; k = k + 1) begin
+	// DIV / MOD: random operands, the zero divisor, and the signed edges; a new
+	// pair every cycle, each result checked two cycles later
+	for (k = 0; k < N + 2; k = k + 1) begin
 		d1 = rnd(0);
 		d2 = rnd(0);
 		if (d2 == 0) d2 = {{(NUBITS-1){1'b0}}, 1'b1};             // by zero is undefined: skip it
 		if (k % 7 == 0) d2 = {{(NUBITS-1){1'b0}}, 1'b1};          // by 1
 		if (k % 11 == 0) d1 = {1'b1, {(NUBITS-1){1'b0}}};         // most negative dividend
 		if (k % 13 == 0) begin d1 = {1'b1, {(NUBITS-1){1'b0}}}; d2 = {NUBITS{1'b1}}; end // INT_MIN / -1
+		if (k >= N) begin d1 = rnd(0); d2 = 1; end                     // the last two out
 		#1;
-		if (dq !== ref_div(d1, d2) || dr !== ref_mod(d1, d2)) begin
+		if (k >= 2 && (dq !== hq[0] || dr !== hr[0])) begin
 			errs_div = errs_div + 1;
 			if (errs_div < 5) $display("  DIV/MOD %0d / %0d -> q=%0d r=%0d expected q=%0d r=%0d",
-			                           d1, d2, dq, dr, ref_div(d1, d2), ref_mod(d1, d2));
+			                           h1[0], h2[0], dq, dr, hq[0], hr[0]);
 		end
+		hq[0] = hq[1]; hr[0] = hr[1]; h1[0] = h1[1]; h2[0] = h2[1];
+		hq[1] = ref_div(d1, d2); hr[1] = ref_mod(d1, d2); h1[1] = d1; h2[1] = d2;
+		@(posedge clk);
 	end
 
 	// F2I: random words, with a sweep of the exponent field

@@ -126,6 +126,8 @@ LOD 0
 SET main_k
 @Lwh9 LOD 3
 MOD main_k
+NOP
+REM
 P_LOD 0
 S_XOR
 JIZ Lwh9cont

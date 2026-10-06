@@ -1,19 +1,17 @@
-# The slow operators: what was tried for a faster clock, and dropped
+# The slow dividers: what was tried for a faster clock, and what stayed
 
 Record of TODO item 19 (2026-10-03 to 2026-10-05). The goal was a higher
 clock for programs that use the slow ALU operators. A paused pipeline was
 designed, built for the three dividers and measured on two FPGA families;
 Luciano then dropped it (2026-10-05) and `SAPHO/` went back to the processor
-before it (commit 954c853). **Nothing of what is described here is in
-`SAPHO/` today.** A co-processor for the dividers alone (section 3) was
-discussed next and dropped too (Luciano, 2026-10-05): the processor stays
-all combinational, and a program that divides runs at the divider's clock
-(~10-12 MHz). What stays is the measurements below and the measurement
-tools; section 3 keeps the co-processor options as they were discussed, in
-case the question comes back. Section 4 is a candidate for the dividers
-worked out afterwards, on paper only: two register cuts inside the divider and a
-fixed three-instruction sequence from asmcomp, with no pause and no new
-circuit outside the dividers.
+before it (commit 954c853); **nothing of section 2 is in `SAPHO/` today.** A
+co-processor for the dividers alone (section 3) was discussed next and
+dropped too, before any code. **Section 4 is what stayed** (2026-10-06): two
+register cuts inside each divider and a fixed three-word sequence written by
+the compilers, with no pause and no new circuit outside the dividers; every
+other operation is still combinational, one cycle. Sections 1-3 keep the
+measurements and the options as they were weighed, in case the question
+comes back.
 
 The code that was built stays in the history of main: step 1 is commit
 e2ca31b, step 2 is commit 3fe1967 (`git show 3fe1967`), and the commit that
@@ -268,12 +266,14 @@ Any of the three changes the cycle count of every program that divides, so
 the goldens of the fixtures with a fixed clock budget, the C++ `.clocks`
 sidecars and Aurora's cycle counts move once.
 
-## 4. A candidate for the dividers: two cuts and a sequence from asmcomp (theory)
+## 4. The dividers: two cuts and a three-word sequence (implemented)
 
-Worked out with Luciano on 2026-10-05, after everything above was dropped.
-Nothing is built or simulated; every number is an estimate from the
-step 1 delays (Cyclone V: ~2.6 ns before the array, ~3.1 ns a row, ~11.3 ns
-after it). He considers it a clean candidate for the `F_DIV` problem.
+Worked out with Luciano on 2026-10-05, after everything above was dropped,
+and implemented on 2026-10-06 (`QUO`/`REM`/`F_QUO` in 3637b60, the rest in
+the commit after it). The delays below are estimates from the step 1
+measurements (Cyclone V: ~2.6 ns before the array, ~3.1 ns a row, ~11.3 ns
+after it); the clock actually gained is still to be measured with a fit of
+`sapho_all`.
 
 **Where to cut.** The `F_DIV` path of `sapho_all` is 91.8 ns (measured; ~94
 by the sum above): data memory -> operand select -> 26-row restoring array
@@ -306,31 +306,40 @@ flag (1), the last three computed once in part 1. ~85 flip-flops a cut.
 On an FPGA they take the flip-flops next to the LUTs, mostly idle: in step 1
 four cuts in `F_DIV` left the area unchanged (1552 -> 1524 ALMs).
 
-**The sequence.** asmcomp writes every `F_DIV x` as
+**The sequence.** Every `F_DIV x` becomes
 
 ```
 F_DIV x     ; cycle t:   part 1 with the right operands
 NOP         ; cycle t+1: part 2
-GDV         ; cycle t+2: part 3; the result reaches the accumulator
+F_QUO       ; cycle t+2: part 3; the result reaches the accumulator
 ```
 
-`GDV` is an **assembler alias of `F_DIV`** (same opcode, as `LOD`, `LEA` and
-`LOD_V` share opcode 1), written for readability, with any data address as
-its operand. It works because the ALU, executing an `F_DIV` at t+2, shows
-part 3's output, which is the first division's result; the division `GDV`
-itself starts (from the overwritten accumulator) is never read. The
+`F_QUO` is an **assembler alias of `F_DIV`** (same opcode, as `LOD`, `LEA`
+and `LOD_V` share opcode 1) with no operand (operand field 0), named for what
+it delivers; `QUO` and `REM` are the aliases of `DIV` and `MOD`. It works
+because the ALU, executing an `F_DIV` at t+2, shows part 3's output, which is
+the first division's result; the division `F_QUO` itself starts (from the
+overwritten accumulator and data word 0) is never read. The
 accumulator receives garbage at t and t+1, which does no harm: part 1
-consumed the operands at t. The instruction after `GDV` sees the result
+consumed the operands at t. The instruction after `F_QUO` sees the result
 through `ula_out` in the same cycle, as today (`SET`, `JIZ` right after
 work). A following division reads the result from the accumulator at t+3.
-The stack form cannot be repeated (it would pop again): `SF_DIV; NOP; GDV`,
-with `GDV` the memory form; a program that only had `SF_DIV` then also gets
-the `F_DIV` decode row (small; the divider is shared by both forms).
+The stack form cannot be repeated (it would pop again): `SF_DIV; NOP;
+F_QUO`, `F_QUO` decoding as the memory form; a program that only had
+`SF_DIV` then also gets the `F_DIV` decode row (small; the divider is shared
+by both forms).
 
-- circuit outside `ula_fdiv`: none (no decoder row, no flip-flop, no mux);
-- ISA: unchanged (one alias in asmcomp); cmmcomp and cppcomp unchanged;
-  asmcomp also expands the hand-written `Includes/*.asm` (`float_sqrt.asm`
-  has 4 `F_DIV`s);
+- circuit outside the dividers: none (no decoder row, no flip-flop, no
+  mux); the ALU gets a clock for their cuts;
+- who writes the sequence: a pass shared by both compilers, `asm_divseq`
+  (`Compilers/common/asm_share.c`), right after `asm_reach`. It has to run
+  before appcomp, which counts the words that become every label's address,
+  and next to the pc map the compilers write (the waveform's line view
+  repeats the division's line). It covers the macros (`Includes/*.asm`,
+  `float_sqrt.asm` has 4 `F_DIV`s) and C++ inline assembly, leaves a
+  division already followed by its sequence alone, and asmcomp rejects a
+  division that is not (a hand-written `.asm` must write it out);
+- ISA: unchanged but for the three aliases;
 - cost: 3 cycles and 3 program words per `F_DIV`; the cycle counts of the
   fixtures with `F_DIV`, the C++ `.clocks` sidecars and Aurora's numbers move
   once.
@@ -347,7 +356,7 @@ lost, and with the alias nothing writes the accumulator behind the handler's
 back. Nothing to do. Holding the interrupt off for the two cycles would be
 wrong today (a short level would be lost: nothing latches it). If the
 interrupt becomes a real one (edge latched, PC saved, return), the
-sequence must not be split: hold it off from `F_DIV` to `GDV` then.
+sequence must not be split: hold it off from the division to its read then.
 
 **`DIV` and `MOD`: one shared circuit, the same treatment.** Every operation
 above the `F_ADD` path (44.4 ns in `sapho_all`) is a divider: with the

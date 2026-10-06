@@ -8,6 +8,31 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **The dividers take three cycles, and stop setting the clock.** `DIV`,
+  `MOD` and `F_DIV` were ~5x the base processor's longest path (the
+  `sapho_all` worst path, 91.8 ns, went through `F_DIV`): a program that
+  divided ran at ~10-12 MHz. Each divider is now a restoring array cut by
+  two registers into three parts of ~30 ns (estimated), under the `F_ADD`
+  path; `DIV` and `MOD` share one array (`ula_idiv`). Nothing in the core
+  waits: both compilers write every division as `<div> x; NOP; <read>`
+  (`asm_divseq`, `Compilers/common/asm_share.c`, after `asm_reach`), and the
+  read -- `QUO`, `REM` or `F_QUO`, aliases of the division's own opcode with
+  no operand -- finds the result two cycles later. The macros
+  (`float_sqrt.asm` and the others) and C++ inline assembly get it too; the
+  pc map behind the waveform repeats the division's line. asmcomp rejects a
+  division not followed by `NOP` and its read (a hand-written `.asm` must
+  write it out). Cost: two more words and two more cycles per division; the
+  fixtures that run until the testbench's clock budget ends print fewer
+  lines, each new output a prefix of the old one (checked, 17 fixtures).
+  `INT_MIN / -1` still wraps; a zero divisor now gives the array's
+  all-ones quotient instead of `x` (still undefined, TODO 10.5). The clock
+  gained is to be measured. Design and history:
+  `docs/pipeln-and-division.md` section 4.
+
+### Added
+- `QUO`, `REM`, `F_QUO` in the assembler (the reads above).
+
 ## [v5.7] – 2026-10-03
 
 ### Added

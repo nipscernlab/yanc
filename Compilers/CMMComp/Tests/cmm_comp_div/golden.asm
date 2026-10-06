@@ -28,6 +28,8 @@ F_MLT main_y_i
 SF_ADD
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 P_LOD main_x_i
 F_MLT main_y
 P_LOD main_x
@@ -35,6 +37,8 @@ F_MLT main_y_i
 SF_SU2
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 SET_P main_r_i
 SET main_r
 F2I_M main_r
@@ -61,6 +65,8 @@ F_MLT main_y_i
 SF_ADD
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 P_LOD main_x_i
 F_MLT main_y
 P_LOD main_x
@@ -68,6 +74,8 @@ F_MLT main_y_i
 SF_SU2
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 SET_P main_r_i
 SET main_r
 F2I_M main_r
@@ -94,6 +102,8 @@ F_MLT main_y_i
 SF_ADD
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 P_LOD main_x_i
 F_MLT main_y
 P_LOD main_x
@@ -101,6 +111,8 @@ F_MLT main_y_i
 SF_SU2
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 SET_P main_r_i
 SET main_r
 F2I_M main_r

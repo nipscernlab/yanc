@@ -751,6 +751,105 @@ done:
     return removed;
 }
 
+// ---- asm_divseq: every division becomes `<div> x; NOP; <read>` ----------------------
+// See asm_share.h.
+
+// the read that goes with a division mnemonic, NULL if it is not one
+static const char *div_read(const char *mn)
+{
+    if (strcmp(mn,   "DIV") == 0 || strcmp(mn,  "S_DIV") == 0) return "QUO";
+    if (strcmp(mn,   "MOD") == 0 || strcmp(mn,  "S_MOD") == 0) return "REM";
+    if (strcmp(mn, "F_DIV") == 0 || strcmp(mn, "SF_DIV") == 0) return "F_QUO";
+    return NULL;
+}
+
+// the mnemonic of a line, after its labels ("" if the line holds no instruction)
+static void line_mnemonic(const char *text, char *mn, size_t cap)
+{
+    const char *p   = text;
+    const char *end = strstr(text, "//");
+    if (!end) end = text + strlen(text);
+    mn[0] = 0;
+    for (;;)
+    {
+        while (p < end && isspace((unsigned char)*p)) p++;
+        if (p >= end) return;
+        const char *t = p;
+        while (p < end && !isspace((unsigned char)*p)) p++;
+        if (*t == '@') continue;                          // a label: the instruction follows
+        if (*t == '#') return;                            // a directive
+        snprintf(mn, cap, "%.*s", (int)(p - t), t);
+        return;
+    }
+}
+
+int asm_divseq(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+    if (pc_path && (f = fopen(pc_path, "r"))) { read_lines(f, &pc); fclose(f); }
+
+    // the instruction each line holds (-1: none), and which divisions to expand
+    int  *ins_of = malloc((lines.n + 1) * sizeof(int));
+    char (*mn)[32] = malloc((lines.n + 1) * sizeof(*mn));
+    int   n = 0;
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        line_mnemonic(lines.s[ln], mn[ln], sizeof(mn[ln]));
+        ins_of[ln] = mn[ln][0] ? n++ : -1;
+    }
+    char *expand = calloc(n + 1, 1);
+    int   added = 0, added_pc = 0;
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        const char *rd = ins_of[ln] >= 0 ? div_read(mn[ln]) : NULL;
+        if (!rd) continue;
+        int l1 = ln + 1, l2;                              // already followed by NOP and its read: leave it
+        while (l1 < lines.n && ins_of[l1] < 0) l1++;
+        l2 = l1 + 1;
+        while (l2 < lines.n && ins_of[l2] < 0) l2++;
+        if (l2 < lines.n && strcmp(mn[l1], "NOP") == 0 && strcmp(mn[l2], rd) == 0) continue;
+        expand[ins_of[ln]] = 1;
+        added += 2;
+        if (ins_of[ln] < pc.n) added_pc += 2;
+    }
+    if (added == 0) goto done;
+
+    f = fopen(asm_path, "w");
+    if (!f) { added_pc = -1; goto done; }
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        const char *text = lines.s[ln];
+        fputs(text, f);
+        if (ins_of[ln] < 0 || !expand[ins_of[ln]]) continue;
+        size_t k = strlen(text);
+        if (k == 0 || text[k - 1] != '\n') fputc('\n', f);
+        fprintf(f, "NOP\n%s\n", div_read(mn[ln]));
+    }
+    fclose(f);
+
+    if (pc.n > 0 && added_pc > 0)                         // the source line of a division, twice more
+    {
+        f = fopen(pc_path, "w");
+        if (!f) { added_pc = -1; goto done; }
+        for (int i = 0; i < pc.n; i++)
+        {
+            fputs(pc.s[i], f);
+            if (expand[i]) { fputs(pc.s[i], f); fputs(pc.s[i], f); }
+        }
+        fclose(f);
+    }
+    printf("Info: %d divisions take three words each (%d added)\n", added / 2, added);
+
+done:
+    free(expand); free(mn); free(ins_of);
+    st_free(&lines); st_free(&pc);
+    return added_pc;
+}
+
 // ---- asm_depth: how deep the two stacks get -----------------------------------------
 // See asm_share.h. A routine is the code a CAL target reaches until its RETs
 // (plus the entry at address 0 and the interrupt point). For each one, once

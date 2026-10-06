@@ -561,27 +561,187 @@ assign out = {s_out, e_out, m_out};
 
 endmodule
 
-// DIV - fixed-point division -------------------------------------------------
+// dividers -------------------------------------------------------------------
+// DIV, MOD and F_DIV are the longest paths of the processor (~5x the base's,
+// docs/pipeln-and-division.md). Each divider is a restoring array cut by two
+// registers into three parts of about the same delay, so it takes three
+// cycles and every other path keeps its one: the compilers write each
+// division as `<div> x; NOP; <read>` (Compilers/common asm_divseq), and the
+// third word, QUO / REM / F_QUO (an alias of the division's own opcode),
+// finds the first one's result at the end of the array. Nothing waits: the
+// cuts carry with the data everything the later parts need, so the inputs may
+// change every cycle.
 
-module ula_div
+// restoring divider array ----------------------------------------------------
+// One row per quotient bit: the partial remainder shifts left taking the next
+// dividend bit, the divisor is subtracted, and the row keeps the difference
+// when there is no borrow (quotient bit 1). The remainder entering the array
+// (r0) and the one leaving it (rem) are below the divisor d.
+//
+// The rows split into STG groups with a register in front of each group but
+// the first: the remainder, the quotient bits found so far, the divisor, the
+// dividend bits and `side` (what the caller needs at the end, computed from
+// the inputs of the first cycle) travel together, one group a cycle; q, rem
+// and side_o are the inputs' of STG-1 cycles before. PRE10/POST10 are the
+// logic in the same register-to-register path before the array (data memory
+// read, operand select, magnitudes) and after it (slice, sign, normaliser,
+// ALU output mux, jump decision, PC), in tenths of a row: the first and last
+// groups are shorter, they share their cycle with it.
+
+module div_array
 #(
-	parameter NUBITS = 32
+	parameter N      = 23,                                    // divisor bits
+	parameter R      = 24,                                    // rows = quotient bits
+	parameter S      =  1,                                    // side bits
+	parameter STG    =  3,                                    // cycles it takes
+	parameter PRE10  =  8,
+	parameter POST10 = 36
 )(
-	 input signed [NUBITS-1:0] in1, in2,
-	output signed [NUBITS-1:0] out
+	 input [N  :0] r0,                                        // remainder entering row 0 (< d)
+	 input [R-1:0] nb,                                        // dividend bit each row takes, nb[R-1] in row 0
+	 input [N-1:0] d,                                         // divisor
+	 input [S-1:0] side,                                      // carried along, untouched
+	output [R-1:0] q,                                         // quotient, q[R-1] from row 0
+	output [N  :0] rem,                                       // final remainder (< d)
+	output [S-1:0] side_o,
+	 input         clk
 );
 
-// INT_MIN / -1 is the one signed quotient that does not fit in NUBITS bits.
-// Verilog defines it as the wrapped result (INT_MIN), which is what Icarus
-// computes and what every other YANC integer operator does on overflow. The
-// C++ simulator disagreed: its runtime guards the host divide trap and
-// yielded 0, so the same program printed different numbers under the two
-// simulators. Name the case here so both -- and synthesis -- agree (TODO 11a).
-// (Do not start a comment line with the simulator's name: a leading
-// "verilator" word makes it parse the line as a pragma.)
-wire ovf = in1[NUBITS-1] & ~(|in1[NUBITS-2:0]) & (&in2);
+// the first row of group s (group 0 starts at row 0), chosen so that every
+// cycle carries the same logic, the outside logic included: with PRE + R rows
+// + POST in all, group s starts where s/STG of it is behind,
+// round(s*(PRE+R+POST)/STG - PRE) rows into the array (kept within it and one
+// row apart); and the group a row falls in
+function integer first_row(input integer s);
+	integer b10, b;
+	begin
+		b10 = (s * (PRE10 + 10*R + POST10)) / STG - PRE10;     // tenths of a row
+		b   = (b10 + 5) / 10;
+		if (b < s)         b = s;                              // at least one row a group
+		if (b > R-(STG-s)) b = R-(STG-s);
+		first_row = (s <= 0) ? 0 : b;
+	end
+endfunction
 
-assign out = ovf ? in1 : in1 / in2;
+function integer group_of(input integer row);
+	integer i;
+	begin
+		group_of = 0;
+		for (i = 1; i < STG; i = i+1) if (row >= first_row(i)) group_of = i;
+	end
+endfunction
+
+wire [N  :0] rp [0:R];                                    // partial remainders (< d after each row)
+wire [N  :0] rin[0:R-1];                                  // the remainder each row starts from
+wire [N-1:0] dv [0:R-1];                                  // the divisor each row subtracts
+wire [R-1:0] nbv;                                         // the dividend bits the rows take
+wire [R-1:0] qc;                                          // quotient bits as each row computes them
+
+assign rp[0] = r0;
+
+genvar r, s;
+generate
+	for (r = 0; r < R; r = r+1) begin : row
+		wire [N+1:0] shr = {rin[r], nbv[R-1-r]};          // remainder << 1 | bit
+		wire [N+1:0] dif = shr - {2'b00, dv[r]};
+
+		assign qc[R-1-r] = ~dif[N+1];                     // no borrow: the divisor fits
+		assign rp[r+1  ] = (qc[R-1-r]) ? dif[N:0] : shr[N:0];
+	end
+
+	for (s = 1; s < STG; s = s+1) begin : cut                 // the register in front of group s
+		localparam integer B  = first_row(s  );               // its first row
+		localparam integer BP = first_row(s-1);               // the previous group's first row
+		reg  [N  :0] rreg  = 0;                               // the remainder entering row B
+		reg  [R-1:0] qreg  = 0;                               // quotient bits of rows [0, B)
+		reg  [N-1:0] dreg  = 0;                               // the divisor
+		reg  [R-1:0] nbreg = 0;                               // the dividend bits
+		reg  [S-1:0] sreg  = 0;                               // side
+		wire [R-1:0] qprev;
+		wire [N-1:0] dprev;
+		wire [R-1:0] nbprev;
+		wire [S-1:0] sprev;
+		if (s == 1) begin : first
+			assign qprev = {R{1'b0}}; assign dprev = d;           assign nbprev = nb;            assign sprev = side;
+		end else begin : later
+			assign qprev = cut[s-1].qreg; assign dprev = cut[s-1].dreg; assign nbprev = cut[s-1].nbreg; assign sprev = cut[s-1].sreg;
+		end
+		integer k;
+		always @ (posedge clk) begin
+			rreg  <= rp[B];
+			dreg  <= dprev;
+			nbreg <= nbprev;
+			sreg  <= sprev;
+			for (k = 0; k < R; k = k+1)                        // rows [BP, B) from this group, [0, BP) carried
+				qreg[R-1-k] <= (k < BP) ? qprev[R-1-k] : (k < B) ? qc[R-1-k] : 1'b0;
+		end
+	end
+
+	for (r = 0; r < R; r = r+1) begin : link
+		localparam integer GR = group_of(r);
+		if (GR > 0 && r == first_row(GR)) begin : starts
+			assign rin[r] = cut[GR].rreg;
+		end else begin : plain
+			assign rin[r] = rp[r];
+		end
+		if (GR > 0) begin : late_op
+			assign dv [r]     = cut[GR].dreg;
+			assign nbv[R-1-r] = cut[GR].nbreg[R-1-r];
+		end else begin : early_op
+			assign dv [r]     = d;
+			assign nbv[R-1-r] = nb[R-1-r];
+		end
+	end
+
+	if (STG > 1) begin : out_late
+		for (r = 0; r < R; r = r+1) begin : qsel
+			if (r < first_row(STG-1)) begin : early assign q[R-1-r] = cut[STG-1].qreg[R-1-r]; end
+			else                      begin : late  assign q[R-1-r] = qc[R-1-r];              end
+		end
+		assign side_o = cut[STG-1].sreg;
+	end else begin : out_now
+		assign q      = qc;
+		assign side_o = side;
+	end
+endgenerate
+
+assign rem = rp[R];
+
+endmodule
+
+// DIV / MOD - fixed-point division and remainder -----------------------------
+// One array for both: the quotient comes out of the rows, the remainder is
+// what the last one leaves; the ALU's operation (the third word: QUO or REM)
+// picks which. Truncating signed division (C, Verilog) from the magnitudes:
+// the quotient is negative when the signs differ, the remainder takes the
+// dividend's sign. INT_MIN / -1, the one quotient that does not fit, wraps
+// to INT_MIN by itself (|INT_MIN| / 1 negated in NUBITS bits), which is what
+// Verilog defines and what both simulators now agree on (TODO 11a). A zero
+// divisor gives the array's all-ones quotient (undefined, TODO 10.5).
+
+module ula_idiv
+#(
+	parameter NUBITS = 32,
+	parameter PRE10  = 15,                                    // see div_array: the magnitudes count here
+	parameter POST10 = 28                                     //   and the sign correction there
+)(
+	 input signed [NUBITS-1:0] in1, in2,                      // in1 / in2, in1 % in2
+	output signed [NUBITS-1:0] quo, rem,
+	 input                     clk
+);
+
+wire [NUBITS-1:0] a = in1[NUBITS-1] ? -in1 : in1;
+wire [NUBITS-1:0] b = in2[NUBITS-1] ? -in2 : in2;
+wire [NUBITS-1:0] q;
+wire [NUBITS  :0] r;
+wire        [1:0] sg;                                     // {quotient negative, remainder negative}
+
+div_array #(NUBITS,NUBITS,2,3,PRE10,POST10) arr({(NUBITS+1){1'b0}}, a, b,
+                                                {in1[NUBITS-1] ^ in2[NUBITS-1], in1[NUBITS-1]},
+                                                q, r, sg, clk);
+
+assign quo = sg[1] ? -q              : q;
+assign rem = sg[0] ? -r[NUBITS-1:0] : r[NUBITS-1:0];
 
 endmodule
 
@@ -592,10 +752,17 @@ module ula_fdiv
 	parameter MAN    = 23,
 	parameter EXP    =  8,
 	parameter FROUND =  0,
-	parameter G      =  0
+	parameter G      =  0,
+	// the logic in the same register-to-register path outside the array, in
+	// tenths of an array row: before it (data memory read, operand select) and
+	// after it (slice, normaliser, ALU output mux, jump decision, PC). Measured
+	// on the Cyclone V (2026-10-04): ~2.6 ns and ~11.3 ns against ~3.1 ns a row.
+	parameter PRE10  =  8,
+	parameter POST10 = 36
 )(
-	 input [MAN+EXP :0] in1, in2,
-	output [MAN+EXP+G+2:0] out                                // exponent 2 bits wider (see ula_norm)
+	 input [MAN+EXP    :0] in1, in2,
+	output [MAN+EXP+G+2:0] out,                               // exponent 2 bits wider (see ula_norm)
+	 input                 clk
 );
 
 localparam W = MAN+G;
@@ -606,9 +773,6 @@ wire signed [EXP+1:0] e1 = {{2{in1[MAN+EXP-1]}}, in1[MAN+EXP-1:MAN]};
 wire signed [EXP+1:0] e2 = {{2{in2[MAN+EXP-1]}}, in2[MAN+EXP-1:MAN]};
 wire        [MAN-1:0] m1 = in1[MAN    -1:0  ];
 wire        [MAN-1:0] m2 = in2[MAN    -1:0  ];
-
-wire                  s_out = (s1 != s2);
-wire signed [EXP+1:0] e_dif = e1 - e2 - MAN[EXP+1:0];
 
 // restoring divider array ----------------------------------------------------
 // Quotient of the dividend m1 << K by m2, one row per quotient bit. The `/`
@@ -625,24 +789,25 @@ wire signed [EXP+1:0] e_dif = e1 - e2 - MAN[EXP+1:0];
 localparam K = (FROUND == 0) ? MAN-1 : (G == 0) ? MAN : MAN+G-1;
 localparam R = K+1;                                       // quotient bits = rows
 
-wire [MAN  :0] rem [0:R];                                 // partial remainders (< m2 after each row)
-wire [R-1  :0] q;
-wire           stk;                                       // remainder != 0
+// what the slice needs from the operands travels with the array: the sign,
+// the exponent difference, and whether the divisor is zero
+wire                  s_in  = (s1 != s2);
+wire signed [EXP+1:0] e_in  = e1 - e2 - MAN[EXP+1:0];
+wire                  dz_in = (m2 == {MAN{1'b0}});
 
-assign rem[0] = {2'b00, m1[MAN-1:1]};                     // top MAN-1 dividend bits
+wire [R-1:0] q;                                           // quotient bits
+wire [MAN:0] rem;                                         // final remainder
+wire [EXP+3:0] side;
 
-genvar r;
-generate
-	for (r = 0; r < R; r = r+1) begin : row
-		wire           nb  = (r == 0) ? m1[0] : 1'b0;       // next dividend bit (zeros below m1)
-		wire [MAN+1:0] shr = {rem[r], nb};                 // remainder << 1 | bit
-		wire [MAN+1:0] dif = shr - {2'b00, m2};
-		assign q[R-1-r]  = ~dif[MAN+1];                    // no borrow: the divisor fits
-		assign rem[r+1]  = (q[R-1-r]) ? dif[MAN:0] : shr[MAN:0];
-	end
-endgenerate
+// the top MAN-1 dividend bits enter as the first remainder, m1[0] in row 0,
+// zeros below it
+div_array #(MAN,R,EXP+4,3,PRE10,POST10) arr({2'b00, m1[MAN-1:1]}, {m1[0], {(R-1){1'b0}}}, m2,
+                                            {s_in, e_in, dz_in}, q, rem, side, clk);
 
-assign stk = |rem[R];
+wire                  s_out = side[EXP+3];
+wire signed [EXP+1:0] e_dif = side[EXP+2:1];
+wire                  dz    = side[0];
+wire                  stk   = |rem;                       // remainder != 0
 
 // pick the slice ---------------------------------------------------------------
 
@@ -655,7 +820,6 @@ generate if (FROUND == 0) begin : legacy
 	assign m_out = q[MAN-1:0];
 end else begin : ranged
 	wire top = q[R-1];                                     // quotient occupies its top bit
-	wire dz  = (m2 == {MAN{1'b0}});                         // division by zero: saturate (the ALU's +-infinity)
 	wire signed [EXP+1:0] e_q = e_dif + {{EXP+1{1'b0}}, top};
 	wire        [W-1  :0] m_q;
 	if (G == 0) begin : keep_lsb
@@ -665,25 +829,12 @@ end else begin : ranged
 		// the quotient bit that falls off the slice when the top bit is set)
 		assign m_q = (top) ? {q[MAN+G-1:1], q[0] | stk} : {q[MAN+G-2:0], stk};
 	end
+	// division by zero: saturate (the ALU's +-infinity)
 	assign e_out = (dz) ? {1'b0, {(EXP+1){1'b1}}} : e_q;   // above every exponent -> ula_norm saturates
-	assign m_out = (dz) ? {W{1'b1}}                : m_q;
+	assign m_out = (dz) ? {W{1'b1}}               : m_q;
 end endgenerate
 
 assign out = {s_out, e_out, m_out};
-
-endmodule
-
-// MOD - division remainder ---------------------------------------------------
-
-module ula_mod
-#(
-	parameter NUBITS = 32
-)(
-	 input signed [NUBITS-1:0] in1, in2,
-	output signed [NUBITS-1:0] out
-);
-
-assign out = in1 % in2;
 
 endmodule
 
@@ -1394,7 +1545,8 @@ module ula
 (
 	input         [       5:0] op,
 	input  signed [NUBITS-1:0] in1, in2,
-	output signed [NUBITS-1:0] out
+	output signed [NUBITS-1:0] out,
+	input                      clk                     // the dividers' register cuts
 );
 
 // floating-point rounding level ----------------------------------------------
@@ -1441,23 +1593,20 @@ wire signed [NUBITS+G+1:0] fmlt;
 
 generate if ((F_MLT) != 0) begin : op_fmlt ula_fmlt #(NBMANT,NBEXPO,FROUND,G) my_fmlt(in1 ,in2 , fmlt); end else begin : op_fmlt assign fmlt = {NUBITS+G+2{1'bx}}; end endgenerate
 
-// DIV ------------------------------------------------------------------------
+// DIV / MOD ------------------------------------------------------------------
+// one divider for both, three cycles (see ula_idiv): DIV/MOD start it, QUO/REM
+// read it two words later
 
-wire signed [NUBITS-1:0] div;
+wire signed [NUBITS-1:0] div, mod;
 
-generate if ((DIV) != 0) begin : op_div ula_div #(NUBITS) my_div(in1, in2, div); end else begin : op_div assign div = {NUBITS{1'bx}}; end endgenerate
+generate if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(NUBITS) my_idiv(in1, in2, div, mod, clk); end else begin : op_idiv assign div = {NUBITS{1'bx}}; assign mod = {NUBITS{1'bx}}; end endgenerate
 
 // F_DIV ----------------------------------------------------------------------
+// three cycles (see ula_fdiv): F_DIV starts it, F_QUO reads it two words later
 
 wire signed [NUBITS+G+1:0] fdiv;
 
-generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(NBMANT,NBEXPO,FROUND,G) my_fdiv(in1, in2, fdiv); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'bx}}; end endgenerate
-
-// MOD ------------------------------------------------------------------------
-
-wire signed [NUBITS-1:0] mod;
-
-generate if ((MOD) != 0) begin : op_mod ula_mod #(NUBITS) my_mod(in1, in2, mod); end else begin : op_mod assign mod = {NUBITS{1'bx}}; end endgenerate
+generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(NBMANT,NBEXPO,FROUND,G) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // SGN ------------------------------------------------------------------------
 

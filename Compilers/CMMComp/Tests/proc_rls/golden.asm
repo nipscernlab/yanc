@@ -87,6 +87,8 @@ F_MLT_V rls_update_Px 3
 SF_ADD
 F_ADD 0.99
 F_DIV 1.0
+NOP
+F_QUO
 SET rls_update_g
 #array rls_update_K 2 4
 LOD_V rls_update_Px 0

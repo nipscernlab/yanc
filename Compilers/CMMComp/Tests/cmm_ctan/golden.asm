@@ -43,6 +43,8 @@ LOD ctan_tb
 CAL float_exp
 SET ctan_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET ctan_emb
 F_ADD ctan_eb
 F_MLT 0.5
@@ -55,8 +57,12 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
+NOP
+F_QUO
 P_LOD ctan_d
 F_DIV ctan_shb
+NOP
+F_QUO
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -83,6 +89,8 @@ LOD ctan_tb
 CAL float_exp
 SET ctan_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET ctan_emb
 F_ADD ctan_eb
 F_MLT 0.5
@@ -95,8 +103,12 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
+NOP
+F_QUO
 P_LOD ctan_d
 F_DIV ctan_shb
+NOP
+F_QUO
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -127,6 +139,8 @@ LOD ctan_tb
 CAL float_exp
 SET ctan_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET ctan_emb
 F_ADD ctan_eb
 F_MLT 0.5
@@ -139,8 +153,12 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
+NOP
+F_QUO
 P_LOD ctan_d
 F_DIV ctan_shb
+NOP
+F_QUO
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -180,6 +198,8 @@ LOD ctan_tb
 CAL float_exp
 SET ctan_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET ctan_emb
 F_ADD ctan_eb
 F_MLT 0.5
@@ -192,8 +212,12 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
+NOP
+F_QUO
 P_LOD ctan_d
 F_DIV ctan_shb
+NOP
+F_QUO
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -220,6 +244,8 @@ LOD ctan_tb
 CAL float_exp
 SET ctan_eb
 F_DIV 1.0
+NOP
+F_QUO
 SET ctan_emb
 F_ADD ctan_eb
 F_MLT 0.5
@@ -232,8 +258,12 @@ LOD ctan_c2a
 F_ADD ctan_chb
 SET ctan_d
 F_DIV ctan_s2a
+NOP
+F_QUO
 P_LOD ctan_d
 F_DIV ctan_shb
+NOP
+F_QUO
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0

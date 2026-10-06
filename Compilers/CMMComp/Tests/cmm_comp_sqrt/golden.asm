@@ -170,21 +170,29 @@ JMP Lwh1
 
                 PSH                // update x
               F_DIV sqrt_num       // iteration 1
+NOP
+F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV sqrt_num       // iteration 2
+NOP
+F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV sqrt_num       // iteration 3
+NOP
+F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV sqrt_num       // iteration 4
+NOP
+F_QUO
              SF_ADD
               F_MLT 0.5
 

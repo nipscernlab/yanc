@@ -92,6 +92,8 @@ SET tanh_n
 LOD tanh_e
 F_ADD 1.0
 F_DIV tanh_n
+NOP
+F_QUO
 F_MLT 1000.0
 SET main_r
 F2I_M main_r
@@ -105,6 +107,8 @@ SET tanh_n
 LOD tanh_e
 F_ADD 1.0
 F_DIV tanh_n
+NOP
+F_QUO
 F_MLT 1000.0
 SET main_r
 F2I_M main_r
@@ -118,6 +122,8 @@ SET tanh_n
 LOD tanh_e
 F_ADD 1.0
 F_DIV tanh_n
+NOP
+F_QUO
 F_MLT 1000.0
 SET main_r
 F2I_M main_r

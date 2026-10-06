@@ -40,7 +40,8 @@ static void ensure_dir(const char *path) {
 }
 
 /* asm_reach dropped `gone` instructions the pc map covered: cmm_log.txt's
- * "num_ins" line, already written by codegen, drops by as much. */
+ * "num_ins" line, already written by codegen, drops by as much (a negative
+ * `gone` raises it: asm_divseq's added words). */
 static void lower_num_ins(const char *tmp_dir, int gone) {
     char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", tmp_dir);
     FILE *f = fopen(path, "r");
@@ -159,7 +160,14 @@ int main(int argc, char **argv)
         char pc[2048]; snprintf(pc, sizeof(pc), "%s/pc_%s_mem.txt", tmp_dir, g_unit->prname);
         int gone = asm_reach(outp, pc);
         if (gone > 0) lower_num_ins(tmp_dir, gone);
-    } else asm_reach(outp, NULL);
+        // every division becomes `<div> x; NOP; <read>` (the dividers take
+        // three cycles); the count grows by the words added
+        int more = asm_divseq(outp, pc);
+        if (more > 0) lower_num_ins(tmp_dir, -more);
+    } else {
+        asm_reach(outp, NULL);
+        asm_divseq(outp, NULL);
+    }
 
     // scalars never alive together share one data word (#SHARE lines ahead of
     // the code; the instructions and the pc_<proc>_mem.txt map are untouched)

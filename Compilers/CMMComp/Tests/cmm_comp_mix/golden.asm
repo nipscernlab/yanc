@@ -49,8 +49,12 @@ F2I_M main_r_i
 OUT 0
 LOD 2.0
 F_DIV main_c2
+NOP
+F_QUO
 P_LOD 2.0
 F_DIV main_c2_i
+NOP
+F_QUO
 SET_P main_r_i
 SET main_r
 F2I_M main_r
@@ -95,10 +99,14 @@ LOD 25.0
 F_MLT main_c
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 P_LOD 25.0
 F_MLT main_c_i
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 F_NEG
 SET_P main_r_i
 SET main_r
@@ -136,8 +144,12 @@ F2I_M main_r_i
 OUT 0
 LOD 2.0
 F_DIV main_c2
+NOP
+F_QUO
 P_LOD 2.0
 F_DIV main_c2_i
+NOP
+F_QUO
 SET_P main_r_i
 SET main_r
 F2I_M main_r
@@ -182,10 +194,14 @@ LOD 25.0
 F_MLT main_c
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 P_LOD 25.0
 F_MLT main_c_i
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 F_NEG
 SET_P main_r_i
 SET main_r

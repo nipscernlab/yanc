@@ -48,6 +48,8 @@ F_LES fase_re
 JIZ Lfa1a
 LOD fase_re
 F_DIV fase_im
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -64,6 +66,8 @@ F_LES 0.0
 JIZ Lfa1c
 LOD fase_re
 F_DIV fase_im
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa1z
 @Lfa1c LOD fase_im
@@ -92,6 +96,8 @@ F_MLT catan_bm
 F_ADD catan_a2
 SET catan_den
 F_DIV catan_num
+NOP
+F_QUO
 CAL float_log
 F_MLT 0.25
 SET catan_im
@@ -123,6 +129,8 @@ F_LES fase_re
 JIZ Lfa2a
 LOD fase_re
 F_DIV fase_im
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -139,6 +147,8 @@ F_LES 0.0
 JIZ Lfa2c
 LOD fase_re
 F_DIV fase_im
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa2z
 @Lfa2c LOD fase_im
@@ -167,6 +177,8 @@ F_MLT catan_bm
 F_ADD catan_a2
 SET catan_den
 F_DIV catan_num
+NOP
+F_QUO
 CAL float_log
 F_MLT 0.25
 SET catan_im
@@ -202,6 +214,8 @@ F_LES fase_re
 JIZ Lfa3a
 LOD fase_re
 F_DIV fase_im
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -218,6 +232,8 @@ F_LES 0.0
 JIZ Lfa3c
 LOD fase_re
 F_DIV fase_im
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa3z
 @Lfa3c LOD fase_im
@@ -246,6 +262,8 @@ F_MLT catan_bm
 F_ADD catan_a2
 SET catan_den
 F_DIV catan_num
+NOP
+F_QUO
 CAL float_log
 F_MLT 0.25
 SET catan_im
@@ -290,6 +308,8 @@ F_LES fase_re
 JIZ Lfa4a
 LOD fase_re
 F_DIV fase_im
+NOP
+F_QUO
 CAL float_atan
 SET fase_t
 LOD 0.0
@@ -306,6 +326,8 @@ F_LES 0.0
 JIZ Lfa4c
 LOD fase_re
 F_DIV fase_im
+NOP
+F_QUO
 CAL float_atan
 JMP Lfa4z
 @Lfa4c LOD fase_im
@@ -334,6 +356,8 @@ F_MLT catan_bm
 F_ADD catan_a2
 SET catan_den
 F_DIV catan_num
+NOP
+F_QUO
 CAL float_log
 F_MLT 0.25
 SET catan_im
@@ -365,6 +389,8 @@ JMP Lwh1
             JIZ   L_atan_small
             LOD   atan_ax                // big branch: t = 1/ax
             F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
+NOP
+F_QUO
             JMP   L_atan_haveT
 @L_atan_small LOD atan_ax               // small branch: t = ax
 @L_atan_haveT SET atan_t
@@ -420,6 +446,8 @@ JMP Lwh1
             SET   log_t1
             LOD   log_t2
             F_DIV log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
+NOP
+F_QUO
             SET   log_u
             F_MLT log_u
             SET   log_w                  // w = u^2

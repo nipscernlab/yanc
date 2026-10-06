@@ -114,6 +114,8 @@ JMP Lwh1
             SET   log_t1
             LOD   log_t2
             F_DIV log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
+NOP
+F_QUO
             SET   log_u
             F_MLT log_u
             SET   log_w                  // w = u^2

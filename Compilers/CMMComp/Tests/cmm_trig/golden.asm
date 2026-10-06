@@ -82,6 +82,8 @@ JMP Lwh1
             JIZ   L_atan_small
             LOD   atan_ax                // big branch: t = 1/ax
             F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
+NOP
+F_QUO
             JMP   L_atan_haveT
 @L_atan_small LOD atan_ax               // small branch: t = ax
 @L_atan_haveT SET atan_t

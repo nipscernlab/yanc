@@ -38,6 +38,8 @@ F_MLT 1.000000
 SF_ADD
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 P_LOD 2.000000
 F_MLT 1.000000
 P_LOD 4.000000
@@ -45,6 +47,8 @@ F_MLT 1.000000
 SF_SU2
 P_LOD aux_var
 SF_DIV
+NOP
+F_QUO
 SET_P main_r_i
 SET main_r
 F2I_M main_r

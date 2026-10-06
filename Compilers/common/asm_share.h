@@ -60,6 +60,26 @@ int asm_share(const char *asm_path);
 int asm_reach(const char *asm_path, const char *pc_path);
 
 // ****************************************************************************
+// asm_divseq -- a division takes three words: `<div> x; NOP; <read>` --------
+// ****************************************************************************
+//
+// The dividers (SAPHO/ula.v) are cut by two registers: the result of a
+// division started at cycle t is at the end of the array at t+2, while the
+// ALU executes the third word. So every DIV / S_DIV becomes `DIV x; NOP; QUO`,
+// MOD / S_MOD `...; NOP; REM` and F_DIV / SF_DIV `...; NOP; F_QUO` (QUO, REM,
+// F_QUO: aliases of the division's own opcode, no operand; the read is always
+// the memory form, so a stack form is not popped twice). A division already
+// followed by NOP and its read is left alone. Labels stay on the line they
+// were on, so a jump still lands on the division, never inside the sequence.
+//
+// pc_path (pc_<proc>_mem.txt, may be NULL) repeats a division's source line
+// for its two new words. Run it after asm_reach (dead code needs no
+// sequence) and before asm_share. Returns how many words were added inside
+// the part of the program the pc map covers (the caller's instruction count
+// grows by that much), -1 on an I/O error.
+int asm_divseq(const char *asm_path, const char *pc_path);
+
+// ****************************************************************************
 // asm_depth -- each stack as deep as the program goes, not a fixed 128 -------
 // ****************************************************************************
 //

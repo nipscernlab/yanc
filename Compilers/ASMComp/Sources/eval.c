@@ -313,9 +313,43 @@ void eval_direct(int next_state)
     state = next_state;
 }
 
+// a division takes three words, `<div> x; NOP; <read>` (the dividers are cut
+// by two registers; Compilers/common asm_divseq writes the sequence): the two
+// words after a division must be NOP and its read
+static int  div_left = 0;          // words of the sequence still expected
+static char div_op[16], div_rd[8]; // the division, and the read it ends with
+
+static const char *div_read_of(const char *mn)
+{
+    if (strcmp(mn,   "DIV") == 0 || strcmp(mn,  "S_DIV") == 0) return "QUO";
+    if (strcmp(mn,   "MOD") == 0 || strcmp(mn,  "S_MOD") == 0) return "REM";
+    if (strcmp(mn, "F_DIV") == 0 || strcmp(mn, "SF_DIV") == 0) return "F_QUO";
+    return NULL;
+}
+
+static void div_seq(const char *mn)
+{
+    if (div_left > 0)
+    {
+        const char *want = (div_left == 2) ? "NOP" : div_rd;
+        if (strcmp(mn, want) != 0) {fprintf(stderr, MSG_ERR_DIV_SEQ, div_op, want, mn); exit(EXIT_FAILURE);}
+        div_left--;
+        return;
+    }
+    const char *rd = div_read_of(mn);
+    if (rd)
+    {
+        snprintf(div_op, sizeof(div_op), "%s", mn);
+        snprintf(div_rd, sizeof(div_rd), "%s", rd);
+        div_left = 2;
+    }
+}
+
 // runs when a new opcode is found
 void eval_opcode(int op, int next_state, char *text, char *nome)
 {
+    div_seq(text);         // a division must be followed by NOP and its read
+
     opc_idx = op;          // record the current opcode
     strcpy(opc_name,text); // store the current opcode name for the translation file
 
@@ -373,6 +407,8 @@ void eval_opernd(char *va, int is_const)
 // runs after the lexer
 void eval_finish()
 {
+    if (div_left > 0) {fprintf(stderr, MSG_ERR_DIV_SEQ_END, div_op, div_rd); exit(EXIT_FAILURE);}
+
     // close the .mif files ---------------------------------------------------
 
     for (int i = n_dat_used; i < n_dat; i++) fprintf(f_data, "%s\n", itob(0, nubits));   // padding (see eval_init)
