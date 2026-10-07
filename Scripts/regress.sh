@@ -873,7 +873,10 @@ if [ "$CPP_ONLY" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
     echo "==> SAPHO blocks (sapho_all)"
     sa="$CMM_ROOT/Tests/sapho_all"
     sa_v="$WORK_DIR/sapho_all/Hardware/sapho_all.v"
-    if [ ! -s "$sa_v" ]; then
+    if [ "$NO_SIM" -eq 1 ]; then
+        # --no-sim stops before asmcomp: there is no .v to check
+        echo "SKIP (sapho_all-blocks): --no-sim builds no .v"
+    elif [ ! -s "$sa_v" ]; then
         echo "FAIL (sapho_all-blocks): $sa_v missing - did its build pass?"
         fail=$((fail + 1)); failed_names+=("sapho_all-blocks")
     elif python3 "$ROOT/Scripts/check_blocks.py" "$sa_v" "$HDL/processor.v" "$sa/blocks_except.txt"; then

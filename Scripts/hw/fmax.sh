@@ -71,7 +71,8 @@ EOF
 "$QUARTUS/quartus_sta" $PROC > sta.log 2>&1 || { echo "$PROC: STA FAILED";  grep -m5 'Error' sta.log; exit 1; }
 
 ALM=$(grep -m1 -E 'Logic utilization \(in ALMs\)|Total logic elements' $PROC.fit.summary | sed 's/^[^:]*: *//')
-FMAX=$(grep -A6 'Slow 1100mV 85C Model Fmax Summary\|Slow 1200mV 85C Model Fmax Summary' $PROC.sta.rpt \
+# the hot slow corner: 85C for commercial parts (C6), 100C for industrial (I7, DE10-Nano)
+FMAX=$(grep -A6 -E 'Slow 1[12]00mV (85|100)C Model Fmax Summary' $PROC.sta.rpt \
        | grep -m1 'MHz' | awk -F';' '{print $2}' | tr -d ' ')
 echo "$PROC $DEV${FR:+ FROUND=$FR}${TAG:+ ($TAG)}${SEED:+ seed $SEED}: Fmax=$FMAX logic=$ALM" | tee -a "$OUT/fmax.txt"
 
