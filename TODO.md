@@ -16,12 +16,11 @@ strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
 small accessors in cppcomp, 15 the regress not being trustworthy on this
 machine, 17 faster array fill/copy (hardware options). Item 18 (hardware paid for
 code that never runs) is closed (2026-10-02): see the CHANGELOG. Item 19
-(the slow dividers): a paused pipeline was built and dropped, a dividers
-co-processor discussed and dropped; what stayed (2026-10-06) is two register
-cuts inside each divider (`DIV`/`MOD` sharing one) and every division
-written as `<div> x; NOP; <read>` by the compilers. Left: time it, a fit of
-`sapho_all` on the Cyclone V and the Zynq-7010. The record is in
-[`docs/pipeln-and-division.md`](docs/pipeln-and-division.md). Item 11,
+(the slow dividers) is closed and released as v6.0 (2026-10-07): two
+register cuts inside each divider and every division written as
+`<div> x; NOP; <read>`; the record is in
+[`docs/pipeln-and-division.md`](docs/pipeln-and-division.md). Item 20
+(two SAPHOs talking through their I/O ports) is the next phase. Item 11,
 consistency at 32 bits, is closed (2026-09-21): see the CHANGELOG for its
 four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
@@ -63,36 +62,36 @@ Also in v5.6: the FFT bit-reversal parameters swapped back (`cmm_fft_rd`, `cmm_f
 **v5.7 (released 2026-10-03).** Item 18 (hardware paid for code that
 never runs, stack depths from the program) closed; C± recursion an error;
 C++ `<cstring>`, function-pointer initializers and `&f` fixed; the package
-is `SAPHO/` only (zip and tar checked, binaries say 5.7). Aurora v6.21.0
-ships yanc v5.6; the text for Aurora's bump to v5.7 (YANC_TAG, and what its
-AI prompt and answer key must now say about stack depths and C±
-recursion) is in `C:\tmp\aurora_yanc_v5.7.md`.
+is `SAPHO/` only (zip and tar checked, binaries say 5.7). The released
+Aurora v6.21.0 pins yanc v5.6; Aurora's main pins v5.7 since 2026-10-03
+(not released there).
 
-**2026-10-03 to 10-06 (item 19, not released).** A paused pipeline was
-built for the dividers, measured and dropped; a dividers co-processor was
-discussed and dropped. What stayed (a862a9e, with the aliases of 3637b60):
-each divider cut by two registers, every division written by the compilers
-as `<div> x; NOP; <read>` (`QUO`/`REM`/`F_QUO`); everything else is still
-one combinational cycle. Record: `docs/pipeln-and-division.md`. Next here,
-in this order:
-- **time it** (heavy: Quartus/Vivado use every core, 20 min to 2 h a fit;
-  Luciano works on a laptop, so on mains power only): after
-  `Scripts/regress.sh`, `bash Scripts/hw/fmax.sh sapho_all` and
-  `bash Scripts/hw/vfmax.sh sapho_all`. Before: 10.66 MHz (Cyclone V),
-  8.97 MHz (Zynq-7010), worst path through `F_DIV`. Expected (estimate):
-  the worst path becomes `F_ADD` (44.4 ns, ~21.5 MHz on the Cyclone V) or
-  a divider part if the ~31-33 ns per part is off. Compare a few seeds
-  (`SEED=n TAG=sN`). Record the numbers in the doc's section 4, the
-  CHANGELOG entry and this paragraph;
-- refresh `Compilers/CMMComp/Tests/size_baseline.txt` in its own commit:
-  it lists 19 programs of the 68 and most values are above today's sizes
-  (`bash Scripts/regress.sh --update-size`, then check the diff is only
-  ratchets down and new rows);
-- for the next release, the Aurora text (`C:\tmp\aurora_yanc_<ver>.md`)
-  must say: the ISA gained `QUO`/`REM`/`F_QUO`; a hand-written `.asm`
-  must write every division as `<div> x; NOP; <read>` (asmcomp rejects it
-  otherwise); a program that divides takes 2 more words and cycles per
-  division, so cycle counts and fixed-budget outputs move.
+**v6.0 (released 2026-10-07): item 19, the dividers.** A paused pipeline
+was built, measured and dropped; a dividers co-processor was discussed and
+dropped. What stayed (a862a9e, with the aliases of 3637b60): each divider
+cut by two registers, every division written by the compilers as
+`<div> x; NOP; <read>` (`QUO`/`REM`/`F_QUO`); everything else is still one
+combinational cycle. `sapho_all`, one fit per board: 9.43 -> 21.9 MHz on
+the DE10-Nano, 8.80 -> 23.98 MHz on the ZYBO. Also in v6.0: `sapho_all`
+unified with the students' board version (LED table for inputs 5 to 11
+kept), `size_baseline.txt` covering all 68 C± tests. The text for Aurora's
+bump is in `C:\tmp\aurora_yanc_v6.0.md`. Left from item 19, only if the
+clock matters again: the integer divider's first part (~42 ns) limits now,
+above its estimate; moving its first cut earlier, a few seeds, and the
+next path once it is shorter were not measured. The students' frequency
+sweep on both boards is the real check of v6.0; their result comes back here.
+
+**Next phase: item 20, two SAPHOs talking through their I/O ports** (target
+v7.0, Luciano 2026-10-07). One SAPHO does `out()`, another waiting in `in()`
+receives the value, nothing lost or duplicated. To bring before any code: a
+short proposal (how each side knows there is new data and that it was read;
+in SAPHO, in YANC or a module between the two; the C± side; one side faster
+than the other). Constraints known: `out_en` at the pin is a combinational
+AND of the port decoder and can glitch (an enable, never a clock); an
+`in()` right after an `out()` reads the input in the same cycle as the
+`out`'s pulse; SAPHO has no ready/valid handshake today (the VGA student's
+roadmap records it). Then: implement, simulate two SAPHOs, a small example
+for the boards. A design doc in `docs/` and fixtures in the regress.
 
 Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the

@@ -8,6 +8,8 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v6.0] – 2026-10-07
+
 ### Changed
 - **The dividers take three cycles, and stop setting the clock.** `DIV`,
   `MOD` and `F_DIV` were ~5x the base processor's longest path (the
@@ -26,12 +28,33 @@ tags consumed by Aurora.
   fixtures that run until the testbench's clock budget ends print fewer
   lines, each new output a prefix of the old one (checked, 17 fixtures).
   `INT_MIN / -1` still wraps; a zero divisor now gives the array's
-  all-ones quotient instead of `x` (still undefined, TODO 10.5). The clock
-  gained is to be measured. Design and history:
-  `docs/pipeln-and-division.md` section 4.
+  all-ones quotient instead of `x` (still undefined, TODO 10.5). Measured
+  on `sapho_all`, one fit per board, out of context: **9.43 -> 21.9 MHz** on
+  the DE10-Nano (`5CSEBA6U23I7`, Quartus 24.1) and **8.80 -> 23.98 MHz** on
+  the ZYBO (`xc7z010clg400-1`, Vivado 2025.2). The limit is now the first
+  part of the integer divider (~42 ns, above its estimate), not `F_DIV`.
+  Design, history and the numbers: `docs/pipeln-and-division.md` section 4.
+- **`sapho_all`: one version for the repo and the board tests.** The two
+  fixes the students made to the program on the boards are in: `ia[3]`
+  zeroed every turn (only inputs 7 and 10 write it) and the array indices
+  as `y & 7` (input 14 wrote outside the arrays, over the program's
+  constant 0). The two stack-depth terms are now checked, not summed (`s`
+  moves only on a wrong value), so the LED table for inputs 5 to 11 stays
+  the one the boards were tested against: 0, 11, 4, 7, 11, 8, 0 (`model.py`
+  and seven simulations). 998 -> 1017 instructions.
 
 ### Added
 - `QUO`, `REM`, `F_QUO` in the assembler (the reads above).
+- **`size_baseline.txt` covers every C± test** (19 -> 68 programs); 16
+  counts went down since the last refresh, none up.
+
+### Fixed
+- **`Scripts/hw/fmax.sh` reads the Fmax of an industrial part.** It looked
+  only for the 85C slow corner; the DE10-Nano's `5CSEBA6U23I7` reports at
+  100C, and the Fmax came out empty.
+- **`regress.sh --no-sim` no longer fails `sapho_all-blocks`.** Without the
+  simulation phase there is no `.v` to check; the step is skipped, so
+  `--update-size --no-sim` can rewrite the baseline.
 
 ## [v5.7] – 2026-10-03
 

@@ -15,8 +15,8 @@ release line is supported.
 
 | Version       | Supported |
 |---------------|-----------|
-| v5.0 / `main` | ✅        |
-| < v5.0        | ❌        |
+| v6.0 / `main` | ✅        |
+| < v6.0        | ❌        |
 
 ## Reporting a vulnerability
 

@@ -9,7 +9,9 @@ co-processor for the dividers alone (section 3) was discussed next and
 dropped too, before any code. **Section 4 is what stayed** (2026-10-06): two
 register cuts inside each divider and a fixed three-word sequence written by
 the compilers, with no pause and no new circuit outside the dividers; every
-other operation is still combinational, one cycle. Sections 1-3 keep the
+other operation is still combinational, one cycle. Released in v6.0
+(2026-10-07): `sapho_all` went from 9.43 to 21.9 MHz on the DE10-Nano and
+from 8.80 to 23.98 MHz on the ZYBO (section 4, **Measured**). Sections 1-3 keep the
 measurements and the options as they were weighed, in case the question
 comes back.
 
@@ -272,8 +274,8 @@ Worked out with Luciano on 2026-10-05, after everything above was dropped,
 and implemented on 2026-10-06 (`QUO`/`REM`/`F_QUO` in 3637b60, the rest in
 the commit after it). The delays below are estimates from the step 1
 measurements (Cyclone V: ~2.6 ns before the array, ~3.1 ns a row, ~11.3 ns
-after it); the clock actually gained is still to be measured with a fit of
-`sapho_all`.
+after it); the clock actually gained was measured afterwards: see
+**Measured** at the end of this section.
 
 **Where to cut.** The `F_DIV` path of `sapho_all` is 91.8 ns (measured; ~94
 by the sum above): data memory -> operand select -> 26-row restoring array
@@ -401,6 +403,30 @@ above it (deduced). To verify before trusting it: a fit of `sapho_all` with
 the cuts (placement moves every number), a cycle-by-cycle simulation of the
 sequences, back-to-back divisions, the stack forms, and every `#FROUND`
 level against `tb_fdiv.v` (and `tb_alu.v` for `DIV`/`MOD`).
+
+**Measured (2026-10-07, released as v6.0).** One fit of `sapho_all` (the
+unified version of 59cc0c2) per board, on the two boards of the lab's
+student tests, before (v5.7, every divider one combinational cycle) and
+after (a862a9e). Out of context: no pins, no board top.
+
+| board (part, tool) | v5.7 | v6.0 | worst path after |
+|---|---|---|---|
+| DE10-Nano (`5CSEBA6U23I7`, Quartus 24.1, slow 100C model) | 9.43 MHz | **21.9 MHz** | data memory -> `NEG_M` -> integer array to `cut[1]`: 43.1 ns |
+| ZYBO (`xc7z010clg400-1`, Vivado 2025.2) | 8.80 MHz | **23.98 MHz** | data memory -> integer array to `cut[1]`: 41.7 ns (96 `CARRY4`) |
+
+Before, the worst path went through all of `F_DIV` on both boards (87.5 ns
+of 103.9 on the Cyclone V). The students' own v5.7 builds, with their pins
+and top, reported 9.53 MHz (Quartus) and about 8.22 MHz (Vivado), within 1
+% and 7 % of these. After, the limit is still a divider, but only its first
+part, and only the **integer** one: part 1 of `DIV`/`MOD` (memory, the
+operands' magnitudes, the first rows) came out at ~41-43 ns, above the
+~29-31 ns estimated, so its first cut sits too late. The ten worst paths
+reported all end at that cut, so how close `F_DIV`'s parts or `F_ADD` come
+was not seen. Not done: other seeds (one fit each, a few per cent of
+noise), moving the integer cut earlier, and finding what limits once part 1
+is shorter (`F_ADD`, 44.4 ns on the Cyclone V part of the earlier
+measurements, is the estimate). The real limit on the boards
+comes from the students' frequency sweep.
 
 ## 5. Tools kept from this work
 
