@@ -81,6 +81,8 @@ RET
 SET s
 LOD 0
 SET main_w
+LOD 0
+SET_V ia 3
 INN 0
 SET main_x
 F_INN 0
@@ -798,28 +800,34 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
+LOD 7
+AND main_y
 P_LOD main_x
 STI ia
-LOD main_y
+LOD 7
+AND main_y
 LDI ia
 SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
+LOD 7
+AND main_y
 P_LOD main_z
 ISI ia
-LOD main_y
+LOD 7
+AND main_y
 ILI ia
 SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
+LOD 7
+AND main_y
 P_LOD main_fx
 STI fa
-LOD main_y
+LOD 7
+AND main_y
 LDI fa
 SET main_fw
 F_MLT 4194304.0
@@ -888,10 +896,15 @@ SET s
 LOD main_x
 CAL n1
 SET main_t
-LOD s
-ADD main_t
-SET s
 LOD main_x
+ADD 7
+EQU main_t
+LIN
+JIZ Lif11else
+LOD s
+ADD 1024
+SET s
+@Lif11else LOD main_x
 ADD 1
 P_LOD main_y
 ADD 1
@@ -922,10 +935,16 @@ S_ADD
 NEG
 S_ADD
 SET main_t
+NEG_M main_y
+ADD main_x
+MLT 4
+EQU main_t
+LIN
+JIZ Lif12else
 LOD s
-ADD main_t
+ADD 2048
 SET s
-LOD 16
+@Lif12else LOD 16
 SHR s
 XOR s
 SET main_t

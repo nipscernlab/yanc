@@ -67,6 +67,8 @@ void main()
     while (1)
     {
         s = 0; w = 0;
+        ia[3] = 0;                      // the POP line below reads ia[3], which only inputs 7
+                                        // and 10 write: every turn starts from the same value
         x = in(0);                      // INN
         fx = fin(0);                    // F_INN
         y = x - 4;                      // 3
@@ -173,9 +175,11 @@ void main()
         fw = (fy + 1.0) - fin(0);  t = fw * 4194304.0;  s = s + t;   // PF_INN
 
         // ---- arrays: indexed and bit-reversed (FFT) addressing
-        ia[y] = x;         t = ia[y];   s = s + t;          // STI / LDI
-        ia[y) = z;         t = ia[y);   s = s + t;          // ISI / ILI
-        fa[y] = fx;        fw = fa[y];  t = fw * 4194304.0;  s = s + t;
+        // y & 7 keeps every index inside the 8-element arrays: same index for
+        // inputs 5 to 11 (y = 1..7), no write outside the arrays for the others
+        ia[y & 7] = x;     t = ia[y & 7];   s = s + t;          // STI / LDI
+        ia[y & 7) = z;     t = ia[y & 7);   s = s + t;          // ISI / ILI
+        fa[y & 7] = fx;    fw = fa[y & 7];  t = fw * 4194304.0;  s = s + t;
 
         // ---- a call (instruction stack) and the library blocks
         t = twice(x);      s = s + t;                       // CAL / RET
@@ -186,10 +190,13 @@ void main()
         fw = log(1.0);     t = fw * 4194304.0;  s = s + t;     // XPO
 
         // ---- both stacks 7 deep (of 8): the call chain, and seven partial
-        // results waiting on the data stack, (x+1) - ((y+1) - ((x+2) - ...))
-        t = n1(x);         s = s + t;                       // x + 7
+        // results waiting on the data stack, (x+1) - ((y+1) - ((x+2) - ...)).
+        // Checked, not summed: s changes only if a stack gives a wrong value,
+        // so the LED table of the board tests (inputs 5 to 11) stays the same.
+        t = n1(x);
+        if (t != x + 7) s = s + 1024;
         t = (x + 1) - ((y + 1) - ((x + 2) - ((y + 2) - ((x + 3) - ((y + 3) - ((x + 4) - (y + 4)))))));
-        s = s + t;                                          // 4 * (x - y)
+        if (t != 4 * (x - y)) s = s + 2048;
 
         // fold the 32 bits of s into 4 (four LEDs): XOR of its eight nibbles,
         // so a wrong bit anywhere in s changes what the LEDs show
