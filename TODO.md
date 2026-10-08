@@ -96,8 +96,11 @@ for the boards. A design doc in `docs/` and fixtures in the regress.
 -- `toma(x)` / `y = cade()`, instructions `TOM` (20) and `CAD` (21), each a
 jump to itself until the partner's bit allows it; one bit per side (T, C)
 plus the writer's waiting flag, generated only when used; pins `toma`,
-`cade`, `taqui`, `valeu`, `cade_dado`. Next: SAPHO + ISA table, asmcomp,
-hdl.c, cppcomp, cmmcomp (diff shown first), a two-SAPHO simulation.
+`cade`, `taqui`, `valeu`, `cade_dado`. **Implemented (2026-10-07, not
+released):** SAPHO, ISA, asmcomp/appcomp, hdl.c, cmmcomp, cppcomp, the `LINK`
+regress pass. Left: the Fmax of a two-processor design on each board, a small
+example for the boards, the interrupt during a wait, `cade()` inside an
+expression (a push form), a C++ two-processor pass in the regress.
 
 Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the

@@ -1,0 +1,24 @@
+#PRNAME link_recebe
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK: takes the 16 values of link_envia,
+// waiting less every turn, and puts each on port 0.
+void main()
+{
+    int n = 0;
+    int k;
+    int v;
+    while (n < 16)
+    {
+        k = 0;
+        while (k < 16 - n) {k++;}
+        v = cade();
+        out(0, v);
+        n++;
+    }
+}

@@ -1,0 +1,22 @@
+#PRNAME link_ping
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK: one link both ways. Hands n to
+// link_pong, takes back what it returns (n + 1) and puts it on port 0.
+void main()
+{
+    int n = 0;
+    int r;
+    while (n < 16)
+    {
+        toma(n);
+        r = cade();
+        out(0, r);
+        n++;
+    }
+}

@@ -8,6 +8,32 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **`toma` and `cade`: two SAPHOs pass a value to each other.** `toma(x);`
+  on one processor and `y = cade();` on its partner: whoever arrives first
+  waits, nothing is lost or read twice, no port number, no status port.
+  Two instructions, `TOM` (20) and `CAD` (21), each a jump to itself until
+  the partner's bit lets it through; each side owns one bit (the writer T,
+  the reader C, a value waits while T != C) plus the writer's waiting flag,
+  generated only when the program uses the instruction (measured with Yosys:
+  `sapho_all` is cell for cell the same). New pins `toma`, `cade`, `taqui`,
+  `valeu`, `cade_dado`; two processors are joined with wires only. In C+-
+  and C++, `cade()` stands only as `x = cade();` (or `T x = cade();` in C++)
+  for now; the word goes as it is, no int/float conversion. Regress: the
+  `LINK` project pass (two pairs, both directions) and three negative
+  fixtures. Design and tests: `docs/toma-and-cade.md`.
+
+### Changed
+- **Opcodes from `ADD` up move by 2** to make room for `TOM`/`CAD` among the
+  flow-control opcodes (below 32). An encoding break: SAPHO/ and asmcomp must
+  come from the same release (as since v5.5). No `.asm` golden or simulation
+  output moved.
+
+### Fixed
+- **`check_isa.py` holds appcomp's mnemonic list (`app.l`) to `ASMComp.l`.**
+  A mnemonic missing there is not counted, and the instruction memory comes
+  out one word short (seen while adding `TOM`/`CAD`).
+
 ## [v6.0] – 2026-10-07
 
 ### Changed

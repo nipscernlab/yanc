@@ -68,10 +68,12 @@ Reset clears T, C and W on both sides.
 
 **Two instructions, `TOM` and `CAD`**, each a conditional jump to its own
 address, decided where `JMP`/`JIZ` are decided (the prefetch, section 5).
-The assembler fills the operand with the instruction's own address (as
-`@fim JMP fim`); neither needs a data operand. Through the ALU both pass
-the accumulator unchanged, like `OUT`; `CAD`, when it goes on, loads the
-accumulator from its input the way `INN` does, without raising `req_in`.
+The operand is the instruction's own address, written as a label, as in
+`@fim JMP fim` (`@L TOM L`); neither needs a data operand. Neither has a
+row in `instr_dec.v` (like `JMP`/`JIZ`): an opcode without one decodes to
+"pass the accumulator through the ALU", which is what a looping `TOM` needs.
+`CAD` loads the accumulator through `INN`'s path (`ula_in2_ctrl`) with
+`cade_dado` in place of `io_in`, raising no `req_in` outside.
 
 **Opcodes** (agreed 2026-10-07). Flow control is kept below opcode 32
 (`check_isa.py`), and 0-31 are all taken: `TOM` = 20 and `CAD` = 21, right
@@ -113,18 +115,49 @@ link (deduced from the structure; to be measured, section 6).
 
 - `toma(e)` -> the value of `e` in the accumulator, then `@L TOM L`.
 - `y = cade();` -> `@L CAD L`, then `SET y`.
-- asmcomp: the two mnemonics, the operand defaulting to the instruction's
-  own address; `isa.tsv`, `instr_dec.v`, `core.v`'s flow localparams and
-  `check_isa.py` in step.
+- asmcomp and appcomp: the two mnemonics (operand class `code`, the own
+  label); `isa.tsv`, `asm_share.c`, `core.v`'s flow localparams and
+  `check_isa.py` in step. appcomp's lexer (`app.l`) is a sixth copy of the
+  mnemonic list: it counts the instructions that size the instruction memory,
+  and without `TOM`/`CAD` there `MINSTS` came out one short per use (the
+  last instruction fell off the memory). `check_isa.py` now holds `app.l`
+  to `ASMComp.l` too.
 - hdl.c: the pins above in the generated top, only with the instruction
-  present, and the simulation mirrors.
-- cmmcomp is Luciano's compiler: the diff is shown before it is written.
+  present; the standalone testbench ties the inputs to 0 (a lone `TOM` or
+  `CAD` waits forever, as on a board).
+- cmmcomp (diff shown to Luciano first): `toma` and `cade` are reserved
+  words. `toma(e);` is a statement (`STMT_TOMA`, `exec_toma`); `cade()` is a
+  stdlib expression (`OP_STD_CADE`) that only `STMT_ASSIGN` accepts, when it
+  is the whole right-hand side (`exec_cade`): the word lands in the variable
+  with the variable's type, no int/float conversion. Anywhere else the walker
+  stops with "cade() may only stand alone"; a comp destination or argument is
+  rejected (one word). No new grammar conflict.
+- cppcomp: the same two builtins. `cade()` is allowed only where a flag set
+  by the scalar-variable store and the local initializers says so
+  (`x = cade();`, `T x = cade();`); `gen_expr_to` consumes the flag at once,
+  so `x = f(cade())` is rejected too. Any one-word type goes through as it
+  is; a wider one is rejected.
 - C++ inline assembly may write `TOM`/`CAD` directly.
+- Tests: `Compilers/CMMComp/Tests/link_*` (the four programs) and the
+  `LINK` project pass in `Scripts/regress.sh` (two pairs of processors,
+  checked against the sim golden and against the sequences n*7+3 and n+1
+  computed by the script); `NegTests/cade_*` for the rejected forms. `TOM`
+  and `CAD` are in `sapho_all`'s `blocks_except.txt` (alone they would
+  wait forever). The C++ side was checked by hand (the same two scenarios
+  and the rejected forms); there is no C++ two-processor pass in the regress.
 
-## 5. Checked in the code (2026-10-07, by reading `SAPHO/core.v`)
+## 5. Checked in the code, then in simulation (2026-10-07)
 
-Not yet confirmed by simulation; each point is what the simulation of two
-processors must show.
+Read in `SAPHO/core.v` first, then confirmed by three simulations of two
+processors from hand-written assembly (Icarus, outside the regress):
+
+| test | result |
+|---|---|
+| writer offers `i*7+3`, i = 0..15, with a waiting loop that grows with i; reader's shrinks (each side first in turn) | 16 values, in order, none wrong; 1709 cycles, `TOM` repeated 577 cycles, `CAD` 387 |
+| no waiting loops on either side | 16 values right, 260 cycles (~16 a value) |
+| one link both ways: ping offers i and takes back i+1, pong takes, adds 1, offers back | 16 answers right |
+
+What the reading said:
 
 1. **The writer's output bus holds the value while it loops.** `out` is the
    ALU output (`mem_data_wr = ula_out`), not the accumulator, which is why it

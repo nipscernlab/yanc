@@ -1,0 +1,19 @@
+#PRNAME link_pong
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK: takes a value, hands back value + 1,
+// with no wait of its own.
+void main()
+{
+    int v;
+    while (1)
+    {
+        v = cade();
+        toma(v + 1);
+    }
+}

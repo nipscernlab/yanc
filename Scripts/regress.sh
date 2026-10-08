@@ -169,7 +169,10 @@ vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice 
 #                        asm-golden compare is enough to lock the lexer expansion
 #   ResetCheck         - real testbench is the directed reset pass (pulses rst
 #                        mid-run); the generated standalone tb would idle in while(1)
-SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross" "cmm_define" "ResetCheck")
+#   link_*             - toma/cade need a partner: alone they wait forever; the
+#                        real testbench is the LINK project pass
+SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross" "cmm_define" "ResetCheck"
+          "link_envia" "link_recebe" "link_ping" "link_pong")
 
 # Examples to also skip the appcomp/asmcomp build for (their .v / .mif are
 # never consumed elsewhere - no standalone sim, no project link).
@@ -552,6 +555,88 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                 else
                     fail=$((fail + 1)); failed_names+=("$proj")
                 fi
+            fi
+        fi
+    fi
+
+    # ---- 3a. project pass: two SAPHOs over toma/cade ------------------------
+    # docs/toma-and-cade.md. link_envia hands 16 values to link_recebe (their
+    # waits cross over, so each side arrives first in turn); link_ping and
+    # link_pong use one link both ways. Besides the sim golden, the outputs are
+    # checked against the sequences computed here (n*7+3, n+1), which stay
+    # load-bearing after an --update.
+
+    if [ "$NO_SIM" -eq 0 ]; then
+        proj="LINK"
+        proj_top="$CMM_ROOT/Tests/$proj/TopLevel"
+        proj_tmp="$TMP_DIR/$proj"
+        golden_proj="$CMM_ROOT/Tests/$proj/golden_sim"
+        procs=("link_envia" "link_recebe" "link_ping" "link_pong")
+
+        rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"
+
+        project_ok=1
+        proc_vs=()
+        for p in "${procs[@]}"; do
+            if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+                echo "FAIL ($proj): $p artifacts missing - did its build pass?"
+                project_ok=0; break
+            fi
+            proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
+            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$proj_tmp/"
+            cp "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+        done
+
+        if [ "$project_ok" -eq 1 ] && ! "$IVERILOG" -s link_tb -o "$proj_tmp/$proj.vvp" \
+                "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                "$HDL/core.v" "$HDL/ula.v" "${proc_vs[@]}" \
+                "$proj_top/link_tb.v" >/dev/null 2>&1; then
+            echo "FAIL ($proj): iverilog exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+        fi
+
+        if [ "$project_ok" -eq 1 ]; then
+            pushd "$proj_tmp" >/dev/null
+            "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
+            vvp_status=$?
+            if [ $vvp_status -ne 0 ]; then vvp_once_more "$proj" "$proj_tmp/$proj.vvp"; vvp_status=$?; fi
+            popd >/dev/null
+            if [ $vvp_status -ne 0 ]; then
+                echo "FAIL ($proj): vvp exited non-zero"
+                fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+            fi
+        fi
+
+        if [ "$project_ok" -eq 1 ]; then
+            if [ "$UPDATE" -eq 1 ]; then
+                rm -rf "$golden_proj"; mkdir -p "$golden_proj"
+                cp "$proj_tmp"/output_*.txt "$golden_proj/"
+                echo "UPDATED ($proj)  [sim UPDATED]"
+            fi
+            sim_fail=0
+            for f in output_link.txt output_pingpong.txt; do
+                if [ ! -s "$proj_tmp/$f" ]; then
+                    echo "FAIL ($proj): the testbench wrote no $f"; sim_fail=1
+                elif ! cmp -s "$proj_tmp/$f" "$golden_proj/$f"; then
+                    echo "FAIL ($proj): $f differs from sim golden"; sim_fail=1
+                fi
+            done
+            # the sequences themselves: every value once, in order
+            want_link=$(for n in $(seq 0 15); do echo $((n * 7 + 3)); done | tr '\n' ' ')
+            want_pp=$(seq 1 16 | tr '\n' ' ')
+            got_link=$(tr -d '\r' < "$proj_tmp/output_link.txt" 2>/dev/null | tr '\n' ' ')
+            got_pp=$(tr -d '\r' < "$proj_tmp/output_pingpong.txt" 2>/dev/null | tr '\n' ' ')
+            if [ "$got_link" != "$want_link" ]; then
+                echo "FAIL ($proj): envia->recebe got '$got_link', want '$want_link'"; sim_fail=1
+            fi
+            if [ "$got_pp" != "$want_pp" ]; then
+                echo "FAIL ($proj): ping<->pong got '$got_pp', want '$want_pp'"; sim_fail=1
+            fi
+            if [ $sim_fail -eq 0 ]; then
+                echo "PASS ($proj)  [sim OK, 16 values each way, in order]"
+                pass=$((pass + 1))
+            else
+                fail=$((fail + 1)); failed_names+=("$proj")
             fi
         fi
     fi

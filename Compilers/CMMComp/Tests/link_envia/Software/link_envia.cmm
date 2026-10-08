@@ -1,0 +1,23 @@
+#PRNAME link_envia
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture (docs/toma-and-cade.md), project pass LINK: hands
+// n*7+3 for n = 0..15 to link_recebe, waiting longer every turn, so the
+// writer arrives first at the start and last at the end.
+void main()
+{
+    int n = 0;
+    int k;
+    while (n < 16)
+    {
+        k = 0;
+        while (k < n) {k++;}
+        toma(n * 7 + 3);
+        n++;
+    }
+}
