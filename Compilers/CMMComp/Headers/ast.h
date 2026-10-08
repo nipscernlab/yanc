@@ -97,6 +97,7 @@ typedef enum {
     // stdlib calls (EXPR_STDLIB_CALL). port lives in id for IN/FIN/OUT.
     OP_STD_IN,    // in(port)        -> int
     OP_STD_FIN,   // fin(port)       -> float
+    OP_STD_CADE,  // cade()          -> the partner's word, only as `x = cade();` (STMT_ASSIGN)
     OP_STD_PST,   // pst(x)          -> clears if negative
     OP_STD_ABS,   // abs(x)          -> |x|
     OP_STD_SIGN,  // sign(x, y)      -> y with sign of x
@@ -201,6 +202,7 @@ typedef enum {
     STMT_ARRAY_ASSIGN,  // id[idx] = exp;  /  id[idx) = exp;  /  id[idx][idx2] = exp;
     STMT_RETURN,        // return exp;  (rhs set)  /  return;  (rhs NULL)
     STMT_OUT,           // out(port, exp);  (op=0)  /  fout(port, exp);  (op=1)
+    STMT_TOMA,          // toma(exp);  hands exp to the partner processor
     STMT_COPY,          // copy(exp, dst_id);
     STMT_VOUT,          // out(port, exp | vector_id BRA);  Dirac vector output
     STMT_DIRAC,         // Dirac linear-algebra assignments (op discriminates)
@@ -313,6 +315,7 @@ stmt_node *stmt_return(struct expr_node *rhs);
 // out(port, rhs)  -> fout_flag=0
 // fout(port, rhs) -> fout_flag=1
 stmt_node *stmt_out(int port, struct expr_node *rhs, int fout_flag);
+stmt_node *stmt_toma(struct expr_node *rhs);
 
 // copy(rhs, dst_id);   no AST node for the destination, just its var id.
 stmt_node *stmt_copy(struct expr_node *rhs, int dst_id);

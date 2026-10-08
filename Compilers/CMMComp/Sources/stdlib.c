@@ -108,6 +108,58 @@ void exec_out(int id, expr e)
     acc_ok = 0; // libera acc    
 }
 
+// ----------------------------------------------------------------------------
+// the link to a partner processor (docs/toma-and-cade.md) --------------------
+// ----------------------------------------------------------------------------
+
+// TOM and CAD jump to themselves until the partner lets them through: each
+// gets its own label, the instruction's operand
+static int link_cnt = 0;
+
+// toma(x); -- the word goes as it is (int or float bits): no conversion
+void exec_toma(expr e)
+{
+    // check whether e was declared
+    if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    // a comp is two words: the link carries one
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_PICK_COMP_INFO, line_num+1); exit(EXIT_FAILURE);}
+
+    // an array needs its index
+    if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
+
+    if (e.id != 0) v_table[e.id].used = 1;
+
+    // a variable: load it (a value already in acc needs nothing)
+    if (e.id != 0)
+    {
+        if (acc_ok == 0) add_instr("LOD %s\n", v_table[e.id].name); else add_instr("P_LOD %s\n", v_table[e.id].name);
+    }
+
+    link_cnt++;
+    add_sinst(0, "@Ltom%d ", link_cnt);
+    add_instr("TOM Ltom%d\n", link_cnt);
+
+    acc_ok = 0; // frees acc
+}
+
+// x = cade(); -- the only form allowed (STMT_ASSIGN): the partner's word lands
+// in x with x's type, so the caller's SET converts nothing
+expr exec_cade(int dest)
+{
+    if (v_table[dest].type == 0) {fprintf(stderr, MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[dest].name, fname)); exit(EXIT_FAILURE);}
+    if (v_table[dest].isar  > 0) {fprintf(stderr, MSG_ERR_ARRAY_NEEDS_IDX,    line_num+1, rem_fname(v_table[dest].name, fname)); exit(EXIT_FAILURE);}
+    if (v_table[dest].type  > 2) {fprintf(stderr, MSG_ERR_CADE_COMP,          line_num+1, rem_fname(v_table[dest].name, fname)); exit(EXIT_FAILURE);}
+
+    link_cnt++;
+    add_sinst(0, "@Lcad%d ", link_cnt);
+    add_instr("CAD Lcad%d\n", link_cnt);
+
+    acc_ok = 1; // acc now holds the partner's word
+
+    return expr_make(v_table[dest].type, 0);
+}
+
 // output ex: fout(0,x);
 void exec_fout(int id, expr e)
 {

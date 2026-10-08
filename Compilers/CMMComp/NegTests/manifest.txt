@@ -20,3 +20,6 @@ const_idx_2d_read.cmm|has two dimensions
 const_idx_scalar_write.cmm|isn't an array
 const_idx_2d_write.cmm|has two dimensions
 recursion.cmm|calls itself (fact -> fact)
+cade_expr.cmm|cade() may only stand alone
+cade_arg.cmm|cade() may only stand alone
+cade_comp.cmm|cade() brings one word

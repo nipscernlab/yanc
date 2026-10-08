@@ -1,0 +1,13 @@
+#PRNAME p
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// Negative fixture: cade() as an argument. Only `x = cade();` is allowed.
+void main()
+{
+    out(0, cade());
+}

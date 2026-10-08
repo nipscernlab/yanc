@@ -1,0 +1,14 @@
+#PRNAME p
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// Negative fixture: cade() brings one word, a comp is two.
+void main()
+{
+    comp c;
+    c = cade();
+}

@@ -784,6 +784,8 @@ static type *infer_type(expr *e)
             // builtins: in() returns int, out() returns void; both are not "declared" identifiers
             if (!strcmp(fn, "in"))       { e->etype = t_int();  break; }
             if (!strcmp(fn, "out"))      { e->etype = t_void(); break; }
+            if (!strcmp(fn, "toma"))     { e->etype = t_void(); break; }
+            if (!strcmp(fn, "cade"))     { e->etype = t_int();  break; }   // placeholder: x = cade() takes x's type
             if (!strcmp(fn, "malloc"))   { e->etype = t_ptr(t_void()); break; }
             if (!strcmp(fn, "free"))     { e->etype = t_void(); break; }
             if (!strcmp(fn, "__zerofill")) { e->etype = t_void(); break; }   // synth DMI aggregate zero-fill
@@ -1285,8 +1287,27 @@ static int expr_is_01(expr *e)
 
 // evaluate e into acc as a value of type `want` (the destination of an
 // assignment, initializer, argument or return)
+// x = cade(); / T x = cade(); -- the only places cade() may stand. The store
+// that allows it sets g_cade_ok just before gen_expr_to; gen_expr_to consumes
+// it at once, so a cade() nested deeper (x = f(cade())) still finds it clear.
+static int g_cade_ok = 0;
+
+static int is_cade_call(const expr *e)
+{
+    return e && e->kind == E_CALL && e->a && e->a->kind == E_IDENT && e->a->sval
+             && !strcmp(e->a->sval, "cade") && e->n_args == 0;
+}
+
 static void gen_expr_to(expr *e, type *want)
 {
+    int cade_ok = g_cade_ok; g_cade_ok = 0;
+    if (is_cade_call(e) && cade_ok) {
+        if (!want || type_size_words(want) != 1 || want->kind == TY_STRUCT || want->kind == TY_ARRAY || want->is_ref)
+            msg_error(e->line, "cade() brings one word: it can only go into a one-word variable");
+        int k = ++label_n;
+        emit("@Lcad%d CAD Lcad%d", k, k);   // the word as it is: no conversion to `want`
+        return;
+    }
     if (want && want->kind == TY_INT && want->nbits && e->kind == E_INT_LIT) {
         long long v = (unsigned long long)e->ival & ((1ULL << want->nbits) - 1);   // folded wrap
         if (!want->nbits_uns && v >= (1LL << (want->nbits - 1))) v -= 1LL << want->nbits;
@@ -1568,6 +1589,7 @@ static void gen_store(expr *lv, expr *val)
         sym *s = st_find(lv->sval);
         if (s && !s->is_frame && s->stype && !s->stype->is_ref &&
             s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
+            g_cade_ok = 1;                    // x = cade(); is allowed here
             gen_expr_to(val, s->stype);
             emit("SET %s", s->asm_name);
             return;
@@ -2477,6 +2499,22 @@ static void gen_expr(expr *e)
                 gen_expr(e->args[1]);
                 emit("OUT %ld", e->args[0]->ival); return;
             }
+            // the link to a partner processor (docs/toma-and-cade.md): TOM and
+            // CAD jump to themselves (their own label) until the partner lets
+            // them through; the word goes as it is, no int/float conversion
+            if (!strcmp(fn, "toma")) {
+                if (e->n_args != 1) msg_error(e->line, "toma(value) takes 1 arg");
+                type *vt = infer_type(e->args[0]);
+                if (vt && type_size_words(vt) != 1)
+                    msg_error(e->line, "toma() carries one word: this value takes %d", type_size_words(vt));
+                gen_expr(e->args[0]);
+                int k = ++label_n;
+                emit("@Ltom%d TOM Ltom%d", k, k); return;
+            }
+            if (!strcmp(fn, "cade")) {         // gen_expr_to takes the allowed `x = cade();`
+                msg_error(e->line, "cade() may only stand alone, as in x = cade(); or T x = cade(); (not yet inside an expression, an index or an argument)");
+                return;
+            }
             if (!strcmp(fn, "malloc")) {       // malloc(nwords) -> payload addr (0=OOM)
                 if (e->n_args != 1) msg_error(e->line, "malloc(nwords) takes 1 arg");
                 gen_expr(e->args[0]); emit("PSH"); emit("CAL malloc");
@@ -2929,7 +2967,7 @@ static void declare_local(decl *d)
         if (d->init) {                                  // store init into the frame slot
             emit("LOD __fp"); if (ls->frame_off) emit("ADD %d", ls->frame_off); emit("PSH");
             if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
-            else gen_expr_to(d->init, d->dtype);
+            else { g_cade_ok = 1; gen_expr_to(d->init, d->dtype); }   // T x = cade(); allowed
             emit("STI 0");
         }
         return;
@@ -2972,7 +3010,7 @@ static void declare_local(decl *d)
         else if (ct->tag) emit_construct_decl(ct, aname, d->ctor_args, d->n_ctor_args);
     } else if (d->init && (!is_static || st_done)) {
         if (d->dtype && d->dtype->is_ref) gen_addr(d->init);   // bind reference to address
-        else gen_expr_to(d->init, d->dtype);
+        else { g_cade_ok = 1; gen_expr_to(d->init, d->dtype); }   // T x = cade(); allowed
         emit("SET %s", aname);
     } else if (d->vinit && !is_static) {
         // int x{}; float f{}; T *p{}: the float zero is the 0.0 constant
@@ -3983,7 +4021,8 @@ static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect)
             int hit = 0;
             for (int j = 0; j < u->n_funcs; j++)
                 if (strcmp(u->funcs[j]->name, e->a->sval) == 0) { row[j] = 1; hit = 1; break; }
-            if (!hit && e->a->sval && strcmp(e->a->sval, "in") && strcmp(e->a->sval, "out"))
+            if (!hit && e->a->sval && strcmp(e->a->sval, "in") && strcmp(e->a->sval, "out")
+                     && strcmp(e->a->sval, "toma") && strcmp(e->a->sval, "cade"))
                 *indirect = 1;                 // a variable holding a function id
         } else {
             *indirect = 1;

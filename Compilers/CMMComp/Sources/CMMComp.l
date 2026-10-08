@@ -92,6 +92,8 @@ COMEN  "//"[^\n]*
 
 "in"          return INN;
 "fin"         return FIN;
+"toma"        return TOMA;
+"cade"        return CADE;
 "out"         return OUT;
 "fout"        return FOUT;
 
