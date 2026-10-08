@@ -93,118 +93,120 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    "CAL"   eval_opcode( 18,19, yytext,    "CAL"  ); // subroutine call
    "RET"   eval_opcode( 19, 0, yytext,    ""     ); // subroutine return
+   "TOM"   eval_opcode( 20,19, yytext,    "TOM"  ); // toma: offer acc to the partner, jump to itself (operand) until taken
+   "CAD"   eval_opcode( 21,19, yytext,    "CAD"  ); // cade: jump to itself (operand) until the partner offers, then take it into acc
 
-   "ADD"   eval_opcode( 20,18, yytext,    "ADD"  ); // fixed-point addition with memory
- "S_ADD"   eval_opcode( 21, 0, yytext,  "S_ADD"  ); // fixed-point addition with stack
- "F_ADD"   eval_opcode( 30,18, yytext,  "F_ADD"  ); // floating-point addition with memory
-"SF_ADD"   eval_opcode( 31, 0, yytext, "SF_ADD"  ); // floating-point addition with stack
+   "ADD"   eval_opcode( 22,18, yytext,    "ADD"  ); // fixed-point addition with memory
+ "S_ADD"   eval_opcode( 23, 0, yytext,  "S_ADD"  ); // fixed-point addition with stack
+ "F_ADD"   eval_opcode( 32,18, yytext,  "F_ADD"  ); // floating-point addition with memory
+"SF_ADD"   eval_opcode( 33, 0, yytext, "SF_ADD"  ); // floating-point addition with stack
 
-   "MLT"   eval_opcode( 22,18, yytext,    "MLT"  ); // fixed-point multiplication with memory
- "S_MLT"   eval_opcode( 23, 0, yytext,  "S_MLT"  ); // fixed-point multiplication with stack
- "F_MLT"   eval_opcode( 36,18, yytext,  "F_MLT"  ); // floating-point multiplication with memory
-"SF_MLT"   eval_opcode( 37, 0, yytext, "SF_MLT"  ); // floating-point multiplication with stack
+   "MLT"   eval_opcode( 24,18, yytext,    "MLT"  ); // fixed-point multiplication with memory
+ "S_MLT"   eval_opcode( 25, 0, yytext,  "S_MLT"  ); // fixed-point multiplication with stack
+ "F_MLT"   eval_opcode( 38,18, yytext,  "F_MLT"  ); // floating-point multiplication with memory
+"SF_MLT"   eval_opcode( 39, 0, yytext, "SF_MLT"  ); // floating-point multiplication with stack
 
-   "DIV"   eval_opcode( 24,18, yytext,    "DIV"  ); // fixed-point division with memory
- "S_DIV"   eval_opcode( 25, 0, yytext,  "S_DIV"  ); // fixed-point division with stack
- "F_DIV"   eval_opcode( 38,18, yytext,  "F_DIV"  ); // floating-point division with memory
-"SF_DIV"   eval_opcode( 39, 0, yytext, "SF_DIV"  ); // floating-point division with stack
+   "DIV"   eval_opcode( 26,18, yytext,    "DIV"  ); // fixed-point division with memory
+ "S_DIV"   eval_opcode( 27, 0, yytext,  "S_DIV"  ); // fixed-point division with stack
+ "F_DIV"   eval_opcode( 40,18, yytext,  "F_DIV"  ); // floating-point division with memory
+"SF_DIV"   eval_opcode( 41, 0, yytext, "SF_DIV"  ); // floating-point division with stack
 
-   "MOD"   eval_opcode( 26,18, yytext,    "MOD"  ); // fixed-point remainder with memory
- "S_MOD"   eval_opcode( 27, 0, yytext,  "S_MOD"  ); // fixed-point remainder with stack
+   "MOD"   eval_opcode( 28,18, yytext,    "MOD"  ); // fixed-point remainder with memory
+ "S_MOD"   eval_opcode( 29, 0, yytext,  "S_MOD"  ); // fixed-point remainder with stack
 
-   "SGN"   eval_opcode( 28,18, yytext,    "SGN"  ); // fixed-point sign with memory
- "S_SGN"   eval_opcode( 29, 0, yytext,  "S_SGN"  ); // fixed-point sign with stack
- "F_SGN"   eval_opcode( 40,18, yytext,  "F_SGN"  ); // floating-point sign with memory
-"SF_SGN"   eval_opcode( 41, 0, yytext, "SF_SGN"  ); // floating-point sign with stack
+   "SGN"   eval_opcode( 30,18, yytext,    "SGN"  ); // fixed-point sign with memory
+ "S_SGN"   eval_opcode( 31, 0, yytext,  "S_SGN"  ); // fixed-point sign with stack
+ "F_SGN"   eval_opcode( 42,18, yytext,  "F_SGN"  ); // floating-point sign with memory
+"SF_SGN"   eval_opcode( 43, 0, yytext, "SF_SGN"  ); // floating-point sign with stack
 
-   "NEG"   eval_opcode( 44, 0, yytext,    "NEG"  ); // fixed-point negation with acc
-   "NEG_M" eval_opcode( 45,18, yytext,    "NEG_M"); // fixed-point negation with memory
- "P_NEG_M" eval_opcode( 46,18, yytext,  "P_NEG_M"); // PUSH +   NEG_M
- "F_NEG"   eval_opcode( 62, 0, yytext,  "F_NEG"  ); // floating-point negation with acc
- "F_NEG_M" eval_opcode( 63,18, yytext,  "F_NEG_M"); // floating-point negation with memory
-"PF_NEG_M" eval_opcode( 64,18, yytext, "PF_NEG_M"); // PUSH + F_NEG_M
+   "NEG"   eval_opcode( 46, 0, yytext,    "NEG"  ); // fixed-point negation with acc
+   "NEG_M" eval_opcode( 47,18, yytext,    "NEG_M"); // fixed-point negation with memory
+ "P_NEG_M" eval_opcode( 48,18, yytext,  "P_NEG_M"); // PUSH +   NEG_M
+ "F_NEG"   eval_opcode( 64, 0, yytext,  "F_NEG"  ); // floating-point negation with acc
+ "F_NEG_M" eval_opcode( 65,18, yytext,  "F_NEG_M"); // floating-point negation with memory
+"PF_NEG_M" eval_opcode( 66,18, yytext, "PF_NEG_M"); // PUSH + F_NEG_M
 
-   "ABS"   eval_opcode( 47, 0, yytext,    "ABS"  ); // fixed-point abs with acc
-   "ABS_M" eval_opcode( 48,18, yytext,    "ABS_M"); // fixed-point abs with memory
- "P_ABS_M" eval_opcode( 49,18, yytext,  "P_ABS_M"); // PUSH +   ABS_M
- "F_ABS"   eval_opcode( 65, 0, yytext,  "F_ABS"  ); // floating-point abs with acc
- "F_ABS_M" eval_opcode( 66,18, yytext,  "F_ABS_M"); // floating-point abs with memory
-"PF_ABS_M" eval_opcode( 67,18, yytext, "PF_ABS_M"); // PUSH + F_ABS_M
+   "ABS"   eval_opcode( 49, 0, yytext,    "ABS"  ); // fixed-point abs with acc
+   "ABS_M" eval_opcode( 50,18, yytext,    "ABS_M"); // fixed-point abs with memory
+ "P_ABS_M" eval_opcode( 51,18, yytext,  "P_ABS_M"); // PUSH +   ABS_M
+ "F_ABS"   eval_opcode( 67, 0, yytext,  "F_ABS"  ); // floating-point abs with acc
+ "F_ABS_M" eval_opcode( 68,18, yytext,  "F_ABS_M"); // floating-point abs with memory
+"PF_ABS_M" eval_opcode( 69,18, yytext, "PF_ABS_M"); // PUSH + F_ABS_M
 
-   "PST"   eval_opcode( 50, 0, yytext,    "PST"  ); // clears if negative, fixed-point with acc
-   "PST_M" eval_opcode( 51,18, yytext,    "PST_M"); // clears if negative, fixed-point with memory
- "P_PST_M" eval_opcode( 52,18, yytext,  "P_PST_M"); // PUSH +   PST_M
- "F_PST"   eval_opcode( 68, 0, yytext,  "F_PST"  ); // clears if negative, floating-point with acc
- "F_PST_M" eval_opcode( 69,18, yytext,  "F_PST_M"); // clears if negative, floating-point with memory
-"PF_PST_M" eval_opcode( 70,18, yytext, "PF_PST_M"); // PUSH + F_PST_M
+   "PST"   eval_opcode( 52, 0, yytext,    "PST"  ); // clears if negative, fixed-point with acc
+   "PST_M" eval_opcode( 53,18, yytext,    "PST_M"); // clears if negative, fixed-point with memory
+ "P_PST_M" eval_opcode( 54,18, yytext,  "P_PST_M"); // PUSH +   PST_M
+ "F_PST"   eval_opcode( 70, 0, yytext,  "F_PST"  ); // clears if negative, floating-point with acc
+ "F_PST_M" eval_opcode( 71,18, yytext,  "F_PST_M"); // clears if negative, floating-point with memory
+"PF_PST_M" eval_opcode( 72,18, yytext, "PF_PST_M"); // PUSH + F_PST_M
 
-   "NRM"   eval_opcode( 53, 0, yytext,    "NRM"  ); // divides by constant, fixed-point with acc
-   "NRM_M" eval_opcode( 54,18, yytext,    "NRM_M"); // divides by constant, fixed-point with memory
- "P_NRM_M" eval_opcode( 55,18, yytext,  "P_NRM_M"); // PUSH +   NRM_M
+   "NRM"   eval_opcode( 55, 0, yytext,    "NRM"  ); // divides by constant, fixed-point with acc
+   "NRM_M" eval_opcode( 56,18, yytext,    "NRM_M"); // divides by constant, fixed-point with memory
+ "P_NRM_M" eval_opcode( 57,18, yytext,  "P_NRM_M"); // PUSH +   NRM_M
 
-   "I2F"   eval_opcode( 74, 0, yytext,    "I2F"  ); // int2float with acc
-   "I2F_M" eval_opcode( 75,18, yytext,    "I2F_M"); // int2float with mem
- "P_I2F_M" eval_opcode( 76,18, yytext,  "P_I2F_M"); // PUSH + I2F_M
+   "I2F"   eval_opcode( 76, 0, yytext,    "I2F"  ); // int2float with acc
+   "I2F_M" eval_opcode( 77,18, yytext,    "I2F_M"); // int2float with mem
+ "P_I2F_M" eval_opcode( 78,18, yytext,  "P_I2F_M"); // PUSH + I2F_M
 
-   "F2I"   eval_opcode( 77, 0, yytext,    "F2I"  ); // float2int with acc
-   "F2I_M" eval_opcode( 78,18, yytext,    "F2I_M"); // float2int with mem
- "P_F2I_M" eval_opcode( 79,18, yytext,  "P_F2I_M"); // PUSH + F2I_M
+   "F2I"   eval_opcode( 79, 0, yytext,    "F2I"  ); // float2int with acc
+   "F2I_M" eval_opcode( 80,18, yytext,    "F2I_M"); // float2int with mem
+ "P_F2I_M" eval_opcode( 81,18, yytext,  "P_F2I_M"); // PUSH + F2I_M
 
-   "AND"   eval_opcode( 80,18, yytext,    "AND"  ); // and with memory
- "S_AND"   eval_opcode( 81, 0, yytext,  "S_AND"  ); // and with stack
-   "ORR"   eval_opcode( 82,18, yytext,    "ORR"  ); // or  with memory
- "S_ORR"   eval_opcode( 83, 0, yytext,  "S_ORR"  ); // or  with stack
-   "XOR"   eval_opcode( 84,18, yytext,    "XOR"  ); // xor with memory
- "S_XOR"   eval_opcode( 85, 0, yytext,  "S_XOR"  ); // xor with stack
+   "AND"   eval_opcode( 82,18, yytext,    "AND"  ); // and with memory
+ "S_AND"   eval_opcode( 83, 0, yytext,  "S_AND"  ); // and with stack
+   "ORR"   eval_opcode( 84,18, yytext,    "ORR"  ); // or  with memory
+ "S_ORR"   eval_opcode( 85, 0, yytext,  "S_ORR"  ); // or  with stack
+   "XOR"   eval_opcode( 86,18, yytext,    "XOR"  ); // xor with memory
+ "S_XOR"   eval_opcode( 87, 0, yytext,  "S_XOR"  ); // xor with stack
 
-   "INV"   eval_opcode( 56, 0, yytext,    "INV"  ); // not with acc
-   "INV_M" eval_opcode( 57,18, yytext,    "INV_M"); // not with mem
- "P_INV_M" eval_opcode( 58,18, yytext,  "P_INV_M"); // PUSH + INV_M
+   "INV"   eval_opcode( 58, 0, yytext,    "INV"  ); // not with acc
+   "INV_M" eval_opcode( 59,18, yytext,    "INV_M"); // not with mem
+ "P_INV_M" eval_opcode( 60,18, yytext,  "P_INV_M"); // PUSH + INV_M
 
-   "LAN"   eval_opcode( 86,18, yytext,    "LAN"  ); // logical and with memory
- "S_LAN"   eval_opcode( 87, 0, yytext,  "S_LAN"  ); // logical and with stack
-   "LOR"   eval_opcode( 88,18, yytext,    "LOR"  ); // logical or  with memory
- "S_LOR"   eval_opcode( 89, 0, yytext,  "S_LOR"  ); // logical or  with stack
+   "LAN"   eval_opcode( 88,18, yytext,    "LAN"  ); // logical and with memory
+ "S_LAN"   eval_opcode( 89, 0, yytext,  "S_LAN"  ); // logical and with stack
+   "LOR"   eval_opcode( 90,18, yytext,    "LOR"  ); // logical or  with memory
+ "S_LOR"   eval_opcode( 91, 0, yytext,  "S_LOR"  ); // logical or  with stack
 
-   "LIN"   eval_opcode( 59, 0, yytext,    "LIN"  ); // logical inversion with acc
-   "LIN_M" eval_opcode( 60,18, yytext,    "LIN_M"); // logical inversion with mem
- "P_LIN_M" eval_opcode( 61,18, yytext,  "P_LIN_M"); // PUSH + LIN_M
+   "LIN"   eval_opcode( 61, 0, yytext,    "LIN"  ); // logical inversion with acc
+   "LIN_M" eval_opcode( 62,18, yytext,    "LIN_M"); // logical inversion with mem
+ "P_LIN_M" eval_opcode( 63,18, yytext,  "P_LIN_M"); // PUSH + LIN_M
 
-   "LES"   eval_opcode( 90,18, yytext,    "LES"  ); // less than, fixed-point with memory
- "S_LES"   eval_opcode( 91, 0, yytext,  "S_LES"  ); // less than, fixed-point with stack
- "F_LES"   eval_opcode( 96,18, yytext,  "F_LES"  ); // less than, floating-point with memory
-"SF_LES"   eval_opcode( 97, 0, yytext, "SF_LES"  ); // less than, floating-point with stack
+   "LES"   eval_opcode( 92,18, yytext,    "LES"  ); // less than, fixed-point with memory
+ "S_LES"   eval_opcode( 93, 0, yytext,  "S_LES"  ); // less than, fixed-point with stack
+ "F_LES"   eval_opcode( 98,18, yytext,  "F_LES"  ); // less than, floating-point with memory
+"SF_LES"   eval_opcode( 99, 0, yytext, "SF_LES"  ); // less than, floating-point with stack
 
-   "GRE"   eval_opcode( 92,18, yytext,    "GRE"  ); // greater than, fixed-point with memory
- "S_GRE"   eval_opcode( 93, 0, yytext,  "S_GRE"  ); // greater than, fixed-point with stack
- "F_GRE"   eval_opcode( 98,18, yytext,  "F_GRE"  ); // greater than, floating-point with memory
-"SF_GRE"   eval_opcode( 99, 0, yytext, "SF_GRE"  ); // greater than, floating-point with stack
+   "GRE"   eval_opcode( 94,18, yytext,    "GRE"  ); // greater than, fixed-point with memory
+ "S_GRE"   eval_opcode( 95, 0, yytext,  "S_GRE"  ); // greater than, fixed-point with stack
+ "F_GRE"   eval_opcode( 100,18, yytext,  "F_GRE"  ); // greater than, floating-point with memory
+"SF_GRE"   eval_opcode( 101, 0, yytext, "SF_GRE"  ); // greater than, floating-point with stack
 
-   "EQU"   eval_opcode( 94,18, yytext,    "EQU"  ); // equal to, with memory
- "S_EQU"   eval_opcode( 95, 0, yytext,  "S_EQU"  ); // equal to, with stack
+   "EQU"   eval_opcode( 96,18, yytext,    "EQU"  ); // equal to, with memory
+ "S_EQU"   eval_opcode( 97, 0, yytext,  "S_EQU"  ); // equal to, with stack
 
-   "SHL"   eval_opcode(100,18, yytext,    "SHL"  ); // shift left  with memory
- "S_SHL"   eval_opcode(101, 0, yytext,  "S_SHL"  ); // shift left  with stack
-   "SHR"   eval_opcode(102,18, yytext,    "SHR"  ); // shift right with memory
- "S_SHR"   eval_opcode(103, 0, yytext,  "S_SHR"  ); // shift right with stack
-   "SRS"   eval_opcode(104,18, yytext,    "SRS"  ); // arithmetic shift right with memory
- "S_SRS"   eval_opcode(105, 0, yytext,  "S_SRS"  ); // arithmetic shift right with stack
+   "SHL"   eval_opcode(102,18, yytext,    "SHL"  ); // shift left  with memory
+ "S_SHL"   eval_opcode(103, 0, yytext,  "S_SHL"  ); // shift left  with stack
+   "SHR"   eval_opcode(104,18, yytext,    "SHR"  ); // shift right with memory
+ "S_SHR"   eval_opcode(105, 0, yytext,  "S_SHR"  ); // shift right with stack
+   "SRS"   eval_opcode(106,18, yytext,    "SRS"  ); // arithmetic shift right with memory
+ "S_SRS"   eval_opcode(107, 0, yytext,  "S_SRS"  ); // arithmetic shift right with stack
 
    /* special instructions */
 
    "NOP"   eval_opcode(  0, 0, yytext,    ""     ); // no operation
- "F_ROT"   eval_opcode( 71, 0, yytext,  "F_ROT"  ); // nearest power-of-two square-root approximation (with ACC)
- "F_SU1"   eval_opcode( 32,18, yytext,  "F_SU1"  ); // floating-point subtraction with memory at input 1
- "F_SU2"   eval_opcode( 33,18, yytext,  "F_SU2"  ); // floating-point subtraction with memory at input 2
-"SF_SU1"   eval_opcode( 34, 0, yytext, "SF_SU1"  ); // floating-point subtraction with stack at input 1
-"SF_SU2"   eval_opcode( 35, 0, yytext, "SF_SU2"  ); // floating-point subtraction with stack at input 2
+ "F_ROT"   eval_opcode( 73, 0, yytext,  "F_ROT"  ); // nearest power-of-two square-root approximation (with ACC)
+ "F_SU1"   eval_opcode( 34,18, yytext,  "F_SU1"  ); // floating-point subtraction with memory at input 1
+ "F_SU2"   eval_opcode( 35,18, yytext,  "F_SU2"  ); // floating-point subtraction with memory at input 2
+"SF_SU1"   eval_opcode( 36, 0, yytext, "SF_SU1"  ); // floating-point subtraction with stack at input 1
+"SF_SU2"   eval_opcode( 37, 0, yytext, "SF_SU2"  ); // floating-point subtraction with stack at input 2
 
    /* scale-by-2^k and exponent-extract */
 
- "F_SCL"   eval_opcode( 42,18, yytext,  "F_SCL"  ); // scale float by 2^k, k from memory
-"SF_SCL"   eval_opcode( 43, 0, yytext, "SF_SCL"  ); // scale float by 2^k, k from stack
-   "XPO"   eval_opcode( 72, 0, yytext,    "XPO"  ); // base-2 exponent of float (acc) as int
- "XPO_M"   eval_opcode( 73,18, yytext,  "XPO_M"  ); // base-2 exponent of float (memory) as int
+ "F_SCL"   eval_opcode( 44,18, yytext,  "F_SCL"  ); // scale float by 2^k, k from memory
+"SF_SCL"   eval_opcode( 45, 0, yytext, "SF_SCL"  ); // scale float by 2^k, k from stack
+   "XPO"   eval_opcode( 74, 0, yytext,    "XPO"  ); // base-2 exponent of float (acc) as int
+ "XPO_M"   eval_opcode( 75,18, yytext,  "XPO_M"  ); // base-2 exponent of float (memory) as int
 
    /* pseudo instructions */
    /* avoid indirect addressing */
@@ -214,17 +216,17 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
    /* the read of a division's result: the third word of `<div> x; NOP; <read>`, */
    /* an alias of the division's own opcode with operand 0 (docs/pipeln-and-division.md, section 4) */
 
-   "QUO"   eval_opcode( 24, 0, yytext,    "DIV"  ); // integer quotient of the division two words before
-   "REM"   eval_opcode( 26, 0, yytext,    "MOD"  ); // remainder of the division two words before
- "F_QUO"   eval_opcode( 38, 0, yytext,  "F_DIV"  ); // float quotient of the division two words before
+   "QUO"   eval_opcode( 26, 0, yytext,    "DIV"  ); // integer quotient of the division two words before
+   "REM"   eval_opcode( 28, 0, yytext,    "MOD"  ); // remainder of the division two words before
+ "F_QUO"   eval_opcode( 40, 0, yytext,  "F_DIV"  ); // float quotient of the division two words before
 
    "LOD_V" eval_opcode(  1,22, yytext,    "LOD"  ); //   LOD with constant offset
  "P_LOD_V" eval_opcode(  2,22, yytext,  "P_LOD"  ); // P_LOD with constant offset
    "SET_V" eval_opcode(  5,22, yytext,    "SET"  ); //   SET with constant offset
-   "ADD_V" eval_opcode( 20,22, yytext,    "ADD"  ); //   ADD with constant offset
- "F_ADD_V" eval_opcode( 30,22, yytext,  "F_ADD"  ); // F_ADD with constant offset
-   "MLT_V" eval_opcode( 22,22, yytext,    "MLT"  ); //   MLT with constant offset
- "F_MLT_V" eval_opcode( 36,22, yytext,  "F_MLT"  ); // F_MLT with constant offset
+   "ADD_V" eval_opcode( 22,22, yytext,    "ADD"  ); //   ADD with constant offset
+ "F_ADD_V" eval_opcode( 32,22, yytext,  "F_ADD"  ); // F_ADD with constant offset
+   "MLT_V" eval_opcode( 24,22, yytext,    "MLT"  ); //   MLT with constant offset
+ "F_MLT_V" eval_opcode( 38,22, yytext,  "F_MLT"  ); // F_MLT with constant offset
 
 {VARIA}    eval_opernd(yytext,0); // used on ALU instructions with variables (IDs)
 {INNUM}    eval_opernd(yytext,1); // used on ALU instructions with an int constant

@@ -174,6 +174,10 @@ module processor
 	parameter    JIZ   = 0,
 	parameter    CAL   = 0,
 
+	// the link to a partner processor (docs/toma-and-cade.md)
+	parameter    TOM   = 0,
+	parameter    CAD   = 0,
+
 	// two-parameter arithmetic operations
 	parameter    ADD   = 0,
 	parameter  S_ADD   = 0,
@@ -298,7 +302,10 @@ module processor
 	output [NBIOOU-1:0] addr_out,
 	output              req_in  , out_en,
 	input               itr,
-	output              cheguei
+	output              cheguei,
+	output              toma, cade,      // the link to a partner processor
+	input               valeu, taqui,    // (docs/toma-and-cade.md)
+	input  [NUBITS-1:0] cade_dado
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
@@ -361,6 +368,8 @@ core #(.NBOPCO ( NBOPCO ),
 	     .OUT  (   OUT  ),
 		 .JIZ  (   JIZ  ),
          .CAL  (   CAL  ),
+         .TOM  (   TOM  ),
+         .CAD  (   CAD  ),
          .ADD  (   ADD  ),
 	   .S_ADD  ( S_ADD  ),
        .F_ADD  ( F_ADD  ),
@@ -449,7 +458,8 @@ core #(.NBOPCO ( NBOPCO ),
 	   .XPO_M  ( XPO_M  )) core(clk, rst,
                                 instr, instr_addr,
                                 mem_wr, mem_addr_rd, mem_addr_wr, mem_data_in, mem_data_out,
-                                io_in, addr_in, addr_out, req_in, out_en, itr, cheguei
+                                io_in, addr_in, addr_out, req_in, out_en, itr, cheguei,
+                                toma, cade, valeu, taqui, cade_dado
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 

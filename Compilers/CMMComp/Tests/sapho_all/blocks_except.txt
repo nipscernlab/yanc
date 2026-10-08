@@ -1,4 +1,7 @@
-# Opcode blocks sapho_all cannot instantiate: C+- has no source form for them.
+# Opcode blocks sapho_all cannot instantiate: C+- has no source form for them,
+# or they need a second processor.
 # Scripts/check_blocks.py fails if one of these IS instantiated (stale list).
 SF_SCL   F_SCL is reached only inside the exp/log macros, always with a memory operand
 XPO_M    XPO is reached only inside the log macro, always on the accumulator
+TOM      toma needs a partner processor: alone it waits forever (docs/toma-and-cade.md)
+CAD      cade needs a partner processor: alone it waits forever (docs/toma-and-cade.md)

@@ -84,6 +84,12 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     if (toaqui_addr != 0) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
     if (toaqui_addr != 0) {fprintf(f_veri, "output cheguei"); comma = 0;}
 
+    // the link to a partner processor (docs/toma-and-cade.md), only with the
+    // instruction that uses it; 'out' always comes before, so each starts with
+    // its own comma
+    if (opc_tom()) fprintf(f_veri, ",\noutput toma,\ninput  valeu");
+    if (opc_cad()) fprintf(f_veri, ",\noutput cade,\ninput  taqui,\ninput  signed [%d:0] cade_dado", nubits-1);
+
     // close the port list
     fprintf(f_veri, ");\n\n");
 
@@ -106,6 +112,10 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
 
     // no #TOAQUI marker: a local wire absorbs the processor's cheguei output
     if (toaqui_addr == 0) fprintf(f_veri, "wire cheguei;\n");
+
+    // no TOM / no CAD: local wires tie off the link's processor ports
+    if (!opc_tom()) fprintf(f_veri, "wire toma;\nwire valeu = 1'b0;\n");
+    if (!opc_cad()) fprintf(f_veri, "wire cade;\nwire taqui = 1'b0;\nwire [%d:0] cade_dado = 0;\n", nubits-1);
 
     // always needed for the processor connection
     fprintf(f_veri, "wire proc_req_in, proc_out_en;\n");
@@ -180,9 +190,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     fprintf(f_veri, ".DFILE(\"%s_data.mif\"),\n"  , path);
     fprintf(f_veri, ".IFILE(\"%s_inst.mif\"))\n\n", path);
     fprintf(f_veri, "`ifdef YANC_SIM_VIS\n");
-    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
+    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, toma, cade, valeu, taqui, cade_dado, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
     fprintf(f_veri, "`else\n");
-    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei);\n", prname);
+    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, toma, cade, valeu, taqui, cade_dado);\n", prname);
     fprintf(f_veri, "`endif\n\n");
 
     // ------------------------------------------------------------------------
@@ -610,6 +620,10 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (nuioou > 0 && opc_out()) fprintf(f_veri, "wire [%d:0] proc_out_en;\n\n"        , nuioou-1);
     // declare the cheguei wire when the wrapper exposes it
     if (toaqui_addr != 0)        fprintf(f_veri, "wire proc_cheguei;\n\n"              );
+    // the link's outputs; alone in this testbench, its inputs are tied to 0, so
+    // a TOM or CAD waits forever (no partner), as it would on a board
+    if (opc_tom())               fprintf(f_veri, "wire proc_toma;\n"                   );
+    if (opc_cad())               fprintf(f_veri, "wire proc_cade;\n"                   );
 
     // ------------------------------------------------------------------------
     // processor instance -----------------------------------------------------
@@ -632,6 +646,9 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (itr_addr != 0)           fprintf(f_veri, ",1'b0"       );
     // check whether the cheguei output is exposed
     if (toaqui_addr != 0)        fprintf(f_veri, ",proc_cheguei");
+    // the link: toma, valeu / cade, taqui, cade_dado (same order as the ports)
+    if (opc_tom())               fprintf(f_veri, ",proc_toma,1'b0");
+    if (opc_cad())               fprintf(f_veri, ",proc_cade,1'b0,%d'd0", nubits);
     // close the instance
                                  fprintf(f_veri, ");\n\n"      );
 

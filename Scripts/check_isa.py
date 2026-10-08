@@ -39,7 +39,7 @@ import sys
 CLASS_OF_STATE = {0: 'none', 18: 'data', 19: 'code', 20: 'in',
                   21: 'out', 22: 'offset', 24: 'lea',
                   28: 'data'}   # 28: LDI/ILI/STI/ISI, a data name or a raw base number
-FLOW = ('JMP', 'JIZ', 'CAL', 'RET')
+FLOW = ('JMP', 'JIZ', 'CAL', 'RET', 'TOM', 'CAD')
 
 
 effects = {}          # mnemonic -> (acc, stack, opnd, flow, io), filled by read_table
@@ -104,6 +104,10 @@ IRREGULAR = {
     'CAL':   ('-', '-', '-', 'call', '-'),
     'RET':   ('-', '-', '-', 'ret', '-'),
     'NOP':   ('-', '-', '-', '-', '-'),
+    # the link between two processors (docs/toma-and-cade.md): each a jump to
+    # itself until the partner's bit lets it through, so conditional (jz)
+    'TOM':   ('r', '-', '-', 'jz', '-'),
+    'CAD':   ('w', '-', '-', 'jz', '-'),
     # the reads of a division's result (docs/pipeln-and-division.md section 4):
     # they write the accumulator and name no data word
     'QUO':   ('w', '-', '-', '-', '-'),
@@ -174,7 +178,7 @@ def read_lexer(path):
 def read_core_flow(path):
     """core.v: its flow-control opcode localparams, name -> value."""
     text = open(path, encoding='utf-8', errors='replace').read()
-    return {m.group(1): int(m.group(2)) for m in re.finditer(r"\bOP_(JMP|JIZ|CAL|RET)\s*=\s*(\d+)", text)}
+    return {m.group(1): int(m.group(2)) for m in re.finditer(r"\bOP_(JMP|JIZ|CAL|RET|TOM|CAD)\s*=\s*(\d+)", text)}
 
 
 def read_decoder(path):
@@ -303,6 +307,19 @@ def main():
                 if rows[mn] != want:
                     bad.append(f'{mn}: asm_share.c says {"/".join(rows[mn])}, '
                                f'the table says {"/".join(want)}')
+
+    # 10: appcomp's lexer lists the mnemonics too (it counts the instructions
+    # that size the instruction memory): a mnemonic it does not know is not
+    # counted, and MINSTS comes out short (seen with TOM/CAD, 2026-10-07)
+    app_p = os.path.join(root, 'Compilers', 'APPComp', 'Sources', 'app.l')
+    if os.path.exists(app_p):
+        app_text = open(app_p, encoding='utf-8', errors='replace').read()
+        app_mn = set(re.findall(r'"([A-Z_0-9]+)"\s*eval_opcode\(', app_text))
+        asm_mn = set(lexer)
+        for mn in sorted(asm_mn - app_mn):
+            bad.append(f'{mn}: in ASMComp.l but not in app.l (appcomp would not count it)')
+        for mn in sorted(app_mn - asm_mn):
+            bad.append(f'{mn}: in app.l but not in ASMComp.l')
 
     # 9: the totals asmcomp's usage report divides by
     opc_p = os.path.join(root, 'Compilers', 'ASMComp', 'Sources', 'opcodes.c')

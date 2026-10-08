@@ -17,7 +17,7 @@
 // the totals the usage report divides by; Scripts/check_isa.py holds them to
 // the code (rule 9), so adding an opcode or an ALU block without updating them
 // fails the regress instead of printing a wrong percentage
-#define ISA_PARAMS 103   // distinct opcode parameters in ASMComp.l (eval_opcode's last argument)
+#define ISA_PARAMS 105  // distinct opcode parameters in ASMComp.l (eval_opcode's last argument)
 #define ULA_BLOCKS  36   // distinct ALU blocks opc_add can instantiate (its MSG_INFO_*; u_count++ lines)
 
 int  u_count = 0;	      // ALU operations counter
@@ -196,6 +196,16 @@ void opc_add(char *mne)
 		}
 
 		// no message for RET yet
+
+		if (strcmp(mne, "TOM") == 0)
+		{
+			printf(MSG_INFO_TOMA);
+		}
+
+		if (strcmp(mne, "CAD") == 0)
+		{
+			printf(MSG_INFO_CADE);
+		}
 
 		if (strcmp(mne, "ADD") == 0)
 		{
@@ -1042,5 +1052,7 @@ void opc_add(char *mne)
 int opc_inn() {return (find_opc("INN") != -1) | (find_opc("P_INN") != -1) | (find_opc("F_INN") != -1) | (find_opc("PF_INN") != -1);}
 // checks whether the OUT instruction is present
 int opc_out() {return  find_opc("OUT") != -1;}
+int opc_tom() {return  find_opc("TOM") != -1;}
+int opc_cad() {return  find_opc("CAD") != -1;}
 // checks whether the CAL instruction is present
 int opc_cal() {return  find_opc("CAL") != -1;}

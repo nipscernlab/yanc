@@ -35,6 +35,8 @@ static const as_isa isa[] = {
     {"JIZ", "code", "-", "jz", "-"},
     {"CAL", "code", "-", "call", "-"},
     {"RET", "none", "-", "ret", "-"},
+    {"TOM", "code", "-", "jz", "-"},
+    {"CAD", "code", "-", "jz", "-"},
     {"ADD", "data", "r", "-", "-"},
     {"S_ADD", "none", "-", "-", "pop"},
     {"F_ADD", "data", "r", "-", "-"},

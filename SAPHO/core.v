@@ -62,9 +62,13 @@ module prefetch
 	parameter [MINSTW-1:0] ITRADD     = 0,
 	parameter [MINSTW-1:0] TOAQUIADDR = 0,
 	parameter              CAL        = 0,
-	parameter              JIZ        = 0
+	parameter              JIZ        = 0,
+	parameter              TOM        = 0,
+	parameter              CAD        = 0
 )(
 	 input                        rst       ,
+	 input                        tom_go    , // the partner took my value (TOM may go on)
+	 input                        cad_go    , // the partner offers a value (CAD may go on)
 	 input    [MINSTW       -1:0] pc_instr  ,
 	output    [NBOPCO       -1:0] opcode    ,
 	output    [NBOPER       -1:0] operand   ,
@@ -81,16 +85,28 @@ module prefetch
 // flow-control opcodes, as numbered in Compilers/common/isa.tsv (check_isa.py
 // holds these four to the table)
 localparam [NBOPCO-1:0] OP_JMP = 16, OP_JIZ = 17, OP_CAL = 18, OP_RET = 19;
+localparam [NBOPCO-1:0] OP_TOM = 20, OP_CAD = 21;
 
 wire wJMP;
+wire wJMPZ;
 
 generate if ((JIZ) != 0) begin : jmp_sel
 //             JMP                                        JIZ
-assign wJMP = (opcode == OP_JMP) | ((opcode == OP_JIZ) & ~is_um);
+assign wJMPZ = (opcode == OP_JMP) | ((opcode == OP_JIZ) & ~is_um);
 end else begin : jmp_sel
 //             JMP
-assign wJMP = (opcode == OP_JMP);
+assign wJMPZ = (opcode == OP_JMP);
 end endgenerate
+
+// toma / cade (docs/toma-and-cade.md): a jump to itself -- the operand is the
+// instruction's own address -- until the partner's bit lets it through
+wire wTOM, wCAD;
+generate if ((TOM) != 0) begin : tom_sel assign wTOM = (opcode == OP_TOM) & ~tom_go; end
+         else            begin : tom_sel assign wTOM = 1'b0;                        end endgenerate
+generate if ((CAD) != 0) begin : cad_sel assign wCAD = (opcode == OP_CAD) & ~cad_go; end
+         else            begin : cad_sel assign wCAD = 1'b0;                        end endgenerate
+
+assign wJMP = wJMPZ | wTOM | wCAD;
 
 wire pc_load;
 
@@ -233,11 +249,14 @@ module instr_fetch
 	parameter SDEPTH     = 8,
 
 	parameter CAL    = 0,
-	parameter JIZ    = 0
+	parameter JIZ    = 0,
+	parameter TOM    = 0,
+	parameter CAD    = 0
 )(
 	input               clk, rst,
 	input               itr,
 	output              cheguei,
+	input               tom_go, cad_go,
 
 	input  [NBINST-1:0] instr,
 	output [MINSTW-1:0] addr,
@@ -282,7 +301,9 @@ prefetch #(.MINSTW(MINSTW),
            .ITRADD(ITRADD),
            .TOAQUIADDR(TOAQUIADDR),
 		   .CAL   (CAL   ),
-		   .JIZ   (JIZ   )) pf(rst, pc_addr, opcode, operand,
+		   .JIZ   (JIZ   ),
+		   .TOM   (TOM   ),
+		   .CAD   (CAD   )) pf(rst, tom_go, cad_go, pc_addr, opcode, operand,
                                pf_instr, pf_addr,
                                pc_load , acc,
                                pf_isp_push, pf_isp_pop,
@@ -524,6 +545,10 @@ module core
 	parameter    JIZ   = 0,
 	parameter    CAL   = 0,
 
+	// the link to a partner processor (docs/toma-and-cade.md)
+	parameter    TOM   = 0,
+	parameter    CAD   = 0,
+
 	// two-parameter arithmetic operations
 	parameter    ADD   = 0,
 	parameter  S_ADD   = 0,
@@ -658,7 +683,14 @@ module core
 	output              out_en,
 
 	input               itr,
-	output              cheguei
+	output              cheguei,
+
+	// the link to a partner processor (docs/toma-and-cade.md)
+	output              toma,       // my T: flipped when I offer a value
+	output              cade,       // my C: flipped when I take one
+	input               valeu,      // the partner's C (TOM: has my value been taken?)
+	input               taqui,      // the partner's T (CAD: is a value offered?)
+	input  [NUBITS-1:0] cade_dado   // the partner's out bus (CAD reads it)
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
  , output [MINSTW-1:0] pc_sim_val
@@ -670,6 +702,7 @@ module core
 wire              if_acc;
 wire [NBOPCO-1:0] if_opcode;
 wire [NBOPER-1:0] if_operand;
+wire              tom_go, cad_go;
 
 instr_fetch #(
 	.NBINST     (NBINST     ),
@@ -680,10 +713,14 @@ instr_fetch #(
 	.NBOPER     (NBOPER     ),
 	.SDEPTH     (SDEPTH     ),
 	.CAL        (CAL        ),
-	.JIZ        (JIZ        )) instr_fetch (.clk    (clk       ),
+	.JIZ        (JIZ        ),
+	.TOM        (TOM        ),
+	.CAD        (CAD        )) instr_fetch (.clk    (clk       ),
 	                                .rst    (rst       ),
 	                                .itr    (itr       ),
 	                                .cheguei(cheguei   ),
+	                                .tom_go (tom_go    ),
+	                                .cad_go (cad_go    ),
 	                                .instr  (instr     ),
 	                                .addr   (instr_addr),
 	                                .acc    (if_acc    ),
@@ -694,6 +731,51 @@ instr_fetch #(
                                , .pc_sim_val(pc_sim_val)
 `endif // ---------------------------------------------------------------------
 );
+
+// toma / cade: the link to a partner processor -------------------------------
+// (docs/toma-and-cade.md) Each side owns one bit: the writer flips T when it
+// offers a value, the reader flips C when it takes it; a value waits while
+// T != C. TOM and CAD are jumps to themselves (prefetch) until *_go. Every
+// opcode the prefetch shows is executed, so a looping TOM/CAD is seen here once
+// per cycle. The bits are levels in flip-flops: two looping processors see each
+// other's instruction one cycle per turn and could miss one-cycle pulses.
+
+localparam [NBOPCO-1:0] OP_TOM = 20, OP_CAD = 21;
+
+generate if (TOM != 0) begin : tom_link
+	reg rT = 1'b0;  // T
+	reg rW = 1'b0;  // offered, waiting to be taken: T flips once per TOM
+	always @ (posedge clk) begin
+		if (rst) begin
+			rT <= 1'b0;
+			rW <= 1'b0;
+		end else if (if_opcode == OP_TOM) begin
+			if (!rW) begin
+				rT <= ~rT;
+				rW <= 1'b1;
+			end else if (valeu == rT)
+				rW <= 1'b0;
+		end
+	end
+	assign toma   = rT;
+	assign tom_go = rW & (valeu == rT);
+end else begin : tom_link
+	assign toma   = 1'b0;
+	assign tom_go = 1'b0;
+end endgenerate
+
+generate if (CAD != 0) begin : cad_link
+	reg rC = 1'b0;  // C
+	always @ (posedge clk) begin
+		if      (rst                                ) rC <= 1'b0;
+		else if (if_opcode == OP_CAD && taqui != rC) rC <= ~rC;
+	end
+	assign cade   = rC;
+	assign cad_go = (taqui != rC);
+end else begin : cad_link
+	assign cade   = 1'b0;
+	assign cad_go = 1'b0;
+end endgenerate
 
 // Instruction decoder --------------------------------------------------------
 
@@ -839,7 +921,18 @@ reg signed [NUBITS-1:0] racc = 0;
 ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, rst, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1);
 
 // input in2
-generate if ((INN | P_INN | F_INN | PF_INN) != 0) begin : uic_in2
+// CAD reads the partner's out bus through the same path as INN, but raises no
+// req_in outside: the choice between io_in and cade_dado is made in here, and
+// only a program with both pays for it.
+localparam HAS_INN = ((INN | P_INN | F_INN | PF_INN) != 0);
+localparam HAS_CAD = (CAD != 0);
+generate if (HAS_INN && HAS_CAD) begin : uic_in2
+wire              is_cad = (id_opcode == OP_CAD);
+wire [NUBITS-1:0] in_sel = (is_cad) ? cade_dado : io_in;
+ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_req_in | is_cad, uic_acc, in_sel, ula_data_in2);
+end else if (HAS_CAD) begin : uic_in2   // cade() and no in(): the partner is the only input
+ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_opcode == OP_CAD, uic_acc, cade_dado, ula_data_in2);
+end else if (HAS_INN) begin : uic_in2   // in() only: as before the link existed
 ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_req_in , uic_acc, io_in, ula_data_in2);
 end else begin : uic_in2 assign ula_data_in2 = racc; end
 endgenerate

@@ -184,6 +184,14 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: adicionando suporte a saída de dados\n", \
       "Info: adding data output handling\n")
 
+#define MSG_INFO_TOMA \
+    M("Info: adicionando o toma (TOM), que entrega um valor ao processador parceiro\n", \
+      "Info: adding toma (TOM), which hands a value to the partner processor\n")
+
+#define MSG_INFO_CADE \
+    M("Info: adicionando o cade (CAD), que recebe um valor do processador parceiro\n", \
+      "Info: adding cade (CAD), which takes a value from the partner processor\n")
+
 #define MSG_INFO_STACK_MEMORY \
     M("Info: adicionando pilha de memória para chamadas de função\n", \
       "Info: adding stack memory for function calls\n")
