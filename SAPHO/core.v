@@ -548,6 +548,7 @@ module core
 	// the link to a partner processor (docs/toma-and-cade.md)
 	parameter    TOM   = 0,
 	parameter    CAD   = 0,
+	parameter    LINKAS = 0,   // 1: the partner runs on another clock (section 8)
 
 	// two-parameter arithmetic operations
 	parameter    ADD   = 0,
@@ -690,7 +691,8 @@ module core
 	output              cade,       // my C: flipped when I take one
 	input               valeu,      // the partner's C (TOM: has my value been taken?)
 	input               taqui,      // the partner's T (CAD: is a value offered?)
-	input  [NUBITS-1:0] cade_dado   // the partner's out bus (CAD reads it)
+	input  [NUBITS-1:0] cade_dado,  // the partner's toma_dado (CAD reads it)
+	output [NUBITS-1:0] toma_dado   // my offered value (LINKAS 0: the out bus)
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
  , output [MINSTW-1:0] pc_sim_val
@@ -739,12 +741,26 @@ instr_fetch #(
 // opcode the prefetch shows is executed, so a looping TOM/CAD is seen here once
 // per cycle. The bits are levels in flip-flops: two looping processors see each
 // other's instruction one cycle per turn and could miss one-cycle pulses.
+// LINKAS (the partner on another clock, docs/toma-and-cade.md section 8): the
+// partner's bit enters through two flip-flops on my clock, and the writer
+// holds its value in a register (toma_dado) loaded when T flips.
 
 localparam [NBOPCO-1:0] OP_TOM = 20, OP_CAD = 21;
 
+wire tom_offer;   // this cycle T flips: the value is on ula_out (toma_dado)
+
 generate if (TOM != 0) begin : tom_link
-	reg rT = 1'b0;  // T
-	reg rW = 1'b0;  // offered, waiting to be taken: T flips once per TOM
+	reg  rT = 1'b0;  // T
+	reg  rW = 1'b0;  // offered, waiting to be taken: T flips once per TOM
+	wire c_in;       // the partner's C, on my clock
+	if (LINKAS != 0) begin : sync
+		reg s1 = 1'b0, s2 = 1'b0;
+		always @ (posedge clk) begin s1 <= valeu; s2 <= s1; end
+		assign c_in = s2;
+	end else begin : sync
+		assign c_in = valeu;
+	end
+	assign tom_offer = (if_opcode == OP_TOM) & ~rW;
 	always @ (posedge clk) begin
 		if (rst) begin
 			rT <= 1'b0;
@@ -753,25 +769,34 @@ generate if (TOM != 0) begin : tom_link
 			if (!rW) begin
 				rT <= ~rT;
 				rW <= 1'b1;
-			end else if (valeu == rT)
+			end else if (c_in == rT)
 				rW <= 1'b0;
 		end
 	end
 	assign toma   = rT;
-	assign tom_go = rW & (valeu == rT);
+	assign tom_go = rW & (c_in == rT);
 end else begin : tom_link
+	assign tom_offer = 1'b0;
 	assign toma   = 1'b0;
 	assign tom_go = 1'b0;
 end endgenerate
 
 generate if (CAD != 0) begin : cad_link
-	reg rC = 1'b0;  // C
+	reg  rC = 1'b0;  // C
+	wire t_in;       // the partner's T, on my clock
+	if (LINKAS != 0) begin : sync
+		reg s1 = 1'b0, s2 = 1'b0;
+		always @ (posedge clk) begin s1 <= taqui; s2 <= s1; end
+		assign t_in = s2;
+	end else begin : sync
+		assign t_in = taqui;
+	end
 	always @ (posedge clk) begin
-		if      (rst                                ) rC <= 1'b0;
-		else if (if_opcode == OP_CAD && taqui != rC) rC <= ~rC;
+		if      (rst                               ) rC <= 1'b0;
+		else if (if_opcode == OP_CAD && t_in != rC) rC <= ~rC;
 	end
 	assign cade   = rC;
-	assign cad_go = (taqui != rC);
+	assign cad_go = (t_in != rC);
 end else begin : cad_link
 	assign cade   = 1'b0;
 	assign cad_go = 1'b0;
@@ -1003,6 +1028,17 @@ assign sp_in = ula_out;
 // (the racc reg itself is declared earlier, above the uic_in2 generate)
 
 always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out; // synchronous reset (FPGA-friendly)
+
+// toma_dado: the value the partner's CAD reads. One clock: the out bus itself
+// (TOM keeps it there while it loops). Two clocks (LINKAS): a register loaded
+// in the cycle T flips, so it is already still when the partner sees T.
+generate if (TOM != 0 && LINKAS != 0) begin : toma_reg
+	reg [NUBITS-1:0] rD = 0;
+	always @ (posedge clk) if (tom_offer) rD <= ula_out;
+	assign toma_dado = rD;
+end else begin : toma_reg
+	assign toma_dado = ula_out;
+end endgenerate
 
 assign uic_acc = racc;
 // JIZ branch decision: if_acc must reflect "accumulator is non-zero" across the

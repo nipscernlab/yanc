@@ -177,6 +177,7 @@ module processor
 	// the link to a partner processor (docs/toma-and-cade.md)
 	parameter    TOM   = 0,
 	parameter    CAD   = 0,
+	parameter    LINKAS = 0,   // 1: the partner runs on another clock (section 8)
 
 	// two-parameter arithmetic operations
 	parameter    ADD   = 0,
@@ -305,7 +306,8 @@ module processor
 	output              cheguei,
 	output              toma, cade,      // the link to a partner processor
 	input               valeu, taqui,    // (docs/toma-and-cade.md)
-	input  [NUBITS-1:0] cade_dado
+	input  [NUBITS-1:0] cade_dado,
+	output [NUBITS-1:0] toma_dado     // my offered value (LINKAS 0: the out bus)
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
@@ -370,6 +372,7 @@ core #(.NBOPCO ( NBOPCO ),
          .CAL  (   CAL  ),
          .TOM  (   TOM  ),
          .CAD  (   CAD  ),
+         .LINKAS(LINKAS ),
          .ADD  (   ADD  ),
 	   .S_ADD  ( S_ADD  ),
        .F_ADD  ( F_ADD  ),
@@ -459,7 +462,7 @@ core #(.NBOPCO ( NBOPCO ),
                                 instr, instr_addr,
                                 mem_wr, mem_addr_rd, mem_addr_wr, mem_data_in, mem_data_out,
                                 io_in, addr_in, addr_out, req_in, out_en, itr, cheguei,
-                                toma, cade, valeu, taqui, cade_dado
+                                toma, cade, valeu, taqui, cade_dado, toma_dado
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 

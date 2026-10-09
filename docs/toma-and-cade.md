@@ -97,14 +97,19 @@ pins.
 | `valeu` | in | 1 | `TOM` | the partner's C (has it been taken?) |
 | `cade` | out | 1 | `CAD` | my C |
 | `taqui` | in | 1 | `CAD` | the partner's T (is a value offered?) |
-| `cade_dado` | in | NUBITS | `CAD` | the partner's `out` bus |
+| `cade_dado` | in | NUBITS | `CAD` | the partner's offered value |
+| `toma_dado` | out | NUBITS | `TOM` | my offered value (`LINKAS` 0: equal to `out`; 1: a register, section 8) |
 
 **Wiring two processors** (A sends to B; the other direction is the same
 with A and B swapped), wires only, no user logic:
 
 ```
-A.toma -> B.taqui      B.cade -> A.valeu      A.out -> B.cade_dado
+A.toma -> B.taqui      B.cade -> A.valeu      A.toma_dado -> B.cade_dado
 ```
+
+On one clock `A.out -> B.cade_dado` is the same word (the wiring used
+before `toma_dado` existed). On two clocks see section 8: `toma_dado` and
+`#(.LINKAS(1))` on both.
 
 `cade_dado` is a pin of its own: inside the reader a mux picks `in` or
 `cade_dado` by the instruction (`INN` or `CAD`), hidden from the outside.
@@ -201,8 +206,8 @@ What the reading said:
   of a `toma` leaves T flipped with nobody holding the value.
 - **Deadlock**: both sides in `toma` (or both in `cade`) wait forever, as in
   Go; the program's responsibility. A simulation could flag it.
-- **Two clocks**: not implemented (same clock assumed). Proposal in
-  section 8.
+- **Two clocks**: implemented in simulation (`LINKAS`, section 8); the
+  board check and the Quartus constraints are open.
 - **Fmax**: one fit of a two-processor design on each board.
 
 Test plan: two SAPHOs in Icarus; the writer sends 0, 1, 2, ... N; the reader
@@ -226,13 +231,13 @@ if every value arrives once and in order. Then a fixture in the regress
 - **One-cycle pulses instead of the two bits**: two looping processors can
   miss each other forever (section 2).
 
-## 8. Two clocks (proposal, 2026-10-09, not implemented)
+## 8. Two clocks (`LINKAS`, implemented 2026-10-09, not released)
 
 Asked by Luciano on 2026-10-09: can the link join two processors that run
-on different clocks? Short answer: yes, and the protocol does not change.
-Everything below comes from reading `core.v` (the `tom_link` / `cad_link`
-blocks) and section 5; nothing of it has been simulated with two clocks
-yet. What is a fact of the code and what is deduced is marked.
+on different clocks? Yes, and the protocol (section 2) does not change.
+Proposed and approved the same day ("segue com suas sugestoes"): the data
+register (8.2, a) and a module parameter (8.3, option 1). What is a fact of
+the code, what was measured and what is deduced is marked.
 
 ### 8.1 Why the protocol already fits
 
@@ -240,98 +245,99 @@ yet. What is a fact of the code and what is deduced is marked.
   value and then holds; there is no one-cycle pulse to miss. This is the
   two-phase ("toggle") handshake used to cross clock domains.
 - **Fact (code):** the writer leaves `TOM` only after it sees C == T, so its
-  value stays on its `out` bus for the whole exchange. No buffer is needed
-  on either side.
+  value stays offered for the whole exchange. No buffer is needed.
 - **Deduced:** across clocks a bit can only arrive late, never be lost. A
   late T makes the reader wait longer; a late C makes the writer wait
   longer. Order and "once and only once" hold as in one clock.
 
-### 8.2 What changes in the hardware
+### 8.2 What changed in the hardware (`SAPHO/core.v`)
 
-1. **A two flip-flop synchronizer on each incoming bit.** `taqui` enters
-   the reader through two flip-flops on the reader's clock before `cad_go`
-   uses it; `valeu` enters the writer through two flip-flops on the
-   writer's clock before `tom_go` uses it. Four flip-flops per link (two
-   per direction) and nothing else. Only `taqui` and `valeu` need it: the
-   other inputs never cross.
-2. **The data must be stable when the reader sees T.** This is the one
-   delicate point.
-   - **Fact (section 5, item 1):** the `out` bus is the ALU output
-     (`ula_out`), combinational, not a register. While `TOM` loops it holds
-     the value because the same instruction keeps passing the same
-     accumulator through the ALU.
-   - **Deduced, not measured:** in the cycle T flips, the ALU goes from
-     executing `LOD x` to executing `TOM`. The value is the same, but the
-     opcode change may glitch the bus for a few nanoseconds after the edge.
-     With two synchronizer stages the reader samples at least one of its
-     own periods after the first stage saw T, so in practice the glitch is
-     long gone. That is an argument, not a guarantee.
-   - **Two ways to stop depending on it** (decision pending, see 8.5):
-     (a) a NUBITS-bit register on the writer, loaded when `TOM` offers, and
-     a new pin `toma_dado` driven by it (wiring becomes
-     `A.toma_dado -> B.cade_dado`); (b) keep `out` and write a timing
-     constraint so the path `A.out -> B.cade_dado` is shorter than one
-     reader period. (a) costs NUBITS flip-flops on the writer and is safe by
-     construction; (b) costs nothing in hardware and depends on the user
-     writing the constraint. Recommended: (a).
-3. **Reset.** Both processors must leave reset together, each with the
-   release synchronized to its own clock. A reset of one side alone leaves
-   T and C out of step (the same problem as the interrupt, section 6).
-   The user's top-level owns this; the documentation must say it.
-4. **Generated only when used**, like the rest of the link: a processor
-   with no asynchronous link gets no synchronizer and no register.
+1. **A two flip-flop synchronizer on each incoming bit.** With `LINKAS = 1`,
+   `taqui` enters the reader through two flip-flops on the reader's clock
+   before `cad_go` and C use it; `valeu` enters the writer through two
+   flip-flops on the writer's clock before `tom_go` and W use it.
+2. **The writer's value in a register, `toma_dado`.** Without it the
+   partner would read the `out` bus, which is the ALU output
+   (`ula_out`), combinational (section 5, item 1). Deduced, not measured:
+   in the cycle T flips the ALU goes from the instruction before `TOM` to
+   `TOM` itself, and the opcode change may glitch the bus for a few
+   nanoseconds after the edge. With `LINKAS = 1` a NUBITS-bit register is
+   loaded with `ula_out` in the cycle T flips (`tom_offer`, the same edge),
+   so the word the reader takes is a flip-flop output that was already
+   still when T flipped. Dropped alternative: keep `out` and ask the user
+   for a timing constraint on it.
+3. **`toma_dado` is a pin of every processor that has `TOM`.** With
+   `LINKAS = 0` it is a wire equal to `out`, so a synchronous link may be
+   wired either way; the older wiring `A.out -> B.cade_dado` stays valid.
+4. **Generated only when used.** `LINKAS = 0` keeps today's hardware. Yosys
+   on `link_ping` (`TOM` and `CAD`), `synth -flatten`, 2026-10-09:
+   - previous HDL: 1127 cells;
+   - new HDL, `LINKAS = 0`: 1127 cells, identical type by type;
+   - new HDL, `LINKAS = 1`: 1163 cells, of which +32 `$_DFFE_PP_` (the
+     `toma_dado` register) and +4 `$_DFF_P_` (the two synchronizers).
 
-### 8.3 How the toolchain learns the link is asynchronous
+### 8.3 How a link is declared asynchronous
 
-Which clocks exist is known only in the user's top-level, not in the
-program. Today the generated processor module (hdl.c) exposes no Verilog
-parameter: asmcomp fixes everything and the top only joins wires.
+Which clocks exist is known in the user's top-level, not in the program, so
+the choice is made there. The generated module of a program with `TOM` or
+`CAD` (hdl.c) now opens with `#(parameter LINKAS = 0)` and passes it to
+`processor` and `core`. Nothing changes in C+-, C++, cmmcomp, cppcomp or
+appcomp. A program without `TOM`/`CAD` gets no parameter.
 
-- **Option 1 (recommended): a Verilog parameter on the generated module**,
-  say `LINKAS` (name to be chosen), default 0. The top writes
-  `link_envia #(.LINKAS(1)) E (...)` where the two clocks differ. No change
-  to C+-, C++, cmmcomp, cppcomp or Aurora; only hdl.c (declare the
-  parameter and pass it to `processor` and `core`) and `core.v`. The
-  decision sits where the clocks are.
-- **Option 2: a directive in the program** (`#LINKAS` in C+-, a
-  `#pragma yanc` in C++), passed by appcomp/asmcomp to the processor. It
-  puts a fact about the board inside the program, and both compilers,
-  both lexers and the manual change.
+**Rule:** set `LINKAS = 1` on BOTH processors of a link whose clocks differ
+(the reader synchronizes T, the writer synchronizes C and holds the data),
+and wire the data from `toma_dado`:
 
-### 8.4 Cost and checks
+```verilog
+link_envia  #(.LINKAS(1)) A (.clk(clk_a), .rst(rst_a), .toma(a_toma),
+                             .valeu(b_cade), .toma_dado(a_dado), ...);
+link_recebe #(.LINKAS(1)) B (.clk(clk_b), .rst(rst_b), .cade(b_cade),
+                             .taqui(a_toma), .cade_dado(a_dado), ...);
+```
 
-- **Hardware:** 2 flip-flops per incoming bit, plus NUBITS on the writer
-  with option (a) of 8.2.
-- **Speed, estimated, not measured:** each value pays the synchronizer
-  latency, about 2 to 3 cycles on each side, on top of today's ~16 cycles
-  a value (section 5).
-- **Simulation (Icarus):** a second project pass, `LINK2`: the same pairs
-  as `LINK` with clocks of unrelated periods (for example 20 ns and
-  27.3 ns), writer faster, then reader faster; every value must arrive
-  once and in order. Metastability does not show in simulation: that
-  part rests on the synchronizer and the constraints.
-- **Board (Quartus):** a `set_false_path` (or `set_max_delay`) into the
-  first synchronizer stage of `taqui` and `valeu`, and, with option (b), a
-  `set_max_delay` on `out -> cade_dado`. The exact `.sdc` lines are
-  written and checked on the board, not here.
+**Reset:** both processors leave reset together, each with the release
+synchronized to its own clock (two flip-flops per domain from one reset
+source, as `link2_tb.v` does). A reset of one side alone leaves T and C out
+of step, the same open problem as the interrupt (section 6).
 
-### 8.5 Decisions pending (Luciano)
+### 8.4 Checks
 
-1. Data: register `toma_dado` (8.2 a) or a constraint on `out` (8.2 b).
-2. How the link is declared asynchronous: module parameter (8.3, option 1)
-   or directive (option 2); and the name.
-3. Whether a synchronous link keeps exactly today's hardware (proposal:
-   yes, with the parameter at 0 nothing changes, `sapho_all` cell for
-   cell).
+- **Simulation (Icarus), in the regress:** `Compilers/CMMComp/Tests/LINK/
+  TopLevel/link2_tb.v`, run inside the `LINK` pass as `LINK2`. The same
+  programs on clocks of 20 ns and 27.3 ns, `LINKAS = 1`, three pairs:
+  envia fast -> recebe slow, envia slow -> recebe fast, ping slow <-> pong
+  fast. Checked against the sequences regress computes (n*7+3, n+1).
+  Measured 2026-10-09: 16 of 16 in order on each of the three.
+- **What the simulation does not prove.** The same testbench with
+  `LINKAS = 0` also passes (measured): Icarus has no metastability and no
+  glitches, so it shows the synchronizers do not break the protocol, not
+  that the crossing is safe. That part rests on the synchronizer and on the
+  board.
+- **Unchanged:** `link_tb.v` (one clock, `LINKAS = 0`) gives the same four
+  outputs as its golden; the standalone testbench of a processor with `TOM`
+  connects `toma_dado` and still writes the right `toma.txt`.
+
+### 8.5 Still open
+
+- **Board:** a two-clock design on the DE10-Nano / ZYBO, with Fmax. The
+  Quartus constraints to write and check there: a false path (or a
+  `set_max_delay`) into the first synchronizer stage of `taqui` and `valeu`
+  (`*tom_link.sync.s1`, `*cad_link.sync.s1`), and a `set_max_delay` of one
+  reader period on `toma_dado -> cade_dado`. The exact `.sdc` lines are not
+  written yet.
+- **Latency:** each value pays about 2 synchronizer cycles on each side on
+  top of today's ~16 cycles a value (estimated, not measured).
 
 ### 8.6 For the documentation (item 21 in TODO.md)
 
-When the global documentation protocol is decided, the user-facing part of
-this section is short and must state, without the reasoning above:
+When the global documentation protocol is decided, the user-facing text is
+short and must say, without the reasoning above:
 
 - two processors on different clocks can use `toma`/`cade`;
-- what the top-level writes to say so (8.3) and the wiring (with option
-  (a) the data comes from `toma_dado`, not `out`);
-- the reset rule (8.2, item 3);
-- the timing constraints to add in Quartus (8.4);
-- the cost in latency per value.
+- write `#(.LINKAS(1))` on both processors and wire `toma_dado` to the
+  partner's `cade_dado` (the example in 8.3);
+- the reset rule (8.3);
+- the Quartus constraints (8.5);
+- the cost: 4 flip-flops plus NUBITS on the writer, and a few cycles of
+  latency per value.
+

@@ -54,7 +54,10 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     int nbioou = (nuioou > 1) ? (int)ceil(log2(nuioou)) : 1;
 
     // the prologue is fixed ....
-    fprintf(f_veri, "module %s (\n\n", prname);
+    // a link to a partner processor: LINKAS = 1 in the top when the partner
+    // runs on another clock (docs/toma-and-cade.md section 8)
+    if (opc_tom() || opc_cad()) fprintf(f_veri, "module %s #(parameter LINKAS = 0) (\n\n", prname);
+    else                        fprintf(f_veri, "module %s (\n\n", prname);
     fprintf(f_veri, "input  clk, rst,\n");
 
     // check whether the 'in' input bus needs to be added
@@ -89,6 +92,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // its own comma
     if (opc_tom()) fprintf(f_veri, ",\noutput toma,\ninput  valeu");
     if (opc_cad()) fprintf(f_veri, ",\noutput cade,\ninput  taqui,\ninput  signed [%d:0] cade_dado", nubits-1);
+    // the value toma() offers, for the partner's cade_dado (with LINKAS 0 the
+    // same word as out); last, so the older positional wiring still fits
+    if (opc_tom()) fprintf(f_veri, ",\noutput signed [%d:0] toma_dado", nubits-1);
 
     // close the port list
     fprintf(f_veri, ");\n\n");
@@ -114,7 +120,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     if (toaqui_addr == 0) fprintf(f_veri, "wire cheguei;\n");
 
     // no TOM / no CAD: local wires tie off the link's processor ports
-    if (!opc_tom()) fprintf(f_veri, "wire toma;\nwire valeu = 1'b0;\n");
+    if (!opc_tom()) fprintf(f_veri, "wire toma;\nwire valeu = 1'b0;\nwire [%d:0] toma_dado;\n", nubits-1);
     if (!opc_cad()) fprintf(f_veri, "wire cade;\nwire taqui = 1'b0;\nwire [%d:0] cade_dado = 0;\n", nubits-1);
 
     // always needed for the processor connection
@@ -171,6 +177,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // if there's a #TOAQUI marker, set its address on the processor
     if (toaqui_addr != 0) fprintf(f_veri, ".TOAQUIADDR(%d),\n", toaqui_addr);
 
+    // a link: the module's LINKAS goes down to the core
+    if (opc_tom() || opc_cad()) fprintf(f_veri, ".LINKAS(LINKAS),\n");
+
     // ------------------------------------------------------------------------
     // dynamic resource allocation --------------------------------------------
     // ------------------------------------------------------------------------
@@ -190,9 +199,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     fprintf(f_veri, ".DFILE(\"%s_data.mif\"),\n"  , path);
     fprintf(f_veri, ".IFILE(\"%s_inst.mif\"))\n\n", path);
     fprintf(f_veri, "`ifdef YANC_SIM_VIS\n");
-    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, toma, cade, valeu, taqui, cade_dado, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
+    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, toma, cade, valeu, taqui, cade_dado, toma_dado, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
     fprintf(f_veri, "`else\n");
-    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, toma, cade, valeu, taqui, cade_dado);\n", prname);
+    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, toma, cade, valeu, taqui, cade_dado, toma_dado);\n", prname);
     fprintf(f_veri, "`endif\n\n");
 
     // ------------------------------------------------------------------------
@@ -623,7 +632,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // the link (docs/toma-and-cade.md): alone, the processor gets this
     // testbench as its partner -- cade() takes the words of cade.txt, toma()
     // writes into toma.txt (see the partner blocks below)
-    if (opc_tom())               fprintf(f_veri, "wire proc_toma;\nreg  tb_valeu = 0;\n");
+    if (opc_tom())               fprintf(f_veri, "wire proc_toma;\nreg  tb_valeu = 0;\nwire signed [%d:0] proc_toma_dado;\n", nubits-1);
     if (opc_cad())               fprintf(f_veri, "wire proc_cade;\nreg  tb_taqui = 0;\nreg  signed [%d:0] tb_cade_dado = 0;\n", nubits-1);
 
     // ------------------------------------------------------------------------
@@ -650,6 +659,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // the link: toma, valeu / cade, taqui, cade_dado (same order as the ports)
     if (opc_tom())               fprintf(f_veri, ",proc_toma,tb_valeu");
     if (opc_cad())               fprintf(f_veri, ",proc_cade,tb_taqui,tb_cade_dado");
+    if (opc_tom())               fprintf(f_veri, ",proc_toma_dado");
     // close the instance
                                  fprintf(f_veri, ");\n\n"      );
 

@@ -665,6 +665,45 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                 fail=$((fail + 1)); failed_names+=("$proj")
             fi
         fi
+
+        # the same programs on two clocks (20 ns and 27.3 ns), LINKAS = 1
+        # (docs/toma-and-cade.md section 8): checked against the sequences only
+        if [ "$project_ok" -eq 1 ]; then
+            name2="LINK2"
+            if ! "$IVERILOG" -s link2_tb -o "$proj_tmp/$name2.vvp" \
+                    "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                    "$HDL/core.v" "$HDL/ula.v" "${proc_vs[@]}" \
+                    "$proj_top/link2_tb.v" >/dev/null 2>&1; then
+                echo "FAIL ($name2): iverilog exited non-zero"
+                fail=$((fail + 1)); failed_names+=("$name2")
+            else
+                pushd "$proj_tmp" >/dev/null
+                "$VVP" "$proj_tmp/$name2.vvp" >/dev/null 2>&1
+                vvp_status=$?
+                if [ $vvp_status -ne 0 ]; then vvp_once_more "$name2" "$proj_tmp/$name2.vvp"; vvp_status=$?; fi
+                popd >/dev/null
+                sim_fail=0
+                if [ $vvp_status -ne 0 ]; then
+                    echo "FAIL ($name2): vvp exited non-zero"; sim_fail=1
+                else
+                    want_link=$(for n in $(seq 0 15); do echo $((n * 7 + 3)); done | tr '\n' ' ')
+                    want_pp=$(seq 1 16 | tr '\n' ' ')
+                    for f in output_link2_fs.txt output_link2_sf.txt output_pingpong2.txt; do
+                        want="$want_link"; [ "$f" = output_pingpong2.txt ] && want="$want_pp"
+                        got=$(tr -d '\r' < "$proj_tmp/$f" 2>/dev/null | tr '\n' ' ')
+                        if [ "$got" != "$want" ]; then
+                            echo "FAIL ($name2): $f got '$got', want '$want'"; sim_fail=1
+                        fi
+                    done
+                fi
+                if [ $sim_fail -eq 0 ]; then
+                    echo "PASS ($name2)  [two clocks, 20 ns / 27.3 ns: 16 values each way, in order]"
+                    pass=$((pass + 1))
+                else
+                    fail=$((fail + 1)); failed_names+=("$name2")
+                fi
+            fi
+        fi
     fi
 
     # ---- 3b. directed reset pass: single-cycle rst mid-run ------------------
