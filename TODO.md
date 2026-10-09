@@ -134,7 +134,9 @@ regress `FIFO` pass (a C+- writer, `Tests/fifo_w`, through `out()`, plus
 `Scripts/hw/tb_fifo.v`); DTW unchanged. [`docs/myfifo.md`](docs/myfifo.md).
 Also `SAPHO/myDCFIFO.v` (2026-10-09), the FIFO between two clocks: two
 SAPHOs on 20 / 27.3 ns in the `FIFO` pass, `Scripts/hw/tb_dcfifo.v`; left:
-the board check and the Quartus constraints on the Gray pointers.
+the board check and the Quartus constraints on the Gray pointers. Its memory
+is LUT RAM (combinational read); a registered read would make it block RAM
+from ~1024 words (measured in Yosys, not adopted: docs/myfifo.md "Memory").
 
 Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the

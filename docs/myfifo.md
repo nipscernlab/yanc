@@ -76,7 +76,8 @@ Capacity stays LENGTH-1 words (one slot tells full from empty), as before.
 - Not run yet: the full regress (held by Luciano on 2026-10-09).
 
 Other notes on this module (docs/hdl-architecture-audit.md): the read is
-combinational (`q = mem[addr_r]`), which keeps it out of block RAM.
+combinational (`q = mem[addr_r]`), which keeps it out of block RAM; it goes
+to LUT RAM instead (measured, section "Memory" below).
 
 # `SAPHO/myDCFIFO.v`: the same FIFO between two clock domains (2026-10-09)
 
@@ -150,9 +151,13 @@ that may outrun the reader should read `wrfull` the same way before each
   SAPHO reader `fifo_r` on 20 ns and 27.3 ns, writer faster and reader
   faster; both readers put out `1 2 3 4 5 6 7 8 11 12 13 14`. The pass also
   runs `tb_dcfifo.v` both ways. Run on its own; the full regress is owed.
-- Yosys (`synth`, LENGTH 128, WORD 16): synthesizes; the memory becomes
-  2048 flip-flops (combinational read, as in `myFIFO`), the control 66
-  flip-flops (4 of them the clear synchronizers).
+- Yosys synthesizes it; the control is 66 flip-flops (4 of them the clear
+  synchronizers). Where the memory goes: section "Memory" below. (The first
+  note here said "2048 flip-flops": that was Yosys' generic `synth`, which
+  maps no memory to any RAM; corrected the same day.)
+- Verilator lint (`-Wall`): only `PROCASSINIT` (registers with an initial
+  value and a reset, the style of the rest of SAPHO/); `processor` with
+  `TOM`, `CAD` and `LINKAS = 1` lints clean.
 - What simulation cannot show: metastability. The crossing is safe by
   construction (Gray pointers through two flip-flops), but on the board
   Quartus needs constraints on the two Gray pointer crossings: a
@@ -161,6 +166,67 @@ that may outrun the reader should read `wrfull` the same way before each
   skew constraint the Intel `dcfifo` uses. The exact `.sdc` lines are not
   written yet; to be done with the board check of `LINKAS`
   (docs/toma-and-cade.md section 8.5).
+
+## Memory: LUT RAM today, block RAM with a registered read
+
+Asked by Luciano on 2026-10-09 ("can it never become memory?"). It does
+become RAM, just not block RAM. Measured with Yosys 0.56, FPGA mapping, WORD
+16 (Quartus and Vivado not run: they are the reference):
+
+| FIFO | LENGTH | read | ZYBO (`synth_xilinx`) | Cyclone V (`synth_intel_alm`) |
+|---|---|---|---|---|
+| `myFIFO` | 128 | combinational (today) | 12 `RAM64M` (LUT RAM) | 64 `MISTRAL_MLAB` (LUT RAM) |
+| `myDCFIFO` | 128 | combinational (today) | 12 `RAM64M` | 64 `MISTRAL_MLAB` |
+| `myDCFIFO` | 128 | registered (variant) | 12 `RAM64M` | 64 `MISTRAL_MLAB` |
+| `myDCFIFO` | 1024 | combinational (today) | 96 `RAM64M` | 512 `MISTRAL_MLAB` |
+| `myDCFIFO` | 1024 | registered (variant) | **1 `RAMB18E1` (block RAM)** | 512 `MISTRAL_MLAB` |
+
+- Block RAM (M10K on the Cyclone V, RAMB on the ZYBO) reads synchronously:
+  a combinational read can only be LUT RAM. That is the real limit, not
+  "never memory".
+- The registered read that keeps the show-ahead behaviour: read every edge
+  with the address of the NEXT pointer, so after each edge `q` is the word
+  at the read pointer:
+  ```verilog
+  reg [WORD-1:0] q_r = 0;
+  always @ (posedge rdclk) q_r <= mem[rbin_n[A-1:0]];
+  assign q = q_r;
+  ```
+  In `myDCFIFO` this costs nothing in behaviour: a word written is announced
+  to the reader 2 `rdclk` cycles later, and the read is redone at every
+  edge, so `q` is fresh before `rdempty` falls. The variant passed
+  `tb_dcfifo.v` 4 of 4 both ways (scratch, not committed).
+- In `myFIFO` (one clock) it needs one more piece: a word written into an
+  empty FIFO at edge t is readable right after t, but the registered read at
+  t took the old content (read-before-write). Either forward `data` when the
+  write goes to the address being read, or let `empty` fall one cycle later.
+  Not tried.
+- Small FIFOs stay in LUT RAM anyway: at 128 words the tools keep LUT RAM
+  even with the registered read (above). Block RAM pays from about 1024
+  words.
+- The Cyclone V column is Yosys' mapper, which put everything in MLABs;
+  whether Quartus puts the registered variant in M10K is not known yet
+  (`quartus_map` on the variant answers it).
+
+Not decided: whether to adopt the registered read (as a parameter, or for
+`myDCFIFO` only). It changes no behaviour in `myDCFIFO`; in `myFIFO` it
+needs the bypass above.
+
+## Timing constraints the board will need (both FIFOs and `LINKAS`)
+
+Static timing sees paths between the two clocks that the logic makes safe
+but the analyser cannot know about. Each needs a constraint (exact `.sdc`
+lines to be written and checked on the board):
+- `myDCFIFO`: the Gray pointers into the other side's first synchronizer
+  stage (`rg1`, `wg1`): a data-path-only `set_max_delay` of about one
+  destination period, so the bits arrive close together;
+- `myDCFIFO`: the read path from the memory (written on `wrclk`) through `q`
+  into the reader SAPHO's input register (on `rdclk`): safe because a word
+  is announced 2 cycles after it is written; `set_false_path` or a relaxed
+  `set_max_delay`. With the registered read this path becomes a block RAM
+  dual-clock port, which the tools handle themselves;
+- `LINKAS`: `toma`/`cade` into the first synchronizer stage, and
+  `toma_dado` into the reader's input register (docs/toma-and-cade.md 8.5).
 
 ## For the documentation (item 21 in TODO.md)
 
