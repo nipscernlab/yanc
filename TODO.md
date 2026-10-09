@@ -126,6 +126,17 @@ is the basis of the final version. Pending on the side: the GitHub plan for
 the org (Free today; Team would make the rules org-wide), Luciano's GitHub
 Education application on campus.
 
+**Item 22, `SAPHO/myFIFO.v` loses words (confirmed 2026-10-09, not fixed).**
+Three defects, each measured: (1) it stores the word on `data` one cycle
+after `wrreq`, so a SAPHO writing with back-to-back `out()` loses values
+(12 written, `2 3 4 5 5 6 ...` stored); (2) a write into a full FIFO is not
+refused and empties it; (3) a read in the cycle after a write into an empty
+FIFO returns a stale word. `Scripts/hw/tb_fifo.v` shows all three (3 of 3
+FAIL). Proposed fix, checked in scratch (3 of 3 PASS, the SAPHO writer
+right): write in the `wrreq` cycle, `full`/`empty` from the pointers only.
+Waiting for Luciano; before committing it, run the DTW project (its
+testbench may move). Details: [`docs/myfifo.md`](docs/myfifo.md).
+
 Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
   item (the strength-reduction candidate was measured and dropped);
