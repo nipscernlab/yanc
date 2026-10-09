@@ -587,6 +587,22 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             cp "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
         done
 
+        # the C++ partners of the mixed pairs: built here, as the CPP phase
+        # builds its tests (it runs after this pass)
+        for p in link_cpp_recebe link_cpp_ping; do
+            [ "$project_ok" -eq 1 ] || break
+            cp_dir="$proj_tmp/cpp/$p"; cp_tmp="$cp_dir/_tmp"; mkdir -p "$cp_tmp"
+            if ! "$CPPPP" -i "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
+               ! "$CPPC" -i "$cp_tmp/pp.cpp" -p "$cp_dir" -n "$p" -t "$cp_tmp" >/dev/null 2>&1 ||
+               ! "$APPCOMP" -en -i "$cp_dir/Software/$p.asm" -t "$cp_tmp" >/dev/null 2>&1 ||
+               ! "$ASMCOMP" -en -i "$cp_dir/Software/$p.asm" -p "$cp_dir" -d "$HDL" -m "$MACROS" -t "$cp_tmp" -f 100 -c 100000 >/dev/null 2>&1; then
+                echo "FAIL ($proj): building the C++ partner $p"
+                fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0; break
+            fi
+            proc_vs+=("$cp_dir/Hardware/$p.v")
+            cp "$cp_dir/Hardware/${p}_data.mif" "$cp_dir/Hardware/${p}_inst.mif" "$proj_tmp/"
+        done
+
         if [ "$project_ok" -eq 1 ] && ! "$IVERILOG" -s link_tb -o "$proj_tmp/$proj.vvp" \
                 "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
                 "$HDL/core.v" "$HDL/ula.v" "${proc_vs[@]}" \
@@ -614,7 +630,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                 echo "UPDATED ($proj)  [sim UPDATED]"
             fi
             sim_fail=0
-            for f in output_link.txt output_pingpong.txt; do
+            for f in output_link.txt output_pingpong.txt output_link_cpp.txt output_pingpong_cpp.txt; do
                 if [ ! -s "$proj_tmp/$f" ]; then
                     echo "FAIL ($proj): the testbench wrote no $f"; sim_fail=1
                 elif ! cmp -s "$proj_tmp/$f" "$golden_proj/$f"; then
@@ -632,8 +648,16 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             if [ "$got_pp" != "$want_pp" ]; then
                 echo "FAIL ($proj): ping<->pong got '$got_pp', want '$want_pp'"; sim_fail=1
             fi
+            got_link_cpp=$(tr -d '\r' < "$proj_tmp/output_link_cpp.txt" 2>/dev/null | tr '\n' ' ')
+            got_pp_cpp=$(tr -d '\r' < "$proj_tmp/output_pingpong_cpp.txt" 2>/dev/null | tr '\n' ' ')
+            if [ "$got_link_cpp" != "$want_link" ]; then
+                echo "FAIL ($proj): envia(C+-)->recebe(C++) got '$got_link_cpp', want '$want_link'"; sim_fail=1
+            fi
+            if [ "$got_pp_cpp" != "$want_pp" ]; then
+                echo "FAIL ($proj): ping(C++)<->pong(C+-) got '$got_pp_cpp', want '$want_pp'"; sim_fail=1
+            fi
             if [ $sim_fail -eq 0 ]; then
-                echo "PASS ($proj)  [sim OK, 16 values each way, in order]"
+                echo "PASS ($proj)  [sim OK, 16 values each way, in order; C+- and C+-/C++ pairs]"
                 pass=$((pass + 1))
             else
                 fail=$((fail + 1)); failed_names+=("$proj")
