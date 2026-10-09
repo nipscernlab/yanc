@@ -100,6 +100,8 @@ Left before v7.0: the Fmax of a two-processor design on each board, a small
 example for the boards, and a decision on the interrupt during a wait (today
 a restart does not clear T, C or the waiting flag). Deadlock detection in
 simulation was dropped (Luciano, 2026-10-08: the user's responsibility).
+Two processors on different clocks: proposal written, not implemented,
+three decisions pending (docs/toma-and-cade.md section 8, 2026-10-09).
 
 **Item 21, documentation that cannot fall behind a release (waiting, opened
 2026-10-09).** Found while closing item 20: the published manual
