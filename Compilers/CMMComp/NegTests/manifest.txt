@@ -21,3 +21,11 @@ const_idx_scalar_write.cmm|isn't an array
 const_idx_2d_write.cmm|has two dimensions
 recursion.cmm|calls itself (fact -> fact)
 cade_comp.cmm|cade() brings one word
+names_mnemonic.cmm|'ADD' is an instruction of the processor
+names_mnemonic_local.cmm|is 'S_ADD' in the assembly, which is an instruction
+names_global_local.cmm|the local 'x' of 'main()' is 'main_x' in the assembly, and that name is already the global 'main_x'
+names_local_local.cmm|is 'a_b_c' in the assembly, and that name is already the local 'c' of 'a_b()'
+names_fun_global.cmm|the function 'f()' is 'f' in the assembly, and that name is already the global 'f'
+names_comp_imag.cmm|is 'z_i' in the assembly, and that name is already the global 'z_i'
+names_underscore.cmm|names starting with '__' belong to the compiler
+names_fim.cmm|a function can't be called 'fim'

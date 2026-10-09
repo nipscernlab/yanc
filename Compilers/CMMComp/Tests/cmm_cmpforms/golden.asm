@@ -34,23 +34,23 @@ LOD 0
 SET b1_s
 I2F_M b1_k
 F_GRE b1_f
-JIZ Lif1else
+JIZ __Lif1else
 LOD b1_s
 ADD 1
 SET b1_s
-@Lif1else I2F_M b1_k
+@__Lif1else I2F_M b1_k
 F_LES b1_f
-JIZ Lif2else
+JIZ __Lif2else
 LOD b1_s
 ADD 2
 SET b1_s
-@Lif2else I2F_M b1_k
+@__Lif2else I2F_M b1_k
 EQU b1_f
-JIZ Lif3else
+JIZ __Lif3else
 LOD b1_s
 ADD 4
 SET b1_s
-@Lif3else LOD b1_s
+@__Lif3else LOD b1_s
 RET
 @b2 SET_P b2_m
 SET b2_k
@@ -59,25 +59,25 @@ SET b2_s
 LOD b2_k
 ADD 1
 GRE b2_m
-JIZ Lif4else
+JIZ __Lif4else
 LOD b2_s
 ADD 1
 SET b2_s
-@Lif4else LOD b2_k
+@__Lif4else LOD b2_k
 ADD 1
 LES b2_m
-JIZ Lif5else
+JIZ __Lif5else
 LOD b2_s
 ADD 2
 SET b2_s
-@Lif5else LOD b2_k
+@__Lif5else LOD b2_k
 ADD 1
 EQU b2_m
-JIZ Lif6else
+JIZ __Lif6else
 LOD b2_s
 ADD 4
 SET b2_s
-@Lif6else LOD b2_s
+@__Lif6else LOD b2_s
 RET
 @b3 SET_P b3_f
 SET b3_k
@@ -87,27 +87,27 @@ LOD b3_k
 ADD 1
 I2F
 F_GRE b3_f
-JIZ Lif7else
+JIZ __Lif7else
 LOD b3_s
 ADD 1
 SET b3_s
-@Lif7else LOD b3_k
+@__Lif7else LOD b3_k
 ADD 1
 I2F
 F_LES b3_f
-JIZ Lif8else
+JIZ __Lif8else
 LOD b3_s
 ADD 2
 SET b3_s
-@Lif8else LOD b3_k
+@__Lif8else LOD b3_k
 ADD 1
 I2F
 EQU b3_f
-JIZ Lif9else
+JIZ __Lif9else
 LOD b3_s
 ADD 4
 SET b3_s
-@Lif9else LOD b3_s
+@__Lif9else LOD b3_s
 RET
 @b4 SET_P b4_k
 SET b4_f
@@ -115,23 +115,23 @@ LOD 0
 SET b4_s
 I2F_M b4_k
 F_LES b4_f
-JIZ Lif10else
+JIZ __Lif10else
 LOD b4_s
 ADD 1
 SET b4_s
-@Lif10else I2F_M b4_k
+@__Lif10else I2F_M b4_k
 F_GRE b4_f
-JIZ Lif11else
+JIZ __Lif11else
 LOD b4_s
 ADD 2
 SET b4_s
-@Lif11else I2F_M b4_k
+@__Lif11else I2F_M b4_k
 EQU b4_f
-JIZ Lif12else
+JIZ __Lif12else
 LOD b4_s
 ADD 4
 SET b4_s
-@Lif12else LOD b4_s
+@__Lif12else LOD b4_s
 RET
 @b5 SET_P b5_k
 SET b5_f
@@ -141,27 +141,27 @@ LOD b5_k
 ADD 1
 I2F
 F_LES b5_f
-JIZ Lif13else
+JIZ __Lif13else
 LOD b5_s
 ADD 1
 SET b5_s
-@Lif13else LOD b5_k
+@__Lif13else LOD b5_k
 ADD 1
 I2F
 F_GRE b5_f
-JIZ Lif14else
+JIZ __Lif14else
 LOD b5_s
 ADD 2
 SET b5_s
-@Lif14else LOD b5_k
+@__Lif14else LOD b5_k
 ADD 1
 I2F
 EQU b5_f
-JIZ Lif15else
+JIZ __Lif15else
 LOD b5_s
 ADD 4
 SET b5_s
-@Lif15else LOD b5_s
+@__Lif15else LOD b5_s
 RET
 @b6 SET_P b6_g
 SET b6_f
@@ -169,23 +169,23 @@ LOD 0
 SET b6_s
 LOD b6_f
 F_GRE b6_g
-JIZ Lif16else
+JIZ __Lif16else
 LOD b6_s
 ADD 1
 SET b6_s
-@Lif16else LOD b6_f
+@__Lif16else LOD b6_f
 F_LES b6_g
-JIZ Lif17else
+JIZ __Lif17else
 LOD b6_s
 ADD 2
 SET b6_s
-@Lif17else LOD b6_f
+@__Lif17else LOD b6_f
 EQU b6_g
-JIZ Lif18else
+JIZ __Lif18else
 LOD b6_s
 ADD 4
 SET b6_s
-@Lif18else LOD b6_s
+@__Lif18else LOD b6_s
 RET
 @b7 SET_P b7_g
 SET b7_f
@@ -194,25 +194,25 @@ SET b7_s
 LOD b7_g
 F_ADD 0.5
 F_LES b7_f
-JIZ Lif19else
+JIZ __Lif19else
 LOD b7_s
 ADD 1
 SET b7_s
-@Lif19else LOD b7_g
+@__Lif19else LOD b7_g
 F_ADD 0.5
 F_GRE b7_f
-JIZ Lif20else
+JIZ __Lif20else
 LOD b7_s
 ADD 2
 SET b7_s
-@Lif20else LOD b7_g
+@__Lif20else LOD b7_g
 F_ADD 0.5
 EQU b7_f
-JIZ Lif21else
+JIZ __Lif21else
 LOD b7_s
 ADD 4
 SET b7_s
-@Lif21else LOD b7_s
+@__Lif21else LOD b7_s
 RET
 @b8 SET_P b8_g
 SET b8_f
@@ -221,25 +221,25 @@ SET b8_s
 LOD b8_f
 F_ADD 0.5
 F_GRE b8_g
-JIZ Lif22else
+JIZ __Lif22else
 LOD b8_s
 ADD 1
 SET b8_s
-@Lif22else LOD b8_f
+@__Lif22else LOD b8_f
 F_ADD 0.5
 F_LES b8_g
-JIZ Lif23else
+JIZ __Lif23else
 LOD b8_s
 ADD 2
 SET b8_s
-@Lif23else LOD b8_f
+@__Lif23else LOD b8_f
 F_ADD 0.5
 EQU b8_g
-JIZ Lif24else
+JIZ __Lif24else
 LOD b8_s
 ADD 4
 SET b8_s
-@Lif24else LOD b8_s
+@__Lif24else LOD b8_s
 RET
 @main LOD 2
 P_LOD 3.0

@@ -36,11 +36,7 @@ void declar_var(int id)
 {
     // consistency check ------------------------------------------------------
 
-    if (v_table[id].type != 0)
-    {
-        fprintf(stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
-    }
+    check_name(id, 0);   // free in the .asm, not an instruction, not declared twice
 
     // update the variable status ---------------------------------------------
 
@@ -72,11 +68,7 @@ void declar_var(int id)
 // Called immediately so subsequent declarations can resolve this var.
 static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
 {
-    if (v_table[id_var].type != 0)
-    {
-        fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_table[id_var].name, fname));
-        exit(EXIT_FAILURE);
-    }
+    check_name(id_var, 0);
 
     v_table[id_var].type       = type_tmp;
     v_table[id_var].used       = 0;
@@ -144,11 +136,7 @@ void declar_arr_1d(int id_var, int id_arg, int id_fname)
 // Parse-time half of declar_arr_2d.
 static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 {
-    if (v_table[id_var].type != 0)
-    {
-        fprintf (stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(v_table[id_var].name, fname));
-        exit(EXIT_FAILURE);
-    }
+    check_name(id_var, 0);
 
     v_table[id_var].type       = type_tmp;
     v_table[id_var].used       = 0;

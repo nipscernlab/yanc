@@ -1,0 +1,10 @@
+// The local ADD of S is S_ADD in the .asm, an instruction, though neither name is one.
+#PRNAME p
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+int S(int ADD) { return ADD + 1; }
+void main() { out(0, S(4)); }

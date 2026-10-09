@@ -1,0 +1,10 @@
+// A global main_x and the local x of main are both main_x in the .asm.
+#PRNAME p
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+int main_x = 3;
+void main() { int x = 5; out(0, x + main_x); }

@@ -9,7 +9,7 @@ NOP
 #array w 2 4
 #array P 2 16
 #SHARE rls_update_e rls_update_d
-#SHARE aux_var rls_update_d
+#SHARE __aux_var rls_update_d
 JMP main
 @rls_update SET rls_update_d
 LOD w
@@ -273,52 +273,52 @@ SET_V w 2
 SET_V w 3
 LOD 0
 SET main_j
-@Lwh1 LOD 20
+@__Lwh1 LOD 20
 LES main_j
-JIZ Lwh1end
+JIZ __Lwh1end
 F_INN 0
 F_MLT 0.001
-SET aux_var
+SET __aux_var
 LOD_V x 2
 SET_V x 3
 LOD_V x 1
 SET_V x 2
 LOD_V x 0
 SET_V x 1
-LOD aux_var
+LOD __aux_var
 SET x
 F_INN 0
 F_MLT 0.001
-SET aux_var
+SET __aux_var
 LOD_V x 2
 SET_V x 3
 LOD_V x 1
 SET_V x 2
 LOD_V x 0
 SET_V x 1
-LOD aux_var
+LOD __aux_var
 SET x
 F_INN 0
 F_MLT 0.001
-SET aux_var
+SET __aux_var
 LOD_V x 2
 SET_V x 3
 LOD_V x 1
 SET_V x 2
 LOD_V x 0
 SET_V x 1
-LOD aux_var
+LOD __aux_var
 SET x
 F_INN 0
 F_MLT 0.001
-SET aux_var
+SET __aux_var
 LOD_V x 2
 SET_V x 3
 LOD_V x 1
 SET_V x 2
 LOD_V x 0
 SET_V x 1
-LOD aux_var
+LOD __aux_var
 SET x
 INN 1
 I2F
@@ -343,5 +343,5 @@ OUT 0
 LOD main_j
 ADD 1
 SET main_j
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

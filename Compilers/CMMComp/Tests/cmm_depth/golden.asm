@@ -28,11 +28,11 @@ CAL mid
 ADD top_b
 ADD top_c
 RET
-@main @Lwh1 INN 0
+@main @__Lwh1 INN 0
 SET main_x
 P_LOD 2
 P_LOD 3
 CAL top
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

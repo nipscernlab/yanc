@@ -56,7 +56,7 @@ SET_V b 0
 SET_V b 1
 SET_V b 2
 SET_V b 3
-@Lwh1 LOD_V B 0
+@__Lwh1 LOD_V B 0
 F_MLT a
 P_LOD_V B 1
 F_MLT_V a 1
@@ -178,5 +178,5 @@ F_MLT 0.001
 SET_V a 3
 LOD 1
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

@@ -112,7 +112,7 @@ expr pplus1d2exp(int id, expr ete, int old)
     expr e = expr_make(v_table[id].type, 0);
     // a float element whose old value is wanted: keep a copy (the index sits
     // on the stack top for STI, so the stack cannot hold it)
-    if (old && e.type == 2) add_instr("SET aux_var\n");
+    if (old && e.type == 2) add_instr("SET __aux_var\n");
 
     // now turn the 1 into an expr (same data type as x): the name is the
     // assembler operand, so a float x needs "1.0" -- "1" would be assembled
@@ -129,7 +129,7 @@ expr pplus1d2exp(int id, expr ete, int old)
     ass_array(id, ret, 0);
 
     // the value of `x[i]++` in an expression is the old element
-    if (old) add_instr(e.type == 2 ? "LOD aux_var\n" : "ADD -1\n");
+    if (old) add_instr(e.type == 2 ? "LOD __aux_var\n" : "ADD -1\n");
 
     acc_ok = 1; // cannot free acc, since it is an exp
 
@@ -150,7 +150,7 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     add_instr("LDI %s\n", v_table[id].name);
     acc_ok = 1;                                // x[i][j] in the acc
     expr e = expr_make(v_table[id].type, 0);
-    if (old && e.type == 2) add_instr("SET aux_var\n");   // see 1-D
+    if (old && e.type == 2) add_instr("SET __aux_var\n");   // see 1-D
 
     // now turn the 1 into an expr (same data type as x): "1.0" for a float
     // (see pplus2exp)
@@ -166,7 +166,7 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     ass_array(id, ret, 0);
 
     // the value of `x[i][j]++` in an expression is the old element
-    if (old) add_instr(e.type == 2 ? "LOD aux_var\n" : "ADD -1\n");
+    if (old) add_instr(e.type == 2 ? "LOD __aux_var\n" : "ADD -1\n");
 
     acc_ok = 1; // cannot free acc, since it is an exp
 

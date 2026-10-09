@@ -8,11 +8,11 @@ NOP
 #NUGAIN 128
 @main LOD 1
 SET main_um
-@Lwh1 LOD main_um
+@__Lwh1 LOD main_um
 MLT main_um
 PSH
-@Lcad1 CAD Lcad1
+@__Lcad1 CAD __Lcad1
 S_ADD
-@Ltom2 TOM Ltom2
-JMP Lwh1
-@Lwh1end @fim JMP fim
+@__Ltom2 TOM __Ltom2
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

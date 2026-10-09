@@ -304,12 +304,12 @@ void add_instr(char *inst, ...)
     // check whether the instruction needs a special macro --------------------
     // ------------------------------------------------------------------------
 
-    if (find_opc("float_sqrt", str)) mac_add("fsqrt");
-    if (find_opc("float_atan", str)) mac_add("fatan");
-    if (find_opc("float_sin" , str)) mac_add("fsin" );
-    if (find_opc("float_tan" , str)) mac_add("ftan" );
-    if (find_opc("float_exp" , str)) mac_add("fexp" );
-    if (find_opc("float_log" , str)) mac_add("flog" );
+    if (find_opc("__float_sqrt", str)) mac_add("fsqrt");
+    if (find_opc("__float_atan", str)) mac_add("fatan");
+    if (find_opc("__float_sin" , str)) mac_add("fsin" );
+    if (find_opc("__float_tan" , str)) mac_add("ftan" );
+    if (find_opc("__float_exp" , str)) mac_add("fexp" );
+    if (find_opc("__float_log" , str)) mac_add("flog" );
 
     // track what is now in the accumulator: only a plain LOD / P_LOD / SET of an
     // operand leaves that operand's value there; anything else clobbers it.

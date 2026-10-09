@@ -484,11 +484,11 @@ void ass_array(int id, expr e, int fft)
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
-        add_instr("SET aux_var\n");
+        add_instr("SET __aux_var\n");
         add_instr("P_I2F_M %s\n", v_table[e.id].name);
         add_instr("%s %s\n"  , set_type, v_table[id].name);
 
-        add_instr("LOD aux_var\n");
+        add_instr("LOD __aux_var\n");
         add_instr("P_LOD 0.0\n"  );
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -500,12 +500,12 @@ void ass_array(int id, expr e, int fft)
         fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("I2F\n"                   );
-        add_instr("SET_P aux_var\n"         );
-        add_instr("SET   aux_var2\n"        );
-        add_instr("P_LOD aux_var\n"         );
+        add_instr("SET_P __aux_var\n"         );
+        add_instr("SET   __aux_var2\n"        );
+        add_instr("P_LOD __aux_var\n"         );
         add_instr("%s %s\n"  , set_type, v_table[id].name);
 
-        add_instr("LOD   aux_var2\n"        );
+        add_instr("LOD   __aux_var2\n"        );
         add_instr("P_LOD 0.0\n"             );
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -516,11 +516,11 @@ void ass_array(int id, expr e, int fft)
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
-        add_instr("SET   aux_var\n"         );
+        add_instr("SET   __aux_var\n"         );
         add_instr("P_LOD %s\n"  , v_table[e.id].name);
         add_instr("%s %s\n"  , set_type, v_table[id].name);
 
-        add_instr("LOD   aux_var\n"         );
+        add_instr("LOD   __aux_var\n"         );
         add_instr("P_LOD 0.0\n"             );
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -531,12 +531,12 @@ void ass_array(int id, expr e, int fft)
     {
         fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
-        add_instr("SET_P aux_var\n"         );
-        add_instr("SET   aux_var2\n"        );
-        add_instr("P_LOD aux_var\n"         );
+        add_instr("SET_P __aux_var\n"         );
+        add_instr("SET   __aux_var2\n"        );
+        add_instr("P_LOD __aux_var\n"         );
         add_instr("%s %s\n"  , set_type, v_table[id].name);
 
-        add_instr("LOD   aux_var2\n"        );
+        add_instr("LOD   __aux_var2\n"        );
         add_instr("P_LOD 0.0\n"             );
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -547,11 +547,11 @@ void ass_array(int id, expr e, int fft)
     {
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("P_LOD %s\n"  , v_table[etr.id].name);
         add_instr("%s %s\n" , set_type, v_table[id].name);
 
-        add_instr("LOD   aux_var\n");
+        add_instr("LOD   __aux_var\n");
         add_instr("P_LOD %s\n"   , v_table[eti.id].name);
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -562,11 +562,11 @@ void ass_array(int id, expr e, int fft)
     {
         get_cmp_ets(e,&etr,&eti);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("P_LOD %s\n"   , v_table[etr.id].name);
         add_instr("%s %s\n"  , set_type, v_table[id].name);
 
-        add_instr("LOD   aux_var\n");
+        add_instr("LOD   __aux_var\n");
         add_instr("P_LOD %s\n"   , v_table[eti.id].name);
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -575,15 +575,15 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 3) && (e.type == 3) && (e.id == 0))
     {
-        add_instr("SET_P aux_var\n" );
-        add_instr("SET_P aux_var2\n");
-        add_instr("SET   aux_var3\n");
+        add_instr("SET_P __aux_var\n" );
+        add_instr("SET_P __aux_var2\n");
+        add_instr("SET   __aux_var3\n");
 
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         add_instr("%s %s\n"  , set_type, v_table[id].name);
 
-        add_instr("LOD   aux_var3\n");
-        add_instr("P_LOD aux_var\n" );
+        add_instr("LOD   __aux_var3\n");
+        add_instr("P_LOD __aux_var\n" );
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
 

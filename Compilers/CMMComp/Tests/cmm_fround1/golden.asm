@@ -30,7 +30,7 @@ LOD 0.000000000000000000000000000000001
 SET main_d33
 LOD 1000000000000000000000000000000000000.0
 SET main_b36
-@Lwh1 LOD main_one
+@__Lwh1 LOD main_one
 F_ADD main_u
 F_SU1 main_one
 SET main_x
@@ -105,15 +105,15 @@ LOD 0.0
 SET main_acc
 LOD 0
 SET main_k
-@Lwh2 LOD main_acc
+@__Lwh2 LOD main_acc
 F_ADD 0.001
 SET main_acc
 LOD main_k
 ADD 1
 SET main_k
 LES 999
-JIZ Lwh2
-@Lwh2end LOD main_acc
+JIZ __Lwh2
+@__Lwh2end LOD main_acc
 F_SU1 main_one
 F_MLT main_ulp
 SET main_y
@@ -123,25 +123,25 @@ LOD main_big
 F_MLT main_big
 SET main_y
 F_LES main_big
-JIZ Lif1else
+JIZ __Lif1else
 LOD 1
 SET main_flag
-JMP Lif1end
-@Lif1else LOD 0
+JMP __Lif1end
+@__Lif1else LOD 0
 SET main_flag
-@Lif1end LOD main_flag
+@__Lif1end LOD main_flag
 OUT 0
 LOD main_tiny
 F_MLT main_tiny
 SET main_y
 EQU 0.0
-JIZ Lif2else
+JIZ __Lif2else
 LOD 1
 SET main_flag
-JMP Lif2end
-@Lif2else LOD 0
+JMP __Lif2end
+@__Lif2else LOD 0
 SET main_flag
-@Lif2end LOD main_flag
+@__Lif2end LOD main_flag
 OUT 0
 LOD main_x
 F_SU1 main_x
@@ -149,13 +149,13 @@ SET main_z
 F_NEG_M main_z
 SET main_y
 EQU 0.0
-JIZ Lif3else
+JIZ __Lif3else
 LOD 1
 SET main_flag
-JMP Lif3end
-@Lif3else LOD 0
+JMP __Lif3end
+@__Lif3else LOD 0
 SET main_flag
-@Lif3end LOD main_flag
+@__Lif3end LOD main_flag
 OUT 0
 LOD 4194303
 SET main_k
@@ -208,5 +208,5 @@ F_MLT main_b36
 SET main_x
 F2I_M main_x
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

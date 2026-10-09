@@ -1,0 +1,55 @@
+#PRNAME cmm_names
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// User names spelt like the compiler's own names in the .asm. Before the
+// compiler's names moved under `__` (607bff4) this printed
+// 7 1969225728 1983905800 4 5 9: `aux_var` and `pow_b` are scratch words of
+// the post-increment and of pow(), so the program overwrote the user's
+// globals without a word. `Lwh1` and `sw_body_1_1` (labels) and `fim` stay as
+// guards. Expected outputs (hand-computed):
+//   Lwh1 + k after the loop       : 4 + 3          = 7
+//   aux_var after y = g[0]++      : 2              = 2
+//   pow(2, 3) + pow_b             : 8 + 2          = 10
+//   floor(sqrt(16.0) + floor_x)   : floor(4.5)     = 4
+//   sw_body_1_1 after a switch    : 5              = 5
+//   fim (a variable is allowed)   : 9              = 9
+
+int   Lwh1 = 4;
+int   aux_var = 2;
+int   pow_b = 2;
+float floor_x = 0.5;
+int   sw_body_1_1 = 5;
+int   switch_exp = 0;
+int   fim = 9;
+float g[2];
+
+void main()
+{
+    int k = 0;
+    while (k < 3) k = k + 1;
+    out(0, Lwh1 + k);
+
+    g[0] = 1.5;
+    float yy = g[0]++;               // keeps the old g[0] in aux_var
+    out(0, aux_var);
+
+    int y = pow(2, 3);
+    out(0, y + pow_b);
+
+    float s = sqrt(16.0);
+    int r = floor(s + floor_x);
+    out(0, r);
+
+    switch (k)
+    {
+        case 3: switch_exp = 1; break;
+        default: switch_exp = 2;
+    }
+    out(0, sw_body_1_1);
+    out(0, fim);
+}

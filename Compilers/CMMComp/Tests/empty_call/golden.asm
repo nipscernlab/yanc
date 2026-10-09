@@ -12,10 +12,10 @@ RET
 @emit_one LOD 1
 OUT 0
 RET
-@main @Lwh1 CAL answer
+@main @__Lwh1 CAL answer
 SET main_y
 CAL emit_one
 LOD main_y
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

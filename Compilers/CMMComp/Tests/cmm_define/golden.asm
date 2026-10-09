@@ -6,7 +6,7 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-@main @Lwh1 INN 0
+@main @__Lwh1 INN 0
 SET main_x
 ADD 3
 SET main_x
@@ -15,5 +15,5 @@ LOD main_x
 ADD 7
 SET main_x
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

@@ -11,14 +11,14 @@ NOP
 #array data_i 4 8
 #array wpv 3 4
 #array wpv_i 4 4
-#SHARE fft_temp_i aux_var1
+#SHARE fft_temp_i __aux_var1
 JMP main
 @fft SET fft_N
 LOD 1
 SET fft_mmax
-@Lwh1 LOD fft_N
+@__Lwh1 LOD fft_N
 LES fft_mmax
-JIZ Lwh1end
+JIZ __Lwh1end
 LOD fft_mmax
 MLT 2
 SET fft_istep
@@ -28,14 +28,14 @@ LOD 0
 SET fft_ind
 LOD 0
 SET fft_sind
-@Lwh2 LOD fft_mmax
+@__Lwh2 LOD fft_mmax
 LES fft_m
-JIZ Lwh2end
+JIZ __Lwh2end
 LOD fft_m
 SET fft_k
-@Lwh3 LOD fft_N
+@__Lwh3 LOD fft_N
 LES fft_k
-JIZ Lwh3end
+JIZ __Lwh3end
 LOD fft_k
 ADD fft_mmax
 SET fft_j
@@ -47,18 +47,18 @@ P_LOD fft_j
 ILI data
 P_LOD fft_j
 ILI data_i
-SET_P aux_var 
-SET_P aux_var1
-SET_P aux_var2
-SET   aux_var3
-F_MLT aux_var1
-P_LOD aux_var 
-F_MLT aux_var2
+SET_P __aux_var 
+SET_P __aux_var1
+SET_P __aux_var2
+SET   __aux_var3
+F_MLT __aux_var1
+P_LOD __aux_var 
+F_MLT __aux_var2
 SF_SU2
-P_LOD aux_var1
-F_MLT aux_var2
-P_LOD aux_var 
-F_MLT aux_var3
+P_LOD __aux_var1
+F_MLT __aux_var2
+P_LOD __aux_var 
+F_MLT __aux_var3
 SF_ADD
 SET_P fft_temp_i
 SET fft_temp
@@ -67,34 +67,34 @@ P_LOD fft_k
 ILI data
 P_LOD fft_k
 ILI data_i
-SET_P aux_var
+SET_P __aux_var
 F_SU1 fft_temp
-P_LOD aux_var
+P_LOD __aux_var
 F_SU1 fft_temp_i
-SET_P aux_var
-SET_P aux_var2
-SET   aux_var3
-P_LOD aux_var2
+SET_P __aux_var
+SET_P __aux_var2
+SET   __aux_var3
+P_LOD __aux_var2
 ISI data
-LOD   aux_var3
-P_LOD aux_var
+LOD   __aux_var3
+P_LOD __aux_var
 ISI data_i
 LOD fft_k
 P_LOD fft_k
 ILI data
 P_LOD fft_k
 ILI data_i
-SET_P aux_var
+SET_P __aux_var
 F_ADD fft_temp
-P_LOD aux_var
+P_LOD __aux_var
 F_ADD fft_temp_i
-SET_P aux_var
-SET_P aux_var2
-SET   aux_var3
-P_LOD aux_var2
+SET_P __aux_var
+SET_P __aux_var2
+SET   __aux_var3
+P_LOD __aux_var2
 ISI data
-LOD   aux_var3
-P_LOD aux_var
+LOD   __aux_var3
+P_LOD __aux_var
 ISI data_i
 LOD fft_k
 ADD fft_istep
@@ -102,17 +102,17 @@ SET fft_k
 LOD fft_ind
 ADD 1
 SET fft_ind
-JMP Lwh3
-@Lwh3end LOD fft_ind
+JMP __Lwh3
+@__Lwh3end LOD fft_ind
 SET fft_sind
 LOD fft_m
 ADD 1
 SET fft_m
-JMP Lwh2
-@Lwh2end LOD fft_istep
+JMP __Lwh2
+@__Lwh2end LOD fft_istep
 SET fft_mmax
-JMP Lwh1
-@Lwh1end RET
+JMP __Lwh1
+@__Lwh1end RET
 @main LOD 1.000000
 SET_V wpv 0
 LOD 0.000000
@@ -175,8 +175,8 @@ LOD 0
 ILI data
 P_LOD 0
 ILI data_i
-SET_P aux_var
-LOD   aux_var
+SET_P __aux_var
+LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
@@ -192,8 +192,8 @@ LOD 1
 ILI data
 P_LOD 1
 ILI data_i
-SET_P aux_var
-LOD   aux_var
+SET_P __aux_var
+LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
@@ -209,8 +209,8 @@ LOD 2
 ILI data
 P_LOD 2
 ILI data_i
-SET_P aux_var
-LOD   aux_var
+SET_P __aux_var
+LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
@@ -226,8 +226,8 @@ LOD 3
 ILI data
 P_LOD 3
 ILI data_i
-SET_P aux_var
-LOD   aux_var
+SET_P __aux_var
+LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
@@ -243,8 +243,8 @@ LOD 4
 ILI data
 P_LOD 4
 ILI data_i
-SET_P aux_var
-LOD   aux_var
+SET_P __aux_var
+LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
@@ -260,8 +260,8 @@ LOD 5
 ILI data
 P_LOD 5
 ILI data_i
-SET_P aux_var
-LOD   aux_var
+SET_P __aux_var
+LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
@@ -277,8 +277,8 @@ LOD 6
 ILI data
 P_LOD 6
 ILI data_i
-SET_P aux_var
-LOD   aux_var
+SET_P __aux_var
+LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
@@ -294,8 +294,8 @@ LOD 7
 ILI data
 P_LOD 7
 ILI data_i
-SET_P aux_var
-LOD   aux_var
+SET_P __aux_var
+LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1

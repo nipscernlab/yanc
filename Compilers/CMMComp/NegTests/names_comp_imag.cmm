@@ -1,0 +1,11 @@
+// A comp z keeps its imaginary part in z_i: a float z_i declared before it shared that word.
+#PRNAME p
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+float z_i;
+comp z;
+void main() { out(0, 1); }

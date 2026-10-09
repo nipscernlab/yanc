@@ -65,7 +65,7 @@ F2I_M midcomp_c_i
 OUT 0
 LOD midcomp_b
 RET
-@main @Lwh1 LOD 3.000000
+@main @__Lwh1 LOD 3.000000
 P_LOD 4.000000
 CAL echo
 SET_P main_e_i
@@ -136,5 +136,5 @@ F2I_M main_nest
 OUT 0
 F2I_M main_nest_i
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

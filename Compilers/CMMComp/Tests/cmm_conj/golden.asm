@@ -8,7 +8,7 @@ NOP
 #NUGAIN 128
 #SHARE main_z main_c_i
 #SHARE main_z_i main_c
-@main @Lwh1 LOD 3.000000
+@main @__Lwh1 LOD 3.000000
 PF_NEG_M 4.000000
 SET_P main_c_i
 SET main_c
@@ -63,5 +63,5 @@ F2I_M main_c
 OUT 0
 F2I_M main_c_i
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

@@ -9,24 +9,24 @@ NOP
 #SHARE main_v main_k
 @main LOD 0
 SET main_n
-@Lwh1 LOD 16
+@__Lwh1 LOD 16
 LES main_n
-JIZ Lwh1end
+JIZ __Lwh1end
 LOD 0
 SET main_k
-@Lwh2 NEG_M main_n
+@__Lwh2 NEG_M main_n
 ADD 16
 LES main_k
-JIZ Lwh2end
+JIZ __Lwh2end
 LOD main_k
 ADD 1
 SET main_k
-JMP Lwh2
-@Lwh2end @Lcad1 CAD Lcad1
+JMP __Lwh2
+@__Lwh2end @__Lcad1 CAD __Lcad1
 SET main_v
 OUT 0
 LOD main_n
 ADD 1
 SET main_n
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

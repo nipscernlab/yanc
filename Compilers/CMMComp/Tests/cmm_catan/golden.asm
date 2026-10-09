@@ -6,103 +6,103 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE fase_re catan_b2
-#SHARE fase_t catan_re
-#SHARE catan_bp catan_b2
-#SHARE catan_num catan_b2
-#SHARE catan_den catan_bm
-#SHARE catan_im catan_a2
-#SHARE main_c_i catan_a2
-#SHARE main_c fase_im
-#SHARE main_z fase_im
-#SHARE main_w catan_b
-#SHARE main_w_i catan_a2
-#SHARE catan_a fase_im
-#SHARE atan_x catan_b2
-#SHARE atan_big catan_bm
-#SHARE atan_t atan_ax
-#SHARE atan_p atan_ax
-#SHARE log_x catan_bm
-#SHARE log_e catan_b2
-#SHARE log_ne atan_ax
-#SHARE log_m atan_ax
-#SHARE log_t2 catan_bm
-#SHARE log_t1 atan_ax
-#SHARE log_u catan_bm
-#SHARE log_w atan_ax
-#SHARE log_lm catan_bm
-@main @Lwh1 LOD 1.000000
+#SHARE __fase_re __catan_b2
+#SHARE __fase_t __catan_re
+#SHARE __catan_bp __catan_b2
+#SHARE __catan_num __catan_b2
+#SHARE __catan_den __catan_bm
+#SHARE __catan_im __catan_a2
+#SHARE main_c_i __catan_a2
+#SHARE main_c __fase_im
+#SHARE main_z __fase_im
+#SHARE main_w __catan_b
+#SHARE main_w_i __catan_a2
+#SHARE __catan_a __fase_im
+#SHARE __atan_x __catan_b2
+#SHARE __atan_big __catan_bm
+#SHARE __atan_t __atan_ax
+#SHARE __atan_p __atan_ax
+#SHARE __log_x __catan_bm
+#SHARE __log_e __catan_b2
+#SHARE __log_ne __atan_ax
+#SHARE __log_m __atan_ax
+#SHARE __log_t2 __catan_bm
+#SHARE __log_t1 __atan_ax
+#SHARE __log_u __catan_bm
+#SHARE __log_w __atan_ax
+#SHARE __log_lm __catan_bm
+@main @__Lwh1 LOD 1.000000
 F_MLT 1.000000
-SET catan_a2
+SET __catan_a2
 LOD 0.000000
 F_MLT 0.000000
-SET catan_b2
-F_ADD catan_a2
+SET __catan_b2
+F_ADD __catan_a2
 F_SU2 1.0
 P_LOD 1.000000
 F_MLT 2.0
-SET_P fase_im
-SET fase_re
+SET_P __fase_im
+SET __fase_re
 LOD 0.0
-F_LES fase_re
-JIZ Lfa1a
-LOD fase_re
-F_DIV fase_im
+F_LES __fase_re
+JIZ __Lfa1a
+LOD __fase_re
+F_DIV __fase_im
 NOP
 F_QUO
-CAL float_atan
-SET fase_t
+CAL __float_atan
+SET __fase_t
 LOD 0.0
-F_LES fase_im
-JIZ Lfa1b
-LOD fase_t
+F_LES __fase_im
+JIZ __Lfa1b
+LOD __fase_t
 F_ADD -3.14159265359
-JMP Lfa1z
-@Lfa1b LOD fase_t
+JMP __Lfa1z
+@__Lfa1b LOD __fase_t
 F_ADD 3.14159265359
-JMP Lfa1z
-@Lfa1a LOD fase_re
+JMP __Lfa1z
+@__Lfa1a LOD __fase_re
 F_LES 0.0
-JIZ Lfa1c
-LOD fase_re
-F_DIV fase_im
+JIZ __Lfa1c
+LOD __fase_re
+F_DIV __fase_im
 NOP
 F_QUO
-CAL float_atan
-JMP Lfa1z
-@Lfa1c LOD fase_im
+CAL __float_atan
+JMP __Lfa1z
+@__Lfa1c LOD __fase_im
 F_LES 0.0
-JIZ Lfa1d
+JIZ __Lfa1d
 LOD 1.57079632679
-JMP Lfa1z
-@Lfa1d LOD 0.0
-F_LES fase_im
-JIZ Lfa1e
+JMP __Lfa1z
+@__Lfa1d LOD 0.0
+F_LES __fase_im
+JIZ __Lfa1e
 LOD -1.57079632679
-JMP Lfa1z
-@Lfa1e LOD 0.0
-@Lfa1z F_MLT 0.5
-SET catan_re
+JMP __Lfa1z
+@__Lfa1e LOD 0.0
+@__Lfa1z F_MLT 0.5
+SET __catan_re
 LOD 0.000000
 F_ADD 1.0
-SET catan_bp
-F_MLT catan_bp
-F_ADD catan_a2
-SET catan_num
+SET __catan_bp
+F_MLT __catan_bp
+F_ADD __catan_a2
+SET __catan_num
 LOD 0.000000
 F_ADD -1.0
-SET catan_bm
-F_MLT catan_bm
-F_ADD catan_a2
-SET catan_den
-F_DIV catan_num
+SET __catan_bm
+F_MLT __catan_bm
+F_ADD __catan_a2
+SET __catan_den
+F_DIV __catan_num
 NOP
 F_QUO
-CAL float_log
+CAL __float_log
 F_MLT 0.25
-SET catan_im
-LOD catan_re
-P_LOD catan_im
+SET __catan_im
+LOD __catan_re
+P_LOD __catan_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -114,76 +114,76 @@ F2I
 OUT 0
 LOD 0.000000
 F_MLT 0.000000
-SET catan_a2
+SET __catan_a2
 LOD 0.500000
 F_MLT 0.500000
-SET catan_b2
-F_ADD catan_a2
+SET __catan_b2
+F_ADD __catan_a2
 F_SU2 1.0
 P_LOD 0.000000
 F_MLT 2.0
-SET_P fase_im
-SET fase_re
+SET_P __fase_im
+SET __fase_re
 LOD 0.0
-F_LES fase_re
-JIZ Lfa2a
-LOD fase_re
-F_DIV fase_im
+F_LES __fase_re
+JIZ __Lfa2a
+LOD __fase_re
+F_DIV __fase_im
 NOP
 F_QUO
-CAL float_atan
-SET fase_t
+CAL __float_atan
+SET __fase_t
 LOD 0.0
-F_LES fase_im
-JIZ Lfa2b
-LOD fase_t
+F_LES __fase_im
+JIZ __Lfa2b
+LOD __fase_t
 F_ADD -3.14159265359
-JMP Lfa2z
-@Lfa2b LOD fase_t
+JMP __Lfa2z
+@__Lfa2b LOD __fase_t
 F_ADD 3.14159265359
-JMP Lfa2z
-@Lfa2a LOD fase_re
+JMP __Lfa2z
+@__Lfa2a LOD __fase_re
 F_LES 0.0
-JIZ Lfa2c
-LOD fase_re
-F_DIV fase_im
+JIZ __Lfa2c
+LOD __fase_re
+F_DIV __fase_im
 NOP
 F_QUO
-CAL float_atan
-JMP Lfa2z
-@Lfa2c LOD fase_im
+CAL __float_atan
+JMP __Lfa2z
+@__Lfa2c LOD __fase_im
 F_LES 0.0
-JIZ Lfa2d
+JIZ __Lfa2d
 LOD 1.57079632679
-JMP Lfa2z
-@Lfa2d LOD 0.0
-F_LES fase_im
-JIZ Lfa2e
+JMP __Lfa2z
+@__Lfa2d LOD 0.0
+F_LES __fase_im
+JIZ __Lfa2e
 LOD -1.57079632679
-JMP Lfa2z
-@Lfa2e LOD 0.0
-@Lfa2z F_MLT 0.5
-SET catan_re
+JMP __Lfa2z
+@__Lfa2e LOD 0.0
+@__Lfa2z F_MLT 0.5
+SET __catan_re
 LOD 0.500000
 F_ADD 1.0
-SET catan_bp
-F_MLT catan_bp
-F_ADD catan_a2
-SET catan_num
+SET __catan_bp
+F_MLT __catan_bp
+F_ADD __catan_a2
+SET __catan_num
 LOD 0.500000
 F_ADD -1.0
-SET catan_bm
-F_MLT catan_bm
-F_ADD catan_a2
-SET catan_den
-F_DIV catan_num
+SET __catan_bm
+F_MLT __catan_bm
+F_ADD __catan_a2
+SET __catan_den
+F_DIV __catan_num
 NOP
 F_QUO
-CAL float_log
+CAL __float_log
 F_MLT 0.25
-SET catan_im
-LOD catan_re
-P_LOD catan_im
+SET __catan_im
+LOD __catan_re
+P_LOD __catan_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -199,76 +199,76 @@ LOD 1.000000
 SET main_z_i
 LOD main_z
 F_MLT main_z
-SET catan_a2
+SET __catan_a2
 LOD main_z_i
 F_MLT main_z_i
-SET catan_b2
-F_ADD catan_a2
+SET __catan_b2
+F_ADD __catan_a2
 F_SU2 1.0
 P_LOD main_z
 F_MLT 2.0
-SET_P fase_im
-SET fase_re
+SET_P __fase_im
+SET __fase_re
 LOD 0.0
-F_LES fase_re
-JIZ Lfa3a
-LOD fase_re
-F_DIV fase_im
+F_LES __fase_re
+JIZ __Lfa3a
+LOD __fase_re
+F_DIV __fase_im
 NOP
 F_QUO
-CAL float_atan
-SET fase_t
+CAL __float_atan
+SET __fase_t
 LOD 0.0
-F_LES fase_im
-JIZ Lfa3b
-LOD fase_t
+F_LES __fase_im
+JIZ __Lfa3b
+LOD __fase_t
 F_ADD -3.14159265359
-JMP Lfa3z
-@Lfa3b LOD fase_t
+JMP __Lfa3z
+@__Lfa3b LOD __fase_t
 F_ADD 3.14159265359
-JMP Lfa3z
-@Lfa3a LOD fase_re
+JMP __Lfa3z
+@__Lfa3a LOD __fase_re
 F_LES 0.0
-JIZ Lfa3c
-LOD fase_re
-F_DIV fase_im
+JIZ __Lfa3c
+LOD __fase_re
+F_DIV __fase_im
 NOP
 F_QUO
-CAL float_atan
-JMP Lfa3z
-@Lfa3c LOD fase_im
+CAL __float_atan
+JMP __Lfa3z
+@__Lfa3c LOD __fase_im
 F_LES 0.0
-JIZ Lfa3d
+JIZ __Lfa3d
 LOD 1.57079632679
-JMP Lfa3z
-@Lfa3d LOD 0.0
-F_LES fase_im
-JIZ Lfa3e
+JMP __Lfa3z
+@__Lfa3d LOD 0.0
+F_LES __fase_im
+JIZ __Lfa3e
 LOD -1.57079632679
-JMP Lfa3z
-@Lfa3e LOD 0.0
-@Lfa3z F_MLT 0.5
-SET catan_re
+JMP __Lfa3z
+@__Lfa3e LOD 0.0
+@__Lfa3z F_MLT 0.5
+SET __catan_re
 LOD main_z_i
 F_ADD 1.0
-SET catan_bp
-F_MLT catan_bp
-F_ADD catan_a2
-SET catan_num
+SET __catan_bp
+F_MLT __catan_bp
+F_ADD __catan_a2
+SET __catan_num
 LOD main_z_i
 F_ADD -1.0
-SET catan_bm
-F_MLT catan_bm
-F_ADD catan_a2
-SET catan_den
-F_DIV catan_num
+SET __catan_bm
+F_MLT __catan_bm
+F_ADD __catan_a2
+SET __catan_den
+F_DIV __catan_num
 NOP
 F_QUO
-CAL float_log
+CAL __float_log
 F_MLT 0.25
-SET catan_im
-LOD catan_re
-P_LOD catan_im
+SET __catan_im
+LOD __catan_re
+P_LOD __catan_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -290,79 +290,79 @@ LOD main_z
 F_ADD main_w
 P_LOD main_z_i
 F_ADD main_w_i
-SET_P catan_b
-SET   catan_a
-F_MLT catan_a
-SET catan_a2
-LOD catan_b
-F_MLT catan_b
-SET catan_b2
-F_ADD catan_a2
+SET_P __catan_b
+SET   __catan_a
+F_MLT __catan_a
+SET __catan_a2
+LOD __catan_b
+F_MLT __catan_b
+SET __catan_b2
+F_ADD __catan_a2
 F_SU2 1.0
-P_LOD catan_a
+P_LOD __catan_a
 F_MLT 2.0
-SET_P fase_im
-SET fase_re
+SET_P __fase_im
+SET __fase_re
 LOD 0.0
-F_LES fase_re
-JIZ Lfa4a
-LOD fase_re
-F_DIV fase_im
+F_LES __fase_re
+JIZ __Lfa4a
+LOD __fase_re
+F_DIV __fase_im
 NOP
 F_QUO
-CAL float_atan
-SET fase_t
+CAL __float_atan
+SET __fase_t
 LOD 0.0
-F_LES fase_im
-JIZ Lfa4b
-LOD fase_t
+F_LES __fase_im
+JIZ __Lfa4b
+LOD __fase_t
 F_ADD -3.14159265359
-JMP Lfa4z
-@Lfa4b LOD fase_t
+JMP __Lfa4z
+@__Lfa4b LOD __fase_t
 F_ADD 3.14159265359
-JMP Lfa4z
-@Lfa4a LOD fase_re
+JMP __Lfa4z
+@__Lfa4a LOD __fase_re
 F_LES 0.0
-JIZ Lfa4c
-LOD fase_re
-F_DIV fase_im
+JIZ __Lfa4c
+LOD __fase_re
+F_DIV __fase_im
 NOP
 F_QUO
-CAL float_atan
-JMP Lfa4z
-@Lfa4c LOD fase_im
+CAL __float_atan
+JMP __Lfa4z
+@__Lfa4c LOD __fase_im
 F_LES 0.0
-JIZ Lfa4d
+JIZ __Lfa4d
 LOD 1.57079632679
-JMP Lfa4z
-@Lfa4d LOD 0.0
-F_LES fase_im
-JIZ Lfa4e
+JMP __Lfa4z
+@__Lfa4d LOD 0.0
+F_LES __fase_im
+JIZ __Lfa4e
 LOD -1.57079632679
-JMP Lfa4z
-@Lfa4e LOD 0.0
-@Lfa4z F_MLT 0.5
-SET catan_re
-LOD catan_b
+JMP __Lfa4z
+@__Lfa4e LOD 0.0
+@__Lfa4z F_MLT 0.5
+SET __catan_re
+LOD __catan_b
 F_ADD 1.0
-SET catan_bp
-F_MLT catan_bp
-F_ADD catan_a2
-SET catan_num
-LOD catan_b
+SET __catan_bp
+F_MLT __catan_bp
+F_ADD __catan_a2
+SET __catan_num
+LOD __catan_b
 F_ADD -1.0
-SET catan_bm
-F_MLT catan_bm
-F_ADD catan_a2
-SET catan_den
-F_DIV catan_num
+SET __catan_bm
+F_MLT __catan_bm
+F_ADD __catan_a2
+SET __catan_den
+F_DIV __catan_num
 NOP
 F_QUO
-CAL float_log
+CAL __float_log
 F_MLT 0.25
-SET catan_im
-LOD catan_re
-P_LOD catan_im
+SET __catan_im
+LOD __catan_re
+P_LOD __catan_im
 SET_P main_c_i
 SET main_c
 F_MLT 1000.0
@@ -372,8 +372,8 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim
 
 // Arctangent function --------------------------------------------------------
 // |x| is folded into [0,1] with the 1/x identity: atan(|x|) = pi/2 - atan(1/|x|)
@@ -381,43 +381,43 @@ JMP Lwh1
 // squares fit, max abs error ~4.9e-6 -- ~6 digits, vs the old 49-point LUT's
 // ~4e-5). One shared polynomial for both branches; no table, no new hardware.
 
-@float_atan SET   atan_x                 // save x
-            F_ABS_M atan_x               // ax = |x|
-            SET   atan_ax
+@__float_atan SET   __atan_x                 // save x
+            F_ABS_M __atan_x               // ax = |x|
+            SET   __atan_ax
             F_LES 1.0                    // (ax > 1)?  [F_LES true when acc > X]
-            SET   atan_big               // flag: 1 if |x|>1 (use 1/x)
-            JIZ   L_atan_small
-            LOD   atan_ax                // big branch: t = 1/ax
+            SET   __atan_big               // flag: 1 if |x|>1 (use 1/x)
+            JIZ   __L_atan_small
+            LOD   __atan_ax                // big branch: t = 1/ax
             F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
 NOP
 F_QUO
-            JMP   L_atan_haveT
-@L_atan_small LOD atan_ax               // small branch: t = ax
-@L_atan_haveT SET atan_t
+            JMP   __L_atan_haveT
+@__L_atan_small LOD __atan_ax               // small branch: t = ax
+@__L_atan_haveT SET __atan_t
 
-            F_MLT atan_t                 // w = t^2
-            SET   atan_w
+            F_MLT __atan_t                 // w = t^2
+            SET   __atan_w
             LOD  -0.012300666580         // Horner in w: atan(t)/t = a1 + a3 w + ... + a11 w^5
-            F_MLT atan_w                 // a11
+            F_MLT __atan_w                 // a11
             F_ADD 0.054084934779         // a9
-            F_MLT atan_w
+            F_MLT __atan_w
             F_ADD -0.117697073484        // a7
-            F_MLT atan_w
+            F_MLT __atan_w
             F_ADD 0.194020561451         // a5
-            F_MLT atan_w
+            F_MLT __atan_w
             F_ADD -0.332694520616        // a3
-            F_MLT atan_w
+            F_MLT __atan_w
             F_ADD 0.999980069822         // a1
-            F_MLT atan_t                 // * t  -> atan(t)
-            SET   atan_p
+            F_MLT __atan_t                 // * t  -> atan(t)
+            SET   __atan_p
 
-            LOD   atan_big
-            JIZ   L_atan_done            // |x|<=1 -> result = atan(t)
-            LOD   atan_p                 // |x|>1  -> result = pi/2 - atan(1/x)
+            LOD   __atan_big
+            JIZ   __L_atan_done            // |x|<=1 -> result = atan(t)
+            LOD   __atan_p                 // |x|>1  -> result = pi/2 - atan(1/x)
             F_SU2 1.5707963268           // pi/2 - p   (F_SU2 X = X - acc)
-            JMP   L_atan_sign
-@L_atan_done LOD atan_p
-@L_atan_sign F_SGN atan_x                // apply the sign of x
+            JMP   __L_atan_sign
+@__L_atan_done LOD __atan_p
+@__L_atan_sign F_SGN __atan_x                // apply the sign of x
             RET
 
 // Natural logarithm ----------------------------------------------------------
@@ -426,50 +426,50 @@ F_QUO
 // atanh series 2u(1 + u^2/3 + u^4/5 + u^6/7 + u^8/9), u = (m-1)/(m+1).
 // x <= 0 returns 0.
 
-@float_log  SET   log_x                 // save x (acc still = x)
+@__float_log  SET   __log_x                 // save x (acc still = x)
             F_LES 0.0                    // (x > 0) ?   [F_LES true when acc > X]
-            JIZ   L_log_zero             // x <= 0 -> bail out with 0
+            JIZ   __L_log_zero             // x <= 0 -> bail out with 0
 
-            LOD   log_x
+            LOD   __log_x
             XPO                          // e = floor(log2 x)   (int)
-            SET   log_e
+            SET   __log_e
             NEG                          // -e
-            SET   log_ne
-            LOD   log_x
-            F_SCL log_ne                 // m = x * 2^(-e)  -> [1,2)
-            SET   log_m
+            SET   __log_ne
+            LOD   __log_x
+            F_SCL __log_ne                 // m = x * 2^(-e)  -> [1,2)
+            SET   __log_m
 
             F_ADD 1.0                    // m+1   (acc still = m)
-            SET   log_t2
-            LOD   log_m
+            SET   __log_t2
+            LOD   __log_m
             F_SU1 1.0                    // m-1   (acc - X)
-            SET   log_t1
-            LOD   log_t2
-            F_DIV log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
+            SET   __log_t1
+            LOD   __log_t2
+            F_DIV __log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
 NOP
 F_QUO
-            SET   log_u
-            F_MLT log_u
-            SET   log_w                  // w = u^2
+            SET   __log_u
+            F_MLT __log_u
+            SET   __log_w                  // w = u^2
 
             LOD   0.1111111111           // Horner in w (1/9, 1/7, 1/5, 1/3, 1)
-            F_MLT log_w
+            F_MLT __log_w
             F_ADD 0.1428571429
-            F_MLT log_w
+            F_MLT __log_w
             F_ADD 0.2
-            F_MLT log_w
+            F_MLT __log_w
             F_ADD 0.3333333333
-            F_MLT log_w
+            F_MLT __log_w
             F_ADD 1.0
-            F_MLT log_u
+            F_MLT __log_u
             F_MLT 2.0                     // log(m)
-            SET   log_lm
+            SET   __log_lm
 
-            LOD   log_e
+            LOD   __log_e
             I2F                           // float(e)
             F_MLT 0.6931471806            // e * ln2
-            F_ADD log_lm                  // + log(m)  -> log(x)
+            F_ADD __log_lm                  // + log(m)  -> log(x)
             RET
 
-@L_log_zero LOD   0.0
+@__L_log_zero LOD   0.0
             RET

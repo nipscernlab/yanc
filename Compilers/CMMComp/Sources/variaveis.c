@@ -13,6 +13,8 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/diretivas.h"
 #include "../Headers/messages.h"
+#include "../Headers/data_declar.h"
+#include "../../common/asm_share.h"
 
 int          v_count = 0;  // stores the size of the table
 static int   v_cap   = 0;  // current capacity of the parallel arrays
@@ -113,6 +115,112 @@ char* rem_fname(char *var, char *fname)
     // contain the full function name at the beginning,
     // so it is better not to remove anything (it must be global)
     return (ind == strlen(fname)) ? var + ind + 1 : var; // the +1 skips the '_'
+}
+
+// ----------------------------------------------------------------------------
+// one name, one owner in the .asm --------------------------------------------
+// ----------------------------------------------------------------------------
+// A user name is a word (or a label) of the .asm as the table spells it: the
+// local `x` of `main` is `main_x`. Before a declaration takes its row, make
+// sure the name is not an instruction (the assembler would read the
+// instruction) and that nobody else owns it (both would silently share one
+// word). Compiler-made names start with `__`, which the lexer refuses.
+
+// who owns row id, in words, for the messages
+static void name_owner(int id, char *out, size_t n)
+{
+    int  t = v_table[id].type, f = v_table[id].fnid;
+    char nm[512]; strcpy(nm, v_table[id].name);
+    if (t >= 6 && t <= 9) {snprintf(out, n, MSG_NAME_FUNC, nm); return;}
+    if (t == 4) nm[strlen(nm) - 2] = '\0';                    // drop the "_i"
+    char *raw = nm;
+    if (f >= 0)
+    {
+        size_t L = strlen(v_table[f].name);
+        if (strncmp(nm, v_table[f].name, L) == 0 && nm[L] == '_') raw = nm + L + 1;
+    }
+    char base[1024];
+    if (f < 0) snprintf(base, sizeof(base), MSG_NAME_GLOBAL, raw);
+    else       snprintf(base, sizeof(base), MSG_NAME_LOCAL , raw, v_table[f].name);
+    if (t == 4) snprintf(out, n, MSG_NAME_IMAG, base);
+    else        snprintf(out, n, "%s", base);
+}
+
+static void name_taken(const char *me, const char *as, const char *who)
+{
+    fprintf(stderr, MSG_ERR_NAME_TAKEN, line_num+1, me, as, who);
+    exit(EXIT_FAILURE);
+}
+
+// called by every declaration (variable, array, parameter, function) on its
+// row, before the row is filled
+void check_name(int id, int is_fun)
+{
+    char *as = v_table[id].name;
+    char  me[1200], who[1200];
+
+    if (is_fun)
+    {
+        const char *why = strcmp(as, "fim"    ) == 0 ? MSG_NAME_FIM        :
+                          strcmp(as, "global" ) == 0 ? MSG_NAME_GLOBAL_LOG :
+                          strcmp(as, "num_ins") == 0 ? MSG_NAME_NUM_INS    : NULL;
+        if (why) {fprintf(stderr, MSG_ERR_NAME_RESERVED, line_num+1, as, why); exit(EXIT_FAILURE);}
+        snprintf(me, sizeof(me), MSG_NAME_FUNC, as);
+    }
+    else if (strcmp(fname, "") == 0) snprintf(me, sizeof(me), MSG_NAME_GLOBAL, as);
+    else
+    {
+        size_t L = strlen(fname);
+        char *raw = (strncmp(as, fname, L) == 0 && as[L] == '_') ? as + L + 1 : as;
+        snprintf(me, sizeof(me), MSG_NAME_LOCAL, raw, fname);
+    }
+
+    if (asm_is_mnemonic(as))
+    {
+        char q[600]; snprintf(q, sizeof(q), "'%s'", as);
+        fprintf(stderr, strstr(me, q) ? MSG_ERR_NAME_IS_MNEMONIC : MSG_ERR_NAME_MNEMONIC, line_num+1, me, as);
+        exit(EXIT_FAILURE);
+    }
+
+    if (v_table[id].type != 0)
+    {
+        int t = v_table[id].type;
+        if (!is_fun && t < 6 && t != 4 && v_table[id].fnid == find_var(fname))
+        {   // the same name declared twice in the same place
+            fprintf(stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as, fname));
+            exit(EXIT_FAILURE);
+        }
+        name_owner(id, who, sizeof(who));
+        name_taken(me, as, who);
+    }
+
+    if (is_fun) return;
+
+    // a comp `z` also owns `z_i`, its imaginary part, and the other way round
+    char nm[1024];
+    if (type_tmp == 3)
+    {
+        snprintf(nm, sizeof(nm), "%s_i", as);
+        int idi = find_var(nm);
+        if (idi >= 0 && v_table[idi].type != 0)
+        {
+            char im[1300]; snprintf(im, sizeof(im), MSG_NAME_IMAG, me);
+            name_owner(idi, who, sizeof(who));
+            name_taken(im, nm, who);
+        }
+    }
+    size_t L = strlen(as);
+    if (L > 2 && strcmp(as + L - 2, "_i") == 0)
+    {
+        snprintf(nm, sizeof(nm), "%.*s", (int)(L - 2), as);
+        int idr = find_var(nm);
+        if (idr >= 0 && v_table[idr].type == 3)
+        {
+            char base[1024]; name_owner(idr, base, sizeof(base));
+            snprintf(who, sizeof(who), MSG_NAME_IMAG, base);
+            name_taken(me, as, who);
+        }
+    }
 }
 
 // used when the lexer finds an ID

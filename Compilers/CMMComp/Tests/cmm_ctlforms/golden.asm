@@ -19,103 +19,103 @@ LOD 0
 SET sw_r
 LOD sw_v
 ADD -7
-JIZ sw_body_1_1
+JIZ __sw_body_1_1
 ADD 5
-JIZ sw_body_1_2
+JIZ __sw_body_1_2
 ADD 2
-JIZ sw_body_1_3
+JIZ __sw_body_1_3
 ADD -1000
-JIZ sw_body_1_4
-JMP sw_body_1_5
-@sw_body_1_1 LOD 70
+JIZ __sw_body_1_4
+JMP __sw_body_1_5
+@__sw_body_1_1 LOD 70
 SET sw_r
-JMP switch_end_1
-@sw_body_1_2 LOD 20
+JMP __switch_end_1
+@__sw_body_1_2 LOD 20
 SET sw_r
-JMP switch_end_1
-@sw_body_1_3 LOD 1
+JMP __switch_end_1
+@__sw_body_1_3 LOD 1
 SET sw_r
-JMP switch_end_1
-@sw_body_1_4 LOD 1000
+JMP __switch_end_1
+@__sw_body_1_4 LOD 1000
 SET sw_r
-JMP switch_end_1
-@sw_body_1_5 NEG_M 1
+JMP __switch_end_1
+@__sw_body_1_5 NEG_M 1
 SET sw_r
-@switch_end_1 LOD sw_r
+@__switch_end_1 LOD sw_r
 RET
 @sw2 SET sw2_v
 LOD 0
 SET sw2_r
 LOD sw2_v
 ADD -5
-JIZ sw_body_2_1
-JMP sw_body_2_2
-@sw_body_2_1 LOD 5
+JIZ __sw_body_2_1
+JMP __sw_body_2_2
+@__sw_body_2_1 LOD 5
 XOR sw2_v
-JIZ switch_end_2
+JIZ __switch_end_2
 LOD 55
 SET sw2_r
-JMP switch_end_2
-@sw_body_2_2 LOD 9
+JMP __switch_end_2
+@__sw_body_2_2 LOD 9
 SET sw2_r
-@switch_end_2 LOD sw2_r
+@__switch_end_2 LOD sw2_r
 RET
 @sw3 SET sw3_v
 LOD 0
 SET sw3_r
 LOD sw3_v
 ADD -2147483647
-JIZ sw_body_3_1
+JIZ __sw_body_3_1
 ADD 2147483647
-JIZ sw_body_3_2
-JMP sw_body_3_3
-@sw_body_3_1 LOD 1
+JIZ __sw_body_3_2
+JMP __sw_body_3_3
+@__sw_body_3_1 LOD 1
 SET sw3_r
-JMP switch_end_3
-@sw_body_3_2 LOD 2
+JMP __switch_end_3
+@__sw_body_3_2 LOD 2
 SET sw3_r
-JMP switch_end_3
-@sw_body_3_3 LOD 3
+JMP __switch_end_3
+@__sw_body_3_3 LOD 3
 SET sw3_r
-@switch_end_3 LOD sw3_r
+@__switch_end_3 LOD sw3_r
 RET
 @main LOD 0
 SET main_k
-@Lwh1 LOD main_k
+@__Lwh1 LOD main_k
 ADD 1
 SET main_k
 LOD 5
 XOR main_k
-JIZ Lwh1end
-JMP Lwh1
-@Lwh1end LOD main_k
+JIZ __Lwh1end
+JMP __Lwh1
+@__Lwh1end LOD main_k
 OUT 0
-@Lwh2 LOD main_k
+@__Lwh2 LOD main_k
 ADD 1
 SET main_k
 LOD 7
 EQU main_k
-JIZ Lwh2cont
-JMP Lwh2end
-@Lwh2cont JMP Lwh2
-@Lwh2end LOD main_k
+JIZ __Lwh2cont
+JMP __Lwh2end
+@__Lwh2cont JMP __Lwh2
+@__Lwh2end LOD main_k
 OUT 0
 LOD 0
 SET main_s
 LOD 0
 SET main_n
-@Lwh3 LOD 2
+@__Lwh3 LOD 2
 XOR main_n
-JIZ Lwh3cont
+JIZ __Lwh3cont
 LOD main_s
 ADD main_n
 SET main_s
-@Lwh3cont LOD main_n
+@__Lwh3cont LOD main_n
 ADD 1
 SET main_n
 LES 5
-JIZ Lwh3
-@Lwh3end LOD main_s
+JIZ __Lwh3
+@__Lwh3end LOD main_s
 OUT 0
 LOD 0
 CAL sw

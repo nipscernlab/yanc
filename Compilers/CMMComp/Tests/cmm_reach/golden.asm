@@ -21,17 +21,17 @@ SET_V buf 1
 LOD_V buf 1
 ADD 2
 RET
-@main @Lwh1 INN 0
+@main @__Lwh1 INN 0
 SET main_x
 CAL live1
 SET main_y
 LOD 12345
 EQU main_x
-JIZ Lif1else
+JIZ __Lif1else
 LOD main_y
 CAL rare
 SET main_y
-@Lif1else LOD main_y
+@__Lif1else LOD main_y
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

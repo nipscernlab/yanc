@@ -8,14 +8,14 @@ NOP
 #NUGAIN 128
 @main LOD 0
 SET main_k
-@Lwh1 LOD 6
+@__Lwh1 LOD 6
 LES main_k
-JIZ Lwh1end
+JIZ __Lwh1end
 INN 0
 SET main_x
 OUT 0
 LOD main_k
 ADD 1
 SET main_k
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

@@ -20,7 +20,7 @@ SET triple_sum_x
 ADD triple_sum_y
 ADD triple_sum_z
 RET
-@main @Lwh1 INN 0
+@main @__Lwh1 INN 0
 SET main_v
 P_LOD 1
 CAL add
@@ -34,5 +34,5 @@ LOD main_two
 OUT 0
 LOD main_three
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

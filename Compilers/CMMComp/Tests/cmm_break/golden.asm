@@ -6,27 +6,27 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-@main @Lwh1 LOD 0
+@main @__Lwh1 LOD 0
 SET main_k
-@Lwh2 LOD 10
+@__Lwh2 LOD 10
 LES main_k
-JIZ Lwh2end
+JIZ __Lwh2end
 LOD 3
 XOR main_k
-JIZ Lwh2end
+JIZ __Lwh2end
 LOD main_k
 OUT 0
 LOD main_k
 ADD 1
 SET main_k
-JMP Lwh2
-@Lwh2end LOD 100
+JMP __Lwh2
+@__Lwh2end LOD 100
 OUT 0
 LOD 0
 SET main_k
-@Lwh3 LOD 2
+@__Lwh3 LOD 2
 XOR main_k
-JIZ Lwh3end
+JIZ __Lwh3end
 LOD 10
 ADD main_k
 OUT 0
@@ -34,16 +34,16 @@ LOD main_k
 ADD 1
 SET main_k
 LES 9
-JIZ Lwh3
-@Lwh3end LOD 101
+JIZ __Lwh3
+@__Lwh3end LOD 101
 OUT 0
 LOD 0
 SET main_k
-@Lwh4 LOD 0
+@__Lwh4 LOD 0
 SET main_n
-@Lwh5 LOD 2
+@__Lwh5 LOD 2
 XOR main_n
-JIZ Lwh5end
+JIZ __Lwh5end
 LOD main_k
 MLT 10
 ADD 20
@@ -53,24 +53,24 @@ LOD main_n
 ADD 1
 SET main_n
 LES 4
-JIZ Lwh5
-@Lwh5end LOD main_k
+JIZ __Lwh5
+@__Lwh5end LOD main_k
 ADD 1
 SET main_k
 LES 2
-JIZ Lwh4
-@Lwh4end LOD 102
+JIZ __Lwh4
+@__Lwh4end LOD 102
 OUT 0
 LOD 1
 SET main_k
 ADD -1
-JIZ sw_body_1_1
-JMP sw_body_1_2
-@sw_body_1_1 LOD 0
+JIZ __sw_body_1_1
+JMP __sw_body_1_2
+@__sw_body_1_1 LOD 0
 SET main_n
-@Lwh6 LOD 2
+@__Lwh6 LOD 2
 XOR main_n
-JIZ Lwh6end
+JIZ __Lwh6end
 LOD 50
 ADD main_n
 OUT 0
@@ -78,30 +78,30 @@ LOD main_n
 ADD 1
 SET main_n
 LES 4
-JIZ Lwh6
-@Lwh6end LOD 59
+JIZ __Lwh6
+@__Lwh6end LOD 59
 OUT 0
-JMP switch_end_1
-@sw_body_1_2 LOD 99
+JMP __switch_end_1
+@__sw_body_1_2 LOD 99
 OUT 0
-@switch_end_1 LOD 0
+@__switch_end_1 LOD 0
 SET main_k
-@Lwh7 LOD main_k
+@__Lwh7 LOD main_k
 ADD -1
-JIZ sw_body_2_1
-JMP sw_body_2_2
-@sw_body_2_1 LOD 61
+JIZ __sw_body_2_1
+JMP __sw_body_2_2
+@__sw_body_2_1 LOD 61
 OUT 0
-JMP switch_end_2
-@sw_body_2_2 LOD 69
+JMP __switch_end_2
+@__sw_body_2_2 LOD 69
 OUT 0
-@switch_end_2 LOD 70
+@__switch_end_2 LOD 70
 ADD main_k
 OUT 0
 LOD main_k
 ADD 1
 SET main_k
 LES 2
-JIZ Lwh7
-@Lwh7end JMP Lwh1
-@Lwh1end @fim JMP fim
+JIZ __Lwh7
+@__Lwh7end JMP __Lwh1
+@__Lwh1end @fim JMP fim

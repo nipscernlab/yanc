@@ -14,9 +14,9 @@ NOP
 #array buf 1 4
 #SHARE main_n main_x
 #SHARE main_j main_x
-#SHARE aux_var main_r
+#SHARE __aux_var main_r
 #SHARE main_y main_r
-@main @Lwh1 LOD 5
+@main @__Lwh1 LOD 5
 SET main_k
 ADD 1
 SET main_k
@@ -158,10 +158,10 @@ SET_V f 0
 LOD 0
 PSH
 LDI f
-SET aux_var
+SET __aux_var
 F_ADD 1.0
 STI f
-LOD aux_var
+LOD __aux_var
 SET main_y
 F_MLT 10.0
 F2I
@@ -230,17 +230,17 @@ LOD 0
 SET main_k
 LOD 0
 SET main_r
-@Lwh2 LOD main_k
+@__Lwh2 LOD main_k
 PSH
 ADD 1
 SET_P main_k
 GRE 3
-JIZ Lwh2end
+JIZ __Lwh2end
 LOD main_r
 ADD 1
 SET main_r
-JMP Lwh2
-@Lwh2end LOD main_r
+JMP __Lwh2
+@__Lwh2end LOD main_r
 OUT 0
 LOD main_k
 OUT 0
@@ -266,9 +266,9 @@ LOD 3
 SET_V s 5
 LOD 0
 SET main_j
-@Lwh3 LOD 6
+@__Lwh3 LOD 6
 LES main_j
-JIZ Lwh3end
+JIZ __Lwh3end
 LOD main_j
 LDI s
 PSH
@@ -278,8 +278,8 @@ STI hist
 LOD main_j
 ADD 1
 SET main_j
-JMP Lwh3
-@Lwh3end LOD_V hist 0
+JMP __Lwh3
+@__Lwh3end LOD_V hist 0
 OUT 0
 LOD_V hist 1
 OUT 0
@@ -287,5 +287,5 @@ LOD_V hist 2
 OUT 0
 LOD_V hist 3
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

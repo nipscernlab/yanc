@@ -6,126 +6,126 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE main_r floor_x
-#SHARE ceil_x floor_x
-#SHARE ceil_t floor_t
-#SHARE round_x floor_x
-@main @Lwh1 LOD 2.7
-SET floor_x
+#SHARE main_r __floor_x
+#SHARE __ceil_x __floor_x
+#SHARE __ceil_t __floor_t
+#SHARE __round_x __floor_x
+@main @__Lwh1 LOD 2.7
+SET __floor_x
 F2I
 I2F
-SET floor_t
-F_LES floor_x
-JIZ Lflr1end
-LOD floor_t
+SET __floor_t
+F_LES __floor_x
+JIZ __Lflr1end
+LOD __floor_t
 F_ADD -1.0
-SET floor_t
-@Lflr1end LOD floor_t
+SET __floor_t
+@__Lflr1end LOD __floor_t
 SET main_r
 F2I_M main_r
 OUT 0
 LOD -2.3
-SET floor_x
+SET __floor_x
 F2I
 I2F
-SET floor_t
-F_LES floor_x
-JIZ Lflr2end
-LOD floor_t
+SET __floor_t
+F_LES __floor_x
+JIZ __Lflr2end
+LOD __floor_t
 F_ADD -1.0
-SET floor_t
-@Lflr2end LOD floor_t
+SET __floor_t
+@__Lflr2end LOD __floor_t
 SET main_r
 F2I_M main_r
 OUT 0
 LOD 2.3
-SET ceil_x
+SET __ceil_x
 F2I
 I2F
-SET ceil_t
-LOD ceil_x
-F_LES ceil_t
-JIZ Lcel1end
-LOD ceil_t
+SET __ceil_t
+LOD __ceil_x
+F_LES __ceil_t
+JIZ __Lcel1end
+LOD __ceil_t
 F_ADD 1.0
-SET ceil_t
-@Lcel1end LOD ceil_t
+SET __ceil_t
+@__Lcel1end LOD __ceil_t
 SET main_r
 F2I_M main_r
 OUT 0
 LOD -2.3
-SET ceil_x
+SET __ceil_x
 F2I
 I2F
-SET ceil_t
-LOD ceil_x
-F_LES ceil_t
-JIZ Lcel2end
-LOD ceil_t
+SET __ceil_t
+LOD __ceil_x
+F_LES __ceil_t
+JIZ __Lcel2end
+LOD __ceil_t
 F_ADD 1.0
-SET ceil_t
-@Lcel2end LOD ceil_t
+SET __ceil_t
+@__Lcel2end LOD __ceil_t
 SET main_r
 F2I_M main_r
 OUT 0
 LOD 2.5
-SET round_x
+SET __round_x
 LOD 0.5
-F_SGN round_x
-F_ADD round_x
+F_SGN __round_x
+F_ADD __round_x
 F2I
 I2F
 SET main_r
 F2I_M main_r
 OUT 0
 LOD -2.5
-SET round_x
+SET __round_x
 LOD 0.5
-F_SGN round_x
-F_ADD round_x
+F_SGN __round_x
+F_ADD __round_x
 F2I
 I2F
 SET main_r
 F2I_M main_r
 OUT 0
 LOD 2.4
-SET round_x
+SET __round_x
 LOD 0.5
-F_SGN round_x
-F_ADD round_x
+F_SGN __round_x
+F_ADD __round_x
 F2I
 I2F
 SET main_r
 F2I_M main_r
 OUT 0
 LOD 5.0
-SET floor_x
+SET __floor_x
 F2I
 I2F
-SET floor_t
-F_LES floor_x
-JIZ Lflr3end
-LOD floor_t
+SET __floor_t
+F_LES __floor_x
+JIZ __Lflr3end
+LOD __floor_t
 F_ADD -1.0
-SET floor_t
-@Lflr3end LOD floor_t
+SET __floor_t
+@__Lflr3end LOD __floor_t
 SET main_r
 F2I_M main_r
 OUT 0
 LOD -5.0
-SET ceil_x
+SET __ceil_x
 F2I
 I2F
-SET ceil_t
-LOD ceil_x
-F_LES ceil_t
-JIZ Lcel3end
-LOD ceil_t
+SET __ceil_t
+LOD __ceil_x
+F_LES __ceil_t
+JIZ __Lcel3end
+LOD __ceil_t
 F_ADD 1.0
-SET ceil_t
-@Lcel3end LOD ceil_t
+SET __ceil_t
+@__Lcel3end LOD __ceil_t
 SET main_r
 F2I_M main_r
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

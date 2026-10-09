@@ -5,6 +5,7 @@
 #include "../Headers/global.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/data_declar.h"
+#include "../Headers/messages.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -177,6 +178,9 @@ COMEN  "//"[^\n]*
                     yy_switch_to_buffer(cur);
                     yypush_buffer_state(body);
                 } else {
+                    // `__` starts the compiler's own names in the .asm
+                    if (yytext[0] == '_' && yytext[1] == '_')
+                        {fprintf(stderr, MSG_ERR_NAME_UNDERSCORES, line_num+1, yytext); exit(EXIT_FAILURE);}
                     yylval.ival = exec_id(yytext);
                     return ID;
                 }

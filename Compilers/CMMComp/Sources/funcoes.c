@@ -360,6 +360,7 @@ void par_check(expr e)
 // only when func_body_begin builds that node.
 void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
 {
+    check_name(id2, 1);   // not a variable's or another function's name, not an instruction
     int is_main = (strcmp(v_table[id2].name, "main") == 0);
     if (mainok == 0)
     {

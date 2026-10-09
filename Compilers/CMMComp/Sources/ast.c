@@ -245,11 +245,11 @@ static int jump_only_target(stmt_node *s, char *buf, size_t sz)
     while (s && s->kind == STMT_BLOCK && s->kids_n == 1) s = s->kids[0];
     if (!s) return 0;
     switch (s->kind) {
-        case STMT_BREAK_WHILE:  snprintf(buf, sz, "Lwh%dend", s->id); return 1;
-        case STMT_SWITCH_BREAK: snprintf(buf, sz, "switch_end_%d", s->id); return 1;
+        case STMT_BREAK_WHILE:  snprintf(buf, sz, "__Lwh%dend", s->id); return 1;
+        case STMT_SWITCH_BREAK: snprintf(buf, sz, "__switch_end_%d", s->id); return 1;
         case STMT_CONTINUE:
-            if (s->op) snprintf(buf, sz, "Lwh%dcont", s->id);
-            else       snprintf(buf, sz, "Lwh%d", s->id);
+            if (s->op) snprintf(buf, sz, "__Lwh%dcont", s->id);
+            else       snprintf(buf, sz, "__Lwh%d", s->id);
             return 1;
         default: return 0;
     }
@@ -1332,21 +1332,21 @@ void stmt_emit(stmt_node *n)
                 }
             }
             emit_cond_int_load(ast_emit_expr(n->cond), 0);
-            add_instr("JIZ Lif%delse\n", n->id);
+            add_instr("JIZ __Lif%delse\n", n->id);
             acc_ok = 0;
 
             stmt_emit(n->then_body);
 
             if (n->else_body)
             {
-                add_instr("JMP Lif%dend\n",  n->id);
-                add_sinst(0, "@Lif%delse ",  n->id);
+                add_instr("JMP __Lif%dend\n",  n->id);
+                add_sinst(0, "@__Lif%delse ",  n->id);
                 stmt_emit(n->else_body);
-                add_sinst(0, "@Lif%dend ",   n->id);
+                add_sinst(0, "@__Lif%dend ",   n->id);
             }
             else
             {
-                add_sinst(0, "@Lif%delse ",  n->id);
+                add_sinst(0, "@__Lif%delse ",  n->id);
             }
             break;
         }
@@ -1354,22 +1354,22 @@ void stmt_emit(stmt_node *n)
         case STMT_WHILE: {
             expr_node *bt = for_bottom_test(n);
             if (bt) {                                // for (k = c0; k < c1; ...): see for_bottom_test
-                add_sinst(0, "@Lwh%d ", n->id);
+                add_sinst(0, "@__Lwh%d ", n->id);
                 acc_ok = 0;
                 stmt_emit(n->body);
-                if (n->op) add_sinst(0, "@Lwh%dcont ", n->id);
+                if (n->op) add_sinst(0, "@__Lwh%dcont ", n->id);
                 stmt_emit(n->else_body);
                 emit_cond_int_load(ast_emit_expr(bt), 0);
-                add_instr("JIZ Lwh%d\n",   n->id);   // condition holds -> next turn
-                add_sinst(0, "@Lwh%dend ", n->id);
+                add_instr("JIZ __Lwh%d\n",   n->id);   // condition holds -> next turn
+                add_sinst(0, "@__Lwh%dend ", n->id);
                 acc_ok = 0;
                 expr_free(bt);
                 break;
             }
-            add_sinst(0, "@Lwh%d ", n->id);
+            add_sinst(0, "@__Lwh%d ", n->id);
             if (!is_const_true(n->cond)) {          // while (1): nothing to test
                 emit_cond_int_load(ast_emit_expr(n->cond), 0);
-                add_instr("JIZ Lwh%dend\n", n->id);
+                add_instr("JIZ __Lwh%dend\n", n->id);
             }
             acc_ok = 0;
 
@@ -1380,11 +1380,11 @@ void stmt_emit(stmt_node *n)
             // lands so the step still runs. The Lwh<n>cont label is only emitted
             // when a continue actually targets this loop (op set by
             // exec_continue), so loops without continue stay byte-identical.
-            if (n->op)        add_sinst(0, "@Lwh%dcont ", n->id);
+            if (n->op)        add_sinst(0, "@__Lwh%dcont ", n->id);
             if (n->else_body) stmt_emit(n->else_body);
 
-            add_instr("JMP Lwh%d\n",   n->id);
-            add_sinst(0, "@Lwh%dend ", n->id);
+            add_instr("JMP __Lwh%d\n",   n->id);
+            add_sinst(0, "@__Lwh%dend ", n->id);
             break;
         }
 
@@ -1394,18 +1394,18 @@ void stmt_emit(stmt_node *n)
             // Lwh<n> label namespace, so break (-> Lwh<n>end) and continue (->
             // Lwh<n>cont) ride the same stacks as while/for. continue lands at
             // Lwh<n>cont, just before the test, so it re-evaluates the condition.
-            add_sinst(0, "@Lwh%d ", n->id);
+            add_sinst(0, "@__Lwh%d ", n->id);
             acc_ok = 0;
 
             stmt_emit(n->body);
 
-            if (n->op) add_sinst(0, "@Lwh%dcont ", n->id);   // continue target
+            if (n->op) add_sinst(0, "@__Lwh%dcont ", n->id);   // continue target
             if (!is_const_true(n->cond)) {                     // while (1): no test
                 emit_cond_int_load(ast_emit_expr(n->cond), 0);
-                add_instr("JIZ Lwh%dend\n", n->id);           // condition false -> exit
+                add_instr("JIZ __Lwh%dend\n", n->id);           // condition false -> exit
             }
-            add_instr("JMP Lwh%d\n",    n->id);   // condition true  -> loop
-            add_sinst(0, "@Lwh%dend ",  n->id);
+            add_instr("JMP __Lwh%d\n",    n->id);   // condition true  -> loop
+            add_sinst(0, "@__Lwh%dend ",  n->id);
             acc_ok = 0;
             break;
         }
@@ -1439,25 +1439,25 @@ void stmt_emit(stmt_node *n)
                         long long d = ((prev - v) % mod + mod) % mod;    // acc += d
                         if (d >= mod / 2) d -= mod;                        // as a signed word
                         if (d) add_instr("ADD %lld\n", d);
-                        add_instr("JIZ sw_body_%d_%d\n", n->id, kid->id2);
+                        add_instr("JIZ __sw_body_%d_%d\n", n->id, kid->id2);
                         prev = v;
                     }
                     else if (kid->kind == STMT_DEFAULT_LABEL) def_idx = kid->id2;
                 }
-                if (def_idx >= 0) add_instr("JMP sw_body_%d_%d\n", n->id, def_idx);
-                else              add_instr("JMP switch_end_%d\n",  n->id);
+                if (def_idx >= 0) add_instr("JMP __sw_body_%d_%d\n", n->id, def_idx);
+                else              add_instr("JMP __switch_end_%d\n",  n->id);
                 acc_ok = 0;
                 for (int i = 0; body && i < body->kids_n; i++)
                 {
                     stmt_node *kid = body->kids[i];
                     if (kid->kind == STMT_CASE_LABEL || kid->kind == STMT_DEFAULT_LABEL)
                     {
-                        add_sinst(0, "@sw_body_%d_%d ", n->id, kid->id2);
+                        add_sinst(0, "@__sw_body_%d_%d ", n->id, kid->id2);
                         acc_ok = 0;
                     }
                     else stmt_emit(kid);
                 }
-                add_sinst(0, "@switch_end_%d ", n->id);
+                add_sinst(0, "@__switch_end_%d ", n->id);
                 acc_ok = 0;
                 break;
             }
@@ -1465,13 +1465,13 @@ void stmt_emit(stmt_node *n)
             // General dispatch (a float switch or a float case): ensure the
             // implicit `switch_exp` var exists and matches the cond's type;
             // the dispatch block below rebuilds an expr against it.
-            if (find_var("switch_exp") == -1) add_var("switch_exp");
-            int sw_id = find_var("switch_exp");
+            if (find_var("__switch_exp") == -1) add_var("__switch_exp");
+            int sw_id = find_var("__switch_exp");
             v_table[sw_id].type = cond_e.type;
             v_table[sw_id].used = 0;
 
             emit_cond_int_load(cond_e, 1);
-            add_instr("SET switch_exp\n");
+            add_instr("SET __switch_exp\n");
             acc_ok = 0;
 
             // The body is a flat block of CASE_LABEL / DEFAULT_LABEL markers and
@@ -1494,9 +1494,9 @@ void stmt_emit(stmt_node *n)
                     expr e1 = num2exp(kid->id3, kid->id4);
                     expr e2 = id2exp(sw_id);
                     oper_cmp(e1, e2, 2);                                 // acc = (val == switch_exp)
-                    add_instr("JIZ sw_disp_%d_%d\n", n->id, kid->id2);  // not equal -> next entry
-                    add_instr("JMP sw_body_%d_%d\n", n->id, kid->id2);  // equal     -> this body
-                    add_sinst(0, "@sw_disp_%d_%d ", n->id, kid->id2);
+                    add_instr("JIZ __sw_disp_%d_%d\n", n->id, kid->id2);  // not equal -> next entry
+                    add_instr("JMP __sw_body_%d_%d\n", n->id, kid->id2);  // equal     -> this body
+                    add_sinst(0, "@__sw_disp_%d_%d ", n->id, kid->id2);
                     acc_ok = 0;
                 }
                 else if (kid->kind == STMT_DEFAULT_LABEL)
@@ -1505,8 +1505,8 @@ void stmt_emit(stmt_node *n)
                 }
             }
             // nothing matched -> default body (if any), else the switch end.
-            if (def_idx >= 0) add_instr("JMP sw_body_%d_%d\n", n->id, def_idx);
-            else              add_instr("JMP switch_end_%d\n",  n->id);
+            if (def_idx >= 0) add_instr("JMP __sw_body_%d_%d\n", n->id, def_idx);
+            else              add_instr("JMP __switch_end_%d\n",  n->id);
             acc_ok = 0;
 
             // Pass 2 -- bodies, contiguous. A label node only drops its body
@@ -1518,7 +1518,7 @@ void stmt_emit(stmt_node *n)
                 stmt_node *kid = body->kids[i];
                 if (kid->kind == STMT_CASE_LABEL || kid->kind == STMT_DEFAULT_LABEL)
                 {
-                    add_sinst(0, "@sw_body_%d_%d ", n->id, kid->id2);
+                    add_sinst(0, "@__sw_body_%d_%d ", n->id, kid->id2);
                     acc_ok = 0;
                 }
                 else
@@ -1526,7 +1526,7 @@ void stmt_emit(stmt_node *n)
                     stmt_emit(kid);
                 }
             }
-            add_sinst(0, "@switch_end_%d ", n->id);
+            add_sinst(0, "@__switch_end_%d ", n->id);
             acc_ok = 0;
             break;
         }
@@ -1538,18 +1538,18 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_SWITCH_BREAK:
-            add_instr("JMP switch_end_%d\n", n->id);
+            add_instr("JMP __switch_end_%d\n", n->id);
             break;
 
         case STMT_CONTINUE:
             // for: jump to the step label (Lwh<n>cont) so the step runs before
             // the next condition test; while: jump straight to the top.
-            if (n->op) add_instr("JMP Lwh%dcont\n", n->id);
-            else       add_instr("JMP Lwh%d\n",     n->id);
+            if (n->op) add_instr("JMP __Lwh%dcont\n", n->id);
+            else       add_instr("JMP __Lwh%d\n",     n->id);
             break;
 
         case STMT_BREAK_WHILE:
-            add_instr("JMP Lwh%dend\n", n->id);
+            add_instr("JMP __Lwh%dend\n", n->id);
             break;
 
         case STMT_DECLAR_ARR_1D:

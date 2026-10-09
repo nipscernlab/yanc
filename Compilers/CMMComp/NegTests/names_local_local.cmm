@@ -1,0 +1,11 @@
+// The local c of a_b and the local b_c of a are both a_b_c in the .asm.
+#PRNAME p
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+int a_b(int c) { return c; }
+int a(int b_c) { return b_c; }
+void main() { out(0, a(1) + a_b(2)); }

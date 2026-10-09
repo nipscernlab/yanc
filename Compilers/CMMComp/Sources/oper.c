@@ -98,9 +98,9 @@ expr oper_neg(expr e)
     // when it is a comp in the acc
     if ((e.type == 3) && (e.id == 0))
     {
-        add_instr("   SET_P aux_var\n");
+        add_instr("   SET_P __aux_var\n");
         add_instr(" F_NEG\n"          );
-        add_instr("PF_NEG_M aux_var\n");
+        add_instr("PF_NEG_M __aux_var\n");
     }
 
     acc_ok = 1;
@@ -169,10 +169,10 @@ expr oper_soma(expr e1, expr e2)
     // int var with comp acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET aux_var\n");                 // temporarily save the imaginary part
+        add_instr("SET __aux_var\n");                 // temporarily save the imaginary part
         add_instr("I2F_M %s\n", v_table[e1.id].name);  // fetch the int while converting to float
         add_instr("SF_ADD\n");                      // add acc with stack
-        add_instr("P_LOD aux_var\n");               // push the result onto the stack while bringing the imag back
+        add_instr("P_LOD __aux_var\n");               // push the result onto the stack while bringing the imag back
     }
 
     // int acc with int var
@@ -197,9 +197,9 @@ expr oper_soma(expr e1, expr e2)
     // int acc with float acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n"); // temporarily save the float, pushing the int to the accumulator
+        add_instr("SET_P __aux_var\n"); // temporarily save the float, pushing the int to the accumulator
         add_instr("I2F\n");           // converte o int do acumulador pra float
-        add_instr("F_ADD aux_var\n"); // add with the saved float
+        add_instr("F_ADD __aux_var\n"); // add with the saved float
     }
 
     // int acc with comp const
@@ -225,11 +225,11 @@ expr oper_soma(expr e1, expr e2)
     // int acc with comp acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n" ); // temporarily save the imaginary part, popping the real part
-        add_instr("SET_P aux_var1\n"); // temporarily save the real part, popping the int
+        add_instr("SET_P __aux_var\n" ); // temporarily save the imaginary part, popping the real part
+        add_instr("SET_P __aux_var1\n"); // temporarily save the real part, popping the int
         add_instr("I2F\n");            // converte o int do acumulador pra float
-        add_instr("F_ADD aux_var1\n"); // add with the saved real part
-        add_instr("P_LOD aux_var\n" ); // push the imaginary part back to the accumulator
+        add_instr("F_ADD __aux_var1\n"); // add with the saved real part
+        add_instr("P_LOD __aux_var\n" ); // push the imaginary part back to the accumulator
     }
 
     // float var with int var
@@ -282,9 +282,9 @@ expr oper_soma(expr e1, expr e2)
     // float var with comp acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_ADD %s\n", v_table[e1.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
     }
 
     // float acc with int var
@@ -334,9 +334,9 @@ expr oper_soma(expr e1, expr e2)
     // float acc with comp acc
     if ((e1.type==2) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("SF_ADD\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
     }
 
     // comp const with int var
@@ -415,11 +415,11 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_ADD %s\n", v_table[etr.id].name);
 
         add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_ADD aux_var\n");
+        add_instr("F_ADD __aux_var\n");
     }
 
     // comp var with int var
@@ -498,47 +498,47 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_ADD %s\n", v_table[etr.id].name);
 
         add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_ADD aux_var\n");
+        add_instr("F_ADD __aux_var\n");
     }
 
     // comp acc with int var
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SF_ADD\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
     }
 
     // comp acc with int acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id==0))
     {
-        add_instr("SET_P   aux_var\n" );
-        add_instr("SET_P   aux_var1\n");
-        add_instr("P_I2F_M aux_var\n" );
+        add_instr("SET_P   __aux_var\n" );
+        add_instr("SET_P   __aux_var1\n");
+        add_instr("P_I2F_M __aux_var\n" );
         add_instr("SF_ADD\n");
-        add_instr("P_LOD   aux_var1\n");
+        add_instr("P_LOD   __aux_var1\n");
     }
 
     // comp acc with float var
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_ADD %s\n", v_table[e2.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
     }
 
     // comp acc with float acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n" );
-        add_instr("SET_P aux_var1\n");
-        add_instr("F_ADD aux_var\n" );
-        add_instr("P_LOD aux_var1\n");
+        add_instr("SET_P __aux_var\n" );
+        add_instr("SET_P __aux_var1\n");
+        add_instr("F_ADD __aux_var\n" );
+        add_instr("P_LOD __aux_var1\n");
     }
 
     // comp acc with comp const
@@ -546,10 +546,10 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_ADD %s\n", v_table[etr.id].name);
 
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_ADD %s\n", v_table[eti.id].name);
     }
 
@@ -558,23 +558,23 @@ expr oper_soma(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_ADD %s\n", v_table[etr.id].name);
 
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_ADD %s\n", v_table[eti.id].name);
     }
 
     // comp acc with comp acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
-        add_instr("SET_P aux_var2\n");
-        add_instr("F_ADD aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("SET_P __aux_var2\n");
+        add_instr("F_ADD __aux_var1\n");
 
-        add_instr("P_LOD aux_var2\n");
-        add_instr("F_ADD aux_var \n");
+        add_instr("P_LOD __aux_var2\n");
+        add_instr("F_ADD __aux_var \n");
     }
 
     acc_ok = 1;
@@ -642,10 +642,10 @@ expr oper_subt(expr e1, expr e2)
     // int var with comp acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET aux_var\n");                 // temporarily save the imaginary part
+        add_instr("SET __aux_var\n");                 // temporarily save the imaginary part
         add_instr("I2F_M %s\n", v_table[e1.id].name);  // fetch the int while converting to float
         add_instr("SF_SU1\n");                      // add acc with stack
-        add_instr("PF_NEG_M aux_var\n");            // push the result onto the stack while bringing the imag back
+        add_instr("PF_NEG_M __aux_var\n");            // push the result onto the stack while bringing the imag back
     }
 
     // int acc with int var
@@ -670,9 +670,9 @@ expr oper_subt(expr e1, expr e2)
     // int acc with float acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("I2F\n");
-        add_instr("F_SU1 aux_var\n");
+        add_instr("F_SU1 __aux_var\n");
     }
 
     // int acc with comp const
@@ -694,11 +694,11 @@ expr oper_subt(expr e1, expr e2)
     // int acc with comp acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P    aux_var\n" );
-        add_instr("SET_P    aux_var1\n");
+        add_instr("SET_P    __aux_var\n" );
+        add_instr("SET_P    __aux_var1\n");
         add_instr("I2F\n");
-        add_instr("F_SU1    aux_var1\n");
-        add_instr("PF_NEG_M aux_var\n" );
+        add_instr("F_SU1    __aux_var1\n");
+        add_instr("PF_NEG_M __aux_var\n" );
     }
 
     // float var with int var
@@ -747,9 +747,9 @@ expr oper_subt(expr e1, expr e2)
     // float var with comp acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_SU2 %s\n", v_table[e1.id].name);
-        add_instr("PF_NEG_M aux_var\n");
+        add_instr("PF_NEG_M __aux_var\n");
     }
 
     // float acc with int var
@@ -796,9 +796,9 @@ expr oper_subt(expr e1, expr e2)
     // float acc with comp acc
     if ((e1.type==2) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("SF_SU2\n");
-        add_instr("PF_NEG_M aux_var\n");
+        add_instr("PF_NEG_M __aux_var\n");
     }
 
     // comp const with int var
@@ -867,11 +867,11 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_SU2 %s\n", v_table[etr.id].name);
 
         add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_SU1 aux_var\n");
+        add_instr("F_SU1 __aux_var\n");
     }
 
     // comp var with int var
@@ -940,47 +940,47 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_SU2 %s\n", v_table[etr.id].name);
 
         add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_SU1 aux_var\n");
+        add_instr("F_SU1 __aux_var\n");
     }
 
     // comp acc with int var
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SF_SU2\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
     }
 
     // comp acc with int acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id==0))
     {
-        add_instr("SET_P   aux_var\n" );
-        add_instr("SET_P   aux_var1\n");
-        add_instr("P_I2F_M aux_var\n" );
+        add_instr("SET_P   __aux_var\n" );
+        add_instr("SET_P   __aux_var1\n");
+        add_instr("P_I2F_M __aux_var\n" );
         add_instr("SF_SU2\n");
-        add_instr("P_LOD   aux_var1\n");
+        add_instr("P_LOD   __aux_var1\n");
     }
 
     // comp acc with float var
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_SU1 %s\n", v_table[e2.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
     }
 
     // comp acc with float acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n" );
-        add_instr("SET_P aux_var1\n");
-        add_instr("F_SU1 aux_var\n" );
-        add_instr("P_LOD aux_var1\n");
+        add_instr("SET_P __aux_var\n" );
+        add_instr("SET_P __aux_var1\n");
+        add_instr("F_SU1 __aux_var\n" );
+        add_instr("P_LOD __aux_var1\n");
     }
 
     // comp acc with comp const (no comp const subtraction)
@@ -994,23 +994,23 @@ expr oper_subt(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_SU1 %s\n", v_table[etr.id].name);
 
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_SU1 %s\n", v_table[eti.id].name);
     }
 
     // comp acc with comp acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
-        add_instr("SET_P aux_var2\n");
-        add_instr("F_SU1 aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("SET_P __aux_var2\n");
+        add_instr("F_SU1 __aux_var1\n");
 
-        add_instr("P_LOD aux_var2\n");
-        add_instr("F_SU1 aux_var \n");
+        add_instr("P_LOD __aux_var2\n");
+        add_instr("F_SU1 __aux_var \n");
     }
 
     acc_ok = 1;
@@ -1087,11 +1087,11 @@ expr oper_mult(expr e1, expr e2)
     // int var with comp acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("P_I2F_M %s\n", v_table[e1.id].name);
         add_instr("SF_MLT\n");
 
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("P_I2F_M %s\n", v_table[e1.id].name);
         add_instr("SF_MLT\n");
     }
@@ -1118,9 +1118,9 @@ expr oper_mult(expr e1, expr e2)
     // int acc with float acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("I2F\n");
-        add_instr("F_MLT aux_var\n");
+        add_instr("F_MLT __aux_var\n");
     }
 
     // int acc with comp const
@@ -1129,9 +1129,9 @@ expr oper_mult(expr e1, expr e2)
         get_cmp_cst(e2,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("F_MLT %s\n", v_table[etr.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_MLT %s\n", v_table[eti.id].name);
     }
 
@@ -1141,22 +1141,22 @@ expr oper_mult(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("F_MLT %s\n", v_table[etr.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_MLT %s\n", v_table[eti.id].name);
     }
 
     // int acc with comp acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
         add_instr("I2F\n");
-        add_instr("SET   aux_var2\n");
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT aux_var2\n");
+        add_instr("SET   __aux_var2\n");
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
+        add_instr("F_MLT __aux_var2\n");
     }
 
     // float var with int var
@@ -1213,9 +1213,9 @@ expr oper_mult(expr e1, expr e2)
     // float var with comp acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_MLT %s\n", v_table[e1.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_MLT %s\n", v_table[e1.id].name);
     }
 
@@ -1250,10 +1250,10 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_MLT aux_var\n");
+        add_instr("F_MLT __aux_var\n");
     }
 
     // float acc with comp var
@@ -1261,21 +1261,21 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_MLT aux_var\n");
+        add_instr("F_MLT __aux_var\n");
     }
 
     // float acc with comp acc
     if ((e1.type==2) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
-        add_instr("SET   aux_var2\n");
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT aux_var2\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("SET   __aux_var2\n");
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
+        add_instr("F_MLT __aux_var2\n");
     }
 
     // comp const with int var
@@ -1295,9 +1295,9 @@ expr oper_mult(expr e1, expr e2)
         get_cmp_cst(e1,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("F_MLT %s\n"  , v_table[etr.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
@@ -1317,9 +1317,9 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("F_MLT %s\n"  , v_table[etr.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
@@ -1366,18 +1366,18 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
 
         add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_MLT aux_var \n");
+        add_instr("F_MLT __aux_var \n");
         add_instr("SF_SU2\n");
 
         add_instr("P_LOD %s\n" , v_table[etr.id].name);
-        add_instr("F_MLT aux_var \n");
+        add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD %s\n" , v_table[eti.id].name);
-        add_instr("F_MLT aux_var1\n");
+        add_instr("F_MLT __aux_var1\n");
         add_instr("SF_ADD\n");
     }
 
@@ -1398,9 +1398,9 @@ expr oper_mult(expr e1, expr e2)
         get_cmp_ets(e1,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("F_MLT %s\n"  , v_table[etr.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
@@ -1420,9 +1420,9 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("F_MLT %s\n"  , v_table[etr.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_MLT %s\n"  , v_table[eti.id].name);
     }
 
@@ -1469,60 +1469,60 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
 
         add_instr("F_MLT %s\n", v_table[etr.id].name);
         add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_MLT aux_var \n");
+        add_instr("F_MLT __aux_var \n");
         add_instr("SF_SU2\n");
 
         add_instr("P_LOD %s\n" , v_table[etr.id].name);
-        add_instr("F_MLT aux_var \n");
+        add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD %s\n" , v_table[eti.id].name);
-        add_instr("F_MLT aux_var1\n");
+        add_instr("F_MLT __aux_var1\n");
         add_instr("SF_ADD\n");
     }
 
     // comp acc with int var
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("SET_P aux_var\n" );
+        add_instr("SET_P __aux_var\n" );
         add_instr("P_I2F_M %s\n", v_table[e2.id].name);
-        add_instr("SET   aux_var1\n");
+        add_instr("SET   __aux_var1\n");
         add_instr("SF_MLT\n");
-        add_instr("P_LOD aux_var\n" );
-        add_instr("F_MLT aux_var1\n");
+        add_instr("P_LOD __aux_var\n" );
+        add_instr("F_MLT __aux_var1\n");
     }
 
     // comp acc with int acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id==0))
     {
         add_instr("I2F\n");
-        add_instr("SET_P aux_var\n" );
-        add_instr("SET_P aux_var1\n");
-        add_instr("F_MLT aux_var\n" );
-        add_instr("P_LOD aux_var1\n");
-        add_instr("F_MLT aux_var\n" );
+        add_instr("SET_P __aux_var\n" );
+        add_instr("SET_P __aux_var1\n");
+        add_instr("F_MLT __aux_var\n" );
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("F_MLT __aux_var\n" );
     }
 
     // comp acc with float var
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("F_MLT %s\n", v_table[e2.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("F_MLT %s\n", v_table[e2.id].name);
     }
 
     // comp acc with float acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n" );
-        add_instr("SET_P aux_var1\n");
-        add_instr("F_MLT aux_var\n" );
-        add_instr("P_LOD aux_var1\n");
-        add_instr("F_MLT aux_var\n");
+        add_instr("SET_P __aux_var\n" );
+        add_instr("SET_P __aux_var1\n");
+        add_instr("F_MLT __aux_var\n" );
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("F_MLT __aux_var\n");
     }
 
     // comp acc with comp const
@@ -1530,16 +1530,16 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
         add_instr("F_MLT %s\n", v_table[etr.id].name);
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         add_instr("F_MLT %s\n", v_table[eti.id].name);
         add_instr("SF_SU2\n");
 
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         add_instr("F_MLT %s\n", v_table[etr.id].name);
-        add_instr("P_LOD aux_var1\n");
+        add_instr("P_LOD __aux_var1\n");
         add_instr("F_MLT %s\n", v_table[eti.id].name);
         add_instr("SF_ADD\n");
     }
@@ -1549,16 +1549,16 @@ expr oper_mult(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
         add_instr("F_MLT %s\n", v_table[etr.id].name);
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         add_instr("F_MLT %s\n", v_table[eti.id].name);
         add_instr("SF_SU2\n");
 
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         add_instr("F_MLT %s\n", v_table[etr.id].name);
-        add_instr("P_LOD aux_var1\n");
+        add_instr("P_LOD __aux_var1\n");
         add_instr("F_MLT %s\n", v_table[eti.id].name);
         add_instr("SF_ADD\n");
     }
@@ -1566,20 +1566,20 @@ expr oper_mult(expr e1, expr e2)
     // comp acc with comp acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
-        add_instr("SET_P aux_var2\n");
-        add_instr("SET   aux_var3\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("SET_P __aux_var2\n");
+        add_instr("SET   __aux_var3\n");
 
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT aux_var2\n");
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
+        add_instr("F_MLT __aux_var2\n");
         add_instr("SF_SU2\n");
 
-        add_instr("P_LOD aux_var1\n");
-        add_instr("F_MLT aux_var2\n");
-        add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT aux_var3\n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("F_MLT __aux_var2\n");
+        add_instr("P_LOD __aux_var \n");
+        add_instr("F_MLT __aux_var3\n");
         add_instr("SF_ADD\n");
     }
 
@@ -1650,9 +1650,9 @@ expr oper_divi(expr e1, expr e2)
     // int var with float acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("I2F_M %s\n", v_table[e1.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("SF_DIV\n");
     }
 
@@ -1662,16 +1662,16 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_cst(e2,&etr,&eti);
 
         emit_sq_sum(etr, eti);
-        add_instr("SET aux_var\n");   // save the result
+        add_instr("SET __aux_var\n");   // save the result
 
         acc_ok = 0;                   // libera acumulador
 
         oper_mult(e1, etr);           // multiply int with real part
-        add_instr("P_LOD aux_var\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));     // faz a divisao
 
         oper_mult(e1, eti);           // multiply int with imag part
-        add_instr("P_LOD aux_var\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));     // faz a divisao
         oper_neg (expr_make(2, 0));            // nega a parte imaginaria
     }
@@ -1682,16 +1682,16 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         emit_sq_sum(etr, eti);
-        add_instr("SET aux_var\n");   // save the result
+        add_instr("SET __aux_var\n");   // save the result
 
         acc_ok = 0;                   // libera acumulador
 
         oper_mult(e1, etr);           // multiply int with real part
-        add_instr("P_LOD aux_var\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));     // faz a divisao
 
         oper_mult(e1, eti);           // multiply int with imag part
-        add_instr("P_LOD aux_var\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));     // faz a divisao
         oper_neg (expr_make(2, 0));            // nega a parte imaginaria
     }
@@ -1699,24 +1699,24 @@ expr oper_divi(expr e1, expr e2)
     // int var with comp acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n"); // save the imaginary part
-        add_instr("SET   aux_var1\n"); // save the real part
+        add_instr("SET_P __aux_var \n"); // save the imaginary part
+        add_instr("SET   __aux_var1\n"); // save the real part
 
-        add_instr("F_MLT aux_var1\n"); // parte real ao quadrado
-        add_instr("P_LOD aux_var \n"); // fetch the imaginary part
-        add_instr("F_MLT aux_var \n"); // parte imag ao quadrado
+        add_instr("F_MLT __aux_var1\n"); // parte real ao quadrado
+        add_instr("P_LOD __aux_var \n"); // fetch the imaginary part
+        add_instr("F_MLT __aux_var \n"); // parte imag ao quadrado
         add_instr("SF_ADD        \n"); // soma os quadrados
-        add_instr("SET   aux_var2\n"); // save the squared magnitude
+        add_instr("SET   __aux_var2\n"); // save the squared magnitude
 
         add_instr("I2F_M %s\n", v_table[e1.id].name); 
-        add_instr("SET   aux_var3\n"); // save the float
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var2\n"); // fetch the squared magnitude
+        add_instr("SET   __aux_var3\n"); // save the float
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var2\n"); // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
 
-        add_instr("P_LOD aux_var3\n"); // fetch the float
-        add_instr("F_MLT aux_var \n");
-        add_instr("P_LOD aux_var2\n"); // fetch the squared magnitude
+        add_instr("P_LOD __aux_var3\n"); // fetch the float
+        add_instr("F_MLT __aux_var \n");
+        add_instr("P_LOD __aux_var2\n"); // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -1745,9 +1745,9 @@ expr oper_divi(expr e1, expr e2)
     // int acc with float acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET_P aux_soma\n");
+        add_instr("SET_P __aux_soma\n");
         add_instr("I2F\n");
-        add_instr("P_LOD aux_soma\n");
+        add_instr("P_LOD __aux_soma\n");
         add_instr("SF_DIV\n");
     }
 
@@ -1757,20 +1757,20 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_cst(e2,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("SET aux_var\n");
+        add_instr("SET __aux_var\n");
         acc_ok = 0;
 
         emit_sq_sum(etr, eti);
-        add_instr("SET   aux_var1\n"); // save the result
+        add_instr("SET   __aux_var1\n"); // save the result
 
-        add_instr("LOD   aux_var\n");
+        add_instr("LOD   __aux_var\n");
         oper_mult(expr_make(2, 0), etr);         // multiply float with real part
-        add_instr("P_LOD aux_var1\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var1\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
 
-        add_instr("P_LOD  aux_var\n");
+        add_instr("P_LOD  __aux_var\n");
         oper_mult(expr_make(2, 0), eti);         // multiply float with imag part
-        add_instr("P_LOD aux_var1\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var1\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -1781,20 +1781,20 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         acc_ok = 0;
 
         emit_sq_sum(etr, eti);
-        add_instr("SET   aux_var1\n");  // save the result
+        add_instr("SET   __aux_var1\n");  // save the result
 
-        add_instr("LOD   aux_var\n" );
+        add_instr("LOD   __aux_var\n" );
         oper_mult(expr_make(2, 0), etr);          // multiply float with real part
-        add_instr("P_LOD aux_var1\n");  // fetch the denominator
+        add_instr("P_LOD __aux_var1\n");  // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));       // faz a divisao
 
-        add_instr("P_LOD  aux_var\n" );
+        add_instr("P_LOD  __aux_var\n" );
         oper_mult(expr_make(2, 0), eti);          // multiply float with imag part
-        add_instr("P_LOD  aux_var1\n"); // fetch the denominator
+        add_instr("P_LOD  __aux_var1\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));       // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -1802,26 +1802,26 @@ expr oper_divi(expr e1, expr e2)
     // int acc with comp acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n"); // save the imaginary part
-        add_instr("SET_P aux_var1\n"); // save the real part
+        add_instr("SET_P __aux_var \n"); // save the imaginary part
+        add_instr("SET_P __aux_var1\n"); // save the real part
         add_instr("I2F           \n");
-        add_instr("SET   aux_var2\n"); // save the float
+        add_instr("SET   __aux_var2\n"); // save the float
 
-        add_instr("LOD   aux_var1\n"); // push the real part onto the stack
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var \n"); // fetch the imaginary part
-        add_instr("F_MLT aux_var \n");
+        add_instr("LOD   __aux_var1\n"); // push the real part onto the stack
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var \n"); // fetch the imaginary part
+        add_instr("F_MLT __aux_var \n");
         add_instr("SF_ADD        \n");
-        add_instr("SET   aux_var3\n"); // save the squared magnitude
+        add_instr("SET   __aux_var3\n"); // save the squared magnitude
 
-        add_instr("LOD   aux_var2\n"); // load the float
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
+        add_instr("LOD   __aux_var2\n"); // load the float
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
 
-        add_instr("P_LOD aux_var2\n"); // fetch the float
-        add_instr("F_MLT aux_var \n");
-        add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
+        add_instr("P_LOD __aux_var2\n"); // fetch the float
+        add_instr("F_MLT __aux_var \n");
+        add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -1859,15 +1859,15 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_cst(e2,&etr,&eti);
 
         emit_sq_sum(etr, eti);
-        add_instr("SET   aux_var\n"); // save the result
+        add_instr("SET   __aux_var\n"); // save the result
         acc_ok = 0;
 
         oper_mult(e1, etr);           // multiply float with real part
-        add_instr("P_LOD aux_var\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));     // faz a divisao
 
         oper_mult(e1, eti);           // multiply float with imag part
-        add_instr("P_LOD aux_var\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));     // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -1878,15 +1878,15 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         emit_sq_sum(etr, eti);
-        add_instr("SET   aux_var\n"); // save the result
+        add_instr("SET   __aux_var\n"); // save the result
         acc_ok = 0;
 
         oper_mult(e1, etr);           // multiply float with real part
-        add_instr("P_LOD aux_var\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));     // faz a divisao
 
         oper_mult(e1, eti);           // multiply float with imag part
-        add_instr("P_LOD aux_var\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));     // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -1894,22 +1894,22 @@ expr oper_divi(expr e1, expr e2)
     // float var with comp acc
     if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n");             // save the imaginary part
-        add_instr("SET   aux_var1\n");             // save the real part
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var \n");             // fetch the imaginary part
-        add_instr("F_MLT aux_var \n");
+        add_instr("SET_P __aux_var \n");             // save the imaginary part
+        add_instr("SET   __aux_var1\n");             // save the real part
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");             // fetch the imaginary part
+        add_instr("F_MLT __aux_var \n");
         add_instr("SF_ADD        \n");
-        add_instr("SET   aux_var2\n");             // save the squared magnitude
+        add_instr("SET   __aux_var2\n");             // save the squared magnitude
 
         add_instr("LOD %s\n"  , v_table[e1.id].name); // load the float
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var2\n");             // fetch the squared magnitude
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var2\n");             // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));                  // faz a divisao
 
         add_instr("P_LOD %s\n", v_table[e1.id].name); // load the float
-        add_instr("F_MLT aux_var \n");
-        add_instr("P_LOD aux_var2\n");             // fetch the squared magnitude
+        add_instr("F_MLT __aux_var \n");
+        add_instr("P_LOD __aux_var2\n");             // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));                  // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -1946,20 +1946,20 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         acc_ok = 0;
 
         emit_sq_sum(etr, eti);
-        add_instr("SET   aux_var1\n"); // save the result
+        add_instr("SET   __aux_var1\n"); // save the result
 
-        add_instr("LOD   aux_var \n");
+        add_instr("LOD   __aux_var \n");
         oper_mult(expr_make(2, 0), etr);         // multiply float with real part
-        add_instr("P_LOD aux_var1\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var1\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
 
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         oper_mult(expr_make(2, 0), eti);         // multiply float with imag part
-        add_instr("P_LOD aux_var1\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var1\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -1969,20 +1969,20 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("SET aux_var\n");
+        add_instr("SET __aux_var\n");
         acc_ok = 0;
 
         emit_sq_sum(etr, eti);
-        add_instr("SET   aux_var1\n"); // save the result
+        add_instr("SET   __aux_var1\n"); // save the result
 
-        add_instr("LOD   aux_var\n");
+        add_instr("LOD   __aux_var\n");
         oper_mult(expr_make(2, 0), etr);         // multiply float with real part
-        add_instr("P_LOD aux_var1\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var1\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
 
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(expr_make(2, 0), eti);         // multiply float with imag part
-        add_instr("P_LOD aux_var1\n"); // fetch the denominator
+        add_instr("P_LOD __aux_var1\n"); // fetch the denominator
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -1990,25 +1990,25 @@ expr oper_divi(expr e1, expr e2)
     // float acc with comp acc
     if ((e1.type==2) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n"); // save the imaginary part
-        add_instr("SET_P aux_var1\n"); // save the real part
-        add_instr("SET   aux_var2\n"); // save the float
+        add_instr("SET_P __aux_var \n"); // save the imaginary part
+        add_instr("SET_P __aux_var1\n"); // save the real part
+        add_instr("SET   __aux_var2\n"); // save the float
 
-        add_instr("LOD   aux_var1\n"); // push the real part onto the stack
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var \n"); // fetch the imaginary part
-        add_instr("F_MLT aux_var \n");
+        add_instr("LOD   __aux_var1\n"); // push the real part onto the stack
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var \n"); // fetch the imaginary part
+        add_instr("F_MLT __aux_var \n");
         add_instr("SF_ADD        \n");
-        add_instr("SET   aux_var3\n"); // save the squared magnitude
+        add_instr("SET   __aux_var3\n"); // save the squared magnitude
 
-        add_instr("LOD   aux_var2\n"); // load the float
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
+        add_instr("LOD   __aux_var2\n"); // load the float
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
 
-        add_instr("P_LOD aux_var2\n"); // fetch the float
-        add_instr("F_MLT aux_var \n");
-        add_instr("P_LOD aux_var3\n"); // fetch the squared magnitude
+        add_instr("P_LOD __aux_var2\n"); // fetch the float
+        add_instr("F_MLT __aux_var \n");
+        add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
         oper_divi(expr_make(2, 0), expr_make(2, 0));      // faz a divisao
         oper_neg (expr_make(2, 0));
     }
@@ -2028,9 +2028,9 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_cst(e1,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         oper_divi(etr, expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(eti, expr_make(2, 0));
     }
 
@@ -2048,9 +2048,9 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         oper_divi(etr, expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(eti, expr_make(2, 0));
     }
 
@@ -2064,19 +2064,19 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_cst(e2,&et2r,&et2i);
 
         emit_sq_sum(et2r, et2i);
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         acc_ok = 0;
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
 
         oper_mult(et1i, et2r);
         oper_mult(et1r, et2i);
         oper_subt(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
@@ -2090,19 +2090,19 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e2,&et2r,&et2i);
 
         emit_sq_sum(et2r, et2i);
-        add_instr("SET aux_var\n");
+        add_instr("SET __aux_var\n");
         acc_ok = 0;
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
 
         oper_mult(et1i, et2r);
         oper_mult(et1r, et2i);
         oper_subt(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
@@ -2111,28 +2111,28 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT aux_var \n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
+        add_instr("F_MLT __aux_var \n");
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("SET   aux_var2\n");
+        add_instr("SET   __aux_var2\n");
 
-        add_instr("LOD   aux_var1\n");
+        add_instr("LOD   __aux_var1\n");
         oper_mult(etr, expr_make(2, 0));
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         oper_mult(eti, expr_make(2, 0));
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
 
-        add_instr("P_LOD aux_var1\n");
+        add_instr("P_LOD __aux_var1\n");
         oper_mult(eti, expr_make(2, 0));
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         oper_mult(etr, expr_make(2, 0));
         oper_subt(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
@@ -2151,9 +2151,9 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e1,&etr,&eti);
 
         add_instr("I2F\n");
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         oper_divi(etr, expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(eti, expr_make(2, 0));
     }
 
@@ -2171,9 +2171,9 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         oper_divi(etr, expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(eti, expr_make(2, 0));
     }
 
@@ -2187,19 +2187,19 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_cst(e2,&et2r,&et2i);
 
         emit_sq_sum(et2r, et2i);
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         acc_ok = 0;
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
 
         oper_mult(et1i, et2r);
         oper_mult(et1r, et2i);
         oper_subt(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
@@ -2213,19 +2213,19 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e2,&et2r,&et2i);
 
         emit_sq_sum(et2r, et2i);
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         acc_ok = 0;
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
 
         oper_mult(et1i, et2r);
         oper_mult(et1r, et2i);
         oper_subt(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
@@ -2234,40 +2234,40 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT aux_var \n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
+        add_instr("F_MLT __aux_var \n");
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("SET   aux_var2\n");
+        add_instr("SET   __aux_var2\n");
 
-        add_instr("LOD   aux_var1\n");
+        add_instr("LOD   __aux_var1\n");
         oper_mult(etr, expr_make(2, 0));
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         oper_mult(eti, expr_make(2, 0));
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
 
-        add_instr("P_LOD aux_var1\n");
+        add_instr("P_LOD __aux_var1\n");
         oper_mult(eti, expr_make(2, 0));
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         oper_mult(etr, expr_make(2, 0));
         oper_subt(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
     // comp acc with int var
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("SET_P aux_var \n");
+        add_instr("SET_P __aux_var \n");
         add_instr("P_I2F_M %s\n", v_table[e2.id].name);
-        add_instr("SET   aux_var1\n");
+        add_instr("SET   __aux_var1\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var \n");
-        add_instr("P_LOD aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
@@ -2275,22 +2275,22 @@ expr oper_divi(expr e1, expr e2)
     if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id==0))
     {
         add_instr("I2F\n");
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
     // comp acc with float var
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("P_LOD %s\n", v_table[e2.id].name);
         oper_divi(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         add_instr("P_LOD %s\n", v_table[e2.id].name);
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
@@ -2298,12 +2298,12 @@ expr oper_divi(expr e1, expr e2)
     // comp acc with float acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
     }
 
@@ -2312,27 +2312,27 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_cst(e2,&etr,&eti);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
         acc_ok = 0;
 
         emit_sq_sum(etr, eti);
-        add_instr("SET   aux_var2\n");
+        add_instr("SET   __aux_var2\n");
 
-        add_instr("LOD   aux_var1\n");
+        add_instr("LOD   __aux_var1\n");
         oper_mult(etr, expr_make(2, 0));
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         oper_mult(eti, expr_make(2, 0));
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
 
-        add_instr("P_LOD aux_var1\n");
+        add_instr("P_LOD __aux_var1\n");
         oper_mult(eti, expr_make(2, 0));
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         oper_mult(etr, expr_make(2, 0));
         oper_subt(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
         oper_neg (expr_make(2, 0));
     }
@@ -2342,27 +2342,27 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_ets(e2,&etr,&eti);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
         acc_ok = 0;
 
         emit_sq_sum(etr, eti);
-        add_instr("SET   aux_var2\n");
+        add_instr("SET   __aux_var2\n");
 
-        add_instr("LOD   aux_var1\n");
+        add_instr("LOD   __aux_var1\n");
         oper_mult(etr, expr_make(2, 0));
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         oper_mult(eti, expr_make(2, 0));
         oper_soma(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
 
-        add_instr("P_LOD aux_var1\n");
+        add_instr("P_LOD __aux_var1\n");
         oper_mult(eti, expr_make(2, 0));
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var \n");
         oper_mult(etr, expr_make(2, 0));
         oper_subt(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
         oper_neg (expr_make(2, 0));
     }
@@ -2370,32 +2370,32 @@ expr oper_divi(expr e1, expr e2)
     // comp acc with comp acc
     if ((e1.type==3) && (e1.id==0) && (e2.type==3) && (e2.id==0))
     {
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
-        add_instr("SET_P aux_var2\n");
-        add_instr("SET   aux_var3\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("SET_P __aux_var2\n");
+        add_instr("SET   __aux_var3\n");
 
-        add_instr("LOD   aux_var1\n");
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var \n");
-        add_instr("F_MLT aux_var \n");
+        add_instr("LOD   __aux_var1\n");
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
+        add_instr("F_MLT __aux_var \n");
         add_instr("SF_ADD        \n");
-        add_instr("SET   aux_var4\n");
+        add_instr("SET   __aux_var4\n");
 
-        add_instr("LOD   aux_var3\n");
-        add_instr("F_MLT aux_var1\n");
-        add_instr("P_LOD aux_var2\n");
-        add_instr("F_MLT aux_var \n");
+        add_instr("LOD   __aux_var3\n");
+        add_instr("F_MLT __aux_var1\n");
+        add_instr("P_LOD __aux_var2\n");
+        add_instr("F_MLT __aux_var \n");
         add_instr("SF_ADD        \n");
-        add_instr("P_LOD aux_var4\n");
+        add_instr("P_LOD __aux_var4\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
 
-        add_instr("P_LOD aux_var3\n");
-        add_instr("F_MLT aux_var \n");
-        add_instr("P_LOD aux_var2\n");
-        add_instr("F_MLT aux_var1\n");
+        add_instr("P_LOD __aux_var3\n");
+        add_instr("F_MLT __aux_var \n");
+        add_instr("P_LOD __aux_var2\n");
+        add_instr("F_MLT __aux_var1\n");
         oper_subt(expr_make(2, 0), expr_make(2, 0));
-        add_instr("P_LOD aux_var4\n");
+        add_instr("P_LOD __aux_var4\n");
         oper_divi(expr_make(2, 0), expr_make(2, 0));
         oper_neg (expr_make(2, 0));
     }
@@ -2507,9 +2507,9 @@ expr oper_cmp(expr e1, expr e2, int type)
     // int var with float acc
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         add_instr("I2F_M %s\n", v_table[e1.id].name);
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
@@ -2539,13 +2539,13 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
         acc_ok = 0;
 
         oper_mult(e1, e1);
-        add_instr("P_LOD aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         exec_mod2(expr_make(3, 0));
         oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
     }
@@ -2572,9 +2572,9 @@ expr oper_cmp(expr e1, expr e2, int type)
     // int acc with float acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         add_instr("I2F\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
@@ -2584,8 +2584,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        add_instr("SET   aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("SET   __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e1, e1);
         exec_mod2(e2);
         oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
@@ -2596,8 +2596,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        add_instr("SET   aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("SET   __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e1, e1);
         exec_mod2(e2);
         oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
@@ -2608,14 +2608,14 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
-        add_instr("SET   aux_var2\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("SET   __aux_var2\n");
 
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_mult(e1, e1);
-        add_instr("P_LOD aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         exec_mod2(expr_make(3, 0));
         oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
     }
@@ -2672,13 +2672,13 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
         acc_ok = 0;
 
         oper_mult(e1, e1);
-        add_instr("P_LOD aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         exec_mod2(expr_make(3, 0));
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }
@@ -2716,8 +2716,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
-        add_instr("SET   aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("SET   __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e1, e1);
         exec_mod2(e2);
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
@@ -2728,8 +2728,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
-        add_instr("SET   aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("SET   __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e1, e1);
         exec_mod2(e2);
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
@@ -2740,14 +2740,14 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
-        add_instr("SET   aux_var2\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("SET   __aux_var2\n");
 
-        add_instr("P_LOD aux_var2\n");
+        add_instr("P_LOD __aux_var2\n");
         oper_mult(e1, e1);
-        add_instr("P_LOD aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         exec_mod2(expr_make(3, 0));
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }
@@ -2767,11 +2767,11 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         acc_ok = 0;
         exec_mod2(e1);
-        add_instr("P_LOD aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e2, e2);
         oper_cmp(expr_make(2, 0), expr_make(1, 0), type);
     }
@@ -2791,11 +2791,11 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         acc_ok = 0;
         exec_mod2(e1);
-        add_instr("P_LOD aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e2, e2);
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }
@@ -2825,12 +2825,12 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
         acc_ok = 0;
         exec_mod2(e1);
-        add_instr("P_LOD aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         exec_mod2(e2);
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }
@@ -2850,11 +2850,11 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         acc_ok = 0;
         exec_mod2(e1);
-        add_instr("P_LOD aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e2, e2);
         oper_cmp(expr_make(2, 0), expr_make(1, 0), type);
     }
@@ -2874,11 +2874,11 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
 
-        add_instr("SET   aux_var\n");
+        add_instr("SET   __aux_var\n");
         acc_ok = 0;
         exec_mod2(e1);
-        add_instr("P_LOD aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e2, e2);
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }
@@ -2908,12 +2908,12 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET   aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET   __aux_var1\n");
         acc_ok = 0;
         exec_mod2(e1);
-        add_instr("P_LOD aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         exec_mod2(e2);
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }
@@ -2933,10 +2933,10 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         exec_mod2(e1);
-        add_instr("P_LOD aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e2, e2);
         oper_cmp(expr_make(2, 0), expr_make(1, 0), type);
     }
@@ -2956,10 +2956,10 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        add_instr("SET_P aux_var\n");
+        add_instr("SET_P __aux_var\n");
         exec_mod2(e1);
-        add_instr("P_LOD aux_var\n");
-        add_instr("P_LOD aux_var\n");
+        add_instr("P_LOD __aux_var\n");
+        add_instr("P_LOD __aux_var\n");
         oper_mult(e2, e2);
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }
@@ -2989,11 +2989,11 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
 
-        add_instr("SET_P aux_var \n");
-        add_instr("SET_P aux_var1\n");
+        add_instr("SET_P __aux_var \n");
+        add_instr("SET_P __aux_var1\n");
         exec_mod2(e1);
-        add_instr("P_LOD aux_var1\n");
-        add_instr("P_LOD aux_var \n");
+        add_instr("P_LOD __aux_var1\n");
+        add_instr("P_LOD __aux_var \n");
         exec_mod2(e2);
         oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }

@@ -23,7 +23,7 @@ OUT 0
 LOD main_a
 MLT main_b
 OUT 0
-@Lwh1 LOD main_a
+@__Lwh1 LOD main_a
 SET main_b
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

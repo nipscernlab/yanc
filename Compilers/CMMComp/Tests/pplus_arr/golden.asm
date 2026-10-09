@@ -8,7 +8,7 @@ NOP
 #NUGAIN 128
 @main #array main_a 1 4
 #array main_b 1 16
-@Lwh1 INN 0
+@__Lwh1 INN 0
 SET main_idx
 PSH
 LDI main_a
@@ -24,5 +24,5 @@ STI main_b
 LOD main_idx
 LDI main_a
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

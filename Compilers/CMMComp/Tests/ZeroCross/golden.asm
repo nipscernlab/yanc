@@ -60,10 +60,10 @@ F_INN 1
 SET sinal_entrada
 LOD 0.0
 EQU sinal_entrada
-JIZ Lif1else
+JIZ __Lif1else
 LOD 0.0000001
 SET sinal_entrada
-@Lif1else LOD sinal_entrada
+@__Lif1else LOD sinal_entrada
 F_MLT 0.615089250452674
 SET x1
 LOD 1.976807847899757
@@ -135,15 +135,15 @@ F2I_M y3
 OUT 4
 LOD y3
 F_GRE 0.0000001
-JIZ Lif2else
+JIZ __Lif2else
 LOD amostra_anterior
 F_LES 0.0000001
-JIZ Lif3else
+JIZ __Lif3else
 F2I_M 1.0
 OUT 1
 F2I_M 0.0
 OUT 1
-@Lif3else @Lif2else LOD y3
+@__Lif3else @__Lif2else LOD y3
 SET amostra_anterior
 F2I_M 1.0
 OUT 0

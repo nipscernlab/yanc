@@ -7,7 +7,7 @@ NOP
 #NBEXPO 5
 #NUGAIN 128
 #SHARE main_f main_v
-@main @Lwh1 INN 0
+@main @__Lwh1 INN 0
 SET main_v
 SET main_a
 LOD main_v
@@ -32,5 +32,5 @@ LOD main_e
 OUT 0
 LOD main_f
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

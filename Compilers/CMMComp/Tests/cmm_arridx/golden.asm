@@ -7,7 +7,7 @@ NOP
 #NBEXPO 5
 #NUGAIN 128
 @main #array main_v 1 8
-@Lwh1 LOD 7
+@__Lwh1 LOD 7
 SET main_a
 LOD 3
 SET main_b
@@ -35,5 +35,5 @@ LOD_V main_v 5
 OUT 0
 LOD_V main_v 7
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

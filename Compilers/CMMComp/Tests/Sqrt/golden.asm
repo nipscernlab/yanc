@@ -10,14 +10,14 @@ NOP
 #SHARE main_y my_sqrt_num
 #SHARE main_t my_sqrt_v
 #SHARE main_e my_sqrt_num
-#SHARE sqrt_num my_sqrt_num
+#SHARE __sqrt_num my_sqrt_num
 JMP main
 @my_sqrt SET my_sqrt_num
 EQU 0.0
-JIZ Lif1else
+JIZ __Lif1else
 LOD 0.0
 RET
-@Lif1else LOD 1
+@__Lif1else LOD 1
 SHL my_sqrt_num
 P_LOD 24
 S_SRS
@@ -67,12 +67,12 @@ RET
 #arrays main_a 2 1000 "sqrt_y.txt"
 LOD 0
 SET main_j
-@Lwh1 LOD 1000
+@__Lwh1 LOD 1000
 LES main_j
-JIZ Lwh1end
+JIZ __Lwh1end
 LOD main_j
 LDI main_x
-CAL float_sqrt
+CAL __float_sqrt
 SET main_y
 LOD main_j
 LDI main_a
@@ -82,12 +82,12 @@ SET main_e
 LOD main_j
 ADD 1
 SET main_j
-JMP Lwh1
-@Lwh1end LOD 0
+JMP __Lwh1
+@__Lwh1end LOD 0
 SET main_j
-@Lwh2 LOD 1000
+@__Lwh2 LOD 1000
 LES main_j
-JIZ Lwh2end
+JIZ __Lwh2end
 LOD main_j
 LDI main_x
 CAL my_sqrt
@@ -100,37 +100,37 @@ SET main_e
 LOD main_j
 ADD 1
 SET main_j
-JMP Lwh2
-@Lwh2end @fim JMP fim
+JMP __Lwh2
+@__Lwh2end @fim JMP fim
 
 // sqrt function --------------------------------------------------------------
 
-@float_sqrt     SET sqrt_num       // get the parameter
+@__float_sqrt     SET __sqrt_num       // get the parameter
               F_ROT                // first estimate (nearest power of 2)
 
                 PSH                // update x
-              F_DIV sqrt_num       // iteration 1
+              F_DIV __sqrt_num       // iteration 1
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
-              F_DIV sqrt_num       // iteration 2
+              F_DIV __sqrt_num       // iteration 2
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
-              F_DIV sqrt_num       // iteration 3
+              F_DIV __sqrt_num       // iteration 3
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
-              F_DIV sqrt_num       // iteration 4
+              F_DIV __sqrt_num       // iteration 4
 NOP
 F_QUO
              SF_ADD

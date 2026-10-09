@@ -6,10 +6,10 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-#SHARE aux_var main_r_i
+#SHARE __aux_var main_r_i
 #SHARE main_x main_r_i
 #SHARE main_x_i main_r
-@main @Lwh1 LOD 1.000000
+@main @__Lwh1 LOD 1.000000
 F_MLT 3.000000
 P_LOD 2.000000
 F_MLT 4.000000
@@ -30,13 +30,13 @@ F_MLT 1.000000
 P_LOD 1.000000
 F_MLT 1.000000
 SF_ADD
-SET   aux_var
+SET   __aux_var
 LOD 4.000000
 F_MLT 1.000000
 P_LOD 2.000000
 F_MLT 1.000000
 SF_ADD
-P_LOD aux_var
+P_LOD __aux_var
 SF_DIV
 NOP
 F_QUO
@@ -45,7 +45,7 @@ F_MLT 1.000000
 P_LOD 4.000000
 F_MLT 1.000000
 SF_SU2
-P_LOD aux_var
+P_LOD __aux_var
 SF_DIV
 NOP
 F_QUO
@@ -109,5 +109,5 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

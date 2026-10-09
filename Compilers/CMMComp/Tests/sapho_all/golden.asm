@@ -23,23 +23,23 @@ NOP
 #SHARE main_fx twice_v
 #SHARE main_z diff_a
 #SHARE main_fw main_w
-#SHARE aux_var twice_v
-#SHARE aux_var1 diff_a
-#SHARE aux_var2 main_fy
-#SHARE sqrt_num twice_v
-#SHARE exp_x twice_v
-#SHARE exp_q diff_a
-#SHARE exp_n diff_a
-#SHARE exp_r twice_v
-#SHARE log_x diff_a
-#SHARE log_e twice_v
-#SHARE log_ne main_fy
-#SHARE log_m main_fy
-#SHARE log_t2 diff_a
-#SHARE log_t1 main_fy
-#SHARE log_u diff_a
-#SHARE log_w main_fy
-#SHARE log_lm diff_a
+#SHARE __aux_var twice_v
+#SHARE __aux_var1 diff_a
+#SHARE __aux_var2 main_fy
+#SHARE __sqrt_num twice_v
+#SHARE __exp_x twice_v
+#SHARE __exp_q diff_a
+#SHARE __exp_n diff_a
+#SHARE __exp_r twice_v
+#SHARE __log_x diff_a
+#SHARE __log_e twice_v
+#SHARE __log_ne main_fy
+#SHARE __log_m main_fy
+#SHARE __log_t2 diff_a
+#SHARE __log_t1 main_fy
+#SHARE __log_u diff_a
+#SHARE __log_w main_fy
+#SHARE __log_lm diff_a
 JMP main
 @twice SET twice_v
 ADD twice_v
@@ -77,7 +77,7 @@ CAL n2
 ADD 1
 RET
 @main #ITRAD
-@Lwh1 LOD 0
+@__Lwh1 LOD 0
 SET s
 LOD 0
 SET main_w
@@ -183,23 +183,23 @@ ADD main_t
 SET s
 LOD main_y
 LES main_x
-JIZ Lif1else
+JIZ __Lif1else
 LOD s
 ADD 1
 SET s
-@Lif1else LOD main_y
+@__Lif1else LOD main_y
 GRE main_x
-JIZ Lif2else
+JIZ __Lif2else
 LOD s
 ADD 2
 SET s
-@Lif2else LOD main_y
+@__Lif2else LOD main_y
 EQU main_x
-JIZ Lif3else
+JIZ __Lif3else
 LOD s
 ADD 4
 SET s
-@Lif3else LOD main_x
+@__Lif3else LOD main_x
 ADD 1
 P_LOD main_y
 MLT 2
@@ -325,29 +325,29 @@ ADD 1
 P_LOD main_y
 ADD 2
 S_LES
-JIZ Lif4else
+JIZ __Lif4else
 LOD s
 ADD 8
 SET s
-@Lif4else LOD main_x
+@__Lif4else LOD main_x
 ADD 1
 P_LOD main_y
 ADD 2
 S_GRE
-JIZ Lif5else
+JIZ __Lif5else
 LOD s
 ADD 16
 SET s
-@Lif5else LOD main_x
+@__Lif5else LOD main_x
 ADD 1
 P_LOD main_y
 ADD 5
 S_EQU
-JIZ Lif6else
+JIZ __Lif6else
 LOD s
 ADD 32
 SET s
-@Lif6else LOD main_x
+@__Lif6else LOD main_x
 ADD main_y
 NEG
 SET main_t
@@ -594,35 +594,35 @@ ADD main_t
 SET s
 LOD main_fx
 F_GRE main_fy
-JIZ Lif7else
+JIZ __Lif7else
 LOD s
 ADD 64
 SET s
-@Lif7else LOD main_fx
+@__Lif7else LOD main_fx
 F_LES main_fy
-JIZ Lif8else
+JIZ __Lif8else
 LOD s
 ADD 128
 SET s
-@Lif8else LOD main_fx
+@__Lif8else LOD main_fx
 F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_LES
-JIZ Lif9else
+JIZ __Lif9else
 LOD s
 ADD 256
 SET s
-@Lif9else LOD main_fx
+@__Lif9else LOD main_fx
 F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_GRE
-JIZ Lif10else
+JIZ __Lif10else
 LOD s
 ADD 512
 SET s
-@Lif10else LOD main_fx
+@__Lif10else LOD main_fx
 F_ADD main_fy
 F_NEG
 SET main_fw
@@ -853,12 +853,12 @@ LOD 2.0
 P_LOD 1.0
 P_LOD 1.0
 P_LOD 0.0
-SET_P aux_var 
-SET_P aux_var1
-SET_P aux_var2
-F_ADD aux_var1
-P_LOD aux_var2
-F_ADD aux_var 
+SET_P __aux_var 
+SET_P __aux_var1
+SET_P __aux_var2
+F_ADD __aux_var1
+P_LOD __aux_var2
+F_ADD __aux_var 
 POP
 F2I
 LDI ia
@@ -867,7 +867,7 @@ LOD s
 ADD main_t
 SET s
 LOD 4.0
-CAL float_sqrt
+CAL __float_sqrt
 SET main_fw
 F_MLT 4194304.0
 F2I
@@ -876,7 +876,7 @@ LOD s
 ADD main_t
 SET s
 LOD 0.0
-CAL float_exp
+CAL __float_exp
 SET main_fw
 F_MLT 4194304.0
 F2I
@@ -885,7 +885,7 @@ LOD s
 ADD main_t
 SET s
 LOD 1.0
-CAL float_log
+CAL __float_log
 SET main_fw
 F_MLT 4194304.0
 F2I
@@ -900,11 +900,11 @@ LOD main_x
 ADD 7
 EQU main_t
 LIN
-JIZ Lif11else
+JIZ __Lif11else
 LOD s
 ADD 1024
 SET s
-@Lif11else LOD main_x
+@__Lif11else LOD main_x
 ADD 1
 P_LOD main_y
 ADD 1
@@ -940,11 +940,11 @@ ADD main_x
 MLT 4
 EQU main_t
 LIN
-JIZ Lif12else
+JIZ __Lif12else
 LOD s
 ADD 2048
 SET s
-@Lif12else LOD 16
+@__Lif12else LOD 16
 SHR s
 XOR s
 SET main_t
@@ -960,37 +960,37 @@ LOD 15
 AND main_t
 OUT 0
 #TOAQUI
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim
 
 // sqrt function --------------------------------------------------------------
 
-@float_sqrt     SET sqrt_num       // get the parameter
+@__float_sqrt     SET __sqrt_num       // get the parameter
               F_ROT                // first estimate (nearest power of 2)
 
                 PSH                // update x
-              F_DIV sqrt_num       // iteration 1
+              F_DIV __sqrt_num       // iteration 1
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
-              F_DIV sqrt_num       // iteration 2
+              F_DIV __sqrt_num       // iteration 2
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
-              F_DIV sqrt_num       // iteration 3
+              F_DIV __sqrt_num       // iteration 3
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
-              F_DIV sqrt_num       // iteration 4
+              F_DIV __sqrt_num       // iteration 4
 NOP
 F_QUO
              SF_ADD
@@ -1003,33 +1003,33 @@ F_QUO
 // O(1): n via F2I (round-to-nearest with a sign-half bias, since F2I truncates),
 // 2^n via a single F_SCL (no loop). exp(r) is a degree-6 Taylor polynomial.
 
-@float_exp  SET   exp_x                 // save x
+@__float_exp  SET   __exp_x                 // save x
             F_MLT 1.4426950409          // q = x / ln2   (1/ln2 = log2 e)
-            SET   exp_q
+            SET   __exp_q
             LOD   0.5
-            F_SGN exp_q                 // copysign(0.5, q)
-            F_ADD exp_q                 // q + copysign(0.5,q)
+            F_SGN __exp_q                 // copysign(0.5, q)
+            F_ADD __exp_q                 // q + copysign(0.5,q)
             F2I                         // n = round(q)   (F2I truncates toward 0)
-            SET   exp_n
+            SET   __exp_n
             I2F                         // float(n)
             F_MLT 0.6931471806          // n * ln2
-            F_SU2 exp_x                 // r = x - n*ln2   (F_SU2 X = X - acc)
-            SET   exp_r
+            F_SU2 __exp_x                 // r = x - n*ln2   (F_SU2 X = X - acc)
+            SET   __exp_r
 
             LOD   0.0013888889          // Horner, exp(r) = sum r^k/k! (k=0..6)
-            F_MLT exp_r                 // 1/6!
+            F_MLT __exp_r                 // 1/6!
             F_ADD 0.0083333333          // 1/5!
-            F_MLT exp_r
+            F_MLT __exp_r
             F_ADD 0.0416666667          // 1/4!
-            F_MLT exp_r
+            F_MLT __exp_r
             F_ADD 0.1666666667          // 1/3!
-            F_MLT exp_r
+            F_MLT __exp_r
             F_ADD 0.5                    // 1/2!
-            F_MLT exp_r
+            F_MLT __exp_r
             F_ADD 1.0                    // 1/1!
-            F_MLT exp_r
+            F_MLT __exp_r
             F_ADD 1.0                    // 1/0!  -> exp(r)
-            F_SCL exp_n                  // * 2^n  -> exp(x)
+            F_SCL __exp_n                  // * 2^n  -> exp(x)
             RET
 
 // Natural logarithm ----------------------------------------------------------
@@ -1038,50 +1038,50 @@ F_QUO
 // atanh series 2u(1 + u^2/3 + u^4/5 + u^6/7 + u^8/9), u = (m-1)/(m+1).
 // x <= 0 returns 0.
 
-@float_log  SET   log_x                 // save x (acc still = x)
+@__float_log  SET   __log_x                 // save x (acc still = x)
             F_LES 0.0                    // (x > 0) ?   [F_LES true when acc > X]
-            JIZ   L_log_zero             // x <= 0 -> bail out with 0
+            JIZ   __L_log_zero             // x <= 0 -> bail out with 0
 
-            LOD   log_x
+            LOD   __log_x
             XPO                          // e = floor(log2 x)   (int)
-            SET   log_e
+            SET   __log_e
             NEG                          // -e
-            SET   log_ne
-            LOD   log_x
-            F_SCL log_ne                 // m = x * 2^(-e)  -> [1,2)
-            SET   log_m
+            SET   __log_ne
+            LOD   __log_x
+            F_SCL __log_ne                 // m = x * 2^(-e)  -> [1,2)
+            SET   __log_m
 
             F_ADD 1.0                    // m+1   (acc still = m)
-            SET   log_t2
-            LOD   log_m
+            SET   __log_t2
+            LOD   __log_m
             F_SU1 1.0                    // m-1   (acc - X)
-            SET   log_t1
-            LOD   log_t2
-            F_DIV log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
+            SET   __log_t1
+            LOD   __log_t2
+            F_DIV __log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
 NOP
 F_QUO
-            SET   log_u
-            F_MLT log_u
-            SET   log_w                  // w = u^2
+            SET   __log_u
+            F_MLT __log_u
+            SET   __log_w                  // w = u^2
 
             LOD   0.1111111111           // Horner in w (1/9, 1/7, 1/5, 1/3, 1)
-            F_MLT log_w
+            F_MLT __log_w
             F_ADD 0.1428571429
-            F_MLT log_w
+            F_MLT __log_w
             F_ADD 0.2
-            F_MLT log_w
+            F_MLT __log_w
             F_ADD 0.3333333333
-            F_MLT log_w
+            F_MLT __log_w
             F_ADD 1.0
-            F_MLT log_u
+            F_MLT __log_u
             F_MLT 2.0                     // log(m)
-            SET   log_lm
+            SET   __log_lm
 
-            LOD   log_e
+            LOD   __log_e
             I2F                           // float(e)
             F_MLT 0.6931471806            // e * ln2
-            F_ADD log_lm                  // + log(m)  -> log(x)
+            F_ADD __log_lm                  // + log(m)  -> log(x)
             RET
 
-@L_log_zero LOD   0.0
+@__L_log_zero LOD   0.0
             RET

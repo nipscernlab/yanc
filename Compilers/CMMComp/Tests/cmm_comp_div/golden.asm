@@ -8,7 +8,7 @@ NOP
 #NUGAIN 128
 #SHARE main_r_i main_x
 #SHARE main_r main_x_i
-@main @Lwh1 LOD 4.000000
+@main @__Lwh1 LOD 4.000000
 SET main_x
 LOD 2.000000
 SET main_x_i
@@ -20,13 +20,13 @@ F_MLT main_y_i
 P_LOD main_y
 F_MLT main_y
 SF_ADD
-SET   aux_var
+SET   __aux_var
 LOD main_x
 F_MLT main_y
 P_LOD main_x_i
 F_MLT main_y_i
 SF_ADD
-P_LOD aux_var
+P_LOD __aux_var
 SF_DIV
 NOP
 F_QUO
@@ -35,7 +35,7 @@ F_MLT main_y
 P_LOD main_x
 F_MLT main_y_i
 SF_SU2
-P_LOD aux_var
+P_LOD __aux_var
 SF_DIV
 NOP
 F_QUO
@@ -57,13 +57,13 @@ F_MLT main_y_i
 P_LOD main_y
 F_MLT main_y
 SF_ADD
-SET   aux_var
+SET   __aux_var
 LOD main_x
 F_MLT main_y
 P_LOD main_x_i
 F_MLT main_y_i
 SF_ADD
-P_LOD aux_var
+P_LOD __aux_var
 SF_DIV
 NOP
 F_QUO
@@ -72,7 +72,7 @@ F_MLT main_y
 P_LOD main_x
 F_MLT main_y_i
 SF_SU2
-P_LOD aux_var
+P_LOD __aux_var
 SF_DIV
 NOP
 F_QUO
@@ -94,13 +94,13 @@ F_MLT main_y_i
 P_LOD main_y
 F_MLT main_y
 SF_ADD
-SET   aux_var
+SET   __aux_var
 LOD main_x
 F_MLT main_y
 P_LOD main_x_i
 F_MLT main_y_i
 SF_ADD
-P_LOD aux_var
+P_LOD __aux_var
 SF_DIV
 NOP
 F_QUO
@@ -109,7 +109,7 @@ F_MLT main_y
 P_LOD main_x
 F_MLT main_y_i
 SF_SU2
-P_LOD aux_var
+P_LOD __aux_var
 SF_DIV
 NOP
 F_QUO
@@ -119,5 +119,5 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

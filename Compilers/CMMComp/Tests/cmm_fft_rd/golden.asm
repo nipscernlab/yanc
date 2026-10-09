@@ -10,21 +10,21 @@ NOP
 #array x 1 8
 @main LOD 0
 SET main_k
-@Lwh1 LOD 8
+@__Lwh1 LOD 8
 LES main_k
-JIZ Lwh1end
+JIZ __Lwh1end
 LOD main_k
 P_LOD main_k
 STI x
 LOD main_k
 ADD 1
 SET main_k
-JMP Lwh1
-@Lwh1end LOD 0
+JMP __Lwh1
+@__Lwh1end LOD 0
 SET main_k
-@Lwh2 LOD 8
+@__Lwh2 LOD 8
 LES main_k
-JIZ Lwh2end
+JIZ __Lwh2end
 LOD main_k
 ILI x
 SET main_v
@@ -32,5 +32,5 @@ OUT 0
 LOD main_k
 ADD 1
 SET main_k
-JMP Lwh2
-@Lwh2end @fim JMP fim
+JMP __Lwh2
+@__Lwh2end @fim JMP fim

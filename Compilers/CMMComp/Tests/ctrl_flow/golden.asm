@@ -9,77 +9,77 @@ NOP
 #SHARE main_ic main_wc
 #SHARE main_outer main_wc
 #SHARE main_bc main_wc
-@main @Lwh1 LOD 1
-JIZ Lif1else
+@main @__Lwh1 LOD 1
+JIZ __Lif1else
 LOD 11
 OUT 0
-@Lif1else LOD 0
-JIZ Lif2else
+@__Lif1else LOD 0
+JIZ __Lif2else
 LOD 12
 OUT 0
-@Lif2else LOD 1
-JIZ Lif3else
+@__Lif2else LOD 1
+JIZ __Lif3else
 LOD 21
 OUT 0
-JMP Lif3end
-@Lif3else LOD 22
+JMP __Lif3end
+@__Lif3else LOD 22
 OUT 0
-@Lif3end LOD 0
-JIZ Lif4else
+@__Lif3end LOD 0
+JIZ __Lif4else
 LOD 31
 OUT 0
-JMP Lif4end
-@Lif4else LOD 32
+JMP __Lif4end
+@__Lif4else LOD 32
 OUT 0
-@Lif4end LOD 1
-JIZ Lif5else
+@__Lif4end LOD 1
+JIZ __Lif5else
 LOD 1
-JIZ Lif6else
+JIZ __Lif6else
 LOD 41
 OUT 0
-@Lif6else @Lif5else LOD 0
-JIZ Lif7else
+@__Lif6else @__Lif5else LOD 0
+JIZ __Lif7else
 LOD 51
 OUT 0
-JMP Lif7end
-@Lif7else LOD 1
-JIZ Lif8else
+JMP __Lif7end
+@__Lif7else LOD 1
+JIZ __Lif8else
 LOD 52
 OUT 0
-@Lif8else @Lif7end LOD 1
-JIZ Lif9else
+@__Lif8else @__Lif7end LOD 1
+JIZ __Lif9else
 LOD 3
 SET main_wc
-@Lwh2 LOD main_wc
-JIZ Lwh2end
+@__Lwh2 LOD main_wc
+JIZ __Lwh2end
 LOD 60
 ADD main_wc
 OUT 0
 NEG_M 1
 ADD main_wc
 SET main_wc
-JMP Lwh2
-@Lwh2end @Lif9else LOD 2
+JMP __Lwh2
+@__Lwh2end @__Lif9else LOD 2
 SET main_ic
-@Lwh3 LOD main_ic
-JIZ Lwh3end
+@__Lwh3 LOD main_ic
+JIZ __Lwh3end
 LOD main_ic
-JIZ Lif10else
+JIZ __Lif10else
 LOD 70
 ADD main_ic
 OUT 0
-@Lif10else NEG_M 1
+@__Lif10else NEG_M 1
 ADD main_ic
 SET main_ic
-JMP Lwh3
-@Lwh3end LOD 2
+JMP __Lwh3
+@__Lwh3end LOD 2
 SET main_outer
-@Lwh4 LOD main_outer
-JIZ Lwh4end
+@__Lwh4 LOD main_outer
+JIZ __Lwh4end
 LOD 2
 SET main_inner
-@Lwh5 LOD main_inner
-JIZ Lwh5end
+@__Lwh5 LOD main_inner
+JIZ __Lwh5end
 LOD main_outer
 MLT 10
 ADD 80
@@ -88,26 +88,26 @@ OUT 0
 NEG_M 1
 ADD main_inner
 SET main_inner
-JMP Lwh5
-@Lwh5end NEG_M 1
+JMP __Lwh5
+@__Lwh5end NEG_M 1
 ADD main_outer
 SET main_outer
-JMP Lwh4
-@Lwh4end LOD 5
+JMP __Lwh4
+@__Lwh4end LOD 5
 SET main_bc
-@Lwh6 LOD main_bc
-JIZ Lwh6end
+@__Lwh6 LOD main_bc
+JIZ __Lwh6end
 LOD 3
 XOR main_bc
-JIZ Lwh6end
+JIZ __Lwh6end
 LOD 100
 ADD main_bc
 OUT 0
 NEG_M 1
 ADD main_bc
 SET main_bc
-JMP Lwh6
-@Lwh6end LOD 0
+JMP __Lwh6
+@__Lwh6end LOD 0
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

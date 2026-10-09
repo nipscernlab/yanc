@@ -6,70 +6,70 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-@main @Lwh1 LOD 1
+@main @__Lwh1 LOD 1
 SET main_s
 ADD -1
-JIZ sw_body_1_1
+JIZ __sw_body_1_1
 ADD -1
-JIZ sw_body_1_2
-JMP sw_body_1_3
-@sw_body_1_1 LOD 11
+JIZ __sw_body_1_2
+JMP __sw_body_1_3
+@__sw_body_1_1 LOD 11
 OUT 0
-JMP switch_end_1
-@sw_body_1_2 LOD 12
+JMP __switch_end_1
+@__sw_body_1_2 LOD 12
 OUT 0
-JMP switch_end_1
-@sw_body_1_3 LOD 19
+JMP __switch_end_1
+@__sw_body_1_3 LOD 19
 OUT 0
-@switch_end_1 LOD 2
+@__switch_end_1 LOD 2
 SET main_s
 ADD -1
-JIZ sw_body_2_1
+JIZ __sw_body_2_1
 ADD -1
-JIZ sw_body_2_2
-JMP sw_body_2_3
-@sw_body_2_1 LOD 21
+JIZ __sw_body_2_2
+JMP __sw_body_2_3
+@__sw_body_2_1 LOD 21
 OUT 0
-JMP switch_end_2
-@sw_body_2_2 LOD 22
+JMP __switch_end_2
+@__sw_body_2_2 LOD 22
 OUT 0
-JMP switch_end_2
-@sw_body_2_3 LOD 29
+JMP __switch_end_2
+@__sw_body_2_3 LOD 29
 OUT 0
-@switch_end_2 LOD 7
+@__switch_end_2 LOD 7
 SET main_s
 ADD -1
-JIZ sw_body_3_1
+JIZ __sw_body_3_1
 ADD -1
-JIZ sw_body_3_2
-JMP sw_body_3_3
-@sw_body_3_1 LOD 31
+JIZ __sw_body_3_2
+JMP __sw_body_3_3
+@__sw_body_3_1 LOD 31
 OUT 0
-JMP switch_end_3
-@sw_body_3_2 LOD 32
+JMP __switch_end_3
+@__sw_body_3_2 LOD 32
 OUT 0
-JMP switch_end_3
-@sw_body_3_3 LOD 39
+JMP __switch_end_3
+@__sw_body_3_3 LOD 39
 OUT 0
-@switch_end_3 LOD 20
+@__switch_end_3 LOD 20
 SET main_s
 ADD -10
-JIZ sw_body_4_1
+JIZ __sw_body_4_1
 ADD -10
-JIZ sw_body_4_2
+JIZ __sw_body_4_2
 ADD -10
-JIZ sw_body_4_3
-JMP sw_body_4_4
-@sw_body_4_1 LOD 41
+JIZ __sw_body_4_3
+JMP __sw_body_4_4
+@__sw_body_4_1 LOD 41
 OUT 0
-JMP switch_end_4
-@sw_body_4_2 LOD 42
+JMP __switch_end_4
+@__sw_body_4_2 LOD 42
 OUT 0
-JMP switch_end_4
-@sw_body_4_3 LOD 43
+JMP __switch_end_4
+@__sw_body_4_3 LOD 43
 OUT 0
-JMP switch_end_4
-@sw_body_4_4 LOD 49
+JMP __switch_end_4
+@__sw_body_4_4 LOD 49
 OUT 0
-@switch_end_4 JMP Lwh1
-@Lwh1end @fim JMP fim
+@__switch_end_4 JMP __Lwh1
+@__Lwh1end @fim JMP fim

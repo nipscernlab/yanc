@@ -354,7 +354,7 @@ void exec_switch(expr_node *cond)
     // case body runs, so an inner switch (inside a body) reusing switch_exp can
     // never corrupt an enclosing compare -- the enclosing dispatch is already
     // done by then.
-    if (find_var("switch_exp") == -1) add_var("switch_exp");
+    if (find_var("__switch_exp") == -1) add_var("__switch_exp");
 
     swit_cnt++;
     stmt_node *partial = stmt_switch(swit_cnt, /*case_max=*/0, cond, NULL);

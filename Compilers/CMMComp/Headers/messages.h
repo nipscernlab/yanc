@@ -76,6 +76,38 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: a variável '%s' já existe. Vai tomar um Ω³!\n", \
       "Error on line %d: the variable '%s' already exists. Go grab an Ω³!\n")
 
+// a declared name, as the .asm spells it, already belongs to something else,
+// or the assembler would read it as an instruction (check_name, variaveis.c)
+#define MSG_ERR_NAME_TAKEN \
+    M("Erro na linha %d: %s vira '%s' no assembly, e esse nome já é %s. Troque um dos dois nomes.\n", \
+      "Error on line %d: %s is '%s' in the assembly, and that name is already %s. Rename one of them.\n")
+
+#define MSG_ERR_NAME_MNEMONIC \
+    M("Erro na linha %d: %s vira '%s' no assembly, que é uma instrução do processador. Troque o nome.\n", \
+      "Error on line %d: %s is '%s' in the assembly, which is an instruction of the processor. Rename it.\n")
+
+#define MSG_ERR_NAME_IS_MNEMONIC \
+    M("Erro na linha %d: %s: '%s' é uma instrução do processador. Troque o nome.\n", \
+      "Error on line %d: %s: '%s' is an instruction of the processor. Rename it.\n")
+
+#define MSG_ERR_NAME_RESERVED \
+    M("Erro na linha %d: a função não pode se chamar '%s': %s.\n", \
+      "Error on line %d: a function can't be called '%s': %s.\n")
+
+#define MSG_ERR_NAME_UNDERSCORES \
+    M("Erro na linha %d: '%s': nomes começando com '__' são do compilador.\n", \
+      "Error on line %d: '%s': names starting with '__' belong to the compiler.\n")
+
+#define MSG_NAME_GLOBAL     M("a global '%s'",              "the global '%s'")
+#define MSG_NAME_LOCAL      M("a local '%s' de '%s()'",     "the local '%s' of '%s()'")
+#define MSG_NAME_FUNC       M("a função '%s()'",            "the function '%s()'")
+#define MSG_NAME_IMAG       M("a parte imaginária de %s",   "the imaginary part of %s")
+#define MSG_NAME_FIM        M("o programa termina no rótulo @fim", "the program ends at the label @fim")
+#define MSG_NAME_GLOBAL_LOG M("'global' marca as variáveis globais no log da simulação", \
+                              "'global' marks the global variables in the simulation log")
+#define MSG_NAME_NUM_INS    M("'num_ins' é uma chave do log da simulação", \
+                              "'num_ins' is a key of the simulation log")
+
 #define MSG_ERR_VAR_NOT_FOUND \
     M("Erro na linha %d: não tem essa variável '%s'!\n", \
       "Error on line %d: there's no variable '%s'!\n")

@@ -6,7 +6,7 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-@main @Lwh1 LOD 1.999999
+@main @__Lwh1 LOD 1.999999
 SET main_a
 LOD 3.999999
 SET main_b
@@ -24,5 +24,5 @@ LOD main_c
 F_MLT 1000.0
 F2I
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

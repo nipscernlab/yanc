@@ -23,6 +23,7 @@ int    find_var(char *val);              // searches the table for the ID (-1 if
 void    add_var(char *var);              // adds an ID to the table
 void  check_var();                       // checks what was used in the table (at the end of the parser)
 char *rem_fname(char *var, char *fname); // removes the function name from the variable
+void  check_name(int id, int is_fun);     // a declared name must be free in the .asm and not an instruction
 
 // used in the lexer to pick up variables and constants -----------------------
 

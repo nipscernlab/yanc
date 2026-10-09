@@ -1,0 +1,10 @@
+// Names starting with __ belong to the compiler in the .asm.
+#PRNAME p
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+int __a;
+void main() { __a = 1; out(0, __a); }

@@ -23,16 +23,16 @@ LOD 0.0
 SET main_r6
 LOD 0.0
 SET main_r7
-@Lwh1 INN 0
+@__Lwh1 INN 0
 GRE 300
-JIZ Lif1else
+JIZ __Lif1else
 INN 0
 LDI main_ene
 SET main_x
-JMP Lif1end
-@Lif1else LOD 0.0
+JMP __Lif1end
+@__Lif1else LOD 0.0
 SET main_x
-@Lif1end LOD main_x
+@__Lif1end LOD main_x
 F_MLT 1000.0
 F2I
 OUT 0
@@ -100,5 +100,5 @@ LOD main_y
 F_MLT 1000.0
 F2I
 OUT 1
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

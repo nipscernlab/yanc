@@ -8,24 +8,24 @@ NOP
 #NUGAIN 128
 @main LOD 0
 SET main_n
-@Lwh1 LOD 16
+@__Lwh1 LOD 16
 LES main_n
-JIZ Lwh1end
+JIZ __Lwh1end
 LOD 0
 SET main_k
-@Lwh2 LOD main_n
+@__Lwh2 LOD main_n
 LES main_k
-JIZ Lwh2end
+JIZ __Lwh2end
 LOD main_k
 ADD 1
 SET main_k
-JMP Lwh2
-@Lwh2end LOD main_n
+JMP __Lwh2
+@__Lwh2end LOD main_n
 MLT 7
 ADD 3
-@Ltom1 TOM Ltom1
+@__Ltom1 TOM __Ltom1
 LOD main_n
 ADD 1
 SET main_n
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

@@ -1,0 +1,11 @@
+// A function and a global with one name: the function silently took the row of the global.
+#PRNAME p
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+int f;
+int f(int a) { return a; }
+void main() { out(0, f(1)); }

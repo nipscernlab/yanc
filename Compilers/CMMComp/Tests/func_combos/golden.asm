@@ -40,7 +40,7 @@ F2I_M three_mixed_r
 OUT 0
 LOD three_mixed_p
 RET
-@main @Lwh1 CAL noargs_void
+@main @__Lwh1 CAL noargs_void
 CAL noargs_int
 SET main_v1
 LOD 5
@@ -70,5 +70,5 @@ F2I_M main_v4
 OUT 0
 LOD main_v5
 OUT 0
-JMP Lwh1
-@Lwh1end @fim JMP fim
+JMP __Lwh1
+@__Lwh1end @fim JMP fim
