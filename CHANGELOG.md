@@ -27,17 +27,52 @@ tags consumed by Aurora.
   whose operand is not a label of its own line. Regress: the `LINK`
   project pass (two C+- pairs and two C+-/C++ pairs, both directions, with
   `cade()` in an expression and as an argument) and a negative fixture. Design and tests: `docs/toma-and-cade.md`.
+- **`toma`/`cade` between processors on different clocks.** Write
+  `#(.LINKAS(1))` on both processors of the link and wire the new pin
+  `toma_dado` to the partner's `cade_dado`: the partner's bit then enters
+  through two flip-flops on the receiver's clock, and the writer offers its
+  value from a register. With `LINKAS` 0 (the default) the hardware is
+  today's, cell for cell (Yosys), and `toma_dado` equals `out`. Both
+  processors must leave reset together, each release synchronized to its
+  own clock. Regress: `LINK2`, the `LINK` programs on 20 ns and 27.3 ns
+  clocks. Simulation cannot show metastability: the board check and the
+  Quartus constraints are still to do (`docs/toma-and-cade.md` section 8).
 
 ### Changed
 - **Opcodes from `ADD` up move by 2** to make room for `TOM`/`CAD` among the
   flow-control opcodes (below 32). An encoding break: SAPHO/ and asmcomp must
   come from the same release (as since v5.5). No `.asm` golden or simulation
   output moved.
+- **The compilers' own names in the `.asm` start with `__`** (loop and
+  switch labels, `aux_var`, the stdlib's scratch words, the `float_*`
+  routines, cppcomp's runtime routines and temporaries), and user names may
+  not: C+- refuses a name starting with `__`, C++ any name with `__` in it
+  (C++ reserves them). Every C+- `.asm` golden changed by these renames only.
 
 ### Fixed
 - **`check_isa.py` holds appcomp's mnemonic list (`app.l`) to `ASMComp.l`.**
   A mnemonic missing there is not counted, and the instruction memory comes
   out one word short (seen while adding `TOM`/`CAD`).
+- **A user name spelt like an instruction or like a compiler-made name
+  compiled into a wrong program, without a word.** Measured: `int ADD;`
+  dropped `SET ADD` (C+-) or printed 0 (C++); a global `main_x` and the
+  local `x` of `main` were one word in C++; a global `aux_var` or `pow_b`
+  was overwritten by the post-increment or by `pow()` in C+-; a global
+  `udm_r` took the remainder of every unsigned division in C++. Both
+  compilers now refuse a name whose `.asm` spelling is an instruction or
+  already belongs to something else (a global, another function's local, a
+  function, the imaginary part of a `comp`), with a message naming both
+  owners, and a function named `fim`, `global` or `num_ins`. New negative
+  fixtures for both languages (C++ gets a negative phase in the regress),
+  `cmm_names` and `test90`.
+- **`SAPHO/myFIFO.v` lost words.** It stored the word on `data` one cycle
+  after `wrreq` (a SAPHO writing with back-to-back `out()` filled it with
+  `2 3 4 5 5 6 ...` instead of `1 2 3 4 5 6 ...`), let a write into a full
+  FIFO through (which emptied it), and let a read right after a write take
+  a stale word. Now it writes in the `wrreq` cycle and `full`/`empty` come
+  from the pointers. The DTW project's outputs are unchanged. Regress: the
+  `FIFO` pass (a C+- writer through `out()`, and `Scripts/hw/tb_fifo.v`).
+  `docs/myfifo.md`.
 
 ## [v6.0] – 2026-10-07
 

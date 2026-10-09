@@ -1,0 +1,22 @@
+#PRNAME fifo_w
+#NUBITS 16
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// The writer of the FIFO project pass (Tests/FIFO, Scripts/regress.sh): its
+// out() feeds SAPHO/myFIFO.v (wrreq = out_en, data = out). 1..4 go back to
+// back, one OUT after another, then 5..8 and 11..14 from loops. With the
+// FIFO that stored the word of the cycle after wrreq the FIFO held
+// 2 3 4 5 5 6 7 8 11 12 13 14 (docs/myfifo.md); it must hold 1..8, 11..14.
+void main()
+{
+    out(0, 1); out(0, 2); out(0, 3); out(0, 4);
+    int k = 5;
+    while (k < 9) { out(0, k); k = k + 1; }
+    k = 11;
+    while (k < 15) { out(0, k); k = k + 1; }
+    while (1) { k = 0; }
+}

@@ -706,6 +706,63 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
     fi
 
+    # ---- 3a. project pass FIFO: a SAPHO writes into SAPHO/myFIFO.v ---------
+    # fifo_w's out() feeds the FIFO (wrreq = out_en, data = out), back-to-back
+    # OUTs and OUTs from loops; the tb drains it. Plus Scripts/hw/tb_fifo.v,
+    # the FIFO alone: full refuses, read right after a write. docs/myfifo.md.
+
+    if [ "$NO_SIM" -eq 0 ]; then
+        proj="FIFO"
+        proj_top="$CMM_ROOT/Tests/$proj/TopLevel"
+        proj_tmp="$TMP_DIR/$proj"
+        rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"
+        p="fifo_w"
+        if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+            echo "FAIL ($proj): $p artifacts missing - did its build pass?"
+            fail=$((fail + 1)); failed_names+=("$proj")
+        else
+            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+            sim_fail=0
+            if ! "$IVERILOG" -s fifo_tb -o "$proj_tmp/$proj.vvp" \
+                    "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                    "$HDL/core.v" "$HDL/ula.v" "$HDL/myFIFO.v" \
+                    "$WORK_DIR/$p/Hardware/$p.v" "$proj_top/fifo_tb.v" >/dev/null 2>&1; then
+                echo "FAIL ($proj): iverilog exited non-zero"; sim_fail=1
+            else
+                pushd "$proj_tmp" >/dev/null
+                "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
+                vvp_status=$?
+                if [ $vvp_status -ne 0 ]; then vvp_once_more "$proj" "$proj_tmp/$proj.vvp"; vvp_status=$?; fi
+                popd >/dev/null
+                want="1 2 3 4 5 6 7 8 11 12 13 14 "
+                got=$(tr -d '\r' < "$proj_tmp/output_fifo.txt" 2>/dev/null | tr '\n' ' ')
+                if [ $vvp_status -ne 0 ]; then
+                    echo "FAIL ($proj): vvp exited non-zero"; sim_fail=1
+                elif [ "$got" != "$want" ]; then
+                    echo "FAIL ($proj): the FIFO held '$got', want '$want'"; sim_fail=1
+                fi
+            fi
+            # the FIFO alone (Scripts/hw/tb_fifo.v prints "0 of 3 failed")
+            if [ $sim_fail -eq 0 ]; then
+                if ! "$IVERILOG" -g2012 -s tb_fifo -o "$proj_tmp/tb_fifo.vvp" \
+                        "$ROOT/Scripts/hw/tb_fifo.v" "$HDL/myFIFO.v" >/dev/null 2>&1; then
+                    echo "FAIL ($proj): iverilog on tb_fifo.v exited non-zero"; sim_fail=1
+                else
+                    tbf=$(cd "$proj_tmp" && "$VVP" -n "$proj_tmp/tb_fifo.vvp" 2>&1)
+                    if ! printf '%s' "$tbf" | grep -q "^0 of 3 failed"; then
+                        echo "FAIL ($proj): tb_fifo.v:"; printf '%s\n' "$tbf" | grep FAIL; sim_fail=1
+                    fi
+                fi
+            fi
+            if [ $sim_fail -eq 0 ]; then
+                echo "PASS ($proj)  [a SAPHO wrote 1..8, 11..14 through out(); tb_fifo 3 of 3]"
+                pass=$((pass + 1))
+            else
+                fail=$((fail + 1)); failed_names+=("$proj")
+            fi
+        fi
+    fi
+
     # ---- 3b. directed reset pass: single-cycle rst mid-run ------------------
     # ResetCheck emits one deterministic burst then parks in while(1); its
     # custom tb (TopLevel/reset_tb.v) pulses rst across exactly one posedge

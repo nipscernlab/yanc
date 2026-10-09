@@ -224,7 +224,7 @@ if every value arrives once and in order. Then a fixture in the regress
   transparency. `SAPHO/myFIFO.v` would not have served as is: it writes
   `data` one cycle after `wrreq`, when a SAPHO's `out` bus has already
   changed (by reading at the time; confirmed in simulation on 2026-10-09,
-  with two more defects: docs/myfifo.md).
+  with two more defects, all fixed: docs/myfifo.md).
 - **Freezing the core while waiting** (a `wait` pin): as transparent, but it
   is the pause logic dropped from `#PIPELN` (docs/pipeln-and-division.md
   section 2) and puts a combinational path from one processor's decoder

@@ -168,7 +168,7 @@ table fills.
 - `myFIFO` reads combinationally (`always @(*) q = mem[addr_r]`), which keeps
   it out of block RAM (M10K is synchronous-read only): fine at 128 × 16, wasteful
   larger. `full` depends combinationally on `wrreq`. (2026-10-09: that
-  `full`, the delayed write and `empty` lose words; see docs/myfifo.md.)
+  `full`, the delayed write and `empty` lost words; fixed, docs/myfifo.md.)
 
 ### 1.8 Verification is golden-only
 
