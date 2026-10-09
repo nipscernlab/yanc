@@ -106,7 +106,7 @@ void  yyerror(char const *s);
 %token PRNAME NUBITS NBMANT NBEXPO NDSTAC SDEPTH                       // directives
 %token NUIOIN NUIOOU NUGAIN FFTSIZ FROUND ITRADD TOAQUI                // directives
 %token INN FIN OUT FOUT                                                // stdlib (I/O)
-%token TOMA CADE                                                       // the link to a partner processor
+%token TOMA CADE FCADE                                                       // the link to a partner processor
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
 %token SQRT ATAN SIN COS TAN EXP LOG POW                               // stdlib (non-linear functions)
 %token COSH SINH TANH                                                  // stdlib (hyperbolic)
@@ -154,7 +154,7 @@ void  yyerror(char const *s);
 // subtree it just parsed; codegen happens when a statement-level consumer
 // hits EE($N), which runs ast_emit_expr() over the subtree.
 %type <eval> func_call
-%type <eval> std_in std_fin std_cade
+%type <eval> std_in std_fin std_cade std_fcade
 %type <eval> std_pst std_abs std_sign std_nrm
 %type <eval> std_sqrt std_atan std_sin std_cos std_tan std_exp std_log std_pow
 %type <eval> std_cosh std_sinh std_tanh
@@ -288,7 +288,8 @@ std_out  : OUT  '(' INUM ',' exp ')' ';'            {stmt_append(stmt_out($3, $5
 std_fout : FOUT '(' INUM ',' exp ')' ';'            {stmt_append(stmt_out($3, $5, 1));}  // data output (converting to float)
 std_in   : INN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_IN, $3, NULL, NULL);}  // data input
 std_toma : TOMA '(' exp ')' ';'                 {stmt_append(stmt_toma($3));}                    // hands exp to the partner processor
-std_cade : CADE '(' ')'                         {$$ = expr_stdlib(OP_STD_CADE, 0, NULL, NULL);}  // takes the partner's value (only as x = cade();)
+std_cade : CADE '(' ')'                         {$$ = expr_stdlib(OP_STD_CADE, 0, NULL, NULL);}  // takes the partner's word (int)
+std_fcade: FCADE '(' ')'                        {$$ = expr_stdlib(OP_STD_FCADE, 0, NULL, NULL);} // takes the partner's word (float)
 std_fin  : FIN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FIN, $3, NULL, NULL);}  // float input
 std_pst  : PST  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_PST, 0,  $3,   NULL);}  // clears if negative
 std_abs  : ABS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ABS, 0,  $3,   NULL);}  // |x|
@@ -423,6 +424,7 @@ exp:       terminal                           {$$ = $1;}
          | std_in                             {$$ = $1;}
          | std_fin                            {$$ = $1;}
          | std_cade                           {$$ = $1;}
+         | std_fcade                          {$$ = $1;}
          | std_pst                            {$$ = $1;}
          | std_abs                            {$$ = $1;}
          | std_sign                           {$$ = $1;}

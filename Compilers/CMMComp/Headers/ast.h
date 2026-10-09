@@ -97,7 +97,8 @@ typedef enum {
     // stdlib calls (EXPR_STDLIB_CALL). port lives in id for IN/FIN/OUT.
     OP_STD_IN,    // in(port)        -> int
     OP_STD_FIN,   // fin(port)       -> float
-    OP_STD_CADE,  // cade()          -> the partner's word, only as `x = cade();` (STMT_ASSIGN)
+    OP_STD_CADE,  // cade()          -> the partner's word, as int   (x = cade(); takes x's type)
+    OP_STD_FCADE, // fcade()         -> the partner's word, as float (x = fcade(); takes x's type)
     OP_STD_PST,   // pst(x)          -> clears if negative
     OP_STD_ABS,   // abs(x)          -> |x|
     OP_STD_SIGN,  // sign(x, y)      -> y with sign of x

@@ -160,6 +160,22 @@ expr exec_cade(int dest)
     return expr_make(v_table[dest].type, 0);
 }
 
+// cade() / fcade() inside an expression, an index or an argument: type 1 (int)
+// or 2 (float). CAD has no push form, so a live acc is pushed first; the PSH
+// runs once, CAD's waiting loop jumps back to CAD itself.
+expr exec_cade_expr(int type)
+{
+    if (acc_ok) add_instr("PSH\n");
+
+    link_cnt++;
+    add_sinst(0, "@Lcad%d ", link_cnt);
+    add_instr("CAD Lcad%d\n", link_cnt);
+
+    acc_ok = 1; // acc now holds the partner's word
+
+    return expr_make(type, 0);
+}
+
 // output ex: fout(0,x);
 void exec_fout(int id, expr e)
 {

@@ -7,13 +7,13 @@
 #NUGAIN 128
 
 // toma/cade fixture, project pass LINK: takes a value, hands back value + 1,
-// with no wait of its own.
+// with no wait of its own. cade() inside an expression whose left side is
+// already in acc: the compiler pushes it (PSH) before CAD.
 void main()
 {
-    int v;
+    int um = 1;
     while (1)
     {
-        v = cade();
-        toma(v + 1);
+        toma(um * um + cade());
     }
 }

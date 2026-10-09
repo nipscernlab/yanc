@@ -16,6 +16,7 @@ void exec_out (int port, expr e);  // data output
 void exec_fout(int port, expr e);  // data output (converting to float)
 void exec_toma(expr e);            // toma(e): hands e to the partner processor (docs/toma-and-cade.md)
 expr exec_cade(int dest);          // x = cade(): takes the partner's word for x, as x's type
+expr exec_cade_expr(int type);     // cade() (1, int) / fcade() (2, float) inside an expression
 
 // ----------------------------------------------------------------------------
 // special functions that save code -------------------------------------------

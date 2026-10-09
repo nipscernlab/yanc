@@ -369,7 +369,8 @@ void typecheck_expr(expr_node *n)
             {
                 case OP_STD_IN:                                  n->type = 1;  break;
                 case OP_STD_FIN:                                 n->type = 2;  break;
-                case OP_STD_CADE:                                n->type = 1;  break;   // placeholder: x = cade() takes x's type
+                case OP_STD_CADE:                                n->type = 1;  break;   // int   (x = cade();  takes x's type)
+                case OP_STD_FCADE:                               n->type = 2;  break;   // float (x = fcade(); takes x's type)
                 case OP_STD_PST: case OP_STD_ABS:                n->type = lt; break;
                 case OP_STD_SIGN:                                n->type = rt; break;
                 case OP_STD_NRM:                                 n->type = 1;  break;
@@ -453,7 +454,7 @@ static int has_side_effect(const expr_node *n)
 {
     if (!n) return 0;
     if (n->kind == EXPR_FUNC_CALL || n->kind == EXPR_PPLUS) return 1;
-    if (n->kind == EXPR_STDLIB_CALL && (n->op == OP_STD_IN || n->op == OP_STD_FIN || n->op == OP_STD_CADE)) return 1;
+    if (n->kind == EXPR_STDLIB_CALL && (n->op == OP_STD_IN || n->op == OP_STD_FIN || n->op == OP_STD_CADE || n->op == OP_STD_FCADE)) return 1;
     for (int k = 0; k < n->n_args; k++) if (has_side_effect(n->args[k])) return 1;
     return has_side_effect(n->left) || has_side_effect(n->right);
 }
@@ -676,9 +677,10 @@ static expr ast_emit_expr_impl(expr_node *n)
             switch (n->op) {
                 case OP_STD_IN:   return exec_in (n->id);
                 case OP_STD_FIN:  return exec_fin(n->id);
-                // reached only when cade() is not the whole right-hand side of
-                // an assignment (STMT_ASSIGN takes that case before this)
-                case OP_STD_CADE: fprintf(stderr, MSG_ERR_CADE_ALONE, line_num+1); exit(EXIT_FAILURE);
+                // inside an expression, an index or an argument (the whole
+                // right-hand side of an assignment is taken by STMT_ASSIGN)
+                case OP_STD_CADE:  return exec_cade_expr(1);
+                case OP_STD_FCADE: return exec_cade_expr(2);
                 case OP_STD_PST:  { expr a = ast_emit_expr(n->left); return exec_pst (a); }
                 case OP_STD_ABS:  { expr a = ast_emit_expr(n->left); return exec_abs (a); }
                 case OP_STD_SIGN: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_sign(a, b); }
@@ -1211,9 +1213,10 @@ void stmt_emit(stmt_node *n)
     switch (n->kind)
     {
         case STMT_ASSIGN:
-            // x = cade(); -- the only place cade() may stand: the partner's
-            // word goes into x as it is, with x's type (no int/float convert)
-            if (n->rhs && n->rhs->kind == EXPR_STDLIB_CALL && n->rhs->op == OP_STD_CADE)
+            // x = cade(); / x = fcade(); as the whole right-hand side: the
+            // partner's word goes into x as it is, with x's type (no convert)
+            if (n->rhs && n->rhs->kind == EXPR_STDLIB_CALL &&
+                (n->rhs->op == OP_STD_CADE || n->rhs->op == OP_STD_FCADE))
                  ass_set(n->id, exec_cade(n->id));
             else ass_set(n->id, ast_emit_expr(n->rhs));
             break;

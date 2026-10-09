@@ -144,10 +144,6 @@ void parse_lang_flag(int *argc, char **argv);
 
 // stdlib errors and warnings (special functions) ----------------------------
 
-#define MSG_ERR_CADE_ALONE \
-    M("Erro na linha %d: cade() só pode aparecer sozinho, como em x = cade(); (ainda não dentro de uma expressão, índice ou argumento).\n", \
-      "Error on line %d: cade() may only stand alone, as in x = cade(); (not yet inside an expression, an index or an argument).\n")
-
 #define MSG_ERR_CADE_COMP \
     M("Erro na linha %d: cade() traz uma palavra só, e '%s' é complexo (duas palavras). Receba a parte real e a imaginária separadas.\n", \
       "Error on line %d: cade() brings one word, and '%s' is complex (two words). Take the real and the imaginary parts separately.\n")
