@@ -134,8 +134,12 @@ void instr_ula(char *va, int is_const)
 }
 
 // registers jump instructions
+static void link_own_label(const char *va);   // below, next to eval_opcode
+
 void instr_salto(char *va)
 {
+    link_own_label(va);    // TOM / CAD: the operand is the instruction's own label
+
     // write the new instruction
     fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(lab_find(va),nbopr));
     // also register it in the simulation translator
@@ -345,10 +349,34 @@ static void div_seq(const char *mn)
     }
 }
 
+// TOM / CAD jump to themselves while they wait (docs/toma-and-cade.md): their
+// operand must be a label of their own line, `@L TOM L`. The labels defined
+// since the last instruction are kept here and handed to the next one.
+#define LINK_LABELS 8
+static char lab_pend[LINK_LABELS][64]; static int n_pend = 0;   // since the last instruction
+static char lab_own [LINK_LABELS][64]; static int n_own  = 0;   // the current instruction's
+
+void eval_label(char *name)
+{
+    if (n_pend < LINK_LABELS) snprintf(lab_pend[n_pend++], sizeof(lab_pend[0]), "%s", name);
+}
+
+static void link_own_label(const char *va)
+{
+    if (strcmp(opc_name, "TOM") != 0 && strcmp(opc_name, "CAD") != 0) return;
+    for (int i = 0; i < n_own; i++) if (strcmp(lab_own[i], va) == 0) return;
+    fprintf(stderr, MSG_ERR_LINK_SELF, opc_name, va, opc_name);
+    exit(EXIT_FAILURE);
+}
+
 // runs when a new opcode is found
 void eval_opcode(int op, int next_state, char *text, char *nome)
 {
     div_seq(text);         // a division must be followed by NOP and its read
+
+    // the labels just defined belong to this instruction
+    for (n_own = 0; n_own < n_pend; n_own++) strcpy(lab_own[n_own], lab_pend[n_own]);
+    n_pend = 0;
 
     opc_idx = op;          // record the current opcode
     strcpy(opc_name,text); // store the current opcode name for the translation file

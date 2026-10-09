@@ -23,10 +23,15 @@ Occam). There is no port number and no status port: each processor has **one**
 such link, to one partner, usable in both directions. The ordinary I/O ports
 (`in`, `out`, `req_in`, `out_en`) are untouched and never wait.
 
-C+- and C++ both get the two builtins. For now `cade()` is accepted only as
-the whole right-hand side of an assignment (`y = cade();`), in both
-compilers; inside an expression (`z + cade()`) it is an error until a
-push form is designed (section 6).
+C+- and C++ both get `toma(x)`, `cade()` (the word as an int) and `fcade()`
+(the word as a float), as `in()`/`fin()`. As the whole right-hand side of an
+assignment (`y = cade();`) the word goes into `y` as it is, with `y`'s type;
+inside an expression, an index or an argument (`z + cade()`, `out(0,
+fcade())`) it is an int or a float operand. `CAD` has no push form: when the
+accumulator is in use, the compilers write `PSH` before it (one word, one
+cycle; the waiting loop jumps back to `CAD`, not to the `PSH`). Decided
+with Luciano 2026-10-08, rather than a `P_CAD` opcode, which would need
+another renumbering below 32.
 
 ## 2. The protocol: one bit per side
 
@@ -123,28 +128,42 @@ link (deduced from the structure; to be measured, section 6).
   last instruction fell off the memory). `check_isa.py` now holds `app.l`
   to `ASMComp.l` too.
 - hdl.c: the pins above in the generated top, only with the instruction
-  present; the standalone testbench ties the inputs to 0 (a lone `TOM` or
-  `CAD` waits forever, as on a board).
+  present. The standalone testbench plays the partner, so each side can be
+  simulated alone, as `in()`/`out()` already are with `input_N.txt` /
+  `output_N.txt`: `cade()` takes the words of `Simulation/cade.txt` one by one
+  (when the file ends it says so and the next `cade()` waits forever), and
+  every `toma()` value is written to `Simulation/toma.txt`. It keeps the same
+  protocol (it owns T for `cade`, C for `toma`).
+- asmcomp checks that a `TOM`/`CAD` operand is a label of its own line
+  (`@L TOM L`); any other target is rejected ("waits by jumping to itself").
 - cmmcomp (diff shown to Luciano first): `toma` and `cade` are reserved
-  words. `toma(e);` is a statement (`STMT_TOMA`, `exec_toma`); `cade()` is a
-  stdlib expression (`OP_STD_CADE`) that only `STMT_ASSIGN` accepts, when it
-  is the whole right-hand side (`exec_cade`): the word lands in the variable
-  with the variable's type, no int/float conversion. Anywhere else the walker
-  stops with "cade() may only stand alone"; a comp destination or argument is
-  rejected (one word). No new grammar conflict.
-- cppcomp: the same two builtins. `cade()` is allowed only where a flag set
-  by the scalar-variable store and the local initializers says so
-  (`x = cade();`, `T x = cade();`); `gen_expr_to` consumes the flag at once,
-  so `x = f(cade())` is rejected too. Any one-word type goes through as it
-  is; a wider one is rejected.
+  words, and `fcade`. `toma(e);` is a statement (`STMT_TOMA`, `exec_toma`);
+  `cade()`/`fcade()` are stdlib expressions (`OP_STD_CADE`/`OP_STD_FCADE`).
+  As the whole right-hand side of an assignment `STMT_ASSIGN` takes them
+  (`exec_cade`: the word lands in the variable with its type); anywhere else
+  `exec_cade_expr` gives an int / float operand, with `PSH` first when acc is
+  live (the same choice as `INN` / `P_INN`). A comp destination or a comp
+  `toma` is rejected (one word). No new grammar conflict.
+- cppcomp: the same builtins. The scalar store and the local initializers set
+  a flag that `gen_expr_to` consumes at once: there `x = cade();` puts the
+  word in as it is; anywhere else `cade()`/`fcade()` is an ordinary int/float
+  call (`@L CAD L`), and the expression code pushes a live acc by itself.
+  `toma` of a wider value is rejected.
 - C++ inline assembly may write `TOM`/`CAD` directly.
 - Tests: `Compilers/CMMComp/Tests/link_*` (the four programs) and the
   `LINK` project pass in `Scripts/regress.sh` (two pairs of processors,
   checked against the sim golden and against the sequences n*7+3 and n+1
-  computed by the script); `NegTests/cade_*` for the rejected forms. `TOM`
+  computed by the script); `NegTests/cade_comp` for a comp destination.
+  `link_pong` writes `toma(um * um + cade())` (the `PSH` path) and
+  `link_cpp_ping` `out(0, cade())`; `fcade()` was checked by hand with real
+  floats across the compilers (C+- hands n*1.5, C++ takes `0.5f + fcade()`,
+  16 of 16 right). `TOM`
   and `CAD` are in `sapho_all`'s `blocks_except.txt` (alone they would
-  wait forever). The C++ side was checked by hand (the same two scenarios
-  and the rejected forms); there is no C++ two-processor pass in the regress.
+  wait forever). The same pass also runs both scenarios across the
+  compilers: the C+- `link_envia` hands to the C++ `link_cpp_recebe`, the
+  C++ `link_cpp_ping` talks to the C+- `link_pong` (sources in
+  `Tests/LINK/cpp/`, built inside the pass with the CPP phase's commands).
+  The C++ rejected forms were checked by hand.
 
 ## 5. Checked in the code, then in simulation (2026-10-07)
 
@@ -180,7 +199,6 @@ What the reading said:
 - **The interrupt** (left for later, Luciano 2026-10-07). Today's interrupt
   restarts at `ITRADD` without clearing T, C or W; a restart in the middle
   of a `toma` leaves T flipped with nobody holding the value.
-- **`cade()` inside an expression**: needs a push form (as `P_INN`); later.
 - **Deadlock**: both sides in `toma` (or both in `cade`) wait forever, as in
   Go; the program's responsibility. A simulation could flag it.
 - **Two clocks**: out of scope (same clock assumed). Different clocks need a

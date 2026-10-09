@@ -38,4 +38,5 @@ void eval_init  (int   clk  , int clk_n);
 void eval_direct(int   next_state);
 void eval_opcode(int   op   , int next_state, char *text, char *nome);
 void eval_opernd(char *va   , int is_const);
+void eval_label (char *name);      // a label definition (TOM/CAD must name one of their own)
 void eval_finish();

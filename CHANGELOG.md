@@ -18,10 +18,15 @@ tags consumed by Aurora.
   generated only when the program uses the instruction (measured with Yosys:
   `sapho_all` is cell for cell the same). New pins `toma`, `cade`, `taqui`,
   `valeu`, `cade_dado`; two processors are joined with wires only. In C+-
-  and C++, `cade()` stands only as `x = cade();` (or `T x = cade();` in C++)
-  for now; the word goes as it is, no int/float conversion. Regress: the
-  `LINK` project pass (two pairs, both directions) and three negative
-  fixtures. Design and tests: `docs/toma-and-cade.md`.
+  and C++: `toma(x)`, `cade()` (int) and `fcade()` (float), anywhere an
+  expression goes; `x = cade();` alone puts the word into `x` as it is. A
+  live accumulator is pushed (`PSH`) before `CAD`. Simulated alone, a
+  processor gets its testbench as the partner: `cade()` reads
+  `Simulation/cade.txt`, `toma()` writes `Simulation/toma.txt` (as `in()` /
+  `out()` with `input_N.txt` / `output_N.txt`). asmcomp rejects a `TOM`/`CAD`
+  whose operand is not a label of its own line. Regress: the `LINK`
+  project pass (two C+- pairs and two C+-/C++ pairs, both directions, with
+  `cade()` in an expression and as an argument) and a negative fixture. Design and tests: `docs/toma-and-cade.md`.
 
 ### Changed
 - **Opcodes from `ADD` up move by 2** to make room for `TOM`/`CAD` among the

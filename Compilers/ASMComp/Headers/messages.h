@@ -60,6 +60,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: %s leva três palavras: depois dela vem NOP e a leitura do resultado (esperava %s, achei %s). Os compiladores escrevem a sequência; num .asm feito à mão, escreva-a.\n", \
       "Error: %s takes three words: it must be followed by NOP and the read of its result (expected %s, found %s). The compilers write the sequence; in a hand-written .asm, write it out.\n")
 
+#define MSG_ERR_LINK_SELF \
+    M("Erro: %s espera saltando para si mesma, então o operando tem de ser um rótulo da própria linha (achei '%s'; escreva @L %s L).\n", \
+      "Error: %s waits by jumping to itself, so its operand must be a label of its own line (found '%s'; write @L %s L).\n")
+
 #define MSG_ERR_DIV_SEQ_END \
     M("Erro: o programa termina no meio da sequência de %s (faltou NOP e %s).\n", \
       "Error: the program ends inside the sequence of %s (NOP and %s are missing).\n")

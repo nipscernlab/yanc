@@ -620,10 +620,11 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (nuioou > 0 && opc_out()) fprintf(f_veri, "wire [%d:0] proc_out_en;\n\n"        , nuioou-1);
     // declare the cheguei wire when the wrapper exposes it
     if (toaqui_addr != 0)        fprintf(f_veri, "wire proc_cheguei;\n\n"              );
-    // the link's outputs; alone in this testbench, its inputs are tied to 0, so
-    // a TOM or CAD waits forever (no partner), as it would on a board
-    if (opc_tom())               fprintf(f_veri, "wire proc_toma;\n"                   );
-    if (opc_cad())               fprintf(f_veri, "wire proc_cade;\n"                   );
+    // the link (docs/toma-and-cade.md): alone, the processor gets this
+    // testbench as its partner -- cade() takes the words of cade.txt, toma()
+    // writes into toma.txt (see the partner blocks below)
+    if (opc_tom())               fprintf(f_veri, "wire proc_toma;\nreg  tb_valeu = 0;\n");
+    if (opc_cad())               fprintf(f_veri, "wire proc_cade;\nreg  tb_taqui = 0;\nreg  signed [%d:0] tb_cade_dado = 0;\n", nubits-1);
 
     // ------------------------------------------------------------------------
     // processor instance -----------------------------------------------------
@@ -647,8 +648,8 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // check whether the cheguei output is exposed
     if (toaqui_addr != 0)        fprintf(f_veri, ",proc_cheguei");
     // the link: toma, valeu / cade, taqui, cade_dado (same order as the ports)
-    if (opc_tom())               fprintf(f_veri, ",proc_toma,1'b0");
-    if (opc_cad())               fprintf(f_veri, ",proc_cade,1'b0,%d'd0", nubits);
+    if (opc_tom())               fprintf(f_veri, ",proc_toma,tb_valeu");
+    if (opc_cad())               fprintf(f_veri, ",proc_cade,tb_taqui,tb_cade_dado");
     // close the instance
                                  fprintf(f_veri, ");\n\n"      );
 
@@ -812,6 +813,41 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
         }
     }
     if (opc_out()) fprintf(f_veri, "end\n\n");
+
+    // ------------------------------------------------------------------------
+    // the link's partner -----------------------------------------------------
+    // ------------------------------------------------------------------------
+    // Alone, the processor talks to this testbench, which keeps the protocol of
+    // docs/toma-and-cade.md: a value waits while T != C. For cade() the
+    // testbench owns T (tb_taqui): with nothing pending (T == the processor's
+    // C) it offers the next word of cade.txt and flips T; when the file ends,
+    // CAD waits forever, as it would with a silent partner. For toma() it owns
+    // C (tb_valeu): when the processor's T differs, the value is on its out
+    // bus (TOM keeps it there while it loops): written to toma.txt, C flipped.
+
+    force_rightbar(proc_dir);
+    if (opc_cad())
+    {
+        fprintf(f_veri, "// cade() partner: the words of cade.txt, one per cade()\n");
+        fprintf(f_veri, "integer data_cade, cade_val, cade_scan;\n");
+        fprintf(f_veri, "reg     cade_fim = 0;\n");
+        fprintf(f_veri, "initial data_cade = $fopen(\"%s/Simulation/cade.txt\", \"r\"); // the words cade() takes\n", proc_dir);
+        fprintf(f_veri, "always @ (posedge clk) if (!cade_fim && tb_taqui == proc_cade) begin\n");
+        fprintf(f_veri, "    cade_scan = (data_cade != 0) ? $fscanf(data_cade, \"%%d\", cade_val) : 0;\n");
+        fprintf(f_veri, "    if (cade_scan == 1) begin tb_cade_dado <= cade_val; tb_taqui <= ~tb_taqui; end\n");
+        fprintf(f_veri, "    else begin cade_fim <= 1'b1; $display(\"cade.txt: no more words -- the next cade() waits forever\"); end\n");
+        fprintf(f_veri, "end\n\n");
+    }
+    if (opc_tom())
+    {
+        fprintf(f_veri, "// toma() partner: each value goes to toma.txt\n");
+        fprintf(f_veri, "integer data_toma;\n");
+        fprintf(f_veri, "initial data_toma = $fopen(\"%s/Simulation/toma.txt\", \"w\"); // the values toma() hands over\n", proc_dir);
+        fprintf(f_veri, "always @ (posedge clk) if (proc_toma != tb_valeu) begin\n");
+        fprintf(f_veri, "    $fdisplay(data_toma, \"%%0d\", proc_io_out); $fflush(data_toma);\n");
+        fprintf(f_veri, "    tb_valeu <= proc_toma;\n");
+        fprintf(f_veri, "end\n\n");
+    }
 
     // ------------------------------------------------------------------------
     // signal registration, progress bar, and finish --------------------------

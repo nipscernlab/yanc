@@ -99,8 +99,9 @@ plus the writer's waiting flag, generated only when used; pins `toma`,
 `cade`, `taqui`, `valeu`, `cade_dado`. **Implemented (2026-10-07, not
 released):** SAPHO, ISA, asmcomp/appcomp, hdl.c, cmmcomp, cppcomp, the `LINK`
 regress pass. Left: the Fmax of a two-processor design on each board, a small
-example for the boards, the interrupt during a wait, `cade()` inside an
-expression (a push form), a C++ two-processor pass in the regress.
+example for the boards, the interrupt during a wait. (`cade()`/`fcade()` in
+expressions landed 2026-10-08, with `PSH`; the LINK pass also runs C+- <-> C++
+pairs.)
 
 Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the

@@ -233,7 +233,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 {FLNUM}    eval_opernd(yytext,2); // used on ALU instructions with a float constant
 
 {STRIN}    eval_opernd(yytext,0); // used on instructions with strings (e.g. array initialization file)
-{LABEL}                         ; // used on jump instructions
+{LABEL}    eval_label(yytext+1);  // a label definition: TOM/CAD must name one of their own
 
 {COMEN}
 {EMPTY}
