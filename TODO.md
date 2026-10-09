@@ -20,14 +20,16 @@ code that never runs) is closed (2026-10-02): see the CHANGELOG. Item 19
 register cuts inside each divider and every division written as
 `<div> x; NOP; <read>`; the record is in
 [`docs/pipeln-and-division.md`](docs/pipeln-and-division.md). Item 20
-(two SAPHOs talking through their I/O ports) is the next phase. Item 11,
+(two SAPHOs passing a value, `toma`/`cade`) is implemented on main, not
+released (target v7.0). Item 21 (documentation that cannot fall behind a
+release) waits for Chrysthofer's opinion. Item 11,
 consistency at 32 bits, is closed (2026-09-21): see the CHANGELOG for its
 four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
 moved.
 
-**Where the work stands (2026-09-18).** Item **8 is closed** — all six steps,
+**Where the work stood on 2026-09-18 (history: the order it suggests was overtaken by items 18 to 21).** Item **8 is closed** — all six steps,
 each measured; step 4b was withdrawn by the measurement rather than done. The
 hygiene of item **7** (audit 1.7) is done except the invariant guard, which
 item 3 had parked for the same reason: it needs a form Icarus, Verilator,
@@ -81,27 +83,43 @@ above its estimate; moving its first cut earlier, a few seeds, and the
 next path once it is shorter were not measured. The students' frequency
 sweep on both boards is the real check of v6.0; their result comes back here.
 
-**Next phase: item 20, two SAPHOs talking through their I/O ports** (target
-v7.0, Luciano 2026-10-07). One SAPHO does `out()`, another waiting in `in()`
-receives the value, nothing lost or duplicated. To bring before any code: a
-short proposal (how each side knows there is new data and that it was read;
-in SAPHO, in YANC or a module between the two; the C± side; one side faster
-than the other). Constraints known: `out_en` at the pin is a combinational
-AND of the port decoder and can glitch (an enable, never a clock); an
-`in()` right after an `out()` reads the input in the same cycle as the
-`out`'s pulse; SAPHO has no ready/valid handshake today (the VGA student's
-roadmap records it). Then: implement, simulate two SAPHOs, a small example
-for the boards. A design doc in `docs/` and fixtures in the regress.
-**Design agreed (2026-10-07): [`docs/toma-and-cade.md`](docs/toma-and-cade.md)**
--- `toma(x)` / `y = cade()`, instructions `TOM` (20) and `CAD` (21), each a
-jump to itself until the partner's bit allows it; one bit per side (T, C)
-plus the writer's waiting flag, generated only when used; pins `toma`,
-`cade`, `taqui`, `valeu`, `cade_dado`. **Implemented (2026-10-07, not
-released):** SAPHO, ISA, asmcomp/appcomp, hdl.c, cmmcomp, cppcomp, the `LINK`
-regress pass. Left: the Fmax of a two-processor design on each board, a small
-example for the boards, the interrupt during a wait. (`cade()`/`fcade()` in
-expressions landed 2026-10-08, with `PSH`; the LINK pass also runs C+- <-> C++
-pairs.)
+**Item 20, two SAPHOs passing a value (`toma`/`cade`): implemented, not
+released; target v7.0.** Design and tests:
+[`docs/toma-and-cade.md`](docs/toma-and-cade.md). `toma(x)` on one processor,
+`y = cade()` (int) or `fcade()` (float) on its partner, anywhere an expression
+goes; whoever arrives first waits, nothing lost or read twice. Instructions
+`TOM` (20) and `CAD` (21), each a jump to its own label until the partner's
+bit lets it through (asmcomp rejects any other target); one bit per side (T,
+C) plus the writer's waiting flag, generated only when used (Yosys:
+`sapho_all` unchanged cell for cell); pins `toma`, `cade`, `taqui`, `valeu`,
+`cade_dado`, joined with wires only. A live accumulator is pushed (`PSH`)
+before `CAD`. Simulated alone, a processor gets its testbench as the partner
+(`Simulation/cade.txt`, `Simulation/toma.txt`). Regress: the `LINK` pass (two
+C+- pairs and two C+-/C++ pairs, both directions) and `NegTests/cade_comp`.
+Left before v7.0: the Fmax of a two-processor design on each board, a small
+example for the boards, and a decision on the interrupt during a wait (today
+a restart does not clear T, C or the waiting flag). Deadlock detection in
+simulation was dropped (Luciano, 2026-10-08: the user's responsibility).
+
+**Item 21, documentation that cannot fall behind a release (waiting, opened
+2026-10-09).** Found while closing item 20: the published manual
+(nipscernlab/docs_aurora, nipscern.com/library/sapho) stopped at AURORA
+6.11.0.5 (2026-08-31, about yanc v5.3: it lists LDA/STA and old directive
+defaults), and Aurora Intelligence quotes it; this README still calls the
+divider combinational and says nothing of `toma`/`cade`. Luciano wants hard
+guidelines for every public nipscernlab repo (each repo an independent
+project, the guidelines global, in nipscernlab/.github): no release without
+green CI, rigorous per-repo tests and coherent documentation; English as the
+source language, Portuguese generated and reviewed by a person. For yanc
+that means: the README split into "run" and "develop" (the release README
+generated from the "run" part), the yanc chapters of the manual living in
+this repo and published on the site, the reference pages generated from
+`isa.tsv` and the other tables, and a release routine that refuses to tag
+without them. **Nothing starts before Chrysthofer answers** the email
+"Diretrizes para os repositórios do nipscernlab" (2026-10-09); that thread
+is the basis of the final version. Pending on the side: the GitHub plan for
+the org (Free today; Team would make the rules org-wide), Luciano's GitHub
+Education application on campus.
 
 Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
