@@ -93,6 +93,12 @@ extern int tmpl_name_is(const char *n);   // function-template name -> TEMPLATE_
 
 static int classify_ident(const char *name)
 {
+    // C++ reserves every name with `__` in it, and here those are the
+    // compiler's own names in the .asm (__fp, __L..., Class__method)
+    if (strstr(name, "__"))
+        msg_error(yylineno, "'%s': a name with '__' in it is reserved (C++ "
+                  "keeps them for the compiler, and YANC uses them in the "
+                  "assembly)", name);
     sym *s = st_find(name);
     if (s && s->kind == SK_TYPEDEF) return TYPEDEF_NAME;
     if (tmpl_name_is(name)) return TEMPLATE_NAME;

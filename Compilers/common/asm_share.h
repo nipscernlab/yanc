@@ -30,6 +30,11 @@
 // nothing could be shared or the file was left untouched), -1 on an I/O error.
 int asm_share(const char *asm_path);
 
+// 1 when name is an instruction of the assembly (the table above, held to
+// isa.tsv by check_isa.py): the assembler reads such a word as the
+// instruction, so neither compiler lets a user name become one.
+int asm_is_mnemonic(const char *name);
+
 // ****************************************************************************
 // asm_reach -- code no path gets to is not in the program, nor its hardware --
 // ****************************************************************************

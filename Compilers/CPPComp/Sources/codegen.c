@@ -22,6 +22,7 @@
 #include "../Headers/config.h"
 #include "../Headers/symtab.h"
 #include "../Headers/messages.h"
+#include "../../common/asm_share.h"
 
 // ---- output ----------------------------------------------------------------
 
@@ -295,17 +296,89 @@ static void emit_verbatim(const char *text) { ibuf_push(strdup(text), cg_line, 1
 static char *fresh_label(const char *prefix)
 {
     char buf[64];
-    snprintf(buf, sizeof(buf), "L%s%d", prefix, ++label_n);
+    snprintf(buf, sizeof(buf), "__L%s%d", prefix, ++label_n);
     char *s = malloc(strlen(buf)+1); strcpy(s, buf); return s;
 }
 
+// the local `x` of `f` is `f_x` in the .asm; a compiler temporary (its name
+// starts with `__`, which no user name may) stays under `__`: `__f_tmp3`
 static char *mangle_local(const char *name)
 {
     if (!cur_func_name) return strdup(name);
-    size_t n = strlen(cur_func_name) + strlen(name) + 2;
+    size_t n = strlen(cur_func_name) + strlen(name) + 4;
     char *r = malloc(n);
-    snprintf(r, n, "%s_%s", cur_func_name, name);
+    if (name[0] == '_' && name[1] == '_') snprintf(r, n, "__%s_%s", cur_func_name, name + 2);
+    else                                  snprintf(r, n, "%s_%s", cur_func_name, name);
     return r;
+}
+
+// ---- one name, one owner in the .asm --------------------------------------
+// Every user name becomes a word of the .asm (`f_x` for the local `x` of `f`)
+// and the assembler has one namespace for data and one for labels, so two
+// different things spelt alike there would silently share a word or a
+// label. claim() records who owns each name and stops the compiler on a
+// clash, and on a name the assembler would read as an instruction.
+// Compiler-made names all start with `__`, which no user name may contain.
+
+enum { NS_DATA, NS_LABEL };
+typedef struct { char *name, *who; int reserved; } owner_e;
+static owner_e *owners[2];
+static int      owners_n[2], owners_cap[2];
+
+static void claim(int ns, const char *name, const char *who, int line)
+{
+    char quoted[300]; snprintf(quoted, sizeof(quoted), "'%s'", name);
+    if (asm_is_mnemonic(name)) {
+        if (strstr(who, quoted))     // the name as written: no need to spell it twice
+            msg_error(line, "%s: '%s' is an instruction of the processor's "
+                      "assembly, rename it", who, name);
+        msg_error(line, "%s is '%s' in the assembly, which is an instruction "
+                  "of the processor: rename it", who, name);
+    }
+    if (ns == NS_LABEL && strcmp(name, "global") == 0)
+        msg_error(line, "%s: 'global' names the global variables in the "
+                  "simulation log, rename the function", who);
+    for (int i = 0; i < owners_n[ns]; i++) {
+        if (strcmp(owners[ns][i].name, name) != 0) continue;
+        if (strcmp(owners[ns][i].who, who) == 0) return;   // the same thing again
+        if (owners[ns][i].reserved)
+            msg_error(line, "%s: '%s' is reserved, it is %s; rename it",
+                      who, name, owners[ns][i].who);
+        msg_error(line, "%s and %s are both '%s' in the assembly: rename one "
+                  "of them", owners[ns][i].who, who, name);
+    }
+    if (owners_n[ns] == owners_cap[ns]) {
+        owners_cap[ns] = owners_cap[ns] ? 2 * owners_cap[ns] : 256;
+        owners[ns] = realloc(owners[ns], (size_t)owners_cap[ns] * sizeof(owner_e));
+    }
+    owners[ns][owners_n[ns]].name = strdup(name);
+    owners[ns][owners_n[ns]].who  = strdup(who);
+    owners[ns][owners_n[ns]].reserved = (line == 0);   // the compiler's own (fim, malloc...)
+    owners_n[ns]++;
+}
+
+static void claim_local(const char *aname, const char *name, int line)
+{
+    char who[512];
+    snprintf(who, sizeof(who), "the local '%s' of '%s'", name, cur_func_name);
+    claim(NS_DATA, aname, who, line);
+}
+
+// a function's label (an overload's is f_O<types>), described by its source name
+static void claim_func(func *f)
+{
+    char who[512];
+    if (strcmp(f->name, f->asm_label) == 0) snprintf(who, sizeof(who), "the function '%s'", f->name);
+    else                                    snprintf(who, sizeof(who), "an overload of '%s'", f->name);
+    claim(NS_LABEL, f->asm_label, who, f->line);
+}
+
+static void claims_reset(void)
+{
+    for (int k = 0; k < 2; k++) {
+        for (int i = 0; i < owners_n[k]; i++) { free(owners[k][i].name); free(owners[k][i].who); }
+        owners_n[k] = 0;
+    }
 }
 
 // ---- variable-log (for asmcomp's cmm_log.txt) ------------------------------
@@ -421,7 +494,7 @@ static int    strtab_n = 0;
 
 // ---- function-pointer dispatch table ---------------------------------------
 // Every address-taken function gets an integer ID = its index here. A function
-// pointer holds that ID; an indirect call sets _fp_id and CALs _dispatch, which
+// pointer holds that ID; an indirect call sets __fp_id and CALs _dispatch, which
 // CALs the matching function. (CAL takes an immediate target, hence the table.)
 #define FPTAB_MAX 256
 static char *fptab[FPTAB_MAX];
@@ -442,7 +515,7 @@ static void fp_add(const char *name)
     fptab[fptab_n++] = strdup(name);
 }
 
-// emit the inlined function-ID dispatch (assumes _fp_id is set and the args,
+// emit the inlined function-ID dispatch (assumes __fp_id is set and the args,
 // including any `this`, are already on the data stack). Only the functions
 // that take np parameters (`this` included; -1: any) can be the target, and
 // the last of them needs no test: an id that matches none is a call through
@@ -459,7 +532,7 @@ static void emit_dispatch_chain(int np)
         int i = cand[k];
         if (k == nc - 1) { emit("CAL %s", fptab[i]); break; }
         char *skip = fresh_label("ic_s");
-        emit("LOD _fp_id"); emit("EQU %d", i); emit("JIZ %s", skip);
+        emit("LOD __fp_id"); emit("EQU %d", i); emit("JIZ %s", skip);
         emit("CAL %s", fptab[i]); emit("JMP %s", done);
         emit("@%s NOP", skip); free(skip);
     }
@@ -509,7 +582,7 @@ static void scan_strings_expr(expr *e)
     if (!e) return;
     if (e->kind == E_STRING_LIT && !e->member) {
         if (strtab_n >= STRLIT_MAX) msg_internal("too many string literals");
-        char lbl[32]; snprintf(lbl, sizeof(lbl), "_str%d", strtab_n);
+        char lbl[32]; snprintf(lbl, sizeof(lbl), "__str%d", strtab_n);
         e->member = strdup(lbl);
         strtab[strtab_n].label = e->member;
         strtab[strtab_n].bytes = e->sval;
@@ -1246,10 +1319,10 @@ static void coerce_to(type *have, type *want)
         return;
     }
     if (wf && !hf && have->kind == TY_INT) {
-        if (!have->is_signed && !have->is_bool) { emit("CAL u2f"); g_uses_u2f = 1; }
+        if (!have->is_signed && !have->is_bool) { emit("CAL __u2f"); g_uses_u2f = 1; }
         else emit("I2F");
     } else if (!wf && hf && want->kind == TY_INT) {
-        if (!want->is_signed) { emit("CAL f2u"); g_uses_f2u = 1; }
+        if (!want->is_signed) { emit("CAL __f2u"); g_uses_f2u = 1; }
         else emit("F2I");
     }
     // an exact-width int8_t/uint16_t/...: wrap, unless every value of `have`
@@ -1310,7 +1383,7 @@ static void gen_expr_to(expr *e, type *want)
         if (!want || type_size_words(want) != 1 || want->kind == TY_STRUCT || want->kind == TY_ARRAY || want->is_ref)
             msg_error(e->line, "cade() brings one word: it can only go into a one-word variable");
         int k = ++label_n;
-        emit("@Lcad%d CAD Lcad%d", k, k);   // the word as it is: no conversion to `want`
+        emit("@__Lcad%d CAD __Lcad%d", k, k);   // the word as it is: no conversion to `want`
         return;
     }
     if (want && want->kind == TY_INT && want->nbits && e->kind == E_INT_LIT) {
@@ -1338,8 +1411,8 @@ static void gen_expr_to(expr *e, type *want)
 static void gen_struct_copy(expr *dest, expr *src, int nwords)
 {
     char dn[32], sn[32];
-    snprintf(dn, sizeof(dn), "_scd%d", ++label_n);
-    snprintf(sn, sizeof(sn), "_scs%d", ++label_n);
+    snprintf(dn, sizeof(dn), "__scd%d", ++label_n);
+    snprintf(sn, sizeof(sn), "__scs%d", ++label_n);
     char *dt = mangle_local(dn), *st = mangle_local(sn);
     const char *fn = cur_func_name ? cur_func_name : "global";
     st_add(SK_LOCAL_VAR, dn, dt, t_int()); log_var(fn, dn, 1, 0);
@@ -1374,7 +1447,7 @@ static void copy_to_block(const char *dest, expr *src, int n)
             }
         }
     }
-    char sn[32]; snprintf(sn, sizeof(sn), "_cbs%d", ++label_n);
+    char sn[32]; snprintf(sn, sizeof(sn), "__cbs%d", ++label_n);
     char *st = mangle_local(sn);
     const char *fn = cur_func_name ? cur_func_name : "global";
     st_add(SK_LOCAL_VAR, sn, st, t_int()); log_var(fn, sn, 1, 0);
@@ -1395,7 +1468,7 @@ static void gen_push_arg(expr *arg)
     type *at = infer_type(arg);
     if (at && at->kind == TY_STRUCT) {
         int w = type_size_words(at);
-        char nm[32]; snprintf(nm, sizeof(nm), "_argt%d", ++label_n);
+        char nm[32]; snprintf(nm, sizeof(nm), "__argt%d", ++label_n);
         char *an = mangle_local(nm);
         emit("#array %s 1 %d", an, w);
         copy_to_block(an, arg, w);
@@ -1426,7 +1499,7 @@ static void gen_arg(expr *arg, type *ptype)
 // a fresh one-word scratch variable of the current function (its asm name)
 static char *new_temp(const char *prefix)
 {
-    char nm[32]; snprintf(nm, sizeof(nm), "_%s%d", prefix, ++label_n);
+    char nm[32]; snprintf(nm, sizeof(nm), "__%s%d", prefix, ++label_n);
     char *an = mangle_local(nm);
     st_add(SK_LOCAL_VAR, nm, an, t_int());
     log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
@@ -1460,7 +1533,7 @@ static void emit_ctor_call(func *cf, objaddr a, expr **args, int nargs)
 static void emit_construct(type *t, objaddr a, expr **args, int nargs)
 {
     if (!t || t->kind != TY_STRUCT || !t->tag) return;
-    if (t->n_vtbl > 0) { emit_objaddr(a); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STI 0"); }
+    if (t->n_vtbl > 0) { emit_objaddr(a); emit("PSH"); emit("LEA __vt_%s", t->tag); emit("STI 0"); }
     func *cf = resolve_ctor(t, args, nargs);
     if (cf) emit_ctor_call(cf, a, args, nargs);
 }
@@ -1476,14 +1549,14 @@ static void emit_construct_n(type *t, objaddr a, int n, const char *n_var)
     emit_objaddr(a); emit("SET %s", cp);                      // cp = &a[0]
     if (n_var) emit("LOD %s", n_var); else emit("LOD %d", n);
     emit("SET %s", ck);                                       // ck = n
-    emit("@Lcn_t%d NOP", id);
-    emit("LOD %s", ck); emit("JIZ Lcn_e%d", id);              // while ck != 0
+    emit("@__Lcn_t%d NOP", id);
+    emit("LOD %s", ck); emit("JIZ __Lcn_e%d", id);              // while ck != 0
     objaddr el = { 1, cp };
     emit_construct(t, el, NULL, 0);
     emit("LOD %s", cp); emit("ADD %d", type_size_words(t)); emit("SET %s", cp);   // next element
     emit("LOD %s", ck); emit("ADD -1"); emit("SET %s", ck);
-    emit("JMP Lcn_t%d", id);
-    emit("@Lcn_e%d NOP", id);
+    emit("JMP __Lcn_t%d", id);
+    emit("@__Lcn_e%d NOP", id);
     free(cp); free(ck);
 }
 
@@ -1569,7 +1642,7 @@ static void gen_store(expr *lv, expr *val)
         if (bf && bf->is_bitfield) {
             long mask  = bf_mask(bf);
             long clear = bf_clear(bf);
-            char tn[64]; snprintf(tn, sizeof(tn), "_bf%d", ++label_n);
+            char tn[64]; snprintf(tn, sizeof(tn), "__bf%d", ++label_n);
             char *ta = mangle_local(tn);
             st_add(SK_LOCAL_VAR, tn, ta, t_int());
             log_var(cur_func_name ? cur_func_name : "global", tn, 1, 0);
@@ -1799,7 +1872,11 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
     for (int i = 0; i < np; i++) {
         char nm[256];
         if (bound[i]) snprintf(nm, sizeof(nm), "%s", bound[i]);
-        else          snprintf(nm, sizeof(nm), "%s_%s", f->asm_label, plist[i]->name);
+        else {
+            char *m = mangle_local(plist[i]->name);
+            snprintf(nm, sizeof(nm), "%s", m); free(m);
+            claim_local(nm, plist[i]->name, f->line);
+        }
         st_add(SK_PARAM, plist[i]->name, nm, plist[i]->dtype);
     }
     for (int i = 0; i < np; i++) free(bound[i]);
@@ -2150,10 +2227,10 @@ static void gen_expr(expr *e)
             // unsigned divider (the ULA's DIV/MOD are signed). q in acc, r in _ud_r.
             case OP_DIV:
                 if (is_float) { emit("SF_DIV"); return; }
-                if (uns_cmp)  { emit("PSH"); emit("CAL udivmod"); g_uses_udiv = 1; return; }
+                if (uns_cmp)  { emit("PSH"); emit("CAL __udivmod"); g_uses_udiv = 1; return; }
                 emit("S_DIV"); return;
             case OP_MOD:
-                if (uns_cmp)  { emit("PSH"); emit("CAL udivmod"); emit("LOD udm_r"); g_uses_udiv = 1; return; }
+                if (uns_cmp)  { emit("PSH"); emit("CAL __udivmod"); emit("LOD __udm_r"); g_uses_udiv = 1; return; }
                 emit("S_MOD"); return;
             case OP_BAND: emit("S_AND"); return;
             case OP_BOR:  emit("S_ORR"); return;
@@ -2274,7 +2351,7 @@ static void gen_expr(expr *e)
         // float (re-adding would round) or a wrapping type (the old value cannot
         // be recovered from the wrapped one): keep old in a temp instead
         {
-            char tn[64]; snprintf(tn, sizeof(tn), "_pf%d", ++label_n);
+            char tn[64]; snprintf(tn, sizeof(tn), "__pf%d", ++label_n);
             char *ta = mangle_local(tn);
             st_add(SK_LOCAL_VAR, tn, ta, t_int());
             log_var(cur_func_name ? cur_func_name : "global", tn, 1, 0);
@@ -2332,7 +2409,7 @@ static void gen_expr(expr *e)
         if (!poly && !has_ctor) return;                            // plain alloc, ptr in acc
         emit("SET __new_p");                                       // stash the new object
         if (poly) {                                                // mem[obj+0] = &vtable
-            emit("LOD __new_p"); emit("PSH"); emit("LEA %s__vtable", t->tag); emit("STI 0");
+            emit("LOD __new_p"); emit("PSH"); emit("LEA __vt_%s", t->tag); emit("STI 0");
         }
         if (has_ctor) {
             emit("LOD __new_p"); emit("PSH");                      // result (kept on stack bottom)
@@ -2354,7 +2431,7 @@ static void gen_expr(expr *e)
         // T(args): build a hidden stack temporary, run its ctor, yield its address.
         type *t = e->target_t;
         if (!t || t->kind != TY_STRUCT || !t->tag) { msg_error(e->line, "T(args) on non-class type"); return; }
-        char nm[32]; snprintf(nm, sizeof(nm), "_tmp%d", ++label_n);
+        char nm[32]; snprintf(nm, sizeof(nm), "__tmp%d", ++label_n);
         char *aname = mangle_local(nm);
         st_add(SK_LOCAL_VAR, nm, aname, t);
         log_var(cur_func_name ? cur_func_name : "global", nm, innermost_code(t), 0);
@@ -2389,7 +2466,7 @@ static void gen_expr(expr *e)
             emit("PSH");                            // copy consumed as the dtor's `this`
             if (dslot >= 0) {                       // virtual dtor: dispatch via the vptr
                 emit("LDI 0"); if (dslot) emit("ADD %d", dslot); emit("LDI 0");
-                emit("SET _fp_id");
+                emit("SET __fp_id");
                 emit_dispatch_chain(1);             // a destructor takes `this` alone
             } else {
                 emit("CAL %s", dtor); free(dtor);
@@ -2410,7 +2487,7 @@ static void gen_expr(expr *e)
         // materialise an unnamed block, initialise it, and yield it: aggregates
         // decay to the block's address; a scalar literal yields its value.
         type *t = e->target_t;
-        char nm[32]; snprintf(nm, sizeof(nm), "_cl%d", ++label_n);
+        char nm[32]; snprintf(nm, sizeof(nm), "__cl%d", ++label_n);
         char *an = mangle_local(nm);
         if (t->kind == TY_ARRAY) emit("#array %s %d %d", an, innermost_code(t), type_size_words(t));
         else                     emit("#array %s %d %d", an, agg_fill_code(t), type_size_words(t));
@@ -2458,7 +2535,7 @@ static void gen_expr(expr *e)
                 emit("LDI 0");                                  // acc = vptr = mem[this]
                 if (vslot) emit("ADD %d", vslot);
                 emit("LDI 0");                                  // acc = fid = mem[vptr+slot]
-                emit("SET _fp_id");
+                emit("SET __fp_id");
                 for (int i = 0; i < e->n_args; i++) {
                     type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
                     gen_arg(e->args[i], pt);
@@ -2514,12 +2591,12 @@ static void gen_expr(expr *e)
                     msg_error(e->line, "toma() carries one word: this value takes %d", type_size_words(vt));
                 gen_expr(e->args[0]);
                 int k = ++label_n;
-                emit("@Ltom%d TOM Ltom%d", k, k); return;
+                emit("@__Ltom%d TOM __Ltom%d", k, k); return;
             }
             if (!strcmp(fn, "cade") || !strcmp(fn, "fcade")) {   // int / float word
                 if (e->n_args != 0) msg_error(e->line, "%s() takes no argument", fn);
                 int k = ++label_n;
-                emit("@Lcad%d CAD Lcad%d", k, k); return;
+                emit("@__Lcad%d CAD __Lcad%d", k, k); return;
             }
             if (!strcmp(fn, "malloc")) {       // malloc(nwords) -> payload addr (0=OOM)
                 if (e->n_args != 1) msg_error(e->line, "malloc(nwords) takes 1 arg");
@@ -2589,8 +2666,8 @@ static void gen_expr(expr *e)
                 gen_addr(e->args[0]);                      // acc = &field (this + offset)
                 int id = ++label_n;
                 char pn[32], kn[32];
-                snprintf(pn, sizeof(pn), "_zfp%d", id);
-                snprintf(kn, sizeof(kn), "_zfk%d", id);
+                snprintf(pn, sizeof(pn), "__zfp%d", id);
+                snprintf(kn, sizeof(kn), "__zfk%d", id);
                 char *zp = mangle_local(pn), *zk = mangle_local(kn);
                 st_add(SK_LOCAL_VAR, pn, zp, t_int());
                 st_add(SK_LOCAL_VAR, kn, zk, t_int());
@@ -2598,13 +2675,13 @@ static void gen_expr(expr *e)
                 log_var(cur_func_name ? cur_func_name : "global", kn, 1, 0);
                 emit("SET %s", zp);                        // zp = &field
                 emit("LOD %ld", nw); emit("SET %s", zk);   // zk = N
-                emit("@Lzf_t%d NOP", id);
-                emit("LOD %s", zk); emit("JIZ Lzf_e%d", id);                 // while zk != 0
+                emit("@__Lzf_t%d NOP", id);
+                emit("LOD %s", zk); emit("JIZ __Lzf_e%d", id);                 // while zk != 0
                 emit("LOD %s", zp); emit("PSH"); emit("LOD 0"); emit("STI 0"); // *zp = 0
                 emit("LOD %s", zp); emit("P_LOD 1"); emit("S_ADD"); emit("SET %s", zp);          // zp++
                 emit("LOD %s", zk); emit("P_LOD 1"); emit("NEG"); emit("S_ADD"); emit("SET %s", zk); // zk--
-                emit("JMP Lzf_t%d", id);
-                emit("@Lzf_e%d NOP", id);
+                emit("JMP __Lzf_t%d", id);
+                emit("@__Lzf_e%d NOP", id);
                 free(zp); free(zk);
                 return;
             }
@@ -2684,7 +2761,7 @@ static void gen_expr(expr *e)
                         emit("LDI 0");                          // acc = vptr = mem[this]
                         if (vslot) emit("ADD %d", vslot);
                         emit("LDI 0");                          // acc = fid = mem[vptr+slot]
-                        emit("SET _fp_id");
+                        emit("SET __fp_id");
                         for (int i = 0; i < e->n_args; i++) {
                             type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
                             gen_arg(e->args[i], pt);
@@ -2714,7 +2791,7 @@ static void gen_expr(expr *e)
             expr *fpv = (e->a->kind == E_DEREF) ? e->a->a : e->a;
             for (int i = 0; i < e->n_args; i++) gen_push_arg(e->args[i]);
             gen_expr(fpv);                          // acc = function ID
-            emit("SET _fp_id");
+            emit("SET __fp_id");
             emit_dispatch_chain(e->n_args);         // no `this`, no default arguments
             return;
         }
@@ -2774,18 +2851,18 @@ static void emit_zero_words(const char *base, int off, int n, const type *t)
         int id = ++label_n;
         char *zi = new_temp("zwi");
         emit("LOD %d", off + n - 1); emit("SET %s", zi);
-        emit("@Lzw_t%d NOP", id);
+        emit("@__Lzw_t%d NOP", id);
         emit("PSH"); emit("LOD %s", zero); emit("STI %s", base);           // base[zi]   = 0 (acc = zi)
         for (int j = 1; j < 4; j++) {                                      // base[zi-j] = 0
             emit("LOD %s", zi); emit("ADD %d", -j);
             emit("PSH"); emit("LOD %s", zero); emit("STI %s", base);
         }
         emit("LOD %s", zi); emit("ADD %d", -(lo + 3));
-        emit("JIZ Lzw_e%d", id);                                           // until zi - 3 == lo
+        emit("JIZ __Lzw_e%d", id);                                           // until zi - 3 == lo
         emit("ADD %d", lo + 3 - 4);                                        // acc = zi - 4
         emit("SET %s", zi);
-        emit("JMP Lzw_t%d", id);
-        emit("@Lzw_e%d NOP", id);
+        emit("JMP __Lzw_t%d", id);
+        emit("@__Lzw_e%d NOP", id);
         free(zi);
         return;
     }
@@ -2795,15 +2872,15 @@ static void emit_zero_words(const char *base, int off, int n, const type *t)
     int id = ++label_n;
     char *zi = new_temp("zwi");
     emit("LOD %d", off + n - 1); emit("SET %s", zi);
-    emit("@Lzw_t%d NOP", id);
+    emit("@__Lzw_t%d NOP", id);
     emit("PSH"); emit("LOD %s", zero); emit("STI %s", base);               // base[zi] = 0
     emit("LOD %s", zi);
     if (off) emit("ADD %d", -off);
-    emit("JIZ Lzw_e%d", id);                                               // until zi == off
+    emit("JIZ __Lzw_e%d", id);                                               // until zi == off
     if (off != 1) emit("ADD %d", off - 1);
     emit("SET %s", zi);
-    emit("JMP Lzw_t%d", id);
-    emit("@Lzw_e%d NOP", id);
+    emit("JMP __Lzw_t%d", id);
+    emit("@__Lzw_e%d NOP", id);
     free(zi);
 }
 
@@ -2849,7 +2926,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
             emit("STI %s", base);
         } else {
             int n = type_size_words(t);
-            char sn[32]; snprintf(sn, sizeof(sn), "_izs%d", ++label_n);
+            char sn[32]; snprintf(sn, sizeof(sn), "__izs%d", ++label_n);
             char *st = mangle_local(sn);
             st_add(SK_LOCAL_VAR, sn, st, t_int());
             log_var(cur_func_name ? cur_func_name : "global", sn, 1, 0);
@@ -2940,7 +3017,7 @@ static void emit_static_guard_open(const char *aname, char **l_done)
 {
     char *l_init = fresh_label("st_init");
     *l_done      = fresh_label("st_done");
-    emit("LOD %s__once", aname);
+    emit("LOD __once_%s", aname);
     emit("JIZ %s", l_init);          // still zero -> first time here
     emit("JMP %s", *l_done);
     emit("@%s NOP", l_init);
@@ -2950,7 +3027,7 @@ static void emit_static_guard_open(const char *aname, char **l_done)
 static void emit_static_guard_close(const char *aname, char *l_done)
 {
     emit("LOD 1");
-    emit("SET %s__once", aname);
+    emit("SET __once_%s", aname);
     emit("@%s NOP", l_done);
     free(l_done);
 }
@@ -2980,6 +3057,7 @@ static void declare_local(decl *d)
     }
 
     char *aname = mangle_local(d->name);
+    claim_local(aname, d->name, d->line);
     { sym *ls = st_add(SK_LOCAL_VAR, d->name, aname, d->dtype); ls->is_const = d->is_const; }
     int arr_words = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
     log_var(cur_func_name ? cur_func_name : "global", d->name,
@@ -3265,7 +3343,7 @@ static void lih_rewrite_expr(expr *e, const nameset *w)
         if (!strcmp(lih_h[i].base, e->a->sval) && lih_expr_eq(lih_h[i].inv, inv)) tmp = lih_h[i].tmp;
     if (!tmp) {
         if (lih_nh == 16) return;
-        char nm[32]; snprintf(nm, sizeof nm, "_lip%d", ++label_n);
+        char nm[32]; snprintf(nm, sizeof nm, "__lip%d", ++label_n);
         char *an = mangle_local(nm);
         st_add(SK_LOCAL_VAR, nm, an, st_find(e->a->sval)->stype);
         log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
@@ -3449,7 +3527,7 @@ static void gen_stmt_inner(stmt *s)
             if (cur_func_ret && cur_func_ret->kind == TY_STRUCT) {
                 // write the struct into this function's static result block and
                 // return its address (a struct rvalue == its base address)
-                char rb[80]; snprintf(rb, sizeof(rb), "_ret_%s", cur_func_name);
+                char rb[80]; snprintf(rb, sizeof(rb), "__ret_%s", cur_func_name);
                 copy_to_block(rb, s->e1, type_size_words(cur_func_ret));
                 emit("LEA %s", rb);
             } else if (cur_func_ret && cur_func_ret->is_ref) {
@@ -3462,7 +3540,7 @@ static void gen_stmt_inner(stmt *s)
             int hasval = s->e1 && cur_func_ret && cur_func_ret->kind != TY_VOID;
             char *rs = NULL;
             if (hasval) {                    // protect the return value across the dtor CALs
-                char rn[32]; snprintf(rn, sizeof(rn), "_rsv%d", ++label_n);
+                char rn[32]; snprintf(rn, sizeof(rn), "__rsv%d", ++label_n);
                 rs = mangle_local(rn);
                 st_add(SK_LOCAL_VAR, rn, rs, t_int());
                 log_var(cur_func_name ? cur_func_name : "global", rn, 1, 0);
@@ -3476,11 +3554,11 @@ static void gen_stmt_inner(stmt *s)
         return;
 
     case S_GOTO:
-        emit("JMP _l_%s_%s", cur_func_name ? cur_func_name : "g", s->label);
+        emit("JMP __l_%s_%s", cur_func_name ? cur_func_name : "g", s->label);
         return;
 
     case S_LABEL:
-        emit("@_l_%s_%s NOP", cur_func_name ? cur_func_name : "g", s->label);
+        emit("@__l_%s_%s NOP", cur_func_name ? cur_func_name : "g", s->label);
         gen_stmt(s->body);
         return;
 
@@ -3509,7 +3587,7 @@ static void gen_stmt_inner(stmt *s)
         // (cases may be nested anywhere — Duff's device), then emit the body
         // normally; each case/default emits its minted label inline.
         infer_type(s->e1);
-        char tmp[64]; snprintf(tmp, sizeof(tmp), "_sw_%d", ++label_n);
+        char tmp[64]; snprintf(tmp, sizeof(tmp), "__sw%d", ++label_n);
         char *tmp_name = mangle_local(tmp);
         st_add(SK_LOCAL_VAR, tmp, tmp_name, t_int());
         log_var(cur_func_name ? cur_func_name : "global", tmp, 1, 0);
@@ -3677,7 +3755,7 @@ static void emit_static_once_flags(void)
         stinit_e *e = &stinits[i];
         if (e->line > 0) cg_line = e->line;   // map to the static local's decl line
         emit("LOD 0");
-        emit("SET %s__once", e->base);
+        emit("SET __once_%s", e->base);
     }
     cg_line = saved;
 }
@@ -3713,6 +3791,7 @@ static void emit_function(func *f, unit *u, int is_main)
     cg_line = -1;                      // prologue / @label NOP are INTERNAL; the
                                        // body's gen_stmt stamps real source lines
     if (!f->asm_label) f->asm_label = f->name;
+    claim_func(f);
     cur_func_name    = f->asm_label;   // unique label keeps overloads' locals distinct
     cur_func_ret     = f->ret;
     cur_fn_recursive = f->is_recursive;
@@ -3736,6 +3815,7 @@ static void emit_function(func *f, unit *u, int is_main)
     } else {
         for (int i = 0; i < np; i++) {
             char *aname = mangle_local(plist[i]->name);
+            claim_local(aname, plist[i]->name, f->line);
             st_add(SK_PARAM, plist[i]->name, aname, plist[i]->dtype);
             // log under cur_func_name (== f->asm_label), the SAME prefix
             // mangle_local stamps into the .asm operand, so asmcomp's
@@ -3750,7 +3830,7 @@ static void emit_function(func *f, unit *u, int is_main)
     emit("@%s NOP", f->asm_label);
 
     if (!is_main && f->ret && f->ret->kind == TY_STRUCT)
-        emit("#array _ret_%s 1 %d", f->asm_label, type_size_words(f->ret));
+        emit("#array __ret_%s 1 %d", f->asm_label, type_size_words(f->ret));
 
     if (cur_fn_recursive) {
         // prologue: push a new frame
@@ -3806,7 +3886,7 @@ static void emit_function(func *f, unit *u, int is_main)
 }
 
 // software unsigned divide: caller pushes n then d; returns quotient in acc and
-// leaves the remainder in the global udm_r. Shift-subtract, NUBITS iterations.
+// leaves the remainder in the global __udm_r. Shift-subtract, NUBITS iterations.
 // The ULA's DIV/MOD are signed, so this is the unsigned path. `>=u` uses the
 // sign-bit-flip trick (XOR sb, then signed compare).
 // NOTE: the assembler's label/identifier grammar rejects a leading underscore
@@ -3814,31 +3894,31 @@ static void emit_function(func *f, unit *u, int is_main)
 static void emit_udivmod(void)
 {
     long sb = 1L << (g_nubits - 1);
-    emit("@udivmod NOP");
-    emit("POP"); emit("SET udm_d");          // divisor
-    emit("POP"); emit("SET udm_n");          // dividend
-    emit("LOD 0"); emit("SET udm_q");
-    emit("LOD 0"); emit("SET udm_r");
-    emit("LOD 0"); emit("SET udm_c");
-    emit("@udm_top NOP");
-    emit("LOD udm_c"); emit("PSH"); emit("LOD %d", g_nubits); emit("S_LES"); emit("JIZ udm_end"); // while c < NUBITS
+    emit("@__udivmod NOP");
+    emit("POP"); emit("SET __udm_d");          // divisor
+    emit("POP"); emit("SET __udm_n");          // dividend
+    emit("LOD 0"); emit("SET __udm_q");
+    emit("LOD 0"); emit("SET __udm_r");
+    emit("LOD 0"); emit("SET __udm_c");
+    emit("@__udm_top NOP");
+    emit("LOD __udm_c"); emit("PSH"); emit("LOD %d", g_nubits); emit("S_LES"); emit("JIZ __udm_end"); // while c < NUBITS
     // r = (r<<1) | (n >> (NUBITS-1))
-    emit("LOD udm_r"); emit("PSH"); emit("LOD 1"); emit("S_SHL"); emit("PSH");           // (r<<1) on stack
-    emit("LOD udm_n"); emit("PSH"); emit("LOD %d", g_nubits - 1); emit("S_SHR");          // top bit of n
-    emit("S_ORR"); emit("SET udm_r");
+    emit("LOD __udm_r"); emit("PSH"); emit("LOD 1"); emit("S_SHL"); emit("PSH");           // (r<<1) on stack
+    emit("LOD __udm_n"); emit("PSH"); emit("LOD %d", g_nubits - 1); emit("S_SHR");          // top bit of n
+    emit("S_ORR"); emit("SET __udm_r");
     // n <<= 1 ; q <<= 1
-    emit("LOD udm_n"); emit("PSH"); emit("LOD 1"); emit("S_SHL"); emit("SET udm_n");
-    emit("LOD udm_q"); emit("PSH"); emit("LOD 1"); emit("S_SHL"); emit("SET udm_q");
+    emit("LOD __udm_n"); emit("PSH"); emit("LOD 1"); emit("S_SHL"); emit("SET __udm_n");
+    emit("LOD __udm_q"); emit("PSH"); emit("LOD 1"); emit("S_SHL"); emit("SET __udm_q");
     // if (r >=u d) { r -= d; q += 1 }
-    emit("LOD udm_r"); emit("XOR %ld", sb); emit("PSH");
-    emit("LOD udm_d"); emit("XOR %ld", sb); emit("S_LES"); emit("LIN"); emit("JIZ udm_noif"); // !(r<u d) -> r>=u d
-    emit("LOD udm_d"); emit("NEG"); emit("ADD udm_r"); emit("SET udm_r");   // r = r - d
-    emit("LOD udm_q"); emit("ADD 1"); emit("SET udm_q");                    // q += 1 (low bit was 0)
-    emit("@udm_noif NOP");
-    emit("LOD udm_c"); emit("ADD 1"); emit("SET udm_c");
-    emit("JMP udm_top");
-    emit("@udm_end NOP");
-    emit("LOD udm_q");                       // return quotient
+    emit("LOD __udm_r"); emit("XOR %ld", sb); emit("PSH");
+    emit("LOD __udm_d"); emit("XOR %ld", sb); emit("S_LES"); emit("LIN"); emit("JIZ __udm_noif"); // !(r<u d) -> r>=u d
+    emit("LOD __udm_d"); emit("NEG"); emit("ADD __udm_r"); emit("SET __udm_r");   // r = r - d
+    emit("LOD __udm_q"); emit("ADD 1"); emit("SET __udm_q");                    // q += 1 (low bit was 0)
+    emit("@__udm_noif NOP");
+    emit("LOD __udm_c"); emit("ADD 1"); emit("SET __udm_c");
+    emit("JMP __udm_top");
+    emit("@__udm_end NOP");
+    emit("LOD __udm_q");                       // return quotient
     emit("RET");
 }
 
@@ -3847,15 +3927,15 @@ static void emit_udivmod(void)
 // so the rounding stays exact, then converted and doubled.
 static void emit_u2f(void)
 {
-    emit("@u2f NOP");
-    emit("SET u2f_x");
-    emit("GRE 0"); emit("JIZ u2f_lo");                               // bit 31 clear: plain I2F
-    emit("LOD u2f_x"); emit("PSH"); emit("LOD 1"); emit("S_SHR");    // x >> 1, logical
-    emit("PSH"); emit("LOD u2f_x"); emit("AND 1"); emit("S_ORR");    // | (x & 1), the sticky bit
+    emit("@__u2f NOP");
+    emit("SET __u2f_x");
+    emit("GRE 0"); emit("JIZ __u2f_lo");                               // bit 31 clear: plain I2F
+    emit("LOD __u2f_x"); emit("PSH"); emit("LOD 1"); emit("S_SHR");    // x >> 1, logical
+    emit("PSH"); emit("LOD __u2f_x"); emit("AND 1"); emit("S_ORR");    // | (x & 1), the sticky bit
     emit("I2F"); emit("F_MLT 2.0");
     emit("RET");
-    emit("@u2f_lo NOP");
-    emit("LOD u2f_x"); emit("I2F");
+    emit("@__u2f_lo NOP");
+    emit("LOD __u2f_x"); emit("I2F");
     emit("RET");
 }
 
@@ -3864,13 +3944,13 @@ static void emit_u2f(void)
 // converted, and given bit 31 back.
 static void emit_f2u(void)
 {
-    emit("@f2u NOP");
-    emit("SET f2u_f");
-    emit("F_GRE 2147483648.0"); emit("JIZ f2u_hi");                  // below 2^31: plain F2I
-    emit("LOD f2u_f"); emit("F2I");
+    emit("@__f2u NOP");
+    emit("SET __f2u_f");
+    emit("F_GRE 2147483648.0"); emit("JIZ __f2u_hi");                  // below 2^31: plain F2I
+    emit("LOD __f2u_f"); emit("F2I");
     emit("RET");
-    emit("@f2u_hi NOP");
-    emit("LOD f2u_f"); emit("F_ADD -2147483648.0"); emit("F2I");
+    emit("@__f2u_hi NOP");
+    emit("LOD __f2u_f"); emit("F_ADD -2147483648.0"); emit("F2I");
     emit("XOR %ld", bf_word(1ULL << (g_nubits - 1)));               // + 2^31
     emit("RET");
 }
@@ -3886,49 +3966,51 @@ static void emit_f2u(void)
 static void emit_heap(void)
 {
     // ---- malloc(n) : payload words on the data stack -> payload addr in acc --
+    claim(NS_LABEL, "malloc", "the heap's allocation routine", 0);
+    claim(NS_LABEL, "free", "the heap's release routine", 0);
     emit("@malloc NOP");
     emit("POP"); emit("SET __m_sz");
     emit("LOD 0");       emit("SET __m_prev");         // prev payload ptr (0=none)
     emit("LOD __flist"); emit("SET __m_cur");          // cur payload ptr (0=end)
-    emit("@mal_loop NOP");
-    emit("LOD __m_cur"); emit("JIZ mal_bump");         // end of list -> bump-allocate
+    emit("@__mal_loop NOP");
+    emit("LOD __m_cur"); emit("JIZ __mal_bump");         // end of list -> bump-allocate
     emit("LOD __m_cur"); emit("PSH"); emit("LOD 1"); emit("NEG"); emit("S_ADD"); emit("LDI 0");
     emit("SET __m_csz");                               // csz = mem[cur-1] (block size)
     // if (csz >= sz) reuse: !(csz < sz)
     emit("LOD __m_csz"); emit("PSH"); emit("LOD __m_sz"); emit("S_LES"); emit("LIN");
-    emit("JIZ mal_next");
+    emit("JIZ __mal_next");
     emit("LOD __m_cur"); emit("LDI 0"); emit("SET __m_lnk");          // link = mem[cur]
-    emit("LOD __m_prev"); emit("JIZ mal_head");
+    emit("LOD __m_prev"); emit("JIZ __mal_head");
     emit("LOD __m_prev"); emit("PSH"); emit("LOD __m_lnk"); emit("STI 0"); // mem[prev]=link
-    emit("JMP mal_reuse");
-    emit("@mal_head NOP");
+    emit("JMP __mal_reuse");
+    emit("@__mal_head NOP");
     emit("LOD __m_lnk"); emit("SET __flist");          // __flist = link
-    emit("@mal_reuse NOP");
+    emit("@__mal_reuse NOP");
     emit("LOD __m_cur"); emit("RET");                  // return payload (cur)
-    emit("@mal_next NOP");
+    emit("@__mal_next NOP");
     emit("LOD __m_cur"); emit("SET __m_prev");
     emit("LOD __m_cur"); emit("LDI 0"); emit("SET __m_cur");          // cur = mem[cur] (next)
-    emit("JMP mal_loop");
+    emit("JMP __mal_loop");
     // ---- bump-allocate: need = hp + sz + 1 ; require need <= hend -----------
-    emit("@mal_bump NOP");
+    emit("@__mal_bump NOP");
     emit("LOD __hp"); emit("PSH"); emit("LOD __m_sz"); emit("S_ADD"); emit("PSH"); emit("LOD 1"); emit("S_ADD");
     emit("SET __m_need");
     emit("LOD __m_need"); emit("PSH"); emit("LOD __hend"); emit("S_GRE"); emit("LIN"); // need<=hend
-    emit("JIZ mal_oom");
+    emit("JIZ __mal_oom");
     emit("LOD __hp"); emit("PSH"); emit("LOD __m_sz"); emit("STI 0");      // mem[hp]=sz
     emit("LOD __hp"); emit("ADD 1"); emit("SET __m_ret");                // ret=hp+1 (payload)
     emit("LOD __m_need"); emit("SET __hp");                              // hp=need
     emit("LOD __m_ret"); emit("RET");
-    emit("@mal_oom NOP");
+    emit("@__mal_oom NOP");
     emit("LOD 0"); emit("RET");                                         // NULL
 
     // ---- free(p) : push payload p onto the free list -----------------------
     emit("@free NOP");
     emit("POP"); emit("SET __m_cur");                  // p (payload addr)
-    emit("LOD __m_cur"); emit("JIZ free_ret");         // free(0) is a no-op
+    emit("LOD __m_cur"); emit("JIZ __free_ret");         // free(0) is a no-op
     emit("LOD __m_cur"); emit("PSH"); emit("LOD __flist"); emit("STI 0");  // mem[p]=__flist
     emit("LOD __m_cur"); emit("SET __flist");                            // __flist=p
-    emit("@free_ret NOP");
+    emit("@__free_ret NOP");
     emit("RET");
 }
 
@@ -3961,7 +4043,7 @@ static void emit_vtable_inits(void)
         for (int s = 0; s < c->n_vtbl; s++) {
             char *impl = resolve_method(c, c->vtbl[s]);
             int id = impl ? fp_id_of(impl) : 0;
-            emit("LEA %s__vtable", c->tag); if (s) emit("ADD %d", s); emit("PSH");
+            emit("LEA __vt_%s", c->tag); if (s) emit("ADD %d", s); emit("PSH");
             emit("LOD %d", id); emit("STI 0");          // mem[vtable+slot] = id
             if (impl) free(impl);
         }
@@ -4530,6 +4612,8 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
     g_uses_udiv = 0; g_uses_u2f = 0; g_uses_f2u = 0; n_stinit = 0; g_n_inst = 0;
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
     cg_unit = u;
+    claims_reset();
+    claim(NS_LABEL, "fim", "the label where the program ends", 0);
 
     // pc_<proc>_mem.txt: filled in lockstep with emit() from here on. Open it
     // before emit_header so the leading NOP is logged too. cg_line starts at -1
@@ -4544,6 +4628,8 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
+        { char who[512]; snprintf(who, sizeof(who), "the global '%s'", d->name);
+          claim(NS_DATA, d->name, who, d->line); }
         { sym *gs = st_add(SK_GLOBAL_VAR, d->name, d->name, d->dtype); gs->is_const = d->is_const; }
         int gw = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
         log_var("global", d->name, innermost_code(d->dtype), gw);
@@ -4560,6 +4646,8 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
 
     cg_unit = u;
     assign_overload_labels(u);
+    for (int i = 0; i < u->n_funcs; i++)       // every label, emitted or inlined away
+        claim_func(u->funcs[i]);
     instantiate_ctmpl_methods(u);   // clone class-template methods per instance
 
     // pre-scan every function body and global initialiser for string literals
@@ -4569,7 +4657,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
         scan_strings_stmt(u->funcs[i]->body);
         scan_fp_stmt(u->funcs[i]->body);
         scan_heap_stmt(u->funcs[i]->body);
-        collect_statics_stmt(u->funcs[i]->name, u->funcs[i]->body);
+        collect_statics_stmt(u->funcs[i]->asm_label, u->funcs[i]->body);
     }
     for (int i = 0; i < u->n_globals; i++) {
         scan_strings_expr(u->globals[i]->init);
@@ -4591,7 +4679,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
     if (g_any_recursive) emit("#array __cstk 0 %d", CSTK_SIZE);  // software call stack
     if (g_uses_heap)     emit("#array __heap 0 %d", CFG_HEAPSZ); // dynamic-alloc arena
     for (int i = 0; i < n_poly; i++)                            // per-class virtual tables
-        emit("#array %s__vtable 1 %d", poly_cls[i]->tag, poly_cls[i]->n_vtbl);
+        emit("#array __vt_%s 1 %d", poly_cls[i]->tag, poly_cls[i]->n_vtbl);
     emit("JMP main");
 
     for (int i = 0; i < u->n_funcs; i++) {

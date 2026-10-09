@@ -34,6 +34,8 @@
 #      malformed program with a clean non-zero exit and the expected diagnostic
 #      -- never a crash, never a silent accept. Error-path coverage the golden
 #      phases don't give. (Runs with the CMM phase; skipped by --cpp-only.)
+#      The CPP negative phase does the same for cppcomp with
+#      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only).
 #
 # Build phase builds all 5 binaries once (cmmcomp + cpppp + cppcomp +
 # appcomp + asmcomp), all phases reuse them.
@@ -1073,6 +1075,47 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             pass=$((pass+1))
         fi
     done < "$neg_dir/nowarn.txt"
+    rm -rf "$neg_work"
+fi
+
+# ---- 4c. CPP negative phase (error reporting) ------------------------------
+# The same for cppcomp: Compilers/CPPComp/NegTests/manifest.txt, format
+# <fixture.cpp>|<expected substring>. cpppp runs first, as in the CPP phase.
+if [ "$CMM_ONLY" -eq 0 ]; then
+    echo ""
+    echo "==> CPP negative phase (error reporting)"
+    neg_dir="$CPP_ROOT/NegTests"
+    neg_work="$SCRATCH/work_cppneg"
+    while IFS='|' read -r fixture expect; do
+        fixture="${fixture%$'\r'}"; expect="${expect%$'\r'}"
+        case "$fixture" in ''|\#*) continue ;; esac
+        name="cppneg:${fixture%.cpp}"
+        if [ ! -f "$neg_dir/$fixture" ]; then
+            echo "FAIL ($name): fixture missing ($neg_dir/$fixture)"
+            fail=$((fail+1)); failed_names+=("$name"); continue
+        fi
+        rm -rf "$neg_work"; mkdir -p "$neg_work/Software" "$neg_work/tmp"
+        if ! "$CPPPP" -i "$neg_dir/$fixture" -o "$neg_work/tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1; then
+            echo "FAIL ($name): cpppp exited non-zero"
+            fail=$((fail+1)); failed_names+=("$name"); continue
+        fi
+        out="$("$CPPC" -i "$neg_work/tmp/pp.cpp" -p "$neg_work" -n p -t "$neg_work/tmp" 2>&1)"
+        rc=$?
+        if [ "$rc" -eq 0 ]; then
+            echo "FAIL ($name): compiled (exit 0) but should have been rejected"
+            fail=$((fail+1)); failed_names+=("$name")
+        elif [ "$rc" -ge 128 ]; then
+            echo "FAIL ($name): crashed (exit $rc) instead of a clean error"
+            fail=$((fail+1)); failed_names+=("$name")
+        elif ! printf '%s' "$out" | grep -qF "$expect"; then
+            echo "FAIL ($name): exit $rc but missing diagnostic '$expect'"
+            echo "    got: $(printf '%s' "$out" | head -1)"
+            fail=$((fail+1)); failed_names+=("$name")
+        else
+            echo "PASS ($name): rejected (exit $rc) -- \"$expect\""
+            pass=$((pass+1))
+        fi
+    done < "$neg_dir/manifest.txt"
     rm -rf "$neg_work"
 fi
 

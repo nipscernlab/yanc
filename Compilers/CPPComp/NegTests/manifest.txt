@@ -1,0 +1,12 @@
+# Negative test manifest for regress.sh's CPP negative phase: each fixture is
+# a C++ program cppcomp MUST reject with a clean non-zero exit (never a crash,
+# never a silent accept) and the listed diagnostic substring.
+#
+# format:  <fixture.cpp>|<expected substring>
+names_mnemonic.cpp|the global 'ADD': 'ADD' is an instruction of the processor's assembly
+names_mnemonic_local.cpp|the local 'ADD' of 'S' is 'S_ADD' in the assembly, which is an instruction
+names_global_local.cpp|the global 'main_x' and the local 'x' of 'main' are both 'main_x' in the assembly
+names_overload.cpp|are both 'f_Oi' in the assembly
+names_underscores.cpp|'__fp': a name with '__' in it is reserved
+names_fim.cpp|'fim' is reserved, it is the label where the program ends
+names_global_fn.cpp|'global' names the global variables in the simulation log

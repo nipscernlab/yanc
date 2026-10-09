@@ -192,7 +192,7 @@ static void lambda_enter(void)
     if (st_current_func())
         msg_error(yylineno, "a lambda is only supported as a global initializer"
                             " (immediately-invoked, no captures)");
-    snprintf(lambda_name, sizeof lambda_name, "lam_%d", lambda_seq++);
+    snprintf(lambda_name, sizeof lambda_name, "__lam%d", lambda_seq++);
     sym *s = st_add(SK_FUNC, lambda_name, lambda_name, t_int());
     s->defined = 1;
     st_enter_func(lambda_name);
@@ -2054,7 +2054,7 @@ param_declarator:
       }
     | base_type pointers {
           /* abstract (unnamed) parameter — e.g. the `int` in `int (*f)(int)` */
-          $$ = ast_decl(apply_pointers($1, $2), "_anon", NULL, yylineno);
+          $$ = ast_decl(apply_pointers($1, $2), "__anon", NULL, yylineno);
       }
     | base_type '(' '*' IDENT ')' '(' param_list ')' {
           /* function-pointer parameter — int function ID */

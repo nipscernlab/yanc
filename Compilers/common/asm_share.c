@@ -145,6 +145,8 @@ static int isa_find(const char *mn)
     return -1;
 }
 
+int asm_is_mnemonic(const char *name) { return isa_find(name) >= 0; }
+
 // ---- small growable tables ---------------------------------------------------
 
 typedef struct { char **s; int n, cap; } strtab;
