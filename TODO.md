@@ -132,6 +132,9 @@ into a full FIFO emptying it, a stale read right after a write); now it
 writes in the `wrreq` cycle and `full`/`empty` come from the pointers. New
 regress `FIFO` pass (a C+- writer, `Tests/fifo_w`, through `out()`, plus
 `Scripts/hw/tb_fifo.v`); DTW unchanged. [`docs/myfifo.md`](docs/myfifo.md).
+Also `SAPHO/myDCFIFO.v` (2026-10-09), the FIFO between two clocks: two
+SAPHOs on 20 / 27.3 ns in the `FIFO` pass, `Scripts/hw/tb_dcfifo.v`; left:
+the board check and the Quartus constraints on the Gray pointers.
 
 Open here, in the order they were queued:
 - item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the

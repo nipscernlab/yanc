@@ -1,0 +1,22 @@
+#PRNAME fifo_r
+#NUBITS 16
+#NUIOIN 2
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+#NUGAIN 128
+
+// The reader of the FIFO project pass (Scripts/regress.sh, built inside the
+// pass, so it is not in Tests/*/Software): port 1 is the FIFO's empty flag,
+// port 0 its oldest word (reading it takes the word: rdreq = req_in[0]).
+// Every word read goes out on port 0.
+void main()
+{
+    int x = 0;
+    while (1)
+    {
+        while (in(1)) { x = 0; }
+        x = in(0);
+        out(0, x);
+    }
+}

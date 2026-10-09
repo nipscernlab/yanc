@@ -37,6 +37,15 @@ tags consumed by Aurora.
   own clock. Regress: `LINK2`, the `LINK` programs on 20 ns and 27.3 ns
   clocks. Simulation cannot show metastability: the board check and the
   Quartus constraints are still to do (`docs/toma-and-cade.md` section 8).
+- **`SAPHO/myDCFIFO.v`: a FIFO between two SAPHOs on different clocks**,
+  ports in the style of the Quartus `dcfifo` (`wrclk`/`wrreq`/`wrfull`/
+  `wrusedw`, `rdclk`/`rdreq`/`rdempty`/`q`/`rdusedw`, `aclr`). Gray-code
+  pointers through two flip-flops; the same behaviour as `myFIFO` on each
+  side (the word of the `wrreq` cycle, show-ahead read); holds LENGTH words
+  (a power of two). Regress: the `FIFO` pass adds a SAPHO writer and a C+-
+  reader on 20 ns / 27.3 ns clocks both ways, and `Scripts/hw/tb_dcfifo.v`.
+  The board check and its Quartus constraints are still to do
+  (`docs/myfifo.md`).
 
 ### Changed
 - **Opcodes from `ADD` up move by 2** to make room for `TOM`/`CAD` among the

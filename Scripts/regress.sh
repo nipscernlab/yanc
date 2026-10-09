@@ -709,7 +709,9 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     # ---- 3a. project pass FIFO: a SAPHO writes into SAPHO/myFIFO.v ---------
     # fifo_w's out() feeds the FIFO (wrreq = out_en, data = out), back-to-back
     # OUTs and OUTs from loops; the tb drains it. Plus Scripts/hw/tb_fifo.v,
-    # the FIFO alone: full refuses, read right after a write. docs/myfifo.md.
+    # the FIFO alone (full refuses, read right after a write). Then the same
+    # across two clocks: myDCFIFO between fifo_w and a SAPHO reader
+    # (Tests/FIFO/fifo_r.cmm), and Scripts/hw/tb_dcfifo.v. docs/myfifo.md.
 
     if [ "$NO_SIM" -eq 0 ]; then
         proj="FIFO"
@@ -754,8 +756,59 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                     fi
                 fi
             fi
+            # two clocks: myDCFIFO between a SAPHO writer and a SAPHO reader
+            # (Tests/FIFO/fifo_r.cmm, built here), both clock ratios; then
+            # Scripts/hw/tb_dcfifo.v both ways round ("0 of 4 failed")
             if [ $sim_fail -eq 0 ]; then
-                echo "PASS ($proj)  [a SAPHO wrote 1..8, 11..14 through out(); tb_fifo 3 of 3]"
+                r="fifo_r"; rd="$proj_tmp/$r"; mkdir -p "$rd/Software" "$rd/_tmp"
+                cp "$proj_top/../$r.cmm" "$rd/Software/"
+                if ! "$CMMCOMP" -en -i "$r.cmm" -n "$r" -p "$rd" -m "$MACROS" -t "$rd/_tmp" >/dev/null 2>&1 ||
+                   ! "$APPCOMP" -en -i "$rd/Software/$r.asm" -t "$rd/_tmp" >/dev/null 2>&1 ||
+                   ! "$ASMCOMP" -en -i "$rd/Software/$r.asm" -p "$rd" -d "$HDL" -m "$MACROS" -t "$rd/_tmp" -f 100 -c 100000 >/dev/null 2>&1; then
+                    echo "FAIL ($proj): building the reader $r"; sim_fail=1
+                else
+                    cp "$rd/Hardware/${r}_data.mif" "$rd/Hardware/${r}_inst.mif" "$proj_tmp/"
+                fi
+            fi
+            if [ $sim_fail -eq 0 ]; then
+                if ! "$IVERILOG" -s dcfifo_tb -o "$proj_tmp/dcfifo.vvp" \
+                        "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                        "$HDL/core.v" "$HDL/ula.v" "$HDL/myDCFIFO.v" \
+                        "$WORK_DIR/$p/Hardware/$p.v" "$rd/Hardware/$r.v" \
+                        "$proj_top/dcfifo_tb.v" >/dev/null 2>&1; then
+                    echo "FAIL ($proj): iverilog on dcfifo_tb.v exited non-zero"; sim_fail=1
+                else
+                    pushd "$proj_tmp" >/dev/null
+                    "$VVP" "$proj_tmp/dcfifo.vvp" >/dev/null 2>&1
+                    vvp_status=$?
+                    if [ $vvp_status -ne 0 ]; then vvp_once_more "$proj" "$proj_tmp/dcfifo.vvp"; vvp_status=$?; fi
+                    popd >/dev/null
+                    if [ $vvp_status -ne 0 ]; then
+                        echo "FAIL ($proj): vvp on dcfifo_tb.v exited non-zero"; sim_fail=1
+                    fi
+                    for f in output_dcfifo_fs.txt output_dcfifo_sf.txt; do
+                        got=$(tr -d '\r' < "$proj_tmp/$f" 2>/dev/null | tr '\n' ' ')
+                        if [ "$got" != "$want" ]; then
+                            echo "FAIL ($proj): $f got '$got', want '$want'"; sim_fail=1
+                        fi
+                    done
+                fi
+            fi
+            if [ $sim_fail -eq 0 ]; then
+                for ratio in "-Ptb_dcfifo.WH=10 -Ptb_dcfifo.RH=13.65" "-Ptb_dcfifo.WH=13.65 -Ptb_dcfifo.RH=10"; do
+                    # shellcheck disable=SC2086
+                    if ! "$IVERILOG" -g2012 -s tb_dcfifo $ratio -o "$proj_tmp/tb_dcfifo.vvp" \
+                            "$ROOT/Scripts/hw/tb_dcfifo.v" "$HDL/myDCFIFO.v" >/dev/null 2>&1; then
+                        echo "FAIL ($proj): iverilog on tb_dcfifo.v exited non-zero"; sim_fail=1; break
+                    fi
+                    tbf=$(cd "$proj_tmp" && "$VVP" -n "$proj_tmp/tb_dcfifo.vvp" 2>&1)
+                    if ! printf '%s' "$tbf" | grep -q "^0 of 4 failed"; then
+                        echo "FAIL ($proj): tb_dcfifo.v ($ratio):"; printf '%s\n' "$tbf" | grep FAIL; sim_fail=1
+                    fi
+                done
+            fi
+            if [ $sim_fail -eq 0 ]; then
+                echo "PASS ($proj)  [one clock and two clocks: SAPHO -> FIFO -> 1..8, 11..14; tb_fifo 3/3, tb_dcfifo 4/4 both ways]"
                 pass=$((pass + 1))
             else
                 fail=$((fail + 1)); failed_names+=("$proj")

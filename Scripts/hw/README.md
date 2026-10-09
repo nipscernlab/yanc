@@ -15,6 +15,7 @@ All paths assume the repo at `/c/nipscern/yanc` under an **MSYS2 login shell**
 | `fmax.sh` | Quartus Prime Lite | real Fmax and ALMs of a processor the regress already built, its 10 worst register-to-register paths, and the worst one grouped by block (`path_blocks.py`): memory read, operand select, each ALU operator, output mux, jump decision, PC. Time the whole design on `sapho_all` (every block in, `#FROUND 2`) |
 | `tb_fdiv.v` | iverilog | the divider array against Verilog's `/` and `%`, 20000 random operands |
 | `tb_fifo.v` | iverilog | `SAPHO/myFIFO.v` against what a FIFO between SAPHOs needs: the word of the `wrreq` cycle, a full FIFO refusing a write, a read right after a write. The FIFO before its fix failed all three; the regress `FIFO` pass runs it (`docs/myfifo.md`) |
+| `tb_dcfifo.v` | iverilog | `SAPHO/myDCFIFO.v`, the FIFO between two clocks: the word of the `wrreq` cycle, LENGTH words fit and the next is refused, a word reaches the reader, 300 words with random pauses on both sides arrive once and in order. Run it both ways round (`WH`/`RH`, the half periods); the regress `FIFO` pass does |
 | `width_sweep.sh` (`width_sweep/`) | iverilog, verilator, python3 | does each simulator compute every integer operator right at a given word width, in continuous assigns and in procedural blocks, against a Python-bigint oracle? Re-run after upgrading Icarus or Verilator: it decides when YANC may go beyond 32 bits (`TODO.md` item 6(b)). **Expected non-zero result:** Verilator still reports one `div` mismatch, `INT_MIN / -1` giving `0` instead of the wrapped `INT_MIN`. That is its runtime guarding the host divide trap, and it is a property of the simulator, not of YANC: `ula_div` names the case and forces the wrapped quotient, so the processor agrees on both (item 11(a), `test72`/`test73`) |
 | `vfmax.sh` (`vfmax.tcl`) | Vivado (2025.2 ML Standard) | the same as `fmax.sh` on AMD/Xilinx, out of context (no pins), default part the ZYBO's `xc7z010clg400-1`; both memories asked into block RAM in a copy of `SAPHO/`, as Quartus puts them |
 | `est/` | yosys, python3 | the per-operator delay table over the base, on several families (see `est/README.md`) |
@@ -32,6 +33,8 @@ bash Scripts/hw/fmax.sh cmm_cexp                            # after Scripts/regr
 FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp              # same program forced to #FROUND 2
 iverilog -g2012 -s tb -o tb.vvp Scripts/hw/tb_fdiv.v SAPHO/ula.v && vvp -n tb.vvp
 iverilog -g2012 -s tb_fifo -o f.vvp Scripts/hw/tb_fifo.v SAPHO/myFIFO.v && vvp -n f.vvp
+iverilog -g2012 -s tb_dcfifo -o d.vvp Scripts/hw/tb_dcfifo.v SAPHO/myDCFIFO.v && vvp -n d.vvp
+iverilog -g2012 -s tb_dcfifo -Ptb_dcfifo.WH=13.65 -Ptb_dcfifo.RH=10 -o d.vvp Scripts/hw/tb_dcfifo.v SAPHO/myDCFIFO.v && vvp -n d.vvp
 bash Scripts/hw/tb_alu.sh                                   # after any ula.v edit
 bash Scripts/hw/tb_alu.sh 50000                             # longer run
 bash Scripts/hw/width_sweep.sh                              # after a simulator upgrade (32 64 128)
