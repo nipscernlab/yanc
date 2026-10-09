@@ -131,11 +131,33 @@ Open here, in the order they were queued:
   show the diff first);
 - the heap arena (item 13): 77 % of the C++ data memory, not started, needs a
   decision (a pragma or sizing from measured use).
-- a global named like a mnemonic breaks the assembly (seen 2026-10-05,
-  adding `QUO`/`REM`/`F_QUO`): globals reach the `.asm` unprefixed (`SET s`)
-  and the assembler lexes `ADD`, `OUT`, `REM`... as instructions. Nothing
-  guards it in cmmcomp (only `i` is reserved); not measured in cppcomp.
-  Needs a check (reject, or prefix the name) and a negative fixture.
+- **NEXT (approved by Luciano 2026-10-09): user names that collide in the
+  `.asm`.** User names, mnemonics, compiler-made labels, internal names and
+  renamed locals (`func_var`) share one namespace in the `.asm`, and a
+  collision compiles WITHOUT error into a wrong program. Measured 2026-10-09
+  (simulated):
+  - `int ADD;` -- C+-: `SET ADD` vanishes from the program (4 words instead
+    of 5); C++: output 0 instead of 5;
+  - global `main_x` plus a local `x` in `main` -- C+- rejects it with a
+    confusing message ("the variable 'x' already exists"); C++ compiles both
+    into one variable: output 14 instead of 8;
+  - a global named like a generated label (`Lwh1`) -- C+-: no output at all;
+  - C++ `int __fp;` -- works by luck; `__fp` is the frame pointer of
+    recursive functions;
+  - a global `fim` -- worked, probably by luck.
+  The plan, three rules in BOTH compilers (cmmcomp: show Luciano the diff
+  first): (1) no user name (global, local, parameter, function, array) may
+  equal an assembler mnemonic or directive -- the list comes from the one
+  ISA table (`asm_share.c`, held by `check_isa.py`), so a new instruction is
+  reserved automatically; (2) every compiler-made name starts with `__`
+  (`Lwh1` -> `__Lwh1`, `Lfor_top1`, `Ltom1`, `sw_case_*`...) and user names
+  starting with `__` are rejected (C and C++ reserve them); `@fim` keeps its
+  name (Aurora reads it) and `fim` becomes a reserved word; (3) cppcomp gets
+  the global-versus-renamed-local check cmmcomp has, and both messages say
+  why ("global `main_x` is the internal name of the local `x` of `main`").
+  Cost: rule 2 rewrites every `.asm` golden (labels only: check the diff is
+  just renamed labels, no sim output and no size moves). Negative fixtures
+  for each case in NegTests (C+-) and an equivalent for C++.
 Parked by Luciano: reorganizing the runner/setup scripts and the dependency
 lists (seeing the code run in GTKWave is too valuable to drop). Not started:
 a macOS build in `release.yml`.
