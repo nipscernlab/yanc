@@ -22,12 +22,35 @@ register cuts inside each divider and every division written as
 [`docs/pipeln-and-division.md`](docs/pipeln-and-division.md). Item 20
 (two SAPHOs passing a value, `toma`/`cade`) is implemented on main, not
 released (target v7.0). Item 21 (documentation that cannot fall behind a
-release) waits for Chrysthofer's opinion. Item 11,
+release) waits for Chrysthofer's opinion. Item 22 (`myFIFO` losing words, and
+the two-clock `myDCFIFO`) is fixed on main, not released. Item 11,
 consistency at 32 bits, is closed (2026-09-21): see the CHANGELOG for its
 four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
 moved.
+
+**Where the work stood on 2026-10-10 (session closed by Luciano).** Nine
+commits on the local `main`, NOT pushed and NOT through a full regress
+(Luciano held the full regress on 2026-10-09: ask before running it, it is
+heavy, mains power): 96fcdaf, d8f4eeb (user names that collide in the
+`.asm`), 33c5516, 50cc7a0 (`toma`/`cade` on two clocks, `LINKAS`), 9c3b2d5,
+ba2849c (`myFIFO` fixed), 3ea1471 (`myDCFIFO`), 1f3a138 (FIFO memory and
+cross-clock timing notes) and this note. Each was checked with light runs only (regress
+`--no-sim`, single passes on their own, Yosys); the CHANGELOG
+`[Unreleased]` has all of them. To close them: the full regress, then push,
+then `Scripts/aurora.bat`.
+Open, waiting on Luciano:
+- `RAMBLK` (proposed 2026-10-09, not started): a parameter on `myFIFO` and
+  `myDCFIFO` for a registered read, so a large FIFO can go to block RAM
+  (area, not clock: the SAPHO path dominates at ~22 MHz). `myDCFIFO` only
+  needs the read form (tried in scratch: passes `tb_dcfifo.v`, one
+  `RAMB18E1` at 1024 words); `myFIFO` also needs a write->read bypass.
+  Light to do (simulation + Yosys); details in `docs/myfifo.md` "Memory";
+- a `quartus_map` of the registered variant (does the Cyclone V use M10K?);
+- the board check of `LINKAS` and `myDCFIFO` with their `.sdc` lines
+  (`docs/myfifo.md` "Timing constraints", `docs/toma-and-cade.md` 8.5),
+  and an Fmax if wanted (`Scripts/hw/fmax.sh`, heavy).
 
 **Where the work stood on 2026-09-18 (history: the order it suggests was overtaken by items 18 to 21).** Item **8 is closed** — all six steps,
 each measured; step 4b was withdrawn by the measurement rather than done. The
