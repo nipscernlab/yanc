@@ -162,8 +162,19 @@ A -> B -> C. A chain needs several links per processor: per link its own T,
 C and W bits and pins, a link number in the source (`toma(1, x)`, say) and
 `LINKAS` chosen per link. The open point is the encoding: the operand of
 `TOM`/`CAD` is already their own address, so the link number needs separate
-opcodes or operand bits. Nothing designed or measured yet; a proposal in
-docs/ is the next step.
+opcodes or operand bits. Decided 2026-10-11: the operand becomes the link
+number (any number of links, each synchronous or not, chosen in the
+source: `toma`/`cade` synchronized, `toma_sync`/`cade_sync`/`fcade_sync`
+for a partner on the same clock, 4 cycles a value faster, measured);
+`LINKAS` goes away. Design in
+[`docs/toma-and-cade-links.md`](docs/toma-and-cade-links.md).
+
+**Item 24, floats between processors with different formats (target
+v7.2, opened 2026-10-11 by Luciano).** `toma` already sends a float's word
+unconverted and `fcade` reads it as a float: exact when both processors
+have the same `#NBMANT`/`#NBEXPO`, garbled with no warning when they
+differ (each program is compiled alone). Convert, or flag the mismatch.
+[`docs/toma-and-cade-links.md`](docs/toma-and-cade-links.md) section 9.
 
 **Item 22, `SAPHO/myFIFO.v` lost words: FIXED 2026-10-09, full regress
 owed.** Three measured defects (the word of the cycle after `wrreq`, a write
