@@ -182,14 +182,15 @@ processor that only forwards data.
    the current tests are rewired.
 3. No fixed limit on the number of links beyond the operand width.
 
-## 9. Later (v7.2): floats across processors with different formats
+## 9. Parked: processors with different formats
 
 `toma(x)` already sends a float's word unconverted and `fcade()` reads it as
 a float (fact: `exec_toma` emits no `F2I`; checked by hand 2026-10-07, C+-
 to C++, 16 of 16). When both processors have the same `#NBMANT`/`#NBEXPO`
 that is exact. When they differ, the word arrives garbled with no warning:
-each program is compiled alone. v7.2 (Luciano, 2026-10-11): convert, or at
-least flag the mismatch.
+each program is compiled alone. Parked by Luciano (2026-10-11): the check
+belongs to Aurora, which sees every program of a project; converting
+between formats maybe in the future. v7.1 stops at the links.
 
 ## 10. For the documentation (item 21 in TODO.md)
 

@@ -107,6 +107,13 @@ with A and B swapped), wires only, no user logic:
 A.toma -> B.taqui      B.cade -> A.valeu      A.toma_dado -> B.cade_dado
 ```
 
+**Both processors must have the same word format**: the same `#NUBITS`
+for ints, and the same `#NBMANT`/`#NBEXPO` for floats. The link carries the
+word as it is, with no conversion: with different widths Verilog joins the
+buses by cutting or zero-filling, so a negative int arrives wrong (deduced
+from Verilog's rules, not tested), and a float of another format arrives
+garbled. Nothing warns: each program is compiled alone (TODO item 24).
+
 On one clock `A.out -> B.cade_dado` is the same word (the wiring used
 before `toma_dado` existed). On two clocks see section 8: `toma_dado` and
 `#(.LINKAS(1))` on both.
@@ -374,6 +381,9 @@ Fmax and the board check of a linked design measure two full SAPHOs.
 When the global documentation protocol is decided, the user-facing text is
 short and must say, without the reasoning above:
 
+- both processors must have the same `#NUBITS`, and the same `#NBMANT`/
+  `#NBEXPO` when floats are passed: the word goes as it is, no conversion,
+  no warning (section 3);
 - two processors on different clocks can use `toma`/`cade`;
 - write `#(.LINKAS(1))` on both processors and wire `toma_dado` to the
   partner's `cade_dado` (the example in 8.3);
