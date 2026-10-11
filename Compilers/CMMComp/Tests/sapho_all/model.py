@@ -64,6 +64,8 @@ def run(inp):
     def addf(fw):                  # t = fw * 4194304.0 (F_MLT, then F2I); s = s + t
         add(f2i(fl(fw * 4194304)))
     x = inp; fx = fl(inp); w = 0
+    if x < 5: x = wrap(x + 8)                # inputs 0 to 4 are taken as 8 to 12
+    if fx < 5: fx = fl(fx + 8)
     y = wrap(x - 4); z = wrap(0 - x)
     fy = fl(fx * Fr(1, 2)); fz = fl(fx - 10)
 

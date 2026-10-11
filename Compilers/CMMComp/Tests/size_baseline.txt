@@ -66,7 +66,7 @@ procBlind  621
 procBlindOpt 590
 ProcDTW    266
 ResetCheck 22
-sapho_all  921
+sapho_all  933
 Seno       67
 Sqrt       90
 sw_test    20

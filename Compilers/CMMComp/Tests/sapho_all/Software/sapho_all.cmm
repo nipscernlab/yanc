@@ -71,6 +71,11 @@ void main()
                                         // and 10 write: every turn starts from the same value
         x = in(0);                      // INN
         fx = fin(0);                    // F_INN
+        // inputs 0 to 4 are taken as 8 to 12, so every 4-bit input is valid and
+        // the output can be fed back (one processor, or two in a ring); 5 to 15
+        // are unchanged
+        if (x < 5) x = x + 8;
+        if (fx < 5.0) fx = fx + 8.0;
         y = x - 4;                      // 3
         z = 0 - x;                      // -7
         fy = fx * 0.5;                  // 3.5

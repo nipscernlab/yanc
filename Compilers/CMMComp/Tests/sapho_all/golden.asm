@@ -87,7 +87,19 @@ INN 0
 SET main_x
 F_INN 0
 SET main_fx
-NEG_M 4
+LOD 5
+LES main_x
+JIZ __Lif1else
+LOD main_x
+ADD 8
+SET main_x
+@__Lif1else LOD main_fx
+F_GRE 5.0
+JIZ __Lif2else
+LOD main_fx
+F_ADD 8.0
+SET main_fx
+@__Lif2else NEG_M 4
 ADD main_x
 SET main_y
 NEG_M main_x
@@ -183,23 +195,23 @@ ADD main_t
 SET s
 LOD main_y
 LES main_x
-JIZ __Lif1else
+JIZ __Lif3else
 LOD s
 ADD 1
 SET s
-@__Lif1else LOD main_y
+@__Lif3else LOD main_y
 GRE main_x
-JIZ __Lif2else
+JIZ __Lif4else
 LOD s
 ADD 2
 SET s
-@__Lif2else LOD main_y
+@__Lif4else LOD main_y
 EQU main_x
-JIZ __Lif3else
+JIZ __Lif5else
 LOD s
 ADD 4
 SET s
-@__Lif3else LOD main_x
+@__Lif5else LOD main_x
 ADD 1
 P_LOD main_y
 MLT 2
@@ -325,29 +337,29 @@ ADD 1
 P_LOD main_y
 ADD 2
 S_LES
-JIZ __Lif4else
+JIZ __Lif6else
 LOD s
 ADD 8
 SET s
-@__Lif4else LOD main_x
+@__Lif6else LOD main_x
 ADD 1
 P_LOD main_y
 ADD 2
 S_GRE
-JIZ __Lif5else
+JIZ __Lif7else
 LOD s
 ADD 16
 SET s
-@__Lif5else LOD main_x
+@__Lif7else LOD main_x
 ADD 1
 P_LOD main_y
 ADD 5
 S_EQU
-JIZ __Lif6else
+JIZ __Lif8else
 LOD s
 ADD 32
 SET s
-@__Lif6else LOD main_x
+@__Lif8else LOD main_x
 ADD main_y
 NEG
 SET main_t
@@ -594,35 +606,35 @@ ADD main_t
 SET s
 LOD main_fx
 F_GRE main_fy
-JIZ __Lif7else
+JIZ __Lif9else
 LOD s
 ADD 64
 SET s
-@__Lif7else LOD main_fx
+@__Lif9else LOD main_fx
 F_LES main_fy
-JIZ __Lif8else
+JIZ __Lif10else
 LOD s
 ADD 128
 SET s
-@__Lif8else LOD main_fx
+@__Lif10else LOD main_fx
 F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_LES
-JIZ __Lif9else
+JIZ __Lif11else
 LOD s
 ADD 256
 SET s
-@__Lif9else LOD main_fx
+@__Lif11else LOD main_fx
 F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_GRE
-JIZ __Lif10else
+JIZ __Lif12else
 LOD s
 ADD 512
 SET s
-@__Lif10else LOD main_fx
+@__Lif12else LOD main_fx
 F_ADD main_fy
 F_NEG
 SET main_fw
@@ -900,11 +912,11 @@ LOD main_x
 ADD 7
 EQU main_t
 LIN
-JIZ __Lif11else
+JIZ __Lif13else
 LOD s
 ADD 1024
 SET s
-@__Lif11else LOD main_x
+@__Lif13else LOD main_x
 ADD 1
 P_LOD main_y
 ADD 1
@@ -940,11 +952,11 @@ ADD main_x
 MLT 4
 EQU main_t
 LIN
-JIZ __Lif12else
+JIZ __Lif14else
 LOD s
 ADD 2048
 SET s
-@__Lif12else LOD 16
+@__Lif14else LOD 16
 SHR s
 XOR s
 SET main_t
