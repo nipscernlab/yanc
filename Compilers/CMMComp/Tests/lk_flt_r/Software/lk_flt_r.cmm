@@ -1,0 +1,19 @@
+#PRNAME lk_flt_r
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK3: takes the float words of lk_flt_w
+// with fcade and puts twice each, converted to int, on port 0 (3n).
+void main()
+{
+    int t;
+    while (1)
+    {
+        t = fcade(0) * 2.0;
+        out(0, t);
+    }
+}

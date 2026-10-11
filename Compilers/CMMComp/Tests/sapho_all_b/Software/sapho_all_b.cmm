@@ -72,7 +72,7 @@ void main()
         s = 0; w = 0;
         ia[3] = 0;                      // the POP line below reads ia[3], which only inputs 7
                                         // and 10 write: every turn starts from the same value
-        k = cade();                     // LINK: CAD, waits for sapho_all_a
+        k = cade(0);                    // LINK: CAD, waits for sapho_all_a
         x = in(0);                      // INN
         if (k != x) s = s + 4096;       // LINK
         fx = fin(0);                    // F_INN

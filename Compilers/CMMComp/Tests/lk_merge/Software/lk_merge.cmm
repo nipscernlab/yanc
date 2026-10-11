@@ -1,0 +1,22 @@
+#PRNAME lk_merge
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK3: fan-in. Takes one word from link 0
+// and one from link 1 (two CAD links: the operand picks the word inside the
+// processor) and puts a*1000 + b on port 0.
+void main()
+{
+    int a;
+    int b;
+    while (1)
+    {
+        a = cade(0);
+        b = cade(1);
+        out(0, a * 1000 + b);
+    }
+}

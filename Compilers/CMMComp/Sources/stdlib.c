@@ -113,10 +113,32 @@ void exec_out(int id, expr e)
 // ----------------------------------------------------------------------------
 
 // TOM k and CAD k wait in place until the partner lets them through; the
-// operand is the link number (docs/toma-and-cade-links.md), link 0 for now
+// operand is the link number (docs/toma-and-cade-links.md). A link is
+// synchronized (toma/cade/fcade) or on my clock (the _sync forms) in every use:
+// its hardware is one; #LKSYNC k tells asmcomp which links skip the
+// synchronizer.
+#define MAX_LINKS 1024
+static char lnk_mode[MAX_LINKS];   // 0 unused, 1 plain, 2 _sync
 
-// toma(x); -- the word goes as it is (int or float bits): no conversion
-void exec_toma(expr e)
+int link_use(int id, int sync)
+{
+    int k = atoi(v_table[id].name);
+    if (k < 0 || k >= MAX_LINKS) {fprintf(stderr, MSG_ERR_LINK_NUM, line_num+1, MAX_LINKS-1, v_table[id].name); exit(EXIT_FAILURE);}
+
+    int mode = sync ? 2 : 1;
+    if (lnk_mode[k] != 0 && lnk_mode[k] != mode)
+        {fprintf(stderr, MSG_ERR_LINK_MIX, line_num+1, k, (lnk_mode[k] == 2) ? MSG_LINK_WITH : MSG_LINK_WITHOUT); exit(EXIT_FAILURE);}
+    lnk_mode[k] = mode;
+    return k;
+}
+
+void link_sync_emit()
+{
+    for (int k = 0; k < MAX_LINKS; k++) if (lnk_mode[k] == 2) add_sinst(0, "#LKSYNC %d\n", k);
+}
+
+// toma(k, x); -- the word goes as it is (int or float bits): no conversion
+void exec_toma(expr e, int k)
 {
     // check whether e was declared
     if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
@@ -135,34 +157,34 @@ void exec_toma(expr e)
         if (acc_ok == 0) add_instr("LOD %s\n", v_table[e.id].name); else add_instr("P_LOD %s\n", v_table[e.id].name);
     }
 
-    add_instr("TOM 0\n");
+    add_instr("TOM %d\n", k);
 
     acc_ok = 0; // frees acc
 }
 
-// x = cade(); -- the only form allowed (STMT_ASSIGN): the partner's word lands
+// x = cade(k); -- the only form allowed (STMT_ASSIGN): link k's word lands
 // in x with x's type, so the caller's SET converts nothing
-expr exec_cade(int dest)
+expr exec_cade(int dest, int k)
 {
     if (v_table[dest].type == 0) {fprintf(stderr, MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[dest].name, fname)); exit(EXIT_FAILURE);}
     if (v_table[dest].isar  > 0) {fprintf(stderr, MSG_ERR_ARRAY_NEEDS_IDX,    line_num+1, rem_fname(v_table[dest].name, fname)); exit(EXIT_FAILURE);}
     if (v_table[dest].type  > 2) {fprintf(stderr, MSG_ERR_CADE_COMP,          line_num+1, rem_fname(v_table[dest].name, fname)); exit(EXIT_FAILURE);}
 
-    add_instr("CAD 0\n");
+    add_instr("CAD %d\n", k);
 
     acc_ok = 1; // acc now holds the partner's word
 
     return expr_make(v_table[dest].type, 0);
 }
 
-// cade() / fcade() inside an expression, an index or an argument: type 1 (int)
+// cade(k) / fcade(k) inside an expression, an index or an argument: type 1 (int)
 // or 2 (float). CAD has no push form, so a live acc is pushed first; the PSH
 // runs once, CAD's waiting loop jumps back to CAD itself.
-expr exec_cade_expr(int type)
+expr exec_cade_expr(int type, int k)
 {
     if (acc_ok) add_instr("PSH\n");
 
-    add_instr("CAD 0\n");
+    add_instr("CAD %d\n", k);
 
     acc_ok = 1; // acc now holds the partner's word
 

@@ -1,0 +1,20 @@
+#PRNAME lk_chain_b
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK3: the middle of the chain. Takes a
+// word from lk_chain_a on link 0 (same clock: cade_sync) and hands twice it to
+// lk_chain_c on link 1 (another clock: plain toma, synchronized).
+void main()
+{
+    int x;
+    while (1)
+    {
+        x = cade_sync(0);
+        toma(1, x * 2);
+    }
+}

@@ -10,3 +10,5 @@ names_overload.cpp|are both 'f_Oi' in the assembly
 names_underscores.cpp|'__fp': a name with '__' in it is reserved
 names_fim.cpp|'fim' is reserved, it is the label where the program ends
 names_global_fn.cpp|'global' names the global variables in the simulation log
+link_mix.cpp|link 1 was already used with _sync
+link_lit.cpp|the link number comes first and is an integer literal

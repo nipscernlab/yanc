@@ -7,7 +7,7 @@
 void main(void)
 {
     for (int n = 0; n < 16; n++) {
-        toma(n);
-        out(0, cade());     // cade() as an argument
+        toma(0, n);
+        out(0, cade(0));    // cade(0) as an argument
     }
 }

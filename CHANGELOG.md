@@ -9,41 +9,44 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
-- **`toma` and `cade`: two SAPHOs pass a value to each other.** `toma(x);`
-  on one processor and `y = cade();` on its partner: whoever arrives first
-  waits, nothing is lost or read twice, no port number, no status port.
-  Two instructions, `TOM` (20) and `CAD` (21), each a jump to itself until
-  the partner's bit lets it through; each side owns one bit (the writer T,
-  the reader C, a value waits while T != C) plus the writer's waiting flag,
-  generated only when the program uses the instruction (measured with Yosys:
-  `sapho_all` is cell for cell the same). New pins `toma`, `cade`, `taqui`,
-  `valeu`, `cade_dado`; two processors are joined with wires only. In C+-
-  and C++: `toma(x)`, `cade()` (int) and `fcade()` (float), anywhere an
-  expression goes; `x = cade();` alone puts the word into `x` as it is. A
-  live accumulator is pushed (`PSH`) before `CAD`. Simulated alone, a
-  processor gets its testbench as the partner: `cade()` reads
-  `Simulation/cade.txt`, `toma()` writes `Simulation/toma.txt` (as `in()` /
-  `out()` with `input_N.txt` / `output_N.txt`). asmcomp rejects a `TOM`/`CAD`
-  whose operand is not a label of its own line. Regress: the `LINK`
-  project pass (two C+- pairs and two C+-/C++ pairs, both directions, with
-  `cade()` in an expression and as an argument) and a negative fixture. Design and tests: `docs/toma-and-cade.md`.
-- **`toma`/`cade` between processors on different clocks.** Write
-  `#(.LINKAS(1))` on both processors of the link and wire the new pin
-  `toma_dado` to the partner's `cade_dado`: the partner's bit then enters
-  through two flip-flops on the receiver's clock, and the writer offers its
-  value from a register. With `LINKAS` 0 (the default) the hardware is
-  today's, cell for cell (Yosys), and `toma_dado` equals `out`. Both
-  processors must leave reset together, each release synchronized to its
-  own clock. Regress: `LINK2`, the `LINK` programs on 20 ns and 27.3 ns
-  clocks. Simulation cannot show metastability: the board check and the
-  Quartus constraints are still to do (`docs/toma-and-cade.md` section 8).
+- **`toma` and `cade`: SAPHOs pass values to each other over links.**
+  `toma(k, x);` on one processor hands `x` over its link k, `y = cade(k);`
+  (int) or `fcade(k)` (float) on the partner takes it: whoever arrives first
+  waits, nothing is lost or read twice. A processor can have any number of
+  links (numbered from 0, each joining two processors, usable both ways),
+  so chains, fan-out and fan-in are written directly. The word goes
+  unconverted (a float arrives exact when both processors have the same
+  `#NBMANT`/`#NBEXPO`; both need the same `#NUBITS`). Two instructions,
+  `TOM k` (20) and `CAD k` (21), the operand being the link number; each
+  waits in place (the fetch takes its own address again) until the
+  partner's bit lets it through. Per link each side owns one bit (the
+  writer T, the reader C, a value waits while T != C) plus the writer's
+  waiting flag. Generated only where used: link k only with `TOM k` or
+  `CAD k` in the program; the operand compare and the multiplexers only with
+  two or more links of a kind (Yosys: `sapho_all`, with no link, cell for
+  cell the same; a second TOM link +18 cells, a second CAD link +71). Every
+  link is synchronized (two flip-flops on the partner's bit, the offered
+  word held in a register), so it works across clocks; the forms
+  `toma_sync(k, x)`, `cade_sync(k)`, `fcade_sync(k)` declare the partner on
+  the same clock and drop the synchronizer (4 cycles a value faster,
+  measured: 8 against 12 back to back); a link used both ways is an error.
+  Pins per link `toma_k`, `valeu_k` / `cade_k`, `taqui_k`, `cade_dado_k`,
+  and one `toma_dado`; wire `W.toma_i -> R.taqui_j`, `R.cade_j ->
+  W.valeu_i`, `W.toma_dado -> R.cade_dado_j`. Simulated alone, a processor
+  gets its testbench as the partner of each link (`Simulation/cade_k.txt`,
+  `Simulation/toma_k.txt`). Regress: `LINK` (pairs, C+- and C+-/C++), `LINK2`
+  (pairs on 20 / 27.3 ns), `LINKALL` (below), `LINK3` (a chain on two clocks
+  with the middle in C+- and in C++, fan-out, fan-in, a float), negative
+  fixtures in both languages. `docs/toma-and-cade.md`,
+  `docs/toma-and-cade-links.md`. The board check and the Quartus constraints
+  are still to do.
 - **The whole processor over `toma`/`cade` (`LINKALL`).** `sapho_all_a`
   hands its result to `sapho_all_b` (each is `sapho_all` plus the lines
   marked `// LINK`; regress fails if they drift from `sapho_all.cmm`), on
-  one clock and on two (`LINKAS` 1), and `sapho_all` alone runs with its
-  output fed back (input = last output XOR 7). Checked against `model.py`:
-  A = 4, B = 10, the fed-back cycle 4, 11, 13, 8, 12, 0. The pair is the
-  design for the two-processor Fmax and the board check of `LINKAS`.
+  one clock and on two, and `sapho_all` alone runs with its output fed back
+  (input = last output XOR 7). Checked against `model.py`: A = 4, B = 10,
+  the fed-back cycle 4, 11, 13, 8, 12, 0. The pair is the design for the
+  two-processor Fmax and the board check of the synchronized link.
   `docs/toma-and-cade.md` 8.6.
 - **`sapho_all` takes every 4-bit input.** Inputs 0 to 4 are read as 8 to
   12, so its output can always be fed back; 5 to 15 give what they gave

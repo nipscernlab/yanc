@@ -1,5 +1,12 @@
 # `toma` and `cade`: two SAPHOs passing a value
 
+> **Superseded in part (2026-10-11):** a processor now has several links.
+> The source forms are `toma(k, x)`, `cade(k)`, `fcade(k)` and the `_sync`
+> forms, the pins carry the link number (`toma_k`, `cade_dado_k`, ...), and
+> `LINKAS` is gone: every link is synchronized unless the program uses a
+> `_sync` form. See [`toma-and-cade-links.md`](toma-and-cade-links.md). The
+> protocol, the hardware per link and the checks below still hold.
+
 Design record of TODO item 20 (2026-10-07, target v7.0). Worked out with
 Luciano in conversation; nothing below is implemented yet. Sections 1-4 are
 the design as agreed, section 5 what was checked in the code and how, section
@@ -245,7 +252,11 @@ if every value arrives once and in order. Then a fixture in the regress
 - **One-cycle pulses instead of the two bits**: two looping processors can
   miss each other forever (section 2).
 
-## 8. Two clocks (`LINKAS`, implemented 2026-10-09, not released)
+## 8. Two clocks (`LINKAS`, implemented 2026-10-09, replaced 2026-10-11)
+
+(History: `LINKAS` was replaced by synchronized links by default and the
+`_sync` forms, `toma-and-cade-links.md` section 7. The synchronizer and the
+`toma_dado` register described here are the ones every link now has.)
 
 Asked by Luciano on 2026-10-09: can the link join two processors that run
 on different clocks? Yes, and the protocol (section 2) does not change.

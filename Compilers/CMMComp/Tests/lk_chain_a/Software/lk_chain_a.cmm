@@ -1,0 +1,20 @@
+#PRNAME lk_chain_a
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK3 (docs/toma-and-cade-links.md): the
+// head of a chain A -> B -> C. Hands n*3+1, n = 0..15, to lk_chain_b over
+// link 0; B runs on the same clock, so the _sync form (no synchronizer).
+void main()
+{
+    int n = 0;
+    while (n < 16)
+    {
+        toma_sync(0, n * 3 + 1);
+        n++;
+    }
+}

@@ -9,7 +9,7 @@ void main(void)
 {
     for (int n = 0; n < 16; n++) {
         for (volatile int k = 0; k < 16 - n; k++) { }
-        int v = cade();
+        int v = cade(0);
         out(0, v);
     }
 }

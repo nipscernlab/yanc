@@ -1,9 +1,11 @@
 # `toma`/`cade` with several links: chains, fan-out, fan-in
 
-Design proposal for TODO item 23 (target v7.1), opened 2026-10-11. Nothing
-here is implemented. Marked: **fact** (read in the code), **deduced** (from
-the code, not run), **to measure**. The single-link design it extends is
-[`toma-and-cade.md`](toma-and-cade.md).
+Design of TODO item 23 (target v7.1), opened and **implemented on
+2026-10-11** (section 10 has what was built and measured). Marked: **fact**
+(read in the code), **deduced** (from the code, not run), **to measure**. The
+single-link design it extends is [`toma-and-cade.md`](toma-and-cade.md),
+whose source forms (`toma(x)`, `cade()`), pins (`toma`, `cade_dado`) and
+`LINKAS` parameter this replaces.
 
 ## 1. What it is for
 
@@ -192,7 +194,39 @@ each program is compiled alone. Parked by Luciano (2026-10-11): the check
 belongs to Aurora, which sees every program of a project; converting
 between formats maybe in the future. v7.1 stops at the links.
 
-## 10. For the documentation (item 21 in TODO.md)
+## 10. Implemented (2026-10-11)
+
+- `SAPHO/core.v`: the self-jump keeps the address of the instruction in
+  decode (`r_self`) and re-fetches it; per link a `generate` slot with
+  T/W (TOMS[k]), C (CADS[k]) and a synchronizer unless LSYNC[k]; the
+  operand compare, `tom_go`/`cad_go` and the CAD word multiplexers only with
+  two or more links of a kind; `toma_dado` a register as soon as one TOM link
+  is synchronized. `SAPHO/processor.v`: `NLINK`, `TOMS`, `CADS`, `LSYNC`
+  among the fixed parameters (before `P_LOD`, so `check_blocks.py` does not
+  take them for opcode blocks).
+- asmcomp: `TOM k` / `CAD k` (operand class `link`, checked against the
+  operand width), the directive `#LKSYNC k` (an error on a link the program
+  does not use), the pins and parameters in the generated top, one partner
+  per link in the standalone testbench. appcomp counts `TOM`/`CAD` with
+  their number and skips `#LKSYNC`.
+- cmmcomp and cppcomp: `toma(k, e)`, `cade(k)`, `fcade(k)` and the `_sync`
+  forms, k an integer literal; a link used with both forms is an error;
+  `#LKSYNC k` written after `@fim` for each `_sync` link.
+- Checks: `LINK`, `LINK2`, `LINKALL` give the same sequences as before;
+  `LINK3` (Tests/LINK3/TopLevel/link3_tb.v, 20 / 27.3 ns): chain
+  lk_chain_a -> lk_chain_b -> lk_chain_c ((3n+1)*2, also with the C++
+  middle lk_cpp_chain_b), fan-out lk_fan_w (n and n+100), fan-in lk_merge
+  (1000n + 7n), float lk_flt_w -> lk_flt_r (3n), all 16 of 16 in order.
+  Negative fixtures: `link_mix`, `link_range` (C+-), `link_mix`, `link_lit`
+  (C++).
+- Yosys (`synth -flatten`, the same program with one link and with two):
+  fan-out 1090 -> 1108 cells, fan-in 4199 -> 4270; `cade_sync` on lk_chain_b's
+  link 0 takes 276 flip-flops to 272. The self-jump alone: +12 cells on
+  link_ping, +35 on sapho_all_b, `sapho_all` (no link) unchanged.
+- Still open: the board check and the Quartus constraints on the
+  synchronized links (`toma-and-cade.md` 8.5); Fmax of a linked design.
+
+## 11. For the documentation (item 21 in TODO.md)
 
 The user-facing text says: a processor can have several links, numbered
 from 0; `toma(k, x)` hands `x` over link k and `cade(k)` / `fcade(k)` take a

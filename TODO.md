@@ -162,12 +162,13 @@ A -> B -> C. A chain needs several links per processor: per link its own T,
 C and W bits and pins, a link number in the source (`toma(1, x)`, say) and
 `LINKAS` chosen per link. The open point is the encoding: the operand of
 `TOM`/`CAD` is already their own address, so the link number needs separate
-opcodes or operand bits. Decided 2026-10-11: the operand becomes the link
-number (any number of links, each synchronous or not, chosen in the
-source: `toma`/`cade` synchronized, `toma_sync`/`cade_sync`/`fcade_sync`
-for a partner on the same clock, 4 cycles a value faster, measured);
-`LINKAS` goes away. Design in
-[`docs/toma-and-cade-links.md`](docs/toma-and-cade-links.md).
+opcodes or operand bits. **Implemented 2026-10-11:** the operand is the
+link number (any number of links, each synchronous or not, chosen in the
+source: `toma(k, x)`/`cade(k)` synchronized, `toma_sync`/`cade_sync`/
+`fcade_sync` for a partner on the same clock, 4 cycles a value faster,
+measured); `LINKAS` is gone; regress `LINK3` (chain, fan-out, fan-in,
+float). Left for v7.1: the board check and the Quartus constraints, and an
+Fmax. [`docs/toma-and-cade-links.md`](docs/toma-and-cade-links.md).
 
 **Item 24, processors with different formats on one link (parked
 2026-10-11 by Luciano: no v7.2 for it; the check belongs to Aurora, which

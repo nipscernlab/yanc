@@ -210,7 +210,7 @@ void main()
         t = t ^ (t >> 8);
         t = t ^ (t >> 4);
         out(0, t & 15);
-        toma(t & 15);                   // LINK: TOM, waits for sapho_all_b
+        toma(0, t & 15);                // LINK: TOM, waits for sapho_all_b
 #TOAQUI
     }
 }

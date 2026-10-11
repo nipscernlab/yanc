@@ -96,6 +96,9 @@ COMEN  "//"[^\n]*
 "toma"        return TOMA;
 "cade"        return CADE;
 "fcade"       return FCADE;
+"toma_sync"   return TOMAS;
+"cade_sync"   return CADES;
+"fcade_sync"  return FCADES;
 "out"         return OUT;
 "fout"        return FOUT;
 

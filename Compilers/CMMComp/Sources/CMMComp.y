@@ -106,7 +106,7 @@ void  yyerror(char const *s);
 %token PRNAME NUBITS NBMANT NBEXPO NDSTAC SDEPTH                       // directives
 %token NUIOIN NUIOOU NUGAIN FFTSIZ FROUND ITRADD TOAQUI                // directives
 %token INN FIN OUT FOUT                                                // stdlib (I/O)
-%token TOMA CADE FCADE                                                       // the link to a partner processor
+%token TOMA CADE FCADE TOMAS CADES FCADES                                    // the links to partner processors (_S: the _sync forms)
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
 %token SQRT ATAN SIN COS TAN EXP LOG POW                               // stdlib (non-linear functions)
 %token COSH SINH TANH                                                  // stdlib (hyperbolic)
@@ -287,9 +287,12 @@ exp_list :                              {args_frame_push();}
 std_out  : OUT  '(' INUM ',' exp ')' ';'            {stmt_append(stmt_out($3, $5, 0));}  // data output
 std_fout : FOUT '(' INUM ',' exp ')' ';'            {stmt_append(stmt_out($3, $5, 1));}  // data output (converting to float)
 std_in   : INN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_IN, $3, NULL, NULL);}  // data input
-std_toma : TOMA '(' exp ')' ';'                 {stmt_append(stmt_toma($3));}                    // hands exp to the partner processor
-std_cade : CADE '(' ')'                         {$$ = expr_stdlib(OP_STD_CADE, 0, NULL, NULL);}  // takes the partner's word (int)
-std_fcade: FCADE '(' ')'                        {$$ = expr_stdlib(OP_STD_FCADE, 0, NULL, NULL);} // takes the partner's word (float)
+std_toma : TOMA  '(' INUM ',' exp ')' ';'      {stmt_append(stmt_toma(link_use($3, 0), $5));}   // hands exp over link INUM
+         | TOMAS '(' INUM ',' exp ')' ';'      {stmt_append(stmt_toma(link_use($3, 1), $5));}   // the same, partner on my clock
+std_cade : CADE  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_CADE,  link_use($3, 0), NULL, NULL);}  // takes link INUM's word (int)
+         | CADES '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_CADE,  link_use($3, 1), NULL, NULL);}  // the same, partner on my clock
+std_fcade: FCADE '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FCADE, link_use($3, 0), NULL, NULL);}  // takes link INUM's word (float)
+         | FCADES'(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FCADE, link_use($3, 1), NULL, NULL);}  // the same, partner on my clock
 std_fin  : FIN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FIN, $3, NULL, NULL);}  // float input
 std_pst  : PST  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_PST, 0,  $3,   NULL);}  // clears if negative
 std_abs  : ABS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ABS, 0,  $3,   NULL);}  // |x|

@@ -174,8 +174,11 @@ vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice 
 #   link_*             - toma/cade need a partner: alone they wait forever; the
 #                        real testbench is the LINK project pass
 #   sapho_all_a/_b     - the same, real testbench is the LINKALL project pass
+#   lk_*               - the same, real testbench is the LINK3 project pass
 SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross" "cmm_define" "ResetCheck"
-          "link_envia" "link_recebe" "link_ping" "link_pong" "sapho_all_a" "sapho_all_b")
+          "link_envia" "link_recebe" "link_ping" "link_pong" "sapho_all_a" "sapho_all_b"
+          "lk_chain_a" "lk_chain_b" "lk_chain_c" "lk_fan_w" "lk_echo" "lk_count" "lk_count7" "lk_merge"
+          "lk_flt_w" "lk_flt_r")
 
 # Examples to also skip the appcomp/asmcomp build for (their .v / .mif are
 # never consumed elsewhere - no standalone sim, no project link).
@@ -785,6 +788,82 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             [ "$n" -ge 12 ] || { [ "$sim_fail" -eq 1 ] || echo "FAIL ($proj): fed back, only $n lines"; sim_fail=1; }
             if [ $sim_fail -eq 0 ]; then
                 echo "PASS ($proj)  [sapho_all A -> B: one clock and two clocks, A = $la_a, B = $la_b; alone fed back, $n turns = model.py]"
+                pass=$((pass + 1))
+            else
+                fail=$((fail + 1)); failed_names+=("$proj")
+            fi
+        fi
+    fi
+
+    # ---- 3a. project pass LINK3: several links per processor ----------------
+    # docs/toma-and-cade-links.md, on 20 ns / 27.3 ns clocks: a chain A -> B -> C
+    # (A->B with the _sync forms, B->C synchronized; once more with the C++
+    # middle lk_cpp_chain_b), fan-out (two TOM links), fan-in (two CAD links)
+    # and a float word over a link. Checked against the sequences computed here.
+    if [ "$NO_SIM" -eq 0 ]; then
+        proj="LINK3"
+        proj_top="$CMM_ROOT/Tests/$proj/TopLevel"
+        proj_tmp="$TMP_DIR/$proj"
+        rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"
+        project_ok=1
+        proc_vs=()
+        for p in lk_chain_a lk_chain_b lk_chain_c lk_fan_w lk_echo lk_count lk_count7 lk_merge lk_flt_w lk_flt_r; do
+            if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+                echo "FAIL ($proj): $p artifacts missing - did its build pass?"
+                fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0; break
+            fi
+            proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
+            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+        done
+        p=lk_cpp_chain_b
+        if [ "$project_ok" -eq 1 ]; then
+            cp_dir="$proj_tmp/cpp/$p"; cp_tmp="$cp_dir/_tmp"; mkdir -p "$cp_tmp"
+            if ! "$CPPPP" -i "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
+               ! "$CPPC" -i "$cp_tmp/pp.cpp" -p "$cp_dir" -n "$p" -t "$cp_tmp" >/dev/null 2>&1 ||
+               ! "$APPCOMP" -en -i "$cp_dir/Software/$p.asm" -t "$cp_tmp" >/dev/null 2>&1 ||
+               ! "$ASMCOMP" -en -i "$cp_dir/Software/$p.asm" -p "$cp_dir" -d "$HDL" -m "$MACROS" -t "$cp_tmp" -f 100 -c 100000 >/dev/null 2>&1; then
+                echo "FAIL ($proj): building the C++ middle $p"
+                fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+            else
+                proc_vs+=("$cp_dir/Hardware/$p.v")
+                cp "$cp_dir/Hardware/${p}_data.mif" "$cp_dir/Hardware/${p}_inst.mif" "$proj_tmp/"
+            fi
+        fi
+        if [ "$project_ok" -eq 1 ] && ! "$IVERILOG" -s link3_tb -o "$proj_tmp/$proj.vvp" \
+                "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                "$HDL/core.v" "$HDL/ula.v" "${proc_vs[@]}" \
+                "$proj_top/link3_tb.v" >/dev/null 2>&1; then
+            echo "FAIL ($proj): iverilog exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+        fi
+        if [ "$project_ok" -eq 1 ]; then
+            pushd "$proj_tmp" >/dev/null
+            "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
+            vvp_status=$?
+            if [ $vvp_status -ne 0 ]; then vvp_once_more "$proj" "$proj_tmp/$proj.vvp"; vvp_status=$?; fi
+            popd >/dev/null
+            if [ $vvp_status -ne 0 ]; then
+                echo "FAIL ($proj): vvp exited non-zero"
+                fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+            fi
+        fi
+        if [ "$project_ok" -eq 1 ]; then
+            sim_fail=0
+            for f in chain chain2 fan0 fan1 merge float; do
+                case $f in
+                    chain|chain2) want=$(for n in $(seq 0 15); do echo $(((n * 3 + 1) * 2)); done | tr '\n' ' ') ;;
+                    fan0)         want=$(seq 0 15 | tr '\n' ' ') ;;
+                    fan1)         want=$(seq 100 115 | tr '\n' ' ') ;;
+                    merge)        want=$(for n in $(seq 0 15); do echo $((n * 1000 + n * 7)); done | tr '\n' ' ') ;;
+                    float)        want=$(for n in $(seq 0 15); do echo $((n * 3)); done | tr '\n' ' ') ;;
+                esac
+                got=$(tr -d '\r' < "$proj_tmp/output_$f.txt" 2>/dev/null | tr '\n' ' ')
+                if [ "$got" != "$want" ]; then
+                    echo "FAIL ($proj): output_$f.txt got '$got', want '$want'"; sim_fail=1
+                fi
+            done
+            if [ $sim_fail -eq 0 ]; then
+                echo "PASS ($proj)  [chains (C+- and C++ middle), fan-out, fan-in, float: 16 values each, in order]"
                 pass=$((pass + 1))
             else
                 fail=$((fail + 1)); failed_names+=("$proj")

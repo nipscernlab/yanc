@@ -1,0 +1,21 @@
+#PRNAME lk_fan_w
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK3: fan-out. Hands n to the reader on
+// link 0 and n + 100 to the reader on link 1 (two TOM links: the operand picks
+// the link inside the processor).
+void main()
+{
+    int n = 0;
+    while (n < 16)
+    {
+        toma(0, n);
+        toma(1, n + 100);
+        n++;
+    }
+}

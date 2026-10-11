@@ -176,6 +176,16 @@ void parse_lang_flag(int *argc, char **argv);
 
 // stdlib errors and warnings (special functions) ----------------------------
 
+#define MSG_ERR_LINK_NUM \
+    M("Erro na linha %d: o número do link é um inteiro de 0 a %d, e achei %s.\n", \
+      "Error on line %d: the link number is an integer from 0 to %d, and I found %s.\n")
+
+#define MSG_ERR_LINK_MIX \
+    M("Erro na linha %d: o link %d já foi usado %s _sync. Um link tem um hardware só: ou o parceiro está no mesmo clock (toma_sync/cade_sync/fcade_sync em todo uso), ou não (toma/cade/fcade em todo uso).\n", \
+      "Error on line %d: link %d was already used %s _sync. A link has one hardware: either the partner is on the same clock (toma_sync/cade_sync/fcade_sync in every use) or it is not (toma/cade/fcade in every use).\n")
+#define MSG_LINK_WITH    M("com", "with")
+#define MSG_LINK_WITHOUT M("sem", "without")
+
 #define MSG_ERR_CADE_COMP \
     M("Erro na linha %d: cade() traz uma palavra só, e '%s' é complexo (duas palavras). Receba a parte real e a imaginária separadas.\n", \
       "Error on line %d: cade() brings one word, and '%s' is complex (two words). Take the real and the imaginary parts separately.\n")

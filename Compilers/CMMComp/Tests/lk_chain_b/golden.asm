@@ -1,0 +1,15 @@
+NOP
+#PRNAME lk_chain_b
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+@main @__Lwh1 CAD 0
+SET main_x
+MLT 2
+TOM 1
+JMP __Lwh1
+@__Lwh1end @fim JMP fim
+#LKSYNC 0

@@ -1,0 +1,19 @@
+#PRNAME lk_chain_c
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK3: the tail of the chain, on another
+// clock. Takes lk_chain_b's words on its link 0 and puts each on port 0.
+void main()
+{
+    int n = 0;
+    while (n < 16)
+    {
+        out(0, cade(0));
+        n++;
+    }
+}

@@ -17,7 +17,7 @@ void main()
     {
         k = 0;
         while (k < n) {k++;}
-        toma(n * 7 + 3);
+        toma(0, n * 7 + 3);
         n++;
     }
 }

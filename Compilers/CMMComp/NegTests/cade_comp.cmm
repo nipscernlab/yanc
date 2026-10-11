@@ -10,5 +10,5 @@
 void main()
 {
     comp c;
-    c = cade();
+    c = cade(0);
 }

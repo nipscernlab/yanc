@@ -1,0 +1,19 @@
+#PRNAME lk_count
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK3: hands 0..15 over link 0 (one of the
+// writers of lk_merge).
+void main()
+{
+    int n = 0;
+    while (n < 16)
+    {
+        toma(0, n);
+        n++;
+    }
+}

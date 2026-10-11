@@ -14,8 +14,8 @@ void main()
     int r;
     while (n < 16)
     {
-        toma(n);
-        r = cade();
+        toma(0, n);
+        r = cade(0);
         out(0, r);
         n++;
     }

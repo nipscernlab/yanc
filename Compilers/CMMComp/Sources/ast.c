@@ -369,8 +369,8 @@ void typecheck_expr(expr_node *n)
             {
                 case OP_STD_IN:                                  n->type = 1;  break;
                 case OP_STD_FIN:                                 n->type = 2;  break;
-                case OP_STD_CADE:                                n->type = 1;  break;   // int   (x = cade();  takes x's type)
-                case OP_STD_FCADE:                               n->type = 2;  break;   // float (x = fcade(); takes x's type)
+                case OP_STD_CADE:                                n->type = 1;  break;   // int   (x = cade(k);  takes x's type)
+                case OP_STD_FCADE:                               n->type = 2;  break;   // float (x = fcade(k); takes x's type)
                 case OP_STD_PST: case OP_STD_ABS:                n->type = lt; break;
                 case OP_STD_SIGN:                                n->type = rt; break;
                 case OP_STD_NRM:                                 n->type = 1;  break;
@@ -679,8 +679,8 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_STD_FIN:  return exec_fin(n->id);
                 // inside an expression, an index or an argument (the whole
                 // right-hand side of an assignment is taken by STMT_ASSIGN)
-                case OP_STD_CADE:  return exec_cade_expr(1);
-                case OP_STD_FCADE: return exec_cade_expr(2);
+                case OP_STD_CADE:  return exec_cade_expr(1, n->id);
+                case OP_STD_FCADE: return exec_cade_expr(2, n->id);
                 case OP_STD_PST:  { expr a = ast_emit_expr(n->left); return exec_pst (a); }
                 case OP_STD_ABS:  { expr a = ast_emit_expr(n->left); return exec_abs (a); }
                 case OP_STD_SIGN: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_sign(a, b); }
@@ -810,9 +810,10 @@ stmt_node *stmt_out(int port, expr_node *rhs, int fout_flag)
     return n;
 }
 
-stmt_node *stmt_toma(expr_node *rhs)
+stmt_node *stmt_toma(int k, expr_node *rhs)
 {
     stmt_node *n = snode_new(STMT_TOMA);
+    n->id  = k;     // the link number
     n->rhs = rhs;
     return n;
 }
@@ -1213,11 +1214,11 @@ void stmt_emit(stmt_node *n)
     switch (n->kind)
     {
         case STMT_ASSIGN:
-            // x = cade(); / x = fcade(); as the whole right-hand side: the
+            // x = cade(k); / x = fcade(k); as the whole right-hand side: the
             // partner's word goes into x as it is, with x's type (no convert)
             if (n->rhs && n->rhs->kind == EXPR_STDLIB_CALL &&
                 (n->rhs->op == OP_STD_CADE || n->rhs->op == OP_STD_FCADE))
-                 ass_set(n->id, exec_cade(n->id));
+                 ass_set(n->id, exec_cade(n->id, n->rhs->id));
             else ass_set(n->id, ast_emit_expr(n->rhs));
             break;
 
@@ -1268,7 +1269,7 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_TOMA:
-            exec_toma(ast_emit_expr(n->rhs));
+            exec_toma(ast_emit_expr(n->rhs), n->id);
             break;
 
         case STMT_COPY:
@@ -1650,6 +1651,7 @@ void stmt_emit(stmt_node *n)
             if (strcmp(v_table[n->id].name, "main") == 0)
             {
                 add_sinst(-3, "@fim JMP fim\n");
+                link_sync_emit();   // #LKSYNC k for the links used with a _sync form
                 v_table[n->id].used = 1;
             }
             else if (v_table[n->id].type == 6)

@@ -1,0 +1,15 @@
+NOP
+#PRNAME lk_flt_r
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+@main @__Lwh1 CAD 0
+F_MLT 2.0
+F2I
+SET main_t
+OUT 0
+JMP __Lwh1
+@__Lwh1end @fim JMP fim

@@ -17,7 +17,7 @@ void main()
     {
         k = 0;
         while (k < 16 - n) {k++;}
-        v = cade();
+        v = cade(0);
         out(0, v);
         n++;
     }

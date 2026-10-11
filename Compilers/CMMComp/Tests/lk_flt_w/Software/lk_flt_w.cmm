@@ -1,0 +1,21 @@
+#PRNAME lk_flt_w
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// toma/cade fixture, project pass LINK3: a float over the link, unconverted.
+// Hands n*1.5, n = 0..15, as float words.
+void main()
+{
+    int n = 0;
+    float f;
+    while (n < 16)
+    {
+        f = n;
+        toma(0, f * 1.5);
+        n++;
+    }
+}

@@ -14,9 +14,11 @@ expr exec_in  (int port);          //  data input
 expr exec_fin (int port);          //  data input (converting to float)
 void exec_out (int port, expr e);  // data output
 void exec_fout(int port, expr e);  // data output (converting to float)
-void exec_toma(expr e);            // toma(e): hands e to the partner processor (docs/toma-and-cade.md)
-expr exec_cade(int dest);          // x = cade(): takes the partner's word for x, as x's type
-expr exec_cade_expr(int type);     // cade() (1, int) / fcade() (2, float) inside an expression
+int  link_use(int id, int sync);   // the link number of a toma/cade (id: its INUM); records plain / _sync
+void link_sync_emit();             // #LKSYNC k for every link used with a _sync form
+void exec_toma(expr e, int k);     // toma(k, e): hands e over link k (docs/toma-and-cade-links.md)
+expr exec_cade(int dest, int k);   // x = cade(k): takes link k's word for x, as x's type
+expr exec_cade_expr(int type, int k); // cade(k) (1, int) / fcade(k) (2, float) inside an expression
 
 // ----------------------------------------------------------------------------
 // special functions that save code -------------------------------------------

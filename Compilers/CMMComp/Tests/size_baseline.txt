@@ -57,6 +57,16 @@ dirac_assign 171
 empty_call 14
 for_loop   78
 func_combos 60
+lk_chain_a 15
+lk_chain_b 7
+lk_chain_c 13
+lk_count   13
+lk_count7  14
+lk_echo    5
+lk_fan_w   16
+lk_flt_r   8
+lk_flt_w   15
+lk_merge   11
 multiparam 28
 pplus_arr  19
 proc_fft   289
