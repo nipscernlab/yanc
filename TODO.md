@@ -21,10 +21,10 @@ register cuts inside each divider and every division written as
 `<div> x; NOP; <read>`; the record is in
 [`docs/pipeln-and-division.md`](docs/pipeln-and-division.md). Item 20
 (two SAPHOs passing a value, `toma`/`cade`) is implemented on main, not
-released (target v7.0). Item 21 (documentation that cannot fall behind a
+released (target v7.1: no v7.0 release, Luciano 2026-10-11). Item 21 (documentation that cannot fall behind a
 release) waits for Chrysthofer's opinion. Item 22 (`myFIFO` losing words, and
 the two-clock `myDCFIFO`) is fixed on main, not released. Item 23 (`toma`/`cade` in a chain of
-processors) is the target of v7.1. Item 11,
+processors) is in v7.1 too. Item 11,
 consistency at 32 bits, is closed (2026-09-21): see the CHANGELOG for its
 four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
@@ -106,7 +106,7 @@ next path once it is shorter were not measured. The students' frequency
 sweep on both boards is the real check of v6.0; their result comes back here.
 
 **Item 20, two SAPHOs passing a value (`toma`/`cade`): implemented, not
-released; target v7.0.** Design and tests:
+released; target v7.1 (no v7.0 release).** Design and tests:
 [`docs/toma-and-cade.md`](docs/toma-and-cade.md). `toma(x)` on one processor,
 `y = cade()` (int) or `fcade()` (float) on its partner, anywhere an expression
 goes; whoever arrives first waits, nothing lost or read twice. Instructions
@@ -118,7 +118,7 @@ C) plus the writer's waiting flag, generated only when used (Yosys:
 before `CAD`. Simulated alone, a processor gets its testbench as the partner
 (`Simulation/cade.txt`, `Simulation/toma.txt`). Regress: the `LINK` pass (two
 C+- pairs and two C+-/C++ pairs, both directions) and `NegTests/cade_comp`.
-Left before v7.0: the Fmax of a two-processor design on each board, a small
+Left before v7.1: the Fmax of a two-processor design on each board, a small
 example for the boards. The interrupt during a wait is decided (Luciano,
 2026-10-11): it stays as it is and the manual says not to interrupt a
 processor while it waits (docs/toma-and-cade.md section 6). Proposed
@@ -155,14 +155,15 @@ the org (Free today; Team would make the rules org-wide), Luciano's GitHub
 Education application on campus.
 
 **Item 23, `toma`/`cade` in a chain (target v7.1, opened 2026-10-11 by
-Luciano).** Today each processor has one link, to one partner, both ways
+Luciano: there is no v7.0 release, v7.1 ships items 20, 22 and 23
+together).** Today each processor has one link, to one partner, both ways
 (docs/toma-and-cade.md section 1): two processors, or a ring of two, never
 A -> B -> C. A chain needs several links per processor: per link its own T,
 C and W bits and pins, a link number in the source (`toma(1, x)`, say) and
 `LINKAS` chosen per link. The open point is the encoding: the operand of
 `TOM`/`CAD` is already their own address, so the link number needs separate
 opcodes or operand bits. Nothing designed or measured yet; a proposal in
-docs/ comes after v7.0.
+docs/ is the next step.
 
 **Item 22, `SAPHO/myFIFO.v` lost words: FIXED 2026-10-09, full regress
 owed.** Three measured defects (the word of the cycle after `wrreq`, a write
