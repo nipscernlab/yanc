@@ -37,6 +37,18 @@ tags consumed by Aurora.
   own clock. Regress: `LINK2`, the `LINK` programs on 20 ns and 27.3 ns
   clocks. Simulation cannot show metastability: the board check and the
   Quartus constraints are still to do (`docs/toma-and-cade.md` section 8).
+- **The whole processor over `toma`/`cade` (`LINKALL`).** `sapho_all_a`
+  hands its result to `sapho_all_b` (each is `sapho_all` plus the lines
+  marked `// LINK`; regress fails if they drift from `sapho_all.cmm`), on
+  one clock and on two (`LINKAS` 1), and `sapho_all` alone runs with its
+  output fed back (input = last output XOR 7). Checked against `model.py`:
+  A = 4, B = 10, the fed-back cycle 4, 11, 13, 8, 12, 0. The pair is the
+  design for the two-processor Fmax and the board check of `LINKAS`.
+  `docs/toma-and-cade.md` 8.6.
+- **`sapho_all` takes every 4-bit input.** Inputs 0 to 4 are read as 8 to
+  12, so its output can always be fed back; 5 to 15 give what they gave
+  (the golden, 7 -> 4, and the board table unchanged). 921 -> 933
+  instructions.
 - **`SAPHO/myDCFIFO.v`: a FIFO between two SAPHOs on different clocks**,
   ports in the style of the Quartus `dcfifo` (`wrclk`/`wrreq`/`wrfull`/
   `wrusedw`, `rdclk`/`rdreq`/`rdempty`/`q`/`rdusedw`, `aclr`). Gray-code

@@ -23,7 +23,8 @@ register cuts inside each divider and every division written as
 (two SAPHOs passing a value, `toma`/`cade`) is implemented on main, not
 released (target v7.0). Item 21 (documentation that cannot fall behind a
 release) waits for Chrysthofer's opinion. Item 22 (`myFIFO` losing words, and
-the two-clock `myDCFIFO`) is fixed on main, not released. Item 11,
+the two-clock `myDCFIFO`) is fixed on main, not released. Item 23 (`toma`/`cade` in a chain of
+processors) is the target of v7.1. Item 11,
 consistency at 32 bits, is closed (2026-09-21): see the CHANGELOG for its
 four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
@@ -128,8 +129,10 @@ simulation was dropped (Luciano, 2026-10-08: the user's responsibility).
 Two processors on different clocks: done in simulation (2026-10-09,
 `#(.LINKAS(1))` on both processors, data from the new pin `toma_dado`;
 regress `LINK2`); left: the board check and the Quartus constraints
-(docs/toma-and-cade.md section 8). The full regress after this change is
-still owed.
+(docs/toma-and-cade.md section 8). The whole processor over the link:
+`LINKALL` (2026-10-11), `sapho_all_a` -> `sapho_all_b` on one clock and on
+two, plus `sapho_all` alone with its output fed back (docs/toma-and-cade.md
+8.6); this pair is the design for the Fmax and the board check.
 
 **Item 21, documentation that cannot fall behind a release (waiting, opened
 2026-10-09).** Found while closing item 20: the published manual
@@ -150,6 +153,16 @@ without them. **Nothing starts before Chrysthofer answers** the email
 is the basis of the final version. Pending on the side: the GitHub plan for
 the org (Free today; Team would make the rules org-wide), Luciano's GitHub
 Education application on campus.
+
+**Item 23, `toma`/`cade` in a chain (target v7.1, opened 2026-10-11 by
+Luciano).** Today each processor has one link, to one partner, both ways
+(docs/toma-and-cade.md section 1): two processors, or a ring of two, never
+A -> B -> C. A chain needs several links per processor: per link its own T,
+C and W bits and pins, a link number in the source (`toma(1, x)`, say) and
+`LINKAS` chosen per link. The open point is the encoding: the operand of
+`TOM`/`CAD` is already their own address, so the link number needs separate
+opcodes or operand bits. Nothing designed or measured yet; a proposal in
+docs/ comes after v7.0.
 
 **Item 22, `SAPHO/myFIFO.v` lost words: FIXED 2026-10-09, full regress
 owed.** Three measured defects (the word of the cycle after `wrreq`, a write

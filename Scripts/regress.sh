@@ -173,8 +173,9 @@ vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice 
 #                        mid-run); the generated standalone tb would idle in while(1)
 #   link_*             - toma/cade need a partner: alone they wait forever; the
 #                        real testbench is the LINK project pass
+#   sapho_all_a/_b     - the same, real testbench is the LINKALL project pass
 SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross" "cmm_define" "ResetCheck"
-          "link_envia" "link_recebe" "link_ping" "link_pong")
+          "link_envia" "link_recebe" "link_ping" "link_pong" "sapho_all_a" "sapho_all_b")
 
 # Examples to also skip the appcomp/asmcomp build for (their .v / .mif are
 # never consumed elsewhere - no standalone sim, no project link).
@@ -702,6 +703,91 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                 else
                     fail=$((fail + 1)); failed_names+=("$name2")
                 fi
+            fi
+        fi
+    fi
+
+    # ---- 3a. project pass LINKALL: the whole processor over toma/cade -------
+    # sapho_all_a hands its result to sapho_all_b, on one clock (LINKAS 0) and
+    # on two (LINKAS 1); sapho_all alone runs with its output fed back
+    # (input = last output XOR 7). Checked against model.py only: A's lines are
+    # model(7), B's model(model(7)), and each fed-back line is model of the
+    # previous one XOR 7. The two programs must stay sapho_all plus the lines
+    # marked // LINK (checked first, also under --no-sim).
+    sa_dir="$CMM_ROOT/Tests/sapho_all"
+    mkdir -p "$TMP_DIR"
+    grep -v -E '// LINK|^#PRNAME' "$sa_dir/Software/sapho_all.cmm" > "$TMP_DIR/linkall_src0.txt"
+    for p in sapho_all_a sapho_all_b; do
+        # temp files, not <(...): MSYS2's diff/cmp can't always open /proc paths
+        grep -v -E '// LINK|^#PRNAME' "$CMM_ROOT/Tests/$p/Software/$p.cmm" > "$TMP_DIR/linkall_src1.txt"
+        if ! diff "$TMP_DIR/linkall_src0.txt" "$TMP_DIR/linkall_src1.txt" >/dev/null; then
+            echo "FAIL (LINKALL-source): $p.cmm differs from sapho_all.cmm beyond its // LINK lines"
+            fail=$((fail + 1)); failed_names+=("LINKALL-source")
+        else
+            pass=$((pass + 1))
+        fi
+    done
+
+    if [ "$NO_SIM" -eq 0 ]; then
+        proj="LINKALL"
+        proj_top="$CMM_ROOT/Tests/$proj/TopLevel"
+        proj_tmp="$TMP_DIR/$proj"
+        rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"
+        project_ok=1
+        proc_vs=()
+        for p in sapho_all sapho_all_a sapho_all_b; do
+            if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+                echo "FAIL ($proj): $p artifacts missing - did its build pass?"
+                fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0; break
+            fi
+            proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
+            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+        done
+        if [ "$project_ok" -eq 1 ] && ! "$IVERILOG" -s linkall_tb -o "$proj_tmp/$proj.vvp" \
+                "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                "$HDL/core.v" "$HDL/ula.v" "${proc_vs[@]}" \
+                "$proj_top/linkall_tb.v" >/dev/null 2>&1; then
+            echo "FAIL ($proj): iverilog exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+        fi
+        if [ "$project_ok" -eq 1 ]; then
+            pushd "$proj_tmp" >/dev/null
+            "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
+            vvp_status=$?
+            if [ $vvp_status -ne 0 ]; then vvp_once_more "$proj" "$proj_tmp/$proj.vvp"; vvp_status=$?; fi
+            popd >/dev/null
+            if [ $vvp_status -ne 0 ]; then
+                echo "FAIL ($proj): vvp exited non-zero"
+                fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
+            fi
+        fi
+        if [ "$project_ok" -eq 1 ]; then
+            sim_fail=0
+            la_a=$(python3 "$sa_dir/model.py" 7)
+            la_b=$(python3 "$sa_dir/model.py" "$la_a")
+            for f in a1 b1 a2 b2; do
+                want=$la_a; [ "${f:0:1}" = b ] && want=$la_b
+                lines=$(grep -c '' "$proj_tmp/output_$f.txt" 2>/dev/null)
+                other=$(tr -d '\r' < "$proj_tmp/output_$f.txt" 2>/dev/null | grep -cvx -- "$want")
+                if [ "${lines:-0}" -lt 12 ] || [ "$other" -ne 0 ]; then
+                    echo "FAIL ($proj): output_$f.txt has ${lines:-0} lines, $other not $want"; sim_fail=1
+                fi
+            done
+            prev=0; n=0
+            while IFS= read -r v; do
+                v="${v%$'\r'}"
+                want=$(python3 "$sa_dir/model.py" $((prev ^ 7)))
+                if [ "$v" != "$want" ]; then
+                    echo "FAIL ($proj): fed back, line $((n + 1)) is $v, want model($((prev ^ 7))) = $want"; sim_fail=1; break
+                fi
+                prev=$v; n=$((n + 1))
+            done < "$proj_tmp/output_fb.txt"
+            [ "$n" -ge 12 ] || { [ "$sim_fail" -eq 1 ] || echo "FAIL ($proj): fed back, only $n lines"; sim_fail=1; }
+            if [ $sim_fail -eq 0 ]; then
+                echo "PASS ($proj)  [sapho_all A -> B: one clock and two clocks, A = $la_a, B = $la_b; alone fed back, $n turns = model.py]"
+                pass=$((pass + 1))
+            else
+                fail=$((fail + 1)); failed_names+=("$proj")
             fi
         fi
     fi

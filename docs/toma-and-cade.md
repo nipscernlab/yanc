@@ -326,7 +326,8 @@ of step, the same open problem as the interrupt (section 6).
 
 ### 8.5 Still open
 
-- **Board:** a two-clock design on the DE10-Nano / ZYBO, with Fmax. The
+- **Board:** a two-clock design on the DE10-Nano / ZYBO, with Fmax: the
+  `LINKALL` pair (8.6) is the design to take there. The
   Quartus constraints to write and check there: a false path (or a
   `set_max_delay`) into the first synchronizer stage of `taqui` and `valeu`
   (`*tom_link.sync.s1`, `*cad_link.sync.s1`), and a `set_max_delay` of one
@@ -335,7 +336,40 @@ of step, the same open problem as the interrupt (section 6).
 - **Latency:** each value pays about 2 synchronizer cycles on each side on
   top of today's ~16 cycles a value (estimated, not measured).
 
-### 8.6 For the documentation (item 21 in TODO.md)
+### 8.6 The whole processor over the link (`LINKALL`, 2026-10-11)
+
+The `LINK` programs are small; `LINKALL` puts the whole processor on each
+side, the processor used for timing (`sapho_all`, every block), so the
+Fmax and the board check of a linked design measure two full SAPHOs.
+
+- `Tests/sapho_all_a` is `sapho_all` plus `toma(t & 15);` after its
+  `out()`; `Tests/sapho_all_b` is `sapho_all` plus `k = cade();` before its
+  `in(0)` and `if (k != x) s = s + 4096;`. B's input port carries A's last
+  output (a register loaded on `out_en`, as a board holds it for the LEDs)
+  and `cade` takes the same word: the check moves `s`, and so the LEDs,
+  only if the link delivers a different word. Every added line ends in
+  `// LINK`; regress (`LINKALL-source`, also under `--no-sim`) fails if
+  either file differs from `sapho_all.cmm` in any other line, so a change
+  to `sapho_all` must be copied to both.
+- `Tests/LINKALL/TopLevel/linkall_tb.v`, three circuits in one run:
+  A -> B on one clock (20 ns, `LINKAS` 0); A (20 ns) -> B (27.3 ns),
+  `LINKAS` 1 on both, the reset released in each domain through two
+  flip-flops; and `sapho_all` alone with its input = its last output XOR 7
+  (starts at 7; the XOR keeps it off the fixed point 13 that a plain
+  feedback from 0 falls into).
+- Checked against `model.py` only, never a blessed golden: A's lines are
+  model(7) = 4, B's model(4) = 10, and each fed-back line is model of the
+  previous one XOR 7, the cycle 4, 11, 13, 8, 12, 0. Measured 2026-10-11:
+  pair 1 A 17 / B 16 lines, pair 2 A 13 / B 12, fed back 17, all equal to
+  the model.
+- A chain (A -> B -> C) is not possible: each processor has one link
+  (section 1). A link carries values both ways between its two processors
+  (`link_ping`/`link_pong`), so a ring of two is possible; more than two
+  needs several links per processor (TODO item 23, v7.1).
+- What `sapho_all_a`/`_b` add to `sapho_all`: `TOM` on A, `CAD` on B (and
+  `LINKAS` when the clocks differ); 936 and 941 instructions against 933.
+
+### 8.7 For the documentation (item 21 in TODO.md)
 
 When the global documentation protocol is decided, the user-facing text is
 short and must say, without the reasoning above:
