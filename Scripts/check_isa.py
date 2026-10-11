@@ -38,7 +38,8 @@ import sys
 
 CLASS_OF_STATE = {0: 'none', 18: 'data', 19: 'code', 20: 'in',
                   21: 'out', 22: 'offset', 24: 'lea',
-                  28: 'data'}   # 28: LDI/ILI/STI/ISI, a data name or a raw base number
+                  28: 'data',   # 28: LDI/ILI/STI/ISI, a data name or a raw base number
+                  29: 'link'}   # 29: TOM/CAD, the link number
 FLOW = ('JMP', 'JIZ', 'CAL', 'RET', 'TOM', 'CAD')
 
 
@@ -104,10 +105,11 @@ IRREGULAR = {
     'CAL':   ('-', '-', '-', 'call', '-'),
     'RET':   ('-', '-', '-', 'ret', '-'),
     'NOP':   ('-', '-', '-', '-', '-'),
-    # the link between two processors (docs/toma-and-cade.md): each a jump to
-    # itself until the partner's bit lets it through, so conditional (jz)
-    'TOM':   ('r', '-', '-', 'jz', '-'),
-    'CAD':   ('w', '-', '-', 'jz', '-'),
+    # the links between processors (docs/toma-and-cade-links.md): each waits
+    # in place (the prefetch re-fetches it) and then falls through, so no flow
+    # effect for the asm passes; the operand is the link number
+    'TOM':   ('r', '-', '-', '-', '-'),
+    'CAD':   ('w', '-', '-', '-', '-'),
     # the reads of a division's result (docs/pipeln-and-division.md section 4):
     # they write the accumulator and name no data word
     'QUO':   ('w', '-', '-', '-', '-'),

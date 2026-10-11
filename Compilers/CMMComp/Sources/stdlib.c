@@ -112,9 +112,8 @@ void exec_out(int id, expr e)
 // the link to a partner processor (docs/toma-and-cade.md) --------------------
 // ----------------------------------------------------------------------------
 
-// TOM and CAD jump to themselves until the partner lets them through: each
-// gets its own label, the instruction's operand
-static int link_cnt = 0;
+// TOM k and CAD k wait in place until the partner lets them through; the
+// operand is the link number (docs/toma-and-cade-links.md), link 0 for now
 
 // toma(x); -- the word goes as it is (int or float bits): no conversion
 void exec_toma(expr e)
@@ -136,9 +135,7 @@ void exec_toma(expr e)
         if (acc_ok == 0) add_instr("LOD %s\n", v_table[e.id].name); else add_instr("P_LOD %s\n", v_table[e.id].name);
     }
 
-    link_cnt++;
-    add_sinst(0, "@__Ltom%d ", link_cnt);
-    add_instr("TOM __Ltom%d\n", link_cnt);
+    add_instr("TOM 0\n");
 
     acc_ok = 0; // frees acc
 }
@@ -151,9 +148,7 @@ expr exec_cade(int dest)
     if (v_table[dest].isar  > 0) {fprintf(stderr, MSG_ERR_ARRAY_NEEDS_IDX,    line_num+1, rem_fname(v_table[dest].name, fname)); exit(EXIT_FAILURE);}
     if (v_table[dest].type  > 2) {fprintf(stderr, MSG_ERR_CADE_COMP,          line_num+1, rem_fname(v_table[dest].name, fname)); exit(EXIT_FAILURE);}
 
-    link_cnt++;
-    add_sinst(0, "@__Lcad%d ", link_cnt);
-    add_instr("CAD __Lcad%d\n", link_cnt);
+    add_instr("CAD 0\n");
 
     acc_ok = 1; // acc now holds the partner's word
 
@@ -167,9 +162,7 @@ expr exec_cade_expr(int type)
 {
     if (acc_ok) add_instr("PSH\n");
 
-    link_cnt++;
-    add_sinst(0, "@__Lcad%d ", link_cnt);
-    add_instr("CAD __Lcad%d\n", link_cnt);
+    add_instr("CAD 0\n");
 
     acc_ok = 1; // acc now holds the partner's word
 

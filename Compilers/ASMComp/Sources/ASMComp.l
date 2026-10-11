@@ -58,6 +58,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#SDEPTH"  eval_direct( 6);                         // subroutine stack depth
 "#NUIOIN"  eval_direct( 7);                         // number of input ports
 "#NUIOOU"  eval_direct( 8);                         // number of output ports
+"#LKSYNC"  eval_direct(30);                         // #LKSYNC k: the partner on link k runs on my clock (no synchronizer)
 "#NUGAIN"  eval_direct( 9);                         // division constant for the norm() function
 "#FFTSIZ"  eval_direct(10);                         // FFT size (bits)
 "#FROUND"  eval_direct(25);                         // float rounding level (0, 1 or 2)
@@ -93,8 +94,8 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    "CAL"   eval_opcode( 18,19, yytext,    "CAL"  ); // subroutine call
    "RET"   eval_opcode( 19, 0, yytext,    ""     ); // subroutine return
-   "TOM"   eval_opcode( 20,19, yytext,    "TOM"  ); // toma: offer acc to the partner, jump to itself (operand) until taken
-   "CAD"   eval_opcode( 21,19, yytext,    "CAD"  ); // cade: jump to itself (operand) until the partner offers, then take it into acc
+   "TOM"   eval_opcode( 20,29, yytext,    "TOM"  ); // toma: offer acc on link <operand>, wait (jump to itself) until taken
+   "CAD"   eval_opcode( 21,29, yytext,    "CAD"  ); // cade: wait (jump to itself) until link <operand> offers, then take it into acc
 
    "ADD"   eval_opcode( 22,18, yytext,    "ADD"  ); // fixed-point addition with memory
  "S_ADD"   eval_opcode( 23, 0, yytext,  "S_ADD"  ); // fixed-point addition with stack
@@ -233,7 +234,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 {FLNUM}    eval_opernd(yytext,2); // used on ALU instructions with a float constant
 
 {STRIN}    eval_opernd(yytext,0); // used on instructions with strings (e.g. array initialization file)
-{LABEL}    eval_label(yytext+1);  // a label definition: TOM/CAD must name one of their own
+{LABEL}
 
 {COMEN}
 {EMPTY}

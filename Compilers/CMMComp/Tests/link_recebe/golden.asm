@@ -22,7 +22,7 @@ LOD main_k
 ADD 1
 SET main_k
 JMP __Lwh2
-@__Lwh2end @__Lcad1 CAD __Lcad1
+@__Lwh2end CAD 0
 SET main_v
 OUT 0
 LOD main_n

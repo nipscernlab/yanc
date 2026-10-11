@@ -32,11 +32,17 @@ int get_n_ins();               // number of instructions (only use after eval_in
 int inn_used(int i);           // tells whether input port i was used
 int out_used(int i);           // tells whether output port i was used
 
+// links to partner processors (docs/toma-and-cade-links.md), from TOM k / CAD k
+// and #LKSYNC k
+int lnk_count();               // link slots: highest link number used + 1 (0: no link)
+int lnk_tom  (int k);          // the program has TOM k
+int lnk_cad  (int k);          // the program has CAD k
+int lnk_sync (int k);          // #LKSYNC k: no synchronizer on link k
+
 // functions used in the lexer (.l) -------------------------------------------
 
 void eval_init  (int   clk  , int clk_n);
 void eval_direct(int   next_state);
 void eval_opcode(int   op   , int next_state, char *text, char *nome);
 void eval_opernd(char *va   , int is_const);
-void eval_label (char *name);      // a label definition (TOM/CAD must name one of their own)
 void eval_finish();

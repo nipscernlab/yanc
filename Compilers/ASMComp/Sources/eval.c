@@ -134,14 +134,46 @@ void instr_ula(char *va, int is_const)
 }
 
 // registers jump instructions
-static void link_own_label(const char *va);   // below, next to eval_opcode
-
 void instr_salto(char *va)
 {
-    link_own_label(va);    // TOM / CAD: the operand is the instruction's own label
-
     // write the new instruction
     fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(lab_find(va),nbopr));
+    // also register it in the simulation translator
+    sim_add(opc_name,va);
+}
+
+// links to partner processors (docs/toma-and-cade-links.md): which links the
+// program uses, and which it declared on my clock (#LKSYNC); hdl.c builds
+// only those
+#define MAX_LINKS 1024
+static char l_tom[MAX_LINKS], l_cad[MAX_LINKS], l_sync[MAX_LINKS];
+static int  n_link = 0;      // highest link number used + 1
+
+int lnk_count()      {return n_link;}
+int lnk_tom  (int k) {return k >= 0 && k < MAX_LINKS && l_tom [k];}
+int lnk_cad  (int k) {return k >= 0 && k < MAX_LINKS && l_cad [k];}
+int lnk_sync (int k) {return k >= 0 && k < MAX_LINKS && l_sync[k];}
+
+// the link number of TOM / CAD, or of #LKSYNC: a non-negative integer that
+// fits the operand field (and the table)
+static int link_num(const char *what, const char *va)
+{
+    int lim = MAX_LINKS - 1;
+    if (nbopr < 31 && (1 << nbopr) - 1 < lim) lim = (1 << nbopr) - 1;
+    char *end; long k = strtol(va, &end, 10);
+    if (*va == '\0' || *end != '\0' || k < 0 || k > lim) {fprintf(stderr, MSG_ERR_LINK_NUM, what, lim, va); exit(EXIT_FAILURE);}
+    return (int)k;
+}
+
+// TOM k / CAD k: the operand is the link number
+void instr_link(char *va)
+{
+    int k = link_num(opc_name, va);
+    if (strcmp(opc_name, "TOM") == 0) l_tom[k] = 1; else l_cad[k] = 1;
+    if (k + 1 > n_link) n_link = k + 1;
+
+    // write the new instruction
+    fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(k,nbopr));
     // also register it in the simulation translator
     sim_add(opc_name,va);
 }
@@ -349,34 +381,10 @@ static void div_seq(const char *mn)
     }
 }
 
-// TOM / CAD jump to themselves while they wait (docs/toma-and-cade.md): their
-// operand must be a label of their own line, `@L TOM L`. The labels defined
-// since the last instruction are kept here and handed to the next one.
-#define LINK_LABELS 8
-static char lab_pend[LINK_LABELS][64]; static int n_pend = 0;   // since the last instruction
-static char lab_own [LINK_LABELS][64]; static int n_own  = 0;   // the current instruction's
-
-void eval_label(char *name)
-{
-    if (n_pend < LINK_LABELS) snprintf(lab_pend[n_pend++], sizeof(lab_pend[0]), "%s", name);
-}
-
-static void link_own_label(const char *va)
-{
-    if (strcmp(opc_name, "TOM") != 0 && strcmp(opc_name, "CAD") != 0) return;
-    for (int i = 0; i < n_own; i++) if (strcmp(lab_own[i], va) == 0) return;
-    fprintf(stderr, MSG_ERR_LINK_SELF, opc_name, va, opc_name);
-    exit(EXIT_FAILURE);
-}
-
 // runs when a new opcode is found
 void eval_opcode(int op, int next_state, char *text, char *nome)
 {
     div_seq(text);         // a division must be followed by NOP and its read
-
-    // the labels just defined belong to this instruction
-    for (n_own = 0; n_own < n_pend; n_own++) strcpy(lab_own[n_own], lab_pend[n_own]);
-    n_pend = 0;
 
     opc_idx = op;          // record the current opcode
     strcpy(opc_name,text); // store the current opcode name for the translation file
@@ -429,6 +437,8 @@ void eval_opernd(char *va, int is_const)
         case 26: snprintf(sh_var, sizeof(sh_var), "%s", va); state = 27; break; // #SHARE: the name
         case 27: var_share(sh_var, va);                 state =  0; break; // #SHARE: the home it uses
         case 28: instr_ind     (va,is_const);           state =  0; break; // indirect load/store: array name or raw base
+        case 29: instr_link    (va);                    state =  0; break; // TOM / CAD: the link number
+        case 30: l_sync[link_num("#LKSYNC", va)] = 1;   state =  0; break; // #LKSYNC k: link k on my clock
     }
 }
 
@@ -436,6 +446,10 @@ void eval_opernd(char *va, int is_const)
 void eval_finish()
 {
     if (div_left > 0) {fprintf(stderr, MSG_ERR_DIV_SEQ_END, div_op, div_rd); exit(EXIT_FAILURE);}
+
+    // a #LKSYNC on a link the program does not use is a typo
+    for (int k = 0; k < MAX_LINKS; k++)
+        if (l_sync[k] && !l_tom[k] && !l_cad[k]) {fprintf(stderr, MSG_ERR_LINK_SYNC, k, k); exit(EXIT_FAILURE);}
 
     // close the .mif files ---------------------------------------------------
 

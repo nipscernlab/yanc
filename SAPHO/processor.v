@@ -119,6 +119,13 @@ module processor
 	parameter MDATAW = $clog2(MDATAS),  // Number of address bits for data memory
 	parameter MINSTW = $clog2(MINSTS),  // Number of address bits for instruction memory
 
+	// links to partner processors (docs/toma-and-cade-links.md), set by asmcomp
+	// from the program: link k is built only where its bit is set
+	parameter NLINK  = 1,               // number of link slots (highest link number used + 1)
+	parameter [NLINK-1:0] TOMS  = 0,    // bit k: the program has TOM k
+	parameter [NLINK-1:0] CADS  = 0,    // bit k: the program has CAD k
+	parameter [NLINK-1:0] LSYNC = 0,    // bit k: link k's partner runs on my clock (_sync forms)
+
 	// -------------------------------------------------------------------------
 	// User-configured parameters ----------------------------------------------
 	// -------------------------------------------------------------------------
@@ -174,10 +181,9 @@ module processor
 	parameter    JIZ   = 0,
 	parameter    CAL   = 0,
 
-	// the link to a partner processor (docs/toma-and-cade.md)
+	// the links to partner processors (docs/toma-and-cade-links.md)
 	parameter    TOM   = 0,
 	parameter    CAD   = 0,
-	parameter    LINKAS = 0,   // 1: the partner runs on another clock (section 8)
 
 	// two-parameter arithmetic operations
 	parameter    ADD   = 0,
@@ -304,10 +310,10 @@ module processor
 	output              req_in  , out_en,
 	input               itr,
 	output              cheguei,
-	output              toma, cade,      // the link to a partner processor
-	input               valeu, taqui,    // (docs/toma-and-cade.md)
-	input  [NUBITS-1:0] cade_dado,
-	output [NUBITS-1:0] toma_dado     // my offered value (LINKAS 0: the out bus)
+	output [NLINK       -1:0] toma, cade,   // the links to partner processors, one bit per link
+	input  [NLINK       -1:0] valeu, taqui, // (docs/toma-and-cade-links.md)
+	input  [NLINK*NUBITS-1:0] cade_dado,    // link k at bits k*NUBITS
+	output [NUBITS      -1:0] toma_dado     // my offered value, the same for every link
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
@@ -353,6 +359,10 @@ core #(.NBOPCO ( NBOPCO ),
        .NUGAIN ( NUGAIN ),
        .FFTSIZ ( FFTSIZ ),
        .FROUND ( FROUND ),
+       .NLINK  ( NLINK  ),
+       .TOMS   ( TOMS   ),
+       .CADS   ( CADS   ),
+       .LSYNC  ( LSYNC  ),
 	     .LOD  (   LOD  ),
 	   .P_LOD  ( P_LOD  ),
          .LDI  (   LDI  ),
@@ -372,7 +382,6 @@ core #(.NBOPCO ( NBOPCO ),
          .CAL  (   CAL  ),
          .TOM  (   TOM  ),
          .CAD  (   CAD  ),
-         .LINKAS(LINKAS ),
          .ADD  (   ADD  ),
 	   .S_ADD  ( S_ADD  ),
        .F_ADD  ( F_ADD  ),

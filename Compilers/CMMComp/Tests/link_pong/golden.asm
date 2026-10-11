@@ -11,8 +11,8 @@ SET main_um
 @__Lwh1 LOD main_um
 MLT main_um
 PSH
-@__Lcad1 CAD __Lcad1
+CAD 0
 S_ADD
-@__Ltom2 TOM __Ltom2
+TOM 0
 JMP __Lwh1
 @__Lwh1end @fim JMP fim

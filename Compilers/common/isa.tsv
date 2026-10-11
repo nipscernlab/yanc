@@ -19,6 +19,7 @@
 #          code    an address in instruction memory
 #          in      an input port
 #          out     an output port
+#          link    a link number (TOM/CAD: which partner processor)
 #          offset  a data address plus a constant offset (array access)
 #          lea     the ADDRESS of a data name, as a constant (pseudo-op)
 #
@@ -69,8 +70,8 @@ JMP	16	code	-	-	-	jmp	-	unconditional jump
 JIZ	17	code	r	-	-	jz	-	jump if acc is zero
 CAL	18	code	-	-	-	call	-	subroutine call
 RET	19	none	-	-	-	ret	-	subroutine return
-TOM	20	code	r	-	-	jz	-	toma: offer acc to the partner, jump to itself until it is taken
-CAD	21	code	w	-	-	jz	-	cade: jump to itself until the partner offers a value, then take it into acc
+TOM	20	link	r	-	-	-	-	toma: offer acc on link <operand>, wait in place until it is taken
+CAD	21	link	w	-	-	-	-	cade: wait in place until link <operand> offers a value, then take it into acc
 ADD	22	data	rw	-	r	-	-	fixed-point addition with memory
 S_ADD	23	none	rw	pop	-	-	-	fixed-point addition with stack
 MLT	24	data	rw	-	r	-	-	fixed-point multiplication with memory

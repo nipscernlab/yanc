@@ -1382,8 +1382,7 @@ static void gen_expr_to(expr *e, type *want)
     if (is_cade_call(e) && cade_ok) {
         if (!want || type_size_words(want) != 1 || want->kind == TY_STRUCT || want->kind == TY_ARRAY || want->is_ref)
             msg_error(e->line, "cade() brings one word: it can only go into a one-word variable");
-        int k = ++label_n;
-        emit("@__Lcad%d CAD __Lcad%d", k, k);   // the word as it is: no conversion to `want`
+        emit("CAD 0");   // the word as it is: no conversion to `want`
         return;
     }
     if (want && want->kind == TY_INT && want->nbits && e->kind == E_INT_LIT) {
@@ -2581,22 +2580,21 @@ static void gen_expr(expr *e)
                 gen_expr(e->args[1]);
                 emit("OUT %ld", e->args[0]->ival); return;
             }
-            // the link to a partner processor (docs/toma-and-cade.md): TOM and
-            // CAD jump to themselves (their own label) until the partner lets
-            // them through; the word goes as it is, no int/float conversion
+            // the link to a partner processor (docs/toma-and-cade.md): TOM k and
+            // CAD k (k the link number, docs/toma-and-cade-links.md) wait in
+            // place until the partner lets them through; the word goes as it
+            // is, no int/float conversion
             if (!strcmp(fn, "toma")) {
                 if (e->n_args != 1) msg_error(e->line, "toma(value) takes 1 arg");
                 type *vt = infer_type(e->args[0]);
                 if (vt && type_size_words(vt) != 1)
                     msg_error(e->line, "toma() carries one word: this value takes %d", type_size_words(vt));
                 gen_expr(e->args[0]);
-                int k = ++label_n;
-                emit("@__Ltom%d TOM __Ltom%d", k, k); return;
+                emit("TOM 0"); return;
             }
             if (!strcmp(fn, "cade") || !strcmp(fn, "fcade")) {   // int / float word
                 if (e->n_args != 0) msg_error(e->line, "%s() takes no argument", fn);
-                int k = ++label_n;
-                emit("@__Lcad%d CAD __Lcad%d", k, k); return;
+                emit("CAD 0"); return;
             }
             if (!strcmp(fn, "malloc")) {       // malloc(nwords) -> payload addr (0=OOM)
                 if (e->n_args != 1) msg_error(e->line, "malloc(nwords) takes 1 arg");

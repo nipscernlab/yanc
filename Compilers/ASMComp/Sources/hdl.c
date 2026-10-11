@@ -54,10 +54,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     int nbioou = (nuioou > 1) ? (int)ceil(log2(nuioou)) : 1;
 
     // the prologue is fixed ....
-    // a link to a partner processor: LINKAS = 1 in the top when the partner
-    // runs on another clock (docs/toma-and-cade.md section 8)
-    if (opc_tom() || opc_cad()) fprintf(f_veri, "module %s #(parameter LINKAS = 0) (\n\n", prname);
-    else                        fprintf(f_veri, "module %s (\n\n", prname);
+    fprintf(f_veri, "module %s (\n\n", prname);
     fprintf(f_veri, "input  clk, rst,\n");
 
     // check whether the 'in' input bus needs to be added
@@ -87,13 +84,16 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     if (toaqui_addr != 0) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
     if (toaqui_addr != 0) {fprintf(f_veri, "output cheguei"); comma = 0;}
 
-    // the link to a partner processor (docs/toma-and-cade.md), only with the
-    // instruction that uses it; 'out' always comes before, so each starts with
-    // its own comma
-    if (opc_tom()) fprintf(f_veri, ",\noutput toma,\ninput  valeu");
-    if (opc_cad()) fprintf(f_veri, ",\noutput cade,\ninput  taqui,\ninput  signed [%d:0] cade_dado", nubits-1);
-    // the value toma() offers, for the partner's cade_dado (with LINKAS 0 the
-    // same word as out); last, so the older positional wiring still fits
+    // the links to partner processors (docs/toma-and-cade-links.md): per link
+    // k only the pins of the instructions the program uses on it; 'out' always
+    // comes before, so each starts with its own comma
+    for (int k = 0; k < lnk_count(); k++)
+    {
+        if (lnk_tom(k)) fprintf(f_veri, ",\noutput toma_%d,\ninput  valeu_%d", k, k);
+        if (lnk_cad(k)) fprintf(f_veri, ",\noutput cade_%d,\ninput  taqui_%d,\ninput  signed [%d:0] cade_dado_%d", k, k, nubits-1, k);
+    }
+    // the value toma() offers, one for every link (wired to each partner's
+    // cade_dado_j)
     if (opc_tom()) fprintf(f_veri, ",\noutput signed [%d:0] toma_dado", nubits-1);
 
     // close the port list
@@ -119,9 +119,22 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // no #TOAQUI marker: a local wire absorbs the processor's cheguei output
     if (toaqui_addr == 0) fprintf(f_veri, "wire cheguei;\n");
 
-    // no TOM / no CAD: local wires tie off the link's processor ports
-    if (!opc_tom()) fprintf(f_veri, "wire toma;\nwire valeu = 1'b0;\nwire [%d:0] toma_dado;\n", nubits-1);
-    if (!opc_cad()) fprintf(f_veri, "wire cade;\nwire taqui = 1'b0;\nwire [%d:0] cade_dado = 0;\n", nubits-1);
+    // the links: the processor's per-link vectors, joined to the pins of the
+    // links the program uses and tied off elsewhere
+    {
+        int nl = (lnk_count() > 0) ? lnk_count() : 1;
+        fprintf(f_veri, "wire [%d:0] lk_toma, lk_cade, lk_valeu, lk_taqui;\n", nl-1);
+        fprintf(f_veri, "wire [%d:0] lk_cade_dado;\n", nl*nubits-1);
+        fprintf(f_veri, "wire [%d:0] lk_toma_dado;\n", nubits-1);
+        for (int k = 0; k < nl; k++)
+        {
+            if (lnk_tom(k)) fprintf(f_veri, "assign toma_%d = lk_toma[%d];\nassign lk_valeu[%d] = valeu_%d;\n", k, k, k, k);
+            else            fprintf(f_veri, "assign lk_valeu[%d] = 1'b0;\n", k);
+            if (lnk_cad(k)) fprintf(f_veri, "assign cade_%d = lk_cade[%d];\nassign lk_taqui[%d] = taqui_%d;\nassign lk_cade_dado[%d:%d] = cade_dado_%d;\n", k, k, k, k, (k+1)*nubits-1, k*nubits, k);
+            else            fprintf(f_veri, "assign lk_taqui[%d] = 1'b0;\nassign lk_cade_dado[%d:%d] = 0;\n", k, (k+1)*nubits-1, k*nubits);
+        }
+        if (opc_tom()) fprintf(f_veri, "assign toma_dado = lk_toma_dado;\n");
+    }
 
     // always needed for the processor connection
     fprintf(f_veri, "wire proc_req_in, proc_out_en;\n");
@@ -177,8 +190,15 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // if there's a #TOAQUI marker, set its address on the processor
     if (toaqui_addr != 0) fprintf(f_veri, ".TOAQUIADDR(%d),\n", toaqui_addr);
 
-    // a link: the module's LINKAS goes down to the core
-    if (opc_tom() || opc_cad()) fprintf(f_veri, ".LINKAS(LINKAS),\n");
+    // the links the program uses, and which are on my clock (#LKSYNC)
+    if (lnk_count() > 0)
+    {
+        int n = lnk_count();
+        fprintf(f_veri, ".NLINK(%d),\n", n);
+        fprintf(f_veri, ".TOMS(%d'b", n); for (int k = n-1; k >= 0; k--) fputc(lnk_tom (k) ? '1' : '0', f_veri); fprintf(f_veri, "),\n");
+        fprintf(f_veri, ".CADS(%d'b", n); for (int k = n-1; k >= 0; k--) fputc(lnk_cad (k) ? '1' : '0', f_veri); fprintf(f_veri, "),\n");
+        fprintf(f_veri, ".LSYNC(%d'b",n); for (int k = n-1; k >= 0; k--) fputc(lnk_sync(k) ? '1' : '0', f_veri); fprintf(f_veri, "),\n");
+    }
 
     // ------------------------------------------------------------------------
     // dynamic resource allocation --------------------------------------------
@@ -199,9 +219,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     fprintf(f_veri, ".DFILE(\"%s_data.mif\"),\n"  , path);
     fprintf(f_veri, ".IFILE(\"%s_inst.mif\"))\n\n", path);
     fprintf(f_veri, "`ifdef YANC_SIM_VIS\n");
-    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, toma, cade, valeu, taqui, cade_dado, toma_dado, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
+    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, lk_toma, lk_cade, lk_valeu, lk_taqui, lk_cade_dado, lk_toma_dado, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
     fprintf(f_veri, "`else\n");
-    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, toma, cade, valeu, taqui, cade_dado, toma_dado);\n", prname);
+    fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, lk_toma, lk_cade, lk_valeu, lk_taqui, lk_cade_dado, lk_toma_dado);\n", prname);
     fprintf(f_veri, "`endif\n\n");
 
     // ------------------------------------------------------------------------
@@ -629,11 +649,15 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (nuioou > 0 && opc_out()) fprintf(f_veri, "wire [%d:0] proc_out_en;\n\n"        , nuioou-1);
     // declare the cheguei wire when the wrapper exposes it
     if (toaqui_addr != 0)        fprintf(f_veri, "wire proc_cheguei;\n\n"              );
-    // the link (docs/toma-and-cade.md): alone, the processor gets this
-    // testbench as its partner -- cade() takes the words of cade.txt, toma()
-    // writes into toma.txt (see the partner blocks below)
-    if (opc_tom())               fprintf(f_veri, "wire proc_toma;\nreg  tb_valeu = 0;\nwire signed [%d:0] proc_toma_dado;\n", nubits-1);
-    if (opc_cad())               fprintf(f_veri, "wire proc_cade;\nreg  tb_taqui = 0;\nreg  signed [%d:0] tb_cade_dado = 0;\n", nubits-1);
+    // the links (docs/toma-and-cade-links.md): alone, the processor gets this
+    // testbench as the partner of every link -- cade(k) takes the words of
+    // cade_k.txt, toma(k, x) writes into toma_k.txt (partner blocks below)
+    for (int k = 0; k < lnk_count(); k++)
+    {
+        if (lnk_tom(k))          fprintf(f_veri, "wire proc_toma_%d;\nreg  tb_valeu_%d = 0;\n", k, k);
+        if (lnk_cad(k))          fprintf(f_veri, "wire proc_cade_%d;\nreg  tb_taqui_%d = 0;\nreg  signed [%d:0] tb_cade_dado_%d = 0;\n", k, k, nubits-1, k);
+    }
+    if (opc_tom())               fprintf(f_veri, "wire signed [%d:0] proc_toma_dado;\n", nubits-1);
 
     // ------------------------------------------------------------------------
     // processor instance -----------------------------------------------------
@@ -656,9 +680,13 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (itr_addr != 0)           fprintf(f_veri, ",1'b0"       );
     // check whether the cheguei output is exposed
     if (toaqui_addr != 0)        fprintf(f_veri, ",proc_cheguei");
-    // the link: toma, valeu / cade, taqui, cade_dado (same order as the ports)
-    if (opc_tom())               fprintf(f_veri, ",proc_toma,tb_valeu");
-    if (opc_cad())               fprintf(f_veri, ",proc_cade,tb_taqui,tb_cade_dado");
+    // the links, per link k: toma_k, valeu_k / cade_k, taqui_k, cade_dado_k,
+    // then toma_dado (same order as the ports)
+    for (int k = 0; k < lnk_count(); k++)
+    {
+        if (lnk_tom(k))          fprintf(f_veri, ",proc_toma_%d,tb_valeu_%d", k, k);
+        if (lnk_cad(k))          fprintf(f_veri, ",proc_cade_%d,tb_taqui_%d,tb_cade_dado_%d", k, k, k);
+    }
     if (opc_tom())               fprintf(f_veri, ",proc_toma_dado");
     // close the instance
                                  fprintf(f_veri, ");\n\n"      );
@@ -827,36 +855,40 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // ------------------------------------------------------------------------
     // the link's partner -----------------------------------------------------
     // ------------------------------------------------------------------------
-    // Alone, the processor talks to this testbench, which keeps the protocol of
-    // docs/toma-and-cade.md: a value waits while T != C. For cade() the
-    // testbench owns T (tb_taqui): with nothing pending (T == the processor's
-    // C) it offers the next word of cade.txt and flips T; when the file ends,
-    // CAD waits forever, as it would with a silent partner. For toma() it owns
-    // C (tb_valeu): when the processor's T differs, the value is on its out
-    // bus (TOM keeps it there while it loops): written to toma.txt, C flipped.
+    // Alone, the processor talks to this testbench on every link it uses,
+    // keeping the protocol of docs/toma-and-cade.md: a value waits while
+    // T != C. For cade(k) the testbench owns T (tb_taqui_k): with nothing
+    // pending (T == the processor's C) it offers the next word of cade_k.txt
+    // and flips T; when the file ends, CAD k waits forever, as it would with a
+    // silent partner. For toma(k, x) it owns C (tb_valeu_k): when the
+    // processor's T differs, the value is on toma_dado (held while TOM loops):
+    // written to toma_k.txt, C flipped.
 
     force_rightbar(proc_dir);
-    if (opc_cad())
+    for (int k = 0; k < lnk_count(); k++)
     {
-        fprintf(f_veri, "// cade() partner: the words of cade.txt, one per cade()\n");
-        fprintf(f_veri, "integer data_cade, cade_val, cade_scan;\n");
-        fprintf(f_veri, "reg     cade_fim = 0;\n");
-        fprintf(f_veri, "initial data_cade = $fopen(\"%s/Simulation/cade.txt\", \"r\"); // the words cade() takes\n", proc_dir);
-        fprintf(f_veri, "always @ (posedge clk) if (!cade_fim && tb_taqui == proc_cade) begin\n");
-        fprintf(f_veri, "    cade_scan = (data_cade != 0) ? $fscanf(data_cade, \"%%d\", cade_val) : 0;\n");
-        fprintf(f_veri, "    if (cade_scan == 1) begin tb_cade_dado <= cade_val; tb_taqui <= ~tb_taqui; end\n");
-        fprintf(f_veri, "    else begin cade_fim <= 1'b1; $display(\"cade.txt: no more words -- the next cade() waits forever\"); end\n");
-        fprintf(f_veri, "end\n\n");
-    }
-    if (opc_tom())
-    {
-        fprintf(f_veri, "// toma() partner: each value goes to toma.txt\n");
-        fprintf(f_veri, "integer data_toma;\n");
-        fprintf(f_veri, "initial data_toma = $fopen(\"%s/Simulation/toma.txt\", \"w\"); // the values toma() hands over\n", proc_dir);
-        fprintf(f_veri, "always @ (posedge clk) if (proc_toma != tb_valeu) begin\n");
-        fprintf(f_veri, "    $fdisplay(data_toma, \"%%0d\", proc_io_out); $fflush(data_toma);\n");
-        fprintf(f_veri, "    tb_valeu <= proc_toma;\n");
-        fprintf(f_veri, "end\n\n");
+        if (lnk_cad(k))
+        {
+            fprintf(f_veri, "// cade(%d) partner: the words of cade_%d.txt, one per cade(%d)\n", k, k, k);
+            fprintf(f_veri, "integer data_cade_%d, cade_val_%d, cade_scan_%d;\n", k, k, k);
+            fprintf(f_veri, "reg     cade_fim_%d = 0;\n", k);
+            fprintf(f_veri, "initial data_cade_%d = $fopen(\"%s/Simulation/cade_%d.txt\", \"r\"); // the words cade(%d) takes\n", k, proc_dir, k, k);
+            fprintf(f_veri, "always @ (posedge clk) if (!cade_fim_%d && tb_taqui_%d == proc_cade_%d) begin\n", k, k, k);
+            fprintf(f_veri, "    cade_scan_%d = (data_cade_%d != 0) ? $fscanf(data_cade_%d, \"%%d\", cade_val_%d) : 0;\n", k, k, k, k);
+            fprintf(f_veri, "    if (cade_scan_%d == 1) begin tb_cade_dado_%d <= cade_val_%d; tb_taqui_%d <= ~tb_taqui_%d; end\n", k, k, k, k, k);
+            fprintf(f_veri, "    else begin cade_fim_%d <= 1'b1; $display(\"cade_%d.txt: no more words -- the next cade(%d) waits forever\"); end\n", k, k, k);
+            fprintf(f_veri, "end\n\n");
+        }
+        if (lnk_tom(k))
+        {
+            fprintf(f_veri, "// toma(%d, x) partner: each value goes to toma_%d.txt\n", k, k);
+            fprintf(f_veri, "integer data_toma_%d;\n", k);
+            fprintf(f_veri, "initial data_toma_%d = $fopen(\"%s/Simulation/toma_%d.txt\", \"w\"); // the values toma(%d, x) hands over\n", k, proc_dir, k, k);
+            fprintf(f_veri, "always @ (posedge clk) if (proc_toma_%d != tb_valeu_%d) begin\n", k, k);
+            fprintf(f_veri, "    $fdisplay(data_toma_%d, \"%%0d\", proc_toma_dado); $fflush(data_toma_%d);\n", k, k);
+            fprintf(f_veri, "    tb_valeu_%d <= proc_toma_%d;\n", k, k);
+            fprintf(f_veri, "end\n\n");
+        }
     }
 
     // ------------------------------------------------------------------------

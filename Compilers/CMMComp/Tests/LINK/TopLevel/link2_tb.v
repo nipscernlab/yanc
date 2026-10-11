@@ -1,8 +1,9 @@
 `timescale 1ns/1ps
 // Project pass LINK, second testbench: the same programs as link_tb.v, each
-// pair on two clocks of unrelated periods (20 ns and 27.3 ns), every
-// processor with LINKAS = 1 (docs/toma-and-cade.md section 8): the partner's
-// bit enters through two flip-flops, the writer's value comes from toma_dado.
+// pair on two clocks of unrelated periods (20 ns and 27.3 ns). The links are
+// synchronized (the plain toma/cade, docs/toma-and-cade-links.md section 7):
+// the partner's bit enters through two flip-flops, the writer's value comes
+// from toma_dado.
 //   envia (fast) -> recebe (slow) : output_link2_fs.txt
 //   envia (slow) -> recebe (fast) : output_link2_sf.txt
 //   ping  (slow) <-> pong (fast)  : output_pingpong2.txt
@@ -25,28 +26,28 @@ wire rst_f = rf2, rst_s = rs2;
 wire [31:0] e1_out, e1_dado, r1_out;
 wire        e1_toma, r1_cade;
 wire [0:0]  r1_out_en;
-link_envia  #(.LINKAS(1)) E1 (.clk(clk_f), .rst(rst_f), .out(e1_out), .toma(e1_toma), .valeu(r1_cade), .toma_dado(e1_dado));
-link_recebe #(.LINKAS(1)) R1 (.clk(clk_s), .rst(rst_s), .out(r1_out), .out_en(r1_out_en),
-                              .cade(r1_cade), .taqui(e1_toma), .cade_dado(e1_dado));
+link_envia  E1 (.clk(clk_f), .rst(rst_f), .out(e1_out), .toma_0(e1_toma), .valeu_0(r1_cade), .toma_dado(e1_dado));
+link_recebe R1 (.clk(clk_s), .rst(rst_s), .out(r1_out), .out_en(r1_out_en),
+                              .cade_0(r1_cade), .taqui_0(e1_toma), .cade_dado_0(e1_dado));
 
 // envia (slow) -> recebe (fast)
 wire [31:0] e2_out, e2_dado, r2_out;
 wire        e2_toma, r2_cade;
 wire [0:0]  r2_out_en;
-link_envia  #(.LINKAS(1)) E2 (.clk(clk_s), .rst(rst_s), .out(e2_out), .toma(e2_toma), .valeu(r2_cade), .toma_dado(e2_dado));
-link_recebe #(.LINKAS(1)) R2 (.clk(clk_f), .rst(rst_f), .out(r2_out), .out_en(r2_out_en),
-                              .cade(r2_cade), .taqui(e2_toma), .cade_dado(e2_dado));
+link_envia  E2 (.clk(clk_s), .rst(rst_s), .out(e2_out), .toma_0(e2_toma), .valeu_0(r2_cade), .toma_dado(e2_dado));
+link_recebe R2 (.clk(clk_f), .rst(rst_f), .out(r2_out), .out_en(r2_out_en),
+                              .cade_0(r2_cade), .taqui_0(e2_toma), .cade_dado_0(e2_dado));
 
 // ping (slow) <-> pong (fast): the same three wires each way
 wire [31:0] p_out, p_dado, q_out, q_dado;
 wire        p_toma, p_cade, q_toma, q_cade;
 wire [0:0]  p_out_en;
-link_ping #(.LINKAS(1)) P (.clk(clk_s), .rst(rst_s), .out(p_out), .out_en(p_out_en),
-                           .toma(p_toma), .valeu(q_cade), .cade(p_cade), .taqui(q_toma),
-                           .cade_dado(q_dado), .toma_dado(p_dado));
-link_pong #(.LINKAS(1)) Q (.clk(clk_f), .rst(rst_f), .out(q_out),
-                           .toma(q_toma), .valeu(p_cade), .cade(q_cade), .taqui(p_toma),
-                           .cade_dado(p_dado), .toma_dado(q_dado));
+link_ping P (.clk(clk_s), .rst(rst_s), .out(p_out), .out_en(p_out_en),
+                           .toma_0(p_toma), .valeu_0(q_cade), .cade_0(p_cade), .taqui_0(q_toma),
+                           .cade_dado_0(q_dado), .toma_dado(p_dado));
+link_pong Q (.clk(clk_f), .rst(rst_f), .out(q_out),
+                           .toma_0(q_toma), .valeu_0(p_cade), .cade_0(q_cade), .taqui_0(p_toma),
+                           .cade_dado_0(p_dado), .toma_dado(q_dado));
 
 integer f_fs, f_sf, f_pp;
 integer n_fs = 0, n_sf = 0, n_pp = 0;

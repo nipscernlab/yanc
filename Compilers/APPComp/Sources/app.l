@@ -31,6 +31,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#NUIOOU"  ;
 "#NUGAIN"  ;
 "#FFTSIZ"  ;
+"#LKSYNC"  ;                // #LKSYNC k: read by asmcomp (link k on the processor clock)
 "#FROUND"  eval_direct(25); // float rounding level (asmcomp needs it before encoding constants)
 
 "#array"   eval_direct(11); // regular array
@@ -64,8 +65,8 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    "CAL"   eval_opcode(19); // subroutine call
    "RET"   eval_opcode( 0); // subroutine return
-   "TOM"   eval_opcode(19); // toma: offer acc to the partner, jump to itself until taken
-   "CAD"   eval_opcode(19); // cade: jump to itself until the partner offers, then take it
+   "TOM"   eval_opcode(20); // toma: offer acc on link <operand> (a number), wait until taken
+   "CAD"   eval_opcode(20); // cade: wait until link <operand> (a number) offers, then take it
 
    "ADD"   eval_opcode(18); // fixed-point addition with memory
  "S_ADD"   eval_opcode( 0); // fixed-point addition with stack

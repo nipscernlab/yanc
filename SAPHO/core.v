@@ -69,6 +69,8 @@ module prefetch
 	 input                        rst       ,
 	 input                        tom_go    , // the partner took my value (TOM may go on)
 	 input                        cad_go    , // the partner offers a value (CAD may go on)
+	 input    [MINSTW       -1:0] self_addr , // address of the instruction now decoded (TOM/CAD wait)
+	output                        pc_self   , // TOM/CAD waits: fetch self_addr again
 	 input    [MINSTW       -1:0] pc_instr  ,
 	output    [NBOPCO       -1:0] opcode    ,
 	output    [NBOPER       -1:0] operand   ,
@@ -98,15 +100,18 @@ end else begin : jmp_sel
 assign wJMPZ = (opcode == OP_JMP);
 end endgenerate
 
-// toma / cade (docs/toma-and-cade.md): a jump to itself -- the operand is the
-// instruction's own address -- until the partner's bit lets it through
+// toma / cade (docs/toma-and-cade.md): a jump to itself until the partner's
+// bit lets it through. The target is not the operand (free for the link
+// number, docs/toma-and-cade-links.md): instr_fetch keeps the address of the
+// instruction now decoded (self_addr) and the fetch takes it again.
 wire wTOM, wCAD;
 generate if ((TOM) != 0) begin : tom_sel assign wTOM = (opcode == OP_TOM) & ~tom_go; end
          else            begin : tom_sel assign wTOM = 1'b0;                        end endgenerate
 generate if ((CAD) != 0) begin : cad_sel assign wCAD = (opcode == OP_CAD) & ~cad_go; end
          else            begin : cad_sel assign wCAD = 1'b0;                        end endgenerate
 
-assign wJMP = wJMPZ | wTOM | wCAD;
+assign pc_self = wTOM | wCAD;
+assign wJMP    = wJMPZ | pc_self;
 
 wire pc_load;
 
@@ -135,15 +140,21 @@ assign operand    =  mem_instr[NBOPER       -1:     0];
 // executed afterwards. Fetching at the old PC let a JMP / JIZ / CAL sitting
 // there run right after a mid-run reset and send the program back where it
 // was. At boot the PC is already 0, so this makes every reset a boot.
+// the jump target: the operand, or self_addr when TOM/CAD wait (only with
+// TOM or CAD in the program)
+wire [MINSTW-1:0] jmp_addr;
+generate if ((TOM) != 0 || (CAD) != 0) begin : jmp_tgt assign jmp_addr = (pc_self) ? self_addr : operand[MINSTW-1:0]; end
+         else                          begin : jmp_tgt assign jmp_addr =                          operand[MINSTW-1:0]; end endgenerate
+
 generate if (ITRADD>0) begin : itr_fetch
 
 assign pc_l       =  itr  | pc_load;
-assign instr_addr = (rst) ? {MINSTW{1'b0}} : (itr) ? ITRADD : (pc_load) ? operand[MINSTW-1:0] : pc_instr;
+assign instr_addr = (rst) ? {MINSTW{1'b0}} : (itr) ? ITRADD : (pc_load) ? jmp_addr : pc_instr;
 
 end else begin : itr_fetch
 
 assign pc_l       =         pc_load;
-assign instr_addr = (rst) ? {MINSTW{1'b0}} :                  (pc_load) ? operand[MINSTW-1:0] : pc_instr;
+assign instr_addr = (rst) ? {MINSTW{1'b0}} :                  (pc_load) ? jmp_addr : pc_instr;
 
 end endgenerate
 
@@ -294,6 +305,21 @@ wire [NBINST-1:0] pf_instr = instr;
 wire              pf_isp_push;
 wire              pf_isp_pop;
 wire [MINSTW-1:0] pf_addr;
+wire              pf_self;
+wire [MINSTW-1:0] self_addr;
+
+// the address of the instruction now decoded, for a waiting TOM/CAD: the
+// instruction memory reads synchronously, so it is the address presented in
+// the previous cycle (only with TOM or CAD in the program)
+generate
+	if (TOM != 0 || CAD != 0) begin : self_blk
+		reg [MINSTW-1:0] r_self = 0;
+		always @ (posedge clk) r_self <= addr;
+		assign self_addr = r_self;
+	end else begin : self_blk
+		assign self_addr = {MINSTW{1'b0}};
+	end
+endgenerate
 
 prefetch #(.MINSTW(MINSTW),
            .NBOPCO(NBOPCO),
@@ -303,7 +329,7 @@ prefetch #(.MINSTW(MINSTW),
 		   .CAL   (CAL   ),
 		   .JIZ   (JIZ   ),
 		   .TOM   (TOM   ),
-		   .CAD   (CAD   )) pf(rst, tom_go, cad_go, pc_addr, opcode, operand,
+		   .CAD   (CAD   )) pf(rst, tom_go, cad_go, self_addr, pf_self, pc_addr, opcode, operand,
                                pf_instr, pf_addr,
                                pc_load , acc,
                                pf_isp_push, pf_isp_pop,
@@ -316,8 +342,19 @@ wire [MINSTW-1:0] stack_out;
 generate
 	if (CAL) begin : isp_blk
 		stack #($clog2(SDEPTH), SDEPTH, MINSTW) isp(clk, rst, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
+	end
+endgenerate
+
+// what the PC loads on a jump: the operand, the return address, or the
+// waiting TOM/CAD's own address (each term only when its block exists)
+generate
+	if (CAL && (TOM || CAD)) begin : pcl_val
+		assign pc_lval = (pf_isp_pop) ? stack_out : (pf_self) ? self_addr : instr[MINSTW-1:0];
+	end else if (CAL) begin : pcl_val
 		assign pc_lval = (pf_isp_pop) ? stack_out : instr[MINSTW-1:0];
-	end else begin : isp_blk
+	end else if (TOM || CAD) begin : pcl_val
+		assign pc_lval = (pf_self) ? self_addr : instr[MINSTW-1:0];
+	end else begin : pcl_val
 		assign pc_lval = instr[MINSTW-1:0];
 	end
 endgenerate
@@ -513,6 +550,14 @@ module core
 	parameter  FFTSIZ =  3,              // ILI size for bit reversal
 	parameter  FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 exact truncation + saturation, 2 round to nearest even
 
+	// links to partner processors (docs/toma-and-cade-links.md): link k is
+	// built only where its bit is set; the opcode parameters TOM/CAD say
+	// whether the instructions exist at all
+	parameter  NLINK  =  1,              // number of link slots (highest link number used + 1)
+	parameter  [NLINK-1:0] TOMS  = 0,    // bit k: the program has TOM k
+	parameter  [NLINK-1:0] CADS  = 0,    // bit k: the program has CAD k
+	parameter  [NLINK-1:0] LSYNC = 0,    // bit k: link k's partner runs on my clock (_sync forms): no synchronizer
+
 	// -------------------------------------------------------------------------
 	// Dynamically configured parameters ---------------------------------------
 	// -------------------------------------------------------------------------
@@ -545,10 +590,9 @@ module core
 	parameter    JIZ   = 0,
 	parameter    CAL   = 0,
 
-	// the link to a partner processor (docs/toma-and-cade.md)
+	// the links to partner processors (docs/toma-and-cade-links.md)
 	parameter    TOM   = 0,
 	parameter    CAD   = 0,
-	parameter    LINKAS = 0,   // 1: the partner runs on another clock (section 8)
 
 	// two-parameter arithmetic operations
 	parameter    ADD   = 0,
@@ -686,13 +730,13 @@ module core
 	input               itr,
 	output              cheguei,
 
-	// the link to a partner processor (docs/toma-and-cade.md)
-	output              toma,       // my T: flipped when I offer a value
-	output              cade,       // my C: flipped when I take one
-	input               valeu,      // the partner's C (TOM: has my value been taken?)
-	input               taqui,      // the partner's T (CAD: is a value offered?)
-	input  [NUBITS-1:0] cade_dado,  // the partner's toma_dado (CAD reads it)
-	output [NUBITS-1:0] toma_dado   // my offered value (LINKAS 0: the out bus)
+	// the links to partner processors, one bit / word per link
+	output [NLINK       -1:0] toma,       // my T per link: flipped when I offer a value
+	output [NLINK       -1:0] cade,       // my C per link: flipped when I take one
+	input  [NLINK       -1:0] valeu,      // the partner's C (TOM: has my value been taken?)
+	input  [NLINK       -1:0] taqui,      // the partner's T (CAD: is a value offered?)
+	input  [NLINK*NUBITS-1:0] cade_dado,  // the partners' toma_dado, link k at bits k*NUBITS (CAD k reads it)
+	output [NUBITS      -1:0] toma_dado   // my offered value, the same for every link
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
  , output [MINSTW-1:0] pc_sim_val
@@ -734,73 +778,119 @@ instr_fetch #(
 `endif // ---------------------------------------------------------------------
 );
 
-// toma / cade: the link to a partner processor -------------------------------
-// (docs/toma-and-cade.md) Each side owns one bit: the writer flips T when it
-// offers a value, the reader flips C when it takes it; a value waits while
-// T != C. TOM and CAD are jumps to themselves (prefetch) until *_go. Every
-// opcode the prefetch shows is executed, so a looping TOM/CAD is seen here once
-// per cycle. The bits are levels in flip-flops: two looping processors see each
+// toma / cade: the links to partner processors ------------------------------
+// (docs/toma-and-cade.md, docs/toma-and-cade-links.md) On each link each side
+// owns one bit: the writer flips T when it offers a value, the reader flips C
+// when it takes it; a value waits while T != C. TOM k and CAD k (the operand is
+// the link number) jump to themselves (prefetch) until *_go. Every opcode the
+// prefetch shows is executed, so a looping TOM/CAD is seen here once per
+// cycle. The bits are levels in flip-flops: two looping processors see each
 // other's instruction one cycle per turn and could miss one-cycle pulses.
-// LINKAS (the partner on another clock, docs/toma-and-cade.md section 8): the
-// partner's bit enters through two flip-flops on my clock, and the writer
-// holds its value in a register (toma_dado) loaded when T flips.
+// Unless the program used a _sync form on link k (LSYNC[k]), the partner's
+// bit enters through two flip-flops on my clock, and the writer holds its
+// value in a register (toma_dado) loaded when T flips.
+// Built only where needed: link k only with its TOMS/CADS bit; the operand is
+// compared and the links multiplexed only with TOM (or CAD) on two or more.
 
 localparam [NBOPCO-1:0] OP_TOM = 20, OP_CAD = 21;
 
-wire tom_offer;   // this cycle T flips: the value is on ula_out (toma_dado)
+function integer n_ones (input [NLINK-1:0] m); integer i; begin
+	n_ones = 0; for (i = 0; i < NLINK; i = i + 1) n_ones = n_ones + m[i];
+end endfunction
 
-generate if (TOM != 0) begin : tom_link
-	reg  rT = 1'b0;  // T
-	reg  rW = 1'b0;  // offered, waiting to be taken: T flips once per TOM
-	wire c_in;       // the partner's C, on my clock
-	if (LINKAS != 0) begin : sync
-		reg s1 = 1'b0, s2 = 1'b0;
-		always @ (posedge clk) begin s1 <= valeu; s2 <= s1; end
-		assign c_in = s2;
-	end else begin : sync
-		assign c_in = valeu;
-	end
-	assign tom_offer = (if_opcode == OP_TOM) & ~rW;
-	always @ (posedge clk) begin
-		if (rst) begin
-			rT <= 1'b0;
-			rW <= 1'b0;
-		end else if (if_opcode == OP_TOM) begin
-			if (!rW) begin
-				rT <= ~rT;
-				rW <= 1'b1;
-			end else if (c_in == rT)
-				rW <= 1'b0;
+localparam N_TOM   = n_ones(TOMS);
+localparam N_CAD   = n_ones(CADS);
+localparam TOM_REG = ((TOMS & ~LSYNC) != 0);   // a synchronized TOM link: toma_dado is a register
+
+wire [NLINK-1:0] tgo, cgo;     // per link: TOM k / CAD k may go on
+wire [NLINK-1:0] toffer;       // per link: this cycle T flips
+wire             tom_offer = |toffer;
+
+genvar k;
+generate for (k = 0; k < NLINK; k = k + 1) begin : lnk
+
+	// TOM k --------------------------------------------------------------
+	if (TOM != 0 && TOMS[k]) begin : t
+		reg  rT = 1'b0;  // T
+		reg  rW = 1'b0;  // offered, waiting to be taken: T flips once per TOM
+		wire c_in;       // the partner's C, on my clock
+		wire me;         // the TOM in decode is TOM k
+		if (LSYNC[k]) begin : sync assign c_in = valeu[k]; end
+		else begin : sync
+			reg s1 = 1'b0, s2 = 1'b0;
+			always @ (posedge clk) begin s1 <= valeu[k]; s2 <= s1; end
+			assign c_in = s2;
 		end
+		if (N_TOM > 1) begin : sel assign me = (if_opcode == OP_TOM) & (if_operand == k); end
+		else           begin : sel assign me = (if_opcode == OP_TOM);                      end
+		assign toffer[k] = me & ~rW;
+		always @ (posedge clk) begin
+			if (rst) begin
+				rT <= 1'b0;
+				rW <= 1'b0;
+			end else if (me) begin
+				if (!rW) begin
+					rT <= ~rT;
+					rW <= 1'b1;
+				end else if (c_in == rT)
+					rW <= 1'b0;
+			end
+		end
+		assign toma[k] = rT;
+		assign tgo [k] = rW & (c_in == rT);
+	end else begin : t
+		assign toffer[k] = 1'b0;
+		assign toma  [k] = 1'b0;
+		assign tgo   [k] = 1'b0;
 	end
-	assign toma   = rT;
-	assign tom_go = rW & (c_in == rT);
-end else begin : tom_link
-	assign tom_offer = 1'b0;
-	assign toma   = 1'b0;
-	assign tom_go = 1'b0;
+
+	// CAD k --------------------------------------------------------------
+	if (CAD != 0 && CADS[k]) begin : c
+		reg  rC = 1'b0;  // C
+		wire t_in;       // the partner's T, on my clock
+		wire me;         // the CAD in decode is CAD k
+		if (LSYNC[k]) begin : sync assign t_in = taqui[k]; end
+		else begin : sync
+			reg s1 = 1'b0, s2 = 1'b0;
+			always @ (posedge clk) begin s1 <= taqui[k]; s2 <= s1; end
+			assign t_in = s2;
+		end
+		if (N_CAD > 1) begin : sel assign me = (if_opcode == OP_CAD) & (if_operand == k); end
+		else           begin : sel assign me = (if_opcode == OP_CAD);                      end
+		always @ (posedge clk) begin
+			if      (rst              ) rC <= 1'b0;
+			else if (me && t_in != rC) rC <= ~rC;
+		end
+		assign cade[k] = rC;
+		assign cgo [k] = (t_in != rC);
+	end else begin : c
+		assign cade[k] = 1'b0;
+		assign cgo [k] = 1'b0;
+	end
+
 end endgenerate
 
-generate if (CAD != 0) begin : cad_link
-	reg  rC = 1'b0;  // C
-	wire t_in;       // the partner's T, on my clock
-	if (LINKAS != 0) begin : sync
-		reg s1 = 1'b0, s2 = 1'b0;
-		always @ (posedge clk) begin s1 <= taqui; s2 <= s1; end
-		assign t_in = s2;
-	end else begin : sync
-		assign t_in = taqui;
-	end
-	always @ (posedge clk) begin
-		if      (rst                               ) rC <= 1'b0;
-		else if (if_opcode == OP_CAD && t_in != rC) rC <= ~rC;
-	end
-	assign cade   = rC;
-	assign cad_go = (t_in != rC);
-end else begin : cad_link
-	assign cade   = 1'b0;
-	assign cad_go = 1'b0;
-end endgenerate
+// the go of the TOM / CAD in decode: with one link of the kind its bit alone
+// (the others are 0), with more the operand picks it
+generate
+	if (N_TOM > 1) begin : tom_go_sel assign tom_go = tgo[if_operand]; end
+	else           begin : tom_go_sel assign tom_go = |tgo;            end
+	if (N_CAD > 1) begin : cad_go_sel assign cad_go = cgo[if_operand]; end
+	else           begin : cad_go_sel assign cad_go = |cgo;            end
+endgenerate
+
+// the word CAD reads: with one CAD link that link's word, with more the
+// operand picks it (the multiplexer a fan-in costs)
+function integer first_one (input [NLINK-1:0] m); integer i; begin
+	first_one = 0; for (i = NLINK-1; i >= 0; i = i - 1) if (m[i]) first_one = i;
+end endfunction
+localparam CAD_ONE = first_one(CADS);
+
+wire [NUBITS-1:0] cad_word;
+generate
+	if (N_CAD > 1) begin : cad_word_sel assign cad_word = cade_dado[if_operand*NUBITS +: NUBITS]; end
+	else           begin : cad_word_sel assign cad_word = cade_dado[CAD_ONE   *NUBITS +: NUBITS]; end
+endgenerate
 
 // Instruction decoder --------------------------------------------------------
 
@@ -953,10 +1043,10 @@ localparam HAS_INN = ((INN | P_INN | F_INN | PF_INN) != 0);
 localparam HAS_CAD = (CAD != 0);
 generate if (HAS_INN && HAS_CAD) begin : uic_in2
 wire              is_cad = (id_opcode == OP_CAD);
-wire [NUBITS-1:0] in_sel = (is_cad) ? cade_dado : io_in;
+wire [NUBITS-1:0] in_sel = (is_cad) ? cad_word : io_in;
 ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_req_in | is_cad, uic_acc, in_sel, ula_data_in2);
 end else if (HAS_CAD) begin : uic_in2   // cade() and no in(): the partner is the only input
-ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_opcode == OP_CAD, uic_acc, cade_dado, ula_data_in2);
+ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_opcode == OP_CAD, uic_acc, cad_word, ula_data_in2);
 end else if (HAS_INN) begin : uic_in2   // in() only: as before the link existed
 ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_req_in , uic_acc, io_in, ula_data_in2);
 end else begin : uic_in2 assign ula_data_in2 = racc; end
@@ -1029,10 +1119,12 @@ assign sp_in = ula_out;
 
 always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out; // synchronous reset (FPGA-friendly)
 
-// toma_dado: the value the partner's CAD reads. One clock: the out bus itself
-// (TOM keeps it there while it loops). Two clocks (LINKAS): a register loaded
-// in the cycle T flips, so it is already still when the partner sees T.
-generate if (TOM != 0 && LINKAS != 0) begin : toma_reg
+// toma_dado: the value the partners' CAD reads, one for every link (a writer
+// is inside one TOM at a time and leaves it only once the value was taken).
+// Only _sync links: the out bus itself (TOM keeps it there while it loops).
+// Any synchronized TOM link: a register loaded in the cycle T flips, so it is
+// already still when the partner sees T.
+generate if (TOM != 0 && TOM_REG) begin : toma_reg
 	reg [NUBITS-1:0] rD = 0;
 	always @ (posedge clk) if (tom_offer) rD <= ula_out;
 	assign toma_dado = rD;

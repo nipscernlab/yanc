@@ -973,7 +973,7 @@ AND main_t
 OUT 0
 LOD 15
 AND main_t
-@__Ltom1 TOM __Ltom1
+TOM 0
 #TOAQUI
 JMP __Lwh1
 @__Lwh1end @fim JMP fim

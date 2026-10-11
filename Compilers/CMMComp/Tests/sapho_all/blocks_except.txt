@@ -5,4 +5,3 @@ SF_SCL   F_SCL is reached only inside the exp/log macros, always with a memory o
 XPO_M    XPO is reached only inside the log macro, always on the accumulator
 TOM      toma needs a partner processor: alone it waits forever (docs/toma-and-cade.md)
 CAD      cade needs a partner processor: alone it waits forever (docs/toma-and-cade.md)
-LINKAS   a mode of toma/cade, not an opcode block: two clocks need a partner processor (docs/toma-and-cade.md section 8)

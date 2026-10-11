@@ -1,8 +1,8 @@
 `timescale 1ns/1ps
 // Project pass LINKALL (Scripts/regress.sh): the whole processor (sapho_all)
 // over toma/cade, and alone with its output fed back.
-//   pair 1: sapho_all_a -> sapho_all_b, one clock (20 ns), LINKAS 0
-//   pair 2: sapho_all_a (20 ns) -> sapho_all_b (27.3 ns), LINKAS 1 on both,
+//   pair 1: sapho_all_a -> sapho_all_b, one clock (20 ns)
+//   pair 2: sapho_all_a (20 ns) -> sapho_all_b (27.3 ns), the link synchronized,
 //           the reset released in each domain through two flip-flops
 //   alone : sapho_all with its input = its last output XOR 7 (starts at 7)
 // A reads 7 on its port and hands its 4-bit result (model.py: 4) with toma;
@@ -30,9 +30,9 @@ reg  signed [31:0] a1_q = 0, b1_q = 0;
 always @(posedge clk_f) if (a1_en[0]) a1_q <= a1_out;
 always @(posedge clk_f) if (b1_en[0]) b1_q <= b1_out;
 sapho_all_a A1 (.clk(clk_f), .rst(rst_f), .in(32'sd7), .out(a1_out), .out_en(a1_en), .itr(1'b0),
-                .toma(a1_toma), .valeu(b1_cade), .toma_dado(a1_dado));
+                .toma_0(a1_toma), .valeu_0(b1_cade), .toma_dado(a1_dado));
 sapho_all_b B1 (.clk(clk_f), .rst(rst_f), .in(a1_q), .out(b1_out), .out_en(b1_en), .itr(1'b0),
-                .cade(b1_cade), .taqui(a1_toma), .cade_dado(a1_dado));
+                .cade_0(b1_cade), .taqui_0(a1_toma), .cade_dado_0(a1_dado));
 
 // ---- pair 2, two clocks
 wire signed [31:0] a2_out, a2_dado, b2_out;
@@ -41,10 +41,10 @@ wire [0:0]  a2_en, b2_en;
 reg  signed [31:0] a2_q = 0, b2_q = 0;
 always @(posedge clk_f) if (a2_en[0]) a2_q <= a2_out;
 always @(posedge clk_s) if (b2_en[0]) b2_q <= b2_out;
-sapho_all_a #(.LINKAS(1)) A2 (.clk(clk_f), .rst(rst_f), .in(32'sd7), .out(a2_out), .out_en(a2_en), .itr(1'b0),
-                              .toma(a2_toma), .valeu(b2_cade), .toma_dado(a2_dado));
-sapho_all_b #(.LINKAS(1)) B2 (.clk(clk_s), .rst(rst_s), .in(a2_q), .out(b2_out), .out_en(b2_en), .itr(1'b0),
-                              .cade(b2_cade), .taqui(a2_toma), .cade_dado(a2_dado));
+sapho_all_a A2 (.clk(clk_f), .rst(rst_f), .in(32'sd7), .out(a2_out), .out_en(a2_en), .itr(1'b0),
+                              .toma_0(a2_toma), .valeu_0(b2_cade), .toma_dado(a2_dado));
+sapho_all_b B2 (.clk(clk_s), .rst(rst_s), .in(a2_q), .out(b2_out), .out_en(b2_en), .itr(1'b0),
+                              .cade_0(b2_cade), .taqui_0(a2_toma), .cade_dado_0(a2_dado));
 
 // ---- alone, output fed back
 wire signed [31:0] f_out;

@@ -23,7 +23,7 @@ JMP __Lwh2
 @__Lwh2end LOD main_n
 MLT 7
 ADD 3
-@__Ltom1 TOM __Ltom1
+TOM 0
 LOD main_n
 ADD 1
 SET main_n

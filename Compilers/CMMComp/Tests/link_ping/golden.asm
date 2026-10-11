@@ -12,8 +12,8 @@ SET main_n
 LES main_n
 JIZ __Lwh1end
 LOD main_n
-@__Ltom1 TOM __Ltom1
-@__Lcad2 CAD __Lcad2
+TOM 0
+CAD 0
 SET main_r
 OUT 0
 LOD main_n
