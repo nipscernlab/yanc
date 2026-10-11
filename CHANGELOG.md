@@ -73,7 +73,7 @@ tags consumed by Aurora.
   function, the imaginary part of a `comp`), with a message naming both
   owners, and a function named `fim`, `global` or `num_ins`. New negative
   fixtures for both languages (C++ gets a negative phase in the regress),
-  `cmm_names` and `test90`.
+  `cmm_names` and `test90`. `docs/asm-names.md`.
 - **`SAPHO/myFIFO.v` lost words.** It stored the word on `data` one cycle
   after `wrreq` (a SAPHO writing with back-to-back `out()` filled it with
   `2 3 4 5 5 6 ...` instead of `1 2 3 4 5 6 ...`), let a write into a full

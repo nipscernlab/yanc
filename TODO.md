@@ -30,16 +30,14 @@ Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
 CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
 moved.
 
-**Where the work stood on 2026-10-10 (session closed by Luciano).** Nine
-commits on the local `main`, NOT pushed and NOT through a full regress
-(Luciano held the full regress on 2026-10-09: ask before running it, it is
-heavy, mains power): 96fcdaf, d8f4eeb (user names that collide in the
-`.asm`), 33c5516, 50cc7a0 (`toma`/`cade` on two clocks, `LINKAS`), 9c3b2d5,
-ba2849c (`myFIFO` fixed), 3ea1471 (`myDCFIFO`), 1f3a138 (FIFO memory and
-cross-clock timing notes) and this note. Each was checked with light runs only (regress
-`--no-sim`, single passes on their own, Yosys); the CHANGELOG
-`[Unreleased]` has all of them. To close them: the full regress, then push,
-then `Scripts/aurora.bat`.
+**Where the work stood on 2026-10-10 (evening).** The ten commits of
+2026-10-09/10 (user names in the `.asm`, `LINKAS`, `myFIFO` fixed,
+`myDCFIFO`) went through the full regress (202/203: the `sapho_all` block
+check did not know `LINKAS`, fixed in 3a96072) and are pushed; Aurora got
+them through `Scripts/aurora.bat`. Every feature since v6.0 has its docs/
+note with a "For the documentation (item 21)" section: `docs/asm-names.md`,
+`docs/toma-and-cade.md`, `docs/myfifo.md`. Item 21 still waits on
+Chrysthofer's answer (no reply on 2026-10-10).
 Open, waiting on Luciano:
 - `RAMBLK` (proposed 2026-10-09, not started): a parameter on `myFIFO` and
   `myDCFIFO` for a registered read, so a large FIFO can go to block RAM
