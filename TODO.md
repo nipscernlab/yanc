@@ -118,8 +118,12 @@ before `CAD`. Simulated alone, a processor gets its testbench as the partner
 (`Simulation/cade.txt`, `Simulation/toma.txt`). Regress: the `LINK` pass (two
 C+- pairs and two C+-/C++ pairs, both directions) and `NegTests/cade_comp`.
 Left before v7.0: the Fmax of a two-processor design on each board, a small
-example for the boards, and a decision on the interrupt during a wait (today
-a restart does not clear T, C or the waiting flag). Deadlock detection in
+example for the boards. The interrupt during a wait is decided (Luciano,
+2026-10-11): it stays as it is and the manual says not to interrupt a
+processor while it waits (docs/toma-and-cade.md section 6). Proposed
+2026-10-11: the board example, the two-processor Fmax and the `LINKAS`
+board check become the next task of Sabrina and Pedro Henrique (the pair
+running `sapho_all` on both boards). Deadlock detection in
 simulation was dropped (Luciano, 2026-10-08: the user's responsibility).
 Two processors on different clocks: done in simulation (2026-10-09,
 `#(.LINKAS(1))` on both processors, data from the new pin `toma_dado`;

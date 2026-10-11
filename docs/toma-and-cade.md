@@ -201,9 +201,15 @@ What the reading said:
 
 ## 6. Open
 
-- **The interrupt** (left for later, Luciano 2026-10-07). Today's interrupt
-  restarts at `ITRADD` without clearing T, C or W; a restart in the middle
-  of a `toma` leaves T flipped with nobody holding the value.
+- **The interrupt: decided, stays as it is** (Luciano, 2026-10-11). The
+  interrupt restarts at `ITRADD` without clearing T, C or W; a restart in
+  the middle of a `toma` leaves T flipped with nobody holding the value and
+  the pair out of step. Not interrupting a processor while it waits in
+  `toma`/`cade` is the program's responsibility, the same line as the
+  deadlock below. Two alternatives were set aside for v7.0 and wait for a
+  real case: hold `itr` until the wait ends (small hardware, but an absent
+  partner then blocks the interrupt forever), or reset the link on both
+  sides (a wire between the partners).
 - **Deadlock**: both sides in `toma` (or both in `cade`) wait forever, as in
   Go; the program's responsibility. A simulation could flag it.
 - **Two clocks**: implemented in simulation (`LINKAS`, section 8); the
@@ -340,5 +346,7 @@ short and must say, without the reasoning above:
 - the reset rule (8.3);
 - the Quartus constraints (8.5);
 - the cost: 4 flip-flops plus NUBITS on the writer, and a few cycles of
-  latency per value.
+  latency per value;
+- (any clock) an interrupt during a `toma`/`cade` wait puts the pair out of
+  step: do not interrupt a processor while it waits (section 6).
 
