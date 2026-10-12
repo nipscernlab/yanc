@@ -41,12 +41,10 @@ void cli_parse(int argc, char **argv, cli_args *out)
             out->input = opt_value(argc, argv, &i, arg);
         else if (!strcmp(arg, "-n") || !strcmp(arg, "--name"))
             out->name = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-p") || !strcmp(arg, "--proc-dir"))
+        else if (!strcmp(arg, "-o") || !strcmp(arg, "--output"))
             out->proc_dir = opt_value(argc, argv, &i, arg);
         else if (!strcmp(arg, "-m") || !strcmp(arg, "--macros-dir"))
             out->macros_dir = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-t") || !strcmp(arg, "--temp-dir"))
-            out->temp_dir = opt_value(argc, argv, &i, arg);
         else if (!strcmp(arg, "-A") || !strcmp(arg, "--array"))
             out->array_sim = 1;
         else if (!strcmp(arg, "-h") || !strcmp(arg, "--help"))
@@ -70,16 +68,21 @@ void cli_parse(int argc, char **argv, cli_args *out)
     }
 
     // defaults (exe_dir.h): -m the Macros/ folder next to the tool, -n the
-    // source file's name, -t <proc-dir>/Temp; -i and -p are mandatory ------
+    // source file's name, -o the folder ./<name>, where everything goes (the
+    // .asm and the tables); the source file is mandatory --------------------
 
     static const char *const macros_dirs[] = EXE_MACROS_DIRS;
     if (!out->macros_dir) out->macros_dir = exe_find_dir(macros_dirs);
     if (!out->name && out->input) out->name = path_stem(out->input);
-    if (!out->temp_dir && out->proc_dir) out->temp_dir = default_temp(out->proc_dir);
+    if (!out->proc_dir && out->name)
+    {
+        out->proc_dir = malloc(strlen(out->name) + 3);
+        if (out->proc_dir) sprintf(out->proc_dir, "./%s", out->name);
+    }
+    if (out->proc_dir) {make_dir(out->proc_dir); out->temp_dir = out->proc_dir;}
 
     const char *missing = NULL;
-    if      (!out->input)      missing = "-i/--input";
-    else if (!out->proc_dir)   missing = "-p/--proc-dir";
+    if      (!out->input)      missing = "<file.cmm>";
     else if (!out->macros_dir) missing = "-m/--macros-dir";
 
     if (missing)

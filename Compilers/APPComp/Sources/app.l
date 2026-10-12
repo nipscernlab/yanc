@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 
     yyin = fopen(a.input, "r"); // -i is the input .asm file
     if (yyin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
-    eval_init   (a.temp_dir);   // -t is the directory holding the log file
+    eval_init   (a.temp_dir);   // the folder of the .asm, where app_log.txt goes
     yylex();                    // run the lexer
     fclose(yyin);               // close the .asm file
     eval_finish();              // finalize the log file

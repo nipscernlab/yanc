@@ -3,21 +3,21 @@
 #
 # Runs both compiler pipelines off a shared set of binaries:
 #
-#   1. CMM phase: for every Compilers/CMMComp/Tests/<prname>/Software/<prname>.cmm
+#   1. CMM phase: for every Compilers/CMMComp/Tests/<prname>/<prname>.cmm
 #      run cmmcomp and compare the produced .asm against
 #      Compilers/CMMComp/Tests/<prname>/golden.asm. For the sim-enabled subset also
 #      run appcomp + asmcomp + iverilog + vvp and compare output_*.txt
 #      against Compilers/Compilers/CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
 #      the multi-proc DTW example (Compilers/CMMComp/Tests/DTW/TopLevel/).
 #
-#   2. CPP phase: for every Compilers/CPPComp/Tests/testN/Software/testN.cpp run
+#   2. CPP phase: for every Compilers/CPPComp/Tests/testN/testN.cpp run
 #      cpppp -> cppcomp -> appcomp -> asmcomp -> iverilog (or Verilator
-#      if testN/Software/testN.in is present) and compare the resulting
-#      Simulation/output_0.txt against Compilers/CPPComp/Tests/testN/golden.txt.
-#      Tests follow the cmmcomp pipeline layout: <proc>/Software/ for
-#      source, <proc>/Hardware/ for the generated .v/.mif, and
-#      <proc>/Simulation/ for the sim output (all three are created on
-#      demand by cppcomp + asmcomp). An optional testN/warnings.txt lists
+#      if testN/testN.in is present) and compare the resulting
+#      output_0.txt against Compilers/CPPComp/Tests/testN/golden.txt.
+#      Every test is a folder holding the source and its own files (array
+#      inits, input_N.txt); the tools write everything they generate to one
+#      output folder, <work>/<test>/<prname>/ (the default ./<prname> of the
+#      user's flow). An optional testN/warnings.txt lists
 #      the cppcomp warnings the test expects, one substring per line: each
 #      must appear, and no other warning may. An optional hardware.txt (in
 #      both phases) holds the generated processor's parameters: see hw_check.
@@ -299,17 +299,20 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
     echo "==> CMM phase"
 
-    # Each test lives in its own folder under Compilers/CMMComp/Tests/<prname>/,
-    # mirroring the Compilers/CPPComp/Tests/ layout: Software/<prname>.cmm is the
-    # entry, golden.asm + golden_sim/ live alongside. The multi-proc DTW
-    # and PulseSim entries (project-pass wrappers without a top-level .cmm)
-    # are filtered out by the Software/<prname>.cmm existence check below.
+    # Each test is a folder Compilers/CMMComp/Tests/<prname>/ holding
+    # <prname>.cmm, its own files (array inits, input_N.txt) and golden.asm +
+    # golden_sim/. Project-pass wrappers (DTW, LINK, FIFO, ...) have no
+    # <prname>.cmm and are left out. The test is copied to $WORK_DIR/<prname>
+    # and compiled into $WORK_DIR/<prname>/<prname>/, its output folder.
     shopt -s globstar nullglob
-    cmm_files=("$CMM_ROOT"/Tests/*/Software/*.cmm)
+    cmm_files=()
+    for d in "$CMM_ROOT"/Tests/*/; do
+        d="${d%/}"; [ -f "$d/$(basename "$d").cmm" ] && cmm_files+=("$d/$(basename "$d").cmm")
+    done
     IFS=$'\n' cmm_sorted=($(printf '%s\n' "${cmm_files[@]}" | sort))
 
     for cmm in "${cmm_sorted[@]}"; do
-        proc_dir_rel="$(dirname "$(dirname "$cmm")")"
+        proc_dir_rel="$(dirname "$cmm")"
         prname="$(basename "$proc_dir_rel")"
         filename="$(basename "$cmm")"
 
@@ -317,15 +320,14 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         rm -rf "$work_proc"
         cp -r "$proc_dir_rel" "$work_proc"
 
-        tmp="$TMP_DIR/$prname"
-        rm -rf "$tmp"
-        mkdir -p "$tmp"
+        out="$work_proc/$prname"            # the output folder
+        tmp="$out"
 
-        asm_file="$work_proc/Software/$prname.asm"
+        asm_file="$out/$prname.asm"
         golden="$proc_dir_rel/golden.asm"
 
         # cmmcomp step ------------------------------------------------------
-        if ! "$CMMCOMP" -en -i "$work_proc/Software/$filename" -n "$prname" -p "$work_proc" -m "$MACROS" -t "$tmp" >/dev/null 2>&1; then
+        if ! "$CMMCOMP" -en -o "$out" -m "$MACROS" "$work_proc/$filename" >/dev/null 2>&1; then
             echo "FAIL ($prname): cmmcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
@@ -373,15 +375,15 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             continue
         fi
 
-        if ! "$APPCOMP" -en -i "$asm_file" -t "$tmp" >/dev/null 2>&1; then
+        if ! "$APPCOMP" -en "$asm_file" >/dev/null 2>&1; then
             echo "FAIL ($prname): appcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
-        if ! "$ASMCOMP" -en -i "$asm_file" -p "$work_proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 100000 >/dev/null 2>&1; then
+        if ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 100000 "$asm_file" >/dev/null 2>&1; then
             echo "FAIL ($prname): asmcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
-        if ! hw_msg=$(hw_check "$proc_dir_rel/hardware.txt" "$work_proc/Hardware/$prname.v"); then
+        if ! hw_msg=$(hw_check "$proc_dir_rel/hardware.txt" "$out/$prname.v"); then
             echo "FAIL ($prname): $hw_msg"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
@@ -394,7 +396,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             continue
         fi
 
-        uproc="$work_proc/Hardware/$prname"
+        uproc="$out/$prname"
         tb="$tmp/${prname}_tb.v"
         if [ ! -s "$uproc.v" ] || [ ! -s "$tb" ]; then
             echo "FAIL ($prname): asmcomp artifacts missing"
@@ -409,8 +411,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
 
-        cp "${uproc}_data.mif" "${uproc}_inst.mif" "$tmp/"
-        pushd "$tmp" >/dev/null
+        pushd "$out" >/dev/null
         "$VVP" "$tmp/$prname.vvp" >/dev/null 2>&1
         vvp_status=$?
         if [ $vvp_status -ne 0 ]; then vvp_once_more "$prname" "$tmp/$prname.vvp"; vvp_status=$?; fi
@@ -424,7 +425,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
 
-        sim_dir="$work_proc/Simulation"
+        sim_dir="$out"
         golden_sim="$proc_dir_rel/golden_sim"
         out_files=("$sim_dir"/output_*.txt)
         if [ "${#out_files[@]}" -eq 0 ] || [ ! -e "${out_files[0]}" ]; then
@@ -476,14 +477,14 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         project_ok=1
         proc_vs=()
         for p in "${procs[@]}"; do
-            if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+            if [ ! -s "$WORK_DIR/$p/$p/$p.v" ]; then
                 echo "FAIL ($proj): $p artifacts missing - did its build pass?"
                 project_ok=0; break
             fi
-            proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
-            cp "$WORK_DIR/$p/Hardware/$p.v"          "$proj_tmp/"
-            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$proj_tmp/"
-            cp "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+            proc_vs+=("$WORK_DIR/$p/$p/$p.v")
+            cp "$WORK_DIR/$p/$p/$p.v"          "$proj_tmp/"
+            cp "$WORK_DIR/$p/$p/${p}_data.mif" "$proj_tmp/"
+            cp "$WORK_DIR/$p/$p/${p}_inst.mif" "$proj_tmp/"
         done
 
         if [ "$project_ok" -eq 1 ]; then
@@ -584,13 +585,13 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         project_ok=1
         proc_vs=()
         for p in "${procs[@]}"; do
-            if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+            if [ ! -s "$WORK_DIR/$p/$p/$p.v" ]; then
                 echo "FAIL ($proj): $p artifacts missing - did its build pass?"
                 project_ok=0; break
             fi
-            proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
-            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$proj_tmp/"
-            cp "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+            proc_vs+=("$WORK_DIR/$p/$p/$p.v")
+            cp "$WORK_DIR/$p/$p/${p}_data.mif" "$proj_tmp/"
+            cp "$WORK_DIR/$p/$p/${p}_inst.mif" "$proj_tmp/"
         done
 
         # the C++ partners of the mixed pairs: built here, as the CPP phase
@@ -599,14 +600,14 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             [ "$project_ok" -eq 1 ] || break
             cp_dir="$proj_tmp/cpp/$p"; cp_tmp="$cp_dir/_tmp"; mkdir -p "$cp_tmp"
             if ! "$CPPPP" -i "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
-               ! "$CPPC" -i "$cp_tmp/pp.cpp" -p "$cp_dir" -n "$p" -t "$cp_tmp" >/dev/null 2>&1 ||
-               ! "$APPCOMP" -en -i "$cp_dir/Software/$p.asm" -t "$cp_tmp" >/dev/null 2>&1 ||
-               ! "$ASMCOMP" -en -i "$cp_dir/Software/$p.asm" -p "$cp_dir" -d "$HDL" -m "$MACROS" -t "$cp_tmp" -f 100 -c 100000 >/dev/null 2>&1; then
+               ! "$CPPC" -o "$cp_dir" -n "$p" "$cp_tmp/pp.cpp" >/dev/null 2>&1 ||
+               ! "$APPCOMP" -en "$cp_dir/$p.asm" >/dev/null 2>&1 ||
+               ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
                 echo "FAIL ($proj): building the C++ partner $p"
                 fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0; break
             fi
-            proc_vs+=("$cp_dir/Hardware/$p.v")
-            cp "$cp_dir/Hardware/${p}_data.mif" "$cp_dir/Hardware/${p}_inst.mif" "$proj_tmp/"
+            proc_vs+=("$cp_dir/$p.v")
+            cp "$cp_dir/${p}_data.mif" "$cp_dir/${p}_inst.mif" "$proj_tmp/"
         done
 
         if [ "$project_ok" -eq 1 ] && ! "$IVERILOG" -s link_tb -o "$proj_tmp/$proj.vvp" \
@@ -719,10 +720,10 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     # marked // LINK (checked first, also under --no-sim).
     sa_dir="$CMM_ROOT/Tests/sapho_all"
     mkdir -p "$TMP_DIR"
-    grep -v -E '// LINK|^#PRNAME' "$sa_dir/Software/sapho_all.cmm" > "$TMP_DIR/linkall_src0.txt"
+    grep -v -E '// LINK|^#PRNAME' "$sa_dir/sapho_all.cmm" > "$TMP_DIR/linkall_src0.txt"
     for p in sapho_all_a sapho_all_b; do
         # temp files, not <(...): MSYS2's diff/cmp can't always open /proc paths
-        grep -v -E '// LINK|^#PRNAME' "$CMM_ROOT/Tests/$p/Software/$p.cmm" > "$TMP_DIR/linkall_src1.txt"
+        grep -v -E '// LINK|^#PRNAME' "$CMM_ROOT/Tests/$p/$p.cmm" > "$TMP_DIR/linkall_src1.txt"
         if ! diff "$TMP_DIR/linkall_src0.txt" "$TMP_DIR/linkall_src1.txt" >/dev/null; then
             echo "FAIL (LINKALL-source): $p.cmm differs from sapho_all.cmm beyond its // LINK lines"
             fail=$((fail + 1)); failed_names+=("LINKALL-source")
@@ -739,12 +740,12 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         project_ok=1
         proc_vs=()
         for p in sapho_all sapho_all_a sapho_all_b; do
-            if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+            if [ ! -s "$WORK_DIR/$p/$p/$p.v" ]; then
                 echo "FAIL ($proj): $p artifacts missing - did its build pass?"
                 fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0; break
             fi
-            proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
-            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+            proc_vs+=("$WORK_DIR/$p/$p/$p.v")
+            cp "$WORK_DIR/$p/$p/${p}_data.mif" "$WORK_DIR/$p/$p/${p}_inst.mif" "$proj_tmp/"
         done
         if [ "$project_ok" -eq 1 ] && ! "$IVERILOG" -s linkall_tb -o "$proj_tmp/$proj.vvp" \
                 "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
@@ -808,25 +809,25 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         project_ok=1
         proc_vs=()
         for p in lk_chain_a lk_chain_b lk_chain_c lk_fan_w lk_echo lk_count lk_count7 lk_merge lk_flt_w lk_flt_r; do
-            if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+            if [ ! -s "$WORK_DIR/$p/$p/$p.v" ]; then
                 echo "FAIL ($proj): $p artifacts missing - did its build pass?"
                 fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0; break
             fi
-            proc_vs+=("$WORK_DIR/$p/Hardware/$p.v")
-            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+            proc_vs+=("$WORK_DIR/$p/$p/$p.v")
+            cp "$WORK_DIR/$p/$p/${p}_data.mif" "$WORK_DIR/$p/$p/${p}_inst.mif" "$proj_tmp/"
         done
         p=lk_cpp_chain_b
         if [ "$project_ok" -eq 1 ]; then
             cp_dir="$proj_tmp/cpp/$p"; cp_tmp="$cp_dir/_tmp"; mkdir -p "$cp_tmp"
             if ! "$CPPPP" -i "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
-               ! "$CPPC" -i "$cp_tmp/pp.cpp" -p "$cp_dir" -n "$p" -t "$cp_tmp" >/dev/null 2>&1 ||
-               ! "$APPCOMP" -en -i "$cp_dir/Software/$p.asm" -t "$cp_tmp" >/dev/null 2>&1 ||
-               ! "$ASMCOMP" -en -i "$cp_dir/Software/$p.asm" -p "$cp_dir" -d "$HDL" -m "$MACROS" -t "$cp_tmp" -f 100 -c 100000 >/dev/null 2>&1; then
+               ! "$CPPC" -o "$cp_dir" -n "$p" "$cp_tmp/pp.cpp" >/dev/null 2>&1 ||
+               ! "$APPCOMP" -en "$cp_dir/$p.asm" >/dev/null 2>&1 ||
+               ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
                 echo "FAIL ($proj): building the C++ middle $p"
                 fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
             else
-                proc_vs+=("$cp_dir/Hardware/$p.v")
-                cp "$cp_dir/Hardware/${p}_data.mif" "$cp_dir/Hardware/${p}_inst.mif" "$proj_tmp/"
+                proc_vs+=("$cp_dir/$p.v")
+                cp "$cp_dir/${p}_data.mif" "$cp_dir/${p}_inst.mif" "$proj_tmp/"
             fi
         fi
         if [ "$project_ok" -eq 1 ] && ! "$IVERILOG" -s link3_tb -o "$proj_tmp/$proj.vvp" \
@@ -884,16 +885,16 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         proj_tmp="$TMP_DIR/$proj"
         rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"
         p="fifo_w"
-        if [ ! -s "$WORK_DIR/$p/Hardware/$p.v" ]; then
+        if [ ! -s "$WORK_DIR/$p/$p/$p.v" ]; then
             echo "FAIL ($proj): $p artifacts missing - did its build pass?"
             fail=$((fail + 1)); failed_names+=("$proj")
         else
-            cp "$WORK_DIR/$p/Hardware/${p}_data.mif" "$WORK_DIR/$p/Hardware/${p}_inst.mif" "$proj_tmp/"
+            cp "$WORK_DIR/$p/$p/${p}_data.mif" "$WORK_DIR/$p/$p/${p}_inst.mif" "$proj_tmp/"
             sim_fail=0
             if ! "$IVERILOG" -s fifo_tb -o "$proj_tmp/$proj.vvp" \
                     "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
                     "$HDL/core.v" "$HDL/ula.v" "$HDL/myFIFO.v" \
-                    "$WORK_DIR/$p/Hardware/$p.v" "$proj_top/fifo_tb.v" >/dev/null 2>&1; then
+                    "$WORK_DIR/$p/$p/$p.v" "$proj_top/fifo_tb.v" >/dev/null 2>&1; then
                 echo "FAIL ($proj): iverilog exited non-zero"; sim_fail=1
             else
                 pushd "$proj_tmp" >/dev/null
@@ -925,21 +926,20 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             # (Tests/FIFO/fifo_r.cmm, built here), both clock ratios; then
             # Scripts/hw/tb_dcfifo.v both ways round ("0 of 4 failed")
             if [ $sim_fail -eq 0 ]; then
-                r="fifo_r"; rd="$proj_tmp/$r"; mkdir -p "$rd/Software" "$rd/_tmp"
-                cp "$proj_top/../$r.cmm" "$rd/Software/"
-                if ! "$CMMCOMP" -en -i "$rd/Software/$r.cmm" -n "$r" -p "$rd" -m "$MACROS" -t "$rd/_tmp" >/dev/null 2>&1 ||
-                   ! "$APPCOMP" -en -i "$rd/Software/$r.asm" -t "$rd/_tmp" >/dev/null 2>&1 ||
-                   ! "$ASMCOMP" -en -i "$rd/Software/$r.asm" -p "$rd" -d "$HDL" -m "$MACROS" -t "$rd/_tmp" -f 100 -c 100000 >/dev/null 2>&1; then
+                r="fifo_r"; rd="$proj_tmp/$r"; mkdir -p "$rd"
+                if ! "$CMMCOMP" -en -o "$rd" -m "$MACROS" "$proj_top/../$r.cmm" >/dev/null 2>&1 ||
+                   ! "$APPCOMP" -en "$rd/$r.asm" >/dev/null 2>&1 ||
+                   ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 100000 "$rd/$r.asm" >/dev/null 2>&1; then
                     echo "FAIL ($proj): building the reader $r"; sim_fail=1
                 else
-                    cp "$rd/Hardware/${r}_data.mif" "$rd/Hardware/${r}_inst.mif" "$proj_tmp/"
+                    cp "$rd/${r}_data.mif" "$rd/${r}_inst.mif" "$proj_tmp/"
                 fi
             fi
             if [ $sim_fail -eq 0 ]; then
                 if ! "$IVERILOG" -s dcfifo_tb -o "$proj_tmp/dcfifo.vvp" \
                         "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
                         "$HDL/core.v" "$HDL/ula.v" "$HDL/myDCFIFO.v" \
-                        "$WORK_DIR/$p/Hardware/$p.v" "$rd/Hardware/$r.v" \
+                        "$WORK_DIR/$p/$p/$p.v" "$rd/$r.v" \
                         "$proj_top/dcfifo_tb.v" >/dev/null 2>&1; then
                     echo "FAIL ($proj): iverilog on dcfifo_tb.v exited non-zero"; sim_fail=1
                 else
@@ -998,13 +998,13 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         rm -rf "$rtmp"; mkdir -p "$rtmp"
 
         reset_ok=1
-        if [ ! -s "$WORK_DIR/$rname/Hardware/$rname.v" ]; then
+        if [ ! -s "$WORK_DIR/$rname/$rname/$rname.v" ]; then
             echo "FAIL ($rtest): $rname artifacts missing - did its build pass?"
             fail=$((fail + 1)); failed_names+=("$rtest"); reset_ok=0
         else
-            cp "$WORK_DIR/$rname/Hardware/$rname.v"          "$rtmp/"
-            cp "$WORK_DIR/$rname/Hardware/${rname}_data.mif" "$rtmp/"
-            cp "$WORK_DIR/$rname/Hardware/${rname}_inst.mif" "$rtmp/"
+            cp "$WORK_DIR/$rname/$rname/$rname.v"          "$rtmp/"
+            cp "$WORK_DIR/$rname/$rname/${rname}_data.mif" "$rtmp/"
+            cp "$WORK_DIR/$rname/$rname/${rname}_inst.mif" "$rtmp/"
         fi
 
         if [ "$reset_ok" -eq 1 ]; then
@@ -1092,30 +1092,29 @@ if [ "$CMM_ONLY" -eq 0 ]; then
     shopt -s nullglob
     for entry in "$CPP_ROOT"/Tests/test*/; do
         base="$(basename "$entry")"
-        # Sources live in testN/Software/ to match the cmmcomp pipeline layout.
-        src="${entry%/}/Software/$base.cpp"
+        # The test folder holds testN.cpp and its own files.
+        src="${entry%/}/$base.cpp"
         if [ ! -f "$src" ]; then
-            echo "FAIL ($base): folder layout needs $base/Software/$base.cpp as entry"
+            echo "FAIL ($base): folder layout needs $base/$base.cpp as entry"
             fail=$((fail+1)); failed_names+=("$base"); continue
         fi
-        local_inc=("-I" "${entry%/}/Software")
+        local_inc=("-I" "${entry%/}")
 
         prname="$(grep -oE '#pragma[ \t]+yanc[ \t]+prname[ \t]+[A-Za-z0-9_]+' "$src" | awk '{print $NF}' | head -1)"
         [ -z "$prname" ] && prname="$base"
 
         proc="$WORK_CPP/$base"
-        tmp="$WORK_CPP/$base/_tmp"
+        tmp="$WORK_CPP/$base/_tmp"   # pp.cpp, cppcomp.log, Verilator's build
+        od="$proc/$prname"           # the output folder
         rm -rf "$proc"
-        mkdir -p "$tmp"      # cppcomp -p creates Software/, asmcomp creates Hardware/Simulation/
+        mkdir -p "$tmp"
 
-        asm="$proc/Software/$prname.asm"
+        asm="$od/$prname.asm"
 
-        if ! "$CPPPP" -i "$src" -o "$tmp/pp.cpp" -I "$CPP_ROOT/Includes" "${local_inc[@]}" >/dev/null 2>&1; then
+        if ! "$CPPPP" -o "$tmp/pp.cpp" -I "$CPP_ROOT/Includes" "${local_inc[@]}" "$src" >/dev/null 2>&1; then
             echo "FAIL ($base): cpppp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
-        # cppcomp -p <proc> writes Software/<prname>.asm into the proc folder,
-        # creating Software/ if missing (cmmcomp-style pipeline layout).
-        if ! "$CPPC" -i "$tmp/pp.cpp" -p "$proc" -n "$prname" -t "$tmp" >"$tmp/cppcomp.log" 2>&1; then
+        if ! "$CPPC" -o "$od" -n "$prname" "$tmp/pp.cpp" >"$tmp/cppcomp.log" 2>&1; then
             echo "FAIL ($base): cppcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
         # warnings.txt (optional): one expected cppcomp warning per line (a
@@ -1133,24 +1132,24 @@ if [ "$CMM_ONLY" -eq 0 ]; then
                 echo "FAIL ($base): $wbad"; fail=$((fail+1)); failed_names+=("$base"); continue
             fi
         fi
-        if ! "$APPCOMP" -en -i "$asm" -t "$tmp" >/dev/null 2>&1; then
+        if ! "$APPCOMP" -en "$asm" >/dev/null 2>&1; then
             echo "FAIL ($base): appcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
-        if ! "$ASMCOMP" -en -i "$asm" -p "$proc" -d "$HDL" -m "$MACROS" -t "$tmp" -f 100 -c 5000000 >/dev/null 2>&1; then
+        if ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 5000000 "$asm" >/dev/null 2>&1; then
             echo "FAIL ($base): asmcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
-        if ! hw_msg=$(hw_check "${entry%/}/hardware.txt" "$proc/Hardware/$prname.v"); then
+        if ! hw_msg=$(hw_check "${entry%/}/hardware.txt" "$od/$prname.v"); then
             echo "FAIL ($base): $hw_msg"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
 
-        uproc="$proc/Hardware/$prname"
-        tb="$tmp/${prname}_tb.v"
+        uproc="$od/$prname"
+        tb="$od/${prname}_tb.v"
         if [ ! -s "$uproc.v" ] || [ ! -s "$tb" ]; then
             echo "FAIL ($base): asmcomp artifacts missing"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
 
-        out="$proc/Simulation/output_0.txt"
-        infile="${entry%/}/Software/$base.in"
+        out="$od/output_0.txt"
+        infile="${entry%/}/$base.in"
         if [ -f "$infile" ]; then
             if [ "$NO_SIM" -eq 1 ]; then
                 echo "PASS ($base)  [verilator sim skipped]"
@@ -1199,16 +1198,15 @@ if [ "$CMM_ONLY" -eq 0 ]; then
                 "$vldir/sim_$prname" "$infile" "$out" "$clocks" "$exp" >/dev/null 2>&1 || true
             fi
         else
-            if ! "$IVERILOG" -s "${prname}_tb" -o "$tmp/$prname.vvp" \
+            if ! "$IVERILOG" -s "${prname}_tb" -o "$od/$prname.vvp" \
                     "$tb" "$uproc.v" \
                     "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
                     "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1; then
                 echo "FAIL ($base): iverilog"; fail=$((fail+1)); failed_names+=("$base"); continue
             fi
 
-            cp "${uproc}_data.mif" "${uproc}_inst.mif" "$tmp/" 2>/dev/null
-            pushd "$tmp" >/dev/null
-            "$VVP" "$tmp/$prname.vvp" >/dev/null 2>&1
+            pushd "$od" >/dev/null
+            "$VVP" "$od/$prname.vvp" >/dev/null 2>&1
             vvp_status=$?
             # died: non-zero, or an empty / truncated output (a strict prefix
             # of the golden) -- once more (item 15)
@@ -1220,9 +1218,9 @@ if [ "$CMM_ONLY" -eq 0 ]; then
                 osz=$(wc -c < "$out"); gsz=$(wc -c < "$gold_c")
                 if [ "$osz" -lt "$gsz" ] && head -c "$osz" "$gold_c" | cmp -s - "$out"; then died=1; fi
             fi
-            [ $died -eq 1 ] && vvp_once_more "$base" "$tmp/$prname.vvp"
+            [ $died -eq 1 ] && vvp_once_more "$base" "$od/$prname.vvp"
             popd >/dev/null
-            if ! stack_check "$tmp/${prname}_tb.vcd"; then
+            if ! stack_check "$od/${prname}_tb.vcd"; then
                 echo "FAIL ($base): a stack reached its depth in the simulation (fl_full)"
                 fail=$((fail+1)); failed_names+=("$base"); continue
             fi
@@ -1297,7 +1295,7 @@ if [ "$CPP_ONLY" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
     echo ""
     echo "==> SAPHO blocks (sapho_all)"
     sa="$CMM_ROOT/Tests/sapho_all"
-    sa_v="$WORK_DIR/sapho_all/Hardware/sapho_all.v"
+    sa_v="$WORK_DIR/sapho_all/sapho_all/sapho_all.v"
     if [ "$NO_SIM" -eq 1 ]; then
         # --no-sim stops before asmcomp: there is no .v to check
         echo "SKIP (sapho_all-blocks): --no-sim builds no .v"
@@ -1312,7 +1310,7 @@ if [ "$CPP_ONLY" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
     fi
     # one output line per turn of the program's while (1): every line must be
     # the model's value
-    sa_in=$(head -n 1 "$sa/Simulation/input_0.txt" | tr -d '\r')
+    sa_in=$(head -n 1 "$sa/input_0.txt" | tr -d '\r')
     sa_want=$(python3 "$sa/model.py" "$sa_in")
     sa_lines=$(grep -c '' "$sa/golden_sim/output_0.txt")
     sa_other=$(tr -d '\r' < "$sa/golden_sim/output_0.txt" | grep -cvx -- "$sa_want")
@@ -1344,9 +1342,9 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             echo "FAIL ($name): fixture missing ($neg_dir/$fixture)"
             fail=$((fail+1)); failed_names+=("$name"); continue
         fi
-        rm -rf "$neg_work"; mkdir -p "$neg_work/Software" "$neg_work/tmp"
-        cp "$neg_dir/$fixture" "$neg_work/Software/p.cmm"
-        out="$("$CMMCOMP" -en -i "$neg_work/Software/p.cmm" -n p -p "$neg_work" -m "$MACROS" -t "$neg_work/tmp" 2>&1)"
+        rm -rf "$neg_work"; mkdir -p "$neg_work"
+        cp "$neg_dir/$fixture" "$neg_work/p.cmm"
+        out="$("$CMMCOMP" -en -o "$neg_work/p" -m "$MACROS" "$neg_work/p.cmm" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"
@@ -1371,9 +1369,9 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         case "$fixture" in ''|\#*) continue ;; esac
         name="warn:${fixture%.cmm}"
         want=0; case "$forbid" in +*) want=1; forbid="${forbid#+}" ;; esac
-        rm -rf "$neg_work"; mkdir -p "$neg_work/Software" "$neg_work/tmp"
-        cp "$neg_dir/$fixture" "$neg_work/Software/p.cmm"
-        out="$("$CMMCOMP" -en -i "$neg_work/Software/p.cmm" -n p -p "$neg_work" -m "$MACROS" -t "$neg_work/tmp" 2>&1)"
+        rm -rf "$neg_work"; mkdir -p "$neg_work"
+        cp "$neg_dir/$fixture" "$neg_work/p.cmm"
+        out="$("$CMMCOMP" -en -o "$neg_work/p" -m "$MACROS" "$neg_work/p.cmm" 2>&1)"
         rc=$?
         printed=0; printf '%s' "$out" | grep -qF "$forbid" && printed=1
         if [ "$rc" -ne 0 ]; then
@@ -1408,12 +1406,12 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             echo "FAIL ($name): fixture missing ($neg_dir/$fixture)"
             fail=$((fail+1)); failed_names+=("$name"); continue
         fi
-        rm -rf "$neg_work"; mkdir -p "$neg_work/Software" "$neg_work/tmp"
-        if ! "$CPPPP" -i "$neg_dir/$fixture" -o "$neg_work/tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1; then
+        rm -rf "$neg_work"; mkdir -p "$neg_work/tmp"
+        if ! "$CPPPP" -o "$neg_work/tmp/pp.cpp" -I "$CPP_ROOT/Includes" "$neg_dir/$fixture" >/dev/null 2>&1; then
             echo "FAIL ($name): cpppp exited non-zero"
             fail=$((fail+1)); failed_names+=("$name"); continue
         fi
-        out="$("$CPPC" -i "$neg_work/tmp/pp.cpp" -p "$neg_work" -n p -t "$neg_work/tmp" 2>&1)"
+        out="$("$CPPC" -o "$neg_work/p" -n p "$neg_work/tmp/pp.cpp" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"

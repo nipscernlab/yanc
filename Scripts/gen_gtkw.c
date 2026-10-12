@@ -14,9 +14,10 @@
 // with:  gtkwave <vcd> -a <out.gtkw>
 //
 // Usage:
-//   gen_gtkw <in.vcd> <out.gtkw> <tmp_base> <comp2gtkw_exe>
-//     <tmp_base>      base temp dir; per-proc translate files are read from
-//                     <tmp_base>/<proc_type>/trad_opcode.txt and trad_cmm.txt
+//   gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw_exe>]
+//     <base>          the folder holding each processor's output folder; the
+//                     translate files are read from
+//                     <base>/<proc_type>/trad_opcode.txt and trad_cmm.txt
 //     <comp2gtkw_exe> path to comp2gtkw.exe (process filter for complex signals)
 //
 // Build (sibling of comp2gtkw.c):  gcc -O2 -o gen_gtkw.exe gen_gtkw.c
@@ -364,23 +365,13 @@ static void emit_proc_section(const Proc *p) {
     emit_io(p->inst, "out_en_sim_", FMT_BIN,        "out_en");
     emit_io(p->inst, "out_sig_",    FMT_SIGNED_DEC, "output");
 
-    // per-proc translate files at <tmp_base>/<type>/, or at <tmp_base>/<type>/
-    // Temp/ when the tools ran with their default temp folder (<proc>/Temp)
-    // (forward slashes work on both Windows and POSIX, and GTKWave accepts
-    // them in the .gtkw paths).
+    // per-proc translate files in each processor's output folder,
+    // <base>/<type>/ (forward slashes work on both Windows and POSIX, and
+    // GTKWave accepts them in the .gtkw paths).
     char tradop[800] = "", tradcmm[800] = "";
     if (p->type[0]) {
         snprintf(tradop,  sizeof tradop,  "%s/%s/trad_opcode.txt", g_tmp_base, p->type);
-        FILE *probe = fopen(tradop, "r");
-        const char *sub = "";
-        if (probe) fclose(probe);
-        else {
-            snprintf(tradop, sizeof tradop, "%s/%s/Temp/trad_opcode.txt", g_tmp_base, p->type);
-            probe = fopen(tradop, "r");
-            if (probe) {fclose(probe); sub = "/Temp";}
-        }
-        snprintf(tradop,  sizeof tradop,  "%s/%s%s/trad_opcode.txt", g_tmp_base, p->type, sub);
-        snprintf(tradcmm, sizeof tradcmm, "%s/%s%s/trad_cmm.txt",    g_tmp_base, p->type, sub);
+        snprintf(tradcmm, sizeof tradcmm, "%s/%s/trad_cmm.txt",    g_tmp_base, p->type);
     }
     emit_comment("Instructions *******");
     int vi = find_sig(p->inst, "valr2");
@@ -478,10 +469,10 @@ int main(int argc, char **argv) {
     int help = argc >= 2 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"));
     if (help || argc < 4 || argc > 5) {
         fprintf(help ? stdout : stderr,
-                "usage: gen_gtkw <in.vcd> <out.gtkw> <tmp_base> [<comp2gtkw>]\n"
+                "usage: gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]\n"
                 "  writes the formatted GTKWave view (out.gtkw) of a simulation dump;\n"
-                "  tmp_base holds one folder per processor with its translate files\n"
-                "  (<tmp_base>/<proc>/ or <tmp_base>/<proc>/Temp/);\n"
+                "  <base> holds the output folder of each processor, <base>/<proc>/,\n"
+                "  with its translate files (trad_opcode.txt, trad_cmm.txt);\n"
                 "  comp2gtkw defaults to the one next to gen_gtkw\n");
         return help ? 0 : 1;
     }

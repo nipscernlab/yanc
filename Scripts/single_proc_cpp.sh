@@ -61,31 +61,30 @@ SRC_PROC="$ROOT_DIR/Compilers/CPPComp/Tests/$PROC"
 # --- Work area: the only files this script creates (Teste/ is gitignored) ---
 WORK="$ROOT_DIR/Teste"
 rm -rf "$WORK"
-PROC_DIR="$WORK/$PROC"
-SOFT_DIR="$PROC_DIR/Software"; HARD_DIR="$PROC_DIR/Hardware"
-TMP_DIR="$WORK/Temp"; TMP_PRO="$TMP_DIR/$PROC"
+SRC_DIR="$WORK/$PROC"             # the project: the .cpp and its own files
+TMP_PRO="$SRC_DIR/$PROC"          # the output folder: asm, Verilog, tables, sim cwd
 VL_DIR="$TMP_PRO/vl"
 
-# The .cpp is the only input; cppcomp/asmcomp create Software/Hardware outputs.
-mkdir -p "$TMP_PRO" "$SOFT_DIR"
-cp "$SRC_PROC/Software/$FNAM" "$SOFT_DIR/"
+mkdir -p "$WORK"
+cp -r "$SRC_PROC" "$SRC_DIR"
+mkdir -p "$TMP_PRO"
 
 # --- Compile: C++ -> asm -> Verilog -----------------------------------------
 echo "#### Running the C++ preprocessor (cpppp)"
-"$BIN_DIR/cpppp" -i "$SOFT_DIR/$FNAM" -o "$TMP_PRO/pp.cpp" -I "$INC_DIR" -I "$SOFT_DIR"
+"$BIN_DIR/cpppp" -o "$TMP_PRO/pp.cpp" -I "$INC_DIR" -I "$SRC_DIR" "$SRC_DIR/$FNAM"
 
 echo "#### Running the C++ compiler (cppcomp)"
-"$BIN_DIR/cppcomp" -i "$TMP_PRO/pp.cpp" -p "$PROC_DIR" -n "$PROC" -t "$TMP_PRO"
+"$BIN_DIR/cppcomp" -o "$TMP_PRO" -n "$PROC" "$TMP_PRO/pp.cpp"
 
 echo "#### Running the Pre-assembler (appcomp)"
-ASM_FILE="$SOFT_DIR/$PROC.asm"
-"$BIN_DIR/appcomp" -i "$ASM_FILE" -t "$TMP_PRO"
+ASM_FILE="$TMP_PRO/$PROC.asm"
+"$BIN_DIR/appcomp" "$ASM_FILE"
 
 echo "#### Running the Assembler (asmcomp)"
-"$BIN_DIR/asmcomp" -i "$ASM_FILE" -p "$PROC_DIR" -d "$HDL_DIR" -m "$MAC_DIR" -t "$TMP_PRO" -f "$FRE_CLK" -c "$NUM_CLK"
+"$BIN_DIR/asmcomp" -d "$HDL_DIR" -m "$MAC_DIR" -f "$FRE_CLK" -c "$NUM_CLK" "$ASM_FILE"
 
 # --- Build + run the simulation ---------------------------------------------
-UPROC="$HARD_DIR/$PROC"
+UPROC="$TMP_PRO/$PROC"
 if [ "$SIM" = iverilog ]; then
     echo "#### Running Icarus"
     TB_MOD="${PROC}_tb"
@@ -93,8 +92,6 @@ if [ "$SIM" = iverilog ]; then
         "$TMP_PRO/${PROC}_tb.v" "$UPROC.v" addr_dec.v instr_dec.v processor.v core.v ula.v )
 
     echo "#### Running VVP"
-    cp "${UPROC}_data.mif" "$TMP_PRO/"
-    cp "${UPROC}_inst.mif" "$TMP_PRO/"
     cd "$TMP_PRO"
     "$VVP" "$PROC.vvp" +HEADER_ONLY
     cp "$TB_MOD.vcd" "${TB_MOD}_hdr.vcd"
@@ -119,7 +116,7 @@ fi
 
 # --- View in GTKWave (layout built by gen_gtkw) -----------------------------
 echo "#### Generating the .gtkw layout (gen_gtkw)"
-"$BIN_DIR/gen_gtkw" "$HDR_VCD" "$GTKW_OUT" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
+"$BIN_DIR/gen_gtkw" "$HDR_VCD" "$GTKW_OUT" "$SRC_DIR" "$BIN_DIR/comp2gtkw"
 if [ "$VIEW" = 0 ]; then
     echo "#### --no-view: skipping GTKWave. Waveform: $WAVE_VCD"
     cd "$ROOT_DIR"; exit 0

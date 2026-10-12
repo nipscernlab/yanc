@@ -70,36 +70,42 @@ Auxiliary content:
 * `Compilers/yanc_version.h` — single source of truth for the toolchain version, included by the five compiler binaries (the three compilers + the two preprocessors)
 ## What lands where
 
-With the Quick start's folders (`out/my_proc`, `tmp/my_proc`):
+The files the user writes stay where they are: the source, the files that
+initialise arrays (`int c[3] "coefs.txt";`) and the simulation inputs
+(`input_N.txt` feeds input port N). Everything the tools generate goes to one
+output folder, `./<name>/` beside the source unless `-o` says otherwise. With
+the Quick start's `my_program.cpp`:
 
-| file | written by | what it is |
+| file in `my_program/` | written by | what it is |
 |---|---|---|
-| `out/my_proc/Software/my_proc.asm` | cppcomp / cmmcomp | the program in SAPHO assembly |
-| `out/my_proc/Hardware/my_proc.v` | asmcomp | the Verilog top: SAPHO instantiated with this program's parameters |
-| `out/my_proc/Hardware/my_proc_inst.mif`, `_data.mif` | asmcomp | instruction and data memory images |
-| `tmp/my_proc/my_proc_tb.v` | asmcomp | the testbench |
-| `tmp/my_proc/pc_my_proc_mem.txt`, `trad_cmm.txt`, `trad_opcode.txt`, `cmm_log.txt` | the compilers | the tables the waveform view uses (PC to source line, opcode names, variables) |
-| `out/my_proc/Simulation/output_0.txt` | the simulation | what the program wrote to output port 0 (`input_N.txt` there feeds input port N) |
-| `tmp/my_proc/my_proc_tb.vcd` | the simulation | the waveform |
-| `tmp/my_proc/my_proc_tb.gtkw` | gen_gtkw | the formatted GTKWave view of it |
+| `my_program.asm` | cppcomp / cmmcomp | the program in SAPHO assembly |
+| `cmm_log.txt`, `pc_my_program_mem.txt`, `trad_cmm.txt` | cppcomp / cmmcomp | the tables asmcomp and the waveform use (variables, PC to source line, the source text); `cmm_log.txt` also names the source folder, where asmcomp reads the user's files |
+| `app_log.txt` | appcomp | addresses and processor parameters, for asmcomp |
+| `my_program.v` | asmcomp | the Verilog top: SAPHO instantiated with this program's parameters |
+| `my_program_inst.mif`, `my_program_data.mif` | asmcomp | instruction and data memory images |
+| `my_program_tb.v`, `trad_opcode.txt` | asmcomp | the testbench, and the opcode names for the waveform |
+| `output_0.txt` | the simulation | what the program wrote to output port 0 |
+| `my_program_tb.vcd` | the simulation | the waveform |
+| `my_program_tb.gtkw` | gen_gtkw | the formatted GTKWave view of it |
 
-You can stop at step 4 if all you want are the Verilog and the memory images
-(to synthesize, or to feed your own simulator), or swap step 5 for
-**Verilator** (below).
+You can stop after asmcomp if all you want are the Verilog and the memory
+images (to synthesize, or to feed your own simulator), or swap the simulation
+for **Verilator** (below).
 
 ## Simulating with Verilator
 
 Verilator 5 compiles the same generated `<proc>_tb.v` directly — `--timing` understands the testbench's clock and `#` delays, so no separate C++ driver is needed:
 
 ```bat
-:: --- 5b. simulate (Verilator) — alternative to the Quick start's step 5 ---
-verilator --binary --timing --trace +define+YANC_TRACE --top-module %NAME%_tb ^
+:: --- simulate with Verilator, from the output folder (my_program\) --------
+cd my_program
+verilator --binary --timing --trace +define+YANC_TRACE --top-module my_program_tb ^
           -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-COMBDLY -Wno-STMTDLY ^
-          -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir %TMP%\vl ^
-          %TMP%\%NAME%_tb.v %PROJ%\Hardware\%NAME%.v ^
+          -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl ^
+          my_program_tb.v my_program.v ^
           %SAPHO%\processor.v %SAPHO%\core.v %SAPHO%\ula.v %SAPHO%\addr_dec.v %SAPHO%\instr_dec.v
-pushd %TMP% & vl\V%NAME%_tb.exe & popd   :: runs the sim, writes %NAME%_tb.vcd in %TMP%
-gtkwave %TMP%\%NAME%_tb.vcd
+vl\Vmy_program_tb.exe   :: runs the sim, writes my_program_tb.vcd here
+gtkwave my_program_tb.vcd
 ```
 
 **The one thing to remember:** `+define+YANC_TRACE` is what makes your variables, arrays, the PC→C± line table and the assembly opcode appear in the waveform. Icarus gets them for free (it predefines `__ICARUS__`); Verilator only compiles that visibility harness when you pass the define. For big multi-millisecond project dumps, use `--trace-fst` instead of `--trace` (compact FST; the file is still named `<tb>.vcd` and GTKWave detects the format). The trace deliberately carries only the `<proc>`-level user signals — the CPU internals below each processor are fenced out with `/* verilator tracing_off */`. **In particular the stack-monitoring flags and the ULA rounding-error taps (`fl_max`, `fl_full`, `pointeri`, `delta_int`, `delta_float`) are intentionally *not* in the Verilator VCD**: keeping them would force Verilator to evaluate the expensive real-valued ULA monitoring logic every cycle, which defeats the whole point of using Verilator (speed). Those debug signals remain available under the Icarus flow (`Scripts\single_proc.bat` / `multi_proc.bat`), where raw speed is not the goal.
@@ -111,12 +117,12 @@ After simulating with **either** Icarus or Verilator you have a raw `<tb>.vcd` /
 instead — the **input/output ports**, the **Assembly** and **C±** instruction
 tracks (disassembled through their translate files), and the **internal
 variables and arrays** grouped per processor — run **`gen_gtkw`** (it is in the
-release's `bin/`), then open the waveform with it applied via `-a`. With the
-Quick start's folders:
+release's `bin/`), then open the waveform with it applied via `-a`. From the
+Quick start's output folder:
 
 ```bat
-%YANC%\bin\gen_gtkw.exe %TMP%\%NAME%_tb.vcd %TMP%\%NAME%_tb.gtkw %CD%\tmp %YANC%\bin\comp2gtkw.exe
-gtkwave --dark --zoom-fit --left-justify %TMP%\%NAME%_tb.vcd -a %TMP%\%NAME%_tb.gtkw
+gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
+gtkwave --dark --zoom-fit --left-justify my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
 `gen_gtkw` reads only the VCD **header** (the signal list), classifies each
@@ -125,9 +131,9 @@ format / colour / alias per signal, the `trad_opcode.txt` / `trad_cmm.txt`
 translators on the Assembly / C± tracks, `comp2gtkw.exe` on complex signals, and
 one section per processor — any scope that owns both `valr2` and `linetabs` — so
 the **same tool handles single- and multi-processor dumps**. Its third argument
-is the folder that holds one subfolder per processor type, each with that
-processor's translate files (`tmp\` in the Quick start, where `tmp\my_proc\`
-is the one processor).
+is the folder that holds each processor's output folder, where its translate
+files are (`..` from inside `my_program/` in the Quick start, the folder that
+holds `my_program/`).
 
 Because only the header is needed, the big project FST dumps don't have to be
 written in full first: run the sim once with the **`+HEADER_ONLY`** plusarg and
@@ -183,39 +189,43 @@ Run any of them with `-h` / `--help` for the per-tool synopsis, or
 -en    English
 ```
 
-Each tool's options (`[...]` optional):
+Each tool's options (`[...]` optional; the source file is the argument
+without an option, `-i <file>` also works):
 
 ```bat
-:: compilers
-cmmcomp -p <proc-dir> [-n <name>] [-t <temp-dir>] [-m <macros-dir>] [-A] <file.cmm>
-cppcomp -p <proc-dir> [-n <name>] [-t <temp-dir>] <file.cpp>
-asmcomp -p <proc-dir> [-t <temp-dir>] [-d <hdl-dir>] [-m <macros-dir>] [-f <MHz>] [-c <clocks>] <file.asm>
+:: compilers: the .asm and the tables to the output folder (default ./<name>)
+cmmcomp [-o <dir>] [-n <name>] [-m <macros-dir>] [-A] <file.cmm>
+cppcomp [-o <dir>] [-n <name>] <file.cpp>
+:: the assembler: everything to the folder of the .asm
+asmcomp [-d <hdl-dir>] [-m <macros-dir>] [-f <MHz>] [-c <clocks>] <file.asm>
 
 :: preprocessors
 cpppp   [-o <file.cpp>] [-I <dir>]... <file.cpp>
-appcomp [-t <temp-dir>] <file.asm>
+appcomp <file.asm>
 
 :: waveform helpers
-gen_gtkw <in.vcd> <out.gtkw> <tmp_base> [<comp2gtkw>]
+gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]
 comp2gtkw                 (a filter GTKWave runs on complex signals: stdin to stdout)
 ```
 
-The source file is the argument without an option (`-i <file>` also works).
-`-n` defaults to the source file's name, and `-t` to `<proc-dir>/Temp`
-(appcomp, which has no `-p`, takes the folder that holds `Software/<file>.asm`).
-The folders that come with the tools are found next to their executable:
-`-m` defaults to `Macros/`, `-d` to `SAPHO/`, `cpppp` searches `Header/` after
-any `-I`, and `gen_gtkw` uses the `comp2gtkw` beside it. In a repository
-build the same options find `Compilers/CMMComp/Includes`, `SAPHO/` and
-`Compilers/CPPComp/Includes`. An explicit option always wins (AURORA passes
-them all).
+`-n` defaults to the source file's name (cppcomp: `#pragma yanc prname` wins),
+`-o` to the folder `./<name>`, created if missing. asmcomp's `-f` and `-c`, the
+testbench's clock and length, default to 100 MHz and 10000 clocks. The user's
+own files (array inits, `input_N.txt`, `cade_k.txt`) are read in the folder of
+the source: cmmcomp writes it to `cmm_log.txt`; for C++, cpppp passes it to
+cppcomp in a `#pragma yanc srcdir` line at the end of its output. The folders
+that come with the tools are found next to their executable: `-m` defaults to
+`Macros/`, `-d` to `SAPHO/`, `cpppp` searches `Header/` after any `-I`, and
+`gen_gtkw` uses the `comp2gtkw` beside it. In a repository build the same
+options find `Compilers/CMMComp/Includes`, `SAPHO/` and
+`Compilers/CPPComp/Includes`.
 
 `-A` / `--array` (cmmcomp only) tells the toolchain to emit per-element waveform signals for declared arrays — useful when visualizing buffer contents in GTKWave.
 
-Every short option has a long form (`--input`, `--proc-dir`, `--temp-dir`, `--macros-dir`, `--hdl-dir`, `--freq`, `--clocks`, `--name`, `--array`, …).
+Every short option has a long form (`--input`, `--output`, `--name`, `--macros-dir`, `--hdl-dir`, `--freq`, `--clocks`, `--array`, …).
 
 Example:
 
 ```bat
-cmmcomp -en -p C:\proj\proc_fft C:\src\proc_fft.cmm
+cmmcomp -en C:\src\proc_fft.cmm
 ```

@@ -90,23 +90,21 @@ set SRC_PROC=%ROOT_DIR%\Compilers\CPPComp\Tests\%PROC%
 
 :: Work area: the only files this script creates (Teste\ is gitignored) -------
 set WORK=%ROOT_DIR%\Teste
-set PROC_DIR=%WORK%\%PROC%
-set SOFT_DIR=%PROC_DIR%\Software
-set HARD_DIR=%PROC_DIR%\Hardware
-set TMP_DIR=%WORK%\Temp
-set TMP_PRO=%TMP_DIR%\%PROC%
+set SRC_DIR=%WORK%\%PROC%
+set TMP_PRO=%SRC_DIR%\%PROC%
 set VL_DIR=%TMP_PRO%\vl
 
-:: The .cpp is the only input; cppcomp/asmcomp create Software/Hardware outputs.
+:: A copy of the project (the .cpp and its own files), compiled into its
+:: output folder Teste\<proc>\<proc>\.
 rmdir /s /q "%WORK%" 2>nul
 if exist "%WORK%" (
     echo [single_proc_cpp] could not clear "%WORK%" -- is GTKWave still open on
     echo            this proc? Close it and re-run ^(it locks proc_cpp_tb.vcd^).
     exit /b 1
 )
+mkdir "%WORK%"
+xcopy "%SRC_PROC%" "%SRC_DIR%\" /e /i /q >nul
 mkdir "%TMP_PRO%"
-mkdir "%SOFT_DIR%"
-copy "%SRC_PROC%\Software\%FNAM%" "%SOFT_DIR%\" >nul
 
 :: Verilator's g++ wants a writable TMP for its intermediate files
 set TMP=%TMP_PRO%
@@ -115,23 +113,23 @@ set TEMP=%TMP_PRO%
 :: Compile: C++ -> asm -> Verilog --------------------------------------------
 
 echo #### Running the C++ preprocessor (cpppp)
-"%BIN_DIR%\cpppp.exe" -i "%SOFT_DIR%\%FNAM%" -o "%TMP_PRO%\pp.cpp" -I "%INC_DIR%" -I "%SOFT_DIR%"
+"%BIN_DIR%\cpppp.exe" -o "%TMP_PRO%\pp.cpp" -I "%INC_DIR%" -I "%SRC_DIR%" "%SRC_DIR%\%FNAM%"
 
 echo #### Running the C++ compiler (cppcomp)
-"%BIN_DIR%\cppcomp.exe" -i "%TMP_PRO%\pp.cpp" -p "%PROC_DIR%" -n "%PROC%" -t "%TMP_PRO%"
+"%BIN_DIR%\cppcomp.exe" -o "%TMP_PRO%" -n "%PROC%" "%TMP_PRO%\pp.cpp"
 
-set ASM_FILE=%SOFT_DIR%\%PROC%.asm
+set ASM_FILE=%TMP_PRO%\%PROC%.asm
 if not exist "%ASM_FILE%" ( echo [single_proc_cpp] cppcomp did not produce "%ASM_FILE%". & goto fail )
 
 echo #### Running the Pre-assembler (appcomp)
-"%BIN_DIR%\appcomp.exe" -i "%ASM_FILE%" -t "%TMP_PRO%"
+"%BIN_DIR%\appcomp.exe" "%ASM_FILE%"
 
 echo #### Running the Assembler (asmcomp)
-"%BIN_DIR%\asmcomp.exe" -i "%ASM_FILE%" -p "%PROC_DIR%" -d "%HDL_DIR%" -m "%MAC_DIR%" -t "%TMP_PRO%" -f %FRE_CLK% -c %NUM_CLK%
+"%BIN_DIR%\asmcomp.exe" -d "%HDL_DIR%" -m "%MAC_DIR%" -f %FRE_CLK% -c %NUM_CLK% "%ASM_FILE%"
 
 :: Build + run the simulation -------------------------------------------------
 
-set UPROC=%HARD_DIR%\%PROC%
+set UPROC=%TMP_PRO%\%PROC%
 if not exist "%UPROC%.v" ( echo [single_proc_cpp] asmcomp did not produce "%UPROC%.v". & goto fail )
 if /i "%SIM%"=="verilator" goto sim_verilator
 
@@ -143,8 +141,6 @@ cd /d "%HDL_DIR%"
 if not exist "%TMP_PRO%\%PROC%.vvp" ( echo [single_proc_cpp] iverilog failed to build the .vvp. & goto fail )
 
 echo #### Running VVP
-copy "%UPROC%_data.mif" "%TMP_PRO%\" >nul
-copy "%UPROC%_inst.mif" "%TMP_PRO%\" >nul
 cd /d "%TMP_PRO%"
 :: header-only pass (no -fst -> text VCD): gives gen_gtkw the signal list fast.
 "%VVP%" "%PROC%.vvp" +HEADER_ONLY
@@ -178,7 +174,7 @@ set GTKWOUT=%TMP_PRO%\%PROC%_tb.gtkw
 :: View in GTKWave (layout built by gen_gtkw) ---------------------------------
 :run_gtkwave
 echo #### Generating the .gtkw layout (gen_gtkw)
-"%BIN_DIR%\gen_gtkw.exe" "%HDR%" "%GTKWOUT%" "%TMP_DIR%" "%BIN_DIR%\comp2gtkw.exe"
+"%BIN_DIR%\gen_gtkw.exe" "%HDR%" "%GTKWOUT%" "%SRC_DIR%" "%BIN_DIR%\comp2gtkw.exe"
 if "%VIEW%"=="0" (
     echo #### --no-view: skipping GTKWave. Waveform: %WAVE%
     cd /d "%ROOT_DIR%"

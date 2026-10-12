@@ -85,25 +85,24 @@ PROJ_DIR="$USER_DIR/$PROJET"; TOPL_DIR="$PROJ_DIR/TopLevel"
 VL_DIR="$TMP_DIR/vl"
 
 # Only the inputs are copied: the project's TopLevel/ (user testbench, top-level
-# Verilog and stimulus) and each processor's .cmm. The compilers create the
-# Software/Hardware outputs in the writable copies.
+# Verilog and stimulus) and each processor's project (its .cmm and own files).
+# Each processor compiles into its output folder Temp/<proc>/, which is also
+# what gen_gtkw reads (one folder per processor under Temp/).
 mkdir -p "$TMP_DIR" "$TOPL_DIR"
 cp -r "$TESTS_DIR/$PROJET/TopLevel/." "$TOPL_DIR/"
 for i in "${PROC_LIST[@]}"; do
-    mkdir -p "$USER_DIR/$i/Software" "$TMP_DIR/$i"
-    cp "$TESTS_DIR/$i/Software/$i.cmm" "$USER_DIR/$i/Software/"
+    cp -r "$TESTS_DIR/$i" "$USER_DIR/$i"
 done
 
 # --- Compile each processor: C+- -> asm -> Verilog --------------------------
 for i in "${PROC_LIST[@]}"; do
-    "$BIN_DIR/cmmcomp" -i "$USER_DIR/$i/Software/$i.cmm" -n "$i" -p "$USER_DIR/$i" -m "$MAC_DIR" -t "$TMP_DIR/$i" --array
+    "$BIN_DIR/cmmcomp" -o "$TMP_DIR/$i" -m "$MAC_DIR" --array "$USER_DIR/$i/$i.cmm"
 done
 for i in "${PROC_LIST[@]}"; do
-    "$BIN_DIR/appcomp" -i "$USER_DIR/$i/Software/$i.asm" -t "$TMP_DIR/$i"
+    "$BIN_DIR/appcomp" "$TMP_DIR/$i/$i.asm"
 done
 for i in "${PROC_LIST[@]}"; do
-    "$BIN_DIR/asmcomp" -i "$USER_DIR/$i/Software/$i.asm" -p "$USER_DIR/$i" -d "$HDL_DIR" -m "$MAC_DIR" -t "$TMP_DIR/$i" -f 0 -c 0
-    cp "$USER_DIR/$i/Hardware/$i.v" "$TMP_DIR/$i/"
+    "$BIN_DIR/asmcomp" -d "$HDL_DIR" -m "$MAC_DIR" "$TMP_DIR/$i/$i.asm"
 done
 
 # --- Build + run the simulation ---------------------------------------------
@@ -120,8 +119,8 @@ if [ "$SIM" = iverilog ]; then
     echo "#### Running VVP"
     for f in "$TOPL_DIR"/*.txt; do [ -e "$f" ] && cp "$f" .; done
     for i in "${PROC_LIST[@]}"; do
-        cp "$USER_DIR/$i/Hardware/${i}_inst.mif" .
-        cp "$USER_DIR/$i/Hardware/${i}_data.mif" .
+        cp "$TMP_DIR/$i/${i}_inst.mif" .
+        cp "$TMP_DIR/$i/${i}_data.mif" .
         cp "$TMP_DIR/$i/pc_${i}_mem.txt" .
     done
     # header-only pass (tiny text VCD) then the real FST run (+WAVE arms $dumpvars)

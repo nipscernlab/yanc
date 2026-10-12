@@ -1,11 +1,11 @@
 // ----------------------------------------------------------------------------
 // CPPComp — compiler entry point -----------------------------------------------
 // ----------------------------------------------------------------------------
-// usage: cppcomp -i <input.cpp> -p <proc_dir> [-n <prname>] [-t <tmp>]
+// usage: cppcomp [-o <dir>] [-n <prname>] <input.cpp>
 // input is assumed to be already preprocessed (run cpppp first).
 //
-// Mirrors the cmmcomp pipeline layout: the .asm lands at
-// <proc_dir>/Software/<prname>.asm, with Software/ created if missing.
+// Mirrors cmmcomp: <prname>.asm and the tables go to one output folder,
+// -o or ./<prname>, created if missing.
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -22,23 +22,6 @@
 #include "../../common/asm_share.h"
 #include "../../common/console_utf8.h"
 #include "../../common/exe_dir.h"
-
-/* Create a directory if it doesn't already exist. Used by the -p
- * proc-folder mode to mkdir <proc>/Software when missing. Tolerates
- * EEXIST so reruns don't fail. */
-static void ensure_dir(const char *path) {
-#ifdef _WIN32
-    if (mkdir(path) != 0 && errno != EEXIST) {
-        fprintf(stderr, "cppcomp: warning: could not create %s (errno=%d)\n",
-                path, errno);
-    }
-#else
-    if (mkdir(path, 0755) != 0 && errno != EEXIST) {
-        fprintf(stderr, "cppcomp: warning: could not create %s (errno=%d)\n",
-                path, errno);
-    }
-#endif
-}
 
 /* asm_reach dropped `gone` instructions the pc map covered: cmm_log.txt's
  * "num_ins" line, already written by codegen, drops by as much (a negative
@@ -68,14 +51,12 @@ static void usage(void)
 {
     fprintf(stderr,
         "cppcomp %s — C++ compiler for the SAPHO processor\n"
-        "usage: cppcomp -p <proc_dir> [-n <prname>] [-t <tmp>] <input.cpp>\n"
+        "usage: cppcomp [-o <dir>] [-n <prname>] <input.cpp>\n"
         "  <file>, -i <file>       input .cpp file, preprocessed by cpppp\n"
-        "  -p, --proc-dir <dir>    writes .asm to <dir>/Software/<prname>.asm\n"
-        "                          (creates Software/ if missing). Required.\n"
+        "  -o, --output   <dir>    output folder (default: ./<prname>): <prname>.asm and\n"
+        "                          the tables asmcomp and the waveform read\n"
         "  -n, --name     <name>   processor name (default: input basename;\n"
         "                          a `#pragma yanc prname` in the source wins)\n"
-        "  -t, --temp-dir <dir>    temp directory; cppcomp writes cmm_log.txt there for asmcomp\n"
-        "                          (default: <proc_dir>/Temp)\n"
         "  -h, --help              this help\n"
         "  -V, --version           show version and exit\n"
         "\n"
@@ -107,15 +88,13 @@ int main(int argc, char **argv)
 {
     console_utf8();                 // the help text is UTF-8 (Windows console)
     const char *in_path  = NULL;
-    const char *proc_dir = NULL;
+    const char *out_dir  = NULL;
     const char *prname   = NULL;
-    const char *tmp_dir  = NULL;
 
     for (int i = 1; i < argc; i++) {
         if      ((!strcmp(argv[i], "-i") || !strcmp(argv[i], "--input"   )) && i+1 < argc) in_path  = argv[++i];
-        else if ((!strcmp(argv[i], "-p") || !strcmp(argv[i], "--proc-dir")) && i+1 < argc) proc_dir = argv[++i];
+        else if ((!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output"  )) && i+1 < argc) out_dir  = argv[++i];
         else if ((!strcmp(argv[i], "-n") || !strcmp(argv[i], "--name"    )) && i+1 < argc) prname   = argv[++i];
-        else if ((!strcmp(argv[i], "-t") || !strcmp(argv[i], "--temp-dir")) && i+1 < argc) tmp_dir  = argv[++i];
         else if ( !strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"    )) usage();
         else if ( !strcmp(argv[i], "-V") || !strcmp(argv[i], "--version" )) {
             printf("cppcomp %s\n", YANC_VERSION);
@@ -124,8 +103,7 @@ int main(int argc, char **argv)
         else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source, without -i
         else { fprintf(stderr, "cppcomp: unknown option '%s'\n", argv[i]); usage(); }
     }
-    if (!in_path || !proc_dir) usage();
-    if (!tmp_dir) tmp_dir = default_temp(proc_dir);   // <proc_dir>/Temp (exe_dir.h)
+    if (!in_path) usage();
 
     msg_set_file(in_path);
 
@@ -143,14 +121,18 @@ int main(int argc, char **argv)
         else        g_unit->prname = derive_name(in_path, "");
     }
 
-    /* Output: <proc_dir>/Software/<prname>.asm, creating Software/ if missing.
-     * Mirrors the cmmcomp pipeline layout. */
-    size_t plen = strlen(proc_dir);
-    size_t nlen = strlen(g_unit->prname);
-    char *outp = malloc(plen + nlen + 32);   // "/Software/" + ".asm" + slack
-    sprintf(outp, "%s/Software", proc_dir);
-    ensure_dir(outp);
-    sprintf(outp, "%s/Software/%s.asm", proc_dir, g_unit->prname);
+    /* Output: everything in one folder, -o or ./<prname> (created, all
+     * levels): <prname>.asm and the tables asmcomp and the waveform read. */
+    char *dflt = NULL;
+    if (!out_dir) {
+        dflt = malloc(strlen(g_unit->prname) + 3);
+        sprintf(dflt, "./%s", g_unit->prname);
+        out_dir = dflt;
+    }
+    make_dir(out_dir);
+    const char *tmp_dir = out_dir;
+    char *outp = malloc(strlen(out_dir) + strlen(g_unit->prname) + 8);
+    sprintf(outp, "%s/%s.asm", out_dir, g_unit->prname);
     FILE *fo = fopen(outp, "w");
     if (!fo) { fprintf(stderr, "cppcomp: cannot open '%s' for writing\n", outp); exit(1); }
 
@@ -177,5 +159,16 @@ int main(int argc, char **argv)
     // scalars never alive together share one data word (#SHARE lines ahead of
     // the code; the instructions and the pc_<proc>_mem.txt map are untouched)
     asm_share(outp);
+
+    // the folder of the original source, where asmcomp reads the user's own
+    // files (input_N.txt, cade_k.txt): cpppp's `#pragma yanc srcdir`, else the
+    // folder of the input
+    char log[2048]; snprintf(log, sizeof(log), "%s/cmm_log.txt", tmp_dir);
+    FILE *fl = fopen(log, "a");
+    if (fl) {
+        char *src = g_unit->srcdir ? strdup(g_unit->srcdir) : dir_of(in_path);
+        if (src) fprintf(fl, "srcdir %s\n", src);
+        fclose(fl);
+    }
     return 0;
 }

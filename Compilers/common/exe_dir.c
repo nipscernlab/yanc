@@ -41,15 +41,6 @@ int make_dir(const char *path)       // as mkdir -p: every missing level
     return make_one(p);
 }
 
-char *default_temp(const char *proc_dir)
-{
-    char *t = malloc(strlen(proc_dir) + 6);
-    if (!t) return NULL;
-    sprintf(t, "%s/Temp", proc_dir);
-    make_dir(t);
-    return t;
-}
-
 char *abs_path(const char *path)
 {
     char buf[4096];
@@ -64,19 +55,13 @@ char *abs_path(const char *path)
     return r;
 }
 
-char *proc_of_asm(const char *asm_path)
+char *dir_of(const char *path)
 {
-    size_t n = strlen(asm_path);
-    char *d = malloc(n + 2);
+    char *d = abs_path(path);
     if (!d) return NULL;
-    strcpy(d, asm_path);
-    for (char *c = d; *c; c++) if (*c == '\\') *c = '/';
     char *s = strrchr(d, '/');
-    if (!s) {strcpy(d, "."); return d;}               // a bare file name: here
-    *s = 0;                                            // the .asm's folder
-    s = strrchr(d, '/');
-    const char *last = s ? s + 1 : d;
-    if (!strcmp(last, "Software")) {if (s) *s = 0; else strcpy(d, ".");}
+    if (s && s != d && s[-1] != ':') *s = 0;   // keep "/" and "C:/" whole
+    else if (s) s[1] = 0;
     return d;
 }
 

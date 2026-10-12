@@ -85,51 +85,47 @@ set BIN_DIR=%YANC_BIN%
 set SRC_PROC=%ROOT_DIR%\Compilers\CMMComp\Tests\%PROC%
 
 :: Work area: the only files this script creates (Teste\ is gitignored) -------
+:: A copy of the project (the .cmm and its own files), compiled into its
+:: output folder Teste\<proc>\<proc>\, as `cmmcomp <proc>.cmm` does in a
+:: user's folder.
 set WORK=%ROOT_DIR%\Teste
-set PROC_DIR=%WORK%\%PROC%
-set SOFT_DIR=%PROC_DIR%\Software
-set HARD_DIR=%PROC_DIR%\Hardware
-set TMP_DIR=%WORK%\Temp
-set TMP_PRO=%TMP_DIR%\%PROC%
+set SRC_DIR=%WORK%\%PROC%
+set TMP_PRO=%SRC_DIR%\%PROC%
 set VL_DIR=%TMP_PRO%\vl
 
-:: The .cmm is the only input; cmmcomp/asmcomp create Software/Hardware outputs here.
 rmdir %WORK% /s /q
-mkdir %TMP_PRO%
-mkdir %SOFT_DIR%
-copy "%SRC_PROC%\Software\%FNAM%" "%SOFT_DIR%\">%TMP_PRO%\log.txt
+mkdir %WORK%
+xcopy "%SRC_PROC%" "%SRC_DIR%\" /e /i /q >nul
+
+:: Compile: C+- -> asm -> Verilog --------------------------------------------
+
+echo #### Running the CMM compiler
+"%BIN_DIR%\cmmcomp.exe" -o %TMP_PRO% -m %MAC_DIR% %SRC_DIR%\%FNAM%
 
 :: Verilator's g++ wants a writable TMP for its intermediate files
 set TMP=%TMP_PRO%
 set TEMP=%TMP_PRO%
 
-:: Compile: C+- -> asm -> Verilog --------------------------------------------
-
-echo #### Running the CMM compiler
-"%BIN_DIR%\cmmcomp.exe" -i %SOFT_DIR%\%FNAM% -n %PROC% -p %PROC_DIR% -m %MAC_DIR% -t %TMP_PRO%
-
 echo #### Running the Pre-assembler
-set ASM_FILE=%SOFT_DIR%\%PROC%.asm
-"%BIN_DIR%\appcomp.exe" -i %ASM_FILE% -t %TMP_PRO%
+set ASM_FILE=%TMP_PRO%\%PROC%.asm
+"%BIN_DIR%\appcomp.exe" %ASM_FILE%
 
 echo #### Running the Assembler
-"%BIN_DIR%\asmcomp.exe" -i %ASM_FILE% -p %PROC_DIR% -d %HDL_DIR% -m %MAC_DIR% -t %TMP_PRO% -f %FRE_CLK% -c %NUM_CLK%
+"%BIN_DIR%\asmcomp.exe" -d %HDL_DIR% -m %MAC_DIR% -f %FRE_CLK% -c %NUM_CLK% %ASM_FILE%
 
 :: Build + run the simulation -------------------------------------------------
 
-set UPROC=%HARD_DIR%\%PROC%
+set UPROC=%TMP_PRO%\%PROC%
 if /i "%SIM%"=="verilator" goto :sim_verilator
 
 :: --- Icarus -----------------------------------------------------------------
 echo #### Running Icarus
-:: The testbench asmcomp generated (<proc>_tb.v in Temp).
+:: The testbench asmcomp generated (<proc>_tb.v, in the output folder).
 set TB_MOD=%PROC%_tb
 cd %HDL_DIR%
 %IVERILOG% -s %TB_MOD% -o %TMP_PRO%\%PROC%.vvp %TMP_PRO%\%PROC%_tb.v %UPROC%.v addr_dec.v instr_dec.v processor.v core.v ula.v
 
 echo #### Running VVP
-copy %UPROC%_data.mif %TMP_PRO%>%TMP_PRO%\log.txt
-copy %UPROC%_inst.mif %TMP_PRO%>%TMP_PRO%\log.txt
 cd %TMP_PRO%
 :: header-only pass (no -fst -> text VCD): gives gen_gtkw the signal list fast.
 %VVP% %PROC%.vvp +HEADER_ONLY
@@ -163,7 +159,7 @@ set GTKWOUT=%TMP_PRO%\%PROC%_tb.gtkw
 :: View in GTKWave (layout built by gen_gtkw) ---------------------------------
 :run_gtkwave
 echo #### Generating the .gtkw layout (gen_gtkw) and launching GTKWave
-%BIN_DIR%\gen_gtkw.exe %HDR% %GTKWOUT% %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
+%BIN_DIR%\gen_gtkw.exe %HDR% %GTKWOUT% %SRC_DIR% %BIN_DIR%\comp2gtkw.exe
 %GTKWAVE% --dark --zoom-fit --left-justify %WAVE% -a %GTKWOUT%
 
 cd %ROOT_DIR%

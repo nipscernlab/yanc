@@ -6,7 +6,7 @@
 #         FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp
 #
 # <proc> is a processor the regress already built: it reads
-# .smoke/work/<proc>/Hardware/<proc>.v, whose .mif paths are absolute, so the
+# .smoke/work/<proc>/<proc>/<proc>.v, whose .mif paths are absolute, so the
 # memories initialise. SEED is the fitter's placement seed (default 1): a
 # single fit can be off by several per cent, compare across seeds (give each
 # its own TAG). The optimization mode below already runs the fitter's
@@ -28,7 +28,7 @@ PROC=$1; DEV=${2:-5CSEMA5F31C6}; FAM=${3:-Cyclone V}
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 QUARTUS=${QUARTUS:-/c/intelFPGA_lite/24.1std/quartus/bin64}
-WORK="$ROOT/.smoke/work/$PROC/Hardware"
+WORK="$ROOT/.smoke/work/$PROC/$PROC"
 OUT="$ROOT/.smoke/hw"
 DIR="$OUT/${PROC}_${DEV}${TAG:+_$TAG}"
 

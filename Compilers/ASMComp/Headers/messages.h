@@ -381,36 +381,36 @@ void parse_lang_flag(int *argc, char **argv);
     M("asmcomp - compilador assembly→Verilog do YANC (%s)\n" \
       "\n" \
       "Uso:\n" \
-      "  asmcomp [opções] -p <dir> <arq.asm>\n" \
+      "  asmcomp [opções] <arq.asm>\n" \
       "\n" \
-      "Obrigatórios:\n" \
-      "  <arq.asm>, -i <arq>     arquivo-fonte assembly (caminho completo)\n" \
-      "  -p, --proc-dir <dir>    diretório do processador\n" \
+      "Escreve tudo na pasta do <arq.asm>: o processador (<nome>.v), as memórias\n" \
+      "(<nome>_inst.mif, <nome>_data.mif), o testbench (<nome>_tb.v) e as tabelas da\n" \
+      "forma de onda. Os arquivos que inicializam vetores e as entradas da simulação\n" \
+      "(input_N.txt, cade_k.txt) são lidos na pasta do fonte do programa.\n" \
       "\n" \
-      "Outras opções:\n" \
-      "  -t, --temp-dir <dir>    diretório Temp (padrão: <dir-proc>/Temp)\n" \
+      "Opções:\n" \
       "  -d, --hdl-dir <dir>     diretório do HDL (padrão: a pasta SAPHO ao lado de bin/)\n" \
       "  -m, --macros-dir <dir>  diretório de Macros (padrão: a pasta Macros ao lado de bin/)\n" \
-      "  -f, --freq <MHz>        frequência de operação em MHz (padrão: 0)\n" \
-      "  -c, --clocks <n>        número de clocks a simular (padrão: 0)\n" \
+      "  -f, --freq <MHz>        frequência do clock do testbench (padrão: 100)\n" \
+      "  -c, --clocks <n>        número de clocks a simular (padrão: 10000)\n" \
       "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
       "  -h, --help              mostra esta ajuda e sai\n" \
       "  -V, --version           mostra a versão e sai\n", \
       "asmcomp - YANC assembly-to-Verilog compiler (%s)\n" \
       "\n" \
       "Usage:\n" \
-      "  asmcomp [options] -p <dir> <file.asm>\n" \
+      "  asmcomp [options] <file.asm>\n" \
       "\n" \
-      "Required:\n" \
-      "  <file.asm>, -i <file>   assembly source file (full path)\n" \
-      "  -p, --proc-dir <dir>    processor directory\n" \
+      "Writes everything to the folder of <file.asm>: the processor (<name>.v), the\n" \
+      "memories (<name>_inst.mif, <name>_data.mif), the testbench (<name>_tb.v) and the\n" \
+      "waveform tables. The files that initialize arrays and the simulation inputs\n" \
+      "(input_N.txt, cade_k.txt) are read in the folder of the program's source.\n" \
       "\n" \
-      "Other options:\n" \
-      "  -t, --temp-dir <dir>    Temp directory (default: <proc-dir>/Temp)\n" \
+      "Options:\n" \
       "  -d, --hdl-dir <dir>     HDL directory (default: the SAPHO folder next to bin/)\n" \
       "  -m, --macros-dir <dir>  Macros directory (default: the Macros folder next to bin/)\n" \
-      "  -f, --freq <MHz>        operating frequency in MHz (default: 0)\n" \
-      "  -c, --clocks <n>        number of clocks to simulate (default: 0)\n" \
+      "  -f, --freq <MHz>        testbench clock frequency (default: 100)\n" \
+      "  -c, --clocks <n>        number of clocks to simulate (default: 10000)\n" \
       "  -en, -pt                diagnostic message language (default: -pt)\n" \
       "  -h, --help              show this help and exit\n" \
       "  -V, --version           show version and exit\n")

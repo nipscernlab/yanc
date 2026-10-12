@@ -20,10 +20,9 @@ const char *exe_dir(void);
 
 // Path helpers the tools share for their defaults.
 int   make_dir   (const char *path);       // creates a folder; 0 if it exists now
-char *default_temp(const char *proc_dir);  // "<proc_dir>/Temp", created (malloc)
 char *path_stem  (const char *path);       // "a/b/prog.cmm" -> "prog" (malloc)
 char *abs_path   (const char *path);       // the absolute form, '/' separators (malloc); the path itself if the system can't say
-char *proc_of_asm(const char *asm_path);   // "<proc>/Software/x.asm" -> "<proc>"; else the .asm's folder (malloc)
+char *dir_of     (const char *path);       // the absolute folder of a file, '/' separators (malloc)
 
 // Where each tool looks, in order: a release (bin/ beside the folder), a
 // repository build in bin/, and one in .smoke/bin/ or stage/bin/.

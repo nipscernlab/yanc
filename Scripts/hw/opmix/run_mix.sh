@@ -14,16 +14,18 @@ one() {   # one <name> <prname> <tb.v> <proc.v> <rundir>
     ( cd "$run" && vvp $S_OUT/mix/$name.vvp >/dev/null 2>&1 )
     [ -f "$S_OUT/mix/$name.txt" ] && echo "$name ok" || echo "$name NO-OUTPUT"
 }
-for d in $R/.smoke/tmp/*/; do
-    p=$(basename $d)
-    [ -f "$d/${p}_tb.v" ] && [ -f "$R/.smoke/work/$p/Hardware/$p.v" ] || continue
-    one "cmm_$p" $p "$d/${p}_tb.v" "$R/.smoke/work/$p/Hardware/$p.v" "$d"
+# each program's output folder: .smoke/work/<p>/<p>/ (C+-) and
+# .smoke/work_cpp/<test>/<prname>/ (C++)
+for w in $R/.smoke/work/*/; do
+    p=$(basename $w); d=$w$p
+    [ -f "$d/${p}_tb.v" ] && [ -f "$d/$p.v" ] || continue
+    one "cmm_$p" $p "$d/${p}_tb.v" "$d/$p.v" "$d"
 done
-for d in $R/.smoke/work_cpp/test*/; do
-    t=$(basename $d)
-    tb=$(ls $d/_tmp/*_tb.v 2>/dev/null | head -1); [ -n "$tb" ] || continue
-    [ -f "$d/Software/$t.in" ] && continue          # Verilator tests: no Icarus run
-    pr=$(basename $tb _tb.v)
-    one "cpp_$t" $pr "$tb" "$d/Hardware/$pr.v" "$d/_tmp"
+for w in $R/.smoke/work_cpp/test*/; do
+    t=$(basename $w)
+    tb=$(ls $w*/*_tb.v 2>/dev/null | head -1); [ -n "$tb" ] || continue
+    [ -f "$R/Compilers/CPPComp/Tests/$t/$t.in" ] && continue   # Verilator tests: no Icarus run
+    pr=$(basename $tb _tb.v); d=$(dirname $tb)
+    one "cpp_$t" $pr "$tb" "$d/$pr.v" "$d"
 done
 echo done

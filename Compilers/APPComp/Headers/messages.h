@@ -74,12 +74,10 @@ void parse_lang_flag(int *argc, char **argv);
       "Uso:\n" \
       "  appcomp [opções] <arq.asm>\n" \
       "\n" \
-      "Obrigatório:\n" \
-      "  <arq.asm>, -i <arq>   arquivo-fonte assembly (caminho completo)\n" \
+      "Lê o <arq.asm> e escreve o app_log.txt (endereços e parâmetros do processador,\n" \
+      "para o asmcomp) na pasta dele.\n" \
       "\n" \
-      "Outras opções:\n" \
-      "  -t, --temp-dir <dir>  diretório Temp, recebe o app_log.txt (padrão: <dir-proc>/Temp,\n" \
-      "                        <dir-proc> sendo a pasta que contém Software/<arq.asm>)\n" \
+      "Opções:\n" \
       "  -en, -pt              idioma das mensagens (padrão: -pt)\n" \
       "  -h, --help            mostra esta ajuda e sai\n" \
       "  -V, --version         mostra a versão e sai\n", \
@@ -88,12 +86,10 @@ void parse_lang_flag(int *argc, char **argv);
       "Usage:\n" \
       "  appcomp [options] <file.asm>\n" \
       "\n" \
-      "Required:\n" \
-      "  <file.asm>, -i <file> assembly source file (full path)\n" \
+      "Reads <file.asm> and writes app_log.txt (addresses and processor parameters,\n" \
+      "for asmcomp) in its folder.\n" \
       "\n" \
-      "Other options:\n" \
-      "  -t, --temp-dir <dir>  Temp directory, receives app_log.txt (default: <proc-dir>/Temp,\n" \
-      "                        <proc-dir> being the folder that holds Software/<file.asm>)\n" \
+      "Options:\n" \
       "  -en, -pt              diagnostic message language (default: -pt)\n" \
       "  -h, --help            show this help and exit\n" \
       "  -V, --version         show version and exit\n")

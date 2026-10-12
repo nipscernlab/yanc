@@ -732,6 +732,12 @@ int main(int argc, char **argv)
 
     process_file(in_path);
 
+    // the folder of the original source, for cppcomp: asmcomp reads the
+    // user's own files there (input_N.txt, cade_k.txt). Last, so the line
+    // numbers of the source stay the same in the messages
+    char *src = dir_of(in_path);
+    if (src) fprintf(out_f, "\n#pragma yanc srcdir %s\n", src);
+
     if (out_f != stdout) fclose(out_f);
     return 0;
 }

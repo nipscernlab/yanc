@@ -39,8 +39,6 @@ void cli_parse(int argc, char **argv, cli_args *out)
 
         if      (!strcmp(arg, "-i") || !strcmp(arg, "--input"))
             out->input = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-t") || !strcmp(arg, "--temp-dir"))
-            out->temp_dir = opt_value(argc, argv, &i, arg);
         else if (!strcmp(arg, "-h") || !strcmp(arg, "--help"))
         {
             cli_help(stdout);
@@ -61,18 +59,13 @@ void cli_parse(int argc, char **argv, cli_args *out)
         }
     }
 
-    // -t defaults to <proc>/Temp, <proc> being the folder that holds
-    // Software/<file>.asm (exe_dir.h); the input is mandatory ---------------
+    // app_log.txt goes to the folder of the .asm, the output folder of the
+    // program (exe_dir.h); the input is mandatory ---------------------------
 
-    if (!out->temp_dir && out->input)
-    {
-        char *proc = proc_of_asm(out->input);
-        if (proc) out->temp_dir = default_temp(proc);
-    }
+    if (out->input) out->temp_dir = dir_of(out->input);
 
     const char *missing = NULL;
-    if      (!out->input)    missing = "-i/--input";
-    else if (!out->temp_dir) missing = "-t/--temp-dir";
+    if (!out->input) missing = "<file.asm>";
 
     if (missing)
     {

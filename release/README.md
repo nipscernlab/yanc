@@ -38,10 +38,11 @@ The commands, for Windows `cmd` and for a Linux shell, are in the Quick start
 of the main README: <https://github.com/nipscernlab/yanc#quick-start>. They
 run as they are on `example/my_program.cpp`, which prints `55`.
 
-The C± version compiles with `cmmcomp` instead of `cpppp` + `cppcomp`:
+The C± version compiles with `cmmcomp` instead of `cpppp` + `cppcomp`; it
+writes into `./my_program/`:
 
 ```
-cmmcomp -en -p <project> example/my_program.cmm
+cmmcomp -en example/my_program.cmm
 ```
 
 The rest of the pipeline (appcomp, asmcomp, the simulation) is the same.

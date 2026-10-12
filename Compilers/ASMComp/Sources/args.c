@@ -57,14 +57,10 @@ void cli_parse(int argc, char **argv, cli_args *out)
 
         if      (!strcmp(arg, "-i") || !strcmp(arg, "--input"))
             out->input = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-p") || !strcmp(arg, "--proc-dir"))
-            out->proc_dir = opt_value(argc, argv, &i, arg);
         else if (!strcmp(arg, "-d") || !strcmp(arg, "--hdl-dir"))
             out->hdl_dir = opt_value(argc, argv, &i, arg);
         else if (!strcmp(arg, "-m") || !strcmp(arg, "--macros-dir"))
             out->macros_dir = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-t") || !strcmp(arg, "--temp-dir"))
-            out->temp_dir = opt_value(argc, argv, &i, arg);
         else if (!strcmp(arg, "-f") || !strcmp(arg, "--freq"))
             out->freq = opt_int(opt_value(argc, argv, &i, arg), arg);
         else if (!strcmp(arg, "-c") || !strcmp(arg, "--clocks"))
@@ -89,27 +85,22 @@ void cli_parse(int argc, char **argv, cli_args *out)
         }
     }
 
-    // -d and -m default to the SAPHO/ and Macros/ folders next to the tool,
-    // -t to <proc-dir>/Temp (exe_dir.h); -i and -p are mandatory; -f and -c
-    // default to 0 -----------------------------------------------------------
+    // everything goes to the folder of the .asm (absolute: the testbench names
+    // its files there); -d and -m default to the SAPHO/ and Macros/ folders
+    // next to the tool (exe_dir.h); -f and -c to a testbench that runs -------
 
     static const char *const hdl_dirs[]    = EXE_HDL_DIRS;
     static const char *const macros_dirs[] = EXE_MACROS_DIRS;
     if (!out->hdl_dir)    out->hdl_dir    = exe_find_dir(hdl_dirs);
     if (!out->macros_dir) out->macros_dir = exe_find_dir(macros_dirs);
-    if (!out->temp_dir && out->proc_dir) out->temp_dir = default_temp(out->proc_dir);
-
-    // the testbench names files under the processor folder and runs from the
-    // temp folder: both absolute, so a relative -p / -t still works
-    if (out->proc_dir) {make_dir(out->proc_dir); out->proc_dir = abs_path(out->proc_dir);}
-    if (out->temp_dir) {make_dir(out->temp_dir); out->temp_dir = abs_path(out->temp_dir);}
+    if (out->input) out->proc_dir = out->temp_dir = dir_of(out->input);
+    if (out->freq   <= 0) out->freq   = 100;     // MHz
+    if (out->clocks <= 0) out->clocks = 10000;   // clocks to simulate
 
     const char *missing = NULL;
-    if      (!out->input)      missing = "-i/--input";
-    else if (!out->proc_dir)   missing = "-p/--proc-dir";
+    if      (!out->input)      missing = "<file.asm>";
     else if (!out->hdl_dir)    missing = "-d/--hdl-dir";
     else if (!out->macros_dir) missing = "-m/--macros-dir";
-    else if (!out->temp_dir)   missing = "-t/--temp-dir";
 
     if (missing)
     {

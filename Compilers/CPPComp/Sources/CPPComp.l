@@ -149,6 +149,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
             else if (!strcmp(key, "nuioou")) g_unit->nuioou = atoi(val);
             else if (!strcmp(key, "fftsiz")) g_unit->fftsiz = atoi(val);
             else if (!strcmp(key, "itradd")) g_unit->itradd = atoi(val);
+            else if (!strcmp(key, "srcdir")) { free(g_unit->srcdir); g_unit->srcdir = xstrdup_n(val, strlen(val)); }
             else msg_warning(yylineno, "unknown #pragma yanc setting '%s'", key);
         }
     }

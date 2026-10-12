@@ -81,6 +81,33 @@ int  nbopr;             // number of operand bits
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+// the folder of the program's source, where the user's own files live (the
+// files that initialize arrays, the simulation inputs input_N.txt and
+// cade_k.txt): the compilers write it to cmm_log.txt as "srcdir <path>" (the
+// rest of the line, so a path with spaces holds); without it, the output folder
+const char *src_dir(void)
+{
+    static char dir[2048];
+    static int  done = 0;
+    if (done) return dir;
+    done = 1;
+    snprintf(dir, sizeof(dir), "%s", temp_dir);
+
+    char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", temp_dir);
+    FILE *input = fopen(path, "r");
+    if (input == NULL) return dir;
+    char linha[2048];
+    while (fgets(linha, sizeof(linha), input))
+        if (strncmp(linha, "srcdir ", 7) == 0)
+        {
+            linha[strcspn(linha, "\r\n")] = 0;
+            memcpy(dir, linha + 7, strlen(linha + 7) + 1);   // fits: linha is no longer than dir
+            break;
+        }
+    fclose(input);
+    return dir;
+}
+
 // fetches a parameter from the log file
 int eval_get(char *fname, char *var, char *val)
 {
@@ -312,9 +339,10 @@ void eval_init(int clk, int clk_n)
     // with zero words the program never addresses; eval_finish writes them.
     n_dat_used = n_dat;
     if (n_dat < 2) n_dat = 2;
-    eval_get("app_log.txt","nubits",    aux); nubits = atoi(aux); // ALU word width (bits)
-    eval_get("app_log.txt","nbmant",    aux); nbmant = atoi(aux); // mantissa width (bits)
-    eval_get("app_log.txt","nbexpo",    aux); nbexpo = atoi(aux); // exponent width (bits)
+    // the widths a program left out keep their defaults (32/23/8, above)
+    if (eval_get("app_log.txt","nubits", aux) == 1) nubits = atoi(aux); // ALU word width (bits)
+    if (eval_get("app_log.txt","nbmant", aux) == 1) nbmant = atoi(aux); // mantissa width (bits)
+    if (eval_get("app_log.txt","nbexpo", aux) == 1) nbexpo = atoi(aux); // exponent width (bits)
 
     // float rounding level: needed before the first constant is encoded (f2mf)
     if (eval_get("app_log.txt","fround", aux) == 1) fround = atoi(aux);
@@ -334,8 +362,8 @@ void eval_init(int clk, int clk_n)
 
     // open the .mif files ----------------------------------------------------
 
-    snprintf(aux, sizeof(aux), "%s/Hardware/%s_data.mif", proc_dir, prname); f_data  = fopen(aux, "w");
-    snprintf(aux, sizeof(aux), "%s/Hardware/%s_inst.mif", proc_dir, prname); f_instr = fopen(aux, "w");
+    snprintf(aux, sizeof(aux), "%s/%s_data.mif", proc_dir, prname); f_data  = fopen(aux, "w");
+    snprintf(aux, sizeof(aux), "%s/%s_inst.mif", proc_dir, prname); f_instr = fopen(aux, "w");
 
     // initialize routines for iverilog simulation ----------------------------
 

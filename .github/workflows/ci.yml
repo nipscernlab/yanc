@@ -43,19 +43,16 @@ jobs:
 
       - name: Smoke test full pipeline on all examples
         shell: msys2 {0}
-        # For every .cmm in Compilers/CMMComp/Tests/, copy the processor directory to a
+        # For every test Compilers/CMMComp/Tests/<p>/<p>.cmm, copy the test to a
         # writable scratch area (so generated files do not dirty the
-        # checkout) and run the full toolchain end-to-end:
+        # checkout) and run the full toolchain end-to-end into the test's
+        # output folder <p>/:
         #
-        #   cmmcomp  : <file.cmm> -> Software/<prname>.asm
-        #   appcomp  : Software/<prname>.asm -> tmp/app_log.txt
-        #   asmcomp  : Software/<prname>.asm -> Hardware/<prname>.v
-        #                                     + Hardware/<prname>_data.mif
-        #                                     + Hardware/<prname>_inst.mif
+        #   cmmcomp  : <p>.cmm -> <p>/<p>.asm (+ the tables)
+        #   appcomp  : <p>/<p>.asm -> <p>/app_log.txt
+        #   asmcomp  : <p>/<p>.asm -> <p>/<p>.v + <p>_data.mif + <p>_inst.mif
         #
-        # Same named-option shapes as single_proc.bat. The Hardware/ subdir is
-        # created up front because asmcomp does not mkdir it itself. Any
-        # non-zero exit or missing/empty expected artifact fails the job.
+        # Any non-zero exit or missing/empty expected artifact fails the job.
         run: |
           set -uo pipefail
 
@@ -71,37 +68,36 @@ jobs:
 
           fail=0
           while IFS= read -r cmm; do
-            proc_dir_rel="$(dirname "$(dirname "$cmm")")"  # strip /Software/file.cmm
+            proc_dir_rel="$(dirname "$cmm")"
             prname="$(basename "$proc_dir_rel")"
             filename="$(basename "$cmm")"
 
-            work_proc="$SCRATCH/proc/$prname"
-            tmp_dir="$SCRATCH/tmp/$prname"
-            mkdir -p "$tmp_dir" "$(dirname "$work_proc")"
+            work_proc="$SCRATCH/proc/$prname"   # the test: the .cmm and its own files
+            out="$work_proc/$prname"            # its output folder
+            mkdir -p "$(dirname "$work_proc")"
             cp -r "$proc_dir_rel" "$work_proc"
-            mkdir -p "$work_proc/Hardware" "$work_proc/Simulation"
 
-            asm_file="$work_proc/Software/$prname.asm"
+            asm_file="$out/$prname.asm"
 
             echo "=== smoke: $filename ==="
 
-            if ! "$CMMCOMP" -en -i "$work_proc/Software/$filename" -n "$prname" -p "$work_proc" -m "$MAC_DIR" -t "$tmp_dir"; then
+            if ! "$CMMCOMP" -en -o "$out" -m "$MAC_DIR" "$work_proc/$filename"; then
               echo "FAIL: cmmcomp exited non-zero for $prname"; fail=1; continue
             fi
             [ -s "$asm_file" ] || { echo "FAIL: $asm_file missing/empty"; fail=1; continue; }
 
-            if ! "$APPCOMP" -en -i "$asm_file" -t "$tmp_dir"; then
+            if ! "$APPCOMP" -en "$asm_file"; then
               echo "FAIL: appcomp exited non-zero for $prname"; fail=1; continue
             fi
-            [ -s "$tmp_dir/app_log.txt" ] || { echo "FAIL: app_log.txt missing/empty"; fail=1; continue; }
+            [ -s "$out/app_log.txt" ] || { echo "FAIL: app_log.txt missing/empty"; fail=1; continue; }
 
-            if ! "$ASMCOMP" -en -i "$asm_file" -p "$work_proc" -d "$HDL_DIR" -m "$MAC_DIR" -t "$tmp_dir" -f 100 -c 1000; then
+            if ! "$ASMCOMP" -en -d "$HDL_DIR" -m "$MAC_DIR" -f 100 -c 1000 "$asm_file"; then
               echo "FAIL: asmcomp exited non-zero for $prname"; fail=1; continue
             fi
             for art in "$prname.v" "${prname}_data.mif" "${prname}_inst.mif"; do
-              [ -s "$work_proc/Hardware/$art" ] || { echo "FAIL: Hardware/$art missing/empty"; fail=1; }
+              [ -s "$out/$art" ] || { echo "FAIL: $art missing/empty"; fail=1; }
             done
-          done < <(find Compilers/CMMComp/Tests -name '*.cmm' | sort)
+          done < <(for d in Compilers/CMMComp/Tests/*/; do d="${d%/}"; f="$d/$(basename "$d").cmm"; [ -f "$f" ] && echo "$f"; done | sort)
 
           rm -rf "$SCRATCH"
           exit "$fail"
@@ -140,37 +136,36 @@ jobs:
 
           fail=0
           while IFS= read -r cmm; do
-            proc_dir_rel="$(dirname "$(dirname "$cmm")")"  # strip /Software/file.cmm
+            proc_dir_rel="$(dirname "$cmm")"
             prname="$(basename "$proc_dir_rel")"
             filename="$(basename "$cmm")"
 
-            work_proc="$SCRATCH/proc/$prname"
-            tmp_dir="$SCRATCH/tmp/$prname"
-            mkdir -p "$tmp_dir" "$(dirname "$work_proc")"
+            work_proc="$SCRATCH/proc/$prname"   # the test: the .cmm and its own files
+            out="$work_proc/$prname"            # its output folder
+            mkdir -p "$(dirname "$work_proc")"
             cp -r "$proc_dir_rel" "$work_proc"
-            mkdir -p "$work_proc/Hardware" "$work_proc/Simulation"
 
-            asm_file="$work_proc/Software/$prname.asm"
+            asm_file="$out/$prname.asm"
 
             echo "=== smoke: $filename ==="
 
-            if ! "$CMMCOMP" -en -i "$work_proc/Software/$filename" -n "$prname" -p "$work_proc" -m "$MAC_DIR" -t "$tmp_dir"; then
+            if ! "$CMMCOMP" -en -o "$out" -m "$MAC_DIR" "$work_proc/$filename"; then
               echo "FAIL: cmmcomp exited non-zero for $prname"; fail=1; continue
             fi
             [ -s "$asm_file" ] || { echo "FAIL: $asm_file missing/empty"; fail=1; continue; }
 
-            if ! "$APPCOMP" -en -i "$asm_file" -t "$tmp_dir"; then
+            if ! "$APPCOMP" -en "$asm_file"; then
               echo "FAIL: appcomp exited non-zero for $prname"; fail=1; continue
             fi
-            [ -s "$tmp_dir/app_log.txt" ] || { echo "FAIL: app_log.txt missing/empty"; fail=1; continue; }
+            [ -s "$out/app_log.txt" ] || { echo "FAIL: app_log.txt missing/empty"; fail=1; continue; }
 
-            if ! "$ASMCOMP" -en -i "$asm_file" -p "$work_proc" -d "$HDL_DIR" -m "$MAC_DIR" -t "$tmp_dir" -f 100 -c 1000; then
+            if ! "$ASMCOMP" -en -d "$HDL_DIR" -m "$MAC_DIR" -f 100 -c 1000 "$asm_file"; then
               echo "FAIL: asmcomp exited non-zero for $prname"; fail=1; continue
             fi
             for art in "$prname.v" "${prname}_data.mif" "${prname}_inst.mif"; do
-              [ -s "$work_proc/Hardware/$art" ] || { echo "FAIL: Hardware/$art missing/empty"; fail=1; }
+              [ -s "$out/$art" ] || { echo "FAIL: $art missing/empty"; fail=1; }
             done
-          done < <(find Compilers/CMMComp/Tests -name '*.cmm' | sort)
+          done < <(for d in Compilers/CMMComp/Tests/*/; do d="${d%/}"; f="$d/$(basename "$d").cmm"; [ -f "$f" ] && echo "$f"; done | sort)
 
           rm -rf "$SCRATCH"
           exit "$fail"

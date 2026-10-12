@@ -63,42 +63,41 @@ BIN_DIR="$YANC_BIN"
 SRC_PROC="$ROOT_DIR/Compilers/CMMComp/Tests/$PROC"
 
 # --- Work area: the only files this script creates (Teste/ is gitignored) ---
+# A copy of the project (the .cmm and its own files), compiled into its
+# output folder Teste/<proc>/<proc>/, as `cmmcomp <proc>.cmm` does in a
+# user's folder.
 WORK="$ROOT_DIR/Teste"
 rm -rf "$WORK"
-PROC_DIR="$WORK/$PROC"            # writable project dir (tools read the .cmm and emit here)
-SOFT_DIR="$PROC_DIR/Software"; HARD_DIR="$PROC_DIR/Hardware"
-TMP_DIR="$WORK/Temp"; TMP_PRO="$TMP_DIR/$PROC"   # scratch (-t, sim cwd, trad_*.txt for gen_gtkw)
-VL_DIR="$TMP_PRO/vl"             # Verilator obj_dir
+SRC_DIR="$WORK/$PROC"             # the project: the .cmm, array inits, input_N.txt
+TMP_PRO="$SRC_DIR/$PROC"          # the output folder: asm, Verilog, tables, sim cwd
+VL_DIR="$TMP_PRO/vl"              # Verilator obj_dir
 
-# The .cmm is the only input; cmmcomp/asmcomp create Software/Hardware outputs here.
-mkdir -p "$TMP_PRO" "$SOFT_DIR"
-cp "$SRC_PROC/Software/$FNAM" "$SOFT_DIR/"
+mkdir -p "$WORK"
+cp -r "$SRC_PROC" "$SRC_DIR"
 
 # --- Compile: C+- -> asm -> Verilog -----------------------------------------
 echo "#### Running the CMM compiler"
-"$BIN_DIR/cmmcomp" -i "$SOFT_DIR/$FNAM" -n "$PROC" -p "$PROC_DIR" -m "$MAC_DIR" -t "$TMP_PRO"
+"$BIN_DIR/cmmcomp" -o "$TMP_PRO" -m "$MAC_DIR" "$SRC_DIR/$FNAM"
 
 echo "#### Running the Pre-assembler"
-ASM_FILE="$SOFT_DIR/$PROC.asm"
-"$BIN_DIR/appcomp" -i "$ASM_FILE" -t "$TMP_PRO"
+ASM_FILE="$TMP_PRO/$PROC.asm"
+"$BIN_DIR/appcomp" "$ASM_FILE"
 
 echo "#### Running the Assembler"
-"$BIN_DIR/asmcomp" -i "$ASM_FILE" -p "$PROC_DIR" -d "$HDL_DIR" -m "$MAC_DIR" -t "$TMP_PRO" -f "$FRE_CLK" -c "$NUM_CLK"
+"$BIN_DIR/asmcomp" -d "$HDL_DIR" -m "$MAC_DIR" -f "$FRE_CLK" -c "$NUM_CLK" "$ASM_FILE"
 
 # --- Build + run the simulation ---------------------------------------------
 # WAVE_VCD: the waveform GTKWave opens; HDR_VCD: the (text) VCD gen_gtkw parses
 # for the signal list; GTKW_OUT: the layout gen_gtkw writes when none is given.
-UPROC="$HARD_DIR/$PROC"
+UPROC="$TMP_PRO/$PROC"
 if [ "$SIM" = iverilog ]; then
     echo "#### Running Icarus"
-    # The testbench asmcomp generated (<proc>_tb.v in Temp).
+    # The testbench asmcomp generated (<proc>_tb.v, in the output folder).
     TB_MOD="${PROC}_tb"
     ( cd "$HDL_DIR" && "$IVERILOG" -s "$TB_MOD" -o "$TMP_PRO/$PROC.vvp" \
         "$TMP_PRO/${PROC}_tb.v" "$UPROC.v" addr_dec.v instr_dec.v processor.v core.v ula.v )
 
     echo "#### Running VVP"
-    cp "${UPROC}_data.mif" "$TMP_PRO/"
-    cp "${UPROC}_inst.mif" "$TMP_PRO/"
     cd "$TMP_PRO"
     # header-only pass (text VCD): gives gen_gtkw the signal list fast.
     "$VVP" "$PROC.vvp" +HEADER_ONLY
@@ -130,7 +129,7 @@ fi
 
 # --- View in GTKWave (layout built by gen_gtkw) -----------------------------
 echo "#### Generating the .gtkw layout (gen_gtkw) and launching GTKWave"
-"$BIN_DIR/gen_gtkw" "$HDR_VCD" "$GTKW_OUT" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
+"$BIN_DIR/gen_gtkw" "$HDR_VCD" "$GTKW_OUT" "$SRC_DIR" "$BIN_DIR/comp2gtkw"
 "$GTKWAVE" --dark --zoom-fit --left-justify "$WAVE_VCD" -a "$GTKW_OUT"
 
 cd "$ROOT_DIR"

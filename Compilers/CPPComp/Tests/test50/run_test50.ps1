@@ -18,7 +18,7 @@ $BIN   = Join-Path $ROOT ".smoke/bin"
 if (-not (Test-Path (Join-Path $BIN "cppcomp.exe"))) { $BIN = Join-Path $ROOT "bin" }
 $WORK  = Join-Path $CPP  ".work"
 $TEST  = $PSScriptRoot
-$SW    = Join-Path $TEST "Software"
+$SW    = $TEST
 $HDL   = Join-Path $ROOT "SAPHO"
 $MACROS= Join-Path $ROOT "Compilers/CMMComp/Includes"
 
@@ -57,29 +57,28 @@ if (Test-Path $proc) {
         Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $proc
     }
 }
-New-Item -ItemType Directory -Force "$proc/Software", "$proc/Hardware", "$proc/Simulation", $tmp | Out-Null
+$od  = Join-Path $proc $prname     # the output folder
+New-Item -ItemType Directory -Force $od, $tmp | Out-Null
 
-$asm = "$proc/Software/$prname.asm"
+$asm = "$od/$prname.asm"
 
 Write-Host "==> cpppp"
-& $CPPPP -i $src -o "$tmp/pp.cpp" -I "$CPP/Includes" -I $src_dir
+& $CPPPP -o "$tmp/pp.cpp" -I "$CPP/Includes" -I $src_dir $src
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> cppcomp"
-# cppcomp >= v5.2 dropped -o for the cmmcomp-style layout: -p <proc> -n <prname>
-# writes Software/<prname>.asm into the proc folder ($asm above).
-& $CPPC -i "$tmp/pp.cpp" -p $proc -n $prname -t $tmp
+& $CPPC -o $od -n $prname "$tmp/pp.cpp"
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> appcomp"
-& $APPCOMP -en -i $asm -t $tmp
+& $APPCOMP -en $asm
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> asmcomp"
-& $ASMCOMP -en -i $asm -p $proc -d $HDL -m $MACROS -t $tmp -f 100 -c 5000000
+& $ASMCOMP -en -d $HDL -m $MACROS -f 100 -c 5000000 $asm
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
-$uproc_v = "$proc/Hardware/$prname.v"
+$uproc_v = "$od/$prname.v"
 if (-not (Test-Path $uproc_v)) { Write-Error "missing $uproc_v"; exit 1 }
 
 Write-Host "==> verilator build"
@@ -92,7 +91,7 @@ Write-Host "==> verilator build"
 if ($LASTEXITCODE -ne 0) { Write-Error "verilator failed"; exit 1 }
 
 $infile = "$src_dir/$base.in"
-$out    = "$proc/Simulation/output_0.txt"
+$out    = "$od/output_0.txt"
 $clocks_file = "$src_dir/$base.clocks"
 $clocks = 200000000
 if (Test-Path $clocks_file) {

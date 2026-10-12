@@ -261,7 +261,7 @@ void sim_regi_arr(char *va)
 // returns the memory contents
 void sim_mem(int addr, char *val)
 {
-    char aux[2048]; snprintf(aux, sizeof(aux), "%s/Hardware/%s_data.mif", proc_dir, prname);
+    char aux[2048]; snprintf(aux, sizeof(aux), "%s/%s_data.mif", proc_dir, prname);
     FILE *f_data = fopen(aux, "r");
 
     int i = 0;

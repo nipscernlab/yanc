@@ -17,9 +17,9 @@ typedef struct
 {
     char *input;      // -i  C± source file name (inside <proc-dir>/Software)
     char *name;       // -n  processor name (base name of the .asm output)
-    char *proc_dir;   // -p  processor directory
+    char *proc_dir;   // -o  output folder (default ./<name>): the .asm and the tables
     char *macros_dir; // -m  Macros directory
-    char *temp_dir;   // -t  Temp directory
+    char *temp_dir;   //     the same folder (the tables)
     int   array_sim;  // -A  emit each array element as its own GTKWave signal
 } cli_args;
 

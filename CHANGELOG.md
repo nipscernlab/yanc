@@ -84,21 +84,29 @@ tags consumed by Aurora.
   `Compilers/` and `SAPHO/` folders the same way. Explicit options still win.
   The Quick start runs with bare tool names. `cppcomp -h` and `cpppp -h` now
   say C++, and `gen_gtkw -h` prints its usage.
-- **The command lines follow the usual conventions.** The source file is the
-  argument without an option in every tool (`-i` still works), and **cmmcomp
-  takes its path** instead of a name looked up in `<proc>/Software/` (callers
-  must pass the path: AURORA adapts with v7.1). `-n` of cmmcomp defaults to
-  the source file's name; `-t` of cmmcomp, cppcomp and asmcomp defaults to
-  `<proc>/Temp`, and that of appcomp to the `Temp/` beside the `Software/`
-  holding its `.asm`; a missing processor folder is created (all levels).
-  asmcomp makes `-p` and `-t` absolute, so a relative folder still works in
-  the testbench. `gen_gtkw` also finds the translate files in
-  `<tmp_base>/<proc>/Temp/`. The smallest C± run is now
-  `cmmcomp -p out/prog prog.cmm`, `appcomp out/prog/Software/prog.asm`,
-  `asmcomp -p out/prog out/prog/Software/prog.asm`. Fixed on the way: cmmcomp
-  re-read the source for the waveform's C± track at
-  `<proc>/Software/<name>.cmm`, which failed when the file was not named after
-  the processor.
+- **The command lines and the folders follow the usual conventions.** The
+  source file is the argument without an option in every tool (`-i` still
+  works). The files the user writes stay beside the source (the `.cmm` /
+  `.cpp`, the files that initialise arrays, the simulation inputs
+  `input_N.txt` and `cade_k.txt`); everything generated goes to one output
+  folder, `./<name>` unless `-o` says otherwise: `<name>.asm`, the tables,
+  `app_log.txt`, `<name>.v`, the `.mif`, `<name>_tb.v`, the simulation
+  outputs. There are no `Software/`, `Hardware/`, `Simulation/` or `Temp/`
+  folders any more, and no `-p` or `-t`: cmmcomp and cppcomp take `-o`,
+  appcomp and asmcomp write beside the `.asm` they read. The compilers record
+  the source folder in `cmm_log.txt` (`srcdir`; for C++, cpppp hands it to
+  cppcomp in a `#pragma yanc srcdir` line), where asmcomp reads the user's
+  files. `-n` defaults to the source file's name; asmcomp's `-f` / `-c` to 100
+  MHz and 10000 clocks (0 gave a testbench with an infinite clock period);
+  missing folders are created (all levels); `gen_gtkw`'s third argument is the
+  folder that holds the output folders. The smallest C± run is
+  `cmmcomp prog.cmm`, `appcomp prog/prog.asm`, `asmcomp prog/prog.asm`. The
+  test projects moved to the same layout (`Tests/<p>/<p>.cmm` beside its
+  files), and the scripts, the regress and the CI with them. AURORA adapts
+  with v7.1. Fixed on the way: cmmcomp re-read the source for the waveform's
+  C± track at `<proc>/Software/<name>.cmm`, which failed when the file was not
+  named after the processor; asmcomp took garbage for `#NUBITS`, `#NBMANT` and
+  `#NBEXPO` when a program left them out, instead of the defaults 32/23/8.
 - **The README is short: what YANC is, how to run it, how to develop it.**
   The rest moved to `docs/setup.md`, `docs/running.md` and
   `docs/programming.md`. The release examples lost the directives that have

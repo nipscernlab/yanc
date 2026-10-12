@@ -658,15 +658,14 @@ void parse_lang_flag(int *argc, char **argv);
     M("cmmcomp - compilador front-end C± do YANC (%s)\n" \
       "\n" \
       "Uso:\n" \
-      "  cmmcomp [opções] -p <dir> <arq.cmm>\n" \
+      "  cmmcomp [opções] <arq.cmm>\n" \
       "\n" \
-      "Obrigatórios:\n" \
-      "  <arq.cmm>, -i <arq>     arquivo-fonte C± (o caminho)\n" \
-      "  -p, --proc-dir <dir>    diretório do processador (o .asm vai para <dir>/Software)\n" \
+      "Escreve na pasta de saída o <nome>.asm e as tabelas (cmm_log.txt,\n" \
+      "pc_<nome>_mem.txt, trad_cmm.txt) que o asmcomp e a forma de onda usam.\n" \
       "\n" \
-      "Outras opções:\n" \
+      "Opções:\n" \
+      "  -o, --output <dir>      pasta de saída (padrão: ./<nome>)\n" \
       "  -n, --name <nome>       nome do processador (padrão: o nome do arquivo-fonte)\n" \
-      "  -t, --temp-dir <dir>    diretório Temp (padrão: <dir-proc>/Temp)\n" \
       "  -m, --macros-dir <dir>  diretório de Macros (padrão: a pasta Macros ao lado de bin/)\n" \
       "  -A, --array             expande cada elemento do array como sinal individual no GTKWave\n" \
       "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
@@ -675,17 +674,16 @@ void parse_lang_flag(int *argc, char **argv);
       "cmmcomp - YANC C± front-end compiler (%s)\n" \
       "\n" \
       "Usage:\n" \
-      "  cmmcomp [options] -p <dir> <file.cmm>\n" \
+      "  cmmcomp [options] <file.cmm>\n" \
       "\n" \
-      "Required:\n" \
-      "  <file.cmm>, -i <file>   C± source file (its path)\n" \
-      "  -p, --proc-dir <dir>    processor directory (the .asm goes to <dir>/Software)\n" \
+      "Writes to the output folder the <name>.asm and the tables (cmm_log.txt,\n" \
+      "pc_<name>_mem.txt, trad_cmm.txt) that asmcomp and the waveform use.\n" \
       "\n" \
-      "Other options:\n" \
+      "Options:\n" \
+      "  -o, --output <dir>      output folder (default: ./<name>)\n" \
       "  -n, --name <name>       processor name (default: the source file's name)\n" \
-      "  -t, --temp-dir <dir>    Temp directory (default: <proc-dir>/Temp)\n" \
       "  -m, --macros-dir <dir>  Macros directory (default: the Macros folder next to bin/)\n" \
-      "  -A, --array             emit each array element as a separate GTKWave signal       \n" \
+      "  -A, --array             emit each array element as a separate GTKWave signal\n" \
       "  -en, -pt                diagnostic message language (default: -pt)\n" \
       "  -h, --help              show this help and exit\n" \
       "  -V, --version           show version and exit\n")

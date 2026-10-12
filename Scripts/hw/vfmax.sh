@@ -6,7 +6,7 @@
 # Usage:  bash Scripts/hw/vfmax.sh <proc> [part]
 #         bash Scripts/hw/vfmax.sh sapho_all                 # ZYBO: xc7z010clg400-1
 #
-# <proc> is a processor the regress already built (.smoke/work/<proc>/Hardware/
+# <proc> is a processor the regress already built (.smoke/work/<proc>/<proc>/
 # <proc>.v, whose .mif paths are absolute). Results in .smoke/hw/<proc>_<part>/
 # and appended to .smoke/hw/vfmax.txt. One run takes minutes to an hour; run one
 # at a time.
@@ -16,7 +16,7 @@ PROC=$1; PART=${2:-xc7z010clg400-1}
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 VIVADO=${VIVADO:-/c/AMDDesignTools/2025.2/Vivado/bin/vivado.bat}
-TOP="$ROOT/.smoke/work/$PROC/Hardware/$PROC.v"
+TOP="$ROOT/.smoke/work/$PROC/$PROC/$PROC.v"
 OUT="$ROOT/.smoke/hw"
 DIR="$OUT/${PROC}_${PART}"
 

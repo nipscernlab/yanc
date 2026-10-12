@@ -60,34 +60,31 @@ int main() {
 }
 ```
 
-**Windows** (`cmd`):
+**Windows** (`cmd`), in the folder that holds `my_program.cpp`:
 
 ```bat
-set NAME=my_proc
-set PROJ=%CD%\out\%NAME%
-set TMP=%CD%\tmp\%NAME%
-mkdir %PROJ% %TMP%
-
-:: 1. preprocess the C++ source (a .cmm source skips this step)
-cpppp -i my_program.cpp -o %TMP%\pp.cpp
-:: 2. compile it to assembly (for a .cmm source:
-::    cmmcomp -n %NAME% -p %PROJ% -t %TMP% my_program.cmm)
-cppcomp -i %TMP%\pp.cpp -n %NAME% -p %PROJ% -t %TMP%
+:: 1. preprocess the C++ source into the output folder (a .cmm source skips this)
+mkdir my_program
+cpppp -o my_program\pp.cpp my_program.cpp
+:: 2. compile it to assembly: my_program\my_program.asm and its tables
+::    (a .cmm source: cmmcomp my_program.cmm)
+cppcomp -n my_program my_program\pp.cpp
 :: 3. addresses and processor parameters
-appcomp -en -i %PROJ%\Software\%NAME%.asm -t %TMP%
-:: 4. the processor's Verilog, memory images and testbench
-asmcomp -en -i %PROJ%\Software\%NAME%.asm -p %PROJ% -t %TMP% -f 100 -c 10000
+appcomp my_program\my_program.asm
+:: 4. the processor's Verilog, memory images and testbench, all in my_program\
+asmcomp my_program\my_program.asm
 
 :: 5. simulate (Icarus); the processor's Verilog is the package's SAPHO folder
 set SAPHO=C:\path\to\yanc\SAPHO
-iverilog -s %NAME%_tb -o %TMP%\%NAME%.vvp %TMP%\%NAME%_tb.v %PROJ%\Hardware\%NAME%.v ^
+cd my_program
+iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
          %SAPHO%\processor.v %SAPHO%\core.v %SAPHO%\ula.v %SAPHO%\addr_dec.v %SAPHO%\instr_dec.v
-pushd %TMP% & vvp %NAME%.vvp & popd
-type %PROJ%\Simulation\output_0.txt
+vvp sim.vvp
+type output_0.txt
 
-:: 6. the waveform, formatted
-gen_gtkw %TMP%\%NAME%_tb.vcd %TMP%\%NAME%_tb.gtkw %CD%\tmp
-gtkwave %TMP%\%NAME%_tb.vcd -a %TMP%\%NAME%_tb.gtkw
+:: 6. the waveform, formatted (.. holds the output folder my_program\)
+gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
+gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
 **Linux** (or MSYS2 on Windows), with the package unpacked in `$YANC`. This
@@ -100,10 +97,6 @@ set -e
 YANC=${YANC:-/path/to/yanc}                 # the unpacked package
 "$YANC/install.sh"                          # the tools into ~/.local/bin
 export PATH="$HOME/.local/bin:$PATH"
-NAME=my_proc
-PROJ=$PWD/out/$NAME
-TMP=$PWD/tmp/$NAME                          # one folder per processor (gen_gtkw reads it)
-mkdir -p "$PROJ" "$TMP"
 
 cat > my_program.cpp <<'EOF'
 int main() {
@@ -114,26 +107,32 @@ int main() {
 }
 EOF
 
-cpppp   -i my_program.cpp -o "$TMP/pp.cpp"
-cppcomp -i "$TMP/pp.cpp" -n $NAME -p "$PROJ" -t "$TMP"
-appcomp -en -i "$PROJ/Software/$NAME.asm" -t "$TMP"
-asmcomp -en -i "$PROJ/Software/$NAME.asm" -p "$PROJ" -t "$TMP" -f 100 -c 10000
+mkdir -p my_program
+cpppp -o my_program/pp.cpp my_program.cpp
+cppcomp -n my_program my_program/pp.cpp
+appcomp my_program/my_program.asm
+asmcomp my_program/my_program.asm
 
 SAPHO=$YANC/SAPHO
-iverilog -s ${NAME}_tb -o "$TMP/$NAME.vvp" "$TMP/${NAME}_tb.v" "$PROJ/Hardware/$NAME.v" \
+cd my_program
+iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v \
          "$SAPHO/processor.v" "$SAPHO/core.v" "$SAPHO/ula.v" "$SAPHO/addr_dec.v" "$SAPHO/instr_dec.v"
-(cd "$TMP" && vvp -n $NAME.vvp)
-tr -d '\r' < "$PROJ/Simulation/output_0.txt"      # 55
-[ "$(tr -d '\r' < "$PROJ/Simulation/output_0.txt")" = 55 ]
-gen_gtkw "$TMP/${NAME}_tb.vcd" "$TMP/${NAME}_tb.gtkw" "$PWD/tmp"
-test -s "$TMP/${NAME}_tb.gtkw"
-# gtkwave "$TMP/${NAME}_tb.vcd" -a "$TMP/${NAME}_tb.gtkw"   # to look at the waveform
+vvp -n sim.vvp
+tr -d '\r' < output_0.txt      # 55
+[ "$(tr -d '\r' < output_0.txt)" = 55 ]
+gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
+test -s my_program_tb.gtkw
+# gtkwave my_program_tb.vcd -a my_program_tb.gtkw   # to look at the waveform
 ```
 
-Stop after `asmcomp` if all you want are the Verilog and the memory images.
-What each file is, Verilator instead of Icarus, the formatted waveform and the
-scripts that run the whole pipeline: [docs/running.md](docs/running.md).
-Writing programs: [docs/programming.md](docs/programming.md).
+Everything generated lands in `my_program/`, beside the source: the
+processor (`my_program.v`, `my_program_inst.mif`, `my_program_data.mif`), the
+assembly, the testbench and the simulation outputs. Files the program reads
+(arrays initialised from a file, `input_N.txt` for the simulation) stay beside
+the source. Stop after `asmcomp` if all you want are the Verilog and the memory
+images. Verilator instead of Icarus, the formatted waveform and the scripts
+that run the whole pipeline: [docs/running.md](docs/running.md). Writing
+programs: [docs/programming.md](docs/programming.md).
 
 ## Develop
 

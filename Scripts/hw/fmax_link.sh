@@ -6,7 +6,7 @@
 # Usage:  [TAG=<name>] [SEED=<n>] bash Scripts/hw/fmax_link.sh [device] [family]
 #         bash Scripts/hw/fmax_link.sh 5CSEBA6U23I7      # DE10-Nano
 #
-# Reads the regress-built .smoke/work/sapho_all_{a,b}/Hardware/*.v (absolute
+# Reads the regress-built .smoke/work/sapho_all_{a,b}/<name>/*.v (absolute
 # .mif paths, so the memories initialise). The top is Scripts/hw/linkall_top.v,
 # the pair as a board would hold it. The two clocks are declared asynchronous:
 # every path between them is a toma/cade bit (into a two-flip-flop
@@ -25,12 +25,12 @@ DIR="$OUT/linkall_${DEV}${TAG:+_$TAG}"
 TOP=linkall_top
 
 for p in sapho_all_a sapho_all_b; do
-    [ -f "$ROOT/.smoke/work/$p/Hardware/$p.v" ] || { echo "no .smoke/work/$p/Hardware/$p.v -- run Scripts/regress.sh first"; exit 1; }
+    [ -f "$ROOT/.smoke/work/$p/$p/$p.v" ] || { echo "no .smoke/work/$p/$p/$p.v -- run Scripts/regress.sh first"; exit 1; }
 done
 [ -x "$QUARTUS/quartus_map" ] || { echo "Quartus not at $QUARTUS (set QUARTUS=...)"; exit 1; }
 
 rm -rf "$DIR"; mkdir -p "$DIR"; cd "$DIR"
-cp "$ROOT/.smoke/work/sapho_all_a/Hardware/sapho_all_a.v" "$ROOT/.smoke/work/sapho_all_b/Hardware/sapho_all_b.v" .
+cp "$ROOT/.smoke/work/sapho_all_a/sapho_all_a/sapho_all_a.v" "$ROOT/.smoke/work/sapho_all_b/sapho_all_b/sapho_all_b.v" .
 cp "$ROOT/Scripts/hw/linkall_top.v" .
 HDLW=$(cygpath -m "$ROOT/SAPHO" 2>/dev/null || echo "$ROOT/SAPHO")
 

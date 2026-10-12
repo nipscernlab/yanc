@@ -5,7 +5,7 @@
 #
 # Usage:  bash Scripts/hw/vfmax_link.sh [part]       # ZYBO: xc7z010clg400-1
 #
-# Reads the regress-built .smoke/work/sapho_all_{a,b}/Hardware/*.v. Results in
+# Reads the regress-built .smoke/work/sapho_all_{a,b}/<name>/*.v. Results in
 # .smoke/hw/linkall_<part>/ and appended to .smoke/hw/vfmax.txt (one Fmax per
 # clock). Minutes to an hour; run one at a time.
 set -e
@@ -16,13 +16,13 @@ OUT="$ROOT/.smoke/hw"
 DIR="$OUT/linkall_${PART}"
 
 for p in sapho_all_a sapho_all_b; do
-    [ -f "$ROOT/.smoke/work/$p/Hardware/$p.v" ] || { echo "no .smoke/work/$p/Hardware/$p.v -- run Scripts/regress.sh first"; exit 1; }
+    [ -f "$ROOT/.smoke/work/$p/$p/$p.v" ] || { echo "no .smoke/work/$p/$p/$p.v -- run Scripts/regress.sh first"; exit 1; }
 done
 [ -f "$VIVADO" ] || { echo "Vivado not at $VIVADO (set VIVADO=...)"; exit 1; }
 
 rm -rf "$DIR"; mkdir -p "$DIR/hdl"; cd "$DIR"
 W() { cygpath -m "$1" 2>/dev/null || echo "$1"; }
-cp "$ROOT/Scripts/hw/linkall_top.v" "$ROOT/.smoke/work/sapho_all_a/Hardware/sapho_all_a.v" "$ROOT/.smoke/work/sapho_all_b/Hardware/sapho_all_b.v" .
+cp "$ROOT/Scripts/hw/linkall_top.v" "$ROOT/.smoke/work/sapho_all_a/sapho_all_a/sapho_all_a.v" "$ROOT/.smoke/work/sapho_all_b/sapho_all_b/sapho_all_b.v" .
 # both memories into block RAM, as vfmax.sh does (and as Quartus does)
 cp "$ROOT"/SAPHO/*.v hdl/
 sed -i 's/^reg \[NBDATA-1:0\] mem \[0:NADDRE-1\];/(* ram_style = "block", rom_style = "block" *) reg [NBDATA-1:0] mem [0:NADDRE-1];/' hdl/processor.v

@@ -109,16 +109,15 @@ set TOPL_DIR=%PROJ_DIR%\TopLevel
 set VL_DIR=%TMP_DIR%\vl
 
 :: Only the inputs are copied: the project's TopLevel\ (user testbench, top-level
-:: Verilog and stimulus) and each processor's .cmm. The compilers create the
-:: Software/Hardware outputs in the writable copies.
+:: Verilog and stimulus) and each processor's project (its .cmm and own files).
+:: Each processor compiles into its output folder Temp\<proc>\, which is also
+:: what gen_gtkw reads (one folder per processor under Temp\).
 rmdir %WORK% /s /q
 mkdir %TMP_DIR%
 mkdir %TOPL_DIR%
 xcopy "%TESTS_DIR%\%PROJET%\TopLevel" "%TOPL_DIR%\" /e /i /q /y>%TMP_DIR%\xcopy.txt
 (for %%i in (%PROC_LIST%) do (
-    mkdir %USER_DIR%\%%i\Software
-    mkdir %TMP_DIR%\%%i
-    copy "%TESTS_DIR%\%%i\Software\%%i.cmm" "%USER_DIR%\%%i\Software\">%TMP_DIR%\xcopy.txt
+    xcopy "%TESTS_DIR%\%%i" "%USER_DIR%\%%i\" /e /i /q /y>%TMP_DIR%\xcopy.txt
 ))
 
 :: Verilator's g++ wants a writable TMP for its intermediate files
@@ -128,14 +127,13 @@ set TEMP=%TMP_DIR%
 :: Compile each processor: C+- -> asm -> Verilog -----------------------------
 
 (for %%i in (%PROC_LIST%) do (
-    "%BIN_DIR%\cmmcomp.exe" -i %USER_DIR%\%%i\Software\%%i.cmm -n %%i -p %USER_DIR%\%%i -m %MAC_DIR% -t %TMP_DIR%\%%i --array
+    "%BIN_DIR%\cmmcomp.exe" -o %TMP_DIR%\%%i -m %MAC_DIR% --array %USER_DIR%\%%i\%%i.cmm
 ))
 (for %%i in (%PROC_LIST%) do (
-    "%BIN_DIR%\appcomp.exe" -i %USER_DIR%\%%i\Software\%%i.asm -t %TMP_DIR%\%%i
+    "%BIN_DIR%\appcomp.exe" %TMP_DIR%\%%i\%%i.asm
 ))
 (for %%i in (%PROC_LIST%) do (
-    "%BIN_DIR%\asmcomp.exe" -i %USER_DIR%\%%i\Software\%%i.asm -p %USER_DIR%\%%i -d %HDL_DIR% -m %MAC_DIR% -t %TMP_DIR%\%%i -f 0 -c 0
-    cp %USER_DIR%\%%i\Hardware\%%i.v %TMP_DIR%\%%i
+    "%BIN_DIR%\asmcomp.exe" -d %HDL_DIR% -m %MAC_DIR% %TMP_DIR%\%%i\%%i.asm
 ))
 
 :: Build the simulation (gather the same .v set for both simulators) ----------
@@ -172,8 +170,8 @@ goto :proj_run_vl
 :proj_run_icarus
 dir %TOPL_DIR%\*.txt /b > f_list.txt
 for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do copy %TOPL_DIR%\%%a .\>%TMP_DIR%\xcopy.txt
-for %%a in (%PROC_LIST%) do copy %USER_DIR%\%%a\Hardware\%%a_inst.mif .\>%TMP_DIR%\xcopy.txt
-for %%a in (%PROC_LIST%) do copy %USER_DIR%\%%a\Hardware\%%a_data.mif .\>%TMP_DIR%\xcopy.txt
+for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\%%a_inst.mif .\>%TMP_DIR%\xcopy.txt
+for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\%%a_data.mif .\>%TMP_DIR%\xcopy.txt
 for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\pc_%%a_mem.txt .\>%TMP_DIR%\xcopy.txt
 del f_list.txt
 del xcopy.txt
