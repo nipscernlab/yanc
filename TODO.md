@@ -167,8 +167,12 @@ link number (any number of links, each synchronous or not, chosen in the
 source: `toma(k, x)`/`cade(k)` synchronized, `toma_sync`/`cade_sync`/
 `fcade_sync` for a partner on the same clock, 4 cycles a value faster,
 measured); `LINKAS` is gone; regress `LINK3` (chain, fan-out, fan-in,
-float). Left for v7.1: the board check and the Quartus constraints, and an
-Fmax. [`docs/toma-and-cade-links.md`](docs/toma-and-cade-links.md).
+float). Fmax measured 2026-10-11 (`Scripts/hw/fmax_link.sh`,
+`vfmax_link.sh`): the LINKALL pair on two clocks runs at the speed of
+`sapho_all` alone on both boards (DE10-Nano 20.8 / 22.4 against 21.8 MHz,
+ZYBO 24.0 / 23.9 against 23.5), the divider still the worst path; the
+`.sdc` (`set_clock_groups -asynchronous`) is written and checked. Left for
+v7.1: only the board run (the students put the pair on the boards). [`docs/toma-and-cade-links.md`](docs/toma-and-cade-links.md).
 
 **Item 24, processors with different formats on one link (parked
 2026-10-11 by Luciano: no v7.2 for it; the check belongs to Aurora, which

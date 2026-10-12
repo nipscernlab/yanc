@@ -223,8 +223,38 @@ between formats maybe in the future. v7.1 stops at the links.
   fan-out 1090 -> 1108 cells, fan-in 4199 -> 4270; `cade_sync` on lk_chain_b's
   link 0 takes 276 flip-flops to 272. The self-jump alone: +12 cells on
   link_ping, +35 on sapho_all_b, `sapho_all` (no link) unchanged.
-- Still open: the board check and the Quartus constraints on the
-  synchronized links (`toma-and-cade.md` 8.5); Fmax of a linked design.
+- Fmax of a linked design (2026-10-11, the LINKALL pair: `sapho_all_a` on
+  clk_a hands its result to `sapho_all_b` on clk_b over a synchronized link;
+  top `Scripts/hw/linkall_top.v`, scripts `fmax_link.sh` and
+  `vfmax_link.sh`), against `sapho_all` alone with the same HDL:
+
+  | | `sapho_all` alone | pair, clk_a | pair, clk_b |
+  |---|---|---|---|
+  | DE10-Nano, Quartus 24.1, slow 100C | 21.82 MHz, 3,558 ALMs | 20.76 MHz | 22.36 MHz (7,127 ALMs both) |
+  | ZYBO, Vivado 2025.2 | 23.54 MHz | 23.99 MHz | 23.89 MHz |
+
+  Within the seed noise (~2.5 MHz, quartus-fmax notes): the link costs no
+  clock. In every case the worst path is the integer divider (data memory ->
+  `cut[1]` of `ula_idiv`), as in `sapho_all` alone. Quartus found 4
+  synchronizer chains of 2 registers (the two link bits and the two reset
+  releases), 9.4 ns of settling time; no MTBF, since the chains are not
+  declared as synchronizers in the project.
+- The board constraint, checked by both tools: two clocks and
+  `set_clock_groups -asynchronous` between them. Every crossing is then cut:
+  Vivado lists 33 paths clk_a -> clk_b (the toma bit and the 32 bits of
+  `toma_dado`) and 1 clk_b -> clk_a (the cade bit), all "Asynchronous Groups".
+  Cutting the word is safe because the protocol holds it still at least two
+  receiver cycles before it is read (section 4); a board project writes:
+
+  ```
+  create_clock -period <ns> -name clk_a [get_ports clk_a]
+  create_clock -period <ns> -name clk_b [get_ports clk_b]
+  derive_clock_uncertainty
+  set_clock_groups -asynchronous -group [get_clocks clk_a] -group [get_clocks clk_b]
+  ```
+- Still open: the board itself (Icarus has no metastability; only the board
+  shows the link holding up for hours). The students' task: the LINKALL pair
+  on each board with this `.sdc`, A on the switches, B on the LEDs.
 
 ## 11. For the documentation (item 21 in TODO.md)
 
@@ -232,7 +262,7 @@ The user-facing text says: a processor can have several links, numbered
 from 0; `toma(k, x)` hands `x` over link k and `cade(k)` / `fcade(k)` take a
 word from it; each link joins two processors and works both ways; how to
 wire link k of one processor to link j of another (the pins of section 4,
-one shared `toma_dado`); the plain forms work across clocks, the `_sync`
+one shared `toma_dado`); the `.sdc` of section 10 when the clocks differ; the plain forms work across clocks, the `_sync`
 forms only when the partner runs on the same clock (and save 4 cycles a
 value); a deadlock, and an interrupt during a wait, are the
 program's responsibility.
