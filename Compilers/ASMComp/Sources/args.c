@@ -10,6 +10,7 @@
 
 #include "../Headers/args.h"
 #include "../Headers/messages.h"
+#include "../../common/exe_dir.h"
 
 // prints the full help text to 'stream'
 static void cli_help(FILE *stream)
@@ -78,6 +79,8 @@ void cli_parse(int argc, char **argv, cli_args *out)
             printf(MSG_CLI_VERSION, YANC_VERSION);
             exit(EXIT_SUCCESS);
         }
+        else if (arg[0] != '-' && !out->input)
+            out->input = arg;               // the .asm, without -i
         else
         {
             fprintf(stderr, MSG_ERR_CLI_UNKNOWN_OPT, arg);
@@ -86,7 +89,20 @@ void cli_parse(int argc, char **argv, cli_args *out)
         }
     }
 
-    // every directory/file option is mandatory; -f and -c default to 0 -------
+    // -d and -m default to the SAPHO/ and Macros/ folders next to the tool,
+    // -t to <proc-dir>/Temp (exe_dir.h); -i and -p are mandatory; -f and -c
+    // default to 0 -----------------------------------------------------------
+
+    static const char *const hdl_dirs[]    = EXE_HDL_DIRS;
+    static const char *const macros_dirs[] = EXE_MACROS_DIRS;
+    if (!out->hdl_dir)    out->hdl_dir    = exe_find_dir(hdl_dirs);
+    if (!out->macros_dir) out->macros_dir = exe_find_dir(macros_dirs);
+    if (!out->temp_dir && out->proc_dir) out->temp_dir = default_temp(out->proc_dir);
+
+    // the testbench names files under the processor folder and runs from the
+    // temp folder: both absolute, so a relative -p / -t still works
+    if (out->proc_dir) {make_dir(out->proc_dir); out->proc_dir = abs_path(out->proc_dir);}
+    if (out->temp_dir) {make_dir(out->temp_dir); out->temp_dir = abs_path(out->temp_dir);}
 
     const char *missing = NULL;
     if      (!out->input)      missing = "-i/--input";

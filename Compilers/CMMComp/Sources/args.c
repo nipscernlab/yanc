@@ -8,6 +8,7 @@
 
 #include "../Headers/args.h"
 #include "../Headers/messages.h"
+#include "../../common/exe_dir.h"
 
 // prints the full help text to 'stream'
 static void cli_help(FILE *stream)
@@ -58,6 +59,8 @@ void cli_parse(int argc, char **argv, cli_args *out)
             printf(MSG_CLI_VERSION, YANC_VERSION);
             exit(EXIT_SUCCESS);
         }
+        else if (arg[0] != '-' && !out->input)
+            out->input = arg;               // the source file, without -i
         else
         {
             fprintf(stderr, MSG_ERR_CLI_UNKNOWN_OPT, arg);
@@ -66,14 +69,18 @@ void cli_parse(int argc, char **argv, cli_args *out)
         }
     }
 
-    // every path-bearing option is mandatory ---------------------------------
+    // defaults (exe_dir.h): -m the Macros/ folder next to the tool, -n the
+    // source file's name, -t <proc-dir>/Temp; -i and -p are mandatory ------
+
+    static const char *const macros_dirs[] = EXE_MACROS_DIRS;
+    if (!out->macros_dir) out->macros_dir = exe_find_dir(macros_dirs);
+    if (!out->name && out->input) out->name = path_stem(out->input);
+    if (!out->temp_dir && out->proc_dir) out->temp_dir = default_temp(out->proc_dir);
 
     const char *missing = NULL;
     if      (!out->input)      missing = "-i/--input";
-    else if (!out->name)       missing = "-n/--name";
     else if (!out->proc_dir)   missing = "-p/--proc-dir";
     else if (!out->macros_dir) missing = "-m/--macros-dir";
-    else if (!out->temp_dir)   missing = "-t/--temp-dir";
 
     if (missing)
     {

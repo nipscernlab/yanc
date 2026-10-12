@@ -381,16 +381,16 @@ void parse_lang_flag(int *argc, char **argv);
     M("asmcomp - compilador assembly→Verilog do YANC (%s)\n" \
       "\n" \
       "Uso:\n" \
-      "  asmcomp [opções] -i <arq.asm> -p <dir> -d <dir> -m <dir> -t <dir>\n" \
+      "  asmcomp [opções] -p <dir> <arq.asm>\n" \
       "\n" \
-      "Opções obrigatórias:\n" \
-      "  -i, --input <arq>       arquivo-fonte assembly (caminho completo)\n" \
+      "Obrigatórios:\n" \
+      "  <arq.asm>, -i <arq>     arquivo-fonte assembly (caminho completo)\n" \
       "  -p, --proc-dir <dir>    diretório do processador\n" \
-      "  -d, --hdl-dir <dir>     diretório do HDL\n" \
-      "  -m, --macros-dir <dir>  diretório de Macros\n" \
-      "  -t, --temp-dir <dir>    diretório Temp\n" \
       "\n" \
       "Outras opções:\n" \
+      "  -t, --temp-dir <dir>    diretório Temp (padrão: <dir-proc>/Temp)\n" \
+      "  -d, --hdl-dir <dir>     diretório do HDL (padrão: a pasta SAPHO ao lado de bin/)\n" \
+      "  -m, --macros-dir <dir>  diretório de Macros (padrão: a pasta Macros ao lado de bin/)\n" \
       "  -f, --freq <MHz>        frequência de operação em MHz (padrão: 0)\n" \
       "  -c, --clocks <n>        número de clocks a simular (padrão: 0)\n" \
       "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
@@ -399,16 +399,16 @@ void parse_lang_flag(int *argc, char **argv);
       "asmcomp - YANC assembly-to-Verilog compiler (%s)\n" \
       "\n" \
       "Usage:\n" \
-      "  asmcomp [options] -i <file.asm> -p <dir> -d <dir> -m <dir> -t <dir>\n" \
+      "  asmcomp [options] -p <dir> <file.asm>\n" \
       "\n" \
-      "Required options:\n" \
-      "  -i, --input <file>      assembly source file (full path)\n" \
+      "Required:\n" \
+      "  <file.asm>, -i <file>   assembly source file (full path)\n" \
       "  -p, --proc-dir <dir>    processor directory\n" \
-      "  -d, --hdl-dir <dir>     HDL directory\n" \
-      "  -m, --macros-dir <dir>  Macros directory\n" \
-      "  -t, --temp-dir <dir>    Temp directory\n" \
       "\n" \
       "Other options:\n" \
+      "  -t, --temp-dir <dir>    Temp directory (default: <proc-dir>/Temp)\n" \
+      "  -d, --hdl-dir <dir>     HDL directory (default: the SAPHO folder next to bin/)\n" \
+      "  -m, --macros-dir <dir>  Macros directory (default: the Macros folder next to bin/)\n" \
       "  -f, --freq <MHz>        operating frequency in MHz (default: 0)\n" \
       "  -c, --clocks <n>        number of clocks to simulate (default: 0)\n" \
       "  -en, -pt                diagnostic message language (default: -pt)\n" \

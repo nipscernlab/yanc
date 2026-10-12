@@ -8,6 +8,7 @@
 
 #include "../Headers/args.h"
 #include "../Headers/messages.h"
+#include "../../common/exe_dir.h"
 
 // prints the full help text to 'stream'
 static void cli_help(FILE *stream)
@@ -50,6 +51,8 @@ void cli_parse(int argc, char **argv, cli_args *out)
             printf(MSG_CLI_VERSION, YANC_VERSION);
             exit(EXIT_SUCCESS);
         }
+        else if (arg[0] != '-' && !out->input)
+            out->input = arg;               // the .asm, without -i
         else
         {
             fprintf(stderr, MSG_ERR_CLI_UNKNOWN_OPT, arg);
@@ -58,7 +61,14 @@ void cli_parse(int argc, char **argv, cli_args *out)
         }
     }
 
-    // both options are mandatory ---------------------------------------------
+    // -t defaults to <proc>/Temp, <proc> being the folder that holds
+    // Software/<file>.asm (exe_dir.h); the input is mandatory ---------------
+
+    if (!out->temp_dir && out->input)
+    {
+        char *proc = proc_of_asm(out->input);
+        if (proc) out->temp_dir = default_temp(proc);
+    }
 
     const char *missing = NULL;
     if      (!out->input)    missing = "-i/--input";

@@ -106,7 +106,7 @@ set TEMP=%TMP_PRO%
 :: Compile: C+- -> asm -> Verilog --------------------------------------------
 
 echo #### Running the CMM compiler
-"%BIN_DIR%\cmmcomp.exe" -i %FNAM% -n %PROC% -p %PROC_DIR% -m %MAC_DIR% -t %TMP_PRO%
+"%BIN_DIR%\cmmcomp.exe" -i %SOFT_DIR%\%FNAM% -n %PROC% -p %PROC_DIR% -m %MAC_DIR% -t %TMP_PRO%
 
 echo #### Running the Pre-assembler
 set ASM_FILE=%SOFT_DIR%\%PROC%.asm

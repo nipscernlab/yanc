@@ -27,6 +27,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "../Compilers/common/exe_dir.h"
+
 // ---- GTKWave trace-format flag bits (see Aurora gtkw_proc_writer.js) --------
 #define TR_HEX        0x2
 #define TR_DEC        0x4
@@ -362,12 +364,23 @@ static void emit_proc_section(const Proc *p) {
     emit_io(p->inst, "out_en_sim_", FMT_BIN,        "out_en");
     emit_io(p->inst, "out_sig_",    FMT_SIGNED_DEC, "output");
 
-    // per-proc translate files at <tmp_base>/<type>/ (forward slashes work on
-    // both Windows and POSIX, and GTKWave accepts them in the .gtkw paths).
+    // per-proc translate files at <tmp_base>/<type>/, or at <tmp_base>/<type>/
+    // Temp/ when the tools ran with their default temp folder (<proc>/Temp)
+    // (forward slashes work on both Windows and POSIX, and GTKWave accepts
+    // them in the .gtkw paths).
     char tradop[800] = "", tradcmm[800] = "";
     if (p->type[0]) {
         snprintf(tradop,  sizeof tradop,  "%s/%s/trad_opcode.txt", g_tmp_base, p->type);
-        snprintf(tradcmm, sizeof tradcmm, "%s/%s/trad_cmm.txt",    g_tmp_base, p->type);
+        FILE *probe = fopen(tradop, "r");
+        const char *sub = "";
+        if (probe) fclose(probe);
+        else {
+            snprintf(tradop, sizeof tradop, "%s/%s/Temp/trad_opcode.txt", g_tmp_base, p->type);
+            probe = fopen(tradop, "r");
+            if (probe) {fclose(probe); sub = "/Temp";}
+        }
+        snprintf(tradop,  sizeof tradop,  "%s/%s%s/trad_opcode.txt", g_tmp_base, p->type, sub);
+        snprintf(tradcmm, sizeof tradcmm, "%s/%s%s/trad_cmm.txt",    g_tmp_base, p->type, sub);
     }
     emit_comment("Instructions *******");
     int vi = find_sig(p->inst, "valr2");
@@ -462,13 +475,25 @@ static void detect_procs(void) {
 
 // ---- main ------------------------------------------------------------------
 int main(int argc, char **argv) {
-    if (argc < 5) {
-        fprintf(stderr, "usage: %s <in.vcd> <out.gtkw> <tmp_base> <comp2gtkw_exe>\n", argv[0]);
-        return 1;
+    int help = argc >= 2 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"));
+    if (help || argc < 4 || argc > 5) {
+        fprintf(help ? stdout : stderr,
+                "usage: gen_gtkw <in.vcd> <out.gtkw> <tmp_base> [<comp2gtkw>]\n"
+                "  writes the formatted GTKWave view (out.gtkw) of a simulation dump;\n"
+                "  tmp_base holds one folder per processor with its translate files\n"
+                "  (<tmp_base>/<proc>/ or <tmp_base>/<proc>/Temp/);\n"
+                "  comp2gtkw defaults to the one next to gen_gtkw\n");
+        return help ? 0 : 1;
     }
     const char *vcd = argv[1], *out = argv[2];
     g_tmp_base = argv[3];
-    g_comp2gtkw = argv[4];
+    static char c2g[4200];
+#ifdef _WIN32
+    snprintf(c2g, sizeof c2g, "%s/comp2gtkw.exe", exe_dir());
+#else
+    snprintf(c2g, sizeof c2g, "%s/comp2gtkw", exe_dir());
+#endif
+    g_comp2gtkw = (argc == 5) ? argv[4] : c2g;
 
     parse_vcd_header(vcd);
     detect_procs();

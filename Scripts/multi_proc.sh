@@ -96,7 +96,7 @@ done
 
 # --- Compile each processor: C+- -> asm -> Verilog --------------------------
 for i in "${PROC_LIST[@]}"; do
-    "$BIN_DIR/cmmcomp" -i "$i.cmm" -n "$i" -p "$USER_DIR/$i" -m "$MAC_DIR" -t "$TMP_DIR/$i" --array
+    "$BIN_DIR/cmmcomp" -i "$USER_DIR/$i/Software/$i.cmm" -n "$i" -p "$USER_DIR/$i" -m "$MAC_DIR" -t "$TMP_DIR/$i" --array
 done
 for i in "${PROC_LIST[@]}"; do
     "$BIN_DIR/appcomp" -i "$USER_DIR/$i/Software/$i.asm" -t "$TMP_DIR/$i"

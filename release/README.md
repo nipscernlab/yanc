@@ -5,14 +5,27 @@ C++ program into the Verilog of a SAPHO processor sized for that program, its
 memory images and a testbench. Full documentation:
 <https://github.com/nipscernlab/yanc>.
 
+## Install
+
+Run the install script once, from this folder:
+
+| system | command | what it does |
+|---|---|---|
+| Windows | `install.bat` | puts `bin\` on your user PATH (no administrator rights); `uninstall.bat` takes it off |
+| Linux | `./install.sh` | a launcher per tool in `~/.local/bin` (`PREFIX=... ./install.sh` for another place); `./install.sh --uninstall` removes them |
+
+Then open a new terminal: `cmmcomp -h` answers. Keep this folder where it is:
+the tools find `SAPHO/`, `Macros/` and `Header/` next to `bin/` by
+themselves.
+
 ## What is in this package
 
 | folder | contents |
 |---|---|
 | `bin/` | the compilers (`cmmcomp`, `cppcomp`, `asmcomp`), the preprocessors (`cpppp`, `appcomp`) and two waveform helpers (`comp2gtkw`, `gen_gtkw`). `-h` on any of them shows its options, `-V` its version |
 | `SAPHO/` | the SAPHO processor, in Verilog: asmcomp instantiates it with each program's parameters, and a simulator or a synthesizer reads it from here |
-| `Macros/` | assembly macros and tables used by C± programs (`-m` of cmmcomp and asmcomp) |
-| `Header/` | the C++ headers the programs include (`-I` of cpppp) |
+| `Macros/` | assembly macros and tables used by C± programs |
+| `Header/` | the C++ headers the programs include |
 | `example/` | one small program, in C++ (`my_program.cpp`) and in C± (`my_program.cmm`) |
 
 The binaries need nothing else to produce the Verilog. To simulate it you
@@ -21,16 +34,14 @@ waveform, GTKWave.
 
 ## Quick start
 
-The commands, for Windows `cmd` and for a Linux or MSYS2 shell, are in the
-Quick start of the main README:
-<https://github.com/nipscernlab/yanc#quick-start>. They run as they are on
-`example/my_program.cpp`, which prints `55`.
+The commands, for Windows `cmd` and for a Linux shell, are in the Quick start
+of the main README: <https://github.com/nipscernlab/yanc#quick-start>. They
+run as they are on `example/my_program.cpp`, which prints `55`.
 
-The C± version compiles with `cmmcomp` instead of `cpppp` + `cppcomp`; the
-source goes in `<project>/Software/` first:
+The C± version compiles with `cmmcomp` instead of `cpppp` + `cppcomp`:
 
 ```
-cmmcomp -en -i my_program.cmm -n my_program -p <project> -m Macros -t <temp>
+cmmcomp -en -p <project> example/my_program.cmm
 ```
 
 The rest of the pipeline (appcomp, asmcomp, the simulation) is the same.

@@ -17,6 +17,7 @@
 #include "../Headers/messages.h"
 #include "../Headers/funcoes.h"
 #include "../../common/asm_share.h"
+#include "../../common/exe_dir.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -29,6 +30,7 @@ FILE *f_lin;          // line file for the cmm program
 char dir_macro[1024]; // Macros directory
 char dir_tmp  [1024]; // Temp directory
 char dir_soft [1024]; // Software directory
+char cmm_src  [1024]; // the .cmm the parser reads (re-read for trad_cmm.txt)
 
 // state variables
 int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
@@ -128,15 +130,18 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 {
     // pick up the arguments --------------------------------------------------
 
-    char cmm_file[1024]; snprintf(cmm_file, sizeof(cmm_file), "%s/Software/%s"    , d_proc, f_name); // input .cmm file name
-    char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/Software/%s.asm", d_proc, prname); // output .asm file name
+    // the .cmm, by its path
+    snprintf(cmm_src, sizeof(cmm_src), "%s", f_name);
+    yyin = fopen(cmm_src, "r");
+    if (yyin  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_src); exit(EXIT_FAILURE); }
 
-    yyin  = fopen(cmm_file, "r"); // open the .cmm file
-    if (yyin  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_file); exit(EXIT_FAILURE); }
+    char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/Software/%s.asm", d_proc, prname); // output .asm file name
+    make_dir(d_proc);
+    snprintf(dir_soft, sizeof(dir_soft), "%s/Software", d_proc);
+    make_dir(dir_soft);
     f_asm = fopen(asm_file, "w"); // create the .asm file
     if (f_asm == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, asm_file); exit(EXIT_FAILURE); }
 
-    snprintf(dir_soft, sizeof(dir_soft), "%s/Software", d_proc); // record the Software directory
     strcpy (dir_macro,                d_macro); // record the Macro directory
     strcpy (dir_tmp  ,                d_tmp  ); // record the Tmp directory
 
@@ -216,13 +221,14 @@ void parse_end(char *prname, char *d_proc)
 
     // generate the translation file for the cmm code -------------------------
 
+    // (the source the parser read: before, <proc>/Software/<prname>.cmm, which
+    // failed when the file was not named after the processor)
     char     path[2048]; snprintf(path, sizeof(path), "%s/%s", dir_tmp, "trad_cmm.txt");
-    char cmm_file[1024]; snprintf(cmm_file, sizeof(cmm_file), "%s/Software/%s.cmm", d_proc, prname);
 
     FILE *output = fopen(path    , "w");
-    if (output == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path);     exit(EXIT_FAILURE); }
-    FILE *input  = fopen(cmm_file, "r");
-    if (input  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_file); exit(EXIT_FAILURE); }
+    if (output == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path);    exit(EXIT_FAILURE); }
+    FILE *input  = fopen(cmm_src, "r");
+    if (input  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_src); exit(EXIT_FAILURE); }
 
     char linha[1001], texto[1001] = "";
     fputs("-1 INTERNAL\n"    , output); // code for the file start

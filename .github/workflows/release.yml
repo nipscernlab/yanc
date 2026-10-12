@@ -88,7 +88,7 @@ jobs:
           # extracting into components/ produces components/{bin,SAPHO,Macros,Header}/,
           # the layout Aurora expects.
           zip -r "../${{ steps.artifact.outputs.name }}.zip" \
-              bin SAPHO Macros Header README.md example
+              bin SAPHO Macros Header README.md example install.bat uninstall.bat
           ls -la "../${{ steps.artifact.outputs.name }}.zip"
 
       - name: Upload artifact (always)
@@ -159,7 +159,7 @@ jobs:
           # Mirror the Windows layout: bin/, SAPHO/, Macros/, Header/ at the
           # archive root.
           tar -czf "../${{ steps.artifact.outputs.name }}.tar.gz" \
-              bin SAPHO Macros Header README.md example
+              bin SAPHO Macros Header README.md example install.sh
           ls -la "../${{ steps.artifact.outputs.name }}.tar.gz"
 
       - name: Upload artifact (always)

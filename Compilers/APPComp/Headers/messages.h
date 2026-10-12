@@ -72,26 +72,28 @@ void parse_lang_flag(int *argc, char **argv);
     M("appcomp - pré-processador de assembly do YANC (%s)\n" \
       "\n" \
       "Uso:\n" \
-      "  appcomp [opções] -i <arq.asm> -t <dir>\n" \
+      "  appcomp [opções] <arq.asm>\n" \
       "\n" \
-      "Opções obrigatórias:\n" \
-      "  -i, --input <arq>     arquivo-fonte assembly (caminho completo)\n" \
-      "  -t, --temp-dir <dir>  diretório Temp (recebe o app_log.txt)\n" \
+      "Obrigatório:\n" \
+      "  <arq.asm>, -i <arq>   arquivo-fonte assembly (caminho completo)\n" \
       "\n" \
       "Outras opções:\n" \
+      "  -t, --temp-dir <dir>  diretório Temp, recebe o app_log.txt (padrão: <dir-proc>/Temp,\n" \
+      "                        <dir-proc> sendo a pasta que contém Software/<arq.asm>)\n" \
       "  -en, -pt              idioma das mensagens (padrão: -pt)\n" \
       "  -h, --help            mostra esta ajuda e sai\n" \
       "  -V, --version         mostra a versão e sai\n", \
       "appcomp - YANC assembly pre-processor (%s)\n" \
       "\n" \
       "Usage:\n" \
-      "  appcomp [options] -i <file.asm> -t <dir>\n" \
+      "  appcomp [options] <file.asm>\n" \
       "\n" \
-      "Required options:\n" \
-      "  -i, --input <file>    assembly source file (full path)\n" \
-      "  -t, --temp-dir <dir>  Temp directory (receives app_log.txt)\n" \
+      "Required:\n" \
+      "  <file.asm>, -i <file> assembly source file (full path)\n" \
       "\n" \
       "Other options:\n" \
+      "  -t, --temp-dir <dir>  Temp directory, receives app_log.txt (default: <proc-dir>/Temp,\n" \
+      "                        <proc-dir> being the folder that holds Software/<file.asm>)\n" \
       "  -en, -pt              diagnostic message language (default: -pt)\n" \
       "  -h, --help            show this help and exit\n" \
       "  -V, --version         show version and exit\n")

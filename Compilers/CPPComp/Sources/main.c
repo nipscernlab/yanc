@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // CPPComp — compiler entry point -----------------------------------------------
 // ----------------------------------------------------------------------------
-// usage: cppcomp -i <input.c> -p <proc_dir> [-n <prname>] [-t <tmp>]
+// usage: cppcomp -i <input.cpp> -p <proc_dir> [-n <prname>] [-t <tmp>]
 // input is assumed to be already preprocessed (run cpppp first).
 //
 // Mirrors the cmmcomp pipeline layout: the .asm lands at
@@ -21,6 +21,7 @@
 #include "../Headers/messages.h"
 #include "../../common/asm_share.h"
 #include "../../common/console_utf8.h"
+#include "../../common/exe_dir.h"
 
 /* Create a directory if it doesn't already exist. Used by the -p
  * proc-folder mode to mkdir <proc>/Software when missing. Tolerates
@@ -66,13 +67,15 @@ extern unit *g_unit;
 static void usage(void)
 {
     fprintf(stderr,
-        "CPPComp %s — C compiler for the YANC processor\n"
-        "usage: cppcomp -i <input.c> -p <proc_dir> [-n <prname>] [-t <tmp>]\n"
-        "  -i, --input    <file>   input (preprocessed) .c file\n"
+        "cppcomp %s — C++ compiler for the SAPHO processor\n"
+        "usage: cppcomp -p <proc_dir> [-n <prname>] [-t <tmp>] <input.cpp>\n"
+        "  <file>, -i <file>       input .cpp file, preprocessed by cpppp\n"
         "  -p, --proc-dir <dir>    writes .asm to <dir>/Software/<prname>.asm\n"
         "                          (creates Software/ if missing). Required.\n"
-        "  -n, --name     <name>   #PRNAME embedded in output (default: input basename)\n"
+        "  -n, --name     <name>   processor name (default: input basename;\n"
+        "                          a `#pragma yanc prname` in the source wins)\n"
         "  -t, --temp-dir <dir>    temp directory; cppcomp writes cmm_log.txt there for asmcomp\n"
+        "                          (default: <proc_dir>/Temp)\n"
         "  -h, --help              this help\n"
         "  -V, --version           show version and exit\n"
         "\n"
@@ -118,9 +121,11 @@ int main(int argc, char **argv)
             printf("cppcomp %s\n", YANC_VERSION);
             return 0;
         }
+        else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source, without -i
         else { fprintf(stderr, "cppcomp: unknown option '%s'\n", argv[i]); usage(); }
     }
     if (!in_path || !proc_dir) usage();
+    if (!tmp_dir) tmp_dir = default_temp(proc_dir);   // <proc_dir>/Temp (exe_dir.h)
 
     msg_set_file(in_path);
 

@@ -72,6 +72,38 @@ tags consumed by Aurora.
   routines, cppcomp's runtime routines and temporaries), and user names may
   not: C+- refuses a name starting with `__`, C++ any name with `__` in it
   (C++ reserves them). Every C+- `.asm` golden changed by these renames only.
+- **The tools install on the PATH and find their own folders.** The release
+  package carries `install.bat` / `uninstall.bat` (Windows: `bin\` on the
+  user PATH, no administrator rights; an older YANC's `bin\` is taken off)
+  and `install.sh` (Linux: a launcher per tool in `~/.local/bin`, or
+  `$PREFIX/bin`). The tools look for the folders that come with them next to
+  their own executable (`Compilers/common/exe_dir.c`): `-m` of cmmcomp and
+  asmcomp defaults to `Macros/`, `-d` of asmcomp to `SAPHO/`, cpppp searches
+  `Header/` after any `-I`, and the last argument of `gen_gtkw` (the
+  `comp2gtkw` path) is optional. In a repository build they find the
+  `Compilers/` and `SAPHO/` folders the same way. Explicit options still win.
+  The Quick start runs with bare tool names. `cppcomp -h` and `cpppp -h` now
+  say C++, and `gen_gtkw -h` prints its usage.
+- **The command lines follow the usual conventions.** The source file is the
+  argument without an option in every tool (`-i` still works), and **cmmcomp
+  takes its path** instead of a name looked up in `<proc>/Software/` (callers
+  must pass the path: AURORA adapts with v7.1). `-n` of cmmcomp defaults to
+  the source file's name; `-t` of cmmcomp, cppcomp and asmcomp defaults to
+  `<proc>/Temp`, and that of appcomp to the `Temp/` beside the `Software/`
+  holding its `.asm`; a missing processor folder is created (all levels).
+  asmcomp makes `-p` and `-t` absolute, so a relative folder still works in
+  the testbench. `gen_gtkw` also finds the translate files in
+  `<tmp_base>/<proc>/Temp/`. The smallest C± run is now
+  `cmmcomp -p out/prog prog.cmm`, `appcomp out/prog/Software/prog.asm`,
+  `asmcomp -p out/prog out/prog/Software/prog.asm`. Fixed on the way: cmmcomp
+  re-read the source for the waveform's C± track at
+  `<proc>/Software/<name>.cmm`, which failed when the file was not named after
+  the processor.
+- **The README is short: what YANC is, how to run it, how to develop it.**
+  The rest moved to `docs/setup.md`, `docs/running.md` and
+  `docs/programming.md`. The release examples lost the directives that have
+  defaults (`#NDSTAC`, `#SDEPTH`, `#NUGAIN`), and `my_program.cpp` gained the
+  `#pragma yanc` lines that match `my_program.cmm`'s header.
 
 ### Fixed
 - **`check_isa.py` holds appcomp's mnemonic list (`app.l`) to `ASMComp.l`.**

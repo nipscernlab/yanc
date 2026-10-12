@@ -76,7 +76,7 @@ cp "$SRC_PROC/Software/$FNAM" "$SOFT_DIR/"
 
 # --- Compile: C+- -> asm -> Verilog -----------------------------------------
 echo "#### Running the CMM compiler"
-"$BIN_DIR/cmmcomp" -i "$FNAM" -n "$PROC" -p "$PROC_DIR" -m "$MAC_DIR" -t "$TMP_PRO"
+"$BIN_DIR/cmmcomp" -i "$SOFT_DIR/$FNAM" -n "$PROC" -p "$PROC_DIR" -m "$MAC_DIR" -t "$TMP_PRO"
 
 echo "#### Running the Pre-assembler"
 ASM_FILE="$SOFT_DIR/$PROC.asm"

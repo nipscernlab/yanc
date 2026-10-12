@@ -658,16 +658,16 @@ void parse_lang_flag(int *argc, char **argv);
     M("cmmcomp - compilador front-end C± do YANC (%s)\n" \
       "\n" \
       "Uso:\n" \
-      "  cmmcomp [opções] -i <arq.cmm> -n <nome> -p <dir> -m <dir> -t <dir>\n" \
+      "  cmmcomp [opções] -p <dir> <arq.cmm>\n" \
       "\n" \
-      "Opções obrigatórias:\n" \
-      "  -i, --input <arq>       arquivo-fonte C± (dentro de <dir-proc>/Software)\n" \
-      "  -n, --name <nome>       nome do processador (base do .asm gerado)\n" \
-      "  -p, --proc-dir <dir>    diretório do processador\n" \
-      "  -m, --macros-dir <dir>  diretório de Macros\n" \
-      "  -t, --temp-dir <dir>    diretório Temp\n" \
+      "Obrigatórios:\n" \
+      "  <arq.cmm>, -i <arq>     arquivo-fonte C± (o caminho)\n" \
+      "  -p, --proc-dir <dir>    diretório do processador (o .asm vai para <dir>/Software)\n" \
       "\n" \
       "Outras opções:\n" \
+      "  -n, --name <nome>       nome do processador (padrão: o nome do arquivo-fonte)\n" \
+      "  -t, --temp-dir <dir>    diretório Temp (padrão: <dir-proc>/Temp)\n" \
+      "  -m, --macros-dir <dir>  diretório de Macros (padrão: a pasta Macros ao lado de bin/)\n" \
       "  -A, --array             expande cada elemento do array como sinal individual no GTKWave\n" \
       "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
       "  -h, --help              mostra esta ajuda e sai\n" \
@@ -675,16 +675,16 @@ void parse_lang_flag(int *argc, char **argv);
       "cmmcomp - YANC C± front-end compiler (%s)\n" \
       "\n" \
       "Usage:\n" \
-      "  cmmcomp [options] -i <file.cmm> -n <name> -p <dir> -m <dir> -t <dir>\n" \
+      "  cmmcomp [options] -p <dir> <file.cmm>\n" \
       "\n" \
-      "Required options:\n" \
-      "  -i, --input <file>      C± source file (inside <proc-dir>/Software)\n" \
-      "  -n, --name <name>       processor name (base name of the .asm output)\n" \
-      "  -p, --proc-dir <dir>    processor directory\n" \
-      "  -m, --macros-dir <dir>  Macros directory\n" \
-      "  -t, --temp-dir <dir>    Temp directory\n" \
+      "Required:\n" \
+      "  <file.cmm>, -i <file>   C± source file (its path)\n" \
+      "  -p, --proc-dir <dir>    processor directory (the .asm goes to <dir>/Software)\n" \
       "\n" \
       "Other options:\n" \
+      "  -n, --name <name>       processor name (default: the source file's name)\n" \
+      "  -t, --temp-dir <dir>    Temp directory (default: <proc-dir>/Temp)\n" \
+      "  -m, --macros-dir <dir>  Macros directory (default: the Macros folder next to bin/)\n" \
       "  -A, --array             emit each array element as a separate GTKWave signal       \n" \
       "  -en, -pt                diagnostic message language (default: -pt)\n" \
       "  -h, --help              show this help and exit\n" \

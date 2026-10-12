@@ -21,6 +21,7 @@
 
 #include "../../yanc_version.h"   // YANC_VERSION shared across all five binaries
 #include "../../common/console_utf8.h"
+#include "../../common/exe_dir.h"
 
 #define MAX_INCDIRS 32
 static const char *incdirs[MAX_INCDIRS];
@@ -686,11 +687,12 @@ static void process_file(const char *path)
 static void usage(void)
 {
     fprintf(stderr,
-        "cpppp %s — C preprocessor for the CPPComp toolchain\n"
-        "usage: cpppp -i <input.c> [-o <output.c>] [-I <dir>]*\n"
-        "  -i <file>        input .c file\n"
-        "  -o <file>        output preprocessed .c (default: stdout)\n"
-        "  -I <dir>         add include search directory (repeatable)\n"
+        "cpppp %s — C++ preprocessor for cppcomp\n"
+        "usage: cpppp [-o <output.cpp>] [-I <dir>]* <input.cpp>\n"
+        "  <file>, -i <file> input .cpp file\n"
+        "  -o <file>        output preprocessed .cpp (default: stdout)\n"
+        "  -I <dir>         add include search directory (repeatable); the Header\n"
+        "                   folder next to bin/ is searched after them\n"
         "  -h, --help       show this help\n"
         "  -V, --version    show version and exit\n",
         YANC_VERSION);
@@ -715,9 +717,15 @@ int main(int argc, char **argv)
             printf("cpppp %s\n", YANC_VERSION);
             return 0;
         }
+        else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source, without -i
         else { fprintf(stderr, "cpppp: unknown option '%s'\n", argv[i]); usage(); }
     }
     if (!in_path) usage();
+
+    // after the -I dirs, the Header/ folder next to the tool (exe_dir.h)
+    static const char *const header_dirs[] = EXE_HEADER_DIRS;
+    char *hdr = exe_find_dir(header_dirs);
+    if (hdr && n_incdirs < MAX_INCDIRS) incdirs[n_incdirs++] = hdr;
 
     out_f = out_path ? fopen(out_path, "w") : stdout;
     if (!out_f) { fprintf(stderr, "cpppp: cannot open '%s'\n", out_path); exit(1); }

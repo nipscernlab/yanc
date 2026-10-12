@@ -252,11 +252,11 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
         funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
         variaveis.c array_index.c global.c macros.c messages.c args.c \
-        y.tab.c ../../common/asm_share.c ../../common/console_utf8.c -lm
+        y.tab.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
-    gcc -O2 -Wall -o "$CPPPP" "$CPP_ROOT/Sources/cpppp.c" "$ROOT/Compilers/common/console_utf8.c" -lm
+    gcc -O2 -Wall -o "$CPPPP" "$CPP_ROOT/Sources/cpppp.c" "$ROOT/Compilers/common/console_utf8.c" "$ROOT/Compilers/common/exe_dir.c" -lm
 
     pushd "$CPP_ROOT/Sources" >/dev/null
     bison -y -d CPPComp.y
@@ -264,14 +264,14 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
         $CPP_DEFS -o "$CPPC" \
         main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c \
-        ../../common/asm_share.c ../../common/console_utf8.c -lm
+        ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
     pushd "$ROOT/Compilers/APPComp/Sources" >/dev/null
     flex -o app.c app.l
     gcc -O2 -Wall -Werror -o "$APPCOMP" \
-        app.c eval.c variaveis.c messages.c args.c ../../common/console_utf8.c -lm
+        app.c eval.c variaveis.c messages.c args.c ../../common/console_utf8.c ../../common/exe_dir.c -lm
     rm -f app.c
     popd >/dev/null
 
@@ -279,7 +279,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex -o ASMComp.c ASMComp.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
         ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/console_utf8.c -lm
+        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c -lm
     rm -f ASMComp.c
     popd >/dev/null
 
@@ -325,7 +325,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         golden="$proc_dir_rel/golden.asm"
 
         # cmmcomp step ------------------------------------------------------
-        if ! "$CMMCOMP" -en -i "$filename" -n "$prname" -p "$work_proc" -m "$MACROS" -t "$tmp" >/dev/null 2>&1; then
+        if ! "$CMMCOMP" -en -i "$work_proc/Software/$filename" -n "$prname" -p "$work_proc" -m "$MACROS" -t "$tmp" >/dev/null 2>&1; then
             echo "FAIL ($prname): cmmcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
@@ -927,7 +927,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             if [ $sim_fail -eq 0 ]; then
                 r="fifo_r"; rd="$proj_tmp/$r"; mkdir -p "$rd/Software" "$rd/_tmp"
                 cp "$proj_top/../$r.cmm" "$rd/Software/"
-                if ! "$CMMCOMP" -en -i "$r.cmm" -n "$r" -p "$rd" -m "$MACROS" -t "$rd/_tmp" >/dev/null 2>&1 ||
+                if ! "$CMMCOMP" -en -i "$rd/Software/$r.cmm" -n "$r" -p "$rd" -m "$MACROS" -t "$rd/_tmp" >/dev/null 2>&1 ||
                    ! "$APPCOMP" -en -i "$rd/Software/$r.asm" -t "$rd/_tmp" >/dev/null 2>&1 ||
                    ! "$ASMCOMP" -en -i "$rd/Software/$r.asm" -p "$rd" -d "$HDL" -m "$MACROS" -t "$rd/_tmp" -f 100 -c 100000 >/dev/null 2>&1; then
                     echo "FAIL ($proj): building the reader $r"; sim_fail=1
@@ -1346,7 +1346,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
         rm -rf "$neg_work"; mkdir -p "$neg_work/Software" "$neg_work/tmp"
         cp "$neg_dir/$fixture" "$neg_work/Software/p.cmm"
-        out="$("$CMMCOMP" -en -i p.cmm -n p -p "$neg_work" -m "$MACROS" -t "$neg_work/tmp" 2>&1)"
+        out="$("$CMMCOMP" -en -i "$neg_work/Software/p.cmm" -n p -p "$neg_work" -m "$MACROS" -t "$neg_work/tmp" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"
@@ -1373,7 +1373,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         want=0; case "$forbid" in +*) want=1; forbid="${forbid#+}" ;; esac
         rm -rf "$neg_work"; mkdir -p "$neg_work/Software" "$neg_work/tmp"
         cp "$neg_dir/$fixture" "$neg_work/Software/p.cmm"
-        out="$("$CMMCOMP" -en -i p.cmm -n p -p "$neg_work" -m "$MACROS" -t "$neg_work/tmp" 2>&1)"
+        out="$("$CMMCOMP" -en -i "$neg_work/Software/p.cmm" -n p -p "$neg_work" -m "$MACROS" -t "$neg_work/tmp" 2>&1)"
         rc=$?
         printed=0; printf '%s' "$out" | grep -qF "$forbid" && printed=1
         if [ "$rc" -ne 0 ]; then
