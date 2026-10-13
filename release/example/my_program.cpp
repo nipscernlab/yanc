@@ -5,8 +5,8 @@
 #pragma yanc nuioou 1
 
 // The pragmas set the processor, as the header of my_program.cmm does: word
-// width, float format, number of input and output ports. Its name comes
-// from cppcomp -n.
+// width, float format, number of input and output ports. The processor
+// takes the file's name: my_program.
 
 int main() {
     int acc = 0;

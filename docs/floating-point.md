@@ -71,7 +71,7 @@ float addition, multiplication, conversions and comparisons, before v6.0
 `copy(x, v)` copies the bits of `x` into the variable `v` with no
 conversion, so a program can read a float's exponent and mantissa as an
 int, or build a float from bits: the square-root example of
-[Programming notes](programming.md) builds its first guess that way. In C++,
+[A first program](first-program.md) builds its first guess that way. In C++,
 `std::bit_cast` does the same between YANC types.
 
 ## Seeing the rounding in the waveform

@@ -14,7 +14,7 @@ yanc v5.3 and some of it no longer holds.
 
 - [Installing YANC](install.md): the release package, the simulators and
   GTKWave.
-- First program: from an empty folder to a simulated processor, in C± and in
+- [A first program](first-program.md): from an empty folder to a simulated processor, in C± and in
   C++.
 - [The command line](command-line.md): `yanc` and the tools under it, the output folder, the
   options, `--lang`.
@@ -30,8 +30,6 @@ yanc v5.3 and some of it no longer holds.
 - [The library](library.md): `sqrt`, `sin`, `exp`, ... and what each one costs.
 - [Floating point](floating-point.md): the SAPHO float format (not IEEE 754) and the rounding
   levels of `#FROUND`.
-- [Programming notes](programming.md): an example in C±, the rounding
-  levels, several processors (to be split into the pages above).
 
 ## Several processors
 
