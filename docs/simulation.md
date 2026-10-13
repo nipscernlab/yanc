@@ -106,7 +106,9 @@ one section per processor â€” any scope that owns both `valr2` and `linetabs` â€
 the **same tool handles single- and multi-processor dumps**. Its third argument
 is the folder that holds each processor's output folder, where its translate
 files are (`..` from inside `my_program/` in the Quick start, the folder that
-holds `my_program/`).
+holds `my_program/`). When the output folder is not named after the
+processor (`yanc -o build`, an `.asm` in a folder of another name), give the
+output folder itself: `.` from inside it.
 
 Because only the header is needed, the big project FST dumps don't have to be
 written in full first: run the sim once with the **`+HEADER_ONLY`** plusarg and

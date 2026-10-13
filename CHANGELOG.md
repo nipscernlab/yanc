@@ -201,6 +201,21 @@ tags consumed by Aurora.
   (`docs/design/README.md`); `docs/` itself is the manual.
 
 ### Fixed
+- **An `.asm` written by hand did not assemble.** Without the compiler's
+  `prog_log.txt` beside it, asmcomp wrote the `.v` and the memories and then
+  stopped with an error before the testbench (exit 1); without a `#PRNAME`
+  line it named the processor with whatever followed (`module 5`). Now the
+  `.asm`'s file name names the processor, checked as a source's is, and a
+  missing `prog_log.txt` means no source: the waveform has no source line
+  and no variable names, and the program's files are looked for beside the
+  `.asm`. Compiled programs are unchanged (their `.asm` has the source's
+  name). Regress: the `yanc` phase assembles and simulates an `.asm` alone
+  in a folder (found by AURORA).
+- **`gen_gtkw` lost the Assembly and source tracks when the output folder
+  was not named after the processor** (`yanc -o build`, an `.asm` in a
+  folder of another name): it looked for the translate files only in
+  `<base>/<processor>/`. It now also takes `<base>` as the output folder
+  itself, and leaves out a translate file that is not there.
 - **cmmcomp: four messages that misled.** A function with more than 16
   parameters kept the first 16 and failed later with "parameter list doesn't
   match"; it now says the limit. A comp given to `sinh`, `cosh`, `tanh`,

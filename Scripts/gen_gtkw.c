@@ -17,7 +17,8 @@
 //   gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw_exe>]
 //     <base>          the folder holding each processor's output folder; the
 //                     translate files are read from
-//                     <base>/<proc_type>/trad_opcode.txt and src_lines.txt
+//                     <base>/<proc_type>/trad_opcode.txt and src_lines.txt,
+//                     or from <base>/ when it is the output folder itself
 //     <comp2gtkw_exe> path to comp2gtkw.exe (process filter for complex signals)
 //
 // Build (sibling of comp2gtkw.c):  gcc -O2 -o gen_gtkw.exe gen_gtkw.c
@@ -366,15 +367,29 @@ static void emit_proc_section(const Proc *p) {
     emit_io(p->inst, "out_en_sim_", FMT_BIN,        "out_en");
     emit_io(p->inst, "out_sig_",    FMT_SIGNED_DEC, "output");
 
-    // per-proc translate files in each processor's output folder,
-    // <base>/<type>/ (forward slashes work on both Windows and POSIX, and
-    // GTKWave accepts them in the .gtkw paths).
+    // per-proc translate files in each processor's output folder: <base>/<type>/
+    // when the folder is named after the processor (the default ./<name>),
+    // else <base> itself, when it is the output folder (yanc -o, an .asm in a
+    // folder of another name). Forward slashes work on both Windows and
+    // POSIX, and GTKWave accepts them in the .gtkw paths. A file that is not
+    // there (src_lines.txt of an .asm written by hand) is left out.
     char tradop[800] = "", tradcmm[800] = "";
     char lang[32] = "C+-";       // the source track's name: prog_log.txt's `lang`
     if (p->type[0]) {
-        snprintf(tradop,  sizeof tradop,  "%s/%s/trad_opcode.txt", g_tmp_base, p->type);
-        snprintf(tradcmm, sizeof tradcmm, "%s/%s/src_lines.txt",    g_tmp_base, p->type);
-        char logp[800]; snprintf(logp, sizeof logp, "%s/%s/prog_log.txt", g_tmp_base, p->type);
+        char dir[700];
+        snprintf(dir, sizeof dir, "%s/%s", g_tmp_base, p->type);
+        snprintf(tradop, sizeof tradop, "%s/trad_opcode.txt", dir);
+        FILE *t = fopen(tradop, "r");
+        if (!t) {
+            char own[800]; snprintf(own, sizeof own, "%s/trad_opcode.txt", g_tmp_base);
+            if ((t = fopen(own, "r")) != NULL) snprintf(dir, sizeof dir, "%s", g_tmp_base);
+        }
+        if (t) fclose(t);
+        snprintf(tradop,  sizeof tradop,  "%s/trad_opcode.txt", dir);
+        snprintf(tradcmm, sizeof tradcmm, "%s/src_lines.txt",    dir);
+        FILE *s = fopen(tradcmm, "r");
+        if (s) fclose(s); else tradcmm[0] = 0;
+        char logp[800]; snprintf(logp, sizeof logp, "%s/prog_log.txt", dir);
         FILE *lf = fopen(logp, "r");
         if (lf) {
             char ln[512];
@@ -483,7 +498,8 @@ int main(int argc, char **argv) {
                 "usage: gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]\n"
                 "  writes the formatted GTKWave view (out.gtkw) of a simulation dump;\n"
                 "  <base> holds the output folder of each processor, <base>/<proc>/,\n"
-                "  with its translate files (trad_opcode.txt, src_lines.txt);\n"
+                "  or is the output folder itself, with the translate files\n"
+                "  (trad_opcode.txt, src_lines.txt);\n"
                 "  comp2gtkw defaults to the one next to gen_gtkw\n");
         return help ? 0 : 1;
     }
