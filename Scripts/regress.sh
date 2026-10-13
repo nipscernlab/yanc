@@ -1245,6 +1245,12 @@ if command -v python3 >/dev/null 2>&1; then
     else
         fail=$((fail + 1)); failed_names+=("isa-doc")
     fi
+    # and the manual's message reference from the compilers' sources
+    if python3 "$ROOT/Scripts/gen_messages_doc.py" "$ROOT" --check; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("messages-doc")
+    fi
 else
     echo ""
     echo "==> ISA table  [skipped: no python3]"

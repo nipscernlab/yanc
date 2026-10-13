@@ -40,10 +40,13 @@ yanc v5.3 and some of it no longer holds.
 
 - [Simulation and the waveform](simulation.md): Icarus and Verilator,
   GTKWave and `gen_gtkw`, the runner scripts.
-- Messages: the errors and warnings, what they mean and how to fix them.
+- [Messages](messages.md): the errors and warnings, what they mean and how to fix them.
 
 ## Reference
 
+- [Message reference](reference/messages.md): every message the tools
+  print, generated from their sources (the regress fails when it falls
+  behind).
 - [Instructions](reference/instructions.md): the SAPHO instruction set,
   generated from `Compilers/common/isa.tsv` (the regress fails when the page
   falls behind the table).

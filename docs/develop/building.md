@@ -52,8 +52,11 @@ The regression builds the tools, compiles every test and compares its
 assembly with the golden one, simulates and compares the outputs with
 references computed apart from YANC, checks that the bad programs of
 `NegTests/` are refused with the right message, holds the instruction set's
-copies and the manual's instruction page to `Compilers/common/isa.tsv`, and
-runs `yanc` itself. Every change goes through it.
+copies and the manual's instruction page to `Compilers/common/isa.tsv`,
+holds the manual's message reference to the compilers' sources, and runs
+`yanc` itself. Every change goes through it. A change to the instruction
+table or to a message regenerates its page:
+`python3 Scripts/gen_isa_doc.py`, `python3 Scripts/gen_messages_doc.py`.
 
 ## The setup script
 
