@@ -79,14 +79,14 @@ gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
 gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
+(`..` is the folder that holds the output folder; see
+[Simulation](simulation.md).)
+
 ![One turn of the loop in GTKWave, from 154 to 215 ns: the Assembly track steps through LOD main_acc, ADD main_k, SET main_acc, LOD main_k, ADD 1, SET main_k; acc goes from 1 to 3 and k from 2 to 3](images/first-program-loop.png)
 
 One turn of the loop, zoomed in: each clock runs one instruction; `acc`
 takes its new value at `SET main_acc`, `k` at `SET main_k`. The C± line
 stays the same, because all six instructions come from it.
-
-(`..` is the folder that holds the output folder; see
-[Simulation](simulation.md).)
 
 ## A program that reads its input
 
