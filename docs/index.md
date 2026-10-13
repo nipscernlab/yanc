@@ -25,7 +25,7 @@ yanc v5.3 and some of it no longer holds.
   operators, control flow, input and output, the traps.
 - [The C++ YANC accepts](language-cpp.md): what works, the `#pragma yanc` settings, what does
   not exist.
-- Directives: `#NUBITS`, `#NBMANT`, `#NBEXPO` and the rest, with their
+- [Directives](directives.md): `#NUBITS`, `#NBMANT`, `#NBEXPO` and the rest, with their
   defaults and their C++ pragmas.
 - The library: `sqrt`, `sin`, `exp`, ... and what each one costs.
 - Floating point: the SAPHO float format (not IEEE 754) and the rounding
