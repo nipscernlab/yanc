@@ -2,7 +2,7 @@
 
 For whoever builds YANC from source or changes it. Installing a release is
 in [Installing YANC](../install.md); the conventions for a change are in
-[CONTRIBUTING.md](../../CONTRIBUTING.md).
+[CONTRIBUTING.md](https://github.com/nipscernlab/yanc/blob/main/CONTRIBUTING.md).
 
 ## The repository
 

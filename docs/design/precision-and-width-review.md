@@ -2,7 +2,7 @@
 
 Date: 2026-09-14 · Scope: `SAPHO/*.v`, `Compilers/{CMMComp,CPPComp,APPComp,ASMComp}`,
 `Scripts/`, the Verilator harness. This is the evidence behind the items in
-[`TODO.md`](../TODO.md); the list of work and the "done when" criteria live
+[`TODO.md`](https://github.com/nipscernlab/yanc/blob/main/TODO.md); the list of work and the "done when" criteria live
 there, not here.
 
 Two questions were asked of the code base:
@@ -478,7 +478,7 @@ orders them. At level 2 the sticky bit already prevented it.
 **What the lexicographic order assumes (2026-09-16).** Every word the machine
 holds has a normalised mantissa **or** the minimum exponent: `ula_norm`
 normalises every result, and `f2mf` clamps every denormal to the same minimum
-exponent ([`t2t.c`](../Compilers/ASMComp/Sources/t2t.c) `while (e < -pow(2,
+exponent ([`t2t.c`](https://github.com/nipscernlab/yanc/blob/main/Compilers/ASMComp/Sources/t2t.c) `while (e < -pow(2,
 nbexpo-1))`). That clamp is what keeps the order exact for denormals: sharing
 one exponent, they are ordered by mantissa, and any normal number at that
 exponent is larger than all of them. An unnormalised mantissa at a larger
@@ -486,13 +486,13 @@ exponent would be misordered — the old aligned compare handled those, this one
 does not — but only an input port writing raw bits can produce one, and at
 `#FROUND >= 1` the same words already break `F_MLT`/`F_DIV`, which assume
 normalised operands (step 2). Measured with
-[`Scripts/hw/tb_alu.v`](../Scripts/hw/tb_alu.v), 4000 pairs per format against
+[`Scripts/hw/tb_alu.v`](https://github.com/nipscernlab/yanc/blob/main/Scripts/hw/tb_alu.v), 4000 pairs per format against
 real-valued arithmetic: **0 errors in every format the machine can hold**
 (8/4/3, 16/10/5, 32/23/8, 64/52/11); on arbitrary words, the new compare
 disagrees with the true value 3–101 times per 4000 (and the old one 0–130 —
 worse than the new one at 8/4/3, where the alignment loses bits).
 
-**Unit testbench (2026-09-16).** [`Scripts/hw/tb_alu.sh`](../Scripts/hw/tb_alu.sh)
+**Unit testbench (2026-09-16).** [`Scripts/hw/tb_alu.sh`](https://github.com/nipscernlab/yanc/blob/main/Scripts/hw/tb_alu.sh)
 runs the shared shifter, `F2I` and the comparison in four formats × three
 levels, against references derived in the testbench (`<<`/`>>`/`>>>`, a native
 two-direction shift model, real arithmetic) — never blessed output. Five

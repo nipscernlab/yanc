@@ -5,10 +5,8 @@ Verilog of a processor built for that program, its memories and a
 testbench. This manual covers installing YANC, the two languages, running
 the tools, simulating the result and putting several processors together.
 
-The manual is being written for v7.1 (2026-10). Pages without a link are not
-written yet; until then, the SAPHO manual
-(<https://nipscern.com/library/sapho>) covers the language, but it describes
-yanc v5.3 and some of it no longer holds.
+It describes YANC 7.1. The SAPHO manual (<https://nipscern.com/library/sapho>)
+covers the processor and the AURORA IDE.
 
 ## Getting started
 
@@ -55,5 +53,58 @@ yanc v5.3 and some of it no longer holds.
 
 - [Building and testing YANC](develop/building.md): the repository, building
   the tools, the regression, deploying to AURORA.
-- [Design notes](design/): why each feature is built the way it is, what was
+- [Design notes](design/README.md): why each feature is built the way it is, what was
   measured, what is open.
+
+```{toctree}
+:hidden:
+:caption: Getting started
+
+install
+first-program
+command-line
+```
+
+```{toctree}
+:hidden:
+:caption: Writing programs
+
+language-cmm
+language-cpp
+directives
+library
+floating-point
+multiprocessor
+```
+
+```{toctree}
+:hidden:
+:caption: Simulating
+
+simulation
+messages
+```
+
+```{toctree}
+:hidden:
+:caption: Reference
+
+reference/messages
+reference/instructions
+```
+
+```{toctree}
+:hidden:
+:caption: Developing YANC
+
+develop/building
+design/README
+design/cli-v7.1
+design/toma-and-cade-links
+design/toma-and-cade
+design/myfifo
+design/asm-names
+design/pipeln-and-division
+design/precision-and-width-review
+design/hdl-architecture-audit
+```
