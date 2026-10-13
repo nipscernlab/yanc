@@ -75,7 +75,8 @@ mantissa bits, and a narrower `#NBMANT` loses accuracy in them.
 | `fase(z)` | `float` | the angle, in radians, in all four quadrants |
 | `conj(z)` | `comp` | the conjugate |
 
-`+ - * /` work on `comp`, and the functions marked "yes" above take one.
+`+ - * /` work on `comp`, and so do the mathematical functions marked
+"yes" in the table of [Mathematical functions](#mathematical-functions).
 
 ## Vectors in Dirac notation
 
@@ -85,18 +86,18 @@ column vector, `⟨a|b⟩` the inner product, `|M|` a matrix, and an assignment
 
 | form | computes |
 |---|---|
-| `s = ⟨a|b⟩` | the inner product of the arrays `a` and `b` |
-| `v # |M|a⟩` | the matrix `M` times the vector `a` |
-| `v # c|a⟩` | the vector `a` times the scalar `c` |
-| `v # |a⟩ + c|b⟩` | `a + c·b` |
-| `M # |a⟩⟨b|` | the outer product |
-| `M # |A| - |a⟩⟨b|` | `A` minus the outer product |
-| `M # c|A|` | the matrix `A` times `c` |
-| `M # c|I|` | `c` times the identity |
-| `v # |0⟩` | the zero vector |
-| `v # c|in(p)⟩` | reads input port `p` once per element of `v`, each value times `c` |
-| `a # c -> |a⟩` | shifts `a` by one place, `c` entering (the same array on both sides) |
-| `out(p, c|a⟩)` | writes each element of `a`, times `c`, to output port `p` |
+| `s = ⟨a\|b⟩` | the inner product of the arrays `a` and `b` |
+| `v # \|M\|a⟩` | the matrix `M` times the vector `a` |
+| `v # c\|a⟩` | the vector `a` times the scalar `c` |
+| `v # \|a⟩ + c\|b⟩` | `a + c·b` |
+| `M # \|a⟩⟨b\|` | the outer product |
+| `M # \|A\| - \|a⟩⟨b\|` | `A` minus the outer product |
+| `M # c\|A\|` | the matrix `A` times `c` |
+| `M # c\|I\|` | `c` times the identity |
+| `v # \|0⟩` | the zero vector |
+| `v # c\|in(p)⟩` | reads input port `p` once per element of `v`, each value times `c` |
+| `a # c -> \|a⟩` | shifts `a` by one place, `c` entering (the same array on both sides) |
+| `out(p, c\|a⟩)` | writes each element of `a`, times `c`, to output port `p` |
 
 The brackets are the Unicode characters `⟨` (U+27E8) and `⟩` (U+27E9), not
 `<` and `>`. The sizes are the arrays' declared sizes; the elements are

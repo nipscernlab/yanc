@@ -12,7 +12,7 @@ the CHANGELOG (`[Unreleased]`); how to run is in
 | `<proc>/Software`, `Hardware`, `Simulation`, `Temp` | the user's files beside the source; everything generated in one folder, `./<name>` or `-o` |
 | `-i`, `-p`, `-t`, `-n`, `-m`, `-d` | gone: the source is the argument, `-o` the output folder, the tools find `SAPHO/` and `Macros/` themselves |
 | `-A` / `--array` | `--wave-arrays` |
-| `-en` / `-pt`, Portuguese by default | `--lang=en|pt` (or `YANC_LANG`), English by default |
+| `-en` / `-pt`, Portuguese by default | `--lang=en\|pt` (or `YANC_LANG`), English by default |
 | `cmm_log.txt`, `trad_cmm.txt` | `prog_log.txt`, `src_lines.txt` |
 | C++ errors at a line of `pp.cpp` | at the file and line written, a header's too |
 | the tools added to the PATH by hand | `install.bat` / `install.sh` in the package |
