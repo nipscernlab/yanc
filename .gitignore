@@ -97,3 +97,4 @@ $RECYCLE.BIN/
 # Claude Code local memory / settings (per-developer, not shared)
 .claude/
 _build/
+Compilers/common/utf8_res.o

@@ -21,6 +21,7 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/simulacao.h"
 #include "../Headers/messages.h"
+#include "../../common/exe_dir.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -106,6 +107,16 @@ const char *src_dir(void)
         }
     fclose(input);
     return dir;
+}
+
+// the same folder as the generated testbench names it: relative to the
+// output folder, where the simulation runs (".." when the output is the
+// default prog/ beside the source); absolute only across drives
+const char *src_rel(void)
+{
+    static char *rel = NULL;
+    if (!rel) rel = rel_path(proc_dir, src_dir());
+    return rel;
 }
 
 // fetches a parameter from the log file

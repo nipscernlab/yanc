@@ -32,6 +32,7 @@ int get_n_ins();               // number of instructions (only use after eval_in
 int inn_used(int i);           // tells whether input port i was used
 int out_used(int i);           // tells whether output port i was used
 const char *src_dir(void);     // the folder of the source: the user's own files (array inits, input_N.txt, cade_k.txt)
+const char *src_rel(void);     // the same, relative to the output folder (as the testbench names it)
 
 // links to partner processors (docs/design/toma-and-cade-links.md), from TOM k / CAD k
 // and #LKSYNC k

@@ -27,9 +27,6 @@
 // (valr10, for the $finish) carry this attribute. To Icarus it is a comment.
 #define VPUB " /* verilator public_flat */"
 
-// replaces \ with / on a path
-void force_rightbar(char *str){while (*str) {if (*str == '\\') *str = '/'; str++;}}
-
 // ----------------------------------------------------------------------------
 // generates the verilog file with a processor instance -----------------------
 // ----------------------------------------------------------------------------
@@ -214,10 +211,10 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // finalize the processor instance ----------------------------------------
     // ------------------------------------------------------------------------
 
-    char path[2048]; snprintf(path, sizeof(path), "%s/%s", proc_dir, prname); force_rightbar(path);
-
-    fprintf(f_veri, ".DFILE(\"%s_data.mif\"),\n"  , path);
-    fprintf(f_veri, ".IFILE(\"%s_inst.mif\"))\n\n", path);
+    // bare names: the simulation runs in the output folder, so the folder
+    // can move (and its path never has to be written in an encoding)
+    fprintf(f_veri, ".DFILE(\"%s_data.mif\"),\n"  , prname);
+    fprintf(f_veri, ".IFILE(\"%s_inst.mif\"))\n\n", prname);
     fprintf(f_veri, "`ifdef YANC_SIM_VIS\n");
     fprintf(f_veri, "p_%s (clk, rst, in, out, addr_in, addr_out, proc_req_in, proc_out_en, itr, cheguei, lk_toma, lk_cade, lk_valeu, lk_taqui, lk_cade_dado, lk_toma_dado, mem_wr, mem_addr_wr,pc_sim_val);\n", prname);
     fprintf(f_veri, "`else\n");
@@ -723,8 +720,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     {
         if (inn_used(i))
         {
-            force_rightbar(proc_dir);
-            fprintf(f_veri, "    data_in_%d = $fopen(\"%s/input_%d.txt\", \"r\"); // place your input data in this file, beside the source\n",i,src_dir(),i);
+            fprintf(f_veri, "    data_in_%d = $fopen(\"%s/input_%d.txt\", \"r\"); // place your input data in this file, beside the source\n",i,src_rel(),i);
         }
     }
     if (opc_inn()) fprintf(f_veri, "end\n\n");
@@ -796,8 +792,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     {
         if (out_used(i))
         {
-            force_rightbar(proc_dir);
-            fprintf(f_veri, "    data_out_%d = $fopen(\"%s/output_%d.txt\", \"w\"); // check the output data in this file\n",i,proc_dir,i);
+            fprintf(f_veri, "    data_out_%d = $fopen(\"output_%d.txt\", \"w\"); // check the output data in this file\n",i,i);
         }
     }
     if (opc_out()) fprintf(f_veri, "end\n\n");
@@ -864,7 +859,6 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // processor's T differs, the value is on toma_dado (held while TOM loops):
     // written to toma_k.txt, C flipped.
 
-    force_rightbar(proc_dir);
     for (int k = 0; k < lnk_count(); k++)
     {
         if (lnk_cad(k))
@@ -872,7 +866,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
             fprintf(f_veri, "// cade(%d) partner: the words of cade_%d.txt, one per cade(%d)\n", k, k, k);
             fprintf(f_veri, "integer data_cade_%d, cade_val_%d, cade_scan_%d;\n", k, k, k);
             fprintf(f_veri, "reg     cade_fim_%d = 0;\n", k);
-            fprintf(f_veri, "initial data_cade_%d = $fopen(\"%s/cade_%d.txt\", \"r\"); // the words cade(%d) takes, beside the source\n", k, src_dir(), k, k);
+            fprintf(f_veri, "initial data_cade_%d = $fopen(\"%s/cade_%d.txt\", \"r\"); // the words cade(%d) takes, beside the source\n", k, src_rel(), k, k);
             fprintf(f_veri, "always @ (posedge clk) if (!cade_fim_%d && tb_taqui_%d == proc_cade_%d) begin\n", k, k, k);
             fprintf(f_veri, "    cade_scan_%d = (data_cade_%d != 0) ? $fscanf(data_cade_%d, \"%%d\", cade_val_%d) : 0;\n", k, k, k, k);
             fprintf(f_veri, "    if (cade_scan_%d == 1) begin tb_cade_dado_%d <= cade_val_%d; tb_taqui_%d <= ~tb_taqui_%d; end\n", k, k, k, k, k);
@@ -883,7 +877,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
         {
             fprintf(f_veri, "// toma(%d, x) partner: each value goes to toma_%d.txt\n", k, k);
             fprintf(f_veri, "integer data_toma_%d;\n", k);
-            fprintf(f_veri, "initial data_toma_%d = $fopen(\"%s/toma_%d.txt\", \"w\"); // the values toma(%d, x) hands over\n", k, proc_dir, k, k);
+            fprintf(f_veri, "initial data_toma_%d = $fopen(\"toma_%d.txt\", \"w\"); // the values toma(%d, x) hands over\n", k, k, k);
             fprintf(f_veri, "always @ (posedge clk) if (proc_toma_%d != tb_valeu_%d) begin\n", k, k);
             fprintf(f_veri, "    $fdisplay(data_toma_%d, \"%%0d\", proc_toma_dado); $fflush(data_toma_%d);\n", k, k);
             fprintf(f_veri, "    tb_valeu_%d <= proc_toma_%d;\n", k, k);

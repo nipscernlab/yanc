@@ -129,9 +129,12 @@ else
         "${VL_WARN[@]}" --Mdir "$VL_DIR" "${HDL_V[@]}" "${PRO_V[@]}" "${TOP_V[@]}"
 
     # Stage the files the run reads with relative paths into the CWD (= TMP_DIR).
-    # (the _data/_inst .mif are referenced by absolute path, so they resolve.)
     for f in "$TOPL_DIR"/*.txt; do [ -e "$f" ] && cp "$f" .; done
-    for i in "${PROC_LIST[@]}"; do cp "$TMP_DIR/$i/pc_${i}_mem.txt" .; done
+    for i in "${PROC_LIST[@]}"; do
+        cp "$TMP_DIR/$i/${i}_inst.mif" .
+        cp "$TMP_DIR/$i/${i}_data.mif" .
+        cp "$TMP_DIR/$i/pc_${i}_mem.txt" .
+    done
 
     echo "#### Running the Verilator simulation"
     # header-only pass -> tiny FST; fst2vcd extracts a text VCD for the formatter.

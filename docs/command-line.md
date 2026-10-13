@@ -70,6 +70,11 @@ To synthesize, take `my_program.v` and the two `.mif` files, and the SAPHO
 modules in the `SAPHO/` folder that comes with YANC (`processor.v`,
 `core.v`, `ula.v`, `addr_dec.v`, `instr_dec.v`).
 
+The generated Verilog writes no absolute path: it names its files relative
+to the output folder, where the simulation runs (see
+[Simulation](simulation.md)). The folder and its source can move together,
+and names with accents or spaces are fine on every system.
+
 ## The tools under `yanc`
 
 Each can be run alone; the source file is the argument without an option,

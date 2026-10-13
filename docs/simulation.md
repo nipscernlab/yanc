@@ -24,6 +24,19 @@ The testbench simulates as many clocks as `yanc -c` said (10000 by
 default) at the clock of `yanc -f` (100 MHz by default), and writes the
 waveform to `my_program_tb.vcd`.
 
+**Run the simulation from the output folder.** The generated Verilog names
+every file relative to it: the memories (`my_program_inst.mif`,
+`my_program_data.mif`), the PC table, the outputs (`output_N.txt`,
+`toma_k.txt`) and the waveform by their bare names, and the inputs
+(`input_N.txt`, `cade_k.txt`) by the way from the output folder to the
+source, `../input_0.txt` when the output folder is the default one beside
+the source. No absolute path is written, so the folder can be moved or
+copied to another machine along with the source, and a folder name with
+accents or spaces costs nothing: the YANC tools work in UTF-8 on Windows,
+Linux and macOS alike. To synthesize, give the synthesis tool the `.mif`
+files in its project folder, or their full path in the `DFILE`/`IFILE`
+parameters.
+
 ## What you see in GTKWave
 
 Because the toolchain emits a side-table mapping each PC value to its
@@ -54,6 +67,10 @@ verilator --binary --timing --trace +define+YANC_TRACE --top-module my_program_t
 vl\Vmy_program_tb.exe   :: runs the sim, writes my_program_tb.vcd here
 gtkwave my_program_tb.vcd
 ```
+
+Verilator builds with GNU make, which refuses a build folder whose path has a
+space. If the output folder's has one, point `--Mdir` somewhere without
+spaces and still run the binary from the output folder.
 
 **The one thing to remember:** `+define+YANC_TRACE` is what makes your variables, arrays, the PC→C± line table and the assembly opcode appear in the waveform. Icarus gets them for free (it predefines `__ICARUS__`); Verilator only compiles that visibility harness when you pass the define. For big multi-millisecond project dumps, use `--trace-fst` instead of `--trace` (compact FST; the file is still named `<tb>.vcd` and GTKWave detects the format). The trace deliberately carries only the `<proc>`-level user signals — the CPU internals below each processor are fenced out with `/* verilator tracing_off */`. **In particular the stack-monitoring flags and the ULA rounding-error taps (`fl_max`, `fl_full`, `pointeri`, `delta_int`, `delta_float`) are intentionally *not* in the Verilator VCD**: keeping them would force Verilator to evaluate the expensive real-valued ULA monitoring logic every cycle, which defeats the whole point of using Verilator (speed). Those debug signals remain available under the Icarus flow (`Scripts\single_proc.bat` / `multi_proc.bat`), where raw speed is not the goal.
 

@@ -109,6 +109,19 @@ tags consumed by Aurora.
   C± track at `<proc>/Software/<name>.cmm`, which failed when the file was not
   named after the processor; asmcomp took garbage for `#NUBITS`, `#NBMANT` and
   `#NBEXPO` when a program left them out, instead of the defaults 32/23/8.
+- **UTF-8 everywhere, and no absolute path in the generated Verilog.** On
+  Windows each tool carries a manifest that makes it work in UTF-8, as on
+  Linux and macOS: a folder or file name with accents reaches the tools
+  intact (before, they got it in the Windows code page and `srcdir` in
+  `prog_log.txt` came out mangled). The generated Verilog names its files
+  relative to the output folder: the `.mif` memories, `output_N.txt`,
+  `toma_k.txt` by their bare names (the PC table and the waveform already
+  were), `input_N.txt` and `cade_k.txt` by the way to the source
+  (`../input_0.txt` by default). The simulation runs from the output folder,
+  the folder can move with its source, and the simulators never see a
+  non-ASCII path. `multi_proc` copies each processor's `.mif` beside the
+  run for Verilator too. Regress: `yanc` compiles and simulates a program in
+  a folder named with accents and spaces.
 - **The processor takes the name of its source file**, as `gcc` names the
   program: `filtro.cmm` makes the processor `filtro` (`filtro.v`, module
   `filtro`, its memories and testbench). `#PRNAME`, `#pragma yanc prname` and

@@ -182,6 +182,8 @@ goto :proj_gtkwave
 :proj_run_vl
 dir %TOPL_DIR%\*.txt /b > f_list.txt
 for /f "delims=" %%a in (%TMP_DIR%\f_list.txt) do copy %TOPL_DIR%\%%a .\>%TMP_DIR%\xcopy.txt
+for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\%%a_inst.mif .\>%TMP_DIR%\xcopy.txt
+for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\%%a_data.mif .\>%TMP_DIR%\xcopy.txt
 for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\pc_%%a_mem.txt .\>%TMP_DIR%\xcopy.txt
 del f_list.txt
 del xcopy.txt

@@ -84,8 +84,14 @@ if ($buildCode -ne 0 -or -not (Test-Path $simExe)) {
     exit 1
 }
 
-# 2. Run the sim
-Invoke-Native $simExe @($InFile, $OutFile, "$Clocks", "$Expected") | Out-Null
+# 2. Run the sim, in the output folder: the processor names its memories
+#    (<prname>_data.mif, _inst.mif) relative to it
+Push-Location (Split-Path -Parent $UprocV)
+try {
+    Invoke-Native $simExe @($InFile, $OutFile, "$Clocks", "$Expected") | Out-Null
+} finally {
+    Pop-Location
+}
 # sim exit code matters less than whether output was produced (the sim's
 # idle-detector can exit non-zero on programs that legitimately stall
 # briefly between out() calls). regress.sh checks for the output file

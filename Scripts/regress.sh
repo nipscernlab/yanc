@@ -244,6 +244,15 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     # binary, hiding the real problem.
     set -e
 
+    # Windows: each tool carries the manifest that makes it work in UTF-8
+    # (Compilers/common/utf8.rc, as the Makefile builds it)
+    UTF8RES=""
+    case "$(uname -s)" in
+        MINGW*|MSYS*|CYGWIN*)
+            UTF8RES="$SCRATCH/utf8_res.o"
+            (cd "$ROOT/Compilers/common" && windres -O coff utf8.rc "$UTF8RES") ;;
+    esac
+
     pushd "$ROOT/Compilers/CMMComp/Sources" >/dev/null
     bison -y -d CMMComp.y
     flex CMMComp.l
@@ -251,7 +260,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
         funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
         variaveis.c array_index.c global.c macros.c messages.c args.c \
-        y.tab.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
+        y.tab.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
@@ -261,7 +270,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
         $CPP_DEFS -o "$CPPC" \
         main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c lex.yy.c y.tab.c \
-        ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
+        ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
@@ -270,13 +279,13 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex -o pass1_lex.c pass1.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
         ASMComp.c pass1_lex.c pass1.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
+        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
     rm -f ASMComp.c pass1_lex.c
     popd >/dev/null
 
     rm -f "$YANC"
     gcc -O2 -Wall -Werror -o "$YANC" "$ROOT/Compilers/Driver/yanc.c" \
-        "$ROOT/Compilers/common/console_utf8.c" "$ROOT/Compilers/common/exe_dir.c" "$ROOT/Compilers/common/yanc_lang.c"
+        "$ROOT/Compilers/common/console_utf8.c" "$ROOT/Compilers/common/exe_dir.c" "$ROOT/Compilers/common/yanc_lang.c" $UTF8RES
 
     set +e
 fi
@@ -1173,7 +1182,8 @@ if [ "$CMM_ONLY" -eq 0 ]; then
                 fi
                 # Output is compared separately; the sim's idle-detector can exit
                 # non-zero on programs that legitimately stall between out() calls.
-                "$vldir/sim_$prname" "$infile" "$out" "$clocks" "$exp" >/dev/null 2>&1 || true
+                # In the output folder: the processor names its .mif files relative to it.
+                (cd "$od" && "$vldir/sim_$prname" "$infile" "$out" "$clocks" "$exp") >/dev/null 2>&1 || true
             fi
         else
             if ! "$IVERILOG" -s "${prname}_tb" -o "$od/$prname.vvp" \
@@ -1420,7 +1430,8 @@ fi
 # ---- 4d. the driver, yanc --------------------------------------------------
 # yanc runs the tools next to it: on a C+- test its .asm must be the golden;
 # -S then the .asm must give the same processor; on a C++ test its .asm must
-# be cppcomp's own; a bad input and a failing compile must stop it non-zero.
+# be cppcomp's own; a bad input and a failing compile must stop it non-zero;
+# a program in a folder with accents and spaces simulates from its output folder.
 echo ""
 echo "==> yanc (the driver)"
 drv="$SCRATCH/work_yanc"
@@ -1439,7 +1450,26 @@ r3=$?
 printf 'void main()\n{\n    int a = 1\n}\n' > "$drv/bad.cmm"
 ( cd "$drv" && ! "$YANC" bad.cmm >/dev/null 2>&1 && ! "$YANC" bad.txt >/dev/null 2>&1 )
 r4=$?
-for t in "1 C+- to Verilog, .asm = golden" "2 -S then the .asm" "3 C++ .asm = cppcomp's" "4 errors stop it"; do
+# a folder with accents and spaces: the tools work in UTF-8 on every system,
+# the Verilog names its files relative to the output folder (no absolute
+# path), and the simulation, run there, reads ../input_0.txt
+acc="$drv/Pasta Ação ü"
+mkdir -p "$acc"
+cp "$CMM_ROOT/Tests/cmm_bigin/cmm_bigin.cmm" "$acc/eco.cmm"
+cp "$CMM_ROOT/Tests/cmm_bigin/input_0.txt"   "$acc/"
+( cd "$acc" && "$YANC" eco.cmm >/dev/null 2>&1 ) && [ -f "$acc/eco/eco.v" ] \
+    && grep -q '^srcdir .*/Pasta Ação ü$' "$acc/eco/prog_log.txt" \
+    && ! grep -E '(fopen|readmem[bh]|FILE)\("(/|[A-Za-z]:)' "$acc/eco/eco.v" "$acc/eco/eco_tb.v" >/dev/null \
+    && grep -q '"\.\./input_0\.txt"' "$acc/eco/eco_tb.v"
+r5=$?
+if [ "$r5" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
+    ( cd "$acc/eco" && "$IVERILOG" -s eco_tb -o eco.vvp eco_tb.v eco.v \
+          "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1 \
+      && "$VVP" eco.vvp >/dev/null 2>&1 ) \
+        && cmp -s "$acc/eco/output_0.txt" "$CMM_ROOT/Tests/cmm_bigin/golden_sim/output_0.txt"
+    r5=$?
+fi
+for t in "1 C+- to Verilog, .asm = golden" "2 -S then the .asm" "3 C++ .asm = cppcomp's" "4 errors stop it" "5 a folder with accents and spaces"; do
     n="${t%% *}"; eval "r=\$r$n"
     if [ "$r" -eq 0 ]; then echo "PASS (yanc:${t#* })"; pass=$((pass+1))
     else echo "FAIL (yanc:${t#* })"; fail=$((fail+1)); failed_names+=("yanc$n"); fi

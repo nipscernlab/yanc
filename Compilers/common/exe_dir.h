@@ -23,6 +23,7 @@ int   make_dir   (const char *path);       // creates a folder; 0 if it exists n
 char *path_stem  (const char *path);       // "a/b/prog.cmm" -> "prog" (malloc)
 char *abs_path   (const char *path);       // the absolute form, '/' separators (malloc); the path itself if the system can't say
 char *dir_of     (const char *path);       // the absolute folder of a file, '/' separators (malloc)
+char *rel_path   (const char *from_dir, const char *to_dir);   // to_dir seen from from_dir ("..", "../src", "."); absolute when on another drive (malloc)
 
 // Where each tool looks, in order: a release (bin/ beside the folder), a
 // repository build in bin/, and one in .smoke/bin/ or stage/bin/.

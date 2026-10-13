@@ -65,6 +65,37 @@ char *dir_of(const char *path)
     return d;
 }
 
+char *rel_path(const char *from_dir, const char *to_dir)
+{
+    char *f = abs_path(from_dir), *t = abs_path(to_dir);
+    if (!f || !t) { free(f); return t; }
+    // compare component by component (case-insensitive on Windows paths)
+    size_t i = 0, last = 0;
+    for (;; i++) {
+        char a = f[i], b = t[i];
+#ifdef _WIN32
+        if (a >= 'A' && a <= 'Z') a += 32;
+        if (b >= 'A' && b <= 'Z') b += 32;
+#endif
+        if ((a == '/' || a == 0) && (b == '/' || b == 0)) last = i;
+        if (a != b || a == 0) break;
+    }
+    if (last == 0 && !(f[0] == '/' && t[0] == '/')) { free(f); return t; }   // another drive: absolute
+    if (f[last] == 0 && t[last] == 0) { free(f); free(t); return strdup("."); }
+    // one ".." per component of from_dir past the common part
+    int ups = 0;
+    for (size_t k = last; f[k]; k++) if (f[k] == '/' && f[k + 1]) ups++;
+    if (f[last] == 0) ups = 0;
+    const char *rest = t[last] == '/' ? t + last + 1 : t + last;
+    char *r = malloc(3 * (size_t)ups + strlen(rest) + 2);
+    r[0] = 0;
+    for (int k = 0; k < ups; k++) strcat(r, k ? "/.." : "..");
+    if (*rest) { if (ups) strcat(r, "/"); strcat(r, rest); }
+    if (!r[0]) strcpy(r, ".");
+    free(f); free(t);
+    return r;
+}
+
 char *path_stem(const char *path)
 {
     const char *b = path;
