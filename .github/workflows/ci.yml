@@ -155,17 +155,27 @@ jobs:
           exit "$fail"
 
       - name: README Quick start, as written
-        # The sh block after the <!-- quickstart-sh --> marker in README.md,
-        # run verbatim on the release layout (make stage), so the documented
-        # commands cannot drift from what the tools do. The block checks its
-        # own output (55).
+        # Every sh block after a <!-- quickstart-sh --> marker in README.md,
+        # in order, run on the release layout (make stage) and on the
+        # package's example, so the documented commands cannot drift from
+        # what the tools do. The README's own SAPHO line points at a
+        # placeholder and gtkwave needs a screen: both are left out here.
+        # Then the result is checked: 55, and a waveform view.
         run: |
           set -euo pipefail
           make stage STAGE="$RUNNER_TEMP/yanc"
-          awk '/<!-- quickstart-sh/{f=1;next} f&&/^```sh/{p=1;next} p&&/^```/{exit} p' README.md > "$RUNNER_TEMP/quickstart.sh"
+          awk '/<!-- quickstart-sh/{f=1;next} f&&/^```sh/{p=1;next} p&&/^```/{p=0;f=0;next} p' README.md \
+            | grep -v -e '^export SAPHO=' -e '^gtkwave ' > "$RUNNER_TEMP/quickstart.sh"
           test -s "$RUNNER_TEMP/quickstart.sh"
+          cat "$RUNNER_TEMP/quickstart.sh"
+          "$RUNNER_TEMP/yanc/install.sh"
+          export PATH="$HOME/.local/bin:$PATH"
+          export SAPHO="$RUNNER_TEMP/yanc/SAPHO"
           mkdir -p "$RUNNER_TEMP/qs" && cd "$RUNNER_TEMP/qs"
-          YANC="$RUNNER_TEMP/yanc" bash "$RUNNER_TEMP/quickstart.sh"
+          cp "$RUNNER_TEMP/yanc/example/my_program.cpp" .
+          bash -e "$RUNNER_TEMP/quickstart.sh"
+          test "$(tr -d '\r' < my_program/output_0.txt)" = 55
+          test -s my_program/my_program_tb.gtkw
 
   # The manual (docs/): built on every push the way the release publishes it.
   # -W makes every Sphinx warning an error (a broken link, a page outside the

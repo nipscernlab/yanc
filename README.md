@@ -35,24 +35,16 @@ Verilog is the [`SAPHO/`](SAPHO/) folder of this repository.
 ## Quick start
 
 **1. Install.** Download the latest
-[release](https://github.com/nipscernlab/yanc/releases/latest)
-(`yanc-bin-<tag>.zip` on Windows, `yanc-bin-linux-<tag>.tar.gz` on Linux,
-`<tag>` being the version, for example `yanc-bin-v6.0.zip`), unpack it
-anywhere and run the install script in it once: `install.bat` on Windows,
-`./install.sh` on Linux. It puts the tools on your PATH (no administrator
-rights); open a new terminal and `yanc -h` answers. The tools find the
-folders that come with them (`SAPHO/`, `Macros/`, `Header/`) by themselves.
-To simulate you also need [Icarus Verilog](http://iverilog.icarus.com/) (or
-Verilator), and to look at the waveform GTKWave
-([docs/install.md](docs/install.md)).
+[release](https://github.com/nipscernlab/yanc/releases/latest):
+`yanc-bin-<version>.zip` for Windows, `yanc-bin-linux-<version>.tar.gz` for
+Linux. Unpack it anywhere and run its install script once: `install.bat` on
+Windows, `./install.sh` on Linux. It puts the tools on your PATH, with no
+administrator rights. Open a new
+terminal: `yanc -h` answers. To simulate you also need
+[Icarus Verilog](http://iverilog.icarus.com/), and to see the waveform,
+GTKWave ([docs/install.md](docs/install.md)).
 
-**2. Run a program.** One command, `yanc`, takes a source file (`.cmm` or
-`.cpp`) down to the processor's Verilog and its testbench; a simulator and a
-viewer do the rest. `yanc -h` lists its options (`-o` the output folder, `-S`
-stop at the assembly, `-v` show the tools it runs, ...). The tools print in
-English; `--lang=pt` (or `YANC_LANG=pt` in the environment) switches to
-Portuguese.
-The program, `my_program.cpp`:
+**2. Compile.** The package's `example/my_program.cpp`:
 
 ```cpp
 int main() {
@@ -63,67 +55,56 @@ int main() {
 }
 ```
 
-**Windows** (`cmd`), in the folder that holds `my_program.cpp`:
+In its folder:
+
+<!-- quickstart-sh -->
+```sh
+yanc my_program.cpp
+```
+
+This writes the processor `my_program` into the folder `my_program/`: its
+Verilog, its memories and a testbench. A C± program is the same command on
+a `.cmm` file.
+
+**3. Simulate.** From the output folder, with `SAPHO` the `SAPHO/` folder of
+the package. On Windows (`cmd`):
 
 ```bat
-:: 1. the processor's Verilog, memory images and testbench, all in my_program\
-::    (the processor takes the source file's name; a C± source: yanc my_program.cmm)
-yanc my_program.cpp
-
-:: 2. simulate (Icarus); the processor's Verilog is the package's SAPHO folder
 set SAPHO=C:\path\to\yanc\SAPHO
 cd my_program
-iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
-         %SAPHO%\processor.v %SAPHO%\core.v %SAPHO%\ula.v %SAPHO%\addr_dec.v %SAPHO%\instr_dec.v
+iverilog -s my_program_tb -o sim.vvp -y %SAPHO% my_program_tb.v my_program.v
 vvp sim.vvp
 type output_0.txt
+```
 
-:: 3. the waveform, formatted (.. holds the output folder my_program\)
+On Linux:
+
+<!-- quickstart-sh -->
+```sh
+export SAPHO=/path/to/yanc/SAPHO
+cd my_program
+iverilog -s my_program_tb -o sim.vvp -y "$SAPHO" my_program_tb.v my_program.v
+vvp sim.vvp
+cat output_0.txt
+```
+
+`output_0.txt` holds `55`.
+
+**4. See the waveform.** Still in `my_program/`, on either system:
+
+<!-- quickstart-sh -->
+```sh
 gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
 gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
-**Linux** (or MSYS2 on Windows), with the package unpacked in `$YANC`. This
-block installs, writes the program and checks the output, so it can be pasted
-as is (the CI runs it on every push):
+GTKWave shows, clock by clock, the source line being run, the assembly
+instruction and every variable by name.
 
-<!-- quickstart-sh: .github/workflows/ci.yml runs the next block -->
-```sh
-set -e
-YANC=${YANC:-/path/to/yanc}                 # the unpacked package
-"$YANC/install.sh"                          # the tools into ~/.local/bin
-export PATH="$HOME/.local/bin:$PATH"
-
-cat > my_program.cpp <<'EOF'
-int main() {
-    int acc = 0;
-    for (int k = 1; k <= 10; ++k) acc += k;
-    out(0, acc);            // writes 55 to output port 0
-    return 0;
-}
-EOF
-
-yanc my_program.cpp
-
-SAPHO=$YANC/SAPHO
-cd my_program
-iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v \
-         "$SAPHO/processor.v" "$SAPHO/core.v" "$SAPHO/ula.v" "$SAPHO/addr_dec.v" "$SAPHO/instr_dec.v"
-vvp -n sim.vvp
-tr -d '\r' < output_0.txt      # 55
-[ "$(tr -d '\r' < output_0.txt)" = 55 ]
-gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
-test -s my_program_tb.gtkw
-# gtkwave my_program_tb.vcd -a my_program_tb.gtkw   # to look at the waveform
-```
-
-Everything generated lands in `my_program/`, beside the source: the
-processor (`my_program.v`, `my_program_inst.mif`, `my_program_data.mif`), the
-assembly, the testbench and the simulation outputs. Files the program reads
-(arrays initialised from a file, `input_N.txt` for the simulation) stay beside
-the source. Stop after `yanc` if all you want are the Verilog and the memory
-images. Everything else, from the languages to simulating with Verilator,
-is in the manual: [docs/index.md](docs/index.md).
+`yanc -h` lists the options: `-o` another output folder, `-S` stop at the
+assembly, `--lang=pt` the messages in Portuguese, and the rest. Everything
+else, from the two languages to simulating with Verilator, is in the
+manual: [docs/index.md](docs/index.md).
 
 ## Develop
 

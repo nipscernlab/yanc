@@ -14,7 +14,7 @@ Run the install script once, from this folder:
 | Windows | `install.bat` | puts `bin\` on your user PATH (no administrator rights); `uninstall.bat` takes it off |
 | Linux | `./install.sh` | a launcher per tool in `~/.local/bin` (`PREFIX=... ./install.sh` for another place); `./install.sh --uninstall` removes them |
 
-Then open a new terminal: `cmmcomp -h` answers. Keep this folder where it is:
+Then open a new terminal: `yanc -h` answers. Keep this folder where it is:
 the tools find `SAPHO/`, `Macros/` and `Header/` next to `bin/` by
 themselves.
 
