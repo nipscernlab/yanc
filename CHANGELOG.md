@@ -177,6 +177,25 @@ tags consumed by Aurora.
   `#pragma yanc` lines that match `my_program.cmm`'s header.
 
 ### Fixed
+- **cppcomp: four programs that compiled into the wrong thing, and two
+  preprocessor gaps** (found writing the manual, 2026-10-13; `test91`,
+  NegTests `pp_error.cpp`, `pragma_fftsiz.cpp`):
+  - `p + n` and `p - n` on a pointer to a struct of k words added n, not
+    n·k (`p++` was right); `p - q` now counts elements too;
+  - a range-for over a `std::vector` (any object with `size()` and
+    `operator[]`) ran zero times; it now visits every element, and a
+    range-for over anything else is an error;
+  - `delete[]` ran no destructor: `new T[n]` of a class with a destructor
+    now keeps n in a word before the array, and `delete[]` destroys the n
+    elements, last first;
+  - `010` was ten: a literal starting with 0 is octal, as in C++ (an 8 or 9
+    in it is an error);
+  - `#error` did not stop the compiler (now it does, with its message;
+    `#warning` warns), and a `// comment` after a `#define` became part of
+    the macro (comments now leave every directive line first);
+  - `#pragma yanc fftsiz` and `itradd` were accepted and did nothing; they
+    are errors now. The comments that called the C++ float "IEEE-754
+    single" say what it is: the SAPHO format with the field sizes of IEEE.
 - **`check_isa.py` holds appcomp's mnemonic list (`app.l`) to `ASMComp.l`.**
   A mnemonic missing there is not counted, and the instruction memory comes
   out one word short (seen while adding `TOM`/`CAD`).
