@@ -35,7 +35,7 @@ yanc v5.3 and some of it no longer holds.
 
 ## Several processors
 
-- Several processors: `toma` and `cade` over links, `myFIFO` and
+- [Several processors](multiprocessor.md): the processor's pins, `toma` and `cade` over links, `myFIFO` and
   `myDCFIFO`, interrupts.
 
 ## Simulating
