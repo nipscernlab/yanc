@@ -22,7 +22,7 @@ themselves.
 
 | folder | contents |
 |---|---|
-| `bin/` | the compilers (`cmmcomp`, `cppcomp`, `asmcomp`), the assembly's first pass (`appcomp`) and two waveform helpers (`comp2gtkw`, `gen_gtkw`). `-h` on any of them shows its options, `-V` its version |
+| `bin/` | the compilers (`cmmcomp`, `cppcomp`, `asmcomp`) and two waveform helpers (`comp2gtkw`, `gen_gtkw`). `-h` on any of them shows its options, `-V` its version |
 | `SAPHO/` | the SAPHO processor, in Verilog: asmcomp instantiates it with each program's parameters, and a simulator or a synthesizer reads it from here |
 | `Macros/` | assembly macros and tables used by C± programs |
 | `Header/` | the C++ headers the programs include |
@@ -42,10 +42,10 @@ The C± version compiles with `cmmcomp` instead of `cppcomp`; it
 writes into `./my_program/`:
 
 ```
-cmmcomp -en example/my_program.cmm
+cmmcomp example/my_program.cmm
 ```
 
-The rest of the pipeline (appcomp, asmcomp, the simulation) is the same.
+The rest of the pipeline (asmcomp, the simulation) is the same.
 
 ## License
 

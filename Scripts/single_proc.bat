@@ -105,9 +105,7 @@ echo #### Running the CMM compiler
 set TMP=%TMP_PRO%
 set TEMP=%TMP_PRO%
 
-echo #### Running the Pre-assembler
 set ASM_FILE=%TMP_PRO%\%PROC%.asm
-"%BIN_DIR%\appcomp.exe" %ASM_FILE%
 
 echo #### Running the Assembler
 "%BIN_DIR%\asmcomp.exe" -f %FRE_CLK% -c %NUM_CLK% %ASM_FILE%

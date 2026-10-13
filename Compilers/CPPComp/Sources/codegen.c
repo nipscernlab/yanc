@@ -22,6 +22,7 @@
 #include "../Headers/config.h"
 #include "../Headers/symtab.h"
 #include "../Headers/messages.h"
+#include "../Headers/cpppp.h"
 #include "../../common/asm_share.h"
 
 // ---- output ----------------------------------------------------------------
@@ -4090,9 +4091,10 @@ static void write_prog_log(const char *tmp_dir)
 
 // src_lines.txt: the source the pc_<proc>_mem.txt line numbers index into, so
 // GTKWave can show the text for the line the processor is executing. Three
-// fixed header rows (the negative scaffolding codes) followed by every source
-// line numbered from 1. src_text is the text cppcomp actually compiled (the
-// preprocessed source), so its line numbers match the AST's ->line stamps.
+// fixed header rows (the negative scaffolding codes) followed by one row per
+// line of src_text, the preprocessed text cppcomp compiled (its line numbers
+// are the AST's ->line stamps); each row holds that line as the user wrote it
+// (pp_source: its own file, macros not expanded), as cmmcomp shows the .cmm.
 static void write_src_lines(const char *tmp_dir, const char *src_text)
 {
     char path[2048]; snprintf(path, sizeof(path), "%s/src_lines.txt", tmp_dir);
@@ -4107,10 +4109,12 @@ static void write_src_lines(const char *tmp_dir, const char *src_text)
     for (const char *p = src_text; *p; ) {
         const char *e = strchr(p, '\n');
         size_t len = e ? (size_t)(e - p + 1) : strlen(p);
-        fprintf(out, "%d %.*s", n++, (int)len, p);
+        const char *src = pp_source(n);
+        if (!src) src = "";
+        size_t sl = strcspn(src, "\r\n");         // the row ends here, newline or not
+        fprintf(out, "%d %.*s\n", n++, (int)sl, src);
         p += len;
     }
-    if (n > 1 && src_text[strlen(src_text) - 1] != '\n') fputc('\n', out);
 
     fclose(out);
 }

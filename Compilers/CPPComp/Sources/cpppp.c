@@ -460,14 +460,15 @@ static int eval_if(const char *text)
 }
 
 // the output: the text, and for each of its lines the file and line it came
-// from (pp_where)
+// from (pp_where) and that line as written (pp_source)
 static sbuf         out_text;
 static const char **map_file = NULL;
 static int         *map_line = NULL;
+static char       **map_src  = NULL;
 static int          map_n = 0, map_cap = 0;
 static int          at_bol = 1;          // the next character starts a line
 
-static void pp_emit(const char *s, const char *file, int line)
+static void pp_emit(const char *s, const char *file, int line, const char *src)
 {
     for (; *s; s++) {
         if (at_bol) {
@@ -475,8 +476,11 @@ static void pp_emit(const char *s, const char *file, int line)
                 map_cap  = map_cap ? 2 * map_cap : 1024;
                 map_file = realloc(map_file, map_cap * sizeof *map_file);
                 map_line = realloc(map_line, map_cap * sizeof *map_line);
+                map_src  = realloc(map_src , map_cap * sizeof *map_src );
             }
-            map_file[map_n] = file; map_line[map_n] = line; map_n++;
+            map_file[map_n] = file; map_line[map_n] = line;
+            map_src [map_n] = strdup(src);
+            map_n++;
             at_bol = 0;
         }
         sb_putc(&out_text, *s);
@@ -690,18 +694,18 @@ static void process_file(const char *path)
                     }
                     free(orig); continue;          // don't emit `#pragma once`
                 }
-                if (cond_active()) pp_emit(line, file, ln);   // e.g. #pragma yanc
+                if (cond_active()) pp_emit(line, file, ln, line);   // e.g. #pragma yanc
                 free(orig); continue;
             }
 
             // ---- unknown directive: pass through ----
-            if (cond_active()) pp_emit(line, file, ln);
+            if (cond_active()) pp_emit(line, file, ln, line);
             free(orig); continue;
         }
 
         if (cond_active()) {
             char *expanded = expand_str(line, 0);
-            pp_emit(expanded, file, ln);
+            pp_emit(expanded, file, ln, line);
             free(expanded);
         }
         free(orig);
@@ -734,4 +738,9 @@ int pp_where(int line, const char **file)
     if (line < 1 || line > map_n) return line;    // *file left as it was
     *file = map_file[line - 1];
     return map_line[line - 1];
+}
+
+const char *pp_source(int line)
+{
+    return (line < 1 || line > map_n) ? NULL : map_src[line - 1];
 }

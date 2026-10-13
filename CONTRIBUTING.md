@@ -26,8 +26,8 @@ checkout, `Scripts/aurora.bat` produces all six binaries.
 2. **Keep commits focused.** One logical change per commit is easier to
    review and easier to revert if something goes wrong.
 3. **Make sure CI passes.** Every push to `main` (and every PR) builds all
-   four compilers with `-O2 -Wall` and smoke-tests the full pipeline
-   (cmmcomp → appcomp → asmcomp) against every example in `Exemplos/`. If
+   compilers with `-O2 -Wall` and smoke-tests the full pipeline
+   (cmmcomp → asmcomp) against every example in `Exemplos/`. If
    your change breaks any of these, the PR will be blocked.
 4. **Open the PR against `main`** with a description that explains *why*
    the change is needed, not just what it does.

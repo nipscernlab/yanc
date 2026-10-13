@@ -226,6 +226,7 @@ void parse_end(char *prname, char *d_proc)
     fprintf(f_log, "num_ins %d\n", num_ins); // number of instructions (excluding final macros)
     char *src = dir_of(cmm_src);             // the folder of the source: asmcomp reads the user's
     if (src) fprintf(f_log, "srcdir %s\n", src); // files there (array inits, input_N.txt, cade_k.txt)
+    fprintf(f_log, "lang C+-\n");            // the source language: the waveform's source track takes its name
     fclose (f_log);
 
     // generate the translation file for the cmm code -------------------------

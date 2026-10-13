@@ -4,6 +4,7 @@
 #include "../Headers/hdl.h"
 #include "../Headers/messages.h"
 #include "../Headers/args.h"
+#include "../Headers/pass1.h"
 #include "../../common/console_utf8.h"
 #include "../../common/asm_share.h"
 
@@ -45,7 +46,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#arrays"  eval_direct(14);                         // array with initialization file
 
 "#ITRAD"                  ;                         // interrupt address point
-"#TOAQUI"                 ;                         // #TOAQUI marker (consumed by appcomp; ignored here)
+"#TOAQUI"                 ;                         // #TOAQUI marker (consumed by the first pass; ignored here)
 "#SHARE"   eval_direct(26);                         // #SHARE <name> <home>: <name> uses the data word of <home>
 
    "LOD"   eval_opcode(  1,18, yytext,    "LOD"  ); // loads data from memory
@@ -225,7 +226,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 int main(int argc, char *argv[])
 {
   console_utf8();                            // the PT messages are UTF-8 (Windows console)
-  parse_lang_flag(&argc, argv);              // processes -en/-pt flag (removes it from argv)
+  parse_lang_flag(&argc, argv);              // --lang=en|pt (removes it from argv)
 
   cli_args a;
   cli_parse(argc, argv, &a);                 // parses the named options (or exits with usage)
@@ -235,7 +236,9 @@ int main(int argc, char *argv[])
   strcpy( mac_dir, a.macros_dir);            // Macros folder path
   strcpy(temp_dir, a.temp_dir);              // the same folder: the tables of the compilers are read from here
 
-  yyin = fopen(a.input, "r");                // -i is the input .asm file
+  pass1_run(a.input, a.temp_dir);            // first pass: app_log.txt (labels, sizes)
+
+  yyin = fopen(a.input, "r");                // second pass: the .asm again
   if (yyin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
   eval_init(a.freq, a.clocks);               // initialize the state variables
   yylex();                                   // run the lexer

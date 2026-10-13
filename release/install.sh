@@ -12,7 +12,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 PREFIX=${PREFIX:-$HOME/.local}
 DEST=$PREFIX/bin
 mkdir -p "$DEST"
-for t in cmmcomp cppcomp appcomp asmcomp gen_gtkw comp2gtkw; do
+for t in cmmcomp cppcomp asmcomp gen_gtkw comp2gtkw; do
     if [ "$1" = "--uninstall" ]; then
         rm -f "$DEST/$t"
     else

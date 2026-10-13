@@ -13,7 +13,7 @@
 *.ilk
 
 # flex outputs (.l -> .c)
-Compilers/APPComp/Sources/app.c
+Compilers/ASMComp/Sources/pass1_lex.c
 Compilers/ASMComp/Sources/ASMComp.c
 Compilers/CMMComp/Sources/lex.yy.c
 Compilers/CPPComp/Sources/lex.yy.c

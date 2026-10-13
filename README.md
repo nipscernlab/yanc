@@ -46,9 +46,10 @@ To simulate you also need [Icarus Verilog](http://iverilog.icarus.com/) (or
 Verilator), and to look at the waveform GTKWave
 ([docs/setup.md](docs/setup.md)).
 
-**2. Run a program.** Four commands take a source file down to the
+**2. Run a program.** Two commands take a source file down to the
 processor's Verilog and its testbench; a simulator and a viewer do the rest.
-The compilers print in Portuguese by default; `-en` switches them to English.
+The tools print in English; `--lang=pt` (or `YANC_LANG=pt` in the
+environment) switches the C± ones to Portuguese.
 The program, `my_program.cpp`:
 
 ```cpp
@@ -66,12 +67,10 @@ int main() {
 :: 1. compile to assembly: my_program\my_program.asm and its tables (the
 ::    processor takes the source file's name; a .cmm source: cmmcomp my_program.cmm)
 cppcomp my_program.cpp
-:: 2. addresses and processor parameters
-appcomp my_program\my_program.asm
-:: 3. the processor's Verilog, memory images and testbench, all in my_program\
+:: 2. the processor's Verilog, memory images and testbench, all in my_program\
 asmcomp my_program\my_program.asm
 
-:: 4. simulate (Icarus); the processor's Verilog is the package's SAPHO folder
+:: 3. simulate (Icarus); the processor's Verilog is the package's SAPHO folder
 set SAPHO=C:\path\to\yanc\SAPHO
 cd my_program
 iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
@@ -79,7 +78,7 @@ iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
 vvp sim.vvp
 type output_0.txt
 
-:: 5. the waveform, formatted (.. holds the output folder my_program\)
+:: 4. the waveform, formatted (.. holds the output folder my_program\)
 gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
 gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
@@ -105,7 +104,6 @@ int main() {
 EOF
 
 cppcomp my_program.cpp
-appcomp my_program/my_program.asm
 asmcomp my_program/my_program.asm
 
 SAPHO=$YANC/SAPHO
@@ -151,7 +149,7 @@ ships. See [CONTRIBUTING.md](CONTRIBUTING.md) for the conventions.
 
 ```
 yanc/
-├── Compilers/      the compilers: CMMComp (C±), CPPComp (C++), ASMComp, APPComp,
+├── Compilers/      the compilers: CMMComp (C±), CPPComp (C++), ASMComp,
 │                   common/ (the ISA table, asm passes), yanc_version.h;
 │                   Tests/ and NegTests/ under each front end
 ├── SAPHO/          the SAPHO processor, in Verilog

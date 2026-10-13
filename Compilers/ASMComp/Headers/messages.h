@@ -9,13 +9,13 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
-// 0 = Portuguese (default), 1 = English
+// 1 = English (default), 0 = Portuguese
 extern int lang_en;
 
 // string-selection macro. takes PT and EN and picks one based on lang_en
 #define M(pt, en) (lang_en ? (en) : (pt))
 
-// scans argv for -en/-pt, adjusts lang_en and removes the flag from argv/argc
+// --lang=en|pt (and YANC_LANG): sets lang_en, takes the option out of argv
 void parse_lang_flag(int *argc, char **argv);
 
 // ----------------------------------------------------------------------------
@@ -35,6 +35,20 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_ERR_CANT_OPEN_FILE \
     M("Erro: não rolou de abrir o arquivo '%s'!!\n", \
       "Error: couldn't open the file '%s' for the life of me!!\n")
+
+// the first pass (pass1.c, which was appcomp) ---------------------------------
+
+#define MSG_ERR_CANT_CREATE_LOG \
+    M("Erro: não deu pra criar o arquivo %s/app_log.txt.\n", \
+      "Error: couldn't create the file %s/app_log.txt.\n")
+
+#define MSG_INFO_ITR_HANDLING \
+    M("Info: implementando tratamento de interrupção\n", \
+      "Info: implementing interruption handling\n")
+
+#define MSG_INFO_INS_VAR_FOUND \
+    M("Info: foram encontradas %d instruções e %d variáveis\n", \
+      "Info: %d instructions and %d variables were found\n")
 
 #define MSG_ERR_BAD_FLOAT \
     M("Erro: a constante '%s' não é um número.\n", \
@@ -395,7 +409,7 @@ void parse_lang_flag(int *argc, char **argv);
       "Opções:\n" \
       "  -f, --freq <MHz>        frequência do clock do testbench (padrão: 100)\n" \
       "  -c, --clocks <n>        número de clocks a simular (padrão: 10000)\n" \
-      "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
+      "  --lang=en|pt            idioma das mensagens (padrão: en, ou YANC_LANG)\n" \
       "  -h, --help              mostra esta ajuda e sai\n" \
       "  -V, --version           mostra a versão e sai\n", \
       "asmcomp - YANC assembly-to-Verilog compiler (%s)\n" \
@@ -411,7 +425,7 @@ void parse_lang_flag(int *argc, char **argv);
       "Options:\n" \
       "  -f, --freq <MHz>        testbench clock frequency (default: 100)\n" \
       "  -c, --clocks <n>        number of clocks to simulate (default: 10000)\n" \
-      "  -en, -pt                diagnostic message language (default: -pt)\n" \
+      "  --lang=en|pt            message language (default: en, or YANC_LANG)\n" \
       "  -h, --help              show this help and exit\n" \
       "  -V, --version           show version and exit\n")
 

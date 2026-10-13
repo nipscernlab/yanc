@@ -129,9 +129,6 @@ set TEMP=%TMP_DIR%
     "%BIN_DIR%\cmmcomp.exe" -o %TMP_DIR%\%%i --wave-arrays %USER_DIR%\%%i\%%i.cmm
 ))
 (for %%i in (%PROC_LIST%) do (
-    "%BIN_DIR%\appcomp.exe" %TMP_DIR%\%%i\%%i.asm
-))
-(for %%i in (%PROC_LIST%) do (
     "%BIN_DIR%\asmcomp.exe" %TMP_DIR%\%%i\%%i.asm
 ))
 

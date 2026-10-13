@@ -30,12 +30,11 @@ $env:Path = "C:/packs/msys64/mingw64/bin;" + $env:Path
 $env:VERILATOR_ROOT = "C:/packs/msys64/mingw64/share/verilator"
 
 $CPPC    = Join-Path $BIN "cppcomp.exe"
-$APPCOMP = Join-Path $BIN "appcomp.exe"
 $ASMCOMP = Join-Path $BIN "asmcomp.exe"
 $VERILATOR = "C:/packs/msys64/mingw64/bin/verilator_bin.exe"
 $SIMMAIN = Join-Path $CPP "Tests/Verilator/sim_main.cpp"
 
-foreach ($x in @($CPPC, $APPCOMP, $ASMCOMP, $VERILATOR)) {
+foreach ($x in @($CPPC, $ASMCOMP, $VERILATOR)) {
     if (-not (Test-Path $x)) { Write-Error "missing: $x"; exit 1 }
 }
 
@@ -64,12 +63,8 @@ Write-Host "==> cppcomp"
 & $CPPC -o $od $src
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
-Write-Host "==> appcomp"
-& $APPCOMP -en $asm
-if ($LASTEXITCODE -ne 0) { exit 1 }
-
 Write-Host "==> asmcomp"
-& $ASMCOMP -en -f 100 -c 5000000 $asm
+& $ASMCOMP -f 100 -c 5000000 $asm
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 $uproc_v = "$od/$prname.v"

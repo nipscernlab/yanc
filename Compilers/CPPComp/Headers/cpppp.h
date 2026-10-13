@@ -15,4 +15,8 @@ const char *pp_run(const char *in_path);
 // its file (left as it was for a line outside the text)
 int         pp_where(int line, const char **file);
 
+// line `line` of the text as it was written (macros not expanded, newline
+// kept), or NULL outside the text
+const char *pp_source(int line);
+
 #endif

@@ -4,7 +4,7 @@
 # opcode + operand class), instr_dec.v and ula.v (opcode -> control signals
 # and ALU operation), core.v (which names the flow-control opcodes in
 # localparams), asm_share.c (operand class, flow, stack, for the asm passes)
-# and appcomp's app.l (the mnemonic list that counts the instructions) -- and
+# and asmcomp's pass1.l (the mnemonic list that counts the instructions) -- and
 # a disagreement between them is silent: a program assembles and then runs as
 # a different program. TODO.md item 10.2.
 #

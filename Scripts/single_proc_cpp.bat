@@ -116,9 +116,6 @@ echo #### Running the C++ compiler (cppcomp)
 set ASM_FILE=%TMP_PRO%\%PROC%.asm
 if not exist "%ASM_FILE%" ( echo [single_proc_cpp] cppcomp did not produce "%ASM_FILE%". & goto fail )
 
-echo #### Running the Pre-assembler (appcomp)
-"%BIN_DIR%\appcomp.exe" "%ASM_FILE%"
-
 echo #### Running the Assembler (asmcomp)
 "%BIN_DIR%\asmcomp.exe" -f %FRE_CLK% -c %NUM_CLK% "%ASM_FILE%"
 

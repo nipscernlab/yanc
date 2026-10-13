@@ -23,6 +23,7 @@
 #include "../../common/asm_share.h"
 #include "../../common/console_utf8.h"
 #include "../../common/exe_dir.h"
+#include "../../common/yanc_lang.h"
 
 /* asm_reach dropped `gone` instructions the pc map covered: prog_log.txt's
  * "num_ins" line, already written by codegen, drops by as much (a negative
@@ -59,6 +60,8 @@ static void usage(int code)
         "  -I <dir>                add an #include folder (repeatable); the source's\n"
         "                          folder comes first, the Header folder next to bin/ last\n"
         "  -E                      print the preprocessed source and stop\n"
+        "  --lang=en|pt            accepted, as by every YANC tool; cppcomp's messages\n"
+        "                          are in English only\n"
         "  -h, --help              this help\n"
         "  -V, --version           show version and exit\n",
         YANC_VERSION);
@@ -82,6 +85,7 @@ static char *derive_name(const char *path, const char *new_ext)
 int main(int argc, char **argv)
 {
     console_utf8();                 // the help text is UTF-8 (Windows console)
+    yanc_lang(&argc, argv, "cppcomp");   // --lang: checked and taken out; English only
     const char *in_path  = NULL;
     const char *out_dir  = NULL;
     int         only_pp  = 0;
@@ -160,6 +164,7 @@ int main(int argc, char **argv)
     if (fl) {
         char *src = dir_of(in_path);
         if (src) fprintf(fl, "srcdir %s\n", src);
+        fprintf(fl, "lang C++\n");       // the waveform's source track takes its name
         fclose(fl);
     }
     return 0;

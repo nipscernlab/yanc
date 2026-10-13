@@ -27,8 +27,7 @@ cd "$R"
 "$B/cppcomp.exe" -o "$o" "$p/$v.cpp" > /dev/null || exit 1
 a="$o/$v.asm"
 echo "instructions: $(grep -vc '^#' "$a")"
-"$B/appcomp.exe" -en "$a" > /dev/null 2>&1 || { echo "appcomp failed"; exit 1; }
-"$B/asmcomp.exe" -en -f 100 -c 5000000 "$a" > /dev/null 2>&1 || { echo "asmcomp failed"; exit 1; }
+"$B/asmcomp.exe" -f 100 -c 5000000 "$a" > /dev/null 2>&1 || { echo "asmcomp failed"; exit 1; }
 if [ "$mode" = prof ]; then
     sed "s/PCSIG/${v}__DOT__pc_sim_val/" "$P/sim_prof.cpp" > "$p/sim_prof_$v.cpp"
     harness="$p/sim_prof_$v.cpp"; extra="+define+YANC_TRACE --public-flat-rw"

@@ -1,6 +1,6 @@
 name: CI
 
-# Builds all three compilers (cmmcomp, asmcomp, appcomp) plus comp2gtkw
+# Builds the compilers (cmmcomp, cppcomp, asmcomp) plus comp2gtkw
 # on every push and pull request to catch breakages before they reach a
 # release tag. Mirrors the relevant parts of release.yml but skips the
 # packaging / release-creation steps.
@@ -49,8 +49,8 @@ jobs:
         # output folder <p>/:
         #
         #   cmmcomp  : <p>.cmm -> <p>/<p>.asm (+ the tables)
-        #   appcomp  : <p>/<p>.asm -> <p>/app_log.txt
-        #   asmcomp  : <p>/<p>.asm -> <p>/<p>.v + <p>_data.mif + <p>_inst.mif
+        #   asmcomp  : <p>/<p>.asm -> <p>/app_log.txt (first pass), <p>/<p>.v
+        #              + <p>_data.mif + <p>_inst.mif
         #
         # Any non-zero exit or missing/empty expected artifact fails the job.
         run: |
@@ -58,7 +58,6 @@ jobs:
 
           ROOT="$(pwd)"
           CMMCOMP="$ROOT/bin/cmmcomp.exe"
-          APPCOMP="$ROOT/bin/appcomp.exe"
           ASMCOMP="$ROOT/bin/asmcomp.exe"
           SCRATCH="$ROOT/.smoke"
           rm -rf "$SCRATCH"
@@ -79,17 +78,12 @@ jobs:
 
             echo "=== smoke: $filename ==="
 
-            if ! "$CMMCOMP" -en -o "$out" "$work_proc/$filename"; then
+            if ! "$CMMCOMP" -o "$out" "$work_proc/$filename"; then
               echo "FAIL: cmmcomp exited non-zero for $prname"; fail=1; continue
             fi
             [ -s "$asm_file" ] || { echo "FAIL: $asm_file missing/empty"; fail=1; continue; }
 
-            if ! "$APPCOMP" -en "$asm_file"; then
-              echo "FAIL: appcomp exited non-zero for $prname"; fail=1; continue
-            fi
-            [ -s "$out/app_log.txt" ] || { echo "FAIL: app_log.txt missing/empty"; fail=1; continue; }
-
-            if ! "$ASMCOMP" -en -f 100 -c 1000 "$asm_file"; then
+            if ! "$ASMCOMP" -f 100 -c 1000 "$asm_file"; then
               echo "FAIL: asmcomp exited non-zero for $prname"; fail=1; continue
             fi
             for art in "$prname.v" "${prname}_data.mif" "${prname}_inst.mif"; do
@@ -124,7 +118,6 @@ jobs:
 
           ROOT="$(pwd)"
           CMMCOMP="$ROOT/bin/cmmcomp"
-          APPCOMP="$ROOT/bin/appcomp"
           ASMCOMP="$ROOT/bin/asmcomp"
           SCRATCH="$ROOT/.smoke"
           rm -rf "$SCRATCH"
@@ -145,17 +138,12 @@ jobs:
 
             echo "=== smoke: $filename ==="
 
-            if ! "$CMMCOMP" -en -o "$out" "$work_proc/$filename"; then
+            if ! "$CMMCOMP" -o "$out" "$work_proc/$filename"; then
               echo "FAIL: cmmcomp exited non-zero for $prname"; fail=1; continue
             fi
             [ -s "$asm_file" ] || { echo "FAIL: $asm_file missing/empty"; fail=1; continue; }
 
-            if ! "$APPCOMP" -en "$asm_file"; then
-              echo "FAIL: appcomp exited non-zero for $prname"; fail=1; continue
-            fi
-            [ -s "$out/app_log.txt" ] || { echo "FAIL: app_log.txt missing/empty"; fail=1; continue; }
-
-            if ! "$ASMCOMP" -en -f 100 -c 1000 "$asm_file"; then
+            if ! "$ASMCOMP" -f 100 -c 1000 "$asm_file"; then
               echo "FAIL: asmcomp exited non-zero for $prname"; fail=1; continue
             fi
             for art in "$prname.v" "${prname}_data.mif" "${prname}_inst.mif"; do

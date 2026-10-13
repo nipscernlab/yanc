@@ -6,7 +6,7 @@
 // hold a value that will be read later (liveness, on the whole program), and
 // gives variables that are never alive at the same time one data word: for
 // each name that moves into another's word it writes "#SHARE <name> <home>"
-// ahead of the code, and appcomp/asmcomp give <name> the address of <home>.
+// ahead of the code, and asmcomp gives <name> the address of <home>.
 // The code itself is not touched -- every instruction keeps its own names, so
 // the listing reads as written, the pc_*_mem.txt line map stays valid, and
 // asmcomp still shows each variable in the waveform on its own (it follows a

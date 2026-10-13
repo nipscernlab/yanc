@@ -3,7 +3,7 @@ Thanks for the PR! A few quick reminders:
 
 - Read CONTRIBUTING.md if you haven't yet, especially the bilingual
   MSG_* convention and the m4 apostrophe trap in .l/.y files.
-- CI runs build + full-pipeline smoke (cmmcomp -> appcomp -> asmcomp)
+- CI runs build + full-pipeline smoke (cmmcomp -> asmcomp)
   on every push. Make sure it's green before requesting review.
 - Source comments in English. User-facing strings stay bilingual
   through the M("pt", "en") macro.

@@ -2,22 +2,14 @@
 // suporte bilingue PT/EN para as mensagens do cmmcomp ------------------------
 // ----------------------------------------------------------------------------
 
-#include <string.h>
-
 #include "../Headers/messages.h"
+#include "../../common/yanc_lang.h"
 
-int lang_en = 0; // default: portugues
+int lang_en = 1; // English unless YANC_LANG or --lang says pt
 
-// procura -en/-pt em argv, seta lang_en e remove a flag
-// mantem o resto dos argumentos na ordem original
+// --lang=en|pt (and YANC_LANG): sets lang_en and takes the option out of
+// argv, the other arguments keeping their order (common/yanc_lang.c)
 void parse_lang_flag(int *argc, char **argv)
 {
-    int w = 1;
-    for (int i = 1; i < *argc; i++)
-    {
-        if      (strcmp(argv[i], "-en") == 0) lang_en = 1;
-        else if (strcmp(argv[i], "-pt") == 0) lang_en = 0;
-        else argv[w++] = argv[i];
-    }
-    *argc = w;
+    lang_en = yanc_lang(argc, argv, "cmmcomp");
 }

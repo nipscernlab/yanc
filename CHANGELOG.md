@@ -122,13 +122,33 @@ tags consumed by Aurora.
   memory, so there is no `pp.cpp` and no `#pragma yanc source` any more.
   `-I <dir>` moved to cppcomp, and `cppcomp -E` prints the preprocessed text,
   as `gcc -E`. The messages point to the file and line written (an error in
-  an included header names the header) instead of the line of `pp.cpp`. No
+  an included header names the header) instead of the line of `pp.cpp`, and
+  the waveform's source track (`src_lines.txt`) shows each line as written
+  (`x + K`, not the expanded `x + 3`), as for C±; that track is named after
+  the language (`C++` or `C+-`, from a `lang` line the compilers write to
+  `prog_log.txt`, read by `gen_gtkw`). No
   `.asm` golden moved. `cppcomp -h` exits 0 and writes to stdout, and no
   longer lists the build-time defaults of the compiler.
 - **The tables have names that fit both languages:** `cmm_log.txt` is
   `prog_log.txt` (the variables, `num_ins` and `srcdir` asmcomp reads) and
   `trad_cmm.txt` is `src_lines.txt` (the source text the waveform shows). A
   C++ program wrote them under the C± names.
+- **`asmcomp` does both passes: `appcomp` is gone.** Its first pass (the
+  appcomp program: `app.l`, `eval.c`, `variaveis.c`) is now
+  `ASMComp/Sources/pass1.l` and `pass1.c`, a scanner of its own (prefix
+  `app`) that asmcomp runs before the second pass; it still writes
+  `app_log.txt` (labels, sizes, parameters) beside the `.asm`, where the
+  second pass and AURORA read it. `asmcomp prog/prog.asm` is the whole back
+  end; the Quick start is two commands. `check_isa.py` checks the first
+  pass's mnemonic list (TODO item 25, closed).
+- **English by default, `--lang=en|pt` in every tool.** The messages are in
+  English unless `--lang=pt` (or `--lang pt`) or the environment variable
+  `YANC_LANG=pt` says otherwise; the option wins over the variable, and any
+  other value is an error. `-en` and `-pt` are gone. cmmcomp and asmcomp
+  speak both languages (cmmcomp keeps its tone in English too);
+  cppcomp and gen_gtkw accept `--lang` and stay in English. One
+  implementation for all: `Compilers/common/yanc_lang.c`. The regress sets
+  `YANC_LANG=en`.
 - **cmmcomp's `-A` / `--array` is `--wave-arrays`**, a name that says what it
   does: every array element becomes its own signal in the waveform.
 - **The README is short: what YANC is, how to run it, how to develop it.**

@@ -258,7 +258,7 @@ void instr_lea(char *va)
     // materialise &va as a constant cell named "__addr_<va>". using a name
     // distinct from any plain integer literal avoids the dedup collision
     // that the literal "<addr>" would have with a later LOD <addr>, which
-    // would make asmcomp and appcomp disagree on n_dat.
+    // would make the two passes disagree on n_dat.
     char syn[600];
     snprintf(syn, sizeof(syn), "__addr_%s", va);
     if (var_find(syn) == -1)

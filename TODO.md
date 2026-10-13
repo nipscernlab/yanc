@@ -10,220 +10,54 @@ links to its section there. The measurements themselves are reproducible with
 Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
-Items 1–4 are HDL, 5–6 toolchain, 7–8 HDL scaling/timing, 9 libraries,
-10 architecture hardening (from the HDL audit), 12 a run-time exception
-strobe (parked, noted 2026-09-20), 13 a pre-assembly optimizer, 14 inlining
-small accessors in cppcomp, 15 the regress not being trustworthy on this
-machine, 17 faster array fill/copy (hardware options). Item 18 (hardware paid for
-code that never runs) is closed (2026-10-02): see the CHANGELOG. Item 19
-(the slow dividers) is closed and released as v6.0 (2026-10-07): two
-register cuts inside each divider and every division written as
-`<div> x; NOP; <read>`; the record is in
-[`docs/pipeln-and-division.md`](docs/pipeln-and-division.md). Item 20
-(two SAPHOs passing a value, `toma`/`cade`) is implemented on main, not
-released (target v7.1: no v7.0 release, Luciano 2026-10-11). Item 21 (documentation that cannot fall behind a
-release) waits for Chrysthofer's opinion. Item 22 (`myFIFO` losing words, and
-the two-clock `myDCFIFO`) is fixed on main, not released. Item 23 (`toma`/`cade` in a chain of
-processors) is in v7.1 too. Item 24 (arrays in the waveform without a
-signal per element) is open. Item 25 (appcomp folded into asmcomp) is
-open. Item 11,
-consistency at 32 bits, is closed (2026-09-21): see the CHANGELOG for its
-four fixes.
-Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
-CHANGELOG); the default level `0` keeps the legacy datapath, so no C± golden
-moved.
+## Where things stand (2026-10-13)
 
-**Where the work stood on 2026-10-10 (evening).** The ten commits of
-2026-10-09/10 (user names in the `.asm`, `LINKAS`, `myFIFO` fixed,
-`myDCFIFO`) went through the full regress (202/203: the `sapho_all` block
-check did not know `LINKAS`, fixed in 3a96072) and are pushed; Aurora got
-them through `Scripts/aurora.bat`. Every feature since v6.0 has its docs/
-note with a "For the documentation (item 21)" section: `docs/asm-names.md`,
-`docs/toma-and-cade.md`, `docs/myfifo.md`. Item 21 still waits on
-Chrysthofer's answer (no reply on 2026-10-10).
-Open, waiting on Luciano:
-- `RAMBLK` (proposed 2026-10-09, not started): a parameter on `myFIFO` and
-  `myDCFIFO` for a registered read, so a large FIFO can go to block RAM
-  (area, not clock: the SAPHO path dominates at ~22 MHz). `myDCFIFO` only
-  needs the read form (tried in scratch: passes `tb_dcfifo.v`, one
-  `RAMB18E1` at 1024 words); `myFIFO` also needs a write->read bypass.
-  Light to do (simulation + Yosys); details in `docs/myfifo.md` "Memory";
-- a `quartus_map` of the registered variant (does the Cyclone V use M10K?);
-- the board check of `LINKAS` and `myDCFIFO` with their `.sdc` lines
-  (`docs/myfifo.md` "Timing constraints", `docs/toma-and-cade.md` 8.5),
-  and an Fmax if wanted (`Scripts/hw/fmax.sh`, heavy).
+**v7.1, the next release** (no v7.0: Luciano, 2026-10-11). On main and
+regress-clean: `toma`/`cade` in pairs and chains (items 20, 23), `myFIFO`
+fixed and `myDCFIFO` (item 22), the conventional command lines and the flat
+output folder, the processor named after its source file, `cppcomp`
+preprocessing the C++ itself (no `cpppp`), the tables `prog_log.txt` /
+`src_lines.txt`. Left before the tag, in order:
+1. `--lang=en|pt` in every tool, English the default (cmmcomp's English
+   stays relaxed and slangy; Luciano sees the diff).
+2. The `yanc` driver: `yanc [-o dir] [-S] [-I dir] [-f MHz] [-c n]
+   [--wave-arrays] [-v] [--lang] <file.cmm|.cpp>`, the tools found next to
+   it, stopping at the Verilog.
+3. One consolidated text for AURORA (no compatibility kept in yanc): merge
+   `C:\tmp\aurora_yanc_cli.md`, `aurora_yanc_layout.md` and the running list
+   `aurora_yanc_pending.md`. AURORA's local C++ flow is broken until it
+   adapts (no `cpppp`). AURORA does not push before the yanc release; both
+   release together.
+4. The board run of Sabrina and Pedro Henrique: the `LINKALL` pair with the
+   `.sdc` on both boards (the Fmax is measured: the link costs no clock).
+5. CHANGELOG `[Unreleased]` -> 7.1, `yanc_version.h`, tag.
 
-**Where the work stood on 2026-09-18 (history: the order it suggests was overtaken by items 18 to 21).** Item **8 is closed** — all six steps,
-each measured; step 4b was withdrawn by the measurement rather than done. The
-hygiene of item **7** (audit 1.7) is done except the invariant guard, which
-item 3 had parked for the same reason: it needs a form Icarus, Verilator,
-Yosys *and* Quartus all accept silently. The two decisions below are taken:
-**YANC stays at 32 bits** and everything above it is parked. Item **11 is
-closed** (2026-09-21): `INT_MIN / -1` agrees on both simulators, an input
-word at or above 2^31 keeps its bits, `T x(N::v);` declares an object, and
-a `static` local is built on first use. **Next in the suggested order:
-14 → 5 → 6(a) → 9** — 15 is mitigated (the regress retries a simulation that
-died and lists it), so a board tells a real regression from noise again. 14: the cycle profile of test46
-is done and paid 15.8 % at once (the zero-fill loop), then 5.1 % more (the
-Cholesky inner loop, hoisted); the loop control of every `for` is next.
-Item 16 (value-initialized locals not re-zeroed) landed 2026-09-24 with
-`test78`; see the CHANGELOG.
+**Waiting on someone else:** item 21 (documentation that cannot fall
+behind a release) waits on Chrysthofer's answer to "Diretrizes para os
+repositórios do nipscernlab" (2026-10-09); the GitHub plan for the org
+(Free today, Team pending) and Luciano's GitHub Education application.
 
-**2026-09-25/26 (released as v5.5).** Item 13's data-word sharing landed for
-C± (`#SHARE`, transparent in the waveform); cmmcomp's hand-written templates
-got shorter; `LDA`/`STA` left the ISA (`LDI`/`STI` with a raw base), the
-opcodes were renumbered by family and `instr_dec.v` became the decode table
-(item 10.2's check part). Aurora pins v5.5 since its side landed.
+**Waiting on Luciano, proposed and not started:** `RAMBLK`, a registered
+read on `myFIFO`/`myDCFIFO` so a large FIFO goes to block RAM (area, not
+clock; docs/myfifo.md "Memory"), with a `quartus_map` of it.
 
-**2026-09-26/28 (released as v5.6).** `instr_dec.v`'s table became a function
-(its `always @ (*)` left the control lines X after reset under cocotb on
-Icarus, found by Aurora's toolchain test). cppcomp now runs `asm_share` too
-(item 13): -1710 data words over the C++ tests. Every yanc change is deployed
-into Aurora with `Scripts/aurora.bat` without a release, so Aurora's tests run
-against main. Item 13's local-array sharing was measured and closed (48
-words over the C++ tests); the C++ memory is in the fixed 2048-word heap
-arena instead (item 13). Next here: the order above.
-Also in v5.6: the FFT bit-reversal parameters swapped back (`cmm_fft_rd`, `cmm_fft_wr`), `HDL/` renamed `SAPHO/` (with an `HDL/` copy until Aurora reads `SAPHO/`), UTF-8 messages on a Windows console, the README rewritten with a Quick start the CI runs, and a README + example in the release package.
+**Open items, below:** 2(b) a fixture for unbiased rounding; 3 the parameter
+guard in `ula.v`; 5 steps 4-5, the exact constant encoder in cmmcomp (show
+Luciano the diff); 6(a) the ULA testbench; 8 the leftovers; 9 library
+accuracy keyed on `NBMANT`; 10 architecture hardening (ISS, division by zero,
+interrupt, I/O contract); 13 the pre-assembly optimizer and the C++ heap
+arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
+it; 15 the regress on this machine (mitigated); 17 faster fill/copy in
+hardware (measure the index register `X` first); 24 processors with
+different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element.
+**Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
+exception strobe), the reorganisation of the runner/setup scripts, a macOS
+build.
 
-**v5.7 (released 2026-10-03).** Item 18 (hardware paid for code that
-never runs, stack depths from the program) closed; C± recursion an error;
-C++ `<cstring>`, function-pointer initializers and `&f` fixed; the package
-is `SAPHO/` only (zip and tar checked, binaries say 5.7). The released
-Aurora v6.21.0 pins yanc v5.6; Aurora's main pins v5.7 since 2026-10-03
-(not released there).
-
-**v6.0 (released 2026-10-07): item 19, the dividers.** A paused pipeline
-was built, measured and dropped; a dividers co-processor was discussed and
-dropped. What stayed (a862a9e, with the aliases of 3637b60): each divider
-cut by two registers, every division written by the compilers as
-`<div> x; NOP; <read>` (`QUO`/`REM`/`F_QUO`); everything else is still one
-combinational cycle. `sapho_all`, one fit per board: 9.43 -> 21.9 MHz on
-the DE10-Nano, 8.80 -> 23.98 MHz on the ZYBO. Also in v6.0: `sapho_all`
-unified with the students' board version (LED table for inputs 5 to 11
-kept), `size_baseline.txt` covering all 68 C± tests. The text for Aurora's
-bump is in `C:\tmp\aurora_yanc_v6.0.md`. Left from item 19, only if the
-clock matters again: the integer divider's first part (~42 ns) limits now,
-above its estimate; moving its first cut earlier, a few seeds, and the
-next path once it is shorter were not measured. The students' frequency
-sweep on both boards is the real check of v6.0; their result comes back here.
-
-**Item 20, two SAPHOs passing a value (`toma`/`cade`): implemented, not
-released; target v7.1 (no v7.0 release).** Design and tests:
-[`docs/toma-and-cade.md`](docs/toma-and-cade.md). `toma(x)` on one processor,
-`y = cade()` (int) or `fcade()` (float) on its partner, anywhere an expression
-goes; whoever arrives first waits, nothing lost or read twice. Instructions
-`TOM` (20) and `CAD` (21), each a jump to its own label until the partner's
-bit lets it through (asmcomp rejects any other target); one bit per side (T,
-C) plus the writer's waiting flag, generated only when used (Yosys:
-`sapho_all` unchanged cell for cell); pins `toma`, `cade`, `taqui`, `valeu`,
-`cade_dado`, joined with wires only. A live accumulator is pushed (`PSH`)
-before `CAD`. Simulated alone, a processor gets its testbench as the partner
-(`Simulation/cade.txt`, `Simulation/toma.txt`). Regress: the `LINK` pass (two
-C+- pairs and two C+-/C++ pairs, both directions) and `NegTests/cade_comp`.
-Left before v7.1: the Fmax of a two-processor design on each board, a small
-example for the boards. The interrupt during a wait is decided (Luciano,
-2026-10-11): it stays as it is and the manual says not to interrupt a
-processor while it waits (docs/toma-and-cade.md section 6). Proposed
-2026-10-11: the board example, the two-processor Fmax and the `LINKAS`
-board check become the next task of Sabrina and Pedro Henrique (the pair
-running `sapho_all` on both boards). Deadlock detection in
-simulation was dropped (Luciano, 2026-10-08: the user's responsibility).
-Two processors on different clocks: done in simulation (2026-10-09,
-`#(.LINKAS(1))` on both processors, data from the new pin `toma_dado`;
-regress `LINK2`); left: the board check and the Quartus constraints
-(docs/toma-and-cade.md section 8). The whole processor over the link:
-`LINKALL` (2026-10-11), `sapho_all_a` -> `sapho_all_b` on one clock and on
-two, plus `sapho_all` alone with its output fed back (docs/toma-and-cade.md
-8.6); this pair is the design for the Fmax and the board check.
-
-**Item 21, documentation that cannot fall behind a release (waiting, opened
-2026-10-09).** Found while closing item 20: the published manual
-(nipscernlab/docs_aurora, nipscern.com/library/sapho) stopped at AURORA
-6.11.0.5 (2026-08-31, about yanc v5.3: it lists LDA/STA and old directive
-defaults), and Aurora Intelligence quotes it; this README still calls the
-divider combinational and says nothing of `toma`/`cade`. Luciano wants hard
-guidelines for every public nipscernlab repo (each repo an independent
-project, the guidelines global, in nipscernlab/.github): no release without
-green CI, rigorous per-repo tests and coherent documentation; English as the
-source language, Portuguese generated and reviewed by a person. For yanc
-that means: the README split into "run" and "develop" (the release README
-generated from the "run" part), the yanc chapters of the manual living in
-this repo and published on the site, the reference pages generated from
-`isa.tsv` and the other tables, and a release routine that refuses to tag
-without them. **Nothing starts before Chrysthofer answers** the email
-"Diretrizes para os repositórios do nipscernlab" (2026-10-09); that thread
-is the basis of the final version. Pending on the side: the GitHub plan for
-the org (Free today; Team would make the rules org-wide), Luciano's GitHub
-Education application on campus.
-
-**Item 23, `toma`/`cade` in a chain (target v7.1, opened 2026-10-11 by
-Luciano: there is no v7.0 release, v7.1 ships items 20, 22 and 23
-together).** Today each processor has one link, to one partner, both ways
-(docs/toma-and-cade.md section 1): two processors, or a ring of two, never
-A -> B -> C. A chain needs several links per processor: per link its own T,
-C and W bits and pins, a link number in the source (`toma(1, x)`, say) and
-`LINKAS` chosen per link. The open point is the encoding: the operand of
-`TOM`/`CAD` is already their own address, so the link number needs separate
-opcodes or operand bits. **Implemented 2026-10-11:** the operand is the
-link number (any number of links, each synchronous or not, chosen in the
-source: `toma(k, x)`/`cade(k)` synchronized, `toma_sync`/`cade_sync`/
-`fcade_sync` for a partner on the same clock, 4 cycles a value faster,
-measured); `LINKAS` is gone; regress `LINK3` (chain, fan-out, fan-in,
-float). Fmax measured 2026-10-11 (`Scripts/hw/fmax_link.sh`,
-`vfmax_link.sh`): the LINKALL pair on two clocks runs at the speed of
-`sapho_all` alone on both boards (DE10-Nano 20.8 / 22.4 against 21.8 MHz,
-ZYBO 24.0 / 23.9 against 23.5), the divider still the worst path; the
-`.sdc` (`set_clock_groups -asynchronous`) is written and checked. Left for
-v7.1: only the board run (the students put the pair on the boards). [`docs/toma-and-cade-links.md`](docs/toma-and-cade-links.md).
-
-**Item 24, processors with different formats on one link (parked
-2026-10-11 by Luciano: no v7.2 for it; the check belongs to Aurora, which
-sees every program of a project; conversion maybe in the future).** `toma` already sends a float's word
-unconverted and `fcade` reads it as a float: exact when both processors
-have the same `#NBMANT`/`#NBEXPO`, garbled with no warning when they
-differ (each program is compiled alone); ints with different `#NUBITS`
-only get the tools' port-width warning. Documented in
-docs/toma-and-cade.md section 3.
-[`docs/toma-and-cade-links.md`](docs/toma-and-cade-links.md) section 9.
-
-**Item 22, `SAPHO/myFIFO.v` lost words: FIXED 2026-10-09, full regress
-owed.** Three measured defects (the word of the cycle after `wrreq`, a write
-into a full FIFO emptying it, a stale read right after a write); now it
-writes in the `wrreq` cycle and `full`/`empty` come from the pointers. New
-regress `FIFO` pass (a C+- writer, `Tests/fifo_w`, through `out()`, plus
-`Scripts/hw/tb_fifo.v`); DTW unchanged. [`docs/myfifo.md`](docs/myfifo.md).
-Also `SAPHO/myDCFIFO.v` (2026-10-09), the FIFO between two clocks: two
-SAPHOs on 20 / 27.3 ns in the `FIFO` pass, `Scripts/hw/tb_dcfifo.v`; left:
-the board check and the Quartus constraints on the Gray pointers. Its memory
-is LUT RAM (combinational read); a registered read would make it block RAM
-from ~1024 words (measured in Yosys, not adopted: docs/myfifo.md "Memory").
-
-Open here, in the order they were queued:
-- item 14: the zero-fill at 8 words a turn (~2.4 % of test46), or close the
-  item (the strength-reduction candidate was measured and dropped);
-- item 17: faster fill/copy in hardware, a design discussion with nothing
-  measured; recommended first step is measuring the index register `X`
-  (Quartus ALUTs/Fmax, test46 cycles) before any ISA decision;
-- item 5, steps 4-5: the exact constant encoder in cmmcomp (Luciano's code:
-  show the diff first);
-- the heap arena (item 13): 77 % of the C++ data memory, not started, needs a
-  decision (a pragma or sizing from measured use).
-- **User names that collide in the `.asm`: DONE 2026-10-09, full regress
-  still owed.** Both compilers refuse a user name whose `.asm` spelling is an
-  instruction (`asm_is_mnemonic`, from the one ISA table) or already belongs
-  to something else (cppcomp `claim()`, cmmcomp `check_name()`), and every
-  compiler-made name moved under `__` (labels, `aux_var`, stdlib scratch,
-  the `float_*` macro routines, cppcomp's runtime routines and temporaries).
-  A variable `fim` stays legal (data and labels are separate tables in
-  asmcomp); a function `fim`, `global` or `num_ins` is refused. Old vs new
-  compiler: `cmm_names` printed `7 1969225728 1983905800 4 5 9` (now
-  `7 2 10 4 5 9`), test90 printed `udm_r` = 1 (now 2). Checked so far:
-  `regress --no-sim`, the 71 changed C+- golden `.asm` are pure renames, and
-  19 small C+- tests simulated against their unchanged `golden_sim`. Owed:
-  ONE full regress (Luciano asked to hold it on 2026-10-09).
-Parked by Luciano: reorganizing the runner/setup scripts and the dependency
-lists (seeing the code run in GTKWave is too valuable to drop). Not started:
-a macOS build in `release.yml`.
+**Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 11 (consistency at 32
+bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
+20, 22 and 23 (on main for v7.1), 25 (appcomp folded into asmcomp, on main
+for v7.1), the user names that collide in the `.asm`.
 
 ---
 
@@ -244,14 +78,6 @@ a macOS build in `release.yml`.
   [§1.8]
 
 ---
-
-## 1. Float operators drop one mantissa bit before normalisation
-
-**Status:** landed as `#FROUND 1` (the legacy level `0` keeps the bug on
-purpose, for bit-identical hardware) · **Evidence:** [§1.1](docs/precision-and-width-review.md#11-one-mantissa-bit-is-thrown-away-before-normalisation-bug-verified)
-
-Left open: nothing. The item stays listed until the next release notes
-mention it; remove it then.
 
 ## 2. Round to nearest, full-range `I2F`, saturating `F2I`
 
@@ -287,13 +113,6 @@ Left open: the parameter guard
 `initial if (NUBITS != NBMANT+NBEXPO+1 || NBMANT >= 2**(NBEXPO-1)) $error`
 in `ula.v` (needs a form that every simulator and synthesizer in the flow
 accepts silently).
-
-## 4. Negative zero is not equal to zero
-
-**Status:** landed as `#FROUND 1` (canonical `+0` out of `ula_norm`,
-`F_NEG`, `F_SGN`) · **Evidence:** [§1.7](docs/precision-and-width-review.md#17-negative-zero-is-not-equal-to-zero)
-
-Left open: nothing.
 
 ## 5. One shared, exact constant encoder
 
@@ -917,7 +736,39 @@ real group programs are the bottleneck. Each step measured first: ALUTs and
 Fmax in Quartus (a program that uses it and one that must pay nothing), and
 test46's cycles.
 
-## 24. Arrays in the waveform without one signal per element
+## 21. Documentation that cannot fall behind a release
+
+**Status:** waiting on Chrysthofer (opened 2026-10-09) · **Area:** this repo,
+nipscernlab/docs_aurora, nipscernlab/.github
+
+The published manual (nipscernlab/docs_aurora, nipscern.com/library/sapho)
+stopped at AURORA 6.11.0.5 (2026-08-31, about yanc v5.3: it lists LDA/STA and
+old directive defaults), and Aurora Intelligence quotes it. Luciano wants hard
+guidelines for every public nipscernlab repo (each repo an independent
+project, the guidelines global, in nipscernlab/.github): no release without
+green CI, rigorous per-repo tests and coherent documentation; English the
+source language, Portuguese generated and reviewed by a person. For yanc: the
+yanc chapters of the manual living in this repo and published on the site,
+the reference pages generated from `isa.tsv` and the other tables, a release
+routine that refuses to tag without them. Every feature since v6.0 has its
+docs/ note ending in "For the documentation (item 21)".
+
+**Done when** the guidelines are agreed (the email "Diretrizes para os
+repositórios do nipscernlab", 2026-10-09, is the basis) and yanc follows them.
+
+## 24. Processors with different float formats on one link
+
+**Status:** parked (Luciano, 2026-10-11: the check belongs to AURORA, which
+sees every program of a project; a conversion maybe in the future) ·
+**Evidence:** docs/toma-and-cade.md section 3,
+docs/toma-and-cade-links.md section 9
+
+`toma` sends a float's word unconverted and `fcade` reads it as a float:
+exact when both processors have the same `#NBMANT`/`#NBEXPO`, garbled with
+no warning when they differ (each program is compiled alone); ints with
+different `#NUBITS` only get the tools' port-width warning.
+
+## 26. Arrays in the waveform without one signal per element
 
 **Status:** open, noted 2026-10-12 (Luciano) · **Area:** cmmcomp
 `--wave-arrays`, asmcomp `hdl.c` (the `$dumpvars` of `sim_name_arr`),
@@ -932,24 +783,6 @@ arrays do not show at all. The option exists only to keep that cost away.
 example one signal for the last write (address and value), or a dump of
 the array memory read back by the viewer, chosen after measuring the
 `.vcd` size and the simulation time on a test with large arrays (test46).
-
-## 25. One assembler: appcomp inside asmcomp
-
-**Status:** open, noted 2026-10-12 (Luciano) · **Area:** `Compilers/APPComp/`,
-`Compilers/ASMComp/`, the scripts, the regress, the `yanc` driver
-
-**Why.** appcomp is the first pass of a two-pass assembler in its own
-executable: it reads the `.asm` once and writes `app_log.txt` (the
-directives, `n_ins`, `n_dat`, `itr_addr`, `toaqui_addr` and the address of
-every label) so that asmcomp can resolve forward jumps and size the memories
-in its single pass. Two executables mean one more call for every user and
-script, and a file passed between them.
-
-**Done when** asmcomp runs both passes itself and appcomp is gone from the
-release, the scripts and the regress. Who else reads `app_log.txt` decides
-whether it is still written: AURORA reads the `@fim <n>` line for the hardware
-test (`teste_de_hardware.ts`), and `Scripts/hw/opmix/run_mix.sh` reads it too.
-AURORA adapts from a pasted text (no compatibility kept in yanc).
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

@@ -9,13 +9,13 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
-// 0 = portuguese (default), 1 = english
+// 1 = english (default), 0 = portuguese
 extern int lang_en;
 
 // string-selection macro. takes PT and EN and chooses based on lang_en
 #define M(pt, en) (lang_en ? (en) : (pt))
 
-// scans argv for -en/-pt, sets lang_en and removes the flag from argv/argc
+// --lang=en|pt (and YANC_LANG): sets lang_en, takes the option out of argv
 void parse_lang_flag(int *argc, char **argv);
 
 // ============================================================================
@@ -675,7 +675,7 @@ void parse_lang_flag(int *argc, char **argv);
       "Opções:\n" \
       "  -o, --output <dir>      pasta de saída (padrão: ./<nome>)\n" \
       "  --wave-arrays           cada elemento de vetor vira um sinal no GTKWave\n" \
-      "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
+      "  --lang=en|pt            idioma das mensagens (padrão: en, ou YANC_LANG)\n" \
       "  -h, --help              mostra esta ajuda e sai\n" \
       "  -V, --version           mostra a versão e sai\n", \
       "cmmcomp - YANC C± front-end compiler (%s)\n" \
@@ -690,7 +690,7 @@ void parse_lang_flag(int *argc, char **argv);
       "Options:\n" \
       "  -o, --output <dir>      output folder (default: ./<name>)\n" \
       "  --wave-arrays           each array element as its own GTKWave signal\n" \
-      "  -en, -pt                diagnostic message language (default: -pt)\n" \
+      "  --lang=en|pt            message language (default: en, or YANC_LANG)\n" \
       "  -h, --help              show this help and exit\n" \
       "  -V, --version           show version and exit\n")
 

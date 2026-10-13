@@ -45,7 +45,7 @@ byl = collections.Counter()
 for a, c in prof.items():
     byl[line[a] if a < len(line) else -99] += c
 print("\n== by source line")
-for l, c in byl.most_common(25): print(pct(c), f"{l:5d}", src.get(l, "")[:90])
+for l, c in byl.most_common(25): print(pct(c), "  ", src.get(l, "").strip()[:90])   # the text, as the waveform shows it
 
 print("\n== hottest addresses")
 for a, c in sorted(prof.items(), key=lambda kv: -kv[1])[:40]:

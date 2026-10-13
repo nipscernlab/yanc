@@ -78,9 +78,7 @@ cp -r "$SRC_PROC" "$SRC_DIR"
 echo "#### Running the CMM compiler"
 "$BIN_DIR/cmmcomp" -o "$TMP_PRO" "$SRC_DIR/$FNAM"
 
-echo "#### Running the Pre-assembler"
 ASM_FILE="$TMP_PRO/$PROC.asm"
-"$BIN_DIR/appcomp" "$ASM_FILE"
 
 echo "#### Running the Assembler"
 "$BIN_DIR/asmcomp" -f "$FRE_CLK" -c "$NUM_CLK" "$ASM_FILE"

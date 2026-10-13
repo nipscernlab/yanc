@@ -509,7 +509,7 @@ terminal : INUM                               {$$ = expr_lit(1, $1);}
 int main(int argc, char *argv[])
 {
     console_utf8();                 // the PT messages are UTF-8 (Windows console)
-    parse_lang_flag(&argc, argv);   // processes -en/-pt flag (removes it from argv)
+    parse_lang_flag(&argc, argv);   // --lang=en|pt (removes it from argv)
 
     cli_args a;
     cli_parse(argc, argv, &a);      // parses the named options (or exits with usage)

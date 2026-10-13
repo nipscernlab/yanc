@@ -29,6 +29,7 @@
 #include <ctype.h>
 
 #include "../Compilers/common/exe_dir.h"
+#include "../Compilers/common/yanc_lang.h"
 
 // ---- GTKWave trace-format flag bits (see Aurora gtkw_proc_writer.js) --------
 #define TR_HEX        0x2
@@ -369,15 +370,24 @@ static void emit_proc_section(const Proc *p) {
     // <base>/<type>/ (forward slashes work on both Windows and POSIX, and
     // GTKWave accepts them in the .gtkw paths).
     char tradop[800] = "", tradcmm[800] = "";
+    char lang[32] = "C+-";       // the source track's name: prog_log.txt's `lang`
     if (p->type[0]) {
         snprintf(tradop,  sizeof tradop,  "%s/%s/trad_opcode.txt", g_tmp_base, p->type);
         snprintf(tradcmm, sizeof tradcmm, "%s/%s/src_lines.txt",    g_tmp_base, p->type);
+        char logp[800]; snprintf(logp, sizeof logp, "%s/%s/prog_log.txt", g_tmp_base, p->type);
+        FILE *lf = fopen(logp, "r");
+        if (lf) {
+            char ln[512];
+            while (fgets(ln, sizeof ln, lf))
+                if (sscanf(ln, "lang %31s", lang) == 1) break;
+            fclose(lf);
+        }
     }
     emit_comment("Instructions *******");
     int vi = find_sig(p->inst, "valr2");
     if (vi >= 0) emit_signal(&g_sig[vi], FMT_DEC, COL_INDIGO, "Assembly", tradop[0]?tradop:NULL, NULL);
     int li = find_sig(p->inst, "linetabs");
-    if (li >= 0) emit_signal(&g_sig[li], FMT_SIGNED_DEC, COL_VIOLET, "C+-", tradcmm[0]?tradcmm:NULL, NULL);
+    if (li >= 0) emit_signal(&g_sig[li], FMT_SIGNED_DEC, COL_VIOLET, lang, tradcmm[0]?tradcmm:NULL, NULL);
 
     emit_comment("Variables **********");
     emit_typed_vars(p->inst, "me1_",      FMT_SIGNED_DEC, "int",   NULL);
@@ -466,6 +476,7 @@ static void detect_procs(void) {
 
 // ---- main ------------------------------------------------------------------
 int main(int argc, char **argv) {
+    yanc_lang(&argc, argv, "gen_gtkw");   // --lang: checked and taken out; English only
     int help = argc >= 2 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"));
     if (help || argc < 4 || argc > 5) {
         fprintf(help ? stdout : stderr,

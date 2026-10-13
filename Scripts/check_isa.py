@@ -310,18 +310,19 @@ def main():
                     bad.append(f'{mn}: asm_share.c says {"/".join(rows[mn])}, '
                                f'the table says {"/".join(want)}')
 
-    # 10: appcomp's lexer lists the mnemonics too (it counts the instructions
-    # that size the instruction memory): a mnemonic it does not know is not
-    # counted, and MINSTS comes out short (seen with TOM/CAD, 2026-10-07)
-    app_p = os.path.join(root, 'Compilers', 'APPComp', 'Sources', 'app.l')
+    # 10: asmcomp's first pass lists the mnemonics too (it counts the
+    # instructions that size the instruction memory): a mnemonic it does not
+    # know is not counted, and MINSTS comes out short (seen with TOM/CAD,
+    # 2026-10-07)
+    app_p = os.path.join(root, 'Compilers', 'ASMComp', 'Sources', 'pass1.l')
     if os.path.exists(app_p):
         app_text = open(app_p, encoding='utf-8', errors='replace').read()
-        app_mn = set(re.findall(r'"([A-Z_0-9]+)"\s*eval_opcode\(', app_text))
+        app_mn = set(re.findall(r'"([A-Z_0-9]+)"\s*p1_opcode\(', app_text))
         asm_mn = set(lexer)
         for mn in sorted(asm_mn - app_mn):
-            bad.append(f'{mn}: in ASMComp.l but not in app.l (appcomp would not count it)')
+            bad.append(f'{mn}: in ASMComp.l but not in pass1.l (the first pass would not count it)')
         for mn in sorted(app_mn - asm_mn):
-            bad.append(f'{mn}: in app.l but not in ASMComp.l')
+            bad.append(f'{mn}: in pass1.l but not in ASMComp.l')
 
     # 9: the totals asmcomp's usage report divides by
     opc_p = os.path.join(root, 'Compilers', 'ASMComp', 'Sources', 'opcodes.c')

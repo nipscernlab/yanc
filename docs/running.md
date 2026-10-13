@@ -6,12 +6,12 @@ result. The commands that take one program all the way are in the README's
 
 ## Pipeline
 
-YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end compilers turn high-level source into assembly (`cppcomp` preprocesses the C++ itself, as gcc does); a single back-end compiler turns that assembly into Verilog, after a first pass over the assembly (`appcomp`).
+YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end compilers turn high-level source into assembly (`cppcomp` preprocesses the C++ itself, as gcc does); a single back-end compiler, the assembler `asmcomp`, turns that assembly into Verilog in two passes over it.
 
 ```
   C±:     foo.cmm  ──►  cmmcomp  ─┐
                                 ▼
-                             foo.asm  ──►  appcomp  ──►  asmcomp  ──►  foo.v + *.mif + foo_tb.v
+                             foo.asm  ──►  asmcomp  ──►  foo.v + *.mif + foo_tb.v
                                 ▲
   C++:    foo.cpp  ──►  cppcomp  ─┘
 ```
@@ -35,7 +35,7 @@ declared variables (`N`, `ind`, `istep`, `j`, `k`, `m`, `mmax`,
 
 ## Components
 
-Six binaries are produced from source — three compilers, the assembly's first pass, and two helpers:
+Five binaries are produced from source — three compilers and two helpers:
 
 **Compilers**
 
@@ -46,12 +46,6 @@ Six binaries are produced from source — three compilers, the assembly's first 
 | `asmcomp`    | `Compilers/ASMComp/`    | Flex + GCC         | Back-end: assembly → Verilog HDL + memory images + testbench |
 
 `cppcomp` carries its own C preprocessor (`#include`, `#define`, `#if`, ...; `cppcomp -E` prints its output).
-
-**Assembly first pass**
-
-| Binary       | Source dir              | Built with    | Role                                                                |
-| ------------ | ----------------------- | ------------- | ------------------------------------------------------------------- |
-| `appcomp`    | `Compilers/APPComp/`    | Flex + GCC    | First pass over the `.asm`: records processor params + resolves variable/label addresses for `asmcomp` |
 
 **Helper**
 
@@ -81,7 +75,7 @@ the Quick start's `my_program.cpp`:
 |---|---|---|
 | `my_program.asm` | cppcomp / cmmcomp | the program in SAPHO assembly |
 | `prog_log.txt`, `pc_my_program_mem.txt`, `src_lines.txt` | cppcomp / cmmcomp | the tables asmcomp and the waveform use (variables, PC to source line, the source text); `prog_log.txt` also names the source folder, where asmcomp reads the user's files |
-| `app_log.txt` | appcomp | addresses and processor parameters, for asmcomp |
+| `app_log.txt` | asmcomp | its first pass: the address of every label, the sizes and the processor parameters |
 | `my_program.v` | asmcomp | the Verilog top: SAPHO instantiated with this program's parameters |
 | `my_program_inst.mif`, `my_program_data.mif` | asmcomp | instruction and data memory images |
 | `my_program_tb.v`, `trad_opcode.txt` | asmcomp | the testbench, and the opcode names for the waveform |
@@ -179,16 +173,14 @@ C±, which — for optimization reasons — only ever allocates fixed-address
 variables anyway, so both flows show the same kind of thing.
 ## CLI flags
 
-The five compiler binaries accept **named options** with short and long forms.
-Run any of them with `-h` / `--help` for the per-tool synopsis, or
-`-V` / `--version` for the version string.
+The tools accept **named options** with short and long forms. Run any of
+them with `-h` / `--help` for the per-tool synopsis, or `-V` / `--version`
+for the version string.
 
-`cmmcomp`, `appcomp` and `asmcomp` produce bilingual diagnostic messages:
-
-```
--pt    Portuguese (default)
--en    English
-```
+The messages are in English. `cmmcomp` and `asmcomp` also speak
+Portuguese: `--lang=pt` on the command line, or the environment variable
+`YANC_LANG=pt` once for the terminal (`--lang=en` wins over it). Every tool
+accepts `--lang`; `cppcomp` and `gen_gtkw` stay in English.
 
 Each tool's options (`[...]` optional; the source file is the argument
 without an option):
@@ -199,9 +191,6 @@ cmmcomp [-o <dir>] [--wave-arrays] <file.cmm>
 cppcomp [-o <dir>] [-I <dir>]... [-E] <file.cpp>
 :: the assembler: everything to the folder of the .asm
 asmcomp [-f <MHz>] [-c <clocks>] <file.asm>
-
-:: the assembly's first pass (addresses and parameters for asmcomp)
-appcomp <file.asm>
 
 :: waveform helpers
 gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]
@@ -232,5 +221,5 @@ The short options have a long form (`--output`, `--freq`, `--clocks`, `--help`, 
 Example:
 
 ```bat
-cmmcomp -en C:\src\proc_fft.cmm
+cmmcomp C:\src\proc_fft.cmm
 ```

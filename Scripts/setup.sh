@@ -106,7 +106,7 @@ want flex  flex  required || build_ok=0
 
 bins_present=0
 if [ -x "$YANC_BIN/cmmcomp" ] && [ -x "$YANC_BIN/asmcomp" ] && \
-   [ -x "$YANC_BIN/appcomp" ] && [ -x "$YANC_BIN/gen_gtkw" ]; then
+   [ -x "$YANC_BIN/cppcomp" ] && [ -x "$YANC_BIN/gen_gtkw" ]; then
     bins_present=1
 fi
 

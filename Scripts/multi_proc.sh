@@ -98,9 +98,6 @@ for i in "${PROC_LIST[@]}"; do
     "$BIN_DIR/cmmcomp" -o "$TMP_DIR/$i" --wave-arrays "$USER_DIR/$i/$i.cmm"
 done
 for i in "${PROC_LIST[@]}"; do
-    "$BIN_DIR/appcomp" "$TMP_DIR/$i/$i.asm"
-done
-for i in "${PROC_LIST[@]}"; do
     "$BIN_DIR/asmcomp" "$TMP_DIR/$i/$i.asm"
 done
 

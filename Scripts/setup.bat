@@ -75,7 +75,7 @@ set "MINGW_BIN="
 if defined MSYS2_ROOT set "MINGW_BIN=%MSYS2_ROOT%\mingw64\bin"
 
 set "BIN_PRESENT="
-if exist "%YANC_BIN%\cmmcomp.exe" if exist "%YANC_BIN%\asmcomp.exe" if exist "%YANC_BIN%\appcomp.exe" if exist "%YANC_BIN%\gen_gtkw.exe" set "BIN_PRESENT=1"
+if exist "%YANC_BIN%\cmmcomp.exe" if exist "%YANC_BIN%\asmcomp.exe" if exist "%YANC_BIN%\cppcomp.exe" if exist "%YANC_BIN%\gen_gtkw.exe" set "BIN_PRESENT=1"
 
 :: C++ toolchain sanity for the Verilator flow (gcc 16.1.0-5 has a broken
 :: libstdc++ -- see :check_cxx). Non-fatal; the Icarus flow is unaffected.

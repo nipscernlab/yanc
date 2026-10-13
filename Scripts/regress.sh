@@ -6,12 +6,12 @@
 #   1. CMM phase: for every Compilers/CMMComp/Tests/<prname>/<prname>.cmm
 #      run cmmcomp and compare the produced .asm against
 #      Compilers/CMMComp/Tests/<prname>/golden.asm. For the sim-enabled subset also
-#      run appcomp + asmcomp + iverilog + vvp and compare output_*.txt
+#      run asmcomp + iverilog + vvp and compare output_*.txt
 #      against Compilers/Compilers/CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
 #      the multi-proc DTW example (Compilers/CMMComp/Tests/DTW/TopLevel/).
 #
 #   2. CPP phase: for every Compilers/CPPComp/Tests/testN/testN.cpp run
-#      cppcomp -> appcomp -> asmcomp -> iverilog (or Verilator
+#      cppcomp -> asmcomp -> iverilog (or Verilator
 #      if testN/testN.in is present) and compare the resulting
 #      output_0.txt against Compilers/CPPComp/Tests/testN/golden.txt.
 #      Every test is a folder holding the source and its own files (array
@@ -37,8 +37,8 @@
 #      The CPP negative phase does the same for cppcomp with
 #      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only).
 #
-# Build phase builds all 4 binaries once (cmmcomp + cppcomp +
-# appcomp + asmcomp), all phases reuse them.
+# Build phase builds all 3 binaries once (cmmcomp + cppcomp + asmcomp), all
+# phases reuse them.
 #
 # Usage (from repo root, in msys2/git-bash on Windows):
 #   Scripts/regress.sh                check against goldens (exit 0 = pass)
@@ -95,6 +95,7 @@ done
 # Resolve repo root from the script's own location so it works no matter
 # where you invoke it from.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export YANC_LANG=en               # the expected messages are the English ones
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 SCRATCH="$ROOT/.smoke"
@@ -105,7 +106,6 @@ TMP_DIR="$SCRATCH/tmp"            # CMM phase tmps
 
 CMMCOMP="$BIN_DIR/cmmcomp.exe"
 CPPC="$BIN_DIR/cppcomp.exe"
-APPCOMP="$BIN_DIR/appcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
 HDL="$ROOT/SAPHO"
 CMM_ROOT="$ROOT/Compilers/CMMComp"
@@ -159,7 +159,7 @@ vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice 
 }
 
 # Examples to exclude from the standalone simulation phase (still run cmmcomp
-# .asm compare AND appcomp/asmcomp so their .v + .mif are available for any
+# .asm compare AND asmcomp so their .v + .mif are available for any
 # downstream project-level link):
 #   procBlind/procBlindOpt - take too long to simulate (heavy FISTA)
 #   sw_test            - synthetic .cmm fixture; testbench would loop on while(1)
@@ -178,7 +178,7 @@ SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross
           "lk_chain_a" "lk_chain_b" "lk_chain_c" "lk_fan_w" "lk_echo" "lk_count" "lk_count7" "lk_merge"
           "lk_flt_w" "lk_flt_r")
 
-# Examples to also skip the appcomp/asmcomp build for (their .v / .mif are
+# Examples to also skip the asmcomp build for (their .v / .mif are
 # never consumed elsewhere - no standalone sim, no project link).
 BUILD_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "cmm_define")
 build_skipped() {
@@ -230,12 +230,12 @@ stack_check() {   # stack_check <tb.vcd>
 # ---- 1. build all 5 binaries -----------------------------------------------
 
 if [ "$SKIP_BUILD" -eq 0 ]; then
-    echo "==> building cmmcomp + cppcomp + appcomp + asmcomp"
+    echo "==> building cmmcomp + cppcomp + asmcomp"
     mkdir -p "$BIN_DIR"
 
     # Wipe stale binaries first: a silently-failing gcc must NOT leave the
     # previous build in place to fool the regress into testing dead code.
-    rm -f "$CMMCOMP" "$BIN_DIR/cpppp.exe" "$CPPC" "$APPCOMP" "$ASMCOMP"
+    rm -f "$CMMCOMP" "$BIN_DIR/cpppp.exe" "$CPPC" "$BIN_DIR/appcomp.exe" "$ASMCOMP"
 
     # Per-binary `set -e` so a build error aborts the script. Without it,
     # a gcc -Werror failure would print to the terminal but the regress
@@ -250,7 +250,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
         funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
         variaveis.c array_index.c global.c macros.c messages.c args.c \
-        y.tab.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c -lm
+        y.tab.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
@@ -260,23 +260,17 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
         $CPP_DEFS -o "$CPPC" \
         main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c lex.yy.c y.tab.c \
-        ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c -lm
+        ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
-    popd >/dev/null
-
-    pushd "$ROOT/Compilers/APPComp/Sources" >/dev/null
-    flex -o app.c app.l
-    gcc -O2 -Wall -Werror -o "$APPCOMP" \
-        app.c eval.c variaveis.c messages.c args.c ../../common/console_utf8.c ../../common/exe_dir.c -lm
-    rm -f app.c
     popd >/dev/null
 
     pushd "$ROOT/Compilers/ASMComp/Sources" >/dev/null
     flex -o ASMComp.c ASMComp.l
+    flex -o pass1_lex.c pass1.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
-        ASMComp.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c -lm
-    rm -f ASMComp.c
+        ASMComp.c pass1_lex.c pass1.c eval.c labels.c opcodes.c variaveis.c t2t.c \
+        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
+    rm -f ASMComp.c pass1_lex.c
     popd >/dev/null
 
     set +e
@@ -323,7 +317,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         golden="$proc_dir_rel/golden.asm"
 
         # cmmcomp step ------------------------------------------------------
-        if ! "$CMMCOMP" -en -o "$out" "$work_proc/$filename" >/dev/null 2>&1; then
+        if ! "$CMMCOMP" -o "$out" "$work_proc/$filename" >/dev/null 2>&1; then
             echo "FAIL ($prname): cmmcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
@@ -371,11 +365,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             continue
         fi
 
-        if ! "$APPCOMP" -en "$asm_file" >/dev/null 2>&1; then
-            echo "FAIL ($prname): appcomp exited non-zero"
-            fail=$((fail + 1)); failed_names+=("$prname"); continue
-        fi
-        if ! "$ASMCOMP" -en -f 100 -c 100000 "$asm_file" >/dev/null 2>&1; then
+        if ! "$ASMCOMP" -f 100 -c 100000 "$asm_file" >/dev/null 2>&1; then
             echo "FAIL ($prname): asmcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
@@ -596,8 +586,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             [ "$project_ok" -eq 1 ] || break
             cp_dir="$proj_tmp/cpp/$p"
             if ! "$CPPC" -o "$cp_dir" "$proj_top/../cpp/$p.cpp" >/dev/null 2>&1 ||
-               ! "$APPCOMP" -en "$cp_dir/$p.asm" >/dev/null 2>&1 ||
-               ! "$ASMCOMP" -en -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
+               ! "$ASMCOMP" -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
                 echo "FAIL ($proj): building the C++ partner $p"
                 fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0; break
             fi
@@ -815,8 +804,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         if [ "$project_ok" -eq 1 ]; then
             cp_dir="$proj_tmp/cpp/$p"
             if ! "$CPPC" -o "$cp_dir" "$proj_top/../cpp/$p.cpp" >/dev/null 2>&1 ||
-               ! "$APPCOMP" -en "$cp_dir/$p.asm" >/dev/null 2>&1 ||
-               ! "$ASMCOMP" -en -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
+               ! "$ASMCOMP" -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
                 echo "FAIL ($proj): building the C++ middle $p"
                 fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
             else
@@ -921,9 +909,8 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             # Scripts/hw/tb_dcfifo.v both ways round ("0 of 4 failed")
             if [ $sim_fail -eq 0 ]; then
                 r="fifo_r"; rd="$proj_tmp/$r"; mkdir -p "$rd"
-                if ! "$CMMCOMP" -en -o "$rd" "$proj_top/../$r.cmm" >/dev/null 2>&1 ||
-                   ! "$APPCOMP" -en "$rd/$r.asm" >/dev/null 2>&1 ||
-                   ! "$ASMCOMP" -en -f 100 -c 100000 "$rd/$r.asm" >/dev/null 2>&1; then
+                if ! "$CMMCOMP" -o "$rd" "$proj_top/../$r.cmm" >/dev/null 2>&1 ||
+                   ! "$ASMCOMP" -f 100 -c 100000 "$rd/$r.asm" >/dev/null 2>&1; then
                     echo "FAIL ($proj): building the reader $r"; sim_fail=1
                 else
                     cp "$rd/${r}_data.mif" "$rd/${r}_inst.mif" "$proj_tmp/"
@@ -1121,10 +1108,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
                 echo "FAIL ($base): $wbad"; fail=$((fail+1)); failed_names+=("$base"); continue
             fi
         fi
-        if ! "$APPCOMP" -en "$asm" >/dev/null 2>&1; then
-            echo "FAIL ($base): appcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
-        fi
-        if ! "$ASMCOMP" -en -f 100 -c 5000000 "$asm" >/dev/null 2>&1; then
+        if ! "$ASMCOMP" -f 100 -c 5000000 "$asm" >/dev/null 2>&1; then
             echo "FAIL ($base): asmcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
         if ! hw_msg=$(hw_check "${entry%/}/hardware.txt" "$od/$prname.v"); then
@@ -1333,7 +1317,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
         rm -rf "$neg_work"; mkdir -p "$neg_work"
         cp "$neg_dir/$fixture" "$neg_work/p.cmm"
-        out="$("$CMMCOMP" -en -o "$neg_work/p" "$neg_work/p.cmm" 2>&1)"
+        out="$("$CMMCOMP" -o "$neg_work/p" "$neg_work/p.cmm" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"
@@ -1360,7 +1344,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         want=0; case "$forbid" in +*) want=1; forbid="${forbid#+}" ;; esac
         rm -rf "$neg_work"; mkdir -p "$neg_work"
         cp "$neg_dir/$fixture" "$neg_work/p.cmm"
-        out="$("$CMMCOMP" -en -o "$neg_work/p" "$neg_work/p.cmm" 2>&1)"
+        out="$("$CMMCOMP" -o "$neg_work/p" "$neg_work/p.cmm" 2>&1)"
         rc=$?
         printed=0; printf '%s' "$out" | grep -qF "$forbid" && printed=1
         if [ "$rc" -ne 0 ]; then
