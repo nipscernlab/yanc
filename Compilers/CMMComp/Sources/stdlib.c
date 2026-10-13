@@ -109,11 +109,11 @@ void exec_out(int id, expr e)
 }
 
 // ----------------------------------------------------------------------------
-// the link to a partner processor (docs/toma-and-cade.md) --------------------
+// the link to a partner processor (docs/design/toma-and-cade.md) --------------------
 // ----------------------------------------------------------------------------
 
 // TOM k and CAD k wait in place until the partner lets them through; the
-// operand is the link number (docs/toma-and-cade-links.md). A link is
+// operand is the link number (docs/design/toma-and-cade-links.md). A link is
 // synchronized (toma/cade/fcade) or on my clock (the _sync forms) in every use:
 // its hardware is one; #LKSYNC k tells asmcomp which links skip the
 // synchronizer.

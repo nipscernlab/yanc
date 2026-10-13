@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 // Project pass FIFO, second testbench: a SAPHO writer and a SAPHO reader on
 // two clocks of unrelated periods (20 ns and 27.3 ns), joined by
-// SAPHO/myDCFIFO.v with wires only (docs/myfifo.md):
+// SAPHO/myDCFIFO.v with wires only (docs/design/myfifo.md):
 //   writer: wrreq = out_en[0], data = out
 //   reader: in() of port 1 is rdempty, in() of port 0 is q, rdreq = req_in[0]
 // Two pairs: writer fast -> reader slow (output_dcfifo_fs.txt) and writer

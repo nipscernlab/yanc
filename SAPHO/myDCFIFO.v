@@ -19,7 +19,7 @@
 // LENGTH: a power of two, at least 4; the FIFO holds LENGTH words (one more
 // pointer bit tells full from empty). aclr: asynchronous clear of both
 // sides; each side leaves it on its own clock (two flip-flops), so assert it
-// for a few cycles of the slower clock. docs/myfifo.md; checked by
+// for a few cycles of the slower clock. docs/design/myfifo.md; checked by
 // Scripts/hw/tb_dcfifo.v and the regress FIFO pass.
 
 module myDCFIFO

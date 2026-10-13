@@ -33,7 +33,7 @@ int inn_used(int i);           // tells whether input port i was used
 int out_used(int i);           // tells whether output port i was used
 const char *src_dir(void);     // the folder of the source: the user's own files (array inits, input_N.txt, cade_k.txt)
 
-// links to partner processors (docs/toma-and-cade-links.md), from TOM k / CAD k
+// links to partner processors (docs/design/toma-and-cade-links.md), from TOM k / CAD k
 // and #LKSYNC k
 int lnk_count();               // link slots: highest link number used + 1 (0: no link)
 int lnk_tom  (int k);          // the program has TOM k

@@ -44,7 +44,7 @@ rights); open a new terminal and `yanc -h` answers. The tools find the
 folders that come with them (`SAPHO/`, `Macros/`, `Header/`) by themselves.
 To simulate you also need [Icarus Verilog](http://iverilog.icarus.com/) (or
 Verilator), and to look at the waveform GTKWave
-([docs/setup.md](docs/setup.md)).
+([docs/install.md](docs/install.md)).
 
 **2. Run a program.** One command, `yanc`, takes a source file (`.cmm` or
 `.cpp`) down to the processor's Verilog and its testbench; a simulator and a
@@ -122,9 +122,8 @@ processor (`my_program.v`, `my_program_inst.mif`, `my_program_data.mif`), the
 assembly, the testbench and the simulation outputs. Files the program reads
 (arrays initialised from a file, `input_N.txt` for the simulation) stay beside
 the source. Stop after `yanc` if all you want are the Verilog and the memory
-images. Verilator instead of Icarus, the formatted waveform and the scripts
-that run the whole pipeline: [docs/running.md](docs/running.md). Writing
-programs: [docs/programming.md](docs/programming.md).
+images. Everything else, from the languages to simulating with Verilator,
+is in the manual: [docs/index.md](docs/index.md).
 
 ## Develop
 
@@ -132,7 +131,7 @@ The build needs `gcc`, `make`, `bison` and `flex` (on Windows from
 [MSYS2](https://www.msys2.org/), with the `mingw-w64-x86_64-gcc` cross
 toolchain; on Linux from the distribution). `Scripts/setup.bat` /
 `Scripts/setup.sh` check and install what is missing; the details, including
-a broken gcc version to avoid, are in [docs/setup.md](docs/setup.md).
+a broken gcc version to avoid, are in [docs/install.md](docs/install.md).
 
 ```sh
 make                              # build every tool into bin/
@@ -154,7 +153,7 @@ yanc/
 ├── SAPHO/          the SAPHO processor, in Verilog
 ├── Scripts/        setup, regress.sh, aurora.bat, the pipeline runners,
 │                   hw/ (elaboration, area, Fmax)
-├── docs/           setup, running, programming, and the design notes
+├── docs/           the manual (index.md), and design/ with the design notes
 ├── release/        the README and example/ every release package carries
 ├── Makefile        the one place the tools are built from
 └── TODO.md         open work items
@@ -162,13 +161,11 @@ yanc/
 
 ## Documentation
 
-| file | what it covers |
-|---|---|
-| [docs/setup.md](docs/setup.md) | dependencies, the setup scripts, building from source |
-| [docs/running.md](docs/running.md) | the pipeline, each tool and its options, what lands where, Icarus and Verilator, the formatted waveform, the runner scripts |
-| [docs/programming.md](docs/programming.md) | an example in C±, the float rounding levels (`#FROUND`), several processors (`toma` / `cade`) |
-| [CHANGELOG.md](CHANGELOG.md) | what changed in each release |
-| `docs/*.md` (the rest) | design notes behind each feature: why, what was measured, what is open |
+The manual is in [docs/](docs/index.md): installing, the C± and C++
+languages, the command line, simulating, several processors, the instruction
+set. [docs/design/](docs/design/) holds the design notes behind each
+feature (why, what was measured, what is open), and
+[CHANGELOG.md](CHANGELOG.md) what changed in each release.
 
 ## About
 

@@ -1379,7 +1379,7 @@ static int is_cade_call(const expr *e)
              && is_cade_name(e->a->sval) && e->n_args == 1;
 }
 
-// the links to partner processors (docs/toma-and-cade-links.md): the link
+// the links to partner processors (docs/design/toma-and-cade-links.md): the link
 // number is an integer literal; a link is synchronized (toma/cade/fcade) or on
 // my clock (the _sync forms) in every use, since its hardware is one, and
 // #LKSYNC k (after @fim) tells asmcomp which links skip the synchronizer
@@ -2605,8 +2605,8 @@ static void gen_expr(expr *e)
                 gen_expr(e->args[1]);
                 emit("OUT %ld", e->args[0]->ival); return;
             }
-            // the link to a partner processor (docs/toma-and-cade.md): TOM k and
-            // CAD k (k the link number, docs/toma-and-cade-links.md) wait in
+            // the link to a partner processor (docs/design/toma-and-cade.md): TOM k and
+            // CAD k (k the link number, docs/design/toma-and-cade-links.md) wait in
             // place until the partner lets them through; the word goes as it
             // is, no int/float conversion
             if (!strcmp(fn, "toma") || !strcmp(fn, "toma_sync")) {

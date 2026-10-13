@@ -558,7 +558,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     fi
 
     # ---- 3a. project pass: two SAPHOs over toma/cade ------------------------
-    # docs/toma-and-cade.md. link_envia hands 16 values to link_recebe (their
+    # docs/design/toma-and-cade.md. link_envia hands 16 values to link_recebe (their
     # waits cross over, so each side arrives first in turn); link_ping and
     # link_pong use one link both ways. Besides the sim golden, the outputs are
     # checked against the sequences computed here (n*7+3, n+1), which stay
@@ -661,7 +661,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
 
         # the same programs on two clocks (20 ns and 27.3 ns), LINKAS = 1
-        # (docs/toma-and-cade.md section 8): checked against the sequences only
+        # (docs/design/toma-and-cade.md section 8): checked against the sequences only
         if [ "$project_ok" -eq 1 ]; then
             name2="LINK2"
             if ! "$IVERILOG" -s link2_tb -o "$proj_tmp/$name2.vvp" \
@@ -786,7 +786,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     fi
 
     # ---- 3a. project pass LINK3: several links per processor ----------------
-    # docs/toma-and-cade-links.md, on 20 ns / 27.3 ns clocks: a chain A -> B -> C
+    # docs/design/toma-and-cade-links.md, on 20 ns / 27.3 ns clocks: a chain A -> B -> C
     # (A->B with the _sync forms, B->C synchronized; once more with the C++
     # middle lk_cpp_chain_b), fan-out (two TOM links), fan-in (two CAD links)
     # and a float word over a link. Checked against the sequences computed here.
@@ -864,7 +864,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     # OUTs and OUTs from loops; the tb drains it. Plus Scripts/hw/tb_fifo.v,
     # the FIFO alone (full refuses, read right after a write). Then the same
     # across two clocks: myDCFIFO between fifo_w and a SAPHO reader
-    # (Tests/FIFO/fifo_r.cmm), and Scripts/hw/tb_dcfifo.v. docs/myfifo.md.
+    # (Tests/FIFO/fifo_r.cmm), and Scripts/hw/tb_dcfifo.v. docs/design/myfifo.md.
 
     if [ "$NO_SIM" -eq 0 ]; then
         proj="FIFO"
@@ -1238,6 +1238,12 @@ if command -v python3 >/dev/null 2>&1; then
         pass=$((pass + 1))
     else
         fail=$((fail + 1)); failed_names+=("isa-table")
+    fi
+    # the manual's instruction page is generated from the same table
+    if python3 "$ROOT/Scripts/gen_isa_doc.py" "$ROOT" --check; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("isa-doc")
     fi
 else
     echo ""

@@ -244,9 +244,9 @@ if every value arrives once and in order. Then a fixture in the regress
   transparency. `SAPHO/myFIFO.v` would not have served as is: it writes
   `data` one cycle after `wrreq`, when a SAPHO's `out` bus has already
   changed (by reading at the time; confirmed in simulation on 2026-10-09,
-  with two more defects, all fixed: docs/myfifo.md).
+  with two more defects, all fixed: docs/design/myfifo.md).
 - **Freezing the core while waiting** (a `wait` pin): as transparent, but it
-  is the pause logic dropped from `#PIPELN` (docs/pipeln-and-division.md
+  is the pause logic dropped from `#PIPELN` (docs/design/pipeln-and-division.md
   section 2) and puts a combinational path from one processor's decoder
   into the other's stall.
 - **One-cycle pulses instead of the two bits**: two looping processors can
@@ -389,19 +389,14 @@ Fmax and the board check of a linked design measure two full SAPHOs.
 
 ### 8.7 For the documentation (item 21 in TODO.md)
 
-When the global documentation protocol is decided, the user-facing text is
-short and must say, without the reasoning above:
+Superseded (2026-10-11): the user-facing text for v7.1 is the list in
+[`toma-and-cade-links.md`](toma-and-cade-links.md) section 11 (several
+links, no `LINKAS`). From this note it keeps only:
 
 - both processors must have the same `#NUBITS`, and the same `#NBMANT`/
   `#NBEXPO` when floats are passed: the word goes as it is, no conversion,
   no warning (section 3);
-- two processors on different clocks can use `toma`/`cade`;
-- write `#(.LINKAS(1))` on both processors and wire `toma_dado` to the
-  partner's `cade_dado` (the example in 8.3);
-- the reset rule (8.3);
-- the Quartus constraints (8.5);
-- the cost: 4 flip-flops plus NUBITS on the writer, and a few cycles of
-  latency per value;
+- the reset rule when the clocks differ (8.3);
 - (any clock) an interrupt during a `toma`/`cade` wait puts the pair out of
   step: do not interrupt a processor while it waits (section 6).
 

@@ -1,5 +1,5 @@
 // Two SAPHOs on two clocks, joined by one synchronized toma/cade link: the
-// LINKALL pair (docs/toma-and-cade.md 8.6) as a board would hold it, the top
+// LINKALL pair (docs/design/toma-and-cade.md 8.6) as a board would hold it, the top
 // timed by fmax_link.sh (Quartus) and vfmax_link.sh (Vivado). clk_a and clk_b
 // from two pins, the reset released in each domain through two flip-flops,
 // A's input from four switches, B's input port fed by A's last output (a

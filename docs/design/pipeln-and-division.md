@@ -105,7 +105,7 @@ than ~10 %, and a message telling the user to simulate both. The full design
 proposal, with the list of every register held and every effect masked, is
 `docs/pipeln-design.md` in commit 954c853 (`git show
 954c853:docs/pipeln-design.md`); the list of state registers comes from
-`docs/precision-and-width-review.md` §2.6.
+`docs/design/precision-and-width-review.md` §2.6.
 
 How the core runs, which is what any pause has to respect: two stages
 overlap. In one cycle the core decodes instruction i+1 (its data memory
@@ -352,7 +352,7 @@ the divider at t+2 (plain `NOP`s, but new logic in the core), or a new opcode
 (a decoder row and an ISA change).
 
 **The interrupt.** Today's interrupt is a level-sensitive restart to
-`ITRADD` with no return (`docs/hdl-architecture-audit.md` 1.1): an
+`ITRADD` with no return (`docs/design/hdl-architecture-audit.md` 1.1): an
 interrupted division is never resumed, so it does not matter that it is
 lost, and with the alias nothing writes the accumulator behind the handler's
 back. Nothing to do. Holding the interrupt off for the two cycles would be

@@ -563,7 +563,7 @@ endmodule
 
 // dividers -------------------------------------------------------------------
 // DIV, MOD and F_DIV are the longest paths of the processor (~5x the base's,
-// docs/pipeln-and-division.md). Each divider is a restoring array cut by two
+// docs/design/pipeln-and-division.md). Each divider is a restoring array cut by two
 // registers into three parts of about the same delay, so it takes three
 // cycles and every other path keeps its one: the compilers write each
 // division as `<div> x; NOP; <read>` (Compilers/common asm_divseq), and the

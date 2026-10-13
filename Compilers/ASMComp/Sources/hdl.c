@@ -84,7 +84,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     if (toaqui_addr != 0) if (comma == 0) {fprintf(f_veri, ",\n"); comma = 1;}
     if (toaqui_addr != 0) {fprintf(f_veri, "output cheguei"); comma = 0;}
 
-    // the links to partner processors (docs/toma-and-cade-links.md): per link
+    // the links to partner processors (docs/design/toma-and-cade-links.md): per link
     // k only the pins of the instructions the program uses on it; 'out' always
     // comes before, so each starts with its own comma
     for (int k = 0; k < lnk_count(); k++)
@@ -649,7 +649,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     if (nuioou > 0 && opc_out()) fprintf(f_veri, "wire [%d:0] proc_out_en;\n\n"        , nuioou-1);
     // declare the cheguei wire when the wrapper exposes it
     if (toaqui_addr != 0)        fprintf(f_veri, "wire proc_cheguei;\n\n"              );
-    // the links (docs/toma-and-cade-links.md): alone, the processor gets this
+    // the links (docs/design/toma-and-cade-links.md): alone, the processor gets this
     // testbench as the partner of every link -- cade(k) takes the words of
     // cade_k.txt, toma(k, x) writes into toma_k.txt (partner blocks below)
     for (int k = 0; k < lnk_count(); k++)
@@ -856,7 +856,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // the link's partner -----------------------------------------------------
     // ------------------------------------------------------------------------
     // Alone, the processor talks to this testbench on every link it uses,
-    // keeping the protocol of docs/toma-and-cade.md: a value waits while
+    // keeping the protocol of docs/design/toma-and-cade.md: a value waits while
     // T != C. For cade(k) the testbench owns T (tb_taqui_k): with nothing
     // pending (T == the processor's C) it offers the next word of cade_k.txt
     // and flips T; when the file ends, CAD k waits forever, as it would with a

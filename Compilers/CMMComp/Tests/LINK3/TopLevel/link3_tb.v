@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 // Project pass LINK3 (Scripts/regress.sh): several links per processor
-// (docs/toma-and-cade-links.md), on two clocks of unrelated periods.
+// (docs/design/toma-and-cade-links.md), on two clocks of unrelated periods.
 //   chain  : lk_chain_a (20 ns) -> lk_chain_b (20 ns) -> lk_chain_c (27.3 ns);
 //            A->B on one clock with the _sync forms, B->C synchronized
 //   chain2 : the same with the C++ middle lk_cpp_chain_b

@@ -10,7 +10,7 @@
 # memories initialise. SEED is the fitter's placement seed (default 1): a
 # single fit can be off by several per cent, compare across seeds (give each
 # its own TAG). The optimization mode below already runs the fitter's
-# physical synthesis, retiming included (docs/pipeln-and-division.md): there
+# physical synthesis, retiming included (docs/design/pipeln-and-division.md): there
 # is nothing more to switch on there. FR rewrites the .FROUND() parameter of
 # that top (the .mif stay valid -- the level does not change the instruction
 # encoding), which is how a C+- program gets timed at a level its source did

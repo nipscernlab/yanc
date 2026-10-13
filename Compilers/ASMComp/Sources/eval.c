@@ -169,7 +169,7 @@ void instr_salto(char *va)
     sim_add(opc_name,va);
 }
 
-// links to partner processors (docs/toma-and-cade-links.md): which links the
+// links to partner processors (docs/design/toma-and-cade-links.md): which links the
 // program uses, and which it declared on my clock (#LKSYNC); hdl.c builds
 // only those
 #define MAX_LINKS 1024

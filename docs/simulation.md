@@ -2,7 +2,8 @@
 
 What each tool does, what it writes, and the ways to simulate and look at the
 result. The commands that take one program all the way are in the README's
-[Quick start](../README.md#quick-start).
+[Quick start](../README.md#quick-start); what changed from v6.0 is in
+[command-line.md](design/cli-v7.1.md).
 
 ## Pipeline
 

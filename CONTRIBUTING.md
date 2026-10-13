@@ -16,7 +16,7 @@ even if it's just a stripped-down example.
 
 ## Setting up
 
-See **Building from source** in [docs/setup.md](docs/setup.md) — you'll
+See **Building from source** in [docs/install.md](docs/install.md) — you'll
 need MSYS2 with `mingw-w64-x86_64-gcc`, `bison`, and `flex`. On a clean
 checkout, `Scripts/aurora.bat` produces all six binaries.
 

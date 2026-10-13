@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-// checks SAPHO/myDCFIFO.v (a FIFO between two clock domains, docs/myfifo.md).
+// checks SAPHO/myDCFIFO.v (a FIFO between two clock domains, docs/design/myfifo.md).
 // WH / RH: half periods of wrclk / rdclk; run it both ways round:
 //   iverilog -g2012 -s tb_dcfifo -o d.vvp Scripts/hw/tb_dcfifo.v SAPHO/myDCFIFO.v && vvp -n d.vvp
 //   iverilog -g2012 -s tb_dcfifo -Ptb_dcfifo.WH=13.65 -Ptb_dcfifo.RH=10 -o d.vvp ... && vvp -n d.vvp

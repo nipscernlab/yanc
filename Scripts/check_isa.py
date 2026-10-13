@@ -105,12 +105,12 @@ IRREGULAR = {
     'CAL':   ('-', '-', '-', 'call', '-'),
     'RET':   ('-', '-', '-', 'ret', '-'),
     'NOP':   ('-', '-', '-', '-', '-'),
-    # the links between processors (docs/toma-and-cade-links.md): each waits
+    # the links between processors (docs/design/toma-and-cade-links.md): each waits
     # in place (the prefetch re-fetches it) and then falls through, so no flow
     # effect for the asm passes; the operand is the link number
     'TOM':   ('r', '-', '-', '-', '-'),
     'CAD':   ('w', '-', '-', '-', '-'),
-    # the reads of a division's result (docs/pipeln-and-division.md section 4):
+    # the reads of a division's result (docs/design/pipeln-and-division.md section 4):
     # they write the accumulator and name no data word
     'QUO':   ('w', '-', '-', '-', '-'),
     'REM':   ('w', '-', '-', '-', '-'),

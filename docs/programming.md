@@ -93,7 +93,7 @@ goes from 8487 LUT4 to 8271 (level 1, within synthesis noise) and 8691 (level
 2, +2.4 %); the divider itself grows the most at level 2 (2682 → 3162, three
 extra quotient bits). These counts predate v6.0, which cut each divider by
 two registers: a division is now the three-word sequence `<div> x; NOP;
-<read>` ([`pipeln-and-division.md`](pipeln-and-division.md)).
+<read>` ([`pipeln-and-division.md`](design/pipeln-and-division.md)).
 
 `cppcomp` always emits `#FROUND 2`. The fixtures `Compilers/CMMComp/Tests/cmm_fround0`,
 `cmm_fround1` and `cmm_fround2` run the same program at each level; their
@@ -112,4 +112,4 @@ written directly, and a link works across clocks (the `_sync` forms,
 `toma_sync` / `cade_sync` / `fcade_sync`, declare the partner on the same
 clock and save 4 cycles a value). Both processors of a link need the same
 `#NUBITS`, and the same float format to pass floats. The pins, the wiring and
-the two-clock constraint: [`toma-and-cade-links.md`](toma-and-cade-links.md).
+the two-clock constraint: [`toma-and-cade-links.md`](design/toma-and-cade-links.md).

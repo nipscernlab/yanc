@@ -1,6 +1,6 @@
 #!/bin/bash
 # Real Fmax of two linked processors on two clocks, through Quartus Prime Lite:
-# the LINKALL pair (docs/toma-and-cade.md 8.6), sapho_all_a hands its result
+# the LINKALL pair (docs/design/toma-and-cade.md 8.6), sapho_all_a hands its result
 # to sapho_all_b over a synchronized toma/cade link.
 #
 # Usage:  [TAG=<name>] [SEED=<n>] bash Scripts/hw/fmax_link.sh [device] [family]
@@ -12,7 +12,7 @@
 # every path between them is a toma/cade bit (into a two-flip-flop
 # synchronizer) or a word that the protocol holds still for at least two
 # receiver cycles before it is read (toma_dado, and A's held output) -- clk.sdc
-# is the constraint a board project needs (docs/toma-and-cade-links.md).
+# is the constraint a board project needs (docs/design/toma-and-cade-links.md).
 #
 # One fit takes 20 min to 2 h: RUN ONE AT A TIME. Results go to
 # .smoke/hw/fmax.txt (one Fmax per clock).
@@ -39,7 +39,7 @@ create_clock -period 10.000 -name clk_a [get_ports clk_a]
 create_clock -period 10.000 -name clk_b [get_ports clk_b]
 derive_clock_uncertainty
 # toma/cade between the two domains: bits into two-flip-flop synchronizers,
-# words held still by the protocol (docs/toma-and-cade-links.md)
+# words held still by the protocol (docs/design/toma-and-cade-links.md)
 set_clock_groups -asynchronous -group [get_clocks clk_a] -group [get_clocks clk_b]
 EOF
 

@@ -5,7 +5,7 @@
 #NBEXPO 8
 #NUGAIN 128
 
-// toma/cade fixture, project pass LINK3 (docs/toma-and-cade-links.md): the
+// toma/cade fixture, project pass LINK3 (docs/design/toma-and-cade-links.md): the
 // head of a chain A -> B -> C. Hands n*3+1, n = 0..15, to lk_chain_b over
 // link 0; B runs on the same clock, so the _sync form (no synchronizer).
 void main()

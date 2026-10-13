@@ -5,7 +5,7 @@
 #NBEXPO 8
 #NUGAIN 128
 
-// toma/cade fixture (docs/toma-and-cade.md), project pass LINK: hands
+// toma/cade fixture (docs/design/toma-and-cade.md), project pass LINK: hands
 // n*7+3 for n = 0..15 to link_recebe, waiting longer every turn, so the
 // writer arrives first at the start and last at the end.
 void main()

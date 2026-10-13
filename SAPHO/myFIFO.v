@@ -5,7 +5,7 @@
 // bus holds it in its `out_en` cycle only); `full` and `empty` come from the
 // pointers alone, a write into a full FIFO is refused, and a word written
 // can be read from the next cycle on (show-ahead: `q` is the oldest word).
-// Holds LENGTH-1 words. docs/myfifo.md; checked by Scripts/hw/tb_fifo.v.
+// Holds LENGTH-1 words. docs/design/myfifo.md; checked by Scripts/hw/tb_fifo.v.
 
 module myFIFO
 #(

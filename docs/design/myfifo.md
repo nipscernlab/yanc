@@ -4,12 +4,12 @@
 
 `myFIFO` replaces the Quartus FIFO IP. It is meant for passing a buffer of
 words between SAPHOs (or between a SAPHO and other logic) when word-by-word
-`toma`/`cade` (docs/toma-and-cade.md) is not what the design needs. Users
+`toma`/`cade` (docs/design/toma-and-cade.md) is not what the design needs. Users
 in this repository: the `DTW` project
 (`Compilers/CMMComp/Tests/DTW/TopLevel/top_level.v`, fed by its
 testbench) and the `FIFO` project pass (fed by a SAPHO, below).
 
-Suspected while designing `toma`/`cade` (docs/toma-and-cade.md section 7),
+Suspected while designing `toma`/`cade` (docs/design/toma-and-cade.md section 7),
 confirmed in simulation and fixed on 2026-10-09 (TODO.md item 22).
 
 ## The defects (code up to commit 9c3b2d5)
@@ -75,7 +75,7 @@ Capacity stays LENGTH-1 words (one slot tells full from empty), as before.
   still 459908.
 - Not run yet: the full regress (held by Luciano on 2026-10-09).
 
-Other notes on this module (docs/hdl-architecture-audit.md): the read is
+Other notes on this module (docs/design/hdl-architecture-audit.md): the read is
 combinational (`q = mem[addr_r]`), which keeps it out of block RAM; it goes
 to LUT RAM instead (measured, section "Memory" below).
 
@@ -157,15 +157,16 @@ that may outrun the reader should read `wrfull` the same way before each
   maps no memory to any RAM; corrected the same day.)
 - Verilator lint (`-Wall`): only `PROCASSINIT` (registers with an initial
   value and a reset, the style of the rest of SAPHO/); `processor` with
-  `TOM`, `CAD` and `LINKAS = 1` lints clean.
+  `TOM`, `CAD` and `LINKAS = 1` lints clean (2026-10-09; `LINKAS` is gone
+  since 2026-10-11, the links are synchronized by default).
 - What simulation cannot show: metastability. The crossing is safe by
   construction (Gray pointers through two flip-flops), but on the board
   Quartus needs constraints on the two Gray pointer crossings: a
   `set_max_delay` (data path only) of about one period of the destination
   clock, so the Gray bits arrive close together, or the `set_false_path` +
   skew constraint the Intel `dcfifo` uses. The exact `.sdc` lines are not
-  written yet; to be done with the board check of `LINKAS`
-  (docs/toma-and-cade.md section 8.5).
+  written yet; to be done with the board check of the links
+  (docs/design/toma-and-cade-links.md section 10).
 
 ## Memory: LUT RAM today, block RAM with a registered read
 
@@ -212,7 +213,7 @@ Not decided: whether to adopt the registered read (as a parameter, or for
 `myDCFIFO` only). It changes no behaviour in `myDCFIFO`; in `myFIFO` it
 needs the bypass above.
 
-## Timing constraints the board will need (both FIFOs and `LINKAS`)
+## Timing constraints the board will need (both FIFOs and the links)
 
 Static timing sees paths between the two clocks that the logic makes safe
 but the analyser cannot know about. Each needs a constraint (exact `.sdc`
@@ -225,8 +226,9 @@ lines to be written and checked on the board):
   is announced 2 cycles after it is written; `set_false_path` or a relaxed
   `set_max_delay`. With the registered read this path becomes a block RAM
   dual-clock port, which the tools handle themselves;
-- `LINKAS`: `toma`/`cade` into the first synchronizer stage, and
-  `toma_dado` into the reader's input register (docs/toma-and-cade.md 8.5).
+- the `toma`/`cade` links between two clocks: written and checked in
+  Quartus and Vivado (`set_clock_groups -asynchronous`,
+  docs/design/toma-and-cade-links.md section 10); the board run is still to come.
 
 ## For the documentation (item 21 in TODO.md)
 

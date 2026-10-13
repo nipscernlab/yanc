@@ -2,7 +2,7 @@
 // Project pass FIFO (Scripts/regress.sh): a SAPHO (fifo_w) writes into
 // SAPHO/myFIFO.v through out()/out_en, wires only (wrreq = out_en, data =
 // out). Once the writer is done the testbench drains the FIFO into
-// output_fifo.txt; regress wants 1..8, 11..14 (docs/myfifo.md).
+// output_fifo.txt; regress wants 1..8, 11..14 (docs/design/myfifo.md).
 module fifo_tb;
 reg clk = 0; always #10 clk = ~clk;
 reg rst = 1;

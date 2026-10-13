@@ -37,8 +37,8 @@ tags consumed by Aurora.
   `Simulation/toma_k.txt`). Regress: `LINK` (pairs, C+- and C+-/C++), `LINK2`
   (pairs on 20 / 27.3 ns), `LINKALL` (below), `LINK3` (a chain on two clocks
   with the middle in C+- and in C++, fan-out, fan-in, a float), negative
-  fixtures in both languages. `docs/toma-and-cade.md`,
-  `docs/toma-and-cade-links.md`. The board check and the Quartus constraints
+  fixtures in both languages. `docs/design/toma-and-cade.md`,
+  `docs/design/toma-and-cade-links.md`. The board check and the Quartus constraints
   are still to do.
 - **The whole processor over `toma`/`cade` (`LINKALL`).** `sapho_all_a`
   hands its result to `sapho_all_b` (each is `sapho_all` plus the lines
@@ -47,7 +47,7 @@ tags consumed by Aurora.
   (input = last output XOR 7). Checked against `model.py`: A = 4, B = 10,
   the fed-back cycle 4, 11, 13, 8, 12, 0. The pair is the design for the
   two-processor Fmax and the board check of the synchronized link.
-  `docs/toma-and-cade.md` 8.6.
+  `docs/design/toma-and-cade.md` 8.6.
 - **`sapho_all` takes every 4-bit input.** Inputs 0 to 4 are read as 8 to
   12, so its output can always be fed back; 5 to 15 give what they gave
   (the golden, 7 -> 4, and the board table unchanged). 921 -> 933
@@ -60,7 +60,7 @@ tags consumed by Aurora.
   (a power of two). Regress: the `FIFO` pass adds a SAPHO writer and a C+-
   reader on 20 ns / 27.3 ns clocks both ways, and `Scripts/hw/tb_dcfifo.v`.
   The board check and its Quartus constraints are still to do
-  (`docs/myfifo.md`).
+  (`docs/design/myfifo.md`).
 
 ### Changed
 - **Opcodes from `ADD` up move by 2** to make room for `TOM`/`CAD` among the
@@ -163,7 +163,7 @@ tags consumed by Aurora.
 - **cmmcomp's `-A` / `--array` is `--wave-arrays`**, a name that says what it
   does: every array element becomes its own signal in the waveform.
 - **The README is short: what YANC is, how to run it, how to develop it.**
-  The rest moved to `docs/setup.md`, `docs/running.md` and
+  The rest moved to `docs/install.md`, `docs/simulation.md` and
   `docs/programming.md`. The release examples lost the directives that have
   defaults (`#NDSTAC`, `#SDEPTH`, `#NUGAIN`), and `my_program.cpp` gained the
   `#pragma yanc` lines that match `my_program.cmm`'s header.
@@ -183,7 +183,7 @@ tags consumed by Aurora.
   function, the imaginary part of a `comp`), with a message naming both
   owners, and a function named `fim`, `global` or `num_ins`. New negative
   fixtures for both languages (C++ gets a negative phase in the regress),
-  `cmm_names` and `test90`. `docs/asm-names.md`.
+  `cmm_names` and `test90`. `docs/design/asm-names.md`.
 - **`SAPHO/myFIFO.v` lost words.** It stored the word on `data` one cycle
   after `wrreq` (a SAPHO writing with back-to-back `out()` filled it with
   `2 3 4 5 5 6 ...` instead of `1 2 3 4 5 6 ...`), let a write into a full
@@ -191,7 +191,7 @@ tags consumed by Aurora.
   a stale word. Now it writes in the `wrreq` cycle and `full`/`empty` come
   from the pointers. The DTW project's outputs are unchanged. Regress: the
   `FIFO` pass (a C+- writer through `out()`, and `Scripts/hw/tb_fifo.v`).
-  `docs/myfifo.md`.
+  `docs/design/myfifo.md`.
 
 ## [v6.0] – 2026-10-07
 
@@ -218,7 +218,7 @@ tags consumed by Aurora.
   the DE10-Nano (`5CSEBA6U23I7`, Quartus 24.1) and **8.80 -> 23.98 MHz** on
   the ZYBO (`xc7z010clg400-1`, Vivado 2025.2). The limit is now the first
   part of the integer divider (~42 ns, above its estimate), not `F_DIV`.
-  Design, history and the numbers: `docs/pipeln-and-division.md` section 4.
+  Design, history and the numbers: `docs/design/pipeln-and-division.md` section 4.
 - **`sapho_all`: one version for the repo and the board tests.** The two
   fixes the students made to the program on the boards are in: `ia[3]`
   zeroed every turn (only inputs 7 and 10 write it) and the array indices
@@ -1242,7 +1242,7 @@ every float block is now gated by the opcodes the program uses.
   `NBEXPO+1` bits above the mantissa) and lets `ula_norm` truncate (level 1)
   or round (level 2) it. `F2I` returns `INT_MAX`/`INT_MIN` instead of
   wrapping for |x| >= 2^(NUBITS-1). Level 0 keeps both legacy behaviours.
-- `docs/precision-and-width-review.md` — review of the float datapath and of
+- `docs/design/precision-and-width-review.md` — review of the float datapath and of
   every 32-bit assumption in the toolchain: what limits precision today (a
   mantissa bit lost before normalisation, truncation, exponent wrap, the
   host-`float` constant encoder) and what is needed to run any

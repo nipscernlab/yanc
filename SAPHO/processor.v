@@ -119,7 +119,7 @@ module processor
 	parameter MDATAW = $clog2(MDATAS),  // Number of address bits for data memory
 	parameter MINSTW = $clog2(MINSTS),  // Number of address bits for instruction memory
 
-	// links to partner processors (docs/toma-and-cade-links.md), set by asmcomp
+	// links to partner processors (docs/design/toma-and-cade-links.md), set by asmcomp
 	// from the program: link k is built only where its bit is set
 	parameter NLINK  = 1,               // number of link slots (highest link number used + 1)
 	parameter [NLINK-1:0] TOMS  = 0,    // bit k: the program has TOM k
@@ -181,7 +181,7 @@ module processor
 	parameter    JIZ   = 0,
 	parameter    CAL   = 0,
 
-	// the links to partner processors (docs/toma-and-cade-links.md)
+	// the links to partner processors (docs/design/toma-and-cade-links.md)
 	parameter    TOM   = 0,
 	parameter    CAD   = 0,
 
@@ -311,7 +311,7 @@ module processor
 	input               itr,
 	output              cheguei,
 	output [NLINK       -1:0] toma, cade,   // the links to partner processors, one bit per link
-	input  [NLINK       -1:0] valeu, taqui, // (docs/toma-and-cade-links.md)
+	input  [NLINK       -1:0] valeu, taqui, // (docs/design/toma-and-cade-links.md)
 	input  [NLINK*NUBITS-1:0] cade_dado,    // link k at bits k*NUBITS
 	output [NUBITS      -1:0] toma_dado     // my offered value, the same for every link
 

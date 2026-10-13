@@ -100,9 +100,9 @@ end else begin : jmp_sel
 assign wJMPZ = (opcode == OP_JMP);
 end endgenerate
 
-// toma / cade (docs/toma-and-cade.md): a jump to itself until the partner's
+// toma / cade (docs/design/toma-and-cade.md): a jump to itself until the partner's
 // bit lets it through. The target is not the operand (free for the link
-// number, docs/toma-and-cade-links.md): instr_fetch keeps the address of the
+// number, docs/design/toma-and-cade-links.md): instr_fetch keeps the address of the
 // instruction now decoded (self_addr) and the fetch takes it again.
 wire wTOM, wCAD;
 generate if ((TOM) != 0) begin : tom_sel assign wTOM = (opcode == OP_TOM) & ~tom_go; end
@@ -550,7 +550,7 @@ module core
 	parameter  FFTSIZ =  3,              // ILI size for bit reversal
 	parameter  FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 exact truncation + saturation, 2 round to nearest even
 
-	// links to partner processors (docs/toma-and-cade-links.md): link k is
+	// links to partner processors (docs/design/toma-and-cade-links.md): link k is
 	// built only where its bit is set; the opcode parameters TOM/CAD say
 	// whether the instructions exist at all
 	parameter  NLINK  =  1,              // number of link slots (highest link number used + 1)
@@ -590,7 +590,7 @@ module core
 	parameter    JIZ   = 0,
 	parameter    CAL   = 0,
 
-	// the links to partner processors (docs/toma-and-cade-links.md)
+	// the links to partner processors (docs/design/toma-and-cade-links.md)
 	parameter    TOM   = 0,
 	parameter    CAD   = 0,
 
@@ -779,7 +779,7 @@ instr_fetch #(
 );
 
 // toma / cade: the links to partner processors ------------------------------
-// (docs/toma-and-cade.md, docs/toma-and-cade-links.md) On each link each side
+// (docs/design/toma-and-cade.md, docs/design/toma-and-cade-links.md) On each link each side
 // owns one bit: the writer flips T when it offers a value, the reader flips C
 // when it takes it; a value waits while T != C. TOM k and CAD k (the operand is
 // the link number) jump to themselves (prefetch) until *_go. Every opcode the

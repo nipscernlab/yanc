@@ -3,8 +3,8 @@
 Open work items for YANC that are not tracked elsewhere. This file is the
 **list**: what is wrong, why it matters, what "done" looks like. The evidence
 (file:line, measurements, the full inventory of 32-bit assumptions) lives in
-[`docs/precision-and-width-review.md`](docs/precision-and-width-review.md) and
-[`docs/hdl-architecture-audit.md`](docs/hdl-architecture-audit.md); each item
+[`docs/design/precision-and-width-review.md`](docs/design/precision-and-width-review.md) and
+[`docs/design/hdl-architecture-audit.md`](docs/design/hdl-architecture-audit.md); each item
 links to its section there. The measurements themselves are reproducible with
 [`Scripts/hw/`](Scripts/hw/README.md) (elaboration, Yosys area/depth, Quartus
 Fmax, the divider testbench). Remove an item when it lands (the
@@ -30,14 +30,14 @@ order:
    `.sdc` on both boards (the Fmax is measured: the link costs no clock).
 3. CHANGELOG `[Unreleased]` -> 7.1, `yanc_version.h`, tag.
 
-**Waiting on someone else:** item 21 (documentation that cannot fall
-behind a release) waits on Chrysthofer's answer to "Diretrizes para os
-repositórios do nipscernlab" (2026-10-09); the GitHub plan for the org
-(Free today, Team pending) and Luciano's GitHub Education application.
+**Waiting on a decision:** item 21 (documentation that cannot fall behind
+a release): Chrysthofer's proposal arrived on 2026-10-13; Luciano and he
+agree on it (its phase 0). The GitHub plan: the proposal says GitHub
+Education gives teachers Team for free (Luciano's application).
 
 **Waiting on Luciano, proposed and not started:** `RAMBLK`, a registered
 read on `myFIFO`/`myDCFIFO` so a large FIFO goes to block RAM (area, not
-clock; docs/myfifo.md "Memory"), with a `quartus_map` of it.
+clock; docs/design/myfifo.md "Memory"), with a `quartus_map` of it.
 
 **Open items, below:** 2(b) a fixture for unbiased rounding; 3 the parameter
 guard in `ula.v`; 5 steps 4-5, the exact constant encoder in cmmcomp (show
@@ -80,7 +80,7 @@ for v7.1), the user names that collide in the `.asm`.
 ## 2. Round to nearest, full-range `I2F`, saturating `F2I`
 
 **Status:** functionality landed; two verification/refinement leftovers ·
-**Area:** `SAPHO/ula.v` · **Evidence:** [§1.2](docs/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
+**Area:** `SAPHO/ula.v` · **Evidence:** [§1.2](docs/design/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/design/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
 
 Done (commits `81f5f25`, `755b758`):
 - `#FROUND 2`: round to nearest even after normalisation, for `F_ADD`/`F_SU*`,
@@ -105,7 +105,7 @@ Left open:
 
 ## 3. Exponent overflow / underflow wraps silently
 
-**Status:** landed as `#FROUND 1` (saturate / flush to zero) · **Evidence:** [§1.3](docs/precision-and-width-review.md#13-exponent-overflow--underflow-silently-wraps-bug)
+**Status:** landed as `#FROUND 1` (saturate / flush to zero) · **Evidence:** [§1.3](docs/design/precision-and-width-review.md#13-exponent-overflow--underflow-silently-wraps-bug)
 
 Left open: the parameter guard
 `initial if (NUBITS != NBMANT+NBEXPO+1 || NBMANT >= 2**(NBEXPO-1)) $error`
@@ -114,7 +114,7 @@ accepts silently).
 
 ## 5. One shared, exact constant encoder
 
-**Status:** steps 1-3 of 5 done (2026-09-25), 4-5 left · **Area:** `ASMComp/t2t.c`, `CMMComp/{variaveis,t2t}.c`, `CPPComp/codegen.c`, the three lexers · **Evidence:** [§1.5](docs/precision-and-width-review.md#15-constant-encoding-on-the-host-loses-bits-today)
+**Status:** steps 1-3 of 5 done (2026-09-25), 4-5 left · **Area:** `ASMComp/t2t.c`, `CMMComp/{variaveis,t2t}.c`, `CPPComp/codegen.c`, the three lexers · **Evidence:** [§1.5](docs/design/precision-and-width-review.md#15-constant-encoding-on-the-host-loses-bits-today)
 
 **Where it stands.**
 1. Done (`bbb8278`): `Compilers/common/yanc_num.{c,h}`, the exact encoder --
@@ -191,8 +191,8 @@ compute division right above 32 bits. Do not write code for it. **Watch:**
 re-run [`Scripts/hw/width_sweep.sh`](Scripts/hw/width_sweep.sh) after every
 Icarus or Verilator upgrade (last run: Icarus 13.0, Verilator 5.048,
 2026-09-18); reopen when 64 bits comes back with 0 errors in both. The
-evidence is in [§2.2–2.5](docs/precision-and-width-review.md#22-asmcomp--the-actual-ceiling)
-and [§2.7](docs/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator).
+evidence is in [§2.2–2.5](docs/design/precision-and-width-review.md#22-asmcomp--the-actual-ceiling)
+and [§2.7](docs/design/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator).
 
 What reopening it will involve, measured once so it need not be redone:
 `itob(int)`, `v_val` (`int`), cmmcomp's `long` constant folder, cppcomp's
@@ -206,7 +206,7 @@ procedural division reference must be replaced above 64 bits.
 
 ## 7. HDL scaling for wide mantissas
 
-**Status:** parked with item 6(b) · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.1](docs/precision-and-width-review.md#21-hdl--parametric-with-a-handful-of-scaling-issues)
+**Status:** parked with item 6(b) · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.1](docs/design/precision-and-width-review.md#21-hdl--parametric-with-a-handful-of-scaling-issues)
 
 The structural fixes that make a wide mantissa feasible at all (log-depth
 leading-zero tree, explicit divider arrays, single shifters) are item 8 and
@@ -227,7 +227,7 @@ decision and the `LDI` address combinationally, so the ALU depth
 bounds the fetch path too, not only `racc`. If the constraint is ever
 relaxed, a global-stall multi-cycle divider (only `DIV`/`MOD`/`F_DIV`) is
 feasible with an enable on ~10 registers of `core.v` and no compiler change
-(see [§2.6](docs/precision-and-width-review.md#26-critical-path-depth-of-the-alu)).
+(see [§2.6](docs/design/precision-and-width-review.md#26-critical-path-depth-of-the-alu)).
 
 **Done when (on reopening):** the 64/52/11 configuration is synthesised and
 its depth/Fmax reported next to 32/23/8 (the 105/52-bit divider array is the
@@ -238,7 +238,7 @@ project).
 
 **Status:** the six planned steps are done (below); what is left is to
 measure where the critical path of the whole processor lies now, and decide
-from that · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.6](docs/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
+from that · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.6](docs/design/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/design/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
 
 The ALU is combinational and every instruction takes one cycle, so the ALU
 sits on the path that sets the clock. Measured before the steps (Yosys,
@@ -326,7 +326,7 @@ levels, ≈ −50 % LUT4; every golden unchanged.
 
 ## 9. Library accuracy keyed on `NBMANT`
 
-**Status:** open · **Area:** `CMMComp/Includes/float_*.asm`, `CMMComp/stdlib.c`, `CPPComp/Includes/cmath` · **Evidence:** [§1.6](docs/precision-and-width-review.md#16-library-accuracy-is-pinned-to-23-bits)
+**Status:** open · **Area:** `CMMComp/Includes/float_*.asm`, `CMMComp/stdlib.c`, `CPPComp/Includes/cmath` · **Evidence:** [§1.6](docs/design/precision-and-width-review.md#16-library-accuracy-is-pinned-to-23-bits)
 
 The polynomial fits are accurate to ~1e-6 (≈20 bits), π/e constants have
 10–12 digits, and cppcomp's `sqrt` runs a fixed 24 Newton iterations; cppcomp
@@ -341,7 +341,7 @@ reference at 32/23/8 and 16/10/5. Wider sets wait for item 6(b).
 
 ## 10. Architecture hardening (HDL audit)
 
-**Status:** open · **Area:** `SAPHO/*`, tooling · **Evidence:** [`docs/hdl-architecture-audit.md`](docs/hdl-architecture-audit.md)
+**Status:** open · **Area:** `SAPHO/*`, tooling · **Evidence:** [`docs/design/hdl-architecture-audit.md`](docs/design/hdl-architecture-audit.md)
 
 The core is sound where it matters (opcode-driven allocation, one instruction
 per cycle, bypass by construction, single clock / sync reset — keep all of
@@ -409,7 +409,7 @@ overflow/underflow, `F2I` saturation, ... each with its own code. It costs
 hardware (comparators, the code register, the pins), so it is **opt-in
 through a new directive** (`#EXCEPT`-style, default off): a processor that
 does not ask for it builds exactly what it builds today ([pay only for what
-you use](docs/hdl-architecture-audit.md)). Same spirit as `#TOAQUI`/`cheguei`.
+you use](docs/design/hdl-architecture-audit.md)). Same spirit as `#TOAQUI`/`cheguei`.
 
 Points to settle when it is taken up: which exceptions are raised by the
 hardware (stack overflow, divide by zero, float range) and which by the
@@ -736,7 +736,10 @@ test46's cycles.
 
 ## 21. Documentation that cannot fall behind a release
 
-**Status:** waiting on Chrysthofer (opened 2026-10-09) · **Area:** this repo,
+**Status:** Chrysthofer answered on 2026-10-13 with a proposal, "Diretrizes
+e arquitetura dos projetos do nipscernlab" (PDF, 28 pages, attached to the
+email thread); its phase 0 is Luciano and him agreeing on it. Nothing is
+decided yet (opened 2026-10-09) · **Area:** this repo,
 nipscernlab/docs_aurora, nipscernlab/.github
 
 The published manual (nipscernlab/docs_aurora, nipscern.com/library/sapho)
@@ -749,7 +752,19 @@ source language, Portuguese generated and reviewed by a person. For yanc: the
 yanc chapters of the manual living in this repo and published on the site,
 the reference pages generated from `isa.tsv` and the other tables, a release
 routine that refuses to tag without them. Every feature since v6.0 has its
-docs/ note ending in "For the documentation (item 21)".
+docs/ note ending in "For the documentation (item 21)": `command-line.md`
+(the v7.1 command line and output folder), `toma-and-cade-links.md` 11
+(with three points kept from `toma-and-cade.md` 8.7), `myfifo.md`,
+`asm-names.md`.
+
+What the proposal asks of yanc (to weigh, not decided): the language file
+(today AURORA's hand-generated `sapho_rules.json`) generated by yanc's CI
+at each release and attached to it, the release failing without it (its
+phase 4); the manual in English in docs_aurora, built and published by CI,
+the SAPHO release locked while the manual is behind; and for the repo
+itself `AGENTS.md`, `ROADMAP.md` (from issues and milestones instead of
+TODO.md), ADRs, a ruleset on main without exceptions, lint, secret scanning,
+a third-party list and `CITATION.cff`.
 
 **Done when** the guidelines are agreed (the email "Diretrizes para os
 repositórios do nipscernlab", 2026-10-09, is the basis) and yanc follows them.
@@ -758,8 +773,8 @@ repositórios do nipscernlab", 2026-10-09, is the basis) and yanc follows them.
 
 **Status:** parked (Luciano, 2026-10-11: the check belongs to AURORA, which
 sees every program of a project; a conversion maybe in the future) ·
-**Evidence:** docs/toma-and-cade.md section 3,
-docs/toma-and-cade-links.md section 9
+**Evidence:** docs/design/toma-and-cade.md section 3,
+docs/design/toma-and-cade-links.md section 9
 
 `toma` sends a float's word unconverted and `fcade` reads it as a float:
 exact when both processors have the same `#NBMANT`/`#NBEXPO`, garbled with

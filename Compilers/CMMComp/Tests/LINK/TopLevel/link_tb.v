@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 // Project pass LINK (Scripts/regress.sh): two pairs of SAPHOs over toma/cade
-// (docs/toma-and-cade.md), wires only between them.
+// (docs/design/toma-and-cade.md), wires only between them.
 //   link_envia  -> link_recebe : 16 values n*7+3, speeds crossing over
 //   link_ping  <-> link_pong   : one link both ways, pong returns n + 1
 // and the same two scenarios across the compilers (C+- <-> C++):

@@ -117,7 +117,9 @@ today's hardware (to verify cell for cell with Yosys).
   pass them as masks (`TOMS`, `CADS`, and which are `_sync`); emit the pins
   above; no `LINKAS` parameter left.
 - Standalone simulation: the testbench plays every partner, one file per
-  link: `Simulation/cade_k.txt` and `Simulation/toma_k.txt`.
+  link: it reads `cade_k.txt` beside the source and writes `toma_k.txt`
+  where the simulation runs (since the flat layout of 2026-10-12; it was
+  `Simulation/cade_k.txt` and `Simulation/toma_k.txt`).
 - `check_isa.py`, `isa.tsv`, `asm_share.c`: the operand class of `TOM`/`CAD`
   changes from "own label" to "link number".
 
@@ -207,8 +209,9 @@ between formats maybe in the future. v7.1 stops at the links.
 - asmcomp: `TOM k` / `CAD k` (operand class `link`, checked against the
   operand width), the directive `#LKSYNC k` (an error on a link the program
   does not use), the pins and parameters in the generated top, one partner
-  per link in the standalone testbench. appcomp counts `TOM`/`CAD` with
-  their number and skips `#LKSYNC`.
+  per link in the standalone testbench. asmcomp's first pass (appcomp
+  then; inside asmcomp since 2026-10-13) counts `TOM`/`CAD` with their
+  number and skips `#LKSYNC`.
 - cmmcomp and cppcomp: `toma(k, e)`, `cade(k)`, `fcade(k)` and the `_sync`
   forms, k an integer literal; a link used with both forms is an error;
   `#LKSYNC k` written after `@fim` for each `_sync` link.
@@ -258,7 +261,9 @@ between formats maybe in the future. v7.1 stops at the links.
 
 ## 11. For the documentation (item 21 in TODO.md)
 
-The user-facing text says: a processor can have several links, numbered
+This list replaces the one in [`toma-and-cade.md`](toma-and-cade.md) 8.7,
+which also keeps three points (same word format, the reset rule on two
+clocks, no interrupt during a wait). The user-facing text says: a processor can have several links, numbered
 from 0; `toma(k, x)` hands `x` over link k and `cade(k)` / `fcade(k)` take a
 word from it; each link joins two processors and works both ways; how to
 wire link k of one processor to link j of another (the pins of section 4,

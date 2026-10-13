@@ -9,7 +9,7 @@
 // out() feeds SAPHO/myFIFO.v (wrreq = out_en, data = out). 1..4 go back to
 // back, one OUT after another, then 5..8 and 11..14 from loops. With the
 // FIFO that stored the word of the cycle after wrreq the FIFO held
-// 2 3 4 5 5 6 7 8 11 12 13 14 (docs/myfifo.md); it must hold 1..8, 11..14.
+// 2 3 4 5 5 6 7 8 11 12 13 14 (docs/design/myfifo.md); it must hold 1..8, 11..14.
 void main()
 {
     out(0, 1); out(0, 2); out(0, 3); out(0, 4);

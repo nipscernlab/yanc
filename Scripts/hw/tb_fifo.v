@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 // checks SAPHO/myFIFO.v against what a FIFO between two SAPHOs needs
-// (docs/myfifo.md). Each case prints PASS or FAIL; the myFIFO.v of
+// (docs/design/myfifo.md). Each case prints PASS or FAIL; the myFIFO.v of
 // 2026-10-09 before its fix failed all three (the regress FIFO pass runs it):
 //   C1 the word is the one on `data` in the wrreq cycle (a SAPHO's out bus
 //      holds it for that cycle only);

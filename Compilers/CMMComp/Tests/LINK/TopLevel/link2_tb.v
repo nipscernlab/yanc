@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 // Project pass LINK, second testbench: the same programs as link_tb.v, each
 // pair on two clocks of unrelated periods (20 ns and 27.3 ns). The links are
-// synchronized (the plain toma/cade, docs/toma-and-cade-links.md section 7):
+// synchronized (the plain toma/cade, docs/design/toma-and-cade-links.md section 7):
 // the partner's bit enters through two flip-flops, the writer's value comes
 // from toma_dado.
 //   envia (fast) -> recebe (slow) : output_link2_fs.txt
