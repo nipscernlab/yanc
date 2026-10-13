@@ -58,11 +58,13 @@ The testbench runs the processor and writes what it outputs to
 
 ```bat
 cd my_program
-iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
-         %SAPHO%\processor.v %SAPHO%\core.v %SAPHO%\ula.v %SAPHO%\addr_dec.v %SAPHO%\instr_dec.v
+iverilog -s my_program_tb -o sim.vvp -y %SAPHO% my_program_tb.v my_program.v
 vvp sim.vvp
 type output_0.txt
 ```
+
+`-y` tells the simulator where to find the SAPHO modules the processor
+uses.
 
 `output_0.txt` holds `55`.
 

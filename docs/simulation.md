@@ -14,11 +14,16 @@ YANC:
 
 ```bat
 cd my_program
-iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
-         %SAPHO%\processor.v %SAPHO%\core.v %SAPHO%\ula.v %SAPHO%\addr_dec.v %SAPHO%\instr_dec.v
+iverilog -s my_program_tb -o sim.vvp -y %SAPHO% my_program_tb.v my_program.v
 vvp sim.vvp
 type output_0.txt
 ```
+
+`-y %SAPHO%` makes the simulator look in `SAPHO/` for each module it is
+missing, in the file of the same name: `processor` in `processor.v`, and
+from there `core.v`, `ula.v`, `addr_dec.v`, `instr_dec.v`, and `myFIFO.v`
+or `myDCFIFO.v` when a project uses them. Listing the files instead works
+too.
 
 The testbench simulates as many clocks as `yanc -c` said (10000 by
 default) at the clock of `yanc -f` (100 MHz by default), and writes the
@@ -59,14 +64,18 @@ Verilator 5 compiles the same generated `<proc>_tb.v` directly — `--timing` un
 ```bat
 :: --- simulate with Verilator, from the output folder (my_program\) --------
 cd my_program
-verilator --binary --timing --trace +define+YANC_TRACE --top-module my_program_tb ^
-          -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-COMBDLY -Wno-STMTDLY ^
-          -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl ^
-          my_program_tb.v my_program.v ^
-          %SAPHO%\processor.v %SAPHO%\core.v %SAPHO%\ula.v %SAPHO%\addr_dec.v %SAPHO%\instr_dec.v
+verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps ^
+          --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK ^
+          -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl ^
+          -y %SAPHO% my_program_tb.v my_program.v
 vl\Vmy_program_tb.exe   :: runs the sim, writes my_program_tb.vcd here
 gtkwave my_program_tb.vcd
 ```
+
+`--timescale 1ns/1ps` gives the SAPHO modules the testbench's time unit:
+the files `-y` finds are read on their own, so they do not inherit the
+testbench's `` `timescale `` as files listed after it do, and Verilator
+stops at the difference.
 
 Verilator builds with GNU make, which refuses a build folder whose path has a
 space. If the output folder's has one, point `--Mdir` somewhere without
