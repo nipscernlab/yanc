@@ -28,7 +28,7 @@ yanc v5.3 and some of it no longer holds.
 - [Directives](directives.md): `#NUBITS`, `#NBMANT`, `#NBEXPO` and the rest, with their
   defaults and their C++ pragmas.
 - [The library](library.md): `sqrt`, `sin`, `exp`, ... and what each one costs.
-- Floating point: the SAPHO float format (not IEEE 754) and the rounding
+- [Floating point](floating-point.md): the SAPHO float format (not IEEE 754) and the rounding
   levels of `#FROUND`.
 - [Programming notes](programming.md): an example in C±, the rounding
   levels, several processors (to be split into the pages above).
