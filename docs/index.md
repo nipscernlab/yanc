@@ -12,8 +12,8 @@ yanc v5.3 and some of it no longer holds.
 
 ## Getting started
 
-- [Installing YANC](install.md): the release package, the dependencies,
-  building from source.
+- [Installing YANC](install.md): the release package, the simulators and
+  GTKWave.
 - First program: from an empty folder to a simulated processor, in C± and in
   C++.
 - [The command line](command-line.md): `yanc` and the tools under it, the output folder, the
@@ -52,7 +52,7 @@ yanc v5.3 and some of it no longer holds.
 
 ## Developing YANC
 
-- [Building and testing](install.md#building-from-source): building the
-  tools, the regression, deploying to AURORA.
+- [Building and testing YANC](develop/building.md): the repository, building
+  the tools, the regression, deploying to AURORA.
 - [Design notes](design/): why each feature is built the way it is, what was
   measured, what is open.

@@ -131,7 +131,7 @@ The build needs `gcc`, `make`, `bison` and `flex` (on Windows from
 [MSYS2](https://www.msys2.org/), with the `mingw-w64-x86_64-gcc` cross
 toolchain; on Linux from the distribution). `Scripts/setup.bat` /
 `Scripts/setup.sh` check and install what is missing; the details, including
-a broken gcc version to avoid, are in [docs/install.md](docs/install.md).
+a broken gcc version to avoid, are in [docs/develop/building.md](docs/develop/building.md).
 
 ```sh
 make                              # build every tool into bin/
