@@ -2,7 +2,7 @@
 # ****************************************************************************
 # single_proc_cpp - end-to-end example of the YANC single-processor pipeline,
 # C++ edition. POSIX counterpart of single_proc_cpp.bat: it feeds a C++ (.cpp)
-# program through the C++ front end (cpppp -> cppcomp) instead of the C+- one
+# program through the C++ front end (cppcomp) instead of the C+- one
 # (cmmcomp), then assembles, simulates and opens the result in GTKWave.
 #
 #   ./single_proc_cpp.sh                  # simulate with Icarus (default)
@@ -53,7 +53,6 @@ NUM_CLK=100000            # number of clocks to simulate
 
 # --- Repo sources, read in place (never written to) -------------------------
 HDL_DIR="$ROOT_DIR/SAPHO"
-INC_DIR="$ROOT_DIR/Compilers/CPPComp/Includes"      # C++ headers
 BIN_DIR="$YANC_BIN"
 SRC_PROC="$ROOT_DIR/Compilers/CPPComp/Tests/$PROC"
 
@@ -69,11 +68,8 @@ cp -r "$SRC_PROC" "$SRC_DIR"
 mkdir -p "$TMP_PRO"
 
 # --- Compile: C++ -> asm -> Verilog -----------------------------------------
-echo "#### Running the C++ preprocessor (cpppp)"
-"$BIN_DIR/cpppp" -o "$TMP_PRO/pp.cpp" -I "$INC_DIR" -I "$SRC_DIR" "$SRC_DIR/$FNAM"
-
 echo "#### Running the C++ compiler (cppcomp)"
-"$BIN_DIR/cppcomp" -o "$TMP_PRO" "$TMP_PRO/pp.cpp"
+"$BIN_DIR/cppcomp" -o "$TMP_PRO" "$SRC_DIR/$FNAM"
 
 echo "#### Running the Pre-assembler (appcomp)"
 ASM_FILE="$TMP_PRO/$PROC.asm"

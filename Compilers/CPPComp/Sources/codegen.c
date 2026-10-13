@@ -31,7 +31,7 @@ static int   ins_count = 0;
 static int   label_n   = 0;
 
 // pc_<proc>_mem.txt: one 20-bit word per emitted instruction = the source line
-// that produced it (negative codes are scaffolding, resolved via trad_cmm.txt).
+// that produced it (negative codes are scaffolding, resolved via src_lines.txt).
 // f_line is written in lockstep with ins_count from inside emit(); cg_line holds
 // the line currently being emitted (-1 = INTERNAL, -3 = END, >=1 = source line).
 static FILE *f_line  = NULL;
@@ -381,7 +381,7 @@ static void claims_reset(void)
     }
 }
 
-// ---- variable-log (for asmcomp's cmm_log.txt) ------------------------------
+// ---- variable-log (for asmcomp's prog_log.txt) ------------------------------
 
 typedef struct { char *func; char *var; int type_code; int size; } varlog_e;
 #define VARLOG_MAX 4096
@@ -390,7 +390,7 @@ static int      varlog_n = 0;
 
 static void log_var(const char *func, const char *var, int type_code, int size)
 {
-    if (type_code == 0) return;   // ptr/struct/etc.: not published to cmm_log.txt
+    if (type_code == 0) return;   // ptr/struct/etc.: not published to prog_log.txt
     if (varlog_n >= VARLOG_MAX) msg_internal("too many variables");
     varlog[varlog_n].func = strdup(func);
     varlog[varlog_n].var  = strdup(var);
@@ -399,7 +399,7 @@ static void log_var(const char *func, const char *var, int type_code, int size)
     varlog_n++;
 }
 
-// cmm_log.txt type code, used by asmcomp to mirror the variable into the .vcd
+// prog_log.txt type code, used by asmcomp to mirror the variable into the .vcd
 // with the right gtkwave formatting. Only the two scalar kinds the dump path
 // can render faithfully are published: TY_INT -> 1 (raw word), TY_FLOAT -> 2
 // (decoded float). Everything else (ptr, struct, func, void) returns 0 = "do
@@ -4073,9 +4073,9 @@ static void emit_vtable_inits(void)
     }
 }
 
-static void write_cmm_log(const char *tmp_dir)
+static void write_prog_log(const char *tmp_dir)
 {
-    char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", tmp_dir);
+    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", tmp_dir);
     FILE *f = fopen(path, "w");
     if (!f) { fprintf(stderr, "cppcomp: cannot open %s\n", path); return; }
     for (int i = 0; i < varlog_n; i++) {
@@ -4088,28 +4088,30 @@ static void write_cmm_log(const char *tmp_dir)
     fclose(f);
 }
 
-// trad_cmm.txt: the source the pc_<proc>_mem.txt line numbers index into, so
+// src_lines.txt: the source the pc_<proc>_mem.txt line numbers index into, so
 // GTKWave can show the text for the line the processor is executing. Three
 // fixed header rows (the negative scaffolding codes) followed by every source
-// line numbered from 1. src_path is the file cppcomp actually compiled (the
-// preprocessed pp.cpp), so its line numbers match the AST's ->line stamps.
-static void write_trad_cmm(const char *tmp_dir, const char *src_path)
+// line numbered from 1. src_text is the text cppcomp actually compiled (the
+// preprocessed source), so its line numbers match the AST's ->line stamps.
+static void write_src_lines(const char *tmp_dir, const char *src_text)
 {
-    char path[2048]; snprintf(path, sizeof(path), "%s/trad_cmm.txt", tmp_dir);
+    char path[2048]; snprintf(path, sizeof(path), "%s/src_lines.txt", tmp_dir);
     FILE *out = fopen(path, "w");
     if (!out) { fprintf(stderr, "cppcomp: cannot open %s\n", path); return; }
-    FILE *in  = fopen(src_path, "r");
-    if (!in)  { fprintf(stderr, "cppcomp: cannot open %s\n", src_path); fclose(out); return; }
 
     fputs("-1 INTERNAL\n"    , out);   // pc code -1: scaffolding (NOP, prologue)
     fputs("-2 void main();\n", out);   // pc code -2: entry call
     fputs("-3 END\n"         , out);   // pc code -3: @fim halt loop
 
-    char line[1024];
-    int  n = 1;
-    while (fgets(line, sizeof(line), in)) fprintf(out, "%d %s", n++, line);
+    int n = 1;
+    for (const char *p = src_text; *p; ) {
+        const char *e = strchr(p, '\n');
+        size_t len = e ? (size_t)(e - p + 1) : strlen(p);
+        fprintf(out, "%d %.*s", n++, (int)len, p);
+        p += len;
+    }
+    if (n > 1 && src_text[strlen(src_text) - 1] != '\n') fputc('\n', out);
 
-    fclose(in);
     fclose(out);
 }
 
@@ -4628,7 +4630,7 @@ static void free_ibuf(void)
     free(g_ibuf); g_ibuf = NULL; g_ibuf_n = g_ibuf_cap = 0;
 }
 
-void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
+void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
 {
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
@@ -4712,7 +4714,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
         if (strcmp(u->funcs[i]->name, "main") == 0) emit_function(u->funcs[i], u, 1);
     }
 
-    cg_line = -3;                 // END marker (trad_cmm.txt row -3)
+    cg_line = -3;                 // END marker (src_lines.txt row -3)
     emit("@fim JMP fim");
     for (int k = 0; k < MAX_LINKS; k++) if (lnk_mode[k] == 2) emit("#LKSYNC %d", k);   // links on my clock
     cg_line = -1;                 // post-@fim helpers are INTERNAL scaffolding
@@ -4737,6 +4739,6 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_path)
 
     if (f_line) { fclose(f_line); f_line = NULL; }
 
-    if (tmp_dir) write_cmm_log(tmp_dir);
-    if (tmp_dir && src_path) write_trad_cmm(tmp_dir, src_path);
+    if (tmp_dir) write_prog_log(tmp_dir);
+    if (tmp_dir && src_text) write_src_lines(tmp_dir, src_text);
 }

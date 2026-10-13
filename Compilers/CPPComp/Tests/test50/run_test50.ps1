@@ -29,14 +29,13 @@ New-Item -ItemType Directory -Force "C:/packs/msys64/tmp" | Out-Null
 $env:Path = "C:/packs/msys64/mingw64/bin;" + $env:Path
 $env:VERILATOR_ROOT = "C:/packs/msys64/mingw64/share/verilator"
 
-$CPPPP   = Join-Path $BIN "cpppp.exe"
 $CPPC    = Join-Path $BIN "cppcomp.exe"
 $APPCOMP = Join-Path $BIN "appcomp.exe"
 $ASMCOMP = Join-Path $BIN "asmcomp.exe"
 $VERILATOR = "C:/packs/msys64/mingw64/bin/verilator_bin.exe"
 $SIMMAIN = Join-Path $CPP "Tests/Verilator/sim_main.cpp"
 
-foreach ($x in @($CPPPP, $CPPC, $APPCOMP, $ASMCOMP, $VERILATOR)) {
+foreach ($x in @($CPPC, $APPCOMP, $ASMCOMP, $VERILATOR)) {
     if (-not (Test-Path $x)) { Write-Error "missing: $x"; exit 1 }
 }
 
@@ -61,12 +60,8 @@ New-Item -ItemType Directory -Force $od, $tmp | Out-Null
 
 $asm = "$od/$prname.asm"
 
-Write-Host "==> cpppp"
-& $CPPPP -o "$tmp/pp.cpp" -I "$CPP/Includes" -I $src_dir $src
-if ($LASTEXITCODE -ne 0) { exit 1 }
-
 Write-Host "==> cppcomp"
-& $CPPC -o $od "$tmp/pp.cpp"
+& $CPPC -o $od $src
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> appcomp"

@@ -83,7 +83,7 @@ int  nbopr;             // number of operand bits
 
 // the folder of the program's source, where the user's own files live (the
 // files that initialize arrays, the simulation inputs input_N.txt and
-// cade_k.txt): the compilers write it to cmm_log.txt as "srcdir <path>" (the
+// cade_k.txt): the compilers write it to prog_log.txt as "srcdir <path>" (the
 // rest of the line, so a path with spaces holds); without it, the output folder
 const char *src_dir(void)
 {
@@ -93,7 +93,7 @@ const char *src_dir(void)
     done = 1;
     snprintf(dir, sizeof(dir), "%s", temp_dir);
 
-    char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", temp_dir);
+    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
     if (input == NULL) return dir;
     char linha[2048];
@@ -231,7 +231,7 @@ void instr_out(char *va)
 void instr_arr(char *va)
 {
          var_add(va ,0); // adds the array to the table
-    sim_regi_arr(va   ); // registers the array in the simulator (looks up info in cmm_log.txt)
+    sim_regi_arr(va   ); // registers the array in the simulator (looks up info in prog_log.txt)
 }
 
 // LEA <name>: load-effective-address pseudo-instruction
@@ -305,7 +305,7 @@ void instr_oft(char *va)
 // number of instructions
 int get_n_ins()
 {
-    char aux[256]; eval_get("cmm_log.txt","num_ins", aux);
+    char aux[256]; eval_get("prog_log.txt","num_ins", aux);
 
     return atoi(aux);
 }

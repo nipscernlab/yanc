@@ -1,7 +1,7 @@
 :: ****************************************************************************
 :: single_proc_cpp - end-to-end example of the YANC single-processor pipeline,
 :: C++ edition. Mirrors single_proc.bat but feeds a C++ (.cpp) program through
-:: the C++ front end (cpppp -> cppcomp) instead of the C+- one (cmmcomp).
+:: the C++ front end (cppcomp) instead of the C+- one (cmmcomp).
 ::
 :: It takes one .cpp program and runs the full compile pipeline that turns it
 :: into the synthesizable Verilog (.v) of a SAPHO processor, then simulates it
@@ -83,7 +83,6 @@ set NUM_CLK=100000
 
 :: Repo sources, read in place (never written to) -----------------------------
 set HDL_DIR=%ROOT_DIR%\SAPHO
-set INC_DIR=%ROOT_DIR%\Compilers\CPPComp\Includes
 set BIN_DIR=%YANC_BIN%
 set SRC_PROC=%ROOT_DIR%\Compilers\CPPComp\Tests\%PROC%
 
@@ -111,11 +110,8 @@ set TEMP=%TMP_PRO%
 
 :: Compile: C++ -> asm -> Verilog --------------------------------------------
 
-echo #### Running the C++ preprocessor (cpppp)
-"%BIN_DIR%\cpppp.exe" -o "%TMP_PRO%\pp.cpp" -I "%INC_DIR%" -I "%SRC_DIR%" "%SRC_DIR%\%FNAM%"
-
 echo #### Running the C++ compiler (cppcomp)
-"%BIN_DIR%\cppcomp.exe" -o "%TMP_PRO%" "%TMP_PRO%\pp.cpp"
+"%BIN_DIR%\cppcomp.exe" -o "%TMP_PRO%" "%SRC_DIR%\%FNAM%"
 
 set ASM_FILE=%TMP_PRO%\%PROC%.asm
 if not exist "%ASM_FILE%" ( echo [single_proc_cpp] cppcomp did not produce "%ASM_FILE%". & goto fail )

@@ -30,7 +30,7 @@ FILE *f_lin;          // line file for the cmm program
 char dir_macro[1024]; // Macros directory
 char dir_tmp  [1024]; // Temp directory
 char dir_soft [1024]; // output folder (the .asm)
-char cmm_src  [1024]; // the .cmm the parser reads (re-read for trad_cmm.txt)
+char cmm_src  [1024]; // the .cmm the parser reads (re-read for src_lines.txt)
 
 // state variables
 int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
@@ -157,7 +157,7 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 
     char path[2048];
 
-    snprintf(path, sizeof(path),   "%s/cmm_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
+    snprintf(path, sizeof(path),   "%s/prog_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
     if (f_log == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path); exit(EXIT_FAILURE); }
     snprintf(path, sizeof(path), "%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
     if (f_lin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path); exit(EXIT_FAILURE); }
@@ -232,7 +232,7 @@ void parse_end(char *prname, char *d_proc)
 
     // (the source the parser read: before, <proc>/Software/<prname>.cmm, which
     // failed when the file was not named after the processor)
-    char     path[2048]; snprintf(path, sizeof(path), "%s/%s", dir_tmp, "trad_cmm.txt");
+    char     path[2048]; snprintf(path, sizeof(path), "%s/%s", dir_tmp, "src_lines.txt");
 
     FILE *output = fopen(path    , "w");
     if (output == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path);    exit(EXIT_FAILURE); }

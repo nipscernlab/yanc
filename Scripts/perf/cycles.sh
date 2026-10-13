@@ -24,9 +24,7 @@ p="$D/$v"
 o="$p/$v"                                  # the output folder
 rm -rf "$o" "$p/vl"
 cd "$R"
-mkdir -p "$o"
-"$B/cpppp.exe"   -o "$o/pp.cpp" -I "$p" "$p/$v.cpp" || exit 1
-"$B/cppcomp.exe" -o "$o" "$o/pp.cpp" > /dev/null || exit 1
+"$B/cppcomp.exe" -o "$o" "$p/$v.cpp" > /dev/null || exit 1
 a="$o/$v.asm"
 echo "instructions: $(grep -vc '^#' "$a")"
 "$B/appcomp.exe" -en "$a" > /dev/null 2>&1 || { echo "appcomp failed"; exit 1; }

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include "../Headers/messages.h"
+#include "../Headers/cpppp.h"
 
 static const char *g_file = "<input>";
 static int         g_errs = 0;
@@ -17,7 +18,9 @@ int  msg_error_count(void)          { return g_errs; }
 void msg_error(int line, const char *fmt, ...)
 {
     va_list ap;
-    fprintf(stderr, "%s:%d: error: ", g_file, line);
+    const char *file = g_file;
+    line = pp_where(line, &file);        // back to the file and line written
+    fprintf(stderr, "%s:%d: error: ", file, line);
     va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
     fputc('\n', stderr);
     g_errs++;
@@ -27,7 +30,9 @@ void msg_error(int line, const char *fmt, ...)
 void msg_warning(int line, const char *fmt, ...)
 {
     va_list ap;
-    fprintf(stderr, "%s:%d: warning: ", g_file, line);
+    const char *file = g_file;
+    line = pp_where(line, &file);
+    fprintf(stderr, "%s:%d: warning: ", file, line);
     va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
     fputc('\n', stderr);
 }

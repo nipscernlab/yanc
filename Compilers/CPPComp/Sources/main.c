@@ -1,12 +1,11 @@
 // ----------------------------------------------------------------------------
 // CPPComp — compiler entry point -----------------------------------------------
 // ----------------------------------------------------------------------------
-// usage: cppcomp [-o <dir>] <input.cpp>
-// input is assumed to be already preprocessed (run cpppp first).
-//
-// Mirrors cmmcomp: the processor takes the name of the source file (the
-// original one, which cpppp names in `#pragma yanc source`), and
-// <name>.asm and the tables go to one output folder, -o or ./<name>.
+// usage: cppcomp [-o <dir>] [-I <dir>]... [-E] <file.cpp>
+// Preprocesses the source in memory (cpppp.c), then compiles it, as gcc runs
+// cpp and cc1. Mirrors cmmcomp: the processor takes the name of the source
+// file, and <name>.asm and the tables go to one output folder, -o or ./<name>.
+// -E prints the preprocessed text and stops.
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -20,15 +19,16 @@
 #include "../Headers/symtab.h"
 #include "../Headers/codegen.h"
 #include "../Headers/messages.h"
+#include "../Headers/cpppp.h"
 #include "../../common/asm_share.h"
 #include "../../common/console_utf8.h"
 #include "../../common/exe_dir.h"
 
-/* asm_reach dropped `gone` instructions the pc map covered: cmm_log.txt's
+/* asm_reach dropped `gone` instructions the pc map covered: prog_log.txt's
  * "num_ins" line, already written by codegen, drops by as much (a negative
  * `gone` raises it: asm_divseq's added words). */
 static void lower_num_ins(const char *tmp_dir, int gone) {
-    char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", tmp_dir);
+    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", tmp_dir);
     FILE *f = fopen(path, "r");
     if (!f) return;
     char *text = NULL; size_t len = 0, cap = 0; char line[1024];
@@ -45,29 +45,24 @@ static void lower_num_ins(const char *tmp_dir, int gone) {
 }
 
 extern int yyparse(void);
-extern FILE *yyin;
+extern struct yy_buffer_state *yy_scan_string(const char *text);   // flex
 extern unit *g_unit;
 
-static void usage(void)
+static void usage(int code)
 {
-    fprintf(stderr,
+    fprintf(code ? stderr : stdout,
         "cppcomp %s — C++ compiler for the SAPHO processor\n"
-        "usage: cppcomp [-o <dir>] <input.cpp>\n"
-        "  <input.cpp>             the .cpp preprocessed by cpppp; the processor\n"
-        "                          takes the name of the original source file\n"
+        "usage: cppcomp [options] <file.cpp>\n"
+        "  <file.cpp>              the source; the processor takes its name\n"
         "  -o, --output   <dir>    output folder (default: ./<name>): <name>.asm and\n"
         "                          the tables asmcomp and the waveform read\n"
+        "  -I <dir>                add an #include folder (repeatable); the source's\n"
+        "                          folder comes first, the Header folder next to bin/ last\n"
+        "  -E                      print the preprocessed source and stop\n"
         "  -h, --help              this help\n"
-        "  -V, --version           show version and exit\n"
-        "\n"
-        "build-time defaults (override with -D when building cppcomp.exe):\n"
-        "  NUBITS=%d  NBMANT=%d  NBEXPO=%d  NUGAIN=%d\n"
-        "  NUIOIN=%d  NUIOOU=%d  FFTSIZ=%d\n"
-        "stack depths (NDSTAC, SDEPTH): worked out by asmcomp unless a pragma sets them\n",
-        YANC_VERSION,
-        CFG_NUBITS, CFG_NBMANT, CFG_NBEXPO, CFG_NUGAIN,
-        CFG_NUIOIN, CFG_NUIOOU, CFG_FFTSIZ);
-    exit(1);
+        "  -V, --version           show version and exit\n",
+        YANC_VERSION);
+    exit(code);
 }
 
 static char *derive_name(const char *path, const char *new_ext)
@@ -89,34 +84,35 @@ int main(int argc, char **argv)
     console_utf8();                 // the help text is UTF-8 (Windows console)
     const char *in_path  = NULL;
     const char *out_dir  = NULL;
+    int         only_pp  = 0;
 
     for (int i = 1; i < argc; i++) {
         if      ((!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output"  )) && i+1 < argc) out_dir  = argv[++i];
-        else if ( !strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"    )) usage();
+        else if ( !strcmp(argv[i], "-I") && i+1 < argc) pp_add_incdir(argv[++i]);
+        else if ( !strcmp(argv[i], "-E")) only_pp = 1;
+        else if ( !strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"    )) usage(0);
         else if ( !strcmp(argv[i], "-V") || !strcmp(argv[i], "--version" )) {
             printf("cppcomp %s\n", YANC_VERSION);
             return 0;
         }
         else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source
-        else { fprintf(stderr, "cppcomp: unknown option '%s'\n", argv[i]); usage(); }
+        else { fprintf(stderr, "cppcomp: unknown option '%s'\n", argv[i]); usage(1); }
     }
-    if (!in_path) usage();
+    if (!in_path) usage(1);
 
     msg_set_file(in_path);
 
-    yyin = fopen(in_path, "r");
-    if (!yyin) { fprintf(stderr, "cppcomp: cannot open '%s'\n", in_path); exit(1); }
+    const char *text = pp_run(in_path);  // the source, preprocessed
+    if (only_pp) { fputs(text, stdout); return 0; }
+    yy_scan_string(text);
 
     g_unit = ast_unit();
     st_init();
 
     if (yyparse() != 0) { fprintf(stderr, "cppcomp: parse failed\n"); exit(2); }
-    fclose(yyin);
 
     if (msg_error_count() > 0) return 2;
-    // the name of the original source (cpppp's `#pragma yanc source`), else
-    // of the input
-    g_unit->prname = derive_name(g_unit->srcdir ? g_unit->srcdir : in_path, "");
+    g_unit->prname = derive_name(in_path, "");   // the source file's name
 
     /* Output: everything in one folder, -o or ./<prname> (created, all
      * levels): <prname>.asm and the tables asmcomp and the waveform read. */
@@ -133,13 +129,13 @@ int main(int argc, char **argv)
     FILE *fo = fopen(outp, "w");
     if (!fo) { fprintf(stderr, "cppcomp: cannot open '%s' for writing\n", outp); exit(1); }
 
-    codegen(fo, g_unit, tmp_dir, in_path);
+    codegen(fo, g_unit, tmp_dir, text);
 
     fclose(fo);
     if (msg_error_count() > 0) return 2;
 
     // code no path reaches leaves the program, and its hardware with it (the
-    // pc_<proc>_mem.txt map and cmm_log's num_ins follow)
+    // pc_<proc>_mem.txt map and prog_log's num_ins follow)
     if (tmp_dir) {
         char pc[2048]; snprintf(pc, sizeof(pc), "%s/pc_%s_mem.txt", tmp_dir, g_unit->prname);
         int gone = asm_reach(outp, pc);
@@ -157,13 +153,12 @@ int main(int argc, char **argv)
     // the code; the instructions and the pc_<proc>_mem.txt map are untouched)
     asm_share(outp);
 
-    // the folder of the original source, where asmcomp reads the user's own
-    // files (input_N.txt, cade_k.txt): cpppp's `#pragma yanc source`, else the
-    // input
-    char log[2048]; snprintf(log, sizeof(log), "%s/cmm_log.txt", tmp_dir);
+    // the folder of the source, where asmcomp reads the user's own files
+    // (input_N.txt, cade_k.txt)
+    char log[2048]; snprintf(log, sizeof(log), "%s/prog_log.txt", tmp_dir);
     FILE *fl = fopen(log, "a");
     if (fl) {
-        char *src = dir_of(g_unit->srcdir ? g_unit->srcdir : in_path);
+        char *src = dir_of(in_path);
         if (src) fprintf(fl, "srcdir %s\n", src);
         fclose(fl);
     }

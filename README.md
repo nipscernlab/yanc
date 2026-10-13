@@ -63,18 +63,15 @@ int main() {
 **Windows** (`cmd`), in the folder that holds `my_program.cpp`:
 
 ```bat
-:: 1. preprocess the C++ source into the output folder (a .cmm source skips this)
-mkdir my_program
-cpppp -o my_program\pp.cpp my_program.cpp
-:: 2. compile it to assembly: my_program\my_program.asm and its tables (the
+:: 1. compile to assembly: my_program\my_program.asm and its tables (the
 ::    processor takes the source file's name; a .cmm source: cmmcomp my_program.cmm)
-cppcomp my_program\pp.cpp
-:: 3. addresses and processor parameters
+cppcomp my_program.cpp
+:: 2. addresses and processor parameters
 appcomp my_program\my_program.asm
-:: 4. the processor's Verilog, memory images and testbench, all in my_program\
+:: 3. the processor's Verilog, memory images and testbench, all in my_program\
 asmcomp my_program\my_program.asm
 
-:: 5. simulate (Icarus); the processor's Verilog is the package's SAPHO folder
+:: 4. simulate (Icarus); the processor's Verilog is the package's SAPHO folder
 set SAPHO=C:\path\to\yanc\SAPHO
 cd my_program
 iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
@@ -82,7 +79,7 @@ iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
 vvp sim.vvp
 type output_0.txt
 
-:: 6. the waveform, formatted (.. holds the output folder my_program\)
+:: 5. the waveform, formatted (.. holds the output folder my_program\)
 gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
 gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
@@ -107,9 +104,7 @@ int main() {
 }
 EOF
 
-mkdir -p my_program
-cpppp -o my_program/pp.cpp my_program.cpp
-cppcomp my_program/pp.cpp
+cppcomp my_program.cpp
 appcomp my_program/my_program.asm
 asmcomp my_program/my_program.asm
 

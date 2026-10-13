@@ -17,7 +17,7 @@
 //   gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw_exe>]
 //     <base>          the folder holding each processor's output folder; the
 //                     translate files are read from
-//                     <base>/<proc_type>/trad_opcode.txt and trad_cmm.txt
+//                     <base>/<proc_type>/trad_opcode.txt and src_lines.txt
 //     <comp2gtkw_exe> path to comp2gtkw.exe (process filter for complex signals)
 //
 // Build (sibling of comp2gtkw.c):  gcc -O2 -o gen_gtkw.exe gen_gtkw.c
@@ -371,7 +371,7 @@ static void emit_proc_section(const Proc *p) {
     char tradop[800] = "", tradcmm[800] = "";
     if (p->type[0]) {
         snprintf(tradop,  sizeof tradop,  "%s/%s/trad_opcode.txt", g_tmp_base, p->type);
-        snprintf(tradcmm, sizeof tradcmm, "%s/%s/trad_cmm.txt",    g_tmp_base, p->type);
+        snprintf(tradcmm, sizeof tradcmm, "%s/%s/src_lines.txt",    g_tmp_base, p->type);
     }
     emit_comment("Instructions *******");
     int vi = find_sig(p->inst, "valr2");
@@ -472,7 +472,7 @@ int main(int argc, char **argv) {
                 "usage: gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]\n"
                 "  writes the formatted GTKWave view (out.gtkw) of a simulation dump;\n"
                 "  <base> holds the output folder of each processor, <base>/<proc>/,\n"
-                "  with its translate files (trad_opcode.txt, trad_cmm.txt);\n"
+                "  with its translate files (trad_opcode.txt, src_lines.txt);\n"
                 "  comp2gtkw defaults to the one next to gen_gtkw\n");
         return help ? 0 : 1;
     }

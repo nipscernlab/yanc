@@ -688,8 +688,8 @@ names into one is all the tool has to do, and the memory saving follows.
 - **The instruction table.** `Compilers/common/isa.tsv` already says, per
   mnemonic, what it does to the accumulator, the stack, the word its operand
   names, the control flow and the ports. That is what the analysis reads.
-- **The line-mapping sidecars** (`pc_*_mem.txt`, `cmm_log.txt`,
-  `trad_cmm.txt`): one entry per instruction. Deleting or merging an
+- **The line-mapping sidecars** (`pc_*_mem.txt`, `prog_log.txt`,
+  `src_lines.txt`): one entry per instruction. Deleting or merging an
   instruction invalidates them unless the tool rewrites them too.
 
 **Small leftovers found on the way (2026-09-24, cmmcomp goldens):** a
@@ -748,7 +748,7 @@ recipe and history).
 **The profile of `test46` (2026-09-24).** A Verilator harness counts the
 cycles the fetch address (`pc_sim_val`, exposed with `+define+YANC_TRACE`)
 spends on each program word; a script maps the words to functions and source
-lines through the `.asm`, `pc_*_mem.txt` and `trad_cmm.txt`. Both are in the
+lines through the `.asm`, `pc_*_mem.txt` and `src_lines.txt`. Both are in the
 cycle bench (`build_prof.sh`, `prof_report.py`). Of 76 311 cycles:
 
 | function | before | after the zero-fill fix |

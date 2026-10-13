@@ -1,7 +1,7 @@
 # Security Policy
 
 YANC is a command-line compiler toolchain (`cmmcomp`, `cppcomp`, `asmcomp`,
-`appcomp`, `cpppp`) that turns C±/C++ source into assembly and Verilog for the
+`appcomp`) that turns C±/C++ source into assembly and Verilog for the
 SAPHO soft-processor. It runs locally on source you control; it is **not** a
 network service. The security-relevant surface is therefore the parsers and code
 generators that read source / assembly / array-initialization files: a malformed

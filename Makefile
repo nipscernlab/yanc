@@ -7,7 +7,7 @@
 # Windows_NT, which switches the output suffix to .exe).
 #
 #   make                build every binary into bin/
-#   make <name>         build one: cmmcomp appcomp asmcomp cpppp cppcomp
+#   make <name>         build one: cmmcomp appcomp asmcomp cppcomp
 #                       comp2gtkw gen_gtkw
 #   make clean          remove bin/ and the flex/bison generated files
 #   make install DESTDIR=<dir>   copy the binaries into <dir>/bin
@@ -59,14 +59,14 @@ CMMCOMP_C := ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
 APPCOMP_C := eval.c variaveis.c messages.c args.c
 ASMCOMP_C := eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c \
              array.c messages.c args.c
-CPPCOMP_C := main.c messages.c types.c symtab.c ast.c codegen.c
+CPPCOMP_C := main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c
 
 BINARIES := $(BIN)/cmmcomp$(EXE) $(BIN)/appcomp$(EXE) $(BIN)/asmcomp$(EXE) \
-            $(BIN)/cpppp$(EXE) $(BIN)/cppcomp$(EXE) \
+            $(BIN)/cppcomp$(EXE) \
             $(BIN)/comp2gtkw$(EXE) $(BIN)/gen_gtkw$(EXE)
 
 .PHONY: all clean install stage \
-        cmmcomp appcomp asmcomp cpppp cppcomp comp2gtkw gen_gtkw
+        cmmcomp appcomp asmcomp cppcomp comp2gtkw gen_gtkw
 
 all: $(BINARIES)
 
@@ -90,7 +90,6 @@ stage:
 cmmcomp:   $(BIN)/cmmcomp$(EXE)
 appcomp:   $(BIN)/appcomp$(EXE)
 asmcomp:   $(BIN)/asmcomp$(EXE)
-cpppp:     $(BIN)/cpppp$(EXE)
 cppcomp:   $(BIN)/cppcomp$(EXE)
 comp2gtkw: $(BIN)/comp2gtkw$(EXE)
 gen_gtkw:  $(BIN)/gen_gtkw$(EXE)
@@ -119,11 +118,7 @@ $(BIN)/asmcomp$(EXE): $(addprefix $(ASM)/,$(ASMCOMP_C)) $(ASM)/ASMComp.l $(COMMO
 	cd $(ASM) && $(FLEX) -o ASMComp.c ASMComp.l
 	$(CC) $(CFLAGS) -o $@ $(ASM)/ASMComp.c $(addprefix $(ASM)/,$(ASMCOMP_C)) $(COMMON)/yanc_num.c $(COMMON)/asm_share.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(LDLIBS)
 
-# --- cpppp (single TU) ------------------------------------------------------
-$(BIN)/cpppp$(EXE): $(CPP)/cpppp.c $(CONSOLE) $(EXEDIR) $(VERSION_H) | $(BIN)
-	$(CC) $(CFLAGS) -Wall -o $@ $(CPP)/cpppp.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(LDLIBS)
-
-# --- cppcomp (flex + bison) -------------------------------------------------
+# --- cppcomp (flex + bison; cpppp.c is its preprocessor) --------------------
 $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \
                       $(CPP)/CPPComp.l $(CPP)/CPPComp.y \
                       $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(CONSOLE) $(EXEDIR) \

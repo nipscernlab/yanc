@@ -11,7 +11,7 @@
 #      the multi-proc DTW example (Compilers/CMMComp/Tests/DTW/TopLevel/).
 #
 #   2. CPP phase: for every Compilers/CPPComp/Tests/testN/testN.cpp run
-#      cpppp -> cppcomp -> appcomp -> asmcomp -> iverilog (or Verilator
+#      cppcomp -> appcomp -> asmcomp -> iverilog (or Verilator
 #      if testN/testN.in is present) and compare the resulting
 #      output_0.txt against Compilers/CPPComp/Tests/testN/golden.txt.
 #      Every test is a folder holding the source and its own files (array
@@ -37,7 +37,7 @@
 #      The CPP negative phase does the same for cppcomp with
 #      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only).
 #
-# Build phase builds all 5 binaries once (cmmcomp + cpppp + cppcomp +
+# Build phase builds all 4 binaries once (cmmcomp + cppcomp +
 # appcomp + asmcomp), all phases reuse them.
 #
 # Usage (from repo root, in msys2/git-bash on Windows):
@@ -104,7 +104,6 @@ WORK_CPP="$SCRATCH/work_cpp"      # CPP phase scratch
 TMP_DIR="$SCRATCH/tmp"            # CMM phase tmps
 
 CMMCOMP="$BIN_DIR/cmmcomp.exe"
-CPPPP="$BIN_DIR/cpppp.exe"
 CPPC="$BIN_DIR/cppcomp.exe"
 APPCOMP="$BIN_DIR/appcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
@@ -231,12 +230,12 @@ stack_check() {   # stack_check <tb.vcd>
 # ---- 1. build all 5 binaries -----------------------------------------------
 
 if [ "$SKIP_BUILD" -eq 0 ]; then
-    echo "==> building cmmcomp + cpppp + cppcomp + appcomp + asmcomp"
+    echo "==> building cmmcomp + cppcomp + appcomp + asmcomp"
     mkdir -p "$BIN_DIR"
 
     # Wipe stale binaries first: a silently-failing gcc must NOT leave the
     # previous build in place to fool the regress into testing dead code.
-    rm -f "$CMMCOMP" "$CPPPP" "$CPPC" "$APPCOMP" "$ASMCOMP"
+    rm -f "$CMMCOMP" "$BIN_DIR/cpppp.exe" "$CPPC" "$APPCOMP" "$ASMCOMP"
 
     # Per-binary `set -e` so a build error aborts the script. Without it,
     # a gcc -Werror failure would print to the terminal but the regress
@@ -255,14 +254,12 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
-    gcc -O2 -Wall -o "$CPPPP" "$CPP_ROOT/Sources/cpppp.c" "$ROOT/Compilers/common/console_utf8.c" "$ROOT/Compilers/common/exe_dir.c" -lm
-
     pushd "$CPP_ROOT/Sources" >/dev/null
     bison -y -d CPPComp.y
     flex CPPComp.l
     gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
         $CPP_DEFS -o "$CPPC" \
-        main.c messages.c types.c symtab.c ast.c codegen.c lex.yy.c y.tab.c \
+        main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c lex.yy.c y.tab.c \
         ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
@@ -333,7 +330,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         [ -s "$asm_file" ] || { echo "FAIL ($prname): asm missing/empty"; fail=$((fail+1)); failed_names+=("$prname"); continue; }
 
         # size ratchet ------------------------------------------------------
-        num_ins=$(grep "^num_ins " "$tmp/cmm_log.txt" 2>/dev/null | awk '{print $2}')
+        num_ins=$(grep "^num_ins " "$tmp/prog_log.txt" 2>/dev/null | awk '{print $2}')
         SIZE_CURRENT[$prname]="${num_ins:-0}"
         baseline="${SIZE_BASELINE[$prname]:-}"
         size_grew=0
@@ -597,9 +594,8 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         # builds its tests (it runs after this pass)
         for p in link_cpp_recebe link_cpp_ping; do
             [ "$project_ok" -eq 1 ] || break
-            cp_dir="$proj_tmp/cpp/$p"; cp_tmp="$cp_dir/_tmp"; mkdir -p "$cp_tmp"
-            if ! "$CPPPP" "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
-               ! "$CPPC" -o "$cp_dir" "$cp_tmp/pp.cpp" >/dev/null 2>&1 ||
+            cp_dir="$proj_tmp/cpp/$p"
+            if ! "$CPPC" -o "$cp_dir" "$proj_top/../cpp/$p.cpp" >/dev/null 2>&1 ||
                ! "$APPCOMP" -en "$cp_dir/$p.asm" >/dev/null 2>&1 ||
                ! "$ASMCOMP" -en -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
                 echo "FAIL ($proj): building the C++ partner $p"
@@ -817,9 +813,8 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         done
         p=lk_cpp_chain_b
         if [ "$project_ok" -eq 1 ]; then
-            cp_dir="$proj_tmp/cpp/$p"; cp_tmp="$cp_dir/_tmp"; mkdir -p "$cp_tmp"
-            if ! "$CPPPP" "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
-               ! "$CPPC" -o "$cp_dir" "$cp_tmp/pp.cpp" >/dev/null 2>&1 ||
+            cp_dir="$proj_tmp/cpp/$p"
+            if ! "$CPPC" -o "$cp_dir" "$proj_top/../cpp/$p.cpp" >/dev/null 2>&1 ||
                ! "$APPCOMP" -en "$cp_dir/$p.asm" >/dev/null 2>&1 ||
                ! "$ASMCOMP" -en -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
                 echo "FAIL ($proj): building the C++ middle $p"
@@ -1097,22 +1092,18 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             echo "FAIL ($base): folder layout needs $base/$base.cpp as entry"
             fail=$((fail+1)); failed_names+=("$base"); continue
         fi
-        local_inc=("-I" "${entry%/}")
 
         prname="$base"                # the processor takes the source file's name
 
         proc="$WORK_CPP/$base"
-        tmp="$WORK_CPP/$base/_tmp"   # pp.cpp, cppcomp.log, Verilator's build
+        tmp="$WORK_CPP/$base/_tmp"   # cppcomp.log, Verilator's build
         od="$proc/$prname"           # the output folder
         rm -rf "$proc"
         mkdir -p "$tmp"
 
         asm="$od/$prname.asm"
 
-        if ! "$CPPPP" -o "$tmp/pp.cpp" -I "$CPP_ROOT/Includes" "${local_inc[@]}" "$src" >/dev/null 2>&1; then
-            echo "FAIL ($base): cpppp"; fail=$((fail+1)); failed_names+=("$base"); continue
-        fi
-        if ! "$CPPC" -o "$od" "$tmp/pp.cpp" >"$tmp/cppcomp.log" 2>&1; then
+        if ! "$CPPC" -o "$od" "$src" >"$tmp/cppcomp.log" 2>&1; then
             echo "FAIL ($base): cppcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
         # warnings.txt (optional): one expected cppcomp warning per line (a
@@ -1390,7 +1381,7 @@ fi
 
 # ---- 4c. CPP negative phase (error reporting) ------------------------------
 # The same for cppcomp: Compilers/CPPComp/NegTests/manifest.txt, format
-# <fixture.cpp>|<expected substring>. cpppp runs first, as in the CPP phase.
+# <fixture.cpp>|<expected substring>.
 if [ "$CMM_ONLY" -eq 0 ]; then
     echo ""
     echo "==> CPP negative phase (error reporting)"
@@ -1405,11 +1396,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             fail=$((fail+1)); failed_names+=("$name"); continue
         fi
         rm -rf "$neg_work"; mkdir -p "$neg_work/tmp"
-        if ! "$CPPPP" -o "$neg_work/tmp/pp.cpp" -I "$CPP_ROOT/Includes" "$neg_dir/$fixture" >/dev/null 2>&1; then
-            echo "FAIL ($name): cpppp exited non-zero"
-            fail=$((fail+1)); failed_names+=("$name"); continue
-        fi
-        out="$("$CPPC" -o "$neg_work/p" "$neg_work/tmp/pp.cpp" 2>&1)"
+        out="$("$CPPC" -o "$neg_work/p" "$neg_dir/$fixture" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"

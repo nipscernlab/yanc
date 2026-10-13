@@ -6,14 +6,14 @@ result. The commands that take one program all the way are in the README's
 
 ## Pipeline
 
-YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end compilers turn high-level source into assembly; a single back-end compiler turns that assembly into Verilog. Each compiler is preceded by an optional preprocessor (`cpppp` for C++, `appcomp` for assembly macros).
+YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end compilers turn high-level source into assembly (`cppcomp` preprocesses the C++ itself, as gcc does); a single back-end compiler turns that assembly into Verilog, after a first pass over the assembly (`appcomp`).
 
 ```
-  C±:     foo.cmm  ─────────────────────►  cmmcomp  ─┐
-                                                     ▼
-                                                  foo.asm  ──►  appcomp  ──►  asmcomp  ──►  foo.v + *.mif + foo_tb.v
-                                                     ▲
-  C++:    foo.cpp  ──►  cpppp  ──►  cppcomp  ────────┘
+  C±:     foo.cmm  ──►  cmmcomp  ─┐
+                                ▼
+                             foo.asm  ──►  appcomp  ──►  asmcomp  ──►  foo.v + *.mif + foo_tb.v
+                                ▲
+  C++:    foo.cpp  ──►  cppcomp  ─┘
 ```
 
 After `asmcomp`, the generated Verilog can be simulated with **Icarus Verilog** (`iverilog` + `vvp`) or with **Verilator**, and visualized in **GTKWave**. Pre-wired scripts in `Scripts/` cover the whole pipeline end-to-end — `single_proc` (one C± processor), `multi_proc` (C± multi-processor project) and `single_proc_cpp` (one C++ processor), each with a `.bat` and a `.sh` and a `--sim iverilog|verilator` flag (default Icarus).
@@ -35,7 +35,7 @@ declared variables (`N`, `ind`, `istep`, `j`, `k`, `m`, `mmax`,
 
 ## Components
 
-Seven binaries are produced from source — three compilers, two preprocessors, and two helpers:
+Six binaries are produced from source — three compilers, the assembly's first pass, and two helpers:
 
 **Compilers**
 
@@ -45,11 +45,12 @@ Seven binaries are produced from source — three compilers, two preprocessors, 
 | `cppcomp`    | `Compilers/CPPComp/`    | Flex + Bison + GCC | C++ front-end → assembly                            |
 | `asmcomp`    | `Compilers/ASMComp/`    | Flex + GCC         | Back-end: assembly → Verilog HDL + memory images + testbench |
 
-**Preprocessors**
+`cppcomp` carries its own C preprocessor (`#include`, `#define`, `#if`, ...; `cppcomp -E` prints its output).
+
+**Assembly first pass**
 
 | Binary       | Source dir              | Built with    | Role                                                                |
 | ------------ | ----------------------- | ------------- | ------------------------------------------------------------------- |
-| `cpppp`      | `Compilers/CPPComp/`    | GCC           | C++ preprocessor for `cppcomp` (`#include`, `#define`, `#if`, ...)  |
 | `appcomp`    | `Compilers/APPComp/`    | Flex + GCC    | First pass over the `.asm`: records processor params + resolves variable/label addresses for `asmcomp` |
 
 **Helper**
@@ -79,7 +80,7 @@ the Quick start's `my_program.cpp`:
 | file in `my_program/` | written by | what it is |
 |---|---|---|
 | `my_program.asm` | cppcomp / cmmcomp | the program in SAPHO assembly |
-| `cmm_log.txt`, `pc_my_program_mem.txt`, `trad_cmm.txt` | cppcomp / cmmcomp | the tables asmcomp and the waveform use (variables, PC to source line, the source text); `cmm_log.txt` also names the source folder, where asmcomp reads the user's files |
+| `prog_log.txt`, `pc_my_program_mem.txt`, `src_lines.txt` | cppcomp / cmmcomp | the tables asmcomp and the waveform use (variables, PC to source line, the source text); `prog_log.txt` also names the source folder, where asmcomp reads the user's files |
 | `app_log.txt` | appcomp | addresses and processor parameters, for asmcomp |
 | `my_program.v` | asmcomp | the Verilog top: SAPHO instantiated with this program's parameters |
 | `my_program_inst.mif`, `my_program_data.mif` | asmcomp | instruction and data memory images |
@@ -127,7 +128,7 @@ gtkwave --dark --zoom-fit --left-justify my_program_tb.vcd -a my_program_tb.gtkw
 
 `gen_gtkw` reads only the VCD **header** (the signal list), classifies each
 harness signal by name, and writes a formatted `.gtkw` save file: the right data
-format / colour / alias per signal, the `trad_opcode.txt` / `trad_cmm.txt`
+format / colour / alias per signal, the `trad_opcode.txt` / `src_lines.txt`
 translators on the Assembly / C± tracks, `comp2gtkw.exe` on complex signals, and
 one section per processor — any scope that owns both `valr2` and `linetabs` — so
 the **same tool handles single- and multi-processor dumps**. Its third argument
@@ -152,7 +153,7 @@ Windows (`.bat`) and a Linux (`.sh`) version, and picks the simulator from a
 ```bat
 Scripts\single_proc      .bat / .sh   one C± processor    (edit PROC / FNAM at the top)
 Scripts\multi_proc       .bat / .sh   C± multi-proc project
-Scripts\single_proc_cpp  .bat / .sh   one C++ processor   (front end: cpppp -> cppcomp)
+Scripts\single_proc_cpp  .bat / .sh   one C++ processor   (front end: cppcomp)
 
   ... default (no flag)        -> Icarus Verilog (iverilog + vvp)
   ... --sim verilator          -> Verilator (--binary --timing, +define+YANC_TRACE)
@@ -163,10 +164,10 @@ On Linux make them executable once (`chmod +x Scripts/*.sh`) and run
 `Scripts/single_proc.sh` (or `Scripts/single_proc.sh --sim verilator`).
 
 **The C++ runner (`single_proc_cpp`)** feeds a `.cpp` program — the bundled
-`Compilers/CPPComp/Tests/proc_cpp` demo — through `cpppp -> cppcomp` instead of
+`Compilers/CPPComp/Tests/proc_cpp` demo — through `cppcomp` instead of
 `cmmcomp`, then the *same* assemble / simulate / view back end. cppcomp now emits
-the same files cmmcomp does (the `.asm`, `cmm_log.txt`, the `pc_<proc>_mem.txt`
-PC→source line table and `trad_cmm.txt`), so the waveform looks just like the C±
+the same files cmmcomp does (the `.asm`, `prog_log.txt`, the `pc_<proc>_mem.txt`
+PC→source line table and `src_lines.txt`), so the waveform looks just like the C±
 flow — **with one rule**: GTKWave only shows C++ variables that live at a **fixed
 data-memory address**, because the dump snoops a *constant* write address
 (`if (mem_addr_wr == X)`). That covers globals, the locals/params of
@@ -195,12 +196,11 @@ without an option):
 ```bat
 :: compilers: the .asm and the tables to the output folder (default ./<name>)
 cmmcomp [-o <dir>] [--wave-arrays] <file.cmm>
-cppcomp [-o <dir>] <file.cpp>
+cppcomp [-o <dir>] [-I <dir>]... [-E] <file.cpp>
 :: the assembler: everything to the folder of the .asm
 asmcomp [-f <MHz>] [-c <clocks>] <file.asm>
 
-:: preprocessors
-cpppp   [-o <file.cpp>] [-I <dir>]... <file.cpp>
+:: the assembly's first pass (addresses and parameters for asmcomp)
 appcomp <file.asm>
 
 :: waveform helpers
@@ -214,12 +214,14 @@ rename the file. `-o` defaults to the folder `./<name>`, created if missing.
 asmcomp's `-f` and `-c`, the testbench's clock and length, default to 100 MHz
 and 10000 clocks. The user's
 own files (array inits, `input_N.txt`, `cade_k.txt`) are read in the folder of
-the source: cmmcomp writes it to `cmm_log.txt`; for C++, cpppp names the
-original file to cppcomp in a `#pragma yanc source` line at the end of its
-output (the name and the folder both come from it). The folders
+the source, which the compilers write to `prog_log.txt`. cppcomp preprocesses
+the source in memory, as gcc does: `#include "x"` looks in the folder of the
+including file, then in the `-I` folders, then in `Header/`; `-E` prints the
+preprocessed text and stops; the messages point to the file and line written
+(a header's line, too). The folders
 that come with the tools are found next to their executable, with no option:
-cmmcomp and asmcomp use `Macros/`, asmcomp `SAPHO/`, `cpppp` searches
-`Header/` after any `-I`, and `gen_gtkw` uses the `comp2gtkw` beside it. In a
+cmmcomp and asmcomp use `Macros/`, asmcomp `SAPHO/`, cppcomp `Header/`, and
+`gen_gtkw` uses the `comp2gtkw` beside it. In a
 repository build the same search finds `Compilers/CMMComp/Includes`, `SAPHO/`
 and `Compilers/CPPComp/Includes`.
 

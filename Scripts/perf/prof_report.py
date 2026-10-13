@@ -19,7 +19,7 @@ for ln in asm:
     ins.append(ln); func.append(cur)
 
 src = {}
-for ln in open(f"{d}/trad_cmm.txt", encoding="utf-8", errors="replace"):
+for ln in open(f"{d}/src_lines.txt", encoding="utf-8", errors="replace"):
     k, _, t = ln.rstrip("\n").partition(" ")
     src[int(k)] = t
 line = []

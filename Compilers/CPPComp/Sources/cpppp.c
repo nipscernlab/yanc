@@ -1,17 +1,18 @@
 // ----------------------------------------------------------------------------
-// CPPComp — standalone C preprocessor ------------------------------------------
+// CPPComp — the C preprocessor --------------------------------------------------
 // ----------------------------------------------------------------------------
-// Standalone binary that runs before cppcomp.exe. Handles:
+// cppcomp's first step, as cpp is gcc's: pp_run() turns the source into one
+// text, kept in memory, with a map from each of its lines back to the file and
+// line it came from (the messages point there). `cppcomp -E` prints the text.
+// Handles:
 //   #include "name"          (relative to current file + -I paths)
-//   #include <name>          (-I paths only)
+//   #include <name>          (-I paths, then the Header/ folder next to the tool)
 //   #define NAME body        (object- and function-like macros, incl.
 //                             variadic `...`/__VA_ARGS__, # stringize, ## paste)
 //   #undef NAME
 //   #ifdef NAME / #ifndef NAME / #else / #endif
 //   #pragma once             (skip the file on any later #include)
 //   #pragma yanc ...         (passed through verbatim)
-//
-// usage:  cpppp [-o out.cpp] [-I dir]* input.cpp
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -19,8 +20,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "../../yanc_version.h"   // YANC_VERSION shared across all five binaries
-#include "../../common/console_utf8.h"
+#include "../Headers/cpppp.h"
 #include "../../common/exe_dir.h"
 
 #define MAX_INCDIRS 32
@@ -459,8 +459,32 @@ static int eval_if(const char *text)
     return v != 0;
 }
 
-static FILE *out_f;
-static int   depth = 0;
+// the output: the text, and for each of its lines the file and line it came
+// from (pp_where)
+static sbuf         out_text;
+static const char **map_file = NULL;
+static int         *map_line = NULL;
+static int          map_n = 0, map_cap = 0;
+static int          at_bol = 1;          // the next character starts a line
+
+static void pp_emit(const char *s, const char *file, int line)
+{
+    for (; *s; s++) {
+        if (at_bol) {
+            if (map_n == map_cap) {
+                map_cap  = map_cap ? 2 * map_cap : 1024;
+                map_file = realloc(map_file, map_cap * sizeof *map_file);
+                map_line = realloc(map_line, map_cap * sizeof *map_line);
+            }
+            map_file[map_n] = file; map_line[map_n] = line; map_n++;
+            at_bol = 0;
+        }
+        sb_putc(&out_text, *s);
+        if (*s == '\n') at_bol = 1;
+    }
+}
+
+static int depth = 0;
 
 static void process_file(const char *path);
 
@@ -502,16 +526,19 @@ static char *trim_in_place(char *s)
 
 static void process_file(const char *path)
 {
-    if (depth > 32) { fprintf(stderr, "cpppp: include too deep\n"); exit(1); }
+    if (depth > 32) { fprintf(stderr, "cppcomp: include too deep\n"); exit(1); }
     depth++;
 
     char dir[2048]; dirname_of(path, dir, sizeof(dir));
 
     FILE *fp = fopen(path, "r");
-    if (!fp) { fprintf(stderr, "cpppp: cannot open '%s'\n", path); exit(1); }
+    if (!fp) { fprintf(stderr, "cppcomp: cannot open '%s'\n", path); exit(1); }
+    const char *file = strdup(path);     // the map keeps it
+    int ln = 0;
 
     char line[4096];
     while (fgets(line, sizeof(line), fp)) {
+        ln++;
         char *orig = strdup(line);
         char *t = trim_in_place(orig);
 
@@ -530,7 +557,7 @@ static void process_file(const char *path)
                     target[i] = 0;
                     char resolved[2048];
                     FILE *inc = open_include(target, dir, resolved, sizeof(resolved));
-                    if (!inc) { fprintf(stderr, "cpppp: can't find #include \"%s\"\n", target); exit(1); }
+                    if (!inc) { fprintf(stderr, "cppcomp: can't find #include \"%s\"\n", target); exit(1); }
                     fclose(inc);
                     char canon[2048]; path_canon(resolved, canon, sizeof(canon));
                     if (!once_seen(canon)) process_file(resolved);
@@ -540,7 +567,7 @@ static void process_file(const char *path)
                     target[i] = 0;
                     char resolved[2048];
                     FILE *inc = open_include(target, NULL, resolved, sizeof(resolved));
-                    if (!inc) { fprintf(stderr, "cpppp: can't find #include <%s>\n", target); exit(1); }
+                    if (!inc) { fprintf(stderr, "cppcomp: can't find #include <%s>\n", target); exit(1); }
                     fclose(inc);
                     char canon[2048]; path_canon(resolved, canon, sizeof(canon));
                     if (!once_seen(canon)) process_file(resolved);
@@ -606,7 +633,7 @@ static void process_file(const char *path)
                 name[i] = 0;
                 int defined = macro_lookup(name) != NULL;
                 int active = is_ifndef ? !defined : defined;
-                if (cond_n >= MAX_COND) { fprintf(stderr, "cpppp: #ifdef nesting too deep\n"); exit(1); }
+                if (cond_n >= MAX_COND) { fprintf(stderr, "cppcomp: #ifdef nesting too deep\n"); exit(1); }
                 cond_stk[cond_n] = active;
                 cond_seen_true[cond_n] = active;
                 cond_n++;
@@ -617,7 +644,7 @@ static void process_file(const char *path)
             if (strncmp(p, "if", 2) == 0 && (p[2] == ' ' || p[2] == '\t' || p[2] == '(')) {
                 p += 2;
                 int active = eval_if(p);
-                if (cond_n >= MAX_COND) { fprintf(stderr, "cpppp: #if nesting too deep\n"); exit(1); }
+                if (cond_n >= MAX_COND) { fprintf(stderr, "cppcomp: #if nesting too deep\n"); exit(1); }
                 cond_stk[cond_n] = active;
                 cond_seen_true[cond_n] = active;
                 cond_n++;
@@ -626,7 +653,7 @@ static void process_file(const char *path)
 
             // ---- #elif <expr> ----
             if (strncmp(p, "elif", 4) == 0 && (p[4] == ' ' || p[4] == '\t' || p[4] == '(')) {
-                if (cond_n == 0) { fprintf(stderr, "cpppp: stray #elif\n"); exit(1); }
+                if (cond_n == 0) { fprintf(stderr, "cppcomp: stray #elif\n"); exit(1); }
                 p += 4;
                 if (cond_seen_true[cond_n-1]) {
                     cond_stk[cond_n-1] = 0;          // an earlier branch already won
@@ -640,7 +667,7 @@ static void process_file(const char *path)
 
             // ---- #else ----
             if (strcmp(p, "else") == 0 || strncmp(p, "else ", 5) == 0 || strncmp(p, "else\t", 5) == 0) {
-                if (cond_n == 0) { fprintf(stderr, "cpppp: stray #else\n"); exit(1); }
+                if (cond_n == 0) { fprintf(stderr, "cppcomp: stray #else\n"); exit(1); }
                 cond_stk[cond_n-1] = !cond_seen_true[cond_n-1];
                 cond_seen_true[cond_n-1] = 1;
                 free(orig); continue;
@@ -648,7 +675,7 @@ static void process_file(const char *path)
 
             // ---- #endif ----
             if (strcmp(p, "endif") == 0 || strncmp(p, "endif ", 6) == 0 || strncmp(p, "endif\t", 6) == 0) {
-                if (cond_n == 0) { fprintf(stderr, "cpppp: stray #endif\n"); exit(1); }
+                if (cond_n == 0) { fprintf(stderr, "cppcomp: stray #endif\n"); exit(1); }
                 cond_n--;
                 free(orig); continue;
             }
@@ -663,18 +690,18 @@ static void process_file(const char *path)
                     }
                     free(orig); continue;          // don't emit `#pragma once`
                 }
-                if (cond_active()) fprintf(out_f, "%s", line);   // e.g. #pragma yanc
+                if (cond_active()) pp_emit(line, file, ln);   // e.g. #pragma yanc
                 free(orig); continue;
             }
 
             // ---- unknown directive: pass through ----
-            if (cond_active()) fprintf(out_f, "%s", line);
+            if (cond_active()) pp_emit(line, file, ln);
             free(orig); continue;
         }
 
         if (cond_active()) {
             char *expanded = expand_str(line, 0);
-            fputs(expanded, out_f);
+            pp_emit(expanded, file, ln);
             free(expanded);
         }
         free(orig);
@@ -684,60 +711,27 @@ static void process_file(const char *path)
     depth--;
 }
 
-static void usage(void)
+void pp_add_incdir(const char *dir)
 {
-    fprintf(stderr,
-        "cpppp %s — C++ preprocessor for cppcomp\n"
-        "usage: cpppp [-o <output.cpp>] [-I <dir>]* <input.cpp>\n"
-        "  <input.cpp>      the source file\n"
-        "  -o <file>        output preprocessed .cpp (default: stdout)\n"
-        "  -I <dir>         add include search directory (repeatable); the Header\n"
-        "                   folder next to bin/ is searched after them\n"
-        "  -h, --help       show this help\n"
-        "  -V, --version    show version and exit\n",
-        YANC_VERSION);
-    exit(1);
+    if (n_incdirs < MAX_INCDIRS) incdirs[n_incdirs++] = dir;
+    else { fprintf(stderr, "cppcomp: too many -I dirs\n"); exit(1); }
 }
 
-int main(int argc, char **argv)
+const char *pp_run(const char *in_path)
 {
-    console_utf8();                 // the help text is UTF-8 (Windows console)
-    const char *in_path  = NULL;
-    const char *out_path = NULL;
-
-    for (int i = 1; i < argc; i++) {
-        if      (!strcmp(argv[i], "-o") && i+1 < argc) out_path = argv[++i];
-        else if (!strcmp(argv[i], "-I") && i+1 < argc) {
-            if (n_incdirs < MAX_INCDIRS) incdirs[n_incdirs++] = argv[++i];
-            else { fprintf(stderr, "cpppp: too many -I dirs\n"); exit(1); }
-        }
-        else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) usage();
-        else if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--version")) {
-            printf("cpppp %s\n", YANC_VERSION);
-            return 0;
-        }
-        else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source
-        else { fprintf(stderr, "cpppp: unknown option '%s'\n", argv[i]); usage(); }
-    }
-    if (!in_path) usage();
-
     // after the -I dirs, the Header/ folder next to the tool (exe_dir.h)
     static const char *const header_dirs[] = EXE_HEADER_DIRS;
     char *hdr = exe_find_dir(header_dirs);
-    if (hdr && n_incdirs < MAX_INCDIRS) incdirs[n_incdirs++] = hdr;
+    if (hdr) pp_add_incdir(hdr);
 
-    out_f = out_path ? fopen(out_path, "w") : stdout;
-    if (!out_f) { fprintf(stderr, "cpppp: cannot open '%s'\n", out_path); exit(1); }
-
+    sb_init(&out_text);
     process_file(in_path);
+    return out_text.p;
+}
 
-    // the original source, for cppcomp: the processor takes its name, and
-    // asmcomp reads the user's own files (input_N.txt, cade_k.txt) in its
-    // folder. Last, so the line numbers of the source stay the same in the
-    // messages
-    char *src = abs_path(in_path);
-    if (src) fprintf(out_f, "\n#pragma yanc source %s\n", src);
-
-    if (out_f != stdout) fclose(out_f);
-    return 0;
+int pp_where(int line, const char **file)
+{
+    if (line < 1 || line > map_n) return line;    // *file left as it was
+    *file = map_file[line - 1];
+    return map_line[line - 1];
 }

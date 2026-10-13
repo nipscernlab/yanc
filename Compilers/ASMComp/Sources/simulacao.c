@@ -46,14 +46,14 @@ int  s_size_arr[1000];     // size     of the found array
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// helper that searches cmm_log.txt to check whether ...
+// helper that searches prog_log.txt to check whether ...
 // char *va points to a variable declared in the .cmm
 // also returns the type of the variable found
 int sim_is_var(char *va, int *tipo, int *is_global, char *nome)
 {
     // open the log file ------------------------------------------------------
 
-    char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", temp_dir);
+    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
 
     // scan the file lines looking for the variable ---------------------------
@@ -97,14 +97,14 @@ int sim_is_var(char *va, int *tipo, int *is_global, char *nome)
     return ok;
 }
 
-// helper that searches cmm_log.txt to check whether ...
+// helper that searches prog_log.txt to check whether ...
 // char *va points to an array declared in the .cmm
 // also returns the type and size of the array found
 int sim_is_arr(char *va, int *tipo, int *size, int *is_global, char *nome)
 {
     // open the log file ------------------------------------------------------
 
-    char path[2048]; snprintf(path, sizeof(path), "%s/cmm_log.txt", temp_dir);
+    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
 
     // scan the file lines looking for the variable --------------------------
@@ -237,7 +237,7 @@ void sim_store(char *va)
     }
 }
 
-// checks cmm_log.txt to see whether it's an array declared in the .cmm code
+// checks prog_log.txt to see whether it's an array declared in the .cmm code
 // if so, registers it for display in the simulator
 void sim_regi_arr(char *va)
 {

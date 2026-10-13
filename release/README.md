@@ -22,7 +22,7 @@ themselves.
 
 | folder | contents |
 |---|---|
-| `bin/` | the compilers (`cmmcomp`, `cppcomp`, `asmcomp`), the preprocessors (`cpppp`, `appcomp`) and two waveform helpers (`comp2gtkw`, `gen_gtkw`). `-h` on any of them shows its options, `-V` its version |
+| `bin/` | the compilers (`cmmcomp`, `cppcomp`, `asmcomp`), the assembly's first pass (`appcomp`) and two waveform helpers (`comp2gtkw`, `gen_gtkw`). `-h` on any of them shows its options, `-V` its version |
 | `SAPHO/` | the SAPHO processor, in Verilog: asmcomp instantiates it with each program's parameters, and a simulator or a synthesizer reads it from here |
 | `Macros/` | assembly macros and tables used by C± programs |
 | `Header/` | the C++ headers the programs include |
@@ -38,7 +38,7 @@ The commands, for Windows `cmd` and for a Linux shell, are in the Quick start
 of the main README: <https://github.com/nipscernlab/yanc#quick-start>. They
 run as they are on `example/my_program.cpp`, which prints `55`.
 
-The C± version compiles with `cmmcomp` instead of `cpppp` + `cppcomp`; it
+The C± version compiles with `cmmcomp` instead of `cppcomp`; it
 writes into `./my_program/`:
 
 ```

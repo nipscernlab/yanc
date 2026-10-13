@@ -669,7 +669,7 @@ void parse_lang_flag(int *argc, char **argv);
       "  cmmcomp [opções] <arq.cmm>\n" \
       "\n" \
       "O processador tem o nome do arquivo (<nome>.cmm). Escreve na pasta de saída o\n" \
-      "<nome>.asm e as tabelas (cmm_log.txt, pc_<nome>_mem.txt, trad_cmm.txt) que o\n" \
+      "<nome>.asm e as tabelas (prog_log.txt, pc_<nome>_mem.txt, src_lines.txt) que o\n" \
       "asmcomp e a forma de onda usam.\n" \
       "\n" \
       "Opções:\n" \
@@ -684,8 +684,8 @@ void parse_lang_flag(int *argc, char **argv);
       "  cmmcomp [options] <file.cmm>\n" \
       "\n" \
       "The processor takes the name of the file (<name>.cmm). Writes to the output\n" \
-      "folder the <name>.asm and the tables (cmm_log.txt, pc_<name>_mem.txt,\n" \
-      "trad_cmm.txt) that asmcomp and the waveform use.\n" \
+      "folder the <name>.asm and the tables (prog_log.txt, pc_<name>_mem.txt,\n" \
+      "src_lines.txt) that asmcomp and the waveform use.\n" \
       "\n" \
       "Options:\n" \
       "  -o, --output <dir>      output folder (default: ./<name>)\n" \

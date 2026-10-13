@@ -11,7 +11,7 @@ in cycles, before calling an optimisation a win.
 | `sim_cyc.cpp` | the Verilator harness (a copy of `Compilers/CPPComp/Tests/Verilator/sim_main.cpp` that prints `CYCLES <n> value <v>` at every output) |
 | `sim_prof.cpp` | the same, also counting the cycles the fetch address (`pc_sim_val`, exposed with `+define+YANC_TRACE`) spends on each program word, into `prof.txt` |
 | `asm_waste.py <tests dir>` | scans every `golden.asm` for sequences a lean compiler would not emit (reload after SET, jump to a jump, unfused PSH; LOD, ...) |
-| `prof_report.py <output dir> <name>` | cycles per function, per source line (through `pc_<name>_mem.txt` and `trad_cmm.txt`) and per address |
+| `prof_report.py <output dir> <name>` | cycles per function, per source line (through `pc_<name>_mem.txt` and `src_lines.txt`) and per address |
 
 Rebuild the toolchain first, or you measure the OLD compiler:
 

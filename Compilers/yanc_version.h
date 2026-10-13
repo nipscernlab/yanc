@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 // Single source of truth for the YANC toolchain version. All five binaries
-// (compilers: cmmcomp, cppcomp, asmcomp -- preprocessors: cpppp, appcomp)
+// (compilers: cmmcomp, cppcomp, asmcomp -- the assembly preprocessor appcomp)
 // include this header so that bumping the version in one place updates the
 // --version output everywhere.
 // ----------------------------------------------------------------------------

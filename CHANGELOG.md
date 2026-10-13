@@ -116,6 +116,19 @@ tags consumed by Aurora.
   rename the file instead. They could disagree before: `-n` named the `.asm`
   and the pc table, `#PRNAME` the `.v`, the module and the testbench.
   Negative fixtures `prname_gone.cmm`, `prname_gone.cpp`.
+- **`cppcomp` preprocesses the C++ itself, as gcc does: `cpppp` is gone.**
+  `cppcomp filtro.cpp` is the whole front end, one call as `cmmcomp
+  filtro.cmm`: the preprocessor (`cpppp.c`, now part of cppcomp) works in
+  memory, so there is no `pp.cpp` and no `#pragma yanc source` any more.
+  `-I <dir>` moved to cppcomp, and `cppcomp -E` prints the preprocessed text,
+  as `gcc -E`. The messages point to the file and line written (an error in
+  an included header names the header) instead of the line of `pp.cpp`. No
+  `.asm` golden moved. `cppcomp -h` exits 0 and writes to stdout, and no
+  longer lists the build-time defaults of the compiler.
+- **The tables have names that fit both languages:** `cmm_log.txt` is
+  `prog_log.txt` (the variables, `num_ins` and `srcdir` asmcomp reads) and
+  `trad_cmm.txt` is `src_lines.txt` (the source text the waveform shows). A
+  C++ program wrote them under the C± names.
 - **cmmcomp's `-A` / `--array` is `--wave-arrays`**, a name that says what it
   does: every array element becomes its own signal in the waveform.
 - **The README is short: what YANC is, how to run it, how to develop it.**
