@@ -9,6 +9,15 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **The YANC manual (`docs/`).** Installing, a first program in C± and C++,
+  the command line, the two languages, the directives, the library and its
+  costs, the float format, several processors, simulation and the
+  waveform, the messages; a message reference and the instruction set,
+  generated from the sources (the regress fails when either falls behind).
+  Every claim was checked by compiling or simulating. Built with Sphinx
+  (MyST, Furo); the CI builds it on every push with warnings as errors; each
+  release attaches it as `yanc-docs-<tag>.zip` and publishes it on GitHub
+  Pages, for nipscern.com/library/yanc to serve.
 - **`toma` and `cade`: SAPHOs pass values to each other over links.**
   `toma(k, x);` on one processor hands `x` over its link k, `y = cade(k);`
   (int) or `fcade(k)` (float) on the partner takes it: whoever arrives first
@@ -33,8 +42,8 @@ tags consumed by Aurora.
   Pins per link `toma_k`, `valeu_k` / `cade_k`, `taqui_k`, `cade_dado_k`,
   and one `toma_dado`; wire `W.toma_i -> R.taqui_j`, `R.cade_j ->
   W.valeu_i`, `W.toma_dado -> R.cade_dado_j`. Simulated alone, a processor
-  gets its testbench as the partner of each link (`Simulation/cade_k.txt`,
-  `Simulation/toma_k.txt`). Regress: `LINK` (pairs, C+- and C+-/C++), `LINK2`
+  gets its testbench as the partner of each link (it reads `cade_k.txt`
+  beside the source and writes `toma_k.txt` in the output folder). Regress: `LINK` (pairs, C+- and C+-/C++), `LINK2`
   (pairs on 20 / 27.3 ns), `LINKALL` (below), `LINK3` (a chain on two clocks
   with the middle in C+- and in C++, fan-out, fan-in, a float), negative
   fixtures in both languages. `docs/design/toma-and-cade.md`,
@@ -81,14 +90,13 @@ tags consumed by Aurora.
   and `install.sh` (Linux: a launcher per tool in `~/.local/bin`, or
   `$PREFIX/bin`). The tools look for the folders that come with them next to
   their own executable (`Compilers/common/exe_dir.c`): cmmcomp and asmcomp
-  use `Macros/`, asmcomp `SAPHO/`, cpppp searches `Header/` after any `-I`,
-  and the last argument of `gen_gtkw` (the `comp2gtkw` path) is optional. In
-  a repository build they find the `Compilers/` and `SAPHO/` folders the same
-  way. The options that named those folders are gone: `-m` (cmmcomp,
-  asmcomp) and `-d` (asmcomp); a missing folder is an error that says to
-  install YANC again.
-  The Quick start runs with bare tool names. `cppcomp -h` and `cpppp -h` now
-  say C++, and `gen_gtkw -h` prints its usage.
+  use `Macros/`, asmcomp `SAPHO/`, cppcomp searches `Header/` after any
+  `-I`, and the last argument of `gen_gtkw` (the `comp2gtkw` path) is
+  optional. In a repository build they find the `Compilers/` and `SAPHO/`
+  folders the same way. The options that named those folders are gone: `-m`
+  (cmmcomp, asmcomp) and `-d` (asmcomp); a missing folder is an error that
+  says to install YANC again. `cppcomp -h` now says C++, and `gen_gtkw -h`
+  prints its usage.
 - **The command lines and the folders follow the usual conventions.** The
   source file is the argument without an option in every tool (`-i` is
   gone). The files the user writes stay beside the source (the `.cmm` /
@@ -98,20 +106,18 @@ tags consumed by Aurora.
   `app_log.txt`, `<name>.v`, the `.mif`, `<name>_tb.v`, the simulation
   outputs. There are no `Software/`, `Hardware/`, `Simulation/` or `Temp/`
   folders any more, and no `-p` or `-t`: cmmcomp and cppcomp take `-o`,
-  appcomp and asmcomp write beside the `.asm` they read. The compilers record
-  the source folder in `cmm_log.txt` (`srcdir`; for C++, cpppp names the
-  source to cppcomp in a `#pragma yanc source` line), where asmcomp reads the
-  user's files. asmcomp's `-f` / `-c` to 100
-  MHz and 10000 clocks (0 gave a testbench with an infinite clock period);
-  missing folders are created (all levels); `gen_gtkw`'s third argument is the
-  folder that holds the output folders. The smallest C± run is
-  `cmmcomp prog.cmm`, `appcomp prog/prog.asm`, `asmcomp prog/prog.asm`. The
-  test projects moved to the same layout (`Tests/<p>/<p>.cmm` beside its
-  files), and the scripts, the regress and the CI with them. AURORA adapts
-  with v7.1. Fixed on the way: cmmcomp re-read the source for the waveform's
-  C± track at `<proc>/Software/<name>.cmm`, which failed when the file was not
-  named after the processor; asmcomp took garbage for `#NUBITS`, `#NBMANT` and
-  `#NBEXPO` when a program left them out, instead of the defaults 32/23/8.
+  asmcomp writes beside the `.asm` it reads. The compilers record the source
+  folder in `prog_log.txt` (`srcdir`), where asmcomp finds the user's files.
+  asmcomp's `-f` / `-c` default to 100 MHz and 10000 clocks (0 gave a
+  testbench with an infinite clock period); missing folders are created (all
+  levels); `gen_gtkw`'s third argument is the folder that holds the output
+  folders. The test projects moved to the same layout (`Tests/<p>/<p>.cmm`
+  beside its files), and the scripts, the regress and the CI with them.
+  AURORA adapts with v7.1. Fixed on the way: cmmcomp re-read the source for
+  the waveform's C± track at `<proc>/Software/<name>.cmm`, which failed when
+  the file was not named after the processor; asmcomp took garbage for
+  `#NUBITS`, `#NBMANT` and `#NBEXPO` when a program left them out, instead of
+  the defaults 32/23/8.
 - **UTF-8 everywhere, and no absolute path in the generated Verilog.** On
   Windows each tool carries a manifest that makes it work in UTF-8, as on
   Linux and macOS: a folder or file name with accents reaches the tools
@@ -143,7 +149,7 @@ tags consumed by Aurora.
 - **`cppcomp` preprocesses the C++ itself, as gcc does: `cpppp` is gone.**
   `cppcomp filtro.cpp` is the whole front end, one call as `cmmcomp
   filtro.cmm`: the preprocessor (`cpppp.c`, now part of cppcomp) works in
-  memory, so there is no `pp.cpp` and no `#pragma yanc source` any more.
+  memory, so there is no `pp.cpp` any more.
   `-I <dir>` moved to cppcomp, and `cppcomp -E` prints the preprocessed text,
   as `gcc -E`. The messages point to the file and line written (an error in
   an included header names the header) instead of the line of `pp.cpp`, and
@@ -174,8 +180,8 @@ tags consumed by Aurora.
   `app`) that asmcomp runs before the second pass; it still writes
   `app_log.txt` (labels, sizes, parameters) beside the `.asm`, where the
   second pass and AURORA read it. `asmcomp prog/prog.asm` is the whole back
-  end; the Quick start is two commands. `check_isa.py` checks the first
-  pass's mnemonic list (TODO item 25, closed).
+  end. `check_isa.py` checks the first pass's mnemonic list (TODO item 25,
+  closed).
 - **English by default, `--lang=en|pt` in every tool.** The messages are in
   English unless `--lang=pt` (or `--lang pt`) or the environment variable
   `YANC_LANG=pt` says otherwise; the option wins over the variable, and any
@@ -187,10 +193,12 @@ tags consumed by Aurora.
 - **cmmcomp's `-A` / `--array` is `--wave-arrays`**, a name that says what it
   does: every array element becomes its own signal in the waveform.
 - **The README is short: what YANC is, how to run it, how to develop it.**
-  The rest moved to `docs/install.md`, `docs/simulation.md` and
-  `docs/programming.md`. The release examples lost the directives that have
-  defaults (`#NDSTAC`, `#SDEPTH`, `#NUGAIN`), and `my_program.cpp` gained the
-  `#pragma yanc` lines that match `my_program.cmm`'s header.
+  The rest is in the manual (above). The release examples lost the
+  directives that have defaults (`#NDSTAC`, `#SDEPTH`, `#NUGAIN`), and
+  `my_program.cpp` gained the `#pragma yanc` lines that match
+  `my_program.cmm`'s header.
+- **The design notes moved to `docs/design/`**, with an index
+  (`docs/design/README.md`); `docs/` itself is the manual.
 
 ### Fixed
 - **cmmcomp: four messages that misled.** A function with more than 16
@@ -221,7 +229,8 @@ tags consumed by Aurora.
   - `#pragma yanc fftsiz` and `itradd` were accepted and did nothing; they
     are errors now. The comments that called the C++ float "IEEE-754
     single" say what it is: the SAPHO format with the field sizes of IEEE.
-- **`check_isa.py` holds appcomp's mnemonic list (`app.l`) to `ASMComp.l`.**
+- **`check_isa.py` holds the assembler's first-pass mnemonic list to
+  `ASMComp.l`** (then appcomp's `app.l`, now asmcomp's `pass1.l`).
   A mnemonic missing there is not counted, and the instruction memory comes
   out one word short (seen while adding `TOM`/`CAD`).
 - **A user name spelt like an instruction or like a compiler-made name
