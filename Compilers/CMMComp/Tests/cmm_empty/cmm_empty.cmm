@@ -1,0 +1,22 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// The empty statement ';' and the empty block '{ }' emit nothing: alone,
+// as the body of an if, of a while and of a for. With 1 at the input: 7
+// (the else), then 2 (the for).
+
+void main()
+{
+    int a;
+    a = in(0);
+    ;
+    if (a > 2) ; else out(0, 7);
+    while (a < 0) ;
+    { }
+    while (a < 0) { }
+    for (a = 0; a < 2; a = a + 1) ;
+    out(0, a);
+}

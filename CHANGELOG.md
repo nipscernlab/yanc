@@ -61,6 +61,9 @@ tags consumed by Aurora.
   reader on 20 ns / 27.3 ns clocks both ways, and `Scripts/hw/tb_dcfifo.v`.
   The board check and its Quartus constraints are still to do
   (`docs/design/myfifo.md`).
+- **C±: the empty statement `;` and the empty block `{ }`**, as in C: a
+  waiting loop is `while (in(1)) ;`. Both emit nothing. Regress:
+  `cmm_empty`.
 
 ### Changed
 - **Opcodes from `ADD` up move by 2** to make room for `TOM`/`CAD` among the
@@ -190,6 +193,15 @@ tags consumed by Aurora.
   `#pragma yanc` lines that match `my_program.cmm`'s header.
 
 ### Fixed
+- **cmmcomp: four messages that misled.** A function with more than 16
+  parameters kept the first 16 and failed later with "parameter list doesn't
+  match"; it now says the limit. A comp given to `sinh`, `cosh`, `tanh`,
+  `floor`, `ceil` or `round` said complex square roots were not coded; it
+  now names the function. The duplicate `#TOAQUI` error and its Info line
+  were English only; they follow `--lang`. "aproximated" is "approximated".
+  Two messages that could no longer appear are gone ("exp(.)/log(.) of a
+  complex number isn't implemented": both take a comp).
+  NegTests `params_17`, `sinh_comp`, `toaqui_twice`.
 - **cppcomp: four programs that compiled into the wrong thing, and two
   preprocessor gaps** (found writing the manual, 2026-10-13; `test91`,
   NegTests `pp_error.cpp`, `pragma_fftsiz.cpp`):

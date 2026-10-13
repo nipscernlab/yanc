@@ -32,7 +32,7 @@ float unit, at the cost of precision (see [Directives](directives.md)).
 
 A float constant in the program (`0.1`) becomes the nearest value the
 processor's format can hold. The compiler says so for each constant that is
-not held exactly (`constant 0.1 on line 1 aproximated to 0.10000000894070`),
+not held exactly (`constant 0.1 on line 1 approximated to 0.10000000894070`),
 and the assembler reports the largest error among the values of an array
 file. Measured: with `#FROUND 0`, an input of 5 000 000 read with `fin()`
 comes out of `fout()` as -3 388 608; with `#FROUND 1`, as 5 000 000. Write constants as decimals: C± has no exponent

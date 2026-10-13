@@ -126,9 +126,8 @@ when `x` is not negative.
   the next, as in C.
 - `break` leaves the innermost loop or `switch`; `continue` goes to the next
   turn of the innermost loop.
-- There is no empty statement: `while (busy()) ;` and `{ }` are syntax
-  errors. A waiting loop needs a body, even a harmless one:
-  `while (in(1)) { x = 0; }`.
+- The empty statement `;` and the empty block `{ }` emit nothing, so a
+  waiting loop is written as in C: `while (in(1)) ;`.
 
 ## Functions
 

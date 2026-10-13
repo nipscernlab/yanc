@@ -1,0 +1,13 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+void main()
+{
+    int a;
+    #TOAQUI
+    a = 1;
+    #TOAQUI
+    out(0, a);
+}

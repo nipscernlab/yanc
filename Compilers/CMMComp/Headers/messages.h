@@ -210,17 +210,9 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: nada a ver! norm(.) é só pra inteiro!\n", \
       "Error on line %d: nope! norm(.) is integer-only!\n")
 
-#define MSG_ERR_SQRT_COMPLEX \
-    M("Erro na linha %d: não implementei raiz quadrada de número complexo ainda. Se vira!\n", \
-      "Error on line %d: I haven't coded up complex square roots yet. You're on your own!\n")
-
-#define MSG_ERR_EXP_COMPLEX \
-    M("Erro na linha %d: exp(.) de número complexo ainda não foi implementado!\n", \
-      "Error on line %d: exp(.) of a complex number isn't implemented yet!\n")
-
-#define MSG_ERR_LOG_COMPLEX \
-    M("Erro na linha %d: log(.) de número complexo ainda não foi implementado!\n", \
-      "Error on line %d: log(.) of a complex number isn't implemented yet!\n")
+#define MSG_ERR_FUNC_COMPLEX \
+    M("Erro na linha %d: %s(.) não aceita comp.\n", \
+      "Error on line %d: %s(.) doesn't take a comp.\n")
 
 #define MSG_ERR_POW_COMPLEX \
     M("Erro na linha %d: elevar número complexo a uma potência? Tá viajando! Não fiz isso ainda, se vira!\n", \
@@ -450,6 +442,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: olha lá direito quantos parâmetros tem a função '%s'.\n", \
       "Error on line %d: check again how many parameters the function '%s' actually takes.\n")
 
+#define MSG_ERR_TOO_MANY_PARAMS \
+    M("Erro na linha %d: a função '%s' passa de %d parâmetros, o máximo.\n", \
+      "Error on line %d: function '%s' has more than %d parameters, the most allowed.\n")
+
 #define MSG_ERR_VOID_FUNC_USE \
     M("Erro na linha %d: olha lá a funcao '%s', você vai ver que ela nao retorna nada.\n", \
       "Error on line %d: take a look at function '%s', you'll see it doesn't return anything.\n")
@@ -542,6 +538,14 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: já tem uma interrupção rolando em outro ponto antes desse!\n", \
       "Error on line %d: there's already an interrupt going on somewhere else before this one!\n")
 
+#define MSG_ERR_DUP_TOAQUI \
+    M("Erro na linha %d: #TOAQUI repetido (só pode um)\n", \
+      "Error on line %d: duplicate #TOAQUI marker (only one allowed)\n")
+
+#define MSG_INFO_TOAQUI \
+    M("Info na linha %d: marcador #TOAQUI registrado (aciona o pino cheguei)\n", \
+      "Info on line %d: #TOAQUI marker registered (drives the cheguei pin)\n")
+
 // info messages -------------------------------------------------------------
 
 #define MSG_INFO_INTERRUPT_DIRECTIVE \
@@ -558,7 +562,7 @@ void parse_lang_flag(int *argc, char **argv);
 
 #define MSG_INFO_CONST_APPROX \
     M("Info: constante %s na linha %d aproximada para %.14f (erro = %.14f)\n", \
-      "Info: constant %s on line %d aproximated to %.14f (error = %.14f)\n")
+      "Info: constant %s on line %d approximated to %.14f (error = %.14f)\n")
 
 #define MSG_INFO_SQRT_MACRO \
     M("Info: adicionando macro assembly para cálculo de raiz quadrada\n", \

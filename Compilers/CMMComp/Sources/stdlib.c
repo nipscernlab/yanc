@@ -1725,7 +1725,7 @@ expr exec_cosh(expr e)
 
     if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_FUNC_COMPLEX, line_num+1, "cosh"); exit(EXIT_FAILURE);}
 
     if (e.id != 0) v_table[e.id].used = 1;
 
@@ -1778,7 +1778,7 @@ expr exec_sinh(expr e)
 
     if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_FUNC_COMPLEX, line_num+1, "sinh"); exit(EXIT_FAILURE);}
 
     if (e.id != 0) v_table[e.id].used = 1;
 
@@ -1831,7 +1831,7 @@ expr exec_tanh(expr e)
 
     if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_FUNC_COMPLEX, line_num+1, "tanh"); exit(EXIT_FAILURE);}
 
     if (e.id != 0) v_table[e.id].used = 1;
 
@@ -1894,7 +1894,7 @@ expr exec_floor(expr e)
 
     if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_FUNC_COMPLEX, line_num+1, "floor"); exit(EXIT_FAILURE);}
 
     if (e.id != 0) v_table[e.id].used = 1;
 
@@ -1954,7 +1954,7 @@ expr exec_ceil(expr e)
 
     if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_FUNC_COMPLEX, line_num+1, "ceil"); exit(EXIT_FAILURE);}
 
     if (e.id != 0) v_table[e.id].used = 1;
 
@@ -2013,7 +2013,7 @@ expr exec_round(expr e)
 
     if (e.id != 0 && v_table[e.id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
     if (e.id != 0 && v_table[e.id].isar > 0) {fprintf(stderr, MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname)); exit(EXIT_FAILURE);}
-    if (e.type > 2) {fprintf (stderr, MSG_ERR_SQRT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    if (e.type > 2) {fprintf (stderr, MSG_ERR_FUNC_COMPLEX, line_num+1, "round"); exit(EXIT_FAILURE);}
 
     if (e.id != 0) v_table[e.id].used = 1;
 

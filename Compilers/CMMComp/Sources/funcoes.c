@@ -389,8 +389,8 @@ int declar_par(int type, int id)
     // store info about every parameter's data type in a single number
     v_table[fun_parse].fpar = v_table[fun_parse].fpar*10 + type;
 
-    if (func_nparams < FUNC_MAX_PARAMS)
-        func_params[func_nparams++] = id;
+    if (func_nparams == FUNC_MAX_PARAMS) {fprintf(stderr, MSG_ERR_TOO_MANY_PARAMS, line_num+1, v_table[fun_parse].name, FUNC_MAX_PARAMS); exit(EXIT_FAILURE);}
+    func_params[func_nparams++] = id;
 
     return id;
 }

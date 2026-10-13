@@ -49,9 +49,7 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: using sign(.,.) with complex numbers makes zero sense!
 - Error on line <n>: using the 'pset(.)' function with complex numbers makes zero sense!
 - Error on line <n>: nope! norm(.) is integer-only!
-- Error on line <n>: I haven't coded up complex square roots yet. You're on your own!
-- Error on line <n>: exp(.) of a complex number isn't implemented yet!
-- Error on line <n>: log(.) of a complex number isn't implemented yet!
+- Error on line <n>: <name>(.) doesn't take a comp.
 - Error on line <n>: a complex number raised to a power? Dream on! Didn't build that yet, you're on your own!
 - Error on line <n>: argument of real(.) has gotta be complex!
 - Error on line <n>: argument of imag(.) has gotta be complex!
@@ -83,12 +81,14 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: where's this function '<name>' supposed to be?
 - Error on line <n>: function '<name>' is where exactly?
 - Error on line <n>: check again how many parameters the function '<name>' actually takes.
+- Error on line <n>: function '<name>' has more than <n> parameters, the most allowed.
 - Error on line <n>: take a look at function '<name>', you'll see it doesn't return anything.
 - Error on line <n>: parameter list of function '<name>' doesn't match the original.
 - Error on line <n>: that break is just hanging out lost!
 - Error on line <n>: a continue outside a loop goes nowhere!
 - Error on line <n>: function '<name>' calls itself (<name>). Recursion doesn't fly in C±. Really want recursion? Use SAPHO's C++ compiler.
 - Error on line <n>: there's already an interrupt going on somewhere else before this one!
+- Error on line <n>: duplicate #TOAQUI marker (only one allowed)
 - Error: option '<name>' needs a value.
 - Error: unknown option '<name>'.
 - Error: the file '<name>' names the processor, and '<name>' <name>. Rename the file.
@@ -142,9 +142,10 @@ value. What the common ones mean and how to get past them is in
 
 ### Information
 
+- Info on line <n>: #TOAQUI marker registered (drives the cheguei pin)
 - Info: interruption directive found at line <n>
 - Info: <n> assembly instructions generated
-- Info: constant <name> on line <n> aproximated to <x> (error = <x>)
+- Info: constant <name> on line <n> approximated to <x> (error = <x>)
 - Info: adding assembly macro for root square computation
 - Info: adding assembly macro for arc-tangent computation
 - Info: adding assembly macro for sin computation

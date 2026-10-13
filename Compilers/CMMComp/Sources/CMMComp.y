@@ -268,6 +268,8 @@ stmt_full: '{' stmt_list '}' // statement block
          |         break     // break; (innermost loop or switch)
          |      continue     // continue; (innermost loop)
          |    dire_inter     // interrupt point
+         |           ';'     // empty statement: emits nothing
+         |       '{' '}'     // empty block: emits nothing
 
 // function calls -------------------------------------------------------------
 

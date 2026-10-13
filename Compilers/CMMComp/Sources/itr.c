@@ -30,9 +30,9 @@ void dire_inter()
 // they match the cheguei output pin asserts. Only one #TOAQUI per program.
 void dire_toaqui()
 {
-    if (toaqui_ok == 1) {fprintf(stderr, "Error on line %d: duplicate #TOAQUI marker (only one allowed)\n", line_num+1); exit(EXIT_FAILURE);}
+    if (toaqui_ok == 1) {fprintf(stderr, MSG_ERR_DUP_TOAQUI, line_num+1); exit(EXIT_FAILURE);}
 
-    printf("Info on line %d: #TOAQUI marker registered (drives the cheguei pin)\n", line_num+1);
+    printf(MSG_INFO_TOAQUI, line_num+1);
 
     add_sinst(0, "#TOAQUI\n");
     toaqui_ok = 1;
