@@ -107,6 +107,7 @@ TMP_DIR="$SCRATCH/tmp"            # CMM phase tmps
 CMMCOMP="$BIN_DIR/cmmcomp.exe"
 CPPC="$BIN_DIR/cppcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
+YANC="$BIN_DIR/yanc.exe"
 HDL="$ROOT/SAPHO"
 CMM_ROOT="$ROOT/Compilers/CMMComp"
 SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"
@@ -230,7 +231,7 @@ stack_check() {   # stack_check <tb.vcd>
 # ---- 1. build all 5 binaries -----------------------------------------------
 
 if [ "$SKIP_BUILD" -eq 0 ]; then
-    echo "==> building cmmcomp + cppcomp + asmcomp"
+    echo "==> building cmmcomp + cppcomp + asmcomp + yanc"
     mkdir -p "$BIN_DIR"
 
     # Wipe stale binaries first: a silently-failing gcc must NOT leave the
@@ -272,6 +273,10 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
     rm -f ASMComp.c pass1_lex.c
     popd >/dev/null
+
+    rm -f "$YANC"
+    gcc -O2 -Wall -Werror -o "$YANC" "$ROOT/Compilers/Driver/yanc.c" \
+        "$ROOT/Compilers/common/console_utf8.c" "$ROOT/Compilers/common/exe_dir.c" "$ROOT/Compilers/common/yanc_lang.c"
 
     set +e
 fi
@@ -1399,6 +1404,35 @@ if [ "$CMM_ONLY" -eq 0 ]; then
     done < "$neg_dir/manifest.txt"
     rm -rf "$neg_work"
 fi
+
+# ---- 4d. the driver, yanc --------------------------------------------------
+# yanc runs the tools next to it: on a C+- test its .asm must be the golden;
+# -S then the .asm must give the same processor; on a C++ test its .asm must
+# be cppcomp's own; a bad input and a failing compile must stop it non-zero.
+echo ""
+echo "==> yanc (the driver)"
+drv="$SCRATCH/work_yanc"
+rm -rf "$drv"; mkdir -p "$drv"
+cp -r "$CMM_ROOT/Tests/sw_test" "$drv/sw_test"
+cp -r "$CPP_ROOT/Tests/test1"   "$drv/test1"
+( cd "$drv/sw_test" && "$YANC" sw_test.cmm >/dev/null 2>&1 ) && [ -f "$drv/sw_test/sw_test/sw_test.v" ] \
+    && diff -q "$drv/sw_test/golden.asm" "$drv/sw_test/sw_test/sw_test.asm" >/dev/null
+r1=$?
+( cd "$drv/sw_test" && rm -rf sw_test && "$YANC" -S sw_test.cmm >/dev/null 2>&1 && [ ! -f sw_test/sw_test.v ] \
+    && "$YANC" sw_test/sw_test.asm >/dev/null 2>&1 ) && [ -f "$drv/sw_test/sw_test/sw_test.v" ]
+r2=$?
+( cd "$drv/test1" && "$YANC" -o by_yanc test1.cpp >/dev/null 2>&1 && "$CPPC" -o direct test1.cpp >/dev/null 2>&1 ) \
+    && diff -q "$drv/test1/by_yanc/test1.asm" "$drv/test1/direct/test1.asm" >/dev/null && [ -f "$drv/test1/by_yanc/test1.v" ]
+r3=$?
+printf 'void main()\n{\n    int a = 1\n}\n' > "$drv/bad.cmm"
+( cd "$drv" && ! "$YANC" bad.cmm >/dev/null 2>&1 && ! "$YANC" bad.txt >/dev/null 2>&1 )
+r4=$?
+for t in "1 C+- to Verilog, .asm = golden" "2 -S then the .asm" "3 C++ .asm = cppcomp's" "4 errors stop it"; do
+    n="${t%% *}"; eval "r=\$r$n"
+    if [ "$r" -eq 0 ]; then echo "PASS (yanc:${t#* })"; pass=$((pass+1))
+    else echo "FAIL (yanc:${t#* })"; fail=$((fail+1)); failed_names+=("yanc$n"); fi
+done
+rm -rf "$drv"
 
 # ---- 5. summary ------------------------------------------------------------
 

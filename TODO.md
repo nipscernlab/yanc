@@ -16,21 +16,19 @@ history stays in git and in the CHANGELOG).
 regress-clean: `toma`/`cade` in pairs and chains (items 20, 23), `myFIFO`
 fixed and `myDCFIFO` (item 22), the conventional command lines and the flat
 output folder, the processor named after its source file, `cppcomp`
-preprocessing the C++ itself (no `cpppp`), the tables `prog_log.txt` /
-`src_lines.txt`. Left before the tag, in order:
-1. `--lang=en|pt` in every tool, English the default (cmmcomp's English
-   stays relaxed and slangy; Luciano sees the diff).
-2. The `yanc` driver: `yanc [-o dir] [-S] [-I dir] [-f MHz] [-c n]
-   [--wave-arrays] [-v] [--lang] <file.cmm|.cpp>`, the tools found next to
-   it, stopping at the Verilog.
-3. One consolidated text for AURORA (no compatibility kept in yanc): merge
-   `C:\tmp\aurora_yanc_cli.md`, `aurora_yanc_layout.md` and the running list
-   `aurora_yanc_pending.md`. AURORA's local C++ flow is broken until it
-   adapts (no `cpppp`). AURORA does not push before the yanc release; both
+preprocessing the C++ itself (no `cpppp`), `asmcomp` doing both passes (no
+`appcomp`), the tables `prog_log.txt` / `src_lines.txt`, `--lang=en|pt`
+with English the default, and the driver `yanc`. Left before the tag, in
+order:
+1. One consolidated text for AURORA (no compatibility kept in yanc; AURORA
+   calls `yanc`, Luciano 2026-10-13): merge `C:\tmp\aurora_yanc_cli.md`,
+   `aurora_yanc_layout.md` and the running list `aurora_yanc_pending.md`.
+   AURORA's local flow is broken until it adapts (no `cpppp`, no `appcomp`,
+   no `-en`/`-pt`). AURORA does not push before the yanc release; both
    release together.
-4. The board run of Sabrina and Pedro Henrique: the `LINKALL` pair with the
+2. The board run of Sabrina and Pedro Henrique: the `LINKALL` pair with the
    `.sdc` on both boards (the Fmax is measured: the link costs no clock).
-5. CHANGELOG `[Unreleased]` -> 7.1, `yanc_version.h`, tag.
+3. CHANGELOG `[Unreleased]` -> 7.1, `yanc_version.h`, tag.
 
 **Waiting on someone else:** item 21 (documentation that cannot fall
 behind a release) waits on Chrysthofer's answer to "Diretrizes para os

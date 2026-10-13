@@ -40,16 +40,18 @@ Verilog is the [`SAPHO/`](SAPHO/) folder of this repository.
 `<tag>` being the version, for example `yanc-bin-v6.0.zip`), unpack it
 anywhere and run the install script in it once: `install.bat` on Windows,
 `./install.sh` on Linux. It puts the tools on your PATH (no administrator
-rights); open a new terminal and `cmmcomp -h` answers. The tools find the
+rights); open a new terminal and `yanc -h` answers. The tools find the
 folders that come with them (`SAPHO/`, `Macros/`, `Header/`) by themselves.
 To simulate you also need [Icarus Verilog](http://iverilog.icarus.com/) (or
 Verilator), and to look at the waveform GTKWave
 ([docs/setup.md](docs/setup.md)).
 
-**2. Run a program.** Two commands take a source file down to the
-processor's Verilog and its testbench; a simulator and a viewer do the rest.
-The tools print in English; `--lang=pt` (or `YANC_LANG=pt` in the
-environment) switches the C± ones to Portuguese.
+**2. Run a program.** One command, `yanc`, takes a source file (`.cmm` or
+`.cpp`) down to the processor's Verilog and its testbench; a simulator and a
+viewer do the rest. `yanc -h` lists its options (`-o` the output folder, `-S`
+stop at the assembly, `-v` show the tools it runs, ...). The tools print in
+English; `--lang=pt` (or `YANC_LANG=pt` in the environment) switches to
+Portuguese.
 The program, `my_program.cpp`:
 
 ```cpp
@@ -64,13 +66,11 @@ int main() {
 **Windows** (`cmd`), in the folder that holds `my_program.cpp`:
 
 ```bat
-:: 1. compile to assembly: my_program\my_program.asm and its tables (the
-::    processor takes the source file's name; a .cmm source: cmmcomp my_program.cmm)
-cppcomp my_program.cpp
-:: 2. the processor's Verilog, memory images and testbench, all in my_program\
-asmcomp my_program\my_program.asm
+:: 1. the processor's Verilog, memory images and testbench, all in my_program\
+::    (the processor takes the source file's name; a C± source: yanc my_program.cmm)
+yanc my_program.cpp
 
-:: 3. simulate (Icarus); the processor's Verilog is the package's SAPHO folder
+:: 2. simulate (Icarus); the processor's Verilog is the package's SAPHO folder
 set SAPHO=C:\path\to\yanc\SAPHO
 cd my_program
 iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
@@ -78,7 +78,7 @@ iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
 vvp sim.vvp
 type output_0.txt
 
-:: 4. the waveform, formatted (.. holds the output folder my_program\)
+:: 3. the waveform, formatted (.. holds the output folder my_program\)
 gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
 gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
@@ -103,8 +103,7 @@ int main() {
 }
 EOF
 
-cppcomp my_program.cpp
-asmcomp my_program/my_program.asm
+yanc my_program.cpp
 
 SAPHO=$YANC/SAPHO
 cd my_program
@@ -122,7 +121,7 @@ Everything generated lands in `my_program/`, beside the source: the
 processor (`my_program.v`, `my_program_inst.mif`, `my_program_data.mif`), the
 assembly, the testbench and the simulation outputs. Files the program reads
 (arrays initialised from a file, `input_N.txt` for the simulation) stay beside
-the source. Stop after `asmcomp` if all you want are the Verilog and the memory
+the source. Stop after `yanc` if all you want are the Verilog and the memory
 images. Verilator instead of Icarus, the formatted waveform and the scripts
 that run the whole pipeline: [docs/running.md](docs/running.md). Writing
 programs: [docs/programming.md](docs/programming.md).

@@ -6,7 +6,11 @@ result. The commands that take one program all the way are in the README's
 
 ## Pipeline
 
-YANC has **three compilers** (`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end compilers turn high-level source into assembly (`cppcomp` preprocesses the C++ itself, as gcc does); a single back-end compiler, the assembler `asmcomp`, turns that assembly into Verilog in two passes over it.
+`yanc`, the driver, runs the tools for you, as gcc runs its own: `yanc
+prog.cmm` (or `prog.cpp`) compiles and builds the processor in `prog/`,
+`yanc -S` stops at the assembly, `yanc prog/prog.asm` only assembles, and
+`-v` shows each tool it runs. Underneath, YANC has **three compilers**
+(`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end compilers turn high-level source into assembly (`cppcomp` preprocesses the C++ itself, as gcc does); a single back-end compiler, the assembler `asmcomp`, turns that assembly into Verilog in two passes over it.
 
 ```
   C±:     foo.cmm  ──►  cmmcomp  ─┐
@@ -35,7 +39,7 @@ declared variables (`N`, `ind`, `istep`, `j`, `k`, `m`, `mmax`,
 
 ## Components
 
-Five binaries are produced from source — three compilers and two helpers:
+Six binaries are produced from source — the driver `yanc` (`Compilers/Driver/`), three compilers and two helpers:
 
 **Compilers**
 
@@ -186,6 +190,9 @@ Each tool's options (`[...]` optional; the source file is the argument
 without an option):
 
 ```bat
+:: the driver: the compiler, then asmcomp (a .asm: asmcomp only)
+yanc    [-o <dir>] [-S] [-I <dir>]... [-f <MHz>] [-c <clocks>] [--wave-arrays] [-v] <file.cmm|.cpp|.asm>
+
 :: compilers: the .asm and the tables to the output folder (default ./<name>)
 cmmcomp [-o <dir>] [--wave-arrays] <file.cmm>
 cppcomp [-o <dir>] [-I <dir>]... [-E] <file.cpp>

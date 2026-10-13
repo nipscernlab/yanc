@@ -7,7 +7,7 @@
 # Windows_NT, which switches the output suffix to .exe).
 #
 #   make                build every binary into bin/
-#   make <name>         build one: cmmcomp asmcomp cppcomp
+#   make <name>         build one: yanc cmmcomp asmcomp cppcomp
 #                       comp2gtkw gen_gtkw
 #   make clean          remove bin/ and the flex/bison generated files
 #   make install DESTDIR=<dir>   copy the binaries into <dir>/bin
@@ -59,12 +59,12 @@ ASMCOMP_C := eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c \
              array.c messages.c args.c pass1.c
 CPPCOMP_C := main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c
 
-BINARIES := $(BIN)/cmmcomp$(EXE) $(BIN)/asmcomp$(EXE) \
+BINARIES := $(BIN)/yanc$(EXE) $(BIN)/cmmcomp$(EXE) $(BIN)/asmcomp$(EXE) \
             $(BIN)/cppcomp$(EXE) \
             $(BIN)/comp2gtkw$(EXE) $(BIN)/gen_gtkw$(EXE)
 
 .PHONY: all clean install stage \
-        cmmcomp asmcomp cppcomp comp2gtkw gen_gtkw
+        yanc cmmcomp asmcomp cppcomp comp2gtkw gen_gtkw
 
 all: $(BINARIES)
 
@@ -88,6 +88,7 @@ stage:
 cmmcomp:   $(BIN)/cmmcomp$(EXE)
 asmcomp:   $(BIN)/asmcomp$(EXE)
 cppcomp:   $(BIN)/cppcomp$(EXE)
+yanc:      $(BIN)/yanc$(EXE)
 comp2gtkw: $(BIN)/comp2gtkw$(EXE)
 gen_gtkw:  $(BIN)/gen_gtkw$(EXE)
 
@@ -125,6 +126,10 @@ $(BIN)/comp2gtkw$(EXE): $(SCR)/comp2gtkw.c | $(BIN)
 
 $(BIN)/gen_gtkw$(EXE): $(SCR)/gen_gtkw.c $(EXEDIR) | $(BIN)
 	$(CC) $(CFLAGS) -o $@ $(SCR)/gen_gtkw.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(LDLIBS)
+
+# --- yanc, the driver (runs the tools next to it) ---------------------------
+$(BIN)/yanc$(EXE): Compilers/Driver/yanc.c $(CONSOLE) $(EXEDIR) $(VERSION_H) | $(BIN)
+	$(CC) $(CFLAGS) -o $@ Compilers/Driver/yanc.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(LDLIBS)
 
 # --- housekeeping -----------------------------------------------------------
 install: all

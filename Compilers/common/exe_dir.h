@@ -3,8 +3,8 @@
 // A release unpacks as bin/ beside SAPHO/, Macros/ and Header/; a repository
 // build puts the tools in bin/ (or .smoke/bin/, stage/bin/) beside Compilers/
 // and SAPHO/. A tool started from anywhere (on the PATH) looks for its data
-// folders relative to where its executable is, so -m, -d and -I can be left
-// out; an explicit option still wins.
+// folders relative to where its executable is, with no option to name them;
+// the driver yanc finds the other tools the same way.
 
 #ifndef EXE_DIR_H
 #define EXE_DIR_H

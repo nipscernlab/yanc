@@ -133,6 +133,17 @@ tags consumed by Aurora.
   `prog_log.txt` (the variables, `num_ins` and `srcdir` asmcomp reads) and
   `trad_cmm.txt` is `src_lines.txt` (the source text the waveform shows). A
   C++ program wrote them under the C± names.
+- **`yanc`, the driver: one command from the source to the processor.** As
+  gcc runs its own tools, `yanc prog.cmm` (or `prog.cpp`) runs cmmcomp (or
+  cppcomp) and then asmcomp, found next to it, and prints `SAPHO processor
+  ready: prog/prog.v`; `yanc -S` stops at the assembly, `yanc prog/prog.asm`
+  only assembles (so an IDE can show the two steps apart), `-v` shows each
+  command. Options: `-o`, `-I` (C++), `-f`, `-c`, `--wave-arrays` (C±),
+  `--lang`. It stops at the first tool that fails with that tool's exit code,
+  and stops at the Verilog (no simulation). `Compilers/Driver/yanc.c`; the
+  release installs it with the others, and the Quick start is one command.
+  Regress: a `yanc` phase (C± `.asm` = golden, `-S` then the `.asm`, C++
+  `.asm` = cppcomp's, errors stop it).
 - **`asmcomp` does both passes: `appcomp` is gone.** Its first pass (the
   appcomp program: `app.l`, `eval.c`, `variaveis.c`) is now
   `ASMComp/Sources/pass1.l` and `pass1.c`, a scanner of its own (prefix
