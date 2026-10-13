@@ -148,8 +148,8 @@ CHRLIT  \'(\\.|[^\\'\n])\'
             else if (!strcmp(key, "sdepth")) g_unit->sdepth = atoi(val);
             else if (!strcmp(key, "nuioin")) g_unit->nuioin = atoi(val);
             else if (!strcmp(key, "nuioou")) g_unit->nuioou = atoi(val);
-            else if (!strcmp(key, "fftsiz")) g_unit->fftsiz = atoi(val);
-            else if (!strcmp(key, "itradd")) g_unit->itradd = atoi(val);
+            else if (!strcmp(key, "fftsiz")) msg_error(yylineno, "#pragma yanc fftsiz does nothing in C++ (the bit-reversed addressing is C\xC2\xB1 only); delete the line");
+            else if (!strcmp(key, "itradd")) msg_error(yylineno, "#pragma yanc itradd does nothing in C++ (interrupts are C\xC2\xB1 only); delete the line");
             else msg_warning(yylineno, "unknown #pragma yanc setting '%s'", key);
         }
     }
@@ -254,7 +254,10 @@ CHRLIT  \'(\\.|[^\\'\n])\'
   /* literals ----------------------------------------------------------- */
 
 {INT_HEX}                { yylval.ival = int_lit(yytext, 16); return INT_LIT; }  /* truncates to the target word */
-{INT_DEC}                { yylval.ival = int_lit(yytext, 10); return INT_LIT; }
+{INT_DEC}                { /* a leading 0 makes it octal, as in C++ (010 is 8); an 8 or 9 then is an error */
+                           int oct = yytext[0] == '0' && yytext[1] >= '0' && yytext[1] <= '9';
+                           if (oct && strpbrk(yytext, "89")) msg_error(yylineno, "'%s': a number starting with 0 is octal, and has no 8 or 9", yytext);
+                           yylval.ival = int_lit(yytext, oct ? 8 : 10); return INT_LIT; }
 {FLOAT}f?                { yylval.fval = strtod(yytext, NULL);     return FLOAT_LIT; }
 {CHRLIT}                 { yylval.ival = unescape_char(yytext);    return CHAR_LIT; }
 {STRLIT}                 {

@@ -1,6 +1,6 @@
 #pragma once
-// CPPComp <cmath>: a small subset implemented for the IEEE-754 single-float
-// target. No HW transcendental ops, so these are software routines.
+// CPPComp <cmath>: a small subset for the SAPHO float (23 + 8 bits by default;
+// not IEEE-754 encoded). No HW transcendental ops, so these are software routines.
 namespace std {
     inline float fabs(float x) { return x < 0.0f ? -x : x; }
     inline float fabsf(float x) { return x < 0.0f ? -x : x; }

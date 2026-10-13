@@ -282,22 +282,33 @@ static void method_enter(type *ret, const char *name, decl *params, int nparams)
     ts_sclass = SC_NONE; ts_is_const = 0;
 }
 
-// desugar `for (T x : arr) body` over a fixed-size array into an index loop:
-//   for (int __ri = 0; __ri < N; __ri = __ri+1) { T x = arr[__ri]; body }
-// `vt` may be `auto` (deduce element type) or a reference (bind to each element).
+// desugar `for (T x : c) body` into an index loop:
+//   for (int __ri = 0; __ri < N; __ri = __ri+1) { T x = c[__ri]; body }
+// over a fixed-size array (N its size) or over an object with size() and
+// operator[] (N = c.size(), as std::vector and std::array); anything else is
+// an error. `vt` may be `auto` (deduce element type) or a reference (bind to
+// each element).
 static stmt *make_range_for(type *vt, char *var, char *container, stmt *body, int line)
 {
     static int rc = 0;
     sym *cs = st_find(container);
-    int   n    = (cs && cs->stype && cs->stype->kind == TY_ARRAY) ? cs->stype->arr_size : 0;
-    type *elem = (cs && cs->stype && cs->stype->kind == TY_ARRAY) ? cs->stype->base : t_int();
-    if (vt->is_auto)                       vt = elem;            // auto x
-    else if (vt->is_ref && vt->base && vt->base->is_auto) vt = t_ref(elem);  // auto& x
+    type *ct = cs ? cs->stype : NULL;
+    if (ct && ct->is_ref) ct = ct->base;
+    int is_arr = ct && ct->kind == TY_ARRAY;
+    if (!is_arr && !(ct && ct->kind == TY_STRUCT))
+        msg_error(line, "range-for over '%s': it takes an array or an object with size() and operator[]", container);
+    if (is_arr) {
+        type *elem = ct->base;
+        if (vt->is_auto)                       vt = elem;            // auto x
+        else if (vt->is_ref && vt->base && vt->base->is_auto) vt = t_ref(elem);  // auto& x
+    }   // an object: auto / auto& are deduced from c[__ri] (declare_local)
     char ivar[24]; sprintf(ivar, "__ri%d", rc++);
 
     decl *id = ast_decl(t_int(), strdup(ivar), ast_int_lit(0, line), line);
     stmt *init = ast_stmt(S_DECL, line); init->decls = id;
-    expr *cond = ast_binop(OP_LT, ast_ident(strdup(ivar), line), ast_int_lit(n, line), line);
+    expr *count = is_arr ? ast_int_lit(ct->arr_size, line)
+                         : ast_call(ast_member(ast_ident(strdup(container), line), strdup("size"), line), NULL, 0, line);
+    expr *cond = ast_binop(OP_LT, ast_ident(strdup(ivar), line), count, line);
     expr *step = ast_assign(ast_ident(strdup(ivar), line),
                     ast_binop(OP_ADD, ast_ident(strdup(ivar), line), ast_int_lit(1, line), line), line);
     decl *vd = ast_decl(vt, var,

@@ -50,6 +50,7 @@ static int   g_uses_heap = 0;    // malloc/free/new/delete used -> emit heap run
 static int   cur_fn_recursive = 0; // emitting a recursive function right now
 static int   cur_frame_cursor = 0; // next free frame offset while emitting it
 #define CSTK_SIZE 1024            // software call-stack depth (words)
+#define PTR_SCALED 0x5CA1ED       // an E_BINOP ival: the operand pointer arithmetic already scaled
 static char *cur_func_name = NULL;
 static type *cur_func_ret  = NULL;
 static type *cur_method_class = NULL;   // class type when emitting a method body
@@ -808,6 +809,32 @@ static type *infer_type(expr *e)
             case OP_MOD: case OP_BAND: case OP_BOR: case OP_BXOR: case OP_SHL: case OP_SHR:
                 e->etype = t_int(); break;
             default:
+                // pointer arithmetic: p + n and p - n step n elements, p - q
+                // counts elements; an element of k words scales by k (as ++
+                // does, gen_expr E_PREINC). The scaled operand is marked so a
+                // second inference does not scale it again.
+                if ((e->op == OP_ADD || e->op == OP_SUB) && lt && rt) {
+                    type *pt = type_is_ptr_or_arr(lt) ? lt : (e->op == OP_ADD && type_is_ptr_or_arr(rt)) ? rt : NULL;
+                    int k = pt && pt->base ? type_size_words(pt->base) : 1;
+                    if (pt && k > 1) {
+                        if (type_is_ptr_or_arr(lt) && type_is_ptr_or_arr(rt)) {        // p - q
+                            if (!(e->a->kind == E_BINOP && e->a->ival == PTR_SCALED)) {
+                                expr *d = ast_binop(OP_SUB, e->a, e->b, e->line);
+                                d->ival = PTR_SCALED;
+                                e->op = OP_DIV; e->a = d; e->b = ast_int_lit(k, e->line);
+                                infer_type(e->a); infer_type(e->b);
+                            }
+                            e->etype = t_int(); break;
+                        }
+                        expr **n = (pt == lt) ? &e->b : &e->a;                         // the integer side
+                        if (type_is_int(infer_type(*n)) && !((*n)->kind == E_BINOP && (*n)->ival == PTR_SCALED)) {
+                            *n = ast_binop(OP_MUL, *n, ast_int_lit(k, e->line), e->line);
+                            (*n)->ival = PTR_SCALED;
+                            infer_type(*n);
+                        }
+                        e->etype = pt; break;
+                    }
+                }
                 if (lt && rt && (type_is_float(lt) || type_is_float(rt))) e->etype = t_float();
                 else if (type_is_ptr_or_arr(lt)) e->etype = lt;
                 else if (type_is_ptr_or_arr(rt)) e->etype = rt;
@@ -1536,6 +1563,17 @@ typedef struct { int in_var; const char *name; } objaddr;
 static void emit_objaddr(objaddr a) { emit(a.in_var ? "LOD %s" : "LEA %s", a.name); }
 
 // does creating an object of class t run code (a vptr to set, a ctor to call)?
+// the label of a class's destructor (direct call), or NULL when it has none
+static char *dtor_label(type *t)
+{
+    if (!t || t->kind != TY_STRUCT || !t->tag) return NULL;
+    char *d = resolve_method(t, "dtor");
+    sym *ds = d ? st_find(d) : NULL;
+    if (ds && ds->kind == SK_FUNC) return d;
+    free(d);
+    return NULL;
+}
+
 static int needs_construct(type *t)
 {
     return t && t->kind == TY_STRUCT && t->tag && (t->n_vtbl > 0 || resolve_ctor(t, NULL, 0));
@@ -2409,6 +2447,22 @@ static void gen_expr(expr *e)
     case E_NEW: {
         type *t = e->target_t;
         int words = type_size_words(t);
+        char *nd = e->a ? dtor_label(t) : NULL;
+        if (nd) {                                     // new T[n] of objects with a destructor:
+            free(nd);                                 // one word more, holding n, before the
+            char *nv = new_temp("nwn"), *pv = new_temp("nwp");   // array (delete[] reads it)
+            gen_expr(e->a); emit("SET %s", nv);
+            if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
+            emit("ADD 1");
+            emit("PSH"); emit("CAL malloc"); emit("SET %s", pv);
+            emit("LOD %s", pv); emit("PSH"); emit("LOD %s", nv); emit("STI 0");   // mem[pv] = n
+            emit("LOD %s", pv); emit("ADD 1"); emit("SET %s", pv);                 // the array
+            objaddr a = { 1, pv };
+            emit_construct_n(t, a, 0, nv);
+            emit("LOD %s", pv);                                   // result: the array
+            free(nv); free(pv);
+            return;
+        }
         if (e->a && needs_construct(t)) {             // new T[n] of objects: construct each
             char *nv = new_temp("nwn"), *pv = new_temp("nwp");
             gen_expr(e->a); emit("SET %s", nv);
@@ -2471,6 +2525,24 @@ static void gen_expr(expr *e)
         type *t = pt ? pt->base : NULL;
         int   dslot = -1;
         char *dtor  = NULL;
+        char *ad = e->ival ? dtor_label(t) : NULL;
+        if (ad) {                                   // delete[] of objects with a destructor:
+            int words = type_size_words(t), id = ++label_n;      // n is the word before the
+            char *dp = new_temp("dlp"), *dn = new_temp("dln");   // array (new[] put it there);
+            gen_expr(e->a); emit("SET %s", dp);                  // destroy n..1, last first
+            emit("LOD %s", dp); emit("ADD -1"); emit("LDI 0"); emit("SET %s", dn);
+            emit("@__Ldl_t%d NOP", id);
+            emit("LOD %s", dn); emit("JIZ __Ldl_e%d", id);
+            emit("LOD %s", dn); emit("ADD -1"); emit("SET %s", dn);
+            if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
+            emit("ADD %s", dp); emit("PSH");                    // this = &a[dn]
+            emit("CAL %s", ad);
+            emit("JMP __Ldl_t%d", id);
+            emit("@__Ldl_e%d NOP", id);
+            emit("LOD %s", dp); emit("ADD -1"); emit("PSH"); emit("CAL free");   // the whole block
+            free(ad); free(dp); free(dn);
+            return;
+        }
         if (!e->ival && t && t->kind == TY_STRUCT && t->tag) {
             dslot = vtbl_slot(t, "dtor");
             if (dslot < 0) {
@@ -3063,6 +3135,11 @@ static void declare_local(decl *d)
         type *it = infer_type(d->init);
         if (it) d->dtype = it;
     }
+    // `auto& x = init;` — a reference to init's type
+    if (d->dtype && d->dtype->is_ref && d->dtype->base && d->dtype->base->is_auto && d->init) {
+        type *it = infer_type(d->init);
+        if (it) d->dtype = t_ref(it);
+    }
     // recursive function: the local lives in the stack frame at __fp + offset
     if (cur_fn_recursive && d->sclass != SC_STATIC) {
         if (d->dtype && (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT))
@@ -3652,11 +3729,12 @@ static void gen_stmt_inner(stmt *s)
 
 static int has_main = 0;
 
-// IEEE-754 float layout for a given word width: the standard interchange
-// formats for 16/32/64 bits, and a sensible split otherwise (overridable per
-// source with `#pragma yanc nbmant/nbexpo`). The compiler is width-parametric,
-// so picking nubits selects the matching float format automatically — a program
-// with no pragmas defaults to 32-bit / IEEE-754 single.
+// The float's field sizes for a given word width: those of the IEEE-754
+// interchange formats for 16/32/64 bits, and a sensible split otherwise
+// (overridable per source with `#pragma yanc nbmant/nbexpo`). Only the sizes are
+// IEEE's: the SAPHO float has an explicit mantissa bit and a two's-complement
+// exponent (docs/floating-point.md). A program with no pragmas gets 32 bits,
+// 23 + 8.
 static void derive_ieee(int w, int *mant, int *expo)
 {
     switch (w) {

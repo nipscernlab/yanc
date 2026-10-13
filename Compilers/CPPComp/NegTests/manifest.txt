@@ -15,3 +15,5 @@ link_lit.cpp|the link number comes first and is an integer literal
 prname_gone.cpp|#pragma yanc prname is gone
 module.cpp|is a Verilog keyword
 2fast.cpp|cannot start with a digit
+pp_error.cpp|#error this program is not meant to compile
+pragma_fftsiz.cpp|#pragma yanc fftsiz does nothing in C++

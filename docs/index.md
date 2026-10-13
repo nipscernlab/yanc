@@ -21,7 +21,7 @@ yanc v5.3 and some of it no longer holds.
 
 ## Writing programs
 
-- The C± language: types (`int`, `float`, `comp`), arrays, functions,
+- [The C± language](language-cmm.md): types (`int`, `float`, `comp`), arrays, functions,
   operators, control flow, input and output, the traps.
 - The C++ YANC accepts: what works, the `#pragma yanc` settings, what does
   not exist.

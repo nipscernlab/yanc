@@ -20,6 +20,13 @@ preprocessing the C++ itself (no `cpppp`), `asmcomp` doing both passes (no
 `appcomp`), the tables `prog_log.txt` / `src_lines.txt`, `--lang=en|pt`
 with English the default, and the driver `yanc`. Left before the tag, in
 order:
+0. The manual in docs/ (Luciano 2026-10-13: written before the tag, English,
+   he reviews at the end): the pages listed in docs/index.md; done so far the
+   reorganisation, the generated instruction page, the C± chapter. Then
+   published like library/sapho: yanc's CI builds it with Sphinx (MyST) on
+   GitHub Pages, a worker route nipscern.com/library/yanc in nipscernweb
+   (the Cloudflare route registered by Luciano or Chrysthofer), the release
+   README pointing there and an HTML zip attached to the release.
 1. One consolidated text for AURORA (no compatibility kept in yanc; AURORA
    calls `yanc`, Luciano 2026-10-13): merge `C:\tmp\aurora_yanc_cli.md`,
    `aurora_yanc_layout.md` and the running list `aurora_yanc_pending.md`.

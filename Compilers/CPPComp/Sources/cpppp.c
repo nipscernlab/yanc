@@ -520,6 +520,26 @@ static void dirname_of(const char *path, char *out, size_t sz)
     }
 }
 
+// drops the comments of a directive line, `// ...` and `/* ... */`, outside
+// string and character literals, and the blanks they leave at the end (C
+// removes comments before it reads a directive: `#define K 5 // five` is 5)
+static void strip_comments(char *s)
+{
+    char q = 0;
+    for (char *c = s; *c; c++) {
+        if (q) { if (*c == '\\' && c[1]) c++; else if (*c == q) q = 0; continue; }
+        if (*c == '"' || *c == '\'') { q = *c; continue; }
+        if (c[0] == '/' && c[1] == '/') { *c = 0; break; }
+        if (c[0] == '/' && c[1] == '*') {
+            char *e = strstr(c + 2, "*/");
+            if (!e) { *c = 0; break; }
+            memmove(c, " ", 1); memmove(c + 1, e + 2, strlen(e + 2) + 1);
+        }
+    }
+    int L = (int)strlen(s);
+    while (L > 0 && (s[L-1] == ' ' || s[L-1] == '\t')) s[--L] = 0;
+}
+
 static char *trim_in_place(char *s)
 {
     while (*s == ' ' || *s == '\t') s++;
@@ -549,6 +569,7 @@ static void process_file(const char *path)
         if (t[0] == '#') {
             char *p = t + 1;
             while (*p == ' ' || *p == '\t') p++;
+            strip_comments(p);
 
             // ---- #include ----
             if (strncmp(p, "include", 7) == 0 && (p[7] == ' ' || p[7] == '\t' || p[7] == '"' || p[7] == '<')) {
@@ -695,6 +716,18 @@ static void process_file(const char *path)
                     free(orig); continue;          // don't emit `#pragma once`
                 }
                 if (cond_active()) pp_emit(line, file, ln, line);   // e.g. #pragma yanc
+                free(orig); continue;
+            }
+
+            // ---- #error stops here; #warning only says so ----
+            if ((strncmp(p, "error", 5) == 0 || strncmp(p, "warning", 7) == 0) &&
+                (p[p[0] == 'e' ? 5 : 7] == 0 || isspace((unsigned char)p[p[0] == 'e' ? 5 : 7]))) {
+                if (cond_active()) {
+                    int err = p[0] == 'e';
+                    const char *msg = p + (err ? 5 : 7); while (*msg == ' ' || *msg == '\t') msg++;
+                    fprintf(stderr, "%s:%d: %s: #%s %s\n", file, ln, err ? "error" : "warning", err ? "error" : "warning", msg);
+                    if (err) exit(1);
+                }
                 free(orig); continue;
             }
 

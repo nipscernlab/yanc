@@ -1,8 +1,9 @@
 // ----------------------------------------------------------------------------
 // CPPComp — compile-time defaults for the YANC target --------------------------
 // ----------------------------------------------------------------------------
-// These defaults ARE the fixed YANC hardware target (32-bit word, IEEE-style
-// mant23/exp8, 128-deep data/return stacks) — C++ sources carry no target
+// These defaults ARE the fixed YANC hardware target (32-bit word, a float of
+// 23 mantissa and 8 exponent bits -- the SAPHO format, the sizes of IEEE-754
+// single but not its encoding --, 128-deep data/return stacks) — C++ sources carry no target
 // directive, so the build default is the target. Override via -D only when
 // building cppcomp.exe for a DIFFERENT (non-32-bit) target; a .c source can also
 // override per-program with `#pragma yanc <name> <value>` at file scope.

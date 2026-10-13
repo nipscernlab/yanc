@@ -1,5 +1,5 @@
 // Locks in the fixed CPPComp target: every sizeof==1, short/long fold to
-// 32-bit (full-width arithmetic, no 16-bit overflow), IEEE-754 single float.
+// 32-bit (full-width arithmetic, no 16-bit overflow), SAPHO float (23 + 8).
 void main(void) {
     out(0, sizeof(char));        // 1
     out(0, sizeof(short));       // 1
@@ -12,5 +12,5 @@ void main(void) {
     short b = 1000;
     out(0, a + b);               // 1001000  (full 32-bit arithmetic)
     float f = 3.5;
-    out(0, (int)(f * 2.0));      // 7  (IEEE single)
+    out(0, (int)(f * 2.0));      // 7
 }
