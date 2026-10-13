@@ -1,0 +1,59 @@
+[*]
+[*] The view of first-program-loop.png: gen_gtkw's view of my_program with
+[*] [timestart] and the zoom line (*-14.5) set by hand, 154 to 215 ns.
+[dumpfile] "my_program_tb.vcd"
+[savefile] "first-program-loop.gtkw"
+[timestart] 154000
+*-14.500000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+@200
+-###### proc
+@28
+my_program_tb.clk
+@28
+my_program_tb.rst
+@200
+-I/O ****************
+@28
+[color] 3
++{out_en 0} my_program_tb.proc.out_en_sim_0
+@420
+[color] 3
++{output 0} my_program_tb.proc.out_sig_0[31:0]
+@200
+-Instructions *******
+@2024
+[color] 6
+^1 ../my_program/trad_opcode.txt
++{Assembly} my_program_tb.proc.valr2[31:0]
+@2420
+[color] 7
+^2 ../my_program/src_lines.txt
++{C+-} my_program_tb.proc.linetabs[19:0]
+@200
+-Variables **********
+@420
+[color] 2
++{int acc in main()} my_program_tb.proc.me1_f_main_v_acc_e_[31:0]
+@420
+[color] 2
++{int k in main()} my_program_tb.proc.me1_f_main_v_k_e_[31:0]
+@200
+-Flags **************
+@c00200
+-Stack
+@8420
++{Data Stack Pointer} my_program_tb.proc.p_my_program.core.sp.pointeri
+@24
++{Data Stack Max} my_program_tb.proc.p_my_program.core.sp.fl_max
+@28
++{Data Stack Overflow} my_program_tb.proc.p_my_program.core.sp.fl_full
+@1401200
+-Stack
+@c00200
+-ALU
+@8022
++{Rounding Error (int)} my_program_tb.proc.p_my_program.core.ula.delta_int
+@8022
++{Rounding Error (float)} my_program_tb.proc.p_my_program.core.ula.delta_float
+@1401200
+-ALU
