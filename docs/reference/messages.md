@@ -313,6 +313,7 @@ value. What the common ones mean and how to get past them is in
 
 - Info: implementing interruption handling
 - Info: <n> instructions and <n> variables were found
+- Info: stack depths from the program: SDEPTH <n>, NDSTAC <n>
 - Info: filling array with <n> values read from file <name>
 - Info: largest approximation error in file '<name>' is <x> on line <n>
 - Info: largest approximation error, for real part, in file '<name>', is <x> on line <n>

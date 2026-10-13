@@ -50,6 +50,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: foram encontradas %d instruções e %d variáveis\n", \
       "Info: %d instructions and %d variables were found\n")
 
+#define MSG_INFO_STACK_DEPTHS \
+    M("Info: profundidade das pilhas pelo programa: SDEPTH %d, NDSTAC %d\n", \
+      "Info: stack depths from the program: SDEPTH %d, NDSTAC %d\n")
+
 #define MSG_ERR_BAD_FLOAT \
     M("Erro: a constante '%s' não é um número.\n", \
       "Error: the constant '%s' is not a number.\n")

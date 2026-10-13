@@ -22,6 +22,8 @@ static void bad_lang(const char *tool, const char *where, const char *v)
     exit(EXIT_FAILURE);
 }
 
+int yanc_lang_en = 1;
+
 int yanc_lang(int *argc, char **argv, const char *tool)
 {
     int en = 1;                                     // English by default
@@ -47,5 +49,6 @@ int yanc_lang(int *argc, char **argv, const char *tool)
     }
     *argc = w;
     argv[w] = NULL;
+    yanc_lang_en = en;
     return en;
 }

@@ -14,4 +14,8 @@
 // or pt is an error: the tool named `tool` says so and exits.
 int yanc_lang(int *argc, char **argv, const char *tool);
 
+// what yanc_lang() chose (1 English, 0 Portuguese), for code shared by the
+// tools that prints on its own (asm_share.c)
+extern int yanc_lang_en;
+
 #endif

@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
     {
       if (!sdepth_set) sdepth = s;
       if (!ddepth_set) ddepth = d;
-      printf("Info: stack depths from the program: SDEPTH %d, NDSTAC %d\n", sdepth, ddepth);
+      printf(MSG_INFO_STACK_DEPTHS, sdepth, ddepth);
     }
   }
 

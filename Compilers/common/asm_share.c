@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include "asm_share.h"
+#include "yanc_lang.h"
 
 // ---- what each mnemonic does to its operand and to the flow -----------------
 // A copy of five columns of isa.tsv (mnemonic, operand class, effect on the
@@ -456,7 +457,8 @@ int asm_share(const char *asm_path)
                 fputs(lines.s[ln], f);
             }
             fclose(f);
-            printf("Info: %d variables share %d data words (%d saved)\n", ncand, ncol, saved);
+            printf(yanc_lang_en ? "Info: %d variables share %d data words (%d saved)\n"
+                                : "Info: %d variáveis dividem %d palavras de dados (%d economizadas)\n", ncand, ncol, saved);
         }
     }
 
@@ -746,7 +748,8 @@ int asm_reach(const char *asm_path, const char *pc_path)
         for (int i = 0; i < pc.n; i++) { if (live[i]) fputs(pc.s[i], f); else removed++; }
         fclose(f);
     }
-    if (dead > 0) printf("Info: %d unreachable instructions removed\n", dead);
+    if (dead > 0) printf(yanc_lang_en ? "Info: %d unreachable instructions removed\n"
+                                      : "Info: %d instruções inalcançáveis removidas\n", dead);
 
 done:
     free(carry); free(needed); free(next_live); free(work); free(used); free(live);
@@ -846,7 +849,8 @@ int asm_divseq(const char *asm_path, const char *pc_path)
         }
         fclose(f);
     }
-    printf("Info: %d divisions take three words each (%d added)\n", added / 2, added);
+    printf(yanc_lang_en ? "Info: %d divisions take three words each (%d added)\n"
+                        : "Info: %d divisões ocupam três palavras cada (%d a mais)\n", added / 2, added);
 
 done:
     free(expand); free(mn); free(ins_of);
