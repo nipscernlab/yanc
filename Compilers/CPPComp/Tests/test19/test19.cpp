@@ -1,6 +1,5 @@
 // Copy constructor: Buf(Buf&) coexists with Buf(int) (distinct mangling) and
 // runs on copy-initialization, producing an independent copy.
-#pragma yanc prname test19
 int copies;
 class Buf {
 public:

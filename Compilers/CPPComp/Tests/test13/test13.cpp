@@ -1,6 +1,5 @@
 // Stack-object RAII: default construction at declaration + destruction at
 // scope exit (ctor/dtor track a live-object count in a global).
-#pragma yanc prname test13
 int alive;        // live-object count (ctor++ / dtor--)
 
 class Counter {

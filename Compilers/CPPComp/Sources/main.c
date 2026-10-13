@@ -1,11 +1,12 @@
 // ----------------------------------------------------------------------------
 // CPPComp — compiler entry point -----------------------------------------------
 // ----------------------------------------------------------------------------
-// usage: cppcomp [-o <dir>] [-n <prname>] <input.cpp>
+// usage: cppcomp [-o <dir>] <input.cpp>
 // input is assumed to be already preprocessed (run cpppp first).
 //
-// Mirrors cmmcomp: <prname>.asm and the tables go to one output folder,
-// -o or ./<prname>, created if missing.
+// Mirrors cmmcomp: the processor takes the name of the source file (the
+// original one, which cpppp names in `#pragma yanc source`), and
+// <name>.asm and the tables go to one output folder, -o or ./<name>.
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -51,12 +52,11 @@ static void usage(void)
 {
     fprintf(stderr,
         "cppcomp %s — C++ compiler for the SAPHO processor\n"
-        "usage: cppcomp [-o <dir>] [-n <prname>] <input.cpp>\n"
-        "  <file>, -i <file>       input .cpp file, preprocessed by cpppp\n"
-        "  -o, --output   <dir>    output folder (default: ./<prname>): <prname>.asm and\n"
+        "usage: cppcomp [-o <dir>] <input.cpp>\n"
+        "  <input.cpp>             the .cpp preprocessed by cpppp; the processor\n"
+        "                          takes the name of the original source file\n"
+        "  -o, --output   <dir>    output folder (default: ./<name>): <name>.asm and\n"
         "                          the tables asmcomp and the waveform read\n"
-        "  -n, --name     <name>   processor name (default: input basename;\n"
-        "                          a `#pragma yanc prname` in the source wins)\n"
         "  -h, --help              this help\n"
         "  -V, --version           show version and exit\n"
         "\n"
@@ -89,18 +89,15 @@ int main(int argc, char **argv)
     console_utf8();                 // the help text is UTF-8 (Windows console)
     const char *in_path  = NULL;
     const char *out_dir  = NULL;
-    const char *prname   = NULL;
 
     for (int i = 1; i < argc; i++) {
-        if      ((!strcmp(argv[i], "-i") || !strcmp(argv[i], "--input"   )) && i+1 < argc) in_path  = argv[++i];
-        else if ((!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output"  )) && i+1 < argc) out_dir  = argv[++i];
-        else if ((!strcmp(argv[i], "-n") || !strcmp(argv[i], "--name"    )) && i+1 < argc) prname   = argv[++i];
+        if      ((!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output"  )) && i+1 < argc) out_dir  = argv[++i];
         else if ( !strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"    )) usage();
         else if ( !strcmp(argv[i], "-V") || !strcmp(argv[i], "--version" )) {
             printf("cppcomp %s\n", YANC_VERSION);
             return 0;
         }
-        else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source, without -i
+        else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source
         else { fprintf(stderr, "cppcomp: unknown option '%s'\n", argv[i]); usage(); }
     }
     if (!in_path) usage();
@@ -116,10 +113,10 @@ int main(int argc, char **argv)
     if (yyparse() != 0) { fprintf(stderr, "cppcomp: parse failed\n"); exit(2); }
     fclose(yyin);
 
-    if (!g_unit->prname) {
-        if (prname) g_unit->prname = strdup(prname);
-        else        g_unit->prname = derive_name(in_path, "");
-    }
+    if (msg_error_count() > 0) return 2;
+    // the name of the original source (cpppp's `#pragma yanc source`), else
+    // of the input
+    g_unit->prname = derive_name(g_unit->srcdir ? g_unit->srcdir : in_path, "");
 
     /* Output: everything in one folder, -o or ./<prname> (created, all
      * levels): <prname>.asm and the tables asmcomp and the waveform read. */
@@ -161,12 +158,12 @@ int main(int argc, char **argv)
     asm_share(outp);
 
     // the folder of the original source, where asmcomp reads the user's own
-    // files (input_N.txt, cade_k.txt): cpppp's `#pragma yanc srcdir`, else the
-    // folder of the input
+    // files (input_N.txt, cade_k.txt): cpppp's `#pragma yanc source`, else the
+    // input
     char log[2048]; snprintf(log, sizeof(log), "%s/cmm_log.txt", tmp_dir);
     FILE *fl = fopen(log, "a");
     if (fl) {
-        char *src = g_unit->srcdir ? strdup(g_unit->srcdir) : dir_of(in_path);
+        char *src = dir_of(g_unit->srcdir ? g_unit->srcdir : in_path);
         if (src) fprintf(fl, "srcdir %s\n", src);
         fclose(fl);
     }

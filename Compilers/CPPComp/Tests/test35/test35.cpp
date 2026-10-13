@@ -1,4 +1,3 @@
-#pragma yanc prname test35
 // std::vector<float> via the new <vector> header: real type-parameter
 // monomorphization, so operator[] returns float& and element-vs-element
 // arithmetic uses float ops (the case that type-erasure got wrong).

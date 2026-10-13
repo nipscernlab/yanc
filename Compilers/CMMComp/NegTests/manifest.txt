@@ -31,3 +31,4 @@ names_underscore.cmm|names starting with '__' belong to the compiler
 names_fim.cmm|a function can't be called 'fim'
 link_mix.cmm|link 0 was already used without _sync
 link_range.cmm|the link number is an integer from 0 to 1023
+prname_gone.cmm|#PRNAME is gone

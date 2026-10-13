@@ -1,4 +1,3 @@
-#pragma yanc prname test59
 // Realistic embedded example: debounced digital input + rising-edge counter.
 // debounce() keeps its state in function-local statics (the classic embedded
 // idiom for per-function persistent state without globals or objects).

@@ -3,7 +3,6 @@
 // unqualified); the point is that it PARSES without error and the program runs.
 // Locks the `KW_USING qualified_id ';'` grammar rule. Uses several locals so the
 // program clears appcomp's "needs a data memory" floor (var_cnt > 2).
-#pragma yanc prname test53
 
 namespace ns {
     int twice(int x) { return x + x; }

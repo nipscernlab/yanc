@@ -1,4 +1,3 @@
-#pragma yanc prname test72
 // INT_MIN / -1 is the one signed quotient that does not fit in a word. Verilog
 // defines it as the wrapped result (INT_MIN) and Icarus computed that, but
 // Verilator's runtime guarded the host divide trap and returned 0, so the same

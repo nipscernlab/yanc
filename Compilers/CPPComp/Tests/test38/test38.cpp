@@ -1,4 +1,3 @@
-#pragma yanc prname test38
 // 'noexcept' function specifier: ignored on this target (no exceptions). Must
 // parse in every spot it's syntactically valid: free function declarations,
 // free function definitions, and template-function definitions.

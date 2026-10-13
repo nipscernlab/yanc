@@ -1,4 +1,3 @@
-#pragma yanc prname test71
 // `T x(v);` -- a direct-initialized object whose first argument starts with a
 // variable -- was a syntax error: after `T x(`, an identifier could still have
 // begun a namespace-qualified parameter type (`std::uint8_t`), so the parser

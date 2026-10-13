@@ -1,4 +1,3 @@
-#pragma yanc prname test47
 // Static methods in class bodies (inline-defined), called as Class::name(args).
 // Also `Class<T>::name(args)` via the new template-instantiation call syntax.
 // And `std::numeric_limits<float>::infinity()` via the <limits> shim, which

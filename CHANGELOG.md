@@ -77,16 +77,18 @@ tags consumed by Aurora.
   user PATH, no administrator rights; an older YANC's `bin\` is taken off)
   and `install.sh` (Linux: a launcher per tool in `~/.local/bin`, or
   `$PREFIX/bin`). The tools look for the folders that come with them next to
-  their own executable (`Compilers/common/exe_dir.c`): `-m` of cmmcomp and
-  asmcomp defaults to `Macros/`, `-d` of asmcomp to `SAPHO/`, cpppp searches
-  `Header/` after any `-I`, and the last argument of `gen_gtkw` (the
-  `comp2gtkw` path) is optional. In a repository build they find the
-  `Compilers/` and `SAPHO/` folders the same way. Explicit options still win.
+  their own executable (`Compilers/common/exe_dir.c`): cmmcomp and asmcomp
+  use `Macros/`, asmcomp `SAPHO/`, cpppp searches `Header/` after any `-I`,
+  and the last argument of `gen_gtkw` (the `comp2gtkw` path) is optional. In
+  a repository build they find the `Compilers/` and `SAPHO/` folders the same
+  way. The options that named those folders are gone: `-m` (cmmcomp,
+  asmcomp) and `-d` (asmcomp); a missing folder is an error that says to
+  install YANC again.
   The Quick start runs with bare tool names. `cppcomp -h` and `cpppp -h` now
   say C++, and `gen_gtkw -h` prints its usage.
 - **The command lines and the folders follow the usual conventions.** The
-  source file is the argument without an option in every tool (`-i` still
-  works). The files the user writes stay beside the source (the `.cmm` /
+  source file is the argument without an option in every tool (`-i` is
+  gone). The files the user writes stay beside the source (the `.cmm` /
   `.cpp`, the files that initialise arrays, the simulation inputs
   `input_N.txt` and `cade_k.txt`); everything generated goes to one output
   folder, `./<name>` unless `-o` says otherwise: `<name>.asm`, the tables,
@@ -94,9 +96,9 @@ tags consumed by Aurora.
   outputs. There are no `Software/`, `Hardware/`, `Simulation/` or `Temp/`
   folders any more, and no `-p` or `-t`: cmmcomp and cppcomp take `-o`,
   appcomp and asmcomp write beside the `.asm` they read. The compilers record
-  the source folder in `cmm_log.txt` (`srcdir`; for C++, cpppp hands it to
-  cppcomp in a `#pragma yanc srcdir` line), where asmcomp reads the user's
-  files. `-n` defaults to the source file's name; asmcomp's `-f` / `-c` to 100
+  the source folder in `cmm_log.txt` (`srcdir`; for C++, cpppp names the
+  source to cppcomp in a `#pragma yanc source` line), where asmcomp reads the
+  user's files. asmcomp's `-f` / `-c` to 100
   MHz and 10000 clocks (0 gave a testbench with an infinite clock period);
   missing folders are created (all levels); `gen_gtkw`'s third argument is the
   folder that holds the output folders. The smallest C± run is
@@ -107,6 +109,15 @@ tags consumed by Aurora.
   C± track at `<proc>/Software/<name>.cmm`, which failed when the file was not
   named after the processor; asmcomp took garbage for `#NUBITS`, `#NBMANT` and
   `#NBEXPO` when a program left them out, instead of the defaults 32/23/8.
+- **The processor takes the name of its source file**, as `gcc` names the
+  program: `filtro.cmm` makes the processor `filtro` (`filtro.v`, module
+  `filtro`, its memories and testbench). `#PRNAME`, `#pragma yanc prname` and
+  the `-n` option are gone; the two directives are now errors that say to
+  rename the file instead. They could disagree before: `-n` named the `.asm`
+  and the pc table, `#PRNAME` the `.v`, the module and the testbench.
+  Negative fixtures `prname_gone.cmm`, `prname_gone.cpp`.
+- **cmmcomp's `-A` / `--array` is `--wave-arrays`**, a name that says what it
+  does: every array element becomes its own signal in the waveform.
 - **The README is short: what YANC is, how to run it, how to develop it.**
   The rest moved to `docs/setup.md`, `docs/running.md` and
   `docs/programming.md`. The release examples lost the directives that have

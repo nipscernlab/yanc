@@ -1,4 +1,3 @@
-#pragma yanc prname test25
 // Realistic embedded example: a UART-style command classifier.
 // Compares an incoming command string against a known set and returns a code,
 // then builds a short reply into a mutable char buffer. Exercises const char*,

@@ -1,0 +1,10 @@
+#PRNAME other
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+
+// Negative fixture: #PRNAME is gone, the processor takes the file's name.
+void main()
+{
+    out(0, 1);
+}

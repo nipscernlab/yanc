@@ -1,4 +1,3 @@
-#pragma yanc prname test70
 // Every object is constructed. cppcomp ran a constructor only for a plain local
 // object and `new T`: global objects, static locals, array elements, new T[n]
 // and member objects stayed all zero, and a class without a constructor got no

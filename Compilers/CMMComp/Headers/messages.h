@@ -176,6 +176,10 @@ void parse_lang_flag(int *argc, char **argv);
 
 // stdlib errors and warnings (special functions) ----------------------------
 
+#define MSG_ERR_PRNAME_GONE \
+    M("Erro na linha %d: #PRNAME não existe mais. O processador tem o nome do arquivo (filtro.cmm vira o processador filtro): apague a linha e, se quiser outro nome, renomeie o arquivo.\n", \
+      "Error on line %d: #PRNAME is gone. The processor takes the name of the file (filtro.cmm becomes the processor filtro): delete the line and, for another name, rename the file.\n")
+
 #define MSG_ERR_LINK_NUM \
     M("Erro na linha %d: o número do link é um inteiro de 0 a %d, e achei %s.\n", \
       "Error on line %d: the link number is an integer from 0 to %d, and I found %s.\n")
@@ -646,6 +650,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: opção desconhecida '%s'.\n", \
       "Error: unknown option '%s'.\n")
 
+#define MSG_ERR_NO_TOOL_DIR \
+    M("Erro: cadê a pasta %s? Ela tem que estar ao lado da pasta bin/ do cmmcomp. Instala o YANC de novo.\n", \
+      "Error: where's the %s folder? It has to sit next to cmmcomp's bin/ folder. Install YANC again.\n")
+
 #define MSG_ERR_CLI_MISSING \
     M("Erro: faltou a opção obrigatória '%s'.\n", \
       "Error: missing required option '%s'.\n")
@@ -660,14 +668,13 @@ void parse_lang_flag(int *argc, char **argv);
       "Uso:\n" \
       "  cmmcomp [opções] <arq.cmm>\n" \
       "\n" \
-      "Escreve na pasta de saída o <nome>.asm e as tabelas (cmm_log.txt,\n" \
-      "pc_<nome>_mem.txt, trad_cmm.txt) que o asmcomp e a forma de onda usam.\n" \
+      "O processador tem o nome do arquivo (<nome>.cmm). Escreve na pasta de saída o\n" \
+      "<nome>.asm e as tabelas (cmm_log.txt, pc_<nome>_mem.txt, trad_cmm.txt) que o\n" \
+      "asmcomp e a forma de onda usam.\n" \
       "\n" \
       "Opções:\n" \
       "  -o, --output <dir>      pasta de saída (padrão: ./<nome>)\n" \
-      "  -n, --name <nome>       nome do processador (padrão: o nome do arquivo-fonte)\n" \
-      "  -m, --macros-dir <dir>  diretório de Macros (padrão: a pasta Macros ao lado de bin/)\n" \
-      "  -A, --array             expande cada elemento do array como sinal individual no GTKWave\n" \
+      "  --wave-arrays           cada elemento de vetor vira um sinal no GTKWave\n" \
       "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
       "  -h, --help              mostra esta ajuda e sai\n" \
       "  -V, --version           mostra a versão e sai\n", \
@@ -676,14 +683,13 @@ void parse_lang_flag(int *argc, char **argv);
       "Usage:\n" \
       "  cmmcomp [options] <file.cmm>\n" \
       "\n" \
-      "Writes to the output folder the <name>.asm and the tables (cmm_log.txt,\n" \
-      "pc_<name>_mem.txt, trad_cmm.txt) that asmcomp and the waveform use.\n" \
+      "The processor takes the name of the file (<name>.cmm). Writes to the output\n" \
+      "folder the <name>.asm and the tables (cmm_log.txt, pc_<name>_mem.txt,\n" \
+      "trad_cmm.txt) that asmcomp and the waveform use.\n" \
       "\n" \
       "Options:\n" \
       "  -o, --output <dir>      output folder (default: ./<name>)\n" \
-      "  -n, --name <name>       processor name (default: the source file's name)\n" \
-      "  -m, --macros-dir <dir>  Macros directory (default: the Macros folder next to bin/)\n" \
-      "  -A, --array             emit each array element as a separate GTKWave signal\n" \
+      "  --wave-arrays           each array element as its own GTKWave signal\n" \
       "  -en, -pt                diagnostic message language (default: -pt)\n" \
       "  -h, --help              show this help and exit\n" \
       "  -V, --version           show version and exit\n")

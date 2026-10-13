@@ -22,7 +22,6 @@
 // If the target's data memory is configured below ~14k words this WILL fail
 // at asmcomp; the proper fix is to size the processor's RAM at synthesis.
 
-#pragma yanc prname test48
 
 #include "blind_core.cpp"
 #include "iter_mad.cpp"

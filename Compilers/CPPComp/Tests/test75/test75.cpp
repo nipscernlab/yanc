@@ -1,4 +1,3 @@
-#pragma yanc prname test75
 // An input word at or above 2^31 must arrive with its bits intact. The
 // Verilator harness read the file with `fscanf("%d")` into an int, which
 // saturates at INT_MAX on overflow: 3000000000, 2^31 and 4294967295 all

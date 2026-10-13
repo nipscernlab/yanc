@@ -1,4 +1,3 @@
-#pragma yanc prname test82
 // The zero-fill of a local brace initializer stores four words a turn from
 // 16 words up (emit_zero_words): the n % 4 lowest words singly, then groups of
 // four top-down. One array per remainder (0..3) and per starting word, int

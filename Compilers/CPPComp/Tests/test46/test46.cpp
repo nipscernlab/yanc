@@ -1,4 +1,3 @@
-#pragma yanc prname test46
 // Probe: compile inverse_fir.cpp UNMODIFIED. Driver builds an h with a known
 // peak, calls inverse_tikhonov_calibrated, dumps a couple of fields of the
 // resulting InverseFIR via YANC port I/O.

@@ -1,7 +1,6 @@
 // Virtual functions + vtables: dynamic dispatch through a base-class pointer.
 // Each polymorphic object carries a vptr at offset 0; the ctor/new sets it to
 // the class vtable; p->area() loads the slot from the vtable and dispatches.
-#pragma yanc prname test10
 class Shape {
 public:
     virtual int area()  { return 0; }

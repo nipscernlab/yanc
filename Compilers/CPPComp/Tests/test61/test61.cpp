@@ -1,4 +1,3 @@
-#pragma yanc prname test61
 // Lambda IIFE as a global initializer: the user's constants.cpp TRIANGLE_INIT, verbatim.
 #include <array>
 

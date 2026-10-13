@@ -15,7 +15,7 @@
 // parsed command-line arguments for appcomp
 typedef struct
 {
-    char *input;    // -i  assembly source file (full path)
+    char *input;    //     the .asm (the argument without an option)
     char *temp_dir; // -t  Temp directory (holds app_log.txt)
 } cli_args;
 

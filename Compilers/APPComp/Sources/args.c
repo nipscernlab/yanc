@@ -16,19 +16,6 @@ static void cli_help(FILE *stream)
     fprintf(stream, MSG_CLI_HELP, YANC_VERSION);
 }
 
-// returns the value attached to an option, consuming the next argv slot.
-// bails out with a usage message when the value is missing.
-static char *opt_value(int argc, char **argv, int *i, const char *opt)
-{
-    if (*i + 1 >= argc)
-    {
-        fprintf(stderr, MSG_ERR_CLI_NEEDS_VALUE, opt);
-        cli_help(stderr);
-        exit(EXIT_FAILURE);
-    }
-    return argv[++(*i)];
-}
-
 void cli_parse(int argc, char **argv, cli_args *out)
 {
     memset(out, 0, sizeof *out);
@@ -37,9 +24,7 @@ void cli_parse(int argc, char **argv, cli_args *out)
     {
         char *arg = argv[i];
 
-        if      (!strcmp(arg, "-i") || !strcmp(arg, "--input"))
-            out->input = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-h") || !strcmp(arg, "--help"))
+        if      (!strcmp(arg, "-h") || !strcmp(arg, "--help"))
         {
             cli_help(stdout);
             exit(EXIT_SUCCESS);
@@ -50,7 +35,7 @@ void cli_parse(int argc, char **argv, cli_args *out)
             exit(EXIT_SUCCESS);
         }
         else if (arg[0] != '-' && !out->input)
-            out->input = arg;               // the .asm, without -i
+            out->input = arg;               // the .asm
         else
         {
             fprintf(stderr, MSG_ERR_CLI_UNKNOWN_OPT, arg);

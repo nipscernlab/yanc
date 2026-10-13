@@ -1,6 +1,5 @@
 // Constructors / destructors wired into new/delete, plus bool/true/false.
 // new Point(3,4) allocates then runs the ctor; delete runs the dtor then frees.
-#pragma yanc prname test5
 int dtor_log;
 
 class Point {

@@ -1,4 +1,3 @@
-#pragma yanc prname test41
 // 'constexpr' treated as 'const' for storage purposes. Integer constexprs go
 // through the existing constant-folding path (usable as array bounds and
 // template arguments). Float constexprs behave as runtime-initialised consts.

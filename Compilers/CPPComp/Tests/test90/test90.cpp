@@ -4,7 +4,6 @@
 // string literal's word), `Lwh1` and `mal_loop` (labels) stay as guards.
 // Expected (hand-computed): 9/2 = 4, then udm_r 2, _str0 1, Lwh1 + k = 4 + 3,
 // s[1] 'i' = 105, mal_loop 6.
-#pragma yanc prname test90
 
 int udm_r = 2;
 int _str0 = 1;

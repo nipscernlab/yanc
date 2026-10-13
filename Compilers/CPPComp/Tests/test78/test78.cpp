@@ -1,4 +1,3 @@
-#pragma yanc prname test78
 // Value-initialised locals (`T v{};`, `T v = {};`, `T v[N] = {};`) are zeroed
 // on EVERY entry: a local keeps fixed storage, so these forms emitted nothing
 // and the second call found the first call's writes (TODO 16). probe() runs

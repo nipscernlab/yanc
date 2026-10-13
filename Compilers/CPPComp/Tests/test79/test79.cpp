@@ -1,4 +1,3 @@
-#pragma yanc prname test79
 // A reference used where cppcomp takes a memory-operand shortcut: its word
 // holds the referent's ADDRESS, so `z + r` added that address (104 for 105:
 // &x was 4) and `++r` stepped it, leaving x alone and the reference pointing

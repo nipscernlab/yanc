@@ -3,7 +3,6 @@
 // recursive; the set-up sits in #IFLIVE <recursive functions> / #ENDLIVE, so
 // asm_reach drops it, and the array, when none of them is reached.
 // hardware.txt: no __cstk in the data memory, no multiplier.
-#pragma yanc prname test88
 
 int fact(int n) { if (n < 2) return 1; return n * fact(n - 1); }
 

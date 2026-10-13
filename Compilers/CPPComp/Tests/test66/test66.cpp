@@ -1,4 +1,3 @@
-#pragma yanc prname test66
 #include <cstdint>
 // Signed and unsigned on a signed-only ALU. The ULA compares, divides and
 // converts as signed; cppcomp compensates for `unsigned`: comparisons flip

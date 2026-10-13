@@ -1,4 +1,3 @@
-#pragma yanc prname test31
 // Realistic embedded example: a heap-backed dynamic buffer with RAII, plus a
 // simple fixed-block pool allocator. Exercises new[]/delete[], destructors
 // freeing heap memory, and reusing freed blocks.

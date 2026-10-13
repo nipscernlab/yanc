@@ -1,4 +1,3 @@
-#pragma yanc prname test69
 // A tagged struct is a class: methods, constructors, a base, access labels, a
 // nested struct with a method, a template. C++ tells struct and class apart
 // only by the default access; cppcomp accepted nothing but fields in a struct.

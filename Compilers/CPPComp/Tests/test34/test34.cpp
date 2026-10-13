@@ -1,4 +1,3 @@
-#pragma yanc prname test34
 // Standard-library foundation: #include of bundled headers, fixed-width integer
 // aliases, std::bit_cast (explicit template arguments) and std::sqrt/fabs.
 #include <cstdint>

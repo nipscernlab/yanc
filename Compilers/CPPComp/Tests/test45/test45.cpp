@@ -1,4 +1,3 @@
-#pragma yanc prname test45
 // In-class method/ctor prototypes paired with out-of-class definitions.
 // Exercises:
 //   - ctor declared inside class with default args, defined outside

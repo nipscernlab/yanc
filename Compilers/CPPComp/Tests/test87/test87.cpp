@@ -3,7 +3,6 @@
 // memcpy / memset count words; the header used to take n / 4 words, so
 // memcpy(a, b, sizeof(a)) copied a quarter of the array. Also the two casts
 // with a const type the fix added: `(const T*)e` and static_cast<const T*>.
-#pragma yanc prname test87
 #include <cstring>
 
 struct Pt { int x; int y; float w; };

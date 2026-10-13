@@ -1,4 +1,3 @@
-#pragma yanc prname test68
 // Runtime helpers used only inside template instances: udivmod (unsigned /),
 // u2f (unsigned -> float) and f2u (float -> unsigned). Instances are emitted
 // after main, and the helpers used to be emitted before them, so a helper that

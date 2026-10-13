@@ -1,4 +1,3 @@
-#pragma yanc prname test42
 // static const / static constexpr int member inside a class. The grammar now
 // has an explicit "static const" prefix in static_member so the const isn't
 // pulled into field_decl's base_type by bison's default shift (field_decl has

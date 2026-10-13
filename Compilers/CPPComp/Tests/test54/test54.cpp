@@ -4,7 +4,6 @@
 //
 // Without the fix `Box b = {};` is parse-and-drop, so h2 (reusing h1's freed
 // slot) would read h1's 111/222/333/444; with the fix the ctor zero-fills b.
-#pragma yanc prname test54
 
 struct Box {
     int data[4];

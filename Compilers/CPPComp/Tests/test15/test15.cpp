@@ -1,6 +1,5 @@
 // Stack construction with arguments T v(a,b) and a virtual destructor
 // (delete via a base pointer runs the derived destructor).
-#pragma yanc prname test15
 int dlog;
 
 class Vec {

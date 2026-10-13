@@ -16,7 +16,6 @@
 //
 // Sizes / I/O are identical to procBlind: N = 40, LX = 34, M = 7, C = 3.
 
-#PRNAME procBlindOpt
 #NUBITS 32
 #NBMANT 23
 #NBEXPO 8

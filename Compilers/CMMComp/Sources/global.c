@@ -145,6 +145,14 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 
     sim_arr = strcmp(d_array, "1") == 0;
 
+    // reserve entry 0 of the symbol table. An operand whose id is 0 means "the
+    // value is already in the accumulator" (expr_make(type, 0), oper.c), so no
+    // real variable or constant may ever get id 0. #PRNAME's name used to sit
+    // there; without it the first literal took it (the 32 of #NUBITS 32) and
+    // s = s + 32 came out as ADD s. The name starts with __, which the user
+    // can't write, so it never appears in an expression
+    add_var("__acc");
+
     // create helper files ----------------------------------------------------
 
     char path[2048];
@@ -168,6 +176,7 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 void prog_emit(void)
 {
     add_sinst(-1, "NOP\n");
+    add_sinst( 0, "#PRNAME %s\n", prname);   // the processor's name: the source file's
 
     stmt_node *prog = stmt_list_close();
     stmt_emit(prog);

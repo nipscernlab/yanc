@@ -1,4 +1,3 @@
-#pragma yanc prname test33
 // Knowingly-complex example: a recursive-descent arithmetic evaluator that
 // builds a polymorphic expression tree on the heap and evaluates it. Combines
 // mutual recursion, virtual dispatch, a virtual destructor that frees the whole

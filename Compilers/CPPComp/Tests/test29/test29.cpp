@@ -1,4 +1,3 @@
-#pragma yanc prname test29
 // Realistic embedded example: a 3D vector for physics/IMU math.
 // Exercises overloaded constructors, binary operators (+ - * scalar), a unary
 // negation operator, and a dot-product method, all over IEEE floats.

@@ -190,14 +190,14 @@ Run any of them with `-h` / `--help` for the per-tool synopsis, or
 ```
 
 Each tool's options (`[...]` optional; the source file is the argument
-without an option, `-i <file>` also works):
+without an option):
 
 ```bat
 :: compilers: the .asm and the tables to the output folder (default ./<name>)
-cmmcomp [-o <dir>] [-n <name>] [-m <macros-dir>] [-A] <file.cmm>
-cppcomp [-o <dir>] [-n <name>] <file.cpp>
+cmmcomp [-o <dir>] [--wave-arrays] <file.cmm>
+cppcomp [-o <dir>] <file.cpp>
 :: the assembler: everything to the folder of the .asm
-asmcomp [-d <hdl-dir>] [-m <macros-dir>] [-f <MHz>] [-c <clocks>] <file.asm>
+asmcomp [-f <MHz>] [-c <clocks>] <file.asm>
 
 :: preprocessors
 cpppp   [-o <file.cpp>] [-I <dir>]... <file.cpp>
@@ -208,21 +208,24 @@ gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]
 comp2gtkw                 (a filter GTKWave runs on complex signals: stdin to stdout)
 ```
 
-`-n` defaults to the source file's name (cppcomp: `#pragma yanc prname` wins),
-`-o` to the folder `./<name>`, created if missing. asmcomp's `-f` and `-c`, the
-testbench's clock and length, default to 100 MHz and 10000 clocks. The user's
+The processor takes the name of the source file (`filtro.cmm` makes the
+processor `filtro`, its `filtro.v` and its module `filtro`); for another name,
+rename the file. `-o` defaults to the folder `./<name>`, created if missing.
+asmcomp's `-f` and `-c`, the testbench's clock and length, default to 100 MHz
+and 10000 clocks. The user's
 own files (array inits, `input_N.txt`, `cade_k.txt`) are read in the folder of
-the source: cmmcomp writes it to `cmm_log.txt`; for C++, cpppp passes it to
-cppcomp in a `#pragma yanc srcdir` line at the end of its output. The folders
-that come with the tools are found next to their executable: `-m` defaults to
-`Macros/`, `-d` to `SAPHO/`, `cpppp` searches `Header/` after any `-I`, and
-`gen_gtkw` uses the `comp2gtkw` beside it. In a repository build the same
-options find `Compilers/CMMComp/Includes`, `SAPHO/` and
-`Compilers/CPPComp/Includes`.
+the source: cmmcomp writes it to `cmm_log.txt`; for C++, cpppp names the
+original file to cppcomp in a `#pragma yanc source` line at the end of its
+output (the name and the folder both come from it). The folders
+that come with the tools are found next to their executable, with no option:
+cmmcomp and asmcomp use `Macros/`, asmcomp `SAPHO/`, `cpppp` searches
+`Header/` after any `-I`, and `gen_gtkw` uses the `comp2gtkw` beside it. In a
+repository build the same search finds `Compilers/CMMComp/Includes`, `SAPHO/`
+and `Compilers/CPPComp/Includes`.
 
-`-A` / `--array` (cmmcomp only) tells the toolchain to emit per-element waveform signals for declared arrays — useful when visualizing buffer contents in GTKWave.
+`--wave-arrays` (cmmcomp only) shows each array element as its own signal in the waveform; without it the arrays do not appear there (a large array makes many signals).
 
-Every short option has a long form (`--input`, `--output`, `--name`, `--macros-dir`, `--hdl-dir`, `--freq`, `--clocks`, `--array`, …).
+The short options have a long form (`--output`, `--freq`, `--clocks`, `--help`, `--version`).
 
 Example:
 

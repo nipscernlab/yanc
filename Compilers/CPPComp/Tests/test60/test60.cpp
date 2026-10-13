@@ -1,4 +1,3 @@
-#pragma yanc prname test60
 // Realistic embedded example: sensor statistics passed around BY VALUE.
 // A small POD struct is returned by value from the analysis function,
 // passed by value into a scaling helper (caller's copy must NOT change),

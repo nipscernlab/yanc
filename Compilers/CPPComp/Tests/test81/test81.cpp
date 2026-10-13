@@ -1,4 +1,3 @@
-#pragma yanc prname test81
 // The `for` tests its condition at the bottom now (codegen.c S_FOR +
 // gen_jump_true): once on entry, then after the step, jumping back when it
 // holds. Each case below would print a different number if the bottom test

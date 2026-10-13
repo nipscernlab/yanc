@@ -1,4 +1,3 @@
-#pragma yanc prname test74
 // `T x(N::v);` used to parse as a function prototype. After `T x(` the parser
 // had one token of lookahead and a namespace-qualified name could still start
 // a parameter TYPE (`Filter f(std::uint8_t v)`), so it took the prototype path

@@ -1,4 +1,3 @@
-#pragma yanc prname test27
 // Overloaded base-class constructors selected from a derived class's member-
 // initializer list: `: Base()` and `: Base(a)` must each dispatch to the right
 // constructor overload (a label, not the bare mangled name).

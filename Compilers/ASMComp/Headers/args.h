@@ -15,11 +15,11 @@
 // parsed command-line arguments for asmcomp
 typedef struct
 {
-    char *input;      // -i  assembly source file (full path)
-    char *proc_dir;   // -p  processor directory
-    char *hdl_dir;    // -d  HDL directory
-    char *macros_dir; // -m  Macros directory
-    char *temp_dir;   // -t  Temp directory
+    char *input;      //     the .asm (the argument without an option)
+    char *proc_dir;   //     the folder of the .asm, where everything goes
+    char *hdl_dir;    //     the SAPHO folder next to the tool
+    char *macros_dir; //     the Macros folder next to the tool
+    char *temp_dir;   //     the same folder as proc_dir
     int   freq;       // -f  processor operating frequency in MHz
     int   clocks;     // -c  number of clocks to simulate
 } cli_args;

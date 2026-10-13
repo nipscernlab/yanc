@@ -55,13 +55,7 @@ void cli_parse(int argc, char **argv, cli_args *out)
     {
         char *arg = argv[i];
 
-        if      (!strcmp(arg, "-i") || !strcmp(arg, "--input"))
-            out->input = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-d") || !strcmp(arg, "--hdl-dir"))
-            out->hdl_dir = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-m") || !strcmp(arg, "--macros-dir"))
-            out->macros_dir = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-f") || !strcmp(arg, "--freq"))
+        if      (!strcmp(arg, "-f") || !strcmp(arg, "--freq"))
             out->freq = opt_int(opt_value(argc, argv, &i, arg), arg);
         else if (!strcmp(arg, "-c") || !strcmp(arg, "--clocks"))
             out->clocks = opt_int(opt_value(argc, argv, &i, arg), arg);
@@ -76,7 +70,7 @@ void cli_parse(int argc, char **argv, cli_args *out)
             exit(EXIT_SUCCESS);
         }
         else if (arg[0] != '-' && !out->input)
-            out->input = arg;               // the .asm, without -i
+            out->input = arg;               // the .asm
         else
         {
             fprintf(stderr, MSG_ERR_CLI_UNKNOWN_OPT, arg);
@@ -86,26 +80,23 @@ void cli_parse(int argc, char **argv, cli_args *out)
     }
 
     // everything goes to the folder of the .asm (absolute: the testbench names
-    // its files there); -d and -m default to the SAPHO/ and Macros/ folders
-    // next to the tool (exe_dir.h); -f and -c to a testbench that runs -------
+    // its files there); the SAPHO/ and Macros/ folders are the ones next to
+    // the tool (exe_dir.h); -f and -c default to a testbench that runs ------
 
     static const char *const hdl_dirs[]    = EXE_HDL_DIRS;
     static const char *const macros_dirs[] = EXE_MACROS_DIRS;
-    if (!out->hdl_dir)    out->hdl_dir    = exe_find_dir(hdl_dirs);
-    if (!out->macros_dir) out->macros_dir = exe_find_dir(macros_dirs);
+    out->hdl_dir    = exe_find_dir(hdl_dirs);
+    out->macros_dir = exe_find_dir(macros_dirs);
     if (out->input) out->proc_dir = out->temp_dir = dir_of(out->input);
     if (out->freq   <= 0) out->freq   = 100;     // MHz
     if (out->clocks <= 0) out->clocks = 10000;   // clocks to simulate
 
-    const char *missing = NULL;
-    if      (!out->input)      missing = "<file.asm>";
-    else if (!out->hdl_dir)    missing = "-d/--hdl-dir";
-    else if (!out->macros_dir) missing = "-m/--macros-dir";
-
-    if (missing)
+    if (!out->input)
     {
-        fprintf(stderr, MSG_ERR_CLI_MISSING, missing);
+        fprintf(stderr, MSG_ERR_CLI_MISSING, "<file.asm>");
         cli_help(stderr);
         exit(EXIT_FAILURE);
     }
+    if (!out->hdl_dir)    {fprintf(stderr, MSG_ERR_NO_TOOL_DIR, "SAPHO" ); exit(EXIT_FAILURE);}
+    if (!out->macros_dir) {fprintf(stderr, MSG_ERR_NO_TOOL_DIR, "Macros"); exit(EXIT_FAILURE);}
 }

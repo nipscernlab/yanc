@@ -1,5 +1,4 @@
 // Base-class initialization in the member list: Derived(x,y) : Base(x), d(y) {}
-#pragma yanc prname test16
 class Base {
 public:
     int b;

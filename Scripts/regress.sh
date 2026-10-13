@@ -108,7 +108,6 @@ CPPPP="$BIN_DIR/cpppp.exe"
 CPPC="$BIN_DIR/cppcomp.exe"
 APPCOMP="$BIN_DIR/appcomp.exe"
 ASMCOMP="$BIN_DIR/asmcomp.exe"
-MACROS="$ROOT/Compilers/CMMComp/Includes"
 HDL="$ROOT/SAPHO"
 CMM_ROOT="$ROOT/Compilers/CMMComp"
 SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"
@@ -327,7 +326,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         golden="$proc_dir_rel/golden.asm"
 
         # cmmcomp step ------------------------------------------------------
-        if ! "$CMMCOMP" -en -o "$out" -m "$MACROS" "$work_proc/$filename" >/dev/null 2>&1; then
+        if ! "$CMMCOMP" -en -o "$out" "$work_proc/$filename" >/dev/null 2>&1; then
             echo "FAIL ($prname): cmmcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
@@ -379,7 +378,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             echo "FAIL ($prname): appcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
-        if ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 100000 "$asm_file" >/dev/null 2>&1; then
+        if ! "$ASMCOMP" -en -f 100 -c 100000 "$asm_file" >/dev/null 2>&1; then
             echo "FAIL ($prname): asmcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
@@ -599,10 +598,10 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         for p in link_cpp_recebe link_cpp_ping; do
             [ "$project_ok" -eq 1 ] || break
             cp_dir="$proj_tmp/cpp/$p"; cp_tmp="$cp_dir/_tmp"; mkdir -p "$cp_tmp"
-            if ! "$CPPPP" -i "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
-               ! "$CPPC" -o "$cp_dir" -n "$p" "$cp_tmp/pp.cpp" >/dev/null 2>&1 ||
+            if ! "$CPPPP" "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
+               ! "$CPPC" -o "$cp_dir" "$cp_tmp/pp.cpp" >/dev/null 2>&1 ||
                ! "$APPCOMP" -en "$cp_dir/$p.asm" >/dev/null 2>&1 ||
-               ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
+               ! "$ASMCOMP" -en -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
                 echo "FAIL ($proj): building the C++ partner $p"
                 fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0; break
             fi
@@ -819,10 +818,10 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         p=lk_cpp_chain_b
         if [ "$project_ok" -eq 1 ]; then
             cp_dir="$proj_tmp/cpp/$p"; cp_tmp="$cp_dir/_tmp"; mkdir -p "$cp_tmp"
-            if ! "$CPPPP" -i "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
-               ! "$CPPC" -o "$cp_dir" -n "$p" "$cp_tmp/pp.cpp" >/dev/null 2>&1 ||
+            if ! "$CPPPP" "$proj_top/../cpp/$p.cpp" -o "$cp_tmp/pp.cpp" -I "$CPP_ROOT/Includes" >/dev/null 2>&1 ||
+               ! "$CPPC" -o "$cp_dir" "$cp_tmp/pp.cpp" >/dev/null 2>&1 ||
                ! "$APPCOMP" -en "$cp_dir/$p.asm" >/dev/null 2>&1 ||
-               ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
+               ! "$ASMCOMP" -en -f 100 -c 100000 "$cp_dir/$p.asm" >/dev/null 2>&1; then
                 echo "FAIL ($proj): building the C++ middle $p"
                 fail=$((fail + 1)); failed_names+=("$proj"); project_ok=0
             else
@@ -927,9 +926,9 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             # Scripts/hw/tb_dcfifo.v both ways round ("0 of 4 failed")
             if [ $sim_fail -eq 0 ]; then
                 r="fifo_r"; rd="$proj_tmp/$r"; mkdir -p "$rd"
-                if ! "$CMMCOMP" -en -o "$rd" -m "$MACROS" "$proj_top/../$r.cmm" >/dev/null 2>&1 ||
+                if ! "$CMMCOMP" -en -o "$rd" "$proj_top/../$r.cmm" >/dev/null 2>&1 ||
                    ! "$APPCOMP" -en "$rd/$r.asm" >/dev/null 2>&1 ||
-                   ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 100000 "$rd/$r.asm" >/dev/null 2>&1; then
+                   ! "$ASMCOMP" -en -f 100 -c 100000 "$rd/$r.asm" >/dev/null 2>&1; then
                     echo "FAIL ($proj): building the reader $r"; sim_fail=1
                 else
                     cp "$rd/${r}_data.mif" "$rd/${r}_inst.mif" "$proj_tmp/"
@@ -1100,8 +1099,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         fi
         local_inc=("-I" "${entry%/}")
 
-        prname="$(grep -oE '#pragma[ \t]+yanc[ \t]+prname[ \t]+[A-Za-z0-9_]+' "$src" | awk '{print $NF}' | head -1)"
-        [ -z "$prname" ] && prname="$base"
+        prname="$base"                # the processor takes the source file's name
 
         proc="$WORK_CPP/$base"
         tmp="$WORK_CPP/$base/_tmp"   # pp.cpp, cppcomp.log, Verilator's build
@@ -1114,7 +1112,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         if ! "$CPPPP" -o "$tmp/pp.cpp" -I "$CPP_ROOT/Includes" "${local_inc[@]}" "$src" >/dev/null 2>&1; then
             echo "FAIL ($base): cpppp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
-        if ! "$CPPC" -o "$od" -n "$prname" "$tmp/pp.cpp" >"$tmp/cppcomp.log" 2>&1; then
+        if ! "$CPPC" -o "$od" "$tmp/pp.cpp" >"$tmp/cppcomp.log" 2>&1; then
             echo "FAIL ($base): cppcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
         # warnings.txt (optional): one expected cppcomp warning per line (a
@@ -1135,7 +1133,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         if ! "$APPCOMP" -en "$asm" >/dev/null 2>&1; then
             echo "FAIL ($base): appcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
-        if ! "$ASMCOMP" -en -d "$HDL" -m "$MACROS" -f 100 -c 5000000 "$asm" >/dev/null 2>&1; then
+        if ! "$ASMCOMP" -en -f 100 -c 5000000 "$asm" >/dev/null 2>&1; then
             echo "FAIL ($base): asmcomp"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
         if ! hw_msg=$(hw_check "${entry%/}/hardware.txt" "$od/$prname.v"); then
@@ -1344,7 +1342,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
         rm -rf "$neg_work"; mkdir -p "$neg_work"
         cp "$neg_dir/$fixture" "$neg_work/p.cmm"
-        out="$("$CMMCOMP" -en -o "$neg_work/p" -m "$MACROS" "$neg_work/p.cmm" 2>&1)"
+        out="$("$CMMCOMP" -en -o "$neg_work/p" "$neg_work/p.cmm" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"
@@ -1371,7 +1369,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         want=0; case "$forbid" in +*) want=1; forbid="${forbid#+}" ;; esac
         rm -rf "$neg_work"; mkdir -p "$neg_work"
         cp "$neg_dir/$fixture" "$neg_work/p.cmm"
-        out="$("$CMMCOMP" -en -o "$neg_work/p" -m "$MACROS" "$neg_work/p.cmm" 2>&1)"
+        out="$("$CMMCOMP" -en -o "$neg_work/p" "$neg_work/p.cmm" 2>&1)"
         rc=$?
         printed=0; printf '%s' "$out" | grep -qF "$forbid" && printed=1
         if [ "$rc" -ne 0 ]; then
@@ -1411,7 +1409,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             echo "FAIL ($name): cpppp exited non-zero"
             fail=$((fail+1)); failed_names+=("$name"); continue
         fi
-        out="$("$CPPC" -o "$neg_work/p" -n p "$neg_work/tmp/pp.cpp" 2>&1)"
+        out="$("$CPPC" -o "$neg_work/p" "$neg_work/tmp/pp.cpp" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"

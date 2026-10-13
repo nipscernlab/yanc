@@ -1,4 +1,3 @@
-#pragma yanc prname test84
 // Float constants far from 1 survive the trip to the assembler (TODO 5, step
 // 3). cppcomp printed them with %.20f while the assembler's lexer rejected an
 // exponent: 1e-25f became "0.00000000000000000000" = 0 and anything above

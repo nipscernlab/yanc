@@ -1,4 +1,3 @@
-#pragma yanc prname test30
 // Realistic embedded example: a device mode controller as an OO state machine
 // (State pattern). States are polymorphic objects on the heap; a factory builds
 // the current state, and transitions delete the old one and build the next.

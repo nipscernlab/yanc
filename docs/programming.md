@@ -13,10 +13,7 @@ A hand-written square root against the built-in one. The program is the
 files: 1000 inputs and their exact square roots.
 
 ```c
-#PRNAME Sqrt
 #NUBITS 32
-#NDSTAC 5
-#SDEPTH 5
 #NUIOIN 1
 #NUIOOU 1
 #NBMANT 23

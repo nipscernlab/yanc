@@ -58,7 +58,6 @@ NUM_CLK=1000000           # number of clocks to simulate
 
 # --- Repo sources, read in place (never written to) -------------------------
 HDL_DIR="$ROOT_DIR/SAPHO"
-MAC_DIR="$ROOT_DIR/Compilers/CMMComp/Includes"
 BIN_DIR="$YANC_BIN"
 SRC_PROC="$ROOT_DIR/Compilers/CMMComp/Tests/$PROC"
 
@@ -77,14 +76,14 @@ cp -r "$SRC_PROC" "$SRC_DIR"
 
 # --- Compile: C+- -> asm -> Verilog -----------------------------------------
 echo "#### Running the CMM compiler"
-"$BIN_DIR/cmmcomp" -o "$TMP_PRO" -m "$MAC_DIR" "$SRC_DIR/$FNAM"
+"$BIN_DIR/cmmcomp" -o "$TMP_PRO" "$SRC_DIR/$FNAM"
 
 echo "#### Running the Pre-assembler"
 ASM_FILE="$TMP_PRO/$PROC.asm"
 "$BIN_DIR/appcomp" "$ASM_FILE"
 
 echo "#### Running the Assembler"
-"$BIN_DIR/asmcomp" -d "$HDL_DIR" -m "$MAC_DIR" -f "$FRE_CLK" -c "$NUM_CLK" "$ASM_FILE"
+"$BIN_DIR/asmcomp" -f "$FRE_CLK" -c "$NUM_CLK" "$ASM_FILE"
 
 # --- Build + run the simulation ---------------------------------------------
 # WAVE_VCD: the waveform GTKWave opens; HDR_VCD: the (text) VCD gen_gtkw parses

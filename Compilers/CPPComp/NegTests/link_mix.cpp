@@ -1,5 +1,4 @@
 // Negative fixture: link 1 taken with _sync and then plain.
-#pragma yanc prname p
 #pragma yanc nuioin 1
 #pragma yanc nuioou 1
 

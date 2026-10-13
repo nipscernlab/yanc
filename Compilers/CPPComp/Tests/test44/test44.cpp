@@ -1,4 +1,3 @@
-#pragma yanc prname test44
 // Probe: compile iter_mad.cpp UNMODIFIED via the testN/ folder layout.
 // iter_mad.cpp pulls in blind_deconv.hpp + dsp_kernels.hpp + <cmath>.
 // Goal at this stage is just to see what cppcomp errors on first.

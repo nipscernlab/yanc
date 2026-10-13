@@ -6,7 +6,6 @@
 // both are chains of direct CALs. hardware.txt holds the hardware to that.
 // Also the function-pointer declarator with an initializer, global and local,
 // and `&f` (it gave 0: a LEA of the function's name as if it were data).
-#pragma yanc prname test85
 #include <cmath>
 #include <vector>
 

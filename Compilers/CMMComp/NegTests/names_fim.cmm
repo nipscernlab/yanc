@@ -1,5 +1,4 @@
 // The program ends at the label @fim: a function fim was a second label with that name.
-#PRNAME p
 #NUBITS 32
 #NUIOIN 1
 #NUIOOU 1

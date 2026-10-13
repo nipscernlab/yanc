@@ -1,5 +1,4 @@
 // Negative fixture: the link number must be an integer literal.
-#pragma yanc prname p
 #pragma yanc nuioin 1
 #pragma yanc nuioou 1
 

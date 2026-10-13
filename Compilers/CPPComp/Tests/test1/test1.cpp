@@ -1,5 +1,4 @@
 // CPPComp bootstrap smoke test — valid C subset for now (C++ features come next)
-#pragma yanc prname test1
 
 int add(int a, int b) { return a + b; }
 

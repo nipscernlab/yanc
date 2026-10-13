@@ -14,7 +14,6 @@
 // This test exercises the exact buggy pattern and verifies the round-trip
 // of floats through a pointer-arithmetic-derived `float*` works.
 
-#pragma yanc prname test51
 
 constexpr int L = 15;
 

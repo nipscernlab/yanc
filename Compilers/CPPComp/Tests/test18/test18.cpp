@@ -1,6 +1,5 @@
 // Operator overloading for class types: operator= (custom assignment, replaces
 // the default memberwise copy) and operator[] (subscript).
-#pragma yanc prname test18
 int assign_log;
 class Vec {
 public:

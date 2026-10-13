@@ -2,7 +2,6 @@
 // new[] arrays, free-list reuse, and a heap-built singly linked list. (Uses
 // `struct Node` spelling for now; the bare class-name shorthand arrives with
 // tier-1 classes.)
-#pragma yanc prname test3
 
 struct Node { int val; struct Node* next; };
 

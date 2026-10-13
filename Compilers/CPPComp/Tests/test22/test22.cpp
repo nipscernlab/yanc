@@ -1,4 +1,3 @@
-#pragma yanc prname test22
 // Real monomorphization: maxv/addv instantiate a separate concrete function per
 // argument type, so the float instances use float ops (not the int-erased ones).
 template<class T> T maxv(T a, T b) { return a > b ? a : b; }

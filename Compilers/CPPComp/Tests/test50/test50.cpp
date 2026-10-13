@@ -13,7 +13,6 @@
 // Step 3: inverse_tikhonov_calibrated + apply_inverse_fir for g, x_tilde.
 // Step 4: dump all 6 arrays via out(0, scaled_int).
 
-#pragma yanc prname test50
 
 #include "blind_core.cpp"
 #include "iter_mad.cpp"

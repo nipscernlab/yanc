@@ -2,7 +2,6 @@
 // a pointer (`ptr->s`), for both read and write. A static is one shared global
 // (Class__s), so a write through one object is visible through another and
 // through Class::s. Locks the obj.staticmember / ptr->staticmember resolution.
-#pragma yanc prname test56
 
 class Counter {
 public:

@@ -7,11 +7,11 @@ in cycles, before calling an optimisation a win.
 
 | file | what |
 |---|---|
-| `cycles.sh <work dir> <name> <n_outputs> [prof]` | compiles `<work dir>/<name>/Software/<name>.cpp` with the toolchain in `.smoke/bin`, builds it under Verilator, prints the instruction count and the cycle of every output; `prof` adds the per-address profile |
+| `cycles.sh <work dir> <name> <n_outputs> [prof]` | compiles `<work dir>/<name>/<name>.cpp` (output in `<work dir>/<name>/<name>/`) with the toolchain in `.smoke/bin`, builds it under Verilator, prints the instruction count and the cycle of every output; `prof` adds the per-address profile |
 | `sim_cyc.cpp` | the Verilator harness (a copy of `Compilers/CPPComp/Tests/Verilator/sim_main.cpp` that prints `CYCLES <n> value <v>` at every output) |
 | `sim_prof.cpp` | the same, also counting the cycles the fetch address (`pc_sim_val`, exposed with `+define+YANC_TRACE`) spends on each program word, into `prof.txt` |
 | `asm_waste.py <tests dir>` | scans every `golden.asm` for sequences a lean compiler would not emit (reload after SET, jump to a jump, unfused PSH; LOD, ...) |
-| `prof_report.py <program dir> <name>` | cycles per function, per source line (through `pc_<name>_mem.txt` and `trad_cmm.txt`) and per address |
+| `prof_report.py <output dir> <name>` | cycles per function, per source line (through `pc_<name>_mem.txt` and `trad_cmm.txt`) and per address |
 
 Rebuild the toolchain first, or you measure the OLD compiler:
 
@@ -23,9 +23,9 @@ Run everything through the MSYS2 login shell (`$env:MSYSTEM="MINGW64"; bash -lc 
 
 ## test46, the reference program
 
-    W=/c/tmp/perf; mkdir -p $W/test46/Software
-    cp Compilers/CPPComp/Tests/test46/Software/* $W/test46/Software/
-    sed -i 's/^void main(void) {/&\n    in(0);/' $W/test46/Software/test46.cpp
+    W=/c/tmp/perf; mkdir -p $W/test46
+    cp Compilers/CPPComp/Tests/test46/* $W/test46/
+    sed -i 's/^void main(void) {/&\n    in(0);/' $W/test46/test46.cpp
     bash Scripts/perf/cycles.sh $W test46 4          # cycles
     bash Scripts/perf/cycles.sh $W test46 4 prof     # + profile
 

@@ -1,4 +1,3 @@
-#pragma yanc prname test4
 // Tier-1 classes: data members, methods with implicit `this`, unqualified
 // member access, and calls via both `.` and `->` (incl. on a heap object).
 

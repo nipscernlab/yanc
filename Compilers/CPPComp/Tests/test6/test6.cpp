@@ -1,6 +1,5 @@
 // References (T&): swap/inc by reference, a reference local, ref-to-global,
 // and a class reference used for method + member access.
-#pragma yanc prname test6
 void swap(int& a, int& b) { int t = a; a = b; b = t; }
 void inc(int& x) { x = x + 1; }
 

@@ -1,6 +1,5 @@
 // Locks in the fixed CPPComp target: every sizeof==1, short/long fold to
 // 32-bit (full-width arithmetic, no 16-bit overflow), IEEE-754 single float.
-#pragma yanc prname test2
 void main(void) {
     out(0, sizeof(char));        // 1
     out(0, sizeof(short));       // 1

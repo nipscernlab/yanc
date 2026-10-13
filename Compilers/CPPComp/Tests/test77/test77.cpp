@@ -1,4 +1,3 @@
-#pragma yanc prname test77
 // The zero-fill loop of a local brace initializer (emit_zero_words), at the
 // three shapes of its exit test: the run starting at word 0 (a leading array
 // member the designated list leaves out), at word 1 (one item given) and at

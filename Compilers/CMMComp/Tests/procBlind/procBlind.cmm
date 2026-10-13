@@ -31,7 +31,6 @@
 //     float expression to out()/an int does F2I.
 //   - no exponent literals (1e-5)           -> written long-form (0.00001).
 
-#PRNAME procBlind
 #NUBITS 32
 #NBMANT 23
 #NBEXPO 8

@@ -1,6 +1,5 @@
 // Single inheritance (non-virtual): the base subobject is laid first, so a
 // derived object inherits the base fields and methods.
-#pragma yanc prname test9
 class Animal {
 public:
     int legs;

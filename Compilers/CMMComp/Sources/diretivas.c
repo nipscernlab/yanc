@@ -40,12 +40,11 @@ void dire_exec(char *dir, int id, int t)
     int ival = atoi(v_table[id].name);
 
     // action to take depending on the directive
-    // only directives 1, 3, 4, 7 and 8 affect the cmm compiler; 9 and 10 are
+    // only directives 3, 4, 7 and 8 affect the cmm compiler; 9 and 10 are
     // validated here (asmcomp validates them again: it is the gate every front
     // end passes through; this one just knows the source line)
     switch(t)
     {
-        case  1: strcpy (prname,v_table[id].name); break;
         case  3: nbmant = ival             ; break;
         case  4: nbexpo = ival             ; break;
         case  7: nuioin = ival             ; break;

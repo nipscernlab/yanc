@@ -1,5 +1,4 @@
 // A global named like an instruction: the assembler read SET ADD as two instructions (SET vanished, 4 words instead of 5).
-#PRNAME p
 #NUBITS 32
 #NUIOIN 1
 #NUIOOU 1

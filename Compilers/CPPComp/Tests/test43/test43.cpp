@@ -1,4 +1,3 @@
-#pragma yanc prname test43
 // Default function arguments. The prototype carries the defaults; the
 // out-of-line definition omits them. Calls with fewer args than params
 // get the missing trailing values from the prototype's stored defaults.

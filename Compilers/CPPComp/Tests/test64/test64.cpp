@@ -1,4 +1,3 @@
-#pragma yanc prname test64
 // Regression for the cur_base clobbering bug in array dimensions: a sizeof(T)
 // (or cast / new) in an array's size expression reduces its own base_type and
 // overwrote the global cur_base that the enclosing declarator reads afterwards,

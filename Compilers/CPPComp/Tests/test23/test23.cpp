@@ -1,4 +1,3 @@
-#pragma yanc prname test23
 // Realistic embedded example: a byte-stream packet framer.
 // A ring buffer feeds a state machine that frames packets of the form:
 //   STX | LEN | payload[LEN] | ETX

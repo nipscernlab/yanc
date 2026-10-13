@@ -1,6 +1,5 @@
 // Static data member: one shared global per class (Class::count), used by the
 // constructor and a method; instance ids come from the shared counter.
-#pragma yanc prname test17
 class Widget {
 public:
     static int count = 0;     // one shared global across all instances

@@ -96,7 +96,6 @@ set TB=top_level_tb
 
 :: Repo sources, read in place (never written to) -----------------------------
 set HDL_DIR=%ROOT_DIR%\SAPHO
-set MAC_DIR=%ROOT_DIR%\Compilers\CMMComp\Includes
 set BIN_DIR=%YANC_BIN%
 set TESTS_DIR=%ROOT_DIR%\Compilers\CMMComp\Tests
 
@@ -127,13 +126,13 @@ set TEMP=%TMP_DIR%
 :: Compile each processor: C+- -> asm -> Verilog -----------------------------
 
 (for %%i in (%PROC_LIST%) do (
-    "%BIN_DIR%\cmmcomp.exe" -o %TMP_DIR%\%%i -m %MAC_DIR% --array %USER_DIR%\%%i\%%i.cmm
+    "%BIN_DIR%\cmmcomp.exe" -o %TMP_DIR%\%%i --wave-arrays %USER_DIR%\%%i\%%i.cmm
 ))
 (for %%i in (%PROC_LIST%) do (
     "%BIN_DIR%\appcomp.exe" %TMP_DIR%\%%i\%%i.asm
 ))
 (for %%i in (%PROC_LIST%) do (
-    "%BIN_DIR%\asmcomp.exe" -d %HDL_DIR% -m %MAC_DIR% %TMP_DIR%\%%i\%%i.asm
+    "%BIN_DIR%\asmcomp.exe" %TMP_DIR%\%%i\%%i.asm
 ))
 
 :: Build the simulation (gather the same .v set for both simulators) ----------

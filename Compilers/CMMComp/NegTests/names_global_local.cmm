@@ -1,5 +1,4 @@
 // A global main_x and the local x of main are both main_x in the .asm.
-#PRNAME p
 #NUBITS 32
 #NUIOIN 1
 #NUIOOU 1

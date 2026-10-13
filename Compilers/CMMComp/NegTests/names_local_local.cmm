@@ -1,5 +1,4 @@
 // The local c of a_b and the local b_c of a are both a_b_c in the .asm.
-#PRNAME p
 #NUBITS 32
 #NUIOIN 1
 #NUIOOU 1

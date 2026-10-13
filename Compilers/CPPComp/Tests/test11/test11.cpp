@@ -1,6 +1,5 @@
 // Member-initializer lists (Ctor():x(a),y(b){}) and operator overloading
 // (operator+ / operator== as member functions).
-#pragma yanc prname test11
 class Vec {
 public:
     int x, y;

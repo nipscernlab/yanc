@@ -1,6 +1,5 @@
 // C++ quick wins: type alias (using T = U), static_cast<T>(e), and scoped
 // enumerations (enum class E { ... } accessed as E::name).
-#pragma yanc prname test20
 using Int = int;                          // type alias
 enum class Color { Red, Green, Blue };    // scoped enum (Red=0, Green=1, Blue=2)
 

@@ -1,4 +1,3 @@
-#pragma yanc prname test67
 // Types wider than the 32-bit word (long long, unsigned long long, int64_t,
 // uint64_t, double, long double) get one word on YANC. cppcomp warns at each
 // variable declared with one -- global, local, loop variable, parameter,

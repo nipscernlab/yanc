@@ -3,7 +3,6 @@
 // construction order, BEFORE jumping. The destructor here prints the object id,
 // so the output order is the proof. Also checks the returned value survives the
 // destructor calls (which clobber the accumulator).
-#pragma yanc prname test55
 
 class Beep {
 public:

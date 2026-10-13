@@ -202,7 +202,7 @@ typedef struct {
     int     n_ctinsts;
 
     char   *prname;
-    char   *srcdir;          // #pragma yanc srcdir (cpppp writes it): the folder of the original source
+    char   *srcdir;          // #pragma yanc source (cpppp writes it): the original source file
     int     nubits, nbmant, nbexpo, nugain, ndstac, sdepth, nuioin, nuioou, fftsiz, itradd;
 } unit;
 

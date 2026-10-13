@@ -1,4 +1,3 @@
-#pragma yanc prname test24
 // Realistic embedded example: a tiny cooperative task scheduler.
 // Tasks are plain function-pointer callbacks held in a fixed array; run()
 // dispatches them in order. Classic bare-metal cooperative scheduler shape.

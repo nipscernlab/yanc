@@ -66,9 +66,9 @@ int main() {
 :: 1. preprocess the C++ source into the output folder (a .cmm source skips this)
 mkdir my_program
 cpppp -o my_program\pp.cpp my_program.cpp
-:: 2. compile it to assembly: my_program\my_program.asm and its tables
-::    (a .cmm source: cmmcomp my_program.cmm)
-cppcomp -n my_program my_program\pp.cpp
+:: 2. compile it to assembly: my_program\my_program.asm and its tables (the
+::    processor takes the source file's name; a .cmm source: cmmcomp my_program.cmm)
+cppcomp my_program\pp.cpp
 :: 3. addresses and processor parameters
 appcomp my_program\my_program.asm
 :: 4. the processor's Verilog, memory images and testbench, all in my_program\
@@ -109,7 +109,7 @@ EOF
 
 mkdir -p my_program
 cpppp -o my_program/pp.cpp my_program.cpp
-cppcomp -n my_program my_program/pp.cpp
+cppcomp my_program/pp.cpp
 appcomp my_program/my_program.asm
 asmcomp my_program/my_program.asm
 

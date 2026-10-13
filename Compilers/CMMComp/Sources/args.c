@@ -37,15 +37,9 @@ void cli_parse(int argc, char **argv, cli_args *out)
     {
         char *arg = argv[i];
 
-        if      (!strcmp(arg, "-i") || !strcmp(arg, "--input"))
-            out->input = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-n") || !strcmp(arg, "--name"))
-            out->name = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-o") || !strcmp(arg, "--output"))
+        if      (!strcmp(arg, "-o") || !strcmp(arg, "--output"))
             out->proc_dir = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-m") || !strcmp(arg, "--macros-dir"))
-            out->macros_dir = opt_value(argc, argv, &i, arg);
-        else if (!strcmp(arg, "-A") || !strcmp(arg, "--array"))
+        else if (!strcmp(arg, "--wave-arrays"))
             out->array_sim = 1;
         else if (!strcmp(arg, "-h") || !strcmp(arg, "--help"))
         {
@@ -58,7 +52,7 @@ void cli_parse(int argc, char **argv, cli_args *out)
             exit(EXIT_SUCCESS);
         }
         else if (arg[0] != '-' && !out->input)
-            out->input = arg;               // the source file, without -i
+            out->input = arg;               // the source file
         else
         {
             fprintf(stderr, MSG_ERR_CLI_UNKNOWN_OPT, arg);
@@ -67,13 +61,13 @@ void cli_parse(int argc, char **argv, cli_args *out)
         }
     }
 
-    // defaults (exe_dir.h): -m the Macros/ folder next to the tool, -n the
-    // source file's name, -o the folder ./<name>, where everything goes (the
-    // .asm and the tables); the source file is mandatory --------------------
+    // the processor takes the name of the source file; the Macros/ folder is
+    // the one next to the tool (exe_dir.h); -o defaults to the folder
+    // ./<name>, where everything goes (the .asm and the tables) -------------
 
     static const char *const macros_dirs[] = EXE_MACROS_DIRS;
-    if (!out->macros_dir) out->macros_dir = exe_find_dir(macros_dirs);
-    if (!out->name && out->input) out->name = path_stem(out->input);
+    out->macros_dir = exe_find_dir(macros_dirs);
+    if (out->input) out->name = path_stem(out->input);
     if (!out->proc_dir && out->name)
     {
         out->proc_dir = malloc(strlen(out->name) + 3);
@@ -81,14 +75,11 @@ void cli_parse(int argc, char **argv, cli_args *out)
     }
     if (out->proc_dir) {make_dir(out->proc_dir); out->temp_dir = out->proc_dir;}
 
-    const char *missing = NULL;
-    if      (!out->input)      missing = "<file.cmm>";
-    else if (!out->macros_dir) missing = "-m/--macros-dir";
-
-    if (missing)
+    if (!out->input)
     {
-        fprintf(stderr, MSG_ERR_CLI_MISSING, missing);
+        fprintf(stderr, MSG_ERR_CLI_MISSING, "<file.cmm>");
         cli_help(stderr);
         exit(EXIT_FAILURE);
     }
+    if (!out->macros_dir) {fprintf(stderr, MSG_ERR_NO_TOOL_DIR, "Macros"); exit(EXIT_FAILURE);}
 }

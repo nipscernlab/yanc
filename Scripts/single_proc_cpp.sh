@@ -53,7 +53,6 @@ NUM_CLK=100000            # number of clocks to simulate
 
 # --- Repo sources, read in place (never written to) -------------------------
 HDL_DIR="$ROOT_DIR/SAPHO"
-MAC_DIR="$ROOT_DIR/Compilers/CMMComp/Includes"      # asmcomp macros (shared)
 INC_DIR="$ROOT_DIR/Compilers/CPPComp/Includes"      # C++ headers
 BIN_DIR="$YANC_BIN"
 SRC_PROC="$ROOT_DIR/Compilers/CPPComp/Tests/$PROC"
@@ -74,14 +73,14 @@ echo "#### Running the C++ preprocessor (cpppp)"
 "$BIN_DIR/cpppp" -o "$TMP_PRO/pp.cpp" -I "$INC_DIR" -I "$SRC_DIR" "$SRC_DIR/$FNAM"
 
 echo "#### Running the C++ compiler (cppcomp)"
-"$BIN_DIR/cppcomp" -o "$TMP_PRO" -n "$PROC" "$TMP_PRO/pp.cpp"
+"$BIN_DIR/cppcomp" -o "$TMP_PRO" "$TMP_PRO/pp.cpp"
 
 echo "#### Running the Pre-assembler (appcomp)"
 ASM_FILE="$TMP_PRO/$PROC.asm"
 "$BIN_DIR/appcomp" "$ASM_FILE"
 
 echo "#### Running the Assembler (asmcomp)"
-"$BIN_DIR/asmcomp" -d "$HDL_DIR" -m "$MAC_DIR" -f "$FRE_CLK" -c "$NUM_CLK" "$ASM_FILE"
+"$BIN_DIR/asmcomp" -f "$FRE_CLK" -c "$NUM_CLK" "$ASM_FILE"
 
 # --- Build + run the simulation ---------------------------------------------
 UPROC="$TMP_PRO/$PROC"

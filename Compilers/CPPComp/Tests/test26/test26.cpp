@@ -1,4 +1,3 @@
-#pragma yanc prname test26
 // Realistic embedded example: Q8.8 fixed-point arithmetic (no FPU).
 // A value is stored as an int scaled by 256. Exercises overloaded constructors
 // (default + converting), operator overloading including the compound operator

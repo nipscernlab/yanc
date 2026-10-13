@@ -1,6 +1,5 @@
 // Namespaces (transparent on this target): namespace blocks, N::name qualified
 // calls, a using-directive, and a namespace-qualified type N::Vec with a method.
-#pragma yanc prname test7
 namespace math {
     int square(int x) { return x * x; }
     int cube(int x) { return x * x * x; }

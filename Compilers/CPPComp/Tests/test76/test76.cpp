@@ -1,4 +1,3 @@
-#pragma yanc prname test76
 // A `static` local is initialised the first time control reaches its
 // declaration. cppcomp used to build every one of them at program start, with
 // the globals: a function that was never called still ran its static's

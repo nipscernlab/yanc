@@ -1,5 +1,4 @@
 // A comp z keeps its imaginary part in z_i: a float z_i declared before it shared that word.
-#PRNAME p
 #NUBITS 32
 #NUIOIN 1
 #NUIOOU 1

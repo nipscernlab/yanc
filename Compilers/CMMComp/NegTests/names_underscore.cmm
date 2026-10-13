@@ -1,5 +1,4 @@
 // Names starting with __ belong to the compiler in the .asm.
-#PRNAME p
 #NUBITS 32
 #NUIOIN 1
 #NUIOOU 1

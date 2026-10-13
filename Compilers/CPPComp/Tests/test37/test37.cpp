@@ -1,4 +1,3 @@
-#pragma yanc prname test37
 // <cstddef>: std::size_t / std::ptrdiff_t aliases. Both fold to int on this
 // target (all integer widths are one 32-bit word), so they behave exactly like
 // plain int and can be used wherever int can.

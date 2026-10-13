@@ -1,4 +1,3 @@
-#pragma yanc prname test65
 // Bitfields laid out and masked at the 32-bit word, as a host compiler does.
 // (1) Without `#pragma yanc nubits`, cppcomp packed bitfields into 16-bit
 //     words: four 8-bit fields took two words, so a union with an `unsigned`

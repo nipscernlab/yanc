@@ -72,7 +72,6 @@ VL_WARN=(-Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH -Wno-CASEINCOMPLE
 
 # --- Repo sources, read in place (never written to) -------------------------
 HDL_DIR="$ROOT_DIR/SAPHO"
-MAC_DIR="$ROOT_DIR/Compilers/CMMComp/Includes"
 BIN_DIR="$YANC_BIN"
 TESTS_DIR="$ROOT_DIR/Compilers/CMMComp/Tests"
 
@@ -96,13 +95,13 @@ done
 
 # --- Compile each processor: C+- -> asm -> Verilog --------------------------
 for i in "${PROC_LIST[@]}"; do
-    "$BIN_DIR/cmmcomp" -o "$TMP_DIR/$i" -m "$MAC_DIR" --array "$USER_DIR/$i/$i.cmm"
+    "$BIN_DIR/cmmcomp" -o "$TMP_DIR/$i" --wave-arrays "$USER_DIR/$i/$i.cmm"
 done
 for i in "${PROC_LIST[@]}"; do
     "$BIN_DIR/appcomp" "$TMP_DIR/$i/$i.asm"
 done
 for i in "${PROC_LIST[@]}"; do
-    "$BIN_DIR/asmcomp" -d "$HDL_DIR" -m "$MAC_DIR" "$TMP_DIR/$i/$i.asm"
+    "$BIN_DIR/asmcomp" "$TMP_DIR/$i/$i.asm"
 done
 
 # --- Build + run the simulation ---------------------------------------------

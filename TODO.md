@@ -24,7 +24,9 @@ register cuts inside each divider and every division written as
 released (target v7.1: no v7.0 release, Luciano 2026-10-11). Item 21 (documentation that cannot fall behind a
 release) waits for Chrysthofer's opinion. Item 22 (`myFIFO` losing words, and
 the two-clock `myDCFIFO`) is fixed on main, not released. Item 23 (`toma`/`cade` in a chain of
-processors) is in v7.1 too. Item 11,
+processors) is in v7.1 too. Item 24 (arrays in the waveform without a
+signal per element) is open. Item 25 (appcomp folded into asmcomp) is
+open. Item 11,
 consistency at 32 bits, is closed (2026-09-21): see the CHANGELOG for its
 four fixes.
 Items 1, 3 and 4 landed as `#FROUND 1` and item 2 as `#FROUND 2` (see the
@@ -914,6 +916,40 @@ for circular FIR buffers), then `Y` with two full ports if the MAC loops of
 real group programs are the bottleneck. Each step measured first: ALUTs and
 Fmax in Quartus (a program that uses it and one that must pay nothing), and
 test46's cycles.
+
+## 24. Arrays in the waveform without one signal per element
+
+**Status:** open, noted 2026-10-12 (Luciano) · **Area:** cmmcomp
+`--wave-arrays`, asmcomp `hdl.c` (the `$dumpvars` of `sim_name_arr`),
+`gen_gtkw`
+
+**Why.** With `--wave-arrays` the testbench dumps every element of every
+array as its own variable, so the `.vcd` and the GTKWave signal list grow
+with the array sizes (a 2400-word buffer is 2400 signals); without it the
+arrays do not show at all. The option exists only to keep that cost away.
+
+**Done when** an array can be watched without a variable per position: for
+example one signal for the last write (address and value), or a dump of
+the array memory read back by the viewer, chosen after measuring the
+`.vcd` size and the simulation time on a test with large arrays (test46).
+
+## 25. One assembler: appcomp inside asmcomp
+
+**Status:** open, noted 2026-10-12 (Luciano) · **Area:** `Compilers/APPComp/`,
+`Compilers/ASMComp/`, the scripts, the regress, the `yanc` driver
+
+**Why.** appcomp is the first pass of a two-pass assembler in its own
+executable: it reads the `.asm` once and writes `app_log.txt` (the
+directives, `n_ins`, `n_dat`, `itr_addr`, `toaqui_addr` and the address of
+every label) so that asmcomp can resolve forward jumps and size the memories
+in its single pass. Two executables mean one more call for every user and
+script, and a file passed between them.
+
+**Done when** asmcomp runs both passes itself and appcomp is gone from the
+release, the scripts and the regress. Who else reads `app_log.txt` decides
+whether it is still written: AURORA reads the `@fim <n>` line for the hardware
+test (`teste_de_hardware.ts`), and `Scripts/hw/opmix/run_mix.sh` reads it too.
+AURORA adapts from a pasted text (no compatibility kept in yanc).
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

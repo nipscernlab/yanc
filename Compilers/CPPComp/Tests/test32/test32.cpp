@@ -1,4 +1,3 @@
-#pragma yanc prname test32
 // Realistic embedded example: a fixed-size array container parameterised by a
 // non-type template parameter (the element count). Avoids the heap entirely —
 // the storage is inline. Classic embedded "static container" idiom.

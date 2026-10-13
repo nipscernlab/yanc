@@ -3,7 +3,6 @@
 // the body is provided outside the class. A stack object's scope-exit must
 // run that out-of-class destructor body. Locks the dtor_decl + out-of-class
 // dtor_def grammar added for this feature.
-#pragma yanc prname test52
 
 class Beeper {
 public:

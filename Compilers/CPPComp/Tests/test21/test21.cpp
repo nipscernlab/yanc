@@ -1,6 +1,5 @@
 // Mini-STL written in the language itself: a templated Vector<T> (heap-backed,
 // RAII, grow-on-push, operator[]) and a unique_ptr<T> (RAII owning pointer).
-#pragma yanc prname test21
 #include "ministl.hpp"
 
 void main(void) {

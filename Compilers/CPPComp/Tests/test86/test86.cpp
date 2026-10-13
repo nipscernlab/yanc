@@ -2,7 +2,6 @@
 // top -> mid -> leaf is three calls deep, and arguments wait on the data
 // stack across them; hardware.txt holds SDEPTH to the depth asm_depth works
 // out. The data-stack depth is set by the pragma below, which must win.
-#pragma yanc prname test86
 #pragma yanc ndstac 20
 
 int leaf(int a, int b) { if (a > 100) return a - b; return a + b; }

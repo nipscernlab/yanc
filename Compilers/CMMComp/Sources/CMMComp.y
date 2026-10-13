@@ -177,7 +177,7 @@ prog_elements : direct | declar | funcao
 
 // Compilation directives -----------------------------------------------------
 
-direct : PRNAME   ID   {dire_exec("#PRNAME",$2, 1);} // processor name
+direct : PRNAME   ID   {fprintf(stderr, MSG_ERR_PRNAME_GONE, line_num+1); exit(EXIT_FAILURE);} // the name is the file's
        | NUBITS INUM   {dire_exec("#NUBITS",$2, 0);} // ALU word width
        | NBMANT INUM   {dire_exec("#NBMANT",$2, 3);} // mantissa width (bits)
        | NBEXPO INUM   {dire_exec("#NBEXPO",$2, 4);} // exponent width (bits)
@@ -514,6 +514,7 @@ int main(int argc, char *argv[])
     cli_args a;
     cli_parse(argc, argv, &a);      // parses the named options (or exits with usage)
 
+    snprintf(prname, sizeof(prname), "%s", a.name);   // the processor takes the source file's name
     parse_init(a.input, a.name, a.proc_dir, a.macros_dir, a.temp_dir,
                a.array_sim ? "1" : "0"); // initializes the parser and global variables
     yyparse   ();                       // here the magic happens!!

@@ -1,8 +1,8 @@
-# prof_report.py <program dir> <name>: cycles per function, per source line and
+# prof_report.py <output dir> <name>: cycles per function, per source line and
 # per address, from prof.txt (PC -> cycles) written by Scripts/perf/cycles.sh prof.
 import sys, re, collections
 d, v = sys.argv[1], sys.argv[2]
-asm = open(f"{d}/proc/Software/{v}.asm").read().splitlines()
+asm = open(f"{d}/{v}.asm").read().splitlines()
 
 # address -> (instruction text, enclosing function label)
 ins, func, cur = [], [], "?"
@@ -13,7 +13,7 @@ for ln in asm:
     m = re.match(r"@(\S+)\s+(.*)", ln)
     if m:
         lab, ln = m.group(1), m.group(2)
-        if not re.match(r"L[a-z_]*\d+$", lab):   # branch targets are not functions
+        if not re.match(r"__L[a-z_]*\d+$", lab):   # branch targets are not functions
             cur = lab
         ln = f"@{lab} {ln}"
     ins.append(ln); func.append(cur)

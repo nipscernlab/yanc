@@ -1,4 +1,3 @@
-#pragma yanc prname test80
 // Loop-invariant address hoisting (codegen.c, lih_*): in a `for`, p[inv + k]
 // with p and the variables of inv not written in the loop becomes t[k], with
 // t = p + inv computed once before it. The cases that must NOT be hoisted

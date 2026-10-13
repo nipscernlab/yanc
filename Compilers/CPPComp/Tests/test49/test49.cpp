@@ -1,4 +1,3 @@
-#pragma yanc prname test49
 // Isolated probe: does iter_mad scale? We invoke it with N=100 (not 1000) to
 // see if the algorithm finishes well within budget. If even N=100 fails, the
 // bottleneck is fundamental, not size-driven. We still read 1000 ints from

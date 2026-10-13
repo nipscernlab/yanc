@@ -157,4 +157,3 @@ void main(void) {
 
     for (int j = 0; j < M; ++j) out(0, (int)(h_hat[j] * GAIN_OUT + 0.5f));
 }
-#pragma yanc prname test36

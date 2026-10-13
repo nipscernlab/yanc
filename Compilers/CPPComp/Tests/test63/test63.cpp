@@ -1,4 +1,3 @@
-#pragma yanc prname test63
 // Regression for the f2mf rounding-carry bug: the largest float just below a
 // power of two has an all-ones IEEE mantissa, so rounding to the YANC mantissa
 // carries out of the field (0x7FFFFF -> 0x800000). Without renormalization that

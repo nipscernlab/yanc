@@ -1,4 +1,3 @@
-#pragma yanc prname test83
 // Constant folding (codegen.c cfold): an int expression of literals only is
 // computed at compile time in the word's arithmetic -- 32-bit two's
 // complement, wrapping; / and % truncate; >> of a signed int is arithmetic.

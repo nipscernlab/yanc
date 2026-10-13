@@ -1,4 +1,3 @@
-#pragma yanc prname test62
 // Regression for the std::array<float,N> zero-fill bug: a value-initialised
 // (`= {}`) or partially brace-initialised float aggregate must zero-fill its
 // unwritten slots with the YANC float encoding of 0.0 (f2mf(0.0)), NOT all-zero

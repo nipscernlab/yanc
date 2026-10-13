@@ -9,7 +9,6 @@
 // stack-frame slot), which is exactly what the dump's `if (mem_addr_wr == X)`
 // in proc.v needs to match.
 // ****************************************************************************
-#pragma yanc prname proc_cpp
 
 int   g_count = 7;      // global int   -> cmm_log: global g_count 1
 float g_gain  = 2.5;    // global float -> cmm_log: global g_gain  2

@@ -11,7 +11,7 @@
 //   #pragma once             (skip the file on any later #include)
 //   #pragma yanc ...         (passed through verbatim)
 //
-// usage:  cpppp -i input.c [-o out.c] [-I dir]*
+// usage:  cpppp [-o out.cpp] [-I dir]* input.cpp
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -689,7 +689,7 @@ static void usage(void)
     fprintf(stderr,
         "cpppp %s — C++ preprocessor for cppcomp\n"
         "usage: cpppp [-o <output.cpp>] [-I <dir>]* <input.cpp>\n"
-        "  <file>, -i <file> input .cpp file\n"
+        "  <input.cpp>      the source file\n"
         "  -o <file>        output preprocessed .cpp (default: stdout)\n"
         "  -I <dir>         add include search directory (repeatable); the Header\n"
         "                   folder next to bin/ is searched after them\n"
@@ -706,8 +706,7 @@ int main(int argc, char **argv)
     const char *out_path = NULL;
 
     for (int i = 1; i < argc; i++) {
-        if      (!strcmp(argv[i], "-i") && i+1 < argc) in_path  = argv[++i];
-        else if (!strcmp(argv[i], "-o") && i+1 < argc) out_path = argv[++i];
+        if      (!strcmp(argv[i], "-o") && i+1 < argc) out_path = argv[++i];
         else if (!strcmp(argv[i], "-I") && i+1 < argc) {
             if (n_incdirs < MAX_INCDIRS) incdirs[n_incdirs++] = argv[++i];
             else { fprintf(stderr, "cpppp: too many -I dirs\n"); exit(1); }
@@ -717,7 +716,7 @@ int main(int argc, char **argv)
             printf("cpppp %s\n", YANC_VERSION);
             return 0;
         }
-        else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source, without -i
+        else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source
         else { fprintf(stderr, "cpppp: unknown option '%s'\n", argv[i]); usage(); }
     }
     if (!in_path) usage();
@@ -732,11 +731,12 @@ int main(int argc, char **argv)
 
     process_file(in_path);
 
-    // the folder of the original source, for cppcomp: asmcomp reads the
-    // user's own files there (input_N.txt, cade_k.txt). Last, so the line
-    // numbers of the source stay the same in the messages
-    char *src = dir_of(in_path);
-    if (src) fprintf(out_f, "\n#pragma yanc srcdir %s\n", src);
+    // the original source, for cppcomp: the processor takes its name, and
+    // asmcomp reads the user's own files (input_N.txt, cade_k.txt) in its
+    // folder. Last, so the line numbers of the source stay the same in the
+    // messages
+    char *src = abs_path(in_path);
+    if (src) fprintf(out_f, "\n#pragma yanc source %s\n", src);
 
     if (out_f != stdout) fclose(out_f);
     return 0;

@@ -365,6 +365,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: opção desconhecida '%s'.\n", \
       "Error: unknown option '%s'.\n")
 
+#define MSG_ERR_NO_TOOL_DIR \
+    M("Erro: não achei a pasta %s ao lado da pasta bin/ do asmcomp. Instale o YANC de novo.\n", \
+      "Error: the %s folder is not next to asmcomp's bin/ folder. Install YANC again.\n")
+
 #define MSG_ERR_CLI_MISSING \
     M("Erro: faltou a opção obrigatória '%s'.\n", \
       "Error: missing required option '%s'.\n")
@@ -389,8 +393,6 @@ void parse_lang_flag(int *argc, char **argv);
       "(input_N.txt, cade_k.txt) são lidos na pasta do fonte do programa.\n" \
       "\n" \
       "Opções:\n" \
-      "  -d, --hdl-dir <dir>     diretório do HDL (padrão: a pasta SAPHO ao lado de bin/)\n" \
-      "  -m, --macros-dir <dir>  diretório de Macros (padrão: a pasta Macros ao lado de bin/)\n" \
       "  -f, --freq <MHz>        frequência do clock do testbench (padrão: 100)\n" \
       "  -c, --clocks <n>        número de clocks a simular (padrão: 10000)\n" \
       "  -en, -pt                idioma das mensagens (padrão: -pt)\n" \
@@ -407,8 +409,6 @@ void parse_lang_flag(int *argc, char **argv);
       "(input_N.txt, cade_k.txt) are read in the folder of the program's source.\n" \
       "\n" \
       "Options:\n" \
-      "  -d, --hdl-dir <dir>     HDL directory (default: the SAPHO folder next to bin/)\n" \
-      "  -m, --macros-dir <dir>  Macros directory (default: the Macros folder next to bin/)\n" \
       "  -f, --freq <MHz>        testbench clock frequency (default: 100)\n" \
       "  -c, --clocks <n>        number of clocks to simulate (default: 10000)\n" \
       "  -en, -pt                diagnostic message language (default: -pt)\n" \

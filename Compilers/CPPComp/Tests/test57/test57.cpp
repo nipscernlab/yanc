@@ -2,7 +2,6 @@
 // `int (*fns[N])(int)` inside a struct (the field rule previously lacked the
 // array_suffix). Each element holds a function id; calling through an indexed
 // element dispatches. Locks the struct-field array-of-funcptr grammar.
-#pragma yanc prname test57
 
 int f0(int x) { return x; }
 int f1(int x) { return x + 10; }

@@ -1,5 +1,4 @@
 // A function and a global with one name: the function silently took the row of the global.
-#PRNAME p
 #NUBITS 32
 #NUIOIN 1
 #NUIOOU 1

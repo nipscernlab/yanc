@@ -1,4 +1,3 @@
-#pragma yanc prname test40
 // <array>: fixed-size std::array<T, N>. Uses the same non-type-template
 // monomorphization the grammar already had for `template<class T, int N>`.
 // Each (T, N) pair instantiates to a distinct concrete class with inline T[N]

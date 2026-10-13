@@ -83,7 +83,6 @@ set NUM_CLK=100000
 
 :: Repo sources, read in place (never written to) -----------------------------
 set HDL_DIR=%ROOT_DIR%\SAPHO
-set MAC_DIR=%ROOT_DIR%\Compilers\CMMComp\Includes
 set INC_DIR=%ROOT_DIR%\Compilers\CPPComp\Includes
 set BIN_DIR=%YANC_BIN%
 set SRC_PROC=%ROOT_DIR%\Compilers\CPPComp\Tests\%PROC%
@@ -116,7 +115,7 @@ echo #### Running the C++ preprocessor (cpppp)
 "%BIN_DIR%\cpppp.exe" -o "%TMP_PRO%\pp.cpp" -I "%INC_DIR%" -I "%SRC_DIR%" "%SRC_DIR%\%FNAM%"
 
 echo #### Running the C++ compiler (cppcomp)
-"%BIN_DIR%\cppcomp.exe" -o "%TMP_PRO%" -n "%PROC%" "%TMP_PRO%\pp.cpp"
+"%BIN_DIR%\cppcomp.exe" -o "%TMP_PRO%" "%TMP_PRO%\pp.cpp"
 
 set ASM_FILE=%TMP_PRO%\%PROC%.asm
 if not exist "%ASM_FILE%" ( echo [single_proc_cpp] cppcomp did not produce "%ASM_FILE%". & goto fail )
@@ -125,7 +124,7 @@ echo #### Running the Pre-assembler (appcomp)
 "%BIN_DIR%\appcomp.exe" "%ASM_FILE%"
 
 echo #### Running the Assembler (asmcomp)
-"%BIN_DIR%\asmcomp.exe" -d "%HDL_DIR%" -m "%MAC_DIR%" -f %FRE_CLK% -c %NUM_CLK% "%ASM_FILE%"
+"%BIN_DIR%\asmcomp.exe" -f %FRE_CLK% -c %NUM_CLK% "%ASM_FILE%"
 
 :: Build + run the simulation -------------------------------------------------
 

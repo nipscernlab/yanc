@@ -1,4 +1,3 @@
-#pragma yanc prname test12
 // Tier 3: function templates (type-erased to a word), `auto`, range-for.
 template<class T> T maxv(T a, T b) { return a > b ? a : b; }
 template<typename T> T addv(T a, T b) { return a + b; }

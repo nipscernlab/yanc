@@ -1,5 +1,4 @@
 // Pure virtual (= 0) abstract base, override/final, and const member functions.
-#pragma yanc prname test14
 class Shape {
 public:
     virtual int area() = 0;                       // pure virtual -> abstract

@@ -20,7 +20,6 @@ $WORK  = Join-Path $CPP  ".work"
 $TEST  = $PSScriptRoot
 $SW    = $TEST
 $HDL   = Join-Path $ROOT "SAPHO"
-$MACROS= Join-Path $ROOT "Compilers/CMMComp/Includes"
 
 $env:TMP    = "C:/packs/msys64/tmp"
 $env:TEMP   = "C:/packs/msys64/tmp"
@@ -67,7 +66,7 @@ Write-Host "==> cpppp"
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> cppcomp"
-& $CPPC -o $od -n $prname "$tmp/pp.cpp"
+& $CPPC -o $od "$tmp/pp.cpp"
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> appcomp"
@@ -75,7 +74,7 @@ Write-Host "==> appcomp"
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "==> asmcomp"
-& $ASMCOMP -en -d $HDL -m $MACROS -f 100 -c 5000000 $asm
+& $ASMCOMP -en -f 100 -c 5000000 $asm
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 $uproc_v = "$od/$prname.v"

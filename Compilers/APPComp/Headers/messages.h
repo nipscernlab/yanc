@@ -52,10 +52,6 @@ void parse_lang_flag(int *argc, char **argv);
 
 // command-line interface ----------------------------------------------------
 
-#define MSG_ERR_CLI_NEEDS_VALUE \
-    M("Erro: a opção '%s' precisa de um valor.\n", \
-      "Error: option '%s' needs a value.\n")
-
 #define MSG_ERR_CLI_UNKNOWN_OPT \
     M("Erro: opção desconhecida '%s'.\n", \
       "Error: unknown option '%s'.\n")

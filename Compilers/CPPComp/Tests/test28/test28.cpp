@@ -1,4 +1,3 @@
-#pragma yanc prname test28
 // Realistic embedded example: a device status register accessed either as a
 // whole word or field-by-field, via a union over a bitfield struct. Classic
 // memory-mapped-register HAL idiom. Exercises a union used by its bare name

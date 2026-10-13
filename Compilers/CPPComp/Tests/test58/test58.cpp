@@ -1,4 +1,3 @@
-#pragma yanc prname test58
 // Realistic embedded example: telemetry command link with CRC-16/CCITT (XModem).
 // Frames arrive as words [cmd, arg, crc] where crc = CRC16 over (cmd, arg).
 // Valid frames are dispatched to command handlers; corrupted frames are counted.
