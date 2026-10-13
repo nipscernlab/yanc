@@ -788,6 +788,21 @@ exact when both processors have the same `#NBMANT`/`#NBEXPO`, garbled with
 no warning when they differ (each program is compiled alone); ints with
 different `#NUBITS` only get the tools' port-width warning.
 
+## 27. C++ gaps that real embedded code hits
+
+**Status:** open, noted 2026-10-13 while writing docs/language-cpp.md (each
+checked with a program) · **Area:** `Compilers/CPPComp/`
+
+Accepted by C++ compilers, a syntax error in cppcomp: an `enum` value that
+is not a plain literal (`= -1`, `= A + 1`) and an underlying type
+(`enum class E : int`); operator overloading as a free function, and of
+`%`, the shifts, the bitwise operators, `()`; multiple inheritance;
+anonymous namespaces; variadic functions; lambdas inside functions or with
+captures; template specialization and default template arguments. Also: no
+`fin`/`fout`, and `out()` of a float writes its raw bits (C± converts);
+`#pragma yanc nugain` is accepted and changes nothing. Each is a candidate
+when a real program needs it (the missing-feature protocol: ask first).
+
 ## 26. Arrays in the waveform without one signal per element
 
 **Status:** open, noted 2026-10-12 (Luciano) · **Area:** cmmcomp
