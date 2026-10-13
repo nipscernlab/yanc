@@ -8,6 +8,11 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v7.1] – 2026-10-13
+
+There is no v7.0: the links between processors (`toma`/`cade`) were
+finished as v7.1 before any release.
+
 ### Added
 - **The YANC manual (`docs/`).** Installing, a first program in C± and C++,
   the command line, the two languages, the directives, the library and its
@@ -2265,7 +2270,16 @@ history).
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v5.0...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v7.1...HEAD
+[v7.1]: https://github.com/nipscernlab/yanc/releases/tag/v7.1
+[v6.0]: https://github.com/nipscernlab/yanc/releases/tag/v6.0
+[v5.7]: https://github.com/nipscernlab/yanc/releases/tag/v5.7
+[v5.6]: https://github.com/nipscernlab/yanc/releases/tag/v5.6
+[v5.5]: https://github.com/nipscernlab/yanc/releases/tag/v5.5
+[v5.4]: https://github.com/nipscernlab/yanc/releases/tag/v5.4
+[v5.3]: https://github.com/nipscernlab/yanc/releases/tag/v5.3
+[v5.2]: https://github.com/nipscernlab/yanc/releases/tag/v5.2
+[v5.1]: https://github.com/nipscernlab/yanc/releases/tag/v5.1
 [v5.0]: https://github.com/nipscernlab/yanc/releases/tag/v5.0
 [v4.4.1]: https://github.com/nipscernlab/yanc/releases/tag/v4.4.1
 [v4.4]: https://github.com/nipscernlab/yanc/releases/tag/v4.4
