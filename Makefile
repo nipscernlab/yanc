@@ -32,6 +32,13 @@ CFLAGS ?= -O2
 LDLIBS ?= -lm
 BIN    ?= bin
 
+# No built-in rules. make's own lex rule (x.c from x.l) would delete
+# asmcomp's pass1.c and write the scanner of pass1.l over it whenever a
+# checkout leaves pass1.l newer; every generated file has its rule below.
+.SUFFIXES:
+%.c: %.l
+%.c: %.y
+
 # Windows (incl. MSYS2) -> .exe suffix, and each tool carries a manifest that
 # makes it work in UTF-8 (argv, file names), as it does on Linux and macOS;
 # POSIX -> neither.
