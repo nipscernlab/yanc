@@ -16,7 +16,7 @@ yanc v5.3 and some of it no longer holds.
   building from source.
 - First program: from an empty folder to a simulated processor, in C± and in
   C++.
-- Command line: `yanc` and the tools under it, the output folder, the
+- [The command line](command-line.md): `yanc` and the tools under it, the output folder, the
   options, `--lang`.
 
 ## Writing programs

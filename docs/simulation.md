@@ -1,27 +1,28 @@
-# Running the YANC pipeline
+# Simulation and the waveform
 
-What each tool does, what it writes, and the ways to simulate and look at the
-result. The commands that take one program all the way are in the README's
-[Quick start](../README.md#quick-start); what changed from v6.0 is in
-[command-line.md](design/cli-v7.1.md).
+`yanc` stops at the Verilog (see [The command line](command-line.md)). The
+output folder then holds everything a simulator needs: the processor
+`<name>.v`, its memories, and the testbench `<name>_tb.v`, which feeds each
+input port from `input_N.txt` beside the source and writes what the program
+outputs to `output_N.txt`. This page runs it with Icarus Verilog or
+Verilator and opens the waveform in GTKWave.
 
-## Pipeline
+## Simulating with Icarus
 
-`yanc`, the driver, runs the tools for you, as gcc runs its own: `yanc
-prog.cmm` (or `prog.cpp`) compiles and builds the processor in `prog/`,
-`yanc -S` stops at the assembly, `yanc prog/prog.asm` only assembles, and
-`-v` shows each tool it runs. Underneath, YANC has **three compilers**
-(`cmmcomp`, `cppcomp`, `asmcomp`). Two front-end compilers turn high-level source into assembly (`cppcomp` preprocesses the C++ itself, as gcc does); a single back-end compiler, the assembler `asmcomp`, turns that assembly into Verilog in two passes over it.
+From the output folder, with `SAPHO` the `SAPHO/` folder that comes with
+YANC:
 
+```bat
+cd my_program
+iverilog -s my_program_tb -o sim.vvp my_program_tb.v my_program.v ^
+         %SAPHO%\processor.v %SAPHO%\core.v %SAPHO%\ula.v %SAPHO%\addr_dec.v %SAPHO%\instr_dec.v
+vvp sim.vvp
+type output_0.txt
 ```
-  C±:     foo.cmm  ──►  cmmcomp  ─┐
-                                ▼
-                             foo.asm  ──►  asmcomp  ──►  foo.v + *.mif + foo_tb.v
-                                ▲
-  C++:    foo.cpp  ──►  cppcomp  ─┘
-```
 
-After `asmcomp`, the generated Verilog can be simulated with **Icarus Verilog** (`iverilog` + `vvp`) or with **Verilator**, and visualized in **GTKWave**. Pre-wired scripts in `Scripts/` cover the whole pipeline end-to-end — `single_proc` (one C± processor), `multi_proc` (C± multi-processor project) and `single_proc_cpp` (one C++ processor), each with a `.bat` and a `.sh` and a `--sim iverilog|verilator` flag (default Icarus).
+The testbench simulates as many clocks as `yanc -c` said (10000 by
+default) at the clock of `yanc -f` (100 MHz by default), and writes the
+waveform to `my_program_tb.vcd`.
 
 ## What you see in GTKWave
 
@@ -37,60 +38,6 @@ The example above is `proc_fft` mid-run: the C± track shows the
 the matching `LOD / F_MLT+ / F2I / OUT 0` sequence, and the
 declared variables (`N`, `ind`, `istep`, `j`, `k`, `m`, `mmax`,
 `sind`, `comp temp`) carry their live values.
-
-## Components
-
-Six binaries are produced from source — the driver `yanc` (`Compilers/Driver/`), three compilers and two helpers:
-
-**Compilers**
-
-| Binary       | Source dir              | Built with         | Role                                                |
-| ------------ | ----------------------- | ------------------ | --------------------------------------------------- |
-| `cmmcomp`    | `Compilers/CMMComp/`    | Flex + Bison + GCC | C± front-end → assembly                            |
-| `cppcomp`    | `Compilers/CPPComp/`    | Flex + Bison + GCC | C++ front-end → assembly                            |
-| `asmcomp`    | `Compilers/ASMComp/`    | Flex + GCC         | Back-end: assembly → Verilog HDL + memory images + testbench |
-
-`cppcomp` carries its own C preprocessor (`#include`, `#define`, `#if`, ...; `cppcomp -E` prints its output).
-
-**Helper**
-
-| Binary       | Source dir   | Built with    | Role                                                |
-| ------------ | ------------ | ------------- | --------------------------------------------------- |
-| `comp2gtkw`  | `Scripts/`   | GCC           | Translator: complex-number bit pattern → GTKWave    |
-| `gen_gtkw`   | `Scripts/`   | GCC           | Reads a VCD header → writes a formatted `.gtkw` view |
-
-Auxiliary content:
-
-* `SAPHO/` — the SAPHO processor itself, in Verilog (core, ALU, instruction decoder, FIFO, ...); asmcomp instantiates it with the parameters each program needs. Up to v5.6 the folder was called `HDL/` (v5.6 ships both names)
-* `Compilers/CMMComp/Includes/` — assembly macros and lookup tables for `.cmm` programs (`float_sqrt`, `float_sin`, `float_atan`, ...)
-* `Compilers/CPPComp/Includes/` — header shims that `.cpp` programs include
-* `Scripts/` — `regress.sh`, `comp2gtkw`, `gen_gtkw` (builds the formatted GTKWave view)
-* `Compilers/CMMComp/Tests/` — runnable `.cmm` example projects (Math, FFT, RLS, DTW, PulseSim, Blind, ...)
-* `Compilers/CPPComp/Tests/` — per-test C++ programs (`test1` … `test84`), plus the Verilator harness
-* `Compilers/yanc_version.h` — single source of truth for the toolchain version, included by the five compiler binaries (the three compilers + the two preprocessors)
-## What lands where
-
-The files the user writes stay where they are: the source, the files that
-initialise arrays (`int c[3] "coefs.txt";`) and the simulation inputs
-(`input_N.txt` feeds input port N). Everything the tools generate goes to one
-output folder, `./<name>/` beside the source unless `-o` says otherwise. With
-the Quick start's `my_program.cpp`:
-
-| file in `my_program/` | written by | what it is |
-|---|---|---|
-| `my_program.asm` | cppcomp / cmmcomp | the program in SAPHO assembly |
-| `prog_log.txt`, `pc_my_program_mem.txt`, `src_lines.txt` | cppcomp / cmmcomp | the tables asmcomp and the waveform use (variables, PC to source line, the source text); `prog_log.txt` also names the source folder, where asmcomp reads the user's files |
-| `app_log.txt` | asmcomp | its first pass: the address of every label, the sizes and the processor parameters |
-| `my_program.v` | asmcomp | the Verilog top: SAPHO instantiated with this program's parameters |
-| `my_program_inst.mif`, `my_program_data.mif` | asmcomp | instruction and data memory images |
-| `my_program_tb.v`, `trad_opcode.txt` | asmcomp | the testbench, and the opcode names for the waveform |
-| `output_0.txt` | the simulation | what the program wrote to output port 0 |
-| `my_program_tb.vcd` | the simulation | the waveform |
-| `my_program_tb.gtkw` | gen_gtkw | the formatted GTKWave view of it |
-
-You can stop after asmcomp if all you want are the Verilog and the memory
-images (to synthesize, or to feed your own simulator), or swap the simulation
-for **Verilator** (below).
 
 ## Simulating with Verilator
 
@@ -145,7 +92,7 @@ for using it in practice. `--zoom-fit` fits the whole trace to the window.
 
 ## Pre-wired scripts
 
-Three scripts in `Scripts/` bundle the Quick start's steps 1–6 with sensible defaults. Each has a
+Three scripts in the repository's `Scripts/` folder run the whole way, from a test program to GTKWave, with sensible defaults. Each has a
 Windows (`.bat`) and a Linux (`.sh`) version, and picks the simulator from a
 `--sim iverilog|verilator` flag (default Icarus):
 
@@ -176,58 +123,3 @@ recursive functions (no fixed address), pointers (an address, not a value) and
 structs (a multi-word aggregate) are deliberately **not** traced. This mirrors
 C±, which — for optimization reasons — only ever allocates fixed-address
 variables anyway, so both flows show the same kind of thing.
-## CLI flags
-
-The tools accept **named options** with short and long forms. Run any of
-them with `-h` / `--help` for the per-tool synopsis, or `-V` / `--version`
-for the version string.
-
-The messages are in English. `cmmcomp` and `asmcomp` also speak
-Portuguese: `--lang=pt` on the command line, or the environment variable
-`YANC_LANG=pt` once for the terminal (`--lang=en` wins over it). Every tool
-accepts `--lang`; `cppcomp` and `gen_gtkw` stay in English.
-
-Each tool's options (`[...]` optional; the source file is the argument
-without an option):
-
-```bat
-:: the driver: the compiler, then asmcomp (a .asm: asmcomp only)
-yanc    [-o <dir>] [-S] [-I <dir>]... [-f <MHz>] [-c <clocks>] [--wave-arrays] [-v] <file.cmm|.cpp|.asm>
-
-:: compilers: the .asm and the tables to the output folder (default ./<name>)
-cmmcomp [-o <dir>] [--wave-arrays] <file.cmm>
-cppcomp [-o <dir>] [-I <dir>]... [-E] <file.cpp>
-:: the assembler: everything to the folder of the .asm
-asmcomp [-f <MHz>] [-c <clocks>] <file.asm>
-
-:: waveform helpers
-gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]
-comp2gtkw                 (a filter GTKWave runs on complex signals: stdin to stdout)
-```
-
-The processor takes the name of the source file (`filtro.cmm` makes the
-processor `filtro`, its `filtro.v` and its module `filtro`); for another name,
-rename the file. `-o` defaults to the folder `./<name>`, created if missing.
-asmcomp's `-f` and `-c`, the testbench's clock and length, default to 100 MHz
-and 10000 clocks. The user's
-own files (array inits, `input_N.txt`, `cade_k.txt`) are read in the folder of
-the source, which the compilers write to `prog_log.txt`. cppcomp preprocesses
-the source in memory, as gcc does: `#include "x"` looks in the folder of the
-including file, then in the `-I` folders, then in `Header/`; `-E` prints the
-preprocessed text and stops; the messages point to the file and line written
-(a header's line, too). The folders
-that come with the tools are found next to their executable, with no option:
-cmmcomp and asmcomp use `Macros/`, asmcomp `SAPHO/`, cppcomp `Header/`, and
-`gen_gtkw` uses the `comp2gtkw` beside it. In a
-repository build the same search finds `Compilers/CMMComp/Includes`, `SAPHO/`
-and `Compilers/CPPComp/Includes`.
-
-`--wave-arrays` (cmmcomp only) shows each array element as its own signal in the waveform; without it the arrays do not appear there (a large array makes many signals).
-
-The short options have a long form (`--output`, `--freq`, `--clocks`, `--help`, `--version`).
-
-Example:
-
-```bat
-cmmcomp C:\src\proc_fft.cmm
-```
