@@ -7,10 +7,10 @@
 
 // reads asm_path once and writes <dir>/app_log.txt: the directives, the
 // address of every label, n_ins and n_dat (exits on an error)
-void pass1_run(const char *asm_path, const char *dir);
+void pass1_run(const char *asm_path, const char *dir, const char *name);
 
 // the scanner's actions (pass1.c)
-void p1_init  (const char *dir);
+void p1_init  (const char *dir, const char *name);
 void p1_direct(int next_state);
 void p1_itrad (void);
 void p1_toaqui(void);

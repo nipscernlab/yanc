@@ -279,7 +279,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex -o pass1_lex.c pass1.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
         ASMComp.c pass1_lex.c pass1.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
+        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
     rm -f ASMComp.c pass1_lex.c
     popd >/dev/null
 
@@ -1431,7 +1431,8 @@ fi
 # yanc runs the tools next to it: on a C+- test its .asm must be the golden;
 # -S then the .asm must give the same processor; on a C++ test its .asm must
 # be cppcomp's own; a bad input and a failing compile must stop it non-zero;
-# a program in a folder with accents and spaces simulates from its output folder.
+# a program in a folder with accents and spaces simulates from its output folder;
+# an .asm with no compiler tables beside it assembles and simulates.
 echo ""
 echo "==> yanc (the driver)"
 drv="$SCRATCH/work_yanc"
@@ -1448,7 +1449,9 @@ r2=$?
     && diff -q "$drv/test1/by_yanc/test1.asm" "$drv/test1/direct/test1.asm" >/dev/null && [ -f "$drv/test1/by_yanc/test1.v" ]
 r3=$?
 printf 'void main()\n{\n    int a = 1\n}\n' > "$drv/bad.cmm"
-( cd "$drv" && ! "$YANC" bad.cmm >/dev/null 2>&1 && ! "$YANC" bad.txt >/dev/null 2>&1 )
+cp "$CMM_ROOT/Tests/cmm_bigin/golden.asm" "$drv/bad-name.asm"   # an .asm names the processor too
+( cd "$drv" && ! "$YANC" bad.cmm >/dev/null 2>&1 && ! "$YANC" bad.txt >/dev/null 2>&1 \
+    && ! "$YANC" bad-name.asm >/dev/null 2>&1 && [ ! -f bad-name.v ] )
 r4=$?
 # a folder with accents and spaces: the tools work in UTF-8 on every system,
 # the Verilog names its files relative to the output folder (no absolute
@@ -1469,7 +1472,24 @@ if [ "$r5" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
         && cmp -s "$acc/eco/output_0.txt" "$CMM_ROOT/Tests/cmm_bigin/golden_sim/output_0.txt"
     r5=$?
 fi
-for t in "1 C+- to Verilog, .asm = golden" "2 -S then the .asm" "3 C++ .asm = cppcomp's" "4 errors stop it" "5 a folder with accents and spaces"; do
+# an .asm on its own (written by hand: no prog_log.txt beside it, no
+# #PRNAME line): it assembles with exit 0, its file name names the
+# processor, its testbench reads input_0.txt from the same folder, and it
+# simulates to the golden
+hand="$drv/hand"
+mkdir -p "$hand"
+grep -v '^#PRNAME' "$CMM_ROOT/Tests/cmm_bigin/golden.asm" > "$hand/eco_hand.asm"
+cp "$CMM_ROOT/Tests/cmm_bigin/input_0.txt" "$hand/"
+( cd "$drv" && "$YANC" hand/eco_hand.asm >/dev/null 2>&1 ) && [ -f "$hand/eco_hand_tb.v" ]
+r6=$?
+if [ "$r6" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
+    ( cd "$hand" && "$IVERILOG" -s eco_hand_tb -o h.vvp eco_hand_tb.v eco_hand.v \
+          "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1 \
+      && "$VVP" h.vvp >/dev/null 2>&1 ) \
+        && cmp -s "$hand/output_0.txt" "$CMM_ROOT/Tests/cmm_bigin/golden_sim/output_0.txt"
+    r6=$?
+fi
+for t in "1 C+- to Verilog, .asm = golden" "2 -S then the .asm" "3 C++ .asm = cppcomp's" "4 errors stop it" "5 a folder with accents and spaces" "6 an .asm on its own"; do
     n="${t%% *}"; eval "r=\$r$n"
     if [ "$r" -eq 0 ]; then echo "PASS (yanc:${t#* })"; pass=$((pass+1))
     else echo "FAIL (yanc:${t#* })"; fail=$((fail+1)); failed_names+=("yanc$n"); fi

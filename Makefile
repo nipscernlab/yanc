@@ -110,10 +110,10 @@ $(BIN)/cmmcomp$(EXE): $(addprefix $(CMM)/,$(CMMCOMP_C)) \
 
 # --- asmcomp (flex: pass1.l is the first pass, ASMComp.l the second) --------
 $(BIN)/asmcomp$(EXE): $(addprefix $(ASM)/,$(ASMCOMP_C)) $(ASM)/ASMComp.l $(ASM)/pass1.l $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(CONSOLE) $(EXEDIR) \
-                      $(COMMON)/asm_share.c $(COMMON)/asm_share.h \
+                      $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(COMMON)/proc_name.c $(COMMON)/proc_name.h \
                       $(wildcard Compilers/ASMComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(ASM) && $(FLEX) -o ASMComp.c ASMComp.l && $(FLEX) -o pass1_lex.c pass1.l
-	$(CC) $(CFLAGS) -o $@ $(ASM)/ASMComp.c $(ASM)/pass1_lex.c $(addprefix $(ASM)/,$(ASMCOMP_C)) $(COMMON)/yanc_num.c $(COMMON)/asm_share.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
+	$(CC) $(CFLAGS) -o $@ $(ASM)/ASMComp.c $(ASM)/pass1_lex.c $(addprefix $(ASM)/,$(ASMCOMP_C)) $(COMMON)/yanc_num.c $(COMMON)/asm_share.c $(COMMON)/proc_name.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
 
 # --- cppcomp (flex + bison; cpppp.c is its preprocessor) --------------------
 $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \

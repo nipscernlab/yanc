@@ -217,11 +217,11 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 .;
 %%
 
-void pass1_run(const char *asm_path, const char *dir)
+void pass1_run(const char *asm_path, const char *dir, const char *name)
 {
     yyin = fopen(asm_path, "r");
     if (yyin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, asm_path); exit(EXIT_FAILURE); }
-    p1_init(dir);               // app_log.txt goes to the folder of the .asm
+    p1_init(dir, name);         // app_log.txt goes to the folder of the .asm
     yylex();
     fclose(yyin);
     p1_finish();

@@ -55,6 +55,7 @@ int sim_is_var(char *va, int *tipo, int *is_global, char *nome)
 
     char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
+    if (input == NULL) return 0;   // an .asm written by hand: no source variables
 
     // scan the file lines looking for the variable ---------------------------
 
@@ -106,6 +107,7 @@ int sim_is_arr(char *va, int *tipo, int *size, int *is_global, char *nome)
 
     char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
+    if (input == NULL) return 0;   // an .asm written by hand: no source arrays
 
     // scan the file lines looking for the variable --------------------------
 

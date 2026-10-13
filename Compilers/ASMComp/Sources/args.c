@@ -11,6 +11,7 @@
 #include "../Headers/args.h"
 #include "../Headers/messages.h"
 #include "../../common/exe_dir.h"
+#include "../../common/proc_name.h"
 
 // prints the full help text to 'stream'
 static void cli_help(FILE *stream)
@@ -96,6 +97,15 @@ void cli_parse(int argc, char **argv, cli_args *out)
         fprintf(stderr, MSG_ERR_CLI_MISSING, "<file.asm>");
         cli_help(stderr);
         exit(EXIT_FAILURE);
+    }
+    // the .asm names the processor, as the source does for the compilers
+    // (whose .asm has the source's name): it has to be a Verilog module name
+    out->name = path_stem(out->input);
+    {
+        int bad = proc_name_problem(out->name);
+        const char *why = bad == 1 ? MSG_PROC_NAME_CHARS   : bad == 2 ? MSG_PROC_NAME_DIGIT :
+                          bad == 3 ? MSG_PROC_NAME_UNDERSC : MSG_PROC_NAME_KEYWORD;
+        if (bad) {fprintf(stderr, MSG_ERR_PROC_NAME, out->input, out->name, why); exit(EXIT_FAILURE);}
     }
     if (!out->hdl_dir)    {fprintf(stderr, MSG_ERR_NO_TOOL_DIR, "SAPHO" ); exit(EXIT_FAILURE);}
     if (!out->macros_dir) {fprintf(stderr, MSG_ERR_NO_TOOL_DIR, "Macros"); exit(EXIT_FAILURE);}

@@ -41,7 +41,14 @@ yanc [options] <file.cmm | file.cpp | file.asm>
 
 A `.asm` is only assembled, in its own folder: `yanc -S prog.cmm` and then
 `yanc prog/prog.asm` do in two steps what `yanc prog.cmm` does in one (an
-IDE shows the two outputs apart that way).
+IDE shows the two outputs apart that way). The `.asm`'s file name names the
+processor, with the same rule as a source file's.
+
+An `.asm` written by hand assembles the same way. Without the compiler's
+tables beside it (`prog_log.txt`, `pc_<name>_mem.txt`) there is no source
+behind it: the waveform shows the assembly but no source line and no
+variable names, and the files the program reads (`input_N.txt`, array
+initialisation) are looked for in the `.asm`'s own folder.
 
 The processor takes the source file's name: `filtro.cmm` makes the processor
 `filtro`, its Verilog `filtro.v` and its module `filtro`. The name has to be

@@ -300,6 +300,7 @@ value. What the common ones mean and how to get past them is in
 - Error: you're <n> lines short in file '<name>'!
 - Error: option '<name>' needs a value.
 - Error: unknown option '<name>'.
+- Error: the file '<name>' names the processor, and '<name>' <name>. Rename the file.
 - Error: the <name> folder is not next to asmcomp's bin/ folder. Install YANC again.
 - Error: missing required option '<name>'.
 - Error: option '<name>' expects a non-negative integer, got '<name>'.

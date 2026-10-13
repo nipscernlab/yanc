@@ -525,18 +525,21 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     }
     fprintf(f_veri, "/* verilator tracing_on */\n\n");
 
-    int num_ins = get_n_ins();
+    int num_ins = get_n_ins();   // 0: an .asm written by hand, no source lines
 
-    // create the memory that will hold the instruction table
-    fprintf(f_veri, "reg [19:0] min [0:%d-1];\n\n", num_ins);
+    if (num_ins > 0)
+    {
+        // create the memory that will hold the instruction table
+        fprintf(f_veri, "reg [19:0] min [0:%d-1];\n\n", num_ins);
+    }
     // create the interface to that memory
     fprintf(f_veri, "/* verilator tracing_off */ reg signed [19:0] linetab" VPUB " =-1; /* verilator tracing_on */\n");
     fprintf(f_veri, "reg signed [19:0] linetabs=-1;\n\n");
     // initialize the memory from the .txt file
-    fprintf(f_veri, "initial	$readmemb(\"pc_%s_mem.txt\",min);\n\n"  , prname );
+    if (num_ins > 0) fprintf(f_veri, "initial	$readmemb(\"pc_%s_mem.txt\",min);\n\n"  , prname );
     // run the registers
     fprintf(f_veri, "always @ (posedge clk) begin\n");
-    fprintf(f_veri, "if (pc_sim_val < %d) linetab <= min[pc_sim_val];\n", num_ins);
+    if (num_ins > 0) fprintf(f_veri, "if (pc_sim_val < %d) linetab <= min[pc_sim_val];\n", num_ins);
     fprintf(f_veri, "linetabs <= linetab;   \n");
     // pc_sim_val is the narrow PC; valr1..valr10 are nubits-wide. Zero-extend it
     // explicitly so the assign is not a width mismatch (WIDTHEXPAND) on Verilator.

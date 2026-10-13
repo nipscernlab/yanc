@@ -94,8 +94,8 @@ static int   state = 0;     // scanner state
 
 static FILE *f_log;         // app_log.txt
 
-// runs before the scanner
-void p1_init(const char *dir)
+// runs before the scanner; name is the processor's (the .asm's file name)
+void p1_init(const char *dir, const char *name)
 {
     char    file[1001];
     snprintf(file, sizeof(file), "%s/app_log.txt", dir);
@@ -103,6 +103,8 @@ void p1_init(const char *dir)
     f_log = fopen(file, "w");
 
     if (f_log == NULL) {fprintf(stderr, MSG_ERR_CANT_CREATE_LOG, dir); exit(EXIT_FAILURE);}
+
+    fprintf(f_log, "prname %s\n", name);
 }
 
 // a directive: the next operand is its argument
@@ -141,7 +143,7 @@ void p1_opernd(char *va)
 {
     switch (state)
     {
-        case  1: fprintf(f_log, "prname %s\n", va ); state =  0; break; // processor name
+        case  1:                                     state =  0; break; // #PRNAME: the compilers' copy of the name; the file's wins
         case  2: fprintf(f_log, "nubits %s\n", va ); state =  0; break; // ALU word width (bits)
         case  3: fprintf(f_log, "nbmant %s\n", va ); state =  0; break; // mantissa width (bits)
         case  4: fprintf(f_log, "nbexpo %s\n", va ); state =  0; break; // exponent width (bits)

@@ -313,10 +313,16 @@ void instr_oft(char *va)
 // global functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// number of instructions
+// number of instructions the compiler wrote (the size of the PC-to-source
+// table); 0 for an .asm written by hand, which has no prog_log.txt
 int get_n_ins()
 {
-    char aux[256]; eval_get("prog_log.txt","num_ins", aux);
+    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", temp_dir);
+    FILE *f = fopen(path, "r");
+    if (f == NULL) return 0;
+    fclose(f);
+
+    char aux[256] = "0"; eval_get("prog_log.txt","num_ins", aux);
 
     return atoi(aux);
 }

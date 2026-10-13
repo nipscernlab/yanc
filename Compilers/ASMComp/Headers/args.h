@@ -16,6 +16,7 @@
 typedef struct
 {
     char *input;      //     the .asm (the argument without an option)
+    char *name;       //     the processor's name: the .asm's file name, as the compilers name it after the source
     char *proc_dir;   //     the folder of the .asm, where everything goes
     char *hdl_dir;    //     the SAPHO folder next to the tool
     char *macros_dir; //     the Macros folder next to the tool

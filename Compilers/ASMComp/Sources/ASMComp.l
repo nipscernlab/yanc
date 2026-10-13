@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
   strcpy( mac_dir, a.macros_dir);            // Macros folder path
   strcpy(temp_dir, a.temp_dir);              // the same folder: the tables of the compilers are read from here
 
-  pass1_run(a.input, a.temp_dir);            // first pass: app_log.txt (labels, sizes)
+  pass1_run(a.input, a.temp_dir, a.name);    // first pass: app_log.txt (name, labels, sizes)
 
   yyin = fopen(a.input, "r");                // second pass: the .asm again
   if (yyin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }

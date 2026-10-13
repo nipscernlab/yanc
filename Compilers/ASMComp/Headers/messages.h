@@ -383,6 +383,14 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: opção desconhecida '%s'.\n", \
       "Error: unknown option '%s'.\n")
 
+#define MSG_ERR_PROC_NAME \
+    M("Erro: o arquivo '%s' dá nome ao processador, e '%s' %s. Renomeie o arquivo.\n", \
+      "Error: the file '%s' names the processor, and '%s' %s. Rename the file.\n")
+#define MSG_PROC_NAME_CHARS   M("só pode ter letras, dígitos e '_'", "can only have letters, digits and '_'")
+#define MSG_PROC_NAME_DIGIT   M("não pode começar com dígito", "can't start with a digit")
+#define MSG_PROC_NAME_UNDERSC M("não pode começar com '__' (é do compilador)", "can't start with '__' (that's the compiler's)")
+#define MSG_PROC_NAME_KEYWORD M("é palavra reservada do Verilog", "is a Verilog keyword")
+
 #define MSG_ERR_NO_TOOL_DIR \
     M("Erro: não achei a pasta %s ao lado da pasta bin/ do asmcomp. Instale o YANC de novo.\n", \
       "Error: the %s folder is not next to asmcomp's bin/ folder. Install YANC again.\n")
