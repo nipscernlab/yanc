@@ -1,0 +1,5 @@
+// Negative fixture: the file name is the processor name, and "begin" is a Verilog keyword.
+void main()
+{
+    out(0, 1);
+}

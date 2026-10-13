@@ -1,0 +1,5 @@
+// Negative fixture: the file name is the processor name, and "bad-name" is not a Verilog name.
+void main()
+{
+    out(0, 1);
+}

@@ -9,6 +9,7 @@
 #include "../Headers/args.h"
 #include "../Headers/messages.h"
 #include "../../common/exe_dir.h"
+#include "../../common/proc_name.h"
 
 // prints the full help text to 'stream'
 static void cli_help(FILE *stream)
@@ -68,6 +69,14 @@ void cli_parse(int argc, char **argv, cli_args *out)
     static const char *const macros_dirs[] = EXE_MACROS_DIRS;
     out->macros_dir = exe_find_dir(macros_dirs);
     if (out->input) out->name = path_stem(out->input);
+    // the name becomes a Verilog module's: refuse one that cannot be
+    if (out->name)
+    {
+        int bad = proc_name_problem(out->name);
+        const char *why = bad == 1 ? MSG_PROC_NAME_CHARS   : bad == 2 ? MSG_PROC_NAME_DIGIT :
+                          bad == 3 ? MSG_PROC_NAME_UNDERSC : MSG_PROC_NAME_KEYWORD;
+        if (bad) {fprintf(stderr, MSG_ERR_PROC_NAME, out->input, out->name, why); exit(EXIT_FAILURE);}
+    }
     if (!out->proc_dir && out->name)
     {
         out->proc_dir = malloc(strlen(out->name) + 3);

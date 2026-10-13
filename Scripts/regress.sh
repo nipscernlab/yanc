@@ -251,7 +251,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
         funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
         variaveis.c array_index.c global.c macros.c messages.c args.c \
-        y.tab.c ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
+        y.tab.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
@@ -261,7 +261,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
         $CPP_DEFS -o "$CPPC" \
         main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c lex.yy.c y.tab.c \
-        ../../common/asm_share.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
+        ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
@@ -1327,8 +1327,8 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             fail=$((fail+1)); failed_names+=("$name"); continue
         fi
         rm -rf "$neg_work"; mkdir -p "$neg_work"
-        cp "$neg_dir/$fixture" "$neg_work/p.cmm"
-        out="$("$CMMCOMP" -o "$neg_work/p" "$neg_work/p.cmm" 2>&1)"
+        cp "$neg_dir/$fixture" "$neg_work/$fixture"   # its own name: the processor's
+        out="$("$CMMCOMP" -o "$neg_work/p" "$neg_work/$fixture" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"

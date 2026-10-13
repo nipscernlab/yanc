@@ -115,7 +115,15 @@ tags consumed by Aurora.
   the `-n` option are gone; the two directives are now errors that say to
   rename the file instead. They could disagree before: `-n` named the `.asm`
   and the pc table, `#PRNAME` the `.v`, the module and the testbench.
-  Negative fixtures `prname_gone.cmm`, `prname_gone.cpp`.
+  Negative fixtures `prname_gone.cmm`, `prname_gone.cpp`. Since the name
+  becomes a Verilog module's, cmmcomp and cppcomp refuse a file whose name
+  cannot be one (`my-prog.cmm`, `2fast.cpp`, `begin.cmm`: characters other
+  than letters, digits and `_`, a leading digit, a leading `__`, a Verilog
+  or SystemVerilog keyword), saying to rename the file; before, the tools
+  wrote a module the simulator or the synthesizer refused later
+  (`Compilers/common/proc_name.c`; fixtures `begin.cmm`, `bad-name.cmm`,
+  `module.cpp`, `2fast.cpp`). The negative regress keeps each fixture's
+  file name.
 - **`cppcomp` preprocesses the C++ itself, as gcc does: `cpppp` is gone.**
   `cppcomp filtro.cpp` is the whole front end, one call as `cmmcomp
   filtro.cmm`: the preprocessor (`cpppp.c`, now part of cppcomp) works in

@@ -24,6 +24,7 @@
 #include "../../common/console_utf8.h"
 #include "../../common/exe_dir.h"
 #include "../../common/yanc_lang.h"
+#include "../../common/proc_name.h"
 
 /* asm_reach dropped `gone` instructions the pc map covered: prog_log.txt's
  * "num_ins" line, already written by codegen, drops by as much (a negative
@@ -108,6 +109,21 @@ int main(int argc, char **argv)
 
     const char *text = pp_run(in_path);  // the source, preprocessed
     if (only_pp) { fputs(text, stdout); return 0; }
+
+    // the file's name becomes a Verilog module's: refuse one that cannot be
+    {
+        char *nm = derive_name(in_path, "");
+        static const char *const why[] = {"", "can only have letters, digits and '_'",
+            "cannot start with a digit", "cannot start with '__' (the compiler's names)",
+            "is a Verilog keyword"};
+        int bad = proc_name_problem(nm);
+        if (bad) {
+            fprintf(stderr, "cppcomp: the file '%s' names the processor, and '%s' %s; rename the file\n",
+                    in_path, nm, why[bad]);
+            return 2;
+        }
+        free(nm);
+    }
     yy_scan_string(text);
 
     g_unit = ast_unit();
