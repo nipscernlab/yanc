@@ -439,10 +439,10 @@ paths of this fit, not of a design with the dividers changed:
 
 | excluded | worst path left | data delay |
 |---|---|---|
-| nothing | integer divider part 1: data memory -> `NEG_M` -> rows to `cut[1]` | 43.3 ns |
-| `cut[1]` of `DIV`/`MOD` | integer divider part 2: `cut[1]` -> `cut[2]` | 43.6 ns |
-| every cut of `DIV`/`MOD` | `F_DIV` part 3: `cut[2]` -> rows (23.5) -> normaliser (9.8) -> ALU mux -> `JIZ` -> `pc` | 42.4 ns |
-| every cut of both dividers | `F_ADD`: data memory -> `denorm` (9.0) -> add (2.2) -> normaliser `norm_mux` (17.9) -> ALU mux -> `JIZ` -> `pc` | 40.2 ns |
+| nothing | integer divider part 1: data memory -> `NEG_M` -> rows to `cut[1]` | 43.3 ns (slack -35.8) |
+| `cut[1]` of `DIV`/`MOD` | integer divider part 2: `cut[1]` -> `cut[2]` | 43.6 ns (slack -34.3) |
+| every cut of `DIV`/`MOD` | `F_DIV` part 3: `cut[2]` -> rows (23.5) -> normaliser (9.8) -> ALU mux -> `JIZ` -> `pc` | 42.4 ns (slack -33.0) |
+| every cut of both dividers | `F_ADD`: data memory -> `denorm` (9.0) -> add (2.2) -> normaliser `norm_mux` (17.9) -> ALU mux -> `JIZ` -> `pc` | 40.2 ns (slack -32.4) |
 
 Conclusions:
 
@@ -452,8 +452,11 @@ Conclusions:
   Luciano (2026-10-14): more registers in the integer divider are fine, a
   division is rare. `F_DIV`'s last part is as long (42.4 ns) and needs the
   same.
-- Behind the dividers sits `F_ADD` at 40.2 ns: perfect dividers take
-  `sapho_all` from 21.8 to at most ~24.9 MHz on this part (+14 %). The
+- The clock follows the slack, not the data delay (period = 10 ns - slack:
+  skew and setup count): 21.8 MHz today (slack -35.8); a third cut in the
+  integer divider leaves `F_DIV` part 3 (slack -33.0, ~23.2 MHz, +6.5 %);
+  a third cut in both leaves `F_ADD` (slack -32.4, ~23.6 MHz, +8 %).
+  Estimates on this placement, not a fit. The
   `F_ADD` path ends at the program counter because `JIZ` decides on the
   ALU output in the same clock (`if_acc = |ula_out`); the normaliser is
   44 % of it. `F_ADD` runs too often to take a cycle (ula-combinational).
