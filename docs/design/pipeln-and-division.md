@@ -434,7 +434,22 @@ On the v7.1 `sapho_all` fit of 2026-10-11 (DE10-Nano, 21.82 MHz; the
 hardware is unchanged since, only comments moved), the timing analysis was
 run again with the worst endpoints declared false paths one group at a
 time, to see the next one (`Scripts/hw/path_groups.py` groups the 5000
-worst paths by destination). The placement is the same, so these are the
+worst paths by destination). No new fit: `quartus_sta -t` on the fitted
+project, with `clk.sdc` plus lines like these (in Quartus, `*` does not
+cross a `|` unless `-compatibility_mode` is given):
+
+```
+set_false_path -to   [get_registers {*my_idiv|div_array:arr|cut[*}]
+set_false_path -from [get_registers {*my_idiv|div_array:arr|cut[*}]
+set_false_path -to   [get_registers {*my_fdiv|div_array:arr|cut[*}]
+set_false_path -from [get_registers {*my_fdiv|div_array:arr|cut[*}]
+set_false_path -through [get_cells -compatibility_mode {*op_fadd.my_fadd|*}]
+set_false_path -through [get_cells -compatibility_mode {*op_denorm.denorm|*}]
+```
+
+and `report_timing -setup -npaths 5000 -detail summary` (and
+`-to [get_registers {*core:core|racc*}]` for the paths to the
+accumulator). The placement is the same, so these are the
 paths of this fit, not of a design with the dividers changed:
 
 | excluded | worst path left | data delay |
