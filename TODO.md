@@ -18,9 +18,9 @@ nipscern.com/library/yanc. Left from it: the board run of Sabrina and Pedro
 Henrique (the `LINKALL` pair with the `.sdc` on both boards; the Fmax is
 measured, the link costs no clock).
 
-**Next, by Luciano's choice (2026-10-14):** item 28, the burst (a whole array
-through a port at one word a clock, stopping while the FIFO is full); the
-design note is written, implementation in the steps of its section 7.
+**Recorded, not to be implemented yet (Luciano, 2026-10-14):** item 28, the
+burst (a whole array through a port at one word a clock, stopping while the
+FIFO is full); the design note lists the holes to close first.
 
 **Waiting on a decision:** item 21 (documentation that cannot fall behind
 a release): Chrysthofer's proposal arrived on 2026-10-13; Luciano and he
@@ -782,10 +782,13 @@ Sending an array to a FIFO costs 8 instructions a word in a loop, or 2 to 3
 a word unrolled (code growing with the array). A `burst` block (size
 register, pointer, an `out` that waits in place until the end) sends one
 word a clock with fixed code, and stops while the FIFO is full through a new
-`out_ok[p]` pin; the same block fills an array from an input FIFO. Open: the
-accumulator after a burst, the one-word margin against a full FIFO, names
-and opcodes (they fit at the end of the table), the language forms. Shares
-its pointer with item 17's index register: design the two together.
+`out_ok[p]` pin; the same block fills an array from an input FIFO. Not to
+be implemented yet (Luciano, 2026-10-14): the idea is recorded. Open: the
+accumulator after a burst, the one-word margin against a full FIFO (and an
+empty one on input), the element type, the compiler passes that drop and
+share arrays, names and opcodes (they fit at the end of the table), the
+language forms (note sections 5 and 5a). Shares its pointer with item 17's
+index register: design the two together.
 
 ## 27. C++ gaps that real embedded code hits
 

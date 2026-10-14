@@ -1,6 +1,7 @@
 # Burst: a whole array through a port, one word per clock
 
-Status: design, 2026-10-14. Nothing implemented. The design is Luciano's
+Status: design, 2026-10-14. Nothing implemented, and not to be yet (Luciano):
+the idea is recorded. The design is Luciano's
 (the `burst` block, a size register, a counter, an instruction that waits in
 place); this note adds the refinements discussed on 2026-10-14 and the
 timing measured before writing it. Marks: **fact** (read in the code),
@@ -154,6 +155,42 @@ other clock: it can say full longer than needed (safe), never less
    place to the end) and the sequential loads of item 17. Decide the
    instruction set with both in view, so that `BSZ`/`BPT` are not designed
    twice.
+
+## 5a. Checked, and holes still open (2026-10-14)
+
+**Checked:** one word per clock is possible. A wait in place repeats the
+instruction every clock with no bubble: the jump is decided in the cycle
+the instruction leaves the instruction memory (`toma-and-cade.md`
+section 5), and in the probe of section 3 `@fim JMP fim` shows PC 12 at
+every edge.
+
+**Holes, to be closed before implementing:**
+
+1. **The input side has the same one-word trap, reversed.** A FIFO's
+   empty flag changes only after the read, so `BIN` can decide to read the
+   next word from a FIFO that is already empty and take garbage. `myFIFO`
+   already has an `almost_empty` output; the margin rule of section 4
+   applies here too.
+2. **The element type.** Today `out` of a float sends its raw bits (with a
+   warning) and `fout` converts it to an int. A burst of a float array
+   needs the same choice; the word goes through the ALU, so a conversion
+   per word (`F2I`) is possible. A `comp` element is two words.
+3. **Size 0 and size 1.** The registered "next is the last" flag must
+   handle both: with size 0, `BOT` sends nothing and does not wait.
+4. **The compiler passes that drop and share data.** `asm_reach` removes
+   arrays nothing reads, and `asm_share` lets variables whose lives do not
+   overlap share a word. Both must count `BPT` as a read of the array (and,
+   for `BIN`, a write of all of it), or the array is dropped or overwritten
+   by another variable, silently. A small test passes; a large program
+   breaks.
+5. **`OUT` and `BOT` on one port.** A plain `OUT` ignores `out_ok`, so a
+   program mixing both on one port can still overflow the FIFO. Document
+   it, or make `OUT` wait on `out_ok` too (a change to today's behaviour,
+   with its own pin cost).
+6. **Simulation and its consumers.** The generated testbench has to drive
+   `out_ok`/`in_ok` (tied to 1, or better a model FIFO that fills, to test
+   the stop), and so do the Verilator harness, the mirror block AURORA reads
+   (`YANC_SIM_VIS`) and `gen_gtkw` (the new pins in the view).
 
 ## 6. Cost, to be measured
 
