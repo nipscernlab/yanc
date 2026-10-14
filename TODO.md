@@ -22,7 +22,8 @@ measured, the link costs no clock).
 burst (a whole array through a port at one word a clock, stopping while the
 FIFO is full); the design note lists the holes to close first.
 Also recorded the same day: item 29, a faster clock (the dividers, the
-normaliser, the `JIZ` zero test).
+normaliser, the `JIZ` zero test), and item 30, SAPHO without showing its
+source (parked until a partnership).
 
 **Waiting on a decision:** item 21 (documentation that cannot fall behind
 a release): Chrysthofer's proposal arrived on 2026-10-13; Luciano and he
@@ -809,6 +810,21 @@ path loses ~4 ns), and a faster shared normaliser (44-48 % of every float
 path; leading-zero anticipation, no shared input mux); a two-path float
 adder only after those. Not measured: the Zynq side, and any real fit with
 a change.
+
+## 30. SAPHO synthesized without showing its source (if a partnership comes)
+
+**Status:** parked (Luciano, 2026-10-14): to look at only if UFJF partners
+with a company that would invest in SAPHO · **Evidence:**
+docs/design/ip-protection.md
+
+Shipping `SAPHO/` so Quartus or Vivado synthesize it without anyone reading
+it. IEEE 1735 keeps the per-program parameters working, but Quartus
+decrypts it only in Pro (the lab's Cyclone V is Lite/Standard; Intel's
+Ampcrypt through sales instead), and Vivado needs the AMD key and an
+encryption license; a netlist service is the vendor-free option. SAPHO up
+to v7.1 is public under MIT and stays so. If it comes: ask Intel and AMD,
+test with a small module then `sapho_all`, decide the licence of future
+versions with UFJF's technology transfer office first.
 
 ## 27. C++ gaps that real embedded code hits
 

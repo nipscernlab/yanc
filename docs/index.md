@@ -104,6 +104,7 @@ design/toma-and-cade-links
 design/toma-and-cade
 design/myfifo
 design/burst
+design/ip-protection
 design/asm-names
 design/pipeln-and-division
 design/precision-and-width-review

@@ -13,6 +13,7 @@ code), what was measured and what was deduced, and most end with a section
 | [toma-and-cade.md](toma-and-cade.md) | two SAPHOs passing a value: the protocol, the single-link design (v7.0, superseded in part) |
 | [toma-and-cade-links.md](toma-and-cade-links.md) | several links per processor: chains, fan-out, fan-in, two clocks |
 | [myfifo.md](myfifo.md) | `myFIFO` fixed, the two-clock `myDCFIFO` |
+| [ip-protection.md](ip-protection.md) | handing SAPHO to Quartus or Vivado without showing its source: IEEE 1735, vendor schemes, a service (notes, parked until a partnership) |
 | [burst.md](burst.md) | a whole array through a port, one word per clock, stopping while the FIFO is full (design, not implemented) |
 | [asm-names.md](asm-names.md) | user names that collide in the assembly |
 | [pipeln-and-division.md](pipeln-and-division.md) | the slow dividers: the pipeline tried and dropped, the two register cuts kept |
