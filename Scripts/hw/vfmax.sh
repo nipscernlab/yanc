@@ -7,7 +7,7 @@
 #         bash Scripts/hw/vfmax.sh sapho_all                 # ZYBO: xc7z010clg400-1
 #
 # <proc> is a processor the regress already built (.smoke/work/<proc>/<proc>/
-# <proc>.v, whose .mif paths are absolute). Results in .smoke/hw/<proc>_<part>/
+# <proc>.v; its two .mif are copied to the run folder, where Vivado looks). Results in .smoke/hw/<proc>_<part>/
 # and appended to .smoke/hw/vfmax.txt. One run takes minutes to an hour; run one
 # at a time.
 set -e
@@ -24,6 +24,9 @@ DIR="$OUT/${PROC}_${PART}"
 [ -f "$VIVADO" ] || { echo "Vivado not at $VIVADO (set VIVADO=...)"; exit 1; }
 
 rm -rf "$DIR"; mkdir -p "$DIR/hdl"; cd "$DIR"
+# the generated Verilog names its memories by bare name (v7.1): Vivado runs
+# here, so they have to be here, or the program memory is empty
+cp "$(dirname "$TOP")/${PROC}_data.mif" "$(dirname "$TOP")/${PROC}_inst.mif" .
 W() { cygpath -m "$1" 2>/dev/null || echo "$1"; }
 # A copy of SAPHO/ with both memories asked into block RAM, as Quartus puts
 # them: left alone, Vivado builds the program ROM (its contents are known) out
@@ -41,4 +44,7 @@ for try in 1 2 3; do
     grep -q 'Synth 20-411' vivado.log && [ $try -lt 3 ] && { echo "$PROC: Synth 20-411, again ($try)"; continue; }
     echo "$PROC: VIVADO FAILED"; grep -m5 'ERROR' vivado.log; exit 1
 done
+if grep -qiE 'could not open.*\.mif|readmem.*(not|cannot).*open' vivado.log; then
+    echo "$PROC: a .mif was not found -- the memories would be empty"; grep -m3 -i 'mif' vivado.log; exit 1
+fi
 cat result.txt | tee -a "$OUT/vfmax.txt"

@@ -6,8 +6,8 @@
 #         FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp
 #
 # <proc> is a processor the regress already built: it reads
-# .smoke/work/<proc>/<proc>/<proc>.v, whose .mif paths are absolute, so the
-# memories initialise. SEED is the fitter's placement seed (default 1): a
+# .smoke/work/<proc>/<proc>/<proc>.v and copies its two .mif beside it (the
+# Verilog names them by bare name), so the memories initialise. SEED is the fitter's placement seed (default 1): a
 # single fit can be off by several per cent, compare across seeds (give each
 # its own TAG). The optimization mode below already runs the fitter's
 # physical synthesis, retiming included (docs/design/pipeln-and-division.md): there
@@ -37,6 +37,10 @@ DIR="$OUT/${PROC}_${DEV}${TAG:+_$TAG}"
 
 rm -rf "$DIR"; mkdir -p "$DIR"; cd "$DIR"
 cp "$WORK/$PROC.v" .
+# the generated Verilog names its memories by bare name (v7.1): they have to
+# sit in the project folder, or the program memory is empty and the fit
+# times a processor pruned to nothing
+cp "$WORK/${PROC}_data.mif" "$WORK/${PROC}_inst.mif" .
 [ -n "$FR" ] && sed -i "s/\.FROUND([0-9])/.FROUND($FR)/" "$PROC.v"
 
 HDLW=$(cygpath -m "$ROOT/SAPHO" 2>/dev/null || echo "$ROOT/SAPHO")
@@ -67,6 +71,9 @@ EOF
 
 "$QUARTUS/quartus_sh"  -t proj.tcl > tcl.log 2>&1
 "$QUARTUS/quartus_map" $PROC > map.log 2>&1 || { echo "$PROC: MAP FAILED";  grep -m5 'Error' map.log; exit 1; }
+if grep -qiE "can't (find|read).*\.mif|memory initialization file.*(not|n't)" map.log; then
+    echo "$PROC: a .mif was not found -- the memories would be empty"; grep -m3 -i 'mif' map.log; exit 1
+fi
 "$QUARTUS/quartus_fit" $PROC > fit.log 2>&1 || { echo "$PROC: FIT FAILED";  grep -m5 'Error' fit.log; exit 1; }
 "$QUARTUS/quartus_sta" $PROC > sta.log 2>&1 || { echo "$PROC: STA FAILED";  grep -m5 'Error' sta.log; exit 1; }
 
@@ -87,6 +94,7 @@ read_sdc clk.sdc
 update_timing_netlist
 report_timing -setup -npaths 10 -detail summary   -file worst_paths.txt
 report_timing -setup -npaths 1  -detail full_path -file worst_path_full.txt
+report_timing -setup -npaths 3000 -detail summary   -file many_paths.txt
 delete_timing_netlist
 project_close
 EOF

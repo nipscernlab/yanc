@@ -428,12 +428,47 @@ is shorter (`F_ADD`, 44.4 ns on the Cyclone V part of the earlier
 measurements, is the estimate). The real limit on the boards
 comes from the students' frequency sweep.
 
+### 4.1 What limits behind the integer divider (measured 2026-10-14)
+
+On the v7.1 `sapho_all` fit of 2026-10-11 (DE10-Nano, 21.82 MHz; the
+hardware is unchanged since, only comments moved), the timing analysis was
+run again with the worst endpoints declared false paths one group at a
+time, to see the next one (`Scripts/hw/path_groups.py` groups the 5000
+worst paths by destination). The placement is the same, so these are the
+paths of this fit, not of a design with the dividers changed:
+
+| excluded | worst path left | data delay |
+|---|---|---|
+| nothing | integer divider part 1: data memory -> `NEG_M` -> rows to `cut[1]` | 43.3 ns |
+| `cut[1]` of `DIV`/`MOD` | integer divider part 2: `cut[1]` -> `cut[2]` | 43.6 ns |
+| every cut of `DIV`/`MOD` | `F_DIV` part 3: `cut[2]` -> rows (23.5) -> normaliser (9.8) -> ALU mux -> `JIZ` -> `pc` | 42.4 ns |
+| every cut of both dividers | `F_ADD`: data memory -> `denorm` (9.0) -> add (2.2) -> normaliser `norm_mux` (17.9) -> ALU mux -> `JIZ` -> `pc` | 40.2 ns |
+
+Conclusions:
+
+- The integer divider is not cut in the wrong place: its two first parts
+  are equal (43.3 and 43.6 ns). Moving a cut gains nothing; a third cut
+  (four stages, `DIV x; NOP; NOP; QUO`) is the change that shortens it.
+  Luciano (2026-10-14): more registers in the integer divider are fine, a
+  division is rare. `F_DIV`'s last part is as long (42.4 ns) and needs the
+  same.
+- Behind the dividers sits `F_ADD` at 40.2 ns: perfect dividers take
+  `sapho_all` from 21.8 to at most ~24.9 MHz on this part (+14 %). The
+  `F_ADD` path ends at the program counter because `JIZ` decides on the
+  ALU output in the same clock (`if_acc = |ula_out`); the normaliser is
+  44 % of it. `F_ADD` runs too often to take a cycle (ula-combinational).
+- Not measured: the Zynq (Vivado) side of the same exclusion, and a real
+  fit with a third cut (placement changes).
+
 ## 5. Tools kept from this work
 
 - `Scripts/hw/fmax.sh`: `SEED=<n>` (compare a change across seeds: one fit
   is off by a few per cent);
 - `Scripts/hw/path_blocks.py`: each block of the worst path split into
   interconnect and cell delay;
+- `Scripts/hw/path_groups.py`: the worst path of each destination block in
+  a long report (fmax.sh and vfmax.sh now write `many_paths.txt`), so the
+  second block that limits is not hidden behind the first;
 - `Scripts/hw/vfmax.sh`: retries Vivado's intermittent empty "[Synth 20-411]";
 - `Scripts/hw/opmix/` (`pipeln_cost.py`): the operation mix of the regress
   programs and the extra cycles of a given latency table;

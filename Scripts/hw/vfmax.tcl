@@ -20,6 +20,8 @@ set fmax [expr {1000.0 / (10.0 - $wns)}]
 report_utilization -file [file join $out utilization.txt]
 report_timing -max_paths 10 -setup -file [file join $out worst_paths.txt]
 report_timing -max_paths 1 -setup -file [file join $out worst_path_full.txt]
+# one path per endpoint, the 3000 worst: what limits after the worst block
+report_timing -max_paths 3000 -nworst 1 -setup -file [file join $out many_paths.txt]
 set fh [open [file join $out result.txt] w]
 puts $fh [format "%s %s: Fmax=%.2fMHz WNS=%.3f" $proc $part $fmax $wns]
 close $fh
