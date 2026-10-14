@@ -21,6 +21,8 @@ measured, the link costs no clock).
 **Recorded, not to be implemented yet (Luciano, 2026-10-14):** item 28, the
 burst (a whole array through a port at one word a clock, stopping while the
 FIFO is full); the design note lists the holes to close first.
+Also recorded the same day: item 29, a faster clock (the dividers, the
+normaliser, the `JIZ` zero test).
 
 **Waiting on a decision:** item 21 (documentation that cannot fall behind
 a release): Chrysthofer's proposal arrived on 2026-10-13; Luciano and he
@@ -789,6 +791,24 @@ empty one on input), the element type, the compiler passes that drop and
 share arrays, names and opcodes (they fit at the end of the table), the
 language forms (note sections 5 and 5a). Shares its pointer with item 17's
 index register: design the two together.
+
+## 29. A faster clock behind the dividers
+
+**Status:** measured and recorded, not to be implemented yet (Luciano,
+2026-10-14) · **Area:** `SAPHO/ula.v` (dividers, normaliser, float adder),
+`SAPHO/core.v` (`JIZ`), `asm_divseq` · **Evidence:**
+docs/design/pipeln-and-division.md sections 4.1 and 4.2
+
+On the v7.1 `sapho_all` (DE10-Nano, 21.8 MHz) the integer divider's two
+first parts are equal (~43.5 ns): a third cut, not a moved one, is what
+helps (Luciano: more registers in the dividers are fine, a division is
+rare; each division then takes four words). `F_DIV`'s last part is as long.
+With both fixed: ~23.6 MHz, limited by `F_ADD` into the `JIZ` decision.
+Behind it, without new registers: the `JIZ` zero test computed early (every
+path loses ~4 ns), and a faster shared normaliser (44-48 % of every float
+path; leading-zero anticipation, no shared input mux); a two-path float
+adder only after those. Not measured: the Zynq side, and any real fit with
+a change.
 
 ## 27. C++ gaps that real embedded code hits
 

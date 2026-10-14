@@ -463,6 +463,48 @@ Conclusions:
 - Not measured: the Zynq (Vivado) side of the same exclusion, and a real
   fit with a third cut (placement changes).
 
+### 4.2 Behind the dividers, without registers (2026-10-14)
+
+Recorded, not to be implemented yet (Luciano). Same fit, same method, the
+dividers excluded; each float path ends at two places, the program counter
+(through the `JIZ` decision, which reads the ALU output in the same clock,
+`if_acc = |ula_out`) and the accumulator:
+
+| path (data delay of each block, ns) | to the PC | to the accumulator |
+|---|---|---|
+| `F_ADD`: memory -> `denorm` 9.0 -> add 2.2 -> normaliser 17.9 -> ALU mux | slack -32.4 (~23.6 MHz) | -28.7 (~25.8 MHz) |
+| with `F_ADD` excluded too, `I2F_M`: memory -> `NEG_M` 3.2 -> convert 8.4 -> normaliser 16.9 -> ALU mux | -30.4 (~24.8 MHz) | -26.7 (~27.3 MHz) |
+
+Two facts follow. The `JIZ` decision adds about 4 ns to every path that
+ends at the PC. The shared normaliser (`op_smx.norm_mux`) is 44-48 % of
+each float path, `F_ADD` and `I2F_M` alike. 55 % of the delay is
+interconnect: seeds give a few per cent, not more.
+
+Ideas without a new register, and how they combine (all estimates on this
+placement):
+
+1. **The `JIZ` zero test early**: "the result is not zero" computed beside
+   the ALU instead of from its final output (for `F_ADD`, the raw sum is
+   zero before normalising). Every path loses its PC tail, the limit
+   becomes the accumulator paths (~25.8 MHz with the dividers fixed). It
+   must agree exactly with the stored result, including a tiny result the
+   normaliser flushes to zero (`#FROUND`), or `JIZ` jumps on a value that
+   is not the one kept. Small in area; touches every processor's core.
+2. **A two-path float adder** (far path: big alignment, at most one bit of
+   normalising; near path: no big alignment, full normalising): one large
+   shifter per path instead of two in series. Shortens only `F_ADD`, and
+   `I2F_M` through the same normaliser is right behind (~27.3 MHz). Costs
+   area; must stay bit-exact at every `#FROUND` level or every golden moves.
+3. **Leading-zero anticipation** in the normaliser: count the leading zeros
+   while the value is computed, not after.
+4. **The normaliser's input mux out of the path**: a normaliser per float
+   operation instead of one shared one.
+
+Combined: 1 with a faster normaliser (3, 4) shortens every float path at
+once; 2 only if `F_ADD` is still ahead after that. If the normaliser lost
+half of its ~17 ns, the accumulator paths would be ~26-28 ns, near 30 MHz;
+speculation, since the path behind those was not looked at.
+
 ## 5. Tools kept from this work
 
 - `Scripts/hw/fmax.sh`: `SEED=<n>` (compare a change across seeds: one fit
