@@ -13,6 +13,7 @@ code), what was measured and what was deduced, and most end with a section
 | [toma-and-cade.md](toma-and-cade.md) | two SAPHOs passing a value: the protocol, the single-link design (v7.0, superseded in part) |
 | [toma-and-cade-links.md](toma-and-cade-links.md) | several links per processor: chains, fan-out, fan-in, two clocks |
 | [myfifo.md](myfifo.md) | `myFIFO` fixed, the two-clock `myDCFIFO` |
+| [burst.md](burst.md) | a whole array through a port, one word per clock, stopping while the FIFO is full (design, not implemented) |
 | [asm-names.md](asm-names.md) | user names that collide in the assembly |
 | [pipeln-and-division.md](pipeln-and-division.md) | the slow dividers: the pipeline tried and dropped, the two register cuts kept |
 | [precision-and-width-review.md](precision-and-width-review.md) | the float and word-width review (2026-09): the evidence behind TODO items 1 to 9 |

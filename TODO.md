@@ -10,32 +10,17 @@ links to its section there. The measurements themselves are reproducible with
 Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
-## Where things stand (2026-10-13)
+## Where things stand (2026-10-14)
 
-**v7.1, the next release** (no v7.0: Luciano, 2026-10-11). On main and
-regress-clean: `toma`/`cade` in pairs and chains (items 20, 23), `myFIFO`
-fixed and `myDCFIFO` (item 22), the conventional command lines and the flat
-output folder, the processor named after its source file, `cppcomp`
-preprocessing the C++ itself (no `cpppp`), `asmcomp` doing both passes (no
-`appcomp`), the tables `prog_log.txt` / `src_lines.txt`, `--lang=en|pt`
-with English the default, and the driver `yanc`. Left before the tag, in
-order:
-0. The manual in docs/ (Luciano 2026-10-13: written before the tag, English,
-   he reviews at the end): the pages listed in docs/index.md; done so far the
-   reorganisation, the generated instruction page, the C± chapter. Then
-   published like library/sapho: yanc's CI builds it with Sphinx (MyST) on
-   GitHub Pages, a worker route nipscern.com/library/yanc in nipscernweb
-   (the Cloudflare route registered by Luciano or Chrysthofer), the release
-   README pointing there and an HTML zip attached to the release.
-1. One consolidated text for AURORA (no compatibility kept in yanc; AURORA
-   calls `yanc`, Luciano 2026-10-13): merge `C:\tmp\aurora_yanc_cli.md`,
-   `aurora_yanc_layout.md` and the running list `aurora_yanc_pending.md`.
-   AURORA's local flow is broken until it adapts (no `cpppp`, no `appcomp`,
-   no `-en`/`-pt`). AURORA does not push before the yanc release; both
-   release together.
-2. The board run of Sabrina and Pedro Henrique: the `LINKALL` pair with the
-   `.sdc` on both boards (the Fmax is measured: the link costs no clock).
-3. CHANGELOG `[Unreleased]` -> 7.1, `yanc_version.h`, tag.
+**v7.1 released on 2026-10-13** (no v7.0), with AURORA moved to it the same
+day. The manual is published from docs/ by each release: GitHub Pages and
+nipscern.com/library/yanc. Left from it: the board run of Sabrina and Pedro
+Henrique (the `LINKALL` pair with the `.sdc` on both boards; the Fmax is
+measured, the link costs no clock).
+
+**Next, by Luciano's choice (2026-10-14):** item 28, the burst (a whole array
+through a port at one word a clock, stopping while the FIFO is full); the
+design note is written, implementation in the steps of its section 7.
 
 **Waiting on a decision:** item 21 (documentation that cannot fall behind
 a release): Chrysthofer's proposal arrived on 2026-10-13; Luciano and he
@@ -53,16 +38,15 @@ accuracy keyed on `NBMANT`; 10 architecture hardening (ISS, division by zero,
 interrupt, I/O contract); 13 the pre-assembly optimizer and the C++ heap
 arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
 it; 15 the regress on this machine (mitigated); 17 faster fill/copy in
-hardware (measure the index register `X` first); 24 processors with
-different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element.
+hardware (measure the index register `X` first; shares its pointer with 28); 24 processors with
+different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst.
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), the reorganisation of the runner/setup scripts, a macOS
 build.
 
 **Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 11 (consistency at 32
 bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
-20, 22 and 23 (on main for v7.1), 25 (appcomp folded into asmcomp, on main
-for v7.1), the user names that collide in the `.asm`.
+20, 22 and 23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), the user names that collide in the `.asm`.
 
 ---
 
@@ -787,6 +771,21 @@ docs/design/toma-and-cade-links.md section 9
 exact when both processors have the same `#NBMANT`/`#NBEXPO`, garbled with
 no warning when they differ (each program is compiled alone); ints with
 different `#NUBITS` only get the tools' port-width warning.
+
+## 28. Burst: a whole array through a port, one word per clock
+
+**Status:** design written (Luciano's block, 2026-10-14), nothing
+implemented · **Area:** `SAPHO/core.v`, `instr_dec.v`, `isa.tsv`, asmcomp,
+then cmmcomp and cppcomp · **Evidence:** docs/design/burst.md
+
+Sending an array to a FIFO costs 8 instructions a word in a loop, or 2 to 3
+a word unrolled (code growing with the array). A `burst` block (size
+register, pointer, an `out` that waits in place until the end) sends one
+word a clock with fixed code, and stops while the FIFO is full through a new
+`out_ok[p]` pin; the same block fills an array from an input FIFO. Open: the
+accumulator after a burst, the one-word margin against a full FIFO, names
+and opcodes (they fit at the end of the table), the language forms. Shares
+its pointer with item 17's index register: design the two together.
 
 ## 27. C++ gaps that real embedded code hits
 
