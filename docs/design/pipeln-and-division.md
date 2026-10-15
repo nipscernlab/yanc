@@ -628,6 +628,34 @@ mux only with a normalised operation, `norm_mux` guarded): the best
 `sapho_all` result and no `x` arm left, as the pay-only-for-what-you-use
 rule wants. To be confirmed with more seeds before it is final.
 
+**Normaliser alternatives** (2026-10-15). Luciano's point: the alignment
+(`denorm`) belongs to the add alone (built only with `F_ADD`/`F_SU1`/
+`F_SU2`), but the normaliser is shared by eight operations, so a faster
+normaliser helps all of them and is the place to look first. Known
+structures, and which were tried:
+
+| structure | serves | tried |
+|---|---|---|
+| leading-zero chain + shift | all | original |
+| leading-zero tree + shift | all | `lzc` and later variants |
+| normalizing shifter (count and shift together, 16/8/4/2/1) | all | `nshift`, `nsr` |
+| mantissa rounding as a carry select | all | `rpar`, `nsr` |
+| leading-zero anticipation (LZA) | the add only | no |
+| two-path adder | the add only | no |
+
+`nshift`, `rpar` and `nsr` (both) are built from `pnorm` and proven equal
+to the original normaliser (`eq_norm.sh <variant>`: 1.8 million outputs
+each). Seed noise first: `pnorm` gave 32.61 MHz with seed 1 and 32.25 with
+seed 2 (3,579 ALMs), about 1 %. One fit of `nsr` (seed 1): **31.41 MHz**,
+3,604 ALMs, below both `pnorm` seeds; its normaliser block took 14.6 ns
+(28 cells on the worst path) against 12.1 ns (18 cells) in `pnorm`. The
+normalizing shifter, better on paper by its levels of logic, did not win on
+this FPGA: the synthesis already built the tree count and the shift well.
+One seed only. A three-seed comparison of `pnorm`, `nshift`, `rpar` and
+`nsr` (`fit_normalisers_resume.sh`, about 15 hours) was started and
+stopped; Luciano will run it at home. Until then `pnorm` stays the
+recommendation.
+
 What each would need to become the processor, none done:
 
 1. More division stages: `asm_divseq` in both compilers and asmcomp's check

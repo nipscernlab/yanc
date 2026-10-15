@@ -1,5 +1,5 @@
 #!/bin/bash
-# fit_normalisers.sh that can be stopped and started again: it skips every fit
+# fit_normalisers.sh (about 15 hours) that can be stopped and started again: it skips every fit
 # whose result line is already in .smoke/hw/fmax.txt (a laptop closed in the
 # middle of a fit loses only that fit). Same variants, seeds and tags.
 cd "$(dirname "$0")/../../.." || exit 1
