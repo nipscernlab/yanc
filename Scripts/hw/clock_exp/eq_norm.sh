@@ -1,13 +1,14 @@
 #!/bin/bash
-# ula_norm of SAPHO/ against the tree leading-zero count of the lzc experiment:
+# ula_norm of SAPHO/ against a variant's (default lzc; eq_norm.sh <variant>):
 # 200000 random inputs (biased to many leading zeros and to zero mantissas) in
 # nine formats and rounding levels; every output must be the same.
 # Run make_variants.py first. Exit 0 when all are equal.
 set -u
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
-D="$ROOT/.smoke/hw/clock_exp/eq"
+D="$ROOT/.smoke/hw/clock_exp/eq_${1:-lzc}"
 OLD="$ROOT/SAPHO/ula.v"
-NEW="$ROOT/.smoke/hw/clock_exp/lzc/ula.v"
+V=${1:-lzc}
+NEW="$ROOT/.smoke/hw/clock_exp/$V/ula.v"
 TB="$ROOT/Scripts/hw/clock_exp/tb_norm.v"
 [ -f "$NEW" ] || { echo "no $NEW: run make_variants.py first"; exit 1; }
 mkdir -p "$D"; cd "$D" || exit 1

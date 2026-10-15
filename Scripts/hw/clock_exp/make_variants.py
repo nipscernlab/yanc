@@ -14,6 +14,9 @@ SAPHO/ under .smoke/hw/clock_exp/ (nothing in SAPHO/ changes).
   pcase param with the fast mux as a case with one guarded row per
         operation, default 0 (the instruction decoder's style)
   pnorm param with the normaliser's input mux (norm_mux) guarded the same way
+  nshift pnorm with a normalizing shifter (count and shift together)
+  rpar  pnorm with the mantissa rounding as a carry select
+  nsr   nshift + rpar
 
 Each later variant contains the earlier ones. Time one with
   HDL=$PWD/.smoke/hw/clock_exp/<name> TAG=<tag> bash Scripts/hw/fmax.sh sapho_all 5CSEBA6U23I7
@@ -359,6 +362,78 @@ def pnorm(src):
     return d
 
 
+NSHIFT_MODULE = '''// experiment: normalizing shifter -- counts the leading zeros and shifts at
+// once, stage by stage: a stage of 2^k shifts left by 2^k when the top 2^k
+// bits are zero (from the widest stage down). The count is the sum of the
+// shifts, capped at W-1 as the chain was (only a zero mantissa reaches more,
+// and zman handles it).
+
+module ula_nshift
+#(
+	parameter W  = 26,
+	parameter CW =  8
+)(
+	input  [W -1:0] in,
+	output [W -1:0] out,
+	output [CW-1:0] cnt
+);
+
+localparam L = $clog2(W);
+
+genvar k;
+generate
+for (k = L; k >= 0; k = k-1) begin : st
+	wire [W-1:0] v;
+	wire [L  :0] c;
+	if (k == L) begin : top
+		assign v = in;
+		assign c = {(L+1){1'b0}};
+	end else begin : stage
+		wire z = (st[k+1].v[W-1 -: (1 << k)] == {(1 << k){1'b0}});
+		assign v = (z) ? (st[k+1].v << (1 << k)) : st[k+1].v;
+		assign c = st[k+1].c + ((z) ? (1 << k) : 0);
+	end
+end
+endgenerate
+
+assign out = st[0].v;
+assign cnt = (st[0].c > W-1) ? W-1 : st[0].c;
+
+endmodule
+
+'''
+
+NSHIFT_USE = '''	// experiment: the normalizing shifter counts and shifts at once
+	wire [EXP-1:0] sh;
+	wire [W-1  :0] nrm_l;
+	ula_nshift #(W, EXP) nsh (man_l, nrm_l, sh);
+	wire signed [EXP+1:0] e_l   =  exp_l - {{2{1'b0}}, sh};
+'''
+
+
+def nshift(src):
+    """pnorm with the normaliser's leading-zero count and left shift done by a
+    normalizing shifter (2026-10-15)."""
+    d, ula, core = fresh('nshift', src)
+    nl = newline(ula)
+    edit(ula, TREE.replace('\n', nl), NSHIFT_USE.replace('\n', nl))
+    anchor = '// normalization of a floating-point number -----------------------------------'
+    edit(ula, anchor, NSHIFT_MODULE.replace('\n', nl) + anchor)
+    return d
+
+
+def rpar(src, name='rpar'):
+    """pnorm with the mantissa rounding as a carry select (2026-10-15): the
+    increment does not wait for the round decision, it is chosen at the end,
+    as the exponent already was."""
+    d, ula, core = fresh(name, src)
+    nl = newline(ula)
+    edit(ula, '\twire        [MAN  :0] rnd   = {1\'b0, mnt} + {{MAN{1\'b0}}, inc};',
+              "\twire        [MAN  :0] mp1   = {1'b0, mnt} + {{MAN{1'b0}}, 1'b1};   // experiment: computed without waiting for inc" + nl +
+              "\twire        [MAN  :0] rnd   = (inc) ? mp1 : {1'b0, mnt};")
+    return d
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     d = os.path.join(ROOT, 'SAPHO')
@@ -368,7 +443,14 @@ def main():
         variants[step.__name__] = d
         print('built', os.path.relpath(d, ROOT))
     for step in (pcase, pnorm):                  # both start from param
-        print('built', os.path.relpath(step(variants['param']), ROOT))
+        variants[step.__name__] = step(variants['param'])
+        print('built', os.path.relpath(variants[step.__name__], ROOT))
+    # the normaliser alternatives, each from pnorm (2026-10-15)
+    variants['nshift'] = nshift(variants['pnorm'])
+    variants['rpar'] = rpar(variants['pnorm'])
+    variants['nsr'] = rpar(variants['nshift'], 'nsr')
+    for v in ('nshift', 'rpar', 'nsr'):
+        print('built', os.path.relpath(variants[v], ROOT))
 
 
 if __name__ == '__main__':
