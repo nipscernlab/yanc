@@ -667,22 +667,30 @@ operation and those specific to FPGAs. Done the same day:
 tried, four not applicable; to try next, the shift through a DSP multiplier,
 then rounding only on the short shifts).
 
-What each would need to become the processor, none done:
+What each would need to become the processor, none done. The target is
+`pnorm` (32.61 / 32.25 MHz on seeds 1 and 2, 3,551 ALMs against v7.1's
+21.82 MHz and 3,558): `F_DIV` in 4 stages, `DIV`/`MOD` in 5, `JIZ` and the
+indirect index from the fast output, the tree count, and the muxes generated
+from the opcode parameters. Its exact code is what
+`Scripts/hw/clock_exp/make_variants.py` builds (`stg4` -> `jz` -> `lzc` ->
+`addr` -> `split` -> `param` -> `pnorm`, each a set of edits on the one
+before):
 
 1. More division stages: `asm_divseq` in both compilers and asmcomp's check
-   write `<div> x; NOP; NOP; QUO` (four words; five for `DIV`/`MOD` in
-   `addr`), derived from the stage parameter, not a constant (derive from
-   widths); every golden with a division moves; hand-written `.asm` with a
-   division changes.
+   write `<div> x; NOP; NOP; F_QUO` for `F_DIV` (four words) and
+   `<div> x; NOP; NOP; NOP; QUO|REM` for `DIV`/`MOD` (five), derived from
+   the stage parameter, not a constant (derive from widths); every golden
+   with a division moves; hand-written `.asm` with a division changes.
 2. The `JIZ` and the indirect index without the normaliser: asmcomp refuses
    (or pads with a `NOP`) a `JIZ`/`LDI`/`ILI` right after a normalised
-   operation; the C++ goldens counted; the split structure of `split`
-   rather than a copy of the mux, built only where the program has a
-   normalised operation (pay only for what you use).
+   operation; the C++ goldens counted; the ALU output as in `pnorm`: the
+   fast mux as an OR of one term per operation the program has, the 2-input
+   mux after it only with a normalised operation, `norm_mux` guarded by the
+   same parameters (pay only for what you use).
 3. The tree count: `ula_lzc` in `SAPHO/ula.v` and `eq_norm.sh` kept as a
    test; `elab.sh`, `elab_single.sh` and `tb_alu.sh` on it.
-4. All: the regress, area (`area.sh`; the fits show 3,558 -> 3,816 ALMs
-   from v7.1 to `addr`), the Vivado side (not timed), more seeds.
+4. All: the regress, area (`area.sh`; fits: 3,558 ALMs in v7.1, 3,551 in
+   `pnorm`), the Vivado side (not timed), a third seed.
 
 Behind 32 MHz the float add itself limits (30.9 ns to the accumulator): the
 shift and the rounding inside the normaliser, or the two-path adder of 4.2.

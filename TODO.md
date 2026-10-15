@@ -830,7 +830,11 @@ run at home. Literature survey done (2026-10-15,
 applicable. NEXT, for Luciano to choose: the shift through a DSP multiplier
 (one 27x27 block, 2^k from `r & -r` without a decoder), then rounding only
 on the short shifts (deduced: at `#FROUND 2` the increment is zero after a
-shift of 2 or more; needs a proof through the operators). The tree count is proven
+shift of 2 or more; needs a proof through the operators). Built and checked
+the same day (survey section 4, `eq_fops.sh`, whole ALU against `pnorm`):
+`dsp`, `alm`, `lza` exact for any input; `rshort`, `twopath` exact only
+with normalised operands (open: can an unnormalised float reach an add?).
+No fit yet. The tree count is proven
 equal to the chain (1.8 million outputs); the others need the compilers and
 asmcomp (division length, a rule against `JIZ`/`LDI`/`ILI` after a
 normalised operation) before they can be real. Not done: Vivado, seeds,

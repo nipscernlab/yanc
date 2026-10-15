@@ -185,6 +185,42 @@ after the methods that serve every operation.
 The three-seed batch of `nshift`, `rpar` and `nsr`
 (`fit_normalisers_resume.sh`) is independent of this list and still to run.
 
+## 4. Built and checked (2026-10-15)
+
+Luciano asked for the Verilog of each buildable method and a quick check
+that each gives the right values, before any fit. The five are built from
+`pnorm` by `Scripts/hw/clock_exp/make_variants.py` (`dsp`, `alm`, `rshort`,
+`lza`, `twopath`; nothing in `SAPHO/` changed) and checked by
+`eq_fops.sh`: the whole ALU, eight operations (`F_ADD`, `F_SU1`, `F_SU2`,
+`F_MLT`, `F_DIV`, `I2F`, `I2F_M`, `F_ROT`), 20000 operand pairs, five
+formats and rounding levels (32 bits at `#FROUND` 0, 1, 2; 16 bits at 0
+and 2), each print compared with `pnorm`'s. Two kinds of operands:
+normalised floats as programs make them, biased to exponents 0 to 2 apart
+and to close mantissas (cancellation), plus integers for `I2F`; and any bit
+pattern, unnormalised floats included.
+
+| variant | what it is | normalised operands | any bit pattern |
+|---|---|---|---|
+| `dsp` | shift as `man * (r & -r)` | equal, all 10 runs | equal |
+| `alm` | radix-4 leading-zero tree | equal | equal |
+| `rshort` | rounding only for a shift of 0 or 1 | equal | differs at `#FROUND 2` only, in `F_ADD`/`F_SU1`/`F_SU2` (5 to 6 % of their 20000 outputs) |
+| `lza` | `F_ADD` with anticipation (`f_i = (a_i ^ b_i) & ~(d_(i-1) = -1)`), one-bit correction, direct path | equal | equal |
+| `twopath` | near/far `F_ADD`, direct path | equal | differs in `F_ADD`/`F_SU1`/`F_SU2` (11 to 12 % of their 20000 outputs, 23 to 25 % at `#FROUND 0`) |
+
+So `dsp`, `alm` and `lza` are exact for any input; `rshort` and
+`twopath` are exact only when the operands of an add are normalised, as
+their derivation assumed (2.4 above; the far path normalises by at most 2
+bits). Whether an unnormalised float can reach an add in a real program
+(an integer pattern read as a float, a value from an input port) was not
+checked: it decides whether those two can be used. The check found two
+faults of the testbench, not of the variants, before it was trusted: the
+integer samples went to `F_ADD` too (they are unnormalised floats), and a
+paused older run wrote the same directories (lesson in memory).
+
+Not done: fits (each about 1h30 on mains power). `lza` and `twopath` also
+take `F_ADD` out of the leading-zero path, so with them the count serves
+only `I2F`, `I2F_M`, `F_ROT` and `F_MLT`/`F_DIV` at `#FROUND 0`.
+
 ## Sources
 
 - V. G. Oklobdzija, "An algorithmic and novel design of a leading zero

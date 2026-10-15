@@ -15,6 +15,16 @@ section 4.3 and TODO item 29.
 | `lzc` | the normaliser's leading-zero count as a tree (`ula_lzc`) instead of a chain of W-1 muxes; same results |
 | `addr` | the indirect read index (`LDI`/`ILI`) from that same fast output; the integer divider in 5 stages |
 | `split` | `addr` with the ALU output split instead of copied: one mux of the non-normalised operations (`out_fast`) and a 2-input mux choosing the normaliser for the accumulator |
+| `param`, `pcase`, `pnorm` | the muxes generated from the opcode parameters (note 4.3); `pnorm` is the base of the normaliser variants below |
+| `nshift`, `rpar`, `nsr` | normalizing shifter, rounding carry select, both |
+| `dsp` | the normaliser's shift as a product by 2^k (a DSP block), 2^k = r & -r of the bit-reversed mantissa |
+| `alm` | the leading-zero count as a radix-4 tree |
+| `rshort` | the rounding increment only for a shift of 0 or 1 |
+| `lza` | `F_ADD` normalised by leading-zero anticipation, then the normaliser's direct path |
+| `twopath` | `F_ADD` in two paths (near: alignment by 0 or 1 and full normalising; far: full alignment and at most 2 bits), then the direct path |
+
+The last five are the methods of
+[docs/design/normalisation-survey.md](../../../docs/design/normalisation-survey.md).
 
 ```sh
 python3 Scripts/hw/clock_exp/make_variants.py
@@ -25,6 +35,13 @@ HDL=$PWD/.smoke/hw/clock_exp/addr TAG=de10_addr bash Scripts/hw/fmax.sh sapho_al
 `mux_x_cost.py` measures in Yosys what an unused `ula_mux` input tied to `x`
 still costs: `python3 Scripts/hw/clock_exp/mux_x_cost.py` (2026-10-15: 235
 against 229 LUT4 for an integer set, 306 against 253 for a float set).
+
+`tb_fops.v` drives the whole ALU on the eight operations that go through the
+normaliser, with normalised operands (`RAW=0`, as programs make them) and
+with any bit pattern (`RAW=1`); `eq_fops.sh <variant> [N]` compares a
+variant's prints with `pnorm`'s in five formats and rounding levels
+(the reference print is cached in `eqf_ref/`). Only `RAW=0` has to be equal:
+`rshort` and `twopath` assume normalised operands.
 
 `tb_norm.v` drives `ula_norm` with random inputs biased to many leading
 zeros and to zero mantissas and prints every output; `eq_norm.sh` runs it

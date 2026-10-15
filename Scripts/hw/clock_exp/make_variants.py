@@ -17,6 +17,12 @@ SAPHO/ under .smoke/hw/clock_exp/ (nothing in SAPHO/ changes).
   nshift pnorm with a normalizing shifter (count and shift together)
   rpar  pnorm with the mantissa rounding as a carry select
   nsr   nshift + rpar
+  dsp   pnorm with the normaliser's shift as a product by 2^k (DSP block)
+  alm   pnorm with the leading-zero count as a radix-4 tree
+  rshort pnorm with the rounding increment only for a shift of 0 or 1
+  lza   pnorm with F_ADD normalised by leading-zero anticipation
+  twopath pnorm with a two-path F_ADD
+(the last five: docs/design/normalisation-survey.md; eq_fops.sh tests them)
 
 Each later variant contains the earlier ones. Time one with
   HDL=$PWD/.smoke/hw/clock_exp/<name> TAG=<tag> bash Scripts/hw/fmax.sh sapho_all 5CSEBA6U23I7
@@ -434,6 +440,319 @@ def rpar(src, name='rpar'):
     return d
 
 
+ANCHOR_NORM = '// normalization of a floating-point number -----------------------------------'
+
+
+def dsp(src):
+    """pnorm with the normaliser's left shift as a product by 2^sh, for a DSP
+    block (survey method 6, 2026-10-15). 2^sh is the lowest set bit of the
+    bit-reversed mantissa (r & -r), so no decoder from the count; the count
+    still comes from the tree, for the exponent."""
+    d, ula, core = fresh('dsp', src)
+    nl = newline(ula)
+    edit(ula, '\twire        [W-1  :0] nrm_l =  man_l << sh;',
+         ('\t// experiment: the shift as a product by 2^sh (a DSP block); 2^sh is the\n'
+          '\t// lowest set bit of the bit-reversed mantissa, r & -r, no decoder\n'
+          '\treg  [W-1  :0] rev;\n'
+          '\tinteger rb;\n'
+          '\talways @ (*) for (rb = 0; rb < W; rb = rb+1) rev[rb] = man_l[W-1-rb];\n'
+          "\twire [W-1  :0] p2    = rev & (~rev + {{W-1{1'b0}}, 1'b1});\n"
+          '\twire [2*W-1:0] prod  = man_l * p2;\n'
+          '\twire [W-1  :0] nrm_l = prod[W-1:0];').replace('\n', nl))
+    return d
+
+
+LZC4_MODULE = '''// experiment: leading-zero count as a radix-4 tree (survey method 3): each
+// leaf takes 4 bits, each node 4 children, so fewer levels than the binary
+// tree and node functions of up to 7 inputs (one ALM). Same output as
+// ula_lzc: the input is padded with ones below, so a zero input counts W.
+
+module ula_lzc4
+#(
+	parameter W  = 26,
+	parameter CW =  8
+)(
+	input  [W -1:0] in,
+	output [CW-1:0] out
+);
+
+localparam L = (W <= 4) ? 1 : (W <= 16) ? 2 : (W <= 64) ? 3 : 4;   // levels
+localparam P = 1 << (2*L);                                          // padded width
+
+wire [P-1:0] x;
+generate if (P > W) begin : pad assign x = {in, {(P-W){1'b1}}}; end
+         else       begin : pad assign x = in;                   end endgenerate
+
+genvar k, j;
+generate
+for (k = 1; k <= L; k = k+1) begin : lv
+	wire [(P>>(2*k))*(2*k)-1:0] cnt;
+	wire [(P>>(2*k))      -1:0] zer;
+	for (j = 0; j < (P>>(2*k)); j = j+1) begin : n
+		wire [3:0] z;
+		wire [2*k-1:0] c;
+		if (k == 1) begin : leaf
+			wire [3:0] g = x[4*j +: 4];
+			assign z = ~g;
+			assign c = (g[3]) ? 2'd0 : (g[2]) ? 2'd1 : (g[1]) ? 2'd2 : 2'd3;
+		end else begin : node
+			// child 3 is the most significant
+			wire [2*k-3:0] c3 = lv[k-1].cnt[(4*j+3)*(2*k-2) +: (2*k-2)];
+			wire [2*k-3:0] c2 = lv[k-1].cnt[(4*j+2)*(2*k-2) +: (2*k-2)];
+			wire [2*k-3:0] c1 = lv[k-1].cnt[(4*j+1)*(2*k-2) +: (2*k-2)];
+			wire [2*k-3:0] c0 = lv[k-1].cnt[(4*j  )*(2*k-2) +: (2*k-2)];
+			assign z = lv[k-1].zer[4*j +: 4];
+			assign c = (!z[3]) ? {2'd0, c3} : (!z[2]) ? {2'd1, c2} : (!z[1]) ? {2'd2, c1} : {2'd3, c0};
+		end
+		assign zer[j]              = &z;
+		assign cnt[j*(2*k) +: 2*k] = c;
+	end
+end
+endgenerate
+
+assign out = lv[L].cnt[2*L-1:0];           // zero-extended (or cut: the count never exceeds W) to CW
+
+endmodule
+
+'''
+
+
+def alm(src):
+    """pnorm with the leading-zero count as a radix-4 tree (survey method 3)."""
+    d, ula, core = fresh('alm', src)
+    nl = newline(ula)
+    edit(ula, '\tula_lzc #(W, EXP) lzc (man_l, lz);', '\tula_lzc4 #(W, EXP) lzc (man_l, lz);   // experiment: radix 4')
+    edit(ula, ANCHOR_NORM, LZC4_MODULE.replace('\n', nl) + ANCHOR_NORM)
+    return d
+
+
+RSHORT_RNE = '''	// experiment: rounding only on the short shifts (survey method 7). After a
+	// shift of 2 or more, guard and sticky are zero (deduced from the
+	// operators), so the increment is computed on the unshifted input for a
+	// shift of 0 and of 1, beside the count, and only picked at the end
+	wire        [MAN  :0] rnd;
+	if (G != 0) begin : rne
+		wire [MAN-1:0] mnt0 = src_r[W-1:G];
+		wire [MAN-1:0] mnt1 = src_r[W-2:G-1];
+		wire           inc0 = src_r[G-1] & ((|src_r[G-2:0]) | mnt0[0]);
+		wire           inc1 = src_r[G-2] & ((|{src_r[G-3:0], 1'b0}) | mnt1[0]);   // G = 3
+		wire [MAN  :0] rnd0 = {1'b0, mnt0} + {{MAN{1'b0}}, inc0};
+		wire [MAN  :0] rnd1 = {1'b0, mnt1} + {{MAN{1'b0}}, inc1};
+		assign rnd = (k_r == 0) ? rnd0 : (k_r == 1) ? rnd1 : {1'b0, nrm[W-1:G]};
+	end else begin : trunc
+		assign rnd = {1'b0, nrm[W-1:G]};
+	end
+'''
+
+
+def rshort(src):
+    """pnorm with the rounding increment only for a shift of 0 or 1 (survey
+    method 7): correct only if no operator hands in non-zero guard bits that a
+    longer shift would keep."""
+    d, ula, core = fresh('rshort', src)
+    nl = newline(ula)
+    edit(ula, 'wire                  zman;' + nl + nl + 'generate if (LZC != 0) begin : lzc',
+              'wire                  zman;' + nl +
+              'wire        [W-1  :0] src_r;                                          // experiment: the mantissa before the shift' + nl +
+              'wire        [EXP-1:0] k_r;                                            // experiment: the shift' + nl + nl +
+              'generate if (LZC != 0) begin : lzc')
+    edit(ula, "\t\tassign zman  = (use_d) ? (in_d[W-1:0] == {W{1'b0}}) : (man_l == {W{1'b0}});",
+              "\t\tassign zman  = (use_d) ? (in_d[W-1:0] == {W{1'b0}}) : (man_l == {W{1'b0}});" + nl +
+              "\t\tassign src_r = (use_d) ? in_d[W-1:0] : man_l;" + nl +
+              "\t\tassign k_r   = (use_d) ? {EXP{1'b0}} : sh;")
+    edit(ula, "\t\tassign zman  = (man_l == {W{1'b0}});",
+              "\t\tassign zman  = (man_l == {W{1'b0}});" + nl +
+              "\t\tassign src_r = man_l;" + nl + "\t\tassign k_r   = sh;")
+    edit(ula, "\tassign zman  = (in_d[W-1:0] == {W{1'b0}});",
+              "\tassign zman  = (in_d[W-1:0] == {W{1'b0}});" + nl +
+              "\tassign src_r = in_d[W-1:0];" + nl + "\tassign k_r   = {EXP{1'b0}};")
+    s = open(ula, encoding='utf-8', newline='').read()
+    a = s.index('\twire        [MAN-1:0] mnt = nrm[W-1:G];')
+    b_txt = "\twire        [MAN  :0] rnd   = {1'b0, mnt} + {{MAN{1'b0}}, inc};" + nl
+    b = s.index(b_txt) + len(b_txt)
+    s = s[:a] + RSHORT_RNE.replace('\n', nl) + s[b:]
+    open(ula, 'w', encoding='utf-8', newline='').write(s)
+    return d
+
+
+FADD_LZA_MODULE = '''// experiment: F_ADD with leading-zero anticipation (survey method 8). The
+// count is predicted from the operands beside the adder, then the result is
+// shifted by it and by one more bit when the prediction was one short; it
+// leaves already normalised, for the normaliser's direct path.
+//   subtraction a - b, a >= b: digit d_i = a_i - b_i. The leading one is at
+//   the end of the run of -1 digits after the first non-zero digit, or one
+//   below: f_i = (a_i ^ b_i) & ~(d_(i-1) == -1), its leading one predicts it.
+//   addition: the leading one of a | b, or one above (the carry).
+
+module ula_fadd_lza
+#(
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0
+)(
+	input  signed [EXP-1     :0] e_in,
+	input                        s_big, s_small,
+	input         [MAN+G-1   :0] m_big, m_small,
+	output        [MAN+EXP+G+2:0] out
+);
+
+localparam W = MAN+G;
+
+wire [MAN+EXP+G+2:0] raw;
+ula_fadd #(MAN,EXP,FROUND,G) add (e_in, s_big, s_small, m_big, m_small, raw);
+wire                  s_r = raw[MAN+EXP+G+2  ];
+wire signed [EXP+1:0] e_r = raw[MAN+EXP+G+1:W];
+wire        [W-1  :0] m_r = raw[W        -1:0];
+
+wire       same = (s_big == s_small);
+wire [W:0] dbs  = {1'b0, m_big} - {1'b0, m_small};
+wire       bneg = dbs[W];                                     // m_big < m_small (the adder has the same)
+
+wire [W-1:0] f_bs = (m_big ^ m_small) & ~{(~m_big[W-2:0] &  m_small[W-2:0]), 1'b0};
+wire [W-1:0] f_sb = (m_big ^ m_small) & ~{( m_big[W-2:0] & ~m_small[W-2:0]), 1'b0};
+
+wire [EXP-1:0] lz_bs, lz_sb, lz_or;
+ula_lzc #(W, EXP) l1 (f_bs, lz_bs);
+ula_lzc #(W, EXP) l2 (f_sb, lz_sb);
+ula_lzc #(W, EXP) l3 (m_big | m_small, lz_or);
+
+wire [EXP-1:0] lz_f = (bneg) ? lz_sb : lz_bs;
+wire [EXP-1:0] pred;
+generate if (FROUND == 0) begin : legacy
+	// the adder always drops one bit (m[W:1]): one more leading zero
+	assign pred = (same) ? lz_or : lz_f + {{EXP-1{1'b0}}, 1'b1};
+end else begin : keep
+	assign pred = (same) ? ((lz_or == 0) ? {EXP{1'b0}} : lz_or - {{EXP-1{1'b0}}, 1'b1}) : lz_f;
+end endgenerate
+
+wire        [W-1  :0] s1  = m_r << pred;
+wire                  c   = ~s1[W-1];                         // the prediction was one short
+wire        [W-1  :0] nrm = (c) ? (s1 << 1) : s1;
+wire        [EXP-1:0] cnt = pred + {{EXP-1{1'b0}}, c};
+wire signed [EXP+1:0] e_o = e_r - {2'b00, cnt};
+
+assign out = {s_r, e_o, nrm};
+
+endmodule
+
+'''
+
+FADD_2P_MODULE = '''// experiment: two-path F_ADD (survey method 9). Near path: an effective
+// subtraction with exponents at most 1 apart -- alignment by 0 or 1 bit, then
+// the full leading-zero count and shift. Far path: everything else -- the full
+// alignment (ula_denorm, outside), then at most 2 bits of normalising (2 only
+// at FROUND 0, where the adder drops a bit). Assumes normalised operands. The
+// result leaves normalised, for the normaliser's direct path.
+
+module ula_fadd2p
+#(
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0
+)(
+	input                        neg1, neg2,
+	input         [MAN+EXP   :0] in1,  in2,
+	input  signed [EXP-1     :0] e_far,                       // ula_denorm's outputs (far path)
+	input                        s_big_f, s_small_f,
+	input         [MAN+G-1   :0] m_big_f, m_small_f,
+	output        [MAN+EXP+G+2:0] out
+);
+
+localparam W = MAN+G;
+
+// far path
+wire [MAN+EXP+G+2:0] far;
+ula_fadd #(MAN,EXP,FROUND,G) add_f (e_far, s_big_f, s_small_f, m_big_f, m_small_f, far);
+wire        [W-1  :0] m_f  = far[W-1:0];
+wire        [1    :0] sh_f = (m_f[W-1]) ? 2'd0 : (m_f[W-2]) ? 2'd1 : 2'd2;
+wire        [W-1  :0] n_f  = m_f << sh_f;
+wire signed [EXP+1:0] e_f  = $signed(far[MAN+EXP+G+1:W]) - {{EXP{1'b0}}, sh_f};
+
+// near path: its own alignment by 0 or 1
+wire                  s1_in = (neg1) ? ~in1[MAN+EXP] : in1[MAN+EXP];
+wire                  s2_in = (neg2) ? ~in2[MAN+EXP] : in2[MAN+EXP];
+wire signed [EXP-1:0] e1_in = in1[MAN+EXP-1:MAN];
+wire signed [EXP-1:0] e2_in = in2[MAN+EXP-1:MAN];
+wire signed [EXP  :0] d12   = e1_in - e2_in;
+wire signed [EXP  :0] d21   = e2_in - e1_in;
+wire                  swap  = d12[EXP];
+wire        [EXP  :0] shift = (swap) ? d21 : d12;
+wire                  sb_n  = (swap) ? s2_in : s1_in;
+wire                  ss_n  = (swap) ? s1_in : s2_in;
+wire                  near  = (shift <= 1) & (sb_n != ss_n);
+wire        [MAN-1:0] mb    = (swap) ? in2[MAN-1:0] : in1[MAN-1:0];
+wire        [MAN-1:0] ms    = (swap) ? in1[MAN-1:0] : in2[MAN-1:0];
+wire        [W-1  :0] mb_x, ms_x;
+generate if (G != 0) begin : ext
+	assign mb_x = {mb, {G{1'b0}}};
+	assign ms_x = {ms, {G{1'b0}}};
+end else begin : noext
+	assign mb_x = mb;
+	assign ms_x = ms;
+end endgenerate
+wire        [W-1  :0] ms_a  = (shift[0]) ? (ms_x >> 1) : ms_x;   // G = 0: the bit is lost, as in ula_denorm
+wire signed [EXP-1:0] e_nr  = (swap) ? e2_in : e1_in;
+
+wire [MAN+EXP+G+2:0] nr;
+ula_fadd #(MAN,EXP,FROUND,G) add_n (e_nr, sb_n, ss_n, mb_x, ms_a, nr);
+wire        [W-1  :0] m_n  = nr[W-1:0];
+wire        [EXP-1:0] lz;
+ula_lzc #(W, EXP) lzn (m_n, lz);
+wire        [EXP-1:0] sh_n = (lz > W-1) ? W-1 : lz;
+wire        [W-1  :0] n_n  = m_n << sh_n;
+wire signed [EXP+1:0] e_n  = $signed(nr[MAN+EXP+G+1:W]) - {2'b00, sh_n};
+
+assign out = (near) ? {nr[MAN+EXP+G+2], e_n, n_n} : {far[MAN+EXP+G+2], e_f, n_f};
+
+endmodule
+
+'''
+
+
+def fadd_direct(ula, nl):
+    """F_ADD/F_SU1/F_SU2 arrive normalised: route them to the normaliser's
+    direct path and take them out of the leading-zero path."""
+    edit(ula, "wire               use_d = (FROUND != 0) & ((op == 6'd5) | (op == 6'd7));",
+              "wire               use_d = ((FROUND != 0) & ((op == 6'd5) | (op == 6'd7))) | (op == 6'd3) | (op == 6'd47) | (op == 6'd48);   // experiment: F_ADD arrives normalised")
+    for code, p in (("6'd3  ", 'P_FADD'), ("6'd47 ", 'P_FSU1'), ("6'd48 ", 'P_FSU2')):
+        edit(ula, f"\t{code} : if ({p}) imux_l =  fadd ;", f"\t{code} : if ({p}) imux_d =  fadd ;   // experiment: direct path")
+    s = open(ula, encoding='utf-8', newline='').read()
+    # the three rows now write imux_d: move them into the imux_d case
+    rows = [l for l in s.split(nl) if 'imux_d =  fadd ;   // experiment' in l]
+    for l in rows:
+        s = s.replace(l + nl, '', 1)
+    anchor = "\t6'd5   : if (P_FMLT) imux_d =  fmlt ;"
+    s = s.replace(anchor, nl.join(rows) + nl + anchor, 1)
+    open(ula, 'w', encoding='utf-8', newline='').write(s)
+    edit(ula, '((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_ROT) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC',
+              '((I2F | I2F_M | F_ROT) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC (experiment: F_ADD not)')
+    edit(ula, '(FROUND != 0) && ((F_MLT | F_DIV) != 0),                                                             // DIR',
+              '((FROUND != 0) && ((F_MLT | F_DIV) != 0)) || ((F_ADD | F_SU1 | F_SU2) != 0),                         // DIR (experiment: + F_ADD)')
+
+
+def lza(src):
+    """pnorm with F_ADD normalised by leading-zero anticipation (survey method 8)."""
+    d, ula, core = fresh('lza', src)
+    nl = newline(ula)
+    edit(ula, 'ula_fadd #(NBMANT,NBEXPO,FROUND,G) my_fadd(', 'ula_fadd_lza #(NBMANT,NBEXPO,FROUND,G) my_fadd(')
+    edit(ula, ANCHOR_NORM, FADD_LZA_MODULE.replace('\n', nl) + ANCHOR_NORM)
+    fadd_direct(ula, nl)
+    return d
+
+
+def twopath(src):
+    """pnorm with a two-path F_ADD (survey method 9)."""
+    d, ula, core = fresh('twopath', src)
+    nl = newline(ula)
+    edit(ula, 'ula_fadd #(NBMANT,NBEXPO,FROUND,G) my_fadd(e_out,',
+              'ula_fadd2p #(NBMANT,NBEXPO,FROUND,G) my_fadd(su1, su2, in1, in2, e_out,')
+    edit(ula, ANCHOR_NORM, FADD_2P_MODULE.replace('\n', nl) + ANCHOR_NORM)
+    fadd_direct(ula, nl)
+    return d
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     d = os.path.join(ROOT, 'SAPHO')
@@ -449,7 +768,10 @@ def main():
     variants['nshift'] = nshift(variants['pnorm'])
     variants['rpar'] = rpar(variants['pnorm'])
     variants['nsr'] = rpar(variants['nshift'], 'nsr')
-    for v in ('nshift', 'rpar', 'nsr'):
+    # the methods of docs/design/normalisation-survey.md, each from pnorm
+    for step in (dsp, alm, rshort, lza, twopath):
+        variants[step.__name__] = step(variants['pnorm'])
+    for v in ('nshift', 'rpar', 'nsr', 'dsp', 'alm', 'rshort', 'lza', 'twopath'):
         print('built', os.path.relpath(variants[v], ROOT))
 
 
