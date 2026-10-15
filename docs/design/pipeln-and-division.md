@@ -656,6 +656,14 @@ One seed only. A three-seed comparison of `pnorm`, `nshift`, `rpar` and
 stopped; Luciano will run it at home. Until then `pnorm` stays the
 recommendation.
 
+The table above came from memory, not from a survey. Known and not listed
+there: shifting through the FPGA's DSP multipliers (a left shift by k is a
+product by 2^k), a leading-zero count grouped to the 6-input cells of the
+Cyclone V, and rounding injected before the normalisation. Next (Luciano,
+2026-10-15): a literature survey of normalisation for FPGA floating point
+(with sources), then choose which to try, first those that serve every
+operation and those specific to FPGAs.
+
 What each would need to become the processor, none done:
 
 1. More division stages: `asm_divseq` in both compilers and asmcomp's check

@@ -825,7 +825,9 @@ recommended (note 4.3; more seeds before it is final). Normaliser alternatives
 (normalizing shifter, rounding carry select; proven bit-exact): one fit of
 both together gave 31.41 MHz, below `pnorm` (32.61 / 32.25 on two seeds);
 the three-seed batch `fit_normalisers_resume.sh` (~15 h) is for Luciano to
-run at home. The tree count is proven
+run at home. NEXT: a literature survey of normalisation methods for FPGA
+floating point (only 4 of at least 9 known ones tried; the DSP-multiplier
+shift looks the most promising), then choose what to try (note 4.3). The tree count is proven
 equal to the chain (1.8 million outputs); the others need the compilers and
 asmcomp (division length, a rule against `JIZ`/`LDI`/`ILI` after a
 normalised operation) before they can be real. Not done: Vivado, seeds,
