@@ -584,6 +584,34 @@ that is about 1 %. Generating the arms from the opcode parameters would take
 it out (the rule of pay-only-for-what-you-use: `x` is a fallback). One run,
 Yosys, not Quartus.
 
+**The muxes generated from the opcode parameters** (Luciano, 2026-10-15;
+in progress). Variants built from `split`: `param` (fast mux as an OR of one
+term per operation the program has, each term in a `generate` on its
+parameter; the 2-input mux and `is_norm` only with a normalised operation),
+`pcase` (the fast mux in the instruction decoder's style: a case with one
+row per operation guarded by its parameter, default 0), `pnorm` (`param`
+plus the normaliser's input mux `norm_mux` guarded the same way, default 0
+instead of `x`). All three simulated equal to stock on `cmm_cexp`,
+`sw_test`, `proc_fft`. The instruction decoder (`instr_dec.v`) already has
+that form: each row guarded by its parameter, default 0 (76 -> 31 ALUTs
+when it got it). The other core muxes are already chosen by `generate`
+(ALU input 2, jump target, return, interrupt, FFT index) or driven by a
+decoder constant (ALU input 1, deduced to be removed by constant
+propagation, not measured).
+
+`sapho_all` fit: `param` **32.26 MHz, 3,539 ALMs** (below v7.1's 3,558).
+Synthesis-only area estimates (Quartus map, `fmax.sh MAPONLY=1`), ALMs:
+
+| program (ops) | stock | split | param | pcase |
+|---|---|---|---|---|
+| `cmm_tiny0` (4) | 29 | 29 | 29 | 29 |
+| `sw_test` (8) | 66 | 66 | 73 | 75 |
+| `cmm_cexp` (18) | 585 | 570 | 543 | 581 |
+| `ProcDTW` (21) | 439 | 439 | 431 | 379 |
+
+Mixed: estimates of synthesis, not fits, and small designs move by a few
+ALMs either way. Still to run: the `pcase` fit and the `pnorm` battery.
+
 What each would need to become the processor, none done:
 
 1. More division stages: `asm_divseq` in both compilers and asmcomp's check

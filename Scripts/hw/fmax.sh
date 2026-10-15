@@ -1,7 +1,7 @@
 #!/bin/bash
 # Real Fmax and ALM count of a generated processor, through Quartus Prime Lite.
 #
-# Usage:  [FR=<0|1|2>] [TAG=<name>] [SEED=<n>] [HDL=<dir>] bash Scripts/hw/fmax.sh <proc> [device] [family]
+# Usage:  [FR=<0|1|2>] [TAG=<name>] [SEED=<n>] [HDL=<dir>] [MAPONLY=1] bash Scripts/hw/fmax.sh <proc> [device] [family]
 # e.g.    bash Scripts/hw/fmax.sh cmm_cexp
 #         FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp
 #
@@ -74,6 +74,13 @@ EOF
 "$QUARTUS/quartus_map" $PROC > map.log 2>&1 || { echo "$PROC: MAP FAILED";  grep -m5 'Error' map.log; exit 1; }
 if grep -qiE "can't (find|read).*\.mif|memory initialization file.*(not|n't)" map.log; then
     echo "$PROC: a .mif was not found -- the memories would be empty"; grep -m3 -i 'mif' map.log; exit 1
+fi
+# MAPONLY=1: stop after synthesis (minutes, not the hour of a fit) and report
+# its area estimate -- enough to compare two variants' logic, not their clock
+if [ -n "$MAPONLY" ]; then
+    EST=$(grep -m1 'Estimate of Logic utilization (ALMs needed)' $PROC.map.rpt | awk -F';' '{print $3}' | tr -d ' ')
+    echo "$PROC $DEV${TAG:+ ($TAG)}: synthesis estimate ALMs=$EST (MAPONLY)" | tee -a "$OUT/fmax.txt"
+    exit 0
 fi
 "$QUARTUS/quartus_fit" $PROC > fit.log 2>&1 || { echo "$PROC: FIT FAILED";  grep -m5 'Error' fit.log; exit 1; }
 "$QUARTUS/quartus_sta" $PROC > sta.log 2>&1 || { echo "$PROC: STA FAILED";  grep -m5 'Error' sta.log; exit 1; }

@@ -9,6 +9,11 @@ SAPHO/ under .smoke/hw/clock_exp/ (nothing in SAPHO/ changes).
         integer divider in 5 stages
   split addr with the ALU output split, not copied: one mux of the non-normalised
         operations and a 2-input mux after it for the normaliser
+  param split with both muxes generated from the opcode parameters (OR of
+        one term per operation; the 2-input mux only with a normalised op)
+  pcase param with the fast mux as a case with one guarded row per
+        operation, default 0 (the instruction decoder's style)
+  pnorm param with the normaliser's input mux (norm_mux) guarded the same way
 
 Each later variant contains the earlier ones. Time one with
   HDL=$PWD/.smoke/hw/clock_exp/<name> TAG=<tag> bash Scripts/hw/fmax.sh sapho_all 5CSEBA6U23I7
@@ -217,12 +222,153 @@ def split(src):
     return d
 
 
+# (code, input, parameter) of every ula_mux arm; NOP and LOD always exist
+ARMS = [(0, 'in2', None), (1, 'in1', None), (2, 'add', 'ADD'), (3, 'smx', 'F_ADD'),
+        (4, 'mlt', 'MLT'), (5, 'smx', 'F_MLT'), (6, 'div', 'DIV'), (7, 'smx', 'F_DIV'),
+        (8, 'mod', 'MOD'), (9, 'sgn', 'SGN'), (10, 'fsgn', 'F_SGN'), (11, 'neg', 'NEG'),
+        (12, 'negm', 'NEG_M'), (13, 'fneg', 'F_NEG'), (14, 'fnegm', 'F_NEG_M'),
+        (15, 'abs', 'ABS'), (16, 'absm', 'ABS_M'), (17, 'fabs', 'F_ABS'), (18, 'fabsm', 'F_ABS_M'),
+        (19, 'pst', 'PST'), (20, 'pstm', 'PST_M'), (21, 'fpst', 'F_PST'), (22, 'fpstm', 'F_PST_M'),
+        (23, 'nrm', 'NRM'), (24, 'nrmm', 'NRM_M'), (25, 'smx', 'I2F'), (26, 'smx', 'I2F_M'),
+        (27, 'f2i', 'F2I'), (28, 'f2im', 'F2I_M'), (29, 'ann', 'AND'), (30, 'orr', 'ORR'),
+        (31, 'cor', 'XOR'), (32, 'inv', 'INV'), (33, 'invm', 'INV_M'), (34, 'lan', 'LAN'),
+        (35, 'lor', 'LOR'), (36, 'lin', 'LIN'), (37, 'linm', 'LIN_M'), (38, 'les', 'LES'),
+        (39, 'fles', 'F_LES'), (40, 'gre', 'GRE'), (41, 'fgre', 'F_GRE'), (42, 'equ', 'EQU'),
+        (43, 'shl', 'SHL'), (44, 'shr', 'SHR'), (45, 'srs', 'SRS'), (46, 'smx', 'F_ROT'),
+        (47, 'smx', 'F_SU1'), (48, 'smx', 'F_SU2'), (49, 'fscl', 'F_SCL'), (50, 'xpo', 'XPO'),
+        (51, 'xpom', 'XPO_M')]
+
+
+def param(src):
+    """split with both muxes generated from the opcode parameters (Luciano,
+    2026-10-15): the fast mux has one term per non-normalised operation the
+    program has, OR-ed (no x arms at all); the 2-input mux and is_norm exist
+    only when the program has a normalised operation."""
+    d, ula, core = fresh('param', src)
+    nl = newline(ula)
+    s = open(ula, encoding='utf-8', newline='').read()
+    m = re.search(r'ula_mux #\(NUBITS\) ula_mux_jz \(.*?\.out\(out_jz\)\);', s, re.S)
+    if not m:
+        sys.exit('fast mux instance not found')
+    terms, names = [], []
+    for code, inp, par in ARMS:
+        if inp == 'smx':
+            continue
+        t = f't{code}'
+        names.append(t)
+        sel = f"(op == 6'd{code}) ? {inp} : {{NUBITS{{1'b0}}}}"
+        if par is None:
+            terms.append(f'wire [NUBITS-1:0] {t} = {sel};')
+        else:
+            terms.append(f'wire [NUBITS-1:0] {t}; generate if (({par}) != 0) begin : g{code} assign {t} = {sel}; end '
+                         f"else begin : g{code} assign {t} = {{NUBITS{{1'b0}}}}; end endgenerate")
+    fast = (nl.join(['// experiment: the fast mux, one term per non-normalised operation the',
+                     '// program has (a term that is not generated is a constant 0)'] + terms) + nl +
+            'wire [NUBITS-1:0] out_jz = ' + ' | '.join(names) + ';')
+    s = s.replace(m.group(0), fast, 1)
+    s = s.replace('wire [NUBITS-1:0] out_jz;' + nl, '', 1)
+    norm_codes = [(c, p) for c, i, p in ARMS if i == 'smx']
+    old = ("wire is_norm = (op == 6'd3) | (op == 6'd5) | (op == 6'd7) | (op == 6'd25) | (op == 6'd26) |" + nl +
+           "               (op == 6'd46) | (op == 6'd47) | (op == 6'd48);" + nl +
+           'assign out = (is_norm) ? smx : out_jz;')
+    if s.count(old) != 1:
+        sys.exit('2-input mux not found')
+    any_norm = ' | '.join(p for c, p in norm_codes)
+    is_norm = ' | '.join(f"((({p}) != 0) & (op == 6'd{c}))" for c, p in norm_codes)
+    new = (f'generate if (({any_norm}) != 0) begin : norm_out' + nl +
+           f'\twire is_norm = {is_norm};' + nl +
+           '\tassign out = (is_norm) ? smx : out_jz;' + nl +
+           'end else begin : norm_out' + nl +
+           '\tassign out = out_jz;                  // no normalised operation: no 2-input mux' + nl +
+           'end endgenerate')
+    s = s.replace(old, new)
+    open(ula, 'w', encoding='utf-8', newline='').write(s)
+    return d
+
+
+def pcase(src):
+    """param with the fast mux in the instruction decoder's style (Luciano,
+    2026-10-15): a function with one case row per non-normalised operation,
+    each row guarded by its opcode parameter, default 0, driven by a
+    continuous assignment (as instr_dec.v: an always @ (*) would stay X in
+    Icarus until an input changes)."""
+    d, ula, core = fresh('pcase', src)
+    nl = newline(ula)
+    s = open(ula, encoding='utf-8', newline='').read()
+    a = s.index('// experiment: the fast mux, one term per non-normalised operation the')
+    b = s.index('wire [NUBITS-1:0] out_jz = ')
+    b = s.index(';', b) + 1
+    rows = [(c, i, p) for c, i, p in ARMS if i != 'smx']
+    ins = []
+    for c, i, p in rows:
+        if i not in ins:
+            ins.append(i)
+    args = ', '.join(f'a_{i}' for i in ins)
+    lines = ['// experiment: the fast mux in the instruction decoder\'s style: one row per',
+             '// non-normalised operation, guarded by its opcode parameter, default 0',
+             f'function [NUBITS-1:0] fast_mux(input [5:0] o, input [NUBITS-1:0] {args});',
+             'begin',
+             "\tfast_mux = {NUBITS{1'b0}};",
+             '\tcase (o)']
+    for c, i, p in rows:
+        guard = '' if p is None else f'if ({p}) '
+        lines.append(f"\t6'd{c:<2}: {guard}fast_mux = a_{i};")
+    lines += ['\tdefault: ;', '\tendcase', 'end', 'endfunction',
+              'wire [NUBITS-1:0] out_jz = fast_mux(op, ' + ', '.join(ins) + ');']
+    s = s[:a] + nl.join(lines) + s[b:]
+    open(ula, 'w', encoding='utf-8', newline='').write(s)
+    return d
+
+
+def pnorm(src):
+    """param with the normaliser's input mux (norm_mux) generated from the
+    opcode parameters too (2026-10-15): each row guarded by its operation's
+    parameter, default 0 instead of x. Built from param, not pcase."""
+    d, ula, core = fresh('pnorm', src)
+    nl = newline(ula)
+    edit(ula, '\tparameter DIR    =  0' + nl + ')(' + nl + '\t input [         5:0] op  ,' + nl +
+              '\t input [NUBITS+G+1:0] fadd,',
+              '\tparameter DIR    =  0,' + nl +
+              '\t// experiment: which operations the program has (default: all, as before)' + nl +
+              '\tparameter P_FADD = 1, P_FSU1 = 1, P_FSU2 = 1, P_FMLT = 1, P_FDIV = 1,' + nl +
+              '\tparameter P_I2F  = 1, P_I2FM = 1, P_FROT = 1' + nl +
+              ')(' + nl + '\t input [         5:0] op  ,' + nl + '\t input [NUBITS+G+1:0] fadd,')
+    rows = [("6'd3   : imux_l =  fadd ;", 'P_FADD'), ("6'd5   : imux_l =  fmlt ;", 'P_FMLT'),
+            ("6'd7   : imux_l =  fdiv ;", 'P_FDIV'), ("6'd25  : imux_l =   i2f ;", 'P_I2F'),
+            ("6'd26  : imux_l =   i2fm;", 'P_I2FM'), ("6'd46  : imux_l =  frot ;", 'P_FROT'),
+            ("6'd47  : imux_l =  fadd ;", 'P_FSU1'), ("6'd48  : imux_l =  fadd ;", 'P_FSU2'),
+            ("6'd5   : imux_d =  fmlt ;", 'P_FMLT'), ("6'd7   : imux_d =  fdiv ;", 'P_FDIV')]
+    for row, p in rows:
+        code, rest = row.split(':', 1)
+        edit(ula, row, f'{code}: if ({p}) {rest.strip()}')
+    edit(ula, "\tdefault: imux_l = {NUBITS+G+2{1'bx}};", "\tdefault: imux_l = {NUBITS+G+2{1'b0}};")
+    edit(ula, "\tdefault: imux_d = {NUBITS+G+2{1'bx}};", "\tdefault: imux_d = {NUBITS+G+2{1'b0}};")
+    # the case rows above leave imux_l unassigned when a guard is off: give it
+    # a value first, so it never becomes a latch
+    edit(ula, 'always @ (*) case (op)' + nl + "\t6'd3   : if (P_FADD)",
+              "always @ (*) begin imux_l = {NUBITS+G+2{1'b0}}; case (op)" + nl + "\t6'd3   : if (P_FADD)")
+    edit(ula, "\tdefault: imux_l = {NUBITS+G+2{1'b0}};" + nl + 'endcase',
+              "\tdefault: imux_l = {NUBITS+G+2{1'b0}};" + nl + 'endcase end')
+    edit(ula, 'always @ (*) case (op)' + nl + "\t6'd5   : if (P_FMLT) imux_d",
+              "always @ (*) begin imux_d = {NUBITS+G+2{1'b0}}; case (op)" + nl + "\t6'd5   : if (P_FMLT) imux_d")
+    edit(ula, "\tdefault: imux_d = {NUBITS+G+2{1'b0}};" + nl + 'endcase',
+              "\tdefault: imux_d = {NUBITS+G+2{1'b0}};" + nl + 'endcase end')
+    edit(ula, '(FROUND != 0) && ((F_MLT | F_DIV) != 0))                                                            // DIR: someone takes the direct path',
+              '(FROUND != 0) && ((F_MLT | F_DIV) != 0),                                                             // DIR: someone takes the direct path' + nl +
+              '\t(F_ADD != 0), (F_SU1 != 0), (F_SU2 != 0), (F_MLT != 0), (F_DIV != 0), (I2F != 0), (I2F_M != 0), (F_ROT != 0))   // experiment')
+    return d
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     d = os.path.join(ROOT, 'SAPHO')
-    for step in (stg4, jz, lzc, addr, split):
+    variants = {}
+    for step in (stg4, jz, lzc, addr, split, param):
         d = step(d)
+        variants[step.__name__] = d
         print('built', os.path.relpath(d, ROOT))
+    for step in (pcase, pnorm):                  # both start from param
+        print('built', os.path.relpath(step(variants['param']), ROOT))
 
 
 if __name__ == '__main__':
