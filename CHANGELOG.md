@@ -8,6 +8,19 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **`Scripts/hw/path_groups.py`**: the worst path of each destination block
+  in a long timing report. `fmax.sh` and `vfmax.sh` now write the 3000 worst
+  paths (`many_paths.txt`), so the block that limits after the worst one is
+  no longer hidden behind it.
+
+### Fixed
+- **`Scripts/hw/fmax.sh` and `vfmax.sh` copy the two `.mif`.** Since v7.1 the
+  generated Verilog names its memories by bare name, and the scripts copied
+  only the `.v`: a fit would have run with an empty program memory. They now
+  copy both `.mif` beside the project and stop if the tool reports one
+  missing.
+
 ## [v7.1] – 2026-10-13
 
 There is no v7.0: the links between processors (`toma`/`cade`) were

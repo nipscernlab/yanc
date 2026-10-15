@@ -13,6 +13,7 @@ All paths assume the repo at `/c/nipscern/yanc` under an **MSYS2 login shell**
 | `elab_single.sh` | iverilog | does each float operator still elaborate **alone** (one `generate` branch at a time)? Catches a block that stopped being gated by the opcodes |
 | `area.sh` | yosys | LUT4 count and critical-path depth per operator set |
 | `fmax.sh` | Quartus Prime Lite | real Fmax and ALMs of a processor the regress already built, its 10 worst register-to-register paths, and the worst one grouped by block (`path_blocks.py`): memory read, operand select, each ALU operator, output mux, jump decision, PC. Time the whole design on `sapho_all` (every block in, `#FROUND 2`) |
+| `path_groups.py` | python3 | the worst path of each destination block in a long timing report (`many_paths.txt`, written by `fmax.sh` and `vfmax.sh`): the first thousands of paths can all end at one register bank and hide the next block that limits. To look behind a block, rerun `quartus_sta` on the fitted project with that block's registers as false paths (lines in `docs/design/pipeln-and-division.md` 4.1); no new fit |
 | `tb_fdiv.v` | iverilog | the divider array against Verilog's `/` and `%`, 20000 random operands |
 | `tb_fifo.v` | iverilog | `SAPHO/myFIFO.v` against what a FIFO between SAPHOs needs: the word of the `wrreq` cycle, a full FIFO refusing a write, a read right after a write. The FIFO before its fix failed all three; the regress `FIFO` pass runs it (`docs/design/myfifo.md`) |
 | `tb_dcfifo.v` | iverilog | `SAPHO/myDCFIFO.v`, the FIFO between two clocks: the word of the `wrreq` cycle, LENGTH words fit and the next is refused, a word reaches the reader, 300 words with random pauses on both sides arrive once and in order. Run it both ways round (`WH`/`RH`, the half periods); the regress `FIFO` pass does |
@@ -48,13 +49,19 @@ constant produces such a word — see the comment on `ula_fcmp`. A non-zero coun
 there is expected and roughly width-dependent (100/4000 at 8/4/3, 3/4000 at
 64/52/11).
 
-## Two traps, both measured
+## Three traps
 
-- **Yosys `synth` shares resources** (SAT-based `share`): it merges mutually
+- **The `.mif` must sit beside the project** (deduced, 2026-10-14; no fit was
+  run without them). Since v7.1 the generated Verilog names its memories by
+  bare name. `fmax.sh` and `vfmax.sh` copy both `.mif` into the folder the
+  tool runs in and stop if the tool reports one missing; without them the
+  program memory would be empty and the synthesis free to prune the
+  processor, giving a false Fmax.
+- **Yosys `synth` shares resources** (measured; SAT-based `share`): it merges mutually
   exclusive operators — `F2I`'s shifters with the normaliser's — which inflates
   the reported depth by ~7 levels and is something Quartus does not do. Always
   pass `NOSHARE=1`.
-- **`abc` is heuristic**: on a netlist Quartus proves identical, Yosys reported
+- **`abc` is heuristic** (measured): on a netlist Quartus proves identical, Yosys reported
   4209 vs 3827 LUT4. Deltas under ~10 % are noise; Quartus is the reference.
 
 `area.sh` works on a copy of `SAPHO/ula.v` (in `.smoke/hw/`, gitignored, where

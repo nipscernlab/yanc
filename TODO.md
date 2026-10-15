@@ -22,8 +22,9 @@ measured, the link costs no clock).
 burst (a whole array through a port at one word a clock, stopping while the
 FIFO is full); the design note lists the holes to close first.
 Also recorded the same day: item 29, a faster clock (the dividers, the
-normaliser, the `JIZ` zero test), and item 30, SAPHO without showing its
-source (parked until a partnership).
+normaliser, the `JIZ` zero test), item 30, SAPHO without showing its
+source (parked until a partnership), and item 31, the Dirac array output
+(a wasted `MLT 1`, a missing form; open).
 
 **Waiting on a decision:** item 21 (documentation that cannot fall behind
 a release): Chrysthofer's proposal arrived on 2026-10-13; Luciano and he
@@ -42,10 +43,11 @@ interrupt, I/O contract); 13 the pre-assembly optimizer and the C++ heap
 arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
 it; 15 the regress on this machine (mitigated); 17 faster fill/copy in
 hardware (measure the index register `X` first; shares its pointer with 28); 24 processors with
-different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst.
+different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst (recorded); 29 a faster
+clock (recorded); 31 the Dirac array output.
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), the reorganisation of the runner/setup scripts, a macOS
-build.
+build, 30 (SAPHO without showing its source, until a partnership).
 
 **Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 11 (consistency at 32
 bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
@@ -825,6 +827,20 @@ encryption license; a netlist service is the vendor-free option. SAPHO up
 to v7.1 is public under MIT and stays so. If it comes: ask Intel and AMD,
 test with a small module then `sapho_all`, decide the licence of future
 versions with UFJF's technology transfer office first.
+
+## 31. The Dirac output of an array: a wasted multiply, a missing form
+
+**Status:** open, found 2026-10-14 while measuring item 28, not fixed ·
+**Area:** cmmcomp (Luciano's code: the diff goes to him first) ·
+**Evidence:** docs/design/burst.md section 1
+
+`out(0, 1|a⟩);` writes each element as `LOD_V a k; MLT 1; OUT 0`: the
+`MLT 1` costs a cycle a word and synthesizes the integer multiplier for a
+multiplication by one (pay only for what you use). And `out(0, |a⟩);`,
+without the scalar, is a syntax error. Fixed, the form is two instructions a
+word (`LOD_V`, `OUT`), the least today's ISA allows, independent of the
+burst. A fixture with the scalar 1 and with none, the golden checking that
+no `MLT` and no multiplier remain.
 
 ## 27. C++ gaps that real embedded code hits
 
