@@ -22,6 +22,10 @@ bash Scripts/hw/clock_exp/eq_norm.sh                       # the tree count give
 HDL=$PWD/.smoke/hw/clock_exp/addr TAG=de10_addr bash Scripts/hw/fmax.sh sapho_all 5CSEBA6U23I7
 ```
 
+`mux_x_cost.py` measures in Yosys what an unused `ula_mux` input tied to `x`
+still costs: `python3 Scripts/hw/clock_exp/mux_x_cost.py` (2026-10-15: 235
+against 229 LUT4 for an integer set, 306 against 253 for a float set).
+
 `tb_norm.v` drives `ula_norm` with random inputs biased to many leading
 zeros and to zero mantissas and prints every output; `eq_norm.sh` runs it
 against `SAPHO/ula.v` and against the `lzc` copy in nine formats and

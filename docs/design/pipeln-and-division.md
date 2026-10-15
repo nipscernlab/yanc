@@ -576,7 +576,7 @@ division (`cmm_cexp`, `sw_test`, `proc_fft`, at the regress's `-f 100 -c
 
 **Does an `x` mux input cost logic?** Measured in Yosys on `ula_mux` alone
 (`synth -flatten -noshare`, `abc -lut 4`), unused inputs at `x` against a mux
-written with only the used arms: integer set (8 of 52 arms) 235 against
+written with only the used arms (`Scripts/hw/clock_exp/mux_x_cost.py`): integer set (8 of 52 arms) 235 against
 229 LUT4, noise; float set (18 arms) 306 against 253, +53 LUT4 (+21 %),
 above `abc`'s ~10 % noise. Every input real: 1,068. So `x` removes most of
 an unused arm but not all of it in a float program; on the whole processor
