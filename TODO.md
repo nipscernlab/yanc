@@ -819,8 +819,9 @@ tree 29.03; + the indirect read index without the normaliser and a 5-stage
 integer divider **32.07 MHz** (+47 % over 21.82). Luciano's split ALU output (one mux
 without the normalised operations, a 2-input mux after it) instead of a
 copied mux: 31.52 MHz with 194 ALMs fewer (3,622). Muxes generated from the opcode
-parameters (`param`): 32.26 MHz with 3,539 ALMs; `pcase` and `pnorm` in
-progress (note 4.3). The tree count is proven
+parameters: `param` 32.26 MHz / 3,539 ALMs, `pcase` (decoder style) 32.52 /
+3,618, `pnorm` (`param` + `norm_mux` guarded) 32.61 / 3,551, the one
+recommended (note 4.3; more seeds before it is final). The tree count is proven
 equal to the chain (1.8 million outputs); the others need the compilers and
 asmcomp (division length, a rule against `JIZ`/`LDI`/`ILI` after a
 normalised operation) before they can be real. Not done: Vivado, seeds,

@@ -599,18 +599,34 @@ when it got it). The other core muxes are already chosen by `generate`
 decoder constant (ALU input 1, deduced to be removed by constant
 propagation, not measured).
 
-`sapho_all` fit: `param` **32.26 MHz, 3,539 ALMs** (below v7.1's 3,558).
+`sapho_all` fits (one each, seed 1):
+
+| variant | Fmax | logic |
+|---|---|---|
+| `split` (case with `x`) | 31.52 MHz | 3,622 ALMs |
+| `param` (OR of terms) | 32.26 MHz | 3,539 ALMs |
+| `pcase` (decoder style) | 32.52 MHz | 3,618 ALMs |
+| `pnorm` (`param` + `norm_mux` guarded) | **32.61 MHz** | **3,551 ALMs** |
+
 Synthesis-only area estimates (Quartus map, `fmax.sh MAPONLY=1`), ALMs:
 
-| program (ops) | stock | split | param | pcase |
-|---|---|---|---|---|
-| `cmm_tiny0` (4) | 29 | 29 | 29 | 29 |
-| `sw_test` (8) | 66 | 66 | 73 | 75 |
-| `cmm_cexp` (18) | 585 | 570 | 543 | 581 |
-| `ProcDTW` (21) | 439 | 439 | 431 | 379 |
+| program (ops) | stock | split | param | pcase | pnorm |
+|---|---|---|---|---|---|
+| `cmm_tiny0` (4) | 29 | 29 | 29 | 29 | 29 |
+| `sw_test` (8) | 66 | 66 | 73 | 75 | 73 |
+| `cmm_cexp` (18) | 585 | 570 | 543 | 581 | 546 |
+| `ProcDTW` (21) | 439 | 439 | 431 | 379 | 431 |
 
-Mixed: estimates of synthesis, not fits, and small designs move by a few
-ALMs either way. Still to run: the `pcase` fit and the `pnorm` battery.
+Reading: on `sapho_all` (every operation present) the four mux forms are
+within one fit's noise for the clock (31.5 to 32.6 MHz) and within ~80 ALMs
+for the area; generating the muxes from the parameters costs nothing and
+takes the area back to v7.1's. On the small programs the estimates move by
+a few ALMs either way and no form wins everywhere (`pcase` best on
+`ProcDTW`, worst on `sw_test`); guarding `norm_mux` too changes nothing
+measurable. Recommendation: `pnorm` (the OR-of-terms fast mux, the 2-input
+mux only with a normalised operation, `norm_mux` guarded): the best
+`sapho_all` result and no `x` arm left, as the pay-only-for-what-you-use
+rule wants. To be confirmed with more seeds before it is final.
 
 What each would need to become the processor, none done:
 
