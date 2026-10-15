@@ -17,5 +17,6 @@ code), what was measured and what was deduced, and most end with a section
 | [burst.md](burst.md) | a whole array through a port, one word per clock, stopping while the FIFO is full (design, not implemented) |
 | [asm-names.md](asm-names.md) | user names that collide in the assembly |
 | [pipeln-and-division.md](pipeln-and-division.md) | the slow dividers: the pipeline tried and dropped, the two register cuts kept |
+| [normalisation-survey.md](normalisation-survey.md) | the known ways to normalise a float on an FPGA, which were tried, which to try next |
 | [precision-and-width-review.md](precision-and-width-review.md) | the float and word-width review (2026-09): the evidence behind TODO items 1 to 9 |
 | [hdl-architecture-audit.md](hdl-architecture-audit.md) | the HDL audit: the evidence behind TODO item 10 |

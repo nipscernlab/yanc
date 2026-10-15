@@ -662,7 +662,10 @@ product by 2^k), a leading-zero count grouped to the 6-input cells of the
 Cyclone V, and rounding injected before the normalisation. Next (Luciano,
 2026-10-15): a literature survey of normalisation for FPGA floating point
 (with sources), then choose which to try, first those that serve every
-operation and those specific to FPGAs.
+operation and those specific to FPGAs. Done the same day:
+[normalisation-survey.md](normalisation-survey.md) (thirteen methods, four
+tried, four not applicable; to try next, the shift through a DSP multiplier,
+then rounding only on the short shifts).
 
 What each would need to become the processor, none done:
 
