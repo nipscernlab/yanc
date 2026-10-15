@@ -1,6 +1,6 @@
 # Clock experiments (2026-10-15)
 
-Four changes to the processor, timed on `sapho_all` to see how far the clock
+Changes to the processor, timed on `sapho_all` to see how far the clock
 goes without the dividers and the float path limiting it. They are
 **experiments**: `make_variants.py` builds them as copies of `SAPHO/` under
 `.smoke/hw/clock_exp/` and nothing in `SAPHO/` changes. Results, and what
@@ -14,6 +14,7 @@ section 4.3 and TODO item 29.
 | `jz` | `JIZ` tests a copy of the ALU output mux with the normaliser input tied to 0 |
 | `lzc` | the normaliser's leading-zero count as a tree (`ula_lzc`) instead of a chain of W-1 muxes; same results |
 | `addr` | the indirect read index (`LDI`/`ILI`) from that same fast output; the integer divider in 5 stages |
+| `split` | `addr` with the ALU output split instead of copied: one mux of the non-normalised operations (`out_fast`) and a 2-input mux choosing the normaliser for the accumulator |
 
 ```sh
 python3 Scripts/hw/clock_exp/make_variants.py

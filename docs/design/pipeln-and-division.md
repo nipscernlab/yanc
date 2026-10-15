@@ -552,6 +552,38 @@ Facts behind them:
   in the 87 C± goldens: 450 `JIZ`, 141 `LDI`, 42 `ILI`, none after such an
   operation. The C++ side was not counted.
 
+**The ALU output split instead of copied** (Luciano's proposal, 2026-10-15).
+`jz` and `addr` copy the whole `ula_mux` with the normaliser input tied to
+0. The cleaner structure: one mux of the operations that do not go through
+the normaliser (`out_fast`, read by `JIZ` and the indirect index, the
+normalised operations at `x` in it) and, after it, a 2-input mux choosing
+the normaliser's output for the eight codes of the `norm_mux` list (3, 5,
+7, 25, 26, 46, 47, 48; `out`, to the accumulator). Variant `split` (`addr`
+with that change), one fit:
+
+| variant | Fmax | logic |
+|---|---|---|
+| `addr` (copied mux) | 32.07 MHz | 3,816 ALMs |
+| `split` | 31.52 MHz | 3,622 ALMs |
+
+194 ALMs fewer, back near `stg4`'s 3,602, and the clock within one fit's
+noise (the worst path's data delay is shorter, 29.1 against 30.9 ns; the
+slack is worse by the clock skew of this placement). The 2-input mux is one
+cell on the worst path (2.6 ns, most of it wire), as expected. `split` was
+also simulated against stock `SAPHO/` on three float programs without a
+division (`cmm_cexp`, `sw_test`, `proc_fft`, at the regress's `-f 100 -c
+100000`): the outputs are equal to stock and to the goldens.
+
+**Does an `x` mux input cost logic?** Measured in Yosys on `ula_mux` alone
+(`synth -flatten -noshare`, `abc -lut 4`), unused inputs at `x` against a mux
+written with only the used arms: integer set (8 of 52 arms) 235 against
+229 LUT4, noise; float set (18 arms) 306 against 253, +53 LUT4 (+21 %),
+above `abc`'s ~10 % noise. Every input real: 1,068. So `x` removes most of
+an unused arm but not all of it in a float program; on the whole processor
+that is about 1 %. Generating the arms from the opcode parameters would take
+it out (the rule of pay-only-for-what-you-use: `x` is a fallback). One run,
+Yosys, not Quartus.
+
 What each would need to become the processor, none done:
 
 1. More division stages: `asm_divseq` in both compilers and asmcomp's check
@@ -561,8 +593,9 @@ What each would need to become the processor, none done:
    division changes.
 2. The `JIZ` and the indirect index without the normaliser: asmcomp refuses
    (or pads with a `NOP`) a `JIZ`/`LDI`/`ILI` right after a normalised
-   operation; the C++ goldens counted; `ula_mux` duplicated only where the
-   program has a normalised operation (pay only for what you use).
+   operation; the C++ goldens counted; the split structure of `split`
+   rather than a copy of the mux, built only where the program has a
+   normalised operation (pay only for what you use).
 3. The tree count: `ula_lzc` in `SAPHO/ula.v` and `eq_norm.sh` kept as a
    test; `elab.sh`, `elab_single.sh` and `tb_alu.sh` on it.
 4. All: the regress, area (`area.sh`; the fits show 3,558 -> 3,816 ALMs

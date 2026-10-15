@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""make_variants.py: build the four clock experiments of 2026-10-15 as copies of
+"""make_variants.py: build the clock experiments of 2026-10-15 as copies of
 SAPHO/ under .smoke/hw/clock_exp/ (nothing in SAPHO/ changes).
 
   stg4  both dividers in 4 stages (one more register cut each)
@@ -7,6 +7,8 @@ SAPHO/ under .smoke/hw/clock_exp/ (nothing in SAPHO/ changes).
   lzc   jz + the normaliser's leading-zero count as a tree (same results)
   addr  lzc + the indirect read index from that same output, and the
         integer divider in 5 stages
+  split addr with the ALU output split, not copied: one mux of the non-normalised
+        operations and a 2-input mux after it for the normaliser
 
 Each later variant contains the earlier ones. Time one with
   HDL=$PWD/.smoke/hw/clock_exp/<name> TAG=<tag> bash Scripts/hw/fmax.sh sapho_all 5CSEBA6U23I7
@@ -187,10 +189,38 @@ def addr(src):
     return d
 
 
+def split(src):
+    """addr with the ALU output split instead of copied (Luciano, 2026-10-15):
+    one mux of the operations that do not go through the normaliser (out_fast,
+    for JIZ and the indirect index), and a 2-input mux after it choosing the
+    normaliser's output for the operations that need it (out, for the
+    accumulator). No second copy of the big mux."""
+    d, ula, core = fresh('split', src)
+    nl = newline(ula)
+    s = open(ula, encoding='utf-8', newline='').read()
+    m = re.search(r'ula_mux #\(NUBITS\) ula_mux \(.*?\.out\(out\)\);', s, re.S)
+    if not m:
+        sys.exit('main mux instance not found')
+    s = s.replace(m.group(0), '// experiment: the full-width mux is gone, see out_fast below', 1)
+    # the copy becomes the only big mux; the normalised operations are don't-care there
+    s = s.replace('.smx({NUBITS{1\'b0}}),', ".smx({NUBITS{1'bx}}),   // experiment: never read (the normalised operations take smx below)")
+    old = 'assign jz_nz = |out_jz;' + nl + 'assign out_fast = out_jz;'
+    if s.count(old) != 1:
+        sys.exit('fast output not found')
+    new = (old + nl +
+           '// experiment: the operations that go through the normaliser (the norm_mux list)' + nl +
+           "wire is_norm = (op == 6'd3) | (op == 6'd5) | (op == 6'd7) | (op == 6'd25) | (op == 6'd26) |" + nl +
+           "               (op == 6'd46) | (op == 6'd47) | (op == 6'd48);" + nl +
+           'assign out = (is_norm) ? smx : out_jz;')
+    s = s.replace(old, new)
+    open(ula, 'w', encoding='utf-8', newline='').write(s)
+    return d
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     d = os.path.join(ROOT, 'SAPHO')
-    for step in (stg4, jz, lzc, addr):
+    for step in (stg4, jz, lzc, addr, split):
         d = step(d)
         print('built', os.path.relpath(d, ROOT))
 
