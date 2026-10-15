@@ -13,6 +13,7 @@ All paths assume the repo at `/c/nipscern/yanc` under an **MSYS2 login shell**
 | `elab_single.sh` | iverilog | does each float operator still elaborate **alone** (one `generate` branch at a time)? Catches a block that stopped being gated by the opcodes |
 | `area.sh` | yosys | LUT4 count and critical-path depth per operator set |
 | `fmax.sh` | Quartus Prime Lite | real Fmax and ALMs of a processor the regress already built, its 10 worst register-to-register paths, and the worst one grouped by block (`path_blocks.py`): memory read, operand select, each ALU operator, output mux, jump decision, PC. Time the whole design on `sapho_all` (every block in, `#FROUND 2`) |
+| `clock_exp/` (`make_variants.py`, `eq_norm.sh`, `tb_norm.v`) | python3, iverilog, Quartus | the clock experiments of 2026-10-15 (four variants of `SAPHO/` built under `.smoke/hw/clock_exp/`, timed with `HDL=<dir> fmax.sh`), and the proof that the tree leading-zero count gives the same normaliser output; see `clock_exp/README.md` |
 | `path_groups.py` | python3 | the worst path of each destination block in a long timing report (`many_paths.txt`, written by `fmax.sh` and `vfmax.sh`): the first thousands of paths can all end at one register bank and hide the next block that limits. To look behind a block, rerun `quartus_sta` on the fitted project with that block's registers as false paths (lines in `docs/design/pipeln-and-division.md` 4.1); no new fit |
 | `tb_fdiv.v` | iverilog | the divider array against Verilog's `/` and `%`, 20000 random operands |
 | `tb_fifo.v` | iverilog | `SAPHO/myFIFO.v` against what a FIFO between SAPHOs needs: the word of the `wrreq` cycle, a full FIFO refusing a write, a read right after a write. The FIFO before its fix failed all three; the regress `FIFO` pass runs it (`docs/design/myfifo.md`) |
@@ -32,6 +33,7 @@ bash Scripts/hw/elab_single.sh          # after touching a generate guard
 NOSHARE=1 bash Scripts/hw/area.sh 2 fadd fmlt all_nodiv     # level 2, three configurations
 NUBITS=64 NBMANT=52 NBEXPO=11 NOSHARE=1 bash Scripts/hw/area.sh 0 fadd
 bash Scripts/hw/fmax.sh cmm_cexp                            # after Scripts/regress.sh built it
+HDL=$PWD/.smoke/hw/clock_exp/addr TAG=exp bash Scripts/hw/fmax.sh sapho_all 5CSEBA6U23I7   # a modified copy of SAPHO/
 FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp              # same program forced to #FROUND 2
 iverilog -g2012 -s tb -o tb.vvp Scripts/hw/tb_fdiv.v SAPHO/ula.v && vvp -n tb.vvp
 iverilog -g2012 -s tb_fifo -o f.vvp Scripts/hw/tb_fifo.v SAPHO/myFIFO.v && vvp -n f.vvp

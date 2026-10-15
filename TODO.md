@@ -44,7 +44,7 @@ arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
 it; 15 the regress on this machine (mitigated); 17 faster fill/copy in
 hardware (measure the index register `X` first; shares its pointer with 28); 24 processors with
 different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst (recorded); 29 a faster
-clock (recorded); 31 the Dirac array output.
+clock (timed: 32 MHz in experiments); 31 the Dirac array output.
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), the reorganisation of the runner/setup scripts, a macOS
 build, 30 (SAPHO without showing its source, until a partnership).
@@ -810,8 +810,18 @@ With both fixed: ~23.6 MHz, limited by `F_ADD` into the `JIZ` decision.
 Behind it, without new registers: the `JIZ` zero test computed early (every
 path loses ~4 ns), and a faster shared normaliser (44-48 % of every float
 path; leading-zero anticipation, no shared input mux); a two-path float
-adder only after those. Not measured: the Zynq side, and any real fit with
-a change.
+adder only after those.
+
+**Timed 2026-10-15 (Luciano's request; experiments, not in `SAPHO/`):** one
+Quartus fit each on the DE10-Nano part: 4-stage dividers 26.39 MHz; + `JIZ`
+without the normaliser 28.49; + the normaliser's leading-zero count as a
+tree 29.03; + the indirect read index without the normaliser and a 5-stage
+integer divider **32.07 MHz** (+47 % over 21.82). The tree count is proven
+equal to the chain (1.8 million outputs); the others need the compilers and
+asmcomp (division length, a rule against `JIZ`/`LDI`/`ILI` after a
+normalised operation) before they can be real. Not done: Vivado, seeds,
+regress, area review. Rebuild with `Scripts/hw/clock_exp/`; section 4.3 of
+the note lists the steps.
 
 ## 30. SAPHO synthesized without showing its source (if a partnership comes)
 

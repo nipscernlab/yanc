@@ -1,7 +1,7 @@
 #!/bin/bash
 # Real Fmax and ALM count of a generated processor, through Quartus Prime Lite.
 #
-# Usage:  [FR=<0|1|2>] [TAG=<name>] [SEED=<n>] bash Scripts/hw/fmax.sh <proc> [device] [family]
+# Usage:  [FR=<0|1|2>] [TAG=<name>] [SEED=<n>] [HDL=<dir>] bash Scripts/hw/fmax.sh <proc> [device] [family]
 # e.g.    bash Scripts/hw/fmax.sh cmm_cexp
 #         FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp
 #
@@ -43,7 +43,8 @@ cp "$WORK/$PROC.v" .
 cp "$WORK/${PROC}_data.mif" "$WORK/${PROC}_inst.mif" .
 [ -n "$FR" ] && sed -i "s/\.FROUND([0-9])/.FROUND($FR)/" "$PROC.v"
 
-HDLW=$(cygpath -m "$ROOT/SAPHO" 2>/dev/null || echo "$ROOT/SAPHO")
+HDL=${HDL:-$ROOT/SAPHO}     # HDL=<dir>: time a modified copy of SAPHO/ (an experiment) instead
+HDLW=$(cygpath -m "$HDL" 2>/dev/null || echo "$HDL")
 
 cat > clk.sdc <<EOF
 create_clock -period 10.000 -name clk [get_ports clk]

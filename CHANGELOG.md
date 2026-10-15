@@ -13,6 +13,12 @@ tags consumed by Aurora.
   in a long timing report. `fmax.sh` and `vfmax.sh` now write the 3000 worst
   paths (`many_paths.txt`), so the block that limits after the worst one is
   no longer hidden behind it.
+- **`fmax.sh` and `vfmax.sh` take `HDL=<dir>`** (time a modified copy of
+  `SAPHO/`), and `vfmax.sh` a `TAG`. **`Scripts/hw/clock_exp/`** builds the
+  four clock experiments of 2026-10-15 and checks that the tree leading-zero
+  count gives the normaliser's output unchanged; `sapho_all` reached 32.07
+  MHz on the DE10-Nano part against 21.82 (experiments only, `SAPHO/`
+  unchanged; docs/design/pipeln-and-division.md 4.3).
 
 ### Fixed
 - **`Scripts/hw/fmax.sh` and `vfmax.sh` copy the two `.mif`.** Since v7.1 the

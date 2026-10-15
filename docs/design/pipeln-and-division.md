@@ -520,6 +520,57 @@ once; 2 only if `F_ADD` is still ahead after that. If the normaliser lost
 half of its ~17 ns, the accumulator paths would be ~26-28 ns, near 30 MHz;
 speculation, since the path behind those was not looked at.
 
+### 4.3 The experiments, timed (2026-10-15)
+
+Luciano asked to try the combination of 4.1 and 4.2 and see whether
+`sapho_all` reaches 30 MHz. Four variants, each containing the one before,
+built as copies of `SAPHO/` by `Scripts/hw/clock_exp/make_variants.py`
+(nothing in `SAPHO/` changed), one Quartus fit each on the DE10-Nano part
+(5CSEBA6U23I7, slow 100C model, seed 1):
+
+| variant | change | Fmax | worst path after |
+|---|---|---|---|
+| v7.1 (2026-10-11) | -- | 21.82 MHz | integer divider part 1 |
+| `stg4` | both dividers in 4 stages | 26.39 MHz | `F_ADD` -> normaliser -> `JIZ` -> PC, 35.8 ns |
+| `jz` | + `JIZ` reads an ALU output without the normaliser | 28.49 MHz | integer divider part 1, 33.0 ns; second, `F_ADD` -> normaliser -> indirect read index -> data memory, 34.7 ns delay |
+| `lzc` | + the normaliser's leading-zero count as a tree | 29.03 MHz | integer divider part 1, 31.9 ns (all 3000 worst paths) |
+| `addr` | + the indirect read index from the same fast output, integer divider in 5 stages | **32.07 MHz** (+47 %) | `F_ADD` -> normaliser -> accumulator, 30.9 ns (denorm 7.5, add 2.6, normaliser 14.8) |
+
+Facts behind them:
+
+- The placement changes with every fit: `stg4` came out at 26.4 MHz where
+  the estimate on the old placement (4.1) said 23.6. The estimates of 4.1
+  and 4.2 were conservative.
+- The tree leading-zero count (`ula_lzc`) gives the same normaliser output
+  as the chain: 200000 random inputs in each of nine formats and rounding
+  levels (4 to 52 mantissa bits, `#FROUND` 0, 1, 2), 1.8 million outputs,
+  all equal (`Scripts/hw/clock_exp/eq_norm.sh`). It is the only change of
+  the four that keeps every program's behaviour.
+- `jz` and `addr` rely on a rule: no `JIZ`, `LDI` or `ILI` right after an
+  operation that goes through the normaliser (`F_ADD`, `F_SU1`, `F_SU2`,
+  `F_MLT`, `F_DIV`, `I2F`, `I2F_M`, `F_ROT` and their stack forms). Counted
+  in the 87 C± goldens: 450 `JIZ`, 141 `LDI`, 42 `ILI`, none after such an
+  operation. The C++ side was not counted.
+
+What each would need to become the processor, none done:
+
+1. More division stages: `asm_divseq` in both compilers and asmcomp's check
+   write `<div> x; NOP; NOP; QUO` (four words; five for `DIV`/`MOD` in
+   `addr`), derived from the stage parameter, not a constant (derive from
+   widths); every golden with a division moves; hand-written `.asm` with a
+   division changes.
+2. The `JIZ` and the indirect index without the normaliser: asmcomp refuses
+   (or pads with a `NOP`) a `JIZ`/`LDI`/`ILI` right after a normalised
+   operation; the C++ goldens counted; `ula_mux` duplicated only where the
+   program has a normalised operation (pay only for what you use).
+3. The tree count: `ula_lzc` in `SAPHO/ula.v` and `eq_norm.sh` kept as a
+   test; `elab.sh`, `elab_single.sh` and `tb_alu.sh` on it.
+4. All: the regress, area (`area.sh`; the fits show 3,558 -> 3,816 ALMs
+   from v7.1 to `addr`), the Vivado side (not timed), more seeds.
+
+Behind 32 MHz the float add itself limits (30.9 ns to the accumulator): the
+shift and the rounding inside the normaliser, or the two-path adder of 4.2.
+
 ## 5. Tools kept from this work
 
 - `Scripts/hw/fmax.sh`: `SEED=<n>` (compare a change across seeds: one fit

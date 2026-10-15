@@ -3,7 +3,7 @@
 # counterpart of fmax.sh (Quartus). Out of context: no pins, the timing of the
 # processor itself against a 10 ns clock, after placement and routing.
 #
-# Usage:  bash Scripts/hw/vfmax.sh <proc> [part]
+# Usage:  [TAG=<name>] [HDL=<dir>] bash Scripts/hw/vfmax.sh <proc> [part]
 #         bash Scripts/hw/vfmax.sh sapho_all                 # ZYBO: xc7z010clg400-1
 #
 # <proc> is a processor the regress already built (.smoke/work/<proc>/<proc>/
@@ -18,7 +18,7 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 VIVADO=${VIVADO:-/c/AMDDesignTools/2025.2/Vivado/bin/vivado.bat}
 TOP="$ROOT/.smoke/work/$PROC/$PROC/$PROC.v"
 OUT="$ROOT/.smoke/hw"
-DIR="$OUT/${PROC}_${PART}"
+DIR="$OUT/${PROC}_${PART}${TAG:+_$TAG}"
 
 [ -f "$TOP" ] || { echo "no $TOP -- run Scripts/regress.sh first"; exit 1; }
 [ -f "$VIVADO" ] || { echo "Vivado not at $VIVADO (set VIVADO=...)"; exit 1; }
@@ -31,7 +31,7 @@ W() { cygpath -m "$1" 2>/dev/null || echo "$1"; }
 # A copy of SAPHO/ with both memories asked into block RAM, as Quartus puts
 # them: left alone, Vivado builds the program ROM (its contents are known) out
 # of LUTs, which lengthens every path that ends at the instruction fetch.
-cp "$ROOT"/SAPHO/*.v hdl/
+cp "${HDL:-$ROOT/SAPHO}"/*.v hdl/      # HDL=<dir>: a modified copy of SAPHO/ (an experiment)
 sed -i 's/^reg \[NBDATA-1:0\] mem \[0:NADDRE-1\];/(* ram_style = "block", rom_style = "block" *) reg [NBDATA-1:0] mem [0:NADDRE-1];/' hdl/processor.v
 [ "$(grep -c 'rom_style = "block"' hdl/processor.v)" = 2 ] || { echo "vfmax: could not mark the memories"; exit 1; }
 # Vivado 2025.2 sometimes stops in opt_design with an empty "[Synth 20-411]"
@@ -47,4 +47,4 @@ done
 if grep -qiE 'could not open.*\.mif|readmem.*(not|cannot).*open' vivado.log; then
     echo "$PROC: a .mif was not found -- the memories would be empty"; grep -m3 -i 'mif' vivado.log; exit 1
 fi
-cat result.txt | tee -a "$OUT/vfmax.txt"
+sed "s/\$/${TAG:+ ($TAG)}/" result.txt | tee -a "$OUT/vfmax.txt"
