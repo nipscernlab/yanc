@@ -665,7 +665,9 @@ Cyclone V, and rounding injected before the normalisation. Next (Luciano,
 operation and those specific to FPGAs. Done the same day:
 [normalisation-survey.md](normalisation-survey.md) (thirteen methods, four
 tried, four not applicable; to try next, the shift through a DSP multiplier,
-then rounding only on the short shifts).
+then rounding only on the short shifts). Then the untried methods were
+built and checked (survey section 4), `rshort` fitted with no gain, and
+Luciano decided: `pnorm` stays, normaliser unchanged.
 
 What each would need to become the processor, none done. The target is
 `pnorm` (32.61 / 32.25 MHz on seeds 1 and 2, 3,551 ALMs against v7.1's

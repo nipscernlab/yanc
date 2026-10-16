@@ -239,7 +239,9 @@ The normaliser did get 2.2 ns shorter, but the add on the same path grew
 from 3.1 to 4.5 ns in this placement and the path total is the same; the
 1 % in clock is seed noise. Same `F_ADD` -> normaliser path in both.
 
-Not done: the other fits. `lza` and `twopath` also
+**Decision (Luciano, 2026-10-15): `pnorm` stays.** The normaliser is not
+changed. Not fitted, and parked: `twopath`, `dsp`, `lza` (still built by
+`make_variants.py` and checked by `eq_fops.sh` if the question comes back). `lza` and `twopath` also
 take `F_ADD` out of the leading-zero path, so with them the count serves
 only `I2F`, `I2F_M`, `F_ROT` and `F_MLT`/`F_DIV` at `#FROUND 0`.
 
