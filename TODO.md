@@ -232,9 +232,10 @@ project).
 
 ## 8. ALU datapath restructuring (depth and area)
 
-**Status:** the six planned steps are done (below); what is left is to
-measure where the critical path of the whole processor lies now, and decide
-from that · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.6](docs/design/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/design/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
+**Status:** the six planned steps are done (below); the critical path of
+the whole processor was measured under item 29 (2026-10-14 to 16: the
+dividers, then `F_ADD` -> normaliser once they are cut); what follows is
+item 29's plan · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.6](docs/design/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/design/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
 
 The ALU is combinational and every instruction takes one cycle, so the ALU
 sits on the path that sets the clock. Measured before the steps (Yosys,
@@ -797,10 +798,59 @@ index register: design the two together.
 
 ## 29. A faster clock behind the dividers
 
-**Status:** measured and recorded, not to be implemented yet (Luciano,
-2026-10-14) · **Area:** `SAPHO/ula.v` (dividers, normaliser, float adder),
-`SAPHO/core.v` (`JIZ`), `asm_divseq` · **Evidence:**
-docs/design/pipeln-and-division.md sections 4.1 and 4.2
+**Status:** studies finished, `pnorm` chosen (32.61 MHz, 3,551 ALMs against
+v7.1's 21.82 / 3,558); implementation PLANNED in nine commits (below,
+2026-10-16), three questions open for Luciano · **Area:** `SAPHO/ula.v`
+(dividers, normaliser, muxes), `SAPHO/core.v` (`JIZ`, indirect index),
+`asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
+section 4.3, normalisation-survey.md, fadd-survey.md
+
+**Implementation plan (agreed shape, 2026-10-16; start here next session).**
+Each step one commit: quick checks during it, then a full regress (heavy,
+mains power), Luciano's "sim", commit and push, `Scripts/aurora.bat`. The
+code of each step is what `Scripts/hw/clock_exp/make_variants.py` builds
+(`lzc`, `param`/`pnorm`, `jz`, `addr`, `stg4`).
+
+1. Leading-zero count as a tree (`ula_lzc`) instead of the chain. Results
+   identical (proven, `eq_norm.sh`); `tb_alu.sh`, regress, goldens unchanged.
+2. Muxes generated from the opcode parameters: fast mux as an OR of one term
+   per operation present, the 2-input mux only with a normalised operation,
+   `norm_mux` guarded. `JIZ` still reads the full output, so nothing changes
+   for programs; area check (`fmax.sh MAPONLY=1` on tiny0, sw_test, cexp,
+   ProcDTW).
+3. asmcomp rule, check only: no `JIZ`/`LDI`/`ILI` right after an operation
+   that goes through the normaliser (`F_ADD`, `F_SU1`, `F_SU2`, `F_MLT`,
+   `F_DIV`, `I2F`, `I2F_M`, `F_ROT` and stack forms). Run the regress to see
+   whether any program breaks it (87 C± goldens: none; C++ never counted).
+4. `JIZ` reads the fast output (`core.v`).
+5. `LDI`/`ILI` index from the fast output.
+6. The number of NOPs of a division from a parameter in `asm_divseq`
+   (`Compilers/common/asm_share.c`) and in asmcomp's check (`eval.c`),
+   still 3 stages: refactor only, goldens unchanged. cmmcomp only calls
+   `asm_divseq` (if it must change, show Luciano the diff first).
+7. `F_DIV` in 4 stages (one more NOP): goldens with a float division move.
+8. `DIV`/`MOD` in 5 stages.
+9. Measure and document: `sapho_all` fit (expect ~32 MHz), Vivado/ZYBO
+   (`vfmax.sh`), `area.sh`, the item-21 note for the manual, CHANGELOG.
+
+The clock rises only at 7 and 8 (until then the integer divider limits, 21.8
+MHz). Alternative: dividers (6-8) first to see the gain early; proposed
+order keeps the golden-moving part last.
+
+**Questions for Luciano (open):**
+- The `JIZ`/`LDI`/`ILI` rule: asmcomp refuses with an error, or inserts a
+  `NOP` by itself?
+- Stage count: fixed (5 and 4) or computed from the widths (`NUBITS`,
+  `NBMANT`), one formula shared by the HDL and the compilers (the
+  derive-from-widths rule; a narrower word has a shorter divider)?
+- Fit only at step 9, or also after step 5?
+
+Measured 2026-10-16 (no new fit, STA on the `pnorm` seed-1 project): worst
+path `F_ADD` -> normaliser -> accumulator (slack -20.7 ns); `F_DIV` last
+segment -19.8, integer divider worst segment -17.8. Segments already
+balanced by retiming (integer 25.9/27.5/25.8/26.8/23.8 ns, ~130 in all;
+float 26.3/25.6/26.5/29.2, ~108): one stage fewer gives ~32 and ~36 ns per
+segment (deduced), so the dividers would limit. 5 and 4 are the minimum.
 
 On the v7.1 `sapho_all` (DE10-Nano, 21.8 MHz) the integer divider's two
 first parts are equal (~43.5 ns): a third cut, not a moved one, is what
