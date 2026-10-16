@@ -709,6 +709,7 @@ ALMs as on 2026-10-11.
 |---|---|---|---|---|---|
 | 0 | v7.1 | 21.82 MHz | 3,558 | 907 | integer divider, 43.3 ns |
 | 1 | `DIV`/`MOD` in 5 stages, `F_DIV` in 4 | **29.66 MHz** (+36 %) | 3,652 (+2.6 %) | 1,197 | data memory -> `denorm` 8.1 -> `fadd` 2.6 -> normaliser 11.2 -> ALU mux 2.9 -> jump and PC 5.0 ns (31.5 ns) |
+| 1b | every mux guided by the opcode parameters, no `x` | **30.90 MHz** (+4.2 %) | 3,600 (-1.4 %) | 1,216 | the same path: `denorm` 7.1 -> `fadd` 4.6 -> normaliser 10.1 -> ALU mux **0.7** -> jump and PC 6.3 ns (29.8 ns) |
 
 Step 1: `ula_idiv` and `ula_fdiv` take a parameter `STG` (5 and 4) instead of
 the 3 written in both instances; the compilers write `DIV x; NOP; NOP; NOP;
@@ -719,8 +720,18 @@ check). Better than `stg4`'s 26.39 (both in 4): with the integer divider in
 flip-flops beside the LUTs, so the ALMs barely move. Every program with a
 division is one word and one cycle longer per `F_DIV`, two per `DIV`/`MOD`;
 the outputs are unchanged (22 simulated against their goldens, 16 of them
-needing 200 000 cycles instead of 100 000 to print all of them). Next: the
-`JIZ` without the normaliser (TODO 29 step 2).
+needing 200 000 cycles instead of 100 000 to print all of them). 
+
+Step 1b (Luciano's proposal, before the `JIZ`): `ula_mux` and the two input
+muxes of `norm_mux` became an OR of one term per operation, each term in a
+`generate` on its operation's parameter (absent: constant 0); an absent
+operator's output and `isp_push`/`isp_pop` without `CAL` are 0 instead of
+`x`. No `x` is left in `ula.v` or `core.v`, and since then no mux input may
+be a don't care (docs/design/README.md, "Rules for SAPHO/"). The ports are
+unchanged (AURORA's netlist viewer draws both modules). The ALU output mux
+went from 2.9 to 0.7 ns on the worst path; one seed, and the placement
+moved the other blocks too (the add 2.6 -> 4.6 ns), so only the total
+counts. Next: the `JIZ` without the normaliser (TODO 29 step 2).
 
 **For the documentation (item 21).** A division now takes five words
 (`DIV`/`MOD`: `DIV x; NOP; NOP; NOP; QUO`) or four (`F_DIV x; NOP; NOP;

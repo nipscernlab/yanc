@@ -800,7 +800,8 @@ index register: design the two together.
 ## 29. A faster clock behind the dividers
 
 **Status:** in progress: step 1 (dividers 5/4) DONE 2026-10-16, 21.82 ->
-29.66 MHz; next step 2 (`JIZ`) · **Area:** `SAPHO/ula.v`
+29.66 MHz; step 1b (muxes by parameters) DONE, 30.90 MHz; next step 2
+(`JIZ`) · **Area:** `SAPHO/ula.v`
 (dividers, normaliser, muxes), `SAPHO/core.v` (`JIZ`, indirect index),
 `asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
 section 4.3, normalisation-survey.md, fadd-survey.md
@@ -822,11 +823,21 @@ are the variants' one-seed fits of note 4.3, not the final code.
    **29.66 MHz** (+36 %), 3,652 ALMs (+2.6 %), 1,197 registers. Worst path
    now data memory -> `denorm` -> `fadd` -> normaliser (11.2 ns) -> ALU mux
    -> jump -> PC, 31.5 ns (note 4.4).
-2. `JIZ` without the normaliser: the ALU output split (fast mux generated
-   from the opcode parameters, 2-input mux after it only with a normalised
-   operation), `JIZ` reads the fast output, asmcomp inserts a `NOP` before a
-   `JIZ` right after a normalised operation (`F_ADD`, `F_SU1`, `F_SU2`,
-   `F_MLT`, `F_DIV`, `I2F`, `I2F_M`, `F_ROT`, stack forms). Expect ~28.5.
+1b. DONE (Luciano's proposal, accepted): every mux guided by the opcode
+   parameters, no `x` left in `SAPHO/` (`ula_mux`, `norm_mux` as OR of
+   guarded terms; absent operators and `isp_push`/`isp_pop` at 0). **30.90
+   MHz** (+4.2 %), 3,600 ALMs (-1.4 %). Rule from now on: no mux input at
+   don't care (docs/design/README.md). Checked 2026-10-16 with Verilator
+   -Wall on four whole processors: nothing undriven inside `SAPHO/`. Left
+   as it is (Luciano): `ula_in1_ctrl` (memory or stack top) is always built;
+   both inputs are real, a decoder constant picks.
+2. `JIZ` without the normaliser: the ALU output split (the fast mux is the
+   OR of the non-normalised terms, the 2-input mux after it only with a
+   normalised operation), `JIZ` reads the fast output, asmcomp inserts a
+   `NOP` before a `JIZ` right after a normalised operation (`F_ADD`, `F_SU1`,
+   `F_SU2`, `F_MLT`, `F_DIV`, `I2F`, `I2F_M`, `F_ROT`, stack forms). Also in
+   this commit (Luciano): the generated top of a program without `in()`
+   declares `wire in` undriven (asmcomp `hdl.c:111`): give it `= 0`.
 3. `LDI`/`ILI` index from the fast output, the same `NOP` rule for them.
    Expect ~32 (`addr`/`param`); then `F_ADD` -> normaliser -> accumulator.
 4. The leading-zero count as a tree (`ula_lzc`, code in 19bc344; equal

@@ -16,6 +16,10 @@ tags consumed by Aurora.
   `F_DIV x; NOP; NOP; F_QUO`. A hand-written `.asm` with a division must
   write the longer sequence: asmcomp names what is missing. The float add
   and the `JIZ` after it limit now (docs/design/pipeln-and-division.md 4.4).
+- **Every mux of `SAPHO/` guided by the opcode parameters; 29.66 -> 30.90
+  MHz** (3,652 -> 3,600 ALMs). `ula_mux` and `norm_mux` are an OR of one
+  term per operation the program has, instead of a `case` whose absent
+  inputs were don't cares; no `x` is left in the processor. Same ports.
 
 ### Added
 - **`Scripts/hw/path_groups.py`**: the worst path of each destination block

@@ -127,8 +127,8 @@ assign isp_pop    =  wRET;
 end else begin : call_ctrl
 
 assign pc_load    =  wJMP;
-assign isp_push   =  1'bx;
-assign isp_pop    =  1'bx;
+assign isp_push   =  1'b0;                // no CAL: no instruction stack reads them
+assign isp_pop    =  1'b0;
 
 end endgenerate
 
