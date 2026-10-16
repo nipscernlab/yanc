@@ -117,6 +117,41 @@ SAPHO's format is fixed, so not applicable.
 Not worth trying for the clock: 2 (longer swap), 6 and 7 (off the path),
 10 and 11 (not available / format).
 
+## 4. The add as a separate circuit (2026-10-16)
+
+Luciano's proposal: the add (`F_ADD`, `F_SU1`, `F_SU2`) built as a whole,
+with its own normaliser and rounding (a private `ula_norm`), its result
+going to the accumulator without the shared normaliser. It cannot enter the
+fast mux: that output feeds the `JIZ` zero test and the indirect index
+(`LDI`/`ILI`), and the add would come back on those paths (the ones `jz`
+and `addr` cleared, 26.4 -> 32 MHz). It enters the final mux as a third
+input instead (`out = add ? add's own : normalised ? shared : fast`), still
+one cell; the add leaves the shared normaliser's 8-input mux. Two variants
+from `pnorm` (`make_variants.py`):
+
+- `sepadd`: today's single-path add, private normaliser;
+- `sep2p`: the near/far add of `twopath` inside, the private normaliser only
+  rounding and range.
+
+Checked with `eq_fops.sh` (whole ALU against `pnorm`): `sepadd` equal for
+any input; `sep2p` equal with normalised operands (the real case), the same
+differences as `twopath` with any bit pattern. Yosys (`-noshare`, LUT4,
+longest path of the ALU with `F_ADD`, `F_SU1`, `F_SU2`, `I2F`, `I2F_M`,
+`F_ROT`):
+
+| variant | levels `#FROUND 2` | LUT4 | levels `#FROUND 0` | LUT4 |
+|---|---|---|---|---|
+| `pnorm` | 45 | 1268 | 36 | 768 |
+| `sepadd` | 45 | 1391 | 36 | 890 |
+| `twopath` | 40 | 1733 | 32 | 1183 |
+| `sep2p` | 40 | 1676 | 32 | 1176 |
+
+Reading: taking the add out of the shared mux alone (`sepadd`) saves no
+level and costs about 120 LUT4; the gain is the two paths, and `sep2p` has
+it with 57 LUT4 fewer than `twopath`. The level count is the ALU's longest
+path, which with the add shortened may now be another operation (`I2F`
+through the shared normaliser): not looked at. No fit yet.
+
 ## Sources
 
 - FloPoCo, `FPAddSinglePath.cpp`.

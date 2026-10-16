@@ -23,6 +23,9 @@ SAPHO/ under .smoke/hw/clock_exp/ (nothing in SAPHO/ changes).
   lza   pnorm with F_ADD normalised by leading-zero anticipation
   twopath pnorm with a two-path F_ADD
 (the last five: docs/design/normalisation-survey.md; eq_fops.sh tests them)
+  sepadd pnorm with the add as a separate circuit (own normaliser and
+        rounding), a third input of the final mux
+  sep2p sepadd with the near/far adder inside
 
 Each later variant contains the earlier ones. Time one with
   HDL=$PWD/.smoke/hw/clock_exp/<name> TAG=<tag> bash Scripts/hw/fmax.sh sapho_all 5CSEBA6U23I7
@@ -753,6 +756,44 @@ def twopath(src):
     return d
 
 
+def sepadd(src, name='sepadd', two_path=False):
+    """pnorm with F_ADD/F_SU1/F_SU2 as a separate circuit (Luciano,
+    2026-10-16): its own normaliser and rounding (a private ula_norm), its
+    result a third input of the final mux, out of the shared normaliser's
+    input mux and never into the fast mux (JIZ, indirect index). two_path:
+    the near/far adder of twopath inside, then only the rounding."""
+    d, ula, core = fresh(name, src)
+    nl = newline(ula)
+    if two_path:
+        edit(ula, 'ula_fadd #(NBMANT,NBEXPO,FROUND,G) my_fadd(e_out,',
+                  'ula_fadd2p #(NBMANT,NBEXPO,FROUND,G) my_fadd(su1, su2, in1, in2, e_out,')
+        edit(ula, ANCHOR_NORM, FADD_2P_MODULE.replace('\n', nl) + ANCHOR_NORM)
+        # aligned already: the private normaliser only rounds and checks the range
+        norm = "ula_norm #(NBMANT,NBEXPO,FROUND,G,0,1) fadd_norm ({NUBITS+G+2{1'b0}}, fadd, 1'b1, fadd_n);"
+    else:
+        norm = "ula_norm #(NBMANT,NBEXPO,FROUND,G,1,0) fadd_norm (fadd, {NUBITS+G+2{1'b0}}, 1'b0, fadd_n);"
+    s = open(ula, encoding='utf-8', newline='').read()
+    i = s.index('begin : op_fadd ')
+    j = s.index(nl, i) + len(nl)
+    s = (s[:j] + nl +
+         '// experiment: the add normalised and rounded by its own circuit, out of the shared normaliser' + nl +
+         'wire [NUBITS-1:0] fadd_n;' + nl +
+         'generate if ((F_ADD | F_SU1 | F_SU2) != 0) begin : op_faddn ' + norm +
+         " end else begin : op_faddn assign fadd_n = {NUBITS{1'b0}}; end endgenerate" + nl + s[j:])
+    open(ula, 'w', encoding='utf-8', newline='').write(s)
+    edit(ula, 'generate if ((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_MLT | F_DIV | F_ROT) != 0) begin : op_smx',
+              'generate if ((I2F | I2F_M | F_MLT | F_DIV | F_ROT) != 0) begin : op_smx')
+    edit(ula, '((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_ROT) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC',
+              '((I2F | I2F_M | F_ROT) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC (experiment: the add has its own)')
+    edit(ula, '(F_ADD != 0), (F_SU1 != 0), (F_SU2 != 0), (F_MLT != 0)', "0, 0, 0, (F_MLT != 0)")
+    edit(ula, "\twire is_norm = (((F_ADD) != 0) & (op == 6'd3)) | (((F_MLT) != 0) & (op == 6'd5)) | (((F_DIV) != 0) & (op == 6'd7)) | (((I2F) != 0) & (op == 6'd25)) | (((I2F_M) != 0) & (op == 6'd26)) | (((F_ROT) != 0) & (op == 6'd46)) | (((F_SU1) != 0) & (op == 6'd47)) | (((F_SU2) != 0) & (op == 6'd48));" + nl +
+              "\tassign out = (is_norm) ? smx : out_jz;",
+              "\twire is_add  = (((F_ADD) != 0) & (op == 6'd3)) | (((F_SU1) != 0) & (op == 6'd47)) | (((F_SU2) != 0) & (op == 6'd48));" + nl +
+              "\twire is_norm = (((F_MLT) != 0) & (op == 6'd5)) | (((F_DIV) != 0) & (op == 6'd7)) | (((I2F) != 0) & (op == 6'd25)) | (((I2F_M) != 0) & (op == 6'd26)) | (((F_ROT) != 0) & (op == 6'd46));" + nl +
+              "\tassign out = (is_add) ? fadd_n : (is_norm) ? smx : out_jz;   // experiment: the add's own circuit, a third input")
+    return d
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     d = os.path.join(ROOT, 'SAPHO')
@@ -769,9 +810,10 @@ def main():
     variants['rpar'] = rpar(variants['pnorm'])
     variants['nsr'] = rpar(variants['nshift'], 'nsr')
     # the methods of docs/design/normalisation-survey.md, each from pnorm
-    for step in (dsp, alm, rshort, lza, twopath):
+    for step in (dsp, alm, rshort, lza, twopath, sepadd):
         variants[step.__name__] = step(variants['pnorm'])
-    for v in ('nshift', 'rpar', 'nsr', 'dsp', 'alm', 'rshort', 'lza', 'twopath'):
+    variants['sep2p'] = sepadd(variants['pnorm'], 'sep2p', two_path=True)
+    for v in ('nshift', 'rpar', 'nsr', 'dsp', 'alm', 'rshort', 'lza', 'twopath', 'sepadd', 'sep2p'):
         print('built', os.path.relpath(variants[v], ROOT))
 
 

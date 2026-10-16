@@ -23,7 +23,10 @@ section 4.3 and TODO item 29.
 | `lza` | `F_ADD` normalised by leading-zero anticipation, then the normaliser's direct path |
 | `twopath` | `F_ADD` in two paths (near: alignment by 0 or 1 and full normalising; far: full alignment and at most 2 bits), then the direct path |
 
-The last five are the methods of
+| `sepadd` | the add as a separate circuit (own normaliser and rounding), a third input of the final mux |
+| `sep2p` | `sepadd` with the near/far add inside |
+
+The five from `dsp` to `twopath` are the methods of
 [docs/design/normalisation-survey.md](../../../docs/design/normalisation-survey.md).
 
 ```sh
