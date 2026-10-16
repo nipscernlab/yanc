@@ -7,6 +7,18 @@ for whoever develops YANC; the user-facing text is the manual
 code), what was measured and what was deduced, and most end with a section
 "For the documentation" listing what the manual has to say.
 
+## Rules for `SAPHO/`
+
+- **Pay only for what you use.** Every block exists only when an opcode of
+  the program needs it: a `generate` on the opcode parameters, never left
+  to the synthesiser to prune (measured: it does not, precision review 2026-09-15).
+- **No mux input at don't care (Luciano, 2026-10-16).** Every multiplexer
+  is guided by the opcode parameters: each input is a term or a row inside
+  the `generate` (or guard) of the operation that uses it, and what is not
+  generated is a constant 0. No `x` default, no `x` arm, no `x` on an
+  absent operator's output. An unused `x` input still costs logic (Yosys:
+  +21 % in a float `ula_mux`, pipeln-and-division.md 4.3).
+
 | note | about |
 |---|---|
 | [cli-v7.1.md](cli-v7.1.md) | the v7.1 command line, the `yanc` driver and the output folder, against v6.0 |
