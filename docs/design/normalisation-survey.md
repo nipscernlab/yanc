@@ -217,7 +217,29 @@ faults of the testbench, not of the variants, before it was trusted: the
 integer samples went to `F_ADD` too (they are unnormalised floats), and a
 paused older run wrote the same directories (lesson in memory).
 
-Not done: fits (each about 1h30 on mains power). `lza` and `twopath` also
+Luciano: every operand that enters the ALU is normalised; only the add
+denormalises, inside (2026-10-15). So `rshort` and `twopath` are valid too.
+
+Yosys estimate (`-noshare`, LUT4, longest path of the ALU with `F_ADD`,
+`F_SU1`, `F_SU2`, `I2F`, `I2F_M`, `F_ROT`), `#FROUND 2`: `pnorm` 45 levels /
+1268 LUT4, `twopath` 40 / 1733, `rshort` 41 / 1332, `rpar` 44 / 1280, `lza`
+45 / 1541, `nsr` 46 / 1237, `alm` 47 / 1242, `nshift` 49 / 1217 (`dsp` not
+meaningful: Yosys builds the product in LUTs). A proxy: `nsr` was one level
+from `pnorm` here and 2.5 ns slower in its fit.
+
+Fit of `rshort` (`sapho_all`, DE10-Nano, seed 1, `PERIOD=30
+EFFORT=BALANCED`, against `pnorm` in the same conditions): **no gain**.
+
+| variant | Fmax | ALMs | worst path | normaliser on it |
+|---|---|---|---|---|
+| `pnorm` | 32.37 MHz | 3,543 | 28.69 ns | 12.5 ns |
+| `rshort` | 32.03 MHz | 3,629 | 28.66 ns | 10.3 ns |
+
+The normaliser did get 2.2 ns shorter, but the add on the same path grew
+from 3.1 to 4.5 ns in this placement and the path total is the same; the
+1 % in clock is seed noise. Same `F_ADD` -> normaliser path in both.
+
+Not done: the other fits. `lza` and `twopath` also
 take `F_ADD` out of the leading-zero path, so with them the count serves
 only `I2F`, `I2F_M`, `F_ROT` and `F_MLT`/`F_DIV` at `#FROUND 0`.
 

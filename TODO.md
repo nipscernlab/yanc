@@ -833,8 +833,10 @@ on the short shifts (deduced: at `#FROUND 2` the increment is zero after a
 shift of 2 or more; needs a proof through the operators). Built and checked
 the same day (survey section 4, `eq_fops.sh`, whole ALU against `pnorm`):
 `dsp`, `alm`, `lza` exact for any input; `rshort`, `twopath` exact only
-with normalised operands (open: can an unnormalised float reach an add?).
-No fit yet. The tree count is proven
+with normalised operands (Luciano: every ALU operand is normalised, so all
+valid). Fit of `rshort` (PERIOD=30, BALANCED, with `pnorm` in the same
+conditions): 32.03 against 32.37 MHz, no gain (normaliser -2.2 ns, add
++1.4 ns in that placement). The tree count is proven
 equal to the chain (1.8 million outputs); the others need the compilers and
 asmcomp (division length, a rule against `JIZ`/`LDI`/`ILI` after a
 normalised operation) before they can be real. Not done: Vivado, seeds,

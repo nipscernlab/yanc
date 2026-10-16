@@ -1,7 +1,7 @@
 #!/bin/bash
 # Real Fmax and ALM count of a generated processor, through Quartus Prime Lite.
 #
-# Usage:  [FR=<0|1|2>] [TAG=<name>] [SEED=<n>] [HDL=<dir>] [MAPONLY=1] bash Scripts/hw/fmax.sh <proc> [device] [family]
+# Usage:  [FR=<0|1|2>] [TAG=<name>] [SEED=<n>] [HDL=<dir>] [MAPONLY=1] [PERIOD=<ns>] [EFFORT=<mode>] bash Scripts/hw/fmax.sh <proc> [device] [family]
 # e.g.    bash Scripts/hw/fmax.sh cmm_cexp
 #         FR=2 TAG=lvl2 bash Scripts/hw/fmax.sh cmm_cexp
 #
@@ -19,6 +19,13 @@
 # Besides the Fmax it writes the 10 worst paths (worst_paths.txt) and the
 # worst one in full (worst_path_full.txt) in the project folder, and prints
 # that one grouped by block (path_blocks.py): where the clock is lost.
+#
+# PERIOD (default 10 ns) is the clock asked of the fitter, EFFORT (default
+# "HIGH PERFORMANCE EFFORT") its optimization mode. The Fmax is read from the
+# timing report, not from PERIOD. Measured 2026-10-15 on sapho_all (pnorm):
+# PERIOD=30 EFFORT=BALANCED gave the same Fmax (32.37 against 32.61 MHz) and
+# was NOT faster (62 min against 46): the fit time is not the impossible
+# 10 ns goal. Compare only fits made with the same two.
 #
 # One fit takes 20 min to 2 h. RUN ONE AT A TIME: three in parallel brought a
 # 22-thread machine to its knees. Results are appended to .smoke/hw/fmax.txt.
@@ -47,7 +54,7 @@ HDL=${HDL:-$ROOT/SAPHO}     # HDL=<dir>: time a modified copy of SAPHO/ (an expe
 HDLW=$(cygpath -m "$HDL" 2>/dev/null || echo "$HDL")
 
 cat > clk.sdc <<EOF
-create_clock -period 10.000 -name clk [get_ports clk]
+create_clock -period ${PERIOD:-10.000} -name clk [get_ports clk]
 derive_clock_uncertainty
 EOF
 
@@ -64,7 +71,7 @@ set_global_assignment -name VERILOG_FILE $HDLW/instr_dec.v
 set_global_assignment -name VERILOG_FILE $HDLW/addr_dec.v
 set_global_assignment -name SDC_FILE clk.sdc
 set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
-set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
+set_global_assignment -name OPTIMIZATION_MODE "${EFFORT:-HIGH PERFORMANCE EFFORT}"
 set_global_assignment -name SEED ${SEED:-1}
 export_assignments
 project_close
@@ -89,7 +96,7 @@ ALM=$(grep -m1 -E 'Logic utilization \(in ALMs\)|Total logic elements' $PROC.fit
 # the hot slow corner: 85C for commercial parts (C6), 100C for industrial (I7, DE10-Nano)
 FMAX=$(grep -A6 -E 'Slow 1[12]00mV (85|100)C Model Fmax Summary' $PROC.sta.rpt \
        | grep -m1 'MHz' | awk -F';' '{print $2}' | tr -d ' ')
-echo "$PROC $DEV${FR:+ FROUND=$FR}${TAG:+ ($TAG)}${SEED:+ seed $SEED}: Fmax=$FMAX logic=$ALM" | tee -a "$OUT/fmax.txt"
+echo "$PROC $DEV${FR:+ FROUND=$FR}${TAG:+ ($TAG)}${SEED:+ seed $SEED}${PERIOD:+ period $PERIOD}${EFFORT:+ effort $EFFORT}: Fmax=$FMAX logic=$ALM" | tee -a "$OUT/fmax.txt"
 
 # Where the clock is lost: the worst register-to-register paths of the WHOLE
 # processor (the ALU alone is a proxy, TODO.md item 8). worst_paths.txt lists
