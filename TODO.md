@@ -842,7 +842,11 @@ parked; that study is finished. NEXT (Luciano, 2026-10-15): the add and the
 exponent alignment, survey in `docs/design/fadd-survey.md` (11 methods; the
 worst path enters `ula_denorm` through the exponent subtraction, the swap
 and the shift-amount mux; to try: both mantissas shifted at once, the order
-picked after, then `twopath` fitted). The tree count is proven
+picked after, then `twopath` fitted). Then the add as a separate circuit
+(`sepadd`, `sep2p`, survey section 4): built, checked, Yosys 45 -> 40
+levels for `sep2p`, not fitted. **Decision (Luciano, 2026-10-16): stop at
+`pnorm`**; both studies finished. What is left of item 29 is turning
+`pnorm` into `SAPHO/` (note 4.3, the steps to implement). The tree count is proven
 equal to the chain (1.8 million outputs); the others need the compilers and
 asmcomp (division length, a rule against `JIZ`/`LDI`/`ILI` after a
 normalised operation) before they can be real. Not done: Vivado, seeds,

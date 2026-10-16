@@ -4,8 +4,14 @@ Survey of 2026-10-15 (Luciano's request, after
 [normalisation-survey.md](normalisation-survey.md) closed with the
 normaliser unchanged): the ways to build the alignment (`ula_denorm`) and
 the add (`ula_fadd`) found in the literature, and which could shorten
-`sapho_all`'s worst path. Nothing here is built. Each line says whether it
-is read in a source, measured here, or deduced (and from what).
+`sapho_all`'s worst path. Each line says whether it is read in a source,
+measured here, or deduced (and from what).
+
+**Status: FINISHED (2026-10-16).** Survey done; the add as a separate
+circuit built (`sepadd`, `sep2p`, section 4) and checked, not fitted.
+Decision (Luciano): stop at `pnorm`, the add unchanged. Expected gain of
+`sep2p`, deduced: a few per cent at most, since `I2F_M` through the shared
+normaliser was about 2 ns behind the add (note 4.2).
 
 ## 1. What limits today
 
