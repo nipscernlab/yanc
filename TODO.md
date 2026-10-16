@@ -44,7 +44,8 @@ arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
 it; 15 the regress on this machine (mitigated); 17 faster fill/copy in
 hardware (measure the index register `X` first; shares its pointer with 28); 24 processors with
 different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst (recorded); 29 a faster
-clock (timed: 32 MHz in experiments); 31 the Dirac array output.
+clock (timed: 32 MHz in experiments); 31 the Dirac array output; 32 the
+divider stage count from the widths (recorded).
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), the reorganisation of the runner/setup scripts, a macOS
 build, 30 (SAPHO without showing its source, until a partnership).
@@ -800,7 +801,7 @@ index register: design the two together.
 
 **Status:** studies finished, `pnorm` chosen (32.61 MHz, 3,551 ALMs against
 v7.1's 21.82 / 3,558); implementation PLANNED in nine commits (below,
-2026-10-16), three questions open for Luciano · **Area:** `SAPHO/ula.v`
+2026-10-16), the three questions answered the same day · **Area:** `SAPHO/ula.v`
 (dividers, normaliser, muxes), `SAPHO/core.v` (`JIZ`, indirect index),
 `asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
 section 4.3, normalisation-survey.md, fadd-survey.md
@@ -837,13 +838,13 @@ The clock rises only at 7 and 8 (until then the integer divider limits, 21.8
 MHz). Alternative: dividers (6-8) first to see the gain early; proposed
 order keeps the golden-moving part last.
 
-**Questions for Luciano (open):**
-- The `JIZ`/`LDI`/`ILI` rule: asmcomp refuses with an error, or inserts a
-  `NOP` by itself?
-- Stage count: fixed (5 and 4) or computed from the widths (`NUBITS`,
-  `NBMANT`), one formula shared by the HDL and the compilers (the
-  derive-from-widths rule; a narrower word has a shorter divider)?
-- Fit only at step 9, or also after step 5?
+**Decisions (Luciano, 2026-10-16):**
+- The `JIZ`/`LDI`/`ILI` rule: asmcomp inserts the `NOP` by itself (step 3
+  becomes: count first, then pad).
+- Stage count fixed in the circuit: 5 for `DIV`/`MOD`, 4 for `F_DIV`, as
+  constants (step 6 still makes the NOP count one named value per divider,
+  not a literal 3). Computing it from the widths is item 32, for later.
+- When to fit: decided along the way, not fixed in advance.
 
 Measured 2026-10-16 (no new fit, STA on the `pnorm` seed-1 project): worst
 path `F_ADD` -> normaliser -> accumulator (slack -20.7 ns); `F_DIV` last
@@ -931,6 +932,30 @@ without the scalar, is a syntax error. Fixed, the form is two instructions a
 word (`LOD_V`, `OUT`), the least today's ISA allows, independent of the
 burst. A fixture with the scalar 1 and with none, the golden checking that
 no `MLT` and no multiplier remain.
+
+## 32. Divider stage count computed from the widths
+
+**Status:** recorded 2026-10-16, for later (Luciano: 5/4 stay fixed for
+now, item 29) · **Area:** `SAPHO/ula.v` (`div_array`), `asm_divseq`,
+asmcomp, `hdl.c` · **Evidence:** docs/design/pipeln-and-division.md
+section 4
+
+The cut positions already follow the widths (`first_row()` spreads PRE + R
+rows + POST evenly over `STG` cycles); the number of cuts does not. The
+other direction: fix how much logic fits in a cycle, a budget B in rows,
+and take `STG = ceil((PRE + R + POST) / B)`, R = `NUBITS` for `DIV`/`MOD`
+and `NBMANT` + 0/1/3 for `F_DIV` at `#FROUND` 0/1/2, PRE/POST the ones in
+the code (integer 1.5/2.8, float 0.8/3.6 rows). The measured 32-bit
+minima (5 and 4) hold for B between 7.6 and 9.07 rows; with B = 8.5:
+integer 32/24/16 bits -> 5/4/3, float `NBMANT` 23 at `#FROUND` 2 or 0 ->
+4, `NBMANT` 15 at `#FROUND` 2 -> 3. The gain is in narrower words only (a
+16-bit processor saves two NOPs and two cycles a division, and two cuts).
+Compute it once, in C, and pass `STG` to the generated Verilog like the
+opcode parameters, so the HDL and `asm_divseq` cannot disagree (`hdl.c`
+not checked yet). Weak point, deduced and not measured: the rest of the
+processor also shortens at narrower widths, so one B in rows may over- or
+under-cut; a fit at 16 bits would settle it. Done: the formula in the
+compilers, `STG` a parameter of both dividers, regress, one narrow fit.
 
 ## 27. C++ gaps that real embedded code hits
 
