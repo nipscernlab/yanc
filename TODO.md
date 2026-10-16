@@ -812,8 +812,11 @@ mains power), Luciano's "sim", commit and push, `Scripts/aurora.bat`. The
 code of each step is what `Scripts/hw/clock_exp/make_variants.py` builds
 (`lzc`, `param`/`pnorm`, `jz`, `addr`, `stg4`).
 
-1. Leading-zero count as a tree (`ula_lzc`) instead of the chain. Results
-   identical (proven, `eq_norm.sh`); `tb_alu.sh`, regress, goldens unchanged.
+1. DONE (2026-10-16): leading-zero count as a tree (`ula_lzc`) instead of
+   the chain, `ula_nmux` removed. Results identical (`eq_norm.sh`, now SAPHO/
+   against the chain of commit 1cbf4bb); `tb_alu.sh`, `elab.sh`,
+   `elab_single.sh` ok; full regress skipped (Luciano: quick checks enough
+   for a proven-equal change). `make_variants.py` builds from 1cbf4bb.
 2. Muxes generated from the opcode parameters: fast mux as an OR of one term
    per operation present, the 2-input mux only with a normalised operation,
    `norm_mux` guarded. `JIZ` still reads the full output, so nothing changes

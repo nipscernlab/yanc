@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """make_variants.py: build the clock experiments of 2026-10-15 as copies of
-SAPHO/ under .smoke/hw/clock_exp/ (nothing in SAPHO/ changes).
+SAPHO/ under .smoke/hw/clock_exp/ (nothing in SAPHO/ changes). The copies
+start from SAPHO/ as it was at commit BASE (1cbf4bb, before item 29 brought
+any of them in), extracted to .smoke/hw/clock_exp/base/.
 
   stg4  both dividers in 4 stages (one more register cut each)
   jz    stg4 + JIZ tests an ALU output without the normaliser
@@ -32,13 +34,17 @@ Each later variant contains the earlier ones. Time one with
 The results and what each change would still need before it is real are in
 docs/design/pipeln-and-division.md section 4.3.
 """
+import io
 import os
 import re
 import shutil
+import subprocess
 import sys
+import tarfile
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 OUT = os.path.join(ROOT, '.smoke', 'hw', 'clock_exp')
+BASE = '1cbf4bb'
 
 
 def newline(path):
@@ -794,9 +800,21 @@ def sepadd(src, name='sepadd', two_path=False):
     return d
 
 
+def base():
+    # the SAPHO/ the experiments were written against: item 29 brings them
+    # into SAPHO/ step by step, after which their edits no longer apply there
+    dst = os.path.join(OUT, 'base')
+    shutil.rmtree(dst, ignore_errors=True)
+    os.makedirs(dst)
+    tar = subprocess.run(['git', '-C', ROOT, 'archive', BASE, 'SAPHO'],
+                         check=True, capture_output=True).stdout
+    tarfile.open(fileobj=io.BytesIO(tar)).extractall(dst)
+    return os.path.join(dst, 'SAPHO')
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
-    d = os.path.join(ROOT, 'SAPHO')
+    d = base()
     variants = {}
     for step in (stg4, jz, lzc, addr, split, param):
         d = step(d)

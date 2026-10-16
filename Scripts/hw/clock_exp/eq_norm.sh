@@ -1,15 +1,18 @@
 #!/bin/bash
-# ula_norm of SAPHO/ against a variant's (default lzc; eq_norm.sh <variant>):
-# 200000 random inputs (biased to many leading zeros and to zero mantissas) in
-# nine formats and rounding levels; every output must be the same.
-# Run make_variants.py first. Exit 0 when all are equal.
+# ula_norm with the original leading-zero chain (SAPHO/ at make_variants.py's
+# BASE commit) against SAPHO/ula.v today (tree count, item 29 step 1) or a
+# variant's (eq_norm.sh <variant>): 200000 random inputs (biased to many
+# leading zeros and to zero mantissas) in nine formats and rounding levels;
+# every output must be the same. Run make_variants.py first. Exit 0 when all
+# are equal.
 set -u
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
-D="$ROOT/.smoke/hw/clock_exp/eq_${1:-lzc}"
-OLD="$ROOT/SAPHO/ula.v"
-V=${1:-lzc}
-NEW="$ROOT/.smoke/hw/clock_exp/$V/ula.v"
+V=${1:-SAPHO}
+D="$ROOT/.smoke/hw/clock_exp/eq_$V"
+OLD="$ROOT/.smoke/hw/clock_exp/base/SAPHO/ula.v"
+if [ "$V" = SAPHO ]; then NEW="$ROOT/SAPHO/ula.v"; else NEW="$ROOT/.smoke/hw/clock_exp/$V/ula.v"; fi
 TB="$ROOT/Scripts/hw/clock_exp/tb_norm.v"
+[ -f "$OLD" ] || { echo "no $OLD: run make_variants.py first"; exit 1; }
 [ -f "$NEW" ] || { echo "no $NEW: run make_variants.py first"; exit 1; }
 mkdir -p "$D"; cd "$D" || exit 1
 fail=0

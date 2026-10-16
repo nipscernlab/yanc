@@ -3,7 +3,11 @@
 Changes to the processor, timed on `sapho_all` to see how far the clock
 goes without the dividers and the float path limiting it. They are
 **experiments**: `make_variants.py` builds them as copies of `SAPHO/` under
-`.smoke/hw/clock_exp/` and nothing in `SAPHO/` changes. Results, and what
+`.smoke/hw/clock_exp/` and nothing in `SAPHO/` changes. The copies start
+from `SAPHO/` at commit 1cbf4bb (`BASE` in the script, extracted to
+`.smoke/hw/clock_exp/base/`): item 29 brings the chosen ones into `SAPHO/`
+step by step (step 1, the tree count, is in), after which their edits no
+longer apply to it. Results, and what
 each change still needs before it can be real, in
 [docs/design/pipeln-and-division.md](../../../docs/design/pipeln-and-division.md)
 section 4.3 and TODO item 29.
@@ -31,7 +35,7 @@ The five from `dsp` to `twopath` are the methods of
 
 ```sh
 python3 Scripts/hw/clock_exp/make_variants.py
-bash Scripts/hw/clock_exp/eq_norm.sh                       # the tree count gives the same normaliser output
+bash Scripts/hw/clock_exp/eq_norm.sh                       # SAPHO/'s tree count against the old chain
 HDL=$PWD/.smoke/hw/clock_exp/addr TAG=de10_addr bash Scripts/hw/fmax.sh sapho_all 5CSEBA6U23I7
 ```
 
@@ -48,8 +52,9 @@ variant's prints with `pnorm`'s in five formats and rounding levels
 
 `tb_norm.v` drives `ula_norm` with random inputs biased to many leading
 zeros and to zero mantissas and prints every output; `eq_norm.sh` runs it
-against `SAPHO/ula.v` and against the `lzc` copy in nine formats and
-rounding levels and compares the prints.
+on the original chain (the `base` copy) and on `SAPHO/ula.v` (or on a
+variant: `eq_norm.sh lzc`) in nine formats and rounding levels and compares
+the prints.
 
 What the timed variants do NOT have yet, so a program run on them is wrong:
 the compilers still write each division as three words (`stg4` needs four,
