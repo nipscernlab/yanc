@@ -806,44 +806,41 @@ v7.1's 21.82 / 3,558); implementation PLANNED in nine commits (below,
 `asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
 section 4.3, normalisation-survey.md, fadd-survey.md
 
-**Implementation plan (2026-10-16, reordered the same day: Luciano wants the
-order of the worst path, so a fit after any step shows whether it paid
-off).** Each step one commit: quick checks, Luciano's "sim", commit and push,
-`Scripts/aurora.bat`. The code of each step is what
-`Scripts/hw/clock_exp/make_variants.py` builds. Expected clocks are the
-variants' one-seed fits of note 4.3, not the final code.
+**Implementation plan (2026-10-16, restarted the same day by Luciano).**
+From the v7.1 `SAPHO/`, on the DE10-Nano part (5CSEBA6U23I7), one change
+at a time, the one expected to raise the clock most first. Each change: a
+fit of `sapho_all` (seed 1, default PERIOD/EFFORT of `fmax.sh`), then
+Fmax and ALMs against the previous fit go to Luciano, who decides whether
+it stays; then commit and push, `Scripts/aurora.bat`. The tree count was
+committed first (19bc344) and reverted (it cannot move the clock while the
+integer divider limits); it comes back as its own step. Expected clocks
+are the variants' one-seed fits of note 4.3, not the final code.
 
-0. DONE (19bc344, before the reorder): the leading-zero count as a tree
-   (`ula_lzc`), `ula_nmux` removed. Results identical (`eq_norm.sh`, SAPHO/
-   against the chain of 1cbf4bb); `tb_alu.sh`, `elab.sh`, `elab_single.sh`
-   ok. Alone it cannot move the clock (the integer divider limits).
-A. The NOP count of a division as one named constant per divider in
-   `asm_divseq` (`Compilers/common/asm_share.c`) and asmcomp's check
-   (`eval.c`), still 3: compilers only, goldens unchanged (cmmcomp only calls
-   `asm_divseq`; if it must change, diff to Luciano first). 21.8 MHz.
-B. `F_DIV` in 4 stages, `DIV`/`MOD` in 5 (`div_array` `STG`), the sequence
-   in 4/5 words: goldens with a division move. Expect ~26.4 MHz (`stg4`);
-   then `F_ADD` -> normaliser -> `JIZ` -> PC limits. Fit point.
-C. asmcomp inserts a `NOP` before a `JIZ`/`LDI`/`ILI` right after an
-   operation that goes through the normaliser (`F_ADD`, `F_SU1`, `F_SU2`,
-   `F_MLT`, `F_DIV`, `I2F`, `I2F_M`, `F_ROT` and stack forms); count first
-   (87 C± goldens: none; C++ never counted). No circuit change.
-D. The ALU output split: the fast mux generated from the opcode parameters
-   (OR of one term per operation present), the 2-input mux after it only
-   with a normalised operation; `JIZ` reads the fast output (`core.v`).
-   Expect ~28.5-29 MHz (`jz`/`lzc`); area check (`fmax.sh MAPONLY=1` on
-   tiny0, sw_test, cexp, ProcDTW). Fit point.
-E. `LDI`/`ILI` index from the fast output. Expect ~32 MHz (`addr`,
-   `param`); then `F_ADD` -> normaliser -> accumulator limits. Fit point.
-F. `norm_mux` guarded by the same parameters (`pnorm`: area, clock equal).
-G. Measure and document: `sapho_all` seeds, Vivado/ZYBO (`vfmax.sh`),
-   `area.sh`, the item-21 note for the manual, CHANGELOG.
+0. Reference: v7.1 refitted with today's `fmax.sh` (it copies the `.mif`
+   since 4ddc731; the 21.82 MHz / 3,558 ALMs fit of 2026-10-11 did not).
+1. Dividers: `F_DIV` in 4 stages, `DIV`/`MOD` in 5 (`div_array` `STG`), the
+   sequence in 4/5 words, one named constant per divider in `asm_divseq`
+   (`Compilers/common/asm_share.c`) and asmcomp's check (`eval.c`); goldens
+   with a division move. Expect ~26.4 MHz (`stg4`); then `F_ADD` ->
+   normaliser -> `JIZ` -> PC limits.
+2. `JIZ` without the normaliser: the ALU output split (fast mux generated
+   from the opcode parameters, 2-input mux after it only with a normalised
+   operation), `JIZ` reads the fast output, asmcomp inserts a `NOP` before a
+   `JIZ` right after a normalised operation (`F_ADD`, `F_SU1`, `F_SU2`,
+   `F_MLT`, `F_DIV`, `I2F`, `I2F_M`, `F_ROT`, stack forms). Expect ~28.5.
+3. `LDI`/`ILI` index from the fast output, the same `NOP` rule for them.
+   Expect ~32 (`addr`/`param`); then `F_ADD` -> normaliser -> accumulator.
+4. The leading-zero count as a tree (`ula_lzc`, code in 19bc344; equal
+   outputs, `eq_norm.sh lzc`).
+5. `norm_mux` guarded by the opcode parameters (`pnorm`: area).
+6. Document: Vivado/ZYBO (`vfmax.sh`), `area.sh`, the item-21 note,
+   CHANGELOG.
 
 **Decisions (Luciano, 2026-10-16):**
 - The `JIZ`/`LDI`/`ILI` rule: asmcomp inserts the `NOP` by itself (step C
   becomes: count first, then pad).
 - Stage count fixed in the circuit: 5 for `DIV`/`MOD`, 4 for `F_DIV`, as
-  constants (step A still makes the NOP count one named value per divider,
+  constants (step 1 makes the NOP count one named value per divider,
   not a literal 3). Computing it from the widths is item 32, for later.
 - When to fit: decided along the way, not fixed in advance.
 

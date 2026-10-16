@@ -6,7 +6,7 @@ goes without the dividers and the float path limiting it. They are
 `.smoke/hw/clock_exp/` and nothing in `SAPHO/` changes. The copies start
 from `SAPHO/` at commit 1cbf4bb (`BASE` in the script, extracted to
 `.smoke/hw/clock_exp/base/`): item 29 brings the chosen ones into `SAPHO/`
-step by step (step 1, the tree count, is in), after which their edits no
+step by step, after which their edits no
 longer apply to it. Results, and what
 each change still needs before it can be real, in
 [docs/design/pipeln-and-division.md](../../../docs/design/pipeln-and-division.md)

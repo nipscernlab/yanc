@@ -214,55 +214,20 @@ assign m_big = mb_ext;
 
 endmodule
 
-// leading-zero count of a W-bit word, by a tree -------------------------------
-// Pads W to a power of two with ones below (they never add zeros above a
-// one), then merges pairs over log2(W) levels: a pair's count is the left
-// count when the left half has a one, else the left half's width plus the
-// right count. A zero word counts W (the normaliser handles it apart).
+// multiplexer of the normalization module ------------------------------------
+// assists the normalization circuit of a floating-point number ---------------
 
-module ula_lzc
+module ula_nmux
 #(
-	parameter W  = 26,
-	parameter CW =  8                      // width of the count
+	parameter NCOMP = 2,
+	parameter NBITS = 8
 )(
-	input  [W -1:0] in,
-	output [CW-1:0] out
+	input  [NCOMP-1:0]   A,   B,
+	input  [NBITS-1:0] in1, in2,
+	output [NBITS-1:0] out
 );
 
-localparam L = $clog2(W);                  // levels
-localparam P = 1 << L;                     // padded width
-
-wire [P-1:0] x;
-generate if (P > W) begin : pad assign x = {in, {(P-W){1'b1}}}; end
-         else       begin : pad assign x = in;                   end endgenerate
-
-// level k holds P>>k nodes, each a count of L+1 bits plus "all zero"
-genvar k, j;
-generate
-for (k = 0; k <= L; k = k+1) begin : lv
-	wire [(P>>k)*(L+1)-1:0] cnt;
-	wire [(P>>k)      -1:0] zer;
-	if (k == 0) begin : leaf
-		for (j = 0; j < P; j = j+1) begin : b
-			assign zer[j]                = ~x[j];
-			assign cnt[j*(L+1) +: (L+1)] = {{L{1'b0}}, ~x[j]};
-		end
-	end else begin : node
-		for (j = 0; j < (P>>k); j = j+1) begin : n
-			// left = the more significant child (index 2j+1)
-			wire           zl = lv[k-1].zer[2*j+1];
-			wire           zr = lv[k-1].zer[2*j  ];
-			wire [L:0]     cl = lv[k-1].cnt[(2*j+1)*(L+1) +: (L+1)];
-			wire [L:0]     cr = lv[k-1].cnt[(2*j  )*(L+1) +: (L+1)];
-			assign zer[j]                = zl & zr;
-			assign cnt[j*(L+1) +: (L+1)] = (zl) ? ((1 << (k-1)) + cr) : cl;
-		end
-	end
-end
-endgenerate
-
-wire [L:0] total = lv[L].cnt[L:0];
-assign out = total;                        // zero-extended (or cut) to CW
+assign out = (A==B) ? in1 : in2;
 
 endmodule
 
@@ -309,14 +274,18 @@ generate if (LZC != 0) begin : lzc
 	wire signed [EXP+1  :0] exp_l = in[MAN+EXP+G+1:W];
 	wire        [W-1    :0] man_l = in[W        -1:0];
 
-	// the shift is the leading-zero count, capped at W-1 (a zero mantissa
-	// counts W; zman handles it)
-	wire [EXP-1:0] lz;
-	ula_lzc #(W, EXP) lzc (man_l, lz);
+	wire [EXP-1:0] w [W-1:0];
 
-	wire        [EXP-1:0] sh    =  (lz > W-1) ? W-1 : lz;
+	wire        [EXP-1:0] sh    =  w[W-2];
 	wire        [W-1  :0] nrm_l =  man_l << sh;
 	wire signed [EXP+1:0] e_l   =  exp_l - {{2{1'b0}}, sh};
+
+	ula_nmux #(1, EXP) mm1 (man_l[W-1], 1'b0, {{EXP-1{1'b0}}, {1'b1}}, {EXP{1'b0}}, w[0]);
+
+	genvar i;
+	for (i = 1; i < W-1; i = i+1) begin : norm
+		ula_nmux #(i+1, EXP) mm (man_l[W-1:W-1-i], {i+1{1'b0}}, i[EXP-1:0] + {{EXP-1{1'b0}}, {1'b1}}, w[i-1], w[i]);
+	end
 
 	if (DIR != 0) begin : both
 		// direct path (no shift) beside it, selected per opcode
