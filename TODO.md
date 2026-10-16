@@ -838,7 +838,11 @@ valid). Fit of `rshort` (PERIOD=30, BALANCED, with `pnorm` in the same
 conditions): 32.03 against 32.37 MHz, no gain (normaliser -2.2 ns, add
 +1.4 ns in that placement). **Decision (Luciano, 2026-10-15): `pnorm`
 stays**, the normaliser as it is; `twopath`, `dsp`, `lza` not fitted,
-parked. The tree count is proven
+parked; that study is finished. NEXT (Luciano, 2026-10-15): the add and the
+exponent alignment, survey in `docs/design/fadd-survey.md` (11 methods; the
+worst path enters `ula_denorm` through the exponent subtraction, the swap
+and the shift-amount mux; to try: both mantissas shifted at once, the order
+picked after, then `twopath` fitted). The tree count is proven
 equal to the chain (1.8 million outputs); the others need the compilers and
 asmcomp (division length, a rule against `JIZ`/`LDI`/`ILI` after a
 normalised operation) before they can be real. Not done: Vivado, seeds,

@@ -108,6 +108,7 @@ design/ip-protection
 design/asm-names
 design/pipeln-and-division
 design/normalisation-survey
+design/fadd-survey
 design/precision-and-width-review
 design/hdl-architecture-audit
 ```

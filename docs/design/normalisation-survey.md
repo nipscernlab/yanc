@@ -4,8 +4,14 @@ Survey of 2026-10-15 (Luciano's request, TODO 29, note
 [pipeln-and-division.md](pipeln-and-division.md) 4.3): the ways to
 normalise a floating-point result found in the literature, which serve every
 operation of SAPHO's shared normaliser and which serve the add alone, which
-fit a Cyclone V, and which to try. Nothing here is built. Each line says
-whether it is read in a source, measured here, or deduced (and from what).
+fit a Cyclone V, and which to try. Each line says whether it is read in a
+source, measured here, or deduced (and from what).
+
+**Status: FINISHED (2026-10-15).** Eight methods built and proven equal to
+`pnorm` (sections 2.2 and 4), two fitted (`nsr`, `rshort`), none faster.
+Decision (Luciano): `pnorm` stays, the normaliser unchanged. The next study
+is the add itself and the exponent alignment
+([fadd-survey.md](fadd-survey.md)).
 
 ## 1. The block being replaced
 
