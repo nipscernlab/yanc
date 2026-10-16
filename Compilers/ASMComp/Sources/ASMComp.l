@@ -196,9 +196,9 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
    /* the read of a division's result: the third word of `<div> x; NOP; <read>`, */
    /* an alias of the division's own opcode with operand 0 (docs/design/pipeln-and-division.md, section 4) */
 
-   "QUO"   eval_opcode( 26, 0, yytext,    "DIV"  ); // integer quotient of the division two words before
-   "REM"   eval_opcode( 28, 0, yytext,    "MOD"  ); // remainder of the division two words before
- "F_QUO"   eval_opcode( 40, 0, yytext,  "F_DIV"  ); // float quotient of the division two words before
+   "QUO"   eval_opcode( 26, 0, yytext,    "DIV"  ); // integer quotient of the division four words before
+   "REM"   eval_opcode( 28, 0, yytext,    "MOD"  ); // remainder of the division four words before
+ "F_QUO"   eval_opcode( 40, 0, yytext,  "F_DIV"  ); // float quotient of the division three words before
 
    "LOD_V" eval_opcode(  1,22, yytext,    "LOD"  ); //   LOD with constant offset
  "P_LOD_V" eval_opcode(  2,22, yytext,  "P_LOD"  ); // P_LOD with constant offset

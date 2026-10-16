@@ -87,7 +87,8 @@ operators, exceptions, variadic functions (see
   value the float format holds.
 - **`ULA resource -> ...`** (asmcomp): each piece of the arithmetic unit the
   program needs; a divider or a float divider is the slowest and largest.
-- **`N divisions take three words each`**: every division is written as
-  three instructions, because the dividers take three clock cycles.
+- **`N divisions, 5 words each for DIV/MOD and 4 for F_DIV`**: every
+  division is written as five instructions (integer) or four (float),
+  because the dividers take that many clock cycles.
 - **`stack depths from the program: SDEPTH n, NDSTAC n`**: the stacks are as
   deep as the program needs.

@@ -39,6 +39,7 @@ SF_ADD
 P_LOD __aux_var
 SF_DIV
 NOP
+NOP
 F_QUO
 P_LOD 2.000000
 F_MLT 1.000000
@@ -47,6 +48,7 @@ F_MLT 1.000000
 SF_SU2
 P_LOD __aux_var
 SF_DIV
+NOP
 NOP
 F_QUO
 SET_P main_r_i

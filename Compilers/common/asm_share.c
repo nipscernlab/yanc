@@ -758,16 +758,22 @@ done:
     return removed;
 }
 
-// ---- asm_divseq: every division becomes `<div> x; NOP; <read>` ----------------------
+// ---- asm_divseq: every division becomes `<div> x; NOP...; <read>` -------------------
 // See asm_share.h.
 
-// the read that goes with a division mnemonic, NULL if it is not one
-static const char *div_read(const char *mn)
+const char *asm_div_read(const char *mn)
 {
     if (strcmp(mn,   "DIV") == 0 || strcmp(mn,  "S_DIV") == 0) return "QUO";
     if (strcmp(mn,   "MOD") == 0 || strcmp(mn,  "S_MOD") == 0) return "REM";
     if (strcmp(mn, "F_DIV") == 0 || strcmp(mn, "SF_DIV") == 0) return "F_QUO";
     return NULL;
+}
+
+int asm_div_words(const char *mn)
+{
+    const char *rd = asm_div_read(mn);
+    if (!rd) return 0;
+    return strcmp(rd, "F_QUO") == 0 ? ASM_DIV_WORDS_FLT : ASM_DIV_WORDS_INT;
 }
 
 // the mnemonic of a line, after its labels ("" if the line holds no instruction)
@@ -808,20 +814,23 @@ int asm_divseq(const char *asm_path, const char *pc_path)
         line_mnemonic(lines.s[ln], mn[ln], sizeof(mn[ln]));
         ins_of[ln] = mn[ln][0] ? n++ : -1;
     }
-    char *expand = calloc(n + 1, 1);
-    int   added = 0, added_pc = 0;
+    char *expand = calloc(n + 1, 1);                     // per instruction: the words of its sequence (0: leave it)
+    int   added = 0, added_pc = 0, ndiv = 0;
     for (int ln = 0; ln < lines.n; ln++)
     {
-        const char *rd = ins_of[ln] >= 0 ? div_read(mn[ln]) : NULL;
+        const char *rd = ins_of[ln] >= 0 ? asm_div_read(mn[ln]) : NULL;
         if (!rd) continue;
-        int l1 = ln + 1, l2;                              // already followed by NOP and its read: leave it
-        while (l1 < lines.n && ins_of[l1] < 0) l1++;
-        l2 = l1 + 1;
-        while (l2 < lines.n && ins_of[l2] < 0) l2++;
-        if (l2 < lines.n && strcmp(mn[l1], "NOP") == 0 && strcmp(mn[l2], rd) == 0) continue;
-        expand[ins_of[ln]] = 1;
-        added += 2;
-        if (ins_of[ln] < pc.n) added_pc += 2;
+        int w = asm_div_words(mn[ln]), k = 1, l = ln;    // already followed by its NOPs and its read: leave it
+        for (; k < w; k++)
+        {
+            for (l++; l < lines.n && ins_of[l] < 0; l++) ;
+            if (l >= lines.n || strcmp(mn[l], k < w - 1 ? "NOP" : rd) != 0) break;
+        }
+        if (k == w) continue;
+        expand[ins_of[ln]] = (char)w;
+        ndiv++;
+        added += w - 1;
+        if (ins_of[ln] < pc.n) added_pc += w - 1;
     }
     if (added == 0) goto done;
 
@@ -834,23 +843,25 @@ int asm_divseq(const char *asm_path, const char *pc_path)
         if (ins_of[ln] < 0 || !expand[ins_of[ln]]) continue;
         size_t k = strlen(text);
         if (k == 0 || text[k - 1] != '\n') fputc('\n', f);
-        fprintf(f, "NOP\n%s\n", div_read(mn[ln]));
+        for (int w = 2; w < expand[ins_of[ln]]; w++) fputs("NOP\n", f);
+        fprintf(f, "%s\n", asm_div_read(mn[ln]));
     }
     fclose(f);
 
-    if (pc.n > 0 && added_pc > 0)                         // the source line of a division, twice more
+    if (pc.n > 0 && added_pc > 0)                         // the source line of a division, once per new word
     {
         f = fopen(pc_path, "w");
         if (!f) { added_pc = -1; goto done; }
         for (int i = 0; i < pc.n; i++)
         {
             fputs(pc.s[i], f);
-            if (expand[i]) { fputs(pc.s[i], f); fputs(pc.s[i], f); }
+            for (int w = 1; w < expand[i]; w++) fputs(pc.s[i], f);
         }
         fclose(f);
     }
-    printf(yanc_lang_en ? "Info: %d divisions take three words each (%d added)\n"
-                        : "Info: %d divisões ocupam três palavras cada (%d a mais)\n", added / 2, added);
+    printf(yanc_lang_en ? "Info: %d divisions, %d words each for DIV/MOD and %d for F_DIV (%d added)\n"
+                        : "Info: %d divisões, %d palavras cada em DIV/MOD e %d em F_DIV (%d a mais)\n",
+           ndiv, ASM_DIV_WORDS_INT, ASM_DIV_WORDS_FLT, added);
 
 done:
     free(expand); free(mn); free(ins_of);

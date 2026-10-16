@@ -190,9 +190,9 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    /* the read of a division's result: the third word of `<div> x; NOP; <read>` */
 
-   "QUO"   p1_opcode( 0); // integer quotient of the division two words before
-   "REM"   p1_opcode( 0); // remainder of the division two words before
- "F_QUO"   p1_opcode( 0); // float quotient of the division two words before
+   "QUO"   p1_opcode( 0); // integer quotient of the division four words before
+   "REM"   p1_opcode( 0); // remainder of the division four words before
+ "F_QUO"   p1_opcode( 0); // float quotient of the division three words before
 
    "LOD_V" p1_opcode(22); //   LOD with constant offset
  "P_LOD_V" p1_opcode(22); // P_LOD with constant offset

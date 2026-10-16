@@ -18,14 +18,14 @@ import os, sys
 BINARY = {
     'ADD':   'a + x',
     'MLT':   'x * a',
-    'DIV':   'starts x / a (integer quotient, toward zero); read it with QUO two words later',
-    'MOD':   'starts x % a (remainder, the sign of x); read it with REM two words later',
+    'DIV':   'starts x / a (integer quotient, toward zero); read it with QUO four words later',
+    'MOD':   'starts x % a (remainder, the sign of x); read it with REM four words later',
     'SGN':   'a with the sign of x',
     'F_ADD': 'x + a',
     'F_SU1': 'a - x',
     'F_SU2': 'x - a',
     'F_MLT': 'x * a',
-    'F_DIV': 'starts x / a; read it with F_QUO two words later',
+    'F_DIV': 'starts x / a; read it with F_QUO three words later',
     'F_SGN': 'a with the sign of x',
     'F_SCL': 'a * 2^x (x an int, a a float)',
     'AND':   'x & a (bitwise)',
@@ -72,9 +72,9 @@ OTHER = {
     'TOM': 'offer a on link x; wait here until the partner takes it',
     'CAD': 'wait here until link x offers a word; a = that word',
     'F_ROT': 'the power of two nearest to the square root of the float a',
-    'QUO': 'a = the quotient of the DIV two words before',
-    'REM': 'a = the remainder of the MOD two words before',
-    'F_QUO': 'a = the quotient of the F_DIV two words before',
+    'QUO': 'a = the quotient of the DIV four words before',
+    'REM': 'a = the remainder of the MOD four words before',
+    'F_QUO': 'a = the quotient of the F_DIV three words before',
     'LEA': 'a = the address of x (a constant)',
 }
 
@@ -148,9 +148,10 @@ def render(rows):
     w('opcode and differ only in how the assembler reads the operand.')
     w('')
     w('A processor contains only the hardware of the instructions its program')
-    w('uses. A division takes three words, `DIV k; NOP; QUO` (also `MOD`/`REM`,')
-    w('`F_DIV`/`F_QUO`): the compilers write it that way, because the dividers')
-    w('take three cycles.')
+    w('uses. An integer division takes five words, `DIV k; NOP; NOP; NOP; QUO`')
+    w('(also `MOD`/`REM`), a float division four, `F_DIV k; NOP; NOP; F_QUO`:')
+    w('the compilers write it that way, because the dividers take five and four')
+    w('cycles.')
     w('')
     w('Columns: **operand**, what the operand field holds (`data` a data address,')
     w('`code` an instruction address, `in`/`out` a port, `link` a link number,')

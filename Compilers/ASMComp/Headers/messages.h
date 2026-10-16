@@ -75,8 +75,8 @@ void parse_lang_flag(int *argc, char **argv);
       "Error: %s %s: the operand of LDI/ILI/STI/ISI is an array name or an integer base address.\n")
 
 #define MSG_ERR_DIV_SEQ \
-    M("Erro: %s leva três palavras: depois dela vem NOP e a leitura do resultado (esperava %s, achei %s). Os compiladores escrevem a sequência; num .asm feito à mão, escreva-a.\n", \
-      "Error: %s takes three words: it must be followed by NOP and the read of its result (expected %s, found %s). The compilers write the sequence; in a hand-written .asm, write it out.\n")
+    M("Erro: %s leva %d palavras: depois dela vêm %d NOP e a leitura do resultado (esperava %s, achei %s). Os compiladores escrevem a sequência; num .asm feito à mão, escreva-a.\n", \
+      "Error: %s takes %d words: it must be followed by %d NOP and the read of its result (expected %s, found %s). The compilers write the sequence; in a hand-written .asm, write it out.\n")
 
 #define MSG_ERR_LINK_NUM \
     M("Erro: o operando de %s é o número do link, um inteiro de 0 a %d (achei '%s').\n", \
@@ -86,8 +86,8 @@ void parse_lang_flag(int *argc, char **argv);
       "Error: #LKSYNC %d, but the program has no TOM or CAD on link %d.\n")
 
 #define MSG_ERR_DIV_SEQ_END \
-    M("Erro: o programa termina no meio da sequência de %s (faltou NOP e %s).\n", \
-      "Error: the program ends inside the sequence of %s (NOP and %s are missing).\n")
+    M("Erro: o programa termina no meio da sequência de %s (faltaram NOP e %s).\n", \
+      "Error: the program ends inside the sequence of %s (NOPs and %s are missing).\n")
 
 #define MSG_ERR_FROUND_RANGE \
     M("Erro: #FROUND só aceita 0 (legado), 1 (truncamento exato + saturação) ou 2 (arredondamento ao par).\n", \

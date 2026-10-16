@@ -135,6 +135,8 @@ SET s
 LOD main_y
 DIV main_z
 NOP
+NOP
+NOP
 QUO
 SET main_t
 LOD s
@@ -142,6 +144,8 @@ ADD main_t
 SET s
 LOD main_y
 MOD main_z
+NOP
+NOP
 NOP
 REM
 SET main_t
@@ -244,6 +248,8 @@ P_LOD main_y
 ADD 1
 S_DIV
 NOP
+NOP
+NOP
 QUO
 SET main_t
 LOD s
@@ -254,6 +260,8 @@ ADD main_z
 P_LOD main_y
 ADD 1
 S_MOD
+NOP
+NOP
 NOP
 REM
 SET main_t
@@ -515,6 +523,7 @@ SET s
 LOD main_fy
 F_DIV main_fx
 NOP
+NOP
 F_QUO
 SET main_fw
 F_MLT 4194304.0
@@ -570,6 +579,7 @@ F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_DIV
+NOP
 NOP
 F_QUO
 SET main_fw
@@ -992,12 +1002,14 @@ JMP __Lwh1
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 1
 NOP
+NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 2
+NOP
 NOP
 F_QUO
              SF_ADD
@@ -1006,12 +1018,14 @@ F_QUO
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 3
 NOP
+NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 4
+NOP
 NOP
 F_QUO
              SF_ADD
@@ -1079,6 +1093,7 @@ F_QUO
             SET   __log_t1
             LOD   __log_t2
             F_DIV __log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
+NOP
 NOP
 F_QUO
             SET   __log_u

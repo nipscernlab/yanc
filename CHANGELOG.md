@@ -8,6 +8,15 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **The dividers take five and four cycles; `sapho_all` from 21.82 to 29.66
+  MHz** on the DE10-Nano part (3,558 -> 3,652 ALMs). `DIV`/`MOD` are cut
+  into five stages and `F_DIV` into four (`STG` of `ula_idiv`/`ula_fdiv`),
+  so the compilers write `DIV x; NOP; NOP; NOP; QUO` (also `MOD`/`REM`) and
+  `F_DIV x; NOP; NOP; F_QUO`. A hand-written `.asm` with a division must
+  write the longer sequence: asmcomp names what is missing. The float add
+  and the `JIZ` after it limit now (docs/design/pipeln-and-division.md 4.4).
+
 ### Added
 - **`Scripts/hw/path_groups.py`**: the worst path of each destination block
   in a long timing report. `fmax.sh` and `vfmax.sh` now write the 3000 worst

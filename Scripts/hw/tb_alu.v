@@ -74,11 +74,13 @@ endfunction
 reg signed [NUBITS-1:0] d1, d2;
 wire signed [NUBITS-1:0] dq, dr;
 
-// one divider for both (ula_idiv): three cycles, a new pair may enter every
-// cycle, the results come out two cycles later -- as QUO / REM read them
+// one divider for both (ula_idiv): five cycles, a new pair may enter every
+// cycle, the results come out four cycles later -- as QUO / REM read them
+localparam DLAT = 4;                                       // ula_idiv's STG - 1
 reg clk = 0; always #5 clk = ~clk;
 ula_idiv #(NUBITS) dut_idiv (d1, d2, dq, dr, clk);
-reg signed [NUBITS-1:0] hq [0:1], hr [0:1], h1 [0:1], h2 [0:1];   // expected, oldest first
+reg signed [NUBITS-1:0] hq [0:DLAT-1], hr [0:DLAT-1], h1 [0:DLAT-1], h2 [0:DLAT-1];   // expected, oldest first
+integer kd;
 
 // The reference: Verilog's own signed / and %. Division by zero is NOT
 // checked: it stays undefined (the array gives an all-ones quotient, TODO
@@ -192,23 +194,26 @@ initial begin
 	end
 
 	// DIV / MOD: random operands, the zero divisor, and the signed edges; a new
-	// pair every cycle, each result checked two cycles later
-	for (k = 0; k < N + 2; k = k + 1) begin
+	// pair every cycle, each result checked DLAT cycles later
+	if (dut_idiv.STG - 1 != DLAT) begin $display("FAIL: ula_idiv has %0d stages, DLAT here is %0d", dut_idiv.STG, DLAT); $finish; end
+	for (k = 0; k < N + DLAT; k = k + 1) begin
 		d1 = rnd(0);
 		d2 = rnd(0);
 		if (d2 == 0) d2 = {{(NUBITS-1){1'b0}}, 1'b1};             // by zero is undefined: skip it
 		if (k % 7 == 0) d2 = {{(NUBITS-1){1'b0}}, 1'b1};          // by 1
 		if (k % 11 == 0) d1 = {1'b1, {(NUBITS-1){1'b0}}};         // most negative dividend
 		if (k % 13 == 0) begin d1 = {1'b1, {(NUBITS-1){1'b0}}}; d2 = {NUBITS{1'b1}}; end // INT_MIN / -1
-		if (k >= N) begin d1 = rnd(0); d2 = 1; end                     // the last two out
+		if (k >= N) begin d1 = rnd(0); d2 = 1; end                     // the last ones out
 		#1;
-		if (k >= 2 && (dq !== hq[0] || dr !== hr[0])) begin
+		if (k >= DLAT && (dq !== hq[0] || dr !== hr[0])) begin
 			errs_div = errs_div + 1;
 			if (errs_div < 5) $display("  DIV/MOD %0d / %0d -> q=%0d r=%0d expected q=%0d r=%0d",
 			                           h1[0], h2[0], dq, dr, hq[0], hr[0]);
 		end
-		hq[0] = hq[1]; hr[0] = hr[1]; h1[0] = h1[1]; h2[0] = h2[1];
-		hq[1] = ref_div(d1, d2); hr[1] = ref_mod(d1, d2); h1[1] = d1; h2[1] = d2;
+		for (kd = 0; kd < DLAT-1; kd = kd + 1) begin
+			hq[kd] = hq[kd+1]; hr[kd] = hr[kd+1]; h1[kd] = h1[kd+1]; h2[kd] = h2[kd+1];
+		end
+		hq[DLAT-1] = ref_div(d1, d2); hr[DLAT-1] = ref_mod(d1, d2); h1[DLAT-1] = d1; h2[DLAT-1] = d2;
 		@(posedge clk);
 	end
 

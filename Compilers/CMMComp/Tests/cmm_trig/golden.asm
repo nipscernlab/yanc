@@ -83,6 +83,7 @@ JMP __Lwh1
             LOD   __atan_ax                // big branch: t = 1/ax
             F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
 NOP
+NOP
 F_QUO
             JMP   __L_atan_haveT
 @__L_atan_small LOD __atan_ax               // small branch: t = ax

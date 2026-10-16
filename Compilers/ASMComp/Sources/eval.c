@@ -22,6 +22,7 @@
 #include "../Headers/simulacao.h"
 #include "../Headers/messages.h"
 #include "../../common/exe_dir.h"
+#include "../../common/asm_share.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -394,35 +395,29 @@ void eval_direct(int next_state)
     state = next_state;
 }
 
-// a division takes three words, `<div> x; NOP; <read>` (the dividers are cut
-// by two registers; Compilers/common asm_divseq writes the sequence): the two
-// words after a division must be NOP and its read
+// a division takes as many words as its divider has stages, `<div> x; NOP...;
+// <read>` (Compilers/common asm_divseq writes the sequence, asm_div_words
+// says how long): the words after a division must be NOPs and its read
 static int  div_left = 0;          // words of the sequence still expected
+static int  div_len  = 0;          // words of the whole sequence
 static char div_op[16], div_rd[8]; // the division, and the read it ends with
-
-static const char *div_read_of(const char *mn)
-{
-    if (strcmp(mn,   "DIV") == 0 || strcmp(mn,  "S_DIV") == 0) return "QUO";
-    if (strcmp(mn,   "MOD") == 0 || strcmp(mn,  "S_MOD") == 0) return "REM";
-    if (strcmp(mn, "F_DIV") == 0 || strcmp(mn, "SF_DIV") == 0) return "F_QUO";
-    return NULL;
-}
 
 static void div_seq(const char *mn)
 {
     if (div_left > 0)
     {
-        const char *want = (div_left == 2) ? "NOP" : div_rd;
-        if (strcmp(mn, want) != 0) {fprintf(stderr, MSG_ERR_DIV_SEQ, div_op, want, mn); exit(EXIT_FAILURE);}
+        const char *want = (div_left > 1) ? "NOP" : div_rd;
+        if (strcmp(mn, want) != 0) {fprintf(stderr, MSG_ERR_DIV_SEQ, div_op, div_len, div_len - 2, want, mn); exit(EXIT_FAILURE);}
         div_left--;
         return;
     }
-    const char *rd = div_read_of(mn);
+    const char *rd = asm_div_read(mn);
     if (rd)
     {
         snprintf(div_op, sizeof(div_op), "%s", mn);
         snprintf(div_rd, sizeof(div_rd), "%s", rd);
-        div_left = 2;
+        div_len  = asm_div_words(mn);
+        div_left = div_len - 1;
     }
 }
 

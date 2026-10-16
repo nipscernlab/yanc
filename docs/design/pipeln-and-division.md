@@ -697,6 +697,37 @@ before):
 Behind 32 MHz the float add itself limits (30.9 ns to the accumulator): the
 shift and the rounding inside the normaliser, or the two-path adder of 4.2.
 
+### 4.4 Into `SAPHO/`, one change at a time (2026-10-16)
+
+Luciano's protocol: from v7.1, the change expected to raise the clock most
+first, a fit of `sapho_all` after each (DE10-Nano part, seed 1, `fmax.sh`
+defaults), kept only if it pays. The reference was refitted with today's
+`fmax.sh` (it copies the `.mif` since 4ddc731): the same 21.82 MHz and 3,558
+ALMs as on 2026-10-11.
+
+| step | change | Fmax | ALMs | registers | worst path after |
+|---|---|---|---|---|---|
+| 0 | v7.1 | 21.82 MHz | 3,558 | 907 | integer divider, 43.3 ns |
+| 1 | `DIV`/`MOD` in 5 stages, `F_DIV` in 4 | **29.66 MHz** (+36 %) | 3,652 (+2.6 %) | 1,197 | data memory -> `denorm` 8.1 -> `fadd` 2.6 -> normaliser 11.2 -> ALU mux 2.9 -> jump and PC 5.0 ns (31.5 ns) |
+
+Step 1: `ula_idiv` and `ula_fdiv` take a parameter `STG` (5 and 4) instead of
+the 3 written in both instances; the compilers write `DIV x; NOP; NOP; NOP;
+QUO` and `F_DIV x; NOP; NOP; F_QUO` (`ASM_DIV_WORDS_INT`/`_FLT` in
+`Compilers/common/asm_share.h`, read by `asm_divseq` and by asmcomp's
+check). Better than `stg4`'s 26.39 (both in 4): with the integer divider in
+5 the dividers left the 10 worst paths. The 290 new registers sit in the
+flip-flops beside the LUTs, so the ALMs barely move. Every program with a
+division is one word and one cycle longer per `F_DIV`, two per `DIV`/`MOD`;
+the outputs are unchanged (22 simulated against their goldens, 16 of them
+needing 200 000 cycles instead of 100 000 to print all of them). Next: the
+`JIZ` without the normaliser (TODO 29 step 2).
+
+**For the documentation (item 21).** A division now takes five words
+(`DIV`/`MOD`: `DIV x; NOP; NOP; NOP; QUO`) or four (`F_DIV x; NOP; NOP;
+F_QUO`); the compilers write them, a hand-written `.asm` must too (asmcomp
+says how many are missing). The instruction and message pages are generated
+and already say so.
+
 ## 5. Tools kept from this work
 
 - `Scripts/hw/fmax.sh`: `SEED=<n>` (compare a change across seeds: one fit

@@ -40,11 +40,6 @@ SET my_sqrt_v
 SET my_sqrt_x
 F_DIV my_sqrt_num
 NOP
-F_QUO
-F_ADD my_sqrt_x
-F_MLT 0.5
-SET my_sqrt_x
-F_DIV my_sqrt_num
 NOP
 F_QUO
 F_ADD my_sqrt_x
@@ -52,11 +47,20 @@ F_MLT 0.5
 SET my_sqrt_x
 F_DIV my_sqrt_num
 NOP
+NOP
 F_QUO
 F_ADD my_sqrt_x
 F_MLT 0.5
 SET my_sqrt_x
 F_DIV my_sqrt_num
+NOP
+NOP
+F_QUO
+F_ADD my_sqrt_x
+F_MLT 0.5
+SET my_sqrt_x
+F_DIV my_sqrt_num
+NOP
 NOP
 F_QUO
 F_ADD my_sqrt_x
@@ -111,12 +115,14 @@ JMP __Lwh2
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 1
 NOP
+NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 2
+NOP
 NOP
 F_QUO
              SF_ADD
@@ -125,12 +131,14 @@ F_QUO
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 3
 NOP
+NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 4
+NOP
 NOP
 F_QUO
              SF_ADD

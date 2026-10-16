@@ -17,9 +17,10 @@ address (an array element at a known index). Several mnemonics share an
 opcode and differ only in how the assembler reads the operand.
 
 A processor contains only the hardware of the instructions its program
-uses. A division takes three words, `DIV k; NOP; QUO` (also `MOD`/`REM`,
-`F_DIV`/`F_QUO`): the compilers write it that way, because the dividers
-take three cycles.
+uses. An integer division takes five words, `DIV k; NOP; NOP; NOP; QUO`
+(also `MOD`/`REM`), a float division four, `F_DIV k; NOP; NOP; F_QUO`:
+the compilers write it that way, because the dividers take five and four
+cycles.
 
 Columns: **operand**, what the operand field holds (`data` a data address,
 `code` an instruction address, `in`/`out` a port, `link` a link number,
@@ -80,12 +81,12 @@ named, `addr` its address only).
 | `MLT` | 24 | data | rw | - | r | a = x * a |
 | `MLT_V` | 24 | offset | rw | - | r | as MLT, x at a constant offset from the name |
 | `S_MLT` | 25 | none | rw | pop | - | a = x * a |
-| `DIV` | 26 | data | rw | - | r | starts x / a (integer quotient, toward zero); read it with QUO two words later |
-| `QUO` | 26 | none | w | - | - | a = the quotient of the DIV two words before |
-| `S_DIV` | 27 | none | rw | pop | - | starts x / a (integer quotient, toward zero); read it with QUO two words later |
-| `MOD` | 28 | data | rw | - | r | starts x % a (remainder, the sign of x); read it with REM two words later |
-| `REM` | 28 | none | w | - | - | a = the remainder of the MOD two words before |
-| `S_MOD` | 29 | none | rw | pop | - | starts x % a (remainder, the sign of x); read it with REM two words later |
+| `DIV` | 26 | data | rw | - | r | starts x / a (integer quotient, toward zero); read it with QUO four words later |
+| `QUO` | 26 | none | w | - | - | a = the quotient of the DIV four words before |
+| `S_DIV` | 27 | none | rw | pop | - | starts x / a (integer quotient, toward zero); read it with QUO four words later |
+| `MOD` | 28 | data | rw | - | r | starts x % a (remainder, the sign of x); read it with REM four words later |
+| `REM` | 28 | none | w | - | - | a = the remainder of the MOD four words before |
+| `S_MOD` | 29 | none | rw | pop | - | starts x % a (remainder, the sign of x); read it with REM four words later |
 | `SGN` | 30 | data | rw | - | r | a = a with the sign of x |
 | `S_SGN` | 31 | none | rw | pop | - | a = a with the sign of x |
 
@@ -103,9 +104,9 @@ named, `addr` its address only).
 | `F_MLT` | 38 | data | rw | - | r | a = x * a |
 | `F_MLT_V` | 38 | offset | rw | - | r | as F_MLT, x at a constant offset from the name |
 | `SF_MLT` | 39 | none | rw | pop | - | a = x * a |
-| `F_DIV` | 40 | data | rw | - | r | starts x / a; read it with F_QUO two words later |
-| `F_QUO` | 40 | none | w | - | - | a = the quotient of the F_DIV two words before |
-| `SF_DIV` | 41 | none | rw | pop | - | starts x / a; read it with F_QUO two words later |
+| `F_DIV` | 40 | data | rw | - | r | starts x / a; read it with F_QUO three words later |
+| `F_QUO` | 40 | none | w | - | - | a = the quotient of the F_DIV three words before |
+| `SF_DIV` | 41 | none | rw | pop | - | starts x / a; read it with F_QUO three words later |
 | `F_SGN` | 42 | data | rw | - | r | a = a with the sign of x |
 | `SF_SGN` | 43 | none | rw | pop | - | a = a with the sign of x |
 | `F_SCL` | 44 | data | rw | - | r | a = a * 2^x (x an int, a a float) |

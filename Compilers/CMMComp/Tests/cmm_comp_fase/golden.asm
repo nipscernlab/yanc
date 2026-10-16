@@ -20,6 +20,7 @@ JIZ __Lfa1a
 LOD main_c
 F_DIV main_c_i
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -37,6 +38,7 @@ F_LES 0.0
 JIZ __Lfa1c
 LOD main_c
 F_DIV main_c_i
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -65,6 +67,7 @@ JIZ __Lfa2a
 LOD main_c
 F_DIV main_c_i
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -82,6 +85,7 @@ F_LES 0.0
 JIZ __Lfa2c
 LOD main_c
 F_DIV main_c_i
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -110,6 +114,7 @@ JIZ __Lfa3a
 LOD main_c
 F_DIV main_c_i
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -127,6 +132,7 @@ F_LES 0.0
 JIZ __Lfa3c
 LOD main_c
 F_DIV main_c_i
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -155,6 +161,7 @@ JIZ __Lfa4a
 LOD main_c
 F_DIV main_c_i
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -172,6 +179,7 @@ F_LES 0.0
 JIZ __Lfa4c
 LOD main_c
 F_DIV main_c_i
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -200,6 +208,7 @@ JIZ __Lfa5a
 LOD main_c
 F_DIV main_c_i
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -217,6 +226,7 @@ F_LES 0.0
 JIZ __Lfa5c
 LOD main_c
 F_DIV main_c_i
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -245,6 +255,7 @@ JIZ __Lfa6a
 LOD main_c
 F_DIV main_c_i
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -262,6 +273,7 @@ F_LES 0.0
 JIZ __Lfa6c
 LOD main_c
 F_DIV main_c_i
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -290,6 +302,7 @@ JIZ __Lfa7a
 LOD main_c
 F_DIV main_c_i
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -307,6 +320,7 @@ F_LES 0.0
 JIZ __Lfa7c
 LOD main_c
 F_DIV main_c_i
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -335,6 +349,7 @@ JIZ __Lfa8a
 LOD main_c
 F_DIV main_c_i
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -352,6 +367,7 @@ F_LES 0.0
 JIZ __Lfa8c
 LOD main_c
 F_DIV main_c_i
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -380,6 +396,7 @@ JIZ __Lfa9a
 LOD main_c
 F_DIV main_c_i
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -397,6 +414,7 @@ F_LES 0.0
 JIZ __Lfa9c
 LOD main_c
 F_DIV main_c_i
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -432,6 +450,7 @@ JMP __Lwh1
             JIZ   __L_atan_small
             LOD   __atan_ax                // big branch: t = 1/ax
             F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
+NOP
 NOP
 F_QUO
             JMP   __L_atan_haveT

@@ -16,7 +16,7 @@ code), what was measured and what was deduced, and most end with a section
 | [ip-protection.md](ip-protection.md) | handing SAPHO to Quartus or Vivado without showing its source: IEEE 1735, vendor schemes, a service (notes, parked until a partnership) |
 | [burst.md](burst.md) | a whole array through a port, one word per clock, stopping while the FIFO is full (design, not implemented) |
 | [asm-names.md](asm-names.md) | user names that collide in the assembly |
-| [pipeln-and-division.md](pipeln-and-division.md) | the slow dividers: the pipeline tried and dropped, the two register cuts kept |
+| [pipeln-and-division.md](pipeln-and-division.md) | the slow dividers: the pipeline tried and dropped, the register cuts kept (5 and 4 stages since 2026-10-16, section 4.4) |
 | [normalisation-survey.md](normalisation-survey.md) | the known ways to normalise a float on an FPGA: eight built, two fitted, none faster; finished, `pnorm` kept |
 | [fadd-survey.md](fadd-survey.md) | the known ways to align the exponents and add; the add as a separate circuit built, not fitted; finished, `pnorm` kept |
 | [precision-and-width-review.md](precision-and-width-review.md) | the float and word-width review (2026-09): the evidence behind TODO items 1 to 9 |

@@ -160,8 +160,8 @@ int main(int argc, char **argv)
         char pc[2048]; snprintf(pc, sizeof(pc), "%s/pc_%s_mem.txt", tmp_dir, g_unit->prname);
         int gone = asm_reach(outp, pc);
         if (gone > 0) lower_num_ins(tmp_dir, gone);
-        // every division becomes `<div> x; NOP; <read>` (the dividers take
-        // three cycles); the count grows by the words added
+        // every division becomes `<div> x; NOP...; <read>` (the dividers take
+        // five / four cycles); the count grows by the words added
         int more = asm_divseq(outp, pc);
         if (more > 0) lower_num_ins(tmp_dir, -more);
     } else {

@@ -93,6 +93,7 @@ LOD __tanh_e
 F_ADD 1.0
 F_DIV __tanh_n
 NOP
+NOP
 F_QUO
 F_MLT 1000.0
 SET main_r
@@ -108,6 +109,7 @@ LOD __tanh_e
 F_ADD 1.0
 F_DIV __tanh_n
 NOP
+NOP
 F_QUO
 F_MLT 1000.0
 SET main_r
@@ -122,6 +124,7 @@ SET __tanh_n
 LOD __tanh_e
 F_ADD 1.0
 F_DIV __tanh_n
+NOP
 NOP
 F_QUO
 F_MLT 1000.0

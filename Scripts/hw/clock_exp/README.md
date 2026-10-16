@@ -57,7 +57,8 @@ variant: `eq_norm.sh lzc`) in nine formats and rounding levels and compares
 the prints.
 
 What the timed variants do NOT have yet, so a program run on them is wrong:
-the compilers still write each division as three words (`stg4` needs four,
-`addr` five for `DIV`/`MOD`), and nothing stops a `JIZ`, `LDI` or `ILI` right
+the compilers of their base (1cbf4bb) write each division as three words
+(`stg4` needs four, `addr` five for `DIV`/`MOD`; `SAPHO/` has 5/4 since item
+29 step 1), and nothing stops a `JIZ`, `LDI` or `ILI` right
 after an operation that goes through the normaliser (none of the C± goldens
 has one; the assembler would have to refuse or pad it).

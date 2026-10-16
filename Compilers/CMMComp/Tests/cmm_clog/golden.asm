@@ -42,6 +42,7 @@ JIZ __Lfa1a
 LOD __fase_re
 F_DIV __fase_im
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -59,6 +60,7 @@ F_LES 0.0
 JIZ __Lfa1c
 LOD __fase_re
 F_DIV __fase_im
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -104,6 +106,7 @@ JIZ __Lfa2a
 LOD __fase_re
 F_DIV __fase_im
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -121,6 +124,7 @@ F_LES 0.0
 JIZ __Lfa2c
 LOD __fase_re
 F_DIV __fase_im
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -166,6 +170,7 @@ JIZ __Lfa3a
 LOD __fase_re
 F_DIV __fase_im
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -183,6 +188,7 @@ F_LES 0.0
 JIZ __Lfa3c
 LOD __fase_re
 F_DIV __fase_im
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -232,6 +238,7 @@ JIZ __Lfa4a
 LOD __fase_re
 F_DIV __fase_im
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -249,6 +256,7 @@ F_LES 0.0
 JIZ __Lfa4c
 LOD __fase_re
 F_DIV __fase_im
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -307,6 +315,7 @@ JIZ __Lfa5a
 LOD __fase_re
 F_DIV __fase_im
 NOP
+NOP
 F_QUO
 CAL __float_atan
 SET __fase_t
@@ -324,6 +333,7 @@ F_LES 0.0
 JIZ __Lfa5c
 LOD __fase_re
 F_DIV __fase_im
+NOP
 NOP
 F_QUO
 CAL __float_atan
@@ -368,6 +378,7 @@ JMP __Lwh1
             JIZ   __L_atan_small
             LOD   __atan_ax                // big branch: t = 1/ax
             F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
+NOP
 NOP
 F_QUO
             JMP   __L_atan_haveT
@@ -425,6 +436,7 @@ F_QUO
             SET   __log_t1
             LOD   __log_t2
             F_DIV __log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
+NOP
 NOP
 F_QUO
             SET   __log_u

@@ -116,6 +116,7 @@ JMP __Lwh1
             LOD   __log_t2
             F_DIV __log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
 NOP
+NOP
 F_QUO
             SET   __log_u
             F_MLT __log_u

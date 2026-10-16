@@ -383,6 +383,7 @@ CAL lipschitz_x
 SET fista_x_L
 F_DIV 1.0
 NOP
+NOP
 F_QUO
 SET fista_x_step
 SET fista_x_step_lam
@@ -430,6 +431,7 @@ LOD fista_x_t
 F_SU1 1.0
 P_LOD fista_x_tn
 SF_DIV
+NOP
 NOP
 F_QUO
 SET fista_x_mom
@@ -616,6 +618,7 @@ PF_INN 0
 P_LOD 30000.0
 SF_DIV
 NOP
+NOP
 F_QUO
 STI y
 LOD main_n
@@ -649,12 +652,14 @@ JMP __Lwh33
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 1
 NOP
+NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 2
+NOP
 NOP
 F_QUO
              SF_ADD
@@ -663,12 +668,14 @@ F_QUO
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 3
 NOP
+NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 4
+NOP
 NOP
 F_QUO
              SF_ADD

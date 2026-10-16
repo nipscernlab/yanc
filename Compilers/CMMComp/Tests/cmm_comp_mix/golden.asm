@@ -50,9 +50,11 @@ OUT 0
 LOD 2.0
 F_DIV main_c2
 NOP
+NOP
 F_QUO
 P_LOD 2.0
 F_DIV main_c2_i
+NOP
 NOP
 F_QUO
 SET_P main_r_i
@@ -100,11 +102,13 @@ F_MLT main_c
 P_LOD __aux_var
 SF_DIV
 NOP
+NOP
 F_QUO
 P_LOD 25.0
 F_MLT main_c_i
 P_LOD __aux_var
 SF_DIV
+NOP
 NOP
 F_QUO
 F_NEG
@@ -145,9 +149,11 @@ OUT 0
 LOD 2.0
 F_DIV main_c2
 NOP
+NOP
 F_QUO
 P_LOD 2.0
 F_DIV main_c2_i
+NOP
 NOP
 F_QUO
 SET_P main_r_i
@@ -195,11 +201,13 @@ F_MLT main_c
 P_LOD __aux_var
 SF_DIV
 NOP
+NOP
 F_QUO
 P_LOD 25.0
 F_MLT main_c_i
 P_LOD __aux_var
 SF_DIV
+NOP
 NOP
 F_QUO
 F_NEG

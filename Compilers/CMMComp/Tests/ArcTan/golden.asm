@@ -31,6 +31,7 @@ LOD 1.0
 P_LOD arctan_LUT_x
 SF_DIV
 NOP
+NOP
 F_QUO
 SET arctan_LUT_x
 LOD 1.57079632679
@@ -107,6 +108,7 @@ JMP __Lwh2
             JIZ   __L_atan_small
             LOD   __atan_ax                // big branch: t = 1/ax
             F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
+NOP
 NOP
 F_QUO
             JMP   __L_atan_haveT

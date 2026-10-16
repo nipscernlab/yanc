@@ -95,6 +95,7 @@ JIZ __Lpow1pos
 LOD __pow_r
 F_DIV 1.0
 NOP
+NOP
 F_QUO
 SET __pow_r
 @__Lpow1pos LOD __pow_r
@@ -198,6 +199,7 @@ JMP __Lwh1
             SET   __log_t1
             LOD   __log_t2
             F_DIV __log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
+NOP
 NOP
 F_QUO
             SET   __log_u

@@ -1,14 +1,14 @@
 `timescale 1ns/1ps
 // checks the explicit divider array of ula_fdiv against the `/` and `%` operators
 // at every FROUND level, for random normalized operands (and the zero cases).
-// The divider takes three cycles (two register cuts) and holds nothing: a new
-// pair of operands enters every cycle, as in the processor (F_DIV at t, other
-// instructions at t+1, F_QUO at t+2), and each output is checked against the
-// operands of two cycles before.
+// The divider takes four cycles (three register cuts, ula_fdiv STG) and holds
+// nothing: a new pair of operands enters every cycle, as in the processor
+// (F_DIV at t, NOPs at t+1 and t+2, F_QUO at t+3), and each output is checked
+// against the operands of three cycles before.
 module tb;
 parameter MAN = 23, EXP = 8;
 localparam W2 = MAN+3;   // level 2 mantissa+GRS
-localparam LAT = 2;      // cycles from the operands to the result
+localparam LAT = 3;      // cycles from the operands to the result: ula_fdiv's STG - 1
 
 reg clk = 0; always #5 clk = ~clk;
 
@@ -76,6 +76,7 @@ end
 endtask
 
 initial begin
+	if (d0.STG - 1 != LAT) begin $display("FAIL: ula_fdiv has %0d stages, LAT here is %0d", d0.STG, LAT); $finish; end
 	errs = 0; hv = 0;
 	for (n = 0; n < 20000; n = n + 1) begin
 		a = $random; b = $random;
@@ -87,7 +88,7 @@ initial begin
 	end
 	a = 0; a[MAN+EXP-1:MAN] = 8'h80; b = $random; b[MAN-1] = 1; step;   // 0 / x
 	a = $random; a[MAN-1] = 1; b = 0; step;                              // x / 0 (levels >= 1)
-	for (n = 0; n < LAT; n = n + 1) begin a = $random; b = $random; b[MAN-1] = 1; step; end   // the last two out
+	for (n = 0; n < LAT; n = n + 1) begin a = $random; b = $random; b[MAN-1] = 1; step; end   // the last ones out
 	if (errs == 0) $display("PASS: 20000 random divisions, 3 levels, %0d/%0d, a new pair every cycle, result %0d cycles later", MAN, EXP, LAT);
 	else $display("FAIL: %0d mismatches", errs);
 	$finish;

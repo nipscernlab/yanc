@@ -108,6 +108,7 @@ JMP __Lwh1
             LOD   __tan_p                  // a > pi/4  -> tan = 1/P  (cotangent)
             F_DIV 1.0                    // 1.0 / P   (F_DIV X = X/acc)
 NOP
+NOP
 F_QUO
             JMP   __L_tan_sign
 @__L_tan_done LOD  __tan_p

@@ -44,6 +44,7 @@ CAL __float_exp
 SET __ctan_eb
 F_DIV 1.0
 NOP
+NOP
 F_QUO
 SET __ctan_emb
 F_ADD __ctan_eb
@@ -58,9 +59,11 @@ F_ADD __ctan_chb
 SET __ctan_d
 F_DIV __ctan_s2a
 NOP
+NOP
 F_QUO
 P_LOD __ctan_d
 F_DIV __ctan_shb
+NOP
 NOP
 F_QUO
 SET_P main_c_i
@@ -90,6 +93,7 @@ CAL __float_exp
 SET __ctan_eb
 F_DIV 1.0
 NOP
+NOP
 F_QUO
 SET __ctan_emb
 F_ADD __ctan_eb
@@ -104,9 +108,11 @@ F_ADD __ctan_chb
 SET __ctan_d
 F_DIV __ctan_s2a
 NOP
+NOP
 F_QUO
 P_LOD __ctan_d
 F_DIV __ctan_shb
+NOP
 NOP
 F_QUO
 SET_P main_c_i
@@ -140,6 +146,7 @@ CAL __float_exp
 SET __ctan_eb
 F_DIV 1.0
 NOP
+NOP
 F_QUO
 SET __ctan_emb
 F_ADD __ctan_eb
@@ -154,9 +161,11 @@ F_ADD __ctan_chb
 SET __ctan_d
 F_DIV __ctan_s2a
 NOP
+NOP
 F_QUO
 P_LOD __ctan_d
 F_DIV __ctan_shb
+NOP
 NOP
 F_QUO
 SET_P main_c_i
@@ -199,6 +208,7 @@ CAL __float_exp
 SET __ctan_eb
 F_DIV 1.0
 NOP
+NOP
 F_QUO
 SET __ctan_emb
 F_ADD __ctan_eb
@@ -213,9 +223,11 @@ F_ADD __ctan_chb
 SET __ctan_d
 F_DIV __ctan_s2a
 NOP
+NOP
 F_QUO
 P_LOD __ctan_d
 F_DIV __ctan_shb
+NOP
 NOP
 F_QUO
 SET_P main_c_i
@@ -245,6 +257,7 @@ CAL __float_exp
 SET __ctan_eb
 F_DIV 1.0
 NOP
+NOP
 F_QUO
 SET __ctan_emb
 F_ADD __ctan_eb
@@ -259,9 +272,11 @@ F_ADD __ctan_chb
 SET __ctan_d
 F_DIV __ctan_s2a
 NOP
+NOP
 F_QUO
 P_LOD __ctan_d
 F_DIV __ctan_shb
+NOP
 NOP
 F_QUO
 SET_P main_c_i

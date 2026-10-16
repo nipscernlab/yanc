@@ -799,9 +799,8 @@ index register: design the two together.
 
 ## 29. A faster clock behind the dividers
 
-**Status:** studies finished, `pnorm` chosen (32.61 MHz, 3,551 ALMs against
-v7.1's 21.82 / 3,558); implementation PLANNED in nine commits (below,
-2026-10-16), the three questions answered the same day · **Area:** `SAPHO/ula.v`
+**Status:** in progress: step 1 (dividers 5/4) DONE 2026-10-16, 21.82 ->
+29.66 MHz; next step 2 (`JIZ`) · **Area:** `SAPHO/ula.v`
 (dividers, normaliser, muxes), `SAPHO/core.v` (`JIZ`, indirect index),
 `asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
 section 4.3, normalisation-survey.md, fadd-survey.md
@@ -816,13 +815,13 @@ committed first (19bc344) and reverted (it cannot move the clock while the
 integer divider limits); it comes back as its own step. Expected clocks
 are the variants' one-seed fits of note 4.3, not the final code.
 
-0. Reference: v7.1 refitted with today's `fmax.sh` (it copies the `.mif`
-   since 4ddc731; the 21.82 MHz / 3,558 ALMs fit of 2026-10-11 did not).
-1. Dividers: `F_DIV` in 4 stages, `DIV`/`MOD` in 5 (`div_array` `STG`), the
-   sequence in 4/5 words, one named constant per divider in `asm_divseq`
-   (`Compilers/common/asm_share.c`) and asmcomp's check (`eval.c`); goldens
-   with a division move. Expect ~26.4 MHz (`stg4`); then `F_ADD` ->
-   normaliser -> `JIZ` -> PC limits.
+0. DONE: reference, v7.1 refitted with today's `fmax.sh`: 21.82 MHz, 3,558
+   ALMs, 907 registers (the same as 2026-10-11).
+1. DONE (accepted by Luciano): `DIV`/`MOD` in 5 stages, `F_DIV` in 4 (`STG`
+   of `ula_idiv`/`ula_fdiv`), `ASM_DIV_WORDS_INT`/`_FLT` in asm_share.h.
+   **29.66 MHz** (+36 %), 3,652 ALMs (+2.6 %), 1,197 registers. Worst path
+   now data memory -> `denorm` -> `fadd` -> normaliser (11.2 ns) -> ALU mux
+   -> jump -> PC, 31.5 ns (note 4.4).
 2. `JIZ` without the normaliser: the ALU output split (fast mux generated
    from the opcode parameters, 2-input mux after it only with a normalised
    operation), `JIZ` reads the fast output, asmcomp inserts a `NOP` before a
@@ -837,8 +836,8 @@ are the variants' one-seed fits of note 4.3, not the final code.
    CHANGELOG.
 
 **Decisions (Luciano, 2026-10-16):**
-- The `JIZ`/`LDI`/`ILI` rule: asmcomp inserts the `NOP` by itself (step C
-  becomes: count first, then pad).
+- The `JIZ`/`LDI`/`ILI` rule: asmcomp inserts the `NOP` by itself (steps 2
+  and 3; count first, then pad).
 - Stage count fixed in the circuit: 5 for `DIV`/`MOD`, 4 for `F_DIV`, as
   constants (step 1 makes the NOP count one named value per divider,
   not a literal 3). Computing it from the widths is item 32, for later.

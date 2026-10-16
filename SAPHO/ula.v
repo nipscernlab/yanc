@@ -563,12 +563,13 @@ endmodule
 
 // dividers -------------------------------------------------------------------
 // DIV, MOD and F_DIV are the longest paths of the processor (~5x the base's,
-// docs/design/pipeln-and-division.md). Each divider is a restoring array cut by two
-// registers into three parts of about the same delay, so it takes three
-// cycles and every other path keeps its one: the compilers write each
-// division as `<div> x; NOP; <read>` (Compilers/common asm_divseq), and the
-// third word, QUO / REM / F_QUO (an alias of the division's own opcode),
-// finds the first one's result at the end of the array. Nothing waits: the
+// docs/design/pipeln-and-division.md). Each divider is a restoring array cut by
+// registers into STG parts of about the same delay (ula_idiv 5, ula_fdiv 4), so
+// it takes STG cycles and every other path keeps its one: the compilers write
+// each division as `<div> x`, STG-2 NOPs and `<read>` (Compilers/common
+// asm_divseq, ASM_DIV_WORDS_*), and the last word, QUO / REM / F_QUO (an alias
+// of the division's own opcode), finds the first one's result at the end of
+// the array. Nothing waits: the
 // cuts carry with the data everything the later parts need, so the inputs may
 // change every cycle.
 
@@ -711,7 +712,7 @@ endmodule
 
 // DIV / MOD - fixed-point division and remainder -----------------------------
 // One array for both: the quotient comes out of the rows, the remainder is
-// what the last one leaves; the ALU's operation (the third word: QUO or REM)
+// what the last one leaves; the ALU's operation (the last word: QUO or REM)
 // picks which. Truncating signed division (C, Verilog) from the magnitudes:
 // the quotient is negative when the signs differ, the remainder takes the
 // dividend's sign. INT_MIN / -1, the one quotient that does not fit, wraps
@@ -723,7 +724,8 @@ module ula_idiv
 #(
 	parameter NUBITS = 32,
 	parameter PRE10  = 15,                                    // see div_array: the magnitudes count here
-	parameter POST10 = 28                                     //   and the sign correction there
+	parameter POST10 = 28,                                    //   and the sign correction there
+	parameter STG    =  5                                     // cycles (Compilers/common ASM_DIV_WORDS_INT)
 )(
 	 input signed [NUBITS-1:0] in1, in2,                      // in1 / in2, in1 % in2
 	output signed [NUBITS-1:0] quo, rem,
@@ -736,7 +738,7 @@ wire [NUBITS-1:0] q;
 wire [NUBITS  :0] r;
 wire        [1:0] sg;                                     // {quotient negative, remainder negative}
 
-div_array #(NUBITS,NUBITS,2,3,PRE10,POST10) arr({(NUBITS+1){1'b0}}, a, b,
+div_array #(NUBITS,NUBITS,2,STG,PRE10,POST10) arr({(NUBITS+1){1'b0}}, a, b,
                                                 {in1[NUBITS-1] ^ in2[NUBITS-1], in1[NUBITS-1]},
                                                 q, r, sg, clk);
 
@@ -758,7 +760,8 @@ module ula_fdiv
 	// after it (slice, normaliser, ALU output mux, jump decision, PC). Measured
 	// on the Cyclone V (2026-10-04): ~2.6 ns and ~11.3 ns against ~3.1 ns a row.
 	parameter PRE10  =  8,
-	parameter POST10 = 36
+	parameter POST10 = 36,
+	parameter STG    =  4                                     // cycles (Compilers/common ASM_DIV_WORDS_FLT)
 )(
 	 input [MAN+EXP    :0] in1, in2,
 	output [MAN+EXP+G+2:0] out,                               // exponent 2 bits wider (see ula_norm)
@@ -801,7 +804,7 @@ wire [EXP+3:0] side;
 
 // the top MAN-1 dividend bits enter as the first remainder, m1[0] in row 0,
 // zeros below it
-div_array #(MAN,R,EXP+4,3,PRE10,POST10) arr({2'b00, m1[MAN-1:1]}, {m1[0], {(R-1){1'b0}}}, m2,
+div_array #(MAN,R,EXP+4,STG,PRE10,POST10) arr({2'b00, m1[MAN-1:1]}, {m1[0], {(R-1){1'b0}}}, m2,
                                             {s_in, e_in, dz_in}, q, rem, side, clk);
 
 wire                  s_out = side[EXP+3];
@@ -1594,15 +1597,15 @@ wire signed [NUBITS+G+1:0] fmlt;
 generate if ((F_MLT) != 0) begin : op_fmlt ula_fmlt #(NBMANT,NBEXPO,FROUND,G) my_fmlt(in1 ,in2 , fmlt); end else begin : op_fmlt assign fmlt = {NUBITS+G+2{1'bx}}; end endgenerate
 
 // DIV / MOD ------------------------------------------------------------------
-// one divider for both, three cycles (see ula_idiv): DIV/MOD start it, QUO/REM
-// read it two words later
+// one divider for both, five cycles (see ula_idiv): DIV/MOD start it, QUO/REM
+// read it four words later
 
 wire signed [NUBITS-1:0] div, mod;
 
 generate if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(NUBITS) my_idiv(in1, in2, div, mod, clk); end else begin : op_idiv assign div = {NUBITS{1'bx}}; assign mod = {NUBITS{1'bx}}; end endgenerate
 
 // F_DIV ----------------------------------------------------------------------
-// three cycles (see ula_fdiv): F_DIV starts it, F_QUO reads it two words later
+// four cycles (see ula_fdiv): F_DIV starts it, F_QUO reads it three words later
 
 wire signed [NUBITS+G+1:0] fdiv;
 
