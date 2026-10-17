@@ -29,6 +29,9 @@ tags consumed by Aurora.
 - **The `LDI`/`ILI` read index also leaves the normaliser out** (31.54 MHz,
   3,507 ALMs; the change against 32.67 is placement noise, one seed each).
   The `NOP` rule covers `JIZ`, `LDI` and `ILI`.
+- **The normaliser counts leading zeros with a tree** (`ula_lzc`, log2 of the
+  mantissa width in levels) instead of a chain; the same outputs, the same
+  clock and area within noise (31.82 MHz, 3,535 ALMs).
 
 ### Added
 - **`Scripts/hw/path_groups.py`**: the worst path of each destination block

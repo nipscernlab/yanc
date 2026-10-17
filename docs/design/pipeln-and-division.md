@@ -712,6 +712,7 @@ ALMs as on 2026-10-11.
 | 1b | every mux guided by the opcode parameters, no `x` | **30.90 MHz** (+4.2 %) | 3,600 (-1.4 %) | 1,216 | the same path: `denorm` 7.1 -> `fadd` 4.6 -> normaliser 10.1 -> ALU mux **0.7** -> jump and PC 6.3 ns (29.8 ns) |
 | 2 | `JIZ` reads the ALU before the normaliser | **32.67 MHz** (+5.7 %) | 3,541 (-1.6 %) | 1,197 | `denorm` 6.8 -> `fadd` 4.0 -> normaliser 11.2 -> ALU mux 4.4 -> data stack write (28.1 ns); next, 0.6 ns behind, the data memory read address (`LDI`/`ILI` index, 27.9 ns) |
 | 3 | the `LDI`/`ILI` read index too | 31.54 MHz (-3.5 %, seed noise) | 3,507 (-1.0 %) | 1,201 | the same kind: `denorm` 7.7 -> `fadd` 3.6 -> normaliser **13.7** -> ALU mux 1.9 -> data stack write (31.0 ns); only the data stack and the accumulator among the 3,000 worst paths |
+| 4 | the normaliser's leading-zero count as a tree | 31.82 MHz (+0.9 %, noise) | 3,535 (+0.8 %) | 1,193 | the same kind: `denorm` 8.5 -> `fadd` 3.4 -> normaliser 10.9 -> ALU mux 3.9 -> data stack write (28.8 ns) |
 
 Step 1: `ula_idiv` and `ula_fdiv` take a parameter `STG` (5 and 4) instead of
 the 3 written in both instances; the compilers write `DIV x; NOP; NOP; NOP;
@@ -770,6 +771,12 @@ result into the accumulator and the stack limits, and what would remove it
 (a faster normaliser or add, studied and closed in 4.3; cutting `F_ADD`
 with registers, against the decision to keep the ALU combinational) is not
 on the table.
+
+Step 4: `ula_lzc` (the tree of 19bc344, reverted then because the integer
+divider limited) replaces the chain of `ula_nmux`; outputs equal to the
+chain (`eq_norm.sh`, nine formats, 200,000 inputs each). Neutral on the fit
+(+0.9 % clock, +28 ALMs, both within noise); Luciano kept it (log-depth,
+scales with the mantissa width).
 
 **For the documentation (item 21).** A hand-written `.asm` that tests a
 float result with `JIZ`, or uses it as an `LDI`/`ILI` index, right away

@@ -801,7 +801,8 @@ index register: design the two together.
 
 **Status:** in progress: step 1 (dividers 5/4) DONE 2026-10-16, 21.82 ->
 29.66 MHz; step 1b (muxes by parameters) DONE, 30.90 MHz; step 2 (`JIZ`) DONE,
-32.67 MHz; step 3 (`LDI`/`ILI`) DONE, 31.54 (noise) · **Area:** `SAPHO/ula.v`
+32.67 MHz; step 3 (`LDI`/`ILI`) DONE, 31.54 (noise); step 4 (tree LZC) DONE,
+31.82; next 4b (decoder-style muxes) · **Area:** `SAPHO/ula.v`
 (dividers, normaliser, muxes), `SAPHO/core.v` (`JIZ`, indirect index),
 `asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
 section 4.3, normalisation-survey.md, fadd-survey.md
@@ -840,8 +841,15 @@ are the variants' one-seed fits of note 4.3, not the final code.
    `asm_normnop` covers `JIZ`/`LDI`/`ILI`. 31.54 MHz, 3,507 ALMs: -3.5 %
    against step 2 on one seed, the same kind of path, the normaliser placed
    longer; judged noise (note 4.4). One seed cannot separate < ~4 %.
-4. The leading-zero count as a tree (`ula_lzc`, code in 19bc344; equal
-   outputs, `eq_norm.sh lzc`).
+4. DONE (Luciano kept it): the leading-zero count as a tree (`ula_lzc`);
+   equal outputs (`eq_norm.sh`). 31.82 MHz, 3,535 ALMs: neutral, in noise.
+4b. NEXT after 4 (Luciano, 2026-10-17): `ula_mux` and `norm_mux` in the
+   instruction decoder's style (one `case`, each row guarded by its
+   parameter, `out = 0` before it: `pcase` of note 4.3) instead of the OR of
+   generate terms, for coherence with `instr_dec.v`. Kept if the ALMs do not
+   grow and the clock does not drop (beyond seed noise). In 4.3 `pcase` was
+   +79 ALMs on `sapho_all`, -52 on ProcDTW, +38 on cmm_cexp: open, measure
+   again on today's code (the fast output now feeds JIZ and LDI/ILI).
 5. `norm_mux` guarded by the opcode parameters (`pnorm`: area).
 6. Document: Vivado/ZYBO (`vfmax.sh`), `area.sh`, the item-21 note,
    CHANGELOG.
