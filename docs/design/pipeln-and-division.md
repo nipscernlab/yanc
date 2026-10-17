@@ -808,9 +808,14 @@ the steps after step 2 cannot be told apart by one seed each. On the ZYBO
 the worst path is not the float add but the first part of `F_DIV` (data
 memory -> `ula_fdiv` array up to its second cut, 26.5 ns; Vivado packs the
 cut registers that carry the quotient bits into SRLs): one more `F_DIV`
-stage would likely help there (deduced from one run; the stage count stays
-5/4 by Luciano's decision, TODO 32). The same v7.1 ZYBO run of 2026-10-11,
-without the `.mif`, had also given 23.54 MHz.
+stage would likely help there (deduced from one run). Tried the same day
+(a copy of `SAPHO/` with `ula_fdiv` `STG` 5, one Vivado run): 37.79 MHz
+against 37.26 (+1.4 %, noise), 5,883 LUTs, 699 registers; `F_DIV` left the
+worst path, and the next one, 0.4 ns behind, is the ALU result written
+back to the data memory (the float result into storage, as on the
+DE10-Nano). Not worth a word and a cycle per float division: Luciano kept
+4 stages. The same v7.1 ZYBO run of 2026-10-11, without the `.mif`, had
+also given 23.54 MHz.
 
 **For the documentation (item 21).** A hand-written `.asm` that tests a
 float result with `JIZ`, or uses it as an `LDI`/`ILI` index, right away

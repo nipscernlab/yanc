@@ -858,10 +858,11 @@ compilers, `STG` a parameter of both dividers, regress, one narrow fit.
 
 Seen 2026-10-17 on the ZYBO (Vivado, one run, after item 29): the worst
 path is the first part of `F_DIV` (data memory -> array up to its second
-cut, 26.5 ns; 37.26 MHz), not the float add as on the DE10-Nano: a fifth
-`F_DIV` stage would likely help there (deduced). The budget per cycle
-differs per FPGA family, so a computed `STG` would need a per-target B, or
-the larger of the two counts.
+cut, 26.5 ns; 37.26 MHz), not the float add as on the DE10-Nano. A fifth
+`F_DIV` stage, tried on a copy: 37.79 MHz (noise), the next path (the
+result written back to memory) only 0.4 ns behind; Luciano kept 4. The
+budget per cycle differs per FPGA family, so a computed `STG` would need a
+per-target B, or the larger of the two counts.
 
 ## 27. C++ gaps that real embedded code hits
 
