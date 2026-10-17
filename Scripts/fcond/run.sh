@@ -28,12 +28,16 @@ sim() {   # $1 program name (folder written by the compiler)
       cp output_0.txt "../out_$1.txt" )
 }
 
-rm -rf fcond fcond_l0 fcond_l1 fcond_l2 out_*.txt
-"$BIN/cppcomp.exe" -o fcond fcond.cpp > cpp_build.log 2>&1 || { echo "cppcomp failed"; tail -5 cpp_build.log; exit 1; }
-sim fcond
-for l in 0 1 2; do
-    "$BIN/cmmcomp.exe" -o fcond_l$l fcond_l$l.cmm > cmm_build_l$l.log 2>&1 || { echo "cmmcomp (level $l) failed"; tail -5 cmm_build_l$l.log; exit 1; }
-    sim fcond_l$l
+rm -rf out_*.txt
+for f in fcond_*.cpp; do                 # C++, one per float format
+    p=${f%.cpp}; rm -rf "$p"
+    "$BIN/cppcomp.exe" -o "$p" "$f" > "build_$p.log" 2>&1 || { echo "cppcomp $f failed"; tail -5 "build_$p.log"; exit 1; }
+    sim "$p"
+done
+for f in fcond_*_l?.cmm; do              # C+-, per format and #FROUND level
+    p=${f%.cmm}; rm -rf "$p"
+    "$BIN/cmmcomp.exe" -o "$p" "$f" > "build_$p.log" 2>&1 || { echo "cmmcomp $f failed"; grep -v "Heads up\|Info:" "build_$p.log" | tail -5; exit 1; }
+    sim "$p"
 done
 
-python3 "$ROOT/Scripts/fcond/compare.py" .
+python3 "$ROOT/Scripts/fcond/compare.py" ${SHORT:+-s} .

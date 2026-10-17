@@ -938,7 +938,12 @@ wrong). C+- 35 of 80 wrong, the same at the three levels: every nonzero
 value in (-1, 1) taken as false (0.5, -0.3, +-0.999, 0.001, 1/3, 0.0005)
 in `if`, `!`, `while`, `for`, `do`; zeros, -0 and |x| >= 1 right. C+-
 refuses a float in `&&`/`||` with an error (those forms are C++ only in
-the test). Next: step 2, the prototypes.
+the test). The same at the three formats of the fixtures (32/23/8,
+16/10/5, 23/16/6; values below a format's smallest normal left out). The
+fix must take the widths from the program (`#NBMANT`/`#NBEXPO`, `#pragma
+yanc`), never a constant. cppcomp already tests a float for zero by its
+mantissa (`AND 2^NBMANT - 1`) in its float -> bool cast, which is why
+`bool b = x` is right; `gen_bool` does not use it. Next: step 2.
 
 How to choose: a differential test against a C compiler first, the same
 source on host gcc (IEEE) and on the simulated SAPHO, many values (0, -0,
