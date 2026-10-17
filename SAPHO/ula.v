@@ -70,81 +70,81 @@ module ula_mux
 	 input     [NUBITS-1:0] fscl, xpo , xpom,        // F_SCL/SF_SCL, XPO, XPO_M
 	 // outputs: every operation, and the ones that do not go through the
 	 // normaliser only (JIZ reads it: the normaliser stays out of the jump)
-	output     [NUBITS-1:0] out,
-	output     [NUBITS-1:0] out_fast
+	output reg [NUBITS-1:0] out,
+	output reg [NUBITS-1:0] out_fast
 	);
 
-// One term per operation, OR-ed: a term is its input when op selects it, 0
-// otherwise, and an operation the program does not have builds no term (a
-// constant 0). No input is ever a don't care (docs/design/README.md). The
-// operations that go through the normaliser (smx) are not terms: a 2-input
-// mux after the OR picks smx for them, so out_fast is the OR alone.
+// The instruction decoder's style (instr_dec.v): one case, each row guarded by
+// its operation's parameter, 0 when the row is not built or op selects
+// nothing. No input is ever a don't care (docs/design/README.md). out_fast
+// leaves out the operations that go through the normaliser (JIZ and the
+// LDI/ILI index read it); out takes smx for them.
 
-wire [NUBITS-1:0] t0 = (op == 6'd0) ? in2 : {NUBITS{1'b0}};   //   NOP (and every instruction that keeps the accumulator)
-wire [NUBITS-1:0] t1 = (op == 6'd1) ? in1 : {NUBITS{1'b0}};   //   LOD
+always @ (*) begin
+	out_fast = {NUBITS{1'b0}};
+	case (op)
+	6'd0  :              out_fast = in2  ;   // NOP (and every instruction that keeps the accumulator)
+	6'd1  :              out_fast = in1  ;   // LOD
+	6'd2  : if (ADD    ) out_fast = add  ;   // ADD
+	6'd4  : if (MLT    ) out_fast = mlt  ;   // MLT
+	6'd6  : if (DIV    ) out_fast = div  ;   // DIV
+	6'd8  : if (MOD    ) out_fast = mod  ;   // MOD
+	6'd9  : if (SGN    ) out_fast = sgn  ;   // SGN
+	6'd10 : if (F_SGN  ) out_fast = fsgn ;   // F_SGN
+	6'd11 : if (NEG    ) out_fast = neg  ;   // NEG
+	6'd12 : if (NEG_M  ) out_fast = negm ;   // NEG_M
+	6'd13 : if (F_NEG  ) out_fast = fneg ;   // F_NEG
+	6'd14 : if (F_NEG_M) out_fast = fnegm;   // F_NEG_M
+	6'd15 : if (ABS    ) out_fast = abs  ;   // ABS
+	6'd16 : if (ABS_M  ) out_fast = absm ;   // ABS_M
+	6'd17 : if (F_ABS  ) out_fast = fabs ;   // F_ABS
+	6'd18 : if (F_ABS_M) out_fast = fabsm;   // F_ABS_M
+	6'd19 : if (PST    ) out_fast = pst  ;   // PST
+	6'd20 : if (PST_M  ) out_fast = pstm ;   // PST_M
+	6'd21 : if (F_PST  ) out_fast = fpst ;   // F_PST
+	6'd22 : if (F_PST_M) out_fast = fpstm;   // F_PST_M
+	6'd23 : if (NRM    ) out_fast = nrm  ;   // NRM
+	6'd24 : if (NRM_M  ) out_fast = nrmm ;   // NRM_M
+	6'd27 : if (F2I    ) out_fast = f2i  ;   // F2I
+	6'd28 : if (F2I_M  ) out_fast = f2im ;   // F2I_M
+	6'd29 : if (AND    ) out_fast = ann  ;   // AND
+	6'd30 : if (ORR    ) out_fast = orr  ;   // ORR
+	6'd31 : if (XOR    ) out_fast = cor  ;   // XOR
+	6'd32 : if (INV    ) out_fast = inv  ;   // INV
+	6'd33 : if (INV_M  ) out_fast = invm ;   // INV_M
+	6'd34 : if (LAN    ) out_fast = lan  ;   // LAN
+	6'd35 : if (LOR    ) out_fast = lor  ;   // LOR
+	6'd36 : if (LIN    ) out_fast = lin  ;   // LIN
+	6'd37 : if (LIN_M  ) out_fast = linm ;   // LIN_M
+	6'd38 : if (LES    ) out_fast = les  ;   // LES
+	6'd39 : if (F_LES  ) out_fast = fles ;   // F_LES
+	6'd40 : if (GRE    ) out_fast = gre  ;   // GRE
+	6'd41 : if (F_GRE  ) out_fast = fgre ;   // F_GRE
+	6'd42 : if (EQU    ) out_fast = equ  ;   // EQU
+	6'd43 : if (SHL    ) out_fast = shl  ;   // SHL
+	6'd44 : if (SHR    ) out_fast = shr  ;   // SHR
+	6'd45 : if (SRS    ) out_fast = srs  ;   // SRS
+	6'd49 : if (F_SCL  ) out_fast = fscl ;   // F_SCL
+	6'd50 : if (XPO    ) out_fast = xpo  ;   // XPO
+	6'd51 : if (XPO_M  ) out_fast = xpom ;   // XPO_M
+	default: ;
+	endcase
+end
 
-wire [NUBITS-1:0] t2 ; generate if ((ADD) != 0) begin : g2  assign t2  = (op == 6'd2 ) ? add   : {NUBITS{1'b0}}; end else begin : g2  assign t2  = {NUBITS{1'b0}}; end endgenerate   // ADD
-wire [NUBITS-1:0] t4 ; generate if ((MLT) != 0) begin : g4  assign t4  = (op == 6'd4 ) ? mlt   : {NUBITS{1'b0}}; end else begin : g4  assign t4  = {NUBITS{1'b0}}; end endgenerate   // MLT
-wire [NUBITS-1:0] t6 ; generate if ((DIV) != 0) begin : g6  assign t6  = (op == 6'd6 ) ? div   : {NUBITS{1'b0}}; end else begin : g6  assign t6  = {NUBITS{1'b0}}; end endgenerate   // DIV
-wire [NUBITS-1:0] t8 ; generate if ((MOD) != 0) begin : g8  assign t8  = (op == 6'd8 ) ? mod   : {NUBITS{1'b0}}; end else begin : g8  assign t8  = {NUBITS{1'b0}}; end endgenerate   // MOD
-wire [NUBITS-1:0] t9 ; generate if ((SGN) != 0) begin : g9  assign t9  = (op == 6'd9 ) ? sgn   : {NUBITS{1'b0}}; end else begin : g9  assign t9  = {NUBITS{1'b0}}; end endgenerate   // SGN
-wire [NUBITS-1:0] t10; generate if ((F_SGN) != 0) begin : g10 assign t10 = (op == 6'd10) ? fsgn  : {NUBITS{1'b0}}; end else begin : g10 assign t10 = {NUBITS{1'b0}}; end endgenerate   // F_SGN
-wire [NUBITS-1:0] t11; generate if ((NEG) != 0) begin : g11 assign t11 = (op == 6'd11) ? neg   : {NUBITS{1'b0}}; end else begin : g11 assign t11 = {NUBITS{1'b0}}; end endgenerate   // NEG
-wire [NUBITS-1:0] t12; generate if ((NEG_M) != 0) begin : g12 assign t12 = (op == 6'd12) ? negm  : {NUBITS{1'b0}}; end else begin : g12 assign t12 = {NUBITS{1'b0}}; end endgenerate   // NEG_M
-wire [NUBITS-1:0] t13; generate if ((F_NEG) != 0) begin : g13 assign t13 = (op == 6'd13) ? fneg  : {NUBITS{1'b0}}; end else begin : g13 assign t13 = {NUBITS{1'b0}}; end endgenerate   // F_NEG
-wire [NUBITS-1:0] t14; generate if ((F_NEG_M) != 0) begin : g14 assign t14 = (op == 6'd14) ? fnegm : {NUBITS{1'b0}}; end else begin : g14 assign t14 = {NUBITS{1'b0}}; end endgenerate   // F_NEG_M
-wire [NUBITS-1:0] t15; generate if ((ABS) != 0) begin : g15 assign t15 = (op == 6'd15) ? abs   : {NUBITS{1'b0}}; end else begin : g15 assign t15 = {NUBITS{1'b0}}; end endgenerate   // ABS
-wire [NUBITS-1:0] t16; generate if ((ABS_M) != 0) begin : g16 assign t16 = (op == 6'd16) ? absm  : {NUBITS{1'b0}}; end else begin : g16 assign t16 = {NUBITS{1'b0}}; end endgenerate   // ABS_M
-wire [NUBITS-1:0] t17; generate if ((F_ABS) != 0) begin : g17 assign t17 = (op == 6'd17) ? fabs  : {NUBITS{1'b0}}; end else begin : g17 assign t17 = {NUBITS{1'b0}}; end endgenerate   // F_ABS
-wire [NUBITS-1:0] t18; generate if ((F_ABS_M) != 0) begin : g18 assign t18 = (op == 6'd18) ? fabsm : {NUBITS{1'b0}}; end else begin : g18 assign t18 = {NUBITS{1'b0}}; end endgenerate   // F_ABS_M
-wire [NUBITS-1:0] t19; generate if ((PST) != 0) begin : g19 assign t19 = (op == 6'd19) ? pst   : {NUBITS{1'b0}}; end else begin : g19 assign t19 = {NUBITS{1'b0}}; end endgenerate   // PST
-wire [NUBITS-1:0] t20; generate if ((PST_M) != 0) begin : g20 assign t20 = (op == 6'd20) ? pstm  : {NUBITS{1'b0}}; end else begin : g20 assign t20 = {NUBITS{1'b0}}; end endgenerate   // PST_M
-wire [NUBITS-1:0] t21; generate if ((F_PST) != 0) begin : g21 assign t21 = (op == 6'd21) ? fpst  : {NUBITS{1'b0}}; end else begin : g21 assign t21 = {NUBITS{1'b0}}; end endgenerate   // F_PST
-wire [NUBITS-1:0] t22; generate if ((F_PST_M) != 0) begin : g22 assign t22 = (op == 6'd22) ? fpstm : {NUBITS{1'b0}}; end else begin : g22 assign t22 = {NUBITS{1'b0}}; end endgenerate   // F_PST_M
-wire [NUBITS-1:0] t23; generate if ((NRM) != 0) begin : g23 assign t23 = (op == 6'd23) ? nrm   : {NUBITS{1'b0}}; end else begin : g23 assign t23 = {NUBITS{1'b0}}; end endgenerate   // NRM
-wire [NUBITS-1:0] t24; generate if ((NRM_M) != 0) begin : g24 assign t24 = (op == 6'd24) ? nrmm  : {NUBITS{1'b0}}; end else begin : g24 assign t24 = {NUBITS{1'b0}}; end endgenerate   // NRM_M
-wire [NUBITS-1:0] t27; generate if ((F2I) != 0) begin : g27 assign t27 = (op == 6'd27) ? f2i   : {NUBITS{1'b0}}; end else begin : g27 assign t27 = {NUBITS{1'b0}}; end endgenerate   // F2I
-wire [NUBITS-1:0] t28; generate if ((F2I_M) != 0) begin : g28 assign t28 = (op == 6'd28) ? f2im  : {NUBITS{1'b0}}; end else begin : g28 assign t28 = {NUBITS{1'b0}}; end endgenerate   // F2I_M
-wire [NUBITS-1:0] t29; generate if ((AND) != 0) begin : g29 assign t29 = (op == 6'd29) ? ann   : {NUBITS{1'b0}}; end else begin : g29 assign t29 = {NUBITS{1'b0}}; end endgenerate   // AND
-wire [NUBITS-1:0] t30; generate if ((ORR) != 0) begin : g30 assign t30 = (op == 6'd30) ? orr   : {NUBITS{1'b0}}; end else begin : g30 assign t30 = {NUBITS{1'b0}}; end endgenerate   // ORR
-wire [NUBITS-1:0] t31; generate if ((XOR) != 0) begin : g31 assign t31 = (op == 6'd31) ? cor   : {NUBITS{1'b0}}; end else begin : g31 assign t31 = {NUBITS{1'b0}}; end endgenerate   // XOR
-wire [NUBITS-1:0] t32; generate if ((INV) != 0) begin : g32 assign t32 = (op == 6'd32) ? inv   : {NUBITS{1'b0}}; end else begin : g32 assign t32 = {NUBITS{1'b0}}; end endgenerate   // INV
-wire [NUBITS-1:0] t33; generate if ((INV_M) != 0) begin : g33 assign t33 = (op == 6'd33) ? invm  : {NUBITS{1'b0}}; end else begin : g33 assign t33 = {NUBITS{1'b0}}; end endgenerate   // INV_M
-wire [NUBITS-1:0] t34; generate if ((LAN) != 0) begin : g34 assign t34 = (op == 6'd34) ? lan   : {NUBITS{1'b0}}; end else begin : g34 assign t34 = {NUBITS{1'b0}}; end endgenerate   // LAN
-wire [NUBITS-1:0] t35; generate if ((LOR) != 0) begin : g35 assign t35 = (op == 6'd35) ? lor   : {NUBITS{1'b0}}; end else begin : g35 assign t35 = {NUBITS{1'b0}}; end endgenerate   // LOR
-wire [NUBITS-1:0] t36; generate if ((LIN) != 0) begin : g36 assign t36 = (op == 6'd36) ? lin   : {NUBITS{1'b0}}; end else begin : g36 assign t36 = {NUBITS{1'b0}}; end endgenerate   // LIN
-wire [NUBITS-1:0] t37; generate if ((LIN_M) != 0) begin : g37 assign t37 = (op == 6'd37) ? linm  : {NUBITS{1'b0}}; end else begin : g37 assign t37 = {NUBITS{1'b0}}; end endgenerate   // LIN_M
-wire [NUBITS-1:0] t38; generate if ((LES) != 0) begin : g38 assign t38 = (op == 6'd38) ? les   : {NUBITS{1'b0}}; end else begin : g38 assign t38 = {NUBITS{1'b0}}; end endgenerate   // LES
-wire [NUBITS-1:0] t39; generate if ((F_LES) != 0) begin : g39 assign t39 = (op == 6'd39) ? fles  : {NUBITS{1'b0}}; end else begin : g39 assign t39 = {NUBITS{1'b0}}; end endgenerate   // F_LES
-wire [NUBITS-1:0] t40; generate if ((GRE) != 0) begin : g40 assign t40 = (op == 6'd40) ? gre   : {NUBITS{1'b0}}; end else begin : g40 assign t40 = {NUBITS{1'b0}}; end endgenerate   // GRE
-wire [NUBITS-1:0] t41; generate if ((F_GRE) != 0) begin : g41 assign t41 = (op == 6'd41) ? fgre  : {NUBITS{1'b0}}; end else begin : g41 assign t41 = {NUBITS{1'b0}}; end endgenerate   // F_GRE
-wire [NUBITS-1:0] t42; generate if ((EQU) != 0) begin : g42 assign t42 = (op == 6'd42) ? equ   : {NUBITS{1'b0}}; end else begin : g42 assign t42 = {NUBITS{1'b0}}; end endgenerate   // EQU
-wire [NUBITS-1:0] t43; generate if ((SHL) != 0) begin : g43 assign t43 = (op == 6'd43) ? shl   : {NUBITS{1'b0}}; end else begin : g43 assign t43 = {NUBITS{1'b0}}; end endgenerate   // SHL
-wire [NUBITS-1:0] t44; generate if ((SHR) != 0) begin : g44 assign t44 = (op == 6'd44) ? shr   : {NUBITS{1'b0}}; end else begin : g44 assign t44 = {NUBITS{1'b0}}; end endgenerate   // SHR
-wire [NUBITS-1:0] t45; generate if ((SRS) != 0) begin : g45 assign t45 = (op == 6'd45) ? srs   : {NUBITS{1'b0}}; end else begin : g45 assign t45 = {NUBITS{1'b0}}; end endgenerate   // SRS
-wire [NUBITS-1:0] t49; generate if ((F_SCL) != 0) begin : g49 assign t49 = (op == 6'd49) ? fscl  : {NUBITS{1'b0}}; end else begin : g49 assign t49 = {NUBITS{1'b0}}; end endgenerate   // F_SCL
-wire [NUBITS-1:0] t50; generate if ((XPO) != 0) begin : g50 assign t50 = (op == 6'd50) ? xpo   : {NUBITS{1'b0}}; end else begin : g50 assign t50 = {NUBITS{1'b0}}; end endgenerate   // XPO
-wire [NUBITS-1:0] t51; generate if ((XPO_M) != 0) begin : g51 assign t51 = (op == 6'd51) ? xpom  : {NUBITS{1'b0}}; end else begin : g51 assign t51 = {NUBITS{1'b0}}; end endgenerate   // XPO_M
-
-assign out_fast = t0 | t1 | t2 | t4 | t6 | t8 | t9 | t10 | t11 | t12 | t13 | t14 | t15 |
-                  t16 | t17 | t18 | t19 | t20 | t21 | t22 | t23 | t24 | t27 | t28 | t29 | t30 |
-                  t31 | t32 | t33 | t34 | t35 | t36 | t37 | t38 | t39 | t40 | t41 | t42 | t43 |
-                  t44 | t45 | t49 | t50 | t51;
-
-// the 2-input mux, only when the program has a normalised operation
-generate if ((F_ADD | F_MLT | F_DIV | I2F | I2F_M | F_ROT | F_SU1 | F_SU2) != 0) begin : norm_out
-	wire is_norm = (((F_ADD) != 0) & (op == 6'd3)) |
-	                 (((F_MLT) != 0) & (op == 6'd5)) |
-	                 (((F_DIV) != 0) & (op == 6'd7)) |
-	                 (((I2F) != 0) & (op == 6'd25)) |
-	                 (((I2F_M) != 0) & (op == 6'd26)) |
-	                 (((F_ROT) != 0) & (op == 6'd46)) |
-	                 (((F_SU1) != 0) & (op == 6'd47)) |
-	                 (((F_SU2) != 0) & (op == 6'd48));
-	assign out = (is_norm) ? smx : out_fast;
-end else begin : norm_out
-	assign out = out_fast;
-end endgenerate
+always @ (*) begin
+	out = out_fast;
+	case (op)
+	6'd3  : if (F_ADD  ) out = smx;   // F_ADD
+	6'd5  : if (F_MLT  ) out = smx;   // F_MLT
+	6'd7  : if (F_DIV  ) out = smx;   // F_DIV
+	6'd25 : if (I2F    ) out = smx;   // I2F
+	6'd26 : if (I2F_M  ) out = smx;   // I2F_M
+	6'd46 : if (F_ROT  ) out = smx;   // F_ROT
+	6'd47 : if (F_SU1  ) out = smx;   // F_SU1
+	6'd48 : if (F_SU2  ) out = smx;   // F_SU2
+	default: ;
+	endcase
+end
 
 endmodule
 
@@ -419,31 +419,44 @@ module norm_mux
 	output [NUBITS  -1:0] out
 );
 
-// Both muxes as in ula_mux: one term per operation, OR-ed, built only when
-// the program has the operation (no don't-care input, docs/design/README.md).
+// Both muxes as in ula_mux, in the instruction decoder's style: one case,
+// each row guarded by its operation's parameter, 0 otherwise (no don't-care
+// input, docs/design/README.md).
 localparam W2 = NUBITS+G+2;
 
 // operands that need the leading-zero count (F_MLT/F_DIV too at level 0, where
 // the legacy path is kept bit for bit)
-wire [W2-1:0] l3 ; generate if ((F_ADD) != 0) begin : gl3  assign l3  = (op == 6'd3 ) ? fadd : {W2{1'b0}}; end else begin : gl3  assign l3  = {W2{1'b0}}; end endgenerate   // F_ADD
-wire [W2-1:0] l5 ; generate if ((F_MLT) != 0) begin : gl5  assign l5  = (op == 6'd5 ) ? fmlt : {W2{1'b0}}; end else begin : gl5  assign l5  = {W2{1'b0}}; end endgenerate   // F_MLT
-wire [W2-1:0] l7 ; generate if ((F_DIV) != 0) begin : gl7  assign l7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gl7  assign l7  = {W2{1'b0}}; end endgenerate   // F_DIV
-wire [W2-1:0] l25; generate if ((I2F  ) != 0) begin : gl25 assign l25 = (op == 6'd25) ? i2f  : {W2{1'b0}}; end else begin : gl25 assign l25 = {W2{1'b0}}; end endgenerate   //   I2F
-wire [W2-1:0] l26; generate if ((I2F_M) != 0) begin : gl26 assign l26 = (op == 6'd26) ? i2fm : {W2{1'b0}}; end else begin : gl26 assign l26 = {W2{1'b0}}; end endgenerate   //   I2F_M
-wire [W2-1:0] l46; generate if ((F_ROT) != 0) begin : gl46 assign l46 = (op == 6'd46) ? frot : {W2{1'b0}}; end else begin : gl46 assign l46 = {W2{1'b0}}; end endgenerate   // F_ROT
-wire [W2-1:0] l47; generate if ((F_SU1) != 0) begin : gl47 assign l47 = (op == 6'd47) ? fadd : {W2{1'b0}}; end else begin : gl47 assign l47 = {W2{1'b0}}; end endgenerate   // F_SU1 (the same addition circuit)
-wire [W2-1:0] l48; generate if ((F_SU2) != 0) begin : gl48 assign l48 = (op == 6'd48) ? fadd : {W2{1'b0}}; end else begin : gl48 assign l48 = {W2{1'b0}}; end endgenerate   // F_SU2 (the same addition circuit)
+reg [W2-1:0] imux_l;
 
-wire [W2-1:0] imux_l = l3 | l5 | l7 | l25 | l26 | l46 | l47 | l48;
+always @ (*) begin
+	imux_l = {W2{1'b0}};
+	case (op)
+	6'd3  : if (F_ADD) imux_l = fadd;   // F_ADD
+	6'd5  : if (F_MLT) imux_l = fmlt;   // F_MLT
+	6'd7  : if (F_DIV) imux_l = fdiv;   // F_DIV
+	6'd25 : if (I2F  ) imux_l = i2f ;   //   I2F
+	6'd26 : if (I2F_M) imux_l = i2fm;   //   I2F_M
+	6'd46 : if (F_ROT) imux_l = frot;   // F_ROT
+	6'd47 : if (F_SU1) imux_l = fadd;   // F_SU1 (the same addition circuit)
+	6'd48 : if (F_SU2) imux_l = fadd;   // F_SU2 (the same addition circuit)
+	default: ;
+	endcase
+end
 
 // operands already aligned to their top bit by the operator (FROUND >= 1):
 // they skip the leading-zero count and go straight to rounding/saturation
 wire               use_d = (FROUND != 0) & ((op == 6'd5) | (op == 6'd7));
 
-wire [W2-1:0] d5 ; generate if ((F_MLT) != 0) begin : gd5  assign d5  = (op == 6'd5 ) ? fmlt : {W2{1'b0}}; end else begin : gd5  assign d5  = {W2{1'b0}}; end endgenerate   // F_MLT
-wire [W2-1:0] d7 ; generate if ((F_DIV) != 0) begin : gd7  assign d7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gd7  assign d7  = {W2{1'b0}}; end endgenerate   // F_DIV
+reg [W2-1:0] imux_d;
 
-wire [W2-1:0] imux_d = d5 | d7;
+always @ (*) begin
+	imux_d = {W2{1'b0}};
+	case (op)
+	6'd5  : if (F_MLT) imux_d = fmlt;   // F_MLT
+	6'd7  : if (F_DIV) imux_d = fdiv;   // F_DIV
+	default: ;
+	endcase
+end
 
 // perform the normalization
 ula_norm #(NBMANT,NBEXPO,FROUND,G,LZC,DIR) ula_norm (imux_l, imux_d, use_d, out);
