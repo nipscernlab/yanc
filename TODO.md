@@ -51,7 +51,8 @@ arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
 it; 15 the regress on this machine (mitigated); 17 faster fill/copy in
 hardware (measure the index register `X` first; shares its pointer with 28); 24 processors with
 different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst (recorded); 31 the Dirac array output; 32 the
-divider stage count from the widths (recorded; on the ZYBO `F_DIV` limits).
+divider stage count from the widths (recorded; on the ZYBO `F_DIV` limits); 33 a
+float as a condition (study first: C+- truncates, C++ is always true).
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), the reorganisation of the runner/setup scripts, a macOS
 build, 30 (SAPHO without showing its source, until a partnership).
@@ -863,6 +864,61 @@ cut, 26.5 ns; 37.26 MHz), not the float add as on the DE10-Nano. A fifth
 result written back to memory) only 0.4 ns behind; Luciano kept 4. The
 budget per cycle differs per FPGA family, so a computed `STG` would need a
 per-target B, or the larger of the two counts.
+
+## 33. A float as a condition: neither compiler gives C's answer
+
+**Status:** STUDY first (Luciano, 2026-10-17): compare the approaches, pick
+one, only then implement · **Area:** cmmcomp (`ast.c`
+`emit_cond_int_load`, `oper.c` `oper_lin`/`oper_lanor`; Luciano's code,
+diff to him first), cppcomp (`codegen.c` `gen_bool`, the float -> bool
+cast) · **Evidence:** simulated 2026-10-17 (.smoke/s8/fcond, .smoke/s8/cpp)
+
+In C a float condition is true when the value is not zero. Measured on
+the simulated processor, `#FROUND 2` (and `0.6` also at `#FROUND 0`):
+
+| condition | C | C+- today | C++ today |
+|---|---|---|---|
+| `if (0.5)` | 1 | **0** | 1 |
+| `if (2.5)` | 1 | 1 | 1 |
+| `if (-0.3)` | 1 | **0** | 1 |
+| `if (0.0)` | 0 | 0 | **1** |
+| `if (a - a)` | 0 | 0 (not run) | **1** |
+| `while (a)`, a = 0.5, a -= 0.25 | 2 turns | **0 turns** | (not run) |
+
+C+-: the condition goes through `F2I` (truncation; any float in (-1, 1) is
+false), on purpose, with a warning that says "Gonna round it" although it
+truncates (0.6 is false at both levels measured). `!`, `&&`, `||` on a
+float do the same (`MSG_WARN_LOGIC_FLOAT`). No C+- golden has a float
+condition. C++: `gen_bool` tests the float's bits, and SAPHO's zero float
+is not all zero bits (its exponent is the minimum, not 0), so every float
+condition is true: a correctness bug.
+
+Approaches to compare (none chosen):
+1. Test the mantissa: SAPHO keeps the leading one, so a float is zero
+   exactly when its mantissa is zero (+0, -0, every `#FROUND`):
+   `AND <2^NBMANT - 1>` before the `JIZ`. One fast integer instruction;
+   the AND operator is built if the program had none. To check: denormals
+   at `#FROUND 0`, values the encoder turns into zero.
+2. Compare with zero: `EQU` against the zero constant, then invert (`LIN`)
+   or swap the branch targets. Two zero encodings at `#FROUND 0` (the sign
+   is kept), so it may need two compares there.
+3. A hardware change: the zero flag of `JIZ` computed from the float's
+   meaning for float results (an opcode or a flag from the compiler).
+   Costs hardware and touches the path just shortened by item 29.
+4. Keep C+- as it is (document the truncation, fix the warning's text to
+   "truncate") and fix only C++.
+
+How to choose: a differential test against a C compiler first, the same
+source on host gcc (IEEE) and on the simulated SAPHO, many values (0, -0,
+values in (-1, 1), integers, results of `a - a`, `a * 0`, divisions) and
+every form (`if`, `while`, `for`, `do`, `!`, `&&`, `||`, `?:` and float ->
+bool in C++), comparing the printed 0/1. It shows today's failures and
+proves the chosen fix. Leave out values below SAPHO's smallest normal
+(they become zero at `#FROUND 1/2`, a format difference, not an error).
+Then compare the approaches on words per condition, cycles and hardware.
+Done: the approach chosen by Luciano, both compilers equal to gcc on the
+test, the test kept as a fixture, the manual (C+-, C++, messages) and
+AURORA's text updated.
 
 ## 27. C++ gaps that real embedded code hits
 
