@@ -20,6 +20,12 @@ tags consumed by Aurora.
   MHz** (3,652 -> 3,600 ALMs). `ula_mux` and `norm_mux` are an OR of one
   term per operation the program has, instead of a `case` whose absent
   inputs were don't cares; no `x` is left in the processor. Same ports.
+- **`JIZ` reads the arithmetic unit before the float normaliser; 30.90 ->
+  32.67 MHz** (3,600 -> 3,541 ALMs). asmcomp puts a `NOP` between an
+  operation that goes through the normaliser (`F_ADD`, `F_MLT`, `F_DIV`/
+  `F_QUO`, `I2F`, `F_INN`, ...) and a `JIZ` right after it; the compilers
+  never write that pattern, a hand-written `.asm` may. The generated top of
+  a program without `in()` ties its input wire to 0 (it was undriven).
 
 ### Added
 - **`Scripts/hw/path_groups.py`**: the worst path of each destination block

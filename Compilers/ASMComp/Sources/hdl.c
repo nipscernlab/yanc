@@ -107,8 +107,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // I/O interface wires ----------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // no input bus: a wire is needed so it can be tied off into the processor
-    if (nuioin == 0 || !opc_inn()) fprintf(f_veri, "wire [%d:0] in;\n", nubits-1);
+    // no input bus: a wire is needed so it can be tied off into the processor,
+    // at 0 (an undriven wire would be a don't care, docs/design/README.md)
+    if (nuioin == 0 || !opc_inn()) fprintf(f_veri, "wire [%d:0] in = 0;\n", nubits-1);
 
     // no interrupt pin: a wire is needed for the processor connection
     if (itr_addr == 0) fprintf(f_veri, "wire itr = 1'b0;\n");

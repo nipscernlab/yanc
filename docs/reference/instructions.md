@@ -20,7 +20,13 @@ A processor contains only the hardware of the instructions its program
 uses. An integer division takes five words, `DIV k; NOP; NOP; NOP; QUO`
 (also `MOD`/`REM`), a float division four, `F_DIV k; NOP; NOP; F_QUO`:
 the compilers write it that way, because the dividers take five and four
-cycles.
+cycles. A `JIZ` right after an operation whose result goes through the
+float normaliser (`F_ADD`, `F_SU1`, `F_SU2`, `F_MLT`, `F_DIV`/`F_QUO`,
+`F_ROT`, `I2F`, `I2F_M`, `F_INN` and their stack, `P_` and `_V` forms) gets
+a `NOP` before it: the jump reads the arithmetic unit before the
+normaliser, and asmcomp inserts the `NOP` by itself, in a hand-written
+`.asm` too. The compilers never put a float operation right before a
+`JIZ`: they test a float condition after `F2I`.
 
 Columns: **operand**, what the operand field holds (`data` a data address,
 `code` an instruction address, `in`/`out` a port, `link` a link number,

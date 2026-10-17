@@ -1055,6 +1055,7 @@ endgenerate
 // Arithmetic Logic Unit ------------------------------------------------------
 
 wire signed [NUBITS-1:0] ula_out;
+wire        [NUBITS-1:0] ula_fast;   // ula_out without the normalised operations
 
 ula #(.NUBITS (NUBITS ),
       .NBMANT (NBMANT ),
@@ -1110,7 +1111,7 @@ ula #(.NUBITS (NUBITS ),
 	  .F_SU2  (F_SU2   | SF_SU2  ),
 	  .F_SCL  (F_SCL   | SF_SCL  ),
 	  .XPO    (XPO              ),
-	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out, clk);
+	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out, ula_fast, clk);
 
 assign sp_in = ula_out;
 
@@ -1137,7 +1138,10 @@ assign uic_acc = racc;
 // WHOLE word, not just bit 0. Using ula_out[0] alone made `while (x)` / `if (x)`
 // misbehave for any multi-bit value with a clear LSB (e.g. 2, 4, ...). The
 // OR-reduction gives true C truthiness; JIZ jumps iff the word is exactly zero.
-assign  if_acc = |ula_out;
+// It reads the ALU before the float normaliser (ula_fast): the normaliser is
+// the longest path, and asmcomp puts a NOP between a normalised operation and
+// a JIZ right after it (asm_jiznop), so the word tested is never one of them.
+assign  if_acc = |ula_fast;
 
 // Indirect Addressing --------------------------------------------------------
 

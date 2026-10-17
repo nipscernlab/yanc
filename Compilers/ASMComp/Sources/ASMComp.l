@@ -10,6 +10,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 %}
 
@@ -223,6 +224,28 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 .;
 %%
 
+// the compilers' instruction count (prog_log.txt "num_ins", which sizes the
+// source-line table of the waveform) grows by `more` words; nothing to do
+// for an .asm written by hand, which has no prog_log.txt
+static void add_num_ins(const char *dir, int more)
+{
+  char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", dir);
+  FILE *f = fopen(path, "r");
+  if (!f) return;
+  char *text = NULL; size_t len = 0, cap = 0; char line[1024];
+  while (fgets(line, sizeof(line), f))
+  {
+    int v;
+    if (sscanf(line, "num_ins %d", &v) == 1) snprintf(line, sizeof(line), "num_ins %d\n", v + more);
+    size_t k = strlen(line);
+    if (len + k + 1 > cap) { cap = 2 * (len + k + 1); text = realloc(text, cap); }
+    memcpy(text + len, line, k + 1); len += k;
+  }
+  fclose(f);
+  if ((f = fopen(path, "w"))) { if (text) fputs(text, f); fclose(f); }
+  free(text);
+}
+
 int main(int argc, char *argv[])
 {
   console_utf8();                            // the PT messages are UTF-8 (Windows console)
@@ -235,6 +258,14 @@ int main(int argc, char *argv[])
   strcpy( hdl_dir, a.hdl_dir);               // HDL folder path
   strcpy( mac_dir, a.macros_dir);            // Macros folder path
   strcpy(temp_dir, a.temp_dir);              // the same folder: the tables of the compilers are read from here
+
+  // a JIZ right after a float operation gets a NOP (it reads the ALU before
+  // the normaliser; Compilers/common/asm_share.h); the source-line map and
+  // the instruction count of the compilers follow
+  char pc_path[2048]; snprintf(pc_path, sizeof(pc_path), "%s/pc_%s_mem.txt", a.temp_dir, a.name);
+  int jn = asm_jiznop(a.input, pc_path);
+  if (jn < 0) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
+  if (jn > 0) add_num_ins(a.temp_dir, jn);
 
   pass1_run(a.input, a.temp_dir, a.name);    // first pass: app_log.txt (name, labels, sizes)
 

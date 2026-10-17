@@ -869,6 +869,76 @@ done:
     return added_pc;
 }
 
+// ---- asm_jiznop: a NOP between a normalised operation and its JIZ -------------------
+// See asm_share.h. The mnemonics whose ALU operation goes through the
+// normaliser: the instr_dec.v rows with ALU operation 3, 5, 7, 25, 26, 46, 47
+// or 48, and their aliases (Scripts/check_isa.py holds the list to the decoder).
+
+static const char *norm_mn[] = {
+    "F_INN", "PF_INN", "F_ADD", "F_ADD_V", "SF_ADD", "F_SU1", "F_SU2", "SF_SU1", "SF_SU2",
+    "F_MLT", "F_MLT_V", "SF_MLT", "F_DIV", "F_QUO", "SF_DIV", "F_ROT", "I2F", "I2F_M", "P_I2F_M",
+    NULL
+};
+
+int asm_is_norm(const char *mn)
+{
+    for (int i = 0; norm_mn[i]; i++) if (strcmp(mn, norm_mn[i]) == 0) return 1;
+    return 0;
+}
+
+int asm_jiznop(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+    if (pc_path && (f = fopen(pc_path, "r"))) { read_lines(f, &pc); fclose(f); }
+
+    // the instruction each line holds (-1: none), and which JIZ get a NOP before them
+    int  *ins_of = malloc((lines.n + 1) * sizeof(int));
+    char (*mn)[32] = malloc((lines.n + 1) * sizeof(*mn));
+    char *pad = calloc(lines.n + 1, 1);                  // per instruction: a NOP goes before it
+    int   n = 0, prev = -1, added = 0;
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        line_mnemonic(lines.s[ln], mn[ln], sizeof(mn[ln]));
+        ins_of[ln] = mn[ln][0] ? n++ : -1;
+        if (ins_of[ln] < 0) continue;
+        if (strcmp(mn[ln], "JIZ") == 0 && prev >= 0 && asm_is_norm(mn[prev])) { pad[ins_of[ln]] = 1; added++; }
+        prev = ln;
+    }
+    if (added == 0) goto done;
+
+    f = fopen(asm_path, "w");
+    if (!f) { added = -1; goto done; }
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        if (ins_of[ln] >= 0 && pad[ins_of[ln]]) fputs("NOP\n", f);
+        fputs(lines.s[ln], f);
+    }
+    fclose(f);
+
+    if (pc.n > 0)                                        // the NOP takes the JIZ's source line
+    {
+        f = fopen(pc_path, "w");
+        if (!f) { added = -1; goto done; }
+        for (int i = 0; i < pc.n; i++)
+        {
+            if (pad[i]) fputs(pc.s[i], f);
+            fputs(pc.s[i], f);
+        }
+        fclose(f);
+    }
+    printf(yanc_lang_en ? "Info: %d NOP inserted between a float operation and the JIZ after it\n"
+                        : "Info: %d NOP inserido(s) entre uma operação float e o JIZ logo depois dela\n", added);
+
+done:
+    free(pad); free(mn); free(ins_of);
+    st_free(&lines); st_free(&pc);
+    return added;
+}
+
 // ---- asm_depth: how deep the two stacks get -----------------------------------------
 // See asm_share.h. A routine is the code a CAL target reaches until its RETs
 // (plus the entry at address 0 and the interrupt point). For each one, once

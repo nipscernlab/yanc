@@ -710,6 +710,7 @@ ALMs as on 2026-10-11.
 | 0 | v7.1 | 21.82 MHz | 3,558 | 907 | integer divider, 43.3 ns |
 | 1 | `DIV`/`MOD` in 5 stages, `F_DIV` in 4 | **29.66 MHz** (+36 %) | 3,652 (+2.6 %) | 1,197 | data memory -> `denorm` 8.1 -> `fadd` 2.6 -> normaliser 11.2 -> ALU mux 2.9 -> jump and PC 5.0 ns (31.5 ns) |
 | 1b | every mux guided by the opcode parameters, no `x` | **30.90 MHz** (+4.2 %) | 3,600 (-1.4 %) | 1,216 | the same path: `denorm` 7.1 -> `fadd` 4.6 -> normaliser 10.1 -> ALU mux **0.7** -> jump and PC 6.3 ns (29.8 ns) |
+| 2 | `JIZ` reads the ALU before the normaliser | **32.67 MHz** (+5.7 %) | 3,541 (-1.6 %) | 1,197 | `denorm` 6.8 -> `fadd` 4.0 -> normaliser 11.2 -> ALU mux 4.4 -> data stack write (28.1 ns); next, 0.6 ns behind, the data memory read address (`LDI`/`ILI` index, 27.9 ns) |
 
 Step 1: `ula_idiv` and `ula_fdiv` take a parameter `STG` (5 and 4) instead of
 the 3 written in both instances; the compilers write `DIV x; NOP; NOP; NOP;
@@ -731,7 +732,29 @@ be a don't care (docs/design/README.md, "Rules for SAPHO/"). The ports are
 unchanged (AURORA's netlist viewer draws both modules). The ALU output mux
 went from 2.9 to 0.7 ns on the worst path; one seed, and the placement
 moved the other blocks too (the add 2.6 -> 4.6 ns), so only the total
-counts. Next: the `JIZ` without the normaliser (TODO 29 step 2).
+counts.
+
+Step 2: `ula_mux` gives `out_fast`, the OR of the terms that do not go
+through the normaliser, and a 2-input mux after it (only with a normalised
+operation, each case of its select guarded) picks `smx` for the eight
+normalised ALU operations; `JIZ` tests `|out_fast`. asmcomp inserts a `NOP`
+between an operation whose ALU result goes through the normaliser and a
+`JIZ` right after it (`asm_jiznop`, Compilers/common; the list `norm_mn`
+includes `F_INN`/`PF_INN`, which convert through `I2F`, and
+`Scripts/check_isa.py` holds it to `instr_dec.v`), adjusting the
+source-line map and `num_ins`. None of the 174 `.asm` the compilers write
+in the regress has the pattern: cmmcomp tests a float condition after
+`F2I`. A hand-written `.asm` with `F_ADD`/`F_MLT`/`I2F` before `JIZ` gave
+`11 21 31 41` on the old processor without `NOP` and on the new one with the
+inserted `NOP` (14,813 outputs equal), and `10 20 31 40` on the new one
+without it. The `JIZ` left the 3,000 worst paths. The indirect read index
+(step 3) is now 0.6 ns behind the worst path, so step 3 can give at most
+~2 % (deduced); behind it the float result into the accumulator and the
+stack limits, which no change of this kind removes.
+
+**For the documentation (item 21).** A hand-written `.asm` that tests a
+float result with `JIZ` right away gets a `NOP` before the `JIZ` from
+asmcomp (one word, one cycle); the instruction and message pages say so.
 
 **For the documentation (item 21).** A division now takes five words
 (`DIV`/`MOD`: `DIV x; NOP; NOP; NOP; QUO`) or four (`F_DIV x; NOP; NOP;

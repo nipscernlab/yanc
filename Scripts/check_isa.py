@@ -310,6 +310,23 @@ def main():
                     bad.append(f'{mn}: asm_share.c says {"/".join(rows[mn])}, '
                                f'the table says {"/".join(want)}')
 
+    # 11: asm_share.c's list of the mnemonics whose ALU operation goes through
+    # the float normaliser (asm_jiznop puts a NOP between one of them and a JIZ
+    # right after it): every mnemonic whose opcode has an instr_dec.v row with
+    # ALU operation 3, 5, 7, 25, 26, 46, 47 or 48, aliases included
+    if os.path.exists(share_p):
+        dec_text = open(os.path.join(root, 'SAPHO', 'instr_dec.v'), encoding='utf-8', errors='replace').read()
+        norm_ops = {int(m.group(1)) for m in re.finditer(
+            r"7'd(\d+)\s*:\s*if\s*\(\s*[A-Z_0-9]+\s*\)\s*decode\s*=\s*\{6'd(\d+)", dec_text)
+            if int(m.group(2)) in (3, 5, 7, 25, 26, 46, 47, 48)}
+        want = {mn for mn in table if table[mn][0] in norm_ops}
+        m = re.search(r'norm_mn\[\]\s*=\s*\{(.*?)\};', text, re.S)
+        have = set(re.findall(r'"([A-Z_0-9]+)"', m.group(1))) if m else set()
+        for mn in sorted(want - have):
+            bad.append(f'{mn}: goes through the normaliser but is not in asm_share.c norm_mn')
+        for mn in sorted(have - want):
+            bad.append(f'{mn}: in asm_share.c norm_mn but does not go through the normaliser')
+
     # 10: asmcomp's first pass lists the mnemonics too (it counts the
     # instructions that size the instruction memory): a mnemonic it does not
     # know is not counted, and MINSTS comes out short (seen with TOM/CAD,

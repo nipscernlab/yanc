@@ -800,8 +800,8 @@ index register: design the two together.
 ## 29. A faster clock behind the dividers
 
 **Status:** in progress: step 1 (dividers 5/4) DONE 2026-10-16, 21.82 ->
-29.66 MHz; step 1b (muxes by parameters) DONE, 30.90 MHz; next step 2
-(`JIZ`) · **Area:** `SAPHO/ula.v`
+29.66 MHz; step 1b (muxes by parameters) DONE, 30.90 MHz; step 2 (`JIZ`) DONE,
+32.67 MHz; step 3 next · **Area:** `SAPHO/ula.v`
 (dividers, normaliser, muxes), `SAPHO/core.v` (`JIZ`, indirect index),
 `asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
 section 4.3, normalisation-survey.md, fadd-survey.md
@@ -831,15 +831,15 @@ are the variants' one-seed fits of note 4.3, not the final code.
    -Wall on four whole processors: nothing undriven inside `SAPHO/`. Left
    as it is (Luciano): `ula_in1_ctrl` (memory or stack top) is always built;
    both inputs are real, a decoder constant picks.
-2. `JIZ` without the normaliser: the ALU output split (the fast mux is the
-   OR of the non-normalised terms, the 2-input mux after it only with a
-   normalised operation), `JIZ` reads the fast output, asmcomp inserts a
-   `NOP` before a `JIZ` right after a normalised operation (`F_ADD`, `F_SU1`,
-   `F_SU2`, `F_MLT`, `F_DIV`, `I2F`, `I2F_M`, `F_ROT`, stack forms). Also in
-   this commit (Luciano): the generated top of a program without `in()`
-   declares `wire in` undriven (asmcomp `hdl.c:111`): give it `= 0`.
-3. `LDI`/`ILI` index from the fast output, the same `NOP` rule for them.
-   Expect ~32 (`addr`/`param`); then `F_ADD` -> normaliser -> accumulator.
+2. DONE (accepted): `JIZ` tests `out_fast` (the ALU before the
+   normaliser); asmcomp inserts the `NOP` (`asm_jiznop`, list checked by
+   check_isa.py); the generated top ties an unused `in` to 0. **32.67 MHz**
+   (+5.7 %), 3,541 ALMs, 1,197 registers. Worst path now the float result
+   into the data stack (28.1 ns); the indirect read index 0.6 ns behind.
+3. NEXT (Luciano, 2026-10-17: do it, for robustness): `LDI`/`ILI` index from the fast
+   output, the same `NOP` rule for them. Measured after step 2: that path is
+   0.6 ns behind the worst one, so at most ~2 % (deduced); then the float
+   result into the accumulator/stack limits.
 4. The leading-zero count as a tree (`ula_lzc`, code in 19bc344; equal
    outputs, `eq_norm.sh lzc`).
 5. `norm_mux` guarded by the opcode parameters (`pnorm`: area).
