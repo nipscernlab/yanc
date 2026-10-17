@@ -111,8 +111,8 @@ float table[64] "table.txt";      // initialised from a file
 
 The precedence is C's. There is no `--`, no compound assignment (`+=`,
 `-=`, ...), no `?:`, no `sizeof`. A shift costs almost nothing in hardware,
-a division a divider and three clock cycles: `x >> 2` instead of `x / 4`
-when `x` is not negative.
+a division a divider and five clock cycles (four for a float division):
+`x >> 2` instead of `x / 4` when `x` is not negative.
 
 ## Control flow
 

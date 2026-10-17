@@ -10,7 +10,7 @@ links to its section there. The measurements themselves are reproducible with
 Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
-## Where things stand (2026-10-14)
+## Where things stand (2026-10-17)
 
 **v7.1 released on 2026-10-13** (no v7.0), with AURORA moved to it the same
 day. The manual is published from docs/ by each release: GitHub Pages and
@@ -18,11 +18,18 @@ nipscern.com/library/yanc. Left from it: the board run of Sabrina and Pedro
 Henrique (the `LINKALL` pair with the `.sdc` on both boards; the Fmax is
 measured, the link costs no clock).
 
+**Item 29 closed 2026-10-17 (next release):** `sapho_all` 21.8 -> 32.4 MHz
+on the DE10-Nano (mean of three seeds), 23.5 -> 37.3 MHz on the ZYBO, the
+same area: dividers in 5/4 stages, every mux guided by the opcode
+parameters (no `x` left), `JIZ` and the `LDI`/`ILI` index before the float
+normaliser (asmcomp inserts the `NOP`), the tree leading-zero count, the
+decoder in the ALU's form (CHANGELOG [Unreleased], design note 4.4).
+AURORA's text for the release: `C:	mpurora_yanc_divseq.md`.
+
 **Recorded, not to be implemented yet (Luciano, 2026-10-14):** item 28, the
 burst (a whole array through a port at one word a clock, stopping while the
 FIFO is full); the design note lists the holes to close first.
-Also recorded the same day: item 29, a faster clock (the dividers, the
-normaliser, the `JIZ` zero test), item 30, SAPHO without showing its
+Also recorded the same day: item 30, SAPHO without showing its
 source (parked until a partnership), and item 31, the Dirac array output
 (a wasted `MLT 1`, a missing form; open).
 
@@ -43,16 +50,15 @@ interrupt, I/O contract); 13 the pre-assembly optimizer and the C++ heap
 arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
 it; 15 the regress on this machine (mitigated); 17 faster fill/copy in
 hardware (measure the index register `X` first; shares its pointer with 28); 24 processors with
-different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst (recorded); 29 a faster
-clock (timed: 32 MHz in experiments); 31 the Dirac array output; 32 the
-divider stage count from the widths (recorded).
+different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst (recorded); 31 the Dirac array output; 32 the
+divider stage count from the widths (recorded; on the ZYBO `F_DIV` limits).
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), the reorganisation of the runner/setup scripts, a macOS
 build, 30 (SAPHO without showing its source, until a partnership).
 
 **Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 11 (consistency at 32
 bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
-20, 22 and 23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), the user names that collide in the `.asm`.
+20, 22 and 23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), the user names that collide in the `.asm`, 29 (a faster clock, next release).
 
 ---
 
@@ -234,9 +240,9 @@ project).
 ## 8. ALU datapath restructuring (depth and area)
 
 **Status:** the six planned steps are done (below); the critical path of
-the whole processor was measured under item 29 (2026-10-14 to 16: the
-dividers, then `F_ADD` -> normaliser once they are cut); what follows is
-item 29's plan · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.6](docs/design/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/design/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
+the whole processor was measured under item 29 (closed 2026-10-17: the
+dividers, then `F_ADD` -> normaliser into the accumulator and the stack,
+which limits now; design note pipeln-and-division.md 4.4) · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.6](docs/design/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/design/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
 
 The ALU is combinational and every instruction takes one cycle, so the ALU
 sits on the path that sets the clock. Measured before the steps (Yosys,
@@ -797,130 +803,6 @@ share arrays, names and opcodes (they fit at the end of the table), the
 language forms (note sections 5 and 5a). Shares its pointer with item 17's
 index register: design the two together.
 
-## 29. A faster clock behind the dividers
-
-**Status:** in progress: step 1 (dividers 5/4) DONE 2026-10-16, 21.82 ->
-29.66 MHz; step 1b (muxes by parameters) DONE, 30.90 MHz; step 2 (`JIZ`) DONE,
-32.67 MHz; step 3 (`LDI`/`ILI`) DONE, 31.54 (noise); step 4 (tree LZC) DONE,
-31.82; 4b (decoder as an OR of terms) DONE, 33.10 · **Area:** `SAPHO/ula.v`
-(dividers, normaliser, muxes), `SAPHO/core.v` (`JIZ`, indirect index),
-`asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
-section 4.3, normalisation-survey.md, fadd-survey.md
-
-**Implementation plan (2026-10-16, restarted the same day by Luciano).**
-From the v7.1 `SAPHO/`, on the DE10-Nano part (5CSEBA6U23I7), one change
-at a time, the one expected to raise the clock most first. Each change: a
-fit of `sapho_all` (seed 1, default PERIOD/EFFORT of `fmax.sh`), then
-Fmax and ALMs against the previous fit go to Luciano, who decides whether
-it stays; then commit and push, `Scripts/aurora.bat`. The tree count was
-committed first (19bc344) and reverted (it cannot move the clock while the
-integer divider limits); it comes back as its own step. Expected clocks
-are the variants' one-seed fits of note 4.3, not the final code.
-
-0. DONE: reference, v7.1 refitted with today's `fmax.sh`: 21.82 MHz, 3,558
-   ALMs, 907 registers (the same as 2026-10-11).
-1. DONE (accepted by Luciano): `DIV`/`MOD` in 5 stages, `F_DIV` in 4 (`STG`
-   of `ula_idiv`/`ula_fdiv`), `ASM_DIV_WORDS_INT`/`_FLT` in asm_share.h.
-   **29.66 MHz** (+36 %), 3,652 ALMs (+2.6 %), 1,197 registers. Worst path
-   now data memory -> `denorm` -> `fadd` -> normaliser (11.2 ns) -> ALU mux
-   -> jump -> PC, 31.5 ns (note 4.4).
-1b. DONE (Luciano's proposal, accepted): every mux guided by the opcode
-   parameters, no `x` left in `SAPHO/` (`ula_mux`, `norm_mux` as OR of
-   guarded terms; absent operators and `isp_push`/`isp_pop` at 0). **30.90
-   MHz** (+4.2 %), 3,600 ALMs (-1.4 %). Rule from now on: no mux input at
-   don't care (docs/design/README.md). Checked 2026-10-16 with Verilator
-   -Wall on four whole processors: nothing undriven inside `SAPHO/`. Left
-   as it is (Luciano): `ula_in1_ctrl` (memory or stack top) is always built;
-   both inputs are real, a decoder constant picks.
-2. DONE (accepted): `JIZ` tests `out_fast` (the ALU before the
-   normaliser); asmcomp inserts the `NOP` (`asm_normnop`, list checked by
-   check_isa.py); the generated top ties an unused `in` to 0. **32.67 MHz**
-   (+5.7 %), 3,541 ALMs, 1,197 registers. Worst path now the float result
-   into the data stack (28.1 ns); the indirect read index 0.6 ns behind.
-3. DONE (Luciano, for robustness): the `LDI`/`ILI` index from `out_fast`,
-   `asm_normnop` covers `JIZ`/`LDI`/`ILI`. 31.54 MHz, 3,507 ALMs: -3.5 %
-   against step 2 on one seed, the same kind of path, the normaliser placed
-   longer; judged noise (note 4.4). One seed cannot separate < ~4 %.
-4. DONE (Luciano kept it): the leading-zero count as a tree (`ula_lzc`);
-   equal outputs (`eq_norm.sh`). 31.82 MHz, 3,535 ALMs: neutral, in noise.
-4b. DONE (Luciano kept it): the instruction decoder
-   (`instr_dec.v`) in the ULA's form, an OR of terms each inside a generate
-   on its parameter, instead of a case in a function, for coherence. Kept if
-   the ALMs do not grow and the clock does not drop (beyond seed noise).
-   First I did it the wrong way round (the ULA muxes in the decoder's case
-   style, 7a1bd9c, reverted a632605): +95 ALMs on `sapho_all` (30.94 MHz),
-   like 4.3's `pcase` (+79), so the OR is the cheaper form on the ULA.
-   Result: 33.10 MHz, 3,566 ALMs (the decoder itself +8 ALMs); in noise.
-5. `norm_mux` guarded by the opcode parameters (`pnorm`: area).
-6. Document: Vivado/ZYBO (`vfmax.sh`), `area.sh`, the item-21 note,
-   CHANGELOG.
-
-**Decisions (Luciano, 2026-10-16):**
-- The `JIZ`/`LDI`/`ILI` rule: asmcomp inserts the `NOP` by itself (steps 2
-  and 3; count first, then pad).
-- Stage count fixed in the circuit: 5 for `DIV`/`MOD`, 4 for `F_DIV`, as
-  constants (step 1 makes the NOP count one named value per divider,
-  not a literal 3). Computing it from the widths is item 32, for later.
-- When to fit: decided along the way, not fixed in advance.
-
-Measured 2026-10-16 (no new fit, STA on the `pnorm` seed-1 project): worst
-path `F_ADD` -> normaliser -> accumulator (slack -20.7 ns); `F_DIV` last
-segment -19.8, integer divider worst segment -17.8. Segments already
-balanced by retiming (integer 25.9/27.5/25.8/26.8/23.8 ns, ~130 in all;
-float 26.3/25.6/26.5/29.2, ~108): one stage fewer gives ~32 and ~36 ns per
-segment (deduced), so the dividers would limit. 5 and 4 are the minimum.
-
-On the v7.1 `sapho_all` (DE10-Nano, 21.8 MHz) the integer divider's two
-first parts are equal (~43.5 ns): a third cut, not a moved one, is what
-helps (Luciano: more registers in the dividers are fine, a division is
-rare; each division then takes four words). `F_DIV`'s last part is as long.
-With both fixed: ~23.6 MHz, limited by `F_ADD` into the `JIZ` decision.
-Behind it, without new registers: the `JIZ` zero test computed early (every
-path loses ~4 ns), and a faster shared normaliser (44-48 % of every float
-path; leading-zero anticipation, no shared input mux); a two-path float
-adder only after those.
-
-**Timed 2026-10-15 (Luciano's request; experiments, not in `SAPHO/`):** one
-Quartus fit each on the DE10-Nano part: 4-stage dividers 26.39 MHz; + `JIZ`
-without the normaliser 28.49; + the normaliser's leading-zero count as a
-tree 29.03; + the indirect read index without the normaliser and a 5-stage
-integer divider **32.07 MHz** (+47 % over 21.82). Luciano's split ALU output (one mux
-without the normalised operations, a 2-input mux after it) instead of a
-copied mux: 31.52 MHz with 194 ALMs fewer (3,622). Muxes generated from the opcode
-parameters: `param` 32.26 MHz / 3,539 ALMs, `pcase` (decoder style) 32.52 /
-3,618, `pnorm` (`param` + `norm_mux` guarded) 32.61 / 3,551, the one
-recommended (note 4.3; more seeds before it is final). Normaliser alternatives
-(normalizing shifter, rounding carry select; proven bit-exact): one fit of
-both together gave 31.41 MHz, below `pnorm` (32.61 / 32.25 on two seeds);
-the three-seed batch `fit_normalisers_resume.sh` (~15 h) is for Luciano to
-run at home. Literature survey done (2026-10-15,
-`docs/design/normalisation-survey.md`): 13 methods, 4 tried, 4 not
-applicable. NEXT, for Luciano to choose: the shift through a DSP multiplier
-(one 27x27 block, 2^k from `r & -r` without a decoder), then rounding only
-on the short shifts (deduced: at `#FROUND 2` the increment is zero after a
-shift of 2 or more; needs a proof through the operators). Built and checked
-the same day (survey section 4, `eq_fops.sh`, whole ALU against `pnorm`):
-`dsp`, `alm`, `lza` exact for any input; `rshort`, `twopath` exact only
-with normalised operands (Luciano: every ALU operand is normalised, so all
-valid). Fit of `rshort` (PERIOD=30, BALANCED, with `pnorm` in the same
-conditions): 32.03 against 32.37 MHz, no gain (normaliser -2.2 ns, add
-+1.4 ns in that placement). **Decision (Luciano, 2026-10-15): `pnorm`
-stays**, the normaliser as it is; `twopath`, `dsp`, `lza` not fitted,
-parked; that study is finished. NEXT (Luciano, 2026-10-15): the add and the
-exponent alignment, survey in `docs/design/fadd-survey.md` (11 methods; the
-worst path enters `ula_denorm` through the exponent subtraction, the swap
-and the shift-amount mux; to try: both mantissas shifted at once, the order
-picked after, then `twopath` fitted). Then the add as a separate circuit
-(`sepadd`, `sep2p`, survey section 4): built, checked, Yosys 45 -> 40
-levels for `sep2p`, not fitted. **Decision (Luciano, 2026-10-16): stop at
-`pnorm`**; both studies finished. What is left of item 29 is turning
-`pnorm` into `SAPHO/` (note 4.3, the steps to implement). The tree count is proven
-equal to the chain (1.8 million outputs); the others need the compilers and
-asmcomp (division length, a rule against `JIZ`/`LDI`/`ILI` after a
-normalised operation) before they can be real. Not done: Vivado, seeds,
-regress, area review. Rebuild with `Scripts/hw/clock_exp/`; section 4.3 of
-the note lists the steps.
-
 ## 30. SAPHO synthesized without showing its source (if a partnership comes)
 
 **Status:** parked (Luciano, 2026-10-14): to look at only if UFJF partners
@@ -953,7 +835,7 @@ no `MLT` and no multiplier remain.
 ## 32. Divider stage count computed from the widths
 
 **Status:** recorded 2026-10-16, for later (Luciano: 5/4 stay fixed for
-now, item 29) · **Area:** `SAPHO/ula.v` (`div_array`), `asm_divseq`,
+now, item 29, closed) · **Area:** `SAPHO/ula.v` (`div_array`), `asm_divseq`,
 asmcomp, `hdl.c` · **Evidence:** docs/design/pipeln-and-division.md
 section 4
 
@@ -973,6 +855,13 @@ not checked yet). Weak point, deduced and not measured: the rest of the
 processor also shortens at narrower widths, so one B in rows may over- or
 under-cut; a fit at 16 bits would settle it. Done: the formula in the
 compilers, `STG` a parameter of both dividers, regress, one narrow fit.
+
+Seen 2026-10-17 on the ZYBO (Vivado, one run, after item 29): the worst
+path is the first part of `F_DIV` (data memory -> array up to its second
+cut, 26.5 ns; 37.26 MHz), not the float add as on the DE10-Nano: a fifth
+`F_DIV` stage would likely help there (deduced). The budget per cycle
+differs per FPGA family, so a computed `STG` would need a per-target B, or
+the larger of the two counts.
 
 ## 27. C++ gaps that real embedded code hits
 

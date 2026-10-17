@@ -790,6 +790,28 @@ little better), the rest of the change is placement; kept. Done the wrong
 way round first (the ULA muxes as a case, 7a1bd9c / a632605): +95 ALMs, as
 4.3's `pcase`, so the OR stays the form of both.
 
+**Closing measurements (2026-10-17).** Three seeds each on the DE10-Nano
+part, v7.1 (its own compilers, in a worktree at the tag) against the state
+after step 4b, and one Vivado run each on the ZYBO part, all with today's
+scripts (the `.mif` copied):
+
+| | v7.1 | after 4b | gain |
+|---|---|---|---|
+| DE10-Nano, seeds 1 / 2 / 3 | 21.82 / 21.60 / 22.01 MHz | 33.10 / 32.40 / 31.64 MHz | |
+| DE10-Nano, mean | **21.81 MHz** | **32.38 MHz** | **+48 %** |
+| DE10-Nano, ALMs (mean) | 3,567 | 3,561 | the same |
+| ZYBO (xc7z010clg400-1, Vivado 2025.2) | 23.54 MHz | **37.26 MHz** | **+58 %** |
+| ZYBO, LUTs / registers | 6,043 / 478 | 5,907 / 665 | -2 % / +187 |
+
+The seeds of one state spread up to 4.5 % (31.64 to 33.10), which is why
+the steps after step 2 cannot be told apart by one seed each. On the ZYBO
+the worst path is not the float add but the first part of `F_DIV` (data
+memory -> `ula_fdiv` array up to its second cut, 26.5 ns; Vivado packs the
+cut registers that carry the quotient bits into SRLs): one more `F_DIV`
+stage would likely help there (deduced from one run; the stage count stays
+5/4 by Luciano's decision, TODO 32). The same v7.1 ZYBO run of 2026-10-11,
+without the `.mif`, had also given 23.54 MHz.
+
 **For the documentation (item 21).** A hand-written `.asm` that tests a
 float result with `JIZ`, or uses it as an `LDI`/`ILI` index, right away
 gets a `NOP` before that instruction from asmcomp (one word, one cycle);

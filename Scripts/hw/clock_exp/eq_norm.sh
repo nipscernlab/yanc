@@ -1,6 +1,6 @@
 #!/bin/bash
 # ula_norm with the original leading-zero chain (SAPHO/ at make_variants.py's
-# BASE commit) against SAPHO/ula.v today (tree count, item 29 step 1) or a
+# BASE commit) against SAPHO/ula.v today (tree count, item 29 step 4) or a
 # variant's (eq_norm.sh <variant>): 200000 random inputs (biased to many
 # leading zeros and to zero mantissas) in nine formats and rounding levels;
 # every output must be the same. Run make_variants.py first. Exit 0 when all

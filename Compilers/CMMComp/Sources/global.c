@@ -208,7 +208,7 @@ void parse_end(char *prname, char *d_proc)
 	int  gone = asm_reach(asm_file, pc_file);
 	if  (gone > 0) num_ins -= gone;
 
-	// every division becomes <div> x; NOP; <read>: the dividers take three cycles
+	// every division becomes <div> x; NOP...; <read>: the dividers take five / four cycles
 
 	int  more = asm_divseq(asm_file, pc_file);
 	if  (more > 0) num_ins += more;

@@ -9,6 +9,10 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Changed
+- **`sapho_all` from 21.8 to 32.4 MHz on the DE10-Nano (+48 %, mean of three
+  seeds) and from 23.5 to 37.3 MHz on the ZYBO (+58 %), the same area.** The
+  steps below, each timed on one seed; the numbers after each are that
+  seed's (docs/design/pipeln-and-division.md 4.4).
 - **The dividers take five and four cycles; `sapho_all` from 21.82 to 29.66
   MHz** on the DE10-Nano part (3,558 -> 3,652 ALMs). `DIV`/`MOD` are cut
   into five stages and `F_DIV` into four (`STG` of `ula_idiv`/`ula_fdiv`),
