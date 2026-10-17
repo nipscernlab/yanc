@@ -907,6 +907,38 @@ Approaches to compare (none chosen):
    Costs hardware and touches the path just shortened by item 29.
 4. Keep C+- as it is (document the truncation, fix the warning's text to
    "truncate") and fix only C++.
+5. (Luciano, 2026-10-17) The float zero with every bit at 0, in hardware,
+   keeping the explicit leading one: a float is zero exactly when its
+   mantissa is zero, so pick the all-zero code among them. Output: the
+   normaliser emits all zeros for a zero (and the sign at 0, also at
+   `#FROUND 0`); `F_NEG`/`F_ABS` keep a zero a zero. Input: whoever reads the
+   exponent treats mantissa 0 as the minimum exponent (the add's alignment,
+   `F_LES`/`F_GRE`, `F_SCL`/`XPO`); `F_MLT`, `F_DIV`, conversions already
+   work. Then `JIZ` (the OR of all bits) is right for floats with no extra
+   instruction, old data with the old zero code still reads as zero, and
+   0 and 0.0 share a code. The input fix sits on the add, today's worst
+   path: needs a fit. The encoder emits 0.0 as all zeros.
+
+Test sequence (agreed 2026-10-17): 1) the reference test against host gcc
+(below), run on today's compilers; 2) a prototype of each approach outside
+main (1, 2, 4 in the compilers; 5 in a copy of SAPHO/ plus the compilers,
+with `tb_alu` zero cases, the C+- programs and a fit), each run through the
+same test and costed (words and cycles per condition; ALMs and Fmax for
+5); 3 is left last, 5 covers its goal more simply; 3) a comparison table
+for Luciano to choose; 4) only the chosen one on main, the test kept as a
+regress fixture.
+
+Step 1 DONE 2026-10-17: `Scripts/fcond/` (gen.py writes one C++ file, run
+by the host g++ and by cppcomp, and the same cases in C+- at `#FROUND`
+0/1/2; run.sh simulates, compare.py lines them up; BIN and HDL point at a
+prototype). 16 values x 11 forms. Today: C++ 83 of 176 wrong (every zero
+taken as true in `if`, `!`, loops, `&&`, `||`, `?:`; loops then run one
+turn too many for any value; `bool b = x` is right, only `gen_bool` is
+wrong). C+- 35 of 80 wrong, the same at the three levels: every nonzero
+value in (-1, 1) taken as false (0.5, -0.3, +-0.999, 0.001, 1/3, 0.0005)
+in `if`, `!`, `while`, `for`, `do`; zeros, -0 and |x| >= 1 right. C+-
+refuses a float in `&&`/`||` with an error (those forms are C++ only in
+the test). Next: step 2, the prototypes.
 
 How to choose: a differential test against a C compiler first, the same
 source on host gcc (IEEE) and on the simulated SAPHO, many values (0, -0,
