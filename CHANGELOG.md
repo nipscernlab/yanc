@@ -32,6 +32,9 @@ tags consumed by Aurora.
 - **The normaliser counts leading zeros with a tree** (`ula_lzc`, log2 of the
   mantissa width in levels) instead of a chain; the same outputs, the same
   clock and area within noise (31.82 MHz, 3,535 ALMs).
+- **The instruction decoder in the ALU's form**: each row a term guarded by
+  its mnemonic's parameter, OR-ed, instead of a case (the same outputs on
+  every opcode; 33.10 MHz, 3,566 ALMs, within noise).
 
 ### Added
 - **`Scripts/hw/path_groups.py`**: the worst path of each destination block

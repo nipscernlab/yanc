@@ -21,7 +21,7 @@ literal, which is the part that stays true when the HDL is edited:
      base with a constant offset) and agree with the operand class,
   7. the copy in Compilers/common/asm_share.c (operand class, operand effect,
      flow, data stack) is the table's,
-  8. every row of instr_dec.v's decode table (`7'dN : if (NAME)`) carries its
+  8. every row of instr_dec.v's decode table (`generate if ((NAME) != 0)`) carries its
      mnemonic's opcode, and every decoded mnemonic of the table has a row,
   9. asmcomp's usage totals (ISA_PARAMS, ULA_BLOCKS in opcodes.c) are the
      number of opcode parameters in ASMComp.l and of ALU blocks in opcodes.c.
@@ -183,12 +183,16 @@ def read_core_flow(path):
     return {m.group(1): int(m.group(2)) for m in re.finditer(r"\bOP_(JMP|JIZ|CAL|RET|TOM|CAD)\s*=\s*(\d+)", text)}
 
 
+# a row of instr_dec.v: generate if ((NAME) != 0) ... (opcode == 7'dN) ? {6'dALU, ...}
+DEC_ROW = r"generate\s+if\s*\(\(\s*(\w+)\s*\)\s*!=\s*0\)\s*begin\s*:\s*\w+\s+assign\s+\w+\s*=\s*\(opcode\s*==\s*7'd(\d+)\s*\)\s*\?\s*\{6'd(\d+)"
+
+
 def read_decoder(path):
     """instr_dec.v: its decode table, mnemonic -> the opcode of its row."""
     text = open(path, encoding='utf-8', errors='replace').read()
     rows = {}
-    for m in re.finditer(r"7'd(\d+)\s*:\s*if\s*\(\s*(\w+)\s*\)", text):
-        rows.setdefault(m.group(2), []).append(int(m.group(1)))
+    for m in re.finditer(DEC_ROW, text):
+        rows.setdefault(m.group(1), []).append(int(m.group(2)))
     return rows
 
 
@@ -316,9 +320,8 @@ def main():
     # ALU operation 3, 5, 7, 25, 26, 46, 47 or 48, aliases included
     if os.path.exists(share_p):
         dec_text = open(os.path.join(root, 'SAPHO', 'instr_dec.v'), encoding='utf-8', errors='replace').read()
-        norm_ops = {int(m.group(1)) for m in re.finditer(
-            r"7'd(\d+)\s*:\s*if\s*\(\s*[A-Z_0-9]+\s*\)\s*decode\s*=\s*\{6'd(\d+)", dec_text)
-            if int(m.group(2)) in (3, 5, 7, 25, 26, 46, 47, 48)}
+        norm_ops = {int(m.group(2)) for m in re.finditer(DEC_ROW, dec_text)
+            if int(m.group(3)) in (3, 5, 7, 25, 26, 46, 47, 48)}
         want = {mn for mn in table if table[mn][0] in norm_ops}
         m = re.search(r'norm_mn\[\]\s*=\s*\{(.*?)\};', text, re.S)
         have = set(re.findall(r'"([A-Z_0-9]+)"', m.group(1))) if m else set()

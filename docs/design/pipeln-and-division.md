@@ -713,6 +713,8 @@ ALMs as on 2026-10-11.
 | 2 | `JIZ` reads the ALU before the normaliser | **32.67 MHz** (+5.7 %) | 3,541 (-1.6 %) | 1,197 | `denorm` 6.8 -> `fadd` 4.0 -> normaliser 11.2 -> ALU mux 4.4 -> data stack write (28.1 ns); next, 0.6 ns behind, the data memory read address (`LDI`/`ILI` index, 27.9 ns) |
 | 3 | the `LDI`/`ILI` read index too | 31.54 MHz (-3.5 %, seed noise) | 3,507 (-1.0 %) | 1,201 | the same kind: `denorm` 7.7 -> `fadd` 3.6 -> normaliser **13.7** -> ALU mux 1.9 -> data stack write (31.0 ns); only the data stack and the accumulator among the 3,000 worst paths |
 | 4 | the normaliser's leading-zero count as a tree | 31.82 MHz (+0.9 %, noise) | 3,535 (+0.8 %) | 1,193 | the same kind: `denorm` 8.5 -> `fadd` 3.4 -> normaliser 10.9 -> ALU mux 3.9 -> data stack write (28.8 ns) |
+| (4b') | the ULA muxes in the decoder's `case` style (a misunderstanding; reverted) | 30.94 MHz | 3,630 (+95) | 1,253 | the same kind (31.6 ns) |
+| 4b | the instruction decoder as an OR of guarded terms, the ULA's form | **33.10 MHz** (+4.0 %, noise) | 3,566 (+0.9 %; the decoder itself 23.9 -> 31.6) | 1,196 | the same kind (27.6 ns) |
 
 Step 1: `ula_idiv` and `ula_fdiv` take a parameter `STG` (5 and 4) instead of
 the 3 written in both instances; the compilers write `DIV x; NOP; NOP; NOP;
@@ -777,6 +779,16 @@ divider limited) replaces the chain of `ula_nmux`; outputs equal to the
 chain (`eq_norm.sh`, nine formats, 200,000 inputs each). Neutral on the fit
 (+0.9 % clock, +28 ALMs, both within noise); Luciano kept it (log-depth,
 scales with the mantissa width).
+
+Step 4b (Luciano, for coherence): `instr_dec.v` loses its case inside a
+function; every row is a term in a generate on its mnemonic's parameter,
+OR-ed, as in `ula_mux` (still continuous assignments, for Icarus at t=0).
+Equal to the old decoder on all 128 opcodes with three parameter sets (all
+on, all off, alternating); `Scripts/check_isa.py` reads the new rows. The
+decoder itself grows by ~8 ALMs (the case with constant outputs reduces a
+little better), the rest of the change is placement; kept. Done the wrong
+way round first (the ULA muxes as a case, 7a1bd9c / a632605): +95 ALMs, as
+4.3's `pcase`, so the OR stays the form of both.
 
 **For the documentation (item 21).** A hand-written `.asm` that tests a
 float result with `JIZ`, or uses it as an `LDI`/`ILI` index, right away

@@ -802,7 +802,7 @@ index register: design the two together.
 **Status:** in progress: step 1 (dividers 5/4) DONE 2026-10-16, 21.82 ->
 29.66 MHz; step 1b (muxes by parameters) DONE, 30.90 MHz; step 2 (`JIZ`) DONE,
 32.67 MHz; step 3 (`LDI`/`ILI`) DONE, 31.54 (noise); step 4 (tree LZC) DONE,
-31.82; next 4b (decoder-style muxes) · **Area:** `SAPHO/ula.v`
+31.82; 4b (decoder as an OR of terms) DONE, 33.10 · **Area:** `SAPHO/ula.v`
 (dividers, normaliser, muxes), `SAPHO/core.v` (`JIZ`, indirect index),
 `asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
 section 4.3, normalisation-survey.md, fadd-survey.md
@@ -843,13 +843,14 @@ are the variants' one-seed fits of note 4.3, not the final code.
    longer; judged noise (note 4.4). One seed cannot separate < ~4 %.
 4. DONE (Luciano kept it): the leading-zero count as a tree (`ula_lzc`);
    equal outputs (`eq_norm.sh`). 31.82 MHz, 3,535 ALMs: neutral, in noise.
-4b. NEXT after 4 (Luciano, 2026-10-17): `ula_mux` and `norm_mux` in the
-   instruction decoder's style (one `case`, each row guarded by its
-   parameter, `out = 0` before it: `pcase` of note 4.3) instead of the OR of
-   generate terms, for coherence with `instr_dec.v`. Kept if the ALMs do not
-   grow and the clock does not drop (beyond seed noise). In 4.3 `pcase` was
-   +79 ALMs on `sapho_all`, -52 on ProcDTW, +38 on cmm_cexp: open, measure
-   again on today's code (the fast output now feeds JIZ and LDI/ILI).
+4b. DONE (Luciano kept it): the instruction decoder
+   (`instr_dec.v`) in the ULA's form, an OR of terms each inside a generate
+   on its parameter, instead of a case in a function, for coherence. Kept if
+   the ALMs do not grow and the clock does not drop (beyond seed noise).
+   First I did it the wrong way round (the ULA muxes in the decoder's case
+   style, 7a1bd9c, reverted a632605): +95 ALMs on `sapho_all` (30.94 MHz),
+   like 4.3's `pcase` (+79), so the OR is the cheaper form on the ULA.
+   Result: 33.10 MHz, 3,566 ALMs (the decoder itself +8 ALMs); in noise.
 5. `norm_mux` guarded by the opcode parameters (`pnorm`: area).
 6. Document: Vivado/ZYBO (`vfmax.sh`), `area.sh`, the item-21 note,
    CHANGELOG.
