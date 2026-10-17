@@ -453,7 +453,8 @@ module mem_ctrl
 	parameter ILI    = 0
 )(
 	input               sti, ldi, fft, wr,
-	input  [NUBITS-1:0] ula,
+	input  [NUBITS-1:0] ula,                      // the word a write stores
+	input  [NUBITS-1:0] idx,                      // the read index: the ALU before the float normaliser
 	input  [MDATAW-1:0] base_addr, stk_ofst,
 
 	output              mem_wr,
@@ -469,8 +470,10 @@ assign mem_wr      = wr;
 // base of 0 in the operand field (LDI 0 / STI 0), or of the constant offset
 // it is read at (LDI 3 = mem[acc + 3]). The FFT bit reversal of the index
 // (x[k) in C+-) is built into the read path when the program uses ILI and
-// into the write path when it uses ISI (cmm_fft_rd / cmm_fft_wr).
-rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ILI)) ra_rd(ldi, fft, ula[MDATAW-1:0], base_addr, mem_addr_rd);
+// into the write path when it uses ISI (cmm_fft_rd / cmm_fft_wr). The read
+// index leaves the normaliser out (asmcomp puts a NOP between a normalised
+// operation and an LDI/ILI right after it, as for JIZ).
+rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ILI)) ra_rd(ldi, fft, idx[MDATAW-1:0], base_addr, mem_addr_rd);
 rel_addr #(.MDATAW(MDATAW), .FFTSIZ(FFTSIZ), .USEFFT(ISI)) ra_wr(sti, fft, stk_ofst       , base_addr, mem_addr_wr);
 
 endmodule
@@ -1140,7 +1143,7 @@ assign uic_acc = racc;
 // OR-reduction gives true C truthiness; JIZ jumps iff the word is exactly zero.
 // It reads the ALU before the float normaliser (ula_fast): the normaliser is
 // the longest path, and asmcomp puts a NOP between a normalised operation and
-// a JIZ right after it (asm_jiznop), so the word tested is never one of them.
+// a JIZ right after it (asm_normnop), so the word tested is never one of them.
 assign  if_acc = |ula_fast;
 
 // Indirect Addressing --------------------------------------------------------
@@ -1153,7 +1156,7 @@ generate
 		           .MDATAW(MDATAW),
 		           .FFTSIZ(FFTSIZ),
 		           .ILI(ILI),.ISI(ISI)) ac(id_sti, id_ldi, id_fft, id_wr,
-		                                   ula_out,
+		                                   ula_out, ula_fast,
 		                                   if_operand[MDATAW-1:0], sp_data[MDATAW-1:0],
 		                                   mem_wr, mem_addr_rd, mem_addr_wr, mem_data_wr);
 	end else begin : mem_access

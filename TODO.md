@@ -801,7 +801,7 @@ index register: design the two together.
 
 **Status:** in progress: step 1 (dividers 5/4) DONE 2026-10-16, 21.82 ->
 29.66 MHz; step 1b (muxes by parameters) DONE, 30.90 MHz; step 2 (`JIZ`) DONE,
-32.67 MHz; step 3 next · **Area:** `SAPHO/ula.v`
+32.67 MHz; step 3 (`LDI`/`ILI`) DONE, 31.54 (noise) · **Area:** `SAPHO/ula.v`
 (dividers, normaliser, muxes), `SAPHO/core.v` (`JIZ`, indirect index),
 `asm_divseq`, asmcomp · **Evidence:** docs/design/pipeln-and-division.md
 section 4.3, normalisation-survey.md, fadd-survey.md
@@ -832,14 +832,14 @@ are the variants' one-seed fits of note 4.3, not the final code.
    as it is (Luciano): `ula_in1_ctrl` (memory or stack top) is always built;
    both inputs are real, a decoder constant picks.
 2. DONE (accepted): `JIZ` tests `out_fast` (the ALU before the
-   normaliser); asmcomp inserts the `NOP` (`asm_jiznop`, list checked by
+   normaliser); asmcomp inserts the `NOP` (`asm_normnop`, list checked by
    check_isa.py); the generated top ties an unused `in` to 0. **32.67 MHz**
    (+5.7 %), 3,541 ALMs, 1,197 registers. Worst path now the float result
    into the data stack (28.1 ns); the indirect read index 0.6 ns behind.
-3. NEXT (Luciano, 2026-10-17: do it, for robustness): `LDI`/`ILI` index from the fast
-   output, the same `NOP` rule for them. Measured after step 2: that path is
-   0.6 ns behind the worst one, so at most ~2 % (deduced); then the float
-   result into the accumulator/stack limits.
+3. DONE (Luciano, for robustness): the `LDI`/`ILI` index from `out_fast`,
+   `asm_normnop` covers `JIZ`/`LDI`/`ILI`. 31.54 MHz, 3,507 ALMs: -3.5 %
+   against step 2 on one seed, the same kind of path, the normaliser placed
+   longer; judged noise (note 4.4). One seed cannot separate < ~4 %.
 4. The leading-zero count as a tree (`ula_lzc`, code in 19bc344; equal
    outputs, `eq_norm.sh lzc`).
 5. `norm_mux` guarded by the opcode parameters (`pnorm`: area).

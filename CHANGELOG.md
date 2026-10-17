@@ -26,6 +26,9 @@ tags consumed by Aurora.
   `F_QUO`, `I2F`, `F_INN`, ...) and a `JIZ` right after it; the compilers
   never write that pattern, a hand-written `.asm` may. The generated top of
   a program without `in()` ties its input wire to 0 (it was undriven).
+- **The `LDI`/`ILI` read index also leaves the normaliser out** (31.54 MHz,
+  3,507 ALMs; the change against 32.67 is placement noise, one seed each).
+  The `NOP` rule covers `JIZ`, `LDI` and `ILI`.
 
 ### Added
 - **`Scripts/hw/path_groups.py`**: the worst path of each destination block

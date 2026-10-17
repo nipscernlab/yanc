@@ -311,8 +311,8 @@ def main():
                                f'the table says {"/".join(want)}')
 
     # 11: asm_share.c's list of the mnemonics whose ALU operation goes through
-    # the float normaliser (asm_jiznop puts a NOP between one of them and a JIZ
-    # right after it): every mnemonic whose opcode has an instr_dec.v row with
+    # the float normaliser (asm_normnop puts a NOP between one of them and a
+    # JIZ, LDI or ILI right after it): every mnemonic whose opcode has an instr_dec.v row with
     # ALU operation 3, 5, 7, 25, 26, 46, 47 or 48, aliases included
     if os.path.exists(share_p):
         dec_text = open(os.path.join(root, 'SAPHO', 'instr_dec.v'), encoding='utf-8', errors='replace').read()

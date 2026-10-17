@@ -259,11 +259,11 @@ int main(int argc, char *argv[])
   strcpy( mac_dir, a.macros_dir);            // Macros folder path
   strcpy(temp_dir, a.temp_dir);              // the same folder: the tables of the compilers are read from here
 
-  // a JIZ right after a float operation gets a NOP (it reads the ALU before
-  // the normaliser; Compilers/common/asm_share.h); the source-line map and
-  // the instruction count of the compilers follow
+  // a JIZ/LDI/ILI right after a float operation gets a NOP (they read the ALU
+  // before the normaliser; Compilers/common/asm_share.h); the source-line map
+  // and the instruction count of the compilers follow
   char pc_path[2048]; snprintf(pc_path, sizeof(pc_path), "%s/pc_%s_mem.txt", a.temp_dir, a.name);
-  int jn = asm_jiznop(a.input, pc_path);
+  int jn = asm_normnop(a.input, pc_path);
   if (jn < 0) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
   if (jn > 0) add_num_ins(a.temp_dir, jn);
 

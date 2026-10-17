@@ -711,6 +711,7 @@ ALMs as on 2026-10-11.
 | 1 | `DIV`/`MOD` in 5 stages, `F_DIV` in 4 | **29.66 MHz** (+36 %) | 3,652 (+2.6 %) | 1,197 | data memory -> `denorm` 8.1 -> `fadd` 2.6 -> normaliser 11.2 -> ALU mux 2.9 -> jump and PC 5.0 ns (31.5 ns) |
 | 1b | every mux guided by the opcode parameters, no `x` | **30.90 MHz** (+4.2 %) | 3,600 (-1.4 %) | 1,216 | the same path: `denorm` 7.1 -> `fadd` 4.6 -> normaliser 10.1 -> ALU mux **0.7** -> jump and PC 6.3 ns (29.8 ns) |
 | 2 | `JIZ` reads the ALU before the normaliser | **32.67 MHz** (+5.7 %) | 3,541 (-1.6 %) | 1,197 | `denorm` 6.8 -> `fadd` 4.0 -> normaliser 11.2 -> ALU mux 4.4 -> data stack write (28.1 ns); next, 0.6 ns behind, the data memory read address (`LDI`/`ILI` index, 27.9 ns) |
+| 3 | the `LDI`/`ILI` read index too | 31.54 MHz (-3.5 %, seed noise) | 3,507 (-1.0 %) | 1,201 | the same kind: `denorm` 7.7 -> `fadd` 3.6 -> normaliser **13.7** -> ALU mux 1.9 -> data stack write (31.0 ns); only the data stack and the accumulator among the 3,000 worst paths |
 
 Step 1: `ula_idiv` and `ula_fdiv` take a parameter `STG` (5 and 4) instead of
 the 3 written in both instances; the compilers write `DIV x; NOP; NOP; NOP;
@@ -739,7 +740,7 @@ through the normaliser, and a 2-input mux after it (only with a normalised
 operation, each case of its select guarded) picks `smx` for the eight
 normalised ALU operations; `JIZ` tests `|out_fast`. asmcomp inserts a `NOP`
 between an operation whose ALU result goes through the normaliser and a
-`JIZ` right after it (`asm_jiznop`, Compilers/common; the list `norm_mn`
+`JIZ` right after it (`asm_normnop`, Compilers/common; the list `norm_mn`
 includes `F_INN`/`PF_INN`, which convert through `I2F`, and
 `Scripts/check_isa.py` holds it to `instr_dec.v`), adjusting the
 source-line map and `num_ins`. None of the 174 `.asm` the compilers write
@@ -752,9 +753,28 @@ without it. The `JIZ` left the 3,000 worst paths. The indirect read index
 ~2 % (deduced); behind it the float result into the accumulator and the
 stack limits, which no change of this kind removes.
 
+Step 3 (Luciano, for robustness, knowing the gain would be small): the
+`LDI`/`ILI` read index comes from `out_fast` too (`mem_ctrl` port `idx`;
+the word a write stores is still the full output), and `asm_normnop` (was
+`asm_jiznop`) puts the `NOP` before a `JIZ`, `LDI` or `ILI` right after a
+normalised operation. The index left the 3,000 worst paths. The clock came
+out 3.5 % lower, but on the same kind of path through the same logic, 2.9 ns
+longer almost all inside the normaliser (11.2 -> 13.7 ns, wire 15.7 -> 18.6
+ns on the path), which step 3 did not touch: the placement moved (deduced
+from the reports). One seed per step cannot tell differences below ~4 %
+from chance (the three `pnorm` seeds of 4.3 spread 1.8 %, this pair 3.5 %),
+which also applies to step 1b's +4.2 %. Luciano kept step 3: it makes more
+sense for the hardware, and the difference is in the noise. 32 MHz is about
+the ceiling of the one-instruction-a-cycle core: behind it the float
+result into the accumulator and the stack limits, and what would remove it
+(a faster normaliser or add, studied and closed in 4.3; cutting `F_ADD`
+with registers, against the decision to keep the ALU combinational) is not
+on the table.
+
 **For the documentation (item 21).** A hand-written `.asm` that tests a
-float result with `JIZ` right away gets a `NOP` before the `JIZ` from
-asmcomp (one word, one cycle); the instruction and message pages say so.
+float result with `JIZ`, or uses it as an `LDI`/`ILI` index, right away
+gets a `NOP` before that instruction from asmcomp (one word, one cycle);
+the instruction and message pages say so.
 
 **For the documentation (item 21).** A division now takes five words
 (`DIV`/`MOD`: `DIV x; NOP; NOP; NOP; QUO`) or four (`F_DIV x; NOP; NOP;

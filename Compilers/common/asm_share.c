@@ -869,7 +869,7 @@ done:
     return added_pc;
 }
 
-// ---- asm_jiznop: a NOP between a normalised operation and its JIZ -------------------
+// ---- asm_normnop: a NOP between a normalised operation and a JIZ/LDI/ILI ------------
 // See asm_share.h. The mnemonics whose ALU operation goes through the
 // normaliser: the instr_dec.v rows with ALU operation 3, 5, 7, 25, 26, 46, 47
 // or 48, and their aliases (Scripts/check_isa.py holds the list to the decoder).
@@ -886,7 +886,13 @@ int asm_is_norm(const char *mn)
     return 0;
 }
 
-int asm_jiznop(const char *asm_path, const char *pc_path)
+// the instructions that read the ALU output before the normaliser
+static int reads_fast(const char *mn)
+{
+    return strcmp(mn, "JIZ") == 0 || strcmp(mn, "LDI") == 0 || strcmp(mn, "ILI") == 0;
+}
+
+int asm_normnop(const char *asm_path, const char *pc_path)
 {
     FILE *f = fopen(asm_path, "r");
     if (!f) return -1;
@@ -895,7 +901,7 @@ int asm_jiznop(const char *asm_path, const char *pc_path)
     fclose(f);
     if (pc_path && (f = fopen(pc_path, "r"))) { read_lines(f, &pc); fclose(f); }
 
-    // the instruction each line holds (-1: none), and which JIZ get a NOP before them
+    // the instruction each line holds (-1: none), and which JIZ/LDI/ILI get a NOP before them
     int  *ins_of = malloc((lines.n + 1) * sizeof(int));
     char (*mn)[32] = malloc((lines.n + 1) * sizeof(*mn));
     char *pad = calloc(lines.n + 1, 1);                  // per instruction: a NOP goes before it
@@ -905,7 +911,7 @@ int asm_jiznop(const char *asm_path, const char *pc_path)
         line_mnemonic(lines.s[ln], mn[ln], sizeof(mn[ln]));
         ins_of[ln] = mn[ln][0] ? n++ : -1;
         if (ins_of[ln] < 0) continue;
-        if (strcmp(mn[ln], "JIZ") == 0 && prev >= 0 && asm_is_norm(mn[prev])) { pad[ins_of[ln]] = 1; added++; }
+        if (reads_fast(mn[ln]) && prev >= 0 && asm_is_norm(mn[prev])) { pad[ins_of[ln]] = 1; added++; }
         prev = ln;
     }
     if (added == 0) goto done;
@@ -919,7 +925,7 @@ int asm_jiznop(const char *asm_path, const char *pc_path)
     }
     fclose(f);
 
-    if (pc.n > 0)                                        // the NOP takes the JIZ's source line
+    if (pc.n > 0)                                        // the NOP takes its reader's source line
     {
         f = fopen(pc_path, "w");
         if (!f) { added = -1; goto done; }
@@ -930,8 +936,8 @@ int asm_jiznop(const char *asm_path, const char *pc_path)
         }
         fclose(f);
     }
-    printf(yanc_lang_en ? "Info: %d NOP inserted between a float operation and the JIZ after it\n"
-                        : "Info: %d NOP inserido(s) entre uma operação float e o JIZ logo depois dela\n", added);
+    printf(yanc_lang_en ? "Info: %d NOP inserted between a float operation and the JIZ/LDI/ILI after it\n"
+                        : "Info: %d NOP inserido(s) entre uma operação float e o JIZ/LDI/ILI logo depois dela\n", added);
 
 done:
     free(pad); free(mn); free(ins_of);

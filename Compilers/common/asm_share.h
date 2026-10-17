@@ -95,22 +95,23 @@ const char *asm_div_read (const char *mn);        // QUO / REM / F_QUO, NULL if 
 int         asm_div_words(const char *mn);        // its words (above), 0 if mn is no division
 
 // ****************************************************************************
-// asm_jiznop -- a NOP between a normalised operation and the JIZ after it ----
+// asm_normnop -- a NOP between a normalised operation and a JIZ/LDI/ILI ------
 // ****************************************************************************
 //
-// JIZ decides on the ALU output of the instruction right before it, and reads
-// it before the float normaliser (SAPHO/ula.v, out_fast): the normaliser is
-// the longest path, and leaving it out of the jump raises the clock. So a
-// JIZ right after an operation whose ALU result goes through the normaliser
+// JIZ (the jump decision) and LDI/ILI (the read index) take the ALU output of
+// the instruction right before them, and read it before the float normaliser
+// (SAPHO/ula.v, out_fast): the normaliser is the longest path, and leaving it
+// out of the jump and of the read address raises the clock. So a JIZ, LDI or
+// ILI right after an operation whose ALU result goes through the normaliser
 // (asm_is_norm) gets a NOP in between: the NOP's ALU output is the
-// accumulator, the normalised result. A label on the JIZ line stays there:
-// a jump to it comes from a jump, never from the normalised operation.
+// accumulator, the normalised result. A label on that line stays there: a
+// jump to it comes from a jump, never from the normalised operation.
 //
 // asmcomp runs it on the .asm it assembles (the compilers' and hand-written
 // ones alike), before its first pass. pc_path (pc_<proc>_mem.txt, may be
-// NULL or missing) repeats the JIZ's source line for the new word. Returns
+// NULL or missing) repeats the reader's source line for the new word. Returns
 // how many NOPs went in (the .asm is rewritten only then), -1 on an I/O error.
-int asm_jiznop(const char *asm_path, const char *pc_path);
+int asm_normnop(const char *asm_path, const char *pc_path);
 int asm_is_norm(const char *mn);                  // its ALU result goes through the normaliser
 
 // ****************************************************************************
