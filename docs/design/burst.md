@@ -147,7 +147,8 @@ other clock: it can say full longer than needed (safe), never less
    C++: an `out(p, array)` overload in cppcomp. The size is the declared
    one, or a part of the array (`out(p, a, n)`)?
 
-7. **Item 17 of TODO.md** (filling and copying arrays faster) proposes an
+7. **Item 17 of TODO.md** (filling and copying arrays faster; merged into
+   item 28 on 2026-10-18, Luciano: one block for both) proposes an
    index register `X` with post-increment. The burst pointer is that
    register plus an end and a wait in place. If both are built, they should
    be one block: the same pointer would give a fill at one word per clock
