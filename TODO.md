@@ -943,7 +943,21 @@ the test). The same at the three formats of the fixtures (32/23/8,
 fix must take the widths from the program (`#NBMANT`/`#NBEXPO`, `#pragma
 yanc`), never a constant. cppcomp already tests a float for zero by its
 mantissa (`AND 2^NBMANT - 1`) in its float -> bool cast, which is why
-`bool b = x` is right; `gen_bool` does not use it. Next: step 2.
+`bool b = x` is right; `gen_bool` does not use it.
+
+Step 2 so far (prototypes in worktrees .smoke/proto1, .smoke/proto2, not on
+main), the test now 16 values x 18 forms (&&/|| with a computed operand
+on either side, both computed, with an int): approach 1 (AND the
+mantissa) gives 0 differences from g++ in C++ (288 cases) and C+- (256,
+also with && and || on floats, which Luciano asked to allow: the error
+now only for a comp; the stack-on-both case goes through `__aux_var`), at
+the three formats and levels; +1 word and cycle per float condition (+2
+for C++ `!x`). Approach 2 (`EQU 0.0; LIN`): C++ right, C+- wrong for -0 at
+`#FROUND 0` (5 cases a format), +2 words. Approach 4 = approach 1's C++
+half with C+- as it is. Today's compilers on the extended test: C+- does
+not build (&& on floats), C++ 118 of 288 wrong. No C++ regress test used
+another float format before this one. Next: approach 5 (hardware), then
+the comparison table.
 
 How to choose: a differential test against a C compiler first, the same
 source on host gcc (IEEE) and on the simulated SAPHO, many values (0, -0,

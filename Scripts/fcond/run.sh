@@ -31,12 +31,12 @@ sim() {   # $1 program name (folder written by the compiler)
 rm -rf out_*.txt
 for f in fcond_*.cpp; do                 # C++, one per float format
     p=${f%.cpp}; rm -rf "$p"
-    "$BIN/cppcomp.exe" -o "$p" "$f" > "build_$p.log" 2>&1 || { echo "cppcomp $f failed"; tail -5 "build_$p.log"; exit 1; }
+    "$BIN/cppcomp.exe" -o "$p" "$f" > "build_$p.log" 2>&1 || { echo "BUILD FAILED: cppcomp $f: $(tail -1 "build_$p.log")"; continue; }
     sim "$p"
 done
 for f in fcond_*_l?.cmm; do              # C+-, per format and #FROUND level
     p=${f%.cmm}; rm -rf "$p"
-    "$BIN/cmmcomp.exe" -o "$p" "$f" > "build_$p.log" 2>&1 || { echo "cmmcomp $f failed"; grep -v "Heads up\|Info:" "build_$p.log" | tail -5; exit 1; }
+    "$BIN/cmmcomp.exe" -o "$p" "$f" > "build_$p.log" 2>&1 || { echo "BUILD FAILED: cmmcomp $f: $(grep -v -e "Heads up" -e "Info:" "build_$p.log" | tail -1)"; continue; }
     sim "$p"
 done
 
