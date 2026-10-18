@@ -10,13 +10,21 @@ links to its section there. The measurements themselves are reproducible with
 Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
-## Where things stand (2026-10-17)
+## Where things stand (2026-10-18)
 
 **v7.1 released on 2026-10-13** (no v7.0), with AURORA moved to it the same
 day. The manual is published from docs/ by each release: GitHub Pages and
 nipscern.com/library/yanc. Left from it: the board run of Sabrina and Pedro
 Henrique (the `LINKALL` pair with the `.sdc` on both boards; the Fmax is
 measured, the link costs no clock).
+
+**Session 2026-10-16 to 18, all on main, for the next release (no tag
+yet, AURORA still on v7.1):** item 29 (clock, below) and the float/comp
+condition fix (CHANGELOG [Unreleased], Fixed; `Scripts/fcond` is now a
+regress phase, 245 tests). AURORA's text for the release, to paste then:
+`C:	mpurora_yanc_divseq.md` (divisions in 5/4 words, the NOP before
+`JIZ`/`LDI`/`ILI` after a float operation, float conditions). Next session:
+pick from the open items below; a release would ship both changes.
 
 **Item 29 closed 2026-10-17 (next release):** `sapho_all` 21.8 -> 32.4 MHz
 on the DE10-Nano (mean of three seeds), 23.5 -> 37.3 MHz on the ZYBO, the
