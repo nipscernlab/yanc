@@ -51,8 +51,8 @@ arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
 it; 15 the regress on this machine (mitigated); 17 faster fill/copy in
 hardware (measure the index register `X` first; shares its pointer with 28); 24 processors with
 different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst (recorded); 31 the Dirac array output; 32 the
-divider stage count from the widths (recorded; on the ZYBO `F_DIV` limits); 33 a
-float as a condition (study first: C+- truncates, C++ is always true).
+divider stage count from the widths (recorded; on the ZYBO `F_DIV` limits); 33 the
+float zero as an all-zero word in hardware (parked).
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), the reorganisation of the runner/setup scripts, a macOS
 build, 30 (SAPHO without showing its source, until a partnership).
@@ -865,111 +865,29 @@ result written back to memory) only 0.4 ns behind; Luciano kept 4. The
 budget per cycle differs per FPGA family, so a computed `STG` would need a
 per-target B, or the larger of the two counts.
 
-## 33. A float as a condition: neither compiler gives C's answer
+## 33. The float zero as an all-zero word, in hardware (parked)
 
-**Status:** STUDY first (Luciano, 2026-10-17): compare the approaches, pick
-one, only then implement · **Area:** cmmcomp (`ast.c`
-`emit_cond_int_load`, `oper.c` `oper_lin`/`oper_lanor`; Luciano's code,
-diff to him first), cppcomp (`codegen.c` `gen_bool`, the float -> bool
-cast) · **Evidence:** simulated 2026-10-17 (.smoke/s8/fcond, .smoke/s8/cpp)
+**Status:** parked (Luciano, 2026-10-17: not now) · **Area:** `SAPHO/ula.v`
+(normaliser, add alignment, comparisons, `F_NEG`/`F_ABS`, `F_SCL`/`XPO`),
+the constant encoder, the compilers · **Evidence:** the float-condition
+study of 2026-10-17 (CHANGELOG [Unreleased], `Scripts/fcond`)
 
-In C a float condition is true when the value is not zero. Measured on
-the simulated processor, `#FROUND 2` (and `0.6` also at `#FROUND 0`):
-
-| condition | C | C+- today | C++ today |
-|---|---|---|---|
-| `if (0.5)` | 1 | **0** | 1 |
-| `if (2.5)` | 1 | 1 | 1 |
-| `if (-0.3)` | 1 | **0** | 1 |
-| `if (0.0)` | 0 | 0 | **1** |
-| `if (a - a)` | 0 | 0 (not run) | **1** |
-| `while (a)`, a = 0.5, a -= 0.25 | 2 turns | **0 turns** | (not run) |
-
-C+-: the condition goes through `F2I` (truncation; any float in (-1, 1) is
-false), on purpose, with a warning that says "Gonna round it" although it
-truncates (0.6 is false at both levels measured). `!`, `&&`, `||` on a
-float do the same (`MSG_WARN_LOGIC_FLOAT`). No C+- golden has a float
-condition. C++: `gen_bool` tests the float's bits, and SAPHO's zero float
-is not all zero bits (its exponent is the minimum, not 0), so every float
-condition is true: a correctness bug.
-
-Approaches to compare (none chosen):
-1. Test the mantissa: SAPHO keeps the leading one, so a float is zero
-   exactly when its mantissa is zero (+0, -0, every `#FROUND`):
-   `AND <2^NBMANT - 1>` before the `JIZ`. One fast integer instruction;
-   the AND operator is built if the program had none. To check: denormals
-   at `#FROUND 0`, values the encoder turns into zero.
-2. Compare with zero: `EQU` against the zero constant, then invert (`LIN`)
-   or swap the branch targets. Two zero encodings at `#FROUND 0` (the sign
-   is kept), so it may need two compares there.
-3. A hardware change: the zero flag of `JIZ` computed from the float's
-   meaning for float results (an opcode or a flag from the compiler).
-   Costs hardware and touches the path just shortened by item 29.
-4. Keep C+- as it is (document the truncation, fix the warning's text to
-   "truncate") and fix only C++.
-5. (Luciano, 2026-10-17) The float zero with every bit at 0, in hardware,
-   keeping the explicit leading one: a float is zero exactly when its
-   mantissa is zero, so pick the all-zero code among them. Output: the
-   normaliser emits all zeros for a zero (and the sign at 0, also at
-   `#FROUND 0`); `F_NEG`/`F_ABS` keep a zero a zero. Input: whoever reads the
-   exponent treats mantissa 0 as the minimum exponent (the add's alignment,
-   `F_LES`/`F_GRE`, `F_SCL`/`XPO`); `F_MLT`, `F_DIV`, conversions already
-   work. Then `JIZ` (the OR of all bits) is right for floats with no extra
-   instruction, old data with the old zero code still reads as zero, and
-   0 and 0.0 share a code. The input fix sits on the add, today's worst
-   path: needs a fit. The encoder emits 0.0 as all zeros.
-
-Test sequence (agreed 2026-10-17): 1) the reference test against host gcc
-(below), run on today's compilers; 2) a prototype of each approach outside
-main (1, 2, 4 in the compilers; 5 in a copy of SAPHO/ plus the compilers,
-with `tb_alu` zero cases, the C+- programs and a fit), each run through the
-same test and costed (words and cycles per condition; ALMs and Fmax for
-5); 3 is left last, 5 covers its goal more simply; 3) a comparison table
-for Luciano to choose; 4) only the chosen one on main, the test kept as a
-regress fixture.
-
-Step 1 DONE 2026-10-17: `Scripts/fcond/` (gen.py writes one C++ file, run
-by the host g++ and by cppcomp, and the same cases in C+- at `#FROUND`
-0/1/2; run.sh simulates, compare.py lines them up; BIN and HDL point at a
-prototype). 16 values x 11 forms. Today: C++ 83 of 176 wrong (every zero
-taken as true in `if`, `!`, loops, `&&`, `||`, `?:`; loops then run one
-turn too many for any value; `bool b = x` is right, only `gen_bool` is
-wrong). C+- 35 of 80 wrong, the same at the three levels: every nonzero
-value in (-1, 1) taken as false (0.5, -0.3, +-0.999, 0.001, 1/3, 0.0005)
-in `if`, `!`, `while`, `for`, `do`; zeros, -0 and |x| >= 1 right. C+-
-refuses a float in `&&`/`||` with an error (those forms are C++ only in
-the test). The same at the three formats of the fixtures (32/23/8,
-16/10/5, 23/16/6; values below a format's smallest normal left out). The
-fix must take the widths from the program (`#NBMANT`/`#NBEXPO`, `#pragma
-yanc`), never a constant. cppcomp already tests a float for zero by its
-mantissa (`AND 2^NBMANT - 1`) in its float -> bool cast, which is why
-`bool b = x` is right; `gen_bool` does not use it.
-
-Step 2 so far (prototypes in worktrees .smoke/proto1, .smoke/proto2, not on
-main), the test now 16 values x 18 forms (&&/|| with a computed operand
-on either side, both computed, with an int): approach 1 (AND the
-mantissa) gives 0 differences from g++ in C++ (288 cases) and C+- (256,
-also with && and || on floats, which Luciano asked to allow: the error
-now only for a comp; the stack-on-both case goes through `__aux_var`), at
-the three formats and levels; +1 word and cycle per float condition (+2
-for C++ `!x`). Approach 2 (`EQU 0.0; LIN`): C++ right, C+- wrong for -0 at
-`#FROUND 0` (5 cases a format), +2 words. Approach 4 = approach 1's C++
-half with C+- as it is. Today's compilers on the extended test: C+- does
-not build (&& on floats), C++ 118 of 288 wrong. No C++ regress test used
-another float format before this one. Next: approach 5 (hardware), then
-the comparison table.
-
-How to choose: a differential test against a C compiler first, the same
-source on host gcc (IEEE) and on the simulated SAPHO, many values (0, -0,
-values in (-1, 1), integers, results of `a - a`, `a * 0`, divisions) and
-every form (`if`, `while`, `for`, `do`, `!`, `&&`, `||`, `?:` and float ->
-bool in C++), comparing the printed 0/1. It shows today's failures and
-proves the chosen fix. Leave out values below SAPHO's smallest normal
-(they become zero at `#FROUND 1/2`, a format difference, not an error).
-Then compare the approaches on words per condition, cycles and hardware.
-Done: the approach chosen by Luciano, both compilers equal to gcc on the
-test, the test kept as a fixture, the manual (C+-, C++, messages) and
-AURORA's text updated.
+What was item 33, a float as a condition, is solved in software (approach
+1 of that study, in both compilers: `AND 2^NBMANT - 1` before the `JIZ`,
+one word and one cycle per float condition; checked against the host
+C/C++ compiler by `Scripts/fcond`, in the regress). Of the other
+approaches, `EQU 0.0; LIN` was wrong for -0 at `#FROUND 0` and cost two
+words; keeping C+-'s truncation was declined. The one left, kept as an
+option: with the explicit leading one a float is zero exactly when its
+mantissa is, so the all-zero word can be chosen as the zero's code. Output:
+the normaliser emits all zeros for a zero (the sign at 0, also at
+`#FROUND 0`); `F_NEG`/`F_ABS` keep a zero a zero. Input: whoever reads the
+exponent treats mantissa 0 as the minimum exponent (the add's alignment,
+`F_LES`/`F_GRE`, `F_SCL`/`XPO`). Then `JIZ` (the OR of all bits) would be
+right for floats with no `AND`, 0 and 0.0 would share a code, and old data
+with the old zero code would still read as zero. The input fix sits on the
+add, the worst path: it needs a fit. Done: `Scripts/fcond` passing with the
+compilers' `AND` removed, the regress, a fit that does not lose clock.
 
 ## 27. C++ gaps that real embedded code hits
 

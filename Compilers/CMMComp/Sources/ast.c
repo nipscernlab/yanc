@@ -1161,34 +1161,40 @@ stmt_node *stmt_func(int func_id, stmt_node *body)
 // while) and MSG_WARN_CASE_* (switch) for the float / comp warnings.
 static void emit_cond_int_load(expr e, int is_switch)
 {
-    const char *msg_float = is_switch ? MSG_WARN_CASE_FLOAT : MSG_WARN_COND_FLOAT;
-    const char *msg_comp  = is_switch ? MSG_WARN_CASE_COMP  : MSG_WARN_COND_COMP;
+    const char *msg_float = MSG_WARN_CASE_FLOAT;       // a switch index still converts (truncates)
+    const char *msg_comp  = MSG_WARN_CASE_COMP;
 
     if ((e.type == 1) && (e.id != 0)) add_instr("LOD %s\n", v_table[e.id].name);
     // int acc: nothing
 
+    // An if/while/for/do condition tests a float by its mantissa: a SAPHO
+    // float is zero exactly when its mantissa is (the leading one is kept),
+    // so C's "true when not zero" is AND 2^NBMANT - 1 (TODO 33). A switch
+    // index still converts (F2I, truncating).
+    long mask = (1L << nbmant) - 1;
     if ((e.type == 2) && (e.id != 0)) {
-        fprintf(stdout, msg_float, line_num+1);
-        add_instr("F2I_M %s\n", v_table[e.id].name);
+        if (is_switch) { fprintf(stdout, msg_float, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
+        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("AND %ld\n", mask); }
     }
     if ((e.type == 2) && (e.id == 0)) {
-        fprintf(stdout, msg_float, line_num+1);
-        add_instr("F2I\n");
+        if (is_switch) { fprintf(stdout, msg_float, line_num+1); add_instr("F2I\n"); }
+        else           add_instr("AND %ld\n", mask);
     }
+    // a comp condition is true when its real or its imaginary part is not
+    // zero (C99): (re OR im) AND mask, the mask being the same for both
     if (e.type == 5) {
-        fprintf(stdout, msg_comp, line_num+1);
         expr etr, eti;
         get_cmp_cst(e, &etr, &eti);
-        add_instr("F2I_M %s\n", v_table[etr.id].name);
+        if (is_switch) { fprintf(stdout, msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[etr.id].name); }
+        else           { add_instr("LOD %s\n", v_table[etr.id].name); add_instr("ORR %s\n", v_table[eti.id].name); add_instr("AND %ld\n", mask); }
     }
     if ((e.type == 3) && (e.id != 0)) {
-        fprintf(stdout, msg_comp, line_num+1);
-        add_instr("F2I_M %s\n", v_table[e.id].name);
+        if (is_switch) { fprintf(stdout, msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
+        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %ld\n", mask); }
     }
-    if ((e.type == 3) && (e.id == 0)) {
-        fprintf(stdout, msg_comp, line_num+1);
-        add_instr("POP\n");
-        add_instr("F2I\n");
+    if ((e.type == 3) && (e.id == 0)) {                    // the imag part in the acc, the real on the stack
+        if (is_switch) { fprintf(stdout, msg_comp, line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
+        else           { add_instr("S_ORR\n"); add_instr("AND %ld\n", mask); }
     }
 }
 

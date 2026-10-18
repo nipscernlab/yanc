@@ -173,7 +173,8 @@ void main()
         t = fx + fy;       s = s + t;                       // F2I (acc)
         t = fy;            s = s + t;                       // F2I_M
         t = (y + 1) - fy;  s = s + t;                       // int - float
-        t = (y + 1) - !fy; s = s + t;                       // P_F2I_M
+        t = (y + 1) - !fy; s = s + t;                       // ! of a float (its mantissa: P_LOD, AND, LIN)
+        t = ia[fy] - ia[fy];  s = s + t;                    // P_F2I_M (a float index, live accumulator; adds 0)
 
         // ---- input with a live accumulator
         t = (y + 1) - in(0);        s = s + t;              // P_INN

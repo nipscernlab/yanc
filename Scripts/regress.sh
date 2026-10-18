@@ -29,6 +29,10 @@
 #      that spell the ISA out cannot drift apart silently. See
 #      Scripts/check_isa.py.
 #
+#   3b. Float and complex conditions: Scripts/fcond runs the same cases on
+#      the host C/C++ compiler and on both compilers (three float formats,
+#      three #FROUND levels) and compares C's answers (TODO 33).
+#
 #   4. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
 #      malformed program with a clean non-zero exit and the expected diagnostic
@@ -1321,6 +1325,28 @@ if [ "$CPP_ONLY" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
         echo "FAIL (sapho_all-model): $sa_other of $sa_lines golden lines differ from model.py($sa_in) = $sa_want"
         fail=$((fail + 1)); failed_names+=("sapho_all-model")
     fi
+fi
+
+# ---- 4a3. a float or a complex as a condition -------------------------------
+# Scripts/fcond: the same cases (if, while, for, do, !, &&, ||, ?:, bool) on
+# the host compiler, which gives C's answer, and on cppcomp and cmmcomp at
+# three float formats and the three #FROUND levels, simulated; every 0/1
+# must agree (TODO 33). Needs the simulator and python3.
+if command -v python3 >/dev/null 2>&1 && command -v g++ >/dev/null 2>&1; then
+    echo ""
+    echo "==> Float and complex conditions against the host C compiler (fcond)"
+    if [ "$NO_SIM" -eq 1 ]; then
+        echo "SKIP (float-conditions): --no-sim"
+    elif BIN="$BIN_DIR" HDL="$HDL" SHORT=1 bash "$ROOT/Scripts/fcond/run.sh" "$WORK_DIR/fcond" > "$WORK_DIR/fcond.log" 2>&1; then
+        echo "PASS (float-conditions)"
+        pass=$((pass + 1))
+    else
+        echo "FAIL (float-conditions): see $WORK_DIR/fcond.log"
+        grep -E "differ|BUILD FAILED" "$WORK_DIR/fcond.log" | grep -v " 0 differ" | head -10 | sed 's/^/    /'
+        fail=$((fail + 1)); failed_names+=("float-conditions")
+    fi
+else
+    echo "==> Float and complex conditions  [skipped: no python3 or g++]"
 fi
 
 # ---- 4b. CMM negative phase (error reporting) ------------------------------

@@ -981,9 +981,19 @@ static void emit_load_float(double v)
 }
 
 // ---- conditional branch ----------------------------------------------------
-// JIZ tests the whole accumulator word (HDL: if_acc = |ula_out), so any value's
-// C truthiness is honoured directly. No LIN;LIN normalisation needed — emit the
-// expression and branch.
+// JIZ tests the whole accumulator word (HDL: if_acc = |ula_out), so an int's or
+// a pointer's C truthiness is honoured directly (no LIN;LIN normalisation); a
+// float goes through float_truth first.
+
+// After a float is in the acc, leave a word that is zero exactly when the
+// float is: a YANC float is zero exactly when its mantissa is (the leading
+// one is kept, docs/floating-point.md), so AND 2^NBMANT - 1. The float's
+// raw word is not enough: the zero float's exponent is not 0 (TODO 33).
+static void float_truth(expr *e)
+{
+    type *t = infer_type(e);
+    if (t && t->kind == TY_FLOAT) emit("AND %ld", (1L << g_nbmant) - 1);
+}
 
 static void gen_bool(expr *e, const char *jz_target)
 {
@@ -999,6 +1009,7 @@ static void gen_bool(expr *e, const char *jz_target)
         char *tcont = fresh_label("or_t");   // condition-true continuation
         char *chkb  = fresh_label("or_b");
         gen_expr(e->a);
+        float_truth(e->a);
         emit("JIZ %s", chkb);                // a == 0 -> must test b
         emit("JMP %s", tcont);               // a != 0 -> whole OR is true
         emit("@%s NOP", chkb);
@@ -1008,6 +1019,7 @@ static void gen_bool(expr *e, const char *jz_target)
         return;
     }
     gen_expr(e);
+    float_truth(e);
     emit("JIZ %s", jz_target);
 }
 
@@ -2327,6 +2339,13 @@ static void gen_expr(expr *e)
         // with the _M unary form instead of LOD x; <op>.
         {
             sym *mv = simple_mem_var(e->a);
+            type *at = infer_type(e->a);              // !float: its truth, then LIN
+            if (e->op == OP_LNOT && at && at->kind == TY_FLOAT) {
+                gen_expr(e->a);
+                float_truth(e->a);
+                emit("LIN");
+                return;
+            }
             if (mv) switch (e->op) {
                 case OP_NEG: emit(e->etype && e->etype->kind == TY_FLOAT ? "F_NEG_M %s" : "NEG_M %s", mv->asm_name); return;
                 case OP_BNOT: emit("INV_M %s", mv->asm_name); return;

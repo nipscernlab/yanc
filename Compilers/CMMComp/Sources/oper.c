@@ -3031,7 +3031,6 @@ expr oper_lin(expr e)
     expr etr, eti;
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char f2i[10]; if (acc_ok == 0) strcpy(f2i,"F2I_M"); else strcpy(f2i,"P_F2I_M");
     char lin[10]; if (acc_ok == 0) strcpy(lin,"LIN_M"); else strcpy(lin,"P_LIN_M");
 
     // when it is an int in memory
@@ -3049,48 +3048,46 @@ expr oper_lin(expr e)
     // when it is a float variable in memory
     if ((e.type == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_LOGIC_FLOAT, line_num+1);
-
-        add_instr("%s %s\n", f2i, v_table[e.id].name);
+        // a float is zero exactly when its mantissa is (see emit_cond_int_load)
+        add_instr("%s %s\n", ld, v_table[e.id].name);
+        add_instr("AND %ld\n", (1L << nbmant) - 1);
         add_instr("LIN\n");
     }
 
     // when it is a float in the acc
     if ((e.type == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_LOGIC_FLOAT, line_num+1);
-
-        add_instr("F2I\n");
+        add_instr("AND %ld\n", (1L << nbmant) - 1);
         add_instr("LIN\n");
     }
 
     // when it is a comp const
     if (e.type == 5)
     {
-        fprintf(stdout, MSG_WARN_LOGIC_COMP, line_num+1);
-
+        // a comp is true when its real or its imaginary part is not zero
+        // (C99): (re OR im) AND mask, then LIN
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", f2i, v_table[etr.id].name);
+        add_instr("%s %s\n", ld, v_table[etr.id].name);
+        add_instr("ORR %s\n", v_table[eti.id].name);
+        add_instr("AND %ld\n", (1L << nbmant) - 1);
         add_instr("LIN\n");
     }
 
     // when it is a comp variable
     if ((e.type == 3) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_LOGIC_COMP, line_num+1);
-
-        add_instr("%s %s\n", f2i, v_table[e.id].name);
+        add_instr("%s %s\n", ld, v_table[e.id].name);
+        add_instr("ORR %s\n", v_table[get_img_id(e.id)].name);
+        add_instr("AND %ld\n", (1L << nbmant) - 1);
         add_instr("LIN\n");
     }
 
-    // when it is a comp in the acc
+    // when it is a comp in the acc (the imag part in the acc, the real on the stack)
     if ((e.type == 3) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_LOGIC_COMP, line_num+1);
-
-        add_instr("POP\n");
-        add_instr("F2I\n");
+        add_instr("S_ORR\n");
+        add_instr("AND %ld\n", (1L << nbmant) - 1);
         add_instr("LIN\n");
     }
 
@@ -3103,7 +3100,7 @@ expr oper_lin(expr e)
 expr oper_lanor(expr e1, expr e2, int type)
 {
 
-    if ((e1.type > 1) || (e2.type > 1))
+    if ((e1.type > 2) || (e2.type > 2))
     {
         fprintf(stderr, MSG_ERR_LOGIC_NON_INT, line_num+1);
         exit(EXIT_FAILURE);
@@ -3117,6 +3114,37 @@ expr oper_lanor(expr e1, expr e2, int type)
     {
         case 0: strcpy(op, "LAN"); break;
         case 1: strcpy(op, "LOR" ); break;
+    }
+
+    // a float operand counts by its truth, the word AND 2^NBMANT - 1
+    // (zero exactly when the float is); LAN and LOR commute, so the order of
+    // the two operands does not matter
+    if ((e1.type == 2) || (e2.type == 2))
+    {
+        long mask = (1L << nbmant) - 1;
+        if ((e1.id != 0) && (e2.id != 0))                     // var with var
+        {
+            add_instr("%s %s\n", ld, v_table[e2.id].name);
+            if (e2.type == 2) add_instr("AND %ld\n", mask);
+            if (e1.type == 2) { add_instr("P_LOD %s\n", v_table[e1.id].name); add_instr("AND %ld\n", mask); add_instr("S_%s\n", op); }
+            else              add_instr("%s %s\n", op, v_table[e1.id].name);
+        }
+        else if ((e1.id != 0) || (e2.id != 0))                // var with acc
+        {
+            expr ea = (e1.id == 0) ? e1 : e2;                  // the one in the acc
+            expr ev = (e1.id == 0) ? e2 : e1;                  // the one in memory
+            if (ea.type == 2) add_instr("AND %ld\n", mask);
+            if (ev.type == 2) { add_instr("P_LOD %s\n", v_table[ev.id].name); add_instr("AND %ld\n", mask); add_instr("S_%s\n", op); }
+            else              add_instr("%s %s\n", op, v_table[ev.id].name);
+        }
+        else                                                  // acc with acc: e2 in the acc, e1 on the stack
+        {
+            if (e2.type == 2) add_instr("AND %ld\n", mask);
+            if (e1.type == 2) { add_instr("SET_P __aux_var\n"); add_instr("AND %ld\n", mask); add_instr("%s __aux_var\n", op); }
+            else              add_instr("S_%s\n", op);
+        }
+        acc_ok = 1;
+        return expr_make(1, 0);
     }
 
     // int var with int var

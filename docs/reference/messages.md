@@ -70,7 +70,7 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: dimensions don't match. You're a confused soul!
 - Error on line <n>: you can only shift a vector into itself, mate!
 - Error on line <n>: what's the point of computing a remainder with non-integer numbers? Get a grip!
-- Error on line <n>: logical operation, integers only!
+- Error on line <n>: logical operation with a comp (int and float only)!
 - Error on line <n>: bad use of the '~' operator. Gotta pass an int. You tripping?
 - Error on line <n>: how am I supposed to do bitwise ops with a complex number? You tripping?
 - Error on line <n>: how am I supposed to shift bits of a complex number? You tripping?
@@ -103,15 +103,13 @@ value. What the common ones mean and how to get past them is in
 - Heads up on line <n>: comparing int with comp? Gonna use the magnitude.
 - Heads up on line <n>: comparing float with comp? Gonna use the magnitude.
 - Heads up on line <n>: comparing with a complex number? Gonna use the magnitude.
-- Heads up on line <n>: logical expression with a float? You're a confused soul!
-- Heads up on line <n>: logical expression with a comp? Really? Gonna round the real part!
 - Heads up on line <n>: the second operand of the shift is a float. Now you're killin' me!
 - Heads up on line <n>: variable '<name>' is int, but getting a float.
 - Heads up on line <n>: local array '<name>' is initialized from file <name> only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
 - Heads up on line <n>: variable '<name>' is float, but getting an int.
 - Heads up on line <n>: variable '<name>' is comp, but getting an int.
 - Heads up on line <n>: variable '<name>' is comp, but getting a float.
-- Heads up on line <n>: in this conversion I'm rounding the real part, just so you know!
+- Heads up on line <n>: in this conversion I'm truncating the real part, just so you know!
 - Heads up on line <n>: in this conversion I'm only grabbing the real part, just so you know!
 - Heads up on line <n>: converting float to int on parameter <n> of function '<name>'.
 - Heads up on line <n>: converting comp to int on parameter <n> of function '<name>'.
@@ -123,18 +121,16 @@ value. What the common ones mean and how to get past them is in
 - Heads up on line <n>: return is float, but getting an int.
 - Heads up on line <n>: function return is comp, but getting an int.
 - Heads up on line <n>: function return is comp, but getting a float.
-- Heads up on line <n>: conditional expression came out float! Gonna round it.
-- Heads up on line <n>: conditional expression came out comp! Gonna round the real part.
-- Heads up on line <n>: case index came out float! Gonna round it.
-- Heads up on line <n>: case index came out comp! Gonna round the real part.
-- Heads up on line <n>: see how the array index came out a float? Gonna round it!
-- Heads up on line <n>: see how the first array index came out a float? Gonna round it!
-- Heads up on line <n>: see how the second array index came out a float? Gonna round it!
-- Heads up on line <n>: see how the array indices came out floats? Gonna round 'em!
-- Heads up on line <n>: a complex array index? Seriously?! Gonna round the real part.
+- Heads up on line <n>: case index came out float! Gonna truncate it.
+- Heads up on line <n>: case index came out comp! Gonna truncate the real part.
+- Heads up on line <n>: see how the array index came out a float? Gonna truncate it!
+- Heads up on line <n>: see how the first array index came out a float? Gonna truncate it!
+- Heads up on line <n>: see how the second array index came out a float? Gonna truncate it!
+- Heads up on line <n>: see how the array indices came out floats? Gonna truncate 'em!
+- Heads up on line <n>: a complex array index? Seriously?! Gonna truncate the real part.
 - Heads up on line <n>: a complex array index? Seriously?! Gonna grab the real part.
 - Heads up on line <n>: these array indices are all over the place. You're a confused soul!
-- Heads up on line <n>: array index is coming out float. Gonna generate a ton of code to round it!
+- Heads up on line <n>: array index is coming out float. Gonna generate a ton of code to truncate it!
 - Heads up: global variable '<name>' isn't being used. Save some memory, will ya!
 - Heads up: variable '<name>' in function '<name>' isn't being used. Save some memory, will ya!
 - Heads up: function '<name>' isn't being used. Save some memory, will ya!

@@ -79,7 +79,9 @@ Everything C has: `if`, `switch` (with fall-through), `while`, `do`, `for`,
 check), `sizeof`, `static_assert`, designated initializers, compound
 literals. A range-for (`for (auto x : c)`) walks an array, or an object with
 `size()` and `operator[]` such as `std::vector` and `std::array`. A number
-starting with `0` is octal.
+starting with `0` is octal. A float used as a condition (`if (x)`, `!x`,
+`x && y`, `x ? a : b`) is true when it is not zero, as in C: the compiler
+tests its mantissa, because SAPHO's zero float is not an all-zero word.
 
 ## Functions
 

@@ -104,7 +104,7 @@ float table[64] "table.txt";      // initialised from a file
 |---|---|---|
 | arithmetic | `+` `-` `*` `/` `%` | `%` between ints only; `/` and `%` build a divider into the processor |
 | comparison | `<` `>` `<=` `>=` `==` `!=` | 1 or 0 |
-| logical | `&&` `\|\|` `!` | 1 or 0 |
+| logical | `&&` `\|\|` `!` | 1 or 0; on ints and floats (not `comp`) |
 | bitwise | `&` `\|` `^` `~` | ints |
 | shifts | `<<` `>>` `>>>` | `>>` fills with zeros, `>>>` with the sign |
 | increment | `x++`, `v[k]++` | also inside an expression |
@@ -128,6 +128,12 @@ a division a divider and five clock cycles (four for a float division):
   turn of the innermost loop.
 - The empty statement `;` and the empty block `{ }` emit nothing, so a
   waiting loop is written as in C: `while (in(1)) ;`.
+- A condition (`if`, `while`, `for`, `do`, and the operands of `!`, `&&`,
+  `||`) is true when its value is not zero, as in C, also for a float:
+  `if (0.5)` is true and `if (0.0)` false. The compiler tests the float's
+  mantissa (`AND 2^NBMANT - 1`, one instruction), with no conversion to int.
+  A `comp` condition is true when its real or its imaginary part is not
+  zero (C99). A `switch` index, by contrast, is converted to int, truncating.
 
 ## Functions
 

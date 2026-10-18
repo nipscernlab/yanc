@@ -40,6 +40,27 @@ tags consumed by Aurora.
   its mnemonic's parameter, OR-ed, instead of a case (the same outputs on
   every opcode; 33.10 MHz, 3,566 ALMs, within noise).
 
+### Fixed
+- **A float as a condition gives C's answer in both compilers.** C++ took
+  every float condition as true, even zero (SAPHO's zero float is not an
+  all-zero word): `if (0.0f)`, a loop on a float that reaches zero, `!x`.
+  C+- converted the float to int first, truncating, so every float in
+  (-1, 1) was false (`if (0.5)`, `while (err)` with a small error). Both
+  now test the mantissa, `AND 2^NBMANT - 1` before the jump: one word and
+  one cycle per float condition. In C+- also: `&&` and `||` take floats
+  (an error before), a `comp` condition is true when its real or its
+  imaginary part is not zero (C99), the warnings of the remaining
+  conversions (a float `switch` or array index, a `comp` into an `int`)
+  say they truncate (they said "round"), and the four warnings of the
+  conditions are gone. `Scripts/fcond` checks every form against the host
+  C/C++ compiler at three float formats and three `#FROUND` levels, in the
+  regress (TODO 33).
+- **`Scripts/hw/fmax.sh` and `vfmax.sh` copy the two `.mif`.** Since v7.1 the
+  generated Verilog names its memories by bare name, and the scripts copied
+  only the `.v`: a fit would have run with an empty program memory. They now
+  copy both `.mif` beside the project and stop if the tool reports one
+  missing.
+
 ### Added
 - **`Scripts/hw/path_groups.py`**: the worst path of each destination block
   in a long timing report. `fmax.sh` and `vfmax.sh` now write the 3000 worst
@@ -51,13 +72,6 @@ tags consumed by Aurora.
   count gives the normaliser's output unchanged; `sapho_all` reached 32.07
   MHz on the DE10-Nano part against 21.82 (experiments only, `SAPHO/`
   unchanged; docs/design/pipeln-and-division.md 4.3).
-
-### Fixed
-- **`Scripts/hw/fmax.sh` and `vfmax.sh` copy the two `.mif`.** Since v7.1 the
-  generated Verilog names its memories by bare name, and the scripts copied
-  only the `.v`: a fit would have run with an empty program memory. They now
-  copy both `.mif` beside the project and stop if the tool reports one
-  missing.
 
 ## [v7.1] – 2026-10-13
 

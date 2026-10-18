@@ -314,17 +314,9 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", \
       "Heads up on line %d: comparing with a complex number? Gonna use the magnitude.\n")
 
-#define MSG_WARN_LOGIC_FLOAT \
-    M("Atenção na linha %d: expressão lógica com float? Você é uma pessoa confusa!\n", \
-      "Heads up on line %d: logical expression with a float? You're a confused soul!\n")
-
-#define MSG_WARN_LOGIC_COMP \
-    M("Atenção na linha %d: expressão lógica com comp? Sério? Vou arredondar a parte real!\n", \
-      "Heads up on line %d: logical expression with a comp? Really? Gonna round the real part!\n")
-
 #define MSG_ERR_LOGIC_NON_INT \
-    M("Erro na linha %d: operação lógica, só entre números inteiros!\n", \
-      "Error on line %d: logical operation, integers only!\n")
+    M("Erro na linha %d: operação lógica com um comp (só int e float)!\n", \
+      "Error on line %d: logical operation with a comp (int and float only)!\n")
 
 #define MSG_ERR_INV_NON_INT \
     M("Erro na linha %d: uso incorreto do operador '~'. Tem que passar tipo int. Viajou?\n", \
@@ -369,8 +361,8 @@ void parse_lang_flag(int *argc, char **argv);
       "Heads up on line %d: variable '%s' is comp, but getting a float.\n")
 
 #define MSG_WARN_ROUND_REAL \
-    M("Atenção na linha %d: nessa conversão, eu vou arredondar a parte real hein!\n", \
-      "Heads up on line %d: in this conversion I'm rounding the real part, just so you know!\n")
+    M("Atenção na linha %d: nessa conversão, eu vou truncar a parte real hein!\n", \
+      "Heads up on line %d: in this conversion I'm truncating the real part, just so you know!\n")
 
 #define MSG_WARN_GRAB_REAL_ONLY \
     M("Atenção na linha %d: nessa conversão, eu vou pegar só a parte real hein!\n", \
@@ -456,14 +448,6 @@ void parse_lang_flag(int *argc, char **argv);
 
 // jump errors/warnings (saltos.c) -------------------------------------------
 
-#define MSG_WARN_COND_FLOAT \
-    M("Atenção na linha %d: expressão condicional dando float! Vou arredondar.\n", \
-      "Heads up on line %d: conditional expression came out float! Gonna round it.\n")
-
-#define MSG_WARN_COND_COMP \
-    M("Atenção na linha %d: expressão condicional dando comp! Vou arredondar a parte real.\n", \
-      "Heads up on line %d: conditional expression came out comp! Gonna round the real part.\n")
-
 #define MSG_ERR_BREAK_LOST \
     M("Erro na linha %d: esse brake aí tá perdido!\n", \
       "Error on line %d: that break is just hanging out lost!\n")
@@ -473,34 +457,34 @@ void parse_lang_flag(int *argc, char **argv);
       "Error on line %d: a continue outside a loop goes nowhere!\n")
 
 #define MSG_WARN_CASE_FLOAT \
-    M("Atenção na linha %d: índice do case dando float! Vou arredondar.\n", \
-      "Heads up on line %d: case index came out float! Gonna round it.\n")
+    M("Atenção na linha %d: índice do case dando float! Vou truncar.\n", \
+      "Heads up on line %d: case index came out float! Gonna truncate it.\n")
 
 #define MSG_WARN_CASE_COMP \
-    M("Atenção na linha %d: índice do case dando comp! Vou arredondar a parte real.\n", \
-      "Heads up on line %d: case index came out comp! Gonna round the real part.\n")
+    M("Atenção na linha %d: índice do case dando comp! Vou truncar a parte real.\n", \
+      "Heads up on line %d: case index came out comp! Gonna truncate the real part.\n")
 
 // array-index warnings (array_index.c) --------------------------------------
 
 #define MSG_WARN_IDX_FLOAT \
-    M("Atenção na linha %d: tá vendo que o índice do array tá em ponto flutuante né? Vou arredondar!\n", \
-      "Heads up on line %d: see how the array index came out a float? Gonna round it!\n")
+    M("Atenção na linha %d: tá vendo que o índice do array tá em ponto flutuante né? Vou truncar!\n", \
+      "Heads up on line %d: see how the array index came out a float? Gonna truncate it!\n")
 
 #define MSG_WARN_IDX1_FLOAT \
-    M("Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou arredondar!\n", \
-      "Heads up on line %d: see how the first array index came out a float? Gonna round it!\n")
+    M("Atenção na linha %d: tá vendo que o primeiro índice do array tá em ponto flutuante né? Vou truncar!\n", \
+      "Heads up on line %d: see how the first array index came out a float? Gonna truncate it!\n")
 
 #define MSG_WARN_IDX2_FLOAT \
-    M("Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou arredondar!\n", \
-      "Heads up on line %d: see how the second array index came out a float? Gonna round it!\n")
+    M("Atenção na linha %d: tá vendo que o segundo índice do array tá em ponto flutuante né? Vou truncar!\n", \
+      "Heads up on line %d: see how the second array index came out a float? Gonna truncate it!\n")
 
 #define MSG_WARN_IDXS_FLOAT \
-    M("Atenção na linha %d: tá vendo que os índices do array estão em ponto flutuante né? Vou arredondar!\n", \
-      "Heads up on line %d: see how the array indices came out floats? Gonna round 'em!\n")
+    M("Atenção na linha %d: tá vendo que os índices do array estão em ponto flutuante né? Vou truncar!\n", \
+      "Heads up on line %d: see how the array indices came out floats? Gonna truncate 'em!\n")
 
 #define MSG_WARN_IDX_COMP_ROUND \
-    M("Atenção na linha %d: índice de array complexo? Sério?! Vou arredondar a parte real.\n", \
-      "Heads up on line %d: a complex array index? Seriously?! Gonna round the real part.\n")
+    M("Atenção na linha %d: índice de array complexo? Sério?! Vou truncar a parte real.\n", \
+      "Heads up on line %d: a complex array index? Seriously?! Gonna truncate the real part.\n")
 
 #define MSG_WARN_IDX_COMP_GRAB \
     M("Atenção na linha %d: índice de array complexo? Sério?! Vou pegar a parte real.\n", \
@@ -511,8 +495,8 @@ void parse_lang_flag(int *argc, char **argv);
       "Heads up on line %d: these array indices are all over the place. You're a confused soul!\n")
 
 #define MSG_WARN_IDX_FLOAT_HEAVY \
-    M("Atenção na linha %d: índice de array tá dando float. Vai gerar muito código pra arredondar!\n", \
-      "Heads up on line %d: array index is coming out float. Gonna generate a ton of code to round it!\n")
+    M("Atenção na linha %d: índice de array tá dando float. Vai gerar muito código pra truncar!\n", \
+      "Heads up on line %d: array index is coming out float. Gonna generate a ton of code to truncate it!\n")
 
 // unused-variable errors/warnings (variaveis.c) -----------------------------
 

@@ -111,7 +111,8 @@ def run(inp):
         addf(fw)
     # conversions
     addf(fl(wrap(x + y))); addf(fl(x)); addf(fl(fy1 - fl(x))); addf(fl(fl(x) - fy1))
-    add(f2i(fl(fx + fy))); add(f2i(fy)); add(f2i(fl(fl(y1) - fy))); add(wrap(y1 - lin(f2i(fy))))
+    add(f2i(fl(fx + fy))); add(f2i(fy)); add(f2i(fl(fl(y1) - fy))); add(wrap(y1 - (1 if fy == 0 else 0)))
+    add(0)                                  # ia[fy] - ia[fy] (only for P_F2I_M)
     # input with a live accumulator (the port gives the same value every read)
     add(wrap(y1 - inp)); addf(fl(fy1 - fl(inp)))
     # arrays

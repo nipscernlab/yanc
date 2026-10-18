@@ -803,8 +803,19 @@ ADD main_t
 SET s
 LOD main_y
 ADD 1
-P_F2I_M main_fy
+P_LOD main_fy
+AND 8388607
 LIN
+NEG
+S_ADD
+SET main_t
+LOD s
+ADD main_t
+SET s
+F2I_M main_fy
+LDI ia
+P_F2I_M main_fy
+LDI ia
 NEG
 S_ADD
 SET main_t
