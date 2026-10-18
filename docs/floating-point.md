@@ -25,7 +25,8 @@ bits after the point, one fewer than IEEE single. With the defaults the
 magnitudes run from about `1.2e-32` (`2^-106`) to about `1.4e45` (`2^150`),
 with about 7 significant digits (deduced from the format above).
 
-`#NUBITS = #NBMANT + #NBEXPO + 1`; a smaller format is a smaller and faster
+`#NUBITS = #NBMANT + #NBEXPO + 1` and `#NBMANT < 2^(#NBEXPO-1)`, checked
+when the program uses float; a smaller format is a smaller and faster
 float unit, at the cost of precision (see [Directives](directives.md)).
 
 ## Constants

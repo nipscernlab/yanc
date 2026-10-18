@@ -48,3 +48,4 @@ void eval_direct(int   next_state);
 void eval_opcode(int   op   , int next_state, char *text, char *nome);
 void eval_opernd(char *va   , int is_const);
 void eval_finish();
+void eval_fp_check();         // stops on a float format that cannot work (only when the program uses float)

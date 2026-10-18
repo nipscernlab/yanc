@@ -8,6 +8,24 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **A processor without float needs no float format.** asmcomp checks
+  `NUBITS = NBMANT + NBEXPO + 1` only when the program uses float (a float
+  opcode, or a float constant or variable in memory). A 16-bit integer program
+  without `#NBMANT`/`#NBEXPO` was refused, since the defaults 23/8 add up to
+  32; it is accepted now (fixture `cmm_nofloat`). The message names the
+  three widths.
+
+### Added
+- **asmcomp refuses an exponent too short for the mantissa**,
+  `NBMANT >= 2^(NBEXPO-1)` (12/3, say): with no hidden bit 1.0 needs the
+  exponent -(NBMANT-1), out of reach. Same rule: only with float.
+
+### Fixed
+- The waveform's float view of the ALU (`YANC_SIM_VIS` in `ula.v`) selected
+  bits outside the word when the format did not fill it; it is generated only
+  when the format fills the word.
+
 ## [v8.0] – 2026-10-18
 
 A faster processor and C's answer for a float condition. **Breaks a

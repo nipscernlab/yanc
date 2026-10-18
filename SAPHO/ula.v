@@ -1949,22 +1949,35 @@ ula_mux #(.NUBITS(NUBITS),
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
-// get the signed mantissa for inputs and output ------------------------------
+// get the signed mantissa and the exponent of inputs and output --------------
 
 // signed mantissa = +/- the NBMANT-bit magnitude. Width is NBMANT+1 (sign +
 // magnitude) so the assign is symmetric -- a 32-bit integer here would make the
 // RHS narrower than the LHS and Verilator flags WIDTHEXPAND.
-reg signed [NBMANT:0] sm_in1; always @ (*) sm_in1 = (in1[NBMANT+NBEXPO]) ? -$signed({1'b0, in1[NBMANT-1:0]}) : $signed({1'b0, in1[NBMANT-1:0]}); // signed mantissa of in1
-reg signed [NBMANT:0] sm_in2; always @ (*) sm_in2 = (in2[NBMANT+NBEXPO]) ? -$signed({1'b0, in2[NBMANT-1:0]}) : $signed({1'b0, in2[NBMANT-1:0]}); // signed mantissa of in2
-reg signed [NBMANT:0] sm_out; always @ (*) sm_out = (out[NBMANT+NBEXPO]) ? -$signed({1'b0, out[NBMANT-1:0]}) : $signed({1'b0, out[NBMANT-1:0]}); // signed mantissa of out
-
-// get the exponent of inputs and output --------------------------------------
+reg signed [NBMANT:0] sm_in1;   // signed mantissa of in1
+reg signed [NBMANT:0] sm_in2;   // signed mantissa of in2
+reg signed [NBMANT:0] sm_out;   // signed mantissa of out
 
 // exponent = NBEXPO-bit signed field; size the reg to match so the assign is
 // symmetric (a 32-bit integer would be wider than the RHS -> WIDTHEXPAND).
-reg signed [NBEXPO-1:0] e_in1; always @ (*) e_in1 = $signed(in1[NBMANT+NBEXPO-1:NBMANT]); // exponent of in1
-reg signed [NBEXPO-1:0] e_in2; always @ (*) e_in2 = $signed(in2[NBMANT+NBEXPO-1:NBMANT]); // exponent of in2
-reg signed [NBEXPO-1:0] e_ouu; always @ (*) e_ouu = $signed(out[NBMANT+NBEXPO-1:NBMANT]); // exponent of out
+reg signed [NBEXPO-1:0] e_in1;  // exponent of in1
+reg signed [NBEXPO-1:0] e_in2;  // exponent of in2
+reg signed [NBEXPO-1:0] e_ouu;  // exponent of out
+
+// asmcomp checks the float format only when the program uses float, so a
+// processor without float may carry an NBMANT/NBEXPO that does not fit the
+// word (the defaults 23/8 under #NUBITS 16): the fields would be selected out
+// of range. Then the float view stays at zero.
+generate if (NBMANT + NBEXPO + 1 == NUBITS) begin : fview
+always @ (*) sm_in1 = (in1[NBMANT+NBEXPO]) ? -$signed({1'b0, in1[NBMANT-1:0]}) : $signed({1'b0, in1[NBMANT-1:0]});
+always @ (*) sm_in2 = (in2[NBMANT+NBEXPO]) ? -$signed({1'b0, in2[NBMANT-1:0]}) : $signed({1'b0, in2[NBMANT-1:0]});
+always @ (*) sm_out = (out[NBMANT+NBEXPO]) ? -$signed({1'b0, out[NBMANT-1:0]}) : $signed({1'b0, out[NBMANT-1:0]});
+always @ (*) e_in1  = $signed(in1[NBMANT+NBEXPO-1:NBMANT]);
+always @ (*) e_in2  = $signed(in2[NBMANT+NBEXPO-1:NBMANT]);
+always @ (*) e_ouu  = $signed(out[NBMANT+NBEXPO-1:NBMANT]);
+end else begin : fview
+initial begin sm_in1 = 0; sm_in2 = 0; sm_out = 0; e_in1 = 0; e_in2 = 0; e_ouu = 0; end
+end endgenerate
 
 // get the real values of inputs and output -----------------------------------
 

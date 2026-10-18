@@ -1,0 +1,11 @@
+#NUBITS 16
+#NUIOIN 1
+#NUIOOU 1
+// Negative fixture for asmcomp (regress step 4b2): a 16-bit word with float
+// and no #NBMANT/#NBEXPO, so the format stays 23/8 and does not add up to 16.
+// cmmcomp accepts it; asmcomp must stop.
+void main()
+{
+    float x = 1.5;
+    while (1) { x = x * 2.0; fout(0, x); }
+}

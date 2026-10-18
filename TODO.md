@@ -88,15 +88,6 @@ bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
 
 ---
 
-## 3. Exponent overflow / underflow wraps silently
-
-**Status:** landed as `#FROUND 1` (saturate / flush to zero) · **Evidence:** [§1.3](docs/design/precision-and-width-review.md#13-exponent-overflow--underflow-silently-wraps-bug)
-
-Left open: the parameter guard
-`initial if (NUBITS != NBMANT+NBEXPO+1 || NBMANT >= 2**(NBEXPO-1)) $error`
-in `ula.v` (needs a form that every simulator and synthesizer in the flow
-accepts silently).
-
 ## 5. One shared, exact constant encoder
 
 **Status:** steps 1-3 of 5 done (2026-09-25), 4-5 left · **Area:** `ASMComp/t2t.c`, `CMMComp/{variaveis,t2t}.c`, `CPPComp/codegen.c`, the three lexers · **Evidence:** [§1.5](docs/design/precision-and-width-review.md#15-constant-encoding-on-the-host-loses-bits-today)
@@ -362,10 +353,9 @@ it). The audit found the weak points in the surroundings. In order:
 7. **Hygiene** — ~~one default parameter set~~ (done: `cppcomp`'s set,
    the one the 81 C++ tests actually run on, now in `asmcomp`, `cmmcomp` and
    the three HDL files, named at the top of `processor.v`), ~~`NUGAIN`
-   typed~~, ~~unused `NBOPCO` parameter of `ula`~~; still open: the invariant
-   guard (`NUBITS == NBMANT+NBEXPO+1`, `NBMANT < 2^(NBEXPO-1)`, `NUGAIN` a
-   power of two — it needs a form every simulator *and* synthesizer in the
-   flow accepts silently, which is why item 3 parked it too), lint-clean
+   typed~~, ~~unused `NBOPCO` parameter of `ula`~~, ~~the invariant guard~~
+   (done 2026-10-18 in asmcomp, only when the program uses float; the HDL
+   takes any format, precision-and-width-review.md 1.3); still open: lint-clean
    Verilator, `mem_instr`'s fake write commented or removed, `myFIFO` with a
    registered read so it maps to block RAM.
 8. **Registered-branch option** — only if Fmax ever matters more than the
@@ -383,7 +373,7 @@ Today a run-time failure is silent: `malloc`/`new` returns `0` when the
 `__heap` arena (fixed `CFG_HEAPSZ` = 2048 words, no analysis of what the
 program will allocate) is exhausted, the software call stack `__cstk` (fixed
 1024 words) and the hardware stacks (`#NDSTAC`/`#SDEPTH`) overflow without a
-trace, `DIV`/`MOD` by zero and exponent overflow (item 3) give whatever the
+trace, `DIV`/`MOD` by zero and exponent overflow at `#FROUND 0` give whatever the
 datapath gives. Nothing outside the processor can tell that it happened.
 
 **Design (Luciano, 2026-09-20):** an output pair — a **strobe pin** high for
@@ -912,6 +902,19 @@ arrays do not show at all. The option exists only to keep that cost away.
 example one signal for the last write (address and value), or a dump of
 the array memory read back by the viewer, chosen after measuring the
 `.vcd` size and the simulation time on a test with large arrays (test46).
+
+## 34. A C± declaration list cannot carry an initializer
+
+**Status:** open, found 2026-10-18 writing `cmm_nofloat` (item 3) ·
+**Area:** cmmcomp (Luciano's code: the diff goes to him first)
+
+`int a, b;` compiles, but as soon as one name of a list has an initializer
+cmmcomp stops with "Syntax error": `int a = 1, b;`, `int a, b = 1;`,
+`int a = 1, b = 2;`, `float a = 1.0, b;`, local or global (checked
+2026-10-18). C accepts all of them; the fixture had to split the line.
+
+**Done when** a declaration list takes an initializer on any of its names,
+local and global, int, float and comp, with a fixture.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 

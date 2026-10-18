@@ -1,0 +1,21 @@
+#NUBITS 16
+#NUIOIN 1
+#NUIOOU 1
+// A processor without float needs no float format (TODO item 3). No #NBMANT
+// or #NBEXPO here: they keep their defaults 23/8, which do not add up to 16
+// bits. asmcomp checks the format only when the program uses float, and the
+// ULA's float view in the waveform stays at zero instead of reading fields
+// out of the word. The sums wrap at 16 bits: 30000 + 5000 = -30536.
+void main()
+{
+    int x = 30000;
+    int k;
+
+    for (k = 0; k < 4; k = k + 1)
+    {
+        x = x + 5000;
+        out(0, x);
+    }
+    out(0, x >> 3);
+    out(0, x * 3);
+}

@@ -59,8 +59,12 @@ operators, exceptions, variadic functions (see
   above `#NUIOOU` (`#NUIOIN` for inputs). Raise the directive.
 - **`you're N lines short in file '...'`** (asmcomp): an array initialised
   from a file has more elements than the file has lines.
-- **`floating-point setup doesn't add up`** (asmcomp): `#NUBITS` must equal
-  `#NBMANT + #NBEXPO + 1`.
+- **`floating-point setup doesn't add up`** (asmcomp): a program with float
+  needs `#NUBITS` equal to `#NBMANT + #NBEXPO + 1`. A program without float
+  never sees it; with float on a narrow word, give the format too
+  (`#NUBITS 16`, `#NBMANT 10`, `#NBEXPO 5`).
+- **`the exponent is too short for the mantissa`** (asmcomp): `#NBMANT` must
+  be below `2^(#NBEXPO-1)`. Widen `#NBEXPO` or narrow `#NBMANT`.
 
 ## Common warnings
 

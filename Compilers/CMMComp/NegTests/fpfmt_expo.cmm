@@ -1,0 +1,13 @@
+#NUBITS 16
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 12
+#NBEXPO 3
+// Negative fixture for asmcomp (regress step 4b2): 12 + 3 + 1 = 16 adds up,
+// but a 3-bit exponent reaches only -4, and 1.0 needs 2^-11 (no hidden bit).
+// NBMANT must be below 2^(NBEXPO-1) = 4. cmmcomp accepts it; asmcomp must stop.
+void main()
+{
+    float x = 1.5;
+    while (1) { x = x * 2.0; fout(0, x); }
+}

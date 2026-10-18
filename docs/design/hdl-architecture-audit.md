@@ -157,9 +157,12 @@ table fills.
   **done**, typed `signed [NUBITS-1:0]` in all three (with step 6 of item 8).
   ~~`NBOPCO` is passed to `ula` and unused~~ — **done**, the parameter and the
   connection are gone.
-- No invariant guard (`NUBITS == NBMANT+NBEXPO+1`, `NBMANT < 2^(NBEXPO-1)`,
-  `NUGAIN` a power of two) — the assembler checks the first; the HDL checks
-  nothing.
+- ~~No invariant guard~~ — **done 2026-10-18 in asmcomp**: `NUGAIN` a power
+  of two always; `NUBITS == NBMANT+NBEXPO+1` and `NBMANT < 2^(NBEXPO-1)` when
+  the program uses float (a float opcode or a float word in memory). The HDL
+  takes any format: nothing outside the float `generate` blocks depends on
+  NBMANT/NBEXPO, and the waveform's float view is generated only when the
+  format fills the word (precision-and-width-review.md 1.3).
 - Verilator runs with `-Wno-WIDTH -Wno-UNOPTFLAT -Wno-CASEINCOMPLETE …`. A
   professional flow is lint-clean at `-Wall`; the remaining WIDTH warnings are
   few and mechanical.

@@ -1437,6 +1437,41 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     rm -rf "$neg_work"
 fi
 
+# ---- 4b2. float format refused by asmcomp -----------------------------------
+# cmmcomp accepts these two; asmcomp must stop on the float format (TODO item
+# 3), checked only because they use float (Tests/cmm_nofloat is the other side:
+# no float, a format that does not add up, accepted).
+if [ "$CPP_ONLY" -eq 0 ]; then
+    echo ""
+    echo "==> float format (asmcomp)"
+    neg_work="$SCRATCH/work_neg"
+    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short"; do
+        fixture="${fe%%|*}"; expect="${fe#*|}"; name="asm:$fixture"
+        rm -rf "$neg_work"; mkdir -p "$neg_work"
+        cp "$CMM_ROOT/NegTests/$fixture.cmm" "$neg_work/"
+        if ! "$CMMCOMP" -o "$neg_work/p" "$neg_work/$fixture.cmm" >/dev/null 2>&1; then
+            echo "FAIL ($name): cmmcomp rejected it, the check is asmcomp's"
+            fail=$((fail+1)); failed_names+=("$name"); continue
+        fi
+        out="$("$ASMCOMP" "$neg_work/p/$fixture.asm" 2>&1)"
+        rc=$?
+        if [ "$rc" -eq 0 ]; then
+            echo "FAIL ($name): asmcomp accepted it"
+            fail=$((fail+1)); failed_names+=("$name")
+        elif [ "$rc" -ge 128 ] || ! printf '%s' "$out" | grep -qF "$expect"; then
+            echo "FAIL ($name): exit $rc, missing '$expect'"
+            fail=$((fail+1)); failed_names+=("$name")
+        elif [ -e "$neg_work/p/$fixture.v" ]; then
+            echo "FAIL ($name): refused, but the .v was written"
+            fail=$((fail+1)); failed_names+=("$name")
+        else
+            echo "PASS ($name): refused (exit $rc) -- \"$expect\""
+            pass=$((pass+1))
+        fi
+    done
+    rm -rf "$neg_work"
+fi
+
 # ---- 4c. CPP negative phase (error reporting) ------------------------------
 # The same for cppcomp: Compilers/CPPComp/NegTests/manifest.txt, format
 # <fixture.cpp>|<expected substring>.

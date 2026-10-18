@@ -124,6 +124,26 @@ canonical zero; F2I → saturate. Cheap (a compare on the wide exponent sum, as
 `ula_scl` already does). Without this, "more exponent bits" only moves the
 cliff; with a short `NBEXPO` (the 16-bit fixtures use 5) the cliff is close.
 
+**Done** as `#FROUND 1`. The format guard that went with it (TODO item 3) is
+asmcomp's, closed 2026-10-18: `eval_fp_check` stops on `NUBITS !=
+NBMANT+NBEXPO+1` and on `NBMANT >= 2^(NBEXPO-1)` (with no hidden bit 1.0 is
+2^(NBMANT-1) x 2^-(NBMANT-1), and that exponent has to fit), but only when the
+program uses float: a float opcode in the final assembly (checked in
+`eval_finish`, before the `.v` is written) or a float word in data memory
+(checked by `f2mf`). A processor without float takes any NBMANT/NBEXPO: a
+16-bit integer program with the defaults 23/8 was refused before.
+
+Measured before choosing asmcomp over a guard in the HDL: an integer-only
+processor elaborated with the formats 10/5, 23/8, 40/20 and 3/2 under a 16-bit
+word gives the same simulation (Icarus) and elaborates in Verilator. Outside
+the float `generate` blocks NBMANT/NBEXPO size only three unused wires
+(`ula.v`, `e_out`, `dn_m_big/small`) and the waveform's float view
+(`YANC_SIM_VIS`), which selected fields out of the word (Icarus "@* found no
+sensitivities", Verilator `SELRANGE`). That view is now generated only when the
+format fills the word, and stays at zero otherwise. Fixtures: `cmm_nofloat`
+(accepted), `NegTests/fpfmt_sum.cmm` and `fpfmt_expo.cmm` (refused, regress
+step 4b2).
+
 ### 1.4 `I2F` uses only `NBMANT` bits (`TODO.md` item 2) and rounds nothing
 
 `ula.v:1195,1201` pass `in[NBMANT-1:0]`; `ula_i2f` (`ula.v:591-606`) negates and
@@ -213,7 +233,7 @@ Everything on the datapath is sized by `NUBITS`/`NBMANT`/`NBEXPO`
 | Combinational multiplier `MAN×MAN` | `ula.v:372` | fine for DSP blocks up to ~54 bits (several DSPs); check Fmax |
 | `NUGAIN` untyped parameter | `processor.v:129`, `core.v:490` | a 32-bit `integer`; `ula.v:966` declares it `signed [NUBITS-1:0]`. Type it in all three |
 | Three inconsistent default sets | `processor.v:115` NUBITS=16, `core.v:477` 32, `ula.v:963` 32; asmcomp `eval.c:37-39` 23/16/6; cmmcomp `diretivas.c:21-22` 16/6; cppcomp `config.h:15-22` 32/23/8 | harmless while every flow passes explicit values; unify anyway |
-| No invariant check in HDL | — | add `initial if (NUBITS != NBMANT+NBEXPO+1 \|\| NBMANT >= 2**(NBEXPO-1)) $error(...)` — `ula_fmlt` needs `e1+e2+MAN` representable |
+| ~~No invariant check in HDL~~ | — | **done 2026-10-18 in asmcomp instead** (`eval_fp_check`): both conditions, only when the program uses float; the HDL elaborates any format, see 1.3 |
 | Verilog `real` monitors | `ula.v:1400-1402`, `hdl.c:325,351,424` | exact only to 53 bits (see 1.9) |
 | `hdl.c:374,447` comp mirror header `{8'd nbmant, 8'd nbexpo, …}` | caps at 255 bits each — fine; `comp2gtkw.c:54-64` reads it |
 | `hdl.c:405` `real … = %f` with `mf2f()` | float-array initial values printed with 6 decimals from a host `float`; emit `sm*2.0**e` instead |
@@ -231,7 +251,7 @@ Everything on the datapath is sized by `NUBITS`/`NBMANT`/`NBEXPO`
 | every constant's encoded word stored as `int` | `variaveis.c:21,56-63,87,92-96` |
 | int-literal range check `(int)pow(2, nubits-1)` — exact at 32, garbage above | `array.c:48-53` |
 | float-literal range check in host `float` — saturates to ±inf once the target exceeds host range (nbexpo ≳ 9) | `array.c:76-78,168-169` |
-| the only format validation: `nubits != nbmant+nbexpo+1` — no maximum, no `NBMANT < 2^(NBEXPO-1)` | `eval.c:336` |
+| format validation (`eval_fp_check`, 2026-10-18): `nubits == nbmant+nbexpo+1` and `NBMANT < 2^(NBEXPO-1)`, when the program uses float; still no maximum | `eval.c` |
 | `nbopr = ceil(log2(...))` — fine; `NBITS_OPC 7` — fine | `eval.c:6,254` |
 | no exponent notation in `FLNUM` | `ASMComp.l:38`, `app.l:10` |
 

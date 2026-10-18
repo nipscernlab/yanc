@@ -67,8 +67,12 @@ void parse_lang_flag(int *argc, char **argv);
       "Error: #NUGAIN %d is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift (~12 LUT levels); anything else becomes a constant divider (38 to 70 levels, measured), the critical path of the whole ALU.\n")
 
 #define MSG_ERR_FP_INCONSISTENT \
-    M("Erro: inconsistência no ponto flutuante. Tem que ser NUBITS = NBMANT + NBEXPO + 1.\n", \
-      "Error: floating-point setup doesn't add up. You gotta have NUBITS = NBMANT + NBEXPO + 1.\n")
+    M("Erro: inconsistência no ponto flutuante. Tem que ser NUBITS = NBMANT + NBEXPO + 1 (NUBITS %d, NBMANT %d, NBEXPO %d somam %d). Um programa sem float não precisa de #NBMANT nem #NBEXPO.\n", \
+      "Error: floating-point setup doesn't add up. You gotta have NUBITS = NBMANT + NBEXPO + 1 (NUBITS %d, NBMANT %d, NBEXPO %d add up to %d). A program without float needs no #NBMANT or #NBEXPO.\n")
+
+#define MSG_ERR_FP_EXPO_SHORT \
+    M("Erro: o expoente é curto demais para a mantissa (NBMANT %d, NBEXPO %d). Tem que ser NBMANT < 2^(NBEXPO-1): sem bit escondido, 1.0 é 2^(NBMANT-1) x 2^-(NBMANT-1), e esse expoente precisa caber. Aumente NBEXPO ou diminua NBMANT.\n", \
+      "Error: the exponent is too short for the mantissa (NBMANT %d, NBEXPO %d). You need NBMANT < 2^(NBEXPO-1): with no hidden bit, 1.0 is 2^(NBMANT-1) x 2^-(NBMANT-1), and that exponent has to fit. Widen NBEXPO or narrow NBMANT.\n")
 
 #define MSG_ERR_IND_BASE_INT \
     M("Erro: %s %s: o operando de LDI/ILI/STI/ISI é o nome de um array ou um endereço base inteiro.\n", \

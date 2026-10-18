@@ -41,6 +41,7 @@ cmm_fround_mean 67
 cmm_hyper  123
 cmm_log    36
 cmm_names  83
+cmm_nofloat 21
 cmm_pow    118
 cmm_pplus  274
 cmm_reach  25

@@ -27,9 +27,12 @@ writes only what it changes. A C++ program says the same with
 | `#NDSTAC n` | worked out | the data stack depth | `ndstac` |
 | `#SDEPTH n` | worked out | the call stack depth | `sdepth` |
 
-- **`#NUBITS = #NBMANT + #NBEXPO + 1`** (the sign bit): the assembler stops
-  when they do not add up. The defaults give 32 = 23 + 8 + 1; a 16-bit
-  processor is, for example, `#NUBITS 16`, `#NBMANT 10`, `#NBEXPO 5`. YANC is
+- **`#NUBITS = #NBMANT + #NBEXPO + 1`** (the sign bit), **and `#NBMANT`
+  below `2^(#NBEXPO-1)`** (the exponent has to reach 1.0, which is
+  `2^(NBMANT-1) · 2^-(NBMANT-1)`): the assembler stops when either fails,
+  but only for a program that uses float. The defaults give 32 = 23 + 8 + 1;
+  a 16-bit processor with float is, for example, `#NUBITS 16`, `#NBMANT 10`,
+  `#NBEXPO 5`, and one without float needs only `#NUBITS 16`. YANC is
   maintained at 32 bits; narrower words work, wider ones are not supported.
 - **`#NUGAIN` must be a power of two.** `norm(x)` is `x / NUGAIN` in
   hardware: a power of two is a shift, any other value would be a divider

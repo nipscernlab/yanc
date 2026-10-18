@@ -483,6 +483,18 @@ void eval_opernd(char *va, int is_const)
 }
 
 // runs after the lexer
+// the float format has to fill the word, and the exponent has to reach the
+// mantissa's own scale: with no hidden bit, 1.0 is 2^(NBMANT-1) x 2^-(NBMANT-1),
+// and F_MLT forms e1 + e2 + NBMANT. NBMANT < 2^(NBEXPO-1) keeps both inside the
+// NBEXPO-bit exponent. Called by f2mf (a float word in data memory) and by
+// eval_finish (a float opcode); a program without float takes any NBMANT/NBEXPO
+void eval_fp_check()
+{
+    if (nubits != nbmant+nbexpo+1) {fprintf(stderr, MSG_ERR_FP_INCONSISTENT, nubits, nbmant, nbexpo, nbmant+nbexpo+1); exit(EXIT_FAILURE);}
+    if (nbexpo < 2 || (nbexpo <= 63 && nbmant >= (1LL << (nbexpo-1))))
+                                   {fprintf(stderr, MSG_ERR_FP_EXPO_SHORT, nbmant, nbexpo); exit(EXIT_FAILURE);}
+}
+
 void eval_finish()
 {
     if (div_left > 0) {fprintf(stderr, MSG_ERR_DIV_SEQ_END, div_op, div_rd); exit(EXIT_FAILURE);}
@@ -500,7 +512,9 @@ void eval_finish()
 
     // check floating-point consistency ---------------------------------------
 
-    if (nubits != nbmant+nbexpo+1) {fprintf(stderr, MSG_ERR_FP_INCONSISTENT); exit(EXIT_FAILURE);}
+    // the float format matters only to a program with float: a float opcode
+    // here (the final assembly), a float word in data memory (f2mf checked it)
+    if (opc_float()) eval_fp_check();
     if (fround < 0 || fround > 2)  {fprintf(stderr, MSG_ERR_FROUND_RANGE  ); exit(EXIT_FAILURE);}
 
     // norm() divides by NUGAIN in hardware (ula_nrm: in / NUGAIN). A power of

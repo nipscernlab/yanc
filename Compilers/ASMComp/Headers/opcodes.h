@@ -13,3 +13,4 @@ int   opc_out ();          // checks whether the OUT instruction is present
 int   opc_tom ();          // checks whether the TOM instruction is present (toma, docs/design/toma-and-cade.md)
 int   opc_cad ();          // checks whether the CAD instruction is present (cade)
 int   opc_cal ();          // checks whether the CAL instruction is present
+int   opc_float();         // checks whether any float opcode is present

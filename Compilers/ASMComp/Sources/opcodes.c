@@ -1056,3 +1056,13 @@ int opc_tom() {return  find_opc("TOM") != -1;}
 int opc_cad() {return  find_opc("CAD") != -1;}
 // checks whether the CAL instruction is present
 int opc_cal() {return  find_opc("CAL") != -1;}
+
+// checks whether any float opcode is present: every float mnemonic has F_ in
+// its name (F_, SF_, PF_ prefixes, I2F_M), plus I2F, F2I and the XPO family
+int opc_float()
+{
+	for (int i = 0; i < m_count; i++)
+		if (strstr(m_name[i], "F_") || strstr(m_name[i], "I2F") ||
+		    strstr(m_name[i], "F2I") || strstr(m_name[i], "XPO")) return 1;
+	return 0;
+}
