@@ -6,7 +6,8 @@ Does a float used as a condition (`if (x)`, `while (x)`, `!x`, `x && y`,
 - `gen.py` writes one C++ file, `fcond.cpp`, compiled both by the host g++
   (the reference: `host.h` turns `out()` into `printf`) and by cppcomp, and
   the same cases in C+- at `#FROUND` 0, 1 and 2 (no `?:` and no `bool` in
-  C+-; C+- refuses a float in `&&` and `||`, so those are C++ only).
+  C+-). Until TODO 33 is done, today's cmmcomp refuses a float in `&&` and
+  `||`, so its programs do not build ("BUILD FAILED"; run.sh goes on).
 - Every program runs at the three float formats the fixtures use, 32/23/8,
   16/10/5 and 23/16/6 (`FORMATS` in gen.py; `#pragma yanc` for C++, the
   directives for C+-): the widths are a per-program choice, so every fix
