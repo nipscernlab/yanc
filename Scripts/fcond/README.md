@@ -12,6 +12,9 @@ Does a float used as a condition (`if (x)`, `while (x)`, `!x`, `x && y`,
   16/10/5 and 23/16/6 (`FORMATS` in gen.py; `#pragma yanc` for C++, the
   directives for C+-): the widths are a per-program choice, so every fix
   must hold at each of them.
+- Complex conditions (C+- only: C++'s `std::complex` has no `bool`
+  conversion): `fcomp.c`, C99 on the host gcc, is the reference (true when
+  the real or the imaginary part is not zero), against `fcomp_<f>_l<n>.cmm`.
 - `run.sh` builds and simulates them; `compare.py` prints the cases that
   differ from g++ (`SHORT=1`: one line per run).
 

@@ -18,6 +18,9 @@ cd "$OUT" || exit 1
 # the reference: the same C++ file through the host compiler
 g++ -std=c++17 -include host.h -o host.exe fcond.cpp > host_build.log 2>&1 || { echo "host g++ failed"; cat host_build.log; exit 1; }
 ./host.exe > ref.txt
+# complex conditions: C99 on the host is the reference (C++ has no complex -> bool)
+gcc -std=c99 -o comp.exe fcomp.c > comp_build.log 2>&1 || { echo "host gcc (complex) failed"; cat comp_build.log; exit 1; }
+./comp.exe > ref_comp.txt
 
 sim() {   # $1 program name (folder written by the compiler)
     ( cd "$1" || exit 1
@@ -34,7 +37,7 @@ for f in fcond_*.cpp; do                 # C++, one per float format
     "$BIN/cppcomp.exe" -o "$p" "$f" > "build_$p.log" 2>&1 || { echo "BUILD FAILED: cppcomp $f: $(tail -1 "build_$p.log")"; continue; }
     sim "$p"
 done
-for f in fcond_*_l?.cmm; do              # C+-, per format and #FROUND level
+for f in fcond_*_l?.cmm fcomp_*_l?.cmm; do   # C+-, per format and #FROUND level
     p=${f%.cmm}; rm -rf "$p"
     "$BIN/cmmcomp.exe" -o "$p" "$f" > "build_$p.log" 2>&1 || { echo "BUILD FAILED: cmmcomp $f: $(grep -v -e "Heads up" -e "Info:" "build_$p.log" | tail -1)"; continue; }
     sim "$p"
