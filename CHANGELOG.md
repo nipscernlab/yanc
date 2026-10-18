@@ -8,6 +8,14 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v8.0] – 2026-10-18
+
+A faster processor and C's answer for a float condition. **Breaks a
+hand-written `.asm` with a division** (now five words for `DIV`/`MOD`, four
+for `F_DIV`; asmcomp names what is missing), and `SAPHO/` and asmcomp must
+come from the same release, as in v6.0. Programs in C+- and C++ need no
+change.
+
 ### Changed
 - **`sapho_all` from 21.8 to 32.4 MHz on the DE10-Nano (+48 %, mean of three
   seeds) and from 23.5 to 37.3 MHz on the ZYBO (+58 %), the same area.** The
