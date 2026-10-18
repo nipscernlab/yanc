@@ -22,7 +22,8 @@ measured, the link costs no clock).
 and the float/comp condition fix; breaks a hand-written `.asm` with a
 division (5/4 words). Assets yanc-bin-v8.0.zip, yanc-bin-linux-v8.0.tar.gz,
 yanc-docs-v8.0.zip; the package example gives 55 in C+- and C++. AURORA
-still pins v7.1: the text to paste there is `C:	mpurora_yanc_v8.0.md`.
+told the same day (`C:	mpurora_yanc_v8.0.md`): nothing changes on its
+side; its developers get v8.0 at their next `npm start`.
 Next session: pick from the open items below.
 
 **Item 29 closed 2026-10-17 (in v8.0):** `sapho_all` 21.8 -> 32.4 MHz
