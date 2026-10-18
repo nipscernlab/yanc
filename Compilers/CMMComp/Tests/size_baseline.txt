@@ -37,6 +37,7 @@ cmm_forbottom 156
 cmm_fround0 202
 cmm_fround1 202
 cmm_fround2 202
+cmm_fround_mean 67
 cmm_hyper  123
 cmm_log    36
 cmm_names  83

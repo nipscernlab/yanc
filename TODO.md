@@ -22,7 +22,7 @@ measured, the link costs no clock).
 and the float/comp condition fix; breaks a hand-written `.asm` with a
 division (5/4 words). Assets yanc-bin-v8.0.zip, yanc-bin-linux-v8.0.tar.gz,
 yanc-docs-v8.0.zip; the package example gives 55 in C+- and C++. AURORA
-told the same day (`C:	mpurora_yanc_v8.0.md`): nothing changes on its
+told the same day (`C:\tmp\aurora_yanc_v8.0.md`): nothing changes on its
 side; its developers get v8.0 at their next `npm start`.
 Next session: pick from the open items below.
 
@@ -32,7 +32,7 @@ same area: dividers in 5/4 stages, every mux guided by the opcode
 parameters (no `x` left), `JIZ` and the `LDI`/`ILI` index before the float
 normaliser (asmcomp inserts the `NOP`), the tree leading-zero count, the
 decoder in the ALU's form (CHANGELOG [Unreleased], design note 4.4).
-AURORA's text for the release: `C:	mpurora_yanc_divseq.md`.
+AURORA's text for the release: `C:\tmp\aurora_yanc_divseq.md`.
 
 **Recorded, not to be implemented yet (Luciano, 2026-10-14):** item 28, the
 burst (a whole array through a port at one word a clock, stopping while the
@@ -87,32 +87,6 @@ bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
   [§1.8]
 
 ---
-
-## 2. Round to nearest, full-range `I2F`, saturating `F2I`
-
-**Status:** functionality landed; two verification/refinement leftovers ·
-**Area:** `SAPHO/ula.v` · **Evidence:** [§1.2](docs/design/precision-and-width-review.md#12-truncation-instead-of-rounding-todomd-item-2), [§1.4](docs/design/precision-and-width-review.md#14-i2f-uses-only-nbmant-bits-todomd-item-2-and-rounds-nothing)
-
-Done (commits `81f5f25`, `755b758`):
-- `#FROUND 2`: round to nearest even after normalisation, for `F_ADD`/`F_SU*`,
-  `F_MLT`, `F_DIV`, `I2F`. Verified by `cmm_fround2` (tie cases, sticky) and
-  by every C++ test (cppcomp always emits level 2); `I2F` matches host
-  `float` on the out-of-range cases.
-- `#FROUND >= 1`: `I2F` converts the whole `NUBITS` word (was: low `NBMANT`
-  bits, garbage beyond ±2^22); `F2I` saturates to `INT_MAX`/`INT_MIN` (was:
-  wrap).
-
-Left open:
-- (a) ~~`F_DIV` sticky is approximate~~ — closed by the explicit divider
-  array (item 8 step 4): the remainder gives the exact sticky.
-- (b) **"Unbiased on varying data" is only shown on the host.** The core was
-  checked with a constant addend (`cmm_fround2`, 1000 × 0.001), which is
-  correlated and drifts +78 ULP — exactly what IEEE `float` does on a PC.
-  A fixture accumulating varying data (e.g. a sine table) at level 2 should
-  show mean error ≈ 0 and size ~sqrt(N) ULP against a double reference, and
-  `delta_float` zero-mean on the waveform.
-
-**Done when:** (b) has its fixture.
 
 ## 3. Exponent overflow / underflow wraps silently
 

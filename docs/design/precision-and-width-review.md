@@ -87,6 +87,25 @@ remainder (`ula.v:414`), then round-to-nearest-even *after* normalisation,
 with carry-out handling (mantissa 1000…0, exponent+1). Do 1.1 first: rounding
 on top of a lost bit is still wrong by up to 1 ULP.
 
+**Done** as `#FROUND 2` (`81f5f25`, `755b758`). Unbiased on varying data,
+measured 2026-10-18 by the fixture `cmm_fround_mean`: 1024 additions of
+pseudo-random `r / 256` (16-bit xorshift) to an accumulator held in
+[2^20, 2^21), where each addition rounds away 6 bits. The error is computed
+exactly on the processor and printed every 32 additions; `model.py` in the
+fixture computes the same lines from the rounding definition, and every
+simulated line matched at both levels:
+
+| level | error after 1024 additions | along the way |
+|---|---|---|
+| `#FROUND 2` (nearest even) | -10 ULP | both signs, between -10.7 and +2.5 ULP |
+| `#FROUND 1` (truncation) | -490 ULP | always down, about -0.48 ULP per addition |
+
+A random walk of 1024 errors uniform in ±½ ULP has a standard deviation of
+√(1024/12) ≈ 9.2 ULP, so -10 ULP is about one deviation; truncation is the
+expected -½ ULP per step. The regress checks the golden against `model.py`
+(step 4a2b of `Scripts/regress.sh`), so the golden cannot be blessed from a
+wrong run.
+
 ### 1.3 Exponent overflow / underflow silently wraps (bug)
 
 Only `ula_scl` saturates (`ula.v:921-925`). Everywhere else the exponent is

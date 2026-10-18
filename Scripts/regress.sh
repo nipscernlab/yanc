@@ -1327,6 +1327,27 @@ if [ "$CPP_ONLY" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
     fi
 fi
 
+# ---- 4a2b. round to nearest on varying data -----------------------------------
+# cmm_fround_mean accumulates pseudo-random addends at #FROUND 2 (TODO item
+# 2(b)). Its sim golden is checked line by line against model.py, which rounds
+# by the definition (nearest, ties to even), so a wrong run cannot be blessed.
+# The golden holds several turns of the while (1); a turn is 32 lines.
+if [ "$CPP_ONLY" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
+    fm="$CMM_ROOT/Tests/cmm_fround_mean"
+    fm_want="$SCRATCH/fround_mean_model.txt"
+    python3 "$fm/model.py" 2 | tr -d '\r' > "$fm_want"
+    fm_lines=$(grep -c '' "$fm/golden_sim/output_0.txt")
+    fm_other=$(tr -d '\r' < "$fm/golden_sim/output_0.txt" \
+        | awk 'NR==FNR { m[FNR-1] = $0; n = FNR; next } $0 != m[(FNR-1) % n] { bad++ } END { print bad+0 }' "$fm_want" -)
+    if [ "$fm_lines" -gt 0 ] && [ "$fm_other" -eq 0 ]; then
+        echo "PASS (fround_mean-model): all $fm_lines golden lines = model.py 2 (final error $(tail -n 1 "$fm_want") / 64 ULP)"
+        pass=$((pass + 1))
+    else
+        echo "FAIL (fround_mean-model): $fm_other of $fm_lines golden lines differ from model.py 2"
+        fail=$((fail + 1)); failed_names+=("fround_mean-model")
+    fi
+fi
+
 # ---- 4a3. a float or a complex as a condition -------------------------------
 # Scripts/fcond: the same cases (if, while, for, do, !, &&, ||, ?:, bool) on
 # the host compiler, which gives C's answer, and on cppcomp and cmmcomp at

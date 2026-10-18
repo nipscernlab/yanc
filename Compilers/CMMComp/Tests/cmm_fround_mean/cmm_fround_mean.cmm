@@ -1,0 +1,49 @@
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+#FROUND 2
+// Round to nearest is unbiased on varying data (TODO item 2(b)). cmm_fround2
+// block 3 adds a constant, so it drops the same bits every step and drifts;
+// here the addends vary and the rounding errors should cancel.
+//
+// acc starts at 2^20 and adds 1024 pseudo-random x = r / 256, r a 16-bit
+// xorshift (7, 9, 8), so x has bits down to 2^-8 and acc stays in [2^20, 2^21),
+// where one ULP is 0.25: every addition drops the 6 low bits of r and rounds.
+// The exact sum is 2^20 + sum / 256, sum = the integer total of r. Every 32
+// additions fout() prints the accumulated error acc - exact in units of 2^-8
+// (64 units = 1 ULP). Each step of that difference is exact (both terms in the
+// same range, results representable), so the line is the true error.
+//
+// Expected: model.py in this folder computes every line from the definition of
+// round to nearest even (regress checks the golden against it). Level 2 ends at
+// a few hundred units, both signs along the way; truncation (#FROUND 1, model.py
+// 1) drifts one way to about -32000 (1024 steps x half an ULP).
+void main()
+{
+    float base = 1048576.0;       // 2^20
+    float s8   = 0.00390625;      // 2^-8
+    float acc, d, e;
+    int   r, sum, k, n;
+
+    while (1)
+    {
+        r = 1; sum = 0; acc = base;
+        for (k = 0; k < 32; k = k + 1)
+        {
+            for (n = 0; n < 32; n = n + 1)
+            {
+                r = r ^ ((r << 7) & 65535);
+                r = r ^ (r >> 9);
+                r = r ^ ((r << 8) & 65535);
+                acc = acc + r * s8;
+                sum = sum + r;
+            }
+            d = (acc - base) - (sum >> 16) * 256.0;
+            e = (d - (sum & 65535) * s8) * 256.0;
+            fout(0, e);
+        }
+    }
+}
