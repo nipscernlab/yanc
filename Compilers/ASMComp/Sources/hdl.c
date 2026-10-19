@@ -294,14 +294,14 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
         if (nuioin > 0) fprintf(f_veri, "\nalways @ (posedge clk) begin\n");
         for(int i=0; i<nuioin; i++)
             if (inn_used(i))
-                fprintf(f_veri, "   if (req_in == %d) in_sim_%d <= in;\n", (int)pow(2,i),i);
+                fprintf(f_veri, "   if (req_in[%d]) in_sim_%d <= in;\n", i,i);
         if (nuioin > 0) fprintf(f_veri, "end\n");
 
         if (nuioin > 0) fprintf(f_veri, "always @ (*) begin\n");
         for(int i=0; i<nuioin; i++)
         {
             if (inn_used(i))
-                fprintf(f_veri, "   req_in_sim_%d = req_in == %d;\n",  i, (int)pow(2,i));
+                fprintf(f_veri, "   req_in_sim_%d = req_in[%d];\n",  i, i);
             else printf(MSG_WARN_UNUSED_IN_PORT, i);
         }
         if (nuioin > 0) fprintf(f_veri, "end\n");
@@ -317,14 +317,14 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
         if (nuioou > 0) fprintf(f_veri, "\nalways @ (posedge clk) begin\n");
         for(int i=0;i<nuioou;i++)
             if (out_used(i))
-                fprintf(f_veri, "   if (out_en == %d) out_sig_%d <= out;\n", (int)pow(2,i),i);
+                fprintf(f_veri, "   if (out_en[%d]) out_sig_%d <= out;\n", i,i);
         if (nuioou > 0) fprintf(f_veri, "end\n");
 
         if (nuioou > 0) fprintf(f_veri, "always @ (*) begin\n");
         for(int i=0;i<nuioou;i++)
         {
             if (out_used(i))
-                fprintf(f_veri, "   out_en_sim_%d = out_en == %d;\n",     i, (int)pow(2,i));
+                fprintf(f_veri, "   out_en_sim_%d = out_en[%d];\n",     i, i);
             else printf(MSG_WARN_UNUSED_OUT_PORT, i);
         }
         if (nuioou > 0) fprintf(f_veri, "end\n\n");
@@ -735,7 +735,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
         fprintf(f_veri, "// decode input ports\n");
         fprintf(f_veri, "always @ (*) begin\n");
         // Default assignment so proc_io_in is driven on every path -- a bare
-        // `if (proc_req_in == N) proc_io_in = in_N;` with no else infers a latch
+        // `if (proc_req_in[N]) proc_io_in = in_N;` with no else infers a latch
         // under Verilator. The proc only samples `in` while req_in is asserted,
         // so the otherwise-0 value is never read: behaviour is unchanged.
         fprintf(f_veri, "    proc_io_in = 0;\n");
@@ -745,8 +745,10 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
         if (inn_used(i))
         {
             fprintf(f_veri, "    // port %d decoding\n", i);
-            fprintf(f_veri, "    if (proc_req_in == %d) proc_io_in = in_%d;\n", (int)pow(2,i),i);
-            fprintf(f_veri, "    req_in_%d = proc_req_in == %d;\n",                 i, (int)pow(2,i));
+            // the port's own bit of the one-hot req_in: `== 2^i` was an int
+            // and went negative at port 31 (2026-10-19, cmm_ioports)
+            fprintf(f_veri, "    if (proc_req_in[%d]) proc_io_in = in_%d;\n", i,i);
+            fprintf(f_veri, "    req_in_%d = proc_req_in[%d];\n",                 i, i);
         }
     }
     if (opc_inn()) fprintf(f_veri, "end\n\n");
@@ -763,7 +765,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
         if (inn_used(i))
         {
             fprintf(f_veri, "    // reading port %d\n", i);
-            fprintf(f_veri, "    if (data_in_%d != 0 && proc_req_in == %d) scan_result = $fscanf(data_in_%d, \"%%d\", in_%d);\n", i,(int)pow(2,i),i,i);
+            fprintf(f_veri, "    if (data_in_%d != 0 && proc_req_in[%d]) scan_result = $fscanf(data_in_%d, \"%%d\", in_%d);\n", i,i,i,i);
         }
     }
     if (opc_inn()) fprintf(f_veri, "end\n\n");
@@ -806,7 +808,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // Combinational with UNCONDITIONAL assignment to out_sig_N: the file-write
     // block below gates on out_en_N at posedge clk and reads out_sig_N at the
     // same instant, so what matters is that out_sig_N == proc_io_out exactly
-    // when out_en_N is high. The original form `if (proc_out_en == N) out_sig_N <= proc_io_out;`
+    // when out_en_N is high. The original form `if (proc_out_en[N]) out_sig_N <= proc_io_out;`
     // inferred a latch (no else) and used `<=` in combinational (COMBDLY).
     // Both Verilator warnings go away with the unconditional `=` form, and
     // the file output is unchanged because the gate is the same.
@@ -821,7 +823,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
         {
             fprintf(f_veri, "    // port %d decoding\n", i);
             fprintf(f_veri, "    out_sig_%d = proc_io_out;\n", i);
-            fprintf(f_veri, "    out_en_%d  = proc_out_en == %d;\n", i, (int)pow(2,i));
+            fprintf(f_veri, "    out_en_%d  = proc_out_en[%d];\n", i, i);
         }
     }
     if (opc_out()) fprintf(f_veri, "end\n\n");

@@ -1,0 +1,19 @@
+#NUBITS 16
+#NUIOIN 1
+#NUIOOU 32
+// A port number wider than the data address and the operand (2026-10-19).
+// Two variables and two constants: the data address has 2 bits, and with
+// about 14 instructions the operand had 4. Port 31 needs 5. The port number
+// came to io_ctrl cut to the data-address width (core.v), and asmcomp sized
+// the operand from the memories only: before the fix nothing came out on
+// ports 31 and 9 (out_en was x). Each input word must come out on port 31,
+// the next on port 9, three times each.
+void main()
+{
+    int k;
+    for (k = 0; k < 3; k = k + 1)
+    {
+        out(31, in(0));
+        out(9, in(0));
+    }
+}

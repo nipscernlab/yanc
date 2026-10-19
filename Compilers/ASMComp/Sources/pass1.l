@@ -30,8 +30,8 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#NBEXPO"  p1_direct( 4); // exponent width (bits)
 "#NDSTAC"  ;                // must be recognized to avoid an error
 "#SDEPTH"  ;                // same goes for everyone below
-"#NUIOIN"  ;
-"#NUIOOU"  ;
+"#NUIOIN"  p1_direct(29); // number of input ports: the operand must hold the highest
+"#NUIOOU"  p1_direct(29); // number of output ports: idem
 "#NUGAIN"  ;
 "#FFTSIZ"  ;
 "#LKSYNC"  ;                // #LKSYNC k: read by asmcomp (link k on the processor clock)

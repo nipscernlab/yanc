@@ -25,6 +25,19 @@ tags consumed by Aurora.
   exponent -(NBMANT-1), out of reach. Same rule: only with float.
 
 ### Fixed
+- **A port number wider than the data address was cut** (hardware and
+  asmcomp). `io_ctrl` took the port of `IN`/`OUT` from the operand cut to
+  the data-address width, so a program with few variables and more ports
+  lost the port number's top bits: `out_en` went `x` in simulation on every
+  `OUT`, and on a board `out(2, ...)` could land on port 0. asmcomp also
+  sized the operand field from the memories only, so a short program cut a
+  high port number in the instruction itself. Now `io_ctrl` reads the whole
+  operand and asmcomp widens it to hold the highest port or link number
+  (`max_io` in `app_log.txt`). The generated testbench compared `out_en`
+  and `req_in` with `2^k` as a C `int`, which went negative at port 31; it
+  tests the port's bit now. Found on 2026-10-19 by an 8-bit keyboard echo
+  with two variables and three output ports; fixture `cmm_ioports` (ports 31
+  and 9, nothing came out on either before).
 - **`F_SCL` (`ldexp`, used by `exp()`/`log()`) saturated a huge scale at the
   smallest exponent:** the exponent sum wrapped when k came near `INT_MAX`
   (exp of a huge x, whose k `F2I` saturates); the sum is one bit wider now.

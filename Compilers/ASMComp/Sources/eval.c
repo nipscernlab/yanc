@@ -374,9 +374,13 @@ void eval_init(int clk, int clk_n)
     lab_reg(); // register labels found in app_log.txt
 
     // determine the number of address bits for the operand (after the mnemonic)
-    // depends on whichever is larger, data or instruction memory ------------
+    // depends on whichever is larger, data or instruction memory, and has to
+    // hold the largest port or link number too (INN/OUT/TOM/CAD k): a program
+    // with few words and a high port had its port number cut ---------------
 
     nbopr = (n_ins > n_dat) ? ceil(log2(n_ins)) : ceil(log2(n_dat));
+    if (eval_get("app_log.txt","max_io", aux) == 1)
+        for (int m = atoi(aux); (m >> nbopr) != 0; ) nbopr++;
 
     // open the .mif files ----------------------------------------------------
 

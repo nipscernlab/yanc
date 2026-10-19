@@ -480,9 +480,16 @@ endmodule
 
 // I/O controller -------------------------------------------------------------
 
+// The port number is the instruction's operand, all NBOPER bits of it. It used
+// to come cut to the data-address width (MDATAW): a program with few
+// variables and more ports lost the port number's top bits (out_en went x in
+// simulation, out(2) could reach port 0 on a board). asmcomp sizes NBOPER to
+// hold the highest port; the operand is zero-extended here as well, so no
+// select falls outside it.
+
 module io_ctrl
 #(
-	parameter MDATAW = 8,
+	parameter NBOPER = 8,
 	parameter NBIOIN = 8,
 	parameter NBIOOU = 8,
 	parameter    INN = 0,
@@ -492,7 +499,7 @@ module io_ctrl
 )(
 	input                   clk, rst,
 	input                   req_in, out_en,
-	input      [MDATAW-1:0] addr,
+	input      [NBOPER-1:0] opnd,
 
 	output                  en_in,
 	output     [NBIOIN-1:0] addr_in,
@@ -500,6 +507,10 @@ module io_ctrl
 	output reg              en_out,
 	output reg [NBIOOU-1:0] addr_out
 );
+
+localparam AW = (NBOPER > NBIOIN) ? ((NBOPER > NBIOOU) ? NBOPER : NBIOOU)
+                                  : ((NBIOIN > NBIOOU) ? NBIOIN : NBIOOU);
+wire [AW-1:0] addr = opnd;                         // zero-extended when narrower
 
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : en_in_sel   assign en_in   = req_in;           end else begin : en_in_sel   assign en_in   =         1'b0  ; end endgenerate
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : addr_in_sel assign addr_in = addr[NBIOIN-1:0]; end else begin : addr_in_sel assign addr_in = {NBIOIN{1'b0}}; end endgenerate
@@ -1170,14 +1181,14 @@ endgenerate
 // I/O Control ----------------------------------------------------------------
 
 generate if ((INN | F_INN | P_INN | PF_INN | OUT) != 0) begin : io_ports
-io_ctrl #(.MDATAW(MDATAW),
+io_ctrl #(.NBOPER(NBOPER),
           .NBIOIN(NBIOIN),
           .NBIOOU(NBIOOU),
 		     .INN(   INN),
 		   .F_INN( F_INN),
 		   .P_INN( P_INN),
 		  .PF_INN(PF_INN)) io(clk, rst, id_req_in, id_out_en,
-                              if_operand[MDATAW-1:0],
+                              if_operand,
                               req_in, addr_in, out_en, addr_out);
 end else begin : io_ports
 assign req_in   = 1'b0;

@@ -91,6 +91,7 @@ static char  name_sh [512]; // name of the #SHARE variable currently being read
 
 static int   n_ins = 0;     // number of instructions
 static int   state = 0;     // scanner state
+static int   max_io = 0;    // the largest port or link number (an operand, #NUIOIN/#NUIOOU - 1)
 
 static FILE *f_log;         // app_log.txt
 
@@ -138,6 +139,13 @@ void p1_opcode(int next_state)
     if (state == 0) n_ins++;
 }
 
+// a port or link number: the operand field has to hold the largest one
+// (eval_init sizes NBOPER with it, and io_ctrl reads the port from it)
+static void io_num(int k)
+{
+    if (k > max_io) max_io = k;
+}
+
 // an operand
 void p1_opernd(char *va)
 {
@@ -162,8 +170,9 @@ void p1_opernd(char *va)
         case 17: var_add(name_arr,         tam_arr); state =  0; break; // its words
         case 18: var_add(va,1);             n_ins++; state =  0; break; // ALU operations
         case 19:                            n_ins++; state =  0; break; // jump operations
-        case 20:                            n_ins++; state =  0; break; // input operations
-        case 21:                            n_ins++; state =  0; break; // output operations
+        case 20: io_num(atoi(va));          n_ins++; state =  0; break; // input operations (INN, TOM, CAD: a port or link number)
+        case 21: io_num(atoi(va));          n_ins++; state =  0; break; // output operations
+        case 29: io_num(atoi(va) - 1);               state =  0; break; // #NUIOIN / #NUIOOU: the highest port
         case 22:                                     state = 23; break; // prepare constant offset
         case 23:                            n_ins++; state =  0; break; // instr with constant offset
         case 24: {                                                       // LEA <name>: target + synthetic addr-of constant
@@ -188,6 +197,7 @@ void p1_finish(void)
 {
     fprintf(f_log, "n_ins %d\n", n_ins  );
     fprintf(f_log, "n_dat %d\n", v_count);
+    fprintf(f_log, "max_io %d\n", max_io);
     fclose (f_log);
 
     // no minimum here: a program with 2 or fewer data words (a button-to-LED
