@@ -17,6 +17,19 @@ tags consumed by Aurora.
   three widths.
 
 ### Added
+- **`SAPHO/myKeyPS2.v`: a PS/2 keyboard read with `cade_sync(k)`.** The
+  block hands the program one character per key press, ready: Shift,
+  the `E0`/`F0` sequences and the table are in the hardware, `LAYOUT`
+  `"ABNT2"` (default) or `"US"`, Enter/Backspace/Tab/Esc as their ASCII codes;
+  releases, arrows, F-keys, the keypad and Caps Lock give nothing. A queue
+  of `DEPTH` characters (4), read through a register; a 1 ms timeout
+  forgets a frame cut in the middle. 233 logic elements and 92 registers
+  on a Cyclone IV E. Works with an 8-bit processor. Testbench
+  `Scripts/hw/tb_keyps2.v`; regress pass `KEYPS2` (C+- and C++ SAPHOs of
+  8 bits). From Dênis's keyboard project, whose program drops from 1,012
+  to 59 instructions with it.
+- **A manual chapter for the peripherals** (`docs/peripherals.md`): the
+  FIFOs (moved from "Several processors") and the keyboard.
 - **A self-checking testbench of the whole ALU** (`Scripts/hw/tb_ula.sh`,
   regress step 4a0): 42 operations in three formats at every `#FROUND`
   level, against references derived from what each operation means.

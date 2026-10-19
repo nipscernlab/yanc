@@ -980,6 +980,52 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
     fi
 
+    # ---- 3a2. project pass KEYPS2: SAPHO/myKeyPS2.v on whole processors ------
+    # One simulated keyboard drives two blocks: US on the C+- SAPHO kbd_cmm and
+    # ABNT2 on the C++ SAPHO kbd_cpp, both with an 8-bit word (a character
+    # needs no more), both echoing cade_sync(0) to port 0. The testbench checks
+    # the characters itself (Tests/KEYPS2/TopLevel/keyps2_tb.v). The block
+    # alone, every key and case: Scripts/hw/tb_keyps2.sh (step 4a0).
+    # docs/design/ps2-keyboard.md, docs/peripherals.md.
+
+    if [ "$NO_SIM" -eq 0 ]; then
+        proj="KEYPS2"
+        kd="$CMM_ROOT/Tests/$proj"
+        kt="$TMP_DIR/$proj"
+        rm -rf "$kt"; mkdir -p "$kt"
+        k_fail=0
+        if ! "$CMMCOMP" -o "$kt/kbd_cmm" "$kd/kbd_cmm.cmm" >/dev/null 2>&1 ||
+           ! "$ASMCOMP" -f 100 -c 1000 "$kt/kbd_cmm/kbd_cmm.asm" >/dev/null 2>&1; then
+            echo "FAIL ($proj): building kbd_cmm"; k_fail=1
+        elif ! "$CPPC" -o "$kt/kbd_cpp" "$kd/kbd_cpp.cpp" >/dev/null 2>&1 ||
+             ! "$ASMCOMP" -f 100 -c 1000 "$kt/kbd_cpp/kbd_cpp.asm" >/dev/null 2>&1; then
+            echo "FAIL ($proj): building kbd_cpp"; k_fail=1
+        else
+            for p in kbd_cmm kbd_cpp; do
+                cp "$kt/$p/${p}_data.mif" "$kt/$p/${p}_inst.mif" "$kt/$p/pc_${p}_mem.txt" "$kt/"
+            done
+            if ! "$IVERILOG" -s keyps2_tb -o "$kt/k.vvp" \
+                    "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                    "$HDL/core.v" "$HDL/ula.v" "$HDL/myKeyPS2.v" \
+                    "$kt/kbd_cmm/kbd_cmm.v" "$kt/kbd_cpp/kbd_cpp.v" \
+                    "$kd/TopLevel/keyps2_tb.v" >/dev/null 2>&1; then
+                echo "FAIL ($proj): iverilog exited non-zero"; k_fail=1
+            else
+                k_out=$(cd "$kt" && "$VVP" -n "$kt/k.vvp" 2>&1)
+                if [ "$(printf '%s\n' "$k_out" | grep -c ': ok$')" -ne 2 ]; then
+                    printf '%s\n' "$k_out" | grep "KEYPS2" | sed 's/^/    /'
+                    echo "FAIL ($proj): a processor did not echo the keys"; k_fail=1
+                fi
+            fi
+        fi
+        if [ $k_fail -eq 0 ]; then
+            echo "PASS ($proj)  [C+- (US) and C++ (ABNT2) SAPHOs, 8 bits, echo the keys through myKeyPS2]"
+            pass=$((pass + 1))
+        else
+            fail=$((fail + 1)); failed_names+=("$proj")
+        fi
+    fi
+
     # ---- 3b. directed reset pass: single-cycle rst mid-run ------------------
     # ResetCheck emits one deterministic burst then parks in while(1); its
     # custom tb (TopLevel/reset_tb.v) pulses rst across exactly one posedge
@@ -1293,11 +1339,12 @@ fi
 # operation number and checks every result against a reference derived in the
 # testbench, never blessed (TODO item 6(a)); Scripts/hw/tb_alu.sh does the same
 # for the shared shifter, the integer divider, F2I and the float comparison as
-# blocks, in four formats. Both at every #FROUND level.
+# blocks, in four formats. Both at every #FROUND level. Scripts/hw/tb_keyps2.sh
+# checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes).
 if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
     echo ""
-    echo "==> ALU unit testbenches"
-    for t in tb_ula tb_alu; do
+    echo "==> unit testbenches (ALU, keyboard)"
+    for t in tb_ula tb_alu tb_keyps2; do
         if t_out=$(bash "$ROOT/Scripts/hw/$t.sh" 2>&1); then
             echo "PASS ($t): $(printf '%s\n' "$t_out" | grep -c ': ok') configurations"
             pass=$((pass + 1))

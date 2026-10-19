@@ -932,6 +932,19 @@ cmmcomp stops with "Syntax error": `int a = 1, b;`, `int a, b = 1;`,
 **Done when** a declaration list takes an initializer on any of its names,
 local and global, int, float and comp, with a fixture.
 
+## 35. A PS/2 keyboard block read with `cade()`
+
+**Status:** implemented 2026-10-19 (`SAPHO/myKeyPS2.v`, testbench, regress
+pass `KEYPS2`, docs/peripherals.md); the board check is left · **Area:**
+`SAPHO/myKeyPS2.v` · **Evidence:** docs/design/ps2-keyboard.md
+
+From Dênis's keyboard + VGA project: a block that takes the PS/2 pins and
+hands the SAPHO a ready character over a `cade` link, `LAYOUT` US or ABNT2.
+A VGA block fed by `toma` is the next one, not designed yet.
+
+**Done when** Dênis runs it on the DE2-115 (both layouts if he has both
+keyboards; the ABNT2 punctuation positions are from memory, decision 3).
+
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
 - Keep long-running accumulators (phase, time base, counters) in **integer /

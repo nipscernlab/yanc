@@ -115,37 +115,7 @@ writes `x` to `toma_k.txt` in the output folder.
 
 ## FIFOs: `myFIFO` and `myDCFIFO`
 
-When a program produces a buffer of words for another (or for other logic),
-a FIFO between an output port and an input port lets the writer go on
-without waiting for each word to be taken. Both are in the `SAPHO/` folder.
+A FIFO between an output port and an input port lets a writer go on without
+waiting for each word to be taken. The two FIFO blocks, their ports and how
+to wire them are in [Peripherals](peripherals.md).
 
-- `myFIFO`: one clock. Ports `clk`, `sclr`, `data`, `wrreq`, `full`, `q`,
-  `rdreq`, `empty`, `almost_empty`, `usedw`; parameters `WORD`, `LENGTH`,
-  `ALMOST`. It holds `LENGTH - 1` words.
-- `myDCFIFO`: two clocks, ports in the style of the Quartus `dcfifo`:
-  `aclr`; `wrclk`, `data`, `wrreq`, `wrfull`, `wrusedw` on the writer's
-  side; `rdclk`, `rdreq`, `q`, `rdempty`, `rdalmost_empty`, `rdusedw` on the
-  reader's. It holds `LENGTH` words (a power of two); a word shows up on the
-  reader's side 2 to 3 reader cycles after it is written. Hold `aclr` for a
-  few cycles of the slower clock.
-
-In both, the word on `data` is stored in the cycle `wrreq` is 1, `q` shows
-the oldest word, and `rdreq` moves to the next. Wired to two SAPHOs (as the
-regress does in `Compilers/CMMComp/Tests/FIFO`):
-
-```verilog
-// writer: out() on port 0
-fifo_w W (.clk(clk_a), .rst(rst_a), .out(w_out), .out_en(w_en));
-myDCFIFO #(.WORD(16), .LENGTH(16)) D (.aclr(rst),
-    .wrclk(clk_a), .data(w_out), .wrreq(w_en[0]), .wrfull(full),
-    .rdclk(clk_b), .rdreq(r_req[0]), .rdempty(empty), .q(q));
-// reader: in(1) is the empty flag, in(0) takes the oldest word
-assign r_in = r_req[1] ? {15'd0, empty} : q;
-fifo_r R (.clk(clk_b), .rst(rst_b), .in(r_in), .req_in(r_req), .out(r_out), .out_en(r_en));
-```
-
-The reader waits with `while (in(1)) { x = 0; }` (C± has no empty
-statement, so the loop body does something harmless) and takes a word with
-`x = in(0);`.
-A writer that may outrun the reader reads the full flag the same way before
-each `out()`.

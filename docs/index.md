@@ -5,7 +5,7 @@ Verilog of a processor built for that program, its memories and a
 testbench. This manual covers installing YANC, the two languages, running
 the tools, simulating the result and putting several processors together.
 
-It describes YANC 7.1. The SAPHO manual (<https://nipscern.com/library/sapho>)
+It describes YANC 8.0. The SAPHO manual (<https://nipscern.com/library/sapho>)
 covers the processor and the AURORA IDE.
 
 ## Getting started
@@ -31,8 +31,14 @@ covers the processor and the AURORA IDE.
 
 ## Several processors
 
-- [Several processors](multiprocessor.md): the processor's pins, `toma` and `cade` over links, `myFIFO` and
-  `myDCFIFO`, interrupts.
+- [Several processors](multiprocessor.md): the processor's pins, `toma` and `cade` over links, FIFOs,
+  interrupts.
+
+## Peripherals
+
+- [Peripherals](peripherals.md): blocks beside the processor, wired in your
+  top level: the FIFOs `myFIFO` and `myDCFIFO`, the PS/2 keyboard
+  `myKeyPS2`.
 
 ## Simulating
 
@@ -75,6 +81,13 @@ directives
 library
 floating-point
 multiprocessor
+```
+
+```{toctree}
+:hidden:
+:caption: Peripherals
+
+peripherals
 ```
 
 ```{toctree}
