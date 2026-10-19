@@ -59,6 +59,7 @@ for cfg in "$@"; do
         fmlt)       run fmlt      F_MLT ;;
         fdiv)       run fdiv      F_DIV ;;
         fcmp)       run fcmp      F_LES F_GRE ;;
+        fscl)       run fscl      F_SCL ;;
         i2f)        run i2f       I2F ;;
         f2i)        run f2i       F2I ;;
         idiv)       run idiv      DIV MOD ;;
@@ -77,6 +78,6 @@ for cfg in "$@"; do
         all)        run all       $INT $FLT ;;
         all_nofdiv) run all_nofdiv $INT $FLT_NODIV ;;
         all_nodiv)  run all_nodiv $INT_NODIV $FLT_NODIV ;;
-        *) echo "unknown config: $cfg (fadd fmlt fdiv fcmp i2f f2i idiv div mod nrm shift shl shr srs imlt int int_nodiv flt flt_nodiv all all_nofdiv all_nodiv)"; exit 1 ;;
+        *) echo "unknown config: $cfg (fadd fmlt fdiv fcmp fscl i2f f2i idiv div mod nrm shift shl shr srs imlt int int_nodiv flt flt_nodiv all all_nofdiv all_nodiv)"; exit 1 ;;
     esac
 done

@@ -1288,6 +1288,27 @@ if command -v python3 >/dev/null 2>&1; then
     fi
 fi
 
+# ---- 4a0. the ALU against what each operation means ---------------------------
+# Scripts/hw/tb_ula.sh drives the whole ula (every opcode on) through each
+# operation number and checks every result against a reference derived in the
+# testbench, never blessed (TODO item 6(a)); Scripts/hw/tb_alu.sh does the same
+# for the shared shifter, the integer divider, F2I and the float comparison as
+# blocks, in four formats. Both at every #FROUND level.
+if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
+    echo ""
+    echo "==> ALU unit testbenches"
+    for t in tb_ula tb_alu; do
+        if t_out=$(bash "$ROOT/Scripts/hw/$t.sh" 2>&1); then
+            echo "PASS ($t): $(printf '%s\n' "$t_out" | grep -c ': ok') configurations"
+            pass=$((pass + 1))
+        else
+            echo "FAIL ($t):"
+            printf '%s\n' "$t_out" | grep -v ': ok' | head -12 | sed 's/^/    /'
+            fail=$((fail + 1)); failed_names+=("$t")
+        fi
+    done
+fi
+
 # ---- 4a. every SAPHO block ---------------------------------------------------
 # sapho_all is a program written to instantiate every optional block of the
 # processor. Its sim golden ran in the CMM phase; here: (1) the generated .v

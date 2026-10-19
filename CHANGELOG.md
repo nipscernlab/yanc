@@ -17,11 +17,23 @@ tags consumed by Aurora.
   three widths.
 
 ### Added
+- **A self-checking testbench of the whole ALU** (`Scripts/hw/tb_ula.sh`,
+  regress step 4a0): 42 operations in three formats at every `#FROUND`
+  level, against references derived from what each operation means.
 - **asmcomp refuses an exponent too short for the mantissa**,
   `NBMANT >= 2^(NBEXPO-1)` (12/3, say): with no hidden bit 1.0 needs the
   exponent -(NBMANT-1), out of reach. Same rule: only with float.
 
 ### Fixed
+- **`F_SCL` (`ldexp`, used by `exp()`/`log()`) saturated a huge scale at the
+  smallest exponent:** the exponent sum wrapped when k came near `INT_MAX`
+  (exp of a huge x, whose k `F2I` saturates); the sum is one bit wider now.
+  At `#FROUND` 1 and 2 a zero scaled came out with its exponent moved, so
+  `== 0.0` failed; it stays the canonical zero. Found by the new ALU
+  testbench. Cost on `sapho_all` (DE10-Nano, seed 1): 3,566 -> 3,554 ALMs,
+  33.10 -> 32.17 MHz, within one seed's spread; the critical path is still
+  `F_ADD` -> normaliser, `F_SCL` is not among the 10 worst (Yosys: the whole
+  ALU 7,638 / 8,425 LUT4 at levels 0 / 2, unchanged).
 - The waveform's float view of the ALU (`YANC_SIM_VIS` in `ula.v`) selected
   bits outside the word when the format did not fill it; it is generated only
   when the format fills the word.

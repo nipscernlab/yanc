@@ -1452,12 +1452,17 @@ endmodule
 // F_SCL - scale a float by a power of two: out = in2 * 2^in1 -----------------
 // in1 is a signed integer k; the exponent field gets k added to it (value =
 // mantissa*2^e), saturating to the EXP-bit range. The mantissa is unchanged, so
-// a normalized input stays normalized (no re-normalization needed).
+// a normalized input stays normalized (no re-normalization needed). The sum is
+// one bit wider than the word: k near INT_MAX must saturate up, not wrap to a
+// negative sum (exp() of a huge x, whose k F2I saturates). A zero stays the
+// canonical zero at FROUND >= 1, as F_NEG/F_SGN keep it: the float == is a
+// compare of the words.
 
 module ula_scl
 #(
-	parameter MAN = 23,
-	parameter EXP =  8
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0
 )(
 	 input  signed [MAN+EXP:0] in1,                 // k (signed integer)
 	 input         [MAN+EXP:0] in2,                 // x (normalized float)
@@ -1468,19 +1473,24 @@ wire                  s = in2[MAN+EXP      ];
 wire signed [EXP-1:0] e = in2[MAN+EXP-1:MAN];
 wire        [MAN-1:0] m = in2[MAN    -1:0  ];
 
-wire signed [MAN+EXP:0] esum = $signed(e) + in1;            // e + k (wide signed)
-localparam signed [MAN+EXP:0] EMAX =  (1 <<< (EXP-1)) - 1;  //  127 for EXP=8
-localparam signed [MAN+EXP:0] EMIN = -(1 <<< (EXP-1));      // -128 for EXP=8
+wire signed [MAN+EXP+1:0] esum = $signed(e) + in1;              // e + k (one bit wider than k)
+localparam signed [MAN+EXP+1:0] EMAX =  (1 <<< (EXP-1)) - 1;    //  127 for EXP=8
+localparam signed [MAN+EXP+1:0] EMIN = -(1 <<< (EXP-1));        // -128 for EXP=8
 wire signed [EXP-1:0] e_out = (esum > EMAX) ? EMAX[EXP-1:0] :
                               (esum < EMIN) ? EMIN[EXP-1:0] : esum[EXP-1:0];
+wire                  zero  = (FROUND != 0) & (m == {MAN{1'b0}}); // FROUND >= 1: zero stays canonical (+0)
 
-assign out = {s, e_out, m};
+assign out = (zero) ? {1'b0, EMIN[EXP-1:0], m} : {s, e_out, m};
 
 endmodule
 
 // XPO - base-2 exponent of a float as a signed int ---------------------------
 // value = mantissa_int * 2^e with mantissa_int in [2^(MAN-1),2^MAN) when
-// normalized, so floor(log2|x|) = e + (MAN-1). out is that integer (0 if x==0).
+// normalized, so floor(log2|x|) = e + (MAN-1). out is that integer, and 0 for
+// the all-zero word only. The zero the machine holds (zero mantissa, minimum
+// exponent) gives EMIN + MAN-1 (-106 at 32/23/8), the floor of the smallest
+// normal: "very small", which suits log(). A denormal (FROUND 0 only) is read
+// as if normalized: its leading zeros are not counted.
 
 module ula_xpo
 #(
@@ -1882,7 +1892,7 @@ generate if ((F_ROT) != 0) begin : op_frot ula_frot #(NBMANT,NBEXPO,G) my_frot(i
 
 wire signed [NUBITS-1:0] fscl;
 
-generate if ((F_SCL) != 0) begin : op_fscl ula_scl #(NBMANT,NBEXPO) my_scl(in1, in2, fscl); end else begin : op_fscl assign fscl = {NUBITS{1'b0}}; end endgenerate
+generate if ((F_SCL) != 0) begin : op_fscl ula_scl #(NBMANT,NBEXPO,FROUND) my_scl(in1, in2, fscl); end else begin : op_fscl assign fscl = {NUBITS{1'b0}}; end endgenerate
 
 wire signed [NUBITS-1:0] xpo;
 

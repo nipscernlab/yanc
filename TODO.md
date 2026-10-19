@@ -145,9 +145,25 @@ host `float` (e.g. 32/25/6), and at 16/10/5.
 
 ### 6(a). Self-checking ULA unit testbench
 
-**Status:** open · **Area:** `Scripts/hw/tb_alu.v`, `Scripts/regress.sh`
+**Status:** step 1 of 3 done (2026-10-19) · **Area:** `Scripts/hw/tb_ula.v`, `Scripts/hw/tb_alu.v`, `Scripts/regress.sh`
 
-A directed regress pass like `ResetCheck`: every float operator, including
+**Where it stands.** `Scripts/hw/tb_ula.v` drives the whole `ula` (every
+opcode on) through each operation number, in 16/10/5, 23/16/6 and 32/23/8 at
+the three levels, against references derived from what each operation means;
+regress step 4a0 runs it and `tb_alu.sh`.
+1. Done: the 42 operations that do not round (integer, logic, compare,
+   shifts, `F_SGN`/`F_NEG`/`F_ABS`/`F_PST` and `_M`, `F_LES`/`F_GRE`,
+   `F2I`, `NRM`, `F_SCL`, `XPO`). It found two `F_SCL` defects, fixed: a
+   huge k wrapped the exponent sum and saturated at the minimum, and a zero
+   came out non-canonical at levels 1/2. `XPO` of zero (EMIN+MAN-1) and of a
+   level-0 denormal (leading zeros not counted) are documented as defined.
+2. Left: the rounding operations (`F_ADD`, `F_SU1`/`F_SU2`, `F_MLT`, `I2F`,
+   `F_ROT`): bit-exact at levels 1/2 against the exact result truncated or
+   rounded to nearest even, an error bound at level 0 (the legacy datapath).
+3. Left: the divisions through their real sequence (`DIV`/`MOD`/`F_DIV`,
+   the `NOP`s, `QUO`/`REM`/`F_QUO`).
+
+The original plan: a directed regress pass like `ResetCheck`: every float operator, including
 `F_ROT`, `F_SGN`, `F_LES`/`F_GRE`, the `_M` variants, `I2F`/`F2I` at the
 range edges, and the integer operators at their signed edges, at `FROUND`
 0/1/2 and at 16/10/5 and 32/23/8, with the expected values derived in the
