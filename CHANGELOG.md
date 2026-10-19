@@ -8,6 +8,17 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v9.0] – 2026-10-19
+
+Peripherals: blocks in `SAPHO/` that sit beside a processor, with a manual
+chapter of their own. The first new one is a PS/2 keyboard read with
+`cade_sync(k)`; a VGA text screen fed by `toma` comes in v9.1. Also: an
+integer-only processor needs no float format, two `F_SCL` defects and a
+cut port number fixed, a self-checking testbench of the whole ALU.
+Programs in C+- and C++ need no change. A hand-written `.asm` may get a
+wider operand field (a high port number); `SAPHO/` and asmcomp must come
+from the same release.
+
 ### Changed
 - **A processor without float needs no float format.** asmcomp checks
   `NUBITS = NBMANT + NBEXPO + 1` only when the program uses float (a float
@@ -33,6 +44,11 @@ tags consumed by Aurora.
 - **A self-checking testbench of the whole ALU** (`Scripts/hw/tb_ula.sh`,
   regress step 4a0): 42 operations in three formats at every `#FROUND`
   level, against references derived from what each operation means.
+- **Round to nearest is shown unbiased on varying data** (fixture
+  `cmm_fround_mean`, TODO item 2 closed): 1,024 pseudo-random additions end
+  at -10 ULP (one standard deviation) at `#FROUND 2`, against -490 ULP
+  truncating; `model.py` in the fixture computes every line and the regress
+  checks the golden against it.
 - **asmcomp refuses an exponent too short for the mantissa**,
   `NBMANT >= 2^(NBEXPO-1)` (12/3, say): with no hidden bit 1.0 needs the
   exponent -(NBMANT-1), out of reach. Same rule: only with float.
