@@ -38,7 +38,7 @@ covers the processor and the AURORA IDE.
 
 - [Peripherals](peripherals.md): blocks beside the processor, wired in your
   top level: the FIFOs `myFIFO` and `myDCFIFO`, the PS/2 keyboard
-  `myKeyPS2`.
+  `myKeyPS2`, the VGA text screen `myVGAText`.
 
 ## Simulating
 
@@ -117,6 +117,7 @@ design/toma-and-cade-links
 design/toma-and-cade
 design/myfifo
 design/ps2-keyboard
+design/vga-text
 design/burst
 design/ip-protection
 design/asm-names

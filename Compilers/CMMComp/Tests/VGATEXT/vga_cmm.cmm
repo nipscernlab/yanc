@@ -1,0 +1,13 @@
+#NUBITS 8
+// The two peripherals on a C+- SAPHO with an 8-bit word: SAPHO/myKeyPS2.v on
+// link 0 (cade_sync) and SAPHO/myVGAText.v on link 1 (toma_sync). The program
+// clears the screen, writes the prompt "> " and echoes every key to the
+// screen. Built and run by the regress project pass VGATEXT
+// (TopLevel/vgatext_tb.v).
+void main()
+{
+    toma_sync(1, 128);
+    toma_sync(1, 62);
+    toma_sync(1, 32);
+    while (1) toma_sync(1, cade_sync(0));
+}

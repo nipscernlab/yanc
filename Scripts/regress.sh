@@ -1026,6 +1026,53 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
     fi
 
+    # ---- 3a3. project pass VGATEXT: myKeyPS2 and myVGAText on whole processors --
+    # One simulated keyboard drives two systems, each a SAPHO of 8 bits with a
+    # keyboard block (link 0, cade_sync) and a screen block (link 1,
+    # toma_sync), all on 25 MHz: the C+- vga_cmm (US) and the C++ vga_cpp
+    # (ABNT2), both echoing the keys to the screen. The testbench reads each
+    # screen memory and checks the text and the cursor itself
+    # (Tests/VGATEXT/TopLevel/vgatext_tb.v). The screen block alone:
+    # Scripts/hw/tb_vgatext.sh (step 4a0). docs/design/vga-text.md.
+
+    if [ "$NO_SIM" -eq 0 ]; then
+        proj="VGATEXT"
+        vd="$CMM_ROOT/Tests/$proj"
+        vt="$TMP_DIR/$proj"
+        rm -rf "$vt"; mkdir -p "$vt"
+        v_fail=0
+        if ! "$CMMCOMP" -o "$vt/vga_cmm" "$vd/vga_cmm.cmm" >/dev/null 2>&1 ||
+           ! "$ASMCOMP" -f 25 -c 1000 "$vt/vga_cmm/vga_cmm.asm" >/dev/null 2>&1; then
+            echo "FAIL ($proj): building vga_cmm"; v_fail=1
+        elif ! "$CPPC" -o "$vt/vga_cpp" "$vd/vga_cpp.cpp" >/dev/null 2>&1 ||
+             ! "$ASMCOMP" -f 25 -c 1000 "$vt/vga_cpp/vga_cpp.asm" >/dev/null 2>&1; then
+            echo "FAIL ($proj): building vga_cpp"; v_fail=1
+        else
+            for p in vga_cmm vga_cpp; do
+                cp "$vt/$p/${p}_data.mif" "$vt/$p/${p}_inst.mif" "$vt/$p/pc_${p}_mem.txt" "$vt/"
+            done
+            if ! "$IVERILOG" -g2012 -s vgatext_tb -o "$vt/v.vvp" \
+                    "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                    "$HDL/core.v" "$HDL/ula.v" "$HDL/myKeyPS2.v" "$HDL/myVGAText.v" \
+                    "$vt/vga_cmm/vga_cmm.v" "$vt/vga_cpp/vga_cpp.v" \
+                    "$vd/TopLevel/vgatext_tb.v" >/dev/null 2>&1; then
+                echo "FAIL ($proj): iverilog exited non-zero"; v_fail=1
+            else
+                v_out=$(cd "$vt" && "$VVP" -n "$vt/v.vvp" 2>&1)
+                if [ "$(printf '%s\n' "$v_out" | grep -c ': ok$')" -ne 2 ]; then
+                    printf '%s\n' "$v_out" | grep "VGATEXT\|screen\|cursor" | sed 's/^/    /'
+                    echo "FAIL ($proj): a system did not show the keys"; v_fail=1
+                fi
+            fi
+        fi
+        if [ $v_fail -eq 0 ]; then
+            echo "PASS ($proj)  [C+- (US) and C++ (ABNT2) SAPHOs, 8 bits: keyboard -> SAPHO -> screen]"
+            pass=$((pass + 1))
+        else
+            fail=$((fail + 1)); failed_names+=("$proj")
+        fi
+    fi
+
     # ---- 3b. directed reset pass: single-cycle rst mid-run ------------------
     # ResetCheck emits one deterministic burst then parks in while(1); its
     # custom tb (TopLevel/reset_tb.v) pulses rst across exactly one posedge
@@ -1340,12 +1387,14 @@ fi
 # testbench, never blessed (TODO item 6(a)); Scripts/hw/tb_alu.sh does the same
 # for the shared shifter, the integer divider, F2I and the float comparison as
 # blocks, in four formats. Both at every #FROUND level. Scripts/hw/tb_keyps2.sh
-# checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes).
+# checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes);
+# Scripts/hw/tb_vgatext.sh 8, SAPHO/myVGAText.v alone with an 8-bit word.
 if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
     echo ""
-    echo "==> unit testbenches (ALU, keyboard)"
-    for t in tb_ula tb_alu tb_keyps2; do
-        if t_out=$(bash "$ROOT/Scripts/hw/$t.sh" 2>&1); then
+    echo "==> unit testbenches (ALU, keyboard, screen)"
+    for t in tb_ula tb_alu tb_keyps2 tb_vgatext; do
+        t_arg=""; [ "$t" = tb_vgatext ] && t_arg=8          # one width: about 3 minutes each
+        if t_out=$(bash "$ROOT/Scripts/hw/$t.sh" $t_arg 2>&1); then
             echo "PASS ($t): $(printf '%s\n' "$t_out" | grep -c ': ok') configurations"
             pass=$((pass + 1))
         else

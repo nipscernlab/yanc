@@ -8,6 +8,22 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **`SAPHO/myVGAText.v`: a VGA text screen written with `toma_sync(k, w)`.**
+  640 x 480 at 60 Hz, 80 x 30 characters of 8 x 16, white on black, a
+  blinking underline cursor. Words 32-126 are characters; 10, 8 and 9 are
+  new line, erasing backspace and tab; 128 clears; 129 with a line and a
+  column places the cursor; a new line from the last line scrolls (a
+  top-line register, nothing copied). The block answers the `toma` only
+  when the word is carried out, so nothing is lost while it clears. One
+  clock, the 25 MHz pixel clock; one-bit outputs (`hs`, `vs`, `ativo`,
+  `pixel`) that each board maps to its converter. The font is Modern DOS
+  8x16 (CC0 1.0), ASCII only, inside the `.v`, written by
+  `Scripts/gen_vga_font.py`. 324 logic elements and 33,184 memory bits on
+  a Cyclone IV E; works with an 8-bit processor. Testbench
+  `Scripts/hw/tb_vgatext.v`; regress pass `VGATEXT` (C± and C++ SAPHOs of
+  8 bits with a keyboard and a screen). Manual: docs/peripherals.md.
+
 ## [v9.0] – 2026-10-19
 
 Peripherals: blocks in `SAPHO/` that sit beside a processor, with a manual

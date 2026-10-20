@@ -10,8 +10,7 @@ them and wire them to the processor's pins. Each one has a testbench under
 | `myFIFO` | a buffer of words, one clock | `out()` on one side, `in()` on the other |
 | `myDCFIFO` | a buffer of words between two clocks | `out()` on one side, `in()` on the other |
 | `myKeyPS2` | a PS/2 keyboard, characters ready | `cade_sync(k)` |
-
-A VGA text screen fed by `toma` is planned.
+| `myVGAText` | a VGA text screen, 80 x 30 characters | `toma_sync(k, w)` |
 
 ## FIFOs: `myFIFO` and `myDCFIFO`
 
@@ -118,7 +117,102 @@ block, but Quartus keeps memories this small in logic.
 runs the block on two SAPHOs with `#NUBITS 8` (`Compilers/CMMComp/Tests/KEYPS2`):
 a C± one on a US keyboard and a C++ one on an ABNT2 keyboard, both echoing
 `cade_sync(0)` to a port. In C++ the word width is `#pragma yanc nubits 8`.
+With the screen block, a whole keyboard-and-screen system fits in an 8-bit
+SAPHO too (regress pass `VGATEXT`).
 
 Checked by `Scripts/hw/tb_keyps2.v`: every key of both layouts with and
 without Shift, releases, extended keys, a bad parity, a cut frame, a full
 queue. Design and decisions: [design/ps2-keyboard.md](design/ps2-keyboard.md).
+
+## Screen: `myVGAText`
+
+A VGA text screen written with `toma()`: 640 x 480 at 60 Hz, 80 columns by
+30 lines of 8 x 16 characters, white on black, with a blinking underline
+cursor. The program sends one word at a time, and the block shows it.
+
+```c
+toma_sync(1, 'A');        // writes A at the cursor
+toma_sync(1, 128);        // clears the screen (the program waits until it is done)
+```
+
+**The words.**
+
+| words | effect |
+|---|---|
+| 32 to 126 | the character, at the cursor; the cursor advances (past column 79, the next line) |
+| 10 | column 0 of the next line |
+| 8 | the cursor back one column, a space written there; nothing at column 0 |
+| 9 | the next column that is a multiple of 8 |
+| 128 | clear: the whole screen blank, the cursor at line 0, column 0 |
+| 129, line, column | three words: the cursor at that line and column (out of range gives 0) |
+| anything else | ignored (130 to 255 are free for later commands) |
+
+A new line from the last line **scrolls** the screen up: the text moves one
+line up and the last line comes out blank. The block takes a word only when
+it can carry it out, and answers the `toma` only when it is done: one cycle
+for a character, 80 for a scroll, 2,400 for a clear. The program never waits
+on a port of its own, and no character is lost while the screen clears.
+
+A helper in C++, as the regress program `Tests/VGATEXT/vga_cpp.cpp` does:
+
+```cpp
+void escreve(const char *s) { while (*s) toma_sync(1, *s++); }
+void cursor(int linha, int coluna) { toma_sync(1, 129); toma_sync(1, linha); toma_sync(1, coluna); }
+```
+
+**Parameter.** `NUBITS` (32): the width of the word `toma()` sends, the
+program's `#NUBITS`; at least 8 (the commands fit in 8 bits).
+
+**Pins.**
+
+| pin | direction | connect to |
+|---|---|---|
+| `clk`, `rst` | in | the 25 MHz pixel clock, reset (active high; reset also clears the screen) |
+| `toma` | in | the processor's `toma_k` |
+| `dado` | in | the processor's `toma_dado` |
+| `valeu` | out | the processor's `valeu_k` |
+| `hs`, `vs` | out | the sync pulses, active low |
+| `ativo` | out | 1 in the visible 640 x 480 window |
+| `pixel` | out | 1 = lit |
+
+**The board.** The outputs are logic, the same on every board; the top of
+each board maps them to its converter. The DE2-115 (8 bits a colour, an
+ADV7123 converter):
+
+```verilog
+assign VGA_R = {8{pixel & ativo}};
+assign VGA_G = {8{pixel & ativo}};
+assign VGA_B = {8{pixel & ativo}};
+assign VGA_BLANK_N = ativo;
+assign VGA_SYNC_N  = 1'b0;
+assign VGA_CLK     = clk;            // the 25 MHz pixel clock
+assign VGA_HS = hs;
+assign VGA_VS = vs;
+```
+
+A board with a resistor converter (4 bits a colour, say) takes `{4{pixel &
+ativo}}` on each colour and only the sync pins.
+
+**Clock.** The block's clock is the 25 MHz pixel clock, from a PLL on the
+board. A processor on that same clock writes with `toma_sync(k, w)`; a
+processor on another clock writes with the plain `toma(k, w)`, whose link
+synchronizes the two clocks.
+
+**The font** is "Modern DOS" 8x16 by Jayvee Enaguas (CC0 1.0), the ASCII
+characters only, inside `myVGAText.v` itself: the block is one file, with no
+data file to point at. `Scripts/gen_vga_font.py` writes it from the original
+font file and says where that comes from.
+
+**Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115): 324 logic
+elements, 118 registers and 33,184 memory bits (the screen, 2,400 x 7 bits,
+and the font, 2,048 x 8, both in memory blocks). A whole system with an
+8-bit C± SAPHO, `myKeyPS2` and `myVGAText` takes 629 logic elements, with
+the clock at up to 97.8 MHz for the 25 MHz asked.
+
+Checked by `Scripts/hw/tb_vgatext.v`: the picture rebuilt from the output
+pins as a monitor would (the timing, a glyph against the font, the cursor
+blinking), every word and control code, the cursor command, a scroll, a
+clear and how long each holds the program. The regress pass `VGATEXT` runs
+a C± and a C++ SAPHO of 8 bits, each with a keyboard and a screen, echoing
+what a simulated keyboard types. Design and decisions:
+[design/vga-text.md](design/vga-text.md).

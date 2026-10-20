@@ -940,7 +940,7 @@ pass `KEYPS2`, docs/peripherals.md); the board check is left · **Area:**
 
 From Dênis's keyboard + VGA project: a block that takes the PS/2 pins and
 hands the SAPHO a ready character over a `cade` link, `LAYOUT` US or ABNT2.
-A VGA block fed by `toma` is the next one, not designed yet.
+The VGA block fed by `toma` is item 37.
 
 **Done when** Dênis runs it on the DE2-115 (both layouts if he has both
 keyboards; the ABNT2 punctuation positions are from memory, decision 3).
@@ -964,6 +964,35 @@ puts the same values straight into the data `.mif`.
 scalars) as initial data words, an initializer that is not a constant
 still runs as code, and a fixture shows the instruction count drop with the
 same simulation output.
+
+## 37. A VGA text screen written with `toma()`
+
+**Status:** implemented 2026-10-20 (`SAPHO/myVGAText.v`, testbench, regress
+pass `VGATEXT`, docs/peripherals.md); the board check is left · **Area:**
+`SAPHO/myVGAText.v`, `Scripts/gen_vga_font.py` · **Evidence:**
+docs/design/vga-text.md
+
+From Dênis's video, with Luciano's decisions: a `toma` link, command words
+(128 clear, 129 cursor), scrolling with a top-line register, erasing
+backspace, generic one-bit outputs, one 25 MHz clock, the Modern DOS font
+(CC0) inside the `.v`, a blinking underline cursor, monochrome.
+
+**Done when** it runs on the DE2-115 (Dênis, after roteiro 3), with the
+DE2-115 mapping of docs/peripherals.md.
+
+## 38. A tiny program's SAPHO memories are deeper than their `.mif`
+
+**Status:** seen 2026-10-20, not studied · **Area:** asmcomp (the `.mif`
+writers, `MDATAS`/`MINSTS`), `SAPHO/processor.v`
+
+Quartus 24.1, fitting an 8-bit C+- program of 11 instructions and 3 data
+words: "Critical Warning (127005): Memory depth (4) in the design file
+differs from memory depth (3) in the Memory Initialization File" (data)
+and "(16) ... (11)" (instructions); the rest is set to 0, so the processor
+works. A design should not leave critical warnings for a correct program.
+
+**Done when** the `.mif` files have as many words as the memories, or the
+memories as many as the files, with the reason written down.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
