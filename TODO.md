@@ -945,26 +945,6 @@ The VGA block fed by `toma` is item 37.
 **Done when** Dênis runs it on the DE2-115 (both layouts if he has both
 keyboards; the ABNT2 punctuation positions are from memory, decision 3).
 
-## 36. cppcomp fills initialized arrays with code instead of data
-
-**Status:** open, found 2026-10-19 (Luciano: record it) · **Area:**
-`Compilers/CPPComp/Sources/codegen.c` (global/static initializers, the
-string literals `__strN`), asmcomp's `#arrays` (an array initialized from a
-file, which C± already uses) · **Evidence:** Dênis's `nucleo.cpp`
-(docs/design/ps2-keyboard.md section 1)
-
-A global array with an initializer, and every string literal, is written at
-run time by three instructions per element (`LOD k`, `P_LOD value`,
-`STI array`), zeros included, although the data memory starts at zero.
-Dênis's keyboard program: two 132-entry tables and one string cost 819 of
-its 1,012 instructions (yanc 8.0, measured); "Digite:\n" alone is 27. C±
-puts the same values straight into the data `.mif`.
-
-**Done when** cppcomp emits constant initializers (arrays, string literals,
-scalars) as initial data words, an initializer that is not a constant
-still runs as code, and a fixture shows the instruction count drop with the
-same simulation output.
-
 ## 37. A VGA text screen written with `toma()`
 
 **Status:** implemented 2026-10-20 (`SAPHO/myVGAText.v`, testbench, regress

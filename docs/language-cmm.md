@@ -85,13 +85,28 @@ float table[64] "table.txt";      // initialised from a file
   inside a function (local to it). Only one variable per declaration can be
   initialised: `int a = 1;`, not `int a = 1, b = 2;`.
 - The size of an array is a number (or a `#define` name for one).
-- An array is initialised from a file only: the file's name in quotes after
-  the size. There is no `= {1, 2, 3}`. The file holds one value per line
-  (`int`, `float`, or `re+imi` for `comp`, as `1.5-2i`) and sits beside the
-  source. Fewer lines than the size is an error; more lines are ignored with
-  a warning. The values are loaded once, with the memory: a local array
-  initialised from a file keeps, from one call of its function to the next,
-  what the function wrote into it (like a C `static`; the compiler warns).
+- An array is initialised between braces, as in C, or from a file:
+
+  ```c
+  int   v[5]    = {3, -2, 7};             // v[3] and v[4] are 0
+  float g[3]    = {1.5, -0.25, 4};
+  comp  z[2]    = {1.5-2i, 3};
+  int   m[2][3] = {{1, 2}, {4, 5, 6}};    // or the six values without inner braces
+  int   t[256] "tabela.txt";             // one value per line, beside the source
+  ```
+
+  Between braces go constants (a minus sign in front is fine): only integers
+  in an `int` array, integers and floats in a `float` one, any of the three
+  in a `comp` one. Positions left out are zero; more values than positions
+  is an error. In a 2D array, inner braces mark the rows: every row in braces
+  or none. The file holds one value per line (`int`, `float`, or `re+imi` for
+  `comp`, as `1.5-2i`); fewer lines than the size is an error, more lines are
+  ignored with a warning.
+- Either way the values go straight into the data memory: no instruction
+  stores them, so they cost nothing at run time. They are loaded once, with
+  the memory, when the FPGA is configured: a local array keeps, from one call
+  of its function to the next, what the function wrote into it (like a C
+  `static`; the compiler warns), and a reset does not bring the values back.
 - `v[k]` reads or writes an element; `M[r][c]` an element of a matrix.
 - `v[k)` (a closing parenthesis) reads or writes the element at the
   **bit-reversed** index, the addressing an FFT needs (its width set by

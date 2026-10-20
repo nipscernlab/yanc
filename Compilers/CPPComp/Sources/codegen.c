@@ -3928,13 +3928,134 @@ static void emit_header(unit *u)
     emit("#FROUND 2");   // C++ always gets the most precise float datapath (round to nearest even)
 }
 
+// ---- constant data in the data memory (#arrayd) -----------------------------
+// A string literal, and a global `const` array whose initializer is made of
+// constants, go into the data memory's .mif as #arrayd <name> <type> <size>
+// <n> <values>: no code at main entry stores them (3 instructions a word, run
+// at every start). Only data the program cannot change: the .mif is loaded
+// when the FPGA is configured, not on reset, so a changed value would stay
+// changed after a reset (docs/design/cpp-iostream.md, the constant data).
+
+typedef struct { char **w; int n, cap; } cwords;     // word texts by index
+
+static void cw_put(cwords *c, int at, const char *txt)
+{
+    if (at >= c->cap) {
+        int nc = c->cap ? c->cap : 16; while (nc <= at) nc *= 2;
+        c->w = realloc(c->w, nc * sizeof(char *));
+        for (int i = c->cap; i < nc; i++) c->w[i] = NULL;
+        c->cap = nc;
+    }
+    free(c->w[at]); c->w[at] = strdup(txt);
+    if (at + 1 > c->n) c->n = at + 1;
+}
+
+static void cw_free(cwords *c) { for (int i = 0; i < c->cap; i++) free(c->w[i]); free(c->w); }
+
+// one scalar constant as the assembler reads it; 0 when it is not a constant
+static int const_word(expr *e, type *t, char *buf, size_t sz)
+{
+    if (!e || !t) return 0;
+    if (t->kind == TY_FLOAT) {
+        double v; int neg = 0;
+        expr *x = e;
+        if (x->kind == E_UNOP && x->op == OP_NEG) { neg = 1; x = x->a; }
+        long iv;
+        if (x->kind == E_FLOAT_LIT) v = x->fval;
+        else if (cfold(x, &iv))     v = (double)iv;
+        else return 0;
+        snprintf(buf, sz, "%.17g", neg ? -v : v);
+        if (!strpbrk(buf, ".eEn")) strncat(buf, ".0", sz - strlen(buf) - 1);
+        return 1;
+    }
+    if (t->kind != TY_INT) return 0;                  // a pointer, a class: by code
+    long v;
+    if (e->kind == E_INT_LIT && e->is_uns == 1) v = e->ival;   // cfold leaves unsigned literals out
+    else if (!cfold(e, &v)) return 0;
+    if (t->is_bool) v = (v != 0);
+    if (t->nbits) {                                   // int8_t, uint16_t...: the width a value wraps to
+        long m = (1L << t->nbits) - 1; v &= m;
+        if (!t->nbits_uns && (v >> (t->nbits - 1)) & 1) v -= (1L << t->nbits);
+    }
+    snprintf(buf, sz, "%ld", v);
+    return 1;
+}
+
+// the words of an initializer of type t placed at word `off`; 0 when any part
+// is not a constant (the whole array then keeps its code)
+static int const_initz(cwords *c, int off, type *t, initz *z)
+{
+    if (!z || !t) return 0;
+    if (t->kind == TY_ARRAY) {
+        type *b = t->base;
+        if (!z->is_list) {                            // char s[] = "..."
+            if (!(z->e && z->e->kind == E_STRING_LIT && b && b->kind == TY_INT)) return 0;
+            for (int k = 0; k < z->e->slen && k < t->arr_size; k++) {
+                char w[24]; snprintf(w, sizeof(w), "%d", (unsigned char)z->e->sval[k]);
+                cw_put(c, off + k, w);
+            }
+            return 1;
+        }
+        int esz = type_size_words(b), cursor = 0;
+        for (int k = 0; k < z->n; k++) {
+            int idx = cursor;
+            if (z->desigs[k].kind == DESIG_FIELD) return 0;
+            if (z->desigs[k].kind == DESIG_INDEX) idx = z->desigs[k].idx;
+            cursor = idx + 1;
+            if (idx < 0 || (t->arr_size > 0 && idx >= t->arr_size)) return 0;
+            if (!const_initz(c, off + idx * esz, b, z->items[k])) return 0;
+        }
+        return 1;
+    }
+    if (t->kind != TY_INT && t->kind != TY_FLOAT) return 0;
+    if (z->is_list) {                                 // {x} around a scalar
+        if (z->n != 1 || z->desigs[0].kind != DESIG_NONE) return 0;
+        return const_initz(c, off, t, z->items[0]);
+    }
+    infer_type(z->e);
+    char w[64];
+    if (!const_word(z->e, t, w, sizeof(w))) return 0;
+    cw_put(c, off, w);
+    return 1;
+}
+
+// #arrayd for the words of c; a hole (an index nobody gave) is a zero
+static void emit_arrayd(const char *name, int code, int size, cwords *c)
+{
+    const char *zero = (code == 2) ? "0.0" : "0";
+    size_t len = strlen(name) + 64;
+    for (int i = 0; i < c->n; i++) len += (c->w[i] ? strlen(c->w[i]) : 3) + 1;
+    char *line = malloc(len), *p = line;
+    p += sprintf(p, "#arrayd %s %d %d %d", name, code, size, c->n);
+    for (int i = 0; i < c->n; i++) p += sprintf(p, " %s", c->w[i] ? c->w[i] : zero);
+    emit("%s", line);
+    free(line);
+}
+
+static char *g_glob_data;     // per global: its value is in the .mif (#arrayd), no init code
+
 static void emit_global_arrays(unit *u)
 {
+    free(g_glob_data);
+    g_glob_data = calloc(u->n_globals + 1, 1);
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
         if (!d->dtype) continue;
         if (d->dtype->kind == TY_ARRAY) {
             int arr_words = type_size_words(d->dtype);
+            if (d->is_const && !d->init_file && (d->binit || d->init)) {
+                cwords c = {0};
+                initz one; memset(&one, 0, sizeof one); one.e = d->init;
+                int ok = const_initz(&c, 0, d->dtype, d->binit ? d->binit : &one);
+                int code = innermost_code(d->dtype);
+                if (ok && (code == 1 || code == 2)) {
+                    emit_arrayd(d->name, code, arr_words, &c);
+                    g_glob_data[i] = 1;
+                    cw_free(&c);
+                    continue;
+                }
+                cw_free(&c);
+            }
             if (d->init_file)
                 emit("#arrays %s %d %d \"%s\"", d->name, innermost_code(d->dtype), arr_words, d->init_file);
             else
@@ -3945,28 +4066,18 @@ static void emit_global_arrays(unit *u)
     }
 }
 
-// declare a global char array per string literal (1 word/char + NUL)
+// a global char array per string literal (1 word a char + NUL), its
+// characters in the data memory (#arrayd; the NUL is the zero after them)
 static void emit_string_arrays(void)
 {
-    for (int i = 0; i < strtab_n; i++)
-        emit("#array %s 1 %d", strtab[i].label, strtab[i].len + 1);
-}
-
-// fill each string array at main entry: byte-by-byte stores + NUL terminator
-static void emit_string_inits(void)
-{
     for (int i = 0; i < strtab_n; i++) {
+        cwords c = {0};
         for (int k = 0; k < strtab[i].len; k++) {
-            emit("LOD %d", k);
-            emit("PSH");
-            emit("LOD %d", (unsigned char)strtab[i].bytes[k]);
-            emit("STI %s", strtab[i].label);
+            char w[24]; snprintf(w, sizeof(w), "%d", (unsigned char)strtab[i].bytes[k]);
+            cw_put(&c, k, w);
         }
-        // NUL terminator at index len (memory defaults to 0, but be explicit)
-        emit("LOD %d", strtab[i].len);
-        emit("PSH");
-        emit("LOD 0");
-        emit("STI %s", strtab[i].label);
+        emit_arrayd(strtab[i].label, 1, strtab[i].len + 1, &c);
+        cw_free(&c);
     }
 }
 
@@ -3980,6 +4091,7 @@ static void emit_global_scalar_inits(unit *u)
         // show as that C++ source line in GTKWave (not -1/INTERNAL scaffolding).
         if (d->line > 0) cg_line = d->line;
         if (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT) {
+            if (g_glob_data && g_glob_data[i]) continue;   // in the .mif already (#arrayd)
             if      (d->binit) emit_initz(d->name, 0, d->dtype, d->binit);
             else if (d->init)  copy_to_block(d->name, d->init, type_size_words(d->dtype));
             continue;
@@ -4126,7 +4238,7 @@ static void emit_function(func *f, unit *u, int is_main)
             emit("#ENDLIVE");                                            // (asm_reach, asm_share.h)
         }
         emit_vtable_inits();                                             // fill class vtables
-        emit_string_inits(); emit_global_scalar_inits(u); emit_static_once_flags();
+        emit_global_scalar_inits(u); emit_static_once_flags();
     }
 
     gen_stmt(f->body);

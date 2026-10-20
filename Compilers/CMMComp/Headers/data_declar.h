@@ -17,6 +17,16 @@ void declar_var   (int id);                                          // variable
 void declar_arr_1d(int id_var , int id_arg,           int id_fname); // 1D array declaration
 void declar_arr_2d(int id_var , int id_x  , int id_y, int id_fname); // 2D array declaration
 
+// arrays initialized between braces, `int v[4] = {1, 2, 3};`: the grammar
+// hands each value over (ini_add: the token's v_table id, its kind 1 int /
+// 2 float / 3 comp, a leading minus) and marks the rows of a 2D list
+// (ini_row_open / ini_row_close); the declaration takes them all
+void ini_add      (int id, int kind, int neg);
+void ini_row_open (void);
+void ini_row_close(void);
+void declar_arr_1d_ini(int id_var, int id_arg);
+void declar_arr_2d_ini(int id_var, int id_x, int id_y);
+
 // Walker-time helpers used by the STMT_DECLAR_ARR_* walker cases in ast.c.
 // Emit only the `#array` directive(s) (plus arr_size LOD/SET for 2D). The
 // v_table is already populated by the parse-time half.

@@ -88,6 +88,16 @@ See [Text on the keyboard and the screen](#text-on-the-keyboard-and-the-screen).
 | `struct`, `class`, `union`, bitfields | as in C++ |
 | `auto` | for a local with an initializer, and in a range-for |
 
+**Constant data in the data memory.** A string literal, and a global
+`const` array whose initializer is made of constants (`const int t[4] = {1,
+2, 3};`, `const float k[] = {0.5f, -1.0f};`, `const char msg[] = "Oi";`),
+go straight into the data memory: no instruction stores them at the start
+of the program. Write a table that never changes as `const`: without it, a
+global array with an initializer is stored by code when `main` starts (3
+instructions a word), because the data memory is loaded once, when the FPGA
+is configured, and a value the program changed would stay changed after a
+reset. An array of classes or of pointers is always stored by code.
+
 `sizeof` counts words, not bytes: `sizeof(int) == sizeof(char) == 1`.
 `const` objects cannot be assigned; `constexpr` is read as `const`, and a
 `const int` with a constant value can size an array or be a template

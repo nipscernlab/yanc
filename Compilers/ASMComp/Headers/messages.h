@@ -187,6 +187,19 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: maior erro de aproximação, na parte imaginária, no arquivo '%s', é %.14f na linha %d\n", \
       "Info: largest approximation error, for imaginary part, in file '%s', is %.14f on line %d\n")
 
+// #arrayd: an array with its initial values on the line itself
+#define MSG_ERR_ARRD_COUNT \
+    M("Erro: o array '%s' tem %d posições e %d valores iniciais!\n", \
+      "Error: array '%s' has %d positions and %d initial values!\n")
+
+#define MSG_ERR_ARRD_INT \
+    M("Erro: o valor %d do array '%s' (%s) não cabe numa palavra de %d bits!\n", \
+      "Error: value %d of array '%s' (%s) does not fit a %d-bit word!\n")
+
+#define MSG_INFO_APPROX_ERR_ARRD \
+    M("Info: maior erro de aproximação nos valores do array '%s' é %.14f no valor %d\n", \
+      "Info: largest approximation error in the values of array '%s' is %.14f on value %d\n")
+
 #define MSG_INFO_ISA_USAGE \
     M("Info: usando %d%% do Assembly Instruction Set\n", \
       "Info: using %d%% of the Assembly Instruction Set\n")

@@ -344,6 +344,26 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: variável '%s' é int, mas recebe float.\n", \
       "Heads up on line %d: variable '%s' is int, but getting a float.\n")
 
+#define MSG_WARN_ARRAY_INI_LOCAL \
+    M("Atenção na linha %d: o array local '%s' recebe os valores entre chaves uma vez só, quando a memória é carregada; de uma chamada para outra ele guarda o que a função escreveu nele (como um static em C).\n", \
+      "Heads up on line %d: local array '%s' gets the values between braces only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).\n")
+
+#define MSG_ERR_ARRAY_INI_TYPE \
+    M("Erro na linha %d: o array '%s' é de %s e não recebe o valor %s entre chaves.\n", \
+      "Error on line %d: array '%s' holds %s and does not take the value %s between braces.\n")
+
+#define MSG_ERR_ARRAY_INI_COUNT \
+    M("Erro na linha %d: o array '%s' tem %d posições e a lista entre chaves vai até a posição %d.\n", \
+      "Error on line %d: array '%s' has %d positions and the list between braces reaches position %d.\n")
+
+#define MSG_ERR_ARRAY_INI_1D \
+    M("Erro na linha %d: o array '%s' tem uma dimensão; chaves dentro da lista só separam as linhas de um array 2D.\n", \
+      "Error on line %d: array '%s' has one dimension; braces inside the list only mark the rows of a 2D array.\n")
+
+#define MSG_ERR_ARRAY_INI_ROWS \
+    M("Erro na linha %d: no array '%s', as chaves de dentro separam as linhas de um array 2D: todas as linhas entre chaves, ou nenhuma, cada uma com até %d valores.\n", \
+      "Error on line %d: in array '%s', inner braces mark the rows of a 2D array: every row between braces, or none, each with up to %d values.\n")
+
 #define MSG_WARN_ARRAY_FILE_LOCAL \
     M("Atenção na linha %d: o array local '%s' é inicializado pelo arquivo %s uma vez só, quando a memória é carregada; de uma chamada para outra ele guarda o que a função escreveu nele (como um static em C).\n", \
       "Heads up on line %d: local array '%s' is initialized from file %s only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).\n")

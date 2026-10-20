@@ -67,6 +67,7 @@ char  va_name[64];      // stores the current variable name
 int  opc_idx;           // stores the current opcode index
 int  arr_typ;           // stores the array type
 int  arr_tam;           // stores the array size
+static char arrd_nm[128]; // #arrayd: the array's name
 char  sh_var[512];      // stores the name of the #SHARE being read
 
 // helper variables
@@ -483,6 +484,11 @@ void eval_opernd(char *va, int is_const)
         case 28: instr_ind     (va,is_const);           state =  0; break; // indirect load/store: array name or raw base
         case 29: instr_link    (va);                    state =  0; break; // TOM / CAD: the link number
         case 30: l_sync[link_num("#LKSYNC", va)] = 1;   state =  0; break; // #LKSYNC k: link k on my clock
+        case 31: instr_arr     (va); strcpy(arrd_nm,va); state = 32; break; // #arrayd: the name
+        case 32: arr_typ = atoi(va);                    state = 33; break; // #arrayd: the type
+        case 33: arr_tam = atoi(va);                    state = 34; break; // #arrayd: the size
+        case 34: state = arrd_start(arrd_nm, arr_tam, arr_typ, atoi(va), f_data) ? 35 : 0; break; // #arrayd: how many values
+        case 35: state = arrd_value(va, f_data)         ? 35 : 0; break; // #arrayd: one value
     }
 }
 

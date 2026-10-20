@@ -45,6 +45,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 "#array"   eval_direct(11);                         // regular array
 "#arrays"  eval_direct(14);                         // array with initialization file
+"#arrayd"  eval_direct(31);                         // array with its initial values on the line
 
 "#ITRAD"                  ;                         // interrupt address point
 "#TOAQUI"                 ;                         // #TOAQUI marker (consumed by the first pass; ignored here)

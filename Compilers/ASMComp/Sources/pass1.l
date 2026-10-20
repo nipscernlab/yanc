@@ -39,6 +39,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
 "#array"   p1_direct(11); // regular array
 "#arrays"  p1_direct(14); // array with initialization file
+"#arrayd"  p1_direct(31); // array with its initial values on the line
 
 "#ITRAD"   p1_itrad (  ); // interrupt address point
 "#TOAQUI"  p1_toaqui(  ); // #TOAQUI marker (PC compared against this address -> cheguei pin)

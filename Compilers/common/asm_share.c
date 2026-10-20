@@ -197,6 +197,24 @@ static int is_literal(const char *s)
 
 // ---- the pass -------------------------------------------------------------------
 
+// the next line of f, newline included, of any length (a #arrayd line carries
+// a whole array's initial values); NULL at the end. The caller frees it.
+static char *read_line(FILE *f)
+{
+    size_t cap = 256, len = 0;
+    char  *s   = malloc(cap);
+    int    c;
+    while ((c = fgetc(f)) != EOF)
+    {
+        if (len + 2 > cap) { cap *= 2; s = realloc(s, cap); }
+        s[len++] = (char)c;
+        if (c == '\n') break;
+    }
+    if (len == 0) { free(s); return NULL; }
+    s[len] = 0;
+    return s;
+}
+
 int asm_share(const char *asm_path)
 {
     // read the whole file, line by line ---------------------------------------
@@ -204,15 +222,15 @@ int asm_share(const char *asm_path)
     FILE *f = fopen(asm_path, "r");
     if (!f) return -1;
     strtab lines = {0};
-    char buf[4096];
-    while (fgets(buf, sizeof(buf), f))
+    char *buf;
+    while ((buf = read_line(f)))
     {
         if (lines.n == lines.cap)
         {
             lines.cap = lines.cap ? 2 * lines.cap : 1024;
             lines.s   = realloc(lines.s, lines.cap * sizeof(char *));
         }
-        lines.s[lines.n++] = strdup(buf);
+        lines.s[lines.n++] = buf;
     }
     fclose(f);
 
@@ -259,7 +277,7 @@ int asm_share(const char *asm_path)
         {
             TOK(t);
             if (strcmp(tok, "#ITRAD") == 0) itr = n;
-            if ((strcmp(tok, "#array") == 0 || strcmp(tok, "#arrays") == 0) && t + 1 < nt)
+            if ((strcmp(tok, "#array") == 0 || strcmp(tok, "#arrays") == 0 || strcmp(tok, "#arrayd") == 0) && t + 1 < nt)
             {
                 int ni = st_add(&names, TOK(t + 1));
                 if (ni >= pin_cap)
@@ -515,15 +533,15 @@ static int lab_add(strtab *labels, int **at, int *cap, const char *s)
 
 static void read_lines(FILE *f, strtab *t)
 {
-    char buf[4096];
-    while (fgets(buf, sizeof(buf), f))
+    char *buf;
+    while ((buf = read_line(f)))
     {
         if (t->n == t->cap)
         {
             t->cap = t->cap ? 2 * t->cap : 1024;
             t->s   = realloc(t->s, t->cap * sizeof(char *));
         }
-        t->s[t->n++] = strdup(buf);
+        t->s[t->n++] = buf;
     }
 }
 
@@ -619,7 +637,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
                 l->kind = RL_LKSYNC;                       // goes when no TOM/CAD on the link is kept
                 l->name = atoi(TOK(t + 1));
             }
-            else if ((strcmp(tok, "#array") == 0 || strcmp(tok, "#arrays") == 0) && t + 1 < nt)
+            else if ((strcmp(tok, "#array") == 0 || strcmp(tok, "#arrays") == 0 || strcmp(tok, "#arrayd") == 0) && t + 1 < nt)
             {
                 l->kind = RL_ARRAY;
                 l->name = st_add(&names, TOK(t + 1));

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include  <ctype.h>
 #include   <math.h>
+#include <limits.h>
 
 // local includes
 #include "../Headers/t2t.h"
@@ -290,6 +291,65 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
 // ----------------------------------------------------------------------------
 // array manipulation functions -----------------------------------------------
 // ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
+// #arrayd: the initial values on the directive's own line -------------------
+// ----------------------------------------------------------------------------
+// The compilers write it for an array initialized between braces (C+-) and
+// for constant data (C++ string literals and const arrays), so the values are
+// in the data memory's .mif instead of being stored by code at run time. The
+// words after the n given are zero, as in C.
+
+static char  arrd_name[128];
+static int   arrd_size, arrd_type, arrd_n, arrd_i, arrd_imax;
+static float arrd_dmax;
+static FILE *arrd_f;
+
+static void arrd_zero(void)                   // one zero word of the array's type
+{
+    if (arrd_type > 1) fprintf(arrd_f, "%s\n", itob(f2mf("0.0",NULL), nubits));
+    else               fprintf(arrd_f, "%s\n", itob(0,nubits));
+}
+
+static void arrd_end(void)
+{
+    for (int i = arrd_n; i < arrd_size; i++) arrd_zero();
+    if (arrd_type > 1 && arrd_dmax != 0.0) printf(MSG_INFO_APPROX_ERR_ARRD, arrd_name, arrd_dmax, arrd_imax);
+}
+
+int arrd_start(char *name, int size, int type, int n, FILE *f_data)
+{
+    snprintf(arrd_name, sizeof(arrd_name), "%s", name);
+    if (n > size) {fprintf(stderr, MSG_ERR_ARRD_COUNT, name, size, n); exit(EXIT_FAILURE);}
+    var_inc(size-1);
+    arrd_size = size; arrd_type = type; arrd_n = n; arrd_i = 0;
+    arrd_dmax = 0.0;  arrd_imax = 0;    arrd_f = f_data;
+    if (n == 0) { arrd_end(); return 0; }
+    return 1;
+}
+
+int arrd_value(char *va, FILE *f_data)
+{
+    arrd_i++;
+    if (arrd_type > 1)                        // float, or a part of a comp
+    {
+        float delta = 0.0;
+        unsigned int w = f2mf(va, &delta);
+        if (fabs(delta) > fabs(arrd_dmax)) {arrd_dmax = delta; arrd_imax = arrd_i;}
+        fprintf(f_data, "%s\n", itob(w, nubits));
+    }
+    else                                      // int: two's complement in NUBITS bits, or an
+    {                                         // unsigned value up to 2^NUBITS - 1 (a char 200 at 8 bits)
+        long long v   = atoll(va);
+        long long max = (nubits >= 63) ? LLONG_MAX : (1LL << nubits) - 1;
+        long long min = (nubits >= 63) ? LLONG_MIN : -(1LL << (nubits-1));
+        if (v > max || v < min) {fprintf(stderr, MSG_ERR_ARRD_INT, arrd_i, arrd_name, va, nubits); exit(EXIT_FAILURE);}
+        fprintf(f_data, "%s\n", itob((int)v, nubits));
+    }
+    if (arrd_i < arrd_n) return 1;
+    arrd_end();
+    return 0;
+}
 
 // adds an array to data memory
 // for a regular array (f_name = ""), fills with zeros

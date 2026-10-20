@@ -202,11 +202,25 @@ declar : TYPE id_list                               ';'
          // array declaration with file initialization
        | TYPE ID '[' INUM ']'              STRING   ';' {declar_arr_1d($2,$4,$6    );}
        | TYPE ID '[' INUM ']' '[' INUM ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
+         // array declaration initialized between braces, as in C (the values go to the .mif)
+       | TYPE ID '[' INUM ']'              '=' '{' ini_list '}' ';' {declar_arr_1d_ini($2,$4   );}
+       | TYPE ID '[' INUM ']' '[' INUM ']' '=' '{' ini_list '}' ';' {declar_arr_2d_ini($2,$4,$7);}
          // array declaration with Dirac-notation initialization (on demand)
        | TYPE ID '[' INUM ']' '#' '|' ID '|' ID BRA ';' {declar_Mv    ($2,$4,$8,$10);}
        | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2,$4,$7, $9);}
 
 id_list : IID | id_list ',' IID
+
+// the values between braces: constants, a row of a 2D array between inner braces
+ini_list : ini_item | ini_list ',' ini_item
+ini_item : ini_num
+         | '{' {ini_row_open();} ini_nums '}' {ini_row_close();}
+ini_nums : ini_num | ini_nums ',' ini_num
+ini_num  :     INUM {ini_add($1,1,0);}
+         |     FNUM {ini_add($1,2,0);}
+         |     CNUM {ini_add($1,3,0);}
+         | '-' INUM {ini_add($2,1,1);}
+         | '-' FNUM {ini_add($2,2,1);}
 
 IID    : ID                           {declar_var   ($1         );}
        | ID '[' INUM ']'              {declar_arr_1d($1,$3   ,-1);}

@@ -75,6 +75,10 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: how am I supposed to do bitwise ops with a complex number? You tripping?
 - Error on line <n>: how am I supposed to shift bits of a complex number? You tripping?
 - Error on line <n>: using comp to shift bits? You're a confused soul!
+- Error on line <n>: array '<name>' holds <name> and does not take the value <name> between braces.
+- Error on line <n>: array '<name>' has <n> positions and the list between braces reaches position <n>.
+- Error on line <n>: array '<name>' has one dimension; braces inside the list only mark the rows of a 2D array.
+- Error on line <n>: in array '<name>', inner braces mark the rows of a 2D array: every row between braces, or none, each with up to <n> values.
 - Error on line <n>: a return value in a void function? You tripping!
 - Error in function <name>: where's the return for this function?
 - Error on line <n>: where's the function return value?
@@ -105,6 +109,7 @@ value. What the common ones mean and how to get past them is in
 - Heads up on line <n>: comparing with a complex number? Gonna use the magnitude.
 - Heads up on line <n>: the second operand of the shift is a float. Now you're killin' me!
 - Heads up on line <n>: variable '<name>' is int, but getting a float.
+- Heads up on line <n>: local array '<name>' gets the values between braces only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
 - Heads up on line <n>: local array '<name>' is initialized from file <name> only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
 - Heads up on line <n>: variable '<name>' is float, but getting an int.
 - Heads up on line <n>: variable '<name>' is comp, but getting an int.
@@ -295,6 +300,8 @@ value. What the common ones mean and how to get past them is in
 - Error: imaginary part of line <n> of file '<name>' busts the upper limit of <x>!
 - Error: imaginary part of line <n> of file '<name>' is below the lower limit of <x>!
 - Error: you're <n> lines short in file '<name>'!
+- Error: array '<name>' has <n> positions and <n> initial values!
+- Error: value <n> of array '<name>' (<name>) does not fit a <n>-bit word!
 - Error: option '<name>' needs a value.
 - Error: unknown option '<name>'.
 - Error: the file '<name>' names the processor, and '<name>' <name>. Rename the file.
@@ -317,6 +324,7 @@ value. What the common ones mean and how to get past them is in
 - Info: largest approximation error in file '<name>' is <x> on line <n>
 - Info: largest approximation error, for real part, in file '<name>', is <x> on line <n>
 - Info: largest approximation error, for imaginary part, in file '<name>', is <x> on line <n>
+- Info: largest approximation error in the values of array '<name>' is <x> on value <n>
 - Info: using <n>% of the Assembly Instruction Set
 - Info: using <n>% of the ULA operations
 - Info: adding array handling

@@ -86,6 +86,7 @@ static void var_add(char *va, int size)
 // ----------------------------------------------------------------------------
 
 static int   tam_arr;       // array size
+static int   arrd_left;     // #arrayd: values still to come
 static char  name_arr[128]; // name of the array currently being read
 static char  name_sh [512]; // name of the #SHARE variable currently being read
 
@@ -168,6 +169,11 @@ void p1_opernd(char *va)
         case 15:                                     state = 16; break; // its data type (not needed here)
         case 16:          tam_arr =       atoi(va ); state = 17; break; // the file-initialized array's size
         case 17: var_add(name_arr,         tam_arr); state =  0; break; // its words
+        case 31: strcpy (name_arr,             va ); state = 32; break; // #arrayd: the name
+        case 32:                                     state = 33; break; // its data type (not needed here)
+        case 33: var_add(name_arr,        atoi(va)); state = 34; break; // its words
+        case 34: arrd_left = atoi(va);  state = arrd_left ? 35 : 0; break; // how many values follow
+        case 35: if (--arrd_left == 0)               state =  0; break; // a value (written by the second pass)
         case 18: var_add(va,1);             n_ins++; state =  0; break; // ALU operations
         case 19:                            n_ins++; state =  0; break; // jump operations
         case 20: io_num(atoi(va));          n_ins++; state =  0; break; // input operations (INN, TOM, CAD: a port or link number)

@@ -8,13 +8,37 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **C±: arrays initialized between braces, as in C.** `int v[5] = {3, -2,
+  7};`, `float g[3] = {1.5, -0.25, 4};`, `comp z[2] = {1.5-2i, 3};`, `int
+  m[2][3] = {{1, 2}, {4, 5, 6}};`. Constants only; positions left out are
+  zero. The values go straight into the data memory, like a file's
+  (`#arrays`): no instruction stores them, and a local array keeps its
+  values from one call to the next (the compiler warns). Fixture
+  `cmm_braces`. Manual: docs/language-cmm.md.
+- **asmcomp: `#arrayd <name> <type> <size> <n> <values>`**, an array with
+  its initial values on the directive's line (the rest zero), written by
+  both compilers.
+
 ### Changed
+- **C++: string literals and global `const` arrays go into the data
+  memory** instead of being stored by code when `main` starts (3
+  instructions a word). The `cin`/`cout` demonstration for the DE2-115:
+  1,672 -> 1,180 instructions. A global array without `const` is still
+  stored by code, so a reset brings its values back. Test test94. Manual:
+  docs/language-cpp.md ("Constant data in the data memory").
 - **`myVGAText` reads the `toma` word through a register.** The SAPHO puts
   the word straight out of its ALU, and decoding it in the same cycle made
   the SAPHO's longest path longer: a 32-bit C++ SAPHO with `<iostream>` on
   the DE2-115 went from 26.3 to 27.9 MHz (mean of three seeds), from 1.8 to
   about 4.2 ns of margin at 25 MHz. One cycle more per word; +33 registers
   at 32 bits, +9 at 8. Issue #6.
+
+### Fixed
+- **C++: `char s[] = "..."` (no size) got no words** and the copy of the
+  string ran past it; it now has the string's length plus the NUL.
+- **The shared assembly passes cut lines longer than 4,096 characters**;
+  they read lines of any length now (a long `#arrayd`).
 
 ## [v9.1] – 2026-10-20
 

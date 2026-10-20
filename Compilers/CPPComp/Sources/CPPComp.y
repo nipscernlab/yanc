@@ -1803,6 +1803,12 @@ init_declarator:
              at the top of init_declarator. */
           if (ts_typedef) msg_error(yylineno, "typedef cannot have an initializer");
           $$ = make_decl($<typ>5, $1, $2, $3.dims, $3.n, yylineno, $6);
+          /* `char s[] = "Oi";` takes the string's length and its NUL, as the
+             braced form takes its count: left at 0, the array got no words
+             and the copy of the string ran over whatever came after it */
+          if ($$->dtype && $$->dtype->kind == TY_ARRAY && $$->dtype->arr_size == 0 &&
+              $6 && $6->kind == E_STRING_LIT)
+              $$->dtype->arr_size = $6->slen + 1;
       }
     | pointers IDENT array_suffix '=' '{' '}' {
           /* empty brace init `T v[N] = {};` / `T v = {};` — value-init. Static

@@ -82,11 +82,49 @@ does that work itself.
   other C++ and C± program of the regress compiles to the same `.asm` as
   before (93 C++, 93 C±, compared one by one).
 
+## 3b. Constant data in the data memory (TODO item 36, 2026-10-20)
+
+Every string literal was written at the start of `main` by code, 3
+instructions a character (`LOD k`, `P_LOD c`, `STI __strN`): in the DE2-115
+demonstration for Dênis (`nucleo.cpp`, a `cin`/`cout` dialogue) 493 of its
+1,672 instructions. Luciano chose (2026-10-20) option 2 of four:
+
+1. string literals only;
+2. **string literals and global `const` arrays** with constant values
+   (taken);
+3. every initialized global array, as C±'s `#arrays`: a program that
+   changes such a table and is reset would not get the values back;
+4. option 2 plus the arrays the compiler proves are never written.
+
+The data memory's `.mif` is loaded when the FPGA is configured, not on
+reset, so only data the program cannot change goes there in C++: options 1
+and 2 change nothing a program does. asmcomp got a directive with the
+values on its own line, `#arrayd <name> <type> <size> <n> <v0> ...`
+(the words after the n given are zero); the `#arrays` file form would have
+made cppcomp write files into the user's folder. Measured: `nucleo.cpp`
+1,672 -> 1,180 instructions, the same screen in the board simulation.
+Found on the way: `char s[] = "..."` (no size) got no words at all (the
+parser deduced the size only from a braced list), so the string was copied
+over whatever came next; fixed, test94. And the shared asm passes read a
+line through a 4,096-byte buffer, which would have cut a long `#arrayd`
+line; they read lines of any length now.
+
+Luciano asked (2026-10-20) for the same directive in C±: `int v[4] = {1,
+2, 3};`, which C± did not have, now goes to the `.mif` too, with C±'s file
+semantics (loaded once; a local keeps its values between calls, with a
+warning). Fixture cmm_braces.
+
 ## 4. Tests
 
 - test92: the overload rules (hand-computed golden).
 - test93: a program that only writes, with `<cstdio>` and the string
   functions (hand-computed golden).
+- test94: `const` arrays and string literals in the data memory (int,
+  float, char from a string, 2D, designated, bool, unsigned, int8_t), a
+  non-const array still stored by code, `char s[] = "..."` sized (hand-
+  computed golden).
+- cmm_braces (C±): arrays between braces, 1D, 2D with and without inner
+  braces, float, comp, a local one (hand-computed golden).
 - Regress pass VGATEXT, system C: a 32-bit C++ SAPHO with `<iostream>` and
   `<cstring>` on a `myKeyPS2` and a `myVGAText` of its own; the keyboard
   types a name with a backspace and two numbers, and the bench reads the
