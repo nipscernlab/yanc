@@ -19,10 +19,32 @@ tags consumed by Aurora.
   clock, the 25 MHz pixel clock; one-bit outputs (`hs`, `vs`, `ativo`,
   `pixel`) that each board maps to its converter. The font is Modern DOS
   8x16 (CC0 1.0), ASCII only, inside the `.v`, written by
-  `Scripts/gen_vga_font.py`. 324 logic elements and 33,184 memory bits on
+  `Scripts/gen_vga_font.py`. 332 logic elements and 33,184 memory bits on
   a Cyclone IV E; works with an 8-bit processor. Testbench
   `Scripts/hw/tb_vgatext.v`; regress pass `VGATEXT` (C± and C++ SAPHOs of
   8 bits with a keyboard and a screen). Manual: docs/peripherals.md.
+- **`myKeyPS2`: Ctrl and `tem_tecla`.** Ctrl+A to Ctrl+Z give 1 to 26
+  (either Ctrl, Shift or not); Ctrl with any other key gives nothing. A new
+  output `tem_tecla`, 1 while a character waits, lets a program wired to an
+  input port ask "is there a key?" without blocking in `cade_sync`.
+- **One code table for the keyboard and the screen** (docs/peripherals.md):
+  0-127 ASCII, 128-159 screen commands, 160-255 the keyboard's special keys
+  (none delivered yet), which the screen always ignores.
+
+### Fixed
+- **`myKeyPS2`: `ps2_clk` filtered.** A slow or ringing edge on the
+  open-drain line could count as two edges and lose the frame; a new level
+  now counts after 8 cycles of `clk`.
+- **`myKeyPS2`: a reset of the block alone gave a phantom character** when
+  the program's C bit was 1. On reset T now takes C.
+- **`myVGAText`: the first word after reset could be lost.** A word offered
+  while the reset clears the screen (2,400 cycles) was answered without
+  being carried out; it now waits. On reset C takes the program's T, so the
+  block can also be reset alone.
+- **`myVGAText`: outputs reset** (syncs at 1, `ativo` and `pixel` at 0) and
+  the screen memory no longer read past its end in the blanking.
+- **DE2-115 mapping: `VGA_CLK = ~clk`** recommended in the manual, so the
+  converter latches in the middle of the pixel (not checked on the board).
 
 ## [v9.0] – 2026-10-19
 

@@ -97,6 +97,29 @@ project:
     Dênis gets it tested and explained step by step, and checks it on the
     board (Luciano).
 
+Added for v9.1, after an audit of the block (Luciano, 2026-10-20: "implement
+everything you suggested"; what was left for later is in GitHub issue #3):
+
+15. **`ps2_clk` is filtered**: the synchronized wire must hold a new level
+    for `FILT` = 8 cycles before it counts (320 ns at 25 MHz; the keyboard
+    holds each level 30 us at least). The lines are open drain with
+    pull-ups; a slow or ringing edge crossing the threshold twice made an
+    extra falling edge, one bit too many, the frame lost. Replaces the
+    plain edge detect of item 1 of the specification (Dênis's).
+16. **Ctrl gives control codes**: either Ctrl (left `14`, right `E0 14`)
+    held, a letter gives 1 to 26 (Ctrl+A = 1), Shift or not; Ctrl with any
+    other key gives nothing. Ctrl is the second state after Shift; still
+    nothing is sent back to the keyboard (decision 7).
+17. **On reset T takes the program's C** (`t <= cade`, nothing offered):
+    resetting the block alone while C = 1 made T != C at once, and the
+    program read a character nobody typed.
+18. **An output `tem_tecla`** = the queue is not empty, for an input port:
+    the program asks "is there a key?" without blocking in `cade_sync`.
+19. **The codes are shared with the screen**: 0-127 ASCII; 128-159 screen
+    commands, never from the keyboard; 160-255 for the keyboard's special
+    keys (arrows, F-keys, later; decision 6), which the screen always
+    ignores. Today the block gives 1-127 only.
+
 ## 3. Specification (as implemented)
 
 **File and module.** `SAPHO/myKeyPS2.v`, module `myKeyPS2` (name: Luciano), beside
@@ -104,7 +127,7 @@ project:
 
 **Parameters.** `NUBITS` (32): width of the word handed to `cade()`, the
 character zero-extended. `DEPTH` (4): characters the queue holds. `CLK_KHZ`
-(50000): the clock, only to size the frame timeout below.
+(25000): the clock, only to size the frame timeout below.
 
 **Pins.**
 
@@ -115,20 +138,25 @@ character zero-extended. `DEPTH` (4): characters the queue holds. `CLK_KHZ`
 | `taqui` | out | the SAPHO's `taqui_k` (the block's T bit) |
 | `dado` [NUBITS] | out | the SAPHO's `cade_dado_k` |
 | `cade` | in | the SAPHO's `cade_k` (the program's C bit) |
+| `tem_tecla` | out | optional, to an input port: 1 while the queue is not empty |
 
 **What the program writes.** `c = cade_sync(k);` (same clock, no
 synchronizer); plain `cade(k)` also works. The word is always a character:
 `a-z`, `A-Z` with Shift, `0-9`, the shifted digits but `^`, space, `- _ = +
-, < . >`, Enter = 10, Backspace = 8, Tab = 9, Esc = 27.
+, < . >`, Enter = 10, Backspace = 8, Tab = 9, Esc = 27, and 1-26 for
+Ctrl+letter (decision 16).
 
 **Inside, in order.**
-1. Two flip-flops on `ps2_clk`/`ps2_dat`, falling-edge detect (as Dênis).
+1. Two flip-flops on `ps2_clk`/`ps2_dat`; `ps2_clk` filtered (a level counts
+   after 8 cycles, decision 15) and its falling edge taken from the filtered
+   level.
 2. Receiver: 11-bit frame, start/parity/stop checked, a bad frame dropped
    (as Dênis). **New:** a timeout (no `ps2_clk` edge for about 1 ms
    restarts the bit count), so one lost bit cannot shift every later frame;
    Dênis's receiver has none.
 3. Decoder: remembers `F0` (next code is a release) and `E0` (next code is
-   extended), and the two Shift keys held. A release only clears Shift; an
+   extended), the two Shift keys and the two Ctrl keys held. A release only
+   clears Shift or Ctrl; an
    extended key, a keypad key, Caps Lock and every key outside the list
    give nothing. The `E0 F0 5A` case of section 1 is handled by keeping both
    flags.
@@ -137,12 +165,16 @@ synchronizer); plain `cade(k)` also works. The word is always a character:
    dropped.
 6. Link: while the queue is not empty and T == C (the last word was taken),
    put the oldest character on `dado` and flip T; when C flips back to T,
-   pop it. `dado` holds still while T != C.
+   pop it. `dado` holds still while T != C. On reset T takes C (decision 17).
 
 **Tests.** `Scripts/hw/tb_keyps2.v`: PS/2 frames in (bit timing as a
 keyboard), the link driven as `CAD` does, characters checked out: every key
 of the list with and without Shift, `E0` keys and the `E0 F0 5A` release,
-releases, a bad parity, a lost bit (timeout), a full queue. A regress pass
+releases, a bad parity, a lost bit (timeout), a full queue; since v9.1 also
+frames whose `ps2_clk` rings at both edges (glitches of 2 cycles), Ctrl
+(Ctrl+c = 3, Ctrl+Shift+a = 1, Ctrl+h = 8, Ctrl+1 and Ctrl+Enter nothing,
+right Ctrl `E0 14`), `tem_tecla` with the queue full and empty, and a reset
+of the block alone with C = 1. A regress pass
 runs it. Then a whole-processor case: a C+- and a C++ program that echo
 `cade_sync(0)` to `out(0)`, with the block in the testbench top. Board check
 on the DE2-115 with Dênis.
@@ -165,8 +197,18 @@ on the DE2-115 with Dênis.
   no `.sdc`), the worst path inside the SAPHO.
 - An 8-bit echo found a processor defect unrelated to the keyboard: the
   port number was cut to the data-address width (fixed in 849f5cc).
+- v9.1, mutation-checked (2026-10-20): with `FILT` = 1 (no filter) the
+  ringing frames decode wrong (5 errors); with the old reset (`t <= 0`) a
+  reset of the block alone hands the program a phantom character.
+- v9.1 refit of the DE2-115 system (2026-10-20, one seed): the block went
+  from 233 LEs / 92 registers to 294 / 99 (filter, Ctrl). With Ctrl written
+  as `k - 96` the worst path of the whole system became the table plus that
+  subtraction (frame -> ch, Fmax 88.0 MHz); taking the letter's low 5 bits
+  instead (`a` = 0x61) brought it to 100.4 MHz.
 
 ## 5. For the documentation (item 21 in TODO.md)
 
 Written: docs/peripherals.md (pins, parameters, the words `cade()` returns,
-the key list, wiring, the clock, the size, 8 bits).
+the key list, wiring, the clock, the size, 8 bits); v9.1: the code table
+shared with the screen, Ctrl, `tem_tecla` with its wiring, reset, the
+filter.

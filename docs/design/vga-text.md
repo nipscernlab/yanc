@@ -103,6 +103,35 @@ his code:
     changing the codes 0-131.
 11. **Name `SAPHO/myVGAText.v`**, module `myVGAText` (Luciano).
 
+Added for v9.1, after an audit of the block (Luciano, 2026-10-20: "implement
+everything you suggested"; what was left for later is in GitHub issue #4):
+
+12. **The code ranges, shared with the keyboard** (refines decision 2):
+    0-127 ASCII; 128-159 screen commands (128 clear, 129 cursor, 130-159
+    kept for later commands, ignored now); 160-255 the keyboard's special
+    keys, which the screen ignores for good. An echo loop stays correct
+    when the keyboard learns new keys.
+13. **The screen memory's read address is held at 0 outside the visible
+    window.** In the blanking the cell counters run to column 99 and line
+    32, and the address went up to 2,579 in a memory of 2,400: unspecified
+    on a synthesizer, `x` in simulation.
+14. **The outputs are reset**: `hs` and `vs` at 1 (inactive), `ativo` and
+    `pixel` at 0, and the two pipeline stages that feed them, so the
+    monitor sees no stray sync while the reset is held.
+15. **On reset C takes the program's T, and a word offered during the
+    reset's clear waits for it.** Before, C went to 0 and the end of the
+    clear flipped C whenever T != C: a word the program offered in the
+    first 2,400 cycles after a common reset was answered without being
+    carried out (lost). Now the clear ends without touching C when the
+    reset, not a word, asked for it (`fword`). Found in the audit,
+    beyond the list Luciano approved, as the same defect class as the
+    keyboard's decision 17.
+16. **On the DE2-115, `VGA_CLK = ~clk` is recommended** (refines decision
+    5): the ADV7123 latches on the rising edge, the block's outputs change
+    on the rising edge of `clk`; inverted, the converter samples in the
+    middle of the pixel. Not checked on the board, and not compared with
+    Terasic's demo; Dênis's project, not inverted, shows a picture.
+
 ## 3. Specification (approved 2026-10-20, as implemented)
 
 **Parameter.** `NUBITS` (32): width of the word `toma` sends (at least 8).
@@ -132,7 +161,8 @@ MHz clock) or `toma(k, w)` (another clock), one word at a time:
 | 0-31 others, 127 | ignored |
 | 128 | clear: 2,400 spaces, cursor at (0, 0), the top register at 0 |
 | 129, line, column | the cursor at that screen line and column; out of range gives 0 |
-| 130 to 255 | ignored (free for later commands) |
+| 130 to 159 | ignored (kept for later commands, decision 12) |
+| 160 to 255 | ignored for good (the keyboard's special keys) |
 
 "The next line" from the last screen line scrolls: the top register goes up
 by one (mod 30) and the line it frees is cleared (80 cycles).
@@ -175,7 +205,9 @@ bits writing text. Board check on the DE2-115 with Dênis.
   an `initial` block and read through a register, Quartus put it in two M9K
   blocks and the block fell to 324 LEs, 118 registers, 33,184 memory bits.
   A whole 8-bit system (C± SAPHO, `myKeyPS2`, `myVGAText`, PLL) on the
-  DE2-115: 629 LEs, Fmax 97.8 MHz for 25 MHz.
+  DE2-115: 629 LEs, Fmax 97.8 MHz for 25 MHz. After the v9.1 changes
+  (2026-10-20, one seed, `VGA_CLK = ~clk`): the block 332 LEs, 118
+  registers; the system 692 LEs, 100.4 MHz.
 - The screen memory is written through a register, one cycle after the
   block flips C: harmless for the SAPHO (the writes go in order, the
   program never reads the screen back); the testbench checks one cycle
@@ -183,10 +215,15 @@ bits writing text. Board check on the DE2-115 with Dênis.
 - Mutation-checked: the sync not delayed (1,916 errors), a scroll that does
   not clear the new line, a clear that releases the SAPHO at once, a
   backspace that writes another character: all four caught.
+- v9.1, mutation-checked (2026-10-20): without the hold at 0 the testbench
+  sees reads at 2,400 and up; with the old reset (C to 0, the clear ending
+  on `new_word`) the word offered during the reset's clear is lost.
 - Quartus warns, for a tiny program, that the SAPHO's memories are deeper
   than their `.mif` files (data 4 against 3 words, instructions 16 against
   11); the rest is set to 0. Seen here, not studied (TODO).
 
 ## 5. For the documentation (item 21 in TODO.md)
 
-Written: docs/peripherals.md, section "Screen: `myVGAText`".
+Written: docs/peripherals.md, section "Screen: `myVGAText`"; v9.1: the code
+table shared with the keyboard (section "Character codes"), reset, the
+inverted `VGA_CLK`.

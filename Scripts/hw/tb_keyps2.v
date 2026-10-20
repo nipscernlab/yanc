@@ -15,6 +15,12 @@
 // forgotten after the 1 ms timeout and the next one decodes; the keyboard's
 // power-on byte AA and an FA are ignored; a held key repeats; with the reader
 // stalled, the queue keeps the first DEPTH characters and drops the rest.
+// Added for v9.1: frames whose ps2_clk bounces at every edge (2-cycle
+// glitches, below the block's filter) decode as clean ones; Ctrl+letter gives
+// 1..26 with either Ctrl (left 14, right E0 14), Shift or not, and Ctrl with
+// a digit or Enter gives nothing; `tem_tecla` is 1 while a character waits
+// and 0 once the queue is drained; a reset of the block alone while the
+// program's C is 1 hands it no phantom character, and the link works after.
 //
 // Run:  iverilog -g2012 -s tb -Ptb.LAYOUT=\"ABNT2\" -o k.vvp Scripts/hw/tb_keyps2.v SAPHO/myKeyPS2.v && vvp -n k.vvp
 //       (Scripts/hw/tb_keyps2.sh runs both layouts at two clocks)
@@ -30,13 +36,13 @@ reg clk = 0, rst = 1;
 always #(500000.0 / CLK_KHZ) clk = ~clk;
 
 reg  ps2_clk = 1, ps2_dat = 1;
-wire taqui;
+wire taqui, tem;
 wire [31:0] dado;
 reg  c = 0;
 
 myKeyPS2 #(.LAYOUT(LAYOUT), .NUBITS(32), .DEPTH(DEPTH), .CLK_KHZ(CLK_KHZ))
 	dut (.clk(clk), .rst(rst), .ps2_clk(ps2_clk), .ps2_dat(ps2_dat),
-	     .taqui(taqui), .dado(dado), .cade(c));
+	     .taqui(taqui), .dado(dado), .cade(c), .tem_tecla(tem));
 
 // ---------------------------------------------------------------- keyboard --
 
@@ -56,6 +62,26 @@ task frame;                        // one byte; bad = 1 sends a wrong parity
 		end
 		ps2_dat = 1;
 		#(2 * HALF);                       // gap between bytes
+	end
+endtask
+
+localparam real GLITCH = 2.0e6 / CLK_KHZ;   // ns: 2 cycles of clk
+
+task bouncy;                       // one byte, ps2_clk bouncing at every edge
+	input [7:0] b;
+	reg  [10:0] f;
+	integer j;
+	begin
+		f = {1'b1, ~^b, b, 1'b0};
+		for (j = 0; j < 11; j = j + 1) begin
+			ps2_dat = f[j];
+			#(HALF) ps2_clk = 0;
+			#(GLITCH) ps2_clk = 1; #(GLITCH) ps2_clk = 0;    // ringing on the fall
+			#(HALF - 2*GLITCH) ps2_clk = 1;
+			#(GLITCH) ps2_clk = 0; #(GLITCH) ps2_clk = 1;    // and on the rise
+		end
+		ps2_dat = 1;
+		#(2 * HALF);
 	end
 endtask
 
@@ -222,9 +248,42 @@ initial begin
 		tap(letter[k % 26]);
 		if (k < DEPTH) want("a" + (k % 26));
 	end
+	if (tem !== 1'b1) begin errs = errs + 1; $display("  tem_tecla %b with the queue full, want 1", tem); end
 	@(posedge clk); run = 1;
 
 	tap(letter[24]); want("y");               // and the queue works after it
+
+	// ps2_clk bouncing at every edge: the filter keeps the frames whole
+	bouncy(letter[7]); bouncy(8'hF0); bouncy(letter[7]); want("h");
+	bouncy(letter[8]); bouncy(8'hF0); bouncy(letter[8]); want("i");
+
+	// Ctrl: letters give 1..26, Shift or not; other keys give nothing
+	press(8'h14);                             // left Ctrl
+	tap(letter[2]); want(8'd3);               // Ctrl+c
+	press(8'h12); tap(letter[0]); want(8'd1); solta(8'h12);   // Ctrl+Shift+a
+	tap(letter[7]); want(8'd8);               // Ctrl+h
+	tap(digit[0]);                            // Ctrl+1: nothing
+	tap(8'h5A);                               // Ctrl+Enter: nothing
+	solta(8'h14);
+	frame(8'hE0, 0); frame(8'h14, 0);         // right Ctrl
+	tap(letter[25]); want(8'd26);             // Ctrl+z
+	frame(8'hE0, 0); frame(8'hF0, 0); frame(8'h14, 0);
+	tap(letter[0]); want("a");                // Ctrl released
+
+	for (t = 0; t < 200000 && ngot < nexp; t = t + 1) @(posedge clk);
+	repeat (100) @(posedge clk);
+	if (tem !== 1'b0) begin errs = errs + 1; $display("  tem_tecla %b with the queue empty, want 0", tem); end
+
+	// reset of the block alone with the program's C at 1: no phantom character
+	if (c == 1'b0) begin                      // bring C to 1 with one more key
+		tap(letter[1]); want("b");
+		for (t = 0; t < 200000 && ngot < nexp; t = t + 1) @(posedge clk);
+		repeat (100) @(posedge clk);
+	end
+	@(posedge clk); rst = 1;
+	repeat (5) @(posedge clk); rst = 0;
+	repeat (2000) @(posedge clk);             // a phantom would be read here
+	tap(letter[3]); want("d");                // and the link still works
 
 	for (t = 0; t < 200000 && ngot < nexp; t = t + 1) @(posedge clk);
 	repeat (100) @(posedge clk);

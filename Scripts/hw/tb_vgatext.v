@@ -11,6 +11,11 @@
 //     register (screen line r is memory line (r + top) mod 30);
 //   - the handshake: a clear holds the SAPHO about 2,400 cycles, a character
 //     a few.
+// Added for v9.1: the outputs are defined during reset (syncs 1, ativo and
+// pixel 0) and never x after it; codes 130-255 are ignored; the screen
+// memory is never read past 2399; a word offered while the reset clears the
+// screen is carried out after it; a reset of the block alone while T = C = 1
+// takes no stale word, and the link works after.
 // Run: bash Scripts/hw/tb_vgatext.sh
 module tb;
 
@@ -27,6 +32,16 @@ myVGAText #(.NUBITS(NUBITS)) dut (.clk(clk), .rst(rst), .toma(t), .dado(w), .val
                                    .hs(hs), .vs(vs), .ativo(ativo), .pixel(pixel));
 
 integer errs = 0;
+reg     mon  = 1;                            // the monitor below: off for the reset cases
+
+// the screen memory's read address, every cycle
+always @ (posedge clk) if (!rst && dut.raddr > 2399) begin
+	errs = errs + 1; if (errs < 12) $display("  screen memory read at %0d", dut.raddr);
+end
+// the outputs never x after reset; no pixel outside the visible window
+always @ (posedge clk) if (!rst && (hs === 1'bx || vs === 1'bx || ativo === 1'bx || (!ativo && pixel !== 1'b0))) begin
+	errs = errs + 1; if (errs < 12) $display("  outputs hs %b vs %b ativo %b pixel %b", hs, vs, ativo, pixel);
+end
 
 // ------------------------------------------------------------------- toma --
 
@@ -77,7 +92,7 @@ integer hcnt = 0, hlow = 0, hper = 0, h_from_vis = 0, vis_w = 0, vis_lines = 0;
 integer vlines_low = 0, lines_since = 0;
 reg hs_d = 1;
 
-always @ (posedge clk) if (!rst) begin
+always @ (posedge clk) if (!rst && mon) begin
 	if (ativo) begin pic[x][y] = pixel; x = x + 1; end
 	if (ativo_d && !ativo) begin vis_w = x; x = 0; y = y + 1; h_from_vis = 0; end
 	else h_from_vis = h_from_vis + 1;
@@ -117,7 +132,10 @@ task one_frame; integer f; begin f = frame_done; while (frame_done < f + 2) @(po
 
 integer k;
 initial begin
-	#200 rst = 0;
+	#190 if (hs !== 1'b1 || vs !== 1'b1 || ativo !== 1'b0 || pixel !== 1'b0) begin
+		errs = errs + 1; $display("  during reset: hs %b vs %b ativo %b pixel %b", hs, vs, ativo, pixel);
+	end
+	#10 rst = 0;
 	repeat (2500) @(posedge clk);            // reset clears the screen
 	want_blank_line(0); want_blank_line(29); want_cursor(0, 0);
 
@@ -128,6 +146,8 @@ initial begin
 	toma(129); toma(5); toma(10); toma(65);   want_text(5, 10, "A", 1); want_cursor(5, 11);
 	toma(129); toma(40); toma(90);            want_cursor(0, 0);
 	toma(0); toma(27); toma(127); toma(200);  want_cursor(0, 0); want_text(0, 0, "Hello", 5);
+	for (k = 130; k < 256; k = k + 1) toma(k);   // later commands and the keyboard's special keys
+	want_cursor(0, 0); want_text(0, 0, "Hello", 5);
 	toma(129); toma(1); toma(78); toma(8'h58); toma(8'h59);   // 'X' at 78, 'Y' at 79: past 79 goes to the next line
 	want_text(1, 78, "XY", 2); want_cursor(2, 0);
 	toma(129); toma(3); toma(75); toma(9);   want_cursor(4, 0);   // tab past column 72: next line
@@ -158,6 +178,24 @@ initial begin
 	if (wait_cycles < 2400) begin errs = errs + 1; $display("  a clear held the SAPHO %0d cycles, want at least 2400", wait_cycles); end
 	want_blank_line(0); want_blank_line(28); want_blank_line(29); want_cursor(0, 0);
 	if (dut.top !== 0) begin errs = errs + 1; $display("  top %0d after a clear, want 0", dut.top); end
+
+	// the SAPHO and the block reset together (T back to 0); a word offered at
+	// once waits for the screen to be cleared and is carried out
+	mon = 0;
+	@(posedge clk); rst = 1; t = 0;
+	repeat (5) @(posedge clk); rst = 0;
+	toma("Q");
+	if (wait_cycles < 2400) begin errs = errs + 1; $display("  a word right after reset waited %0d cycles, want at least 2400", wait_cycles); end
+	want_text(0, 0, "Q", 1); want_cursor(0, 1);
+
+	// the block alone resets while T = C = 1: no stale word is taken
+	if (t == 1'b0) toma("R");
+	@(posedge clk); rst = 1;
+	repeat (5) @(posedge clk); rst = 0;
+	repeat (2500) @(posedge clk);
+	if (valeu !== t) begin errs = errs + 1; $display("  after a reset of the block alone C = %b, T = %b", valeu, t); end
+	want_blank_line(0); want_cursor(0, 0);
+	toma("Z"); want_text(0, 0, "Z", 1);
 
 	if (errs == 0) $display("NUBITS=%0d: ok", NUBITS);
 	else           $display("NUBITS=%0d: FAIL, %0d errors", NUBITS, errs);

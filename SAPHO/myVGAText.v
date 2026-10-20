@@ -14,13 +14,15 @@
 //   9            the next column that is a multiple of 8
 //   128          clear: 2,400 spaces, cursor at (0, 0)
 //   129, l, c    the cursor at screen line l and column c (out of range: 0)
-//   anything else is ignored (130-255 are free for later commands)
+//   anything else is ignored: 130-159 are kept for later screen commands,
+//   160-255 (the keyboard's special keys) are ignored for good
 // "The next line" from the last line scrolls: a top-line register goes up by
 // one (mod 30) and the line it frees is cleared; nothing is copied. The block
 // takes a word only when it is idle and flips its C bit (`valeu`) only when
 // the word is carried out (1 cycle for a character, 80 for a scroll, 2,400
 // for a clear), so the SAPHO waits in `toma` meanwhile and nothing is lost.
-// Reset clears the screen too.
+// Reset clears the screen too, and the block's C takes the program's T, so a
+// reset of this block alone does not take a stale word for a new one.
 //
 // The cursor is shown as an underline (the bottom two pixel rows of its
 // cell), blinking about twice a second.
@@ -28,7 +30,8 @@
 // The clock is the 25 MHz pixel clock. The outputs are logic, the same on
 // every board; a board's top maps them to its converter. On the DE2-115:
 //   assign VGA_R = {8{pixel & ativo}}; (and G, B)   assign VGA_BLANK_N = ativo;
-//   assign VGA_SYNC_N = 1'b0;   assign VGA_CLK = clk;
+//   assign VGA_SYNC_N = 1'b0;   assign VGA_CLK = ~clk;   (the converter latches
+//                               mid-pixel; not checked on the board)
 //   assign VGA_HS = hs;         assign VGA_VS = vs;
 //
 // Wiring, link k:
@@ -101,9 +104,13 @@ reg [11:0] waddr;
 reg  [6:0] wdata;
 reg  [6:0] code;                            // stage 1: the code of the cell
 
+// read address: in the blanking cx and cy go past 79 and 29 (to 99 and 32) and
+// the address past 2399; it is held at 0 there, outside the memory never
+wire [11:0] raddr = vis0 ? maddr(mline(cy, top), cx) : 12'd0;
+
 always @ (posedge clk) begin                // no reset: a RAM block
 	if (we) smem[waddr] <= wdata;
-	code <= smem[maddr(mline(cy, top), cx)];
+	code <= smem[raddr];
 end
 
 // ----------------------------------------------------------------------------
@@ -472,12 +479,18 @@ reg       cur1, cur2;                       // the cell is the cursor's
 wire cur0 = (cy == crow) & (cx == ccol);
 
 always @ (posedge clk) begin
-	{px2, px1}   <= {px1, hc[2:0]};
-	{row2, row1} <= {row1, vc[3:0]};
-	{vis2, vis1} <= {vis1, vis0};
-	{hs2, hs1}   <= {hs1, hs0};
-	{vs2, vs1}   <= {vs1, vs0};
-	{cur2, cur1} <= {cur1, cur0};
+	if (rst) begin                          // syncs inactive, the screen dark
+		{px2, px1, row2, row1} <= 14'd0;
+		{vis2, vis1, cur2, cur1} <= 4'd0;
+		{hs2, hs1, vs2, vs1} <= 4'b1111;
+	end else begin
+		{px2, px1}   <= {px1, hc[2:0]};
+		{row2, row1} <= {row1, vc[3:0]};
+		{vis2, vis1} <= {vis1, vis0};
+		{hs2, hs1}   <= {hs1, hs0};
+		{vs2, vs1}   <= {vs1, vs0};
+		{cur2, cur1} <= {cur1, cur0};
+	end
 end
 
 // blink: a frame counter, its top bit turns every 16 frames (about 2 Hz)
@@ -489,10 +502,17 @@ always @ (posedge clk)
 wire under = cur2 & (row2 >= 4'd14) & frames[4];
 
 always @ (posedge clk) begin
-	hs    <= hs2;
-	vs    <= vs2;
-	ativo <= vis2;
-	pixel <= vis2 & (fq[3'd7 - px2] | under);
+	if (rst) begin
+		hs    <= 1'b1;
+		vs    <= 1'b1;
+		ativo <= 1'b0;
+		pixel <= 1'b0;
+	end else begin
+		hs    <= hs2;
+		vs    <= vs2;
+		ativo <= vis2;
+		pixel <= vis2 & (fq[3'd7 - px2] | under);
+	end
 end
 
 // ----------------------------------------------------------------------------
@@ -506,6 +526,7 @@ reg        c;                               // the block's C bit
 reg [1:0]  pend;                            // 129's arguments: 1 = the line next, 2 = the column next
 reg [4:0]  arg_l;
 reg [11:0] fpos, fend;                      // FILL: the next address, the last one
+reg        fword;                           // FILL: a word asked for it (not the reset)
 
 assign valeu = c;
 
@@ -520,6 +541,7 @@ task next_line;
 			top   <= (top == 5'd29) ? 5'd0 : top + 5'd1;
 			fpos  <= maddr(top, 7'd0);          // the line freed is the old top one
 			fend  <= maddr(top, 7'd79);
+			fword <= 1'b1;
 			state <= FILL;
 		end else begin
 			crow <= crow + 5'd1;
@@ -531,15 +553,16 @@ endtask
 always @ (posedge clk) begin
 	we <= 1'b0;
 	if (rst) begin
-		crow <= 5'd0; ccol <= 7'd0; top <= 5'd0; pend <= 2'd0; c <= 1'b0;
-		fpos <= 12'd0; fend <= 12'd2399; state <= FILL;   // reset clears the screen
+		crow <= 5'd0; ccol <= 7'd0; top <= 5'd0; pend <= 2'd0; c <= toma;
+		fpos <= 12'd0; fend <= 12'd2399; fword <= 1'b0; state <= FILL;   // reset clears the screen
 	end else if (state == FILL) begin
 		we    <= 1'b1;
 		waddr <= fpos;
 		wdata <= 7'd32;
 		if (fpos == fend) begin
 			state <= IDLE;
-			if (new_word) c <= ~c;              // the word that asked for it is done (none after reset)
+			if (fword) c <= ~c;                 // the word that asked for it is done; after reset
+			                                    // a word offered meanwhile waits for IDLE
 		end
 		fpos <= fpos + 12'd1;
 	end else if (new_word) begin                // IDLE, a word offered
@@ -573,7 +596,7 @@ always @ (posedge clk) begin
 			else begin ccol <= (ccol | 7'd7) + 7'd1; c <= ~c; end
 		end else if (w == 128) begin            // clear
 			crow <= 5'd0; ccol <= 7'd0; top <= 5'd0;
-			fpos <= 12'd0; fend <= 12'd2399; state <= FILL;
+			fpos <= 12'd0; fend <= 12'd2399; fword <= 1'b1; state <= FILL;
 		end else if (w == 129) begin            // cursor: the line and the column come next
 			pend <= 2'd1;
 			c    <= ~c;

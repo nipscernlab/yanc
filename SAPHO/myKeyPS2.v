@@ -13,10 +13,13 @@
 //     Tab = 9, Esc = 27. Keys without an ASCII character give nothing: arrows,
 //     F1-F12, the keypad, Caps Lock, and on ABNT2 the c-cedilla, acute and
 //     diaeresis.
-//   - Shift is the only state. Nothing is sent back to the keyboard: both
+//   - Shift and Ctrl are the only states: Ctrl+A..Z give 1..26, Ctrl with any
+//     other key gives nothing. Nothing is sent back to the keyboard: both
 //     wires are inputs.
+//   - Codes: 0-127 ASCII; 160-255 are kept for special keys (none delivered
+//     yet); 128-159 never come from the keyboard (screen commands, myVGAText).
 //
-// Chain: two flip-flops on each wire -> 11-bit frame (start, 8 data bits LSB
+// Chain: two flip-flops on each wire, ps2_clk filtered -> 11-bit frame (start, 8 data bits LSB
 // first, odd parity, stop), a bad frame dropped, the bit count restarted when
 // ps2_clk stays still for 1 ms in mid-frame -> scancode decoder (F0 = the
 // next code is a release, E0 = the next code is an extended key) -> table ->
@@ -24,11 +27,14 @@
 // with the queue full is dropped) -> link: while the queue is not empty and
 // the last character was taken (T == C), the oldest goes on `dado` and T
 // flips; when the program flips C back to T it leaves the queue.
+// `tem_tecla` is 1 while the queue holds a character: wired to an in() port,
+// the program asks "is there a key?" without blocking in cade_sync.
 //
 // Wiring, with the SAPHO on the same clock (link k):
 //   myKeyPS2 #(.LAYOUT("ABNT2"), .CLK_KHZ(25000)) kbd (.clk(clk), .rst(rst),
 //       .ps2_clk(PS2_CLK), .ps2_dat(PS2_DAT),
-//       .taqui(taqui_k), .dado(cade_dado_k), .cade(cade_k));
+//       .taqui(taqui_k), .dado(cade_dado_k), .cade(cade_k),
+//       .tem_tecla(tem));                         // optional, to an in() port
 // Checked by Scripts/hw/tb_keyps2.v.
 
 module myKeyPS2
@@ -45,19 +51,46 @@ module myKeyPS2
 	input               ps2_dat,
 	output              taqui,       // to the SAPHO's taqui_k: the block's T bit
 	output [NUBITS-1:0] dado,        // to the SAPHO's cade_dado_k
-	input               cade         // from the SAPHO's cade_k: the program's C bit
+	input               cade,        // from the SAPHO's cade_k: the program's C bit
+	output              tem_tecla    // a character is waiting (the queue is not empty)
 );
 
-// the two wires, brought to clk ----------------------------------------------
+// the two wires, brought to clk, and ps2_clk filtered --------------------------
+// The PS/2 lines are open drain with pull-ups: a slow rise or a ringing edge
+// can cross the threshold more than once, and each crossing would count as
+// an edge (one bit too many, the frame lost). The filtered clock `pc` takes a
+// new level only after the synchronized wire has held it for FILT cycles
+// (320 ns at 25 MHz; the keyboard holds each level 30 us at least), so a
+// glitch shorter than that never makes an edge. The data is read on the
+// filtered falling edge, well inside the 5 us it is held.
 
-reg [2:0] clk_s;
-reg [1:0] dat_s;
+localparam FILT = 8;                               // cycles a new level must hold
+
+reg [1:0] clk_s, dat_s;
 always @ (posedge clk) begin
-	clk_s <= {clk_s[1:0], ps2_clk};
-	dat_s <= {dat_s[0]  , ps2_dat};
+	clk_s <= {clk_s[0], ps2_clk};
+	dat_s <= {dat_s[0], ps2_dat};
 end
 
-wire fall   = clk_s[2] & ~clk_s[1];                // a falling edge of ps2_clk
+reg       pc = 1'b1;                               // the filtered ps2_clk
+reg [3:0] hold;                                    // cycles clk_s[1] has differed from pc
+reg       fall;                                    // pc fell this cycle
+
+always @ (posedge clk) begin
+	fall <= 1'b0;
+	if (rst) begin
+		pc   <= 1'b1;
+		hold <= 4'd0;
+	end else if (clk_s[1] == pc)
+		hold <= 4'd0;
+	else if (hold == FILT - 1) begin
+		pc   <= clk_s[1];
+		hold <= 4'd0;
+		fall <= pc;                                // 1 -> 0
+	end else
+		hold <= hold + 4'd1;
+end
+
 wire bit_in = dat_s[1];
 
 // frame: 11 bits, LSB first, read on the falling edge --------------------------
@@ -139,20 +172,26 @@ function [15:0] key;                               // {with Shift, without}
 	endcase
 endfunction
 
-// decoder: F0, E0 and the two Shift keys ----------------------------------------
+// decoder: F0, E0, the two Shift keys and the two Ctrl keys -----------------------
+// With Ctrl held, a letter gives its ASCII control code, as on a terminal:
+// Ctrl+A = 1 ... Ctrl+Z = 26 (Shift does not matter; Ctrl+H, I, J are 8, 9, 10,
+// backspace, tab and new line). Ctrl with any other key gives nothing.
 
 reg       brk, ext;                                // F0 seen, E0 seen
 reg       lsh, rsh;                                // Shift keys held
+reg       lct, rct;                                // Ctrl keys held (left 14, right E0 14)
 reg       put;                                     // a character for the queue
 reg [7:0] ch;
 
-wire [15:0] k   = key(code);
-wire [ 7:0] chr = (lsh | rsh) ? k[15:8] : k[7:0];
+wire [15:0] k      = key(code);
+wire        letter = (k[7:0] >= "a") & (k[7:0] <= "z");
+wire [ 7:0] chr    = (lct | rct) ? (letter ? {3'd0, k[4:0]} : 8'd0)   // "a" = 0x61: its low 5 bits are 1
+                   : (lsh | rsh) ? k[15:8] : k[7:0];
 
 always @ (posedge clk) begin
 	put <= 1'b0;
 	if (rst) begin
-		brk <= 1'b0; ext <= 1'b0; lsh <= 1'b0; rsh <= 1'b0;
+		brk <= 1'b0; ext <= 1'b0; lsh <= 1'b0; rsh <= 1'b0; lct <= 1'b0; rct <= 1'b0;
 	end else if (got & ok) begin
 		if (code == 8'hE0)
 			ext <= 1'b1;
@@ -163,6 +202,9 @@ always @ (posedge clk) begin
 			// release of an extended key (E0 F0 xx) is a release
 			if (!ext && code == 8'h12) lsh <= ~brk;
 			if (!ext && code == 8'h59) rsh <= ~brk;
+			if (code == 8'h14) begin
+				if (ext) rct <= ~brk; else lct <= ~brk;
+			end
 			if (!ext && !brk && chr != 8'd0) begin
 				ch  <= chr;
 				put <= 1'b1;
@@ -225,12 +267,17 @@ reg t, offered;                                    // T bit; a character is on d
 
 assign pop   = offered & (cade == t);              // the program took it
 assign taqui = t;
+assign tem_tecla = (count != 0);
 assign dado  = rdq;                                // zero-extended to NUBITS (a {0{..}} pad is not Verilog at NUBITS 8);
                                                    // still while offered: the head is not read anew
 
+// On reset T takes the program's C: T == C means "nothing on offer", so a
+// reset of this block alone, with C at 1, does not hand the program a
+// phantom character.
+
 always @ (posedge clk) begin
 	if (rst) begin
-		t       <= 1'b0;
+		t       <= cade;
 		offered <= 1'b0;
 	end else if (offered) begin
 		if (cade == t) offered <= 1'b0;

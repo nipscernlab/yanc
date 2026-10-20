@@ -49,6 +49,21 @@ same way before each `out()`.
 
 Checked by `Scripts/hw/tb_fifo.v` and `Scripts/hw/tb_dcfifo.v`.
 
+## Character codes: keyboard and screen
+
+The keyboard and the screen share one table of codes, so a program can
+pass what `cade_sync()` returns straight to `toma_sync()`:
+
+| codes | what they are | keyboard | screen |
+|---|---|---|---|
+| 0 to 127 | ASCII | gives them | draws 32 to 126, obeys 8, 9, 10, ignores the rest |
+| 128 to 159 | screen commands | never gives them | 128 clear, 129 cursor; 130 to 159 kept for later commands, ignored now |
+| 160 to 255 | the keyboard's special keys | none yet (arrows, F-keys... later) | always ignored |
+
+A code the screen ignores costs the program one `toma` and nothing else,
+so an echo loop `toma_sync(1, cade_sync(0));` stays correct when the
+keyboard learns new keys.
+
 ## Keyboard: `myKeyPS2`
 
 A PS/2 keyboard read with `cade()`: the block takes the keyboard's two
@@ -66,6 +81,11 @@ nothing: the arrows, F1 to F12, the numeric keypad, Caps Lock (only Shift
 makes capitals), and on ABNT2 the `ç`, the acute `´` and the diaeresis
 `¨`. ABNT2's accent keys give the accent itself (`~`, `^`, `` ` ``), with
 no composition.
+
+**Ctrl.** With either Ctrl held, a letter gives its control code, as on a
+terminal: Ctrl+A = 1 up to Ctrl+Z = 26, with or without Shift (so Ctrl+H,
+Ctrl+I and Ctrl+J are 8, 9 and 10, the same as Backspace, Tab and Enter).
+Ctrl with any other key gives nothing.
 
 **Parameters.**
 
@@ -85,6 +105,7 @@ no composition.
 | `taqui` | out | the processor's `taqui_k` |
 | `dado` | out | the processor's `cade_dado_k` |
 | `cade` | in | the processor's `cade_k` |
+| `tem_tecla` | out | optional: 1 while a character waits; to an input port |
 
 **Wiring**, link 0, on the processor's clock:
 
@@ -101,15 +122,32 @@ The same in C± and in C++: `c = cade_sync(0);`. With the block on another
 clock than the processor, the program uses the plain `cade(0)` instead,
 whose link synchronizes the two clocks ([Several processors](multiprocessor.md)).
 
+**Is there a key?** `cade_sync(0)` waits until a key comes. A program that
+has other work to do wires `tem_tecla` to an input port and reads it first:
+
+```verilog
+assign in = tem;                     // port 0: 1 while a character waits
+```
+
+```c
+if (in(0)) c = cade_sync(0);         // takes a key only when there is one
+```
+
+**Reset.** On reset the block's T bit takes the program's C bit, so the
+block can be reset alone, with the processor running, without handing the
+program a character nobody typed. The queue is emptied.
+
 **Clock.** The link is a handshake, not a timing, so the processor's clock
 does not have to be any particular one: the testbench runs the block at 2
 and at 25 MHz. The block samples the keyboard's 10 to 17 kHz clock, so keep
-the processor well above that (a few MHz). `CLK_KHZ` only sizes the 1 ms
-after which a frame cut in the middle (noise, a keyboard plugged in with the
-board on) is forgotten.
+the processor well above that (a few MHz). `ps2_clk` is filtered: a new
+level counts only after it holds for 8 cycles of `clk` (320 ns at 25 MHz),
+so a slow or ringing edge on the open-drain line does not count twice.
+`CLK_KHZ` only sizes the 1 ms after which a frame cut in the middle (noise,
+a keyboard plugged in with the board on) is forgotten.
 
 **Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115), `DEPTH` 4:
-233 logic elements and 92 registers, no memory bits. The queue stays in
+294 logic elements and 99 registers, no memory bits. The queue stays in
 flip-flops: the read is registered, so a synthesizer may use a memory
 block, but Quartus keeps memories this small in logic.
 
@@ -122,7 +160,8 @@ SAPHO too (regress pass `VGATEXT`).
 
 Checked by `Scripts/hw/tb_keyps2.v`: every key of both layouts with and
 without Shift, releases, extended keys, a bad parity, a cut frame, a full
-queue. Design and decisions: [design/ps2-keyboard.md](design/ps2-keyboard.md).
+queue, frames whose `ps2_clk` rings at every edge, Ctrl with both Ctrl keys,
+`tem_tecla`, a reset of the block alone. Design and decisions: [design/ps2-keyboard.md](design/ps2-keyboard.md).
 
 ## Screen: `myVGAText`
 
@@ -145,7 +184,7 @@ toma_sync(1, 128);        // clears the screen (the program waits until it is do
 | 9 | the next column that is a multiple of 8 |
 | 128 | clear: the whole screen blank, the cursor at line 0, column 0 |
 | 129, line, column | three words: the cursor at that line and column (out of range gives 0) |
-| anything else | ignored (130 to 255 are free for later commands) |
+| anything else | ignored: 130 to 159 are kept for later commands, 160 to 255 are the keyboard's special keys ([codes](#character-codes-keyboard-and-screen)) |
 
 A new line from the last line **scrolls** the screen up: the text moves one
 line up and the last line comes out blank. The block takes a word only when
@@ -167,7 +206,7 @@ program's `#NUBITS`; at least 8 (the commands fit in 8 bits).
 
 | pin | direction | connect to |
 |---|---|---|
-| `clk`, `rst` | in | the 25 MHz pixel clock, reset (active high; reset also clears the screen) |
+| `clk`, `rst` | in | the 25 MHz pixel clock, reset (active high; reset also clears the screen; the syncs stay at 1 and the screen dark while it is held) |
 | `toma` | in | the processor's `toma_k` |
 | `dado` | in | the processor's `toma_dado` |
 | `valeu` | out | the processor's `valeu_k` |
@@ -185,10 +224,18 @@ assign VGA_G = {8{pixel & ativo}};
 assign VGA_B = {8{pixel & ativo}};
 assign VGA_BLANK_N = ativo;
 assign VGA_SYNC_N  = 1'b0;
-assign VGA_CLK     = clk;            // the 25 MHz pixel clock
+assign VGA_CLK     = ~clk;           // the 25 MHz pixel clock, inverted
 assign VGA_HS = hs;
 assign VGA_VS = vs;
 ```
+
+The converter latches the colour on the rising edge of `VGA_CLK`. The
+block's outputs change on the rising edge of `clk`, so with `VGA_CLK = clk`
+the converter samples them as they change, with only the routing delays as
+margin; inverted, it samples them half a period (20 ns) later, in the middle
+of the pixel. **Not checked on the board:** Terasic's own demo was not read,
+and Dênis's project, with the clock not inverted, shows a picture on his
+DE2-115.
 
 A board with a resistor converter (4 bits a colour, say) takes `{4{pixel &
 ativo}}` on each colour and only the sync pins.
@@ -203,16 +250,23 @@ characters only, inside `myVGAText.v` itself: the block is one file, with no
 data file to point at. `Scripts/gen_vga_font.py` writes it from the original
 font file and says where that comes from.
 
-**Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115): 324 logic
+**Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115): 332 logic
 elements, 118 registers and 33,184 memory bits (the screen, 2,400 x 7 bits,
 and the font, 2,048 x 8, both in memory blocks). A whole system with an
-8-bit C± SAPHO, `myKeyPS2` and `myVGAText` takes 629 logic elements, with
-the clock at up to 97.8 MHz for the 25 MHz asked.
+8-bit C± SAPHO, `myKeyPS2` and `myVGAText` takes 692 logic elements, with
+the clock at up to 100.4 MHz for the 25 MHz asked.
+
+**Reset** clears the screen (2,400 cycles). A word the program offers
+meanwhile waits and is carried out after it. On reset the block's C bit
+takes the program's T bit, so the block can be reset alone without taking
+an old word for a new one.
 
 Checked by `Scripts/hw/tb_vgatext.v`: the picture rebuilt from the output
 pins as a monitor would (the timing, a glyph against the font, the cursor
-blinking), every word and control code, the cursor command, a scroll, a
-clear and how long each holds the program. The regress pass `VGATEXT` runs
+blinking), every word and control code, the codes 130 to 255 ignored, the
+cursor command, a scroll, a clear and how long each holds the program, the
+outputs during and after reset, a word offered during the reset's clear, a
+reset of the block alone, the screen memory never read past its end. The regress pass `VGATEXT` runs
 a C± and a C++ SAPHO of 8 bits, each with a keyboard and a screen, echoing
 what a simulated keyboard types. Design and decisions:
 [design/vga-text.md](design/vga-text.md).
