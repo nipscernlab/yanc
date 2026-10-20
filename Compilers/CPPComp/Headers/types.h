@@ -99,7 +99,8 @@ strct_field *t_struct_find(type *st, const char *name);
 
 // helpers
 int   type_size_words(const type *t);    // size in words (1 for scalar/ptr; N for arrays; struct size)
-char  type_code(const type *t);          // 1-char signature code (overload mangling)
+char  type_code(const type *t);          // 1-char signature code (template instances)
+char  ov_code(const type *t);            // type_code with char/bool/unsigned apart (overloads)
 int   type_is_int   (const type *t);
 int   type_is_float (const type *t);
 int   type_is_arith (const type *t);     // int or float

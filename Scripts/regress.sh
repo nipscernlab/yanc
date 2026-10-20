@@ -1030,8 +1030,9 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     # One simulated keyboard drives two systems, each a SAPHO of 8 bits with a
     # keyboard block (link 0, cade_sync) and a screen block (link 1,
     # toma_sync), all on 25 MHz: the C+- vga_cmm (US) and the C++ vga_cpp
-    # (ABNT2), both echoing the keys to the screen. The testbench reads each
-    # screen memory and checks the text and the cursor itself
+    # (ABNT2), both echoing the keys to the screen; and a third, the 32-bit
+    # C++ vga_io, which uses <iostream> on a keyboard and screen of its own.
+    # The testbench reads each screen memory and checks the text and the cursor itself
     # (Tests/VGATEXT/TopLevel/vgatext_tb.v). The screen block alone:
     # Scripts/hw/tb_vgatext.sh (step 4a0). docs/design/vga-text.md.
 
@@ -1047,26 +1048,29 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         elif ! "$CPPC" -o "$vt/vga_cpp" "$vd/vga_cpp.cpp" >/dev/null 2>&1 ||
              ! "$ASMCOMP" -f 25 -c 1000 "$vt/vga_cpp/vga_cpp.asm" >/dev/null 2>&1; then
             echo "FAIL ($proj): building vga_cpp"; v_fail=1
+        elif ! "$CPPC" -o "$vt/vga_io" "$vd/vga_io.cpp" >/dev/null 2>&1 ||
+             ! "$ASMCOMP" -f 25 -c 1000 "$vt/vga_io/vga_io.asm" >/dev/null 2>&1; then
+            echo "FAIL ($proj): building vga_io"; v_fail=1
         else
-            for p in vga_cmm vga_cpp; do
+            for p in vga_cmm vga_cpp vga_io; do
                 cp "$vt/$p/${p}_data.mif" "$vt/$p/${p}_inst.mif" "$vt/$p/pc_${p}_mem.txt" "$vt/"
             done
             if ! "$IVERILOG" -g2012 -s vgatext_tb -o "$vt/v.vvp" \
                     "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
                     "$HDL/core.v" "$HDL/ula.v" "$HDL/myKeyPS2.v" "$HDL/myVGAText.v" \
-                    "$vt/vga_cmm/vga_cmm.v" "$vt/vga_cpp/vga_cpp.v" \
+                    "$vt/vga_cmm/vga_cmm.v" "$vt/vga_cpp/vga_cpp.v" "$vt/vga_io/vga_io.v" \
                     "$vd/TopLevel/vgatext_tb.v" >/dev/null 2>&1; then
                 echo "FAIL ($proj): iverilog exited non-zero"; v_fail=1
             else
                 v_out=$(cd "$vt" && "$VVP" -n "$vt/v.vvp" 2>&1)
-                if [ "$(printf '%s\n' "$v_out" | grep -c ': ok$')" -ne 2 ]; then
+                if [ "$(printf '%s\n' "$v_out" | grep -c ': ok$')" -ne 3 ]; then
                     printf '%s\n' "$v_out" | grep "VGATEXT\|screen\|cursor" | sed 's/^/    /'
                     echo "FAIL ($proj): a system did not show the keys"; v_fail=1
                 fi
             fi
         fi
         if [ $v_fail -eq 0 ]; then
-            echo "PASS ($proj)  [C+- (US) and C++ (ABNT2) SAPHOs, 8 bits: keyboard -> SAPHO -> screen]"
+            echo "PASS ($proj)  [C+- (US) and C++ (ABNT2) SAPHOs, 8 bits: keyboard -> SAPHO -> screen; C++ <iostream>, 32 bits]"
             pass=$((pass + 1))
         else
             fail=$((fail + 1)); failed_names+=("$proj")

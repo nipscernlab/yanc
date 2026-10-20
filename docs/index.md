@@ -118,6 +118,7 @@ design/toma-and-cade
 design/myfifo
 design/ps2-keyboard
 design/vga-text
+design/cpp-iostream
 design/burst
 design/ip-protection
 design/asm-names

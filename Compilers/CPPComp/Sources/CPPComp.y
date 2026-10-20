@@ -67,13 +67,13 @@ static char *params_sig(decl *params)
 {
     int n = 0; for (decl *p = params; p; p = p->next) n++;
     char *s = malloc(n + 1); int i = 0;
-    for (decl *p = params; p; p = p->next) s[i++] = type_code(p->dtype);
+    for (decl *p = params; p; p = p->next) s[i++] = ov_code(p->dtype);
     s[i] = 0; return s;
 }
 static char *sym_sig(sym *s)
 {
     char *str = malloc(s->n_params + 1);
-    for (int i = 0; i < s->n_params; i++) str[i] = type_code(s->param_types[i]);
+    for (int i = 0; i < s->n_params; i++) str[i] = ov_code(s->param_types[i]);
     str[s->n_params] = 0; return str;
 }
 static void params_reset(void) { param_head = param_tail = NULL; param_count = 0; }
@@ -239,7 +239,7 @@ static expr *lambda_finish(stmt *body)
     type *ret = NULL;
     if (r) {
         if      (r->kind == E_IDENT)     ret = lambda_find_decl(body, r->sval);
-        else if (r->kind == E_INT_LIT)   ret = r->is_uns ? t_uint() : t_int();
+        else if (r->kind == E_INT_LIT)   ret = r->is_uns == 2 ? t_bool() : r->is_uns ? t_uint() : t_int();
         else if (r->kind == E_FLOAT_LIT) ret = t_float();
     }
     if (!ret)
@@ -1501,6 +1501,8 @@ op_name:
     | '>'    { $$ = "op_gt";  }
     | TOK_LE { $$ = "op_le";  }
     | TOK_GE { $$ = "op_ge";  }
+    | TOK_SHL { $$ = "op_shl"; }      /* cout << x */
+    | TOK_SHR { $$ = "op_shr"; }      /* cin >> x */
     | '='    { $$ = "op_assign"; }
     | '[' ']' { $$ = "op_index"; }
     | TOK_PLUSEQ  { $$ = "op_addeq"; }

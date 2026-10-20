@@ -268,5 +268,31 @@ cursor command, a scroll, a clear and how long each holds the program, the
 outputs during and after reset, a word offered during the reset's clear, a
 reset of the block alone, the screen memory never read past its end. The regress pass `VGATEXT` runs
 a C± and a C++ SAPHO of 8 bits, each with a keyboard and a screen, echoing
-what a simulated keyboard types. Design and decisions:
-[design/vga-text.md](design/vga-text.md).
+what a simulated keyboard types, and a 32-bit C++ SAPHO that uses
+`<iostream>`. Design and decisions: [design/vga-text.md](design/vga-text.md).
+
+## Text from C++: `<iostream>` and `<cstdio>`
+
+With the keyboard on link 0 and the screen on link 1, both on the
+processor's clock (the wiring above), a C++ program needs no `cade_sync` or
+`toma_sync` of its own:
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main()
+{
+    int n;
+    cout << "n? ";
+    cin >> n;                        // typed with echo and backspace, ended by Enter
+    cout << "2n = " << n + n << endl;
+    return 0;
+}
+```
+
+`<cstdio>` gives `putchar`, `puts`, `getchar` and `fgets`. Other links, or
+blocks on another clock, are set with `#define` before the `#include`. The
+whole list, what `cin` and `cout` take and what they cost:
+[The C++ language](language-cpp.md#text-on-the-keyboard-and-the-screen).
+Design: [design/cpp-iostream.md](design/cpp-iostream.md).

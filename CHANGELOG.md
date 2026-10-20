@@ -27,11 +27,37 @@ tags consumed by Aurora.
   (either Ctrl, Shift or not); Ctrl with any other key gives nothing. A new
   output `tem_tecla`, 1 while a character waits, lets a program wired to an
   input port ask "is there a key?" without blocking in `cade_sync`.
+- **C++: `<iostream>`, `<cstdio>` and a complete `<cstring>`.** `std::cout`
+  writes on `myVGAText`, `std::cin` reads `myKeyPS2`, as on a PC: `cout <<`
+  text, `char`, `bool`, `int`, `unsigned`, `float` (6 significant digits),
+  `endl`, `hex`/`dec`/`oct`; `cin >>` `int`, `unsigned`, `float`, `char`,
+  a word; `cin.getline`, `get`, `peek`, `ignore`, `fail`. What is typed is
+  echoed and Backspace edits it before Enter. `<cstdio>`: `putchar`, `puts`,
+  `getchar`, `fgets` and kin. `<cstring>`: `strlen`, `strcmp`, `strncmp`,
+  `strcpy`, `strncpy`, `strcat`, `strncat`, `strchr`, `strrchr`, `strstr`,
+  `memmove`, `memcmp`, `memchr`. Links set by `#define` (keyboard 0, screen
+  1 by default). Printing a number needs no divider. `printf`, `scanf` and
+  `std::string`: later (issue #5). Manual: docs/language-cpp.md, section
+  "Text on the keyboard and the screen"; tests test92, test93 and a third
+  system in the regress pass `VGATEXT`.
+- **C++: `operator<<` and `operator>>` can be overloaded**, and an operator
+  that returns a reference chains (`s << a << b`).
 - **One code table for the keyboard and the screen** (docs/peripherals.md):
   0-127 ASCII, 128-159 screen commands, 160-255 the keyboard's special keys
   (none delivered yet), which the screen always ignores.
 
 ### Fixed
+- **C++: an overloaded method was called by a label that does not exist**
+  (`p.put(3)` with `put(int)` and `put(float)`): the program compiled and
+  did not assemble. A method call now picks its overload as a free function
+  call does.
+- **C++: overloads by `char`, `bool` and `unsigned`.** They were one type
+  with `int` (`f(char)` beside `f(int)` was "a redefinition"); `'A'` was an
+  `int` and `true` an `int`; a reference parameter (`int&`) never matched an
+  overloaded call. The choice now follows C++'s ranking. Every C++ program
+  of the regress compiles to the same assembly as before.
+- **A link used only by code that is never called** left a `#LKSYNC` behind
+  and asmcomp refused the program (C± and C++).
 - **`myKeyPS2`: `ps2_clk` filtered.** A slow or ringing edge on the
   open-drain line could count as two edges and lose the frame; a new level
   now counts after 8 cycles of `clk`.

@@ -1,0 +1,40 @@
+#pragma once
+// CPPComp <cstdio>: C's character and line I/O on the keyboard and the
+// screen (the setting is in <yanc_term>). getchar and fgets read the line
+// typed, as on a PC: nothing comes before Enter, and what is typed shows on
+// the screen with backspace editing it.
+//   putchar(c); puts("text");          // puts adds the '\n'
+//   int c = getchar();
+//   fgets(buf, 40, stdin);             // keeps the '\n', as C's
+// printf and scanf are not here: they need variadic functions, which
+// CPPComp does not have yet (GitHub issue #5).
+#include <yanc_term>
+
+struct FILE { int fd; };             // 0 the keyboard, 1 the screen
+FILE yanc_stdin_file  = { 0 };
+FILE yanc_stdout_file = { 1 };
+FILE yanc_stderr_file = { 2 };          // the screen too
+#define stdin  (&yanc_stdin_file)
+#define stdout (&yanc_stdout_file)
+#define stderr (&yanc_stderr_file)
+
+inline int putchar(int c)            { yanc_put(c); return c; }
+inline int puts(const char* s)       { yanc_puts(s); yanc_put(10); return 0; }
+inline int getchar()                 { return yanc_get(); }
+inline int fputc(int c, FILE* f)     { yanc_put(c); return c; }
+inline int putc(int c, FILE* f)      { yanc_put(c); return c; }
+inline int fputs(const char* s, FILE* f) { yanc_puts(s); return 0; }
+inline int fgetc(FILE* f)            { return yanc_get(); }
+inline int getc(FILE* f)             { return yanc_get(); }
+
+// up to n-1 characters of the line, the '\n' included when it fits
+inline char* fgets(char* s, int n, FILE* f) {
+    int k = 0;
+    while (k < n - 1) {
+        int c = yanc_get();
+        s[k] = c; k = k + 1;
+        if (c == 10) break;
+    }
+    s[k] = 0;
+    return s;
+}

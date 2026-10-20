@@ -1,0 +1,99 @@
+#pragma once
+// CPPComp <iostream>: std::cout writes on the screen (SAPHO/myVGAText.v),
+// std::cin reads the keyboard (SAPHO/myKeyPS2.v), as on a PC:
+//   std::cout << "n = " << n << std::endl;
+//   std::cin >> n;                  // blanks skipped, as on a PC
+//   std::cin.getline(name, 40);     // a whole line
+// What is typed shows on the screen and backspace edits it before Enter: on
+// a PC the terminal does that, here std::cin does. Which links, and the
+// rest of the setting, are in <yanc_term> (defaults: keyboard on link 0,
+// screen on link 1, both on the processor's clock).
+//
+// cout << : const char*, char, bool (as 1 / 0), int, unsigned, float (6
+// significant digits, as C++); std::endl, std::flush, std::hex, std::dec,
+// std::oct. cin >> : int, unsigned, char, float, char* (a word). A failed
+// read sets fail(), leaves 0 and takes nothing; clear() resets it.
+// Not here (GitHub issue #5): std::string, std::getline(cin, s), setw,
+// setprecision, `if (cin >> x)` and `!cin` (use cin.fail()).
+#include <yanc_term>
+
+namespace std {
+
+    struct yanc_manip { int op; };      // endl 1, flush 2, hex 16, dec 10, oct 8
+    yanc_manip endl  = { 1 };
+    yanc_manip flush = { 2 };
+    yanc_manip hex   = { 16 };
+    yanc_manip dec   = { 10 };
+    yanc_manip oct   = { 8 };
+
+    class ostream {
+        int base;                    // 0 is 10: the zero-filled global starts decimal
+    public:
+        ostream& operator<<(const char* s) { yanc_puts(s); return *this; }
+        ostream& operator<<(char c)        { yanc_put(c); return *this; }
+        ostream& operator<<(bool b)        { yanc_put(b ? '1' : '0'); return *this; }
+        ostream& operator<<(int v) {
+            if (base == 0 || base == 10) yanc_put_int(v, 0, ' ', 0);
+            else yanc_put_uint((unsigned)v, base, 0, ' ', 0, 0, 0);
+            return *this;
+        }
+        ostream& operator<<(unsigned v) {
+            yanc_put_uint(v, base == 0 ? 10 : base, 0, ' ', 0, 0, 0);
+            return *this;
+        }
+        ostream& operator<<(float f)       { yanc_put_float(f, 6); return *this; }
+        ostream& operator<<(yanc_manip m) {
+            if (m.op == 1) yanc_put(10);
+            else if (m.op != 2) base = m.op;
+            return *this;
+        }
+        ostream& put(char c)               { yanc_put(c); return *this; }
+        ostream& write(const char* s, int n) {
+            for (int i = 0; i < n; i = i + 1) yanc_put(s[i]);
+            return *this;
+        }
+    };
+
+    class istream {
+        int bad;                     // the last read failed
+    public:
+        istream& operator>>(int& v) {
+            int ok = 0; int x = yanc_get_int(&ok);
+            v = ok ? x : 0; if (!ok) bad = 1;
+            return *this;
+        }
+        istream& operator>>(unsigned& v) {
+            int ok = 0; int x = yanc_get_int(&ok);
+            v = ok ? (unsigned)x : 0u; if (!ok) bad = 1;
+            return *this;
+        }
+        istream& operator>>(float& v) {
+            int ok = 0; float x = yanc_get_float(&ok);
+            v = ok ? x : 0.0f; if (!ok) bad = 1;
+            return *this;
+        }
+        istream& operator>>(char& c) {
+            yanc_skip_blanks();
+            c = yanc_get();
+            return *this;
+        }
+        istream& operator>>(char* s) {
+            yanc_get_word(s, YANC_LINE_MAX + 1);
+            return *this;
+        }
+        int get()                          { return yanc_get(); }
+        int peek()                         { return yanc_peek(); }
+        istream& getline(char* s, int n)   { yanc_get_line(s, n); return *this; }
+        // drops up to n characters, stopping after delim (as C++)
+        istream& ignore(int n = 1, int delim = EOF) {
+            for (int i = 0; i < n; i = i + 1) if (yanc_get() == delim) break;
+            return *this;
+        }
+        bool fail()                        { return bad != 0; }
+        bool good()                        { return bad == 0; }
+        void clear()                       { bad = 0; }
+    };
+
+    ostream cout;
+    istream cin;
+}

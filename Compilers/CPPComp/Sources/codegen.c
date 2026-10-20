@@ -149,6 +149,7 @@ static const char *op_method_name(op_kind op)
         case OP_EQ:  return "op_eq";  case OP_NE:  return "op_ne";
         case OP_LT:  return "op_lt";  case OP_GT:  return "op_gt";
         case OP_LE:  return "op_le";  case OP_GE:  return "op_ge";
+        case OP_SHL: return "op_shl"; case OP_SHR: return "op_shr";   // cout << x, cin >> x
         default: return NULL;
     }
 }
@@ -187,14 +188,81 @@ static void assign_overload_labels(unit *u)
         char *lbl = malloc(strlen(f->name) + f->n_params + 3);
         int k = sprintf(lbl, "%s_O", f->name);
         decl *p = f->params;
-        for (int a = 0; a < f->n_params && p; a++, p = p->next) lbl[k++] = type_code(p->dtype);
+        for (int a = 0; a < f->n_params && p; a++, p = p->next) lbl[k++] = ov_code(p->dtype);
         lbl[k] = 0;
         f->asm_label = lbl;
     }
 }
 
-// pick the best-matching overload of `name` for the argument types (exact code
-// match scores higher than an int<->float conversion); NULL if no such function.
+// how well an argument of type `at` fits a parameter of type `pt`, as C++
+// ranks it: 3 the same type, 2 a promotion (char or bool to int), 1 a
+// conversion (between integer types, integer <-> float), 0 not at all.
+static int ov_score(type *pt, type *at)
+{
+    if (at && at->is_ref && at->base) at = at->base;
+    if (pt && pt->is_ref && pt->base) return ov_score(pt->base, at);   // a reference binds its referent
+    char pc = ov_code(pt), ac = ov_code(at);
+    if (pc == 'S' && ac == 'S') return (pt == at || (pt->tag && at->tag && !strcmp(pt->tag, at->tag))) ? 3 : 0;
+    if (pc == ac) return 3;
+    if ((pc == 'p' || pc == 's') && (ac == 'p' || ac == 's')) return 1;   // another pointer type
+    int pi = pc == 'i' || pc == 'c' || pc == 'b' || pc == 'u';
+    int ai = ac == 'i' || ac == 'c' || ac == 'b' || ac == 'u';
+    if (pi && ai) return (pc == 'i' && (ac == 'c' || ac == 'b')) ? 2 : 1;
+    if ((pi && ac == 'f') || (pc == 'f' && ai)) return 1;
+    return 0;
+}
+
+// the overload of method `m` of `cls` (or of the nearest ancestor that has
+// one) that best fits the call's arguments (`this` not among them); NULL if
+// none fits. A class template's methods are clones in g_inst, so both lists
+// are searched. Overloaded methods have their own labels (`P__put_Opi`,
+// `P__put_Opf`): a call by the bare name went to a label that does not exist.
+static func *resolve_method_ov(type *cls, const char *m, expr **args, int nargs)
+{
+    if (!cg_unit) return NULL;
+    for (type *c = cls; c; c = c->base_class) {
+        if (!c->tag) continue;
+        char *mm = cg_mangle_method(c->tag, m);
+        func *best = NULL; int best_score = -1, seen = 0;
+        for (int i = 0; i < cg_unit->n_funcs + g_n_inst; i++) {
+            func *f = (i < cg_unit->n_funcs) ? cg_unit->funcs[i] : g_inst[i - cg_unit->n_funcs];
+            if (!f->method_of || strcmp(f->name, mm)) continue;
+            seen = 1;
+            decl *p0 = f->params ? f->params->next : NULL;     // skip `this`
+            int required = 0;
+            for (decl *q = p0; q; q = q->next) if (!q->init) required++;
+            if (nargs < required || nargs > f->n_params - 1) continue;
+            int score = 0, ok = 1; decl *p = p0;
+            for (int a = 0; a < nargs && p; a++, p = p->next) {
+                int sc = ov_score(p->dtype, infer_type(args[a]));
+                if (sc) score += sc; else { ok = 0; break; }
+            }
+            if (ok && score > best_score) { best_score = score; best = f; }
+        }
+        free(mm);
+        if (seen) return best;            // the name in a class hides its bases'
+    }
+    return NULL;
+}
+
+// the label to call for `cls.m(args)`: the chosen overload's when `m` is
+// overloaded (*fo set to it), else the plain mangled name, as before
+static char *method_call_label(type *cls, const char *m, expr **args, int nargs, func **fo)
+{
+    char *masm = resolve_method(cls, m);
+    *fo = NULL;
+    if (!masm) return NULL;
+    func *f = resolve_method_ov(cls, m, args, nargs);
+    if (f && f->asm_label && strcmp(f->asm_label, masm)) {
+        free(masm);
+        *fo = f;
+        return strdup(f->asm_label);
+    }
+    return masm;
+}
+
+// pick the best-matching overload of `name` for the argument types (see
+// ov_score); NULL if no such function.
 static func *resolve_overload(const char *name, expr **args, int nargs)
 {
     if (!cg_unit) return NULL;
@@ -208,10 +276,8 @@ static func *resolve_overload(const char *name, expr **args, int nargs)
         int score = 0, ok = 1;
         decl *p = f->params;
         for (int a = 0; a < nargs && p; a++, p = p->next) {
-            char pc = type_code(p->dtype), ac = type_code(infer_type(args[a]));
-            if (pc == ac) score += 2;
-            else if ((pc == 'i' && ac == 'f') || (pc == 'f' && ac == 'i')) score += 1;
-            else { ok = 0; break; }
+            int sc = ov_score(p->dtype, infer_type(args[a]));
+            if (sc) score += sc; else { ok = 0; break; }
         }
         if (ok && score > best_score) { best_score = score; best = f; }
     }
@@ -240,10 +306,8 @@ static func *resolve_ctor(type *cls, expr **args, int nargs)
         int score = 0, ok = 1;
         decl *p = p0;
         for (int a = 0; a < nargs && p; a++, p = p->next) {
-            char pc = type_code(p->dtype), ac = type_code(infer_type(args[a]));
-            if (pc == ac) score += 2;
-            else if ((pc == 'i' && ac == 'f') || (pc == 'f' && ac == 'i')) score += 1;
-            else { ok = 0; break; }
+            int sc = ov_score(p->dtype, infer_type(args[a]));
+            if (sc) score += sc; else { ok = 0; break; }
         }
         if (ok && score > best_score) { best_score = score; best = f; }
     }
@@ -779,8 +843,8 @@ static type *infer_type(expr *e)
     if (!e) return NULL;
     if (e->etype) return e->etype;
     switch (e->kind) {
-    case E_INT_LIT:  e->etype = e->is_uns ? t_uint() : t_int(); break;
-    case E_CHAR_LIT: e->etype = t_int(); break;
+    case E_INT_LIT:  e->etype = e->is_uns == 2 ? t_bool() : e->is_uns ? t_uint() : t_int(); break;
+    case E_CHAR_LIT: e->etype = t_char(); break;      // 'A' is a char: cout << 'A' prints A
     case E_FLOAT_LIT: e->etype = t_float(); break;
     case E_STRING_LIT: e->etype = t_ptr(t_char()); break;
     case E_IDENT: {
@@ -798,9 +862,13 @@ static type *infer_type(expr *e)
         type *rt = infer_type(e->b);
         if (lt && lt->kind == TY_STRUCT) {       // overloaded operator -> its return type
             const char *opm = op_method_name(e->op);
-            char *masm = opm ? resolve_method(lt, opm) : NULL;
-            if (masm) { sym *ms = st_find(masm); free(masm);
-                        e->etype = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int(); break; }
+            func *fo = NULL;
+            char *masm = opm ? method_call_label(lt, opm, &e->b, 1, &fo) : NULL;
+            if (masm) { sym *ms = fo ? NULL : st_find(masm); free(masm);
+                        type *rt = fo ? fo->ret : (ms && ms->kind == SK_FUNC) ? ms->stype : t_int();
+                        // a reference result is its referent: `cout << a << b`
+                        // calls operator<< on what the first one returned
+                        e->etype = (rt && rt->is_ref) ? rt->base : rt; break; }
         }
         switch (e->op) {
             case OP_EQ: case OP_NE: case OP_LT: case OP_GT: case OP_LE: case OP_GE:
@@ -874,6 +942,10 @@ static type *infer_type(expr *e)
             type *ct = infer_type(e->a->a);
             if (e->a->kind == E_PMEMBER) ct = ct ? ct->base : NULL;
             if (ct && ct->kind == TY_STRUCT && ct->tag) {
+                func *fo = NULL;
+                char *ml = method_call_label(ct, e->a->member, e->args, e->n_args, &fo);
+                free(ml);
+                if (fo) { e->etype = fo->ret; break; }     // an overloaded method
                 char *masm = cg_mangle_method(ct->tag, e->a->member);
                 sym *s = st_find(masm); free(masm);
                 e->etype = (s && s->kind == SK_FUNC) ? s->stype : t_int();
@@ -904,6 +976,10 @@ static type *infer_type(expr *e)
             sym *s = st_find(fn);
             if (s) { e->etype = s->stype; break; }
             if (cur_method_class) {                  // unqualified sibling-method call -> this->fn()
+                func *fo = NULL;
+                char *ml = method_call_label(cur_method_class, fn, e->args, e->n_args, &fo);
+                free(ml);
+                if (fo) { e->etype = fo->ret; break; }   // an overloaded method
                 char *masm = resolve_method(cur_method_class, fn);
                 int vslot = vtbl_slot(cur_method_class, fn);
                 if (masm) { sym *ms = st_find(masm); free(masm);
@@ -1040,7 +1116,7 @@ static int cfold(expr *e, long *v)
 {
     if (!e) return 0;
     if (e->kind == E_INT_LIT || e->kind == E_CHAR_LIT) {
-        if (e->is_uns) return 0;
+        if (e->is_uns == 1) return 0;               // true/false (2) fold
         *v = e->ival; return 1;
     }
     long a, b;
@@ -1289,6 +1365,27 @@ static void gen_addr(expr *e)
         if (!f) msg_error(e->line, "no field '%s'", e->member);
         if (f->offset > 0) emit("ADD %d", f->offset);
         return;
+    }
+    case E_BINOP: case E_CALL: {
+        // an overloaded operator or a method that returns a reference: the
+        // call yields the referent's address, which is this lvalue's address
+        // (`cout << a << b`: the second << works on what the first returned)
+        type *rt = NULL;
+        expr *oe = e->kind == E_BINOP ? e->a : (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER) ? e->a->a : NULL;
+        type *ot = oe ? infer_type(oe) : NULL;
+        if (e->kind == E_CALL && ot && e->a->kind == E_PMEMBER) ot = ot->base;
+        const char *mn = e->kind == E_BINOP ? op_method_name(e->op)
+                       : (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER) ? e->a->member : NULL;
+        if (ot && ot->kind == TY_STRUCT && ot->tag && mn) {
+            func *fo = NULL;
+            char *masm = method_call_label(ot, mn, e->kind == E_BINOP ? &e->b : e->args,
+                                           e->kind == E_BINOP ? 1 : e->n_args, &fo);
+            sym *ms = (masm && !fo) ? st_find(masm) : NULL;
+            rt = fo ? fo->ret : ms ? ms->stype : NULL;
+            free(masm);
+        }
+        if (rt && rt->is_ref && rt->base && rt->base->kind == TY_STRUCT) { gen_expr(e); return; }
+        msg_error(e->line, "expression is not an lvalue");
     }
     default:
         msg_error(e->line, "expression is not an lvalue");
@@ -2136,12 +2233,14 @@ static void gen_expr(expr *e)
         if (e->op != OP_NONE) {
             type *lt = infer_type(e->a);
             const char *opm = op_compound_method_name(e->op);
+            func *fo = NULL;
             char *masm = (lt && lt->kind == TY_STRUCT && lt->tag && opm)
-                       ? resolve_method(lt, opm) : NULL;
+                       ? method_call_label(lt, opm, &e->b->b, 1, &fo) : NULL;
             if (masm) {
-                sym *ms = st_find(masm);
+                sym *ms = fo ? NULL : st_find(masm);
                 gen_addr(e->a); emit("PSH");                  // this = &lhs
-                type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
+                type *pt = fo ? (fo->params && fo->params->next ? fo->params->next->dtype : NULL)
+                         : (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
                 gen_arg(e->b->b, pt);                         // the rhs operand
                 emit("CAL %s", masm);
                 free(masm);
@@ -2161,14 +2260,20 @@ static void gen_expr(expr *e)
         // operator overloading: lhs is a class with operator<OP> -> a.op(b)
         if (lt && lt->kind == TY_STRUCT) {
             const char *opm = op_method_name(op);
-            char *masm = opm ? resolve_method(lt, opm) : NULL;
+            func *fo = NULL;
+            char *masm = opm ? method_call_label(lt, opm, &e->b, 1, &fo) : NULL;
             if (masm) {
-                sym *ms = st_find(masm);
+                sym *ms = fo ? NULL : st_find(masm);
                 gen_addr(e->a); emit("PSH");                  // this = &lhs
-                type *pt = (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
+                type *pt = fo ? (fo->params && fo->params->next ? fo->params->next->dtype : NULL)
+                         : (ms && ms->param_types && ms->n_params > 1) ? ms->param_types[1] : NULL;
                 gen_arg(e->b, pt);                            // the rhs operand
                 emit("CAL %s", masm);
                 free(masm);
+                // a reference to a scalar is read through (a class result
+                // stays an address, the form a class value has here)
+                type *rt = fo ? fo->ret : ms ? ms->stype : NULL;
+                if (rt && rt->is_ref && rt->base && rt->base->kind != TY_STRUCT) emit("LDI 0");
                 return;
             }
         }
@@ -2659,6 +2764,24 @@ static void gen_expr(expr *e)
                 free(masm);
                 return;
             }
+            {   // an overloaded method: the overload the arguments pick
+                func *fo = NULL;
+                char *ml = method_call_label(ct, e->a->member, e->args, e->n_args, &fo);
+                if (fo) {
+                    if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // this
+                    emit("PSH");
+                    decl *p = fo->params ? fo->params->next : NULL;     // skip `this`
+                    for (int i = 0; i < e->n_args; i++) {
+                        gen_arg(e->args[i], p ? p->dtype : NULL);
+                        if (p) p = p->next;
+                    }
+                    for (; p; p = p->next) gen_arg(p->init, p->dtype);  // default arguments
+                    emit("CAL %s", ml);
+                    free(ml); free(masm);
+                    return;
+                }
+                free(ml);
+            }
             {   // a tiny accessor is pasted here instead of called
                 func *cf = func_by_label(masm);
                 expr *bd = cf ? inlinable_body(cf) : NULL;
@@ -2838,10 +2961,8 @@ static void gen_expr(expr *e)
                     if (nuser < required || nuser > f->n_params - 1) continue;
                     int score = 0, ok = 1; decl *p = p0;
                     for (int a = 1; a < e->n_args && p; a++, p = p->next) {
-                        char pc = type_code(p->dtype), ac = type_code(infer_type(e->args[a]));
-                        if (pc == ac) score += 2;
-                        else if ((pc == 'i' && ac == 'f') || (pc == 'f' && ac == 'i')) score += 1;
-                        else { ok = 0; break; }
+                        int sc = ov_score(p->dtype, infer_type(e->args[a]));
+                        if (sc) score += sc; else { ok = 0; break; }
                     }
                     if (ok && score > bests) { bests = score; bestm = f; }
                 }
@@ -2885,6 +3006,21 @@ static void gen_expr(expr *e)
                         free(masm);
                         return;
                     }
+                    func *fo = NULL;
+                    char *ml = method_call_label(cur_method_class, fn, e->args, e->n_args, &fo);
+                    if (fo) {                                 // an overloaded method
+                        gen_load_this(); emit("PSH");
+                        decl *p = fo->params ? fo->params->next : NULL;
+                        for (int i = 0; i < e->n_args; i++) {
+                            gen_arg(e->args[i], p ? p->dtype : NULL);
+                            if (p) p = p->next;
+                        }
+                        for (; p; p = p->next) gen_arg(p->init, p->dtype);
+                        emit("CAL %s", ml);
+                        free(ml); free(masm);
+                        return;
+                    }
+                    free(ml);
                     gen_load_this(); emit("PSH");
                     for (int i = 0; i < e->n_args; i++) {
                         type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;

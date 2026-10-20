@@ -474,20 +474,21 @@ done:
 // ---- asm_reach: drop the code no path from the entry gets to ---------------------
 // See asm_share.h. One record per line of the file, one per instruction.
 
-enum { RL_OTHER, RL_INS, RL_IFLIVE, RL_ENDLIVE, RL_ARRAY };
+enum { RL_OTHER, RL_INS, RL_IFLIVE, RL_ENDLIVE, RL_ARRAY, RL_LKSYNC };
 
 typedef struct {
     int kind;       // RL_*
     int ins;        // RL_INS: its index; any other line: the next instruction's
     int lab0, nlab; // its labels: lab_of[lab0 .. lab0+nlab-1]
     int rest;       // offset where the text after the labels starts
-    int name;       // RL_ARRAY: the array it declares
+    int name;       // RL_ARRAY: the array it declares; RL_LKSYNC: the link
 } rl_line;
 
 typedef struct {
     int op, name;   // row of isa[] (-1: unknown), data name (-1: none)
     int target;     // label index of a jump or call (-1: none)
     int region;     // the #IFLIVE block it sits in (-1: none)
+    int link;       // TOM k / CAD k: k (-1: not a link instruction)
 } rl_ins;
 
 static void *grow(void *p, int *cap, int need, size_t sz)   // room for index `need`
@@ -613,6 +614,11 @@ int asm_reach(const char *asm_path, const char *pc_path)
                 if (region < 0) ok = 0;
                 region = -1;
             }
+            else if (strcmp(tok, "#LKSYNC") == 0 && t + 1 < nt)
+            {
+                l->kind = RL_LKSYNC;                       // goes when no TOM/CAD on the link is kept
+                l->name = atoi(TOK(t + 1));
+            }
             else if ((strcmp(tok, "#array") == 0 || strcmp(tok, "#arrays") == 0) && t + 1 < nt)
             {
                 l->kind = RL_ARRAY;
@@ -623,7 +629,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
 
         ins = grow(ins, &cap, n, sizeof(rl_ins));
         rl_ins *x = &ins[n++];
-        x->op = isa_find(TOK(t)); x->name = -1; x->target = -1; x->region = region;
+        x->op = isa_find(TOK(t)); x->name = -1; x->target = -1; x->region = region; x->link = -1;
         l->kind = RL_INS;
         if (x->op < 0) { ok = 0; continue; }               // not ours to guess
 
@@ -637,6 +643,8 @@ int asm_reach(const char *asm_path, const char *pc_path)
         {
             if (!is_literal(TOK(t + 1))) x->name = st_add(&names, tok);
         }
+        else if (strcmp(cls, "link") == 0 && t + 1 < nt)
+            x->link = atoi(TOK(t + 1));
         if (region >= 0 && strcmp(isa[x->op].flow, "-") != 0) ok = 0;   // a block is straight-line code
         #undef TOK
     }
@@ -702,6 +710,16 @@ int asm_reach(const char *asm_path, const char *pc_path)
     int dead = 0, arrays_gone = 0;
     for (int i = 0; i < n; i++) dead += !live[i];
     for (int ln = 0; ln < lines.n && ok; ln++) if (L[ln].kind == RL_ARRAY && !used[L[ln].name]) arrays_gone++;
+    // a #LKSYNC k whose link lost every TOM k / CAD k: asmcomp refuses a
+    // #LKSYNC with no instruction on the link (a function never called that
+    // reads the keyboard, as <iostream>'s, made a program with cout alone fail)
+    for (int ln = 0; ln < lines.n && ok; ln++)
+        if (L[ln].kind == RL_LKSYNC)
+        {
+            int kept = 0;
+            for (int i = 0; i < n && !kept; i++) kept = live[i] && ins[i].link == L[ln].name;
+            if (!kept) { L[ln].name = -1; arrays_gone++; }  // -1: drop the line
+        }
     if (dead == 0 && arrays_gone == 0 && !markers) goto done;
 
     // rewrite: dead lines, the arrays only they used and the #IFLIVE/#ENDLIVE
@@ -716,7 +734,8 @@ int asm_reach(const char *asm_path, const char *pc_path)
         rl_line *l = &L[ln];
         char *text = lines.s[ln];
         int drop = (l->kind == RL_INS && !live[l->ins]) || l->kind == RL_IFLIVE || l->kind == RL_ENDLIVE
-                || (l->kind == RL_ARRAY && ok && !used[l->name]);
+                || (l->kind == RL_ARRAY && ok && !used[l->name])
+                || (l->kind == RL_LKSYNC && ok && l->name < 0);
         int move = drop || (l->kind != RL_INS && l->nlab > 0 && l->ins < n && !live[l->ins]);
         if (move)
             for (int k = 0; k < l->nlab; k++)

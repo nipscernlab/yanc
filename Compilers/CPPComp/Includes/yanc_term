@@ -1,0 +1,288 @@
+#pragma once
+// CPPComp: the terminal under <iostream> and <cstdio>. Not a standard
+// header; a program includes those two, not this one.
+//
+// The keyboard is SAPHO/myKeyPS2.v on a cade link, the screen
+// SAPHO/myVGAText.v on a toma link (docs/peripherals.md). A program may say
+// which links, before its first #include:
+//   #define YANC_STDIN_LINK  0   // the keyboard's link (default 0)
+//   #define YANC_STDOUT_LINK 1   // the screen's link (default 1)
+//   #define YANC_LINK_SYNC   1   // 1: the blocks on the processor's clock,
+//                                // cade_sync/toma_sync (default); 0: cade/toma
+//   #define YANC_ECHO        1   // 1: what is typed shows on the screen (default)
+//   #define YANC_LINE_MAX   80   // the longest line read (default 80, a screen line)
+//
+// Three layers, so printf/scanf and std::string can stand on them later
+// (GitHub issue #5):
+//   1. one character in and out on the links;
+//   2. numbers written as text: an integer in a base with a width, a fill
+//      and a sign; a float with significant digits. No division: the
+//      processor gets no divider for printing (decimal digits are made by
+//      doubling a digit array, one bit at a time);
+//   3. reading: a line typed with echo and backspace, as a PC terminal does
+//      before the program sees it; then blanks skipped, an integer, a float
+//      or a word taken from it.
+
+#ifndef YANC_STDIN_LINK
+#define YANC_STDIN_LINK 0
+#endif
+#ifndef YANC_STDOUT_LINK
+#define YANC_STDOUT_LINK 1
+#endif
+#ifndef YANC_LINK_SYNC
+#define YANC_LINK_SYNC 1
+#endif
+#ifndef YANC_ECHO
+#define YANC_ECHO 1
+#endif
+#ifndef YANC_LINE_MAX
+#define YANC_LINE_MAX 80
+#endif
+
+#ifndef EOF
+#define EOF (-1)
+#endif
+
+namespace yanc {
+
+// ---- 1. one character ----------------------------------------------------
+
+inline void yanc_put(int c) {
+#if YANC_LINK_SYNC
+    toma_sync(YANC_STDOUT_LINK, c);
+#else
+    toma(YANC_STDOUT_LINK, c);
+#endif
+}
+inline int yanc_key() {                   // the next key, no echo, no line
+#if YANC_LINK_SYNC
+    return cade_sync(YANC_STDIN_LINK);
+#else
+    return cade(YANC_STDIN_LINK);
+#endif
+}
+inline void yanc_puts(const char* s) { while (*s) { yanc_put(*s); s++; } }
+
+// ---- 2. numbers as text ------------------------------------------------------
+
+// the bits of a word (8, 16, 32: the program's #NUBITS)
+inline int yanc_word_bits() {
+    unsigned x = ~0u;
+    int n = 0;
+    while (x) { x = x >> 1; n = n + 1; }
+    return n;
+}
+
+inline void yanc_pad(int n, int fill) { while (n > 0) { yanc_put(fill); n = n - 1; } }
+
+// v as unsigned in base 2-16, at least `width` characters wide: fill on the
+// left ('0' goes after the sign), `upper` for A-F; `neg` writes a '-' first
+// (v is then the magnitude), `plus` a '+' when not negative
+inline void yanc_put_uint(unsigned v, int base, int width, int fill, int upper, int neg, int plus) {
+    char d[40];                      // digits, least significant first
+    int n = 0;
+    if (base == 10) {
+        // decimal by doubling: d = 2*d + bit for each bit, most significant first
+        int nb = yanc_word_bits();
+        d[0] = 0; n = 1;
+        for (int b = nb - 1; b >= 0; b = b - 1) {
+            int c = (v >> b) & 1;
+            for (int i = 0; i < n; i = i + 1) {
+                int t = d[i] + d[i] + c;
+                if (t >= 10) { t = t - 10; c = 1; } else c = 0;
+                d[i] = t;
+            }
+            if (c) { d[n] = 1; n = n + 1; }
+        }
+    } else {
+        int sh = base == 16 ? 4 : base == 8 ? 3 : 1;   // 2, 8 and 16: shifts
+        unsigned m = (unsigned)base - 1u;
+        do { d[n] = (int)(v & m); n = n + 1; v = v >> sh; } while (v);
+    }
+    int sign = neg || plus;
+    if (fill != '0') yanc_pad(width - n - sign, fill);
+    if (neg) yanc_put('-'); else if (plus) yanc_put('+');
+    if (fill == '0') yanc_pad(width - n - sign, '0');
+    while (n > 0) {
+        n = n - 1;
+        int x = d[n];
+        yanc_put(x < 10 ? '0' + x : (upper ? 'A' : 'a') + x - 10);
+    }
+}
+
+inline void yanc_put_int(int v, int width, int fill, int plus) {
+    if (v < 0) yanc_put_uint((unsigned)(0 - v), 10, width, fill, 0, 1, 0);
+    else       yanc_put_uint((unsigned)v, 10, width, fill, 0, 0, plus);
+}
+
+// f with `prec` significant digits, as C++ prints a float by default (%g):
+// 7.5, 3.14159, 1e+10, 1.5e-07; trailing zeros dropped. The SAPHO float has
+// about 7 decimal digits, so the last of 6 may be off by one.
+// The power p = 10^e is built by multiplying up from 1 (a small number is
+// itself scaled up instead), never by scaling a large f down by 0.1, whose
+// error piles up (1e10 came out 9.99999e+09); each digit is then counted by
+// subtracting p. No float division: no float divider in the processor.
+inline void yanc_put_float(float f, int prec) {
+    if (prec < 1) prec = 1;
+    if (prec > 12) prec = 12;
+    if (f < 0.0f) { yanc_put('-'); f = -f; }
+    if (f == 0.0f) { yanc_put('0'); return; }
+    float p = 1.0f;                  // 10^e <= f < 10^(e+1)
+    int e = 0;
+    if (f >= 1.0f) { while (e < 38 && f >= p * 10.0f) { p = p * 10.0f; e = e + 1; } }
+    else           { while (f < 1.0f) { f = f * 10.0f; e = e - 1; } }
+    float h = p * 0.5f;              // round at the last digit kept
+    for (int i = 1; i < prec; i = i + 1) h = h * 0.1f;
+    f = f + h;
+    if (e < 38 && f >= p * 10.0f) { p = p * 10.0f; e = e + 1; }
+    char d[12];
+    for (int i = 0; i < prec; i = i + 1) {
+        int k = 0;
+        while (k < 9 && f >= p) { f = f - p; k = k + 1; }
+        d[i] = k;
+        p = p * 0.1f;
+    }
+    int last = prec - 1;             // drop trailing zeros
+    while (last > 0 && d[last] == 0) last = last - 1;
+    if (e < -4 || e >= prec) {       // scientific: d.ddde+XX
+        yanc_put('0' + d[0]);
+        if (last > 0) { yanc_put('.'); for (int i = 1; i <= last; i = i + 1) yanc_put('0' + d[i]); }
+        yanc_put('e');
+        if (e < 0) { yanc_put('-'); e = -e; } else yanc_put('+');
+        if (e < 10) yanc_put('0');
+        yanc_put_uint((unsigned)e, 10, 0, ' ', 0, 0, 0);
+    } else if (e >= 0) {             // ddd.ddd
+        for (int i = 0; i <= e; i = i + 1) yanc_put('0' + (i <= last ? d[i] : 0));
+        if (last > e) { yanc_put('.'); for (int i = e + 1; i <= last; i = i + 1) yanc_put('0' + d[i]); }
+    } else {                         // 0.000ddd
+        yanc_put('0'); yanc_put('.');
+        for (int i = -1; i > e; i = i - 1) yanc_put('0');
+        for (int i = 0; i <= last; i = i + 1) yanc_put('0' + d[i]);
+    }
+}
+
+// ---- 3. reading ---------------------------------------------------------------
+
+char yanc_line[YANC_LINE_MAX + 2];        // the line typed, with its '\n'
+int  yanc_line_len = 0;
+int  yanc_line_pos = 0;
+
+// a line from the keyboard: printable characters kept (and echoed),
+// backspace takes the last one back, Enter ends it; other keys are dropped
+inline void yanc_read_line() {
+    yanc_line_len = 0;
+    yanc_line_pos = 0;
+    while (1) {
+        int c = yanc_key();
+        if (c == 10) break;
+        if (c == 8) {
+            if (yanc_line_len > 0) {
+                yanc_line_len = yanc_line_len - 1;
+#if YANC_ECHO
+                yanc_put(8);
+#endif
+            }
+        } else if (c == 9 || (c >= 32 && c <= 126)) {
+            if (c == 9) c = ' ';      // a tab is a blank: backspace stays one column
+            if (yanc_line_len < YANC_LINE_MAX) {
+                yanc_line[yanc_line_len] = c;
+                yanc_line_len = yanc_line_len + 1;
+#if YANC_ECHO
+                yanc_put(c);
+#endif
+            }
+        }
+    }
+    yanc_line[yanc_line_len] = 10;
+    yanc_line_len = yanc_line_len + 1;
+#if YANC_ECHO
+    yanc_put(10);
+#endif
+}
+
+inline int yanc_peek() {                  // the next character typed, left in place
+    if (yanc_line_pos >= yanc_line_len) yanc_read_line();
+    return yanc_line[yanc_line_pos];
+}
+inline int yanc_get() {                   // the next character typed
+    int c = yanc_peek();
+    yanc_line_pos = yanc_line_pos + 1;
+    return c;
+}
+
+inline int yanc_blank(int c) { return c == ' ' || c == 10 || c == 9; }
+inline void yanc_skip_blanks() { while (yanc_blank(yanc_peek())) yanc_line_pos = yanc_line_pos + 1; }
+
+// an integer: blanks, an optional sign, digits; *ok = 0 when no digit came
+// (nothing is taken then but the blanks). v*10 is (v<<3)+(v<<1): no multiplier.
+inline int yanc_get_int(int* ok) {
+    yanc_skip_blanks();
+    int neg = 0, v = 0, n = 0;
+    int c = yanc_peek();
+    if (c == '-' || c == '+') { neg = c == '-'; yanc_line_pos = yanc_line_pos + 1; }
+    while (1) {
+        c = yanc_peek();
+        if (c < '0' || c > '9') break;
+        v = (v << 3) + (v << 1) + (c - '0');
+        n = n + 1;
+        yanc_line_pos = yanc_line_pos + 1;
+    }
+    *ok = n > 0;
+    return neg ? 0 - v : v;
+}
+
+// a float: blanks, sign, digits, '.', digits, e, sign, digits
+inline float yanc_get_float(int* ok) {
+    yanc_skip_blanks();
+    int neg = 0, n = 0;
+    float v = 0.0f;
+    int c = yanc_peek();
+    if (c == '-' || c == '+') { neg = c == '-'; yanc_line_pos = yanc_line_pos + 1; }
+    while (1) {
+        c = yanc_peek();
+        if (c < '0' || c > '9') break;
+        v = v * 10.0f + (float)(c - '0'); n = n + 1; yanc_line_pos = yanc_line_pos + 1;
+    }
+    if (yanc_peek() == '.') {
+        yanc_line_pos = yanc_line_pos + 1;
+        float s = 0.1f;
+        while (1) {
+            c = yanc_peek();
+            if (c < '0' || c > '9') break;
+            v = v + s * (float)(c - '0'); s = s * 0.1f; n = n + 1; yanc_line_pos = yanc_line_pos + 1;
+        }
+    }
+    if (n > 0 && (yanc_peek() == 'e' || yanc_peek() == 'E')) {
+        yanc_line_pos = yanc_line_pos + 1;
+        int eok = 0;
+        int e = yanc_get_int(&eok);
+        while (e > 0) { v = v * 10.0f; e = e - 1; }
+        while (e < 0) { v = v * 0.1f;  e = e + 1; }
+    }
+    *ok = n > 0;
+    return neg ? -v : v;
+}
+
+// a word: blanks skipped, then up to the next blank; n counts the 0 too
+inline int yanc_get_word(char* s, int n) {
+    yanc_skip_blanks();
+    int k = 0;
+    while (!yanc_blank(yanc_peek()) && k < n - 1) { s[k] = yanc_get(); k = k + 1; }
+    s[k] = 0;
+    return k;
+}
+
+// a line into s, up to n-1 chars; the '\n' is taken and not stored
+inline int yanc_get_line(char* s, int n) {
+    int k = 0;
+    while (1) {
+        int c = yanc_peek();
+        if (c == 10) { yanc_line_pos = yanc_line_pos + 1; break; }
+        if (k >= n - 1) break;
+        s[k] = c; k = k + 1; yanc_line_pos = yanc_line_pos + 1;
+    }
+    s[k] = 0;
+    return k;
+}
+
+}   // namespace yanc

@@ -223,8 +223,8 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 "delete"                 { return KW_DELETE;   }
 "namespace"              { return KW_NAMESPACE; }
 "using"                  { return KW_USING;    }
-"true"                   { yylval.ival = 1; g_lit_uns = 0; return INT_LIT; }
-"false"                  { yylval.ival = 0; g_lit_uns = 0; return INT_LIT; }
+"true"                   { yylval.ival = 1; g_lit_uns = 2; return INT_LIT; }   /* 2: a bool */
+"false"                  { yylval.ival = 0; g_lit_uns = 2; return INT_LIT; }
 "nullptr"                { yylval.ival = 0; g_lit_uns = 0; return INT_LIT; }
 
 "_Generic"               { return KW_GENERIC; }

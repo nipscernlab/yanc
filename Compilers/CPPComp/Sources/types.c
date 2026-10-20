@@ -231,6 +231,31 @@ int type_is_arith (const type *t) { return type_is_int(t) || type_is_float(t); }
 int type_is_ptr_or_arr(const type *t) { return t && (t->kind == TY_PTR || t->kind == TY_ARRAY); }
 int type_is_scalar(const type *t) { return t && t->kind != TY_STRUCT && t->kind != TY_ARRAY; }
 
+// the code an overload is chosen and labelled by: type_code, with char, bool
+// and unsigned told apart from int, as C++ tells them (`cout << 'A'` is not
+// `cout << 65`). Template instances keep type_code: f<char> is f<int> here.
+// A reference takes its referent's code in capitals (int& 'I', char& 'C',
+// float& 'F', a class& 'T', a pointer& 'P'), so `cin >> x` picks by x's type;
+// a pointer to char is 's', apart from the other pointers 'p' (`cout << "hi"`).
+char ov_code(const type *t)
+{
+    if (t && t->is_ref && t->base) {
+        switch (ov_code(t->base)) {
+            case 'i': return 'I'; case 'c': return 'C'; case 'b': return 'B';
+            case 'u': return 'U'; case 'f': return 'F'; case 'S': return 'T';
+            default:  return 'P';
+        }
+    }
+    if (t && (t->kind == TY_PTR || t->kind == TY_ARRAY))
+        return (t->base == t_char()) ? 's' : 'p';
+    if (t && t->kind == TY_INT) {
+        if (t->is_bool)       return 'b';
+        if (t == t_char())    return 'c';
+        if (!t->is_signed)    return 'u';
+    }
+    return type_code(t);
+}
+
 // one-char signature code for a parameter type, used to mangle overloaded
 // function names and to match a call's arguments to the right overload.
 char type_code(const type *t)

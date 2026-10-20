@@ -25,6 +25,7 @@ code), what was measured and what was deduced, and most end with a section
 | [toma-and-cade.md](toma-and-cade.md) | two SAPHOs passing a value: the protocol, the single-link design (v7.0, superseded in part) |
 | [toma-and-cade-links.md](toma-and-cade-links.md) | several links per processor: chains, fan-out, fan-in, two clocks |
 | [myfifo.md](myfifo.md) | `myFIFO` fixed, the two-clock `myDCFIFO` |
+| [cpp-iostream.md](cpp-iostream.md) | `<iostream>`, `<cstdio>`, `<cstring>` for CPPComp on the keyboard and the screen, and the overload rules they needed (v9.1) |
 | [vga-text.md](vga-text.md) | `myVGAText`: a VGA text screen written with `toma`, the decisions and what was measured (v9.1) |
 | [ps2-keyboard.md](ps2-keyboard.md) | `myKeyPS2`: a PS/2 keyboard read with `cade_sync`, the decisions and what was measured (v9.0) |
 | [ip-protection.md](ip-protection.md) | handing SAPHO to Quartus or Vivado without showing its source: IEEE 1735, vendor schemes, a service (notes, parked until a partnership) |

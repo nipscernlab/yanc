@@ -48,6 +48,30 @@ float, read an int and scale it; to write one, cast it, `out(0, (int)x)`.
 `out` with a `float` writes the float's raw bits, not its value, and the
 compiler warns.
 
+With a keyboard and a screen beside the processor (`myKeyPS2` and
+`myVGAText`, see [Peripherals](peripherals.md)), a program reads and writes
+text as on a PC:
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main()
+{
+    char nome[20];
+    int a, b;
+    cout << "Nome? ";
+    cin.getline(nome, 20);
+    cout << "Oi, " << nome << '!' << endl;
+    cout << "a b? ";
+    cin >> a >> b;
+    cout << a << " + " << b << " = " << a + b << endl;
+    return 0;
+}
+```
+
+See [Text on the keyboard and the screen](#text-on-the-keyboard-and-the-screen).
+
 ## Types
 
 | type | in YANC |
@@ -86,7 +110,12 @@ tests its mantissa, because SAPHO's zero float is not an all-zero word.
 ## Functions
 
 - Overloading by the number and type of the parameters, and default
-  arguments.
+  arguments, for functions and methods. The overload is chosen as C++
+  ranks it: the same type first, then a promotion (`char` or `bool` to
+  `int`), then a conversion (between integer types, integer and float, one
+  pointer type to another). `char`, `bool`, `unsigned` and `int` are told
+  apart (`f('A')` calls `f(char)`), `'A'` is a `char`, `true` a `bool`, and
+  a reference parameter (`int&`) matches by the type it refers to.
 - **Recursion works**: a function that can reach itself gets a stack frame
   on a 1024-word call stack, built only when the program has one. Inside a
   recursive function a local cannot be an array or a struct; the compiler
@@ -107,13 +136,17 @@ tests its mantissa, because SAPHO's zero float is not an all-zero word.
 - **Single** inheritance (one base class), virtual functions, pure virtual
   functions, virtual destructors.
 - Operator overloading, as member functions only, of `+ - * / == != < > <=
-  >= = [] += -= *= /=` and unary `-` and `+`. Not `%`, the shifts, the
-  bitwise operators, `!`, `++`, `--`, `->`, `()`, and not as free functions.
+  >= << >> = [] += -= *= /=` and unary `-` and `+`. Not `%`, `<<=`, `>>=`,
+  the bitwise operators, `!`, `++`, `--`, `->`, `()`, conversion operators,
+  and not as free functions. An operator that returns a reference to its
+  object chains: `s << a << b` calls `operator<<` on what the first returned.
 - Templates of functions and of classes, with type parameters
   (`typename`/`class`) and `int` parameters, explicit `f<T>(...)`. No
   specialization and no default template argument.
 - Namespaces, nested; a qualified name and `using namespace` work. No
-  anonymous `namespace {`.
+  anonymous `namespace {`. A namespace only groups names: every name in it
+  is also global, so `std::cout` and `cout` are one object, and a program
+  that includes `<iostream>` cannot name its own variable `hex` or `dec`.
 - A lambda only as an immediately-invoked global initializer with no
   captures and no parameters (`int k = []() { ... }();`).
 
@@ -131,14 +164,67 @@ returns 0. The heap's size is fixed.
 | `<cmath>` | `fabs`, `sqrt`, `isfinite`, `isnan`, `isinf` (the last two always 0: there is no infinity or NaN) |
 | `<vector>` | `std::vector<T>`: `size()`, `data()`, `operator[]`, `reserve`, `resize`, `push_back`; its storage is never freed, and there is no `erase`, `insert`, `clear` or iterator |
 | `<array>` | `std::array<T, N>`: `operator[]`, `data()`, `size()` |
-| `<cstring>` | `memcpy(dst, src, n)` and `memset(dst, v, n)`, `n` in words |
+| `<cstring>` | `strlen`, `strcmp`, `strncmp`, `strcpy`, `strncpy`, `strcat`, `strncat`, `strchr`, `strrchr`, `strstr`, as C's (a char is a word, a string ends with a 0); `memcpy`, `memmove`, `memset`, `memcmp`, `memchr`, `n` in words |
+| `<iostream>` | `std::cout`, `std::cin` on the screen and the keyboard: [below](#text-on-the-keyboard-and-the-screen) |
+| `<cstdio>` | `putchar`, `puts`, `fputs`, `fputc`, `putc`, `getchar`, `fgetc`, `getc`, `fgets`, with `stdin`, `stdout`, `stderr`: [below](#text-on-the-keyboard-and-the-screen) |
 | `<cstdint>`, `<cstddef>` | the integer types, `size_t`, `ptrdiff_t` |
 | `<limits>` | `std::numeric_limits<T>`, with `infinity()` = 1e30 |
 | `<bit>` | `std::bit_cast` |
 
-There is no `<string>`, `<iostream>`, `<cstdio>`, `<algorithm>`, `<memory>`
-or `<utility>`. A header the program includes but does not use costs
-nothing: the code nobody calls leaves the processor.
+There is no `<string>`, `<algorithm>`, `<memory>` or `<utility>`. A header
+the program includes but does not use costs nothing: the code nobody calls
+leaves the processor.
+
+## Text on the keyboard and the screen
+
+`<iostream>` and `<cstdio>` read the keyboard block `myKeyPS2` and write
+the screen block `myVGAText` ([Peripherals](peripherals.md)), over two
+links. By default the keyboard is on link 0 and the screen on link 1, both
+blocks on the processor's clock. A program changes that with `#define`
+before its first `#include`:
+
+| define | default | means |
+|---|---|---|
+| `YANC_STDIN_LINK` | 0 | the keyboard's link |
+| `YANC_STDOUT_LINK` | 1 | the screen's link |
+| `YANC_LINK_SYNC` | 1 | 1: the blocks on the processor's clock (`cade_sync`/`toma_sync`); 0: on another clock (`cade`/`toma`) |
+| `YANC_ECHO` | 1 | 1: what is typed shows on the screen |
+| `YANC_LINE_MAX` | 80 | the longest line read |
+
+**Writing.** `cout <<` takes `const char*`, `char`, `bool` (written as 1 or
+0, as C++ does), `int`, `unsigned` and `float`, and `std::endl`,
+`std::flush`, `std::hex`, `std::dec`, `std::oct`. A float is written as C++
+writes it by default, with 6 significant digits: `7.5`, `3.14159`, `1e+10`,
+`0.00015`. The SAPHO float carries about 7 decimal digits, so the sixth can
+be off by one. `cout.put(c)` and `cout.write(s, n)` also work. In C:
+`putchar(c)`, `puts(s)` (adds the new line), `fputs(s, stdout)`.
+
+**Reading.** As on a PC, nothing reaches the program before Enter: the
+characters typed show on the screen and Backspace takes the last one back.
+On a PC the terminal does that; here `std::cin` and `getchar` do. Then:
+
+| call | reads |
+|---|---|
+| `cin >> x` | `int`, `unsigned`, `float` (`2.5`, `-1e3`), `char` (the next one that is not blank) or `char*` (a word); blanks and new lines before it are skipped |
+| `cin.getline(s, n)` | the rest of the line, up to `n - 1` characters; the new line is taken and not stored |
+| `cin.get()`, `cin.peek()` | the next character, taken or left |
+| `cin.ignore(n, c)` | drops up to `n` characters, stopping after `c` |
+| `getchar()`, `fgets(s, n, stdin)` | as C's (`fgets` keeps the new line) |
+
+A number that is not there (a letter where `cin >> n` wants digits) sets
+`cin.fail()`, gives 0 and takes nothing; `cin.clear()` resets it. As on a
+PC, `cin >> n` leaves the Enter in the line, so a `getline` right after it
+reads an empty line: `cin.ignore(100, '\n')` between them.
+
+**What it costs.** Only what the program calls: a program that writes but
+never reads gets no keyboard link. Printing a number divides nothing (the
+processor gets no divider for it); printing or reading a float uses the
+float adder and multiplier. The line typed takes `YANC_LINE_MAX + 2` words
+of data memory.
+
+**Not yet** (GitHub issue #5): `printf` and `scanf` (they need variadic
+functions), `std::string` and `std::getline(cin, s)`, `setw`,
+`setprecision`, and `if (cin >> x)` or `!cin` (use `cin.fail()`).
 
 ## The preprocessor
 
@@ -171,6 +257,6 @@ exist in C± only) are errors.
 Exceptions (`try`, `catch`, `throw`), `typeid` and RTTI, `friend`,
 `decltype`, multiple inheritance, variadic functions, lambdas inside a
 function or with captures, template specialization and default template
-arguments, `std::string` and streams, `enum` values that are not plain
+arguments, `std::string`, file streams, `printf`, `enum` values that are not plain
 literals, and more than one source file (use `#include`). Most of these
 stop the compiler with "syntax error" at the line.
