@@ -131,6 +131,19 @@ everything you suggested"; what was left for later is in GitHub issue #4):
     on the rising edge of `clk`; inverted, the converter samples in the
     middle of the pixel. Not checked on the board, and not compared with
     Terasic's demo; Dênis's project, not inverted, shows a picture.
+17. **The link is read through a register** (Luciano, 2026-10-20: "resolver
+    o problema da queda de frequência"; GitHub issue #6). The SAPHO's
+    `toma` word comes straight out of its ALU, so the block decoding it in
+    the same cycle joined the SAPHO's longest path to its own decode.
+    Surveyed on the DE2-115 project for Dênis (32-bit C++ SAPHO with
+    `<iostream>`, both blocks, PLL; Quartus 24.1, three seeds each): as it
+    was 26.15 / 26.29 / 26.57 MHz; A, T and the word registered at the
+    input, 27.99 / 27.68 / 27.92 MHz (+32 LEs, +33 registers); B, the
+    decode on the low 8 bits plus a "high bits zero" flag, 26.19 MHz (no
+    gain); A and B, 27.11 MHz. A was taken. With it the worst path ends at
+    the new register, level with the SAPHO's own path to its accumulator.
+    One cycle more per word; the SAPHO holds its word while it waits
+    (checked by the regress pass `VGATEXT`, three real SAPHOs).
 
 ## 3. Specification (approved 2026-10-20, as implemented)
 
@@ -180,7 +193,8 @@ by one (mod 30) and the line it frees is cleared (80 cycles).
 5. Cursor: an underline in the bottom two pixel rows of its cell, blinking
    with a frame counter (decision 9).
 6. Link: when T != C and the block is idle, it takes `dado`, carries the
-   word out (one cycle for a character; 80 for a scroll; 2,400 for a
+   word out (after the cycle of its input register: one cycle for a
+   character; 80 for a scroll; 2,400 for a
    clear) and only then flips C, so the SAPHO waits in `toma` meanwhile.
    A command with arguments (129) takes three words; the block remembers
    which one comes next.
@@ -207,7 +221,11 @@ bits writing text. Board check on the DE2-115 with Dênis.
   A whole 8-bit system (C± SAPHO, `myKeyPS2`, `myVGAText`, PLL) on the
   DE2-115: 629 LEs, Fmax 97.8 MHz for 25 MHz. After the v9.1 changes
   (2026-10-20, one seed, `VGA_CLK = ~clk`): the block 332 LEs, 118
-  registers; the system 692 LEs, 100.4 MHz.
+  registers; the system 692 LEs, 100.4 MHz. With decision 17 (input
+  register), three seeds each: the block 337 LEs, 127 registers; the system
+  689 LEs, 88.5 / 92.9 / 92.5 MHz, against 100.4 / 91.1 / 88.4 MHz for the
+  block without it. The limit in all six is the keyboard's table (frame ->
+  ch): the 100.4 MHz above was one lucky seed.
 - The screen memory is written through a register, one cycle after the
   block flips C: harmless for the SAPHO (the writes go in order, the
   program never reads the screen back); the testbench checks one cycle

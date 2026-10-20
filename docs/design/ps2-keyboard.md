@@ -204,7 +204,9 @@ on the DE2-115 with Dênis.
   from 233 LEs / 92 registers to 294 / 99 (filter, Ctrl). With Ctrl written
   as `k - 96` the worst path of the whole system became the table plus that
   subtraction (frame -> ch, Fmax 88.0 MHz); taking the letter's low 5 bits
-  instead (`a` = 0x61) brought it to 100.4 MHz.
+  instead (`a` = 0x61) brought it to 100.4 MHz. That was one seed: three
+  seeds later gave 88 to 100 MHz, the table still the limit (vga-text.md,
+  section 4).
 
 ## 5. For the documentation (item 21 in TODO.md)
 

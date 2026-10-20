@@ -189,7 +189,8 @@ toma_sync(1, 128);        // clears the screen (the program waits until it is do
 A new line from the last line **scrolls** the screen up: the text moves one
 line up and the last line comes out blank. The block takes a word only when
 it can carry it out, and answers the `toma` only when it is done: one cycle
-for a character, 80 for a scroll, 2,400 for a clear. The program never waits
+for a character, 80 for a scroll, 2,400 for a clear, and one more for the
+register the word comes in through. The program never waits
 on a port of its own, and no character is lost while the screen clears.
 
 A helper in C++, as the regress program `Tests/VGATEXT/vga_cpp.cpp` does:
@@ -250,11 +251,23 @@ characters only, inside `myVGAText.v` itself: the block is one file, with no
 data file to point at. `Scripts/gen_vga_font.py` writes it from the original
 font file and says where that comes from.
 
-**Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115): 332 logic
-elements, 118 registers and 33,184 memory bits (the screen, 2,400 x 7 bits,
+**Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115), with
+`NUBITS` 8: 337 logic elements, 127 registers and 33,184 memory bits (the screen, 2,400 x 7 bits,
 and the font, 2,048 x 8, both in memory blocks). A whole system with an
-8-bit C± SAPHO, `myKeyPS2` and `myVGAText` takes 692 logic elements, with
-the clock at up to 100.4 MHz for the 25 MHz asked.
+8-bit C± SAPHO, `myKeyPS2` and `myVGAText` takes 689 logic elements, with
+the clock at up to 88 to 100 MHz (three fitter seeds; the keyboard's table
+is the limit) for the 25 MHz asked. A 32-bit C++ SAPHO with `<iostream>`,
+the two blocks and a PLL takes 3,174 logic elements and runs at up to 27.7
+to 28.0 MHz, the limit being the SAPHO's own float ALU.
+
+**Why the word goes through a register.** The SAPHO puts the `toma` word
+straight out of its ALU. Decoded in the same cycle, the SAPHO's longest path
+(data memory, float adder, normaliser) and the block's decode were one
+path: that 32-bit system ran at 26.2 to 26.6 MHz, 1.8 ns of margin at 25
+MHz. The register cuts it there, at one cycle more per word. The word on
+`out` also comes straight from the ALU: a block of your own that decodes a
+`toma` or an `out` word, rather than only storing it, should register it
+first (GitHub issue #7 weighs a register inside the SAPHO).
 
 **Reset** clears the screen (2,400 cycles). A word the program offers
 meanwhile waits and is carried out after it. On reset the block's C bit

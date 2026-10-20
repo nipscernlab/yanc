@@ -8,6 +8,14 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Changed
+- **`myVGAText` reads the `toma` word through a register.** The SAPHO puts
+  the word straight out of its ALU, and decoding it in the same cycle made
+  the SAPHO's longest path longer: a 32-bit C++ SAPHO with `<iostream>` on
+  the DE2-115 went from 26.3 to 27.9 MHz (mean of three seeds), from 1.8 to
+  about 4.2 ns of margin at 25 MHz. One cycle more per word; +33 registers
+  at 32 bits, +9 at 8. Issue #6.
+
 ## [v9.1] – 2026-10-20
 
 A keyboard and a screen, and text on them as on a PC. `myVGAText` joins

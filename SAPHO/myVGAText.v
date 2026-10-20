@@ -20,7 +20,8 @@
 // one (mod 30) and the line it frees is cleared; nothing is copied. The block
 // takes a word only when it is idle and flips its C bit (`valeu`) only when
 // the word is carried out (1 cycle for a character, 80 for a scroll, 2,400
-// for a clear), so the SAPHO waits in `toma` meanwhile and nothing is lost.
+// for a clear, and one more for the register the word comes in through), so
+// the SAPHO waits in `toma` meanwhile and nothing is lost.
 // Reset clears the screen too, and the block's C takes the program's T, so a
 // reset of this block alone does not take a stale word for a new one.
 //
@@ -530,8 +531,22 @@ reg        fword;                           // FILL: a word asked for it (not th
 
 assign valeu = c;
 
-wire [NUBITS-1:0] w = dado;
-wire              new_word = (toma != c);
+// The link is read through a register: the SAPHO's word comes straight out
+// of its ALU, so decoding it in the same cycle made the SAPHO's longest path
+// (data memory, float adder, normaliser) and this block's 32-bit decode one
+// path. A 32-bit C++ SAPHO on the DE2-115 went from 26.3 to 27.9 MHz (mean
+// of three seeds, Quartus 24.1, Cyclone IV E; GitHub issue #6). T and the
+// word are sampled together; the SAPHO holds its word while it waits, so a
+// word costs one cycle more.
+reg               tq;                       // the program's T, one cycle late
+reg  [NUBITS-1:0] wq;                       // its word, one cycle late
+always @ (posedge clk) begin
+	tq <= toma;
+	wq <= dado;
+end
+
+wire [NUBITS-1:0] w = wq;
+wire              new_word = (tq != c);
 
 // where the cursor goes after a character or a jump, scrolling on the last line
 task next_line;
