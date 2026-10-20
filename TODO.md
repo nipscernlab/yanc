@@ -994,30 +994,6 @@ works. A design should not leave critical warnings for a correct program.
 **Done when** the `.mif` files have as many words as the memories, or the
 memories as many as the files, with the reason written down.
 
-## 39. `myVGAText` decodes the word straight from the SAPHO's output
-
-**Status:** open, found 2026-10-20 (Luciano: record it, after the board
-test) · **Area:** `SAPHO/myVGAText.v` (the link: `w = dado`, the decode in
-IDLE) · **Evidence:** the DE2-115 project for Dênis (C:/tmp/sapho_de2115,
-32-bit C++ SAPHO with `<iostream>`), Quartus 24.1, Cyclone IV E
-
-The block reads `dado` and compares the whole word (`w >= 32 && w <= 126`,
-`w == 128`, `w < 30`, `w < 80`...) in the same cycle the SAPHO puts it out,
-so the SAPHO's path from its data memory to `toma_dado` and the block's
-32-bit decode make one path. On that project it is the worst path of the
-system: Fmax 26.15 MHz for 25 MHz (slack 1.8 ns, slow 85C model), from
-`mem_data` to `myVGAText:tela|fend`. The 8-bit system of the measurements
-(692 LEs) is not limited by it (100.4 MHz).
-
-Survey first (feedback: survey alternatives): register `dado` when the word
-is taken (one cycle more per character; the SAPHO waits in `toma` anyway),
-or decode on the low 8 bits plus a "high bits are zero" flag, or both.
-
-**Done when** the decode starts from a register (or the path is shown not
-to be the limit), tb_vgatext and the regress pass `VGATEXT` still pass, and
-the DE2-115 project fits with the slack measured and written here. Not
-before Dênis's board test of the current block.
-
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
 - Keep long-running accumulators (phase, time base, counters) in **integer /
