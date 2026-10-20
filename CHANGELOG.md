@@ -8,6 +8,16 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v9.1] – 2026-10-20
+
+A keyboard and a screen, and text on them as on a PC. `myVGAText` joins
+`myKeyPS2`, both audited (a filtered PS/2 clock, Ctrl, safe resets), with
+one code table for the two; C++ gets `<iostream>`, `<cstdio>` and a
+complete `<cstring>` on them, and cppcomp gets the overload rules they
+needed. Programs in C+- and C++ need no change: every program of the
+regress compiles to the same assembly as in v9.0. `myKeyPS2` has a new
+output, `tem_tecla`, which may stay unconnected.
+
 ### Added
 - **`SAPHO/myVGAText.v`: a VGA text screen written with `toma_sync(k, w)`.**
   640 x 480 at 60 Hz, 80 x 30 characters of 8 x 16, white on black, a
