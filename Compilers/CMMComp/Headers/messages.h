@@ -63,12 +63,12 @@ void parse_lang_flag(int *argc, char **argv);
       "Error on line %d: the biggest integer this thing can hold is %d!\n")
 
 #define MSG_ERR_FLOAT_MIN \
-    M("Erro na linha %d: o menor número float que pode ser representado é %f!\n", \
-      "Error on line %d: the smallest float this thing can hold is %f!\n")
+    M("Erro na linha %d: o menor número float que pode ser representado é %g!\n", \
+      "Error on line %d: the smallest float this thing can hold is %g!\n")
 
 #define MSG_ERR_FLOAT_MAX \
-    M("Erro na linha %d: o maior número float que pode ser representado é %f!\n", \
-      "Error on line %d: the biggest float this thing can hold is %f!\n")
+    M("Erro na linha %d: o maior número float que pode ser representado é %g!\n", \
+      "Error on line %d: the biggest float this thing can hold is %g!\n")
 
 // declaration / assignment / variable-use errors ---------------------------
 
@@ -565,8 +565,8 @@ void parse_lang_flag(int *argc, char **argv);
       "Heads up on line %d: constant %s is below the smallest normal float (%g) and becomes 0 at #FROUND %d. Use #FROUND 0 or raise #NBEXPO.\n")
 
 #define MSG_INFO_CONST_APPROX \
-    M("Info: constante %s na linha %d aproximada para %.14f (erro = %.14f)\n", \
-      "Info: constant %s on line %d approximated to %.14f (error = %.14f)\n")
+    M("Info: constante %s na linha %d aproximada para %.17g (erro = %.3g)\n", \
+      "Info: constant %s on line %d approximated to %.17g (error = %.3g)\n")
 
 #define MSG_INFO_SQRT_MACRO \
     M("Info: adicionando macro assembly para cálculo de raiz quadrada\n", \

@@ -45,10 +45,12 @@ expr oper_neg(expr e)
     }
     if (e.type == 5)
     {
-        float re, im; char txt[64];
-        if (sscanf(v_table[e.id].name, "%f %f", &re, &im) == 2 && re != 0.0 && im != 0.0)
-        {
-            snprintf(txt, sizeof txt, "%f%+fi", -re, -im);
+        char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)], txt[2*sizeof(v_table[0].name) + 4];
+        cnum_split(v_table[e.id].name, re, im);
+        if (atof(re) != 0.0 && atof(im) != 0.0)
+        {   // each part's sign flipped on the text, as for a float above
+            snprintf(txt, sizeof txt, "%s%s%s%si", re[0] == '-' ? "" : "-", re + (re[0] == '-'),
+                                                   im[0] == '-' ? "+" : "-", im + (im[0] == '-'));
             return num2exp(exec_cnum(txt), 5);
         }
     }

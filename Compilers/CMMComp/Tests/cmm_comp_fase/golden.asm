@@ -10,9 +10,9 @@ NOP
 #SHARE __atan_x main_c
 #SHARE __atan_t __atan_ax
 #SHARE __atan_p __atan_ax
-@main @__Lwh1 LOD 1.000000
+@main @__Lwh1 LOD 1.0
 SET main_c
-LOD 2.000000
+LOD 2.0
 SET main_c_i
 LOD 0.0
 F_LES main_c
@@ -57,9 +57,9 @@ JMP __Lfa1z
 @__Lfa1z F_MLT 1000.0
 F2I
 OUT 0
-LOD -1.000000
+LOD -1.0
 SET main_c
-LOD 2.000000
+LOD 2.0
 SET main_c_i
 LOD 0.0
 F_LES main_c
@@ -104,9 +104,9 @@ JMP __Lfa2z
 @__Lfa2z F_MLT 1000.0
 F2I
 OUT 0
-LOD -1.000000
+LOD -1.0
 SET main_c
-LOD -2.000000
+LOD -2.0
 SET main_c_i
 LOD 0.0
 F_LES main_c
@@ -151,9 +151,9 @@ JMP __Lfa3z
 @__Lfa3z F_MLT 1000.0
 F2I
 OUT 0
-LOD 1.000000
+LOD 1.0
 SET main_c
-LOD -2.000000
+LOD -2.0
 SET main_c_i
 LOD 0.0
 F_LES main_c
@@ -198,9 +198,9 @@ JMP __Lfa4z
 @__Lfa4z F_MLT 1000.0
 F2I
 OUT 0
-LOD 2.000000
+LOD 2.0
 SET main_c
-LOD 0.000000
+LOD 0.0
 SET main_c_i
 LOD 0.0
 F_LES main_c
@@ -245,9 +245,9 @@ JMP __Lfa5z
 @__Lfa5z F_MLT 1000.0
 F2I
 OUT 0
-LOD -2.000000
+LOD -2.0
 SET main_c
-LOD 0.000000
+LOD 0.0
 SET main_c_i
 LOD 0.0
 F_LES main_c
@@ -292,9 +292,9 @@ JMP __Lfa6z
 @__Lfa6z F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.000000
+LOD 0.0
 SET main_c
-LOD 2.000000
+LOD 2.0
 SET main_c_i
 LOD 0.0
 F_LES main_c
@@ -339,9 +339,9 @@ JMP __Lfa7z
 @__Lfa7z F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.000000
+LOD 0.0
 SET main_c
-LOD -2.000000
+LOD -2.0
 SET main_c_i
 LOD 0.0
 F_LES main_c
@@ -386,9 +386,9 @@ JMP __Lfa8z
 @__Lfa8z F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.000000
+LOD 0.0
 SET main_c
-LOD 0.000000
+LOD 0.0
 SET main_c_i
 LOD 0.0
 F_LES main_c

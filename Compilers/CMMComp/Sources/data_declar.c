@@ -136,11 +136,7 @@ void ini_row_close(void) { ini_row = -1; }
 static void ini_split(const ini_val *v, char *re, char *im)
 {
     if (v->kind != 3) { strcpy(re, v->txt); strcpy(im, "0.0"); return; }
-    int len = (int)strlen(v->txt), k = len - 1;
-    while (k > 0 && v->txt[k] != '+' && v->txt[k] != '-') k--;
-    memcpy(re, v->txt, k); re[k] = 0;
-    int b = (v->txt[k] == '+') ? k + 1 : k;
-    memcpy(im, v->txt + b, len - 1 - b); im[len - 1 - b] = 0;      // without the 'i'
+    cnum_split(v->txt, re, im);                 // a sign after an e is the exponent's
 }
 
 // check the list against the array (type, size, rows) and keep its values

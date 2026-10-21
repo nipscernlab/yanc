@@ -90,7 +90,7 @@ bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
 
 ## 5. One shared, exact constant encoder
 
-**Status:** steps 1-3 of 5 done (2026-09-25), 4-5 left · **Area:** `ASMComp/t2t.c`, `CMMComp/{variaveis,t2t}.c`, `CPPComp/codegen.c`, the three lexers · **Evidence:** [§1.5](docs/design/precision-and-width-review.md#15-constant-encoding-on-the-host-loses-bits-today)
+**Status:** steps 1-4 of 5 done (1-3 2026-09-25, 4 2026-10-21), 5 left · **Area:** `ASMComp/t2t.c`, `CMMComp/{variaveis,t2t}.c`, `CPPComp/codegen.c`, the three lexers · **Evidence:** [§1.5](docs/design/precision-and-width-review.md#15-constant-encoding-on-the-host-loses-bits-today)
 
 **Where it stands.**
 1. Done (`bbb8278`): `Compilers/common/yanc_num.{c,h}`, the exact encoder --
@@ -105,16 +105,14 @@ bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
    non-number or an overflowing constant is an error now.
 3. Done (`1e8ca03`): the asmcomp and appcomp lexers read an exponent;
    cppcomp prints `%.17g` instead of `%.20f` (`test84`).
-
-**Left, step 4 -- cmmcomp (Luciano's compiler: show the diff first):**
-`CMMComp.l:60` `FLNUM` has no exponent (C± cannot write `1e-8`);
-`CMMComp/Sources/t2t.c:63-68` splits a complex literal through
-`sscanf("%f %f")` + `sprintf("%f")` -- 6 decimals, `(1e-8, 2e-8)` becomes
-`(0, 0)`: split the source TEXT instead; `CMMComp/Sources/variaveis.c:164-204`
-is a second `f2mf` (diagnostics: precision warnings, the `#FROUND` flush
-warning) -- make it call `yanc_num` so both tools agree bit for bit. cmmcomp
-builds from the Makefile's `CMMCOMP_C` and from `regress.sh`'s own gcc line:
-add `Compilers/common/yanc_num.c` to both, as for asmcomp.
+4. Done (2026-10-21): cmmcomp reads every C float literal (`.5`, `5.`,
+   `007.5`, `1e-8`, `2.5E+3`, an `f`/`F`/`l`/`L` suffix) and writes it one way
+   (`fnum_text`: `[-]d.d[e[-]d]`, so asmcomp reads it and two spellings are
+   one constant); a comp literal is split on its text (`cnum_split`, a sign
+   after an `e` is the exponent's) in `get_cmp_cst`, the comp negation and the
+   brace lists, no `%f` left; its second `f2mf` is gone, `exec_fnum` encodes
+   with `yanc_num`, so its range errors and approximation notes agree with
+   asmcomp bit for bit. Fixture `cmm_flit`.
 
 **Left, step 5:** asmcomp refuses `NBMANT >= 2^(NBEXPO-1)` and `NUBITS > 32`
 (`f2mf` still returns an `unsigned int`, and `itob` takes an `int`); drop the

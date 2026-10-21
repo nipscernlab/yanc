@@ -264,7 +264,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
         ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
         funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
         variaveis.c array_index.c global.c macros.c messages.c args.c \
-        y.tab.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
+        y.tab.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 

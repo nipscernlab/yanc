@@ -8,13 +8,13 @@ NOP
 #NUGAIN 128
 #SHARE main_r_i main_x
 #SHARE main_r main_x_i
-@main @__Lwh1 LOD 4.000000
+@main @__Lwh1 LOD 4.0
 SET main_x
-LOD 2.000000
+LOD 2.0
 SET main_x_i
-LOD 1.000000
+LOD 1.0
 SET main_y
-LOD 1.000000
+LOD 1.0
 SET main_y_i
 F_MLT main_y_i
 P_LOD main_y
@@ -47,13 +47,13 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-LOD 8.000000
+LOD 8.0
 SET main_x
-LOD 6.000000
+LOD 6.0
 SET main_x_i
-LOD 1.000000
+LOD 1.0
 SET main_y
-LOD -1.000000
+LOD -1.0
 SET main_y_i
 F_MLT main_y_i
 P_LOD main_y
@@ -86,13 +86,13 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-LOD 6.000000
+LOD 6.0
 SET main_x
-LOD 8.000000
+LOD 8.0
 SET main_x_i
-LOD 2.000000
+LOD 2.0
 SET main_y
-LOD 0.000000
+LOD 0.0
 SET main_y_i
 F_MLT main_y_i
 P_LOD main_y

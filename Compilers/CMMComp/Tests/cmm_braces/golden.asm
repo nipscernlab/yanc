@@ -10,7 +10,7 @@ NOP
 #arrayd m 1 6 6 1 2 0 4 5 6
 #arrayd q 1 4 3 1 2 3
 #arrayd c 3 2 2 1.5 3
-#arrayd c_i 4 2 2 -2 0.0
+#arrayd c_i 4 2 2 -2.0 0.0
 #SHARE main_k loc_s
 JMP main
 @loc #arrayd loc_l 1 3 2 4 5

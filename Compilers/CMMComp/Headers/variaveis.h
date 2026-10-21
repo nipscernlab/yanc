@@ -2,6 +2,8 @@
 // identifier table -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+#include <stddef.h>
+
 // One row of the symbol table.
 typedef struct symbol {
     char name[512];   // name of the variable or function
@@ -31,3 +33,5 @@ int exec_id  (char *text);               // an ID was found
 int exec_inum(char *text);               // an int constant was found
 int exec_fnum(char *text);               // a float constant was found
 int exec_cnum(char *text);               // a comp constant was found
+void fnum_text (const char *in, char *out, size_t n); // a float literal as the .asm writes it
+void cnum_split(const char *txt, char *re, char *im); // a comp literal's two parts

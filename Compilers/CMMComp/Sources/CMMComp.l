@@ -58,8 +58,10 @@ WS     [ \t]+
 
 VARIA  {LETRA}({LETRA}|[0-9])*
 INNUM  [0-9]+
-FLNUM  (0|[1-9]+[0-9]*)\.?[0-9]*
-CONUM  [-]*{WS}*{FLNUM}{WS}*[+|-]{WS}*{FLNUM}{WS}*[i]
+FEXPO  [eE][-+]?[0-9]+
+FLNUM  ([0-9]+\.[0-9]*{FEXPO}?|\.[0-9]+{FEXPO}?|[0-9]+{FEXPO})[fFlL]?
+CPART  ({FLNUM}|{INNUM})
+CONUM  [-]*{WS}*{CPART}{WS}*[-+]{WS}*{CPART}{WS}*[i]
 
 STRIN  \"(\\.|[^\\"])*\"
 CARES  [-+*()=#;:,\]\[{}<>~!%/&^|⟩]

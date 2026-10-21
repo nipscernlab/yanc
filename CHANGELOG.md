@@ -13,6 +13,10 @@ tags consumed by Aurora.
   a = 1, b, c = a + 1;`, global or local, `int`, `float` and `comp`. It was
   a syntax error unless the declaration had a single name (TODO 34).
   Fixture `cmm_decl_list`. Manual: docs/language-cmm.md.
+- **C±: float literals in every form C writes them.** `1e-8`, `2.5E+3`,
+  `.5`, `5.`, `007.5` and the `f`/`F`/`l`/`L` suffix, in floats, complex
+  literals (`1e-8 + 2e-8i`) and brace lists. Fixture `cmm_flit`. Manual:
+  docs/language-cmm.md.
 - **C±: arrays initialized between braces, as in C.** `int v[5] = {3, -2,
   7};`, `float g[3] = {1.5, -0.25, 4};`, `comp z[2] = {1.5-2i, 3};`, `int
   m[2][3] = {{1, 2}, {4, 5, 6}};`. Constants only; positions left out are
@@ -39,6 +43,13 @@ tags consumed by Aurora.
   at 32 bits, +9 at 8. Issue #6.
 
 ### Fixed
+- **C±: a complex literal kept only 6 decimals.** cmmcomp split it through
+  a host float printed with `%f`, so `0.0000001 + 1i` lost its real part.
+  The parts are now split on the text. cmmcomp also dropped its own copy of
+  the constant encoder: its approximation notes and range errors come from
+  the exact encoder asmcomp uses (TODO item 5, step 4), so they report the
+  value that goes into the memory (`0.1` -> 0.099999994039535522, not
+  0.10000000894070).
 - **`norm()` at 8 or 16 bits with the default `#NUGAIN`.** `NUGAIN` is a
   signed `NUBITS`-bit parameter: 128 at 8 bits was -128 and `norm()`
   divided by a negative number. asmcomp now refuses a `#NUGAIN` that does

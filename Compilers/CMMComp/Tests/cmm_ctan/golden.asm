@@ -26,10 +26,10 @@ NOP
 #SHARE __exp_q main_w_i
 #SHARE __exp_n main_w_i
 #SHARE __exp_r __ctan_emb
-@main @__Lwh1 LOD 0.000000
+@main @__Lwh1 LOD 0.0
 F_MLT 2.0
 SET __ctan_ta
-LOD 0.000000
+LOD 0.0
 F_MLT 2.0
 SET __ctan_tb
 LOD __ctan_ta
@@ -75,10 +75,10 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.000000
+LOD 0.0
 F_MLT 2.0
 SET __ctan_ta
-LOD 1.000000
+LOD 1.0
 F_MLT 2.0
 SET __ctan_tb
 LOD __ctan_ta
@@ -124,9 +124,9 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 1.000000
+LOD 1.0
 SET main_z
-LOD 1.000000
+LOD 1.0
 SET main_z_i
 LOD main_z
 F_MLT 2.0
@@ -177,13 +177,13 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.500000
+LOD 0.5
 SET main_z
-LOD 0.500000
+LOD 0.5
 SET main_z_i
-LOD 0.500000
+LOD 0.5
 SET main_w
-LOD 0.500000
+LOD 0.5
 SET main_w_i
 LOD main_z
 F_ADD main_w
@@ -239,10 +239,10 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.785398
+LOD 0.7853982
 F_MLT 2.0
 SET __ctan_ta
-LOD 0.000000
+LOD 0.0
 F_MLT 2.0
 SET __ctan_tb
 LOD __ctan_ta

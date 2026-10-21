@@ -65,8 +65,8 @@ F2I_M midcomp_c_i
 OUT 0
 LOD midcomp_b
 RET
-@main @__Lwh1 LOD 3.000000
-P_LOD 4.000000
+@main @__Lwh1 LOD 3.0
+P_LOD 4.0
 CAL echo
 SET_P main_e_i
 SET main_e
@@ -74,10 +74,10 @@ F2I_M main_e
 OUT 0
 F2I_M main_e_i
 OUT 0
-LOD 1.000000
-P_LOD 2.000000
-P_LOD 3.000000
-P_LOD 4.000000
+LOD 1.0
+P_LOD 2.0
+P_LOD 3.0
+P_LOD 4.0
 CAL addc
 SET_P main_s_i
 SET main_s
@@ -94,8 +94,8 @@ F2I_M main_m
 OUT 0
 F2I_M main_m_i
 OUT 0
-LOD 10.000000
-P_LOD 5.000000
+LOD 10.0
+P_LOD 5.0
 CAL sumri
 OUT 0
 LOD 8.0
@@ -116,18 +116,18 @@ F2I_M main_cf
 OUT 0
 F2I_M main_cf_i
 OUT 0
-LOD 7.000000
+LOD 7.0
 F2I
 CAL takesint
 OUT 0
 LOD 1
-P_LOD 11.000000
-P_LOD 22.000000
+P_LOD 11.0
+P_LOD 22.0
 P_LOD 2
 CAL midcomp
 OUT 0
-LOD 6.000000
-P_LOD 7.000000
+LOD 6.0
+P_LOD 7.0
 CAL echo
 CAL echo
 SET_P main_nest_i

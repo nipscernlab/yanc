@@ -1,0 +1,51 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+// Float literals in every form C writes them (TODO item 5, step 4,
+// 2026-10-21): an exponent, a leading or trailing point, leading zeros, an
+// f/F/l/L suffix, in floats, comps, comp negation and brace lists. Before
+// it, C± had no exponent and a comp literal kept 6 decimals: 1e-8+2e-8i was
+// 0+0i. Expected (hand-computed, fout truncates):
+//   1e-8 * 1e8 + 0.5                          -> 1
+//   (1e-8+2e-8i) * 1e8 + 0.5, real and imag   -> 1 2
+//   2.5E+3, .5 * 4, 5., 007.5 * 2, 1.5f * 2   -> 2500 2 5 15 3
+//   -2.5e1                                    -> -25
+//   (10+10i) - (3e0+4e0i), real and imag      -> 7 6
+//   g[3] = {1e1, .5, 2.5e-1f}: g0, g1*4, g2*8 -> 10 2 2
+//   c[1] = {1e-1-2e+1i}: real*10+0.5, imag    -> 1 -20
+float g[3] = {1e1, .5, 2.5e-1f};
+comp  c[1] = {1e-1-2e+1i};
+
+void main()
+{
+    float a = 1e-8;
+    fout(0, a * 1e8 + 0.5);
+
+    comp z = 1e-8+2e-8i;
+    fout(0, real(z) * 1e8 + 0.5);
+    fout(0, imag(z) * 1e8 + 0.5);
+
+    fout(0, 2.5E+3);
+    fout(0, .5 * 4.0);
+    fout(0, 5.);
+    fout(0, 007.5 * 2.0);
+    fout(0, 1.5f * 2.0);
+
+    float n = -2.5e1;
+    fout(0, n);
+
+    comp w = complex(10.0, 10.0) - (3e0+4e0i);
+    fout(0, real(w));
+    fout(0, imag(w));
+
+    fout(0, g[0]);
+    fout(0, g[1] * 4.0);
+    fout(0, g[2] * 8.0);
+
+    fout(0, real(c[0]) * 10.0 + 0.5);
+    fout(0, imag(c[0]));
+
+    while (1) {}
+}
