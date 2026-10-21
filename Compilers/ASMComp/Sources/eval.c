@@ -515,6 +515,12 @@ void eval_finish()
 
     // close the .mif files ---------------------------------------------------
 
+    // The .mif files hold the program's words only, not up to the power of two
+    // the address reaches. Padding them took away Quartus's "Critical Warning
+    // (127005): Memory depth (4) in the design file differs from memory depth
+    // (3)", given for the small memories it builds in logic, but cost a block
+    // RAM on bigger ones (test46 on a Zynq-7010: 4 -> 5 RAMB36, 2026-10-21), so
+    // the warning stays: the rest of the memory is set to 0, never addressed.
     for (int i = n_dat_used; i < n_dat; i++) fprintf(f_data, "%s\n", itob(0, nubits));   // padding (see eval_init)
 
     fclose(f_instr);
@@ -532,6 +538,11 @@ void eval_finish()
     // the ALU's critical path (Yosys, 32 bits: 100 -> 70 LUT levels, 3 -> 38,
     // against 12 for 64). This is the one gate every front end passes through.
     if (nugain <= 0 || (nugain & (nugain - 1)) != 0) {fprintf(stderr, MSG_ERR_NUGAIN_POW2, nugain); exit(EXIT_FAILURE);}
+    // and it is a signed NUBITS-bit parameter: 128 at 8 bits is -128, and
+    // norm() divided by a negative number. Only a program that uses norm()
+    // is held to it; the others get NUGAIN 1 (hdl.c), a value nothing reads
+    if (opc_norm() && nubits < 63 && (long long)nugain > (1LL << (nubits-1)) - 1)
+        {fprintf(stderr, MSG_ERR_NUGAIN_RANGE, nugain, nubits, (int)((1LL << (nubits-1)) - 1)); exit(EXIT_FAILURE);}
 
     // finalize simulation ----------------------------------------------------
 

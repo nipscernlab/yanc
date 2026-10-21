@@ -262,7 +262,7 @@ for (k = 0; k <= L; k = k+1) begin : lv
 			wire [L:0]     cl = lv[k-1].cnt[(2*j+1)*(L+1) +: (L+1)];
 			wire [L:0]     cr = lv[k-1].cnt[(2*j  )*(L+1) +: (L+1)];
 			assign zer[j]                = zl & zr;
-			assign cnt[j*(L+1) +: (L+1)] = (zl) ? ((1 << (k-1)) + cr) : cl;
+			assign cnt[j*(L+1) +: (L+1)] = (zl) ? (({{L{1'b0}}, 1'b1} << (k-1)) + cr) : cl;   // the 1 at the count's width
 		end
 	end
 end
@@ -348,8 +348,10 @@ end else begin : direct
 
 end endgenerate
 
-localparam signed [EXP+1:0] EMAX  =  (1 <<< (EXP-1)) - 1;   // largest exponent
-localparam signed [EXP+1:0] EZERO = -(1 <<< (EXP-1));       // exponent of the zero encoding
+// as bit patterns of their own width (a 32-bit integer expression made the
+// synthesizers warn of truncation): 2^(EXP-1) - 1 and -2^(EXP-1)
+localparam signed [EXP+1:0] EMAX  = {3'b000, {(EXP-1){1'b1}}};   // largest exponent
+localparam signed [EXP+1:0] EZERO = {3'b111, {(EXP-1){1'b0}}};   // exponent of the zero encoding
 
 wire                  out_s;
 wire signed [EXP-1:0] out_e;
@@ -549,7 +551,7 @@ module ula_fmlt
 );
 
 localparam W = MAN+G;
-localparam signed [EXP+1:0] EZERO = -(1 <<< (EXP-1));
+localparam signed [EXP+1:0] EZERO = {3'b111, {(EXP-1){1'b0}}};  // -2^(EXP-1), at its own width
 
 // separate the parts of the input signals ------------------------------------
 
@@ -1137,9 +1139,8 @@ wire        [MAN+EXP:0] val   = (s) ? -mag : mag;
 
 // FROUND >= 1: saturate instead of wrapping. A normalized mantissa is at least
 // 2^(MAN-1), so the value reaches 2^(MAN+EXP) as soon as e > EXP.
-localparam signed [EXP+1:0] EFIT = EXP;
 wire signed [EXP+1:0] ew  = {{2{e[EXP-1]}}, e};
-wire                  ovf = (FROUND != 0) & (ew > EFIT);
+wire                  ovf = (FROUND != 0) & (ew > EXP);   // ew sign-extended to compare with EXP
 
 always @ (*) out = (ovf) ? ((s) ? {1'b1, {(MAN+EXP){1'b0}}} : {1'b0, {(MAN+EXP){1'b1}}}) : val;
 

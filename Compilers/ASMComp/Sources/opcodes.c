@@ -1057,6 +1057,9 @@ int opc_cad() {return  find_opc("CAD") != -1;}
 // checks whether the CAL instruction is present
 int opc_cal() {return  find_opc("CAL") != -1;}
 
+// checks whether norm() is used: NRM, NRM_M or P_NRM_M (x / NUGAIN)
+int opc_norm() {return find_opc("NRM") != -1 || find_opc("NRM_M") != -1 || find_opc("P_NRM_M") != -1;}
+
 // checks whether any float opcode is present: every float mnemonic has F_ in
 // its name (F_, SF_, PF_ prefixes, I2F_M), plus I2F, F2I and the XPO family
 int opc_float()

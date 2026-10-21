@@ -960,20 +960,6 @@ backspace, generic one-bit outputs, one 25 MHz clock, the Modern DOS font
 **Done when** it runs on the DE2-115 (Dênis, after roteiro 3), with the
 DE2-115 mapping of docs/peripherals.md.
 
-## 38. A tiny program's SAPHO memories are deeper than their `.mif`
-
-**Status:** seen 2026-10-20, not studied · **Area:** asmcomp (the `.mif`
-writers, `MDATAS`/`MINSTS`), `SAPHO/processor.v`
-
-Quartus 24.1, fitting an 8-bit C+- program of 11 instructions and 3 data
-words: "Critical Warning (127005): Memory depth (4) in the design file
-differs from memory depth (3) in the Memory Initialization File" (data)
-and "(16) ... (11)" (instructions); the rest is set to 0, so the processor
-works. A design should not leave critical warnings for a correct program.
-
-**Done when** the `.mif` files have as many words as the memories, or the
-memories as many as the files, with the reason written down.
-
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
 - Keep long-running accumulators (phase, time base, counters) in **integer /

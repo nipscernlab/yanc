@@ -26,6 +26,27 @@ All input ports share `in`: the top level puts on it the word of the port
 whose `req_in` bit is 1. All output ports share `out`: a port's word is
 valid when its `out_en` bit is 1.
 
+The word on `out` (and on `toma_dado`, below) comes straight from the
+processor's ALU: a block that only stores it when `out_en` is 1 adds
+nothing to the clock, but a block that decodes or computes on it before a
+register makes the processor's longest path longer. Register it first
+(GitHub issue #7 weighs a register inside the processor).
+
+### The warnings Quartus and Vivado give
+
+Every opcode is a parameter and only what the program uses is built, so
+the synthesizers report, for any program, things that are not faults:
+
+| tool | warning | why, and what to do |
+|---|---|---|
+| Quartus | `Critical Warning (127005): Memory depth (16) in the design file differs from memory depth (11) in the Memory Initialization File` | a small memory (a few words, built in logic) is as deep as its address reaches, the `.mif` holds the program's words only; the rest is set to 0 and never addressed. Nothing to do: padding the `.mif` would cost a block RAM on bigger programs |
+| Quartus | `Warning (10036): ... assigned a value but never read`, `(10030)` on the font of `myVGAText` | a signal whose reader belongs to an operation the program does not use; the font is a read-only memory |
+| Vivado | `[Synth 8-7129] Port ... is either unconnected or has no load`, `[Synth 8-3936] ... trimmed`, `[Synth 8-6014]` | the same: inputs of operations not built, divider stage registers with constant bits |
+
+Measured with Quartus 24.1 (Cyclone IV E and V) and Vivado 2025.2 (Zynq-7010)
+on 2026-10-21. A warning not in this table may be a real problem: say so in
+an issue.
+
 ## Links: `toma` and `cade`
 
 ```c

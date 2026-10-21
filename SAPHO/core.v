@@ -184,8 +184,10 @@ module stack
 
 // Constants
 
-wire [NADDR-1:0] zero = {{NADDR-1{1'b0}}, {1'b0}};
-wire [NADDR-1:0] um   = {{NADDR-1{1'b0}}, {1'b1}};
+// (a 1-bit pointer made {NADDR-1{..}} a zero replication, which Vivado
+// flags and stricter tools refuse; 1'b1 is zero-extended to NADDR bits)
+wire [NADDR-1:0] zero = {NADDR{1'b0}};
+wire [NADDR-1:0] um   = 1'b1;
 
 // Memory
 

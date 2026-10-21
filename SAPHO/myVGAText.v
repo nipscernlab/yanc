@@ -91,7 +91,7 @@ reg [4:0] top;                              // memory line shown at the top
 
 // memory line of screen line r: (r + top) mod 30
 function [4:0] mline; input [4:0] r; input [4:0] t; reg [5:0] s;
-	begin s = r + t; mline = (s >= 6'd30) ? s - 6'd30 : s[4:0]; end
+	begin s = r + t; mline = (s >= 6'd30) ? s[4:0] - 5'd30 : s[4:0]; end   // s - 30 < 30: its low 5 bits
 endfunction
 
 // address of (memory line, column): line*80 + column = line*64 + line*16 + column

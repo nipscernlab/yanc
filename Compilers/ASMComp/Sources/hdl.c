@@ -172,7 +172,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     fprintf(f_veri,            ".NBMANT(%d),\n", nbmant);
     fprintf(f_veri,            ".NBEXPO(%d),\n", nbexpo);
     fprintf(f_veri,            ".NBOPER(%d),\n", nbopr );
-    fprintf(f_veri,            ".NUGAIN(%d),\n", nugain);
+    fprintf(f_veri,            ".NUGAIN(%d),\n", opc_norm() ? nugain : 1);   // read only by norm(); 1 fits any width
     fprintf(f_veri,            ".MDATAS(%d),\n", n_dat );
     fprintf(f_veri,            ".MINSTS(%d),\n", n_ins );
     fprintf(f_veri,            ".SDEPTH(%d),\n", sdepth);

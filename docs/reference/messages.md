@@ -278,6 +278,7 @@ value. What the common ones mean and how to get past them is in
 - Error: couldn't create the file <name>/app\_log.txt.
 - Error: the constant '<name>' is not a number.
 - Error: the constant <name> does not fit the processor's float (NBMANT <n>, NBEXPO <n>): its exponent is past the maximum.
+- Error: #NUGAIN <n> does not fit a signed <n>-bit word (at most <n>): norm(x), which is x / NUGAIN, would divide by a negative number. Use a smaller #NUGAIN.
 - Error: #NUGAIN <n> is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift (~12 LUT levels); anything else becomes a constant divider (38 to 70 levels, measured), the critical path of the whole ALU.
 - Error: floating-point setup doesn't add up. You gotta have NUBITS = NBMANT + NBEXPO + 1 (NUBITS <n>, NBMANT <n>, NBEXPO <n> add up to <n>). A program without float needs no #NBMANT or #NBEXPO.
 - Error: the exponent is too short for the mantissa (NBMANT <n>, NBEXPO <n>). You need NBMANT < 2^(NBEXPO-1): with no hidden bit, 1.0 is 2^(NBMANT-1) x 2^-(NBMANT-1), and that exponent has to fit. Widen NBEXPO or narrow NBMANT.

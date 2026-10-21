@@ -35,6 +35,16 @@ tags consumed by Aurora.
   at 32 bits, +9 at 8. Issue #6.
 
 ### Fixed
+- **`norm()` at 8 or 16 bits with the default `#NUGAIN`.** `NUGAIN` is a
+  signed `NUBITS`-bit parameter: 128 at 8 bits was -128 and `norm()`
+  divided by a negative number. asmcomp now refuses a `#NUGAIN` that does
+  not fit the word when the program uses `norm()`, and writes `NUGAIN` 1 in
+  a processor that does not (nothing reads it there).
+- **A zero replication in the stack** (`core.v`, a 1-bit pointer) that
+  Vivado flags and stricter tools refuse; the truncation warnings of five
+  constants of the ALU and one of `myVGAText` are gone (same values,
+  written at their own width; the logic is identical, Quartus and Vivado
+  compared). docs/multiprocessor.md lists the warnings to expect.
 - **C++: `char s[] = "..."` (no size) got no words** and the copy of the
   string ran past it; it now has the string's length plus the NUL.
 - **The shared assembly passes cut lines longer than 4,096 characters**;
