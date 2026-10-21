@@ -1,0 +1,11 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+// Brace initializer: a row longer than the second dimension is refused.
+int m[2][2] = {{1, 2, 3}, {4}};
+void main()
+{
+    out(0, 1);
+}

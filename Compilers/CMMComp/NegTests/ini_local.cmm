@@ -1,0 +1,16 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+// Warning fixture: a LOCAL array initialized between braces keeps its values
+// from one call to the next; the compiler says so.
+int f()
+{
+    int l[3] = {4, 5};
+    return l[1];
+}
+void main()
+{
+    out(0, f());
+}

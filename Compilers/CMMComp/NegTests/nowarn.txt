@@ -7,3 +7,5 @@
 const_idx_read_used.cmm|isn't being used
 file_init_local.cmm|+keeps what the function wrote
 file_init_global.cmm|keeps what the function wrote
+ini_local.cmm|+gets the values between braces only once
+ini_global.cmm|gets the values between braces only once

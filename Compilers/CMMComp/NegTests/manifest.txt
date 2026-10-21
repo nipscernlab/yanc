@@ -37,3 +37,7 @@ bad-name.cmm|can only have letters, digits and '_'
 params_17.cmm|has more than 16 parameters
 sinh_comp.cmm|sinh(.) doesn't take a comp
 toaqui_twice.cmm|duplicate #TOAQUI marker
+ini_type.cmm|does not take the value 2.5 between braces
+ini_count.cmm|has 2 positions and the list between braces reaches position 3
+ini_1d_rows.cmm|braces inside the list only mark the rows of a 2D array
+ini_rows.cmm|each with up to 2 values

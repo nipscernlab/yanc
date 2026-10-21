@@ -1,0 +1,11 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+// No-warning fixture: a GLOBAL array initialized between braces is fine.
+int t[4] = {1, 2};
+void main()
+{
+    out(0, t[1]);
+}
