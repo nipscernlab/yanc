@@ -258,7 +258,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
                            int oct = yytext[0] == '0' && yytext[1] >= '0' && yytext[1] <= '9';
                            if (oct && strpbrk(yytext, "89")) msg_error(yylineno, "'%s': a number starting with 0 is octal, and has no 8 or 9", yytext);
                            yylval.ival = int_lit(yytext, oct ? 8 : 10); return INT_LIT; }
-{FLOAT}f?                { yylval.fval = strtod(yytext, NULL);     return FLOAT_LIT; }
+{FLOAT}[fFlL]?           { yylval.fval = strtod(yytext, NULL);     return FLOAT_LIT; }
 {CHRLIT}                 { yylval.ival = unescape_char(yytext);    return CHAR_LIT; }
 {STRLIT}                 {
                            int len = 0;

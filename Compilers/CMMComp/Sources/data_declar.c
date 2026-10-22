@@ -168,7 +168,7 @@ static void ini_take(int id_var, int size, int siz2)
     for (int k = 0; k < ini_n; k++)
     {
         int pos = (ini_rows > 0) ? ini_v[k].row * siz2 + ini_v[k].col : k;
-        char r[256], i[256];
+        char r[sizeof(v_table[0].name) + 2], i[sizeof(v_table[0].name) + 2];   // a literal and its sign
         ini_split(&ini_v[k], r, i);
         re[pos] = strdup(r); im[pos] = strdup(i);
     }

@@ -8,6 +8,8 @@
 #include   <math.h>
 #include  <ctype.h>
 #include  <stdio.h>
+#include  <errno.h>
+#include <limits.h>
 
 // local includes
 #include "../Headers/global.h"
@@ -248,22 +250,45 @@ int exec_id(char *text)
     return find_var(var_name);
 }
 
+// the value of an int literal in any form C writes it: 42, 052 (octal),
+// 0x2A, 0b101010, with a u/U/l/L suffix; one past the int range if too big
+static unsigned long long inum_value(const char *text)
+{
+    int base = 10; const char *p = text;
+    if      (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {base = 16; p += 2;}
+    else if (p[0] == '0' && (p[1] == 'b' || p[1] == 'B')) {base =  2; p += 2;}
+    else if (p[0] == '0' && isdigit((unsigned char)p[1]))
+    {
+        base = 8; p++;
+        for (const char *q = p; isdigit((unsigned char)*q); q++)
+            if (*q > '7') {fprintf(stderr, MSG_ERR_OCTAL_DIGIT, line_num+1, text); exit(EXIT_FAILURE);}
+    }
+    errno = 0;
+    unsigned long long v = strtoull(p, NULL, base);       // stops at the suffix
+    return (errno == ERANGE || v > (unsigned long long)INT_MAX) ? (unsigned long long)INT_MAX + 1 : v;
+}
+
 // used when the lexer finds an int constant
 int exec_inum(char *text)
 {
     // range check ------------------------------------------------------------
     // no negative constants ever reach this function
 
-    int max = (int) (pow(2,nbmant+nbexpo+1-1)-1);
-    int num = atoi(text);
+    // the width the directives give so far, never past 32: they may be in flux
+    // (#NBMANT 25 read before #NBEXPO 6 is a 34-bit word for a moment)
+    int       w   = nbmant + nbexpo + 1;
+    long long max = (1LL << ((w < 32 ? w : 32) - 1)) - 1;
+    long long num = (long long)inum_value(text);
 
-    if (num > max) {fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, max); exit(EXIT_FAILURE);}
+    if (num > max) {fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, (int)max); exit(EXIT_FAILURE);}
 
-    // add to the table -------------------------------------------------------
+    // add to the table, in decimal: the .asm reads only that -----------------
 
-    if (find_var(text) == -1) add_var(text);
+    char t[32]; snprintf(t, sizeof(t), "%lld", num);
 
-    int id = find_var(text);
+    if (find_var(t) == -1) add_var(t);
+
+    int id = find_var(t);
 
     v_table[id].isco = 1;
 

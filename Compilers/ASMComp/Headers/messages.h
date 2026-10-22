@@ -78,6 +78,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: o expoente é curto demais para a mantissa (NBMANT %d, NBEXPO %d). Tem que ser NBMANT < 2^(NBEXPO-1): sem bit escondido, 1.0 é 2^(NBMANT-1) x 2^-(NBMANT-1), e esse expoente precisa caber. Aumente NBEXPO ou diminua NBMANT.\n", \
       "Error: the exponent is too short for the mantissa (NBMANT %d, NBEXPO %d). You need NBMANT < 2^(NBEXPO-1): with no hidden bit, 1.0 is 2^(NBMANT-1) x 2^-(NBMANT-1), and that exponent has to fit. Widen NBEXPO or narrow NBMANT.\n")
 
+#define MSG_ERR_NUBITS_WIDE \
+    M("Erro: #NUBITS %d passa de 32. A palavra do SAPHO tem no máximo 32 bits.\n", \
+      "Error: #NUBITS %d is past 32. A SAPHO word is at most 32 bits.\n")
+
 #define MSG_ERR_IND_BASE_INT \
     M("Erro: %s %s: o operando de LDI/ILI/STI/ISI é o nome de um array ou um endereço base inteiro.\n", \
       "Error: %s %s: the operand of LDI/ILI/STI/ISI is an array name or an integer base address.\n")
@@ -124,12 +128,12 @@ void parse_lang_flag(int *argc, char **argv);
       "Error: line %d of file '%s' isn't a valid float!\n")
 
 #define MSG_ERR_FLOAT_OVER \
-    M("Erro: a linha %d do arquivo '%s' é maior que o limite de %f!\n", \
-      "Error: line %d of file '%s' busts the upper limit of %f!\n")
+    M("Erro: a linha %d do arquivo '%s' é maior que o limite de %g!\n", \
+      "Error: line %d of file '%s' busts the upper limit of %g!\n")
 
 #define MSG_ERR_FLOAT_UNDER \
-    M("Erro: a linha %d do arquivo '%s' é menor que o limite de %f!\n", \
-      "Error: line %d of file '%s' is below the lower limit of %f!\n")
+    M("Erro: a linha %d do arquivo '%s' é menor que o limite de %g!\n", \
+      "Error: line %d of file '%s' is below the lower limit of %g!\n")
 
 #define MSG_ERR_BAD_FORMAT \
     M("Formato inválido!\n", \
@@ -140,20 +144,20 @@ void parse_lang_flag(int *argc, char **argv);
       "Error: line %d of file '%s' isn't a valid comp!\n")
 
 #define MSG_ERR_COMP_REAL_OVER \
-    M("Erro: parte real da linha %d do arquivo '%s' é maior que o limite de %f!\n", \
-      "Error: real part of line %d of file '%s' busts the upper limit of %f!\n")
+    M("Erro: parte real da linha %d do arquivo '%s' é maior que o limite de %g!\n", \
+      "Error: real part of line %d of file '%s' busts the upper limit of %g!\n")
 
 #define MSG_ERR_COMP_REAL_UNDER \
-    M("Erro: parte real da linha %d do arquivo '%s' é menor que o limite de %f!\n", \
-      "Error: real part of line %d of file '%s' is below the lower limit of %f!\n")
+    M("Erro: parte real da linha %d do arquivo '%s' é menor que o limite de %g!\n", \
+      "Error: real part of line %d of file '%s' is below the lower limit of %g!\n")
 
 #define MSG_ERR_COMP_IMAG_OVER \
-    M("Erro: parte imaginária da linha %d do arquivo '%s' é maior que o limite de %f!\n", \
-      "Error: imaginary part of line %d of file '%s' busts the upper limit of %f!\n")
+    M("Erro: parte imaginária da linha %d do arquivo '%s' é maior que o limite de %g!\n", \
+      "Error: imaginary part of line %d of file '%s' busts the upper limit of %g!\n")
 
 #define MSG_ERR_COMP_IMAG_UNDER \
-    M("Erro: parte imaginária da linha %d do arquivo '%s' é menor que o limite de %f!\n", \
-      "Error: imaginary part of line %d of file '%s' is below the lower limit of %f!\n")
+    M("Erro: parte imaginária da linha %d do arquivo '%s' é menor que o limite de %g!\n", \
+      "Error: imaginary part of line %d of file '%s' is below the lower limit of %g!\n")
 
 #define MSG_ERR_MISSING_LINES \
     M("Erro: tá faltando %d linhas no arquivo '%s'!\n", \

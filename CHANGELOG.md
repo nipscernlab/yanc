@@ -17,6 +17,18 @@ tags consumed by Aurora.
   `.5`, `5.`, `007.5` and the `f`/`F`/`l`/`L` suffix, in floats, complex
   literals (`1e-8 + 2e-8i`) and brace lists. Fixture `cmm_flit`. Manual:
   docs/language-cmm.md.
+- **C±: int literals in every form C writes them.** `0x2A`, `052` (octal:
+  as in C, a leading 0 makes it octal, so `010` is now 8, not 10), `0b101010`
+  and the `u`/`U`/`l`/`L` suffixes, in expressions, brace lists and case
+  labels; `089` stops with a message. Fixture `cmm_ilit`. Manual:
+  docs/language-cmm.md.
+- **C++: the `F`, `l` and `L` float suffixes** (only `f` was read; `1.5F`
+  was a syntax error). Test test95.
+- **Float constants checked end to end** (TODO item 5 closed): a regress
+  step writes C± brace lists of float literals in every form, compiles them
+  and compares each word of the data `.mif` with the exact model, at
+  32/23/8, 32/25/6, 16/10/5 and 32/23/8 `#FROUND 1` (658 constants).
+  `Scripts/check_const_e2e.py`.
 - **C±: arrays initialized between braces, as in C.** `int v[5] = {3, -2,
   7};`, `float g[3] = {1.5, -0.25, 4};`, `comp z[2] = {1.5-2i, 3};`, `int
   m[2][3] = {{1, 2}, {4, 5, 6}};`. Constants only; positions left out are
@@ -43,6 +55,18 @@ tags consumed by Aurora.
   at 32 bits, +9 at 8. Issue #6.
 
 ### Fixed
+- **C±: a brace list of more than about 25 values crashed cmmcomp.** The
+  `#arrayd` line went through a 256-character buffer (since the brace lists
+  came in); it is now written straight to the file. An instruction with a
+  long literal or name had the same problem in a 100-character buffer.
+- **C±: `#NBMANT 25` before `#NBEXPO 6` stopped cmmcomp** with "the biggest
+  integer this thing can hold is -2147483648": the int-literal limit used
+  the width of the directives read so far (34 bits for a moment) in an `int`.
+- **asmcomp refuses `#NUBITS` above 32** with a clear message; the words
+  are built in a C `int` and were cut without a word.
+- **asmcomp: the range of an array file's floats is checked exactly** (the
+  encoder, not a host float), and a complex line like `1e-8+2e-8i` splits
+  at the right sign.
 - **C±: a complex literal kept only 6 decimals.** cmmcomp split it through
   a host float printed with `%f`, so `0.0000001 + 1i` lost its real part.
   The parts are now split on the text. cmmcomp also dropped its own copy of

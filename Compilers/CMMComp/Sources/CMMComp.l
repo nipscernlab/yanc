@@ -57,10 +57,10 @@ LETRA  [A-Za-z_]
 WS     [ \t]+
 
 VARIA  {LETRA}({LETRA}|[0-9])*
-INNUM  [0-9]+
+INNUM  ([0-9]+|0[xX][0-9a-fA-F]+|0[bB][01]+)[uUlL]*
 FEXPO  [eE][-+]?[0-9]+
 FLNUM  ([0-9]+\.[0-9]*{FEXPO}?|\.[0-9]+{FEXPO}?|[0-9]+{FEXPO})[fFlL]?
-CPART  ({FLNUM}|{INNUM})
+CPART  ({FLNUM}|[0-9]+)
 CONUM  [-]*{WS}*{CPART}{WS}*[-+]{WS}*{CPART}{WS}*[i]
 
 STRIN  \"(\\.|[^\\"])*\"

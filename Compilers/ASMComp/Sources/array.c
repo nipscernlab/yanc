@@ -15,10 +15,27 @@
 #include "../Headers/array.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../../common/yanc_num.h"
 
 // ----------------------------------------------------------------------------
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
+
+// largest and smallest magnitudes of the float format, for the messages
+static double fp_max(void) { return (pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1); }
+static double fp_min(void) { return pow(2,-pow(2,nbexpo-1)); }
+
+// whether a float text fits the format, by the encoder f2mf uses (exact, not a
+// host float): 1 too large, -1 a nonzero value that would encode as zero, 0
+// it fits (a text that is not a number is f2mf's to report)
+static int fp_range(const char *text)
+{
+    yn_float r;
+    if (!yn_encode(text, nbmant, nbexpo, fround, &r)) return 0;
+    if (r.overflow) return 1;
+    if (r.underflow && !r.flushed) return -1;
+    return 0;
+}
 
 // helper to strip quotes from a string
 void rem_aspas(char *str)
@@ -74,12 +91,9 @@ int linha_e_float(char *linha, int idx, char *f_name, float *delta)
 
     // range check ------------------------------------------------------------
 
-    float max = (float)((pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1)); // largest representable magnitude
-    float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // smallest representable magnitude
-    float num = (atof(linha)<0.0) ? -atof(linha) : atof(linha);         // absolute value of the number
-
-    if (num < min && num != 0.0) {fprintf(stderr, MSG_ERR_FLOAT_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
-    if (num > max)               {fprintf(stderr, MSG_ERR_FLOAT_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
+    int rg = fp_range(linha);
+    if (rg < 0) {fprintf(stderr, MSG_ERR_FLOAT_UNDER, idx, f_name, fp_min()); exit(EXIT_FAILURE);}
+    if (rg > 0) {fprintf(stderr, MSG_ERR_FLOAT_OVER , idx, f_name, fp_max()); exit(EXIT_FAILURE);}
 
     // convert and compute the residual ---------------------------------------
 
@@ -112,10 +126,11 @@ void separar_complexo(const char *entrada, char *real, char *imag) {
     }
     buffer[j] = '\0';
 
-    // find the last '+' or '-' that splits real from imaginary
+    // find the last '+' or '-' that splits real from imaginary (a sign right
+    // after an e belongs to an exponent: 1e-8+2e-8i)
     int pos = -1;
     for (int i = 1; buffer[i] != '\0'; i++) { // skip index 0 to avoid confusing it with the real part's sign
-        if (buffer[i] == '+' || buffer[i] == '-') {
+        if ((buffer[i] == '+' || buffer[i] == '-') && buffer[i-1] != 'e' && buffer[i-1] != 'E') {
             pos = i;
         }
     }
@@ -166,21 +181,19 @@ int linha_e_comp(const char *linha, int idx, char *f_name, float *delta)
 
     // range check ------------------------------------------------------------
 
-    float max = (float)((pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1)); // largest representable magnitude
-    float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // smallest representable magnitude
-    char  real [64], imag[64];
+    char real[100], imag[100];
 
     separar_complexo(linha, real, imag);
 
     // real part
-    float num = (atof(real)<0.0) ? -atof(real) : atof(real); // absolute value of the real part
-    if (num < min && num != 0.0) {fprintf(stderr, MSG_ERR_COMP_REAL_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
-    if (num > max)               {fprintf(stderr, MSG_ERR_COMP_REAL_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
+    int rg = fp_range(real);
+    if (rg < 0) {fprintf(stderr, MSG_ERR_COMP_REAL_UNDER, idx, f_name, fp_min()); exit(EXIT_FAILURE);}
+    if (rg > 0) {fprintf(stderr, MSG_ERR_COMP_REAL_OVER , idx, f_name, fp_max()); exit(EXIT_FAILURE);}
 
     // imaginary part
-        num = (atof(imag)<0.0) ? -atof(imag) : atof(imag); // absolute value of the imaginary part
-    if (num < min && num != 0.0) {fprintf(stderr, MSG_ERR_COMP_IMAG_UNDER, idx, f_name, min); exit(EXIT_FAILURE);}
-    if (num > max)               {fprintf(stderr, MSG_ERR_COMP_IMAG_OVER, idx, f_name, max); exit(EXIT_FAILURE);}
+    rg = fp_range(imag);
+    if (rg < 0) {fprintf(stderr, MSG_ERR_COMP_IMAG_UNDER, idx, f_name, fp_min()); exit(EXIT_FAILURE);}
+    if (rg > 0) {fprintf(stderr, MSG_ERR_COMP_IMAG_OVER , idx, f_name, fp_max()); exit(EXIT_FAILURE);}
 
     // convert the real part and compute the residual -------------------------
 

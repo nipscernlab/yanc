@@ -88,57 +88,6 @@ bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
 
 ---
 
-## 5. One shared, exact constant encoder
-
-**Status:** steps 1-4 of 5 done (1-3 2026-09-25, 4 2026-10-21), 5 left · **Area:** `ASMComp/t2t.c`, `CMMComp/{variaveis,t2t}.c`, `CPPComp/codegen.c`, the three lexers · **Evidence:** [§1.5](docs/design/precision-and-width-review.md#15-constant-encoding-on-the-host-loses-bits-today)
-
-**Where it stands.**
-1. Done (`bbb8278`): `Compilers/common/yanc_num.{c,h}`, the exact encoder --
-   decimal text with an exponent -> `{s, e, m}` through big integers, to
-   nearest, ties to even, flags for overflow / underflow / denormal / flush,
-   the word as a bit string. Held to an exact Python model by
-   `Scripts/check_yanc_num.py` (3 750 cases, 5 formats), a regress step.
-   Limits: `NBMANT <= 63`, `|decimal exponent| <= 1200`.
-2. Done (`ed20b8c`): asmcomp's `f2mf` calls it. 45 of 264 test constants
-   moved one unit down (the old path rounded twice); the moved outputs were
-   each explained (`cmm_tan`, `test63`, `test68`, one DTW value). A
-   non-number or an overflowing constant is an error now.
-3. Done (`1e8ca03`): the asmcomp and appcomp lexers read an exponent;
-   cppcomp prints `%.17g` instead of `%.20f` (`test84`).
-4. Done (2026-10-21): cmmcomp reads every C float literal (`.5`, `5.`,
-   `007.5`, `1e-8`, `2.5E+3`, an `f`/`F`/`l`/`L` suffix) and writes it one way
-   (`fnum_text`: `[-]d.d[e[-]d]`, so asmcomp reads it and two spellings are
-   one constant); a comp literal is split on its text (`cnum_split`, a sign
-   after an `e` is the exponent's) in `get_cmp_cst`, the comp negation and the
-   brace lists, no `%f` left; its second `f2mf` is gone, `exec_fnum` encodes
-   with `yanc_num`, so its range errors and approximation notes agree with
-   asmcomp bit for bit. Fixture `cmm_flit`.
-
-**Left, step 5:** asmcomp refuses `NBMANT >= 2^(NBEXPO-1)` and `NUBITS > 32`
-(`f2mf` still returns an `unsigned int`, and `itob` takes an `int`); drop the
-host-`float` range checks in the front ends; a fixture that runs the same
-constants end to end at 32/23/8, 32/25/6 and 16/10/5 and checks them to the
-last mantissa bit (the `.mif` words against `check_yanc_num.py`'s model).
-
-The only encoder, `f2mf`, starts from a host `float` (24 bits) — `#NBMANT`
-above 23 gains nothing, below 23 rounds twice — rounds half-up without sticky
-bits, returns an `unsigned int`, and has a second copy in cmmcomp. Today's
-bugs at any width: cmmcomp splits a complex literal through `sprintf("%f")`
-(6 decimals: `(1e-8, 2e-8)` becomes `(0, 0)`); cppcomp prints floats with
-`%.20f` (anything below 1e-20 becomes `0.0`) because the asm/app lexers
-reject exponent notation.
-
-**Done when:** `Compilers/common/yanc_num.c` converts decimal text (with
-exponent) to `{s, e, m}` exactly, ties-to-even, with overflow/underflow
-flags, and produces the `.mif` bit string without a C integer ceiling; both
-`f2mf` copies, the `%f` complex split, the `%.20f` emission and the
-host-`float` range checks are gone; the lexers accept `1e-5`; asmcomp
-validates `NBMANT < 2^(NBEXPO-1)` and refuses `NUBITS > 32`; keeps the
-flush-to-zero of sub-normal constants at `#FROUND >= 1` (landed in the old
-`f2mf`, with the `cmmcomp` warning); a fixture shows constants correct to the
-last mantissa bit at 32/23/8, at a 32-bit format with more mantissa than a
-host `float` (e.g. 32/25/6), and at 16/10/5.
-
 ## 6. ULA unit testbench (a); word width beyond 32 bits (b, parked)
 
 ### 6(a). Self-checking ULA unit testbench
@@ -951,6 +900,7 @@ DE2-115 mapping of docs/peripherals.md.
   fixed point**: `ADD` is exact, and wrap-around modulo 2^NUBITS gives a free
   "mod 2*pi" for binary angles.
 - Accumulate **deviations** from a nominal value instead of absolute values.
-- Raise `#NBMANT` for the processor that accumulates (up to 23 — item 5).
+- Raise `#NBMANT` for the processor that accumulates (32/25/6 keeps two
+  more mantissa bits than 32/23/8; its constants are encoded exactly).
 - A compensated (Kahan) sum does **not** help at level 0: it relies on
   `t - sum` being exact, which loses a bit there. It works from level 1 on.

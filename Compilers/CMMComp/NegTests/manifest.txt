@@ -41,3 +41,4 @@ ini_type.cmm|does not take the value 2.5 between braces
 ini_count.cmm|has 2 positions and the list between braces reaches position 3
 ini_1d_rows.cmm|braces inside the list only mark the rows of a 2D array
 ini_rows.cmm|each with up to 2 values
+octal_digit.cmm|so it is octal, and octal has no 8 or 9

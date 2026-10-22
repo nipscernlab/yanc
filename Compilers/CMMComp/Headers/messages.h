@@ -62,6 +62,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: o maior número inteiro que pode ser representado é %d!\n", \
       "Error on line %d: the biggest integer this thing can hold is %d!\n")
 
+#define MSG_ERR_OCTAL_DIGIT \
+    M("Erro na linha %d: '%s' começa com 0, então é octal, e octal não tem 8 nem 9.\n", \
+      "Error on line %d: '%s' starts with 0, so it is octal, and octal has no 8 or 9.\n")
+
 #define MSG_ERR_FLOAT_MIN \
     M("Erro na linha %d: o menor número float que pode ser representado é %g!\n", \
       "Error on line %d: the smallest float this thing can hold is %g!\n")

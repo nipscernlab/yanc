@@ -1383,6 +1383,17 @@ if command -v python3 >/dev/null 2>&1; then
         echo "FAIL (yanc_num): the encoder disagrees with the exact model (or did not build)"
         fail=$((fail + 1)); failed_names+=("yanc_num")
     fi
+    # the same model end to end (TODO item 5, step 5): C± brace lists of float
+    # literals in every form, through cmmcomp and asmcomp, against the data
+    # .mif word for word, at 32/23/8, 32/25/6, 16/10/5 and 32/23/8 #FROUND 1
+    if [ "$CPP_ONLY" -eq 0 ]; then
+        if python3 "$ROOT/Scripts/check_const_e2e.py" "$CMMCOMP" "$ASMCOMP" "$SCRATCH/const_e2e"; then
+            pass=$((pass + 1))
+        else
+            echo "FAIL (const_e2e): a constant in the .mif differs from the exact model"
+            fail=$((fail + 1)); failed_names+=("const_e2e")
+        fi
+    fi
 fi
 
 # ---- 4a0. the ALU against what each operation means ---------------------------
@@ -1566,13 +1577,17 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
     echo "==> float format (asmcomp)"
     neg_work="$SCRATCH/work_neg"
-    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short"; do
+    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32"; do
         fixture="${fe%%|*}"; expect="${fe#*|}"; name="asm:$fixture"
-        rm -rf "$neg_work"; mkdir -p "$neg_work"
-        cp "$CMM_ROOT/NegTests/$fixture.cmm" "$neg_work/"
-        if ! "$CMMCOMP" -o "$neg_work/p" "$neg_work/$fixture.cmm" >/dev/null 2>&1; then
-            echo "FAIL ($name): cmmcomp rejected it, the check is asmcomp's"
-            fail=$((fail+1)); failed_names+=("$name"); continue
+        rm -rf "$neg_work"; mkdir -p "$neg_work/p"
+        if [ -f "$CMM_ROOT/NegTests/$fixture.asm" ]; then     # written by hand: asmcomp alone
+            cp "$CMM_ROOT/NegTests/$fixture.asm" "$neg_work/p/"
+        else
+            cp "$CMM_ROOT/NegTests/$fixture.cmm" "$neg_work/"
+            if ! "$CMMCOMP" -o "$neg_work/p" "$neg_work/$fixture.cmm" >/dev/null 2>&1; then
+                echo "FAIL ($name): cmmcomp rejected it, the check is asmcomp's"
+                fail=$((fail+1)); failed_names+=("$name"); continue
+            fi
         fi
         out="$("$ASMCOMP" "$neg_work/p/$fixture.asm" 2>&1)"
         rc=$?

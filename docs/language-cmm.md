@@ -50,8 +50,10 @@ defaults; see [Directives](directives.md).
   so, and which two names collide.
 - **`i` is reserved** for the imaginary unit: `int i;` is an error. Use `k`,
   `n`, `idx`.
-- Integer literals: `0`, `42`. A negative number is the unary minus applied
-  to it: `-42`.
+- Integer literals, in every form C writes them: `42`, `0x2A`, `052`
+  (octal: a leading 0 makes it octal, as in C, so `010` is 8), `0b101010`,
+  and the `u`, `U`, `l`, `L` suffixes (they change nothing: there is one
+  int). A negative number is the unary minus applied to it: `-42`.
 - Float literals, in every form C writes them: `3.14`, `0.5`, `.5`, `2.`,
   `1e-5`, `2.5E+3`, `007.5`, and with a suffix `1.5f` (`f`, `F`, `l`, `L`;
   the suffix changes nothing, there is one float). Each one is encoded
