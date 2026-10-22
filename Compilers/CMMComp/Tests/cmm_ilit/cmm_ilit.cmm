@@ -6,12 +6,17 @@
 // Int literals in every form C writes them (2026-10-21): hexadecimal, octal
 // (a leading 0, as in C: 010 is 8), binary (0b, C23) and the u/U/l/L
 // suffixes, in expressions, brace lists and case labels. Before, C± read
-// only decimal. Expected (hand-computed):
+// only decimal. A hex, octal or binary literal with the sign bit of the word
+// set is a negative int, as in C: 0xFFFFFFFF is -1. Expected (hand-computed):
 //   0x1F, 0X2a, 052, 0b101, 10u, 10L, 7UL, 0x7FFFFFFF -> 31 42 42 5 10 10 7 2147483647
 //   a[3] = {0x10, 010, 0b11}                        -> 16 8 3
 //   0xFF & 0x0F, 1 << 0x4                           -> 15 16
 //   switch (16) { case 0x10: ... }                  -> 1
+//   0xFFFFFFFF, 0x80000000                          -> -1 -2147483648
+//   b[3] = {0xFFFFFFFF, 0x80000000, -0xFFFFFFFF}    -> -1 -2147483648 1
+//   0x12345678 & 0xFFFF0000, x + 0xFFFFFFFF (x = 5) -> 305397760 4
 int a[3] = {0x10, 010, 0b11};
+int b[3] = {0xFFFFFFFF, 0x80000000, -0xFFFFFFFF};
 
 void main()
 {
@@ -38,6 +43,16 @@ void main()
         case 0x10: out(0, 1); break;
         case 010:  out(0, 2); break;
     }
+
+    out(0, 0xFFFFFFFF);
+    out(0, 0x80000000);
+    out(0, b[0]);
+    out(0, b[1]);
+    out(0, b[2]);
+    int y = 0x12345678 & 0xFFFF0000;
+    out(0, y);
+    int x = 5;
+    out(0, x + 0xFFFFFFFF);
 
     while (1) {}
 }

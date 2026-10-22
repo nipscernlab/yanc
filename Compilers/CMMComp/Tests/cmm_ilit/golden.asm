@@ -6,7 +6,10 @@ NOP
 #NUIOIN 1
 #NUIOOU 1
 #arrayd a 1 3 3 16 8 3
+#arrayd b 1 3 3 -1 -2147483648 1
 #SHARE main_s main_m
+#SHARE main_y main_m
+#SHARE main_x main_m
 @main LOD 31
 OUT 0
 LOD 42
@@ -48,5 +51,26 @@ JMP __switch_end_1
 @__sw_body_1_2 LOD 2
 OUT 0
 JMP __switch_end_1
-@__switch_end_1 @__Lwh1 JMP __Lwh1
+@__switch_end_1 NEG_M 1
+OUT 0
+NEG_M 2147483647
+P_NEG_M 1
+S_ADD
+OUT 0
+LOD_V b 0
+OUT 0
+LOD_V b 1
+OUT 0
+LOD_V b 2
+OUT 0
+NEG_M 65536
+AND 305419896
+SET main_y
+OUT 0
+LOD 5
+SET main_x
+NEG_M 1
+ADD main_x
+OUT 0
+@__Lwh1 JMP __Lwh1
 @__Lwh1end @fim JMP fim

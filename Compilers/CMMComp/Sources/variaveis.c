@@ -251,8 +251,8 @@ int exec_id(char *text)
 }
 
 // the value of an int literal in any form C writes it: 42, 052 (octal),
-// 0x2A, 0b101010, with a u/U/l/L suffix; one past the int range if too big
-static unsigned long long inum_value(const char *text)
+// 0x2A, 0b101010, with a u/U/l/L suffix (*base, if given, says which)
+static unsigned long long inum_value(const char *text, int *base_out)
 {
     int base = 10; const char *p = text;
     if      (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {base = 16; p += 2;}
@@ -263,9 +263,46 @@ static unsigned long long inum_value(const char *text)
         for (const char *q = p; isdigit((unsigned char)*q); q++)
             if (*q > '7') {fprintf(stderr, MSG_ERR_OCTAL_DIGIT, line_num+1, text); exit(EXIT_FAILURE);}
     }
+    if (base_out) *base_out = base;
     errno = 0;
     unsigned long long v = strtoull(p, NULL, base);       // stops at the suffix
-    return (errno == ERANGE || v > (unsigned long long)INT_MAX) ? (unsigned long long)INT_MAX + 1 : v;
+    return (errno == ERANGE) ? ULLONG_MAX : v;
+}
+
+// the word width for a bit pattern: #NUBITS, 2..32
+static int word_bits(void) { return nubits < 2 ? 2 : nubits > 32 ? 32 : nubits; }
+
+// what the lexer returns for an int literal: 0 a plain INUM; 1 (NINUM) a hex,
+// octal or binary literal with the word's sign bit set, a negative int as in
+// C (0xFFFFFFFF is -1 at 32 bits, 0xFF at 8); 2 (NIMIN) the most negative one
+int inum_kind(const char *text)
+{
+    int base; unsigned long long v = inum_value(text, &base);
+    int w = word_bits();
+    if (base == 10 || v < (1ULL << (w - 1)) || v >= (1ULL << w)) return 0;
+    return (v == (1ULL << (w - 1))) ? 2 : 1;
+}
+
+// the magnitude of a NINUM (2^w - v) as a positive literal; for a NIMIN, the
+// largest int (the grammar writes -max - 1)
+int exec_inum_neg(char *text)
+{
+    int w = word_bits(); char t[32];
+    unsigned long long v = inum_value(text, NULL);
+    unsigned long long m = (inum_kind(text) == 2) ? (1ULL << (w - 1)) - 1 : (1ULL << w) - v;
+    snprintf(t, sizeof(t), "%llu", m);
+    return exec_inum(t);
+}
+
+// the magnitude of the most negative int, 2^(w-1), as a table entry: only a
+// brace list writes it (with its minus sign), so it skips the range check
+int inum_min_id(void)
+{
+    char t[32]; snprintf(t, sizeof(t), "%llu", 1ULL << (word_bits() - 1));
+    if (find_var(t) == -1) add_var(t);
+    int id = find_var(t);
+    v_table[id].isco = 1;
+    return id;
 }
 
 // used when the lexer finds an int constant
@@ -278,13 +315,13 @@ int exec_inum(char *text)
     // (#NBMANT 25 read before #NBEXPO 6 is a 34-bit word for a moment)
     int       w   = nbmant + nbexpo + 1;
     long long max = (1LL << ((w < 32 ? w : 32) - 1)) - 1;
-    long long num = (long long)inum_value(text);
+    unsigned long long num = inum_value(text, NULL);
 
-    if (num > max) {fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, (int)max); exit(EXIT_FAILURE);}
+    if (num > (unsigned long long)max) {fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, (int)max); exit(EXIT_FAILURE);}
 
     // add to the table, in decimal: the .asm reads only that -----------------
 
-    char t[32]; snprintf(t, sizeof(t), "%lld", num);
+    char t[32]; snprintf(t, sizeof(t), "%llu", num);
 
     if (find_var(t) == -1) add_var(t);
 

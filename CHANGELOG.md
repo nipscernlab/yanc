@@ -20,8 +20,11 @@ tags consumed by Aurora.
 - **C±: int literals in every form C writes them.** `0x2A`, `052` (octal:
   as in C, a leading 0 makes it octal, so `010` is now 8, not 10), `0b101010`
   and the `u`/`U`/`l`/`L` suffixes, in expressions, brace lists and case
-  labels; `089` stops with a message. Fixture `cmm_ilit`. Manual:
-  docs/language-cmm.md.
+  labels; `089` stops with a message. A hex, octal or binary literal is a
+  bit pattern of the `#NUBITS` word, as in C: `0xFFFFFFFF` is -1 and
+  `0x80000000` the most negative int at 32 bits, `0xFF` is -1 at 8 (in
+  expressions and brace lists). cmmcomp now reads `#NUBITS` for that.
+  Fixtures `cmm_ilit`, `cmm_ilit8`. Manual: docs/language-cmm.md.
 - **C++: the `F`, `l` and `L` float suffixes** (only `f` was read; `1.5F`
   was a syntax error). Test test95.
 - **Float constants checked end to end** (TODO item 5 closed): a regress

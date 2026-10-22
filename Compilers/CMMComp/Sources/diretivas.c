@@ -21,6 +21,7 @@
 char prname[128] ; // processor name
 // Defaults: the one set shared with asmcomp, cppcomp and the HDL (audit 1.7);
 // only reached when the program omits the directive.
+int  nubits  = 32; // word width (bits): an int literal in hex, octal or binary is a bit pattern of this word
 int  nbmant  = 23; // mantissa width (bits)
 int  nbexpo  =  8; // exponent width (bits)
 int  nuioin  =  1; // number of input ports
@@ -45,6 +46,7 @@ void dire_exec(char *dir, int id, int t)
     // end passes through; this one just knows the source line)
     switch(t)
     {
+        case 11: nubits = ival             ; break;
         case  3: nbmant = ival             ; break;
         case  4: nbexpo = ival             ; break;
         case  7: nuioin = ival             ; break;

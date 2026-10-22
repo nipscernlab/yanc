@@ -192,8 +192,9 @@ COMEN  "//"[^\n]*
              }
 			 
 {INNUM}      {
-                yylval.ival = exec_inum(yytext);
-                return INUM;
+                int k = inum_kind(yytext);
+                yylval.ival = k ? exec_inum_neg(yytext) : exec_inum(yytext);
+                return k == 0 ? INUM : k == 1 ? NINUM : NIMIN;
              }
 			 
 {FLNUM}      {

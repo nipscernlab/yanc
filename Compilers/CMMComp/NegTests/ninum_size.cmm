@@ -1,0 +1,9 @@
+#NUBITS 32
+// Negative fixture: 0xFFFFFFFF is -1 (a bit pattern of the word, as in C),
+// and an array size takes only a positive literal: a syntax error, not an
+// array of -1 words.
+int v[0xFFFFFFFF];
+void main()
+{
+    out(0, v[0]);
+}

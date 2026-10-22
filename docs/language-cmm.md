@@ -53,7 +53,12 @@ defaults; see [Directives](directives.md).
 - Integer literals, in every form C writes them: `42`, `0x2A`, `052`
   (octal: a leading 0 makes it octal, as in C, so `010` is 8), `0b101010`,
   and the `u`, `U`, `l`, `L` suffixes (they change nothing: there is one
-  int). A negative number is the unary minus applied to it: `-42`.
+  int). A negative number is the unary minus applied to it: `-42`. A
+  hexadecimal, octal or binary literal is a bit pattern of the `#NUBITS`
+  word, as in C: with the sign bit set it is negative, so `0xFFFFFFFF` is
+  -1 and `0x80000000` the most negative int at 32 bits (`0xFF` and `0x80`
+  at 8). Such a literal is accepted in expressions and in lists between
+  braces; an array size, a port or a `case` takes a positive one.
 - Float literals, in every form C writes them: `3.14`, `0.5`, `.5`, `2.`,
   `1e-5`, `2.5E+3`, `007.5`, and with a suffix `1.5f` (`f`, `F`, `l`, `L`;
   the suffix changes nothing, there is one float). Each one is encoded
