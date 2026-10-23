@@ -61,9 +61,13 @@ begin
 			if (o1 !== h1[0]) begin errs = errs + 1; if (errs < 6) $display("L1 mismatch a=%h b=%h got=%h exp=%h", ha[0], hb[0], o1, h1[0]); end
 			if (o2 !== h2[0]) begin errs = errs + 1; if (errs < 6) $display("L2 mismatch a=%h b=%h got=%h exp=%h", ha[0], hb[0], o2, h2[0]); end
 		end else begin
-			// division by zero at levels >= 1: exponent above every value, mantissa all ones -> ula_norm saturates
-			if (o1[MAN+EXP+1:MAN] !== {1'b0, {(EXP+1){1'b1}}} || o1[MAN-1:0] !== {MAN{1'b1}}) begin errs = errs + 1; $display("L1 div-by-zero: %h", o1); end
-			if (o2[MAN+EXP+4:W2]  !== {1'b0, {(EXP+1){1'b1}}} || o2[W2-1:0]  !== {W2{1'b1}})  begin errs = errs + 1; $display("L2 div-by-zero: %h", o2); end
+			// division by zero at levels >= 1: exponent above every value with room for
+			// the rounding carry, mantissa all ones -> ula_norm saturates. This checks the
+			// pattern only; the saturated result itself is Scripts/hw/tb_ula.v's (the
+			// pattern was once the largest exponent of the field, and level 2's rounding
+			// carry wrapped it: x / 0 gave 0, which this check could not see)
+			if (o1[MAN+EXP+1:MAN] !== {2'b00, {EXP{1'b1}}} || o1[MAN-1:0] !== {MAN{1'b1}}) begin errs = errs + 1; $display("L1 div-by-zero: %h", o1); end
+			if (o2[MAN+EXP+4:W2]  !== {2'b00, {EXP{1'b1}}} || o2[W2-1:0]  !== {W2{1'b1}})  begin errs = errs + 1; $display("L2 div-by-zero: %h", o2); end
 		end
 	end
 	for (k = 0; k < LAT-1; k = k + 1) begin

@@ -27,9 +27,11 @@ tags consumed by Aurora.
   Fixtures `cmm_ilit`, `cmm_ilit8`. Manual: docs/language-cmm.md.
 - **C++: the `F`, `l` and `L` float suffixes** (only `f` was read; `1.5F`
   was a syntax error). Test test95.
-- **The ALU testbench checks the operations that round** (TODO item 6(a),
-  step 2): `F_ADD`, `F_SU1`/`F_SU2`, `F_MLT`, `I2F`, `F_ROT`, bit for bit at
-  every `#FROUND` level in three formats, against exact results.
+- **The ALU testbench checks every operation** (TODO item 6(a) closed): the
+  ones that round (`F_ADD`, `F_SU1`/`F_SU2`, `F_MLT`, `I2F`, `F_ROT`) and the
+  divisions (`DIV`, `MOD`, `F_DIV`, through the sequence the processor runs:
+  the operands, the NOP cycles, the read), bit for bit at every `#FROUND`
+  level in three formats, against exact results; mutation-checked.
   `Scripts/hw/tb_ula.v`.
 - **Float constants checked end to end** (TODO item 5 closed): a regress
   step writes C± brace lists of float literals in every form, compiles them
@@ -62,6 +64,14 @@ tags consumed by Aurora.
   at 32 bits, +9 at 8. Issue #6.
 
 ### Fixed
+- **`x / 0` gave 0 at `#FROUND 2`** (every C++ program) instead of the
+  largest value with the quotient's sign, as level 1 does (now written in
+  docs/floating-point.md). The
+  divider marks a zero divisor with an exponent above every valid one; it
+  was the largest of its field, and level 2's rounding carry wrapped it to
+  a negative exponent, which the normaliser flushed to zero. Now it leaves
+  room for the carry (`SAPHO/ula.v`, `ula_fdiv`). Found by the ALU
+  testbench; `Scripts/hw/tb_fdiv.v` checked the marker, not the result.
 - **The manual promised exact truncation at `#FROUND 1`.** Level 1 cuts the
   smaller operand of an addition before adding, so a difference can come
   out a few units of the last bit above the exact result and `a - b` is

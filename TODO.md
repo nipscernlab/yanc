@@ -51,8 +51,7 @@ read on `myFIFO`/`myDCFIFO` so a large FIFO goes to block RAM (area, not
 clock; docs/design/myfifo.md "Memory"), with a `quartus_map` of it.
 
 **Open items, below:** 2(b) a fixture for unbiased rounding; 3 the parameter
-guard in `ula.v`; 5 steps 4-5, the exact constant encoder in cmmcomp (show
-Luciano the diff); 6(a) the ULA testbench; 8 the leftovers; 9 library
+guard in `ula.v`; 8 the leftovers; 9 library
 accuracy keyed on `NBMANT`; 10 architecture hardening (ISS, division by zero,
 interrupt, I/O contract); 13 the pre-assembly optimizer and the C++ heap
 arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
@@ -88,48 +87,15 @@ bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
 
 ---
 
-## 6. ULA unit testbench (a); word width beyond 32 bits (b, parked)
+## 6. ULA unit testbench (a, done); word width beyond 32 bits (b, parked)
 
-### 6(a). Self-checking ULA unit testbench
+### 6(a). Self-checking ULA unit testbench: done (2026-10-22)
 
-**Status:** steps 1 and 2 of 3 done (2026-10-19, 2026-10-22) · **Area:** `Scripts/hw/tb_ula.v`, `Scripts/hw/tb_alu.v`, `Scripts/regress.sh`
-
-**Where it stands.** `Scripts/hw/tb_ula.v` drives the whole `ula` (every
-opcode on) through each operation number, in 16/10/5, 23/16/6 and 32/23/8 at
-the three levels, against references derived from what each operation means;
-regress step 4a0 runs it and `tb_alu.sh`.
-1. Done: the 42 operations that do not round (integer, logic, compare,
-   shifts, `F_SGN`/`F_NEG`/`F_ABS`/`F_PST` and `_M`, `F_LES`/`F_GRE`,
-   `F2I`, `NRM`, `F_SCL`, `XPO`). It found two `F_SCL` defects, fixed: a
-   huge k wrapped the exponent sum and saturated at the minimum, and a zero
-   came out non-canonical at levels 1/2. `XPO` of zero (EMIN+MAN-1) and of a
-   level-0 denormal (leading zeros not counted) are documented as defined.
-2. Done (2026-10-22): the operations that round (`F_ADD`, `F_SU1`/`F_SU2`,
-   `F_MLT`, `I2F`/`I2F_M`, `F_ROT`), bit-exact at every level, against the
-   exact result computed on wide integers: level 2 rounded to nearest even;
-   level 1 the product and the conversion truncated, the addition as
-   documented (docs/design/fround1-subtraction.md: it found that level 1 is
-   not the exact truncation the manual promised; the hardware stays); level
-   0 the legacy datapath as docs/floating-point.md describes it (the legacy
-   -0.0 included). Operands added near cancellation and far below the guard
-   bits. Mutation-checked: no rounding, ties away from zero, no alignment
-   sticky (level 2), the multiplier slice and the dropped level-1 fix
-   (level 1) all fail.
-3. Left: the divisions through their real sequence (`DIV`/`MOD`/`F_DIV`,
-   the `NOP`s, `QUO`/`REM`/`F_QUO`).
-
-The original plan: a directed regress pass like `ResetCheck`: every float operator, including
-`F_ROT`, `F_SGN`, `F_LES`/`F_GRE`, the `_M` variants, `I2F`/`F2I` at the
-range edges, and the integer operators at their signed edges, at `FROUND`
-0/1/2 and at 16/10/5 and 32/23/8, with the expected values derived in the
-testbench rather than blessed.
-[`Scripts/hw/tb_alu.sh`](Scripts/hw/tb_alu.sh) is the seed of it: shifts,
-`F2I`, the float comparison, `DIV`/`MOD`, four formats × three levels,
-references derived, mutation-checked. What is left is the other operators and
-wiring it into `regress.sh`. Until then levels 1 and 2 are covered only by
-`cmm_fround1/2` and (level 2) the C++ tests.
-
-**Done when:** every ULA operator is in `tb_alu.v` and `regress.sh` runs it.
+`Scripts/hw/tb_ula.v` checks every operation of the whole `ula`, the
+divisions through their real sequence, bit for bit at the three levels in
+three formats, mutation-checked; regress step 4a0 runs it (CHANGELOG,
+Unreleased). It found the `#FROUND 1` subtraction
+(docs/design/fround1-subtraction.md) and `x / 0` giving 0 at level 2 (fixed).
 
 ### 6(b). Word width beyond 32 bits — parked
 

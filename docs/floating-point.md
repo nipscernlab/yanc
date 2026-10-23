@@ -56,6 +56,11 @@ is beyond ±2^(NBMANT-1) (±4 194 304 by default), and converting a float to
 int wraps instead of saturating. Level 1 and above convert the whole word
 and saturate. A program that converts large integers needs `#FROUND 1`.
 
+**Dividing a float by zero** gives, at levels 1 and 2, the largest float
+with the sign of the quotient (`1.0 / 0.0` and `0.0 / 0.0` alike); at level
+0 the result is not defined. An int divided by zero is not defined at any
+level.
+
 Even at level 2, adding the same constant again and again drifts: the same
 bits are dropped at every step, so the errors do not cancel. Measured, 1000
 additions of `0.001` end 240, 177 and 78 units of the last place away from

@@ -22,7 +22,13 @@
 //     the low NBMANT bits, the exponent wraps). F_ROT is the power of two its
 //     definition gives. These are checked on `out` only: out_fast carries no
 //     normalized operation.
-// The divisions are the next step of item 6(a).
+//   - the divisions through the sequence the processor runs: the division
+//     in one cycle, other operands on the cycles of its NOPs, the read
+//     (QUO / REM / F_QUO, the same operation number) STG-1 cycles later.
+//     DIV and MOD against Verilog's / and % (a zero divisor stays undefined,
+//     TODO item 10); F_DIV from the exact quotient like the other rounding
+//     operations, a zero divisor saturating at #FROUND >= 1; at level 0 the
+//     legacy slice of the quotient, for a normalized divisor only.
 //
 // in1 is the memory operand, in2 the accumulator (NEG negates in2, NEG_M in1;
 // LES is in1 < in2).
@@ -322,6 +328,29 @@ function [NUBITS-1:0] ref_frot;
 	end
 endfunction
 
+// x / y. Levels 1 and 2: the exact quotient (2*MAN+8 bits past the point and
+// a sticky bit for the remainder), truncated or rounded; a zero divisor
+// saturates with the quotient's sign. Level 0: the MAN-bit slice
+// floor(m1 * 2^(MAN-1) / m2), a zero keeping the sign (normalized divisor)
+function [NUBITS-1:0] ref_fdiv;
+	input [NUBITS-1:0] x, y;
+	reg [WX-1:0] A, Q, Rm;
+	reg sq;
+	begin
+		sq = f_sgn(x) ^ f_sgn(y);
+		if (FROUND != 0 && f_man(y) == 0) ref_fdiv = {sq, EMAX[EXP-1:0], {MAN{1'b1}}};
+		else if (FROUND == 0) begin
+			A = f_man(x); A = A << (MAN-1); Q = A / f_man(y);
+			if (Q == 0) ref_fdiv = {sq, EMIN[EXP-1:0], {MAN{1'b0}}};
+			else        ref_fdiv = pack(0, sq, Q, f_exp(x) - f_exp(y) - MAN + 1);
+		end else begin
+			A = f_man(x); A = A << (2*MAN+8); Q = A / f_man(y); Rm = A % f_man(y);
+			Q = (Q << 1) | (Rm != 0);
+			ref_fdiv = pack(FROUND, sq, Q, f_exp(x) - f_exp(y) - (2*MAN+8) - 1);
+		end
+	end
+endfunction
+
 function [NUBITS-1:0] neg_f; input [NUBITS-1:0] x; neg_f = {~x[MAN+EXP], x[MAN+EXP-1:0]}; endfunction
 
 // ------------------------------------------------- what each op means ---
@@ -382,6 +411,9 @@ function [NUBITS-1:0] ref_op;
 			6'd25: ref_op = ref_i2f(b);                                // I2F
 			6'd26: ref_op = ref_i2f(a);                                // I2F_M
 			6'd46: ref_op = ref_frot(b);                               // F_ROT
+			6'd6 : ref_op = a / b;                                     // DIV (QUO)
+			6'd8 : ref_op = a % b;                                     // MOD (REM)
+			6'd7 : ref_op = ref_fdiv(a, b);                            // F_DIV (F_QUO)
 			default: ref_op = {NUBITS{1'bx}};
 		endcase
 	end
@@ -394,7 +426,7 @@ function integer kind;
 	case (o)
 		6'd10, 6'd13, 6'd14, 6'd17, 6'd18, 6'd21, 6'd22, 6'd27, 6'd28,
 		6'd39, 6'd41, 6'd50, 6'd51,
-		6'd3, 6'd5, 6'd46, 6'd47, 6'd48: kind = 1;
+		6'd3, 6'd5, 6'd7, 6'd46, 6'd47, 6'd48: kind = 1;
 		6'd49                     : kind = 2;
 		6'd43, 6'd44, 6'd45       : kind = 3;
 		default                   : kind = 0;
@@ -402,25 +434,27 @@ function integer kind;
 endfunction
 
 // the operations that go through the normalizer: out_fast does not carry them
-function is_round; input [5:0] o; is_round = (o == 3 || o == 5 || o == 25 || o == 26 || o == 46 || o == 47 || o == 48); endfunction
+function is_round; input [5:0] o; is_round = (o == 3 || o == 5 || o == 7 || o == 25 || o == 26 || o == 46 || o == 47 || o == 48); endfunction
 
-// every operation but the divisions (the next step)
-localparam NOPS = 49;
+// the divisions: their result is read STG-1 cycles after the operands
+function is_div; input [5:0] o; is_div = (o == 6 || o == 7 || o == 8); endfunction
+
+// every operation
+localparam NOPS = 52;
 reg [5:0] ops [0:NOPS-1];
 initial begin : list
 	integer j, n; n = 0;
-	for (j = 0; j <= 51; j = j + 1)
-		if (!(j == 6 || j == 7 || j == 8)) begin
-			if (n < NOPS) ops[n] = j;
-			n = n + 1;
-		end
+	for (j = 0; j <= 51; j = j + 1) begin
+		if (n < NOPS) ops[n] = j;
+		n = n + 1;
+	end
 	if (n != NOPS) begin $display("tb_ula: %0d operations listed, NOPS is %0d", n, NOPS); $finish; end
 end
 
 // ------------------------------------------------------------- run ---
 
-integer k, j, errs, total, bad [0:63];
-reg [NUBITS-1:0] want;
+integer k, j, c, lat, errs, total, bad [0:63];
+reg [NUBITS-1:0] want, a_s, b_s;
 reg signed [NUBITS-1:0] kk;
 
 initial begin
@@ -451,13 +485,28 @@ initial begin
 				3: begin in1 = gen_int(0); in2 = (k % 3 == 0) ? (k % (NUBITS + 4)) : gen_int(0); end
 				default: begin in1 = gen_int(0); in2 = gen_int(0); if (k % 13 == 0) in1 = in2; end
 			endcase
+			// a division: a nonzero int divisor; a normalized float divisor at
+			// level 0, where nothing else is defined
+			if (op == 6 || op == 8) while (in2 == 0) in2 = gen_int(0);
+			if (op == 7 && FROUND == 0) begin in2[MAN-1] = 1'b1; end
+			if (op == 7 && FROUND != 0 && k % 23 == 0) in2 = ZERO;            // x / 0
+			a_s = in1; b_s = in2;
 			#1;
 			want = ref_op(op, in1, in2);
+			if (is_div(op)) begin
+				// the operands enter at this clock; NOPs with other operands; the read
+				lat = (op == 7) ? dut.op_fdiv.my_fdiv.STG - 1 : dut.op_idiv.my_idiv.STG - 1;
+				clk = 1; #1; clk = 0; #1;
+				for (c = 1; c < lat; c = c + 1) begin
+					op = 0; in1 = rnd(0); in2 = rnd(0); #1; clk = 1; #1; clk = 0; #1;
+				end
+				op = ops[j]; in1 = rnd(0); in2 = rnd(0); #1;
+			end
 			total = total + 1;
 			if (out !== want || (!is_round(op) && out_fast !== want)) begin
 				errs = errs + 1;
 				if (bad[op] < 3) $display("  op %0d: in1=%h in2=%h -> out=%h out_fast=%h, expected %h",
-				                          op, in1, in2, out, out_fast, want);
+				                          op, a_s, b_s, out, out_fast, want);
 				bad[op] = bad[op] + 1;
 			end
 		end
