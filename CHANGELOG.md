@@ -9,6 +9,10 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **C±: an initializer on any name of a declaration list**, as in C: `int
+  a = 1, b, c = a + 1;`, global or local, `int`, `float` and `comp`. It was
+  a syntax error unless the declaration had a single name (TODO 34).
+  Fixture `cmm_decl_list`. Manual: docs/language-cmm.md.
 - **C±: arrays initialized between braces, as in C.** `int v[5] = {3, -2,
   7};`, `float g[3] = {1.5, -0.25, 4};`, `comp z[2] = {1.5-2i, 3};`, `int
   m[2][3] = {{1, 2}, {4, 5, 6}};`. Constants only; positions left out are

@@ -1,0 +1,55 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+// A declaration list with an initializer on any of its names, as in C
+// (TODO 34, 2026-10-23). Global and local, int, float and comp; a later
+// name may read an earlier one of the same list. Expected (hand-computed):
+//   global  int   ga = 3, gb, gc = ga + 4;  gb = 1     -> 3 1 7
+//   global  float gf, gg = 2.5;  gf = gg * 2.0         -> times 4: 20 10
+//   global  comp  gz = 1.0+2.0i, gw;  gw = gz * 2.0    -> real, imag: 2 4
+//   local   int   a, b = 5, c = b * 2;  a = c - b      -> 5 5 10
+//   local   float x = 0.5, y;  y = x + 1.0             -> times 4: 2 6
+//   local   comp  z, w = 3.0-1.0i;  z = w + 1.0        -> real, imag: 4 -1
+//   int n = 0, s = 0 in a function called twice: sums 1..3 each time,
+//   so the initializers run on each call            -> 6 6
+
+int   ga = 3, gb, gc = ga + 4;
+float gf, gg = 2.5;
+comp  gz = 1.0+2.0i, gw;
+
+int soma()
+{
+    int n = 0, s = 0;
+    while (n < 3)
+    {
+        n = n + 1;
+        s = s + n;
+    }
+    return s;
+}
+
+void main()
+{
+    int   a, b = 5, c = b * 2;
+    float x = 0.5, y;
+    comp  z, w = 3.0-1.0i;
+
+    gb = 1;
+    out(0, ga); out(0, gb); out(0, gc);
+    gf = gg * 2.0;
+    fout(0, gf * 4.0); fout(0, gg * 4.0);
+    gw = gz * 2.0;
+    fout(0, real(gw)); fout(0, imag(gw));
+
+    a = c - b;
+    out(0, a); out(0, b); out(0, c);
+    y = x + 1.0;
+    fout(0, x * 4.0); fout(0, y * 4.0);
+    z = w + 1.0;
+    fout(0, real(z)); fout(0, imag(z));
+
+    out(0, soma());
+    out(0, soma());
+}

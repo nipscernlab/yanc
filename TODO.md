@@ -919,19 +919,6 @@ example one signal for the last write (address and value), or a dump of
 the array memory read back by the viewer, chosen after measuring the
 `.vcd` size and the simulation time on a test with large arrays (test46).
 
-## 34. A C± declaration list cannot carry an initializer
-
-**Status:** open, found 2026-10-18 writing `cmm_nofloat` (item 3) ·
-**Area:** cmmcomp (Luciano's code: the diff goes to him first)
-
-`int a, b;` compiles, but as soon as one name of a list has an initializer
-cmmcomp stops with "Syntax error": `int a = 1, b;`, `int a, b = 1;`,
-`int a = 1, b = 2;`, `float a = 1.0, b;`, local or global (checked
-2026-10-18). C accepts all of them; the fixture had to split the line.
-
-**Done when** a declaration list takes an initializer on any of its names,
-local and global, int, float and comp, with a fixture.
-
 ## 35. A PS/2 keyboard block read with `cade()`
 
 **Status:** implemented 2026-10-19 (`SAPHO/myKeyPS2.v`, testbench, regress
