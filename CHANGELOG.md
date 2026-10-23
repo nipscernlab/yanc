@@ -27,6 +27,10 @@ tags consumed by Aurora.
   Fixtures `cmm_ilit`, `cmm_ilit8`. Manual: docs/language-cmm.md.
 - **C++: the `F`, `l` and `L` float suffixes** (only `f` was read; `1.5F`
   was a syntax error). Test test95.
+- **The ALU testbench checks the operations that round** (TODO item 6(a),
+  step 2): `F_ADD`, `F_SU1`/`F_SU2`, `F_MLT`, `I2F`, `F_ROT`, bit for bit at
+  every `#FROUND` level in three formats, against exact results.
+  `Scripts/hw/tb_ula.v`.
 - **Float constants checked end to end** (TODO item 5 closed): a regress
   step writes C± brace lists of float literals in every form, compiles them
   and compares each word of the data `.mif` with the exact model, at
@@ -58,6 +62,14 @@ tags consumed by Aurora.
   at 32 bits, +9 at 8. Issue #6.
 
 ### Fixed
+- **The manual promised exact truncation at `#FROUND 1`.** Level 1 cuts the
+  smaller operand of an addition before adding, so a difference can come
+  out a few units of the last bit above the exact result and `a - b` is
+  not always exact for `b` between `a/2` and `2a`; in long sums its errors
+  cancel and it is close to level 2. The hardware stays (a fix made long
+  sums twenty times worse, measured); docs/floating-point.md and the
+  `#FROUND` messages say what it does. docs/design/fround1-subtraction.md,
+  `Scripts/hw/fadd_acc/`.
 - **C±: a brace list of more than about 25 values crashed cmmcomp.** The
   `#arrayd` line went through a 256-character buffer (since the brace lists
   came in); it is now written straight to the file. An instruction with a

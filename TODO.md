@@ -92,7 +92,7 @@ bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
 
 ### 6(a). Self-checking ULA unit testbench
 
-**Status:** step 1 of 3 done (2026-10-19) · **Area:** `Scripts/hw/tb_ula.v`, `Scripts/hw/tb_alu.v`, `Scripts/regress.sh`
+**Status:** steps 1 and 2 of 3 done (2026-10-19, 2026-10-22) · **Area:** `Scripts/hw/tb_ula.v`, `Scripts/hw/tb_alu.v`, `Scripts/regress.sh`
 
 **Where it stands.** `Scripts/hw/tb_ula.v` drives the whole `ula` (every
 opcode on) through each operation number, in 16/10/5, 23/16/6 and 32/23/8 at
@@ -104,12 +104,17 @@ regress step 4a0 runs it and `tb_alu.sh`.
    huge k wrapped the exponent sum and saturated at the minimum, and a zero
    came out non-canonical at levels 1/2. `XPO` of zero (EMIN+MAN-1) and of a
    level-0 denormal (leading zeros not counted) are documented as defined.
-2. Left: the rounding operations (`F_ADD`, `F_SU1`/`F_SU2`, `F_MLT`, `I2F`,
-   `F_ROT`): bit-exact at level 2 against the exact result rounded to
-   nearest even; level 1 against what it does (a sum truncates, a difference
-   cuts the smaller operand first: docs/design/fround1-subtraction.md, the
-   hardware stays, decided 2026-10-22); an error bound at level 0 (the
-   legacy datapath).
+2. Done (2026-10-22): the operations that round (`F_ADD`, `F_SU1`/`F_SU2`,
+   `F_MLT`, `I2F`/`I2F_M`, `F_ROT`), bit-exact at every level, against the
+   exact result computed on wide integers: level 2 rounded to nearest even;
+   level 1 the product and the conversion truncated, the addition as
+   documented (docs/design/fround1-subtraction.md: it found that level 1 is
+   not the exact truncation the manual promised; the hardware stays); level
+   0 the legacy datapath as docs/floating-point.md describes it (the legacy
+   -0.0 included). Operands added near cancellation and far below the guard
+   bits. Mutation-checked: no rounding, ties away from zero, no alignment
+   sticky (level 2), the multiplier slice and the dropped level-1 fix
+   (level 1) all fail.
 3. Left: the divisions through their real sequence (`DIV`/`MOD`/`F_DIV`,
    the `NOP`s, `QUO`/`REM`/`F_QUO`).
 

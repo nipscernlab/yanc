@@ -11,8 +11,18 @@
 //     F_PST, F_SCL, XPO, F2I, the comparisons) against the meaning of the
 //     format: value = mantissa * 2^(exponent - MAN), no hidden bit; zero is a
 //     zero mantissa, kept canonical (+0, minimum exponent) at #FROUND >= 1.
-// The operations that round (F_ADD, F_SU1/2, F_MLT, I2F, F_ROT) and the
-// divisions are the next steps of item 6(a).
+//   - float operations that round (F_ADD, F_SU1/2, F_MLT, I2F, F_ROT), from
+//     the exact result computed on wide integers: at #FROUND 2 rounded to the
+//     nearest, ties to even; at level 1 the multiplication and the conversion
+//     truncated toward zero, and the addition as the level is documented (the
+//     smaller operand cut at the larger one's last bit, the result truncated:
+//     docs/design/fround1-subtraction.md); at level 0 the legacy datapath of
+//     docs/floating-point.md (the addition loses one more bit, the
+//     multiplication keeps the top half of the product, the conversion reads
+//     the low NBMANT bits, the exponent wraps). F_ROT is the power of two its
+//     definition gives. These are checked on `out` only: out_fast carries no
+//     normalized operation.
+// The divisions are the next step of item 6(a).
 //
 // in1 is the memory operand, in2 the accumulator (NEG negates in2, NEG_M in1;
 // LES is in1 < in2).
@@ -190,6 +200,130 @@ function [NUBITS-1:0] ref_scl;
 	end
 endfunction
 
+// ------------------------------------------- the operations that round ---
+
+localparam WX = MAN + (1 << EXP) + 8;              // any two operands aligned exactly
+
+// value = s * M * 2^E, encoded: normalized to the MAN-bit mantissa; mode 2
+// rounds to the nearest, ties to even, mode 1 truncates, both saturating on
+// overflow and flushing to the canonical zero below the smallest normal;
+// mode 0 truncates and wraps the exponent (level 0)
+function [NUBITS-1:0] pack;
+	input integer   mode;
+	input           s;
+	input [WX-1:0]  M;
+	input integer   E;
+	integer p, k, j, ee;
+	reg [WX-1:0] q, rem, half, one;
+	begin
+		one = 1;
+		if (M == 0) pack = ZERO;
+		else begin
+			p = 0;
+			for (j = 0; j < WX; j = j + 1) if (M[j]) p = j;
+			k = p - (MAN-1);
+			if (k > 0) begin
+				q    = M >> k;
+				rem  = M & ((one << k) - 1);
+				half = one << (k-1);
+				if (mode == 2 && (rem > half || (rem == half && q[0]))) q = q + 1;
+				ee = E + k;
+				if (q[MAN]) begin q = q >> 1; ee = ee + 1; end
+			end else begin
+				q  = M << (-k);
+				ee = E + k;
+			end
+			if (mode == 0)       pack = {s, ee[EXP-1:0], q[MAN-1:0]};
+			else if (ee > EMAX)  pack = {s, EMAX[EXP-1:0], {MAN{1'b1}}};
+			else if (ee < EMIN)  pack = ZERO;
+			else                 pack = {s, ee[EXP-1:0], q[MAN-1:0]};
+		end
+	end
+endfunction
+
+// x + y. Level 2: the exact sum, rounded. Levels 0 and 1: the operand with the
+// smaller exponent is shifted to the other's last bit and cut there (the
+// first operand is the larger on equal exponents, as ula_denorm orders them);
+// level 1 truncates the result, level 0 drops one more bit first
+function [NUBITS-1:0] ref_fadd;
+	input [NUBITS-1:0] x, y;
+	integer ex, ey, em, eb, sh;
+	reg [WX-1:0] A, B, S;
+	reg sx, sy, sb, ss, sr;
+	reg [MAN-1:0] mb, ms;
+	reg [MAN+1:0] al, T;
+	begin
+		ex = f_exp(x); ey = f_exp(y); sx = f_sgn(x); sy = f_sgn(y);
+		if (FROUND == 2) begin
+			em = (ex < ey) ? ex : ey;
+			A  = f_man(x); A = A << (ex - em);
+			B  = f_man(y); B = B << (ey - em);
+			if (sx == sy)      begin S = A + B; sr = sx; end
+			else if (A >= B)   begin S = A - B; sr = sx; end
+			else               begin S = B - A; sr = sy; end
+			ref_fadd = pack(2, sr, S, em);
+		end else begin
+			if (ex < ey) begin eb = ey; sh = ey - ex; sb = sy; ss = sx; mb = f_man(y); ms = f_man(x); end
+			else         begin eb = ex; sh = ex - ey; sb = sx; ss = sy; mb = f_man(x); ms = f_man(y); end
+			al = (sh >= MAN) ? 0 : (ms >> sh);
+			if (sb == ss)      begin T = mb + al; sr = sb; end
+			else if (mb >= al) begin T = mb - al; sr = sb; end
+			else               begin T = al - mb; sr = ss; end
+			S = T;
+			ref_fadd = (FROUND == 1) ? pack(1, sr, S, eb) : pack(0, sr, S >> 1, eb + 1);
+			// level 0: a difference of one unit loses its last bit and is zero,
+			// but its sign was taken before (the legacy -0.0)
+			if (FROUND == 0 && S == 1) ref_fadd = {sr, EMIN[EXP-1:0], {MAN{1'b0}}};
+		end
+	end
+endfunction
+
+// x * y: the exact product at levels 1 and 2; level 0 keeps its top MAN bits
+function [NUBITS-1:0] ref_fmlt;
+	input [NUBITS-1:0] x, y;
+	reg [WX-1:0] P;
+	begin
+		P = f_man(x); P = P * f_man(y);
+		if (FROUND == 0) ref_fmlt = pack(0, f_sgn(x) ^ f_sgn(y), P >> MAN, f_exp(x) + f_exp(y) + MAN);
+		else             ref_fmlt = pack(FROUND, f_sgn(x) ^ f_sgn(y), P, f_exp(x) + f_exp(y));
+	end
+endfunction
+
+// int -> float: the whole word at levels 1 and 2; level 0 reads the low
+// NBMANT bits as a signed number (docs/floating-point.md)
+function [NUBITS-1:0] ref_i2f;
+	input signed [NUBITS-1:0] x;
+	reg [WX-1:0] M;
+	reg signed [MAN-1:0] lo;
+	reg [MAN-1:0] lm;
+	reg [NUBITS-1:0] mg;
+	begin
+		if (FROUND == 0) begin
+			lo = x[MAN-1:0];
+			lm = (lo < 0) ? -lo : lo;
+			M  = lm;
+			ref_i2f = pack(0, lo < 0, M, 0);
+		end else begin
+			mg = (x < 0) ? -x : x;                 // 2^(NUBITS-1) for the most negative int
+			M  = mg;
+			ref_i2f = pack(FROUND, x < 0, M, 0);
+		end
+	end
+endfunction
+
+// F_ROT: the power of two nearest the square root, 2^((e + MAN-1) / 2) with
+// the operand's sign (the seed of sqrt; the mantissa is not read)
+function [NUBITS-1:0] ref_frot;
+	input [NUBITS-1:0] x;
+	integer h;
+	begin
+		h = (f_exp(x) + (MAN-1)) / 2;
+		ref_frot = pack(FROUND, f_sgn(x), 1, h);
+	end
+endfunction
+
+function [NUBITS-1:0] neg_f; input [NUBITS-1:0] x; neg_f = {~x[MAN+EXP], x[MAN+EXP-1:0]}; endfunction
+
 // ------------------------------------------------- what each op means ---
 
 function [NUBITS-1:0] b2w; input b; b2w = {{(NUBITS-1){1'b0}}, b}; endfunction
@@ -241,6 +375,13 @@ function [NUBITS-1:0] ref_op;
 			6'd49: ref_op = ref_scl(a, b);                             // F_SCL: in2 * 2^in1
 			6'd50: ref_op = ref_xpo(b);                                // XPO
 			6'd51: ref_op = ref_xpo(a);                                // XPO_M
+			6'd3 : ref_op = ref_fadd(a, b);                            // F_ADD
+			6'd47: ref_op = ref_fadd(neg_f(a), b);                     // F_SU1: in2 - in1
+			6'd48: ref_op = ref_fadd(a, neg_f(b));                     // F_SU2: in1 - in2
+			6'd5 : ref_op = ref_fmlt(a, b);                            // F_MLT
+			6'd25: ref_op = ref_i2f(b);                                // I2F
+			6'd26: ref_op = ref_i2f(a);                                // I2F_M
+			6'd46: ref_op = ref_frot(b);                               // F_ROT
 			default: ref_op = {NUBITS{1'bx}};
 		endcase
 	end
@@ -252,21 +393,24 @@ function integer kind;
 	input [5:0] o;
 	case (o)
 		6'd10, 6'd13, 6'd14, 6'd17, 6'd18, 6'd21, 6'd22, 6'd27, 6'd28,
-		6'd39, 6'd41, 6'd50, 6'd51: kind = 1;
+		6'd39, 6'd41, 6'd50, 6'd51,
+		6'd3, 6'd5, 6'd46, 6'd47, 6'd48: kind = 1;
 		6'd49                     : kind = 2;
 		6'd43, 6'd44, 6'd45       : kind = 3;
 		default                   : kind = 0;
 	endcase
 endfunction
 
-// the operations of this step (the rounding ones and the divisions come next)
-localparam NOPS = 42;
+// the operations that go through the normalizer: out_fast does not carry them
+function is_round; input [5:0] o; is_round = (o == 3 || o == 5 || o == 25 || o == 26 || o == 46 || o == 47 || o == 48); endfunction
+
+// every operation but the divisions (the next step)
+localparam NOPS = 49;
 reg [5:0] ops [0:NOPS-1];
 initial begin : list
 	integer j, n; n = 0;
 	for (j = 0; j <= 51; j = j + 1)
-		if (!(j == 3 || j == 5 || j == 6 || j == 7 || j == 8 || j == 25 || j == 26 ||
-		      j == 46 || j == 47 || j == 48)) begin
+		if (!(j == 6 || j == 7 || j == 8)) begin
 			if (n < NOPS) ops[n] = j;
 			n = n + 1;
 		end
@@ -290,6 +434,17 @@ initial begin
 				1: begin in1 = gen_float(0); in2 = gen_float(0);
 				         if (k % 9 == 0) in1 = in2;                                     // equal words
 				         if (k % 11 == 0) begin in1 = in2; in1[MAN+EXP] = ~in2[MAN+EXP]; end   // x and -x
+				         if (k % 5 == 0 && f_man(in2) != 0) begin                       // close to -x: a difference that cancels
+				             in1 = in2 ^ (r16(0) % 8);
+				             in1[MAN+EXP] = ~in2[MAN+EXP];
+				             if (r16(0) % 2 && f_exp(in2) > EMIN) in1[MAN+EXP-1:MAN] = in2[MAN+EXP-1:MAN] - 1;
+				             in1[MAN-1] = 1'b1;
+				         end
+				         if (k % 7 == 0 && f_man(in2) != 0 && f_exp(in2) - EMIN > MAN + 4) begin   // far below: bits past the guard (sticky)
+				             in1 = gen_float(0);
+				             in1[MAN-1] = 1'b1;
+				             in1[MAN+EXP-1:MAN] = in2[MAN+EXP-1:MAN] - (3 + (r16(0) % (MAN + 2)));
+				         end
 				   end
 				2: begin kk = $signed(r16(0)) % (2 * (EMAX - EMIN) + 8); in1 = kk; in2 = gen_float(0);
 				         if (k % 7 == 0) in1 = gen_int(0); end                           // a k far out of range
@@ -299,7 +454,7 @@ initial begin
 			#1;
 			want = ref_op(op, in1, in2);
 			total = total + 1;
-			if (out !== want || out_fast !== want) begin
+			if (out !== want || (!is_round(op) && out_fast !== want)) begin
 				errs = errs + 1;
 				if (bad[op] < 3) $display("  op %0d: in1=%h in2=%h -> out=%h out_fast=%h, expected %h",
 				                          op, in1, in2, out, out_fast, want);
