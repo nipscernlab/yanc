@@ -55,8 +55,8 @@ void parse_lang_flag(int *argc, char **argv);
       "Error on line %d: #NUGAIN %d is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.\n")
 
 #define MSG_ERR_FROUND_RANGE \
-    M("Erro na linha %d: #FROUND só aceita 0 (legado), 1 (truncamento exato + saturação) ou 2 (arredondamento ao par).\n", \
-      "Error on line %d: #FROUND only takes 0 (legacy), 1 (exact truncation + saturation) or 2 (round to nearest even).\n")
+    M("Erro na linha %d: #FROUND só aceita 0 (legado), 1 (truncamento + saturação) ou 2 (arredondamento ao par).\n", \
+      "Error on line %d: #FROUND only takes 0 (legacy), 1 (truncation + saturation) or 2 (round to nearest even).\n")
 
 #define MSG_ERR_INT_MAX_OVERFLOW \
     M("Erro na linha %d: o maior número inteiro que pode ser representado é %d!\n", \

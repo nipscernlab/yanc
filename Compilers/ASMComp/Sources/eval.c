@@ -52,7 +52,7 @@ int  nuioin    =  1;    // number of input ports
 int  nuioou    =  1;    // number of output ports
 int  nugain    = 128;   // division constant (norm(); a power of two, checked in eval_finish)
 int  fftsiz    =  3;    // FFT size (bits)
-int  fround    =  0;    // float rounding level (0 legacy, 1 exact truncation + saturation, 2 nearest even)
+int  fround    =  0;    // float rounding level (0 legacy, 1 truncation + saturation, 2 nearest even)
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------

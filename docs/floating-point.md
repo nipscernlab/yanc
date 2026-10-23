@@ -47,8 +47,8 @@ logic only to the float operations the program uses.
 | `#FROUND` | what the float unit does | cost |
 |---|---|---|
 | `0` (C± default) | the original datapath: the operations truncate, and one mantissa bit is lost before normalisation when a result does not fill the top bit, so `(1 + 2^-22) - 1` gives `0` and `x * 1.0` may differ from `x`; the exponent wraps on overflow and underflow; `-0.0 != 0.0` | none |
-| `1` | keeps that bit (exact truncation toward zero); saturates on overflow and flushes to zero on underflow; one zero. `x * 1.0 == x`; `a - b` is exact when `a/2 <= b <= 2a` | about +1.5 % of the ALU |
-| `2` (C++ always) | level 1, rounding to the nearest, ties to even, in addition, multiplication, division and conversion: rounding errors on varying data have no bias | about +5 % of the ALU |
+| `1` | keeps that bit; saturates on overflow and flushes to zero on underflow; one zero. `x * 1.0 == x`. A sum truncates toward zero; a difference cuts the smaller operand first, so it can come out a few units of the last bit above the exact result, and `a - b` is not always exact even when `a/2 <= b <= 2a`. In long sums of mixed signs the two errors cancel: the result is close to level 2's ([measured](design/fround1-subtraction.md)) | about +1.5 % of the ALU |
+| `2` (C++ always) | level 1 with three more bits below the mantissa, rounding to the nearest, ties to even, in addition, multiplication, division and conversion: rounding errors on varying data have no bias, and `a - b` is exact when `a/2 <= b <= 2a` | about +5 % of the ALU |
 
 **At level 0, converting an int to float uses only its low `NBMANT` bits:**
 `fin()` or an `int` assigned to a `float` gives a wrong value once the int

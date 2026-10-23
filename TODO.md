@@ -105,8 +105,11 @@ regress step 4a0 runs it and `tb_alu.sh`.
    came out non-canonical at levels 1/2. `XPO` of zero (EMIN+MAN-1) and of a
    level-0 denormal (leading zeros not counted) are documented as defined.
 2. Left: the rounding operations (`F_ADD`, `F_SU1`/`F_SU2`, `F_MLT`, `I2F`,
-   `F_ROT`): bit-exact at levels 1/2 against the exact result truncated or
-   rounded to nearest even, an error bound at level 0 (the legacy datapath).
+   `F_ROT`): bit-exact at level 2 against the exact result rounded to
+   nearest even; level 1 against what it does (a sum truncates, a difference
+   cuts the smaller operand first: docs/design/fround1-subtraction.md, the
+   hardware stays, decided 2026-10-22); an error bound at level 0 (the
+   legacy datapath).
 3. Left: the divisions through their real sequence (`DIV`/`MOD`/`F_DIV`,
    the `NOP`s, `QUO`/`REM`/`F_QUO`).
 

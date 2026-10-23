@@ -147,7 +147,7 @@ module processor
 	// arithmetic constants
 	parameter signed [NUBITS-1:0] NUGAIN = 128, // norm() divisor (NRM/NRM_M): a power of two, asmcomp enforces it
 	parameter FFTSIZ =  3,              // ILI size for bit reversal
-	parameter FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 exact truncation + saturation, 2 round to nearest even
+	parameter FROUND =  0,              // Float rounding level (#FROUND): 0 legacy, 1 truncation + saturation, 2 round to nearest even
 
 	// -------------------------------------------------------------------------
 	// Resource-allocation parameters ------------------------------------------

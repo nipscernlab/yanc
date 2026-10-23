@@ -116,6 +116,7 @@ design/cli-v7.1
 design/toma-and-cade-links
 design/toma-and-cade
 design/myfifo
+design/fround1-subtraction
 design/ps2-keyboard
 design/vga-text
 design/cpp-iostream

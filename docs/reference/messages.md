@@ -17,7 +17,7 @@ value. What the common ones mean and how to get past them is in
 - Error: couldn't open the file '<name>' for the life of me!!
 - Error on line <n>: the symbol 'i' is reserved for the imaginary part of a complex constant. Hands off!
 - Error on line <n>: #NUGAIN <n> is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.
-- Error on line <n>: #FROUND only takes 0 (legacy), 1 (exact truncation + saturation) or 2 (round to nearest even).
+- Error on line <n>: #FROUND only takes 0 (legacy), 1 (truncation + saturation) or 2 (round to nearest even).
 - Error on line <n>: the biggest integer this thing can hold is <n>!
 - Error on line <n>: '<name>' starts with 0, so it is octal, and octal has no 8 or 9.
 - Error on line <n>: the smallest float this thing can hold is <x>!
@@ -289,7 +289,7 @@ value. What the common ones mean and how to get past them is in
 - Error: the operand of <name> is the link number, an integer from 0 to <n> (found '<name>').
 - Error: #LKSYNC <n>, but the program has no TOM or CAD on link <n>.
 - Error: the program ends inside the sequence of <name> (NOPs and <name> are missing).
-- Error: #FROUND only takes 0 (legacy), 1 (exact truncation + saturation) or 2 (round to nearest even).
+- Error: #FROUND only takes 0 (legacy), 1 (truncation + saturation) or 2 (round to nearest even).
 - Error: line <n> of file '<name>' is empty! Kinda hard to work with that.
 - Error: line <n> of file '<name>' isn't a valid integer!
 - Error: line <n> of file '<name>' busts the upper limit of <n>!

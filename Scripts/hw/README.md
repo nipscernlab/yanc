@@ -27,6 +27,7 @@ All paths assume the repo at `/c/nipscern/yanc` under an **MSYS2 login shell**
 | `tb_vgatext.sh` (`tb_vgatext.v`) | iverilog | `SAPHO/myVGAText.v` through the toma link: the picture rebuilt from the output pins (800 x 525 timing, a glyph against the font, the cursor blinking), every word and control code, the cursor command, a scroll, a clear; `tb_vgatext.sh 8` runs one width (about 3 minutes), the regress does that (step 4a0) |
 | `tb_keyps2.sh` (`tb_keyps2.v`) | iverilog | `SAPHO/myKeyPS2.v` against frames sent with a keyboard's timing: every key of both layouts with and without Shift, releases, extended keys, a bad parity, a cut frame (the 1 ms timeout), a full queue; US and ABNT2, at 2 and 25 MHz, queue of 1, 4 and 16. The regress runs it (step 4a0) |
 | `tb_alu.sh` (`tb_alu.v`) | iverilog | the shared shifter, `F2I` and the float comparison against references derived in the testbench, in four formats (8/4/3 … 64/52/11) × three `#FROUND` levels. The place to add an operator whose only check today is a blessed golden |
+| `fadd_acc/run.sh` (`tb.v`, `check.py`) | iverilog, python3 | how accurate `F_ADD` is at each `#FROUND` level, against exact results: the share of 200000 random pairs that are not the exact truncation and by how many units, the documented exact subtraction (`b` between `a/2` and `2a`), and the error of 300 running sums of 1000 values of mixed signs. `run.sh <dir>` measures a modified copy of `SAPHO/` (docs/design/fround1-subtraction.md) |
 
 ## Typical use
 

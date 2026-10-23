@@ -102,8 +102,8 @@ void parse_lang_flag(int *argc, char **argv);
       "Error: the program ends inside the sequence of %s (NOPs and %s are missing).\n")
 
 #define MSG_ERR_FROUND_RANGE \
-    M("Erro: #FROUND só aceita 0 (legado), 1 (truncamento exato + saturação) ou 2 (arredondamento ao par).\n", \
-      "Error: #FROUND only takes 0 (legacy), 1 (exact truncation + saturation) or 2 (round to nearest even).\n")
+    M("Erro: #FROUND só aceita 0 (legado), 1 (truncamento + saturação) ou 2 (arredondamento ao par).\n", \
+      "Error: #FROUND only takes 0 (legacy), 1 (truncation + saturation) or 2 (round to nearest even).\n")
 
 // errors when reading array initialization files ----------------------------
 
