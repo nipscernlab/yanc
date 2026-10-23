@@ -159,24 +159,29 @@ for %%D in (bin SAPHO Macros Header) do (
 :: ----------------------------------------------------------------------------
 ::
 :: The deploy above wipes bin\, and with it bin\.yanc-version. Without that
-:: marker, the next `npm start` in Aurora runs download-yanc.js, finds no stamp
+:: marker, the next `npm start` in Aurora runs download-yanc, finds no stamp
 :: matching its pinned YANC_TAG, re-downloads that release and silently
 :: overwrites the build we just deployed. Writing the pinned tag here makes
 :: Aurora treat the local build as already installed, so the build from this
 :: checkout survives every `npm start`.
 ::
-:: The tag is read from Aurora's own download-yanc.js, so this keeps working
+:: The tag is read from Aurora's own download-yanc, so this keeps working
 :: when Aurora bumps the pin. If Aurora bumps it after this script ran, the
 :: next `npm start` re-downloads the release once; run this script again.
+:: Aurora converted the script from download-yanc.js to download-yanc.cts
+:: (nipscernlab/aurora issue 213); the .cts is tried first and the .js stays
+:: as a fallback for an Aurora checkout from before the conversion.
 
 set YANC_PIN=
-for /f "tokens=2 delims='" %%T in ('findstr /r /c:"^const YANC_TAG" "%BLD_DIR%\Scripts\download-yanc.js"') do set YANC_PIN=%%T
+set YANC_SCRIPT=%BLD_DIR%\Scripts\download-yanc.cts
+if not exist "%YANC_SCRIPT%" set YANC_SCRIPT=%BLD_DIR%\Scripts\download-yanc.js
+for /f "tokens=2 delims='" %%T in ('findstr /r /c:"^const YANC_TAG" "%YANC_SCRIPT%"') do set YANC_PIN=%%T
 
 if defined YANC_PIN (
     >"%BLD_DIR%\bin\.yanc-version" echo %YANC_PIN%
     echo Stamped bin\.yanc-version with Aurora's pinned tag %YANC_PIN%.
 ) else (
-    echo WARNING: could not read YANC_TAG from %BLD_DIR%\Scripts\download-yanc.js.
+    echo WARNING: could not read YANC_TAG from %YANC_SCRIPT%.
     echo          The next `npm start` may replace this build with the pinned release.
 )
 
