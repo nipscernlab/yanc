@@ -236,6 +236,68 @@ different banks; it cannot serve `⟨a|a⟩` without a copy.
 5. **What it buys**: words of program and clocks of the Dirac fixtures and
    of `proc_rls`, today against each variant.
 
+### 7.1 Step 1, measured (2026-10-24)
+
+`bash Scripts/hw/mac_study/run.sh` (about 5 minutes; the report in
+`.smoke/hw/mac_study/<width>/report.txt`). Inner products of 4 to 1024
+terms (256 at 16 bits), 30 vectors per size and set: `pos` (magnitudes
+2^-2 to 2^2, positive), `mixed` (the same, random signs), `wide` (2^-20 to
+2^20 at 32 bits, 2^-3 to 2^6 at 16), `cancel` (pairs that cancel exactly
+and two small terms that survive), `sparse` (a third of zeros). "today" is
+the Dirac loop run on `SAPHO/ula.v` (`tb.v`: `F_MLT` with in1 = b, in2 = a,
+then `F_ADD` with in1 = the sum, in2 = the product, as `core.v` feeds the
+ALU); the variants are bit-level models in `mac.py`. The error is in units
+of the last place (ULP) of the exact result, mean |e| / max |e|.
+
+Excerpt at 32/23/8, 1024 terms (the full tables are in the report):
+
+| set | `#FROUND` | today | F (fused, rounded per term) | A, W = 2M+8 | B, 64 bits | C (exact) |
+|---|---|---|---|---|---|---|
+| pos | 0 | 495 / 707 | 249 / 349 | 0.50 / 0.91 | 0.50 / 0.91 | 0.50 / 0.91 |
+| pos | 2 | 3.2 / 15.6 | 3.2 / 15.6 | 0.31 / 0.49 | 0.31 / 0.49 | 0.31 / 0.49 |
+| mixed | 1 | 16 / 81 | 357 / 2420 | 0.65 / 0.98 | 0.65 / 0.98 | 0.65 / 0.98 |
+| mixed | 2 | 9.7 / 79 | 8.6 / 49 | 0.25 / 0.46 | 0.25 / 0.46 | 0.25 / 0.46 |
+| cancel | 2 | 2.5e6 / 3.2e7 | 2.9e6 / 3.9e7 | 0.26 / 0.47 | 0.26 / 0.47 | 0.26 / 0.47 |
+
+What the numbers say (measured on these data):
+
+- **Every variant that keeps the sum unrounded to the end gives the error
+  of one rounding**, at most 0.5 ULP at `#FROUND 2` and below 1 ULP when it
+  truncates, at every length. Today's loop grows with the length: 495 ULP
+  on average for 1024 positive terms at `#FROUND 0`, 3.2 (max 15.6) at
+  `#FROUND 2`; on the cancellation set, millions of ULP of the small result,
+  as any sequential float sum.
+- **F, the fused multiply-add rounded per term, buys little**: as today at
+  `#FROUND 2`; at 0, half of today on positive terms and the same on mixed
+  signs; worse than today at `#FROUND 1` on
+  mixed signs (where today's two errors of level 1 cancel,
+  fround1-subtraction.md). Together with section 4.2 (no clock gained), F
+  is out.
+- **A, the lazy accumulator**: with W = 2M+8 (54 bits at 32, 28 at 16) it
+  matched C on every vector; with W = 2M+2 it lost up to 6 ULP on long
+  cancelling sums. The extra low bits matter only where the sum cancels.
+- **B, the window**: placed from the data's range (an oracle here; in
+  hardware a parameter someone must choose), 2 x `NUBITS` bits matched C on
+  the sets of magnitudes 2^-2 to 2^2; the `wide` set at 32 bits needed 96 bits
+  (with 48 the error reached 3.4e5 ULP). Products that fall below the window
+  are cut without notice; only an overflow at the top can be flagged.
+- **C, the full range**: 567 bits at 32/23/8 for 1024 terms, 91 at 16/10/5
+  for 256: exact by construction, the reference itself.
+- At 16/10/5 the `cancel` set has 12 vectors whose exact sum is below the
+  smallest float of the format; they are left out of every column.
+
+Not measured yet: the cost. A puts an exponent compare and a W-bit
+alignment shifter inside the feedback; B and C keep the shift before it and
+leave an integer add in the loop (section 4.1). Step 2 decides with area
+and Fmax.
+
+**Integer MAC (decision 6), from the code:** `MLT` keeps the low `NUBITS`
+bits of the product (`ula.v` 536: `assign out = in1 * in2` into an
+`NUBITS`-bit wire) and the integer add wraps. A sum modulo 2^`NUBITS` does
+not depend on the order, so an `NUBITS`-bit accumulator gives exactly
+today's result; a wider one matters only to saturate or to flag an
+overflow, a choice of meaning, not of accuracy.
+
 ## 8. For the documentation (item 21 in TODO.md)
 
 - The parameter and what it changes, in the directives and in the
