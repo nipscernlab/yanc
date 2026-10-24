@@ -182,7 +182,8 @@ mode (20 bits against 40), so a 32-bit true dual-port memory would take
 twice the blocks; the Xilinx 36 Kb block RAM is 36 bits wide in true
 dual-port mode. The alternative to true dual port: two banks (X and Y, as
 in classic DSPs), the compiler placing the two operands of an operation in
-different banks; it cannot serve `⟨a|a⟩` without a copy.
+different banks; it cannot serve `⟨a|a⟩` without a copy. Luciano left it
+out (2026-10-24): the memory is true dual port.
 
 ## 6. Decisions to take
 
@@ -197,12 +198,15 @@ different banks; it cannot serve `⟨a|a⟩` without a copy.
    the pointers and a stride; one instruction per operation (`DOT`,
    `AXPY`, ...) or a small programmable sequencer. Designed once with the
    burst's `BSZ`/`BPT`/`BOT`/`BIN` and the fast fill and copy (item 28).
-5. **The MAC variant** (A, B or C), and for B the window.
+5. **The MAC variant** (A, B or C), and for B the window. **Decided
+   (Luciano, 2026-10-24): A**, the lazy accumulator with W = 2M+8, on the
+   results of section 7.1: the error of one rounding, as C, at the area
+   of B, with no window for anyone to choose.
 6. **The int accumulator**: width, overflow (wrap, saturate, flag).
 7. **The scalar operand** of `c|a⟩`: from the accumulator into a
    register of the controller.
-8. **The memory**: true dual port or two banks; the size of each memory
-   (today one `MDATAS`).
+8. **The memory**: true dual port (two banks left out, Luciano,
+   2026-10-24); the size of each memory (today one `MDATAS`).
 9. **Interrupts** during a sequence (the same question as for the burst
    and `TOM`/`CAD`, toma-and-cade.md section 6).
 10. **The compilers**: two address spaces, two memory images; `asm_reach`
@@ -226,8 +230,8 @@ different banks; it cannot serve `⟨a|a⟩` without a copy.
    and Fmax. A MAC alone gives a bound, not the answer: the critical path
    is the whole processor's (`fmax.sh`), measured in step 4.
 3. **The array memory**: a 32-bit true dual-port memory of the sizes of
-   the fixtures, synthesized in Quartus and Vivado; blocks used and Fmax;
-   against two banks.
+   the fixtures, synthesized in Quartus and Vivado; blocks used, against
+   today's simple dual port.
 4. **A prototype of the whole** in a worktree copy of `SAPHO/`, with
    hand-written `.asm`: the single access with today's timing, an inner
    product in a sequence, the wait in place; then `fmax.sh` and `area.sh`
@@ -333,6 +337,19 @@ into each group of registers, data delay in ns:
   and C567, and every Vivado fit (they follow, for the variant chosen). A
   fit of this small block takes about 30 minutes, most of it preparing the
   placement, whatever clock is asked (5 and 10 ns tried).
+
+**Step 3, the memory (2026-10-24):** what matters is that the tools build
+a 32-bit true dual-port memory out of RAM blocks; the block count does not
+change the decision (Luciano). `Scripts/hw/mac_study/mem.sh` (`mem.v`),
+256 words: Quartus 24.1 on the DE10-Nano takes it as `altsyncram` (2 M10K,
+against 1 for today's simple dual port), Vivado 2025.2 on the Z-7010 as one
+block RAM tile (half a tile for simple dual port). The template matters:
+written as each port reading the old word on a write (`q <= mem[a]` beside
+the write), Quartus refused it (276009, unsupported read-during-write) and
+built the array from 8256 registers, about 10 000 ALMs, in a fit that did
+not end in 50 minutes. Written as each port returning the word it writes
+(Intel's template, `mem_tdp` in `mem.v`), it is a RAM. The prototype of
+step 4 uses that form, or checks the behaviour it needs on a write.
 
 **Integer MAC (decision 6), from the code:** `MLT` keeps the low `NUBITS`
 bits of the product (`ula.v` 536: `assign out = in1 * in2` into an
