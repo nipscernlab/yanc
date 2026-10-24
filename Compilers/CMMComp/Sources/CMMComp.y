@@ -195,10 +195,8 @@ dire_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt 
            | TOAQUI             {stmt_append(stmt_dire_toaqui());} // PC tracker marker     (#TOAQUI -> cheguei pin)
 
 // Variable declaration -------------------------------------------------------
-         // list declaration (one or more uninitialized variables)
+         // list declaration (one or more variables, each may have an initializer)
 declar : TYPE id_list                               ';'
-         // declaration of a variable with initialization
-       | TYPE ID '=' exp ';'          {declar_var($2); stmt_append(stmt_assign($2, $4));}
          // array declaration with file initialization
        | TYPE ID '[' INUM ']'              STRING   ';' {declar_arr_1d($2,$4,$6    );}
        | TYPE ID '[' INUM ']' '[' INUM ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
@@ -223,6 +221,7 @@ ini_num  :     INUM {ini_add($1,1,0);}
          | '-' FNUM {ini_add($2,2,1);}
 
 IID    : ID                           {declar_var   ($1         );}
+       | ID '=' exp                   {declar_var   ($1         ); stmt_append(stmt_assign($1, $3));}
        | ID '[' INUM ']'              {declar_arr_1d($1,$3   ,-1);}
        | ID '[' INUM ']' '[' INUM ']' {declar_arr_2d($1,$3,$6,-1);}
 

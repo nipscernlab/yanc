@@ -75,6 +75,7 @@ output), and the compiler prints a warning at each place; there is no cast.
 
 ```c
 int a, b;
+int n = 0, k, m = n + 1;          // any name of a list can be initialised
 float gain = 0.5;
 int v[128];                       // an array
 float M[4][4];                    // two dimensions at most
@@ -82,8 +83,9 @@ float table[64] "table.txt";      // initialised from a file
 ```
 
 - A variable can be declared at the top of the file (global) or anywhere
-  inside a function (local to it). Only one variable per declaration can be
-  initialised: `int a = 1;`, not `int a = 1, b = 2;`.
+  inside a function (local to it). Any name of a declaration list can have
+  an initialiser, and a later name can read an earlier one, as in C. A
+  local initialiser runs each time the function is called.
 - The size of an array is a number (or a `#define` name for one).
 - An array is initialised between braces, as in C, or from a file:
 
