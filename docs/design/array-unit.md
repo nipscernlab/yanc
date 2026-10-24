@@ -274,8 +274,12 @@ What the numbers say (measured on these data):
   fround1-subtraction.md). Together with section 4.2 (no clock gained), F
   is out.
 - **A, the lazy accumulator**: with W = 2M+8 (54 bits at 32, 28 at 16) it
-  matched C on every vector; with W = 2M+2 it lost up to 6 ULP on long
-  cancelling sums. The extra low bits matter only where the sum cancels.
+  matched C on every vector; with W = 2M+2 it lost up to 316 ULP on 1024
+  cancelling terms at 32 bits (68 on 256 at 16). The extra low bits matter
+  only where the sum cancels. The shifts are arithmetic, as in the
+  hardware (toward minus infinity, a bias); the first version of the model
+  cut toward zero and lost at most 6 ULP at W = 2M+2: the direction of the
+  cut matters only when the width is short.
 - **B, the window**: placed from the data's range (an oracle here; in
   hardware a parameter someone must choose), 2 x `NUBITS` bits matched C on
   the sets of magnitudes 2^-2 to 2^2; the `wide` set at 32 bits needed 96 bits
@@ -286,10 +290,49 @@ What the numbers say (measured on these data):
 - At 16/10/5 the `cancel` set has 12 vectors whose exact sum is below the
   smallest float of the format; they are left out of every column.
 
-Not measured yet: the cost. A puts an exponent compare and a W-bit
-alignment shifter inside the feedback; B and C keep the shift before it and
-leave an integer add in the loop (section 4.1). Step 2 decides with area
-and Fmax.
+**Step 2, correctness (2026-10-24):** the four variants in Verilog
+(`Scripts/hw/mac_study/mac.v`: A with W = 2M+8, B with 2 and 3 x `NUBITS`,
+C) give the word of their model (`mac.py expect`) on every vector of the
+study, 750 at 32/23/8 and 588 at 16/10/5 (12 left out, out of range), at
+`#FROUND 0` and 2 (`check.sh`, 16 runs, 0 different). A mutation (the
+hardware at level 0 against the level-2 model) gives 287 different, the
+first by 1 ULP: the check sees a one-unit error.
+
+**Step 2, cost (2026-10-24),** Quartus 24.1 on the DE10-Nano's Cyclone V
+(5CSEBA6U23I7, the slow 1100 mV 100 C corner), each block alone in
+`mac_fit` (inputs and output registered, the pins virtual), `#FROUND 2`,
+`Scripts/hw/mac_study/fit.sh`; "synthesis" is `quartus_map`'s estimate
+(`MAPONLY=1`), the rest a full fit with a 10 ns clock asked. The worst path
+into each group of registers, data delay in ns:
+
+| variant | ALMs | DSP | Fmax of the block | feedback (the loop) | rounding at the end | prepared product | product |
+|---|---|---|---|---|---|---|---|
+| A, W = 54, 32 bits | 1003 (fit) | 1 | 48.7 MHz | **15.7** | 20.3 | 5.1 | 3.1 |
+| B, 64 bits, 32 bits | 964 (synthesis) | 1 | not fitted | | | | |
+| C, 567 bits, 32 bits | 4654 (synthesis) | 1 | not fitted | | | | |
+| C, 91 bits, 16 bits | 847 (fit; synthesis 807) | 1 | about 76 MHz | 5.4 | 12.8 | 4.6 | 4.1 |
+
+- **The synthesis estimate is close to the fit** where both exist (807
+  against 847 ALMs, C at 16 bits; 1048 against 1003, A).
+- **The loops.** A's feedback (exponent compare, 55-bit alignment, add)
+  takes 15.7 ns, as estimated in section 4.3 from the denormaliser and adder
+  of `F_ADD` (11.5 + 3.0 ns, 2026-10-02). The integer add of C at 91 bits
+  takes 5.4 ns; B's 64-bit add is deduced to be no longer (not fitted).
+  `sapho_all` runs at 32.4 MHz on this board (item 29), a period of about
+  31 ns: **every loop fits in the processor's clock**, A's with half of it
+  to spare.
+- **The rounding at the end** is the longest path of each block (12.8 to
+  20.3 ns; for C at 567 bits, with a 567-bit leading-zero count, not fitted
+  and expected longer). It runs once per vector, so it can take two clocks,
+  or be cut by a register, at no cost in rate.
+- **Area.** A and B cost about 1000 ALMs at 32 bits; C at 32 bits about
+  4650, more than the whole `sapho_all` (3759 ALMs, item 8, 2026-10-02); C
+  at 16 bits about 850. Every variant uses one DSP block for the 24 x 24
+  product.
+- Not run, judged not needed for the choice: B at 96 bits, the fits of B64
+  and C567, and every Vivado fit (they follow, for the variant chosen). A
+  fit of this small block takes about 30 minutes, most of it preparing the
+  placement, whatever clock is asked (5 and 10 ns tried).
 
 **Integer MAC (decision 6), from the code:** `MLT` keeps the low `NUBITS`
 bits of the product (`ula.v` 536: `assign out = in1 * in2` into an

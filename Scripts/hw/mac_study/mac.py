@@ -178,6 +178,8 @@ def var_fused(f, ps, nearest):
     return (V, L), bad
 
 def var_lazy(f, ps, W, nearest):
+    """as mac_a in mac.v: two's complement in [-2^W, 2^W), arithmetic shifts
+    (toward minus infinity, Python's >>), a zero product skipped"""
     M = f['M']
     V, e = 0, 0
     for P, lp in ps:
@@ -188,12 +190,12 @@ def var_lazy(f, ps, W, nearest):
             V, e = Pp, ep
             continue
         if ep >= e:
-            V, e = tshift(V, ep - e), ep
+            V, e = V >> (ep - e), ep
         else:
-            Pp = tshift(Pp, e - ep)
+            Pp = Pp >> (e - ep)
         V += Pp
-        if abs(V) >= 1 << W:                          # carry out: one shift right
-            V, e = tshift(V, 1), e + 1
+        if not -(1 << W) <= V < (1 << W):             # out of range: one shift right
+            V, e = V >> 1, e + 1
     r = round_to(f, V, e, nearest)
     return (r[0], r[1]), r[2]
 
@@ -249,6 +251,31 @@ def main():
                 o.write('%d\n' % n)
                 for x, y in zip(a, b):
                     o.write('%0*x %0*x\n' % (NB // 4, x, NB // 4, y))
+        return
+    if cmd == 'expect':
+        # expect NB M E DIR VARIANT FR: what mac.v must give, one line per
+        # vector: the window's LSB exponent (B; 0 otherwise), the word, 1 if
+        # the model's result is in range and the window did not overflow
+        var, lv = sys.argv[6], int(sys.argv[7])
+        nearest = lv == 2
+        pss = [products(f, a, b) for _, _, a, b in sets]
+        top = {}
+        for (name, n, _, _), ps in zip(sets, pss):
+            top[name] = max(top.get(name, -10 ** 9), top_of(ps) + 1)
+        with open('%s/exp_%s_L%d.txt' % (d, var, lv), 'w') as o:
+            for (name, n, _, _), ps in zip(sets, pss):
+                L = 0
+                if var[0] == 'A':
+                    (V, Le), bad = var_lazy(f, ps, int(var[1:]), nearest)
+                elif var[0] == 'B':
+                    W = int(var[1:])
+                    L = top[name] - W + 1
+                    (V, Le), bad, _ = var_window(f, ps, W, top[name], nearest)
+                else:
+                    S, L0 = exact_sum(ps)
+                    V, Le, bad = round_to(f, S, L0, nearest)
+                w = zero(f) if V == 0 else enc(f, int(V < 0), Le, abs(V))
+                o.write('%d %0*x %d\n' % (L, NB // 4, w, 0 if bad else 1))
         return
     base = {}
     for lv in (0, 1, 2):
