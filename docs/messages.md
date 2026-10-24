@@ -26,7 +26,6 @@ uses something the language does not have. The usual causes in C±:
 | written | why | instead |
 |---|---|---|
 | `a += 2;`, `a--;`, `x ? a : b` | no compound assignment, no `--`, no `?:` | `a = a + 2;`, `a = a - 1;`, an `if` |
-| `float x = 1e-5;` | no exponent literals | `0.00001` |
 | `(int) x` | no casts: conversions are automatic | `int a = x;` |
 | `#include`, `#if`, `#define F(x) ...` | the C± preprocessor has only `#define NAME text` | write it out, or use C++ |
 

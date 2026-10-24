@@ -24,16 +24,16 @@ NOP
 #SHARE __log_u main_c
 #SHARE __log_w __atan_ax
 #SHARE __log_lm main_c
-@main @__Lwh1 LOD 1.000000
-F_MLT 1.000000
-P_LOD 0.000000
-F_MLT 0.000000
+@main @__Lwh1 LOD 1.0
+F_MLT 1.0
+P_LOD 0.0
+F_MLT 0.0
 SF_ADD
 CAL __float_log
 F_MLT 0.5
 SET __clog_re
-LOD 1.000000
-P_LOD 0.000000
+LOD 1.0
+P_LOD 0.0
 SET_P __fase_im
 SET __fase_re
 LOD 0.0
@@ -88,16 +88,16 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.000000
-F_MLT 0.000000
-P_LOD 1.000000
-F_MLT 1.000000
+LOD 0.0
+F_MLT 0.0
+P_LOD 1.0
+F_MLT 1.0
 SF_ADD
 CAL __float_log
 F_MLT 0.5
 SET __clog_re
-LOD 0.000000
-P_LOD 1.000000
+LOD 0.0
+P_LOD 1.0
 SET_P __fase_im
 SET __fase_re
 LOD 0.0
@@ -152,16 +152,16 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD -1.000000
-F_MLT -1.000000
-P_LOD 0.000000
-F_MLT 0.000000
+LOD -1.0
+F_MLT -1.0
+P_LOD 0.0
+F_MLT 0.0
 SF_ADD
 CAL __float_log
 F_MLT 0.5
 SET __clog_re
-LOD -1.000000
-P_LOD 0.000000
+LOD -1.0
+P_LOD 0.0
 SET_P __fase_im
 SET __fase_re
 LOD 0.0
@@ -216,9 +216,9 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 3.000000
+LOD 3.0
 SET main_z
-LOD 4.000000
+LOD 4.0
 SET main_z_i
 LOD main_z
 F_MLT main_z
@@ -284,13 +284,13 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 1.000000
+LOD 1.0
 SET main_z
-LOD 2.000000
+LOD 2.0
 SET main_z_i
-LOD 2.000000
+LOD 2.0
 SET main_w
-LOD 2.000000
+LOD 2.0
 SET main_w_i
 LOD main_z
 F_ADD main_w

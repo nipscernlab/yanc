@@ -19,9 +19,9 @@ NOP
 #SHARE __exp_q main_c
 #SHARE __exp_n main_c
 #SHARE __exp_r main_z
-@main @__Lwh1 LOD 1.000000
+@main @__Lwh1 LOD 1.0
 SET main_z
-LOD 0.000000
+LOD 0.0
 SET main_z_i
 LOD main_z
 CAL __float_exp
@@ -44,14 +44,14 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.000000
+LOD 0.0
 CAL __float_exp
 SET __cexp_ea
-LOD 1.570796
+LOD 1.5707963
 CAL __float_sin
 F_MLT __cexp_ea
 SET __cexp_im
-LOD 1.570796
+LOD 1.5707963
 F_SU2 1.570796327
 CAL __float_sin
 F_MLT __cexp_ea
@@ -65,14 +65,14 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.000000
+LOD 0.0
 CAL __float_exp
 SET __cexp_ea
-LOD 3.141593
+LOD 3.1415927
 CAL __float_sin
 F_MLT __cexp_ea
 SET __cexp_im
-LOD 3.141593
+LOD 3.1415927
 F_SU2 1.570796327
 CAL __float_sin
 F_MLT __cexp_ea
@@ -86,13 +86,13 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 1.000000
+LOD 1.0
 SET main_z
-LOD 1.000000
+LOD 1.0
 SET main_z_i
-LOD 0.000000
+LOD 0.0
 SET main_w
-LOD 0.570796
+LOD 0.5707963
 SET main_w_i
 LOD main_z
 F_ADD main_w
@@ -120,9 +120,9 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.000000
+LOD 0.0
 SET main_z
-LOD 0.000000
+LOD 0.0
 SET main_z_i
 LOD main_z
 CAL __float_exp

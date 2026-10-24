@@ -57,16 +57,12 @@ int get_img_id(int id)
 // generating two floating-point entries in the table
 void get_cmp_cst(expr e, expr *er, expr *ei)
 {
-    char  txt[64];
-    float real, img;
+    char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)];
 
-    sscanf(v_table[e.id].name, "%f %f", &real, &img);
+    cnum_split(v_table[e.id].name, re, im);   // the text, not a host float: no digit lost
 
-    sprintf(txt, "%f", real);
-    *er = expr_make(2, exec_fnum(txt));
-
-    sprintf(txt, "%f", img);
-    *ei = expr_make(2, exec_fnum(txt));
+    *er = expr_make(2, exec_fnum(re));
+    *ei = expr_make(2, exec_fnum(im));
 }
 
 // generates the extended float exprs for the real and imag parts

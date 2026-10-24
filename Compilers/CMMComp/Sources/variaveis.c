@@ -6,6 +6,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include   <math.h>
+#include  <ctype.h>
+#include  <stdio.h>
+#include  <errno.h>
+#include <limits.h>
 
 // local includes
 #include "../Headers/global.h"
@@ -15,6 +19,7 @@
 #include "../Headers/messages.h"
 #include "../Headers/data_declar.h"
 #include "../../common/asm_share.h"
+#include "../../common/yanc_num.h"
 
 int          v_count = 0;  // stores the size of the table
 static int   v_cap   = 0;  // current capacity of the parallel arrays
@@ -245,114 +250,158 @@ int exec_id(char *text)
     return find_var(var_name);
 }
 
+// the value of an int literal in any form C writes it: 42, 052 (octal),
+// 0x2A, 0b101010, with a u/U/l/L suffix (*base, if given, says which)
+static unsigned long long inum_value(const char *text, int *base_out)
+{
+    int base = 10; const char *p = text;
+    if      (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {base = 16; p += 2;}
+    else if (p[0] == '0' && (p[1] == 'b' || p[1] == 'B')) {base =  2; p += 2;}
+    else if (p[0] == '0' && isdigit((unsigned char)p[1]))
+    {
+        base = 8; p++;
+        for (const char *q = p; isdigit((unsigned char)*q); q++)
+            if (*q > '7') {fprintf(stderr, MSG_ERR_OCTAL_DIGIT, line_num+1, text); exit(EXIT_FAILURE);}
+    }
+    if (base_out) *base_out = base;
+    errno = 0;
+    unsigned long long v = strtoull(p, NULL, base);       // stops at the suffix
+    return (errno == ERANGE) ? ULLONG_MAX : v;
+}
+
+// the word width for a bit pattern: #NUBITS, 2..32
+static int word_bits(void) { return nubits < 2 ? 2 : nubits > 32 ? 32 : nubits; }
+
+// what the lexer returns for an int literal: 0 a plain INUM; 1 (NINUM) a hex,
+// octal or binary literal with the word's sign bit set, a negative int as in
+// C (0xFFFFFFFF is -1 at 32 bits, 0xFF at 8); 2 (NIMIN) the most negative one
+int inum_kind(const char *text)
+{
+    int base; unsigned long long v = inum_value(text, &base);
+    int w = word_bits();
+    if (base == 10 || v < (1ULL << (w - 1)) || v >= (1ULL << w)) return 0;
+    return (v == (1ULL << (w - 1))) ? 2 : 1;
+}
+
+// the magnitude of a NINUM (2^w - v) as a positive literal; for a NIMIN, the
+// largest int (the grammar writes -max - 1)
+int exec_inum_neg(char *text)
+{
+    int w = word_bits(); char t[32];
+    unsigned long long v = inum_value(text, NULL);
+    unsigned long long m = (inum_kind(text) == 2) ? (1ULL << (w - 1)) - 1 : (1ULL << w) - v;
+    snprintf(t, sizeof(t), "%llu", m);
+    return exec_inum(t);
+}
+
+// the magnitude of the most negative int, 2^(w-1), as a table entry: only a
+// brace list writes it (with its minus sign), so it skips the range check
+int inum_min_id(void)
+{
+    char t[32]; snprintf(t, sizeof(t), "%llu", 1ULL << (word_bits() - 1));
+    if (find_var(t) == -1) add_var(t);
+    int id = find_var(t);
+    v_table[id].isco = 1;
+    return id;
+}
+
 // used when the lexer finds an int constant
 int exec_inum(char *text)
 {
     // range check ------------------------------------------------------------
     // no negative constants ever reach this function
 
-    int max = (int) (pow(2,nbmant+nbexpo+1-1)-1);
-    int num = atoi(text);
+    // the width the directives give so far, never past 32: they may be in flux
+    // (#NBMANT 25 read before #NBEXPO 6 is a 34-bit word for a moment)
+    int       w   = nbmant + nbexpo + 1;
+    long long max = (1LL << ((w < 32 ? w : 32) - 1)) - 1;
+    unsigned long long num = inum_value(text, NULL);
 
-    if (num > max) {fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, max); exit(EXIT_FAILURE);}
+    if (num > (unsigned long long)max) {fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, (int)max); exit(EXIT_FAILURE);}
 
-    // add to the table -------------------------------------------------------
+    // add to the table, in decimal: the .asm reads only that -----------------
 
-    if (find_var(text) == -1) add_var(text);
+    char t[32]; snprintf(t, sizeof(t), "%llu", num);
 
-    int id = find_var(text);
+    if (find_var(t) == -1) add_var(t);
+
+    int id = find_var(t);
 
     v_table[id].isco = 1;
 
     return id;
 }
 
-// converts an IEEE-754 32-bit float to "my float"
-// could be revised to convert 64-bit floats too
-void f2mf(char *va, int *s, int *m, int *e)
+// writes a float literal the one way the .asm reads it: C's forms (.5, 5.,
+// 007.5, 1e-8, 2.5E+3f) become [-]digits.digits[e[-]digits], with no suffix,
+// so asmcomp's lexer takes it and two spellings of one value are one constant
+void fnum_text(const char *in, char *out, size_t n)
 {
-    float f = atof(va);
+    char buf[sizeof(v_table[0].name)], *o = buf, *end = buf + sizeof(buf) - 4;
+    const char *p = in;
 
-    if (f == 0.0) {*m = 0; *e = 0;}
-
-    int *ifl = (int*)&f;
-
-    // unpack standard IEEE ---------------------------------------------------
-
-    *s = ( *ifl >> 31) & 0x00000001;
-    *e = ((*ifl >> 23) & 0xFF) - 127 - 22;
-    *m = ((*ifl & 0x007FFFFF) + 0x00800000) >> 1;
-
-    // exponent ---------------------------------------------------------------
-
-    *e = *e + (23-nbmant);
-
-    int sh = 0;
-    while (*e < -pow(2, nbexpo-1)) {*e = *e+1; sh = sh+1;}
-
-    // mantissa ---------------------------------------------------------------
-    // same single shift as asmcomp's t2t.c f2mf (the nbmant == 23 case used to
-    // skip the denormal shift; 32+ bit shifts are undefined)
-
-    int sht = (23-nbmant) + sh;
-    if (sht == 0)
+    if (*p == '+' || *p == '-') { if (*p == '-') *o++ = '-'; p++; }
+    while (*p == '0' && isdigit((unsigned char)p[1])) p++;              // leading zeros
+    if (*p == '.') *o++ = '0';                                          // .5 -> 0.5
+    while (isdigit((unsigned char)*p) && o < end) *o++ = *p++;
+    *o++ = '.';
+    if (*p == '.') p++;
+    if (!isdigit((unsigned char)*p)) *o++ = '0';                        // 5. -> 5.0
+    while (isdigit((unsigned char)*p) && o < end) *o++ = *p++;
+    if (*p == 'e' || *p == 'E')
     {
-        if (*ifl & 0x00000001) *m = *m+1; // round
+        *o++ = 'e'; p++;
+        if (*p == '+') p++; else if (*p == '-') *o++ = *p++;
+        while (isdigit((unsigned char)*p) && o < end) *o++ = *p++;
     }
-    else if (sht > 24)
-    {
-        *m = 0;                         // below half the smallest denormal
-    }
-    else
-    {
-        int carry = (*m >> (sht-1)) & 0x00000001; // rounding carry
-        *m = *m >> sht;
-        if (carry) *m = *m+1; // round
-    }
+    *o = '\0';                                                          // the f/F/l/L suffix stays out
+    snprintf(out, n, "%s", buf);
+}
 
-    // renormalize a rounding carry out of the nbmant-bit mantissa (mirrors
-    // asmcomp's t2t.c f2mf): the largest value below a power of two rounds from
-    // 0x7FFFFF to 0x800000; without this the approximation residual reported by
-    // exec_fnum would be computed from a bogus ~0 mantissa.
-    if (*m >> nbmant) { *m = *m >> 1; *e = *e + 1; }
-
-    // underflow, or a denormal at #FROUND >= 1: asmcomp encodes the canonical
-    // zero, so report 0 (the approximation message then shows the flush)
-    if (*m == 0 || (fround >= 1 && *m < (1 << (nbmant-1)))) { *m = 0; *e = 0; }
+// splits a comp literal ("-1.5-2i", "1e-8+2e-8i", no spaces) at the sign
+// between its parts: a sign right after an e belongs to the exponent. re and
+// im come out as the source wrote them (im keeps its sign, loses the i)
+void cnum_split(const char *txt, char *re, char *im)
+{
+    int len = (int)strlen(txt), k = len - 2;
+    while (k > 0 && !((txt[k] == '+' || txt[k] == '-') && txt[k-1] != 'e' && txt[k-1] != 'E')) k--;
+    memcpy(re, txt, k); re[k] = '\0';
+    int b = (txt[k] == '+') ? k + 1 : k;
+    memcpy(im, txt + b, len - 1 - b); im[len - 1 - b] = '\0';
 }
 
 // used when the lexer finds a float constant
 int exec_fnum(char *text)
 {
-    // range check ------------------------------------------------------------
-    // the negative sign of the constant never enters here
+    char t[sizeof(v_table[0].name)];
+    fnum_text(text, t, sizeof(t));
 
-    float max = (float)((pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1)); // largest representable magnitude
-    float min = (float)(                    pow(2,-pow(2,nbexpo-1)  )); // smallest representable magnitude
-    float num = atof(text);                                             // absolute value of the number
-    float abs = (num < 0.0) ? -num : num;                               // absolute value of the number
+    // encode it as asmcomp will (common/yanc_num.c, exact): range and residual
 
-    if (abs < min && abs != 0.0) {fprintf (stderr, MSG_ERR_FLOAT_MIN, line_num+1, min); exit(EXIT_FAILURE);}
-    if (abs > max)               {fprintf (stderr, MSG_ERR_FLOAT_MAX, line_num+1, max); exit(EXIT_FAILURE);}
+    yn_float r;
+    yn_encode(t, nbmant, nbexpo, fround, &r);
 
-    // compute the residual ---------------------------------------------------
+    double max = (pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1);         // largest representable magnitude
+    double min =                     pow(2,-pow(2,nbexpo-1));           // smallest representable magnitude
 
-    int s,m,e; f2mf(text,&s,&m,&e);
-
-    float mf    = (s) ? -m*pow(2,e) : m*pow(2,e);
-    float delta = mf-num;
+    if (r.overflow)                {fprintf (stderr, MSG_ERR_FLOAT_MAX, line_num+1, max); exit(EXIT_FAILURE);}
+    if (r.underflow && !r.flushed) {fprintf (stderr, MSG_ERR_FLOAT_MIN, line_num+1, min); exit(EXIT_FAILURE);}
 
     // a nonzero constant flushed to zero (below the smallest normal number at
     // #FROUND >= 1) is not an approximation the user can shrug off: warn
-    if (m == 0 && num != 0.0)
+    if (r.flushed)
         printf(MSG_WARN_CONST_FLUSHED, line_num+1, text, pow(2,nbmant-1)*pow(2,-pow(2,nbexpo-1)), fround);
-    else if (delta != 0.0 && num != 0.0) printf(MSG_INFO_CONST_APPROX,text,line_num+1,mf,delta);
+    else if (r.inexact)
+    {
+        double mf = ldexp((double)r.m, (int)r.e);
+        printf(MSG_INFO_CONST_APPROX, text, line_num+1, r.s ? -mf : mf, r.delta);
+    }
 
     // add to the table -------------------------------------------------------
 
-    if (find_var(text) == -1) add_var(text);
+    if (find_var(t) == -1) add_var(t);
 
-    int id = find_var(text);
+    int id = find_var(t);
 
     v_table[id].isco = 1;
 
@@ -369,15 +418,24 @@ int exec_cnum(char *text)
     strcpy(temp, text);
     while (temp[i] != '\0')
     {
-        while (temp[i] == ' ') i++;
+        while (temp[i] == ' ' || temp[i] == '\t') i++;
         text[j] = temp[i];
+        if (temp[i] == '\0') break;
         i++;
         j++;
     }
     text[j] = '\0';
 
+    // each part as a float literal is written (fnum_text) --------------------
+
+    char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)], t[2*sizeof(v_table[0].name) + 4];
+    cnum_split(text, re, im);
+    fnum_text(re, re, sizeof(re));
+    fnum_text(im, im, sizeof(im));
+    snprintf(t, sizeof(t), "%s%s%si", re, im[0] == '-' ? "" : "+", im);
+
     // add to the table -------------------------------------------------------
 
-    if (find_var(text) == -1) add_var(text);
-    return find_var(text);
+    if (find_var(t) == -1) add_var(t);
+    return find_var(t);
 }

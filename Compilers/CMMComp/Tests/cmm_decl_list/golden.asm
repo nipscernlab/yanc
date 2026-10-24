@@ -20,9 +20,9 @@ ADD 4
 SET gc
 LOD 2.5
 SET gg
-LOD 1.000000
+LOD 1.0
 SET gz
-LOD 2.000000
+LOD 2.0
 SET gz_i
 JMP main
 @soma LOD 0
@@ -47,9 +47,9 @@ MLT 2
 SET main_c
 LOD 0.5
 SET main_x
-LOD 3.000000
+LOD 3.0
 SET main_w
-LOD -1.000000
+LOD -1.0
 SET main_w_i
 LOD 1
 SET gb

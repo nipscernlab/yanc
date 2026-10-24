@@ -153,6 +153,14 @@ round-after-normalise block as 1.2, so implement them together.
 
 ### 1.5 Constant encoding on the host loses bits today
 
+**Fixed (TODO item 5, closed 2026-10-21).** One exact encoder,
+`Compilers/common/yanc_num.c`, in asmcomp and cmmcomp (cppcomp writes 17 digits for it): decimal text
+to the SAPHO word through big integers, to nearest, ties to even, no host float.
+cmmcomp reads every C float literal and splits a complex literal on its text;
+asmcomp refuses `NUBITS > 32`. `Scripts/check_yanc_num.py` holds the encoder to
+an exact model and `Scripts/check_const_e2e.py` the whole path, source to
+`.mif`, in four formats (regress step 4a1). What follows is the state before.
+
 `ASMComp/Sources/t2t.c:39-100 f2mf()` and its copy
 `CMMComp/Sources/variaveis.c:164-204` (diagnostics only):
 

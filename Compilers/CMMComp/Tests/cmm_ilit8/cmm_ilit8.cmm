@@ -1,0 +1,20 @@
+#NUBITS 8
+#NUIOIN 1
+#NUIOOU 1
+// Bit-pattern int literals on an 8-bit word (2026-10-21): the sign bit is
+// bit 7, so 0xFF is -1 and 0x80 the most negative int, as C does with an
+// 8-bit int; 0x7F stays 127. The width comes from #NUBITS (a program with no
+// float needs no #NBMANT / #NBEXPO). Expected: -1 -128 127 -1 -128 -2
+int c[2] = {0xFF, 0x80};
+
+void main()
+{
+    out(0, 0xFF);
+    out(0, 0x80);
+    out(0, 0x7F);
+    out(0, c[0]);
+    out(0, c[1]);
+    int x = 3;
+    out(0, x + 0xFB);
+    while (1) {}
+}

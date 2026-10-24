@@ -13,6 +13,31 @@ tags consumed by Aurora.
   a = 1, b, c = a + 1;`, global or local, `int`, `float` and `comp`. It was
   a syntax error unless the declaration had a single name (TODO 34).
   Fixture `cmm_decl_list`. Manual: docs/language-cmm.md.
+- **C±: float literals in every form C writes them.** `1e-8`, `2.5E+3`,
+  `.5`, `5.`, `007.5` and the `f`/`F`/`l`/`L` suffix, in floats, complex
+  literals (`1e-8 + 2e-8i`) and brace lists. Fixture `cmm_flit`. Manual:
+  docs/language-cmm.md.
+- **C±: int literals in every form C writes them.** `0x2A`, `052` (octal:
+  as in C, a leading 0 makes it octal, so `010` is now 8, not 10), `0b101010`
+  and the `u`/`U`/`l`/`L` suffixes, in expressions, brace lists and case
+  labels; `089` stops with a message. A hex, octal or binary literal is a
+  bit pattern of the `#NUBITS` word, as in C: `0xFFFFFFFF` is -1 and
+  `0x80000000` the most negative int at 32 bits, `0xFF` is -1 at 8 (in
+  expressions and brace lists). cmmcomp now reads `#NUBITS` for that.
+  Fixtures `cmm_ilit`, `cmm_ilit8`. Manual: docs/language-cmm.md.
+- **C++: the `F`, `l` and `L` float suffixes** (only `f` was read; `1.5F`
+  was a syntax error). Test test95.
+- **The ALU testbench checks every operation** (TODO item 6(a) closed): the
+  ones that round (`F_ADD`, `F_SU1`/`F_SU2`, `F_MLT`, `I2F`, `F_ROT`) and the
+  divisions (`DIV`, `MOD`, `F_DIV`, through the sequence the processor runs:
+  the operands, the NOP cycles, the read), bit for bit at every `#FROUND`
+  level in three formats, against exact results; mutation-checked.
+  `Scripts/hw/tb_ula.v`.
+- **Float constants checked end to end** (TODO item 5 closed): a regress
+  step writes C± brace lists of float literals in every form, compiles them
+  and compares each word of the data `.mif` with the exact model, at
+  32/23/8, 32/25/6, 16/10/5 and 32/23/8 `#FROUND 1` (658 constants).
+  `Scripts/check_const_e2e.py`.
 - **C±: arrays initialized between braces, as in C.** `int v[5] = {3, -2,
   7};`, `float g[3] = {1.5, -0.25, 4};`, `comp z[2] = {1.5-2i, 3};`, `int
   m[2][3] = {{1, 2}, {4, 5, 6}};`. Constants only; positions left out are
@@ -39,6 +64,41 @@ tags consumed by Aurora.
   at 32 bits, +9 at 8. Issue #6.
 
 ### Fixed
+- **`x / 0` gave 0 at `#FROUND 2`** (every C++ program) instead of the
+  largest value with the quotient's sign, as level 1 does (now written in
+  docs/floating-point.md). The
+  divider marks a zero divisor with an exponent above every valid one; it
+  was the largest of its field, and level 2's rounding carry wrapped it to
+  a negative exponent, which the normaliser flushed to zero. Now it leaves
+  room for the carry (`SAPHO/ula.v`, `ula_fdiv`). Found by the ALU
+  testbench; `Scripts/hw/tb_fdiv.v` checked the marker, not the result.
+- **The manual promised exact truncation at `#FROUND 1`.** Level 1 cuts the
+  smaller operand of an addition before adding, so a difference can come
+  out a few units of the last bit above the exact result and `a - b` is
+  not always exact for `b` between `a/2` and `2a`; in long sums its errors
+  cancel and it is close to level 2. The hardware stays (a fix made long
+  sums twenty times worse, measured); docs/floating-point.md and the
+  `#FROUND` messages say what it does. docs/design/fround1-subtraction.md,
+  `Scripts/hw/fadd_acc/`.
+- **C±: a brace list of more than about 25 values crashed cmmcomp.** The
+  `#arrayd` line went through a 256-character buffer (since the brace lists
+  came in); it is now written straight to the file. An instruction with a
+  long literal or name had the same problem in a 100-character buffer.
+- **C±: `#NBMANT 25` before `#NBEXPO 6` stopped cmmcomp** with "the biggest
+  integer this thing can hold is -2147483648": the int-literal limit used
+  the width of the directives read so far (34 bits for a moment) in an `int`.
+- **asmcomp refuses `#NUBITS` above 32** with a clear message; the words
+  are built in a C `int` and were cut without a word.
+- **asmcomp: the range of an array file's floats is checked exactly** (the
+  encoder, not a host float), and a complex line like `1e-8+2e-8i` splits
+  at the right sign.
+- **C±: a complex literal kept only 6 decimals.** cmmcomp split it through
+  a host float printed with `%f`, so `0.0000001 + 1i` lost its real part.
+  The parts are now split on the text. cmmcomp also dropped its own copy of
+  the constant encoder: its approximation notes and range errors come from
+  the exact encoder asmcomp uses (TODO item 5, step 4), so they report the
+  value that goes into the memory (`0.1` -> 0.099999994039535522, not
+  0.10000000894070).
 - **`norm()` at 8 or 16 bits with the default `#NUGAIN`.** `NUGAIN` is a
   signed `NUBITS`-bit parameter: 128 at 8 bits was -128 and `norm()`
   divided by a negative number. asmcomp now refuses a `#NUGAIN` that does

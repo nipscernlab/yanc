@@ -10,9 +10,9 @@ NOP
 #SHARE main_w __csqrt_b
 #SHARE main_w_i __csqrt_a
 #SHARE __sqrt_num __csqrt_im
-@main @__Lwh1 LOD 3.000000
+@main @__Lwh1 LOD 3.0
 SET main_z
-LOD 4.000000
+LOD 4.0
 SET main_z_i
 LOD main_z
 F_MLT main_z
@@ -39,22 +39,22 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-LOD -3.000000
-F_MLT -3.000000
-P_LOD 4.000000
-F_MLT 4.000000
+LOD -3.0
+F_MLT -3.0
+P_LOD 4.0
+F_MLT 4.0
 SF_ADD
 CAL __float_sqrt
 SET __csqrt_r
-F_ADD -3.000000
+F_ADD -3.0
 F_MLT 0.5
 CAL __float_sqrt
 SET __csqrt_re
 LOD __csqrt_r
-F_SU1 -3.000000
+F_SU1 -3.0
 F_MLT 0.5
 CAL __float_sqrt
-F_SGN 4.000000
+F_SGN 4.0
 SET __csqrt_im
 LOD __csqrt_re
 P_LOD __csqrt_im
@@ -64,13 +64,13 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-LOD 1.000000
+LOD 1.0
 SET main_z
-LOD 2.000000
+LOD 2.0
 SET main_z_i
-LOD 2.000000
+LOD 2.0
 SET main_w
-LOD 2.000000
+LOD 2.0
 SET main_w_i
 LOD main_z
 F_ADD main_w
@@ -102,9 +102,9 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-LOD 4.000000
+LOD 4.0
 SET main_z
-LOD 0.000000
+LOD 0.0
 SET main_z_i
 LOD main_z
 F_MLT main_z
@@ -131,9 +131,9 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-LOD -4.000000
+LOD -4.0
 SET main_z
-LOD 0.000000
+LOD 0.0
 SET main_z_i
 LOD main_z
 F_MLT main_z

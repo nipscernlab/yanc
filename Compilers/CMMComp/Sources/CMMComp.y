@@ -120,7 +120,7 @@ void  yyerror(char const *s);
 
 // terminal tokens ------------------------------------------------------------
 
-%token <ival> TYPE ID STRING INUM FNUM CNUM                            // comes from the lexer with an associated value
+%token <ival> TYPE ID STRING INUM FNUM CNUM NINUM NIMIN                // comes from the lexer with an associated value
 
 // removes the conflict between if-with-else and if-without-else
 %nonassoc THEN
@@ -178,7 +178,7 @@ prog_elements : direct | declar | funcao
 // Compilation directives -----------------------------------------------------
 
 direct : PRNAME   ID   {fprintf(stderr, MSG_ERR_PRNAME_GONE, line_num+1); exit(EXIT_FAILURE);} // the name is the file's
-       | NUBITS INUM   {dire_exec("#NUBITS",$2, 0);} // ALU word width
+       | NUBITS INUM   {dire_exec("#NUBITS",$2,11);} // ALU word width
        | NBMANT INUM   {dire_exec("#NBMANT",$2, 3);} // mantissa width (bits)
        | NBEXPO INUM   {dire_exec("#NBEXPO",$2, 4);} // exponent width (bits)
        | NDSTAC INUM   {dire_exec("#NDSTAC",$2, 0);} // data stack depth
@@ -215,6 +215,9 @@ ini_item : ini_num
          | '{' {ini_row_open();} ini_nums '}' {ini_row_close();}
 ini_nums : ini_num | ini_nums ',' ini_num
 ini_num  :     INUM {ini_add($1,1,0);}
+         |    NINUM {ini_add($1,1,1);}                     // 0xFFFFFFFF: -1, a bit pattern
+         |    NIMIN {ini_add(inum_min_id(),1,1);}          // 0x80000000: the most negative int
+         | '-' NINUM {ini_add($2,1,0);}
          |     FNUM {ini_add($1,2,0);}
          |     CNUM {ini_add($1,3,0);}
          | '-' INUM {ini_add($2,1,1);}
@@ -513,6 +516,12 @@ exp:       terminal                           {$$ = $1;}
 
          // constants
 terminal : INUM                               {$$ = expr_lit(1, $1);}
+         // a hex, octal or binary literal with the sign bit set is a negative
+         // int, as in C: the negation of its magnitude (literals stay positive);
+         // the most negative one, whose magnitude does not fit, is -max - 1
+         | NINUM                              {$$ = expr_unop(OP_NEG, expr_lit(1, $1));}
+         | NIMIN                              {$$ = expr_binop(OP_SUB, expr_unop(OP_NEG, expr_lit(1, $1)),
+                                                               expr_lit(1, exec_inum("1")));}
          | FNUM                               {$$ = expr_lit(2, $1);}
          | CNUM                               {$$ = expr_lit(5, $1);}
          // variables

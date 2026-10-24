@@ -33,11 +33,11 @@ float unit, at the cost of precision (see [Directives](directives.md)).
 
 A float constant in the program (`0.1`) becomes the nearest value the
 processor's format can hold. The compiler says so for each constant that is
-not held exactly (`constant 0.1 on line 1 approximated to 0.10000000894070`),
+not held exactly (`constant 0.1 on line 1 approximated to 0.099999994039535522`),
 and the assembler reports the largest error among the values of an array
 file. Measured: with `#FROUND 0`, an input of 5 000 000 read with `fin()`
-comes out of `fout()` as -3 388 608; with `#FROUND 1`, as 5 000 000. Write constants as decimals: C± has no exponent
-form (`1e-5` is `0.00001`).
+comes out of `fout()` as -3 388 608; with `#FROUND 1`, as 5 000 000. Constants may be written with an exponent
+(`1e-5`).
 
 ## How operations round: `#FROUND`
 
@@ -47,14 +47,19 @@ logic only to the float operations the program uses.
 | `#FROUND` | what the float unit does | cost |
 |---|---|---|
 | `0` (C± default) | the original datapath: the operations truncate, and one mantissa bit is lost before normalisation when a result does not fill the top bit, so `(1 + 2^-22) - 1` gives `0` and `x * 1.0` may differ from `x`; the exponent wraps on overflow and underflow; `-0.0 != 0.0` | none |
-| `1` | keeps that bit (exact truncation toward zero); saturates on overflow and flushes to zero on underflow; one zero. `x * 1.0 == x`; `a - b` is exact when `a/2 <= b <= 2a` | about +1.5 % of the ALU |
-| `2` (C++ always) | level 1, rounding to the nearest, ties to even, in addition, multiplication, division and conversion: rounding errors on varying data have no bias | about +5 % of the ALU |
+| `1` | keeps that bit; saturates on overflow and flushes to zero on underflow; one zero. `x * 1.0 == x`. A sum truncates toward zero; a difference cuts the smaller operand first, so it can come out a few units of the last bit above the exact result, and `a - b` is not always exact even when `a/2 <= b <= 2a`. In long sums of mixed signs the two errors cancel: the result is close to level 2's ([measured](design/fround1-subtraction.md)) | about +1.5 % of the ALU |
+| `2` (C++ always) | level 1 with three more bits below the mantissa, rounding to the nearest, ties to even, in addition, multiplication, division and conversion: rounding errors on varying data have no bias, and `a - b` is exact when `a/2 <= b <= 2a` | about +5 % of the ALU |
 
 **At level 0, converting an int to float uses only its low `NBMANT` bits:**
 `fin()` or an `int` assigned to a `float` gives a wrong value once the int
 is beyond ±2^(NBMANT-1) (±4 194 304 by default), and converting a float to
 int wraps instead of saturating. Level 1 and above convert the whole word
 and saturate. A program that converts large integers needs `#FROUND 1`.
+
+**Dividing a float by zero** gives, at levels 1 and 2, the largest float
+with the sign of the quotient (`1.0 / 0.0` and `0.0 / 0.0` alike); at level
+0 the result is not defined. An int divided by zero is not defined at any
+level.
 
 Even at level 2, adding the same constant again and again drifts: the same
 bits are dropped at every step, so the errors do not cancel. Measured, 1000

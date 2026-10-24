@@ -875,8 +875,11 @@ end else begin : ranged
 		// the quotient bit that falls off the slice when the top bit is set)
 		assign m_q = (top) ? {q[MAN+G-1:1], q[0] | stk} : {q[MAN+G-2:0], stk};
 	end
-	// division by zero: saturate (the ALU's +-infinity)
-	assign e_out = (dz) ? {1'b0, {(EXP+1){1'b1}}} : e_q;   // above every exponent -> ula_norm saturates
+	// division by zero: saturate (the ALU's +-infinity). The exponent is above
+	// every valid one with room for the rounding carry: at level 2 the all-ones
+	// mantissa rounds up, and the largest exponent of the field wrapped to a
+	// negative one, so x / 0 came out 0 (found by Scripts/hw/tb_ula.v)
+	assign e_out = (dz) ? {2'b00, {EXP{1'b1}}} : e_q;      // above every exponent -> ula_norm saturates
 	assign m_out = (dz) ? {W{1'b1}}               : m_q;
 end endgenerate
 

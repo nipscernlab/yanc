@@ -136,11 +136,7 @@ void ini_row_close(void) { ini_row = -1; }
 static void ini_split(const ini_val *v, char *re, char *im)
 {
     if (v->kind != 3) { strcpy(re, v->txt); strcpy(im, "0.0"); return; }
-    int len = (int)strlen(v->txt), k = len - 1;
-    while (k > 0 && v->txt[k] != '+' && v->txt[k] != '-') k--;
-    memcpy(re, v->txt, k); re[k] = 0;
-    int b = (v->txt[k] == '+') ? k + 1 : k;
-    memcpy(im, v->txt + b, len - 1 - b); im[len - 1 - b] = 0;      // without the 'i'
+    cnum_split(v->txt, re, im);                 // a sign after an e is the exponent's
 }
 
 // check the list against the array (type, size, rows) and keep its values
@@ -172,7 +168,7 @@ static void ini_take(int id_var, int size, int siz2)
     for (int k = 0; k < ini_n; k++)
     {
         int pos = (ini_rows > 0) ? ini_v[k].row * siz2 + ini_v[k].col : k;
-        char r[256], i[256];
+        char r[sizeof(v_table[0].name) + 2], i[sizeof(v_table[0].name) + 2];   // a literal and its sign
         ini_split(&ini_v[k], r, i);
         re[pos] = strdup(r); im[pos] = strdup(i);
     }

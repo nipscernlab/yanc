@@ -97,4 +97,5 @@ def main():
     print('check_yanc_num: %d cases, %d mismatches' % (len(cs), bad))
     sys.exit(1 if bad else 0)
 
-main()
+if __name__ == '__main__':      # Scripts/check_const_e2e.py imports the model
+    main()

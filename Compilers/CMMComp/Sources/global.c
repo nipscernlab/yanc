@@ -54,7 +54,7 @@ static char last_str[256] = "";
 // acc; every other op clobbers it. add_instr drops a "LOD x" whenever acc_name is
 // already x (the acc holds it), which generalises the old "LOD x after SET x"
 // peephole. Cleared at every basic-block boundary alongside last_str.
-static char acc_name[100] = "";
+static char acc_name[600] = "";   // a name is up to 511 characters (v_table)
 
 void emit_peephole_reset(void)
 {
@@ -268,8 +268,8 @@ void add_instr(char *inst, ...)
     va_list  args;
     va_start(args , inst);
 
-    char     str[100];
-    vsprintf(str, inst, args);
+    char     str[1200];                // an opcode and a name or a literal (up to 511 characters)
+    vsnprintf(str, sizeof(str), inst, args);
     va_end  (args);
 
     // ------------------------------------------------------------------------
@@ -300,8 +300,8 @@ void add_instr(char *inst, ...)
 
     if (strncmp(str, "LOD ", 4) == 0)
     {
-        char lod_var[100];
-        if (sscanf(str + 4, "%99s", lod_var) == 1 && strcmp(lod_var, acc_name) == 0)
+        char lod_var[600];
+        if (sscanf(str + 4, "%599s", lod_var) == 1 && strcmp(lod_var, acc_name) == 0)
             return;   // acc already holds it -- acc_name / last_str stay valid
     }
 
@@ -330,9 +330,9 @@ void add_instr(char *inst, ...)
     // track what is now in the accumulator: only a plain LOD / P_LOD / SET of an
     // operand leaves that operand's value there; anything else clobbers it.
     if      (strncmp(str, "LOD ", 4) == 0 || strncmp(str, "SET ", 4) == 0)
-        sscanf(str + 4, "%99s", acc_name);
+        sscanf(str + 4, "%599s", acc_name);
     else if (strncmp(str, "P_LOD ", 6) == 0)
-        sscanf(str + 6, "%99s", acc_name);
+        sscanf(str + 6, "%599s", acc_name);
     else
         acc_name[0] = '\0';
 
@@ -356,13 +356,10 @@ void add_sinst(int type, char *inst, ...)
     va_list  args;
     va_start(args , inst);
 
-    char     str[256];
-    vsprintf(str, inst, args);
+    // straight to the file: a #arrayd line carries a whole brace list, of
+    // any length (a fixed buffer here overflowed past about 25 values)
+    vfprintf(f_asm, inst, args);
     va_end  (args);
-
-    // append the instruction -------------------------------------------------
-
-    fprintf(f_asm, "%s", str);
 
     // table for the gtkwave assembly translator ------------------------------
 

@@ -2,6 +2,8 @@
 // identifier table -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+#include <stddef.h>
+
 // One row of the symbol table.
 typedef struct symbol {
     char name[512];   // name of the variable or function
@@ -29,5 +31,10 @@ void  check_name(int id, int is_fun);     // a declared name must be free in the
 
 int exec_id  (char *text);               // an ID was found
 int exec_inum(char *text);               // an int constant was found
+int inum_kind(const char *text);         // 0 INUM, 1 NINUM (a negative bit pattern), 2 NIMIN (the most negative)
+int exec_inum_neg(char *text);           // the magnitude of a NINUM / NIMIN
+int inum_min_id(void);                   // 2^(NUBITS-1), for a NIMIN in a brace list
 int exec_fnum(char *text);               // a float constant was found
 int exec_cnum(char *text);               // a comp constant was found
+void fnum_text (const char *in, char *out, size_t n); // a float literal as the .asm writes it
+void cnum_split(const char *txt, char *re, char *im); // a comp literal's two parts

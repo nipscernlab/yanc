@@ -57,9 +57,11 @@ LETRA  [A-Za-z_]
 WS     [ \t]+
 
 VARIA  {LETRA}({LETRA}|[0-9])*
-INNUM  [0-9]+
-FLNUM  (0|[1-9]+[0-9]*)\.?[0-9]*
-CONUM  [-]*{WS}*{FLNUM}{WS}*[+|-]{WS}*{FLNUM}{WS}*[i]
+INNUM  ([0-9]+|0[xX][0-9a-fA-F]+|0[bB][01]+)[uUlL]*
+FEXPO  [eE][-+]?[0-9]+
+FLNUM  ([0-9]+\.[0-9]*{FEXPO}?|\.[0-9]+{FEXPO}?|[0-9]+{FEXPO})[fFlL]?
+CPART  ({FLNUM}|[0-9]+)
+CONUM  [-]*{WS}*{CPART}{WS}*[-+]{WS}*{CPART}{WS}*[i]
 
 STRIN  \"(\\.|[^\\"])*\"
 CARES  [-+*()=#;:,\]\[{}<>~!%/&^|⟩]
@@ -190,8 +192,9 @@ COMEN  "//"[^\n]*
              }
 			 
 {INNUM}      {
-                yylval.ival = exec_inum(yytext);
-                return INUM;
+                int k = inum_kind(yytext);
+                yylval.ival = k ? exec_inum_neg(yytext) : exec_inum(yytext);
+                return k == 0 ? INUM : k == 1 ? NINUM : NIMIN;
              }
 			 
 {FLNUM}      {

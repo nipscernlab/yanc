@@ -51,8 +51,7 @@ read on `myFIFO`/`myDCFIFO` so a large FIFO goes to block RAM (area, not
 clock; docs/design/myfifo.md "Memory"), with a `quartus_map` of it.
 
 **Open items, below:** 2(b) a fixture for unbiased rounding; 3 the parameter
-guard in `ula.v`; 5 steps 4-5, the exact constant encoder in cmmcomp (show
-Luciano the diff); 6(a) the ULA testbench; 8 the leftovers; 9 library
+guard in `ula.v`; 8 the leftovers; 9 library
 accuracy keyed on `NBMANT`; 10 architecture hardening (ISS, division by zero,
 interrupt, I/O contract); 13 the pre-assembly optimizer and the C++ heap
 arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
@@ -88,93 +87,15 @@ bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
 
 ---
 
-## 5. One shared, exact constant encoder
+## 6. ULA unit testbench (a, done); word width beyond 32 bits (b, parked)
 
-**Status:** steps 1-3 of 5 done (2026-09-25), 4-5 left · **Area:** `ASMComp/t2t.c`, `CMMComp/{variaveis,t2t}.c`, `CPPComp/codegen.c`, the three lexers · **Evidence:** [§1.5](docs/design/precision-and-width-review.md#15-constant-encoding-on-the-host-loses-bits-today)
+### 6(a). Self-checking ULA unit testbench: done (2026-10-22)
 
-**Where it stands.**
-1. Done (`bbb8278`): `Compilers/common/yanc_num.{c,h}`, the exact encoder --
-   decimal text with an exponent -> `{s, e, m}` through big integers, to
-   nearest, ties to even, flags for overflow / underflow / denormal / flush,
-   the word as a bit string. Held to an exact Python model by
-   `Scripts/check_yanc_num.py` (3 750 cases, 5 formats), a regress step.
-   Limits: `NBMANT <= 63`, `|decimal exponent| <= 1200`.
-2. Done (`ed20b8c`): asmcomp's `f2mf` calls it. 45 of 264 test constants
-   moved one unit down (the old path rounded twice); the moved outputs were
-   each explained (`cmm_tan`, `test63`, `test68`, one DTW value). A
-   non-number or an overflowing constant is an error now.
-3. Done (`1e8ca03`): the asmcomp and appcomp lexers read an exponent;
-   cppcomp prints `%.17g` instead of `%.20f` (`test84`).
-
-**Left, step 4 -- cmmcomp (Luciano's compiler: show the diff first):**
-`CMMComp.l:60` `FLNUM` has no exponent (C± cannot write `1e-8`);
-`CMMComp/Sources/t2t.c:63-68` splits a complex literal through
-`sscanf("%f %f")` + `sprintf("%f")` -- 6 decimals, `(1e-8, 2e-8)` becomes
-`(0, 0)`: split the source TEXT instead; `CMMComp/Sources/variaveis.c:164-204`
-is a second `f2mf` (diagnostics: precision warnings, the `#FROUND` flush
-warning) -- make it call `yanc_num` so both tools agree bit for bit. cmmcomp
-builds from the Makefile's `CMMCOMP_C` and from `regress.sh`'s own gcc line:
-add `Compilers/common/yanc_num.c` to both, as for asmcomp.
-
-**Left, step 5:** asmcomp refuses `NBMANT >= 2^(NBEXPO-1)` and `NUBITS > 32`
-(`f2mf` still returns an `unsigned int`, and `itob` takes an `int`); drop the
-host-`float` range checks in the front ends; a fixture that runs the same
-constants end to end at 32/23/8, 32/25/6 and 16/10/5 and checks them to the
-last mantissa bit (the `.mif` words against `check_yanc_num.py`'s model).
-
-The only encoder, `f2mf`, starts from a host `float` (24 bits) — `#NBMANT`
-above 23 gains nothing, below 23 rounds twice — rounds half-up without sticky
-bits, returns an `unsigned int`, and has a second copy in cmmcomp. Today's
-bugs at any width: cmmcomp splits a complex literal through `sprintf("%f")`
-(6 decimals: `(1e-8, 2e-8)` becomes `(0, 0)`); cppcomp prints floats with
-`%.20f` (anything below 1e-20 becomes `0.0`) because the asm/app lexers
-reject exponent notation.
-
-**Done when:** `Compilers/common/yanc_num.c` converts decimal text (with
-exponent) to `{s, e, m}` exactly, ties-to-even, with overflow/underflow
-flags, and produces the `.mif` bit string without a C integer ceiling; both
-`f2mf` copies, the `%f` complex split, the `%.20f` emission and the
-host-`float` range checks are gone; the lexers accept `1e-5`; asmcomp
-validates `NBMANT < 2^(NBEXPO-1)` and refuses `NUBITS > 32`; keeps the
-flush-to-zero of sub-normal constants at `#FROUND >= 1` (landed in the old
-`f2mf`, with the `cmmcomp` warning); a fixture shows constants correct to the
-last mantissa bit at 32/23/8, at a 32-bit format with more mantissa than a
-host `float` (e.g. 32/25/6), and at 16/10/5.
-
-## 6. ULA unit testbench (a); word width beyond 32 bits (b, parked)
-
-### 6(a). Self-checking ULA unit testbench
-
-**Status:** step 1 of 3 done (2026-10-19) · **Area:** `Scripts/hw/tb_ula.v`, `Scripts/hw/tb_alu.v`, `Scripts/regress.sh`
-
-**Where it stands.** `Scripts/hw/tb_ula.v` drives the whole `ula` (every
-opcode on) through each operation number, in 16/10/5, 23/16/6 and 32/23/8 at
-the three levels, against references derived from what each operation means;
-regress step 4a0 runs it and `tb_alu.sh`.
-1. Done: the 42 operations that do not round (integer, logic, compare,
-   shifts, `F_SGN`/`F_NEG`/`F_ABS`/`F_PST` and `_M`, `F_LES`/`F_GRE`,
-   `F2I`, `NRM`, `F_SCL`, `XPO`). It found two `F_SCL` defects, fixed: a
-   huge k wrapped the exponent sum and saturated at the minimum, and a zero
-   came out non-canonical at levels 1/2. `XPO` of zero (EMIN+MAN-1) and of a
-   level-0 denormal (leading zeros not counted) are documented as defined.
-2. Left: the rounding operations (`F_ADD`, `F_SU1`/`F_SU2`, `F_MLT`, `I2F`,
-   `F_ROT`): bit-exact at levels 1/2 against the exact result truncated or
-   rounded to nearest even, an error bound at level 0 (the legacy datapath).
-3. Left: the divisions through their real sequence (`DIV`/`MOD`/`F_DIV`,
-   the `NOP`s, `QUO`/`REM`/`F_QUO`).
-
-The original plan: a directed regress pass like `ResetCheck`: every float operator, including
-`F_ROT`, `F_SGN`, `F_LES`/`F_GRE`, the `_M` variants, `I2F`/`F2I` at the
-range edges, and the integer operators at their signed edges, at `FROUND`
-0/1/2 and at 16/10/5 and 32/23/8, with the expected values derived in the
-testbench rather than blessed.
-[`Scripts/hw/tb_alu.sh`](Scripts/hw/tb_alu.sh) is the seed of it: shifts,
-`F2I`, the float comparison, `DIV`/`MOD`, four formats × three levels,
-references derived, mutation-checked. What is left is the other operators and
-wiring it into `regress.sh`. Until then levels 1 and 2 are covered only by
-`cmm_fround1/2` and (level 2) the C++ tests.
-
-**Done when:** every ULA operator is in `tb_alu.v` and `regress.sh` runs it.
+`Scripts/hw/tb_ula.v` checks every operation of the whole `ula`, the
+divisions through their real sequence, bit for bit at the three levels in
+three formats, mutation-checked; regress step 4a0 runs it (CHANGELOG,
+Unreleased). It found the `#FROUND 1` subtraction
+(docs/design/fround1-subtraction.md) and `x / 0` giving 0 at level 2 (fixed).
 
 ### 6(b). Word width beyond 32 bits — parked
 
@@ -953,6 +874,7 @@ DE2-115 mapping of docs/peripherals.md.
   fixed point**: `ADD` is exact, and wrap-around modulo 2^NUBITS gives a free
   "mod 2*pi" for binary angles.
 - Accumulate **deviations** from a nominal value instead of absolute values.
-- Raise `#NBMANT` for the processor that accumulates (up to 23 — item 5).
+- Raise `#NBMANT` for the processor that accumulates (32/25/6 keeps two
+  more mantissa bits than 32/23/8; its constants are encoded exactly).
 - A compensated (Kahan) sum does **not** help at level 0: it relies on
   `t - sum` being exact, which loses a bit there. It works from level 1 on.

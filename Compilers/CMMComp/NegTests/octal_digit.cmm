@@ -1,0 +1,7 @@
+#NUBITS 32
+// Negative fixture: a leading 0 makes an int literal octal, as in C, and 089
+// has an 8 and a 9. cmmcomp must stop with a clear message, not read 89.
+void main()
+{
+    out(0, 089);
+}

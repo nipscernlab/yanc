@@ -31,15 +31,15 @@ NOP
 #SHARE __log_u __catan_bm
 #SHARE __log_w __atan_ax
 #SHARE __log_lm __catan_bm
-@main @__Lwh1 LOD 1.000000
-F_MLT 1.000000
+@main @__Lwh1 LOD 1.0
+F_MLT 1.0
 SET __catan_a2
-LOD 0.000000
-F_MLT 0.000000
+LOD 0.0
+F_MLT 0.0
 SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
-P_LOD 1.000000
+P_LOD 1.0
 F_MLT 2.0
 SET_P __fase_im
 SET __fase_re
@@ -85,13 +85,13 @@ JMP __Lfa1z
 @__Lfa1e LOD 0.0
 @__Lfa1z F_MLT 0.5
 SET __catan_re
-LOD 0.000000
+LOD 0.0
 F_ADD 1.0
 SET __catan_bp
 F_MLT __catan_bp
 F_ADD __catan_a2
 SET __catan_num
-LOD 0.000000
+LOD 0.0
 F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
@@ -115,15 +115,15 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.000000
-F_MLT 0.000000
+LOD 0.0
+F_MLT 0.0
 SET __catan_a2
-LOD 0.500000
-F_MLT 0.500000
+LOD 0.5
+F_MLT 0.5
 SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
-P_LOD 0.000000
+P_LOD 0.0
 F_MLT 2.0
 SET_P __fase_im
 SET __fase_re
@@ -169,13 +169,13 @@ JMP __Lfa2z
 @__Lfa2e LOD 0.0
 @__Lfa2z F_MLT 0.5
 SET __catan_re
-LOD 0.500000
+LOD 0.5
 F_ADD 1.0
 SET __catan_bp
 F_MLT __catan_bp
 F_ADD __catan_a2
 SET __catan_num
-LOD 0.500000
+LOD 0.5
 F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
@@ -199,9 +199,9 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 1.000000
+LOD 1.0
 SET main_z
-LOD 1.000000
+LOD 1.0
 SET main_z_i
 LOD main_z
 F_MLT main_z
@@ -287,13 +287,13 @@ LOD main_c_i
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0.500000
+LOD 0.5
 SET main_z
-LOD 0.500000
+LOD 0.5
 SET main_z_i
-LOD 0.500000
+LOD 0.5
 SET main_w
-LOD 0.500000
+LOD 0.5
 SET main_w_i
 LOD main_z
 F_ADD main_w

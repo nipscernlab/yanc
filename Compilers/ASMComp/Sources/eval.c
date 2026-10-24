@@ -52,7 +52,7 @@ int  nuioin    =  1;    // number of input ports
 int  nuioou    =  1;    // number of output ports
 int  nugain    = 128;   // division constant (norm(); a power of two, checked in eval_finish)
 int  fftsiz    =  3;    // FFT size (bits)
-int  fround    =  0;    // float rounding level (0 legacy, 1 exact truncation + saturation, 2 nearest even)
+int  fround    =  0;    // float rounding level (0 legacy, 1 truncation + saturation, 2 nearest even)
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------
@@ -360,6 +360,8 @@ void eval_init(int clk, int clk_n)
     if (n_dat < 2) n_dat = 2;
     // the widths a program left out keep their defaults (32/23/8, above)
     if (eval_get("app_log.txt","nubits", aux) == 1) nubits = atoi(aux); // ALU word width (bits)
+    // the words are built in a C int (itob, f2mf): the width stops at 32 (TODO item 6)
+    if (nubits > 32) {fprintf(stderr, MSG_ERR_NUBITS_WIDE, nubits); exit(EXIT_FAILURE);}
     if (eval_get("app_log.txt","nbmant", aux) == 1) nbmant = atoi(aux); // mantissa width (bits)
     if (eval_get("app_log.txt","nbexpo", aux) == 1) nbexpo = atoi(aux); // exponent width (bits)
 
