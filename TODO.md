@@ -50,20 +50,22 @@ Education gives teachers Team for free (Luciano's application).
 read on `myFIFO`/`myDCFIFO` so a large FIFO goes to block RAM (area, not
 clock; docs/design/myfifo.md "Memory"), with a `quartus_map` of it.
 
-**Open items, below:** 2(b) a fixture for unbiased rounding; 3 the parameter
-guard in `ula.v`; 8 the leftovers; 9 library
+**Open items, below:** 8 the leftovers; 9 library
 accuracy keyed on `NBMANT`; 10 architecture hardening (ISS, division by zero,
 interrupt, I/O contract); 13 the pre-assembly optimizer and the C++ heap
 arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
 it; 15 the regress on this machine (mitigated); 24 processors with
-different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst and fast fill/copy of arrays, one block (recorded); 31 the Dirac array output; 32 the
+different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst and fast fill/copy of arrays, now inside the array unit (design, decisions open); 31 the Dirac array output (waits for the array unit); 32 the
 divider stage count from the widths (recorded; on the ZYBO `F_DIV` limits); 33 the
 float zero as an all-zero word in hardware (parked).
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), the reorganisation of the runner/setup scripts, a macOS
 build, 30 (SAPHO without showing its source, until a partnership).
 
-**Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 11 (consistency at 32
+**Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 2 (round to nearest
+unbiased), 3 (the float format checked only with float), 5 (exact float
+constants), 6(a) (the ALU testbench), 34 (initialisers in a declaration
+list), 11 (consistency at 32
 bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
 20, 22 and 23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), the user names that collide in the `.asm`, 29 (a faster clock, next release); 17 merged into 28 (2026-10-18).
 
@@ -662,6 +664,14 @@ block needs for each use (a second pointer for the copy's destination, the
 read-to-write pipeline register), what pays only when used, and the
 language forms; then decide the ISA once for all three.
 
+**Inside the array unit (Luciano, 2026-10-24).** The burst, the fill and
+the copy become operations of a larger optional unit: every array in a new
+dual-port memory, a controller that runs sequences on it while the core
+waits in place, and a MAC of its own for the inner product and the Dirac
+forms built on it (docs/design/array-unit.md, issue #18). No code until
+every decision there is taken, with tests and measurements made outside
+the YANC code.
+
 ### From item 17: filling and copying arrays faster (2026-09-28)
 
 
@@ -752,6 +762,11 @@ without the scalar, is a syntax error. Fixed, the form is two instructions a
 word (`LOD_V`, `OUT`), the least today's ISA allows, independent of the
 burst. A fixture with the scalar 1 and with none, the golden checking that
 no `MLT` and no multiplier remain.
+
+**Waits for the array unit (Luciano, 2026-10-24).** The Dirac notation is
+not extended or fixed as it is; it is redone on the array unit
+(docs/design/array-unit.md, issue #18), with this item and the transposed
+outer product measured on 2026-10-24.
 
 ## 32. Divider stage count computed from the widths
 
