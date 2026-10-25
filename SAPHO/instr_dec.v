@@ -147,7 +147,7 @@ module instr_dec
 
     // PROTOTYPE (docs/design/array-unit.md, step 4b)
     parameter DOT      = 0,
-    parameter DOTB     = 0
+    parameter DOB      = 0
 )(
     input                   clk, rst,
     input      [NBOPCO-1:0] opcode,
@@ -279,11 +279,11 @@ wire [13:0] d105; generate if ((S_SHR   ) != 0) begin : g105 assign d105 = (opco
 wire [13:0] d106; generate if ((SRS     ) != 0) begin : g106 assign d106 = (opcode == 7'd106) ? {6'd45, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g106 assign d106 = 14'd0; end endgenerate
 wire [13:0] d107; generate if ((S_SRS   ) != 0) begin : g107 assign d107 = (opcode == 7'd107) ? {6'd45, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g107 assign d107 = 14'd0; end endgenerate
 
-// PROTOTYPE (array-unit.md 4b): DOT reads N as LOD does; DOTB too, a read
+// PROTOTYPE (array-unit.md 4b): DOT reads N as LOD does; DOB too, a read
 // of its operand (array b) nobody uses, the controller holding the array
 // memory's ports. Their pop is the controller's, once, when they go on
 wire [13:0] d108; generate if ((DOT     ) != 0) begin : g108 assign d108 = (opcode == 7'd108) ? {6'd1 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g108 assign d108 = 14'd0; end endgenerate
-wire [13:0] d109; generate if ((DOTB    ) != 0) begin : g109 assign d109 = (opcode == 7'd109) ? {6'd1 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g109 assign d109 = 14'd0; end endgenerate
+wire [13:0] d109; generate if ((DOB     ) != 0) begin : g109 assign d109 = (opcode == 7'd109) ? {6'd1 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g109 assign d109 = 14'd0; end endgenerate
 
 wire [13:0] ctl = d108 | d109 |
                   d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 |

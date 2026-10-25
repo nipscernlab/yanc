@@ -96,7 +96,7 @@ IRREGULAR = {
     'ISI':   ('r', 'pop', 'base_w', '-', '-'),
     'LEA':   ('w', '-', 'addr', '-', '-'),
     'DOT':   ('rw', 'pop', 'r', '-', '-'),        # PROTOTYPE (array-unit.md 4b)
-    'DOTB':  ('rw', 'pop', 'base_r', '-', '-'),   # PROTOTYPE (array-unit.md 4b)
+    'DOB':   ('rw', 'pop', 'base_r', '-', '-'),   # PROTOTYPE (array-unit.md 4b)
     'INN':   ('w', '-', '-', '-', 'in'),
     'F_INN': ('w', '-', '-', '-', 'in'),
     'P_INN': ('rw', 'push', '-', '-', 'in'),

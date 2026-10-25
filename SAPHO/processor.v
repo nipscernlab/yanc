@@ -160,7 +160,7 @@ module processor
 	parameter MARRW  = $clog2(MARRS),   // Number of address bits for the array memory
 	parameter AFILE  = "arr.mif",       // File with the array-memory contents
 	parameter DOT    = 0,               // PROTOTYPE (array-unit.md 4b): the inner product
-	parameter DOTB   = 0,               // PROTOTYPE (array-unit.md 4b): the inner product, b in the operand
+	parameter DOB    = 0,                // PROTOTYPE (array-unit.md 4b): the inner product, b in the operand
 
 	// links to partner processors (docs/design/toma-and-cade-links.md), set by asmcomp
 	// from the program: link k is built only where its bit is set
@@ -400,8 +400,8 @@ core #(.NBOPCO ( NBOPCO ),
        .MINSTW ( MINSTW ),
        .ARRMEM ( ARRMEM ),
        .MARRW  ( MARRW  ),
-       .DOT    ( DOT | DOTB ),
-       .DOTB   ( DOTB   ),
+       .DOT    ( DOT | DOB ),
+       .DOB    ( DOB    ),
        .NUBITS ( NUBITS ),
        .NBMANT ( NBMANT ),
        .NBEXPO ( NBEXPO ),
@@ -550,7 +550,7 @@ mem_data # (.NADDRE(MDATAS),
 // step 4a: the core reads on one port and writes on the other, as the data
 // memory; the controller of step 4b will take them while a sequence runs
 
-generate if (ARRMEM && (DOT || DOTB)) begin : marr
+generate if (ARRMEM && (DOT || DOB)) begin : marr
 // 4b: port A reads (the core, or a[k]); port B writes for the core or reads b[k]
 mem_arr2 # (.NADDRE(MARRS ),
             .NBDATA(NUBITS),

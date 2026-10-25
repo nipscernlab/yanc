@@ -192,7 +192,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    /* PROTOTYPE (docs/design/array-unit.md, step 4b): the inner product of the array unit */
    "DOT"   eval_opcode(108,18, yytext,    "DOT"  ); // acc = <a|b>, N terms from memory, a at the stack top (popped), b in acc
-  "DOTB"   eval_opcode(109,28, yytext,    "DOTB" ); // acc = <a|b>, N terms in acc, a at the stack top (popped), b the array named
+   "DOB"   eval_opcode(109,28, yytext,    "DOB"  ); // acc = <a|b>, N terms in acc, a at the stack top (popped), b the array named
 
    /* pseudo instructions */
    /* avoid indirect addressing */

@@ -1,4 +1,4 @@
-"""Hand-written .asm for step 4b (array-unit.md): DOT and DOTB on random SAPHO floats,
+"""Hand-written .asm for step 4b (array-unit.md): DOT and DOB on random SAPHO floats,
 and the words it must print, from the bit-level model of MAC A (mac.py).
 
 Usage: python dot_gen.py <mac.py dir> <out dir> <FROUND> <seed>
@@ -53,21 +53,21 @@ asm += ["LOD 5", "LDI a", "OUT 0"]; exp.append(s32(a[5]))
 # 7. a DOT right after another, its result used by the ALU: <a|b> + <b|a> as float
 asm += ["LEA a", "P_LEA b", f"DOT {K}", "PSH", "LEA b", "P_LEA a", f"DOT {K}", "SF_ADD", "OUT 0"]
 exp.append(None)                                    # checked apart: twice case 1, by the float adder
-# DOTB b: N in the acc (P_LOD N pushes pointer a), b the array named
+# DOB b: N in the acc (P_LOD N pushes pointer a), b the array named
 # 8. the whole vectors
-asm += ["LEA a", f"P_LOD {K}", "DOTB b", "OUT 0"]; exp.append(s32(dot(a, b)))
+asm += ["LEA a", f"P_LOD {K}", "DOB b", "OUT 0"]; exp.append(s32(dot(a, b)))
 # 9. pointer a into the middle, N in a variable (11, set in case 3)
-asm += ["LEA a", "ADD 3", "P_LOD n", "DOTB b", "OUT 0"]; exp.append(s32(dot(a[3:14], b[:11])))
+asm += ["LEA a", "ADD 3", "P_LOD n", "DOB b", "OUT 0"]; exp.append(s32(dot(a[3:14], b[:11])))
 # 10. N = 0 and 11. N = 1
-asm += ["LEA a", "P_LOD 0", "DOTB b", "OUT 0"]; exp.append(s32(mac.zero(f)))
-asm += ["LEA a", "P_LOD 1", "DOTB b", "OUT 0"]; exp.append(s32(dot(a[:1], b[:1])))
-# 12. the stack is balanced after DOTB
+asm += ["LEA a", "P_LOD 0", "DOB b", "OUT 0"]; exp.append(s32(mac.zero(f)))
+asm += ["LEA a", "P_LOD 1", "DOB b", "OUT 0"]; exp.append(s32(dot(a[:1], b[:1])))
+# 12. the stack is balanced after DOB
 asm += ["LOD 7", "P_LOD 5", "S_ADD", "OUT 0"]; exp.append(12)
-# 13. the result reaches the data memory (SET right after DOT, and after DOTB)
+# 13. the result reaches the data memory (SET right after DOT, and after DOB)
 asm += ["LEA a", "P_LEA b", f"DOT {K}", "SET r", "LOD 0", "LOD r", "OUT 0"]; exp.append(s32(dot(a, b)))
-asm += ["LEA a", f"P_LOD {K}", "DOTB b", "SET r", "LOD 0", "LOD r", "OUT 0"]; exp.append(s32(dot(a, b)))
-# 14. DOTB right after DOT, the two results summed by the ALU: as case 7
-asm += ["LEA a", "P_LEA b", f"DOT {K}", "PSH", "LEA b", f"P_LOD {K}", "DOTB a", "SF_ADD", "OUT 0"]
+asm += ["LEA a", f"P_LOD {K}", "DOB b", "SET r", "LOD 0", "LOD r", "OUT 0"]; exp.append(s32(dot(a, b)))
+# 14. DOB right after DOT, the two results summed by the ALU: as case 7
+asm += ["LEA a", "P_LEA b", f"DOT {K}", "PSH", "LEA b", f"P_LOD {K}", "DOB a", "SF_ADD", "OUT 0"]
 exp.append(None)
 asm += ["@fim JMP fim"]
 

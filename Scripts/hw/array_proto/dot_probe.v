@@ -1,4 +1,4 @@
-// For each DOT or DOTB: the clocks its opcode stays decoded, and the clocks from its
+// For each DOT or DOB: the clocks its opcode stays decoded, and the clocks from its
 // last one to the next OUT decoded (1 means no fetch clock lost).
 module dot_probe;
 `define C dot_c_tb.proc.p_dot_c.core

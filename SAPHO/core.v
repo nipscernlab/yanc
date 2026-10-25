@@ -111,10 +111,10 @@ generate if ((TOM) != 0) begin : tom_sel assign wTOM = (opcode == OP_TOM) & ~tom
          else            begin : tom_sel assign wTOM = 1'b0;                        end endgenerate
 generate if ((CAD) != 0) begin : cad_sel assign wCAD = (opcode == OP_CAD) & ~cad_go; end
          else            begin : cad_sel assign wCAD = 1'b0;                        end endgenerate
-// PROTOTYPE (array-unit.md 4b): DOT and DOTB wait in place while the controller runs
-localparam [NBOPCO-1:0] OP_DOT = 108, OP_DOTB = 109;
+// PROTOTYPE (array-unit.md 4b): DOT and DOB wait in place while the controller runs
+localparam [NBOPCO-1:0] OP_DOT = 108, OP_DOB = 109;
 wire wDOT;
-generate if ((DOT) != 0) begin : dot_sel assign wDOT = ((opcode == OP_DOT) | (opcode == OP_DOTB)) & ~dot_go; end
+generate if ((DOT) != 0) begin : dot_sel assign wDOT = ((opcode == OP_DOT) | (opcode == OP_DOB)) & ~dot_go; end
          else            begin : dot_sel assign wDOT = 1'b0;                        end endgenerate
 
 assign pc_self = wTOM | wCAD | wDOT;
@@ -630,9 +630,9 @@ module core
 	parameter    CAD   = 0,
 
 	// PROTOTYPE (array-unit.md 4b): the inner product of the array unit (DOT:
-	// the unit, for DOT or DOTB; DOTB: its decoder row)
+	// the unit, for DOT or DOB; DOB: its decoder row)
 	parameter    DOT   = 0,
-	parameter    DOTB  = 0,
+	parameter    DOB   = 0,
 
 	// two-parameter arithmetic operations
 	parameter    ADD   = 0,
@@ -1054,7 +1054,7 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
 			   .XPO  (   XPO  ),
 			 .XPO_M  ( XPO_M  ),
 			   .DOT  (   DOT  ),
-			   .DOTB (   DOTB )) id(clk, rst,
+			   .DOB  (   DOB  )) id(clk, rst,
                                     id_opcode,
                                     id_dsp_push, id_dsp_pop,
                                     id_ula_op,
@@ -1065,7 +1065,7 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
 // Data stack -----------------------------------------------------------------
 
 wire              sp_push = id_dsp_push;
-// PROTOTYPE (array-unit.md 4b): DOT and DOTB pop pointer a once, in the
+// PROTOTYPE (array-unit.md 4b): DOT and DOB pop pointer a once, in the
 // clock they go on; the pop only moves the stack pointer (ALU input in1
 // takes the inner product in the next clock, not the stack top)
 wire              dot_pop;
@@ -1310,7 +1310,7 @@ endmodule
 // PROTOTYPE (docs/design/array-unit.md, step 4b): the inner product **********
 // ****************************************************************************
 
-// The controller of DOT N and DOTB b (2026-10-25). Pair k is read in one
+// The controller of DOT N and DOB b (2026-10-25). Pair k is read in one
 // clock, multiplied and summed (mac_a1) in the next; the sum is rounded into a
 // register (res) in the clock after the last pair (TAIL), and DOT goes on in
 // the next (DONE, dot_go high, pointer a popped): its ALU operation takes res
@@ -1318,7 +1318,7 @@ endmodule
 //   DOT N  (LEA a; P_LEA b; DOT N), N + 3 clocks: clock 0 decodes DOT, which
 //          reads N as LOD; in clock 1 pointer a is the stack top, pointer b the
 //          acc, N comes out of the ALU (ula_fast): pair 0 is read.
-//   DOTB b (LEA a; P_LOD N; DOTB b), N + 2 clocks: in clock 0 pointer a is the
+//   DOB b (LEA a; P_LOD N; DOB b), N + 2 clocks: in clock 0 pointer a is the
 //          stack top, b the operand and N comes out of the ALU (P_LOD N):
 //          pair 0 is read at once.
 // Reads past N are harmless: only valid pairs (rv) enter the MAC.
@@ -1333,7 +1333,7 @@ module arr_dot
 )(
 	input               clk, rst,
 	input  [NBOPCO-1:0] opcode,          // the instruction decoded now
-	input  [MARRW -1:0] opr,             // its operand: pointer b of DOTB
+	input  [MARRW -1:0] opr,             // its operand: pointer b of DOB
 	input  [NUBITS-1:0] acc,             // the acc register: pointer b of DOT, the clock after it starts
 	input  [NUBITS-1:0] stk,             // the data-stack top: pointer a
 	input  [NUBITS-1:0] nval,            // the ALU before the normaliser: N
@@ -1345,7 +1345,7 @@ module arr_dot
 	output [NUBITS-1:0] res              // the inner product, rounded once (registered)
 );
 
-localparam [NBOPCO-1:0] OP_DOT = 108, OP_DOTB = 109;
+localparam [NBOPCO-1:0] OP_DOT = 108, OP_DOB = 109;
 localparam [2:0] IDLE = 0, FIRST = 1, RUN = 2, TAIL = 3, DONE = 4;
 
 reg [2:0]        st  = IDLE;
@@ -1355,8 +1355,8 @@ reg              rv  = 1'b0;          // the words on qa, qb are a term
 reg              clr = 1'b0;          // the sum restarts with the term now on qa, qb
 
 wire dot   = (opcode == OP_DOT);
-wire dotb  = (opcode == OP_DOTB);
-wire start = (st == IDLE) & dotb;     // DOTB reads pair 0 in the clock it is decoded
+wire dob   = (opcode == OP_DOB);
+wire start = (st == IDLE) & dob;     // DOB reads pair 0 in the clock it is decoded
 wire first = (st == FIRST) | start;   // pair 0 read now, N on nval
 
 always @ (posedge clk) begin
@@ -1364,7 +1364,7 @@ always @ (posedge clk) begin
 	clr <= 1'b0;
 	if (rst) st <= IDLE;
 	else begin
-		if (st == IDLE && (dot | dotb)) clr <= 1'b1;
+		if (st == IDLE && (dot | dob)) clr <= 1'b1;
 		if (first) begin
 			ka  <= ra + 1'b1;
 			kb  <= rb + 1'b1;
@@ -1381,7 +1381,7 @@ always @ (posedge clk) begin
 				if (cnt == 2) st <= TAIL;
 			end
 			TAIL : st <= DONE;
-			DONE : if (dot | dotb) st <= IDLE;
+			DONE : if (dot | dob) st <= IDLE;
 			default: ;
 		endcase
 	end
@@ -1391,7 +1391,7 @@ assign ra   = (first) ? stk[MARRW-1:0]           : ka;
 assign rb   = (start) ? opr : (first) ? acc[MARRW-1:0] : kb;
 assign busy = first | (st == RUN);
 assign go   = (st == DONE);
-assign pop  = (dot | dotb) & go;
+assign pop  = (dot | dob) & go;
 
 // the rounding at the end (20 ns on the DE10-Nano) gets a clock of its own:
 // combinational into ALU input in1 it was the worst path of the processor,

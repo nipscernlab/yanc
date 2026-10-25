@@ -1,8 +1,8 @@
 #!/bin/bash
 # Step 4b: sapho_all with a DOT added by hand (on its float array fa, in the
-# main loop, before #TOAQUI), and with "dotb" a DOTB as well, the array memory
+# main loop, before #TOAQUI), and with "dob" a DOB as well, the array memory
 # on; simulated once to see it runs, then fitted on the DE10-Nano (about an
-# hour: mains power). Usage: fit4b.sh [dot|dotb]
+# hour: mains power). Usage: fit4b.sh [dot|dob]
 D=$(dirname "$0")
 W=$(cd "$D/../../.." && pwd)
 H=$W/SAPHO
@@ -12,8 +12,8 @@ P=$W/.smoke/work/sapho_all/sapho_all
 rm -rf "$W/.smoke/work/sapho_all"; mkdir -p "$W/.smoke/work/sapho_all"
 cp -r "$W/.smoke/array_proto/arrtest/sapho_all/sapho_all" "$W/.smoke/work/sapho_all/"
 cd "$P"
-if [ "$TAG" = dotb ]; then
-    add='print "LEA fa"; print "P_LEA fa"; print "DOT 8"; print "OUT 0"; print "LEA fa"; print "P_LOD 8"; print "DOTB fa"; print "OUT 0"'
+if [ "$TAG" = dob ]; then
+    add='print "LEA fa"; print "P_LEA fa"; print "DOT 8"; print "OUT 0"; print "LEA fa"; print "P_LOD 8"; print "DOB fa"; print "OUT 0"'
 else
     add='print "LEA fa"; print "P_LEA fa"; print "DOT 8"; print "OUT 0"'
 fi
