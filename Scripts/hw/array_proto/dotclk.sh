@@ -5,7 +5,7 @@
 # Vectors of 1.0 (the SAPHO word 1967128576), so the outputs read N.
 D=$(cd "$(dirname "$0")" && pwd)
 W=$(cd "$D/../../.." && pwd)
-H=$W/SAPHO
+H=${HDL:-$W/SAPHO}     # HDL=<dir>: a modified copy of SAPHO/ (fmax.sh takes the same)
 O=$W/.smoke/array_proto/dotclk
 rm -rf "$O"; mkdir -p "$O/dot_c"
 export YANC_ARRMEM=1

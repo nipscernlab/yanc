@@ -5,7 +5,7 @@
 # hour: mains power). Usage: fit4b.sh [dot|dob]
 D=$(dirname "$0")
 W=$(cd "$D/../../.." && pwd)
-H=$W/SAPHO
+H=${HDL:-$W/SAPHO}     # HDL=<dir>: a modified copy of SAPHO/ (fmax.sh takes the same)
 TAG=${1:-dot}
 bash "$D/arrtest.sh" sapho_all || exit 1
 P=$W/.smoke/work/sapho_all/sapho_all

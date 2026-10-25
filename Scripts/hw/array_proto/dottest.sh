@@ -3,7 +3,7 @@
 # its outputs against the model. Usage: dottest.sh <FROUND> <seed>
 D=$(dirname "$0")
 W=$(cd "$D/../../.." && pwd)
-H=$W/SAPHO
+H=${HDL:-$W/SAPHO}     # HDL=<dir>: a modified copy of SAPHO/ (fmax.sh takes the same)
 O=$W/.smoke/array_proto/dottest/fr$1_s$2
 rm -rf "$O"; mkdir -p "$O"
 export YANC_ARRMEM=1

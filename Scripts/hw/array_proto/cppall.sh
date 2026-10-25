@@ -3,7 +3,7 @@
 # array memory on, output_0.txt against golden.txt. The .in tests (Verilator)
 # are listed as skipped.
 W=$(cd "$(dirname "$0")/../../.." && pwd)
-H=$W/SAPHO
+H=${HDL:-$W/SAPHO}     # HDL=<dir>: a modified copy of SAPHO/ (fmax.sh takes the same)
 export YANC_ARRMEM=1
 for e in "$W"/Compilers/CPPComp/Tests/test*/; do
     b=$(basename "$e")

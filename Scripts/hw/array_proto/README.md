@@ -16,6 +16,10 @@ The array memory is switched on by the environment variable `YANC_ARRMEM`
 | `dotclk.sh` (`dot_probe.v`) | the clocks `DOT` and `DOB` stay decoded for N = 0, 1, 2, 3, 5, 40, and whether the next instruction loses a clock |
 | `fit4a.sh` | step 4a: `sapho_all` through `Scripts/hw/fmax.sh` on the DE10-Nano, the array memory off, then on (two fits, about an hour each, on mains power) |
 | `fit4b.sh [dot\|dob]` | step 4b: `sapho_all` with a `DOT` (and, with `dob`, a `DOB`) added before `#TOAQUI`, simulated once, then fitted |
+| `sweep.sh` | the fitter's seed sweep: `sapho_all` with the array memory and no `DOT`, with `DOT` and `DOB`, and the same on the idea-2 copy, each with `SEEDS` (default 2 3); six fits, five to six hours |
+| `mk_ulaout.py <SAPHO> <dir>` | a copy of `SAPHO/` with idea 2 back (the `DOT` result in `ula_out`'s place, dropped in 665ef7f), for `sweep.sh` |
 | `arr_ops.py <root>` | which mnemonics take an array name as operand, across every `golden.asm` (decision 10) |
 
-Build the tools of this tree first (`make` at the root).
+Build the tools of this tree first (`make` at the root). `arrtest.sh`,
+`cppall.sh`, `dottest.sh`, `dotclk.sh` and `fit4b.sh` take `HDL=<dir>` to
+simulate a modified copy of `SAPHO/`, as `Scripts/hw/fmax.sh` does to fit it.
