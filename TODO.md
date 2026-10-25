@@ -23,10 +23,13 @@ ALU testbench, an initializer on any name of a declaration list).
 
 **In design, no code in `main` yet:** the array unit (PR #19,
 docs/design/array-unit.md): a dual-port memory for arrays, a controller and
-a MAC, on which items 28 (the burst, fill and copy) and 31 (the Dirac
-notation) are redone. Rule (Luciano, 2026-10-24): no code until every
-decision there is taken, with tests outside the YANC code; a prototype for
-measuring is on the branch `lucianomaf/array-unit-proto`.
+a MAC, on which item 28 (the burst, fill and copy) is redone. Rule
+(Luciano, 2026-10-24): no code until every decision there is taken, with
+tests outside the YANC code; a prototype for measuring is on the branch
+`lucianomaf/array-unit-proto`. The Dirac notation (item 31) is redone
+first, on its own, as expressions computed in loops (Luciano, 2026-10-25,
+branch `lucianomaf/dirac-expressions`); the array unit enters it later, as
+the hardware choice beside the loop in software.
 
 **Left on boards:** 35 and 37 (keyboard and screen), and from v7.1 the run
 of Sabrina and Pedro Henrique (the `LINKALL` pair with the `.sdc` on both
@@ -49,8 +52,8 @@ regress on this machine (mitigated); 21 documentation that cannot fall
 behind a release (waiting on a decision); 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
 hits; 28 the burst and fast fill/copy of arrays, inside the array unit
-(design, decisions open); 31 the Dirac array output (waits for the array
-unit); 32 the divider stage count from the widths (recorded; on the ZYBO
+(design, decisions open); 31 the Dirac array output (part of the Dirac
+redesign as expressions); 32 the divider stage count from the widths (recorded; on the ZYBO
 `F_DIV` limits); 35 and 37 the board check of the keyboard and the screen.
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), 24 (processors with different float formats on one
