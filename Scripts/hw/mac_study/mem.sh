@@ -1,10 +1,11 @@
 #!/bin/bash
-# RAM blocks of the array memory, by organisation and depth (docs/design/array-unit.md,
+# RAM blocks of the array memory, by organisation (docs/design/array-unit.md,
 # section 7, step 3): mem.v synthesized by Quartus (Cyclone V of the DE10-Nano)
 # and Vivado (the ZYBO's Z-7010), 32-bit words. MODE 0 simple dual port
 # (today's mem_data), 1 true dual port.
 #
-# Usage: [MODES=1] bash Scripts/hw/mac_study/mem.sh [depths...]     (default 256 1024 4096)
+# Usage: [MODES=1] bash Scripts/hw/mac_study/mem.sh [depths...]     (default 256, the one measured;
+#        the block count does not change the decision, Luciano 2026-10-24)
 # Quartus: synthesis and fit (the block count is the fitter's); Vivado: synthesis.
 # Results appended to .smoke/hw/mac_study/mem.txt.
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
@@ -13,7 +14,7 @@ QUARTUS=${QUARTUS:-/c/intelFPGA_lite/24.1std/quartus/bin64}
 VIVADO=${VIVADO:-/c/AMDDesignTools/2025.2/Vivado/bin/vivado.bat}
 W_() { cygpath -m "$1" 2>/dev/null || echo "$1"; }
 OUTF="$ROOT/.smoke/hw/mac_study/mem.txt"
-for D in ${@:-256 1024 4096}; do
+for D in ${@:-256}; do
   for MODE in ${MODES:-0 1}; do
     DIR="$ROOT/.smoke/hw/mac_study/mem_${MODE}_$D"
     rm -rf "$DIR"; mkdir -p "$DIR"; cd "$DIR"; cp "$S/mem.v" .

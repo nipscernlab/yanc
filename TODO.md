@@ -639,9 +639,10 @@ different `#NUBITS` only get the tools' port-width warning.
 
 ## 28. Burst: a whole array through a port, and arrays filled and copied fast
 
-**Status:** design written (Luciano's block, 2026-10-14), nothing
-implemented · **Area:** `SAPHO/core.v`, `instr_dec.v`, `isa.tsv`, asmcomp,
-then cmmcomp and cppcomp · **Evidence:** docs/design/burst.md
+**Status:** design written (Luciano's block, 2026-10-14), inside the
+array unit since 2026-10-24, decisions open, nothing implemented ·
+**Area:** `SAPHO/core.v`, `instr_dec.v`, `isa.tsv`, asmcomp, then cmmcomp
+and cppcomp · **Evidence:** docs/design/burst.md, docs/design/array-unit.md
 
 Sending an array to a FIFO costs 8 instructions a word in a loop, or 2 to 3
 a word unrolled (code growing with the array). A `burst` block (size
@@ -753,7 +754,8 @@ versions with UFJF's technology transfer office first.
 
 **Status:** open, found 2026-10-14 while measuring item 28, not fixed ·
 **Area:** cmmcomp (Luciano's code: the diff goes to him first) ·
-**Evidence:** docs/design/burst.md section 1
+**Evidence:** docs/design/burst.md section 1, docs/design/array-unit.md
+section 1
 
 `out(0, 1|a⟩);` writes each element as `LOD_V a k; MLT 1; OUT 0`: the
 `MLT 1` costs a cycle a word and synthesizes the integer multiplier for a

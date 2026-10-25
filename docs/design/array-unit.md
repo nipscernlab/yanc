@@ -1,6 +1,9 @@
 # Array unit: a memory for arrays, a controller and a MAC
 
-Status: design, started 2026-10-24. Nothing implemented. **Rule (Luciano,
+Status: design, started 2026-10-24. Nothing in `main`. A prototype, to
+measure and not to merge, is on the branch `lucianomaf/array-unit-proto`
+(steps 4a and 4b of section 7); the implementation for `main` is written
+again, clean, once the decisions are taken. **Rule (Luciano,
 2026-10-24): no code in this repository until every decision below is
 taken, each one backed by tests and measurements made outside the YANC
 code** (prototypes in a scratch folder or a worktree, standalone
@@ -194,15 +197,29 @@ out (2026-10-24): the memory is true dual port.
 3. **A single access** (`a[k]` with `k` variable): the same timing as
    today's `LDI`, one clock with no wait. A requirement, to be checked in
    simulation first.
-4. **The instruction set of the controller**: registers for the size,
-   the pointers and a stride; one instruction per operation (`DOT`,
-   `AXPY`, ...) or a small programmable sequencer. Designed once with the
-   burst's `BSZ`/`BPT`/`BOT`/`BIN` and the fast fill and copy (item 28).
+4. **The instruction set of the controller**: one instruction per
+   operation (`DOT`, `AXPY`, ...) or a small programmable sequencer.
+   Designed once with the burst's `BSZ`/`BPT`/`BOT`/`BIN` and the fast fill
+   and copy (item 28). **The inner product, decided (Luciano, 2026-10-25):
+   `LEA a; P_LEA b; DOT N`**, with no register for the size or the pointers:
+   N is the operand of `DOT`, read as `LOD` reads it; pointer a is on the
+   stack top, popped once when `DOT` ends; pointer b is in the acc. Under
+   test (section 7.5): a second form, `LEA a; P_LOD N; DOB b`, with b an
+   address fixed when compiling, one clock shorter. The burst's `BSZ` and
+   `BPT` (burst.md) predate this and load registers; whether the burst
+   takes `DOT`'s form (pointer on the stack, N as the operand, no
+   registers) is open.
 5. **The MAC variant** (A, B or C), and for B the window. **Decided
    (Luciano, 2026-10-24): A**, the lazy accumulator with W = 2M+8, on the
    results of section 7.1: the error of one rounding, as C, at the area
    of B, with no window for anyone to choose.
-6. **The int accumulator**: width, overflow (wrap, saturate, flag).
+6. **The int accumulator**: width, overflow (wrap, saturate, flag). From
+   the code: `MLT` keeps the low `NUBITS` bits of the product (`ula.v` 536:
+   `assign out = in1 * in2` into an `NUBITS`-bit wire) and the integer add
+   wraps. A sum modulo 2^`NUBITS` does not depend on the order, so an
+   `NUBITS`-bit accumulator gives exactly today's result; a wider one
+   matters only to saturate or to flag an overflow, a choice of meaning,
+   not of accuracy.
 7. **The scalar operand** of `c|a⟩`: from the accumulator into a
    register of the controller.
 8. **The memory**: true dual port (two banks left out, Luciano,
@@ -237,6 +254,8 @@ out (2026-10-24): the memory is true dual port.
     by name in the waveform (`pc_sim_val`, `gen_gtkw`, the `YANC_SIM_VIS`
     block AURORA reads).
 12. **Hand-written `.asm`**: what `LDI`/`STI` mean with the option on.
+    Answered by decision 10: they always reach the array memory, so the
+    address they use is one of the array memory (as in the prototype).
 13. **The Dirac notation redone**: the forms of issue #18, `comp`, the
     conjugating bra, the outer product the right way round.
 
@@ -255,13 +274,13 @@ out (2026-10-24): the memory is true dual port.
    today's simple dual port.
 4. **A prototype of the whole** in a worktree copy of `SAPHO/`, with
    hand-written `.asm`: the single access with today's timing, an inner
-   product in a sequence, the wait in place; then `fmax.sh` and `area.sh`
-   on `sapho_all` with and without the option (without it, nothing may
-   change).
+   product in a sequence, the wait in place; then `fmax.sh` on `sapho_all`
+   with and without the option, the area from the same fits (without it,
+   nothing may change).
 5. **What it buys**: words of program and clocks of the Dirac fixtures and
    of `proc_rls`, today against each variant.
 
-### 7.1 Step 1, measured (2026-10-24)
+### 7.1 Step 1, the accuracy of each MAC (2026-10-24)
 
 `bash Scripts/hw/mac_study/run.sh` (about 5 minutes; the report in
 `.smoke/hw/mac_study/<width>/report.txt`). Inner products of 4 to 1024
@@ -315,7 +334,9 @@ What the numbers say (measured on these data):
 - At 16/10/5 the `cancel` set has 12 vectors whose exact sum is below the
   smallest float of the format; they are left out of every column.
 
-**Step 2, correctness (2026-10-24):** the four variants in Verilog
+### 7.2 Step 2, each MAC in Verilog (2026-10-24)
+
+**Correctness:** the four variants in Verilog
 (`Scripts/hw/mac_study/mac.v`: A with W = 2M+8, B with 2 and 3 x `NUBITS`,
 C) give the word of their model (`mac.py expect`) on every vector of the
 study, 750 at 32/23/8 and 588 at 16/10/5 (12 left out, out of range), at
@@ -323,7 +344,7 @@ study, 750 at 32/23/8 and 588 at 16/10/5 (12 left out, out of range), at
 hardware at level 0 against the level-2 model) gives 287 different, the
 first by 1 ULP: the check sees a one-unit error.
 
-**Step 2, cost (2026-10-24),** Quartus 24.1 on the DE10-Nano's Cyclone V
+**Cost:** Quartus 24.1 on the DE10-Nano's Cyclone V
 (5CSEBA6U23I7, the slow 1100 mV 100 C corner), each block alone in
 `mac_fit` (inputs and output registered, the pins virtual), `#FROUND 2`,
 `Scripts/hw/mac_study/fit.sh`; "synthesis" is `quartus_map`'s estimate
@@ -359,7 +380,9 @@ into each group of registers, data delay in ns:
   fit of this small block takes about 30 minutes, most of it preparing the
   placement, whatever clock is asked (5 and 10 ns tried).
 
-**Step 3, the memory (2026-10-24):** what matters is that the tools build
+### 7.3 Step 3, the memory (2026-10-24)
+
+What matters is that the tools build
 a 32-bit true dual-port memory out of RAM blocks; the block count does not
 change the decision (Luciano). `Scripts/hw/mac_study/mem.sh` (`mem.v`),
 256 words: Quartus 24.1 on the DE10-Nano takes it as `altsyncram` (2 M10K,
@@ -372,9 +395,11 @@ not end in 50 minutes. Written as each port returning the word it writes
 (Intel's template, `mem_tdp` in `mem.v`), it is a RAM. The prototype of
 step 4 uses that form, or checks the behaviour it needs on a write.
 
-**Step 4a, the array memory in the processor (2026-10-24),** a prototype
-in a worktree (local branch `lucianomaf/array-unit-proto`, not pushed):
-asmcomp with `YANC_ARRMEM` set numbers the two memories as decision 10
+### 7.4 Step 4a, the array memory in the processor (2026-10-24)
+
+A prototype in a worktree (branch `lucianomaf/array-unit-proto`; the
+tests below are its `Scripts/hw/array_proto/` `arrall.sh`, `cppall.sh` and
+`fit4a.sh`): asmcomp with `YANC_ARRMEM` set numbers the two memories as decision 10
 says and writes `<name>_arr.mif`; `SAPHO/` gets the parameter `ARRMEM`,
 the array memory (read on one port, written on the other, as the data
 memory) and in `core.v` the choice by S or by `LDI`/`STI`, registered,
@@ -398,6 +423,9 @@ With the option on, the simulated outputs against `golden_sim`:
   now with its size: 8 of 95 C++ tests, no C+- fixture.
 - Off, the same fixtures give today's output; the full regression with
   the option off has not been run on the prototype.
+- The single access (decision 3) keeps today's timing by construction
+  (the choice of memory is registered beside the read, no clock added):
+  deduced, the clock counts of the fixtures were not compared.
 - With the option on, the arrays leave the waveform: their mirror in the
   generated `<name>.v` reads the data `.mif` at the array's address
   (decision 11).
@@ -422,12 +450,132 @@ same program and the prototype's `SAPHO/`, the option off and on:
   is still what sets the clock.
 - **Area:** 43 ALMs and the array memory's RAM block.
 
-**Integer MAC (decision 6), from the code:** `MLT` keeps the low `NUBITS`
-bits of the product (`ula.v` 536: `assign out = in1 * in2` into an
-`NUBITS`-bit wire) and the integer add wraps. A sum modulo 2^`NUBITS` does
-not depend on the order, so an `NUBITS`-bit accumulator gives exactly
-today's result; a wider one matters only to saturate or to flag an
-overflow, a choice of meaning, not of accuracy.
+### 7.5 Step 4b, the inner product (2026-10-25)
+
+The same prototype with `DOT` (decision 4): opcode 108, decoded as `LOD`
+(it reads N), waiting in place by `pc_self` as `TOM`/`CAD` do, and in
+`core.v` a controller (`arr_dot`) that reads a[k] on the array memory's
+port A and b[k] on port B, one pair per clock, into MAC A (W = 2M+8): first
+`mac.v`'s three stages copied, then the same arithmetic in one stage
+(`mac_a1`, below), checked through the processor, not by `check.sh`. With
+`DOT` the array memory becomes true dual port, in Intel's template (step
+3).
+
+The tests are `dottest.sh` (with `dot_gen.py`), `dotclk.sh` and `fit4b.sh`
+in `Scripts/hw/array_proto/` on the prototype's branch.
+
+**Correctness:** a hand-written `.asm` (the compilers do not emit `DOT`)
+with random floats of magnitude 2^-2 to 2^2, words expected from the model
+of step 1 (`mac.py`, the lazy accumulator): the whole vectors, pointers
+into the middle, N from a variable, N = 0 and N = 1, the stack balanced
+after `DOT`, the result stored by a `SET` right after `DOT`, two `DOT` in a
+row summed by `SF_ADD`. Every word equal, at `#FROUND` 0 and 2, three
+seeds, in each version below.
+
+**The clock,** `sapho_all` with a `DOT` added before `#TOAQUI`, as in
+step 4a (`fmax.sh`, DE10-Nano, slow corner, seed 1). Clocks are those the
+`DOT` stays decoded, for N >= 1 (N + 8 read from the RTL, the others
+counted in simulation for N = 0, 1, 2, 3, 5 and 40); the whole sequence
+takes two more (`LEA`, `P_LEA`), and the next instruction follows with no
+clock lost.
+
+| version | `DOT` clocks | Fmax | ALMs | RAM blocks | DSP |
+|---|---|---|---|---|---|
+| no `DOT` (step 4a) | | 32.58 MHz | 3588 | 7 | 3 |
+| MAC in 3 stages, the rounding at the end combinational into ALU input in1 | N + 8 | 20.9 MHz | 4707 | 8 | 4 |
+| the same, the rounded result in a register | N + 8 | 31.85 MHz | 4464 | 8 | 4 |
+| MAC in 1 stage, a new controller | N + 3 | 31.34 MHz | 4463 | 8 | 4 |
+| `DOT` and `DOB`, the result in place of the ALU's output (dropped) | N + 2, `DOB` N + 1 | 30.53 MHz | 4571 | 8 | 4 |
+| `DOT` and `DOB`, the result through ALU input in1 | N + 3, `DOB` N + 2 | 29.81 MHz | 4484 | 8 | 4 |
+
+- **The first version lost a third of the clock,** a defect of the
+  prototype, not of the design: the rounding at the end (20.3 ns, step 2)
+  went into ALU input in1, so the worst path ran rounding, mux, float adder,
+  accumulator: 47.5 ns. Step 2 had said the rounding needs a clock of its
+  own; with a register on the result the worst path is again the float
+  adder's (memory, in1, alignment, add, normaliser), with no part of the
+  MAC in it.
+- **The MAC fits in one stage.** The product, its alignment and the add
+  into the sum in the clock the pair leaves the memory, estimated at about
+  26 ns from the step 2 fits (3.1 + 5.1 + 15.7 ns and the memory's
+  output): no MAC path among the 3000 worst of the fit. The new controller
+  reads pair 0 in the clock after `DOT` is decoded, from the stack top and
+  the acc (both registers by then), while N comes out of the ALU; the
+  three clocks of state the first version spent (taking the pointers,
+  taking N, a drain longer than the MAC) are gone, and the two stages
+  merged into the loop take two more: N + 8 to N + 3.
+- **Below step 4a with no part of the MAC on the worst path:** 31.85 and
+  31.34 MHz are 2.2 and 3.8 % under 32.58, their worst path the same
+  float adder's: placement or chance, see the timing reports below.
+- **`DOT` costs** (the MAC, the controller, the second port) about 875
+  ALMs, 1 RAM block and 1 DSP block (the MAC's product, as in step 2;
+  `sapho_all` has 3 already): `sapho_all` with `DOT` uses 24 % more ALMs
+  than without.
+
+**What is left, by clock** (`LEA a; P_LEA b; DOT N`, N + 5 in the 1-stage
+version): the two instructions that bring a and b (each instruction
+carries one operand); one clock for N to come from memory while b is
+still leaving the ALU; N reads, one pair per clock on the two ports; one
+clock for the memory to give the last pair, summed; one to round into a
+register. The rounded word then passes the ALU into the acc in the next
+clock, as a word read by `LOD` does, while the next instruction is
+decoded. The last two rows try two cuts:
+
+- **`DOB b`** (`LEA a; P_LOD N; DOB b`, opcode 109): b is written in the
+  instruction, so in the clock `DOB` is decoded a is the stack top, b the
+  operand and N leaves the ALU (`P_LOD N`): pair 0 is read at once. b is an
+  address fixed when compiling (in the prototype an array's name; `h + 3`
+  not yet). Fits an FIR, where the coefficients stay and the samples
+  slide; when both pointers are computed, `DOT` stays.
+- **The result in place of the ALU's output** (`ula_out`) in the clock
+  `DOT` executes, rounded there (about 22 ns with the mux), instead of
+  entering ALU input in1: the acc, the stack and the memories get it, and
+  the rounding no longer takes a clock of the wait. It
+  adds an input to a mux at the end of the worst path: the fit says what
+  it costs. `ula_fast` does not see it, so asmcomp puts a `NOP` between a
+  `DOT` and a `JIZ`/`LDI`/`ILI` right after it, as after a float
+  operation. With both cuts the sequence takes N + 3: the two
+  instructions, N reads, the memory's clock and the rounding.
+  **Measured and dropped** (Luciano, 2026-10-25): 30.53 MHz against
+  31.34, the worst path the same float adder's but through the new mux
+  (`ula_out`, 2.9 ns) into the acc, 31.1 ns against 29.3. A clock lost on
+  every instruction does not pay for one saved per `DOT`; the result goes
+  back to a register read through in1. Kept in the prototype's history
+  (65f7b96, 665ef7f).
+
+**The fit after the drop says the drop was decided on noise.** With the
+result back through in1, `sapho_all` gave 29.81 MHz, below the version
+dropped. The timing reports of the four fits with the array memory:
+
+- **The worst path is the same logic in every one** (a memory, ALU input
+  in1, the float adder's alignment, add and normaliser, the ALU's last
+  mux, the acc), with no part of the MAC, of `DOB` or of the dropped mux
+  in it. The dropped mux added no level of logic: Quartus folded it into
+  the two cells of the ALU's last mux (`ula_out~50`, `~51`, 2.9 ns),
+  which take 2.4 to 4.0 ns in the other fits.
+- **A path no version touched got slower by itself.** The worst path
+  from the data memory (the scalars, the same in every version), through
+  the same float adder: slack -20.1 ns in step 4a, -21.9 with `DOT`,
+  -22.6 with idea 2, -23.4 without it. The same logic, 3.3 ns apart:
+  placement and routing of a design 25 % larger, or chance; one fit per
+  version cannot tell them apart.
+- **The true dual-port array memory is slower at its output** than the
+  simple dual-port one (1.0 ns against 0.2, and 0.5 to 0.9 ns less of
+  clock skew in its favour), but within one fit its paths are only 0.2
+  ns worse than those from the data memory.
+
+Measured, then: `DOT` costs 2 to 9 % of the clock in these fits (31.85 to
+29.81 MHz against 32.58); how much
+of it is placement, and what idea 2 costs, is below what one fit per
+version resolves. **A seed sweep is running** (`Scripts/hw/array_proto/sweep.sh`:
+the array memory with no `DOT`, `DOT` with `DOB`, and the same with idea
+2, seeds 2 and 3, beside the seed-1 fits above).
+
+**Not tried** (they would change the design): the first read in the clock
+`DOT` is decoded, taking b from the ALU's output (that path into the
+memory's address); the rounding inside the loop (36 ns, more than the
+period); a `DOT` that does not wait, its result read later; two pairs
+per clock (four ports, or the banks left out in section 5).
 
 ## 8. For the documentation (item 21 in TODO.md)
 
