@@ -300,6 +300,38 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: só dá pra fazer shift de um vetor nele mesmo, abensoado!\n", \
       "Error on line %d: you can only shift a vector into itself, mate!\n")
 
+// the shapes of the Dirac notation, as the messages below print them
+#define MSG_SHAPE_NUMBER     M("um número", "a number")
+#define MSG_SHAPE_VECTOR     M("um vetor de %d", "a vector of %d")
+#define MSG_SHAPE_ROW        M("uma linha de %d", "a row of %d")
+#define MSG_SHAPE_MATRIX     M("uma matriz %dx%d", "a %dx%d matrix")
+#define MSG_SHAPE_ANY_VECTOR M("um vetor", "a vector")
+#define MSG_SHAPE_ANY_MATRIX M("uma matriz", "a matrix")
+
+#define MSG_ERR_DIRAC_SUM_SHAPE \
+    M("Erro na linha %d: soma ou subtração de %s com %s: as formas têm que ser iguais\n", \
+      "Error on line %d: adding or subtracting %s and %s: the shapes must be the same\n")
+
+#define MSG_ERR_DIRAC_PRODUCT_SHAPE \
+    M("Erro na linha %d: produto de %s por %s: as colunas do primeiro não batem com as linhas do segundo\n", \
+      "Error on line %d: %s times %s: the columns of the first do not match the rows of the second\n")
+
+#define MSG_ERR_DIRAC_TARGET_SHAPE \
+    M("Erro na linha %d: '%s' é %s e a expressão dá %s\n", \
+      "Error on line %d: '%s' is %s and the expression gives %s\n")
+
+#define MSG_ERR_DIRAC_NOT_SCALAR \
+    M("Erro na linha %d: %s onde se espera um número\n", \
+      "Error on line %d: %s where a number is needed\n")
+
+#define MSG_ERR_DIRAC_OUT_MATRIX \
+    M("Erro na linha %d: out() escreve um número ou um vetor, não %s\n", \
+      "Error on line %d: out() writes a number or a vector, not %s\n")
+
+#define MSG_ERR_DIRAC_NOT_YET \
+    M("Erro na linha %d: esta combinação da notação de Dirac ainda não está implementada\n", \
+      "Error on line %d: this combination of the Dirac notation is not implemented yet\n")
+
 // operator errors and warnings (oper.c) -------------------------------------
 
 #define MSG_ERR_MOD_NON_INT \

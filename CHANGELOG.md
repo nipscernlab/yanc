@@ -50,6 +50,19 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **C±: the Dirac notation is parsed as expressions** (step a of
+  docs/design/dirac-expressions.md). A chain between bars (`|a⟩`, `⟨a|`,
+  `|M|`, `|M|a⟩`, `⟨a|M|b⟩`) is a term of `exp` and juxtaposition is the
+  product, between `+` and `*` in precedence; every term has a shape
+  (number, vector, row, matrix), checked with messages that name both
+  shapes. The lexer reads a bar followed by the name of an array, without
+  an index, as a Dirac bar, so `c | a[k]` stays a bitwise or. The code is
+  still the unrolled code of before, for the same forms, and the assembly
+  of `dirac_assign` and `proc_rls` is unchanged; any other combination
+  stops with "not implemented yet" until step b. The grammar has no
+  conflict left (`%expect 0`; the one of `A # c|B|;` is gone). A
+  coefficient with `+` or `-` now needs parentheses: `x # (a+c)|b⟩`.
+  Negative fixtures `NegTests/dirac_*`.
 - **C++: string literals and global `const` arrays go into the data
   memory** instead of being stored by code when `main` starts (3
   instructions a word). The `cin`/`cout` demonstration for the DE2-115:

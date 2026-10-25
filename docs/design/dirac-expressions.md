@@ -156,11 +156,13 @@ of `CMMComp.y` (measured, bison 3.8.2):
 symbol table when it reads it (`exec_id`, `Compilers/CMMComp/Sources/variaveis.c`
 232, with the function's scope), so the information is at hand (fact). The
 rule: a `|` followed, after blanks, by the name of an array (a variable with
-`isar` set) is the token `DBAR`; any other `|` is the bar it is today
-(bitwise or, or the bar that closes a matrix or a bra). An array's name
-alone is not an operand today (measured: `int y = 3 | a;` with `int a[4]`
-stops with "where's the array index for the variable 'a'?"), so no program
-that compiles today changes meaning. `|in(p)⟩` is lexed whole, like `|0⟩` today,
+`isar` set) that is not followed by `[` is the token `DBAR`; any other `|`
+is the bar it is today (bitwise or, or the bar that closes a matrix or a
+bra). An array's name without an index is not an operand today (measured:
+`int y = 3 | a;` with `int a[4]` stops with "where's the array index for
+the variable 'a'?"), so no program that compiles today changes meaning.
+With an index it is (`c | a[0]`): the first version of the rule missed
+that, and the fixture `NegTests/dirac_or_index.cmm` keeps it. `|in(p)⟩` is lexed whole, like `|0⟩` today,
 because `x | in(0)` is a valid or of an input.
 
 The grammar G3 adds to `exp`:

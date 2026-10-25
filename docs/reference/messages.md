@@ -70,6 +70,12 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: column count of '<name>' doesn't match size of '<name>'!
 - Error on line <n>: dimensions don't match. You're a confused soul!
 - Error on line <n>: you can only shift a vector into itself, mate!
+- Error on line <n>: adding or subtracting <name> and <name>: the shapes must be the same
+- Error on line <n>: <name> times <name>: the columns of the first do not match the rows of the second
+- Error on line <n>: '<name>' is <name> and the expression gives <name>
+- Error on line <n>: <name> where a number is needed
+- Error on line <n>: out() writes a number or a vector, not <name>
+- Error on line <n>: this combination of the Dirac notation is not implemented yet
 - Error on line <n>: what's the point of computing a remainder with non-integer numbers? Get a grip!
 - Error on line <n>: logical operation with a comp (int and float only)!
 - Error on line <n>: bad use of the '~' operator. Gotta pass an int. You tripping?

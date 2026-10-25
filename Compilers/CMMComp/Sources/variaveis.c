@@ -250,6 +250,20 @@ int exec_id(char *text)
     return find_var(var_name);
 }
 
+// the same lookup as exec_id (a global first, then a local of the current
+// function), without adding the name: the lexer asks it whether the name
+// after a bar is an array (DBAR in CMMComp.l)
+int find_id(const char *text)
+{
+    char var_name[sizeof fname + 64];
+
+    int k = find_var((char *)text);
+    if (k != -1 || strcmp(fname, "") == 0) return k;
+
+    snprintf(var_name, sizeof var_name, "%s_%s", fname, text);
+    return find_var(var_name);
+}
+
 // the value of an int literal in any form C writes it: 42, 052 (octal),
 // 0x2A, 0b101010, with a u/U/l/L suffix (*base, if given, says which)
 static unsigned long long inum_value(const char *text, int *base_out)

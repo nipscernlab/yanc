@@ -37,5 +37,4 @@ void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname);
 // array declarations initialized with Dirac notation -------------------------
 // ----------------------------------------------------------------------------
 
-void declar_Mv    (int id_name, int id_N  , int id_M, int id_v       ); // e.g. float a[4] # |B|a>;
-void declar_cv    (int id_name, int id_N  , expr_node *c, int id_v   ); // e.g. float a[4] # c|a>;
+void declar_dirac (int id_name, int id_N  , expr_node *rhs         ); // e.g. float a[4] # |B|a>;

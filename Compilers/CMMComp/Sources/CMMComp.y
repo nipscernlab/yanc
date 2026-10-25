@@ -41,19 +41,20 @@
     - Array initializable from a file. The array memory is filled at compile time. (e.g. int x[128] "values.txt";)
     - Array with reversed index. Used in FFT (e.g. x[j) = exp;) the bits of i are reversed.
 
-    - Statements in Dirac notation (linear algebra):
-      <a|b>             -> returns the inner product between vectors a and b
-      a # |M|b>;        -> vector a receives the product of matrix M and vector b
-      a # c|b>;         -> vector a receives c times vector b
-      d # |a> + c|b>;   -> vector d receives the sum of vector a with vector b weighted by c
-      A # |a><b|;       -> matrix A receives the outer product between vectors a and b
-      A # |P| - |a><b|; -> matrix A receives the subtraction of matrix P by the outer product between a and b
-      A # c|B|;         -> matrix A receives the product of constant c and matrix B
-      A # c|I|;         -> matrix A receives the identity matrix weighted by c
-      a # |0>;          -> zeros every element of vector a
-      a # c|in(x)>;     -> fills vector a with input from port x weighted by c
-      out(x,c|a>);      -> OUT on vector a weighted by c
-      a # c -> |a>;     -> shift register
+    - Dirac notation (linear algebra), as expressions (docs/design/dirac-expressions.md):
+      a chain of array names between bars, |a>, <a|, |M|, |M|a>, <a|M|b>, |A|B|x>:
+      the first name is a bra when the chain opens with <, the last a ket when
+      it closes with >, every other name a matrix. Juxtaposition is the product
+      (c|a>, |a><b|, |A||B|), between + and * in precedence. |I|, |0> and
+      |in(p)> take their size from the context. The shapes are checked
+      (shapecheck_expr in ast.c).
+      x = <a|b>;            -> a number
+      a # expression;       -> the vector or matrix a receives the expression
+      float a[N] # expr;    -> the same, in a declaration
+      out(p, c|a>);         -> OUT of each element of a, times c
+      a # c -> |a>;         -> shift register
+      For now (step a) only the forms of the old rules are computed:
+      |M|a>, c|a>, |a> + c|b>, |a><b|, |A| - |a><b|, c|A|, c|I|, |0>, c|in(p)>.
 */
 
 %{
@@ -116,11 +117,15 @@ void  yyerror(char const *s);
 %token SHIFTL SHIFTR SSHIFTR                                           // bit shift
 %token GREQU LESEQ EQU DIF LAN LOR                                     // two-symbol logical operators
 %token PPLUS                                                           // ++ operator. can be used both to reduce exp and for assignments
-%token BRA KET EYE VZERO                                               // Dirac notation (linear algebra)
+%token BRA KET EYE VZERO DBAR                                          // Dirac notation (BRA is the closing angle, KET the opening one; DBAR a bar before an array name)
+%token <ival> KETIN                                                    // Dirac |in(p)>, the port as an INUM id
 
 // terminal tokens ------------------------------------------------------------
 
 %token <ival> TYPE ID STRING INUM FNUM CNUM NINUM NIMIN                // comes from the lexer with an associated value
+
+// every conflict is an error of the build: the grammar has none
+%expect 0
 
 // removes the conflict between if-with-else and if-without-else
 %nonassoc THEN
@@ -140,6 +145,7 @@ void  yyerror(char const *s);
 %left '>' '<' GREQU LESEQ
 %left SHIFTL SHIFTR SSHIFTR
 %left '+' '-'
+%left JUXT DBAR KET EYE VZERO KETIN                                    // Dirac juxtaposition: (2*c)|a> and |b> + (c|a>)
 %left '*' '/' '%'
 %left '!' '~' PPLUS
 
@@ -161,6 +167,7 @@ void  yyerror(char const *s);
 %type <eval> std_floor std_ceil std_round
 %type <eval> std_real std_imag std_comp std_fase std_mod2 std_conj
 %type <eval> exp terminal
+%type <eval> dirac dchain
 
 %%
 
@@ -203,9 +210,8 @@ declar : TYPE id_list                               ';'
          // array declaration initialized between braces, as in C (the values go to the .mif)
        | TYPE ID '[' INUM ']'              '=' '{' ini_list '}' ';' {declar_arr_1d_ini($2,$4   );}
        | TYPE ID '[' INUM ']' '[' INUM ']' '=' '{' ini_list '}' ';' {declar_arr_2d_ini($2,$4,$7);}
-         // array declaration with Dirac-notation initialization (on demand)
-       | TYPE ID '[' INUM ']' '#' '|' ID '|' ID BRA ';' {declar_Mv    ($2,$4,$8,$10);}
-       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2,$4,$7, $9);}
+         // array declaration with a Dirac expression
+       | TYPE ID '[' INUM ']' '#' exp ';' {declar_dirac($2,$4,$7);}
 
 id_list : IID | id_list ',' IID
 
@@ -276,7 +282,6 @@ stmt_full: '{' stmt_list '}' // statement block
          |       std_out     // stdlib data output
          |      std_toma     // hands a value to the partner processor
          |      std_fout     // stdlib data output (converting to float)
-         |      std_vout     // data output with Dirac notation
          |      std_copy     // copies the value of the first argument into the second (no type checking)
          |     void_call     // subroutine call
          |   return_call     // function return
@@ -337,7 +342,6 @@ std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0,
 std_fase : FASE '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_FASE, 0,  $3,   NULL);}  // phase(comp)
 std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_MOD2, 0,  $3,   NULL);}  // |comp|^2
 std_conj : CONJ '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_CONJ, 0,  $3,   NULL);}  // conjugate
-std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_append(stmt_vout($3, $5, $7));}  // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
 
@@ -422,17 +426,9 @@ assignment : ID  '=' exp ';'                          {stmt_append(stmt_assign($
            | ID  '[' exp ')'  '='     exp ';'         {stmt_append(stmt_array_assign($1, $3, NULL, $6, 1));}
            // 2D array
            | ID  '[' exp ']' '[' exp ']' '=' exp ';'  {stmt_append(stmt_array_assign($1, $3, $6,   $9, 0));}
-           // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
-           | ID '#'     '|' ID '|' ID BRA ';'                    {stmt_append(stmt_dirac_Mv   ($1, $4, $6));}        // A # |B|a>
-           | ID '#' exp '|' ID BRA ';'                           {stmt_append(stmt_dirac_cv   ($1, $3, $5));}        // a # c|b>
-           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {stmt_append(stmt_dirac_apcb ($1, $4, $7, $9));}    // a # |b> + c|d>
-           | ID '#'     '|' ID BRA KET  ID '|' ';'               {stmt_append(stmt_dirac_vvt  ($1, $4, $7));}        // A # |a><b|
-           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {stmt_append(stmt_dirac_Mmvvt($1, $4, $8, $11));}   // A # B - |a><b|
-           | ID '#' exp '|' ID '|' ';'                           {stmt_append(stmt_dirac_cM   ($1, $3, $5));}        // A # c|B|
-           | ID '#' exp     EYE ';'                              {stmt_append(stmt_dirac_cI   ($1, $3));}            // A # c|I|
-           | ID '#'         VZERO ';'                            {stmt_append(stmt_dirac_v0   ($1));}                // a # |0>
-           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {stmt_append(stmt_dirac_cvin ($1, $3, $7));}        // a # |in(0)>
-           | ID '#' exp '-' '>' '|' ID BRA ';'                   {stmt_append(stmt_dirac_shift($1, $3, $7));}        // a # c -> |a>
+           // linear algebra with Dirac notation: a vector or matrix receives an expression
+           | ID '#' exp ';'                                      {stmt_append(stmt_dirac      ($1, $3));}            // A # |B|a>, a # |b> + c|d>, ...
+           | ID '#' exp '-' '>' DBAR ID BRA ';'                  {stmt_append(stmt_dirac_shift($1, $3, $7));}        // a # c -> |a>
 
 // expressions ----------------------------------------------------------------
 
@@ -505,9 +501,24 @@ exp:       terminal                           {$$ = $1;}
          | exp  GREQU  exp                    {$$ = expr_binop(OP_GE, $1, $3);}
          | exp  LESEQ  exp                    {$$ = expr_binop(OP_LE, $1, $3);}
          | exp  DIF    exp                    {$$ = expr_binop(OP_NE, $1, $3);}
-         // linear algebra with exp return (Dirac notation)
-         | KET ID '|' ID BRA                  {$$ = expr_inner(expr_var(v_table[$2].type, $2),
-                                                            expr_var(v_table[$4].type, $4));}
+         // Dirac notation: a term, and the product by juxtaposition
+         | dirac                              {$$ = $1;}
+         | exp dirac %prec JUXT               {$$ = expr_dirac_prod($1, $2);}
+         // a bar and a name that is not an array, closed as a ket: say so
+         // instead of a syntax error
+         |     '|' ID BRA                     {dirac_not_vector($2); $$ = NULL;}
+         | exp '|' ID BRA                     {dirac_not_vector($3); $$ = NULL;}
+
+// a Dirac term: a chain of names between bars (dchain), |I|, |0> or |in(p)>
+dirac    : dchain BRA                         {$$ = dirac_close($1, 1);}
+         | dchain '|'                         {$$ = dirac_close($1, 0);}
+         | EYE                                {$$ = expr_dirac_const(DIRAC_EYE);}
+         | VZERO                              {$$ = expr_dirac_const(DIRAC_ZERO);}
+         | KETIN                              {$$ = expr_dirac_in($1);}
+
+dchain   : DBAR ID                            {$$ = dirac_open(0, $2);}
+         | KET  ID                            {$$ = dirac_open(1, $2);}
+         | dchain DBAR ID                     {$$ = dirac_push($1, $3);}
 
 // terminals used in reductions for expressions -------------------------------
 // Pure tree-construction: no emit, no walker call. The expression's emit
