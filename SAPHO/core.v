@@ -111,10 +111,10 @@ generate if ((TOM) != 0) begin : tom_sel assign wTOM = (opcode == OP_TOM) & ~tom
          else            begin : tom_sel assign wTOM = 1'b0;                        end endgenerate
 generate if ((CAD) != 0) begin : cad_sel assign wCAD = (opcode == OP_CAD) & ~cad_go; end
          else            begin : cad_sel assign wCAD = 1'b0;                        end endgenerate
-// PROTOTYPE (array-unit.md 4b): DOT waits in place while the controller runs
-localparam [NBOPCO-1:0] OP_DOT = 108;
+// PROTOTYPE (array-unit.md 4b): DOT and DOTB wait in place while the controller runs
+localparam [NBOPCO-1:0] OP_DOT = 108, OP_DOTB = 109;
 wire wDOT;
-generate if ((DOT) != 0) begin : dot_sel assign wDOT = (opcode == OP_DOT) & ~dot_go; end
+generate if ((DOT) != 0) begin : dot_sel assign wDOT = ((opcode == OP_DOT) | (opcode == OP_DOTB)) & ~dot_go; end
          else            begin : dot_sel assign wDOT = 1'b0;                        end endgenerate
 
 assign pc_self = wTOM | wCAD | wDOT;
@@ -1108,7 +1108,10 @@ endgenerate
 // Arithmetic Logic Unit ------------------------------------------------------
 
 wire signed [NUBITS-1:0] ula_out;
+wire signed [NUBITS-1:0] ula_alu;    // the ALU's own output
 wire        [NUBITS-1:0] ula_fast;   // ula_out without the normalised operations
+wire                     dot_wr;     // PROTOTYPE (array-unit.md 4b): DOT's result takes the ALU's place
+wire        [NUBITS-1:0] dot_res;
 
 ula #(.NUBITS (NUBITS ),
       .NBMANT (NBMANT ),
@@ -1164,7 +1167,13 @@ ula #(.NUBITS (NUBITS ),
 	  .F_SU2  (F_SU2   | SF_SU2  ),
 	  .F_SCL  (F_SCL   | SF_SCL  ),
 	  .XPO    (XPO              ),
-	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out, ula_fast, clk);
+	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_alu, ula_fast, clk);
+
+// PROTOTYPE (array-unit.md 4b): in the clock DOT executes, its rounded result
+// is the word the acc, the stack and the memories get, in place of the ALU's
+// (whose in1 path would add the rounding to the ALU: 47.5 ns). ula_fast does
+// not see it: asmcomp puts a NOP between a DOT and a JIZ/LDI/ILI
+assign ula_out = (dot_wr) ? dot_res : ula_alu;
 
 assign sp_in = ula_out;
 
@@ -1235,22 +1244,23 @@ generate
 
 		if (DOT) begin : dot
 			// PROTOTYPE (array-unit.md 4b): while it reads, the controller
-			// takes both ports' addresses; the inner product enters ALU
-			// input in1 through the same mux as the memories, in the clock
-			// after DOT goes on (DOT's ALU operation passes in1, as LOD)
+			// takes both ports' addresses; the inner product takes the ALU's
+			// place (dot_wr) in the clock after DOT goes on
 			wire             busy;
 			wire [MARRW-1:0] ra, rb;
-			wire [NUBITS-1:0] res;
 			arr_dot #(.NUBITS(NUBITS), .NBMANT(NBMANT), .NBEXPO(NBEXPO), .MARRW(MARRW), .FROUND(FROUND), .NBOPCO(NBOPCO))
-			        ctl(clk, rst, id_opcode, ula_out, sp_data, ula_fast, dot_go, dot_pop, busy, ra, rb, arr_data_rd, arr_data_b, res);
+			        ctl(clk, rst, id_opcode, if_operand[MARRW-1:0], racc, sp_data, ula_fast, dot_go, dot_pop, busy, ra, rb, arr_data_rd, arr_data_b, dot_res);
 			assign arr_addr_rd = (busy) ? ra : c_rd;
 			assign arr_addr_wr = (busy) ? rb : c_wa;
 			reg mac_rd = 1'b0;
 			always @ (posedge clk) if (rst) mac_rd <= 1'b0; else mac_rd <= dot_pop;
-			assign mem_rd_sel = (mac_rd) ? res : (arr_rd) ? arr_data_rd : mem_data_rd;
+			assign dot_wr     = mac_rd;
+			assign mem_rd_sel = (arr_rd) ? arr_data_rd : mem_data_rd;
 		end else begin : dot
 			assign dot_go      = 1'b0;
 			assign dot_pop     = 1'b0;
+			assign dot_wr      = 1'b0;
+			assign dot_res     = {NUBITS{1'b0}};
 			assign arr_addr_rd = c_rd;
 			assign arr_addr_wr = c_wa;
 			assign mem_rd_sel  = (arr_rd) ? arr_data_rd : mem_data_rd;
@@ -1258,6 +1268,8 @@ generate
 	end else begin : mem_access
 		assign dot_go      = 1'b0;
 		assign dot_pop     = 1'b0;
+		assign dot_wr      = 1'b0;
+		assign dot_res     = {NUBITS{1'b0}};
 	if (STI | LDI | ILI | ISI) begin : ind
 		mem_ctrl #(.NUBITS(NUBITS),
 		           .MDATAW(MDATAW),
@@ -1304,14 +1316,17 @@ endmodule
 // PROTOTYPE (docs/design/array-unit.md, step 4b): the inner product **********
 // ****************************************************************************
 
-// The controller of DOT N. In the clock DOT is decoded and the controller is
-// idle it takes pointer a from the stack top and pointer b from the word the
-// acc gets (ula_out, as SET), and DOT waits in place (dot_go low). In the next
-// clock the ALU passes N (DOT reads it as LOD): the controller takes it from
-// ula_fast. Then N clocks of reads, a[k] on port A and b[k] on port B, each
-// pair into the MAC the clock after, and the MAC's three stages drained. When
-// the sum is ready dot_go goes high: the next DOT seen goes on, pops pointer a
-// (dot_pop, the same clock) and the controller is idle again.
+// The controller of DOT N and DOTB b (2026-10-25). Pair k is read in one
+// clock, multiplied and summed (mac_a1) in the next, and the sum rounded
+// (mac_round, combinational) in the clock DOT executes, into ula_out: DOT goes
+// on (DONE, dot_go high, pointer a popped) the clock the last pair is summed.
+//   DOT N  (LEA a; P_LEA b; DOT N), N + 2 clocks: clock 0 decodes DOT, which
+//          reads N as LOD; in clock 1 pointer a is the stack top, pointer b the
+//          acc, N comes out of the ALU (ula_fast): pair 0 is read.
+//   DOTB b (LEA a; P_LOD N; DOTB b), N + 1 clocks: in clock 0 pointer a is the
+//          stack top, b the operand and N comes out of the ALU (P_LOD N):
+//          pair 0 is read at once.
+// Reads past N are harmless: only valid pairs (rv) enter the MAC.
 module arr_dot
 #(
 	parameter NUBITS = 32,
@@ -1323,60 +1338,66 @@ module arr_dot
 )(
 	input               clk, rst,
 	input  [NBOPCO-1:0] opcode,          // the instruction decoded now
-	input  [NUBITS-1:0] acc,             // the word the acc gets this clock: pointer b
+	input  [MARRW -1:0] opr,             // its operand: pointer b of DOTB
+	input  [NUBITS-1:0] acc,             // the acc register: pointer b of DOT, the clock after it starts
 	input  [NUBITS-1:0] stk,             // the data-stack top: pointer a
-	input  [NUBITS-1:0] nval,            // the ALU before the normaliser: N, the clock after DOT starts
+	input  [NUBITS-1:0] nval,            // the ALU before the normaliser: N
 	output              go,              // DOT may go on
 	output              pop,             // DOT goes on now: pop pointer a
 	output              busy,            // the controller drives the array memory's addresses
 	output [MARRW -1:0] ra, rb,
 	input  [NUBITS-1:0] qa, qb,          // the words read the clock before
-	output [NUBITS-1:0] res              // the inner product, rounded once
+	output [NUBITS-1:0] res              // the inner product, rounded once (combinational)
 );
 
-localparam [NBOPCO-1:0] OP_DOT = 108;
-localparam [2:0] IDLE = 0, LOAD = 1, RUN = 2, DRAIN = 3, DONE = 4;
+localparam [NBOPCO-1:0] OP_DOT = 108, OP_DOTB = 109;
+localparam [1:0] IDLE = 0, FIRST = 1, RUN = 2, DONE = 3;
 
-reg [2:0]        st  = IDLE;
+reg [1:0]        st  = IDLE;
 reg [MARRW -1:0] ka  = 0, kb = 0;     // the next addresses to read
-reg [NUBITS-1:0] cnt = 0;             // terms still to read
-reg [2:0]        dr  = 0;             // clocks still to drain
+reg [NUBITS-1:0] cnt = 0;             // N, then counted down by the reads
 reg              rv  = 1'b0;          // the words on qa, qb are a term
-reg              clr = 1'b0;          // clears the sum
+reg              clr = 1'b0;          // the sum restarts with the term now on qa, qb
 
-wire dot = (opcode == OP_DOT);
+wire dot   = (opcode == OP_DOT);
+wire dotb  = (opcode == OP_DOTB);
+wire start = (st == IDLE) & dotb;     // DOTB reads pair 0 in the clock it is decoded
+wire first = (st == FIRST) | start;   // pair 0 read now, N on nval
 
 always @ (posedge clk) begin
 	rv  <= 1'b0;
 	clr <= 1'b0;
 	if (rst) st <= IDLE;
-	else case (st)
-		IDLE : if (dot) begin ka <= stk[MARRW-1:0]; kb <= acc[MARRW-1:0]; clr <= 1'b1; st <= LOAD; end
-		LOAD : begin
+	else begin
+		if (st == IDLE && (dot | dotb)) clr <= 1'b1;
+		if (first) begin
+			ka  <= ra + 1'b1;
+			kb  <= rb + 1'b1;
 			cnt <= nval;
-			dr  <= 3'd4;              // the read, then the MAC's three stages
-			st  <= ($signed(nval) > 0) ? RUN : DRAIN;
-		end
-		RUN  : begin
-			rv  <= 1'b1;
-			ka  <= ka + 1'b1;
-			kb  <= kb + 1'b1;
-			cnt <= cnt - 1'b1;
-			if (cnt == 1) st <= DRAIN;
-		end
-		DRAIN: if (dr == 0) st <= DONE; else dr <= dr - 1'b1;
-		DONE : if (dot) st <= IDLE;
-		default: st <= IDLE;
-	endcase
+			rv  <= ($signed(nval) > 0);
+			st  <= ($signed(nval) > 1) ? RUN : DONE;
+		end else case (st)
+			IDLE : if (dot) st <= FIRST;
+			RUN  : begin              // pair N-cnt+1, the last when cnt is 2
+				rv  <= 1'b1;
+				ka  <= ka + 1'b1;
+				kb  <= kb + 1'b1;
+				cnt <= cnt - 1'b1;
+				if (cnt == 2) st <= DONE;
+			end
+			DONE : if (dot | dotb) st <= IDLE;
+			default: ;
+		endcase
+	end
 end
 
-assign ra   = ka;
-assign rb   = kb;
-assign busy = (st == RUN);
+assign ra   = (first) ? stk[MARRW-1:0]           : ka;
+assign rb   = (start) ? opr : (first) ? acc[MARRW-1:0] : kb;
+assign busy = first | (st == RUN);
 assign go   = (st == DONE);
-assign pop  = dot & go;
+assign pop  = (dot | dotb) & go;
 
-mac_a #(.NB(NUBITS), .M(NBMANT), .E(NBEXPO), .W(2*NBMANT+8), .FR(FROUND)) mac (clk, clr, rv, qa, qb, res);
+mac_a1 #(.NB(NUBITS), .M(NBMANT), .E(NBEXPO), .W(2*NBMANT+8), .FR(FROUND)) mac (clk, clr, rv, qa, qb, res);
 
 endmodule
 
@@ -1455,6 +1476,40 @@ wire signed [XB-1:0] en_ = (d >= 0) ? pe2 : ea;
 wire signed [W+1:0] sum = vs + ps;
 always @ (posedge clk)
 	if (clr) begin acc <= 0; ea <= 0; end
+	else if (v2) begin
+		if (acc == 0)                 begin acc <= p2;        ea <= pe2;     end
+		else if (sum[W+1] != sum[W])  begin acc <= sum[W+1:1]; ea <= en_ + 1; end
+		else                          begin acc <= sum[W:0];   ea <= en_;     end
+	end
+mac_round #(NB, M, E, W+1, XB, FR) r (acc, ea, res);
+endmodule
+
+// mac_a with its three stages in one (2026-10-25): the product, its alignment
+// to W bits and the add into the sum the clock the pair leaves the memory. The
+// same arithmetic, so the same words; the path is estimated at about 26 ns
+// from the step 2 fits (3.1 + 5.1 + 15.7 ns and the memory's output), to be
+// measured in the processor
+module mac_a1 #(parameter NB = 32, M = 23, E = 8, W = 54, FR = 2) (
+	input           clk, clr, en,
+	input  [NB-1:0] a, b,
+	output [NB-1:0] res
+);
+localparam XB = E + 4;
+wire signed  [E-1:0] ea_ = a[NB-2:M], eb_ = b[NB-2:M];
+wire signed    [E:0] e1  = ea_ + eb_;
+wire       [2*M-1:0] m1  = a[M-1:0] * b[M-1:0];
+wire           [W:0] up  = {{W+1-2*M{1'b0}}, m1} << (W - 2*M);
+wire                 v2  = en && (m1 != 0);
+wire signed    [W:0] p2  = (a[NB-1] ^ b[NB-1]) ? -up : up;
+wire signed [XB-1:0] pe2 = e1 - (W - 2*M);
+reg signed [W:0] acc; reg signed [XB-1:0] ea;
+wire signed [XB:0] d = pe2 - ea;
+wire signed [W:0] vs = (d >= 0) ? ((d > W) ? $signed({W+1{acc[W]}}) : acc >>> d) : acc;
+wire signed [W:0] ps = (d >= 0) ? p2 : ((-d > W) ? $signed({W+1{p2[W]}}) : p2 >>> (-d));
+wire signed [XB-1:0] en_ = (d >= 0) ? pe2 : ea;
+wire signed [W+1:0] sum = vs + ps;
+always @ (posedge clk)
+	if (clr)                          begin acc <= (v2) ? p2 : 0; ea <= (v2) ? pe2 : 0; end   // a new sum, starting with this term
 	else if (v2) begin
 		if (acc == 0)                 begin acc <= p2;        ea <= pe2;     end
 		else if (sum[W+1] != sum[W])  begin acc <= sum[W+1:1]; ea <= en_ + 1; end

@@ -190,6 +190,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
    "LEA"   p1_opcode(24); // load-effective-address; counts as 1 var (the target) + 1 synthetic constant (the materialised address)
  "P_LEA"   p1_opcode(24); // PROTOTYPE (array-unit.md 4b): PUSH + LEA
    "DOT"   p1_opcode(18); // PROTOTYPE (array-unit.md 4b): inner product, N from memory
+  "DOTB"   p1_opcode(28); // PROTOTYPE (array-unit.md 4b): inner product, b the array named (as LDI's operand)
 
    /* the read of a division's result: the third word of `<div> x; NOP; <read>` */
 
