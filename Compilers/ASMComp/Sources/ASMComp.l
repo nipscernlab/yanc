@@ -190,10 +190,14 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
    "XPO"   eval_opcode( 74, 0, yytext,    "XPO"  ); // base-2 exponent of float (acc) as int
  "XPO_M"   eval_opcode( 75,18, yytext,  "XPO_M"  ); // base-2 exponent of float (memory) as int
 
+   /* PROTOTYPE (docs/design/array-unit.md, step 4b): the inner product of the array unit */
+   "DOT"   eval_opcode(108,18, yytext,    "DOT"  ); // acc = <a|b>, N terms from memory, a at the stack top (popped), b in acc
+
    /* pseudo instructions */
    /* avoid indirect addressing */
 
    "LEA"   eval_opcode(  1,24, yytext,    "LOD"  ); // load-effective-address: acc = &var (pseudo, expands to LOD <const>)
+ "P_LEA"   eval_opcode(  2,24, yytext,  "P_LOD"  ); // PROTOTYPE (array-unit.md 4b): PUSH + LEA (expands to P_LOD <const>)
 
    /* the read of a division's result: the third word of `<div> x; NOP; <read>`, */
    /* an alias of the division's own opcode with operand 0 (docs/design/pipeln-and-division.md, section 4) */

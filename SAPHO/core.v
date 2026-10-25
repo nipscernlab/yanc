@@ -64,11 +64,13 @@ module prefetch
 	parameter              CAL        = 0,
 	parameter              JIZ        = 0,
 	parameter              TOM        = 0,
-	parameter              CAD        = 0
+	parameter              CAD        = 0,
+	parameter              DOT        = 0  // PROTOTYPE (array-unit.md 4b)
 )(
 	 input                        rst       ,
 	 input                        tom_go    , // the partner took my value (TOM may go on)
 	 input                        cad_go    , // the partner offers a value (CAD may go on)
+	 input                        dot_go    , // PROTOTYPE: the inner product is ready (DOT may go on)
 	 input    [MINSTW       -1:0] self_addr , // address of the instruction now decoded (TOM/CAD wait)
 	output                        pc_self   , // TOM/CAD waits: fetch self_addr again
 	 input    [MINSTW       -1:0] pc_instr  ,
@@ -109,8 +111,13 @@ generate if ((TOM) != 0) begin : tom_sel assign wTOM = (opcode == OP_TOM) & ~tom
          else            begin : tom_sel assign wTOM = 1'b0;                        end endgenerate
 generate if ((CAD) != 0) begin : cad_sel assign wCAD = (opcode == OP_CAD) & ~cad_go; end
          else            begin : cad_sel assign wCAD = 1'b0;                        end endgenerate
+// PROTOTYPE (array-unit.md 4b): DOT waits in place while the controller runs
+localparam [NBOPCO-1:0] OP_DOT = 108;
+wire wDOT;
+generate if ((DOT) != 0) begin : dot_sel assign wDOT = (opcode == OP_DOT) & ~dot_go; end
+         else            begin : dot_sel assign wDOT = 1'b0;                        end endgenerate
 
-assign pc_self = wTOM | wCAD;
+assign pc_self = wTOM | wCAD | wDOT;
 assign wJMP    = wJMPZ | pc_self;
 
 wire pc_load;
@@ -143,7 +150,7 @@ assign operand    =  mem_instr[NBOPER       -1:     0];
 // the jump target: the operand, or self_addr when TOM/CAD wait (only with
 // TOM or CAD in the program)
 wire [MINSTW-1:0] jmp_addr;
-generate if ((TOM) != 0 || (CAD) != 0) begin : jmp_tgt assign jmp_addr = (pc_self) ? self_addr : operand[MINSTW-1:0]; end
+generate if ((TOM) != 0 || (CAD) != 0 || (DOT) != 0) begin : jmp_tgt assign jmp_addr = (pc_self) ? self_addr : operand[MINSTW-1:0]; end
          else                          begin : jmp_tgt assign jmp_addr =                          operand[MINSTW-1:0]; end endgenerate
 
 generate if (ITRADD>0) begin : itr_fetch
@@ -264,12 +271,14 @@ module instr_fetch
 	parameter CAL    = 0,
 	parameter JIZ    = 0,
 	parameter TOM    = 0,
-	parameter CAD    = 0
+	parameter CAD    = 0,
+	parameter DOT    = 0     // PROTOTYPE (array-unit.md 4b)
 )(
 	input               clk, rst,
 	input               itr,
 	output              cheguei,
 	input               tom_go, cad_go,
+	input               dot_go,
 
 	input  [NBINST-1:0] instr,
 	output [MINSTW-1:0] addr,
@@ -313,8 +322,10 @@ wire [MINSTW-1:0] self_addr;
 // the address of the instruction now decoded, for a waiting TOM/CAD: the
 // instruction memory reads synchronously, so it is the address presented in
 // the previous cycle (only with TOM or CAD in the program)
+localparam WAITS = (TOM != 0 || CAD != 0 || DOT != 0);   // PROTOTYPE: DOT waits as TOM/CAD do
+
 generate
-	if (TOM != 0 || CAD != 0) begin : self_blk
+	if (WAITS) begin : self_blk
 		reg [MINSTW-1:0] r_self = 0;
 		always @ (posedge clk) r_self <= addr;
 		assign self_addr = r_self;
@@ -331,7 +342,8 @@ prefetch #(.MINSTW(MINSTW),
 		   .CAL   (CAL   ),
 		   .JIZ   (JIZ   ),
 		   .TOM   (TOM   ),
-		   .CAD   (CAD   )) pf(rst, tom_go, cad_go, self_addr, pf_self, pc_addr, opcode, operand,
+		   .CAD   (CAD   ),
+		   .DOT   (DOT   )) pf(rst, tom_go, cad_go, dot_go, self_addr, pf_self, pc_addr, opcode, operand,
                                pf_instr, pf_addr,
                                pc_load , acc,
                                pf_isp_push, pf_isp_pop,
@@ -350,11 +362,11 @@ endgenerate
 // what the PC loads on a jump: the operand, the return address, or the
 // waiting TOM/CAD's own address (each term only when its block exists)
 generate
-	if (CAL && (TOM || CAD)) begin : pcl_val
+	if (CAL && WAITS) begin : pcl_val
 		assign pc_lval = (pf_isp_pop) ? stack_out : (pf_self) ? self_addr : instr[MINSTW-1:0];
 	end else if (CAL) begin : pcl_val
 		assign pc_lval = (pf_isp_pop) ? stack_out : instr[MINSTW-1:0];
-	end else if (TOM || CAD) begin : pcl_val
+	end else if (WAITS) begin : pcl_val
 		assign pc_lval = (pf_self) ? self_addr : instr[MINSTW-1:0];
 	end else begin : pcl_val
 		assign pc_lval = instr[MINSTW-1:0];
@@ -617,6 +629,9 @@ module core
 	parameter    TOM   = 0,
 	parameter    CAD   = 0,
 
+	// PROTOTYPE (array-unit.md 4b): the inner product of the array unit
+	parameter    DOT   = 0,
+
 	// two-parameter arithmetic operations
 	parameter    ADD   = 0,
 	parameter  S_ADD   = 0,
@@ -764,7 +779,8 @@ module core
 	// PROTOTYPE (array-unit.md 4a): the array memory
 	output              arr_wr,
 	output [MARRW -1:0] arr_addr_rd, arr_addr_wr,
-	input  [NUBITS-1:0] arr_data_rd
+	input  [NUBITS-1:0] arr_data_rd,
+	input  [NUBITS-1:0] arr_data_b    // 4b: the word read on the second port (the address is arr_addr_wr)
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
  , output [MINSTW-1:0] pc_sim_val
@@ -777,6 +793,7 @@ wire              if_acc;
 wire [NBOPCO-1:0] if_opcode;
 wire [NBOPER-1:0] if_operand;
 wire              tom_go, cad_go;
+wire              dot_go;           // PROTOTYPE (array-unit.md 4b): the inner product is ready
 
 instr_fetch #(
 	.NBINST     (NBINST     ),
@@ -789,7 +806,9 @@ instr_fetch #(
 	.CAL        (CAL        ),
 	.JIZ        (JIZ        ),
 	.TOM        (TOM        ),
-	.CAD        (CAD        )) instr_fetch (.clk    (clk       ),
+	.CAD        (CAD        ),
+	.DOT        (DOT        )) instr_fetch (.clk    (clk       ),
+	                                .dot_go (dot_go    ),
 	                                .rst    (rst       ),
 	                                .itr    (itr       ),
 	                                .cheguei(cheguei   ),
@@ -1031,7 +1050,8 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
 			 .F_SCL  ( F_SCL  ),
 			.SF_SCL  (SF_SCL  ),
 			   .XPO  (   XPO  ),
-			 .XPO_M  ( XPO_M  )) id(clk, rst,
+			 .XPO_M  ( XPO_M  ),
+			   .DOT  (   DOT  )) id(clk, rst,
                                     id_opcode,
                                     id_dsp_push, id_dsp_pop,
                                     id_ula_op,
@@ -1042,7 +1062,11 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
 // Data stack -----------------------------------------------------------------
 
 wire              sp_push = id_dsp_push;
-wire              sp_pop  = id_dsp_pop;
+// PROTOTYPE (array-unit.md 4b): DOT pops pointer a once, in the clock it
+// goes on; the pop only moves the stack pointer (ALU input in1 takes the
+// inner product, not the stack top)
+wire              dot_pop;
+wire              sp_pop  = id_dsp_pop | dot_pop;
 wire [NUBITS-1:0] sp_in, sp_data;
 
 stack #(.NADDR($clog2(DDEPTH)),
@@ -1185,6 +1209,8 @@ generate
 		// word comes out of the memories.
 		wire s      = if_operand[NBOPER-1];
 		wire to_arr = s | id_ldi | id_sti;
+		wire             c_wr;          // the core's access to the array memory
+		wire [MARRW-1:0] c_rd, c_wa;
 		if (STI | LDI | ILI | ISI) begin : ind
 			mem_ctrl #(.NUBITS(NUBITS),
 			           .MDATAW(MARRW),
@@ -1192,21 +1218,46 @@ generate
 			           .ILI(ILI),.ISI(ISI)) ac(.sti(id_sti), .ldi(id_ldi), .fft(id_fft), .wr(id_wr & to_arr),
 			                                   .ula(ula_out), .idx(ula_fast),
 			                                   .base_addr(if_operand[MARRW-1:0]), .stk_ofst(sp_data[MARRW-1:0]),
-			                                   .mem_wr(arr_wr), .mem_addr_rd(arr_addr_rd), .mem_addr_wr(arr_addr_wr), .mem_data_wr());
+			                                   .mem_wr(c_wr), .mem_addr_rd(c_rd), .mem_addr_wr(c_wa), .mem_data_wr());
 		end else begin : ind
-			assign arr_wr      = id_wr & s;
-			assign arr_addr_rd = if_operand[MARRW-1:0];
-			assign arr_addr_wr = if_operand[MARRW-1:0];
+			assign c_wr = id_wr & s;
+			assign c_rd = if_operand[MARRW-1:0];
+			assign c_wa = if_operand[MARRW-1:0];
 		end
 		assign mem_wr      = id_wr & ~to_arr;
 		assign mem_addr_rd = if_operand[MDATAW-1:0];
 		assign mem_addr_wr = if_operand[MDATAW-1:0];
 		assign mem_data_wr = ula_out;
+		assign arr_wr      = c_wr;      // the core is waiting on DOT while the controller reads: it writes nothing
 
 		reg arr_rd = 1'b0;
 		always @ (posedge clk) if (rst) arr_rd <= 1'b0; else arr_rd <= to_arr;
-		assign mem_rd_sel = (arr_rd) ? arr_data_rd : mem_data_rd;
+
+		if (DOT) begin : dot
+			// PROTOTYPE (array-unit.md 4b): while it reads, the controller
+			// takes both ports' addresses; the inner product enters ALU
+			// input in1 through the same mux as the memories, in the clock
+			// after DOT goes on (DOT's ALU operation passes in1, as LOD)
+			wire             busy;
+			wire [MARRW-1:0] ra, rb;
+			wire [NUBITS-1:0] res;
+			arr_dot #(.NUBITS(NUBITS), .NBMANT(NBMANT), .NBEXPO(NBEXPO), .MARRW(MARRW), .FROUND(FROUND), .NBOPCO(NBOPCO))
+			        ctl(clk, rst, id_opcode, ula_out, sp_data, ula_fast, dot_go, dot_pop, busy, ra, rb, arr_data_rd, arr_data_b, res);
+			assign arr_addr_rd = (busy) ? ra : c_rd;
+			assign arr_addr_wr = (busy) ? rb : c_wa;
+			reg mac_rd = 1'b0;
+			always @ (posedge clk) if (rst) mac_rd <= 1'b0; else mac_rd <= dot_pop;
+			assign mem_rd_sel = (mac_rd) ? res : (arr_rd) ? arr_data_rd : mem_data_rd;
+		end else begin : dot
+			assign dot_go      = 1'b0;
+			assign dot_pop     = 1'b0;
+			assign arr_addr_rd = c_rd;
+			assign arr_addr_wr = c_wa;
+			assign mem_rd_sel  = (arr_rd) ? arr_data_rd : mem_data_rd;
+		end
 	end else begin : mem_access
+		assign dot_go      = 1'b0;
+		assign dot_pop     = 1'b0;
 	if (STI | LDI | ILI | ISI) begin : ind
 		mem_ctrl #(.NUBITS(NUBITS),
 		           .MDATAW(MDATAW),
@@ -1247,4 +1298,167 @@ assign addr_in  = {NBIOIN{1'b0}};
 assign addr_out = {NBIOOU{1'b0}};
 end endgenerate
 
+endmodule
+
+// ****************************************************************************
+// PROTOTYPE (docs/design/array-unit.md, step 4b): the inner product **********
+// ****************************************************************************
+
+// The controller of DOT N. In the clock DOT is decoded and the controller is
+// idle it takes pointer a from the stack top and pointer b from the word the
+// acc gets (ula_out, as SET), and DOT waits in place (dot_go low). In the next
+// clock the ALU passes N (DOT reads it as LOD): the controller takes it from
+// ula_fast. Then N clocks of reads, a[k] on port A and b[k] on port B, each
+// pair into the MAC the clock after, and the MAC's three stages drained. When
+// the sum is ready dot_go goes high: the next DOT seen goes on, pops pointer a
+// (dot_pop, the same clock) and the controller is idle again.
+module arr_dot
+#(
+	parameter NUBITS = 32,
+	parameter NBMANT = 23,
+	parameter NBEXPO =  8,
+	parameter MARRW  =  4,
+	parameter FROUND =  0,
+	parameter NBOPCO =  7
+)(
+	input               clk, rst,
+	input  [NBOPCO-1:0] opcode,          // the instruction decoded now
+	input  [NUBITS-1:0] acc,             // the word the acc gets this clock: pointer b
+	input  [NUBITS-1:0] stk,             // the data-stack top: pointer a
+	input  [NUBITS-1:0] nval,            // the ALU before the normaliser: N, the clock after DOT starts
+	output              go,              // DOT may go on
+	output              pop,             // DOT goes on now: pop pointer a
+	output              busy,            // the controller drives the array memory's addresses
+	output [MARRW -1:0] ra, rb,
+	input  [NUBITS-1:0] qa, qb,          // the words read the clock before
+	output [NUBITS-1:0] res              // the inner product, rounded once
+);
+
+localparam [NBOPCO-1:0] OP_DOT = 108;
+localparam [2:0] IDLE = 0, LOAD = 1, RUN = 2, DRAIN = 3, DONE = 4;
+
+reg [2:0]        st  = IDLE;
+reg [MARRW -1:0] ka  = 0, kb = 0;     // the next addresses to read
+reg [NUBITS-1:0] cnt = 0;             // terms still to read
+reg [2:0]        dr  = 0;             // clocks still to drain
+reg              rv  = 1'b0;          // the words on qa, qb are a term
+reg              clr = 1'b0;          // clears the sum
+
+wire dot = (opcode == OP_DOT);
+
+always @ (posedge clk) begin
+	rv  <= 1'b0;
+	clr <= 1'b0;
+	if (rst) st <= IDLE;
+	else case (st)
+		IDLE : if (dot) begin ka <= stk[MARRW-1:0]; kb <= acc[MARRW-1:0]; clr <= 1'b1; st <= LOAD; end
+		LOAD : begin
+			cnt <= nval;
+			dr  <= 3'd4;              // the read, then the MAC's three stages
+			st  <= ($signed(nval) > 0) ? RUN : DRAIN;
+		end
+		RUN  : begin
+			rv  <= 1'b1;
+			ka  <= ka + 1'b1;
+			kb  <= kb + 1'b1;
+			cnt <= cnt - 1'b1;
+			if (cnt == 1) st <= DRAIN;
+		end
+		DRAIN: if (dr == 0) st <= DONE; else dr <= dr - 1'b1;
+		DONE : if (dot) st <= IDLE;
+		default: st <= IDLE;
+	endcase
+end
+
+assign ra   = ka;
+assign rb   = kb;
+assign busy = (st == RUN);
+assign go   = (st == DONE);
+assign pop  = dot & go;
+
+mac_a #(.NB(NUBITS), .M(NBMANT), .E(NBEXPO), .W(2*NBMANT+8), .FR(FROUND)) mac (clk, clr, rv, qa, qb, res);
+
+endmodule
+
+// The MAC, variant A (array-unit.md section 4.2), copied unchanged from
+// Scripts/hw/mac_study/mac.v, where it is checked bit for bit against its
+// model (check.sh) ---------------------------------------------------------
+
+module mac_prod #(parameter NB = 32, M = 23, E = 8) (
+	input                    clk, en,
+	input           [NB-1:0] a, b,
+	output reg               v,
+	output reg               s,
+	output reg signed [E:0]  e,
+	output reg     [2*M-1:0] m
+);
+wire signed [E-1:0] ea = a[NB-2:M], eb = b[NB-2:M];
+always @ (posedge clk) begin
+	v <= en;
+	s <= a[NB-1] ^ b[NB-1];
+	e <= ea + eb;
+	m <= a[M-1:0] * b[M-1:0];
+end
+endmodule
+
+module mac_round #(parameter NB = 32, M = 23, E = 8, W = 64, XB = 12, FR = 2) (
+	input  signed [W-1:0]  acc,
+	input  signed [XB-1:0] lsb,
+	output        [NB-1:0] res
+);
+wire          neg = acc[W-1];
+wire [W-1:0]  mag = neg ? -acc : acc;
+integer k, n;
+always @ (*) begin
+	n = 0;
+	for (k = 0; k < W; k = k + 1) if (mag[k]) n = k + 1;
+end
+wire signed [15:0] sh = n - M;
+reg  [W:0]   low;
+reg  [M:0]   q;
+reg          up;
+reg signed [XB+1:0] eo;
+always @ (*) begin
+	if (sh > 0) begin
+		q   = mag >> sh;
+		low = mag & (({{W{1'b0}}, 1'b1} << (sh - 1)) - 1);
+		up  = (FR == 2) && mag[sh - 1] && ((low != 0) || q[0]);
+	end else begin
+		q   = mag << (-sh);
+		low = 0;
+		up  = 1'b0;
+	end
+	q  = q + up;
+	eo = lsb + sh;
+	if (q[M]) begin q = q >> 1; eo = eo + 1; end
+end
+wire [E-1:0] ezero = {1'b1, {E-1{1'b0}}};
+assign res = (mag == 0) ? {1'b0, ezero, {M{1'b0}}} : {neg, eo[E-1:0], q[M-1:0]};
+endmodule
+
+module mac_a #(parameter NB = 32, M = 23, E = 8, W = 54, FR = 2) (
+	input           clk, clr, en,
+	input  [NB-1:0] a, b,
+	output [NB-1:0] res
+);
+localparam XB = E + 4;
+wire v1, s1; wire signed [E:0] e1; wire [2*M-1:0] m1;
+mac_prod #(NB, M, E) p (clk, en, a, b, v1, s1, e1, m1);
+wire [W:0] up = {{W+1-2*M{1'b0}}, m1} << (W - 2*M);
+reg  v2; reg signed [W:0] p2; reg signed [XB-1:0] pe2;
+always @ (posedge clk) begin v2 <= v1 && (m1 != 0); p2 <= s1 ? -up : up; pe2 <= e1 - (W - 2*M); end
+reg signed [W:0] acc; reg signed [XB-1:0] ea;
+wire signed [XB:0] d = pe2 - ea;
+wire signed [W:0] vs = (d >= 0) ? ((d > W) ? $signed({W+1{acc[W]}}) : acc >>> d) : acc;
+wire signed [W:0] ps = (d >= 0) ? p2 : ((-d > W) ? $signed({W+1{p2[W]}}) : p2 >>> (-d));
+wire signed [XB-1:0] en_ = (d >= 0) ? pe2 : ea;
+wire signed [W+1:0] sum = vs + ps;
+always @ (posedge clk)
+	if (clr) begin acc <= 0; ea <= 0; end
+	else if (v2) begin
+		if (acc == 0)                 begin acc <= p2;        ea <= pe2;     end
+		else if (sum[W+1] != sum[W])  begin acc <= sum[W+1:1]; ea <= en_ + 1; end
+		else                          begin acc <= sum[W:0];   ea <= en_;     end
+	end
+mac_round #(NB, M, E, W+1, XB, FR) r (acc, ea, res);
 endmodule

@@ -126,6 +126,8 @@ static const as_isa isa[] = {
     {"XPO", "none", "-", "-", "-"},
     {"XPO_M", "data", "r", "-", "-"},
     {"LEA", "lea", "addr", "-", "-"},
+    {"P_LEA", "lea", "addr", "-", "push"},   // PROTOTYPE (array-unit.md 4b)
+    {"DOT", "data", "r", "-", "pop"},        // PROTOTYPE (array-unit.md 4b): the arrays it reads are not seen here
     {"LOD_V", "offset", "r", "-", "-"},
     {"QUO", "none", "-", "-", "-"},
     {"REM", "none", "-", "-", "-"},

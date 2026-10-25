@@ -79,6 +79,39 @@ end
 
 endmodule
 
+// PROTOTYPE (docs/design/array-unit.md, step 4b): the array memory with two
+// read ports, port B also the write port; each port returns the word it
+// writes (the form Quartus takes as RAM, Scripts/hw/mac_study/mem.v)
+module mem_arr2
+#(
+	parameter NADDRE =  8,
+	parameter NBDATA = 32,
+	parameter FNAME  = "arr.mif"
+)(
+	input                                  clk,
+	input             [$clog2(NADDRE)-1:0] addr_a,
+	output reg signed [NBDATA        -1:0] q_a,
+	input                                  we_b,
+	input             [$clog2(NADDRE)-1:0] addr_b,
+	input      signed [NBDATA        -1:0] d_b,
+	output reg signed [NBDATA        -1:0] q_b
+);
+
+reg [NBDATA-1:0] mem [0:NADDRE-1];
+
+`ifdef YOSYS
+`else
+	initial $readmemb(FNAME, mem);
+`endif
+
+always @ (posedge clk) q_a <= mem[addr_a];
+always @ (posedge clk) begin
+	if (we_b) begin mem[addr_b] <= d_b; q_b <= d_b; end
+	else q_b <= mem[addr_b];
+end
+
+endmodule
+
 // ****************************************************************************
 // Main circuit ***************************************************************
 // ****************************************************************************
@@ -126,6 +159,7 @@ module processor
 	parameter MARRS  = 2,               // Array-memory size
 	parameter MARRW  = $clog2(MARRS),   // Number of address bits for the array memory
 	parameter AFILE  = "arr.mif",       // File with the array-memory contents
+	parameter DOT    = 0,               // PROTOTYPE (array-unit.md 4b): the inner product
 
 	// links to partner processors (docs/design/toma-and-cade-links.md), set by asmcomp
 	// from the program: link k is built only where its bit is set
@@ -344,6 +378,7 @@ wire        [MDATAW-1:0] mem_addr_rd;
 wire                     arr_wr;
 wire        [MARRW -1:0] arr_addr_rd, arr_addr_wr;
 wire signed [NUBITS-1:0] arr_data_in;
+wire signed [NUBITS-1:0] arr_data_b;   // 4b: the second port's read
 
 // core -----------------------------------------------------------------------
 
@@ -364,6 +399,7 @@ core #(.NBOPCO ( NBOPCO ),
        .MINSTW ( MINSTW ),
        .ARRMEM ( ARRMEM ),
        .MARRW  ( MARRW  ),
+       .DOT    ( DOT    ),
        .NUBITS ( NUBITS ),
        .NBMANT ( NBMANT ),
        .NBEXPO ( NBEXPO ),
@@ -487,7 +523,7 @@ core #(.NBOPCO ( NBOPCO ),
                                 mem_wr, mem_addr_rd, mem_addr_wr, mem_data_in, mem_data_out,
                                 io_in, addr_in, addr_out, req_in, out_en, itr, cheguei,
                                 toma, cade, valeu, taqui, cade_dado, toma_dado,
-                                arr_wr, arr_addr_rd, arr_addr_wr, arr_data_in
+                                arr_wr, arr_addr_rd, arr_addr_wr, arr_data_in, arr_data_b
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
@@ -512,12 +548,19 @@ mem_data # (.NADDRE(MDATAS),
 // step 4a: the core reads on one port and writes on the other, as the data
 // memory; the controller of step 4b will take them while a sequence runs
 
-generate if (ARRMEM) begin : marr
+generate if (ARRMEM && DOT) begin : marr
+// 4b: port A reads (the core, or a[k]); port B writes for the core or reads b[k]
+mem_arr2 # (.NADDRE(MARRS ),
+            .NBDATA(NUBITS),
+            .FNAME (AFILE )) marr(clk, arr_addr_rd, arr_data_in, arr_wr, arr_addr_wr, mem_data_out, arr_data_b);
+end else if (ARRMEM) begin : marr
 mem_data # (.NADDRE(MARRS ),
             .NBDATA(NUBITS),
             .FNAME (AFILE )) marr(clk, arr_wr, arr_addr_rd, arr_addr_wr, mem_data_out, arr_data_in);
+assign arr_data_b = 0;
 end else begin : marr
 assign arr_data_in = 0;
+assign arr_data_b  = 0;
 end endgenerate
 
 endmodule
