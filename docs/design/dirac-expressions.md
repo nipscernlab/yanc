@@ -242,9 +242,12 @@ what exists (`MSG_ERR_NOT_A_VECTOR`, `MSG_ERR_NOT_A_MATRIX`,
 | `MSG_ERR_DIRAC_PRODUCT_SHAPE` | line %d: %s (%s) times %s (%s): %d columns against %d rows |
 | `MSG_ERR_DIRAC_TARGET_SHAPE` | line %d: %s is %s and the expression is %s |
 | `MSG_ERR_DIRAC_NOT_SCALAR` | line %d: a %s where a number is needed |
-| `MSG_INFO_DIRAC_TEMP` | line %d: %s is read and written with a different index: the result goes through a temporary of %d words |
+| `MSG_ERR_DIRAC_OUT_MATRIX` | line %d: out() writes a number or a vector, and %s is %s |
+| `MSG_INFO_DIRAC_TEMP` | line %d: %s is read and written with a different index: the result goes through the temporary area (%d words) |
+| `MSG_INFO_DIRAC_TEMP_TOTAL` | at the end of the compilation, when the area exists: its size in words, the lines that need it with the words of each, and how to avoid it (3.4, requirement 4) |
 
-with a shape written as "a vector of 4", "a row of 4", "a 4x3 matrix". The
+with a shape written as "a vector of 4", "a row of 4", "a 4x3 matrix" (in
+Portuguese "um vetor de 4", "uma linha de 4", "uma matriz 4x3"). The
 element types follow the scalar rules of `typecheck_expr` (int, float,
 comp), so the mix of int and float is allowed where `+` and `*` allow it
 today. With `comp`, a bra conjugates.
@@ -312,17 +315,46 @@ Three ways were weighed:
    matrix operation (`c|A|`, `|A| - |B|`, the zero) runs over one flat index
    of N·M. The area of the extra multiplier was not measured.
 4. **Aliasing.** When the target is read with a different index from the
-   one written (`a # |M|a⟩`, `P # |P||Q|`, a transpose), the result goes to
-   a compiler temporary array of the target's size and is copied at the end,
-   with `MSG_INFO_DIRAC_TEMP`. Read at the same index (`P # |P| - |K⟩⟨Px|`)
-   needs nothing. Data memory is static, so the temporary is one more array
-   of the program (deduced: N words, or N·M).
+   one written (`a # |M|a⟩`, `P # |P||Q|`, a transpose), the result is
+   computed into the temporary area and copied to the target at the end,
+   with `MSG_INFO_DIRAC_TEMP` on that line. Read at the same index
+   (`P # |P| - |K⟩⟨Px|`, the case of `proc_rls`) needs nothing: each element
+   reads only itself before it is written.
 5. **Chains are grouped to keep the work at N²**: `|A|B|x⟩` is `A (B x)`,
-   with `B x` materialised in a temporary, not `(A B) x`.
-6. **Names.** Loop counters, accumulators and temporaries start with `__`
-   (design note asm-names.md, rule 2), one set per nesting depth, shared by
-   every Dirac statement of the program: C± has no recursion and the scalar
-   subtrees are computed before the loops, so no two uses overlap (deduced).
+   with `B x` in the temporary area, not `(A B) x`. A chain of three
+   products alternates two blocks of the area (t1 = C x, t2 = B t1,
+   target = A t2).
+6. **One temporary area for the whole program (Luciano, 2026-10-25).** A
+   temporary lives only inside one Dirac statement, and no two statements
+   can be inside each other: C± has no recursion, and the scalar subtrees,
+   function calls included, are computed before the loops (requirement 2).
+   The interrupt (`#PRACA`) jumps and does not come back to the point it
+   left (deduced from the manual's description; to be checked in `core.v`
+   before the code). So the compiler declares one global array,
+   `__dirac_tmp`, whose size in words is the largest, over the statements
+   of the program, of the blocks one statement has live at once (a block
+   of N for a vector, N·M for a matrix; with `comp` later, two words an
+   element). int and float share it: a word is a word, the type is in the
+   instructions. A program with no aliasing and no chain longer than one
+   product has no area: no data memory is spent (pay only for what you
+   use). Loop counters and accumulators follow the same rule, one set per
+   nesting depth shared by every statement. All these names start with `__`
+   (asm-names.md, rule 2).
+
+   At the end of the compilation, when the area exists, cmmcomp prints
+   `MSG_INFO_DIRAC_TEMP_TOTAL`: the size of the area, each line that needs
+   it with its words, and how to avoid it, by cause:
+
+   - target read at another index (`a # |M|a⟩`): write the result to an
+     array that is not on the right-hand side, if the program has one free
+     at that point (`t # |M|a⟩;`, then use `t`);
+   - a chain of products (`|A|B|x⟩`): if the program keeps `B x` anyway,
+     compute it into an array of its own in a statement before
+     (`y # |B|x⟩; v # |A|y⟩;`).
+
+   The hint saves memory only when the user has an array that is free at
+   that point; otherwise the area is the cheapest place, and the message
+   says so.
 
 ### 3.5 Cost against the unrolled form
 
@@ -430,17 +462,30 @@ taken from YANC), outputting every element:
 And a fixture of compile errors, one per message of 3.2, each checked for
 its line and its text in both languages.
 
-## 5. Open decisions
+## 5. Decisions (Luciano, 2026-10-25)
 
-- G3's lexer rule, and the shape names in the messages.
-- Whether `out(p, X)` accepts a matrix (row by row) or refuses it.
-- Whether a temporary for aliasing is silent, an info line (proposed) or an
-  error that asks the user to write the temporary.
-- Whether to keep unrolling for very small N (L3): at N = 2, `out(0, |a⟩)`
-  unrolled is 4 words and 4 clocks, the loop about 10 words and 20 clocks
-  (deduced). Proposed: no, one code path first, measured later.
-- `comp` now or after: the scalar walker handles `comp`; what is missing is
-  the conjugation of a bra and a fixture.
+1. Grammar G3: Dirac terms inside `exp`, the lexer's `DBAR` for a bar
+   followed by the name of an array.
+2. Code generation L1: lowering to the loop nodes of the tree; the
+   `exec_*` generators go, except `exec_shift`.
+3. Aliasing: through the temporary area, with an info line on the
+   statement and the total at the end of the compilation, with hints
+   (3.4, requirements 4 and 6).
+4. `out(p, X)` refuses a matrix for now (`MSG_ERR_DIRAC_OUT_MATRIX`).
+5. `comp` in a later step of its own (the conjugation of a bra and a
+   fixture).
+6. No unrolling for small N (L3): one code path. At N = 2, `out(0, |a⟩)`
+   unrolled would be 4 words and 4 clocks, the loop about 10 words and 20
+   clocks (deduced); to be measured later if it matters.
+7. The shape names of 3.2, in English and Portuguese.
+8. Three steps, each diff shown before its commit: (a) the tree, the shapes
+   and the grammar, the present fixtures giving the same output; (b) the
+   lowering to loops, the `golden.asm` of `dirac_assign` and `proc_rls`
+   changing on purpose; (c) the generators removed, the fixture
+   `dirac_shapes` and the fixture of errors.
+9. This note reaches `main` through its own pull request before the code.
+10. The measured defects of section 2 are fixed by the redesign, not by a
+    patch to the unrolled generators; the CHANGELOG warns about them.
 
 ## 6. For the documentation (item 21 in TODO.md)
 
@@ -449,7 +494,9 @@ table of forms with the rules: what a chain between bars means (bra, ket,
 matrix by place), that juxtaposition is the product and binds tighter than
 `+` and looser than `*`, that the shapes must match and what the error says,
 that a scalar in an expression is computed once before the element loop,
-that int and float mix as in scalar expressions, and the forms the old table
+that int and float mix as in scalar expressions, when a statement uses the
+temporary area and how to avoid it (the end-of-compilation summary of 3.4),
+that `out()` does not take a matrix, and the forms the old table
 listed as examples, including the declaration form `float v[N] # ...`,
 which the manual never listed. It says that the code is a loop: its size
 does not grow with the arrays, and it runs about four times slower per
