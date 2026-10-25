@@ -10,62 +10,64 @@ links to its section there. The measurements themselves are reproducible with
 Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
-## Where things stand (2026-10-18)
+## Where things stand (2026-10-25)
 
-**v7.1 released on 2026-10-13** (no v7.0), with AURORA moved to it the same
-day. The manual is published from docs/ by each release: GitHub Pages and
-nipscern.com/library/yanc. Left from it: the board run of Sabrina and Pedro
-Henrique (the `LINKALL` pair with the `.sdc` on both boards; the Fmax is
-measured, the link costs no clock).
+**v9.1 is the last release (2026-10-20):** the keyboard and the screen
+(`myKeyPS2`, `myVGAText`) and C++ `<iostream>`, `<cstdio>` and `<cstring>`
+on them. v9.0 (2026-10-19) opened the peripherals with the keyboard; v8.0
+(2026-10-18) brought the faster clock of item 29. Each release publishes
+the manual from docs/ (GitHub Pages and nipscern.com/library/yanc). Items
+2 and 3 closed in v9.0; since v9.1, in the CHANGELOG [Unreleased], items 5,
+6(a) and 34 (exact float constants and C± literals in every C form, the
+ALU testbench, an initializer on any name of a declaration list).
 
-**v8.0 released on 2026-10-18** (tag on 6ce154e): item 29 (clock, below)
-and the float/comp condition fix; breaks a hand-written `.asm` with a
-division (5/4 words). Assets yanc-bin-v8.0.zip, yanc-bin-linux-v8.0.tar.gz,
-yanc-docs-v8.0.zip; the package example gives 55 in C+- and C++. AURORA
-told the same day (`C:\tmp\aurora_yanc_v8.0.md`): nothing changes on its
-side; its developers get v8.0 at their next `npm start`.
-Next session: pick from the open items below.
+**In design, no code in `main` yet:** the array unit (PR #19,
+docs/design/array-unit.md): a dual-port memory for arrays, a controller and
+a MAC, on which item 28 (the burst, fill and copy) is redone. Rule
+(Luciano, 2026-10-24): no code until every decision there is taken, with
+tests outside the YANC code; a prototype for measuring is on the branch
+`lucianomaf/array-unit-proto`. The Dirac notation (item 31) is redone
+first, on its own, as expressions computed in loops (Luciano, 2026-10-25,
+branch `lucianomaf/dirac-expressions`); the array unit enters it later, as
+the hardware choice beside the loop in software.
 
-**Item 29 closed 2026-10-17 (in v8.0):** `sapho_all` 21.8 -> 32.4 MHz
-on the DE10-Nano (mean of three seeds), 23.5 -> 37.3 MHz on the ZYBO, the
-same area: dividers in 5/4 stages, every mux guided by the opcode
-parameters (no `x` left), `JIZ` and the `LDI`/`ILI` index before the float
-normaliser (asmcomp inserts the `NOP`), the tree leading-zero count, the
-decoder in the ALU's form (CHANGELOG [Unreleased], design note 4.4).
-AURORA's text for the release: `C:\tmp\aurora_yanc_divseq.md`.
-
-**Recorded, not to be implemented yet (Luciano, 2026-10-14):** item 28, the
-burst (a whole array through a port at one word a clock, stopping while the
-FIFO is full); the design note lists the holes to close first.
-Also recorded the same day: item 30, SAPHO without showing its
-source (parked until a partnership), and item 31, the Dirac array output
-(a wasted `MLT 1`, a missing form; open).
+**Left on boards:** 35 and 37 (keyboard and screen), and from v7.1 the run
+of Sabrina and Pedro Henrique (the `LINKALL` pair with the `.sdc` on both
+boards; the Fmax is measured, the link costs no clock).
 
 **Waiting on a decision:** item 21 (documentation that cannot fall behind
-a release): Chrysthofer's proposal arrived on 2026-10-13; Luciano and he
-agree on it (its phase 0). The GitHub plan: the proposal says GitHub
+a release): Chrysthofer's proposal arrived on 2026-10-13; its phase 0 is
+Luciano and Chrysthofer agreeing on it. The GitHub plan: the proposal says GitHub
 Education gives teachers Team for free (Luciano's application).
 
 **Waiting on Luciano, proposed and not started:** `RAMBLK`, a registered
 read on `myFIFO`/`myDCFIFO` so a large FIFO goes to block RAM (area, not
 clock; docs/design/myfifo.md "Memory"), with a `quartus_map` of it.
 
-**Open items, below:** 2(b) a fixture for unbiased rounding; 3 the parameter
-guard in `ula.v`; 8 the leftovers; 9 library
-accuracy keyed on `NBMANT`; 10 architecture hardening (ISS, division by zero,
-interrupt, I/O contract); 13 the pre-assembly optimizer and the C++ heap
-arena (77 % of its data memory); 14 the zero-fill at 8 words a turn, or close
-it; 15 the regress on this machine (mitigated); 24 processors with
-different float formats on one link (parked: AURORA's check); 26 arrays in the waveform without a signal per element; 28 the burst and fast fill/copy of arrays, one block (recorded); 31 the Dirac array output; 32 the
-divider stage count from the widths (recorded; on the ZYBO `F_DIV` limits); 33 the
-float zero as an all-zero word in hardware (parked).
+**Open items, below:** 8 the leftovers; 9 library accuracy keyed on
+`NBMANT`; 10 architecture hardening (ISS, division by zero, interrupt, I/O
+contract); 13 the pre-assembly optimizer and the C++ heap arena (77 % of
+its data memory); 14 the zero-fill at 8 words a turn, or close it; 15 the
+regress on this machine (mitigated); 21 documentation that cannot fall
+behind a release (waiting on a decision); 26 arrays in the waveform
+without a signal per element; 27 the C++ gaps that real embedded code
+hits; 28 the burst and fast fill/copy of arrays, inside the array unit
+(design, decisions open); 31 the Dirac array output (part of the Dirac
+redesign as expressions); 32 the divider stage count from the widths (recorded; on the ZYBO
+`F_DIV` limits); 35 and 37 the board check of the keyboard and the screen.
 **Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
-exception strobe), the reorganisation of the runner/setup scripts, a macOS
-build, 30 (SAPHO without showing its source, until a partnership).
+exception strobe), 24 (processors with different float formats on one
+link: AURORA's check), 30 (SAPHO without showing its source, until a
+partnership), 33 (the float zero as an all-zero word in hardware), the
+reorganisation of the runner/setup scripts, a macOS build.
 
-**Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 11 (consistency at 32
-bits), 16, 18 (hardware for code that never runs), 19 (the dividers, v6.0),
-20, 22 and 23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), the user names that collide in the `.asm`, 29 (a faster clock, next release); 17 merged into 28 (2026-10-18).
+**Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 2 (round to nearest
+unbiased), 3 (the float format checked only with float), 5 (exact float
+constants), 6(a) (the ALU testbench), 11 (consistency at 32 bits), 16, 18
+(hardware for code that never runs), 19 (the dividers, v6.0), 20, 22 and
+23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), 29 (a faster clock,
+v8.0), 34 (initialisers in a declaration list), the user names that
+collide in the `.asm`; 17 merged into 28 (2026-10-18).
 
 ---
 
@@ -304,7 +306,7 @@ the audit's table has a defined, documented result.
 
 ## 12. Run-time exception strobe (pin + error code)
 
-**Status:** open, not now (noted 2026-09-20) · **Area:** `SAPHO/*`, `ASMComp`, both front ends · **Evidence:** this item
+**Status:** parked, not now (noted 2026-09-20) · **Area:** `SAPHO/*`, `ASMComp`, both front ends · **Evidence:** this item
 
 Today a run-time failure is silent: `malloc`/`new` returns `0` when the
 `__heap` arena (fixed `CFG_HEAPSZ` = 2048 words, no analysis of what the
