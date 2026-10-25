@@ -159,6 +159,9 @@ S_SHR	105	none	rw	pop	-	-	-	shift right with stack
 SRS	106	data	rw	-	r	-	-	arithmetic shift right with memory
 S_SRS	107	none	rw	pop	-	-	-	arithmetic shift right with stack
 LEA	1	lea	w	-	addr	-	-	load-effective-address: acc = &var (pseudo, expands to LOD <const>)
+P_LEA	2	lea	rw	push	addr	-	-	PROTOTYPE (array-unit.md 4b): PUSH + LEA
+DOT	108	data	rw	pop	r	-	-	PROTOTYPE (array-unit.md 4b): acc = <a|b>, N from memory, a at the stack top (popped), b in acc
+DOTB	109	data	rw	pop	base_r	-	-	PROTOTYPE (array-unit.md 4b): acc = <a|b>, N in acc, a at the stack top (popped), b the array named
 LOD_V	1	offset	w	-	r	-	-	LOD with constant offset
 P_LOD_V	2	offset	rw	push	r	-	-	P_LOD with constant offset
 SET_V	5	offset	r	-	w	-	-	SET with constant offset

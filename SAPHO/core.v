@@ -629,8 +629,10 @@ module core
 	parameter    TOM   = 0,
 	parameter    CAD   = 0,
 
-	// PROTOTYPE (array-unit.md 4b): the inner product of the array unit
+	// PROTOTYPE (array-unit.md 4b): the inner product of the array unit (DOT:
+	// the unit, for DOT or DOTB; DOTB: its decoder row)
 	parameter    DOT   = 0,
+	parameter    DOTB  = 0,
 
 	// two-parameter arithmetic operations
 	parameter    ADD   = 0,
@@ -1051,7 +1053,8 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
 			.SF_SCL  (SF_SCL  ),
 			   .XPO  (   XPO  ),
 			 .XPO_M  ( XPO_M  ),
-			   .DOT  (   DOT  )) id(clk, rst,
+			   .DOT  (   DOT  ),
+			   .DOTB (   DOTB )) id(clk, rst,
                                     id_opcode,
                                     id_dsp_push, id_dsp_pop,
                                     id_ula_op,
@@ -1062,9 +1065,9 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
 // Data stack -----------------------------------------------------------------
 
 wire              sp_push = id_dsp_push;
-// PROTOTYPE (array-unit.md 4b): DOT pops pointer a once, in the clock it
-// goes on; the pop only moves the stack pointer (ALU input in1 takes the
-// inner product, not the stack top)
+// PROTOTYPE (array-unit.md 4b): DOT and DOTB pop pointer a once, in the
+// clock they go on; the pop only moves the stack pointer (ALU input in1
+// takes the inner product in the next clock, not the stack top)
 wire              dot_pop;
 wire              sp_pop  = id_dsp_pop | dot_pop;
 wire [NUBITS-1:0] sp_in, sp_data;
@@ -1108,10 +1111,7 @@ endgenerate
 // Arithmetic Logic Unit ------------------------------------------------------
 
 wire signed [NUBITS-1:0] ula_out;
-wire signed [NUBITS-1:0] ula_alu;    // the ALU's own output
 wire        [NUBITS-1:0] ula_fast;   // ula_out without the normalised operations
-wire                     dot_wr;     // PROTOTYPE (array-unit.md 4b): DOT's result takes the ALU's place
-wire        [NUBITS-1:0] dot_res;
 
 ula #(.NUBITS (NUBITS ),
       .NBMANT (NBMANT ),
@@ -1167,13 +1167,7 @@ ula #(.NUBITS (NUBITS ),
 	  .F_SU2  (F_SU2   | SF_SU2  ),
 	  .F_SCL  (F_SCL   | SF_SCL  ),
 	  .XPO    (XPO              ),
-	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_alu, ula_fast, clk);
-
-// PROTOTYPE (array-unit.md 4b): in the clock DOT executes, its rounded result
-// is the word the acc, the stack and the memories get, in place of the ALU's
-// (whose in1 path would add the rounding to the ALU: 47.5 ns). ula_fast does
-// not see it: asmcomp puts a NOP between a DOT and a JIZ/LDI/ILI
-assign ula_out = (dot_wr) ? dot_res : ula_alu;
+	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out, ula_fast, clk);
 
 assign sp_in = ula_out;
 
@@ -1244,23 +1238,25 @@ generate
 
 		if (DOT) begin : dot
 			// PROTOTYPE (array-unit.md 4b): while it reads, the controller
-			// takes both ports' addresses; the inner product takes the ALU's
-			// place (dot_wr) in the clock after DOT goes on
+			// takes both ports' addresses; the inner product enters ALU
+			// input in1 through the same mux as the memories, in the clock
+			// after DOT goes on (DOT's ALU operation passes in1, as LOD).
+			// Tried and dropped (2026-10-25): the result in ula_out's place,
+			// one clock less but 30.53 MHz against 31.34, the mux on the
+			// worst path
 			wire             busy;
 			wire [MARRW-1:0] ra, rb;
+			wire [NUBITS-1:0] res;
 			arr_dot #(.NUBITS(NUBITS), .NBMANT(NBMANT), .NBEXPO(NBEXPO), .MARRW(MARRW), .FROUND(FROUND), .NBOPCO(NBOPCO))
-			        ctl(clk, rst, id_opcode, if_operand[MARRW-1:0], racc, sp_data, ula_fast, dot_go, dot_pop, busy, ra, rb, arr_data_rd, arr_data_b, dot_res);
+			        ctl(clk, rst, id_opcode, if_operand[MARRW-1:0], racc, sp_data, ula_fast, dot_go, dot_pop, busy, ra, rb, arr_data_rd, arr_data_b, res);
 			assign arr_addr_rd = (busy) ? ra : c_rd;
 			assign arr_addr_wr = (busy) ? rb : c_wa;
 			reg mac_rd = 1'b0;
 			always @ (posedge clk) if (rst) mac_rd <= 1'b0; else mac_rd <= dot_pop;
-			assign dot_wr     = mac_rd;
-			assign mem_rd_sel = (arr_rd) ? arr_data_rd : mem_data_rd;
+			assign mem_rd_sel = (mac_rd) ? res : (arr_rd) ? arr_data_rd : mem_data_rd;
 		end else begin : dot
 			assign dot_go      = 1'b0;
 			assign dot_pop     = 1'b0;
-			assign dot_wr      = 1'b0;
-			assign dot_res     = {NUBITS{1'b0}};
 			assign arr_addr_rd = c_rd;
 			assign arr_addr_wr = c_wa;
 			assign mem_rd_sel  = (arr_rd) ? arr_data_rd : mem_data_rd;
@@ -1268,8 +1264,6 @@ generate
 	end else begin : mem_access
 		assign dot_go      = 1'b0;
 		assign dot_pop     = 1'b0;
-		assign dot_wr      = 1'b0;
-		assign dot_res     = {NUBITS{1'b0}};
 	if (STI | LDI | ILI | ISI) begin : ind
 		mem_ctrl #(.NUBITS(NUBITS),
 		           .MDATAW(MDATAW),
@@ -1317,13 +1311,14 @@ endmodule
 // ****************************************************************************
 
 // The controller of DOT N and DOTB b (2026-10-25). Pair k is read in one
-// clock, multiplied and summed (mac_a1) in the next, and the sum rounded
-// (mac_round, combinational) in the clock DOT executes, into ula_out: DOT goes
-// on (DONE, dot_go high, pointer a popped) the clock the last pair is summed.
-//   DOT N  (LEA a; P_LEA b; DOT N), N + 2 clocks: clock 0 decodes DOT, which
+// clock, multiplied and summed (mac_a1) in the next; the sum is rounded into a
+// register (res) in the clock after the last pair (TAIL), and DOT goes on in
+// the next (DONE, dot_go high, pointer a popped): its ALU operation takes res
+// through input in1 the clock after.
+//   DOT N  (LEA a; P_LEA b; DOT N), N + 3 clocks: clock 0 decodes DOT, which
 //          reads N as LOD; in clock 1 pointer a is the stack top, pointer b the
 //          acc, N comes out of the ALU (ula_fast): pair 0 is read.
-//   DOTB b (LEA a; P_LOD N; DOTB b), N + 1 clocks: in clock 0 pointer a is the
+//   DOTB b (LEA a; P_LOD N; DOTB b), N + 2 clocks: in clock 0 pointer a is the
 //          stack top, b the operand and N comes out of the ALU (P_LOD N):
 //          pair 0 is read at once.
 // Reads past N are harmless: only valid pairs (rv) enter the MAC.
@@ -1347,13 +1342,13 @@ module arr_dot
 	output              busy,            // the controller drives the array memory's addresses
 	output [MARRW -1:0] ra, rb,
 	input  [NUBITS-1:0] qa, qb,          // the words read the clock before
-	output [NUBITS-1:0] res              // the inner product, rounded once (combinational)
+	output [NUBITS-1:0] res              // the inner product, rounded once (registered)
 );
 
 localparam [NBOPCO-1:0] OP_DOT = 108, OP_DOTB = 109;
-localparam [1:0] IDLE = 0, FIRST = 1, RUN = 2, DONE = 3;
+localparam [2:0] IDLE = 0, FIRST = 1, RUN = 2, TAIL = 3, DONE = 4;
 
-reg [1:0]        st  = IDLE;
+reg [2:0]        st  = IDLE;
 reg [MARRW -1:0] ka  = 0, kb = 0;     // the next addresses to read
 reg [NUBITS-1:0] cnt = 0;             // N, then counted down by the reads
 reg              rv  = 1'b0;          // the words on qa, qb are a term
@@ -1375,7 +1370,7 @@ always @ (posedge clk) begin
 			kb  <= rb + 1'b1;
 			cnt <= nval;
 			rv  <= ($signed(nval) > 0);
-			st  <= ($signed(nval) > 1) ? RUN : DONE;
+			st  <= ($signed(nval) > 1) ? RUN : TAIL;
 		end else case (st)
 			IDLE : if (dot) st <= FIRST;
 			RUN  : begin              // pair N-cnt+1, the last when cnt is 2
@@ -1383,8 +1378,9 @@ always @ (posedge clk) begin
 				ka  <= ka + 1'b1;
 				kb  <= kb + 1'b1;
 				cnt <= cnt - 1'b1;
-				if (cnt == 2) st <= DONE;
+				if (cnt == 2) st <= TAIL;
 			end
+			TAIL : st <= DONE;
 			DONE : if (dot | dotb) st <= IDLE;
 			default: ;
 		endcase
@@ -1397,30 +1393,21 @@ assign busy = first | (st == RUN);
 assign go   = (st == DONE);
 assign pop  = (dot | dotb) & go;
 
-mac_a1 #(.NB(NUBITS), .M(NBMANT), .E(NBEXPO), .W(2*NBMANT+8), .FR(FROUND)) mac (clk, clr, rv, qa, qb, res);
+// the rounding at the end (20 ns on the DE10-Nano) gets a clock of its own:
+// combinational into ALU input in1 it was the worst path of the processor,
+// 47.5 ns (2026-10-25)
+wire [NUBITS-1:0] sum;
+reg  [NUBITS-1:0] res_r = 0;
+mac_a1 #(.NB(NUBITS), .M(NBMANT), .E(NBEXPO), .W(2*NBMANT+8), .FR(FROUND)) mac (clk, clr, rv, qa, qb, sum);
+always @ (posedge clk) res_r <= sum;
+assign res = res_r;
 
 endmodule
 
-// The MAC, variant A (array-unit.md section 4.2), copied unchanged from
-// Scripts/hw/mac_study/mac.v, where it is checked bit for bit against its
-// model (check.sh) ---------------------------------------------------------
-
-module mac_prod #(parameter NB = 32, M = 23, E = 8) (
-	input                    clk, en,
-	input           [NB-1:0] a, b,
-	output reg               v,
-	output reg               s,
-	output reg signed [E:0]  e,
-	output reg     [2*M-1:0] m
-);
-wire signed [E-1:0] ea = a[NB-2:M], eb = b[NB-2:M];
-always @ (posedge clk) begin
-	v <= en;
-	s <= a[NB-1] ^ b[NB-1];
-	e <= ea + eb;
-	m <= a[M-1:0] * b[M-1:0];
-end
-endmodule
+// The MAC, variant A (array-unit.md section 4.2). mac_round is copied
+// unchanged from Scripts/hw/mac_study/mac.v, where it is checked bit for bit
+// against its model (check.sh); mac_a1 is mac.v's mac_a with its stages in
+// one, checked through the processor (Scripts/hw/array_proto/dottest.sh) ----
 
 module mac_round #(parameter NB = 32, M = 23, E = 8, W = 64, XB = 12, FR = 2) (
 	input  signed [W-1:0]  acc,
@@ -1457,34 +1444,7 @@ wire [E-1:0] ezero = {1'b1, {E-1{1'b0}}};
 assign res = (mag == 0) ? {1'b0, ezero, {M{1'b0}}} : {neg, eo[E-1:0], q[M-1:0]};
 endmodule
 
-module mac_a #(parameter NB = 32, M = 23, E = 8, W = 54, FR = 2) (
-	input           clk, clr, en,
-	input  [NB-1:0] a, b,
-	output [NB-1:0] res
-);
-localparam XB = E + 4;
-wire v1, s1; wire signed [E:0] e1; wire [2*M-1:0] m1;
-mac_prod #(NB, M, E) p (clk, en, a, b, v1, s1, e1, m1);
-wire [W:0] up = {{W+1-2*M{1'b0}}, m1} << (W - 2*M);
-reg  v2; reg signed [W:0] p2; reg signed [XB-1:0] pe2;
-always @ (posedge clk) begin v2 <= v1 && (m1 != 0); p2 <= s1 ? -up : up; pe2 <= e1 - (W - 2*M); end
-reg signed [W:0] acc; reg signed [XB-1:0] ea;
-wire signed [XB:0] d = pe2 - ea;
-wire signed [W:0] vs = (d >= 0) ? ((d > W) ? $signed({W+1{acc[W]}}) : acc >>> d) : acc;
-wire signed [W:0] ps = (d >= 0) ? p2 : ((-d > W) ? $signed({W+1{p2[W]}}) : p2 >>> (-d));
-wire signed [XB-1:0] en_ = (d >= 0) ? pe2 : ea;
-wire signed [W+1:0] sum = vs + ps;
-always @ (posedge clk)
-	if (clr) begin acc <= 0; ea <= 0; end
-	else if (v2) begin
-		if (acc == 0)                 begin acc <= p2;        ea <= pe2;     end
-		else if (sum[W+1] != sum[W])  begin acc <= sum[W+1:1]; ea <= en_ + 1; end
-		else                          begin acc <= sum[W:0];   ea <= en_;     end
-	end
-mac_round #(NB, M, E, W+1, XB, FR) r (acc, ea, res);
-endmodule
-
-// mac_a with its three stages in one (2026-10-25): the product, its alignment
+// mac.v's mac_a with its three stages in one (2026-10-25): the product, its alignment
 // to W bits and the add into the sum the clock the pair leaves the memory. The
 // same arithmetic, so the same words; the path is estimated at about 26 ns
 // from the step 2 fits (3.1 + 5.1 + 15.7 ns and the memory's output), to be

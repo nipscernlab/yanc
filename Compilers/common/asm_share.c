@@ -951,9 +951,7 @@ int asm_normnop(const char *asm_path, const char *pc_path)
         line_mnemonic(lines.s[ln], mn[ln], sizeof(mn[ln]));
         ins_of[ln] = mn[ln][0] ? n++ : -1;
         if (ins_of[ln] < 0) continue;
-        // PROTOTYPE (array-unit.md 4b): DOT's result reaches ula_out, not ula_fast
-        int dot = prev >= 0 && (strcmp(mn[prev], "DOT") == 0 || strcmp(mn[prev], "DOTB") == 0);
-        if (reads_fast(mn[ln]) && prev >= 0 && (asm_is_norm(mn[prev]) || dot)) { pad[ins_of[ln]] = 1; added++; }
+        if (reads_fast(mn[ln]) && prev >= 0 && asm_is_norm(mn[prev])) { pad[ins_of[ln]] = 1; added++; }
         prev = ln;
     }
     if (added == 0) goto done;
