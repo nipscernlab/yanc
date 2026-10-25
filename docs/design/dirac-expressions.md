@@ -328,9 +328,10 @@ Three ways were weighed:
    temporary lives only inside one Dirac statement, and no two statements
    can be inside each other: C± has no recursion, and the scalar subtrees,
    function calls included, are computed before the loops (requirement 2).
-   The interrupt (`#PRACA`) jumps and does not come back to the point it
-   left (deduced from the manual's description; to be checked in `core.v`
-   before the code). So the compiler declares one global array,
+   The interrupt (`#PRACA`) saves no context and does not come back to the
+   point it left (Luciano, 2026-10-25; fact: `itr` forces the program
+   counter to `ITRADD` and no return address is kept, `SAPHO/core.v` 152).
+   So the compiler declares one global array,
    `__dirac_tmp`, whose size in words is the largest, over the statements
    of the program, of the blocks one statement has live at once (a block
    of N for a vector, N·M for a matrix; with `comp` later, two words an
