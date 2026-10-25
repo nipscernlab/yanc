@@ -48,6 +48,8 @@ cp "$WORK/$PROC.v" .
 # sit in the project folder, or the program memory is empty and the fit
 # times a processor pruned to nothing
 cp "$WORK/${PROC}_data.mif" "$WORK/${PROC}_inst.mif" .
+# PROTOTYPE (array-unit.md 4a): the array memory's image
+[ -f "$WORK/${PROC}_arr.mif" ] && cp "$WORK/${PROC}_arr.mif" .
 [ -n "$FR" ] && sed -i "s/\.FROUND([0-9])/.FROUND($FR)/" "$PROC.v"
 
 HDL=${HDL:-$ROOT/SAPHO}     # HDL=<dir>: time a modified copy of SAPHO/ (an experiment) instead

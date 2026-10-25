@@ -119,6 +119,14 @@ module processor
 	parameter MDATAW = $clog2(MDATAS),  // Number of address bits for data memory
 	parameter MINSTW = $clog2(MINSTS),  // Number of address bits for instruction memory
 
+	// PROTOTYPE (docs/design/array-unit.md, step 4a): the arrays in a memory of
+	// their own; the top bit of the operand (S) names it on a direct access,
+	// LDI/STI/ILI/ISI always reach it
+	parameter ARRMEM = 0,               // 1: the array memory is built
+	parameter MARRS  = 2,               // Array-memory size
+	parameter MARRW  = $clog2(MARRS),   // Number of address bits for the array memory
+	parameter AFILE  = "arr.mif",       // File with the array-memory contents
+
 	// links to partner processors (docs/design/toma-and-cade-links.md), set by asmcomp
 	// from the program: link k is built only where its bit is set
 	parameter NLINK  = 1,               // number of link slots (highest link number used + 1)
@@ -332,6 +340,11 @@ wire        [MDATAW-1:0] mem_addr_wr;
 
 wire        [MDATAW-1:0] mem_addr_rd;
 
+// PROTOTYPE: the array memory's side of the core
+wire                     arr_wr;
+wire        [MARRW -1:0] arr_addr_rd, arr_addr_wr;
+wire signed [NUBITS-1:0] arr_data_in;
+
 // core -----------------------------------------------------------------------
 
 wire        [MINSTW-1:0] instr_addr;
@@ -349,6 +362,8 @@ core #(.NBOPCO ( NBOPCO ),
        .TOAQUIADDR ( TOAQUIADDR ),
        .MDATAW ( MDATAW ),
        .MINSTW ( MINSTW ),
+       .ARRMEM ( ARRMEM ),
+       .MARRW  ( MARRW  ),
        .NUBITS ( NUBITS ),
        .NBMANT ( NBMANT ),
        .NBEXPO ( NBEXPO ),
@@ -471,7 +486,8 @@ core #(.NBOPCO ( NBOPCO ),
                                 instr, instr_addr,
                                 mem_wr, mem_addr_rd, mem_addr_wr, mem_data_in, mem_data_out,
                                 io_in, addr_in, addr_out, req_in, out_en, itr, cheguei,
-                                toma, cade, valeu, taqui, cade_dado, toma_dado
+                                toma, cade, valeu, taqui, cade_dado, toma_dado,
+                                arr_wr, arr_addr_rd, arr_addr_wr, arr_data_in
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
@@ -491,5 +507,17 @@ mem_instr # (.NADDRE(MINSTS       ),
 mem_data # (.NADDRE(MDATAS),
             .NBDATA(NUBITS),
             .FNAME (DFILE )) mdata(clk, mem_wr, mem_addr_rd, mem_addr_wr, mem_data_out, mem_data_in);
+
+// PROTOTYPE: array memory ------------------------------------------------------
+// step 4a: the core reads on one port and writes on the other, as the data
+// memory; the controller of step 4b will take them while a sequence runs
+
+generate if (ARRMEM) begin : marr
+mem_data # (.NADDRE(MARRS ),
+            .NBDATA(NUBITS),
+            .FNAME (AFILE )) marr(clk, arr_wr, arr_addr_rd, arr_addr_wr, mem_data_out, arr_data_in);
+end else begin : marr
+assign arr_data_in = 0;
+end endgenerate
 
 endmodule

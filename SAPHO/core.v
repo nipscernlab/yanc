@@ -433,7 +433,12 @@ generate
 		integer i;
 		always @ (*) for (i = 0; i < FFTSIZ; i = i+1) aux[i] = offset[FFTSIZ-1-i];
 
-		wire [MDATAW-1:0] add = (fft) ? {offset[MDATAW-1:FFTSIZ], aux} : offset;
+		// PROTOTYPE: a memory exactly as wide as the FFT (the array memory of
+		// cmm_fft_rd) has no bits above the reversed ones
+		wire [MDATAW-1:0] rev;
+		if (MDATAW > FFTSIZ) begin : hi assign rev = {offset[MDATAW-1:FFTSIZ], aux}; end
+		else                 begin : hi assign rev = aux[MDATAW-1:0];                 end
+		wire [MDATAW-1:0] add = (fft) ? rev : offset;
 
 		assign out = (use_oft) ?    add + addr: addr;
 	end else begin : fft_offset
@@ -542,6 +547,8 @@ module core
 	parameter  MDATAW = 9,               // Number of address bits for data memory
 	parameter  MINSTW = 9,               // Number of address bits for instruction memory
 	parameter  NBINST = NBOPCO + NBOPER, // Instruction-memory width (bits)
+	parameter  ARRMEM = 0,               // PROTOTYPE (array-unit.md 4a): the array memory is built
+	parameter  MARRW  = 1,               // PROTOTYPE: number of address bits for the array memory
 
 	// -------------------------------------------------------------------------
 	// User-configured parameters ----------------------------------------------
@@ -752,7 +759,12 @@ module core
 	input  [NLINK       -1:0] valeu,      // the partner's C (TOM: has my value been taken?)
 	input  [NLINK       -1:0] taqui,      // the partner's T (CAD: is a value offered?)
 	input  [NLINK*NUBITS-1:0] cade_dado,  // the partners' toma_dado, link k at bits k*NUBITS (CAD k reads it)
-	output [NUBITS      -1:0] toma_dado   // my offered value, the same for every link
+	output [NUBITS      -1:0] toma_dado,  // my offered value, the same for every link
+
+	// PROTOTYPE (array-unit.md 4a): the array memory
+	output              arr_wr,
+	output [MARRW -1:0] arr_addr_rd, arr_addr_wr,
+	input  [NUBITS-1:0] arr_data_rd
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
  , output [MINSTW-1:0] pc_sim_val
@@ -1049,7 +1061,8 @@ wire [NUBITS-1:0] uic_acc;
 reg signed [NUBITS-1:0] racc = 0;
 
 // input in1
-ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, rst, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1);
+wire [NUBITS-1:0] mem_rd_sel;   // PROTOTYPE: the word read, from the data or the array memory
+ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, rst, id_dsp_pop, mem_rd_sel, sp_data, ula_data_in1);
 
 // input in2
 // CAD reads the partner's out bus through the same path as INN, but raises no
@@ -1164,7 +1177,37 @@ assign  if_acc = |ula_fast;
 wire [MDATAW-1:0] rf;
 
 generate
-	if (STI | LDI | ILI | ISI) begin : mem_access
+	if (ARRMEM) begin : mem_access
+		// PROTOTYPE (array-unit.md 4a): the top bit of the operand, S, names
+		// the array memory on a direct access; LDI/ILI (ldi) and STI/ISI (sti)
+		// always reach it. The data memory has no indirect addressing: its
+		// address is the operand. The read is chosen a clock later, when the
+		// word comes out of the memories.
+		wire s      = if_operand[NBOPER-1];
+		wire to_arr = s | id_ldi | id_sti;
+		if (STI | LDI | ILI | ISI) begin : ind
+			mem_ctrl #(.NUBITS(NUBITS),
+			           .MDATAW(MARRW),
+			           .FFTSIZ(FFTSIZ),
+			           .ILI(ILI),.ISI(ISI)) ac(.sti(id_sti), .ldi(id_ldi), .fft(id_fft), .wr(id_wr & to_arr),
+			                                   .ula(ula_out), .idx(ula_fast),
+			                                   .base_addr(if_operand[MARRW-1:0]), .stk_ofst(sp_data[MARRW-1:0]),
+			                                   .mem_wr(arr_wr), .mem_addr_rd(arr_addr_rd), .mem_addr_wr(arr_addr_wr), .mem_data_wr());
+		end else begin : ind
+			assign arr_wr      = id_wr & s;
+			assign arr_addr_rd = if_operand[MARRW-1:0];
+			assign arr_addr_wr = if_operand[MARRW-1:0];
+		end
+		assign mem_wr      = id_wr & ~to_arr;
+		assign mem_addr_rd = if_operand[MDATAW-1:0];
+		assign mem_addr_wr = if_operand[MDATAW-1:0];
+		assign mem_data_wr = ula_out;
+
+		reg arr_rd = 1'b0;
+		always @ (posedge clk) if (rst) arr_rd <= 1'b0; else arr_rd <= to_arr;
+		assign mem_rd_sel = (arr_rd) ? arr_data_rd : mem_data_rd;
+	end else begin : mem_access
+	if (STI | LDI | ILI | ISI) begin : ind
 		mem_ctrl #(.NUBITS(NUBITS),
 		           .MDATAW(MDATAW),
 		           .FFTSIZ(FFTSIZ),
@@ -1172,11 +1215,16 @@ generate
 		                                   ula_out, ula_fast,
 		                                   if_operand[MDATAW-1:0], sp_data[MDATAW-1:0],
 		                                   mem_wr, mem_addr_rd, mem_addr_wr, mem_data_wr);
-	end else begin : mem_access
+	end else begin : ind
 		assign mem_wr      = id_wr;
 		assign mem_addr_rd = if_operand[MDATAW-1:0];
 		assign mem_addr_wr = if_operand[MDATAW-1:0];
 		assign mem_data_wr = ula_out;
+	end
+		assign arr_wr      = 1'b0;
+		assign arr_addr_rd = {MARRW{1'b0}};
+		assign arr_addr_wr = {MARRW{1'b0}};
+		assign mem_rd_sel  = mem_data_rd;
 	end
 endgenerate
 

@@ -182,6 +182,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     fprintf(f_veri,            ".FFTSIZ(%d),\n", fftsiz);
     fprintf(f_veri,            ".FROUND(%d),\n", fround);
 
+    // PROTOTYPE (array-unit.md 4a): the array memory
+    if (n_arrw > 0) fprintf(f_veri, ".ARRMEM(1),\n.MARRS(%d),\n.AFILE(\"%s_arr.mif\"),\n", n_arrw, prname);
+
     // if there's an interrupt, set its address on the processor
     if (itr_addr != 0) fprintf(f_veri, ".ITRADD(%d),\n", itr_addr);
 

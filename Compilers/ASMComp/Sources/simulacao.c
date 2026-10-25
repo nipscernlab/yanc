@@ -192,7 +192,7 @@ void sim_finish (       ){fclose(f_tran);} // closes the translation file
 // if so, registers it for display in the simulator
 int sim_regi(char *va)
 {
-    return sim_regi_at(va, var_cnt()-1);
+    return sim_regi_at(va, var_find(va)); // va was just added: its address
 }
 
 // same, for a variable whose word is at addr (a #SHARE name uses its home's)

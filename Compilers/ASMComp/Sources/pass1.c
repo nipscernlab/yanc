@@ -68,8 +68,13 @@ static void var_share(char *va, char *home)
     sh_count++;
 }
 
+// PROTOTYPE (array-unit.md 4a): with YANC_ARRMEM the arrays are counted
+// apart, in the array memory
+static int p_arrmode = 0;
+static int nd = 0, na = 0;   // words of the normal and of the array memory
+
 // adds a variable, or an array of `size` words
-static void var_add(char *va, int size)
+static void var_add_m(char *va, int size, int is_arr)
 {
     va = var_home(va); // a shared name takes its home's word
 
@@ -78,8 +83,10 @@ static void var_add(char *va, int size)
         var_grow(v_count + size);
         strcpy(v_name[v_count], va);
         v_count += size;
+        if (p_arrmode && is_arr) na += size; else nd += size;
     }
 }
+static void var_add(char *va, int size) {var_add_m(va, size, 0);}
 
 // ----------------------------------------------------------------------------
 // the scanner's actions ------------------------------------------------------
@@ -107,6 +114,7 @@ void p1_init(const char *dir, const char *name)
     if (f_log == NULL) {fprintf(stderr, MSG_ERR_CANT_CREATE_LOG, dir); exit(EXIT_FAILURE);}
 
     fprintf(f_log, "prname %s\n", name);
+    p_arrmode = (getenv("YANC_ARRMEM") != NULL);
 }
 
 // a directive: the next operand is its argument
@@ -164,14 +172,14 @@ void p1_opernd(char *va)
                  n_ins++;                            state =  0; break; // LDI/STI <number>: raw base, no data word
         case 11: strcpy (name_arr,             va ); state = 12; break; // found an array without initialization
         case 12:                                     state = 13; break; // its data type (not needed here)
-        case 13: var_add(name_arr,        atoi(va)); state =  0; break; // declare array without initialization
+        case 13: var_add_m(name_arr,    atoi(va),1); state =  0; break; // declare array without initialization
         case 14: strcpy (name_arr,             va ); state = 15; break; // found an array with initialization
         case 15:                                     state = 16; break; // its data type (not needed here)
         case 16:          tam_arr =       atoi(va ); state = 17; break; // the file-initialized array's size
-        case 17: var_add(name_arr,         tam_arr); state =  0; break; // its words
+        case 17: var_add_m(name_arr,     tam_arr,1); state =  0; break; // its words
         case 31: strcpy (name_arr,             va ); state = 32; break; // #arrayd: the name
         case 32:                                     state = 33; break; // its data type (not needed here)
-        case 33: var_add(name_arr,        atoi(va)); state = 34; break; // its words
+        case 33: var_add_m(name_arr,    atoi(va),1); state = 34; break; // its words
         case 34: arrd_left = atoi(va);  state = arrd_left ? 35 : 0; break; // how many values follow
         case 35: if (--arrd_left == 0)               state =  0; break; // a value (written by the second pass)
         case 18: var_add(va,1);             n_ins++; state =  0; break; // ALU operations
@@ -202,7 +210,8 @@ void p1_label(char *va)
 void p1_finish(void)
 {
     fprintf(f_log, "n_ins %d\n", n_ins  );
-    fprintf(f_log, "n_dat %d\n", v_count);
+    fprintf(f_log, "n_dat %d\n", p_arrmode ? nd : v_count);
+    if (p_arrmode) fprintf(f_log, "n_arr %d\n", na);
     fprintf(f_log, "max_io %d\n", max_io);
     fclose (f_log);
 

@@ -59,6 +59,9 @@ int  fround    =  0;    // float rounding level (0 legacy, 1 truncation + satura
 // ----------------------------------------------------------------------------
 
 FILE *f_data, *f_instr; // .mif of the data and instruction memories
+FILE *f_arr;            // PROTOTYPE: .mif of the array memory (f_data when it is off)
+int   n_arrw = 0;       // PROTOTYPE: words of the array memory (0: off)
+static int n_arr_used = 0;
 
 // state variables
 int  state =   0 ;      // tracks the compiler state
@@ -243,6 +246,9 @@ void instr_out(char *va)
 // registers array declarations
 void instr_arr(char *va)
 {
+    // PROTOTYPE: in the array memory, and not shown in the waveform (its
+    // mirror reads the data .mif at the array's address)
+    if (arr_mode) {var_add_arr(va); return;}
          var_add(va ,0); // adds the array to the table
     sim_regi_arr(va   ); // registers the array in the simulator (looks up info in prog_log.txt)
 }
@@ -255,7 +261,12 @@ void instr_arr(char *va)
 // already be LOD's by the time this is called (set by eval_opcode("LEA", ...)).
 void instr_lea(char *va)
 {
+    // PROTOTYPE: a pointer is an address of the array memory, so only an
+    // array's address can be taken (a scalar's would need it moved there,
+    // decision 2 of array-unit.md)
+    if (arr_mode && !var_is_arr(va)) {fprintf(stderr, "asmcomp (prototype): LEA of %s, not an array\n", va); exit(EXIT_FAILURE);}
     int addr = var_find(va);
+    if (arr_mode) addr &= ~(1 << arr_sbit);   // the address without S
     if (addr == -1)
     {
         // address-taken-only variable (e.g. `int v; f(&v);` where v is never
@@ -292,6 +303,8 @@ void instr_lea(char *va)
 // LDI 3 reads mem[acc + 3]: how a pointer is dereferenced.
 void instr_ind(char *va, int is_const)
 {
+    // PROTOTYPE: LDI/STI always reach the array memory
+    if (arr_mode && is_const == 0 && !var_is_arr(va)) {fprintf(stderr, "asmcomp (prototype): %s on %s, not an array\n", opc_name, va); exit(EXIT_FAILURE);}
     if (is_const == 0) { instr_ula(va, 0); return; }
     if (is_const != 1) {fprintf(stderr, MSG_ERR_IND_BASE_INT, opc_name, va); exit(EXIT_FAILURE);}
 
@@ -382,13 +395,30 @@ void eval_init(int clk, int clk_n)
     // with few words and a high port had its port number cut ---------------
 
     nbopr = (n_ins > n_dat) ? ceil(log2(n_ins)) : ceil(log2(n_dat));
+
+    // PROTOTYPE (array-unit.md 4a): the data addresses take one bit more, S,
+    // the top bit of the operand
+    arr_mode = (getenv("YANC_ARRMEM") != NULL);
+    if (arr_mode)
+    {
+        n_arrw = (eval_get("app_log.txt","n_arr", aux) == 1) ? atoi(aux) : 0;
+        n_arr_used = n_arrw;
+        if (n_arrw < 2) n_arrw = 2;
+        int db = (int)ceil(log2(n_dat > n_arrw ? n_dat : n_arrw));
+        int ib = (int)ceil(log2(n_ins));
+        nbopr  = (ib > db + 1) ? ib : db + 1;
+    }
+
     if (eval_get("app_log.txt","max_io", aux) == 1)
         for (int m = atoi(aux); (m >> nbopr) != 0; ) nbopr++;
+    arr_sbit = nbopr - 1;
 
     // open the .mif files ----------------------------------------------------
 
     snprintf(aux, sizeof(aux), "%s/%s_data.mif", proc_dir, prname); f_data  = fopen(aux, "w");
     snprintf(aux, sizeof(aux), "%s/%s_inst.mif", proc_dir, prname); f_instr = fopen(aux, "w");
+    f_arr = f_data;
+    if (arr_mode) {snprintf(aux, sizeof(aux), "%s/%s_arr.mif", proc_dir, prname); f_arr = fopen(aux, "w");}
 
     // initialize routines for iverilog simulation ----------------------------
 
@@ -468,11 +498,11 @@ void eval_opernd(char *va, int is_const)
         case 10: fftsiz =  atoi(va);                    state =  0; break; // number of bits to reverse in the FFT
         case 11: instr_arr     (va);                    state = 12; break; // found an array without initialization
         case 12: arr_typ = atoi(va);                    state = 13; break; // pick up the array type
-        case 13: arr_add  (atoi(va),arr_typ,"",f_data); state =  0; break; // declare array without initialization
+        case 13: arr_add  (atoi(va),arr_typ,"",f_arr);  state =  0; break; // declare array without initialization
         case 14: instr_arr     (va);                    state = 15; break; // found an array with initialization
         case 15: arr_typ = atoi(va);                    state = 16; break; // pick up the array type
         case 16: arr_tam = atoi(va);                    state = 17; break; // pick up the file-initialized array size
-        case 17: arr_add  (arr_tam,arr_typ,va, f_data); state =  0; break; // fill memory with file values (zeros if no file)
+        case 17: arr_add  (arr_tam,arr_typ,va, f_arr);  state =  0; break; // fill memory with file values (zeros if no file)
         case 18: instr_ula     (va,is_const);           state =  0; break; // ALU operations
         case 19: instr_salto   (va);                    state =  0; break; // jump operations
         case 20: instr_inn     (va);                    state =  0; break; // input operations
@@ -489,8 +519,8 @@ void eval_opernd(char *va, int is_const)
         case 31: instr_arr     (va); strcpy(arrd_nm,va); state = 32; break; // #arrayd: the name
         case 32: arr_typ = atoi(va);                    state = 33; break; // #arrayd: the type
         case 33: arr_tam = atoi(va);                    state = 34; break; // #arrayd: the size
-        case 34: state = arrd_start(arrd_nm, arr_tam, arr_typ, atoi(va), f_data) ? 35 : 0; break; // #arrayd: how many values
-        case 35: state = arrd_value(va, f_data)         ? 35 : 0; break; // #arrayd: one value
+        case 34: state = arrd_start(arrd_nm, arr_tam, arr_typ, atoi(va), f_arr) ? 35 : 0; break; // #arrayd: how many values
+        case 35: state = arrd_value(va, f_arr)          ? 35 : 0; break; // #arrayd: one value
     }
 }
 
@@ -524,6 +554,16 @@ void eval_finish()
     // RAM on bigger ones (test46 on a Zynq-7010: 4 -> 5 RAMB36, 2026-10-21), so
     // the warning stays: the rest of the memory is set to 0, never addressed.
     for (int i = n_dat_used; i < n_dat; i++) fprintf(f_data, "%s\n", itob(0, nubits));   // padding (see eval_init)
+
+    // PROTOTYPE: the two passes must agree on the array memory, and it is
+    // padded to the 2 words its address needs
+    if (arr_mode)
+    {
+        if (var_arr_cnt() != n_arr_used) {fprintf(stderr, "asmcomp (prototype): array words %d in pass 1, %d in pass 2\n", n_arr_used, var_arr_cnt()); exit(EXIT_FAILURE);}
+        if (var_cnt() != n_dat_used)     {fprintf(stderr, "asmcomp (prototype): data words %d in pass 1, %d in pass 2\n", n_dat_used, var_cnt()); exit(EXIT_FAILURE);}
+        for (int i = n_arr_used; i < n_arrw; i++) fprintf(f_arr, "%s\n", itob(0, nubits));
+        fclose(f_arr);
+    }
 
     fclose(f_instr);
     fclose(f_data );

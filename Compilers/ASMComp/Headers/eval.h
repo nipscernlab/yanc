@@ -25,6 +25,7 @@ extern int  nuioou;            // number of output ports
 extern int  nugain;            // division constant
 extern int  fftsiz;            // FFT size (bits)
 extern int  fround;            // float rounding level (0 legacy, 1 truncation + saturation, 2 nearest even)
+extern int  n_arrw;            // PROTOTYPE (array-unit.md 4a): words of the array memory (0: off)
 
 // global functions -----------------------------------------------------------
 
