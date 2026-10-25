@@ -47,6 +47,12 @@ Dirac notation is then redone on it. The burst of item 28
 ([burst.md](burst.md)) is part of the same unit: the inner product needs
 the same size, pointer and wait in place as a burst to a port.
 
+**Changed (Luciano, 2026-10-25):** the Dirac notation is redone first, on
+its own, as expressions with shapes computed in loops (`dirac-expressions.md`,
+branch `lucianomaf/dirac-expressions`); step 5 showed why unrolled code
+cannot stay (section 6, decision 13). The array unit enters it later, as
+the hardware choice beside the loop in software.
+
 ## 2. The architecture (Luciano, 2026-10-24)
 
 - **An option**, chosen by a parameter: with it off, the processor is
@@ -257,7 +263,14 @@ out (2026-10-24): the memory is true dual port.
     Answered by decision 10: they always reach the array memory, so the
     address they use is one of the array memory (as in the prototype).
 13. **The Dirac notation redone**: the forms of issue #18, `comp`, the
-    conjugating bra, the outer product the right way round.
+    conjugating bra, the outer product the right way round. **Taken out
+    of this unit** (Luciano, 2026-10-25): unrolled, `proc_rls` grows as
+    14N² + 21N + 27 words (232 091 at N = 128, more than the block RAM of
+    the DE10-Nano), and each new combination of vectors and matrices needs
+    a grammar rule and a generator of its own. The notation becomes
+    expressions in the parser, computed in loops, independent of this unit
+    (`dirac-expressions.md`, branch `lucianomaf/dirac-expressions`); only
+    then a choice between the loop in software and this unit.
 
 ## 7. Tests and measurements before deciding (no YANC code touched)
 
