@@ -75,7 +75,7 @@ This applies when the person running the agent is an administrator of this repos
 - **What it looks for**, first in the files the current work touches, then in the rest: a sentence a change made untrue, a stale comment, a reference to a line or a section that moved, a number its source does not back, dead code, a script that depends on a path outside the repository.
 - **It reads and reports.** It changes nothing without the person's agreement, except a small, safe defect in a file it is already editing for the current work, and it commits nothing.
 - **Nothing heavy alongside the job:** no second fit, no regression, no build of the whole tree while a fit or the regression runs.
-- **The findings go to the person** when the job ends, most severe first, each with its file and line and whether it was checked or deduced.
+- **Each finding goes to the person as soon as it is found**, without waiting for the job to end, with its file and line and whether it was checked or deduced, so that the two can discuss it while the job runs.
 
 ## Rules of this repository
 
