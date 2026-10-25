@@ -741,17 +741,29 @@ versions with UFJF's technology transfer office first.
 
 ## 31. The Dirac output of an array: a wasted multiply, a missing form
 
-**Status:** open, found 2026-10-14 while measuring item 28, not fixed ·
+**Status:** open, found 2026-10-14 while measuring item 28, not fixed; since
+2026-10-25 part of the Dirac redesign, not to be fixed on its own ·
 **Area:** cmmcomp (Luciano's code: the diff goes to him first) ·
-**Evidence:** docs/design/burst.md section 1
+**Evidence:** docs/design/burst.md section 1,
+docs/design/dirac-expressions.md sections 2 and 3.4
 
 `out(0, 1|a⟩);` writes each element as `LOD_V a k; MLT 1; OUT 0`: the
 `MLT 1` costs a cycle a word and synthesizes the integer multiplier for a
 multiplication by one (pay only for what you use). And `out(0, |a⟩);`,
-without the scalar, is a syntax error. Fixed, the form is two instructions a
-word (`LOD_V`, `OUT`), the least today's ISA allows, independent of the
-burst. A fixture with the scalar 1 and with none, the golden checking that
-no `MLT` and no multiplier remain.
+without the scalar, is a syntax error.
+
+The Dirac notation is being redone as expressions computed in loops
+(Luciano, 2026-10-25, dirac-expressions.md). There both defects go without
+code of their own: `out(p, X)` takes any vector expression, `|a⟩` included,
+and a literal 1 drops out of the element's multiplication by the folding
+the expression walker already does (`ast.c` 569-571). The word then costs
+the loop's instructions: measured in a hand-written C± loop, 10 a word for
+a float array against 4 today (`LOD_V`, `F_MLT`, `F2I`, `OUT`); the two of
+the unrolled best (`LOD_V`, `OUT`) are no longer the target, the burst
+(item 28) or the array unit (PR #19) is. **Done when** the redesign lands
+with the fixture of dirac-expressions.md section 4: `out(0, 1|a⟩)` and
+`out(0, |a⟩)`, the golden showing no `MLT` and the processor no integer
+multiplier.
 
 ## 32. Divider stage count computed from the widths
 

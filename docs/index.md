@@ -121,6 +121,7 @@ design/ps2-keyboard
 design/vga-text
 design/cpp-iostream
 design/burst
+design/dirac-expressions
 design/ip-protection
 design/asm-names
 design/pipeln-and-division
