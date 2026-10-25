@@ -209,7 +209,28 @@ out (2026-10-24): the memory is true dual port.
    2026-10-24); the size of each memory (today one `MDATAS`).
 9. **Interrupts** during a sequence (the same question as for the burst
    and `TOM`/`CAD`, toma-and-cade.md section 6).
-10. **The compilers**: two address spaces, two memory images; `asm_reach`
+10. **The compilers**: two address spaces, two memory images. **How an
+    instruction names its memory, decided (Luciano, 2026-10-24): a bit of
+    the operand.** With the option on, asmcomp numbers two memories from 0:
+    scalars and constants in the normal one, everything declared by
+    `#array`, `#arrays` or `#arrayd` in the array memory. The data operand
+    gets one bit above the address bits, S: 0 the normal memory, 1 the
+    array memory (`LOD k` = `0 00011`, `F_MLT a` = `1 00000`, `LOD_V a 2` =
+    `1 00010`). S, registered, drives the new mux at ALU input in1 on a read
+    and picks which memory takes `mem_wr` on a write. `LDI`/`STI`/`ILI`/`ISI`
+    always use the array memory, whatever S, so a pointer (`LDI 0`, the
+    address in the acc) is an address of the array memory; `LEA a` gives
+    a's address there, without S. The normal memory loses the indirect
+    adder: its address is the operand. Rejected: new opcodes for the direct
+    forms. Element 0 of an array is reached by the plain instruction (`LOD
+    w`, `F_MLT x`, `SET x` in `proc_rls`; `F_MLT a` in `dirac_assign`), so
+    any of the 56 memory-operand mnemonics of `isa.tsv` can take an array,
+    and 20 opcodes are free in 7 bits: twins of `LOD`/`P_LOD`/`SET` alone
+    would cost a load before every other operation on an element, twins of
+    all would need an 8-bit opcode. The cost of S: one bit more in the
+    operand when the data addresses, not the code's, set its width.
+    cmmcomp and cppcomp keep writing `LOD a`, `LOD_V a 2`; the change is in
+    asmcomp (and appcomp, for the `_V` forms). `asm_reach`
     and `asm_share` per space, and both must see a sequence's pointers as
     reads (and writes) of the whole array (burst.md 5a, hole 4).
 11. **Simulation and AURORA**: the variables of the array memory visible
@@ -350,6 +371,56 @@ built the array from 8256 registers, about 10 000 ALMs, in a fit that did
 not end in 50 minutes. Written as each port returning the word it writes
 (Intel's template, `mem_tdp` in `mem.v`), it is a RAM. The prototype of
 step 4 uses that form, or checks the behaviour it needs on a write.
+
+**Step 4a, the array memory in the processor (2026-10-24),** a prototype
+in a worktree (local branch `lucianomaf/array-unit-proto`, not pushed):
+asmcomp with `YANC_ARRMEM` set numbers the two memories as decision 10
+says and writes `<name>_arr.mif`; `SAPHO/` gets the parameter `ARRMEM`,
+the array memory (read on one port, written on the other, as the data
+memory) and in `core.v` the choice by S or by `LDI`/`STI`, registered,
+driving a mux before ALU input in1; the data memory loses the indirect
+adder. cmmcomp and cppcomp unchanged, so the `.asm` is the golden one.
+With the option on, the simulated outputs against `golden_sim`:
+
+- C+-: 70 of the 71 fixtures that have a `golden_sim` and a testbench of
+  their own name give today's output (`ResetCheck` has its own testbench,
+  not run). `cmm_fft_rd`/`cmm_fft_wr` first failed to elaborate: their
+  array memory is exactly 8 words, as wide as the FFT, and `rel_addr`
+  built `offset[MDATAW-1:FFTSIZ]`, an empty range; fixed in the prototype.
+  The data memory, holding the scalars too, is always wider, so today's
+  code never meets it.
+- C++: 81 of the 89 tests simulated by iverilog give `golden.txt`; the 6
+  run by Verilator were not run. The other 8 stop in asmcomp, every one on
+  `LEA` of a scalar (`main_p`, `main_x`, `main_i`, `g_total`,
+  `sum_pointer_i`, `bit_cast_Tif_v`, static members `Widget__count`,
+  `Counter__total`): a pointer is an address of the array memory, so a
+  scalar whose address is taken has to live there. That is decision 2,
+  now with its size: 8 of 95 C++ tests, no C+- fixture.
+- Off, the same fixtures give today's output; the full regression with
+  the option off has not been run on the prototype.
+- With the option on, the arrays leave the waveform: their mirror in the
+  generated `<name>.v` reads the data `.mif` at the array's address
+  (decision 11).
+
+The clock (2026-10-24), `sapho_all` through `Scripts/hw/fmax.sh` on the
+DE10-Nano (5CSEBA6U23I7, slow 1100 mV 100 C, 10 ns asked, seed 1), the
+same program and the prototype's `SAPHO/`, the option off and on:
+
+| `sapho_all` | Fmax | ALMs | RAM blocks | registers |
+|---|---|---|---|---|
+| option off (today) | 32.11 MHz | 3545 | 6 | 1193 |
+| array memory on | 32.58 MHz | 3588 | 7 | 1185 |
+
+- **No clock lost.** +1.5 %, inside the spread of one fit against
+  another (several per cent): the same clock. Off, 32.11 MHz agrees with
+  the 32.4 to 32.6 MHz of item 29 (2026-10-15).
+- **The new mux is now on the worst path, and cheap.** Off, the worst path
+  starts at the accumulator and enters the ALU at in2 (30.9 ns). On, it
+  starts at the array memory, through the mux at in1 (`uic1`, 1.2 ns, one
+  level of logic), the float adder's alignment (7.3), add (3.6) and
+  normaliser (11.5 ns, 41 %), to the accumulator: 28.1 ns. The normaliser
+  is still what sets the clock.
+- **Area:** 43 ALMs and the array memory's RAM block.
 
 **Integer MAC (decision 6), from the code:** `MLT` keeps the low `NUBITS`
 bits of the product (`ula.v` 536: `assign out = in1 * in2` into an
