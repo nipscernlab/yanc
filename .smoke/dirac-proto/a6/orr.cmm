@@ -1,0 +1,13 @@
+#NUIOIN 1
+#NUIOOU 1
+
+int a[4];
+
+void main()
+{
+    int c = 1; int d = 2; int e = 8;
+    a[0] = 4;
+    out(0, c | d | e);
+    out(0, c|d|a[0]);
+    out(0, c | in(0));
+}

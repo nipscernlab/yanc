@@ -1,0 +1,18 @@
+Info: 368 instructions and 46 variables were found
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> < operator for int
+Info: adding data input handling
+Info: ULA resource -> int to float converter
+Info: adding stack memory for function calls
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> integer adder
+Info: ULA resource -> integer multiplier
+Info: adding array handling
+Info: stack depths not worked out from the program, the default stays: two paths reach one instruction with different stack depths
+Info: using 19% of the Assembly Instruction Set
+Info: using 25% of the ULA operations
+Sweet: the processor is good to go.

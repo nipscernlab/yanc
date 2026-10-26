@@ -1,0 +1,23 @@
+0 NOP 
+1 LOD 1
+2 SET main_c
+3 LOD 2
+4 SET main_d
+5 LOD 8
+6 SET main_e
+7 LOD 4
+8 SET_V a 0
+9 LOD main_d
+10 ORR main_c
+11 P_LOD main_e
+12 S_ORR 
+13 OUT 0
+14 LOD main_d
+15 ORR main_c
+16 P_LOD_V a 0
+17 S_ORR 
+18 OUT 0
+19 INN 0
+20 ORR main_c
+21 OUT 0
+22 JMP fim

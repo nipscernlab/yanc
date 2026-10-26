@@ -1,0 +1,33 @@
+-1 INTERNAL
+-2 void main();
+-3 END
+1 #NUBITS 32
+2 #NBMANT 23
+3 #NBEXPO 8
+4 #NUIOIN 1
+5 #NUIOOU 1
+6 
+7 // operand order: are x*y and y*x, x+y and y+x, a-t and -t+a the same bits?
+8 // output: 1 when all three pairs agree, else 0, for 500 random pairs
+9 void main()
+10 {
+11     int n = 0;
+12     int bad = 0;
+13     float x; float y; float p; float q; int ip; int iq;
+14     while (n < 500)
+15     {
+16         x = fin(0)*0.0013;
+17         y = fin(0)*0.00071;
+18         p = x*y; q = y*x;
+19         copy(p, ip); copy(q, iq);
+20         if (ip != iq) bad++;
+21         p = x+y; q = y+x;
+22         copy(p, ip); copy(q, iq);
+23         if (ip != iq) bad++;
+24         p = x-y; q = -y+x;
+25         copy(p, ip); copy(q, iq);
+26         if (ip != iq) bad++;
+27         n++;
+28     }
+29     out(0, bad);
+30 }

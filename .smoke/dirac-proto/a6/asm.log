@@ -1,0 +1,8 @@
+Info: 23 instructions and 11 variables were found
+Info: ULA resource -> | operator
+Info: adding data output handling
+Info: adding data input handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 6% of the Assembly Instruction Set
+Info: using 2% of the ULA operations
+Sweet: the processor is good to go.

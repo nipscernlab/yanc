@@ -1,0 +1,9 @@
+prname sh
+nubits 32
+nbmant 23
+nbexpo 8
+@main 1
+@fim 15
+n_ins 16
+n_dat 7
+max_io 0

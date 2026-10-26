@@ -1,0 +1,5 @@
+VCD info: dumpfile mv_tb.vcd opened for output.
+TURN 941
+TURN 941
+Info: end of program!
+mv/mv_tb.v:90: $finish called at 59165000 (1ps)

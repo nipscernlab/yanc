@@ -1,0 +1,26 @@
+Info: constant 0.99 on line 20 approximated to 0.99000000953674316 (error = 9.54e-09)
+Info: constant 1.010101 on line 30 approximated to 1.0101010799407959 (error = 7.99e-08)
+Info: constant 0.001 on line 48 approximated to 0.00099999993108212948 (error = -6.89e-11)
+Info: constant 0.001 on line 49 approximated to 0.00099999993108212948 (error = -6.89e-11)
+Info: constant 0.001 on line 50 approximated to 0.00099999993108212948 (error = -6.89e-11)
+Info: constant 0.001 on line 51 approximated to 0.00099999993108212948 (error = -6.89e-11)
+Info: constant 0.001 on line 55 approximated to 0.00099999993108212948 (error = -6.89e-11)
+Info: Dirac notation for Inner Product detected at line 15
+Info: Dirac notation for Matrix-Vector multiplication detected at line 19
+Info: Dirac notation for Inner Product detected at line 20
+Info: Dirac notation for Constant-Vector multiplication detected at line 21
+Info: Dirac notation for Vectors Sum detected at line 25
+Info: Dirac notation for Outer Product detected at line 29
+Info: Dirac notation for Matrix Sum detected at line 29
+Info: Dirac notation for Constant-Matrix multiplication detected at line 30
+Info: Dirac notation for Constant-Matrix multiplication detected at line 37
+Info: Dirac notation for zeroing vector contents detected at line 38
+Info: Dirac notation for shift register in vector x detected at line 48
+Info: Dirac notation for shift register in vector x detected at line 49
+Info: Dirac notation for shift register in vector x detected at line 50
+Info: Dirac notation for shift register in vector x detected at line 51
+Info: Dirac notation for flushing vector contents detected at line 59
+Info: 365 assembly instructions generated
+Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (3 added)
+Info: 8 variables share 3 data words (5 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.

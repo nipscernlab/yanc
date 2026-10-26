@@ -1,0 +1,99 @@
+0 NOP 
+1 LOD 0
+2 SET main_k
+3 LOD main_k
+4 PF_INN 0
+5 F_MLT 0.001
+6 STI a
+7 LOD main_k
+8 ADD 1
+9 SET main_k
+10 LES 15
+11 JIZ __Lwh1
+12 LOD 0
+13 SET main_k
+14 LOD main_k
+15 PF_INN 0
+16 F_MLT 0.001
+17 STI b
+18 LOD main_k
+19 ADD 1
+20 SET main_k
+21 LES 15
+22 JIZ __Lwh2
+23 F_INN 0
+24 F_MLT 0.001
+25 SET main_c
+26 LOD 0
+27 SET main_t
+28 LOD 2
+29 LES main_t
+30 JIZ __Lwh3end
+31 LOD a
+32 F_MLT b
+33 P_LOD_V a 1
+34 F_MLT_V b 1
+35 SF_ADD 
+36 P_LOD_V a 2
+37 F_MLT_V b 2
+38 SF_ADD 
+39 P_LOD_V a 3
+40 F_MLT_V b 3
+41 SF_ADD 
+42 P_LOD_V a 4
+43 F_MLT_V b 4
+44 SF_ADD 
+45 P_LOD_V a 5
+46 F_MLT_V b 5
+47 SF_ADD 
+48 P_LOD_V a 6
+49 F_MLT_V b 6
+50 SF_ADD 
+51 P_LOD_V a 7
+52 F_MLT_V b 7
+53 SF_ADD 
+54 P_LOD_V a 8
+55 F_MLT_V b 8
+56 SF_ADD 
+57 P_LOD_V a 9
+58 F_MLT_V b 9
+59 SF_ADD 
+60 P_LOD_V a 10
+61 F_MLT_V b 10
+62 SF_ADD 
+63 P_LOD_V a 11
+64 F_MLT_V b 11
+65 SF_ADD 
+66 P_LOD_V a 12
+67 F_MLT_V b 12
+68 SF_ADD 
+69 P_LOD_V a 13
+70 F_MLT_V b 13
+71 SF_ADD 
+72 P_LOD_V a 14
+73 F_MLT_V b 14
+74 SF_ADD 
+75 P_LOD_V a 15
+76 F_MLT_V b 15
+77 SF_ADD 
+78 SET main_s
+79 LOD 0
+80 SET main_q
+81 LOD main_s
+82 SET main_ib
+83 OUT 0
+84 LOD 7
+85 OUT 0
+86 LOD main_c
+87 F_ADD 0.25
+88 SET main_c
+89 LOD main_t
+90 P_LOD main_t
+91 LDI a
+92 F_ADD 0.125
+93 STI a
+94 LOD main_t
+95 ADD 1
+96 SET main_t
+97 JMP __Lwh3
+98 JMP fim

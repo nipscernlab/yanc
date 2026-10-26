@@ -1,0 +1,10 @@
+rls_update d 2
+rls_update e 2
+rls_update g 2
+main j 1
+main r 1
+main c 1
+main ib 1
+num_ins 368
+srcdir C:/nipscern/yanc-dirac/.smoke/dirac-proto/db
+lang C+-

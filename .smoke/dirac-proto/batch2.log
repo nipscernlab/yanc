@@ -1,0 +1,15 @@
+== operand order probe (bad pairs out of 1500)
+--- output:
+== bits
+dirac+tail: 0 words on port 1
+loop same N=4: 322 words of 16 bits, clocks per turn seen: 1227  output = golden
+  same: bits differ in 20 of 20 words
+loop fix N=4: 322 words of 16 bits, clocks per turn seen: 1227  output = golden
+  fix: bits differ in 20 of 20 words
+loop sub N=4: 321 words of 16 bits, clocks per turn seen: 1211  output = golden
+  sub: bits differ in 20 of 20 words
+loop nat N=4: 321 words of 16 bits, clocks per turn seen: 1211  output = golden
+  nat: bits differ in 20 of 20 words
+== N=32 simulated (input runs out after 400 reads; the timing has no data-dependent branch)
+loop same N=32: 742 words of 18 bits, clocks per turn seen: 61623  
+N=32: 15035 words of 21 bits, clocks per turn seen: 13971 

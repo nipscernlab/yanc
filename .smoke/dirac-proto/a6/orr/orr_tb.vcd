@@ -1,0 +1,321 @@
+$date
+	Sun Oct 25 19:26:00 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module orr_tb $end
+$var reg 1 ! clk $end
+$upscope $end
+$scope module orr_tb $end
+$var reg 1 " rst $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$var reg 1 # req_in_sim_0 $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$var reg 32 $ in_sim_0 [31:0] $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$var reg 1 % out_en_sim_0 $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$var reg 32 & out_sig_0 [31:0] $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$var reg 32 ' valr2 [31:0] $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$var reg 20 ( linetabs [19:0] $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$var reg 32 ) me1_f_main_v_c_e_ [31:0] $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$var reg 32 * me1_f_main_v_d_e_ [31:0] $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$var reg 32 + me1_f_main_v_e_e_ [31:0] $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$scope module p_orr $end
+$scope module core $end
+$scope module sp $end
+$var reg 1 , pointeri $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$scope module p_orr $end
+$scope module core $end
+$scope module sp $end
+$var reg 1 - fl_max $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$scope module p_orr $end
+$scope module core $end
+$scope module sp $end
+$var reg 1 . fl_full $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$scope module p_orr $end
+$scope module core $end
+$scope module ula $end
+$var real 1 / delta_float $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module orr_tb $end
+$scope module proc $end
+$scope module p_orr $end
+$scope module core $end
+$scope module ula $end
+$var real 1 0 delta_int $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+r0 0
+r0 /
+0.
+0-
+0,
+b0 +
+b0 *
+b0 )
+b11111111111111111111 (
+b0 '
+b0 &
+0%
+b0 $
+0#
+1"
+0!
+$end
+#5000
+1!
+#10000
+0!
+0"
+#15000
+1!
+#20000
+0!
+#25000
+1!
+#30000
+0!
+#35000
+b1 '
+b1000 (
+1!
+#40000
+0!
+#45000
+b1 )
+b10 '
+1!
+#50000
+0!
+#55000
+b11 '
+1!
+#60000
+0!
+#65000
+b10 *
+b100 '
+1!
+#70000
+0!
+#75000
+b101 '
+1!
+#80000
+0!
+#85000
+b1000 +
+b110 '
+1!
+#90000
+0!
+#95000
+b111 '
+b1001 (
+1!
+#100000
+0!
+#105000
+b1000 '
+1!
+#110000
+0!
+#115000
+b1001 '
+b1010 (
+1!
+#120000
+0!
+#125000
+b1010 '
+1!
+#130000
+0!
+#135000
+1,
+b1011 '
+1-
+1!
+#140000
+0!
+#145000
+0,
+b1100 '
+1!
+#150000
+0!
+#155000
+1%
+b1101 '
+1!
+#160000
+0!
+#165000
+0%
+b1011 &
+b1110 '
+b1011 (
+1!
+#170000
+0!
+#175000
+b1111 '
+1!
+#180000
+0!
+#185000
+1,
+b10000 '
+1!
+#190000
+0!
+#195000
+0,
+b10001 '
+1!
+#200000
+0!
+#205000
+1#
+1%
+b10010 '
+1!
+#210000
+0!
+#215000
+0#
+0%
+b10011 '
+b1100 (
+b111 &
+b11 $
+1!
+#220000
+0!
+#225000
+b10100 '
+1!
+#230000
+0!
+#235000
+1%
+b10101 '
+1!
+#240000
+0!
+#245000
+0%
+b11 &
+b10110 '
+b11111111111111111101 (
+1!
+#250000
+0!
+#255000
+1!
+#260000
+0!
+#265000
+1!
+#270000
+0!
+#275000
+1!
+#280000
+0!
+#285000
+1!
+#290000
+0!
+#295000
+1!
+#300000
+0!
+#305000
+1!
+#310000
+0!
+#315000
+1!
+#320000
+0!
+#325000
+1!
+#330000
+0!
+#335000
+1!

@@ -1,0 +1,23 @@
+NOP
+#PRNAME sh
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+#array a 1 3
+@main LOD 5
+SET main_k
+LOD 0
+SET_V a 0
+SET_V a 1
+SET_V a 2
+LOD main_k
+ADD 1
+LOD_V a 0
+OUT 0
+LOD_V a 1
+OUT 0
+LOD_V a 2
+OUT 0
+@fim JMP fim

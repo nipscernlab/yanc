@@ -1,0 +1,1459 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 4988dfa..7f58c61 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -50,6 +50,19 @@ tags consumed by Aurora.
+   both compilers.
+ 
+ ### Changed
++- **C±: the Dirac notation is parsed as expressions** (step a of
++  docs/design/dirac-expressions.md). A chain between bars (`|a⟩`, `⟨a|`,
++  `|M|`, `|M|a⟩`, `⟨a|M|b⟩`) is a term of `exp` and juxtaposition is the
++  product, between `+` and `*` in precedence; every term has a shape
++  (number, vector, row, matrix), checked with messages that name both
++  shapes. The lexer reads a bar followed by the name of an array, without
++  an index, as a Dirac bar, so `c | a[k]` stays a bitwise or. The code is
++  still the unrolled code of before, for the same forms, and the assembly
++  of `dirac_assign` and `proc_rls` is unchanged; any other combination
++  stops with "not implemented yet" until step b. The grammar has no
++  conflict left (`%expect 0`; the one of `A # c|B|;` is gone). A
++  coefficient with `+` or `-` now needs parentheses: `x # (a+c)|b⟩`.
++  Negative fixtures `NegTests/dirac_*`.
+ - **C++: string literals and global `const` arrays go into the data
+   memory** instead of being stored by code when `main` starts (3
+   instructions a word). The `cin`/`cout` demonstration for the DE2-115:
+diff --git a/Compilers/CMMComp/Headers/ast.h b/Compilers/CMMComp/Headers/ast.h
+index 37d7f32..203051c 100644
+--- a/Compilers/CMMComp/Headers/ast.h
++++ b/Compilers/CMMComp/Headers/ast.h
+@@ -65,9 +65,31 @@ typedef enum {
+     EXPR_PPLUS,        // postfix ++ (scalar id, or array[idx] / [idx][idx2])
+     EXPR_STDLIB_CALL,  // in() / fin() / pst() / abs() / sign() / sqrt() / ... (op picks which)
+     EXPR_FUNC_CALL,    // user-defined function call f(a, b, ...) - args[] is n-ary
+-    EXPR_INNER         // Dirac inner product <a|b> ; left/right are the two vector refs
++    // Dirac notation: a chain of names between bars and the products of
++    // terms. The shape (rows, cols) is filled by shapecheck_expr.
++    EXPR_DIRAC_REF,    // an array in a chain; id = array, op = its role (dirac_role)
++    EXPR_DIRAC_PROD,   // juxtaposition: left times right (c|a⟩, |M|a⟩, |a⟩⟨b|, ⟨a|b⟩)
++    EXPR_DIRAC_CONST,  // |I| or |0⟩; op = dirac_const, size taken from the context
++    EXPR_DIRAC_IN      // |in(p)⟩; id = the port's v_table index, size from the context
+ } expr_kind;
+ 
++// The role of an array in a Dirac chain, by its place: the first name of a
++// chain opened by ⟨ is a bra, the last of a chain closed by ⟩ a ket, any
++// other a matrix.
++typedef enum {
++    DIRAC_ROLE_KET = 1,  // |a⟩, a column of size N: shape (N, 1)
++    DIRAC_ROLE_BRA,      // ⟨a|, a row of size N:    shape (1, N)
++    DIRAC_ROLE_MAT       // |M|, N x M:               shape (N, M)
++} dirac_role;
++
++typedef enum {
++    DIRAC_EYE = 1,       // |I|, square, any size
++    DIRAC_ZERO           // |0⟩, a ket of any size
++} dirac_const;
++
++// Shape value for a size the context decides (|I|, |0⟩, |in(p)⟩)
++#define DIRAC_ANY (-1)
++
+ // Operator codes carried by EXPR_BINOP / EXPR_UNOP. Names mirror the
+ // historical oper_*() functions in oper.c so the migration of each
+ // consumer reads as a one-to-one mapping. Grows as more rules switch.
+@@ -140,6 +162,11 @@ typedef struct expr_node {
+     // result instead of re-emitting. Producers never set these by hand.
+     int  emitted;
+     expr cached;
++
++    // Shape for the Dirac notation, filled by shapecheck_expr: (1, 1) for
++    // a number, (N, 1) a ket, (1, N) a bra, (N, M) a matrix; DIRAC_ANY for
++    // a size the context decides; (0, 0) not checked yet.
++    int rows, cols;
+ } expr_node;
+ 
+ // constructors. Leaf nodes (literal, var, array_index, pplus, func_call)
+@@ -170,9 +197,26 @@ expr_node *expr_stdlib(int op, int port, expr_node *a, expr_node *b);
+ // and the nodes it points at (expr_free recurses).
+ expr_node *expr_func_call(int type, int id, expr_node **args, int n_args);
+ 
+-// Dirac inner product <a|b>. a and b are vector references (typically built
+-// via expr_var() with the array's v_table index).
+-expr_node *expr_inner(expr_node *a, expr_node *b);
++// Dirac notation. A chain between bars is built name by name while the
++// parser reads it: dirac_open with the first name (opened_by_bra = 1 when
++// the chain starts with ⟨), dirac_push for each next name, dirac_close at
++// the closing ⟩ (closed_by_ket = 1) or bar, which gives each name its role
++// and returns the chain as products, left to right.
++expr_node *dirac_open (int opened_by_bra, int id);
++expr_node *dirac_push (expr_node *chain, int id);
++expr_node *dirac_close(expr_node *chain, int closed_by_ket);
++expr_node *expr_dirac_prod (expr_node *left, expr_node *right); // juxtaposition
++expr_node *expr_dirac_const(int which);                         // DIRAC_EYE / DIRAC_ZERO
++expr_node *expr_dirac_in   (int port);                          // |in(p)⟩
++
++// |x⟩ where x is not an array (the lexer gave a plain bar): stops with the
++// error that says so, at parse time
++void dirac_not_vector(int id);
++
++// Fills rows/cols bottom-up and stops with an error when two shapes do not
++// fit (a sum of a vector and a matrix, a product whose inner sizes differ,
++// a name used as a vector that is not 1D...). Idempotent.
++void shapecheck_expr(expr_node *n);
+ 
+ // frees the node and every descendant recursively
+ void expr_free(expr_node *n);
+@@ -205,8 +249,8 @@ typedef enum {
+     STMT_OUT,           // out(port, exp);  (op=0)  /  fout(port, exp);  (op=1)
+     STMT_TOMA,          // toma(k, exp);  hands exp over link k (id = k)
+     STMT_COPY,          // copy(exp, dst_id);
+-    STMT_VOUT,          // out(port, exp | vector_id BRA);  Dirac vector output
+-    STMT_DIRAC,         // Dirac linear-algebra assignments (op discriminates)
++    STMT_DIRAC,         // dst # exp;  a Dirac expression into an array (id = dst, rhs)
++    STMT_DIRAC_SHIFT,   // dst # c -> |dst⟩;  shift register (id = dst, id2 = the ket, rhs = c)
+     STMT_VOID_CALL,     // f(args);  user-defined void function call statement
+     STMT_DIRE_INTER,    // #PRACA directive (interrupt return target)
+     STMT_DIRE_TOAQUI,   // #TOAQUI directive (cheguei pin trigger address)
+@@ -226,8 +270,7 @@ typedef enum {
+                         // to its step label Lwh<id>cont, op=0 if a while -> jump to top)
+     STMT_DECLAR_ARR_1D, // int/float/comp x[N];  or with file init  id=id_var, id2=id_arg, id3=id_fname
+     STMT_DECLAR_ARR_2D, // int/float/comp x[N][M];  id=id_var, id2=id_x, id3=id_y, id4=id_fname
+-    STMT_DECLAR_MV,     // float a[N] # |M|v⟩;     id=id_var, id2=id_N, id3=id_M, id4=id_v
+-    STMT_DECLAR_CV,     // float a[N] # c|v⟩;      id=id_var, id2=id_N, id3=id_v, rhs=c expression
++    STMT_DECLAR_DIRAC,  // float a[N] # exp;  id=id_var, id2=id_N, rhs=the Dirac expression
+     STMT_FUNC_HEADER,   // @label + optional JMP main + per-param SET[_P];
+                         // id=func v_table index, op=needs_jmp_main flag,
+                         // params[]/n_params=param ids in declaration order
+@@ -239,21 +282,6 @@ typedef enum {
+                         // index, body=function body stmt_list
+ } stmt_kind;
+ 
+-// Sub-operation for STMT_DIRAC. The 10 Dirac forms share enough structure
+-// to live under one kind, dispatched by op in the walker.
+-typedef enum {
+-    DIRAC_MV,      // dst # |M|a⟩;             3 ids
+-    DIRAC_CV,      // dst # c|b⟩;              2 ids + rhs (scalar c)
+-    DIRAC_APCB,    // dst # |b⟩ + c|d⟩;        3 ids + rhs (scalar c)
+-    DIRAC_VVT,     // dst # |a⟩⟨b|;            3 ids
+-    DIRAC_MMVVT,   // dst # |B| - |a⟩⟨b|;      4 ids
+-    DIRAC_CM,      // dst # c|B|;              2 ids + rhs (scalar c)
+-    DIRAC_CI,      // dst # c|I|;              1 id  + rhs (scalar c)
+-    DIRAC_V0,      // dst # |0⟩;               1 id
+-    DIRAC_CVIN,    // dst # c|in(port)⟩;       2 ids + rhs (scalar c)
+-    DIRAC_SHIFT,   // dst # c -> |a⟩;          2 ids + rhs (scalar c)
+-} dirac_op;
+-
+ typedef struct stmt_node {
+     stmt_kind kind;
+     int       line;     // source line where the node was built (1-based)
+@@ -265,7 +293,7 @@ typedef struct stmt_node {
+     int               id2;   // secondary int
+     int               id3;   // tertiary int (DIRAC: third var id)
+     int               id4;   // quaternary int (DIRAC_MMVVT only)
+-    int               op;    // small flag (fft / fout / dirac_op / ...)
++    int               op;    // small flag (fft / fout / ...)
+     struct expr_node *rhs;   // value/source expression (owned)
+     struct expr_node *idx;   // PPLUS / ARRAY_ASSIGN: 1D/2D index (NULL for scalar)
+     struct expr_node *idx2;  // PPLUS / ARRAY_ASSIGN: 2D second index (NULL otherwise)
+@@ -313,7 +341,7 @@ stmt_node *stmt_array_assign(int id,
+ // rhs=NULL -> void return; rhs=<expr> -> value return.
+ stmt_node *stmt_return(struct expr_node *rhs);
+ 
+-// out(port, rhs)  -> fout_flag=0
++// out(port, rhs)  -> fout_flag=0  (rhs a number, or a Dirac vector c|a⟩)
+ // fout(port, rhs) -> fout_flag=1
+ stmt_node *stmt_out(int port, struct expr_node *rhs, int fout_flag);
+ stmt_node *stmt_toma(int k, struct expr_node *rhs);
+@@ -321,8 +349,6 @@ stmt_node *stmt_toma(int k, struct expr_node *rhs);
+ // copy(rhs, dst_id);   no AST node for the destination, just its var id.
+ stmt_node *stmt_copy(struct expr_node *rhs, int dst_id);
+ 
+-// out(port, rhs | vector_id BRA);  Dirac vector output.
+-stmt_node *stmt_vout(int port, struct expr_node *rhs, int vector_id);
+ 
+ // statement-form user void call: f(args);  inner is the EXPR_FUNC_CALL with
+ // the popped args already bound. Walker invokes ast_emit_expr on it.
+@@ -362,11 +388,10 @@ stmt_node *stmt_continue    (int loop_label, int cont_lbl);
+ stmt_node *stmt_declar_arr_1d(int id_var, int id_arg, int id_fname);
+ stmt_node *stmt_declar_arr_2d(int id_var, int id_x, int id_y, int id_fname);
+ 
+-// Dirac-initialized 1D array declarations. The base array's #array directive
+-// is emitted by the same code path as stmt_declar_arr_1d; the Mv / cv stuff
+-// is then walked through exec_Mv / exec_cv.
+-stmt_node *stmt_declar_Mv   (int id_var, int id_N, int id_M, int id_v);
+-stmt_node *stmt_declar_cv   (int id_var, int id_N, struct expr_node *c, int id_v);
++// Dirac-initialized 1D array declaration, float a[N] # exp;. The base
++// array's #array directive is emitted by the same code path as
++// stmt_declar_arr_1d; the expression then goes the way of STMT_DIRAC.
++stmt_node *stmt_declar_dirac(int id_var, int id_N, struct expr_node *rhs);
+ 
+ // Function prologue: @label + optional JMP main (when this is the first
+ // non-main function) + per-parameter SET[_P]. params[] is consumed (takes
+@@ -399,19 +424,10 @@ stmt_node *stmt_list_close      (void);
+ // case_test / switch_break append directly to it.
+ stmt_node *stmt_list_top        (void);
+ 
+-// Dirac linear-algebra assignments. One constructor per syntactic form; each
+-// internally tags the stmt_node with the corresponding dirac_op. `c` is the
+-// scalar factor expression where applicable (NULL otherwise).
+-stmt_node *stmt_dirac_Mv    (int dst, int M, int a);
+-stmt_node *stmt_dirac_cv    (int dst, struct expr_node *c, int b);
+-stmt_node *stmt_dirac_apcb  (int dst, int b, struct expr_node *c, int d);
+-stmt_node *stmt_dirac_vvt   (int dst, int a, int b);
+-stmt_node *stmt_dirac_Mmvvt (int dst, int B, int a, int b);
+-stmt_node *stmt_dirac_cM    (int dst, struct expr_node *c, int M);
+-stmt_node *stmt_dirac_cI    (int dst, struct expr_node *c);
+-stmt_node *stmt_dirac_v0    (int dst);
+-stmt_node *stmt_dirac_cvin  (int dst, struct expr_node *c, int port);
+-stmt_node *stmt_dirac_shift (int dst, struct expr_node *c, int a);
++// Dirac linear algebra: dst # rhs; with rhs a Dirac expression, and the
++// shift register dst # c -> |a⟩; (a must be dst).
++stmt_node *stmt_dirac      (int dst, struct expr_node *rhs);
++stmt_node *stmt_dirac_shift(int dst, struct expr_node *c, int a);
+ 
+ // walks a stmt_node and emits via the same helpers the inline grammar
+ // actions used to call (ass_set, etc.).
+diff --git a/Compilers/CMMComp/Headers/data_declar.h b/Compilers/CMMComp/Headers/data_declar.h
+index ccc47e3..db794c4 100644
+--- a/Compilers/CMMComp/Headers/data_declar.h
++++ b/Compilers/CMMComp/Headers/data_declar.h
+@@ -37,5 +37,4 @@ void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname);
+ // array declarations initialized with Dirac notation -------------------------
+ // ----------------------------------------------------------------------------
+ 
+-void declar_Mv    (int id_name, int id_N  , int id_M, int id_v       ); // e.g. float a[4] # |B|a>;
+-void declar_cv    (int id_name, int id_N  , expr_node *c, int id_v   ); // e.g. float a[4] # c|a>;
++void declar_dirac (int id_name, int id_N  , expr_node *rhs         ); // e.g. float a[4] # |B|a>;
+diff --git a/Compilers/CMMComp/Headers/messages.h b/Compilers/CMMComp/Headers/messages.h
+index 2478863..0c35058 100644
+--- a/Compilers/CMMComp/Headers/messages.h
++++ b/Compilers/CMMComp/Headers/messages.h
+@@ -300,6 +300,38 @@ void parse_lang_flag(int *argc, char **argv);
+     M("Erro na linha %d: só dá pra fazer shift de um vetor nele mesmo, abensoado!\n", \
+       "Error on line %d: you can only shift a vector into itself, mate!\n")
+ 
++// the shapes of the Dirac notation, as the messages below print them
++#define MSG_SHAPE_NUMBER     M("um número", "a number")
++#define MSG_SHAPE_VECTOR     M("um vetor de %d", "a vector of %d")
++#define MSG_SHAPE_ROW        M("uma linha de %d", "a row of %d")
++#define MSG_SHAPE_MATRIX     M("uma matriz %dx%d", "a %dx%d matrix")
++#define MSG_SHAPE_ANY_VECTOR M("um vetor", "a vector")
++#define MSG_SHAPE_ANY_MATRIX M("uma matriz", "a matrix")
++
++#define MSG_ERR_DIRAC_SUM_SHAPE \
++    M("Erro na linha %d: soma ou subtração de %s com %s: as formas têm que ser iguais\n", \
++      "Error on line %d: adding or subtracting %s and %s: the shapes must be the same\n")
++
++#define MSG_ERR_DIRAC_PRODUCT_SHAPE \
++    M("Erro na linha %d: produto de %s por %s: as colunas do primeiro não batem com as linhas do segundo\n", \
++      "Error on line %d: %s times %s: the columns of the first do not match the rows of the second\n")
++
++#define MSG_ERR_DIRAC_TARGET_SHAPE \
++    M("Erro na linha %d: '%s' é %s e a expressão dá %s\n", \
++      "Error on line %d: '%s' is %s and the expression gives %s\n")
++
++#define MSG_ERR_DIRAC_NOT_SCALAR \
++    M("Erro na linha %d: %s onde se espera um número\n", \
++      "Error on line %d: %s where a number is needed\n")
++
++#define MSG_ERR_DIRAC_OUT_MATRIX \
++    M("Erro na linha %d: out() escreve um número ou um vetor, não %s\n", \
++      "Error on line %d: out() writes a number or a vector, not %s\n")
++
++#define MSG_ERR_DIRAC_NOT_YET \
++    M("Erro na linha %d: esta combinação da notação de Dirac ainda não está implementada\n", \
++      "Error on line %d: this combination of the Dirac notation is not implemented yet\n")
++
+ // operator errors and warnings (oper.c) -------------------------------------
+ 
+ #define MSG_ERR_MOD_NON_INT \
+diff --git a/Compilers/CMMComp/Headers/variaveis.h b/Compilers/CMMComp/Headers/variaveis.h
+index 50469ba..e742922 100644
+--- a/Compilers/CMMComp/Headers/variaveis.h
++++ b/Compilers/CMMComp/Headers/variaveis.h
+@@ -30,6 +30,7 @@ void  check_name(int id, int is_fun);     // a declared name must be free in the
+ // used in the lexer to pick up variables and constants -----------------------
+ 
+ int exec_id  (char *text);               // an ID was found
++int find_id  (const char *text);         // the ID as exec_id would resolve it, without creating it (-1 if none)
+ int exec_inum(char *text);               // an int constant was found
+ int inum_kind(const char *text);         // 0 INUM, 1 NINUM (a negative bit pattern), 2 NIMIN (the most negative)
+ int exec_inum_neg(char *text);           // the magnitude of a NINUM / NIMIN
+diff --git a/Compilers/CMMComp/NegTests/dirac_braket_one.cmm b/Compilers/CMMComp/NegTests/dirac_braket_one.cmm
+new file mode 100644
+index 0000000..162db52
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_braket_one.cmm
+@@ -0,0 +1,18 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: one name between angles, with no bar.
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    float x;
++    x = ⟨a⟩;
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_not_matrix.cmm b/Compilers/CMMComp/NegTests/dirac_not_matrix.cmm
+new file mode 100644
+index 0000000..c326c20
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_not_matrix.cmm
+@@ -0,0 +1,17 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: a 1D array between bars, in the place of a matrix.
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    v # |a|a⟩;
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_not_scalar.cmm b/Compilers/CMMComp/NegTests/dirac_not_scalar.cmm
+new file mode 100644
+index 0000000..5858b51
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_not_scalar.cmm
+@@ -0,0 +1,18 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: a vector where a number is needed.
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    float x;
++    x = |a⟩;
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_not_vector.cmm b/Compilers/CMMComp/NegTests/dirac_not_vector.cmm
+new file mode 100644
+index 0000000..395dce9
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_not_vector.cmm
+@@ -0,0 +1,17 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: a 2D array in the place of a ket.
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    v # 2.0|M⟩;
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_not_yet.cmm b/Compilers/CMMComp/NegTests/dirac_not_yet.cmm
+new file mode 100644
+index 0000000..9e36395
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_not_yet.cmm
+@@ -0,0 +1,17 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: a valid form that step a does not compute yet (docs/design/dirac-expressions.md).
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    v # |a⟩ - |a⟩;
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_or_index.cmm b/Compilers/CMMComp/NegTests/dirac_or_index.cmm
+new file mode 100644
+index 0000000..29be042
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_or_index.cmm
+@@ -0,0 +1,17 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Valid fixture: a bar before an indexed array element is still the
++// bitwise or (c | a[0]), not a Dirac bar.
++int a[4];
++
++void main()
++{
++    int c = 1; int d = 2;
++    a[0] = 4;
++    out(0, c|d|a[0]);
++    out(0, c | a[1]);
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_out_matrix.cmm b/Compilers/CMMComp/NegTests/dirac_out_matrix.cmm
+new file mode 100644
+index 0000000..d12f4f1
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_out_matrix.cmm
+@@ -0,0 +1,17 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: out() of a matrix.
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    out(0, 2.0|M|);
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_product_shape.cmm b/Compilers/CMMComp/NegTests/dirac_product_shape.cmm
+new file mode 100644
+index 0000000..505464d
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_product_shape.cmm
+@@ -0,0 +1,17 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: a 3x2 matrix times a vector of 3: the inner sizes differ.
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    v # |N|b⟩;
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_scalar_ket.cmm b/Compilers/CMMComp/NegTests/dirac_scalar_ket.cmm
+new file mode 100644
+index 0000000..c0c3000
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_scalar_ket.cmm
+@@ -0,0 +1,18 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: a number written as a ket.
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    float x;
++    v # 2.0|x⟩;
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_sum_shape.cmm b/Compilers/CMMComp/NegTests/dirac_sum_shape.cmm
+new file mode 100644
+index 0000000..a19e7a0
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_sum_shape.cmm
+@@ -0,0 +1,17 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: a vector and a matrix added: the shapes differ.
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    v # |a⟩ + |M|;
++}
+diff --git a/Compilers/CMMComp/NegTests/dirac_target_shape.cmm b/Compilers/CMMComp/NegTests/dirac_target_shape.cmm
+new file mode 100644
+index 0000000..7ff8a6a
+--- /dev/null
++++ b/Compilers/CMMComp/NegTests/dirac_target_shape.cmm
+@@ -0,0 +1,17 @@
++#NUBITS 32
++#NBMANT 23
++#NBEXPO 8
++#NUIOIN 1
++#NUIOOU 1
++
++// Negative fixture: a vector of 3 into a vector of 2.
++float a[2];
++float b[3];
++float M[2][2];
++float N[3][2];
++float v[2];
++
++void main()
++{
++    v # 2.0|b⟩;
++}
+diff --git a/Compilers/CMMComp/NegTests/manifest.txt b/Compilers/CMMComp/NegTests/manifest.txt
+index 003196c..5ce8552 100644
+--- a/Compilers/CMMComp/NegTests/manifest.txt
++++ b/Compilers/CMMComp/NegTests/manifest.txt
+@@ -43,3 +43,15 @@ ini_1d_rows.cmm|braces inside the list only mark the rows of a 2D array
+ ini_rows.cmm|each with up to 2 values
+ octal_digit.cmm|so it is octal, and octal has no 8 or 9
+ ninum_size.cmm|Syntax error
++
++# Dirac notation as expressions: shapes and the terms of a chain
++dirac_sum_shape.cmm|the shapes must be the same
++dirac_product_shape.cmm|do not match the rows of the second
++dirac_target_shape.cmm|and the expression gives
++dirac_not_scalar.cmm|where a number is needed
++dirac_out_matrix.cmm|writes a number or a vector
++dirac_not_matrix.cmm|ain't even a matrix
++dirac_not_vector.cmm|ain't even a vector
++dirac_scalar_ket.cmm|ain't even a vector
++dirac_braket_one.cmm|Syntax error
++dirac_not_yet.cmm|not implemented yet
+diff --git a/Compilers/CMMComp/NegTests/nowarn.txt b/Compilers/CMMComp/NegTests/nowarn.txt
+index 277a88b..da77342 100644
+--- a/Compilers/CMMComp/NegTests/nowarn.txt
++++ b/Compilers/CMMComp/NegTests/nowarn.txt
+@@ -9,3 +9,4 @@ file_init_local.cmm|+keeps what the function wrote
+ file_init_global.cmm|keeps what the function wrote
+ ini_local.cmm|+gets the values between braces only once
+ ini_global.cmm|gets the values between braces only once
++dirac_or_index.cmm|Syntax error
+diff --git a/Compilers/CMMComp/Sources/CMMComp.l b/Compilers/CMMComp/Sources/CMMComp.l
+index a33d046..92adc67 100644
+--- a/Compilers/CMMComp/Sources/CMMComp.l
++++ b/Compilers/CMMComp/Sources/CMMComp.l
+@@ -163,6 +163,35 @@ COMEN  "//"[^\n]*
+ "|I|"         return EYE;
+ "|0⟩"         return VZERO;
+ 
++ /* |in(p)⟩, an input ket, as one token: x | in(0) is a valid bitwise or */
++"|"[ \t]*"in"[ \t]*"("[ \t]*{INNUM}[ \t]*")"[ \t]*"⟩" {
++                char num[64]; int n = 0;
++                const char *p = strchr(yytext, '(') + 1;
++                while (*p == ' ' || *p == '\t') p++;
++                while (*p && *p != ' ' && *p != '\t' && *p != ')' && n < 63) num[n++] = *p++;
++                num[n] = 0;
++                yylval.ival = exec_inum(num);
++                return KETIN;
++             }
++
++ /* A bar followed by the name of an array opens or continues a Dirac chain
++  * (DBAR); any other bar is the bitwise or, or the bar that closes a matrix
++  * or a bra. An array name without an index is not an operand of an or, so
++  * no program changes meaning; with an index (c | a[k]) it is, and the
++  * longer rule below keeps that bar an or. The name goes back to the input
++  * (yyless) and is lexed as usual. A #define name is not expanded here: it
++  * counts as no array. */
++"|"[ \t\r\n]*{VARIA}[ \t\r\n]*"[" {
++                yyless(1);
++                return '|';
++             }
++"|"[ \t\r\n]*{VARIA} {
++                const char *name = yytext + 1 + strspn(yytext + 1, " \t\r\n");
++                int k = (def_find(name) >= 0) ? -1 : find_id(name);
++                yyless(1);
++                return (k >= 0 && v_table[k].isar) ? DBAR : '|';
++             }
++
+ "comp"       {type_tmp = 3; yylval.ival = 3; return TYPE;}
+ "float"      {type_tmp = 2; yylval.ival = 2; return TYPE;}
+ "int"        {type_tmp = 1; yylval.ival = 1; return TYPE;}
+diff --git a/Compilers/CMMComp/Sources/CMMComp.y b/Compilers/CMMComp/Sources/CMMComp.y
+index c195361..1abac74 100644
+--- a/Compilers/CMMComp/Sources/CMMComp.y
++++ b/Compilers/CMMComp/Sources/CMMComp.y
+@@ -41,19 +41,20 @@
+     - Array initializable from a file. The array memory is filled at compile time. (e.g. int x[128] "values.txt";)
+     - Array with reversed index. Used in FFT (e.g. x[j) = exp;) the bits of i are reversed.
+ 
+-    - Statements in Dirac notation (linear algebra):
+-      <a|b>             -> returns the inner product between vectors a and b
+-      a # |M|b>;        -> vector a receives the product of matrix M and vector b
+-      a # c|b>;         -> vector a receives c times vector b
+-      d # |a> + c|b>;   -> vector d receives the sum of vector a with vector b weighted by c
+-      A # |a><b|;       -> matrix A receives the outer product between vectors a and b
+-      A # |P| - |a><b|; -> matrix A receives the subtraction of matrix P by the outer product between a and b
+-      A # c|B|;         -> matrix A receives the product of constant c and matrix B
+-      A # c|I|;         -> matrix A receives the identity matrix weighted by c
+-      a # |0>;          -> zeros every element of vector a
+-      a # c|in(x)>;     -> fills vector a with input from port x weighted by c
+-      out(x,c|a>);      -> OUT on vector a weighted by c
+-      a # c -> |a>;     -> shift register
++    - Dirac notation (linear algebra), as expressions (docs/design/dirac-expressions.md):
++      a chain of array names between bars, |a>, <a|, |M|, |M|a>, <a|M|b>, |A|B|x>:
++      the first name is a bra when the chain opens with <, the last a ket when
++      it closes with >, every other name a matrix. Juxtaposition is the product
++      (c|a>, |a><b|, |A||B|), between + and * in precedence. |I|, |0> and
++      |in(p)> take their size from the context. The shapes are checked
++      (shapecheck_expr in ast.c).
++      x = <a|b>;            -> a number
++      a # expression;       -> the vector or matrix a receives the expression
++      float a[N] # expr;    -> the same, in a declaration
++      out(p, c|a>);         -> OUT of each element of a, times c
++      a # c -> |a>;         -> shift register
++      For now (step a) only the forms of the old rules are computed:
++      |M|a>, c|a>, |a> + c|b>, |a><b|, |A| - |a><b|, c|A|, c|I|, |0>, c|in(p)>.
+ */
+ 
+ %{
+@@ -116,12 +117,16 @@ void  yyerror(char const *s);
+ %token SHIFTL SHIFTR SSHIFTR                                           // bit shift
+ %token GREQU LESEQ EQU DIF LAN LOR                                     // two-symbol logical operators
+ %token PPLUS                                                           // ++ operator. can be used both to reduce exp and for assignments
+-%token BRA KET EYE VZERO                                               // Dirac notation (linear algebra)
++%token BRA KET EYE VZERO DBAR                                          // Dirac notation (BRA is the closing angle, KET the opening one; DBAR a bar before an array name)
++%token <ival> KETIN                                                    // Dirac |in(p)>, the port as an INUM id
+ 
+ // terminal tokens ------------------------------------------------------------
+ 
+ %token <ival> TYPE ID STRING INUM FNUM CNUM NINUM NIMIN                // comes from the lexer with an associated value
+ 
++// every conflict is an error of the build: the grammar has none
++%expect 0
++
+ // removes the conflict between if-with-else and if-without-else
+ %nonassoc THEN
+ %nonassoc ELSE
+@@ -140,6 +145,7 @@ void  yyerror(char const *s);
+ %left '>' '<' GREQU LESEQ
+ %left SHIFTL SHIFTR SSHIFTR
+ %left '+' '-'
++%left JUXT DBAR KET EYE VZERO KETIN                                    // Dirac juxtaposition: (2*c)|a> and |b> + (c|a>)
+ %left '*' '/' '%'
+ %left '!' '~' PPLUS
+ 
+@@ -161,6 +167,7 @@ void  yyerror(char const *s);
+ %type <eval> std_floor std_ceil std_round
+ %type <eval> std_real std_imag std_comp std_fase std_mod2 std_conj
+ %type <eval> exp terminal
++%type <eval> dirac dchain
+ 
+ %%
+ 
+@@ -203,9 +210,8 @@ declar : TYPE id_list                               ';'
+          // array declaration initialized between braces, as in C (the values go to the .mif)
+        | TYPE ID '[' INUM ']'              '=' '{' ini_list '}' ';' {declar_arr_1d_ini($2,$4   );}
+        | TYPE ID '[' INUM ']' '[' INUM ']' '=' '{' ini_list '}' ';' {declar_arr_2d_ini($2,$4,$7);}
+-         // array declaration with Dirac-notation initialization (on demand)
+-       | TYPE ID '[' INUM ']' '#' '|' ID '|' ID BRA ';' {declar_Mv    ($2,$4,$8,$10);}
+-       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2,$4,$7, $9);}
++         // array declaration with a Dirac expression
++       | TYPE ID '[' INUM ']' '#' exp ';' {declar_dirac($2,$4,$7);}
+ 
+ id_list : IID | id_list ',' IID
+ 
+@@ -276,7 +282,6 @@ stmt_full: '{' stmt_list '}' // statement block
+          |       std_out     // stdlib data output
+          |      std_toma     // hands a value to the partner processor
+          |      std_fout     // stdlib data output (converting to float)
+-         |      std_vout     // data output with Dirac notation
+          |      std_copy     // copies the value of the first argument into the second (no type checking)
+          |     void_call     // subroutine call
+          |   return_call     // function return
+@@ -337,7 +342,6 @@ std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0,
+ std_fase : FASE '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_FASE, 0,  $3,   NULL);}  // phase(comp)
+ std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_MOD2, 0,  $3,   NULL);}  // |comp|^2
+ std_conj : CONJ '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_CONJ, 0,  $3,   NULL);}  // conjugate
+-std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_append(stmt_vout($3, $5, $7));}  // data output with Dirac notation
+ 
+ // if/else --------------------------------------------------------------------
+ 
+@@ -422,17 +426,9 @@ assignment : ID  '=' exp ';'                          {stmt_append(stmt_assign($
+            | ID  '[' exp ')'  '='     exp ';'         {stmt_append(stmt_array_assign($1, $3, NULL, $6, 1));}
+            // 2D array
+            | ID  '[' exp ']' '[' exp ']' '=' exp ';'  {stmt_append(stmt_array_assign($1, $3, $6,   $9, 0));}
+-           // linear algebra with Dirac notation (stdlib implemented as a virtual assign)
+-           | ID '#'     '|' ID '|' ID BRA ';'                    {stmt_append(stmt_dirac_Mv   ($1, $4, $6));}        // A # |B|a>
+-           | ID '#' exp '|' ID BRA ';'                           {stmt_append(stmt_dirac_cv   ($1, $3, $5));}        // a # c|b>
+-           | ID '#'     '|' ID BRA '+' exp '|' ID BRA ';'        {stmt_append(stmt_dirac_apcb ($1, $4, $7, $9));}    // a # |b> + c|d>
+-           | ID '#'     '|' ID BRA KET  ID '|' ';'               {stmt_append(stmt_dirac_vvt  ($1, $4, $7));}        // A # |a><b|
+-           | ID '#'     '|' ID '|' '-' '|' ID BRA KET ID '|' ';' {stmt_append(stmt_dirac_Mmvvt($1, $4, $8, $11));}   // A # B - |a><b|
+-           | ID '#' exp '|' ID '|' ';'                           {stmt_append(stmt_dirac_cM   ($1, $3, $5));}        // A # c|B|
+-           | ID '#' exp     EYE ';'                              {stmt_append(stmt_dirac_cI   ($1, $3));}            // A # c|I|
+-           | ID '#'         VZERO ';'                            {stmt_append(stmt_dirac_v0   ($1));}                // a # |0>
+-           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {stmt_append(stmt_dirac_cvin ($1, $3, $7));}        // a # |in(0)>
+-           | ID '#' exp '-' '>' '|' ID BRA ';'                   {stmt_append(stmt_dirac_shift($1, $3, $7));}        // a # c -> |a>
++           // linear algebra with Dirac notation: a vector or matrix receives an expression
++           | ID '#' exp ';'                                      {stmt_append(stmt_dirac      ($1, $3));}            // A # |B|a>, a # |b> + c|d>, ...
++           | ID '#' exp '-' '>' DBAR ID BRA ';'                  {stmt_append(stmt_dirac_shift($1, $3, $7));}        // a # c -> |a>
+ 
+ // expressions ----------------------------------------------------------------
+ 
+@@ -505,9 +501,24 @@ exp:       terminal                           {$$ = $1;}
+          | exp  GREQU  exp                    {$$ = expr_binop(OP_GE, $1, $3);}
+          | exp  LESEQ  exp                    {$$ = expr_binop(OP_LE, $1, $3);}
+          | exp  DIF    exp                    {$$ = expr_binop(OP_NE, $1, $3);}
+-         // linear algebra with exp return (Dirac notation)
+-         | KET ID '|' ID BRA                  {$$ = expr_inner(expr_var(v_table[$2].type, $2),
+-                                                            expr_var(v_table[$4].type, $4));}
++         // Dirac notation: a term, and the product by juxtaposition
++         | dirac                              {$$ = $1;}
++         | exp dirac %prec JUXT               {$$ = expr_dirac_prod($1, $2);}
++         // a bar and a name that is not an array, closed as a ket: say so
++         // instead of a syntax error
++         |     '|' ID BRA                     {dirac_not_vector($2); $$ = NULL;}
++         | exp '|' ID BRA                     {dirac_not_vector($3); $$ = NULL;}
++
++// a Dirac term: a chain of names between bars (dchain), |I|, |0> or |in(p)>
++dirac    : dchain BRA                         {$$ = dirac_close($1, 1);}
++         | dchain '|'                         {$$ = dirac_close($1, 0);}
++         | EYE                                {$$ = expr_dirac_const(DIRAC_EYE);}
++         | VZERO                              {$$ = expr_dirac_const(DIRAC_ZERO);}
++         | KETIN                              {$$ = expr_dirac_in($1);}
++
++dchain   : DBAR ID                            {$$ = dirac_open(0, $2);}
++         | KET  ID                            {$$ = dirac_open(1, $2);}
++         | dchain DBAR ID                     {$$ = dirac_push($1, $3);}
+ 
+ // terminals used in reductions for expressions -------------------------------
+ // Pure tree-construction: no emit, no walker call. The expression's emit
+diff --git a/Compilers/CMMComp/Sources/ast.c b/Compilers/CMMComp/Sources/ast.c
+index b39753d..36f06a2 100644
+--- a/Compilers/CMMComp/Sources/ast.c
++++ b/Compilers/CMMComp/Sources/ast.c
+@@ -128,14 +128,90 @@ expr_node *expr_func_call(int type, int id, expr_node **args, int n_args)
+     return n;
+ }
+ 
+-expr_node *expr_inner(expr_node *a, expr_node *b)
++// Dirac chains. While the parser reads a chain, it is a left-nested product
++// of EXPR_DIRAC_REF leaves whose roles are still unknown (op = 0); the first
++// leaf keeps op = -1 when the chain was opened by ⟨. dirac_close gives every
++// leaf its role once the closing token is known.
++static expr_node *dirac_ref(int id)
++{
++    expr_node *n = enode_new(EXPR_DIRAC_REF);
++    n->type = v_table[id].type;
++    n->id   = id;
++    return n;
++}
++
++expr_node *dirac_open(int opened_by_bra, int id)
+ {
+-    expr_node *n = enode_new(EXPR_INNER);
+-    n->left  = a;
+-    n->right = b;
++    expr_node *n = dirac_ref(id);
++    n->op = opened_by_bra ? -1 : 0;
++    return n;
++}
++
++expr_node *dirac_push(expr_node *chain, int id)
++{
++    return expr_dirac_prod(chain, dirac_ref(id));
++}
++
++// the leaves of a chain in source order
++static int dirac_leaves(expr_node *n, expr_node **out, int k)
++{
++    if (n->kind == EXPR_DIRAC_PROD) {
++        k = dirac_leaves(n->left, out, k);
++        return dirac_leaves(n->right, out, k);
++    }
++    if (k < 256) out[k] = n;
++    return k + 1;
++}
++
++expr_node *dirac_close(expr_node *chain, int closed_by_ket)
++{
++    expr_node *leaf[256];
++    int k = dirac_leaves(chain, leaf, 0);
++    if (k > 256) {fprintf(stderr, MSG_ERR_SYNTAX, chain->line); exit(EXIT_FAILURE);}
++    int opened_by_bra = (leaf[0]->op == -1);
++
++    // ⟨a⟩ has no bar: neither an inner product nor a vector
++    if (k == 1 && opened_by_bra && closed_by_ket)
++        {fprintf(stderr, MSG_ERR_SYNTAX, chain->line); exit(EXIT_FAILURE);}
++
++    for (int j = 0; j < k; j++) {
++        if      (j == 0     && opened_by_bra) leaf[j]->op = DIRAC_ROLE_BRA;
++        else if (j == k - 1 && closed_by_ket) leaf[j]->op = DIRAC_ROLE_KET;
++        else                                  leaf[j]->op = DIRAC_ROLE_MAT;
++    }
++    return chain;
++}
++
++expr_node *expr_dirac_prod(expr_node *left, expr_node *right)
++{
++    expr_node *n = enode_new(EXPR_DIRAC_PROD);
++    n->left  = left;
++    n->right = right;
++    return n;
++}
++
++expr_node *expr_dirac_const(int which)
++{
++    expr_node *n = enode_new(EXPR_DIRAC_CONST);
++    n->op = which;
++    return n;
++}
++
++expr_node *expr_dirac_in(int port)
++{
++    expr_node *n = enode_new(EXPR_DIRAC_IN);
++    n->id = port;
+     return n;
+ }
+ 
++void dirac_not_vector(int id)
++{
++    char *name = rem_fname(v_table[id].name, fname);
++    if (v_table[id].type == 0) fprintf(stderr, MSG_ERR_DECL_FIRST,   line_num + 1, name);
++    else                       fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num + 1, name);
++    exit(EXIT_FAILURE);
++}
++
+ void expr_free(expr_node *n)
+ {
+     if (!n) return;
+@@ -161,7 +237,10 @@ static const char *kind_name(expr_kind k)
+         case EXPR_PPLUS:       return "PPLUS";
+         case EXPR_STDLIB_CALL: return "STDLIB_CALL";
+         case EXPR_FUNC_CALL:   return "FUNC_CALL";
+-        case EXPR_INNER:       return "INNER";
++        case EXPR_DIRAC_REF:   return "DIRAC_REF";
++        case EXPR_DIRAC_PROD:  return "DIRAC_PROD";
++        case EXPR_DIRAC_CONST: return "DIRAC_CONST";
++        case EXPR_DIRAC_IN:    return "DIRAC_IN";
+     }
+     return "?";
+ }
+@@ -205,10 +284,20 @@ static void expr_dump_at(expr_node *n, int depth)
+         case EXPR_FUNC_CALL:
+             fprintf(stderr, " id=%d (%s) n_args=%d", n->id, v_table[n->id].name, n->n_args);
+             break;
+-        case EXPR_INNER:
+-            /* left/right (vector refs) get printed by the recursive walk */
++        case EXPR_DIRAC_REF:
++            fprintf(stderr, " id=%d (%s) role=%d", n->id, v_table[n->id].name, n->op);
++            break;
++        case EXPR_DIRAC_PROD:
++            /* left/right get printed by the recursive walk */
++            break;
++        case EXPR_DIRAC_CONST:
++            fprintf(stderr, " %s", n->op == DIRAC_EYE ? "|I|" : "|0>");
++            break;
++        case EXPR_DIRAC_IN:
++            fprintf(stderr, " port=%d", n->id);
+             break;
+     }
++    if (n->rows) fprintf(stderr, " shape=%dx%d", n->rows, n->cols);
+     fputc('\n', stderr);
+     expr_dump_at(n->left,  depth + 1);
+     expr_dump_at(n->right, depth + 1);
+@@ -389,17 +478,126 @@ void typecheck_expr(expr_node *n)
+             }
+             break;
+ 
+-        case EXPR_INNER:
+-            // <a|b> reduces via exec_vtv, which returns the element type of
+-            // the first operand. left is an EXPR_VAR whose type already
+-            // carries v_table[id].type, so just propagate.
+-            n->type = lt;
++        case EXPR_DIRAC_PROD:
++            // the element type of a product: comp > float > int, as the
++            // arithmetic operators (an inner product <a|b> of two arrays of
++            // one type has that type, as exec_vtv returns)
++            n->type = (lt > rt) ? lt : rt;
+             break;
+ 
+         default: break;
+     }
+ }
+ 
++// ----------------------------------------------------------------------------
++// shapes (Dirac notation) -----------------------------------------------------
++// ----------------------------------------------------------------------------
++// Every node gets (rows, cols): (1, 1) a number, (N, 1) a ket, (1, N) a bra,
++// (N, M) a matrix, DIRAC_ANY a size the context decides. See
++// docs/design/dirac-expressions.md section 3.2.
++
++static int is_number(const expr_node *n) {return n->rows == 1 && n->cols == 1;}
++static int dim_fits (int a, int b)       {return a == DIRAC_ANY || b == DIRAC_ANY || a == b;}
++static int dim_pick (int a, int b)       {return a == DIRAC_ANY ? b : a;}
++
++// a shape in words, as the messages print it
++static const char *shape_text(int rows, int cols, char *buf, size_t sz)
++{
++    if      (rows == 1 && cols == 1)         snprintf(buf, sz, "%s", MSG_SHAPE_NUMBER);
++    else if (cols == 1 && rows == DIRAC_ANY) snprintf(buf, sz, "%s", MSG_SHAPE_ANY_VECTOR);
++    else if (cols == 1)                      snprintf(buf, sz, MSG_SHAPE_VECTOR, rows);
++    else if (rows == 1)                      snprintf(buf, sz, MSG_SHAPE_ROW, cols);
++    else if (rows == DIRAC_ANY || cols == DIRAC_ANY) snprintf(buf, sz, "%s", MSG_SHAPE_ANY_MATRIX);
++    else                                     snprintf(buf, sz, MSG_SHAPE_MATRIX, rows, cols);
++    return buf;
++}
++
++static void shape_not_number(const expr_node *n)
++{
++    char b[64];
++    fprintf(stderr, MSG_ERR_DIRAC_NOT_SCALAR, n->line, shape_text(n->rows, n->cols, b, sizeof b));
++    exit(EXIT_FAILURE);
++}
++
++void shapecheck_expr(expr_node *n)
++{
++    if (!n || n->rows != 0) return;  // checked already
++
++    shapecheck_expr(n->left);
++    shapecheck_expr(n->right);
++    for (int i = 0; i < n->n_args; i++) shapecheck_expr(n->args[i]);
++
++    expr_node *L = n->left, *R = n->right;
++    char b1[64], b2[64];
++
++    switch (n->kind)
++    {
++        case EXPR_DIRAC_REF: {
++            int id = n->id;
++            char *name = rem_fname(v_table[id].name, fname);
++            if (v_table[id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, n->line, name); exit(EXIT_FAILURE);}
++            if (n->op == DIRAC_ROLE_MAT) {
++                if (v_table[id].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, n->line, name); exit(EXIT_FAILURE);}
++                n->rows = v_table[id].size;
++                n->cols = v_table[id].siz2;
++            } else {
++                if (v_table[id].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, n->line, name); exit(EXIT_FAILURE);}
++                n->rows = (n->op == DIRAC_ROLE_KET) ? v_table[id].size : 1;
++                n->cols = (n->op == DIRAC_ROLE_KET) ? 1 : v_table[id].size;
++            }
++            return;
++        }
++
++        case EXPR_DIRAC_CONST:
++            n->rows = DIRAC_ANY;
++            n->cols = (n->op == DIRAC_EYE) ? DIRAC_ANY : 1;
++            return;
++
++        case EXPR_DIRAC_IN:
++            n->rows = DIRAC_ANY;
++            n->cols = 1;
++            return;
++
++        case EXPR_DIRAC_PROD:
++            if      (is_number(L)) {n->rows = R->rows; n->cols = R->cols;}
++            else if (is_number(R)) {n->rows = L->rows; n->cols = L->cols;}
++            else if (!dim_fits(L->cols, R->rows)) {
++                fprintf(stderr, MSG_ERR_DIRAC_PRODUCT_SHAPE, n->line,
++                        shape_text(L->rows, L->cols, b1, sizeof b1),
++                        shape_text(R->rows, R->cols, b2, sizeof b2));
++                exit(EXIT_FAILURE);
++            }
++            else {n->rows = L->rows; n->cols = R->cols;}
++            return;
++
++        case EXPR_BINOP:
++            if ((n->op == OP_ADD || n->op == OP_SUB) && !(is_number(L) && is_number(R))) {
++                if (!dim_fits(L->rows, R->rows) || !dim_fits(L->cols, R->cols)) {
++                    fprintf(stderr, MSG_ERR_DIRAC_SUM_SHAPE, n->line,
++                            shape_text(L->rows, L->cols, b1, sizeof b1),
++                            shape_text(R->rows, R->cols, b2, sizeof b2));
++                    exit(EXIT_FAILURE);
++                }
++                n->rows = dim_pick(L->rows, R->rows);
++                n->cols = dim_pick(L->cols, R->cols);
++                return;
++            }
++            break;
++
++        case EXPR_UNOP:
++            if (n->op == OP_NEG) {n->rows = L->rows; n->cols = L->cols; return;}
++            break;
++
++        default: break;
++    }
++
++    // everything else takes numbers and gives a number
++    if (L && !is_number(L)) shape_not_number(L);
++    if (R && !is_number(R)) shape_not_number(R);
++    for (int i = 0; i < n->n_args; i++) if (!is_number(n->args[i])) shape_not_number(n->args[i]);
++    n->rows = n->cols = 1;
++}
++
+ // Sethi-Ullman labelling: how many hardware-stack slots the subtree needs
+ // while being evaluated. A leaf (var/literal) is a memory operand and needs
+ // none; a binop with two complex children needs one extra slot to hold the
+@@ -534,6 +732,8 @@ expr ast_emit_expr(expr_node *n)
+     int saved_line_num = line_num;
+     if (n) line_num = n->line - 1;
+     typecheck_expr(n);  // annotate composite n->type before codegen
++    shapecheck_expr(n); // a vector or a matrix has no place in a scalar result
++    if (n && !is_number(n)) shape_not_number(n);
+     expr e = ast_emit_expr_impl(n);
+     if (n) {
+         n->emitted = 1;
+@@ -737,10 +937,18 @@ static expr ast_emit_expr_impl(expr_node *n)
+             return expr_make(n->type, 0);
+         }
+ 
+-        case EXPR_INNER: {
+-            // left / right are EXPR_VAR children carrying the vector ids
+-            return exec_vtv(n->left->id, n->right->id);
+-        }
++        case EXPR_DIRAC_PROD:
++            // a number from the Dirac notation: today only <a|b> (exec_vtv)
++            if (n->left->kind  == EXPR_DIRAC_REF && n->left->op  == DIRAC_ROLE_BRA &&
++                n->right->kind == EXPR_DIRAC_REF && n->right->op == DIRAC_ROLE_KET)
++                return exec_vtv(n->left->id, n->right->id);
++            fprintf(stderr, MSG_ERR_DIRAC_NOT_YET, n->line);
++            exit(EXIT_FAILURE);
++
++        case EXPR_DIRAC_REF:    // not a number: stopped by shapecheck_expr
++        case EXPR_DIRAC_CONST:
++        case EXPR_DIRAC_IN:
++            break;
+     }
+     fprintf(stderr, "ast_emit_expr: unhandled kind=%d op=%d at line %d\n",
+             n->kind, n->op, n->line);
+@@ -826,15 +1034,6 @@ stmt_node *stmt_copy(expr_node *rhs, int dst_id)
+     return n;
+ }
+ 
+-stmt_node *stmt_vout(int port, expr_node *rhs, int vector_id)
+-{
+-    stmt_node *n = snode_new(STMT_VOUT);
+-    n->id  = port;
+-    n->id2 = vector_id;
+-    n->rhs = rhs;
+-    return n;
+-}
+-
+ stmt_node *stmt_void_call(expr_node *call)
+ {
+     stmt_node *n = snode_new(STMT_VOID_CALL);
+@@ -856,96 +1055,17 @@ stmt_node *stmt_dire_toaqui(void)
+ // Dirac linear-algebra constructors ------------------------------------------
+ // ----------------------------------------------------------------------------
+ 
+-static stmt_node *dirac_new(dirac_op op)
++stmt_node *stmt_dirac(int dst, expr_node *rhs)
+ {
+     stmt_node *n = snode_new(STMT_DIRAC);
+-    n->op = op;
+-    return n;
+-}
+-
+-stmt_node *stmt_dirac_Mv(int dst, int M, int a)
+-{
+-    stmt_node *n = dirac_new(DIRAC_MV);
+-    n->id  = dst;
+-    n->id2 = M;
+-    n->id3 = a;
+-    return n;
+-}
+-
+-stmt_node *stmt_dirac_cv(int dst, expr_node *c, int b)
+-{
+-    stmt_node *n = dirac_new(DIRAC_CV);
+-    n->id  = dst;
+-    n->id2 = b;
+-    n->rhs = c;
+-    return n;
+-}
+-
+-stmt_node *stmt_dirac_apcb(int dst, int b, expr_node *c, int d)
+-{
+-    stmt_node *n = dirac_new(DIRAC_APCB);
+-    n->id  = dst;
+-    n->id2 = b;
+-    n->id3 = d;
+-    n->rhs = c;
+-    return n;
+-}
+-
+-stmt_node *stmt_dirac_vvt(int dst, int a, int b)
+-{
+-    stmt_node *n = dirac_new(DIRAC_VVT);
+-    n->id  = dst;
+-    n->id2 = a;
+-    n->id3 = b;
+-    return n;
+-}
+-
+-stmt_node *stmt_dirac_Mmvvt(int dst, int B, int a, int b)
+-{
+-    stmt_node *n = dirac_new(DIRAC_MMVVT);
+-    n->id  = dst;
+-    n->id2 = B;
+-    n->id3 = a;
+-    n->id4 = b;
+-    return n;
+-}
+-
+-stmt_node *stmt_dirac_cM(int dst, expr_node *c, int M)
+-{
+-    stmt_node *n = dirac_new(DIRAC_CM);
+-    n->id  = dst;
+-    n->id2 = M;
+-    n->rhs = c;
+-    return n;
+-}
+-
+-stmt_node *stmt_dirac_cI(int dst, expr_node *c)
+-{
+-    stmt_node *n = dirac_new(DIRAC_CI);
+-    n->id  = dst;
+-    n->rhs = c;
+-    return n;
+-}
+-
+-stmt_node *stmt_dirac_v0(int dst)
+-{
+-    stmt_node *n = dirac_new(DIRAC_V0);
+-    n->id  = dst;
+-    return n;
+-}
+-
+-stmt_node *stmt_dirac_cvin(int dst, expr_node *c, int port)
+-{
+-    stmt_node *n = dirac_new(DIRAC_CVIN);
+     n->id  = dst;
+-    n->id2 = port;
+-    n->rhs = c;
++    n->rhs = rhs;
+     return n;
+ }
+ 
+ stmt_node *stmt_dirac_shift(int dst, expr_node *c, int a)
+ {
+-    stmt_node *n = dirac_new(DIRAC_SHIFT);
++    stmt_node *n = snode_new(STMT_DIRAC_SHIFT);
+     n->id  = dst;
+     n->id2 = a;
+     n->rhs = c;
+@@ -1104,23 +1224,12 @@ stmt_node *stmt_declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
+     return n;
+ }
+ 
+-stmt_node *stmt_declar_Mv(int id_var, int id_N, int id_M, int id_v)
+-{
+-    stmt_node *n = snode_new(STMT_DECLAR_MV);
+-    n->id  = id_var;
+-    n->id2 = id_N;
+-    n->id3 = id_M;
+-    n->id4 = id_v;
+-    return n;
+-}
+-
+-stmt_node *stmt_declar_cv(int id_var, int id_N, expr_node *c, int id_v)
++stmt_node *stmt_declar_dirac(int id_var, int id_N, expr_node *rhs)
+ {
+-    stmt_node *n = snode_new(STMT_DECLAR_CV);
++    stmt_node *n = snode_new(STMT_DECLAR_DIRAC);
+     n->id  = id_var;
+     n->id2 = id_N;
+-    n->id3 = id_v;
+-    n->rhs = c;
++    n->rhs = rhs;
+     return n;
+ }
+ 
+@@ -1159,6 +1268,107 @@ stmt_node *stmt_func(int func_id, stmt_node *body)
+ // cases. Mirrors the if_exp / while_expexp / exec_switch parse-time code from
+ // the pre-fase-6 saltos.c. The flag selects between MSG_WARN_COND_* (if /
+ // while) and MSG_WARN_CASE_* (switch) for the float / comp warnings.
++// ----------------------------------------------------------------------------
++// Dirac statements -----------------------------------------------------------
++// ----------------------------------------------------------------------------
++// The expression is checked for shape, then matched against the forms the
++// unrolled generators of stdlib.c compute (exec_Mv, exec_cv, ...), called
++// with the arguments the old grammar rules gave them, so the assembly is the
++// same. Any other combination stops with MSG_ERR_DIRAC_NOT_YET until the
++// expressions are computed in loops (docs/design/dirac-expressions.md, step b).
++
++static int is_ref(const expr_node *n, int role)
++{
++    return n && n->kind == EXPR_DIRAC_REF && n->op == role;
++}
++
++static int is_const(const expr_node *n, int which)
++{
++    return n && n->kind == EXPR_DIRAC_CONST && n->op == which;
++}
++
++static int is_prod(const expr_node *n)
++{
++    return n && n->kind == EXPR_DIRAC_PROD;
++}
++
++// the target array dst against the shape of the expression
++static void dirac_check_target(int dst, expr_node *r, int line)
++{
++    char *name = rem_fname(v_table[dst].name, fname);
++    if (v_table[dst].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line, name); exit(EXIT_FAILURE);}
++
++    int rows = 1, cols = 1, fits;
++    if (v_table[dst].isar == 1) {
++        rows = v_table[dst].size;
++        fits = (dim_fits(r->rows, rows) && r->cols == 1) || (r->rows == 1 && dim_fits(r->cols, rows));
++    } else if (v_table[dst].isar == 2) {
++        rows = v_table[dst].size; cols = v_table[dst].siz2;
++        fits = dim_fits(r->rows, rows) && dim_fits(r->cols, cols);
++    } else fits = 0;
++
++    if (!fits) {
++        char b1[64], b2[64];
++        fprintf(stderr, MSG_ERR_DIRAC_TARGET_SHAPE, line, name,
++                shape_text(rows, cols, b1, sizeof b1),
++                shape_text(r->rows, r->cols, b2, sizeof b2));
++        exit(EXIT_FAILURE);
++    }
++}
++
++static void dirac_emit(int dst, expr_node *r, int line)
++{
++    shapecheck_expr(r);
++    typecheck_expr(r);
++    dirac_check_target(dst, r, line);
++
++    expr_node *L = r->left, *R = r->right;
++
++    if (is_prod(r) && is_ref(L, DIRAC_ROLE_MAT) && is_ref(R, DIRAC_ROLE_KET))    // |M|a⟩
++        exec_Mv(dst, L->id, R->id);
++    else if (is_prod(r) && is_number(L) && is_ref(R, DIRAC_ROLE_KET))            // c|b⟩
++        exec_cv(dst, ast_emit_expr(L), R->id);
++    else if (r->kind == EXPR_BINOP && r->op == OP_ADD && is_ref(L, DIRAC_ROLE_KET)
++             && is_prod(R) && is_number(R->left) && is_ref(R->right, DIRAC_ROLE_KET)) // |b⟩ + c|d⟩
++        exec_apcb(dst, L->id, ast_emit_expr(R->left), R->right->id);
++    else if (is_prod(r) && is_ref(L, DIRAC_ROLE_KET) && is_ref(R, DIRAC_ROLE_BRA))  // |a⟩⟨b|
++        exec_vvt(dst, L->id, R->id);
++    else if (r->kind == EXPR_BINOP && r->op == OP_SUB && is_ref(L, DIRAC_ROLE_MAT)
++             && is_prod(R) && is_ref(R->left, DIRAC_ROLE_KET) && is_ref(R->right, DIRAC_ROLE_BRA)) // |B| - |a⟩⟨b|
++        exec_Mmvvt(dst, L->id, R->left->id, R->right->id);
++    else if (is_prod(r) && is_number(L) && is_ref(R, DIRAC_ROLE_MAT))            // c|B|
++        exec_cM(dst, ast_emit_expr(L), R->id);
++    else if (is_prod(r) && is_number(L) && is_const(R, DIRAC_EYE))               // c|I|
++        exec_cI(dst, ast_emit_expr(L));
++    else if (is_const(r, DIRAC_ZERO))                                            // |0⟩
++        exec_v0(dst);
++    else if (is_prod(r) && is_number(L) && R->kind == EXPR_DIRAC_IN)             // c|in(p)⟩
++        exec_cvin(dst, ast_emit_expr(L), R->id);
++    else {fprintf(stderr, MSG_ERR_DIRAC_NOT_YET, line); exit(EXIT_FAILURE);}
++}
++
++// out(p, X) / fout(p, X): a number as before; a vector c|a⟩ through exec_vout
++static void dirac_out(stmt_node *n)
++{
++    expr_node *r = n->rhs;
++    shapecheck_expr(r);
++
++    if (is_number(r)) {
++        if (n->op) exec_fout(n->id, ast_emit_expr(r));
++        else       exec_out (n->id, ast_emit_expr(r));
++        return;
++    }
++    if (r->rows != 1 && r->cols != 1) {
++        char b[64];
++        fprintf(stderr, MSG_ERR_DIRAC_OUT_MATRIX, n->line, shape_text(r->rows, r->cols, b, sizeof b));
++        exit(EXIT_FAILURE);
++    }
++    typecheck_expr(r);
++    if (!n->op && is_prod(r) && is_number(r->left) && is_ref(r->right, DIRAC_ROLE_KET))  // out(p, c|a⟩)
++        exec_vout(n->id, ast_emit_expr(r->left), r->right->id);
++    else {fprintf(stderr, MSG_ERR_DIRAC_NOT_YET, n->line); exit(EXIT_FAILURE);}
++}
++
+ static void emit_cond_int_load(expr e, int is_switch)
+ {
+     const char *msg_float = MSG_WARN_CASE_FLOAT;       // a switch index still converts (truncates)
+@@ -1270,8 +1480,7 @@ void stmt_emit(stmt_node *n)
+             break;
+ 
+         case STMT_OUT:
+-            if (n->op) exec_fout(n->id, ast_emit_expr(n->rhs));
+-            else       exec_out (n->id, ast_emit_expr(n->rhs));
++            dirac_out(n);
+             break;
+ 
+         case STMT_TOMA:
+@@ -1282,23 +1491,12 @@ void stmt_emit(stmt_node *n)
+             exec_copy(ast_emit_expr(n->rhs), n->id);
+             break;
+ 
+-        case STMT_VOUT:
+-            exec_vout(n->id, ast_emit_expr(n->rhs), n->id2);
++        case STMT_DIRAC:
++            dirac_emit(n->id, n->rhs, n->line);
+             break;
+ 
+-        case STMT_DIRAC:
+-            switch (n->op) {
+-                case DIRAC_MV:    exec_Mv   (n->id, n->id2, n->id3); break;
+-                case DIRAC_CV:    exec_cv   (n->id, ast_emit_expr(n->rhs), n->id2); break;
+-                case DIRAC_APCB:  exec_apcb (n->id, n->id2, ast_emit_expr(n->rhs), n->id3); break;
+-                case DIRAC_VVT:   exec_vvt  (n->id, n->id2, n->id3); break;
+-                case DIRAC_MMVVT: exec_Mmvvt(n->id, n->id2, n->id3, n->id4); break;
+-                case DIRAC_CM:    exec_cM   (n->id, ast_emit_expr(n->rhs), n->id2); break;
+-                case DIRAC_CI:    exec_cI   (n->id, ast_emit_expr(n->rhs)); break;
+-                case DIRAC_V0:    exec_v0   (n->id); break;
+-                case DIRAC_CVIN:  exec_cvin (n->id, ast_emit_expr(n->rhs), n->id2); break;
+-                case DIRAC_SHIFT: exec_shift(n->id, ast_emit_expr(n->rhs), n->id2); break;
+-            }
++        case STMT_DIRAC_SHIFT:
++            exec_shift(n->id, ast_emit_expr(n->rhs), n->id2);
+             break;
+ 
+         case STMT_VOID_CALL:
+@@ -1567,17 +1765,10 @@ void stmt_emit(stmt_node *n)
+             declar_arr_2d_emit(n->id, n->id2, n->id3, n->id4);
+             break;
+ 
+-        case STMT_DECLAR_MV:
+-            // base array #array directive(s), then Mv codegen.
+-            declar_arr_1d_emit(n->id, n->id2, -1);
+-            exec_Mv(n->id, n->id3, n->id4);
+-            break;
+-
+-        case STMT_DECLAR_CV:
+-            // base array #array directive(s), then walk the scalar coeff
+-            // and let exec_cv do the c|v⟩ codegen.
++        case STMT_DECLAR_DIRAC:
++            // base array #array directive(s), then the Dirac expression
+             declar_arr_1d_emit(n->id, n->id2, -1);
+-            exec_cv(n->id, ast_emit_expr(n->rhs), n->id3);
++            dirac_emit(n->id, n->rhs, n->line);
+             break;
+ 
+         case STMT_FUNC_HEADER: {
+diff --git a/Compilers/CMMComp/Sources/data_declar.c b/Compilers/CMMComp/Sources/data_declar.c
+index d4ab7b2..d3dca45 100644
+--- a/Compilers/CMMComp/Sources/data_declar.c
++++ b/Compilers/CMMComp/Sources/data_declar.c
+@@ -335,23 +335,12 @@ void declar_arr_2d_ini(int id_var, int id_x, int id_y)
+ // array declarations initialized with Dirac notation -------------------------
+ // ----------------------------------------------------------------------------
+ 
+-// added on demand
+-
+-// declares a 1D array as a matrix-vector product, e.g. float v[4] # |M|u>;
++// declares a 1D array with a Dirac expression, e.g. float v[4] # |M|u>;
+ // Parse-time work is identical to a plain `float v[N]` declaration; the
+-// walker (STMT_DECLAR_MV case in ast.c) emits the #array directive plus the
+-// exec_Mv codegen for the matrix product.
+-void declar_Mv(int id_name, int id_N, int id_M, int id_v)
+-{
+-    declar_arr_1d_parse(id_name, id_N, -1);
+-    stmt_append(stmt_declar_Mv(id_name, id_N, id_M, id_v));
+-}
+-
+-// declares a 1D array as a constant-vector product, e.g. float a[4] # c|b>;
+-// Takes the coefficient as a raw expr_node so the walker (STMT_DECLAR_CV)
+-// drives the scalar's codegen at body-close time, in source order.
+-void declar_cv(int id_name, int id_N, expr_node *c, int id_v)
++// walker (STMT_DECLAR_DIRAC case in ast.c) emits the #array directive and
++// then the expression, as an assignment v # ...; would.
++void declar_dirac(int id_name, int id_N, expr_node *rhs)
+ {
+     declar_arr_1d_parse(id_name, id_N, -1);
+-    stmt_append(stmt_declar_cv(id_name, id_N, c, id_v));
++    stmt_append(stmt_declar_dirac(id_name, id_N, rhs));
+ }
+diff --git a/Compilers/CMMComp/Sources/variaveis.c b/Compilers/CMMComp/Sources/variaveis.c
+index 39948b4..ecf8c76 100644
+--- a/Compilers/CMMComp/Sources/variaveis.c
++++ b/Compilers/CMMComp/Sources/variaveis.c
+@@ -250,6 +250,20 @@ int exec_id(char *text)
+     return find_var(var_name);
+ }
+ 
++// the same lookup as exec_id (a global first, then a local of the current
++// function), without adding the name: the lexer asks it whether the name
++// after a bar is an array (DBAR in CMMComp.l)
++int find_id(const char *text)
++{
++    char var_name[sizeof fname + 64];
++
++    int k = find_var((char *)text);
++    if (k != -1 || strcmp(fname, "") == 0) return k;
++
++    snprintf(var_name, sizeof var_name, "%s_%s", fname, text);
++    return find_var(var_name);
++}
++
+ // the value of an int literal in any form C writes it: 42, 052 (octal),
+ // 0x2A, 0b101010, with a u/U/l/L suffix (*base, if given, says which)
+ static unsigned long long inum_value(const char *text, int *base_out)
+diff --git a/docs/design/dirac-expressions.md b/docs/design/dirac-expressions.md
+index 6c49233..ba5ad1a 100644
+--- a/docs/design/dirac-expressions.md
++++ b/docs/design/dirac-expressions.md
+@@ -156,11 +156,13 @@ of `CMMComp.y` (measured, bison 3.8.2):
+ symbol table when it reads it (`exec_id`, `Compilers/CMMComp/Sources/variaveis.c`
+ 232, with the function's scope), so the information is at hand (fact). The
+ rule: a `|` followed, after blanks, by the name of an array (a variable with
+-`isar` set) is the token `DBAR`; any other `|` is the bar it is today
+-(bitwise or, or the bar that closes a matrix or a bra). An array's name
+-alone is not an operand today (measured: `int y = 3 | a;` with `int a[4]`
+-stops with "where's the array index for the variable 'a'?"), so no program
+-that compiles today changes meaning. `|in(p)⟩` is lexed whole, like `|0⟩` today,
++`isar` set) that is not followed by `[` is the token `DBAR`; any other `|`
++is the bar it is today (bitwise or, or the bar that closes a matrix or a
++bra). An array's name without an index is not an operand today (measured:
++`int y = 3 | a;` with `int a[4]` stops with "where's the array index for
++the variable 'a'?"), so no program that compiles today changes meaning.
++With an index it is (`c | a[0]`): the first version of the rule missed
++that, and the fixture `NegTests/dirac_or_index.cmm` keeps it. `|in(p)⟩` is lexed whole, like `|0⟩` today,
+ because `x | in(0)` is a valid or of an input.
+ 
+ The grammar G3 adds to `exp`:
+diff --git a/docs/reference/messages.md b/docs/reference/messages.md
+index e5b346c..cee33e4 100644
+--- a/docs/reference/messages.md
++++ b/docs/reference/messages.md
+@@ -70,6 +70,12 @@ value. What the common ones mean and how to get past them is in
+ - Error on line <n>: column count of '<name>' doesn't match size of '<name>'!
+ - Error on line <n>: dimensions don't match. You're a confused soul!
+ - Error on line <n>: you can only shift a vector into itself, mate!
++- Error on line <n>: adding or subtracting <name> and <name>: the shapes must be the same
++- Error on line <n>: <name> times <name>: the columns of the first do not match the rows of the second
++- Error on line <n>: '<name>' is <name> and the expression gives <name>
++- Error on line <n>: <name> where a number is needed
++- Error on line <n>: out() writes a number or a vector, not <name>
++- Error on line <n>: this combination of the Dirac notation is not implemented yet
+ - Error on line <n>: what's the point of computing a remainder with non-integer numbers? Get a grip!
+ - Error on line <n>: logical operation with a comp (int and float only)!
+ - Error on line <n>: bad use of the '~' operator. Gotta pass an int. You tripping?

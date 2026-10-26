@@ -1,0 +1,3 @@
+num_ins 110
+srcdir C:/nipscern/yanc-dirac/.smoke/dirac-proto/a3
+lang C+-

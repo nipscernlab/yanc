@@ -1,0 +1,60 @@
+0 NOP 
+1 LOD 0
+2 SET main_k
+3 LOD main_k
+4 PF_INN 0
+5 F_MLT 0.001
+6 STI a
+7 LOD main_k
+8 ADD 1
+9 SET main_k
+10 LES 15
+11 JIZ __Lwh1
+12 LOD 0
+13 SET main_k
+14 LOD main_k
+15 PF_INN 0
+16 F_MLT 0.001
+17 STI b
+18 LOD main_k
+19 ADD 1
+20 SET main_k
+21 LES 15
+22 JIZ __Lwh2
+23 F_INN 0
+24 F_MLT 0.001
+25 SET main_c
+26 LOD 0
+27 SET main_t
+28 LOD 2
+29 LES main_t
+30 JIZ __Lwh3end
+31 LOD_V a 1
+32 LOD_V b 1
+33 LOD_V a 0
+34 F_MLT_V b 0
+35 NOP 
+36 P_LOD __pd
+37 F_MLT __pd
+38 SF_ADD 
+39 SET main_s
+40 LOD 0
+41 SET main_q
+42 LOD main_s
+43 SET main_ib
+44 OUT 0
+45 LOD 7
+46 OUT 0
+47 LOD main_c
+48 F_ADD 0.25
+49 SET main_c
+50 LOD main_t
+51 P_LOD main_t
+52 LDI a
+53 F_ADD 0.125
+54 STI a
+55 LOD main_t
+56 ADD 1
+57 SET main_t
+58 JMP __Lwh3
+59 JMP fim

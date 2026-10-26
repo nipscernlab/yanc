@@ -1,0 +1,14 @@
+prname cm
+nubits 32
+nbmant 23
+nbexpo 8
+@main 1
+@__Lwh1 5
+@__Lif1else 30
+@__Lif2else 46
+@__Lif3else 62
+@__Lwh1end 66
+@fim 68
+n_ins 69
+n_dat 11
+max_io 0

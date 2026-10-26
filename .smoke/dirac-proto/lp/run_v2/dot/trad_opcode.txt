@@ -1,0 +1,79 @@
+0 NOP 
+1 LOD 0
+2 SET main_k
+3 LOD main_k
+4 PF_INN 0
+5 F_MLT 0.001
+6 STI w
+7 LOD main_k
+8 ADD 1
+9 SET main_k
+10 LES 15
+11 JIZ __Lwh1
+12 LOD 0
+13 SET main_k
+14 LOD main_k
+15 PF_INN 0
+16 F_MLT 0.001
+17 STI x
+18 LOD main_k
+19 ADD 1
+20 SET main_k
+21 LES 15
+22 JIZ __Lwh2
+23 LOD 0
+24 SET main_t
+25 LOD 6
+26 LES main_t
+27 JIZ __Lwh3end
+28 LOD_V w 0
+29 P_LOD_V x 0
+30 SF_MLT 
+31 P_NEG_M 15
+32 SET main_m
+33 LDI 16
+34 P_LOD main_m
+35 LDI 32
+36 SF_MLT 
+37 SF_ADD 
+38 P_LOD main_m
+39 LDI 17
+40 P_LOD main_m
+41 LDI 33
+42 SF_MLT 
+43 SF_ADD 
+44 P_LOD main_m
+45 LDI 18
+46 P_LOD main_m
+47 LDI 34
+48 SF_MLT 
+49 SF_ADD 
+50 P_LOD main_m
+51 LDI 19
+52 P_LOD main_m
+53 LDI 35
+54 SF_MLT 
+55 SF_ADD 
+56 P_LOD main_m
+57 LDI 20
+58 P_LOD main_m
+59 LDI 36
+60 SF_MLT 
+61 SF_ADD 
+62 P_LOD main_m
+63 ADD 5
+64 SET main_m
+65 JIZ __Lwh4end
+66 JMP __Ld
+67 POP 
+68 SET main_s
+69 SET main_ib
+70 OUT 0
+71 LOD main_t
+72 P_LOD main_s
+73 STI w
+74 LOD main_t
+75 ADD 1
+76 SET main_t
+77 JMP __Lwh3
+78 JMP fim

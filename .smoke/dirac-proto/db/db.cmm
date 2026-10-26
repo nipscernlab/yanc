@@ -1,0 +1,68 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 2
+#NUIOOU 2
+
+float x[4];
+float w[4];
+float P[4][4];
+
+void rls_update(float d)
+{
+    // compute the error e ----------------------------------------------------
+
+    float e = d - ⟨w|x⟩;
+
+    // compute the gain vector K ----------------------------------------------
+
+    float Px[4] # |P|x⟩;
+    float g     = 1.0/(0.99 + ⟨x|Px⟩);
+    float K [4] # g|Px⟩;
+
+    // update the weights w ---------------------------------------------------
+
+    w # |w⟩ + e|K⟩;
+
+    // update the matrix P ----------------------------------------------------
+
+    P # |P| - |K⟩⟨Px|;
+    P # 1.010101|P|; // (1/0.99)
+}
+
+void main()
+{
+    // initialize P and w -----------------------------------------------------
+
+    P # 1000.0|I|;
+    w # |0⟩;
+
+    // loop over the data -----------------------------------------------------
+
+    int j = 0;
+    while (j < 20)
+    {
+        // read the values of x[n] --------------------------------------------
+
+        //x # 0.001|in(0)⟩;
+        x # fin(0)*0.001 -> |x⟩;
+        x # fin(0)*0.001 -> |x⟩;
+        x # fin(0)*0.001 -> |x⟩;
+        x # fin(0)*0.001 -> |x⟩;
+
+        // apply one RLS iteration --------------------------------------------
+
+        rls_update(in(1)*0.001);
+
+        // export the weights w -----------------------------------------------
+
+        out(0,1000.0|w⟩);
+
+        j++;
+    }
+
+    int r; int c; int ib;
+    for (r = 0; r < 4; r++)
+        for (c = 0; c < 4; c++) { copy(P[r][c], ib); out(1, ib); }
+    for (r = 0; r < 4; r++) { copy(w[r], ib); out(1, ib); }
+}

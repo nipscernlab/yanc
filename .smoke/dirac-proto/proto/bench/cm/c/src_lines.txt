@@ -1,0 +1,31 @@
+-1 INTERNAL
+-2 void main();
+-3 END
+1 #NUBITS 32
+2 #NBMANT 23
+3 #NBEXPO 8
+4 #NUIOIN 1
+5 #NUIOOU 1
+6 
+7 float a[16];
+8 float P[16][16];
+9 
+10 void main()
+11 {
+12     int k; int j; int ib; int q;
+13     float c; float s;
+14     for (k = 0; k < 16; k++) a[k] = fin(0)*0.001;
+15     for (k = 0; k < 16; k++) for (j = 0; j < 16; j++) P[k][j] = fin(0)*0.001;
+16     c = fin(0)*0.001;
+17     int t = 0;
+18     while (t < 2)
+19     {
+20         P # c|P|;
+21         q = 0;
+22         for (k = 0; k < 16; k++) for (j = 0; j < 16; j++) {copy(P[k][j], ib); out(0, ib);}
+23         out(0, 7);
+24         c = c + 0.25;
+25         a[t] = a[t] + 0.125;
+26         t++;
+27     }
+28 }

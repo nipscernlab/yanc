@@ -1,0 +1,6 @@
+main c 1
+main d 1
+main e 1
+num_ins 23
+srcdir C:/nipscern/yanc-dirac/.smoke/dirac-proto/a6
+lang C+-

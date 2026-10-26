@@ -1,0 +1,29 @@
+25 Oct 2026 22:42:30
+sapho_all 5CSEBA6U23I7 (base): Fmax=32.11MHz logic=3,545 / 41,910 ( 8 % )
+worst paths: /c/nipscern/yanc-dirac/.smoke/hw/sapho_all_5CSEBA6U23I7_base/worst_paths.txt, worst in full: /c/nipscern/yanc-dirac/.smoke/hw/sapho_all_5CSEBA6U23I7_base/worst_path_full.txt
+the worst path, by block:
+     4.862 ->    4.862    0.000 ns    0 %  ic  0.000  cell  0.000 ( 1)  core
+     4.862 ->    6.199    1.337 ns    4 %  ic  1.337  cell  0.000 ( 0)  core/racc[29]
+     6.199 ->    8.477    2.278 ns    7 %  ic  1.748  cell  0.530 ( 1)  core/uic_in2.uic2/out[29]~2
+     8.477 ->   16.212    7.735 ns   25 %  ic  4.347  cell  3.388 ( 7)  core/ula/op_denorm.denorm
+    16.212 ->   20.347    4.135 ns   13 %  ic  1.434  cell  2.701 (23)  core/ula/op_fadd.my_fadd
+    20.347 ->   31.552   11.205 ns   36 %  ic  5.828  cell  5.377 (20)  core/ula/op_smx.norm_mux
+    31.552 ->   35.182    3.630 ns   12 %  ic  2.894  cell  0.736 ( 2)  core/ula/ula_mux
+    35.182 ->   35.741    0.559 ns    2 %  ic  0.000  cell  0.559 ( 1)  core/sp
+    35.741 ->   35.741    0.000 ns    0 %  ic  0.000  cell  0.000 ( 0)  core/stack
+  total 30.879 ns: ic 17.588, cell 13.291
+25 Oct 2026 23:33:35
+sapho_ptr 5CSEBA6U23I7 (ptr): Fmax=31.82MHz logic=3,643 / 41,910 ( 9 % )
+worst paths: /c/nipscern/yanc-dirac/.smoke/hw/sapho_ptr_5CSEBA6U23I7_ptr/worst_paths.txt, worst in full: /c/nipscern/yanc-dirac/.smoke/hw/sapho_ptr_5CSEBA6U23I7_ptr/worst_path_full.txt
+the worst path, by block:
+     4.828 ->    4.828    0.000 ns    0 %  ic  0.000  cell  0.000 ( 1)  core/ula_in2_ctrl
+     4.828 ->    6.104    1.276 ns    4 %  ic  1.276  cell  0.000 ( 0)  core/uic_in2.uic2/req_inr
+     6.104 ->    8.611    2.507 ns    8 %  ic  2.001  cell  0.506 ( 1)  core/uic_in2.uic2/out[25]~6
+     8.611 ->   16.566    7.955 ns   26 %  ic  4.403  cell  3.552 ( 6)  core/ula/op_denorm.denorm
+    16.566 ->   20.111    3.545 ns   12 %  ic  1.378  cell  2.167 (28)  core/ula/op_fadd.my_fadd
+    20.111 ->   31.404   11.293 ns   37 %  ic  6.110  cell  5.183 (14)  core/ula/op_smx.norm_mux
+    31.404 ->   35.250    3.846 ns   13 %  ic  3.250  cell  0.596 ( 2)  core/ula/ula_mux
+    35.250 ->   35.587    0.337 ns    1 %  ic  0.000  cell  0.337 ( 2)  core/sp
+    35.587 ->   35.587    0.000 ns    0 %  ic  0.000  cell  0.000 ( 0)  core/stack
+  total 30.759 ns: ic 18.418, cell 12.341
+26 Oct 2026 00:22:44

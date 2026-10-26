@@ -1,0 +1,28 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+float a[16];
+float b[16];
+
+void main()
+{
+    int k; int j; int ib; int q;
+    float c; float s;
+    for (k = 0; k < 16; k++) a[k] = fin(0)*0.001;
+    for (k = 0; k < 16; k++) b[k] = fin(0)*0.001;
+    c = fin(0)*0.001;
+    int t = 0;
+    while (t < 2)
+    {
+        s = ⟨a|b⟩;
+        q = 0;
+        copy(s, ib); out(0, ib);
+        out(0, 7);
+        c = c + 0.25;
+        a[t] = a[t] + 0.125;
+        t++;
+    }
+}

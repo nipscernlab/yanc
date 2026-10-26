@@ -1,0 +1,26 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// y = M v, 16x16, three times, with today's unrolled Dirac code
+float M[16][16];
+float v[16];
+float y[16];
+
+void main()
+{
+    int k; int j;
+    for (k = 0; k < 16; k++) for (j = 0; j < 16; j++) M[k][j] = fin(0)*0.001;
+    for (k = 0; k < 16; k++) v[k] = fin(0)*0.001;
+    int t = 0;
+    int ib;
+    while (t < 3)
+    {
+        y # |M|v⟩;
+        for (k = 0; k < 16; k++) {copy(y[k], ib); out(0, ib);}
+        v[t] = y[t];
+        t++;
+    }
+}

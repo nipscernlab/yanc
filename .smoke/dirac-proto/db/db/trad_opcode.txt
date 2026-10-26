@@ -1,0 +1,368 @@
+0 NOP 
+1 JMP main
+2 SET rls_update_d
+3 LOD w
+4 F_MLT x
+5 P_LOD_V w 1
+6 F_MLT_V x 1
+7 SF_ADD 
+8 P_LOD_V w 2
+9 F_MLT_V x 2
+10 SF_ADD 
+11 P_LOD_V w 3
+12 F_MLT_V x 3
+13 SF_ADD 
+14 F_SU2 rls_update_d
+15 SET rls_update_e
+16 LOD_V P 0
+17 F_MLT x
+18 P_LOD_V P 1
+19 F_MLT_V x 1
+20 SF_ADD 
+21 P_LOD_V P 2
+22 F_MLT_V x 2
+23 SF_ADD 
+24 P_LOD_V P 3
+25 F_MLT_V x 3
+26 SF_ADD 
+27 SET_V rls_update_Px 0
+28 LOD_V P 4
+29 F_MLT x
+30 P_LOD_V P 5
+31 F_MLT_V x 1
+32 SF_ADD 
+33 P_LOD_V P 6
+34 F_MLT_V x 2
+35 SF_ADD 
+36 P_LOD_V P 7
+37 F_MLT_V x 3
+38 SF_ADD 
+39 SET_V rls_update_Px 1
+40 LOD_V P 8
+41 F_MLT x
+42 P_LOD_V P 9
+43 F_MLT_V x 1
+44 SF_ADD 
+45 P_LOD_V P 10
+46 F_MLT_V x 2
+47 SF_ADD 
+48 P_LOD_V P 11
+49 F_MLT_V x 3
+50 SF_ADD 
+51 SET_V rls_update_Px 2
+52 LOD_V P 12
+53 F_MLT x
+54 P_LOD_V P 13
+55 F_MLT_V x 1
+56 SF_ADD 
+57 P_LOD_V P 14
+58 F_MLT_V x 2
+59 SF_ADD 
+60 P_LOD_V P 15
+61 F_MLT_V x 3
+62 SF_ADD 
+63 SET_V rls_update_Px 3
+64 LOD x
+65 F_MLT rls_update_Px
+66 P_LOD_V x 1
+67 F_MLT_V rls_update_Px 1
+68 SF_ADD 
+69 P_LOD_V x 2
+70 F_MLT_V rls_update_Px 2
+71 SF_ADD 
+72 P_LOD_V x 3
+73 F_MLT_V rls_update_Px 3
+74 SF_ADD 
+75 F_ADD 0.99
+76 F_DIV 1.0
+77 NOP 
+78 NOP 
+79 F_QUO 
+80 SET rls_update_g
+81 LOD_V rls_update_Px 0
+82 F_MLT rls_update_g
+83 SET_V rls_update_K 0
+84 LOD_V rls_update_Px 1
+85 F_MLT rls_update_g
+86 SET_V rls_update_K 1
+87 LOD_V rls_update_Px 2
+88 F_MLT rls_update_g
+89 SET_V rls_update_K 2
+90 LOD_V rls_update_Px 3
+91 F_MLT rls_update_g
+92 SET_V rls_update_K 3
+93 LOD_V rls_update_K 0
+94 F_MLT rls_update_e
+95 F_ADD_V w 0
+96 SET_V w 0
+97 LOD_V rls_update_K 1
+98 F_MLT rls_update_e
+99 F_ADD_V w 1
+100 SET_V w 1
+101 LOD_V rls_update_K 2
+102 F_MLT rls_update_e
+103 F_ADD_V w 2
+104 SET_V w 2
+105 LOD_V rls_update_K 3
+106 F_MLT rls_update_e
+107 F_ADD_V w 3
+108 SET_V w 3
+109 LOD_V rls_update_K 0
+110 F_MLT_V rls_update_Px 0
+111 F_NEG 
+112 F_ADD_V P 0
+113 SET_V P 0
+114 LOD_V rls_update_K 0
+115 F_MLT_V rls_update_Px 1
+116 F_NEG 
+117 F_ADD_V P 4
+118 SET_V P 4
+119 LOD_V rls_update_K 0
+120 F_MLT_V rls_update_Px 2
+121 F_NEG 
+122 F_ADD_V P 8
+123 SET_V P 8
+124 LOD_V rls_update_K 0
+125 F_MLT_V rls_update_Px 3
+126 F_NEG 
+127 F_ADD_V P 12
+128 SET_V P 12
+129 LOD_V rls_update_K 1
+130 F_MLT_V rls_update_Px 0
+131 F_NEG 
+132 F_ADD_V P 1
+133 SET_V P 1
+134 LOD_V rls_update_K 1
+135 F_MLT_V rls_update_Px 1
+136 F_NEG 
+137 F_ADD_V P 5
+138 SET_V P 5
+139 LOD_V rls_update_K 1
+140 F_MLT_V rls_update_Px 2
+141 F_NEG 
+142 F_ADD_V P 9
+143 SET_V P 9
+144 LOD_V rls_update_K 1
+145 F_MLT_V rls_update_Px 3
+146 F_NEG 
+147 F_ADD_V P 13
+148 SET_V P 13
+149 LOD_V rls_update_K 2
+150 F_MLT_V rls_update_Px 0
+151 F_NEG 
+152 F_ADD_V P 2
+153 SET_V P 2
+154 LOD_V rls_update_K 2
+155 F_MLT_V rls_update_Px 1
+156 F_NEG 
+157 F_ADD_V P 6
+158 SET_V P 6
+159 LOD_V rls_update_K 2
+160 F_MLT_V rls_update_Px 2
+161 F_NEG 
+162 F_ADD_V P 10
+163 SET_V P 10
+164 LOD_V rls_update_K 2
+165 F_MLT_V rls_update_Px 3
+166 F_NEG 
+167 F_ADD_V P 14
+168 SET_V P 14
+169 LOD_V rls_update_K 3
+170 F_MLT_V rls_update_Px 0
+171 F_NEG 
+172 F_ADD_V P 3
+173 SET_V P 3
+174 LOD_V rls_update_K 3
+175 F_MLT_V rls_update_Px 1
+176 F_NEG 
+177 F_ADD_V P 7
+178 SET_V P 7
+179 LOD_V rls_update_K 3
+180 F_MLT_V rls_update_Px 2
+181 F_NEG 
+182 F_ADD_V P 11
+183 SET_V P 11
+184 LOD_V rls_update_K 3
+185 F_MLT_V rls_update_Px 3
+186 F_NEG 
+187 F_ADD_V P 15
+188 SET_V P 15
+189 LOD_V P 0
+190 F_MLT 1.010101
+191 SET_V P 0
+192 LOD_V P 1
+193 F_MLT 1.010101
+194 SET_V P 1
+195 LOD_V P 2
+196 F_MLT 1.010101
+197 SET_V P 2
+198 LOD_V P 3
+199 F_MLT 1.010101
+200 SET_V P 3
+201 LOD_V P 4
+202 F_MLT 1.010101
+203 SET_V P 4
+204 LOD_V P 5
+205 F_MLT 1.010101
+206 SET_V P 5
+207 LOD_V P 6
+208 F_MLT 1.010101
+209 SET_V P 6
+210 LOD_V P 7
+211 F_MLT 1.010101
+212 SET_V P 7
+213 LOD_V P 8
+214 F_MLT 1.010101
+215 SET_V P 8
+216 LOD_V P 9
+217 F_MLT 1.010101
+218 SET_V P 9
+219 LOD_V P 10
+220 F_MLT 1.010101
+221 SET_V P 10
+222 LOD_V P 11
+223 F_MLT 1.010101
+224 SET_V P 11
+225 LOD_V P 12
+226 F_MLT 1.010101
+227 SET_V P 12
+228 LOD_V P 13
+229 F_MLT 1.010101
+230 SET_V P 13
+231 LOD_V P 14
+232 F_MLT 1.010101
+233 SET_V P 14
+234 LOD_V P 15
+235 F_MLT 1.010101
+236 SET_V P 15
+237 RET 
+238 LOD 1000.0
+239 SET_V P 0
+240 SET_V P 5
+241 SET_V P 10
+242 SET_V P 15
+243 LOD 0.0
+244 SET_V P 1
+245 SET_V P 2
+246 SET_V P 3
+247 SET_V P 4
+248 SET_V P 6
+249 SET_V P 7
+250 SET_V P 8
+251 SET_V P 9
+252 SET_V P 11
+253 SET_V P 12
+254 SET_V P 13
+255 SET_V P 14
+256 LOD 0.0
+257 SET_V w 0
+258 SET_V w 1
+259 SET_V w 2
+260 SET_V w 3
+261 LOD 0
+262 SET main_j
+263 LOD 20
+264 LES main_j
+265 JIZ __Lwh1end
+266 F_INN 0
+267 F_MLT 0.001
+268 SET __aux_var
+269 LOD_V x 2
+270 SET_V x 3
+271 LOD_V x 1
+272 SET_V x 2
+273 LOD_V x 0
+274 SET_V x 1
+275 LOD __aux_var
+276 SET x
+277 F_INN 0
+278 F_MLT 0.001
+279 SET __aux_var
+280 LOD_V x 2
+281 SET_V x 3
+282 LOD_V x 1
+283 SET_V x 2
+284 LOD_V x 0
+285 SET_V x 1
+286 LOD __aux_var
+287 SET x
+288 F_INN 0
+289 F_MLT 0.001
+290 SET __aux_var
+291 LOD_V x 2
+292 SET_V x 3
+293 LOD_V x 1
+294 SET_V x 2
+295 LOD_V x 0
+296 SET_V x 1
+297 LOD __aux_var
+298 SET x
+299 F_INN 0
+300 F_MLT 0.001
+301 SET __aux_var
+302 LOD_V x 2
+303 SET_V x 3
+304 LOD_V x 1
+305 SET_V x 2
+306 LOD_V x 0
+307 SET_V x 1
+308 LOD __aux_var
+309 SET x
+310 INN 1
+311 I2F 
+312 F_MLT 0.001
+313 CAL rls_update
+314 LOD_V w 0
+315 F_MLT 1000.0
+316 F2I 
+317 OUT 0
+318 LOD_V w 1
+319 F_MLT 1000.0
+320 F2I 
+321 OUT 0
+322 LOD_V w 2
+323 F_MLT 1000.0
+324 F2I 
+325 OUT 0
+326 LOD_V w 3
+327 F_MLT 1000.0
+328 F2I 
+329 OUT 0
+330 LOD main_j
+331 ADD 1
+332 SET main_j
+333 JMP __Lwh1
+334 LOD 0
+335 SET main_r
+336 LOD 0
+337 SET main_c
+338 LOD main_r
+339 MLT 4
+340 ADD main_c
+341 LDI P
+342 SET main_ib
+343 P_LOD main_ib
+344 OUT 1
+345 LOD main_c
+346 ADD 1
+347 SET main_c
+348 LES 3
+349 JIZ __Lwh3
+350 LOD main_r
+351 ADD 1
+352 SET main_r
+353 LES 3
+354 JIZ __Lwh2
+355 LOD 0
+356 SET main_r
+357 LOD main_r
+358 LDI w
+359 SET main_ib
+360 P_LOD main_ib
+361 OUT 1
+362 LOD main_r
+363 ADD 1
+364 SET main_r
+365 LES 3
+366 JIZ __Lwh4
+367 JMP fim

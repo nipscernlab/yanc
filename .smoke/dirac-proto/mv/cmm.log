@@ -1,0 +1,6 @@
+Info: constant 0.001 on line 15 approximated to 0.00099999993108212948 (error = -6.89e-11)
+Info: constant 0.001 on line 16 approximated to 0.00099999993108212948 (error = -6.89e-11)
+Info: Dirac notation for Matrix-Vector multiplication detected at line 21
+Info: 826 assembly instructions generated
+Info: 4 variables share 3 data words (1 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.

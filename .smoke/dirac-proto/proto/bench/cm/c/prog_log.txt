@@ -1,0 +1,10 @@
+main k 1
+main j 1
+main ib 1
+main q 1
+main c 2
+main s 2
+main t 1
+num_ins 846
+srcdir C:/nipscern/yanc-dirac/.smoke/dirac-proto/proto/bench/cm
+lang C+-

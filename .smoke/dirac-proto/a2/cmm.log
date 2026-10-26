@@ -1,0 +1,4 @@
+Info: Dirac notation for zeroing vector contents detected at line 12
+Info: Dirac notation for shift register in vector a detected at line 13
+Info: 16 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.

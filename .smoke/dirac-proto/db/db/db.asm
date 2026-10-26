@@ -1,0 +1,384 @@
+NOP
+#PRNAME db
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 2
+#NUIOOU 2
+#array x 2 4
+#array w 2 4
+#array P 2 16
+#SHARE rls_update_e rls_update_d
+#SHARE __aux_var rls_update_d
+#SHARE main_r main_j
+#SHARE main_c rls_update_d
+#SHARE main_ib rls_update_g
+JMP main
+@rls_update SET rls_update_d
+LOD w
+F_MLT x
+P_LOD_V w 1
+F_MLT_V x 1
+SF_ADD
+P_LOD_V w 2
+F_MLT_V x 2
+SF_ADD
+P_LOD_V w 3
+F_MLT_V x 3
+SF_ADD
+F_SU2 rls_update_d
+SET rls_update_e
+#array rls_update_Px 2 4
+LOD_V P 0
+F_MLT x
+P_LOD_V P 1
+F_MLT_V x 1
+SF_ADD
+P_LOD_V P 2
+F_MLT_V x 2
+SF_ADD
+P_LOD_V P 3
+F_MLT_V x 3
+SF_ADD
+SET_V rls_update_Px 0
+LOD_V P 4
+F_MLT x
+P_LOD_V P 5
+F_MLT_V x 1
+SF_ADD
+P_LOD_V P 6
+F_MLT_V x 2
+SF_ADD
+P_LOD_V P 7
+F_MLT_V x 3
+SF_ADD
+SET_V rls_update_Px 1
+LOD_V P 8
+F_MLT x
+P_LOD_V P 9
+F_MLT_V x 1
+SF_ADD
+P_LOD_V P 10
+F_MLT_V x 2
+SF_ADD
+P_LOD_V P 11
+F_MLT_V x 3
+SF_ADD
+SET_V rls_update_Px 2
+LOD_V P 12
+F_MLT x
+P_LOD_V P 13
+F_MLT_V x 1
+SF_ADD
+P_LOD_V P 14
+F_MLT_V x 2
+SF_ADD
+P_LOD_V P 15
+F_MLT_V x 3
+SF_ADD
+SET_V rls_update_Px 3
+LOD x
+F_MLT rls_update_Px
+P_LOD_V x 1
+F_MLT_V rls_update_Px 1
+SF_ADD
+P_LOD_V x 2
+F_MLT_V rls_update_Px 2
+SF_ADD
+P_LOD_V x 3
+F_MLT_V rls_update_Px 3
+SF_ADD
+F_ADD 0.99
+F_DIV 1.0
+NOP
+NOP
+F_QUO
+SET rls_update_g
+#array rls_update_K 2 4
+LOD_V rls_update_Px 0
+F_MLT rls_update_g
+SET_V rls_update_K 0
+LOD_V rls_update_Px 1
+F_MLT rls_update_g
+SET_V rls_update_K 1
+LOD_V rls_update_Px 2
+F_MLT rls_update_g
+SET_V rls_update_K 2
+LOD_V rls_update_Px 3
+F_MLT rls_update_g
+SET_V rls_update_K 3
+LOD_V rls_update_K 0
+F_MLT rls_update_e
+F_ADD_V w 0
+SET_V w 0
+LOD_V rls_update_K 1
+F_MLT rls_update_e
+F_ADD_V w 1
+SET_V w 1
+LOD_V rls_update_K 2
+F_MLT rls_update_e
+F_ADD_V w 2
+SET_V w 2
+LOD_V rls_update_K 3
+F_MLT rls_update_e
+F_ADD_V w 3
+SET_V w 3
+LOD_V rls_update_K 0
+F_MLT_V rls_update_Px 0
+F_NEG
+F_ADD_V P 0
+SET_V P 0
+LOD_V rls_update_K 0
+F_MLT_V rls_update_Px 1
+F_NEG
+F_ADD_V P 4
+SET_V P 4
+LOD_V rls_update_K 0
+F_MLT_V rls_update_Px 2
+F_NEG
+F_ADD_V P 8
+SET_V P 8
+LOD_V rls_update_K 0
+F_MLT_V rls_update_Px 3
+F_NEG
+F_ADD_V P 12
+SET_V P 12
+LOD_V rls_update_K 1
+F_MLT_V rls_update_Px 0
+F_NEG
+F_ADD_V P 1
+SET_V P 1
+LOD_V rls_update_K 1
+F_MLT_V rls_update_Px 1
+F_NEG
+F_ADD_V P 5
+SET_V P 5
+LOD_V rls_update_K 1
+F_MLT_V rls_update_Px 2
+F_NEG
+F_ADD_V P 9
+SET_V P 9
+LOD_V rls_update_K 1
+F_MLT_V rls_update_Px 3
+F_NEG
+F_ADD_V P 13
+SET_V P 13
+LOD_V rls_update_K 2
+F_MLT_V rls_update_Px 0
+F_NEG
+F_ADD_V P 2
+SET_V P 2
+LOD_V rls_update_K 2
+F_MLT_V rls_update_Px 1
+F_NEG
+F_ADD_V P 6
+SET_V P 6
+LOD_V rls_update_K 2
+F_MLT_V rls_update_Px 2
+F_NEG
+F_ADD_V P 10
+SET_V P 10
+LOD_V rls_update_K 2
+F_MLT_V rls_update_Px 3
+F_NEG
+F_ADD_V P 14
+SET_V P 14
+LOD_V rls_update_K 3
+F_MLT_V rls_update_Px 0
+F_NEG
+F_ADD_V P 3
+SET_V P 3
+LOD_V rls_update_K 3
+F_MLT_V rls_update_Px 1
+F_NEG
+F_ADD_V P 7
+SET_V P 7
+LOD_V rls_update_K 3
+F_MLT_V rls_update_Px 2
+F_NEG
+F_ADD_V P 11
+SET_V P 11
+LOD_V rls_update_K 3
+F_MLT_V rls_update_Px 3
+F_NEG
+F_ADD_V P 15
+SET_V P 15
+LOD_V P 0
+F_MLT 1.010101
+SET_V P 0
+LOD_V P 1
+F_MLT 1.010101
+SET_V P 1
+LOD_V P 2
+F_MLT 1.010101
+SET_V P 2
+LOD_V P 3
+F_MLT 1.010101
+SET_V P 3
+LOD_V P 4
+F_MLT 1.010101
+SET_V P 4
+LOD_V P 5
+F_MLT 1.010101
+SET_V P 5
+LOD_V P 6
+F_MLT 1.010101
+SET_V P 6
+LOD_V P 7
+F_MLT 1.010101
+SET_V P 7
+LOD_V P 8
+F_MLT 1.010101
+SET_V P 8
+LOD_V P 9
+F_MLT 1.010101
+SET_V P 9
+LOD_V P 10
+F_MLT 1.010101
+SET_V P 10
+LOD_V P 11
+F_MLT 1.010101
+SET_V P 11
+LOD_V P 12
+F_MLT 1.010101
+SET_V P 12
+LOD_V P 13
+F_MLT 1.010101
+SET_V P 13
+LOD_V P 14
+F_MLT 1.010101
+SET_V P 14
+LOD_V P 15
+F_MLT 1.010101
+SET_V P 15
+RET
+@main LOD 1000.0
+SET_V P 0
+SET_V P 5
+SET_V P 10
+SET_V P 15
+LOD 0.0
+SET_V P 1
+SET_V P 2
+SET_V P 3
+SET_V P 4
+SET_V P 6
+SET_V P 7
+SET_V P 8
+SET_V P 9
+SET_V P 11
+SET_V P 12
+SET_V P 13
+SET_V P 14
+LOD 0.0
+SET_V w 0
+SET_V w 1
+SET_V w 2
+SET_V w 3
+LOD 0
+SET main_j
+@__Lwh1 LOD 20
+LES main_j
+JIZ __Lwh1end
+F_INN 0
+F_MLT 0.001
+SET __aux_var
+LOD_V x 2
+SET_V x 3
+LOD_V x 1
+SET_V x 2
+LOD_V x 0
+SET_V x 1
+LOD __aux_var
+SET x
+F_INN 0
+F_MLT 0.001
+SET __aux_var
+LOD_V x 2
+SET_V x 3
+LOD_V x 1
+SET_V x 2
+LOD_V x 0
+SET_V x 1
+LOD __aux_var
+SET x
+F_INN 0
+F_MLT 0.001
+SET __aux_var
+LOD_V x 2
+SET_V x 3
+LOD_V x 1
+SET_V x 2
+LOD_V x 0
+SET_V x 1
+LOD __aux_var
+SET x
+F_INN 0
+F_MLT 0.001
+SET __aux_var
+LOD_V x 2
+SET_V x 3
+LOD_V x 1
+SET_V x 2
+LOD_V x 0
+SET_V x 1
+LOD __aux_var
+SET x
+INN 1
+I2F
+F_MLT 0.001
+CAL rls_update
+LOD_V w 0
+F_MLT 1000.0
+F2I
+OUT 0
+LOD_V w 1
+F_MLT 1000.0
+F2I
+OUT 0
+LOD_V w 2
+F_MLT 1000.0
+F2I
+OUT 0
+LOD_V w 3
+F_MLT 1000.0
+F2I
+OUT 0
+LOD main_j
+ADD 1
+SET main_j
+JMP __Lwh1
+@__Lwh1end LOD 0
+SET main_r
+@__Lwh2 LOD 0
+SET main_c
+@__Lwh3 LOD main_r
+MLT 4
+ADD main_c
+LDI P
+SET main_ib
+P_LOD main_ib
+OUT 1
+LOD main_c
+ADD 1
+SET main_c
+LES 3
+JIZ __Lwh3
+@__Lwh3end LOD main_r
+ADD 1
+SET main_r
+LES 3
+JIZ __Lwh2
+@__Lwh2end LOD 0
+SET main_r
+@__Lwh4 LOD main_r
+LDI w
+SET main_ib
+P_LOD main_ib
+OUT 1
+LOD main_r
+ADD 1
+SET main_r
+LES 3
+JIZ __Lwh4
+@__Lwh4end @fim JMP fim

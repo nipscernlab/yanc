@@ -1,0 +1,8 @@
+VCD info: dumpfile dot_tb.vcd opened for output.
+TURN 120
+TURN 120
+TURN 120
+TURN 120
+TURN 120
+Info: end of program!
+dot/dot_tb.v:90: $finish called at 10295000 (1ps)

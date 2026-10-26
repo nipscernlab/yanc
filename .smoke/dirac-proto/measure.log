@@ -1,0 +1,5 @@
+N=4: 335 words of 16 bits, clocks per turn seen: 307 
+N=8: 1091 words of 18 bits, clocks per turn seen: 1011 
+N=16: 3947 words of 19 bits, clocks per turn seen: 3667 
+N=32: 15035 words of 21 bits (315735 bits), 1164 words of data, 3 s
+N=128: 232091 words of 25 bits (5802275 bits), 16908 words of data, 43 s

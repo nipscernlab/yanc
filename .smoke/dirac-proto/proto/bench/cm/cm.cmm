@@ -1,0 +1,28 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+float a[16];
+float P[16][16];
+
+void main()
+{
+    int k; int j; int ib; int q;
+    float c; float s;
+    for (k = 0; k < 16; k++) a[k] = fin(0)*0.001;
+    for (k = 0; k < 16; k++) for (j = 0; j < 16; j++) P[k][j] = fin(0)*0.001;
+    c = fin(0)*0.001;
+    int t = 0;
+    while (t < 2)
+    {
+        P # c|P|;
+        q = 0;
+        for (k = 0; k < 16; k++) for (j = 0; j < 16; j++) {copy(P[k][j], ib); out(0, ib);}
+        out(0, 7);
+        c = c + 0.25;
+        a[t] = a[t] + 0.125;
+        t++;
+    }
+}

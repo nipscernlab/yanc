@@ -1,0 +1,3 @@
+VCD info: dumpfile sh_tb.vcd opened for output.
+Info: end of program!
+sh/sh_tb.v:61: $finish called at 265000 (1ps)

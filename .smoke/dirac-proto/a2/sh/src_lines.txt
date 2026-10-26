@@ -1,0 +1,20 @@
+-1 INTERNAL
+-2 void main();
+-3 END
+1 #NUBITS 32
+2 #NBMANT 23
+3 #NBEXPO 8
+4 #NUIOIN 1
+5 #NUIOOU 1
+6 
+7 int a[3];
+8 
+9 void main()
+10 {
+11     int k = 5;
+12     a # |0>;
+13     a # k+1 -> |a>;
+14     out(0, a[0]);
+15     out(0, a[1]);
+16     out(0, a[2]);
+17 }

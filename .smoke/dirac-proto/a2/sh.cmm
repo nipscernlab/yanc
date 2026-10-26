@@ -1,0 +1,17 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+int a[3];
+
+void main()
+{
+    int k = 5;
+    a # |0⟩;
+    a # k+1 -> |a⟩;
+    out(0, a[0]);
+    out(0, a[1]);
+    out(0, a[2]);
+}

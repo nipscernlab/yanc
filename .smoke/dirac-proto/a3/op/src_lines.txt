@@ -1,0 +1,25 @@
+-1 INTERNAL
+-2 void main();
+-3 END
+1 #NUBITS 32
+2 #NBMANT 23
+3 #NBEXPO 8
+4 #NUIOIN 1
+5 #NUIOOU 1
+6 
+7 float A[2][2];
+8 float B[2][2];
+9 float a[2];
+10 float b[2];
+11 
+12 void main()
+13 {
+14     a[0] = 1.0; a[1] = 2.0;
+15     b[0] = 10.0; b[1] = 30.0;
+16     A # |a><b|;
+17     fout(0, A[0][0]); fout(0, A[0][1]); fout(0, A[1][0]); fout(0, A[1][1]);
+18     B[0][0] = 100.0; B[0][1] = 200.0;
+19     B[1][0] = 300.0; B[1][1] = 400.0;
+20     A # |B| - |a><b|;
+21     fout(0, A[0][0]); fout(0, A[0][1]); fout(0, A[1][0]); fout(0, A[1][1]);
+22 }

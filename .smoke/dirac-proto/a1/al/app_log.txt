@@ -1,0 +1,9 @@
+prname al
+nubits 32
+nbmant 23
+nbexpo 8
+@main 1
+@fim 43
+n_ins 44
+n_dat 12
+max_io 0

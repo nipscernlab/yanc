@@ -1,0 +1,13 @@
+Info: 57 instructions and 40 variables were found
+Info: adding data input handling
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float-point multiplier
+Info: adding array handling
+Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
+Info: ULA resource -> float-point adder
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 12% of the Assembly Instruction Set
+Info: using 13% of the ULA operations
+Sweet: the processor is good to go.

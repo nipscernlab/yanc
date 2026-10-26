@@ -1,0 +1,4 @@
+VCD info: dumpfile db_tb.vcd opened for output.
+Progress: 10% complete
+Info: end of program!
+db/db_tb.v:112: $finish called at 64455000 (1ps)

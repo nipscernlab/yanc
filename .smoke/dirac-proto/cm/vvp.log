@@ -1,0 +1,4 @@
+VCD info: dumpfile cm_tb.vcd opened for output.
+Progress: 10% complete
+Info: end of program!
+cm/cm_tb.v:90: $finish called at 260215000 (1ps)

@@ -1,0 +1,11 @@
+main n 1
+main bad 1
+main x 2
+main y 2
+main p 2
+main q 2
+main ip 1
+main iq 1
+num_ins 69
+srcdir C:/nipscern/yanc-dirac/.smoke/dirac-proto/cm
+lang C+-

@@ -1,0 +1,29 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// inner product of two arrays of 16, in a loop, 6 times: the loop variants
+// are written by hand in the .asm, at the marked place
+float w[16];
+float x[16];
+
+void main()
+{
+    int k;
+    for (k = 0; k < 16; k++) w[k] = fin(0)*0.001;
+    for (k = 0; k < 16; k++) x[k] = fin(0)*0.001;
+    int t = 0;
+    float s;
+    int ib;
+    while (t < 6)
+    {
+        s = w[0]*x[0];
+        for (k = 1; k < 16; k++) s = s + w[k]*x[k];
+        copy(s, ib);
+        out(0, ib);
+        w[t] = s;
+        t++;
+    }
+}

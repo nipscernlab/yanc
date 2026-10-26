@@ -1,0 +1,52 @@
+NOP
+#PRNAME al
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+#array M 2 4
+#array a 2 2
+@main LOD  0
+MLT  2
+ADD  0
+P_LOD 0.0
+STI M
+LOD  0
+MLT  2
+ADD  1
+P_LOD 1.0
+STI M
+LOD  1
+MLT  2
+ADD  0
+P_LOD 1.0
+STI M
+LOD  1
+MLT  2
+ADD  1
+P_LOD 0.0
+STI M
+LOD 1.0
+SET_V a 0
+LOD 2.0
+SET_V a 1
+LOD_V M 0
+F_MLT a
+P_LOD_V M 1
+F_MLT_V a 1
+SF_ADD
+SET_V a 0
+LOD_V M 2
+F_MLT a
+P_LOD_V M 3
+F_MLT_V a 1
+SF_ADD
+SET_V a 1
+LOD_V a 0
+F2I
+OUT 0
+LOD_V a 1
+F2I
+OUT 0
+@fim JMP fim

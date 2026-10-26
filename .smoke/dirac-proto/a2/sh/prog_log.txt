@@ -1,0 +1,4 @@
+main k 1
+num_ins 16
+srcdir C:/nipscern/yanc-dirac/.smoke/dirac-proto/a2
+lang C+-

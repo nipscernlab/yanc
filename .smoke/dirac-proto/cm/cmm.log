@@ -1,0 +1,5 @@
+Info: constant 0.0013 on line 16 approximated to 0.001299999887123704 (error = -1.13e-10)
+Info: constant 0.00071 on line 17 approximated to 0.0007100000511854887 (error = 5.12e-11)
+Info: 69 assembly instructions generated
+Info: 8 variables share 6 data words (2 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.

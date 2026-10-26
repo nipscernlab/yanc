@@ -1,0 +1,5 @@
+loop same N=8: 349 words of 16 bits, clocks per turn seen: 4287  
+loop same N=16: 469 words of 16 bits, clocks per turn seen: 15975  
+loop same N=32: 709 words of 18 bits
+loop same N=128: 2149 words of 22 bits
+loop fix N=4: 289 words of 16 bits, clocks per turn seen: 1227  output = golden

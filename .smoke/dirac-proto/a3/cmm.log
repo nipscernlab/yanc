@@ -1,0 +1,5 @@
+Info: Dirac notation for Outer Product detected at line 16
+Info: Dirac notation for Outer Product detected at line 20
+Info: Dirac notation for Matrix Sum detected at line 20
+Info: 110 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.

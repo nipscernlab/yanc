@@ -1,0 +1,5 @@
+Info: Dirac notation for Constant-Vector multiplication detected at line 10
+Info: 15 assembly instructions generated
+Info: 3 variables share 2 data words (1 saved)
+Heads up: global variable 'x' isn't being used. Save some memory, will ya!
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.

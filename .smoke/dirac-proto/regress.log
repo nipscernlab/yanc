@@ -1,0 +1,323 @@
+==> building cmmcomp + cppcomp + asmcomp + yanc
+CMMComp.y:96.1-5: warning: POSIX Yacc does not support %code [-Wyacc]
+   96 | %code requires {
+      | ^~~~~
+CMMComp.y:128.1-7: warning: POSIX Yacc does not support %expect [-Wyacc]
+  128 | %expect 0
+      | ^~~~~~~
+CPPComp.y: warning: 1 nonterminal useless in grammar [-Wother]
+CPPComp.y: warning: 2 rules useless in grammar [-Wother]
+CPPComp.y:1700.1-11: warning: nonterminal useless in grammar: ct_arg_list [-Wother]
+ 1700 | ct_arg_list:
+      | ^~~~~~~~~~~
+CPPComp.y: warning: 16 shift/reduce conflicts [-Wconflicts-sr]
+CPPComp.y: note: rerun with option '-Wcounterexamples' to generate conflict counterexamples
+
+==> CMM phase
+PASS (algsimp)  [sim OK]  [size: 28]
+PASS (ArcTan)  [sim skipped]  [size: 76]
+PASS (cmm_arridx)  [sim OK]  [size: 31]
+PASS (cmm_bigin)  [sim OK]  [size: 14]
+PASS (cmm_braces)  [sim OK]  [size: 91, no baseline]
+PASS (cmm_break)  [sim OK]  [size: 100]
+PASS (cmm_callseq)  [sim OK]  [size: 58]
+PASS (cmm_catan)  [sim OK]  [size: 356]
+PASS (cmm_cexp)  [sim OK]  [size: 129]
+PASS (cmm_cfold)  [sim OK]  [size: 21]
+PASS (cmm_clog)  [sim OK]  [size: 340]
+PASS (cmm_cmpforms)  [sim OK]  [size: 312]
+PASS (cmm_comp_arith)  [sim OK]  [size: 105]
+PASS (cmm_comp_div)  [sim OK]  [size: 120]
+PASS (cmm_comp_fase)  [sim OK]  [size: 426]
+PASS (cmm_comp_func)  [sim OK]  [size: 110]
+PASS (cmm_comp_mix)  [sim OK]  [size: 267]
+PASS (cmm_comp_sqrt)  [sim OK]  [size: 153]
+PASS (cmm_conj)  [sim OK]  [size: 58]
+PASS (cmm_continue)  [sim OK]  [size: 70]
+PASS (cmm_csincos)  [sim OK]  [size: 190]
+PASS (cmm_ctan)  [sim OK]  [size: 265]
+PASS (cmm_ctlforms)  [sim OK]  [size: 136]
+PASS (cmm_decl_list)  [sim OK]  [size: 99, no baseline]
+PASS (cmm_define)  [sim skipped]  [size: 12]
+PASS (cmm_depth)  [sim OK]  [size: 29]
+PASS (cmm_dowhile)  [sim OK]  [size: 82]
+PASS (cmm_empty)  [sim OK]  [size: 27]
+PASS (cmm_exp)  [sim OK]  [size: 37]
+PASS (cmm_fbound)  [sim OK]  [size: 21]
+PASS (cmm_fft_rd)  [sim OK]  [size: 27]
+PASS (cmm_fft_wr)  [sim OK]  [size: 27]
+PASS (cmm_flit)  [sim OK]  [size: 79, no baseline]
+PASS (cmm_forbottom)  [sim OK]  [size: 156]
+PASS (cmm_fround_mean)  [sim OK]  [size: 67]
+PASS (cmm_fround0)  [sim OK]  [size: 202]
+PASS (cmm_fround1)  [sim OK]  [size: 202]
+PASS (cmm_fround2)  [sim OK]  [size: 202]
+PASS (cmm_hyper)  [sim OK]  [size: 123]
+PASS (cmm_ilit)  [sim OK]  [size: 65, no baseline]
+PASS (cmm_ilit8)  [sim OK]  [size: 18, no baseline]
+PASS (cmm_ioports)  [sim OK]  [size: 13]
+PASS (cmm_log)  [sim OK]  [size: 36]
+PASS (cmm_names)  [sim OK]  [size: 83]
+PASS (cmm_nofloat)  [sim OK]  [size: 21]
+PASS (cmm_pow)  [sim OK]  [size: 118]
+PASS (cmm_pplus)  [sim OK]  [size: 274]
+PASS (cmm_reach)  [sim OK]  [size: 25]
+PASS (cmm_reorder)  [sim OK]  [size: 58]
+PASS (cmm_return)  [sim OK]  [size: 94]
+PASS (cmm_round)  [sim OK]  [size: 120]
+PASS (cmm_switch)  [sim OK]  [size: 68]
+PASS (cmm_switch_fall)  [sim OK]  [size: 53]
+PASS (cmm_switch_nest)  [sim OK]  [size: 44]
+PASS (cmm_tan)  [sim OK]  [size: 45]
+PASS (cmm_tiny0)  [sim OK]  [size: 5]
+PASS (cmm_tiny1)  [sim OK]  [size: 6]
+PASS (cmm_tiny2)  [sim OK]  [size: 8]
+PASS (cmm_trig)  [sim OK]  [size: 53]
+PASS (ctrl_flow)  [sim OK]  [size: 103]
+PASS (dirac_assign)  [sim OK]  [size: 171]
+PASS (empty_call)  [sim OK]  [size: 14]
+PASS (fifo_w)  [sim OK]  [size: 35]
+PASS (for_loop)  [sim OK]  [size: 78]
+PASS (func_combos)  [sim OK]  [size: 60]
+PASS (link_envia)  [standalone sim skipped]  [size: 24]
+PASS (link_ping)  [standalone sim skipped]  [size: 16]
+PASS (link_pong)  [standalone sim skipped]  [size: 11]
+PASS (link_recebe)  [standalone sim skipped]  [size: 24]
+PASS (lk_chain_a)  [standalone sim skipped]  [size: 15]
+PASS (lk_chain_b)  [standalone sim skipped]  [size: 7]
+PASS (lk_chain_c)  [standalone sim skipped]  [size: 13]
+PASS (lk_count)  [standalone sim skipped]  [size: 13]
+PASS (lk_count7)  [standalone sim skipped]  [size: 14]
+PASS (lk_echo)  [standalone sim skipped]  [size: 5]
+PASS (lk_fan_w)  [standalone sim skipped]  [size: 16]
+PASS (lk_flt_r)  [standalone sim skipped]  [size: 8]
+PASS (lk_flt_w)  [standalone sim skipped]  [size: 15]
+PASS (lk_merge)  [standalone sim skipped]  [size: 11]
+PASS (multiparam)  [sim OK]  [size: 28]
+PASS (pplus_arr)  [sim OK]  [size: 19]
+PASS (proc_fft)  [sim OK]  [size: 289]
+PASS (proc_rls)  [sim OK]  [size: 335]
+PASS (proc_sim)  [sim OK]  [size: 94]
+PASS (procBlind)  [sim skipped]  [size: 624]
+PASS (procBlindOpt)  [sim skipped]  [size: 593]
+PASS (ProcDTW)  [standalone sim skipped]  [size: 266]
+PASS (ResetCheck)  [standalone sim skipped]  [size: 22]
+PASS (sapho_all)  [sim OK]  [size: 954]
+PASS (sapho_all_a)  [standalone sim skipped]  [size: 957]
+PASS (sapho_all_b)  [standalone sim skipped]  [size: 962]
+PASS (Seno)  [sim skipped]  [size: 67]
+PASS (Sqrt)  [sim skipped]  [size: 94]
+PASS (sw_test)  [sim OK]  [size: 20]
+PASS (ZeroCross)  [standalone sim skipped]  [size: 138]
+PASS (DTW)  [sim OK, output_dtw_1=459908]
+PASS (LINK)  [sim OK, 16 values each way, in order; C+- and C+-/C++ pairs]
+PASS (LINK2)  [two clocks, 20 ns / 27.3 ns: 16 values each way, in order]
+PASS (LINKALL)  [sapho_all A -> B: one clock and two clocks, A = 4, B = 10; alone fed back, 17 turns = model.py]
+PASS (LINK3)  [chains (C+- and C++ middle), fan-out, fan-in, float: 16 values each, in order]
+PASS (FIFO)  [one clock and two clocks: SAPHO -> FIFO -> 1..8, 11..14; tb_fifo 3/3, tb_dcfifo 4/4 both ways]
+PASS (KEYPS2)  [C+- (US) and C++ (ABNT2) SAPHOs, 8 bits, echo the keys through myKeyPS2]
+PASS (VGATEXT)  [C+- (US) and C++ (ABNT2) SAPHOs, 8 bits: keyboard -> SAPHO -> screen; C++ <iostream>, 32 bits]
+PASS (reset)  [burst repeated after 5 one-cycle mid-run resets]
+
+==> CPP phase
+PASS (test1): 55 1 
+PASS (test10): 25 4 12 3 25 
+PASS (test11): 3 4 10 0 1 
+PASS (test12): 7 9 9 42 15 123 20 9 
+PASS (test13): 0 1 3 1 
+PASS (test14): 36 1 
+PASS (test15): 7 3 2 200 
+PASS (test16): 10 5 15 7 
+PASS (test17): 0 2 1 2 2 
+PASS (test18): 3 4 1 3 4 
+PASS (test19): 5 1 5 
+PASS (test2): 1 1 1 1 1 1 1 1001000 7 
+PASS (test20): 43 1 2 10 
+PASS (test21): 5 10 50 150 99 42 7 
+PASS (test22): 7 9 25 9 375 
+PASS (test23): 60 12 
+PASS (test24): 23 
+PASS (test25): 1 2 9 0 3 97 99 107 0 
+PASS (test26): 5 6 12 1 
+PASS (test27): 15 100 101 
+PASS (test28): 1 2 5 89 1 1 0 15 
+PASS (test29): 5 7 9 3 30 -1 -3 32 
+PASS (test3): 42 16 13 10 7 
+PASS (test30): 10 20 20 99 10 10 
+PASS (test31): 0 4 16 5 103 7 
+PASS (test32): 20 4 60 3 21 
+PASS (test33): 14 20 5 10 9 
+PASS (test34): 9 12 8 2 4 
+PASS (test35): 42 7 5 16 13 
+PASS (test36): 0 0 499000 1000000 500251 0 0 
+PASS (test37): 5 -3 2 10 
+PASS (test38): 7 36 9 -1 
+PASS (test39): 1 2 2 2 -3 -4 3 0 -2 7 9 11 13 5 3 
+PASS (test4): 7 39 30 40 3 110 
+PASS (test40): 0 1 4 9 16 5 750 9 
+PASS (test41): 10 10 16 7 350 
+PASS (test42): 10 3 0 3 13 
+PASS (test43): 23 53 59 
+PASS (test44): 0 444 
+PASS (test45): 10 12 14 100 102 3 6 
+PASS (test46): 14 999 100 0 
+PASS (test47): 14 30 42 1 
+PASS (test48): 7777 1111 1954 2722 8888 1 2722461 1954949 2722461 11236968 17 31 139 -46 -223 249773 499880 1000000 499927 249779 0 166 103 0 0 0 143 
+PASS (test49): 7777 1111 1954949 2722461 
+PASS (test5): 3 4 25 7 1 0 
+PASS (test50): -3593400 3380200 -3630750 342850 -674750 305500 1287900 272550 -7745050 -1780200 -14802200 -2852750 5123100 2116500 103300 3085700 5074750 68150 2050550 -1962650 15400 997800 1982400 2969250 -41750 1940650 4927450 2920900 909900 1894500 2881300 870350 -145050 -2162650 10815400 1822000 -1191200 -298900 3676900 661550 639550 3617600 4602200 6589000 580200 4558250 2545050 2527450 1509900 4490100 4476900 2463750 5446150 4435150 2422000 1404400 3384600 2369250 -2648350 1323100 5303300 -707700 6268150 2259350 241750 -780200 195600 1173650 6153850 5145050 134050 2112100 94500 10072550 16072552 8085699 1081300 3061550 3046150 6030750 -978000 -3002200 1969250 2951650 2936250 -1079100 1896700 -1120900 4854950 -1156050 3819800 6806600 7800000 4795600 1784600 -1232950 1742850 2725250 4709900 8698900 51 -99 -294 249711 499774 1000000 499873 249714 0 132 70 0 0 0 147 0 0 0 0 0 0 0 0 0 0 0 262122 0 0 0 0 0 0 0 0 0 351749 110599 0 0 0 0 0 0 1130974 0 0 0 0 0 0 271637 783561 1131531 147810 392481 0 0 0 449125 650285 579122 901390 586632 152094 0 0 0 0 0 32541 0 602233 0 0 0 0 0 778164 647363 0 0 160262 2978214 4249742 2673746 429369 35052 59744 86244 0 0 0 0 0 0 0 0 0 0 991161 1954949 1954949 1954949 1954949 1954949 1954949 1954949 1954949 1954949 1954949 1954949 1954963 1954923 1954872 2020404 2085951 2217072 2085978 2020405 1954949 1954984 1954986 1954920 1954835 2042753 2158401 2361974 2241379 2098072 1982626 1954883 1954656 2237375 2520181 3085924 2520345 2237401 1954962 1954999 2022524 2286043 2900665 3476600 3718041 3060225 2703903 2188007 2165112 2341663 2873430 3344139 3568337 3639544 3212873 2625553 2177593 1993087 1955112 1963143 1971142 2137961 2272330 2565395 2256052 2105296 1954658 2149155 2505561 3056786 2991174 2511722 2938987 4664131 7804865 9176964 7720049 4814510 2924223 2183408 2080465 2013225 1976544 1955399 1955591 1955350 1955063 1954856 1954666 2202467 2450307 2946111 2450405 2202457 1954949 1955081 1955019 1954949 1954949 1954949 1955096 4534 9034 -35413 -21401 209348 -203268 -565452 1666952 -566217 -202197 208755 -21877 -34784 8881 4460 -2606053 2739858 295048 -10929286 10757604 -22039352 -2125276 11374238 -2186282 -5973145 2957131 5208447 -5402194 3228994 -4137183 -728981 -491365 -19847 3317654 -4302894 -1185356 5211088 370589 -2999598 10971 1868197 1309068 -2414544 -10874762 17523920 -2159161 -7060850 -1021331 5806300 -2747587 -2708225 1534323 1658255 5958962 -6552001 4072839 890054 -223421 -2742545 3662527 2429188 -3637854 3855189 2859660 -1123729 -2999061 3689979 3261586 -9387012 1373609 7766329 -9955826 7706383 531552 -3024367 -812959 -639399 -3480269 5786703 2858279 -4267386 3842976 -8417108 4491817 16034638 772680 -5805643 1986746 -744931 7794086 -4138313 -7028263 2955799 1915351 1141208 -4224108 2147182 -5258367 8030104 -7078538 542930 4489745 3793048 1420370 -272793 -4361747 2201252 -1129514 -301309 9608880 -4088097 -827046 1304665 -237474 -206684 12000000 1000000 1661420 1249199 749110 249377 62302 64 68 67 73 147 73 36 0 0 0 0 0 70 132 0 249714 499873 1000000 499774 249711 -294 -99 51 0 0 3930 7831 -30696 -18551 181465 -176195 -490140 1444933 -490803 -175267 180951 -18963 -30151 7698 3866 0 0 -3 981 3940 157 -10238 10416 14728 -46310 25911 66708 866811 66708 25911 -46306 14727 10401 -10208 170 3792 1172 -73 -24 26 -2 -4 1 0 12000000 866811 4534 9034 -35413 -21401 209348 -203268 -565452 1666952 -566217 -202197 208755 -21877 -34784 8881 4460 
+PASS (test51): 1500 -2500 3500 -4500 5500 -6500 7500 -8500 9500 -10500 11500 -12500 13500 -14500 15500 
+PASS (test52): 42 99 
+PASS (test53): 42 43 86 
+PASS (test54): 2 0 0 0 0 
+PASS (test55): 2 1 10 3 1 20 50 51 52 999 
+PASS (test56): 100 100 250 250 250 7 
+PASS (test57): 5 15 25 7 
+PASS (test58): 12739 1234 3 75 -1 401 
+PASS (test59): 1 0 101 102 103 
+PASS (test6): 9 3 42 43 11 14 
+PASS (test60): 3 25 14 30 250 140 3 25 99 14 
+PASS (test61): 0 0 0 250 500 1000 500 250 0 0 0 0 0 0 0 30 
+PASS (test62): 1000 2500 1073741824 
+PASS (test63): 1999 999 4000 499 1999 
+PASS (test64): 4000 1000 
+PASS (test65): 67305985 68 51 34 17 1428304708 305839326 703710 291 123456 123457 
+PASS (test66): 1 1 0 1 1 1 0 2147483647 -1 -3 -1 -3 600000000 4 1431655765 -4 8 -70 -2 2 -1 15 -1 -64 7 -8 -7 -4 -40 1 15 -64 14 -6 -6 3 1 1 3500000 3000000 3000000 3000000 3500000 1 1 0 3000000 3500000 4000000 4294967 2147483 16777216 1 1 1 0 1 0 3000000 1500000 1 2 0 255 255 0 4 -128 127 0 -32768 300 44 1 194 255 0 45 -56 -25536 65535 3 4 25536 119 255 15 1 0 1 -8 1 0 
+PASS (test67): 1000 42 8 2 43 6 1000 7 6 100 1 
+PASS (test68): 30517 3999999 53405 
+PASS (test69): 0 7 6 6 20 9 5 2 2 30 15 
+PASS (test7): 25 27 14 16 7 
+PASS (test70): 8 5 8 1 4 2 1 8 33 12 4 5 7 5 8 1 305 305 12 
+PASS (test71): 10 9 13 6 5 12 6 7 1 200 
+PASS (test72): -2147483648 0 -2147483648 2147483647 -6 -1073741824 -1073741824 1 0 
+PASS (test73): -2147483648 0 -2147483648 2147483647 -6 -1073741824 -1073741824 1 0 
+PASS (test74): 6 14 13 12 10 6 14 14 1 200 3 
+PASS (test75): -1294967296 -2147483648 -1 -1 2147483647 705032704 
+PASS (test76): 0 1 2 2 2 101 102 103 0 2 3 3 0 30 30 2 2 0 3 
+PASS (test77): 657 657 
+PASS (test78): 111111111 111111111 
+PASS (test79): 105 500 0 140 9 6 7 39 
+PASS (test8): 5 9 40 -7 10 15 
+PASS (test80): 56 77 77 65 54 7 804 68 84 
+PASS (test81): 45 25 44 42 15 7 5 27 15 10 20 45 20 5 3 
+PASS (test82): 1111111 1111111 
+PASS (test83): 7 28 -2 -2147483648 -3 -1 -134217728 -2147483648 6 0 1410065408 1 1500000000 
+PASS (test84): 1 1 1 1 3 7 25 1 
+PASS (test85): 10 7 7 18 4 
+PASS (test86): 11 73 348 
+PASS (test87): 10 0 14 8 56 2 4 7 
+PASS (test88): 42 
+PASS (test89): 55 13 10 
+PASS (test9): 4 4 1 5 1 
+PASS (test90): 4 2 1 7 105 6 
+PASS (test91): 20 30 20 6 3 8 6 
+PASS (test92): 3 100 200 1 2 3 4 5 2 66 1005 2065 4104 4105 5007 41 2 30 11 
+PASS (test93): 6 0 1 1 0 3 3 2 1 121 0 4 0 -1 1 1 2 3 3 
+PASS (test94): 3 -2 65 0 0 12 -2 32 79 105 0 3 6 2 9 1 0 1 0 1 1 -56 -1 7 122 98 3 8 9 
+PASS (test95): 3 5 7 9 1 
+
+==> ISA table
+check_isa: 119 mnemonics, 108 opcodes (0..107); ASMComp.l, core.v, instr_dec.v, asm_share.c and the effect columns agree
+gen_isa_doc: docs/reference/instructions.md matches isa.tsv (119 mnemonics)
+gen_messages_doc: docs/reference/messages.md matches the sources
+
+==> Constant encoder (yanc_num)
+check_yanc_num: 3750 cases, 0 mismatches
+check_const_e2e: 658 constants in 4 formats, 0 mismatches
+
+==> unit testbenches (ALU, keyboard, screen)
+PASS (tb_ula): 9 configurations
+PASS (tb_alu): 12 configurations
+PASS (tb_keyps2): 6 configurations
+PASS (tb_vgatext): 1 configurations
+
+==> SAPHO blocks (sapho_all)
+check_blocks: 100 of 104 opcode blocks instantiated, 4 excepted; FFT, #PRACA and #TOAQUI set
+PASS (sapho_all-model): all 97 golden lines = model.py(7) = 4
+PASS (fround_mean-model): all 108 golden lines = model.py 2 (final error -640 / 64 ULP)
+
+==> Float and complex conditions against the host C compiler (fcond)
+PASS (float-conditions)
+
+==> CMM negative phase (error reporting)
+PASS (neg:syntax): rejected (exit 1) -- "Syntax error"
+PASS (neg:no_main): rejected (exit 1) -- "main() function"
+PASS (neg:garbage): rejected (exit 1) -- "Syntax error"
+PASS (neg:undeclared): rejected (exit 1) -- "declared the variable"
+PASS (neg:define_recursive): rejected (exit 1) -- "declare the variable"
+PASS (neg:nugain_not_pow2): rejected (exit 1) -- "power of two"
+PASS (neg:const_idx_scalar_read): rejected (exit 1) -- "ain't an array"
+PASS (neg:const_idx_2d_read): rejected (exit 1) -- "has two dimensions"
+PASS (neg:const_idx_scalar_write): rejected (exit 1) -- "isn't an array"
+PASS (neg:const_idx_2d_write): rejected (exit 1) -- "has two dimensions"
+PASS (neg:recursion): rejected (exit 1) -- "calls itself (fact -> fact)"
+PASS (neg:cade_comp): rejected (exit 1) -- "cade() brings one word"
+PASS (neg:names_mnemonic): rejected (exit 1) -- "'ADD' is an instruction of the processor"
+PASS (neg:names_mnemonic_local): rejected (exit 1) -- "is 'S_ADD' in the assembly, which is an instruction"
+PASS (neg:names_global_local): rejected (exit 1) -- "the local 'x' of 'main()' is 'main_x' in the assembly, and that name is already the global 'main_x'"
+PASS (neg:names_local_local): rejected (exit 1) -- "is 'a_b_c' in the assembly, and that name is already the local 'c' of 'a_b()'"
+PASS (neg:names_fun_global): rejected (exit 1) -- "the function 'f()' is 'f' in the assembly, and that name is already the global 'f'"
+PASS (neg:names_comp_imag): rejected (exit 1) -- "is 'z_i' in the assembly, and that name is already the global 'z_i'"
+PASS (neg:names_underscore): rejected (exit 1) -- "names starting with '__' belong to the compiler"
+PASS (neg:names_fim): rejected (exit 1) -- "a function can't be called 'fim'"
+PASS (neg:link_mix): rejected (exit 1) -- "link 0 was already used without _sync"
+PASS (neg:link_range): rejected (exit 1) -- "the link number is an integer from 0 to 1023"
+PASS (neg:prname_gone): rejected (exit 1) -- "#PRNAME is gone"
+PASS (neg:begin): rejected (exit 1) -- "is a Verilog keyword"
+PASS (neg:bad-name): rejected (exit 1) -- "can only have letters, digits and '_'"
+PASS (neg:params_17): rejected (exit 1) -- "has more than 16 parameters"
+PASS (neg:sinh_comp): rejected (exit 1) -- "sinh(.) doesn't take a comp"
+PASS (neg:toaqui_twice): rejected (exit 1) -- "duplicate #TOAQUI marker"
+PASS (neg:ini_type): rejected (exit 1) -- "does not take the value 2.5 between braces"
+PASS (neg:ini_count): rejected (exit 1) -- "has 2 positions and the list between braces reaches position 3"
+PASS (neg:ini_1d_rows): rejected (exit 1) -- "braces inside the list only mark the rows of a 2D array"
+PASS (neg:ini_rows): rejected (exit 1) -- "each with up to 2 values"
+PASS (neg:octal_digit): rejected (exit 1) -- "so it is octal, and octal has no 8 or 9"
+PASS (neg:ninum_size): rejected (exit 1) -- "Syntax error"
+PASS (neg:dirac_sum_shape): rejected (exit 1) -- "the shapes must be the same"
+PASS (neg:dirac_product_shape): rejected (exit 1) -- "do not match the rows of the second"
+PASS (neg:dirac_target_shape): rejected (exit 1) -- "and the expression gives"
+PASS (neg:dirac_not_scalar): rejected (exit 1) -- "where a number is needed"
+PASS (neg:dirac_out_matrix): rejected (exit 1) -- "writes a number or a vector"
+PASS (neg:dirac_not_matrix): rejected (exit 1) -- "ain't even a matrix"
+PASS (neg:dirac_not_vector): rejected (exit 1) -- "ain't even a vector"
+PASS (neg:dirac_scalar_ket): rejected (exit 1) -- "ain't even a vector"
+PASS (neg:dirac_braket_one): rejected (exit 1) -- "Syntax error"
+PASS (neg:dirac_not_yet): rejected (exit 1) -- "not implemented yet"
+PASS (warn:const_idx_read_used): compiled without "isn't being used"
+PASS (warn:file_init_local): printed "keeps what the function wrote"
+PASS (warn:file_init_global): compiled without "keeps what the function wrote"
+PASS (warn:ini_local): printed "gets the values between braces only once"
+PASS (warn:ini_global): compiled without "gets the values between braces only once"
+PASS (warn:dirac_or_index): compiled without "Syntax error"
+
+==> float format (asmcomp)
+PASS (asm:fpfmt_sum): refused (exit 1) -- "doesn't add up"
+PASS (asm:fpfmt_expo): refused (exit 1) -- "exponent is too short"
+PASS (asm:fpfmt_wide): refused (exit 1) -- "is past 32"
+
+==> CPP negative phase (error reporting)
+PASS (cppneg:names_mnemonic): rejected (exit 1) -- "the global 'ADD': 'ADD' is an instruction of the processor's assembly"
+PASS (cppneg:names_mnemonic_local): rejected (exit 1) -- "the local 'ADD' of 'S' is 'S_ADD' in the assembly, which is an instruction"
+PASS (cppneg:names_global_local): rejected (exit 1) -- "the global 'main_x' and the local 'x' of 'main' are both 'main_x' in the assembly"
+PASS (cppneg:names_overload): rejected (exit 1) -- "are both 'f_Oi' in the assembly"
+PASS (cppneg:names_underscores): rejected (exit 1) -- "'__fp': a name with '__' in it is reserved"
+PASS (cppneg:names_fim): rejected (exit 1) -- "'fim' is reserved, it is the label where the program ends"
+PASS (cppneg:names_global_fn): rejected (exit 1) -- "'global' names the global variables in the simulation log"
+PASS (cppneg:link_mix): rejected (exit 1) -- "link 1 was already used with _sync"
+PASS (cppneg:link_lit): rejected (exit 1) -- "the link number comes first and is an integer literal"
+PASS (cppneg:prname_gone): rejected (exit 1) -- "#pragma yanc prname is gone"
+PASS (cppneg:module): rejected (exit 2) -- "is a Verilog keyword"
+PASS (cppneg:2fast): rejected (exit 2) -- "cannot start with a digit"
+PASS (cppneg:pp_error): rejected (exit 1) -- "#error this program is not meant to compile"
+PASS (cppneg:pragma_fftsiz): rejected (exit 1) -- "#pragma yanc fftsiz does nothing in C++"
+
+==> yanc (the driver)
+PASS (yanc:C+- to Verilog, .asm = golden)
+PASS (yanc:-S then the .asm)
+PASS (yanc:C++ .asm = cppcomp's)
+PASS (yanc:errors stop it)
+PASS (yanc:a folder with accents and spaces)
+PASS (yanc:an .asm on its own)
+
+===== 287 passed, 0 failed =====

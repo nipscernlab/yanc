@@ -1,0 +1,16 @@
+0 NOP 
+1 LOD 5
+2 SET main_k
+3 LOD 0
+4 SET_V a 0
+5 SET_V a 1
+6 SET_V a 2
+7 LOD main_k
+8 ADD 1
+9 LOD_V a 0
+10 OUT 0
+11 LOD_V a 1
+12 OUT 0
+13 LOD_V a 2
+14 OUT 0
+15 JMP fim

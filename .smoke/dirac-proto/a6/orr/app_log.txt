@@ -1,0 +1,6 @@
+prname orr
+@main 1
+@fim 22
+n_ins 23
+n_dat 11
+max_io 0

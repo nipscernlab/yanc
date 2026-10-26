@@ -1,0 +1,22 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+float A[2][2];
+float B[2][2];
+float a[2];
+float b[2];
+
+void main()
+{
+    a[0] = 1.0; a[1] = 2.0;
+    b[0] = 10.0; b[1] = 30.0;
+    A # |a⟩⟨b|;
+    fout(0, A[0][0]); fout(0, A[0][1]); fout(0, A[1][0]); fout(0, A[1][1]);
+    B[0][0] = 100.0; B[0][1] = 200.0;
+    B[1][0] = 300.0; B[1][1] = 400.0;
+    A # |B| - |a⟩⟨b|;
+    fout(0, A[0][0]); fout(0, A[0][1]); fout(0, A[1][0]); fout(0, A[1][1]);
+}

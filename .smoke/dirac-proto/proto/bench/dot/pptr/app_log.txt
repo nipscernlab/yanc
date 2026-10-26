@@ -1,0 +1,15 @@
+prname pptr
+nubits 32
+nbmant 23
+nbexpo 8
+@main 1
+@__Lwh1 3
+@__Lwh1end 12
+@__Lwh2 14
+@__Lwh2end 23
+@__Lwh3 28
+@__Lwh3end 59
+@fim 59
+n_ins 60
+n_dat 45
+max_io 0

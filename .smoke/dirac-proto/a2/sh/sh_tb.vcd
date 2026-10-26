@@ -1,0 +1,251 @@
+$date
+	Sun Oct 25 19:25:56 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module sh_tb $end
+$var reg 1 ! clk $end
+$upscope $end
+$scope module sh_tb $end
+$var reg 1 " rst $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$var reg 1 # out_en_sim_0 $end
+$upscope $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$var reg 32 $ out_sig_0 [31:0] $end
+$upscope $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$var reg 32 % valr2 [31:0] $end
+$upscope $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$var reg 20 & linetabs [19:0] $end
+$upscope $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$var reg 32 ' me1_f_main_v_k_e_ [31:0] $end
+$upscope $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$scope module p_sh $end
+$scope module core $end
+$scope module sp $end
+$var reg 1 ( pointeri $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$scope module p_sh $end
+$scope module core $end
+$scope module sp $end
+$var reg 1 ) fl_max $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$scope module p_sh $end
+$scope module core $end
+$scope module sp $end
+$var reg 1 * fl_full $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$scope module p_sh $end
+$scope module core $end
+$scope module ula $end
+$var real 1 + delta_float $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$scope module sh_tb $end
+$scope module proc $end
+$scope module p_sh $end
+$scope module core $end
+$scope module ula $end
+$var real 1 , delta_int $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+r0 ,
+r0 +
+0*
+0)
+0(
+b0 '
+b11111111111111111111 &
+b0 %
+b0 $
+0#
+1"
+0!
+$end
+#5000
+1!
+#10000
+0!
+0"
+#15000
+1!
+#20000
+0!
+#25000
+1!
+#30000
+0!
+#35000
+b1 %
+b1011 &
+1!
+#40000
+0!
+#45000
+b101 '
+b10 %
+1!
+#50000
+0!
+#55000
+b11 %
+b1100 &
+1!
+#60000
+0!
+#65000
+b100 %
+1!
+#70000
+0!
+#75000
+b101 %
+1!
+#80000
+0!
+#85000
+b110 %
+1!
+#90000
+0!
+#95000
+b111 %
+b1101 &
+1!
+#100000
+0!
+#105000
+r0 ,
+b1000 %
+1!
+#110000
+0!
+#115000
+b1001 %
+b1110 &
+1!
+#120000
+0!
+#125000
+1#
+b1010 %
+1!
+#130000
+0!
+#135000
+0#
+b1011 %
+b1111 &
+1!
+#140000
+0!
+#145000
+1#
+b1100 %
+1!
+#150000
+0!
+#155000
+0#
+b1101 %
+b10000 &
+1!
+#160000
+0!
+#165000
+1#
+b1110 %
+1!
+#170000
+0!
+#175000
+0#
+b1111 %
+b11111111111111111101 &
+1!
+#180000
+0!
+#185000
+1!
+#190000
+0!
+#195000
+1!
+#200000
+0!
+#205000
+1!
+#210000
+0!
+#215000
+1!
+#220000
+0!
+#225000
+1!
+#230000
+0!
+#235000
+1!
+#240000
+0!
+#245000
+1!
+#250000
+0!
+#255000
+1!
+#260000
+0!
+#265000
+1!

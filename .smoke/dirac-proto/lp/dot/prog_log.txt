@@ -1,0 +1,7 @@
+main k 1
+main t 1
+main s 2
+main ib 1
+num_ins 57
+srcdir C:/nipscern/yanc-dirac/.smoke/dirac-proto/lp
+lang C+-

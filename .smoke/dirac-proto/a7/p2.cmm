@@ -1,0 +1,11 @@
+#NUIOIN 1
+#NUIOOU 1
+
+int b[2];
+int x[2];
+
+void main()
+{
+    int a = 1; int c = 2;
+    x # (a+c)|b⟩;
+}

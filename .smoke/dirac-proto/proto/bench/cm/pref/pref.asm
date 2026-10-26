@@ -1,0 +1,856 @@
+NOP
+#PRNAME cm
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+#array a 2 16
+#array P 2 256
+#SHARE main_q main_k
+@main LOD 0
+SET main_k
+@__Lwh1 LOD main_k
+PF_INN 0
+F_MLT 0.001
+STI a
+LOD main_k
+ADD 1
+SET main_k
+LES 15
+JIZ __Lwh1
+@__Lwh1end LOD 0
+SET main_k
+@__Lwh2 LOD 0
+SET main_j
+@__Lwh3 LOD  main_k
+MLT  16
+ADD  main_j
+PF_INN 0
+F_MLT 0.001
+STI P
+LOD main_j
+ADD 1
+SET main_j
+LES 15
+JIZ __Lwh3
+@__Lwh3end LOD main_k
+ADD 1
+SET main_k
+LES 15
+JIZ __Lwh2
+@__Lwh2end F_INN 0
+F_MLT 0.001
+SET main_c
+LOD 0
+SET main_t
+@__Lwh4 LOD 2
+LES main_t
+JIZ __Lwh4end
+LOD_V P 0
+F_MLT main_c
+SET_V P 0
+LOD_V P 1
+F_MLT main_c
+SET_V P 1
+LOD_V P 2
+F_MLT main_c
+SET_V P 2
+LOD_V P 3
+F_MLT main_c
+SET_V P 3
+LOD_V P 4
+F_MLT main_c
+SET_V P 4
+LOD_V P 5
+F_MLT main_c
+SET_V P 5
+LOD_V P 6
+F_MLT main_c
+SET_V P 6
+LOD_V P 7
+F_MLT main_c
+SET_V P 7
+LOD_V P 8
+F_MLT main_c
+SET_V P 8
+LOD_V P 9
+F_MLT main_c
+SET_V P 9
+LOD_V P 10
+F_MLT main_c
+SET_V P 10
+LOD_V P 11
+F_MLT main_c
+SET_V P 11
+LOD_V P 12
+F_MLT main_c
+SET_V P 12
+LOD_V P 13
+F_MLT main_c
+SET_V P 13
+LOD_V P 14
+F_MLT main_c
+SET_V P 14
+LOD_V P 15
+F_MLT main_c
+SET_V P 15
+LOD_V P 16
+F_MLT main_c
+SET_V P 16
+LOD_V P 17
+F_MLT main_c
+SET_V P 17
+LOD_V P 18
+F_MLT main_c
+SET_V P 18
+LOD_V P 19
+F_MLT main_c
+SET_V P 19
+LOD_V P 20
+F_MLT main_c
+SET_V P 20
+LOD_V P 21
+F_MLT main_c
+SET_V P 21
+LOD_V P 22
+F_MLT main_c
+SET_V P 22
+LOD_V P 23
+F_MLT main_c
+SET_V P 23
+LOD_V P 24
+F_MLT main_c
+SET_V P 24
+LOD_V P 25
+F_MLT main_c
+SET_V P 25
+LOD_V P 26
+F_MLT main_c
+SET_V P 26
+LOD_V P 27
+F_MLT main_c
+SET_V P 27
+LOD_V P 28
+F_MLT main_c
+SET_V P 28
+LOD_V P 29
+F_MLT main_c
+SET_V P 29
+LOD_V P 30
+F_MLT main_c
+SET_V P 30
+LOD_V P 31
+F_MLT main_c
+SET_V P 31
+LOD_V P 32
+F_MLT main_c
+SET_V P 32
+LOD_V P 33
+F_MLT main_c
+SET_V P 33
+LOD_V P 34
+F_MLT main_c
+SET_V P 34
+LOD_V P 35
+F_MLT main_c
+SET_V P 35
+LOD_V P 36
+F_MLT main_c
+SET_V P 36
+LOD_V P 37
+F_MLT main_c
+SET_V P 37
+LOD_V P 38
+F_MLT main_c
+SET_V P 38
+LOD_V P 39
+F_MLT main_c
+SET_V P 39
+LOD_V P 40
+F_MLT main_c
+SET_V P 40
+LOD_V P 41
+F_MLT main_c
+SET_V P 41
+LOD_V P 42
+F_MLT main_c
+SET_V P 42
+LOD_V P 43
+F_MLT main_c
+SET_V P 43
+LOD_V P 44
+F_MLT main_c
+SET_V P 44
+LOD_V P 45
+F_MLT main_c
+SET_V P 45
+LOD_V P 46
+F_MLT main_c
+SET_V P 46
+LOD_V P 47
+F_MLT main_c
+SET_V P 47
+LOD_V P 48
+F_MLT main_c
+SET_V P 48
+LOD_V P 49
+F_MLT main_c
+SET_V P 49
+LOD_V P 50
+F_MLT main_c
+SET_V P 50
+LOD_V P 51
+F_MLT main_c
+SET_V P 51
+LOD_V P 52
+F_MLT main_c
+SET_V P 52
+LOD_V P 53
+F_MLT main_c
+SET_V P 53
+LOD_V P 54
+F_MLT main_c
+SET_V P 54
+LOD_V P 55
+F_MLT main_c
+SET_V P 55
+LOD_V P 56
+F_MLT main_c
+SET_V P 56
+LOD_V P 57
+F_MLT main_c
+SET_V P 57
+LOD_V P 58
+F_MLT main_c
+SET_V P 58
+LOD_V P 59
+F_MLT main_c
+SET_V P 59
+LOD_V P 60
+F_MLT main_c
+SET_V P 60
+LOD_V P 61
+F_MLT main_c
+SET_V P 61
+LOD_V P 62
+F_MLT main_c
+SET_V P 62
+LOD_V P 63
+F_MLT main_c
+SET_V P 63
+LOD_V P 64
+F_MLT main_c
+SET_V P 64
+LOD_V P 65
+F_MLT main_c
+SET_V P 65
+LOD_V P 66
+F_MLT main_c
+SET_V P 66
+LOD_V P 67
+F_MLT main_c
+SET_V P 67
+LOD_V P 68
+F_MLT main_c
+SET_V P 68
+LOD_V P 69
+F_MLT main_c
+SET_V P 69
+LOD_V P 70
+F_MLT main_c
+SET_V P 70
+LOD_V P 71
+F_MLT main_c
+SET_V P 71
+LOD_V P 72
+F_MLT main_c
+SET_V P 72
+LOD_V P 73
+F_MLT main_c
+SET_V P 73
+LOD_V P 74
+F_MLT main_c
+SET_V P 74
+LOD_V P 75
+F_MLT main_c
+SET_V P 75
+LOD_V P 76
+F_MLT main_c
+SET_V P 76
+LOD_V P 77
+F_MLT main_c
+SET_V P 77
+LOD_V P 78
+F_MLT main_c
+SET_V P 78
+LOD_V P 79
+F_MLT main_c
+SET_V P 79
+LOD_V P 80
+F_MLT main_c
+SET_V P 80
+LOD_V P 81
+F_MLT main_c
+SET_V P 81
+LOD_V P 82
+F_MLT main_c
+SET_V P 82
+LOD_V P 83
+F_MLT main_c
+SET_V P 83
+LOD_V P 84
+F_MLT main_c
+SET_V P 84
+LOD_V P 85
+F_MLT main_c
+SET_V P 85
+LOD_V P 86
+F_MLT main_c
+SET_V P 86
+LOD_V P 87
+F_MLT main_c
+SET_V P 87
+LOD_V P 88
+F_MLT main_c
+SET_V P 88
+LOD_V P 89
+F_MLT main_c
+SET_V P 89
+LOD_V P 90
+F_MLT main_c
+SET_V P 90
+LOD_V P 91
+F_MLT main_c
+SET_V P 91
+LOD_V P 92
+F_MLT main_c
+SET_V P 92
+LOD_V P 93
+F_MLT main_c
+SET_V P 93
+LOD_V P 94
+F_MLT main_c
+SET_V P 94
+LOD_V P 95
+F_MLT main_c
+SET_V P 95
+LOD_V P 96
+F_MLT main_c
+SET_V P 96
+LOD_V P 97
+F_MLT main_c
+SET_V P 97
+LOD_V P 98
+F_MLT main_c
+SET_V P 98
+LOD_V P 99
+F_MLT main_c
+SET_V P 99
+LOD_V P 100
+F_MLT main_c
+SET_V P 100
+LOD_V P 101
+F_MLT main_c
+SET_V P 101
+LOD_V P 102
+F_MLT main_c
+SET_V P 102
+LOD_V P 103
+F_MLT main_c
+SET_V P 103
+LOD_V P 104
+F_MLT main_c
+SET_V P 104
+LOD_V P 105
+F_MLT main_c
+SET_V P 105
+LOD_V P 106
+F_MLT main_c
+SET_V P 106
+LOD_V P 107
+F_MLT main_c
+SET_V P 107
+LOD_V P 108
+F_MLT main_c
+SET_V P 108
+LOD_V P 109
+F_MLT main_c
+SET_V P 109
+LOD_V P 110
+F_MLT main_c
+SET_V P 110
+LOD_V P 111
+F_MLT main_c
+SET_V P 111
+LOD_V P 112
+F_MLT main_c
+SET_V P 112
+LOD_V P 113
+F_MLT main_c
+SET_V P 113
+LOD_V P 114
+F_MLT main_c
+SET_V P 114
+LOD_V P 115
+F_MLT main_c
+SET_V P 115
+LOD_V P 116
+F_MLT main_c
+SET_V P 116
+LOD_V P 117
+F_MLT main_c
+SET_V P 117
+LOD_V P 118
+F_MLT main_c
+SET_V P 118
+LOD_V P 119
+F_MLT main_c
+SET_V P 119
+LOD_V P 120
+F_MLT main_c
+SET_V P 120
+LOD_V P 121
+F_MLT main_c
+SET_V P 121
+LOD_V P 122
+F_MLT main_c
+SET_V P 122
+LOD_V P 123
+F_MLT main_c
+SET_V P 123
+LOD_V P 124
+F_MLT main_c
+SET_V P 124
+LOD_V P 125
+F_MLT main_c
+SET_V P 125
+LOD_V P 126
+F_MLT main_c
+SET_V P 126
+LOD_V P 127
+F_MLT main_c
+SET_V P 127
+LOD_V P 128
+F_MLT main_c
+SET_V P 128
+LOD_V P 129
+F_MLT main_c
+SET_V P 129
+LOD_V P 130
+F_MLT main_c
+SET_V P 130
+LOD_V P 131
+F_MLT main_c
+SET_V P 131
+LOD_V P 132
+F_MLT main_c
+SET_V P 132
+LOD_V P 133
+F_MLT main_c
+SET_V P 133
+LOD_V P 134
+F_MLT main_c
+SET_V P 134
+LOD_V P 135
+F_MLT main_c
+SET_V P 135
+LOD_V P 136
+F_MLT main_c
+SET_V P 136
+LOD_V P 137
+F_MLT main_c
+SET_V P 137
+LOD_V P 138
+F_MLT main_c
+SET_V P 138
+LOD_V P 139
+F_MLT main_c
+SET_V P 139
+LOD_V P 140
+F_MLT main_c
+SET_V P 140
+LOD_V P 141
+F_MLT main_c
+SET_V P 141
+LOD_V P 142
+F_MLT main_c
+SET_V P 142
+LOD_V P 143
+F_MLT main_c
+SET_V P 143
+LOD_V P 144
+F_MLT main_c
+SET_V P 144
+LOD_V P 145
+F_MLT main_c
+SET_V P 145
+LOD_V P 146
+F_MLT main_c
+SET_V P 146
+LOD_V P 147
+F_MLT main_c
+SET_V P 147
+LOD_V P 148
+F_MLT main_c
+SET_V P 148
+LOD_V P 149
+F_MLT main_c
+SET_V P 149
+LOD_V P 150
+F_MLT main_c
+SET_V P 150
+LOD_V P 151
+F_MLT main_c
+SET_V P 151
+LOD_V P 152
+F_MLT main_c
+SET_V P 152
+LOD_V P 153
+F_MLT main_c
+SET_V P 153
+LOD_V P 154
+F_MLT main_c
+SET_V P 154
+LOD_V P 155
+F_MLT main_c
+SET_V P 155
+LOD_V P 156
+F_MLT main_c
+SET_V P 156
+LOD_V P 157
+F_MLT main_c
+SET_V P 157
+LOD_V P 158
+F_MLT main_c
+SET_V P 158
+LOD_V P 159
+F_MLT main_c
+SET_V P 159
+LOD_V P 160
+F_MLT main_c
+SET_V P 160
+LOD_V P 161
+F_MLT main_c
+SET_V P 161
+LOD_V P 162
+F_MLT main_c
+SET_V P 162
+LOD_V P 163
+F_MLT main_c
+SET_V P 163
+LOD_V P 164
+F_MLT main_c
+SET_V P 164
+LOD_V P 165
+F_MLT main_c
+SET_V P 165
+LOD_V P 166
+F_MLT main_c
+SET_V P 166
+LOD_V P 167
+F_MLT main_c
+SET_V P 167
+LOD_V P 168
+F_MLT main_c
+SET_V P 168
+LOD_V P 169
+F_MLT main_c
+SET_V P 169
+LOD_V P 170
+F_MLT main_c
+SET_V P 170
+LOD_V P 171
+F_MLT main_c
+SET_V P 171
+LOD_V P 172
+F_MLT main_c
+SET_V P 172
+LOD_V P 173
+F_MLT main_c
+SET_V P 173
+LOD_V P 174
+F_MLT main_c
+SET_V P 174
+LOD_V P 175
+F_MLT main_c
+SET_V P 175
+LOD_V P 176
+F_MLT main_c
+SET_V P 176
+LOD_V P 177
+F_MLT main_c
+SET_V P 177
+LOD_V P 178
+F_MLT main_c
+SET_V P 178
+LOD_V P 179
+F_MLT main_c
+SET_V P 179
+LOD_V P 180
+F_MLT main_c
+SET_V P 180
+LOD_V P 181
+F_MLT main_c
+SET_V P 181
+LOD_V P 182
+F_MLT main_c
+SET_V P 182
+LOD_V P 183
+F_MLT main_c
+SET_V P 183
+LOD_V P 184
+F_MLT main_c
+SET_V P 184
+LOD_V P 185
+F_MLT main_c
+SET_V P 185
+LOD_V P 186
+F_MLT main_c
+SET_V P 186
+LOD_V P 187
+F_MLT main_c
+SET_V P 187
+LOD_V P 188
+F_MLT main_c
+SET_V P 188
+LOD_V P 189
+F_MLT main_c
+SET_V P 189
+LOD_V P 190
+F_MLT main_c
+SET_V P 190
+LOD_V P 191
+F_MLT main_c
+SET_V P 191
+LOD_V P 192
+F_MLT main_c
+SET_V P 192
+LOD_V P 193
+F_MLT main_c
+SET_V P 193
+LOD_V P 194
+F_MLT main_c
+SET_V P 194
+LOD_V P 195
+F_MLT main_c
+SET_V P 195
+LOD_V P 196
+F_MLT main_c
+SET_V P 196
+LOD_V P 197
+F_MLT main_c
+SET_V P 197
+LOD_V P 198
+F_MLT main_c
+SET_V P 198
+LOD_V P 199
+F_MLT main_c
+SET_V P 199
+LOD_V P 200
+F_MLT main_c
+SET_V P 200
+LOD_V P 201
+F_MLT main_c
+SET_V P 201
+LOD_V P 202
+F_MLT main_c
+SET_V P 202
+LOD_V P 203
+F_MLT main_c
+SET_V P 203
+LOD_V P 204
+F_MLT main_c
+SET_V P 204
+LOD_V P 205
+F_MLT main_c
+SET_V P 205
+LOD_V P 206
+F_MLT main_c
+SET_V P 206
+LOD_V P 207
+F_MLT main_c
+SET_V P 207
+LOD_V P 208
+F_MLT main_c
+SET_V P 208
+LOD_V P 209
+F_MLT main_c
+SET_V P 209
+LOD_V P 210
+F_MLT main_c
+SET_V P 210
+LOD_V P 211
+F_MLT main_c
+SET_V P 211
+LOD_V P 212
+F_MLT main_c
+SET_V P 212
+LOD_V P 213
+F_MLT main_c
+SET_V P 213
+LOD_V P 214
+F_MLT main_c
+SET_V P 214
+LOD_V P 215
+F_MLT main_c
+SET_V P 215
+LOD_V P 216
+F_MLT main_c
+SET_V P 216
+LOD_V P 217
+F_MLT main_c
+SET_V P 217
+LOD_V P 218
+F_MLT main_c
+SET_V P 218
+LOD_V P 219
+F_MLT main_c
+SET_V P 219
+LOD_V P 220
+F_MLT main_c
+SET_V P 220
+LOD_V P 221
+F_MLT main_c
+SET_V P 221
+LOD_V P 222
+F_MLT main_c
+SET_V P 222
+LOD_V P 223
+F_MLT main_c
+SET_V P 223
+LOD_V P 224
+F_MLT main_c
+SET_V P 224
+LOD_V P 225
+F_MLT main_c
+SET_V P 225
+LOD_V P 226
+F_MLT main_c
+SET_V P 226
+LOD_V P 227
+F_MLT main_c
+SET_V P 227
+LOD_V P 228
+F_MLT main_c
+SET_V P 228
+LOD_V P 229
+F_MLT main_c
+SET_V P 229
+LOD_V P 230
+F_MLT main_c
+SET_V P 230
+LOD_V P 231
+F_MLT main_c
+SET_V P 231
+LOD_V P 232
+F_MLT main_c
+SET_V P 232
+LOD_V P 233
+F_MLT main_c
+SET_V P 233
+LOD_V P 234
+F_MLT main_c
+SET_V P 234
+LOD_V P 235
+F_MLT main_c
+SET_V P 235
+LOD_V P 236
+F_MLT main_c
+SET_V P 236
+LOD_V P 237
+F_MLT main_c
+SET_V P 237
+LOD_V P 238
+F_MLT main_c
+SET_V P 238
+LOD_V P 239
+F_MLT main_c
+SET_V P 239
+LOD_V P 240
+F_MLT main_c
+SET_V P 240
+LOD_V P 241
+F_MLT main_c
+SET_V P 241
+LOD_V P 242
+F_MLT main_c
+SET_V P 242
+LOD_V P 243
+F_MLT main_c
+SET_V P 243
+LOD_V P 244
+F_MLT main_c
+SET_V P 244
+LOD_V P 245
+F_MLT main_c
+SET_V P 245
+LOD_V P 246
+F_MLT main_c
+SET_V P 246
+LOD_V P 247
+F_MLT main_c
+SET_V P 247
+LOD_V P 248
+F_MLT main_c
+SET_V P 248
+LOD_V P 249
+F_MLT main_c
+SET_V P 249
+LOD_V P 250
+F_MLT main_c
+SET_V P 250
+LOD_V P 251
+F_MLT main_c
+SET_V P 251
+LOD_V P 252
+F_MLT main_c
+SET_V P 252
+LOD_V P 253
+F_MLT main_c
+SET_V P 253
+LOD_V P 254
+F_MLT main_c
+SET_V P 254
+LOD_V P 255
+F_MLT main_c
+SET_V P 255
+LOD 0
+SET main_q
+LOD 0
+SET main_k
+@__Lwh5 LOD 0
+SET main_j
+@__Lwh6 LOD main_k
+MLT 16
+ADD main_j
+LDI P
+SET main_ib
+P_LOD main_ib
+OUT 0
+LOD main_j
+ADD 1
+SET main_j
+LES 15
+JIZ __Lwh6
+@__Lwh6end LOD main_k
+ADD 1
+SET main_k
+LES 15
+JIZ __Lwh5
+@__Lwh5end LOD 7
+OUT 0
+LOD main_c
+F_ADD 0.25
+SET main_c
+LOD main_t
+P_LOD main_t
+LDI a
+F_ADD 0.125
+STI a
+LOD main_t
+ADD 1
+SET main_t
+JMP __Lwh4
+@__Lwh4end @fim JMP fim
+
