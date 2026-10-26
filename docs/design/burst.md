@@ -4,7 +4,10 @@ Status: design, 2026-10-14. Nothing implemented, and not to be yet (Luciano):
 the idea is recorded. The design is Luciano's
 (the `burst` block, a size register, a counter, an instruction that waits in
 place); this note adds the refinements discussed on 2026-10-14 and the
-timing measured before writing it. Marks: **fact** (read in the code),
+timing measured before writing it. Since 2026-10-24 the burst is part of
+a larger design, a memory for arrays with its own controller and MAC
+([array-unit.md](array-unit.md)): the decisions on its instructions are
+taken there. Marks: **fact** (read in the code),
 **measured**, **deduced** (reasoned, to be checked in simulation).
 
 ## 1. The problem
