@@ -209,8 +209,8 @@ out (2026-10-24): the memory is true dual port.
    and copy (item 28). **The inner product, decided (Luciano, 2026-10-25):
    `LEA a; P_LEA b; DOT N`**, with no register for the size or the pointers:
    N is the operand of `DOT`, read as `LOD` reads it; pointer a is on the
-   stack top, popped once when `DOT` ends; pointer b is in the acc. Under
-   test (section 7.5): a second form, `LEA a; P_LOD N; DOB b`, with b an
+   stack top, popped once when `DOT` ends; pointer b is in the acc. Fitted
+   beside it, not decided (section 7.5): a second form, `LEA a; P_LOD N; DOB b`, with b an
    address fixed when compiling, one clock shorter. The burst's `BSZ` and
    `BPT` (burst.md) predate this and load registers; whether the burst
    takes `DOT`'s form (pointer on the stack, N as the operand, no
@@ -271,6 +271,37 @@ out (2026-10-24): the memory is true dual port.
     expressions in the parser, computed in loops, independent of this unit
     (`dirac-expressions.md`, branch `lucianomaf/dirac-expressions`); only
     then a choice between the loop in software and this unit.
+14. **Operations beyond the inner product** (recorded, Luciano,
+    2026-10-25; none designed, nothing measured). Each reuses what `DOT`
+    built: the controller's pointers and counter, the wait in place, the
+    two ports, and the result register inside the unit, which can feed the
+    array memory's write port as well as ALU input in1. The least clocks a
+    word the two ports allow (**deduced**: accesses a word over two ports):
+
+    | operation | accesses a word | clocks a word | result |
+    |---|---|---|---|
+    | burst out, an array to a port (item 28, `BOT`) | 1 read | 1, while the port takes it | the port |
+    | burst in, a port into an array (item 28, `BIN`) | 1 write | 1, while the port has a word | the array |
+    | copy of an array into another (item 28, from item 17) | 1 read, 1 write | 1 | the array |
+    | fill of an array with a value (item 28) | 1 write | 1 (0.5 with both ports) | the array |
+    | elementwise: `\|a⟩ + \|b⟩`, `c\|a⟩ + \|b⟩`, products, ... | 2 reads, 1 write | 1.5 | the array |
+
+    Open for each: the instruction form (decision 4: `DOT`'s, the pointers
+    on the stack and in the acc, or the burst's `BSZ`/`BPT` registers); the
+    port's handshake for the bursts (burst.md 4 and 5a); interrupts
+    (decision 9). For the elementwise operations, who computes each word:
+
+    - **the MAC**, `a·1 + b·1` and the like: two products a word on its one
+      multiplier, so 2 clocks a word; only what a multiply-add does, and a
+      word rounded once, not as today's loop rounds it;
+    - **the ALU, fed by the controller** (the alternative of section 2,
+      left out there for the inner product, where it takes two operations
+      a pair): one operation a word, any operation of the ALU, and words
+      equal bit for bit to the loop in software, so the choice between the
+      loop and the unit in the Dirac expressions (decision 13) would not
+      change a program's output. The cost: a new input on the mux at ALU
+      input in2, at the start of the worst path, and `ula_out` into the
+      array memory's write port.
 
 ## 7. Tests and measurements before deciding (no YANC code touched)
 
@@ -548,17 +579,16 @@ decoded. The last two rows try two cuts:
   it costs. `ula_fast` does not see it, so asmcomp puts a `NOP` between a
   `DOT` and a `JIZ`/`LDI`/`ILI` right after it, as after a float
   operation. With both cuts the sequence takes N + 3: the two
-  instructions, N reads, the memory's clock and the rounding.
-  **Measured and dropped** (Luciano, 2026-10-25): 30.53 MHz against
-  31.34, the worst path the same float adder's but through the new mux
-  (`ula_out`, 2.9 ns) into the acc, 31.1 ns against 29.3. A clock lost on
-  every instruction does not pay for one saved per `DOT`; the result goes
-  back to a register read through in1. Kept in the prototype's history
+  instructions, N reads, the memory's clock and the rounding. **Dropped,
+  for the structure** (Luciano, 2026-10-25), after the seed sweep below
+  found no difference in the clock. Kept in the prototype's history
   (65f7b96, 665ef7f).
 
-**The fit after the drop says the drop was decided on noise.** With the
-result back through in1, `sapho_all` gave 29.81 MHz, below the version
-dropped. The timing reports of the four fits with the array memory:
+**One fit per version could not tell these apart.** The first fit with
+idea 2 (30.53 MHz against 31.34) looked like a clock lost on every
+instruction, and idea 2 was dropped on it; the next fit, the result back
+through in1, gave 29.81 MHz, below the version dropped. The timing reports
+of the four fits with the array memory:
 
 - **The worst path is the same logic in every one** (a memory, ALU input
   in1, the float adder's alignment, add and normaliser, the ALU's last
@@ -577,12 +607,48 @@ dropped. The timing reports of the four fits with the array memory:
   clock skew in its favour), but within one fit its paths are only 0.2
   ns worse than those from the data memory.
 
-Measured, then: `DOT` costs 2 to 9 % of the clock in these fits (31.85 to
-29.81 MHz against 32.58); how much
-of it is placement, and what idea 2 costs, is below what one fit per
-version resolves. **A seed sweep is running** (`Scripts/hw/array_proto/sweep.sh`:
-the array memory with no `DOT`, `DOT` with `DOB`, and the same with idea
-2, seeds 2 and 3, beside the seed-1 fits above).
+**The seed sweep** (`Scripts/hw/array_proto/sweep.sh`, 2026-10-25): the
+three versions below fitted again with seeds 2 and 3, beside seed 1 above
+(Fmax in MHz; ALMs of the whole design, the mean of seeds 2 and 3):
+
+| version | seed 1 | seed 2 | seed 3 | mean | ALMs |
+|---|---|---|---|---|---|
+| array memory, no `DOT` | 32.58 | 30.97 | 31.16 | 31.57 MHz | 3555 |
+| `DOT` and `DOB`, the result through in1 | 29.81 | 30.83 | 30.86 | 30.50 MHz | 4478 |
+| the same, the result in place of `ula_out` (idea 2) | 30.53 | 30.02 | 30.71 | 30.42 MHz | 4575 |
+
+- **The clock of `DOT` is below what three seeds resolve.** The means are
+  1.07 MHz (3.4 %) apart, but seed by seed `DOT` costs 2.77, 0.14 and
+  0.30 MHz: under 1 % in two seeds of three, the mean set by seed 1.
+- **Idea 2 ties.** 0.08 MHz apart in the means, and the order turns over
+  from seed to seed (+0.72, -0.81, -0.15 MHz).
+- **The area is measured,** each version within 10 ALMs from seed to
+  seed: `DOT` and `DOB` about 920 ALMs, 1 RAM block and 1 DSP block; idea
+  2 about 95 ALMs more, in the mux at `ula_out` (`core`'s own logic 13 to
+  60 ALMs) and in the rounding (`mac_round` 375 to 447: **deduced**,
+  timing-driven synthesis rebuilds the rounding once it ends at the acc
+  instead of a register).
+
+**Why idea 2 was dropped** (Luciano, 2026-10-25), with the clock a tie and
+one clock a `DOT` in its favour:
+
+- **The result through in1 is how every outside word enters the ALU**:
+  the memories through `mem_rd_sel` at in1, the input port and `cade`
+  through the register `ior` at in2. Idea 2 would be the first block to
+  write after the ALU.
+- **Every later operation of the unit returns its result the same way**
+  (section 6, decision 14): into the unit's result register, read by the
+  core as a word from memory. Under idea 2 each would add an input to the
+  mux at the end of the worst path and an entry to the `NOP` list.
+- **The register isolates the timing.** The MAC, the rounding and the
+  controller can change without reaching the core's worst path; under idea
+  2 the rounding (about 22 ns, deduced from step 2) ends at the acc and
+  would cap the clock near 45 MHz once the float adder's path gets faster.
+- **No exception for anyone:** `ula_fast` sees the result, so `JIZ`,
+  `LDI` and `ILI` may follow `DOT` with no `NOP`. Idea 2's `NOP` would
+  not have been a new rule (asmcomp's `asm_normnop` already puts one after
+  each float operation; `DOT` and `DOB` would join `asm_is_norm`), but the
+  three points above stand.
 
 **Not tried** (they would change the design): the first read in the clock
 `DOT` is decoded, taking b from the ALU's output (that path into the
