@@ -68,6 +68,15 @@ An agent merges only when the person running it, who must be allowed to merge th
 
 If any of these fails, the agent does not merge and says why.
 
+## While a long job runs
+
+This applies when the person running the agent is an administrator of this repository (`gh api repos/nipscernlab/yanc --jq .permissions.admin` prints `true`). While the agent waits on a job it started in the background (a fit, the regression, a long simulation), it audits the repository for inconsistencies instead of waiting idle.
+
+- **What it looks for**, first in the files the current work touches, then in the rest: a sentence a change made untrue, a stale comment, a reference to a line or a section that moved, a number its source does not back, dead code, a script that depends on a path outside the repository.
+- **It reads and reports.** It changes nothing without the person's agreement, except a small, safe defect in a file it is already editing for the current work, and it commits nothing.
+- **Nothing heavy alongside the job:** no second fit, no regression, no build of the whole tree while a fit or the regression runs.
+- **Each finding goes to the person as soon as it is found**, without waiting for the job to end, with its file and line and whether it was checked or deduced, so that the two can discuss it while the job runs.
+
 ## Rules of this repository
 
 1. **C± is not C.** Complex numbers are a native type, so `i` is the imaginary unit and never a loop counter. A float has the sizes of IEEE 754 single precision but not its encoding, so it cannot be read or written bit for bit as an IEEE float ([`docs/floating-point.md`](docs/floating-point.md)). There are no pointers, no recursion and no dynamic memory. Read [`docs/language-cmm.md`](docs/language-cmm.md) before writing or generating C±.
