@@ -21,15 +21,15 @@ the manual from docs/ (GitHub Pages and nipscern.com/library/yanc). Items
 6(a) and 34 (exact float constants and C± literals in every C form, the
 ALU testbench, an initializer on any name of a declaration list).
 
-**In design, no code in `main` yet:** the array unit (PR #19,
-docs/design/array-unit.md): a dual-port memory for arrays, a controller and
-a MAC, on which item 28 (the burst, fill and copy) is redone. Rule
-(Luciano, 2026-10-24): no code until every decision there is taken, with
-tests outside the YANC code; a prototype for measuring is on the branch
-`lucianomaf/array-unit-proto`. The Dirac notation (item 31) is redone
-first, on its own, as expressions computed in loops (Luciano, 2026-10-25,
-branch `lucianomaf/dirac-expressions`); the array unit enters it later, as
-the hardware choice beside the loop in software.
+**Parked on 2026-10-26, documented to be taken up later** (Luciano): two
+designs for faster array code, each with its decisions, measurements and
+the questions left open, and their code kept in archive tags, not in a
+branch. The Dirac notation as expressions computed in loops, with
+pointers and `RPT` (docs/design/dirac-expressions.md; tags
+`archive/dirac-parser`, `archive/dirac-loops-proto`), and the array unit,
+a memory for arrays with a MAC (docs/design/array-unit.md; tags
+`archive/array-unit-design`, `archive/array-unit-proto`). Items 28 and 31
+wait for them.
 
 **Left on boards:** 35 and 37 (keyboard and screen), and from v7.1 the run
 of Sabrina and Pedro Henrique (the `LINKALL` pair with the `.sdc` on both
@@ -51,11 +51,11 @@ its data memory); 14 the zero-fill at 8 words a turn, or close it; 15 the
 regress on this machine (mitigated); 21 documentation that cannot fall
 behind a release (waiting on a decision); 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
-hits; 28 the burst and fast fill/copy of arrays, inside the array unit
-(design, decisions open); 31 the Dirac array output (part of the Dirac
-redesign as expressions); 32 the divider stage count from the widths (recorded; on the ZYBO
+hits; 32 the divider stage count from the widths (recorded; on the ZYBO
 `F_DIV` limits); 35 and 37 the board check of the keyboard and the screen.
-**Parked by decision:** 6(b) and 7 (wider than 32 bits), 12 (run-time
+
+**Parked by decision:** 28 and 31 (the array unit and the Dirac
+expressions, above), 6(b) and 7 (wider than 32 bits), 12 (run-time
 exception strobe), 24 (processors with different float formats on one
 link: AURORA's check), 30 (SAPHO without showing its source, until a
 partnership), 33 (the float zero as an all-zero word in hardware), the
@@ -640,8 +640,10 @@ different `#NUBITS` only get the tools' port-width warning.
 ## 28. Burst: a whole array through a port, and arrays filled and copied fast
 
 **Status:** design written (Luciano's block, 2026-10-14), nothing
-implemented · **Area:** `SAPHO/core.v`, `instr_dec.v`, `isa.tsv`, asmcomp,
-then cmmcomp and cppcomp · **Evidence:** docs/design/burst.md
+implemented; part of the array unit since 2026-10-24, parked with it on
+2026-10-26 · **Area:** `SAPHO/core.v`, `instr_dec.v`, `isa.tsv`, asmcomp,
+then cmmcomp and cppcomp · **Evidence:** docs/design/burst.md,
+docs/design/array-unit.md (decision 14: bursts, copy, fill)
 
 Sending an array to a FIFO costs 8 instructions a word in a loop, or 2 to 3
 a word unrolled (code growing with the array). A `burst` block (size
@@ -743,9 +745,11 @@ versions with UFJF's technology transfer office first.
 
 ## 31. The Dirac output of an array: a wasted multiply, a missing form
 
-**Status:** open, found 2026-10-14 while measuring item 28, not fixed ·
-**Area:** cmmcomp (Luciano's code: the diff goes to him first) ·
-**Evidence:** docs/design/burst.md section 1
+**Status:** open, found 2026-10-14 while measuring item 28, not fixed;
+since 2026-10-25 part of the Dirac redesign, parked with it on 2026-10-26,
+not to be fixed on its own · **Area:** cmmcomp (Luciano's code: the diff
+goes to him first) · **Evidence:** docs/design/burst.md section 1,
+docs/design/dirac-expressions.md sections 2 and 3.4
 
 `out(0, 1|a⟩);` writes each element as `LOD_V a k; MLT 1; OUT 0`: the
 `MLT 1` costs a cycle a word and synthesizes the integer multiplier for a
@@ -754,6 +758,11 @@ without the scalar, is a syntax error. Fixed, the form is two instructions a
 word (`LOD_V`, `OUT`), the least today's ISA allows, independent of the
 burst. A fixture with the scalar 1 and with none, the golden checking that
 no `MLT` and no multiplier remain.
+
+In the Dirac redesign (dirac-expressions.md) both defects go without code
+of their own: `out(p, X)` takes any vector expression, `|a⟩` included, and a
+literal 1 drops out by the folding the expression walker already does.
+**Done when** the redesign lands with the fixture of its section 4.
 
 ## 32. Divider stage count computed from the widths
 
