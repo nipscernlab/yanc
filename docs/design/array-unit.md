@@ -303,6 +303,26 @@ out (2026-10-24): the memory is true dual port.
       input in2, at the start of the worst path, and `ula_out` into the
       array memory's write port.
 
+    **No elementwise operation with a scalar and a sum in one** (Luciano,
+    2026-10-25): `c|a⟩ + |b⟩` is a scale (`α·a`) then an add, two
+    operations. Two roundings, as today's loop rounds, so the words stay
+    equal to the loop's (through the ALU); the cost (**deduced**): 1 + 1.5
+    clocks a word and a temporary array, against 2 for a fused one through
+    the ALU.
+
+    **Open, asked when the session ended** (2026-10-25):
+
+    - **The operands' form** (decision 4): A, `DOT`'s form for every
+      operation (stack top, acc, operand; no state kept in the unit); B,
+      registers as in burst.md (`BSZ`/`BPT`); C, `DOT`'s form with a
+      register only where values are left over. Recommended: A.
+    - **In place or a separate destination** for the scale and the add.
+      In place (`a = α·a`, `a = a + b`) every operation of the unit takes
+      three values and fits `DOT`'s form exactly; `c = a + b` keeping a is
+      then a copy and an add, one pass more (1 clock a word). A separate
+      destination takes four values: two levels of the stack, a clock more
+      at the start (deduced). Recommended: in place.
+
 ## 7. Tests and measurements before deciding (no YANC code touched)
 
 1. **MAC models in Python**, bit-exact, for A, B, C and the fused
