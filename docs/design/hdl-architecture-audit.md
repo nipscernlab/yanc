@@ -4,7 +4,12 @@ Date: 2026-09-15 · Scope: `SAPHO/processor.v`, `core.v`, `instr_dec.v`, `ula.v`
 `myFIFO.v`, `addr_dec.v`, the generated `<proc>.v`/`<proc>_tb.v` (`hdl.c`),
 and the two programs that use the interrupt (`ZeroCross`, `ProcDTW`).
 Companion to [`precision-and-width-review.md`](precision-and-width-review.md)
-(which covers the float datapath); the work items are TODO item 10.
+(which covers the float datapath). Its work items were TODO item 10; on
+2026-10-27 the open ones became GitHub issues #32 (an instruction-set
+simulator and random differential test), #33 (the decode rows generated
+from `isa.tsv`), #34 (the undefined cases) and #35 (hygiene), and Luciano
+dropped the interrupt rework, the stack overflow pin, the I/O contract and
+the registered-branch option.
 
 The question asked: *where is this processor weak, and what would make it
 professional without losing its defining property — the hardware adapts to

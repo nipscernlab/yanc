@@ -26,7 +26,7 @@
 //     in one cycle, other operands on the cycles of its NOPs, the read
 //     (QUO / REM / F_QUO, the same operation number) STG-1 cycles later.
 //     DIV and MOD against Verilog's / and % (a zero divisor stays undefined,
-//     TODO item 10); F_DIV from the exact quotient like the other rounding
+//     issue #34); F_DIV from the exact quotient like the other rounding
 //     operations, a zero divisor saturating at #FROUND >= 1; at level 0 the
 //     legacy slice of the quotient, for a normalized divisor only.
 //

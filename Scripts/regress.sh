@@ -1348,7 +1348,7 @@ fi
 # The instruction set is written down in four places that nothing keeps in
 # step; a disagreement between them is silent (a program assembles and then
 # runs as a different program). Hold them to Compilers/common/isa.tsv.
-# TODO.md item 10.2.
+# GitHub issue #33.
 if command -v python3 >/dev/null 2>&1; then
     echo ""
     echo "==> ISA table"

@@ -92,7 +92,7 @@ commercial one) is possible only from a new version on.
 Simulation of a closed SAPHO: Icarus and Verilator cannot decrypt IEEE 1735
 (open tools cannot hold the vendors' private keys); commercial simulators
 can, but the inside of the processor is hidden in the waveform. An
-instruction-set simulator in `yanc` (part of TODO item 10) would let users
+instruction-set simulator in `yanc` (issue #32) would let users
 run and debug programs without the HDL.
 
 ## 7. To do if a partnership comes

@@ -48,10 +48,13 @@ clock; docs/design/myfifo.md "Memory"), with a `quartus_map` of it.
 
 **Moved to GitHub issues (2026-10-27):** 6(b) and 7, the word beyond 32
 bits (#29, parked); 9, the math library keyed on `NBMANT` and shared with
-C++ (#31).
+C++ (#31); 10, architecture hardening, as #32 (an instruction-set
+simulator and random differential test), #33 (the decode rows from
+`isa.tsv`), #34 (the undefined cases, division by zero first) and #35
+(HDL hygiene), its interrupt rework, stack overflow pin, I/O contract and
+registered-branch option dropped (Luciano).
 
-**Open items, below:** 10 architecture hardening (ISS, division by zero, interrupt, I/O
-contract); 13 the pre-assembly optimizer and the C++ heap arena (77 % of
+**Open items, below:** 13 the pre-assembly optimizer and the C++ heap arena (77 % of
 its data memory); 14 the zero-fill at 8 words a turn, or close it; 15 the
 regress on this machine (mitigated); 21 documentation that cannot fall
 behind a release (waiting on a decision); 26 arrays in the waveform
@@ -94,55 +97,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18).
 
 ---
 
-## 10. Architecture hardening (HDL audit)
-
-**Status:** open · **Area:** `SAPHO/*`, tooling · **Evidence:** [`docs/design/hdl-architecture-audit.md`](docs/design/hdl-architecture-audit.md)
-
-The core is sound where it matters (opcode-driven allocation, one instruction
-per cycle, bypass by construction, single clock / sync reset — keep all of
-it). The audit found the weak points in the surroundings. In order:
-
-1. **ISS + random differential test** — an instruction-set simulator in C
-   and a random program generator; compare its trace against Icarus/Verilator
-   on thousands of programs. Catches control bugs the goldens cannot; home of
-   the ALU testbench (`Scripts/hw/tb_ula.v`, done).
-2. **Single-source ISA table** — mnemonic / opcode / ALU op / stack and I/O
-   effects in one file; generate `ASMComp.l` rules, `instr_dec.v` compares and
-   `ula_op` table, `opcodes.c` names and `docs/isa.md`. The regress check part
-   is done (2026-09-25, v5.5): `check_isa.py` holds `ASMComp.l`, the
-   `core.v` `OP_*` localparams, every row of `instr_dec.v`'s decode table,
-   the `asm_share.c` copy and asmcomp's usage totals to `isa.tsv`. Left: what
-   each decode row DOES (its `ula_op` and control lines) is still hand-written
-   and checked only by execution; generating it from `isa.tsv` needs the ALU
-   operation as a column there.
-3. **Interrupt** — today a level-sensitive PC override: the vector instruction
-   re-executes every cycle the level is held, no PC save, no mask. Behind
-   `ITRADD`: one-shot edge detect, optional PC push so the handler can `RET`,
-   a mask bit.
-4. **Stacks sized by the compilers** (static call/expression depth) with
-   `#NDSTAC`/`#SDEPTH` as overrides the assembler validates, plus a sticky
-   overflow pin like `cheguei`.
-5. **Defined behaviour** for integer `DIV`/`MOD` by zero (with the shared
-   `DIV`+`MOD` array, `ula_idiv`), address and jump-target truncation,
-   documented.
-6. **I/O contract** documented; a status-port convention (`empty`/`full`
-   readable with `in()`); valid/ready with a global stall only as a parameter
-   option if streaming peripherals become a goal.
-7. **Hygiene** — ~~one default parameter set~~ (done: `cppcomp`'s set,
-   the one the 81 C++ tests actually run on, now in `asmcomp`, `cmmcomp` and
-   the three HDL files, named at the top of `processor.v`), ~~`NUGAIN`
-   typed~~, ~~unused `NBOPCO` parameter of `ula`~~, ~~the invariant guard~~
-   (done 2026-10-18 in asmcomp, only when the program uses float; the HDL
-   takes any format, precision-and-width-review.md 1.3); still open: lint-clean
-   Verilator, `mem_instr`'s fake write commented or removed, `myFIFO` with a
-   registered read so it maps to block RAM.
-8. **Registered-branch option** — only if Fmax ever matters more than the
-   one-cycle branch; an ISA change with compiler support, never the default.
-
-**Done when:** 1–7 landed; the ISA reference is generated, not hand-written;
-the interrupt and I/O contracts are in `docs/isa.md`; every undefined case in
-the audit's table has a defined, documented result.
-
 ## 12. Run-time exception strobe (pin + error code)
 
 **Status:** parked, not now (noted 2026-09-20) · **Area:** `SAPHO/*`, `ASMComp`, both front ends · **Evidence:** this item
@@ -158,7 +112,8 @@ datapath gives. Nothing outside the processor can tell that it happened.
 exactly one clock cycle, and an **error-code word** valid on that cycle —
 decoding *which* exception occurred. One mechanism, many exceptions: heap
 exhausted, call-stack overflow, data/return-stack overflow (subsumes the
-sticky pin of item 10.4), integer divide by zero (item 10.5), float
+sticky stack pin dropped from the old item 10), integer divide by zero
+(issue #34), float
 overflow/underflow, `F2I` saturation, ... each with its own code. It costs
 hardware (comparators, the code register, the pins), so it is **opt-in
 through a new directive** (`#EXCEPT`-style, default off): a processor that
@@ -170,7 +125,7 @@ hardware (stack overflow, divide by zero, float range) and which by the
 runtime (heap exhausted — the compiler needs an instruction or an I/O
 convention to fire the strobe with a code from software); the code table,
 shared by the HDL and both compilers (goes into the single-source ISA table
-of item 10.2); whether the processor halts, traps to `ITRADD`, or just
+of issue #33); whether the processor halts, traps to `ITRADD`, or just
 signals and continues; how the testbenches and the Verilator harness report
 it (an `output_err.txt`, or a line in `app_log.txt`); how Aurora shows it.
 
@@ -254,7 +209,7 @@ names into one is all the tool has to do, and the memory saving follows.
   analysable subset (a scalar whose address is never taken) is most of them.
 - **Verification.** A wrong live range corrupts a program silently, and the
   golden tests may not exercise the path. The instruction-set simulator of
-  item 10.1 plus a random program generator is the harness this needs; build
+  issue #32 plus a random program generator is the harness this needs; build
   it first or alongside.
 - **The instruction table.** `Compilers/common/isa.tsv` already says, per
   mnemonic, what it does to the accumulator, the stack, the word its operand
