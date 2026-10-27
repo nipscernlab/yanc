@@ -120,7 +120,7 @@ for ints, and the same `#NBMANT`/`#NBEXPO` for floats. The link carries the
 word as it is, with no conversion: with different widths Verilog joins the
 buses by cutting or zero-filling, so a negative int arrives wrong (deduced
 from Verilog's rules, not tested), and a float of another format arrives
-garbled. Nothing warns: each program is compiled alone (TODO item 24).
+garbled. Nothing warns: each program is compiled alone (nipscernlab/aurora#240).
 
 On one clock `A.out -> B.cade_dado` is the same word (the wiring used
 before `toma_dado` existed). On two clocks see section 8: `toma_dado` and
