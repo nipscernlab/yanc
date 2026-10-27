@@ -46,8 +46,11 @@ Education gives teachers Team for free (Luciano's application).
 read on `myFIFO`/`myDCFIFO` so a large FIFO goes to block RAM (area, not
 clock; docs/design/myfifo.md "Memory"), with a `quartus_map` of it.
 
-**Open items, below:** 9 library accuracy keyed on
-`NBMANT`; 10 architecture hardening (ISS, division by zero, interrupt, I/O
+**Moved to GitHub issues (2026-10-27):** 6(b) and 7, the word beyond 32
+bits (#29, parked); 9, the math library keyed on `NBMANT` and shared with
+C++ (#31).
+
+**Open items, below:** 10 architecture hardening (ISS, division by zero, interrupt, I/O
 contract); 13 the pre-assembly optimizer and the C++ heap arena (77 % of
 its data memory); 14 the zero-fill at 8 words a turn, or close it; 15 the
 regress on this machine (mitigated); 21 documentation that cannot fall
@@ -88,21 +91,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18).
   took over items 6(b) and 7 on 2026-10-27). [§3, decision A]
 - **Hidden mantissa bit: no.** The format keeps its explicit leading one.
   [§1.8]
-
----
-
-## 9. Library accuracy keyed on `NBMANT`
-
-**Status:** open · **Area:** `CMMComp/Includes/float_*.asm`, `CMMComp/stdlib.c`, `CPPComp/Includes/cmath` · **Evidence:** [§1.6](docs/design/precision-and-width-review.md#16-library-accuracy-is-pinned-to-23-bits)
-
-The polynomial fits are accurate to ~1e-6 (≈20 bits), π/e constants have
-10–12 digits, and cppcomp's `sqrt` runs a fixed 24 Newton iterations; cppcomp
-has no `exp/log/sin/cos/pow` at all.
-
-**Done when:** tables/iterations are selected by `nbmant` and accurate to the
-last mantissa bit of every 32-bit format (up to 32/25/6), constants carry
-enough digits for it, and the transcendental fixtures compare against a double
-reference at 32/23/8 and 16/10/5. Wider sets wait for issue #29.
 
 ---
 
