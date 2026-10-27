@@ -49,10 +49,11 @@ simulator and random differential test), #33 (the decode rows from
 `isa.tsv`), #34 (the undefined cases, division by zero first) and #35
 (HDL hygiene), its interrupt rework, stack overflow pin, I/O contract and
 registered-branch option dropped (Luciano); 12, the run-time exception
-strobe (#36, parked).
+strobe (#36, parked); 13, what was left of the pre-assembly optimizer, as
+#37 (the C++ heap arena, 77 % of the data memory of the programs that
+allocate) and #38 (wasted instructions left in the C± goldens).
 
-**Open items, below:** 13 the pre-assembly optimizer and the C++ heap arena (77 % of
-its data memory); 14 the zero-fill at 8 words a turn, or close it; 15 the
+**Open items, below:** 14 the zero-fill at 8 words a turn, or close it; 15 the
 regress on this machine (mitigated); 21 documentation that cannot fall
 behind a release (waiting on a decision); 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
@@ -92,103 +93,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18).
   [§1.8]
 
 ---
-
-## 13. Pre-assembly optimizer (whole program), and reusing temporaries
-
-**Status:** open; data-word sharing DONE for C± scalars (2026-09-25) and C++ scalars (2026-09-26), see "What landed" below · **Area:** `Compilers/common/asm_share.c` (sharing), a whole-program pass for the rest · **Evidence:** the measurements below
-
-A separate executable that reads a `.asm` -- from `cmmcomp` or from `cppcomp`,
-they meet there -- and removes whatever does not change what the program does.
-The peephole part of this belongs in the front ends and is being done there
-(a front end knows what the assembly has already forgotten). What genuinely
-needs a separate tool is the part that has to see the WHOLE program at once.
-
-**Reusing the memory of temporaries is the prize.** Every local of every
-function gets its own word today and never gives it back, so a program pays
-for locals that are never alive at the same time. Bounded by the call graph
-(two functions' locals can share a word only if neither can be running while
-the other is), measured on the current tests:
-
-| program | words of locals | call-graph peak | saving |
-|---|---|---|---|
-| `test46` | 202 | 100 | 102 |
-| `test44` | 186 | 153 | 33 |
-| `test70` | 48 | 21 | 27 |
-| `test33` | 17 | 9 | 8 |
-| `cmm_comp_sqrt`, `proc_fft`, `proc_rls` | 12, 13, 5 | same | 0 |
-
-That table only counts sharing ACROSS functions. Liveness inside a function
-is where C± gains: on the C± tests it saves 302 data words over 39 programs
-(`sapho_all` 79 -> 58, `cmm_catan` 62 -> 35, `cmm_comp_func` 44 -> 21).
-
-**What landed (2026-09-25).** `asm_share` runs inside cmmcomp on the finished
-`.asm` (after the macros are appended) and writes `#SHARE <name> <home>`;
-appcomp and asmcomp give `<name>` the address of `<home>`. No instruction is
-renamed, added or moved, so the sidecars stay valid, and the waveform is
-transparent: asmcomp follows a shared variable by the SETs that write it
-(`mem_wr && pc_sim_val == SET+1`), not by its address. Checked by comparing
-the user-variable traces of the same `.asm` with and without `#SHARE`
-(identical, change by change, Icarus and Verilator). What is left:
-- **cppcomp**: DONE 2026-09-26. cppcomp calls `asm_share` on the `.asm` it
-  writes: 84 C++ tests, 76 of them smaller, data memory 49375 -> 47665 words
-  (-1710; `test50` -241, `test48` -222, `test46` -170, `test44` 291 -> 143).
-  A scalar reached through a pointer is safe because cppcomp takes every
-  address with `LEA` (pinned); objects, arrays, `__cstk` and `__heap` are
-  `#array` (pinned); indirect calls go through `CAL _dispatch`, so the flow
-  graph is complete. The same `.asm` with and without `#SHARE` (test29, 39,
-  44, 66, 70, Icarus) gives the same output and the same trace for every
-  variable except the pointers, which move by a constant (the arrays they
-  point into sit lower).
-- **Local arrays**: CLOSED 2026-09-26, measured and not worth it. Over the 84
-  C++ tests the automatic local arrays and structs are 3114 words; sharing
-  them between functions never active together (call graph, greedy) leaves
-  3066, 48 saved (0.1 % of the data memory; `test50` -33, `test48` -13). The
-  big ones sit in `main`, which is always active (`test46` alone has 2448).
-  None of the C± tests has a local array outside `main`. It would also have
-  cost a language change (a local array without an initializer starts at 0
-  and keeps its contents between calls today; 32 of the 48 words are such)
-  and a waveform one (a shared array would show the other's writes).
-  Where the C++ data memory is instead: the `__heap` arena, a fixed
-  `CFG_HEAPSZ` = 2048 words in every program that allocates -- 18 of the 84
-  tests, 36864 words, 77 % of their data memory. Sizing it (a pragma, or from
-  the program's measured use) is the saving worth having; not started.
-- **An interrupt landing on the cycle of a write** forces the PC to `#ITRAD`,
-  and the mirror of a shared variable could miss that one update (the
-  program itself is unaffected). Not checked.
-- The group keeps the name read before any write, else the first seen; the
-  choice no longer shows in the waveform.
-
-**What makes it analysable at all:** the `.asm` is symbolic. Every variable is
-a NAME, not an address; asmcomp assigns addresses later. So merging two
-names into one is all the tool has to do, and the memory saving follows.
-
-**What it has to respect:**
-- **Indirect addressing.** `LEA`/`LDI`/`STI` make the touched cell
-  unknowable, so any name whose address is taken must be pinned. Measured:
-  109-144 indirect operations and 4-19 pinned names in the C++ tests, so the
-  analysable subset (a scalar whose address is never taken) is most of them.
-- **Verification.** A wrong live range corrupts a program silently, and the
-  golden tests may not exercise the path. The instruction-set simulator of
-  issue #32 plus a random program generator is the harness this needs; build
-  it first or alongside.
-- **The instruction table.** `Compilers/common/isa.tsv` already says, per
-  mnemonic, what it does to the accumulator, the stack, the word its operand
-  names, the control flow and the ports. That is what the analysis reads.
-- **The line-mapping sidecars** (`pc_*_mem.txt`, `prog_log.txt`,
-  `src_lines.txt`): one entry per instruction. Deleting or merging an
-  instruction invalidates them unless the tool rewrites them too.
-
-**Small leftovers found on the way (2026-09-24, cmmcomp goldens):** a
-`JMP`/`JIZ` that lands on a `JMP` (13 cases; cycles only), the same index
-computed twice in `s[e] = s[e] + ...` (6 cases), `CAL f; RET` -> `JMP f` (2,
-procBlind). They fit here or as front-end peepholes;
-`Scripts/perf/asm_waste.py Compilers/CMMComp/Tests` is the scanner that found them.
-
-**Done when:** the tool reads a `.asm` and writes a smaller one that
-assembles and simulates identically on every fixture, under both simulators;
-temporaries share memory by liveness (done for C± scalars; cppcomp next); and
-the instruction count and data-word count are reported per program so the
-saving is visible.
 
 ## 14. Inline small leaf accessors (`cppcomp`): what is left
 
@@ -294,8 +198,9 @@ Declined, do not propose again: SHL for a power-of-two 2D row size
 Seven full runs in one session; only ONE came back clean. Each other run
 failed on a DIFFERENT set of 3-8 heavy float tests, with `vvp exited non-zero`
 or empty/truncated output. That matters beyond the annoyance: a run no longer
-distinguishes a real regression from noise, and the whole-program optimiser of
-item 13 is exactly the kind of change that can miscompile silently.
+distinguishes a real regression from noise, and a whole-program pass like the
+data-word sharing (`asm_share`) is exactly the kind of change that can
+miscompile silently.
 
 What is known, measured:
 - the same `.vvp`, re-run in the same directory, alternates exit 0 / exit 1;
