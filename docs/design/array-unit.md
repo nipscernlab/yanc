@@ -105,7 +105,7 @@ clocks per element. Luciano chose the separate MAC.
   exponent in two's complement with no bias, a mantissa of `NBMANT` bits
   with its top bit written out (`2^(M-1) <= m < 2^M`). The product of two
   mantissas lies in `[2^(2M-2), 2^(2M))`: at most one bit of normalisation.
-  `F_MLT` already skips the leading-zero count (TODO item 8, step 2).
+  `F_MLT` already skips the leading-zero count (precision-and-width-review.md 2.7).
 
 ## 4. The MAC
 
@@ -150,7 +150,7 @@ NBEXPO`, `N` the most terms summed):
 At 32 bits the register and its adder are less of a worry than the
 shifter that places a 46-bit product anywhere in 570 positions: estimated
 in the thousands of multiplexers, comparable with the whole `sapho_all`
-(3759 ALMs measured 2026-10-02, TODO item 8). Two ways to shrink it: the
+(3759 ALMs measured 2026-10-02). Two ways to shrink it: the
 window of B (100 to 150 bits, derived from the widths), or an accumulator
 in blocks, where the high bits of the exponent choose the block and the
 shifter covers only the low bits.
@@ -439,7 +439,7 @@ into each group of registers, data delay in ns:
   and expected longer). It runs once per vector, so it can take two clocks,
   or be cut by a register, at no cost in rate.
 - **Area.** A and B cost about 1000 ALMs at 32 bits; C at 32 bits about
-  4650, more than the whole `sapho_all` (3759 ALMs, item 8, 2026-10-02); C
+  4650, more than the whole `sapho_all` (3759 ALMs, 2026-10-02); C
   at 16 bits about 850. Every variant uses one DSP block for the 24 x 24
   product.
 - Not run, judged not needed for the choice: B at 96 bits, the fits of B64

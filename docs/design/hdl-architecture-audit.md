@@ -137,7 +137,7 @@ table fills.
 
 | case | today | proposal |
 |---|---|---|
-| integer `DIV`/`MOD` by zero | `x` in simulation, whatever the array gives in hardware | define (quotient 0 / remainder = dividend, or saturate) — item 8 step 4b, when `DIV`+`MOD` share one array |
+| integer `DIV`/`MOD` by zero | the array's all-ones quotient, undefined | define (quotient 0 / remainder = dividend, or saturate) in the one `DIV`+`MOD` array (`ula_idiv`) |
 | `LDI`/`STI` address ≥ `MDATAS` | truncated to `MDATAW` bits, wraps | document; optional overflow flag pin |
 | `JMP`/`JIZ`/`CAL` target ≥ `MINSTS` | truncated | document (the assembler can already reject it) |
 | shift by ≥ `NUBITS` | Verilog semantics (0 / sign) | document |
@@ -154,7 +154,7 @@ table fills.
   one comment block at the top of `processor.v`; `asmcomp` dropped its 23/16/6
   (a second float format nobody reached) and `cmmcomp` its 16/6.
 - ~~`NUGAIN` is an untyped 32-bit parameter in `processor.v`/`core.v`~~ —
-  **done**, typed `signed [NUBITS-1:0]` in all three (with step 6 of item 8).
+  **done**, typed `signed [NUBITS-1:0]` in all three.
   ~~`NBOPCO` is passed to `ula` and unused~~ — **done**, the parameter and the
   connection are gone.
 - ~~No invariant guard~~ — **done 2026-10-18 in asmcomp**: `NUGAIN` a power

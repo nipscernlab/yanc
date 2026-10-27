@@ -46,7 +46,7 @@ Education gives teachers Team for free (Luciano's application).
 read on `myFIFO`/`myDCFIFO` so a large FIFO goes to block RAM (area, not
 clock; docs/design/myfifo.md "Memory"), with a `quartus_map` of it.
 
-**Open items, below:** 8 the leftovers; 9 library accuracy keyed on
+**Open items, below:** 9 library accuracy keyed on
 `NBMANT`; 10 architecture hardening (ISS, division by zero, interrupt, I/O
 contract); 13 the pre-assembly optimizer and the C++ heap arena (77 % of
 its data memory); 14 the zero-fill at 8 words a turn, or close it; 15 the
@@ -65,7 +65,8 @@ reorganisation of the runner/setup scripts, a macOS build.
 
 **Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 2 (round to nearest
 unbiased), 3 (the float format checked only with float), 5 (exact float
-constants), 6(a) (the ALU testbench), 11 (consistency at 32 bits), 16, 18
+constants), 6(a) (the ALU testbench), 8 (the ALU datapath restructuring,
+its six steps), 11 (consistency at 32 bits), 16, 18
 (hardware for code that never runs), 19 (the dividers, v6.0), 20, 22 and
 23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), 29 (a faster clock,
 v8.0), 34 (initialisers in a declaration list), the user names that
@@ -89,97 +90,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18).
   [§1.8]
 
 ---
-
-## 8. ALU datapath restructuring (depth and area)
-
-**Status:** the six planned steps are done (below); the critical path of
-the whole processor was measured under item 29 (closed 2026-10-17: the
-dividers, then `F_ADD` -> normaliser into the accumulator and the stack,
-which limits now; design note pipeln-and-division.md 4.4) · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.6](docs/design/precision-and-width-review.md#26-critical-path-depth-of-the-alu), [§2.7](docs/design/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator)
-
-The ALU is combinational and every instruction takes one cycle, so the ALU
-sits on the path that sets the clock. Measured before the steps (Yosys,
-`area.sh`, the ALU alone): the float path was 37 LUT4 levels for `F_ADD` at
-level 0, 51 at level 2; the whole no-divider ALU 47 / 57 / 56 (levels 0 / 1 /
-2); with `F_DIV` 546. The efficiency review found five adders in series where
-one is needed, a linear leading-zero chain, three pairs of duplicated
-shifters, `F_MLT`/`F_DIV` needlessly crossing the leading-zero count,
-comparisons done by subtraction, and dividers with twice the rows they need.
-Level 0 stayed bit-identical through all of it (the C± goldens are the proof).
-
-**The ALU alone is a proxy, not the measure.** The clock is set by the worst
-register-to-register path of the whole processor: before the ALU the operand
-select (data memory, stack top, constant) and the instruction decode, after
-it the accumulator write, the bypass and the jump / call logic. A path that is
-the worst inside the ALU need not be the worst once those are added, and a
-path that never crosses the ALU can be the real one. `area.sh` counts levels
-inside `ula.v` only; `fmax.sh` runs Quartus on a processor the regress built,
-so its Fmax is the global answer (the MHz in steps 1-2 come from it), but it
-prints only the number, not the path.
-
-**Measured 2026-10-02 on `sapho_all`** (`#FROUND 2`, both stacks 8 deep,
-Cyclone V 5CSEMA5F31C6, `fmax.sh`, which now prints the worst paths and the
-worst one by block): **Fmax 10.66 MHz, 3759 ALMs (12 %)**. Every worst path
-starts at the data memory's read port and ends at the **PC**, not at the
-accumulator: `ula_out` drives the `JIZ` decision in the same cycle, so the
-jump logic and the PC adder sit in series with the whole operation. Cutting
-the dividers with `set_false_path` (timing analysis only, no new fit) gives
-the next layers:
-
-| worst path | delay | equivalent clock |
-|---|---|---|
-| through `F_DIV` | 91.8 ns | 10.7 MHz (the real Fmax) |
-| without `F_DIV`: integer `DIV` | 87.0 ns | ~11 MHz |
-| without any divider: `F_ADD` | 44.4 ns | ~21.5 MHz |
-
-The `F_ADD` path by block: memory read + operand select 4.4 ns (10 %),
-denormaliser 11.5 (26 %), adder 3.0 (7 %), normalise + round 19.1 (43 %),
-ALU output mux 2.9 (7 %), jump decision + PC adder 4.2 (9 %): about 19 % of
-it is outside the ALU. Each divider alone is ~76 ns, twice everything else;
-while a program divides, nothing else in the ALU moves the clock.
-
-**Next:** decide from these numbers (the two dividers; the level-2
-normaliser; the jump decision in series with the ALU). The targets below
-were set on the ALU alone and should be restated against the whole-processor
-Fmax. Re-time with `bash Scripts/hw/fmax.sh sapho_all` after any change.
-
-**The steps, in the order they were done** (each measured with `ltp`/`stat` and
-the full regress green):
-1. ~~sign-magnitude adder, parallel `e1-e2`/`e2-e1`, one denormaliser
-   shifter~~ — **done** (`58944d9`: level 0 45.1 → 51.0 MHz);
-2. ~~`F_MLT`/`F_DIV` skip the LZC; carry-select exponent and range check;
-   thermometer-mask sticky~~ — **done** (level 2 on a division-free
-   processor 35.0 → 40.3 MHz; a log-depth leading-zero tree was measured
-   and reverted — `abc` already balances the chain, see §2.7);
-3. ~~`F_LES`/`F_GRE` as a lexicographic compare (no denormaliser)~~ —
-   **done** (comparisons alone 314 → 132 LUT4 and 20 → 10 levels at level 0,
-   403 → 132 / 18 → 10 at level 2; the full float ALU pays ~2 % area at the
-   same depth. Levels 0/1 now order a value against a much larger one instead
-   of calling them equal after the alignment shifted it out);
-4. ~~explicit restoring divider array for `F_DIV` (exact sticky → closes
-   item 2(a))~~ — **done**. The follow-up "one array for `DIV`+`MOD`,
-   ≈ −50 %" is **withdrawn: measured, the tools already share one divider**
-   (`DIV` 1796 LUT4, `MOD` 1863, both 1914 — 6 % marginal). What an explicit
-   array would still buy is *defined division by zero*, which a cheap ternary
-   guard cannot give (+80 %: the guard breaks that sharing). Decide with
-   item 10.5, not here;
-5. ~~one shared right shifter for `SHL`/`SHR`/`SRS`, one for `F2I`~~ —
-   **done** (`SHL`+`SHR`+`SRS` 504 → 363 LUT4 at the same depth; `F2I`
-   387 → 350; the integer no-divider ALU −5 %, the whole no-divider ALU
-   −3.5 % / −5.6 % at levels 0 / 2. A processor with a single shift opcode
-   builds exactly what it built before — the selects are parameter
-   constants then);
-6. ~~`NUGAIN` restricted to a power of two, validated by `cmmcomp`/`asmcomp`~~
-   — **done**: `asmcomp` refuses it (the gate every front end passes
-   through) and `cmmcomp` refuses it with the source line; `NUGAIN` typed
-   `signed [NUBITS-1:0]` in `processor.v`/`core.v`/`ula_nrm`. Measured
-   before deciding: 64 → 152 LUT4 / 12 levels, 128 → 147 / 11, **100 → 406 /
-   70**, 3 → 264 / 38 — not the full divider feared, but 2–3× the depth of
-   the whole no-divider ALU (36), i.e. the clock halved.
-
-Targets set on the ALU alone (not yet re-measured after the steps): full
-no-divider ALU ≈ 30 levels at every level, ≈ −15 % LUT4; `F_DIV` ≈ 260
-levels, ≈ −50 % LUT4; every golden unchanged.
 
 ## 9. Library accuracy keyed on `NBMANT`
 
@@ -225,7 +135,7 @@ it). The audit found the weak points in the surroundings. In order:
    `#NDSTAC`/`#SDEPTH` as overrides the assembler validates, plus a sticky
    overflow pin like `cheguei`.
 5. **Defined behaviour** for integer `DIV`/`MOD` by zero (with the shared
-   `DIV`+`MOD` array of item 8 step 4b), address and jump-target truncation,
+   `DIV`+`MOD` array, `ula_idiv`), address and jump-target truncation,
    documented.
 6. **I/O contract** documented; a status-port convention (`empty`/`full`
    readable with `in()`); valid/ready with a global stall only as a parameter

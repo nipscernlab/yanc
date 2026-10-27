@@ -99,7 +99,7 @@ FMAX=$(grep -A6 -E 'Slow 1[12]00mV (85|100)C Model Fmax Summary' $PROC.sta.rpt \
 echo "$PROC $DEV${FR:+ FROUND=$FR}${TAG:+ ($TAG)}${SEED:+ seed $SEED}${PERIOD:+ period $PERIOD}${EFFORT:+ effort $EFFORT}: Fmax=$FMAX logic=$ALM" | tee -a "$OUT/fmax.txt"
 
 # Where the clock is lost: the worst register-to-register paths of the WHOLE
-# processor (the ALU alone is a proxy, TODO.md item 8). worst_paths.txt lists
+# processor (the ALU alone is a proxy). worst_paths.txt lists
 # the 10 worst (slack, from, to); worst_path_full.txt details the worst one,
 # cell by cell, through the operand select, the ALU and the write-back.
 cat > paths.tcl <<EOF
