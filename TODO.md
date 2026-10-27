@@ -48,7 +48,8 @@ C++ (#31); 10, architecture hardening, as #32 (an instruction-set
 simulator and random differential test), #33 (the decode rows from
 `isa.tsv`), #34 (the undefined cases, division by zero first) and #35
 (HDL hygiene), its interrupt rework, stack overflow pin, I/O contract and
-registered-branch option dropped (Luciano).
+registered-branch option dropped (Luciano); 12, the run-time exception
+strobe (#36, parked).
 
 **Open items, below:** 13 the pre-assembly optimizer and the C++ heap arena (77 % of
 its data memory); 14 the zero-fill at 8 words a turn, or close it; 15 the
@@ -59,8 +60,7 @@ hits; 32 the divider stage count from the widths (recorded; on the ZYBO
 `F_DIV` limits).
 
 **Parked by decision:** 28 and 31 (the array unit and the Dirac
-expressions, above), 12 (run-time
-exception strobe), 24 (processors with different float formats on one
+expressions, above), 24 (processors with different float formats on one
 link: AURORA's check), 30 (SAPHO without showing its source, until a
 partnership), 33 (the float zero as an all-zero word in hardware), the
 reorganisation of the runner/setup scripts, a macOS build.
@@ -92,42 +92,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18).
   [§1.8]
 
 ---
-
-## 12. Run-time exception strobe (pin + error code)
-
-**Status:** parked, not now (noted 2026-09-20) · **Area:** `SAPHO/*`, `ASMComp`, both front ends · **Evidence:** this item
-
-Today a run-time failure is silent: `malloc`/`new` returns `0` when the
-`__heap` arena (fixed `CFG_HEAPSZ` = 2048 words, no analysis of what the
-program will allocate) is exhausted, the software call stack `__cstk` (fixed
-1024 words) and the hardware stacks (`#NDSTAC`/`#SDEPTH`) overflow without a
-trace, `DIV`/`MOD` by zero and exponent overflow at `#FROUND 0` give whatever the
-datapath gives. Nothing outside the processor can tell that it happened.
-
-**Design (Luciano, 2026-09-20):** an output pair — a **strobe pin** high for
-exactly one clock cycle, and an **error-code word** valid on that cycle —
-decoding *which* exception occurred. One mechanism, many exceptions: heap
-exhausted, call-stack overflow, data/return-stack overflow (subsumes the
-sticky stack pin dropped from the old item 10), integer divide by zero
-(issue #34), float
-overflow/underflow, `F2I` saturation, ... each with its own code. It costs
-hardware (comparators, the code register, the pins), so it is **opt-in
-through a new directive** (`#EXCEPT`-style, default off): a processor that
-does not ask for it builds exactly what it builds today ([pay only for what
-you use](docs/design/hdl-architecture-audit.md)). Same spirit as `#TOAQUI`/`cheguei`.
-
-Points to settle when it is taken up: which exceptions are raised by the
-hardware (stack overflow, divide by zero, float range) and which by the
-runtime (heap exhausted — the compiler needs an instruction or an I/O
-convention to fire the strobe with a code from software); the code table,
-shared by the HDL and both compilers (goes into the single-source ISA table
-of issue #33); whether the processor halts, traps to `ITRADD`, or just
-signals and continues; how the testbenches and the Verilator harness report
-it (an `output_err.txt`, or a line in `app_log.txt`); how Aurora shows it.
-
-**Done when:** the directive exists and is off by default; with it on, each
-listed exception fires the strobe once with its code in a fixture under both
-simulators; with it off, area and depth are unchanged (`Scripts/hw/area.sh`).
 
 ## 13. Pre-assembly optimizer (whole program), and reusing temporaries
 
