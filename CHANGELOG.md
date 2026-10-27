@@ -73,6 +73,16 @@ tags consumed by Aurora.
   needs (the error "has more than 16 parameters" and its negative test
   `params_17` are removed). Fixture `cmm_params`. Manual:
   docs/language-cmm.md.
+- **The size ratchet held only the examples it already knew.** A C±
+  example with no line in `size_baseline.txt` passed with "no baseline", so
+  `cmm_braces`, `cmm_decl_list`, `cmm_flit`, `cmm_ilit` and `cmm_ilit8`
+  could grow unseen. They have their lines now, and `regress.sh` fails an
+  example that has none (`--update-size` still writes it).
+- **`regress.sh` ran only where MSYS2 is `C:\packs\msys64`.** The temp
+  folder and Verilator (through `run_verilator_step.ps1`) were written as
+  that path; they now come from MSYS2's own `/tmp` and the Verilator
+  `Scripts/env.sh` finds, and off Windows `TMP` is left alone. `est.py`
+  takes `$YOSYS` or the `yosys` on the PATH.
 - **`x / 0` gave 0 at `#FROUND 2`** (every C++ program) instead of the
   largest value with the quotient's sign, as level 1 does (now written in
   docs/floating-point.md). The

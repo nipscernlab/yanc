@@ -7,7 +7,7 @@
 #      run cmmcomp and compare the produced .asm against
 #      Compilers/CMMComp/Tests/<prname>/golden.asm. For the sim-enabled subset also
 #      run asmcomp + iverilog + vvp and compare output_*.txt
-#      against Compilers/Compilers/CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
+#      against Compilers/CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
 #      the multi-proc DTW example (Compilers/CMMComp/Tests/DTW/TopLevel/).
 #
 #   2. CPP phase: for every Compilers/CPPComp/Tests/testN/testN.cpp run
@@ -41,7 +41,7 @@
 #      The CPP negative phase does the same for cppcomp with
 #      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only).
 #
-# Build phase builds all 3 binaries once (cmmcomp + cppcomp + asmcomp), all
+# Build phase builds the 4 binaries it runs once (cmmcomp, cppcomp, asmcomp, yanc), all
 # phases reuse them.
 #
 # Usage (from repo root, in msys2/git-bash on Windows):
@@ -61,15 +61,17 @@ set -uo pipefail
 # silently falls back to C:\WINDOWS\ where unprivileged users can't write
 # ("Cannot create temporary file in C:\WINDOWS\: Permission denied").
 # Setting all three unconditionally is the only thing that survives the
-# PowerShell -> bash -> make -> g++ env-inheritance chain.
-export TMP="C:/packs/msys64/tmp"
-export TEMP="C:/packs/msys64/tmp"
-export TMPDIR="C:/packs/msys64/tmp"
-# Create the dir via its POSIX form. MSYS mkdir reads the bare drive prefix
-# "C:" as a *relative* directory name and would leave a junk "./C:" folder
-# (the ':' shown as a box) in the repo root on every run -- cygpath turns the
-# Windows path into the mount path (here /tmp) so the real dir is used.
-mkdir -p "$(cygpath -u "$TMP" 2>/dev/null || echo "$TMP")"
+# PowerShell -> bash -> make -> g++ env-inheritance chain. The dir is MSYS2's
+# own /tmp in its Windows form (cygpath -m), wherever MSYS2 is installed;
+# off Windows (no cygpath) TMP is left alone. The dir is made through /tmp:
+# MSYS mkdir reads the bare drive prefix "C:" as a *relative* directory name
+# and would leave a junk "./C:" folder in the repo root.
+if command -v cygpath >/dev/null 2>&1; then
+    mkdir -p /tmp
+    export TMP="$(cygpath -m /tmp)"
+    export TEMP="$TMP"
+    export TMPDIR="$TMP"
+fi
 
 UPDATE=0
 UPDATE_SIZE=0
@@ -167,7 +169,6 @@ vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice 
 # .asm compare AND asmcomp so their .v + .mif are available for any
 # downstream project-level link):
 #   procBlind/procBlindOpt - take too long to simulate (heavy FISTA)
-#   sw_test            - synthetic .cmm fixture; testbench would loop on while(1)
 #   ArcTan/Seno/Sqrt   - Math benchmarks: compute internally with no out(...) calls
 #   ProcDTW/ZeroCross  - real testbench lives in the multi-proc DTW project pass
 #   cmm_define         - synthetic #define fixture; while(1) testbench loop,
@@ -232,7 +233,7 @@ stack_check() {   # stack_check <tb.vcd>
          END { exit fired ? 1 : 0 }' "$1"
 }
 
-# ---- 1. build all 5 binaries -----------------------------------------------
+# ---- 1. build the 4 binaries ------------------------------------------------
 
 if [ "$SKIP_BUILD" -eq 0 ]; then
     echo "==> building cmmcomp + cppcomp + asmcomp + yanc"
@@ -240,7 +241,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
 
     # Wipe stale binaries first: a silently-failing gcc must NOT leave the
     # previous build in place to fool the regress into testing dead code.
-    rm -f "$CMMCOMP" "$BIN_DIR/cpppp.exe" "$CPPC" "$BIN_DIR/appcomp.exe" "$ASMCOMP"
+    rm -f "$CMMCOMP" "$CPPC" "$ASMCOMP" "$YANC"
 
     # Per-binary `set -e` so a build error aborts the script. Without it,
     # a gcc -Werror failure would print to the terminal but the regress
@@ -348,6 +349,11 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         size_grew=0
         if [ -z "$baseline" ]; then
             size_msg="  [size: ${num_ins:-?}, no baseline]"
+            # a new example enters with its count, or the ratchet never holds it
+            if [ "$UPDATE_SIZE" -eq 0 ]; then
+                echo "FAIL ($prname): no size baseline; add \"$prname ${num_ins:-?}\" to $SIZE_BASELINE_FILE"
+                fail=$((fail + 1)); failed_names+=("$prname"); continue
+            fi
         elif [ "${num_ins:-0}" -gt "$baseline" ]; then
             size_msg="  [size: $num_ins, GREW +$((num_ins - baseline)) vs $baseline]"
             size_grew=1
@@ -1255,7 +1261,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             # On Windows the PowerShell helper works around bash->make env
             # stripping under MSYS2; elsewhere (Linux) Verilator runs straight
             # from bash -- no env boundary, no hardcoded paths.
-            if command -v powershell.exe >/dev/null 2>&1; then
+            if command -v powershell.exe >/dev/null 2>&1 && command -v cygpath >/dev/null 2>&1; then
                 if ! powershell.exe -ExecutionPolicy Bypass -NoProfile \
                         -File "$CPP_ROOT/Tests/Verilator/run_verilator_step.ps1" \
                         -Prname  "$prname" \
@@ -1266,7 +1272,9 @@ if [ "$CMM_ONLY" -eq 0 ]; then
                         -InFile  "$infile" \
                         -OutFile "$out" \
                         -Clocks  "$clocks" \
-                        -Expected "$exp" >/dev/null 2>&1; then
+                        -Expected "$exp" \
+                        -VlBin   "$(cygpath -m "$(dirname "${VERILATOR:-/mingw64/bin/verilator}")")" \
+                        -WinTmp  "$TMP" >/dev/null 2>&1; then
                     echo "FAIL ($base): verilator"; fail=$((fail+1)); failed_names+=("$base"); continue
                 fi
             else
@@ -1506,7 +1514,7 @@ fi
 # Error-path coverage the golden phases lack: each fixture is a malformed
 # program that cmmcomp must REJECT with a clean non-zero exit and the right
 # diagnostic -- never a crash, never a silent accept. Fixtures live in
-# NegTests/ (a sibling of Tests/) so the CI smoke `find ... Tests ... .cmm`
+# NegTests/ (a sibling of Tests/) so the CI smoke, which walks Tests/*/,
 # never tries to compile them.
 if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
@@ -1732,7 +1740,7 @@ if [ "$UPDATE_SIZE" -eq 1 ]; then
         echo "# num_ins ratchet: each line is \"<prname> <count>\"."
         echo "# Captures the number of real instructions cmmcomp emits per example"
         echo "# (excludes labels, directives and macros). regress.sh fails any run where"
-        echo "# a count grows. To intentionally update after a refactor that shrinks"
+        echo "# a count grows or an example has no line. To update after a refactor that shrinks"
         echo "# things, run: Scripts/regress.sh --update-size"
         # bash's `set -u` raises "unbound variable" on ${assoc[$key]} even
         # when the key is in ${!assoc[@]} (seen on bash 5.2). Build the
