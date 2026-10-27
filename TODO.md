@@ -63,15 +63,16 @@ unit's issue (parked), with the analysis of the old item 17; 31, the
 wasted `MLT 1` and the missing `out(p, |a⟩)`, into #18 as well, to be
 fixed by the Dirac redesign; 32, the divider stage count computed from
 the widths, with the ZYBO measurement (#41); 33, the float zero as an
-all-zero word in hardware (#42, parked).
+all-zero word in hardware (#42, parked); 27, the C++ forms cppcomp
+does not accept, as #43, a list kept equal to docs/language-cpp.md, with
+`fin`/`fout` added to #31.
 
 **Dropped (2026-10-27):** 30, SAPHO synthesized without showing its
 source: it waits on a partnership, not on work here, and
 docs/design/ip-protection.md holds all of it.
 
 **Open items, below:** 26 arrays in the waveform
-without a signal per element; 27 the C++ gaps that real embedded code
-hits.
+without a signal per element.
 
 **Parked by decision:** the reorganisation of the runner/setup scripts,
 a macOS build.
@@ -105,21 +106,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18), both now in #18.
   [§1.8]
 
 ---
-
-## 27. C++ gaps that real embedded code hits
-
-**Status:** open, noted 2026-10-13 while writing docs/language-cpp.md (each
-checked with a program) · **Area:** `Compilers/CPPComp/`
-
-Accepted by C++ compilers, a syntax error in cppcomp: an `enum` value that
-is not a plain literal (`= -1`, `= A + 1`) and an underlying type
-(`enum class E : int`); operator overloading as a free function, and of
-`%`, the shifts, the bitwise operators, `()`; multiple inheritance;
-anonymous namespaces; variadic functions; lambdas inside functions or with
-captures; template specialization and default template arguments. Also: no
-`fin`/`fout`, and `out()` of a float writes its raw bits (C± converts);
-`#pragma yanc nugain` is accepted and changes nothing. Each is a candidate
-when a real program needs it (the missing-feature protocol: ask first).
 
 ## 26. Arrays in the waveform without one signal per element
 
