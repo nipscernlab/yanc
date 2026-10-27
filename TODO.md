@@ -107,7 +107,22 @@ Unreleased). It found the `#FROUND 1` subtraction
 compute division right above 32 bits. Do not write code for it. **Watch:**
 re-run [`Scripts/hw/width_sweep.sh`](Scripts/hw/width_sweep.sh) after every
 Icarus or Verilator upgrade (last run: Icarus 13.0, Verilator 5.048,
-2026-09-18); reopen when 64 bits comes back with 0 errors in both. The
+2026-09-18); reopen when 64 bits comes back with 0 errors in both.
+
+**Since then (checked 2026-10-27):** the processor no longer uses the
+Verilog `/` at all. `DIV`/`MOD` are an explicit array (`ula_idiv` on
+`div_array`, since the dividers were cut into stages), like `F_DIV`; the
+`/` left in `SAPHO/` divides elaboration constants, by the power of two
+`NUGAIN`, or `real` values that exist only in simulation. So Icarus's wrong
+`/` no longer reaches the hardware it simulates: it reaches the testbench
+references that compute the expected result with a procedural `/`
+(`Scripts/hw/tb_ula.v` `DIV` and the float division, `tb_alu.v`
+`ref_div`). Above 64 bits those references must be computed another way
+(a loop of subtractions, a Python big-integer oracle as `width_sweep` has,
+or Verilator only). The compiler work listed below is unchanged. Icarus
+13.0 is still the latest stable release and Verilator has reached 5.052
+(both read on Wikipedia, not on the projects' pages); the sweep was not
+run again. Neither fact reopens the item: that stays Luciano's decision. The
 evidence is in [§2.2–2.5](docs/design/precision-and-width-review.md#22-asmcomp--the-actual-ceiling)
 and [§2.7](docs/design/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator).
 
