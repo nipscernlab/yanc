@@ -50,6 +50,11 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **`TODO.md` is gone: open work is in the GitHub issues.** Each item
+  became an issue, was closed or was dropped (2026-10-27); the file stays
+  in the git history, and "TODO item N" in a comment or a note is its item
+  N. The workarounds for accumulating at `#FROUND 0` moved to
+  docs/floating-point.md.
 - **C++: string literals and global `const` arrays go into the data
   memory** instead of being stored by code when `main` starts (3
   instructions a word). The `cin`/`cout` demonstration for the DE2-115:

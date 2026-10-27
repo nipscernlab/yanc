@@ -1,9 +1,9 @@
 # Precision and word-width review
 
 Date: 2026-09-14 · Scope: `SAPHO/*.v`, `Compilers/{CMMComp,CPPComp,APPComp,ASMComp}`,
-`Scripts/`, the Verilator harness. This is the evidence behind the items in
-[`TODO.md`](https://github.com/nipscernlab/yanc/blob/main/TODO.md); the list of work and the "done when" criteria live
-there, not here.
+`Scripts/`, the Verilator harness. This is the evidence behind items 1 to 9 of
+`TODO.md`, which was removed on 2026-10-27 (it is in the git history); the
+work still open is in the GitHub issues, #29 and #31 for this review.
 
 > **A record of 2026-09-14.** File names, `file:line` references and the
 > state described below are as they were that day and are not kept up to

@@ -17,8 +17,7 @@ yanc/
 │                   gen_gtkw.c, comp2gtkw.c, hw/ (elaboration, area, Fmax)
 ├── docs/           this manual; design/ holds the design notes
 ├── release/        the README, example/ and install scripts of the package
-├── Makefile        the one place the tools are built from
-└── TODO.md         open work items
+└── Makefile        the one place the tools are built from
 ```
 
 | tool | source | built with | does |
