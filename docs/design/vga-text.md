@@ -240,7 +240,7 @@ bits writing text. Board check on the DE2-115 with Dênis.
   than their `.mif` files (data 4 against 3 words, instructions 16 against
   11); the rest is set to 0. Seen here, not studied (TODO).
 
-## 5. For the documentation (item 21 in TODO.md)
+## 5. For the documentation (issue #40)
 
 Written: docs/peripherals.md, section "Screen: `myVGAText`"; v9.1: the code
 table shared with the keyboard (section "Character codes"), reset, the

@@ -209,7 +209,7 @@ on the DE2-115 with Dênis.
   seeds later gave 88 to 100 MHz, the table still the limit (vga-text.md,
   section 4).
 
-## 5. For the documentation (item 21 in TODO.md)
+## 5. For the documentation (issue #40)
 
 Written: docs/peripherals.md (pins, parameters, the words `cade()` returns,
 the key list, wiring, the clock, the size, 8 bits); v9.1: the code table

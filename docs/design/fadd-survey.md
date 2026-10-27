@@ -190,6 +190,6 @@ through the shared normaliser): not looked at. No fit yet.
 Read in full: FloPoCo's source; the ARM patent (first 100,000 characters).
 The rest from abstracts, citations or search summaries.
 
-## For the documentation (item 21)
+## For the documentation (issue #40)
 
 Nothing yet: none of this is in `SAPHO/`.

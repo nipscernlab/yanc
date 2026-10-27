@@ -2,7 +2,7 @@
 
 Commits 96fcdaf (cppcomp) and d8f4eeb (cmmcomp), in `[Unreleased]` of the
 CHANGELOG. This note records what a user can no longer write and why, so the
-manual can say it (TODO.md item 21).
+manual can say it (issue #40).
 
 ## The problem
 
@@ -56,7 +56,7 @@ differ only by the `__` prefix. Full regress on 2026-10-10: 202 of 203; the one
 failure was the `sapho_all` block check, which did not know `LINKAS`
 (fixed in 3a96072, the check rerun alone passes).
 
-## For the documentation (item 21 in TODO.md)
+## For the documentation (issue #40)
 
 The user-facing text says: a name may not be spelt like an instruction of
 the processor once the compiler prefixes it (a local `x` of `f` becomes

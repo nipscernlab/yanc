@@ -126,7 +126,7 @@ The options that were weighed:
 - (c) drop level 1 and send its users to level 2, which has both properties
   for about +5 % of the ALU.
 
-## For the documentation (item 21)
+## For the documentation (issue #40)
 
 The `#FROUND` table of `docs/floating-point.md` was corrected the same day:
 level 1 no longer promises the exact truncation nor the exact subtraction,

@@ -679,7 +679,7 @@ memory's address); the rounding inside the loop (36 ns, more than the
 period); a `DOT` that does not wait, its result read later; two pairs
 per clock (four ports, or the banks left out in section 5).
 
-## 8. For the documentation (item 21 in TODO.md)
+## 8. For the documentation (issue #40)
 
 - The parameter and what it changes, in the directives and in the
   instruction reference (generated from `isa.tsv`).

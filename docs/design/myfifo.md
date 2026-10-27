@@ -249,7 +249,7 @@ lines to be written and checked on the board):
   Quartus and Vivado (`set_clock_groups -asynchronous`,
   docs/design/toma-and-cade-links.md section 10); the board run is still to come.
 
-## For the documentation (item 21 in TODO.md)
+## For the documentation (issue #40)
 
 The user-facing text says: when the two SAPHOs run on different clocks use
 `myDCFIFO` (ports in the table above); wire the writer's `out_en` bit to
@@ -258,7 +258,7 @@ port and `q` on another, with `rdreq` from that port's `req_in`; hold
 `aclr` for a few cycles of the slower clock; a word takes 2-3 reader cycles
 to show up; capacity is LENGTH words; the Quartus constraints.
 
-## For the documentation (item 21 in TODO.md)
+## For the documentation (issue #40)
 
 The user-facing text says: wire `wrreq` to the writer's `out_en` bit and
 `data` to its `out`; the word is taken in that cycle; `q` shows the oldest

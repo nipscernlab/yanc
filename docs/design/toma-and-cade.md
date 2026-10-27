@@ -388,7 +388,7 @@ Fmax and the board check of a linked design measure two full SAPHOs.
 - What `sapho_all_a`/`_b` add to `sapho_all`: `TOM` on A, `CAD` on B (and
   `LINKAS` when the clocks differ); 936 and 941 instructions against 933.
 
-### 8.7 For the documentation (item 21 in TODO.md)
+### 8.7 For the documentation (issue #40)
 
 Superseded (2026-10-11): the user-facing text for v7.1 is the list in
 [`toma-and-cade-links.md`](toma-and-cade-links.md) section 11 (several

@@ -217,7 +217,7 @@ the data-memory read address, and `out_ok` into the fetch. Area with
 4. `fmax.sh` and `area.sh` (section 6).
 5. C± (the diff to Luciano first), then C++; regress fixtures in both.
 
-## 8. For the documentation (item 21 in TODO.md)
+## 8. For the documentation (issue #40)
 
 - The new forms in the language chapters, and the pins `out_ok`/`in_ok` in
   "Several processors" (what to tie them to, the two-free-places rule if

@@ -734,7 +734,7 @@ costs, and do not exclude each other (a parameter could choose):
 `proc_rls` 2 to 3 times, not the tenfold it shows over loops in software;
 any later decision on the unit is to be weighed against the pointers.
 
-## 7. For the documentation (item 21 in TODO.md)
+## 7. For the documentation (issue #40)
 
 The manual (`docs/library.md`, "Vectors in Dirac notation") replaces the
 table of forms with the rules: what a chain between bars means (bra, ket,

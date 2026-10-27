@@ -259,7 +259,7 @@ between formats maybe in the future. v7.1 stops at the links.
   shows the link holding up for hours). The students' task: the LINKALL pair
   on each board with this `.sdc`, A on the switches, B on the LEDs.
 
-## 11. For the documentation (item 21 in TODO.md)
+## 11. For the documentation (issue #40)
 
 This list replaces the one in [`toma-and-cade.md`](toma-and-cade.md) 8.7,
 which also keeps three points (same word format, the reset rule on two
