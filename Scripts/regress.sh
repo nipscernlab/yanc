@@ -150,13 +150,18 @@ if [ -f "$SIZE_BASELINE_FILE" ]; then
 fi
 declare -A SIZE_CURRENT
 
-# Up to two retries for a simulation that DIED (TODO.md item 15). On a
-# machine short of memory vvp can die mid-run with no message; the same .vvp
-# re-run then passes (twice in a row was seen once). A simulation that exits
+# Up to two retries for a simulation that DIED. On a machine short of memory
+# vvp can die mid-run with no message, on a different heavy float test each
+# run; the same .vvp re-run then passes (twice in a row was seen once).
+# Measured in 2026-09: nothing on stderr, a truncated VCD, and 1 GB free of
+# 15.5 GB with one simulation 8x slower than usual -- paging, not YANC or
+# Icarus, and not the waveform writer (without $dumpvars the time is the same). A simulation that exits
 # non-zero -- or, in the C++ phase, leaves an empty or truncated output (a
 # prefix of the golden) -- is run again; a wrong but complete output fails at
 # once, never retried. Every retried test is listed at the end, so a flake
-# stays visible without failing the board.
+# stays visible without failing the board. A long retried list means: free
+# memory on the machine before trusting the run's timings, and re-run a
+# failing heavy test on its own.
 retried_names=()
 vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice at most), 0 if it exits 0
     retried_names+=("$1")
@@ -1305,7 +1310,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             "$VVP" "$od/$prname.vvp" >/dev/null 2>&1
             vvp_status=$?
             # died: non-zero, or an empty / truncated output (a strict prefix
-            # of the golden) -- once more (item 15)
+            # of the golden) -- once more (see vvp_once_more)
             gold_c="${entry%/}/golden.txt"
             died=0
             [ $vvp_status -ne 0 ] && died=1
@@ -1725,7 +1730,7 @@ rm -rf "$drv"
 
 echo ""
 if [ "${#retried_names[@]}" -gt 0 ]; then
-    echo "retried (simulation died, TODO.md item 15): $(printf '%s ' "${retried_names[@]}")"
+    echo "retried (simulation died, likely short of memory): $(printf '%s ' "${retried_names[@]}")"
 fi
 echo "===== $pass passed, $fail failed ====="
 if [ "$fail" -ne 0 ]; then

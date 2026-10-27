@@ -53,8 +53,7 @@ strobe (#36, parked); 13, what was left of the pre-assembly optimizer, as
 #37 (the C++ heap arena, 77 % of the data memory of the programs that
 allocate) and #38 (wasted instructions left in the C± goldens).
 
-**Open items, below:** 15 the
-regress on this machine (mitigated); 21 documentation that cannot fall
+**Open items, below:** 21 documentation that cannot fall
 behind a release (waiting on a decision); 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
 hits; 32 the divider stage count from the widths (recorded; on the ZYBO
@@ -70,7 +69,8 @@ reorganisation of the runner/setup scripts, a macOS build.
 unbiased), 3 (the float format checked only with float), 5 (exact float
 constants), 6(a) (the ALU testbench), 8 (the ALU datapath restructuring,
 its six steps), 11 (consistency at 32 bits), 14 (the cppcomp inliner and
-the test46 cycles, Scripts/perf/README.md), 16, 18
+the test46 cycles, Scripts/perf/README.md), 15 (simulations dying under
+memory pressure: the regress retries them, `vvp_once_more`), 16, 18
 (hardware for code that never runs), 19 (the dividers, v6.0), 20, 22 and
 23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), 29 (a faster clock,
 v8.0), 34 (initialisers in a declaration list), the user names that
@@ -94,64 +94,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18).
   [§1.8]
 
 ---
-
-## 15. The regress is not trustworthy on this machine
-
-**Status:** mitigated 2026-09-25, cause not fixed · **Area:** `Scripts/regress.sh`, the machine · **Evidence:** below
-
-Seven full runs in one session; only ONE came back clean. Each other run
-failed on a DIFFERENT set of 3-8 heavy float tests, with `vvp exited non-zero`
-or empty/truncated output. That matters beyond the annoyance: a run no longer
-distinguishes a real regression from noise, and a whole-program pass like the
-data-word sharing (`asm_share`) is exactly the kind of change that can
-miscompile silently.
-
-What is known, measured:
-- the same `.vvp`, re-run in the same directory, alternates exit 0 / exit 1;
-- nothing on stderr and no Icarus error, so the process is dying, not failing;
-- a failed run leaves the VCD truncated (`cmm_tan`: 4.47 MB of the 5.36 MB a
-  good run writes), i.e. it dies mid-simulation;
-- it tracks machine memory: the one clean run was with the machine free (19
-  min for 134 tests); the bad ones had 1-2 GB free of 15.5 GB and a single
-  simulation took 70 s, about 8x slower.
-
-**NOT the waveform writer, measured:** the same testbench with all 16
-`$dumpvars` commented out runs in the same time (69.9/69.0 s against
-72.0/68.2 s). Gating the dump behind `+WAVE` would save 215 MB of disk per run
-and nothing else. The truncated VCD is a symptom of dying mid-run, not the
-cause; do not repeat that inference.
-
-**Related, and free:** the working tree carries 288 MB that is not versioned
-and regenerates: `.smoke/` (284 MB, of which 215 MB is 118 VCD files nobody
-reads), `Teste/`, and `bin/`. `bin/` is worse than bloat: it goes stale (an
-`appcomp` from June against sources from September) and then silently
-mis-assembles, which has already cost one wrong investigation.
-
-**Latest (2026-09-24), and what the machine looked like:** another run, three
-C± failures (`cmm_fround1`, `cmm_fround2`, `cmm_hyper`), all passing when
-re-run. At that moment the whole machine used about 3 % of its 22 cores, but
-had **1.0 GB free of 15.5 GB**: the slowness is paging, not CPU. What held the
-memory: VS Code 4.6 GB (41 processes, five windows), Claude Code 2.6 GB (20
-processes: seven sessions in VS Code plus the desktop app), `node` 2.2 GB,
-Chrome 1.2 GB. Some of it was idle for hours -- the desktop app (619 MB) and
-two old sessions, found by the last-write time of each session's transcript
-under `~/.claude/projects/<folder>/<session-id>.jsonl`. That is the quickest
-way to see which sessions are only holding memory.
-
-**Mitigated (2026-09-25):** `regress.sh` now re-runs a simulation that DIED
--- vvp exiting non-zero, or in the C++ phase an empty or truncated output (a
-strict prefix of the golden) -- up to twice, and lists every retried test in
-the summary (`retried (simulation died, TODO.md item 15): ...`). A wrong but
-complete output still fails at once. Tested with a fake vvp: a test that dies
-once passes and is listed, one that always dies fails. Two deaths in a row
-were seen once, hence two retries. The board is repeatable again; the cause
-(memory pressure) is not fixed, so a long `retried` list still means: free
-memory before trusting timings.
-
-**Meanwhile:** re-run a failing heavy test on its own; if it passes, it is
-this. Free memory on the machine before trusting a board.
-
-**Done when:** a full run is repeatable, or the cause is found and named.
 
 ## 21. Documentation that cannot fall behind a release
 
