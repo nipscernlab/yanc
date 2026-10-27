@@ -177,8 +177,11 @@ table fills.
   it out of block RAM (M10K is synchronous-read only): fine at 128 × 16, wasteful
   larger. `full` depends combinationally on `wrreq`. (2026-10-09: that
   `full`, the delayed write and `empty` lost words; fixed, docs/design/myfifo.md.
-  Measured the same day: the combinational read maps to LUT RAM (MLAB /
-  RAM64M), and a registered read to block RAM from about 1024 words.)
+  Measured the same day, with Yosys only: the combinational read maps to LUT
+  RAM (MLAB / RAM64M), and a registered read to block RAM from about 1024
+  words. Corrected 2026-10-27: Quartus puts `myFIFO` in block RAM as written,
+  folding the read address register into the RAM; Vivado uses distributed
+  RAM at 128 x 16. myfifo.md "Memory".)
 
 ### 1.8 Verification is golden-only
 

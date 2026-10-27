@@ -76,8 +76,8 @@ Capacity stays LENGTH-1 words (one slot tells full from empty), as before.
 - Not run yet: the full regress (held by Luciano on 2026-10-09).
 
 Other notes on this module (docs/design/hdl-architecture-audit.md): the read is
-combinational (`q = mem[addr_r]`), which keeps it out of block RAM; it goes
-to LUT RAM instead (measured, section "Memory" below).
+combinational on a registered address (`q = mem[addr_r]`); Quartus folds
+that register into the RAM and builds block RAM (section "Memory" below).
 
 # `SAPHO/myDCFIFO.v`: the same FIFO between two clock domains (2026-10-09)
 
@@ -168,7 +168,26 @@ that may outrun the reader should read `wrfull` the same way before each
   written yet; to be done with the board check of the links
   (docs/design/toma-and-cade-links.md section 10).
 
-## Memory: LUT RAM today, block RAM with a registered read
+## Memory: RAM as written, no registered read needed
+
+**Correction (2026-10-27).** The vendor tools build memory from both FIFOs
+as they are, so the registered read below (`RAMBLK`) is not needed and was
+dropped. In the warning survey of 2026-10-21, with `myFIFO` and `myDCFIFO`
+at 128 x 16:
+- **Quartus 24.1, Cyclone V 5CSEMA5F31C6:** an `altsyncram` inferred for
+  each, "Total block memory bits: 4,096" (2 x 2048), so block RAM. For
+  `myFIFO` it warns that it added pass-through logic for a read and a write
+  on one address in one cycle (issue #8); `myDCFIFO` gets the usual
+  dual-clock warning.
+- **Vivado 2025.2, Zynq-7010:** distributed RAM, `RAM64M` x 12 each, the
+  usual choice for a RAM this small.
+
+The read address is a register, and Quartus absorbs it into the RAM's
+input register, which Yosys' mapper did not do. The measurements below
+are Yosys only and say nothing about the vendor tools; a FIFO of 1024
+words was not run in Quartus or Vivado.
+
+What follows is the note of 2026-10-09, kept as written.
 
 Asked by Luciano on 2026-10-09 ("can it never become memory?"). It does
 become RAM, just not block RAM. Measured with Yosys 0.56, FPGA mapping, WORD

@@ -42,10 +42,6 @@ a release): Chrysthofer's proposal arrived on 2026-10-13; its phase 0 is
 Luciano and Chrysthofer agreeing on it. The GitHub plan: the proposal says GitHub
 Education gives teachers Team for free (Luciano's application).
 
-**Waiting on Luciano, proposed and not started:** `RAMBLK`, a registered
-read on `myFIFO`/`myDCFIFO` so a large FIFO goes to block RAM (area, not
-clock; docs/design/myfifo.md "Memory"), with a `quartus_map` of it.
-
 **Moved to GitHub issues (2026-10-27):** 6(b) and 7, the word beyond 32
 bits (#29, parked); 9, the math library keyed on `NBMANT` and shared with
 C++ (#31); 10, architecture hardening, as #32 (an instruction-set
