@@ -65,14 +65,12 @@ fixed by the Dirac redesign; 32, the divider stage count computed from
 the widths, with the ZYBO measurement (#41); 33, the float zero as an
 all-zero word in hardware (#42, parked); 27, the C++ forms cppcomp
 does not accept, as #43, a list kept equal to docs/language-cpp.md, with
-`fin`/`fout` added to #31.
+`fin`/`fout` added to #31; 26, arrays in the waveform without one
+signal per element (#45).
 
 **Dropped (2026-10-27):** 30, SAPHO synthesized without showing its
 source: it waits on a partnership, not on work here, and
 docs/design/ip-protection.md holds all of it.
-
-**Open items, below:** 26 arrays in the waveform
-without a signal per element.
 
 **Parked by decision:** the reorganisation of the runner/setup scripts,
 a macOS build.
@@ -106,22 +104,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18), both now in #18.
   [§1.8]
 
 ---
-
-## 26. Arrays in the waveform without one signal per element
-
-**Status:** open, noted 2026-10-12 (Luciano) · **Area:** cmmcomp
-`--wave-arrays`, asmcomp `hdl.c` (the `$dumpvars` of `sim_name_arr`),
-`gen_gtkw`
-
-**Why.** With `--wave-arrays` the testbench dumps every element of every
-array as its own variable, so the `.vcd` and the GTKWave signal list grow
-with the array sizes (a 2400-word buffer is 2400 signals); without it the
-arrays do not show at all. The option exists only to keep that cost away.
-
-**Done when** an array can be watched without a variable per position: for
-example one signal for the last write (address and value), or a dump of
-the array memory read back by the viewer, chosen after measuring the
-`.vcd` size and the simulation time on a test with large arrays (test46).
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
