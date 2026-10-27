@@ -458,10 +458,6 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: olha lá direito quantos parâmetros tem a função '%s'.\n", \
       "Error on line %d: check again how many parameters the function '%s' actually takes.\n")
 
-#define MSG_ERR_TOO_MANY_PARAMS \
-    M("Erro na linha %d: a função '%s' passa de %d parâmetros, o máximo.\n", \
-      "Error on line %d: function '%s' has more than %d parameters, the most allowed.\n")
-
 #define MSG_ERR_VOID_FUNC_USE \
     M("Erro na linha %d: olha lá a funcao '%s', você vai ver que ela nao retorna nada.\n", \
       "Error on line %d: take a look at function '%s', you'll see it doesn't return anything.\n")

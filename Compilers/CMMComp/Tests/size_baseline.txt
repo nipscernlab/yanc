@@ -43,6 +43,7 @@ cmm_ioports 13
 cmm_log    36
 cmm_names  83
 cmm_nofloat 21
+cmm_params 328
 cmm_pow    118
 cmm_pplus  274
 cmm_reach  25

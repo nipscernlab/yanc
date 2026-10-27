@@ -64,6 +64,15 @@ tags consumed by Aurora.
   at 32 bits, +9 at 8. Issue #6.
 
 ### Fixed
+- **C±: a function with ten or more parameters compiled to a wrong call.**
+  cmmcomp kept the type of each parameter as a decimal digit of one `int`,
+  so ten floats (2222222222) or eleven ints overflowed it: the call loaded
+  no argument and gave no message, and twelve parameters stopped with
+  "parameter list doesn't match the original". The types are a list now,
+  and the limit of 16 parameters is gone: a function takes as many as it
+  needs (the error "has more than 16 parameters" and its negative test
+  `params_17` are removed). Fixture `cmm_params`. Manual:
+  docs/language-cmm.md.
 - **`x / 0` gave 0 at `#FROUND 2`** (every C++ program) instead of the
   largest value with the quotient's sign, as level 1 does (now written in
   docs/floating-point.md). The

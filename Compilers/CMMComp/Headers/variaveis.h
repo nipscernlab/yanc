@@ -9,7 +9,8 @@ typedef struct symbol {
     char name[512];   // name of the variable or function
     int  type;        // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 5 -> const comp
     int  used;        // whether the ID has already been used
-    int  fpar;        // if the ID is a function, holds the parameter list
+    int  npar;        // if the ID is a function, how many parameters it has
+    int *ptyp;        // and the type of each one (1, 2 or 3), npar entries
     int  fnid;        // ID of the function the variable belongs to
     int  isar;        // whether the variable is an array
     int  isco;        // whether the variable is a constant

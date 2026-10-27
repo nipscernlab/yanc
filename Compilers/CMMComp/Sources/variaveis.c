@@ -25,7 +25,7 @@ int          v_count = 0;  // stores the size of the table
 static int   v_cap   = 0;  // current capacity of the parallel arrays
 
 // AoS storage: one row per identifier. All attributes (name, type, used,
-// isar, isco, size, siz2, fpar, fnid) live here. Grown on demand by var_grow.
+// isar, isco, size, siz2, npar, ptyp, fnid) live here. Grown on demand by var_grow.
 symbol *v_table = NULL;
 
 #define GROW(arr, old_cap, new_cap)                                       \

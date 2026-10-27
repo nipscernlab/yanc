@@ -713,14 +713,11 @@ static expr ast_emit_expr_impl(expr_node *n)
         case EXPR_FUNC_CALL: {
             // save/restore the per-call globals so nested calls behave
             int saved_fun_id = fun_id;
-            int saved_p_test = p_test;
             fun_id = n->id;
-            p_test = 0;
 
             for (int i = 0; i < n->n_args; i++) {
                 expr a = ast_emit_expr(n->args[i]);
-                p_test = p_test * 10 + a.type;
-                par_check(a);
+                par_check(a, i);
                 acc_ok = 1;
             }
 
@@ -733,7 +730,6 @@ static expr ast_emit_expr_impl(expr_node *n)
             acc_ok = (n->type == 0) ? 0 : 1;
 
             fun_id = saved_fun_id;
-            p_test = saved_p_test;
             return expr_make(n->type, 0);
         }
 

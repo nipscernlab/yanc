@@ -34,7 +34,6 @@ link_range.cmm|the link number is an integer from 0 to 1023
 prname_gone.cmm|#PRNAME is gone
 begin.cmm|is a Verilog keyword
 bad-name.cmm|can only have letters, digits and '_'
-params_17.cmm|has more than 16 parameters
 sinh_comp.cmm|sinh(.) doesn't take a comp
 toaqui_twice.cmm|duplicate #TOAQUI marker
 ini_type.cmm|does not take the value 2.5 between braces
