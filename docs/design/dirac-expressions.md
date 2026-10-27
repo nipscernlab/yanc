@@ -122,7 +122,7 @@ Limits, from the code (fact) unless marked:
   (`MSG_ERR_VARS_SAME_TYPE`);
 - with the scalar 1, every form still multiplies: `out(0, 1|a⟩)` is
   `LOD_V`, `MLT 1`, `OUT` per word, and the multiplier is synthesized for it;
-  `out(p, |a⟩)` without a scalar is a syntax error (TODO item 31);
+  `out(p, |a⟩)` without a scalar is a syntax error (issue #18);
 - the outer product only square, a, b and A of one size, with no weight;
 - `exec_cI` indexes `N*i+j` with N the number of rows and never checks that
   the matrix is square (deduced: a non-square matrix gets the wrong cells);
@@ -318,7 +318,7 @@ Three ways were weighed:
    temporary (as `exec_cv` does with `__aux_var`, `stdlib.c` 2857). That
    keeps today's semantics (`fin(0)` in a coefficient is read once) and
    keeps calls out of the loops. A literal stays in place, so the folding of
-   `* 1` removes `1|a⟩`'s multiply (TODO item 31).
+   `* 1` removes `1|a⟩`'s multiply (issue #18).
 3. **No `MLT` for an index.** The 2D access of the general array code
    computes `r*N + c` with `MLT` (`LOD r; MLT 4; ADD c; LDI P`, measured in
    3.5), which synthesizes the integer multiplier in a program that may use
@@ -470,7 +470,7 @@ taken from YANC), outputting every element:
   square;
 - the int shift `a # k+1 -> |a⟩`;
 - `out(0, 1|a⟩)` and `out(0, |a⟩)`, the `golden.asm` showing no `MLT` and
-  the processor no multiplier (TODO item 31);
+  the processor no multiplier (issue #18);
 - int with float: `float v[3] # k|a⟩` with `int k`.
 
 And a fixture of compile errors, one per message of 3.2, each checked for

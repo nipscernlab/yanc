@@ -29,8 +29,8 @@ pointers and `RPT` (docs/design/dirac-expressions.md; tags
 `archive/dirac-parser`, `archive/dirac-loops-proto`), and the array unit,
 a memory for arrays with a MAC (docs/design/array-unit.md; tags
 `archive/array-unit-design`, `archive/array-unit-proto`). Both are in
-issue #18, which since 2026-10-27 also holds item 28 (the burst, fill and
-copy of arrays); item 31 waits for them.
+issue #18, which since 2026-10-27 also holds items 28 (the burst, fill
+and copy of arrays) and 31 (the Dirac output of an array).
 
 **Left on boards:** from v7.1, the run of Sabrina and Pedro Henrique (the
 `LINKALL` pair with the `.sdc` on both boards; the Fmax is measured, the
@@ -59,15 +59,16 @@ through pull requests) or left to the laboratory's guidelines; 24,
 processors with different float formats on one link, to AURORA, which
 sees every program of a project (nipscernlab/aurora#240, parked); 28,
 the burst and the fast fill and copy of arrays, into #18, the array
-unit's issue (parked), with the analysis of the old item 17.
+unit's issue (parked), with the analysis of the old item 17; 31, the
+wasted `MLT 1` and the missing `out(p, |a⟩)`, into #18 as well, to be
+fixed by the Dirac redesign.
 
 **Open items, below:** 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
 hits; 32 the divider stage count from the widths (recorded; on the ZYBO
 `F_DIV` limits).
 
-**Parked by decision:** 31 (with the array unit and the Dirac
-expressions, above), 30 (SAPHO without showing its source, until a
+**Parked by decision:** 30 (SAPHO without showing its source, until a
 partnership), 33 (the float zero as an all-zero word in hardware), the
 reorganisation of the runner/setup scripts, a macOS build.
 
@@ -115,27 +116,6 @@ encryption license; a netlist service is the vendor-free option. SAPHO up
 to v7.1 is public under MIT and stays so. If it comes: ask Intel and AMD,
 test with a small module then `sapho_all`, decide the licence of future
 versions with UFJF's technology transfer office first.
-
-## 31. The Dirac output of an array: a wasted multiply, a missing form
-
-**Status:** open, found 2026-10-14 while measuring the burst (#18), not fixed;
-since 2026-10-25 part of the Dirac redesign, parked with it on 2026-10-26,
-not to be fixed on its own · **Area:** cmmcomp (Luciano's code: the diff
-goes to him first) · **Evidence:** docs/design/burst.md section 1,
-docs/design/dirac-expressions.md sections 2 and 3.4
-
-`out(0, 1|a⟩);` writes each element as `LOD_V a k; MLT 1; OUT 0`: the
-`MLT 1` costs a cycle a word and synthesizes the integer multiplier for a
-multiplication by one (pay only for what you use). And `out(0, |a⟩);`,
-without the scalar, is a syntax error. Fixed, the form is two instructions a
-word (`LOD_V`, `OUT`), the least today's ISA allows, independent of the
-burst. A fixture with the scalar 1 and with none, the golden checking that
-no `MLT` and no multiplier remain.
-
-In the Dirac redesign (dirac-expressions.md) both defects go without code
-of their own: `out(p, X)` takes any vector expression, `|a⟩` included, and a
-literal 1 drops out by the folding the expression walker already does.
-**Done when** the redesign lands with the fixture of its section 4.
 
 ## 32. Divider stage count computed from the widths
 
