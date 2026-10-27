@@ -4,7 +4,12 @@ Date: 2026-09-15 · Scope: `SAPHO/processor.v`, `core.v`, `instr_dec.v`, `ula.v`
 `myFIFO.v`, `addr_dec.v`, the generated `<proc>.v`/`<proc>_tb.v` (`hdl.c`),
 and the two programs that use the interrupt (`ZeroCross`, `ProcDTW`).
 Companion to [`precision-and-width-review.md`](precision-and-width-review.md)
-(which covers the float datapath); the work items are TODO item 10.
+(which covers the float datapath). Its work items were TODO item 10; on
+2026-10-27 the open ones became GitHub issues #32 (an instruction-set
+simulator and random differential test), #33 (the decode rows generated
+from `isa.tsv`), #34 (the undefined cases) and #35 (hygiene), and Luciano
+dropped the interrupt rework, the stack overflow pin, the I/O contract and
+the registered-branch option.
 
 The question asked: *where is this processor weak, and what would make it
 professional without losing its defining property — the hardware adapts to
@@ -137,7 +142,7 @@ table fills.
 
 | case | today | proposal |
 |---|---|---|
-| integer `DIV`/`MOD` by zero | `x` in simulation, whatever the array gives in hardware | define (quotient 0 / remainder = dividend, or saturate) — item 8 step 4b, when `DIV`+`MOD` share one array |
+| integer `DIV`/`MOD` by zero | the array's all-ones quotient, undefined | define (quotient 0 / remainder = dividend, or saturate) in the one `DIV`+`MOD` array (`ula_idiv`) |
 | `LDI`/`STI` address ≥ `MDATAS` | truncated to `MDATAW` bits, wraps | document; optional overflow flag pin |
 | `JMP`/`JIZ`/`CAL` target ≥ `MINSTS` | truncated | document (the assembler can already reject it) |
 | shift by ≥ `NUBITS` | Verilog semantics (0 / sign) | document |
@@ -154,7 +159,7 @@ table fills.
   one comment block at the top of `processor.v`; `asmcomp` dropped its 23/16/6
   (a second float format nobody reached) and `cmmcomp` its 16/6.
 - ~~`NUGAIN` is an untyped 32-bit parameter in `processor.v`/`core.v`~~ —
-  **done**, typed `signed [NUBITS-1:0]` in all three (with step 6 of item 8).
+  **done**, typed `signed [NUBITS-1:0]` in all three.
   ~~`NBOPCO` is passed to `ula` and unused~~ — **done**, the parameter and the
   connection are gone.
 - ~~No invariant guard~~ — **done 2026-10-18 in asmcomp**: `NUGAIN` a power
@@ -172,8 +177,11 @@ table fills.
   it out of block RAM (M10K is synchronous-read only): fine at 128 × 16, wasteful
   larger. `full` depends combinationally on `wrreq`. (2026-10-09: that
   `full`, the delayed write and `empty` lost words; fixed, docs/design/myfifo.md.
-  Measured the same day: the combinational read maps to LUT RAM (MLAB /
-  RAM64M), and a registered read to block RAM from about 1024 words.)
+  Measured the same day, with Yosys only: the combinational read maps to LUT
+  RAM (MLAB / RAM64M), and a registered read to block RAM from about 1024
+  words. Corrected 2026-10-27: Quartus puts `myFIFO` in block RAM as written,
+  folding the read address register into the RAM; Vivado uses distributed
+  RAM at 128 x 16. myfifo.md "Memory".)
 
 ### 1.8 Verification is golden-only
 

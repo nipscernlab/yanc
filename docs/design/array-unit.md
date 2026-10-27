@@ -46,9 +46,9 @@ the matrix product, the transpose and the sum of the elements.
 
 **Decision (Luciano, 2026-10-24):** the Dirac library is not extended as
 it is. SAPHO first gets a unit for arrays, separate from the ALU; the
-Dirac notation is then redone on it. The burst of item 28
-([burst.md](burst.md)) is part of the same unit: the inner product needs
-the same size, pointer and wait in place as a burst to a port.
+Dirac notation is then redone on it. The burst ([burst.md](burst.md),
+issue #18) is part of the same unit: the inner product needs the same
+size, pointer and wait in place as a burst to a port.
 
 **Changed (Luciano, 2026-10-25):** the Dirac notation is redone first, on
 its own, as expressions with shapes computed in loops
@@ -105,7 +105,7 @@ clocks per element. Luciano chose the separate MAC.
   exponent in two's complement with no bias, a mantissa of `NBMANT` bits
   with its top bit written out (`2^(M-1) <= m < 2^M`). The product of two
   mantissas lies in `[2^(2M-2), 2^(2M))`: at most one bit of normalisation.
-  `F_MLT` already skips the leading-zero count (TODO item 8, step 2).
+  `F_MLT` already skips the leading-zero count (precision-and-width-review.md 2.7).
 
 ## 4. The MAC
 
@@ -150,7 +150,7 @@ NBEXPO`, `N` the most terms summed):
 At 32 bits the register and its adder are less of a worry than the
 shifter that places a 46-bit product anywhere in 570 positions: estimated
 in the thousands of multiplexers, comparable with the whole `sapho_all`
-(3759 ALMs measured 2026-10-02, TODO item 8). Two ways to shrink it: the
+(3759 ALMs measured 2026-10-02). Two ways to shrink it: the
 window of B (100 to 150 bits, derived from the widths), or an accumulator
 in blocks, where the high bits of the exponent choose the block and the
 shifter covers only the low bits.
@@ -209,7 +209,7 @@ out (2026-10-24): the memory is true dual port.
 4. **The instruction set of the controller**: one instruction per
    operation (`DOT`, `AXPY`, ...) or a small programmable sequencer.
    Designed once with the burst's `BSZ`/`BPT`/`BOT`/`BIN` and the fast fill
-   and copy (item 28). **The inner product, decided (Luciano, 2026-10-25):
+   and copy (issue #18). **The inner product, decided (Luciano, 2026-10-25):
    `LEA a; P_LEA b; DOT N`**, with no register for the size or the pointers:
    N is the operand of `DOT`, read as `LOD` reads it; pointer a is on the
    stack top, popped once when `DOT` ends; pointer b is in the acc. Fitted
@@ -283,10 +283,10 @@ out (2026-10-24): the memory is true dual port.
 
     | operation | accesses a word | clocks a word | result |
     |---|---|---|---|
-    | burst out, an array to a port (item 28, `BOT`) | 1 read | 1, while the port takes it | the port |
-    | burst in, a port into an array (item 28, `BIN`) | 1 write | 1, while the port has a word | the array |
-    | copy of an array into another (item 28, from item 17) | 1 read, 1 write | 1 | the array |
-    | fill of an array with a value (item 28) | 1 write | 1 (0.5 with both ports) | the array |
+    | burst out, an array to a port (`BOT`) | 1 read | 1, while the port takes it | the port |
+    | burst in, a port into an array (`BIN`) | 1 write | 1, while the port has a word | the array |
+    | copy of an array into another | 1 read, 1 write | 1 | the array |
+    | fill of an array with a value | 1 write | 1 (0.5 with both ports) | the array |
     | elementwise: `\|a⟩ + \|b⟩`, `c\|a⟩ + \|b⟩`, products, ... | 2 reads, 1 write | 1.5 | the array |
 
     Open for each: the instruction form (decision 4: `DOT`'s, the pointers
@@ -439,7 +439,7 @@ into each group of registers, data delay in ns:
   and expected longer). It runs once per vector, so it can take two clocks,
   or be cut by a register, at no cost in rate.
 - **Area.** A and B cost about 1000 ALMs at 32 bits; C at 32 bits about
-  4650, more than the whole `sapho_all` (3759 ALMs, item 8, 2026-10-02); C
+  4650, more than the whole `sapho_all` (3759 ALMs, 2026-10-02); C
   at 16 bits about 850. Every variant uses one DSP block for the 24 x 24
   product.
 - Not run, judged not needed for the choice: B at 96 bits, the fits of B64
@@ -679,7 +679,7 @@ memory's address); the rounding inside the loop (36 ns, more than the
 period); a `DOT` that does not wait, its result read later; two pairs
 per clock (four ports, or the banks left out in section 5).
 
-## 8. For the documentation (item 21 in TODO.md)
+## 8. For the documentation (issue #40)
 
 - The parameter and what it changes, in the directives and in the
   instruction reference (generated from `isa.tsv`).

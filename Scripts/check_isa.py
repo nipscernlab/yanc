@@ -6,7 +6,7 @@ assembler's lexer (mnemonic -> opcode + operand class), `instr_dec.v` and
 `ula.v` (opcode -> control signals and ALU operation) and `core.v` (which
 names the four flow-control opcodes in localparams). A disagreement
 between them is silent: a program assembles and then runs as a different
-program. TODO.md item 10.2.
+program. GitHub issue #33.
 
 This checks what can be checked without parsing Verilog beyond recognising a
 literal, which is the part that stays true when the HDL is edited:
@@ -28,7 +28,7 @@ literal, which is the part that stays true when the HDL is edited:
 
 It does NOT verify what each row of instr_dec.v does (its ALU operation and
 control lines) nor ula.v: that is execution, the instruction-set simulator of
-item 10.1. Generating all four copies from the table is the rest of item 10.2.
+issue #32. Generating the decode rows from the table is issue #33.
 
 usage: python3 Scripts/check_isa.py [repo-root]     (exit 1 on any mismatch)
 """
@@ -78,7 +78,7 @@ def read_table(path):
 # the operand from memory instead of the accumulator, _V adds a constant
 # offset. Re-deriving from the name and comparing catches a typo in the table;
 # it does NOT confirm the convention itself, which only execution can (the
-# simulator of TODO item 10.1).
+# simulator of issue #32).
 BINARY = ('ADD', 'MLT', 'DIV', 'MOD', 'SGN', 'AND', 'ORR', 'XOR', 'LAN', 'LOR',
           'LES', 'GRE', 'EQU', 'SHL', 'SHR', 'SRS', 'SU1', 'SU2', 'SCL')
 UNARY = ('NEG', 'ABS', 'PST', 'NRM', 'I2F', 'F2I', 'INV', 'LIN', 'XPO', 'ROT')

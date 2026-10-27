@@ -33,7 +33,7 @@ python -m sphinx -W --keep-going -b html docs docs/_build/html   # the manual, e
 | The toolchain, and the gcc version to avoid | [`docs/install.md`](docs/install.md) |
 | Code conventions and how to open a pull request | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | What changed in each version | [`CHANGELOG.md`](CHANGELOG.md) |
-| Open work | [`TODO.md`](TODO.md) |
+| Open work | [GitHub issues](https://github.com/nipscernlab/yanc/issues); `TODO.md`, removed on 2026-10-27, is in the git history, and "TODO item N" in a comment or a note is its item N |
 | The instruction set | [`Compilers/common/isa.tsv`](Compilers/common/isa.tsv) |
 | How the tools are built | [`Makefile`](Makefile), the only place |
 

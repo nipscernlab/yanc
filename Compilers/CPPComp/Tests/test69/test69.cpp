@@ -3,7 +3,7 @@
 // only by the default access; cppcomp accepted nothing but fields in a struct.
 // The C uses keep working: a self-referential struct, a typedef'd anonymous
 // struct. Constructors run here only where cppcomp already calls them (local
-// objects and `new`); TODO.md item 11 lists the rest.
+// objects and `new`); since then every object is constructed.
 struct Point {
     int x, y;
     Point() { x = 0; y = 0; }

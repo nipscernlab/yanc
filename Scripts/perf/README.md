@@ -2,7 +2,7 @@
 
 Instruction count is not cycle count once there are loops: a change can shrink
 the assembly and not the run time, or the reverse, and a benchmark written to
-isolate a cost overstates the gain (TODO.md item 14). Measure a real program,
+isolate a cost overstates the gain (the inliner below). Measure a real program,
 in cycles, before calling an optimisation a win.
 
 | file | what |
@@ -42,3 +42,28 @@ History of test46 (the blind-deconvolution inverse filter, 4 outputs):
 | integer constant folding (0e61b60) | 49 684 | 1 628 |
 | v5.5 and #SHARE, measured at 0b9db20 | 49 678 | 1 613 |
 | dead stores of `this` dropped | 49 661 | 1 581 |
+
+The inliner of small accessors (`fdcc070`, then the class-template
+`operator[]` and the write path) gave 1.32x on a benchmark of 3232 element
+accesses written to isolate it, and 0.13 % on test46 (76 360 -> 76 261):
+test46 spends its time in float arithmetic, the linear solve and the
+convolution. The zero-fill change right after it gave 15.8 %.
+
+Where test46 spends its cycles at the end (`cycles.sh ... prof`):
+`solve_spd` (Cholesky) 35 %, `main` 25 % (the `scratch[2400]` zero-fill),
+`inverse_tikhonov_calibrated` 18 %, `sqrt` 11 % (the user's 24-step Newton
+loop), `convolve_full` 9 %.
+
+Measured and not done (2026-09-26):
+- the backward solve `a[k*n + i]` with a pointer stepped by `n`: it costs
+  the same five instructions as `P_LOD k; MLT n; S_ADD` plus the load (`MLT`
+  is one cycle like `ADD`). One instruction a turn (18 -> 17) comes only by
+  also replacing `b[k]` with a pointer and eliminating `k`, an
+  induction-variable elimination in cppcomp, for about 105 cycles (0.2 %);
+- the zero-fill at 8 words a turn: about 4.5 instructions a word, for more
+  code; fast fill and copy are issue #18, in hardware;
+- the Cholesky inner loop is 16 instructions a turn, near the floor of this
+  ISA: `k < j` with a variable bound needs `GRE j; LIN; JIZ`.
+
+Declined by Luciano, not to be proposed again: `SHL` for a power-of-two 2D
+row size (the multiplier is in most programs anyway).

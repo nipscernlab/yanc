@@ -136,8 +136,7 @@ yanc/
 │                   hw/ (elaboration, area, Fmax)
 ├── docs/           the manual (index.md), and design/ with the design notes
 ├── release/        the README and example/ every release package carries
-├── Makefile        the one place the tools are built from
-└── TODO.md         open work items
+└── Makefile        the one place the tools are built from
 ```
 
 ## Documentation

@@ -58,7 +58,7 @@ project:
 
    Every other key of the list (letters, digits, `- _ = + , < . >`, space,
    Enter, Backspace, Tab, Esc, the other shifted digits) is the same on both.
-4. **Burst is not needed** here (TODO 28): a few tens of scancodes per
+4. **Burst is not needed** here (issue #18): a few tens of scancodes per
    second; the handshake matters, not the rate.
 5. **Presses only**: a release never reaches the program, and there is no
    parameter to ask for releases (Luciano). Holding a key repeats it, by the
@@ -209,7 +209,7 @@ on the DE2-115 with Dênis.
   seeds later gave 88 to 100 MHz, the table still the limit (vga-text.md,
   section 4).
 
-## 5. For the documentation (item 21 in TODO.md)
+## 5. For the documentation (issue #40)
 
 Written: docs/peripherals.md (pins, parameters, the words `cade()` returns,
 the key list, wiring, the clock, the size, 8 bits); v9.1: the code table

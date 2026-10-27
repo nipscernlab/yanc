@@ -17,7 +17,7 @@ the CHANGELOG (`[Unreleased]`); how to run is in
 | C++ errors at a line of `pp.cpp` | at the file and line written, a header's too |
 | the tools added to the PATH by hand | `install.bat` / `install.sh` in the package |
 
-## For the documentation (item 21 in TODO.md)
+## For the documentation (issue #40)
 
 The user-facing text says:
 - install: unpack the package and run `install.bat` (Windows) or

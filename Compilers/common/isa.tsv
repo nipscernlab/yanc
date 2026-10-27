@@ -6,7 +6,7 @@
 # localparams), asm_share.c (operand class, flow, stack, for the asm passes)
 # and asmcomp's pass1.l (the mnemonic list that counts the instructions) -- and
 # a disagreement between them is silent: a program assembles and then runs as
-# a different program. TODO.md item 10.2.
+# a different program. GitHub issue #33.
 #
 # The opcodes are numbered by family: NOP, memory and stack, I/O, flow control
 # (kept below 32), int arithmetic, float arithmetic, int unary, float unary,
@@ -46,7 +46,7 @@
 # comments in ASMComp.l, which is where LEA and the indirect forms come from. check_isa.py re-derives them from the names and fails on any row
 # that breaks the convention, so a typo cannot survive here. What that does NOT
 # give is execution: no instruction has been run to confirm its effect. The
-# instruction-set simulator of TODO item 10.1 is what will validate these
+# instruction-set simulator of GitHub issue #32 is what will validate these
 # columns; until it exists they are a careful reading, not a measurement.
 #
 # mnemonic	opcode	operand	acc	stack	opnd	flow	io	description

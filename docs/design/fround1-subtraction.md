@@ -1,7 +1,7 @@
 # `#FROUND 1`: the subtraction, and why it stays as it is
 
 Found on 2026-10-22 while writing the rounding references of the ALU
-testbench (TODO item 6(a), step 2). Decided the same day by Luciano: the
+testbench (`Scripts/hw/tb_ula.v`, step 2 of writing it). Decided the same day by Luciano: the
 hardware stays, the manual changes (option (b) below).
 
 ## What the manual said
@@ -114,8 +114,8 @@ close to level 2's.
 Luciano, 2026-10-22: option (b). The hardware stays; the manual describes
 level 1 as it is: good in long sums, close to level 2, without the exact
 subtraction and with a single operation off by a few units. Whoever needs
-the exact subtraction uses level 2. The ALU testbench (TODO item 6(a),
-step 2) checks level 1 against that description, not against the exact
+the exact subtraction uses level 2. The ALU testbench (`Scripts/hw/tb_ula.v`)
+checks level 1 against that description, not against the exact
 truncation.
 
 The options that were weighed:
@@ -126,7 +126,7 @@ The options that were weighed:
 - (c) drop level 1 and send its users to level 2, which has both properties
   for about +5 % of the ALU.
 
-## For the documentation (item 21)
+## For the documentation (issue #40)
 
 The `#FROUND` table of `docs/floating-point.md` was corrected the same day:
 level 1 no longer promises the exact truncation nor the exact subtraction,

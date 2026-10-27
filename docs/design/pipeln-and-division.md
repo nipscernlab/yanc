@@ -818,12 +818,12 @@ DE10-Nano). Not worth a word and a cycle per float division: Luciano kept
 4 stages. The same v7.1 ZYBO run of 2026-10-11, without the `.mif`, had
 also given 23.54 MHz.
 
-**For the documentation (item 21).** A hand-written `.asm` that tests a
+**For the documentation (issue #40).** A hand-written `.asm` that tests a
 float result with `JIZ`, or uses it as an `LDI`/`ILI` index, right away
 gets a `NOP` before that instruction from asmcomp (one word, one cycle);
 the instruction and message pages say so.
 
-**For the documentation (item 21).** A division now takes five words
+**For the documentation (issue #40).** A division now takes five words
 (`DIV`/`MOD`: `DIV x; NOP; NOP; NOP; QUO`) or four (`F_DIV x; NOP; NOP;
 F_QUO`); the compilers write them, a hand-written `.asm` must too (asmcomp
 says how many are missing). The instruction and message pages are generated

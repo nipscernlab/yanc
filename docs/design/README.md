@@ -38,4 +38,4 @@ code), what was measured and what was deduced, and most end with a section
 | [normalisation-survey.md](normalisation-survey.md) | the known ways to normalise a float on an FPGA: eight built, two fitted, none faster; finished, `pnorm` kept |
 | [fadd-survey.md](fadd-survey.md) | the known ways to align the exponents and add; the add as a separate circuit built, not fitted; finished, `pnorm` kept |
 | [precision-and-width-review.md](precision-and-width-review.md) | the float and word-width review (2026-09): the evidence behind TODO items 1 to 9 |
-| [hdl-architecture-audit.md](hdl-architecture-audit.md) | the HDL audit: the evidence behind TODO item 10 |
+| [hdl-architecture-audit.md](hdl-architecture-audit.md) | the HDL audit: the evidence behind issues #32 to #35 |

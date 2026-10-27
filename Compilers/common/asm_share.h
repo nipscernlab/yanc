@@ -11,7 +11,7 @@
 // the listing reads as written, the pc_*_mem.txt line map stays valid, and
 // asmcomp still shows each variable in the waveform on its own (it follows a
 // shared variable by the instructions that write it, not by its address).
-// TODO.md item 13.
+// History: CHANGELOG v5.5 (C+-) and v5.6 (C++).
 //
 // The program is analysed as one flow graph: a RET returns to the instruction
 // after every CAL in the program, and #ITRAD adds an edge from every

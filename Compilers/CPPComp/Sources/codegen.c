@@ -1064,7 +1064,7 @@ static void emit_load_float(double v)
 // After a float is in the acc, leave a word that is zero exactly when the
 // float is: a YANC float is zero exactly when its mantissa is (the leading
 // one is kept, docs/floating-point.md), so AND 2^NBMANT - 1. The float's
-// raw word is not enough: the zero float's exponent is not 0 (TODO 33).
+// raw word is not enough: the zero float's exponent is not 0 (issue #42).
 static void float_truth(expr *e)
 {
     type *t = infer_type(e);

@@ -131,7 +131,7 @@ warning). Fixture cmm_braces.
   screen memory: `Nome? Ana`, `Oi, Ana!`, `a b? 12 30`, `12 + 30 = 42`,
   `-7 ff 18 3.14159 1e+10 0.00015`, `Ana tem 3 letras`.
 
-## 5. For the documentation (item 21 in TODO.md)
+## 5. For the documentation (issue #40)
 
 Written: docs/language-cpp.md (the headers, overloading, the operators) and
 docs/peripherals.md (the keyboard and the screen from C++).

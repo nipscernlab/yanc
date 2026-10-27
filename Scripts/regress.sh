@@ -31,7 +31,7 @@
 #
 #   3b. Float and complex conditions: Scripts/fcond runs the same cases on
 #      the host C/C++ compiler and on both compilers (three float formats,
-#      three #FROUND levels) and compares C's answers (TODO 33).
+#      three #FROUND levels) and compares C's answers.
 #
 #   4. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
@@ -150,13 +150,18 @@ if [ -f "$SIZE_BASELINE_FILE" ]; then
 fi
 declare -A SIZE_CURRENT
 
-# Up to two retries for a simulation that DIED (TODO.md item 15). On a
-# machine short of memory vvp can die mid-run with no message; the same .vvp
-# re-run then passes (twice in a row was seen once). A simulation that exits
+# Up to two retries for a simulation that DIED. On a machine short of memory
+# vvp can die mid-run with no message, on a different heavy float test each
+# run; the same .vvp re-run then passes (twice in a row was seen once).
+# Measured in 2026-09: nothing on stderr, a truncated VCD, and 1 GB free of
+# 15.5 GB with one simulation 8x slower than usual -- paging, not YANC or
+# Icarus, and not the waveform writer (without $dumpvars the time is the same). A simulation that exits
 # non-zero -- or, in the C++ phase, leaves an empty or truncated output (a
 # prefix of the golden) -- is run again; a wrong but complete output fails at
 # once, never retried. Every retried test is listed at the end, so a flake
-# stays visible without failing the board.
+# stays visible without failing the board. A long retried list means: free
+# memory on the machine before trusting the run's timings, and re-run a
+# failing heavy test on its own.
 retried_names=()
 vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice at most), 0 if it exits 0
     retried_names+=("$1")
@@ -1305,7 +1310,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             "$VVP" "$od/$prname.vvp" >/dev/null 2>&1
             vvp_status=$?
             # died: non-zero, or an empty / truncated output (a strict prefix
-            # of the golden) -- once more (item 15)
+            # of the golden) -- once more (see vvp_once_more)
             gold_c="${entry%/}/golden.txt"
             died=0
             [ $vvp_status -ne 0 ] && died=1
@@ -1348,7 +1353,7 @@ fi
 # The instruction set is written down in four places that nothing keeps in
 # step; a disagreement between them is silent (a program assembles and then
 # runs as a different program). Hold them to Compilers/common/isa.tsv.
-# TODO.md item 10.2.
+# GitHub issue #33.
 if command -v python3 >/dev/null 2>&1; then
     echo ""
     echo "==> ISA table"
@@ -1406,7 +1411,7 @@ fi
 # ---- 4a0. the ALU against what each operation means ---------------------------
 # Scripts/hw/tb_ula.sh drives the whole ula (every opcode on) through each
 # operation number and checks every result against a reference derived in the
-# testbench, never blessed (TODO item 6(a)); Scripts/hw/tb_alu.sh does the same
+# testbench, never blessed; Scripts/hw/tb_alu.sh does the same
 # for the shared shifter, the integer divider, F2I and the float comparison as
 # blocks, in four formats. Both at every #FROUND level. Scripts/hw/tb_keyps2.sh
 # checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes);
@@ -1491,7 +1496,7 @@ fi
 # Scripts/fcond: the same cases (if, while, for, do, !, &&, ||, ?:, bool) on
 # the host compiler, which gives C's answer, and on cppcomp and cmmcomp at
 # three float formats and the three #FROUND levels, simulated; every 0/1
-# must agree (TODO 33). Needs the simulator and python3.
+# must agree. Needs the simulator and python3.
 if command -v python3 >/dev/null 2>&1 && command -v g++ >/dev/null 2>&1; then
     echo ""
     echo "==> Float and complex conditions against the host C compiler (fcond)"
@@ -1725,7 +1730,7 @@ rm -rf "$drv"
 
 echo ""
 if [ "${#retried_names[@]}" -gt 0 ]; then
-    echo "retried (simulation died, TODO.md item 15): $(printf '%s ' "${retried_names[@]}")"
+    echo "retried (simulation died, likely short of memory): $(printf '%s ' "${retried_names[@]}")"
 fi
 echo "===== $pass passed, $fail failed ====="
 if [ "$fail" -ne 0 ]; then

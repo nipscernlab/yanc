@@ -150,13 +150,14 @@ other clock: it can say full longer than needed (safe), never less
    C++: an `out(p, array)` overload in cppcomp. The size is the declared
    one, or a part of the array (`out(p, a, n)`)?
 
-7. **Item 17 of TODO.md** (filling and copying arrays faster; merged into
-   item 28 on 2026-10-18, Luciano: one block for both) proposes an
+7. **The old item 17 of TODO.md** (filling and copying arrays faster;
+   merged with the burst on 2026-10-18, Luciano: one block for both; its
+   analysis is kept in issue #18) proposes an
    index register `X` with post-increment. The burst pointer is that
    register plus an end and a wait in place. If both are built, they should
    be one block: the same pointer would give a fill at one word per clock
    (a burst store of the accumulator: `mem[pointer] <= acc`, waiting in
-   place to the end) and the sequential loads of item 17. Decide the
+   place to the end) and the sequential loads of that item. Decide the
    instruction set with both in view, so that `BSZ`/`BPT` are not designed
    twice.
 
@@ -217,7 +218,7 @@ the data-memory read address, and `out_ok` into the fetch. Area with
 4. `fmax.sh` and `area.sh` (section 6).
 5. C± (the diff to Luciano first), then C++; regress fixtures in both.
 
-## 8. For the documentation (item 21 in TODO.md)
+## 8. For the documentation (issue #40)
 
 - The new forms in the language chapters, and the pins `out_ok`/`in_ok` in
   "Several processors" (what to tie them to, the two-free-places rule if
