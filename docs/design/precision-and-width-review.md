@@ -423,9 +423,11 @@ The width sweep (Icarus 13.0, Verilator 5.048, Python-bigint oracle, 3000
 vectors per width, every integer operator in both a continuous assign and a
 procedural block) found what Icarus really gets wrong: **unsigned `/`** from 36
 bits up in a continuous assign and from 64 bits up in a procedural one, and
-**procedural signed `/`** above 64 bits. Continuous signed `/`, the only
-division form the HDL uses (`ula_div`, `ula_nrm`; `F_DIV` is an explicit array),
-is right at 32/64/128/256, as is every other operator; procedural `/` is also
+**procedural signed `/`** above 64 bits. Continuous signed `/`, at the time
+the only division form the HDL used (`ula_div`, `ula_nrm`; `F_DIV` is an
+explicit array), is right at 32/64/128/256, as is every other operator
+(since the dividers were cut into stages, `DIV`/`MOD` are an explicit array
+too and the datapath has no `/` left; note of 2026-10-27, TODO 6(b)); procedural `/` is also
 the only slow one (~52 ms per 256-bit divide). Verilator is right everywhere
 except `INT_MIN / -1` at exactly 32 and 64 bits, which it returns as 0 (a guard
 against the host's divide trap) where Icarus returns `INT_MIN`, so the two
