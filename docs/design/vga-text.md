@@ -129,8 +129,10 @@ everything you suggested"; what was left for later is in GitHub issue #4):
 16. **On the DE2-115, `VGA_CLK = ~clk` is recommended** (refines decision
     5): the ADV7123 latches on the rising edge, the block's outputs change
     on the rising edge of `clk`; inverted, the converter samples in the
-    middle of the pixel. Not checked on the board, and not compared with
-    Terasic's demo; Dênis's project, not inverted, shows a picture.
+    middle of the pixel. Checked on the board (Luciano, 2026-10-27): the
+    project sent to Dênis on 2026-10-20, inverted, shows the picture on his
+    DE2-115; his own earlier project, not inverted, did too. Not compared
+    with Terasic's demo.
 17. **The link is read through a register** (Luciano, 2026-10-20: "resolver
     o problema da queda de frequência"; GitHub issue #6). The SAPHO's
     `toma` word comes straight out of its ALU, so the block decoding it in

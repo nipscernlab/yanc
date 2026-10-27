@@ -234,9 +234,10 @@ The converter latches the colour on the rising edge of `VGA_CLK`. The
 block's outputs change on the rising edge of `clk`, so with `VGA_CLK = clk`
 the converter samples them as they change, with only the routing delays as
 margin; inverted, it samples them half a period (20 ns) later, in the middle
-of the pixel. **Not checked on the board:** Terasic's own demo was not read,
-and Dênis's project, with the clock not inverted, shows a picture on his
-DE2-115.
+of the pixel. **Checked on the board** (DE2-115, Dênis, 2026-10): the
+project sent to him on 2026-10-20, with `VGA_CLK = ~clk` as above, shows
+the picture. His earlier project, with the clock not inverted, did too, so
+on this board both work; the inverted clock is the one with the margin.
 
 A board with a resistor converter (4 bits a colour, say) takes `{4{pixel &
 ativo}}` on each colour and only the sync pins.
