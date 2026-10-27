@@ -1,8 +1,8 @@
 # A VGA text screen for the SAPHO, written with `toma()`
 
 Status: implemented 2026-10-20 (`SAPHO/myVGAText.v`, `Scripts/hw/tb_vgatext.v`,
-`Scripts/gen_vga_font.py`, regress pass `VGATEXT`); for v9.1; the board check
-on the DE2-115 with Dênis is left. Marks: **fact** (read in code or measured), **deduced** (to be
+`Scripts/gen_vga_font.py`, regress pass `VGATEXT`); for v9.1; checked on the
+board by Dênis in his keyboard + VGA example (Luciano, 2026-10-27). Marks: **fact** (read in code or measured), **deduced** (to be
 checked), **decided** (Luciano).
 
 ## 1. Where it comes from
