@@ -63,13 +63,16 @@ unit's issue (parked), with the analysis of the old item 17; 31, the
 wasted `MLT 1` and the missing `out(p, |a⟩)`, into #18 as well, to be
 fixed by the Dirac redesign.
 
+**Dropped (2026-10-27):** 30, SAPHO synthesized without showing its
+source: it waits on a partnership, not on work here, and
+docs/design/ip-protection.md holds all of it.
+
 **Open items, below:** 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
 hits; 32 the divider stage count from the widths (recorded; on the ZYBO
 `F_DIV` limits).
 
-**Parked by decision:** 30 (SAPHO without showing its source, until a
-partnership), 33 (the float zero as an all-zero word in hardware), the
+**Parked by decision:** 33 (the float zero as an all-zero word in hardware), the
 reorganisation of the runner/setup scripts, a macOS build.
 
 **Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 2 (round to nearest
@@ -101,21 +104,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18), both now in #18.
   [§1.8]
 
 ---
-
-## 30. SAPHO synthesized without showing its source (if a partnership comes)
-
-**Status:** parked (Luciano, 2026-10-14): to look at only if UFJF partners
-with a company that would invest in SAPHO · **Evidence:**
-docs/design/ip-protection.md
-
-Shipping `SAPHO/` so Quartus or Vivado synthesize it without anyone reading
-it. IEEE 1735 keeps the per-program parameters working, but Quartus
-decrypts it only in Pro (the lab's Cyclone V is Lite/Standard; Intel's
-Ampcrypt through sales instead), and Vivado needs the AMD key and an
-encryption license; a netlist service is the vendor-free option. SAPHO up
-to v7.1 is public under MIT and stays so. If it comes: ask Intel and AMD,
-test with a small module then `sapho_all`, decide the licence of future
-versions with UFJF's technology transfer office first.
 
 ## 32. Divider stage count computed from the widths
 
