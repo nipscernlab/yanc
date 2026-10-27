@@ -30,14 +30,13 @@ char fname [512]; // name of the function currently being parsed
 
 int ret_ok;       // tells whether the function returned correctly
 int fun_parse;    // stores the id of the function being parsed
-int p_test;       // identifies parameters in function calls (similar to OFST but with value 10)
 
 // Parameter ids collected by declar_par for the function currently being
 // declared. func_body_begin moves these into a STMT_FUNC_HEADER node, then
-// resets the count. Fixed-size: parameter lists never get large.
-#define FUNC_MAX_PARAMS 16
-static int func_params[FUNC_MAX_PARAMS];
-static int func_nparams = 0;
+// resets the count. Grown on demand: a function takes any number of them.
+static int *func_params = NULL;
+static int  func_nparams = 0;
+static int  func_params_cap = 0;
 
 // Set by declar_fun when it decides the current function needs a `JMP main`
 // prologue (the first non-main function in source order). Consumed by
@@ -110,41 +109,12 @@ static expr_node **args_frame_pop(int *n_out)
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// computes how many parameters a function has
-int get_npar(int par)
+// checks whether argument k (from 0) passed to the function is ok
+void par_check(expr e, int k)
 {
-    int t_fun = par;
-    int n_par = 0;
-
-    while (t_fun != 0) {t_fun = t_fun/10; n_par++;}
-
-    return n_par;
-}
-
-// checks whether the argument passed to the function is ok
-void par_check(expr e)
-{
-    // get the original number of parameters
-    int n_par = get_npar(v_table[fun_id].fpar);
-
-    // get the type and position of the current parameter being called
-    int  t_cal = p_test; // will hold the parameter type (0, 1, 2 or 3)
-    int  aux   = p_test;
-    int id_cal = n_par ;
-    int  index = 1;      // will hold the parameter position
-    while (aux > 10)
-    {
-           aux = aux   / 10;
-         t_cal = t_cal % 10;
-        id_cal--;
-         index++;
-    }
-
-    // get the type of the current parameter in the original function
-    int t_fun = v_table[fun_id].fpar;
-    int i;
-    for (i = 1; i < id_cal; i++) t_fun = t_fun/10;
-    t_fun = t_fun % 10;
+    int t_cal = e.type;                  // type of the argument (1, 2 or 3)
+    int t_fun = v_table[fun_id].ptyp[k]; // type of the parameter in the function
+    int index = k+1;                     // position of the parameter, for the messages
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
@@ -386,10 +356,18 @@ int declar_par(int type, int id)
 {
     declar_var(id); // arrays cannot be passed as function parameters
 
-    // store info about every parameter's data type in a single number
-    v_table[fun_parse].fpar = v_table[fun_parse].fpar*10 + type;
+    // store the data type of every parameter, in order
+    symbol *f = &v_table[fun_parse];
+    f->ptyp = realloc(f->ptyp, (size_t)(f->npar+1) * sizeof(int));
+    if (!f->ptyp) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    f->ptyp[f->npar++] = type;
 
-    if (func_nparams == FUNC_MAX_PARAMS) {fprintf(stderr, MSG_ERR_TOO_MANY_PARAMS, line_num+1, v_table[fun_parse].name, FUNC_MAX_PARAMS); exit(EXIT_FAILURE);}
+    if (func_nparams == func_params_cap)
+    {
+        func_params_cap = func_params_cap ? func_params_cap*2 : 16;
+        func_params = realloc(func_params, (size_t)func_params_cap * sizeof(int));
+        if (!func_params) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    }
     func_params[func_nparams++] = id;
 
     return id;
@@ -687,7 +665,7 @@ stmt_node *vcall(int id)
 
     int n; expr_node **a = args_frame_pop(&n);
 
-    if (n != get_npar(v_table[id].fpar))
+    if (n != v_table[id].npar)
     {
         fprintf(stderr, MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name, fname));
         exit(EXIT_FAILURE);
@@ -717,7 +695,7 @@ expr_node *fcall(int id)
 
     int n; expr_node **a = args_frame_pop(&n);
 
-    if (n != get_npar(v_table[id].fpar))
+    if (n != v_table[id].npar)
     {
         fprintf(stderr, MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_table[id].name);
         exit(EXIT_FAILURE);

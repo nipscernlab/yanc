@@ -229,7 +229,6 @@ int type_is_int   (const type *t) { return t && t->kind == TY_INT;   }
 int type_is_float (const type *t) { return t && t->kind == TY_FLOAT; }
 int type_is_arith (const type *t) { return type_is_int(t) || type_is_float(t); }
 int type_is_ptr_or_arr(const type *t) { return t && (t->kind == TY_PTR || t->kind == TY_ARRAY); }
-int type_is_scalar(const type *t) { return t && t->kind != TY_STRUCT && t->kind != TY_ARRAY; }
 
 // the code an overload is chosen and labelled by: type_code, with char, bool
 // and unsigned told apart from int, as C++ tells them (`cout << 'A'` is not
@@ -288,12 +287,6 @@ int type_compatible(const type *a, const type *b)
     if ((a->kind == TY_INT && (b->kind == TY_PTR || b->kind == TY_ARRAY))) return 1;
     if ((b->kind == TY_INT && (a->kind == TY_PTR || a->kind == TY_ARRAY))) return 1;
     return 0;
-}
-
-type *type_decay(type *t)
-{
-    if (t && t->kind == TY_ARRAY) return t_ptr(t->base);
-    return t;
 }
 
 const char *type_str(const type *t)

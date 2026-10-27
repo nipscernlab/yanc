@@ -1,6 +1,6 @@
 // First multi-file test (folder layout): exercises the user's blind::dsp
-// kernels in dsp_kernels.cpp end-to-end (cpppp amalgamation -> cppcomp ->
-// appcomp -> asmcomp -> simulation). Integer-only outputs to avoid float
+// kernels in dsp_kernels.cpp end-to-end (the preprocessor's amalgamation ->
+// cppcomp -> asmcomp -> simulation). Integer-only outputs to avoid float
 // rounding in the golden.
 #include "dsp_kernels.cpp"
 

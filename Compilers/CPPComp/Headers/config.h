@@ -1,12 +1,13 @@
 // ----------------------------------------------------------------------------
 // CPPComp — compile-time defaults for the YANC target --------------------------
 // ----------------------------------------------------------------------------
-// These defaults ARE the fixed YANC hardware target (32-bit word, a float of
-// 23 mantissa and 8 exponent bits -- the SAPHO format, the sizes of IEEE-754
-// single but not its encoding --, 128-deep data/return stacks) — C++ sources carry no target
+// These defaults ARE the fixed YANC hardware target: a 32-bit word. The float
+// format follows from the width (23 mantissa and 8 exponent bits at 32, the
+// sizes of IEEE-754 single but not its encoding; derive_ieee in codegen.c), and
+// asmcomp sizes the stacks from the program. C++ sources carry no target
 // directive, so the build default is the target. Override via -D only when
-// building cppcomp.exe for a DIFFERENT (non-32-bit) target; a .c source can also
-// override per-program with `#pragma yanc <name> <value>` at file scope.
+// building cppcomp.exe for a DIFFERENT (non-32-bit) target; a source can also
+// override per program with `#pragma yanc <name> <value>` at file scope.
 // ----------------------------------------------------------------------------
 
 #ifndef CPPCOMP_CONFIG_H
@@ -18,20 +19,8 @@
 // every C++ test omits the #pragma yanc lines and runs on these.
 #define CFG_NUBITS 32
 #endif
-#ifndef CFG_NBMANT
-#define CFG_NBMANT 23
-#endif
-#ifndef CFG_NBEXPO
-#define CFG_NBEXPO 8
-#endif
 #ifndef CFG_NUGAIN
 #define CFG_NUGAIN 128
-#endif
-#ifndef CFG_NDSTAC
-#define CFG_NDSTAC 128
-#endif
-#ifndef CFG_SDEPTH
-#define CFG_SDEPTH 128
 #endif
 #ifndef CFG_NUIOIN
 #define CFG_NUIOIN 1
@@ -39,10 +28,6 @@
 #ifndef CFG_NUIOOU
 #define CFG_NUIOOU 1
 #endif
-#ifndef CFG_FFTSIZ
-#define CFG_FFTSIZ 3
-#endif
-
-#include "../../yanc_version.h"   // YANC_VERSION shared across all four compilers
+#include "../../yanc_version.h"   // YANC_VERSION, shared with the driver and the other compilers
 
 #endif

@@ -17,18 +17,21 @@ even if it's just a stripped-down example.
 ## Setting up
 
 See [docs/develop/building.md](docs/develop/building.md) — you'll
-need MSYS2 with `mingw-w64-x86_64-gcc`, `bison`, and `flex`. On a clean
-checkout, `Scripts/aurora.bat` produces all six binaries.
+need MSYS2 with `mingw-w64-x86_64-gcc`, `make`, `bison` and `flex`. On a
+clean checkout, `make` builds the six tools into `bin/`.
 
 ## Submitting changes
 
 1. **Branch off `main`.**
 2. **Keep commits focused.** One logical change per commit is easier to
    review and easier to revert if something goes wrong.
-3. **Make sure CI passes.** Every push to `main` (and every PR) builds all
-   compilers with `-O2 -Wall` and smoke-tests the full pipeline
-   (cmmcomp → asmcomp) against every example in `Exemplos/`. If
-   your change breaks any of these, the PR will be blocked.
+3. **Make sure CI passes.** Every push to `main` (and every PR) builds the
+   six tools with `-O2 -Wall -Werror` on Windows and on Linux, runs
+   cmmcomp → asmcomp on every test in `Compilers/CMMComp/Tests/`, runs the
+   README quick start and builds the manual with every warning an error.
+   If your change breaks any of these, the PR will be blocked. CI does not
+   compare goldens or simulate: run `Scripts/regress.sh` before you push
+   ([AGENTS.md](AGENTS.md), "The one command").
 4. **Open the PR against `main`** with a description that explains *why*
    the change is needed, not just what it does.
 
@@ -40,19 +43,13 @@ Source comments are in **English**. Mixing languages makes the codebase
 harder to read for newcomers and makes diffs noisier. If you're translating
 or adding comments, English only.
 
-The shell-comments-only-here rule:
-
-- **No apostrophes inside C-style `//` comments in `.l` / `.y` files.**
-  Flex/Bison feed the comment text through `m4`, which interprets the
-  apostrophe as a quote delimiter and errors out with
-  `end of file in string`. Avoid contractions like `don't`, `won't`,
-  `it's`, etc., or use full forms instead.
-
 ### User-facing strings
 
-YANC supports bilingual diagnostics (PT default, EN via the `-en` CLI
-flag). User-facing strings live in `<Component>/Headers/messages.h` and
-use the `M(pt, en)` macro plus a named `MSG_*` identifier:
+YANC prints its diagnostics in English by default, in Portuguese with
+`--lang=pt` or `YANC_LANG=pt`. In cmmcomp and asmcomp, user-facing strings
+live in `<Component>/Headers/messages.h` and use the `M(pt, en)` macro plus
+a named `MSG_*` identifier (the `yanc` driver uses `M()` inline; cppcomp
+and `gen_gtkw` are English only for now, issue #24):
 
 ```c
 #define MSG_ERR_NO_MAIN \
@@ -76,11 +73,11 @@ When you add a new diagnostic:
 
 ### Memory and tables
 
-The symbol tables (`v_name`, `v_type`, etc. in `variaveis.c` and `l_name`
-in `labels.c`) are grow-on-demand: they start small and `realloc` on
+The symbol table of cmmcomp (`v_table`, one `symbol` row per name, in
+`variaveis.c`) is grow-on-demand: it starts small and `realloc`s on
 overflow, with `memset` to keep the BSS-zero semantics that callers rely
-on. If you add a new parallel array, extend the `var_grow` / `lab_grow`
-helper so it grows in lockstep with the others.
+on. A new attribute of a name is a new field of `symbol`, and it grows
+with the table through `var_grow`.
 
 ## Commit message style
 

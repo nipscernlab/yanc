@@ -1053,7 +1053,6 @@ int opc_inn() {return (find_opc("INN") != -1) | (find_opc("P_INN") != -1) | (fin
 // checks whether the OUT instruction is present
 int opc_out() {return  find_opc("OUT") != -1;}
 int opc_tom() {return  find_opc("TOM") != -1;}
-int opc_cad() {return  find_opc("CAD") != -1;}
 // checks whether the CAL instruction is present
 int opc_cal() {return  find_opc("CAL") != -1;}
 

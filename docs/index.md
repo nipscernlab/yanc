@@ -5,7 +5,7 @@ Verilog of a processor built for that program, its memories and a
 testbench. This manual covers installing YANC, the two languages, running
 the tools, simulating the result and putting several processors together.
 
-It describes YANC 9.0. The SAPHO manual (<https://nipscern.com/library/sapho>)
+It describes the YANC it comes with (`yanc -V` prints the version). The SAPHO manual (<https://nipscern.com/library/sapho>)
 covers the processor and the AURORA IDE.
 
 ## Getting started

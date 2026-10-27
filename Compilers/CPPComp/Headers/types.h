@@ -105,11 +105,7 @@ int   type_is_int   (const type *t);
 int   type_is_float (const type *t);
 int   type_is_arith (const type *t);     // int or float
 int   type_is_ptr_or_arr(const type *t);
-int   type_is_scalar(const type *t);     // not struct, not array
 int   type_compatible(const type *a, const type *b);
 const char *type_str(const type *t);     // human-readable, static buffer
-
-// "decay": array-of-T → ptr-to-T (used in arg passing and rvalue contexts)
-type *type_decay(type *t);
 
 #endif

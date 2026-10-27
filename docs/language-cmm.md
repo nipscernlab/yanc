@@ -174,7 +174,7 @@ float mean(float a, float b)
 - `main()` is required; the program starts there.
 - A function is defined above its first call: there are no prototypes, and
   the whole program is one `.cmm` file.
-- Parameters (16 at most) are passed by value; they can be `int`, `float`
+- Parameters, as many as needed, are passed by value; they can be `int`, `float`
   or `comp`, never an array. The return type is `int`, `float`, `comp` or
   `void`.
 - **No recursion.** The locals of a function have fixed addresses, so a

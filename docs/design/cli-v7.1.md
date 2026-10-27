@@ -3,7 +3,7 @@
 What changed for whoever runs YANC between v6.0 and v7.1 (2026-10-11 to
 2026-10-13), so the manual can say it. The details and the commits are in
 the CHANGELOG (`[Unreleased]`); how to run is in
-[`running.md`](../simulation.md).
+[`simulation.md`](../simulation.md).
 
 | before (v6.0) | now (v7.1) |
 |---|---|

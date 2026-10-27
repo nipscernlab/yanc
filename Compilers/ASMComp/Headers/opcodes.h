@@ -11,7 +11,6 @@ int   opc_utotal();        // returns how many ALU blocks exist
 int   opc_inn ();          // checks whether the INN instruction is present
 int   opc_out ();          // checks whether the OUT instruction is present
 int   opc_tom ();          // checks whether the TOM instruction is present (toma, docs/design/toma-and-cade.md)
-int   opc_cad ();          // checks whether the CAD instruction is present (cade)
 int   opc_cal ();          // checks whether the CAL instruction is present
 int   opc_float();         // checks whether any float opcode is present
 int   opc_norm();          // checks whether norm() is used (NRM, NRM_M, P_NRM_M)

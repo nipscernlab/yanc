@@ -2,9 +2,10 @@
 Thanks for the PR! A few quick reminders:
 
 - Read CONTRIBUTING.md if you haven't yet, especially the bilingual
-  MSG_* convention and the m4 apostrophe trap in .l/.y files.
-- CI runs build + full-pipeline smoke (cmmcomp -> asmcomp)
-  on every push. Make sure it's green before requesting review.
+  MSG_* convention.
+- CI builds the tools, runs the pipeline (cmmcomp -> asmcomp) on every
+  C± test, the README quick start and the manual. It does not compare
+  goldens: run Scripts/regress.sh before requesting review.
 - Source comments in English. User-facing strings stay bilingual
   through the M("pt", "en") macro.
 -->
@@ -23,8 +24,9 @@ it's a refactor or feature, explain what motivated it.
 ## How it was tested
 
 <!--
-- [ ] Scripts/aurora.bat succeeds locally
-- [ ] CI smoke (`.github/workflows/ci.yml`) passes
+- [ ] make CFLAGS="-O2 -Wall -Werror" builds
+- [ ] Scripts/regress.sh passes (every golden, every simulation)
+- [ ] CI (`.github/workflows/ci.yml`) passes
 - [ ] Manually exercised on examples: <which ones>
 - [ ] (For language/codegen changes) inspected the generated .asm / .v
 -->

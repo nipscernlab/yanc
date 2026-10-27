@@ -2,16 +2,16 @@
 // proc_cpp - minimal C++ program for the single_proc_cpp pipeline demo.
 //
 // The simplest possible processor: a handful of int and float variables
-// (global and local) so we can watch how cppcomp logs them in cmm_log.txt --
+// (global and local) so we can watch how cppcomp logs them in prog_log.txt --
 // int -> type 1, float -> type 2 -- the metadata asmcomp later uses to mirror
 // each variable into the VCD at its data-memory address. main() is not
 // recursive, so every local lives at a FIXED data-memory address (it is not a
 // stack-frame slot), which is exactly what the dump's `if (mem_addr_wr == X)`
-// in proc.v needs to match.
+// in proc_cpp.v needs to match.
 // ****************************************************************************
 
-int   g_count = 7;      // global int   -> cmm_log: global g_count 1
-float g_gain  = 2.5;    // global float -> cmm_log: global g_gain  2
+int   g_count = 7;      // global int   -> prog_log: global g_count 1
+float g_gain  = 2.5;    // global float -> prog_log: global g_gain  2
 
 struct Point { int x; float y; };   // aggregate type (used below)
 
@@ -25,7 +25,7 @@ void main(void)
 
     // fixed-size arrays in a non-recursive function -> fixed data-memory
     // addresses, so each element gets its own GTKWave mirror (data0000.. /
-    // coef0000..). cmm_log: "main data 1 4" and "main coef 2 3".
+    // coef0000..). prog_log: "main data 1 4" and "main coef 2 3".
     int   data[4];
     float coef[3];
 
@@ -40,7 +40,7 @@ void main(void)
 
     // --- "complicated" data the dump must IGNORE (no GTKWave mirror) --------
     // A pointer and a reference hold an ADDRESS, and a struct is a multi-word
-    // aggregate -> none of p / r / pt (nor pt.x / pt.y) get a cmm_log entry
+    // aggregate -> none of p / r / pt (nor pt.x / pt.y) get a prog_log entry
     // (type-code 0 = not published). They still WORK; they just must not show
     // up as waveform variables. Only `target`, a plain int, is mirrored.
     int   target = 0;

@@ -335,7 +335,8 @@ by both forms).
   mux); the ALU gets a clock for their cuts;
 - who writes the sequence: a pass shared by both compilers, `asm_divseq`
   (`Compilers/common/asm_share.c`), right after `asm_reach`. It has to run
-  before appcomp, which counts the words that become every label's address,
+  before appcomp (asmcomp's first pass since v7.1), which counts the words
+  that become every label's address,
   and next to the pc map the compilers write (the waveform's line view
   repeats the division's line). It covers the macros (`Includes/*.asm`,
   `float_sqrt.asm` has 4 `F_DIV`s) and C++ inline assembly, leaves a

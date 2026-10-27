@@ -195,7 +195,9 @@ home for the ULA unit testbench already planned with the 64-bit work.
 Encoding, per-instruction semantics and timing, the I/O and interrupt
 contracts, reset behaviour and the parameter list live in code comments, the
 README and Claude's memory notes. A `docs/isa.md` (generated from the table of
-1.5, ideally) is what a new user or a reviewer needs first.
+1.5, ideally) is what a new user or a reviewer needs first. *Since done:*
+[`docs/reference/instructions.md`](../reference/instructions.md), generated
+from `Compilers/common/isa.tsv` by `Scripts/gen_isa_doc.py`.
 
 ---
 

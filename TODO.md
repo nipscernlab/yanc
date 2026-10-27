@@ -113,8 +113,9 @@ What reopening it will involve, measured once so it need not be redone:
 `itob(int)`, `v_val` (`int`), cmmcomp's `long` constant folder, cppcomp's
 `long ival` / `(long)strtoull` / `1L << (g_nubits-1)`, `sim_main.cpp`'s
 `(int)top->out` and `comp2gtkw`'s `int` mantissa all cap the word at 32 bits
-(`long` is 32-bit on Windows); cppcomp seals struct/bitfield layout with a
-fallback of **16**, not `CFG_NUBITS`; APPComp and the HDL need nothing.
+(`long` is 32-bit on Windows); cppcomp seals struct/bitfield layout at the
+program's `#pragma yanc nubits`, else `CFG_NUBITS` (it was a fixed 16 until
+892ef4e, 2026-09-18); asmcomp's first pass and the HDL need nothing.
 Fixtures at 48/40/7 and 64/52/11 through both front ends under both
 simulators, with a host-double reference like `test50`; `tb_alu.v`'s
 procedural division reference must be replaced above 64 bits.
@@ -405,7 +406,7 @@ the user-variable traces of the same `.asm` with and without `#SHARE`
   choice no longer shows in the waveform.
 
 **What makes it analysable at all:** the `.asm` is symbolic. Every variable is
-a NAME, not an address; `appcomp` assigns addresses later. So merging two
+a NAME, not an address; asmcomp assigns addresses later. So merging two
 names into one is all the tool has to do, and the memory saving follows.
 
 **What it has to respect:**

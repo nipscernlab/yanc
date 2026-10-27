@@ -1,0 +1,55 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+// Functions with many parameters (2026-10-26). The compiler kept the type
+// of every parameter as a decimal digit of one int, so ten floats
+// (2222222222) or eleven ints overflowed it: the call loaded no argument and
+// said nothing, and twelve parameters stopped with a bogus "parameter list
+// doesn't match". The types are a list now and there is no limit. Each
+// function weighs parameter k by k, so a swapped or missing argument shows.
+// The int 5 and 20 passed to m20 test the int-to-float conversion past the
+// tenth parameter (two warnings are expected). Expected (hand-computed):
+//   w11(1..11), eleven ints                      -> 1+4+...+121       = 506
+//   f10(1.0..10.0), ten floats                   -> 1+4+...+100       = 385
+//   s12(1..12), void, through a global           -> 1+4+...+144       = 650
+//   m20, int float comp repeated, comp k = k+1i  -> 2051 + (819 + 63) = 2933
+int g;
+
+int w11(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, int a11)
+{
+    return a1 + a2*2 + a3*3 + a4*4 + a5*5 + a6*6 + a7*7 + a8*8 + a9*9 + a10*10 + a11*11;
+}
+
+float f10(float b1, float b2, float b3, float b4, float b5, float b6, float b7, float b8, float b9, float b10)
+{
+    return b1 + b2*2.0 + b3*3.0 + b4*4.0 + b5*5.0 + b6*6.0 + b7*7.0 + b8*8.0 + b9*9.0 + b10*10.0;
+}
+
+void s12(int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8, int c9, int c10, int c11, int c12)
+{
+    g = c1 + c2*2 + c3*3 + c4*4 + c5*5 + c6*6 + c7*7 + c8*8 + c9*9 + c10*10 + c11*11 + c12*12;
+}
+
+float m20(int p1, float p2, comp p3, int p4, float p5, comp p6, int p7, float p8, comp p9, int p10,
+          float p11, comp p12, int p13, float p14, comp p15, int p16, float p17, comp p18, int p19, float p20)
+{
+    int   si = p1 + p4*4 + p7*7 + p10*10 + p13*13 + p16*16 + p19*19;
+    float sf = p2*2.0 + p5*5.0 + p8*8.0 + p11*11.0 + p14*14.0 + p17*17.0 + p20*20.0;
+    comp  sc = p3*3.0 + p6*6.0 + p9*9.0 + p12*12.0 + p15*15.0 + p18*18.0;
+    return sf + real(sc) + imag(sc) + si;
+}
+
+void main()
+{
+    out(0, w11(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
+
+    fout(0, f10(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0));
+
+    s12(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+    out(0, g);
+
+    fout(0, m20(1, 2.0, complex(3.0, 1.0), 4, 5, complex(6.0, 1.0), 7, 8.0, complex(9.0, 1.0), 10,
+                11.0, complex(12.0, 1.0), 13, 14.0, complex(15.0, 1.0), 16, 17.0, complex(18.0, 1.0), 19, 20));
+}

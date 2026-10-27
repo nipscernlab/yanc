@@ -11,7 +11,7 @@ name: Release YANC binaries
 #   - workflow_dispatch runs without creating a release; both archives are
 #     uploaded as artifacts for inspection.
 #
-# Aurora consumes the asset via components/Scripts/download-yanc.js,
+# Aurora consumes the asset via components/Scripts/download-yanc.cts,
 # which pins the expected tag (update it there when a new tag goes up).
 
 on:

@@ -62,8 +62,44 @@ tags consumed by Aurora.
   the DE2-115 went from 26.3 to 27.9 MHz (mean of three seeds), from 1.8 to
   about 4.2 ns of margin at 25 MHz. One cycle more per word; +33 registers
   at 32 bits, +9 at 8. Issue #6.
+- **cppcomp builds with every `-Wall` warning on**, so CI's `-Werror`
+  catches dead code there too. The three `-Wno-unused-*` flags hid four
+  functions nothing called (`params_append`, `instantiate_ctmpl`,
+  `instantiate_ctmpl_t`, superseded by `instantiate_ctmpl_mixed`, and
+  `mk_call1`); they are gone, with the grammar rule `ct_arg_list` that
+  bison reported useless, `type_is_scalar` and `type_decay` in cppcomp,
+  `opc_cad` in asmcomp, `get_while` in cmmcomp, and the `CFG_NBMANT`,
+  `CFG_NBEXPO`, `CFG_NDSTAC`, `CFG_SDEPTH` and `CFG_FFTSIZ` defaults
+  nothing read (the float format follows from `CFG_NUBITS`, asmcomp sizes
+  the stacks).
 
 ### Fixed
+- **C±: a function with ten or more parameters compiled to a wrong call.**
+  cmmcomp kept the type of each parameter as a decimal digit of one `int`,
+  so ten floats (2222222222) or eleven ints overflowed it: the call loaded
+  no argument and gave no message, and twelve parameters stopped with
+  "parameter list doesn't match the original". The types are a list now,
+  and the limit of 16 parameters is gone: a function takes as many as it
+  needs (the error "has more than 16 parameters" and its negative test
+  `params_17` are removed). Fixture `cmm_params`. Manual:
+  docs/language-cmm.md.
+- **The size ratchet held only the examples it already knew.** A C±
+  example with no line in `size_baseline.txt` passed with "no baseline", so
+  `cmm_braces`, `cmm_decl_list`, `cmm_flit`, `cmm_ilit` and `cmm_ilit8`
+  could grow unseen. They have their lines now, and `regress.sh` fails an
+  example that has none (`--update-size` still writes it).
+- **`regress.sh` ran only where MSYS2 is `C:\packs\msys64`.** The temp
+  folder and Verilator (through `run_verilator_step.ps1`) were written as
+  that path; they now come from MSYS2's own `/tmp` and the Verilator
+  `Scripts/env.sh` finds, and off Windows `TMP` is left alone. `est.py`
+  takes `$YOSYS` or the `yosys` on the PATH.
+- **Contributor documents described an older YANC** (issue #2):
+  CONTRIBUTING.md (the CI, `--lang`, the symbol table, how to build), the
+  tool options in docs/command-line.md and the package README, where the
+  gcc version to avoid is written, the `0.1` message in docs/messages.md
+  and the pull request template. The rule against apostrophes in `//`
+  comments of `.l`/`.y` files is gone: more than ten such comments build
+  with today's bison and flex.
 - **`x / 0` gave 0 at `#FROUND 2`** (every C++ program) instead of the
   largest value with the quotient's sign, as level 1 does (now written in
   docs/floating-point.md). The

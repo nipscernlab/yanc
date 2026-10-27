@@ -86,7 +86,6 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: where's this function '<name>' supposed to be?
 - Error on line <n>: function '<name>' is where exactly?
 - Error on line <n>: check again how many parameters the function '<name>' actually takes.
-- Error on line <n>: function '<name>' has more than <n> parameters, the most allowed.
 - Error on line <n>: take a look at function '<name>', you'll see it doesn't return anything.
 - Error on line <n>: parameter list of function '<name>' doesn't match the original.
 - Error on line <n>: that break is just hanging out lost!
