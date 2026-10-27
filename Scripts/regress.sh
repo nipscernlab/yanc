@@ -1406,7 +1406,7 @@ fi
 # ---- 4a0. the ALU against what each operation means ---------------------------
 # Scripts/hw/tb_ula.sh drives the whole ula (every opcode on) through each
 # operation number and checks every result against a reference derived in the
-# testbench, never blessed (TODO item 6(a)); Scripts/hw/tb_alu.sh does the same
+# testbench, never blessed; Scripts/hw/tb_alu.sh does the same
 # for the shared shifter, the integer divider, F2I and the float comparison as
 # blocks, in four formats. Both at every #FROUND level. Scripts/hw/tb_keyps2.sh
 # checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes);

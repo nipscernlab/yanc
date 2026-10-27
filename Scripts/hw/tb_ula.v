@@ -2,7 +2,7 @@
 // Self-checking testbench of the whole ALU (module ula, every opcode parameter
 // on, as in sapho_all): each operation is selected by its number on `op`, so
 // the check covers the operator, its generate guard, its place in the output
-// mux and out_fast, not the block alone. TODO item 6(a).
+// mux and out_fast, not the block alone.
 //
 // The expected value of every operation is derived here from what the
 // operation means, never blessed from a run:

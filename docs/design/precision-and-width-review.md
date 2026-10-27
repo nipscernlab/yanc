@@ -8,7 +8,7 @@ there, not here.
 > **A record of 2026-09-14.** File names, `file:line` references and the
 > state described below are as they were that day and are not kept up to
 > date: lines have moved, the defaults have changed since (the word is 32
-> bits, see TODO item 6b), and APPComp has been asmcomp's first pass since
+> bits, see GitHub issue #29), and APPComp has been asmcomp's first pass since
 > v7.1 (2026-10-13; its `app.l` is now `ASMComp/Sources/pass1.l`). Read the
 > current code before acting on a reference.
 
@@ -353,7 +353,8 @@ Two conclusions:
   would work architecturally and touch no compiler — the core has exactly one
   instruction in execute and every consumer of `ula_out` is either a register
   or a combinational function re-evaluated each cycle. It is ruled out by
-  design (the ALU stays combinational, TODO item 7).
+  design (the ALU stays combinational, then without exception; the dividers
+  were later cut into stages).
 - **Level 2 costs depth, level 1 does not.** The round-to-nearest stage adds
   ~14 levels to `F_ADD` and ~11 to `F_MLT` (+30–38 %): the sticky bit uses a
   second barrel shifter in `ula_denorm` and the incrementer sits after the
@@ -427,7 +428,7 @@ bits up in a continuous assign and from 64 bits up in a procedural one, and
 the only division form the HDL used (`ula_div`, `ula_nrm`; `F_DIV` is an
 explicit array), is right at 32/64/128/256, as is every other operator
 (since the dividers were cut into stages, `DIV`/`MOD` are an explicit array
-too and the datapath has no `/` left; note of 2026-10-27, TODO 6(b)); procedural `/` is also
+too and the datapath has no `/` left; note of 2026-10-27, issue #29); procedural `/` is also
 the only slow one (~52 ms per 256-bit divide). Verilator is right everywhere
 except `INT_MIN / -1` at exactly 32 and 64 bits, which it returns as 0 (a guard
 against the host's divide trap) where Icarus returns `INT_MIN`, so the two
@@ -554,7 +555,7 @@ levels, against references derived in the testbench (`<<`/`>>`/`>>>`, a native
 two-direction shift model, real arithmetic) — never blessed output. Five
 injected mutants (SRS fill zeroed, output reversal dropped, `F2I` directions
 swapped, `-0` sign kept, exponent sign not flipped) are each caught, in the
-right block. This is the seed of the ALU testbench TODO item 6 asks for; the
+right block. This is the seed of the ALU testbench (`Scripts/hw/tb_ula.v`, since written); the
 operators still covered only by goldens (`F_ADD`, `F_MLT`, `F_ROT`, `F_SGN`,
 `I2F`, the `_M` variants) are the work that remains there.
 
@@ -647,7 +648,7 @@ so Tier 2 later is a change in the *integer* paths only.
 bits. YANC's own division form happens to be the one it gets right, but that
 is luck, not a guarantee. Tier 1, Tier 2 and steps 4–6 of the order of work
 below are parked until a re-run of the sweep after a simulator upgrade comes
-back clean at 64 bits (`TODO.md` item 6(b)).
+back clean at 64 bits (GitHub issue #29).
 
 ### Decision B — hidden bit (1.8), yes or no, before anything else is touched.
 

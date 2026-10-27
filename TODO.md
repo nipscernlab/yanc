@@ -57,7 +57,7 @@ hits; 32 the divider stage count from the widths (recorded; on the ZYBO
 `F_DIV` limits).
 
 **Parked by decision:** 28 and 31 (the array unit and the Dirac
-expressions, above), 6(b) and 7 (wider than 32 bits), 12 (run-time
+expressions, above), 12 (run-time
 exception strobe), 24 (processors with different float formats on one
 link: AURORA's check), 30 (SAPHO without showing its source, until a
 partnership), 33 (the float zero as an all-zero word in hardware), the
@@ -81,91 +81,14 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18).
   in a procedural block above 64. The one form the HDL uses (signed `/` in a
   continuous assign) is right at every width, but a design that only works
   because it avoids three simulator bugs is not a base to build on. Nothing
-  above 32 bits is maintained until the simulators are fixed: item 6(b) and
-  item 7 are parked, and no code has to be written to be ready for them.
-  **Re-run the sweep whenever Icarus or Verilator is upgraded**; 64 bits
-  becomes possible when every operator at 64 comes back with 0 errors in both
-  simulators. [§3, decision A]
+  above 32 bits is maintained, and no code has to be written to be ready for
+  it. Since then the datapath has lost its last `/`; where that leaves the
+  question, and what reopening involves, is GitHub issue #29 (parked; it
+  took over items 6(b) and 7 on 2026-10-27). [§3, decision A]
 - **Hidden mantissa bit: no.** The format keeps its explicit leading one.
   [§1.8]
 
 ---
-
-## 6. ULA unit testbench (a, done); word width beyond 32 bits (b, parked)
-
-### 6(a). Self-checking ULA unit testbench: done (2026-10-22)
-
-`Scripts/hw/tb_ula.v` checks every operation of the whole `ula`, the
-divisions through their real sequence, bit for bit at the three levels in
-three formats, mutation-checked; regress step 4a0 runs it (CHANGELOG,
-Unreleased). It found the `#FROUND 1` subtraction
-(docs/design/fround1-subtraction.md) and `x / 0` giving 0 at level 2 (fixed).
-
-### 6(b). Word width beyond 32 bits — parked
-
-**Status:** parked by decision (see *Decisions taken*): the simulators do not
-compute division right above 32 bits. Do not write code for it. **Watch:**
-re-run [`Scripts/hw/width_sweep.sh`](Scripts/hw/width_sweep.sh) after every
-Icarus or Verilator upgrade (last run: Icarus 13.0, Verilator 5.048,
-2026-09-18); reopen when 64 bits comes back with 0 errors in both.
-
-**Since then (checked 2026-10-27):** the processor no longer uses the
-Verilog `/` at all. `DIV`/`MOD` are an explicit array (`ula_idiv` on
-`div_array`, since the dividers were cut into stages), like `F_DIV`; the
-`/` left in `SAPHO/` divides elaboration constants, by the power of two
-`NUGAIN`, or `real` values that exist only in simulation. So Icarus's wrong
-`/` no longer reaches the hardware it simulates: it reaches the testbench
-references that compute the expected result with a procedural `/`
-(`Scripts/hw/tb_ula.v` `DIV` and the float division, `tb_alu.v`
-`ref_div`). Above 64 bits those references must be computed another way
-(a loop of subtractions, a Python big-integer oracle as `width_sweep` has,
-or Verilator only). The compiler work listed below is unchanged. Icarus
-13.0 is still the latest stable release and Verilator has reached 5.052
-(both read on Wikipedia, not on the projects' pages); the sweep was not
-run again. Neither fact reopens the item: that stays Luciano's decision. The
-evidence is in [§2.2–2.5](docs/design/precision-and-width-review.md#22-asmcomp--the-actual-ceiling)
-and [§2.7](docs/design/precision-and-width-review.md#27-alu-efficiency-review-area-and-depth-operator-by-operator).
-
-What reopening it will involve, measured once so it need not be redone:
-`itob(int)`, `v_val` (`int`), cmmcomp's `long` constant folder, cppcomp's
-`long ival` / `(long)strtoull` / `1L << (g_nubits-1)`, `sim_main.cpp`'s
-`(int)top->out` and `comp2gtkw`'s `int` mantissa all cap the word at 32 bits
-(`long` is 32-bit on Windows); cppcomp seals struct/bitfield layout at the
-program's `#pragma yanc nubits`, else `CFG_NUBITS` (it was a fixed 16 until
-892ef4e, 2026-09-18); asmcomp's first pass and the HDL need nothing.
-Fixtures at 48/40/7 and 64/52/11 through both front ends under both
-simulators, with a host-double reference like `test50`; `tb_alu.v`'s
-procedural division reference must be replaced above 64 bits.
-
-## 7. HDL scaling for wide mantissas
-
-**Status:** parked with item 6(b) · **Area:** `SAPHO/ula.v`, `SAPHO/core.v` · **Evidence:** [§2.1](docs/design/precision-and-width-review.md#21-hdl--parametric-with-a-handful-of-scaling-issues)
-
-The structural fixes that make a wide mantissa feasible at all (log-depth
-leading-zero tree, explicit divider arrays, single shifters) are item 8 and
-are done; so are the typed `NUGAIN` and the one default parameter set
-(items 8.6 and 10.7). What remains only matters above 32 bits: nobody has yet
-synthesised a 52-bit mantissa.
-
-**Constraint:** the ALU is combinational by design — the processor pipeline
-assumes every operation completes in the cycle. No multi-cycle or iterative
-divider; wide mantissas pay in Fmax, not in cycles.
-
-**Measured (Yosys `ltp`, 32/23/8, LUT4 levels):** the whole ALU without
-dividers is 47 levels deep; `DIV`+`MOD` alone are 387, `F_DIV` alone 508,
-the whole ALU with every divider 546 — the combinational dividers are ~10×
-deeper than everything else, so a processor that divides runs at roughly a
-tenth of the clock of one that does not. `ula_out` also feeds the `JIZ`
-decision and the `LDI` address combinationally, so the ALU depth
-bounds the fetch path too, not only `racc`. If the constraint is ever
-relaxed, a global-stall multi-cycle divider (only `DIV`/`MOD`/`F_DIV`) is
-feasible with an enable on ~10 registers of `core.v` and no compiler change
-(see [§2.6](docs/design/precision-and-width-review.md#26-critical-path-depth-of-the-alu)).
-
-**Done when (on reopening):** the 64/52/11 configuration is synthesised and
-its depth/Fmax reported next to 32/23/8 (the 105/52-bit divider array is the
-expected limit — its cost is the user's input for choosing `NBMANT` per
-project).
 
 ## 8. ALU datapath restructuring (depth and area)
 
@@ -269,7 +192,7 @@ has no `exp/log/sin/cos/pow` at all.
 **Done when:** tables/iterations are selected by `nbmant` and accurate to the
 last mantissa bit of every 32-bit format (up to 32/25/6), constants carry
 enough digits for it, and the transcendental fixtures compare against a double
-reference at 32/23/8 and 16/10/5. Wider sets wait for item 6(b).
+reference at 32/23/8 and 16/10/5. Wider sets wait for issue #29.
 
 ---
 
@@ -284,7 +207,7 @@ it). The audit found the weak points in the surroundings. In order:
 1. **ISS + random differential test** — an instruction-set simulator in C
    and a random program generator; compare its trace against Icarus/Verilator
    on thousands of programs. Catches control bugs the goldens cannot; home of
-   the ULA unit testbench planned with item 6.
+   the ALU testbench (`Scripts/hw/tb_ula.v`, done).
 2. **Single-source ISA table** — mnemonic / opcode / ALU op / stack and I/O
    effects in one file; generate `ASMComp.l` rules, `instr_dec.v` compares and
    `ula_op` table, `opcodes.c` names and `docs/isa.md`. The regress check part

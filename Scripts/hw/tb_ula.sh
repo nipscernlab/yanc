@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs Scripts/hw/tb_ula.v (the whole ALU, every opcode on) in three formats
-# and at every #FROUND level, against references derived in the testbench
-# (TODO item 6(a)). Needs iverilog only. Exit status 1 on any mismatch.
+# and at every #FROUND level, against references derived in the testbench.
+# Needs iverilog only. Exit status 1 on any mismatch.
 #
 # Usage: bash Scripts/hw/tb_ula.sh [N]        (N = vectors per operation, default 2000)
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
