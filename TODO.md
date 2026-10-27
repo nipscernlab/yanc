@@ -61,7 +61,8 @@ sees every program of a project (nipscernlab/aurora#240, parked); 28,
 the burst and the fast fill and copy of arrays, into #18, the array
 unit's issue (parked), with the analysis of the old item 17; 31, the
 wasted `MLT 1` and the missing `out(p, |a⟩)`, into #18 as well, to be
-fixed by the Dirac redesign.
+fixed by the Dirac redesign; 32, the divider stage count computed from
+the widths, with the ZYBO measurement (#41).
 
 **Dropped (2026-10-27):** 30, SAPHO synthesized without showing its
 source: it waits on a partnership, not on work here, and
@@ -69,8 +70,7 @@ docs/design/ip-protection.md holds all of it.
 
 **Open items, below:** 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
-hits; 32 the divider stage count from the widths (recorded; on the ZYBO
-`F_DIV` limits).
+hits.
 
 **Parked by decision:** 33 (the float zero as an all-zero word in hardware), the
 reorganisation of the runner/setup scripts, a macOS build.
@@ -104,38 +104,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18), both now in #18.
   [§1.8]
 
 ---
-
-## 32. Divider stage count computed from the widths
-
-**Status:** recorded 2026-10-16, for later (Luciano: 5/4 stay fixed for
-now, item 29, closed) · **Area:** `SAPHO/ula.v` (`div_array`), `asm_divseq`,
-asmcomp, `hdl.c` · **Evidence:** docs/design/pipeln-and-division.md
-section 4
-
-The cut positions already follow the widths (`first_row()` spreads PRE + R
-rows + POST evenly over `STG` cycles); the number of cuts does not. The
-other direction: fix how much logic fits in a cycle, a budget B in rows,
-and take `STG = ceil((PRE + R + POST) / B)`, R = `NUBITS` for `DIV`/`MOD`
-and `NBMANT` + 0/1/3 for `F_DIV` at `#FROUND` 0/1/2, PRE/POST the ones in
-the code (integer 1.5/2.8, float 0.8/3.6 rows). The measured 32-bit
-minima (5 and 4) hold for B between 7.6 and 9.07 rows; with B = 8.5:
-integer 32/24/16 bits -> 5/4/3, float `NBMANT` 23 at `#FROUND` 2 or 0 ->
-4, `NBMANT` 15 at `#FROUND` 2 -> 3. The gain is in narrower words only (a
-16-bit processor saves two NOPs and two cycles a division, and two cuts).
-Compute it once, in C, and pass `STG` to the generated Verilog like the
-opcode parameters, so the HDL and `asm_divseq` cannot disagree (`hdl.c`
-not checked yet). Weak point, deduced and not measured: the rest of the
-processor also shortens at narrower widths, so one B in rows may over- or
-under-cut; a fit at 16 bits would settle it. Done: the formula in the
-compilers, `STG` a parameter of both dividers, regress, one narrow fit.
-
-Seen 2026-10-17 on the ZYBO (Vivado, one run, after item 29): the worst
-path is the first part of `F_DIV` (data memory -> array up to its second
-cut, 26.5 ns; 37.26 MHz), not the float add as on the DE10-Nano. A fifth
-`F_DIV` stage, tried on a copy: 37.79 MHz (noise), the next path (the
-result written back to memory) only 0.4 ns behind; Luciano kept 4. The
-budget per cycle differs per FPGA family, so a computed `STG` would need a
-per-target B, or the larger of the two counts.
 
 ## 33. The float zero as an all-zero word, in hardware (parked)
 
