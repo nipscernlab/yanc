@@ -53,7 +53,7 @@ strobe (#36, parked); 13, what was left of the pre-assembly optimizer, as
 #37 (the C++ heap arena, 77 % of the data memory of the programs that
 allocate) and #38 (wasted instructions left in the C± goldens).
 
-**Open items, below:** 14 the zero-fill at 8 words a turn, or close it; 15 the
+**Open items, below:** 15 the
 regress on this machine (mitigated); 21 documentation that cannot fall
 behind a release (waiting on a decision); 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
@@ -69,7 +69,8 @@ reorganisation of the runner/setup scripts, a macOS build.
 **Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 2 (round to nearest
 unbiased), 3 (the float format checked only with float), 5 (exact float
 constants), 6(a) (the ALU testbench), 8 (the ALU datapath restructuring,
-its six steps), 11 (consistency at 32 bits), 16, 18
+its six steps), 11 (consistency at 32 bits), 14 (the cppcomp inliner and
+the test46 cycles, Scripts/perf/README.md), 16, 18
 (hardware for code that never runs), 19 (the dividers, v6.0), 20, 22 and
 23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), 29 (a faster clock,
 v8.0), 34 (initialisers in a declaration list), the user names that
@@ -93,103 +94,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18).
   [§1.8]
 
 ---
-
-## 14. Inline small leaf accessors (`cppcomp`): what is left
-
-**Status:** both landed -- the core in `fdcc070`, the two remaining cases on
-2026-09-24; the profile is done, what is left is below · **Area:** `Compilers/CPPComp/Sources/codegen.c`
-
-`fdcc070` expands a tiny accessor at the call site, with copy propagation:
-1.32x on a loop of element accesses. Two cases still called; both are now
-fixed:
-
-- **`operator[]` of a class template.** The instantiated methods are clones
-  kept in `g_inst[]`, not in `cg_unit->funcs`, so `func_by_label()` never
-  found them. Fix: search `g_inst` too (its declaration moves up next to
-  `cg_unit`, and the three inliner helpers get forward declarations).
-- **The write path, `a[i] = x`.** `gen_addr`'s own overloaded-subscript site
-  now expands too: a reference-returning accessor yields the element's
-  address, which is exactly the lvalue's.
-
-Regress with it: the C++ phase 76/76; three C± failures that passed when
-re-run (item 15 -- cmmcomp is untouched by this change).
-
-**The measurement that matters:**
-
-| program | before | after |
-|---|---|---|
-| template benchmark, 3232 accesses | 78 991 cycles | 59 791 |
-| `test46` (blind deconvolution), real | 76 360 cycles | **76 261 (-0.13 %)** |
-
-`test46` loses all five `operator[]` calls for +2 instructions, but gains
-almost nothing: it spends its time in float arithmetic, the linear solve and
-the convolution, and its five accesses sit in loops of fifteen. The change is
-correct and nearly free, and it removes a real inconsistency (identical code
-expanded for a plain class and not for a template, which is the form real C++
-uses) -- but as an optimisation it does not pay on the one real program
-measured. Committed for the consistency, with the 0.13 % stated.
-
-**The lesson for every optimisation after this one:** a benchmark written to
-isolate a cost overstates the gain. Measure on a real program, in cycles.
-The cycle-counting tools are in [`Scripts/perf/`](Scripts/perf/README.md)
-(`cycles.sh`, the per-address profile, `prof_report.py`, and the test46
-recipe and history).
-
-**The profile of `test46` (2026-09-24).** A Verilator harness counts the
-cycles the fetch address (`pc_sim_val`, exposed with `+define+YANC_TRACE`)
-spends on each program word; a script maps the words to functions and source
-lines through the `.asm`, `pc_*_mem.txt` and `src_lines.txt`. Both are in the
-cycle bench (`build_prof.sh`, `prof_report.py`). Of 76 311 cycles:
-
-| function | before | after the zero-fill fix |
-|---|---|---|
-| `main`, all of it `float scratch[2400] = {0.0f}` | 38.2 % | 26.6 % |
-| `solve_spd` (Cholesky) | 28.0 % | 33.2 % |
-| `inverse_tikhonov_calibrated` | 15.2 % | 18.0 % |
-| `sqrt` (the user's 24-step Newton loop) | 9.0 % | 10.7 % |
-| `convolve_full` | 7.9 % | 9.4 % |
-
-The zero-fill loop was 12 instructions a word and is now 7: 76 261 -> 64 184
-cycles, 15.8 %, in one small change -- against 0.13 % for the whole inliner.
-
-**Done 2026-09-24:** the Cholesky inner loop recomputed `i*n` and `j*n` for
-every `k`. A `for` now hoists a loop-invariant address `p + i*n` into a
-temporary (`lih_*` in codegen.c), and a one-word element indexed by a plain
-variable is `base; ADD idx`: 64 184 -> 60 890 cycles (-5.1 %), the inner
-loop 7 280 -> 4 550.
-
-**Also done 2026-09-24/25** (each in the CHANGELOG): the `for` tests at the
-bottom (cppcomp always; cmmcomp only when a literal start already satisfies a
-literal bound, so C± code never grows -- Luciano's choice); an int literal
-takes the memory form; the zero-fill stores four words a turn; the hoist sees
-by-value calls and lone variables; integer constant folding. **test46:
-76 261 -> 49 684 cycles (-35 %), 1 754 -> 1 628 instructions.**
-
-**Where test46 spends its 49 734 cycles now** (`Scripts/perf/cycles.sh ...
-prof`): `solve_spd` 35 %, `main` 25 % (the `scratch[2400]` zero-fill, 5
-instructions a word), `inverse_tikhonov_calibrated` 18 %, `sqrt` 11 % (the
-user's 24-step Newton loop: nothing for the compiler), `convolve_full` 9 %.
-
-**Next candidates, smallest first:**
-- DONE 2026-09-26: a `<fn>_this` word nothing reads loses every SET (peephole
-  pass 0b). It covered the out-of-line methods too (`POP; SET <fn>_this;
-  LDI k; RET`), not only the expanded accessors: 384 instructions fewer over
-  the C++ tests (26 173 -> 25 789, 37 programs), 12 data words; test46 1 613 ->
-  1 581 instructions but 49 678 -> 49 661 cycles, its accessors are not in
-  the hot loops;
-- ~~the backward solve `a[k*n + i]`: step a pointer by `n` instead of `MLT`~~
-  -- measured 2026-09-26, not worth it. The inner loop is 18 instructions a
-  turn; a pointer stepped by `n` costs the same five as `P_LOD k; MLT n;
-  S_ADD` plus the load (the ALU is combinational, `MLT` is one cycle like
-  `ADD`). One instruction a turn comes only by also replacing `b[k]` with a
-  pointer and eliminating `k` (the end test on the pointer): 18 -> 17, 105
-  turns at n = 15, ~105 of test46's 49 711 cycles (0.2 %), for an induction
-  variable elimination in cppcomp;
-- the zero-fill at 8 words a turn: ~4.5 instructions a word, for more code;
-- the Cholesky inner loop is 16 instructions a turn and near the floor of
-  this ISA: `k < j` with a variable bound needs `GRE j; LIN; JIZ` (only JIZ).
-Declined, do not propose again: SHL for a power-of-two 2D row size
-(Luciano: the multiplier is in most programs anyway).
 
 ## 15. The regress is not trustworthy on this machine
 
@@ -331,7 +235,7 @@ language forms; then decide the ISA once for all three.
 **Status:** open, design discussion (2026-09-28); nothing measured, every
 number below is deduced from the `.asm` · **Area:** `SAPHO/core.v`
 (`mem_ctrl`, `rel_addr`), `SAPHO/processor.v` (`mem_data`), `instr_dec.v`,
-the ISA, cppcomp · **Evidence:** test46's profile (item 14)
+the ISA, cppcomp · **Evidence:** test46's profile (`Scripts/perf/README.md`)
 
 **Why.** `float scratch[2400] = {0.0f}` is 24 % of test46's cycles (11 991 of
 49 711). The zero-fill loop is 20 instructions for 4 words, 5 a word, because
@@ -375,7 +279,8 @@ behaviour has to be defined.
 **Compiler side.** Loops cppcomp writes itself (the `{0}` fill,
 `copy_to_block`) can use any of these directly. User loops need the
 compiler to see that `i` walks the array and replace it with `X` (the
-induction-variable elimination item 14 found expensive).
+induction-variable elimination measured expensive on test46,
+`Scripts/perf/README.md`).
 
 **Recommendation (not decided, 2026-09-28):** if the goal is only fill and copy, the
 store options; if SAPHO is to be stronger at DSP, the index register `X`
