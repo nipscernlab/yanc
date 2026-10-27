@@ -61,7 +61,7 @@ Measured and not done (2026-09-26):
   also replacing `b[k]` with a pointer and eliminating `k`, an
   induction-variable elimination in cppcomp, for about 105 cycles (0.2 %);
 - the zero-fill at 8 words a turn: about 4.5 instructions a word, for more
-  code; fast fill and copy are TODO item 28, in hardware;
+  code; fast fill and copy are issue #18, in hardware;
 - the Cholesky inner loop is 16 instructions a turn, near the floor of this
   ISA: `k < j` with a variable bound needs `GRE j; LIN; JIZ`.
 

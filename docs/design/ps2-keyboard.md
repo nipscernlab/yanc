@@ -58,7 +58,7 @@ project:
 
    Every other key of the list (letters, digits, `- _ = + , < . >`, space,
    Enter, Backspace, Tab, Esc, the other shifted digits) is the same on both.
-4. **Burst is not needed** here (TODO 28): a few tens of scancodes per
+4. **Burst is not needed** here (issue #18): a few tens of scancodes per
    second; the handshake matters, not the rate.
 5. **Presses only**: a release never reaches the program, and there is no
    parameter to ask for releases (Luciano). Holding a key repeats it, by the

@@ -46,9 +46,9 @@ the matrix product, the transpose and the sum of the elements.
 
 **Decision (Luciano, 2026-10-24):** the Dirac library is not extended as
 it is. SAPHO first gets a unit for arrays, separate from the ALU; the
-Dirac notation is then redone on it. The burst of item 28
-([burst.md](burst.md)) is part of the same unit: the inner product needs
-the same size, pointer and wait in place as a burst to a port.
+Dirac notation is then redone on it. The burst ([burst.md](burst.md),
+issue #18) is part of the same unit: the inner product needs the same
+size, pointer and wait in place as a burst to a port.
 
 **Changed (Luciano, 2026-10-25):** the Dirac notation is redone first, on
 its own, as expressions with shapes computed in loops
@@ -209,7 +209,7 @@ out (2026-10-24): the memory is true dual port.
 4. **The instruction set of the controller**: one instruction per
    operation (`DOT`, `AXPY`, ...) or a small programmable sequencer.
    Designed once with the burst's `BSZ`/`BPT`/`BOT`/`BIN` and the fast fill
-   and copy (item 28). **The inner product, decided (Luciano, 2026-10-25):
+   and copy (issue #18). **The inner product, decided (Luciano, 2026-10-25):
    `LEA a; P_LEA b; DOT N`**, with no register for the size or the pointers:
    N is the operand of `DOT`, read as `LOD` reads it; pointer a is on the
    stack top, popped once when `DOT` ends; pointer b is in the acc. Fitted
@@ -283,10 +283,10 @@ out (2026-10-24): the memory is true dual port.
 
     | operation | accesses a word | clocks a word | result |
     |---|---|---|---|
-    | burst out, an array to a port (item 28, `BOT`) | 1 read | 1, while the port takes it | the port |
-    | burst in, a port into an array (item 28, `BIN`) | 1 write | 1, while the port has a word | the array |
-    | copy of an array into another (item 28, from item 17) | 1 read, 1 write | 1 | the array |
-    | fill of an array with a value (item 28) | 1 write | 1 (0.5 with both ports) | the array |
+    | burst out, an array to a port (`BOT`) | 1 read | 1, while the port takes it | the port |
+    | burst in, a port into an array (`BIN`) | 1 write | 1, while the port has a word | the array |
+    | copy of an array into another | 1 read, 1 write | 1 | the array |
+    | fill of an array with a value | 1 write | 1 (0.5 with both ports) | the array |
     | elementwise: `\|a⟩ + \|b⟩`, `c\|a⟩ + \|b⟩`, products, ... | 2 reads, 1 write | 1.5 | the array |
 
     Open for each: the instruction form (decision 4: `DOT`'s, the pointers

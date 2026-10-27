@@ -28,8 +28,9 @@ branch. The Dirac notation as expressions computed in loops, with
 pointers and `RPT` (docs/design/dirac-expressions.md; tags
 `archive/dirac-parser`, `archive/dirac-loops-proto`), and the array unit,
 a memory for arrays with a MAC (docs/design/array-unit.md; tags
-`archive/array-unit-design`, `archive/array-unit-proto`). Items 28 and 31
-wait for them.
+`archive/array-unit-design`, `archive/array-unit-proto`). Both are in
+issue #18, which since 2026-10-27 also holds item 28 (the burst, fill and
+copy of arrays); item 31 waits for them.
 
 **Left on boards:** from v7.1, the run of Sabrina and Pedro Henrique (the
 `LINKALL` pair with the `.sdc` on both boards; the Fmax is measured, the
@@ -56,14 +57,16 @@ of docs/design checked against the manual), the rest of it done (the
 manual in docs/, published by the release; `AGENTS.md`; main reached only
 through pull requests) or left to the laboratory's guidelines; 24,
 processors with different float formats on one link, to AURORA, which
-sees every program of a project (nipscernlab/aurora#240, parked).
+sees every program of a project (nipscernlab/aurora#240, parked); 28,
+the burst and the fast fill and copy of arrays, into #18, the array
+unit's issue (parked), with the analysis of the old item 17.
 
 **Open items, below:** 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
 hits; 32 the divider stage count from the widths (recorded; on the ZYBO
 `F_DIV` limits).
 
-**Parked by decision:** 28 and 31 (the array unit and the Dirac
+**Parked by decision:** 31 (with the array unit and the Dirac
 expressions, above), 30 (SAPHO without showing its source, until a
 partnership), 33 (the float zero as an all-zero word in hardware), the
 reorganisation of the runner/setup scripts, a macOS build.
@@ -77,7 +80,7 @@ memory pressure: the regress retries them, `vvp_once_more`), 16, 18
 (hardware for code that never runs), 19 (the dividers, v6.0), 20, 22 and
 23 (v7.1), 25 (appcomp folded into asmcomp, v7.1), 29 (a faster clock,
 v8.0), 34 (initialisers in a declaration list), the user names that
-collide in the `.asm`; 17 merged into 28 (2026-10-18).
+collide in the `.asm`; 17 merged into 28 (2026-10-18), both now in #18.
 
 ---
 
@@ -98,98 +101,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18).
 
 ---
 
-## 28. Burst: a whole array through a port, and arrays filled and copied fast
-
-**Status:** design written (Luciano's block, 2026-10-14), nothing
-implemented; part of the array unit since 2026-10-24, parked with it on
-2026-10-26 · **Area:** `SAPHO/core.v`, `instr_dec.v`, `isa.tsv`, asmcomp,
-then cmmcomp and cppcomp · **Evidence:** docs/design/burst.md,
-docs/design/array-unit.md (decision 14: bursts, copy, fill)
-
-Sending an array to a FIFO costs 8 instructions a word in a loop, or 2 to 3
-a word unrolled (code growing with the array). A `burst` block (size
-register, pointer, an `out` that waits in place until the end) sends one
-word a clock with fixed code, and stops while the FIFO is full through a new
-`out_ok[p]` pin; the same block fills an array from an input FIFO. Not to
-be implemented yet (Luciano, 2026-10-14): the idea is recorded. Open: the
-accumulator after a burst, the one-word margin against a full FIFO (and an
-empty one on input), the element type, the compiler passes that drop and
-share arrays, names and opcodes (they fit at the end of the table), the
-language forms (note sections 5 and 5a).
-
-**One block for both (Luciano, 2026-10-18).** The burst block and the fast
-fill/copy of arrays (item 17 until then, below) are to be designed together:
-the same size register and auto-incremented pointer that stream an array
-to or from a port can stream it from memory to memory (a copy, one word a
-clock, the simple dual-port RAM's limit: one read and one write a cycle)
-or write one value into every element (a fill). Study first: what the
-block needs for each use (a second pointer for the copy's destination, the
-read-to-write pipeline register), what pays only when used, and the
-language forms; then decide the ISA once for all three.
-
-### From item 17: filling and copying arrays faster (2026-09-28)
-
-
-**Status:** open, design discussion (2026-09-28); nothing measured, every
-number below is deduced from the `.asm` · **Area:** `SAPHO/core.v`
-(`mem_ctrl`, `rel_addr`), `SAPHO/processor.v` (`mem_data`), `instr_dec.v`,
-the ISA, cppcomp · **Evidence:** test46's profile (`Scripts/perf/README.md`)
-
-**Why.** `float scratch[2400] = {0.0f}` is 24 % of test46's cycles (11 991 of
-49 711). The zero-fill loop is 20 instructions for 4 words, 5 a word, because
-`STI` writes `mem[base + stack top] <= acc` and POPS: every word reloads the
-index, adds its offset, pushes it and loads the zero again. A copy
-`b[i] = a[i]` is `LOD i; PSH; LDI a; STI b`, 4 a word.
-
-**The memory's limit.** `mem_data` is a simple dual-port RAM: one registered
-read port and one write port, separate addresses. One read and one write a
-cycle, so a copy can never beat one word a cycle.
-
-**Options, smallest hardware first** (instructions a word, fill / copy):
-
-| option | hardware | fill | copy |
-|---|---|---|---|
-| today | -- | 5 | 4 |
-| cppcomp: 8 words a turn | none | ~4.5 | 4 |
-| assembler: `array+k` operands (LDI/STI take a name OR a number today) | none | ~3.75 | 4 |
-| new store, address from the acc, data from the stack, NO pop | write-address mux (stack/acc) + write-data mux (acc/stack), generated only if used | ~1.6 | none (the stack grows) |
-| the same with POP (a second decode row, same datapath) | as above | ~3 | 3 |
-| index register `X` with post-increment (`SETX`, `LDX a`: acc <= mem[a+X], `STX b`: mem[b+X] <= acc, X++) | an MDATAW register, an incrementer, a third index source in both address adders | 1 (`LOD 0` once, then `STX`) | 2 |
-| pipelined copy instruction (read now, write the read word next cycle) | a data pipeline register, the destination base from the stack or a second register, overlap and flush care | -- | 1 (the RAM's limit) |
-
-**Rejected: redefining `STI` as address-from-acc, data-from-stack.** Plain
-stores tie, but a read-modify-write at a COMPUTED address needs the address
-in a temporary and reloaded: +1 instruction and +1 word each time, in loops.
-test46's `out[i + j] += ai * b[j]` (convolution, 5.4 % of its cycles) is
-exactly that. Keep `STI`; any new store is a separate opcode.
-
-**Two full memory ports (true dual-port).** Do not speed a copy (a word is
-still one read + one write, two accesses a cycle either way). They give two
-writes a cycle (fill at 2 words a cycle) or two READS a cycle, the DSP dual
-data bus: `acc += mem[a + X] * mem[b + Y]` for FIR / convolution / dot
-product, which needs two index registers and a two-address instruction (the
-operand field holds one base). Cost on Cyclone V: an M10K is 256x40 in simple
-dual-port but 512x20 in true dual-port, so 32-bit memories up to 256 words
-take 2 blocks instead of 1 (512 words: 2 either way). A read on the second
-port cannot share a cycle with a write, and the mixed-port read-during-write
-behaviour has to be defined.
-
-**Compiler side.** Loops cppcomp writes itself (the `{0}` fill,
-`copy_to_block`) can use any of these directly. User loops need the
-compiler to see that `i` walks the array and replace it with `X` (the
-induction-variable elimination measured expensive on test46,
-`Scripts/perf/README.md`).
-
-**Recommendation (not decided, 2026-09-28):** if the goal is only fill and copy, the
-store options; if SAPHO is to be stronger at DSP, the index register `X`
-first (it covers fill, copy and sequential loops, and later a modulo mode
-for circular FIR buffers), then `Y` with two full ports if the MAC loops of
-real group programs are the bottleneck. Each step measured first: ALUTs and
-Fmax in Quartus (a program that uses it and one that must pay nothing), and
-test46's cycles.
-
-
-
 ## 30. SAPHO synthesized without showing its source (if a partnership comes)
 
 **Status:** parked (Luciano, 2026-10-14): to look at only if UFJF partners
@@ -207,7 +118,7 @@ versions with UFJF's technology transfer office first.
 
 ## 31. The Dirac output of an array: a wasted multiply, a missing form
 
-**Status:** open, found 2026-10-14 while measuring item 28, not fixed;
+**Status:** open, found 2026-10-14 while measuring the burst (#18), not fixed;
 since 2026-10-25 part of the Dirac redesign, parked with it on 2026-10-26,
 not to be fixed on its own · **Area:** cmmcomp (Luciano's code: the diff
 goes to him first) · **Evidence:** docs/design/burst.md section 1,
