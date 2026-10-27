@@ -31,7 +31,7 @@
 #
 #   3b. Float and complex conditions: Scripts/fcond runs the same cases on
 #      the host C/C++ compiler and on both compilers (three float formats,
-#      three #FROUND levels) and compares C's answers (TODO 33).
+#      three #FROUND levels) and compares C's answers.
 #
 #   4. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
@@ -1496,7 +1496,7 @@ fi
 # Scripts/fcond: the same cases (if, while, for, do, !, &&, ||, ?:, bool) on
 # the host compiler, which gives C's answer, and on cppcomp and cmmcomp at
 # three float formats and the three #FROUND levels, simulated; every 0/1
-# must agree (TODO 33). Needs the simulator and python3.
+# must agree. Needs the simulator and python3.
 if command -v python3 >/dev/null 2>&1 && command -v g++ >/dev/null 2>&1; then
     echo ""
     echo "==> Float and complex conditions against the host C compiler (fcond)"

@@ -62,7 +62,8 @@ the burst and the fast fill and copy of arrays, into #18, the array
 unit's issue (parked), with the analysis of the old item 17; 31, the
 wasted `MLT 1` and the missing `out(p, |a⟩)`, into #18 as well, to be
 fixed by the Dirac redesign; 32, the divider stage count computed from
-the widths, with the ZYBO measurement (#41).
+the widths, with the ZYBO measurement (#41); 33, the float zero as an
+all-zero word in hardware (#42, parked).
 
 **Dropped (2026-10-27):** 30, SAPHO synthesized without showing its
 source: it waits on a partnership, not on work here, and
@@ -72,8 +73,8 @@ docs/design/ip-protection.md holds all of it.
 without a signal per element; 27 the C++ gaps that real embedded code
 hits.
 
-**Parked by decision:** 33 (the float zero as an all-zero word in hardware), the
-reorganisation of the runner/setup scripts, a macOS build.
+**Parked by decision:** the reorganisation of the runner/setup scripts,
+a macOS build.
 
 **Closed, in the CHANGELOG:** 1 and 4 (`#FROUND 1`), 2 (round to nearest
 unbiased), 3 (the float format checked only with float), 5 (exact float
@@ -104,30 +105,6 @@ collide in the `.asm`; 17 merged into 28 (2026-10-18), both now in #18.
   [§1.8]
 
 ---
-
-## 33. The float zero as an all-zero word, in hardware (parked)
-
-**Status:** parked (Luciano, 2026-10-17: not now) · **Area:** `SAPHO/ula.v`
-(normaliser, add alignment, comparisons, `F_NEG`/`F_ABS`, `F_SCL`/`XPO`),
-the constant encoder, the compilers · **Evidence:** the float-condition
-study of 2026-10-17 (CHANGELOG [Unreleased], `Scripts/fcond`)
-
-What was item 33, a float as a condition, is solved in software (approach
-1 of that study, in both compilers: `AND 2^NBMANT - 1` before the `JIZ`,
-one word and one cycle per float condition; checked against the host
-C/C++ compiler by `Scripts/fcond`, in the regress). Of the other
-approaches, `EQU 0.0; LIN` was wrong for -0 at `#FROUND 0` and cost two
-words; keeping C+-'s truncation was declined. The one left, kept as an
-option: with the explicit leading one a float is zero exactly when its
-mantissa is, so the all-zero word can be chosen as the zero's code. Output:
-the normaliser emits all zeros for a zero (the sign at 0, also at
-`#FROUND 0`); `F_NEG`/`F_ABS` keep a zero a zero. Input: whoever reads the
-exponent treats mantissa 0 as the minimum exponent (the add's alignment,
-`F_LES`/`F_GRE`, `F_SCL`/`XPO`). Then `JIZ` (the OR of all bits) would be
-right for floats with no `AND`, 0 and 0.0 would share a code, and old data
-with the old zero code would still read as zero. The input fix sits on the
-add, the worst path: it needs a fit. Done: `Scripts/fcond` passing with the
-compilers' `AND` removed, the regress, a fit that does not lose clock.
 
 ## 27. C++ gaps that real embedded code hits
 

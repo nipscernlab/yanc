@@ -1165,7 +1165,7 @@ static void emit_cond_int_load(expr e, int is_switch)
 
     // An if/while/for/do condition tests a float by its mantissa: a SAPHO
     // float is zero exactly when its mantissa is (the leading one is kept),
-    // so C's "true when not zero" is AND 2^NBMANT - 1 (TODO 33). A switch
+    // so C's "true when not zero" is AND 2^NBMANT - 1 (Scripts/fcond). A switch
     // index still converts (F2I, truncating).
     long mask = (1L << nbmant) - 1;
     if ((e.type == 2) && (e.id != 0)) {
