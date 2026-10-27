@@ -256,7 +256,7 @@ out (2026-10-24): the memory is true dual port.
     all would need an 8-bit opcode. The cost of S: one bit more in the
     operand when the data addresses, not the code's, set its width.
     cmmcomp and cppcomp keep writing `LOD a`, `LOD_V a 2`; the change is in
-    asmcomp (and appcomp, for the `_V` forms). `asm_reach`
+    asmcomp (both of its passes). `asm_reach`
     and `asm_share` per space, and both must see a sequence's pointers as
     reads (and writes) of the whole array (burst.md 5a, hole 4).
 11. **Simulation and AURORA**: the variables of the array memory visible

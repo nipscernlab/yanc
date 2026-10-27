@@ -94,7 +94,8 @@ asmcomp [-f <MHz>] [-c <clocks>] <file.asm>           the Verilog, memories and 
 gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]      a formatted GTKWave view of a dump (see Simulation)
 ```
 
-`--lang`, `-h`/`--help` and `-V`/`--version` work in all of them; in
+`--lang`, `-h`/`--help` and `-V`/`--version` work in the three compilers;
+`gen_gtkw` takes `-h` and `--lang` (its text is English only). In
 `cmmcomp`, `cppcomp` and `asmcomp`, `-o`, `-f` and `-c` also have the long
 forms `--output`, `--freq`, `--clocks`.
 

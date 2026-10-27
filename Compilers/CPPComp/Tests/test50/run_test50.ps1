@@ -11,9 +11,9 @@ $ErrorActionPreference = "Stop"
 
 $ROOT  = Resolve-Path "$PSScriptRoot\..\..\..\.." | Select-Object -ExpandProperty Path
 $CPP   = Join-Path $ROOT "Compilers/CPPComp"
-# Prefer the regress-built binaries: regress.sh burns the real 32-bit target
-# (CFG_NUBITS=32 etc.) into .smoke/bin, while a plain `make` leaves bin/ at
-# config.h's 16-bit default -- which would silently skew this comparison.
+# Prefer the regress-built binaries (.smoke/bin), else bin/. Both are built
+# for the 32-bit target now (config.h defaults to CFG_NUBITS 32; it was 16,
+# which skewed this comparison).
 $BIN   = Join-Path $ROOT ".smoke/bin"
 if (-not (Test-Path (Join-Path $BIN "cppcomp.exe"))) { $BIN = Join-Path $ROOT "bin" }
 $WORK  = Join-Path $CPP  ".work"

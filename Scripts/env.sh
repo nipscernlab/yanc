@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ****************************************************************************
-# Shared environment loader for the go_*.sh scripts (Linux).
+# Shared environment loader for the runner scripts (single_proc.sh,
+# multi_proc.sh, regress.sh, fcond/run.sh).
 #
 # POSIX counterpart of Scripts/env.bat. Resolves the repository root and the
 # locations of the simulation tools (Icarus, Verilator, GTKWave) WITHOUT any
@@ -9,7 +10,7 @@
 #   1. Loads Scripts/tools.local.sh if present -- the cache that
 #      Scripts/setup.sh writes after verifying / installing the tools.
 #   2. For anything not in that cache, falls back to a PATH lookup, so the
-#      go_*.sh still work if the tools are already on PATH.
+#      runners still work if the tools are already on PATH.
 #
 # Meant to be `source`d (not executed) so the variables reach the caller:
 #

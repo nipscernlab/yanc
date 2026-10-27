@@ -11,7 +11,7 @@ every form the C± lexer reads (.5, 5., 007.5, 1e-8, 2.5E+3, a suffix), and
 include ties, values next to the smallest normal and the largest number, and
 random decimal text. Constants the format cannot hold (cmmcomp stops on them)
 are left out. check_yanc_num.py tests the encoder alone; this tests the whole
-path: lexer, the text cmmcomp writes, appcomp, asmcomp and the .mif.
+path: lexer, the text cmmcomp writes, both passes of asmcomp and the .mif.
 """
 import os, random, subprocess, sys
 from fractions import Fraction as Fr

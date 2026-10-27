@@ -5,6 +5,13 @@ Date: 2026-09-14 · Scope: `SAPHO/*.v`, `Compilers/{CMMComp,CPPComp,APPComp,ASMC
 [`TODO.md`](https://github.com/nipscernlab/yanc/blob/main/TODO.md); the list of work and the "done when" criteria live
 there, not here.
 
+> **A record of 2026-09-14.** File names, `file:line` references and the
+> state described below are as they were that day and are not kept up to
+> date: lines have moved, the defaults have changed since (the word is 32
+> bits, see TODO item 6b), and APPComp has been asmcomp's first pass since
+> v7.1 (2026-10-13; its `app.l` is now `ASMComp/Sources/pass1.l`). Read the
+> current code before acting on a reference.
+
 Two questions were asked of the code base:
 
 1. **What is needed to compute with more precision?**

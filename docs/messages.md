@@ -82,8 +82,8 @@ operators, exceptions, variadic functions (see
 
 ## Information worth reading
 
-- **`constant 0.1 on line N approximated to 0.10000000894070`**: the nearest
-  value the float format holds.
+- **`constant 0.1 on line N approximated to 0.099999994039535522 (error =
+  -5.96e-09)`**: the nearest value the float format holds, and how far it is.
 - **`ULA resource -> ...`** (asmcomp): each piece of the arithmetic unit the
   program needs; a divider or a float divider is the slowest and largest.
 - **`N divisions, 5 words each for DIV/MOD and 4 for F_DIV`**: every

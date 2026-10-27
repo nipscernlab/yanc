@@ -83,6 +83,13 @@ tags consumed by Aurora.
   that path; they now come from MSYS2's own `/tmp` and the Verilator
   `Scripts/env.sh` finds, and off Windows `TMP` is left alone. `est.py`
   takes `$YOSYS` or the `yosys` on the PATH.
+- **Contributor documents described an older YANC** (issue #2):
+  CONTRIBUTING.md (the CI, `--lang`, the symbol table, how to build), the
+  tool options in docs/command-line.md and the package README, where the
+  gcc version to avoid is written, the `0.1` message in docs/messages.md
+  and the pull request template. The rule against apostrophes in `//`
+  comments of `.l`/`.y` files is gone: more than ten such comments build
+  with today's bison and flex.
 - **`x / 0` gave 0 at `#FROUND 2`** (every C++ program) instead of the
   largest value with the quotient's sign, as level 1 does (now written in
   docs/floating-point.md). The

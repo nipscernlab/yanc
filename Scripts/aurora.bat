@@ -65,7 +65,6 @@ where make.exe >nul 2>nul || (
     exit /b 1
 )
 
-set GCC=x86_64-w64-mingw32-gcc.exe
 
 :: ----------------------------------------------------------------------------
 :: Build and stage via the top-level Makefile (single source of truth) ---------

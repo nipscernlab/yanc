@@ -32,7 +32,7 @@ yanc/
 
 `Compilers/CMMComp/Includes/` becomes the package's `Macros/`,
 `Compilers/CPPComp/Includes/` its `Header/`. `Compilers/yanc_version.h` is
-the version every tool prints.
+the version `yanc`, `cmmcomp`, `cppcomp` and `asmcomp` print with `-V`.
 
 ## Dependencies for building
 

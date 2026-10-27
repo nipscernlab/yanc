@@ -1,6 +1,6 @@
 name: CI
 
-# Builds the compilers (cmmcomp, cppcomp, asmcomp) plus comp2gtkw
+# Builds the six tools (yanc, cmmcomp, cppcomp, asmcomp, comp2gtkw, gen_gtkw)
 # on every push and pull request to catch breakages before they reach a
 # release tag. Mirrors the relevant parts of release.yml but skips the
 # packaging / release-creation steps.
@@ -33,7 +33,7 @@ jobs:
 
       - name: Build binaries (make, -Werror)
         shell: msys2 {0}
-        # Build all seven binaries through the top-level Makefile (single source
+        # Build all six binaries through the top-level Makefile (single source
         # of truth). $(OS)=Windows_NT here, so the Makefile emits .exe into bin/.
         # -Werror gates new warnings (CI only; user/release builds stay lenient).
         run: |

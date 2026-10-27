@@ -5,7 +5,8 @@
 > forms, the pins carry the link number (`toma_k`, `cade_dado_k`, ...), and
 > `LINKAS` is gone: every link is synchronized unless the program uses a
 > `_sync` form. See [`toma-and-cade-links.md`](toma-and-cade-links.md). The
-> protocol, the hardware per link and the checks below still hold.
+> protocol, the hardware per link and the checks below still hold. The
+> appcomp named below is asmcomp's first pass since v7.1 (2026-10-13).
 
 Design record of TODO item 20 (2026-10-07, target v7.0). Worked out with
 Luciano in conversation; nothing below is implemented yet. Sections 1-4 are

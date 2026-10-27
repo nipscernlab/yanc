@@ -29,7 +29,8 @@ python -m sphinx -W --keep-going -b html docs docs/_build/html   # the manual, e
 | What YANC does and the quick start | [`README.md`](README.md) |
 | The manual: languages, command line, simulation, instruction set | [`docs/index.md`](docs/index.md) |
 | Why each feature is the way it is, what was measured, what is open | [`docs/design/`](docs/design/) |
-| How to build, and the toolchain versions to avoid | [`docs/develop/building.md`](docs/develop/building.md) |
+| How to build | [`docs/develop/building.md`](docs/develop/building.md) |
+| The toolchain, and the gcc version to avoid | [`docs/install.md`](docs/install.md) |
 | Code conventions and how to open a pull request | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | What changed in each version | [`CHANGELOG.md`](CHANGELOG.md) |
 | Open work | [`TODO.md`](TODO.md) |
@@ -82,6 +83,5 @@ This applies when the person running the agent is an administrator of this repos
 1. **C± is not C.** Complex numbers are a native type, so `i` is the imaginary unit and never a loop counter. A float has the sizes of IEEE 754 single precision but not its encoding, so it cannot be read or written bit for bit as an IEEE float ([`docs/floating-point.md`](docs/floating-point.md)). There are no pointers, no recursion and no dynamic memory. Read [`docs/language-cmm.md`](docs/language-cmm.md) before writing or generating C±.
 2. **The instruction set is spelled out in one table.** [`Compilers/common/isa.tsv`](Compilers/common/isa.tsv) is the source; the hand-written copies are held to it by `Scripts/check_isa.py`, which `Scripts/regress.sh` runs. A change to the instruction set changes the table and every copy in the same commit.
 3. **A golden changes only on purpose.** When a change alters a `golden.asm` or a simulation reference, the pull request says which ones and why. A golden is never regenerated just to make the regression pass.
-4. **No apostrophes in `//` comments inside `.l` and `.y` files.** Flex and Bison pass them through m4, which reads the apostrophe as a quote and fails. [`CONTRIBUTING.md`](CONTRIBUTING.md) has the detail.
-5. **Every message a user sees exists in English and in Portuguese**, through the `M(pt, en)` macro and a named `MSG_*` identifier in the component's `messages.h`, as [`CONTRIBUTING.md`](CONTRIBUTING.md) describes.
-6. **The README quick start is executed by CI.** Every `sh` block after a `<!-- quickstart-sh -->` marker runs on the release layout, and the result must still be 55. Changing those blocks changes a test.
+4. **Every message a user sees exists in English and in Portuguese**, through the `M(pt, en)` macro and a named `MSG_*` identifier in the component's `messages.h`, as [`CONTRIBUTING.md`](CONTRIBUTING.md) describes.
+5. **The README quick start is executed by CI.** Every `sh` block after a `<!-- quickstart-sh -->` marker runs on the release layout, and the result must still be 55. Changing those blocks changes a test.
