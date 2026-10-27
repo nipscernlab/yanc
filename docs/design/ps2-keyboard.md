@@ -1,7 +1,8 @@
 # A PS/2 keyboard block for the SAPHO, read with `cade()`
 
 Status: implemented 2026-10-19 (`SAPHO/myKeyPS2.v`, `Scripts/hw/tb_keyps2.v`,
-regress pass `KEYPS2`); the board check on the DE2-115 with Dênis is left.
+regress pass `KEYPS2`); checked on the board by Dênis in his keyboard + VGA
+example (Luciano, 2026-10-27).
 Marks: **fact** (read in code or measured), **deduced** (to be checked on a
 board), **decided** (Luciano).
 

@@ -10,7 +10,7 @@ links to its section there. The measurements themselves are reproducible with
 Fmax, the divider testbench). Remove an item when it lands (the
 history stays in git and in the CHANGELOG).
 
-## Where things stand (2026-10-25)
+## Where things stand (2026-10-27)
 
 **v9.1 is the last release (2026-10-20):** the keyboard and the screen
 (`myKeyPS2`, `myVGAText`) and C++ `<iostream>`, `<cstdio>` and `<cstring>`
@@ -31,9 +31,11 @@ a memory for arrays with a MAC (docs/design/array-unit.md; tags
 `archive/array-unit-design`, `archive/array-unit-proto`). Items 28 and 31
 wait for them.
 
-**Left on boards:** 35 and 37 (keyboard and screen), and from v7.1 the run
-of Sabrina and Pedro Henrique (the `LINKALL` pair with the `.sdc` on both
-boards; the Fmax is measured, the link costs no clock).
+**Left on boards:** from v7.1, the run of Sabrina and Pedro Henrique (the
+`LINKALL` pair with the `.sdc` on both boards; the Fmax is measured, the
+link costs no clock). Items 35 and 37, the keyboard and the screen, closed
+on 2026-10-27: Dênis ran both blocks on the board, read and written with
+`cade` and `toma`, in his keyboard + VGA example.
 
 **Waiting on a decision:** item 21 (documentation that cannot fall behind
 a release): Chrysthofer's proposal arrived on 2026-10-13; its phase 0 is
@@ -52,7 +54,7 @@ regress on this machine (mitigated); 21 documentation that cannot fall
 behind a release (waiting on a decision); 26 arrays in the waveform
 without a signal per element; 27 the C++ gaps that real embedded code
 hits; 32 the divider stage count from the widths (recorded; on the ZYBO
-`F_DIV` limits); 35 and 37 the board check of the keyboard and the screen.
+`F_DIV` limits).
 
 **Parked by decision:** 28 and 31 (the array unit and the Dirac
 expressions, above), 6(b) and 7 (wider than 32 bits), 12 (run-time
@@ -851,34 +853,6 @@ arrays do not show at all. The option exists only to keep that cost away.
 example one signal for the last write (address and value), or a dump of
 the array memory read back by the viewer, chosen after measuring the
 `.vcd` size and the simulation time on a test with large arrays (test46).
-
-## 35. A PS/2 keyboard block read with `cade()`
-
-**Status:** implemented 2026-10-19 (`SAPHO/myKeyPS2.v`, testbench, regress
-pass `KEYPS2`, docs/peripherals.md); the board check is left · **Area:**
-`SAPHO/myKeyPS2.v` · **Evidence:** docs/design/ps2-keyboard.md
-
-From Dênis's keyboard + VGA project: a block that takes the PS/2 pins and
-hands the SAPHO a ready character over a `cade` link, `LAYOUT` US or ABNT2.
-The VGA block fed by `toma` is item 37.
-
-**Done when** Dênis runs it on the DE2-115 (both layouts if he has both
-keyboards; the ABNT2 punctuation positions are from memory, decision 3).
-
-## 37. A VGA text screen written with `toma()`
-
-**Status:** implemented 2026-10-20 (`SAPHO/myVGAText.v`, testbench, regress
-pass `VGATEXT`, docs/peripherals.md); the board check is left · **Area:**
-`SAPHO/myVGAText.v`, `Scripts/gen_vga_font.py` · **Evidence:**
-docs/design/vga-text.md
-
-From Dênis's video, with Luciano's decisions: a `toma` link, command words
-(128 clear, 129 cursor), scrolling with a top-line register, erasing
-backspace, generic one-bit outputs, one 25 MHz clock, the Modern DOS font
-(CC0) inside the `.v`, a blinking underline cursor, monochrome.
-
-**Done when** it runs on the DE2-115 (Dênis, after roteiro 3), with the
-DE2-115 mapping of docs/peripherals.md.
 
 ## Workarounds at `#FROUND 0` (worth a line in the README)
 
