@@ -123,13 +123,12 @@ SIMMAIN="$CPP_ROOT/Tests/Verilator/sim_main.cpp"
 
 # CPPComp build flags (target params burned into cppcomp.exe). Override
 # via env when building a non-default-target binary.
-: "${CFG_NUBITS:=32}"; : "${CFG_NBMANT:=23}"; : "${CFG_NBEXPO:=8}"
-: "${CFG_NUGAIN:=128}"; : "${CFG_NDSTAC:=128}"; : "${CFG_SDEPTH:=128}"
-: "${CFG_NUIOIN:=1}";   : "${CFG_NUIOOU:=1}"; : "${CFG_FFTSIZ:=3}"
+# The float format follows from CFG_NUBITS and asmcomp sizes the stacks.
+: "${CFG_NUBITS:=32}"; : "${CFG_NUGAIN:=128}"
+: "${CFG_NUIOIN:=1}";  : "${CFG_NUIOOU:=1}"
 : "${CFG_HEAPSZ:=2048}"
-CPP_DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NBMANT=$CFG_NBMANT -DCFG_NBEXPO=$CFG_NBEXPO \
-          -DCFG_NUGAIN=$CFG_NUGAIN -DCFG_NDSTAC=$CFG_NDSTAC -DCFG_SDEPTH=$CFG_SDEPTH \
-          -DCFG_NUIOIN=$CFG_NUIOIN -DCFG_NUIOOU=$CFG_NUIOOU -DCFG_FFTSIZ=$CFG_FFTSIZ \
+CPP_DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NUGAIN=$CFG_NUGAIN \
+          -DCFG_NUIOIN=$CFG_NUIOIN -DCFG_NUIOOU=$CFG_NUIOOU \
           -DCFG_HEAPSZ=$CFG_HEAPSZ"
 
 # Resolve iverilog / vvp / verilator the same way the runners do: Scripts/env.sh
@@ -272,7 +271,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     pushd "$CPP_ROOT/Sources" >/dev/null
     bison -y -d CPPComp.y
     flex CPPComp.l
-    gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
+    gcc -O2 -Wall \
         $CPP_DEFS -o "$CPPC" \
         main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c lex.yy.c y.tab.c \
         ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm

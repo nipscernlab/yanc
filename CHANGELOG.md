@@ -62,6 +62,16 @@ tags consumed by Aurora.
   the DE2-115 went from 26.3 to 27.9 MHz (mean of three seeds), from 1.8 to
   about 4.2 ns of margin at 25 MHz. One cycle more per word; +33 registers
   at 32 bits, +9 at 8. Issue #6.
+- **cppcomp builds with every `-Wall` warning on**, so CI's `-Werror`
+  catches dead code there too. The three `-Wno-unused-*` flags hid four
+  functions nothing called (`params_append`, `instantiate_ctmpl`,
+  `instantiate_ctmpl_t`, superseded by `instantiate_ctmpl_mixed`, and
+  `mk_call1`); they are gone, with the grammar rule `ct_arg_list` that
+  bison reported useless, `type_is_scalar` and `type_decay` in cppcomp,
+  `opc_cad` in asmcomp, `get_while` in cmmcomp, and the `CFG_NBMANT`,
+  `CFG_NBEXPO`, `CFG_NDSTAC`, `CFG_SDEPTH` and `CFG_FFTSIZ` defaults
+  nothing read (the float format follows from `CFG_NUBITS`, asmcomp sizes
+  the stacks).
 
 ### Fixed
 - **C±: a function with ten or more parameters compiled to a wrong call.**

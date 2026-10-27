@@ -80,10 +80,3 @@ int pop_while()
 {
     return wh_stk[--wh_ind];
 }
-
-// returns the top of the while stack (or 0 if empty)
-int get_while()
-{
-    if (wh_ind == 0) return 0;
-    return wh_stk[wh_ind-1];
-}

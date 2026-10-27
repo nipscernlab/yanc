@@ -77,11 +77,6 @@ static char *sym_sig(sym *s)
     str[s->n_params] = 0; return str;
 }
 static void params_reset(void) { param_head = param_tail = NULL; param_count = 0; }
-static void params_append(decl *d)
-{
-    if (!param_head) param_head = d; else param_tail->next = d;
-    param_tail = d; param_count++;
-}
 
 // staged "current base type" used by declarators after `base_type` is reduced
 static type *cur_base = NULL;
@@ -534,40 +529,6 @@ static type *subst_field_type(type *t, int *vals, int nvals)
     return t;
 }
 
-// instantiate `Name<vals...>` to a concrete class type (built once, then reused);
-// records a codegen request so the template's methods get cloned + emitted.
-static type *instantiate_ctmpl(ctmpl *ct, int *vals, int nvals)
-{
-    char suffix[32]; int p = 0;
-    p += snprintf(suffix + p, sizeof(suffix) - p, "_T");
-    for (int i = 0; i < nvals; i++) p += snprintf(suffix + p, sizeof(suffix) - p, "%s%d", i ? "_" : "", vals[i]);
-    char tag[128]; snprintf(tag, sizeof(tag), "%s%s", ct->name, suffix);
-
-    sym *ex = st_find(tag);
-    if (ex && ex->kind == SK_TYPEDEF) return ex->stype;   // already instantiated
-
-    type *c = t_make_struct(xstrdup(tag));
-    c->base_class = ct->proto->base_class;
-    c->n_vtbl = ct->proto->n_vtbl;
-    c->has_ctor = ct->proto->has_ctor;
-    if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
-                     for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
-    for (strct_field *f = ct->proto->fields; f; f = f->next) {
-        t_struct_add_field(c, f->name, subst_field_type(f->ftype, vals, nvals));
-        t_struct_find(c, f->name)->inherited = f->inherited;
-    }
-    t_struct_seal(c, seal_bits());
-    st_add_tag(xstrdup(tag), c);
-    st_add_typedef(xstrdup(tag), c);
-
-    ctinst *ins = calloc(1, sizeof(ctinst));
-    ins->tmpl = ct; ins->nvals = nvals; ins->concrete = c; ins->suffix = xstrdup(suffix);
-    for (int i = 0; i < nvals && i < 8; i++) ins->vals[i] = vals[i];
-    g_unit->ctinsts = realloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
-    g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
-    return c;
-}
-
 // substitute type parameters (t_tparam, carried as tparam>0) with their concrete
 // bindings, recursing through pointer/array/reference wrappers.
 static type *subst_tparam_type(type *t, type **targs, int ntargs)
@@ -646,53 +607,8 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
     return c;
 }
 
-// instantiate `Name<types...>` to a concrete class type: substitute the type
-// parameters into the proto's field types and record a codegen request so the
-// template's methods get cloned with the same bindings.
-static type *instantiate_ctmpl_t(ctmpl *ct, type **targs, int n)
-{
-    char suffix[32]; int p = 0;
-    p += snprintf(suffix + p, sizeof(suffix) - p, "_T");
-    for (int i = 0; i < n && p < (int)sizeof(suffix) - 1; i++) suffix[p++] = ct_type_code(targs[i]);
-    suffix[p] = 0;
-    char tag[128]; snprintf(tag, sizeof(tag), "%s%s", ct->name, suffix);
-
-    sym *ex = st_find(tag);
-    if (ex && ex->kind == SK_TYPEDEF) return ex->stype;   // already instantiated
-
-    type *c = t_make_struct(xstrdup(tag));
-    c->base_class = ct->proto->base_class;
-    c->n_vtbl = ct->proto->n_vtbl;
-    c->has_ctor = ct->proto->has_ctor;
-    if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
-                     for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
-    for (strct_field *f = ct->proto->fields; f; f = f->next) {
-        t_struct_add_field(c, f->name, subst_tparam_type(f->ftype, targs, n));
-        t_struct_find(c, f->name)->inherited = f->inherited;
-    }
-    t_struct_seal(c, seal_bits());
-    st_add_tag(xstrdup(tag), c);
-    st_add_typedef(xstrdup(tag), c);
-
-    ctinst *ins = calloc(1, sizeof(ctinst));
-    ins->tmpl = ct; ins->nvals = 0; ins->concrete = c; ins->suffix = xstrdup(suffix);
-    ins->ntargs = n;
-    for (int i = 0; i < n && i < 8; i++) ins->targs[i] = targs[i];
-    g_unit->ctinsts = realloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
-    g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
-    return c;
-}
-
 // wrap base type with N levels of pointer
 static type *apply_pointers(type *base, int stars) { while (stars-- > 0) base = t_ptr(base); return base; }
-
-// build a 1-argument call `fn(arg)` — used to desugar new/delete to malloc/free
-static expr *mk_call1(const char *fn, expr *arg, int line)
-{
-    expr **args = malloc(sizeof(expr*));
-    args[0] = arg;
-    return ast_call(ast_ident(strdup(fn), line), args, 1, line);
-}
 
 // wrap base type with the given array dimensions, innermost-last (row-major):
 // dims [3,4] over int  ->  array(3, array(4, int))
@@ -978,7 +894,7 @@ static type *class_close(void)
 %type <slist> block_item_list
 %type <dlist> init_declarator_list param_list non_empty_param_list
 %type <dcl>   init_declarator param_declarator
-%type <dimlist> array_suffix ct_arg_list
+%type <dimlist> array_suffix
 %type <talist>  type_arg_list
 %type <mxlist>  ct_mixed_arg ct_mixed_arg_list
 %type <elist> argument_list non_empty_argument_list
@@ -1692,19 +1608,6 @@ type_arg_list:
     | type_arg_list ',' base_type pointers {
           $$ = $1; $$.arr = realloc($$.arr, sizeof(type*) * ($$.n + 1));
           $$.arr[$$.n++] = apply_pointers($3, $4);
-      }
-    ;
-
-/* non-type template arguments `<4>` / `<4, 8>` — constant integer expressions.
-   Uses shift_expr (below relational) so a closing `>` is not eaten as `operator>`. */
-ct_arg_list:
-      shift_expr {
-          long v; if (!const_eval($1, &v)) msg_error(yylineno, "template argument must be a constant");
-          $$.n = 0; if ($$.n < 8) $$.dims[$$.n++] = (int)v;
-      }
-    | ct_arg_list ',' shift_expr {
-          long v; if (!const_eval($3, &v)) msg_error(yylineno, "template argument must be a constant");
-          $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)v;
       }
     ;
 
