@@ -1043,14 +1043,17 @@ static type *infer_type(expr *e)
 // ---- literal emission helpers ----------------------------------------------
 
 static void emit_load_int(long v)   { emit("LOD %ld", v); }
-static void emit_load_float(double v)
+static void emit_load_float(double v, const char *text)
 {
-    // 17 significant digits reproduce the double exactly, and the assembler
+    // A literal goes as written (its ftext), so the assembler rounds it once
+    // (#12). A value the compiler computed: 17 significant digits reproduce
+    // the double exactly, and the assembler
     // now reads an exponent (its encoder, yanc_num, rounds that text once to
     // the target mantissa): %.20f, used while the lexers rejected "1e-05",
     // turned everything below ~1e-20 into 0.0 and overflowed the buffer above
     // ~1e75. A text with neither '.' nor an exponent would read as an int
     // constant, so it gets ".0".
+    if (text) { emit("LOD %s", text); return; }
     char buf[40]; snprintf(buf, sizeof(buf), "%.17g", v);
     if (!strpbrk(buf, ".eE")) strcat(buf, ".0");
     emit("LOD %s", buf);
@@ -2071,7 +2074,7 @@ static void gen_expr(expr *e)
     switch (e->kind) {
 
     case E_INT_LIT: case E_CHAR_LIT: emit_load_int(e->ival); return;
-    case E_FLOAT_LIT:                emit_load_float(e->fval); return;
+    case E_FLOAT_LIT:                emit_load_float(e->fval, e->ftext); return;
     case E_STRING_LIT:
         // decays to the base address of its materialised global char array
         if (!e->member) msg_internal("string literal not pre-scanned");
@@ -3961,6 +3964,10 @@ static int const_word(expr *e, type *t, char *buf, size_t sz)
         expr *x = e;
         if (x->kind == E_UNOP && x->op == OP_NEG) { neg = 1; x = x->a; }
         long iv;
+        if (x->kind == E_FLOAT_LIT && x->ftext) {      // as written: one rounding (#12)
+            snprintf(buf, sz, "%s%s", neg ? "-" : "", x->ftext);
+            return 1;
+        }
         if (x->kind == E_FLOAT_LIT) v = x->fval;
         else if (cfold(x, &iv))     v = (double)iv;
         else return 0;

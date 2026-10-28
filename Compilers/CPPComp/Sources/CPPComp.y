@@ -826,7 +826,6 @@ static type *class_close(void)
 
 %union {
     long    ival;
-    double  fval;
     char   *sval;
     type   *typ;
     expr   *exp;
@@ -850,7 +849,7 @@ static type *class_close(void)
 }
 
 %token <ival>  INT_LIT CHAR_LIT
-%token <fval>  FLOAT_LIT
+%token <sval>  FLOAT_LIT
 %token <sval>  IDENT TYPEDEF_NAME STRING_LIT TEMPLATE_NAME
 /* an IDENT the lexer sees followed by `::` (a namespace, or an enum class's
    name): only such a name can start a qualified type, so after `T x(` a plain
@@ -1508,7 +1507,7 @@ field_declarator:
               if (cur_base->kind == TY_INT || cur_base->kind == TY_PTR)
                   f->dinit = ast_int_lit(0, yylineno);
               else if (cur_base->kind == TY_FLOAT)
-                  f->dinit = ast_float_lit(0.0f, yylineno);
+                  f->dinit = ast_float_lit("0.0", yylineno);
               else
                   f->dzero = 1;     /* array/struct aggregate: zero-fill at ctor time */
           }

@@ -79,6 +79,14 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C++: a float literal is rounded once, as in C±** (#12). cppcomp read it
+  into a host `double` and wrote that back with `%.17g`, so the assembler
+  rounded a second time, and a literal within 2^-53 of the point halfway
+  between two SAPHO floats could come out one unit off. The literal's text
+  now goes to the `.asm` as written (`digits.digits[e[-]digits]`, the form
+  cmmcomp writes); the `double` stays for what the compiler computes.
+  test96: a 72-digit literal just below the halfway point between 1.0 and
+  1.0 + 2^-22 is 1.0, as in C±.
 - **C±: a function with ten or more parameters compiled to a wrong call.**
   cmmcomp kept the type of each parameter as a decimal digit of one `int`,
   so ten floats (2222222222) or eleven ints overflowed it: the call loaded

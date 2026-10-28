@@ -42,6 +42,30 @@ static char *xstrdup_n(const char *s, int n)
     memcpy(r, s, n); r[n] = 0; return r;
 }
 
+// A float literal as the .asm takes it, digits.digits[e[-]digits], with no
+// suffix and no leading zeros (.5 -> 0.5, 5. -> 5.0, 1e5 -> 1.0e5), the form
+// cmmcomp's fnum_text writes. The assembler rounds this text once, exactly, to
+// the target format; going through a double first would round twice (#12).
+static char *float_text(const char *p)
+{
+    char *r = (char*)malloc(strlen(p) + 4), *o = r;   // at most "0", ".", "0" added
+    if (!r) msg_internal("oom");
+    while (*p == '0' && p[1] >= '0' && p[1] <= '9') p++;
+    if (*p == '.') *o++ = '0';
+    while (*p >= '0' && *p <= '9') *o++ = *p++;
+    *o++ = '.';
+    if (*p == '.') p++;
+    if (!(*p >= '0' && *p <= '9')) *o++ = '0';
+    while (*p >= '0' && *p <= '9') *o++ = *p++;
+    if (*p == 'e' || *p == 'E') {
+        *o++ = 'e'; p++;
+        if (*p == '+') p++; else if (*p == '-') *o++ = *p++;
+        while (*p >= '0' && *p <= '9') *o++ = *p++;
+    }
+    *o = 0;                                           // the f/F/l/L suffix stays out
+    return r;
+}
+
 // extract the body of a "..." string literal, honouring \n \t \r \\ \" \0
 // returns a freshly-allocated buffer and writes the byte length to *out_len.
 static char *unescape_string(const char *src, int *out_len)
@@ -258,7 +282,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
                            int oct = yytext[0] == '0' && yytext[1] >= '0' && yytext[1] <= '9';
                            if (oct && strpbrk(yytext, "89")) msg_error(yylineno, "'%s': a number starting with 0 is octal, and has no 8 or 9", yytext);
                            yylval.ival = int_lit(yytext, oct ? 8 : 10); return INT_LIT; }
-{FLOAT}[fFlL]?           { yylval.fval = strtod(yytext, NULL);     return FLOAT_LIT; }
+{FLOAT}[fFlL]?           { yylval.sval = float_text(yytext);       return FLOAT_LIT; }
 {CHRLIT}                 { yylval.ival = unescape_char(yytext);    return CHAR_LIT; }
 {STRLIT}                 {
                            int len = 0;
