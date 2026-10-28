@@ -1,0 +1,46 @@
+#NUBITS 8
+#NUIOIN 1
+#NUIOOU 1
+// An int-only processor of 8 bits: no #NBMANT or #NBEXPO, so they keep 23/8
+// and cmmcomp took the int as 32 bits where it reasoned about values (issue
+// #14). A literal past 127 is the word's bits (200 is -56), so the loops with
+// a literal bound or start must run as the same loops with a computed value:
+// 0 times each. cmmcomp tested 0 < 200 and 200 > 100 itself, at 32 bits, moved
+// the test to the bottom and ran each body once. A constant expression that
+// passes 127 is still folded: the assembler keeps the literal's low 8 bits,
+// the value the hardware would compute. A switch case past 127 is compared
+// modulo 2^8.
+// Expected outputs: -56 -56 -112 -112 0 0 0 0 22
+void main()
+{
+    int a = 100;
+    int k;
+    int n = 0;
+    int s = 3;
+
+    out(0, 100 + 100);                            // -56
+    out(0, a + a);                                // -56, computed
+    out(0, 20 * 20);                              // -112
+    out(0, (a - 80) * (a - 80));                  // -112, computed
+
+    for (k = 0; k < 200; k = k + 1) n = n + 1;    // 0 < -56: never
+    out(0, n);
+    n = 0;
+    for (k = 0; k < a + a; k = k + 1) n = n + 1;  // the same, computed
+    out(0, n);
+
+    n = 0;
+    for (k = 200; k > 100; k = k + 1) n = n + 1;  // -56 > 100: never
+    out(0, n);
+    n = 0;
+    k = a + a;
+    while (k > 100) { n = n + 1; k = k + 1; }     // the same, computed
+    out(0, n);
+
+    switch (s)
+    {
+        case 200: out(0, 11); break;
+        case 3:   out(0, 22); break;
+        default:  out(0, 33);
+    }
+}

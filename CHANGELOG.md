@@ -79,6 +79,14 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: a `for` loop with a literal past the word in an int-only processor
+  ran its body once** (#14). A program with no float keeps `#NBMANT` 23 and
+  `#NBEXPO` 8, and cmmcomp took the int as 32 bits when it moved a loop's
+  test to the bottom: at `#NUBITS 8`, `for (k = 0; k < 200; ...)` (200 is
+  -56 in the word) skipped the first test and ran once; the hardware runs it
+  0 times. The loop rewrite and the `switch` dispatch now use `#NUBITS`;
+  constant folding keeps its range, since a folded value past the word wraps
+  as the hardware would. Fixture `cmm_nubits8`.
 - **C++: a float literal is rounded once, as in C±** (#12). cppcomp read it
   into a host `double` and wrote that back with `%.17g`, so the assembler
   rounded a second time, and a literal within 2^-53 of the point halfway
