@@ -18,7 +18,7 @@ static expr *new_expr(expr_kind k, int line)
 }
 
 expr *ast_int_lit  (long v, int line)            { expr *e = new_expr(E_INT_LIT,    line); e->ival = v; return e; }
-expr *ast_float_lit(double v, int line)          { expr *e = new_expr(E_FLOAT_LIT,  line); e->fval = v; return e; }
+expr *ast_float_lit(char *text, int line)        { expr *e = new_expr(E_FLOAT_LIT,  line); e->ftext = text; e->fval = strtod(text, NULL); return e; }
 expr *ast_char_lit (long v, int line)            { expr *e = new_expr(E_CHAR_LIT,   line); e->ival = v; return e; }
 expr *ast_string_lit(char *bytes, int len, int line) { expr *e = new_expr(E_STRING_LIT, line); e->sval = bytes; e->slen = len; return e; }
 expr *ast_ident    (char *n, int line)           { expr *e = new_expr(E_IDENT,      line); e->sval = n; return e; }

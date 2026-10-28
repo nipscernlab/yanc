@@ -58,6 +58,7 @@ struct expr {
     long      ival;      // INT_LIT / CHAR_LIT
     int       is_uns;    // INT_LIT: 1 unsigned (a u/U suffix, or too big for int), 2 true/false (a bool)
     double    fval;      // FLOAT_LIT
+    char     *ftext;     // FLOAT_LIT: the literal as written, digits.digits[e[-]digits]
     char     *sval;      // IDENT name / STRING_LIT bytes
     int       slen;      // length of STRING_LIT (excludes terminator)
     op_kind   op;        // BINOP/UNOP
@@ -210,7 +211,7 @@ typedef struct {
 // ----------------------------------------------------------------------------
 
 expr *ast_int_lit  (long v, int line);
-expr *ast_float_lit(double v, int line);
+expr *ast_float_lit(char *text, int line);
 expr *ast_char_lit (long v, int line);
 expr *ast_string_lit(char *bytes, int len, int line);    // takes ownership of bytes
 expr *ast_ident    (char *n, int line);
