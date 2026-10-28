@@ -168,6 +168,20 @@ vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice 
     "$VVP" "$2" >/dev/null 2>&1 && return 0
     "$VVP" "$2" >/dev/null 2>&1
 }
+# The same rule for a pass that reads what vvp prints (tb_fifo, tb_dcfifo,
+# KEYPS2, VGATEXT): run it in <dir> and leave its output in VVP_OUT, run again
+# (twice at most) only when vvp exits non-zero. Not called in $(...), so that
+# retried_names keeps the name.
+vvp_capture() {    # vvp_capture <name> <dir> <file.vvp>: VVP_OUT, and vvp's exit status
+    local rc n=0
+    VVP_OUT=$(cd "$2" && "$VVP" -n "$3" 2>&1); rc=$?
+    while [ $rc -ne 0 ] && [ $n -lt 2 ]; do
+        [ $n -eq 0 ] && retried_names+=("$1")
+        VVP_OUT=$(cd "$2" && "$VVP" -n "$3" 2>&1); rc=$?
+        n=$((n + 1))
+    done
+    return $rc
+}
 
 # Examples to exclude from the standalone simulation phase (still run cmmcomp
 # .asm compare AND asmcomp so their .v + .mif are available for any
@@ -926,7 +940,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                         "$ROOT/Scripts/hw/tb_fifo.v" "$HDL/myFIFO.v" >/dev/null 2>&1; then
                     echo "FAIL ($proj): iverilog on tb_fifo.v exited non-zero"; sim_fail=1
                 else
-                    tbf=$(cd "$proj_tmp" && "$VVP" -n "$proj_tmp/tb_fifo.vvp" 2>&1)
+                    vvp_capture "$proj" "$proj_tmp" "$proj_tmp/tb_fifo.vvp"; tbf=$VVP_OUT
                     if ! printf '%s' "$tbf" | grep -q "^0 of 3 failed"; then
                         echo "FAIL ($proj): tb_fifo.v:"; printf '%s\n' "$tbf" | grep FAIL; sim_fail=1
                     fi
@@ -975,7 +989,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                             "$ROOT/Scripts/hw/tb_dcfifo.v" "$HDL/myDCFIFO.v" >/dev/null 2>&1; then
                         echo "FAIL ($proj): iverilog on tb_dcfifo.v exited non-zero"; sim_fail=1; break
                     fi
-                    tbf=$(cd "$proj_tmp" && "$VVP" -n "$proj_tmp/tb_dcfifo.vvp" 2>&1)
+                    vvp_capture "$proj" "$proj_tmp" "$proj_tmp/tb_dcfifo.vvp"; tbf=$VVP_OUT
                     if ! printf '%s' "$tbf" | grep -q "^0 of 4 failed"; then
                         echo "FAIL ($proj): tb_dcfifo.v ($ratio):"; printf '%s\n' "$tbf" | grep FAIL; sim_fail=1
                     fi
@@ -1021,7 +1035,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                     "$kd/TopLevel/keyps2_tb.v" >/dev/null 2>&1; then
                 echo "FAIL ($proj): iverilog exited non-zero"; k_fail=1
             else
-                k_out=$(cd "$kt" && "$VVP" -n "$kt/k.vvp" 2>&1)
+                vvp_capture "$proj" "$kt" "$kt/k.vvp"; k_out=$VVP_OUT
                 if [ "$(printf '%s\n' "$k_out" | grep -c ': ok$')" -ne 2 ]; then
                     printf '%s\n' "$k_out" | grep "KEYPS2" | sed 's/^/    /'
                     echo "FAIL ($proj): a processor did not echo the keys"; k_fail=1
@@ -1072,7 +1086,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                     "$vd/TopLevel/vgatext_tb.v" >/dev/null 2>&1; then
                 echo "FAIL ($proj): iverilog exited non-zero"; v_fail=1
             else
-                v_out=$(cd "$vt" && "$VVP" -n "$vt/v.vvp" 2>&1)
+                vvp_capture "$proj" "$vt" "$vt/v.vvp"; v_out=$VVP_OUT
                 if [ "$(printf '%s\n' "$v_out" | grep -c ': ok$')" -ne 3 ]; then
                     printf '%s\n' "$v_out" | grep "VGATEXT\|screen\|cursor" | sed 's/^/    /'
                     echo "FAIL ($proj): a system did not show the keys"; v_fail=1
