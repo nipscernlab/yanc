@@ -1,0 +1,11 @@
+#NUBITS 8
+#NUIOIN 1
+#NUIOOU 1
+// 128 does not fit an 8-bit int: the lexer takes it only after a unary
+// minus, as the most negative int (-128). After a binary minus it is still
+// past the word, the same error as 200 (issue #14).
+void main()
+{
+    int a = 1;
+    out(0, a - 128);
+}

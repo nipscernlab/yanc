@@ -1,0 +1,10 @@
+#NUBITS 8
+#NUIOIN 1
+#NUIOOU 1
+// A decimal literal past the word is an error, as at 32 bits: at #NUBITS 8
+// the largest int is 127, and 200 would be -56 without a word of warning
+// (issue #14). A value past the word comes from arithmetic, which wraps.
+void main()
+{
+    out(0, 200);
+}

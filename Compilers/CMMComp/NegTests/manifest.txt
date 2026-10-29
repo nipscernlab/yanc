@@ -42,3 +42,5 @@ ini_1d_rows.cmm|braces inside the list only mark the rows of a 2D array
 ini_rows.cmm|each with up to 2 values
 octal_digit.cmm|so it is octal, and octal has no 8 or 9
 ninum_size.cmm|Syntax error
+int_word8.cmm|biggest integer this thing can hold is 127
+int_minus128.cmm|biggest integer this thing can hold is 127

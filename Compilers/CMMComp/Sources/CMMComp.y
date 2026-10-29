@@ -120,7 +120,7 @@ void  yyerror(char const *s);
 
 // terminal tokens ------------------------------------------------------------
 
-%token <ival> TYPE ID STRING INUM FNUM CNUM NINUM NIMIN                // comes from the lexer with an associated value
+%token <ival> TYPE ID STRING INUM FNUM CNUM NINUM NIMIN DIMIN          // comes from the lexer with an associated value
 
 // removes the conflict between if-with-else and if-without-else
 %nonassoc THEN
@@ -148,7 +148,7 @@ void  yyerror(char const *s);
 //
 // func_intro carries the function's v_table id up to funcao so func_ret can
 // finalize the function without a mid-rule on `TYPE ID`.
-%type <ival> func_intro
+%type <ival> func_intro unum asize
 
 // expressions ride the bison stack as expr_node *. Each producer builds the
 // subtree it just parsed; codegen happens when a statement-level consumer
@@ -178,16 +178,16 @@ prog_elements : direct | declar | funcao
 // Compilation directives -----------------------------------------------------
 
 direct : PRNAME   ID   {fprintf(stderr, MSG_ERR_PRNAME_GONE, line_num+1); exit(EXIT_FAILURE);} // the name is the file's
-       | NUBITS INUM   {dire_exec("#NUBITS",$2,11);} // ALU word width
-       | NBMANT INUM   {dire_exec("#NBMANT",$2, 3);} // mantissa width (bits)
-       | NBEXPO INUM   {dire_exec("#NBEXPO",$2, 4);} // exponent width (bits)
-       | NDSTAC INUM   {dire_exec("#NDSTAC",$2, 0);} // data stack depth
-       | SDEPTH INUM   {dire_exec("#SDEPTH",$2, 0);} // subroutine stack depth
-       | NUIOIN INUM   {dire_exec("#NUIOIN",$2, 7);} // number of input ports
-       | NUIOOU INUM   {dire_exec("#NUIOOU",$2, 8);} // number of output ports
-       | NUGAIN INUM   {dire_exec("#NUGAIN",$2,10);} // division constant (norm(.)): a power of two (validated)
-       | FFTSIZ INUM   {dire_exec("#FFTSIZ",$2, 0);} // FFT size (2^FFTSIZ)
-       | FROUND INUM   {dire_exec("#FROUND",$2, 9);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
+       | NUBITS unum   {dire_exec("#NUBITS",$2,11);} // ALU word width
+       | NBMANT unum   {dire_exec("#NBMANT",$2, 3);} // mantissa width (bits)
+       | NBEXPO unum   {dire_exec("#NBEXPO",$2, 4);} // exponent width (bits)
+       | NDSTAC unum   {dire_exec("#NDSTAC",$2, 0);} // data stack depth
+       | SDEPTH unum   {dire_exec("#SDEPTH",$2, 0);} // subroutine stack depth
+       | NUIOIN unum   {dire_exec("#NUIOIN",$2, 7);} // number of input ports
+       | NUIOOU unum   {dire_exec("#NUIOOU",$2, 8);} // number of output ports
+       | NUGAIN unum   {dire_exec("#NUGAIN",$2,10);} // division constant (norm(.)): a power of two (validated)
+       | FFTSIZ unum   {dire_exec("#FFTSIZ",$2, 0);} // FFT size (2^FFTSIZ)
+       | FROUND unum   {dire_exec("#FROUND",$2, 9);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
 
 // Behavioral directives ------------------------------------------------------
 
@@ -198,35 +198,42 @@ dire_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt 
          // list declaration (one or more variables, each may have an initializer)
 declar : TYPE id_list                               ';'
          // array declaration with file initialization
-       | TYPE ID '[' INUM ']'              STRING   ';' {declar_arr_1d($2,$4,$6    );}
-       | TYPE ID '[' INUM ']' '[' INUM ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
+       | TYPE ID '[' asize ']'               STRING   ';' {declar_arr_1d($2,$4,$6    );}
+       | TYPE ID '[' asize ']' '[' asize ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
          // array declaration initialized between braces, as in C (the values go to the .mif)
-       | TYPE ID '[' INUM ']'              '=' '{' ini_list '}' ';' {declar_arr_1d_ini($2,$4   );}
-       | TYPE ID '[' INUM ']' '[' INUM ']' '=' '{' ini_list '}' ';' {declar_arr_2d_ini($2,$4,$7);}
+       | TYPE ID '[' asize ']'               '=' '{' ini_list '}' ';' {declar_arr_1d_ini($2,$4   );}
+       | TYPE ID '[' asize ']' '[' asize ']' '=' '{' ini_list '}' ';' {declar_arr_2d_ini($2,$4,$7);}
          // array declaration with Dirac-notation initialization (on demand)
-       | TYPE ID '[' INUM ']' '#' '|' ID '|' ID BRA ';' {declar_Mv    ($2,$4,$8,$10);}
-       | TYPE ID '[' INUM ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2,$4,$7, $9);}
+       | TYPE ID '[' asize ']' '#' '|' ID '|' ID BRA ';' {declar_Mv    ($2,$4,$8,$10);}
+       | TYPE ID '[' asize ']' '#'    exp '|' ID BRA ';' {declar_cv    ($2,$4,$7, $9);}
 
 id_list : IID | id_list ',' IID
+
+// a number that is no value of the word (a size, a port, a link, a directive):
+// any literal, 128 at 8 bits too
+unum  : INUM  {$$ = $1;}
+      | DIMIN {$$ = $1;}
+asize : unum  {$$ = arr_size($1);}           // an array size, with a warning past what an index reaches
 
 // the values between braces: constants, a row of a 2D array between inner braces
 ini_list : ini_item | ini_list ',' ini_item
 ini_item : ini_num
          | '{' {ini_row_open();} ini_nums '}' {ini_row_close();}
 ini_nums : ini_num | ini_nums ',' ini_num
-ini_num  :     INUM {ini_add($1,1,0);}
+ini_num  :     INUM {ini_add(inum_word($1),1,0);}
          |    NINUM {ini_add($1,1,1);}                     // 0xFFFFFFFF: -1, a bit pattern
          |    NIMIN {ini_add(inum_min_id(),1,1);}          // 0x80000000: the most negative int
          | '-' NINUM {ini_add($2,1,0);}
+         | '-' DIMIN {ini_add(inum_min_id(),1,1);}          // -128 at 8 bits: the most negative int
          |     FNUM {ini_add($1,2,0);}
          |     CNUM {ini_add($1,3,0);}
-         | '-' INUM {ini_add($2,1,1);}
+         | '-' INUM {ini_add(inum_word($2),1,1);}
          | '-' FNUM {ini_add($2,2,1);}
 
 IID    : ID                           {declar_var   ($1         );}
        | ID '=' exp                   {declar_var   ($1         ); stmt_append(stmt_assign($1, $3));}
-       | ID '[' INUM ']'              {declar_arr_1d($1,$3   ,-1);}
-       | ID '[' INUM ']' '[' INUM ']' {declar_arr_2d($1,$3,$6,-1);}
+       | ID '[' asize ']'               {declar_arr_1d($1,$3   ,-1);}
+       | ID '[' asize ']' '[' asize ']' {declar_arr_2d($1,$3,$6,-1);}
 
 // Function declaration -------------------------------------------------------
 
@@ -302,16 +309,16 @@ exp_list :                              {args_frame_push();}
 
 // Standard library -----------------------------------------------------------
 
-std_out  : OUT  '(' INUM ',' exp ')' ';'            {stmt_append(stmt_out($3, $5, 0));}  // data output
-std_fout : FOUT '(' INUM ',' exp ')' ';'            {stmt_append(stmt_out($3, $5, 1));}  // data output (converting to float)
-std_in   : INN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_IN, $3, NULL, NULL);}  // data input
-std_toma : TOMA  '(' INUM ',' exp ')' ';'      {stmt_append(stmt_toma(link_use($3, 0), $5));}   // hands exp over link INUM
-         | TOMAS '(' INUM ',' exp ')' ';'      {stmt_append(stmt_toma(link_use($3, 1), $5));}   // the same, partner on my clock
-std_cade : CADE  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_CADE,  link_use($3, 0), NULL, NULL);}  // takes link INUM's word (int)
-         | CADES '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_CADE,  link_use($3, 1), NULL, NULL);}  // the same, partner on my clock
-std_fcade: FCADE '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FCADE, link_use($3, 0), NULL, NULL);}  // takes link INUM's word (float)
-         | FCADES'(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FCADE, link_use($3, 1), NULL, NULL);}  // the same, partner on my clock
-std_fin  : FIN  '(' INUM ')'                   {$$ = expr_stdlib(OP_STD_FIN, $3, NULL, NULL);}  // float input
+std_out  : OUT  '(' unum ',' exp ')' ';'            {stmt_append(stmt_out($3, $5, 0));}  // data output
+std_fout : FOUT '(' unum ',' exp ')' ';'            {stmt_append(stmt_out($3, $5, 1));}  // data output (converting to float)
+std_in   : INN  '(' unum ')'                   {$$ = expr_stdlib(OP_STD_IN, $3, NULL, NULL);}  // data input
+std_toma : TOMA  '(' unum ',' exp ')' ';'      {stmt_append(stmt_toma(link_use($3, 0), $5));}   // hands exp over link INUM
+         | TOMAS '(' unum ',' exp ')' ';'      {stmt_append(stmt_toma(link_use($3, 1), $5));}   // the same, partner on my clock
+std_cade : CADE  '(' unum ')'                   {$$ = expr_stdlib(OP_STD_CADE,  link_use($3, 0), NULL, NULL);}  // takes link INUM's word (int)
+         | CADES '(' unum ')'                   {$$ = expr_stdlib(OP_STD_CADE,  link_use($3, 1), NULL, NULL);}  // the same, partner on my clock
+std_fcade: FCADE '(' unum ')'                   {$$ = expr_stdlib(OP_STD_FCADE, link_use($3, 0), NULL, NULL);}  // takes link INUM's word (float)
+         | FCADES'(' unum ')'                   {$$ = expr_stdlib(OP_STD_FCADE, link_use($3, 1), NULL, NULL);}  // the same, partner on my clock
+std_fin  : FIN  '(' unum ')'                   {$$ = expr_stdlib(OP_STD_FIN, $3, NULL, NULL);}  // float input
 std_pst  : PST  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_PST, 0,  $3,   NULL);}  // clears if negative
 std_abs  : ABS  '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_ABS, 0,  $3,   NULL);}  // |x|
 std_sign : SGN  '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_SIGN, 0,  $3,   $5  );}  // y with sign of x
@@ -337,7 +344,7 @@ std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0,
 std_fase : FASE '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_FASE, 0,  $3,   NULL);}  // phase(comp)
 std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_MOD2, 0,  $3,   NULL);}  // |comp|^2
 std_conj : CONJ '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_CONJ, 0,  $3,   NULL);}  // conjugate
-std_vout : OUT  '(' INUM ',' exp '|' ID BRA ')' ';' {stmt_append(stmt_vout($3, $5, $7));}  // data output with Dirac notation
+std_vout : OUT  '(' unum ',' exp '|' ID BRA ')' ';' {stmt_append(stmt_vout($3, $5, $7));}  // data output with Dirac notation
 
 // if/else --------------------------------------------------------------------
 
@@ -364,7 +371,7 @@ sw_body       : /* empty */
               | sw_body default_label
               | sw_body stmt_full
 
-case_label    : CASE INUM ':' {case_test($2,1);}
+case_label    : CASE INUM ':' {case_test(inum_word($2),1);}
               | CASE FNUM ':' {case_test($2,2);}
 
 default_label : DEFAULT   ':' {defaut_test();}
@@ -431,7 +438,7 @@ assignment : ID  '=' exp ';'                          {stmt_append(stmt_assign($
            | ID '#' exp '|' ID '|' ';'                           {stmt_append(stmt_dirac_cM   ($1, $3, $5));}        // A # c|B|
            | ID '#' exp     EYE ';'                              {stmt_append(stmt_dirac_cI   ($1, $3));}            // A # c|I|
            | ID '#'         VZERO ';'                            {stmt_append(stmt_dirac_v0   ($1));}                // a # |0>
-           | ID '#' exp '|' INN '(' INUM ')' BRA ';'             {stmt_append(stmt_dirac_cvin ($1, $3, $7));}        // a # |in(0)>
+           | ID '#' exp '|' INN '(' unum ')' BRA ';'             {stmt_append(stmt_dirac_cvin ($1, $3, $7));}        // a # |in(0)>
            | ID '#' exp '-' '>' '|' ID BRA ';'                   {stmt_append(stmt_dirac_shift($1, $3, $7));}        // a # c -> |a>
 
 // expressions ----------------------------------------------------------------
@@ -477,6 +484,9 @@ exp:       terminal                           {$$ = $1;}
          |    '+' exp                         {$$ = $2;}
          // unary operators
          |    '-' exp                         {$$ = expr_unop(OP_NEG, $2);}
+         // -128 at 8 bits: 128 does not fit the word, so the lexer gives it
+         // as a DIMIN, a value only here (and in a brace list)
+         |    '-' DIMIN                       {$$ = expr_unop(OP_NEG, expr_lit(1, $2));}
          |    '!' exp                         {$$ = expr_unop(OP_LIN, $2);}
          |    '~' exp                         {$$ = expr_unop(OP_INV, $2);}
          | ID                         PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, NULL, NULL);}
@@ -515,7 +525,7 @@ exp:       terminal                           {$$ = $1;}
 // invokes the walker on the root and emits the entire subtree.
 
          // constants
-terminal : INUM                               {$$ = expr_lit(1, $1);}
+terminal : INUM                               {$$ = expr_lit(1, inum_word($1));}
          // a hex, octal or binary literal with the sign bit set is a negative
          // int, as in C: the negation of its magnitude (literals stay positive);
          // the most negative one, whose magnitude does not fit, is -max - 1
@@ -553,6 +563,7 @@ int main(int argc, char *argv[])
 // bison syntax error
 void yyerror (char const *s)
 {
+    if (yychar == DIMIN) inum_overflow();   // 128 at 8 bits, not after a minus
     fprintf (stderr, MSG_ERR_SYNTAX, line_num+1);
     exit(EXIT_FAILURE);
 }

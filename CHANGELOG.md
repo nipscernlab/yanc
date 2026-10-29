@@ -54,7 +54,7 @@ tags consumed by Aurora.
   127.** The screen's clear is `toma_sync(k, -128)` and its cursor command
   `-127`, at every `#NUBITS`; the keyboard's special keys will be -96 to -1.
   At 8 bits the bits on the link are the ones of 128 and 129, but 128 does
-  not fit an 8-bit int, and CÂ± will stop on a literal past the word (GitHub
+  not fit an 8-bit int, and C± will stop on a literal past the word (GitHub
   issue #14). A program that writes 128 or 129 to `myVGAText` must change:
   at 8 bits the new compiler stops on it, and past 8 bits the block ignores
   it. `myVGAText` compares the whole word with the sign-extended command;
@@ -89,6 +89,20 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: a `for` loop with a literal past the word in an int-only processor
+  ran its body once** (#14). A program with no float keeps `#NBMANT` 23 and
+  `#NBEXPO` 8, and cmmcomp took the int as 32 bits when it moved a loop's
+  test to the bottom: at `#NUBITS 8`, `for (k = 0; k < 200; ...)` (200 is
+  -56 in the word) skipped the first test and ran once; the hardware runs it
+  0 times. The loop rewrite and the `switch` dispatch now use `#NUBITS`;
+  constant folding keeps its range, and a folded value is taken to the word
+  as the hardware computes it (`100 + 100` is -56 at 8 bits). A decimal
+  literal used as a value must now fit the word: `200` at 8 bits is an
+  error, as `3000000000` is at 32. The most negative int is written as in
+  C, `-128` at 8 bits and `-2147483648` at 32; `a - 128` is still an error.
+  An array size, a port and a directive take any literal; an array longer
+  than an int index reaches (`int v[200]` at 8 bits) gives a warning.
+  Fixture `cmm_nubits8`; NegTests `int_word8`, `int_minus128`.
 - **C++: a float literal is rounded once, as in C±** (#12). cppcomp read it
   into a host `double` and wrote that back with `%.17g`, so the assembler
   rounded a second time, and a literal within 2^-53 of the point halfway

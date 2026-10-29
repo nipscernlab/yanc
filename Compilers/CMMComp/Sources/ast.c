@@ -9,7 +9,7 @@
 #include "../Headers/ast.h"
 #include "../Headers/global.h"
 #include "../Headers/variaveis.h"   // v_table[].name for the dump
-#include "../Headers/diretivas.h"   // nbmant / nbexpo for the constant-fold range
+#include "../Headers/diretivas.h"   // nbmant / nbexpo / nubits for the constant ranges
 #include "../Headers/messages.h"
 
 // needed by the expression-tree walker (ast_emit_expr) below
@@ -282,7 +282,8 @@ static expr_node *for_bottom_test(stmt_node *n)
     typecheck_expr(init->rhs); typecheck_expr(lit);
     if (init->rhs->type != 1 || lit->type != 1) return NULL;
     long long c0 = atoll(v_table[init->rhs->id].name), c1 = atoll(v_table[lit->id].name);
-    long long max = (1LL << (nbmant + nbexpo)) - 1;          // largest int of the word
+    long long max = (1LL << (nubits - 1)) - 1;               // largest int of the word
+    if (c0 > max || c1 > max) return NULL;                   // the word wraps it: holds is not the hardware's
     int holds; long long k2; int op2;
     switch (op) {
         case OP_LT: holds = c0 <  c1; op2 = OP_LT;  k2 = c1 - 1; break;
@@ -473,7 +474,13 @@ static int const_eval(expr_node *n, long *val)
     if (!n) return 0;
     // Range that keeps the result both representable and emittable: a positive
     // result becomes a literal, a negative one a NEG_M of its magnitude (a
-    // literal, so |r| must be <= max). max = signed NUBITS-bit max; min = -max.
+    // literal, so |r| must be <= max). max = signed max of NBMANT + NBEXPO + 1
+    // bits, 32 by default; min = -max. In a narrower int-only word (#NUBITS 8
+    // with no float format) that is still 32 bits, and a folded value past the
+    // word is right anyway: + - * & | ^ wrap the same way modulo 2^NUBITS, and
+    // the caller takes the result to the word before it becomes a literal
+    // (issue #14, cmm_nubits8). Nothing may compare such a value at compile
+    // time: for_bottom_test checks its literals against the word itself.
     long max = ((long)1 << (nbmant + nbexpo)) - 1;
     long min = -max;
 
@@ -578,11 +585,18 @@ static expr ast_emit_expr_impl(expr_node *n)
             // Constant folding: a fully-constant int subtree collapses to one
             // literal. A non-negative result is just that literal (num2exp,
             // no emit); a negative one has no literal form, so it becomes a
-            // NEG_M of its magnitude via oper_neg (e.g. 3-5 -> NEG_M 2).
+            // NEG_M of its magnitude via oper_neg (e.g. 3-5 -> NEG_M 2). The
+            // value is first taken to the word, as the hardware would wrap it
+            // (100 + 100 at #NUBITS 8 is -56), so the literal fits the word;
+            // the most negative int is NEG_M of 2^(NUBITS-1), as for 0x80.
             {
                 long cval;
                 if (const_eval(n, &cval)) {
                     char buf[32];
+                    long long m = 1LL << nubits, w = (((long long)cval % m) + m) % m;
+                    if (w >= m / 2) w -= m;
+                    cval = (long)w;
+                    if (cval == -(m / 2)) return oper_neg(num2exp(inum_min_id(), 1));
                     if (cval >= 0) {
                         snprintf(buf, sizeof buf, "%ld", cval);
                         return num2exp(exec_inum(buf), 1);
@@ -1429,7 +1443,7 @@ void stmt_emit(stmt_node *n)
             if (int_cases)
             {
                 emit_cond_int_load(cond_e, 1);
-                int nub = nbmant + nbexpo + 1;
+                int nub = nubits;
                 long long mod = 1LL << nub, prev = 0;
                 int def_idx = -1;
                 stmt_node *body = n->body;

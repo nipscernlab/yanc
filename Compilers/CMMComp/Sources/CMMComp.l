@@ -193,8 +193,8 @@ COMEN  "//"[^\n]*
 			 
 {INNUM}      {
                 int k = inum_kind(yytext);
-                yylval.ival = k ? exec_inum_neg(yytext) : exec_inum(yytext);
-                return k == 0 ? INUM : k == 1 ? NINUM : NIMIN;
+                yylval.ival = (k == 1 || k == 2) ? exec_inum_neg(yytext) : k == 3 ? inum_min_id() : exec_inum(yytext);
+                return k == 0 ? INUM : k == 1 ? NINUM : k == 2 ? NIMIN : DIMIN;
              }
 			 
 {FLNUM}      {
