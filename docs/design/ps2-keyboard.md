@@ -119,7 +119,10 @@ everything you suggested"; what was left for later is in GitHub issue #3):
 19. **The codes are shared with the screen**: 0-127 ASCII; 128-159 screen
     commands, never from the keyboard; 160-255 for the keyboard's special
     keys (arrows, F-keys, later; decision 6), which the screen always
-    ignores. Today the block gives 1-127 only.
+    ignores. Today the block gives 1-127 only. Since 2026-10-28 the codes
+    are an int of 8 bits: the commands are -128 to -97 and the special
+    keys -96 to -1, the same bit patterns, and the block sign-extends its
+    word ([vga-text.md](vga-text.md), decision 18).
 
 ## 3. Specification (as implemented)
 

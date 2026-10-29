@@ -12,10 +12,13 @@
 //   10           column 0 of the next line
 //   8            the cursor back one column and a space there (nothing at 0)
 //   9            the next column that is a multiple of 8
-//   128          clear: 2,400 spaces, cursor at (0, 0)
-//   129, l, c    the cursor at screen line l and column c (out of range: 0)
-//   anything else is ignored: 130-159 are kept for later screen commands,
-//   160-255 (the keyboard's special keys) are ignored for good
+//   -128         clear: 2,400 spaces, cursor at (0, 0)
+//   -127, l, c   the cursor at screen line l and column c (out of range: 0)
+//   anything else is ignored: -126 to -97 are kept for later screen
+//   commands, -96 to -1 (the keyboard's special keys) are ignored for good
+// The codes are an int of 8 bits, so a program of any #NUBITS writes them as
+// the same numbers (at 8 bits, 128 does not fit an int: GitHub issue #14);
+// the block compares the whole word, sign-extended.
 // "The next line" from the last line scrolls: a top-line register goes up by
 // one (mod 30) and the line it frees is cleared; nothing is copied. The block
 // takes a word only when it is idle and flips its C bit (`valeu`) only when
@@ -524,7 +527,7 @@ localparam IDLE = 2'd0, FILL = 2'd1;        // FILL: writing spaces (clear or sc
 
 reg [1:0]  state;
 reg        c;                               // the block's C bit
-reg [1:0]  pend;                            // 129's arguments: 1 = the line next, 2 = the column next
+reg [1:0]  pend;                            // -127's arguments: 1 = the line next, 2 = the column next
 reg [4:0]  arg_l;
 reg [11:0] fpos, fend;                      // FILL: the next address, the last one
 reg        fword;                           // FILL: a word asked for it (not the reset)
@@ -546,6 +549,8 @@ always @ (posedge clk) begin
 end
 
 wire [NUBITS-1:0] w = wq;
+localparam [NUBITS-1:0] CLEAR = -128,       // the commands, sign-extended to the word
+                        CURSOR = -127;
 wire              new_word = (tq != c);
 
 // where the cursor goes after a character or a jump, scrolling on the last line
@@ -581,11 +586,11 @@ always @ (posedge clk) begin
 		end
 		fpos <= fpos + 12'd1;
 	end else if (new_word) begin                // IDLE, a word offered
-		if (pend == 2'd1) begin                 // 129's line
+		if (pend == 2'd1) begin                 // -127's line
 			arg_l <= (w < 30) ? w[4:0] : 5'd0;
 			pend  <= 2'd2;
 			c     <= ~c;
-		end else if (pend == 2'd2) begin        // 129's column
+		end else if (pend == 2'd2) begin        // -127's column
 			crow  <= arg_l;
 			ccol  <= (w < 80) ? w[6:0] : 7'd0;
 			pend  <= 2'd0;
@@ -609,10 +614,10 @@ always @ (posedge clk) begin
 		end else if (w == 9) begin              // tab
 			if (ccol >= 7'd72) next_line;
 			else begin ccol <= (ccol | 7'd7) + 7'd1; c <= ~c; end
-		end else if (w == 128) begin            // clear
+		end else if (w == CLEAR) begin          // clear
 			crow <= 5'd0; ccol <= 7'd0; top <= 5'd0;
 			fpos <= 12'd0; fend <= 12'd2399; fword <= 1'b1; state <= FILL;
-		end else if (w == 129) begin            // cursor: the line and the column come next
+		end else if (w == CURSOR) begin         // cursor: the line and the column come next
 			pend <= 2'd1;
 			c    <= ~c;
 		end else
