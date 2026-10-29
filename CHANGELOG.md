@@ -130,6 +130,11 @@ tags consumed by Aurora.
   that path; they now come from MSYS2's own `/tmp` and the Verilator
   `Scripts/env.sh` finds, and off Windows `TMP` is left alone. `est.py`
   takes `$YOSYS` or the `yosys` on the PATH.
+- **The CHANGELOG's version links stopped at v7.1** (issue #51): v8.0,
+  v9.0 and v9.1 had no link line, and `[Unreleased]` compared from v7.1.
+  `Scripts/check_changelog.py`, run by `regress.sh`, now fails a heading
+  without its link and an `[Unreleased]` that does not compare from the
+  newest version.
 - **Contributor documents described an older YANC** (issue #2):
   CONTRIBUTING.md (the CI, `--lang`, the symbol table, how to build), the
   tool options in docs/command-line.md and the package README, where the
@@ -2668,7 +2673,10 @@ history).
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v7.1...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v9.1...HEAD
+[v9.1]: https://github.com/nipscernlab/yanc/releases/tag/v9.1
+[v9.0]: https://github.com/nipscernlab/yanc/releases/tag/v9.0
+[v8.0]: https://github.com/nipscernlab/yanc/releases/tag/v8.0
 [v7.1]: https://github.com/nipscernlab/yanc/releases/tag/v7.1
 [v6.0]: https://github.com/nipscernlab/yanc/releases/tag/v6.0
 [v5.7]: https://github.com/nipscernlab/yanc/releases/tag/v5.7
