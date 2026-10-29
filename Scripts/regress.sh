@@ -27,7 +27,8 @@
 #   3. ISA table: hold the hand-written copies of the instruction set
 #      (ASMComp.l, core.v) to Compilers/common/isa.tsv, so the four places
 #      that spell the ISA out cannot drift apart silently. See
-#      Scripts/check_isa.py.
+#      Scripts/check_isa.py. In the same step, Scripts/check_changelog.py
+#      holds CHANGELOG.md's link lines to its version headings.
 #
 #   3b. Float and complex conditions: Scripts/fcond runs the same cases on
 #      the host C/C++ compiler and on both compilers (three float formats,
@@ -1387,6 +1388,12 @@ if command -v python3 >/dev/null 2>&1; then
         pass=$((pass + 1))
     else
         fail=$((fail + 1)); failed_names+=("messages-doc")
+    fi
+    # and CHANGELOG.md's link lines to its version headings (issue #51)
+    if python3 "$ROOT/Scripts/check_changelog.py" "$ROOT"; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("changelog-links")
     fi
 else
     echo ""
