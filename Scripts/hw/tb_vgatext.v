@@ -12,7 +12,7 @@
 //   - the handshake: a clear holds the SAPHO about 2,400 cycles, a character
 //     a few.
 // Added for v9.1: the outputs are defined during reset (syncs 1, ativo and
-// pixel 0) and never x after it; codes 130-255 are ignored; the screen
+// pixel 0) and never x after it; codes -126 to -1 are ignored; the screen
 // memory is never read past 2399; a word offered while the reset clears the
 // screen is carried out after it; a reset of the block alone while T = C = 1
 // takes no stale word, and the link works after.
@@ -143,17 +143,18 @@ initial begin
 	if (wait_cycles > 4) begin errs = errs + 1; $display("  a character held the SAPHO %0d cycles", wait_cycles); end
 	toma(10); say("ab"); toma(8);             want_text(1, 0, "a ", 2); want_cursor(1, 1);
 	toma(9);                                  want_cursor(1, 8);
-	toma(129); toma(5); toma(10); toma(65);   want_text(5, 10, "A", 1); want_cursor(5, 11);
-	toma(129); toma(40); toma(90);            want_cursor(0, 0);
+	toma(-127); toma(5); toma(10); toma(65);  want_text(5, 10, "A", 1); want_cursor(5, 11);
+	toma(-127); toma(40); toma(90);           want_cursor(0, 0);
 	toma(0); toma(27); toma(127); toma(200);  want_cursor(0, 0); want_text(0, 0, "Hello", 5);
-	for (k = 130; k < 256; k = k + 1) toma(k);   // later commands and the keyboard's special keys
+	for (k = -126; k < 0; k = k + 1) toma(k);    // later commands and the keyboard's special keys
+	if (NUBITS > 8) for (k = 128; k < 256; k = k + 1) toma(k);   // past 8 bits, the old command codes are no command
 	want_cursor(0, 0); want_text(0, 0, "Hello", 5);
-	toma(129); toma(1); toma(78); toma(8'h58); toma(8'h59);   // 'X' at 78, 'Y' at 79: past 79 goes to the next line
+	toma(-127); toma(1); toma(78); toma(8'h58); toma(8'h59);   // 'X' at 78, 'Y' at 79: past 79 goes to the next line
 	want_text(1, 78, "XY", 2); want_cursor(2, 0);
-	toma(129); toma(3); toma(75); toma(9);   want_cursor(4, 0);   // tab past column 72: next line
+	toma(-127); toma(3); toma(75); toma(9);   want_cursor(4, 0);   // tab past column 72: next line
 
 	// the picture: 'A' at (5,10), the cursor's underline blinking at (5,11)
-	toma(129); toma(5); toma(11);
+	toma(-127); toma(5); toma(11);
 	force dut.frames = 5'h10; one_frame;
 	check_cell_A(5, 10);
 	if (cell_row(5, 11, 14) !== 8'hFF || cell_row(5, 11, 15) !== 8'hFF) begin errs = errs + 1; $display("  the cursor's underline is not lit"); end
@@ -165,16 +166,16 @@ initial begin
 	if (hper !== 799)    begin errs = errs + 1; $display("  hs period %0d, want 800", hper + 1); end
 
 	// scroll: a new line from the last screen line
-	toma(129); toma(29); toma(0); say("last");
-	toma(129); toma(0); toma(0); say("first");
-	toma(129); toma(29); toma(4); toma(10);
+	toma(-127); toma(29); toma(0); say("last");
+	toma(-127); toma(0); toma(0); say("first");
+	toma(-127); toma(29); toma(4); toma(10);
 	if (dut.top !== 1) begin errs = errs + 1; $display("  top %0d after a scroll, want 1", dut.top); end
 	want_text(28, 0, "last", 4); want_blank_line(29); want_cursor(29, 0);
 	if (wait_cycles < 80) begin errs = errs + 1; $display("  a scroll held the SAPHO %0d cycles, want at least 80", wait_cycles); end
 	say("new"); want_text(29, 0, "new", 3);
 
 	// clear
-	toma(128);
+	toma(-128);
 	if (wait_cycles < 2400) begin errs = errs + 1; $display("  a clear held the SAPHO %0d cycles, want at least 2400", wait_cycles); end
 	want_blank_line(0); want_blank_line(28); want_blank_line(29); want_cursor(0, 0);
 	if (dut.top !== 0) begin errs = errs + 1; $display("  top %0d after a clear, want 0", dut.top); end

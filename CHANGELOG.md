@@ -50,6 +50,16 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **The codes of the screen and the keyboard are an int of 8 bits, -128 to
+  127.** The screen's clear is `toma_sync(k, -128)` and its cursor command
+  `-127`, at every `#NUBITS`; the keyboard's special keys will be -96 to -1.
+  At 8 bits the bits on the link are the ones of 128 and 129, but 128 does
+  not fit an 8-bit int, and CÂ± will stop on a literal past the word (GitHub
+  issue #14). A program that writes 128 or 129 to `myVGAText` must change:
+  at 8 bits the new compiler stops on it, and past 8 bits the block ignores
+  it. `myVGAText` compares the whole word with the sign-extended command;
+  `myKeyPS2` sign-extends its word (it gives no code past 127 yet).
+  Manual: docs/peripherals.md; design: docs/design/vga-text.md, decision 18.
 - **`TODO.md` is gone: open work is in the GitHub issues.** Each item
   became an issue, was closed or was dropped (2026-10-27); the file stays
   in the git history, and "TODO item N" in a comment or a note is its item
