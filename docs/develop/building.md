@@ -44,7 +44,7 @@ and GTKWave are the same as for using YANC ([Installing YANC](../install.md#to-s
 
 ```sh
 bash Scripts/regress.sh            # the whole regression (about 30 minutes)
-bash Scripts/regress.sh --no-sim   # without simulating the C± tests (a few minutes)
+bash Scripts/regress.sh --no-sim   # without simulating anything (a few minutes)
 ```
 
 The regression builds the tools, compiles every test and compares its
