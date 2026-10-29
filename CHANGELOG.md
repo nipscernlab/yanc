@@ -54,7 +54,7 @@ tags consumed by Aurora.
   127.** The screen's clear is `toma_sync(k, -128)` and its cursor command
   `-127`, at every `#NUBITS`; the keyboard's special keys will be -96 to -1.
   At 8 bits the bits on the link are the ones of 128 and 129, but 128 does
-  not fit an 8-bit int, and CÂ± will stop on a literal past the word (GitHub
+  not fit an 8-bit int, and C± will stop on a literal past the word (GitHub
   issue #14). A program that writes 128 or 129 to `myVGAText` must change:
   at 8 bits the new compiler stops on it, and past 8 bits the block ignores
   it. `myVGAText` compares the whole word with the sign-extended command;

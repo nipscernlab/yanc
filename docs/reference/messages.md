@@ -101,6 +101,7 @@ value. What the common ones mean and how to get past them is in
 
 ### Warnings
 
+- Heads up on line <n>: the array has <n> positions, but an int index of <n> bits only reaches <n>.
 - Heads up on line <n>: if you don't want this warning, use 'fout'.
 - Heads up on line <n>: if you don't want this warning, use 'out'.
 - Warning on line <n>: conj of a real number? It's just itself with a zero imaginary part, but ok!
