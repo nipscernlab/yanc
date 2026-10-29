@@ -54,11 +54,19 @@ defaults; see [Directives](directives.md).
   (octal: a leading 0 makes it octal, as in C, so `010` is 8), `0b101010`,
   and the `u`, `U`, `l`, `L` suffixes (they change nothing: there is one
   int). A negative number is the unary minus applied to it: `-42`. A
-  hexadecimal, octal or binary literal is a bit pattern of the `#NUBITS`
-  word, as in C: with the sign bit set it is negative, so `0xFFFFFFFF` is
-  -1 and `0x80000000` the most negative int at 32 bits (`0xFF` and `0x80`
-  at 8). Such a literal is accepted in expressions and in lists between
-  braces; an array size, a port or a `case` takes a positive one.
+  decimal literal must fit the `#NUBITS` word: at 8 bits the largest is 127,
+  and `200` is an error (arithmetic past the word wraps, as the hardware
+  does: `100 + 100` is -56). The one exception is the most negative int:
+  `-128` at 8 bits (`-2147483648` at 32) is accepted, so 128 may follow a
+  unary minus, but `a - 128` is still an error. An array size, a port and
+  a directive are no values of the word and take any literal: `int v[200];`
+  at 8 bits compiles, with a warning that an int index reaches only 127. A
+  hexadecimal, octal or binary literal is a
+  bit pattern of the `#NUBITS` word, as in C: with the sign bit set it is
+  negative, so `0xFFFFFFFF` is -1 and `0x80000000` the most negative int at
+  32 bits (`0xFF` and `0x80` at 8). Such a literal is accepted in
+  expressions and in lists between braces; an array size, a port or a
+  `case` takes a positive one.
 - Float literals, in every form C writes them: `3.14`, `0.5`, `.5`, `2.`,
   `1e-5`, `2.5E+3`, `007.5`, and with a suffix `1.5f` (`f`, `F`, `l`, `L`;
   the suffix changes nothing, there is one float). Each one is encoded

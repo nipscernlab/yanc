@@ -85,8 +85,14 @@ tags consumed by Aurora.
   test to the bottom: at `#NUBITS 8`, `for (k = 0; k < 200; ...)` (200 is
   -56 in the word) skipped the first test and ran once; the hardware runs it
   0 times. The loop rewrite and the `switch` dispatch now use `#NUBITS`;
-  constant folding keeps its range, since a folded value past the word wraps
-  as the hardware would. Fixture `cmm_nubits8`.
+  constant folding keeps its range, and a folded value is taken to the word
+  as the hardware computes it (`100 + 100` is -56 at 8 bits). A decimal
+  literal used as a value must now fit the word: `200` at 8 bits is an
+  error, as `3000000000` is at 32. The most negative int is written as in
+  C, `-128` at 8 bits and `-2147483648` at 32; `a - 128` is still an error.
+  An array size, a port and a directive take any literal; an array longer
+  than an int index reaches (`int v[200]` at 8 bits) gives a warning.
+  Fixture `cmm_nubits8`; NegTests `int_word8`, `int_minus128`.
 - **C++: a float literal is rounded once, as in C±** (#12). cppcomp read it
   into a host `double` and wrote that back with `%.17g`, so the assembler
   rounded a second time, and a literal within 2^-53 of the point halfway

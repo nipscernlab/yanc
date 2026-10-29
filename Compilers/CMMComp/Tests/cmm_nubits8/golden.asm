@@ -9,12 +9,13 @@ LOD 0
 SET main_n
 LOD 3
 SET main_s
-LOD 200
+#array main_big 1 200
+NEG_M 56
 OUT 0
 LOD main_a
 ADD main_a
 OUT 0
-LOD 400
+NEG_M 112
 OUT 0
 NEG_M 80
 ADD main_a
@@ -22,9 +23,19 @@ P_NEG_M 80
 ADD main_a
 S_MLT
 OUT 0
+NEG_M 128
+OUT 0
+NEG_M 36
+ADD main_a
+P_NEG_M 36
+ADD main_a
+S_ADD
+OUT 0
+NEG_M 128
+OUT 0
 LOD 0
 SET main_k
-@__Lwh1 LOD 200
+@__Lwh1 NEG_M 56
 LES main_k
 JIZ __Lwh1end
 LOD main_n
@@ -55,10 +66,10 @@ JMP __Lwh2
 OUT 0
 LOD 0
 SET main_n
-LOD 200
+LOD 0
 SET main_k
-@__Lwh3 LOD 100
-GRE main_k
+@__Lwh3 NEG_M 56
+LES main_k
 JIZ __Lwh3end
 LOD main_n
 ADD 1
@@ -69,27 +80,10 @@ SET main_k
 JMP __Lwh3
 @__Lwh3end LOD main_n
 OUT 0
-LOD 0
-SET main_n
-LOD main_a
-ADD main_a
-SET main_k
-@__Lwh4 LOD 100
-GRE main_k
-JIZ __Lwh4end
-LOD main_n
-ADD 1
-SET main_n
-LOD main_k
-ADD 1
-SET main_k
-JMP __Lwh4
-@__Lwh4end LOD main_n
-OUT 0
 LOD main_s
-ADD 56
+ADD -120
 JIZ __sw_body_1_1
-ADD -59
+ADD 117
 JIZ __sw_body_1_2
 JMP __sw_body_1_3
 @__sw_body_1_1 LOD 11
@@ -100,4 +94,8 @@ OUT 0
 JMP __switch_end_1
 @__sw_body_1_3 LOD 33
 OUT 0
-@__switch_end_1 @fim JMP fim
+@__switch_end_1 LOD 5
+SET_V main_big 100
+LOD_V main_big 100
+OUT 0
+@fim JMP fim

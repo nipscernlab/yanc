@@ -478,9 +478,9 @@ static int const_eval(expr_node *n, long *val)
     // bits, 32 by default; min = -max. In a narrower int-only word (#NUBITS 8
     // with no float format) that is still 32 bits, and a folded value past the
     // word is right anyway: + - * & | ^ wrap the same way modulo 2^NUBITS, and
-    // asmcomp keeps the literal's low NUBITS bits (issue #14, cmm_nubits8).
-    // Nothing may compare such a value at compile time: for_bottom_test checks
-    // its literals against the word itself.
+    // the caller takes the result to the word before it becomes a literal
+    // (issue #14, cmm_nubits8). Nothing may compare such a value at compile
+    // time: for_bottom_test checks its literals against the word itself.
     long max = ((long)1 << (nbmant + nbexpo)) - 1;
     long min = -max;
 
@@ -585,11 +585,18 @@ static expr ast_emit_expr_impl(expr_node *n)
             // Constant folding: a fully-constant int subtree collapses to one
             // literal. A non-negative result is just that literal (num2exp,
             // no emit); a negative one has no literal form, so it becomes a
-            // NEG_M of its magnitude via oper_neg (e.g. 3-5 -> NEG_M 2).
+            // NEG_M of its magnitude via oper_neg (e.g. 3-5 -> NEG_M 2). The
+            // value is first taken to the word, as the hardware would wrap it
+            // (100 + 100 at #NUBITS 8 is -56), so the literal fits the word;
+            // the most negative int is NEG_M of 2^(NUBITS-1), as for 0x80.
             {
                 long cval;
                 if (const_eval(n, &cval)) {
                     char buf[32];
+                    long long m = 1LL << nubits, w = (((long long)cval % m) + m) % m;
+                    if (w >= m / 2) w -= m;
+                    cval = (long)w;
+                    if (cval == -(m / 2)) return oper_neg(num2exp(inum_min_id(), 1));
                     if (cval >= 0) {
                         snprintf(buf, sizeof buf, "%ld", cval);
                         return num2exp(exec_inum(buf), 1);

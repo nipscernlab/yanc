@@ -274,12 +274,15 @@ static int word_bits(void) { return nubits < 2 ? 2 : nubits > 32 ? 32 : nubits; 
 
 // what the lexer returns for an int literal: 0 a plain INUM; 1 (NINUM) a hex,
 // octal or binary literal with the word's sign bit set, a negative int as in
-// C (0xFFFFFFFF is -1 at 32 bits, 0xFF at 8); 2 (NIMIN) the most negative one
+// C (0xFFFFFFFF is -1 at 32 bits, 0xFF at 8); 2 (NIMIN) the most negative one;
+// 3 (DIMIN) the decimal 2^(w-1), 128 at 8 bits: it fits only after a minus,
+// so the grammar takes it only as `- 128`, the most negative int
 int inum_kind(const char *text)
 {
     int base; unsigned long long v = inum_value(text, &base);
     int w = word_bits();
-    if (base == 10 || v < (1ULL << (w - 1)) || v >= (1ULL << w)) return 0;
+    if (base == 10) return (v == (1ULL << (w - 1))) ? 3 : 0;
+    if (v < (1ULL << (w - 1)) || v >= (1ULL << w)) return 0;
     return (v == (1ULL << (w - 1))) ? 2 : 1;
 }
 
@@ -294,8 +297,9 @@ int exec_inum_neg(char *text)
     return exec_inum(t);
 }
 
-// the magnitude of the most negative int, 2^(w-1), as a table entry: only a
-// brace list writes it (with its minus sign), so it skips the range check
+// the magnitude of the most negative int, 2^(w-1), as a table entry: a brace
+// list writes it with its minus sign, and the lexer gives it for a DIMIN (128
+// at 8 bits, 2^31 at 32), so it skips the range check
 int inum_min_id(void)
 {
     char t[32]; snprintf(t, sizeof(t), "%llu", 1ULL << (word_bits() - 1));
@@ -305,19 +309,45 @@ int inum_min_id(void)
     return id;
 }
 
+// a decimal int past the word (also a DIMIN anywhere but after a minus)
+void inum_overflow(void)
+{
+    fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, (int)((1LL << (word_bits() - 1)) - 1));
+    exit(EXIT_FAILURE);
+}
+
+// an int literal used as a value (an expression, a list between braces, a
+// case) must fit the #NUBITS word: 200 at 8 bits is an error, not -56 (issue
+// #14). A size, a port or a directive is no value of the word and is not held
+// to it: the lexer takes every literal up to 2^31 - 1.
+int inum_word(int id)
+{
+    if (strtoull(v_table[id].name, NULL, 10) > (1ULL << (word_bits() - 1)) - 1) inum_overflow();
+    return id;
+}
+
+// an array size past what an int index reaches (2^(w-1) positions, indices 0
+// to 2^(w-1) - 1) is allowed, with a warning: 200 positions at 8 bits
+int arr_size(int id)
+{
+    unsigned long long n = strtoull(v_table[id].name, NULL, 10), half = 1ULL << (word_bits() - 1);
+    if (n > half) fprintf (stdout, MSG_WARN_ARR_SIZE_WORD, line_num+1, (int)n, word_bits(), (int)(half - 1));
+    return id;
+}
+
 // used when the lexer finds an int constant
 int exec_inum(char *text)
 {
     // range check ------------------------------------------------------------
     // no negative constants ever reach this function
 
-    // the width the directives give so far, never past 32: they may be in flux
-    // (#NBMANT 25 read before #NBEXPO 6 is a 34-bit word for a moment)
-    int       w   = nbmant + nbexpo + 1;
-    long long max = (1LL << ((w < 32 ? w : 32) - 1)) - 1;
+    // the largest int of a 32-bit word: the literal's own limit. Whether it
+    // fits #NUBITS depends on where it stands, so the grammar checks that
+    // (inum_word)
+    long long max = (1LL << 31) - 1;
     unsigned long long num = inum_value(text, NULL);
 
-    if (num > (unsigned long long)max) {fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, (int)max); exit(EXIT_FAILURE);}
+    if (num > (unsigned long long)max) inum_overflow();
 
     // add to the table, in decimal: the .asm reads only that -----------------
 

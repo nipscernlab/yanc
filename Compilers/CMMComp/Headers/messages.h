@@ -62,6 +62,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: o maior número inteiro que pode ser representado é %d!\n", \
       "Error on line %d: the biggest integer this thing can hold is %d!\n")
 
+#define MSG_WARN_ARR_SIZE_WORD \
+    M("Atenção na linha %d: o array tem %d posições, mas um índice int de %d bits só chega até %d.\n", \
+      "Heads up on line %d: the array has %d positions, but an int index of %d bits only reaches %d.\n")
+
 #define MSG_ERR_OCTAL_DIGIT \
     M("Erro na linha %d: '%s' começa com 0, então é octal, e octal não tem 8 nem 9.\n", \
       "Error on line %d: '%s' starts with 0, so it is octal, and octal has no 8 or 9.\n")
