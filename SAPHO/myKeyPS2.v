@@ -16,8 +16,9 @@
 //   - Shift and Ctrl are the only states: Ctrl+A..Z give 1..26, Ctrl with any
 //     other key gives nothing. Nothing is sent back to the keyboard: both
 //     wires are inputs.
-//   - Codes: 0-127 ASCII; 160-255 are kept for special keys (none delivered
-//     yet); 128-159 never come from the keyboard (screen commands, myVGAText).
+//   - Codes, an int of 8 bits: 0-127 ASCII; -96 to -1 are kept for special
+//     keys (none delivered yet); -128 to -97 never come from the keyboard
+//     (screen commands, myVGAText).
 //
 // Chain: two flip-flops on each wire, ps2_clk filtered -> 11-bit frame (start, 8 data bits LSB
 // first, odd parity, stop), a bad frame dropped, the bit count restarted when
@@ -268,7 +269,7 @@ reg t, offered;                                    // T bit; a character is on d
 assign pop   = offered & (cade == t);              // the program took it
 assign taqui = t;
 assign tem_tecla = (count != 0);
-assign dado  = rdq;                                // zero-extended to NUBITS (a {0{..}} pad is not Verilog at NUBITS 8);
+assign dado  = $signed(rdq);                       // sign-extended to NUBITS (a {0{..}} pad is not Verilog at NUBITS 8);
                                                    // still while offered: the head is not read anew
 
 // On reset T takes the program's C: T == C means "nothing on offer", so a

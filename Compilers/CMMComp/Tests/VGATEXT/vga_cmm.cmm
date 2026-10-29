@@ -6,7 +6,7 @@
 // (TopLevel/vgatext_tb.v).
 void main()
 {
-    toma_sync(1, 128);
+    toma_sync(1, -128);
     toma_sync(1, 62);
     toma_sync(1, 32);
     while (1) toma_sync(1, cade_sync(0));
