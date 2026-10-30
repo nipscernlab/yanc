@@ -197,7 +197,7 @@ before its first `#include`:
 |---|---|---|
 | `YANC_STDIN_LINK` | 0 | the keyboard's link |
 | `YANC_STDOUT_LINK` | 1 | the screen's link |
-| `YANC_LINK_SYNC` | 1 | 1: the blocks on the processor's clock (`cade_sync`/`toma_sync`); 0: on another clock (`cade`/`toma`) |
+| `YANC_LINK_SYNC` | 1 | 1: the blocks on the processor's clock (`cade_sync`/`toma_sync`; the blocks may take `.LINK_SYNC(1)`); 0: on another clock (`cade`/`toma`; the blocks at their default, `LINK_SYNC` 0) |
 | `YANC_ECHO` | 1 | 1: what is typed shows on the screen |
 | `YANC_LINE_MAX` | 80 | the longest line read |
 

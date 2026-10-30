@@ -21,7 +21,9 @@ wire [7:0] dado_a, dado_b;
 
 kbd_cmm A (.clk(clk), .rst(rst), .out(out_a), .out_en(en_a),
            .cade_0(cade_a), .taqui_0(taqui_a), .cade_dado_0(dado_a));
-myKeyPS2 #(.LAYOUT("US"), .NUBITS(8), .CLK_KHZ(CLK_KHZ)) KA (.clk(clk), .rst(rst),
+// KA as on the processor's clock (LINK_SYNC 1); KB with the default, C
+// through two flip-flops (#64), which works on one clock too, two cycles later
+myKeyPS2 #(.LAYOUT("US"), .NUBITS(8), .CLK_KHZ(CLK_KHZ), .LINK_SYNC(1)) KA (.clk(clk), .rst(rst),
            .ps2_clk(ps2_clk), .ps2_dat(ps2_dat), .taqui(taqui_a), .dado(dado_a), .cade(cade_a));
 
 kbd_cpp B (.clk(clk), .rst(rst), .out(out_b), .out_en(en_b),
