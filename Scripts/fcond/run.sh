@@ -1,5 +1,5 @@
 #!/bin/bash
-# The float-as-a-condition test of TODO item 33: the host g++ gives the C
+# The float-as-a-condition test: the host g++ gives the C
 # answer, cppcomp and cmmcomp (#FROUND 0/1/2) run on the simulated processor,
 # compare.py lines them up. BIN (default .smoke/bin) and HDL (default SAPHO/)
 # pick the compilers and the processor, so a prototype can be tried.

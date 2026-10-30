@@ -1,0 +1,192 @@
+// Every way to combine the Dirac notation, one statement a case, with what
+// cmmcomp must do. Run by Scripts/dirac_cases.py (Scripts/regress.sh).
+//
+// Format: <statement> TAB <expected>. The statement goes inside main() of a
+// program that declares the names of dirac_cases.py's PRELUDE. Expected:
+//   ok      it compiles;
+//   oven    the shapes are right, but the combination is not computed yet
+//           (MSG_ERR_DIRAC_NOT_YET, until step b of
+//           docs/design/dirac-expressions.md);
+//   other   it stops, and the message contains this text.
+// Lines starting with // are comments. The fields are separated by a tab
+// because the bar | is part of the notation.
+//
+// Names (dirac_cases.py): float c d x; int n k; comp z;
+// float a b e [3], u [2]; int ia ib [3]; comp za zb [3];
+// float M N [3][3], R [3][2], Q [2][3]; int IM [3][3];
+// float v [3], y [2], V [3][3], W [3][2]; int iv [3], IV [3][3].
+
+// ---- a number: x = ... ---------------------------------------------------
+x = ⟨a|b⟩;	ok
+x = 1.0 + ⟨a|b⟩;	ok
+x = 2.0*⟨a|b⟩;	ok
+x = -⟨a|b⟩;	ok
+x = ⟨a|b⟩*⟨a|e⟩;	ok
+x = ⟨a|b⟩ + ⟨e|a⟩;	ok
+x = sqrt(⟨a|b⟩);	ok
+n = ⟨ia|ib⟩;	ok
+ia[0] = ⟨ia|ib⟩;	ok
+if (⟨a|b⟩ > 0.0) x = 1.0;	ok
+while (⟨a|b⟩ > c) c = c + 1.0;	ok
+x = ⟨a|M|b⟩;	oven
+x = ⟨a|R|u⟩;	oven
+a[0] = ⟨a|M|b⟩;	oven
+x = ⟨a|u⟩;	must match the rows of the second
+x = ⟨a|R|b⟩;	must match the rows of the second
+x = ⟨u|M|b⟩;	must match the rows of the second
+x = |a⟩;	I wanted a number
+x = ⟨a|;	I wanted a number
+x = |M|;	I wanted a number
+x = |a⟩⟨b|;	I wanted a number
+x = sqrt(|a⟩);	I wanted a number
+if (|a⟩) x = 1.0;	I wanted a number
+x = c + |a⟩;	Those shapes don't fit
+x = ⟨ia|b⟩;	different data types
+z = ⟨za|zb⟩;	complex numbers
+x = ⟨a⟩;	Syntax error
+x = ⟨c|b⟩;	ain't even a vector
+x = ⟨a|q⟩;	gotta declare 'q' first
+x = ⟨q|b⟩;	gotta declare 'q' first
+x = ⟨a|M||N|b⟩;	oven
+
+// ---- a vector: v # ... ---------------------------------------------------
+v # |M|a⟩;	ok
+v # c|a⟩;	ok
+v # 2.0|a⟩;	ok
+v # -c|a⟩;	ok
+v # (c+d)|a⟩;	ok
+v # 2.0*c|a⟩;	ok
+v # ⟨a|b⟩|e⟩;	ok
+v # |a⟩ + c|b⟩;	ok
+v # |a⟩ + 2.0|b⟩;	ok
+v # |a⟩ + -c|b⟩;	ok
+v # -c|in(0)⟩;	ok
+v # |0⟩;	ok
+v # c|in(0)⟩;	ok
+v # |R|u⟩;	ok
+y # |Q|a⟩;	ok
+a # |M|a⟩;	ok
+iv # n|ia⟩;	ok
+iv # 2|ia⟩;	ok
+v # |a⟩;	oven
+v # (|a⟩);	oven
+v # -|a⟩;	oven
+v # |a⟩ + |b⟩;	oven
+v # |a⟩ - c|b⟩;	oven
+v # c|b⟩ + |a⟩;	oven
+v # |a⟩ + c|b⟩ + d|e⟩;	oven
+v # |in(0)⟩;	oven
+v # |M|a⟩ + |b⟩;	oven
+v # c|M|a⟩;	oven
+v # -|M|a⟩;	oven
+v # |M||N|a⟩;	oven
+v # |M|N|a⟩;	oven
+v # ⟨a|;	oven
+v # ⟨a|M|;	oven
+v # c+d|a⟩;	Those shapes don't fit
+v # |a⟩ + |u⟩;	Those shapes don't fit
+v # |R|a⟩;	must match the rows of the second
+v # |Q|a⟩;	That won't fit, pal
+v # |u⟩;	That won't fit, pal
+v # c|I|;	That won't fit, pal
+v # |M|;	That won't fit, pal
+v # |a⟩⟨b|;	That won't fit, pal
+v # c;	That won't fit, pal
+v # ⟨a|b⟩;	That won't fit, pal
+x # c|a⟩;	That won't fit, pal
+v # c*|a⟩;	I wanted a number
+v # |a⟩*c;	I wanted a number
+v # |a⟩/c;	I wanted a number
+v # |a⟩c;	Syntax error
+v # |c⟩;	ain't even a vector
+v # |M⟩;	ain't even a vector
+v # |a|b⟩;	ain't even a matrix
+v # |q⟩;	gotta declare 'q' first
+v # |M|q⟩;	gotta declare 'q' first
+v # |M|c⟩;	ain't even a vector
+q # c|a⟩;	gotta declare 'q' first
+v # n|a⟩;	gotta be the same type
+v # c|ia⟩;	gotta be the same type
+za # z|zb⟩;	complex numbers
+
+// ---- a matrix: V # ... ---------------------------------------------------
+V # |a⟩⟨b|;	ok
+V # |M| - |a⟩⟨b|;	ok
+V # c|M|;	ok
+V # 2.0|M|;	ok
+V # -c|M|;	ok
+V # -c|I|;	ok
+V # c|I|;	ok
+V # 1.0|I|;	ok
+IV # n|IM|;	ok
+V # |M|;	oven
+W # |R|;	oven
+V # |I|;	oven
+V # |M| + |a⟩⟨b|;	oven
+V # |M| - c|a⟩⟨b|;	oven
+V # c|a⟩⟨b|;	oven
+V # |a⟩⟨b| + |M|;	oven
+V # |M| + |N|;	oven
+V # |M||N|;	oven
+V # |M| |N|;	oven
+V # |R||Q|;	oven
+V # |M|a⟩⟨b|;	oven
+V # |M| + |R|;	Those shapes don't fit
+V # |R||R|;	must match the rows of the second
+V # |Q||R|;	That won't fit, pal
+V # |a⟩⟨u|;	That won't fit, pal
+V # |0⟩;	That won't fit, pal
+V # |a⟩;	That won't fit, pal
+V # c;	That won't fit, pal
+V # c|v|;	ain't even a matrix
+V # n|M|;	gotta be the same type
+// the outer product of the unrolled code is square only (until step b)
+W # |a⟩⟨u|;	dimensions don't match
+
+// ---- a declaration: float D[N] # ... --------------------------------------
+float D[3] # |M|a⟩;	ok
+float D[3] # c|a⟩;	ok
+float D[3] # |a⟩ + c|b⟩;	ok
+float D[3] # |0⟩;	ok
+float D[3] # c|in(0)⟩;	ok
+int D[3] # n|ia⟩;	ok
+float D[3] # |a⟩;	oven
+float D[2] # |M|a⟩;	That won't fit, pal
+float D[3][3] # |a⟩⟨b|;	Syntax error
+
+// ---- out(p, ...) and fout(p, ...) ------------------------------------------
+out(0, c|a⟩);	ok
+out(0, 1.0|a⟩);	ok
+out(0, -c|a⟩);	ok
+out(0, n|ia⟩);	ok
+out(0, ⟨a|b⟩);	ok
+fout(0, ⟨a|b⟩);	ok
+out(0, |a⟩);	oven
+out(0, ⟨a|);	oven
+out(0, |M|a⟩);	oven
+fout(0, c|a⟩);	oven
+out(0, c|in(0)⟩);	oven
+out(0, |0⟩);	oven
+out(0, |M|);	Slice it up first
+out(0, |a⟩⟨b|);	Slice it up first
+out(0, c|I|);	Slice it up first
+out(0, c|ia⟩);	gotta be the same type
+out(0, n|a⟩);	gotta be the same type
+out(0, z|za⟩);	complex numbers
+
+// ---- the shift register: a # c -> |a⟩ -------------------------------------
+a # c -> |a⟩;	ok
+a # fin(0)*0.001 -> |a⟩;	ok
+a # ⟨a|b⟩ -> |a⟩;	ok
+ia # n+1 -> |ia⟩;	ok
+a # c -> |b⟩;	shift a vector into itself
+M # c -> |M⟩;	ain't even a vector
+
+// ---- the bar as bitwise or ---------------------------------------------------
+n = k | ia[1];	ok
+n = k | n | k;	ok
+n = ia[0] | ib[1];	ok
+n = k|ia[k]|n;	ok
+n = k || n;	ok
+n = k || ia[0];	ok
+n = k||ia[k];	ok

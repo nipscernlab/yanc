@@ -8,4 +8,3 @@ int  get_if   (); // peeks the latest      label of   the if    stack (0 if empt
 
 int push_while(); // pushes a new while    label onto the while stack
 int  pop_while(); // pops  the latest      label from the while stack
-int  get_while(); // peeks the latest      label of   the while stack (0 if empty)

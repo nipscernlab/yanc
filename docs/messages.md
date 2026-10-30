@@ -48,8 +48,6 @@ operators, exceptions, variadic functions (see
   module's. Rename the file.
 - **`#PRNAME is gone`**, **`#pragma yanc prname is gone`**: since v7.1 the
   name is the file's. Delete the line.
-- **`function 'f' has more than 16 parameters`**: the most a C± function
-  takes. Pass the rest through global variables.
 - **`sinh(.) doesn't take a comp`** (also `cosh`, `tanh`, `floor`, `ceil`,
   `round`): these take an int or a float only.
 - **`there's no output port N`** (or input port): the port number is at or
@@ -84,8 +82,8 @@ operators, exceptions, variadic functions (see
 
 ## Information worth reading
 
-- **`constant 0.1 on line N approximated to 0.10000000894070`**: the nearest
-  value the float format holds.
+- **`constant 0.1 on line N approximated to 0.099999994039535522 (error =
+  -5.96e-09)`**: the nearest value the float format holds, and how far it is.
 - **`ULA resource -> ...`** (asmcomp): each piece of the arithmetic unit the
   program needs; a divider or a float divider is the slowest and largest.
 - **`N divisions, 5 words each for DIV/MOD and 4 for F_DIV`**: every

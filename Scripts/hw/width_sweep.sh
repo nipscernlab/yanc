@@ -3,7 +3,7 @@
 # given word width? Every operator of width_sweep/ops.v (continuous assigns, the
 # way ula.v writes them) and the same expressions in a procedural block, against
 # an oracle of Python big integers. Decides whether YANC can go beyond 32 bits
-# (TODO.md item 6): re-run it when Icarus or Verilator is upgraded.
+# (GitHub issue #29): re-run it when Icarus or Verilator is upgraded.
 #
 # Usage: bash Scripts/hw/width_sweep.sh              (32 64 128, 3000 vectors)
 #        WIDTHS="64 256" N=10000 bash Scripts/hw/width_sweep.sh

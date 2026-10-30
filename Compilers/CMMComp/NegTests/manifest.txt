@@ -34,7 +34,6 @@ link_range.cmm|the link number is an integer from 0 to 1023
 prname_gone.cmm|#PRNAME is gone
 begin.cmm|is a Verilog keyword
 bad-name.cmm|can only have letters, digits and '_'
-params_17.cmm|has more than 16 parameters
 sinh_comp.cmm|sinh(.) doesn't take a comp
 toaqui_twice.cmm|duplicate #TOAQUI marker
 ini_type.cmm|does not take the value 2.5 between braces
@@ -43,15 +42,17 @@ ini_1d_rows.cmm|braces inside the list only mark the rows of a 2D array
 ini_rows.cmm|each with up to 2 values
 octal_digit.cmm|so it is octal, and octal has no 8 or 9
 ninum_size.cmm|Syntax error
+int_word8.cmm|biggest integer this thing can hold is 127
+int_minus128.cmm|biggest integer this thing can hold is 127
 
 # Dirac notation as expressions: shapes and the terms of a chain
-dirac_sum_shape.cmm|the shapes must be the same
-dirac_product_shape.cmm|do not match the rows of the second
-dirac_target_shape.cmm|and the expression gives
-dirac_not_scalar.cmm|where a number is needed
-dirac_out_matrix.cmm|writes a number or a vector
+dirac_sum_shape.cmm|Those shapes don't fit
+dirac_product_shape.cmm|must match the rows of the second
+dirac_target_shape.cmm|That won't fit, pal
+dirac_not_scalar.cmm|I wanted a number here
+dirac_out_matrix.cmm|Slice it up first
 dirac_not_matrix.cmm|ain't even a matrix
 dirac_not_vector.cmm|ain't even a vector
 dirac_scalar_ket.cmm|ain't even a vector
 dirac_braket_one.cmm|Syntax error
-dirac_not_yet.cmm|not implemented yet
+dirac_not_yet.cmm|still in the oven

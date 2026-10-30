@@ -70,12 +70,12 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: column count of '<name>' doesn't match size of '<name>'!
 - Error on line <n>: dimensions don't match. You're a confused soul!
 - Error on line <n>: you can only shift a vector into itself, mate!
-- Error on line <n>: adding or subtracting <name> and <name>: the shapes must be the same
-- Error on line <n>: <name> times <name>: the columns of the first do not match the rows of the second
-- Error on line <n>: '<name>' is <name> and the expression gives <name>
-- Error on line <n>: <name> where a number is needed
-- Error on line <n>: out() writes a number or a vector, not <name>
-- Error on line <n>: this combination of the Dirac notation is not implemented yet
+- Error on line <n>: adding <name> and <name>? Those shapes don't fit, mate!
+- Error on line <n>: <name> times <name>? No way: the columns of the first must match the rows of the second!
+- Error on line <n>: '<name>' is <name> and the expression gives <name>. That won't fit, pal!
+- Error on line <n>: I wanted a number here and you gave me <name>!
+- Error on line <n>: out() sends a number or a vector, not <name>. Slice it up first!
+- Error on line <n>: this Dirac combo is still in the oven. Hang tight!
 - Error on line <n>: what's the point of computing a remainder with non-integer numbers? Get a grip!
 - Error on line <n>: logical operation with a comp (int and float only)!
 - Error on line <n>: bad use of the '~' operator. Gotta pass an int. You tripping?
@@ -92,7 +92,6 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: where's this function '<name>' supposed to be?
 - Error on line <n>: function '<name>' is where exactly?
 - Error on line <n>: check again how many parameters the function '<name>' actually takes.
-- Error on line <n>: function '<name>' has more than <n> parameters, the most allowed.
 - Error on line <n>: take a look at function '<name>', you'll see it doesn't return anything.
 - Error on line <n>: parameter list of function '<name>' doesn't match the original.
 - Error on line <n>: that break is just hanging out lost!
@@ -108,6 +107,7 @@ value. What the common ones mean and how to get past them is in
 
 ### Warnings
 
+- Heads up on line <n>: the array has <n> positions, but an int index of <n> bits only reaches <n>.
 - Heads up on line <n>: if you don't want this warning, use 'fout'.
 - Heads up on line <n>: if you don't want this warning, use 'out'.
 - Warning on line <n>: conj of a real number? It's just itself with a zero imaginary part, but ok!
@@ -181,35 +181,6 @@ value. What the common ones mean and how to get past them is in
 
 ### Errors
 
-- error: '<name>': a name with '\_\_' in it is reserved (C++ keeps them for the compiler, and YANC uses them in the assembly)
-- error: #pragma yanc prname is gone: the processor takes the name of the file (filtro.cpp becomes the processor filtro); delete the line and, for another name, rename the file
-- error: #pragma yanc fftsiz does nothing in C++ (the bit-reversed addressing is C± only); delete the line
-- error: #pragma yanc itradd does nothing in C++ (interrupts are C± only); delete the line
-- error: '<name>': a number starting with 0 is octal, and has no 8 or 9
-- error: unexpected character '<c>' (0x<hex>)
-- error: a lambda is only supported as a global initializer (immediately-invoked, no captures)
-- error: cannot deduce the lambda's return type (return a local variable or a literal)
-- error: range-for over '<name>': it takes an array or an object with size() and operator[]
-- error: \_Static\_assert requires a constant integer expression
-- error: static assertion failed<name><name>
-- error: redefinition of global '<name>' (if this comes from a header, guard it with #ifndef or #pragma once)
-- error: unknown type '<name>'
-- error: '<name>' is not a class template
-- error: unknown base class '<name>'
-- error: member '<name>' takes one initializer
-- error: array field size must be constant
-- error: array size must be a constant expression
-- error: template argument must be a constant
-- error: typedef cannot have an initializer
-- error: an array of function pointers takes a { ... } initializer
-- error: '<name>' redeclared as a function (already a variable)
-- error: redefinition of function '<name>'<name>
-- error: out-of-class definition for unknown class '<name>'
-- error: qualified id '<name>::<name>' is not a constructor
-- error: out-of-class ctor for unknown class '<name>'
-- error: qualified id '<name>::~<name>' is not a destructor
-- error: out-of-class dtor for unknown class '<name>'
-- error: <name>
 - error: <name>: '<name>' is an instruction of the processor's assembly, rename it
 - error: <name> is '<name>' in the assembly, which is an instruction of the processor: rename it
 - error: <name>: 'global' names the global variables in the simulation log, rename the function
@@ -252,8 +223,36 @@ value. What the common ones mean and how to get past them is in
 - error: continue outside of loop
 - error: return value in void function
 - error: case/default outside switch
-- error: program has no main() function
 - error: cannot open <name>
+- error: program has no main() function
+- error: a lambda is only supported as a global initializer (immediately-invoked, no captures)
+- error: cannot deduce the lambda's return type (return a local variable or a literal)
+- error: range-for over '<name>': it takes an array or an object with size() and operator[]
+- error: \_Static\_assert requires a constant integer expression
+- error: static assertion failed<name><name>
+- error: redefinition of global '<name>' (if this comes from a header, guard it with #ifndef or #pragma once)
+- error: unknown type '<name>'
+- error: '<name>' is not a class template
+- error: unknown base class '<name>'
+- error: member '<name>' takes one initializer
+- error: array field size must be constant
+- error: array size must be a constant expression
+- error: template argument must be a constant
+- error: typedef cannot have an initializer
+- error: an array of function pointers takes a { ... } initializer
+- error: '<name>' redeclared as a function (already a variable)
+- error: redefinition of function '<name>'<name>
+- error: out-of-class definition for unknown class '<name>'
+- error: qualified id '<name>::<name>' is not a constructor
+- error: out-of-class ctor for unknown class '<name>'
+- error: qualified id '<name>::~<name>' is not a destructor
+- error: out-of-class dtor for unknown class '<name>'
+- error: '<name>': a name with '\_\_' in it is reserved (C++ keeps them for the compiler, and YANC uses them in the assembly)
+- error: #pragma yanc prname is gone: the processor takes the name of the file (filtro.cpp becomes the processor filtro); delete the line and, for another name, rename the file
+- error: #pragma yanc fftsiz does nothing in C++ (the bit-reversed addressing is C± only); delete the line
+- error: #pragma yanc itradd does nothing in C++ (interrupts are C± only); delete the line
+- error: '<name>': a number starting with 0 is octal, and has no 8 or 9
+- error: unexpected character '<c>' (0x<hex>)
 - error: unknown option '<name>'
 - error: the file '<name>' names the processor, and '<name>' <name>; rename the file
 - error: parse failed
@@ -268,12 +267,14 @@ value. What the common ones mean and how to get past them is in
 - error: stray #else
 - error: stray #endif
 - error: too many -I dirs
+- error: syntax error
+- error: memory exhausted
 
 ### Warnings
 
-- warning: unknown #pragma yanc setting '<name>'
-- warning: '<name>' asks for <n> bits, but a YANC word has <n>: the requested size is ignored and '<name>' is a <n>-bit <name>
 - warning: out() sends an integer word; this float is output as its raw bit pattern (wrong value) -- cast to int, e.g. out(port, (int)x)
+- warning: '<name>' asks for <n> bits, but a YANC word has <n>: the requested size is ignored and '<name>' is a <n>-bit <name>
+- warning: unknown #pragma yanc setting '<name>'
 
 ## asmcomp
 

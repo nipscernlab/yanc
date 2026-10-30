@@ -9,13 +9,12 @@
 extern char fname[512];             // name of the function currently being parsed
 extern int  mainok;                 // main function status: 0 -> undefined, 1 -> resolved (how it will be called)
 extern int  fun_id;                 // stores the id of the function being used
-extern int  p_test;                 // packed param-type list for the call currently being walked
 extern int  ret_ok;                 // set by STMT_RETURN walker when a `return` statement fires
 extern int  fun_parse;              // function being walked (set by STMT_FUNC walker; declar_ret reads it)
 
-// type-checks one argument against the expected parameter and emits LOD/SET
-// to stage it for the upcoming CAL. Read by the EXPR_FUNC_CALL walker.
-void par_check(expr e);
+// type-checks argument k (from 0) against the expected parameter and emits
+// LOD/SET to stage it for the upcoming CAL. Read by the EXPR_FUNC_CALL walker.
+void par_check(expr e, int k);
 
 // call graph: every CAL the walker emits is an edge caller -> callee, and
 // check_rec() stops the build on a cycle -- C+- locals live at fixed

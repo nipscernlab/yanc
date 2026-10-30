@@ -1,5 +1,6 @@
 :: ****************************************************************************
-:: Shared environment loader for the go_*.bat scripts.
+:: Shared environment loader for the runner scripts (single_proc.bat,
+:: multi_proc.bat).
 ::
 :: This file lives in <repo>\Scripts\. It resolves the repository root and the
 :: locations of the simulation tools (Icarus, Verilator, GTKWave) WITHOUT any
@@ -8,7 +9,7 @@
 ::   1. It loads Scripts\tools.local.bat if present -- the cache that
 ::      Scripts\setup.bat writes after verifying / downloading the tools.
 ::   2. For anything not in that cache, it falls back to a PATH lookup, so the
-::      go_*.bat still work if the tools happen to be on PATH already.
+::      runners still work if the tools happen to be on PATH already.
 ::
 :: It is meant to be CALLed (not run standalone) and deliberately does NOT use
 :: setlocal, so the variables it sets reach the caller:

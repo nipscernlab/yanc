@@ -5,7 +5,8 @@
 > forms, the pins carry the link number (`toma_k`, `cade_dado_k`, ...), and
 > `LINKAS` is gone: every link is synchronized unless the program uses a
 > `_sync` form. See [`toma-and-cade-links.md`](toma-and-cade-links.md). The
-> protocol, the hardware per link and the checks below still hold.
+> protocol, the hardware per link and the checks below still hold. The
+> appcomp named below is asmcomp's first pass since v7.1 (2026-10-13).
 
 Design record of TODO item 20 (2026-10-07, target v7.0). Worked out with
 Luciano in conversation; nothing below is implemented yet. Sections 1-4 are
@@ -119,7 +120,7 @@ for ints, and the same `#NBMANT`/`#NBEXPO` for floats. The link carries the
 word as it is, with no conversion: with different widths Verilog joins the
 buses by cutting or zero-filling, so a negative int arrives wrong (deduced
 from Verilog's rules, not tested), and a float of another format arrives
-garbled. Nothing warns: each program is compiled alone (TODO item 24).
+garbled. Nothing warns: each program is compiled alone (nipscernlab/aurora#240).
 
 On one clock `A.out -> B.cade_dado` is the same word (the wiring used
 before `toma_dado` existed). On two clocks see section 8: `toma_dado` and
@@ -387,7 +388,7 @@ Fmax and the board check of a linked design measure two full SAPHOs.
 - What `sapho_all_a`/`_b` add to `sapho_all`: `TOM` on A, `CAD` on B (and
   `LINKAS` when the clocks differ); 936 and 941 instructions against 933.
 
-### 8.7 For the documentation (item 21 in TODO.md)
+### 8.7 For the documentation (issue #40)
 
 Superseded (2026-10-11): the user-facing text for v7.1 is the list in
 [`toma-and-cade-links.md`](toma-and-cade-links.md) section 11 (several

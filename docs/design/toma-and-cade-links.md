@@ -256,10 +256,13 @@ between formats maybe in the future. v7.1 stops at the links.
   set_clock_groups -asynchronous -group [get_clocks clk_a] -group [get_clocks clk_b]
   ```
 - Still open: the board itself (Icarus has no metastability; only the board
-  shows the link holding up for hours). The students' task: the LINKALL pair
-  on each board with this `.sdc`, A on the switches, B on the LEDs.
+  shows the link holding up for hours). The students' task was the LINKALL
+  pair on each board with this `.sdc`, A on the switches, B on the LEDs; on
+  2026-10-27 it became a cascade of `sapho_all` processors over the link,
+  one board each (Sabrina and Pedro Henrique), with the Fmax against the
+  number of processors.
 
-## 11. For the documentation (item 21 in TODO.md)
+## 11. For the documentation (issue #40)
 
 This list replaces the one in [`toma-and-cade.md`](toma-and-cade.md) 8.7,
 which also keeps three points (same word format, the reset rule on two

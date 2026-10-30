@@ -59,10 +59,42 @@ tags consumed by Aurora.
   an index, as a Dirac bar, so `c | a[k]` stays a bitwise or. The code is
   still the unrolled code of before, for the same forms, and the assembly
   of `dirac_assign` and `proc_rls` is unchanged; any other combination
-  stops with "not implemented yet" until step b. The grammar has no
-  conflict left (`%expect 0`; the one of `A # c|B|;` is gone). A
-  coefficient with `+` or `-` now needs parentheses: `x # (a+c)|b⟩`.
-  Negative fixtures `NegTests/dirac_*`.
+  stops with "still in the oven" until step b. The grammar has no
+  conflict left (`%expect 0`; the one of `A # c|B|;` is gone), and two
+  bars before an array (`|A||B|`) close a matrix and open a chain instead
+  of being the logical or. A coefficient that is a sum now needs
+  parentheses: `x # (a+c)|b⟩`; a minus in front, `-c|a⟩`, still works.
+  Part of issue #18. Negative fixtures `NegTests/dirac_*`, and
+  `DiracCases/cases.tsv`, 160 combinations with what each must give (it
+  compiles, it is not computed yet, or the message it stops with), run
+  by `Scripts/dirac_cases.py` in the regression.
+- **C±: `out(p, c|a⟩)` with a float `c` and an int `a`** (or the reverse)
+  stops with "variables gotta be the same type!", as every other Dirac
+  form does. It compiled, and each element went out multiplied by the
+  bits of the other type (`MLT` of a float, found 2026-10-29).
+- **cppcomp and gen_gtkw speak Portuguese** (issue #24). `--lang=pt` and
+  `YANC_LANG=pt` now switch their messages too, as cmmcomp's and asmcomp's:
+  each is an `MSG_*` of `M(pt, en)` in `CPPComp/Headers/messages.h`, and the
+  word after the file and line follows (`filter.cpp:12: erro: ...`,
+  `atenção:` for a warning). English stays the default, so a terminal
+  without either setting sees no change; cppcomp's internal errors stay in
+  English. The C++ negative tests take an optional language, and `lang_pt`
+  checks the Portuguese.
+- **The codes of the screen and the keyboard are an int of 8 bits, -128 to
+  127.** The screen's clear is `toma_sync(k, -128)` and its cursor command
+  `-127`, at every `#NUBITS`; the keyboard's special keys will be -96 to -1.
+  At 8 bits the bits on the link are the ones of 128 and 129, but 128 does
+  not fit an 8-bit int, and C± will stop on a literal past the word (GitHub
+  issue #14). A program that writes 128 or 129 to `myVGAText` must change:
+  at 8 bits the new compiler stops on it, and past 8 bits the block ignores
+  it. `myVGAText` compares the whole word with the sign-extended command;
+  `myKeyPS2` sign-extends its word (it gives no code past 127 yet).
+  Manual: docs/peripherals.md; design: docs/design/vga-text.md, decision 18.
+- **`TODO.md` is gone: open work is in the GitHub issues.** Each item
+  became an issue, was closed or was dropped (2026-10-27); the file stays
+  in the git history, and "TODO item N" in a comment or a note is its item
+  N. The workarounds for accumulating at `#FROUND 0` moved to
+  docs/floating-point.md.
 - **C++: string literals and global `const` arrays go into the data
   memory** instead of being stored by code when `main` starts (3
   instructions a word). The `cin`/`cout` demonstration for the DE2-115:
@@ -75,8 +107,71 @@ tags consumed by Aurora.
   the DE2-115 went from 26.3 to 27.9 MHz (mean of three seeds), from 1.8 to
   about 4.2 ns of margin at 25 MHz. One cycle more per word; +33 registers
   at 32 bits, +9 at 8. Issue #6.
+- **cppcomp builds with every `-Wall` warning on**, so CI's `-Werror`
+  catches dead code there too. The three `-Wno-unused-*` flags hid four
+  functions nothing called (`params_append`, `instantiate_ctmpl`,
+  `instantiate_ctmpl_t`, superseded by `instantiate_ctmpl_mixed`, and
+  `mk_call1`); they are gone, with the grammar rule `ct_arg_list` that
+  bison reported useless, `type_is_scalar` and `type_decay` in cppcomp,
+  `opc_cad` in asmcomp, `get_while` in cmmcomp, and the `CFG_NBMANT`,
+  `CFG_NBEXPO`, `CFG_NDSTAC`, `CFG_SDEPTH` and `CFG_FFTSIZ` defaults
+  nothing read (the float format follows from `CFG_NUBITS`, asmcomp sizes
+  the stacks).
 
 ### Fixed
+- **C±: a `for` loop with a literal past the word in an int-only processor
+  ran its body once** (#14). A program with no float keeps `#NBMANT` 23 and
+  `#NBEXPO` 8, and cmmcomp took the int as 32 bits when it moved a loop's
+  test to the bottom: at `#NUBITS 8`, `for (k = 0; k < 200; ...)` (200 is
+  -56 in the word) skipped the first test and ran once; the hardware runs it
+  0 times. The loop rewrite and the `switch` dispatch now use `#NUBITS`;
+  constant folding keeps its range, and a folded value is taken to the word
+  as the hardware computes it (`100 + 100` is -56 at 8 bits). A decimal
+  literal used as a value must now fit the word: `200` at 8 bits is an
+  error, as `3000000000` is at 32. The most negative int is written as in
+  C, `-128` at 8 bits and `-2147483648` at 32; `a - 128` is still an error.
+  An array size, a port and a directive take any literal; an array longer
+  than an int index reaches (`int v[200]` at 8 bits) gives a warning.
+  Fixture `cmm_nubits8`; NegTests `int_word8`, `int_minus128`.
+- **C++: a float literal is rounded once, as in C±** (#12). cppcomp read it
+  into a host `double` and wrote that back with `%.17g`, so the assembler
+  rounded a second time, and a literal within 2^-53 of the point halfway
+  between two SAPHO floats could come out one unit off. The literal's text
+  now goes to the `.asm` as written (`digits.digits[e[-]digits]`, the form
+  cmmcomp writes); the `double` stays for what the compiler computes.
+  test96: a 72-digit literal just below the halfway point between 1.0 and
+  1.0 + 2^-22 is 1.0, as in C±.
+- **C±: a function with ten or more parameters compiled to a wrong call.**
+  cmmcomp kept the type of each parameter as a decimal digit of one `int`,
+  so ten floats (2222222222) or eleven ints overflowed it: the call loaded
+  no argument and gave no message, and twelve parameters stopped with
+  "parameter list doesn't match the original". The types are a list now,
+  and the limit of 16 parameters is gone: a function takes as many as it
+  needs (the error "has more than 16 parameters" and its negative test
+  `params_17` are removed). Fixture `cmm_params`. Manual:
+  docs/language-cmm.md.
+- **The size ratchet held only the examples it already knew.** A C±
+  example with no line in `size_baseline.txt` passed with "no baseline", so
+  `cmm_braces`, `cmm_decl_list`, `cmm_flit`, `cmm_ilit` and `cmm_ilit8`
+  could grow unseen. They have their lines now, and `regress.sh` fails an
+  example that has none (`--update-size` still writes it).
+- **`regress.sh` ran only where MSYS2 is `C:\packs\msys64`.** The temp
+  folder and Verilator (through `run_verilator_step.ps1`) were written as
+  that path; they now come from MSYS2's own `/tmp` and the Verilator
+  `Scripts/env.sh` finds, and off Windows `TMP` is left alone. `est.py`
+  takes `$YOSYS` or the `yosys` on the PATH.
+- **The CHANGELOG's version links stopped at v7.1** (issue #51): v8.0,
+  v9.0 and v9.1 had no link line, and `[Unreleased]` compared from v7.1.
+  `Scripts/check_changelog.py`, run by `regress.sh`, now fails a heading
+  without its link and an `[Unreleased]` that does not compare from the
+  newest version.
+- **Contributor documents described an older YANC** (issue #2):
+  CONTRIBUTING.md (the CI, `--lang`, the symbol table, how to build), the
+  tool options in docs/command-line.md and the package README, where the
+  gcc version to avoid is written, the `0.1` message in docs/messages.md
+  and the pull request template. The rule against apostrophes in `//`
+  comments of `.l`/`.y` files is gone: more than ten such comments build
+  with today's bison and flex.
 - **`x / 0` gave 0 at `#FROUND 2`** (every C++ program) instead of the
   largest value with the quotient's sign, as level 1 does (now written in
   docs/floating-point.md). The
@@ -2608,7 +2703,10 @@ history).
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v7.1...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v9.1...HEAD
+[v9.1]: https://github.com/nipscernlab/yanc/releases/tag/v9.1
+[v9.0]: https://github.com/nipscernlab/yanc/releases/tag/v9.0
+[v8.0]: https://github.com/nipscernlab/yanc/releases/tag/v8.0
 [v7.1]: https://github.com/nipscernlab/yanc/releases/tag/v7.1
 [v6.0]: https://github.com/nipscernlab/yanc/releases/tag/v6.0
 [v5.7]: https://github.com/nipscernlab/yanc/releases/tag/v5.7

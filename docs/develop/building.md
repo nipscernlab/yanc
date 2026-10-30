@@ -17,8 +17,7 @@ yanc/
 │                   gen_gtkw.c, comp2gtkw.c, hw/ (elaboration, area, Fmax)
 ├── docs/           this manual; design/ holds the design notes
 ├── release/        the README, example/ and install scripts of the package
-├── Makefile        the one place the tools are built from
-└── TODO.md         open work items
+└── Makefile        the one place the tools are built from
 ```
 
 | tool | source | built with | does |
@@ -32,7 +31,7 @@ yanc/
 
 `Compilers/CMMComp/Includes/` becomes the package's `Macros/`,
 `Compilers/CPPComp/Includes/` its `Header/`. `Compilers/yanc_version.h` is
-the version every tool prints.
+the version `yanc`, `cmmcomp`, `cppcomp` and `asmcomp` print with `-V`.
 
 ## Dependencies for building
 
@@ -45,7 +44,7 @@ and GTKWave are the same as for using YANC ([Installing YANC](../install.md#to-s
 
 ```sh
 bash Scripts/regress.sh            # the whole regression (about 30 minutes)
-bash Scripts/regress.sh --no-sim   # without simulating the C± tests (a few minutes)
+bash Scripts/regress.sh --no-sim   # without simulating anything (a few minutes)
 ```
 
 The regression builds the tools, compiles every test and compares its
@@ -53,7 +52,10 @@ assembly with the golden one, simulates and compares the outputs with
 references computed apart from YANC, checks that the bad programs of
 `NegTests/` are refused with the right message, holds the instruction set's
 copies and the manual's instruction page to `Compilers/common/isa.tsv`,
-holds the manual's message reference to the compilers' sources, and runs
+holds the manual's message reference to the compilers' sources, holds the
+link lines at the foot of `CHANGELOG.md` to its version headings, runs
+every combination of the Dirac notation in
+`Compilers/CMMComp/DiracCases/cases.tsv` through cmmcomp, and runs
 `yanc` itself. Every change goes through it. A change to the instruction
 table or to a message regenerates its page:
 `python3 Scripts/gen_isa_doc.py`, `python3 Scripts/gen_messages_doc.py`.

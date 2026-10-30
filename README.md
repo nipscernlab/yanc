@@ -112,7 +112,7 @@ The build needs `gcc`, `make`, `bison` and `flex` (on Windows from
 [MSYS2](https://www.msys2.org/), with the `mingw-w64-x86_64-gcc` cross
 toolchain; on Linux from the distribution). `Scripts/setup.bat` /
 `Scripts/setup.sh` check and install what is missing; the details, including
-a broken gcc version to avoid, are in [docs/develop/building.md](docs/develop/building.md).
+a broken gcc version to avoid, are in [docs/install.md](docs/install.md).
 
 ```sh
 make                              # build every tool into bin/
@@ -136,8 +136,7 @@ yanc/
 │                   hw/ (elaboration, area, Fmax)
 ├── docs/           the manual (index.md), and design/ with the design notes
 ├── release/        the README and example/ every release package carries
-├── Makefile        the one place the tools are built from
-└── TODO.md         open work items
+└── Makefile        the one place the tools are built from
 ```
 
 ## Documentation

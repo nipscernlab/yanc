@@ -128,8 +128,7 @@ $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \
                       $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(CONSOLE) $(EXEDIR) \
                       $(wildcard Compilers/CPPComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(CPP) && $(BISON) -y -d CPPComp.y && $(FLEX) CPPComp.l
-	$(CC) $(CFLAGS) -Wall -Wno-unused-but-set-variable -Wno-unused-variable \
-	      -Wno-unused-function -o $@ $(addprefix $(CPP)/,$(CPPCOMP_C)) \
+	$(CC) $(CFLAGS) -Wall -o $@ $(addprefix $(CPP)/,$(CPPCOMP_C)) \
 	      $(CPP)/lex.yy.c $(CPP)/y.tab.c $(COMMON)/asm_share.c $(COMMON)/proc_name.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
 
 # --- GTKWave helpers --------------------------------------------------------

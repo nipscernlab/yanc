@@ -62,6 +62,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: o maior número inteiro que pode ser representado é %d!\n", \
       "Error on line %d: the biggest integer this thing can hold is %d!\n")
 
+#define MSG_WARN_ARR_SIZE_WORD \
+    M("Atenção na linha %d: o array tem %d posições, mas um índice int de %d bits só chega até %d.\n", \
+      "Heads up on line %d: the array has %d positions, but an int index of %d bits only reaches %d.\n")
+
 #define MSG_ERR_OCTAL_DIGIT \
     M("Erro na linha %d: '%s' começa com 0, então é octal, e octal não tem 8 nem 9.\n", \
       "Error on line %d: '%s' starts with 0, so it is octal, and octal has no 8 or 9.\n")
@@ -309,28 +313,28 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_SHAPE_ANY_MATRIX M("uma matriz", "a matrix")
 
 #define MSG_ERR_DIRAC_SUM_SHAPE \
-    M("Erro na linha %d: soma ou subtração de %s com %s: as formas têm que ser iguais\n", \
-      "Error on line %d: adding or subtracting %s and %s: the shapes must be the same\n")
+    M("Erro na linha %d: somar %s com %s? Não encaixa, as formas têm que ser iguais, abensoado!\n", \
+      "Error on line %d: adding %s and %s? Those shapes don't fit, mate!\n")
 
 #define MSG_ERR_DIRAC_PRODUCT_SHAPE \
-    M("Erro na linha %d: produto de %s por %s: as colunas do primeiro não batem com as linhas do segundo\n", \
-      "Error on line %d: %s times %s: the columns of the first do not match the rows of the second\n")
+    M("Erro na linha %d: %s vezes %s não rola: as colunas do primeiro têm que bater com as linhas do segundo!\n", \
+      "Error on line %d: %s times %s? No way: the columns of the first must match the rows of the second!\n")
 
 #define MSG_ERR_DIRAC_TARGET_SHAPE \
-    M("Erro na linha %d: '%s' é %s e a expressão dá %s\n", \
-      "Error on line %d: '%s' is %s and the expression gives %s\n")
+    M("Erro na linha %d: '%s' é %s e a expressão dá %s. Não cabe, né?\n", \
+      "Error on line %d: '%s' is %s and the expression gives %s. That won't fit, pal!\n")
 
 #define MSG_ERR_DIRAC_NOT_SCALAR \
-    M("Erro na linha %d: %s onde se espera um número\n", \
-      "Error on line %d: %s where a number is needed\n")
+    M("Erro na linha %d: aqui eu queria um número e você me deu %s!\n", \
+      "Error on line %d: I wanted a number here and you gave me %s!\n")
 
 #define MSG_ERR_DIRAC_OUT_MATRIX \
-    M("Erro na linha %d: out() escreve um número ou um vetor, não %s\n", \
-      "Error on line %d: out() writes a number or a vector, not %s\n")
+    M("Erro na linha %d: out() manda um número ou um vetor, %s inteira não dá!\n", \
+      "Error on line %d: out() sends a number or a vector, not %s. Slice it up first!\n")
 
 #define MSG_ERR_DIRAC_NOT_YET \
-    M("Erro na linha %d: esta combinação da notação de Dirac ainda não está implementada\n", \
-      "Error on line %d: this combination of the Dirac notation is not implemented yet\n")
+    M("Erro na linha %d: essa combinação de Dirac ainda tá no forno. Aguenta aí!\n", \
+      "Error on line %d: this Dirac combo is still in the oven. Hang tight!\n")
 
 // operator errors and warnings (oper.c) -------------------------------------
 
@@ -489,10 +493,6 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_ERR_PARAM_COUNT \
     M("Erro na linha %d: olha lá direito quantos parâmetros tem a função '%s'.\n", \
       "Error on line %d: check again how many parameters the function '%s' actually takes.\n")
-
-#define MSG_ERR_TOO_MANY_PARAMS \
-    M("Erro na linha %d: a função '%s' passa de %d parâmetros, o máximo.\n", \
-      "Error on line %d: function '%s' has more than %d parameters, the most allowed.\n")
 
 #define MSG_ERR_VOID_FUNC_USE \
     M("Erro na linha %d: olha lá a funcao '%s', você vai ver que ela nao retorna nada.\n", \

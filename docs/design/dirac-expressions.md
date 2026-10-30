@@ -1,21 +1,23 @@
 # Dirac notation as expressions, computed in loops
 
-Status: step (a) of section 5 done (commit 20112ab, branch
-`lucianomaf/dirac-parser`: the grammar, the tree and the shapes, the code
-still unrolled); step (b), the loops, redesigned in section 6 and
-prototyped, not in the repository. Decision (Luciano, 2026-10-25): the
+Status: parked on 2026-10-26, **resumed on 2026-10-29** (Luciano, issue
+#18) as a compiler change only: the loops are generated in software with
+today's instruction set, and the pointers and `RPT` of section 6 are not
+adopted for now (section 8). Step (a) of section 5, the grammar, the tree
+and the shapes with the code still unrolled and every golden identical,
+is in `main` (from commit 20112ab, tag `archive/dirac-parser`); step (b),
+the loops, is next. Decision (Luciano, 2026-10-25): the
 Dirac notation of C± stops being a closed set of grammar rules, one per
 form, each with a generator that unrolls the computation, and becomes
 expressions in the parser: every operator a node of the tree, with shape
 rules (a vector of N, an N×M matrix, a bra or a ket) and a compile error
 when the shapes do not match. The code is generated as loops in software.
-Choosing, later, between the software loop and the array unit of PR #19
-([array-unit.md](https://github.com/nipscernlab/yanc/pull/19), branch
-`lucianomaf/array-unit-design`) is separate work; nothing here depends on
-that unit.
+Choosing, later, between the software loop and the array unit
+([array-unit.md](array-unit.md), parked as well) is separate work; nothing
+here depends on that unit. Section 6.8 compares the two.
 
 Marks: **fact** (read in the code, with file and line), **measured** (run on
-this branch, method given), **deduced** (reasoned, not run).
+the study's branch, method given), **deduced** (reasoned, not run).
 
 ## 1. Why the unrolled form cannot stay
 
@@ -27,8 +29,8 @@ element, no loop. To see what that costs, `proc_rls` (the RLS fixture,
 `[N]` and the read of `x` (`x # fin(0)*0.001 -> |x⟩;`) repeated N times, as
 the fixture repeats it 4 times. Words: `n_ins` in `app_log.txt`. Clocks: a
 probe on the core counts the clocks between the first `OUT` of two loop turns
-(an `OUT` that follows at least 8 clocks without one). Branch
-`lucianomaf/dirac-expressions` at 46f4067, built with
+(an `OUT` that follows at least 8 clocks without one). Commit 46f4067
+(the `main` of 2026-10-25), built with
 `make CFLAGS="-O2 -Wall -Werror"`, Icarus Verilog.
 
 | N | words of program | bits per word | clocks per turn |
@@ -98,7 +100,7 @@ issue #18 lists seven families still missing.
 
 ## 2. Defects and limits known today
 
-The full survey is in issue #18. Measured on this branch with small
+The full survey is in issue #18. Measured on the study's branch with small
 programs compiled and simulated (2026-10-25):
 
 | what | expected | today | where |
@@ -120,7 +122,7 @@ Limits, from the code (fact) unless marked:
   (`MSG_ERR_VARS_SAME_TYPE`);
 - with the scalar 1, every form still multiplies: `out(0, 1|a⟩)` is
   `LOD_V`, `MLT 1`, `OUT` per word, and the multiplier is synthesized for it;
-  `out(p, |a⟩)` without a scalar is a syntax error (TODO item 31);
+  `out(p, |a⟩)` without a scalar is a syntax error (issue #18);
 - the outer product only square, a, b and A of one size, with no weight;
 - `exec_cI` indexes `N*i+j` with N the number of rows and never checks that
   the matrix is square (deduced: a non-square matrix gets the wrong cells);
@@ -255,7 +257,10 @@ with a shape written as "a vector of 4", "a row of 4", "a 4x3 matrix" (in
 Portuguese "um vetor de 4", "uma linha de 4", "uma matriz 4x3"). The
 element types follow the scalar rules of `typecheck_expr` (int, float,
 comp), so the mix of int and float is allowed where `+` and `*` allow it
-today. With `comp`, a bra conjugates.
+today. With `comp`, a bra conjugates. The texts in `messages.h` are not
+these: on 2026-10-29 Luciano approved versions in the casual tone of
+cmmcomp's other messages ("adding a vector of 4 and a 2x2 matrix? Those
+shapes don't fit, mate!").
 
 ### 3.3 Into the expression tree (fact, then proposal)
 
@@ -316,7 +321,7 @@ Three ways were weighed:
    temporary (as `exec_cv` does with `__aux_var`, `stdlib.c` 2857). That
    keeps today's semantics (`fin(0)` in a coefficient is read once) and
    keeps calls out of the loops. A literal stays in place, so the folding of
-   `* 1` removes `1|a⟩`'s multiply (TODO item 31).
+   `* 1` removes `1|a⟩`'s multiply (issue #18).
 3. **No `MLT` for an index.** The 2D access of the general array code
    computes `r*N + c` with `MLT` (`LOD r; MLT 4; ADD c; LDI P`, measured in
    3.5), which synthesizes the integer multiplier in a program that may use
@@ -407,7 +412,7 @@ What this says:
   That is the price of loops on this instruction set: a load through `LDI`
   needs the index in the accumulator, and the counter costs five
   instructions a turn (`LOD k; ADD 1; SET k; LES; JIZ`). The array unit of
-  PR #19 is the way to win that back; this work does not try to.
+  array-unit.md is one way to win that back, section 6 another; this work does not try to.
 - With requirement 3, the matrix loops lose the `MLT` and the index
   arithmetic: deduced, the element-wise ones from 14 to about 10
   instructions per element. Not measured.
@@ -468,7 +473,7 @@ taken from YANC), outputting every element:
   square;
 - the int shift `a # k+1 -> |a⟩`;
 - `out(0, 1|a⟩)` and `out(0, |a⟩)`, the `golden.asm` showing no `MLT` and
-  the processor no multiplier (TODO item 31);
+  the processor no multiplier (issue #18);
 - int with float: `float v[3] # k|a⟩` with `int k`.
 
 And a fixture of compile errors, one per message of 3.2, each checked for
@@ -504,15 +509,15 @@ its line and its text in both languages.
 
 Luciano asked for the fewest instructions in the loops, adding
 instructions if needed, within these limits (2026-10-25): **no memory of
-its own** (no second port, not the array unit of PR #19: that is the
+its own** (no second port, not the array unit of array-unit.md: that is the
 coprocessor mode, which a parameter will choose instead of this), only
 **small hardware** (registers, counters, multiplexers), every block in a
 `generate` and built only when the program uses it, the **logic added
 measured**, and **no path longer than today's path through the float
 adder**: the clock must not drop.
 
-Everything here is a prototype outside the repository, in
-`.smoke/dirac-proto/` of this worktree (ignored by git): a modified copy of
+Everything here is a prototype outside `main`, kept whole in the tag
+`archive/dirac-loops-proto` under `.smoke/dirac-proto/`: a modified copy of
 `SAPHO/` (`proto/SAPHO`, made by `proto/patch_core.py`), a bench
 (`proto/bench.py`) and the fit scripts (`proto/map.sh`, `proto/fit.sh`,
 `proto/sta.sh`). No compiler emits the new instructions yet: the bench
@@ -587,7 +592,7 @@ the program (`NPTR`, `RPT`):
    a matrix stays in software. No jump inside the body (a contract of the
    compiler). The operand holds L in 3 bits and n below it.
 
-Opcodes 108 and 109 stay for `DOT`/`DOB` of PR #19. Every select reads
+Opcodes 108 and 109 stay for `DOT`/`DOB` of array-unit.md. Every select reads
 registers and the instruction word, never the ALU: the pointer feeds the
 **base** input of the `LDI`/`STI` adder, whose other input (`ula_fast`)
 comes much later, and the `RPT` choice is ready before the decode decides
@@ -662,7 +667,33 @@ path was not timed again**.
 The -0.9 % is one seed each: `fmax.sh` warns that a fit can be off by
 several per cent from one seed to another. Not yet shown either way.
 
-### 6.6 Open, in order
+### 6.6 `proc_rls` whole (measured, 2026-10-26)
+
+The forms of 6.4 were run one at a time. `proc_rls` was then run whole:
+`proto/rls_bench.py` (in the tag `archive/dirac-loops-proto`, beside
+`bench.py`, whose loops it reuses) compiles the fixture with arrays of N, as
+in section 1, and replaces every Dirac stretch, in `rls_update`, in the N
+shifts and in the `out`, by the hand-written pointer and `RPT` loops; the
+initialisation (`P # 1000|I|`, `w # |0⟩`), run once, stays unrolled. Both
+versions are simulated for the 20 turns of the fixture, today's on
+`SAPHO/`, the other on the prototype's copy, `F_SU2` in the update of P:
+
+| N | output | words today -> pointers | clocks a turn today -> pointers |
+|---|---|---|---|
+| 4 | the same bits; today's also the golden | 339 -> 186 | 303 -> 349 (+15 %) |
+| 16 | the same bits | 3951 -> 570 | 3663 -> 2989 (-18 %) |
+| 32 | the same bits | 15 039 -> 1530 | 13 967 -> 10 541 (-25 %) |
+
+Against the loops in software alone (3.5: 15 975 clocks at N = 16, 61 623 at
+N = 32) the pointers are 5.3 and 5.8 times faster. Most of the 1530 words
+left at N = 32 are the unrolled initialisation (over 1024 words) and the
+test's own N copies of the read of `x`; a generator would make the
+initialisation a loop as well (deduced). **Deduced:** the loss at N = 4
+is the fixed cost of each stretch, the `SETP`s and the 7 instructions of
+software loop a row of `|P|x⟩` and of the update of P; a second level of
+`RPT`, or a pointer that walks a whole matrix, would remove it (6.7, 4).
+
+### 6.7 Open, in order
 
 1. Two more seeds of each (`proto/fit.sh` with `SEED=2`, `SEED=3`, a fit
    about 50 minutes, one at a time) with the counter fixed, and the path
@@ -678,8 +709,35 @@ several per cent from one seed to another. Not yet shown either way.
    `comp` (two words an element); whether the pointers also serve
    ordinary C± arrays in loops (`for` with `a[k]`), which would speed up
    every program, not only the Dirac notation.
+5. Other hardware for the loops, not built (deduced, 2026-10-26): a
+   second level of `RPT`; a pointer with a programmable step (`+N`), so a
+   column is walked as easily as a row (transpose, `⟨a|M|`, the outer
+   product without swapping the loops); a pointer with row and column
+   counters that walks a whole matrix in one loop; a decrement-and-jump
+   counter in place of `RPT` (one clock a turn more, nothing in the fetch);
+   pointers alone with the loops unrolled by 4 or 8. Left out: a float
+   multiply-add in one clock, which would put the multiplier in series
+   with the float adder, today's worst path.
 
-## 7. For the documentation (item 21 in TODO.md)
+### 6.8 Against the array unit
+
+The two designs answer the same question, faster array code, at different
+costs, and do not exclude each other (a parameter could choose):
+
+| | pointers and `RPT` (this section) | array unit (array-unit.md) |
+|---|---|---|
+| logic | +98 ALMs (one seed) | about +920 ALMs, 1 RAM block, 1 DSP block |
+| memory | today's | a second, dual-port memory for the arrays |
+| clock | -0.9 % on one seed, not yet repeated | below what three seeds resolve |
+| inner product, a word | 3 clocks | 1 clock |
+| results | the bits of the loop in software | the MAC rounds once: other bits |
+| compilers | a loop generator, two instructions | two address spaces, the S bit, more |
+
+**Deduced:** over the pointers, the unit speeds up the N² parts of
+`proc_rls` 2 to 3 times, not the tenfold it shows over loops in software;
+any later decision on the unit is to be weighed against the pointers.
+
+## 7. For the documentation (issue #40)
 
 The manual (`docs/library.md`, "Vectors in Dirac notation") replaces the
 table of forms with the rules: what a chain between bars means (bra, ket,
@@ -698,3 +756,32 @@ of 3.5. It says that a program which wrote `A # |a⟩⟨b|` or
 transposed, and that `a # |M|a⟩` and the int shift of an expression were
 wrong, so that results computed with them need checking. The CHANGELOG says
 the same, and that `golden.asm` of `dirac_assign` and `proc_rls` changed.
+
+## 8. Where it stopped, and how to resume (2026-10-26)
+
+Parked by Luciano on 2026-10-26, with `main` back to its own line of
+releases. Nothing of it is in `main` but this note; the code is in tags:
+
+- `archive/dirac-parser`: this note's history and step (a), the parser
+  with shapes (commit 20112ab), every golden identical, twelve negative
+  tests in `Compilers/CMMComp/NegTests/`. `git switch -c <branch>
+  archive/dirac-parser` gives it back as a branch; `main` has moved since,
+  so it is merged with `main` first.
+- `archive/dirac-loops-proto`: the prototype of section 6 under
+  `.smoke/dirac-proto/` (the SAPHO copy, `bench.py`, `rls_bench.py`, the
+  fit scripts and their logs).
+
+Where it stopped: section 6.7, item 1 (two more seeds of each fit, the
+`RPT` counter's path timed again), then Luciano's decision on the
+instructions of section 6 (item 2). Step (b) of section 5 follows from
+that decision: a loop generator with the pointers, or loops in software.
+
+**Resumed on 2026-10-29.** Luciano chose loops in software, with no
+change to SAPHO: the pointers and `RPT` stay a measured option (section
+6), not adopted. Step (a) was merged with `main` and brought in; step (b)
+lowers the Dirac terms to loops with today's instructions, with the
+temporary area of 3.4. Step (b) also brings `rls_bench.py` (tag
+`archive/dirac-loops-proto`) into the regression, so that `proc_rls` is
+checked against an RLS computed apart from YANC and not only against its
+recorded output: its outer product is symmetric, so the recorded output
+cannot show the transposition of section 2 (Luciano, 2026-10-29).

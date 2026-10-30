@@ -102,3 +102,11 @@ column vector, `⟨a|b⟩` the inner product, `|M|` a matrix, and an assignment
 The brackets are the Unicode characters `⟨` (U+27E8) and `⟩` (U+27E9), not
 `<` and `>`. The sizes are the arrays' declared sizes; the elements are
 `int` or `float`, not `comp`.
+
+Placing a scalar before a vector or a matrix multiplies them, and this
+binds tighter than `+` and `-` and looser than `*`: a coefficient that is a
+sum needs parentheses, `v # (a+c)|b⟩`, because `v # a+c|b⟩` reads as
+`a + c|b⟩`. Each term has a shape (a number, a vector, a row, a matrix) and
+the compiler stops when the shapes do not fit, naming both. A bar followed
+by the name of an array without an index is a Dirac bar, so `c | a[k]`
+stays a bitwise or.

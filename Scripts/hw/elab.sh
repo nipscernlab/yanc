@@ -23,7 +23,7 @@ for L in 0 1 2; do
 done
 
 # Verilator lint at level 2 (what the C++ flow builds). WIDTH/UNOPTFLAT/
-# CASEINCOMPLETE are the known, pre-existing classes -- see TODO item 10.7.
+# CASEINCOMPLETE are the known, pre-existing classes -- see issue #35.
 echo "--- verilator lint (FROUND=2)"
 verilator --lint-only -Wno-fatal -Wno-DECLFILENAME -Wno-UNUSEDPARAM -Wno-UNUSEDSIGNAL \
           --top-module ula -GFROUND=2 -GF_ADD=1 -GF_SU1=1 -GF_SU2=1 -GF_MLT=1 -GF_DIV=1 \

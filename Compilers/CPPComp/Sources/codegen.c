@@ -396,22 +396,18 @@ static void claim(int ns, const char *name, const char *who, int line)
     char quoted[300]; snprintf(quoted, sizeof(quoted), "'%s'", name);
     if (asm_is_mnemonic(name)) {
         if (strstr(who, quoted))     // the name as written: no need to spell it twice
-            msg_error(line, "%s: '%s' is an instruction of the processor's "
-                      "assembly, rename it", who, name);
-        msg_error(line, "%s is '%s' in the assembly, which is an instruction "
-                  "of the processor: rename it", who, name);
+            msg_error(line, MSG_ERR_NAME_IS_MNEMONIC, who, name);
+        msg_error(line, MSG_ERR_ASM_NAME_IS_MNEMONIC, who, name);
     }
     if (ns == NS_LABEL && strcmp(name, "global") == 0)
-        msg_error(line, "%s: 'global' names the global variables in the "
-                  "simulation log, rename the function", who);
+        msg_error(line, MSG_ERR_NAME_GLOBAL, who);
     for (int i = 0; i < owners_n[ns]; i++) {
         if (strcmp(owners[ns][i].name, name) != 0) continue;
         if (strcmp(owners[ns][i].who, who) == 0) return;   // the same thing again
         if (owners[ns][i].reserved)
-            msg_error(line, "%s: '%s' is reserved, it is %s; rename it",
+            msg_error(line, MSG_ERR_NAME_RESERVED,
                       who, name, owners[ns][i].who);
-        msg_error(line, "%s and %s are both '%s' in the assembly: rename one "
-                  "of them", owners[ns][i].who, who, name);
+        msg_error(line, MSG_ERR_NAME_CLASH, owners[ns][i].who, who, name);
     }
     if (owners_n[ns] == owners_cap[ns]) {
         owners_cap[ns] = owners_cap[ns] ? 2 * owners_cap[ns] : 256;
@@ -426,7 +422,7 @@ static void claim(int ns, const char *name, const char *who, int line)
 static void claim_local(const char *aname, const char *name, int line)
 {
     char who[512];
-    snprintf(who, sizeof(who), "the local '%s' of '%s'", name, cur_func_name);
+    snprintf(who, sizeof(who), MSG_WHO_LOCAL, name, cur_func_name);
     claim(NS_DATA, aname, who, line);
 }
 
@@ -434,8 +430,8 @@ static void claim_local(const char *aname, const char *name, int line)
 static void claim_func(func *f)
 {
     char who[512];
-    if (strcmp(f->name, f->asm_label) == 0) snprintf(who, sizeof(who), "the function '%s'", f->name);
-    else                                    snprintf(who, sizeof(who), "an overload of '%s'", f->name);
+    if (strcmp(f->name, f->asm_label) == 0) snprintf(who, sizeof(who), MSG_WHO_FUNC, f->name);
+    else                                    snprintf(who, sizeof(who), MSG_WHO_OVERLOAD, f->name);
     claim(NS_LABEL, f->asm_label, who, f->line);
 }
 
@@ -832,7 +828,7 @@ static expr *generic_select(expr *e)
         if (type_match(ct, e->gtypes[i])) return e->args[i];
     }
     if (deflt) return deflt;
-    msg_error(e->line, "_Generic: no association matches the controlling type");
+    msg_error(e->line, MSG_ERR_GENERIC_NO_MATCH);
     return e->args[0];
 }
 
@@ -852,7 +848,7 @@ static type *infer_type(expr *e)
         if (mf) { e->etype = mf->ftype; break; }    // unqualified data member
         sym *stat = cur_class_static(e->sval);
         sym *s = stat ? stat : st_find(e->sval);
-        if (!s) msg_error(e->line, "undefined '%s'", e->sval);
+        if (!s) msg_error(e->line, MSG_ERR_UNDEFINED, e->sval);
         if (s->stype && s->stype->is_ref) e->etype = s->stype->base;   // peel reference
         else                              e->etype = s->stype;
         break;
@@ -930,9 +926,9 @@ static type *infer_type(expr *e)
             if (masm) { sym *ms = st_find(masm); free(masm);
                         type *rt = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int();
                         e->etype = (rt && rt->is_ref) ? rt->base : rt; }  // peel reference
-            else msg_error(e->line, "subscript on non-array/non-pointer");
+            else msg_error(e->line, MSG_ERR_SUBSCRIPT);
         }
-        else { msg_error(e->line, "subscript on non-array/non-pointer"); }
+        else { msg_error(e->line, MSG_ERR_SUBSCRIPT); }
         break;
     }
     case E_CALL: {
@@ -986,7 +982,7 @@ static type *infer_type(expr *e)
                             e->etype = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int(); break; }
                 if (vslot >= 0) { e->etype = t_int(); break; }
             }
-            msg_error(e->line, "undefined function '%s'", fn);
+            msg_error(e->line, MSG_ERR_UNDEFINED_FUNC, fn);
         } else {
             // indirect call via (*fp)(...) — the callee holds a function ID, not
             // a dereferenceable pointer, so don't type-check the deref itself.
@@ -997,28 +993,28 @@ static type *infer_type(expr *e)
     case E_ADDR:   e->etype = t_ptr(infer_type(e->a)); break;
     case E_DEREF: {
         type *t = infer_type(e->a);
-        if (!t || (t->kind != TY_PTR && t->kind != TY_ARRAY)) msg_error(e->line, "deref on non-pointer");
+        if (!t || (t->kind != TY_PTR && t->kind != TY_ARRAY)) msg_error(e->line, MSG_ERR_DEREF);
         e->etype = t->base;
         break;
     }
     case E_MEMBER: {
         type *t = infer_type(e->a);
-        if (!t || t->kind != TY_STRUCT) msg_error(e->line, "'.' on non-struct");
+        if (!t || t->kind != TY_STRUCT) msg_error(e->line, MSG_ERR_DOT);
         sym *stat = struct_static_sym(t, e->member);
         if (stat) { e->etype = stat->stype; break; }     // static data member via instance
         strct_field *f = t_struct_find(t, e->member);
-        if (!f) msg_error(e->line, "no such field '%s'", e->member);
+        if (!f) msg_error(e->line, MSG_ERR_NO_SUCH_FIELD, e->member);
         e->etype = f->ftype;
         break;
     }
     case E_PMEMBER: {
         type *t = infer_type(e->a);
         if (!t || t->kind != TY_PTR || !t->base || t->base->kind != TY_STRUCT)
-            msg_error(e->line, "'->' on non-pointer-to-struct");
+            msg_error(e->line, MSG_ERR_ARROW);
         sym *stat = struct_static_sym(t->base, e->member);
         if (stat) { e->etype = stat->stype; break; }     // static data member via pointer
         strct_field *f = t_struct_find(t->base, e->member);
-        if (!f) msg_error(e->line, "no such field '%s'", e->member);
+        if (!f) msg_error(e->line, MSG_ERR_NO_SUCH_FIELD, e->member);
         e->etype = f->ftype;
         break;
     }
@@ -1043,14 +1039,17 @@ static type *infer_type(expr *e)
 // ---- literal emission helpers ----------------------------------------------
 
 static void emit_load_int(long v)   { emit("LOD %ld", v); }
-static void emit_load_float(double v)
+static void emit_load_float(double v, const char *text)
 {
-    // 17 significant digits reproduce the double exactly, and the assembler
+    // A literal goes as written (its ftext), so the assembler rounds it once
+    // (#12). A value the compiler computed: 17 significant digits reproduce
+    // the double exactly, and the assembler
     // now reads an exponent (its encoder, yanc_num, rounds that text once to
     // the target mantissa): %.20f, used while the lexers rejected "1e-05",
     // turned everything below ~1e-20 into 0.0 and overflowed the buffer above
     // ~1e75. A text with neither '.' nor an exponent would read as an int
     // constant, so it gets ".0".
+    if (text) { emit("LOD %s", text); return; }
     char buf[40]; snprintf(buf, sizeof(buf), "%.17g", v);
     if (!strpbrk(buf, ".eE")) strcat(buf, ".0");
     emit("LOD %s", buf);
@@ -1064,7 +1063,7 @@ static void emit_load_float(double v)
 // After a float is in the acc, leave a word that is zero exactly when the
 // float is: a YANC float is zero exactly when its mantissa is (the leading
 // one is kept, docs/floating-point.md), so AND 2^NBMANT - 1. The float's
-// raw word is not enough: the zero float's exponent is not 0 (TODO 33).
+// raw word is not enough: the zero float's exponent is not 0 (issue #42).
 static void float_truth(expr *e)
 {
     type *t = infer_type(e);
@@ -1254,7 +1253,7 @@ static void gen_addr(expr *e)
         if (mf) { gen_load_this(); if (mf->offset > 0) emit("ADD %d", mf->offset); return; }
         sym *stat = cur_class_static(e->sval);
         sym *s = stat ? stat : st_find(e->sval);
-        if (!s) msg_error(e->line, "undefined '%s'", e->sval);
+        if (!s) msg_error(e->line, MSG_ERR_UNDEFINED, e->sval);
         // `&f` is f itself: its dispatch-table id, the value a function pointer
         // holds (LEA would take f's name for a data word, a 0)
         if (s->kind == SK_FUNC) {
@@ -1312,7 +1311,7 @@ static void gen_addr(expr *e)
                 return;
             }
             free(masm);
-            msg_error(e->line, "expression is not an lvalue");
+            msg_error(e->line, MSG_ERR_NOT_LVALUE);
         }
         int elem_sz = bt ? type_size_words(bt->base) : 1;
         // one-word elements and an index that is a literal or a plain int
@@ -1351,18 +1350,18 @@ static void gen_addr(expr *e)
         if (stat) { emit("LEA %s", stat->asm_name); return; }   // static via instance (object not addressed)
         gen_addr(e->a);
         strct_field *f = t_struct_find(st, e->member);
-        if (!f) msg_error(e->line, "no field '%s'", e->member);
+        if (!f) msg_error(e->line, MSG_ERR_NO_FIELD, e->member);
         if (f->offset > 0) emit("ADD %d", f->offset);
         return;
     }
     case E_PMEMBER: {
         type *st = infer_type(e->a);
-        if (!st || !st->base) msg_error(e->line, "bad -> target");
+        if (!st || !st->base) msg_error(e->line, MSG_ERR_BAD_ARROW);
         sym *stat = struct_static_sym(st->base, e->member);
         if (stat) { emit("LEA %s", stat->asm_name); return; }   // static via pointer (pointer not loaded)
         gen_expr(e->a);                           // ptr value
         strct_field *f = t_struct_find(st->base, e->member);
-        if (!f) msg_error(e->line, "no field '%s'", e->member);
+        if (!f) msg_error(e->line, MSG_ERR_NO_FIELD, e->member);
         if (f->offset > 0) emit("ADD %d", f->offset);
         return;
     }
@@ -1385,10 +1384,10 @@ static void gen_addr(expr *e)
             free(masm);
         }
         if (rt && rt->is_ref && rt->base && rt->base->kind == TY_STRUCT) { gen_expr(e); return; }
-        msg_error(e->line, "expression is not an lvalue");
+        msg_error(e->line, MSG_ERR_NOT_LVALUE);
     }
     default:
-        msg_error(e->line, "expression is not an lvalue");
+        msg_error(e->line, MSG_ERR_NOT_LVALUE);
     }
 }
 
@@ -1525,11 +1524,11 @@ static char lnk_mode[MAX_LINKS];   // 0 unused, 1 plain, 2 _sync
 static int link_use(const expr *karg, const char *fn, int line)
 {
     if (!karg || karg->kind != E_INT_LIT || karg->ival < 0 || karg->ival >= MAX_LINKS)
-        msg_error(line, "%s(): the link number comes first and is an integer literal from 0 to %d", fn, MAX_LINKS - 1);
+        msg_error(line, MSG_ERR_LINK_NUMBER, fn, MAX_LINKS - 1);
     int k = (int)karg->ival, mode = strstr(fn, "_sync") ? 2 : 1;
     if (lnk_mode[k] && lnk_mode[k] != mode)
-        msg_error(line, "link %d was already used %s _sync: a link has one hardware, the partner is on my clock (the _sync forms in every use) or it is not (toma/cade/fcade in every use)",
-                  k, lnk_mode[k] == 2 ? "with" : "without");
+        msg_error(line, MSG_ERR_LINK_MODE,
+                  k, lnk_mode[k] == 2 ? MSG_WORD_WITH : MSG_WORD_WITHOUT);
     lnk_mode[k] = mode;
     return k;
 }
@@ -1542,7 +1541,7 @@ static void gen_expr_to(expr *e, type *want)
     int cade_ok = g_cade_ok; g_cade_ok = 0;
     if (is_cade_call(e) && cade_ok) {
         if (!want || type_size_words(want) != 1 || want->kind == TY_STRUCT || want->kind == TY_ARRAY || want->is_ref)
-            msg_error(e->line, "cade() brings one word: it can only go into a one-word variable");
+            msg_error(e->line, MSG_ERR_CADE_ONE_WORD);
         emit("CAD %d", link_use(e->args[0], e->a->sval, e->line));   // the word as it is: no conversion to `want`
         return;
     }
@@ -1786,7 +1785,7 @@ static void gen_store(expr *lv, expr *val)
     // reject assignment to a const variable (direct, by-name)
     if (lv->kind == E_IDENT) {
         sym *cs = st_find(lv->sval);
-        if (cs && cs->is_const) msg_error(lv->line, "assignment to const '%s'", lv->sval);
+        if (cs && cs->is_const) msg_error(lv->line, MSG_ERR_ASSIGN_CONST, lv->sval);
     }
     // whole-struct assignment: a user operator= overrides the default memberwise
     // copy; otherwise copy all words (not a single STI 0)
@@ -2071,7 +2070,7 @@ static void gen_expr(expr *e)
     switch (e->kind) {
 
     case E_INT_LIT: case E_CHAR_LIT: emit_load_int(e->ival); return;
-    case E_FLOAT_LIT:                emit_load_float(e->fval); return;
+    case E_FLOAT_LIT:                emit_load_float(e->fval, e->ftext); return;
     case E_STRING_LIT:
         // decays to the base address of its materialised global char array
         if (!e->member) msg_internal("string literal not pre-scanned");
@@ -2092,7 +2091,7 @@ static void gen_expr(expr *e)
         }
         sym *stat = cur_class_static(e->sval);
         sym *s = stat ? stat : st_find(e->sval);
-        if (!s) msg_error(e->line, "undefined '%s'", e->sval);
+        if (!s) msg_error(e->line, MSG_ERR_UNDEFINED, e->sval);
         if (s->stype && s->stype->is_ref) { gen_addr(e); emit("LDI 0"); return; }  // auto-deref
         if (s->kind == SK_FUNC) {
             // function used as a value -> its dispatch-table ID (function ptr)
@@ -2632,7 +2631,7 @@ static void gen_expr(expr *e)
     case E_TEMPOBJ: {
         // T(args): build a hidden stack temporary, run its ctor, yield its address.
         type *t = e->target_t;
-        if (!t || t->kind != TY_STRUCT || !t->tag) { msg_error(e->line, "T(args) on non-class type"); return; }
+        if (!t || t->kind != TY_STRUCT || !t->tag) { msg_error(e->line, MSG_ERR_CTOR_NON_CLASS); return; }
         char nm[32]; snprintf(nm, sizeof(nm), "__tmp%d", ++label_n);
         char *aname = mangle_local(nm);
         st_add(SK_LOCAL_VAR, nm, aname, t);
@@ -2743,10 +2742,10 @@ static void gen_expr(expr *e)
             type *ct = infer_type(obj);
             if (e->a->kind == E_PMEMBER) ct = ct ? ct->base : NULL;
             if (!ct || ct->kind != TY_STRUCT || !ct->tag)
-                msg_error(e->line, "method call on non-class value");
+                msg_error(e->line, MSG_ERR_METHOD_NON_CLASS);
             int vslot = vtbl_slot(ct, e->a->member);
             char *masm = resolve_method(ct, e->a->member);   // may be NULL for a pure virtual
-            if (!masm && vslot < 0) msg_error(e->line, "no method '%s' in class '%s'", e->a->member, ct->tag);
+            if (!masm && vslot < 0) msg_error(e->line, MSG_ERR_NO_METHOD, e->a->member, ct->tag);
             sym *ms = masm ? st_find(masm) : NULL;
             if (vslot >= 0) {
                 // virtual dispatch: fid = mem[mem[this] + slot], then indirect-call
@@ -2802,20 +2801,20 @@ static void gen_expr(expr *e)
         if (e->a->kind == E_IDENT) {
             const char *fn = e->a->sval;
             if (!strcmp(fn, "in")) {
-                if (e->n_args != 1) msg_error(e->line, "in(port) takes 1 arg");
-                if (e->args[0]->kind != E_INT_LIT) msg_error(e->line, "in() port must be a literal int");
+                if (e->n_args != 1) msg_error(e->line, MSG_ERR_IN_ARGS);
+                if (e->args[0]->kind != E_INT_LIT) msg_error(e->line, MSG_ERR_IN_PORT);
                 emit("INN %ld", e->args[0]->ival); return;
             }
             if (!strcmp(fn, "out")) {
-                if (e->n_args != 2) msg_error(e->line, "out(port,val) takes 2 args");
-                if (e->args[0]->kind != E_INT_LIT) msg_error(e->line, "out() port must be a literal int");
+                if (e->n_args != 2) msg_error(e->line, MSG_ERR_OUT_ARGS);
+                if (e->args[0]->kind != E_INT_LIT) msg_error(e->line, MSG_ERR_OUT_PORT);
                 // the OUT port is an integer word: the hardware has no float
                 // output, so a float value is shipped as its raw bit pattern --
                 // a wrong number. Warn (don't block; no implicit convert): the
                 // caller should cast, e.g. out(port, (int)x).
                 { type *vt = infer_type(e->args[1]);
                   if (vt && vt->kind == TY_FLOAT)
-                      msg_warning(e->line, "out() sends an integer word; this float is output as its raw bit pattern (wrong value) -- cast to int, e.g. out(port, (int)x)"); }
+                      msg_warning(e->line, MSG_WARN_OUT_FLOAT); }
                 gen_expr(e->args[1]);
                 emit("OUT %ld", e->args[0]->ival); return;
             }
@@ -2824,25 +2823,25 @@ static void gen_expr(expr *e)
             // place until the partner lets them through; the word goes as it
             // is, no int/float conversion
             if (!strcmp(fn, "toma") || !strcmp(fn, "toma_sync")) {
-                if (e->n_args != 2) msg_error(e->line, "%s(link, value) takes 2 args", fn);
+                if (e->n_args != 2) msg_error(e->line, MSG_ERR_LINK_ARGS2, fn);
                 int k = link_use(e->args[0], fn, e->line);
                 type *vt = infer_type(e->args[1]);
                 if (vt && type_size_words(vt) != 1)
-                    msg_error(e->line, "toma() carries one word: this value takes %d", type_size_words(vt));
+                    msg_error(e->line, MSG_ERR_TOMA_ONE_WORD, type_size_words(vt));
                 gen_expr(e->args[1]);
                 emit("TOM %d", k); return;
             }
             if (is_cade_name(fn)) {   // int / float word
-                if (e->n_args != 1) msg_error(e->line, "%s(link) takes 1 arg, the link number", fn);
+                if (e->n_args != 1) msg_error(e->line, MSG_ERR_LINK_ARGS1, fn);
                 emit("CAD %d", link_use(e->args[0], fn, e->line)); return;
             }
             if (!strcmp(fn, "malloc")) {       // malloc(nwords) -> payload addr (0=OOM)
-                if (e->n_args != 1) msg_error(e->line, "malloc(nwords) takes 1 arg");
+                if (e->n_args != 1) msg_error(e->line, MSG_ERR_MALLOC_ARGS);
                 gen_expr(e->args[0]); emit("PSH"); emit("CAL malloc");
                 g_uses_heap = 1; return;
             }
             if (!strcmp(fn, "free")) {         // free(ptr)
-                if (e->n_args != 1) msg_error(e->line, "free(ptr) takes 1 arg");
+                if (e->n_args != 1) msg_error(e->line, MSG_ERR_FREE_ARGS);
                 gen_expr(e->args[0]); emit("PSH"); emit("CAL free");
                 g_uses_heap = 1; return;
             }
@@ -2898,7 +2897,7 @@ static void gen_expr(expr *e)
                 // emitted for an aggregate `= {}` default member initializer so a
                 // heap object's array/struct field is zeroed (static storage is
                 // already .mif-zeroed). args: [0]=field ident (-> &field), [1]=N.
-                if (e->n_args != 2) msg_error(e->line, "__zerofill takes 2 args");
+                if (e->n_args != 2) msg_error(e->line, MSG_ERR_ZEROFILL_ARGS);
                 long nw = e->args[1]->ival;
                 if (nw <= 0) return;
                 gen_addr(e->args[0]);                      // acc = &field (this + offset)
@@ -3199,7 +3198,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
         for (int k = 0; k < z->n; k++) {
             int idx = cursor;
             if (z->desigs[k].kind == DESIG_FIELD)
-                msg_error(z->line, "field designator in array initializer");
+                msg_error(z->line, MSG_ERR_FIELD_DESIG_IN_ARRAY);
             if (z->desigs[k].kind == DESIG_INDEX) idx = z->desigs[k].idx;
             cursor = idx + 1;
             if (idx >= 0 && idx < n) done[idx] = 1;
@@ -3222,13 +3221,13 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
         for (int k = 0; k < z->n; k++) {
             strct_field *target;
             if (z->desigs[k].kind == DESIG_INDEX)
-                msg_error(z->line, "array designator in struct initializer");
+                msg_error(z->line, MSG_ERR_ARRAY_DESIG_IN_STRUCT);
             if (z->desigs[k].kind == DESIG_FIELD) {
                 target = t_struct_find(t, z->desigs[k].name);
-                if (!target) msg_error(z->line, "no field '%s' in initializer", z->desigs[k].name);
+                if (!target) msg_error(z->line, MSG_ERR_INIT_NO_FIELD, z->desigs[k].name);
                 f = target->next;
             } else {
-                if (!f) msg_error(z->line, "too many initializers");
+                if (!f) msg_error(z->line, MSG_ERR_TOO_MANY_INIT);
                 target = f; f = f->next;
             }
             wr[k] = target;
@@ -3298,7 +3297,7 @@ static void declare_local(decl *d)
     // recursive function: the local lives in the stack frame at __fp + offset
     if (cur_fn_recursive && d->sclass != SC_STATIC) {
         if (d->dtype && (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT))
-            msg_error(d->line, "array/struct local in a recursive function is not supported");
+            msg_error(d->line, MSG_ERR_RECURSIVE_AGGREGATE);
         sym *ls = st_add(SK_LOCAL_VAR, d->name, NULL, d->dtype);
         ls->is_const = d->is_const;
         ls->is_frame = 1; ls->frame_off = cur_frame_cursor;
@@ -3767,10 +3766,10 @@ static void gen_stmt_inner(stmt *s)
 
     case S_BREAK:
         if (brk_top > 0) { emit_live_dtors(brk_live[brk_top-1]); emit("JMP %s", brk_stk[brk_top-1]); }
-        else msg_error(s->line, "break outside of loop/switch");
+        else msg_error(s->line, MSG_ERR_BREAK_OUTSIDE);
         return;
     case S_CONTINUE:
-        if (loop_top == 0) msg_error(s->line, "continue outside of loop");
+        if (loop_top == 0) msg_error(s->line, MSG_ERR_CONTINUE_OUTSIDE);
         emit_live_dtors(loop_live[loop_top-1]);
         emit("JMP %s", loop_stk[loop_top-1].cont_l);
         return;
@@ -3778,7 +3777,7 @@ static void gen_stmt_inner(stmt *s)
     case S_RETURN:
         if (s->e1) {
             if (cur_func_ret && cur_func_ret->kind == TY_VOID)
-                msg_error(s->line, "return value in void function");
+                msg_error(s->line, MSG_ERR_RETURN_IN_VOID);
             infer_type(s->e1);
             if (cur_func_ret && cur_func_ret->kind == TY_STRUCT) {
                 // write the struct into this function's static result block and
@@ -3875,7 +3874,7 @@ static void gen_stmt_inner(stmt *s)
         // reached while emitting a switch body: emit the label minted by
         // switch_dispatch, then the labelled statement (fall-through is natural).
         if (s->label) { emit("@%s NOP", s->label); gen_stmt(s->body); }
-        else          msg_error(s->line, "case/default outside switch");
+        else          msg_error(s->line, MSG_ERR_CASE_OUTSIDE);
         return;
     }
 }
@@ -3961,6 +3960,10 @@ static int const_word(expr *e, type *t, char *buf, size_t sz)
         expr *x = e;
         if (x->kind == E_UNOP && x->op == OP_NEG) { neg = 1; x = x->a; }
         long iv;
+        if (x->kind == E_FLOAT_LIT && x->ftext) {      // as written: one rounding (#12)
+            snprintf(buf, sz, "%s%s", neg ? "-" : "", x->ftext);
+            return 1;
+        }
         if (x->kind == E_FLOAT_LIT) v = x->fval;
         else if (cfold(x, &iv))     v = (double)iv;
         else return 0;
@@ -4335,8 +4338,8 @@ static void emit_f2u(void)
 static void emit_heap(void)
 {
     // ---- malloc(n) : payload words on the data stack -> payload addr in acc --
-    claim(NS_LABEL, "malloc", "the heap's allocation routine", 0);
-    claim(NS_LABEL, "free", "the heap's release routine", 0);
+    claim(NS_LABEL, "malloc", MSG_WHO_MALLOC, 0);
+    claim(NS_LABEL, "free", MSG_WHO_FREE, 0);
     emit("@malloc NOP");
     emit("POP"); emit("SET __m_sz");
     emit("LOD 0");       emit("SET __m_prev");         // prev payload ptr (0=none)
@@ -4423,7 +4426,7 @@ static void write_prog_log(const char *tmp_dir)
 {
     char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", tmp_dir);
     FILE *f = fopen(path, "w");
-    if (!f) { fprintf(stderr, "cppcomp: cannot open %s\n", path); return; }
+    if (!f) { fprintf(stderr, MSG_ERR_TABLE_OPEN, path); return; }
     for (int i = 0; i < varlog_n; i++) {
         if (varlog[i].size > 0)
             fprintf(f, "%s %s %d %d\n", varlog[i].func, varlog[i].var, varlog[i].type_code, varlog[i].size);
@@ -4444,7 +4447,7 @@ static void write_src_lines(const char *tmp_dir, const char *src_text)
 {
     char path[2048]; snprintf(path, sizeof(path), "%s/src_lines.txt", tmp_dir);
     FILE *out = fopen(path, "w");
-    if (!out) { fprintf(stderr, "cppcomp: cannot open %s\n", path); return; }
+    if (!out) { fprintf(stderr, MSG_ERR_TABLE_OPEN, path); return; }
 
     fputs("-1 INTERNAL\n"    , out);   // pc code -1: scaffolding (NOP, prologue)
     fputs("-2 void main();\n", out);   // pc code -2: entry call
@@ -4987,7 +4990,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
     cg_unit = u;
     claims_reset();
-    claim(NS_LABEL, "fim", "the label where the program ends", 0);
+    claim(NS_LABEL, "fim", MSG_WHO_FIM, 0);
 
     // pc_<proc>_mem.txt: filled in lockstep with emit() from here on. Open it
     // before emit_header so the leading NOP is logged too. cg_line starts at -1
@@ -5002,7 +5005,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
-        { char who[512]; snprintf(who, sizeof(who), "the global '%s'", d->name);
+        { char who[512]; snprintf(who, sizeof(who), MSG_WHO_GLOBAL, d->name);
           claim(NS_DATA, d->name, who, d->line); }
         { sym *gs = st_add(SK_GLOBAL_VAR, d->name, d->name, d->dtype); gs->is_const = d->is_const; }
         int gw = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
@@ -5016,7 +5019,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
         }
         if (strcmp(f->name, "main") == 0) has_main = 1;
     }
-    if (!has_main) msg_error(0, "program has no main() function");
+    if (!has_main) msg_error(0, MSG_ERR_NO_MAIN);
 
     cg_unit = u;
     assign_overload_labels(u);

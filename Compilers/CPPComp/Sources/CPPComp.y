@@ -44,9 +44,8 @@ static void warn_wide(type *t, const char *name, int line)
     while (t && t->kind == TY_ARRAY) t = t->base;
     int w = seal_bits();
     if (!t || t->req_bits <= w) return;
-    msg_warning(line, "'%s' asks for %d bits, but a YANC word has %d: the requested size "
-                "is ignored and '%s' is a %d-bit %s", name, t->req_bits, w, name, w,
-                t->kind == TY_FLOAT ? "float" : "integer");
+    msg_warning(line, MSG_WARN_BITS_IGNORED, name, t->req_bits, w, name, w,
+                t->kind == TY_FLOAT ? MSG_WORD_FLOAT : MSG_WORD_INTEGER);
 }
 
 // staging state for declarations and functions ------------------------------
@@ -77,11 +76,6 @@ static char *sym_sig(sym *s)
     str[s->n_params] = 0; return str;
 }
 static void params_reset(void) { param_head = param_tail = NULL; param_count = 0; }
-static void params_append(decl *d)
-{
-    if (!param_head) param_head = d; else param_tail->next = d;
-    param_tail = d; param_count++;
-}
 
 // staged "current base type" used by declarators after `base_type` is reduced
 static type *cur_base = NULL;
@@ -190,8 +184,7 @@ static type         *lambda_sv_base;
 static void lambda_enter(void)
 {
     if (st_current_func())
-        msg_error(yylineno, "a lambda is only supported as a global initializer"
-                            " (immediately-invoked, no captures)");
+        msg_error(yylineno, MSG_ERR_LAMBDA_GLOBAL);
     snprintf(lambda_name, sizeof lambda_name, "__lam%d", lambda_seq++);
     sym *s = st_add(SK_FUNC, lambda_name, lambda_name, t_int());
     s->defined = 1;
@@ -243,8 +236,7 @@ static expr *lambda_finish(stmt *body)
         else if (r->kind == E_FLOAT_LIT) ret = t_float();
     }
     if (!ret)
-        msg_error(yylineno, "cannot deduce the lambda's return type"
-                            " (return a local variable or a literal)");
+        msg_error(yylineno, MSG_ERR_LAMBDA_RETURN);
     sym *s = st_find(lambda_name);
     if (s) s->stype = ret;
     func *f = ast_func(ret, strdup(lambda_name), NULL, 0, body, yylineno);
@@ -296,7 +288,7 @@ static stmt *make_range_for(type *vt, char *var, char *container, stmt *body, in
     if (ct && ct->is_ref) ct = ct->base;
     int is_arr = ct && ct->kind == TY_ARRAY;
     if (!is_arr && !(ct && ct->kind == TY_STRUCT))
-        msg_error(line, "range-for over '%s': it takes an array or an object with size() and operator[]", container);
+        msg_error(line, MSG_ERR_RANGE_FOR, container);
     if (is_arr) {
         type *elem = ct->base;
         if (vt->is_auto)                       vt = elem;            // auto x
@@ -534,40 +526,6 @@ static type *subst_field_type(type *t, int *vals, int nvals)
     return t;
 }
 
-// instantiate `Name<vals...>` to a concrete class type (built once, then reused);
-// records a codegen request so the template's methods get cloned + emitted.
-static type *instantiate_ctmpl(ctmpl *ct, int *vals, int nvals)
-{
-    char suffix[32]; int p = 0;
-    p += snprintf(suffix + p, sizeof(suffix) - p, "_T");
-    for (int i = 0; i < nvals; i++) p += snprintf(suffix + p, sizeof(suffix) - p, "%s%d", i ? "_" : "", vals[i]);
-    char tag[128]; snprintf(tag, sizeof(tag), "%s%s", ct->name, suffix);
-
-    sym *ex = st_find(tag);
-    if (ex && ex->kind == SK_TYPEDEF) return ex->stype;   // already instantiated
-
-    type *c = t_make_struct(xstrdup(tag));
-    c->base_class = ct->proto->base_class;
-    c->n_vtbl = ct->proto->n_vtbl;
-    c->has_ctor = ct->proto->has_ctor;
-    if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
-                     for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
-    for (strct_field *f = ct->proto->fields; f; f = f->next) {
-        t_struct_add_field(c, f->name, subst_field_type(f->ftype, vals, nvals));
-        t_struct_find(c, f->name)->inherited = f->inherited;
-    }
-    t_struct_seal(c, seal_bits());
-    st_add_tag(xstrdup(tag), c);
-    st_add_typedef(xstrdup(tag), c);
-
-    ctinst *ins = calloc(1, sizeof(ctinst));
-    ins->tmpl = ct; ins->nvals = nvals; ins->concrete = c; ins->suffix = xstrdup(suffix);
-    for (int i = 0; i < nvals && i < 8; i++) ins->vals[i] = vals[i];
-    g_unit->ctinsts = realloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
-    g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
-    return c;
-}
-
 // substitute type parameters (t_tparam, carried as tparam>0) with their concrete
 // bindings, recursing through pointer/array/reference wrappers.
 static type *subst_tparam_type(type *t, type **targs, int ntargs)
@@ -646,53 +604,8 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
     return c;
 }
 
-// instantiate `Name<types...>` to a concrete class type: substitute the type
-// parameters into the proto's field types and record a codegen request so the
-// template's methods get cloned with the same bindings.
-static type *instantiate_ctmpl_t(ctmpl *ct, type **targs, int n)
-{
-    char suffix[32]; int p = 0;
-    p += snprintf(suffix + p, sizeof(suffix) - p, "_T");
-    for (int i = 0; i < n && p < (int)sizeof(suffix) - 1; i++) suffix[p++] = ct_type_code(targs[i]);
-    suffix[p] = 0;
-    char tag[128]; snprintf(tag, sizeof(tag), "%s%s", ct->name, suffix);
-
-    sym *ex = st_find(tag);
-    if (ex && ex->kind == SK_TYPEDEF) return ex->stype;   // already instantiated
-
-    type *c = t_make_struct(xstrdup(tag));
-    c->base_class = ct->proto->base_class;
-    c->n_vtbl = ct->proto->n_vtbl;
-    c->has_ctor = ct->proto->has_ctor;
-    if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
-                     for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
-    for (strct_field *f = ct->proto->fields; f; f = f->next) {
-        t_struct_add_field(c, f->name, subst_tparam_type(f->ftype, targs, n));
-        t_struct_find(c, f->name)->inherited = f->inherited;
-    }
-    t_struct_seal(c, seal_bits());
-    st_add_tag(xstrdup(tag), c);
-    st_add_typedef(xstrdup(tag), c);
-
-    ctinst *ins = calloc(1, sizeof(ctinst));
-    ins->tmpl = ct; ins->nvals = 0; ins->concrete = c; ins->suffix = xstrdup(suffix);
-    ins->ntargs = n;
-    for (int i = 0; i < n && i < 8; i++) ins->targs[i] = targs[i];
-    g_unit->ctinsts = realloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
-    g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
-    return c;
-}
-
 // wrap base type with N levels of pointer
 static type *apply_pointers(type *base, int stars) { while (stars-- > 0) base = t_ptr(base); return base; }
-
-// build a 1-argument call `fn(arg)` — used to desugar new/delete to malloc/free
-static expr *mk_call1(const char *fn, expr *arg, int line)
-{
-    expr **args = malloc(sizeof(expr*));
-    args[0] = arg;
-    return ast_call(ast_ident(strdup(fn), line), args, 1, line);
-}
 
 // wrap base type with the given array dimensions, innermost-last (row-major):
 // dims [3,4] over int  ->  array(3, array(4, int))
@@ -821,9 +734,9 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 {
     long v;
     if (!const_eval(cond, &v))
-        msg_error(line, "_Static_assert requires a constant integer expression");
+        msg_error(line, MSG_ERR_STATIC_ASSERT_CONST);
     if (v == 0)
-        msg_error(line, "static assertion failed%s%s", msg ? ": " : "", msg ? msg : "");
+        msg_error(line, MSG_ERR_STATIC_ASSERT_FAILED, msg ? ": " : "", msg ? msg : "");
 }
 
 // A class body: `class Tag : Base { ... }`, or the same with `struct`, which
@@ -910,7 +823,6 @@ static type *class_close(void)
 
 %union {
     long    ival;
-    double  fval;
     char   *sval;
     type   *typ;
     expr   *exp;
@@ -934,7 +846,7 @@ static type *class_close(void)
 }
 
 %token <ival>  INT_LIT CHAR_LIT
-%token <fval>  FLOAT_LIT
+%token <sval>  FLOAT_LIT
 %token <sval>  IDENT TYPEDEF_NAME STRING_LIT TEMPLATE_NAME
 /* an IDENT the lexer sees followed by `::` (a namespace, or an enum class's
    name): only such a name can start a qualified type, so after `T x(` a plain
@@ -978,7 +890,7 @@ static type *class_close(void)
 %type <slist> block_item_list
 %type <dlist> init_declarator_list param_list non_empty_param_list
 %type <dcl>   init_declarator param_declarator
-%type <dimlist> array_suffix ct_arg_list
+%type <dimlist> array_suffix
 %type <talist>  type_arg_list
 %type <mxlist>  ct_mixed_arg ct_mixed_arg_list
 %type <elist> argument_list non_empty_argument_list
@@ -1075,8 +987,7 @@ declaration:
                       if (is_def) warn_wide(d->dtype, d->name, d->line);
                       if (existing && existing->kind == SK_GLOBAL_VAR) {
                           if (is_def && existing->defined)
-                              msg_error(d->line, "redefinition of global '%s' "
-                                  "(if this comes from a header, guard it with #ifndef or #pragma once)", d->name);
+                              msg_error(d->line, MSG_ERR_REDEF_GLOBAL, d->name);
                           if (is_def) { existing->defined = 1; unit_add_global(d); }
                           /* extern re-declaration of a known global: nothing to emit */
                       } else {
@@ -1134,7 +1045,7 @@ type_specifier:
     | enum_specifier                         { $$ = $1;        }
     | TYPEDEF_NAME                           {
           sym *s = st_find($1);
-          if (!s || s->kind != SK_TYPEDEF) { msg_error(yylineno, "unknown type '%s'", $1); }
+          if (!s || s->kind != SK_TYPEDEF) { msg_error(yylineno, MSG_ERR_UNKNOWN_TYPE, $1); }
           $$ = s->stype;
           free($1);
       }
@@ -1143,7 +1054,7 @@ type_specifier:
              a type or a non-type value (the ctmpl's isval[] dictates which slot
              expects which; mismatches are caught by the substitution step). */
           ctmpl *ct = find_ctmpl($1);
-          if (!ct) { msg_error(yylineno, "'%s' is not a class template", $1); $$ = t_int(); }
+          if (!ct) { msg_error(yylineno, MSG_ERR_NOT_CLASS_TEMPLATE, $1); $$ = t_int(); }
           else     { $$ = instantiate_ctmpl_mixed(ct, $3.targs, $3.vals, $3.isval, $3.n); }
           free($1);
       }
@@ -1151,7 +1062,7 @@ type_specifier:
           /* namespace-qualified mixed-arg instantiation `N::Name<args...>` */
           free($1);
           ctmpl *ct = find_ctmpl($3);
-          if (!ct) { msg_error(yylineno, "'%s' is not a class template", $3); $$ = t_int(); }
+          if (!ct) { msg_error(yylineno, MSG_ERR_NOT_CLASS_TEMPLATE, $3); $$ = t_int(); }
           else     { $$ = instantiate_ctmpl_mixed(ct, $5.targs, $5.vals, $5.isval, $5.n); }
           free($3);
       }
@@ -1159,7 +1070,7 @@ type_specifier:
           /* namespace-qualified type N::Type (transparent -> resolve Type) */
           free($1);
           sym *s = st_find($3);
-          if (!s || s->kind != SK_TYPEDEF) { msg_error(yylineno, "unknown type '%s'", $3); }
+          if (!s || s->kind != SK_TYPEDEF) { msg_error(yylineno, MSG_ERR_UNKNOWN_TYPE, $3); }
           $$ = s->stype;
           free($3);
       }
@@ -1247,7 +1158,7 @@ base_clause:
       /* empty */                  { $$ = NULL; }
     | ':' access_opt TYPEDEF_NAME  {
           sym *s = st_find($3);
-          if (!s || s->kind != SK_TYPEDEF) msg_error(yylineno, "unknown base class '%s'", $3);
+          if (!s || s->kind != SK_TYPEDEF) msg_error(yylineno, MSG_ERR_UNKNOWN_BASE, $3);
           $$ = s ? s->stype : NULL;
           free($3);
       }
@@ -1382,7 +1293,7 @@ mem_init:
               s->e1 = ast_call(ast_ident(strdup("__construct_at"), yylineno), a, $3.n + 1, yylineno);
               if (g_n_ctor_members < 32) g_ctor_members[g_n_ctor_members++] = strdup($1);
           } else {
-              if ($3.n > 1) msg_error(yylineno, "member '%s' takes one initializer", $1);
+              if ($3.n > 1) msg_error(yylineno, MSG_ERR_MEMBER_ONE_INIT, $1);
               s->e1 = ast_assign(ast_ident($1, yylineno),
                                  $3.n ? $3.arr[0] : ast_int_lit(0, yylineno), yylineno);
           }
@@ -1592,7 +1503,7 @@ field_declarator:
               if (cur_base->kind == TY_INT || cur_base->kind == TY_PTR)
                   f->dinit = ast_int_lit(0, yylineno);
               else if (cur_base->kind == TY_FLOAT)
-                  f->dinit = ast_float_lit(0.0f, yylineno);
+                  f->dinit = ast_float_lit("0.0", yylineno);
               else
                   f->dzero = 1;     /* array/struct aggregate: zero-fill at ctor time */
           }
@@ -1602,7 +1513,7 @@ field_declarator:
           /* size is any constant expression: a literal, an enum constant, or a
              non-type template parameter (a sentinel int, resolved at instantiation) */
           long v;
-          if (!const_eval($3, &v)) msg_error(yylineno, "array field size must be constant");
+          if (!const_eval($3, &v)) msg_error(yylineno, MSG_ERR_FIELD_SIZE_CONST);
           warn_wide(cur_base, $1, yylineno);
           t_struct_add_field(cur_struct, $1, t_array(cur_base, (int)v));
           free($1);
@@ -1679,7 +1590,7 @@ array_suffix:
              cur_base directly or via their own mid-rule capture). */
           cur_base = $<typ>3;
           long v;
-          if (!const_eval($4, &v)) msg_error(yylineno, "array size must be a constant expression");
+          if (!const_eval($4, &v)) msg_error(yylineno, MSG_ERR_ARRAY_SIZE_CONST);
           $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)v;   /* enum/macro/sizeof/arith ok */
       }
     ;
@@ -1692,19 +1603,6 @@ type_arg_list:
     | type_arg_list ',' base_type pointers {
           $$ = $1; $$.arr = realloc($$.arr, sizeof(type*) * ($$.n + 1));
           $$.arr[$$.n++] = apply_pointers($3, $4);
-      }
-    ;
-
-/* non-type template arguments `<4>` / `<4, 8>` — constant integer expressions.
-   Uses shift_expr (below relational) so a closing `>` is not eaten as `operator>`. */
-ct_arg_list:
-      shift_expr {
-          long v; if (!const_eval($1, &v)) msg_error(yylineno, "template argument must be a constant");
-          $$.n = 0; if ($$.n < 8) $$.dims[$$.n++] = (int)v;
-      }
-    | ct_arg_list ',' shift_expr {
-          long v; if (!const_eval($3, &v)) msg_error(yylineno, "template argument must be a constant");
-          $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)v;
       }
     ;
 
@@ -1721,7 +1619,7 @@ ct_mixed_arg:
       }
     | shift_expr {
           long v;
-          if (!const_eval($1, &v)) msg_error(yylineno, "template argument must be a constant");
+          if (!const_eval($1, &v)) msg_error(yylineno, MSG_ERR_TEMPLATE_ARG_CONST);
           $$.n = 1;
           $$.targs[0] = NULL;
           $$.vals[0]  = (int)v;
@@ -1801,7 +1699,7 @@ init_declarator:
              global cur_base, so capture the declarator's base type BEFORE
              parsing the initializer. Same pattern as the direct-init form
              at the top of init_declarator. */
-          if (ts_typedef) msg_error(yylineno, "typedef cannot have an initializer");
+          if (ts_typedef) msg_error(yylineno, MSG_ERR_TYPEDEF_INIT);
           $$ = make_decl($<typ>5, $1, $2, $3.dims, $3.n, yylineno, $6);
           /* `char s[] = "Oi";` takes the string's length and its NUL, as the
              braced form takes its count: left at 0, the array got no words
@@ -1844,8 +1742,8 @@ init_declarator:
       }
     | '(' '*' IDENT array_suffix ')' '(' param_list ')' '=' assignment_expr {
           /* `ret (*fp)(params) = f;` — the id of f, or any expression giving one */
-          if (ts_typedef) msg_error(yylineno, "typedef cannot have an initializer");
-          if ($4.n > 0) msg_error(yylineno, "an array of function pointers takes a { ... } initializer");
+          if (ts_typedef) msg_error(yylineno, MSG_ERR_TYPEDEF_INIT);
+          if ($4.n > 0) msg_error(yylineno, MSG_ERR_FPTR_ARRAY_INIT);
           $$ = ast_decl(t_int(), $3, $10, yylineno);
       }
     | '(' '*' IDENT array_suffix ')' '(' param_list ')' '=' '{' init_item_list '}' {
@@ -1906,7 +1804,7 @@ function_def:
           if (g_in_template) tmpl_name_register($3);   // lexer emits TEMPLATE_NAME for it
           sym *s = st_find($3);
           if (s && s->kind != SK_FUNC)
-              msg_error(yylineno, "'%s' redeclared as a function (already a variable)", $3);
+              msg_error(yylineno, MSG_ERR_REDECL_AS_FUNC, $3);
           /* C++ overloading: a same-name function with a DIFFERENT signature is a
              new overload; only an identical signature already-defined is an error. */
           char *nsig = params_sig($5.head);
@@ -1916,8 +1814,8 @@ function_def:
               int same = (strcmp(osig, nsig) == 0);
               free(osig);
               if (same && s->defined)
-                  msg_error(yylineno, "redefinition of function '%s'%s", $3,
-                      strcmp($3, "main") == 0 ? " (a program has exactly one main)" : "");
+                  msg_error(yylineno, MSG_ERR_REDEF_FUNC, $3,
+                      strcmp($3, "main") == 0 ? MSG_WORD_ONE_MAIN : "");
               if (same) reuse = 1;          /* matching prototype -> attach the body */
           }
           free(nsig);
@@ -1969,7 +1867,7 @@ function_def:
     | decl_specifiers pointers TYPEDEF_NAME TOK_SCOPE IDENT '(' param_list ')' fn_quals {
           sym *cs = st_find_tag($3);
           if (!cs || !cs->struct_t)
-              msg_error(yylineno, "out-of-class definition for unknown class '%s'", $3);
+              msg_error(yylineno, MSG_ERR_OUT_OF_CLASS_UNKNOWN, $3);
           cur_class = cs->struct_t;
           replay_method_defaults($3, $5, $7.head);
           method_enter(apply_pointers($1, $2), $5, $7.head, $7.n);
@@ -1985,7 +1883,7 @@ function_def:
     | decl_specifiers pointers '&' TYPEDEF_NAME TOK_SCOPE IDENT '(' param_list ')' fn_quals {
           sym *cs = st_find_tag($4);
           if (!cs || !cs->struct_t)
-              msg_error(yylineno, "out-of-class definition for unknown class '%s'", $4);
+              msg_error(yylineno, MSG_ERR_OUT_OF_CLASS_UNKNOWN, $4);
           cur_class = cs->struct_t;
           replay_method_defaults($4, $6, $8.head);
           method_enter(t_ref(apply_pointers($1, $2)), $6, $8.head, $8.n);
@@ -1999,10 +1897,10 @@ function_def:
        Both names lex as TYPEDEF_NAME; we require they match. */
     | TYPEDEF_NAME TOK_SCOPE TYPEDEF_NAME '(' param_list ')' fn_quals {
           if (strcmp($1, $3) != 0)
-              msg_error(yylineno, "qualified id '%s::%s' is not a constructor", $1, $3);
+              msg_error(yylineno, MSG_ERR_NOT_CTOR, $1, $3);
           sym *cs = st_find_tag($1);
           if (!cs || !cs->struct_t)
-              msg_error(yylineno, "out-of-class ctor for unknown class '%s'", $1);
+              msg_error(yylineno, MSG_ERR_OUT_OF_CLASS_CTOR, $1);
           cur_class = cs->struct_t;
           g_n_ctor_inits = 0; g_ctor_base_named = 0; g_n_ctor_members = 0;
       }
@@ -2023,10 +1921,10 @@ function_def:
        the Class__dtor prototype; this supplies the body under that same symbol. */
     | TYPEDEF_NAME TOK_SCOPE '~' TYPEDEF_NAME '(' ')' fn_quals {
           if (strcmp($1, $4) != 0)
-              msg_error(yylineno, "qualified id '%s::~%s' is not a destructor", $1, $4);
+              msg_error(yylineno, MSG_ERR_NOT_DTOR, $1, $4);
           sym *cs = st_find_tag($1);
           if (!cs || !cs->struct_t)
-              msg_error(yylineno, "out-of-class dtor for unknown class '%s'", $1);
+              msg_error(yylineno, MSG_ERR_OUT_OF_CLASS_DTOR, $1);
           cur_class = cs->struct_t;
           method_enter(t_void(), "dtor", NULL, 0);
       }
@@ -2440,7 +2338,7 @@ primary_expr:
           /* T(args) — a temporary object constructed on the stack */
           sym *s = st_find($1);
           type *t = (s && s->kind == SK_TYPEDEF) ? s->stype : NULL;
-          if (!t) msg_error(yylineno, "unknown type '%s'", $1);
+          if (!t) msg_error(yylineno, MSG_ERR_UNKNOWN_TYPE, $1);
           $$ = ast_tempobj(t, $3.arr, $3.n, yylineno);
           free($1);
       }
@@ -2504,7 +2402,10 @@ generic_assoc_list:
 
 %%
 
+// bison's two texts, in the user's language
 void yyerror(const char *s)
 {
+    if      (strcmp(s, "syntax error"    ) == 0) s = MSG_ERR_SYNTAX;
+    else if (strcmp(s, "memory exhausted") == 0) s = MSG_ERR_PARSER_MEMORY;
     msg_error(yylineno, "%s", s);
 }

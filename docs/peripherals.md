@@ -52,13 +52,15 @@ Checked by `Scripts/hw/tb_fifo.v` and `Scripts/hw/tb_dcfifo.v`.
 ## Character codes: keyboard and screen
 
 The keyboard and the screen share one table of codes, so a program can
-pass what `cade_sync()` returns straight to `toma_sync()`:
+pass what `cade_sync()` returns straight to `toma_sync()`. A code is an
+int of 8 bits, from -128 to 127, so a program writes the same numbers at
+any `#NUBITS`:
 
 | codes | what they are | keyboard | screen |
 |---|---|---|---|
 | 0 to 127 | ASCII | gives them | draws 32 to 126, obeys 8, 9, 10, ignores the rest |
-| 128 to 159 | screen commands | never gives them | 128 clear, 129 cursor; 130 to 159 kept for later commands, ignored now |
-| 160 to 255 | the keyboard's special keys | none yet (arrows, F-keys... later) | always ignored |
+| -128 to -97 | screen commands | never gives them | -128 clear, -127 cursor; -126 to -97 kept for later commands, ignored now |
+| -96 to -1 | the keyboard's special keys | none yet (arrows, F-keys... later) | always ignored |
 
 A code the screen ignores costs the program one `toma` and nothing else,
 so an echo loop `toma_sync(1, cade_sync(0));` stays correct when the
@@ -171,7 +173,7 @@ cursor. The program sends one word at a time, and the block shows it.
 
 ```c
 toma_sync(1, 'A');        // writes A at the cursor
-toma_sync(1, 128);        // clears the screen (the program waits until it is done)
+toma_sync(1, -128);       // clears the screen (the program waits until it is done)
 ```
 
 **The words.**
@@ -182,9 +184,9 @@ toma_sync(1, 128);        // clears the screen (the program waits until it is do
 | 10 | column 0 of the next line |
 | 8 | the cursor back one column, a space written there; nothing at column 0 |
 | 9 | the next column that is a multiple of 8 |
-| 128 | clear: the whole screen blank, the cursor at line 0, column 0 |
-| 129, line, column | three words: the cursor at that line and column (out of range gives 0) |
-| anything else | ignored: 130 to 159 are kept for later commands, 160 to 255 are the keyboard's special keys ([codes](#character-codes-keyboard-and-screen)) |
+| -128 | clear: the whole screen blank, the cursor at line 0, column 0 |
+| -127, line, column | three words: the cursor at that line and column (out of range gives 0) |
+| anything else | ignored: -126 to -97 are kept for later commands, -96 to -1 are the keyboard's special keys ([codes](#character-codes-keyboard-and-screen)) |
 
 A new line from the last line **scrolls** the screen up: the text moves one
 line up and the last line comes out blank. The block takes a word only when
@@ -197,7 +199,7 @@ A helper in C++, as the regress program `Tests/VGATEXT/vga_cpp.cpp` does:
 
 ```cpp
 void escreve(const char *s) { while (*s) toma_sync(1, *s++); }
-void cursor(int linha, int coluna) { toma_sync(1, 129); toma_sync(1, linha); toma_sync(1, coluna); }
+void cursor(int linha, int coluna) { toma_sync(1, -127); toma_sync(1, linha); toma_sync(1, coluna); }
 ```
 
 **Parameter.** `NUBITS` (32): the width of the word `toma()` sends, the
@@ -234,9 +236,10 @@ The converter latches the colour on the rising edge of `VGA_CLK`. The
 block's outputs change on the rising edge of `clk`, so with `VGA_CLK = clk`
 the converter samples them as they change, with only the routing delays as
 margin; inverted, it samples them half a period (20 ns) later, in the middle
-of the pixel. **Not checked on the board:** Terasic's own demo was not read,
-and Dênis's project, with the clock not inverted, shows a picture on his
-DE2-115.
+of the pixel. **Checked on the board** (DE2-115, Dênis, 2026-10): the
+project sent to him on 2026-10-20, with `VGA_CLK = ~clk` as above, shows
+the picture. His earlier project, with the clock not inverted, did too, so
+on this board both work; the inverted clock is the one with the margin.
 
 A board with a resistor converter (4 bits a colour, say) takes `{4{pixel &
 ativo}}` on each colour and only the sync pins.
@@ -276,7 +279,7 @@ an old word for a new one.
 
 Checked by `Scripts/hw/tb_vgatext.v`: the picture rebuilt from the output
 pins as a monitor would (the timing, a glyph against the font, the cursor
-blinking), every word and control code, the codes 130 to 255 ignored, the
+blinking), every word and control code, the codes -126 to -1 ignored, the
 cursor command, a scroll, a clear and how long each holds the program, the
 outputs during and after reset, a word offered during the reset's clear, a
 reset of the block alone, the screen memory never read past its end. The regress pass `VGATEXT` runs

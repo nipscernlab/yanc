@@ -2,11 +2,6 @@
 // array index handling -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-/*
-TODO:
-1- usar instrucao virtual para evitar enderecamento idireto quando indice eh constante
-*/
-
 // global includes
 #include  <stdio.h>
 #include <string.h>

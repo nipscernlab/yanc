@@ -15,8 +15,8 @@
 // width when a value is stored, and are ints in arithmetic, as C++ promotes
 // them; they were plain 32-bit words (uint8_t 255 + 1 gave 256). And ++/-- on
 // a bitfield stepped the whole word, carrying into the neighbouring fields.
-// Not here yet (TODO.md item 11): the display of unsigned words at or above
-// 2^31.
+// Not here: an unsigned word at or above 2^31 still shows signed, since a port
+// carries raw bits with no type (TODO.md item 11 closed it as documented).
 struct BF { int s : 4; unsigned u : 4; int one : 1; int mid : 7; };
 union  BU { unsigned raw; BF f; };
 struct BB { bool flag : 1; int n : 8; };

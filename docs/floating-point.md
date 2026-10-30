@@ -66,7 +66,10 @@ bits are dropped at every step, so the errors do not cancel. Measured, 1000
 additions of `0.001` end 240, 177 and 78 units of the last place away from
 1.0 at levels 0, 1 and 2. Keep accumulators of phase or time in integer
 arithmetic, and accumulate deviations from a nominal value rather than the
-value itself.
+value itself. A processor that accumulates can also take a wider mantissa:
+32/25/6 keeps two more bits than 32/23/8. A compensated (Kahan) sum does
+not help at level 0, because it relies on `t - sum` being exact, which
+loses a bit there; from level 1 on it works.
 
 The costs are LUT counts measured with Yosys on a 32-bit processor using
 float addition, multiplication, conversions and comparisons, before v6.0

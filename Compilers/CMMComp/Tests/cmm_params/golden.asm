@@ -1,0 +1,374 @@
+NOP
+#PRNAME cmm_params
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+#SHARE f10_b10 w11_a11
+#SHARE f10_b9 w11_a10
+#SHARE f10_b8 w11_a9
+#SHARE f10_b7 w11_a8
+#SHARE f10_b6 w11_a7
+#SHARE f10_b5 w11_a6
+#SHARE f10_b4 w11_a5
+#SHARE f10_b3 w11_a4
+#SHARE f10_b2 w11_a3
+#SHARE f10_b1 w11_a2
+#SHARE s12_c12 g
+#SHARE s12_c11 w11_a11
+#SHARE s12_c10 w11_a10
+#SHARE s12_c9 w11_a9
+#SHARE s12_c8 w11_a8
+#SHARE s12_c7 w11_a7
+#SHARE s12_c6 w11_a6
+#SHARE s12_c5 w11_a5
+#SHARE s12_c4 w11_a4
+#SHARE s12_c3 w11_a3
+#SHARE s12_c2 w11_a2
+#SHARE s12_c1 w11_a1
+#SHARE m20_p18_i w11_a11
+#SHARE m20_p18 w11_a10
+#SHARE m20_p15_i w11_a9
+#SHARE m20_p15 w11_a8
+#SHARE m20_p12_i w11_a7
+#SHARE m20_p12 w11_a6
+#SHARE m20_p9_i w11_a5
+#SHARE m20_p9 w11_a4
+#SHARE m20_p6_i w11_a3
+#SHARE m20_p6 w11_a2
+#SHARE m20_p3_i w11_a1
+#SHARE m20_si m20_p19
+#SHARE m20_sf m20_p20
+#SHARE __aux_var w11_a3
+#SHARE __aux_var1 w11_a2
+#SHARE __aux_var2 w11_a1
+#SHARE m20_sc_i w11_a11
+#SHARE m20_sc w11_a10
+JMP main
+@w11 SET_P w11_a11
+SET_P w11_a10
+SET_P w11_a9
+SET_P w11_a8
+SET_P w11_a7
+SET_P w11_a6
+SET_P w11_a5
+SET_P w11_a4
+SET_P w11_a3
+SET_P w11_a2
+SET w11_a1
+LOD w11_a2
+MLT 2
+ADD w11_a1
+P_LOD w11_a3
+MLT 3
+S_ADD
+P_LOD w11_a4
+MLT 4
+S_ADD
+P_LOD w11_a5
+MLT 5
+S_ADD
+P_LOD w11_a6
+MLT 6
+S_ADD
+P_LOD w11_a7
+MLT 7
+S_ADD
+P_LOD w11_a8
+MLT 8
+S_ADD
+P_LOD w11_a9
+MLT 9
+S_ADD
+P_LOD w11_a10
+MLT 10
+S_ADD
+P_LOD w11_a11
+MLT 11
+S_ADD
+RET
+@f10 SET_P f10_b10
+SET_P f10_b9
+SET_P f10_b8
+SET_P f10_b7
+SET_P f10_b6
+SET_P f10_b5
+SET_P f10_b4
+SET_P f10_b3
+SET_P f10_b2
+SET f10_b1
+LOD f10_b2
+F_MLT 2.0
+F_ADD f10_b1
+P_LOD f10_b3
+F_MLT 3.0
+SF_ADD
+P_LOD f10_b4
+F_MLT 4.0
+SF_ADD
+P_LOD f10_b5
+F_MLT 5.0
+SF_ADD
+P_LOD f10_b6
+F_MLT 6.0
+SF_ADD
+P_LOD f10_b7
+F_MLT 7.0
+SF_ADD
+P_LOD f10_b8
+F_MLT 8.0
+SF_ADD
+P_LOD f10_b9
+F_MLT 9.0
+SF_ADD
+P_LOD f10_b10
+F_MLT 10.0
+SF_ADD
+RET
+@s12 SET_P s12_c12
+SET_P s12_c11
+SET_P s12_c10
+SET_P s12_c9
+SET_P s12_c8
+SET_P s12_c7
+SET_P s12_c6
+SET_P s12_c5
+SET_P s12_c4
+SET_P s12_c3
+SET_P s12_c2
+SET s12_c1
+LOD s12_c2
+MLT 2
+ADD s12_c1
+P_LOD s12_c3
+MLT 3
+S_ADD
+P_LOD s12_c4
+MLT 4
+S_ADD
+P_LOD s12_c5
+MLT 5
+S_ADD
+P_LOD s12_c6
+MLT 6
+S_ADD
+P_LOD s12_c7
+MLT 7
+S_ADD
+P_LOD s12_c8
+MLT 8
+S_ADD
+P_LOD s12_c9
+MLT 9
+S_ADD
+P_LOD s12_c10
+MLT 10
+S_ADD
+P_LOD s12_c11
+MLT 11
+S_ADD
+P_LOD s12_c12
+MLT 12
+S_ADD
+SET g
+RET
+@m20 SET_P m20_p20
+SET_P m20_p19
+SET_P m20_p18_i
+SET_P m20_p18
+SET_P m20_p17
+SET_P m20_p16
+SET_P m20_p15_i
+SET_P m20_p15
+SET_P m20_p14
+SET_P m20_p13
+SET_P m20_p12_i
+SET_P m20_p12
+SET_P m20_p11
+SET_P m20_p10
+SET_P m20_p9_i
+SET_P m20_p9
+SET_P m20_p8
+SET_P m20_p7
+SET_P m20_p6_i
+SET_P m20_p6
+SET_P m20_p5
+SET_P m20_p4
+SET_P m20_p3_i
+SET_P m20_p3
+SET_P m20_p2
+SET m20_p1
+LOD m20_p4
+MLT 4
+ADD m20_p1
+P_LOD m20_p7
+MLT 7
+S_ADD
+P_LOD m20_p10
+MLT 10
+S_ADD
+P_LOD m20_p13
+MLT 13
+S_ADD
+P_LOD m20_p16
+MLT 16
+S_ADD
+P_LOD m20_p19
+MLT 19
+S_ADD
+SET m20_si
+LOD m20_p2
+F_MLT 2.0
+P_LOD m20_p5
+F_MLT 5.0
+SF_ADD
+P_LOD m20_p8
+F_MLT 8.0
+SF_ADD
+P_LOD m20_p11
+F_MLT 11.0
+SF_ADD
+P_LOD m20_p14
+F_MLT 14.0
+SF_ADD
+P_LOD m20_p17
+F_MLT 17.0
+SF_ADD
+P_LOD m20_p20
+F_MLT 20.0
+SF_ADD
+SET m20_sf
+LOD 3.0
+F_MLT m20_p3
+P_LOD 3.0
+F_MLT m20_p3_i
+P_LOD 6.0
+F_MLT m20_p6
+P_LOD 6.0
+F_MLT m20_p6_i
+SET_P __aux_var 
+SET_P __aux_var1
+SET_P __aux_var2
+F_ADD __aux_var1
+P_LOD __aux_var2
+F_ADD __aux_var 
+P_LOD 9.0
+F_MLT m20_p9
+P_LOD 9.0
+F_MLT m20_p9_i
+SET_P __aux_var 
+SET_P __aux_var1
+SET_P __aux_var2
+F_ADD __aux_var1
+P_LOD __aux_var2
+F_ADD __aux_var 
+P_LOD 12.0
+F_MLT m20_p12
+P_LOD 12.0
+F_MLT m20_p12_i
+SET_P __aux_var 
+SET_P __aux_var1
+SET_P __aux_var2
+F_ADD __aux_var1
+P_LOD __aux_var2
+F_ADD __aux_var 
+P_LOD 15.0
+F_MLT m20_p15
+P_LOD 15.0
+F_MLT m20_p15_i
+SET_P __aux_var 
+SET_P __aux_var1
+SET_P __aux_var2
+F_ADD __aux_var1
+P_LOD __aux_var2
+F_ADD __aux_var 
+P_LOD 18.0
+F_MLT m20_p18
+P_LOD 18.0
+F_MLT m20_p18_i
+SET_P __aux_var 
+SET_P __aux_var1
+SET_P __aux_var2
+F_ADD __aux_var1
+P_LOD __aux_var2
+F_ADD __aux_var 
+SET_P m20_sc_i
+SET m20_sc
+LOD m20_sf
+F_ADD m20_sc
+F_ADD m20_sc_i
+P_I2F_M m20_si
+SF_ADD
+RET
+@main LOD 1
+P_LOD 2
+P_LOD 3
+P_LOD 4
+P_LOD 5
+P_LOD 6
+P_LOD 7
+P_LOD 8
+P_LOD 9
+P_LOD 10
+P_LOD 11
+CAL w11
+OUT 0
+LOD 1.0
+P_LOD 2.0
+P_LOD 3.0
+P_LOD 4.0
+P_LOD 5.0
+P_LOD 6.0
+P_LOD 7.0
+P_LOD 8.0
+P_LOD 9.0
+P_LOD 10.0
+CAL f10
+F2I
+OUT 0
+LOD 1
+P_LOD 2
+P_LOD 3
+P_LOD 4
+P_LOD 5
+P_LOD 6
+P_LOD 7
+P_LOD 8
+P_LOD 9
+P_LOD 10
+P_LOD 11
+P_LOD 12
+CAL s12
+LOD g
+OUT 0
+LOD 1
+P_LOD 2.0
+P_LOD 3.0
+P_LOD 1.0
+P_LOD 4
+P_LOD 5.0
+P_LOD 6.0
+P_LOD 1.0
+P_LOD 7
+P_LOD 8.0
+P_LOD 9.0
+P_LOD 1.0
+P_LOD 10
+P_LOD 11.0
+P_LOD 12.0
+P_LOD 1.0
+P_LOD 13
+P_LOD 14.0
+P_LOD 15.0
+P_LOD 1.0
+P_LOD 16
+P_LOD 17.0
+P_LOD 18.0
+P_LOD 1.0
+P_LOD 19
+P_LOD 20.0
+CAL m20
+F2I
+OUT 0
+@fim JMP fim

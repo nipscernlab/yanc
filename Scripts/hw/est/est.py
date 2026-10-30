@@ -6,7 +6,7 @@ routing). Each delay is then divided by the base variant's on the same family.
 import concurrent.futures as cf, os, re, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-YOSYS = r'C:\packs\msys64\mingw64\bin\yosys.exe'
+YOSYS = os.environ.get('YOSYS') or shutil.which('yosys') or 'yosys'
 SRC = ['processor.v', 'core.v', 'ula.v', 'instr_dec.v', 'addr_dec.v']
 
 GROUPS = {

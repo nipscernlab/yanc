@@ -306,7 +306,7 @@ Bruguera and Lang, the Saskatchewan thesis, Seidel and Even, Langhammer's
 FPL and FCCM papers, Schmookler and Nowka. The numbers quoted from them come
 from their abstracts or from papers that cite them.
 
-## For the documentation (item 21)
+## For the documentation (issue #40)
 
 Nothing for the manual yet: none of this is in `SAPHO/`. If a method is
 adopted, the manual's hardware page gets one line (the normaliser's

@@ -42,6 +42,30 @@ static char *xstrdup_n(const char *s, int n)
     memcpy(r, s, n); r[n] = 0; return r;
 }
 
+// A float literal as the .asm takes it, digits.digits[e[-]digits], with no
+// suffix and no leading zeros (.5 -> 0.5, 5. -> 5.0, 1e5 -> 1.0e5), the form
+// cmmcomp's fnum_text writes. The assembler rounds this text once, exactly, to
+// the target format; going through a double first would round twice (#12).
+static char *float_text(const char *p)
+{
+    char *r = (char*)malloc(strlen(p) + 4), *o = r;   // at most "0", ".", "0" added
+    if (!r) msg_internal("oom");
+    while (*p == '0' && p[1] >= '0' && p[1] <= '9') p++;
+    if (*p == '.') *o++ = '0';
+    while (*p >= '0' && *p <= '9') *o++ = *p++;
+    *o++ = '.';
+    if (*p == '.') p++;
+    if (!(*p >= '0' && *p <= '9')) *o++ = '0';
+    while (*p >= '0' && *p <= '9') *o++ = *p++;
+    if (*p == 'e' || *p == 'E') {
+        *o++ = 'e'; p++;
+        if (*p == '+') p++; else if (*p == '-') *o++ = *p++;
+        while (*p >= '0' && *p <= '9') *o++ = *p++;
+    }
+    *o = 0;                                           // the f/F/l/L suffix stays out
+    return r;
+}
+
 // extract the body of a "..." string literal, honouring \n \t \r \\ \" \0
 // returns a freshly-allocated buffer and writes the byte length to *out_len.
 static char *unescape_string(const char *src, int *out_len)
@@ -96,9 +120,7 @@ static int classify_ident(const char *name)
     // C++ reserves every name with `__` in it, and here those are the
     // compiler's own names in the .asm (__fp, __L..., Class__method)
     if (strstr(name, "__"))
-        msg_error(yylineno, "'%s': a name with '__' in it is reserved (C++ "
-                  "keeps them for the compiler, and YANC uses them in the "
-                  "assembly)", name);
+        msg_error(yylineno, MSG_ERR_RESERVED_DUNDER, name);
     sym *s = st_find(name);
     if (s && s->kind == SK_TYPEDEF) return TYPEDEF_NAME;
     if (tmpl_name_is(name)) return TEMPLATE_NAME;
@@ -138,8 +160,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
         int L = strlen(val);
         while (L > 0 && (val[L-1] == ' ' || val[L-1] == '\t' || val[L-1] == '\r')) val[--L] = 0;
         if (g_unit) {
-            if      (!strcmp(key, "prname")) msg_error(yylineno, "#pragma yanc prname is gone: the processor takes the name of the file "
-                                                       "(filtro.cpp becomes the processor filtro); delete the line and, for another name, rename the file");
+            if      (!strcmp(key, "prname")) msg_error(yylineno, MSG_ERR_PRAGMA_PRNAME);
             else if (!strcmp(key, "nubits")) g_unit->nubits = atoi(val);
             else if (!strcmp(key, "nbmant")) g_unit->nbmant = atoi(val);
             else if (!strcmp(key, "nbexpo")) g_unit->nbexpo = atoi(val);
@@ -148,9 +169,9 @@ CHRLIT  \'(\\.|[^\\'\n])\'
             else if (!strcmp(key, "sdepth")) g_unit->sdepth = atoi(val);
             else if (!strcmp(key, "nuioin")) g_unit->nuioin = atoi(val);
             else if (!strcmp(key, "nuioou")) g_unit->nuioou = atoi(val);
-            else if (!strcmp(key, "fftsiz")) msg_error(yylineno, "#pragma yanc fftsiz does nothing in C++ (the bit-reversed addressing is C\xC2\xB1 only); delete the line");
-            else if (!strcmp(key, "itradd")) msg_error(yylineno, "#pragma yanc itradd does nothing in C++ (interrupts are C\xC2\xB1 only); delete the line");
-            else msg_warning(yylineno, "unknown #pragma yanc setting '%s'", key);
+            else if (!strcmp(key, "fftsiz")) msg_error(yylineno, MSG_ERR_PRAGMA_FFTSIZ);
+            else if (!strcmp(key, "itradd")) msg_error(yylineno, MSG_ERR_PRAGMA_ITRADD);
+            else msg_warning(yylineno, MSG_WARN_PRAGMA_UNKNOWN, key);
         }
     }
 }
@@ -256,9 +277,9 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 {INT_HEX}                { yylval.ival = int_lit(yytext, 16); return INT_LIT; }  /* truncates to the target word */
 {INT_DEC}                { /* a leading 0 makes it octal, as in C++ (010 is 8); an 8 or 9 then is an error */
                            int oct = yytext[0] == '0' && yytext[1] >= '0' && yytext[1] <= '9';
-                           if (oct && strpbrk(yytext, "89")) msg_error(yylineno, "'%s': a number starting with 0 is octal, and has no 8 or 9", yytext);
+                           if (oct && strpbrk(yytext, "89")) msg_error(yylineno, MSG_ERR_OCTAL, yytext);
                            yylval.ival = int_lit(yytext, oct ? 8 : 10); return INT_LIT; }
-{FLOAT}[fFlL]?           { yylval.fval = strtod(yytext, NULL);     return FLOAT_LIT; }
+{FLOAT}[fFlL]?           { yylval.sval = float_text(yytext);       return FLOAT_LIT; }
 {CHRLIT}                 { yylval.ival = unescape_char(yytext);    return CHAR_LIT; }
 {STRLIT}                 {
                            int len = 0;
@@ -345,7 +366,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
   /* single-char punctuation, returned by literal ASCII value ----------- */
 [(){}\[\];,.\?\:+\-*/%&|^~!=<>] { return yytext[0]; }
 
-.                        { msg_error(yylineno, "unexpected character '%c' (0x%02x)", yytext[0], (unsigned char)yytext[0]); }
+.                        { msg_error(yylineno, MSG_ERR_BAD_CHAR, yytext[0], (unsigned char)yytext[0]); }
 
 %%
 

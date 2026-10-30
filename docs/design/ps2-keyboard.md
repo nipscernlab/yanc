@@ -1,7 +1,8 @@
 # A PS/2 keyboard block for the SAPHO, read with `cade()`
 
 Status: implemented 2026-10-19 (`SAPHO/myKeyPS2.v`, `Scripts/hw/tb_keyps2.v`,
-regress pass `KEYPS2`); the board check on the DE2-115 with Dênis is left.
+regress pass `KEYPS2`); checked on the board by Dênis in his keyboard + VGA
+example (Luciano, 2026-10-27).
 Marks: **fact** (read in code or measured), **deduced** (to be checked on a
 board), **decided** (Luciano).
 
@@ -57,7 +58,7 @@ project:
 
    Every other key of the list (letters, digits, `- _ = + , < . >`, space,
    Enter, Backspace, Tab, Esc, the other shifted digits) is the same on both.
-4. **Burst is not needed** here (TODO 28): a few tens of scancodes per
+4. **Burst is not needed** here (issue #18): a few tens of scancodes per
    second; the handshake matters, not the rate.
 5. **Presses only**: a release never reaches the program, and there is no
    parameter to ask for releases (Luciano). Holding a key repeats it, by the
@@ -118,7 +119,10 @@ everything you suggested"; what was left for later is in GitHub issue #3):
 19. **The codes are shared with the screen**: 0-127 ASCII; 128-159 screen
     commands, never from the keyboard; 160-255 for the keyboard's special
     keys (arrows, F-keys, later; decision 6), which the screen always
-    ignores. Today the block gives 1-127 only.
+    ignores. Today the block gives 1-127 only. Since 2026-10-28 the codes
+    are an int of 8 bits: the commands are -128 to -97 and the special
+    keys -96 to -1, the same bit patterns, and the block sign-extends its
+    word ([vga-text.md](vga-text.md), decision 18).
 
 ## 3. Specification (as implemented)
 
@@ -208,7 +212,7 @@ on the DE2-115 with Dênis.
   seeds later gave 88 to 100 MHz, the table still the limit (vga-text.md,
   section 4).
 
-## 5. For the documentation (item 21 in TODO.md)
+## 5. For the documentation (issue #40)
 
 Written: docs/peripherals.md (pins, parameters, the words `cade()` returns,
 the key list, wiring, the clock, the size, 8 bits); v9.1: the code table

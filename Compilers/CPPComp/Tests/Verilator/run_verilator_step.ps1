@@ -20,7 +20,11 @@ param(
     [Parameter(Mandatory=$true)] [string] $InFile,
     [Parameter(Mandatory=$true)] [string] $OutFile,
     [Parameter(Mandatory=$true)] [long]   $Clocks,
-    [Parameter(Mandatory=$true)] [int]    $Expected
+    [Parameter(Mandatory=$true)] [int]    $Expected,
+    # where this machine keeps them, Windows form, found by regress.sh
+    # (cygpath on its env.sh lookup): no install path is written here
+    [Parameter(Mandatory=$true)] [string] $VlBin,
+    [Parameter(Mandatory=$true)] [string] $WinTmp
 )
 
 # Stop on CMDLET errors (a missing file, a bad path): those are real.
@@ -35,7 +39,7 @@ $ErrorActionPreference = "Stop"
 # plumbing (a public signal in the HDL), which only happens on a FRESH build:
 # an incremental one compiles nothing, prints nothing, and passed. That cost a
 # whole debugging session, so the two native calls below run with
-# $ErrorActionPreference = "Continue" (see native_quiet) and are judged the way
+# $ErrorActionPreference = "Continue" (see Invoke-Native) and are judged the way
 # they always should have been: by $LASTEXITCODE and by the artifact.
 
 # Runs a native command with stderr demoted to normal output, and returns its
@@ -53,14 +57,14 @@ function Invoke-Native {
     }
 }
 
-$env:TMP    = "C:/packs/msys64/tmp"
-$env:TEMP   = "C:/packs/msys64/tmp"
-$env:TMPDIR = "C:/packs/msys64/tmp"
-New-Item -ItemType Directory -Force "C:/packs/msys64/tmp" | Out-Null
-$env:Path   = "C:/packs/msys64/mingw64/bin;" + $env:Path
-$env:VERILATOR_ROOT = "C:/packs/msys64/mingw64/share/verilator"
+$env:TMP    = $WinTmp
+$env:TEMP   = $WinTmp
+$env:TMPDIR = $WinTmp
+New-Item -ItemType Directory -Force $WinTmp | Out-Null
+$env:Path   = "$VlBin;" + $env:Path
+$env:VERILATOR_ROOT = Join-Path (Split-Path $VlBin) "share/verilator"
 
-$Verilator = "C:/packs/msys64/mingw64/bin/verilator_bin.exe"
+$Verilator = Join-Path $VlBin "verilator_bin.exe"
 if (-not (Test-Path $Verilator)) {
     Write-Error "verilator not found at $Verilator"
     exit 1

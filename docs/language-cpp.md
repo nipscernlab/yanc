@@ -269,4 +269,6 @@ Exceptions (`try`, `catch`, `throw`), `typeid` and RTTI, `friend`,
 function or with captures, template specialization and default template
 arguments, `std::string`, file streams, `printf`, `enum` values that are not plain
 literals, and more than one source file (use `#include`). Most of these
-stop the compiler with "syntax error" at the line.
+stop the compiler with "syntax error" at the line. GitHub issue #43 keeps
+the list of the forms not accepted yet, and issue #31 the functions of
+C±'s library that C++ lacks (`fin`, `fout`, `sin` and the rest).

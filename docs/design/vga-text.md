@@ -1,8 +1,8 @@
 # A VGA text screen for the SAPHO, written with `toma()`
 
 Status: implemented 2026-10-20 (`SAPHO/myVGAText.v`, `Scripts/hw/tb_vgatext.v`,
-`Scripts/gen_vga_font.py`, regress pass `VGATEXT`); for v9.1; the board check
-on the DE2-115 with Dênis is left. Marks: **fact** (read in code or measured), **deduced** (to be
+`Scripts/gen_vga_font.py`, regress pass `VGATEXT`); for v9.1; checked on the
+board by Dênis in his keyboard + VGA example (Luciano, 2026-10-27). Marks: **fact** (read in code or measured), **deduced** (to be
 checked), **decided** (Luciano).
 
 ## 1. Where it comes from
@@ -129,8 +129,10 @@ everything you suggested"; what was left for later is in GitHub issue #4):
 16. **On the DE2-115, `VGA_CLK = ~clk` is recommended** (refines decision
     5): the ADV7123 latches on the rising edge, the block's outputs change
     on the rising edge of `clk`; inverted, the converter samples in the
-    middle of the pixel. Not checked on the board, and not compared with
-    Terasic's demo; Dênis's project, not inverted, shows a picture.
+    middle of the pixel. Checked on the board (Luciano, 2026-10-27): the
+    project sent to Dênis on 2026-10-20, inverted, shows the picture on his
+    DE2-115; his own earlier project, not inverted, did too. Not compared
+    with Terasic's demo.
 17. **The link is read through a register** (Luciano, 2026-10-20: "resolver
     o problema da queda de frequência"; GitHub issue #6). The SAPHO's
     `toma` word comes straight out of its ALU, so the block decoding it in
@@ -144,6 +146,18 @@ everything you suggested"; what was left for later is in GitHub issue #4):
     the new register, level with the SAPHO's own path to its accumulator.
     One cycle more per word; the SAPHO holds its word while it waits
     (checked by the regress pass `VGATEXT`, three real SAPHOs).
+18. **The codes are an int of 8 bits, -128 to 127** (Luciano, 2026-10-28,
+    refines decision 12: "quem tem que mudar é o periférico"). 128 does
+    not fit the int of an 8-bit SAPHO, and C± is to stop on a literal past
+    the word (GitHub issue #14), so `toma_sync(1, 128)` would no longer
+    compile at 8 bits. The commands are now -128 (clear) and -127 (cursor), -126 to
+    -97 kept, and the keyboard's special keys -96 to -1: at 8 bits the same
+    bits as before. The block compares the whole word with the command
+    sign-extended to `NUBITS`, so a program writes -128 at every width; a
+    32-bit word 128 is no longer a command. Weighed: keeping 128 and
+    writing it `0x80` at 8 bits (a program would change with its width),
+    and accepting decimals up to 255 at 8 bits (a change to C± for one
+    peripheral).
 
 ## 3. Specification (approved 2026-10-20, as implemented)
 
@@ -172,10 +186,10 @@ MHz clock) or `toma(k, w)` (another clock), one word at a time:
 | 8 | the cursor back one column, a space written there; nothing at column 0 |
 | 9 | the next column that is a multiple of 8 (past 79, the next line) |
 | 0-31 others, 127 | ignored |
-| 128 | clear: 2,400 spaces, cursor at (0, 0), the top register at 0 |
-| 129, line, column | the cursor at that screen line and column; out of range gives 0 |
-| 130 to 159 | ignored (kept for later commands, decision 12) |
-| 160 to 255 | ignored for good (the keyboard's special keys) |
+| -128 | clear: 2,400 spaces, cursor at (0, 0), the top register at 0 |
+| -127, line, column | the cursor at that screen line and column; out of range gives 0 |
+| -126 to -97 | ignored (kept for later commands, decisions 12 and 18) |
+| -96 to -1 | ignored for good (the keyboard's special keys) |
 
 "The next line" from the last screen line scrolls: the top register goes up
 by one (mod 30) and the line it frees is cleared (80 cycles).
@@ -196,7 +210,7 @@ by one (mod 30) and the line it frees is cleared (80 cycles).
    word out (after the cycle of its input register: one cycle for a
    character; 80 for a scroll; 2,400 for a
    clear) and only then flips C, so the SAPHO waits in `toma` meanwhile.
-   A command with arguments (129) takes three words; the block remembers
+   A command with arguments (-127) takes three words; the block remembers
    which one comes next.
 
 **Tests.** `Scripts/hw/tb_vgatext.v`: words in through the link as the
@@ -240,7 +254,7 @@ bits writing text. Board check on the DE2-115 with Dênis.
   than their `.mif` files (data 4 against 3 words, instructions 16 against
   11); the rest is set to 0. Seen here, not studied (TODO).
 
-## 5. For the documentation (item 21 in TODO.md)
+## 5. For the documentation (issue #40)
 
 Written: docs/peripherals.md, section "Screen: `myVGAText`"; v9.1: the code
 table shared with the keyboard (section "Character codes"), reset, the

@@ -7,7 +7,7 @@
 #      run cmmcomp and compare the produced .asm against
 #      Compilers/CMMComp/Tests/<prname>/golden.asm. For the sim-enabled subset also
 #      run asmcomp + iverilog + vvp and compare output_*.txt
-#      against Compilers/Compilers/CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
+#      against Compilers/CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
 #      the multi-proc DTW example (Compilers/CMMComp/Tests/DTW/TopLevel/).
 #
 #   2. CPP phase: for every Compilers/CPPComp/Tests/testN/testN.cpp run
@@ -27,11 +27,14 @@
 #   3. ISA table: hold the hand-written copies of the instruction set
 #      (ASMComp.l, core.v) to Compilers/common/isa.tsv, so the four places
 #      that spell the ISA out cannot drift apart silently. See
-#      Scripts/check_isa.py.
+#      Scripts/check_isa.py. In the same step, Scripts/check_changelog.py
+#      holds CHANGELOG.md's link lines to its version headings, and
+#      Scripts/dirac_cases.py runs every combination of the Dirac notation
+#      in Compilers/CMMComp/DiracCases/cases.tsv through cmmcomp.
 #
 #   3b. Float and complex conditions: Scripts/fcond runs the same cases on
 #      the host C/C++ compiler and on both compilers (three float formats,
-#      three #FROUND levels) and compares C's answers (TODO 33).
+#      three #FROUND levels) and compares C's answers.
 #
 #   4. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
@@ -41,7 +44,7 @@
 #      The CPP negative phase does the same for cppcomp with
 #      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only).
 #
-# Build phase builds all 3 binaries once (cmmcomp + cppcomp + asmcomp), all
+# Build phase builds the 4 binaries it runs once (cmmcomp, cppcomp, asmcomp, yanc), all
 # phases reuse them.
 #
 # Usage (from repo root, in msys2/git-bash on Windows):
@@ -61,15 +64,17 @@ set -uo pipefail
 # silently falls back to C:\WINDOWS\ where unprivileged users can't write
 # ("Cannot create temporary file in C:\WINDOWS\: Permission denied").
 # Setting all three unconditionally is the only thing that survives the
-# PowerShell -> bash -> make -> g++ env-inheritance chain.
-export TMP="C:/packs/msys64/tmp"
-export TEMP="C:/packs/msys64/tmp"
-export TMPDIR="C:/packs/msys64/tmp"
-# Create the dir via its POSIX form. MSYS mkdir reads the bare drive prefix
-# "C:" as a *relative* directory name and would leave a junk "./C:" folder
-# (the ':' shown as a box) in the repo root on every run -- cygpath turns the
-# Windows path into the mount path (here /tmp) so the real dir is used.
-mkdir -p "$(cygpath -u "$TMP" 2>/dev/null || echo "$TMP")"
+# PowerShell -> bash -> make -> g++ env-inheritance chain. The dir is MSYS2's
+# own /tmp in its Windows form (cygpath -m), wherever MSYS2 is installed;
+# off Windows (no cygpath) TMP is left alone. The dir is made through /tmp:
+# MSYS mkdir reads the bare drive prefix "C:" as a *relative* directory name
+# and would leave a junk "./C:" folder in the repo root.
+if command -v cygpath >/dev/null 2>&1; then
+    mkdir -p /tmp
+    export TMP="$(cygpath -m /tmp)"
+    export TEMP="$TMP"
+    export TMPDIR="$TMP"
+fi
 
 UPDATE=0
 UPDATE_SIZE=0
@@ -121,13 +126,12 @@ SIMMAIN="$CPP_ROOT/Tests/Verilator/sim_main.cpp"
 
 # CPPComp build flags (target params burned into cppcomp.exe). Override
 # via env when building a non-default-target binary.
-: "${CFG_NUBITS:=32}"; : "${CFG_NBMANT:=23}"; : "${CFG_NBEXPO:=8}"
-: "${CFG_NUGAIN:=128}"; : "${CFG_NDSTAC:=128}"; : "${CFG_SDEPTH:=128}"
-: "${CFG_NUIOIN:=1}";   : "${CFG_NUIOOU:=1}"; : "${CFG_FFTSIZ:=3}"
+# The float format follows from CFG_NUBITS and asmcomp sizes the stacks.
+: "${CFG_NUBITS:=32}"; : "${CFG_NUGAIN:=128}"
+: "${CFG_NUIOIN:=1}";  : "${CFG_NUIOOU:=1}"
 : "${CFG_HEAPSZ:=2048}"
-CPP_DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NBMANT=$CFG_NBMANT -DCFG_NBEXPO=$CFG_NBEXPO \
-          -DCFG_NUGAIN=$CFG_NUGAIN -DCFG_NDSTAC=$CFG_NDSTAC -DCFG_SDEPTH=$CFG_SDEPTH \
-          -DCFG_NUIOIN=$CFG_NUIOIN -DCFG_NUIOOU=$CFG_NUIOOU -DCFG_FFTSIZ=$CFG_FFTSIZ \
+CPP_DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NUGAIN=$CFG_NUGAIN \
+          -DCFG_NUIOIN=$CFG_NUIOIN -DCFG_NUIOOU=$CFG_NUIOOU \
           -DCFG_HEAPSZ=$CFG_HEAPSZ"
 
 # Resolve iverilog / vvp / verilator the same way the runners do: Scripts/env.sh
@@ -149,25 +153,43 @@ if [ -f "$SIZE_BASELINE_FILE" ]; then
 fi
 declare -A SIZE_CURRENT
 
-# Up to two retries for a simulation that DIED (TODO.md item 15). On a
-# machine short of memory vvp can die mid-run with no message; the same .vvp
-# re-run then passes (twice in a row was seen once). A simulation that exits
+# Up to two retries for a simulation that DIED. On a machine short of memory
+# vvp can die mid-run with no message, on a different heavy float test each
+# run; the same .vvp re-run then passes (twice in a row was seen once).
+# Measured in 2026-09: nothing on stderr, a truncated VCD, and 1 GB free of
+# 15.5 GB with one simulation 8x slower than usual -- paging, not YANC or
+# Icarus, and not the waveform writer (without $dumpvars the time is the same). A simulation that exits
 # non-zero -- or, in the C++ phase, leaves an empty or truncated output (a
 # prefix of the golden) -- is run again; a wrong but complete output fails at
 # once, never retried. Every retried test is listed at the end, so a flake
-# stays visible without failing the board.
+# stays visible without failing the board. A long retried list means: free
+# memory on the machine before trusting the run's timings, and re-run a
+# failing heavy test on its own.
 retried_names=()
 vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice at most), 0 if it exits 0
     retried_names+=("$1")
     "$VVP" "$2" >/dev/null 2>&1 && return 0
     "$VVP" "$2" >/dev/null 2>&1
 }
+# The same rule for a pass that reads what vvp prints (tb_fifo, tb_dcfifo,
+# KEYPS2, VGATEXT): run it in <dir> and leave its output in VVP_OUT, run again
+# (twice at most) only when vvp exits non-zero. Not called in $(...), so that
+# retried_names keeps the name.
+vvp_capture() {    # vvp_capture <name> <dir> <file.vvp>: VVP_OUT, and vvp's exit status
+    local rc n=0
+    VVP_OUT=$(cd "$2" && "$VVP" -n "$3" 2>&1); rc=$?
+    while [ $rc -ne 0 ] && [ $n -lt 2 ]; do
+        [ $n -eq 0 ] && retried_names+=("$1")
+        VVP_OUT=$(cd "$2" && "$VVP" -n "$3" 2>&1); rc=$?
+        n=$((n + 1))
+    done
+    return $rc
+}
 
 # Examples to exclude from the standalone simulation phase (still run cmmcomp
 # .asm compare AND asmcomp so their .v + .mif are available for any
 # downstream project-level link):
 #   procBlind/procBlindOpt - take too long to simulate (heavy FISTA)
-#   sw_test            - synthetic .cmm fixture; testbench would loop on while(1)
 #   ArcTan/Seno/Sqrt   - Math benchmarks: compute internally with no out(...) calls
 #   ProcDTW/ZeroCross  - real testbench lives in the multi-proc DTW project pass
 #   cmm_define         - synthetic #define fixture; while(1) testbench loop,
@@ -232,7 +254,7 @@ stack_check() {   # stack_check <tb.vcd>
          END { exit fired ? 1 : 0 }' "$1"
 }
 
-# ---- 1. build all 5 binaries -----------------------------------------------
+# ---- 1. build the 4 binaries ------------------------------------------------
 
 if [ "$SKIP_BUILD" -eq 0 ]; then
     echo "==> building cmmcomp + cppcomp + asmcomp + yanc"
@@ -240,7 +262,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
 
     # Wipe stale binaries first: a silently-failing gcc must NOT leave the
     # previous build in place to fool the regress into testing dead code.
-    rm -f "$CMMCOMP" "$BIN_DIR/cpppp.exe" "$CPPC" "$BIN_DIR/appcomp.exe" "$ASMCOMP"
+    rm -f "$CMMCOMP" "$CPPC" "$ASMCOMP" "$YANC"
 
     # Per-binary `set -e` so a build error aborts the script. Without it,
     # a gcc -Werror failure would print to the terminal but the regress
@@ -271,7 +293,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     pushd "$CPP_ROOT/Sources" >/dev/null
     bison -y -d CPPComp.y
     flex CPPComp.l
-    gcc -O2 -Wall -Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-function \
+    gcc -O2 -Wall \
         $CPP_DEFS -o "$CPPC" \
         main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c lex.yy.c y.tab.c \
         ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
@@ -348,6 +370,11 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         size_grew=0
         if [ -z "$baseline" ]; then
             size_msg="  [size: ${num_ins:-?}, no baseline]"
+            # a new example enters with its count, or the ratchet never holds it
+            if [ "$UPDATE_SIZE" -eq 0 ]; then
+                echo "FAIL ($prname): no size baseline; add \"$prname ${num_ins:-?}\" to $SIZE_BASELINE_FILE"
+                fail=$((fail + 1)); failed_names+=("$prname"); continue
+            fi
         elif [ "${num_ins:-0}" -gt "$baseline" ]; then
             size_msg="  [size: $num_ins, GREW +$((num_ins - baseline)) vs $baseline]"
             size_grew=1
@@ -916,7 +943,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                         "$ROOT/Scripts/hw/tb_fifo.v" "$HDL/myFIFO.v" >/dev/null 2>&1; then
                     echo "FAIL ($proj): iverilog on tb_fifo.v exited non-zero"; sim_fail=1
                 else
-                    tbf=$(cd "$proj_tmp" && "$VVP" -n "$proj_tmp/tb_fifo.vvp" 2>&1)
+                    vvp_capture "$proj" "$proj_tmp" "$proj_tmp/tb_fifo.vvp"; tbf=$VVP_OUT
                     if ! printf '%s' "$tbf" | grep -q "^0 of 3 failed"; then
                         echo "FAIL ($proj): tb_fifo.v:"; printf '%s\n' "$tbf" | grep FAIL; sim_fail=1
                     fi
@@ -965,7 +992,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                             "$ROOT/Scripts/hw/tb_dcfifo.v" "$HDL/myDCFIFO.v" >/dev/null 2>&1; then
                         echo "FAIL ($proj): iverilog on tb_dcfifo.v exited non-zero"; sim_fail=1; break
                     fi
-                    tbf=$(cd "$proj_tmp" && "$VVP" -n "$proj_tmp/tb_dcfifo.vvp" 2>&1)
+                    vvp_capture "$proj" "$proj_tmp" "$proj_tmp/tb_dcfifo.vvp"; tbf=$VVP_OUT
                     if ! printf '%s' "$tbf" | grep -q "^0 of 4 failed"; then
                         echo "FAIL ($proj): tb_dcfifo.v ($ratio):"; printf '%s\n' "$tbf" | grep FAIL; sim_fail=1
                     fi
@@ -1011,7 +1038,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                     "$kd/TopLevel/keyps2_tb.v" >/dev/null 2>&1; then
                 echo "FAIL ($proj): iverilog exited non-zero"; k_fail=1
             else
-                k_out=$(cd "$kt" && "$VVP" -n "$kt/k.vvp" 2>&1)
+                vvp_capture "$proj" "$kt" "$kt/k.vvp"; k_out=$VVP_OUT
                 if [ "$(printf '%s\n' "$k_out" | grep -c ': ok$')" -ne 2 ]; then
                     printf '%s\n' "$k_out" | grep "KEYPS2" | sed 's/^/    /'
                     echo "FAIL ($proj): a processor did not echo the keys"; k_fail=1
@@ -1062,7 +1089,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                     "$vd/TopLevel/vgatext_tb.v" >/dev/null 2>&1; then
                 echo "FAIL ($proj): iverilog exited non-zero"; v_fail=1
             else
-                v_out=$(cd "$vt" && "$VVP" -n "$vt/v.vvp" 2>&1)
+                vvp_capture "$proj" "$vt" "$vt/v.vvp"; v_out=$VVP_OUT
                 if [ "$(printf '%s\n' "$v_out" | grep -c ': ok$')" -ne 3 ]; then
                     printf '%s\n' "$v_out" | grep "VGATEXT\|screen\|cursor" | sed 's/^/    /'
                     echo "FAIL ($proj): a system did not show the keys"; v_fail=1
@@ -1255,7 +1282,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             # On Windows the PowerShell helper works around bash->make env
             # stripping under MSYS2; elsewhere (Linux) Verilator runs straight
             # from bash -- no env boundary, no hardcoded paths.
-            if command -v powershell.exe >/dev/null 2>&1; then
+            if command -v powershell.exe >/dev/null 2>&1 && command -v cygpath >/dev/null 2>&1; then
                 if ! powershell.exe -ExecutionPolicy Bypass -NoProfile \
                         -File "$CPP_ROOT/Tests/Verilator/run_verilator_step.ps1" \
                         -Prname  "$prname" \
@@ -1266,7 +1293,9 @@ if [ "$CMM_ONLY" -eq 0 ]; then
                         -InFile  "$infile" \
                         -OutFile "$out" \
                         -Clocks  "$clocks" \
-                        -Expected "$exp" >/dev/null 2>&1; then
+                        -Expected "$exp" \
+                        -VlBin   "$(cygpath -m "$(dirname "${VERILATOR:-/mingw64/bin/verilator}")")" \
+                        -WinTmp  "$TMP" >/dev/null 2>&1; then
                     echo "FAIL ($base): verilator"; fail=$((fail+1)); failed_names+=("$base"); continue
                 fi
             else
@@ -1298,7 +1327,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             "$VVP" "$od/$prname.vvp" >/dev/null 2>&1
             vvp_status=$?
             # died: non-zero, or an empty / truncated output (a strict prefix
-            # of the golden) -- once more (item 15)
+            # of the golden) -- once more (see vvp_once_more)
             gold_c="${entry%/}/golden.txt"
             died=0
             [ $vvp_status -ne 0 ] && died=1
@@ -1341,7 +1370,7 @@ fi
 # The instruction set is written down in four places that nothing keeps in
 # step; a disagreement between them is silent (a program assembles and then
 # runs as a different program). Hold them to Compilers/common/isa.tsv.
-# TODO.md item 10.2.
+# GitHub issue #33.
 if command -v python3 >/dev/null 2>&1; then
     echo ""
     echo "==> ISA table"
@@ -1361,6 +1390,21 @@ if command -v python3 >/dev/null 2>&1; then
         pass=$((pass + 1))
     else
         fail=$((fail + 1)); failed_names+=("messages-doc")
+    fi
+    # and CHANGELOG.md's link lines to its version headings (issue #51)
+    if python3 "$ROOT/Scripts/check_changelog.py" "$ROOT"; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("changelog-links")
+    fi
+    # and every combination of the Dirac notation through cmmcomp
+    # (Compilers/CMMComp/DiracCases/cases.tsv)
+    dirac_cmm="$CMMCOMP"
+    command -v cygpath >/dev/null 2>&1 && dirac_cmm=$(cygpath -w "$CMMCOMP")
+    if python3 "$ROOT/Scripts/dirac_cases.py" "$ROOT" "$dirac_cmm"; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("dirac-cases")
     fi
 else
     echo ""
@@ -1399,7 +1443,7 @@ fi
 # ---- 4a0. the ALU against what each operation means ---------------------------
 # Scripts/hw/tb_ula.sh drives the whole ula (every opcode on) through each
 # operation number and checks every result against a reference derived in the
-# testbench, never blessed (TODO item 6(a)); Scripts/hw/tb_alu.sh does the same
+# testbench, never blessed; Scripts/hw/tb_alu.sh does the same
 # for the shared shifter, the integer divider, F2I and the float comparison as
 # blocks, in four formats. Both at every #FROUND level. Scripts/hw/tb_keyps2.sh
 # checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes);
@@ -1484,7 +1528,7 @@ fi
 # Scripts/fcond: the same cases (if, while, for, do, !, &&, ||, ?:, bool) on
 # the host compiler, which gives C's answer, and on cppcomp and cmmcomp at
 # three float formats and the three #FROUND levels, simulated; every 0/1
-# must agree (TODO 33). Needs the simulator and python3.
+# must agree. Needs the simulator and python3.
 if command -v python3 >/dev/null 2>&1 && command -v g++ >/dev/null 2>&1; then
     echo ""
     echo "==> Float and complex conditions against the host C compiler (fcond)"
@@ -1506,7 +1550,7 @@ fi
 # Error-path coverage the golden phases lack: each fixture is a malformed
 # program that cmmcomp must REJECT with a clean non-zero exit and the right
 # diagnostic -- never a crash, never a silent accept. Fixtures live in
-# NegTests/ (a sibling of Tests/) so the CI smoke `find ... Tests ... .cmm`
+# NegTests/ (a sibling of Tests/) so the CI smoke, which walks Tests/*/,
 # never tries to compile them.
 if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
@@ -1610,14 +1654,14 @@ fi
 
 # ---- 4c. CPP negative phase (error reporting) ------------------------------
 # The same for cppcomp: Compilers/CPPComp/NegTests/manifest.txt, format
-# <fixture.cpp>|<expected substring>.
+# <fixture.cpp>|<expected substring>[|<lang>], <lang> en (default) or pt.
 if [ "$CMM_ONLY" -eq 0 ]; then
     echo ""
     echo "==> CPP negative phase (error reporting)"
     neg_dir="$CPP_ROOT/NegTests"
     neg_work="$SCRATCH/work_cppneg"
-    while IFS='|' read -r fixture expect; do
-        fixture="${fixture%$'\r'}"; expect="${expect%$'\r'}"
+    while IFS='|' read -r fixture expect lang; do
+        fixture="${fixture%$'\r'}"; expect="${expect%$'\r'}"; lang="${lang%$'\r'}"
         case "$fixture" in ''|\#*) continue ;; esac
         name="cppneg:${fixture%.cpp}"
         if [ ! -f "$neg_dir/$fixture" ]; then
@@ -1625,7 +1669,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             fail=$((fail+1)); failed_names+=("$name"); continue
         fi
         rm -rf "$neg_work"; mkdir -p "$neg_work/tmp"
-        out="$("$CPPC" -o "$neg_work/p" "$neg_dir/$fixture" 2>&1)"
+        out="$(YANC_LANG="${lang:-en}" "$CPPC" -o "$neg_work/p" "$neg_dir/$fixture" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"
@@ -1718,7 +1762,7 @@ rm -rf "$drv"
 
 echo ""
 if [ "${#retried_names[@]}" -gt 0 ]; then
-    echo "retried (simulation died, TODO.md item 15): $(printf '%s ' "${retried_names[@]}")"
+    echo "retried (simulation died, likely short of memory): $(printf '%s ' "${retried_names[@]}")"
 fi
 echo "===== $pass passed, $fail failed ====="
 if [ "$fail" -ne 0 ]; then
@@ -1732,7 +1776,7 @@ if [ "$UPDATE_SIZE" -eq 1 ]; then
         echo "# num_ins ratchet: each line is \"<prname> <count>\"."
         echo "# Captures the number of real instructions cmmcomp emits per example"
         echo "# (excludes labels, directives and macros). regress.sh fails any run where"
-        echo "# a count grows. To intentionally update after a refactor that shrinks"
+        echo "# a count grows or an example has no line. To update after a refactor that shrinks"
         echo "# things, run: Scripts/regress.sh --update-size"
         # bash's `set -u` raises "unbound variable" on ${assoc[$key]} even
         # when the key is in ${!assoc[@]} (seen on bash 5.2). Build the

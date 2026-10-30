@@ -22,7 +22,7 @@ themselves.
 
 | folder | contents |
 |---|---|
-| `bin/` | `yanc`, the one command that runs the others, the compilers (`cmmcomp`, `cppcomp`, `asmcomp`) and two waveform helpers (`comp2gtkw`, `gen_gtkw`). `-h` on any of them shows its options, `-V` its version |
+| `bin/` | `yanc`, the one command that runs the others, the compilers (`cmmcomp`, `cppcomp`, `asmcomp`) and two waveform helpers (`comp2gtkw`, `gen_gtkw`). `-h` on `yanc` or a compiler shows its options, `-V` its version; GTKWave runs `comp2gtkw` itself |
 | `SAPHO/` | the SAPHO processor, in Verilog: asmcomp instantiates it with each program's parameters, and a simulator or a synthesizer reads it from here |
 | `Macros/` | assembly macros and tables used by C± programs |
 | `Header/` | the C++ headers the programs include |
