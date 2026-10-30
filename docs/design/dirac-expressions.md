@@ -6,7 +6,8 @@ today's instruction set, and the pointers and `RPT` of section 6 are not
 adopted for now (section 8). Step (a) of section 5, the grammar, the tree
 and the shapes with the code still unrolled and every golden identical,
 is in `main` (from commit 20112ab, tag `archive/dirac-parser`); step (b),
-the loops, is next. Decision (Luciano, 2026-10-25): the
+the loops in software, was done on 2026-10-30 (section 9); step (c), the
+unrolled generators removed, is next. Decision (Luciano, 2026-10-25): the
 Dirac notation of C± stops being a closed set of grammar rules, one per
 form, each with a generator that unrolls the computation, and becomes
 expressions in the parser: every operator a node of the tree, with shape
@@ -110,7 +111,10 @@ programs compiled and simulated (2026-10-25):
 | `a # \|M\|a⟩`, M = (0 1; 1 0), a = (1, 2) | 2 1 | 2 2 | `exec_Mv` writes `a[0]` before the second row reads it |
 | `int a[3]; a # k+1 -> \|a⟩;`, k = 5 | 6 0 0 | 0 0 0 | `exec_shift` has no case for an int vector and an int in the accumulator (3505-3559): it emits `LOD k; ADD 1` and nothing else, without an error |
 
-The fixtures miss the first three: in `proc_rls` the outer product is
+All four are fixed by step (b) (section 9), and the fixture `dirac_shapes`
+checks each against values computed apart from YANC.
+
+The fixtures missed the first three: in `proc_rls` the outer product is
 K Pxᵀ with K = g Px, symmetric up to rounding, and `|P| - |K⟩⟨Px|` writes P
 in place at the same element; `dirac_assign` never outputs a matrix and its
 `a # |B|a⟩` has B = I.
@@ -298,7 +302,8 @@ it is lowered first (3.4).
 the fewest instructions possible, with small hardware if needed, so L1
 below (the generic walker, 12 to 20 instructions an element) is replaced by
 a generator of its own for the Dirac loops. The rest of this section (the
-requirements on scalars, aliasing, the temporary area) still holds.
+requirements on scalars, aliasing, the temporary area) still holds. That
+generator, with today's instructions only, is section 9.
 
 Three ways were weighed:
 
@@ -739,6 +744,10 @@ any later decision on the unit is to be weighed against the pointers.
 
 ## 7. For the documentation (issue #40)
 
+Done with step (b), on 2026-10-30: `docs/library.md`, "Vectors in Dirac
+notation", says each point below, with the measured table of section 9
+in place of that of 3.5.
+
 The manual (`docs/library.md`, "Vectors in Dirac notation") replaces the
 table of forms with the rules: what a chain between bars means (bra, ket,
 matrix by place), that juxtaposition is the product and binds tighter than
@@ -780,8 +789,119 @@ that decision: a loop generator with the pointers, or loops in software.
 change to SAPHO: the pointers and `RPT` stay a measured option (section
 6), not adopted. Step (a) was merged with `main` and brought in; step (b)
 lowers the Dirac terms to loops with today's instructions, with the
-temporary area of 3.4. Step (b) also brings `rls_bench.py` (tag
-`archive/dirac-loops-proto`) into the regression, so that `proc_rls` is
-checked against an RLS computed apart from YANC and not only against its
-recorded output: its outer product is symmetric, so the recorded output
-cannot show the transposition of section 2 (Luciano, 2026-10-29).
+temporary area of 3.4. Luciano asked (2026-10-29) that `proc_rls` be
+checked against an RLS computed apart from YANC, not only against its
+recorded output. The plan was to bring `rls_bench.py` (tag
+`archive/dirac-loops-proto`) into the regression, but read again on
+2026-10-30 it is not such a reference: it compares the unrolled code with
+hand-written pointer loops, on the prototype's SAPHO, from paths outside
+the repository. The reference is `Scripts/rls_ref.py` instead (section 9).
+No check of `proc_rls`'s output can show the transposition of section 2:
+its outer product is symmetric.
+
+## 9. Step (b): loops in software (2026-10-30)
+
+Luciano's words for it: the leanest code possible, with new virtual
+instructions if needed, no hardware. Code in
+`Compilers/CMMComp/Sources/dirac.c`; `ast.c` checks shapes and target and
+hands the tree over.
+
+**Two virtual instructions.** `LDI_V x k` and `STI_V x k` are `LDI` and
+`STI` (opcodes 3 and 7) with a constant `k` added to the base, as `LOD_V`
+is `LOD` with one: rows of `isa.tsv`, `ASMComp.l`, `pass1.l` and
+`asm_share.c`, nothing in SAPHO. A loop counter runs from `-n` up to 0, so
+the `JIZ` after its increment closes the loop with no comparison (the
+`for` of C± tests with `LES` every turn), and the base sits at the end of
+the array: `LDI_V a 4` with the counter at -4 reads `a[0]`.
+
+**How an element is computed** (fact, `dirac.c`). For each element of the
+result the Dirac tree becomes a scalar expression tree: `|a⟩` at row r is
+`a[r]`, `|M|` is `M[r][c]`, `c X` is `X(r, c)*c` (the element first, the
+scalar second, as the old generators), a product of inner size k is a sum
+over k. The scalar walker (`ast_emit_expr`) emits that tree, with its
+types, its mixing of int and float and its folding (`1|a⟩` has no
+multiply); the array reads are new leaves, `EXPR_DIRAC_ELEM`, and the sums
+`EXPR_DIRAC_SUM`. Further:
+
+- a sum keeps its partial result on the stack; its first term is taken out
+  of the loop, and a cell at index 0 is the array's own name, a memory
+  operand: `⟨a|b⟩` starts `LOD a; F_MLT b`. A sum of 2 terms has no loop;
+- an index of a matrix is a sum of loop variables, never a multiply: a
+  loop's counter steps by the stride its index is used with most deeply
+  (the row length for the rows of `|M|x⟩`), and another stride gets a
+  variable stepped with the counter (requirement 3 of 3.4);
+- a matrix expression that only adds and scales matrices of the target's
+  shape runs over one flat index;
+- what does not depend on the inner loop is computed at the top of the
+  outer one (`K[r]` in `|K⟩⟨Px|`), and a scalar that is not a literal or a
+  variable before the loops (requirement 2), converted once when the
+  elements are float and it is int;
+- the target read at other cells than the one written goes through
+  `__dirac_tmp` and is copied back (requirement 4); a product inside a
+  chain that does not depend on every loop around it is computed into
+  `__dirac_tmp` first, and a chain closed by a ket is read from the right,
+  `|A|B|x⟩` as `A (B x)` (requirement 5). One area for the program, as
+  large as the largest statement needs, declared after `#PRNAME` at the
+  end of the compilation (requirement 6);
+- the shift register stays `exec_shift`, unrolled (2 words an element);
+  its int case of section 2 is added.
+
+Instructions per element in the loop body, read in the assembly of
+`proc_rls` (fact), against the unrolled code and the `for` loops of 3.5:
+
+| form | unrolled | `for` loops (3.5) | loops of step (b) |
+|---|---|---|---|
+| `⟨a\|b⟩` | 3 | 12 | 10 |
+| a row of `\|P\|x⟩` | 3 | 14 | 11 |
+| `\|P\| - \|K⟩⟨Px\|` | 5 | 20 | 13 |
+| `1.010101\|P\|` | 3 | 14 | 9 |
+| `g\|Px⟩` | 3 | | 9 |
+| `\|w⟩ + e\|K⟩` | 4 | | 12 |
+| `out(0, 1000.0\|w⟩)` | 4 | 10 | 9 |
+| `\|0⟩`, the zeros of `c\|I\|` | 1 | | 7 |
+
+Five of each are the loop (`LOD k; ADD 1; SET k; JIZ; JMP`, or `P_LOD k`
+first in a sum), and a store takes two (`PSH` of the index, `STI_V`).
+
+**Measured** with the method of 1.1 (`proc_rls` with arrays of N, Icarus,
+clocks between the first `OUT` of two turns), `main` at 515de8f (the
+unrolled code, whose numbers are those of 1.1) against this branch:
+
+| N | words, unrolled | words, loops | clocks a turn, unrolled | clocks a turn, loops |
+|---|---|---|---|---|
+| 4 | 335 | 235 | 307 | 855 |
+| 8 | 1091 | 343 | 1011 | 2811 |
+| 16 | 3947 | 751 | 3667 | 10 083 |
+| 32 | 15 035 | 2335 | 13 971 | 38 067 |
+
+The loops follow clocks = 35N² + 69N + 19 (fitted on 4, 8 and 16, exact at
+32) and words = 2N² + 3N + 191, whose 2N² are the test's own N unrolled
+shifts. The two give the same output over the five turns both simulate
+at every N. Per turn the loops take 2.7 to
+2.8 times the unrolled code's clocks, and 0.62 to 0.70 times those of the
+`for` loops of 3.5 (58N²).
+
+**Tests.** `dirac_shapes` (new): every element of 44 Dirac statements, int and
+float, the outer product not square, `|B| ± |a⟩⟨b|` with `B` not
+symmetric, `a # |M|a⟩` and `C # |M||C|` through the temporary area,
+chains, `⟨a|M|`, the int shift, `|in(p)⟩`, `out` of a vector, 150 values;
+its golden is written by `Scripts/dirac_ref.py`, the same statements in
+Python on integers the float format holds exactly, and the regression
+checks that it still is. `Scripts/rls_ref.py` computes the RLS of
+`proc_rls` in double precision from its input files: the recorded output
+is that filter's, with no difference in any of the 80 words. Measured by
+changing the filter there: without the update of P the largest difference
+is 4348, with P started at 10 instead of 1000 it is 653, but a forgetting
+factor of 1 gives 0, and so does the transposition, so this checks the
+filter as a whole and `dirac_shapes` the details. `cases.tsv` has 176
+combinations. `proc_rls/golden_sim` is unchanged; `dirac_assign`, which
+writes 1 in a loop forever, writes 195 of them in the regression's
+100 000 clocks instead of 812 (the same values).
+
+**Open.** Step (c): remove the generators of 1.2 (they no longer run) and
+their messages. `|I|` inside a larger expression, and `|I|` or `|0⟩` inside
+a chain (a syntax error today). `comp` (decision 5). An `int` counter of
+an index past the word: at `#NUBITS 8` a flat loop over more than 128
+cells overflows (deduced, as a `for` would; not checked). Unrolling a loop
+of very few turns, which decision 6 left out: at N = 2 the loop costs more
+than the unrolled code in words and in clocks (deduced).

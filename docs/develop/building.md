@@ -55,8 +55,10 @@ copies and the manual's instruction page to `Compilers/common/isa.tsv`,
 holds the manual's message reference to the compilers' sources, holds the
 link lines at the foot of `CHANGELOG.md` to its version headings, runs
 every combination of the Dirac notation in
-`Compilers/CMMComp/DiracCases/cases.tsv` through cmmcomp, and runs
-`yanc` itself. Every change goes through it. A change to the instruction
+`Compilers/CMMComp/DiracCases/cases.tsv` through cmmcomp, holds the
+simulated outputs of `dirac_shapes` and `proc_rls` to values computed in
+Python (`Scripts/dirac_ref.py`, `Scripts/rls_ref.py`), and runs `yanc`
+itself. Every change goes through it. A change to the instruction
 table or to a message regenerates its page:
 `python3 Scripts/gen_isa_doc.py`, `python3 Scripts/gen_messages_doc.py`.
 

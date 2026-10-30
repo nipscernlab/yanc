@@ -24,6 +24,7 @@
 #include "../Headers/data_declar.h"  // declar_arr_*_emit for STMT_DECLAR_* walker
 #include "../Headers/itr.h"
 #include "../Headers/t2t.h"      // get_cmp_cst for complex cond loads
+#include "../Headers/dirac.h"    // the Dirac notation in loops
 
 // ----------------------------------------------------------------------------
 // expressions ----------------------------------------------------------------
@@ -241,6 +242,8 @@ static const char *kind_name(expr_kind k)
         case EXPR_DIRAC_PROD:  return "DIRAC_PROD";
         case EXPR_DIRAC_CONST: return "DIRAC_CONST";
         case EXPR_DIRAC_IN:    return "DIRAC_IN";
+        case EXPR_DIRAC_ELEM:  return "DIRAC_ELEM";
+        case EXPR_DIRAC_SUM:   return "DIRAC_SUM";
     }
     return "?";
 }
@@ -295,6 +298,10 @@ static void expr_dump_at(expr_node *n, int depth)
             break;
         case EXPR_DIRAC_IN:
             fprintf(stderr, " port=%d", n->id);
+            break;
+        case EXPR_DIRAC_ELEM:
+        case EXPR_DIRAC_SUM:
+            fprintf(stderr, " (dirac.c)");
             break;
     }
     if (n->rows) fprintf(stderr, " shape=%dx%d", n->rows, n->cols);
@@ -947,13 +954,13 @@ static expr ast_emit_expr_impl(expr_node *n)
             return expr_make(n->type, 0);
         }
 
-        case EXPR_DIRAC_PROD:
-            // a number from the Dirac notation: today only <a|b> (exec_vtv)
-            if (n->left->kind  == EXPR_DIRAC_REF && n->left->op  == DIRAC_ROLE_BRA &&
-                n->right->kind == EXPR_DIRAC_REF && n->right->op == DIRAC_ROLE_KET)
-                return exec_vtv(n->left->id, n->right->id);
-            fprintf(stderr, MSG_ERR_DIRAC_NOT_YET, n->line);
-            exit(EXIT_FAILURE);
+        case EXPR_DIRAC_PROD:   // a number from the Dirac notation: <a|b>, <a|M|b>
+            return dirac_number(n);
+
+        case EXPR_DIRAC_ELEM:   // the pieces of an element computed in loops (dirac.c)
+            return dirac_elem_emit(n);
+        case EXPR_DIRAC_SUM:
+            return dirac_sum_emit(n);
 
         case EXPR_DIRAC_REF:    // not a number: stopped by shapecheck_expr
         case EXPR_DIRAC_CONST:
@@ -1281,21 +1288,8 @@ stmt_node *stmt_func(int func_id, stmt_node *body)
 // ----------------------------------------------------------------------------
 // Dirac statements -----------------------------------------------------------
 // ----------------------------------------------------------------------------
-// The expression is checked for shape, then matched against the forms the
-// unrolled generators of stdlib.c compute (exec_Mv, exec_cv, ...), called
-// with the arguments the old grammar rules gave them, so the assembly is the
-// same. Any other combination stops with MSG_ERR_DIRAC_NOT_YET until the
-// expressions are computed in loops (docs/design/dirac-expressions.md, step b).
-
-static int is_ref(const expr_node *n, int role)
-{
-    return n && n->kind == EXPR_DIRAC_REF && n->op == role;
-}
-
-static int is_const(const expr_node *n, int which)
-{
-    return n && n->kind == EXPR_DIRAC_CONST && n->op == which;
-}
+// The expression is checked for shape and for its target, then computed in
+// loops by dirac.c (docs/design/dirac-expressions.md, step b).
 
 static int is_prod(const expr_node *n)
 {
@@ -1350,33 +1344,10 @@ static void dirac_emit(int dst, expr_node *r, int line)
     typecheck_expr(r);
     r = dirac_fold_neg(r);
     dirac_check_target(dst, r, line);
-
-    expr_node *L = r->left, *R = r->right;
-
-    if (is_prod(r) && is_ref(L, DIRAC_ROLE_MAT) && is_ref(R, DIRAC_ROLE_KET))    // |M|a⟩
-        exec_Mv(dst, L->id, R->id);
-    else if (is_prod(r) && is_number(L) && is_ref(R, DIRAC_ROLE_KET))            // c|b⟩
-        exec_cv(dst, ast_emit_expr(L), R->id);
-    else if (r->kind == EXPR_BINOP && r->op == OP_ADD && is_ref(L, DIRAC_ROLE_KET)
-             && is_prod(R) && is_number(R->left) && is_ref(R->right, DIRAC_ROLE_KET)) // |b⟩ + c|d⟩
-        exec_apcb(dst, L->id, ast_emit_expr(R->left), R->right->id);
-    else if (is_prod(r) && is_ref(L, DIRAC_ROLE_KET) && is_ref(R, DIRAC_ROLE_BRA))  // |a⟩⟨b|
-        exec_vvt(dst, L->id, R->id);
-    else if (r->kind == EXPR_BINOP && r->op == OP_SUB && is_ref(L, DIRAC_ROLE_MAT)
-             && is_prod(R) && is_ref(R->left, DIRAC_ROLE_KET) && is_ref(R->right, DIRAC_ROLE_BRA)) // |B| - |a⟩⟨b|
-        exec_Mmvvt(dst, L->id, R->left->id, R->right->id);
-    else if (is_prod(r) && is_number(L) && is_ref(R, DIRAC_ROLE_MAT))            // c|B|
-        exec_cM(dst, ast_emit_expr(L), R->id);
-    else if (is_prod(r) && is_number(L) && is_const(R, DIRAC_EYE))               // c|I|
-        exec_cI(dst, ast_emit_expr(L));
-    else if (is_const(r, DIRAC_ZERO))                                            // |0⟩
-        exec_v0(dst);
-    else if (is_prod(r) && is_number(L) && R->kind == EXPR_DIRAC_IN)             // c|in(p)⟩
-        exec_cvin(dst, ast_emit_expr(L), R->id);
-    else {fprintf(stderr, MSG_ERR_DIRAC_NOT_YET, line); exit(EXIT_FAILURE);}
+    dirac_loops(dst, r, line);
 }
 
-// out(p, X) / fout(p, X): a number as before; a vector c|a⟩ through exec_vout
+// out(p, X) / fout(p, X): a number as before; a vector, an element a word
 static void dirac_out(stmt_node *n)
 {
     expr_node *r = n->rhs;
@@ -1394,13 +1365,7 @@ static void dirac_out(stmt_node *n)
         exit(EXIT_FAILURE);
     }
     typecheck_expr(r);
-    if (!n->op && is_prod(r) && is_number(r->left) && is_ref(r->right, DIRAC_ROLE_KET)) {  // out(p, c|a⟩)
-        // exec_vout multiplies with the vector's operation: a float c on an
-        // int vector went out as MLT of the float's bits (found 2026-10-29)
-        if (r->left->type != v_table[r->right->id].type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, n->line); exit(EXIT_FAILURE);}
-        exec_vout(n->id, ast_emit_expr(r->left), r->right->id);
-    }
-    else {fprintf(stderr, MSG_ERR_DIRAC_NOT_YET, n->line); exit(EXIT_FAILURE);}
+    dirac_loops_out(n->id, r, n->op, n->line);
 }
 
 static void emit_cond_int_load(expr e, int is_switch)

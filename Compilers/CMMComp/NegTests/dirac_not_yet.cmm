@@ -4,7 +4,7 @@
 #NUIOIN 1
 #NUIOOU 1
 
-// Negative fixture: a valid form that step a does not compute yet (docs/design/dirac-expressions.md).
+// Negative fixture: a valid form that is not computed yet, |I| inside a larger expression (docs/design/dirac-expressions.md).
 float a[2];
 float b[3];
 float M[2][2];
@@ -13,5 +13,5 @@ float v[2];
 
 void main()
 {
-    v # |a⟩ - |a⟩;
+    M # |I| + |M|;
 }

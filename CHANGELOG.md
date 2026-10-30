@@ -9,6 +9,11 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **asmcomp: `LDI_V` and `STI_V`**, `LDI` and `STI` with a constant offset
+  added to the base (`LDI_V x 4` reads `mem[x + 4 + acc]`), as `LOD_V` is
+  `LOD` with one: no new opcode and no hardware. The Dirac loops use them
+  to put the base at the end of an array, so that the index runs up to
+  zero.
 - **C±: an initializer on any name of a declaration list**, as in C: `int
   a = 1, b, c = a + 1;`, global or local, `int`, `float` and `comp`. It was
   a syntax error unless the declaration had a single name (TODO 34).
@@ -56,22 +61,40 @@ tags consumed by Aurora.
   product, between `+` and `*` in precedence; every term has a shape
   (number, vector, row, matrix), checked with messages that name both
   shapes. The lexer reads a bar followed by the name of an array, without
-  an index, as a Dirac bar, so `c | a[k]` stays a bitwise or. The code is
-  still the unrolled code of before, for the same forms, and the assembly
-  of `dirac_assign` and `proc_rls` is unchanged; any other combination
-  stops with "still in the oven" until step b. The grammar has no
-  conflict left (`%expect 0`; the one of `A # c|B|;` is gone), and two
+  an index, as a Dirac bar, so `c | a[k]` stays a bitwise or. The grammar
+  has no conflict left (`%expect 0`; the one of `A # c|B|;` is gone), and two
   bars before an array (`|A||B|`) close a matrix and open a chain instead
   of being the logical or. A coefficient that is a sum now needs
   parentheses: `x # (a+c)|b⟩`; a minus in front, `-c|a⟩`, still works.
   Part of issue #18. Negative fixtures `NegTests/dirac_*`, and
-  `DiracCases/cases.tsv`, 160 combinations with what each must give (it
+  `DiracCases/cases.tsv`, 176 combinations with what each must give (it
   compiles, it is not computed yet, or the message it stops with), run
   by `Scripts/dirac_cases.py` in the regression.
-- **C±: `out(p, c|a⟩)` with a float `c` and an int `a`** (or the reverse)
-  stops with "variables gotta be the same type!", as every other Dirac
-  form does. It compiled, and each element went out multiplied by the
-  bits of the other type (`MLT` of a float, found 2026-10-29).
+- **C±: the Dirac notation is computed in loops, and any combination of
+  shapes that fit works** (step b of docs/design/dirac-expressions.md,
+  part of issue #18). Each element of the result is a scalar expression
+  computed in a loop whose counter runs up to zero, so the code does not
+  grow with the arrays: `proc_rls` (an RLS filter) is 235 words instead of
+  335 at N = 4 and 2335 instead of 15 035 at N = 32. It runs about 2.7
+  times slower per element than the unrolled code (855 clocks a turn
+  instead of 307 at N = 4, 38 067 instead of 13 971 at N = 32; measured).
+  New forms: sums and differences of any terms (`|a⟩ + |b⟩`,
+  `|M|a⟩ + |b⟩`, `|M| + |N|`), a copy (`v # |a⟩`), `⟨a|M|b⟩` and `⟨a|M|`,
+  matrix products (`|A||B|`), chains (`|A|B|x⟩`, computed as `A (B x)`),
+  the outer product not square, `out` of any vector, and int with float
+  mixed as in a scalar expression (it stopped with "variables gotta be the
+  same type!"; `out(p, c|a⟩)` with a float `c` and an int `a`, which went
+  out multiplied by the bits of the other type, is now right). When the
+  target is read at other elements (`a # |M|a⟩`) or a chain needs its
+  middle product, the result goes through `__dirac_tmp`, one area of data
+  memory the whole program shares, with an info on the line and a summary
+  at the end. `|I|` only on its own or times a number. The `golden.asm` of
+  `dirac_assign` and `proc_rls` change (loops); `proc_rls/golden_sim` does
+  not, and `dirac_assign/golden_sim` has the same values, fewer of them in
+  the same clocks. New fixture `dirac_shapes`, whose output
+  `Scripts/dirac_ref.py` computes apart from YANC, and
+  `Scripts/rls_ref.py`, which holds `proc_rls` to an RLS filter in double
+  precision; both in the regression. Manual: docs/library.md.
 - **cppcomp and gen_gtkw speak Portuguese** (issue #24). `--lang=pt` and
   `YANC_LANG=pt` now switch their messages too, as cmmcomp's and asmcomp's:
   each is an `MSG_*` of `M(pt, en)` in `CPPComp/Headers/messages.h`, and the
@@ -119,6 +142,14 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: three defects of the Dirac notation, which gave wrong results
+  without a message** (docs/design/dirac-expressions.md section 2). The
+  outer product was transposed: `A # |a⟩⟨b|` gave `b aᵀ`, and
+  `A # |B| - |a⟩⟨b|` subtracted `b aᵀ`. `a # |M|a⟩` wrote `a[0]` before
+  the next rows read it. `a # k+1 -> |a⟩` with an `int` vector emitted
+  nothing. A result computed with these up to v9.1 needs checking; with
+  `K = g P x` and `P` symmetric, as in an RLS filter, the transposed outer
+  product is the same matrix up to rounding. Fixture `dirac_shapes`.
 - **C±: a `for` loop with a literal past the word in an int-only processor
   ran its body once** (#14). A program with no float keeps `#NBMANT` 23 and
   `#NBEXPO` 8, and cmmcomp took the int as 32 bits when it moved a loop's

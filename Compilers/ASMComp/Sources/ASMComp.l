@@ -209,6 +209,8 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
  "F_ADD_V" eval_opcode( 32,22, yytext,  "F_ADD"  ); // F_ADD with constant offset
    "MLT_V" eval_opcode( 24,22, yytext,    "MLT"  ); //   MLT with constant offset
  "F_MLT_V" eval_opcode( 38,22, yytext,  "F_MLT"  ); // F_MLT with constant offset
+   "LDI_V" eval_opcode(  3,22, yytext,    "LDI"  ); //   LDI with constant offset: mem[base + offset + acc]
+   "STI_V" eval_opcode(  7,22, yytext,    "STI"  ); //   STI with constant offset: mem[base + offset + stack top]
 
 {VARIA}    eval_opernd(yytext,0); // used on ALU instructions with variables (IDs)
 {INNUM}    eval_opernd(yytext,1); // used on ALU instructions with an int constant

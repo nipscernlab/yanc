@@ -47,11 +47,13 @@ named, `addr` its address only).
 | `P_LOD` | 2 | data | rw | push | r | push a; a = x |
 | `P_LOD_V` | 2 | offset | rw | push | r | as P_LOD, x at a constant offset from the name |
 | `LDI` | 3 | data | rw | - | base_r | a = mem[x + a] (x a base: an array, or a number) |
+| `LDI_V` | 3 | offset | rw | - | base_r | as LDI, x at a constant offset from the name |
 | `ILI` | 4 | data | rw | - | base_r | a = mem[x + bit-reversed a] (FFT addressing) |
 | `SET` | 5 | data | r | - | w | x = a |
 | `SET_V` | 5 | offset | r | - | w | as SET, x at a constant offset from the name |
 | `SET_P` | 6 | data | rw | pop | w | x = a; a = pop |
 | `STI` | 7 | data | r | pop | base_w | mem[x + pop] = a (the index is popped) |
+| `STI_V` | 7 | offset | r | pop | base_w | as STI, x at a constant offset from the name |
 | `ISI` | 8 | data | r | pop | base_w | mem[x + bit-reversed pop] = a (FFT addressing) |
 | `PSH` | 9 | none | r | push | - | push a |
 | `POP` | 10 | none | w | pop | - | a = pop |

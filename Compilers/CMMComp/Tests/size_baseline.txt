@@ -65,7 +65,8 @@ cmm_tiny1  6
 cmm_tiny2  8
 cmm_trig   53
 ctrl_flow  103
-dirac_assign 171
+dirac_assign 149
+dirac_shapes 1531
 empty_call 14
 fifo_w     35
 for_loop   78
@@ -87,7 +88,7 @@ lk_merge   11
 multiparam 28
 pplus_arr  19
 proc_fft   289
-proc_rls   335
+proc_rls   235
 proc_sim   94
 procBlind  624
 procBlindOpt 593

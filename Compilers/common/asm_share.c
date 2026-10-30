@@ -136,6 +136,8 @@ static const as_isa isa[] = {
     {"F_ADD_V", "offset", "r", "-", "-"},
     {"MLT_V", "offset", "r", "-", "-"},
     {"F_MLT_V", "offset", "r", "-", "-"},
+    {"LDI_V", "offset", "base_r", "-", "-"},
+    {"STI_V", "offset", "base_w", "-", "pop"},
 };
 
 #define N_ISA ((int)(sizeof(isa) / sizeof(isa[0])))
@@ -926,7 +928,7 @@ int asm_is_norm(const char *mn)
 // the instructions that read the ALU output before the normaliser
 static int reads_fast(const char *mn)
 {
-    return strcmp(mn, "JIZ") == 0 || strcmp(mn, "LDI") == 0 || strcmp(mn, "ILI") == 0;
+    return strcmp(mn, "JIZ") == 0 || strcmp(mn, "LDI") == 0 || strcmp(mn, "LDI_V") == 0 || strcmp(mn, "ILI") == 0;
 }
 
 int asm_normnop(const char *asm_path, const char *pc_path)
