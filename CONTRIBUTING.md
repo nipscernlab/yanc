@@ -46,10 +46,12 @@ or adding comments, English only.
 ### User-facing strings
 
 YANC prints its diagnostics in English by default, in Portuguese with
-`--lang=pt` or `YANC_LANG=pt`. In cmmcomp and asmcomp, user-facing strings
-live in `<Component>/Headers/messages.h` and use the `M(pt, en)` macro plus
-a named `MSG_*` identifier (the `yanc` driver uses `M()` inline; cppcomp
-and `gen_gtkw` are English only for now, issue #24):
+`--lang=pt` or `YANC_LANG=pt`. In cmmcomp, cppcomp and asmcomp, user-facing
+strings live in `<Component>/Headers/messages.h` and use the `M(pt, en)`
+macro plus a named `MSG_*` identifier (the `yanc` driver uses `M()` inline,
+`gen_gtkw` keeps its few at the top of `Scripts/gen_gtkw.c`; cppcomp's
+internal errors, `msg_internal`, stay in English: they report a defect of
+cppcomp to whoever maintains it):
 
 ```c
 #define MSG_ERR_NO_MAIN \

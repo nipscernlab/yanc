@@ -50,6 +50,14 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **cppcomp and gen_gtkw speak Portuguese** (issue #24). `--lang=pt` and
+  `YANC_LANG=pt` now switch their messages too, as cmmcomp's and asmcomp's:
+  each is an `MSG_*` of `M(pt, en)` in `CPPComp/Headers/messages.h`, and the
+  word after the file and line follows (`filter.cpp:12: erro: ...`,
+  `atenção:` for a warning). English stays the default, so a terminal
+  without either setting sees no change; cppcomp's internal errors stay in
+  English. The C++ negative tests take an optional language, and `lang_pt`
+  checks the Portuguese.
 - **The codes of the screen and the keyboard are an int of 8 bits, -128 to
   127.** The screen's clear is `toma_sync(k, -128)` and its cursor command
   `-127`, at every `#NUBITS`; the keyboard's special keys will be -96 to -1.

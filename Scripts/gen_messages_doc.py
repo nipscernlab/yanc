@@ -5,9 +5,7 @@
     python3 Scripts/gen_messages_doc.py [repo root] --check   # fail if it is stale
 
 The source of truth is the code: the M("pt", "en") catalogs in
-Compilers/{CMMComp,ASMComp}/Headers/messages.h, and for cppcomp the format
-strings of its msg_error / msg_warning calls and of its preprocessor's
-"cppcomp: ..." errors. A format's %d / %s / %f / %c become <n>, <name>, <x>,
+Compilers/{CMMComp,CPPComp,ASMComp}/Headers/messages.h. A format's %d / %s / %f / %c become <n>, <name>, <x>,
 <c>. The page lists them; the hand-written docs/messages.md explains the
 common ones.
 """
@@ -66,9 +64,10 @@ def kind(s):
         return 'Information'
     return 'Other'
 
-def catalog(path):
+def catalog_entries(path):
+    """(name, English text) of each MSG_ in an M("pt", "en") catalog"""
     text = open(path, encoding='utf-8').read()
-    msgs = []
+    out = []
     for m in re.finditer(r'#define\s+(MSG_\w+)\s*\\?\s*M\(', text):
         name = m.group(1)
         if name.startswith('MSG_CLI_'):          # the -h / -V texts
@@ -79,22 +78,28 @@ def catalog(path):
             continue
         en, _ = c_literals(text, i + 1)
         if en:
-            msgs.append(clean(en))
-    return msgs
+            out.append((name, en))
+    return out
+
+def catalog(path):
+    return [clean(en) for _, en in catalog_entries(path)]
 
 def cpp_messages(root):
+    """cppcomp prints `file:line: error: <text>`: its catalog holds the text,
+    and the name says which (MSG_ERR_, MSG_WARN_); the pieces built into a
+    message (MSG_WHO_, MSG_WORD_, MSG_WHY_, MSG_PREFIX_) are left out"""
     msgs = []
-    src = os.path.join(root, 'Compilers', 'CPPComp', 'Sources')
-    for fn in ('CPPComp.l', 'CPPComp.y', 'codegen.c', 'main.c', 'cpppp.c'):
-        text = open(os.path.join(src, fn), encoding='utf-8').read()
-        for m in re.finditer(r'msg_(error|warning)\s*\(\s*[^,]+,\s*', text):
-            s, _ = c_literals(text, m.end())
-            if s:
-                msgs.append(('error: ' if m.group(1) == 'error' else 'warning: ') + clean(s))
-        for m in re.finditer(r'fprintf\s*\(\s*stderr\s*,\s*', text):
-            s, _ = c_literals(text, m.end())
-            if s.startswith('cppcomp: ') and 'internal' not in s:
-                msgs.append('error: ' + clean(s[len('cppcomp: '):]))
+    path = os.path.join(root, 'Compilers', 'CPPComp', 'Headers', 'messages.h')
+    for name, en in catalog_entries(path):
+        if name.startswith('MSG_ERR_'):
+            kind_ = 'error: '
+        elif name.startswith('MSG_WARN_'):
+            kind_ = 'warning: '
+        else:
+            continue
+        if en.startswith('cppcomp: '):
+            en = en[len('cppcomp: '):]
+        msgs.append(kind_ + clean(en))
     return msgs
 
 def section(title, msgs, out):

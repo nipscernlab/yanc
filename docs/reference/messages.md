@@ -175,35 +175,6 @@ value. What the common ones mean and how to get past them is in
 
 ### Errors
 
-- error: '<name>': a name with '\_\_' in it is reserved (C++ keeps them for the compiler, and YANC uses them in the assembly)
-- error: #pragma yanc prname is gone: the processor takes the name of the file (filtro.cpp becomes the processor filtro); delete the line and, for another name, rename the file
-- error: #pragma yanc fftsiz does nothing in C++ (the bit-reversed addressing is C± only); delete the line
-- error: #pragma yanc itradd does nothing in C++ (interrupts are C± only); delete the line
-- error: '<name>': a number starting with 0 is octal, and has no 8 or 9
-- error: unexpected character '<c>' (0x<hex>)
-- error: a lambda is only supported as a global initializer (immediately-invoked, no captures)
-- error: cannot deduce the lambda's return type (return a local variable or a literal)
-- error: range-for over '<name>': it takes an array or an object with size() and operator[]
-- error: \_Static\_assert requires a constant integer expression
-- error: static assertion failed<name><name>
-- error: redefinition of global '<name>' (if this comes from a header, guard it with #ifndef or #pragma once)
-- error: unknown type '<name>'
-- error: '<name>' is not a class template
-- error: unknown base class '<name>'
-- error: member '<name>' takes one initializer
-- error: array field size must be constant
-- error: array size must be a constant expression
-- error: template argument must be a constant
-- error: typedef cannot have an initializer
-- error: an array of function pointers takes a { ... } initializer
-- error: '<name>' redeclared as a function (already a variable)
-- error: redefinition of function '<name>'<name>
-- error: out-of-class definition for unknown class '<name>'
-- error: qualified id '<name>::<name>' is not a constructor
-- error: out-of-class ctor for unknown class '<name>'
-- error: qualified id '<name>::~<name>' is not a destructor
-- error: out-of-class dtor for unknown class '<name>'
-- error: <name>
 - error: <name>: '<name>' is an instruction of the processor's assembly, rename it
 - error: <name> is '<name>' in the assembly, which is an instruction of the processor: rename it
 - error: <name>: 'global' names the global variables in the simulation log, rename the function
@@ -246,8 +217,36 @@ value. What the common ones mean and how to get past them is in
 - error: continue outside of loop
 - error: return value in void function
 - error: case/default outside switch
-- error: program has no main() function
 - error: cannot open <name>
+- error: program has no main() function
+- error: a lambda is only supported as a global initializer (immediately-invoked, no captures)
+- error: cannot deduce the lambda's return type (return a local variable or a literal)
+- error: range-for over '<name>': it takes an array or an object with size() and operator[]
+- error: \_Static\_assert requires a constant integer expression
+- error: static assertion failed<name><name>
+- error: redefinition of global '<name>' (if this comes from a header, guard it with #ifndef or #pragma once)
+- error: unknown type '<name>'
+- error: '<name>' is not a class template
+- error: unknown base class '<name>'
+- error: member '<name>' takes one initializer
+- error: array field size must be constant
+- error: array size must be a constant expression
+- error: template argument must be a constant
+- error: typedef cannot have an initializer
+- error: an array of function pointers takes a { ... } initializer
+- error: '<name>' redeclared as a function (already a variable)
+- error: redefinition of function '<name>'<name>
+- error: out-of-class definition for unknown class '<name>'
+- error: qualified id '<name>::<name>' is not a constructor
+- error: out-of-class ctor for unknown class '<name>'
+- error: qualified id '<name>::~<name>' is not a destructor
+- error: out-of-class dtor for unknown class '<name>'
+- error: '<name>': a name with '\_\_' in it is reserved (C++ keeps them for the compiler, and YANC uses them in the assembly)
+- error: #pragma yanc prname is gone: the processor takes the name of the file (filtro.cpp becomes the processor filtro); delete the line and, for another name, rename the file
+- error: #pragma yanc fftsiz does nothing in C++ (the bit-reversed addressing is C± only); delete the line
+- error: #pragma yanc itradd does nothing in C++ (interrupts are C± only); delete the line
+- error: '<name>': a number starting with 0 is octal, and has no 8 or 9
+- error: unexpected character '<c>' (0x<hex>)
 - error: unknown option '<name>'
 - error: the file '<name>' names the processor, and '<name>' <name>; rename the file
 - error: parse failed
@@ -262,12 +261,14 @@ value. What the common ones mean and how to get past them is in
 - error: stray #else
 - error: stray #endif
 - error: too many -I dirs
+- error: syntax error
+- error: memory exhausted
 
 ### Warnings
 
-- warning: unknown #pragma yanc setting '<name>'
-- warning: '<name>' asks for <n> bits, but a YANC word has <n>: the requested size is ignored and '<name>' is a <n>-bit <name>
 - warning: out() sends an integer word; this float is output as its raw bit pattern (wrong value) -- cast to int, e.g. out(port, (int)x)
+- warning: '<name>' asks for <n> bits, but a YANC word has <n>: the requested size is ignored and '<name>' is a <n>-bit <name>
+- warning: unknown #pragma yanc setting '<name>'
 
 ## asmcomp
 
