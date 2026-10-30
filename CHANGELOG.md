@@ -142,6 +142,15 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: a store to a matrix with both indexes computed wrote the wrong
+  cell** (cmmcomp audit, 2026-10-30). `m[a+1][b+1] = x` and
+  `m[a+1][b+1]++` emitted the second index first, an order C leaves to the
+  compiler that built cmmcomp, and wrote `m[b+1][a+1]`; reading was right.
+- **C±: a `switch` on a `float` or a `comp` never matched a case**
+  (cmmcomp audit, 2026-10-30). The index was converted to int, truncating,
+  as the manual says, and then compared as a float. It is now compared as
+  the int it is, and with int cases it takes the dispatch of an int switch.
+  Fixture `cmm_order_switch`.
 - **C±: three statements left the data stack or the accumulator wrong**
   (cmmcomp audit, 2026-10-30). `copy(x + 1, k)` left the accumulator
   marked busy, so the next statement pushed a word nobody popped: in a
