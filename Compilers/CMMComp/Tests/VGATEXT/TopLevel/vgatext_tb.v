@@ -21,9 +21,12 @@ wire ca, ta, va, tma; wire [7:0] ka, da;
 wire [7:0] oa; wire hsa, vsa, aa, pa;
 vga_cmm A (.clk(clk), .rst(rst), .out(oa), .cade_0(ca), .taqui_0(ta), .cade_dado_0(ka),
            .toma_1(tma), .valeu_1(va), .toma_dado(da));
-myKeyPS2  #(.LAYOUT("US"), .NUBITS(8), .CLK_KHZ(25000)) KA (.clk(clk), .rst(rst),
+// system A's blocks as on the processor's clock (LINK_SYNC 1); system B's with
+// the default, the program's bit through two flip-flops (#64), which works on
+// one clock too, two cycles later
+myKeyPS2  #(.LAYOUT("US"), .NUBITS(8), .CLK_KHZ(25000), .LINK_SYNC(1)) KA (.clk(clk), .rst(rst),
            .ps2_clk(ps2_clk), .ps2_dat(ps2_dat), .taqui(ta), .dado(ka), .cade(ca));
-myVGAText #(.NUBITS(8)) VA (.clk(clk), .rst(rst), .toma(tma), .dado(da), .valeu(va),
+myVGAText #(.NUBITS(8), .LINK_SYNC(1)) VA (.clk(clk), .rst(rst), .toma(tma), .dado(da), .valeu(va),
            .hs(hsa), .vs(vsa), .ativo(aa), .pixel(pa));
 
 // system B: C++, ABNT2

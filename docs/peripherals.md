@@ -97,6 +97,7 @@ Ctrl with any other key gives nothing.
 | `NUBITS` | 32 | width of the word `cade()` returns (the program's `#NUBITS`, at least 8) |
 | `DEPTH` | 4 | characters the block holds while the program does not read; one more is dropped |
 | `CLK_KHZ` | 25000 | the clock in kHz, only to count a 1 ms timeout (a wrong value just changes it) |
+| `LINK_SYNC` | 0 | 0: the program's `cade_k` goes through two flip-flops of the block's clock, so the processor may be on any clock; 1: the processor on the block's clock, two cycles less a key |
 
 **Pins.**
 
@@ -115,14 +116,18 @@ Ctrl with any other key gives nothing.
 nucleo sapho (.clk(clk), .rst(rst), .in(in), .out(out), .req_in(req_in), .out_en(out_en),
               .cade_0(cade_0), .taqui_0(taqui_0), .cade_dado_0(cade_dado_0));
 
-myKeyPS2 #(.LAYOUT("ABNT2"), .CLK_KHZ(25000)) kbd (
+myKeyPS2 #(.LAYOUT("ABNT2"), .CLK_KHZ(25000), .LINK_SYNC(1)) kbd (
     .clk(clk), .rst(rst), .ps2_clk(PS2_CLK), .ps2_dat(PS2_DAT),
     .taqui(taqui_0), .dado(cade_dado_0), .cade(cade_0));
 ```
 
 The same in C± and in C++: `c = cade_sync(0);`. With the block on another
 clock than the processor, the program uses the plain `cade(0)` instead,
-whose link synchronizes the two clocks ([Several processors](multiprocessor.md)).
+whose link synchronizes the block's bit on the processor's side
+([Several processors](multiprocessor.md)), and the block is left at
+`LINK_SYNC` 0, which synchronizes the program's bit on its side. Up to
+v9.1 the block had no such parameter and took the program's bit as it came,
+right only on one clock (GitHub issue #64).
 
 **Is there a key?** `cade_sync(0)` waits until a key comes. A program that
 has other work to do wires `tem_tecla` to an input port and reads it first:
@@ -202,8 +207,11 @@ void escreve(const char *s) { while (*s) toma_sync(1, *s++); }
 void cursor(int linha, int coluna) { toma_sync(1, -127); toma_sync(1, linha); toma_sync(1, coluna); }
 ```
 
-**Parameter.** `NUBITS` (32): the width of the word `toma()` sends, the
-program's `#NUBITS`; at least 8 (the commands fit in 8 bits).
+**Parameters.** `NUBITS` (32): the width of the word `toma()` sends, the
+program's `#NUBITS`; at least 8 (the commands fit in 8 bits). `LINK_SYNC`
+(0): 0 puts the program's `toma_k` through two flip-flops of the pixel
+clock, so the processor may be on any clock; 1, the processor on the pixel
+clock, saves two cycles a word.
 
 **Pins.**
 
@@ -245,9 +253,13 @@ A board with a resistor converter (4 bits a colour, say) takes `{4{pixel &
 ativo}}` on each colour and only the sync pins.
 
 **Clock.** The block's clock is the 25 MHz pixel clock, from a PLL on the
-board. A processor on that same clock writes with `toma_sync(k, w)`; a
-processor on another clock writes with the plain `toma(k, w)`, whose link
-synchronizes the two clocks.
+board. A processor on that same clock writes with `toma_sync(k, w)`, and
+the block may take `.LINK_SYNC(1)`; a processor on another clock writes with
+the plain `toma(k, w)`, whose link synchronizes the block's bit on the
+processor's side, and the block is left at `LINK_SYNC` 0, which
+synchronizes the program's bit on its side. Up to v9.1 the block took the
+program's bit and word in the same cycle, right only on one clock (GitHub
+issue #64).
 
 **The font** is "Modern DOS" 8x16 by Jayvee Enaguas (CC0 1.0), the ASCII
 characters only, inside `myVGAText.v` itself: the block is one file, with no
@@ -261,7 +273,9 @@ and the font, 2,048 x 8, both in memory blocks). A whole system with an
 the clock at up to 88 to 100 MHz (three fitter seeds; the keyboard's table
 is the limit) for the 25 MHz asked. A 32-bit C++ SAPHO with `<iostream>`,
 the two blocks and a PLL takes 3,174 logic elements and runs at up to 27.7
-to 28.0 MHz, the limit being the SAPHO's own float ALU.
+to 28.0 MHz, the limit being the SAPHO's own float ALU. These were measured
+before `LINK_SYNC`; at its default each block has two registers more (not
+measured).
 
 **Why the word goes through a register.** The SAPHO puts the `toma` word
 straight out of its ALU. Decoded in the same cycle, the SAPHO's longest path

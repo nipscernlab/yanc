@@ -149,6 +149,16 @@ tags consumed by Aurora.
   and added a word never pushed. A `comp` function called as a statement,
   its value unused, left its real part on the stack at every call. Fixture
   `cmm_stack_balance`, which runs each one 40 times.
+- **`myKeyPS2` and `myVGAText` on another clock than the SAPHO** (#64).
+  The plain `cade(k)` and `toma(k, w)` synchronize the block's bit on the
+  SAPHO's side only; the keyboard took the program's C straight into its
+  queue logic (a key could repeat or be lost) and the screen took T and the
+  word in the same cycle (a word not yet settled could be written). Both
+  blocks have a parameter `LINK_SYNC`, default 0: the program's bit through
+  two flip-flops of the block's clock, right on any clock; 1, the SAPHO on
+  the block's clock, two cycles less a word, the circuit of before. Found in
+  the audit of the HITS menu on the DE2-115; `tb_vgatext.sh` now sends the
+  word 10 ns after T, which the old block fails.
 - **C±: three defects of the Dirac notation, which gave wrong results
   without a message** (docs/design/dirac-expressions.md section 2). The
   outer product was transposed: `A # |a⟩⟨b|` gave `b aᵀ`, and

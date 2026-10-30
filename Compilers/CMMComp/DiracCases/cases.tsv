@@ -184,6 +184,11 @@ out(0, c|in(0)⟩);	oven
 out(0, |0⟩);	oven
 out(0, |a⟩ + |0⟩);	ok
 out(0, |M||N|a⟩);	ok
+
+// ---- no limit of the compiler's own: 70 sums (a loop each) and 70 parts
+// computed before the loops, past the fixed tables of before (64)
+v # |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩ + |M|a⟩;	ok
+v # (x+1.0)|a⟩ + (x+2.0)|a⟩ + (x+3.0)|a⟩ + (x+4.0)|a⟩ + (x+5.0)|a⟩ + (x+6.0)|a⟩ + (x+7.0)|a⟩ + (x+8.0)|a⟩ + (x+9.0)|a⟩ + (x+10.0)|a⟩ + (x+11.0)|a⟩ + (x+12.0)|a⟩ + (x+13.0)|a⟩ + (x+14.0)|a⟩ + (x+15.0)|a⟩ + (x+16.0)|a⟩ + (x+17.0)|a⟩ + (x+18.0)|a⟩ + (x+19.0)|a⟩ + (x+20.0)|a⟩ + (x+21.0)|a⟩ + (x+22.0)|a⟩ + (x+23.0)|a⟩ + (x+24.0)|a⟩ + (x+25.0)|a⟩ + (x+26.0)|a⟩ + (x+27.0)|a⟩ + (x+28.0)|a⟩ + (x+29.0)|a⟩ + (x+30.0)|a⟩ + (x+31.0)|a⟩ + (x+32.0)|a⟩ + (x+33.0)|a⟩ + (x+34.0)|a⟩ + (x+35.0)|a⟩ + (x+36.0)|a⟩ + (x+37.0)|a⟩ + (x+38.0)|a⟩ + (x+39.0)|a⟩ + (x+40.0)|a⟩ + (x+41.0)|a⟩ + (x+42.0)|a⟩ + (x+43.0)|a⟩ + (x+44.0)|a⟩ + (x+45.0)|a⟩ + (x+46.0)|a⟩ + (x+47.0)|a⟩ + (x+48.0)|a⟩ + (x+49.0)|a⟩ + (x+50.0)|a⟩ + (x+51.0)|a⟩ + (x+52.0)|a⟩ + (x+53.0)|a⟩ + (x+54.0)|a⟩ + (x+55.0)|a⟩ + (x+56.0)|a⟩ + (x+57.0)|a⟩ + (x+58.0)|a⟩ + (x+59.0)|a⟩ + (x+60.0)|a⟩ + (x+61.0)|a⟩ + (x+62.0)|a⟩ + (x+63.0)|a⟩ + (x+64.0)|a⟩ + (x+65.0)|a⟩ + (x+66.0)|a⟩ + (x+67.0)|a⟩ + (x+68.0)|a⟩ + (x+69.0)|a⟩ + (x+70.0)|a⟩;	ok
 out(0, |M|);	Slice it up first
 out(0, |a⟩⟨b|);	Slice it up first
 out(0, c|I|);	Slice it up first
