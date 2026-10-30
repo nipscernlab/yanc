@@ -11,3 +11,4 @@ cmm_stack_balance | the values worked out in its header (k + 2, 13, then 40)
 cmm_order_switch  | the values worked out in its header
 cmm_cnum_expr     | the values worked out in its header
 cmm_flow_globals  | the values worked out in its header
+cmm_comp_cmp      | the values written with each comparison in its generator, in its header
