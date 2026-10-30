@@ -399,30 +399,224 @@ def ops():
     return "cmm_cov_ops", src, out
 
 
-FAMILIES = [arr2d_read, arr2d_write, arr1d, ops]
+# ---------------------------------------------------------------------------
+# the library (stdlib.c): every built-in on every argument form it takes,
+# alone and with a value pending in the accumulator. Results are printed
+# times 1000. The functions a float routine computes (sqrt, exp, log, the
+# trigonometric and hyperbolic ones, fase, pow with a float exponent) are not
+# exact in the SAPHO float: their expected values are Python's, held within a
+# tolerance (TOL thousandths), and their golden_sim is the simulation's,
+# accepted only within it (--record). The others are exact.
+# ---------------------------------------------------------------------------
+import cmath
+import math
+
+S, TOL = 1000, 3
+
+
+def lib_value(v, exact):
+    """the printed values of a result: exact ones as ints, others with TOL"""
+    parts = [v.real, v.imag] if isinstance(v, complex) else [v]
+    out = []
+    for p in parts:
+        if exact:
+            # exact in the float (a few binary places) and not near a truncation step
+            if p * 1024 != int(p * 1024):
+                raise ValueError("exact value %r is not exact in binary" % p)
+            out.append(safe_trunc(S * p))
+        else:
+            out.append(("tol", S * p))
+    return out
+
+
+def lib_emit(body, out, expr, v, exact):
+    if isinstance(v, complex):
+        body.append("    w = %s; fout(0, %d.0*real(w)); fout(0, %d.0*imag(w));" % (expr, S, S))
+    elif isinstance(v, float):
+        body.append("    y = %s; fout(0, %d.0*y);" % (expr, S))
+    else:
+        body.append("    x = %s; out(0, x);" % expr)
+        out.append(v); return
+    out.extend(lib_value(v, exact))
+
+
+def ctext(c):
+    """a comp literal: 3.0+4.0i, 0.5-0.25i"""
+    return "%r%s%ri" % (c.real, "-" if c.imag < 0 else "+", abs(c.imag))
+
+
+def arg_forms(i=None, f=None, c=None):
+    """(text, value) for each form of an argument: var, acc, literal of each type given"""
+    fs = []
+    if i is not None:
+        fs += [("ia", i), ("(ia+z0)", i), ("(%d)" % i, i)]
+    if f is not None:
+        fs += [("fa", f), ("(fa+fz)", f), ("(%r)" % f, f)]
+    if c is not None:
+        lit = "(%s)" % ctext(c)
+        fs += [("ca", c), ("(ca*one)", c), (lit, c)]
+    return fs
+
+
+def setv(i=0, f=0.0, c=0j):
+    return "    ia = %d; fa = %r; ca = %s;" % (i, f, ctext(c))
+
+
+PEND_LIB = {int: ("(pa+z0) + ", 1000), float: ("(pf+fz) + ", 1000.0), complex: ("(pc*one) + ", complex(100, 100))}
+
+
+def library():
+    body, out = [], []
+
+    def call(fn, args, value, exact):
+        for pending in (0, 1):
+            e = "%s(%s)" % (fn, args)
+            v = value
+            if pending:
+                p, pv = PEND_LIB[type(value)]
+                e, v = p + e, pv + value
+            lib_emit(body, out, e, v, exact)
+
+    def one(fn, py, i, f, c, exact=False, real_out=False):
+        body.append(setv(i if i is not None else 0, f if f is not None else 0.0, c if c is not None else 0j))
+        for text, v in arg_forms(i, f, c):
+            r = py(v)
+            if real_out and isinstance(r, complex):
+                r = r.real
+            if not isinstance(r, complex):
+                r = float(r) if not isinstance(r, int) or real_out else r
+            call(fn, text, r, exact)
+
+    fl = lambda g: (lambda v: g(float(v)) if not isinstance(v, complex) else g(v))
+    one("sqrt", lambda v: cmath.sqrt(v) if isinstance(v, complex) else math.sqrt(v), 2, 2.25, 3 + 4j)
+    one("exp",  lambda v: cmath.exp(v) if isinstance(v, complex) else math.exp(v), 1, 0.5, 0.5 + 0.25j)
+    one("log",  lambda v: cmath.log(v) if isinstance(v, complex) else math.log(v), 3, 2.5, 1 + 1j)
+    one("sin",  lambda v: cmath.sin(v) if isinstance(v, complex) else math.sin(v), 1, 0.5, 0.5 + 0.25j)
+    one("cos",  lambda v: cmath.cos(v) if isinstance(v, complex) else math.cos(v), 1, 0.5, 0.5 + 0.25j)
+    one("tan",  lambda v: cmath.tan(v) if isinstance(v, complex) else math.tan(v), 1, 0.5, 0.5 + 0.25j)
+    one("atan", lambda v: cmath.atan(v) if isinstance(v, complex) else math.atan(v), 2, 0.5, 0.5 + 0.25j)
+    one("sinh", math.sinh, 1, 0.5, None)
+    one("cosh", math.cosh, 1, 0.5, None)
+    one("tanh", math.tanh, 1, 0.5, None)
+    one("fase", lambda v: math.atan2(v.imag, v.real), None, None, 3 + 4j)
+    for s in (1, -1):                                      # exact ones, both signs
+        one("floor", lambda v: float(math.floor(v)), 3 * s, 2.6 * s, None, exact=True)
+        one("ceil",  lambda v: float(math.ceil(v)),  3 * s, 2.6 * s, None, exact=True)
+        one("round", lambda v: float(math.floor(v + 0.5)) if v >= 0 else -float(math.floor(-v + 0.5)),
+            3 * s, 2.6 * s, None, exact=True)
+        one("pset", lambda v: v if v >= 0 else type(v)(0), 5 * s, 2.5 * s, None, exact=True)
+        one("norm", lambda v: v >> 7, 640 * s, None, None, exact=True)       # #NUGAIN 128
+    one("abs",  lambda v: abs(v) if not isinstance(v, complex) else abs(v), -5, -2.5, 3 + 4j, exact=True)
+    one("real", lambda v: v.real, None, None, 3 + 4j, exact=True)
+    one("imag", lambda v: v.imag, None, None, 3 + 4j, exact=True)
+    one("mod2", lambda v: v.real ** 2 + v.imag ** 2, None, None, 3 + 4j, exact=True)
+    one("conj", lambda v: complex(v).conjugate(), 2, 2.5, 3 + 4j, exact=True)
+    # two arguments
+    body.append(setv(-3, -2.5) + " ib = 5; fb = 2.5;")
+    xs = [("ia", -3), ("(ia+z0)", -3), ("(-3)", -3), ("fa", -2.5), ("(fa+fz)", -2.5), ("(-2.5)", -2.5)]
+    ys = [("ib", 5), ("(ib+z0)", 5), ("(5)", 5), ("fb", 2.5), ("(fb+fz)", 2.5), ("(2.5)", 2.5)]
+    for xt, xv in xs:
+        for yt, yv in ys:
+            call("sign", "%s, %s" % (xt, yt), -abs(yv) if xv < 0 else abs(yv), True)
+            call("complex", "%s, %s" % (xt, yt), complex(xv, yv), True)
+    body.append(setv(2, 1.5) + " ib = 3; fb = 2.5;")
+    bases = [("ia", 2), ("(ia+z0)", 2), ("(2)", 2), ("fa", 1.5), ("(fa+fz)", 1.5), ("(1.5)", 1.5)]
+    for bt, bv in bases:
+        for et, ev in (("ib", 3), ("(ib+z0)", 3), ("fb", 2.5), ("(fb+fz)", 2.5)):
+            call("pow", "%s, %s" % (bt, et), float(bv) ** ev, False)
+        for k in (0, 1, 2, 5, -2):                         # a literal int exponent: multiplications
+            r = float(bv) ** k                             # exact unless a division leaves a fraction
+            call("pow", "%s, %d" % (bt, k), r, (r * 1024).is_integer())
+    # copy: an int into an int, a float into a float (the bits are the value)
+    body.append(setv(42, 4.25))
+    for t, v, dst in (("ia", 42, "x"), ("(ia+z0)", 42, "x"), ("42", 42, "x"),
+                      ("fa", 4.25, "y"), ("(fa+fz)", 4.25, "y"), ("4.25", 4.25, "y")):
+        body.append("    copy(%s, %s);" % (t, dst))
+        if dst == "x":
+            body.append("    out(0, x);"); out.append(v)
+        else:
+            body.append("    fout(0, %d.0*y);" % S); out.extend(lib_value(v, True))
+    decl = ("    int ia; int ib; int z0; int pa; int x;\n"
+            "    float fa; float fb; float fz; float pf; float y;\n"
+            "    comp ca; comp one; comp pc; comp w;\n"
+            "    z0 = 0; pa = 1000; fz = 0.0; pf = 1000.0; one = 1+0i; pc = 100+100i;\n")
+    src = (HEAD +
+           "// Generated by Scripts/cov_tests.py (issue #69): every built-in of stdlib.c on\n"
+           "// every argument form it takes (int, float, comp; in memory, in the\n"
+           "// accumulator, a literal), alone and with a value pending in the accumulator.\n"
+           "// Results are printed times 1000. The float routines are held to Python's\n"
+           "// values within a tolerance, the others exactly; computed by the script,\n"
+           "// apart from YANC.\n\n"
+           "void main()\n{\n" + decl + "\n".join(body) + "\n}\n")
+    return "cmm_cov_lib", src, out
+
+
+FAMILIES = [arr2d_read, arr2d_write, arr1d, ops, library]
+
+
+def golden_text(out):
+    return "".join("%d\r\n" % (trunc(v[1]) if isinstance(v, tuple) else v) for v in out)
+
+
+def agrees(out, lines):
+    """the lines of an output against the values: exact ones equal, the others within TOL"""
+    if len(lines) != len(out):
+        return ["%d lines, %d values" % (len(lines), len(out))]
+    bad = []
+    for k, (v, l) in enumerate(zip(out, lines)):
+        got = int(l)
+        if isinstance(v, tuple):
+            if abs(got - v[1]) > TOL:
+                bad.append("value %d: %d, Python %.3f (tolerance %d)" % (k, got, v[1], TOL))
+        elif got != v:
+            bad.append("value %d: %d, expected %d" % (k, got, v))
+    return bad
 
 
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    argv = sys.argv[1:]
+    if "--record" in argv:                            # its test name and output file are not the root
+        k = argv.index("--record")
+        argv = argv[:k] + argv[k + 3:]
+    args = [a for a in argv if not a.startswith("--")]
     root = args[0] if args else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
     tests = os.path.join(root, "Compilers", "CMMComp", "Tests")
     bad = 0
     for fam in FAMILIES:
         name, src, out = fam()
         d = os.path.join(tests, name)
-        text = "".join("%d\r\n" % v for v in out)
         cmm = src.replace("\n", "\r\n")
         gold = os.path.join(d, "golden_sim", "output_0.txt")
+        tolerant = any(isinstance(v, tuple) for v in out)
         if "--write" in sys.argv:
             os.makedirs(os.path.dirname(gold), exist_ok=True)
             open(os.path.join(d, name + ".cmm"), "w", newline="", encoding="utf-8").write(cmm)
-            open(gold, "w", newline="").write(text)
-            print("cov_tests: wrote %s (%d values)" % (name, len(out)))
+            if not tolerant:
+                open(gold, "w", newline="").write(golden_text(out))
+            print("cov_tests: wrote %s (%d values%s)" % (name, len(out),
+                  "; record its golden_sim from a simulation with --record" if tolerant else ""))
+        elif "--record" in sys.argv:                  # --record <test> <simulated output_0.txt>
+            i = sys.argv.index("--record")
+            if sys.argv[i + 1] != name:
+                continue
+            lines = open(sys.argv[i + 2]).read().split()
+            errs = agrees(out, lines)
+            if errs:
+                print("cov_tests: %s: the simulation disagrees with Python:" % name)
+                for e in errs[:20]:
+                    print("    " + e)
+                bad += 1
+            else:
+                open(gold, "w", newline="").write("".join(l + "\r\n" for l in lines))
+                print("cov_tests: recorded %s's golden_sim (%d values agree with Python)" % (name, len(out)))
         elif "--check" in sys.argv:
-            ok = (open(os.path.join(d, name + ".cmm"), newline="", encoding="utf-8").read() == cmm
-                  and open(gold, newline="").read() == text)
-            print("cov_tests: %s %s" % (name, "is what the script computes (%d values)" % len(out)
-                                        if ok else "DIFFERS from what the script computes"))
+            src_ok = open(os.path.join(d, name + ".cmm"), newline="", encoding="utf-8").read() == cmm
+            errs = agrees(out, open(gold).read().split()) if os.path.exists(gold) else ["no golden_sim"]
+            ok = src_ok and not errs
+            print("cov_tests: %s %s" % (name, "agrees with what the script computes (%d values)" % len(out)
+                                        if ok else "DIFFERS from what the script computes"
+                                        + ("" if src_ok else " (the source)")
+                                        + "".join("\n    " + e for e in errs[:10])))
             bad += not ok
     sys.exit(1 if bad else 0)
 
