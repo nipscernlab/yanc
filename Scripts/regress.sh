@@ -36,6 +36,9 @@
 #      Scripts/cmm_cov.sh: no more of cmmcomp's assembly-emitting calls may
 #      go unreached by the tests, or unchecked against an independent
 #      reference, than Compilers/CMMComp/Tests/cov_baseline.txt allows.
+#      Scripts/cov_tests.py --check: the generated tests are what it computes.
+#      Scripts/stack_balance.py: no statement of a test leaves a word on the
+#      data stack.
 #
 #   3b. Float and complex conditions: Scripts/fcond runs the same cases on
 #      the host C/C++ compiler and on both compilers (three float formats,
@@ -1423,6 +1426,13 @@ if command -v python3 >/dev/null 2>&1; then
         pass=$((pass + 1))
     else
         fail=$((fail + 1)); failed_names+=("rls-ref")
+    fi
+    # no statement of a C± test leaves a word on the data stack: the depth
+    # worked out from isa.tsv is 0 at every output and at @fim (Scripts/stack_balance.py)
+    if python3 "$ROOT/Scripts/stack_balance.py" "$ROOT"; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("stack-balance")
     fi
     # the generated tests of Scripts/cov_tests.py: their source and golden_sim
     # are what the script computes, apart from YANC

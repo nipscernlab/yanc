@@ -65,7 +65,10 @@ neither count may grow past `cov_baseline.txt`), and runs `yanc`
 itself. Every change goes through it: the quick form (`--no-sim`) for each
 change, the whole one once for each batch of changes, before its last merge
 (AGENTS.md, "The one command"). `bash Scripts/cmm_cov.sh --list`
-lists every call no test checks. A change to the instruction
+lists every call no test checks. `Scripts/cov_tests.py` writes the generated tests
+and their expected output, computed in Python; `Scripts/stack_balance.py`
+works out the data stack's depth through every test's assembly and fails
+when a statement leaves a word on it. A change to the instruction
 table or to a message regenerates its page:
 `python3 Scripts/gen_isa_doc.py`, `python3 Scripts/gen_messages_doc.py`.
 
