@@ -93,6 +93,11 @@ def output():
     o += [2 * p for p in a]
     o += mv(IM, ia)
     o += mv(M, mv(M, a))
+    x = 3 * 3 + dot(a, mv(M, mv(M, mv(M, e))))
+    o += [x]
+    o += [p + 3 * q for p, q in zip(mv(M, mv(M, a)), e)]   # tw(2.0) = 3
+    o += [2 * p + (x - 1) * q for p, q in zip(a, e)]       # tw(1.0) = 2
+    o += mv(M, mv(M, [2 * q for q in e]))                  # w after tw(1.0)
     return o
 
 
