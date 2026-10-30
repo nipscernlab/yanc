@@ -2,7 +2,8 @@
 # a C++ program cppcomp MUST reject with a clean non-zero exit (never a crash,
 # never a silent accept) and the listed diagnostic substring.
 #
-# format:  <fixture.cpp>|<expected substring>
+# format:  <fixture.cpp>|<expected substring>[|<lang>]
+# <lang> is en (the default) or pt, given to cppcomp as YANC_LANG.
 names_mnemonic.cpp|the global 'ADD': 'ADD' is an instruction of the processor's assembly
 names_mnemonic_local.cpp|the local 'ADD' of 'S' is 'S_ADD' in the assembly, which is an instruction
 names_global_local.cpp|the global 'main_x' and the local 'x' of 'main' are both 'main_x' in the assembly
@@ -17,3 +18,4 @@ module.cpp|is a Verilog keyword
 2fast.cpp|cannot start with a digit
 pp_error.cpp|#error this program is not meant to compile
 pragma_fftsiz.cpp|#pragma yanc fftsiz does nothing in C++
+lang_pt.cpp|erro: a variável global 'main_x' e a variável local 'x' de 'main' viram os dois 'main_x' no assembly|pt

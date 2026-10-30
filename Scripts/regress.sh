@@ -1643,14 +1643,14 @@ fi
 
 # ---- 4c. CPP negative phase (error reporting) ------------------------------
 # The same for cppcomp: Compilers/CPPComp/NegTests/manifest.txt, format
-# <fixture.cpp>|<expected substring>.
+# <fixture.cpp>|<expected substring>[|<lang>], <lang> en (default) or pt.
 if [ "$CMM_ONLY" -eq 0 ]; then
     echo ""
     echo "==> CPP negative phase (error reporting)"
     neg_dir="$CPP_ROOT/NegTests"
     neg_work="$SCRATCH/work_cppneg"
-    while IFS='|' read -r fixture expect; do
-        fixture="${fixture%$'\r'}"; expect="${expect%$'\r'}"
+    while IFS='|' read -r fixture expect lang; do
+        fixture="${fixture%$'\r'}"; expect="${expect%$'\r'}"; lang="${lang%$'\r'}"
         case "$fixture" in ''|\#*) continue ;; esac
         name="cppneg:${fixture%.cpp}"
         if [ ! -f "$neg_dir/$fixture" ]; then
@@ -1658,7 +1658,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             fail=$((fail+1)); failed_names+=("$name"); continue
         fi
         rm -rf "$neg_work"; mkdir -p "$neg_work/tmp"
-        out="$("$CPPC" -o "$neg_work/p" "$neg_dir/$fixture" 2>&1)"
+        out="$(YANC_LANG="${lang:-en}" "$CPPC" -o "$neg_work/p" "$neg_dir/$fixture" 2>&1)"
         rc=$?
         if [ "$rc" -eq 0 ]; then
             echo "FAIL ($name): compiled (exit 0) but should have been rejected"

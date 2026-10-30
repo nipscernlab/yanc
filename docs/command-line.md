@@ -95,7 +95,7 @@ gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]      a formatted GTKWave view 
 ```
 
 `--lang`, `-h`/`--help` and `-V`/`--version` work in the three compilers;
-`gen_gtkw` takes `-h` and `--lang` (its text is English only). In
+`gen_gtkw` takes `-h` and `--lang`. In
 `cmmcomp`, `cppcomp` and `asmcomp`, `-o`, `-f` and `-c` also have the long
 forms `--output`, `--freq`, `--clocks`.
 
@@ -106,9 +106,10 @@ repository they find `SAPHO/` and `Compilers/` the same way.
 
 ## Messages and their language
 
-The messages are in English. `--lang=pt` switches `cmmcomp` and `asmcomp`
-(and `yanc`'s own) to Portuguese; so does the environment variable
-`YANC_LANG=pt`, set once for the terminal (`--lang=en` wins over it).
-`cppcomp` and `gen_gtkw` accept `--lang` and stay in English. An error
+The messages are in English. `--lang=pt` switches every tool (`cmmcomp`,
+`cppcomp`, `asmcomp`, `gen_gtkw` and `yanc`'s own) to Portuguese; so does
+the environment variable `YANC_LANG=pt`, set once for the terminal
+(`--lang=en` wins over it). In C++ the word after the file and line
+follows: `filter.cpp:12: erro: ...`, `atenção:` for a warning. An error
 names the line (for C++, the file and line, a header's too) and stops the
 tool; a warning (`Heads up`) does not.

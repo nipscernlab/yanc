@@ -52,20 +52,7 @@ extern unit *g_unit;
 
 static void usage(int code)
 {
-    fprintf(code ? stderr : stdout,
-        "cppcomp %s — C++ compiler for the SAPHO processor\n"
-        "usage: cppcomp [options] <file.cpp>\n"
-        "  <file.cpp>              the source; the processor takes its name\n"
-        "  -o, --output   <dir>    output folder (default: ./<name>): <name>.asm and\n"
-        "                          the tables asmcomp and the waveform read\n"
-        "  -I <dir>                add an #include folder (repeatable); the source's\n"
-        "                          folder comes first, the Header folder next to bin/ last\n"
-        "  -E                      print the preprocessed source and stop\n"
-        "  --lang=en|pt            accepted, as by every YANC tool; cppcomp's messages\n"
-        "                          are in English only\n"
-        "  -h, --help              this help\n"
-        "  -V, --version           show version and exit\n",
-        YANC_VERSION);
+    fprintf(code ? stderr : stdout, MSG_CLI_USAGE, YANC_VERSION);
     exit(code);
 }
 
@@ -86,7 +73,7 @@ static char *derive_name(const char *path, const char *new_ext)
 int main(int argc, char **argv)
 {
     console_utf8();                 // the help text is UTF-8 (Windows console)
-    yanc_lang(&argc, argv, "cppcomp");   // --lang: checked and taken out; English only
+    yanc_lang(&argc, argv, "cppcomp");   // --lang and YANC_LANG: the messages' language (messages.h)
     const char *in_path  = NULL;
     const char *out_dir  = NULL;
     int         only_pp  = 0;
@@ -101,7 +88,7 @@ int main(int argc, char **argv)
             return 0;
         }
         else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source
-        else { fprintf(stderr, "cppcomp: unknown option '%s'\n", argv[i]); usage(1); }
+        else { fprintf(stderr, MSG_ERR_UNKNOWN_OPTION, argv[i]); usage(1); }
     }
     if (!in_path) usage(1);
 
@@ -113,12 +100,11 @@ int main(int argc, char **argv)
     // the file's name becomes a Verilog module's: refuse one that cannot be
     {
         char *nm = derive_name(in_path, "");
-        static const char *const why[] = {"", "can only have letters, digits and '_'",
-            "cannot start with a digit", "cannot start with '__' (the compiler's names)",
-            "is a Verilog keyword"};
+        const char *const why[] = {"", MSG_WHY_CHARS, MSG_WHY_DIGIT, MSG_WHY_DUNDER,
+            MSG_WHY_KEYWORD};
         int bad = proc_name_problem(nm);
         if (bad) {
-            fprintf(stderr, "cppcomp: the file '%s' names the processor, and '%s' %s; rename the file\n",
+            fprintf(stderr, MSG_ERR_FILE_NAME,
                     in_path, nm, why[bad]);
             return 2;
         }
@@ -129,7 +115,7 @@ int main(int argc, char **argv)
     g_unit = ast_unit();
     st_init();
 
-    if (yyparse() != 0) { fprintf(stderr, "cppcomp: parse failed\n"); exit(2); }
+    if (yyparse() != 0) { fprintf(stderr, MSG_ERR_PARSE_FAILED); exit(2); }
 
     if (msg_error_count() > 0) return 2;
     g_unit->prname = derive_name(in_path, "");   // the source file's name
@@ -147,7 +133,7 @@ int main(int argc, char **argv)
     char *outp = malloc(strlen(out_dir) + strlen(g_unit->prname) + 8);
     sprintf(outp, "%s/%s.asm", out_dir, g_unit->prname);
     FILE *fo = fopen(outp, "w");
-    if (!fo) { fprintf(stderr, "cppcomp: cannot open '%s' for writing\n", outp); exit(1); }
+    if (!fo) { fprintf(stderr, MSG_ERR_CANT_WRITE, outp); exit(1); }
 
     codegen(fo, g_unit, tmp_dir, text);
 

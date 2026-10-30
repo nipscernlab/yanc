@@ -20,7 +20,7 @@ void msg_error(int line, const char *fmt, ...)
     va_list ap;
     const char *file = g_file;
     line = pp_where(line, &file);        // back to the file and line written
-    fprintf(stderr, "%s:%d: error: ", file, line);
+    fprintf(stderr, "%s:%d: %s", file, line, MSG_PREFIX_ERROR);
     va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
     fputc('\n', stderr);
     g_errs++;
@@ -32,11 +32,12 @@ void msg_warning(int line, const char *fmt, ...)
     va_list ap;
     const char *file = g_file;
     line = pp_where(line, &file);
-    fprintf(stderr, "%s:%d: warning: ", file, line);
+    fprintf(stderr, "%s:%d: %s", file, line, MSG_PREFIX_WARNING);
     va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
     fputc('\n', stderr);
 }
 
+// English only: a defect of cppcomp, for whoever maintains it (messages.h)
 void msg_internal(const char *fmt, ...)
 {
     va_list ap;

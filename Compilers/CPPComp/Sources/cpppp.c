@@ -21,6 +21,7 @@
 #include <ctype.h>
 
 #include "../Headers/cpppp.h"
+#include "../Headers/messages.h"
 #include "../../common/exe_dir.h"
 
 #define MAX_INCDIRS 32
@@ -550,13 +551,13 @@ static char *trim_in_place(char *s)
 
 static void process_file(const char *path)
 {
-    if (depth > 32) { fprintf(stderr, "cppcomp: include too deep\n"); exit(1); }
+    if (depth > 32) { fprintf(stderr, MSG_ERR_INCLUDE_DEEP); exit(1); }
     depth++;
 
     char dir[2048]; dirname_of(path, dir, sizeof(dir));
 
     FILE *fp = fopen(path, "r");
-    if (!fp) { fprintf(stderr, "cppcomp: cannot open '%s'\n", path); exit(1); }
+    if (!fp) { fprintf(stderr, MSG_ERR_CANT_OPEN, path); exit(1); }
     const char *file = strdup(path);     // the map keeps it
     int ln = 0;
 
@@ -582,7 +583,7 @@ static void process_file(const char *path)
                     target[i] = 0;
                     char resolved[2048];
                     FILE *inc = open_include(target, dir, resolved, sizeof(resolved));
-                    if (!inc) { fprintf(stderr, "cppcomp: can't find #include \"%s\"\n", target); exit(1); }
+                    if (!inc) { fprintf(stderr, MSG_ERR_INCLUDE_QUOTE, target); exit(1); }
                     fclose(inc);
                     char canon[2048]; path_canon(resolved, canon, sizeof(canon));
                     if (!once_seen(canon)) process_file(resolved);
@@ -592,7 +593,7 @@ static void process_file(const char *path)
                     target[i] = 0;
                     char resolved[2048];
                     FILE *inc = open_include(target, NULL, resolved, sizeof(resolved));
-                    if (!inc) { fprintf(stderr, "cppcomp: can't find #include <%s>\n", target); exit(1); }
+                    if (!inc) { fprintf(stderr, MSG_ERR_INCLUDE_ANGLE, target); exit(1); }
                     fclose(inc);
                     char canon[2048]; path_canon(resolved, canon, sizeof(canon));
                     if (!once_seen(canon)) process_file(resolved);
@@ -658,7 +659,7 @@ static void process_file(const char *path)
                 name[i] = 0;
                 int defined = macro_lookup(name) != NULL;
                 int active = is_ifndef ? !defined : defined;
-                if (cond_n >= MAX_COND) { fprintf(stderr, "cppcomp: #ifdef nesting too deep\n"); exit(1); }
+                if (cond_n >= MAX_COND) { fprintf(stderr, MSG_ERR_IFDEF_DEEP); exit(1); }
                 cond_stk[cond_n] = active;
                 cond_seen_true[cond_n] = active;
                 cond_n++;
@@ -669,7 +670,7 @@ static void process_file(const char *path)
             if (strncmp(p, "if", 2) == 0 && (p[2] == ' ' || p[2] == '\t' || p[2] == '(')) {
                 p += 2;
                 int active = eval_if(p);
-                if (cond_n >= MAX_COND) { fprintf(stderr, "cppcomp: #if nesting too deep\n"); exit(1); }
+                if (cond_n >= MAX_COND) { fprintf(stderr, MSG_ERR_IF_DEEP); exit(1); }
                 cond_stk[cond_n] = active;
                 cond_seen_true[cond_n] = active;
                 cond_n++;
@@ -678,7 +679,7 @@ static void process_file(const char *path)
 
             // ---- #elif <expr> ----
             if (strncmp(p, "elif", 4) == 0 && (p[4] == ' ' || p[4] == '\t' || p[4] == '(')) {
-                if (cond_n == 0) { fprintf(stderr, "cppcomp: stray #elif\n"); exit(1); }
+                if (cond_n == 0) { fprintf(stderr, MSG_ERR_STRAY_ELIF); exit(1); }
                 p += 4;
                 if (cond_seen_true[cond_n-1]) {
                     cond_stk[cond_n-1] = 0;          // an earlier branch already won
@@ -692,7 +693,7 @@ static void process_file(const char *path)
 
             // ---- #else ----
             if (strcmp(p, "else") == 0 || strncmp(p, "else ", 5) == 0 || strncmp(p, "else\t", 5) == 0) {
-                if (cond_n == 0) { fprintf(stderr, "cppcomp: stray #else\n"); exit(1); }
+                if (cond_n == 0) { fprintf(stderr, MSG_ERR_STRAY_ELSE); exit(1); }
                 cond_stk[cond_n-1] = !cond_seen_true[cond_n-1];
                 cond_seen_true[cond_n-1] = 1;
                 free(orig); continue;
@@ -700,7 +701,7 @@ static void process_file(const char *path)
 
             // ---- #endif ----
             if (strcmp(p, "endif") == 0 || strncmp(p, "endif ", 6) == 0 || strncmp(p, "endif\t", 6) == 0) {
-                if (cond_n == 0) { fprintf(stderr, "cppcomp: stray #endif\n"); exit(1); }
+                if (cond_n == 0) { fprintf(stderr, MSG_ERR_STRAY_ENDIF); exit(1); }
                 cond_n--;
                 free(orig); continue;
             }
@@ -725,7 +726,7 @@ static void process_file(const char *path)
                 if (cond_active()) {
                     int err = p[0] == 'e';
                     const char *msg = p + (err ? 5 : 7); while (*msg == ' ' || *msg == '\t') msg++;
-                    fprintf(stderr, "%s:%d: %s: #%s %s\n", file, ln, err ? "error" : "warning", err ? "error" : "warning", msg);
+                    fprintf(stderr, "%s:%d: %s: #%s %s\n", file, ln, err ? MSG_WORD_ERROR : MSG_WORD_WARNING, err ? "error" : "warning", msg);
                     if (err) exit(1);
                 }
                 free(orig); continue;
@@ -751,7 +752,7 @@ static void process_file(const char *path)
 void pp_add_incdir(const char *dir)
 {
     if (n_incdirs < MAX_INCDIRS) incdirs[n_incdirs++] = dir;
-    else { fprintf(stderr, "cppcomp: too many -I dirs\n"); exit(1); }
+    else { fprintf(stderr, MSG_ERR_TOO_MANY_I); exit(1); }
 }
 
 const char *pp_run(const char *in_path)
