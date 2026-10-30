@@ -352,10 +352,6 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: essa combinação de Dirac ainda tá no forno. Aguenta aí!\n", \
       "Error on line %d: this Dirac combo is still in the oven. Hang tight!\n")
 
-#define MSG_ERR_DIRAC_TOO_BIG \
-    M("Erro na linha %d: essa expressão de Dirac estourou um limite interno do compilador (laços, partes ou passos demais). Quebra ela em linhas menores.\n", \
-      "Error on line %d: this Dirac expression blew past an internal limit of the compiler (too many loops, parts or strides). Break it into smaller lines.\n")
-
 // operator errors and warnings (oper.c) -------------------------------------
 
 #define MSG_ERR_MOD_NON_INT \

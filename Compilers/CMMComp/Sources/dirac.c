@@ -46,9 +46,6 @@
 // state ----------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-#define DL_MAXLOOP 64
-#define DL_MAXSTR  8
-#define DL_MAXHOI  64
 #define DL_NM      (sizeof emit_fname + 32)   // a name of the compiler: __dk<n>_<function>
 
 // a loop: its counter __dk<num> runs from -n*step up to 0 in steps of step;
@@ -56,9 +53,9 @@
 typedef struct {
     int n, first, step;
     int num;
-    int ns, st[DL_MAXSTR]; long w[DL_MAXSTR]; // strides the index is used with, and how often
-    int nd, ds[DL_MAXSTR], dv[DL_MAXSTR];     // derived variables __dd<dv>: value stride*turn - stride*n
-    int nh; expr_node **hn[DL_MAXHOI]; int hv[DL_MAXHOI]; // parts computed at the top of each turn
+    int ns, cap_s; int *st; long *w;          // strides the index is used with, and how often
+    int nd; int *ds, *dv;                     // derived variables __dd<dv>: value stride*turn - stride*n (cap_s)
+    int nh, cap_h; expr_node ***hn; int *hv;  // parts computed at the top of each turn
 } dl_loop;
 
 // an index: sum of st[i] * (the index of loop lv[i]) + k
@@ -71,7 +68,8 @@ typedef struct { int arr; dl_ix ix; } dl_elem;               // EXPR_DIRAC_ELEM
 typedef struct { int lv; expr_node *first, *body, *src; } dl_sum; // EXPR_DIRAC_SUM
 typedef struct { int off; } dl_tmpref;                       // a REF to a block of __dirac_tmp
 
-static dl_loop loops[DL_MAXLOOP];
+// the tables grow as a statement needs: no limit of the compiler's own
+static dl_loop *loops; static int cap_loops;
 static int     n_loops;
 static int     n_names;          // __dk / __dd / __dh numbers of the statement
 static int     depth;            // statements in the making (a hoist can hold another)
@@ -88,15 +86,14 @@ static int     cur_dst = -1;     // the array the statement writes (-1: none)
 // the first cell of an array as a scalar operand: a v_table entry with the
 // array's name (variaveis.c keeps the count)
 extern int v_count;
-#define DL_MAXALIAS 256
-static int alias_arr[DL_MAXALIAS], alias_id[DL_MAXALIAS], n_alias;
+static int *alias_arr, *alias_id, n_alias, cap_alias;
 
 // the statement-level parts computed before the loops
-static expr_node **hoist_pre[DL_MAXHOI]; static int hoist_pre_v[DL_MAXHOI]; static int n_hoist_pre;
+static expr_node ***hoist_pre; static int *hoist_pre_v; static int n_hoist_pre, cap_hoist_pre;
 
 // the parts already computed, before a product went to __dirac_tmp: the
 // statement is built again after that, and reads them from their variables
-static expr_node *done_n[DL_MAXHOI]; static int done_v[DL_MAXHOI]; static int n_done;
+static expr_node **done_n; static int *done_v; static int n_done, cap_done;
 
 // a number inside a scalar expression: the value the walker holds in the
 // accumulator (keep_live), and the variable it waits in (keep_v, 0: none
@@ -116,6 +113,25 @@ static int *tmp_lines, *tmp_words, n_tmp_lines, cap_tmp_lines;
 // ----------------------------------------------------------------------------
 
 static void die(const char *fmt, int line) {fprintf(stderr, fmt, line); exit(EXIT_FAILURE);}
+
+// a table that grows: the capacity for need entries, and the table moved there
+static int next_cap(int cap, int need) {if (cap < 8) cap = 8; while (cap < need) cap *= 2; return cap;}
+
+static void *re(void *p, int cap, size_t sz)
+{
+    p = realloc(p, (size_t)cap * sz);
+    if (!p) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    return p;
+}
+
+// a copy of sz bytes, to put a table back after a statement inside another
+static void *dup_mem(const void *p, size_t sz)
+{
+    void *q = malloc(sz ? sz : 1);
+    if (!q) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    if (sz) memcpy(q, p, sz);
+    return q;
+}
 
 static expr_node *node_new(expr_kind k, int type)
 {
@@ -150,7 +166,7 @@ static int scalar_var(int t)
 
 static int new_loop(int n, int first)
 {
-    if (n_loops == DL_MAXLOOP) die(MSG_ERR_DIRAC_TOO_BIG, cur_line);
+    if (n_loops == cap_loops) {cap_loops = next_cap(cap_loops, n_loops + 1); loops = re(loops, cap_loops, sizeof *loops);}
     dl_loop *l = &loops[n_loops];
     memset(l, 0, sizeof *l);
     l->n = n; l->first = first; l->step = 1; l->num = n_names++;
@@ -206,7 +222,11 @@ static expr_node *elem_of(expr_node *ref, dl_pos r, dl_pos c)
         int id = -1;
         for (int j = 0; j < n_alias; j++) if (alias_arr[j] == arr) id = alias_id[j];
         if (id < 0) {
-            if (n_alias == DL_MAXALIAS) return elem_new(arr, type, ix);
+            if (n_alias == cap_alias) {
+                cap_alias = next_cap(cap_alias, n_alias + 1);
+                alias_arr = re(alias_arr, cap_alias, sizeof *alias_arr);
+                alias_id  = re(alias_id,  cap_alias, sizeof *alias_id);
+            }
             char nm[sizeof v_table[arr].name];         // add_var may move v_table
             snprintf(nm, sizeof nm, "%s", v_table[arr].name);
             add_var(nm);                               // the same name: find_var still finds the array first
@@ -222,7 +242,11 @@ static expr_node *elem_of(expr_node *ref, dl_pos r, dl_pos c)
 
 static void hoist_pre_add(expr_node **slot, int v)
 {
-    if (n_hoist_pre == DL_MAXHOI) die(MSG_ERR_DIRAC_TOO_BIG, cur_line);
+    if (n_hoist_pre == cap_hoist_pre) {
+        cap_hoist_pre = next_cap(cap_hoist_pre, n_hoist_pre + 1);
+        hoist_pre   = re(hoist_pre,   cap_hoist_pre, sizeof *hoist_pre);
+        hoist_pre_v = re(hoist_pre_v, cap_hoist_pre, sizeof *hoist_pre_v);
+    }
     hoist_pre[n_hoist_pre] = slot; hoist_pre_v[n_hoist_pre++] = v;
 }
 
@@ -330,47 +354,55 @@ static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top)
 // ----------------------------------------------------------------------------
 // what each part depends on --------------------------------------------------
 // ----------------------------------------------------------------------------
-// deps: a bit per loop; volatile: reads an input (must run where it is)
+// dep_on: does the part read the index of loop lv; is_volatile: does it read
+// an input or call a function (it must run where it is)
 
-typedef unsigned long long dl_set;
-
-static dl_set deps(expr_node *n, int *vol)
+static int dep_on(expr_node *n, int lv)
 {
     if (!n) return 0;
-    dl_set s = 0;
     if (n->kind == EXPR_DIRAC_ELEM) {
         dl_elem *e = n->dl;
-        for (int i = 0; i < e->ix.nt; i++) s |= 1ULL << e->ix.lv[i];
-        return s;
+        for (int i = 0; i < e->ix.nt; i++) if (e->ix.lv[i] == lv) return 1;
+        return 0;
     }
     if (n->kind == EXPR_DIRAC_SUM) {
-        dl_sum *d = n->dl;
-        s = deps(d->first, vol) | (deps(d->body, vol) & ~(1ULL << d->lv));
-        return s;
+        dl_sum *d = n->dl;                      // the sum's own index is not read outside it
+        return dep_on(d->first, lv) || (d->lv != lv && dep_on(d->body, lv));
     }
-    if (n->kind == EXPR_STDLIB_CALL && (n->op == OP_STD_IN || n->op == OP_STD_FIN)) *vol = 1;
-    if (n->kind == EXPR_FUNC_CALL) *vol = 1;
-    s |= deps(n->left, vol) | deps(n->right, vol);
-    for (int i = 0; i < n->n_args; i++) s |= deps(n->args[i], vol);
-    return s;
+    if (dep_on(n->left, lv) || dep_on(n->right, lv)) return 1;
+    for (int i = 0; i < n->n_args; i++) if (dep_on(n->args[i], lv)) return 1;
+    return 0;
 }
 
-// a SUM that does not depend on every loop around it would be computed again
-// for nothing: returns it, so that its product goes to __dirac_tmp first
-static expr_node *find_waste(expr_node *n, dl_set around)
+static int is_volatile(expr_node *n)
+{
+    if (!n) return 0;
+    if (n->kind == EXPR_DIRAC_SUM) {dl_sum *d = n->dl; return is_volatile(d->first) || is_volatile(d->body);}
+    if (n->kind == EXPR_STDLIB_CALL && (n->op == OP_STD_IN || n->op == OP_STD_FIN)) return 1;
+    if (n->kind == EXPR_FUNC_CALL) return 1;
+    if (is_volatile(n->left) || is_volatile(n->right)) return 1;
+    for (int i = 0; i < n->n_args; i++) if (is_volatile(n->args[i])) return 1;
+    return 0;
+}
+
+// a SUM that does not depend on every loop around it (the na loops of
+// around) would be computed again for nothing: returns it, so that its
+// product goes to __dirac_tmp first
+static expr_node *find_waste(expr_node *n, const int *around, int na)
 {
     if (!n) return NULL;
     if (n->kind == EXPR_DIRAC_SUM) {
         dl_sum *d = n->dl;
-        int vol = 0;
-        dl_set s = deps(n, &vol);
-        if ((around & ~s) != 0 && !vol) return n;
-        expr_node *w = find_waste(d->first, around);
-        return w ? w : find_waste(d->body, around | (1ULL << d->lv));
+        if (!is_volatile(n))
+            for (int i = 0; i < na; i++) if (!dep_on(n, around[i])) return n;
+        expr_node *w = find_waste(d->first, around, na);
+        if (w) return w;
+        int a2[na + 1]; memcpy(a2, around, na * sizeof *around); a2[na] = d->lv;
+        return find_waste(d->body, a2, na + 1);
     }
-    expr_node *w = find_waste(n->left, around);
-    if (!w) w = find_waste(n->right, around);
-    for (int i = 0; !w && i < n->n_args; i++) w = find_waste(n->args[i], around);
+    expr_node *w = find_waste(n->left, around, na);
+    if (!w) w = find_waste(n->right, around, na);
+    for (int i = 0; !w && i < n->n_args; i++) w = find_waste(n->args[i], around, na);
     return w;
 }
 
@@ -383,11 +415,9 @@ static void hoist_inv(expr_node **slot, int *path, int np)
     if (!n) return;
     if (n->kind == EXPR_LITERAL || n->kind == EXPR_VAR) return;
 
-    int vol = 0;
-    dl_set s = deps(n, &vol);
-    if (np > 0 && !vol && !(s & (1ULL << path[np - 1]))) {
+    if (np > 0 && !is_volatile(n) && !dep_on(n, path[np - 1])) {
         int at = -1;                                     // the deepest loop it depends on
-        for (int i = np - 1; i >= 0; i--) if (s & (1ULL << path[i])) {at = path[i]; break;}
+        for (int i = np - 1; i >= 0; i--) if (dep_on(n, path[i])) {at = path[i]; break;}
         typecheck_expr(n);
         int v = scalar_var(n->type);
         expr_node **keep = malloc(sizeof *keep);
@@ -395,7 +425,11 @@ static void hoist_inv(expr_node **slot, int *path, int np)
         if (at < 0) hoist_pre_add(keep, v);
         else {
             dl_loop *l = &loops[at];
-            if (l->nh == DL_MAXHOI) die(MSG_ERR_DIRAC_TOO_BIG, cur_line);
+            if (l->nh == l->cap_h) {
+                l->cap_h = next_cap(l->cap_h, l->nh + 1);
+                l->hn = re(l->hn, l->cap_h, sizeof *l->hn);
+                l->hv = re(l->hv, l->cap_h, sizeof *l->hv);
+            }
             l->hn[l->nh] = keep; l->hv[l->nh++] = v;
         }
         *slot = expr_var(n->type, v);
@@ -404,7 +438,7 @@ static void hoist_inv(expr_node **slot, int *path, int np)
     if (n->kind == EXPR_DIRAC_SUM) {
         dl_sum *d = n->dl;
         hoist_inv(&d->first, path, np);
-        int p2[DL_MAXLOOP + 1]; memcpy(p2, path, np * sizeof *path); p2[np] = d->lv;
+        int p2[np + 1]; memcpy(p2, path, np * sizeof *path); p2[np] = d->lv;
         hoist_inv(&d->body, p2, np + 1);
         return;
     }
@@ -427,7 +461,16 @@ static void use_ix(const dl_ix *ix, int deeper)
         long w = 1; for (int d = 0; d < deeper && d < 6; d++) w *= 1000;
         int j;
         for (j = 0; j < l->ns; j++) if (l->st[j] == ix->st[i]) break;
-        if (j == l->ns) {if (l->ns == DL_MAXSTR) die(MSG_ERR_DIRAC_TOO_BIG, cur_line); l->st[l->ns] = ix->st[i]; l->w[l->ns++] = 0;}
+        if (j == l->ns) {
+            if (l->ns == l->cap_s) {                 // ds and dv hold at most ns
+                l->cap_s = next_cap(l->cap_s, l->ns + 1);
+                l->st = re(l->st, l->cap_s, sizeof *l->st);
+                l->w  = re(l->w,  l->cap_s, sizeof *l->w);
+                l->ds = re(l->ds, l->cap_s, sizeof *l->ds);
+                l->dv = re(l->dv, l->cap_s, sizeof *l->dv);
+            }
+            l->st[l->ns] = ix->st[i]; l->w[l->ns++] = 0;
+        }
         l->w[j] += w;
     }
 }
@@ -559,7 +602,11 @@ static void emit_pre(void)
     if (n_hoist_pre) keep_acc();
     for (int j = 0; j < n_hoist_pre; j++) {
         emit_hoist(*hoist_pre[j], hoist_pre_v[j]);
-        if (n_done == DL_MAXHOI) die(MSG_ERR_DIRAC_TOO_BIG, cur_line);
+        if (n_done == cap_done) {
+            cap_done = next_cap(cap_done, n_done + 1);
+            done_n = re(done_n, cap_done, sizeof *done_n);
+            done_v = re(done_v, cap_done, sizeof *done_v);
+        }
         done_n[n_done] = *hoist_pre[j]; done_v[n_done++] = hoist_pre_v[j];
     }
     n_hoist_pre = 0;
@@ -588,8 +635,8 @@ static void loop_open(int lv, int push, char *top, char *end)
 // the parts computed at the top of each turn
 static void loop_hoists(int lv)
 {
-    dl_loop *l = &loops[lv];
-    for (int j = 0; j < l->nh; j++) emit_hoist(*l->hn[j], l->hv[j]);
+    for (int j = 0; j < loops[lv].nh; j++)          // a hoist may hold a statement that moves loops
+        emit_hoist(*loops[lv].hn[j], loops[lv].hv[j]);
 }
 
 // steps the derived variables and the counter, and closes the loop
@@ -764,9 +811,7 @@ static expr_node *build_target(expr_node *r, int rows, int cols, int flat, int *
         flat_mode = flat;
         expr_node *el = build(r, pr, flat ? pr : pc, 1);
 
-        dl_set around = 0;
-        for (int i = 0; i < *nl; i++) around |= 1ULL << tl[i];
-        expr_node *w = find_waste(el, around);
+        expr_node *w = find_waste(el, tl, *nl);
         if (!w) return el;
 
         // the product goes to a block of __dirac_tmp first, and the
@@ -863,9 +908,9 @@ static void emit_statement(expr_node *r, const dl_dst *d0, int rows, int cols, i
 {
     enter(line);
     int save_loops = n_loops, save_pre = n_hoist_pre;
-    dl_loop save_l[DL_MAXLOOP]; memcpy(save_l, loops, sizeof loops);
-    expr_node **save_hp[DL_MAXHOI]; int save_hv[DL_MAXHOI];
-    memcpy(save_hp, hoist_pre, sizeof hoist_pre); memcpy(save_hv, hoist_pre_v, sizeof hoist_pre_v);
+    dl_loop *save_l = dup_mem(loops, n_loops * sizeof *loops);
+    expr_node ***save_hp = dup_mem(hoist_pre, n_hoist_pre * sizeof *hoist_pre);
+    int *save_hv = dup_mem(hoist_pre_v, n_hoist_pre * sizeof *hoist_pre_v);
     int save_ctx = ctx_type, save_flat = flat_mode, save_dst = cur_dst;
 
     dl_dst d = *d0;
@@ -910,8 +955,10 @@ static void emit_statement(expr_node *r, const dl_dst *d0, int rows, int cols, i
     }
 
     ctx_type = save_ctx; flat_mode = save_flat; cur_dst = save_dst;
-    memcpy(loops, save_l, sizeof loops); n_loops = save_loops;
-    memcpy(hoist_pre, save_hp, sizeof hoist_pre); memcpy(hoist_pre_v, save_hv, sizeof hoist_pre_v);
+    if (save_loops) memcpy(loops, save_l, save_loops * sizeof *loops);
+    n_loops = save_loops;
+    if (save_pre) {memcpy(hoist_pre, save_hp, save_pre * sizeof *hoist_pre); memcpy(hoist_pre_v, save_hv, save_pre * sizeof *hoist_pre_v);}
+    free(save_l); free(save_hp); free(save_hv);
     n_hoist_pre = save_pre;
     leave();
 }
@@ -1003,9 +1050,9 @@ expr dirac_number(expr_node *n)
     keep_live = live; keep_v = 0;
     enter(n->line);
     int save_loops = n_loops, save_pre = n_hoist_pre, save_ctx = ctx_type;
-    dl_loop save_l[DL_MAXLOOP]; memcpy(save_l, loops, sizeof loops);
-    expr_node **save_hp[DL_MAXHOI]; int save_hv[DL_MAXHOI];
-    memcpy(save_hp, hoist_pre, sizeof hoist_pre); memcpy(save_hv, hoist_pre_v, sizeof hoist_pre_v);
+    dl_loop *save_l = dup_mem(loops, n_loops * sizeof *loops);
+    expr_node ***save_hp = dup_mem(hoist_pre, n_hoist_pre * sizeof *hoist_pre);
+    int *save_hv = dup_mem(hoist_pre_v, n_hoist_pre * sizeof *hoist_pre_v);
 
     if (n->type > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, n->line);
     ctx_type = n->type ? n->type : 1;
@@ -1029,8 +1076,10 @@ expr dirac_number(expr_node *n)
     expr e = in_acc(ast_emit_expr(el));
 
     ctx_type = save_ctx; flat_mode = save_flat; cur_dst = save_dst;
-    memcpy(loops, save_l, sizeof loops); n_loops = save_loops;
-    memcpy(hoist_pre, save_hp, sizeof hoist_pre); memcpy(hoist_pre_v, save_hv, sizeof hoist_pre_v);
+    if (save_loops) memcpy(loops, save_l, save_loops * sizeof *loops);
+    n_loops = save_loops;
+    if (save_pre) {memcpy(hoist_pre, save_hp, save_pre * sizeof *hoist_pre); memcpy(hoist_pre_v, save_hv, save_pre * sizeof *hoist_pre_v);}
+    free(save_l); free(save_hp); free(save_hv);
     n_hoist_pre = save_pre;
     leave();
     return e;

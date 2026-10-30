@@ -920,8 +920,12 @@ found by reading `dirac.c` and checked by compiling, each one now in
 
 Also: the left operand is built before the right one (C left the order to
 the host compiler, and with it the order of two `in(p)` and the
-numbering of the variables), and the limits of the compiler's tables say
-so instead of "still in the oven" (`MSG_ERR_DIRAC_TOO_BIG`).
+numbering of the variables). The compiler's own tables grow as a statement
+needs: before, a statement stopped at 64 loops (63 sums such as `|M|a⟩`
+measured), 64 parts computed before the loops or 8 row lengths read by
+one loop (7 matrices of different widths measured), sizes picked when the
+code was written, with no reason in the hardware, and the sets of loops
+were 64-bit masks; they are now questions to the tree (`dep_on`).
 
 **Open.** Step (c): remove the generators of 1.2 (they no longer run) and
 their messages. `|I|` inside a larger expression, and `|I|` or `|0⟩` inside

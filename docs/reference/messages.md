@@ -76,7 +76,6 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: I wanted a number here and you gave me <name>!
 - Error on line <n>: out() sends a number or a vector, not <name>. Slice it up first!
 - Error on line <n>: this Dirac combo is still in the oven. Hang tight!
-- Error on line <n>: this Dirac expression blew past an internal limit of the compiler (too many loops, parts or strides). Break it into smaller lines.
 - Error on line <n>: what's the point of computing a remainder with non-integer numbers? Get a grip!
 - Error on line <n>: logical operation with a comp (int and float only)!
 - Error on line <n>: bad use of the '~' operator. Gotta pass an int. You tripping?
