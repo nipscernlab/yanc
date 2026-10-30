@@ -28,7 +28,9 @@
 #      (ASMComp.l, core.v) to Compilers/common/isa.tsv, so the four places
 #      that spell the ISA out cannot drift apart silently. See
 #      Scripts/check_isa.py. In the same step, Scripts/check_changelog.py
-#      holds CHANGELOG.md's link lines to its version headings.
+#      holds CHANGELOG.md's link lines to its version headings, and
+#      Scripts/dirac_cases.py runs every combination of the Dirac notation
+#      in Compilers/CMMComp/DiracCases/cases.tsv through cmmcomp.
 #
 #   3b. Float and complex conditions: Scripts/fcond runs the same cases on
 #      the host C/C++ compiler and on both compilers (three float formats,
@@ -1394,6 +1396,15 @@ if command -v python3 >/dev/null 2>&1; then
         pass=$((pass + 1))
     else
         fail=$((fail + 1)); failed_names+=("changelog-links")
+    fi
+    # and every combination of the Dirac notation through cmmcomp
+    # (Compilers/CMMComp/DiracCases/cases.tsv)
+    dirac_cmm="$CMMCOMP"
+    command -v cygpath >/dev/null 2>&1 && dirac_cmm=$(cygpath -w "$CMMCOMP")
+    if python3 "$ROOT/Scripts/dirac_cases.py" "$ROOT" "$dirac_cmm"; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("dirac-cases")
     fi
 else
     echo ""

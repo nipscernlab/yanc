@@ -65,8 +65,30 @@ typedef enum {
     EXPR_PPLUS,        // postfix ++ (scalar id, or array[idx] / [idx][idx2])
     EXPR_STDLIB_CALL,  // in() / fin() / pst() / abs() / sign() / sqrt() / ... (op picks which)
     EXPR_FUNC_CALL,    // user-defined function call f(a, b, ...) - args[] is n-ary
-    EXPR_INNER         // Dirac inner product <a|b> ; left/right are the two vector refs
+    // Dirac notation: a chain of names between bars and the products of
+    // terms. The shape (rows, cols) is filled by shapecheck_expr.
+    EXPR_DIRAC_REF,    // an array in a chain; id = array, op = its role (dirac_role)
+    EXPR_DIRAC_PROD,   // juxtaposition: left times right (c|a⟩, |M|a⟩, |a⟩⟨b|, ⟨a|b⟩)
+    EXPR_DIRAC_CONST,  // |I| or |0⟩; op = dirac_const, size taken from the context
+    EXPR_DIRAC_IN      // |in(p)⟩; id = the port's v_table index, size from the context
 } expr_kind;
+
+// The role of an array in a Dirac chain, by its place: the first name of a
+// chain opened by ⟨ is a bra, the last of a chain closed by ⟩ a ket, any
+// other a matrix.
+typedef enum {
+    DIRAC_ROLE_KET = 1,  // |a⟩, a column of size N: shape (N, 1)
+    DIRAC_ROLE_BRA,      // ⟨a|, a row of size N:    shape (1, N)
+    DIRAC_ROLE_MAT       // |M|, N x M:               shape (N, M)
+} dirac_role;
+
+typedef enum {
+    DIRAC_EYE = 1,       // |I|, square, any size
+    DIRAC_ZERO           // |0⟩, a ket of any size
+} dirac_const;
+
+// Shape value for a size the context decides (|I|, |0⟩, |in(p)⟩)
+#define DIRAC_ANY (-1)
 
 // Operator codes carried by EXPR_BINOP / EXPR_UNOP. Names mirror the
 // historical oper_*() functions in oper.c so the migration of each
@@ -140,6 +162,11 @@ typedef struct expr_node {
     // result instead of re-emitting. Producers never set these by hand.
     int  emitted;
     expr cached;
+
+    // Shape for the Dirac notation, filled by shapecheck_expr: (1, 1) for
+    // a number, (N, 1) a ket, (1, N) a bra, (N, M) a matrix; DIRAC_ANY for
+    // a size the context decides; (0, 0) not checked yet.
+    int rows, cols;
 } expr_node;
 
 // constructors. Leaf nodes (literal, var, array_index, pplus, func_call)
@@ -170,9 +197,26 @@ expr_node *expr_stdlib(int op, int port, expr_node *a, expr_node *b);
 // and the nodes it points at (expr_free recurses).
 expr_node *expr_func_call(int type, int id, expr_node **args, int n_args);
 
-// Dirac inner product <a|b>. a and b are vector references (typically built
-// via expr_var() with the array's v_table index).
-expr_node *expr_inner(expr_node *a, expr_node *b);
+// Dirac notation. A chain between bars is built name by name while the
+// parser reads it: dirac_open with the first name (opened_by_bra = 1 when
+// the chain starts with ⟨), dirac_push for each next name, dirac_close at
+// the closing ⟩ (closed_by_ket = 1) or bar, which gives each name its role
+// and returns the chain as products, left to right.
+expr_node *dirac_open (int opened_by_bra, int id);
+expr_node *dirac_push (expr_node *chain, int id);
+expr_node *dirac_close(expr_node *chain, int closed_by_ket);
+expr_node *expr_dirac_prod (expr_node *left, expr_node *right); // juxtaposition
+expr_node *expr_dirac_const(int which);                         // DIRAC_EYE / DIRAC_ZERO
+expr_node *expr_dirac_in   (int port);                          // |in(p)⟩
+
+// |x⟩ where x is not an array (the lexer gave a plain bar): stops with the
+// error that says so, at parse time
+void dirac_not_vector(int id);
+
+// Fills rows/cols bottom-up and stops with an error when two shapes do not
+// fit (a sum of a vector and a matrix, a product whose inner sizes differ,
+// a name used as a vector that is not 1D...). Idempotent.
+void shapecheck_expr(expr_node *n);
 
 // frees the node and every descendant recursively
 void expr_free(expr_node *n);
@@ -205,8 +249,8 @@ typedef enum {
     STMT_OUT,           // out(port, exp);  (op=0)  /  fout(port, exp);  (op=1)
     STMT_TOMA,          // toma(k, exp);  hands exp over link k (id = k)
     STMT_COPY,          // copy(exp, dst_id);
-    STMT_VOUT,          // out(port, exp | vector_id BRA);  Dirac vector output
-    STMT_DIRAC,         // Dirac linear-algebra assignments (op discriminates)
+    STMT_DIRAC,         // dst # exp;  a Dirac expression into an array (id = dst, rhs)
+    STMT_DIRAC_SHIFT,   // dst # c -> |dst⟩;  shift register (id = dst, id2 = the ket, rhs = c)
     STMT_VOID_CALL,     // f(args);  user-defined void function call statement
     STMT_DIRE_INTER,    // #PRACA directive (interrupt return target)
     STMT_DIRE_TOAQUI,   // #TOAQUI directive (cheguei pin trigger address)
@@ -226,8 +270,7 @@ typedef enum {
                         // to its step label Lwh<id>cont, op=0 if a while -> jump to top)
     STMT_DECLAR_ARR_1D, // int/float/comp x[N];  or with file init  id=id_var, id2=id_arg, id3=id_fname
     STMT_DECLAR_ARR_2D, // int/float/comp x[N][M];  id=id_var, id2=id_x, id3=id_y, id4=id_fname
-    STMT_DECLAR_MV,     // float a[N] # |M|v⟩;     id=id_var, id2=id_N, id3=id_M, id4=id_v
-    STMT_DECLAR_CV,     // float a[N] # c|v⟩;      id=id_var, id2=id_N, id3=id_v, rhs=c expression
+    STMT_DECLAR_DIRAC,  // float a[N] # exp;  id=id_var, id2=id_N, rhs=the Dirac expression
     STMT_FUNC_HEADER,   // @label + optional JMP main + per-param SET[_P];
                         // id=func v_table index, op=needs_jmp_main flag,
                         // params[]/n_params=param ids in declaration order
@@ -238,21 +281,6 @@ typedef enum {
                         // @fim JMP fim (main) or RET (void). id=func v_table
                         // index, body=function body stmt_list
 } stmt_kind;
-
-// Sub-operation for STMT_DIRAC. The 10 Dirac forms share enough structure
-// to live under one kind, dispatched by op in the walker.
-typedef enum {
-    DIRAC_MV,      // dst # |M|a⟩;             3 ids
-    DIRAC_CV,      // dst # c|b⟩;              2 ids + rhs (scalar c)
-    DIRAC_APCB,    // dst # |b⟩ + c|d⟩;        3 ids + rhs (scalar c)
-    DIRAC_VVT,     // dst # |a⟩⟨b|;            3 ids
-    DIRAC_MMVVT,   // dst # |B| - |a⟩⟨b|;      4 ids
-    DIRAC_CM,      // dst # c|B|;              2 ids + rhs (scalar c)
-    DIRAC_CI,      // dst # c|I|;              1 id  + rhs (scalar c)
-    DIRAC_V0,      // dst # |0⟩;               1 id
-    DIRAC_CVIN,    // dst # c|in(port)⟩;       2 ids + rhs (scalar c)
-    DIRAC_SHIFT,   // dst # c -> |a⟩;          2 ids + rhs (scalar c)
-} dirac_op;
 
 typedef struct stmt_node {
     stmt_kind kind;
@@ -265,7 +293,7 @@ typedef struct stmt_node {
     int               id2;   // secondary int
     int               id3;   // tertiary int (DIRAC: third var id)
     int               id4;   // quaternary int (DIRAC_MMVVT only)
-    int               op;    // small flag (fft / fout / dirac_op / ...)
+    int               op;    // small flag (fft / fout / ...)
     struct expr_node *rhs;   // value/source expression (owned)
     struct expr_node *idx;   // PPLUS / ARRAY_ASSIGN: 1D/2D index (NULL for scalar)
     struct expr_node *idx2;  // PPLUS / ARRAY_ASSIGN: 2D second index (NULL otherwise)
@@ -313,7 +341,7 @@ stmt_node *stmt_array_assign(int id,
 // rhs=NULL -> void return; rhs=<expr> -> value return.
 stmt_node *stmt_return(struct expr_node *rhs);
 
-// out(port, rhs)  -> fout_flag=0
+// out(port, rhs)  -> fout_flag=0  (rhs a number, or a Dirac vector c|a⟩)
 // fout(port, rhs) -> fout_flag=1
 stmt_node *stmt_out(int port, struct expr_node *rhs, int fout_flag);
 stmt_node *stmt_toma(int k, struct expr_node *rhs);
@@ -321,8 +349,6 @@ stmt_node *stmt_toma(int k, struct expr_node *rhs);
 // copy(rhs, dst_id);   no AST node for the destination, just its var id.
 stmt_node *stmt_copy(struct expr_node *rhs, int dst_id);
 
-// out(port, rhs | vector_id BRA);  Dirac vector output.
-stmt_node *stmt_vout(int port, struct expr_node *rhs, int vector_id);
 
 // statement-form user void call: f(args);  inner is the EXPR_FUNC_CALL with
 // the popped args already bound. Walker invokes ast_emit_expr on it.
@@ -362,11 +388,10 @@ stmt_node *stmt_continue    (int loop_label, int cont_lbl);
 stmt_node *stmt_declar_arr_1d(int id_var, int id_arg, int id_fname);
 stmt_node *stmt_declar_arr_2d(int id_var, int id_x, int id_y, int id_fname);
 
-// Dirac-initialized 1D array declarations. The base array's #array directive
-// is emitted by the same code path as stmt_declar_arr_1d; the Mv / cv stuff
-// is then walked through exec_Mv / exec_cv.
-stmt_node *stmt_declar_Mv   (int id_var, int id_N, int id_M, int id_v);
-stmt_node *stmt_declar_cv   (int id_var, int id_N, struct expr_node *c, int id_v);
+// Dirac-initialized 1D array declaration, float a[N] # exp;. The base
+// array's #array directive is emitted by the same code path as
+// stmt_declar_arr_1d; the expression then goes the way of STMT_DIRAC.
+stmt_node *stmt_declar_dirac(int id_var, int id_N, struct expr_node *rhs);
 
 // Function prologue: @label + optional JMP main (when this is the first
 // non-main function) + per-parameter SET[_P]. params[] is consumed (takes
@@ -399,19 +424,10 @@ stmt_node *stmt_list_close      (void);
 // case_test / switch_break append directly to it.
 stmt_node *stmt_list_top        (void);
 
-// Dirac linear-algebra assignments. One constructor per syntactic form; each
-// internally tags the stmt_node with the corresponding dirac_op. `c` is the
-// scalar factor expression where applicable (NULL otherwise).
-stmt_node *stmt_dirac_Mv    (int dst, int M, int a);
-stmt_node *stmt_dirac_cv    (int dst, struct expr_node *c, int b);
-stmt_node *stmt_dirac_apcb  (int dst, int b, struct expr_node *c, int d);
-stmt_node *stmt_dirac_vvt   (int dst, int a, int b);
-stmt_node *stmt_dirac_Mmvvt (int dst, int B, int a, int b);
-stmt_node *stmt_dirac_cM    (int dst, struct expr_node *c, int M);
-stmt_node *stmt_dirac_cI    (int dst, struct expr_node *c);
-stmt_node *stmt_dirac_v0    (int dst);
-stmt_node *stmt_dirac_cvin  (int dst, struct expr_node *c, int port);
-stmt_node *stmt_dirac_shift (int dst, struct expr_node *c, int a);
+// Dirac linear algebra: dst # rhs; with rhs a Dirac expression, and the
+// shift register dst # c -> |a⟩; (a must be dst).
+stmt_node *stmt_dirac      (int dst, struct expr_node *rhs);
+stmt_node *stmt_dirac_shift(int dst, struct expr_node *c, int a);
 
 // walks a stmt_node and emits via the same helpers the inline grammar
 // actions used to call (ass_set, etc.).

@@ -50,6 +50,28 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **C±: the Dirac notation is parsed as expressions** (step a of
+  docs/design/dirac-expressions.md). A chain between bars (`|a⟩`, `⟨a|`,
+  `|M|`, `|M|a⟩`, `⟨a|M|b⟩`) is a term of `exp` and juxtaposition is the
+  product, between `+` and `*` in precedence; every term has a shape
+  (number, vector, row, matrix), checked with messages that name both
+  shapes. The lexer reads a bar followed by the name of an array, without
+  an index, as a Dirac bar, so `c | a[k]` stays a bitwise or. The code is
+  still the unrolled code of before, for the same forms, and the assembly
+  of `dirac_assign` and `proc_rls` is unchanged; any other combination
+  stops with "still in the oven" until step b. The grammar has no
+  conflict left (`%expect 0`; the one of `A # c|B|;` is gone), and two
+  bars before an array (`|A||B|`) close a matrix and open a chain instead
+  of being the logical or. A coefficient that is a sum now needs
+  parentheses: `x # (a+c)|b⟩`; a minus in front, `-c|a⟩`, still works.
+  Part of issue #18. Negative fixtures `NegTests/dirac_*`, and
+  `DiracCases/cases.tsv`, 160 combinations with what each must give (it
+  compiles, it is not computed yet, or the message it stops with), run
+  by `Scripts/dirac_cases.py` in the regression.
+- **C±: `out(p, c|a⟩)` with a float `c` and an int `a`** (or the reverse)
+  stops with "variables gotta be the same type!", as every other Dirac
+  form does. It compiled, and each element went out multiplied by the
+  bits of the other type (`MLT` of a float, found 2026-10-29).
 - **cppcomp and gen_gtkw speak Portuguese** (issue #24). `--lang=pt` and
   `YANC_LANG=pt` now switch their messages too, as cmmcomp's and asmcomp's:
   each is an `MSG_*` of `M(pt, en)` in `CPPComp/Headers/messages.h`, and the

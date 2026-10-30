@@ -335,23 +335,12 @@ void declar_arr_2d_ini(int id_var, int id_x, int id_y)
 // array declarations initialized with Dirac notation -------------------------
 // ----------------------------------------------------------------------------
 
-// added on demand
-
-// declares a 1D array as a matrix-vector product, e.g. float v[4] # |M|u>;
+// declares a 1D array with a Dirac expression, e.g. float v[4] # |M|u>;
 // Parse-time work is identical to a plain `float v[N]` declaration; the
-// walker (STMT_DECLAR_MV case in ast.c) emits the #array directive plus the
-// exec_Mv codegen for the matrix product.
-void declar_Mv(int id_name, int id_N, int id_M, int id_v)
+// walker (STMT_DECLAR_DIRAC case in ast.c) emits the #array directive and
+// then the expression, as an assignment v # ...; would.
+void declar_dirac(int id_name, int id_N, expr_node *rhs)
 {
     declar_arr_1d_parse(id_name, id_N, -1);
-    stmt_append(stmt_declar_Mv(id_name, id_N, id_M, id_v));
-}
-
-// declares a 1D array as a constant-vector product, e.g. float a[4] # c|b>;
-// Takes the coefficient as a raw expr_node so the walker (STMT_DECLAR_CV)
-// drives the scalar's codegen at body-close time, in source order.
-void declar_cv(int id_name, int id_N, expr_node *c, int id_v)
-{
-    declar_arr_1d_parse(id_name, id_N, -1);
-    stmt_append(stmt_declar_cv(id_name, id_N, c, id_v));
+    stmt_append(stmt_declar_dirac(id_name, id_N, rhs));
 }

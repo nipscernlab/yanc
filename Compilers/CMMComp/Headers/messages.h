@@ -304,6 +304,38 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: só dá pra fazer shift de um vetor nele mesmo, abensoado!\n", \
       "Error on line %d: you can only shift a vector into itself, mate!\n")
 
+// the shapes of the Dirac notation, as the messages below print them
+#define MSG_SHAPE_NUMBER     M("um número", "a number")
+#define MSG_SHAPE_VECTOR     M("um vetor de %d", "a vector of %d")
+#define MSG_SHAPE_ROW        M("uma linha de %d", "a row of %d")
+#define MSG_SHAPE_MATRIX     M("uma matriz %dx%d", "a %dx%d matrix")
+#define MSG_SHAPE_ANY_VECTOR M("um vetor", "a vector")
+#define MSG_SHAPE_ANY_MATRIX M("uma matriz", "a matrix")
+
+#define MSG_ERR_DIRAC_SUM_SHAPE \
+    M("Erro na linha %d: somar %s com %s? Não encaixa, as formas têm que ser iguais, abensoado!\n", \
+      "Error on line %d: adding %s and %s? Those shapes don't fit, mate!\n")
+
+#define MSG_ERR_DIRAC_PRODUCT_SHAPE \
+    M("Erro na linha %d: %s vezes %s não rola: as colunas do primeiro têm que bater com as linhas do segundo!\n", \
+      "Error on line %d: %s times %s? No way: the columns of the first must match the rows of the second!\n")
+
+#define MSG_ERR_DIRAC_TARGET_SHAPE \
+    M("Erro na linha %d: '%s' é %s e a expressão dá %s. Não cabe, né?\n", \
+      "Error on line %d: '%s' is %s and the expression gives %s. That won't fit, pal!\n")
+
+#define MSG_ERR_DIRAC_NOT_SCALAR \
+    M("Erro na linha %d: aqui eu queria um número e você me deu %s!\n", \
+      "Error on line %d: I wanted a number here and you gave me %s!\n")
+
+#define MSG_ERR_DIRAC_OUT_MATRIX \
+    M("Erro na linha %d: out() manda um número ou um vetor, %s inteira não dá!\n", \
+      "Error on line %d: out() sends a number or a vector, not %s. Slice it up first!\n")
+
+#define MSG_ERR_DIRAC_NOT_YET \
+    M("Erro na linha %d: essa combinação de Dirac ainda tá no forno. Aguenta aí!\n", \
+      "Error on line %d: this Dirac combo is still in the oven. Hang tight!\n")
+
 // operator errors and warnings (oper.c) -------------------------------------
 
 #define MSG_ERR_MOD_NON_INT \

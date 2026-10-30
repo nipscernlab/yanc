@@ -1,12 +1,12 @@
 # Dirac notation as expressions, computed in loops
 
-Status: **parked on 2026-10-26** (Luciano), to be taken up later, whole,
-in part or changed; section 8 says where it stopped and how to resume.
-Step (a) of section 5 was written and kept out of `main` (commit 20112ab,
-tag `archive/dirac-parser`: the grammar, the tree and the shapes, the code
-still unrolled, every golden identical); step (b), the loops, was
-redesigned in section 6 and prototyped (tag `archive/dirac-loops-proto`).
-Decision (Luciano, 2026-10-25): the
+Status: parked on 2026-10-26, **resumed on 2026-10-29** (Luciano, issue
+#18) as a compiler change only: the loops are generated in software with
+today's instruction set, and the pointers and `RPT` of section 6 are not
+adopted for now (section 8). Step (a) of section 5, the grammar, the tree
+and the shapes with the code still unrolled and every golden identical,
+is in `main` (from commit 20112ab, tag `archive/dirac-parser`); step (b),
+the loops, is next. Decision (Luciano, 2026-10-25): the
 Dirac notation of C± stops being a closed set of grammar rules, one per
 form, each with a generator that unrolls the computation, and becomes
 expressions in the parser: every operator a node of the tree, with shape
@@ -257,7 +257,10 @@ with a shape written as "a vector of 4", "a row of 4", "a 4x3 matrix" (in
 Portuguese "um vetor de 4", "uma linha de 4", "uma matriz 4x3"). The
 element types follow the scalar rules of `typecheck_expr` (int, float,
 comp), so the mix of int and float is allowed where `+` and `*` allow it
-today. With `comp`, a bra conjugates.
+today. With `comp`, a bra conjugates. The texts in `messages.h` are not
+these: on 2026-10-29 Luciano approved versions in the casual tone of
+cmmcomp's other messages ("adding a vector of 4 and a 2x2 matrix? Those
+shapes don't fit, mate!").
 
 ### 3.3 Into the expression tree (fact, then proposal)
 
@@ -772,3 +775,13 @@ Where it stopped: section 6.7, item 1 (two more seeds of each fit, the
 `RPT` counter's path timed again), then Luciano's decision on the
 instructions of section 6 (item 2). Step (b) of section 5 follows from
 that decision: a loop generator with the pointers, or loops in software.
+
+**Resumed on 2026-10-29.** Luciano chose loops in software, with no
+change to SAPHO: the pointers and `RPT` stay a measured option (section
+6), not adopted. Step (a) was merged with `main` and brought in; step (b)
+lowers the Dirac terms to loops with today's instructions, with the
+temporary area of 3.4. Step (b) also brings `rls_bench.py` (tag
+`archive/dirac-loops-proto`) into the regression, so that `proc_rls` is
+checked against an RLS computed apart from YANC and not only against its
+recorded output: its outer product is symmetric, so the recorded output
+cannot show the transposition of section 2 (Luciano, 2026-10-29).

@@ -163,6 +163,50 @@ COMEN  "//"[^\n]*
 "|I|"         return EYE;
 "|0⟩"         return VZERO;
 
+ /* |in(p)⟩, an input ket, as one token: x | in(0) is a valid bitwise or */
+"|"[ \t]*"in"[ \t]*"("[ \t]*{INNUM}[ \t]*")"[ \t]*"⟩" {
+                char num[64]; int n = 0;
+                const char *p = strchr(yytext, '(') + 1;
+                while (*p == ' ' || *p == '\t') p++;
+                while (*p && *p != ' ' && *p != '\t' && *p != ')' && n < 63) num[n++] = *p++;
+                num[n] = 0;
+                yylval.ival = exec_inum(num);
+                return KETIN;
+             }
+
+ /* A bar followed by the name of an array opens or continues a Dirac chain
+  * (DBAR); any other bar is the bitwise or, or the bar that closes a matrix
+  * or a bra. An array name without an index is not an operand of an or, so
+  * no program changes meaning; with an index (c | a[k]) it is, and the
+  * longer rule below keeps that bar an or. The name goes back to the input
+  * (yyless) and is lexed as usual. A #define name is not expanded here: it
+  * counts as no array. */
+"|"[ \t\r\n]*{VARIA}[ \t\r\n]*"[" {
+                yyless(1);
+                return '|';
+             }
+"|"[ \t\r\n]*{VARIA} {
+                const char *name = yytext + 1 + strspn(yytext + 1, " \t\r\n");
+                int k = (def_find(name) >= 0) ? -1 : find_id(name);
+                yyless(1);
+                return (k >= 0 && v_table[k].isar) ? DBAR : '|';
+             }
+ /* Two bars before the name of an array are a matrix that closes and a chain
+  * that opens (|A||B|), not the logical or: the first bar goes out alone and
+  * the second is lexed by the rule above. Before anything else, an indexed
+  * array included (x || a[k]), they stay the logical or. */
+"||"[ \t\r\n]*{VARIA}[ \t\r\n]*"[" {
+                yyless(2);
+                return LOR;
+             }
+"||"[ \t\r\n]*{VARIA} {
+                const char *name = yytext + 2 + strspn(yytext + 2, " \t\r\n");
+                int k = (def_find(name) >= 0) ? -1 : find_id(name);
+                if (k >= 0 && v_table[k].isar) {yyless(1); return '|';}
+                yyless(2);
+                return LOR;
+             }
+
 "comp"       {type_tmp = 3; yylval.ival = 3; return TYPE;}
 "float"      {type_tmp = 2; yylval.ival = 2; return TYPE;}
 "int"        {type_tmp = 1; yylval.ival = 1; return TYPE;}

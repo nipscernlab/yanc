@@ -1,0 +1,17 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// Valid fixture: a bar before an indexed array element is still the
+// bitwise or (c | a[0]), not a Dirac bar.
+int a[4];
+
+void main()
+{
+    int c = 1; int d = 2;
+    a[0] = 4;
+    out(0, c|d|a[0]);
+    out(0, c | a[1]);
+}

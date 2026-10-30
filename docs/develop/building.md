@@ -53,7 +53,9 @@ references computed apart from YANC, checks that the bad programs of
 `NegTests/` are refused with the right message, holds the instruction set's
 copies and the manual's instruction page to `Compilers/common/isa.tsv`,
 holds the manual's message reference to the compilers' sources, holds the
-link lines at the foot of `CHANGELOG.md` to its version headings, and runs
+link lines at the foot of `CHANGELOG.md` to its version headings, runs
+every combination of the Dirac notation in
+`Compilers/CMMComp/DiracCases/cases.tsv` through cmmcomp, and runs
 `yanc` itself. Every change goes through it. A change to the instruction
 table or to a message regenerates its page:
 `python3 Scripts/gen_isa_doc.py`, `python3 Scripts/gen_messages_doc.py`.
