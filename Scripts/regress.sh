@@ -33,6 +33,9 @@
 #      in Compilers/CMMComp/DiracCases/cases.tsv through cmmcomp, and
 #      Scripts/dirac_ref.py and Scripts/rls_ref.py hold the sim goldens of
 #      dirac_shapes and proc_rls to values computed apart from YANC.
+#      Scripts/cmm_cov.sh: no more of cmmcomp's assembly-emitting calls may
+#      go unreached by the tests, or unchecked against an independent
+#      reference, than Compilers/CMMComp/Tests/cov_baseline.txt allows.
 #
 #   3b. Float and complex conditions: Scripts/fcond runs the same cases on
 #      the host C/C++ compiler and on both compilers (three float formats,
@@ -1420,6 +1423,14 @@ if command -v python3 >/dev/null 2>&1; then
         pass=$((pass + 1))
     else
         fail=$((fail + 1)); failed_names+=("rls-ref")
+    fi
+    # how many of cmmcomp's assembly-emitting calls no test reaches, and how
+    # many no test with an independent reference checks (Scripts/cmm_cov.sh,
+    # Compilers/CMMComp/Tests/cov_baseline.txt): neither may grow
+    if bash "$ROOT/Scripts/cmm_cov.sh" --check; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("cmm-cov")
     fi
 else
     echo ""

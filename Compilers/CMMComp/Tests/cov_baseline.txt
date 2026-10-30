@@ -1,0 +1,7 @@
+# Of cmmcomp's calls that emit assembly (add_instr, add_sinst), how many no
+# test with a golden.asm reaches, and how many no test in verified.txt
+# reaches (Scripts/cmm_cov.sh). Scripts/regress.sh fails when either grows.
+# Lower them as tests are added (issue #69); never raise them to make the
+# regression pass.
+unreached 1932
+unverified 2538
