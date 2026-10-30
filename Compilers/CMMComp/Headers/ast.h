@@ -185,6 +185,8 @@ expr_node *expr_lit  (int type, int id);
 expr_node *expr_var  (int type, int id);
 expr_node *expr_binop(int op, expr_node *left, expr_node *right);
 expr_node *expr_unop (int op, expr_node *operand);
+expr_node *expr_addsub(int op, expr_node *left, expr_node *right);   // + and -: 3 + 2i is one comp literal
+expr_node *expr_minus (expr_node *e);                                 // unary -: -2i is one comp literal
 
 // id is the array's v_table index. reversed = 0 for x[i] (auto),
 // 1 for x[i) (FFT bit-reversed). idx2 is NULL for 1D access.

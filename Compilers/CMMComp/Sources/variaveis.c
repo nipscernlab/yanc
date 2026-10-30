@@ -234,13 +234,16 @@ int exec_id(char *text)
     if (strcmp(text,"i") == 0)
         {fprintf (stderr, MSG_ERR_RESERVED_I, line_num+1); exit(EXIT_FAILURE);}
 
-    char var_name[64];
+    if ((int)strlen(text) > CMM_NAME_MAX)
+        {fprintf (stderr, MSG_ERR_NAME_TOO_LONG, line_num+1, CMM_NAME_MAX); exit(EXIT_FAILURE);}
+
+    char var_name[sizeof fname + CMM_NAME_MAX + 2];
 
     if (find_var(text) == -1)                                     // first check whether there is a global variable
     {
-            strcpy  (var_name, fname);
-        if (strcmp  (var_name, "") != 0) strcat (var_name, "_");  // otherwise, prepend the current function name
-            strcat  (var_name, text);
+        if (strcmp(fname, "") != 0)                               // otherwise, prepend the current function name
+             snprintf(var_name, sizeof var_name, "%s_%s", fname, text);
+        else snprintf(var_name, sizeof var_name, "%s", text);
         if (find_var(var_name)    == -1) add_var(var_name);       // create the local variable if it does not exist yet
     }
     else
@@ -255,7 +258,7 @@ int exec_id(char *text)
 // after a bar is an array (DBAR in CMMComp.l)
 int find_id(const char *text)
 {
-    char var_name[sizeof fname + 64];
+    char var_name[sizeof fname + CMM_NAME_MAX + 2];
 
     int k = find_var((char *)text);
     if (k != -1 || strcmp(fname, "") == 0) return k;
@@ -450,6 +453,47 @@ int exec_fnum(char *text)
     v_table[id].isco = 1;
 
     return id;
+}
+
+// the comp literal re + (or -, sub) the imaginary literal imid: re is the
+// real part as the source wrote it, with its sign ("3", "-1.5")
+int cnum_join(const char *re, int sub, int imid)
+{
+    char r0[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)];
+    char sim[sizeof(v_table[0].name) + 1], t[2*sizeof(v_table[0].name) + 4];
+    cnum_split(v_table[imid].name, r0, im);
+    if (!sub)            snprintf(sim, sizeof sim, "%s", im);
+    else if (im[0]=='-') snprintf(sim, sizeof sim, "%s", im + 1);
+    else                 snprintf(sim, sizeof sim, "-%s", im);
+    snprintf(t, sizeof t, "%s%s%si", re, sim[0] == '-' ? "" : "+", sim);
+    return exec_cnum(t);
+}
+
+// the text of literal id with a minus in front, for a brace list's -1 + 2i
+const char *neg_text(int id)
+{
+    static char b[sizeof(v_table[0].name) + 1];
+    snprintf(b, sizeof b, "-%s", v_table[id].name);
+    return b;
+}
+
+// the imaginary part of comp literal id, negated when neg, as a float literal
+int cnum_imag_fnum(int id, int neg)
+{
+    char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)], t[sizeof(v_table[0].name) + 1];
+    cnum_split(v_table[id].name, re, im);
+    if (!neg)            snprintf(t, sizeof t, "%s", im);
+    else if (im[0]=='-') snprintf(t, sizeof t, "%s", im + 1);
+    else                 snprintf(t, sizeof t, "-%s", im);
+    return exec_fnum(t);
+}
+
+// is the comp literal id an imaginary one (its real part zero)?
+int cnum_is_imag(int id)
+{
+    char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)];
+    cnum_split(v_table[id].name, re, im);
+    return strtod(re, NULL) == 0.0;
 }
 
 // used when the lexer finds a comp constant

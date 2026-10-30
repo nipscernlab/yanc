@@ -1,0 +1,19 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// cmmcomp audit, 2026-10-30: with x == 0 this function used to run into the
+// next one's code. A path that reaches the end of a function that is not
+// void is an error.
+
+int f(int x)
+{
+    if (x) return 1;
+}
+
+void main()
+{
+    out(0, f(in(0)));
+}

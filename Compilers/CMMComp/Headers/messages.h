@@ -46,6 +46,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: símbolo 'i' é reservado para indicar a parte imaginária de uma constante complexa.\n", \
       "Error on line %d: the symbol 'i' is reserved for the imaginary part of a complex constant. Hands off!\n")
 
+#define MSG_ERR_NAME_TOO_LONG \
+    M("Erro na linha %d: esse nome é comprido demais, o máximo é %d caracteres.\n", \
+      "Error on line %d: that name is way too long, %d characters tops.\n")
+
 #define MSG_ERR_NUGAIN_POW2 \
     M("Erro na linha %d: #NUGAIN %d não é potência de dois. norm(x) é x / NUGAIN em hardware: potência de dois vira um deslocamento; qualquer outro valor vira um divisor, o caminho crítico da ALU inteira.\n", \
       "Error on line %d: #NUGAIN %d is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.\n")
@@ -491,8 +495,8 @@ void parse_lang_flag(int *argc, char **argv);
       "Heads up on line %d: function return is comp, but getting a float.\n")
 
 #define MSG_ERR_FUNC_NO_RETURN \
-    M("Erro na função %s: cadê o retorno pra essa função?\n", \
-      "Error in function %s: where's the return for this function?\n")
+    M("Erro na função %s: tem caminho que chega no fim sem passar por um return, e aí a execução cai direto na função seguinte. Bota um return no fim.\n", \
+      "Error in function %s: some path gets to the end without a return, and then it'd run straight into the next function. Put a return at the end.\n")
 
 #define MSG_ERR_NO_RETURN_VALUE \
     M("Erro na linha %d: cadê o valor de retorno da função?\n", \

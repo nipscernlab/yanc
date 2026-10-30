@@ -16,6 +16,7 @@ value. What the common ones mean and how to get past them is in
 - Error: yo, where's the main() function?
 - Error: couldn't open the file '<name>' for the life of me!!
 - Error on line <n>: the symbol 'i' is reserved for the imaginary part of a complex constant. Hands off!
+- Error on line <n>: that name is way too long, <n> characters tops.
 - Error on line <n>: #NUGAIN <n> is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.
 - Error on line <n>: #FROUND only takes 0 (legacy), 1 (truncation + saturation) or 2 (round to nearest even).
 - Error on line <n>: the biggest integer this thing can hold is <n>!
@@ -87,7 +88,7 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: array '<name>' has one dimension; braces inside the list only mark the rows of a 2D array.
 - Error on line <n>: in array '<name>', inner braces mark the rows of a 2D array: every row between braces, or none, each with up to <n> values.
 - Error on line <n>: a return value in a void function? You tripping!
-- Error in function <name>: where's the return for this function?
+- Error in function <name>: some path gets to the end without a return, and then it'd run straight into the next function. Put a return at the end.
 - Error on line <n>: where's the function return value?
 - Error on line <n>: where's this function '<name>' supposed to be?
 - Error on line <n>: function '<name>' is where exactly?

@@ -172,14 +172,19 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 // Fires from the `fim : prog` action once parsing is complete. The whole
 // program is now an AST in the global stmt_list; this is where it gets
 // flattened into assembly. NOP is emitted as a fixed prefix (the processor
-// expects instruction address 0 to be a no-op) and then every top-level
-// stmt is walked in source order: directives, declarations, function bodies.
+// expects instruction address 0 to be a no-op) and then the top-level stmts
+// are walked in source order, everything but the functions first: a global's
+// initializer runs before main wherever the file declares it, as in C (one
+// written after a function used to land after that function's RET, where
+// nothing reached it). The second walk skips what the first one emitted.
 void prog_emit(void)
 {
     add_sinst(-1, "NOP\n");
     add_sinst( 0, "#PRNAME %s\n", prname);   // the processor's name: the source file's
 
     stmt_node *prog = stmt_list_close();
+    for (int i = 0; i < prog->kids_n; i++)
+        if (prog->kids[i]->kind != STMT_FUNC) stmt_emit(prog->kids[i]);
     stmt_emit(prog);
     stmt_free(prog);
 }

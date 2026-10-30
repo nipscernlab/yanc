@@ -79,6 +79,69 @@ expr_node *expr_binop(int op, expr_node *left, expr_node *right)
     return n;
 }
 
+// the text of a real literal, or of its negation, as the source wrote it
+static int real_lit_text(const expr_node *n, char *b, size_t sz)
+{
+    int neg = 0;
+    if (n->kind == EXPR_UNOP && n->op == OP_NEG && n->left) {neg = 1; n = n->left;}
+    if (n->kind != EXPR_LITERAL || (n->type != 1 && n->type != 2)) return 0;
+    snprintf(b, sz, "%s%s", neg ? "-" : "", v_table[n->id].name);
+    return 1;
+}
+
+static int imag_lit(const expr_node *n)
+{
+    return n->kind == EXPR_LITERAL && n->type == 5 && cnum_is_imag(n->id);
+}
+
+// a + b and a - b as the program writes them: a real literal and an
+// imaginary one (3 + 2i, -1.5 - 0.5i, 2i + 3) are one comp literal, as the
+// lexer gave them before; a real expression and an imaginary literal
+// (y*3 + 2i) are complex(y*3, 2), with no add of the zero real part; anything
+// else is the operation. No arithmetic is done here: an imaginary literal's
+// real part is zero, so the parts are only put side by side
+static int is_real_exp(expr_node *n) {typecheck_expr(n); return n->type == 1 || n->type == 2;}
+
+expr_node *expr_addsub(int op, expr_node *left, expr_node *right)
+{
+    if (op != OP_ADD && op != OP_SUB) return expr_binop(op, left, right);
+    char re[sizeof(v_table[0].name) + 1];
+    int id = -1;
+    if (imag_lit(right) && real_lit_text(left, re, sizeof re))
+        id = cnum_join(re, op == OP_SUB, right->id);
+    else if (imag_lit(left) && real_lit_text(right, re + 1, sizeof re - 1)) {
+        if (op == OP_SUB) {                                // 2i - 3: the real part is -3
+            if (re[1] == '-') memmove(re, re + 2, strlen(re + 2) + 1);
+            else re[0] = '-';
+        } else memmove(re, re + 1, strlen(re + 1) + 1);
+        id = cnum_join(re, 0, left->id);
+    }
+    if (id >= 0) {expr_free(left); expr_free(right); return expr_lit(5, id);}
+
+    if (imag_lit(right) && is_real_exp(left)) {            // x + bi, x - bi
+        expr_node *im = expr_lit(2, cnum_imag_fnum(right->id, op == OP_SUB));
+        expr_free(right);
+        return expr_stdlib(OP_STD_COMP, 0, left, im);
+    }
+    if (imag_lit(left) && is_real_exp(right)) {            // bi + x, bi - x
+        expr_node *im = expr_lit(2, cnum_imag_fnum(left->id, 0));
+        expr_free(left);
+        return expr_stdlib(OP_STD_COMP, 0, op == OP_SUB ? expr_unop(OP_NEG, right) : right, im);
+    }
+    return expr_binop(op, left, right);
+}
+
+// -e as the program writes it: the negation of an imaginary literal is one
+expr_node *expr_minus(expr_node *e)
+{
+    if (imag_lit(e)) {
+        int id = cnum_join("0", 1, e->id);
+        expr_free(e);
+        return expr_lit(5, id);
+    }
+    return expr_unop(OP_NEG, e);
+}
+
 expr_node *expr_unop(int op, expr_node *operand)
 {
     expr_node *n = enode_new(EXPR_UNOP);
@@ -1407,6 +1470,58 @@ static void emit_cond_int_load(expr e, int is_switch)
     }
 }
 
+// ----------------------------------------------------------------------------
+// can a function reach its end? ---------------------------------------------
+// ----------------------------------------------------------------------------
+// A function that is not void and whose end some path reaches would run on
+// into the code of the next function. falls_through(n): can control leave n
+// at its end (not by a return)? It answers yes when it cannot tell, so the
+// error is never missed; a path the code cannot take (a condition always
+// false) still counts.
+
+// a break of loop or switch `id` (kind STMT_BREAK_WHILE or STMT_SWITCH_BREAK)
+// somewhere inside n
+static int has_break(const stmt_node *n, stmt_kind kind, int id)
+{
+    if (!n) return 0;
+    if (n->kind == kind && n->id == id) return 1;
+    for (int i = 0; i < n->kids_n; i++) if (has_break(n->kids[i], kind, id)) return 1;
+    return has_break(n->then_body, kind, id) || has_break(n->else_body, kind, id)
+        || has_break(n->body, kind, id);
+}
+
+static int falls_through(const stmt_node *n)
+{
+    if (!n) return 1;
+    switch (n->kind)
+    {
+        case STMT_RETURN:
+            return 0;
+        case STMT_BREAK_WHILE: case STMT_SWITCH_BREAK: case STMT_CONTINUE:
+            return 0;                       // it leaves, but not at its end: the loop or switch counts it
+        case STMT_BLOCK:
+            for (int i = 0; i < n->kids_n; i++) if (!falls_through(n->kids[i])) return 0;
+            return 1;
+        case STMT_IF:                       // with no else, the false side goes on
+            return !n->else_body || falls_through(n->then_body) || falls_through(n->else_body);
+        case STMT_WHILE: case STMT_DO:      // while (1) leaves only by a break
+            return !is_const_true(n->cond) || has_break(n->body, STMT_BREAK_WHILE, n->id);
+        case STMT_SWITCH: {                 // falling from case to case, every entry runs to the
+            int def = 0;                    // end of the body: with a default and no break, the
+            for (int i = 0; n->body && i < n->body->kids_n; i++)   // body's last statement decides
+                if (n->body->kids[i]->kind == STMT_DEFAULT_LABEL) def = 1;
+            if (!def || has_break(n->body, STMT_SWITCH_BREAK, n->id)) return 1;
+            for (int i = n->body->kids_n - 1; i >= 0; i--) {
+                stmt_kind k = n->body->kids[i]->kind;
+                if (k != STMT_CASE_LABEL && k != STMT_DEFAULT_LABEL) return falls_through(n->body->kids[i]);
+            }
+            return 1;
+        }
+        default:
+            return 1;
+    }
+}
+
 void stmt_emit(stmt_node *n)
 {
     // Idempotent guard: once a node has been emitted, subsequent walker
@@ -1854,7 +1969,8 @@ void stmt_emit(stmt_node *n)
             strcpy(emit_fname, saved_emit_fname);
             fun_parse = saved_fun_parse;
 
-            if ((v_table[n->id].type != 6) && (ret_ok == 0))
+            // not void: no path may reach the end (the next function's code)
+            if ((v_table[n->id].type != 6) && (ret_ok == 0 || falls_through(n->body)))
             {
                 fprintf(stderr, MSG_ERR_FUNC_NO_RETURN, v_table[n->id].name);
                 exit(EXIT_FAILURE);

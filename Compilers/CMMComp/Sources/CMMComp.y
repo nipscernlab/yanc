@@ -232,7 +232,16 @@ ini_num  :     INUM {ini_add(inum_word($1),1,0);}
          | '-' NINUM {ini_add($2,1,0);}
          | '-' DIMIN {ini_add(inum_min_id(),1,1);}          // -128 at 8 bits: the most negative int
          |     FNUM {ini_add($1,2,0);}
-         |     CNUM {ini_add($1,3,0);}
+         |     CNUM {ini_add($1,3,0);}                        // 2i
+         | '-' CNUM {ini_add(cnum_join("0", 1, $2),3,0);}
+         |     INUM '+' CNUM {ini_add(cnum_join(v_table[$1].name, 0, $3),3,0);}   // 1 + 2i
+         |     INUM '-' CNUM {ini_add(cnum_join(v_table[$1].name, 1, $3),3,0);}
+         |     FNUM '+' CNUM {ini_add(cnum_join(v_table[$1].name, 0, $3),3,0);}
+         |     FNUM '-' CNUM {ini_add(cnum_join(v_table[$1].name, 1, $3),3,0);}
+         | '-' INUM '+' CNUM {ini_add(cnum_join(neg_text($2), 0, $4),3,0);}
+         | '-' INUM '-' CNUM {ini_add(cnum_join(neg_text($2), 1, $4),3,0);}
+         | '-' FNUM '+' CNUM {ini_add(cnum_join(neg_text($2), 0, $4),3,0);}
+         | '-' FNUM '-' CNUM {ini_add(cnum_join(neg_text($2), 1, $4),3,0);}
          | '-' INUM {ini_add(inum_word($2),1,1);}
          | '-' FNUM {ini_add($2,2,1);}
 
@@ -479,7 +488,7 @@ exp:       terminal                           {$$ = $1;}
          |    '(' exp ')'                     {$$ = $2;}
          |    '+' exp                         {$$ = $2;}
          // unary operators
-         |    '-' exp                         {$$ = expr_unop(OP_NEG, $2);}
+         |    '-' exp                         {$$ = expr_minus($2);}            // -2i: one comp literal
          // -128 at 8 bits: 128 does not fit the word, so the lexer gives it
          // as a DIMIN, a value only here (and in a brace list)
          |    '-' DIMIN                       {$$ = expr_unop(OP_NEG, expr_lit(1, $2));}
@@ -498,8 +507,8 @@ exp:       terminal                           {$$ = $1;}
          | exp   '^'   exp                    {$$ = expr_binop(OP_XOR, $1, $3);}
          // arithmetic operators
          | exp   '%'   exp                    {$$ = expr_binop(OP_MOD, $1, $3);}
-         | exp   '+'   exp                    {$$ = expr_binop(OP_ADD, $1, $3);}
-         | exp   '-'   exp                    {$$ = expr_binop(OP_SUB, $1, $3);}
+         | exp   '+'   exp                    {$$ = expr_addsub(OP_ADD, $1, $3);}  // 3 + 2i: one comp literal
+         | exp   '-'   exp                    {$$ = expr_addsub(OP_SUB, $1, $3);}
          | exp   '*'   exp                    {$$ = expr_binop(OP_MUL, $1, $3);}
          | exp   '/'   exp                    {$$ = expr_binop(OP_DIV, $1, $3);}
          // true/false operators

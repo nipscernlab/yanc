@@ -20,11 +20,11 @@ int  conta_linhas(char *texto); // for block comments
  * self-referential define from expanding forever. Object-like only --
  * function-like macros, #ifdef and #include are out of scope. */
 #define CMM_MAX_DEFINES 256
-static struct { char name[64]; char *body; int active; } g_def[CMM_MAX_DEFINES];
+static struct { char name[CMM_NAME_MAX + 1]; char *body; int active; } g_def[CMM_MAX_DEFINES];
 static int  g_ndef = 0;
 static int  g_def_stack[CMM_MAX_DEFINES];   /* indices of the live body buffers */
 static int  g_def_sp = 0;
-static char g_def_pending[64];              /* name captured before its body   */
+static char g_def_pending[CMM_NAME_MAX + 1]; /* name captured before its body */
 
 static int def_find(const char *name) {
     for (int i = 0; i < g_ndef; i++)
@@ -61,7 +61,7 @@ INNUM  ([0-9]+|0[xX][0-9a-fA-F]+|0[bB][01]+)[uUlL]*
 FEXPO  [eE][-+]?[0-9]+
 FLNUM  ([0-9]+\.[0-9]*{FEXPO}?|\.[0-9]+{FEXPO}?|[0-9]+{FEXPO})[fFlL]?
 CPART  ({FLNUM}|[0-9]+)
-CONUM  [-]*{WS}*{CPART}{WS}*[-+]{WS}*{CPART}{WS}*[i]
+IMNUM  {CPART}{WS}*i
 
 STRIN  \"(\\.|[^\\"])*\"
 CARES  [-+*()=#;:,\]\[{}<>~!%/&^|⟩]
@@ -88,7 +88,8 @@ COMEN  "//"[^\n]*
  /* object-like #define NAME body -- recorded here, expanded at the {VARIA} rule */
 "#define"               BEGIN(DEFNAME);
 <DEFNAME>{WS}           ;
-<DEFNAME>{VARIA}        { snprintf(g_def_pending, sizeof g_def_pending, "%s", yytext); BEGIN(DEFBODY); }
+<DEFNAME>{VARIA}        { if (yyleng > CMM_NAME_MAX) {fprintf(stderr, MSG_ERR_NAME_TOO_LONG, line_num+1, CMM_NAME_MAX); exit(EXIT_FAILURE);}
+                          snprintf(g_def_pending, sizeof g_def_pending, "%s", yytext); BEGIN(DEFBODY); }
 <DEFNAME>\n             { line_num++; BEGIN(INITIAL); }
 <DEFNAME>.              BEGIN(INITIAL);
 <DEFBODY>[^\n]*         { def_add(g_def_pending, yytext); BEGIN(INITIAL); }
@@ -246,8 +247,13 @@ COMEN  "//"[^\n]*
                 return FNUM;
              }
 			 
-{CONUM}      {
-                yylval.ival = exec_cnum(yytext);
+{IMNUM}/[^A-Za-z0-9_] {
+                /* an imaginary literal, 2i or 2.5i: the comp 0 + 2i. The
+                   parser writes a + bi as an expression and joins the two
+                   literals (expr_addsub), so that y*3+2i is (y*3) + 2i */
+                char t[sizeof(v_table[0].name)];
+                snprintf(t, sizeof t, "0+%s", yytext);
+                yylval.ival = exec_cnum(t);
                 return CNUM;
              }
 			 
