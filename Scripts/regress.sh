@@ -1424,6 +1424,13 @@ if command -v python3 >/dev/null 2>&1; then
     else
         fail=$((fail + 1)); failed_names+=("rls-ref")
     fi
+    # the generated tests of Scripts/cov_tests.py: their source and golden_sim
+    # are what the script computes, apart from YANC
+    if python3 "$ROOT/Scripts/cov_tests.py" "$ROOT" --check; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("cov-tests")
+    fi
     # how many of cmmcomp's assembly-emitting calls no test reaches, and how
     # many no test with an independent reference checks (Scripts/cmm_cov.sh,
     # Compilers/CMMComp/Tests/cov_baseline.txt): neither may grow
