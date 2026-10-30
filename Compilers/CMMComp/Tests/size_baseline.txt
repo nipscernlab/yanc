@@ -56,6 +56,7 @@ cmm_reach  25
 cmm_reorder 58
 cmm_return 94
 cmm_round  120
+cmm_stack_balance 39
 cmm_switch 68
 cmm_switch_fall 53
 cmm_switch_nest 44

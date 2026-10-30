@@ -142,6 +142,13 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: three statements left the data stack or the accumulator wrong**
+  (cmmcomp audit, 2026-10-30). `copy(x + 1, k)` left the accumulator
+  marked busy, so the next statement pushed a word nobody popped: in a
+  loop the stack filled up. `y = a*b + pow(x, 0)` loaded 1.0 over `a*b`
+  and added a word never pushed. A `comp` function called as a statement,
+  its value unused, left its real part on the stack at every call. Fixture
+  `cmm_stack_balance`, which runs each one 40 times.
 - **`myKeyPS2` and `myVGAText` on another clock than the SAPHO** (#64).
   The plain `cade(k)` and `toma(k, w)` synchronize the block's bit on the
   SAPHO's side only; the keyboard took the program's C straight into its

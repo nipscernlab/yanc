@@ -1,0 +1,40 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// Three statements that used to leave the data stack or the accumulator in
+// a wrong state (cmmcomp audit, 2026-10-30), each run 40 times in a loop, so
+// that a word left on the stack every turn fills it (the regression checks
+// fl_full) and a lost value shows in the output:
+//
+//   copy(k + 1, j)       copy() of an expression left the acc marked busy:
+//                        the next load pushed a word nobody popped
+//   y = a*b + pow(x, 0)  pow(x, 0) loaded 1.0 over a*b
+//   g(y);                a comp function called as a statement left its
+//                        real part on the stack
+//
+// Expected, for k = 0 .. 39: k + 2, then 13 (3*4 + 1). Then 40.
+
+comp g(float s)
+{
+    return complex(s, 2.0);
+}
+
+void main()
+{
+    int k; int j; float x; float a; float b; float y;
+    a = 3.0; b = 4.0; x = 5.0;
+    k = 0;
+    while (k < 40) {
+        copy(k + 1, j);
+        j = j + 1;
+        out(0, j);
+        y = a*b + pow(x, 0);
+        fout(0, y);
+        g(y);
+        k = k + 1;
+    }
+    out(0, k);
+}
