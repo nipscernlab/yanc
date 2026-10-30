@@ -16,10 +16,16 @@
 // memory is never read past 2399; a word offered while the reset clears the
 // screen is carried out after it; a reset of the block alone while T = C = 1
 // takes no stale word, and the link works after.
+// Added for GitHub issue #64: LINK_SYNC is the block's parameter, and with
+// SKEW = 1 the word reaches the block 10 ns after T, across one of its clock
+// edges, as from a SAPHO on another clock: the block as it was (T and the
+// word sampled together) took the old word for the new one.
 // Run: bash Scripts/hw/tb_vgatext.sh
 module tb;
 
-parameter NUBITS = 8;
+parameter NUBITS    = 8;
+parameter LINK_SYNC = 0;
+parameter SKEW      = 0;
 
 reg clk = 0, rst = 1;
 always #20 clk = ~clk;                       // 25 MHz
@@ -28,7 +34,7 @@ reg  t = 0;                                  // the SAPHO's T bit
 reg  [NUBITS-1:0] w = 0;
 wire valeu, hs, vs, ativo, pixel;
 
-myVGAText #(.NUBITS(NUBITS)) dut (.clk(clk), .rst(rst), .toma(t), .dado(w), .valeu(valeu),
+myVGAText #(.NUBITS(NUBITS), .LINK_SYNC(LINK_SYNC)) dut (.clk(clk), .rst(rst), .toma(t), .dado(w), .valeu(valeu),
                                    .hs(hs), .vs(vs), .ativo(ativo), .pixel(pixel));
 
 integer errs = 0;
@@ -47,7 +53,9 @@ end
 
 integer wait_cycles;
 task toma; input integer v; begin
-	@(posedge clk); w = v; t = ~t;
+	@(posedge clk);
+	if (SKEW) begin #35 t = ~t; #10 w = v; end   // T 5 ns before an edge, the word 5 ns after it
+	else      begin w = v; t = ~t; end
 	wait_cycles = 0;
 	while (valeu !== t) begin @(posedge clk); wait_cycles = wait_cycles + 1; end
 	@(posedge clk);                          // the write lands the cycle after C flips
@@ -198,8 +206,8 @@ initial begin
 	want_blank_line(0); want_cursor(0, 0);
 	toma("Z"); want_text(0, 0, "Z", 1);
 
-	if (errs == 0) $display("NUBITS=%0d: ok", NUBITS);
-	else           $display("NUBITS=%0d: FAIL, %0d errors", NUBITS, errs);
+	if (errs == 0) $display("NUBITS=%0d LINK_SYNC=%0d SKEW=%0d: ok", NUBITS, LINK_SYNC, SKEW);
+	else           $display("NUBITS=%0d LINK_SYNC=%0d SKEW=%0d: FAIL, %0d errors", NUBITS, LINK_SYNC, SKEW, errs);
 	$finish;
 end
 

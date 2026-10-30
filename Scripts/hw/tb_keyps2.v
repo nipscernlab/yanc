@@ -21,6 +21,11 @@
 // a digit or Enter gives nothing; `tem_tecla` is 1 while a character waits
 // and 0 once the queue is drained; a reset of the block alone while the
 // program's C is 1 hands it no phantom character, and the link works after.
+// Added for GitHub issue #64: with LINK_SYNC = 0 (the block's default) the
+// reader runs on a clock of its own, 1.6 times the block's, and takes T
+// through two flip-flops of it, as the SAPHO does; with LINK_SYNC = 1 it is
+// on the block's clock. A simulation with no delays shows the function, not
+// the race the synchronizer is for.
 //
 // Run:  iverilog -g2012 -s tb -Ptb.LAYOUT=\"ABNT2\" -o k.vvp Scripts/hw/tb_keyps2.v SAPHO/myKeyPS2.v && vvp -n k.vvp
 //       (Scripts/hw/tb_keyps2.sh runs both layouts at two clocks)
@@ -29,6 +34,7 @@ module tb;
 parameter LAYOUT  = "US";
 parameter CLK_KHZ = 2000;          // small by default: the same circuit, fewer cycles to simulate
 parameter DEPTH   = 4;            // the block's default
+parameter LINK_SYNC = 0;          // the block's default: the reader on another clock
 
 localparam ABNT2 = (LAYOUT == "ABNT2");
 
@@ -40,7 +46,7 @@ wire taqui, tem;
 wire [31:0] dado;
 reg  c = 0;
 
-myKeyPS2 #(.LAYOUT(LAYOUT), .NUBITS(32), .DEPTH(DEPTH), .CLK_KHZ(CLK_KHZ))
+myKeyPS2 #(.LAYOUT(LAYOUT), .NUBITS(32), .DEPTH(DEPTH), .CLK_KHZ(CLK_KHZ), .LINK_SYNC(LINK_SYNC))
 	dut (.clk(clk), .rst(rst), .ps2_clk(ps2_clk), .ps2_dat(ps2_dat),
 	     .taqui(taqui), .dado(dado), .cade(c), .tem_tecla(tem));
 
@@ -120,8 +126,15 @@ integer   ngot = 0, dly = 0, errs = 0;
 reg       run  = 1;
 integer   seed = 7;
 
-always @ (posedge clk) begin
-	if (!rst && run && taqui != c) begin
+reg rclk = 0;                                  // the reader's own clock, 1.6 times the block's
+always #(500000.0 / CLK_KHZ / 1.6) rclk = ~rclk;
+wire rck = LINK_SYNC ? clk : rclk;
+reg  ts1 = 0, ts2 = 0;                         // T through two flip-flops of the reader's clock
+always @ (posedge rck) begin ts1 <= taqui; ts2 <= ts1; end
+wire t_r = LINK_SYNC ? taqui : ts2;
+
+always @ (posedge rck) begin
+	if (!rst && run && t_r != c) begin
 		if (dly == 0) begin
 			if (dado[31:8] !== 24'd0) begin
 				errs = errs + 1;
@@ -295,8 +308,8 @@ initial begin
 			                        (k < ngot) ? got[k] : 8'hxx, (k < nexp) ? exp[k] : 8'hxx);
 		end
 
-	if (errs == 0) $display("%0s CLK_KHZ=%0d DEPTH=%0d: ok (%0d characters)", LAYOUT, CLK_KHZ, DEPTH, ngot);
-	else           $display("%0s CLK_KHZ=%0d DEPTH=%0d: FAIL, %0d errors (%0d got, %0d expected)", LAYOUT, CLK_KHZ, DEPTH, errs, ngot, nexp);
+	if (errs == 0) $display("%0s CLK_KHZ=%0d DEPTH=%0d LINK_SYNC=%0d: ok (%0d characters)", LAYOUT, CLK_KHZ, DEPTH, LINK_SYNC, ngot);
+	else           $display("%0s CLK_KHZ=%0d DEPTH=%0d LINK_SYNC=%0d: FAIL, %0d errors (%0d got, %0d expected)", LAYOUT, CLK_KHZ, DEPTH, LINK_SYNC, errs, ngot, nexp);
 	$finish;
 end
 
