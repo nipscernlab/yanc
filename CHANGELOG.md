@@ -142,6 +142,18 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: comparing `comp` values, as in C** (audit of the complex chains,
+  2026-10-30). The compiler compared |z|², so `(1+0i) == (0+1i)` and
+  `-5 == 3+4i` held, and with both operands computed into the accumulator
+  `mod2` overwrote the operand parked in `__aux_var` (`(z*e) == (u*e)`
+  came out wrong). Now `==` and `!=` compare both parts, a real being the
+  comp with a zero imaginary part, and `<`, `>`, `<=`, `>=` with a comp
+  are an error (`MSG_ERR_CMP_COMP_ORDER`). One routine replaces the 33
+  hand-written comp branches of `oper_cmp`. Fixture `cmm_comp_cmp`, NegTest
+  `comp_order`.
+- **C±: `real()` and `imag()` of a comp literal as a built-in's argument**
+  (audit of the complex chains). `fout(0, real(5-7i))` was refused with
+  "gotta declare '5.0' first": the part constants were left untyped.
 - **C±: a store to a matrix with both indexes computed wrote the wrong
   cell** (cmmcomp audit, 2026-10-30). `m[a+1][b+1] = x` and
   `m[a+1][b+1]++` emitted the second index first, an order C leaves to the

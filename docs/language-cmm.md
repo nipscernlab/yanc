@@ -145,7 +145,7 @@ float table[64] "table.txt";      // initialised from a file
 | family | operators | notes |
 |---|---|---|
 | arithmetic | `+` `-` `*` `/` `%` | `%` between ints only; `/` and `%` build a divider into the processor |
-| comparison | `<` `>` `<=` `>=` `==` `!=` | 1 or 0 |
+| comparison | `<` `>` `<=` `>=` `==` `!=` | 1 or 0; with a `comp`, only `==` and `!=` (see Complex numbers) |
 | logical | `&&` `\|\|` `!` | 1 or 0; on ints and floats (not `comp`) |
 | bitwise | `&` `\|` `^` `~` | ints |
 | shifts | `<<` `>>` `>>>` | `>>` fills with zeros, `>>>` with the sign |
@@ -233,7 +233,11 @@ float r = real(p);
 float m = abs(z);        // |z| = 5
 ```
 
-`+ - * /` work on `comp`. `real(z)`, `imag(z)`, `conj(z)`, `abs(z)`,
+`+ - * /` work on `comp`. `==` and `!=` too, as in C: two complex numbers
+are equal when their real parts are equal and their imaginary parts are
+equal, and a real is the `comp` with a zero imaginary part (`3+0i == 3`).
+They have no order: `<`, `>`, `<=` and `>=` with a `comp` are an error;
+compare `abs(z)`, `mod2(z)`, `real(z)` or `imag(z)`. `real(z)`, `imag(z)`, `conj(z)`, `abs(z)`,
 `mod2(z)` (|z|²) and `fase(z)` (the angle) take one apart, and `sqrt`,
 `exp`, `log`, `sin`, `cos`, `tan`, `atan` accept a `comp`. A `comp` does not
 go to an output port as such: write `real(z)` and `imag(z)`.
