@@ -27,6 +27,16 @@ int   iv[3];
 int   k;
 int   n;
 float x;
+float w[3];
+
+// Dirac statements of its own, called from a coefficient of main's: the
+// temporary area and the compiler's variables of the caller must survive
+float tw(float s)
+{
+    w # (s + 1.0)|e⟩;
+    w # |M|M|w⟩;
+    return s + 1.0;
+}
 
 void main()
 {
@@ -139,4 +149,16 @@ void main()
     fout(0, 2.0|a⟩);
     out(0, |IM|ia⟩);
     out(0, |M||M|a⟩);
+
+    // a number with the accumulator in use, through the temporary area
+    x = 3.0;
+    x = x*3.0 + ⟨a|M|M|M|e⟩;
+    fout(0, x);
+
+    // a function called by a coefficient, after and before other parts
+    v # |M|M|a⟩ + tw(2.0)|e⟩;
+    for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+    v # tw(1.0)|a⟩ + (x - 1.0)|e⟩;
+    for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+    for (k = 0; k < 3; k = k + 1) fout(0, w[k]);
 }

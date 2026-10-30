@@ -359,8 +359,11 @@ Three ways were weighed:
    element). int and float share it: a word is a word, the type is in the
    instructions. A program with no aliasing and no chain longer than one
    product has no area: no data memory is spent (pay only for what you
-   use). Loop counters and accumulators follow the same rule, one set per
-   nesting depth shared by every statement. All these names start with `__`
+   use). The loop counters, the derived indexes and the parts computed
+   before the loops (`__dk`, `__dd`, `__dh`) are numbered inside a
+   statement and carry the name of the function (`__dk3_main`): a function
+   called from a coefficient has its own and leaves the caller's alone
+   (corrected 2026-10-30, section 9). All these names start with `__`
    (asm-names.md, rule 2).
 
    At the end of the compilation, when the area exists, cmmcomp prints
@@ -881,10 +884,10 @@ at every N. Per turn the loops take 2.7 to
 2.8 times the unrolled code's clocks, and 0.62 to 0.70 times those of the
 `for` loops of 3.5 (58N²).
 
-**Tests.** `dirac_shapes` (new): every element of 44 Dirac statements, int and
+**Tests.** `dirac_shapes` (new): every element of 49 Dirac statements, int and
 float, the outer product not square, `|B| ± |a⟩⟨b|` with `B` not
 symmetric, `a # |M|a⟩` and `C # |M||C|` through the temporary area,
-chains, `⟨a|M|`, the int shift, `|in(p)⟩`, `out` of a vector, 150 values;
+chains, `⟨a|M|`, the int shift, `|in(p)⟩`, `out` of a vector, 160 values;
 its golden is written by `Scripts/dirac_ref.py`, the same statements in
 Python on integers the float format holds exactly, and the regression
 checks that it still is. `Scripts/rls_ref.py` computes the RLS of
@@ -897,6 +900,28 @@ filter as a whole and `dirac_shapes` the details. `cases.tsv` has 176
 combinations. `proc_rls/golden_sim` is unchanged; `dirac_assign`, which
 writes 1 in a loop forever, writes 195 of them in the regression's
 100 000 clocks instead of 812 (the same values).
+
+**Corrected after the audit of 2026-10-30.** Three defects of this step,
+found by reading `dirac.c` and checked by compiling, each one now in
+`dirac_shapes`, which the code before the correction fails (x came out
+1838 instead of 1847):
+
+- a Dirac number inside a scalar expression whose chain went through the
+  temporary area overwrote the value the walker held in the accumulator
+  (`x = x*3.0 + ⟨a|M|M|M|e⟩` gave 0 + the number): that value now goes to
+  a variable before the first instruction of the number;
+- the product of a chain went to `__dirac_tmp` before the parts computed
+  before the loops, so a function called from a coefficient that has a
+  Dirac statement of its own overwrote the block before it was read: the
+  parts now go first, and the statement is built again reading them;
+- the compiler's variables had the same names in every function, so that
+  call also overwrote the caller's coefficients: they now carry the
+  function's name.
+
+Also: the left operand is built before the right one (C left the order to
+the host compiler, and with it the order of two `in(p)` and the
+numbering of the variables), and the limits of the compiler's tables say
+so instead of "still in the oven" (`MSG_ERR_DIRAC_TOO_BIG`).
 
 **Open.** Step (c): remove the generators of 1.2 (they no longer run) and
 their messages. `|I|` inside a larger expression, and `|I|` or `|0⟩` inside

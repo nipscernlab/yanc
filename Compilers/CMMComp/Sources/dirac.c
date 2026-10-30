@@ -49,6 +49,7 @@
 #define DL_MAXLOOP 64
 #define DL_MAXSTR  8
 #define DL_MAXHOI  64
+#define DL_NM      (sizeof emit_fname + 32)   // a name of the compiler: __dk<n>_<function>
 
 // a loop: its counter __dk<num> runs from -n*step up to 0 in steps of step;
 // the index it stands for is first + the turn (0 .. n-1)
@@ -93,14 +94,22 @@ static int alias_arr[DL_MAXALIAS], alias_id[DL_MAXALIAS], n_alias;
 // the statement-level parts computed before the loops
 static expr_node **hoist_pre[DL_MAXHOI]; static int hoist_pre_v[DL_MAXHOI]; static int n_hoist_pre;
 
+// the parts already computed, before a product went to __dirac_tmp: the
+// statement is built again after that, and reads them from their variables
+static expr_node *done_n[DL_MAXHOI]; static int done_v[DL_MAXHOI]; static int n_done;
+
+// a number inside a scalar expression: the value the walker holds in the
+// accumulator (keep_live), and the variable it waits in (keep_v, 0: none
+// yet) while code of the number's own runs before it is used
+static int keep_live, keep_v;
+
 // what the accumulator holds right now: a sum of loop variables (key), valid
 // while no instruction has been emitted since (num_ins == acc_mark)
-static char acc_key[128];
+static char acc_key[2 * DL_NM];
 static int  acc_mark = -1;
 
 // the lines that went through __dirac_tmp, for the summary
-#define DL_MAXLINES 64
-static int tmp_lines[DL_MAXLINES], tmp_words[DL_MAXLINES], n_tmp_lines;
+static int *tmp_lines, *tmp_words, n_tmp_lines, cap_tmp_lines;
 
 // ----------------------------------------------------------------------------
 // small helpers --------------------------------------------------------------
@@ -122,12 +131,16 @@ static expr_node *node_new(expr_kind k, int type)
 static void key_set(const char *k) {snprintf(acc_key, sizeof acc_key, "%s", k); acc_mark = num_ins;}
 static int  key_is (const char *k) {return acc_mark == num_ins && strcmp(acc_key, k) == 0;}
 
-static void ctr_name(char *b, size_t sz, int lv) {snprintf(b, sz, "__dk%d", loops[lv].num);}
+// a variable of the compiler, __<stem><n>_<function>: each function has its
+// own, so that a call made inside a statement leaves the caller's alone
+static void dl_nm(char *b, size_t sz, const char *stem, int n) {snprintf(b, sz, "__%s%d_%s", stem, n, emit_fname);}
+
+static void ctr_name(char *b, size_t sz, int lv) {dl_nm(b, sz, "dk", loops[lv].num);}
 
 // a scalar variable of the compiler, of type t, as a v_table entry
 static int scalar_var(int t)
 {
-    char name[32]; snprintf(name, sizeof name, "__dh%c%d", t == 1 ? 'i' : 'f', n_names++);
+    char name[DL_NM]; dl_nm(name, sizeof name, t == 1 ? "dhi" : "dhf", n_names++);
     int id = find_var(name);
     if (id < 0) {add_var(name); id = find_var(name);}
     v_table[id].type = t;
@@ -137,7 +150,7 @@ static int scalar_var(int t)
 
 static int new_loop(int n, int first)
 {
-    if (n_loops == DL_MAXLOOP) die(MSG_ERR_DIRAC_NOT_YET, cur_line);
+    if (n_loops == DL_MAXLOOP) die(MSG_ERR_DIRAC_TOO_BIG, cur_line);
     dl_loop *l = &loops[n_loops];
     memset(l, 0, sizeof *l);
     l->n = n; l->first = first; l->step = 1; l->num = n_names++;
@@ -194,7 +207,9 @@ static expr_node *elem_of(expr_node *ref, dl_pos r, dl_pos c)
         for (int j = 0; j < n_alias; j++) if (alias_arr[j] == arr) id = alias_id[j];
         if (id < 0) {
             if (n_alias == DL_MAXALIAS) return elem_new(arr, type, ix);
-            add_var(v_table[arr].name);                // the same name: find_var still finds the array first
+            char nm[sizeof v_table[arr].name];         // add_var may move v_table
+            snprintf(nm, sizeof nm, "%s", v_table[arr].name);
+            add_var(nm);                               // the same name: find_var still finds the array first
             id = v_count - 1;
             v_table[id].type = type;
             v_table[id].used = 1;
@@ -207,7 +222,7 @@ static expr_node *elem_of(expr_node *ref, dl_pos r, dl_pos c)
 
 static void hoist_pre_add(expr_node **slot, int v)
 {
-    if (n_hoist_pre == DL_MAXHOI) die(MSG_ERR_DIRAC_NOT_YET, cur_line);
+    if (n_hoist_pre == DL_MAXHOI) die(MSG_ERR_DIRAC_TOO_BIG, cur_line);
     hoist_pre[n_hoist_pre] = slot; hoist_pre_v[n_hoist_pre++] = v;
 }
 
@@ -231,6 +246,8 @@ static expr_node *scalar_of(expr_node *n)
     }
 
     // computed before the loops into a variable of the compiler, once
+    for (int j = 0; j < n_done; j++)
+        if (done_n[j] == n) return expr_var(conv ? 2 : n->type, done_v[j] & ~(1 << 30));
     for (int j = 0; j < n_hoist_pre; j++)
         if (*hoist_pre[j] == n) return expr_var(conv ? 2 : n->type, hoist_pre_v[j] & ~(1 << 30));
     int t = conv ? 2 : n->type;
@@ -250,6 +267,16 @@ static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top);
 
 static expr_node *mul(expr_node *a, expr_node *b) {return expr_binop(OP_MUL, a, b);}
 
+// the left operand is built before the right one, in statements of their
+// own: building hoists the scalar parts (a function call, in(p)), and C
+// leaves the order of the arguments of one call unspecified
+static expr_node *build_op(int op, expr_node *L, dl_pos lr, dl_pos lc, expr_node *R, dl_pos rr, dl_pos rc)
+{
+    expr_node *a = build(L, lr, lc, 0);
+    expr_node *b = build(R, rr, rc, 0);
+    return expr_binop(op, a, b);
+}
+
 static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top)
 {
     dl_pos z = {-1, 0};
@@ -265,7 +292,7 @@ static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top)
             return expr_stdlib(ctx_type == 2 ? OP_STD_FIN : OP_STD_IN, n->id, NULL, NULL);
         case EXPR_BINOP:
             if (is_num(n)) break;
-            return expr_binop(n->op, build(n->left, r, c, 0), build(n->right, r, c, 0));
+            return build_op(n->op, n->left, r, c, n->right, r, c);
         case EXPR_UNOP:
             if (is_num(n)) break;
             return expr_unop(n->op, build(n->left, r, c, 0));
@@ -273,22 +300,22 @@ static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top)
             if (is_num(n) && !top) break;
             expr_node *L = n->left, *R = n->right;
             // the scalar second, as the generators of before: v[k]*c
-            if (is_num(L)) return mul(build(R, r, c, 0), scalar_of(L));
-            if (is_num(R)) return mul(build(L, r, c, 0), scalar_of(R));
+            if (is_num(L)) {expr_node *s = scalar_of(L); return mul(build(R, r, c, 0), s);}
+            if (is_num(R)) {expr_node *v = build(L, r, c, 0); return mul(v, scalar_of(R));}
             int k = (L->cols != DIRAC_ANY) ? L->cols : R->rows;
             if (k == DIRAC_ANY) die(MSG_ERR_DIRAC_NOT_YET, cur_line);
-            expr_node *first = mul(build(L, r, z, 0), build(R, z, c, 0));
+            expr_node *first = build_op(OP_MUL, L, r, z, R, z, c);
             if (k == 1) return first;                          // an outer product
             if (k == 2) {                                      // two terms: no loop
                 dl_pos one = {-1, 1};
-                return expr_binop(OP_ADD, first, mul(build(L, r, one, 0), build(R, one, c, 0)));
+                return expr_binop(OP_ADD, first, build_op(OP_MUL, L, r, one, R, one, c));
             }
             int lv = new_loop(k - 1, 1);
             dl_pos p = {lv, 0};
             expr_node *s = node_new(EXPR_DIRAC_SUM, 0);
             dl_sum *d = calloc(1, sizeof *d);
             d->lv = lv; d->first = first; d->src = n;
-            d->body = mul(build(L, r, p, 0), build(R, p, c, 0));
+            d->body = build_op(OP_MUL, L, r, p, R, p, c);
             typecheck_expr(d->first);
             typecheck_expr(d->body);
             s->type = d->first->type;
@@ -368,7 +395,7 @@ static void hoist_inv(expr_node **slot, int *path, int np)
         if (at < 0) hoist_pre_add(keep, v);
         else {
             dl_loop *l = &loops[at];
-            if (l->nh == DL_MAXHOI) die(MSG_ERR_DIRAC_NOT_YET, cur_line);
+            if (l->nh == DL_MAXHOI) die(MSG_ERR_DIRAC_TOO_BIG, cur_line);
             l->hn[l->nh] = keep; l->hv[l->nh++] = v;
         }
         *slot = expr_var(n->type, v);
@@ -400,7 +427,7 @@ static void use_ix(const dl_ix *ix, int deeper)
         long w = 1; for (int d = 0; d < deeper && d < 6; d++) w *= 1000;
         int j;
         for (j = 0; j < l->ns; j++) if (l->st[j] == ix->st[i]) break;
-        if (j == l->ns) {if (l->ns == DL_MAXSTR) die(MSG_ERR_DIRAC_NOT_YET, cur_line); l->st[l->ns] = ix->st[i]; l->w[l->ns++] = 0;}
+        if (j == l->ns) {if (l->ns == DL_MAXSTR) die(MSG_ERR_DIRAC_TOO_BIG, cur_line); l->st[l->ns] = ix->st[i]; l->w[l->ns++] = 0;}
         l->w[j] += w;
     }
 }
@@ -439,20 +466,20 @@ static void var_of(char *b, size_t sz, int lv, int stride)
 {
     dl_loop *l = &loops[lv];
     if (stride == l->step) {ctr_name(b, sz, lv); return;}
-    for (int j = 0; j < l->nd; j++) if (l->ds[j] == stride) {snprintf(b, sz, "__dd%d", l->dv[j]); return;}
+    for (int j = 0; j < l->nd; j++) if (l->ds[j] == stride) {dl_nm(b, sz, "dd", l->dv[j]); return;}
     die(MSG_ERR_DIRAC_NOT_YET, cur_line);
 }
 
 // the variables of an index, the innermost loop first, and the constant
 // offset that makes the sum of them the cell's address
-static int ix_vars(const dl_ix *ix, char v[2][32], long *off)
+static int ix_vars(const dl_ix *ix, char v[2][DL_NM], long *off)
 {
     int ord[2] = {0, 1};
     if (ix->nt == 2 && ix->lv[1] > ix->lv[0]) {ord[0] = 1; ord[1] = 0;}   // inner loops are allocated later
     *off = ix->k;
     for (int i = 0; i < ix->nt; i++) {
         int t = ord[i], lv = ix->lv[t], s = ix->st[t];
-        var_of(v[i], 32, lv, s);
+        var_of(v[i], DL_NM, lv, s);
         *off += (long)s * (loops[lv].first + loops[lv].n);
     }
     return ix->nt;
@@ -462,7 +489,7 @@ static int ix_vars(const dl_ix *ix, char v[2][32], long *off)
 // acc_ok); returns the constant offset
 static long ix_load(const dl_ix *ix, char *key, size_t ksz)
 {
-    char v[2][32]; long off;
+    char v[2][DL_NM]; long off;
     int nt = ix_vars(ix, v, &off);
     snprintf(key, ksz, "%s%s%s", v[0], nt > 1 ? "+" : "", nt > 1 ? v[1] : "");
     if (key_is(key)) {if (acc_ok) add_instr("PSH\n"); return off;}
@@ -485,7 +512,7 @@ expr dirac_elem_emit(expr_node *n)
     if (e->ix.nt == 0)
         add_instr("%s %s %ld\n", acc_ok ? "P_LOD_V" : "LOD_V", arr_name(e->arr), e->ix.k);
     else {
-        char key[128];
+        char key[2 * DL_NM];
         long off = ix_load(&e->ix, key, sizeof key);
         add_instr("LDI_V %s %ld\n", arr_name(e->arr), off);
     }
@@ -516,17 +543,40 @@ static void emit_hoist(expr_node *n, int v)
     acc_ok = 0;
 }
 
+// the walker's value leaves the accumulator for a variable, before the
+// first instruction of the number's own
+static void keep_acc(void)
+{
+    if (!keep_live || keep_v) return;
+    keep_v = scalar_var(ctx_type);
+    add_instr("SET %s\n", v_table[keep_v].name);
+    acc_ok = 0;
+}
+
+// computes the parts before the loops, and records them as computed
+static void emit_pre(void)
+{
+    if (n_hoist_pre) keep_acc();
+    for (int j = 0; j < n_hoist_pre; j++) {
+        emit_hoist(*hoist_pre[j], hoist_pre_v[j]);
+        if (n_done == DL_MAXHOI) die(MSG_ERR_DIRAC_TOO_BIG, cur_line);
+        done_n[n_done] = *hoist_pre[j]; done_v[n_done++] = hoist_pre_v[j];
+    }
+    n_hoist_pre = 0;
+}
+
 // opens loop lv: derived variables, then the counter, then the label. The
 // first load pushes what the accumulator holds when push is set
 static void loop_open(int lv, int push, char *top, char *end)
 {
     dl_loop *l = &loops[lv];
-    char c[32]; ctr_name(c, sizeof c, lv);
+    char c[DL_NM], dd[DL_NM]; ctr_name(c, sizeof c, lv);
     snprintf(top, 32, "__Ld%d", label_n);
     snprintf(end, 32, "__Ld%de", label_n++);
     for (int j = 0; j < l->nd; j++) {
         add_instr("%s %ld\n", push ? "P_LOD" : "LOD", -(long)l->ds[j] * l->n); push = 0;
-        add_instr("SET __dd%d\n", l->dv[j]);
+        dl_nm(dd, sizeof dd, "dd", l->dv[j]);
+        add_instr("SET %s\n", dd);
     }
     add_instr("%s %ld\n", push ? "P_LOD" : "LOD", -(long)l->step * l->n);
     add_instr("SET %s\n", c);
@@ -546,11 +596,12 @@ static void loop_hoists(int lv)
 static void loop_close(int lv, int push, const char *top, const char *end)
 {
     dl_loop *l = &loops[lv];
-    char c[32]; ctr_name(c, sizeof c, lv);
+    char c[DL_NM], dd[DL_NM]; ctr_name(c, sizeof c, lv);
     for (int j = 0; j < l->nd; j++) {
-        add_instr("%s __dd%d\n", push ? "P_LOD" : "LOD", l->dv[j]); push = 0;
+        dl_nm(dd, sizeof dd, "dd", l->dv[j]);
+        add_instr("%s %s\n", push ? "P_LOD" : "LOD", dd); push = 0;
         add_instr("ADD %d\n", l->ds[j]);
-        add_instr("SET __dd%d\n", l->dv[j]);
+        add_instr("SET %s\n", dd);
     }
     add_instr("%s %s\n", push ? "P_LOD" : "LOD", c);
     add_instr("ADD %d\n", l->step);
@@ -595,7 +646,7 @@ typedef struct {
 
 static void enter(int line)
 {
-    if (depth++ == 0) {n_names = 0; tmp_at = 0; n_loops = 0; n_hoist_pre = 0;}
+    if (depth++ == 0) {n_names = 0; tmp_at = 0; n_loops = 0; n_hoist_pre = 0; n_done = 0;}
     cur_line = line;
 }
 
@@ -614,7 +665,13 @@ static int tmp_block(int words, int line)
     int at = tmp_at;
     tmp_at += words;
     if (tmp_at > tmp_max) tmp_max = tmp_at;
-    if (n_tmp_lines < DL_MAXLINES) {tmp_lines[n_tmp_lines] = line; tmp_words[n_tmp_lines++] = words;}
+    if (n_tmp_lines == cap_tmp_lines) {
+        cap_tmp_lines = cap_tmp_lines ? 2 * cap_tmp_lines : 16;
+        tmp_lines = realloc(tmp_lines, cap_tmp_lines * sizeof *tmp_lines);
+        tmp_words = realloc(tmp_words, cap_tmp_lines * sizeof *tmp_words);
+        if (!tmp_lines || !tmp_words) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    }
+    tmp_lines[n_tmp_lines] = line; tmp_words[n_tmp_lines++] = words;
     return at;
 }
 
@@ -652,7 +709,7 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
         add_instr("SET_V %s %ld\n", arr_name(d->arr), six->k + d->base);
         acc_ok = 0;
     } else if (d->kind == 0) {
-        char key[128];
+        char key[2 * DL_NM];
         acc_ok = 0;
         long off = ix_load(six, key, sizeof key);
         acc_ok = 1;                       // the index is the value to keep: the first load pushes it
@@ -713,7 +770,10 @@ static expr_node *build_target(expr_node *r, int rows, int cols, int flat, int *
         if (!w) return el;
 
         // the product goes to a block of __dirac_tmp first, and the
-        // expression reads the block
+        // expression reads the block. The parts before the loops go first:
+        // a function they call may use __dirac_tmp too
+        emit_pre();
+        keep_acc();
         expr_node *p = ((dl_sum *)w->dl)->src;
         expr_node copy = *p;
         int words = p->rows * p->cols;
@@ -833,7 +893,7 @@ static void emit_statement(expr_node *r, const dl_dst *d0, int rows, int cols, i
     if (d.kind == 0) collect_target_uses(&six, 0);
     choose_steps(0);
 
-    for (int j = 0; j < n_hoist_pre; j++) emit_hoist(*hoist_pre[j], hoist_pre_v[j]);
+    emit_pre();
     emit_nest(tl, nl, 0, el, &d, &six);
 
     if (copy_back) {                                  // __dirac_tmp -> the target, one flat loop
@@ -939,6 +999,8 @@ void dirac_loops_out(int port, expr_node *r, int fout, int line)
 expr dirac_number(expr_node *n)
 {
     int live = acc_ok;
+    int save_live = keep_live, save_kv = keep_v;
+    keep_live = live; keep_v = 0;
     enter(n->line);
     int save_loops = n_loops, save_pre = n_hoist_pre, save_ctx = ctx_type;
     dl_loop save_l[DL_MAXLOOP]; memcpy(save_l, loops, sizeof loops);
@@ -959,14 +1021,10 @@ expr dirac_number(expr_node *n)
     choose_steps(0);
 
     // the parts computed first: the value the walker holds waits in memory
-    int save_v = 0;
-    if (n_hoist_pre && live) {
-        save_v = scalar_var(ctx_type);
-        add_instr("SET %s\n", v_table[save_v].name);
-    }
-    for (int j = 0; j < n_hoist_pre; j++) emit_hoist(*hoist_pre[j], hoist_pre_v[j]);
-    if (save_v) {add_instr("LOD %s\n", v_table[save_v].name); acc_ok = 1;}
+    emit_pre();
+    if (keep_v) {add_instr("LOD %s\n", v_table[keep_v].name); acc_ok = 1;}
     else acc_ok = live;
+    keep_live = save_live; keep_v = save_kv;
 
     expr e = in_acc(ast_emit_expr(el));
 

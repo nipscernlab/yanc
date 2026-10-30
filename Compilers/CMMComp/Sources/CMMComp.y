@@ -53,8 +53,8 @@
       float a[N] # expr;    -> the same, in a declaration
       out(p, c|a>);         -> OUT of each element of a, times c
       a # c -> |a>;         -> shift register
-      For now (step a) only the forms of the old rules are computed:
-      |M|a>, c|a>, |a> + c|b>, |a><b|, |A| - |a><b|, c|A|, c|I|, |0>, c|in(p)>.
+      Every combination whose shapes fit is computed in loops (dirac.c);
+      |I| only on its own or times a number, and no comp yet.
 */
 
 %{
