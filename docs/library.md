@@ -80,33 +80,80 @@ mantissa bits, and a narrower `#NBMANT` loses accuracy in them.
 
 ## Vectors in Dirac notation
 
-C± has a notation for linear algebra on arrays: `|a⟩` is an array as a
-column vector, `⟨a|b⟩` the inner product, `|M|` a matrix, and an assignment
-`v # ...` computes a vector or a matrix in place:
+C± has a notation for linear algebra on arrays. A chain of array names
+between bars is a term: `|a⟩` is the array `a` as a column vector (a ket),
+`⟨a|` as a row (a bra), and a name between two bars, `|M|`, is a matrix, a
+2D array. In a longer chain the first name is a bra when the chain opens
+with `⟨`, the last a ket when it closes with `⟩`, and every other name a
+matrix: `|M|a⟩` is `M` times `a`, `⟨a|M|b⟩` is `aᵀ M b`. Two terms side by
+side are their product (`c|a⟩`, `|a⟩⟨b|`, `|A||B|`), and `+`, `-` and a
+minus in front work as with numbers. `|I|` is the identity, `|0⟩` the zero
+vector and `|in(p)⟩` a vector read from input port `p`, one word an
+element; each takes its size from the target. The brackets are the
+Unicode characters `⟨` (U+27E8) and `⟩` (U+27E9), not `<` and `>`.
 
-| form | computes |
+A term that is a number, like `⟨a|b⟩` or `⟨a|M|b⟩`, goes anywhere a number
+goes. A vector or a matrix goes to an array, whole, with `#`, or to an
+output port with `out` or `fout`:
+
+| example | computes |
 |---|---|
-| `s = ⟨a\|b⟩` | the inner product of the arrays `a` and `b` |
-| `v # \|M\|a⟩` | the matrix `M` times the vector `a` |
-| `v # c\|a⟩` | the vector `a` times the scalar `c` |
-| `v # \|a⟩ + c\|b⟩` | `a + c·b` |
-| `M # \|a⟩⟨b\|` | the outer product |
-| `M # \|A\| - \|a⟩⟨b\|` | `A` minus the outer product |
-| `M # c\|A\|` | the matrix `A` times `c` |
-| `M # c\|I\|` | `c` times the identity |
-| `v # \|0⟩` | the zero vector |
-| `v # c\|in(p)⟩` | reads input port `p` once per element of `v`, each value times `c` |
-| `a # c -> \|a⟩` | shifts `a` by one place, `c` entering (the same array on both sides) |
-| `out(p, c\|a⟩)` | writes each element of `a`, times `c`, to output port `p` |
+| `s = ⟨a\|b⟩;` | the inner product |
+| `s = 1.0/(0.99 + ⟨x\|P\|x⟩);` | a number from a matrix and a vector |
+| `v # \|M\|a⟩ + c\|b⟩;` | `M a + c b` |
+| `y # ⟨a\|M\|;` | the row `aᵀ M`, into the vector `y` |
+| `A # \|B\| - \|a⟩⟨b\|;` | `B` minus the outer product `a bᵀ` (`A`, `B` not square is fine) |
+| `C # \|A\|\|B\|;` | the matrix product |
+| `M # c\|I\|;` | `c` times the identity |
+| `v # c\|in(0)⟩;` | reads `v`'s size of words from port 0, each times `c` |
+| `float D[4] # \|M\|a⟩;` | declares `D` and computes it |
+| `out(0, \|M\|a⟩);` | writes each element of `M a` to port 0 |
+| `a # c -> \|a⟩;` | shifts `a` by one place, `c` entering (the same array on both sides; not a product) |
 
-The brackets are the Unicode characters `⟨` (U+27E8) and `⟩` (U+27E9), not
-`<` and `>`. The sizes are the arrays' declared sizes; the elements are
-`int` or `float`, not `comp`.
+The rules:
 
-Placing a scalar before a vector or a matrix multiplies them, and this
-binds tighter than `+` and `-` and looser than `*`: a coefficient that is a
-sum needs parentheses, `v # (a+c)|b⟩`, because `v # a+c|b⟩` reads as
-`a + c|b⟩`. Each term has a shape (a number, a vector, a row, a matrix) and
-the compiler stops when the shapes do not fit, naming both. A bar followed
-by the name of an array without an index is a Dirac bar, so `c | a[k]`
-stays a bitwise or.
+- **Precedence.** A product binds tighter than `+` and `-` and looser than
+  `*`: a coefficient that is a sum needs parentheses, `v # (a+c)|b⟩`,
+  because `v # a+c|b⟩` reads as `a + c|b⟩`.
+- **Shapes.** Each term has a shape (a number, a vector of N, a row of N,
+  an N×M matrix); a sum takes two of one shape, a product needs the
+  columns of the first to be the rows of the second, and the target must
+  have the shape of the result. When they do not fit, the compiler stops
+  and names both.
+- **Types.** The elements are `int` or `float`, mixed as in a scalar
+  expression: `v # n|a⟩` with an `int n` and a `float a` is a float
+  vector, and a float result into an `int` array is converted, with the
+  warning of an int receiving a float. Not `comp` yet.
+- **Numbers inside.** A coefficient that is not a literal or a variable
+  (`(c+d)|a⟩`, `fin(0)*0.001|a⟩`) is computed once, before the loops.
+- **`out` takes a number or a vector**, not a matrix, and a vector needs a
+  size: `out(0, |0⟩)` has none.
+- **Bars.** A bar followed by the name of an array without an index is a
+  Dirac bar, so `c | a[k]` stays a bitwise or.
+- **Not yet.** `|I|` only on its own or times a number (`M # c|I|`), not
+  inside a sum; `|I|` and `|0⟩` not inside a chain.
+
+The code is a loop over the elements, whose size does not grow with the
+arrays (an inner product of 4 or of 400 is the same 15 words). It runs
+about 2.7 times slower per element than the unrolled code of v9.1 and
+before, measured on `proc_rls` (an RLS filter, arrays of N, clocks a
+turn of its loop): 855 against 307 at N = 4, 38 067 against 13 971 at
+N = 32, while its program goes from 335 to 235 words at N = 4 and from
+15 035 to 2335 at N = 32.
+
+**The temporary area.** When the target is also read at another element
+than the one being written (`a # |M|a⟩`, `C # |M||C|`), or a product in
+the middle of a chain would be computed again for every element
+(`|A||B|x⟩` is computed as `|A|(|B|x⟩)`, with `B x` first), the result goes
+through `__dirac_tmp`, one area of data memory that every statement of the
+program shares, as large as the largest need. The compiler says so on the
+line, and sums up at the end what the area costs and how to avoid it: write
+to an array that is not on the right-hand side, or compute the middle
+product into an array of your own on a line before.
+
+**Results of earlier versions.** Up to v9.1, `A # |a⟩⟨b|` and
+`A # |B| - |a⟩⟨b|` computed the outer product transposed (`b aᵀ`),
+`a # |M|a⟩` overwrote `a` while still reading it, and an `int` shift of a
+computed value (`a # k+1 -> |a⟩`) did nothing. A result computed with
+these needs checking. With `K = g P x` and `P` symmetric, as in an RLS
+filter, the transposed outer product is the same matrix, up to rounding.

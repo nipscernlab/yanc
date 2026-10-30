@@ -150,6 +150,9 @@ value. What the common ones mean and how to get past them is in
 
 ### Information
 
+- Info on line <n>: '<name>' is read at one spot and written at another, so the result takes a detour through the temporary area (<n> words).
+- Info on line <n>: the product in the middle of the chain goes to the temporary area (<n> words), or it'd be computed all over again for every element.
+- Info: the Dirac temporary area (\_\_dirac\_tmp) takes <n> words of data memory. To save them: write the result to an array that isn't on the right-hand side, or compute the middle product into an array of your own, on a line before. Who used it:
 - Info on line <n>: #TOAQUI marker registered (drives the cheguei pin)
 - Info: interruption directive found at line <n>
 - Info: <n> assembly instructions generated

@@ -332,6 +332,22 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: out() manda um número ou um vetor, %s inteira não dá!\n", \
       "Error on line %d: out() sends a number or a vector, not %s. Slice it up first!\n")
 
+#define MSG_INFO_DIRAC_TEMP \
+    M("Info na linha %d: '%s' é lido numa posição e escrito em outra, então o resultado passa pela área temporária (%d palavras).\n", \
+      "Info on line %d: '%s' is read at one spot and written at another, so the result takes a detour through the temporary area (%d words).\n")
+
+#define MSG_INFO_DIRAC_TEMP_CHAIN \
+    M("Info na linha %d: o produto do meio da cadeia vai pra área temporária (%d palavras), senão seria calculado de novo a cada elemento.\n", \
+      "Info on line %d: the product in the middle of the chain goes to the temporary area (%d words), or it'd be computed all over again for every element.\n")
+
+#define MSG_INFO_DIRAC_TEMP_TOTAL \
+    M("Info: a área temporária do Dirac (__dirac_tmp) ocupa %d palavras da memória de dados. Pra economizar: escreva o resultado num vetor que não aparece do lado direito, ou calcule o produto do meio num vetor seu, numa linha antes. Quem usou:\n", \
+      "Info: the Dirac temporary area (__dirac_tmp) takes %d words of data memory. To save them: write the result to an array that isn't on the right-hand side, or compute the middle product into an array of your own, on a line before. Who used it:\n")
+
+#define MSG_INFO_DIRAC_TEMP_LINE \
+    M("      linha %d: %d palavras\n", \
+      "      line %d: %d words\n")
+
 #define MSG_ERR_DIRAC_NOT_YET \
     M("Erro na linha %d: essa combinação de Dirac ainda tá no forno. Aguenta aí!\n", \
       "Error on line %d: this Dirac combo is still in the oven. Hang tight!\n")

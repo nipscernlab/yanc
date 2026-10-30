@@ -1,5 +1,6 @@
 NOP
 #PRNAME dirac_assign
+#array __dirac_tmp 2 4
 #NUBITS 23
 #NUIOIN 1
 #NUIOOU 1
@@ -10,173 +11,152 @@ NOP
 #array B 2 16
 #array a 2 4
 #array b 2 4
-@main LOD 1.0
-SET_V A 0
-SET_V A 5
-SET_V A 10
-SET_V A 15
-LOD 0.0
-SET_V A 1
-SET_V A 2
-SET_V A 3
-SET_V A 4
-SET_V A 6
-SET_V A 7
-SET_V A 8
-SET_V A 9
-SET_V A 11
-SET_V A 12
-SET_V A 13
-SET_V A 14
-LOD 1.0
-SET_V B 0
-SET_V B 5
-SET_V B 10
-SET_V B 15
-LOD 0.0
-SET_V B 1
-SET_V B 2
-SET_V B 3
-SET_V B 4
-SET_V B 6
-SET_V B 7
-SET_V B 8
-SET_V B 9
-SET_V B 11
-SET_V B 12
-SET_V B 13
-SET_V B 14
-LOD 0.0
-SET_V a 0
-SET_V a 1
-SET_V a 2
-SET_V a 3
-LOD 0.0
-SET_V b 0
-SET_V b 1
-SET_V b 2
-SET_V b 3
-@__Lwh1 LOD_V B 0
-F_MLT a
-P_LOD_V B 1
-F_MLT_V a 1
+#SHARE __dk4 __dk0
+@main LOD -16
+SET __dk0
+@__Ld0 P_LOD 0.0
+STI_V A 16
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld0e
+JMP __Ld0
+@__Ld0e LOD -20
+SET __dk1
+@__Ld1 P_LOD 1.0
+STI_V A 20
+LOD __dk1
+ADD 5
+SET __dk1
+JIZ __Ld1e
+JMP __Ld1
+@__Ld1e LOD -16
+SET __dk0
+@__Ld2 P_LOD 0.0
+STI_V B 16
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld2e
+JMP __Ld2
+@__Ld2e LOD -20
+SET __dk1
+@__Ld3 P_LOD 1.0
+STI_V B 20
+LOD __dk1
+ADD 5
+SET __dk1
+JIZ __Ld3e
+JMP __Ld3
+@__Ld3e LOD -4
+SET __dk0
+@__Ld4 P_LOD 0.0
+STI_V a 4
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld4e
+JMP __Ld4
+@__Ld4e LOD -4
+SET __dk0
+@__Ld5 P_LOD 0.0
+STI_V b 4
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld5e
+JMP __Ld5
+@__Ld5e @__Lwh1 LOD_V a 0
+SET __dhf2
+LOD -4
+SET __dd3
+LOD -16
+SET __dk0
+@__Ld6 LOD __dd3
+P_LOD __dk0
+LDI_V B 16
+F_MLT __dhf2
+P_LOD -3
+SET __dk1
+@__Ld7 ADD __dk0
+LDI_V B 20
+P_LOD __dk1
+LDI_V a 4
+SF_MLT
 SF_ADD
-P_LOD_V B 2
-F_MLT_V a 2
-SF_ADD
-P_LOD_V B 3
-F_MLT_V a 3
-SF_ADD
-SET_V a 0
-LOD_V B 4
-F_MLT a
-P_LOD_V B 5
-F_MLT_V a 1
-SF_ADD
-P_LOD_V B 6
-F_MLT_V a 2
-SF_ADD
-P_LOD_V B 7
-F_MLT_V a 3
-SF_ADD
-SET_V a 1
-LOD_V B 8
-F_MLT a
-P_LOD_V B 9
-F_MLT_V a 1
-SF_ADD
-P_LOD_V B 10
-F_MLT_V a 2
-SF_ADD
-P_LOD_V B 11
-F_MLT_V a 3
-SF_ADD
-SET_V a 2
-LOD_V B 12
-F_MLT a
-P_LOD_V B 13
-F_MLT_V a 1
-SF_ADD
-P_LOD_V B 14
-F_MLT_V a 2
-SF_ADD
-P_LOD_V B 15
-F_MLT_V a 3
-SF_ADD
-SET_V a 3
-LOD_V b 0
+P_LOD __dk1
+ADD 1
+SET __dk1
+JIZ __Ld7e
+JMP __Ld7
+@__Ld7e POP
+STI_V __dirac_tmp 4
+LOD __dd3
+ADD 1
+SET __dd3
+LOD __dk0
+ADD 4
+SET __dk0
+JIZ __Ld6e
+JMP __Ld6
+@__Ld6e LOD -4
+SET __dk4
+@__Ld8 PSH
+LDI_V __dirac_tmp 4
+STI_V a 4
+LOD __dk4
+ADD 1
+SET __dk4
+JIZ __Ld8e
+JMP __Ld8
+@__Ld8e LOD -4
+SET __dk0
+@__Ld9 PSH
+LDI_V b 4
 F_MLT 2.0
-SET_V a 0
-LOD_V b 1
-F_MLT 2.0
-SET_V a 1
-LOD_V b 2
-F_MLT 2.0
-SET_V a 2
-LOD_V b 3
-F_MLT 2.0
-SET_V a 3
-LOD_V a 0
-F_MLT_V b 0
-SET_V A 0
-LOD_V a 0
-F_MLT_V b 1
-SET_V A 4
-LOD_V a 0
-F_MLT_V b 2
-SET_V A 8
-LOD_V a 0
-F_MLT_V b 3
-SET_V A 12
-LOD_V a 1
-F_MLT_V b 0
-SET_V A 1
-LOD_V a 1
-F_MLT_V b 1
-SET_V A 5
-LOD_V a 1
-F_MLT_V b 2
-SET_V A 9
-LOD_V a 1
-F_MLT_V b 3
-SET_V A 13
-LOD_V a 2
-F_MLT_V b 0
-SET_V A 2
-LOD_V a 2
-F_MLT_V b 1
-SET_V A 6
-LOD_V a 2
-F_MLT_V b 2
-SET_V A 10
-LOD_V a 2
-F_MLT_V b 3
-SET_V A 14
-LOD_V a 3
-F_MLT_V b 0
-SET_V A 3
-LOD_V a 3
-F_MLT_V b 1
-SET_V A 7
-LOD_V a 3
-F_MLT_V b 2
-SET_V A 11
-LOD_V a 3
-F_MLT_V b 3
-SET_V A 15
-F_INN 0
+STI_V a 4
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld9e
+JMP __Ld9
+@__Ld9e LOD -16
+SET __dd3
+LOD -4
+SET __dk0
+@__Ld10 LDI_V a 4
+SET __dhf2
+LOD -4
+SET __dk1
+@__Ld11 ADD __dd3
+P_LOD __dk1
+LDI_V b 4
+F_MLT __dhf2
+STI_V A 20
+LOD __dk1
+ADD 1
+SET __dk1
+JIZ __Ld11e
+JMP __Ld11
+@__Ld11e LOD __dd3
+ADD 4
+SET __dd3
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld10e
+JMP __Ld10
+@__Ld10e LOD -4
+SET __dk0
+@__Ld12 PF_INN 0
 F_MLT 0.001
-SET_V a 0
-F_INN 0
-F_MLT 0.001
-SET_V a 1
-F_INN 0
-F_MLT 0.001
-SET_V a 2
-F_INN 0
-F_MLT 0.001
-SET_V a 3
-LOD 1
+STI_V a 4
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld12e
+JMP __Ld12
+@__Ld12e LOD 1
 OUT 0
 JMP __Lwh1
 @__Lwh1end @fim JMP fim

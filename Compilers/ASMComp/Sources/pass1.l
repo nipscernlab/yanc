@@ -202,6 +202,8 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
  "F_ADD_V" p1_opcode(22); // F_ADD with constant offset
    "MLT_V" p1_opcode(22); //   MLT with constant offset
  "F_MLT_V" p1_opcode(22); // F_MLT with constant offset
+   "LDI_V" p1_opcode(22); //   LDI with constant offset
+   "STI_V" p1_opcode(22); //   STI with constant offset
 
 {VARIA}    p1_opernd(yytext); // used on ALU instructions with variables (IDs)
 {INNUM}    p1_opernd(yytext); // used on ALU instructions with an int constant

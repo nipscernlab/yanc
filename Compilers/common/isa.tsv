@@ -169,3 +169,5 @@ F_QUO	40	none	w	-	-	-	-	float quotient of the division three words before (alias
 F_ADD_V	32	offset	rw	-	r	-	-	F_ADD with constant offset
 MLT_V	24	offset	rw	-	r	-	-	MLT with constant offset
 F_MLT_V	38	offset	rw	-	r	-	-	F_MLT with constant offset
+LDI_V	3	offset	rw	-	base_r	-	-	LDI with constant offset (reads mem[base + offset + acc])
+STI_V	7	offset	r	pop	base_w	-	-	STI with constant offset (writes mem[base + offset + stack top])

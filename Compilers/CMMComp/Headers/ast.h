@@ -70,7 +70,10 @@ typedef enum {
     EXPR_DIRAC_REF,    // an array in a chain; id = array, op = its role (dirac_role)
     EXPR_DIRAC_PROD,   // juxtaposition: left times right (c|a⟩, |M|a⟩, |a⟩⟨b|, ⟨a|b⟩)
     EXPR_DIRAC_CONST,  // |I| or |0⟩; op = dirac_const, size taken from the context
-    EXPR_DIRAC_IN      // |in(p)⟩; id = the port's v_table index, size from the context
+    EXPR_DIRAC_IN,     // |in(p)⟩; id = the port's v_table index, size from the context
+    // made by dirac.c for one element of a Dirac expression computed in loops
+    EXPR_DIRAC_ELEM,   // a cell of an array at an index of loop variables; dl = its dl_elem
+    EXPR_DIRAC_SUM     // a sum over a loop (a product with an inner size > 2); dl = its dl_sum
 } expr_kind;
 
 // The role of an array in a Dirac chain, by its place: the first name of a
@@ -167,6 +170,10 @@ typedef struct expr_node {
     // a number, (N, 1) a ket, (1, N) a bra, (N, M) a matrix; DIRAC_ANY for
     // a size the context decides; (0, 0) not checked yet.
     int rows, cols;
+
+    // dirac.c: what an EXPR_DIRAC_ELEM / EXPR_DIRAC_SUM is, or the block of
+    // __dirac_tmp an EXPR_DIRAC_REF names (NULL for an array of the program)
+    void *dl;
 } expr_node;
 
 // constructors. Leaf nodes (literal, var, array_index, pplus, func_call)

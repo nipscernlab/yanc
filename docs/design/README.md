@@ -32,7 +32,7 @@ code), what was measured and what was deduced, and most end with a section
 | [ip-protection.md](ip-protection.md) | handing SAPHO to Quartus or Vivado without showing its source: IEEE 1735, vendor schemes, a service (notes, parked until a partnership) |
 | [burst.md](burst.md) | a whole array through a port, one word per clock, stopping while the FIFO is full (design, not implemented) |
 | [array-unit.md](array-unit.md) | a dual-port memory for arrays, a controller and a MAC (`DOT`): decisions, a prototype measured (parked 2026-10-26) |
-| [dirac-expressions.md](dirac-expressions.md) | the Dirac notation as expressions with shapes, computed in loops, and loops with pointers and `RPT`: decisions, a parser and a prototype measured (resumed 2026-10-29, loops in software) |
+| [dirac-expressions.md](dirac-expressions.md) | the Dirac notation as expressions with shapes, computed in loops, and loops with pointers and `RPT`: decisions, the parser, the loops in software measured (step b, 2026-10-30) and a prototype with pointers |
 | [asm-names.md](asm-names.md) | user names that collide in the assembly |
 | [pipeln-and-division.md](pipeln-and-division.md) | the slow dividers: the pipeline tried and dropped, the register cuts kept (5 and 4 stages since 2026-10-16, section 4.4) |
 | [normalisation-survey.md](normalisation-survey.md) | the known ways to normalise a float on an FPGA: eight built, two fitted, none faster; finished, `pnorm` kept |

@@ -8,83 +8,77 @@ NOP
 #array x 2 4
 #array w 2 4
 #array P 2 16
-#SHARE rls_update_e rls_update_d
-#SHARE __aux_var rls_update_d
+#SHARE __dk1 rls_update_d
+#SHARE rls_update_g rls_update_d
+#SHARE __dd3 rls_update_e
+#SHARE __dhf2 __dd2
+#SHARE __aux_var __dk0
 JMP main
 @rls_update SET rls_update_d
 LOD w
 F_MLT x
-P_LOD_V w 1
-F_MLT_V x 1
+P_LOD -3
+SET __dk0
+@__Ld0 LDI_V w 4
+P_LOD __dk0
+LDI_V x 4
+SF_MLT
 SF_ADD
-P_LOD_V w 2
-F_MLT_V x 2
-SF_ADD
-P_LOD_V w 3
-F_MLT_V x 3
-SF_ADD
+P_LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld0e
+JMP __Ld0
+@__Ld0e POP
 F_SU2 rls_update_d
 SET rls_update_e
 #array rls_update_Px 2 4
-LOD_V P 0
+LOD -4
+SET __dd2
+LOD -16
+SET __dk0
+@__Ld1 LOD __dd2
+P_LOD __dk0
+LDI_V P 16
 F_MLT x
-P_LOD_V P 1
-F_MLT_V x 1
+P_LOD -3
+SET __dk1
+@__Ld2 ADD __dk0
+LDI_V P 20
+P_LOD __dk1
+LDI_V x 4
+SF_MLT
 SF_ADD
-P_LOD_V P 2
-F_MLT_V x 2
-SF_ADD
-P_LOD_V P 3
-F_MLT_V x 3
-SF_ADD
-SET_V rls_update_Px 0
-LOD_V P 4
-F_MLT x
-P_LOD_V P 5
-F_MLT_V x 1
-SF_ADD
-P_LOD_V P 6
-F_MLT_V x 2
-SF_ADD
-P_LOD_V P 7
-F_MLT_V x 3
-SF_ADD
-SET_V rls_update_Px 1
-LOD_V P 8
-F_MLT x
-P_LOD_V P 9
-F_MLT_V x 1
-SF_ADD
-P_LOD_V P 10
-F_MLT_V x 2
-SF_ADD
-P_LOD_V P 11
-F_MLT_V x 3
-SF_ADD
-SET_V rls_update_Px 2
-LOD_V P 12
-F_MLT x
-P_LOD_V P 13
-F_MLT_V x 1
-SF_ADD
-P_LOD_V P 14
-F_MLT_V x 2
-SF_ADD
-P_LOD_V P 15
-F_MLT_V x 3
-SF_ADD
-SET_V rls_update_Px 3
-LOD x
+P_LOD __dk1
+ADD 1
+SET __dk1
+JIZ __Ld2e
+JMP __Ld2
+@__Ld2e POP
+STI_V rls_update_Px 4
+LOD __dd2
+ADD 1
+SET __dd2
+LOD __dk0
+ADD 4
+SET __dk0
+JIZ __Ld1e
+JMP __Ld1
+@__Ld1e LOD x
 F_MLT rls_update_Px
-P_LOD_V x 1
-F_MLT_V rls_update_Px 1
+P_LOD -3
+SET __dk0
+@__Ld3 LDI_V x 4
+P_LOD __dk0
+LDI_V rls_update_Px 4
+SF_MLT
 SF_ADD
-P_LOD_V x 2
-F_MLT_V rls_update_Px 2
-SF_ADD
-P_LOD_V x 3
-F_MLT_V rls_update_Px 3
-SF_ADD
+P_LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld3e
+JMP __Ld3
+@__Ld3e POP
 F_ADD 0.99
 F_DIV 1.0
 NOP
@@ -92,187 +86,101 @@ NOP
 F_QUO
 SET rls_update_g
 #array rls_update_K 2 4
-LOD_V rls_update_Px 0
+LOD -4
+SET __dk0
+@__Ld4 PSH
+LDI_V rls_update_Px 4
 F_MLT rls_update_g
-SET_V rls_update_K 0
-LOD_V rls_update_Px 1
-F_MLT rls_update_g
-SET_V rls_update_K 1
-LOD_V rls_update_Px 2
-F_MLT rls_update_g
-SET_V rls_update_K 2
-LOD_V rls_update_Px 3
-F_MLT rls_update_g
-SET_V rls_update_K 3
-LOD_V rls_update_K 0
+STI_V rls_update_K 4
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld4e
+JMP __Ld4
+@__Ld4e LOD -4
+SET __dk0
+@__Ld5 PSH
+LDI_V w 4
+P_LOD __dk0
+LDI_V rls_update_K 4
 F_MLT rls_update_e
-F_ADD_V w 0
-SET_V w 0
-LOD_V rls_update_K 1
-F_MLT rls_update_e
-F_ADD_V w 1
-SET_V w 1
-LOD_V rls_update_K 2
-F_MLT rls_update_e
-F_ADD_V w 2
-SET_V w 2
-LOD_V rls_update_K 3
-F_MLT rls_update_e
-F_ADD_V w 3
-SET_V w 3
-LOD_V rls_update_K 0
-F_MLT_V rls_update_Px 0
-F_NEG
-F_ADD_V P 0
-SET_V P 0
-LOD_V rls_update_K 0
-F_MLT_V rls_update_Px 1
-F_NEG
-F_ADD_V P 4
-SET_V P 4
-LOD_V rls_update_K 0
-F_MLT_V rls_update_Px 2
-F_NEG
-F_ADD_V P 8
-SET_V P 8
-LOD_V rls_update_K 0
-F_MLT_V rls_update_Px 3
-F_NEG
-F_ADD_V P 12
-SET_V P 12
-LOD_V rls_update_K 1
-F_MLT_V rls_update_Px 0
-F_NEG
-F_ADD_V P 1
-SET_V P 1
-LOD_V rls_update_K 1
-F_MLT_V rls_update_Px 1
-F_NEG
-F_ADD_V P 5
-SET_V P 5
-LOD_V rls_update_K 1
-F_MLT_V rls_update_Px 2
-F_NEG
-F_ADD_V P 9
-SET_V P 9
-LOD_V rls_update_K 1
-F_MLT_V rls_update_Px 3
-F_NEG
-F_ADD_V P 13
-SET_V P 13
-LOD_V rls_update_K 2
-F_MLT_V rls_update_Px 0
-F_NEG
-F_ADD_V P 2
-SET_V P 2
-LOD_V rls_update_K 2
-F_MLT_V rls_update_Px 1
-F_NEG
-F_ADD_V P 6
-SET_V P 6
-LOD_V rls_update_K 2
-F_MLT_V rls_update_Px 2
-F_NEG
-F_ADD_V P 10
-SET_V P 10
-LOD_V rls_update_K 2
-F_MLT_V rls_update_Px 3
-F_NEG
-F_ADD_V P 14
-SET_V P 14
-LOD_V rls_update_K 3
-F_MLT_V rls_update_Px 0
-F_NEG
-F_ADD_V P 3
-SET_V P 3
-LOD_V rls_update_K 3
-F_MLT_V rls_update_Px 1
-F_NEG
-F_ADD_V P 7
-SET_V P 7
-LOD_V rls_update_K 3
-F_MLT_V rls_update_Px 2
-F_NEG
-F_ADD_V P 11
-SET_V P 11
-LOD_V rls_update_K 3
-F_MLT_V rls_update_Px 3
-F_NEG
-F_ADD_V P 15
-SET_V P 15
-LOD_V P 0
+SF_ADD
+STI_V w 4
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld5e
+JMP __Ld5
+@__Ld5e LOD -4
+SET __dd3
+LOD -16
+SET __dk0
+@__Ld6 LOD __dd3
+LDI_V rls_update_K 4
+SET __dhf2
+LOD -4
+SET __dk1
+@__Ld7 ADD __dk0
+PSH
+LDI_V P 20
+P_LOD __dk1
+LDI_V rls_update_Px 4
+F_MLT __dhf2
+SF_SU2
+STI_V P 20
+LOD __dk1
+ADD 1
+SET __dk1
+JIZ __Ld7e
+JMP __Ld7
+@__Ld7e LOD __dd3
+ADD 1
+SET __dd3
+LOD __dk0
+ADD 4
+SET __dk0
+JIZ __Ld6e
+JMP __Ld6
+@__Ld6e LOD -16
+SET __dk0
+@__Ld8 PSH
+LDI_V P 16
 F_MLT 1.010101
-SET_V P 0
-LOD_V P 1
-F_MLT 1.010101
-SET_V P 1
-LOD_V P 2
-F_MLT 1.010101
-SET_V P 2
-LOD_V P 3
-F_MLT 1.010101
-SET_V P 3
-LOD_V P 4
-F_MLT 1.010101
-SET_V P 4
-LOD_V P 5
-F_MLT 1.010101
-SET_V P 5
-LOD_V P 6
-F_MLT 1.010101
-SET_V P 6
-LOD_V P 7
-F_MLT 1.010101
-SET_V P 7
-LOD_V P 8
-F_MLT 1.010101
-SET_V P 8
-LOD_V P 9
-F_MLT 1.010101
-SET_V P 9
-LOD_V P 10
-F_MLT 1.010101
-SET_V P 10
-LOD_V P 11
-F_MLT 1.010101
-SET_V P 11
-LOD_V P 12
-F_MLT 1.010101
-SET_V P 12
-LOD_V P 13
-F_MLT 1.010101
-SET_V P 13
-LOD_V P 14
-F_MLT 1.010101
-SET_V P 14
-LOD_V P 15
-F_MLT 1.010101
-SET_V P 15
-RET
-@main LOD 1000.0
-SET_V P 0
-SET_V P 5
-SET_V P 10
-SET_V P 15
-LOD 0.0
-SET_V P 1
-SET_V P 2
-SET_V P 3
-SET_V P 4
-SET_V P 6
-SET_V P 7
-SET_V P 8
-SET_V P 9
-SET_V P 11
-SET_V P 12
-SET_V P 13
-SET_V P 14
-LOD 0.0
-SET_V w 0
-SET_V w 1
-SET_V w 2
-SET_V w 3
-LOD 0
+STI_V P 16
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld8e
+JMP __Ld8
+@__Ld8e RET
+@main LOD -16
+SET __dk0
+@__Ld9 P_LOD 0.0
+STI_V P 16
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld9e
+JMP __Ld9
+@__Ld9e LOD -20
+SET __dk1
+@__Ld10 P_LOD 1000.0
+STI_V P 20
+LOD __dk1
+ADD 5
+SET __dk1
+JIZ __Ld10e
+JMP __Ld10
+@__Ld10e LOD -4
+SET __dk0
+@__Ld11 P_LOD 0.0
+STI_V w 4
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld11e
+JMP __Ld11
+@__Ld11e LOD 0
 SET main_j
 @__Lwh1 LOD 20
 LES main_j
@@ -325,23 +233,18 @@ INN 1
 I2F
 F_MLT 0.001
 CAL rls_update
-LOD_V w 0
+LOD -4
+SET __dk0
+@__Ld12 LDI_V w 4
 F_MLT 1000.0
 F2I
 OUT 0
-LOD_V w 1
-F_MLT 1000.0
-F2I
-OUT 0
-LOD_V w 2
-F_MLT 1000.0
-F2I
-OUT 0
-LOD_V w 3
-F_MLT 1000.0
-F2I
-OUT 0
-LOD main_j
+LOD __dk0
+ADD 1
+SET __dk0
+JIZ __Ld12e
+JMP __Ld12
+@__Ld12e LOD main_j
 ADD 1
 SET main_j
 JMP __Lwh1

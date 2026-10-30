@@ -15,6 +15,7 @@
 #include "../Headers/diretivas.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../Headers/dirac.h"
 #include "../Headers/funcoes.h"
 #include "../../common/asm_share.h"
 #include "../../common/exe_dir.h"
@@ -195,6 +196,10 @@ void parse_end(char *prname, char *d_proc)
     // check whether macros need to be appended to the .asm file --------------
 
     char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/%s.asm", d_proc, prname);
+
+	// the area the Dirac loops share, when a statement needed it ------------
+
+	dirac_finish(asm_file); // (dirac.c)
 
 	// a function that calls itself back would run over its own locals ------
 

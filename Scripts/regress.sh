@@ -30,7 +30,9 @@
 #      Scripts/check_isa.py. In the same step, Scripts/check_changelog.py
 #      holds CHANGELOG.md's link lines to its version headings, and
 #      Scripts/dirac_cases.py runs every combination of the Dirac notation
-#      in Compilers/CMMComp/DiracCases/cases.tsv through cmmcomp.
+#      in Compilers/CMMComp/DiracCases/cases.tsv through cmmcomp, and
+#      Scripts/dirac_ref.py and Scripts/rls_ref.py hold the sim goldens of
+#      dirac_shapes and proc_rls to values computed apart from YANC.
 #
 #   3b. Float and complex conditions: Scripts/fcond runs the same cases on
 #      the host C/C++ compiler and on both compilers (three float formats,
@@ -285,7 +287,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     gcc -O2 -Wall -Werror -o "$CMMCOMP" \
         ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
         funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
-        variaveis.c array_index.c global.c macros.c messages.c args.c \
+        variaveis.c array_index.c global.c macros.c messages.c args.c dirac.c \
         y.tab.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
@@ -1405,6 +1407,19 @@ if command -v python3 >/dev/null 2>&1; then
         pass=$((pass + 1))
     else
         fail=$((fail + 1)); failed_names+=("dirac-cases")
+    fi
+    # the sim goldens of the Dirac fixtures against values computed apart
+    # from YANC: dirac_shapes exactly (Scripts/dirac_ref.py), proc_rls against
+    # an RLS filter in double precision (Scripts/rls_ref.py)
+    if python3 "$ROOT/Scripts/dirac_ref.py" "$ROOT" --check; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("dirac-ref")
+    fi
+    if python3 "$ROOT/Scripts/rls_ref.py" "$ROOT"; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("rls-ref")
     fi
 else
     echo ""

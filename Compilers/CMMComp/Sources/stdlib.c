@@ -3558,5 +3558,53 @@ void exec_shift(int ida, expr eb, int idc)
         add_instr("SET %s\n", v_table[ida].name);
     }
 
+    // ida int and etb int in the acc (a # k+1 -> |a>): emitted nothing until
+    // 2026-10-30 (docs/design/dirac-expressions.md section 2)
+    if (v_table[ida].type == 1 && eb.type == 1 && eb.id == 0)
+    {
+        add_instr("SET __aux_var\n");
+
+        for (int i = N-1; i > 0; i--)
+        {
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i-1);
+            add_instr("SET_V %s %d\n", v_table[ida].name, i);
+        }
+
+        add_instr("LOD __aux_var\n");
+        add_instr("SET %s\n", v_table[ida].name);
+    }
+
+    // ida float and etb int in memory
+    if (v_table[ida].type == 2 && eb.type == 1 && eb.id != 0)
+    {
+        for (int i = N-1; i > 0; i--)
+        {
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i-1);
+            add_instr("SET_V %s %d\n", v_table[ida].name, i);
+        }
+
+        add_instr("I2F_M %s\n", v_table[eb.id].name);
+        add_instr("SET %s\n", v_table[ida].name);
+    }
+
+    // ida int and etb float: converted, as an int variable getting a float
+    if (v_table[ida].type == 1 && eb.type == 2)
+    {
+        fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name, fname));
+
+        if (eb.id != 0) add_instr("F2I_M %s\n", v_table[eb.id].name);
+        else            add_instr("F2I\n");
+        add_instr("SET __aux_var\n");
+
+        for (int i = N-1; i > 0; i--)
+        {
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i-1);
+            add_instr("SET_V %s %d\n", v_table[ida].name, i);
+        }
+
+        add_instr("LOD __aux_var\n");
+        add_instr("SET %s\n", v_table[ida].name);
+    }
+
     acc_ok = 0;
 }
