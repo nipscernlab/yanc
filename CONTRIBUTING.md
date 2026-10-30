@@ -30,8 +30,10 @@ clean checkout, `make` builds the six tools into `bin/`.
    cmmcomp → asmcomp on every test in `Compilers/CMMComp/Tests/`, runs the
    README quick start and builds the manual with every warning an error.
    If your change breaks any of these, the PR will be blocked. CI does not
-   compare goldens or simulate: run `Scripts/regress.sh` before you push
-   ([AGENTS.md](AGENTS.md), "The one command").
+   compare goldens or simulate: run `Scripts/regress.sh --no-sim` before
+   you push, and the whole `Scripts/regress.sh` once for a batch of pull
+   requests before its last merge ([AGENTS.md](AGENTS.md), "The one
+   command").
 4. **Open the PR against `main`** with a description that explains *why*
    the change is needed, not just what it does.
 

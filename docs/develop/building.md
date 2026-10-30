@@ -62,7 +62,9 @@ cmmcomp's calls that emit assembly the tests reach, and which a test with
 an independent reference checks (`Scripts/cmm_cov.sh`; the tests that
 count as checked are in `Compilers/CMMComp/Tests/verified.txt`, and
 neither count may grow past `cov_baseline.txt`), and runs `yanc`
-itself. Every change goes through it. `bash Scripts/cmm_cov.sh --list`
+itself. Every change goes through it: the quick form (`--no-sim`) for each
+change, the whole one once for each batch of changes, before its last merge
+(AGENTS.md, "The one command"). `bash Scripts/cmm_cov.sh --list`
 lists every call no test checks. A change to the instruction
 table or to a message regenerates its page:
 `python3 Scripts/gen_isa_doc.py`, `python3 Scripts/gen_messages_doc.py`.
