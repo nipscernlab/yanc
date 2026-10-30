@@ -1,0 +1,52 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// Two defects of the cmmcomp audit (2026-10-30), checked by their output:
+//
+// - a store to a matrix with both indexes computed, m[a+1][b+1] = 7 and
+//   m[a+1][b+1]++, emitted the second index first (C left the order of a
+//   call's arguments to the host compiler) and wrote m[b+1][a+1];
+// - a switch on a float or a comp converted the index to int, as the manual
+//   says, but compared it as a float with the cases, so no case matched.
+//
+// Expected: 8 0 (m[1][2] and m[2][1]), 99 10 20 99 (f = 0.5, 1.5, 2.5 and
+// 3.5 truncated: no case, 1, 2, no case), 2 (2.25 truncated matches case
+// 2.0), 3 (the real part of 3.5+1i truncated).
+
+int m[3][4];
+
+void main()
+{
+    int a; int b; int k; float f; comp z;
+    a = 0; b = 1;
+    m[a+1][b+1] = 7;
+    m[a+1][b+1]++;
+    out(0, m[1][2]);
+    out(0, m[2][1]);
+
+    f = 0.5;
+    for (k = 0; k < 4; k++) {
+        switch (f) {
+            case 1:  out(0, 10); break;
+            case 2:  out(0, 20); break;
+            default: out(0, 99);
+        }
+        f = f + 1.0;
+    }
+
+    f = 2.25;
+    switch (f) {
+        case 1.5: out(0, 15); break;
+        case 2.0: out(0, 2);  break;
+        default:  out(0, 99);
+    }
+
+    z = 3.5+1i;
+    switch (z) {
+        case 3:  out(0, 3); break;
+        default: out(0, 99);
+    }
+}

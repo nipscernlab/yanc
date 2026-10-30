@@ -1440,8 +1440,14 @@ void stmt_emit(stmt_node *n)
         case STMT_PPLUS:
             if      (!n->idx ) ass_pplus(n->id);
             else if (!n->idx2) ass_aplus(n->id, ast_emit_expr(n->idx));
-            else               ass_apl2d(n->id, ast_emit_expr(n->idx),
-                                                ast_emit_expr(n->idx2));
+            else {
+                // one statement each: C leaves the order of a call's
+                // arguments to the host compiler, and the first index must
+                // be emitted first (it goes to the stack, the second to the acc)
+                expr i1 = ast_emit_expr(n->idx);
+                expr i2 = ast_emit_expr(n->idx2);
+                ass_apl2d(n->id, i1, i2);
+            }
             break;
 
         case STMT_ARRAY_ASSIGN:
@@ -1467,9 +1473,12 @@ void stmt_emit(stmt_node *n)
             // First emit the index calculation (leaves it in acc),
             // then the walker on the RHS pushes that, computes the value,
             // and ass_array emits the indexed-store.
-            if (n->idx2) arr_2d_index(n->id, ast_emit_expr(n->idx),
-                                              ast_emit_expr(n->idx2));
-            else         arr_1d_index(n->id, ast_emit_expr(n->idx));
+            if (n->idx2) {
+                expr i1 = ast_emit_expr(n->idx);   // first, as in EXPR_ARRAY_INDEX
+                expr i2 = ast_emit_expr(n->idx2);
+                arr_2d_index(n->id, i1, i2);
+            }
+            else arr_1d_index(n->id, ast_emit_expr(n->idx));
             ass_array(n->id, ast_emit_expr(n->rhs), n->op);
             break;
 
@@ -1623,7 +1632,10 @@ void stmt_emit(stmt_node *n)
             // on -- `ADD d; JIZ body` per case, no copy of s in memory. Word
             // arithmetic wraps at NUBITS, so the differences are taken modulo
             // 2^NUBITS too and every compare stays exact.
-            int int_cases = (cond_e.type == 1);
+            // emit_cond_int_load leaves an int whatever the index's type (a
+            // float or the real part of a comp, truncated), so int cases
+            // take this path for any index
+            int int_cases = 1;
             for (int i = 0; int_cases && n->body && i < n->body->kids_n; i++)
                 if (n->body->kids[i]->kind == STMT_CASE_LABEL && n->body->kids[i]->id4 != 1)
                     int_cases = 0;
@@ -1666,12 +1678,13 @@ void stmt_emit(stmt_node *n)
                 break;
             }
 
-            // General dispatch (a float switch or a float case): ensure the
-            // implicit `switch_exp` var exists and matches the cond's type;
-            // the dispatch block below rebuilds an expr against it.
+            // General dispatch (a float case): the implicit `switch_exp` var
+            // holds the index as emit_cond_int_load leaves it, an int, and the
+            // dispatch block below compares each case value with it (a float
+            // case converts the int: case 2.0 matches 2, case 1.5 nothing).
             if (find_var("__switch_exp") == -1) add_var("__switch_exp");
             int sw_id = find_var("__switch_exp");
-            v_table[sw_id].type = cond_e.type;
+            v_table[sw_id].type = 1;
             v_table[sw_id].used = 0;
 
             emit_cond_int_load(cond_e, 1);

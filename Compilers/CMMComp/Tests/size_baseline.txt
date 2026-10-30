@@ -49,6 +49,7 @@ cmm_log    36
 cmm_names  83
 cmm_nofloat 21
 cmm_nubits8 96
+cmm_order_switch 96
 cmm_params 328
 cmm_pow    118
 cmm_pplus  274
