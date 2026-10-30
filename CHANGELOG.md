@@ -168,6 +168,28 @@ tags consumed by Aurora.
   the block's clock, two cycles less a word, the circuit of before. Found in
   the audit of the HITS menu on the DE2-115; `tb_vgatext.sh` now sends the
   word 10 ns after T, which the old block fails.
+- **C±: an imaginary literal, and complex literals with C's precedence**
+  (cmmcomp audit, 2026-10-30). The lexer took `3+2i` as one token, so
+  `y*3+2i` was `y*(3+2i)`, and `n-1+2i` and `w - 3 + 4i` were syntax
+  errors. It now reads an imaginary literal (`2i`, `0.5i`), and `a + bi` is a
+  sum: two literals are one constant, as before, and a real expression and
+  an imaginary literal are `complex(x, b)`. `2i`, `x + 1i` and `-2i` now
+  compile; brace lists take `{1+2i, -3-4i, 2i}` as before. Fixture
+  `cmm_cnum_expr`.
+- **C±: a global initialized after a function was never set** (cmmcomp
+  audit, 2026-10-30). Its initializer landed after that function's `RET`,
+  where nothing reached it, and the compiler removed it as unreachable.
+  Every global initializer now runs before `main`.
+- **C±: a function that is not void could run into the next one** (cmmcomp
+  audit, 2026-10-30). The compiler only asked for some `return` in the
+  body; `int f(int x) { if (x) return 1; }` with `x == 0` ran the next
+  function's code. A path that reaches the end of such a function is now an
+  error. NegTest `no_return_path`; fixture `cmm_flow_globals`.
+- **C±: a long name crashed cmmcomp** (cmmcomp audit, 2026-10-30). The
+  local's assembly name went into a buffer of 64 characters, and asmcomp
+  stops at about 120. A name now has at most 50 characters, with a message
+  past that; GitHub issue #66 is to take any length. NegTest
+  `name_too_long`.
 - **C±: three defects of the Dirac notation, which gave wrong results
   without a message** (docs/design/dirac-expressions.md section 2). The
   outer product was transposed: `A # |a⟩⟨b|` gave `b aᵀ`, and

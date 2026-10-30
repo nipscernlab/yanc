@@ -57,7 +57,7 @@ void declar_var(int id)
     // register the variable in the log file ----------------------------------
 
     // save the function it belongs to
-    char func[256]; if (strcmp(fname,"")==0) strcpy(func, "global"); else strcpy(func, fname);
+    char func[sizeof fname]; if (strcmp(fname,"")==0) strcpy(func, "global"); else strcpy(func, fname);
     // save the data in the log file
     fprintf(f_log, "%s %s %d\n", func, rem_fname(v_table[id].name, fname), type_tmp);
     // if comp, save the imaginary part too
@@ -78,7 +78,7 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
 
     int type = type_tmp;
 
-    char func[256]; if (strcmp(fname,"")==0) strcpy(func, "global"); else strcpy(func, fname);
+    char func[sizeof fname]; if (strcmp(fname,"")==0) strcpy(func, "global"); else strcpy(func, fname);
     if (sim_arr == 1)
     {
                        fprintf(f_log, "%s %s   %d %s\n", func, rem_fname(v_table[id_var].name, fname), type_tmp, v_table[id_arg].name);

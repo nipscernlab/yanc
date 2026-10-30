@@ -43,7 +43,8 @@ defaults; see [Directives](directives.md).
 ## Comments, names and literals
 
 - Comments: `// to the end of the line` and `/* across lines */`.
-- Names: letters, digits and `_`, not starting with a digit. Names starting
+- Names: letters, digits and `_`, not starting with a digit, at most 50
+  characters (the toolchain's buffers; GitHub issue #66). Names starting
   with `__` belong to the compiler. A name may not be spelt like an
   instruction of the processor once the compiler has prefixed it (a local
   `x` of the function `f` becomes `f_x` in the assembly): the compiler says
@@ -71,9 +72,12 @@ defaults; see [Directives](directives.md).
   `1e-5`, `2.5E+3`, `007.5`, and with a suffix `1.5f` (`f`, `F`, `l`, `L`;
   the suffix changes nothing, there is one float). Each one is encoded
   exactly to the nearest value of the format, ties to even.
-- Complex literals: a real part and an imaginary part, both written:
-  `3 + 4i`, `-1.5 - 2i`, `0 + 1i`, `1e-8 + 2e-8i`. From variables, use
-  `complex(re, im)`.
+- Imaginary literals: a number followed by `i`, `2i`, `0.5i`, `1e-8i`. A
+  complex number is a sum, as in C99: `3 + 4i`, `-1.5 - 2i`, `1e-8 + 2e-8i`,
+  `2i`, and with the precedence of any sum, so `y*3 + 2i` is `(y*3) + 2i`.
+  A real literal and an imaginary one make one constant, and a real
+  expression and an imaginary literal are `complex(x, b)`: no instruction
+  adds the zero real part. From two variables, use `complex(re, im)`.
 
 ## Types
 
@@ -103,7 +107,10 @@ float table[64] "table.txt";      // initialised from a file
 - A variable can be declared at the top of the file (global) or anywhere
   inside a function (local to it). Any name of a declaration list can have
   an initialiser, and a later name can read an earlier one, as in C. A
-  local initialiser runs each time the function is called.
+  local initialiser runs each time the function is called. A global
+  initialiser runs once, before `main`, wherever the file declares the
+  global, between functions too, and it may call a function defined above
+  it.
 - The size of an array is a number (or a `#define` name for one).
 - An array is initialised between braces, as in C, or from a file:
 
@@ -185,6 +192,12 @@ float mean(float a, float b)
 - Parameters, as many as needed, are passed by value; they can be `int`, `float`
   or `comp`, never an array. The return type is `int`, `float`, `comp` or
   `void`.
+- A function that is not `void` returns on every path: the compiler stops
+  when a path can reach the end of the body, which would run on into the
+  next function. A path ends in a return when its last statement is a
+  `return`, an `if`/`else` whose two sides end in one, a `while (1)` left
+  only by a `return`, or a `switch` with a `default` and no `break` whose
+  last statement does.
 - **No recursion.** The locals of a function have fixed addresses, so a
   call to itself would overwrite them; the compiler stops with an error. C++
   (see [The C++ YANC accepts](language-cpp.md)) allows recursion.

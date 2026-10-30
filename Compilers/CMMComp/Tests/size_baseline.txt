@@ -15,6 +15,7 @@ cmm_cexp   129
 cmm_cfold  21
 cmm_clog   340
 cmm_cmpforms 312
+cmm_cnum_expr 112
 cmm_comp_arith 105
 cmm_comp_div 120
 cmm_comp_fase 426
@@ -36,6 +37,7 @@ cmm_fbound 21
 cmm_fft_rd 27
 cmm_fft_wr 27
 cmm_flit   79
+cmm_flow_globals 58
 cmm_forbottom 156
 cmm_fround0 202
 cmm_fround1 202

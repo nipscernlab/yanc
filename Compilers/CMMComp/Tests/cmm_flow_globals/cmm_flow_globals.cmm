@@ -1,0 +1,58 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// Globals and returns after the cmmcomp audit (2026-10-30):
+// - a global initialized after a function used to land after that
+//   function's RET, where nothing reached it: every initializer now runs
+//   before main, wherever the file declares it (g, k);
+// - a function that is not void may not let a path reach its end, or it
+//   would run into the next function: if/else both returning, while (1)
+//   left by a return, a switch with a default all pass (f, h, s);
+// - a name of 50 characters, the longest (CMM_NAME_MAX), compiles.
+//
+// Expected: 3 5 4 1 2 10 20 7.
+
+int a = 3;
+
+int f(int x)
+{
+    if (x > 0) return 1;
+    else       return 2;
+}
+
+int g = 5;
+
+int h(int x)
+{
+    while (1) {
+        if (x > 3) return x;
+        x = x + 1;
+    }
+}
+
+int k = h(1);
+
+int s(int x)
+{
+    switch (x) {
+        case 1:  return 10;
+        default: return 20;
+    }
+}
+
+int vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = 7;
+
+void main()
+{
+    out(0, a);
+    out(0, g);
+    out(0, k);
+    out(0, f(1));
+    out(0, f(0));
+    out(0, s(1));
+    out(0, s(7));
+    out(0, vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
+}

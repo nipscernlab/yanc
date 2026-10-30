@@ -18,6 +18,14 @@ typedef struct symbol {
     int  siz2;        // size of the j dimension (when it is a matrix)
 } symbol;
 
+// the longest name a program may write. The longest name the compiler
+// builds from it, a local comp's imaginary part <function>_<name>_i, is
+// 2 * CMM_NAME_MAX + 3 = 103 characters: it must go through asmcomp, whose
+// buffers of 128 stopped a global name of 121 characters (measured
+// 2026-10-30; 120 went through), and fits name[512] here with room to spare;
+// GitHub issue #66 is to take names of any length and drop this limit
+#define CMM_NAME_MAX 50
+
 extern symbol *v_table;                  // AoS storage, indexed by ID 0..v_count
 
 // table element manipulation -------------------------------------------------
@@ -31,6 +39,10 @@ void  check_name(int id, int is_fun);     // a declared name must be free in the
 // used in the lexer to pick up variables and constants -----------------------
 
 int exec_id  (char *text);               // an ID was found
+int cnum_join(const char *re, int sub, int imid); // re +/- an imaginary literal: the comp literal
+int cnum_is_imag(int id);                // a comp literal whose real part is zero
+const char *neg_text(int id);            // "-" and the text of literal id
+int cnum_imag_fnum(int id, int neg);     // the imaginary part of a comp literal, as a float literal
 int find_id  (const char *text);         // the ID as exec_id would resolve it, without creating it (-1 if none)
 int exec_inum(char *text);               // an int constant was found
 int inum_kind(const char *text);         // 0 INUM, 1 NINUM (a negative bit pattern), 2 NIMIN (the most negative), 3 DIMIN (its magnitude in decimal)
