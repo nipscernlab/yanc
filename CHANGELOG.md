@@ -142,6 +142,13 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: three statements left the data stack or the accumulator wrong**
+  (cmmcomp audit, 2026-10-30). `copy(x + 1, k)` left the accumulator
+  marked busy, so the next statement pushed a word nobody popped: in a
+  loop the stack filled up. `y = a*b + pow(x, 0)` loaded 1.0 over `a*b`
+  and added a word never pushed. A `comp` function called as a statement,
+  its value unused, left its real part on the stack at every call. Fixture
+  `cmm_stack_balance`, which runs each one 40 times.
 - **C±: three defects of the Dirac notation, which gave wrong results
   without a message** (docs/design/dirac-expressions.md section 2). The
   outer product was transposed: `A # |a⟩⟨b|` gave `b aᵀ`, and

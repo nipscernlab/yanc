@@ -625,6 +625,8 @@ void exec_copy(expr e, int id2)
     {
         add_instr("SET %s\n", v_table[id2].name);
     }
+
+    acc_ok = 0; // a statement: the acc holds nothing the next one needs
 }
 
 // ----------------------------------------------------------------------------
@@ -1048,8 +1050,9 @@ expr exec_pow(expr ex, expr ey)
         char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
         char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
-        // x^0 = 1 (the base value is simply discarded)
-        if (n == 0) { add_instr("LOD 1.0\n"); acc_ok = 1; return expr_make(2, 0); }
+        // x^0 = 1: a base in the acc is simply discarded; a base in memory
+        // leaves the acc to a value of before, pushed by P_LOD
+        if (n == 0) { add_instr("%s 1.0\n", ex.id != 0 ? ld : "LOD"); acc_ok = 1; return expr_make(2, 0); }
 
         // widen the base to a float in the acc (the four operand shapes)
         if ((ex.type == 1) && (ex.id != 0)) add_instr("%s %s\n", i2f, v_table[ex.id].name);  // int in memory

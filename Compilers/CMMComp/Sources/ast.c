@@ -1500,6 +1500,9 @@ void stmt_emit(stmt_node *n)
 
         case STMT_VOID_CALL:
             ast_emit_expr(n->rhs);  // walks the EXPR_FUNC_CALL: par_check + CAL
+            // a comp function returns its real part on the stack: a call
+            // whose value nobody uses drops it
+            if (v_table[n->rhs->id].type == 9) add_instr("POP\n");
             break;
 
         case STMT_DIRE_INTER:
