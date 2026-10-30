@@ -1,0 +1,16 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// cmmcomp audit, 2026-10-30: complex numbers have no order, as in C; the
+// compiler used to compare |z|^2.
+
+void main()
+{
+    comp z; comp w; int k;
+    z = 3+4i; w = 1+1i;
+    k = z < w;
+    out(0, k);
+}

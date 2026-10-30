@@ -61,8 +61,8 @@ void get_cmp_cst(expr e, expr *er, expr *ei)
 
     cnum_split(v_table[e.id].name, re, im);   // the text, not a host float: no digit lost
 
-    *er = expr_make(2, exec_fnum(re));
-    *ei = expr_make(2, exec_fnum(im));
+    *er = num2exp(exec_fnum(re), 2);   // typed constants: real(5-7i) can be a built-in's argument
+    *ei = num2exp(exec_fnum(im), 2);
 }
 
 // generates the extended float exprs for the real and imag parts

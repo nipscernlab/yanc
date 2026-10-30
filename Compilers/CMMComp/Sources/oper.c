@@ -2458,11 +2458,132 @@ expr oper_mod(expr e1, expr e2)
 // comparison operations ------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+// ----------------------------------------------------------------------------
+// comparisons with a comp ----------------------------------------------------
+// ----------------------------------------------------------------------------
+// As in C, two complex numbers are equal when their real parts are equal and
+// their imaginary parts are equal; a real is the comp with a zero imaginary
+// part. They have no order: <, >, <= and >= with a comp are an error
+// (Luciano, 2026-10-30; it compared |z|^2, so (1+0i) == (0+1i) and
+// -5 == 3+4i held). The result is (re1 == re2) AND (im1 == im2), EQU being
+// one unit for int and float.
+
+// one side of the comparison: in memory (the parts' operands) or in the acc
+typedef struct {
+    int  acc;         // 1: in the acc (a comp: real on the stack, imag in the acc)
+    int  comp;        // 1: a comp, 0: a real
+    int  is_int;      // a real int: its real part is converted (I2F)
+    char re[600];     // in memory: the real part's operand
+    char im[600];     // in memory: the imaginary part's operand
+} cmp_side;
+
+static const char *cmp_flit(const char *t)
+{
+    char b[sizeof(v_table[0].name) + 8]; snprintf(b, sizeof b, "%s", t);
+    return v_table[exec_fnum(b)].name;
+}
+
+static cmp_side cmp_side_of(expr e)
+{
+    cmp_side d; memset(&d, 0, sizeof d);
+    d.comp = (e.type >= 3);
+    if (e.type == 5) {                                  // a comp constant: two float literals
+        expr er, ei; get_cmp_cst(e, &er, &ei);
+        snprintf(d.re, sizeof d.re, "%s", v_table[er.id].name);
+        snprintf(d.im, sizeof d.im, "%s", v_table[ei.id].name);
+        return d;
+    }
+    if (e.id == 0) {d.acc = 1; d.is_int = (e.type == 1); return d;}
+    v_table[e.id].used = 1;
+    if (e.type == 3) {
+        snprintf(d.re, sizeof d.re, "%s", v_table[e.id].name);
+        snprintf(d.im, sizeof d.im, "%s", v_table[get_img_id(e.id)].name);
+    } else if (e.type == 1 && v_table[e.id].isco == 1) {  // an int literal: the float literal
+        char t[sizeof(v_table[0].name) + 4]; snprintf(t, sizeof t, "%s.0", v_table[e.id].name);
+        snprintf(d.re, sizeof d.re, "%s", cmp_flit(t));
+        snprintf(d.im, sizeof d.im, "%s", cmp_flit("0.0"));
+    } else {
+        d.is_int = (e.type == 1);
+        snprintf(d.re, sizeof d.re, "%s", v_table[e.id].name);
+        snprintf(d.im, sizeof d.im, "%s", cmp_flit("0.0"));
+    }
+    return d;
+}
+
+static expr oper_cmp_comp(expr e1, expr e2, int type)
+{
+    if (type != 2) {fprintf(stderr, MSG_ERR_CMP_COMP_ORDER, line_num+1); exit(EXIT_FAILURE);}
+
+    cmp_side a = cmp_side_of(e1), b = cmp_side_of(e2);
+    const char *z = cmp_flit("0.0");
+
+    if (!a.acc && !b.acc)                               // both in memory: 5 words
+    {
+        if (b.is_int) {cmp_side t = a; a = b; b = t;}   // EQU is symmetric: the int one is loaded
+        add_instr("%s %s\n", a.is_int ? (acc_ok ? "P_I2F_M" : "I2F_M") : (acc_ok ? "P_LOD" : "LOD"), a.re);
+        add_instr("EQU %s\n", b.re);
+        add_instr("P_LOD %s\n", a.im);
+        add_instr("EQU %s\n", b.im);
+        add_instr("S_AND\n");
+    }
+    else if (a.acc != b.acc)                            // one in the acc (EQU is symmetric)
+    {
+        cmp_side x = a.acc ? a : b, m = a.acc ? b : a;
+        if (x.comp) {                                   // real on the stack, imag in the acc
+            add_instr("EQU %s\n", m.im);
+            add_instr("SET_P __aux_var\n");
+            if (m.is_int) {add_instr("P_I2F_M %s\n", m.re); add_instr("S_EQU\n");}
+            else           add_instr("EQU %s\n", m.re);
+            add_instr("AND __aux_var\n");
+        } else {                                        // a real in the acc, a comp in memory
+            if (x.is_int) add_instr("I2F\n");
+            add_instr("EQU %s\n", m.re);
+            add_instr("P_LOD %s\n", m.im);
+            add_instr("EQU %s\n", z);
+            add_instr("S_AND\n");
+        }
+    }
+    else if (a.comp && b.comp)                          // stack: re1, im1, re2; acc: im2
+    {
+        add_instr("SET_P __aux_var\n");
+        add_instr("SET_P __aux_var1\n");
+        add_instr("EQU __aux_var\n");
+        add_instr("SET_P __aux_var2\n");
+        add_instr("EQU __aux_var1\n");
+        add_instr("AND __aux_var2\n");
+    }
+    else if (a.comp)                                    // stack: re1, im1; acc: the real
+    {
+        if (b.is_int) add_instr("I2F\n");
+        add_instr("SET_P __aux_var\n");
+        add_instr("EQU %s\n", z);
+        add_instr("SET_P __aux_var1\n");
+        add_instr("EQU __aux_var\n");
+        add_instr("AND __aux_var1\n");
+    }
+    else                                                // stack: the real, re2; acc: im2
+    {
+        add_instr("EQU %s\n", z);
+        add_instr("SET_P __aux_var\n");
+        if (a.is_int) {
+            add_instr("SET_P __aux_var1\n");
+            add_instr("I2F\n");
+            add_instr("EQU __aux_var1\n");
+        } else add_instr("S_EQU\n");
+        add_instr("AND __aux_var\n");
+    }
+
+    acc_ok = 1;
+    return expr_make(1, 0); // int boolean in the accumulator
+}
+
 // compares greater-than, less-than and equal-to
 // - separar o igual pra economizar clock
 // - review to avoid unnecessary stack use!
 expr oper_cmp(expr e1, expr e2, int type)
 {
+
+    if (e1.type >= 3 || e2.type >= 3) return oper_cmp_comp(e1, e2, type);   // a comp: its own rule
 
     char ld [10]; if (acc_ok == 0) strcpy(ld , "LOD" ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
@@ -2516,42 +2637,6 @@ expr oper_cmp(expr e1, expr e2, int type)
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
 
-    // int var with comp const
-    if ((e1.type==1) && (e1.id!=0) && (e2.type==5))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        oper_mult(e1, e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
-    }
-
-    // int var with comp var
-    if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        oper_mult(e1, e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
-    }
-
-    // int var with comp acc
-    if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET   __aux_var1\n");
-        acc_ok = 0;
-
-        oper_mult(e1, e1);
-        add_instr("P_LOD __aux_var1\n");
-        add_instr("P_LOD __aux_var \n");
-        exec_mod2(expr_make(3, 0));
-        oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
-    }
-
     // int acc with int var
     if ((e1.type==1) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
@@ -2581,47 +2666,6 @@ expr oper_cmp(expr e1, expr e2, int type)
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
 
-    // int acc with comp const
-    if ((e1.type==1) && (e1.id==0) && (e2.type==5))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        add_instr("SET   __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e1, e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
-    }
-
-    // int acc with comp var
-    if ((e1.type==1) && (e1.id==0) && (e2.type==3) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        add_instr("SET   __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e1, e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
-    }
-
-    // int acc with comp acc
-    if ((e1.type==1) && (e1.id==0) && (e2.type==3) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET_P __aux_var1\n");
-        add_instr("SET   __aux_var2\n");
-
-        add_instr("P_LOD __aux_var2\n");
-        oper_mult(e1, e1);
-        add_instr("P_LOD __aux_var1\n");
-        add_instr("P_LOD __aux_var \n");
-        exec_mod2(expr_make(3, 0));
-        oper_cmp(expr_make(1, 0), expr_make(2, 0), type);
-    }
-
     // float var with int var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {
@@ -2647,42 +2691,6 @@ expr oper_cmp(expr e1, expr e2, int type)
     if ((e1.type==2) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
         add_instr("%s %s\n", fop, v_table[e1.id].name);
-    }
-
-    // float var with comp const
-    if ((e1.type==2) && (e1.id!=0) && (e2.type==5))
-    {
-        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
-
-        oper_mult(e1, e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // float var with comp var
-    if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
-
-        oper_mult(e1, e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // float var with comp acc
-    if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET   __aux_var1\n");
-        acc_ok = 0;
-
-        oper_mult(e1, e1);
-        add_instr("P_LOD __aux_var1\n");
-        add_instr("P_LOD __aux_var \n");
-        exec_mod2(expr_make(3, 0));
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }
 
     // float acc with int var
@@ -2711,293 +2719,6 @@ expr oper_cmp(expr e1, expr e2, int type)
     if ((e1.type==2) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
-    }
-
-    // float acc with comp const
-    if ((e1.type==2) && (e1.id==0) && (e2.type==5))
-    {
-        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
-
-        add_instr("SET   __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e1, e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // float acc with comp var
-    if ((e1.type==2) && (e1.id==0) && (e2.type==3) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
-
-        add_instr("SET   __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e1, e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // float acc with comp acc
-    if ((e1.type==2) && (e1.id==0) && (e2.type==3) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET_P __aux_var1\n");
-        add_instr("SET   __aux_var2\n");
-
-        add_instr("P_LOD __aux_var2\n");
-        oper_mult(e1, e1);
-        add_instr("P_LOD __aux_var1\n");
-        add_instr("P_LOD __aux_var \n");
-        exec_mod2(expr_make(3, 0));
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp const with int var
-    if ((e1.type==5) && (e2.type==1) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        exec_mod2(e1);
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(1, 0), type);
-    }
-
-    // comp const with int acc
-    if ((e1.type==5) && (e2.type==1) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        add_instr("SET   __aux_var\n");
-        acc_ok = 0;
-        exec_mod2(e1);
-        add_instr("P_LOD __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(1, 0), type);
-    }
-
-    // comp const with float var
-    if ((e1.type==5) && (e2.type==2) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
-
-        exec_mod2(e1);
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp const with float acc
-    if ((e1.type==5) && (e2.type==2) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
-
-        add_instr("SET   __aux_var\n");
-        acc_ok = 0;
-        exec_mod2(e1);
-        add_instr("P_LOD __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp const with comp const
-    if ((e1.type==5) && (e2.type==5))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        exec_mod2(e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp const with comp var
-    if ((e1.type==5) && (e2.type==3) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        exec_mod2(e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp const with comp acc
-    if ((e1.type==5) && (e2.type==3) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET   __aux_var1\n");
-        acc_ok = 0;
-        exec_mod2(e1);
-        add_instr("P_LOD __aux_var1\n");
-        add_instr("P_LOD __aux_var \n");
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp var with int var
-    if ((e1.type==3) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        exec_mod2(e1);
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(1, 0), type);
-    }
-
-    // comp var with int acc
-    if ((e1.type==3) && (e1.id!=0) && (e2.type==1) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_INT_COMP, line_num+1);
-
-        add_instr("SET   __aux_var\n");
-        acc_ok = 0;
-        exec_mod2(e1);
-        add_instr("P_LOD __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(1, 0), type);
-    }
-
-    // comp var with float var
-    if ((e1.type==3) && (e1.id!=0) && (e2.type==2) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
-
-        exec_mod2(e1);
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp var with float acc
-    if ((e1.type==3) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_FLOAT_COMP, line_num+1);
-
-        add_instr("SET   __aux_var\n");
-        acc_ok = 0;
-        exec_mod2(e1);
-        add_instr("P_LOD __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp var with comp const
-    if ((e1.type==3) && (e1.id!=0) && (e2.type==5))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        exec_mod2(e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp var with comp var
-    if ((e1.type==3) && (e1.id!=0) && (e2.type==3) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        exec_mod2(e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp var with comp acc
-    if ((e1.type==3) && (e1.id!=0) && (e2.type==3) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET   __aux_var1\n");
-        acc_ok = 0;
-        exec_mod2(e1);
-        add_instr("P_LOD __aux_var1\n");
-        add_instr("P_LOD __aux_var \n");
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp acc with int var
-    if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        exec_mod2(e1);
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(1, 0), type);
-    }
-
-    // comp acc with int acc
-    if ((e1.type==3) && (e1.id==0) && (e2.type==1) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        add_instr("SET_P __aux_var\n");
-        exec_mod2(e1);
-        add_instr("P_LOD __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(1, 0), type);
-    }
-
-    // comp acc with float var
-    if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        exec_mod2(e1);
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp acc with float acc
-    if ((e1.type==3) && (e1.id==0) && (e2.type==2) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        add_instr("SET_P __aux_var\n");
-        exec_mod2(e1);
-        add_instr("P_LOD __aux_var\n");
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(e2, e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp acc with comp const
-    if ((e1.type==3) && (e1.id==0) && (e2.type==5))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        exec_mod2(e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-
-    // comp acc with comp var
-    if ((e1.type==3) && (e1.id==0) && (e2.type==3) && (e2.id!=0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        exec_mod2(e1);
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
-    }
-    
-    // comp acc with comp acc
-    if ((e1.type==3) && (e1.id==0) && (e2.type==3) && (e2.id==0))
-    {
-        fprintf(stdout, MSG_WARN_CMP_COMPLEX, line_num+1);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET_P __aux_var1\n");
-        exec_mod2(e1);
-        add_instr("P_LOD __aux_var1\n");
-        add_instr("P_LOD __aux_var \n");
-        exec_mod2(e2);
-        oper_cmp(expr_make(2, 0), expr_make(2, 0), type);
     }
 
     acc_ok = 1;
