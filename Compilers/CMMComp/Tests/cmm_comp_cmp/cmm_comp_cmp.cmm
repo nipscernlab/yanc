@@ -1,0 +1,62 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// Comparisons with a comp, after the cmmcomp audit (2026-10-30): as in C, two
+// complex numbers are equal when both parts are; a real is the comp with a
+// zero imaginary part; there is no order (<, >, <=, >= with a comp are an
+// error, NegTest comp_order). Before, the compiler compared |z|^2: (1+0i) ==
+// (0+1i) and -5 == 3+4i held, and two operands both computed into the acc
+// clobbered __aux_var through mod2 ((z*e) == (u*e) came out wrong).
+// Every operand form: memory, constant, computed into the acc, int and
+// float. Then real() and imag() of a comp literal as a built-in's argument,
+// refused before ("gotta declare '5.0' first").
+//
+// z = w = 3+4i, u = 4+3i, e = 1+0i, r = 3+0i, x = 3.0, n = 3. Expected, one
+// per line: 1 0 1 0 1 1 1 1 0 0 1 1 1 1 0 1 1 0 1 1 1 1 0 1 1 1 1 0 1 1 1 0 1 0 0 0, then 5 -7.
+
+void main()
+{
+    comp z; comp w; comp u; comp e; comp r; float x; int n; int k;
+    z = 3+4i; w = 3+4i; u = 4+3i; e = 1+0i; r = 3+0i; x = 3.0; n = 3;
+    k = z == w; out(0, k);
+    k = z == u; out(0, k);
+    k = z != u; out(0, k);
+    k = z != w; out(0, k);
+    k = r == x; out(0, k);
+    k = x == r; out(0, k);
+    k = r == n; out(0, k);
+    k = n == r; out(0, k);
+    k = z == x; out(0, k);
+    k = z == n; out(0, k);
+    k = r == 3; out(0, k);
+    k = r == 3.0; out(0, k);
+    k = z == 3+4i; out(0, k);
+    k = 3+4i == z; out(0, k);
+    k = z == 4+3i; out(0, k);
+    k = (z*e) == w; out(0, k);
+    k = w == (z*e); out(0, k);
+    k = (z*e) == (u*e); out(0, k);
+    k = (z*e) == (w*e); out(0, k);
+    k = (z*e) == 3+4i; out(0, k);
+    k = (r*e) == x; out(0, k);
+    k = (r*e) == n; out(0, k);
+    k = (z*e) == n; out(0, k);
+    k = (r*e) == (x*2.0-3.0); out(0, k);
+    k = (x*2.0-3.0) == (r*e); out(0, k);
+    k = (r*e) == (n*2-3); out(0, k);
+    k = (n*2-3) == (r*e); out(0, k);
+    k = (r*e) == (n*2-2); out(0, k);
+    k = (n*2-3) == r; out(0, k);
+    k = r == (n*2-3); out(0, k);
+    k = (x*2.0-3.0) == r; out(0, k);
+    k = (x*2.0-2.0) == r; out(0, k);
+    k = (z*e) != (u*e); out(0, k);
+    k = (z*e) != (w*e); out(0, k);
+    k = (1+0i) == (0+1i); out(0, k);
+    k = -5 == 3+4i; out(0, k);
+    fout(0, real(5-7i));
+    fout(0, imag(5-7i));
+}

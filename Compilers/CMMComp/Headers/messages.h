@@ -358,21 +358,13 @@ void parse_lang_flag(int *argc, char **argv);
 
 // operator errors and warnings (oper.c) -------------------------------------
 
+#define MSG_ERR_CMP_COMP_ORDER \
+    M("Erro na linha %d: número complexo não tem ordem, então <, >, <= e >= não valem com comp. Compara mod2(z), real(z) ou imag(z).\n", \
+      "Error on line %d: complex numbers have no order, so <, >, <= and >= don't work with a comp. Compare mod2(z), real(z) or imag(z) instead.\n")
+
 #define MSG_ERR_MOD_NON_INT \
     M("Erro na linha %d: qual o sentido de calcular o resto da divisão sem ser com número inteiro? Vai se tratar!\n", \
       "Error on line %d: what's the point of computing a remainder with non-integer numbers? Get a grip!\n")
-
-#define MSG_WARN_CMP_INT_COMP \
-    M("Atenção na linha %d: comparando int com comp? Vou pegar o módulo.\n", \
-      "Heads up on line %d: comparing int with comp? Gonna use the magnitude.\n")
-
-#define MSG_WARN_CMP_FLOAT_COMP \
-    M("Atenção na linha %d: comparando float com comp? Vou pegar o módulo.\n", \
-      "Heads up on line %d: comparing float with comp? Gonna use the magnitude.\n")
-
-#define MSG_WARN_CMP_COMPLEX \
-    M("Atenção na linha %d: comparação com número complexo? Vou usar o módulo.\n", \
-      "Heads up on line %d: comparing with a complex number? Gonna use the magnitude.\n")
 
 #define MSG_ERR_LOGIC_NON_INT \
     M("Erro na linha %d: operação lógica com um comp (só int e float)!\n", \

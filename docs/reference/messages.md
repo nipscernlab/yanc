@@ -77,6 +77,7 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: I wanted a number here and you gave me <name>!
 - Error on line <n>: out() sends a number or a vector, not <name>. Slice it up first!
 - Error on line <n>: this Dirac combo is still in the oven. Hang tight!
+- Error on line <n>: complex numbers have no order, so <, >, <= and >= don't work with a comp. Compare mod2(z), real(z) or imag(z) instead.
 - Error on line <n>: what's the point of computing a remainder with non-integer numbers? Get a grip!
 - Error on line <n>: logical operation with a comp (int and float only)!
 - Error on line <n>: bad use of the '~' operator. Gotta pass an int. You tripping?
@@ -112,9 +113,6 @@ value. What the common ones mean and how to get past them is in
 - Heads up on line <n>: if you don't want this warning, use 'fout'.
 - Heads up on line <n>: if you don't want this warning, use 'out'.
 - Warning on line <n>: conj of a real number? It's just itself with a zero imaginary part, but ok!
-- Heads up on line <n>: comparing int with comp? Gonna use the magnitude.
-- Heads up on line <n>: comparing float with comp? Gonna use the magnitude.
-- Heads up on line <n>: comparing with a complex number? Gonna use the magnitude.
 - Heads up on line <n>: the second operand of the shift is a float. Now you're killin' me!
 - Heads up on line <n>: variable '<name>' is int, but getting a float.
 - Heads up on line <n>: local array '<name>' gets the values between braces only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).

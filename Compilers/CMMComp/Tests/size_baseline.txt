@@ -17,6 +17,7 @@ cmm_clog   340
 cmm_cmpforms 312
 cmm_cnum_expr 112
 cmm_comp_arith 105
+cmm_comp_cmp 509
 cmm_comp_div 120
 cmm_comp_fase 426
 cmm_comp_func 110
