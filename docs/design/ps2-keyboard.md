@@ -93,7 +93,11 @@ project:
 13. **The block runs on the SAPHO's clock**, read with `cade_sync(k)` (no
     link synchronizer): the case tested and documented as the default
     (Luciano). A block on another clock works with the plain `cade(k)`,
-    the same block.
+    the same block. Corrected 2026-10-30 (GitHub issue #64): the plain
+    `cade(k)` synchronizes only the block's bit, on the SAPHO's side, and
+    the block took the program's C straight into its queue logic. The
+    block now has `LINK_SYNC`, default 0: C through two flip-flops of its
+    clock; 1 leaves them out on the SAPHO's clock.
 14. **Claude writes the block, its testbench and the whole-processor test**;
     Dênis gets it tested and explained step by step, and checks it on the
     board (Luciano).
