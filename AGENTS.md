@@ -16,11 +16,13 @@ There is no single command yet that runs what CI runs. Until there is, run these
 
 ```sh
 make CFLAGS="-O2 -Wall -Werror"      # the build CI gates on
-bash Scripts/regress.sh              # the whole regression, about 30 minutes; --no-sim for a quick pass
+bash Scripts/regress.sh --no-sim     # the quick regression, a few minutes
 python -m sphinx -W --keep-going -b html docs docs/_build/html   # the manual, every warning an error
 ```
 
-`Scripts/regress.sh` is stricter than CI: CI only smoke-tests the pipeline on every example, while the regression compares each assembly with its golden, simulates, and checks the results against references computed apart from YANC. Every change goes through it.
+and simulate the tests the change touches. The whole regression, `bash Scripts/regress.sh` (about 30 minutes, it simulates every test), runs once for a batch of pull requests, in the background while the work goes on, and passes before the batch's last merge (Luciano, 2026-10-30: the whole regression for each change held the work up).
+
+`Scripts/regress.sh` is stricter than CI: CI only smoke-tests the pipeline on every example, while the regression compares each assembly with its golden, simulates, and checks the results against references computed apart from YANC. Every change goes through it, the quick form on its own and the whole one with its batch.
 
 ## Where the truth lives
 

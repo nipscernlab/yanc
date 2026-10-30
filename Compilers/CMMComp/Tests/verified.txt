@@ -1,0 +1,14 @@
+# The C± tests whose expected output was computed apart from YANC, so that a
+# call of cmmcomp they reach is checked for computing the right thing, not
+# only for emitting the same assembly (Scripts/cmm_cov.sh). One per line:
+# test | where its expected output comes from. A test goes here only when it
+# is simulated by Scripts/regress.sh (not in its SIM_SKIP list) and its
+# golden_sim was written from that independent source, never recorded with
+# regress.sh --update.
+dirac_shapes      | Scripts/dirac_ref.py: the same statements in Python, checked by the regression
+proc_rls          | Scripts/rls_ref.py: an RLS filter in double precision, checked by the regression
+cmm_stack_balance | the values worked out in its header (k + 2, 13, then 40)
+cmm_order_switch  | the values worked out in its header
+cmm_cnum_expr     | the values worked out in its header
+cmm_flow_globals  | the values worked out in its header
+cmm_comp_cmp      | the values written with each comparison in its generator, in its header
