@@ -17,3 +17,4 @@ cmm_cov_arr2d_wr  | Scripts/cov_tests.py: computed in Python, checked by the reg
 cmm_cov_arr1d     | Scripts/cov_tests.py: computed in Python, checked by the regression
 cmm_cov_ops       | Scripts/cov_tests.py: computed in Python, checked by the regression
 cmm_cov_lib       | Scripts/cov_tests.py: Python math/cmath, the float routines within 3 thousandths, checked by the regression
+cmm_cov_rest      | Scripts/cov_tests.py: computed in Python, checked by the regression

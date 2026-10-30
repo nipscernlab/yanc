@@ -551,7 +551,140 @@ def library():
     return "cmm_cov_lib", src, out
 
 
-FAMILIES = [arr2d_read, arr2d_write, arr1d, ops, library]
+# ---------------------------------------------------------------------------
+# the rest: assignment to a variable (ass_set) and ++ inside an expression;
+# functions (parameters of each type taking each argument form, returns of
+# each kind of value from each type of function); conditions of if, while,
+# ! and switch on each form; shifts by a float; the Dirac shift register;
+# out and fout of each type. Values times 4 where a float shows.
+# ---------------------------------------------------------------------------
+GV = {"i": ("gi", "(gi+gz)", "7"), "f": ("gf", "(gf+gfz)", "2.5"), "c": ("gc", "(gc*gone)", "(3.0+4.0i)")}
+GVAL = {"i": 7, "f": 2.5, "c": complex(3, 4)}
+TYPE = {"i": "int", "f": "float", "c": "comp"}
+
+
+def show4(kind, ref):
+    if kind == "i":
+        return "out(0, %s);" % ref
+    if kind == "f":
+        return "fout(0, 4.0*%s);" % ref
+    return "w = %s; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));" % ref
+
+
+def val4(kind, v):
+    if kind == "i":
+        return [int(v)]
+    if kind == "f":
+        return [safe_trunc(4 * v)]
+    return [safe_trunc(4 * v.real), safe_trunc(4 * v.imag)]
+
+
+def rest():
+    funcs, body, out = [], [], []
+    # assignment of every value form to a variable of every type
+    for tk in "ifc":
+        for vk in "ifc":
+            for text in GV[vk]:
+                body.append("    %s = %s;" % ({"i": "x", "f": "y", "c": "w"}[tk], text))
+                v = stored(GVAL[vk], tk)
+                body.append("    " + show4(tk, {"i": "x", "f": "y", "c": "w"}[tk]))
+                out.extend(val4(tk, v))
+    # ++ inside an expression: the old value, alone and pending
+    for pending in (0, 1):
+        pre_i, pre_f = ("(pa+z0) + ", 1000) if pending else ("", 0), ("(pf+fz) + ", 1000.0) if pending else ("", 0)
+        body.append("    k = 5; x = %sk++; out(0, x); out(0, k);" % pre_i[0]); out += [pre_i[1] + 5, 6]
+        body.append("    g = 1.5; y = %sg++; fout(0, 4.0*y); fout(0, 4.0*g);" % pre_f[0])
+        out += [safe_trunc(4 * (pre_f[1] + 1.5)), 10]
+        body.append("    vi[1] = 5; x = %svi[n1]++; out(0, x); out(0, vi[1]);" % pre_i[0]); out += [pre_i[1] + 5, 6]
+        body.append("    vf[1] = 1.5; y = %svf[n1]++; fout(0, 4.0*y); fout(0, 4.0*vf[1]);" % pre_f[0])
+        out += [safe_trunc(4 * (pre_f[1] + 1.5)), 10]
+        body.append("    mi[1][2] = 5; x = %smi[n1][n2]++; out(0, x); out(0, mi[1][2]);" % pre_i[0]); out += [pre_i[1] + 5, 6]
+        body.append("    mf[1][2] = 1.5; y = %smf[n1][n2]++; fout(0, 4.0*y); fout(0, 4.0*mf[1][2]);" % pre_f[0])
+        out += [safe_trunc(4 * (pre_f[1] + 1.5)), 10]
+    # functions: a parameter of each type, every argument form, alone and pending
+    for pk in "ifc":
+        funcs.append("%s par_%s(%s p)\n{\n    return p;\n}\n" % (TYPE[pk], pk, TYPE[pk]))
+        for vk in "ifc":
+            for text in GV[vk]:
+                v = stored(GVAL[vk], pk)
+                for pending in (0, 1):
+                    if pending:
+                        pre, pv = PEND_LIB[{"i": int, "f": float, "c": complex}[pk]]
+                        body.append("    " + {"i": "x", "f": "y", "c": "w"}[pk] + " = %spar_%s(%s);" % (pre, pk, text))
+                        body.append("    " + show4(pk, {"i": "x", "f": "y", "c": "w"}[pk]))
+                        out.extend(val4(pk, pv + v))
+                    else:
+                        body.append("    " + show4(pk, "par_%s(%s)" % (pk, text)))
+                        out.extend(val4(pk, v))
+    # returns: every kind of value from every type of function
+    for fk in "ifc":
+        for vk in "ifc":
+            for n, text in enumerate(GV[vk]):
+                name = "ret_%s_%s%d" % (fk, vk, n)
+                funcs.append("%s %s()\n{\n    return %s;\n}\n" % (TYPE[fk], name, text))
+                body.append("    " + show4(fk, "%s()" % name))
+                out.extend(val4(fk, stored(GVAL[vk], fk)))
+    funcs.append("void early(int p)\n{\n    if (p) return;\n    out(0, 77);\n}\n")
+    body.append("    early(1); early(0);"); out.append(77)
+    funcs.append("float mix(int a, float b, comp c)\n{\n    return a + b + real(c) + imag(c);\n}\n")
+    body.append("    " + show4("f", "mix(gi, (gf+gfz), (3.0+4.0i))")); out.extend(val4("f", 7 + 2.5 + 3 + 4))
+    body.append("    " + show4("f", "mix((gi+gz), 2.5, (gc*gone))")); out.extend(val4("f", 7 + 2.5 + 3 + 4))
+    # conditions of if, while and ! on every form, true and false
+    for kind in "ifc":
+        for zero in (0, 1):
+            body.append("    gi = %d; gf = %s; gc = %s;" % ((0, "0.0", "0.0+0.0i") if zero else (7, "2.5", "3.0+4.0i")))
+            for n, text in enumerate(GV[kind]):
+                if n == 2:
+                    text = {"i": "0", "f": "0.0", "c": "(0.0+0.0i)"}[kind] if zero else text
+                truth = 0 if zero else 1
+                body.append("    if (%s) out(0, 1); else out(0, 0);" % text); out.append(truth)
+                body.append("    k = 0; while (%s) { k = 1; break; } out(0, k);" % text); out.append(truth)
+                body.append("    x = !%s; out(0, x);" % text); out.append(1 - truth)
+            body.append("    gi = 7; gf = 2.5; gc = 3.0+4.0i;")
+    # switch on every index form (the index truncated, a comp's real part)
+    for kind in "ifc":
+        for text in GV[kind]:
+            body.append("    switch (%s) { case 2: out(0, 20); break; case 3: out(0, 30); break;"
+                        " case 7: out(0, 70); break; default: out(0, 99); }" % text)
+            out.append({"i": 70, "f": 20, "c": 30}[kind])
+    # shifts by a float count (converted), and of a float acc by an int
+    body.append("    x = gi << gf; out(0, x);"); out.append(7 << 2)
+    body.append("    x = (gi+gz) << (gf+gfz); out(0, x);"); out.append(7 << 2)
+    body.append("    x = gi >> 2.5; out(0, x);"); out.append(7 >> 2)
+    # the Dirac shift register: a[i] = a[i-1], the new value into a[0]
+    sr = {"i": [1, 2, 3, 4], "f": [1.5, 2.5, 3.5, 4.5]}
+    for ak in "if":
+        for vk in "if":
+            for text in GV[vk]:
+                body.append("    s%s # %s -> |s%s⟩;" % (ak, text, ak))
+                sr[ak] = [stored(GVAL[vk], ak)] + sr[ak][:-1]
+                for e in range(4):
+                    body.append("    " + show4(ak, "s%s[%d]" % (ak, e)))
+                    out.extend(val4(ak, sr[ak][e]))
+    # out of a float and fout of an int (converted), each form
+    for text in GV["f"]:
+        body.append("    out(0, %s);" % text); out.append(2)
+    for text in GV["i"]:
+        body.append("    fout(0, %s);" % text); out.append(7)
+    decl = ("int gi; int gz; float gf; float gfz; comp gc; comp gone;\n"
+            "int vi[4]; float vf[4]; int mi[3][4]; float mf[3][4];\n"
+            "int si[4] = {1, 2, 3, 4}; float sf[4] = {1.5, 2.5, 3.5, 4.5};\n\n")
+    main_decl = ("    int x; float y; comp w; int k; float g; int n1; int n2;\n"
+                 "    int z0; int pa; float fz; float pf; comp one; comp pc;\n"
+                 "    gi = 7; gz = 0; gf = 2.5; gfz = 0.0; gc = 3.0+4.0i; gone = 1+0i;\n"
+                 "    n1 = 1; n2 = 2; z0 = 0; pa = 1000; fz = 0.0; pf = 1000.0; one = 1+0i; pc = 100+100i;\n")
+    src = (HEAD +
+           "// Generated by Scripts/cov_tests.py (issue #69): assignment of every value\n"
+           "// form to a variable of every type; ++ inside an expression; parameters of\n"
+           "// each type taking every argument form and returns of every value from every\n"
+           "// type of function; if, while, ! and switch on every form; shifts by a float;\n"
+           "// the Dirac shift register; out of a float, fout of an int. Floats and comp\n"
+           "// parts are printed times 4. Computed by the script, apart from YANC.\n\n" +
+           decl + "\n".join(funcs) + "\nvoid main()\n{\n" + main_decl + "\n".join(body) + "\n}\n")
+    return "cmm_cov_rest", src, out
+
+
+FAMILIES = [arr2d_read, arr2d_write, arr1d, ops, library, rest]
 
 
 def golden_text(out):
