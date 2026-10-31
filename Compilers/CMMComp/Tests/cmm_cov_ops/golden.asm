@@ -13908,20 +13908,17 @@ SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD main_ib
-S_AND
+AND main_ib
 SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD main_ib
-S_ORR
+ORR main_ib
 SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD main_ib
-S_XOR
+XOR main_ib
 SET main_x
 OUT 0
 LOD main_ia
@@ -14007,20 +14004,17 @@ SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD 3
-S_AND
+AND 3
 SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD 3
-S_ORR
+ORR 3
 SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD 3
-S_XOR
+XOR 3
 SET main_x
 OUT 0
 LOD main_ib

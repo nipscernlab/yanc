@@ -2964,11 +2964,10 @@ expr oper_bitw(expr e1, expr e2, int type)
         add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
-    // acc with var
+    // acc with var: the three are commutative, so the var is the memory operand
     if ((e1.id == 0) && (e2.id != 0))
     {
-        add_instr("P_LOD %s\n", v_table[e2.id].name);
-        add_instr("S_%s\n", op);
+        add_instr("%s %s\n", op, v_table[e2.id].name);
     }
 
     // acc with acc
