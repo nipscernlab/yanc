@@ -59,9 +59,7 @@ JIZ __Lwh4
 SET main_k
 @__Lwh6 LOD main_k
 ADD -2
-JIZ __sw_body_1_1
-JMP __sw_body_1_2
-@__sw_body_1_1 JMP __Lwh6cont
+JIZ __Lwh6cont
 @__sw_body_1_2 LOD 50
 ADD main_k
 OUT 0

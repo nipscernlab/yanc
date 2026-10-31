@@ -24,7 +24,7 @@ JMP __Lwh1
 SET main_k
 @__Lwh2 LOD 8
 LES main_k
-JIZ __Lwh2end
+JIZ fim
 LOD main_k
 LDI x
 SET main_v

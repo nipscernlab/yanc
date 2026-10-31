@@ -83,7 +83,6 @@ ADD 1
 SET main_k
 LOD 3
 LES main_k
-JIZ __Lwh6end
+JIZ __Lwh1
 JMP __Lwh6
-@__Lwh6end JMP __Lwh1
 @__Lwh1end @fim JMP fim

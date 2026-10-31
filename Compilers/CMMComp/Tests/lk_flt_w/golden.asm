@@ -10,7 +10,7 @@ NOP
 SET main_n
 @__Lwh1 LOD 16
 LES main_n
-JIZ __Lwh1end
+JIZ fim
 I2F_M main_n
 SET main_f
 F_MLT 1.5

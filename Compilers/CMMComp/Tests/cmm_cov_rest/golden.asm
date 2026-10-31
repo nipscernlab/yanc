@@ -1590,7 +1590,6 @@ SET main_k
 JIZ __Lwh1end
 LOD 1
 SET main_k
-JMP __Lwh1end
 @__Lwh1end LOD main_k
 OUT 0
 LIN_M gi
@@ -1611,7 +1610,6 @@ ADD gz
 JIZ __Lwh2end
 LOD 1
 SET main_k
-JMP __Lwh2end
 @__Lwh2end LOD main_k
 OUT 0
 LOD gi
@@ -1630,7 +1628,6 @@ OUT 0
 SET main_k
 @__Lwh3 LOD 1
 SET main_k
-JMP __Lwh3end
 @__Lwh3end LOD main_k
 OUT 0
 LIN_M 7
@@ -1665,7 +1662,6 @@ SET main_k
 JIZ __Lwh4end
 LOD 1
 SET main_k
-JMP __Lwh4end
 @__Lwh4end LOD main_k
 OUT 0
 LIN_M gi
@@ -1686,7 +1682,6 @@ ADD gz
 JIZ __Lwh5end
 LOD 1
 SET main_k
-JMP __Lwh5end
 @__Lwh5end LOD main_k
 OUT 0
 LOD gi
@@ -1707,7 +1702,6 @@ SET main_k
 JIZ __Lwh6end
 LOD 1
 SET main_k
-JMP __Lwh6end
 @__Lwh6end LOD main_k
 OUT 0
 LIN_M 0
@@ -1744,7 +1738,6 @@ AND 8388607
 JIZ __Lwh7end
 LOD 1
 SET main_k
-JMP __Lwh7end
 @__Lwh7end LOD main_k
 OUT 0
 LOD gf
@@ -1769,7 +1762,6 @@ AND 8388607
 JIZ __Lwh8end
 LOD 1
 SET main_k
-JMP __Lwh8end
 @__Lwh8end LOD main_k
 OUT 0
 LOD gf
@@ -1793,7 +1785,6 @@ AND 8388607
 JIZ __Lwh9end
 LOD 1
 SET main_k
-JMP __Lwh9end
 @__Lwh9end LOD main_k
 OUT 0
 LOD 2.5
@@ -1832,7 +1823,6 @@ AND 8388607
 JIZ __Lwh10end
 LOD 1
 SET main_k
-JMP __Lwh10end
 @__Lwh10end LOD main_k
 OUT 0
 LOD gf
@@ -1857,7 +1847,6 @@ AND 8388607
 JIZ __Lwh11end
 LOD 1
 SET main_k
-JMP __Lwh11end
 @__Lwh11end LOD main_k
 OUT 0
 LOD gf
@@ -1881,7 +1870,6 @@ AND 8388607
 JIZ __Lwh12end
 LOD 1
 SET main_k
-JMP __Lwh12end
 @__Lwh12end LOD main_k
 OUT 0
 LOD 0.0
@@ -1922,7 +1910,6 @@ AND 8388607
 JIZ __Lwh13end
 LOD 1
 SET main_k
-JMP __Lwh13end
 @__Lwh13end LOD main_k
 OUT 0
 LOD gc
@@ -1966,7 +1953,6 @@ AND 8388607
 JIZ __Lwh14end
 LOD 1
 SET main_k
-JMP __Lwh14end
 @__Lwh14end LOD main_k
 OUT 0
 LOD gc
@@ -2001,7 +1987,6 @@ AND 8388607
 JIZ __Lwh15end
 LOD 1
 SET main_k
-JMP __Lwh15end
 @__Lwh15end LOD main_k
 OUT 0
 LOD 3.0
@@ -2043,7 +2028,6 @@ AND 8388607
 JIZ __Lwh16end
 LOD 1
 SET main_k
-JMP __Lwh16end
 @__Lwh16end LOD main_k
 OUT 0
 LOD gc
@@ -2087,7 +2071,6 @@ AND 8388607
 JIZ __Lwh17end
 LOD 1
 SET main_k
-JMP __Lwh17end
 @__Lwh17end LOD main_k
 OUT 0
 LOD gc
@@ -2122,7 +2105,6 @@ AND 8388607
 JIZ __Lwh18end
 LOD 1
 SET main_k
-JMP __Lwh18end
 @__Lwh18end LOD main_k
 OUT 0
 LOD 0.0

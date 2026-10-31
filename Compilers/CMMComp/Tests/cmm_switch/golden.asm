@@ -62,13 +62,13 @@ JIZ __sw_body_4_3
 JMP __sw_body_4_4
 @__sw_body_4_1 LOD 41
 OUT 0
-JMP __switch_end_4
+JMP __Lwh1
 @__sw_body_4_2 LOD 42
 OUT 0
-JMP __switch_end_4
+JMP __Lwh1
 @__sw_body_4_3 LOD 43
 OUT 0
-JMP __switch_end_4
+JMP __Lwh1
 @__sw_body_4_4 LOD 49
 OUT 0
 @__switch_end_4 JMP __Lwh1

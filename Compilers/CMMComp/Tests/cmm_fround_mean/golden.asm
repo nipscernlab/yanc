@@ -25,8 +25,7 @@ SET main_k
 SET main_n
 @__Lwh3 LOD 7
 SHL main_r
-P_LOD 65535
-S_AND
+AND 65535
 XOR main_r
 SET main_r
 LOD 9
@@ -35,8 +34,7 @@ XOR main_r
 SET main_r
 LOD 8
 SHL main_r
-P_LOD 65535
-S_AND
+AND 65535
 XOR main_r
 SET main_r
 I2F_M main_r

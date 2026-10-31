@@ -91,7 +91,7 @@ JMP __Lwh1
 SET main_j
 @__Lwh2 LOD 1000
 LES main_j
-JIZ __Lwh2end
+JIZ fim
 LOD main_j
 LDI main_x
 CAL my_sqrt

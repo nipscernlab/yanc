@@ -186,7 +186,7 @@ JMP __Ld11
 SET main_j
 @__Lwh1 LOD 20
 LES main_j
-JIZ __Lwh1end
+JIZ fim
 F_INN 0
 F_MLT 0.001
 SET __aux_var

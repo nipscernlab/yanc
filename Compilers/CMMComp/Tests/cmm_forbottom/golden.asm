@@ -130,8 +130,7 @@ NOP
 NOP
 NOP
 REM
-P_LOD 0
-S_XOR
+XOR 0
 JIZ __Lwh9cont
 LOD main_s
 ADD main_k

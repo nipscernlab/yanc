@@ -16,6 +16,33 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
 
+// an int literal a float meets: the id of its float literal, which a memory
+// form takes as it is (exact below 2^NBMANT, as add_instr's I2F_M rewrite); 0
+// for any other operand
+static int int_flit_id(expr e)
+{
+    if (e.type != 1 || e.id == 0 || v_table[e.id].isco != 1) return 0;
+    long n; char end[8];
+    if (sscanf(v_table[e.id].name, "%ld%7s", &n, end) != 1 || labs(n) >= (1L << nbmant)) return 0;
+    char t[32]; snprintf(t, sizeof t, "%ld.0", n);
+    return exec_fnum(t);
+}
+
+static const char *int_flit(expr e)
+{
+    int id = int_flit_id(e);
+    return id ? v_table[id].name : NULL;
+}
+
+// an int literal a float or a comp meets is taken as that float literal, so the
+// float forms load it or take it from memory and nothing is converted
+static void int_lit_float(expr *e1, expr *e2)
+{
+    int id;
+    if (e2->type >= 2 && (id = int_flit_id(*e1))) *e1 = expr_make(2, id);
+    if (e1->type >= 2 && (id = int_flit_id(*e2))) *e2 = expr_make(2, id);
+}
+
 // ----------------------------------------------------------------------------
 // arithmetic operations ------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -117,6 +144,8 @@ expr oper_neg(expr e)
 expr oper_soma(expr e1, expr e2)
 {
     expr etr, eti;
+
+    int_lit_float(&e1, &e2);
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
@@ -596,6 +625,8 @@ expr oper_subt(expr e1, expr e2)
 {
     expr etr, eti;
 
+    int_lit_float(&e1, &e2);
+
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
@@ -1031,6 +1062,8 @@ expr oper_subt(expr e1, expr e2)
 expr oper_mult(expr e1, expr e2)
 {
     expr etr, eti;
+
+    int_lit_float(&e1, &e2);
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
@@ -1624,6 +1657,8 @@ void emit_sq_sum(expr er, expr ei)
 expr oper_divi(expr e1, expr e2)
 {
     expr etr, eti;
+
+    int_lit_float(&e1, &e2);
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
@@ -2627,14 +2662,16 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("%s %s\n", frev, v_table[e2.id].name);
     }
 
-    // int var with float acc
+    // int var with float acc: an int literal is a float literal in the memory
+    // form; a variable is converted over the float, which the stack then holds
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET   __aux_var\n");
-        add_instr("I2F_M %s\n", v_table[e1.id].name);
-        add_instr("P_LOD __aux_var\n");
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        if (int_flit(e1)) add_instr("%s %s\n", fop, int_flit(e1));
+        else
+        {
+            add_instr("P_I2F_M %s\n", v_table[e1.id].name);
+            if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", rev);
+        }
     }
 
     // int acc with int var
@@ -2656,14 +2693,12 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("%s %s\n", frev, v_table[e2.id].name);
     }
 
-    // int acc with float acc
+    // int acc with float acc: the float is set aside, the int converted in the acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
         add_instr("SET_P __aux_var\n");
         add_instr("I2F\n");
-        add_instr("P_LOD __aux_var\n");
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        add_instr("%s __aux_var\n", frev);
     }
 
     // float var with int var
@@ -2693,12 +2728,15 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("%s %s\n", fop, v_table[e1.id].name);
     }
 
-    // float acc with int var
+    // float acc with int var (an int literal: a float literal in the memory form)
     if ((e1.type==2) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        if (int_flit(e2)) add_instr("%s %s\n", frev, int_flit(e2));
+        else
+        {
+            add_instr("P_I2F_M %s\n", v_table[e2.id].name);
+            if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        }
     }
 
     // float acc with int acc
@@ -2964,11 +3002,10 @@ expr oper_bitw(expr e1, expr e2, int type)
         add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
-    // acc with var
+    // acc with var: the three are commutative, so the var is the memory operand
     if ((e1.id == 0) && (e2.id != 0))
     {
-        add_instr("P_LOD %s\n", v_table[e2.id].name);
-        add_instr("S_%s\n", op);
+        add_instr("%s %s\n", op, v_table[e2.id].name);
     }
 
     // acc with acc

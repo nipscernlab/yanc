@@ -319,9 +319,8 @@ JIZ __sw_disp_2_1
 JMP __sw_body_2_1
 @__sw_disp_2_1 I2F_M __switch_exp
 EQU 2.0
-JIZ __sw_disp_2_2
+JIZ __switch_end_2
 JMP __sw_body_2_2
-@__sw_disp_2_2 JMP __switch_end_2
 @__sw_body_2_1 LOD 15
 SET main_s
 JMP __switch_end_2
@@ -339,9 +338,8 @@ JIZ __sw_disp_3_1
 JMP __sw_body_3_1
 @__sw_disp_3_1 I2F_M __switch_exp
 EQU 3.0
-JIZ __sw_disp_3_2
+JIZ __switch_end_3
 JMP __sw_body_3_2
-@__sw_disp_3_2 JMP __switch_end_3
 @__sw_body_3_1 LOD 15
 SET main_s
 JMP __switch_end_3
