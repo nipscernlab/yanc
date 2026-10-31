@@ -9,6 +9,7 @@
 #include "../Headers/messages.h"
 
 int itr_ok    = 0; // tells whether an interrupt has already been used
+int itr_seen  = 0; // the program has a #PRACA (set while parsing, before any code is emitted)
 int toaqui_ok = 0; // tells whether a #TOAQUI marker has already been used
 
 // emits the #ITRAD directive

@@ -1123,6 +1123,7 @@ stmt_node *stmt_void_call(expr_node *call)
 
 stmt_node *stmt_dire_inter(void)
 {
+    itr_seen = 1;
     return snode_new(STMT_DIRE_INTER);
 }
 

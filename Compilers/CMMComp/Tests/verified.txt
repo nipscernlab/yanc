@@ -19,3 +19,4 @@ cmm_cov_ops       | Scripts/cov_tests.py: computed in Python, checked by the reg
 cmm_cov_lib       | Scripts/cov_tests.py: Python math/cmath, the float routines within 3 thousandths, checked by the regression
 cmm_cov_rest      | Scripts/cov_tests.py: computed in Python, checked by the regression
 cmm_cov_misc      | Scripts/cov_tests.py: computed in Python, checked by the regression
+cmm_main_return   | the values worked out in its header (10, 20, 5)
