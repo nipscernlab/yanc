@@ -29,7 +29,6 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: <name>: '<name>' is an instruction of the processor. Rename it.
 - Error on line <n>: a function can't be called '<name>': <name>.
 - Error on line <n>: '<name>': names starting with '\_\_' belong to the compiler.
-- Error on line <n>: there's no variable '<name>'!
 - Error on line <n>: I'd really appreciate it if you declared the variable '<name>'.
 - Error on line <n>: c'mon dude, declare the variable '<name>' properly!
 - Error on line <n>: gotta declare '<name>' first!
@@ -58,18 +57,9 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: argument of mod2(.) has gotta be complex!
 - Error on line <n>: argument of fase(.) has gotta be complex!
 - Error on line <n>: arguments of complex(.,.) can't themselves be complex!
-- Error on line <n>: the name says it all, vector product is between vectors!
-- Error on line <n>: vectors with different sizes? Go study Linear Algebra first!
-- Error on line <n>: vectors have different sizes! You're a confused soul.
-- Error on line <n>: different data types. You're a confused soul!
-- Error on line <n>: variables gotta be the same type!
 - Error on line <n>: haven't coded this up for complex numbers yet. You're on your own!
 - Error on line <n>: '<name>' ain't even a vector, mate!
 - Error on line <n>: '<name>' ain't even a matrix, mate!
-- Error on line <n>: '<name>' isn't a matrix!
-- Error on line <n>: row count of '<name>' doesn't match size of '<name>'!
-- Error on line <n>: column count of '<name>' doesn't match size of '<name>'!
-- Error on line <n>: dimensions don't match. You're a confused soul!
 - Error on line <n>: you can only shift a vector into itself, mate!
 - Error on line <n>: adding <name> and <name>? Those shapes don't fit, mate!
 - Error on line <n>: <name> times <name>? No way: the columns of the first must match the rows of the second!
@@ -163,16 +153,6 @@ value. What the common ones mean and how to get past them is in
 - Info: adding assembly macro for exponential computation
 - Info: adding assembly macro for natural-logarithm computation
 - Info: array initialization with file <name> for variable '<name>' at line <n>
-- Info: Dirac notation for Inner Product detected at line <n>
-- Info: Dirac notation for Matrix-Vector multiplication detected at line <n>
-- Info: Dirac notation for Constant-Vector multiplication detected at line <n>
-- Info: Dirac notation for Vectors Sum detected at line <n>
-- Info: Dirac notation for Outer Product detected at line <n>
-- Info: Dirac notation for Matrix Sum detected at line <n>
-- Info: Dirac notation for Constant-Matrix multiplication detected at line <n>
-- Info: Dirac notation for zeroing vector contents detected at line <n>
-- Info: Dirac notation for setting vector contents detected at line <n>
-- Info: Dirac notation for flushing vector contents detected at line <n>
 - Info: Dirac notation for shift register in vector <name> detected at line <n>
 
 ### Other

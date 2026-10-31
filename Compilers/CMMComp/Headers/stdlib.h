@@ -61,18 +61,7 @@ expr exec_comp(expr er, expr ei); // combines two real numbers into a complex
 expr exec_conj(expr e);           // complex conjugate (a-bi); real x -> x+0i; always comp
 
 // ----------------------------------------------------------------------------
-// special functions for vector work ------------------------------------------
+// the Dirac shift register (the other forms: dirac.c) -------------------------
 // ----------------------------------------------------------------------------
 
-expr exec_vtv  (int id1, int id2);                   // multiplication between two vectors
-void exec_Mv   (int idy, int idM, int idv);          // matrix-vector multiplication
-void exec_cv   (int idy, expr ec, int idv);          // multiplication of a vector by a constant
-void exec_apcb (int idy, int ida, expr ec, int idb); // weighted sum into the second vector
-void exec_vvt  (int idM, int ida, int idb);          // outer product between two vectors
-void exec_Mmvvt(int idA, int idB, int ida, int idb); // matrix subtraction with outer product
-void exec_cM   (int idA, expr ec, int idM);          // product of constant and matrix
-void exec_cI   (int idM, expr ec);                   // generates the identity matrix
-void exec_v0   (int idv);                            // generates a zero vector
-void exec_cvin (int idv, expr ec, int idp);          // reads an input vector
-void exec_vout (int port, expr ec, int idv);         // writes a vector to the output
 void exec_shift(int ida, expr eb, int idc);          // shift register in vector a (a must equal c)
