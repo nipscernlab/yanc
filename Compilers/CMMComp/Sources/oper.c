@@ -43,6 +43,14 @@ static void int_lit_float(expr *e1, expr *e2)
     int id;
     if (e2->type >= 2 && (id = int_flit_id(*e1))) *e1 = expr_make(2, id);
     if (e1->type >= 2 && (id = int_flit_id(*e2))) *e2 = expr_make(2, id);
+
+    // a comp constant whose imaginary part is zero is a float, its real part
+    for (expr *e = e1; e; e = (e == e1) ? e2 : NULL)
+        if (e->type == 5)
+        {
+            expr er, ei; get_cmp_cst(*e, &er, &ei);
+            if (atof(v_table[ei.id].name) == 0.0) *e = num2exp(er.id, 2);
+        }
 }
 
 // ----------------------------------------------------------------------------
@@ -1067,6 +1075,40 @@ expr oper_mult(expr e1, expr e2)
 
     int_lit_float(&e1, &e2);
 
+    // a comp times a pure imaginary constant ci: (a+bi)(ci) = -bc + aci, two
+    // products and no sum (the multiplication is commutative: the constant goes
+    // right)
+    if (e1.type == 5 && e2.type == 3) { expr t = e1; e1 = e2; e2 = t; }
+    if (e1.type == 3 && e2.type == 5)
+    {
+        expr er, ei; get_cmp_cst(e2, &er, &ei);
+        char *c = v_table[ei.id].name, nt[sizeof(v_table[0].name) + 2];
+        if (atof(v_table[er.id].name) == 0.0 && atof(c) != 0.0)
+        {
+            snprintf(nt, sizeof nt, c[0] == '-' ? "%s" : "-%s", c[0] == '-' ? c + 1 : c);
+            int nid = exec_fnum(nt);                                   // -c
+            if (e1.id != 0)                                            // in memory: 4 words
+            {
+                get_cmp_ets(e1, &etr, &eti);
+                add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", v_table[eti.id].name);
+                add_instr("F_MLT %s\n", v_table[nid].name);            // real: -c b
+                add_instr("P_LOD %s\n", v_table[etr.id].name);
+                add_instr("F_MLT %s\n", c);                            // imag: c a
+            }
+            else                                                       // in the acc (real on the stack)
+            {
+                add_instr("F_MLT %s\n", v_table[nid].name);            // -c b
+                add_instr("SET_P __aux_var\n");                        // the real part back in the acc
+                add_instr("F_MLT %s\n", c);                            // c a
+                add_instr("SET __aux_var1\n");
+                add_instr("LOD __aux_var\n");
+                add_instr("P_LOD __aux_var1\n");
+            }
+            acc_ok = 1;
+            return expr_make(3, 0);
+        }
+    }
+
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
@@ -1379,44 +1421,7 @@ expr oper_mult(expr e1, expr e2)
         add_instr("SF_ADD\n");
     }
 
-    // comp const with comp var
-    if ((e1.type==5) && (e2.type==3) && (e2.id!=0))
-    {
-        expr et1r, et1i; get_cmp_cst(e1,&et1r,&et1i);
-        expr et2r, et2i; get_cmp_ets(e2,&et2r,&et2i);
-
-        add_instr("%s %s\n", ld, v_table[et1r.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
-        add_instr("SF_SU2\n");
-
-        add_instr("P_LOD %s\n" , v_table[et1r.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
-        add_instr("SF_ADD\n");
-    }
-
-    // comp const with comp acc
-    if ((e1.type==5) && (e2.type==3) && (e2.id==0))
-    {
-        get_cmp_cst(e1,&etr,&eti);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET   __aux_var1\n");
-
-        add_instr("F_MLT %s\n", v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_MLT __aux_var \n");
-        add_instr("SF_SU2\n");
-
-        add_instr("P_LOD %s\n" , v_table[etr.id].name);
-        add_instr("F_MLT __aux_var \n");
-        add_instr("P_LOD %s\n" , v_table[eti.id].name);
-        add_instr("F_MLT __aux_var1\n");
-        add_instr("SF_ADD\n");
-    }
+    // comp const with a comp var or acc: swapped above, the constant goes right
 
     // comp var with int var
     if ((e1.type==3) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))

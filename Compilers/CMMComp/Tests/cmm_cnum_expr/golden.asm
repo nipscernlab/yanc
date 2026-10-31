@@ -48,7 +48,6 @@ LOD 3.0
 F_SU2 main_w
 P_LOD main_w_i
 SET_P __aux_var
-F_ADD 0.0
 P_LOD __aux_var
 F_ADD 4.0
 SET_P main_z_i

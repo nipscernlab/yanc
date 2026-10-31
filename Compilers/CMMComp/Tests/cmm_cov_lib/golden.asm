@@ -1203,9 +1203,7 @@ F_MLT main_w_i
 F2I
 OUT 0
 LOD 1.0
-F_MLT 1.0
 P_LOD 1.0
-F_MLT 1.0
 SF_ADD
 CAL __float_log
 F_MLT 0.5
@@ -1278,9 +1276,7 @@ P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
 P_LOD 1.0
-F_MLT 1.0
 P_LOD 1.0
-F_MLT 1.0
 SF_ADD
 CAL __float_log
 F_MLT 0.5

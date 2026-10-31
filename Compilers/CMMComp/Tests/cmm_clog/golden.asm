@@ -25,7 +25,6 @@ NOP
 #SHARE __log_w __atan_ax
 #SHARE __log_lm main_c
 @main @__Lwh1 LOD 1.0
-F_MLT 1.0
 P_LOD 0.0
 F_MLT 0.0
 SF_ADD
@@ -91,7 +90,6 @@ OUT 0
 LOD 0.0
 F_MLT 0.0
 P_LOD 1.0
-F_MLT 1.0
 SF_ADD
 CAL __float_log
 F_MLT 0.5

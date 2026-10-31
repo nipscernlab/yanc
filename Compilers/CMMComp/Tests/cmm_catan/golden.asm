@@ -32,7 +32,6 @@ NOP
 #SHARE __log_w __atan_ax
 #SHARE __log_lm __catan_bm
 @main @__Lwh1 LOD 1.0
-F_MLT 1.0
 SET __catan_a2
 LOD 0.0
 F_MLT 0.0

@@ -1,0 +1,36 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// A comp constant with a zero part (cmmcomp audit, issue #69): one whose
+// imaginary part is zero is taken as a float, and a product by a pure
+// imaginary constant ci is two products, (a+bi)(ci) = -bc + aci, with the
+// comp in memory or in the acc and the constant on either side. Every part is
+// printed times 4.
+//
+// w = 3+2i, one = 1+0i. Expected:
+//   w*(2i)       = -4+6i   ->  -16  24
+//   (2i)*w       = -4+6i   ->  -16  24
+//   (w*one)*(2i) = -4+6i   ->  -16  24   (the comp in the acc)
+//   w*(-0.5i)    =  1-1.5i ->    4  -6
+//   w*(3+0i)     =  9+6i   ->   36  24
+//   w + (3+0i)   =  6+2i   ->   24   8
+//   w - (1+0i)   =  2+2i   ->    8   8
+//   w / (2+0i)   = 1.5+1i  ->    6   4
+
+void main()
+{
+    comp w, one, z;
+    w = 3.0+2.0i; one = 1.0+0.0i;
+
+    z = w*(2.0i);           fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = (2.0i)*w;           fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = (w*one)*(2.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = w*(-0.5i);          fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = w*(3.0+0.0i);       fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = w + (3.0+0.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = w - (1.0+0.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = w / (2.0+0.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+}
