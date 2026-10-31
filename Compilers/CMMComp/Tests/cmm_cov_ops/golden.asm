@@ -14274,51 +14274,39 @@ SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-I2F_M main_ia
-P_LOD __aux_var
+P_I2F_M main_ia
+SF_GRE
+SET main_x
+OUT 0
+LOD main_fb
+F_ADD main_fz
+P_I2F_M main_ia
 SF_LES
 SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-I2F_M main_ia
-P_LOD __aux_var
-SF_GRE
-SET main_x
-OUT 0
-LOD main_fb
-F_ADD main_fz
-SET   __aux_var
-I2F_M main_ia
-P_LOD __aux_var
-SF_GRE
-LIN
-SET main_x
-OUT 0
-LOD main_fb
-F_ADD main_fz
-SET   __aux_var
-I2F_M main_ia
-P_LOD __aux_var
+P_I2F_M main_ia
 SF_LES
 LIN
 SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-I2F_M main_ia
-P_LOD __aux_var
+P_I2F_M main_ia
+SF_GRE
+LIN
+SET main_x
+OUT 0
+LOD main_fb
+F_ADD main_fz
+P_I2F_M main_ia
 S_EQU
 SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-I2F_M main_ia
-P_LOD __aux_var
+P_I2F_M main_ia
 S_EQU
 LIN
 SET main_x
@@ -14576,8 +14564,7 @@ P_LOD main_fb
 F_ADD main_fz
 SET_P __aux_var
 I2F
-P_LOD __aux_var
-SF_LES
+F_GRE __aux_var
 SET main_x
 OUT 0
 LOD main_ia
@@ -14586,8 +14573,7 @@ P_LOD main_fb
 F_ADD main_fz
 SET_P __aux_var
 I2F
-P_LOD __aux_var
-SF_GRE
+F_LES __aux_var
 SET main_x
 OUT 0
 LOD main_ia
@@ -14596,8 +14582,7 @@ P_LOD main_fb
 F_ADD main_fz
 SET_P __aux_var
 I2F
-P_LOD __aux_var
-SF_GRE
+F_LES __aux_var
 LIN
 SET main_x
 OUT 0
@@ -14607,8 +14592,7 @@ P_LOD main_fb
 F_ADD main_fz
 SET_P __aux_var
 I2F
-P_LOD __aux_var
-SF_LES
+F_GRE __aux_var
 LIN
 SET main_x
 OUT 0
@@ -14618,8 +14602,7 @@ P_LOD main_fb
 F_ADD main_fz
 SET_P __aux_var
 I2F
-P_LOD __aux_var
-S_EQU
+EQU __aux_var
 SET main_x
 OUT 0
 LOD main_ia
@@ -14628,8 +14611,7 @@ P_LOD main_fb
 F_ADD main_fz
 SET_P __aux_var
 I2F
-P_LOD __aux_var
-S_EQU
+EQU __aux_var
 LIN
 SET main_x
 OUT 0
@@ -14854,52 +14836,34 @@ SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-LOD 101.0
-P_LOD __aux_var
-SF_LES
+F_LES 101.0
 SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-LOD 101.0
-P_LOD __aux_var
-SF_GRE
+F_GRE 101.0
 SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-LOD 101.0
-P_LOD __aux_var
-SF_GRE
+F_GRE 101.0
 LIN
 SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-LOD 101.0
-P_LOD __aux_var
-SF_LES
+F_LES 101.0
 LIN
 SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-LOD 101.0
-P_LOD __aux_var
-S_EQU
+EQU 101.0
 SET main_x
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET   __aux_var
-LOD 101.0
-P_LOD __aux_var
-S_EQU
+EQU 101.0
 LIN
 SET main_x
 OUT 0
@@ -15336,40 +15300,34 @@ SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
-P_LOD 3.0
-SF_LES
+F_GRE 3.0
 SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
-P_LOD 3.0
-SF_GRE
+F_LES 3.0
 SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
-P_LOD 3.0
-SF_GRE
+F_LES 3.0
 LIN
 SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
-P_LOD 3.0
-SF_LES
+F_GRE 3.0
 LIN
 SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
-P_LOD 3.0
-S_EQU
+EQU 3.0
 SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
-P_LOD 3.0
-S_EQU
+EQU 3.0
 LIN
 SET main_x
 OUT 0

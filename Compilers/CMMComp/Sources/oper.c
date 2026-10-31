@@ -2483,6 +2483,18 @@ static const char *cmp_flit(const char *t)
     return v_table[exec_fnum(b)].name;
 }
 
+// an int literal a float meets: its float literal, which a memory form takes
+// as it is (exact below 2^NBMANT, as add_instr's I2F_M rewrite); NULL for any
+// other operand
+static const char *int_flit(expr e)
+{
+    if (e.type != 1 || e.id == 0 || v_table[e.id].isco != 1) return NULL;
+    long n; char end[8];
+    if (sscanf(v_table[e.id].name, "%ld%7s", &n, end) != 1 || labs(n) >= (1L << nbmant)) return NULL;
+    char t[32]; snprintf(t, sizeof t, "%ld.0", n);
+    return cmp_flit(t);
+}
+
 static cmp_side cmp_side_of(expr e)
 {
     cmp_side d; memset(&d, 0, sizeof d);
@@ -2627,14 +2639,16 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("%s %s\n", frev, v_table[e2.id].name);
     }
 
-    // int var with float acc
+    // int var with float acc: an int literal is a float literal in the memory
+    // form; a variable is converted over the float, which the stack then holds
     if ((e1.type==1) && (e1.id!=0) && (e2.type==2) && (e2.id==0))
     {
-        add_instr("SET   __aux_var\n");
-        add_instr("I2F_M %s\n", v_table[e1.id].name);
-        add_instr("P_LOD __aux_var\n");
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        if (int_flit(e1)) add_instr("%s %s\n", fop, int_flit(e1));
+        else
+        {
+            add_instr("P_I2F_M %s\n", v_table[e1.id].name);
+            if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", rev);
+        }
     }
 
     // int acc with int var
@@ -2656,14 +2670,12 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("%s %s\n", frev, v_table[e2.id].name);
     }
 
-    // int acc with float acc
+    // int acc with float acc: the float is set aside, the int converted in the acc
     if ((e1.type==1) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
         add_instr("SET_P __aux_var\n");
         add_instr("I2F\n");
-        add_instr("P_LOD __aux_var\n");
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        add_instr("%s __aux_var\n", frev);
     }
 
     // float var with int var
@@ -2693,12 +2705,15 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("%s %s\n", fop, v_table[e1.id].name);
     }
 
-    // float acc with int var
+    // float acc with int var (an int literal: a float literal in the memory form)
     if ((e1.type==2) && (e1.id==0) && (e2.type==1) && (e2.id!=0))
     {
-        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
-        
-        if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        if (int_flit(e2)) add_instr("%s %s\n", frev, int_flit(e2));
+        else
+        {
+            add_instr("P_I2F_M %s\n", v_table[e2.id].name);
+            if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
+        }
     }
 
     // float acc with int acc
