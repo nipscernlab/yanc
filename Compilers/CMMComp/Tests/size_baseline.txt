@@ -22,7 +22,7 @@ cmm_comp_div 120
 cmm_comp_fase 426
 cmm_comp_func 110
 cmm_comp_mix 255
-cmm_comp_zero 132
+cmm_comp_zero 182
 cmm_comp_sqrt 153
 cmm_conj   58
 cmm_continue 68

@@ -637,6 +637,20 @@ expr oper_subt(expr e1, expr e2)
 
     int_lit_float(&e1, &e2);
 
+    // minus a comp constant is plus its negation, part by part. Unlike
+    // oper_neg, a zero part is fine here: it stays 0.0, x - 0.0 and x + 0.0
+    // are the same value, and add_instr drops the F_ADD 0.0
+    if (e2.type == 5)
+    {
+        char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)], txt[2*sizeof(v_table[0].name) + 8];
+        cnum_split(v_table[e2.id].name, re, im);
+        int zr = atof(re) == 0.0, zi = atof(im) == 0.0;
+        snprintf(txt, sizeof txt, "%s%s%s%si",
+                 zr ? "" : (re[0] == '-' ? "" : "-"), zr ? "0.0" : re + (re[0] == '-'),
+                 zi ? "+" : (im[0] == '-' ? "+" : "-"), zi ? "0.0" : im + (im[0] == '-'));
+        return oper_soma(e1, num2exp(exec_cnum(txt), 5));
+    }
+
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 

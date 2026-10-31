@@ -5,8 +5,8 @@ NOP
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-#SHARE __aux_var main_one
-#SHARE __aux_var1 main_one_i
+#SHARE __aux_var main_z_i
+#SHARE __aux_var1 main_z
 @main LOD 3.0
 SET main_w
 LOD 2.0
@@ -127,6 +127,56 @@ LOD 0.5
 F_MLT main_w
 P_LOD 0.5
 F_MLT main_w_i
+SET_P main_z_i
+SET main_z
+LOD 4.0
+F_MLT main_z
+F2I
+OUT 0
+LOD 4.0
+F_MLT main_z_i
+F2I
+OUT 0
+LOD main_w
+P_LOD main_w_i
+F_ADD -2.0
+SET_P main_z_i
+SET main_z
+LOD 4.0
+F_MLT main_z
+F2I
+OUT 0
+LOD 4.0
+F_MLT main_z_i
+F2I
+OUT 0
+LOD main_w
+F_MLT main_one
+P_LOD main_w_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_w
+F_MLT main_one_i
+P_LOD main_w_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+P_LOD __aux_var
+F_ADD -0.5
+SET_P main_z_i
+SET main_z
+LOD 4.0
+F_MLT main_z
+F2I
+OUT 0
+LOD 4.0
+F_MLT main_z_i
+F2I
+OUT 0
+LOD main_w
+F_ADD -1.0
+P_LOD main_w_i
+F_ADD -1.0
 SET_P main_z_i
 SET main_z
 LOD 4.0

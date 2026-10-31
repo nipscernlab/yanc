@@ -19,6 +19,9 @@
 //   w + (3+0i)   =  6+2i   ->   24   8
 //   w - (1+0i)   =  2+2i   ->    8   8
 //   w / (2+0i)   = 1.5+1i  ->    6   4
+//   w - 2i       =  3+0i   ->   12   0   (minus a comp constant: plus its negation)
+//   (w*one) - 0.5i = 3+1.5i ->  12   6
+//   w - (1+1i)   =  2+1i   ->    8   4
 
 void main()
 {
@@ -33,4 +36,7 @@ void main()
     z = w + (3.0+0.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
     z = w - (1.0+0.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
     z = w / (2.0+0.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = w - 2.0i;           fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = (w*one) - 0.5i;     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+    z = w - (1.0+1.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
 }
