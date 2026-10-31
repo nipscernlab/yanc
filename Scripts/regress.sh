@@ -208,10 +208,12 @@ vvp_capture() {    # vvp_capture <name> <dir> <file.vvp>: VVP_OUT, and vvp's exi
 #                        real testbench is the LINK project pass
 #   sapho_all_a/_b     - the same, real testbench is the LINKALL project pass
 #   lk_*               - the same, real testbench is the LINK3 project pass
+#   cmm_itr            - the generated tb ties itr to 0 and leaves cheguei open;
+#                        the real testbench is the ITR project pass
 SIM_SKIP=("procBlind" "procBlindOpt" "ArcTan" "Seno" "Sqrt" "ProcDTW" "ZeroCross" "cmm_define" "ResetCheck"
           "link_envia" "link_recebe" "link_ping" "link_pong" "sapho_all_a" "sapho_all_b"
           "lk_chain_a" "lk_chain_b" "lk_chain_c" "lk_fan_w" "lk_echo" "lk_count" "lk_count7" "lk_merge"
-          "lk_flt_w" "lk_flt_r")
+          "lk_flt_w" "lk_flt_r" "cmm_itr")
 
 # Examples to also skip the asmcomp build for (their .v / .mif are
 # never consumed elsewhere - no standalone sim, no project link).
@@ -900,6 +902,52 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             done
             if [ $sim_fail -eq 0 ]; then
                 echo "PASS ($proj)  [chains (C+- and C++ middle), fan-out, fan-in, float: 16 values each, in order]"
+                pass=$((pass + 1))
+            else
+                fail=$((fail + 1)); failed_names+=("$proj")
+            fi
+        fi
+    fi
+
+    # ---- 3a. project pass ITR: the #PRACA restart and the #TOAQUI pin -------
+    # Tests/ITR/TopLevel/itr_tb.v pulls itr up twice while cmm_itr waits at
+    # @fim, and counts the rising edges of cheguei. Checked against what the
+    # program says it does: 100 200 300 on port 0, three edges a pass.
+    if [ "$NO_SIM" -eq 0 ]; then
+        proj="ITR"
+        proj_top="$CMM_ROOT/Tests/$proj/TopLevel"
+        proj_tmp="$TMP_DIR/$proj"
+        rm -rf "$proj_tmp"; mkdir -p "$proj_tmp"
+        p=cmm_itr
+        if [ ! -s "$WORK_DIR/$p/$p/$p.v" ]; then
+            echo "FAIL ($proj): $p artifacts missing - did its build pass?"
+            fail=$((fail + 1)); failed_names+=("$proj")
+        else
+            cp "$WORK_DIR/$p/$p/${p}_data.mif" "$WORK_DIR/$p/$p/${p}_inst.mif" "$proj_tmp/"
+            sim_fail=0
+            if ! "$IVERILOG" -s itr_tb -o "$proj_tmp/$proj.vvp" \
+                    "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
+                    "$HDL/core.v" "$HDL/ula.v" "$WORK_DIR/$p/$p/$p.v" \
+                    "$proj_top/itr_tb.v" >/dev/null 2>&1; then
+                echo "FAIL ($proj): iverilog exited non-zero"; sim_fail=1
+            else
+                pushd "$proj_tmp" >/dev/null
+                "$VVP" "$proj_tmp/$proj.vvp" >/dev/null 2>&1
+                vvp_status=$?
+                if [ $vvp_status -ne 0 ]; then vvp_once_more "$proj" "$proj_tmp/$proj.vvp"; vvp_status=$?; fi
+                popd >/dev/null
+                got=$(tr -d '\r' < "$proj_tmp/output_itr.txt" 2>/dev/null | tr '\n' ' ')
+                got_chg=$(tr -d '\r' < "$proj_tmp/output_cheguei.txt" 2>/dev/null | tr '\n' ' ')
+                if [ $vvp_status -ne 0 ]; then
+                    echo "FAIL ($proj): vvp exited non-zero"; sim_fail=1
+                elif [ "$got" != "100 200 300 " ]; then
+                    echo "FAIL ($proj): port 0 got '$got', want '100 200 300 '"; sim_fail=1
+                elif [ "$got_chg" != "9 " ]; then
+                    echo "FAIL ($proj): cheguei rose '$got_chg' times, want 9"; sim_fail=1
+                fi
+            fi
+            if [ $sim_fail -eq 0 ]; then
+                echo "PASS ($proj)  [two restarts at #PRACA: 100 200 300; cheguei 9 times]"
                 pass=$((pass + 1))
             else
                 fail=$((fail + 1)); failed_names+=("$proj")
