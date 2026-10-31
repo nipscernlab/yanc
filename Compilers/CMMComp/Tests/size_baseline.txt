@@ -31,7 +31,7 @@ cmm_cov_arr2d_wr 9255
 cmm_cov_lib 10976
 cmm_cov_misc 522
 cmm_cov_ops 15834
-cmm_cov_rest 2589
+cmm_cov_rest 2571
 cmm_csincos 190
 cmm_ctan   265
 cmm_ctlforms 136
@@ -52,7 +52,7 @@ cmm_fround1 202
 cmm_fround2 202
 cmm_fround_mean 65
 cmm_hyper  123
-cmm_ilit   65
+cmm_ilit   64
 cmm_ilit8  18
 cmm_ioports 13
 cmm_log    36

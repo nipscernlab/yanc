@@ -715,16 +715,36 @@ int asm_reach(const char *asm_path, const char *pc_path)
     }
     #undef VISIT
 
+    // a JMP to the instruction that follows it anyway goes too (a break at the
+    // end of a loop body, an if whose else is empty), until none is left; not
+    // one that #ITRAD or #TOAQUI marks, whose address the hardware compares
+    int jumps = 0;
+    next_live = malloc((n + 1) * sizeof(int));
+    for (int changed = ok; changed; )
+    {
+        changed = 0;
+        next_live[n] = -1;
+        for (int i = n - 1; i >= 0; i--) next_live[i] = live[i] ? i : next_live[i + 1];
+        for (int i = 0; i < n; i++)
+        {
+            if (!live[i] || strcmp(isa[ins[i].op].flow, "jmp") != 0) continue;
+            int at = lab_at[ins[i].target], root = 0;
+            for (int r = 0; r < nroot && !root; r++) root = roots[r] == i;
+            if (root || at <= i || at > n || next_live[at] < 0 || next_live[at] != next_live[i + 1]) continue;
+            live[i] = 0; jumps++; changed = 1;
+            next_live[i] = next_live[i + 1];
+        }
+    }
+
     // every label a kept jump needs keeps an instruction to sit on
     needed    = calloc(labels.n + 1, 1);
-    next_live = malloc((n + 1) * sizeof(int));
     next_live[n] = -1;
     for (int i = n - 1; i >= 0; i--) next_live[i] = live[i] ? i : next_live[i + 1];
     for (int i = 0; i < n; i++) if (live[i] && ins[i].target >= 0) needed[ins[i].target] = 1;
     if (fim >= 0) needed[fim] = 1;
     for (int li = 0; li < labels.n && ok; li++)
         if (needed[li] && lab_at[li] >= 0 && lab_at[li] < n && next_live[lab_at[li]] < 0) ok = 0;
-    if (!ok) memset(live, 1, n);                           // anything unclear: keep every instruction
+    if (!ok) { memset(live, 1, n); jumps = 0; }            // anything unclear: keep every instruction
 
     for (int i = 0; i < n; i++) if (live[i] && ins[i].name >= 0) used[ins[i].name] = 1;
     int dead = 0, arrays_gone = 0;
@@ -787,8 +807,10 @@ int asm_reach(const char *asm_path, const char *pc_path)
         for (int i = 0; i < pc.n; i++) { if (live[i]) fputs(pc.s[i], f); else removed++; }
         fclose(f);
     }
-    if (dead > 0) printf(yanc_lang_en ? "Info: %d unreachable instructions removed\n"
-                                      : "Info: %d instruções inalcançáveis removidas\n", dead);
+    if (dead > jumps) printf(yanc_lang_en ? "Info: %d unreachable instructions removed\n"
+                                          : "Info: %d instruções inalcançáveis removidas\n", dead - jumps);
+    if (jumps > 0) printf(yanc_lang_en ? "Info: %d jumps to the next instruction removed\n"
+                                       : "Info: %d saltos para a instrução seguinte removidos\n", jumps);
 
 done:
     free(carry); free(needed); free(next_live); free(work); free(used); free(live);
