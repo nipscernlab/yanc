@@ -536,8 +536,7 @@ static long ix_load(const dl_ix *ix, char *key, size_t ksz)
     int nt = ix_vars(ix, v, &off);
     snprintf(key, ksz, "%s%s%s", v[0], nt > 1 ? "+" : "", nt > 1 ? v[1] : "");
     if (key_is(key)) {if (acc_ok) add_instr("PSH\n"); return off;}
-    if (key_is(v[0])) {if (acc_ok) add_instr("PSH\n");}
-    else add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", v[0]);
+    if (!key_is(v[0]) || acc_ok) add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", v[0]);
     if (nt > 1) add_instr("ADD %s\n", v[1]);
     key_set(key);
     return off;
@@ -725,19 +724,14 @@ static int tmp_block(int words, int line)
 // stores the value in the accumulator (or in memory) at the index pushed
 static void store(expr e, const dl_dst *d, long off)
 {
-    if (e.id != 0) {                                          // the index is still in the acc
-        if (d->type == 2 && e.type == 1) add_instr("P_I2F_M %s\n", v_table[e.id].name);
-        else if (d->type == 1 && e.type == 2) {
-            fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
-            add_instr("P_F2I_M %s\n", v_table[e.id].name);
-        }
-        else add_instr("P_LOD %s\n", v_table[e.id].name);
-    } else {
-        if (d->type == 2 && e.type == 1) add_instr("I2F\n");
-        if (d->type == 1 && e.type == 2) {
-            fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
-            add_instr("F2I\n");
-        }
+    // a value in memory goes over the index, which is still in the acc; one
+    // of another type is converted in the acc, a word more than the _M form
+    // (no Dirac case reaches that: Scripts/cmm_cov.sh, issue #69)
+    if (e.id != 0) add_instr("P_LOD %s\n", v_table[e.id].name);
+    if (d->type == 2 && e.type == 1) add_instr("I2F\n");
+    if (d->type == 1 && e.type == 2) {
+        fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
+        add_instr("F2I\n");
     }
     add_instr("STI_V %s %ld\n", arr_name(d->arr), off);
     acc_ok = 0;

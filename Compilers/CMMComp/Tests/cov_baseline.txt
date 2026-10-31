@@ -3,5 +3,5 @@
 # reaches (Scripts/cmm_cov.sh). Scripts/regress.sh fails when either grows.
 # Lower them as tests are added (issue #69); never raise them to make the
 # regression pass.
-unreached 8
-unverified 18
+unreached 0
+unverified 10

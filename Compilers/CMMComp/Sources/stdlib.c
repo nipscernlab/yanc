@@ -78,7 +78,7 @@ void exec_out(int id, expr e)
     // int var
     if ((e.type == 1) && (e.id!=0))
     {
-       if (acc_ok == 0) add_instr("LOD %s\n", v_table[e.id].name); else add_instr("P_LOD %s\n", v_table[e.id].name);
+        add_instr("LOD %s\n", v_table[e.id].name);    // a statement starts with acc free
     }
 
     // int acc
@@ -92,7 +92,7 @@ void exec_out(int id, expr e)
     {
         fprintf(stdout, MSG_WARN_USE_FOUT, line_num+1);
 
-        if (acc_ok == 0) add_instr("F2I_M %s\n", v_table[e.id].name); else add_instr("P_F2I_M %s\n", v_table[e.id].name);
+        add_instr("F2I_M %s\n", v_table[e.id].name);  // a statement starts with acc free
     }
 
     // float acc
@@ -151,10 +151,11 @@ void exec_toma(expr e, int k)
 
     if (e.id != 0) v_table[e.id].used = 1;
 
-    // a variable: load it (a value already in acc needs nothing)
+    // a variable: load it (a value already in acc needs nothing; a statement
+    // starts with acc free)
     if (e.id != 0)
     {
-        if (acc_ok == 0) add_instr("LOD %s\n", v_table[e.id].name); else add_instr("P_LOD %s\n", v_table[e.id].name);
+        add_instr("LOD %s\n", v_table[e.id].name);
     }
 
     add_instr("TOM %d\n", k);
@@ -225,7 +226,7 @@ void exec_fout(int id, expr e)
     {
         fprintf(stdout, MSG_WARN_USE_OUT, line_num+1);
 
-        if (acc_ok == 0) add_instr("LOD %s\n", v_table[e.id].name); else add_instr("P_LOD %s\n", v_table[e.id].name);
+        add_instr("LOD %s\n", v_table[e.id].name);    // a statement starts with acc free
     }
 
     // int acc
@@ -237,7 +238,7 @@ void exec_fout(int id, expr e)
     // float var
     if ((e.type == 2) && (e.id!=0))
     {
-        if (acc_ok == 0) add_instr("F2I_M %s\n", v_table[e.id].name); else add_instr("P_F2I_M %s\n", v_table[e.id].name);
+        add_instr("F2I_M %s\n", v_table[e.id].name);  // a statement starts with acc free
     }
 
     // float acc
