@@ -503,11 +503,8 @@ LOD_V vf 1
 F_MLT 4.0
 F2I
 OUT 0
-LOD  1
-MLT  4
-ADD  2
-P_LOD 5
-STI mi
+LOD 5
+SET_V mi 6
 LOD  main_n1
 MLT  4
 ADD  main_n2
@@ -518,16 +515,10 @@ STI mi
 ADD -1
 SET main_x
 OUT 0
-LOD 1
-MLT 4
-ADD 2
-LDI mi
+LOD_V mi 6
 OUT 0
-LOD  1
-MLT  4
-ADD  2
-P_LOD 1.5
-STI mf
+LOD 1.5
+SET_V mf 6
 LOD  main_n1
 MLT  4
 ADD  main_n2
@@ -542,10 +533,7 @@ LOD 4.0
 F_MLT main_y
 F2I
 OUT 0
-LOD 1
-MLT 4
-ADD 2
-LDI mf
+LOD_V mf 6
 F_MLT 4.0
 F2I
 OUT 0
@@ -618,11 +606,8 @@ LOD_V vf 1
 F_MLT 4.0
 F2I
 OUT 0
-LOD  1
-MLT  4
-ADD  2
-P_LOD 5
-STI mi
+LOD 5
+SET_V mi 6
 LOD main_pa
 ADD main_z0
 PSH
@@ -637,16 +622,10 @@ ADD -1
 S_ADD
 SET main_x
 OUT 0
-LOD 1
-MLT 4
-ADD 2
-LDI mi
+LOD_V mi 6
 OUT 0
-LOD  1
-MLT  4
-ADD  2
-P_LOD 1.5
-STI mf
+LOD 1.5
+SET_V mf 6
 LOD main_pf
 F_ADD main_fz
 PSH
@@ -665,10 +644,7 @@ LOD 4.0
 F_MLT main_y
 F2I
 OUT 0
-LOD 1
-MLT 4
-ADD 2
-LDI mf
+LOD_V mf 6
 F_MLT 4.0
 F2I
 OUT 0

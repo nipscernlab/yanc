@@ -5,6 +5,8 @@
 // global includes
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
 
 // local includes
 #include "../Headers/t2t.h"
@@ -1659,6 +1661,35 @@ expr oper_divi(expr e1, expr e2)
     expr etr, eti;
 
     int_lit_float(&e1, &e2);
+
+    // a division by a float literal is a multiplication by its reciprocal: one
+    // word, and no divider. A power of two has an exact reciprocal, so it always
+    // is. Any other literal gives the reciprocal's rounding, which the program
+    // takes only to keep the float divider out (Luciano, 2026-10-31, issue
+    // #69): both forms are emitted, the division between #DIVK and #MULK, the
+    // multiplication between #MULK and #ENDK, and asm_divk keeps the division
+    // when anything else in the program needs the divider, else the product
+    static int divk_inner = 0;
+    if (!divk_inner && e2.type == 2 && e2.id != 0 && v_table[e2.id].isco == 1)
+    {
+        double c = strtod(v_table[e2.id].name, NULL), r = 1.0 / c;
+        if (c != 0.0 && isfinite(r) && fabs(r) < 1e37 && fabs(r) > 1e-37)
+        {
+            char t[40]; snprintf(t, sizeof t, "%.9g", r);
+            if (!strpbrk(t, ".eE")) strcat(t, ".0");
+            fnum_quiet = 1; int rid = exec_fnum(t); fnum_quiet = 0;   // the user did not write it
+            int ex; if (fabs(frexp(c, &ex)) == 0.5) return oper_mult(e1, num2exp(rid, 2));
+
+            int acc0 = acc_ok;
+            add_sinst(0, "#DIVK\n");
+            divk_inner = 1; oper_divi(e1, e2); divk_inner = 0;
+            add_sinst(0, "#MULK\n");
+            acc_ok = acc0;
+            expr m = oper_mult(e1, num2exp(rid, 2));
+            add_sinst(0, "#ENDK\n");
+            return m;
+        }
+    }
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");

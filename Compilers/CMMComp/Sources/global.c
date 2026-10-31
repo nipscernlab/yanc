@@ -218,6 +218,11 @@ void parse_end(char *prname, char *d_proc)
 	int  gone = asm_reach(asm_file, pc_file);
 	if  (gone > 0) num_ins -= gone;
 
+	// a division by a constant stays one only when the float divider is there anyway
+
+	int  kept = asm_divk(asm_file, pc_file);
+	if  (kept > 0) num_ins -= kept;
+
 	// every division becomes <div> x; NOP...; <read>: the dividers take five / four cycles
 
 	int  more = asm_divseq(asm_file, pc_file);
@@ -313,6 +318,14 @@ void add_instr(char *inst, ...)
         char lod_var[600];
         if (sscanf(str + 4, "%599s", lod_var) == 1 && strcmp(lod_var, acc_name) == 0)
             return;   // acc already holds it -- acc_name / last_str stay valid
+    }
+
+    // "ADD 0" leaves the int in the acc as it is (a matrix index whose column
+    // is the constant 0, a loop's base): nothing to emit, and acc_name stays
+    {
+        char op[8], arg[8], more[2];
+        if (sscanf(str, "%7s %7s %1s", op, arg, more) == 2 && strcmp(op, "ADD") == 0 && strcmp(arg, "0") == 0)
+            return;
     }
 
     // ------------------------------------------------------------------------

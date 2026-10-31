@@ -707,15 +707,17 @@ void arr_2d_index(int id, expr e1, expr e2)
 // arr_1d2exp. P_LOD_V when the accumulator already holds a live value (this
 // read is an operand of a larger expression), mirroring arr_1d2exp's LOD/P_LOD
 // choice. A comp array loads the real half, then pushes it and loads the imag
-// half (the comp-in-acc layout). The walker routes only 1D-forward reads here.
-expr arr_1d2exp_const(int id, int k)
+// half (the comp-in-acc layout). The walker routes 1D-forward reads here, and
+// 2D ones whose two indexes are constant (dims 2: k = row * columns + column,
+// the matrix being stored row by row).
+expr arr_1d2exp_const(int id, int k, int dims)
 {
     // the same checks and use mark as arr_1d2exp
     if (v_table[id].type == 0)
         {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
     if (v_table[id].isar == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
-    if (v_table[id].isar == 2)
+    if (v_table[id].isar == 2 && dims == 1)
         {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
     v_table[id].used = 1;
 

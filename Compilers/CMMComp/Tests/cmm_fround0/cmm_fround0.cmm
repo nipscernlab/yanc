@@ -41,7 +41,8 @@ void main()
         // block 1: lost bit ------------------------------------- level 0 / 1 / 2
         x = (one + u) - one;  y = x * ulp;          fout(0, y);   //   0  /  1  /  1   (exact 1)
         x = (one + u) * one;  y = (x - one) * ulp;  fout(0, y);   //   0  /  1  /  1   (exact 1)
-        x = one / 1.5;        y = x * 3.0 - 2.0;    y = y * ulp; fout(0, y); // 0 / -2 / 0 (exact 0; level 0 loses the residual itself)
+        x = one / (one + 0.5); y = x * 3.0 - 2.0;   y = y * ulp; fout(0, y); // 0 / -2 / 0 (exact 0; level 0 loses the residual itself)
+        // (one + 0.5): a division by a literal is a multiplication by its reciprocal, and this line is the divider's
 
         // block 2: rounding ------------------------------------- level 0 / 1 / 2
         x = one + q;          y = (x - one) * ulp;  fout(0, y);   //   0  /  0  /  0   (below half ULP)

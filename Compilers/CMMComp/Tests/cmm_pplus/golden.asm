@@ -76,11 +76,8 @@ S_ADD
 P_LOD_V a 3
 S_ADD
 OUT 0
-LOD  1
-MLT  3
-ADD  2
-P_LOD 5
-STI b
+LOD 5
+SET_V b 5
 LOD  1
 MLT  3
 ADD  2
@@ -88,10 +85,7 @@ PSH
 LDI b
 ADD 1
 STI b
-LOD 1
-MLT 3
-ADD 2
-LDI b
+LOD_V b 5
 OUT 0
 LOD 1
 SET main_j
@@ -108,10 +102,7 @@ PSH
 LDI b
 ADD 1
 STI b
-LOD 1
-MLT 3
-ADD 1
-LDI b
+LOD_V b 4
 OUT 0
 LOD 2.5
 SET_V f 1
@@ -180,10 +171,7 @@ STI b
 ADD -1
 SET main_r
 OUT 0
-LOD 1
-MLT 3
-ADD 1
-LDI b
+LOD_V b 4
 OUT 0
 LOD 10
 SET main_k

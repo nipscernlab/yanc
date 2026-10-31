@@ -22,6 +22,7 @@
 #include "../../common/yanc_num.h"
 
 int          v_count = 0;  // stores the size of the table
+int          fnum_quiet = 0; // 1: exec_fnum says nothing of an approximation (variaveis.h)
 static int   v_cap   = 0;  // current capacity of the parallel arrays
 
 // AoS storage: one row per identifier. All attributes (name, type, used,
@@ -438,7 +439,7 @@ int exec_fnum(char *text)
     // #FROUND >= 1) is not an approximation the user can shrug off: warn
     if (r.flushed)
         printf(MSG_WARN_CONST_FLUSHED, line_num+1, text, pow(2,nbmant-1)*pow(2,-pow(2,nbexpo-1)), fround);
-    else if (r.inexact)
+    else if (r.inexact && !fnum_quiet)
     {
         double mf = ldexp((double)r.m, (int)r.e);
         printf(MSG_INFO_CONST_APPROX, text, line_num+1, r.s ? -mf : mf, r.delta);

@@ -47,16 +47,10 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-LOD 2.0
-F_DIV main_c2
-NOP
-NOP
-F_QUO
-P_LOD 2.0
-F_DIV main_c2_i
-NOP
-NOP
-F_QUO
+LOD 0.5
+F_MLT main_c2
+P_LOD 0.5
+F_MLT main_c2_i
 SET_P main_r_i
 SET main_r
 F2I_M main_r
@@ -146,16 +140,10 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-LOD 2.0
-F_DIV main_c2
-NOP
-NOP
-F_QUO
-P_LOD 2.0
-F_DIV main_c2_i
-NOP
-NOP
-F_QUO
+LOD 0.5
+F_MLT main_c2
+P_LOD 0.5
+F_MLT main_c2_i
 SET_P main_r_i
 SET main_r
 F2I_M main_r

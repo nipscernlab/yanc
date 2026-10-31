@@ -47,7 +47,8 @@ F_MLT main_ulp
 SET main_y
 F2I_M main_y
 OUT 0
-LOD 1.5
+LOD main_one
+F_ADD 0.5
 F_DIV main_one
 NOP
 NOP

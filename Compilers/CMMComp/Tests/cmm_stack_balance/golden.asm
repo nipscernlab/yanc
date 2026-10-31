@@ -31,8 +31,7 @@ SET main_j
 OUT 0
 LOD main_a
 F_MLT main_b
-P_LOD 1.0
-SF_ADD
+F_ADD 1.0
 SET main_y
 F2I_M main_y
 OUT 0

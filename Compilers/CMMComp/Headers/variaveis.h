@@ -52,6 +52,7 @@ int inum_word(int id);                   // an int literal used as a value: it m
 int arr_size(int id);                    // an array size: a warning if an int index cannot reach its end
 int inum_min_id(void);                   // 2^(NUBITS-1), for a NIMIN in a brace list and for a DIMIN
 int exec_fnum(char *text);               // a float constant was found
+extern int fnum_quiet;                   // 1: exec_fnum says nothing of an approximation (a constant the compiler made)
 int exec_cnum(char *text);               // a comp constant was found
 void fnum_text (const char *in, char *out, size_t n); // a float literal as the .asm writes it
 void cnum_split(const char *txt, char *re, char *im); // a comp literal's two parts

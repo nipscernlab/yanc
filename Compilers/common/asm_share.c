@@ -1209,3 +1209,93 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
     st_free(&labels); st_free(&lines);
     return ret;
 }
+
+// ---- asm_divk: a division by a constant, or the product by its reciprocal ----------------
+// See asm_share.h.
+
+static int marker_of(const char *text)                     // 1 #DIVK, 2 #MULK, 3 #ENDK, 0 none
+{
+    while (*text == ' ' || *text == '\t') text++;
+    if (strncmp(text, "#DIVK", 5) == 0) return 1;
+    if (strncmp(text, "#MULK", 5) == 0) return 2;
+    if (strncmp(text, "#ENDK", 5) == 0) return 3;
+    return 0;
+}
+
+int asm_divk(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    // where each line sits (0 outside, 1 the division, 2 the product) and
+    // whether a float division outside the blocks needs the divider anyway
+    char *part = calloc(lines.n + 1, 1);
+    int   blocks = 0, need = 0, in = 0;
+    char  mn[32];
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        int m = marker_of(lines.s[ln]);
+        if (m) { in = m == 3 ? 0 : m; blocks += m == 1; part[ln] = 3; continue; }
+        part[ln] = (char)in;
+        line_mnemonic(lines.s[ln], mn, sizeof(mn));
+        if (in == 0 && (strcmp(mn, "F_DIV") == 0 || strcmp(mn, "SF_DIV") == 0)) need = 1;
+    }
+    int removed = 0;
+    if (blocks == 0) goto done;
+
+    // the part that goes: the product when the divider is there anyway, else
+    // the division; its labels (none is expected) move to the next kept line
+    char drop = need ? 2 : 1;
+    if (pc_path && (f = fopen(pc_path, "r"))) { read_lines(f, &pc); fclose(f); }
+    char *keep_pc = malloc(pc.n + 1);
+    memset(keep_pc, 1, pc.n + 1);
+    f = fopen(asm_path, "w");
+    if (!f) { free(keep_pc); removed = -1; goto done; }
+    char carry[1024] = "";
+    for (int ln = 0, i = 0; ln < lines.n; ln++)
+    {
+        const char *text = lines.s[ln];
+        if (part[ln] == 3) continue;                       // a marker
+        line_mnemonic(text, mn, sizeof(mn));
+        if (part[ln] == drop)
+        {
+            for (const char *p = text; *p; )               // keep its labels
+            {
+                while (*p == ' ' || *p == '\t') p++;
+                if (*p != '@') break;
+                const char *q = p;
+                while (*q && *q != ' ' && *q != '\t' && *q != '\n' && *q != '\r') q++;
+                if (strlen(carry) + (size_t)(q - p) + 2 < sizeof(carry))
+                    { strncat(carry, p, (size_t)(q - p)); strcat(carry, " "); }
+                p = q;
+            }
+            if (mn[0]) { if (i < pc.n) { keep_pc[i] = 0; removed++; } i++; }
+            continue;
+        }
+        if (carry[0] && mn[0]) { fputs(carry, f); carry[0] = 0; }
+        fputs(text, f);
+        if (mn[0]) i++;
+    }
+    fclose(f);
+
+    if (pc.n > 0 && removed > 0)
+    {
+        f = fopen(pc_path, "w");
+        if (!f) { free(keep_pc); removed = -1; goto done; }
+        for (int i = 0; i < pc.n; i++) if (keep_pc[i]) fputs(pc.s[i], f);
+        fclose(f);
+    }
+    free(keep_pc);
+    printf(need ? (yanc_lang_en ? "Info: %d divisions by a constant kept: the float divider is needed anyway\n"
+                                : "Info: %d divisões por constante mantidas: o divisor float é necessário de qualquer forma\n")
+                : (yanc_lang_en ? "Info: %d divisions by a constant became products by the reciprocal: no float divider\n"
+                                : "Info: %d divisões por constante viraram produtos pelo inverso: sem divisor float\n"), blocks);
+
+done:
+    free(part);
+    st_free(&lines); st_free(&pc);
+    return removed;
+}
