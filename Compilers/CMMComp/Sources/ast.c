@@ -993,8 +993,23 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_STD_FLOOR:{ expr a = ast_emit_expr(n->left); return exec_floor(a); }
                 case OP_STD_CEIL: { expr a = ast_emit_expr(n->left); return exec_ceil (a); }
                 case OP_STD_ROUND:{ expr a = ast_emit_expr(n->left); return exec_round(a); }
-                case OP_STD_REAL: { expr a = ast_emit_expr(n->left); return exec_real(a); }
-                case OP_STD_IMAG: { expr a = ast_emit_expr(n->left); return exec_imag(a); }
+                case OP_STD_REAL: case OP_STD_IMAG:
+                    // a part of a comp array element: the array of that part (v, or
+                    // v_i) is read as a float array, the other one not at all
+                    if (n->left->kind == EXPR_ARRAY_INDEX && v_table[n->left->id].type == 3)
+                    {
+                        int id = n->left->id, part = (n->op == OP_STD_IMAG) ? get_img_id(id) : id;
+                        int t0 = v_table[part].type, a0 = v_table[part].isar, s0 = v_table[part].siz2;
+                        v_table[part].type = 2; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
+                        n->left->id = part;
+                        expr a = ast_emit_expr(n->left);
+                        n->left->id = id;
+                        v_table[part].type = t0; v_table[part].isar = a0; v_table[part].siz2 = s0;
+                        v_table[id].used = 1;
+                        return a;
+                    }
+                    if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return exec_real(a); }
+                    else                      { expr a = ast_emit_expr(n->left); return exec_imag(a); }
                 case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_comp(a, b); }
                 case OP_STD_FASE: { expr a = ast_emit_expr(n->left); return exec_fase(a); }
                 case OP_STD_MOD2: { expr a = ast_emit_expr(n->left); return exec_mod2(a); }

@@ -77,16 +77,11 @@ F_MLT 8.0
 F2I
 OUT 0
 LOD_V c 0
-P_LOD_V c_i 0
-POP
 F_MLT 10.0
 F_ADD 0.5
 F2I
 OUT 0
-LOD_V c 0
-P_LOD_V c_i 0
-SET_P __aux_var
-LOD   __aux_var
+LOD_V c_i 0
 F2I
 OUT 0
 @__Lwh1 JMP __Lwh1
