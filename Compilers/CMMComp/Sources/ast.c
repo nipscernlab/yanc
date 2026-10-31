@@ -459,6 +459,20 @@ static expr_node *for_bottom_test(stmt_node *n)
 }
 
 // an int literal other than 0: a loop condition that is always true (while (1))
+// an expression that writes no variable: no ++ and no call of a user function
+// (which may write a global); the library's calls in an expression only read
+static int rhs_keeps(expr_node *n)
+{
+    if (!n) return 1;
+    switch (n->kind)
+    {
+        case EXPR_LITERAL: case EXPR_VAR: return 1;
+        case EXPR_BINOP: case EXPR_UNOP: case EXPR_ARRAY_INDEX: case EXPR_STDLIB_CALL:
+            return rhs_keeps(n->left) && rhs_keeps(n->right);
+        default: return 0;
+    }
+}
+
 static int is_const_true(expr_node *n)
 {
     return n && n->kind == EXPR_LITERAL && n->type == 1 && atoll(v_table[n->id].name) != 0;
@@ -1654,7 +1668,12 @@ void stmt_emit(stmt_node *n)
                 arr_2d_index(n->id, i1, i2);
             }
             else arr_1d_index(n->id, ast_emit_expr(n->idx));
+            // an int variable as the whole index, which the right-hand side
+            // cannot change: ass_array may read it again for a second word
+            ass_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == 1
+                              && !v_table[n->idx->id].isar && rhs_keeps(n->rhs)) ? n->idx->id : 0;
             ass_array(n->id, ast_emit_expr(n->rhs), n->op);
+            ass_idx_reload = 0;
             break;
 
         case STMT_RETURN:

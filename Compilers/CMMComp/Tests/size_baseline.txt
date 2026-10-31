@@ -27,7 +27,7 @@ cmm_comp_zero 182
 cmm_comp_sqrt 153
 cmm_conj   58
 cmm_continue 68
-cmm_cov_arr1d 2591
+cmm_cov_arr1d 2576
 cmm_cov_arr2d_rd 5478
 cmm_cov_arr2d_wr 9244
 cmm_cov_lib 10942
@@ -104,7 +104,7 @@ lk_flt_w   15
 lk_merge   11
 multiparam 28
 pplus_arr  19
-proc_fft   233
+proc_fft   227
 proc_rls   235
 proc_sim   94
 procBlind  624
