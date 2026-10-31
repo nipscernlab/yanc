@@ -44,35 +44,17 @@ ADD 1
 SET main_k
 LES 2
 JIZ __Lwh2
-@__Lwh2end LOD 0
-MLT 3
-ADD 1
-LDI m
+@__Lwh2end LOD_V m 1
 OUT 0
-LOD 0
-MLT 3
-ADD 2
-LDI m
+LOD_V m 2
 OUT 0
-LOD 1
-MLT 3
-ADD 0
-LDI m
+LOD_V m 3
 OUT 0
-LOD 1
-MLT 3
-ADD 2
-LDI m
+LOD_V m 5
 OUT 0
-LOD 1
-MLT 2
-ADD 0
-LDI q
+LOD_V q 2
 OUT 0
-LOD 1
-MLT 2
-ADD 1
-LDI q
+LOD_V q 3
 OUT 0
 LOD 0
 SET main_k

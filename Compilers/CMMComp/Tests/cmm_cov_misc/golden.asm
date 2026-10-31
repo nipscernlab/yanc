@@ -15,7 +15,6 @@ NOP
 #array i1 1 1
 #array vc 3 4
 #array vc_i 4 4
-#SHARE __aux_var locals_w_i
 #SHARE main_x locals_w_i
 #SHARE main_k locals_w
 #SHARE main_s locals_w_i
@@ -25,8 +24,9 @@ NOP
 #SHARE __dhf1_main main_m5
 #SHARE __dk0_main locals_w_i
 #SHARE main_y main_m5
-#SHARE __aux_var1 main_n2
-#SHARE __aux_var2 main_z0
+#SHARE __aux_var main_n2
+#SHARE __aux_var1 main_z0
+#SHARE __aux_var2 main_pa
 JMP main
 @locals #arrays locals_li 1 3 "li.txt"
 #arrays locals_lf 2 3 "lf.txt"
@@ -54,25 +54,14 @@ LOD 4.0
 F_MLT locals_w_i
 F2I
 OUT 0
-LOD 1
-MLT 3
-ADD 2
-LDI locals_lmi
+LOD_V locals_lmi 5
 OUT 0
-LOD 1
-MLT 3
-ADD 0
-LDI locals_lmf
+LOD_V locals_lmf 3
 F_MLT 4.0
 F2I
 OUT 0
-LOD   1
-MLT   2
-ADD   1
-SET   __aux_var
-LDI   locals_lmc
-P_LOD __aux_var
-LDI   locals_lmc_i
+LOD_V locals_lmc 3
+P_LOD_V locals_lmc_i 3
 SET_P locals_w_i
 SET locals_w
 LOD 4.0

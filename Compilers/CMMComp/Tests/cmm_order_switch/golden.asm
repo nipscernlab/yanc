@@ -35,15 +35,9 @@ PSH
 LDI m
 ADD 1
 STI m
-LOD 1
-MLT 4
-ADD 2
-LDI m
+LOD_V m 6
 OUT 0
-LOD 2
-MLT 4
-ADD 1
-LDI m
+LOD_V m 9
 OUT 0
 LOD 0.5
 SET main_f

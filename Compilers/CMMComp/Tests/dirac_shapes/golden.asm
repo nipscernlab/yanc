@@ -178,7 +178,6 @@ JMP __Ld5
 SET k
 @__Lwh1 LOD k
 MLT 2
-ADD 0
 LDI A
 F2I
 OUT 0
@@ -227,7 +226,6 @@ JMP __Ld7
 SET k
 @__Lwh2 LOD k
 MLT 2
-ADD 0
 LDI A
 F2I
 OUT 0
@@ -277,7 +275,6 @@ JMP __Ld9
 SET k
 @__Lwh3 LOD k
 MLT 2
-ADD 0
 LDI A
 F2I
 OUT 0
@@ -996,7 +993,6 @@ JMP __Ld45
 SET k
 @__Lwh15 LOD k
 MLT 3
-ADD 0
 LDI C
 F2I
 OUT 0
@@ -1035,7 +1031,6 @@ JMP __Ld48
 SET k
 @__Lwh16 LOD k
 MLT 3
-ADD 0
 LDI C
 F2I
 OUT 0
@@ -1078,7 +1073,6 @@ JMP __Ld50
 SET k
 @__Lwh17 LOD k
 MLT 3
-ADD 0
 LDI C
 F2I
 OUT 0
@@ -1121,7 +1115,6 @@ JMP __Ld52
 SET k
 @__Lwh18 LOD k
 MLT 2
-ADD 0
 LDI A
 F2I
 OUT 0
@@ -1171,7 +1164,6 @@ JMP __Ld53
 SET k
 @__Lwh19 LOD k
 MLT 3
-ADD 0
 LDI C
 F2I
 OUT 0
@@ -1457,7 +1449,6 @@ JMP __Ld68
 SET k
 @__Lwh27 LOD k
 MLT 3
-ADD 0
 LDI C
 F2I
 OUT 0

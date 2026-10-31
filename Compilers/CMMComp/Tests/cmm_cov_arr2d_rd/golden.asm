@@ -687,26 +687,15 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD 2
-MLT 4
-ADD 1
-LDI mi
+LOD_V mi 9
 SET main_x
 OUT 0
-LOD 2
-MLT 4
-ADD 1
-LDI mf
+LOD_V mf 9
 SET main_y
 F2I_M main_y
 OUT 0
-LOD   2
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
+LOD_V mc 9
+P_LOD_V mc_i 9
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -3332,28 +3321,17 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD 2
-MLT 4
-ADD 1
-LDI mi
+LOD_V mi 9
 ADD 1000
 SET main_x
 OUT 0
-LOD 2
-MLT 4
-ADD 1
-LDI mf
+LOD_V mf 9
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
-LOD   2
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
+LOD_V mc 9
+P_LOD_V mc_i 9
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0

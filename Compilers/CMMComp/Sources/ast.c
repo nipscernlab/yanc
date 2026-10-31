@@ -936,7 +936,17 @@ static expr ast_emit_expr_impl(expr_node *n)
             {
                 typecheck_expr(n->left);
                 if (n->left->type == 1)
-                    return arr_1d2exp_const(n->id, atoi(v_table[n->left->id].name));
+                    return arr_1d2exp_const(n->id, atoi(v_table[n->left->id].name), 1);
+            }
+            // two constant indexes of a matrix: one constant offset, row by row
+            if (n->right && n->left->kind == EXPR_LITERAL && n->right->kind == EXPR_LITERAL
+                && v_table[n->id].isar == 2 && v_table[n->id].type >= 1 && v_table[n->id].type <= 3)
+            {
+                typecheck_expr(n->left);
+                typecheck_expr(n->right);
+                if (n->left->type == 1 && n->right->type == 1)
+                    return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].siz2
+                                                 + atoi(v_table[n->right->id].name), 2);
             }
             expr idx1 = ast_emit_expr(n->left);
             if (n->right) {
@@ -1582,7 +1592,22 @@ void stmt_emit(stmt_node *n)
                 int rt = n->rhs->type;
                 if (n->idx->type == 1 && (rt == at || (at == 3 && rt == 5))) {
                     int k = atoi(v_table[n->idx->id].name);
-                    ass_array_const(n->id, k, ast_emit_expr(n->rhs));
+                    ass_array_const(n->id, k, 1, ast_emit_expr(n->rhs));
+                    break;
+                }
+            }
+            // two constant indexes of a matrix: one constant offset, row by row
+            if (n->idx2 && n->idx->kind == EXPR_LITERAL && n->idx2->kind == EXPR_LITERAL
+                && v_table[n->id].isar == 2 && v_table[n->id].type >= 1 && v_table[n->id].type <= 3)
+            {
+                int at = v_table[n->id].type;
+                typecheck_expr(n->idx);
+                typecheck_expr(n->idx2);
+                typecheck_expr(n->rhs);
+                int rt = n->rhs->type;
+                if (n->idx->type == 1 && n->idx2->type == 1 && (rt == at || (at == 3 && rt == 5))) {
+                    int k = atoi(v_table[n->idx->id].name) * v_table[n->id].siz2 + atoi(v_table[n->idx2->id].name);
+                    ass_array_const(n->id, k, 2, ast_emit_expr(n->rhs));
                     break;
                 }
             }

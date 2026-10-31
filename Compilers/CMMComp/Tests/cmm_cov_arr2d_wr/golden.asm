@@ -444,11 +444,8 @@ LOD 118.0
 SET main_cv
 LOD 168.0
 SET main_cv_i
-LOD  2
-MLT  4
-ADD  1
-P_LOD main_iv
-STI mi
+LOD main_iv
+SET_V mi 9
 LOD main_n2
 MLT 4
 ADD main_n1
@@ -1921,11 +1918,8 @@ LOD 182.0
 SET main_cv
 LOD 232.0
 SET main_cv_i
-LOD  2
-MLT  4
-ADD  1
-P_LOD main_fv
-STI mf
+LOD main_fv
+SET_V mf 9
 LOD main_n2
 MLT 4
 ADD main_n1
@@ -3742,15 +3736,10 @@ LOD 246.0
 SET main_cv
 LOD 296.0
 SET main_cv_i
-LOD  2
-MLT  4
-ADD  1
-SET   __aux_var
-P_LOD main_cv
-STI mc
-LOD   __aux_var
-P_LOD main_cv_i
-STI mc_i
+LOD main_cv
+SET_V mc 9
+LOD main_cv_i
+SET_V mc_i 9
 LOD   main_n2
 MLT   4
 ADD   main_n1

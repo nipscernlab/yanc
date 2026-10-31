@@ -103,7 +103,6 @@ SET main_fx
 ADD main_x
 SET main_y
 NEG_M main_x
-ADD 0
 SET main_z
 LOD main_fx
 F_MLT 0.5

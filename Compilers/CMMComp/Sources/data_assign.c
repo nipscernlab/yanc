@@ -277,15 +277,16 @@ void ass_set(int id, expr e)
 // the ass_array path. The walker routes only 1D-forward assignments whose rhs
 // has the array's own type here (comp: a variable, a literal or the acc, whose
 // imag half is stored first and then popped off the real half); every other
-// shape still goes through ass_array.
-void ass_array_const(int id, int k, expr e)
+// shape still goes through ass_array. A 2D one whose two indexes are constant
+// comes here too (dims 2, k = row * columns + column).
+void ass_array_const(int id, int k, int dims, expr e)
 {
     // the same checks as ass_array (a write does not mark the array used)
     if (v_table[id].type == 0)
         {fprintf (stderr, MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
     if (v_table[id].isar == 0)
         {fprintf (stderr, MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
-    if (v_table[id].isar == 2)   // arr_1d_index refuses it on the general path
+    if (v_table[id].isar == 2 && dims == 1)   // arr_1d_index refuses it on the general path
         {fprintf (stderr, MSG_ERR_ARRAY_2D, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
 
     if (v_table[id].type == 3)
