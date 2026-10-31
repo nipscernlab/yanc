@@ -4,7 +4,8 @@
 # test | where its expected output comes from. A test goes here only when it
 # is simulated by Scripts/regress.sh (not in its SIM_SKIP list) and its
 # golden_sim was written from that independent source, never recorded with
-# regress.sh --update.
+# regress.sh --update, or when it is a processor of a project pass whose
+# outputs regress.sh checks against a sequence it computes itself.
 dirac_shapes      | Scripts/dirac_ref.py: the same statements in Python, checked by the regression
 proc_rls          | Scripts/rls_ref.py: an RLS filter in double precision, checked by the regression
 cmm_stack_balance | the values worked out in its header (k + 2, 13, then 40)
@@ -20,3 +21,19 @@ cmm_cov_lib       | Scripts/cov_tests.py: Python math/cmath, the float routines 
 cmm_cov_rest      | Scripts/cov_tests.py: computed in Python, checked by the regression
 cmm_cov_misc      | Scripts/cov_tests.py: computed in Python, checked by the regression
 cmm_main_return   | the values worked out in its header (10, 20, 5)
+link_envia        | project pass LINK: link_recebe puts n*7+3, the sequence regress.sh computes
+link_recebe       | project pass LINK: n*7+3 from link_envia, the sequence regress.sh computes
+link_ping         | project pass LINK: 1..16 over one link both ways, the sequence regress.sh computes
+link_pong         | project pass LINK: 1..16 over one link both ways, the sequence regress.sh computes
+lk_chain_a        | project pass LINK3: the chain puts (3n+1)*2, computed by regress.sh
+lk_chain_b        | project pass LINK3: the chain puts (3n+1)*2, computed by regress.sh
+lk_chain_c        | project pass LINK3: the chain puts (3n+1)*2, computed by regress.sh
+lk_fan_w          | project pass LINK3: the two lk_echo put n and n+100, computed by regress.sh
+lk_echo           | project pass LINK3: n and n+100 from lk_fan_w, computed by regress.sh
+lk_count          | project pass LINK3: lk_merge puts n*1000 + n*7, computed by regress.sh
+lk_count7         | project pass LINK3: lk_merge puts n*1000 + n*7, computed by regress.sh
+lk_merge          | project pass LINK3: n*1000 + n*7, computed by regress.sh
+lk_flt_w          | project pass LINK3: lk_flt_r puts 3n from n*1.5, computed by regress.sh
+lk_flt_r          | project pass LINK3: 3n from the float words n*1.5, computed by regress.sh
+sapho_all         | Tests/sapho_all/model.py: every output line, checked by the regression (in, fin with and without a pending value)
+cmm_itr           | project pass ITR: 100 200 300 and cheguei 9 times, what its header works out, checked by the regression

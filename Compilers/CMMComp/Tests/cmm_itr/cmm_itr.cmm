@@ -1,0 +1,37 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// The #PRACA restart and the #TOAQUI pin, checked by the project pass ITR of
+// Scripts/regress.sh (cmmcomp audit, issue #69): the testbench of the
+// standalone simulation ties itr to 0 and leaves cheguei open, so only a
+// testbench of its own sees either work (Tests/ITR/TopLevel/itr_tb.v).
+//
+// The program passes the #PRACA point once on its own, adds 100 to n, puts n
+// on port 0, runs a loop of three turns whose body is the #TOAQUI point, and
+// ends with return;, which in a program with a #PRACA waits in place
+// (@fim JMP fim). The testbench then pulls itr up twice; each time the
+// program restarts at #PRACA. n is a global, kept from one pass to the next.
+//
+// Expected: 100, 200, 300 on port 0, and cheguei rising 3 times a pass, 9 in
+// all.
+
+int n;
+
+void main()
+{
+    int k;
+    n = 0;
+#PRACA
+    n = n + 100;
+    out(0, n);
+    k = 0;
+    while (k < 3)
+    {
+#TOAQUI
+        k = k + 1;
+    }
+    return;
+}

@@ -1,0 +1,26 @@
+NOP
+#PRNAME cmm_itr
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+@main LOD 0
+SET n
+#ITRAD
+LOD n
+ADD 100
+SET n
+OUT 0
+LOD 0
+SET main_k
+@__Lwh1 LOD 3
+LES main_k
+JIZ __Lwh1end
+#TOAQUI
+LOD main_k
+ADD 1
+SET main_k
+JMP __Lwh1
+@__Lwh1end @fim JMP fim
+@fim JMP fim

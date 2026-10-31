@@ -4,4 +4,4 @@
 # Lower them as tests are added (issue #69); never raise them to make the
 # regression pass.
 unreached 0
-unverified 10
+unverified 0
