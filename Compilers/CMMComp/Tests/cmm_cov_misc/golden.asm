@@ -16,15 +16,17 @@ NOP
 #array vc 3 4
 #array vc_i 4 4
 #SHARE __aux_var locals_w_i
-#SHARE main_x main_pa
-#SHARE main_k locals_w_i
-#SHARE main_s main_pa
-#SHARE __switch_exp locals_w_i
-#SHARE main_w_i main_cv
-#SHARE main_w main_cv_i
-#SHARE __dhf1_main main_cv
-#SHARE __dk0_main main_cv_i
-#SHARE main_y main_pf
+#SHARE main_x locals_w_i
+#SHARE main_k locals_w
+#SHARE main_s locals_w_i
+#SHARE __switch_exp main_m5
+#SHARE main_w_i main_m5
+#SHARE main_w locals_w_i
+#SHARE __dhf1_main main_m5
+#SHARE __dk0_main locals_w_i
+#SHARE main_y main_m5
+#SHARE __aux_var1 main_n2
+#SHARE __aux_var2 main_z0
 JMP main
 @locals #arrays locals_li 1 3 "li.txt"
 #arrays locals_lf 2 3 "lf.txt"
@@ -86,6 +88,8 @@ RET
 RET
 @main LOD 2
 SET main_n2
+LOD 5
+SET main_m5
 LOD 0
 SET main_z0
 LOD 1000
@@ -198,6 +202,97 @@ ADD main_k
 SET main_k
 JMP __Lwh5
 @__Lwh5end LOD main_s
+OUT 0
+LOD 0
+SET main_k
+LOD 0
+SET main_s
+@__Lwh6 LOD 5
+EQU main_k
+LIN
+JIZ __Lwh6end
+LOD main_k
+ADD 1
+SET main_k
+LOD 3
+EQU main_k
+JIZ __Lif5else
+LOD main_s
+ADD 100
+SET main_s
+JMP __Lwh6
+@__Lif5else LOD main_s
+ADD main_k
+SET main_s
+JMP __Lwh6
+@__Lwh6end LOD main_s
+OUT 0
+LOD 0
+SET main_s
+LOD 0
+SET main_k
+@__Lwh7 LOD 2
+EQU main_k
+JIZ __Lif6else
+LOD main_s
+ADD 100
+SET main_s
+JMP __Lwh7cont
+@__Lif6else LOD main_s
+ADD main_k
+SET main_s
+@__Lwh7cont LOD main_k
+ADD 1
+SET main_k
+LES 4
+JIZ __Lwh7
+@__Lwh7end LOD main_s
+OUT 0
+LOD 0
+SET main_s
+LOD 0
+SET main_k
+@__Lwh8 LOD main_m5
+LES main_k
+JIZ __Lwh8end
+LOD 2
+EQU main_k
+JIZ __Lif7else
+LOD main_s
+ADD 100
+SET main_s
+JMP __Lwh8cont
+@__Lif7else LOD main_s
+ADD main_k
+SET main_s
+@__Lwh8cont LOD main_k
+ADD 1
+SET main_k
+JMP __Lwh8
+@__Lwh8end LOD main_s
+OUT 0
+LOD 0
+SET main_k
+LOD 0
+SET main_s
+@__Lwh9 LOD main_k
+ADD 1
+SET main_k
+LOD 2
+EQU main_k
+JIZ __Lif8else
+LOD main_s
+ADD 100
+SET main_s
+JMP __Lwh9cont
+@__Lif8else LOD main_s
+ADD main_k
+SET main_s
+@__Lwh9cont LOD 4
+LES main_k
+JIZ __Lwh9end
+JMP __Lwh9
+@__Lwh9end LOD main_s
 OUT 0
 LOD 0
 SET main_s
@@ -416,5 +511,48 @@ OUT 0
 F2I_M main_fs
 OUT 0
 LOD main_n2
+OUT 0
+LOD_V ia3 2
+P_LOD main_pa
+ADD main_z0
+S_ADD
+SET main_x
+OUT 0
+LOD main_pf
+F_ADD main_fz
+P_LOD_V fa3 1
+SF_ADD
+SET main_y
+LOD 4.0
+F_MLT main_y
+F2I
+OUT 0
+LOD main_cv
+F_MLT main_one
+P_LOD main_cv_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_cv
+F_MLT main_one_i
+P_LOD main_cv_i
+F_MLT main_one
+SF_ADD
+P_LOD_V vc 2
+P_LOD_V vc_i 2
+SET_P __aux_var 
+SET_P __aux_var1
+SET_P __aux_var2
+F_ADD __aux_var1
+P_LOD __aux_var2
+F_ADD __aux_var 
+SET_P main_w_i
+SET main_w
+LOD 4.0
+F_MLT main_w
+F2I
+OUT 0
+LOD 4.0
+F_MLT main_w_i
+F2I
 OUT 0
 @fim JMP fim
