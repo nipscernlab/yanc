@@ -1008,6 +1008,25 @@ static expr ast_emit_expr_impl(expr_node *n)
                         v_table[id].used = 1;
                         return a;
                     }
+                    // a part of the product of two comp variables: only that part's
+                    // sum of products, in the order of oper_mult (the same bits)
+                    if (n->left->kind == EXPR_BINOP && n->left->op == OP_MUL
+                        && n->left->left ->kind == EXPR_VAR && v_table[n->left->left ->id].type == 3
+                        && n->left->right->kind == EXPR_VAR && v_table[n->left->right->id].type == 3)
+                    {
+                        int a = n->left->left->id, b = n->left->right->id;
+                        const char *ar = v_table[a].name, *ai = v_table[get_img_id(a)].name;
+                        const char *br = v_table[b].name, *bi = v_table[get_img_id(b)].name;
+                        v_table[a].used = 1; v_table[b].used = 1;
+                        int re = (n->op == OP_STD_REAL);
+                        add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", ar);
+                        add_instr("F_MLT %s\n", re ? br : bi);
+                        add_instr("P_LOD %s\n", ai);
+                        add_instr("F_MLT %s\n", re ? bi : br);
+                        add_instr(re ? "SF_SU2\n" : "SF_ADD\n");       // ar br - ai bi, or ar bi + ai br
+                        acc_ok = 1;
+                        return expr_make(2, 0);
+                    }
                     if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return exec_real(a); }
                     else                      { expr a = ast_emit_expr(n->left); return exec_imag(a); }
                 case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_comp(a, b); }

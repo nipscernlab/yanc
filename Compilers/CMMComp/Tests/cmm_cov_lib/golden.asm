@@ -6003,12 +6003,6 @@ F_MLT main_one
 P_LOD main_ca_i
 F_MLT main_one_i
 SF_SU2
-P_LOD main_ca
-F_MLT main_one_i
-P_LOD main_ca_i
-F_MLT main_one
-SF_ADD
-POP
 SET main_y
 LOD 1000.0
 F_MLT main_y
@@ -6021,12 +6015,6 @@ F_MLT main_one
 P_LOD main_ca_i
 F_MLT main_one_i
 SF_SU2
-P_LOD main_ca
-F_MLT main_one_i
-P_LOD main_ca_i
-F_MLT main_one
-SF_ADD
-POP
 SF_ADD
 SET main_y
 LOD 1000.0
@@ -6069,17 +6057,10 @@ F_MLT main_y
 F2I
 OUT 0
 LOD main_ca
-F_MLT main_one
-P_LOD main_ca_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-LOD   __aux_var
 SET main_y
 LOD 1000.0
 F_MLT main_y
@@ -6088,17 +6069,10 @@ OUT 0
 LOD main_pf
 F_ADD main_fz
 P_LOD main_ca
-F_MLT main_one
-P_LOD main_ca_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-LOD   __aux_var
 SF_ADD
 SET main_y
 LOD 1000.0
