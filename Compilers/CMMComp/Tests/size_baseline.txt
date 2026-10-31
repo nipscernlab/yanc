@@ -21,7 +21,7 @@ cmm_comp_cmp 509
 cmm_comp_div 120
 cmm_comp_fase 426
 cmm_comp_func 110
-cmm_comp_mix 267
+cmm_comp_mix 255
 cmm_comp_sqrt 153
 cmm_conj   58
 cmm_continue 68
@@ -37,6 +37,7 @@ cmm_ctan   265
 cmm_ctlforms 134
 cmm_decl_list 99
 cmm_define 12
+cmm_div_const 92
 cmm_depth  29
 cmm_dowhile 81
 cmm_empty  27
@@ -47,9 +48,9 @@ cmm_fft_wr 27
 cmm_flit   79
 cmm_flow_globals 58
 cmm_forbottom 155
-cmm_fround0 202
-cmm_fround1 202
-cmm_fround2 202
+cmm_fround0 203
+cmm_fround1 203
+cmm_fround2 203
 cmm_fround_mean 65
 cmm_hyper  123
 cmm_ilit   64

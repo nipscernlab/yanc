@@ -1,0 +1,34 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// A float division by a literal that is not a power of two, in a program with
+// no other float division (cmmcomp audit, issue #69): each becomes a product
+// by the reciprocal (asm_divk keeps the #MULK form), so the processor has no
+// float divider and the .asm no F_DIV. Every value is printed times 1000 and
+// sits far from an integer, so the reciprocal's rounding cannot change what
+// fout truncates.
+//
+// Expected: 1875 (3/1.6, exact: 1/1.6 = 0.625), 333 (1/3), 571 (4/7), 3333
+// (10/3), 333 and 666 (the parts of (1+2i)/3), 857 and 1142 (the parts of
+// (6+8i)/7), 428 ((1000 + 3/7) - 1000, the product under a pending value).
+
+void main()
+{
+    float a, f, y;
+    int   n;
+    comp  w, z;
+    a = 3.0; f = 1.0; n = 10;
+    w = 1.0+2.0i;
+
+    y = a / 1.6;            fout(0, 1000.0*y);      // float in memory
+    y = f / 3.0;            fout(0, 1000.0*y);
+    y = (a + f) / 7.0;      fout(0, 1000.0*y);      // float in the acc
+    y = n / 3.0;            fout(0, 1000.0*y);      // int in memory
+    z = w / 3.0;            fout(0, 1000.0*real(z)); fout(0, 1000.0*imag(z));   // comp in memory
+    z = (w*(2.0+0.0i) + (4.0+4.0i)) / 7.0;          // comp in the acc: (6+8i)/7
+                            fout(0, 1000.0*real(z)); fout(0, 1000.0*imag(z));
+    y = (1000.0 + a / 7.0) - 1000.0;  fout(0, 1000.0*y);     // a pending value under the product
+}

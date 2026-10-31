@@ -55,6 +55,16 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **cmmcomp: a float divided by a literal can become a product.** By a
+  power of two always (exact); by any other literal only when no other float
+  division puts the divider in the processor, and then the result can differ
+  in the last bit (`asm_divk`, issue #69). Fixture `cmm_div_const`. Manual:
+  docs/language-cmm.md.
+- **cmmcomp: a smaller assembly** (issue #69): bitwise operators and
+  int/float comparisons with an operand in the acc, an int literal met by a
+  float or a comp, a constant matrix index, `ADD 0`, `pow(x, 0)`, and in the
+  pass shared with cppcomp a jump to the next instruction and a jump to a
+  jump.
 - **cmmcomp: the unrolled Dirac generators are gone** (step c of
   docs/design/dirac-expressions.md). The eleven `exec_*` routines that
   unrolled each Dirac form, 840 lines of `stdlib.c`, and the twenty messages

@@ -37,3 +37,4 @@ lk_flt_w          | project pass LINK3: lk_flt_r puts 3n from n*1.5, computed by
 lk_flt_r          | project pass LINK3: 3n from the float words n*1.5, computed by regress.sh
 sapho_all         | Tests/sapho_all/model.py: every output line, checked by the regression (in, fin with and without a pending value)
 cmm_itr           | project pass ITR: 100 200 300 and cheguei 9 times, what its header works out, checked by the regression
+cmm_div_const     | the values worked out in its header, far from an integer so the reciprocal's rounding cannot move them

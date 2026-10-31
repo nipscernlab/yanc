@@ -70,6 +70,22 @@ int asm_is_mnemonic(const char *name);
 int asm_reach(const char *asm_path, const char *pc_path);
 
 // ****************************************************************************
+// asm_divk -- a division by a constant, or the product by its reciprocal ----
+// ****************************************************************************
+//
+// cmmcomp emits a float division by a literal that is not a power of two in
+// both forms: the division between #DIVK and #MULK, the product by the
+// reciprocal between #MULK and #ENDK. The product is one word and needs no
+// divider, but rounds the reciprocal: it is kept only when no float division
+// outside the blocks (by a variable, of a comp, in a library routine) puts
+// the divider in the processor anyway (Luciano, 2026-10-31, issue #69).
+// The markers leave; pc_path loses the lines of the dropped instructions.
+// Run it after asm_reach (code no path reaches needs no divider) and before
+// asm_divseq. Returns how many dropped instructions the pc map covered, -1
+// on an I/O error.
+int asm_divk(const char *asm_path, const char *pc_path);
+
+// ****************************************************************************
 // asm_divseq -- a division takes as many words as its divider has stages -----
 // ****************************************************************************
 //

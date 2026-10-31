@@ -218,6 +218,11 @@ void parse_end(char *prname, char *d_proc)
 	int  gone = asm_reach(asm_file, pc_file);
 	if  (gone > 0) num_ins -= gone;
 
+	// a division by a constant stays one only when the float divider is there anyway
+
+	int  kept = asm_divk(asm_file, pc_file);
+	if  (kept > 0) num_ins -= kept;
+
 	// every division becomes <div> x; NOP...; <read>: the dividers take five / four cycles
 
 	int  more = asm_divseq(asm_file, pc_file);

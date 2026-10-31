@@ -156,6 +156,16 @@ The precedence is C's. There is no `--`, no compound assignment (`+=`,
 a division a divider and five clock cycles (four for a float division):
 `x >> 2` instead of `x / 4` when `x` is not negative.
 
+A float or `comp` divided by a literal is multiplied by the literal's
+reciprocal instead, one instruction and no divider, when the result is the
+same: the literal is a power of two (`x / 4.0` is `x * 0.25`). Any other
+literal (`x / 3.0`) is multiplied by its rounded reciprocal only when nothing
+else in the program divides floats, so that the float divider stays out of
+the processor; the result can then differ from the division in the last bit
+(`2.5 / 1.25` gives 1.9999999, which an `fout` truncates to 1). When the
+program divides floats elsewhere, the divider is there anyway, and every
+division by a literal stays a division.
+
 ## Control flow
 
 `if` / `else`, `while`, `do` ... `while`, `for`, `switch` / `case` /
