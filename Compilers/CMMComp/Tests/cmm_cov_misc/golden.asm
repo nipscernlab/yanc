@@ -107,7 +107,6 @@ SET main_x
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
 @__Lwh1 LOD main_k
 ADD 1
@@ -123,7 +122,6 @@ JMP __Lwh1
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
 @__Lwh2 LOD 5
 EQU main_k
@@ -143,7 +141,6 @@ JMP __Lwh2
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh3 LOD 2
 XOR main_k
@@ -160,7 +157,6 @@ JIZ __Lwh3
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
 @__Lwh4 LOD main_k
 ADD 1
@@ -194,7 +190,6 @@ JMP __Lwh5
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
 @__Lwh6 LOD 5
 EQU main_k
@@ -218,7 +213,6 @@ JMP __Lwh6
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh7 LOD 2
 EQU main_k
@@ -239,7 +233,6 @@ JIZ __Lwh7
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh8 LOD main_m5
 LES main_k
@@ -262,7 +255,6 @@ JMP __Lwh8
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
 @__Lwh9 LOD main_k
 ADD 1

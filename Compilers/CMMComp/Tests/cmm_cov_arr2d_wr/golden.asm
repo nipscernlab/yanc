@@ -38,7 +38,6 @@ LOD 3.7
 SET main_f3
 LOD 0.0
 SET main_fz
-LOD 0.0
 SET main_c0
 LOD 3.0
 SET main_c0_i

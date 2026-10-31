@@ -92,7 +92,6 @@ LOD 0.0
 SET main_one_i
 LOD 100.0
 SET main_pc
-LOD 100.0
 SET main_pc_i
 LOD 2
 SET main_ia
@@ -458,7 +457,6 @@ LOD 1
 SET main_ia
 LOD 0.5
 SET main_fa
-LOD 0.5
 SET main_ca
 LOD 0.25
 SET main_ca_i
@@ -778,7 +776,6 @@ LOD 2.5
 SET main_fa
 LOD 1.0
 SET main_ca
-LOD 1.0
 SET main_ca_i
 I2F_M main_ia
 CAL __float_log
@@ -1348,7 +1345,6 @@ LOD 1
 SET main_ia
 LOD 0.5
 SET main_fa
-LOD 0.5
 SET main_ca
 LOD 0.25
 SET main_ca_i
@@ -1740,7 +1736,6 @@ LOD 1
 SET main_ia
 LOD 0.5
 SET main_fa
-LOD 0.5
 SET main_ca
 LOD 0.25
 SET main_ca_i
@@ -2150,7 +2145,6 @@ LOD 1
 SET main_ia
 LOD 0.5
 SET main_fa
-LOD 0.5
 SET main_ca
 LOD 0.25
 SET main_ca_i
@@ -2636,7 +2630,6 @@ LOD 2
 SET main_ia
 LOD 0.5
 SET main_fa
-LOD 0.5
 SET main_ca
 LOD 0.25
 SET main_ca_i
@@ -3334,7 +3327,6 @@ LOD 0.5
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 I2F_M main_ia
 SET __sinh_x
@@ -3522,7 +3514,6 @@ LOD 0.5
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 I2F_M main_ia
 SET __cosh_x
@@ -3710,7 +3701,6 @@ LOD 0.5
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 I2F_M main_ia
 F_MLT 2.0
@@ -4257,7 +4247,6 @@ LOD 2.6
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 I2F_M main_ia
 SET __floor_x
@@ -4481,7 +4470,6 @@ LOD 2.6
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 I2F_M main_ia
 SET __ceil_x
@@ -4717,7 +4705,6 @@ LOD 2.6
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 I2F_M main_ia
 SET __round_x
@@ -4893,7 +4880,6 @@ LOD 2.5
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 PST_M main_ia
 SET main_x
@@ -4979,7 +4965,6 @@ LOD 640
 SET main_ia
 LOD 0.0
 SET main_fa
-LOD 0.0
 SET main_ca
 LOD 0.0
 SET main_ca_i
@@ -5020,7 +5005,6 @@ LOD -2.6
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 I2F_M main_ia
 SET __floor_x
@@ -5246,7 +5230,6 @@ LOD -2.6
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 I2F_M main_ia
 SET __ceil_x
@@ -5484,7 +5467,6 @@ LOD -2.6
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 I2F_M main_ia
 SET __round_x
@@ -5662,7 +5644,6 @@ LOD -2.5
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 PST_M main_ia
 SET main_x
@@ -5750,7 +5731,6 @@ NEG_M 640
 SET main_ia
 LOD 0.0
 SET main_fa
-LOD 0.0
 SET main_ca
 LOD 0.0
 SET main_ca_i
@@ -6591,7 +6571,6 @@ LOD -2.5
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 LOD 5
 SET main_ib
@@ -8745,7 +8724,6 @@ LOD 1.5
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 LOD 3
 SET main_ib
@@ -9008,7 +8986,6 @@ OUT 0
 I2F_M main_ia
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -9026,7 +9003,6 @@ F_ADD main_fz
 P_I2F_M main_ia
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -9401,7 +9377,6 @@ ADD main_z0
 I2F
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -9421,7 +9396,6 @@ ADD main_z0
 I2F
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -9769,7 +9743,6 @@ OUT 0
 LOD 2.0
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -9787,7 +9760,6 @@ F_ADD main_fz
 P_LOD 2.0
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -10131,7 +10103,6 @@ OUT 0
 LOD main_fa
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -10149,7 +10120,6 @@ F_ADD main_fz
 P_LOD main_fa
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -10511,7 +10481,6 @@ LOD main_fa
 F_ADD main_fz
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -10530,7 +10499,6 @@ P_LOD main_fa
 F_ADD main_fz
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -10876,7 +10844,6 @@ OUT 0
 LOD 1.5
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -10894,7 +10861,6 @@ F_ADD main_fz
 P_LOD 1.5
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b
@@ -10987,7 +10953,6 @@ LOD 4.25
 SET main_fa
 LOD 0.0
 SET main_ca
-LOD 0.0
 SET main_ca_i
 LOD main_ia
 SET main_x

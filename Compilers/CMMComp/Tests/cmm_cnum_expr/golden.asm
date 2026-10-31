@@ -25,7 +25,6 @@ LOD 4
 SET main_n
 LOD 1.0
 SET main_w
-LOD 1.0
 SET main_w_i
 LOD 2.0
 SET main_x

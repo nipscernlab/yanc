@@ -14,11 +14,10 @@ LOD 2.0
 SET main_x_i
 LOD 1.0
 SET main_y
-LOD 1.0
 SET main_y_i
-F_MLT main_y_i
-P_LOD main_y
 F_MLT main_y
+P_LOD main_y_i
+F_MLT main_y_i
 SF_ADD
 SET   __aux_var
 LOD main_x

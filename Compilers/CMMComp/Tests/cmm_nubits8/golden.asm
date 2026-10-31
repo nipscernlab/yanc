@@ -49,7 +49,6 @@ JMP __Lwh1
 OUT 0
 LOD 0
 SET main_n
-LOD 0
 SET main_k
 @__Lwh2 LOD main_a
 ADD main_a
@@ -66,7 +65,6 @@ JMP __Lwh2
 OUT 0
 LOD 0
 SET main_n
-LOD 0
 SET main_k
 @__Lwh3 NEG_M 56
 LES main_k

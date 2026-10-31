@@ -56,11 +56,12 @@ static char last_str[256] = "";
 // already x (the acc holds it), which generalises the old "LOD x after SET x"
 // peephole. Cleared at every basic-block boundary alongside last_str.
 static char acc_name[600] = "";   // a name is up to 511 characters (v_table)
+static char acc_name2[600] = "";  // and the one before a SET: the acc holds both
 
 void emit_peephole_reset(void)
 {
     last_str[0] = '\0';
-    acc_name[0] = '\0';
+    acc_name[0] = acc_name2[0] = '\0';
 }
 
 // True when the accumulator is known to currently hold variable `name`. Used by
@@ -68,7 +69,7 @@ void emit_peephole_reset(void)
 // acc-resident half first, so its LOD is dropped by the peephole above.
 int acc_holds(const char *name)
 {
-    return name && name[0] && strcmp(acc_name, name) == 0;
+    return name && name[0] && (strcmp(acc_name, name) == 0 || strcmp(acc_name2, name) == 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -316,7 +317,7 @@ void add_instr(char *inst, ...)
     if (strncmp(str, "LOD ", 4) == 0)
     {
         char lod_var[600];
-        if (sscanf(str + 4, "%599s", lod_var) == 1 && strcmp(lod_var, acc_name) == 0)
+        if (sscanf(str + 4, "%599s", lod_var) == 1 && acc_holds(lod_var))
             return;   // acc already holds it -- acc_name / last_str stay valid
     }
 
@@ -358,13 +359,16 @@ void add_instr(char *inst, ...)
     if (find_opc("__float_log" , str)) mac_add("flog" );
 
     // track what is now in the accumulator: only a plain LOD / P_LOD / SET of an
-    // operand leaves that operand's value there; anything else clobbers it.
-    if      (strncmp(str, "LOD ", 4) == 0 || strncmp(str, "SET ", 4) == 0)
-        sscanf(str + 4, "%599s", acc_name);
+    // operand leaves that operand's value there; anything else clobbers it. A
+    // SET keeps the name before it too: after LOD y; SET y_n1 the acc is both
+    if      (strncmp(str, "SET ", 4) == 0)
+        { strcpy(acc_name2, acc_name); sscanf(str + 4, "%599s", acc_name); }
+    else if (strncmp(str, "LOD ", 4) == 0)
+        { sscanf(str + 4, "%599s", acc_name); acc_name2[0] = '\0'; }
     else if (strncmp(str, "P_LOD ", 6) == 0)
-        sscanf(str + 6, "%599s", acc_name);
+        { sscanf(str + 6, "%599s", acc_name); acc_name2[0] = '\0'; }
     else
-        acc_name[0] = '\0';
+        acc_name[0] = acc_name2[0] = '\0';
 
     // remember this emit for the next peephole check
     strncpy(last_str, str, sizeof(last_str) - 1);

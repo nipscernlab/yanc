@@ -200,9 +200,7 @@ F2I
 OUT 0
 LOD 1.0
 SET main_z
-LOD 1.0
 SET main_z_i
-LOD main_z
 F_MLT main_z
 SET __catan_a2
 LOD main_z_i
@@ -288,11 +286,9 @@ F2I
 OUT 0
 LOD 0.5
 SET main_z
-LOD 0.5
 SET main_z_i
 LOD 0.5
 SET main_w
-LOD 0.5
 SET main_w_i
 LOD main_z
 F_ADD main_w

@@ -100,7 +100,6 @@ JIZ __Lwh2
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_n
 @__Lwh3 LOD 2
 XOR main_n

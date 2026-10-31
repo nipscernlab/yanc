@@ -38,7 +38,6 @@ F2I_M main_c_i
 OUT 0
 LOD 1.0
 SET main_z
-LOD 1.0
 SET main_z_i
 LOD 1.0
 SET main_w

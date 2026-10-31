@@ -188,7 +188,6 @@ LOD_V a 3
 OUT 0
 LOD 0
 SET main_n
-LOD 0
 SET_V buf 0
 LOD 0
 SET_V buf 1
@@ -216,7 +215,6 @@ LOD_V buf 2
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_r
 @__Lwh2 LOD main_k
 PSH

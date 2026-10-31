@@ -21,7 +21,6 @@ LOD 0
 CAL early
 LOD 2
 SET main_n
-LOD 2
 EQU main_n
 JIZ __Lif2else
 LOD 5

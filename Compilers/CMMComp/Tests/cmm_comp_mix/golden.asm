@@ -19,7 +19,6 @@ LOD 2
 SET main_ni
 LOD 2.0
 SET main_nf
-LOD 2.0
 F_ADD main_c
 P_LOD main_c_i
 SET_P main_r_i

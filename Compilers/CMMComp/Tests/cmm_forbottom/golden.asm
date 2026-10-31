@@ -8,7 +8,6 @@ NOP
 #NUGAIN 128
 @main LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh1 LOD main_s
 ADD main_k
@@ -64,7 +63,6 @@ JIZ __Lwh4
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh5 LOD main_s
 ADD main_k
@@ -78,7 +76,6 @@ JIZ __Lwh5
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh6 LOD main_s
 ADD 7
@@ -122,7 +119,6 @@ JIZ __Lwh8
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh9 LOD 3
 MOD main_k
@@ -144,7 +140,6 @@ JIZ __Lwh9
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh10 LOD 6
 XOR main_k

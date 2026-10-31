@@ -15,7 +15,6 @@ LOD 3.0
 SET main_w
 LOD 4.0
 SET main_w_i
-LOD 4.0
 SET main_u
 LOD 3.0
 SET main_u_i

@@ -40,7 +40,6 @@ LOD 0.0
 SET main_one_i
 LOD 100.0
 SET main_pc
-LOD 100.0
 SET main_pc_i
 LOD main_ia
 ADD main_ib

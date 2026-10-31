@@ -79,7 +79,6 @@ RET
 @main #ITRAD
 @__Lwh1 LOD 0
 SET s
-LOD 0
 SET main_w
 LOD 0
 SET_V ia 3

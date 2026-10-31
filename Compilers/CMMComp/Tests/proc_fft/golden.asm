@@ -25,7 +25,6 @@ MLT 2
 SET fft_istep
 LOD 0
 SET fft_m
-LOD 0
 SET fft_ind
 LOD 0
 SET fft_sind

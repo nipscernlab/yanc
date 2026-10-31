@@ -88,7 +88,6 @@ F2I
 OUT 0
 LOD 1.0
 SET main_z
-LOD 1.0
 SET main_z_i
 LOD 0.0
 SET main_w
@@ -122,9 +121,7 @@ F2I
 OUT 0
 LOD 0.0
 SET main_z
-LOD 0.0
 SET main_z_i
-LOD main_z
 CAL __float_exp
 SET __cexp_ea
 LOD main_z_i
