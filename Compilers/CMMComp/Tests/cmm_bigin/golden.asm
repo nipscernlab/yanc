@@ -10,7 +10,7 @@ NOP
 SET main_k
 @__Lwh1 LOD 6
 LES main_k
-JIZ __Lwh1end
+JIZ fim
 INN 0
 SET main_x
 OUT 0

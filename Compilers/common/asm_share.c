@@ -680,6 +680,27 @@ int asm_reach(const char *asm_path, const char *pc_path)
         if (pc.n > n) ok = 0;                              // not the map of this file
     }
 
+    // a JMP or JIZ to an unconditional JMP goes straight to where that one goes
+    // (not through one that #ITRAD or #TOAQUI marks, whose address the hardware
+    // compares): the JMP in between may then be reached by nothing, or jump to
+    // the instruction that follows it, and leave below
+    char *thr = calloc(n + 1, 1), *rootm = calloc(n + 1, 1);
+    for (int r = 0; r < nroot; r++) if (roots[r] >= 0 && roots[r] < n) rootm[roots[r]] = 1;
+    for (int i = 0; i < n && ok; i++)
+    {
+        const char *fl = isa[ins[i].op].flow;
+        if (strcmp(fl, "jmp") != 0 && strcmp(fl, "jz") != 0) continue;
+        int t = ins[i].target;
+        for (int hops = 0; hops < n; hops++)               // a cycle of JMPs ends here too
+        {
+            int at = lab_at[t];
+            if (at < 0 || at >= n || rootm[at] || strcmp(isa[ins[at].op].flow, "jmp") != 0
+                || ins[at].target == t) break;             // not a JMP, or one to itself (@fim)
+            t = ins[at].target;
+        }
+        if (t != ins[i].target) { ins[i].target = t; thr[i] = 1; }
+    }
+
     // reach: from the entry, the interrupt, #TOAQUI and @fim ------------------------
 
     live = calloc(n + 1, 1);
@@ -744,7 +765,9 @@ int asm_reach(const char *asm_path, const char *pc_path)
     if (fim >= 0) needed[fim] = 1;
     for (int li = 0; li < labels.n && ok; li++)
         if (needed[li] && lab_at[li] >= 0 && lab_at[li] < n && next_live[lab_at[li]] < 0) ok = 0;
-    if (!ok) { memset(live, 1, n); jumps = 0; }            // anything unclear: keep every instruction
+    if (!ok) { memset(live, 1, n); memset(thr, 0, n); jumps = 0; }   // anything unclear: keep every instruction
+    int threads = 0;
+    for (int i = 0; i < n; i++) threads += live[i] && thr[i];
 
     for (int i = 0; i < n; i++) if (live[i] && ins[i].name >= 0) used[ins[i].name] = 1;
     int dead = 0, arrays_gone = 0;
@@ -760,7 +783,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
             for (int i = 0; i < n && !kept; i++) kept = live[i] && ins[i].link == L[ln].name;
             if (!kept) { L[ln].name = -1; arrays_gone++; }  // -1: drop the line
         }
-    if (dead == 0 && arrays_gone == 0 && !markers) goto done;
+    if (dead == 0 && arrays_gone == 0 && !markers && !threads) goto done;
 
     // rewrite: dead lines, the arrays only they used and the #IFLIVE/#ENDLIVE
     // markers leave; a label a kept jump needs moves to the next kept instruction
@@ -796,7 +819,10 @@ int asm_reach(const char *asm_path, const char *pc_path)
             for (int k = 0; k < nc; k++) fprintf(f, "@%s ", labels.s[carry[k]]);
             nc = 0;
         }
-        fputs(text, f);
+        if (l->kind == RL_INS && thr[l->ins])               // a threaded jump: its new target
+            fprintf(f, "%.*s%s%s %s\n", l->rest, text, l->rest ? " " : "",
+                    isa[ins[l->ins].op].mn, labels.s[ins[l->ins].target]);
+        else fputs(text, f);
     }
     fclose(f);
 
@@ -813,7 +839,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
                                        : "Info: %d saltos para a instrução seguinte removidos\n", jumps);
 
 done:
-    free(carry); free(needed); free(next_live); free(work); free(used); free(live);
+    free(thr); free(rootm); free(carry); free(needed); free(next_live); free(work); free(used); free(live);
     free(L); free(ins); free(lab_at); free(lab_of); free(reg_lab); free(reg_lab0); free(reg_nlab); free(roots);
     st_free(&labels); st_free(&names); st_free(&lines); st_free(&pc);
     return removed;

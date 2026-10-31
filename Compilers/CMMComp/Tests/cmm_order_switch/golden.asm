@@ -81,9 +81,8 @@ JIZ __sw_disp_2_1
 JMP __sw_body_2_1
 @__sw_disp_2_1 I2F_M __switch_exp
 EQU 2.0
-JIZ __sw_disp_2_2
+JIZ __sw_body_2_3
 JMP __sw_body_2_2
-@__sw_disp_2_2 JMP __sw_body_2_3
 @__sw_body_2_1 LOD 15
 OUT 0
 JMP __switch_end_2
@@ -102,7 +101,7 @@ JIZ __sw_body_3_1
 JMP __sw_body_3_2
 @__sw_body_3_1 LOD 3
 OUT 0
-JMP __switch_end_3
+JMP fim
 @__sw_body_3_2 LOD 99
 OUT 0
 @__switch_end_3 @fim JMP fim

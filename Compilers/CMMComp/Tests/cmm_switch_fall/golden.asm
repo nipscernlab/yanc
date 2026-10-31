@@ -48,12 +48,12 @@ JIZ __sw_body_3_3
 JMP __sw_body_3_4
 @__sw_body_3_1 LOD 11
 OUT 0
-JMP __switch_end_3
+JMP __Lwh1
 @__sw_body_3_2 LOD 22
 OUT 0
 @__sw_body_3_3 LOD 33
 OUT 0
-JMP __switch_end_3
+JMP __Lwh1
 @__sw_body_3_4 LOD 44
 OUT 0
 @__switch_end_3 JMP __Lwh1
