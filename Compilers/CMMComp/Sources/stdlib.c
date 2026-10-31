@@ -3476,7 +3476,7 @@ void exec_shift(int ida, expr eb, int idc)
     if (idc != ida) {fprintf(stderr, MSG_ERR_SHIFT_VEC_SELF, line_num+1); exit(EXIT_FAILURE);}
     
     // check that it is not comp
-    if (v_table[ida].type == 3 || eb.type == 3) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+    if (v_table[ida].type == 3 || eb.type == 3 || eb.type == 5) {fprintf(stderr, MSG_ERR_NOT_IMPL_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
 
     // check that the types match
     //if (v_table[ida].type != v_table[eb.id].type) {fprintf(stderr, MSG_ERR_VARS_SAME_TYPE, line_num+1); exit(EXIT_FAILURE);}

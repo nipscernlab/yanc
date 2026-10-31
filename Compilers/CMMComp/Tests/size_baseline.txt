@@ -25,6 +25,12 @@ cmm_comp_mix 267
 cmm_comp_sqrt 153
 cmm_conj   58
 cmm_continue 70
+cmm_cov_arr1d 2591
+cmm_cov_arr2d_rd 5500
+cmm_cov_arr2d_wr 9255
+cmm_cov_lib 10976
+cmm_cov_ops 15924
+cmm_cov_rest 2589
 cmm_csincos 190
 cmm_ctan   265
 cmm_ctlforms 136

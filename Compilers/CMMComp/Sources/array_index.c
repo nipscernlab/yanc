@@ -1883,11 +1883,10 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and int in acc
-        if ((e1.type == 2) && (e1.id != 1) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
         {
-            fprintf (stdout, MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            fprintf (stdout, MSG_WARN_IDX1_FLOAT, line_num+1);
 
-            add_instr("F2I\n");
             add_instr("SET   __aux_var\n");
             add_instr("F2I_M %s\n" , v_table[e1.id].name);
             add_instr("MLT   %d\n", v_table[id].siz2);
