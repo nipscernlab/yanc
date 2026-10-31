@@ -28,7 +28,7 @@ cmm_continue 68
 cmm_cov_arr1d 2591
 cmm_cov_arr2d_rd 5478
 cmm_cov_arr2d_wr 9244
-cmm_cov_lib 10976
+cmm_cov_lib 10972
 cmm_cov_misc 509
 cmm_cov_ops 15834
 cmm_cov_rest 2547
@@ -69,7 +69,7 @@ cmm_reach  25
 cmm_reorder 58
 cmm_return 94
 cmm_round  120
-cmm_stack_balance 39
+cmm_stack_balance 38
 cmm_switch 68
 cmm_switch_fall 53
 cmm_switch_nest 44
