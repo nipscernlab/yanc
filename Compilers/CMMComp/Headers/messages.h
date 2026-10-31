@@ -120,10 +120,6 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_NAME_NUM_INS    M("'num_ins' é uma chave do log da simulação", \
                               "'num_ins' is a key of the simulation log")
 
-#define MSG_ERR_VAR_NOT_FOUND \
-    M("Erro na linha %d: não tem essa variável '%s'!\n", \
-      "Error on line %d: there's no variable '%s'!\n")
-
 #define MSG_ERR_DECLARE_VAR_PLEASE \
     M("Erro na linha %d: se você declarar a variável '%s' eu agradeço.\n", \
       "Error on line %d: I'd really appreciate it if you declared the variable '%s'.\n")
@@ -256,26 +252,6 @@ void parse_lang_flag(int *argc, char **argv);
 
 // linear algebra errors (Dirac notation) ------------------------------------
 
-#define MSG_ERR_INNER_NEEDS_VECTORS \
-    M("Erro na linha %d: o nome tá dizendo, produto vetorial é entre vetores!\n", \
-      "Error on line %d: the name says it all, vector product is between vectors!\n")
-
-#define MSG_ERR_VECTOR_SIZE_DIFF \
-    M("Erro na linha %d: vetores de tamanhos diferentes? Vai estudar Álgebra Linear primeiro!\n", \
-      "Error on line %d: vectors with different sizes? Go study Linear Algebra first!\n")
-
-#define MSG_ERR_VECTOR_SIZE_DIFF2 \
-    M("Erro na linha %d: os vetores têm tamanhos diferentes! Você é uma pessoa confusa.\n", \
-      "Error on line %d: vectors have different sizes! You're a confused soul.\n")
-
-#define MSG_ERR_TYPE_DIFF \
-    M("Erro na linha %d: tipos de dados diferentes. Você é uma pessoa confusa!\n", \
-      "Error on line %d: different data types. You're a confused soul!\n")
-
-#define MSG_ERR_VARS_SAME_TYPE \
-    M("Erro na linha %d: as variáveis têm que ser do mesmo tipo!\n", \
-      "Error on line %d: variables gotta be the same type!\n")
-
 #define MSG_ERR_NOT_IMPL_COMPLEX \
     M("Erro na linha %d: não implementei isso pra números complexos ainda. Se vira!\n", \
       "Error on line %d: haven't coded this up for complex numbers yet. You're on your own!\n")
@@ -287,22 +263,6 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_ERR_NOT_A_MATRIX \
     M("Erro na linha %d: '%s' nem matriz é, abensoado!\n", \
       "Error on line %d: '%s' ain't even a matrix, mate!\n")
-
-#define MSG_ERR_NOT_A_MATRIX2 \
-    M("Erro na linha %d: '%s' não é uma matriz!\n", \
-      "Error on line %d: '%s' isn't a matrix!\n")
-
-#define MSG_ERR_MATRIX_ROW_MISMATCH \
-    M("Erro na linha %d: o número de linhas de '%s' não bate com o tamanho de '%s'!\n", \
-      "Error on line %d: row count of '%s' doesn't match size of '%s'!\n")
-
-#define MSG_ERR_MATRIX_COL_MISMATCH \
-    M("Erro na linha %d: o número de colunas de '%s' não bate com o tamanho de '%s'!\n", \
-      "Error on line %d: column count of '%s' doesn't match size of '%s'!\n")
-
-#define MSG_ERR_DIM_MISMATCH \
-    M("Erro na linha %d: as dimensões não batem. Você é uma pessoa confusa!\n", \
-      "Error on line %d: dimensions don't match. You're a confused soul!\n")
 
 #define MSG_ERR_SHIFT_VEC_SELF \
     M("Erro na linha %d: só dá pra fazer shift de um vetor nele mesmo, abensoado!\n", \
@@ -645,46 +605,6 @@ void parse_lang_flag(int *argc, char **argv);
       "Info: array initialization with file %s for variable '%s' at line %d\n")
 
 // Dirac-notation info messages (stdlib.c) -----------------------------------
-
-#define MSG_INFO_DIRAC_INNER \
-    M("Info: notação de Dirac para Produto Interno detectada na linha %d\n", \
-      "Info: Dirac notation for Inner Product detected at line %d\n")
-
-#define MSG_INFO_DIRAC_MV \
-    M("Info: notação de Dirac para multiplicação Matriz-Vetor detectada na linha %d\n", \
-      "Info: Dirac notation for Matrix-Vector multiplication detected at line %d\n")
-
-#define MSG_INFO_DIRAC_CV \
-    M("Info: notação de Dirac para multiplicação Constante-Vetor detectada na linha %d\n", \
-      "Info: Dirac notation for Constant-Vector multiplication detected at line %d\n")
-
-#define MSG_INFO_DIRAC_VECTOR_SUM \
-    M("Info: notação de Dirac para Soma de Vetores detectada na linha %d\n", \
-      "Info: Dirac notation for Vectors Sum detected at line %d\n")
-
-#define MSG_INFO_DIRAC_OUTER \
-    M("Info: notação de Dirac para Produto Externo detectada na linha %d\n", \
-      "Info: Dirac notation for Outer Product detected at line %d\n")
-
-#define MSG_INFO_DIRAC_MATRIX_SUM \
-    M("Info: notação de Dirac para Soma de Matrizes detectada na linha %d\n", \
-      "Info: Dirac notation for Matrix Sum detected at line %d\n")
-
-#define MSG_INFO_DIRAC_CM \
-    M("Info: notação de Dirac para multiplicação Constante-Matriz detectada na linha %d\n", \
-      "Info: Dirac notation for Constant-Matrix multiplication detected at line %d\n")
-
-#define MSG_INFO_DIRAC_ZERO_VECTOR \
-    M("Info: notação de Dirac para zerar conteúdo de vetor detectada na linha %d\n", \
-      "Info: Dirac notation for zeroing vector contents detected at line %d\n")
-
-#define MSG_INFO_DIRAC_SET_VECTOR \
-    M("Info: notação de Dirac para setar conteúdo de vetor detectada na linha %d\n", \
-      "Info: Dirac notation for setting vector contents detected at line %d\n")
-
-#define MSG_INFO_DIRAC_FLUSH_VECTOR \
-    M("Info: notação de Dirac para flush de vetor detectada na linha %d\n", \
-      "Info: Dirac notation for flushing vector contents detected at line %d\n")
 
 #define MSG_INFO_DIRAC_SHIFT \
     M("Info: notação de Dirac para shift register no vetor %s detectada na linha %d\n", \

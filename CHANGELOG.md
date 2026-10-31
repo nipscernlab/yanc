@@ -55,6 +55,11 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **cmmcomp: the unrolled Dirac generators are gone** (step c of
+  docs/design/dirac-expressions.md). The eleven `exec_*` routines that
+  unrolled each Dirac form, 840 lines of `stdlib.c`, and the twenty messages
+  only they used: since the loops of step b, nothing reached them. The
+  shift register (`a # c -> |a⟩`) keeps its routine.
 - **C±: the Dirac notation is parsed as expressions** (step a of
   docs/design/dirac-expressions.md). A chain between bars (`|a⟩`, `⟨a|`,
   `|M|`, `|M|a⟩`, `⟨a|M|b⟩`) is a term of `exp` and juxtaposition is the

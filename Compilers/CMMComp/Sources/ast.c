@@ -552,7 +552,7 @@ void typecheck_expr(expr_node *n)
         case EXPR_DIRAC_PROD:
             // the element type of a product: comp > float > int, as the
             // arithmetic operators (an inner product <a|b> of two arrays of
-            // one type has that type, as exec_vtv returns)
+            // one type has that type, as dirac.c computes it)
             n->type = (lt > rt) ? lt : rt;
             break;
 

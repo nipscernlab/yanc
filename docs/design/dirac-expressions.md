@@ -7,7 +7,8 @@ adopted for now (section 8). Step (a) of section 5, the grammar, the tree
 and the shapes with the code still unrolled and every golden identical,
 is in `main` (from commit 20112ab, tag `archive/dirac-parser`); step (b),
 the loops in software, was done on 2026-10-30 (section 9); step (c), the
-unrolled generators removed, is next. Decision (Luciano, 2026-10-25): the
+unrolled generators removed, on 2026-10-30 too (section 1.2 describes them
+as they were; the shift register `exec_shift` stays). Decision (Luciano, 2026-10-25): the
 Dirac notation of C± stops being a closed set of grammar rules, one per
 form, each with a generator that unrolls the computation, and becomes
 expressions in the parser: every operator a node of the tree, with shape
@@ -68,7 +69,9 @@ has, before the data memory (16 908 words at N = 128). Compiling it took
 
 ### 1.2 Every combination is a rule and a generator (fact)
 
-There are no Dirac expressions in the parser. Each form is a statement rule
+(Before step b; the generators below were removed in step c, 2026-10-30,
+and the line numbers are those of that time.) There are no Dirac
+expressions in the parser. Each form is a statement rule
 of its own in `Compilers/CMMComp/Sources/CMMComp.y`, built into a
 `STMT_DIRAC` node tagged with one `dirac_op` (`Compilers/CMMComp/Headers/ast.h`
 244-255), dispatched in `stmt_emit` (`Compilers/CMMComp/Sources/ast.c`
@@ -927,8 +930,13 @@ one loop (7 matrices of different widths measured), sizes picked when the
 code was written, with no reason in the hardware, and the sets of loops
 were 64-bit masks; they are now questions to the tree (`dep_on`).
 
-**Open.** Step (c): remove the generators of 1.2 (they no longer run) and
-their messages. `|I|` inside a larger expression, and `|I|` or `|0⟩` inside
+**Step (c), 2026-10-30.** The eleven generators of 1.2 (`exec_vtv` to
+`exec_vout`, 840 lines of `stdlib.c`) and the twenty messages only they used
+are gone; nothing reached them since step (b) (`Scripts/cmm_cov.sh`, issue
+#69: no test and no grammar rule did). The shift register `exec_shift`
+stays.
+
+**Open.** `|I|` inside a larger expression, and `|I|` or `|0⟩` inside
 a chain (a syntax error today). `comp` (decision 5). An `int` counter of
 an index past the word: at `#NUBITS 8` a flat loop over more than 128
 cells overflows (deduced, as a `for` would; not checked). Unrolling a loop
