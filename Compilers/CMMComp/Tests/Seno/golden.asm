@@ -69,7 +69,7 @@ JMP __Lwh2
 SET main_j
 @__Lwh3 LOD 1000
 LES main_j
-JIZ __Lwh3end
+JIZ fim
 LOD main_j
 LDI main_x
 CAL seno_LUT

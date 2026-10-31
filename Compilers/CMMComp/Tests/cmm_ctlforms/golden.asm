@@ -95,9 +95,7 @@ ADD 1
 SET main_k
 LOD 7
 EQU main_k
-JIZ __Lwh2cont
-JMP __Lwh2end
-@__Lwh2cont JMP __Lwh2
+JIZ __Lwh2
 @__Lwh2end LOD main_k
 OUT 0
 LOD 0

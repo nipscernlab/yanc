@@ -50,7 +50,6 @@ OUT 0
 JMP __switch_end_1
 @__sw_body_1_2 LOD 2
 OUT 0
-JMP __switch_end_1
 @__switch_end_1 NEG_M 1
 OUT 0
 NEG_M 2147483647

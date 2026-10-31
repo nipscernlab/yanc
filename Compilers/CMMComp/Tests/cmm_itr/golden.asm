@@ -16,11 +16,10 @@ LOD 0
 SET main_k
 @__Lwh1 LOD 3
 LES main_k
-JIZ __Lwh1end
+JIZ fim
 #TOAQUI
 LOD main_k
 ADD 1
 SET main_k
 JMP __Lwh1
-@__Lwh1end @fim JMP fim
 @fim JMP fim

@@ -10,7 +10,7 @@ NOP
 SET main_n
 @__Lwh1 LOD 16
 LES main_n
-JIZ __Lwh1end
+JIZ fim
 LOD main_n
 MLT 3
 ADD 1

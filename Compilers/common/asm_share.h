@@ -54,6 +54,11 @@ int asm_is_mnemonic(const char *name);
 // functions): the block stays only if one of the labels is reached. The
 // marker lines always leave the file.
 //
+// A JMP or JIZ to an unconditional JMP first goes straight to where that one
+// goes. A JMP whose target is the instruction that follows it anyway (a break
+// at the end of a loop body, an if whose else is empty) leaves too. Neither
+// goes through or drops a JMP that #ITRAD or #TOAQUI marks.
+//
 // pc_path (pc_<proc>_mem.txt, one line per instruction of the program part,
 // may be NULL) loses the lines of the dropped instructions in lockstep. A
 // label that a kept jump needs moves to the next kept instruction. On anything
