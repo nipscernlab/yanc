@@ -64,7 +64,11 @@ tags consumed by Aurora.
   int/float comparisons with an operand in the acc, an int literal met by a
   float or a comp, a constant matrix index, `ADD 0`, `pow(x, 0)`, and in the
   pass shared with cppcomp a jump to the next instruction and a jump to a
-  jump.
+  jump. Then an operation by its identity (`F_ADD 0.0`, `F_MLT 1.0`), a comp
+  constant with a zero part, minus a comp constant, `real()`/`imag()` of a
+  comp array element or of a product of two comp variables, and a comp
+  element stored at a variable index (`proc_fft` 289 → 227 words). Fixtures
+  `cmm_comp_zero`, `cmm_comp_part`.
 - **cmmcomp: the unrolled Dirac generators are gone** (step c of
   docs/design/dirac-expressions.md). The eleven `exec_*` routines that
   unrolled each Dirac form, 840 lines of `stdlib.c`, and the twenty messages
