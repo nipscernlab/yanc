@@ -27,9 +27,8 @@ SET arctan_LUT_v0
 LOD arctan_LUT_x
 F_LES 1.0
 JIZ __Lif1else
-LOD 1.0
-P_LOD arctan_LUT_x
-SF_DIV
+LOD arctan_LUT_x
+F_DIV 1.0
 NOP
 NOP
 F_QUO

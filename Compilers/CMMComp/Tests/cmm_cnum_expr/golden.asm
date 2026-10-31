@@ -29,8 +29,8 @@ LOD 1.0
 SET main_w_i
 LOD 2.0
 SET main_x
-LOD 3.0
-F_MLT main_y
+LOD main_y
+F_MLT 3.0
 P_LOD 2.0
 SET_P main_z_i
 SET main_z

@@ -4,7 +4,7 @@
 # a count grows or an example has no line. To update after a refactor that shrinks
 # things, run: Scripts/regress.sh --update-size
 algsimp    28
-ArcTan     76
+ArcTan     75
 cmm_arridx 31
 cmm_bigin  14
 cmm_braces 91
@@ -30,7 +30,7 @@ cmm_cov_arr2d_rd 5500
 cmm_cov_arr2d_wr 9255
 cmm_cov_lib 10976
 cmm_cov_misc 522
-cmm_cov_ops 15876
+cmm_cov_ops 15834
 cmm_cov_rest 2589
 cmm_csincos 190
 cmm_ctan   265
