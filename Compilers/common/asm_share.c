@@ -816,7 +816,13 @@ int asm_reach(const char *asm_path, const char *pc_path)
         }
         if (l->kind == RL_INS && nc > 0)
         {
-            for (int k = 0; k < nc; k++) fprintf(f, "@%s ", labels.s[carry[k]]);
+            for (int k = 0; k < nc; k++)                   // not one the line has already (@fim twice)
+            {
+                int dup = 0;
+                for (int j = 0; j < l->nlab && !dup; j++) dup = lab_of[l->lab0 + j] == carry[k];
+                for (int j = 0; j < k && !dup; j++) dup = carry[j] == carry[k];
+                if (!dup) fprintf(f, "@%s ", labels.s[carry[k]]);
+            }
             nc = 0;
         }
         if (l->kind == RL_INS && thr[l->ins])               // a threaded jump: its new target
