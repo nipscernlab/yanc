@@ -3,6 +3,7 @@
 // ----------------------------------------------------------------------------
 
 extern int itr_ok;    // tells whether an interrupt has already been used
+extern int itr_seen;  // the program has a #PRACA (set while parsing)
 extern int toaqui_ok; // tells whether a #TOAQUI marker has already been used
 
 void dire_inter ();   // marks the interrupt start point         (#PRACA)

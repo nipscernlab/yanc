@@ -142,6 +142,12 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: `return;` in the middle of `main` ends the simulation** (cmmcomp
+  audit, 2026-10-30). It emitted a second `@fim` label: `JMP fim` went to
+  the first, while the testbench stops at the last, so the simulation ran to
+  its clock limit. Without a `#PRACA`, `return;` in `main` now jumps to the
+  one `@fim` at the end of `main`; with one, it still waits in place for the
+  interrupt (ZeroCross, ProcDTW). Fixture `cmm_main_return`.
 - **C±: comparing `comp` values, as in C** (audit of the complex chains,
   2026-10-30). The compiler compared |z|², so `(1+0i) == (0+1i)` and
   `-5 == 3+4i` held, and with both operands computed into the accumulator

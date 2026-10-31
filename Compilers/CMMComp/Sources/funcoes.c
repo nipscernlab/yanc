@@ -11,6 +11,7 @@
 #include "../Headers/t2t.h"
 #include "../Headers/labels.h"
 #include "../Headers/global.h"
+#include "../Headers/itr.h"
 #include "../Headers/data_use.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/data_declar.h"
@@ -622,13 +623,18 @@ void void_ret()
     if (v_table[fun_parse].type != 6)
         {fprintf (stderr, MSG_ERR_NO_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
 
-    // if main, use JMP fim instead of RET. Reads the function name from
+    // if main, jump to the @fim that the end of main emits, where the
+    // testbench stops the simulation. With a #PRACA, return; waits in place
+    // for the interrupt instead (an @fim of its own, which the testbench does
+    // not stop on), as ZeroCross and ProcDTW do. Reads the function name from
     // v_table via fun_parse (set by the STMT_FUNC walker before walking
     // the body) - the parse-time `fname` is "" by now since walker time
     // happens after parse_end of every function.
-    if (strcmp(v_table[fun_parse].name, "main") == 0)
+    if (strcmp(v_table[fun_parse].name, "main") != 0)
+         add_instr(             "RET\n");
+    else if (itr_seen)
          add_sinst(-3, "@fim JMP fim\n");
-    else add_instr(             "RET\n");
+    else add_instr(             "JMP fim\n");
 }
 
 // ----------------------------------------------------------------------------

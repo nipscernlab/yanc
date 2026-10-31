@@ -186,7 +186,10 @@ float mean(float a, float b)
 }
 ```
 
-- `main()` is required; the program starts there.
+- `main()` is required; the program starts there. `return;` in `main` ends
+  the program: the processor stays at the end of `main`, where the
+  testbench stops. In a program with a `#PRACA` it stays where the `return;`
+  is, waiting for `itr` ([Directives](directives.md)).
 - A function is defined above its first call: there are no prototypes, and
   the whole program is one `.cmm` file.
 - Parameters, as many as needed, are passed by value; they can be `int`, `float`

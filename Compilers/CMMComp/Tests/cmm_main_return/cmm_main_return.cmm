@@ -1,0 +1,31 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// return; in the middle of main (cmmcomp audit, 2026-10-30, issue #69). It
+// emitted a second @fim label: JMP fim went to the first one, while the
+// testbench stops at the last, so the simulation ran to its clock limit.
+// Without a #PRACA, return; in main now jumps to the one @fim at the end of
+// main (with a #PRACA it still waits in place for the interrupt, as
+// ZeroCross and ProcDTW do). A return; in the middle of a void function is
+// a RET.
+//
+// Expected: 10 and 20 from early(), then 5; never 6.
+
+void early(int p)
+{
+    if (p) { out(0, 10); return; }
+    out(0, 20);
+}
+
+void main()
+{
+    int n;
+    early(1);
+    early(0);
+    n = 2;
+    if (n == 2) { out(0, 5); return; }
+    out(0, 6);
+}
