@@ -26,15 +26,11 @@ OUT 0
 F2I_M main_r_i
 OUT 0
 LOD 1.0
-F_MLT 1.0
 P_LOD 1.0
-F_MLT 1.0
 SF_ADD
 SET   __aux_var
 LOD 4.0
-F_MLT 1.0
 P_LOD 2.0
-F_MLT 1.0
 SF_ADD
 P_LOD __aux_var
 SF_DIV
@@ -42,9 +38,7 @@ NOP
 NOP
 F_QUO
 P_LOD 2.0
-F_MLT 1.0
 P_LOD 4.0
-F_MLT 1.0
 SF_SU2
 P_LOD __aux_var
 SF_DIV

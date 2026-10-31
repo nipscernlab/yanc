@@ -320,11 +320,18 @@ void add_instr(char *inst, ...)
             return;   // acc already holds it -- acc_name / last_str stay valid
     }
 
-    // "ADD 0" leaves the int in the acc as it is (a matrix index whose column
-    // is the constant 0, a loop's base): nothing to emit, and acc_name stays
+    // an operation by its identity leaves the acc as it is: "ADD 0" (a matrix
+    // index whose column is the constant 0), "MLT 1", and in float "F_ADD 0.0",
+    // "F_SU1 0.0" (acc - 0) and "F_MLT 1.0" (the zero or unit part of a comp
+    // constant): nothing to emit, and acc_name stays
     {
         char op[8], arg[8], more[2];
-        if (sscanf(str, "%7s %7s %1s", op, arg, more) == 2 && strcmp(op, "ADD") == 0 && strcmp(arg, "0") == 0)
+        if (sscanf(str, "%7s %7s %1s", op, arg, more) == 2 &&
+            ((strcmp(op, "ADD")   == 0 && strcmp(arg, "0")   == 0) ||
+             (strcmp(op, "MLT")   == 0 && strcmp(arg, "1")   == 0) ||
+             (strcmp(op, "F_ADD") == 0 && strcmp(arg, "0.0") == 0) ||
+             (strcmp(op, "F_SU1") == 0 && strcmp(arg, "0.0") == 0) ||
+             (strcmp(op, "F_MLT") == 0 && strcmp(arg, "1.0") == 0)))
             return;
     }
 

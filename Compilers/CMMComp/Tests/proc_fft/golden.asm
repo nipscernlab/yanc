@@ -12,6 +12,7 @@ NOP
 #array wpv 3 4
 #array wpv_i 4 4
 #SHARE fft_temp_i __aux_var1
+#SHARE fft_temp __aux_var2
 JMP main
 @fft SET fft_N
 LOD 1
@@ -72,11 +73,8 @@ F_SU1 fft_temp
 P_LOD __aux_var
 F_SU1 fft_temp_i
 SET_P __aux_var
-SET_P __aux_var2
-SET   __aux_var3
-P_LOD __aux_var2
 ISI data
-LOD   __aux_var3
+LOD fft_j
 P_LOD __aux_var
 ISI data_i
 LOD fft_k
@@ -89,11 +87,8 @@ F_ADD fft_temp
 P_LOD __aux_var
 F_ADD fft_temp_i
 SET_P __aux_var
-SET_P __aux_var2
-SET   __aux_var3
-P_LOD __aux_var2
 ISI data
-LOD   __aux_var3
+LOD fft_k
 P_LOD __aux_var
 ISI data_i
 LOD fft_k
@@ -165,137 +160,81 @@ LOD 8
 CAL fft
 LOD 0
 ILI data
-P_LOD 0
-ILI data_i
-POP
 F_MLT 1000.0
 F2I
 OUT 0
 LOD 0
-ILI data
-P_LOD 0
 ILI data_i
-SET_P __aux_var
-LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
 LOD 1
 ILI data
-P_LOD 1
-ILI data_i
-POP
 F_MLT 1000.0
 F2I
 OUT 0
 LOD 1
-ILI data
-P_LOD 1
 ILI data_i
-SET_P __aux_var
-LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
 LOD 2
 ILI data
-P_LOD 2
-ILI data_i
-POP
 F_MLT 1000.0
 F2I
 OUT 0
 LOD 2
-ILI data
-P_LOD 2
 ILI data_i
-SET_P __aux_var
-LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
 LOD 3
 ILI data
-P_LOD 3
-ILI data_i
-POP
 F_MLT 1000.0
 F2I
 OUT 0
 LOD 3
-ILI data
-P_LOD 3
 ILI data_i
-SET_P __aux_var
-LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
 LOD 4
 ILI data
-P_LOD 4
-ILI data_i
-POP
 F_MLT 1000.0
 F2I
 OUT 0
 LOD 4
-ILI data
-P_LOD 4
 ILI data_i
-SET_P __aux_var
-LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
 LOD 5
 ILI data
-P_LOD 5
-ILI data_i
-POP
 F_MLT 1000.0
 F2I
 OUT 0
 LOD 5
-ILI data
-P_LOD 5
 ILI data_i
-SET_P __aux_var
-LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
 LOD 6
 ILI data
-P_LOD 6
-ILI data_i
-POP
 F_MLT 1000.0
 F2I
 OUT 0
 LOD 6
-ILI data
-P_LOD 6
 ILI data_i
-SET_P __aux_var
-LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1
 LOD 7
 ILI data
-P_LOD 7
-ILI data_i
-POP
 F_MLT 1000.0
 F2I
 OUT 0
 LOD 7
-ILI data
-P_LOD 7
 ILI data_i
-SET_P __aux_var
-LOD   __aux_var
 F_MLT 1000.0
 F2I
 OUT 1

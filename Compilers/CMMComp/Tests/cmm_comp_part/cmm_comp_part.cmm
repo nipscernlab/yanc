@@ -1,0 +1,50 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// real() and imag() of an element of a comp array (cmmcomp audit, issue
+// #69): only the array of that part is read, as a float array, with an index
+// in memory, in the acc or constant, in one and two dimensions, alone and
+// under a pending value. Every value is printed times 4.
+//
+// zv = {1+2i, 3-4i, 5+6i}, zm = {{1+1i, 2+2i}, {3+3i, 4+4i}}, k = 1. Expected:
+//   real(zv[k])        =  3  ->  12
+//   imag(zv[k])        = -4  -> -16
+//   real(zv[2])        =  5  ->  20
+//   imag(zv[2])        =  6  ->  24
+//   imag(zv[k+1])      =  6  ->  24   (the index in the acc)
+//   1.0 + imag(zv[k])  = -3  -> -12   (under a pending value)
+//   real(zm[k][0])     =  3  ->  12
+//   imag(zm[1][k])     =  4  ->  16
+//   imag(zm[0][1])     =  2  ->   8
+// and of a computed comp, a = 1+2i, b = 3-2i:
+//   real(a*b)          =  7  ->  28   (only that part of the product)
+//   imag(a*b)          =  4  ->  16
+//   real(zv[0]+zv[1])  =  4  ->  16   (a comp in the acc)
+//   imag(zv[0]+zv[1])  = -2  ->  -8
+
+void main()
+{
+    comp  zv[3] = {1.0+2.0i, 3.0-4.0i, 5.0+6.0i};
+    comp  zm[2][2] = {{1.0+1.0i, 2.0+2.0i}, {3.0+3.0i, 4.0+4.0i}};
+    float y;
+    int   k;
+    comp  a, b;
+    k = 1; a = 1.0+2.0i; b = 3.0-2.0i;
+
+    y = real(zv[k]);        fout(0, 4.0*y);
+    y = imag(zv[k]);        fout(0, 4.0*y);
+    y = real(zv[2]);        fout(0, 4.0*y);
+    y = imag(zv[2]);        fout(0, 4.0*y);
+    y = imag(zv[k+1]);      fout(0, 4.0*y);
+    y = 1.0 + imag(zv[k]);  fout(0, 4.0*y);
+    y = real(zm[k][0]);     fout(0, 4.0*y);
+    y = imag(zm[1][k]);     fout(0, 4.0*y);
+    y = imag(zm[0][1]);     fout(0, 4.0*y);
+    y = real(a*b);          fout(0, 4.0*y);
+    y = imag(a*b);          fout(0, 4.0*y);
+    y = real(zv[0]+zv[1]);  fout(0, 4.0*y);
+    y = imag(zv[0]+zv[1]);  fout(0, 4.0*y);
+}

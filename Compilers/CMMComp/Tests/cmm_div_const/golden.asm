@@ -61,16 +61,10 @@ LOD 1000.0
 F_MLT main_z_i
 F2I
 OUT 0
-LOD main_w
-F_MLT 2.0
-P_LOD main_w_i
-F_MLT 0.0
-SF_SU2
-P_LOD main_w
-F_MLT 0.0
-P_LOD main_w_i
-F_MLT 2.0
-SF_ADD
+LOD 2.0
+F_MLT main_w
+P_LOD 2.0
+F_MLT main_w_i
 SET_P __aux_var
 F_ADD 4.0
 P_LOD __aux_var

@@ -459,6 +459,20 @@ static expr_node *for_bottom_test(stmt_node *n)
 }
 
 // an int literal other than 0: a loop condition that is always true (while (1))
+// an expression that writes no variable: no ++ and no call of a user function
+// (which may write a global); the library's calls in an expression only read
+static int rhs_keeps(expr_node *n)
+{
+    if (!n) return 1;
+    switch (n->kind)
+    {
+        case EXPR_LITERAL: case EXPR_VAR: return 1;
+        case EXPR_BINOP: case EXPR_UNOP: case EXPR_ARRAY_INDEX: case EXPR_STDLIB_CALL:
+            return rhs_keeps(n->left) && rhs_keeps(n->right);
+        default: return 0;
+    }
+}
+
 static int is_const_true(expr_node *n)
 {
     return n && n->kind == EXPR_LITERAL && n->type == 1 && atoll(v_table[n->id].name) != 0;
@@ -993,8 +1007,42 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_STD_FLOOR:{ expr a = ast_emit_expr(n->left); return exec_floor(a); }
                 case OP_STD_CEIL: { expr a = ast_emit_expr(n->left); return exec_ceil (a); }
                 case OP_STD_ROUND:{ expr a = ast_emit_expr(n->left); return exec_round(a); }
-                case OP_STD_REAL: { expr a = ast_emit_expr(n->left); return exec_real(a); }
-                case OP_STD_IMAG: { expr a = ast_emit_expr(n->left); return exec_imag(a); }
+                case OP_STD_REAL: case OP_STD_IMAG:
+                    // a part of a comp array element: the array of that part (v, or
+                    // v_i) is read as a float array, the other one not at all
+                    if (n->left->kind == EXPR_ARRAY_INDEX && v_table[n->left->id].type == 3)
+                    {
+                        int id = n->left->id, part = (n->op == OP_STD_IMAG) ? get_img_id(id) : id;
+                        int t0 = v_table[part].type, a0 = v_table[part].isar, s0 = v_table[part].siz2;
+                        v_table[part].type = 2; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
+                        n->left->id = part;
+                        expr a = ast_emit_expr(n->left);
+                        n->left->id = id;
+                        v_table[part].type = t0; v_table[part].isar = a0; v_table[part].siz2 = s0;
+                        v_table[id].used = 1;
+                        return a;
+                    }
+                    // a part of the product of two comp variables: only that part's
+                    // sum of products, in the order of oper_mult (the same bits)
+                    if (n->left->kind == EXPR_BINOP && n->left->op == OP_MUL
+                        && n->left->left ->kind == EXPR_VAR && v_table[n->left->left ->id].type == 3
+                        && n->left->right->kind == EXPR_VAR && v_table[n->left->right->id].type == 3)
+                    {
+                        int a = n->left->left->id, b = n->left->right->id;
+                        const char *ar = v_table[a].name, *ai = v_table[get_img_id(a)].name;
+                        const char *br = v_table[b].name, *bi = v_table[get_img_id(b)].name;
+                        v_table[a].used = 1; v_table[b].used = 1;
+                        int re = (n->op == OP_STD_REAL);
+                        add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", ar);
+                        add_instr("F_MLT %s\n", re ? br : bi);
+                        add_instr("P_LOD %s\n", ai);
+                        add_instr("F_MLT %s\n", re ? bi : br);
+                        add_instr(re ? "SF_SU2\n" : "SF_ADD\n");       // ar br - ai bi, or ar bi + ai br
+                        acc_ok = 1;
+                        return expr_make(2, 0);
+                    }
+                    if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return exec_real(a); }
+                    else                      { expr a = ast_emit_expr(n->left); return exec_imag(a); }
                 case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_comp(a, b); }
                 case OP_STD_FASE: { expr a = ast_emit_expr(n->left); return exec_fase(a); }
                 case OP_STD_MOD2: { expr a = ast_emit_expr(n->left); return exec_mod2(a); }
@@ -1620,7 +1668,12 @@ void stmt_emit(stmt_node *n)
                 arr_2d_index(n->id, i1, i2);
             }
             else arr_1d_index(n->id, ast_emit_expr(n->idx));
+            // an int variable as the whole index, which the right-hand side
+            // cannot change: ass_array may read it again for a second word
+            ass_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == 1
+                              && !v_table[n->idx->id].isar && rhs_keeps(n->rhs)) ? n->idx->id : 0;
             ass_array(n->id, ast_emit_expr(n->rhs), n->op);
+            ass_idx_reload = 0;
             break;
 
         case STMT_RETURN:

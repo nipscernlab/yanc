@@ -60,18 +60,11 @@ LOD 0
 SET main_k
 @__Lwh3 LOD main_k
 LDI c
-P_LOD main_k
-LDI c_i
-POP
 F_MLT 2.0
 F2I
 OUT 0
 LOD main_k
-LDI c
-P_LOD main_k
 LDI c_i
-SET_P __aux_var
-LOD   __aux_var
 F_MLT 2.0
 F2I
 OUT 0
