@@ -55,6 +55,7 @@ cmm_hyper  123
 cmm_ilit   64
 cmm_ilit8  18
 cmm_ioports 13
+cmm_itr    18
 cmm_log    36
 cmm_main_return 25
 cmm_names  83

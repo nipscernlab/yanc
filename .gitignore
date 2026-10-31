@@ -89,7 +89,8 @@ $RECYCLE.BIN/
 .vscode/
 
 # Claude Code local memory / settings (per-developer, not shared)
-.claude/
+.claude/*
+!.claude/settings.json
 _build/
 Compilers/common/utf8_res.o
 
