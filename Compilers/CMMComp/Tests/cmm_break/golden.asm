@@ -16,7 +16,6 @@ XOR main_k
 JIZ __Lwh2end
 LOD main_k
 OUT 0
-LOD main_k
 ADD 1
 SET main_k
 JMP __Lwh2

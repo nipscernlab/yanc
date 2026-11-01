@@ -67,13 +67,27 @@ static void acc_only(const char *name)   // the acc holds this one name ("": non
     if (name && name[0]) snprintf(acc_names[acc_n++], sizeof acc_names[0], "%s", name);
 }
 
-// a SET of `name`: the acc keeps what it held, but an element or an index key
-// ("v[k]", "[ii+j]"), since the SET may write a variable the key reads
-static void acc_add(const char *name)
+// a store leaves the acc as it is, but an element or an index key ("v[k]",
+// "[ii+j]") goes, since the store may write a word the key reads
+static void acc_drop_keys(void)
 {
     int k = 0;
     for (int i = 0; i < acc_n; i++)
-        if (!strchr(acc_names[i], '[') && strcmp(acc_names[i], name) != 0)
+        if (!strchr(acc_names[i], '['))
+        {
+            if (k != i) strcpy(acc_names[k], acc_names[i]);
+            k++;
+        }
+    acc_n = k;
+}
+
+// a SET of `name`: the acc keeps what it held, and is `name` too
+static void acc_add(const char *name)
+{
+    acc_drop_keys();
+    int k = 0;
+    for (int i = 0; i < acc_n; i++)
+        if (strcmp(acc_names[i], name) != 0)
         {
             if (k != i) strcpy(acc_names[k], acc_names[i]);
             k++;
@@ -433,9 +447,10 @@ void add_instr(char *inst, ...)
     if (find_opc("__float_exp" , str)) mac_add("fexp" );
     if (find_opc("__float_log" , str)) mac_add("flog" );
 
-    // track what is now in the accumulator: only a plain LOD / P_LOD / SET of an
-    // operand leaves that operand's value there; anything else clobbers it. A
-    // SET keeps the names before it too: after LOD y; SET y_n1 the acc is both
+    // track what is now in the accumulator: a plain LOD / P_LOD / SET of an
+    // operand leaves that operand's value there, OUT, PSH and SET_V leave the
+    // acc as it is, anything else clobbers it. A SET keeps the names before it
+    // too: after LOD y; SET y_n1 the acc is both
     char nm[600];
     if      (strncmp(str, "SET ", 4) == 0 && sscanf(str + 4, "%599s", nm) == 1)
         acc_add(nm);
@@ -443,6 +458,10 @@ void add_instr(char *inst, ...)
         acc_only(nm);
     else if (strncmp(str, "P_LOD ", 6) == 0 && sscanf(str + 6, "%599s", nm) == 1)
         acc_only(nm);
+    else if (strncmp(str, "OUT ", 4) == 0 || strcmp(str, "PSH\n") == 0)
+        ;                                // they read the acc and leave it as it is
+    else if (strncmp(str, "SET_V ", 6) == 0)
+        acc_drop_keys();                 // an element store: as a SET, the keys go
     else
         acc_n = 0;
 

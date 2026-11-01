@@ -182,7 +182,6 @@ SET main_pc
 SET main_pc_i
 LOD gi
 OUT 0
-LOD gi
 ADD gz
 OUT 0
 LOD 7
@@ -2721,7 +2720,6 @@ F2I_M 2.5
 OUT 0
 LOD gi
 OUT 0
-LOD gi
 ADD gz
 OUT 0
 LOD 7

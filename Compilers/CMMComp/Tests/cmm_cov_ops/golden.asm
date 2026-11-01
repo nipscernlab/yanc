@@ -1091,12 +1091,11 @@ ADD main_z0
 ADD main_ia
 ADD main_ib
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ib
+LOD main_ib
 ADD main_z0
 ADD main_ia
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pa
 ADD main_z0
@@ -1233,27 +1232,24 @@ LOD 4.0
 F_MLT main_w_i
 F2I
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ia
+LOD main_ia
 ADD main_z0
 ADD main_ib
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_ia
 ADD main_z0
 ADD main_ib
 ADD main_z0
-P_LOD main_pa
+ADD main_pa
 ADD main_z0
-S_ADD
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ia
+LOD main_ia
 ADD main_z0
 ADD 3
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -1404,12 +1400,11 @@ ADD main_z0
 ADD 101
 ADD main_ib
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ib
+LOD main_ib
 ADD main_z0
 ADD 101
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pa
 ADD main_z0
@@ -2944,10 +2939,10 @@ OUT 0
 NEG_M main_ib
 ADD main_ia
 OUT 0
-LOD main_ib
-ADD main_z0
-NEG
+NEG_M main_ib
 ADD main_ia
+P_NEG_M main_z0
+S_ADD
 OUT 0
 LOD main_ia
 ADD -3
@@ -3131,10 +3126,10 @@ OUT 0
 NEG_M main_ib
 ADD 101
 OUT 0
-LOD main_ib
-ADD main_z0
-NEG
+NEG_M main_ib
 ADD 101
+P_NEG_M main_z0
+S_ADD
 OUT 0
 LOD 98
 OUT 0
@@ -3998,13 +3993,12 @@ ADD main_ia
 P_NEG_M main_ib
 S_ADD
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ib
-ADD main_z0
-NEG
+NEG_M main_ib
 ADD main_ia
+P_NEG_M main_z0
 S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pa
 ADD main_z0
@@ -4141,13 +4135,12 @@ LOD 4.0
 F_MLT main_w_i
 F2I
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ia
+LOD main_ia
 ADD main_z0
 P_NEG_M main_ib
 S_ADD
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -4155,16 +4148,14 @@ P_NEG_M main_ib
 S_ADD
 P_NEG_M main_z0
 S_ADD
-P_LOD main_pa
+ADD main_pa
 ADD main_z0
-S_ADD
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ia
+LOD main_ia
 ADD main_z0
 ADD -3
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -4316,13 +4307,12 @@ ADD 101
 P_NEG_M main_ib
 S_ADD
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ib
-ADD main_z0
-NEG
+NEG_M main_ib
 ADD 101
+P_NEG_M main_z0
 S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pa
 ADD main_z0
@@ -7005,24 +6995,21 @@ LOD 4.0
 F_MLT main_w_i
 F2I
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ia
+LOD main_ia
 MLT main_ib
-S_ADD
-OUT 0
-LOD main_pa
+ADD main_pa
 ADD main_z0
-P_LOD main_ib
+OUT 0
+LOD main_ib
 ADD main_z0
 MLT main_ia
-S_ADD
-OUT 0
-LOD main_pa
+ADD main_pa
 ADD main_z0
-P_LOD main_ia
+OUT 0
+LOD main_ia
 MLT 3
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -7157,28 +7144,25 @@ LOD 4.0
 F_MLT main_w_i
 F2I
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ia
+LOD main_ia
 ADD main_z0
 MLT main_ib
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_ia
 ADD main_z0
 P_LOD main_ib
 ADD main_z0
 S_MLT
-P_LOD main_pa
+ADD main_pa
 ADD main_z0
-S_ADD
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ia
+LOD main_ia
 ADD main_z0
 MLT 3
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -7329,22 +7313,20 @@ LOD 4.0
 F_MLT main_w_i
 F2I
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD 101
+LOD 101
 MLT main_ib
-S_ADD
-OUT 0
-LOD main_pa
+ADD main_pa
 ADD main_z0
-P_LOD main_ib
+OUT 0
+LOD main_ib
 ADD main_z0
 MLT 101
-S_ADD
-OUT 0
-LOD main_pa
+ADD main_pa
 ADD main_z0
-ADD 303
+OUT 0
+LOD 303
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -10835,36 +10817,33 @@ LOD 4.0
 F_MLT main_w_i
 F2I
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ib
+LOD main_ib
 DIV main_ia
 NOP
 NOP
 NOP
 QUO
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ib
+LOD main_ib
 ADD main_z0
 DIV main_ia
 NOP
 NOP
 NOP
 QUO
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD 3
+LOD 3
 DIV main_ia
 NOP
 NOP
 NOP
 QUO
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -11062,9 +11041,7 @@ LOD 4.0
 F_MLT main_w_i
 F2I
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ia
+LOD main_ia
 ADD main_z0
 P_LOD main_ib
 S_DIV
@@ -11072,7 +11049,8 @@ NOP
 NOP
 NOP
 QUO
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -11083,13 +11061,10 @@ NOP
 NOP
 NOP
 QUO
-P_LOD main_pa
+ADD main_pa
 ADD main_z0
-S_ADD
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ia
+LOD main_ia
 ADD main_z0
 P_LOD 3
 S_DIV
@@ -11097,7 +11072,8 @@ NOP
 NOP
 NOP
 QUO
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -11313,36 +11289,33 @@ LOD 4.0
 F_MLT main_w_i
 F2I
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ib
+LOD main_ib
 DIV 101
 NOP
 NOP
 NOP
 QUO
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD main_ib
+LOD main_ib
 ADD main_z0
 DIV 101
 NOP
 NOP
 NOP
 QUO
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
-LOD main_pa
-ADD main_z0
-P_LOD 3
+LOD 3
 DIV 101
 NOP
 NOP
 NOP
 QUO
-S_ADD
+ADD main_pa
+ADD main_z0
 OUT 0
 LOD main_pf
 F_ADD main_fz

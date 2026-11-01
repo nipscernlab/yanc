@@ -482,9 +482,8 @@ OUT 0
 LOD main_n2
 OUT 0
 LOD_V ia3 2
-P_LOD main_pa
+ADD main_pa
 ADD main_z0
-S_ADD
 OUT 0
 LOD main_pf
 F_ADD main_fz

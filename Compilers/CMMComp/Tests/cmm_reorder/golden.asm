@@ -26,9 +26,8 @@ LOD main_c
 ADD main_d
 ADD main_e
 ADD main_f
-P_LOD main_a
+ADD main_a
 ADD main_b
-S_ADD
 OUT 0
 LOD main_a
 ADD main_b

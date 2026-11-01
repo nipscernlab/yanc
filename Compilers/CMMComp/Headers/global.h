@@ -43,7 +43,7 @@ void parse_end (char *prname, char *d_proc);
 void add_instr(char *inst, ...);           // standard
 void add_sinst(int type, char *inst, ...); // special
 
-// clears the peephole state inside add_instr (last_str + acc_name). Called at
+// clears the peephole state inside add_instr (last_str + acc_names). Called at
 // every basic-block boundary (labels, capture push/pop, macro use/end) so the
 // "drop LOD x while the acc already holds x" optimization never crosses control
 // flow.

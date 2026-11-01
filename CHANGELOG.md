@@ -90,7 +90,12 @@ tags consumed by Aurora.
   Then a value the acc keeps through any number of `SET`s, where only two
   were remembered (`ZeroCross` 126 → 117), and an int sum with a constant
   kept in the acc: `a + (b - c)` is `(a + b) - c` and `x - 1` is `ADD -1`
-  (`ProcDTW` 245 → 237).
+  (`ProcDTW` 245 → 237); then the mirror `(b - c) + a`, `x - (y + 1)` in
+  three words, and the acc kept through `OUT`, `PSH` and `SET_V`. Fixture
+  `cmm_int_reassoc`. `sapho_all` (and `_a`, `_b`) gained six checked terms
+  and a chain of products, so that the push forms of the int unary
+  operations and the 7-deep stacks the reductions had folded away are
+  still there; its LED table is the same (908 → 997 words).
 - **cmmcomp: the unrolled Dirac generators are gone** (step c of
   docs/design/dirac-expressions.md). The eleven `exec_*` routines that
   unrolled each Dirac form, 840 lines of `stdlib.c`, and the twenty messages

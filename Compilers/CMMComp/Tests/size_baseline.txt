@@ -3,12 +3,12 @@
 # (excludes labels, directives and macros). regress.sh fails any run where
 # a count grows or an example has no line. To update after a refactor that shrinks
 # things, run: Scripts/regress.sh --update-size
-algsimp    20
+algsimp    10
 ArcTan     75
 cmm_arridx 31
 cmm_bigin  13
 cmm_braces 66
-cmm_break  100
+cmm_break  99
 cmm_callseq 54
 cmm_catan  341
 cmm_cexp   125
@@ -30,18 +30,18 @@ cmm_continue 68
 cmm_cov_arr1d 2513
 cmm_cov_arr2d_rd 5315
 cmm_cov_arr2d_wr 9090
-cmm_cov_lib 10820
-cmm_cov_misc 490
-cmm_cov_ops 15257
-cmm_cov_rest 2705
+cmm_cov_lib 10786
+cmm_cov_misc 489
+cmm_cov_ops 15230
+cmm_cov_rest 2703
 cmm_csincos 184
 cmm_ctan   258
 cmm_ctlforms 132
 cmm_decl_list 96
-cmm_define 12
+cmm_define 8
 cmm_div_const 86
 cmm_depth  26
-cmm_dowhile 76
+cmm_dowhile 75
 cmm_empty  26
 cmm_exp    35
 cmm_fbound 21
@@ -56,7 +56,8 @@ cmm_fround2 202
 cmm_fround_mean 65
 cmm_hyper  123
 cmm_idx_reuse 120
-cmm_ilit   60
+cmm_int_reassoc 82
+cmm_ilit   58
 cmm_ilit8  18
 cmm_ioports 13
 cmm_itr    17
@@ -68,9 +69,9 @@ cmm_nubits8 93
 cmm_order_switch 87
 cmm_params 328
 cmm_pow    116
-cmm_pplus  259
+cmm_pplus  250
 cmm_reach  22
-cmm_reorder 57
+cmm_reorder 56
 cmm_return 91
 cmm_round  120
 cmm_stack_balance 34
@@ -87,7 +88,7 @@ ctrl_flow  103
 dirac_assign 149
 dirac_shapes 1857
 empty_call 14
-fifo_w     35
+fifo_w     33
 for_loop   78
 func_combos 58
 link_envia 24
@@ -106,16 +107,16 @@ lk_flt_w   14
 lk_merge   11
 multiparam 26
 pplus_arr  19
-proc_fft   221
+proc_fft   220
 proc_rls   227
 proc_sim   88
 procBlind  588
 procBlindOpt 588
 ProcDTW    237
-ResetCheck 22
-sapho_all  908
-sapho_all_a 911
-sapho_all_b 916
+ResetCheck 21
+sapho_all  997
+sapho_all_a 1000
+sapho_all_b 1005
 Seno       67
 Sqrt       91
 sw_test    19
