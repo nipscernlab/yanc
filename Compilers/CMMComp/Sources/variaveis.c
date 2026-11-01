@@ -85,7 +85,7 @@ void check_var()
     for (int i = 0; i < v_count; i++)
     {
         // check whether a variable was declared but not used ...
-        if (((v_table[i].type == 1) || (v_table[i].type == 2) || (v_table[i].type == 3)) && (v_table[i].used == 0))
+        if (((v_table[i].type == 1) || (v_table[i].type == 2) || (v_table[i].type == 3)) && (v_table[i].used == 0) && !v_table[i].wave)
         {
             // v_table[i].fnid records the variable's owning function: a valid
             // v_table index for locals, or "" / -1 for globals. declar_arr_1d
@@ -95,15 +95,29 @@ void check_var()
             int fnid = v_table[i].fnid;
             int is_global = (fnid < 0) || (strcmp(v_table[fnid].name, "") == 0);
             if (is_global)
-                fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name);
+                fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
             else
-                fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, rem_fname(v_table[i].name, v_table[fnid].name), v_table[fnid].name);
+            {
+                char *name = rem_fname(v_table[i].name, v_table[fnid].name);
+                fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[fnid].name, name);
+            }
         }
 
         // check whether a function was declared but not used
         if (((v_table[i].type == 5) || (v_table[i].type == 6) || (v_table[i].type == 7)) && v_table[i].used == 0)
             fprintf (stdout, MSG_WARN_UNUSED_FUNCTION, v_table[i].name);
     }
+}
+
+// #WAVE name: the variable stays in the program, and so in the waveform, even
+// if nothing reads it (asm_unread asks v_table[id].wave). It names a variable
+// declared before it, a global at the top level or a local inside a function
+void dire_wave(int id)
+{
+    char *name = rem_fname(v_table[id].name, fname);
+    if (v_table[id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, name); exit(EXIT_FAILURE);}
+    if (v_table[id].type > 3)  {fprintf(stderr, MSG_ERR_WAVE_NOT_VAR, line_num+1, name); exit(EXIT_FAILURE);}
+    v_table[id].wave = 1;
 }
 
 // strips the function name from the variable

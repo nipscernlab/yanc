@@ -5,9 +5,7 @@ NOP
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-#SHARE f_x k
 #SHARE h_x k
-#SHARE s_x k
 LOD 3
 SET a
 LOD 5
@@ -18,8 +16,7 @@ SET k
 LOD 7
 SET vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 JMP main
-@f SET f_x
-LES 0
+@f LES 0
 JIZ __Lif1else
 LOD 1
 RET
@@ -35,8 +32,7 @@ RET
 ADD 1
 SET h_x
 JMP __Lwh1
-@__Lwh1end @s SET s_x
-ADD -1
+@__Lwh1end @s ADD -1
 JIZ __sw_body_1_1
 JMP __sw_body_1_2
 @__sw_body_1_1 LOD 10

@@ -15,7 +15,6 @@ NOP
 #SHARE main_n main_x
 #SHARE main_j main_x
 #SHARE __aux_var main_r
-#SHARE main_y main_r
 @main @__Lwh1 LOD 5
 SET main_k
 ADD 1
@@ -153,7 +152,6 @@ SET __aux_var
 F_ADD 1.0
 STI f
 LOD __aux_var
-SET main_y
 F_MLT 10.0
 F2I
 OUT 0

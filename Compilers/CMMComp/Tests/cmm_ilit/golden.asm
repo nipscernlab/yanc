@@ -7,9 +7,6 @@ NOP
 #NUIOOU 1
 #arrayd a 1 3 3 16 8 3
 #arrayd b 1 3 3 -1 -2147483648 1
-#SHARE main_s main_m
-#SHARE main_y main_m
-#SHARE main_x main_m
 @main LOD 31
 OUT 0
 LOD 42
@@ -33,13 +30,11 @@ OUT 0
 LOD_V a 2
 OUT 0
 LOD 15
-SET main_m
 OUT 0
 LOD 4
 SHL 1
 OUT 0
 LOD 16
-SET main_s
 ADD -16
 JIZ __sw_body_1_1
 ADD 8
@@ -64,7 +59,6 @@ LOD_V b 2
 OUT 0
 NEG_M 65536
 AND 305419896
-SET main_y
 OUT 0
 LOD 5
 SET main_x

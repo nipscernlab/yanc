@@ -6,24 +6,20 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-#SHARE one_float_b one_int_a
-#SHARE one_comp_c_i one_int_a
-#SHARE three_mixed_r_i one_int_a
-#SHARE three_mixed_r one_int_a
+#SHARE three_mixed_r_i one_comp_c_i
+#SHARE three_mixed_r one_comp_c_i
 #SHARE three_mixed_q one_comp_c
 #SHARE main_v4_i main_v4
-#SHARE main_v5 one_int_a
+#SHARE main_v5 one_comp_c_i
 JMP main
 @noargs_void LOD 7
 OUT 0
 RET
 @noargs_int LOD 42
 RET
-@one_int SET one_int_a
-ADD 1
+@one_int ADD 1
 RET
-@one_float SET one_float_b
-F_ADD 0.5
+@one_float F_ADD 0.5
 RET
 @one_comp SET_P one_comp_c_i
 SET one_comp_c

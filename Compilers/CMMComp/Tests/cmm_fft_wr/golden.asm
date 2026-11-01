@@ -27,7 +27,6 @@ GRE 8
 JIZ fim
 LOD main_k
 LDI x
-SET main_v
 OUT 0
 LOD main_k
 ADD 1

@@ -7,7 +7,6 @@ NOP
 #NBEXPO 5
 #NUGAIN 128
 @main @__Lwh1 LOD 1
-SET main_s
 ADD -1
 JIZ __sw_body_1_1
 ADD -1
@@ -22,7 +21,6 @@ JMP __switch_end_1
 @__sw_body_1_3 LOD 19
 OUT 0
 @__switch_end_1 LOD 2
-SET main_s
 ADD -1
 JIZ __sw_body_2_1
 ADD -1
@@ -37,7 +35,6 @@ JMP __switch_end_2
 @__sw_body_2_3 LOD 29
 OUT 0
 @__switch_end_2 LOD 7
-SET main_s
 ADD -1
 JIZ __sw_body_3_1
 ADD -1
@@ -52,7 +49,6 @@ JMP __switch_end_3
 @__sw_body_3_3 LOD 39
 OUT 0
 @__switch_end_3 LOD 20
-SET main_s
 ADD -10
 JIZ __sw_body_4_1
 ADD -10

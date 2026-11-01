@@ -9,7 +9,6 @@ NOP
 @main @__Lwh1 CAD 0
 F_MLT 2.0
 F2I
-SET main_t
 OUT 0
 JMP __Lwh1
 @__Lwh1end @fim JMP fim

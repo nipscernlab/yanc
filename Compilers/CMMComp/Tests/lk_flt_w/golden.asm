@@ -12,7 +12,6 @@ SET main_n
 GRE 16
 JIZ fim
 I2F_M main_n
-SET main_f
 F_MLT 1.5
 TOM 0
 LOD main_n

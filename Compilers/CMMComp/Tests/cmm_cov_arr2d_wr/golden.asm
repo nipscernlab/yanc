@@ -9,17 +9,12 @@ NOP
 #array mf 2 12
 #array mc 3 12
 #array mc_i 4 12
-#SHARE main_n1 main_n0
-#SHARE main_f1 main_f0
-#SHARE main_c0_i main_c0
-#SHARE main_c1 main_c0
 #SHARE main_one main_c3_i
 #SHARE main_w_i __aux_var
 #SHARE main_w main_iv
 #SHARE __aux_var2 main_iv
 #SHARE __aux_var3 main_fv
 @main LOD 0
-SET main_n0
 LOD 1
 SET main_n1
 LOD 2
@@ -29,7 +24,6 @@ SET main_n3
 LOD 0
 SET main_z0
 LOD 0.7
-SET main_f0
 LOD 1.7
 SET main_f1
 LOD 2.7
@@ -38,9 +32,7 @@ LOD 3.7
 SET main_f3
 LOD 0.0
 SET main_fz
-SET main_c0
 LOD 3.0
-SET main_c0_i
 LOD 1.0
 SET main_c1
 LOD 4.0

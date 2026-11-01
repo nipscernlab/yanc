@@ -6,11 +6,8 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE top_a leaf_b
-#SHARE main_x top_c
 JMP main
 @leaf SET_P leaf_b
-SET leaf_a
 ADD leaf_b
 RET
 @mid SET mid_a
@@ -23,13 +20,11 @@ S_ADD
 RET
 @top SET_P top_c
 SET_P top_b
-SET top_a
 CAL mid
 ADD top_b
 ADD top_c
 RET
 @main @__Lwh1 INN 0
-SET main_x
 P_LOD 2
 P_LOD 3
 CAL top

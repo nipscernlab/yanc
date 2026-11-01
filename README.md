@@ -21,8 +21,8 @@
 **C±** ("C plus-minus": integers, floats in SAPHO's own format, native complex
 numbers) or in **C++** and produces the Verilog of a processor sized for that
 program, its memory images, a testbench, and the tables that let a waveform
-viewer show the source line, the assembly instruction and every variable,
-cycle by cycle. It is also the SAPHO compiler inside
+viewer show the source line, the assembly instruction and every variable
+the program reads, cycle by cycle. It is also the SAPHO compiler inside
 **[AURORA](https://github.com/nipscernlab/aurora)**, the NIPS-CERN IDE for
 the synthesis and simulation of Verilog circuits, where YANC builds the
 SAPHO processors those circuits use.
@@ -99,7 +99,9 @@ gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
 GTKWave shows, clock by clock, the source line being run, the assembly
-instruction and every variable by name.
+instruction and every variable by name. A variable the program writes and
+never reads is not in the processor; `#WAVE` keeps it, to see it in the
+waveform.
 
 `yanc -h` lists the options: `-o` another output folder, `-S` stop at the
 assembly, `--lang=pt` the messages in Portuguese, and the rest. Everything

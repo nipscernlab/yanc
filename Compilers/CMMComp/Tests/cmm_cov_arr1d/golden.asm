@@ -9,18 +9,12 @@ NOP
 #arrayd vf 2 8 8 50.0 51.0 52.0 53.0 54.0 55.0 56.0 57.0
 #arrayd vc 3 8 8 20.0 21.0 22.0 23.0 24.0 25.0 26.0 27.0
 #arrayd vc_i 4 8 8 -1.0 -2.0 -3.0 -4.0 -5.0 -6.0 -7.0 -8.0
-#SHARE main_n1 main_n0
-#SHARE main_f1 main_f0
-#SHARE main_c0_i main_c0
-#SHARE main_c1 main_c0
-#SHARE main_y main_x
-#SHARE main_w_i main_x
-#SHARE __aux_var main_x
+#SHARE main_w_i main_y
+#SHARE __aux_var main_y
 #SHARE main_iv main_w
 #SHARE __aux_var2 main_c2_i
 #SHARE __aux_var3 main_w
 @main LOD 0
-SET main_n0
 LOD 1
 SET main_n1
 LOD 2
@@ -30,7 +24,6 @@ SET main_n3
 LOD 0
 SET main_z0
 LOD 0.7
-SET main_f0
 LOD 1.7
 SET main_f1
 LOD 2.7
@@ -39,9 +32,7 @@ LOD 3.7
 SET main_f3
 LOD 0.0
 SET main_fz
-SET main_c0
 LOD 3.0
-SET main_c0_i
 LOD 1.0
 SET main_c1
 LOD 4.0
@@ -60,29 +51,23 @@ LOD 0.0
 SET main_one_i
 LOD main_n1
 LDI vi
-SET main_x
 OUT 0
 LOD main_n2
 ADD main_z0
 LDI vi
-SET main_x
 OUT 0
 LOD_V vi 3
-SET main_x
 OUT 0
 F2I_M main_f1
 LDI vi
-SET main_x
 OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
 LDI vi
-SET main_x
 OUT 0
 F2I_M 3.0
 LDI vi
-SET main_x
 OUT 0
 LOD main_c1
 F_MLT main_one
@@ -97,11 +82,9 @@ SF_ADD
 POP
 F2I
 LDI vi
-SET main_x
 OUT 0
 F2I_M main_c2
 LDI vi
-SET main_x
 OUT 0
 LOD main_n3
 LDI vf
@@ -305,34 +288,28 @@ OUT 0
 LOD main_n1
 LDI vi
 ADD 1000
-SET main_x
 OUT 0
 LOD main_n2
 ADD main_z0
 LDI vi
 ADD 1000
-SET main_x
 OUT 0
 LOD_V vi 3
 ADD 1000
-SET main_x
 OUT 0
 F2I_M main_f1
 LDI vi
 ADD 1000
-SET main_x
 OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
 LDI vi
 ADD 1000
-SET main_x
 OUT 0
 F2I_M 3.0
 LDI vi
 ADD 1000
-SET main_x
 OUT 0
 LOD main_c1
 F_MLT main_one
@@ -348,12 +325,10 @@ POP
 F2I
 LDI vi
 ADD 1000
-SET main_x
 OUT 0
 F2I_M main_c2
 LDI vi
 ADD 1000
-SET main_x
 OUT 0
 LOD main_n3
 LDI vf
@@ -2388,7 +2363,6 @@ F2I
 OUT 0
 LOD main_n1
 ILI vi
-SET main_x
 OUT 0
 LOD 378
 SET main_iv
@@ -2406,7 +2380,6 @@ OUT 0
 LOD main_n3
 ADD main_z0
 ILI vi
-SET main_x
 OUT 0
 LOD 379
 SET main_iv

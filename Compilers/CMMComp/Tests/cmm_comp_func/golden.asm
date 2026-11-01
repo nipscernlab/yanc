@@ -12,11 +12,9 @@ NOP
 #SHARE mk_re echo_c
 #SHARE sumri_c_i echo_c_i
 #SHARE sumri_c echo_c
-#SHARE takesint_x echo_c_i
 #SHARE midcomp_b echo_c_i
 #SHARE midcomp_c_i echo_c
 #SHARE midcomp_c addc_a_i
-#SHARE midcomp_a addc_a
 #SHARE main_e_i echo_c_i
 #SHARE main_e echo_c
 #SHARE main_s_i echo_c_i
@@ -52,12 +50,10 @@ SET sumri_c
 F_ADD sumri_c_i
 F2I
 RET
-@takesint SET takesint_x
-RET
+@takesint RET
 @midcomp SET_P midcomp_b
 SET_P midcomp_c_i
 SET_P midcomp_c
-SET midcomp_a
 OUT 0
 F2I_M midcomp_c
 OUT 0

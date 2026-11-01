@@ -3,6 +3,7 @@
 
     - Directive  #PRACA         : marks the return point for a reset on the itr pin
     - Directive  #TOAQUI        : marks an address that the cheguei pin reflects (PC == addr)
+    - Directive  #WAVE a, b     : keeps variables never read, to see them in the waveform
 
     - comp data type (for complex numbers): e.g. comp a = 3+4i;
 
@@ -105,7 +106,7 @@ void  yyerror(char const *s);
 // tokens with no assignment --------------------------------------------------
 
 %token PRNAME NUBITS NBMANT NBEXPO NDSTAC SDEPTH                       // directives
-%token NUIOIN NUIOOU NUGAIN FFTSIZ FROUND ITRADD TOAQUI                // directives
+%token NUIOIN NUIOOU NUGAIN FFTSIZ FROUND ITRADD TOAQUI WAVE           // directives
 %token INN FIN OUT FOUT                                                // stdlib (I/O)
 %token TOMA CADE FCADE TOMAS CADES FCADES                                    // the links to partner processors (_S: the _sync forms)
 %token NRM PST ABS SGN COPY                                            // stdlib (special functions)
@@ -195,11 +196,16 @@ direct : PRNAME   ID   {fprintf(stderr, MSG_ERR_PRNAME_GONE, line_num+1); exit(E
        | NUGAIN unum   {dire_exec("#NUGAIN",$2,10);} // division constant (norm(.)): a power of two (validated)
        | FFTSIZ unum   {dire_exec("#FFTSIZ",$2, 0);} // FFT size (2^FFTSIZ)
        | FROUND unum   {dire_exec("#FROUND",$2, 9);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
+       | WAVE wave_list                             // globals kept for the waveform even if never read
 
 // Behavioral directives ------------------------------------------------------
 
 dire_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt start point (#PRACA)
            | TOAQUI             {stmt_append(stmt_dire_toaqui());} // PC tracker marker     (#TOAQUI -> cheguei pin)
+           | WAVE wave_list                                      // locals kept for the waveform even if never read
+
+wave_list : ID                 {dire_wave($1);}                   // #WAVE a, b, ...
+          | wave_list ',' ID   {dire_wave($3);}
 
 // Variable declaration -------------------------------------------------------
          // list declaration (one or more variables, each may have an initializer)

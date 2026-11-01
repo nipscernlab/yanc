@@ -125,6 +125,7 @@ design/array-unit
 design/dirac-expressions
 design/ip-protection
 design/asm-names
+design/unread-variables
 design/pipeln-and-division
 design/normalisation-survey
 design/fadd-survey

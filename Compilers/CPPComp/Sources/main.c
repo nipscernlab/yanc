@@ -150,9 +150,13 @@ int main(int argc, char **argv)
         // five / four cycles); the count grows by the words added
         int more = asm_divseq(outp, pc);
         if (more > 0) lower_num_ins(tmp_dir, -more);
+        // a variable written and never read leaves the program
+        int unread = asm_unread(outp, pc, NULL, NULL);
+        if (unread > 0) lower_num_ins(tmp_dir, unread);
     } else {
         asm_reach(outp, NULL);
         asm_divseq(outp, NULL);
+        asm_unread(outp, NULL, NULL, NULL);
     }
 
     // scalars never alive together share one data word (#SHARE lines ahead of

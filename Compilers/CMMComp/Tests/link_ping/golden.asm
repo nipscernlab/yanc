@@ -14,7 +14,6 @@ JIZ fim
 LOD main_n
 TOM 0
 CAD 0
-SET main_r
 OUT 0
 LOD main_n
 ADD 1

@@ -72,7 +72,8 @@ uses.
 
 The simulation also wrote the waveform `my_program_tb.vcd`. `gen_gtkw`
 turns it into a view that shows, clock by clock, the source line being
-executed, the assembly instruction, and every variable by name:
+executed, the assembly instruction, and every variable by name (a variable
+written and never read is not in the processor, see below):
 
 ```bat
 gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
@@ -118,7 +119,9 @@ hand-written square root against the library's. Its two data files load
 1000 inputs and their exact square roots straight into the data memory, and
 the program writes nothing out: the result is read in the waveform, where
 `e` shows the error of each version, input by input, next to the source
-line being executed.
+line being executed. Nothing reads `t` and `e`, and a variable never read
+leaves the program; `#WAVE t, e` keeps them, to be seen in the waveform
+(see [Directives](directives.md#waveform)).
 
 ```c
 #NUIOIN 1
@@ -147,6 +150,7 @@ void main()
     float x[1000] "sqrt_x.txt";   // the inputs, loaded into data memory
     float a[1000] "sqrt_y.txt";   // their exact square roots
     float y, t, e;
+    #WAVE t, e                    // never read: kept for the waveform
 
     int j = 0;
     while (j < 1000)              // the library's sqrt

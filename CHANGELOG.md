@@ -9,6 +9,9 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **C±: `#WAVE a, b`** keeps variables the program never reads, to see them
+  in the waveform. Fixtures `cmm_unread`, NegTests `wave_undeclared` and
+  `wave_not_var`. Manual: docs/directives.md.
 - **asmcomp: `LDI_V` and `STI_V`**, `LDI` and `STI` with a constant offset
   added to the base (`LDI_V x 4` reads `mem[x + 4 + acc]`), as `LOD_V` is
   `LOD` with one: no new opcode and no hardware. The Dirac loops use them
@@ -55,6 +58,11 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **A variable written and never read leaves the program**, in both
+  compilers: its `SET`s, its data word and its waveform signal (`asm_unread`,
+  issue #69). cmmcomp's warning says so and names `#WAVE`. 46 C± tests lost
+  960 words (`sapho_all` 946 → 910, `procBlind` 620 → 605). Fixture
+  `cmm_unread`. docs/design/unread-variables.md.
 - **cmmcomp: a float divided by a literal can become a product.** By a
   power of two always (exact); by any other literal only when no other float
   division puts the divider in the processor, and then the result can differ

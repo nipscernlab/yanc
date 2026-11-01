@@ -70,6 +70,29 @@ int asm_is_mnemonic(const char *name);
 int asm_reach(const char *asm_path, const char *pc_path);
 
 // ****************************************************************************
+// asm_unread -- a variable written and never read is not in the program ------
+// ****************************************************************************
+//
+// A scalar that some SET or SET_P writes and no instruction reads leaves the
+// program: its SETs go (their labels move to the next instruction), a SET_P
+// becomes the POP it also is, and with no instruction naming it the variable
+// is not in the processor, its memory or the waveform either. A name an
+// address touches (an array, a _V offset, LEA, an indirect load or store) or
+// a directive names is read. The two halves of a comp, x and x_i, go together
+// or not at all: asmcomp joins them into comp_x for the waveform. On anything
+// the pass does not understand it leaves the file untouched. keep (may be
+// NULL) names the variables the user asked to keep anyway, for the waveform
+// (cmmcomp's #WAVE): a name it returns nonzero for counts as read.
+//
+// Run it after asm_reach and before asm_share. pc_path (pc_<proc>_mem.txt,
+// may be NULL) loses the lines of the dropped SETs in lockstep. gone (may be
+// NULL) is called with the name of each variable that left, a comp by its
+// real half. Returns how many dropped instructions the pc map covered (the
+// caller's instruction count drops by that much), -1 on an I/O error.
+int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const char *name),
+               int (*keep)(const char *name));
+
+// ****************************************************************************
 // asm_divk -- a division by a constant, or the product by its reciprocal ----
 // ****************************************************************************
 //

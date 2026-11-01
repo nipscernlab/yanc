@@ -9,7 +9,6 @@ NOP
 #array vf 2 6
 #array mi 1 12
 #array mf 2 12
-#SHARE main_x main_k
 #SHARE main_y main_k
 @main LOD 1
 SET main_a
@@ -80,7 +79,6 @@ ADD main_b
 LDI vi
 PSH
 S_MLT
-SET main_x
 OUT 0
 LOD main_a
 ADD main_b

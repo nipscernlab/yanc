@@ -210,6 +210,21 @@ void prog_emit(void)
     stmt_free(prog);
 }
 
+// a variable asm_unread took out of the program counts as not used: check_var
+// tells the user (a comp by its real half, which is its name in the table)
+static void unread_gone(const char *name)
+{
+    int id = find_var((char *)name);
+    if (id >= 0) v_table[id].used = 0;
+}
+
+// a variable the program marked with #WAVE stays, read or not
+static int unread_keep(const char *name)
+{
+    int id = find_var((char *)name);
+    return id >= 0 && v_table[id].wave;
+}
+
 void parse_end(char *prname, char *d_proc)
 {
     printf(MSG_INFO_INS_GENERATED, num_ins);
@@ -248,6 +263,11 @@ void parse_end(char *prname, char *d_proc)
 
 	int  more = asm_divseq(asm_file, pc_file);
 	if  (more > 0) num_ins += more;
+
+	// a variable written and never read leaves the program; check_var says so
+
+	int  unread = asm_unread(asm_file, pc_file, unread_gone, unread_keep);
+	if  (unread > 0) num_ins -= unread;
 
 	// variables that are never alive at the same time share a data word ------
 

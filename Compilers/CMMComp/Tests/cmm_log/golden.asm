@@ -6,7 +6,6 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE main_x main_r
 #SHARE __exp_x main_r
 #SHARE __exp_n __exp_q
 #SHARE __exp_r main_r
@@ -31,7 +30,6 @@ SET main_r
 F2I_M main_r
 OUT 0
 LOD 8.0
-SET main_x
 F_ADD 2.0
 CAL __float_log
 F_MLT 1000.0

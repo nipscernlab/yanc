@@ -13,17 +13,9 @@ NOP
 #array ia 1 8
 #array fa 2 8
 #SHARE diff_b twice_v
-#SHARE n7_v twice_v
-#SHARE n6_v twice_v
-#SHARE n5_v twice_v
-#SHARE n4_v twice_v
-#SHARE n3_v twice_v
-#SHARE n2_v twice_v
-#SHARE n1_v twice_v
 #SHARE main_w twice_v
 #SHARE main_fx diff_a
 #SHARE main_y main_k
-#SHARE main_fw twice_v
 #SHARE __aux_var twice_v
 #SHARE __aux_var1 diff_a
 #SHARE __aux_var2 main_z
@@ -50,31 +42,24 @@ SET diff_a
 NEG_M diff_b
 ADD diff_a
 RET
-@n7 SET n7_v
+@n7 ADD 1
+RET
+@n6 CAL n7
 ADD 1
 RET
-@n6 SET n6_v
-CAL n7
+@n5 CAL n6
 ADD 1
 RET
-@n5 SET n5_v
-CAL n6
+@n4 CAL n5
 ADD 1
 RET
-@n4 SET n4_v
-CAL n5
+@n3 CAL n4
 ADD 1
 RET
-@n3 SET n3_v
-CAL n4
+@n2 CAL n3
 ADD 1
 RET
-@n2 SET n2_v
-CAL n3
-ADD 1
-RET
-@n1 SET n1_v
-CAL n2
+@n1 CAL n2
 ADD 1
 RET
 @main #ITRAD
@@ -502,7 +487,6 @@ ADD main_t
 SET s
 LOD main_fx
 F_ADD main_fy
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -511,7 +495,6 @@ ADD main_t
 SET s
 LOD main_fx
 F_MLT main_fy
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -523,7 +506,6 @@ F_DIV main_fx
 NOP
 NOP
 F_QUO
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -532,7 +514,6 @@ ADD main_t
 SET s
 LOD main_fx
 F_SU1 main_fy
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -541,7 +522,6 @@ ADD main_t
 SET s
 LOD main_fz
 F_SGN main_fy
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -553,7 +533,6 @@ F_ADD 1.0
 P_LOD main_fy
 F_MLT 2.0
 SF_ADD
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -565,7 +544,6 @@ F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_MLT
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -580,7 +558,6 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -592,7 +569,6 @@ F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_SU2
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -602,7 +578,6 @@ SET s
 LOD main_fx
 F_MLT 2.0
 F_SU2 main_fy
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -614,7 +589,6 @@ F_ADD 1.0
 P_LOD main_fz
 F_SU1 1.0
 SF_SGN
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -654,7 +628,6 @@ SET s
 @__Lif13else LOD main_fx
 F_ADD main_fy
 F_NEG
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -662,7 +635,6 @@ LOD s
 ADD main_t
 SET s
 F_NEG_M main_fx
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -673,7 +645,6 @@ LOD main_fy
 F_ADD 1.0
 PF_NEG_M main_fx
 SF_SU2
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -683,7 +654,6 @@ SET s
 LOD main_fz
 F_SU1 1.0
 F_ABS
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -691,7 +661,6 @@ LOD s
 ADD main_t
 SET s
 F_ABS_M main_fz
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -702,7 +671,6 @@ LOD main_fy
 F_ADD 1.0
 PF_ABS_M main_fz
 SF_SU2
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -712,7 +680,6 @@ SET s
 LOD main_fz
 F_SU1 1.0
 F_PST
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -720,7 +687,6 @@ LOD s
 ADD main_t
 SET s
 F_PST_M main_fx
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -731,7 +697,6 @@ LOD main_fy
 F_ADD 1.0
 PF_PST_M main_fz
 SF_SU2
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -741,7 +706,6 @@ SET s
 LOD main_x
 ADD main_y
 I2F
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -749,7 +713,6 @@ LOD s
 ADD main_t
 SET s
 I2F_M main_x
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -760,7 +723,6 @@ LOD main_fy
 F_ADD 1.0
 P_I2F_M main_x
 SF_SU2
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -771,7 +733,6 @@ LOD main_fy
 F_ADD 1.0
 P_I2F_M main_x
 SF_SU1
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -833,7 +794,6 @@ LOD main_fy
 F_ADD 1.0
 PF_INN 0
 SF_SU2
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -863,7 +823,6 @@ LOD 7
 AND main_y
 P_LOD main_fx
 STI fa
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -902,7 +861,6 @@ ADD main_t
 SET s
 LOD 4.0
 CAL __float_sqrt
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -911,7 +869,6 @@ ADD main_t
 SET s
 LOD 0.0
 CAL __float_exp
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t
@@ -920,7 +877,6 @@ ADD main_t
 SET s
 LOD 1.0
 CAL __float_log
-SET main_fw
 F_MLT 4194304.0
 F2I
 SET main_t

@@ -39,7 +39,6 @@ NOP
 #SHARE correlate_residual_x_s lipschitz_x_k
 #SHARE correlate_residual_x_k conv_zh_j
 #SHARE fista_x_ii project_h_hat_k
-#SHARE fista_x_L fista_x_step
 #SHARE fista_x_v lipschitz_x_k
 #SHARE fista_x_tn lipschitz_x_k
 #SHARE fista_x_mom fista_x_t
@@ -48,7 +47,7 @@ NOP
 #SHARE update_h_cdt project_h_hat_k
 #SHARE fit_it fit_ii
 #SHARE main_n fit_ii
-#SHARE main_j update_h_it
+#SHARE main_j fista_x_step
 #SHARE __sqrt_num project_h_hat_k
 JMP main
 @project_h_hat LOD 0
@@ -376,7 +375,6 @@ JMP __Lwh19
 @__Lwh19end LOD 1.0
 SET fista_x_t
 CAL lipschitz_x
-SET fista_x_L
 F_DIV 1.0
 NOP
 NOP

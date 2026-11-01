@@ -1299,3 +1299,177 @@ done:
     st_free(&lines); st_free(&pc);
     return removed;
 }
+
+// ---- asm_unread: a variable written and never read is not in the program ----------
+// See asm_share.h.
+
+int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const char *name),
+               int (*keep)(const char *name))
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, names = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    int   *set_of = malloc((lines.n + 1) * sizeof(int));  // per line: name its SET / SET_P writes (-1: none)
+    int   *ins_of = malloc((lines.n + 1) * sizeof(int));  // per line: its instruction (-1: none)
+    int   *mn_at  = malloc((lines.n + 1) * sizeof(int));  // per line: where its mnemonic starts
+    char  *is_set = calloc(lines.n + 1, 1);                // per line: 1 SET, 2 SET_P
+    char  *rd = NULL, *wr = NULL, *out = NULL;
+    int    rcap = 0, wcap = 0, n = 0, ok = 1, removed = 0, vars = 0;
+
+    for (int ln = 0; ln < lines.n && ok; ln++)
+    {
+        char *text = lines.s[ln];
+        int   end  = (int)strlen(text);
+        char *cm   = strstr(text, "//");
+        if (cm) end = (int)(cm - text);
+        set_of[ln] = ins_of[ln] = mn_at[ln] = -1;
+
+        int ts[8], tl[8], nt = 0;
+        for (int p = 0; p < end && nt < 8; )
+        {
+            while (p < end && isspace((unsigned char)text[p])) p++;
+            if (p >= end) break;
+            ts[nt] = p;
+            while (p < end && !isspace((unsigned char)text[p])) p++;
+            tl[nt] = p - ts[nt]; nt++;
+        }
+        int t = 0;
+        char tok[256];
+        while (t < nt && text[ts[t]] == '@') t++;
+        if (t >= nt) continue;
+
+        // a directive: any name it holds counts as read (#array*, #SHARE, ...)
+        if (text[ts[t]] == '#')
+        {
+            for (int k = t + 1; k < nt; k++)
+            {
+                snprintf(tok, sizeof(tok), "%.*s", tl[k], text + ts[k]);
+                if (is_literal(tok)) continue;
+                int ni = st_add(&names, tok);
+                if (ni >= rcap) { int o = rcap; rd = grow(rd, &rcap, ni, 1); memset(rd + o, 0, rcap - o); }
+                if (ni >= wcap) { int o = wcap; wr = grow(wr, &wcap, ni, 1); memset(wr + o, 0, wcap - o); }
+                rd[ni] = 1;
+            }
+            continue;
+        }
+
+        snprintf(tok, sizeof(tok), "%.*s", tl[t], text + ts[t]);
+        int op = isa_find(tok);
+        if (op < 0) { ok = 0; break; }                     // not ours to guess
+        ins_of[ln] = n++;
+        mn_at[ln]  = ts[t];
+
+        const char *cls = isa[op].cls;
+        if ((strcmp(cls, "data") == 0 || strcmp(cls, "offset") == 0 || strcmp(cls, "lea") == 0) && t + 1 < nt)
+        {
+            snprintf(tok, sizeof(tok), "%.*s", tl[t + 1], text + ts[t + 1]);
+            if (is_literal(tok)) continue;
+            int ni = st_add(&names, tok);
+            if (ni >= rcap) { int o = rcap; rd = grow(rd, &rcap, ni, 1); memset(rd + o, 0, rcap - o); }
+            if (ni >= wcap) { int o = wcap; wr = grow(wr, &wcap, ni, 1); memset(wr + o, 0, wcap - o); }
+            // a SET or SET_P writes the word; anything else reads it, or
+            // touches it through an address (an array), which keeps it
+            if (strcmp(cls, "data") == 0 && strcmp(isa[op].opnd, "w") == 0) { wr[ni] = 1; set_of[ln] = ni; is_set[ln] = strcmp(isa[op].mn, "SET") == 0 ? 1 : 2; }
+            else rd[ni] = 1;
+        }
+    }
+    if (!ok || names.n == 0) goto done;
+    if (keep) for (int i = 0; i < names.n; i++) if (keep(names.s[i])) rd[i] = 1;   // #WAVE
+
+    // the names that go: written, never read. The two halves of a comp, x and
+    // x_i, go together or not at all (asmcomp joins them into comp_x)
+    out = calloc(names.n + 1, 1);
+    for (int i = 0; i < names.n; i++) out[i] = wr[i] && !rd[i];
+    for (int i = 0; i < names.n; i++)
+    {
+        char half[300];
+        snprintf(half, sizeof(half), "%s_i", names.s[i]);
+        int j = st_find(&names, half);
+        if (j >= 0 && out[i] != out[j]) out[i] = out[j] = 2;   // 2: one half is read
+    }
+    for (int i = 0; i < names.n; i++) if (out[i] == 2) out[i] = 0;
+    int drop = 0;
+    for (int ln = 0; ln < lines.n; ln++) if (set_of[ln] >= 0 && out[set_of[ln]]) drop++;
+    if (drop == 0) goto done;
+
+    // a SET that goes takes its labels to the next instruction: there must be one
+    {
+        int carry = 0;
+        for (int ln = 0; ln < lines.n; ln++)
+        {
+            if (ins_of[ln] < 0) continue;
+            int lab = memchr(lines.s[ln], '@', mn_at[ln]) != NULL;
+            if (is_set[ln] == 1 && out[set_of[ln]]) carry |= lab;
+            else carry = 0;
+        }
+        if (carry) goto done;
+    }
+
+    if (pc_path)
+    {
+        FILE *fp = fopen(pc_path, "r");
+        if (fp) { read_lines(fp, &pc); fclose(fp); }
+    }
+
+    // rewrite: a SET leaves (its labels go on the next instruction), a SET_P
+    // becomes the POP it also is
+    f = fopen(asm_path, "w");
+    if (!f) { removed = -1; goto done; }
+    char *dead = calloc(n + 1, 1);
+    char  lab[4096] = "";
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        char *text = lines.s[ln];
+        if (set_of[ln] >= 0 && out[set_of[ln]])
+        {
+            if (is_set[ln] == 1)
+            {
+                size_t k = strlen(lab);
+                if (memchr(text, '@', mn_at[ln])) snprintf(lab + k, sizeof(lab) - k, "%.*s", mn_at[ln], text);
+                dead[ins_of[ln]] = 1;
+                continue;
+            }
+            fprintf(f, "%s%.*sPOP\n", lab, mn_at[ln], text);   // SET_P
+            lab[0] = 0;
+            continue;
+        }
+        if (ins_of[ln] >= 0 && lab[0]) { fputs(lab, f); lab[0] = 0; }
+        fputs(text, f);
+    }
+    fclose(f);
+
+    if (pc.n > 0)
+    {
+        f = fopen(pc_path, "w");
+        if (f)
+        {
+            for (int i = 0; i < pc.n; i++) { if (i < n && dead[i]) removed++; else fputs(pc.s[i], f); }
+            fclose(f);
+        }
+    }
+    free(dead);
+
+    for (int i = 0; i < names.n; i++)
+    {
+        if (!out[i]) continue;
+        size_t k = strlen(names.s[i]);
+        if (k > 2 && strcmp(names.s[i] + k - 2, "_i") == 0)        // the imaginary half of a comp that goes
+        {
+            char base[300]; snprintf(base, sizeof(base), "%.*s", (int)(k - 2), names.s[i]);
+            int j = st_find(&names, base);
+            if (j >= 0 && out[j]) continue;
+        }
+        vars++;
+        if (gone) gone(names.s[i]);
+    }
+    printf(yanc_lang_en ? "Info: %d variables written and never read removed (%d instructions)\n"
+                        : "Info: %d variáveis escritas e nunca lidas removidas (%d instruções)\n", vars, drop);
+
+done:
+    free(set_of); free(ins_of); free(mn_at); free(is_set); free(rd); free(wr); free(out);
+    st_free(&lines); st_free(&names); st_free(&pc);
+    return removed;
+}

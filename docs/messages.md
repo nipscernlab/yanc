@@ -70,8 +70,10 @@ operators, exceptions, variadic functions (see
 - **`if you don't want this warning, use 'fout'`** / **`use 'out'`**: an
   output of the other type; `fout` writes a float (converted to int), `out`
   an int.
-- **`global variable 'b' isn't being used`**: it takes a data word for
-  nothing.
+- **`global variable 'b' is never read, so it's out of the program and the
+  waveform`**: its writes left the program, and it takes no data word. To see
+  it in the waveform anyway, `#WAVE b` keeps it (see
+  [Directives](directives.md#waveform)).
 - **`local array 'table' is initialized from file ... only once`**: a local
   array loaded from a file keeps, between calls, what the function wrote in
   it.

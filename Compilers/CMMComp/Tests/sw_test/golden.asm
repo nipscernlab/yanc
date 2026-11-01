@@ -6,9 +6,7 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-#SHARE main_y main_x
 @main @__Lwh1 INN 0
-SET main_x
 ADD -1
 JIZ __sw_body_1_1
 ADD -1

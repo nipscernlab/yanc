@@ -16,6 +16,7 @@ typedef struct symbol {
     int  isco;        // whether the variable is a constant
     int  size;        // array size (when it is an array)
     int  siz2;        // size of the j dimension (when it is a matrix)
+    int  wave;        // #WAVE: kept for the waveform even if never read
 } symbol;
 
 // the longest name a program may write. The longest name the compiler
@@ -35,6 +36,7 @@ void    add_var(char *var);              // adds an ID to the table
 void  check_var();                       // checks what was used in the table (at the end of the parser)
 char *rem_fname(char *var, char *fname); // removes the function name from the variable
 void  check_name(int id, int is_fun);     // a declared name must be free in the .asm and not an instruction
+void  dire_wave (int id);                // #WAVE name: the variable stays even if never read
 
 // used in the lexer to pick up variables and constants -----------------------
 

@@ -7,7 +7,6 @@ NOP
 #NBEXPO 6
 #NUGAIN 128
 @main @__Lwh1 INN 0
-SET main_x
 OUT 0
 JMP __Lwh1
 @__Lwh1end @fim JMP fim

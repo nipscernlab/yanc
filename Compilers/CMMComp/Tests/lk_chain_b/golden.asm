@@ -7,7 +7,6 @@ NOP
 #NBEXPO 8
 #NUGAIN 128
 @main @__Lwh1 CAD 0
-SET main_x
 MLT 2
 TOM 1
 JMP __Lwh1

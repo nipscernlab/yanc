@@ -6,11 +6,9 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE __fase_re __catan_b2
 #SHARE __fase_t __catan_re
-#SHARE __catan_bp __catan_b2
-#SHARE __catan_num __catan_b2
-#SHARE __catan_den __catan_bm
+#SHARE __catan_bp __fase_re
+#SHARE __catan_num __fase_re
 #SHARE __catan_im __catan_a2
 #SHARE main_c_i __catan_a2
 #SHARE main_c __fase_im
@@ -18,12 +16,12 @@ NOP
 #SHARE main_w __catan_b
 #SHARE main_w_i __catan_a2
 #SHARE __catan_a __fase_im
-#SHARE __atan_x __catan_b2
+#SHARE __atan_x __fase_re
 #SHARE __atan_big __catan_bm
 #SHARE __atan_t __atan_ax
 #SHARE __atan_p __atan_ax
 #SHARE __log_x __catan_bm
-#SHARE __log_e __catan_b2
+#SHARE __log_e __fase_re
 #SHARE __log_ne __atan_ax
 #SHARE __log_m __atan_ax
 #SHARE __log_t2 __catan_bm
@@ -35,7 +33,6 @@ NOP
 SET __catan_a2
 LOD 0.0
 F_MLT 0.0
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD 1.0
@@ -95,7 +92,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP
@@ -119,7 +115,6 @@ F_MLT 0.0
 SET __catan_a2
 LOD 0.5
 F_MLT 0.5
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD 0.0
@@ -179,7 +174,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP
@@ -205,7 +199,6 @@ F_MLT main_z
 SET __catan_a2
 LOD main_z_i
 F_MLT main_z_i
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD main_z
@@ -265,7 +258,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP
@@ -300,7 +292,6 @@ F_MLT __catan_a
 SET __catan_a2
 LOD __catan_b
 F_MLT __catan_b
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD __catan_a
@@ -360,7 +351,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP

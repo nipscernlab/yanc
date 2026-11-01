@@ -6,16 +6,11 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE main_k switch_exp
 #SHARE __aux_var Lwh1
-#SHARE main_yy Lwh1
 #SHARE __pow_b aux_var
 #SHARE __pow_r Lwh1
-#SHARE main_y aux_var
-#SHARE main_s pow_b
 #SHARE __floor_x floor_x
 #SHARE __floor_t pow_b
-#SHARE main_r floor_x
 #SHARE __sqrt_num pow_b
 LOD 4
 SET Lwh1
@@ -27,7 +22,6 @@ SET floor_x
 LOD 5
 SET sw_body_1_1
 LOD 0
-SET switch_exp
 LOD 9
 SET fim
 #array g 2 2
@@ -52,7 +46,6 @@ SET __aux_var
 F_ADD 1.0
 STI g
 LOD __aux_var
-SET main_yy
 LOD aux_var
 OUT 0
 LOD 2.0
@@ -64,12 +57,10 @@ LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
 F2I
-SET main_y
 ADD pow_b
 OUT 0
 LOD 16.0
 CAL __float_sqrt
-SET main_s
 F_ADD floor_x
 SET __floor_x
 F2I
@@ -82,17 +73,14 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr1end LOD __floor_t
 F2I
-SET main_r
 OUT 0
 LOD main_k
 ADD -3
 JIZ __sw_body_1_1
 JMP __sw_body_1_2
 @__sw_body_1_1 LOD 1
-SET switch_exp
 JMP __switch_end_1
 @__sw_body_1_2 LOD 2
-SET switch_exp
 @__switch_end_1 LOD sw_body_1_1
 OUT 0
 LOD fim

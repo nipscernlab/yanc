@@ -528,13 +528,14 @@ void parse_lang_flag(int *argc, char **argv);
 
 // unused-variable errors/warnings (variaveis.c) -----------------------------
 
+// a variable never read is not in the program (asm_unread), nor in the waveform
 #define MSG_WARN_UNUSED_GLOBAL_VAR \
-    M("Atenção: variável global '%s' não está sendo usada. Economize memória!\n", \
-      "Heads up: global variable '%s' isn't being used. Save some memory, will ya!\n")
+    M("Atenção: variável global '%s' não é lida em lugar nenhum, então saiu do programa e da forma de onda (#WAVE %s a mantém).\n", \
+      "Heads up: global variable '%s' is never read, so it's out of the program and the waveform (#WAVE %s keeps it).\n")
 
 #define MSG_WARN_UNUSED_LOCAL_VAR \
-    M("Atenção: variável '%s' na função '%s' não está sendo usada. Economize memória!\n", \
-      "Heads up: variable '%s' in function '%s' isn't being used. Save some memory, will ya!\n")
+    M("Atenção: variável '%s' na função '%s' não é lida em lugar nenhum, então saiu do programa e da forma de onda (#WAVE %s, dentro da função, a mantém).\n", \
+      "Heads up: variable '%s' in function '%s' is never read, so it's out of the program and the waveform (#WAVE %s, in the function, keeps it).\n")
 
 #define MSG_WARN_UNUSED_FUNCTION \
     M("Atenção: função '%s' não está sendo usada. Economize memória!\n", \
@@ -553,6 +554,10 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_ERR_DUP_TOAQUI \
     M("Erro na linha %d: #TOAQUI repetido (só pode um)\n", \
       "Error on line %d: duplicate #TOAQUI marker (only one allowed)\n")
+
+#define MSG_ERR_WAVE_NOT_VAR \
+    M("Erro na linha %d: #WAVE pede uma variável, e '%s' não é uma\n", \
+      "Error on line %d: #WAVE takes a variable, and '%s' isn't one\n")
 
 #define MSG_INFO_TOAQUI \
     M("Info na linha %d: marcador #TOAQUI registrado (aciona o pino cheguei)\n", \

@@ -6,14 +6,11 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-#SHARE firstHit_limit add5_a
-#SHARE nestedFind_target add5_a
+#SHARE nestedFind_target firstHit_limit
 #SHARE nestedFind_a firstHit_k
-#SHARE classify_x add5_a
-#SHARE maybe_x add5_a
+#SHARE maybe_x firstHit_limit
 JMP main
-@add5 SET add5_a
-ADD 5
+@add5 ADD 5
 RET
 @firstHit SET firstHit_limit
 LOD 0
@@ -57,8 +54,7 @@ LES 4
 JIZ __Lwh2
 @__Lwh2end LOD 0
 RET
-@classify SET classify_x
-ADD -1
+@classify ADD -1
 JIZ __sw_body_1_1
 ADD -1
 JIZ __sw_body_1_2
