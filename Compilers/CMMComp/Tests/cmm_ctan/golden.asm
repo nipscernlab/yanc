@@ -14,16 +14,16 @@ NOP
 #SHARE main_c __ctan_tb
 #SHARE main_z __ctan_ta
 #SHARE main_z_i __ctan_tb
-#SHARE main_w __ctan_emb
+#SHARE main_w __ctan_ta
+#SHARE main_w_i __ctan_emb
 #SHARE __ctan_b __ctan_tb
-#SHARE __sin_x main_w_i
 #SHARE __sin_q __ctan_emb
 #SHARE __sin_k __ctan_emb
-#SHARE __sin_r main_w_i
-#SHARE __sin_p main_w_i
+#SHARE __sin_r __sin_x
+#SHARE __sin_p __sin_x
 #SHARE __exp_x __ctan_emb
-#SHARE __exp_q main_w_i
-#SHARE __exp_n main_w_i
+#SHARE __exp_q __sin_x
+#SHARE __exp_n __sin_x
 #SHARE __exp_r __ctan_emb
 @main @__Lwh1 LOD 0.0
 F_MLT 2.0
@@ -177,10 +177,8 @@ OUT 0
 LOD 0.5
 SET main_z
 SET main_z_i
-LOD 0.5
 SET main_w
 SET main_w_i
-LOD main_z
 F_ADD main_w
 P_LOD main_z_i
 F_ADD main_w_i

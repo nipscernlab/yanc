@@ -125,16 +125,20 @@ def run(inp):
     add(wrap(x + x)); add(wrap(x - y))
     add(ia[f2i(fl(Fr(2) + 1))])             # real part of (2+1i)+(1+0i), F2I
     addf(Fr(2)); addf(Fr(1)); addf(Fr(0))    # sqrt(4.0), exp(0.0), log(1.0)
+    # the push forms of the int unary operations, checked and not summed:
+    # (y*2) - f, plus f again, is y + y; s moves only on a mismatch
+    for f in (wrap(-x), abs(z), pst(z), nrm(x), inv(x), lin(x)):
+        if wrap(wrap(wrap(y * 2) - f) + f) != wrap(y + y): s = wrap(s + 4096)
     # both stacks 7 deep, checked and not summed: n1(x) = x + 7, then the
-    # right-nested subtraction chain = 4 * (x - y); s moves only on a mismatch
-    t = wrap(wrap(x + 4) - wrap(y + 4))
-    for k in (3, 2, 1):
-        t = wrap(wrap(y + k) - t)
-        t = wrap(wrap(x + k) - t)
+    # right-nested subtraction chain of products = 14 * (x - y)
+    t = wrap(wrap(x * 5) - wrap(y * 5))
+    for k in (4, 3, 2):
+        t = wrap(wrap(y * k) - t)
+        t = wrap(wrap(x * k) - t)
     n = x
     for _ in range(7): n = wrap(n + 1)       # n1 -> n7, each returns its argument + 1
     if n != wrap(x + 7): s = wrap(s + 1024)
-    if t != wrap(4 * wrap(x - y)): s = wrap(s + 2048)
+    if t != wrap(14 * wrap(x - y)): s = wrap(s + 2048)
     u = s % M                                # the fold works on the raw word (>> is logical)
     u ^= u >> 16; u ^= u >> 8; u ^= u >> 4
     return u & 15, terms

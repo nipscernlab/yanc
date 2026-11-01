@@ -21,7 +21,6 @@ GRE 9
 JIZ __Lwh1end
 LOD main_k
 OUT 0
-LOD main_k
 ADD 1
 SET main_k
 JMP __Lwh1
@@ -32,7 +31,6 @@ GRE 15
 JIZ __Lwh2end
 LOD main_k
 OUT 0
-LOD main_k
 ADD 1
 SET main_k
 JMP __Lwh2

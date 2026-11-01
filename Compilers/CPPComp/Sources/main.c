@@ -153,10 +153,14 @@ int main(int argc, char **argv)
         // a variable written and never read leaves the program
         int unread = asm_unread(outp, pc, NULL, NULL);
         if (unread > 0) lower_num_ins(tmp_dir, unread);
+        // an argument the called function never reads is not computed
+        int noarg = asm_callarg(outp, pc);
+        if (noarg > 0) lower_num_ins(tmp_dir, noarg);
     } else {
         asm_reach(outp, NULL);
         asm_divseq(outp, NULL);
         asm_unread(outp, NULL, NULL, NULL);
+        asm_callarg(outp, NULL);
     }
 
     // scalars never alive together share one data word (#SHARE lines ahead of

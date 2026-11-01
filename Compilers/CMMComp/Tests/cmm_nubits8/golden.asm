@@ -17,19 +17,18 @@ ADD main_a
 OUT 0
 NEG_M 112
 OUT 0
-NEG_M 80
-ADD main_a
-P_NEG_M 80
-ADD main_a
+LOD main_a
+ADD -80
+P_LOD main_a
+ADD -80
 S_MLT
 OUT 0
 NEG_M 128
 OUT 0
-NEG_M 36
+LOD main_a
+ADD -36
 ADD main_a
-P_NEG_M 36
-ADD main_a
-S_ADD
+ADD -36
 OUT 0
 NEG_M 128
 OUT 0

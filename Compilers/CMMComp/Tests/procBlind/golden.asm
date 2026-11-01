@@ -374,7 +374,6 @@ SET fista_x_ii
 JMP __Lwh19
 @__Lwh19end LOD 1.0
 SET fista_x_t
-LOD 0
 CAL lipschitz_x
 F_DIV 1.0
 NOP
@@ -387,11 +386,8 @@ SET fista_x_it
 @__Lwh20 LOD fista_x_it
 GRE 20
 JIZ __Lwh20end
-LOD 0
 CAL conv_zh
-LOD 0
 CAL residual_sub_y
-LOD 0
 CAL correlate_residual_h
 LOD 0
 SET fista_x_ii
@@ -462,22 +458,17 @@ ADD 1
 SET fista_x_it
 JMP __Lwh20
 @__Lwh20end RET
-@update_h LOD 0
-CAL project_h_hat
+@update_h CAL project_h_hat
 LOD 0
 SET update_h_it
 @__Lwh23 LOD update_h_it
 GRE 5
 JIZ __Lwh23end
-LOD 0
 CAL conv_xh
-LOD 0
 CAL residual_sub_y
-LOD 0
 CAL sum_residual_sq
 F_MLT 0.5
 SET update_h_dt
-LOD 0
 CAL correlate_residual_x
 LOD 0.0
 SET_V s_grad_h 3
@@ -520,13 +511,9 @@ LOD update_h_ii
 ADD 1
 SET update_h_ii
 JMP __Lwh26
-@__Lwh26end LOD 0
-CAL project_h_cand
-LOD 0
+@__Lwh26end CAL project_h_cand
 CAL conv_x_hcand
-LOD 0
 CAL residual_sub_y
-LOD 0
 CAL sum_residual_sq
 F_MLT 0.5
 SET update_h_cdt
@@ -571,8 +558,7 @@ JMP __Lwh28
 ADD 1
 SET update_h_it
 JMP __Lwh23
-@__Lwh23end LOD 0
-CAL project_h_hat
+@__Lwh23end CAL project_h_hat
 RET
 @fit LOD 0
 SET fit_ii
@@ -609,9 +595,7 @@ SET fit_it
 @__Lwh31 LOD fit_it
 GRE 40
 JIZ __Lwh31end
-LOD 0
 CAL fista_x
-LOD 0
 CAL update_h
 LOD fit_it
 ADD 1
@@ -635,8 +619,7 @@ LOD main_n
 ADD 1
 SET main_n
 JMP __Lwh32
-@__Lwh32end LOD 0
-CAL fit
+@__Lwh32end CAL fit
 LOD 0
 SET main_j
 @__Lwh33 LOD main_j

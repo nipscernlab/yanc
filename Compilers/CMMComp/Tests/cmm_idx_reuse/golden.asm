@@ -51,9 +51,8 @@ LOD 5
 SET_V mi 7
 LOD main_a
 MLT 4
-P_LOD main_b
+ADD main_b
 ADD 1
-S_ADD
 PSH
 LDI mi
 ADD 7
@@ -64,9 +63,8 @@ LOD 2.5
 SET_V mf 7
 LOD main_a
 MLT 4
-P_LOD main_b
+ADD main_b
 ADD 1
-S_ADD
 PSH
 LDI mf
 F_MLT 2.0
@@ -92,8 +90,7 @@ LOD main_a
 ADD main_b
 P_LOD main_a
 ADD main_b
-P_NEG_M 1
-S_ADD
+ADD -1
 LDI vi
 ADD 1
 STI vi

@@ -9,8 +9,9 @@
 // it still computes the same. Here: a comp written from the acc and never
 // read, in main and in a function; a comp whose real part only is read from
 // memory (both halves stay: asmcomp shows them joined); a parameter the
-// function never reads. #WAVE keeps a variable never read anyway, to see it
-// in the waveform: the global g and the local comp w stay, both halves of w.
+// function never reads, whose argument is not even computed (asm_callarg).
+// #WAVE keeps a variable never read anyway, to see it in the waveform: the
+// global g and the local comp w stay, both halves of w.
 //
 // z = 1+2i:
 //   u = z*(3+1i)            never read
@@ -19,6 +20,8 @@
 //   real(v)                                                    -> -3
 //   z = add_unread(z, 2+1i) (1+2i)+(2+1i) = 3+3i               -> 3 3
 //   one(5)                  its parameter never read, returns 7 -> 7
+//   one(k*3+1)              the argument is not computed (asm_callarg) -> 7
+//   one(one(2))             the inner call stays, its argument goes   -> 7
 //   g = 2.5, w = z*2        never read, kept by #WAVE
 
 float g;
@@ -52,6 +55,8 @@ void main()
     out(0, real(z));
     out(0, imag(z));
     out(0, one(5));
+    out(0, one(k*3+1));
+    out(0, one(one(2)));
     g = 2.5;
     w = z*2.0;
 }

@@ -387,7 +387,6 @@ OUT 0
 LOD 0.0
 SET main_c
 SET main_c_i
-LOD 0.0
 F_LES main_c
 JIZ __Lfa9a
 LOD main_c

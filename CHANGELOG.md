@@ -63,6 +63,9 @@ tags consumed by Aurora.
   issue #69). cmmcomp's warning says so and names `#WAVE`. 46 C± tests lost
   960 words (`sapho_all` 946 → 910, `procBlind` 620 → 605). Fixture
   `cmm_unread`. docs/design/unread-variables.md.
+- **The argument of a parameter never read is not computed**, in both
+  compilers (`asm_callarg`, issue #69): `procBlind` 605 → 588. Fixture
+  `cmm_unread`. docs/design/unread-variables.md.
 - **cmmcomp: a float divided by a literal can become a product.** By a
   power of two always (exact); by any other literal only when no other float
   division puts the divider in the processor, and then the result can differ
@@ -84,6 +87,15 @@ tags consumed by Aurora.
   shift whose value is computed after the vector shifts (`proc_rls` 235 →
   227), and a read at the index a store just computed, pushed with `PSH`
   instead of computed again (`procBlind` 624 → 620). Fixture `cmm_idx_reuse`.
+  Then a value the acc keeps through any number of `SET`s, where only two
+  were remembered (`ZeroCross` 126 → 117), and an int sum with a constant
+  kept in the acc: `a + (b - c)` is `(a + b) - c` and `x - 1` is `ADD -1`
+  (`ProcDTW` 245 → 237); then the mirror `(b - c) + a`, `x - (y + 1)` in
+  three words, and the acc kept through `OUT`, `PSH` and `SET_V`. Fixture
+  `cmm_int_reassoc`. `sapho_all` (and `_a`, `_b`) gained six checked terms
+  and a chain of products, so that the push forms of the int unary
+  operations and the 7-deep stacks the reductions had folded away are
+  still there; its LED table is the same (908 → 997 words).
 - **cmmcomp: the unrolled Dirac generators are gone** (step c of
   docs/design/dirac-expressions.md). The eleven `exec_*` routines that
   unrolled each Dirac form, 840 lines of `stdlib.c`, and the twenty messages

@@ -26,7 +26,6 @@ SET fft_istep
 LOD 0
 SET fft_m
 SET fft_ind
-LOD 0
 SET fft_sind
 @__Lwh2 LOD fft_mmax
 LES fft_m
@@ -109,7 +108,6 @@ LOD 0.0
 SET_V wpv_i 0
 LOD 0.7071067811
 SET_V wpv 1
-LOD 0.7071067811
 SET_V wpv_i 1
 LOD 0.0
 SET_V wpv 2

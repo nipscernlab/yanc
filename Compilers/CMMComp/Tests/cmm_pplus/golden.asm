@@ -50,11 +50,8 @@ LOD main_n
 OUT 0
 LOD 0
 SET_V a 0
-LOD 0
 SET_V a 1
-LOD 0
 SET_V a 2
-LOD 0
 SET_V a 3
 LOD 2
 SET main_j
@@ -187,11 +184,8 @@ OUT 0
 LOD 0
 SET main_n
 SET_V buf 0
-LOD 0
 SET_V buf 1
-LOD 0
 SET_V buf 2
-LOD main_n
 PSH
 ADD 1
 SET_P main_n
@@ -230,11 +224,8 @@ LOD main_k
 OUT 0
 LOD 0
 SET_V hist 0
-LOD 0
 SET_V hist 1
-LOD 0
 SET_V hist 2
-LOD 0
 SET_V hist 3
 LOD 1
 SET_V s 0

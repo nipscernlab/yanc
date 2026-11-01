@@ -1,0 +1,88 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// An int sum with a constant or a leaf kept in the acc (issue #69): every sign
+// of a + (b +- c) and a - (b +- c) with a computed, their mirror (b +- c) +- a,
+// x - (y + 1); a call whose last argument the function never reads (the
+// function starts with POP); and the acc list of names when it is full: a
+// value set into 34 variables in a row is still right after the oldest names
+// left the list.
+//
+// x = 6, y = 4, k = 3, j = 2, x*y = 24:
+//   x*y + (k + j)     24 + 5                  -> 29
+//   x*y + (k - j)     24 + 1                  -> 25
+//   x*y - (k + j)     24 - 5                  -> 19
+//   x*y - (k - j)     24 - 1                  -> 23
+//   x*y - (k - 1)     24 - 2                  -> 22
+//   x*y + (j - 7)     24 - 5                  -> 19
+//   (k - 1) + x*y     2 + 24                  -> 26
+//   (k + j) - x*y     5 - 24                  -> -19
+//   x - (y + 1)       6 - 5                   -> 1
+//   k - (j - 4)       3 - (-2)                -> 5
+//   g(x + 1, y * 3)   g returns 2a, b unread  -> 14
+//   v0 .. v33 = 9     v0 + v33                -> 18
+//   r = 9 after them                          -> 9
+
+int v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31, v32, v33;
+
+int g(int a, int b)
+{
+    return a * 2;
+}
+
+void main()
+{
+    int x, y, k, j, r;
+    x = 6; y = 4; k = 3; j = 2;
+    r = x*y + (k + j);  out(0, r);
+    r = x*y + (k - j);  out(0, r);
+    r = x*y - (k + j);  out(0, r);
+    r = x*y - (k - j);  out(0, r);
+    r = x*y - (k - 1);  out(0, r);
+    r = x*y + (j - 7);  out(0, r);
+    r = (k - 1) + x*y;  out(0, r);
+    r = (k + j) - x*y;  out(0, r);
+    r = x - (y + 1);    out(0, r);
+    r = k - (j - 4);    out(0, r);
+    out(0, g(x + 1, y * 3));
+    v0 = 9;
+    v1 = 9;
+    v2 = 9;
+    v3 = 9;
+    v4 = 9;
+    v5 = 9;
+    v6 = 9;
+    v7 = 9;
+    v8 = 9;
+    v9 = 9;
+    v10 = 9;
+    v11 = 9;
+    v12 = 9;
+    v13 = 9;
+    v14 = 9;
+    v15 = 9;
+    v16 = 9;
+    v17 = 9;
+    v18 = 9;
+    v19 = 9;
+    v20 = 9;
+    v21 = 9;
+    v22 = 9;
+    v23 = 9;
+    v24 = 9;
+    v25 = 9;
+    v26 = 9;
+    v27 = 9;
+    v28 = 9;
+    v29 = 9;
+    v30 = 9;
+    v31 = 9;
+    v32 = 9;
+    v33 = 9;
+    out(0, v0 + v33);
+    r = 9;
+    out(0, r);
+}

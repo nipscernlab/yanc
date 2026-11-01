@@ -52,16 +52,59 @@ static char last_str[256] = "";
 
 // Name of the variable/constant currently sitting in the accumulator, or "" when
 // unknown. A plain LOD/P_LOD/SET of an operand leaves that operand's value in the
-// acc; every other op clobbers it. add_instr drops a "LOD x" whenever acc_name is
-// already x (the acc holds it), which generalises the old "LOD x after SET x"
-// peephole. Cleared at every basic-block boundary alongside last_str.
-static char acc_name[600] = "";   // a name is up to 511 characters (v_table)
-static char acc_name2[600] = "";  // and the one before a SET: the acc holds both
+// acc; every other op clobbers it. add_instr drops a "LOD x" whenever x is among
+// acc_names (the acc holds it), which generalises the old "LOD x after SET x"
+// peephole. Cleared at every basic-block boundary alongside last_str. A SET
+// adds its name to the ones the acc already holds: after LOD 0.0; SET a; SET b;
+// SET c the acc is 0.0, a, b and c, and a fourth "LOD 0.0" is dropped too.
+#define ACC_NAMES 32
+static char acc_names[ACC_NAMES][600];   // a name is up to 511 characters (v_table)
+static int  acc_n = 0;                   // how many of them the acc holds
+
+static void acc_only(const char *name)   // the acc holds this one name ("": none)
+{
+    acc_n = 0;
+    if (name && name[0]) snprintf(acc_names[acc_n++], sizeof acc_names[0], "%s", name);
+}
+
+// a store leaves the acc as it is, but an element or an index key ("v[k]",
+// "[ii+j]") goes, since the store may write a word the key reads
+static void acc_drop_keys(void)
+{
+    int k = 0;
+    for (int i = 0; i < acc_n; i++)
+        if (!strchr(acc_names[i], '['))
+        {
+            if (k != i) strcpy(acc_names[k], acc_names[i]);
+            k++;
+        }
+    acc_n = k;
+}
+
+// a SET of `name`: the acc keeps what it held, and is `name` too
+static void acc_add(const char *name)
+{
+    acc_drop_keys();
+    int k = 0;
+    for (int i = 0; i < acc_n; i++)
+        if (strcmp(acc_names[i], name) != 0)
+        {
+            if (k != i) strcpy(acc_names[k], acc_names[i]);
+            k++;
+        }
+    acc_n = k;
+    if (acc_n == ACC_NAMES)              // full: the oldest goes
+    {
+        for (int i = 1; i < acc_n; i++) strcpy(acc_names[i - 1], acc_names[i]);
+        acc_n--;
+    }
+    snprintf(acc_names[acc_n++], sizeof acc_names[0], "%s", name);
+}
 
 void emit_peephole_reset(void)
 {
     last_str[0] = '\0';
-    acc_name[0] = acc_name2[0] = '\0';
+    acc_n = 0;
 }
 
 // True when the accumulator is known to currently hold variable `name`. Used by
@@ -69,7 +112,9 @@ void emit_peephole_reset(void)
 // acc-resident half first, so its LOD is dropped by the peephole above.
 int acc_holds(const char *name)
 {
-    return name && name[0] && (strcmp(acc_name, name) == 0 || strcmp(acc_name2, name) == 0);
+    if (!name || !name[0]) return 0;
+    for (int i = 0; i < acc_n; i++) if (strcmp(acc_names[i], name) == 0) return 1;
+    return 0;
 }
 
 // An indexed store (STI, ISI) leaves the stored value in the acc: the walker
@@ -80,7 +125,7 @@ int acc_holds(const char *name)
 void acc_holds_elem(const char *key)
 {
     if (strncmp(last_str, "STI ", 4) == 0 || strncmp(last_str, "ISI ", 4) == 0)
-        {snprintf(acc_name, sizeof acc_name, "%s", key); acc_name2[0] = '\0';}
+        acc_only(key);
 }
 
 // The index of an indexed store, computed into the acc: the walker names it
@@ -89,7 +134,7 @@ void acc_holds_elem(const char *key)
 // but a SET forgets the name, and a SET does too
 void acc_holds_index(const char *key)
 {
-    snprintf(acc_name, sizeof acc_name, "%s", key); acc_name2[0] = '\0';
+    acc_only(key);
 }
 
 // ----------------------------------------------------------------------------
@@ -269,6 +314,10 @@ void parse_end(char *prname, char *d_proc)
 	int  unread = asm_unread(asm_file, pc_file, unread_gone, unread_keep);
 	if  (unread > 0) num_ins -= unread;
 
+	// an argument the called function never reads is not computed
+	int  noarg = asm_callarg(asm_file, pc_file);
+	if  (noarg > 0) num_ins -= noarg;
+
 	// variables that are never alive at the same time share a data word ------
 
 	asm_share(asm_file);
@@ -345,12 +394,12 @@ void add_instr(char *inst, ...)
     // ------------------------------------------------------------------------
     // peephole: drop "LOD x" when the accumulator already holds x -------------
     // ------------------------------------------------------------------------
-    // acc_name tracks the operand currently in the acc: a plain LOD / P_LOD /
+    // acc_names track the operands currently in the acc: a plain LOD / P_LOD /
     // SET of an operand leaves its value there (SET stores acc to memory and
     // leaves acc unchanged -- instr_dec.v opcode 4 -> ula_op 0); every other op
-    // clobbers it. So a "LOD x" while acc_name == x is a no-op and is dropped.
+    // clobbers it. So a "LOD x" while x is among them is a no-op and is dropped.
     // This subsumes the old "LOD x after SET x" case. Only the plain LOD is
-    // dropped -- P_LOD also pushes, so it must always run. acc_name is cleared
+    // dropped -- P_LOD also pushes, so it must always run. acc_names are cleared
     // at every basic-block boundary (emit_peephole_reset), so the drop never
     // crosses a label or control-flow merge.
 
@@ -358,13 +407,13 @@ void add_instr(char *inst, ...)
     {
         char lod_var[600];
         if (sscanf(str + 4, "%599s", lod_var) == 1 && acc_holds(lod_var))
-            return;   // acc already holds it -- acc_name / last_str stay valid
+            return;   // acc already holds it -- acc_names / last_str stay valid
     }
 
     // an operation by its identity leaves the acc as it is: "ADD 0" (a matrix
     // index whose column is the constant 0), "MLT 1", and in float "F_ADD 0.0",
     // "F_SU1 0.0" (acc - 0) and "F_MLT 1.0" (the zero or unit part of a comp
-    // constant): nothing to emit, and acc_name stays
+    // constant): nothing to emit, and acc_names stay
     {
         char op[8], arg[8], more[2];
         if (sscanf(str, "%7s %7s %1s", op, arg, more) == 2 &&
@@ -398,17 +447,23 @@ void add_instr(char *inst, ...)
     if (find_opc("__float_exp" , str)) mac_add("fexp" );
     if (find_opc("__float_log" , str)) mac_add("flog" );
 
-    // track what is now in the accumulator: only a plain LOD / P_LOD / SET of an
-    // operand leaves that operand's value there; anything else clobbers it. A
-    // SET keeps the name before it too: after LOD y; SET y_n1 the acc is both
-    if      (strncmp(str, "SET ", 4) == 0)
-        { strcpy(acc_name2, strchr(acc_name, '[') ? "" : acc_name); sscanf(str + 4, "%599s", acc_name); }
-    else if (strncmp(str, "LOD ", 4) == 0)
-        { sscanf(str + 4, "%599s", acc_name); acc_name2[0] = '\0'; }
-    else if (strncmp(str, "P_LOD ", 6) == 0)
-        { sscanf(str + 6, "%599s", acc_name); acc_name2[0] = '\0'; }
+    // track what is now in the accumulator: a plain LOD / P_LOD / SET of an
+    // operand leaves that operand's value there, OUT, PSH and SET_V leave the
+    // acc as it is, anything else clobbers it. A SET keeps the names before it
+    // too: after LOD y; SET y_n1 the acc is both
+    char nm[600];
+    if      (strncmp(str, "SET ", 4) == 0 && sscanf(str + 4, "%599s", nm) == 1)
+        acc_add(nm);
+    else if (strncmp(str, "LOD ", 4) == 0 && sscanf(str + 4, "%599s", nm) == 1)
+        acc_only(nm);
+    else if (strncmp(str, "P_LOD ", 6) == 0 && sscanf(str + 6, "%599s", nm) == 1)
+        acc_only(nm);
+    else if (strncmp(str, "OUT ", 4) == 0 || strcmp(str, "PSH\n") == 0)
+        ;                                // they read the acc and leave it as it is
+    else if (strncmp(str, "SET_V ", 6) == 0)
+        acc_drop_keys();                 // an element store: as a SET, the keys go
     else
-        acc_name[0] = acc_name2[0] = '\0';
+        acc_n = 0;
 
     // remember this emit for the next peephole check
     strncpy(last_str, str, sizeof(last_str) - 1);

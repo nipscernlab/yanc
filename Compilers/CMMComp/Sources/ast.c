@@ -1076,6 +1076,53 @@ static expr ast_emit_expr_impl(expr_node *n)
                 }
             }
 
+            // a + (b ± c) and a - (b ± c) in int, b and c leaves: (a + b) ± c
+            // and (a - b) ∓ c, since an int sum wraps the same in any order.
+            // The parts are taken in the same order, a, b, c, and the partial
+            // sum stays in the acc instead of going to the stack: k*75 + (j-1)
+            // is ADD j; ADD -1, not P_NEG_M 1; ADD j; S_ADD. A leaf a gains
+            // only in a difference: x - (y + 1) is NEG_M y; ADD x; ADD -1
+            if (n->type == 1 && (n->op == OP_ADD || n->op == OP_SUB)
+                && (!is_expr_leaf(n->left) || n->op == OP_SUB)
+                && n->left->type == 1 && n->right->kind == EXPR_BINOP && n->right->type == 1
+                && (n->right->op == OP_ADD || n->right->op == OP_SUB)
+                && is_expr_leaf(n->right->left) && is_expr_leaf(n->right->right)
+                && n->right->left->type == 1 && n->right->right->type == 1)
+            {
+                // two new nodes over the same subtrees, which other trees may
+                // share (a matrix element's linear index): only the new ones go
+                expr_node *r  = n->right;
+                expr_node *ab = expr_binop(n->op, n->left, r->left);                       // a ± b
+                expr_node *t  = expr_binop(n->op == r->op ? OP_ADD : OP_SUB, ab, r->right);  // then ± c
+                ab->type = t->type = 1; ab->line = t->line = n->line;
+                expr e = ast_emit_expr(t);
+                ab->left = ab->right = t->left = t->right = NULL;
+                expr_free(ab); expr_free(t);
+                return e;
+            }
+
+            // the mirror, (b ± c) + a and (b ± c) - a, a computed: (a + b) ± c
+            // and (-a + b) ± c. Here a goes first, so only when computing it
+            // changes nothing b or c could read (no call, ++ or input)
+            if (n->type == 1 && (n->op == OP_ADD || n->op == OP_SUB)
+                && !is_expr_leaf(n->right) && n->right->type == 1 && !has_side_effect(n->right)
+                && n->left->kind == EXPR_BINOP && n->left->type == 1
+                && (n->left->op == OP_ADD || n->left->op == OP_SUB)
+                && is_expr_leaf(n->left->left) && is_expr_leaf(n->left->right)
+                && n->left->left->type == 1 && n->left->right->type == 1)
+            {
+                expr_node *l  = n->left;
+                expr_node *a  = n->op == OP_SUB ? expr_unop(OP_NEG, n->right) : n->right;  // ±a
+                expr_node *ab = expr_binop(OP_ADD, a, l->left);                            // ±a + b
+                expr_node *t  = expr_binop(l->op, ab, l->right);                           // then ± c
+                a->type = ab->type = t->type = 1; a->line = ab->line = t->line = n->line;
+                expr e = ast_emit_expr(t);
+                if (a != n->right) {a->left = NULL; expr_free(a);}
+                ab->left = ab->right = t->left = t->right = NULL;
+                expr_free(ab); expr_free(t);
+                return e;
+            }
+
             // Sethi-Ullman ordering: for a commutative int op, evaluate the
             // heavier subtree first so its result spends less time pushed on
             // the stack (fewer pushes / spills). a/b stay bound to left/right,

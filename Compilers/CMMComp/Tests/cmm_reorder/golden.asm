@@ -24,12 +24,10 @@ LOD 6
 SET main_h
 LOD main_c
 ADD main_d
-P_LOD main_e
+ADD main_e
 ADD main_f
-S_ADD
-P_LOD main_a
+ADD main_a
 ADD main_b
-S_ADD
 OUT 0
 LOD main_a
 ADD main_b

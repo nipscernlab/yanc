@@ -74,25 +74,22 @@ F2I_M main_w_i
 OUT 0
 LOD main_n2
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 LDI mi
 OUT 0
 LOD main_n2
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
 LOD main_n2
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 SET   __aux_var
 LDI mc
 P_LOD __aux_var
@@ -341,17 +338,15 @@ OUT 0
 LOD main_n2
 ADD main_z0
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 LDI mi
 OUT 0
 LOD main_n2
 ADD main_z0
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
@@ -359,9 +354,8 @@ OUT 0
 LOD main_n2
 ADD main_z0
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 SET   __aux_var
 LDI mc
 P_LOD __aux_var
@@ -625,21 +619,21 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD main_n3
+LOD 8
+ADD main_n3
 ADD main_z0
-ADD 8
 LDI mi
 OUT 0
-LOD main_n3
+LOD 8
+ADD main_n3
 ADD main_z0
-ADD 8
 LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
-LOD main_n3
+LOD 8
+ADD main_n3
 ADD main_z0
-ADD 8
 SET   __aux_var
 LDI mc
 P_LOD __aux_var
@@ -2533,17 +2527,15 @@ F2I_M main_w_i
 OUT 0
 LOD main_n2
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 LDI mi
 ADD 1000
 OUT 0
 LOD main_n2
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -2551,9 +2543,8 @@ F2I_M main_y
 OUT 0
 LOD main_n2
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 SET   __aux_var
 LDI mc
 P_LOD __aux_var
@@ -2848,18 +2839,16 @@ OUT 0
 LOD main_n2
 ADD main_z0
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 LDI mi
 ADD 1000
 OUT 0
 LOD main_n2
 ADD main_z0
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -2868,9 +2857,8 @@ OUT 0
 LOD main_n2
 ADD main_z0
 MLT 4
-P_LOD main_n3
+ADD main_n3
 ADD main_z0
-S_ADD
 SET   __aux_var
 LDI mc
 P_LOD __aux_var
@@ -3180,23 +3168,23 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD main_n3
+LOD 8
+ADD main_n3
 ADD main_z0
-ADD 8
 LDI mi
 ADD 1000
 OUT 0
-LOD main_n3
+LOD 8
+ADD main_n3
 ADD main_z0
-ADD 8
 LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
-LOD main_n3
+LOD 8
+ADD main_n3
 ADD main_z0
-ADD 8
 SET   __aux_var
 LDI mc
 P_LOD __aux_var

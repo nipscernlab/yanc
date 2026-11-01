@@ -316,8 +316,7 @@ F_MLT main_e
 SF_ADD
 P_LOD main_n
 MLT 2
-P_NEG_M 3
-S_ADD
+ADD -3
 I2F
 SET_P __aux_var
 EQU 0.0
@@ -327,8 +326,7 @@ AND __aux_var1
 OUT 0
 LOD main_n
 MLT 2
-P_NEG_M 3
-S_ADD
+ADD -3
 P_LOD main_r
 F_MLT main_e
 P_LOD main_r_i
@@ -358,8 +356,7 @@ F_MLT main_e
 SF_ADD
 P_LOD main_n
 MLT 2
-P_NEG_M 2
-S_ADD
+ADD -2
 I2F
 SET_P __aux_var
 EQU 0.0
@@ -369,8 +366,7 @@ AND __aux_var1
 OUT 0
 LOD main_n
 MLT 2
-P_NEG_M 3
-S_ADD
+ADD -3
 I2F
 EQU main_r
 P_LOD main_r_i
@@ -379,8 +375,7 @@ S_AND
 OUT 0
 LOD main_n
 MLT 2
-P_NEG_M 3
-S_ADD
+ADD -3
 I2F
 EQU main_r
 P_LOD main_r_i
