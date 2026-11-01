@@ -82,7 +82,7 @@ cmm_tiny0  5
 cmm_tiny1  5
 cmm_tiny2  8
 cmm_trig   53
-cmm_unread 90
+cmm_unread 94
 ctrl_flow  103
 dirac_assign 149
 dirac_shapes 1857
@@ -109,7 +109,7 @@ pplus_arr  19
 proc_fft   222
 proc_rls   227
 proc_sim   91
-procBlind  605
+procBlind  588
 procBlindOpt 588
 ProcDTW    245
 ResetCheck 22

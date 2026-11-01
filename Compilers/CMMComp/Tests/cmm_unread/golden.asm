@@ -90,7 +90,11 @@ F2I_M main_z
 OUT 0
 F2I_M main_z_i
 OUT 0
-LOD 5
+CAL one
+OUT 0
+CAL one
+OUT 0
+CAL one
 CAL one
 OUT 0
 LOD 2.5

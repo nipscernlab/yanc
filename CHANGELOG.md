@@ -63,6 +63,9 @@ tags consumed by Aurora.
   issue #69). cmmcomp's warning says so and names `#WAVE`. 46 C± tests lost
   960 words (`sapho_all` 946 → 910, `procBlind` 620 → 605). Fixture
   `cmm_unread`. docs/design/unread-variables.md.
+- **The argument of a parameter never read is not computed**, in both
+  compilers (`asm_callarg`, issue #69): `procBlind` 605 → 588. Fixture
+  `cmm_unread`. docs/design/unread-variables.md.
 - **cmmcomp: a float divided by a literal can become a product.** By a
   power of two always (exact); by any other literal only when no other float
   division puts the divider in the processor, and then the result can differ

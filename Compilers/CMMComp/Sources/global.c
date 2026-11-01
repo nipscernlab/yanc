@@ -269,6 +269,10 @@ void parse_end(char *prname, char *d_proc)
 	int  unread = asm_unread(asm_file, pc_file, unread_gone, unread_keep);
 	if  (unread > 0) num_ins -= unread;
 
+	// an argument the called function never reads is not computed
+	int  noarg = asm_callarg(asm_file, pc_file);
+	if  (noarg > 0) num_ins -= noarg;
+
 	// variables that are never alive at the same time share a data word ------
 
 	asm_share(asm_file);

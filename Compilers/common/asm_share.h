@@ -93,6 +93,26 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
                int (*keep)(const char *name));
 
 // ****************************************************************************
+// asm_callarg -- no argument for a function that never reads it --------------
+// ****************************************************************************
+//
+// A function whose first instruction writes the acc without reading it (LOD,
+// a load from memory, ...) never sees the argument its caller left in the
+// acc: once asm_unread has taken out the SET of a parameter nothing reads, the
+// instructions before each CAL of that function that change only the acc
+// compute a value nobody uses, and they leave (their labels move to the next
+// instruction). Only for a function no JMP or JIZ reaches and nothing runs
+// into from the instruction above it. An instruction with any other effect (a
+// push, a pop, I/O, a call, a link, a divider) stays, and so does everything
+// before it. On a #ITRAD, or on anything the pass does not understand, it
+// leaves the file untouched.
+//
+// Run it after asm_unread. pc_path (may be NULL) loses the lines of the
+// dropped instructions. Returns how many dropped instructions the pc map
+// covered, -1 on an I/O error.
+int asm_callarg(const char *asm_path, const char *pc_path);
+
+// ****************************************************************************
 // asm_divk -- a division by a constant, or the product by its reciprocal ----
 // ****************************************************************************
 //
