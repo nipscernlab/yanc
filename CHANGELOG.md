@@ -80,7 +80,10 @@ tags consumed by Aurora.
   acc, a comparison with a literal, sums and products of comp variables and
   elements computed part by part, a matrix element with a computed column
   read and stored through one int index, and the read of an element just
-  stored (`ProcDTW` 266 → 245, `proc_fft` 227 → 222 words).
+  stored (`ProcDTW` 266 → 245, `proc_fft` 227 → 222 words). Then a Dirac
+  shift whose value is computed after the vector shifts (`proc_rls` 235 →
+  227), and a read at the index a store just computed, pushed with `PSH`
+  instead of computed again (`procBlind` 624 → 620). Fixture `cmm_idx_reuse`.
 - **cmmcomp: the unrolled Dirac generators are gone** (step c of
   docs/design/dirac-expressions.md). The eleven `exec_*` routines that
   unrolled each Dirac form, 840 lines of `stdlib.c`, and the twenty messages
