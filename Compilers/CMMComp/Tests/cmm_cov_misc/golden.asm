@@ -24,9 +24,6 @@ NOP
 #SHARE __dhf1_main main_m5
 #SHARE __dk0_main locals_w_i
 #SHARE main_y main_m5
-#SHARE __aux_var main_n2
-#SHARE __aux_var1 main_z0
-#SHARE __aux_var2 main_pa
 JMP main
 @locals #arrays locals_li 1 3 "li.txt"
 #arrays locals_lf 2 3 "lf.txt"
@@ -508,19 +505,15 @@ F_MLT main_one
 P_LOD main_cv_i
 F_MLT main_one_i
 SF_SU2
+P_LOD_V vc 2
+SF_ADD
 P_LOD main_cv
 F_MLT main_one_i
 P_LOD main_cv_i
 F_MLT main_one
 SF_ADD
-P_LOD_V vc 2
 P_LOD_V vc_i 2
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0

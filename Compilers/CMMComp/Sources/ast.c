@@ -742,64 +742,107 @@ static int has_side_effect(const expr_node *n)
     return has_side_effect(n->left) || has_side_effect(n->right);
 }
 
-// A sum or a difference of comps whose leaves are comp variables or comp array
-// elements with a variable or a literal index is computed part by part: the
-// real part as a float expression of the same shape over the leaves' real
-// parts, then the imaginary part over theirs. The real part ends on the stack
-// and the imaginary in the acc, the layout of a comp in the acc, and no comp is
-// set aside in memory between two operations. The operations are the ones the
-// comp forms do, in the same order, so the result has the same bits.
+// A comp expression of sums, differences and products whose leaves are comp
+// variables or comp array elements with a variable or a literal index (a
+// product's factors leaves themselves) is computed part by part: the real part
+// as a float expression over the leaves' parts, then the imaginary part. A sum
+// keeps its shape in each part; a product a*b is ar*br - ai*bi and ar*bi +
+// ai*br, the products and the order of oper_mult. The real part ends on the
+// stack and the imaginary in the acc, the layout of a comp in the acc, and no
+// comp is set aside in memory between two operations; the result has the bits
+// of the comp forms.
 #define PART_MAX 32
-static int part_orig[PART_MAX], part_id[PART_MAX], part_type[PART_MAX], part_isar[PART_MAX], part_siz2[PART_MAX], part_k;
+static int part_id[PART_MAX], part_type[PART_MAX], part_isar[PART_MAX], part_siz2[PART_MAX], part_k;
+static expr_node *part_made[3*PART_MAX]; static int part_n;
 
-static int comp_partwise(const expr_node *n, int *leaves)
+static int comp_part_leaf(const expr_node *n)
 {
-    if (n->kind == EXPR_BINOP && (n->op == OP_ADD || n->op == OP_SUB))
-        return comp_partwise(n->left, leaves) && comp_partwise(n->right, leaves);
-    if (++*leaves > PART_MAX) return 0;
     if (n->kind == EXPR_VAR) return v_table[n->id].type == 3 && v_table[n->id].isar == 0;
     if (n->kind == EXPR_ARRAY_INDEX)
         return v_table[n->id].type == 3 && is_expr_leaf(n->left) && (!n->right || is_expr_leaf(n->right));
     return 0;
 }
 
-// each leaf reads its part (v, or v_i) as a float, as real() and imag() of an
-// array element do; the v_table entries are kept to be put back
-static void comp_part_set(expr_node *n, int imag)
+static int var_indexed(const expr_node *n)
 {
-    n->emitted = 0;
-    if (n->kind == EXPR_BINOP) {n->type = 2; comp_part_set(n->left, imag); comp_part_set(n->right, imag); return;}
-    int id = n->id, part = imag ? get_img_id(id) : id, k = part_k++;
-    part_orig[k] = id; part_id[k] = part;
-    part_type[k] = v_table[part].type; part_isar[k] = v_table[part].isar; part_siz2[k] = v_table[part].siz2;
-    v_table[part].type = 2; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
-    v_table[id].used = 1;
-    n->id = part; n->type = 2;
-    if (n->left ) n->left ->emitted = 0;
-    if (n->right) n->right->emitted = 0;
+    return n->kind == EXPR_ARRAY_INDEX
+        && (n->left->kind != EXPR_LITERAL || (n->right && n->right->kind != EXPR_LITERAL));
 }
 
-static void comp_part_back(expr_node *n, int *k)
+// *leaves counts the leaves of one part's tree, each a v_table entry to put back
+static int comp_partwise(const expr_node *n, int *leaves)
 {
-    n->emitted = 0;
-    if (n->kind == EXPR_BINOP) {n->type = 3; comp_part_back(n->left, k); comp_part_back(n->right, k); return;}
-    n->id = part_orig[(*k)++]; n->type = 3;
+    if (n->kind == EXPR_BINOP && (n->op == OP_ADD || n->op == OP_SUB))
+        return comp_partwise(n->left, leaves) && comp_partwise(n->right, leaves);
+    // two elements indexed by a variable: each part loads the four indexes
+    // again, a word more than the product of the two comps (22 against 21)
+    if (n->kind == EXPR_BINOP && n->op == OP_MUL)
+        return comp_part_leaf(n->left) && comp_part_leaf(n->right) && (*leaves += 4) <= PART_MAX
+            && !(var_indexed(n->left) && var_indexed(n->right));
+    return comp_part_leaf(n) && ++*leaves <= PART_MAX;
+}
+
+static expr_node *part_node(const expr_node *from)
+{
+    expr_node *n = malloc(sizeof *n);
+    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    *n = *from; n->emitted = 0; n->rows = 1; n->cols = 1;
+    part_made[part_n++] = n;
+    return n;
+}
+
+static expr_node *part_bin(int op, expr_node *l, expr_node *r, const expr_node *at)
+{
+    expr_node t = *at; t.kind = EXPR_BINOP; t.op = op; t.type = 2; t.left = l; t.right = r;
+    t.args = NULL; t.n_args = 0;
+    return part_node(&t);
+}
+
+// a leaf reading its part (v, or v_i) as a float, as real() and imag() of an
+// array element do; the v_table entry is kept to be put back
+static expr_node *part_leaf(const expr_node *l, int imag)
+{
+    int id = l->id, part = imag ? get_img_id(id) : id, k = part_k++;
+    part_id[k] = part; part_type[k] = v_table[part].type; part_isar[k] = v_table[part].isar; part_siz2[k] = v_table[part].siz2;
+    v_table[part].type = 2; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
+    v_table[id].used = 1;
+    if (l->left ) l->left ->emitted = 0;
+    if (l->right) l->right->emitted = 0;
+    expr_node *n = part_node(l); n->id = part; n->type = 2;
+    return n;
+}
+
+static expr_node *part_tree(const expr_node *n, int imag)
+{
+    if (n->kind == EXPR_BINOP && n->op == OP_MUL)
+    {
+        const expr_node *a = n->left, *b = n->right;
+        if (!imag) return part_bin(OP_SUB, part_bin(OP_MUL, part_leaf(a, 0), part_leaf(b, 0), n),
+                                           part_bin(OP_MUL, part_leaf(a, 1), part_leaf(b, 1), n), n);
+        else       return part_bin(OP_ADD, part_bin(OP_MUL, part_leaf(a, 0), part_leaf(b, 1), n),
+                                           part_bin(OP_MUL, part_leaf(a, 1), part_leaf(b, 0), n), n);
+    }
+    if (n->kind == EXPR_BINOP)
+    {
+        expr_node *l = part_tree(n->left, imag);
+        return part_bin(n->op, l, part_tree(n->right, imag), n);
+    }
+    return part_leaf(n, imag);
 }
 
 // parts from..to (0 the real, 1 the imaginary): both, a comp in the acc; one,
-// the float of that part, which is all real() and imag() of the sum need
+// the float of that part, which is all real() and imag() of the expression need
 static expr comp_partwise_emit(expr_node *n, int from, int to)
 {
     for (int imag = from; imag <= to; imag++)
     {
-        part_k = 0;
-        comp_part_set(n, imag);
-        ast_emit_expr(n);
-        int k = 0; comp_part_back(n, &k);
-        for (k = part_k - 1; k >= 0; k--)
+        part_k = 0; part_n = 0;
+        ast_emit_expr(part_tree(n, imag));
+        for (int k = part_k - 1; k >= 0; k--)
         {
             v_table[part_id[k]].type = part_type[k]; v_table[part_id[k]].isar = part_isar[k]; v_table[part_id[k]].siz2 = part_siz2[k];
         }
+        for (int k = 0; k < part_n; k++) free(part_made[k]);
     }
     acc_ok = 1;
     return expr_make(from == to ? 2 : 3, 0);
@@ -910,7 +953,7 @@ static expr ast_emit_expr_impl(expr_node *n)
         case EXPR_BINOP: {
             {
                 int leaves = 0;
-                if (n->type == 3 && (n->op == OP_ADD || n->op == OP_SUB) && comp_partwise(n, &leaves))
+                if (n->type == 3 && (n->op == OP_ADD || n->op == OP_SUB || n->op == OP_MUL) && comp_partwise(n, &leaves))
                     return comp_partwise_emit(n, 0, 1);
             }
 
@@ -1091,26 +1134,8 @@ static expr ast_emit_expr_impl(expr_node *n)
                         v_table[id].used = 1;
                         return a;
                     }
-                    // a part of the product of two comp variables: only that part's
-                    // sum of products, in the order of oper_mult (the same bits)
-                    if (n->left->kind == EXPR_BINOP && n->left->op == OP_MUL
-                        && n->left->left ->kind == EXPR_VAR && v_table[n->left->left ->id].type == 3
-                        && n->left->right->kind == EXPR_VAR && v_table[n->left->right->id].type == 3)
-                    {
-                        int a = n->left->left->id, b = n->left->right->id;
-                        const char *ar = v_table[a].name, *ai = v_table[get_img_id(a)].name;
-                        const char *br = v_table[b].name, *bi = v_table[get_img_id(b)].name;
-                        v_table[a].used = 1; v_table[b].used = 1;
-                        int re = (n->op == OP_STD_REAL);
-                        add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", ar);
-                        add_instr("F_MLT %s\n", re ? br : bi);
-                        add_instr("P_LOD %s\n", ai);
-                        add_instr("F_MLT %s\n", re ? bi : br);
-                        add_instr(re ? "SF_SU2\n" : "SF_ADD\n");       // ar br - ai bi, or ar bi + ai br
-                        acc_ok = 1;
-                        return expr_make(2, 0);
-                    }
-                    // a part of a sum of comp variables and elements: only that part
+                    // a part of sums and products of comp variables and elements:
+                    // only that part
                     {
                         int leaves = 0, re = (n->op == OP_STD_REAL);
                         typecheck_expr(n->left);

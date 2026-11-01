@@ -1469,24 +1469,8 @@ expr oper_mult(expr e1, expr e2)
         add_instr("SF_ADD\n");
     }
 
-    // comp var with comp var
-    if ((e1.type==3) && (e1.id!=0) && (e2.type==3) && (e2.id!=0))
-    {
-        expr et1r, et1i; get_cmp_ets(e1,&et1r,&et1i);
-        expr et2r, et2i; get_cmp_ets(e2,&et2r,&et2i);
-
-        add_instr("%s %s\n", ld, v_table[et1r.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
-        add_instr("SF_SU2\n");
-
-        add_instr("P_LOD %s\n" , v_table[et1r.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
-        add_instr("SF_ADD\n");
-    }
+    // comp var with comp var: the walker computes it part by part (ast.c,
+    // comp_partwise), so it does not reach here
 
     // comp var with comp acc
     if ((e1.type==3) && (e1.id!=0) && (e2.type==3) && (e2.id==0))

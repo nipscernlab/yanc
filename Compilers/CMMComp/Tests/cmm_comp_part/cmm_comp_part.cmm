@@ -24,8 +24,14 @@
 //   imag(a*b)          =  4  ->  16
 //   real(zv[0]+zv[1])  =  4  ->  16   (only that part of the sum)
 //   imag(zv[0]+zv[1])  = -2  ->  -8
-//   real(zv[0]*zv[1])  = 11  ->  44   (a comp in the acc: (1+2i)(3-4i) = 11+2i)
+//   real(zv[0]*zv[1])  = 11  ->  44   (only that part of the product: (1+2i)(3-4i) = 11+2i)
 //   imag(zv[0]*zv[1])  =  2  ->   8
+// and of a comp in the acc, conj(b) = 3+2i, conj(a) = 1-2i:
+//   real(a + conj(b))       =  4  ->  16   (a variable with a comp in the acc)
+//   imag(conj(b) + a)       =  4  ->  16   (a comp in the acc with a variable)
+//   real(a - conj(b))       = -2  ->  -8
+//   real(conj(b) - a)       =  2  ->   8
+//   imag(conj(a) - conj(b)) = -4  -> -16   (two comps in the acc)
 
 void main()
 {
@@ -51,4 +57,9 @@ void main()
     y = imag(zv[0]+zv[1]);  fout(0, 4.0*y);
     y = real(zv[0]*zv[1]);  fout(0, 4.0*y);
     y = imag(zv[0]*zv[1]);  fout(0, 4.0*y);
+    y = real(a + conj(b));        fout(0, 4.0*y);
+    y = imag(conj(b) + a);        fout(0, 4.0*y);
+    y = real(a - conj(b));        fout(0, 4.0*y);
+    y = real(conj(b) - a);        fout(0, 4.0*y);
+    y = imag(conj(a) - conj(b));  fout(0, 4.0*y);
 }

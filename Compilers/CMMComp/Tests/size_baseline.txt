@@ -22,7 +22,7 @@ cmm_comp_div 119
 cmm_comp_fase 423
 cmm_comp_func 110
 cmm_comp_mix 254
-cmm_comp_part 160
+cmm_comp_part 203
 cmm_comp_zero 182
 cmm_comp_sqrt 152
 cmm_conj   57
@@ -31,8 +31,8 @@ cmm_cov_arr1d 2575
 cmm_cov_arr2d_rd 5477
 cmm_cov_arr2d_wr 9243
 cmm_cov_lib 10907
-cmm_cov_misc 498
-cmm_cov_ops 15767
+cmm_cov_misc 494
+cmm_cov_ops 15699
 cmm_cov_rest 2543
 cmm_csincos 186
 cmm_ctan   261

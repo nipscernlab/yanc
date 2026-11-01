@@ -12,7 +12,6 @@ NOP
 #SHARE __aux_var main_k
 #SHARE __aux_var1 main_a
 #SHARE __aux_var2 main_a_i
-#SHARE __aux_var3 main_b
 LOD 1
 SET main_k
 LOD 1.0
@@ -125,45 +124,88 @@ F_MLT main_y
 F2I
 OUT 0
 LOD_V main_zv 0
-P_LOD_V main_zv_i 0
 P_LOD_V main_zv 1
+SF_MLT
+P_LOD_V main_zv_i 0
 P_LOD_V main_zv_i 1
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-SET   __aux_var3
-F_MLT __aux_var1
-P_LOD __aux_var 
-F_MLT __aux_var2
+SF_MLT
 SF_SU2
-P_LOD __aux_var1
-F_MLT __aux_var2
-P_LOD __aux_var 
-F_MLT __aux_var3
-SF_ADD
-POP
 SET main_y
 LOD 4.0
 F_MLT main_y
 F2I
 OUT 0
 LOD_V main_zv 0
+P_LOD_V main_zv_i 1
+SF_MLT
 P_LOD_V main_zv_i 0
 P_LOD_V main_zv 1
-P_LOD_V main_zv_i 1
+SF_MLT
+SF_ADD
+SET main_y
+LOD 4.0
+F_MLT main_y
+F2I
+OUT 0
+LOD main_b
+PF_NEG_M main_b_i
+SET_P __aux_var
+F_ADD main_a
+P_LOD main_a_i
+F_ADD __aux_var
+POP
+SET main_y
+LOD 4.0
+F_MLT main_y
+F2I
+OUT 0
+LOD main_b
+PF_NEG_M main_b_i
+SET_P __aux_var
+F_ADD main_a
+P_LOD __aux_var
+F_ADD main_a_i
+SET_P __aux_var
+LOD   __aux_var
+SET main_y
+LOD 4.0
+F_MLT main_y
+F2I
+OUT 0
+LOD main_b
+PF_NEG_M main_b_i
+SET_P __aux_var
+F_SU2 main_a
+P_LOD main_a_i
+F_SU1 __aux_var
+POP
+SET main_y
+LOD 4.0
+F_MLT main_y
+F2I
+OUT 0
+LOD main_b
+PF_NEG_M main_b_i
+SET_P __aux_var
+F_SU1 main_a
+P_LOD __aux_var
+F_SU1 main_a_i
+POP
+SET main_y
+LOD 4.0
+F_MLT main_y
+F2I
+OUT 0
+LOD main_a
+PF_NEG_M main_a_i
+P_LOD main_b
+PF_NEG_M main_b_i
 SET_P __aux_var 
 SET_P __aux_var1
 SET_P __aux_var2
-SET   __aux_var3
-F_MLT __aux_var1
-P_LOD __aux_var 
-F_MLT __aux_var2
-SF_SU2
-P_LOD __aux_var1
-F_MLT __aux_var2
-P_LOD __aux_var 
-F_MLT __aux_var3
-SF_ADD
+F_SU1 __aux_var1
+P_LOD __aux_var2
+F_SU1 __aux_var 
 SET_P __aux_var
 LOD   __aux_var
 SET main_y
