@@ -1304,14 +1304,12 @@ ADD 1
 SET __dk0_main
 JIZ __Ld60e
 JMP __Ld60
-@__Ld60e LOD n
-ADD 1
-SET __aux_var
-LOD_V iv 1
+@__Ld60e LOD_V iv 1
 SET_V iv 2
 LOD_V iv 0
 SET_V iv 1
-LOD __aux_var
+LOD n
+ADD 1
 SET iv
 LOD 0
 SET k

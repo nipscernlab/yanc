@@ -2630,7 +2630,10 @@ expr exec_conj(expr e)
 // performs a shift register on the vector with the value given on the left, e.g. a # b -> |c>;
 // a and c must be the same vector
 // create a new array type for shift register?
-void exec_shift(int ida, expr eb, int idc)
+// later: the walker computes the value after the shift (it reads no element of
+// the vector), so eb carries only its type; the shift is emitted alone and
+// exec_shift_in stores the value, with no word set aside in __aux_var
+void exec_shift(int ida, expr eb, int idc, int later)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -2672,6 +2675,20 @@ void exec_shift(int ida, expr eb, int idc)
     // ------------------------------------------------------------------------
 
     printf(MSG_INFO_DIRAC_SHIFT, v_table[ida].name, line_num+1);
+
+    if (later)
+    {
+        if (v_table[ida].type == 1 && eb.type == 2)
+            fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name, fname));
+
+        for (int i = N-1; i > 0; i--)
+        {
+            add_instr("LOD_V %s %d\n", v_table[ida].name, i-1);
+            add_instr("SET_V %s %d\n", v_table[ida].name, i);
+        }
+        acc_ok = 0;
+        return;
+    }
 
     // ida int and etb int in memory
     if (v_table[ida].type == 1 && eb.type == 1 && eb.id != 0)
@@ -2777,5 +2794,22 @@ void exec_shift(int ida, expr eb, int idc)
         add_instr("SET %s\n", v_table[ida].name);
     }
 
+    acc_ok = 0;
+}
+
+// the value of a shift emitted with later, in the acc or in memory, into a[0]
+void exec_shift_in(int ida, expr e)
+{
+    // an int folded into a constant comes in memory; a float in memory goes
+    // through the acc (LOD, F2I), since the walker folds no float expression
+    if (e.id != 0 && v_table[ida].type == 2 && e.type == 1)
+        add_instr("I2F_M %s\n", v_table[e.id].name);
+    else
+    {
+        if (e.id != 0) add_instr("LOD %s\n", v_table[e.id].name);
+        if (v_table[ida].type == 2 && e.type == 1) add_instr("I2F\n");
+        if (v_table[ida].type == 1 && e.type == 2) add_instr("F2I\n");
+    }
+    add_instr("SET %s\n", v_table[ida].name);
     acc_ok = 0;
 }

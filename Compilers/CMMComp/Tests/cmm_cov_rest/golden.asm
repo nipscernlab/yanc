@@ -2312,7 +2312,40 @@ LOD_V si 2
 OUT 0
 LOD_V si 3
 OUT 0
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
 LOD gi
+ADD gz
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
+LOD 7
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
+CAL ret_i_i0
 ADD gz
 SET __aux_var
 LOD_V si 2
@@ -2347,6 +2380,25 @@ LOD_V si 2
 OUT 0
 LOD_V si 3
 OUT 0
+LOD_V si 2
+ADD gz
+SET __aux_var
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
+LOD __aux_var
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
 F2I_M gf
 SET __aux_var
 LOD_V si 2
@@ -2365,7 +2417,43 @@ LOD_V si 2
 OUT 0
 LOD_V si 3
 OUT 0
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
 LOD gf
+F_ADD gfz
+F2I
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
+F2I_M 2.5
+SET __aux_var
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
+LOD __aux_var
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
+CAL ret_f_f0
 F_ADD gfz
 F2I
 SET __aux_var
@@ -2385,15 +2473,15 @@ LOD_V si 2
 OUT 0
 LOD_V si 3
 OUT 0
-F2I_M 2.5
-SET __aux_var
 LOD_V si 2
 SET_V si 3
 LOD_V si 1
 SET_V si 2
 LOD_V si 0
 SET_V si 1
-LOD __aux_var
+LOD 1.5
+F_ADD 1.0
+F2I
 SET si
 LOD_V si 0
 OUT 0
@@ -2427,7 +2515,57 @@ LOD_V sf 3
 F_MLT 4.0
 F2I
 OUT 0
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
 LOD gi
+ADD gz
+I2F
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
+LOD 7.0
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+CAL ret_i_i0
 ADD gz
 SET __aux_var
 LOD_V sf 2
@@ -2502,7 +2640,56 @@ LOD_V sf 3
 F_MLT 4.0
 F2I
 OUT 0
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
 LOD gf
+F_ADD gfz
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
+LOD 2.5
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+CAL ret_f_f0
 F_ADD gfz
 SET __aux_var
 LOD_V sf 2
@@ -2535,7 +2722,35 @@ LOD_V sf 1
 SET_V sf 2
 LOD_V sf 0
 SET_V sf 1
-LOD 2.5
+LOD 1.5
+F_ADD 1.0
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_ADD gfz
+SET __aux_var
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
+LOD __aux_var
 SET sf
 LOD_V sf 0
 F_MLT 4.0

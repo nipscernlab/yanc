@@ -33,7 +33,7 @@ cmm_cov_arr2d_wr 9127
 cmm_cov_lib 10907
 cmm_cov_misc 494
 cmm_cov_ops 15699
-cmm_cov_rest 2543
+cmm_cov_rest 2758
 cmm_csincos 186
 cmm_ctan   261
 cmm_ctlforms 132
@@ -83,7 +83,7 @@ cmm_tiny2  8
 cmm_trig   53
 ctrl_flow  103
 dirac_assign 149
-dirac_shapes 1859
+dirac_shapes 1857
 empty_call 14
 fifo_w     35
 for_loop   78
@@ -105,7 +105,7 @@ lk_merge   11
 multiparam 28
 pplus_arr  19
 proc_fft   222
-proc_rls   235
+proc_rls   227
 proc_sim   91
 procBlind  624
 procBlindOpt 593

@@ -473,6 +473,13 @@ static int rhs_keeps(expr_node *n)
     }
 }
 
+// true when the variable or array id appears anywhere in the tree
+static int expr_reads(expr_node *n, int id)
+{
+    if (!n) return 0;
+    return n->id == id || expr_reads(n->left, id) || expr_reads(n->right, id);
+}
+
 // the name of an int or float array element for the acc peephole, "v[k]" or
 // "m[(k-1)][j]": built from the index trees when they hold only int literals,
 // scalar variables and operators, so that the same name means the same
@@ -1892,7 +1899,18 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_DIRAC_SHIFT:
-            exec_shift(n->id, ast_emit_expr(n->rhs), n->id2);
+            // a value computed in the acc that reads no element of the vector
+            // and writes no variable: the vector shifts first and the value
+            // goes straight into a[0], instead of waiting in __aux_var
+            typecheck_expr(n->rhs);
+            if (n->id == n->id2 && !is_expr_leaf(n->rhs) && rhs_keeps(n->rhs)
+                && !expr_reads(n->rhs, n->id) && (n->rhs->type == 1 || n->rhs->type == 2)
+                && v_table[n->id].isar == 1 && (v_table[n->id].type == 1 || v_table[n->id].type == 2))
+            {
+                exec_shift(n->id, expr_make(n->rhs->type, 0), n->id2, 1);
+                exec_shift_in(n->id, ast_emit_expr(n->rhs));
+            }
+            else exec_shift(n->id, ast_emit_expr(n->rhs), n->id2, 0);
             break;
 
         case STMT_VOID_CALL:
