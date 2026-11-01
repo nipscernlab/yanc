@@ -129,9 +129,8 @@ ADD main_ib
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD main_ib
+ADD main_ib
 ADD main_z0
-S_ADD
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -1089,9 +1088,8 @@ F2I
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD main_ia
+ADD main_ia
 ADD main_ib
-S_ADD
 OUT 0
 LOD main_pa
 ADD main_z0
@@ -1102,9 +1100,8 @@ S_ADD
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD main_ia
+ADD main_ia
 ADD 3
-S_ADD
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -1245,9 +1242,8 @@ S_ADD
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD main_ib
+ADD main_ib
 ADD main_z0
-S_ADD
 P_LOD main_pa
 ADD main_z0
 S_ADD
@@ -1405,9 +1401,8 @@ F2I
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD 101
+ADD 101
 ADD main_ib
-S_ADD
 OUT 0
 LOD main_pa
 ADD main_z0
@@ -1418,7 +1413,8 @@ S_ADD
 OUT 0
 LOD main_pa
 ADD main_z0
-ADD 104
+ADD 101
+ADD 3
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -2953,8 +2949,8 @@ ADD main_z0
 NEG
 ADD main_ia
 OUT 0
-NEG_M 3
-ADD main_ia
+LOD main_ia
+ADD -3
 OUT 0
 I2F_M main_ia
 F_SU1 main_fb
@@ -3036,15 +3032,14 @@ S_ADD
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD main_ib
-ADD main_z0
-NEG
+P_NEG_M main_ib
+S_ADD
+P_NEG_M main_z0
 S_ADD
 OUT 0
 LOD main_ia
 ADD main_z0
-P_NEG_M 3
-S_ADD
+ADD -3
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -3999,8 +3994,8 @@ F2I
 OUT 0
 LOD main_pa
 ADD main_z0
-P_NEG_M main_ib
 ADD main_ia
+P_NEG_M main_ib
 S_ADD
 OUT 0
 LOD main_pa
@@ -4013,9 +4008,8 @@ S_ADD
 OUT 0
 LOD main_pa
 ADD main_z0
-P_NEG_M 3
 ADD main_ia
-S_ADD
+ADD -3
 OUT 0
 LOD main_pf
 F_ADD main_fz
@@ -4157,9 +4151,9 @@ S_ADD
 OUT 0
 LOD main_ia
 ADD main_z0
-P_LOD main_ib
-ADD main_z0
-NEG
+P_NEG_M main_ib
+S_ADD
+P_NEG_M main_z0
 S_ADD
 P_LOD main_pa
 ADD main_z0
@@ -4169,8 +4163,7 @@ LOD main_pa
 ADD main_z0
 P_LOD main_ia
 ADD main_z0
-P_NEG_M 3
-S_ADD
+ADD -3
 S_ADD
 OUT 0
 LOD main_pf
@@ -4319,8 +4312,8 @@ F2I
 OUT 0
 LOD main_pa
 ADD main_z0
-P_NEG_M main_ib
 ADD 101
+P_NEG_M main_ib
 S_ADD
 OUT 0
 LOD main_pa
@@ -4333,7 +4326,8 @@ S_ADD
 OUT 0
 LOD main_pa
 ADD main_z0
-ADD 98
+ADD 101
+ADD -3
 OUT 0
 LOD main_pf
 F_ADD main_fz

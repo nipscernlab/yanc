@@ -35,8 +35,8 @@ SET_P main_z_i
 SET main_z
 P_LOD main_z_i
 CAL put
-NEG_M 1
-ADD main_n
+LOD main_n
+ADD -1
 I2F
 P_LOD 2.0
 SET_P main_z_i

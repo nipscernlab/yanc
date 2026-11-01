@@ -190,8 +190,7 @@ SET main_x
 F2I_M main_x
 OUT 0
 NEG_M 2147483647
-P_NEG_M 1
-S_ADD
+ADD -1
 SET main_k
 I2F_M main_k
 SET main_x

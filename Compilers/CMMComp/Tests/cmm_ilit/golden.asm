@@ -48,8 +48,7 @@ OUT 0
 @__switch_end_1 NEG_M 1
 OUT 0
 NEG_M 2147483647
-P_NEG_M 1
-S_ADD
+ADD -1
 OUT 0
 LOD_V b 0
 OUT 0

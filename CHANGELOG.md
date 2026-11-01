@@ -88,7 +88,9 @@ tags consumed by Aurora.
   227), and a read at the index a store just computed, pushed with `PSH`
   instead of computed again (`procBlind` 624 → 620). Fixture `cmm_idx_reuse`.
   Then a value the acc keeps through any number of `SET`s, where only two
-  were remembered (`ZeroCross` 126 → 117).
+  were remembered (`ZeroCross` 126 → 117), and an int sum with a constant
+  kept in the acc: `a + (b - c)` is `(a + b) - c` and `x - 1` is `ADD -1`
+  (`ProcDTW` 245 → 237).
 - **cmmcomp: the unrolled Dirac generators are gone** (step c of
   docs/design/dirac-expressions.md). The eleven `exec_*` routines that
   unrolled each Dirac form, 840 lines of `stdlib.c`, and the twenty messages

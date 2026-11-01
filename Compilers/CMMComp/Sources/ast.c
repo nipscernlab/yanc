@@ -1076,6 +1076,29 @@ static expr ast_emit_expr_impl(expr_node *n)
                 }
             }
 
+            // a + (b ± c) and a - (b ± c) in int, b and c leaves: (a + b) ± c
+            // and (a - b) ∓ c, since an int sum wraps the same in any order.
+            // The parts are taken in the same order, a, b, c, and the partial
+            // sum stays in the acc instead of going to the stack: k*75 + (j-1)
+            // is ADD j; ADD -1, not P_NEG_M 1; ADD j; S_ADD
+            if (n->type == 1 && (n->op == OP_ADD || n->op == OP_SUB) && !is_expr_leaf(n->left)
+                && n->left->type == 1 && n->right->kind == EXPR_BINOP && n->right->type == 1
+                && (n->right->op == OP_ADD || n->right->op == OP_SUB)
+                && is_expr_leaf(n->right->left) && is_expr_leaf(n->right->right)
+                && n->right->left->type == 1 && n->right->right->type == 1)
+            {
+                // two new nodes over the same subtrees, which other trees may
+                // share (a matrix element's linear index): only the new ones go
+                expr_node *r  = n->right;
+                expr_node *ab = expr_binop(n->op, n->left, r->left);                       // a ± b
+                expr_node *t  = expr_binop(n->op == r->op ? OP_ADD : OP_SUB, ab, r->right);  // then ± c
+                ab->type = t->type = 1; ab->line = t->line = n->line;
+                expr e = ast_emit_expr(t);
+                ab->left = ab->right = t->left = t->right = NULL;
+                expr_free(ab); expr_free(t);
+                return e;
+            }
+
             // Sethi-Ullman ordering: for a commutative int op, evaluate the
             // heavier subtree first so its result spends less time pushed on
             // the stack (fewer pushes / spills). a/b stay bound to left/right,
