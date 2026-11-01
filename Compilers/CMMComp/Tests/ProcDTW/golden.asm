@@ -8,14 +8,13 @@ NOP
 #array dtw 1 5625
 #array data_ref 1 75
 #array data 1 75
-#SHARE __aux_var cont
-#SHARE val_final menor
+#SHARE menor cont
 @main LOD 75
 SET len_ref
 LOD 0
 SET cont
-@__Lwh1 LOD 75
-LES cont
+@__Lwh1 LOD cont
+GRE 75
 JIZ __Lwh1end
 LOD cont
 P_LOD 0
@@ -38,8 +37,8 @@ INN 2
 SET len_data
 LOD 0
 SET cont
-@__Lwh2 LOD 75
-LES cont
+@__Lwh2 LOD cont
+GRE 75
 JIZ __Lwh2end
 LOD cont
 GRE len_data
@@ -71,10 +70,10 @@ OUT 2
 @__Lwh4 LOD len_ref
 LES j
 JIZ __Lwh4end
-LOD 0
-EQU k
-P_LOD 0
-EQU j
+LOD k
+EQU 0
+P_LOD j
+EQU 0
 S_LAN
 JIZ __Lif2else
 LOD  k
@@ -88,16 +87,12 @@ NEG
 S_ADD
 ABS
 STI dtw
-LOD k
-MLT 75
-ADD j
-LDI dtw
 OUT 2
 JMP __Lif2end
-@__Lif2else LOD 0
-EQU k
-P_LOD 0
-GRE j
+@__Lif2else LOD k
+EQU 0
+P_LOD j
+LES 0
 S_LAN
 JIZ __Lif3else
 LOD  k
@@ -110,23 +105,19 @@ LDI data_ref
 NEG
 S_ADD
 ABS
+P_LOD k
+MLT 75
 P_NEG_M 1
 ADD j
-P_LOD k
-MLT   75
 S_ADD
-LDI   dtw
+LDI dtw
 S_ADD
 STI dtw
-LOD k
-MLT 75
-ADD j
-LDI dtw
 OUT 2
-@__Lif3else @__Lif2end LOD 0
-GRE k
-P_LOD 0
-EQU j
+@__Lif3else @__Lif2end LOD k
+LES 0
+P_LOD j
+EQU 0
 S_LAN
 JIZ __Lif4else
 LOD  k
@@ -146,16 +137,12 @@ ADD j
 LDI dtw
 S_ADD
 STI dtw
-LOD k
-MLT 75
-ADD j
-LDI dtw
 OUT 2
 JMP __Lif4end
-@__Lif4else LOD 0
-GRE k
-P_LOD 0
-GRE j
+@__Lif4else LOD k
+LES 0
+P_LOD j
+LES 0
 S_LAN
 JIZ __Lif5else
 NEG_M 1
@@ -165,49 +152,46 @@ ADD j
 LDI dtw
 SET menor
 OUT 2
-NEG_M 1
+LOD k
+MLT 75
+P_NEG_M 1
 ADD j
-P_LOD k
-MLT   75
 S_ADD
-LDI   dtw
+LDI dtw
 GRE menor
 JIZ __Lif6else
-NEG_M 1
+LOD k
+MLT 75
+P_NEG_M 1
 ADD j
-P_LOD k
-MLT   75
 S_ADD
-LDI   dtw
+LDI dtw
 SET menor
 OUT 2
 @__Lif6else NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 OUT 2
 NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 GRE menor
 JIZ __Lif7else
 NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 SET menor
 OUT 2
 @__Lif7else LOD  k
@@ -222,10 +206,6 @@ S_ADD
 ABS
 ADD menor
 STI dtw
-LOD k
-MLT 75
-ADD j
-LDI dtw
 OUT 2
 @__Lif5else @__Lif4end LOD j
 ADD 1
@@ -237,29 +217,27 @@ SET k
 JMP __Lwh3
 @__Lwh3end NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 SET val_final
 NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 LES 36000
 JIZ __Lif8else
 LOD 0
 SET cont
 LOD len_data
 SET len_ref
-@__Lwh5 LOD 75
-LES cont
+@__Lwh5 LOD cont
+GRE 75
 JIZ __Lwh5end
 LOD cont
 P_LOD cont

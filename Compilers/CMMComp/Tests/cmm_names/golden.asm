@@ -21,7 +21,6 @@ LOD 4
 SET Lwh1
 LOD 2
 SET aux_var
-LOD 2
 SET pow_b
 LOD 0.5
 SET floor_x
@@ -34,8 +33,8 @@ SET fim
 #array g 2 2
 @main LOD 0
 SET main_k
-@__Lwh1 LOD 3
-LES main_k
+@__Lwh1 LOD main_k
+GRE 3
 JIZ __Lwh1end
 LOD main_k
 ADD 1
@@ -59,7 +58,6 @@ OUT 0
 LOD 2.0
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 LOD __pow_r

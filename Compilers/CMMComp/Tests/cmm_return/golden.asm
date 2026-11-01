@@ -70,8 +70,7 @@ RET
 @__sw_body_1_3 LOD 99
 RET
 @maybe SET maybe_x
-LOD 0
-EQU maybe_x
+EQU 0
 JIZ __Lif3else
 RET
 @__Lif3else LOD 500

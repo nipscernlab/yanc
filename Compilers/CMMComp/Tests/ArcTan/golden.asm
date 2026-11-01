@@ -57,8 +57,8 @@ RET
 #arrays main_a 2 1000 "atan_y.txt"
 LOD 0
 SET main_j
-@__Lwh1 LOD 1000
-LES main_j
+@__Lwh1 LOD main_j
+GRE 1000
 JIZ __Lwh1end
 LOD main_j
 LDI main_x
@@ -75,8 +75,8 @@ SET main_j
 JMP __Lwh1
 @__Lwh1end LOD 0
 SET main_j
-@__Lwh2 LOD 1000
-LES main_j
+@__Lwh2 LOD main_j
+GRE 1000
 JIZ fim
 LOD main_j
 LDI main_x

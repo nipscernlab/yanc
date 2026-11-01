@@ -25,8 +25,8 @@ RET
 SET main_x
 CAL live1
 SET main_y
-LOD 12345
-EQU main_x
+LOD main_x
+EQU 12345
 JIZ __Lif1else
 LOD main_y
 CAL rare

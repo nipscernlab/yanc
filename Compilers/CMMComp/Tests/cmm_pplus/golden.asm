@@ -188,7 +188,6 @@ LOD_V a 3
 OUT 0
 LOD 0
 SET main_n
-LOD 0
 SET_V buf 0
 LOD 0
 SET_V buf 1
@@ -216,7 +215,6 @@ LOD_V buf 2
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_r
 @__Lwh2 LOD main_k
 PSH
@@ -254,8 +252,8 @@ LOD 3
 SET_V s 5
 LOD 0
 SET main_j
-@__Lwh3 LOD 6
-LES main_j
+@__Lwh3 LOD main_j
+GRE 6
 JIZ __Lwh3end
 LOD main_j
 LDI s

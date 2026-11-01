@@ -24,9 +24,6 @@ NOP
 #SHARE __dhf1_main main_m5
 #SHARE __dk0_main locals_w_i
 #SHARE main_y main_m5
-#SHARE __aux_var main_n2
-#SHARE __aux_var1 main_z0
-#SHARE __aux_var2 main_pa
 JMP main
 @locals #arrays locals_li 1 3 "li.txt"
 #arrays locals_lf 2 3 "lf.txt"
@@ -107,7 +104,6 @@ SET main_x
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
 @__Lwh1 LOD main_k
 ADD 1
@@ -123,17 +119,15 @@ JMP __Lwh1
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
-@__Lwh2 LOD 5
-EQU main_k
+@__Lwh2 LOD main_k
+EQU 5
 LIN
 JIZ __Lwh2end
 LOD main_k
 ADD 1
 SET main_k
-LOD 3
-EQU main_k
+EQU 3
 JIZ __Lwh2
 LOD main_s
 ADD 10
@@ -143,7 +137,6 @@ JMP __Lwh2
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh3 LOD 2
 XOR main_k
@@ -160,7 +153,6 @@ JIZ __Lwh3
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
 @__Lwh4 LOD main_k
 ADD 1
@@ -171,8 +163,8 @@ JIZ __Lwh4cont
 LOD main_s
 ADD main_k
 SET main_s
-@__Lwh4cont LOD 4
-LES main_k
+@__Lwh4cont LOD main_k
+GRE 4
 JIZ __Lwh4end
 JMP __Lwh4
 @__Lwh4end LOD main_s
@@ -194,17 +186,15 @@ JMP __Lwh5
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
-@__Lwh6 LOD 5
-EQU main_k
+@__Lwh6 LOD main_k
+EQU 5
 LIN
 JIZ __Lwh6end
 LOD main_k
 ADD 1
 SET main_k
-LOD 3
-EQU main_k
+EQU 3
 JIZ __Lif5else
 LOD main_s
 ADD 100
@@ -218,10 +208,9 @@ JMP __Lwh6
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
-@__Lwh7 LOD 2
-EQU main_k
+@__Lwh7 LOD main_k
+EQU 2
 JIZ __Lif6else
 LOD main_s
 ADD 100
@@ -239,13 +228,12 @@ JIZ __Lwh7
 OUT 0
 LOD 0
 SET main_s
-LOD 0
 SET main_k
 @__Lwh8 LOD main_m5
 LES main_k
 JIZ __Lwh8end
-LOD 2
-EQU main_k
+LOD main_k
+EQU 2
 JIZ __Lif7else
 LOD main_s
 ADD 100
@@ -262,13 +250,11 @@ JMP __Lwh8
 OUT 0
 LOD 0
 SET main_k
-LOD 0
 SET main_s
 @__Lwh9 LOD main_k
 ADD 1
 SET main_k
-LOD 2
-EQU main_k
+EQU 2
 JIZ __Lif8else
 LOD main_s
 ADD 100
@@ -277,8 +263,8 @@ JMP __Lwh9cont
 @__Lif8else LOD main_s
 ADD main_k
 SET main_s
-@__Lwh9cont LOD 4
-LES main_k
+@__Lwh9cont LOD main_k
+GRE 4
 JIZ __Lwh9end
 JMP __Lwh9
 @__Lwh9end LOD main_s
@@ -519,19 +505,15 @@ F_MLT main_one
 P_LOD main_cv_i
 F_MLT main_one_i
 SF_SU2
+P_LOD_V vc 2
+SF_ADD
 P_LOD main_cv
 F_MLT main_one_i
 P_LOD main_cv_i
 F_MLT main_one
 SF_ADD
-P_LOD_V vc 2
 P_LOD_V vc_i 2
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0

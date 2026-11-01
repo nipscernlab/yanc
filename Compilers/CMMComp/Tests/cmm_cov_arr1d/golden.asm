@@ -39,7 +39,6 @@ LOD 3.7
 SET main_f3
 LOD 0.0
 SET main_fz
-LOD 0.0
 SET main_c0
 LOD 3.0
 SET main_c0_i
@@ -606,8 +605,6 @@ SET main_cv_i
 LOD main_n1
 P_LOD main_iv
 STI vi
-LOD main_n1
-LDI vi
 OUT 0
 LOD 301
 SET main_iv
@@ -731,8 +728,6 @@ SET main_cv_i
 LOD main_n3
 P_LOD main_fv
 STI vf
-LOD main_n3
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0
@@ -1114,8 +1109,6 @@ SET main_cv_i
 LOD main_n1
 P_LOD main_iv
 STI vi
-LOD main_n1
-LDI vi
 OUT 0
 LOD 325
 SET main_iv
@@ -1144,8 +1137,6 @@ LOD main_n3
 P_LOD main_iv
 ADD main_z0
 STI vi
-LOD main_n3
-LDI vi
 OUT 0
 LOD 327
 SET main_iv
@@ -1174,8 +1165,6 @@ SET main_cv_i
 LOD main_n2
 P_LOD 328
 STI vi
-LOD main_n2
-LDI vi
 OUT 0
 LOD 329
 SET main_iv
@@ -1203,8 +1192,6 @@ SET main_cv_i
 LOD main_n1
 P_F2I_M main_fv
 STI vi
-LOD main_n1
-LDI vi
 OUT 0
 LOD 331
 SET main_iv
@@ -1234,8 +1221,6 @@ P_LOD main_fv
 F_ADD main_fz
 F2I
 STI vi
-LOD main_n3
-LDI vi
 OUT 0
 LOD 333
 SET main_iv
@@ -1265,8 +1250,6 @@ SET main_cv_i
 LOD main_n2
 P_F2I_M 334.5
 STI vi
-LOD main_n2
-LDI vi
 OUT 0
 LOD 335
 SET main_iv
@@ -1294,8 +1277,6 @@ SET main_cv_i
 LOD main_n1
 P_F2I_M main_cv
 STI vi
-LOD main_n1
-LDI vi
 OUT 0
 LOD 337
 SET main_iv
@@ -1334,8 +1315,6 @@ SF_ADD
 POP
 F2I
 STI vi
-LOD main_n3
-LDI vi
 OUT 0
 LOD 339
 SET main_iv
@@ -1374,8 +1353,6 @@ SET main_cv_i
 LOD main_n2
 P_F2I_M 340.0
 STI vi
-LOD main_n2
-LDI vi
 OUT 0
 LOD 341
 SET main_iv
@@ -1403,8 +1380,6 @@ SET main_cv_i
 LOD main_n1
 P_I2F_M main_iv
 STI vf
-LOD main_n1
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0
@@ -1438,8 +1413,6 @@ P_LOD main_iv
 ADD main_z0
 I2F
 STI vf
-LOD main_n3
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0
@@ -1473,8 +1446,6 @@ SET main_cv_i
 LOD main_n2
 P_LOD 346.0
 STI vf
-LOD main_n2
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0
@@ -1506,8 +1477,6 @@ SET main_cv_i
 LOD main_n1
 P_LOD main_fv
 STI vf
-LOD main_n1
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0
@@ -1540,8 +1509,6 @@ LOD main_n3
 P_LOD main_fv
 F_ADD main_fz
 STI vf
-LOD main_n3
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0
@@ -1574,8 +1541,6 @@ SET main_cv_i
 LOD main_n2
 P_LOD 352.5
 STI vf
-LOD main_n2
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0
@@ -1607,8 +1572,6 @@ SET main_cv_i
 LOD main_n1
 P_LOD main_cv
 STI vf
-LOD main_n1
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0
@@ -1650,8 +1613,6 @@ F_MLT main_one
 SF_ADD
 POP
 STI vf
-LOD main_n3
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0
@@ -1693,8 +1654,6 @@ SET main_cv_i
 LOD main_n2
 P_LOD 358.0
 STI vf
-LOD main_n2
-LDI vf
 F_MLT 2.0
 F2I
 OUT 0

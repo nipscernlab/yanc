@@ -10,8 +10,8 @@ NOP
 #array x 1 8
 @main LOD 0
 SET main_k
-@__Lwh1 LOD 8
-LES main_k
+@__Lwh1 LOD main_k
+GRE 8
 JIZ __Lwh1end
 LOD main_k
 P_LOD main_k
@@ -22,8 +22,8 @@ SET main_k
 JMP __Lwh1
 @__Lwh1end LOD 0
 SET main_k
-@__Lwh2 LOD 8
-LES main_k
+@__Lwh2 LOD main_k
+GRE 8
 JIZ fim
 LOD main_k
 LDI x

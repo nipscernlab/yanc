@@ -16,8 +16,8 @@ LOD 4
 OUT 0
 LOD 5
 SET main_k
-@__Lwh1 LOD 9
-LES main_k
+@__Lwh1 LOD main_k
+GRE 9
 JIZ __Lwh1end
 LOD main_k
 OUT 0
@@ -27,8 +27,8 @@ SET main_k
 JMP __Lwh1
 @__Lwh1end LOD 11
 SET main_k
-@__Lwh2 LOD 15
-LES main_k
+@__Lwh2 LOD main_k
+GRE 15
 JIZ __Lwh2end
 LOD main_k
 OUT 0

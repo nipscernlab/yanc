@@ -6,19 +6,16 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-#SHARE main_f main_v
+#SHARE main_e main_v
 @main @__Lwh1 INN 0
 SET main_v
 SET main_a
-LOD main_v
 SET main_b
 LOD main_v
 SET main_c
-LOD main_v
 SET main_d
 LOD main_v
 SET main_e
-LOD main_v
 SET main_f
 LOD main_a
 OUT 0

@@ -202,7 +202,6 @@ LOD 2.0
 SET main_c
 LOD 0.0
 SET main_c_i
-LOD 0.0
 F_LES main_c
 JIZ __Lfa5a
 LOD main_c
@@ -249,7 +248,6 @@ LOD -2.0
 SET main_c
 LOD 0.0
 SET main_c_i
-LOD 0.0
 F_LES main_c
 JIZ __Lfa6a
 LOD main_c
@@ -388,7 +386,6 @@ F2I
 OUT 0
 LOD 0.0
 SET main_c
-LOD 0.0
 SET main_c_i
 LOD 0.0
 F_LES main_c

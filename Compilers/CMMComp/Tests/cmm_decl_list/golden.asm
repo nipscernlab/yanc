@@ -27,10 +27,9 @@ SET gz_i
 JMP main
 @soma LOD 0
 SET soma_n
-LOD 0
 SET soma_s
-@__Lwh1 LOD 3
-LES soma_n
+@__Lwh1 LOD soma_n
+GRE 3
 JIZ __Lwh1end
 LOD soma_n
 ADD 1

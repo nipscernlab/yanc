@@ -80,7 +80,6 @@ RET
 @main #ITRAD
 @__Lwh1 LOD 0
 SET s
-LOD 0
 SET main_w
 LOD 0
 SET_V ia 3
@@ -96,8 +95,8 @@ ADD 4096
 SET s
 @__Lif1else F_INN 0
 SET main_fx
-LOD 5
-LES main_x
+LOD main_x
+GRE 5
 JIZ __Lif2else
 LOD main_x
 ADD 8
@@ -845,9 +844,6 @@ LOD 7
 AND main_y
 P_LOD main_x
 STI ia
-LOD 7
-AND main_y
-LDI ia
 SET main_t
 LOD s
 ADD main_t
@@ -867,9 +863,6 @@ LOD 7
 AND main_y
 P_LOD main_fx
 STI fa
-LOD 7
-AND main_y
-LDI fa
 SET main_fw
 F_MLT 4194304.0
 F2I

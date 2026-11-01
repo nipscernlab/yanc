@@ -40,7 +40,6 @@ LOD 0.0
 SET main_one_i
 LOD 100.0
 SET main_pc
-LOD 100.0
 SET main_pc_i
 LOD main_ia
 ADD main_ib
@@ -710,15 +709,13 @@ F_MLT main_one
 P_LOD main_cb_i
 F_MLT main_one_i
 SF_SU2
+F_ADD main_ca
 P_LOD main_cb
 F_MLT main_one_i
 P_LOD main_cb_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-F_ADD main_ca
-P_LOD main_ca_i
-F_ADD __aux_var
+F_ADD main_ca_i
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -894,14 +891,12 @@ F_MLT main_one
 P_LOD main_ca_i
 F_MLT main_one_i
 SF_SU2
+F_ADD main_cb
 P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-F_ADD main_cb
-P_LOD __aux_var
 F_ADD main_cb_i
 SET_P main_w_i
 SET main_w
@@ -918,27 +913,23 @@ F_MLT main_one
 P_LOD main_ca_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_cb
+F_MLT main_one
+P_LOD main_cb_i
+F_MLT main_one_i
+SF_SU2
+SF_ADD
 P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
 P_LOD main_cb
-F_MLT main_one
-P_LOD main_cb_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_cb
 F_MLT main_one_i
 P_LOD main_cb_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -2251,21 +2242,17 @@ F_MLT main_one
 P_LOD main_pc_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_ca
+F_ADD main_cb
+SF_ADD
 P_LOD main_pc
 F_MLT main_one_i
 P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
-P_LOD main_ca
-F_ADD main_cb
 P_LOD main_ca_i
 F_ADD main_cb_i
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -2281,31 +2268,25 @@ F_MLT main_one
 P_LOD main_pc_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_cb
+F_MLT main_one
+P_LOD main_cb_i
+F_MLT main_one_i
+SF_SU2
+F_ADD main_ca
+SF_ADD
 P_LOD main_pc
 F_MLT main_one_i
 P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
 P_LOD main_cb
-F_MLT main_one
-P_LOD main_cb_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_cb
 F_MLT main_one_i
 P_LOD main_cb_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-F_ADD main_ca
-P_LOD main_ca_i
-F_ADD __aux_var
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD main_ca_i
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -2593,31 +2574,25 @@ F_MLT main_one
 P_LOD main_pc_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_ca
+F_MLT main_one
+P_LOD main_ca_i
+F_MLT main_one_i
+SF_SU2
+F_ADD main_cb
+SF_ADD
 P_LOD main_pc
 F_MLT main_one_i
 P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
 P_LOD main_ca
-F_MLT main_one
-P_LOD main_ca_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-F_ADD main_cb
-P_LOD __aux_var
 F_ADD main_cb_i
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -2633,43 +2608,35 @@ F_MLT main_one
 P_LOD main_pc_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_ca
+F_MLT main_one
+P_LOD main_ca_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_cb
+F_MLT main_one
+P_LOD main_cb_i
+F_MLT main_one_i
+SF_SU2
+SF_ADD
+SF_ADD
 P_LOD main_pc
 F_MLT main_one_i
 P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
 P_LOD main_ca
-F_MLT main_one
-P_LOD main_ca_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
 P_LOD main_cb
-F_MLT main_one
-P_LOD main_cb_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_cb
 F_MLT main_one_i
 P_LOD main_cb_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_ADD
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -3670,15 +3637,13 @@ F_MLT main_one
 P_LOD main_cb_i
 F_MLT main_one_i
 SF_SU2
+F_SU2 main_ca
 P_LOD main_cb
 F_MLT main_one_i
 P_LOD main_cb_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-F_SU2 main_ca
-P_LOD main_ca_i
-F_SU1 __aux_var
+F_SU2 main_ca_i
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -3854,14 +3819,12 @@ F_MLT main_one
 P_LOD main_ca_i
 F_MLT main_one_i
 SF_SU2
+F_SU1 main_cb
 P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-F_SU1 main_cb
-P_LOD __aux_var
 F_SU1 main_cb_i
 SET_P main_w_i
 SET main_w
@@ -3878,27 +3841,23 @@ F_MLT main_one
 P_LOD main_ca_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_cb
+F_MLT main_one
+P_LOD main_cb_i
+F_MLT main_one_i
+SF_SU2
+SF_SU2
 P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
 P_LOD main_cb
-F_MLT main_one
-P_LOD main_cb_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_cb
 F_MLT main_one_i
 P_LOD main_cb_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_SU1 __aux_var1
-P_LOD __aux_var2
-F_SU1 __aux_var 
+SF_SU2
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -5216,21 +5175,17 @@ F_MLT main_one
 P_LOD main_pc_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_ca
+F_SU1 main_cb
+SF_ADD
 P_LOD main_pc
 F_MLT main_one_i
 P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
-P_LOD main_ca
-F_SU1 main_cb
 P_LOD main_ca_i
 F_SU1 main_cb_i
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -5246,31 +5201,25 @@ F_MLT main_one
 P_LOD main_pc_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_cb
+F_MLT main_one
+P_LOD main_cb_i
+F_MLT main_one_i
+SF_SU2
+F_SU2 main_ca
+SF_ADD
 P_LOD main_pc
 F_MLT main_one_i
 P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
 P_LOD main_cb
-F_MLT main_one
-P_LOD main_cb_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_cb
 F_MLT main_one_i
 P_LOD main_cb_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-F_SU2 main_ca
-P_LOD main_ca_i
-F_SU1 __aux_var
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+F_SU2 main_ca_i
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -5558,31 +5507,25 @@ F_MLT main_one
 P_LOD main_pc_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_ca
+F_MLT main_one
+P_LOD main_ca_i
+F_MLT main_one_i
+SF_SU2
+F_SU1 main_cb
+SF_ADD
 P_LOD main_pc
 F_MLT main_one_i
 P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
 P_LOD main_ca
-F_MLT main_one
-P_LOD main_ca_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var
-F_SU1 main_cb
-P_LOD __aux_var
 F_SU1 main_cb_i
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -5598,43 +5541,35 @@ F_MLT main_one
 P_LOD main_pc_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_ca
+F_MLT main_one
+P_LOD main_ca_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_cb
+F_MLT main_one
+P_LOD main_cb_i
+F_MLT main_one_i
+SF_SU2
+SF_SU2
+SF_ADD
 P_LOD main_pc
 F_MLT main_one_i
 P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
 P_LOD main_ca
-F_MLT main_one
-P_LOD main_ca_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_ca
 F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
 P_LOD main_cb
-F_MLT main_one
-P_LOD main_cb_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_cb
 F_MLT main_one_i
 P_LOD main_cb_i
 F_MLT main_one
 SF_ADD
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_SU1 __aux_var1
-P_LOD __aux_var2
-F_SU1 __aux_var 
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_SU2
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -8295,27 +8230,23 @@ F_MLT main_one
 P_LOD main_pc_i
 F_MLT main_one_i
 SF_SU2
+P_LOD main_ca
+F_MLT main_cb
+P_LOD main_ca_i
+F_MLT main_cb_i
+SF_SU2
+SF_ADD
 P_LOD main_pc
 F_MLT main_one_i
 P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
 P_LOD main_ca
-F_MLT main_cb
-P_LOD main_ca_i
-F_MLT main_cb_i
-SF_SU2
-P_LOD main_ca
 F_MLT main_cb_i
 P_LOD main_ca_i
 F_MLT main_cb
 SF_ADD
-SET_P __aux_var 
-SET_P __aux_var1
-SET_P __aux_var2
-F_ADD __aux_var1
-P_LOD __aux_var2
-F_ADD __aux_var 
+SF_ADD
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -14092,30 +14023,30 @@ ADD main_z0
 LOR main_ia
 SET main_x
 OUT 0
-LOD 3
-LES main_ia
+LOD main_ia
+GRE 3
 SET main_x
 OUT 0
-LOD 3
-GRE main_ia
+LOD main_ia
+LES 3
 SET main_x
 OUT 0
-LOD 3
-GRE main_ia
+LOD main_ia
+LES 3
 LIN
 SET main_x
 OUT 0
-LOD 3
-LES main_ia
+LOD main_ia
+GRE 3
 LIN
 SET main_x
 OUT 0
-LOD 3
-EQU main_ia
+LOD main_ia
+EQU 3
 SET main_x
 OUT 0
-LOD 3
-EQU main_ia
+LOD main_ia
+EQU 3
 LIN
 SET main_x
 OUT 0
@@ -14689,30 +14620,30 @@ LOD 3
 LOR 101
 SET main_x
 OUT 0
-LOD 101.0
-F_GRE main_fb
+LOD main_fb
+F_LES 101.0
 SET main_x
 OUT 0
-LOD 101.0
-F_LES main_fb
+LOD main_fb
+F_GRE 101.0
 SET main_x
 OUT 0
-LOD 101.0
-F_LES main_fb
+LOD main_fb
+F_GRE 101.0
 LIN
 SET main_x
 OUT 0
-LOD 101.0
-F_GRE main_fb
+LOD main_fb
+F_LES 101.0
 LIN
 SET main_x
 OUT 0
-LOD 101.0
-EQU main_fb
+LOD main_fb
+EQU 101.0
 SET main_x
 OUT 0
-LOD 101.0
-EQU main_fb
+LOD main_fb
+EQU 101.0
 LIN
 SET main_x
 OUT 0
@@ -14900,30 +14831,30 @@ AND 8388607
 S_LOR
 SET main_x
 OUT 0
-LOD 3.0
-F_LES main_fa
+LOD main_fa
+F_GRE 3.0
 SET main_x
 OUT 0
-LOD 3.0
-F_GRE main_fa
+LOD main_fa
+F_LES 3.0
 SET main_x
 OUT 0
-LOD 3.0
-F_GRE main_fa
+LOD main_fa
+F_LES 3.0
 LIN
 SET main_x
 OUT 0
-LOD 3.0
-F_LES main_fa
+LOD main_fa
+F_GRE 3.0
 LIN
 SET main_x
 OUT 0
-LOD 3.0
-EQU main_fa
+LOD main_fa
+EQU 3.0
 SET main_x
 OUT 0
-LOD 3.0
-EQU main_fa
+LOD main_fa
+EQU 3.0
 LIN
 SET main_x
 OUT 0
@@ -15490,30 +15421,30 @@ AND 8388607
 S_LOR
 SET main_x
 OUT 0
-LOD 3.0
-F_LES 2.5
+LOD 2.5
+F_GRE 3.0
 SET main_x
 OUT 0
-LOD 3.0
-F_GRE 2.5
+LOD 2.5
+F_LES 3.0
 SET main_x
 OUT 0
-LOD 3.0
-F_GRE 2.5
+LOD 2.5
+F_LES 3.0
 LIN
 SET main_x
 OUT 0
-LOD 3.0
-F_LES 2.5
+LOD 2.5
+F_GRE 3.0
 LIN
 SET main_x
 OUT 0
-LOD 3.0
-EQU 2.5
+LOD 2.5
+EQU 3.0
 SET main_x
 OUT 0
-LOD 3.0
-EQU 2.5
+LOD 2.5
+EQU 3.0
 LIN
 SET main_x
 OUT 0
@@ -15529,30 +15460,30 @@ AND 8388607
 S_LOR
 SET main_x
 OUT 0
-LOD 2.5
-F_GRE main_fb
+LOD main_fb
+F_LES 2.5
 SET main_x
 OUT 0
-LOD 2.5
-F_LES main_fb
+LOD main_fb
+F_GRE 2.5
 SET main_x
 OUT 0
-LOD 2.5
-F_LES main_fb
+LOD main_fb
+F_GRE 2.5
 LIN
 SET main_x
 OUT 0
-LOD 2.5
-F_GRE main_fb
+LOD main_fb
+F_LES 2.5
 LIN
 SET main_x
 OUT 0
-LOD 2.5
-EQU main_fb
+LOD main_fb
+EQU 2.5
 SET main_x
 OUT 0
-LOD 2.5
-EQU main_fb
+LOD main_fb
+EQU 2.5
 LIN
 SET main_x
 OUT 0

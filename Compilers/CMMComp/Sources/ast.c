@@ -473,6 +473,40 @@ static int rhs_keeps(expr_node *n)
     }
 }
 
+// the name of an int or float array element for the acc peephole, "v[k]" or
+// "m[(k-1)][j]": built from the index trees when they hold only int literals,
+// scalar variables and operators, so that the same name means the same
+// element as long as no instruction runs between the store and the read
+// (global.c, acc_holds_elem). 0 when an index has any other node
+static int elem_key_tree(expr_node *e, char *b, size_t sz)
+{
+    size_t l = strlen(b);
+    if (!e || l + 1 >= sz) return 0;
+    if (e->kind == EXPR_LITERAL || (e->kind == EXPR_VAR && v_table[e->id].isar == 0))
+    {
+        if (e->kind == EXPR_LITERAL && v_table[e->id].type != 1) return 0;
+        snprintf(b + l, sz - l, "%s", v_table[e->id].name);
+        return strlen(b) + 1 < sz;
+    }
+    if (e->kind != EXPR_BINOP) return 0;
+    snprintf(b + l, sz - l, "(");
+    if (!elem_key_tree(e->left, b, sz)) return 0;
+    l = strlen(b); snprintf(b + l, sz - l, "#%d#", e->op);
+    if (!elem_key_tree(e->right, b, sz)) return 0;
+    l = strlen(b); snprintf(b + l, sz - l, ")");
+    return strlen(b) + 1 < sz;
+}
+
+static int elem_key(int id, expr_node *i1, expr_node *i2, char *b, size_t sz)
+{
+    if (v_table[id].type != 1 && v_table[id].type != 2) return 0;
+    snprintf(b, sz, "%s[", v_table[id].name);
+    if (!elem_key_tree(i1, b, sz)) return 0;
+    if (i2) { strncat(b, "][", sz - strlen(b) - 1); if (!elem_key_tree(i2, b, sz)) return 0; }
+    strncat(b, "]", sz - strlen(b) - 1);
+    return strlen(b) + 1 < sz;
+}
+
 static int is_const_true(expr_node *n)
 {
     return n && n->kind == EXPR_LITERAL && n->type == 1 && atoll(v_table[n->id].name) != 0;
@@ -742,6 +776,112 @@ static int has_side_effect(const expr_node *n)
     return has_side_effect(n->left) || has_side_effect(n->right);
 }
 
+// A comp expression of sums, differences and products whose leaves are comp
+// variables or comp array elements with a variable or a literal index (a
+// product's factors leaves themselves) is computed part by part: the real part
+// as a float expression over the leaves' parts, then the imaginary part. A sum
+// keeps its shape in each part; a product a*b is ar*br - ai*bi and ar*bi +
+// ai*br, the products and the order of oper_mult. The real part ends on the
+// stack and the imaginary in the acc, the layout of a comp in the acc, and no
+// comp is set aside in memory between two operations; the result has the bits
+// of the comp forms.
+#define PART_MAX 32
+static int part_id[PART_MAX], part_type[PART_MAX], part_isar[PART_MAX], part_siz2[PART_MAX], part_k;
+static expr_node *part_made[3*PART_MAX]; static int part_n;
+
+static int comp_part_leaf(const expr_node *n)
+{
+    if (n->kind == EXPR_VAR) return v_table[n->id].type == 3 && v_table[n->id].isar == 0;
+    if (n->kind == EXPR_ARRAY_INDEX)
+        return v_table[n->id].type == 3 && is_expr_leaf(n->left) && (!n->right || is_expr_leaf(n->right));
+    return 0;
+}
+
+static int var_indexed(const expr_node *n)
+{
+    return n->kind == EXPR_ARRAY_INDEX
+        && (n->left->kind != EXPR_LITERAL || (n->right && n->right->kind != EXPR_LITERAL));
+}
+
+// *leaves counts the leaves of one part's tree, each a v_table entry to put back
+static int comp_partwise(const expr_node *n, int *leaves)
+{
+    if (n->kind == EXPR_BINOP && (n->op == OP_ADD || n->op == OP_SUB))
+        return comp_partwise(n->left, leaves) && comp_partwise(n->right, leaves);
+    // two elements indexed by a variable: each part loads the four indexes
+    // again, a word more than the product of the two comps (22 against 21)
+    if (n->kind == EXPR_BINOP && n->op == OP_MUL)
+        return comp_part_leaf(n->left) && comp_part_leaf(n->right) && (*leaves += 4) <= PART_MAX
+            && !(var_indexed(n->left) && var_indexed(n->right));
+    return comp_part_leaf(n) && ++*leaves <= PART_MAX;
+}
+
+static expr_node *part_node(const expr_node *from)
+{
+    expr_node *n = malloc(sizeof *n);
+    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    *n = *from; n->emitted = 0; n->rows = 1; n->cols = 1;
+    part_made[part_n++] = n;
+    return n;
+}
+
+static expr_node *part_bin(int op, expr_node *l, expr_node *r, const expr_node *at)
+{
+    expr_node t = *at; t.kind = EXPR_BINOP; t.op = op; t.type = 2; t.left = l; t.right = r;
+    t.args = NULL; t.n_args = 0;
+    return part_node(&t);
+}
+
+// a leaf reading its part (v, or v_i) as a float, as real() and imag() of an
+// array element do; the v_table entry is kept to be put back
+static expr_node *part_leaf(const expr_node *l, int imag)
+{
+    int id = l->id, part = imag ? get_img_id(id) : id, k = part_k++;
+    part_id[k] = part; part_type[k] = v_table[part].type; part_isar[k] = v_table[part].isar; part_siz2[k] = v_table[part].siz2;
+    v_table[part].type = 2; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
+    v_table[id].used = 1;
+    if (l->left ) l->left ->emitted = 0;
+    if (l->right) l->right->emitted = 0;
+    expr_node *n = part_node(l); n->id = part; n->type = 2;
+    return n;
+}
+
+static expr_node *part_tree(const expr_node *n, int imag)
+{
+    if (n->kind == EXPR_BINOP && n->op == OP_MUL)
+    {
+        const expr_node *a = n->left, *b = n->right;
+        if (!imag) return part_bin(OP_SUB, part_bin(OP_MUL, part_leaf(a, 0), part_leaf(b, 0), n),
+                                           part_bin(OP_MUL, part_leaf(a, 1), part_leaf(b, 1), n), n);
+        else       return part_bin(OP_ADD, part_bin(OP_MUL, part_leaf(a, 0), part_leaf(b, 1), n),
+                                           part_bin(OP_MUL, part_leaf(a, 1), part_leaf(b, 0), n), n);
+    }
+    if (n->kind == EXPR_BINOP)
+    {
+        expr_node *l = part_tree(n->left, imag);
+        return part_bin(n->op, l, part_tree(n->right, imag), n);
+    }
+    return part_leaf(n, imag);
+}
+
+// parts from..to (0 the real, 1 the imaginary): both, a comp in the acc; one,
+// the float of that part, which is all real() and imag() of the expression need
+static expr comp_partwise_emit(expr_node *n, int from, int to)
+{
+    for (int imag = from; imag <= to; imag++)
+    {
+        part_k = 0; part_n = 0;
+        ast_emit_expr(part_tree(n, imag));
+        for (int k = part_k - 1; k >= 0; k--)
+        {
+            v_table[part_id[k]].type = part_type[k]; v_table[part_id[k]].isar = part_isar[k]; v_table[part_id[k]].siz2 = part_siz2[k];
+        }
+        for (int k = 0; k < part_n; k++) free(part_made[k]);
+    }
+    acc_ok = 1;
+    return expr_make(from == to ? 2 : 3, 0);
+}
+
 // Constant folding. const_eval recursively evaluates a subtree as a
 // compile-time int constant: it succeeds (returns 1, sets *val) only for an int
 // literal, or +/-/*/&/|/^ of foldable constants whose result -- AT EVERY LEVEL
@@ -845,6 +985,12 @@ static expr ast_emit_expr_impl(expr_node *n)
         case EXPR_VAR:     return id2exp (n->id);
 
         case EXPR_BINOP: {
+            {
+                int leaves = 0;
+                if (n->type == 3 && (n->op == OP_ADD || n->op == OP_SUB || n->op == OP_MUL) && comp_partwise(n, &leaves))
+                    return comp_partwise_emit(n, 0, 1);
+            }
+
             // Algebraic identity folding (constant operand drops out, surviving
             // subtree is emitted directly). Only fire when the surviving
             // operand's type matches the binop's result type - otherwise a
@@ -941,6 +1087,16 @@ static expr ast_emit_expr_impl(expr_node *n)
         }
 
         case EXPR_ARRAY_INDEX: {
+            // the element an indexed store has just left in the acc: no read
+            if (acc_ok == 0 && n->op == 0)
+            {
+                char key[600];
+                if (elem_key(n->id, n->left, n->right, key, sizeof key) && acc_holds(key))
+                {
+                    acc_ok = 1;
+                    return expr_make(v_table[n->id].type, 0);
+                }
+            }
             // Constant 1D forward index: read directly with LOD_V (offset
             // baked into the address), skipping the index materialise +
             // indirect LDI; a comp array reads both halves that way. Other
@@ -961,6 +1117,28 @@ static expr ast_emit_expr_impl(expr_node *n)
                 if (n->left->type == 1 && n->right->type == 1)
                     return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].siz2
                                                  + atoi(v_table[n->right->id].name), 2);
+            }
+            // a matrix element whose column index is computed: row * row length +
+            // column is one int expression, the column computed over the pushed
+            // row, and the element is read as from a vector; arr_2d_index would
+            // set the column aside in memory to multiply the row
+            if (n->right && !is_expr_leaf(n->right) && v_table[n->id].isar == 2)
+            {
+                typecheck_expr(n->left);
+                typecheck_expr(n->right);
+                if (n->left->type == 1 && n->right->type == 1)
+                {
+                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
+                    expr_node *s = expr_lit(1, exec_inum(b));
+                    expr_node *m = expr_binop(OP_MUL, n->left, s);
+                    expr_node *a = expr_binop(OP_ADD, m, n->right);
+                    expr e = ast_emit_expr(a);
+                    free(a); free(m); free(s);
+                    v_table[n->id].isar = 1;
+                    expr r = arr_1d2exp(n->id, e, 0);
+                    v_table[n->id].isar = 2;
+                    return r;
+                }
             }
             expr idx1 = ast_emit_expr(n->left);
             if (n->right) {
@@ -1022,24 +1200,13 @@ static expr ast_emit_expr_impl(expr_node *n)
                         v_table[id].used = 1;
                         return a;
                     }
-                    // a part of the product of two comp variables: only that part's
-                    // sum of products, in the order of oper_mult (the same bits)
-                    if (n->left->kind == EXPR_BINOP && n->left->op == OP_MUL
-                        && n->left->left ->kind == EXPR_VAR && v_table[n->left->left ->id].type == 3
-                        && n->left->right->kind == EXPR_VAR && v_table[n->left->right->id].type == 3)
+                    // a part of sums and products of comp variables and elements:
+                    // only that part
                     {
-                        int a = n->left->left->id, b = n->left->right->id;
-                        const char *ar = v_table[a].name, *ai = v_table[get_img_id(a)].name;
-                        const char *br = v_table[b].name, *bi = v_table[get_img_id(b)].name;
-                        v_table[a].used = 1; v_table[b].used = 1;
-                        int re = (n->op == OP_STD_REAL);
-                        add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", ar);
-                        add_instr("F_MLT %s\n", re ? br : bi);
-                        add_instr("P_LOD %s\n", ai);
-                        add_instr("F_MLT %s\n", re ? bi : br);
-                        add_instr(re ? "SF_SU2\n" : "SF_ADD\n");       // ar br - ai bi, or ar bi + ai br
-                        acc_ok = 1;
-                        return expr_make(2, 0);
+                        int leaves = 0, re = (n->op == OP_STD_REAL);
+                        typecheck_expr(n->left);
+                        if (n->left->kind == EXPR_BINOP && n->left->type == 3 && comp_partwise(n->left, &leaves))
+                            return comp_partwise_emit(n->left, !re, !re);
                     }
                     if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return exec_real(a); }
                     else                      { expr a = ast_emit_expr(n->left); return exec_imag(a); }
@@ -1663,9 +1830,29 @@ void stmt_emit(stmt_node *n)
             // then the walker on the RHS pushes that, computes the value,
             // and ass_array emits the indexed-store.
             if (n->idx2) {
-                expr i1 = ast_emit_expr(n->idx);   // first, as in EXPR_ARRAY_INDEX
-                expr i2 = ast_emit_expr(n->idx2);
-                arr_2d_index(n->id, i1, i2);
+                typecheck_expr(n->idx);
+                typecheck_expr(n->idx2);
+                // a computed column: row * row length + column as one int
+                // expression, as in EXPR_ARRAY_INDEX
+                if (!is_expr_leaf(n->idx2) && v_table[n->id].isar == 2
+                    && n->idx->type == 1 && n->idx2->type == 1)
+                {
+                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
+                    expr_node *s = expr_lit(1, exec_inum(b));
+                    expr_node *m = expr_binop(OP_MUL, n->idx, s);
+                    expr_node *a = expr_binop(OP_ADD, m, n->idx2);
+                    expr e = ast_emit_expr(a);
+                    free(a); free(m); free(s);
+                    v_table[n->id].isar = 1;
+                    arr_1d_index(n->id, e);
+                    v_table[n->id].isar = 2;
+                }
+                else
+                {
+                    expr i1 = ast_emit_expr(n->idx);   // first, as in EXPR_ARRAY_INDEX
+                    expr i2 = ast_emit_expr(n->idx2);
+                    arr_2d_index(n->id, i1, i2);
+                }
             }
             else arr_1d_index(n->id, ast_emit_expr(n->idx));
             // an int variable as the whole index, which the right-hand side
@@ -1674,6 +1861,13 @@ void stmt_emit(stmt_node *n)
                               && !v_table[n->idx->id].isar && rhs_keeps(n->rhs)) ? n->idx->id : 0;
             ass_array(n->id, ast_emit_expr(n->rhs), n->op);
             ass_idx_reload = 0;
+            // the store leaves the element in the acc: a read of it right
+            // after takes the acc, when the right-hand side changed no index
+            {
+                char key[600];
+                if (n->op == 0 && rhs_keeps(n->rhs) && elem_key(n->id, n->idx, n->idx2, key, sizeof key))
+                    acc_holds_elem(key);
+            }
             break;
 
         case STMT_RETURN:

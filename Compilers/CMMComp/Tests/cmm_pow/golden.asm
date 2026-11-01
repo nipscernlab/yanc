@@ -24,7 +24,6 @@ NOP
 @main @__Lwh1 LOD 2.0
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 LOD __pow_r
@@ -38,7 +37,6 @@ SET __pow_b
 F_MLT __pow_b
 SET __pow_b
 SET __pow_r
-LOD __pow_b
 F_MLT __pow_b
 SET __pow_b
 F_MLT __pow_b

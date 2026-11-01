@@ -68,7 +68,11 @@ tags consumed by Aurora.
   constant with a zero part, minus a comp constant, `real()`/`imag()` of a
   comp array element or of a product of two comp variables, and a comp
   element stored at a variable index (`proc_fft` 289 → 227 words). Fixtures
-  `cmm_comp_zero`, `cmm_comp_part`.
+  `cmm_comp_zero`, `cmm_comp_part`. Then the variable a `SET` leaves in the
+  acc, a comparison with a literal, sums and products of comp variables and
+  elements computed part by part, a matrix element with a computed column
+  read and stored through one int index, and the read of an element just
+  stored (`ProcDTW` 266 → 245, `proc_fft` 227 → 222 words).
 - **cmmcomp: the unrolled Dirac generators are gone** (step c of
   docs/design/dirac-expressions.md). The eleven `exec_*` routines that
   unrolled each Dirac form, 840 lines of `stdlib.c`, and the twenty messages

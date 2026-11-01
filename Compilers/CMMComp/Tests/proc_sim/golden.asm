@@ -11,15 +11,12 @@ NOP
 #SHARE main_xl main_x
 LOD 0.0
 SET main_r1
-LOD 0.0
 SET main_r2
 LOD 0.0
 SET main_r3
-LOD 0.0
 SET main_r4
 LOD 0.0
 SET main_r5
-LOD 0.0
 SET main_r6
 LOD 0.0
 SET main_r7

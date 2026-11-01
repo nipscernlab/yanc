@@ -6,6 +6,7 @@ NOP
 #NUIOIN 1
 #NUIOOU 1
 #array m 1 12
+#SHARE __aux_var main_a
 #SHARE main_f main_a
 #SHARE main_k main_b
 #SHARE __switch_exp main_a
@@ -17,11 +18,10 @@ LOD 1
 SET main_b
 LOD main_a
 ADD 1
+MLT 4
 P_LOD main_b
 ADD 1
-SET_P __aux_var
-MLT   4
-ADD   __aux_var
+S_ADD
 P_LOD 7
 STI m
 LOD main_a

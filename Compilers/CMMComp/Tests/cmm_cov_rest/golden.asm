@@ -186,7 +186,6 @@ LOD 0.0
 SET main_one_i
 LOD 100.0
 SET main_pc
-LOD 100.0
 SET main_pc_i
 LOD gi
 SET main_x
@@ -1621,7 +1620,6 @@ LOD 0
 SET gi
 LOD 0.0
 SET gf
-LOD 0.0
 SET gc
 LOD 0.0
 SET gc_i
@@ -1780,7 +1778,6 @@ LOD 0
 SET gi
 LOD 0.0
 SET gf
-LOD 0.0
 SET gc
 LOD 0.0
 SET gc_i
@@ -1983,7 +1980,6 @@ LOD 0
 SET gi
 LOD 0.0
 SET gf
-LOD 0.0
 SET gc
 LOD 0.0
 SET gc_i
