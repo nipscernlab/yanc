@@ -13,8 +13,7 @@ OUT 0
 LOD main_k
 ADD 1
 SET main_k
-LOD 5
-LES main_k
+GRE 5
 JIZ __Lwh2end
 JMP __Lwh2
 @__Lwh2end LOD 0
@@ -25,8 +24,7 @@ OUT 0
 LOD main_k
 ADD 1
 SET main_k
-LOD 3
-LES main_k
+GRE 3
 JIZ __Lwh3end
 JMP __Lwh3
 @__Lwh3end LOD 0
@@ -40,8 +38,7 @@ OUT 0
 LOD main_k
 ADD 1
 SET main_k
-LOD 10
-LES main_k
+GRE 10
 JIZ __Lwh4end
 JMP __Lwh4
 @__Lwh4end LOD 0
@@ -55,8 +52,8 @@ JIZ __Lwh5cont
 LOD 40
 ADD main_k
 OUT 0
-@__Lwh5cont LOD 5
-LES main_k
+@__Lwh5cont LOD main_k
+GRE 5
 JIZ __Lwh5end
 JMP __Lwh5
 @__Lwh5end LOD 0
@@ -74,15 +71,13 @@ OUT 0
 LOD main_n
 ADD 1
 SET main_n
-LOD 5
-LES main_n
+GRE 5
 JIZ __Lwh7end
 JMP __Lwh7
 @__Lwh7end LOD main_k
 ADD 1
 SET main_k
-LOD 3
-LES main_k
+GRE 3
 JIZ __Lwh1
 JMP __Lwh6
 @__Lwh1end @fim JMP fim

@@ -20,8 +20,8 @@ LOD 5.0
 SET main_x
 LOD 0
 SET main_k
-@__Lwh1 LOD 40
-LES main_k
+@__Lwh1 LOD main_k
+GRE 40
 JIZ __Lwh1end
 LOD main_k
 ADD 1

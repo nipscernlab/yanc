@@ -95,8 +95,8 @@ ADD 4096
 SET s
 @__Lif1else F_INN 0
 SET main_fx
-LOD 5
-LES main_x
+LOD main_x
+GRE 5
 JIZ __Lif2else
 LOD main_x
 ADD 8

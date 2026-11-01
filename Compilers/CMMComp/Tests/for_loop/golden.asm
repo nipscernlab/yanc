@@ -60,8 +60,8 @@ LES 1
 JIZ __Lwh5
 @__Lwh5end LOD 0
 SET main_idx
-@__Lwh7 LOD 2
-LES main_idx
+@__Lwh7 LOD main_idx
+GRE 2
 JIZ __Lwh7end
 LOD 60
 ADD main_idx
@@ -72,8 +72,8 @@ SET main_idx
 JMP __Lwh7
 @__Lwh7end LOD 0
 SET main_idx
-@__Lwh8 LOD 2
-LES main_idx
+@__Lwh8 LOD main_idx
+GRE 2
 JIZ __Lwh8end
 LOD 70
 ADD main_idx

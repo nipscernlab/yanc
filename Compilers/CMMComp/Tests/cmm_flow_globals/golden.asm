@@ -19,16 +19,15 @@ LOD 7
 SET vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 JMP main
 @f SET f_x
-LOD 0
-GRE f_x
+LES 0
 JIZ __Lif1else
 LOD 1
 RET
 @__Lif1else LOD 2
 RET
 @__Lif1end @h SET h_x
-@__Lwh1 LOD 3
-GRE h_x
+@__Lwh1 LOD h_x
+LES 3
 JIZ __Lif2else
 LOD h_x
 RET

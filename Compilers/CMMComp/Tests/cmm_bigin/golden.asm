@@ -8,8 +8,8 @@ NOP
 #NUGAIN 128
 @main LOD 0
 SET main_k
-@__Lwh1 LOD 6
-LES main_k
+@__Lwh1 LOD main_k
+GRE 6
 JIZ fim
 INN 0
 SET main_x

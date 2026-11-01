@@ -123,15 +123,14 @@ OUT 0
 LOD 0
 SET main_k
 SET main_s
-@__Lwh2 LOD 5
-EQU main_k
+@__Lwh2 LOD main_k
+EQU 5
 LIN
 JIZ __Lwh2end
 LOD main_k
 ADD 1
 SET main_k
-LOD 3
-EQU main_k
+EQU 3
 JIZ __Lwh2
 LOD main_s
 ADD 10
@@ -167,8 +166,8 @@ JIZ __Lwh4cont
 LOD main_s
 ADD main_k
 SET main_s
-@__Lwh4cont LOD 4
-LES main_k
+@__Lwh4cont LOD main_k
+GRE 4
 JIZ __Lwh4end
 JMP __Lwh4
 @__Lwh4end LOD main_s
@@ -191,15 +190,14 @@ OUT 0
 LOD 0
 SET main_k
 SET main_s
-@__Lwh6 LOD 5
-EQU main_k
+@__Lwh6 LOD main_k
+EQU 5
 LIN
 JIZ __Lwh6end
 LOD main_k
 ADD 1
 SET main_k
-LOD 3
-EQU main_k
+EQU 3
 JIZ __Lif5else
 LOD main_s
 ADD 100
@@ -214,8 +212,8 @@ OUT 0
 LOD 0
 SET main_s
 SET main_k
-@__Lwh7 LOD 2
-EQU main_k
+@__Lwh7 LOD main_k
+EQU 2
 JIZ __Lif6else
 LOD main_s
 ADD 100
@@ -237,8 +235,8 @@ SET main_k
 @__Lwh8 LOD main_m5
 LES main_k
 JIZ __Lwh8end
-LOD 2
-EQU main_k
+LOD main_k
+EQU 2
 JIZ __Lif7else
 LOD main_s
 ADD 100
@@ -259,8 +257,7 @@ SET main_s
 @__Lwh9 LOD main_k
 ADD 1
 SET main_k
-LOD 2
-EQU main_k
+EQU 2
 JIZ __Lif8else
 LOD main_s
 ADD 100
@@ -269,8 +266,8 @@ JMP __Lwh9cont
 @__Lif8else LOD main_s
 ADD main_k
 SET main_s
-@__Lwh9cont LOD 4
-LES main_k
+@__Lwh9cont LOD main_k
+GRE 4
 JIZ __Lwh9end
 JMP __Lwh9
 @__Lwh9end LOD main_s

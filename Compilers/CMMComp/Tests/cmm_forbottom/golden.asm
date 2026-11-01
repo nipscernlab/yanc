@@ -91,8 +91,8 @@ LOD 0
 SET main_s
 LOD 5
 SET main_k
-@__Lwh7 LOD 3
-LES main_k
+@__Lwh7 LOD main_k
+GRE 3
 JIZ __Lwh7end
 LOD main_s
 ADD 100

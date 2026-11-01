@@ -33,8 +33,8 @@ SET fim
 #array g 2 2
 @main LOD 0
 SET main_k
-@__Lwh1 LOD 3
-LES main_k
+@__Lwh1 LOD main_k
+GRE 3
 JIZ __Lwh1end
 LOD main_k
 ADD 1

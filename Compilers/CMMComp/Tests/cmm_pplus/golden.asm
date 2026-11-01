@@ -252,8 +252,8 @@ LOD 3
 SET_V s 5
 LOD 0
 SET main_j
-@__Lwh3 LOD 6
-LES main_j
+@__Lwh3 LOD main_j
+GRE 6
 JIZ __Lwh3end
 LOD main_j
 LDI s

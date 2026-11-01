@@ -93,8 +93,7 @@ OUT 0
 @__Lwh2 LOD main_k
 ADD 1
 SET main_k
-LOD 7
-EQU main_k
+EQU 7
 JIZ __Lwh2
 @__Lwh2end LOD main_k
 OUT 0

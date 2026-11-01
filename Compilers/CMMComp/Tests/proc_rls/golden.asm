@@ -184,8 +184,8 @@ JIZ __Ld11e
 JMP __Ld11
 @__Ld11e LOD 0
 SET main_j
-@__Lwh1 LOD 20
-LES main_j
+@__Lwh1 LOD main_j
+GRE 20
 JIZ fim
 F_INN 0
 F_MLT 0.001

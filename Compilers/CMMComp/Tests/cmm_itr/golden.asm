@@ -14,8 +14,8 @@ SET n
 OUT 0
 LOD 0
 SET main_k
-@__Lwh1 LOD 3
-LES main_k
+@__Lwh1 LOD main_k
+GRE 3
 JIZ fim
 #TOAQUI
 LOD main_k
