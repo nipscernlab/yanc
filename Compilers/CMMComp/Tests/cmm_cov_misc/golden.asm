@@ -176,8 +176,8 @@ JIZ __Lwh5end
 LOD main_s
 ADD main_k
 SET main_s
-NEG_M 1
-ADD main_k
+LOD main_k
+ADD -1
 SET main_k
 JMP __Lwh5
 @__Lwh5end LOD main_s
@@ -482,9 +482,8 @@ OUT 0
 LOD main_n2
 OUT 0
 LOD_V ia3 2
-P_LOD main_pa
+ADD main_pa
 ADD main_z0
-S_ADD
 OUT 0
 LOD main_pf
 F_ADD main_fz

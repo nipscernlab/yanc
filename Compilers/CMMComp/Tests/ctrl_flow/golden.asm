@@ -55,8 +55,8 @@ JIZ __Lwh2end
 LOD 60
 ADD main_wc
 OUT 0
-NEG_M 1
-ADD main_wc
+LOD main_wc
+ADD -1
 SET main_wc
 JMP __Lwh2
 @__Lwh2end @__Lif9else LOD 2
@@ -68,8 +68,8 @@ JIZ __Lif10else
 LOD 70
 ADD main_ic
 OUT 0
-@__Lif10else NEG_M 1
-ADD main_ic
+@__Lif10else LOD main_ic
+ADD -1
 SET main_ic
 JMP __Lwh3
 @__Lwh3end LOD 2
@@ -85,12 +85,12 @@ MLT 10
 ADD 80
 ADD main_inner
 OUT 0
-NEG_M 1
-ADD main_inner
+LOD main_inner
+ADD -1
 SET main_inner
 JMP __Lwh5
-@__Lwh5end NEG_M 1
-ADD main_outer
+@__Lwh5end LOD main_outer
+ADD -1
 SET main_outer
 JMP __Lwh4
 @__Lwh4end LOD 5
@@ -103,8 +103,8 @@ JIZ __Lwh6end
 LOD 100
 ADD main_bc
 OUT 0
-NEG_M 1
-ADD main_bc
+LOD main_bc
+ADD -1
 SET main_bc
 JMP __Lwh6
 @__Lwh6end LOD 0

@@ -10,134 +10,134 @@
 #include "yanc_lang.h"
 
 // ---- what each mnemonic does to its operand and to the flow -----------------
-// A copy of five columns of isa.tsv (mnemonic, operand class, effect on the
-// word the operand names, flow, data stack); Scripts/check_isa.py holds it
-// to the table.
+// A copy of seven columns of isa.tsv (mnemonic, operand class, effect on the
+// word the operand names, flow, data stack, effect on the acc, I/O);
+// Scripts/check_isa.py holds it to the table.
 
-typedef struct { const char *mn, *cls, *opnd, *flow, *stk; } as_isa;
+typedef struct { const char *mn, *cls, *opnd, *flow, *stk, *acc, *io; } as_isa;
 
 static const as_isa isa[] = {
-    {"LOD", "data", "r", "-", "-"},
-    {"P_LOD", "data", "r", "-", "push"},
-    {"LDI", "data", "base_r", "-", "-"},
-    {"ILI", "data", "base_r", "-", "-"},
-    {"SET", "data", "w", "-", "-"},
-    {"SET_P", "data", "w", "-", "pop"},
-    {"STI", "data", "base_w", "-", "pop"},
-    {"ISI", "data", "base_w", "-", "pop"},
-    {"PSH", "none", "-", "-", "push"},
-    {"POP", "none", "-", "-", "pop"},
-    {"INN", "in", "-", "-", "-"},
-    {"F_INN", "in", "-", "-", "-"},
-    {"P_INN", "in", "-", "-", "push"},
-    {"PF_INN", "in", "-", "-", "push"},
-    {"OUT", "out", "-", "-", "-"},
-    {"JMP", "code", "-", "jmp", "-"},
-    {"JIZ", "code", "-", "jz", "-"},
-    {"CAL", "code", "-", "call", "-"},
-    {"RET", "none", "-", "ret", "-"},
-    {"TOM", "link", "-", "-", "-"},
-    {"CAD", "link", "-", "-", "-"},
-    {"ADD", "data", "r", "-", "-"},
-    {"S_ADD", "none", "-", "-", "pop"},
-    {"F_ADD", "data", "r", "-", "-"},
-    {"SF_ADD", "none", "-", "-", "pop"},
-    {"MLT", "data", "r", "-", "-"},
-    {"S_MLT", "none", "-", "-", "pop"},
-    {"F_MLT", "data", "r", "-", "-"},
-    {"SF_MLT", "none", "-", "-", "pop"},
-    {"DIV", "data", "r", "-", "-"},
-    {"S_DIV", "none", "-", "-", "pop"},
-    {"F_DIV", "data", "r", "-", "-"},
-    {"SF_DIV", "none", "-", "-", "pop"},
-    {"MOD", "data", "r", "-", "-"},
-    {"S_MOD", "none", "-", "-", "pop"},
-    {"SGN", "data", "r", "-", "-"},
-    {"S_SGN", "none", "-", "-", "pop"},
-    {"F_SGN", "data", "r", "-", "-"},
-    {"SF_SGN", "none", "-", "-", "pop"},
-    {"NEG", "none", "-", "-", "-"},
-    {"NEG_M", "data", "r", "-", "-"},
-    {"P_NEG_M", "data", "r", "-", "push"},
-    {"F_NEG", "none", "-", "-", "-"},
-    {"F_NEG_M", "data", "r", "-", "-"},
-    {"PF_NEG_M", "data", "r", "-", "push"},
-    {"ABS", "none", "-", "-", "-"},
-    {"ABS_M", "data", "r", "-", "-"},
-    {"P_ABS_M", "data", "r", "-", "push"},
-    {"F_ABS", "none", "-", "-", "-"},
-    {"F_ABS_M", "data", "r", "-", "-"},
-    {"PF_ABS_M", "data", "r", "-", "push"},
-    {"PST", "none", "-", "-", "-"},
-    {"PST_M", "data", "r", "-", "-"},
-    {"P_PST_M", "data", "r", "-", "push"},
-    {"F_PST", "none", "-", "-", "-"},
-    {"F_PST_M", "data", "r", "-", "-"},
-    {"PF_PST_M", "data", "r", "-", "push"},
-    {"NRM", "none", "-", "-", "-"},
-    {"NRM_M", "data", "r", "-", "-"},
-    {"P_NRM_M", "data", "r", "-", "push"},
-    {"I2F", "none", "-", "-", "-"},
-    {"I2F_M", "data", "r", "-", "-"},
-    {"P_I2F_M", "data", "r", "-", "push"},
-    {"F2I", "none", "-", "-", "-"},
-    {"F2I_M", "data", "r", "-", "-"},
-    {"P_F2I_M", "data", "r", "-", "push"},
-    {"AND", "data", "r", "-", "-"},
-    {"S_AND", "none", "-", "-", "pop"},
-    {"ORR", "data", "r", "-", "-"},
-    {"S_ORR", "none", "-", "-", "pop"},
-    {"XOR", "data", "r", "-", "-"},
-    {"S_XOR", "none", "-", "-", "pop"},
-    {"INV", "none", "-", "-", "-"},
-    {"INV_M", "data", "r", "-", "-"},
-    {"P_INV_M", "data", "r", "-", "push"},
-    {"LAN", "data", "r", "-", "-"},
-    {"S_LAN", "none", "-", "-", "pop"},
-    {"LOR", "data", "r", "-", "-"},
-    {"S_LOR", "none", "-", "-", "pop"},
-    {"LIN", "none", "-", "-", "-"},
-    {"LIN_M", "data", "r", "-", "-"},
-    {"P_LIN_M", "data", "r", "-", "push"},
-    {"LES", "data", "r", "-", "-"},
-    {"S_LES", "none", "-", "-", "pop"},
-    {"F_LES", "data", "r", "-", "-"},
-    {"SF_LES", "none", "-", "-", "pop"},
-    {"GRE", "data", "r", "-", "-"},
-    {"S_GRE", "none", "-", "-", "pop"},
-    {"F_GRE", "data", "r", "-", "-"},
-    {"SF_GRE", "none", "-", "-", "pop"},
-    {"EQU", "data", "r", "-", "-"},
-    {"S_EQU", "none", "-", "-", "pop"},
-    {"SHL", "data", "r", "-", "-"},
-    {"S_SHL", "none", "-", "-", "pop"},
-    {"SHR", "data", "r", "-", "-"},
-    {"S_SHR", "none", "-", "-", "pop"},
-    {"SRS", "data", "r", "-", "-"},
-    {"S_SRS", "none", "-", "-", "pop"},
-    {"NOP", "none", "-", "-", "-"},
-    {"F_ROT", "none", "-", "-", "-"},
-    {"F_SU1", "data", "r", "-", "-"},
-    {"F_SU2", "data", "r", "-", "-"},
-    {"SF_SU1", "none", "-", "-", "pop"},
-    {"SF_SU2", "none", "-", "-", "pop"},
-    {"F_SCL", "data", "r", "-", "-"},
-    {"SF_SCL", "none", "-", "-", "pop"},
-    {"XPO", "none", "-", "-", "-"},
-    {"XPO_M", "data", "r", "-", "-"},
-    {"LEA", "lea", "addr", "-", "-"},
-    {"LOD_V", "offset", "r", "-", "-"},
-    {"QUO", "none", "-", "-", "-"},
-    {"REM", "none", "-", "-", "-"},
-    {"F_QUO", "none", "-", "-", "-"},
-    {"P_LOD_V", "offset", "r", "-", "push"},
-    {"SET_V", "offset", "w", "-", "-"},
-    {"ADD_V", "offset", "r", "-", "-"},
-    {"F_ADD_V", "offset", "r", "-", "-"},
-    {"MLT_V", "offset", "r", "-", "-"},
-    {"F_MLT_V", "offset", "r", "-", "-"},
-    {"LDI_V", "offset", "base_r", "-", "-"},
-    {"STI_V", "offset", "base_w", "-", "pop"},
+    {"LOD", "data", "r", "-", "-", "w", "-"},
+    {"P_LOD", "data", "r", "-", "push", "rw", "-"},
+    {"LDI", "data", "base_r", "-", "-", "rw", "-"},
+    {"ILI", "data", "base_r", "-", "-", "rw", "-"},
+    {"SET", "data", "w", "-", "-", "r", "-"},
+    {"SET_P", "data", "w", "-", "pop", "rw", "-"},
+    {"STI", "data", "base_w", "-", "pop", "r", "-"},
+    {"ISI", "data", "base_w", "-", "pop", "r", "-"},
+    {"PSH", "none", "-", "-", "push", "r", "-"},
+    {"POP", "none", "-", "-", "pop", "w", "-"},
+    {"INN", "in", "-", "-", "-", "w", "in"},
+    {"F_INN", "in", "-", "-", "-", "w", "in"},
+    {"P_INN", "in", "-", "-", "push", "rw", "in"},
+    {"PF_INN", "in", "-", "-", "push", "rw", "in"},
+    {"OUT", "out", "-", "-", "-", "r", "out"},
+    {"JMP", "code", "-", "jmp", "-", "-", "-"},
+    {"JIZ", "code", "-", "jz", "-", "r", "-"},
+    {"CAL", "code", "-", "call", "-", "-", "-"},
+    {"RET", "none", "-", "ret", "-", "-", "-"},
+    {"TOM", "link", "-", "-", "-", "r", "-"},
+    {"CAD", "link", "-", "-", "-", "w", "-"},
+    {"ADD", "data", "r", "-", "-", "rw", "-"},
+    {"S_ADD", "none", "-", "-", "pop", "rw", "-"},
+    {"F_ADD", "data", "r", "-", "-", "rw", "-"},
+    {"SF_ADD", "none", "-", "-", "pop", "rw", "-"},
+    {"MLT", "data", "r", "-", "-", "rw", "-"},
+    {"S_MLT", "none", "-", "-", "pop", "rw", "-"},
+    {"F_MLT", "data", "r", "-", "-", "rw", "-"},
+    {"SF_MLT", "none", "-", "-", "pop", "rw", "-"},
+    {"DIV", "data", "r", "-", "-", "rw", "-"},
+    {"S_DIV", "none", "-", "-", "pop", "rw", "-"},
+    {"F_DIV", "data", "r", "-", "-", "rw", "-"},
+    {"SF_DIV", "none", "-", "-", "pop", "rw", "-"},
+    {"MOD", "data", "r", "-", "-", "rw", "-"},
+    {"S_MOD", "none", "-", "-", "pop", "rw", "-"},
+    {"SGN", "data", "r", "-", "-", "rw", "-"},
+    {"S_SGN", "none", "-", "-", "pop", "rw", "-"},
+    {"F_SGN", "data", "r", "-", "-", "rw", "-"},
+    {"SF_SGN", "none", "-", "-", "pop", "rw", "-"},
+    {"NEG", "none", "-", "-", "-", "rw", "-"},
+    {"NEG_M", "data", "r", "-", "-", "w", "-"},
+    {"P_NEG_M", "data", "r", "-", "push", "rw", "-"},
+    {"F_NEG", "none", "-", "-", "-", "rw", "-"},
+    {"F_NEG_M", "data", "r", "-", "-", "w", "-"},
+    {"PF_NEG_M", "data", "r", "-", "push", "rw", "-"},
+    {"ABS", "none", "-", "-", "-", "rw", "-"},
+    {"ABS_M", "data", "r", "-", "-", "w", "-"},
+    {"P_ABS_M", "data", "r", "-", "push", "rw", "-"},
+    {"F_ABS", "none", "-", "-", "-", "rw", "-"},
+    {"F_ABS_M", "data", "r", "-", "-", "w", "-"},
+    {"PF_ABS_M", "data", "r", "-", "push", "rw", "-"},
+    {"PST", "none", "-", "-", "-", "rw", "-"},
+    {"PST_M", "data", "r", "-", "-", "w", "-"},
+    {"P_PST_M", "data", "r", "-", "push", "rw", "-"},
+    {"F_PST", "none", "-", "-", "-", "rw", "-"},
+    {"F_PST_M", "data", "r", "-", "-", "w", "-"},
+    {"PF_PST_M", "data", "r", "-", "push", "rw", "-"},
+    {"NRM", "none", "-", "-", "-", "rw", "-"},
+    {"NRM_M", "data", "r", "-", "-", "w", "-"},
+    {"P_NRM_M", "data", "r", "-", "push", "rw", "-"},
+    {"I2F", "none", "-", "-", "-", "rw", "-"},
+    {"I2F_M", "data", "r", "-", "-", "w", "-"},
+    {"P_I2F_M", "data", "r", "-", "push", "rw", "-"},
+    {"F2I", "none", "-", "-", "-", "rw", "-"},
+    {"F2I_M", "data", "r", "-", "-", "w", "-"},
+    {"P_F2I_M", "data", "r", "-", "push", "rw", "-"},
+    {"AND", "data", "r", "-", "-", "rw", "-"},
+    {"S_AND", "none", "-", "-", "pop", "rw", "-"},
+    {"ORR", "data", "r", "-", "-", "rw", "-"},
+    {"S_ORR", "none", "-", "-", "pop", "rw", "-"},
+    {"XOR", "data", "r", "-", "-", "rw", "-"},
+    {"S_XOR", "none", "-", "-", "pop", "rw", "-"},
+    {"INV", "none", "-", "-", "-", "rw", "-"},
+    {"INV_M", "data", "r", "-", "-", "w", "-"},
+    {"P_INV_M", "data", "r", "-", "push", "rw", "-"},
+    {"LAN", "data", "r", "-", "-", "rw", "-"},
+    {"S_LAN", "none", "-", "-", "pop", "rw", "-"},
+    {"LOR", "data", "r", "-", "-", "rw", "-"},
+    {"S_LOR", "none", "-", "-", "pop", "rw", "-"},
+    {"LIN", "none", "-", "-", "-", "rw", "-"},
+    {"LIN_M", "data", "r", "-", "-", "w", "-"},
+    {"P_LIN_M", "data", "r", "-", "push", "rw", "-"},
+    {"LES", "data", "r", "-", "-", "rw", "-"},
+    {"S_LES", "none", "-", "-", "pop", "rw", "-"},
+    {"F_LES", "data", "r", "-", "-", "rw", "-"},
+    {"SF_LES", "none", "-", "-", "pop", "rw", "-"},
+    {"GRE", "data", "r", "-", "-", "rw", "-"},
+    {"S_GRE", "none", "-", "-", "pop", "rw", "-"},
+    {"F_GRE", "data", "r", "-", "-", "rw", "-"},
+    {"SF_GRE", "none", "-", "-", "pop", "rw", "-"},
+    {"EQU", "data", "r", "-", "-", "rw", "-"},
+    {"S_EQU", "none", "-", "-", "pop", "rw", "-"},
+    {"SHL", "data", "r", "-", "-", "rw", "-"},
+    {"S_SHL", "none", "-", "-", "pop", "rw", "-"},
+    {"SHR", "data", "r", "-", "-", "rw", "-"},
+    {"S_SHR", "none", "-", "-", "pop", "rw", "-"},
+    {"SRS", "data", "r", "-", "-", "rw", "-"},
+    {"S_SRS", "none", "-", "-", "pop", "rw", "-"},
+    {"NOP", "none", "-", "-", "-", "-", "-"},
+    {"F_ROT", "none", "-", "-", "-", "rw", "-"},
+    {"F_SU1", "data", "r", "-", "-", "rw", "-"},
+    {"F_SU2", "data", "r", "-", "-", "rw", "-"},
+    {"SF_SU1", "none", "-", "-", "pop", "rw", "-"},
+    {"SF_SU2", "none", "-", "-", "pop", "rw", "-"},
+    {"F_SCL", "data", "r", "-", "-", "rw", "-"},
+    {"SF_SCL", "none", "-", "-", "pop", "rw", "-"},
+    {"XPO", "none", "-", "-", "-", "rw", "-"},
+    {"XPO_M", "data", "r", "-", "-", "w", "-"},
+    {"LEA", "lea", "addr", "-", "-", "w", "-"},
+    {"LOD_V", "offset", "r", "-", "-", "w", "-"},
+    {"QUO", "none", "-", "-", "-", "w", "-"},
+    {"REM", "none", "-", "-", "-", "w", "-"},
+    {"F_QUO", "none", "-", "-", "-", "w", "-"},
+    {"P_LOD_V", "offset", "r", "-", "push", "rw", "-"},
+    {"SET_V", "offset", "w", "-", "-", "r", "-"},
+    {"ADD_V", "offset", "r", "-", "-", "rw", "-"},
+    {"F_ADD_V", "offset", "r", "-", "-", "rw", "-"},
+    {"MLT_V", "offset", "r", "-", "-", "rw", "-"},
+    {"F_MLT_V", "offset", "r", "-", "-", "rw", "-"},
+    {"LDI_V", "offset", "base_r", "-", "-", "rw", "-"},
+    {"STI_V", "offset", "base_w", "-", "pop", "r", "-"},
 };
 
 #define N_ISA ((int)(sizeof(isa) / sizeof(isa[0])))
@@ -1471,5 +1471,167 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
 done:
     free(set_of); free(ins_of); free(mn_at); free(is_set); free(rd); free(wr); free(out);
     st_free(&lines); st_free(&names); st_free(&pc);
+    return removed;
+}
+
+// ---- asm_callarg: no argument for a function that never reads it ------------
+// See asm_share.h.
+
+// the word that reads a divider's result (QUO, REM, F_QUO)
+static int div_read(const char *mn)
+{
+    return strcmp(mn, "QUO") == 0 || strcmp(mn, "REM") == 0 || strcmp(mn, "F_QUO") == 0;
+}
+
+// an instruction that changes nothing but the acc: no stack, flow, I/O, link,
+// divider, and no data word written
+static int acc_only(int op)
+{
+    const as_isa *d = &isa[op];
+    return (strcmp(d->acc, "w") == 0 || strcmp(d->acc, "rw") == 0) && strcmp(d->stk, "-") == 0
+        && strcmp(d->flow, "-") == 0 && strcmp(d->io, "-") == 0 && strcmp(d->cls, "link") != 0
+        && strcmp(d->opnd, "w") != 0 && strcmp(d->opnd, "base_w") != 0
+        && !asm_div_words(d->mn) && !div_read(d->mn);
+}
+
+// an instruction that writes the acc without reading it: what the acc held
+// before it is lost (a divider's read is left alone: it ends a sequence)
+static int acc_kills(int op)
+{
+    return strcmp(isa[op].acc, "w") == 0 && strcmp(isa[op].cls, "link") != 0 && !div_read(isa[op].mn);
+}
+
+int asm_callarg(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, labels = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    int  *op_of  = malloc((lines.n + 1) * sizeof(int));   // per line: its instruction's isa row (-1: none)
+    int  *mn_at  = malloc((lines.n + 1) * sizeof(int));   // per line: where its mnemonic starts
+    int  *tgt_of = malloc((lines.n + 1) * sizeof(int));   // per line: label a jump or call names (-1: none)
+    int  *ins_of = malloc((lines.n + 1) * sizeof(int));   // per line: its instruction index (-1: none)
+    char *dead   = calloc(lines.n + 1, 1);                 // per line: 1 if it leaves
+    char *jumped = NULL;                                   // per label: 1 if a JMP / JIZ names it
+    int  *at     = NULL;                                   // per label: the line it marks (-1: none)
+    int   acap = 0, jcap = 0, n = 0, ok = 1, removed = 0, drop = 0;
+
+    for (int ln = 0; ln < lines.n && ok; ln++)
+    {
+        char *text = lines.s[ln];
+        int   end  = (int)strlen(text);
+        char *cm   = strstr(text, "//");
+        if (cm) end = (int)(cm - text);
+        op_of[ln] = mn_at[ln] = tgt_of[ln] = ins_of[ln] = -1;
+
+        int ts[8], tl[8], nt = 0;
+        for (int p = 0; p < end && nt < 8; )
+        {
+            while (p < end && isspace((unsigned char)text[p])) p++;
+            if (p >= end) break;
+            ts[nt] = p;
+            while (p < end && !isspace((unsigned char)text[p])) p++;
+            tl[nt] = p - ts[nt]; nt++;
+        }
+        if (nt == 0) continue;
+        int  t = 0;
+        char tok[256];
+        for (; t < nt && text[ts[t]] == '@'; t++)
+        {
+            snprintf(tok, sizeof(tok), "%.*s", tl[t] - 1, text + ts[t] + 1);
+            int li = lab_add(&labels, &at, &acap, tok);
+            at[li] = ln;
+        }
+        if (t >= nt) { ok = 0; break; }                      // a label alone on its line: not ours to guess
+        if (text[ts[t]] == '#')
+        {
+            if (strncmp(text + ts[t], "#ITRAD", 6) == 0) ok = 0;   // a restart point: leave the file alone
+            continue;
+        }
+
+        snprintf(tok, sizeof(tok), "%.*s", tl[t], text + ts[t]);
+        int op = isa_find(tok);
+        if (op < 0) { ok = 0; break; }
+        op_of[ln] = op; mn_at[ln] = ts[t]; ins_of[ln] = n++;
+        if (strcmp(isa[op].cls, "code") == 0 && t + 1 < nt)
+        {
+            snprintf(tok, sizeof(tok), "%.*s", tl[t + 1], text + ts[t + 1]);
+            int li = lab_add(&labels, &at, &acap, tok);
+            tgt_of[ln] = li;
+            if (strcmp(isa[op].flow, "call") != 0)
+            {
+                if (li >= jcap) { int o = jcap; jumped = grow(jumped, &jcap, li, 1); memset(jumped + o, 0, jcap - o); }
+                jumped[li] = 1;
+            }
+        }
+    }
+    if (!ok) goto done;
+
+    // a call to a function whose first instruction writes the acc without
+    // reading it, reached only by calls: the instructions before the CAL that
+    // change only the acc compute an argument nobody reads
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        if (op_of[ln] < 0 || strcmp(isa[op_of[ln]].flow, "call") != 0 || tgt_of[ln] < 0) continue;
+        int li = tgt_of[ln];
+        if (li >= acap || at[li] < 0) continue;              // not a label of this file
+        if (li < jcap && jumped[li]) continue;
+        int entry = at[li];
+        if (op_of[entry] < 0 || !acc_kills(op_of[entry])) continue;
+        int prev = entry - 1;                                 // nothing may run into the function
+        while (prev >= 0 && op_of[prev] < 0) prev--;
+        if (prev >= 0 && strcmp(isa[op_of[prev]].flow, "jmp") != 0 && strcmp(isa[op_of[prev]].flow, "ret") != 0) continue;
+
+        for (int k = ln - 1; k >= 0 && op_of[k] >= 0 && !dead[k] && acc_only(op_of[k]); k--)
+        {
+            dead[k] = 1; drop++;
+        }
+    }
+    if (drop == 0) goto done;
+
+    if (pc_path)
+    {
+        FILE *fp = fopen(pc_path, "r");
+        if (fp) { read_lines(fp, &pc); fclose(fp); }
+    }
+
+    // rewrite: a line that leaves takes its labels to the next instruction
+    f = fopen(asm_path, "w");
+    if (!f) { removed = -1; goto done; }
+    char *gone = calloc(n + 1, 1);
+    char  lab[4096] = "";
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        char *text = lines.s[ln];
+        if (dead[ln])
+        {
+            size_t k = strlen(lab);
+            if (memchr(text, '@', mn_at[ln])) snprintf(lab + k, sizeof(lab) - k, "%.*s", mn_at[ln], text);
+            gone[ins_of[ln]] = 1;
+            continue;
+        }
+        if (op_of[ln] >= 0 && lab[0]) { fputs(lab, f); lab[0] = 0; }
+        fputs(text, f);
+    }
+    fclose(f);
+
+    if (pc.n > 0)
+    {
+        f = fopen(pc_path, "w");
+        if (f)
+        {
+            for (int i = 0; i < pc.n; i++) { if (i < n && gone[i]) removed++; else fputs(pc.s[i], f); }
+            fclose(f);
+        }
+    }
+    free(gone);
+    printf(yanc_lang_en ? "Info: %d instructions computing an argument never read removed\n"
+                        : "Info: %d instruções que calculavam um argumento nunca lido removidas\n", drop);
+
+done:
+    free(op_of); free(mn_at); free(tgt_of); free(ins_of); free(dead); free(jumped); free(at);
+    st_free(&lines); st_free(&labels); st_free(&pc);
     return removed;
 }

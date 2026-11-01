@@ -40,8 +40,8 @@ SET main_k
 @__Lwh3 LOD main_s
 ADD main_k
 SET main_s
-NEG_M 1
-ADD main_k
+LOD main_k
+ADD -1
 SET main_k
 GRE 2
 JIZ __Lwh3
@@ -54,8 +54,8 @@ SET main_k
 @__Lwh4 LOD main_s
 ADD main_k
 SET main_s
-NEG_M 1
-ADD main_k
+LOD main_k
+ADD -1
 SET main_k
 GRE 3
 JIZ __Lwh4

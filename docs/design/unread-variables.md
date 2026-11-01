@@ -45,13 +45,33 @@ takes from the accumulator does not read the variable: in
 `t = a[j]; e = t - y;` the subtraction uses the `t` still in the acc, so
 `t` is never read. That is why the examples keep `t` as well as `e`.
 
+## The argument of a parameter never read
+
+Once the `SET` of a parameter nothing reads has left, the caller still
+computes the argument into the acc before the `CAL`. `asm_callarg`, run
+right after `asm_unread` in both compilers, takes it out: when a function's
+first instruction writes the acc without reading it, the instructions just
+before each `CAL` of that function that change only the acc compute a value
+nobody uses, and they leave. An argument with any other effect (a call, an
+`in()`, a push, a division) stays, and so does everything before it. The
+pass leaves alone a function a `JMP` or `JIZ` reaches, one that the
+instruction above it runs into, and a program with `#ITRAD`.
+
+It needs the acc effect and the I/O of each mnemonic, so asm_share.c's copy
+of isa.tsv gained those two columns (held to the table by
+`Scripts/check_isa.py`).
+
+Measured (2026-11-01): `procBlind` 605 → 588 words (the 17 `LOD 0` before
+calls to functions with a `dummy` parameter; its Verilator output is
+unchanged), and no other program changes.
+
 ## What it does not do yet
 
 The computation that fed a removed `SET` stays: in `e = t - y` without
-`#WAVE`, the subtraction is still computed and thrown away. Removing it
-needs a pass that follows the accumulator's liveness; it is the next step
-of issue #69. The same pass would remove the caller's `LOD 0` before a call
-to a function whose parameter is never read (14 words in `procBlind`).
+`#WAVE`, the subtraction is still computed and thrown away. A pass that
+follows the acc's liveness in straight-line code would remove it, but over
+the C± tests it finds 21 words, all in coverage fixtures and none in the
+real programs (measured 2026-11-01), so it was not built.
 
 cppcomp runs the pass without callbacks: no warning, and no `#WAVE` (a
 `#pragma yanc` form is not done).

@@ -136,6 +136,17 @@ void main()
         t = !x;                s = s + t;
         t = (y + 1) - !x;      s = s + t;
 
+        // ---- the push forms of the same (P_NEG_M, P_ABS_M, P_PST_M, P_NRM_M,
+        // P_INV_M, P_LIN_M): the acc holds a product, which the compiler cannot fold
+        // into a sum the way it does (y + 1) - abs(z) above. Checked, not
+        // summed: s changes only on a wrong value, so the LED table stays
+        t = (y * 2) - -x;      if (t + -x != y + y) s = s + 4096;
+        t = (y * 2) - abs(z);  if (t + abs(z) != y + y) s = s + 4096;
+        t = (y * 2) - pset(z); if (t + pset(z) != y + y) s = s + 4096;
+        t = (y * 2) - norm(x); if (t + norm(x) != y + y) s = s + 4096;
+        t = (y * 2) - ~x;      if (t + ~x != y + y) s = s + 4096;
+        t = (y * 2) - !x;      if (t + !x != y + y) s = s + 4096;
+
         // ---- float with memory operand, and computed
         fw = fx + fy;     t = fw * 4194304.0;  s = s + t;
         fw = fx * fy;     t = fw * 4194304.0;  s = s + t;
@@ -195,13 +206,14 @@ void main()
         fw = log(1.0);     t = fw * 4194304.0;  s = s + t;     // XPO
 
         // ---- both stacks 7 deep (of 8): the call chain, and seven partial
-        // results waiting on the data stack, (x+1) - ((y+1) - ((x+2) - ...)).
+        // results waiting on the data stack, (x*2) - ((y*2) - ((x*3) - ...)):
+        // products, which the compiler cannot fold into a sum in the acc.
         // Checked, not summed: s changes only if a stack gives a wrong value,
         // so the LED table of the board tests (inputs 5 to 11) stays the same.
         t = n1(x);
         if (t != x + 7) s = s + 1024;
-        t = (x + 1) - ((y + 1) - ((x + 2) - ((y + 2) - ((x + 3) - ((y + 3) - ((x + 4) - (y + 4)))))));
-        if (t != 4 * (x - y)) s = s + 2048;
+        t = (x * 2) - ((y * 2) - ((x * 3) - ((y * 3) - ((x * 4) - ((y * 4) - ((x * 5) - (y * 5)))))));
+        if (t != 14 * (x - y)) s = s + 2048;
 
         // fold the 32 bits of s into 4 (four LEDs): XOR of its eight nibbles,
         // so a wrong bit anywhere in s changes what the LEDs show

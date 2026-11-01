@@ -10,7 +10,6 @@ NOP
 SET main_k
 @__Lwh2 LOD main_k
 OUT 0
-LOD main_k
 ADD 1
 SET main_k
 GRE 5

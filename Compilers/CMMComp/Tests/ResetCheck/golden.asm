@@ -12,7 +12,6 @@ LOD 40
 SET main_b
 LOD main_a
 OUT 0
-LOD main_a
 ADD main_b
 SET main_a
 OUT 0

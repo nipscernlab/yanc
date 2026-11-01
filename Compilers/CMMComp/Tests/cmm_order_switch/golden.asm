@@ -19,9 +19,8 @@ SET main_b
 LOD main_a
 ADD 1
 MLT 4
-P_LOD main_b
+ADD main_b
 ADD 1
-S_ADD
 P_LOD 7
 STI m
 LOD main_a

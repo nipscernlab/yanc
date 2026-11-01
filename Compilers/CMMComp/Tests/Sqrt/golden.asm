@@ -6,9 +6,8 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE my_sqrt_x my_sqrt_v
 #SHARE main_y my_sqrt_num
-#SHARE main_t my_sqrt_v
+#SHARE main_t my_sqrt_x
 #SHARE main_e my_sqrt_num
 #SHARE __sqrt_num my_sqrt_num
 JMP main
@@ -24,9 +23,7 @@ S_SRS
 ADD 22
 P_LOD 1
 S_SRS
-SET my_sqrt_v
-NEG_M 22
-ADD my_sqrt_v
+ADD -22
 P_LOD 23
 S_SHL
 P_LOD 22
@@ -36,7 +33,6 @@ P_LOD 1
 S_SHL
 P_LOD 1
 S_SHR
-SET my_sqrt_v
 SET my_sqrt_x
 F_DIV my_sqrt_num
 NOP

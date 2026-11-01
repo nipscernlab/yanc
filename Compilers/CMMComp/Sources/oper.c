@@ -635,6 +635,18 @@ expr oper_subt(expr e1, expr e2)
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
+    // int minus an int literal: ADD of its negation, one word (the literal
+    // stays non-negative in the table, as oper_neg wants; only the operand
+    // text carries the sign). x - 1 is LOD x; ADD -1, not NEG_M 1; ADD x
+    if ((e1.type==1) && (e2.type==1) && (e2.id!=0) && v_table[e2.id].isco
+        && strspn(v_table[e2.id].name, "0123456789") == strlen(v_table[e2.id].name))
+    {
+        if (e1.id != 0) add_instr("%s %s\n", ld, v_table[e1.id].name);
+        add_instr("ADD -%s\n", v_table[e2.id].name);
+        acc_ok = 1;
+        return expr_make(1, 0);
+    }
+
     // int var with int var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==1) && (e2.id!=0))
     {

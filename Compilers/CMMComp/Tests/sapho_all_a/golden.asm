@@ -65,7 +65,6 @@ RET
 @__Lwh1 LOD 0
 SET s
 SET main_w
-LOD 0
 SET_V ia 3
 INN 0
 SET main_x
@@ -83,8 +82,8 @@ JIZ __Lif2else
 LOD main_fx
 F_ADD 8.0
 SET main_fx
-@__Lif2else NEG_M 4
-ADD main_x
+@__Lif2else LOD main_x
+ADD -4
 SET main_y
 NEG_M main_x
 SET main_z
@@ -198,11 +197,10 @@ JIZ __Lif5else
 LOD s
 ADD 4
 SET s
-@__Lif5else LOD main_x
-ADD 1
-P_LOD main_y
+@__Lif5else LOD main_y
 MLT 2
-S_ADD
+ADD main_x
+ADD 1
 SET main_t
 LOD s
 ADD main_t
@@ -216,8 +214,8 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-NEG_M 1
-ADD main_z
+LOD main_z
+ADD -1
 P_LOD main_y
 ADD 1
 S_DIV
@@ -229,8 +227,8 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-NEG_M 1
-ADD main_z
+LOD main_z
+ADD -1
 P_LOD main_y
 ADD 1
 S_MOD
@@ -271,15 +269,15 @@ ADD main_t
 SET s
 LOD main_x
 ADD 1
-P_NEG_M 3
-ADD main_y
+P_LOD main_y
+ADD -3
 S_LAN
 SET main_t
 LOD s
 ADD main_t
 SET s
-NEG_M 7
-ADD main_x
+LOD main_x
+ADD -7
 P_LOD main_y
 ADD 2
 S_LOR
@@ -289,26 +287,26 @@ ADD main_t
 SET s
 LOD main_x
 ADD 1
-P_NEG_M 1
-ADD main_y
+P_LOD main_y
+ADD -1
 S_SHL
 SET main_t
 LOD s
 ADD main_t
 SET s
-NEG_M 1
-ADD main_z
-P_NEG_M 1
-ADD main_y
+LOD main_z
+ADD -1
+P_LOD main_y
+ADD -1
 S_SHR
 SET main_t
 LOD s
 ADD main_t
 SET s
-NEG_M 1
-ADD main_z
-P_NEG_M 1
-ADD main_y
+LOD main_z
+ADD -1
+P_LOD main_y
+ADD -1
 S_SRS
 SET main_t
 LOD s
@@ -316,8 +314,8 @@ ADD main_t
 SET s
 LOD main_y
 ADD 1
-P_NEG_M 1
-ADD main_z
+P_LOD main_z
+ADD -1
 S_SGN
 SET main_t
 LOD s
@@ -362,17 +360,16 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
-ADD 1
-P_NEG_M main_x
+NEG_M main_x
 NEG
-S_ADD
+ADD main_y
+ADD 1
 SET main_t
 LOD s
 ADD main_t
 SET s
-NEG_M 1
-ADD main_z
+LOD main_z
+ADD -1
 ABS
 SET main_t
 LOD s
@@ -383,17 +380,16 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
-ADD 1
-P_ABS_M main_z
+ABS_M main_z
 NEG
-S_ADD
+ADD main_y
+ADD 1
 SET main_t
 LOD s
 ADD main_t
 SET s
-NEG_M 1
-ADD main_z
+LOD main_z
+ADD -1
 PST
 SET main_t
 LOD s
@@ -404,11 +400,10 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
-ADD 1
-P_PST_M main_z
+PST_M main_z
 NEG
-S_ADD
+ADD main_y
+ADD 1
 SET main_t
 LOD s
 ADD main_t
@@ -425,11 +420,10 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
-ADD 1
-P_NRM_M main_x
+NRM_M main_x
 NEG
-S_ADD
+ADD main_y
+ADD 1
 SET main_t
 LOD s
 ADD main_t
@@ -446,17 +440,16 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
-ADD 1
-P_INV_M main_x
+INV_M main_x
 NEG
-S_ADD
+ADD main_y
+ADD 1
 SET main_t
 LOD s
 ADD main_t
 SET s
-NEG_M 7
-ADD main_x
+LOD main_x
+ADD -7
 LIN
 SET main_t
 LOD s
@@ -467,16 +460,111 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
-ADD 1
-P_LIN_M main_x
+LIN_M main_x
 NEG
-S_ADD
+ADD main_y
+ADD 1
 SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_fx
+LOD main_y
+MLT 2
+P_NEG_M main_x
+NEG
+S_ADD
+SET main_t
+NEG_M main_x
+ADD main_t
+P_LOD main_y
+ADD main_y
+S_EQU
+LIN
+JIZ __Lif9else
+LOD s
+ADD 4096
+SET s
+@__Lif9else LOD main_y
+MLT 2
+P_ABS_M main_z
+NEG
+S_ADD
+SET main_t
+ABS_M main_z
+ADD main_t
+P_LOD main_y
+ADD main_y
+S_EQU
+LIN
+JIZ __Lif10else
+LOD s
+ADD 4096
+SET s
+@__Lif10else LOD main_y
+MLT 2
+P_PST_M main_z
+NEG
+S_ADD
+SET main_t
+PST_M main_z
+ADD main_t
+P_LOD main_y
+ADD main_y
+S_EQU
+LIN
+JIZ __Lif11else
+LOD s
+ADD 4096
+SET s
+@__Lif11else LOD main_y
+MLT 2
+P_NRM_M main_x
+NEG
+S_ADD
+SET main_t
+NRM_M main_x
+ADD main_t
+P_LOD main_y
+ADD main_y
+S_EQU
+LIN
+JIZ __Lif12else
+LOD s
+ADD 4096
+SET s
+@__Lif12else LOD main_y
+MLT 2
+P_INV_M main_x
+NEG
+S_ADD
+SET main_t
+INV_M main_x
+ADD main_t
+P_LOD main_y
+ADD main_y
+S_EQU
+LIN
+JIZ __Lif13else
+LOD s
+ADD 4096
+SET s
+@__Lif13else LOD main_y
+MLT 2
+P_LIN_M main_x
+NEG
+S_ADD
+SET main_t
+LIN_M main_x
+ADD main_t
+P_LOD main_y
+ADD main_y
+S_EQU
+LIN
+JIZ __Lif14else
+LOD s
+ADD 4096
+SET s
+@__Lif14else LOD main_fx
 F_ADD main_fy
 F_MLT 4194304.0
 F2I
@@ -588,35 +676,35 @@ ADD main_t
 SET s
 LOD main_fx
 F_GRE main_fy
-JIZ __Lif9else
+JIZ __Lif15else
 LOD s
 ADD 64
 SET s
-@__Lif9else LOD main_fx
+@__Lif15else LOD main_fx
 F_LES main_fy
-JIZ __Lif10else
+JIZ __Lif16else
 LOD s
 ADD 128
 SET s
-@__Lif10else LOD main_fx
+@__Lif16else LOD main_fx
 F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_LES
-JIZ __Lif11else
+JIZ __Lif17else
 LOD s
 ADD 256
 SET s
-@__Lif11else LOD main_fx
+@__Lif17else LOD main_fx
 F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_GRE
-JIZ __Lif12else
+JIZ __Lif18else
 LOD s
 ADD 512
 SET s
-@__Lif12else LOD main_fx
+@__Lif18else LOD main_fx
 F_ADD main_fy
 F_NEG
 F_MLT 4194304.0
@@ -751,13 +839,12 @@ SET main_t
 LOD s
 ADD main_t
 SET s
-LOD main_y
-ADD 1
-P_LOD main_fy
+LOD main_fy
 AND 8388607
 LIN
 NEG
-S_ADD
+ADD main_y
+ADD 1
 SET main_t
 LOD s
 ADD main_t
@@ -881,26 +968,26 @@ LOD main_x
 ADD 7
 EQU main_t
 LIN
-JIZ __Lif13else
+JIZ __Lif19else
 LOD s
 ADD 1024
 SET s
-@__Lif13else LOD main_x
-ADD 1
+@__Lif19else LOD main_x
+MLT 2
 P_LOD main_y
-ADD 1
+MLT 2
 P_LOD main_x
-ADD 2
+MLT 3
 P_LOD main_y
-ADD 2
+MLT 3
 P_LOD main_x
-ADD 3
+MLT 4
 P_LOD main_y
-ADD 3
+MLT 4
 P_LOD main_x
-ADD 4
+MLT 5
 P_LOD main_y
-ADD 4
+MLT 5
 NEG
 S_ADD
 NEG
@@ -918,14 +1005,14 @@ S_ADD
 SET main_t
 NEG_M main_y
 ADD main_x
-MLT 4
+MLT 14
 EQU main_t
 LIN
-JIZ __Lif14else
+JIZ __Lif20else
 LOD s
 ADD 2048
 SET s
-@__Lif14else LOD 16
+@__Lif20else LOD 16
 SHR s
 XOR s
 SET main_t

@@ -12,13 +12,10 @@ NOP
 LOD 0.0
 SET main_r1
 SET main_r2
-LOD 0.0
 SET main_r3
 SET main_r4
-LOD 0.0
 SET main_r5
 SET main_r6
-LOD 0.0
 SET main_r7
 @__Lwh1 INN 0
 GRE 300
