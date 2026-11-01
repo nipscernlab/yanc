@@ -844,9 +844,6 @@ LOD 7
 AND main_y
 P_LOD main_x
 STI ia
-LOD 7
-AND main_y
-LDI ia
 SET main_t
 LOD s
 ADD main_t
@@ -866,9 +863,6 @@ LOD 7
 AND main_y
 P_LOD main_fx
 STI fa
-LOD 7
-AND main_y
-LDI fa
 SET main_fw
 F_MLT 4194304.0
 F2I

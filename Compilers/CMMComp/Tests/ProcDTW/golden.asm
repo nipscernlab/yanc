@@ -87,10 +87,6 @@ NEG
 S_ADD
 ABS
 STI dtw
-LOD k
-MLT 75
-ADD j
-LDI dtw
 OUT 2
 JMP __Lif2end
 @__Lif2else LOD k
@@ -117,10 +113,6 @@ S_ADD
 LDI dtw
 S_ADD
 STI dtw
-LOD k
-MLT 75
-ADD j
-LDI dtw
 OUT 2
 @__Lif3else @__Lif2end LOD k
 LES 0
@@ -145,10 +137,6 @@ ADD j
 LDI dtw
 S_ADD
 STI dtw
-LOD k
-MLT 75
-ADD j
-LDI dtw
 OUT 2
 JMP __Lif4end
 @__Lif4else LOD k
@@ -218,10 +206,6 @@ S_ADD
 ABS
 ADD menor
 STI dtw
-LOD k
-MLT 75
-ADD j
-LDI dtw
 OUT 2
 @__Lif5else @__Lif4end LOD j
 ADD 1

@@ -72,6 +72,17 @@ int acc_holds(const char *name)
     return name && name[0] && (strcmp(acc_name, name) == 0 || strcmp(acc_name2, name) == 0);
 }
 
+// An indexed store (STI, ISI) leaves the stored value in the acc: the walker
+// names it by the element, "v[k]", which no variable name can be, so that a
+// read of the same element right after it takes the acc (ast.c). Only when the
+// store is the last instruction emitted; any instruction after it but a SET
+// forgets the name, and a SET does too, since it may write an index
+void acc_holds_elem(const char *key)
+{
+    if (strncmp(last_str, "STI ", 4) == 0 || strncmp(last_str, "ISI ", 4) == 0)
+        {snprintf(acc_name, sizeof acc_name, "%s", key); acc_name2[0] = '\0';}
+}
+
 // ----------------------------------------------------------------------------
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -362,7 +373,7 @@ void add_instr(char *inst, ...)
     // operand leaves that operand's value there; anything else clobbers it. A
     // SET keeps the name before it too: after LOD y; SET y_n1 the acc is both
     if      (strncmp(str, "SET ", 4) == 0)
-        { strcpy(acc_name2, acc_name); sscanf(str + 4, "%599s", acc_name); }
+        { strcpy(acc_name2, strchr(acc_name, '[') ? "" : acc_name); sscanf(str + 4, "%599s", acc_name); }
     else if (strncmp(str, "LOD ", 4) == 0)
         { sscanf(str + 4, "%599s", acc_name); acc_name2[0] = '\0'; }
     else if (strncmp(str, "P_LOD ", 6) == 0)

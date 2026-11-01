@@ -52,3 +52,6 @@ void emit_peephole_reset(void);
 // true when the accumulator is known to currently hold variable `name` -- lets
 // codegen square the acc-resident half of c²+d² first so its LOD is dropped.
 int  acc_holds(const char *name);
+
+// after an indexed store, names the acc by the element stored, "v[k]" (ast.c)
+void acc_holds_elem(const char *key);

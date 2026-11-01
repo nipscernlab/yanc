@@ -473,6 +473,40 @@ static int rhs_keeps(expr_node *n)
     }
 }
 
+// the name of an int or float array element for the acc peephole, "v[k]" or
+// "m[(k-1)][j]": built from the index trees when they hold only int literals,
+// scalar variables and operators, so that the same name means the same
+// element as long as no instruction runs between the store and the read
+// (global.c, acc_holds_elem). 0 when an index has any other node
+static int elem_key_tree(expr_node *e, char *b, size_t sz)
+{
+    size_t l = strlen(b);
+    if (!e || l + 1 >= sz) return 0;
+    if (e->kind == EXPR_LITERAL || (e->kind == EXPR_VAR && v_table[e->id].isar == 0))
+    {
+        if (e->kind == EXPR_LITERAL && v_table[e->id].type != 1) return 0;
+        snprintf(b + l, sz - l, "%s", v_table[e->id].name);
+        return strlen(b) + 1 < sz;
+    }
+    if (e->kind != EXPR_BINOP) return 0;
+    snprintf(b + l, sz - l, "(");
+    if (!elem_key_tree(e->left, b, sz)) return 0;
+    l = strlen(b); snprintf(b + l, sz - l, "#%d#", e->op);
+    if (!elem_key_tree(e->right, b, sz)) return 0;
+    l = strlen(b); snprintf(b + l, sz - l, ")");
+    return strlen(b) + 1 < sz;
+}
+
+static int elem_key(int id, expr_node *i1, expr_node *i2, char *b, size_t sz)
+{
+    if (v_table[id].type != 1 && v_table[id].type != 2) return 0;
+    snprintf(b, sz, "%s[", v_table[id].name);
+    if (!elem_key_tree(i1, b, sz)) return 0;
+    if (i2) { strncat(b, "][", sz - strlen(b) - 1); if (!elem_key_tree(i2, b, sz)) return 0; }
+    strncat(b, "]", sz - strlen(b) - 1);
+    return strlen(b) + 1 < sz;
+}
+
 static int is_const_true(expr_node *n)
 {
     return n && n->kind == EXPR_LITERAL && n->type == 1 && atoll(v_table[n->id].name) != 0;
@@ -1053,6 +1087,16 @@ static expr ast_emit_expr_impl(expr_node *n)
         }
 
         case EXPR_ARRAY_INDEX: {
+            // the element an indexed store has just left in the acc: no read
+            if (acc_ok == 0 && n->op == 0)
+            {
+                char key[600];
+                if (elem_key(n->id, n->left, n->right, key, sizeof key) && acc_holds(key))
+                {
+                    acc_ok = 1;
+                    return expr_make(v_table[n->id].type, 0);
+                }
+            }
             // Constant 1D forward index: read directly with LOD_V (offset
             // baked into the address), skipping the index materialise +
             // indirect LDI; a comp array reads both halves that way. Other
@@ -1786,9 +1830,29 @@ void stmt_emit(stmt_node *n)
             // then the walker on the RHS pushes that, computes the value,
             // and ass_array emits the indexed-store.
             if (n->idx2) {
-                expr i1 = ast_emit_expr(n->idx);   // first, as in EXPR_ARRAY_INDEX
-                expr i2 = ast_emit_expr(n->idx2);
-                arr_2d_index(n->id, i1, i2);
+                typecheck_expr(n->idx);
+                typecheck_expr(n->idx2);
+                // a computed column: row * row length + column as one int
+                // expression, as in EXPR_ARRAY_INDEX
+                if (!is_expr_leaf(n->idx2) && v_table[n->id].isar == 2
+                    && n->idx->type == 1 && n->idx2->type == 1)
+                {
+                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
+                    expr_node *s = expr_lit(1, exec_inum(b));
+                    expr_node *m = expr_binop(OP_MUL, n->idx, s);
+                    expr_node *a = expr_binop(OP_ADD, m, n->idx2);
+                    expr e = ast_emit_expr(a);
+                    free(a); free(m); free(s);
+                    v_table[n->id].isar = 1;
+                    arr_1d_index(n->id, e);
+                    v_table[n->id].isar = 2;
+                }
+                else
+                {
+                    expr i1 = ast_emit_expr(n->idx);   // first, as in EXPR_ARRAY_INDEX
+                    expr i2 = ast_emit_expr(n->idx2);
+                    arr_2d_index(n->id, i1, i2);
+                }
             }
             else arr_1d_index(n->id, ast_emit_expr(n->idx));
             // an int variable as the whole index, which the right-hand side
@@ -1797,6 +1861,13 @@ void stmt_emit(stmt_node *n)
                               && !v_table[n->idx->id].isar && rhs_keeps(n->rhs)) ? n->idx->id : 0;
             ass_array(n->id, ast_emit_expr(n->rhs), n->op);
             ass_idx_reload = 0;
+            // the store leaves the element in the acc: a read of it right
+            // after takes the acc, when the right-hand side changed no index
+            {
+                char key[600];
+                if (n->op == 0 && rhs_keeps(n->rhs) && elem_key(n->id, n->idx, n->idx2, key, sizeof key))
+                    acc_holds_elem(key);
+            }
             break;
 
         case STMT_RETURN:
