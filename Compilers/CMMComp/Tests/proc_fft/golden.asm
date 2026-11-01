@@ -26,7 +26,6 @@ SET fft_istep
 LOD 0
 SET fft_m
 SET fft_ind
-LOD 0
 SET fft_sind
 @__Lwh2 LOD fft_mmax
 LES fft_m

@@ -1587,7 +1587,6 @@ SET gi
 LOD 0.0
 SET gf
 SET gc
-LOD 0.0
 SET gc_i
 LOD gi
 JIZ __Lif5else
@@ -1739,9 +1738,7 @@ SET gi
 LOD 0.0
 SET gf
 SET gc
-LOD 0.0
 SET gc_i
-LOD gf
 AND 8388607
 JIZ __Lif11else
 LOD 1
@@ -1935,9 +1932,7 @@ SET gi
 LOD 0.0
 SET gf
 SET gc
-LOD 0.0
 SET gc_i
-LOD gc
 ORR gc_i
 AND 8388607
 JIZ __Lif17else

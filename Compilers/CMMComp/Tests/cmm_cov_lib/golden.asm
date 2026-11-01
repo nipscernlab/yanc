@@ -4939,7 +4939,6 @@ SET main_ia
 LOD 0.0
 SET main_fa
 SET main_ca
-LOD 0.0
 SET main_ca_i
 NRM_M main_ia
 OUT 0
@@ -5693,7 +5692,6 @@ SET main_ia
 LOD 0.0
 SET main_fa
 SET main_ca
-LOD 0.0
 SET main_ca_i
 NRM_M main_ia
 OUT 0

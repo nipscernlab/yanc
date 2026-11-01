@@ -66,7 +66,6 @@ RET
 @__Lwh1 LOD 0
 SET s
 SET main_w
-LOD 0
 SET_V ia 3
 CAD 0
 SET main_k

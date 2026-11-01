@@ -87,6 +87,8 @@ tags consumed by Aurora.
   shift whose value is computed after the vector shifts (`proc_rls` 235 →
   227), and a read at the index a store just computed, pushed with `PSH`
   instead of computed again (`procBlind` 624 → 620). Fixture `cmm_idx_reuse`.
+  Then a value the acc keeps through any number of `SET`s, where only two
+  were remembered (`ZeroCross` 126 → 117).
 - **cmmcomp: the unrolled Dirac generators are gone** (step c of
   docs/design/dirac-expressions.md). The eleven `exec_*` routines that
   unrolled each Dirac form, 840 lines of `stdlib.c`, and the twenty messages

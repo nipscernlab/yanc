@@ -164,10 +164,8 @@ OUT 0
 LOD 0.5
 SET main_z
 SET main_z_i
-LOD 0.5
 SET main_w
 SET main_w_i
-LOD main_z
 F_ADD main_w
 P_LOD main_z_i
 F_ADD main_w_i
