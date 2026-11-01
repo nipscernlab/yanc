@@ -9,7 +9,6 @@ NOP
 #SHARE main_c_i main_z
 #SHARE main_w __cexp_b
 #SHARE main_w_i main_c
-#SHARE __cexp_a main_z
 #SHARE __sin_x main_c
 #SHARE __sin_q main_z
 #SHARE __sin_k main_z
@@ -98,7 +97,6 @@ F_ADD main_w
 P_LOD main_z_i
 F_ADD main_w_i
 SET_P __cexp_b
-SET   __cexp_a
 CAL __float_exp
 SET __cexp_ea
 LOD __cexp_b

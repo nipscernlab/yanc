@@ -652,12 +652,17 @@ def rest():
     body.append("    x = (gi+gz) << (gf+gfz); out(0, x);"); out.append(7 << 2)
     body.append("    x = gi >> 2.5; out(0, x);"); out.append(7 >> 2)
     # the Dirac shift register: a[i] = a[i-1], the new value into a[0]
+    # and three more values: a call (the value waits while the vector shifts),
+    # a folded constant, and an element of the vector itself, read before the
+    # shift moves it (the vector cannot shift first)
     sr = {"i": [1, 2, 3, 4], "f": [1.5, 2.5, 3.5, 4.5]}
+    more = {"i": ["(ret_i_i0()+gz)", "(3+4)"], "f": ["(ret_f_f0()+gfz)", "(1.5+1.0)"]}
     for ak in "if":
         for vk in "if":
-            for text in GV[vk]:
+            for text in list(GV[vk]) + more[vk] + (["(s%s[2]+%s)" % (ak, {"i": "gz", "f": "gfz"}[ak])] if ak == vk else []):
+                value = sr[ak][2] if text.startswith("(s") else GVAL[vk]
                 body.append("    s%s # %s -> |s%s⟩;" % (ak, text, ak))
-                sr[ak] = [stored(GVAL[vk], ak)] + sr[ak][:-1]
+                sr[ak] = [stored(value, ak)] + sr[ak][:-1]
                 for e in range(4):
                     body.append("    " + show4(ak, "s%s[%d]" % (ak, e)))
                     out.extend(val4(ak, sr[ak][e]))

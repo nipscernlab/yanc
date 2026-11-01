@@ -9,15 +9,13 @@ NOP
 #NBEXPO 8
 #NUGAIN 128
 #array buf 1 3
-#SHARE live1_u rare_u
 #SHARE main_y rare_u
 JMP main
 @rare SET rare_u
 NEG_M 7
 ADD rare_u
 RET
-@live1 SET live1_u
-SET_V buf 1
+@live1 SET_V buf 1
 LOD_V buf 1
 ADD 2
 RET

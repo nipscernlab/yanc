@@ -1,0 +1,19 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// Negative fixture: #WAVE names a function.
+
+int f(int a)
+{
+    return a;
+}
+
+#WAVE f
+
+void main()
+{
+    out(0, f(1));
+}

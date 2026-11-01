@@ -4,7 +4,7 @@ This file is the entry point for anyone who changes this repository, a person or
 
 ## What YANC is
 
-The compiler suite for SAPHO, the soft-core processor of NIPS-CERN whose hardware fits the program it runs. YANC takes a program in C± or in C++ and produces the Verilog of a processor sized for that program, its memory images, a testbench and the tables a waveform viewer uses to show the source line, the instruction and every variable, cycle by cycle. AURORA, the IDE of SAPHO, ships YANC as its compiler, and the Verilog of SAPHO itself is in [`SAPHO/`](SAPHO/).
+The compiler suite for SAPHO, the soft-core processor of NIPS-CERN whose hardware fits the program it runs. YANC takes a program in C± or in C++ and produces the Verilog of a processor sized for that program, its memory images, a testbench and the tables a waveform viewer uses to show the source line, the instruction and every variable the program reads, cycle by cycle. AURORA, the IDE of SAPHO, ships YANC as its compiler, and the Verilog of SAPHO itself is in [`SAPHO/`](SAPHO/).
 
 Everything else in the SAPHO ecosystem depends on this repository: a change here reaches AURORA, the manual and every user's processor.
 

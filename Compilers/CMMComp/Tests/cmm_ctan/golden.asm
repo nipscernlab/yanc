@@ -16,7 +16,6 @@ NOP
 #SHARE main_z_i __ctan_tb
 #SHARE main_w __ctan_emb
 #SHARE __ctan_b __ctan_tb
-#SHARE __ctan_a __ctan_ta
 #SHARE __sin_x main_w_i
 #SHARE __sin_q __ctan_emb
 #SHARE __sin_k __ctan_emb
@@ -186,7 +185,6 @@ F_ADD main_w
 P_LOD main_z_i
 F_ADD main_w_i
 SET_P __ctan_b
-SET   __ctan_a
 F_MLT 2.0
 SET __ctan_ta
 LOD __ctan_b

@@ -8,13 +8,11 @@ NOP
 #arrayd g 2 3 3 1.0e1 0.5 2.5e-1
 #arrayd c 3 1 1 1.0e-1
 #arrayd c_i 4 1 1 -2.0e1
-#SHARE main_z main_a
-#SHARE main_n main_a
-#SHARE __aux_var main_a
-#SHARE main_w_i main_a
+#SHARE main_n main_z
+#SHARE __aux_var main_z
+#SHARE main_w_i main_z
 #SHARE main_w main_z_i
 @main LOD 1.0e-8
-SET main_a
 F_MLT 1.0e8
 F_ADD 0.5
 F2I

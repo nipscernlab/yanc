@@ -5,10 +5,8 @@ NOP
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-#SHARE main_n early_p
 JMP main
-@early SET early_p
-JIZ __Lif1else
+@early JIZ __Lif1else
 LOD 10
 OUT 0
 RET
@@ -20,7 +18,6 @@ CAL early
 LOD 0
 CAL early
 LOD 2
-SET main_n
 EQU 2
 JIZ __Lif2else
 LOD 5

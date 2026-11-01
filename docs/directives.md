@@ -60,6 +60,25 @@ the processor on that point. `#TOAQUI` lets a testbench or other hardware
 see that the program has reached a place, for example the end of an
 initialisation.
 
+## Waveform
+
+A variable the program writes and never reads is not in the processor: its
+writes leave the program, it takes no data word, and it is not in the
+waveform; the compiler warns of each one. `#WAVE` keeps such variables,
+to see them in the waveform:
+
+```c
+float y, t, e;
+#WAVE t, e          // never read: kept for the waveform
+```
+
+It names variables already declared, separated by commas: globals at the
+top of the file, locals inside their function. It changes nothing for a
+variable the program reads. A value the compiler takes from the accumulator,
+without reading the variable back, does not count as a read: in
+`t = a[j]; e = t - y;` nothing reads `t`. In C++ such a variable leaves
+the program too, without a warning, and there is no `#WAVE` yet.
+
 ## Constants
 
 `#define NAME text` replaces the name by the text from that line on:

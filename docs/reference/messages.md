@@ -91,6 +91,7 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: function '<name>' calls itself (<name>). Recursion doesn't fly in C±. Really want recursion? Use SAPHO's C++ compiler.
 - Error on line <n>: there's already an interrupt going on somewhere else before this one!
 - Error on line <n>: duplicate #TOAQUI marker (only one allowed)
+- Error on line <n>: #WAVE takes a variable, and '<name>' isn't one
 - Error: option '<name>' needs a value.
 - Error: unknown option '<name>'.
 - Error: the file '<name>' names the processor, and '<name>' <name>. Rename the file.
@@ -132,8 +133,8 @@ value. What the common ones mean and how to get past them is in
 - Heads up on line <n>: a complex array index? Seriously?! Gonna grab the real part.
 - Heads up on line <n>: these array indices are all over the place. You're a confused soul!
 - Heads up on line <n>: array index is coming out float. Gonna generate a ton of code to truncate it!
-- Heads up: global variable '<name>' isn't being used. Save some memory, will ya!
-- Heads up: variable '<name>' in function '<name>' isn't being used. Save some memory, will ya!
+- Heads up: global variable '<name>' is never read, so it's out of the program and the waveform (#WAVE <name> keeps it).
+- Heads up: variable '<name>' in function '<name>' is never read, so it's out of the program and the waveform (#WAVE <name>, in the function, keeps it).
 - Heads up: function '<name>' isn't being used. Save some memory, will ya!
 - Heads up on line <n>: constant <name> is below the smallest normal float (<x>) and becomes 0 at #FROUND <n>. Use #FROUND 0 or raise #NBEXPO.
 

@@ -6,7 +6,6 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE main_r f_q
 JMP main
 @f0 LOD 100
 RET
@@ -23,14 +22,12 @@ PSH
 CAL f0
 NEG
 S_ADD
-SET main_r
 OUT 0
 LOD main_x
 ADD 5
 PSH
 CAL f0
 S_ADD
-SET main_r
 OUT 0
 CAL f0
 P_LOD main_x
@@ -45,7 +42,6 @@ ADD 4
 S_MLT
 S_MLT
 S_ADD
-SET main_r
 OUT 0
 LOD 0
 SET g
@@ -59,7 +55,6 @@ CAL f
 ADD 1
 S_MLT
 S_ADD
-SET main_r
 OUT 0
 LOD g
 OUT 0

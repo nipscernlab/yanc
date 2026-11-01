@@ -9,7 +9,6 @@ NOP
 #SHARE main_w_i main_y
 #SHARE __aux_var main_y
 #SHARE __aux_var1 main_w
-#SHARE __cexp_a main_y
 #SHARE __fase_re main_y
 #SHARE __fase_t main_y
 #SHARE __clog_im main_y
@@ -25,14 +24,11 @@ NOP
 #SHARE __ctan_shb main_w
 #SHARE __ctan_d main_y
 #SHARE __ctan_b __ctan_tb
-#SHARE __ctan_a __ctan_ta
-#SHARE __catan_b2 __fase_im
 #SHARE __catan_bp main_y
 #SHARE __catan_num main_y
 #SHARE __catan_bm main_w
-#SHARE __catan_den main_w
 #SHARE __catan_im main_y
-#SHARE __catan_a main_y
+#SHARE __catan_a __fase_im
 #SHARE __tanh_e main_y
 #SHARE __tanh_n main_w
 #SHARE __floor_x main_ca
@@ -40,7 +36,6 @@ NOP
 #SHARE __ceil_x main_ca
 #SHARE __ceil_t main_ca_i
 #SHARE __round_x main_ca
-#SHARE main_x main_y
 #SHARE __pow_x main_w
 #SHARE __pow_r main_y
 #SHARE __pow_c __aux_var2
@@ -639,7 +634,6 @@ P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
 SET_P __cexp_b
-SET   __cexp_a
 CAL __float_exp
 SET __cexp_ea
 LOD __cexp_b
@@ -682,7 +676,6 @@ P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
 SET_P __cexp_b
-SET   __cexp_a
 CAL __float_exp
 SET __cexp_ea
 LOD __cexp_b
@@ -2383,7 +2376,6 @@ P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
 SET_P __ctan_b
-SET   __ctan_a
 F_MLT 2.0
 SET __ctan_ta
 LOD __ctan_b
@@ -2454,7 +2446,6 @@ P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
 SET_P __ctan_b
-SET   __ctan_a
 F_MLT 2.0
 SET __ctan_ta
 LOD __ctan_b
@@ -2746,7 +2737,6 @@ F_MLT main_ca
 SET __catan_a2
 LOD main_ca_i
 F_MLT main_ca_i
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD main_ca
@@ -2806,7 +2796,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP
@@ -2841,7 +2830,6 @@ F_MLT main_ca
 SET __catan_a2
 LOD main_ca_i
 F_MLT main_ca_i
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD main_ca
@@ -2901,7 +2889,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP
@@ -2943,7 +2930,6 @@ F_MLT __catan_a
 SET __catan_a2
 LOD __catan_b
 F_MLT __catan_b
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD __catan_a
@@ -3003,7 +2989,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP
@@ -3049,7 +3034,6 @@ F_MLT __catan_a
 SET __catan_a2
 LOD __catan_b
 F_MLT __catan_b
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD __catan_a
@@ -3109,7 +3093,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP
@@ -3140,7 +3123,6 @@ F_MLT 0.5
 SET __catan_a2
 LOD 0.25
 F_MLT 0.25
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD 0.5
@@ -3200,7 +3182,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP
@@ -3235,7 +3216,6 @@ F_MLT 0.5
 SET __catan_a2
 LOD 0.25
 F_MLT 0.25
-SET __catan_b2
 F_ADD __catan_a2
 F_SU2 1.0
 P_LOD 0.5
@@ -3295,7 +3275,6 @@ F_ADD -1.0
 SET __catan_bm
 F_MLT __catan_bm
 F_ADD __catan_a2
-SET __catan_den
 F_DIV __catan_num
 NOP
 NOP
@@ -4882,18 +4861,15 @@ LOD 0.0
 SET main_ca
 SET main_ca_i
 PST_M main_ia
-SET main_x
 OUT 0
 PST_M main_ia
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
 PST
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -4901,16 +4877,13 @@ PST
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 PST_M 5
-SET main_x
 OUT 0
 PST_M 5
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 F_PST_M main_fa
 SET main_y
@@ -4969,18 +4942,15 @@ SET main_ca
 LOD 0.0
 SET main_ca_i
 NRM_M main_ia
-SET main_x
 OUT 0
 NRM_M main_ia
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
 NRM
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -4988,16 +4958,13 @@ NRM
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 NRM_M 640
-SET main_x
 OUT 0
 NRM_M 640
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 NEG_M 3
 SET main_ia
@@ -5646,18 +5613,15 @@ LOD 0.0
 SET main_ca
 SET main_ca_i
 PST_M main_ia
-SET main_x
 OUT 0
 PST_M main_ia
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
 PST
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -5665,18 +5629,15 @@ PST
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 NEG_M 5
 PST
-SET main_x
 OUT 0
 NEG_M 5
 PST
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 F_PST_M main_fa
 SET main_y
@@ -5735,18 +5696,15 @@ SET main_ca
 LOD 0.0
 SET main_ca_i
 NRM_M main_ia
-SET main_x
 OUT 0
 NRM_M main_ia
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
 NRM
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -5754,18 +5712,15 @@ NRM
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 NEG_M 640
 NRM
-SET main_x
 OUT 0
 NEG_M 640
 NRM
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 NEG_M 5
 SET main_ia
@@ -5776,18 +5731,15 @@ SET main_ca
 LOD 4.0
 SET main_ca_i
 ABS_M main_ia
-SET main_x
 OUT 0
 ABS_M main_ia
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
 ABS
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -5795,18 +5747,15 @@ ABS
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 NEG_M 5
 ABS
-SET main_x
 OUT 0
 NEG_M 5
 ABS
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 F_ABS_M main_fa
 SET main_y
@@ -6578,14 +6527,12 @@ LOD 2.5
 SET main_fb
 LOD main_ib
 SGN main_ia
-SET main_x
 OUT 0
 LOD main_ib
 SGN main_ia
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 I2F_M main_ia
 P_I2F_M main_ib
@@ -6630,7 +6577,6 @@ OUT 0
 LOD main_ib
 ADD main_z0
 SGN main_ia
-SET main_x
 OUT 0
 LOD main_ib
 ADD main_z0
@@ -6638,7 +6584,6 @@ SGN main_ia
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ib
 ADD main_z0
@@ -6688,14 +6633,12 @@ F2I
 OUT 0
 LOD 5
 SGN main_ia
-SET main_x
 OUT 0
 LOD 5
 SGN main_ia
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 I2F_M main_ia
 P_LOD 5.0
@@ -6920,7 +6863,6 @@ LOD main_ia
 ADD main_z0
 P_LOD main_ib
 S_SGN
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -6929,7 +6871,6 @@ S_SGN
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -6980,7 +6921,6 @@ ADD main_z0
 P_LOD main_ib
 ADD main_z0
 S_SGN
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -6990,7 +6930,6 @@ S_SGN
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -7046,7 +6985,6 @@ LOD main_ia
 ADD main_z0
 P_LOD 5
 S_SGN
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -7055,7 +6993,6 @@ S_SGN
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
@@ -7307,7 +7244,6 @@ OUT 0
 NEG_M 3
 P_LOD main_ib
 S_SGN
-SET main_x
 OUT 0
 NEG_M 3
 P_LOD main_ib
@@ -7315,7 +7251,6 @@ S_SGN
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 NEG_M 3
 I2F
@@ -7363,7 +7298,6 @@ NEG_M 3
 P_LOD main_ib
 ADD main_z0
 S_SGN
-SET main_x
 OUT 0
 NEG_M 3
 P_LOD main_ib
@@ -7372,7 +7306,6 @@ S_SGN
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 NEG_M 3
 P_LOD main_ib
@@ -7425,7 +7358,6 @@ OUT 0
 NEG_M 3
 P_LOD 5
 S_SGN
-SET main_x
 OUT 0
 NEG_M 3
 P_LOD 5
@@ -7433,7 +7365,6 @@ S_SGN
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 NEG_M 3
 I2F
@@ -7670,14 +7601,12 @@ F2I
 OUT 0
 LOD main_ib
 SGN main_fa
-SET main_x
 OUT 0
 LOD main_ib
 SGN main_fa
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_fa
 P_I2F_M main_ib
@@ -7722,7 +7651,6 @@ OUT 0
 LOD main_ib
 ADD main_z0
 SGN main_fa
-SET main_x
 OUT 0
 LOD main_ib
 ADD main_z0
@@ -7730,7 +7658,6 @@ SGN main_fa
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ib
 ADD main_z0
@@ -7780,14 +7707,12 @@ F2I
 OUT 0
 LOD 5
 SGN main_fa
-SET main_x
 OUT 0
 LOD 5
 SGN main_fa
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_fa
 P_LOD 5.0
@@ -8012,7 +7937,6 @@ LOD main_fa
 F_ADD main_fz
 P_LOD main_ib
 S_SGN
-SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
@@ -8021,7 +7945,6 @@ S_SGN
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
@@ -8070,7 +7993,6 @@ F_ADD main_fz
 P_LOD main_ib
 ADD main_z0
 S_SGN
-SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
@@ -8080,7 +8002,6 @@ S_SGN
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
@@ -8132,7 +8053,6 @@ LOD main_fa
 F_ADD main_fz
 P_LOD 5
 S_SGN
-SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
@@ -8141,7 +8061,6 @@ S_SGN
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_fa
 F_ADD main_fz
@@ -8380,14 +8299,12 @@ F2I
 OUT 0
 LOD main_ib
 SGN -2.5
-SET main_x
 OUT 0
 LOD main_ib
 SGN -2.5
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD -2.5
 P_I2F_M main_ib
@@ -8432,7 +8349,6 @@ OUT 0
 LOD main_ib
 ADD main_z0
 SGN -2.5
-SET main_x
 OUT 0
 LOD main_ib
 ADD main_z0
@@ -8440,7 +8356,6 @@ SGN -2.5
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_ib
 ADD main_z0
@@ -8490,14 +8405,12 @@ F2I
 OUT 0
 LOD 5
 SGN -2.5
-SET main_x
 OUT 0
 LOD 5
 SGN -2.5
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD -2.5
 P_LOD 5.0
@@ -10955,14 +10868,11 @@ LOD 0.0
 SET main_ca
 SET main_ca_i
 LOD main_ia
-SET main_x
 OUT 0
 LOD main_ia
 ADD main_z0
-SET main_x
 OUT 0
 LOD 42
-SET main_x
 OUT 0
 LOD main_fa
 SET main_y

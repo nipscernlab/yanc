@@ -64,4 +64,5 @@ expr exec_conj(expr e);           // complex conjugate (a-bi); real x -> x+0i; a
 // the Dirac shift register (the other forms: dirac.c) -------------------------
 // ----------------------------------------------------------------------------
 
-void exec_shift(int ida, expr eb, int idc);          // shift register in vector a (a must equal c)
+void exec_shift(int ida, expr eb, int idc, int later); // shift register in vector a (a must equal c)
+void exec_shift_in(int ida, expr e);                   // later: the value, computed after the shift, into a[0]

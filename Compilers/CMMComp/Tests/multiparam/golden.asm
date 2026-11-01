@@ -7,16 +7,13 @@ NOP
 #NBEXPO 5
 #NUGAIN 128
 #SHARE triple_sum_z add_b
-#SHARE triple_sum_y add_a
 #SHARE main_three main_v
 JMP main
 @add SET_P add_b
-SET add_a
 ADD add_b
 RET
 @triple_sum SET_P triple_sum_z
 SET_P triple_sum_y
-SET triple_sum_x
 ADD triple_sum_y
 ADD triple_sum_z
 RET

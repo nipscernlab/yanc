@@ -5,19 +5,14 @@ NOP
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-#SHARE main_k main_x
-#SHARE main_j g_s
-#SHARE main_y g_s
 JMP main
-@g SET g_s
-P_LOD 2.0
+@g P_LOD 2.0
 RET
 @main LOD 3.0
 SET main_a
 LOD 4.0
 SET main_b
 LOD 5.0
-SET main_x
 LOD 0
 SET main_k
 @__Lwh1 LOD main_k
@@ -25,9 +20,7 @@ GRE 40
 JIZ __Lwh1end
 LOD main_k
 ADD 1
-SET main_j
 ADD 1
-SET main_j
 OUT 0
 LOD main_a
 F_MLT main_b

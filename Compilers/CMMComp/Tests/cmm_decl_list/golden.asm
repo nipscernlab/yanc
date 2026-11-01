@@ -7,10 +7,8 @@ NOP
 #NUIOOU 1
 #SHARE main_x soma_n
 #SHARE main_w soma_s
-#SHARE gf ga
-#SHARE gw_i gg
-#SHARE gw gz
-#SHARE main_a gg
+#SHARE gw_i ga
+#SHARE gw gc
 #SHARE main_y main_b
 #SHARE main_z_i soma_n
 #SHARE main_z soma_s
@@ -60,7 +58,6 @@ LOD gc
 OUT 0
 LOD gg
 F_MLT 2.0
-SET gf
 F_MLT 4.0
 F2I
 OUT 0
@@ -80,7 +77,6 @@ F2I_M gw_i
 OUT 0
 NEG_M main_b
 ADD main_c
-SET main_a
 OUT 0
 LOD main_b
 OUT 0

@@ -84,6 +84,7 @@ COMEN  "//"[^\n]*
 
 "#PRACA"      return ITRADD;
 "#TOAQUI"     return TOAQUI;
+"#WAVE"       return WAVE;
 
  /* object-like #define NAME body -- recorded here, expanded at the {VARIA} rule */
 "#define"               BEGIN(DEFNAME);

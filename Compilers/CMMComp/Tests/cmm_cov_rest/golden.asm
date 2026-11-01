@@ -11,27 +11,21 @@ NOP
 #array mf 2 12
 #arrayd si 1 4 4 1 2 3 4
 #arrayd sf 2 4 4 1.5 2.5 3.5 4.5
-#SHARE par_f_p par_i_p
-#SHARE par_c_p_i par_i_p
-#SHARE early_p par_i_p
-#SHARE mix_c_i par_i_p
+#SHARE mix_c_i par_c_p_i
 #SHARE mix_c par_c_p
-#SHARE main_n1 par_i_p
+#SHARE main_n1 par_c_p_i
 #SHARE main_n2 par_c_p
-#SHARE main_x mix_b
 #SHARE main_y mix_b
 #SHARE main_w mix_b
 #SHARE main_w_i mix_a
-#SHARE main_k mix_a
+#SHARE main_k mix_b
 #SHARE main_g mix_a
 #SHARE __aux_var mix_b
-#SHARE __aux_var1 par_i_p
+#SHARE __aux_var1 par_c_p_i
 #SHARE __aux_var2 par_c_p
 JMP main
-@par_i SET par_i_p
-RET
-@par_f SET par_f_p
-RET
+@par_i RET
+@par_f RET
 @par_c SET_P par_c_p_i
 SET par_c_p
 P_LOD par_c_p_i
@@ -137,8 +131,7 @@ RET
 @ret_c_c2 LOD 3.0
 P_LOD 4.0
 RET
-@early SET early_p
-JIZ __Lif1else
+@early JIZ __Lif1else
 RET
 @__Lif1else LOD 77
 OUT 0
@@ -188,28 +181,21 @@ LOD 100.0
 SET main_pc
 SET main_pc_i
 LOD gi
-SET main_x
 OUT 0
 LOD gi
 ADD gz
-SET main_x
 OUT 0
 LOD 7
-SET main_x
 OUT 0
 F2I_M gf
-SET main_x
 OUT 0
 LOD gf
 F_ADD gfz
 F2I
-SET main_x
 OUT 0
 F2I_M 2.5
-SET main_x
 OUT 0
 F2I_M gc
-SET main_x
 OUT 0
 LOD gc
 F_MLT gone
@@ -223,10 +209,8 @@ F_MLT gone
 SF_ADD
 POP
 F2I
-SET main_x
 OUT 0
 F2I_M 3.0
-SET main_x
 OUT 0
 I2F_M gi
 SET main_y
@@ -454,7 +438,6 @@ SET main_k
 PSH
 ADD 1
 SET_P main_k
-SET main_x
 OUT 0
 LOD main_k
 OUT 0
@@ -480,7 +463,6 @@ LDI vi
 ADD 1
 STI vi
 ADD -1
-SET main_x
 OUT 0
 LOD_V vi 1
 OUT 0
@@ -512,7 +494,6 @@ LDI mi
 ADD 1
 STI mi
 ADD -1
-SET main_x
 OUT 0
 LOD_V mi 6
 OUT 0
@@ -545,7 +526,6 @@ PSH
 ADD 1
 SET_P main_k
 S_ADD
-SET main_x
 OUT 0
 LOD main_k
 OUT 0
@@ -579,7 +559,6 @@ ADD 1
 STI vi
 ADD -1
 S_ADD
-SET main_x
 OUT 0
 LOD_V vi 1
 OUT 0
@@ -619,7 +598,6 @@ ADD 1
 STI mi
 ADD -1
 S_ADD
-SET main_x
 OUT 0
 LOD_V mi 6
 OUT 0
@@ -655,7 +633,6 @@ ADD main_z0
 P_LOD gi
 CAL par_i
 S_ADD
-SET main_x
 OUT 0
 LOD gi
 ADD gz
@@ -667,7 +644,6 @@ P_LOD gi
 ADD gz
 CAL par_i
 S_ADD
-SET main_x
 OUT 0
 LOD 7
 CAL par_i
@@ -677,7 +653,6 @@ ADD main_z0
 P_LOD 7
 CAL par_i
 S_ADD
-SET main_x
 OUT 0
 LOD gf
 F2I
@@ -689,7 +664,6 @@ P_LOD gf
 F2I
 CAL par_i
 S_ADD
-SET main_x
 OUT 0
 LOD gf
 F_ADD gfz
@@ -703,7 +677,6 @@ F_ADD gfz
 F2I
 CAL par_i
 S_ADD
-SET main_x
 OUT 0
 LOD 2.5
 F2I
@@ -715,7 +688,6 @@ P_LOD 2.5
 F2I
 CAL par_i
 S_ADD
-SET main_x
 OUT 0
 LOD gc
 F2I
@@ -727,7 +699,6 @@ P_LOD gc
 F2I
 CAL par_i
 S_ADD
-SET main_x
 OUT 0
 LOD gc
 F_MLT gone
@@ -759,7 +730,6 @@ POP
 F2I
 CAL par_i
 S_ADD
-SET main_x
 OUT 0
 LOD 3.0
 F2I
@@ -771,7 +741,6 @@ P_LOD 3.0
 F2I
 CAL par_i
 S_ADD
-SET main_x
 OUT 0
 I2F_M gi
 CAL par_f
@@ -1568,7 +1537,6 @@ SET main_k
 @__Lwh1end LOD main_k
 OUT 0
 LIN_M gi
-SET main_x
 OUT 0
 LOD gi
 ADD gz
@@ -1590,7 +1558,6 @@ OUT 0
 LOD gi
 ADD gz
 LIN
-SET main_x
 OUT 0
 LOD 7
 JIZ __Lif4else
@@ -1606,7 +1573,6 @@ SET main_k
 @__Lwh3end LOD main_k
 OUT 0
 LIN_M 7
-SET main_x
 OUT 0
 LOD 7
 SET gi
@@ -1639,7 +1605,6 @@ SET main_k
 @__Lwh4end LOD main_k
 OUT 0
 LIN_M gi
-SET main_x
 OUT 0
 LOD gi
 ADD gz
@@ -1661,7 +1626,6 @@ OUT 0
 LOD gi
 ADD gz
 LIN
-SET main_x
 OUT 0
 LOD 0
 JIZ __Lif7else
@@ -1679,7 +1643,6 @@ SET main_k
 @__Lwh6end LOD main_k
 OUT 0
 LIN_M 0
-SET main_x
 OUT 0
 LOD 7
 SET gi
@@ -1717,7 +1680,6 @@ OUT 0
 LOD gf
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD gf
 F_ADD gfz
@@ -1742,7 +1704,6 @@ LOD gf
 F_ADD gfz
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD 2.5
 AND 8388607
@@ -1764,7 +1725,6 @@ OUT 0
 LOD 2.5
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD 7
 SET gi
@@ -1801,7 +1761,6 @@ OUT 0
 LOD gf
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD gf
 F_ADD gfz
@@ -1826,7 +1785,6 @@ LOD gf
 F_ADD gfz
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD 0.0
 AND 8388607
@@ -1848,7 +1806,6 @@ OUT 0
 LOD 0.0
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD 7
 SET gi
@@ -1889,7 +1846,6 @@ LOD gc
 ORR gc_i
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD gc
 F_MLT gone
@@ -1941,7 +1897,6 @@ SF_ADD
 S_ORR
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD 3.0
 ORR 4.0
@@ -1966,7 +1921,6 @@ LOD 3.0
 ORR 4.0
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD 7
 SET gi
@@ -2006,7 +1960,6 @@ LOD gc
 ORR gc_i
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD gc
 F_MLT gone
@@ -2058,7 +2011,6 @@ SF_ADD
 S_ORR
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD 0.0
 ORR 0.0
@@ -2083,7 +2035,6 @@ LOD 0.0
 ORR 0.0
 AND 8388607
 LIN
-SET main_x
 OUT 0
 LOD 7
 SET gi
@@ -2281,7 +2232,6 @@ OUT 0
 @__switch_end_9 LOD gf
 F2I
 SHL gi
-SET main_x
 OUT 0
 LOD gi
 ADD gz
@@ -2289,12 +2239,10 @@ P_LOD gf
 F_ADD gfz
 F2I
 S_SHL
-SET main_x
 OUT 0
 LOD 2.5
 F2I
 SHR gi
-SET main_x
 OUT 0
 LOD_V si 2
 SET_V si 3
@@ -2312,7 +2260,40 @@ LOD_V si 2
 OUT 0
 LOD_V si 3
 OUT 0
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
 LOD gi
+ADD gz
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
+LOD 7
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
+CAL ret_i_i0
 ADD gz
 SET __aux_var
 LOD_V si 2
@@ -2347,6 +2328,25 @@ LOD_V si 2
 OUT 0
 LOD_V si 3
 OUT 0
+LOD_V si 2
+ADD gz
+SET __aux_var
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
+LOD __aux_var
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
 F2I_M gf
 SET __aux_var
 LOD_V si 2
@@ -2365,7 +2365,43 @@ LOD_V si 2
 OUT 0
 LOD_V si 3
 OUT 0
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
 LOD gf
+F_ADD gfz
+F2I
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
+F2I_M 2.5
+SET __aux_var
+LOD_V si 2
+SET_V si 3
+LOD_V si 1
+SET_V si 2
+LOD_V si 0
+SET_V si 1
+LOD __aux_var
+SET si
+LOD_V si 0
+OUT 0
+LOD_V si 1
+OUT 0
+LOD_V si 2
+OUT 0
+LOD_V si 3
+OUT 0
+CAL ret_f_f0
 F_ADD gfz
 F2I
 SET __aux_var
@@ -2385,15 +2421,15 @@ LOD_V si 2
 OUT 0
 LOD_V si 3
 OUT 0
-F2I_M 2.5
-SET __aux_var
 LOD_V si 2
 SET_V si 3
 LOD_V si 1
 SET_V si 2
 LOD_V si 0
 SET_V si 1
-LOD __aux_var
+LOD 1.5
+F_ADD 1.0
+F2I
 SET si
 LOD_V si 0
 OUT 0
@@ -2427,7 +2463,57 @@ LOD_V sf 3
 F_MLT 4.0
 F2I
 OUT 0
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
 LOD gi
+ADD gz
+I2F
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
+LOD 7.0
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+CAL ret_i_i0
 ADD gz
 SET __aux_var
 LOD_V sf 2
@@ -2502,7 +2588,56 @@ LOD_V sf 3
 F_MLT 4.0
 F2I
 OUT 0
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
 LOD gf
+F_ADD gfz
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
+LOD 2.5
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+CAL ret_f_f0
 F_ADD gfz
 SET __aux_var
 LOD_V sf 2
@@ -2535,7 +2670,35 @@ LOD_V sf 1
 SET_V sf 2
 LOD_V sf 0
 SET_V sf 1
-LOD 2.5
+LOD 1.5
+F_ADD 1.0
+SET sf
+LOD_V sf 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 1
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 3
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V sf 2
+F_ADD gfz
+SET __aux_var
+LOD_V sf 2
+SET_V sf 3
+LOD_V sf 1
+SET_V sf 2
+LOD_V sf 0
+SET_V sf 1
+LOD __aux_var
 SET sf
 LOD_V sf 0
 F_MLT 4.0

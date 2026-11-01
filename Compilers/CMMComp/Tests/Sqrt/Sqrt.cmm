@@ -27,6 +27,7 @@ void main()
     float x[1000] "sqrt_x.txt";
     float a[1000] "sqrt_y.txt";
     float y,t,e;
+    #WAVE t, e             // never read: kept to be seen in the waveform
 
     int j=0;
     while (j < 1000)

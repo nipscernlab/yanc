@@ -12,7 +12,6 @@ SET main_k
 GRE 6
 JIZ fim
 INN 0
-SET main_x
 OUT 0
 LOD main_k
 ADD 1

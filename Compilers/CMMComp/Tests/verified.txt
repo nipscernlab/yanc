@@ -40,3 +40,5 @@ cmm_itr           | project pass ITR: 100 200 300 and cheguei 9 times, what its 
 cmm_div_const     | the values worked out in its header, far from an integer so the reciprocal's rounding cannot move them
 cmm_comp_zero     | the values worked out in its header
 cmm_comp_part     | the values worked out in its header
+cmm_idx_reuse     | the values worked out in its header
+cmm_unread        | the values worked out in its header

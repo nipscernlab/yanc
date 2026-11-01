@@ -7,7 +7,8 @@ straight away; what needs learning is mostly what is missing, and why.
 
 Every variable has a fixed address in the data memory: there is no heap, no
 pointer, no recursion. That is what lets each variable show up by name in
-the simulation waveform, and what lets the compiler build only the hardware
+the simulation waveform (one written and never read is left out, unless
+`#WAVE` keeps it), and what lets the compiler build only the hardware
 the program uses: a program that never divides gets a processor with no
 divider.
 

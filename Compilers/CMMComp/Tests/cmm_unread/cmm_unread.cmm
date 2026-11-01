@@ -1,0 +1,57 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// A variable written and never read leaves the program (asm_unread, issue
+// #69): its SETs go, a SET_P becomes the POP it also is, and the code around
+// it still computes the same. Here: a comp written from the acc and never
+// read, in main and in a function; a comp whose real part only is read from
+// memory (both halves stay: asmcomp shows them joined); a parameter the
+// function never reads. #WAVE keeps a variable never read anyway, to see it
+// in the waveform: the global g and the local comp w stay, both halves of w.
+//
+// z = 1+2i:
+//   u = z*(3+1i)            never read
+//   v = z*z = -3+4i         read after the loop
+//   n = 0+1+2               while k < 3                        -> 3
+//   real(v)                                                    -> -3
+//   z = add_unread(z, 2+1i) (1+2i)+(2+1i) = 3+3i               -> 3 3
+//   one(5)                  its parameter never read, returns 7 -> 7
+//   g = 2.5, w = z*2        never read, kept by #WAVE
+
+float g;
+#WAVE g
+
+comp add_unread(comp a, comp b)
+{
+    comp q;
+    q = a*b;
+    return a + b;
+}
+
+int one(int p)
+{
+    return 7;
+}
+
+void main()
+{
+    comp z; comp u; comp v; comp w; float re; int k; int n;
+    #WAVE w, re
+    z = 1.0+2.0i;
+    u = z*(3.0+1.0i);
+    v = z*z;
+    n = 0; k = 0;
+    while (k < 3) { n = n + k; k++; }
+    out(0, n);
+    re = real(v);
+    out(0, re);
+    z = add_unread(z, 2.0+1.0i);
+    out(0, real(z));
+    out(0, imag(z));
+    out(0, one(5));
+    g = 2.5;
+    w = z*2.0;
+}

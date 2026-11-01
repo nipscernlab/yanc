@@ -15,7 +15,6 @@ NOP
 #array i1 1 1
 #array vc 3 4
 #array vc_i 4 4
-#SHARE main_x locals_w_i
 #SHARE main_k locals_w
 #SHARE main_s locals_w_i
 #SHARE __switch_exp main_m5
@@ -100,7 +99,6 @@ ADD main_z0
 PSH
 CAL noarg
 S_ADD
-SET main_x
 OUT 0
 LOD 0
 SET main_k
@@ -468,14 +466,12 @@ LOD main_fs
 F_ADD main_fz
 F2I
 SHL main_n2
-SET main_x
 OUT 0
 LOD main_n2
 ADD main_z0
 P_LOD main_fs
 F2I
 S_SHL
-SET main_x
 OUT 0
 LOD main_n2
 OUT 0
@@ -489,7 +485,6 @@ LOD_V ia3 2
 P_LOD main_pa
 ADD main_z0
 S_ADD
-SET main_x
 OUT 0
 LOD main_pf
 F_ADD main_fz

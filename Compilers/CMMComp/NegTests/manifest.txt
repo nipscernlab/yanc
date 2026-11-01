@@ -59,3 +59,5 @@ dirac_not_yet.cmm|still in the oven
 no_return_path.cmm|some path gets to the end without a return
 name_too_long.cmm|that name is way too long, 50 characters tops
 comp_order.cmm|complex numbers have no order
+wave_undeclared.cmm|gotta declare 'x' first
+wave_not_var.cmm|#WAVE takes a variable, and 'f' isn't one

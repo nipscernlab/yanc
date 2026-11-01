@@ -14,7 +14,6 @@ NOP
 #SHARE __dhf2_rls_update __dd2_rls_update
 #SHARE __dk0_main __dk0_rls_update
 #SHARE main_j __dk1_main
-#SHARE __aux_var __dk0_rls_update
 JMP main
 @rls_update SET rls_update_d
 LOD w
@@ -187,49 +186,41 @@ SET main_j
 @__Lwh1 LOD main_j
 GRE 20
 JIZ fim
-F_INN 0
-F_MLT 0.001
-SET __aux_var
 LOD_V x 2
 SET_V x 3
 LOD_V x 1
 SET_V x 2
 LOD_V x 0
 SET_V x 1
-LOD __aux_var
+F_INN 0
+F_MLT 0.001
 SET x
-F_INN 0
-F_MLT 0.001
-SET __aux_var
 LOD_V x 2
 SET_V x 3
 LOD_V x 1
 SET_V x 2
 LOD_V x 0
 SET_V x 1
-LOD __aux_var
+F_INN 0
+F_MLT 0.001
 SET x
-F_INN 0
-F_MLT 0.001
-SET __aux_var
 LOD_V x 2
 SET_V x 3
 LOD_V x 1
 SET_V x 2
 LOD_V x 0
 SET_V x 1
-LOD __aux_var
+F_INN 0
+F_MLT 0.001
 SET x
-F_INN 0
-F_MLT 0.001
-SET __aux_var
 LOD_V x 2
 SET_V x 3
 LOD_V x 1
 SET_V x 2
 LOD_V x 0
 SET_V x 1
-LOD __aux_var
+F_INN 0
+F_MLT 0.001
 SET x
 INN 1
 I2F

@@ -15,58 +15,42 @@ NOP
 #array s_h_cand 2 7
 #array s_h_best 2 7
 #array s_grad_h 2 7
-#SHARE project_h_hat_k project_h_hat_dummy
-#SHARE project_h_cand_dummy project_h_hat_dummy
-#SHARE project_h_cand_k project_h_hat_dummy
-#SHARE lipschitz_x_dummy project_h_hat_dummy
-#SHARE lipschitz_x_s project_h_hat_dummy
-#SHARE lipschitz_x_L project_h_hat_dummy
-#SHARE conv_zh_dummy project_h_hat_dummy
-#SHARE conv_zh_n project_h_hat_dummy
-#SHARE conv_zh_ii project_h_hat_dummy
+#SHARE project_h_cand_k project_h_hat_k
+#SHARE lipschitz_x_s project_h_hat_k
+#SHARE lipschitz_x_L project_h_hat_k
+#SHARE conv_zh_n project_h_hat_k
+#SHARE conv_zh_ii project_h_hat_k
 #SHARE conv_zh_zi lipschitz_x_k
-#SHARE conv_xh_dummy project_h_hat_dummy
-#SHARE conv_xh_n project_h_hat_dummy
-#SHARE conv_xh_ii project_h_hat_dummy
+#SHARE conv_xh_n project_h_hat_k
+#SHARE conv_xh_ii project_h_hat_k
 #SHARE conv_xh_xi lipschitz_x_k
 #SHARE conv_xh_j conv_zh_j
-#SHARE conv_x_hcand_dummy project_h_hat_dummy
-#SHARE conv_x_hcand_n project_h_hat_dummy
-#SHARE conv_x_hcand_ii project_h_hat_dummy
+#SHARE conv_x_hcand_n project_h_hat_k
+#SHARE conv_x_hcand_ii project_h_hat_k
 #SHARE conv_x_hcand_xi lipschitz_x_k
 #SHARE conv_x_hcand_j conv_zh_j
-#SHARE residual_sub_y_dummy project_h_hat_dummy
-#SHARE residual_sub_y_n project_h_hat_dummy
-#SHARE sum_residual_sq_dummy project_h_hat_dummy
-#SHARE sum_residual_sq_s project_h_hat_dummy
+#SHARE residual_sub_y_n project_h_hat_k
+#SHARE sum_residual_sq_s project_h_hat_k
 #SHARE sum_residual_sq_n lipschitz_x_k
-#SHARE correlate_residual_h_dummy project_h_hat_dummy
-#SHARE correlate_residual_h_n project_h_hat_dummy
+#SHARE correlate_residual_h_n project_h_hat_k
 #SHARE correlate_residual_h_s lipschitz_x_k
 #SHARE correlate_residual_h_k conv_zh_j
-#SHARE correlate_residual_x_dummy project_h_hat_dummy
-#SHARE correlate_residual_x_n project_h_hat_dummy
+#SHARE correlate_residual_x_n project_h_hat_k
 #SHARE correlate_residual_x_s lipschitz_x_k
 #SHARE correlate_residual_x_k conv_zh_j
-#SHARE fista_x_dummy fista_x_t
-#SHARE fista_x_ii project_h_hat_dummy
-#SHARE fista_x_L fista_x_step
+#SHARE fista_x_ii project_h_hat_k
 #SHARE fista_x_v lipschitz_x_k
 #SHARE fista_x_tn lipschitz_x_k
 #SHARE fista_x_mom fista_x_t
 #SHARE fista_x_xi conv_zh_j
-#SHARE update_h_dummy project_h_hat_dummy
-#SHARE update_h_ii project_h_hat_dummy
-#SHARE update_h_cdt project_h_hat_dummy
-#SHARE fit_ii fit_dummy
-#SHARE fit_it fit_dummy
-#SHARE main_n fit_dummy
-#SHARE main_j update_h_it
-#SHARE main_r update_h_dt
-#SHARE __sqrt_num project_h_hat_dummy
+#SHARE update_h_ii project_h_hat_k
+#SHARE update_h_cdt project_h_hat_k
+#SHARE fit_it fit_ii
+#SHARE main_n fit_ii
+#SHARE main_j fista_x_step
+#SHARE __sqrt_num project_h_hat_k
 JMP main
-@project_h_hat SET project_h_hat_dummy
-LOD 0
+@project_h_hat LOD 0
 SET project_h_hat_k
 @__Lwh1 LOD project_h_hat_k
 GRE 7
@@ -92,8 +76,7 @@ JMP __Lwh1
 @__Lwh1end LOD 1.0
 SET_V h_hat 3
 RET
-@project_h_cand SET project_h_cand_dummy
-LOD 0
+@project_h_cand LOD 0
 SET project_h_cand_k
 @__Lwh2 LOD project_h_cand_k
 GRE 7
@@ -119,8 +102,7 @@ JMP __Lwh2
 @__Lwh2end LOD 1.0
 SET_V s_h_cand 3
 RET
-@lipschitz_x SET lipschitz_x_dummy
-LOD 0.0
+@lipschitz_x LOD 0.0
 SET lipschitz_x_s
 LOD 0
 SET lipschitz_x_k
@@ -144,8 +126,7 @@ LOD 0.000000000001
 SET lipschitz_x_L
 @__Lif5else LOD lipschitz_x_L
 RET
-@conv_zh SET conv_zh_dummy
-LOD 0
+@conv_zh LOD 0
 SET conv_zh_n
 @__Lwh4 LOD conv_zh_n
 GRE 40
@@ -172,8 +153,7 @@ GRE 7
 JIZ __Lwh6end
 LOD conv_zh_ii
 ADD conv_zh_j
-P_LOD conv_zh_ii
-ADD conv_zh_j
+PSH
 LDI s_conv
 P_LOD conv_zh_j
 LDI h_hat
@@ -189,8 +169,7 @@ ADD 1
 SET conv_zh_ii
 JMP __Lwh5
 @__Lwh5end RET
-@conv_xh SET conv_xh_dummy
-LOD 0
+@conv_xh LOD 0
 SET conv_xh_n
 @__Lwh7 LOD conv_xh_n
 GRE 40
@@ -217,8 +196,7 @@ GRE 7
 JIZ __Lwh9end
 LOD conv_xh_ii
 ADD conv_xh_j
-P_LOD conv_xh_ii
-ADD conv_xh_j
+PSH
 LDI s_conv
 P_LOD conv_xh_j
 LDI h_hat
@@ -234,8 +212,7 @@ ADD 1
 SET conv_xh_ii
 JMP __Lwh8
 @__Lwh8end RET
-@conv_x_hcand SET conv_x_hcand_dummy
-LOD 0
+@conv_x_hcand LOD 0
 SET conv_x_hcand_n
 @__Lwh10 LOD conv_x_hcand_n
 GRE 40
@@ -262,8 +239,7 @@ GRE 7
 JIZ __Lwh12end
 LOD conv_x_hcand_ii
 ADD conv_x_hcand_j
-P_LOD conv_x_hcand_ii
-ADD conv_x_hcand_j
+PSH
 LDI s_conv
 P_LOD conv_x_hcand_j
 LDI s_h_cand
@@ -279,8 +255,7 @@ ADD 1
 SET conv_x_hcand_ii
 JMP __Lwh11
 @__Lwh11end RET
-@residual_sub_y SET residual_sub_y_dummy
-LOD 0
+@residual_sub_y LOD 0
 SET residual_sub_y_n
 @__Lwh13 LOD residual_sub_y_n
 GRE 40
@@ -297,8 +272,7 @@ ADD 1
 SET residual_sub_y_n
 JMP __Lwh13
 @__Lwh13end RET
-@sum_residual_sq SET sum_residual_sq_dummy
-LOD 0.0
+@sum_residual_sq LOD 0.0
 SET sum_residual_sq_s
 LOD 0
 SET sum_residual_sq_n
@@ -307,8 +281,7 @@ GRE 40
 JIZ __Lwh14end
 LOD sum_residual_sq_n
 LDI s_conv
-P_LOD sum_residual_sq_n
-LDI s_conv
+PSH
 SF_MLT
 F_ADD sum_residual_sq_s
 SET sum_residual_sq_s
@@ -318,8 +291,7 @@ SET sum_residual_sq_n
 JMP __Lwh14
 @__Lwh14end LOD sum_residual_sq_s
 RET
-@correlate_residual_h SET correlate_residual_h_dummy
-LOD 0
+@correlate_residual_h LOD 0
 SET correlate_residual_h_n
 @__Lwh15 LOD correlate_residual_h_n
 GRE 34
@@ -351,8 +323,7 @@ ADD 1
 SET correlate_residual_h_n
 JMP __Lwh15
 @__Lwh15end RET
-@correlate_residual_x SET correlate_residual_x_dummy
-LOD 0
+@correlate_residual_x LOD 0
 SET correlate_residual_x_n
 @__Lwh17 LOD correlate_residual_x_n
 GRE 7
@@ -384,8 +355,7 @@ ADD 1
 SET correlate_residual_x_n
 JMP __Lwh17
 @__Lwh17end RET
-@fista_x SET fista_x_dummy
-LOD 0
+@fista_x LOD 0
 SET fista_x_ii
 @__Lwh19 LOD fista_x_ii
 GRE 34
@@ -406,7 +376,6 @@ JMP __Lwh19
 SET fista_x_t
 LOD 0
 CAL lipschitz_x
-SET fista_x_L
 F_DIV 1.0
 NOP
 NOP
@@ -493,8 +462,7 @@ ADD 1
 SET fista_x_it
 JMP __Lwh20
 @__Lwh20end RET
-@update_h SET update_h_dummy
-LOD 0
+@update_h LOD 0
 CAL project_h_hat
 LOD 0
 SET update_h_it
@@ -606,8 +574,7 @@ JMP __Lwh23
 @__Lwh23end LOD 0
 CAL project_h_hat
 RET
-@fit SET fit_dummy
-LOD 0
+@fit LOD 0
 SET fit_ii
 @__Lwh29 LOD fit_ii
 GRE 34
@@ -680,7 +647,6 @@ LDI h_hat
 F_MLT 1000000.0
 F_ADD 0.5
 F2I
-SET main_r
 OUT 0
 LOD main_j
 ADD 1
