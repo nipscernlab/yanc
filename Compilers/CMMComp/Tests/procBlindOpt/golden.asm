@@ -154,8 +154,7 @@ GRE 7
 JIZ __Lwh6end
 LOD conv_zh_ii
 ADD conv_zh_j
-P_LOD conv_zh_ii
-ADD conv_zh_j
+PSH
 LDI s_conv
 P_LOD conv_zh_j
 LDI h_hat
@@ -198,8 +197,7 @@ GRE 7
 JIZ __Lwh9end
 LOD conv_xh_ii
 ADD conv_xh_j
-P_LOD conv_xh_ii
-ADD conv_xh_j
+PSH
 LDI s_conv
 P_LOD conv_xh_j
 LDI h_hat
@@ -242,8 +240,7 @@ GRE 7
 JIZ __Lwh12end
 LOD conv_x_hcand_ii
 ADD conv_x_hcand_j
-P_LOD conv_x_hcand_ii
-ADD conv_x_hcand_j
+PSH
 LDI s_conv
 P_LOD conv_x_hcand_j
 LDI s_h_cand
@@ -285,8 +282,7 @@ GRE 40
 JIZ __Lwh14end
 LOD sum_residual_sq_n
 LDI s_conv
-P_LOD sum_residual_sq_n
-LDI s_conv
+PSH
 SF_MLT
 F_ADD sum_residual_sq_s
 SET sum_residual_sq_s

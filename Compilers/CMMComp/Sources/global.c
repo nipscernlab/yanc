@@ -83,6 +83,15 @@ void acc_holds_elem(const char *key)
         {snprintf(acc_name, sizeof acc_name, "%s", key); acc_name2[0] = '\0';}
 }
 
+// The index of an indexed store, computed into the acc: the walker names it
+// "[ii+j]" so that a read at the same index inside the right-hand side pushes
+// it with PSH instead of computing it again (ast.c). As above, any instruction
+// but a SET forgets the name, and a SET does too
+void acc_holds_index(const char *key)
+{
+    snprintf(acc_name, sizeof acc_name, "%s", key); acc_name2[0] = '\0';
+}
+
 // ----------------------------------------------------------------------------
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------

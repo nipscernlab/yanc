@@ -514,6 +514,20 @@ static int elem_key(int id, expr_node *i1, expr_node *i2, char *b, size_t sz)
     return strlen(b) + 1 < sz;
 }
 
+// the name of a computed int index for the acc peephole, "[(ii#1#j)]": the
+// brackets keep a SET from passing it on (global.c). 0 for a leaf, whose
+// read costs no more than a PSH
+static int idx_key(expr_node *ix, char *b, size_t sz)
+{
+    if (!ix || ix->kind == EXPR_LITERAL || ix->kind == EXPR_VAR) return 0;
+    typecheck_expr(ix);
+    if (ix->type != 1) return 0;
+    snprintf(b, sz, "[");
+    if (!elem_key_tree(ix, b, sz)) return 0;
+    strncat(b, "]", sz - strlen(b) - 1);
+    return strlen(b) + 1 < sz;
+}
+
 static int is_const_true(expr_node *n)
 {
     return n && n->kind == EXPR_LITERAL && n->type == 1 && atoll(v_table[n->id].name) != 0;
@@ -997,6 +1011,25 @@ static expr ast_emit_expr_impl(expr_node *n)
                 if (n->type == 3 && (n->op == OP_ADD || n->op == OP_SUB || n->op == OP_MUL) && comp_partwise(n, &leaves))
                     return comp_partwise_emit(n, 0, 1);
             }
+            // the square of an int or float element, v[k]*v[k]: read once,
+            // PSH copies it to the stack and the product takes both
+            if (n->op == OP_MUL && n->left->kind == EXPR_ARRAY_INDEX && n->right->kind == EXPR_ARRAY_INDEX
+                && n->left->op == 0 && n->right->op == 0)
+            {
+                char k1[600], k2[600];
+                typecheck_expr(n);
+                if ((n->type == 1 || n->type == 2) && n->left->type == n->type
+                    && elem_key(n->left ->id, n->left ->left, n->left ->right, k1, sizeof k1)
+                    && elem_key(n->right->id, n->right->left, n->right->right, k2, sizeof k2)
+                    && strcmp(k1, k2) == 0)
+                {
+                    ast_emit_expr(n->left);
+                    add_instr("PSH\n");
+                    add_instr(n->type == 2 ? "SF_MLT\n" : "S_MLT\n");
+                    acc_ok = 1;
+                    return expr_make(n->type, 0);
+                }
+            }
 
             // Algebraic identity folding (constant operand drops out, surviving
             // subtree is emitted directly). Only fire when the surviving
@@ -1139,12 +1172,28 @@ static expr ast_emit_expr_impl(expr_node *n)
                     expr_node *s = expr_lit(1, exec_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->left, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->right);
-                    expr e = ast_emit_expr(a);
+                    char key[600];
+                    expr e;
+                    // the index the store of this statement left in the acc
+                    if (acc_ok == 1 && idx_key(a, key, sizeof key) && acc_holds(key))
+                        {add_instr("PSH\n"); e = expr_make(1, 0);}
+                    else e = ast_emit_expr(a);
                     free(a); free(m); free(s);
                     v_table[n->id].isar = 1;
                     expr r = arr_1d2exp(n->id, e, 0);
                     v_table[n->id].isar = 2;
                     return r;
+                }
+            }
+            // a computed index the store of this statement left in the acc:
+            // PSH pushes what was pending and leaves the index for the LDI
+            if (!n->right && n->op == 0 && acc_ok == 1)
+            {
+                char key[600];
+                if (idx_key(n->left, key, sizeof key) && acc_holds(key))
+                {
+                    add_instr("PSH\n");
+                    return arr_1d2exp(n->id, expr_make(1, 0), 0);
                 }
             }
             expr idx1 = ast_emit_expr(n->left);
@@ -1849,10 +1898,12 @@ void stmt_emit(stmt_node *n)
                     expr_node *m = expr_binop(OP_MUL, n->idx, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->idx2);
                     expr e = ast_emit_expr(a);
-                    free(a); free(m); free(s);
                     v_table[n->id].isar = 1;
                     arr_1d_index(n->id, e);
                     v_table[n->id].isar = 2;
+                    char key[600];
+                    if (idx_key(a, key, sizeof key)) acc_holds_index(key);
+                    free(a); free(m); free(s);
                 }
                 else
                 {
@@ -1861,7 +1912,12 @@ void stmt_emit(stmt_node *n)
                     arr_2d_index(n->id, i1, i2);
                 }
             }
-            else arr_1d_index(n->id, ast_emit_expr(n->idx));
+            else
+            {
+                arr_1d_index(n->id, ast_emit_expr(n->idx));
+                char key[600];
+                if (idx_key(n->idx, key, sizeof key)) acc_holds_index(key);
+            }
             // an int variable as the whole index, which the right-hand side
             // cannot change: ass_array may read it again for a second word
             ass_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == 1

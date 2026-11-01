@@ -1,0 +1,63 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// A store at a computed index whose right-hand side reads an element at the
+// same index takes the index the store left in the acc (PSH) instead of
+// computing it again; a square of an element reads it once (issue #69).
+// Checked here on int and float vectors and matrices, against a read at
+// another index and of another array at the same index.
+//
+// vi = 0 1 2 3 4 5, vf = 0.0 0.5 1.0 1.5 2.0 2.5, a = 1, b = 2:
+//   vi[a+b] = vi[a+b] + 10          vi[3] = 13              -> 13
+//   vf[a+b] = vf[a+b] * 4.0         vf[3] = 6.0             -> 6
+//   mi[1][3] = 5; mi[a][b+1] + 7    mi[1][3] = 12           -> 12
+//   mf[1][3] = 2.5; mf[a][b+1] * 2  mf[1][3] = 5.0          -> 5
+//   vi[a+b]*vi[a+b]                 13*13                   -> 169
+//   vf[a+b]*vf[a+b]                 6.0*6.0                 -> 36
+//   vi[a+b] = vi[a+b-1] + 1         vi[2] + 1 = 3           -> 3
+//   vf[a+b] = vi[a+b] + 0.5         3.5, shown doubled      -> 7
+//   vi[k+1] = vi[k+1] + 100, k < 3  vi[1..3] = 101 102 103  -> 101 102 103
+
+int   vi[6];
+float vf[6];
+int   mi[3][4];
+float mf[3][4];
+
+void main()
+{
+    int a; int b; int k; int x; float y;
+    a = 1; b = 2;
+    k = 0;
+    while (k < 6) { vi[k] = k; vf[k] = k * 0.5; k++; }
+
+    vi[a+b] = vi[a+b] + 10;
+    out(0, vi[3]);
+    vf[a+b] = vf[a+b] * 4.0;
+    out(0, vf[3]);
+
+    mi[1][3] = 5;
+    mi[a][b+1] = mi[a][b+1] + 7;
+    out(0, mi[1][3]);
+    mf[1][3] = 2.5;
+    mf[a][b+1] = mf[a][b+1] * 2.0;
+    out(0, mf[1][3]);
+
+    x = vi[a+b]*vi[a+b];
+    out(0, x);
+    y = vf[a+b]*vf[a+b];
+    out(0, y);
+
+    vi[a+b] = vi[a+b-1] + 1;
+    out(0, vi[3]);
+    vf[a+b] = vi[a+b] + 0.5;
+    out(0, 2.0*vf[3]);
+
+    k = 0;
+    while (k < 3) { vi[k+1] = vi[k+1] + 100; k++; }
+    out(0, vi[1]);
+    out(0, vi[2]);
+    out(0, vi[3]);
+}

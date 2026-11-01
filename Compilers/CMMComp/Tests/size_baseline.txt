@@ -55,6 +55,7 @@ cmm_fround1 203
 cmm_fround2 203
 cmm_fround_mean 65
 cmm_hyper  123
+cmm_idx_reuse 124
 cmm_ilit   64
 cmm_ilit8  18
 cmm_ioports 13
@@ -107,8 +108,8 @@ pplus_arr  19
 proc_fft   222
 proc_rls   227
 proc_sim   91
-procBlind  624
-procBlindOpt 593
+procBlind  620
+procBlindOpt 589
 ProcDTW    245
 ResetCheck 22
 sapho_all  946
