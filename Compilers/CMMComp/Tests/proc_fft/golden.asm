@@ -65,11 +65,9 @@ SET fft_temp
 LOD fft_j
 P_LOD fft_k
 ILI data
+F_SU1 fft_temp
 P_LOD fft_k
 ILI data_i
-SET_P __aux_var
-F_SU1 fft_temp
-P_LOD __aux_var
 F_SU1 fft_temp_i
 SET_P __aux_var
 ISI data
@@ -79,11 +77,9 @@ ISI data_i
 LOD fft_k
 P_LOD fft_k
 ILI data
+F_ADD fft_temp
 P_LOD fft_k
 ILI data_i
-SET_P __aux_var
-F_ADD fft_temp
-P_LOD __aux_var
 F_ADD fft_temp_i
 SET_P __aux_var
 ISI data

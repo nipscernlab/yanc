@@ -22,7 +22,7 @@ cmm_comp_div 119
 cmm_comp_fase 423
 cmm_comp_func 110
 cmm_comp_mix 254
-cmm_comp_part 130
+cmm_comp_part 160
 cmm_comp_zero 182
 cmm_comp_sqrt 152
 cmm_conj   57
@@ -104,7 +104,7 @@ lk_flt_w   15
 lk_merge   11
 multiparam 28
 pplus_arr  19
-proc_fft   226
+proc_fft   222
 proc_rls   235
 proc_sim   91
 procBlind  624

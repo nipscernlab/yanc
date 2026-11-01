@@ -22,8 +22,10 @@
 // and of a computed comp, a = 1+2i, b = 3-2i:
 //   real(a*b)          =  7  ->  28   (only that part of the product)
 //   imag(a*b)          =  4  ->  16
-//   real(zv[0]+zv[1])  =  4  ->  16   (a comp in the acc)
+//   real(zv[0]+zv[1])  =  4  ->  16   (only that part of the sum)
 //   imag(zv[0]+zv[1])  = -2  ->  -8
+//   real(zv[0]*zv[1])  = 11  ->  44   (a comp in the acc: (1+2i)(3-4i) = 11+2i)
+//   imag(zv[0]*zv[1])  =  2  ->   8
 
 void main()
 {
@@ -47,4 +49,6 @@ void main()
     y = imag(a*b);          fout(0, 4.0*y);
     y = real(zv[0]+zv[1]);  fout(0, 4.0*y);
     y = imag(zv[0]+zv[1]);  fout(0, 4.0*y);
+    y = real(zv[0]*zv[1]);  fout(0, 4.0*y);
+    y = imag(zv[0]*zv[1]);  fout(0, 4.0*y);
 }

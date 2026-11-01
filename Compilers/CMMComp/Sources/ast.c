@@ -742,6 +742,69 @@ static int has_side_effect(const expr_node *n)
     return has_side_effect(n->left) || has_side_effect(n->right);
 }
 
+// A sum or a difference of comps whose leaves are comp variables or comp array
+// elements with a variable or a literal index is computed part by part: the
+// real part as a float expression of the same shape over the leaves' real
+// parts, then the imaginary part over theirs. The real part ends on the stack
+// and the imaginary in the acc, the layout of a comp in the acc, and no comp is
+// set aside in memory between two operations. The operations are the ones the
+// comp forms do, in the same order, so the result has the same bits.
+#define PART_MAX 32
+static int part_orig[PART_MAX], part_id[PART_MAX], part_type[PART_MAX], part_isar[PART_MAX], part_siz2[PART_MAX], part_k;
+
+static int comp_partwise(const expr_node *n, int *leaves)
+{
+    if (n->kind == EXPR_BINOP && (n->op == OP_ADD || n->op == OP_SUB))
+        return comp_partwise(n->left, leaves) && comp_partwise(n->right, leaves);
+    if (++*leaves > PART_MAX) return 0;
+    if (n->kind == EXPR_VAR) return v_table[n->id].type == 3 && v_table[n->id].isar == 0;
+    if (n->kind == EXPR_ARRAY_INDEX)
+        return v_table[n->id].type == 3 && is_expr_leaf(n->left) && (!n->right || is_expr_leaf(n->right));
+    return 0;
+}
+
+// each leaf reads its part (v, or v_i) as a float, as real() and imag() of an
+// array element do; the v_table entries are kept to be put back
+static void comp_part_set(expr_node *n, int imag)
+{
+    n->emitted = 0;
+    if (n->kind == EXPR_BINOP) {n->type = 2; comp_part_set(n->left, imag); comp_part_set(n->right, imag); return;}
+    int id = n->id, part = imag ? get_img_id(id) : id, k = part_k++;
+    part_orig[k] = id; part_id[k] = part;
+    part_type[k] = v_table[part].type; part_isar[k] = v_table[part].isar; part_siz2[k] = v_table[part].siz2;
+    v_table[part].type = 2; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
+    v_table[id].used = 1;
+    n->id = part; n->type = 2;
+    if (n->left ) n->left ->emitted = 0;
+    if (n->right) n->right->emitted = 0;
+}
+
+static void comp_part_back(expr_node *n, int *k)
+{
+    n->emitted = 0;
+    if (n->kind == EXPR_BINOP) {n->type = 3; comp_part_back(n->left, k); comp_part_back(n->right, k); return;}
+    n->id = part_orig[(*k)++]; n->type = 3;
+}
+
+// parts from..to (0 the real, 1 the imaginary): both, a comp in the acc; one,
+// the float of that part, which is all real() and imag() of the sum need
+static expr comp_partwise_emit(expr_node *n, int from, int to)
+{
+    for (int imag = from; imag <= to; imag++)
+    {
+        part_k = 0;
+        comp_part_set(n, imag);
+        ast_emit_expr(n);
+        int k = 0; comp_part_back(n, &k);
+        for (k = part_k - 1; k >= 0; k--)
+        {
+            v_table[part_id[k]].type = part_type[k]; v_table[part_id[k]].isar = part_isar[k]; v_table[part_id[k]].siz2 = part_siz2[k];
+        }
+    }
+    acc_ok = 1;
+    return expr_make(from == to ? 2 : 3, 0);
+}
+
 // Constant folding. const_eval recursively evaluates a subtree as a
 // compile-time int constant: it succeeds (returns 1, sets *val) only for an int
 // literal, or +/-/*/&/|/^ of foldable constants whose result -- AT EVERY LEVEL
@@ -845,6 +908,12 @@ static expr ast_emit_expr_impl(expr_node *n)
         case EXPR_VAR:     return id2exp (n->id);
 
         case EXPR_BINOP: {
+            {
+                int leaves = 0;
+                if (n->type == 3 && (n->op == OP_ADD || n->op == OP_SUB) && comp_partwise(n, &leaves))
+                    return comp_partwise_emit(n, 0, 1);
+            }
+
             // Algebraic identity folding (constant operand drops out, surviving
             // subtree is emitted directly). Only fire when the surviving
             // operand's type matches the binop's result type - otherwise a
@@ -1040,6 +1109,13 @@ static expr ast_emit_expr_impl(expr_node *n)
                         add_instr(re ? "SF_SU2\n" : "SF_ADD\n");       // ar br - ai bi, or ar bi + ai br
                         acc_ok = 1;
                         return expr_make(2, 0);
+                    }
+                    // a part of a sum of comp variables and elements: only that part
+                    {
+                        int leaves = 0, re = (n->op == OP_STD_REAL);
+                        typecheck_expr(n->left);
+                        if (n->left->kind == EXPR_BINOP && n->left->type == 3 && comp_partwise(n->left, &leaves))
+                            return comp_partwise_emit(n->left, !re, !re);
                     }
                     if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return exec_real(a); }
                     else                      { expr a = ast_emit_expr(n->left); return exec_imag(a); }
