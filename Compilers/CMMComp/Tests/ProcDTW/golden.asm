@@ -8,8 +8,7 @@ NOP
 #array dtw 1 5625
 #array data_ref 1 75
 #array data 1 75
-#SHARE __aux_var cont
-#SHARE val_final menor
+#SHARE menor cont
 @main LOD 75
 SET len_ref
 LOD 0
@@ -110,12 +109,12 @@ LDI data_ref
 NEG
 S_ADD
 ABS
+P_LOD k
+MLT 75
 P_NEG_M 1
 ADD j
-P_LOD k
-MLT   75
 S_ADD
-LDI   dtw
+LDI dtw
 S_ADD
 STI dtw
 LOD k
@@ -165,49 +164,46 @@ ADD j
 LDI dtw
 SET menor
 OUT 2
-NEG_M 1
+LOD k
+MLT 75
+P_NEG_M 1
 ADD j
-P_LOD k
-MLT   75
 S_ADD
-LDI   dtw
+LDI dtw
 GRE menor
 JIZ __Lif6else
-NEG_M 1
+LOD k
+MLT 75
+P_NEG_M 1
 ADD j
-P_LOD k
-MLT   75
 S_ADD
-LDI   dtw
+LDI dtw
 SET menor
 OUT 2
 @__Lif6else NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 OUT 2
 NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 GRE menor
 JIZ __Lif7else
 NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 SET menor
 OUT 2
 @__Lif7else LOD  k
@@ -237,21 +233,19 @@ SET k
 JMP __Lwh3
 @__Lwh3end NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 SET val_final
 NEG_M 1
 ADD k
+MLT 75
 P_NEG_M 1
 ADD j
-SET_P __aux_var
-MLT   75
-ADD   __aux_var
-LDI   dtw
+S_ADD
+LDI dtw
 LES 36000
 JIZ __Lif8else
 LOD 0

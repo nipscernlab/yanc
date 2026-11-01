@@ -28,7 +28,7 @@ cmm_comp_sqrt 152
 cmm_conj   57
 cmm_continue 68
 cmm_cov_arr1d 2575
-cmm_cov_arr2d_rd 5477
+cmm_cov_arr2d_rd 5459
 cmm_cov_arr2d_wr 9243
 cmm_cov_lib 10907
 cmm_cov_misc 494
@@ -109,7 +109,7 @@ proc_rls   235
 proc_sim   91
 procBlind  624
 procBlindOpt 593
-ProcDTW    266
+ProcDTW    261
 ResetCheck 22
 sapho_all  952
 sapho_all_a 955

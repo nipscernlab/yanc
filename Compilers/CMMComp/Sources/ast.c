@@ -1074,6 +1074,28 @@ static expr ast_emit_expr_impl(expr_node *n)
                     return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].siz2
                                                  + atoi(v_table[n->right->id].name), 2);
             }
+            // a matrix element whose column index is computed: row * row length +
+            // column is one int expression, the column computed over the pushed
+            // row, and the element is read as from a vector; arr_2d_index would
+            // set the column aside in memory to multiply the row
+            if (n->right && !is_expr_leaf(n->right) && v_table[n->id].isar == 2)
+            {
+                typecheck_expr(n->left);
+                typecheck_expr(n->right);
+                if (n->left->type == 1 && n->right->type == 1)
+                {
+                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
+                    expr_node *s = expr_lit(1, exec_inum(b));
+                    expr_node *m = expr_binop(OP_MUL, n->left, s);
+                    expr_node *a = expr_binop(OP_ADD, m, n->right);
+                    expr e = ast_emit_expr(a);
+                    free(a); free(m); free(s);
+                    v_table[n->id].isar = 1;
+                    expr r = arr_1d2exp(n->id, e, 0);
+                    v_table[n->id].isar = 2;
+                    return r;
+                }
+            }
             expr idx1 = ast_emit_expr(n->left);
             if (n->right) {
                 expr idx2 = ast_emit_expr(n->right);
