@@ -12,8 +12,10 @@
 #      shows (the messages, the variables, each source line with its
 #      instructions) is compared against golden_map.txt; also under --no-sim.
 #      For the sim-enabled subset also run iverilog + vvp, check that the
-#      waveform's source-line and instruction tracks show the same address
-#      at every change, and compare output_*.txt
+#      waveform agrees with the program (wave_map.py --vcd: the source-line
+#      and instruction tracks show the same address, a variable changes only
+#      at a SET of it, and shows the value an out of it puts out), and
+#      compare output_*.txt
 #      against Compilers/CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
 #      the multi-proc DTW example (Compilers/CMMComp/Tests/DTW/TopLevel/).
 #
@@ -505,7 +507,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
         if [ -f "$tmp/${prname}_tb.vcd" ] && ! python3 "$ROOT/Scripts/wave_map.py" "$out" "$prname" --vcd "$tmp/${prname}_tb.vcd" >/dev/null; then
-            echo "FAIL ($prname): the waveform shows an instruction on another's line (wave_map.py --vcd, above)"
+            echo "FAIL ($prname): the waveform disagrees with the program (wave_map.py --vcd, above)"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
 

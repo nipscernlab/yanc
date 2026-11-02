@@ -9,6 +9,17 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **The regression holds the variables the waveform shows.** In every
+  simulated C± test (Scripts/wave_map.py --vcd), an int or float variable
+  of the waveform changes only in the cycle whose instruction is a `SET` or
+  `SET_P` of it (243 331 changes in 95 tests), and where `out(p, x)` or
+  `fout(p, x)` writes a variable, the waveform's `x` is the word port `p`
+  puts out one cycle later (144 572 outputs), with the conversions and the
+  overflow of docs/floating-point.md. The outputs are checked against
+  references apart from YANC, so the values the waveform shows are tied to
+  proven ones. A mirror moved to another variable's `SET`, and a float
+  shown wrong, are both caught; the check found the asmcomp name overflow
+  fixed above.
 - **The regression holds what the waveform shows.** The source line and the
   instruction the waveform shows at each address, and its variables, come
   from tables cmmcomp writes and asmcomp completes (`trad_opcode.txt`,
