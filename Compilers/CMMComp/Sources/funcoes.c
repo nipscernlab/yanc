@@ -22,7 +22,7 @@
 // ----------------------------------------------------------------------------
 
 int  fun_id;      // stores the id of the function being used
-int  mainok  = 0; // main function status: 0 -> undefined, 1 -> resolved (how it will be called)
+int  mainok  = 0; // 1 once a function named main is declared (check_var refuses a program without it)
 char fname [512]; // name of the function currently being parsed
 
 // ----------------------------------------------------------------------------
@@ -325,7 +325,7 @@ void par_check(expr e, int k)
 void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
 {
     check_name(id2, 1);   // not a variable's or another function's name, not an instruction
-    mainok = 1;                   // first function resolves the main question
+    if (strcmp(v_table[id2].name, "main") == 0) mainok = 1; // the reset reaches main: it must exist
 
     strcpy(fname, v_table[id2].name); // set the fname state to the function being analyzed
     v_table[id2].type = id1+6       ; // v_type becomes function (void, int, float, comp) -> (6, 7, 8, 9)

@@ -1,0 +1,10 @@
+#NUBITS 16
+#NUIOIN 1
+#NUIOOU 1
+
+// Negative fixture: functions but no main() must be rejected too. Since main
+// comes first in the program (no JMP main), the reset would fall into f.
+int f(int a)
+{
+    return a + 1;
+}
