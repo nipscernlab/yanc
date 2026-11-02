@@ -254,6 +254,10 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: a program with functions but no `main` is refused.** Any function
+  counted as the main question resolved, so such a program compiled; now
+  that `main` comes first in the program, the reset fell into the first
+  function. NegTest `no_main_funcs` (found by the third cmmcomp audit).
 - **cmmcomp: a name taken from the symbol table survives its growth.**
   About 50 places in the library keep a name and then add a symbol; past
   256, 512, ... symbols the table moved and left those names on freed
