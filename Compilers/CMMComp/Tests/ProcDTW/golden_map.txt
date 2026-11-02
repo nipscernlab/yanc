@@ -1,10 +1,10 @@
 ## messages
 Info: interruption directive found at line 31
-Info: 233 assembly instructions generated
+Info: 227 assembly instructions generated
 Info: 7 variables share 6 data words (1 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
 Info: implementing interruption handling
-Info: 233 instructions and 5792 variables were found
+Info: 227 instructions and 5792 variables were found
 Info: adding array handling
 Info: ULA resource -> integer adder
 Info: ULA resource -> < operator for int
@@ -235,97 +235,91 @@ lang C+-
 157 LDI dtw
 158 OUT 2
 // 92: if (dtw[k-1][j-1] < menor)
-159 LOD k
-160 ADD -1
-161 MLT 75
-162 ADD j
-163 ADD -1
-164 LDI dtw
-165 GRE menor
-166 JIZ __Lif7else
+159 GRE menor
+160 JIZ __Lif7else
 // 94: menor = dtw[k-1][j-1];
-167 LOD k
-168 ADD -1
-169 MLT 75
-170 ADD j
-171 ADD -1
-172 LDI dtw
-173 SET menor
+161 LOD k
+162 ADD -1
+163 MLT 75
+164 ADD j
+165 ADD -1
+166 LDI dtw
+167 SET menor
 // 95: out(2, menor);
-174 OUT 2
+168 OUT 2
 // 97: dtw[k][j] = abs(data[k] - data_ref[j]) + menor;
-175 LOD k
-176 MLT 75
-177 ADD j
-178 P_LOD k
-179 LDI data
-180 P_LOD j
-181 LDI data_ref
-182 NEG
-183 S_ADD
-184 ABS
-185 ADD menor
-186 STI dtw
+169 LOD k
+170 MLT 75
+171 ADD j
+172 P_LOD k
+173 LDI data
+174 P_LOD j
+175 LDI data_ref
+176 NEG
+177 S_ADD
+178 ABS
+179 ADD menor
+180 STI dtw
 // 98: out(2, dtw[k][j]);
-187 OUT 2
+181 OUT 2
 // 101: j++;
-188 LOD j
-189 ADD 1
-190 SET j
+182 LOD j
+183 ADD 1
+184 SET j
 // 59: while (j < len_ref)
-191 JMP __Lwh4
+185 JMP __Lwh4
 // 103: k++;
-192 LOD k
-193 ADD 1
-194 SET k
+186 LOD k
+187 ADD 1
+188 SET k
 // 55: while (k < len_data) // rows of the dtw matrix
-195 JMP __Lwh3
+189 JMP __Lwh3
 // 106: val_final = dtw[k-1][j-1];
-196 LOD k
-197 ADD -1
-198 MLT 75
-199 ADD j
-200 ADD -1
-201 LDI dtw
-202 SET val_final
+190 LOD k
+191 ADD -1
+192 MLT 75
+193 ADD j
+194 ADD -1
+195 LDI dtw
+196 SET val_final
 // 108: if(dtw[k-1][j-1]>36000)  //If there is novelty
-203 LOD k
-204 ADD -1
-205 MLT 75
-206 ADD j
-207 ADD -1
-208 LDI dtw
-209 LES 36000
-210 JIZ __Lif8else
+197 LOD k
+198 ADD -1
+199 MLT 75
+200 ADD j
+201 ADD -1
+202 LDI dtw
+203 LES 36000
+204 JIZ __Lif8else
 // 110: cont    = 0;           // Reset the counter
-211 LOD 0
-212 SET cont
+205 LOD 0
+206 SET cont
 // 111: len_ref = len_data;        // Update the length
-213 LOD len_data
-214 SET len_ref
+207 LOD len_data
+208 SET len_ref
 // 112: while(cont < 75)    // Update vector 1
-215 LOD cont
-216 GRE 75
-217 JIZ __Lwh5end
+209 LOD cont
+210 GRE 75
+211 JIZ __Lwh5end
 // 114: data_ref[cont]= data[cont];
-218 LOD cont
-219 P_LOD cont
-220 LDI data
-221 STI data_ref
+212 LOD cont
+213 P_LOD cont
+214 LDI data
+215 STI data_ref
 // 115: cont++ ;
-222 LOD cont
-223 ADD 1
-224 SET cont
+216 LOD cont
+217 ADD 1
+218 SET cont
 // 112: while(cont < 75)    // Update vector 1
-225 JMP __Lwh5
+219 JMP __Lwh5
 // 119: out(1,val_final);
-226 LOD val_final
-227 OUT 1
+220 LOD val_final
+221 OUT 1
 // 120: out(2, 36000);
-228 LOD 36000
-229 OUT 2
+222 LOD 36000
+223 OUT 2
 // 123: out(0,1);
-230 LOD 1
-231 OUT 0
+224 LOD 1
+225 OUT 0
 // -3: END
-232 JMP fim
+226 JMP fim

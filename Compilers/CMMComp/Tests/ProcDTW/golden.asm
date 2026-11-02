@@ -168,12 +168,6 @@ ADD j
 ADD -1
 LDI dtw
 OUT 2
-LOD k
-ADD -1
-MLT 75
-ADD j
-ADD -1
-LDI dtw
 GRE menor
 JIZ __Lif7else
 LOD k

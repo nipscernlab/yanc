@@ -515,6 +515,17 @@ static int elem_key(int id, expr_node *i1, expr_node *i2, char *b, size_t sz)
     return strlen(b) + 1 < sz;
 }
 
+// a forward element read just emitted: name the element in the acc
+// (acc_holds_elem keeps the name only when the read's LDI is the last
+// instruction), so that a second read of it with nothing between that changes
+// an index takes the acc: out(2, d[k][j]); if (d[k][j] < m) reads d once
+static expr elem_read(expr_node *n, expr r)
+{
+    char key[600];
+    if (r.id == 0 && elem_key(n->id, n->left, n->right, key, sizeof key)) acc_holds_elem(key);
+    return r;
+}
+
 // the name of a computed int index for the acc peephole, "[(ii#1#j)]": the
 // brackets keep a SET from passing it on (global.c). 0 for a leaf, whose
 // read costs no more than a PSH
@@ -1270,7 +1281,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                     v_table[n->id].isar = 1;
                     expr r = arr_1d2exp(n->id, e, 0);
                     v_table[n->id].isar = 2;
-                    return r;
+                    return elem_read(n, r);
                 }
             }
             // a computed index the store of this statement left in the acc:
@@ -1281,15 +1292,16 @@ static expr ast_emit_expr_impl(expr_node *n)
                 if (idx_key(n->left, key, sizeof key) && acc_holds(key))
                 {
                     add_instr("PSH\n");
-                    return arr_1d2exp(n->id, expr_make(1, 0), 0);
+                    return elem_read(n, arr_1d2exp(n->id, expr_make(1, 0), 0));
                 }
             }
             expr idx1 = ast_emit_expr(n->left);
             if (n->right) {
                 expr idx2 = ast_emit_expr(n->right);
-                return arr_2d2exp(n->id, idx1, idx2);
+                return elem_read(n, arr_2d2exp(n->id, idx1, idx2));
             }
-            return arr_1d2exp(n->id, idx1, n->op);  // op = reversed flag
+            if (n->op) return arr_1d2exp(n->id, idx1, n->op);  // reversed: not named
+            return elem_read(n, arr_1d2exp(n->id, idx1, 0));
         }
 
         case EXPR_PPLUS: {

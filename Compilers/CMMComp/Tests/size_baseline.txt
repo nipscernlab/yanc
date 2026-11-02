@@ -114,7 +114,7 @@ proc_rls   224
 proc_sim   87
 procBlind  521
 procBlindOpt 521
-ProcDTW    233
+ProcDTW    227
 ResetCheck 20
 sapho_all  904
 sapho_all_a 907
