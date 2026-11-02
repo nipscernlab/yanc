@@ -49,11 +49,23 @@ from tables the compilers write beside it, and asmcomp completes them.
    moved to the line before or after; the map shifted by one address) and
    fails when the rules do not notice: a rule loosened by mistake shows up.
 
-3. With --vcd, the waveform's two tracks show the same address: at every
-   change, the source-line track (linetabs) is the line pc_<name>_mem.txt
-   gives the address on the instruction track (valr2). The two are two
-   registers behind the PC each (asmcomp's hdl.c); a change to one delay
-   and not the other puts every instruction on the line of its neighbour.
+3. With --vcd, what a simulation's waveform shows agrees with the program:
+     tracks     at every change, the source-line track (linetabs) is the
+                line pc_<name>_mem.txt gives the address on the instruction
+                track (valr2). The two are two registers behind the PC each
+                (asmcomp's hdl.c); a change to one delay and not the other
+                puts every instruction on the line of its neighbour;
+     writes     an int or float variable of the waveform changes only in a
+                cycle whose instruction (valr2) is a SET or SET_P of that
+                variable: a signal tied to the wrong word, a #SHARE group
+                followed wrongly or a name mixed up with another's shows;
+     outputs    where out(p, x) or fout(p, x) writes a variable x, the
+                waveform's x is the word port p puts out one cycle later
+                (fout, or out of a float, truncates to an int; past the
+                word, #FROUND 0 wraps and 1 and 2 saturate,
+                docs/floating-point.md). The outputs are checked against
+                references apart from YANC, so this ties the value the
+                waveform shows to a proven one.
 
 Printed after the checks: the messages (when a file of them is given, with
 the folder of the run replaced by $DIR), the variables, then each source
@@ -337,47 +349,169 @@ def selftest(prog):
     print(f"wave_map: selftest: {tried} broken maps, all noticed")
 
 
+def app_log(prog):
+    """the word and float widths and the #FROUND level asmcomp built for"""
+    got = {"nubits": 32, "nbmant": 23, "nbexpo": 8, "fround": 0}
+    for ln in lines(os.path.join(prog.d, "app_log.txt")):
+        p = ln.split()
+        if len(p) == 2 and p[0] in got:
+            got[p[0]] = int(p[1])
+    return got
+
+
 def check_vcd(prog, path):
-    """linetabs is pc_<name>_mem.txt at the address valr2 shows, at every change."""
-    ids, scope, want = {}, [], ("valr2", "linetabs")
-    val, checked = {}, 0
-    with open(path, encoding="utf-8", errors="replace") as f:
-        for ln in f:
-            if ln.startswith("$scope"):
-                scope.append(ln.split()[2])
-            elif ln.startswith("$upscope"):
-                scope.pop()
-            elif ln.startswith("$var"):
+    """Part 3: the tracks, the writes and the outputs of a simulation."""
+    w = app_log(prog)
+    n, nm, ne = w["nubits"], w["nbmant"], w["nbexpo"]
+
+    def signed(v, bits):
+        return v - (1 << bits) if v >= 1 << (bits - 1) else v
+
+    def float_of(v):                               # a word of SAPHO's float format
+        e = signed((v >> nm) & ((1 << ne) - 1), ne)
+        m = v & ((1 << nm) - 1)
+        return (-m if (v >> (nm + ne)) & 1 else m) * 2.0 ** e
+
+    def to_int(x):                                 # F2I: truncate; past the word, wrap or saturate
+        k = int(x)
+        lo, hi = -(1 << (n - 1)), (1 << (n - 1)) - 1
+        if w["fround"] == 0:
+            return (k - lo) % (1 << n) + lo
+        return max(lo, min(hi, k))
+
+    # the waveform signal of each int and float variable, as asmcomp names it
+    mirror_of = {}
+    for ln in prog.variables:
+        p = ln.split()
+        if len(p) == 3 and p[2] in ("1", "2"):
+            f, v, t = p
+            sig = f"me{t}_f_global_v_{v}_e_" if f == "global" else f"me{t}_f_{f}_v_{v}_e_"
+            mirror_of[sig] = (v if f == "global" else f"{f}_{v}", t == "2")
+
+    ids, mirror, outsig, clk = {}, {}, {}, None
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for ln in fh:
+            if ln.startswith("$var"):
                 p = ln.split()
-                if p[4] in want and p[4] not in [v for v in ids.values()]:
-                    ids[p[3]] = p[4]
+                name = p[4]
+                if name in ("valr2", "linetabs") and name not in ids.values():
+                    ids[p[3]] = name
+                elif name == "clk" and clk is None:
+                    clk = p[3]
+                elif name in mirror_of:
+                    mirror[p[3]] = mirror_of[name]
+                elif re.fullmatch(r"out_sig_\d+", name):
+                    outsig[int(name[8:])] = p[3]
             elif ln.startswith("$enddefinitions"):
-                if sorted(ids.values()) != sorted(want):
-                    fail(f"{path} lacks {', '.join(w for w in want if w not in ids.values())}")
+                missing = [x for x in ("valr2", "linetabs") if x not in ids.values()]
+                if missing:
+                    fail(f"{path} lacks {', '.join(missing)}")
                 break
-        for ln in f:
-            if ln.startswith("#"):
-                if len(val) == 2:
-                    a, s = val["valr2"], val["linetabs"]
-                    if a < prog.num_ins:
-                        checked += 1
-                        if s != prog.line[a]:
-                            fail(f"at time {t}: the waveform shows line {s} for address {a} "
-                                 f"('{prog.trad[a]}'), which is on line {prog.line[a]}")
-                t = ln[1:].strip()
-            elif ln[0] == "b":
+        id_of = {v: k for k, v in ids.items()}
+
+        # out(p, x) / fout(p, x) of a plain variable, by address
+        outs = {}
+        for a in range(prog.num_ins):
+            ins = prog.trad[a].split()
+            if ins[0] != "OUT" or prog.line[a] <= 0:
+                continue
+            code = prog.code.get(prog.line[a], "")
+            if len(re.findall(r"\bf?out\s*\(", code)) != 1:
+                continue
+            m = re.search(r"\b(f?out)\s*\(\s*" + ins[1] + r"\s*,\s*(\w+)\s*\)", code)
+            if not m:
+                continue
+            fn = next((f for f, (b, e) in prog.funcs.items() if b <= prog.line[a] <= e), None)
+            for name in (f"{fn}_{m.group(2)}", m.group(2)):
+                sig = next((i for i, (asm, _) in mirror.items() if asm == name), None)
+                if sig is not None:
+                    outs[a] = (int(ins[1]), sig, m.group(1) == "fout" or prog.trad[a - 1].split()[0] in ("F2I", "F2I_M"))
+                    break
+
+        val, seen, changed = {}, set(), set()
+        pending, period, rises = [], None, []
+        tracks = writes = outputs = 0
+        t = None
+
+        def settle(now):                           # the state after time t, before time now
+            nonlocal tracks, writes, outputs
+            a, s = val.get("valr2"), val.get("linetabs")
+            if a is not None and s is not None and a < prog.num_ins:
+                tracks += 1
+                if s != prog.line[a]:
+                    fail(f"at time {t}: the waveform shows line {s} for address {a} "
+                         f"('{prog.trad[a]}'), which is on line {prog.line[a]}")
+            for i in changed:
+                writes += 1
+                ins = prog.trad[a].split() if a is not None and a < len(prog.trad) else ["?"]
+                if not (ins[0] in ("SET", "SET_P") and len(ins) > 1 and ins[1] == mirror[i][0]):
+                    fail(f"at time {t}: the waveform's '{mirror[i][0]}' changes while the "
+                         f"instruction is '{' '.join(ins)}' (address {a}), not a SET of it")
+            changed.clear()
+            if a is not None and a in outs and period is not None:
+                port, sig, trunc = outs[a]
+                if port in outsig and sig in val:
+                    x = val[sig] if mirror[sig][1] else signed(val[sig], n)
+                    pending.append((t + period, port, sig, x, trunc, a))
+            for item in [x for x in pending if x[0] < now]:
+                pending.remove(item)
+                due, port, sig, x, trunc, at = item
+                got = val.get(outsig[port])
+                if got is None:
+                    continue
+                outputs += 1
+                if mirror[sig][1] and not trunc:
+                    ok = abs(float_of(got) - x) <= 1e-6 * max(1.0, abs(x))
+                    want = x
+                else:
+                    want = to_int(x) if mirror[sig][1] else x
+                    ok = signed(got, n) == want
+                    got = signed(got, n)
+                if not ok:
+                    fail(f"at time {due}: port {port} puts out {got}, but the waveform shows "
+                         f"'{mirror[sig][0]}' = {want} at the out of address {at}")
+
+        for ln in fh:
+            c = ln[0]
+            if c == "#":
+                now = int(ln[1:])
+                if t is not None:
+                    settle(now)
+                t = now
+            elif c == "b":
                 bits, i = ln[1:].split()
+                if "x" in bits or "z" in bits:
+                    val.pop(ids.get(i, i), None)
+                    continue
+                v = int(bits, 2)
                 if i in ids:
-                    if "x" in bits or "z" in bits:
-                        val.pop(ids[i], None)
-                        continue
-                    v = int(bits, 2)
-                    if ids[i] == "linetabs" and len(bits) == 20 and bits[0] == "1":
-                        v -= 1 << 20
+                    if ids[i] == "linetabs":
+                        v = signed(v, 20)
                     val[ids[i]] = v
-    if checked == 0:
+                else:
+                    val[i] = v
+                    if i in mirror:
+                        if i in seen:
+                            changed.add(i)
+                        seen.add(i)
+            elif c == "r":
+                x, i = ln[1:].split()
+                if i in mirror:
+                    val[i] = float(x)
+                    if i in seen:
+                        changed.add(i)
+                    seen.add(i)
+            elif c in "01" and ln[1:].strip() == clk:
+                if c == "1" and t is not None:
+                    rises.append(t)
+                    if len(rises) == 2:
+                        period = rises[1] - rises[0]
+        if t is not None:
+            settle(float("inf"))
+    if tracks == 0:
         fail(f"{path}: no cycle to check")
-    print(f"wave_map: the waveform's tracks agree at {checked} changes")
+    print(f"wave_map: the waveform agrees with the program: tracks at {tracks} changes, "
+          f"{writes} writes of a variable, {outputs} outputs of a variable")
 
 
 def main():

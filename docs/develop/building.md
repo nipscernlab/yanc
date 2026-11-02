@@ -53,9 +53,11 @@ assembly with the golden one, assembles it, checks with
 each other and with the assembly and put each instruction on a source line
 that can have produced it, compares what the waveform will show (each
 source line with its instructions, the variables and the messages) with
-`golden_map.txt`, simulates, checks that the waveform's source-line and
-instruction tracks show the same address at every change, and compares the
-outputs with
+`golden_map.txt`, simulates, checks that the waveform agrees with the
+program (the source-line and instruction tracks show the same address at
+every change, a variable changes only in the cycle of a `SET` of it, and
+where `out(p, x)` writes a variable the waveform's `x` is the word that
+comes out), and compares the outputs with
 references computed apart from YANC, checks that the bad programs of
 `NegTests/` are refused with the right message, holds the instruction set's
 copies and the manual's instruction page to `Compilers/common/isa.tsv`,
