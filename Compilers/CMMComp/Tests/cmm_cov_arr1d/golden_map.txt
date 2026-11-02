@@ -94,16 +94,17 @@ Heads up on line 334: see how the array index came out a float? Gonna truncate i
 Heads up on line 336: a complex array index? Seriously?! Gonna truncate the real part.
 Heads up on line 338: a complex array index? Seriously?! Gonna truncate the real part.
 Heads up on line 340: a complex array index? Seriously?! Gonna truncate the real part.
-Info: 2535 assembly instructions generated
-Info: 4 variables written and never read removed (22 instructions)
+Info: 2517 assembly instructions generated
+Info: 5 variables written and never read removed (40 instructions)
 Info: 3 instructions computing a value never read removed
-Info: 26 variables share 21 data words (5 saved)
+Info: 25 variables share 21 data words (4 saved)
 Heads up: variable 'n0' in function 'main' is never read, so it's out of the program and the waveform (#WAVE n0, in the function, keeps it).
 Heads up: variable 'f0' in function 'main' is never read, so it's out of the program and the waveform (#WAVE f0, in the function, keeps it).
 Heads up: variable 'c0' in function 'main' is never read, so it's out of the program and the waveform (#WAVE c0, in the function, keeps it).
 Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Heads up: variable 'y' in function 'main' is never read, so it's out of the program and the waveform (#WAVE y, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 2510 instructions and 372 variables were found
+Info: 2474 instructions and 372 variables were found
 Info: adding array handling
 Info: adding data output handling
 Info: ULA resource -> integer adder
@@ -232,84 +233,85 @@ lang C+-
 // 36: y = vf[n3]; fout(0, 2.0*y);
 70 LOD main_n3
 71 LDI vf
-72 SET main_y
-73 LOD 2.0
-74 F_MLT main_y
-75 F2I
-76 OUT 0
+72 F_MLT 2.0
+73 F2I
+74 OUT 0
 // 37: y = vf[(n1+z0)]; fout(0, 2.0*y);
-77 LOD main_n1
-78 ADD main_z0
-79 LDI vf
-80 SET main_y
-81 LOD 2.0
-82 F_MLT main_y
+75 LOD main_n1
+76 ADD main_z0
+77 LDI vf
+78 F_MLT 2.0
+79 F2I
+80 OUT 0
+// 38: y = vf[2]; fout(0, 2.0*y);
+81 LOD_V vf 2
+82 F_MLT 2.0
 83 F2I
 84 OUT 0
-// 38: y = vf[2]; fout(0, 2.0*y);
-85 LOD_V vf 2
-86 SET main_y
-87 LOD 2.0
-88 F_MLT main_y
-89 F2I
-90 OUT 0
 // 39: y = vf[f3]; fout(0, 2.0*y);
-91 F2I_M main_f3
-92 LDI vf
-93 SET main_y
-94 LOD 2.0
-95 F_MLT main_y
-96 F2I
-97 OUT 0
+85 F2I_M main_f3
+86 LDI vf
+87 F_MLT 2.0
+88 F2I
+89 OUT 0
 // 40: y = vf[(f1+fz)]; fout(0, 2.0*y);
-98 LOD main_f1
-99 F_ADD main_fz
-100 F2I
-101 LDI vf
-102 SET main_y
-103 LOD 2.0
-104 F_MLT main_y
-105 F2I
-106 OUT 0
+90 LOD main_f1
+91 F_ADD main_fz
+92 F2I
+93 LDI vf
+94 F_MLT 2.0
+95 F2I
+96 OUT 0
 // 41: y = vf[(2+9i)]; fout(0, 2.0*y);
-107 F2I_M 2.0
-108 LDI vf
-109 SET main_y
-110 LOD 2.0
-111 F_MLT main_y
-112 F2I
-113 OUT 0
+97 F2I_M 2.0
+98 LDI vf
+99 F_MLT 2.0
+100 F2I
+101 OUT 0
 // 42: y = vf[(c3*one)]; fout(0, 2.0*y);
-114 LOD main_c3
-115 F_MLT main_one
-116 P_LOD main_c3_i
-117 F_MLT main_one_i
-118 SF_SU2
-119 P_LOD main_c3
-120 F_MLT main_one_i
-121 P_LOD main_c3_i
-122 F_MLT main_one
-123 SF_ADD
-124 POP
-125 F2I
-126 LDI vf
-127 SET main_y
-128 LOD 2.0
-129 F_MLT main_y
-130 F2I
-131 OUT 0
+102 LOD main_c3
+103 F_MLT main_one
+104 P_LOD main_c3_i
+105 F_MLT main_one_i
+106 SF_SU2
+107 P_LOD main_c3
+108 F_MLT main_one_i
+109 P_LOD main_c3_i
+110 F_MLT main_one
+111 SF_ADD
+112 POP
+113 F2I
+114 LDI vf
+115 F_MLT 2.0
+116 F2I
+117 OUT 0
 // 43: y = vf[c1]; fout(0, 2.0*y);
-132 F2I_M main_c1
-133 LDI vf
-134 SET main_y
-135 LOD 2.0
-136 F_MLT main_y
-137 F2I
-138 OUT 0
+118 F2I_M main_c1
+119 LDI vf
+120 F_MLT 2.0
+121 F2I
+122 OUT 0
 // 44: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-139 LOD main_n2
+123 LOD main_n2
+124 LDI vc
+125 P_LOD main_n2
+126 LDI vc_i
+127 SET_P main_w_i
+128 SET main_w
+129 LOD 2.0
+130 F_MLT main_w
+131 F2I
+132 OUT 0
+133 LOD 2.0
+134 F_MLT main_w_i
+135 F2I
+136 OUT 0
+// 45: w = vc[(n3+z0)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+137 LOD main_n3
+138 ADD main_z0
+139 SET __aux_var
 140 LDI vc
-141 P_LOD main_n2
+141 P_LOD __aux_var
 142 LDI vc_i
 143 SET_P main_w_i
 144 SET main_w
@@ -321,2682 +323,2645 @@ lang C+-
 150 F_MLT main_w_i
 151 F2I
 152 OUT 0
-// 45: w = vc[(n3+z0)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-153 LOD main_n3
-154 ADD main_z0
-155 SET __aux_var
-156 LDI vc
-157 P_LOD __aux_var
-158 LDI vc_i
-159 SET_P main_w_i
-160 SET main_w
+// 46: w = vc[1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+153 LOD_V vc 1
+154 P_LOD_V vc_i 1
+155 SET_P main_w_i
+156 SET main_w
+157 LOD 2.0
+158 F_MLT main_w
+159 F2I
+160 OUT 0
 161 LOD 2.0
-162 F_MLT main_w
+162 F_MLT main_w_i
 163 F2I
 164 OUT 0
-165 LOD 2.0
-166 F_MLT main_w_i
-167 F2I
-168 OUT 0
-// 46: w = vc[1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-169 LOD_V vc 1
-170 P_LOD_V vc_i 1
-171 SET_P main_w_i
-172 SET main_w
-173 LOD 2.0
-174 F_MLT main_w
-175 F2I
-176 OUT 0
-177 LOD 2.0
-178 F_MLT main_w_i
-179 F2I
-180 OUT 0
 // 47: w = vc[f2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-181 F2I_M main_f2
-182 SET __aux_var
-183 LDI vc
-184 P_LOD __aux_var
-185 LDI vc_i
-186 SET_P main_w_i
-187 SET main_w
-188 LOD 2.0
-189 F_MLT main_w
-190 F2I
-191 OUT 0
-192 LOD 2.0
-193 F_MLT main_w_i
-194 F2I
-195 OUT 0
+165 F2I_M main_f2
+166 SET __aux_var
+167 LDI vc
+168 P_LOD __aux_var
+169 LDI vc_i
+170 SET_P main_w_i
+171 SET main_w
+172 LOD 2.0
+173 F_MLT main_w
+174 F2I
+175 OUT 0
+176 LOD 2.0
+177 F_MLT main_w_i
+178 F2I
+179 OUT 0
 // 48: w = vc[(f3+fz)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-196 LOD main_f3
-197 F_ADD main_fz
-198 F2I
-199 SET __aux_var
-200 LDI vc
-201 P_LOD __aux_var
-202 LDI vc_i
-203 SET_P main_w_i
-204 SET main_w
-205 LOD 2.0
-206 F_MLT main_w
-207 F2I
-208 OUT 0
-209 LOD 2.0
-210 F_MLT main_w_i
-211 F2I
-212 OUT 0
+180 LOD main_f3
+181 F_ADD main_fz
+182 F2I
+183 SET __aux_var
+184 LDI vc
+185 P_LOD __aux_var
+186 LDI vc_i
+187 SET_P main_w_i
+188 SET main_w
+189 LOD 2.0
+190 F_MLT main_w
+191 F2I
+192 OUT 0
+193 LOD 2.0
+194 F_MLT main_w_i
+195 F2I
+196 OUT 0
 // 49: w = vc[(1+9i)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-213 F2I_M 1.0
-214 SET __aux_var
-215 LDI vc
-216 P_LOD __aux_var
-217 LDI vc_i
-218 SET_P main_w_i
-219 SET main_w
-220 LOD 2.0
-221 F_MLT main_w
-222 F2I
-223 OUT 0
-224 LOD 2.0
-225 F_MLT main_w_i
-226 F2I
-227 OUT 0
+197 F2I_M 1.0
+198 SET __aux_var
+199 LDI vc
+200 P_LOD __aux_var
+201 LDI vc_i
+202 SET_P main_w_i
+203 SET main_w
+204 LOD 2.0
+205 F_MLT main_w
+206 F2I
+207 OUT 0
+208 LOD 2.0
+209 F_MLT main_w_i
+210 F2I
+211 OUT 0
 // 50: w = vc[(c2*one)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-228 LOD main_c2
-229 F_MLT main_one
-230 P_LOD main_c2_i
-231 F_MLT main_one_i
-232 SF_SU2
-233 P_LOD main_c2
-234 F_MLT main_one_i
-235 P_LOD main_c2_i
-236 F_MLT main_one
-237 SF_ADD
-238 POP
-239 F2I
-240 SET __aux_var
-241 LDI vc
-242 P_LOD __aux_var
-243 LDI vc_i
-244 SET_P main_w_i
-245 SET main_w
-246 LOD 2.0
-247 F_MLT main_w
-248 F2I
-249 OUT 0
-250 LOD 2.0
-251 F_MLT main_w_i
-252 F2I
-253 OUT 0
+212 LOD main_c2
+213 F_MLT main_one
+214 P_LOD main_c2_i
+215 F_MLT main_one_i
+216 SF_SU2
+217 P_LOD main_c2
+218 F_MLT main_one_i
+219 P_LOD main_c2_i
+220 F_MLT main_one
+221 SF_ADD
+222 POP
+223 F2I
+224 SET __aux_var
+225 LDI vc
+226 P_LOD __aux_var
+227 LDI vc_i
+228 SET_P main_w_i
+229 SET main_w
+230 LOD 2.0
+231 F_MLT main_w
+232 F2I
+233 OUT 0
+234 LOD 2.0
+235 F_MLT main_w_i
+236 F2I
+237 OUT 0
 // 51: w = vc[c3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-254 F2I_M main_c3
-255 SET __aux_var
-256 LDI vc
-257 P_LOD __aux_var
-258 LDI vc_i
-259 SET_P main_w_i
-260 SET main_w
-261 LOD 2.0
-262 F_MLT main_w
-263 F2I
-264 OUT 0
-265 LOD 2.0
-266 F_MLT main_w_i
-267 F2I
-268 OUT 0
+238 F2I_M main_c3
+239 SET __aux_var
+240 LDI vc
+241 P_LOD __aux_var
+242 LDI vc_i
+243 SET_P main_w_i
+244 SET main_w
+245 LOD 2.0
+246 F_MLT main_w
+247 F2I
+248 OUT 0
+249 LOD 2.0
+250 F_MLT main_w_i
+251 F2I
+252 OUT 0
 // 52: x = 1000 + vi[n1]; out(0, x);
-269 LOD main_n1
-270 LDI vi
-271 ADD 1000
-272 OUT 0
+253 LOD main_n1
+254 LDI vi
+255 ADD 1000
+256 OUT 0
 // 53: x = 1000 + vi[(n2+z0)]; out(0, x);
-273 LOD main_n2
-274 ADD main_z0
-275 LDI vi
-276 ADD 1000
-277 OUT 0
+257 LOD main_n2
+258 ADD main_z0
+259 LDI vi
+260 ADD 1000
+261 OUT 0
 // 54: x = 1000 + vi[3]; out(0, x);
-278 LOD_V vi 3
-279 ADD 1000
-280 OUT 0
+262 LOD_V vi 3
+263 ADD 1000
+264 OUT 0
 // 55: x = 1000 + vi[f1]; out(0, x);
-281 F2I_M main_f1
-282 LDI vi
-283 ADD 1000
-284 OUT 0
+265 F2I_M main_f1
+266 LDI vi
+267 ADD 1000
+268 OUT 0
 // 56: x = 1000 + vi[(f2+fz)]; out(0, x);
-285 LOD main_f2
-286 F_ADD main_fz
-287 F2I
-288 LDI vi
-289 ADD 1000
-290 OUT 0
+269 LOD main_f2
+270 F_ADD main_fz
+271 F2I
+272 LDI vi
+273 ADD 1000
+274 OUT 0
 // 57: x = 1000 + vi[(3+9i)]; out(0, x);
-291 F2I_M 3.0
-292 LDI vi
-293 ADD 1000
-294 OUT 0
+275 F2I_M 3.0
+276 LDI vi
+277 ADD 1000
+278 OUT 0
 // 58: x = 1000 + vi[(c1*one)]; out(0, x);
-295 LOD main_c1
-296 F_MLT main_one
-297 P_LOD main_c1_i
-298 F_MLT main_one_i
-299 SF_SU2
-300 P_LOD main_c1
-301 F_MLT main_one_i
-302 P_LOD main_c1_i
-303 F_MLT main_one
-304 SF_ADD
-305 POP
-306 F2I
-307 LDI vi
-308 ADD 1000
-309 OUT 0
+279 LOD main_c1
+280 F_MLT main_one
+281 P_LOD main_c1_i
+282 F_MLT main_one_i
+283 SF_SU2
+284 P_LOD main_c1
+285 F_MLT main_one_i
+286 P_LOD main_c1_i
+287 F_MLT main_one
+288 SF_ADD
+289 POP
+290 F2I
+291 LDI vi
+292 ADD 1000
+293 OUT 0
 // 59: x = 1000 + vi[c2]; out(0, x);
-310 F2I_M main_c2
-311 LDI vi
-312 ADD 1000
-313 OUT 0
+294 F2I_M main_c2
+295 LDI vi
+296 ADD 1000
+297 OUT 0
 // 60: y = 1000.0 + vf[n3]; fout(0, 2.0*y);
-314 LOD main_n3
-315 LDI vf
-316 F_ADD 1000.0
-317 SET main_y
-318 LOD 2.0
-319 F_MLT main_y
+298 LOD main_n3
+299 LDI vf
+300 F_ADD 1000.0
+301 F_MLT 2.0
+302 F2I
+303 OUT 0
+// 61: y = 1000.0 + vf[(n1+z0)]; fout(0, 2.0*y);
+304 LOD main_n1
+305 ADD main_z0
+306 LDI vf
+307 F_ADD 1000.0
+308 F_MLT 2.0
+309 F2I
+310 OUT 0
+// 62: y = 1000.0 + vf[2]; fout(0, 2.0*y);
+311 LOD_V vf 2
+312 F_ADD 1000.0
+313 F_MLT 2.0
+314 F2I
+315 OUT 0
+// 63: y = 1000.0 + vf[f3]; fout(0, 2.0*y);
+316 F2I_M main_f3
+317 LDI vf
+318 F_ADD 1000.0
+319 F_MLT 2.0
 320 F2I
 321 OUT 0
-// 61: y = 1000.0 + vf[(n1+z0)]; fout(0, 2.0*y);
-322 LOD main_n1
-323 ADD main_z0
-324 LDI vf
-325 F_ADD 1000.0
-326 SET main_y
-327 LOD 2.0
-328 F_MLT main_y
-329 F2I
-330 OUT 0
-// 62: y = 1000.0 + vf[2]; fout(0, 2.0*y);
-331 LOD_V vf 2
-332 F_ADD 1000.0
-333 SET main_y
-334 LOD 2.0
-335 F_MLT main_y
-336 F2I
-337 OUT 0
-// 63: y = 1000.0 + vf[f3]; fout(0, 2.0*y);
-338 F2I_M main_f3
-339 LDI vf
-340 F_ADD 1000.0
-341 SET main_y
-342 LOD 2.0
-343 F_MLT main_y
-344 F2I
-345 OUT 0
 // 64: y = 1000.0 + vf[(f1+fz)]; fout(0, 2.0*y);
-346 LOD main_f1
-347 F_ADD main_fz
-348 F2I
-349 LDI vf
-350 F_ADD 1000.0
-351 SET main_y
-352 LOD 2.0
-353 F_MLT main_y
-354 F2I
-355 OUT 0
+322 LOD main_f1
+323 F_ADD main_fz
+324 F2I
+325 LDI vf
+326 F_ADD 1000.0
+327 F_MLT 2.0
+328 F2I
+329 OUT 0
 // 65: y = 1000.0 + vf[(2+9i)]; fout(0, 2.0*y);
-356 F2I_M 2.0
-357 LDI vf
-358 F_ADD 1000.0
-359 SET main_y
-360 LOD 2.0
-361 F_MLT main_y
-362 F2I
-363 OUT 0
+330 F2I_M 2.0
+331 LDI vf
+332 F_ADD 1000.0
+333 F_MLT 2.0
+334 F2I
+335 OUT 0
 // 66: y = 1000.0 + vf[(c3*one)]; fout(0, 2.0*y);
-364 LOD main_c3
-365 F_MLT main_one
-366 P_LOD main_c3_i
-367 F_MLT main_one_i
-368 SF_SU2
-369 P_LOD main_c3
-370 F_MLT main_one_i
-371 P_LOD main_c3_i
-372 F_MLT main_one
-373 SF_ADD
-374 POP
-375 F2I
-376 LDI vf
-377 F_ADD 1000.0
-378 SET main_y
-379 LOD 2.0
-380 F_MLT main_y
-381 F2I
-382 OUT 0
+336 LOD main_c3
+337 F_MLT main_one
+338 P_LOD main_c3_i
+339 F_MLT main_one_i
+340 SF_SU2
+341 P_LOD main_c3
+342 F_MLT main_one_i
+343 P_LOD main_c3_i
+344 F_MLT main_one
+345 SF_ADD
+346 POP
+347 F2I
+348 LDI vf
+349 F_ADD 1000.0
+350 F_MLT 2.0
+351 F2I
+352 OUT 0
 // 67: y = 1000.0 + vf[c1]; fout(0, 2.0*y);
-383 F2I_M main_c1
-384 LDI vf
-385 F_ADD 1000.0
-386 SET main_y
-387 LOD 2.0
-388 F_MLT main_y
-389 F2I
-390 OUT 0
+353 F2I_M main_c1
+354 LDI vf
+355 F_ADD 1000.0
+356 F_MLT 2.0
+357 F2I
+358 OUT 0
 // 68: w = (100+100i) + vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-391 LOD main_n2
-392 LDI vc
-393 P_LOD main_n2
-394 LDI vc_i
-395 SET_P __aux_var
-396 F_ADD 100.0
-397 P_LOD 100.0
-398 F_ADD __aux_var
-399 SET_P main_w_i
-400 SET main_w
-401 LOD 2.0
-402 F_MLT main_w
-403 F2I
-404 OUT 0
+359 LOD main_n2
+360 LDI vc
+361 P_LOD main_n2
+362 LDI vc_i
+363 SET_P __aux_var
+364 F_ADD 100.0
+365 P_LOD 100.0
+366 F_ADD __aux_var
+367 SET_P main_w_i
+368 SET main_w
+369 LOD 2.0
+370 F_MLT main_w
+371 F2I
+372 OUT 0
+373 LOD 2.0
+374 F_MLT main_w_i
+375 F2I
+376 OUT 0
+// 69: w = (100+100i) + vc[(n3+z0)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+377 LOD main_n3
+378 ADD main_z0
+379 SET __aux_var
+380 LDI vc
+381 P_LOD __aux_var
+382 LDI vc_i
+383 SET_P __aux_var
+384 F_ADD 100.0
+385 P_LOD 100.0
+386 F_ADD __aux_var
+387 SET_P main_w_i
+388 SET main_w
+389 LOD 2.0
+390 F_MLT main_w
+391 F2I
+392 OUT 0
+393 LOD 2.0
+394 F_MLT main_w_i
+395 F2I
+396 OUT 0
+// 70: w = (100+100i) + vc[1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+397 LOD_V vc 1
+398 P_LOD_V vc_i 1
+399 SET_P __aux_var
+400 F_ADD 100.0
+401 P_LOD 100.0
+402 F_ADD __aux_var
+403 SET_P main_w_i
+404 SET main_w
 405 LOD 2.0
-406 F_MLT main_w_i
+406 F_MLT main_w
 407 F2I
 408 OUT 0
-// 69: w = (100+100i) + vc[(n3+z0)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-409 LOD main_n3
-410 ADD main_z0
-411 SET __aux_var
-412 LDI vc
-413 P_LOD __aux_var
-414 LDI vc_i
-415 SET_P __aux_var
-416 F_ADD 100.0
-417 P_LOD 100.0
-418 F_ADD __aux_var
-419 SET_P main_w_i
-420 SET main_w
-421 LOD 2.0
-422 F_MLT main_w
-423 F2I
-424 OUT 0
-425 LOD 2.0
-426 F_MLT main_w_i
-427 F2I
-428 OUT 0
-// 70: w = (100+100i) + vc[1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-429 LOD_V vc 1
-430 P_LOD_V vc_i 1
-431 SET_P __aux_var
-432 F_ADD 100.0
-433 P_LOD 100.0
-434 F_ADD __aux_var
-435 SET_P main_w_i
-436 SET main_w
-437 LOD 2.0
-438 F_MLT main_w
-439 F2I
-440 OUT 0
-441 LOD 2.0
-442 F_MLT main_w_i
-443 F2I
-444 OUT 0
+409 LOD 2.0
+410 F_MLT main_w_i
+411 F2I
+412 OUT 0
 // 71: w = (100+100i) + vc[f2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-445 F2I_M main_f2
-446 SET __aux_var
-447 LDI vc
-448 P_LOD __aux_var
-449 LDI vc_i
-450 SET_P __aux_var
-451 F_ADD 100.0
-452 P_LOD 100.0
-453 F_ADD __aux_var
-454 SET_P main_w_i
-455 SET main_w
-456 LOD 2.0
-457 F_MLT main_w
-458 F2I
-459 OUT 0
-460 LOD 2.0
-461 F_MLT main_w_i
-462 F2I
-463 OUT 0
+413 F2I_M main_f2
+414 SET __aux_var
+415 LDI vc
+416 P_LOD __aux_var
+417 LDI vc_i
+418 SET_P __aux_var
+419 F_ADD 100.0
+420 P_LOD 100.0
+421 F_ADD __aux_var
+422 SET_P main_w_i
+423 SET main_w
+424 LOD 2.0
+425 F_MLT main_w
+426 F2I
+427 OUT 0
+428 LOD 2.0
+429 F_MLT main_w_i
+430 F2I
+431 OUT 0
 // 72: w = (100+100i) + vc[(f3+fz)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-464 LOD main_f3
-465 F_ADD main_fz
-466 F2I
-467 SET __aux_var
-468 LDI vc
-469 P_LOD __aux_var
-470 LDI vc_i
-471 SET_P __aux_var
-472 F_ADD 100.0
-473 P_LOD 100.0
-474 F_ADD __aux_var
-475 SET_P main_w_i
-476 SET main_w
-477 LOD 2.0
-478 F_MLT main_w
-479 F2I
-480 OUT 0
-481 LOD 2.0
-482 F_MLT main_w_i
-483 F2I
-484 OUT 0
+432 LOD main_f3
+433 F_ADD main_fz
+434 F2I
+435 SET __aux_var
+436 LDI vc
+437 P_LOD __aux_var
+438 LDI vc_i
+439 SET_P __aux_var
+440 F_ADD 100.0
+441 P_LOD 100.0
+442 F_ADD __aux_var
+443 SET_P main_w_i
+444 SET main_w
+445 LOD 2.0
+446 F_MLT main_w
+447 F2I
+448 OUT 0
+449 LOD 2.0
+450 F_MLT main_w_i
+451 F2I
+452 OUT 0
 // 73: w = (100+100i) + vc[(1+9i)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-485 F2I_M 1.0
-486 SET __aux_var
-487 LDI vc
-488 P_LOD __aux_var
-489 LDI vc_i
-490 SET_P __aux_var
-491 F_ADD 100.0
-492 P_LOD 100.0
-493 F_ADD __aux_var
-494 SET_P main_w_i
-495 SET main_w
-496 LOD 2.0
-497 F_MLT main_w
-498 F2I
-499 OUT 0
-500 LOD 2.0
-501 F_MLT main_w_i
-502 F2I
-503 OUT 0
+453 F2I_M 1.0
+454 SET __aux_var
+455 LDI vc
+456 P_LOD __aux_var
+457 LDI vc_i
+458 SET_P __aux_var
+459 F_ADD 100.0
+460 P_LOD 100.0
+461 F_ADD __aux_var
+462 SET_P main_w_i
+463 SET main_w
+464 LOD 2.0
+465 F_MLT main_w
+466 F2I
+467 OUT 0
+468 LOD 2.0
+469 F_MLT main_w_i
+470 F2I
+471 OUT 0
 // 74: w = (100+100i) + vc[(c2*one)]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-504 LOD main_c2
-505 F_MLT main_one
-506 P_LOD main_c2_i
-507 F_MLT main_one_i
-508 SF_SU2
-509 P_LOD main_c2
-510 F_MLT main_one_i
-511 P_LOD main_c2_i
-512 F_MLT main_one
-513 SF_ADD
-514 POP
-515 F2I
-516 SET __aux_var
-517 LDI vc
-518 P_LOD __aux_var
-519 LDI vc_i
-520 SET_P __aux_var
-521 F_ADD 100.0
-522 P_LOD 100.0
-523 F_ADD __aux_var
-524 SET_P main_w_i
-525 SET main_w
-526 LOD 2.0
-527 F_MLT main_w
-528 F2I
-529 OUT 0
-530 LOD 2.0
-531 F_MLT main_w_i
-532 F2I
-533 OUT 0
+472 LOD main_c2
+473 F_MLT main_one
+474 P_LOD main_c2_i
+475 F_MLT main_one_i
+476 SF_SU2
+477 P_LOD main_c2
+478 F_MLT main_one_i
+479 P_LOD main_c2_i
+480 F_MLT main_one
+481 SF_ADD
+482 POP
+483 F2I
+484 SET __aux_var
+485 LDI vc
+486 P_LOD __aux_var
+487 LDI vc_i
+488 SET_P __aux_var
+489 F_ADD 100.0
+490 P_LOD 100.0
+491 F_ADD __aux_var
+492 SET_P main_w_i
+493 SET main_w
+494 LOD 2.0
+495 F_MLT main_w
+496 F2I
+497 OUT 0
+498 LOD 2.0
+499 F_MLT main_w_i
+500 F2I
+501 OUT 0
 // 75: w = (100+100i) + vc[c3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-534 F2I_M main_c3
-535 SET __aux_var
-536 LDI vc
-537 P_LOD __aux_var
-538 LDI vc_i
-539 SET_P __aux_var
-540 F_ADD 100.0
-541 P_LOD 100.0
-542 F_ADD __aux_var
-543 SET_P main_w_i
-544 SET main_w
-545 LOD 2.0
-546 F_MLT main_w
-547 F2I
-548 OUT 0
-549 LOD 2.0
-550 F_MLT main_w_i
-551 F2I
-552 OUT 0
+502 F2I_M main_c3
+503 SET __aux_var
+504 LDI vc
+505 P_LOD __aux_var
+506 LDI vc_i
+507 SET_P __aux_var
+508 F_ADD 100.0
+509 P_LOD 100.0
+510 F_ADD __aux_var
+511 SET_P main_w_i
+512 SET main_w
+513 LOD 2.0
+514 F_MLT main_w
+515 F2I
+516 OUT 0
+517 LOD 2.0
+518 F_MLT main_w_i
+519 F2I
+520 OUT 0
 // 76: iv = 300; fv = 300.5; cv = 300+350i;
-553 LOD 300
-554 SET main_iv
-555 LOD 300.5
-556 SET main_fv
-557 LOD 300.0
-558 SET main_cv
-559 LOD 350.0
-560 SET main_cv_i
+521 LOD 300
+522 SET main_iv
+523 LOD 300.5
+524 SET main_fv
+525 LOD 300.0
+526 SET main_cv
+527 LOD 350.0
+528 SET main_cv_i
 // 77: vi[n1] = iv;
-561 LOD main_n1
-562 P_LOD main_iv
-563 STI vi
+529 LOD main_n1
+530 P_LOD main_iv
+531 STI vi
 // 78: out(0, vi[n1]);
-564 OUT 0
+532 OUT 0
 // 79: iv = 301; fv = 301.5; cv = 301+351i;
-565 LOD 301
-566 SET main_iv
-567 LOD 301.5
-568 SET main_fv
-569 LOD 301.0
-570 SET main_cv
-571 LOD 351.0
-572 SET main_cv_i
+533 LOD 301
+534 SET main_iv
+535 LOD 301.5
+536 SET main_fv
+537 LOD 301.0
+538 SET main_cv
+539 LOD 351.0
+540 SET main_cv_i
 // 80: vi[(n2+z0)] = iv;
-573 LOD main_n2
-574 ADD main_z0
-575 P_LOD main_iv
-576 STI vi
+541 LOD main_n2
+542 ADD main_z0
+543 P_LOD main_iv
+544 STI vi
 // 81: out(0, vi[n2]);
-577 LOD main_n2
-578 LDI vi
-579 OUT 0
+545 LOD main_n2
+546 LDI vi
+547 OUT 0
 // 82: iv = 302; fv = 302.5; cv = 302+352i;
-580 LOD 302
-581 SET main_iv
-582 LOD 302.5
-583 SET main_fv
-584 LOD 302.0
-585 SET main_cv
-586 LOD 352.0
-587 SET main_cv_i
+548 LOD 302
+549 SET main_iv
+550 LOD 302.5
+551 SET main_fv
+552 LOD 302.0
+553 SET main_cv
+554 LOD 352.0
+555 SET main_cv_i
 // 83: vi[3] = iv;
-588 LOD main_iv
-589 SET_V vi 3
+556 LOD main_iv
+557 SET_V vi 3
 // 84: out(0, vi[n3]);
-590 LOD main_n3
-591 LDI vi
-592 OUT 0
+558 LOD main_n3
+559 LDI vi
+560 OUT 0
 // 85: iv = 303; fv = 303.5; cv = 303+353i;
-593 LOD 303
-594 SET main_iv
-595 LOD 303.5
-596 SET main_fv
-597 LOD 303.0
-598 SET main_cv
-599 LOD 353.0
-600 SET main_cv_i
+561 LOD 303
+562 SET main_iv
+563 LOD 303.5
+564 SET main_fv
+565 LOD 303.0
+566 SET main_cv
+567 LOD 353.0
+568 SET main_cv_i
 // 86: vi[f1] = iv;
-601 F2I_M main_f1
-602 P_LOD main_iv
-603 STI vi
+569 F2I_M main_f1
+570 P_LOD main_iv
+571 STI vi
 // 87: out(0, vi[n1]);
-604 LOD main_n1
-605 LDI vi
-606 OUT 0
+572 LOD main_n1
+573 LDI vi
+574 OUT 0
 // 88: iv = 304; fv = 304.5; cv = 304+354i;
-607 LOD 304
-608 SET main_iv
-609 LOD 304.5
-610 SET main_fv
-611 LOD 304.0
-612 SET main_cv
-613 LOD 354.0
-614 SET main_cv_i
+575 LOD 304
+576 SET main_iv
+577 LOD 304.5
+578 SET main_fv
+579 LOD 304.0
+580 SET main_cv
+581 LOD 354.0
+582 SET main_cv_i
 // 89: vi[(f2+fz)] = iv;
-615 LOD main_f2
-616 F_ADD main_fz
-617 F2I
-618 P_LOD main_iv
-619 STI vi
+583 LOD main_f2
+584 F_ADD main_fz
+585 F2I
+586 P_LOD main_iv
+587 STI vi
 // 90: out(0, vi[n2]);
-620 LOD main_n2
-621 LDI vi
-622 OUT 0
+588 LOD main_n2
+589 LDI vi
+590 OUT 0
 // 91: iv = 305; fv = 305.5; cv = 305+355i;
-623 LOD 305
-624 SET main_iv
-625 LOD 305.5
-626 SET main_fv
-627 LOD 305.0
-628 SET main_cv
-629 LOD 355.0
-630 SET main_cv_i
+591 LOD 305
+592 SET main_iv
+593 LOD 305.5
+594 SET main_fv
+595 LOD 305.0
+596 SET main_cv
+597 LOD 355.0
+598 SET main_cv_i
 // 92: vi[(3+9i)] = iv;
-631 F2I_M 3.0
-632 P_LOD main_iv
-633 STI vi
+599 F2I_M 3.0
+600 P_LOD main_iv
+601 STI vi
 // 93: out(0, vi[n3]);
-634 LOD main_n3
-635 LDI vi
-636 OUT 0
+602 LOD main_n3
+603 LDI vi
+604 OUT 0
 // 94: iv = 306; fv = 306.5; cv = 306+356i;
-637 LOD 306
-638 SET main_iv
-639 LOD 306.5
-640 SET main_fv
-641 LOD 306.0
-642 SET main_cv
-643 LOD 356.0
-644 SET main_cv_i
+605 LOD 306
+606 SET main_iv
+607 LOD 306.5
+608 SET main_fv
+609 LOD 306.0
+610 SET main_cv
+611 LOD 356.0
+612 SET main_cv_i
 // 95: vi[(c1*one)] = iv;
-645 LOD main_c1
-646 F_MLT main_one
-647 P_LOD main_c1_i
-648 F_MLT main_one_i
-649 SF_SU2
-650 P_LOD main_c1
-651 F_MLT main_one_i
-652 P_LOD main_c1_i
-653 F_MLT main_one
-654 SF_ADD
-655 POP
-656 F2I
-657 P_LOD main_iv
-658 STI vi
+613 LOD main_c1
+614 F_MLT main_one
+615 P_LOD main_c1_i
+616 F_MLT main_one_i
+617 SF_SU2
+618 P_LOD main_c1
+619 F_MLT main_one_i
+620 P_LOD main_c1_i
+621 F_MLT main_one
+622 SF_ADD
+623 POP
+624 F2I
+625 P_LOD main_iv
+626 STI vi
 // 96: out(0, vi[n1]);
-659 LOD main_n1
-660 LDI vi
-661 OUT 0
+627 LOD main_n1
+628 LDI vi
+629 OUT 0
 // 97: iv = 307; fv = 307.5; cv = 307+357i;
-662 LOD 307
-663 SET main_iv
-664 LOD 307.5
-665 SET main_fv
-666 LOD 307.0
-667 SET main_cv
-668 LOD 357.0
-669 SET main_cv_i
+630 LOD 307
+631 SET main_iv
+632 LOD 307.5
+633 SET main_fv
+634 LOD 307.0
+635 SET main_cv
+636 LOD 357.0
+637 SET main_cv_i
 // 98: vi[c2] = iv;
-670 F2I_M main_c2
-671 P_LOD main_iv
-672 STI vi
+638 F2I_M main_c2
+639 P_LOD main_iv
+640 STI vi
 // 99: out(0, vi[n2]);
-673 LOD main_n2
-674 LDI vi
-675 OUT 0
+641 LOD main_n2
+642 LDI vi
+643 OUT 0
 // 100: iv = 308; fv = 308.5; cv = 308+358i;
-676 LOD 308
-677 SET main_iv
-678 LOD 308.5
-679 SET main_fv
-680 LOD 308.0
-681 SET main_cv
-682 LOD 358.0
-683 SET main_cv_i
+644 LOD 308
+645 SET main_iv
+646 LOD 308.5
+647 SET main_fv
+648 LOD 308.0
+649 SET main_cv
+650 LOD 358.0
+651 SET main_cv_i
 // 101: vf[n3] = fv;
-684 LOD main_n3
-685 P_LOD main_fv
-686 STI vf
+652 LOD main_n3
+653 P_LOD main_fv
+654 STI vf
 // 102: fout(0, 2.0*vf[n3]);
+655 F_MLT 2.0
+656 F2I
+657 OUT 0
+// 103: iv = 309; fv = 309.5; cv = 309+359i;
+658 LOD 309
+659 SET main_iv
+660 LOD 309.5
+661 SET main_fv
+662 LOD 309.0
+663 SET main_cv
+664 LOD 359.0
+665 SET main_cv_i
+// 104: vf[(n1+z0)] = fv;
+666 LOD main_n1
+667 ADD main_z0
+668 P_LOD main_fv
+669 STI vf
+// 105: fout(0, 2.0*vf[n1]);
+670 LOD main_n1
+671 LDI vf
+672 F_MLT 2.0
+673 F2I
+674 OUT 0
+// 106: iv = 310; fv = 310.5; cv = 310+360i;
+675 LOD 310
+676 SET main_iv
+677 LOD 310.5
+678 SET main_fv
+679 LOD 310.0
+680 SET main_cv
+681 LOD 360.0
+682 SET main_cv_i
+// 107: vf[2] = fv;
+683 LOD main_fv
+684 SET_V vf 2
+// 108: fout(0, 2.0*vf[n2]);
+685 LOD main_n2
+686 LDI vf
 687 F_MLT 2.0
 688 F2I
 689 OUT 0
-// 103: iv = 309; fv = 309.5; cv = 309+359i;
-690 LOD 309
-691 SET main_iv
-692 LOD 309.5
-693 SET main_fv
-694 LOD 309.0
-695 SET main_cv
-696 LOD 359.0
-697 SET main_cv_i
-// 104: vf[(n1+z0)] = fv;
-698 LOD main_n1
-699 ADD main_z0
-700 P_LOD main_fv
-701 STI vf
-// 105: fout(0, 2.0*vf[n1]);
-702 LOD main_n1
-703 LDI vf
-704 F_MLT 2.0
-705 F2I
-706 OUT 0
-// 106: iv = 310; fv = 310.5; cv = 310+360i;
-707 LOD 310
-708 SET main_iv
-709 LOD 310.5
-710 SET main_fv
-711 LOD 310.0
-712 SET main_cv
-713 LOD 360.0
-714 SET main_cv_i
-// 107: vf[2] = fv;
-715 LOD main_fv
-716 SET_V vf 2
-// 108: fout(0, 2.0*vf[n2]);
-717 LOD main_n2
-718 LDI vf
-719 F_MLT 2.0
-720 F2I
-721 OUT 0
 // 109: iv = 311; fv = 311.5; cv = 311+361i;
-722 LOD 311
-723 SET main_iv
-724 LOD 311.5
-725 SET main_fv
-726 LOD 311.0
-727 SET main_cv
-728 LOD 361.0
-729 SET main_cv_i
+690 LOD 311
+691 SET main_iv
+692 LOD 311.5
+693 SET main_fv
+694 LOD 311.0
+695 SET main_cv
+696 LOD 361.0
+697 SET main_cv_i
 // 110: vf[f3] = fv;
-730 F2I_M main_f3
-731 P_LOD main_fv
-732 STI vf
+698 F2I_M main_f3
+699 P_LOD main_fv
+700 STI vf
 // 111: fout(0, 2.0*vf[n3]);
-733 LOD main_n3
-734 LDI vf
-735 F_MLT 2.0
-736 F2I
-737 OUT 0
+701 LOD main_n3
+702 LDI vf
+703 F_MLT 2.0
+704 F2I
+705 OUT 0
 // 112: iv = 312; fv = 312.5; cv = 312+362i;
-738 LOD 312
-739 SET main_iv
-740 LOD 312.5
-741 SET main_fv
-742 LOD 312.0
-743 SET main_cv
-744 LOD 362.0
-745 SET main_cv_i
+706 LOD 312
+707 SET main_iv
+708 LOD 312.5
+709 SET main_fv
+710 LOD 312.0
+711 SET main_cv
+712 LOD 362.0
+713 SET main_cv_i
 // 113: vf[(f1+fz)] = fv;
-746 LOD main_f1
-747 F_ADD main_fz
-748 F2I
-749 P_LOD main_fv
-750 STI vf
+714 LOD main_f1
+715 F_ADD main_fz
+716 F2I
+717 P_LOD main_fv
+718 STI vf
 // 114: fout(0, 2.0*vf[n1]);
-751 LOD main_n1
-752 LDI vf
-753 F_MLT 2.0
-754 F2I
-755 OUT 0
+719 LOD main_n1
+720 LDI vf
+721 F_MLT 2.0
+722 F2I
+723 OUT 0
 // 115: iv = 313; fv = 313.5; cv = 313+363i;
-756 LOD 313
-757 SET main_iv
-758 LOD 313.5
-759 SET main_fv
-760 LOD 313.0
-761 SET main_cv
-762 LOD 363.0
-763 SET main_cv_i
+724 LOD 313
+725 SET main_iv
+726 LOD 313.5
+727 SET main_fv
+728 LOD 313.0
+729 SET main_cv
+730 LOD 363.0
+731 SET main_cv_i
 // 116: vf[(2+9i)] = fv;
-764 F2I_M 2.0
-765 P_LOD main_fv
-766 STI vf
+732 F2I_M 2.0
+733 P_LOD main_fv
+734 STI vf
 // 117: fout(0, 2.0*vf[n2]);
-767 LOD main_n2
-768 LDI vf
-769 F_MLT 2.0
-770 F2I
-771 OUT 0
+735 LOD main_n2
+736 LDI vf
+737 F_MLT 2.0
+738 F2I
+739 OUT 0
 // 118: iv = 314; fv = 314.5; cv = 314+364i;
-772 LOD 314
-773 SET main_iv
-774 LOD 314.5
-775 SET main_fv
-776 LOD 314.0
-777 SET main_cv
-778 LOD 364.0
-779 SET main_cv_i
+740 LOD 314
+741 SET main_iv
+742 LOD 314.5
+743 SET main_fv
+744 LOD 314.0
+745 SET main_cv
+746 LOD 364.0
+747 SET main_cv_i
 // 119: vf[(c3*one)] = fv;
-780 LOD main_c3
-781 F_MLT main_one
-782 P_LOD main_c3_i
-783 F_MLT main_one_i
-784 SF_SU2
-785 P_LOD main_c3
-786 F_MLT main_one_i
-787 P_LOD main_c3_i
-788 F_MLT main_one
-789 SF_ADD
-790 POP
-791 F2I
-792 P_LOD main_fv
-793 STI vf
+748 LOD main_c3
+749 F_MLT main_one
+750 P_LOD main_c3_i
+751 F_MLT main_one_i
+752 SF_SU2
+753 P_LOD main_c3
+754 F_MLT main_one_i
+755 P_LOD main_c3_i
+756 F_MLT main_one
+757 SF_ADD
+758 POP
+759 F2I
+760 P_LOD main_fv
+761 STI vf
 // 120: fout(0, 2.0*vf[n3]);
-794 LOD main_n3
-795 LDI vf
-796 F_MLT 2.0
-797 F2I
-798 OUT 0
+762 LOD main_n3
+763 LDI vf
+764 F_MLT 2.0
+765 F2I
+766 OUT 0
 // 121: iv = 315; fv = 315.5; cv = 315+365i;
-799 LOD 315
-800 SET main_iv
-801 LOD 315.5
-802 SET main_fv
-803 LOD 315.0
-804 SET main_cv
-805 LOD 365.0
-806 SET main_cv_i
+767 LOD 315
+768 SET main_iv
+769 LOD 315.5
+770 SET main_fv
+771 LOD 315.0
+772 SET main_cv
+773 LOD 365.0
+774 SET main_cv_i
 // 122: vf[c1] = fv;
-807 F2I_M main_c1
-808 P_LOD main_fv
-809 STI vf
+775 F2I_M main_c1
+776 P_LOD main_fv
+777 STI vf
 // 123: fout(0, 2.0*vf[n1]);
-810 LOD main_n1
-811 LDI vf
-812 F_MLT 2.0
-813 F2I
-814 OUT 0
+778 LOD main_n1
+779 LDI vf
+780 F_MLT 2.0
+781 F2I
+782 OUT 0
 // 124: iv = 316; fv = 316.5; cv = 316+366i;
-815 LOD 316
-816 SET main_iv
-817 LOD 316.5
-818 SET main_fv
-819 LOD 316.0
-820 SET main_cv
-821 LOD 366.0
-822 SET main_cv_i
+783 LOD 316
+784 SET main_iv
+785 LOD 316.5
+786 SET main_fv
+787 LOD 316.0
+788 SET main_cv
+789 LOD 366.0
+790 SET main_cv_i
 // 125: vc[n2] = cv;
-823 LOD main_n2
-824 P_LOD main_cv
-825 STI vc
-826 LOD main_n2
-827 P_LOD main_cv_i
-828 STI vc_i
+791 LOD main_n2
+792 P_LOD main_cv
+793 STI vc
+794 LOD main_n2
+795 P_LOD main_cv_i
+796 STI vc_i
 // 126: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-829 LOD main_n2
-830 LDI vc
-831 P_LOD main_n2
-832 LDI vc_i
-833 SET_P main_w_i
-834 SET main_w
-835 LOD 2.0
-836 F_MLT main_w
-837 F2I
-838 OUT 0
-839 LOD 2.0
-840 F_MLT main_w_i
-841 F2I
-842 OUT 0
+797 LOD main_n2
+798 LDI vc
+799 P_LOD main_n2
+800 LDI vc_i
+801 SET_P main_w_i
+802 SET main_w
+803 LOD 2.0
+804 F_MLT main_w
+805 F2I
+806 OUT 0
+807 LOD 2.0
+808 F_MLT main_w_i
+809 F2I
+810 OUT 0
 // 127: iv = 317; fv = 317.5; cv = 317+367i;
-843 LOD 317
-844 SET main_iv
-845 LOD 317.5
-846 SET main_fv
-847 LOD 317.0
-848 SET main_cv
-849 LOD 367.0
-850 SET main_cv_i
+811 LOD 317
+812 SET main_iv
+813 LOD 317.5
+814 SET main_fv
+815 LOD 317.0
+816 SET main_cv
+817 LOD 367.0
+818 SET main_cv_i
 // 128: vc[(n3+z0)] = cv;
-851 LOD main_n3
-852 ADD main_z0
-853 SET __aux_var
-854 P_LOD main_cv
-855 STI vc
-856 LOD __aux_var
-857 P_LOD main_cv_i
-858 STI vc_i
+819 LOD main_n3
+820 ADD main_z0
+821 SET __aux_var
+822 P_LOD main_cv
+823 STI vc
+824 LOD __aux_var
+825 P_LOD main_cv_i
+826 STI vc_i
 // 129: w = vc[n3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-859 LOD main_n3
-860 LDI vc
-861 P_LOD main_n3
-862 LDI vc_i
-863 SET_P main_w_i
-864 SET main_w
-865 LOD 2.0
-866 F_MLT main_w
-867 F2I
-868 OUT 0
-869 LOD 2.0
-870 F_MLT main_w_i
-871 F2I
-872 OUT 0
+827 LOD main_n3
+828 LDI vc
+829 P_LOD main_n3
+830 LDI vc_i
+831 SET_P main_w_i
+832 SET main_w
+833 LOD 2.0
+834 F_MLT main_w
+835 F2I
+836 OUT 0
+837 LOD 2.0
+838 F_MLT main_w_i
+839 F2I
+840 OUT 0
 // 130: iv = 318; fv = 318.5; cv = 318+368i;
-873 LOD 318
-874 SET main_iv
-875 LOD 318.5
-876 SET main_fv
-877 LOD 318.0
-878 SET main_cv
-879 LOD 368.0
-880 SET main_cv_i
+841 LOD 318
+842 SET main_iv
+843 LOD 318.5
+844 SET main_fv
+845 LOD 318.0
+846 SET main_cv
+847 LOD 368.0
+848 SET main_cv_i
 // 131: vc[1] = cv;
-881 LOD main_cv
-882 SET_V vc 1
-883 LOD main_cv_i
-884 SET_V vc_i 1
+849 LOD main_cv
+850 SET_V vc 1
+851 LOD main_cv_i
+852 SET_V vc_i 1
 // 132: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-885 LOD main_n1
-886 LDI vc
-887 P_LOD main_n1
-888 LDI vc_i
-889 SET_P main_w_i
-890 SET main_w
-891 LOD 2.0
-892 F_MLT main_w
-893 F2I
-894 OUT 0
-895 LOD 2.0
-896 F_MLT main_w_i
-897 F2I
-898 OUT 0
+853 LOD main_n1
+854 LDI vc
+855 P_LOD main_n1
+856 LDI vc_i
+857 SET_P main_w_i
+858 SET main_w
+859 LOD 2.0
+860 F_MLT main_w
+861 F2I
+862 OUT 0
+863 LOD 2.0
+864 F_MLT main_w_i
+865 F2I
+866 OUT 0
 // 133: iv = 319; fv = 319.5; cv = 319+369i;
-899 LOD 319
-900 SET main_iv
-901 LOD 319.5
-902 SET main_fv
-903 LOD 319.0
-904 SET main_cv
-905 LOD 369.0
-906 SET main_cv_i
+867 LOD 319
+868 SET main_iv
+869 LOD 319.5
+870 SET main_fv
+871 LOD 319.0
+872 SET main_cv
+873 LOD 369.0
+874 SET main_cv_i
 // 134: vc[f2] = cv;
-907 F2I_M main_f2
-908 SET __aux_var
-909 P_LOD main_cv
-910 STI vc
-911 LOD __aux_var
-912 P_LOD main_cv_i
-913 STI vc_i
+875 F2I_M main_f2
+876 SET __aux_var
+877 P_LOD main_cv
+878 STI vc
+879 LOD __aux_var
+880 P_LOD main_cv_i
+881 STI vc_i
 // 135: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-914 LOD main_n2
-915 LDI vc
-916 P_LOD main_n2
-917 LDI vc_i
-918 SET_P main_w_i
-919 SET main_w
-920 LOD 2.0
-921 F_MLT main_w
-922 F2I
-923 OUT 0
-924 LOD 2.0
-925 F_MLT main_w_i
-926 F2I
-927 OUT 0
+882 LOD main_n2
+883 LDI vc
+884 P_LOD main_n2
+885 LDI vc_i
+886 SET_P main_w_i
+887 SET main_w
+888 LOD 2.0
+889 F_MLT main_w
+890 F2I
+891 OUT 0
+892 LOD 2.0
+893 F_MLT main_w_i
+894 F2I
+895 OUT 0
 // 136: iv = 320; fv = 320.5; cv = 320+370i;
-928 LOD 320
-929 SET main_iv
-930 LOD 320.5
-931 SET main_fv
-932 LOD 320.0
-933 SET main_cv
-934 LOD 370.0
-935 SET main_cv_i
+896 LOD 320
+897 SET main_iv
+898 LOD 320.5
+899 SET main_fv
+900 LOD 320.0
+901 SET main_cv
+902 LOD 370.0
+903 SET main_cv_i
 // 137: vc[(f3+fz)] = cv;
-936 LOD main_f3
-937 F_ADD main_fz
-938 F2I
-939 SET __aux_var
-940 P_LOD main_cv
-941 STI vc
-942 LOD __aux_var
-943 P_LOD main_cv_i
-944 STI vc_i
+904 LOD main_f3
+905 F_ADD main_fz
+906 F2I
+907 SET __aux_var
+908 P_LOD main_cv
+909 STI vc
+910 LOD __aux_var
+911 P_LOD main_cv_i
+912 STI vc_i
 // 138: w = vc[n3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-945 LOD main_n3
-946 LDI vc
-947 P_LOD main_n3
-948 LDI vc_i
-949 SET_P main_w_i
-950 SET main_w
-951 LOD 2.0
-952 F_MLT main_w
-953 F2I
-954 OUT 0
-955 LOD 2.0
-956 F_MLT main_w_i
-957 F2I
-958 OUT 0
+913 LOD main_n3
+914 LDI vc
+915 P_LOD main_n3
+916 LDI vc_i
+917 SET_P main_w_i
+918 SET main_w
+919 LOD 2.0
+920 F_MLT main_w
+921 F2I
+922 OUT 0
+923 LOD 2.0
+924 F_MLT main_w_i
+925 F2I
+926 OUT 0
 // 139: iv = 321; fv = 321.5; cv = 321+371i;
-959 LOD 321
-960 SET main_iv
-961 LOD 321.5
-962 SET main_fv
-963 LOD 321.0
-964 SET main_cv
-965 LOD 371.0
-966 SET main_cv_i
+927 LOD 321
+928 SET main_iv
+929 LOD 321.5
+930 SET main_fv
+931 LOD 321.0
+932 SET main_cv
+933 LOD 371.0
+934 SET main_cv_i
 // 140: vc[(1+9i)] = cv;
-967 F2I_M 1.0
-968 SET __aux_var
-969 P_LOD main_cv
-970 STI vc
-971 LOD __aux_var
-972 P_LOD main_cv_i
-973 STI vc_i
+935 F2I_M 1.0
+936 SET __aux_var
+937 P_LOD main_cv
+938 STI vc
+939 LOD __aux_var
+940 P_LOD main_cv_i
+941 STI vc_i
 // 141: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-974 LOD main_n1
-975 LDI vc
-976 P_LOD main_n1
-977 LDI vc_i
-978 SET_P main_w_i
-979 SET main_w
-980 LOD 2.0
-981 F_MLT main_w
-982 F2I
-983 OUT 0
-984 LOD 2.0
-985 F_MLT main_w_i
-986 F2I
-987 OUT 0
+942 LOD main_n1
+943 LDI vc
+944 P_LOD main_n1
+945 LDI vc_i
+946 SET_P main_w_i
+947 SET main_w
+948 LOD 2.0
+949 F_MLT main_w
+950 F2I
+951 OUT 0
+952 LOD 2.0
+953 F_MLT main_w_i
+954 F2I
+955 OUT 0
 // 142: iv = 322; fv = 322.5; cv = 322+372i;
-988 LOD 322
-989 SET main_iv
-990 LOD 322.5
-991 SET main_fv
-992 LOD 322.0
-993 SET main_cv
-994 LOD 372.0
-995 SET main_cv_i
+956 LOD 322
+957 SET main_iv
+958 LOD 322.5
+959 SET main_fv
+960 LOD 322.0
+961 SET main_cv
+962 LOD 372.0
+963 SET main_cv_i
 // 143: vc[(c2*one)] = cv;
-996 LOD main_c2
-997 F_MLT main_one
-998 P_LOD main_c2_i
-999 F_MLT main_one_i
-1000 SF_SU2
-1001 P_LOD main_c2
-1002 F_MLT main_one_i
-1003 P_LOD main_c2_i
-1004 F_MLT main_one
-1005 SF_ADD
-1006 POP
-1007 F2I
-1008 SET __aux_var
-1009 P_LOD main_cv
-1010 STI vc
-1011 LOD __aux_var
-1012 P_LOD main_cv_i
-1013 STI vc_i
+964 LOD main_c2
+965 F_MLT main_one
+966 P_LOD main_c2_i
+967 F_MLT main_one_i
+968 SF_SU2
+969 P_LOD main_c2
+970 F_MLT main_one_i
+971 P_LOD main_c2_i
+972 F_MLT main_one
+973 SF_ADD
+974 POP
+975 F2I
+976 SET __aux_var
+977 P_LOD main_cv
+978 STI vc
+979 LOD __aux_var
+980 P_LOD main_cv_i
+981 STI vc_i
 // 144: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1014 LOD main_n2
-1015 LDI vc
-1016 P_LOD main_n2
-1017 LDI vc_i
-1018 SET_P main_w_i
-1019 SET main_w
-1020 LOD 2.0
-1021 F_MLT main_w
-1022 F2I
-1023 OUT 0
-1024 LOD 2.0
-1025 F_MLT main_w_i
-1026 F2I
-1027 OUT 0
+982 LOD main_n2
+983 LDI vc
+984 P_LOD main_n2
+985 LDI vc_i
+986 SET_P main_w_i
+987 SET main_w
+988 LOD 2.0
+989 F_MLT main_w
+990 F2I
+991 OUT 0
+992 LOD 2.0
+993 F_MLT main_w_i
+994 F2I
+995 OUT 0
 // 145: iv = 323; fv = 323.5; cv = 323+373i;
-1028 LOD 323
-1029 SET main_iv
-1030 LOD 323.5
-1031 SET main_fv
-1032 LOD 323.0
-1033 SET main_cv
-1034 LOD 373.0
-1035 SET main_cv_i
+996 LOD 323
+997 SET main_iv
+998 LOD 323.5
+999 SET main_fv
+1000 LOD 323.0
+1001 SET main_cv
+1002 LOD 373.0
+1003 SET main_cv_i
 // 146: vc[c3] = cv;
-1036 F2I_M main_c3
-1037 SET __aux_var
-1038 P_LOD main_cv
-1039 STI vc
-1040 LOD __aux_var
-1041 P_LOD main_cv_i
-1042 STI vc_i
+1004 F2I_M main_c3
+1005 SET __aux_var
+1006 P_LOD main_cv
+1007 STI vc
+1008 LOD __aux_var
+1009 P_LOD main_cv_i
+1010 STI vc_i
 // 147: w = vc[n3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1043 LOD main_n3
-1044 LDI vc
-1045 P_LOD main_n3
-1046 LDI vc_i
-1047 SET_P main_w_i
-1048 SET main_w
-1049 LOD 2.0
-1050 F_MLT main_w
-1051 F2I
-1052 OUT 0
-1053 LOD 2.0
-1054 F_MLT main_w_i
-1055 F2I
-1056 OUT 0
+1011 LOD main_n3
+1012 LDI vc
+1013 P_LOD main_n3
+1014 LDI vc_i
+1015 SET_P main_w_i
+1016 SET main_w
+1017 LOD 2.0
+1018 F_MLT main_w
+1019 F2I
+1020 OUT 0
+1021 LOD 2.0
+1022 F_MLT main_w_i
+1023 F2I
+1024 OUT 0
 // 148: iv = 324; fv = 324.5; cv = 324+374i;
-1057 LOD 324
-1058 SET main_iv
-1059 LOD 324.5
-1060 SET main_fv
-1061 LOD 324.0
-1062 SET main_cv
-1063 LOD 374.0
-1064 SET main_cv_i
+1025 LOD 324
+1026 SET main_iv
+1027 LOD 324.5
+1028 SET main_fv
+1029 LOD 324.0
+1030 SET main_cv
+1031 LOD 374.0
+1032 SET main_cv_i
 // 149: vi[n1] = iv;
-1065 LOD main_n1
-1066 P_LOD main_iv
-1067 STI vi
+1033 LOD main_n1
+1034 P_LOD main_iv
+1035 STI vi
 // 150: out(0, vi[n1]);
-1068 OUT 0
+1036 OUT 0
 // 151: iv = 325; fv = 325.5; cv = 325+375i;
-1069 LOD 325
-1070 SET main_iv
-1071 LOD 325.5
-1072 SET main_fv
-1073 LOD 325.0
-1074 SET main_cv
-1075 LOD 375.0
-1076 SET main_cv_i
+1037 LOD 325
+1038 SET main_iv
+1039 LOD 325.5
+1040 SET main_fv
+1041 LOD 325.0
+1042 SET main_cv
+1043 LOD 375.0
+1044 SET main_cv_i
 // 152: vi[(n2+z0)] = iv;
-1077 LOD main_n2
-1078 ADD main_z0
-1079 P_LOD main_iv
-1080 STI vi
+1045 LOD main_n2
+1046 ADD main_z0
+1047 P_LOD main_iv
+1048 STI vi
 // 153: out(0, vi[n2]);
-1081 LOD main_n2
-1082 LDI vi
-1083 OUT 0
+1049 LOD main_n2
+1050 LDI vi
+1051 OUT 0
 // 154: iv = 326; fv = 326.5; cv = 326+376i;
-1084 LOD 326
-1085 SET main_iv
-1086 LOD 326.5
-1087 SET main_fv
-1088 LOD 326.0
-1089 SET main_cv
-1090 LOD 376.0
-1091 SET main_cv_i
+1052 LOD 326
+1053 SET main_iv
+1054 LOD 326.5
+1055 SET main_fv
+1056 LOD 326.0
+1057 SET main_cv
+1058 LOD 376.0
+1059 SET main_cv_i
 // 155: vi[n3] = (iv+z0);
-1092 LOD main_n3
-1093 P_LOD main_iv
-1094 ADD main_z0
-1095 STI vi
+1060 LOD main_n3
+1061 P_LOD main_iv
+1062 ADD main_z0
+1063 STI vi
 // 156: out(0, vi[n3]);
-1096 OUT 0
+1064 OUT 0
 // 157: iv = 327; fv = 327.5; cv = 327+377i;
-1097 LOD 327
-1098 SET main_iv
-1099 LOD 327.5
-1100 SET main_fv
-1101 LOD 327.0
-1102 SET main_cv
-1103 LOD 377.0
-1104 SET main_cv_i
+1065 LOD 327
+1066 SET main_iv
+1067 LOD 327.5
+1068 SET main_fv
+1069 LOD 327.0
+1070 SET main_cv
+1071 LOD 377.0
+1072 SET main_cv_i
 // 158: vi[(n1+z0)] = (iv+z0);
-1105 LOD main_n1
-1106 ADD main_z0
-1107 P_LOD main_iv
-1108 ADD main_z0
-1109 STI vi
+1073 LOD main_n1
+1074 ADD main_z0
+1075 P_LOD main_iv
+1076 ADD main_z0
+1077 STI vi
 // 159: out(0, vi[n1]);
-1110 LOD main_n1
-1111 LDI vi
-1112 OUT 0
+1078 LOD main_n1
+1079 LDI vi
+1080 OUT 0
 // 160: iv = 328; fv = 328.5; cv = 328+378i;
-1113 LOD 328
-1114 SET main_iv
-1115 LOD 328.5
-1116 SET main_fv
-1117 LOD 328.0
-1118 SET main_cv
-1119 LOD 378.0
-1120 SET main_cv_i
+1081 LOD 328
+1082 SET main_iv
+1083 LOD 328.5
+1084 SET main_fv
+1085 LOD 328.0
+1086 SET main_cv
+1087 LOD 378.0
+1088 SET main_cv_i
 // 161: vi[n2] = 328;
-1121 LOD main_n2
-1122 P_LOD 328
-1123 STI vi
+1089 LOD main_n2
+1090 P_LOD 328
+1091 STI vi
 // 162: out(0, vi[n2]);
-1124 OUT 0
+1092 OUT 0
 // 163: iv = 329; fv = 329.5; cv = 329+379i;
-1125 LOD 329
-1126 SET main_iv
-1127 LOD 329.5
-1128 SET main_fv
-1129 LOD 329.0
-1130 SET main_cv
-1131 LOD 379.0
-1132 SET main_cv_i
+1093 LOD 329
+1094 SET main_iv
+1095 LOD 329.5
+1096 SET main_fv
+1097 LOD 329.0
+1098 SET main_cv
+1099 LOD 379.0
+1100 SET main_cv_i
 // 164: vi[(n3+z0)] = 329;
-1133 LOD main_n3
-1134 ADD main_z0
-1135 P_LOD 329
-1136 STI vi
+1101 LOD main_n3
+1102 ADD main_z0
+1103 P_LOD 329
+1104 STI vi
 // 165: out(0, vi[n3]);
-1137 LOD main_n3
-1138 LDI vi
-1139 OUT 0
+1105 LOD main_n3
+1106 LDI vi
+1107 OUT 0
 // 166: iv = 330; fv = 330.5; cv = 330+380i;
-1140 LOD 330
-1141 SET main_iv
-1142 LOD 330.5
-1143 SET main_fv
-1144 LOD 330.0
-1145 SET main_cv
-1146 LOD 380.0
-1147 SET main_cv_i
+1108 LOD 330
+1109 SET main_iv
+1110 LOD 330.5
+1111 SET main_fv
+1112 LOD 330.0
+1113 SET main_cv
+1114 LOD 380.0
+1115 SET main_cv_i
 // 167: vi[n1] = fv;
-1148 LOD main_n1
-1149 P_F2I_M main_fv
-1150 STI vi
+1116 LOD main_n1
+1117 P_F2I_M main_fv
+1118 STI vi
 // 168: out(0, vi[n1]);
-1151 OUT 0
+1119 OUT 0
 // 169: iv = 331; fv = 331.5; cv = 331+381i;
-1152 LOD 331
-1153 SET main_iv
-1154 LOD 331.5
-1155 SET main_fv
-1156 LOD 331.0
-1157 SET main_cv
-1158 LOD 381.0
-1159 SET main_cv_i
+1120 LOD 331
+1121 SET main_iv
+1122 LOD 331.5
+1123 SET main_fv
+1124 LOD 331.0
+1125 SET main_cv
+1126 LOD 381.0
+1127 SET main_cv_i
 // 170: vi[(n2+z0)] = fv;
-1160 LOD main_n2
-1161 ADD main_z0
-1162 P_F2I_M main_fv
-1163 STI vi
+1128 LOD main_n2
+1129 ADD main_z0
+1130 P_F2I_M main_fv
+1131 STI vi
 // 171: out(0, vi[n2]);
-1164 LOD main_n2
-1165 LDI vi
-1166 OUT 0
+1132 LOD main_n2
+1133 LDI vi
+1134 OUT 0
 // 172: iv = 332; fv = 332.5; cv = 332+382i;
-1167 LOD 332
-1168 SET main_iv
-1169 LOD 332.5
-1170 SET main_fv
-1171 LOD 332.0
-1172 SET main_cv
-1173 LOD 382.0
-1174 SET main_cv_i
+1135 LOD 332
+1136 SET main_iv
+1137 LOD 332.5
+1138 SET main_fv
+1139 LOD 332.0
+1140 SET main_cv
+1141 LOD 382.0
+1142 SET main_cv_i
 // 173: vi[n3] = (fv+fz);
-1175 LOD main_n3
-1176 P_LOD main_fv
-1177 F_ADD main_fz
-1178 F2I
-1179 STI vi
+1143 LOD main_n3
+1144 P_LOD main_fv
+1145 F_ADD main_fz
+1146 F2I
+1147 STI vi
 // 174: out(0, vi[n3]);
-1180 OUT 0
+1148 OUT 0
 // 175: iv = 333; fv = 333.5; cv = 333+383i;
-1181 LOD 333
-1182 SET main_iv
-1183 LOD 333.5
-1184 SET main_fv
-1185 LOD 333.0
-1186 SET main_cv
-1187 LOD 383.0
-1188 SET main_cv_i
+1149 LOD 333
+1150 SET main_iv
+1151 LOD 333.5
+1152 SET main_fv
+1153 LOD 333.0
+1154 SET main_cv
+1155 LOD 383.0
+1156 SET main_cv_i
 // 176: vi[(n1+z0)] = (fv+fz);
-1189 LOD main_n1
-1190 ADD main_z0
-1191 P_LOD main_fv
-1192 F_ADD main_fz
-1193 F2I
-1194 STI vi
+1157 LOD main_n1
+1158 ADD main_z0
+1159 P_LOD main_fv
+1160 F_ADD main_fz
+1161 F2I
+1162 STI vi
 // 177: out(0, vi[n1]);
-1195 LOD main_n1
-1196 LDI vi
-1197 OUT 0
+1163 LOD main_n1
+1164 LDI vi
+1165 OUT 0
 // 178: iv = 334; fv = 334.5; cv = 334+384i;
-1198 LOD 334
-1199 SET main_iv
-1200 LOD 334.5
-1201 SET main_fv
-1202 LOD 334.0
-1203 SET main_cv
-1204 LOD 384.0
-1205 SET main_cv_i
+1166 LOD 334
+1167 SET main_iv
+1168 LOD 334.5
+1169 SET main_fv
+1170 LOD 334.0
+1171 SET main_cv
+1172 LOD 384.0
+1173 SET main_cv_i
 // 179: vi[n2] = 334.5;
-1206 LOD main_n2
-1207 P_F2I_M 334.5
-1208 STI vi
+1174 LOD main_n2
+1175 P_F2I_M 334.5
+1176 STI vi
 // 180: out(0, vi[n2]);
-1209 OUT 0
+1177 OUT 0
 // 181: iv = 335; fv = 335.5; cv = 335+385i;
-1210 LOD 335
-1211 SET main_iv
-1212 LOD 335.5
-1213 SET main_fv
-1214 LOD 335.0
-1215 SET main_cv
-1216 LOD 385.0
-1217 SET main_cv_i
+1178 LOD 335
+1179 SET main_iv
+1180 LOD 335.5
+1181 SET main_fv
+1182 LOD 335.0
+1183 SET main_cv
+1184 LOD 385.0
+1185 SET main_cv_i
 // 182: vi[(n3+z0)] = 335.5;
-1218 LOD main_n3
-1219 ADD main_z0
-1220 P_F2I_M 335.5
-1221 STI vi
+1186 LOD main_n3
+1187 ADD main_z0
+1188 P_F2I_M 335.5
+1189 STI vi
 // 183: out(0, vi[n3]);
-1222 LOD main_n3
-1223 LDI vi
-1224 OUT 0
+1190 LOD main_n3
+1191 LDI vi
+1192 OUT 0
 // 184: iv = 336; fv = 336.5; cv = 336+386i;
-1225 LOD 336
-1226 SET main_iv
-1227 LOD 336.5
-1228 SET main_fv
-1229 LOD 336.0
-1230 SET main_cv
-1231 LOD 386.0
-1232 SET main_cv_i
+1193 LOD 336
+1194 SET main_iv
+1195 LOD 336.5
+1196 SET main_fv
+1197 LOD 336.0
+1198 SET main_cv
+1199 LOD 386.0
+1200 SET main_cv_i
 // 185: vi[n1] = cv;
-1233 LOD main_n1
-1234 P_F2I_M main_cv
-1235 STI vi
+1201 LOD main_n1
+1202 P_F2I_M main_cv
+1203 STI vi
 // 186: out(0, vi[n1]);
-1236 OUT 0
+1204 OUT 0
 // 187: iv = 337; fv = 337.5; cv = 337+387i;
-1237 LOD 337
-1238 SET main_iv
-1239 LOD 337.5
-1240 SET main_fv
-1241 LOD 337.0
-1242 SET main_cv
-1243 LOD 387.0
-1244 SET main_cv_i
+1205 LOD 337
+1206 SET main_iv
+1207 LOD 337.5
+1208 SET main_fv
+1209 LOD 337.0
+1210 SET main_cv
+1211 LOD 387.0
+1212 SET main_cv_i
 // 188: vi[(n2+z0)] = cv;
-1245 LOD main_n2
-1246 ADD main_z0
-1247 P_F2I_M main_cv
-1248 STI vi
+1213 LOD main_n2
+1214 ADD main_z0
+1215 P_F2I_M main_cv
+1216 STI vi
 // 189: out(0, vi[n2]);
-1249 LOD main_n2
-1250 LDI vi
-1251 OUT 0
+1217 LOD main_n2
+1218 LDI vi
+1219 OUT 0
 // 190: iv = 338; fv = 338.5; cv = 338+388i;
-1252 LOD 338
-1253 SET main_iv
-1254 LOD 338.5
-1255 SET main_fv
-1256 LOD 338.0
-1257 SET main_cv
-1258 LOD 388.0
-1259 SET main_cv_i
+1220 LOD 338
+1221 SET main_iv
+1222 LOD 338.5
+1223 SET main_fv
+1224 LOD 338.0
+1225 SET main_cv
+1226 LOD 388.0
+1227 SET main_cv_i
 // 191: vi[n3] = (cv*one);
-1260 LOD main_n3
-1261 P_LOD main_cv
-1262 F_MLT main_one
-1263 P_LOD main_cv_i
-1264 F_MLT main_one_i
-1265 SF_SU2
-1266 P_LOD main_cv
-1267 F_MLT main_one_i
-1268 P_LOD main_cv_i
-1269 F_MLT main_one
-1270 SF_ADD
-1271 POP
-1272 F2I
-1273 STI vi
+1228 LOD main_n3
+1229 P_LOD main_cv
+1230 F_MLT main_one
+1231 P_LOD main_cv_i
+1232 F_MLT main_one_i
+1233 SF_SU2
+1234 P_LOD main_cv
+1235 F_MLT main_one_i
+1236 P_LOD main_cv_i
+1237 F_MLT main_one
+1238 SF_ADD
+1239 POP
+1240 F2I
+1241 STI vi
 // 192: out(0, vi[n3]);
-1274 OUT 0
+1242 OUT 0
 // 193: iv = 339; fv = 339.5; cv = 339+389i;
-1275 LOD 339
-1276 SET main_iv
-1277 LOD 339.5
-1278 SET main_fv
-1279 LOD 339.0
-1280 SET main_cv
-1281 LOD 389.0
-1282 SET main_cv_i
+1243 LOD 339
+1244 SET main_iv
+1245 LOD 339.5
+1246 SET main_fv
+1247 LOD 339.0
+1248 SET main_cv
+1249 LOD 389.0
+1250 SET main_cv_i
 // 194: vi[(n1+z0)] = (cv*one);
-1283 LOD main_n1
-1284 ADD main_z0
-1285 P_LOD main_cv
-1286 F_MLT main_one
-1287 P_LOD main_cv_i
-1288 F_MLT main_one_i
-1289 SF_SU2
-1290 P_LOD main_cv
-1291 F_MLT main_one_i
-1292 P_LOD main_cv_i
-1293 F_MLT main_one
-1294 SF_ADD
-1295 POP
-1296 F2I
-1297 STI vi
+1251 LOD main_n1
+1252 ADD main_z0
+1253 P_LOD main_cv
+1254 F_MLT main_one
+1255 P_LOD main_cv_i
+1256 F_MLT main_one_i
+1257 SF_SU2
+1258 P_LOD main_cv
+1259 F_MLT main_one_i
+1260 P_LOD main_cv_i
+1261 F_MLT main_one
+1262 SF_ADD
+1263 POP
+1264 F2I
+1265 STI vi
 // 195: out(0, vi[n1]);
-1298 LOD main_n1
-1299 LDI vi
-1300 OUT 0
+1266 LOD main_n1
+1267 LDI vi
+1268 OUT 0
 // 196: iv = 340; fv = 340.5; cv = 340+390i;
-1301 LOD 340
-1302 SET main_iv
-1303 LOD 340.5
-1304 SET main_fv
-1305 LOD 340.0
-1306 SET main_cv
-1307 LOD 390.0
-1308 SET main_cv_i
+1269 LOD 340
+1270 SET main_iv
+1271 LOD 340.5
+1272 SET main_fv
+1273 LOD 340.0
+1274 SET main_cv
+1275 LOD 390.0
+1276 SET main_cv_i
 // 197: vi[n2] = (340+390i);
-1309 LOD main_n2
-1310 P_F2I_M 340.0
-1311 STI vi
+1277 LOD main_n2
+1278 P_F2I_M 340.0
+1279 STI vi
 // 198: out(0, vi[n2]);
-1312 OUT 0
+1280 OUT 0
 // 199: iv = 341; fv = 341.5; cv = 341+391i;
-1313 LOD 341
-1314 SET main_iv
-1315 LOD 341.5
-1316 SET main_fv
-1317 LOD 341.0
-1318 SET main_cv
-1319 LOD 391.0
-1320 SET main_cv_i
+1281 LOD 341
+1282 SET main_iv
+1283 LOD 341.5
+1284 SET main_fv
+1285 LOD 341.0
+1286 SET main_cv
+1287 LOD 391.0
+1288 SET main_cv_i
 // 200: vi[(n3+z0)] = (341+391i);
-1321 LOD main_n3
-1322 ADD main_z0
-1323 P_F2I_M 341.0
-1324 STI vi
+1289 LOD main_n3
+1290 ADD main_z0
+1291 P_F2I_M 341.0
+1292 STI vi
 // 201: out(0, vi[n3]);
-1325 LOD main_n3
-1326 LDI vi
-1327 OUT 0
+1293 LOD main_n3
+1294 LDI vi
+1295 OUT 0
 // 202: iv = 342; fv = 342.5; cv = 342+392i;
-1328 LOD 342
-1329 SET main_iv
-1330 LOD 342.5
-1331 SET main_fv
-1332 LOD 342.0
-1333 SET main_cv
-1334 LOD 392.0
-1335 SET main_cv_i
+1296 LOD 342
+1297 SET main_iv
+1298 LOD 342.5
+1299 SET main_fv
+1300 LOD 342.0
+1301 SET main_cv
+1302 LOD 392.0
+1303 SET main_cv_i
 // 203: vf[n1] = iv;
-1336 LOD main_n1
-1337 P_I2F_M main_iv
-1338 STI vf
+1304 LOD main_n1
+1305 P_I2F_M main_iv
+1306 STI vf
 // 204: fout(0, 2.0*vf[n1]);
-1339 F_MLT 2.0
-1340 F2I
-1341 OUT 0
+1307 F_MLT 2.0
+1308 F2I
+1309 OUT 0
 // 205: iv = 343; fv = 343.5; cv = 343+393i;
-1342 LOD 343
-1343 SET main_iv
-1344 LOD 343.5
-1345 SET main_fv
-1346 LOD 343.0
-1347 SET main_cv
-1348 LOD 393.0
-1349 SET main_cv_i
+1310 LOD 343
+1311 SET main_iv
+1312 LOD 343.5
+1313 SET main_fv
+1314 LOD 343.0
+1315 SET main_cv
+1316 LOD 393.0
+1317 SET main_cv_i
 // 206: vf[(n2+z0)] = iv;
-1350 LOD main_n2
-1351 ADD main_z0
-1352 P_I2F_M main_iv
-1353 STI vf
+1318 LOD main_n2
+1319 ADD main_z0
+1320 P_I2F_M main_iv
+1321 STI vf
 // 207: fout(0, 2.0*vf[n2]);
-1354 LOD main_n2
-1355 LDI vf
-1356 F_MLT 2.0
-1357 F2I
-1358 OUT 0
+1322 LOD main_n2
+1323 LDI vf
+1324 F_MLT 2.0
+1325 F2I
+1326 OUT 0
 // 208: iv = 344; fv = 344.5; cv = 344+394i;
-1359 LOD 344
-1360 SET main_iv
-1361 LOD 344.5
-1362 SET main_fv
-1363 LOD 344.0
-1364 SET main_cv
-1365 LOD 394.0
-1366 SET main_cv_i
+1327 LOD 344
+1328 SET main_iv
+1329 LOD 344.5
+1330 SET main_fv
+1331 LOD 344.0
+1332 SET main_cv
+1333 LOD 394.0
+1334 SET main_cv_i
 // 209: vf[n3] = (iv+z0);
-1367 LOD main_n3
-1368 P_LOD main_iv
-1369 ADD main_z0
-1370 I2F
-1371 STI vf
+1335 LOD main_n3
+1336 P_LOD main_iv
+1337 ADD main_z0
+1338 I2F
+1339 STI vf
 // 210: fout(0, 2.0*vf[n3]);
-1372 F_MLT 2.0
-1373 F2I
-1374 OUT 0
+1340 F_MLT 2.0
+1341 F2I
+1342 OUT 0
 // 211: iv = 345; fv = 345.5; cv = 345+395i;
-1375 LOD 345
-1376 SET main_iv
-1377 LOD 345.5
-1378 SET main_fv
-1379 LOD 345.0
-1380 SET main_cv
-1381 LOD 395.0
-1382 SET main_cv_i
+1343 LOD 345
+1344 SET main_iv
+1345 LOD 345.5
+1346 SET main_fv
+1347 LOD 345.0
+1348 SET main_cv
+1349 LOD 395.0
+1350 SET main_cv_i
 // 212: vf[(n1+z0)] = (iv+z0);
-1383 LOD main_n1
-1384 ADD main_z0
-1385 P_LOD main_iv
-1386 ADD main_z0
-1387 I2F
-1388 STI vf
+1351 LOD main_n1
+1352 ADD main_z0
+1353 P_LOD main_iv
+1354 ADD main_z0
+1355 I2F
+1356 STI vf
 // 213: fout(0, 2.0*vf[n1]);
-1389 LOD main_n1
-1390 LDI vf
-1391 F_MLT 2.0
-1392 F2I
-1393 OUT 0
+1357 LOD main_n1
+1358 LDI vf
+1359 F_MLT 2.0
+1360 F2I
+1361 OUT 0
 // 214: iv = 346; fv = 346.5; cv = 346+396i;
-1394 LOD 346
-1395 SET main_iv
-1396 LOD 346.5
-1397 SET main_fv
-1398 LOD 346.0
-1399 SET main_cv
-1400 LOD 396.0
-1401 SET main_cv_i
+1362 LOD 346
+1363 SET main_iv
+1364 LOD 346.5
+1365 SET main_fv
+1366 LOD 346.0
+1367 SET main_cv
+1368 LOD 396.0
+1369 SET main_cv_i
 // 215: vf[n2] = 346;
-1402 LOD main_n2
-1403 P_LOD 346.0
-1404 STI vf
+1370 LOD main_n2
+1371 P_LOD 346.0
+1372 STI vf
 // 216: fout(0, 2.0*vf[n2]);
-1405 F_MLT 2.0
-1406 F2I
-1407 OUT 0
+1373 F_MLT 2.0
+1374 F2I
+1375 OUT 0
 // 217: iv = 347; fv = 347.5; cv = 347+397i;
-1408 LOD 347
-1409 SET main_iv
-1410 LOD 347.5
-1411 SET main_fv
-1412 LOD 347.0
-1413 SET main_cv
-1414 LOD 397.0
-1415 SET main_cv_i
+1376 LOD 347
+1377 SET main_iv
+1378 LOD 347.5
+1379 SET main_fv
+1380 LOD 347.0
+1381 SET main_cv
+1382 LOD 397.0
+1383 SET main_cv_i
 // 218: vf[(n3+z0)] = 347;
-1416 LOD main_n3
-1417 ADD main_z0
-1418 P_LOD 347.0
-1419 STI vf
+1384 LOD main_n3
+1385 ADD main_z0
+1386 P_LOD 347.0
+1387 STI vf
 // 219: fout(0, 2.0*vf[n3]);
-1420 LOD main_n3
-1421 LDI vf
-1422 F_MLT 2.0
-1423 F2I
-1424 OUT 0
+1388 LOD main_n3
+1389 LDI vf
+1390 F_MLT 2.0
+1391 F2I
+1392 OUT 0
 // 220: iv = 348; fv = 348.5; cv = 348+398i;
-1425 LOD 348
-1426 SET main_iv
-1427 LOD 348.5
-1428 SET main_fv
-1429 LOD 348.0
-1430 SET main_cv
-1431 LOD 398.0
-1432 SET main_cv_i
+1393 LOD 348
+1394 SET main_iv
+1395 LOD 348.5
+1396 SET main_fv
+1397 LOD 348.0
+1398 SET main_cv
+1399 LOD 398.0
+1400 SET main_cv_i
 // 221: vf[n1] = fv;
-1433 LOD main_n1
-1434 P_LOD main_fv
-1435 STI vf
+1401 LOD main_n1
+1402 P_LOD main_fv
+1403 STI vf
 // 222: fout(0, 2.0*vf[n1]);
+1404 F_MLT 2.0
+1405 F2I
+1406 OUT 0
+// 223: iv = 349; fv = 349.5; cv = 349+399i;
+1407 LOD 349
+1408 SET main_iv
+1409 LOD 349.5
+1410 SET main_fv
+1411 LOD 349.0
+1412 SET main_cv
+1413 LOD 399.0
+1414 SET main_cv_i
+// 224: vf[(n2+z0)] = fv;
+1415 LOD main_n2
+1416 ADD main_z0
+1417 P_LOD main_fv
+1418 STI vf
+// 225: fout(0, 2.0*vf[n2]);
+1419 LOD main_n2
+1420 LDI vf
+1421 F_MLT 2.0
+1422 F2I
+1423 OUT 0
+// 226: iv = 350; fv = 350.5; cv = 350+400i;
+1424 LOD 350
+1425 SET main_iv
+1426 LOD 350.5
+1427 SET main_fv
+1428 LOD 350.0
+1429 SET main_cv
+1430 LOD 400.0
+1431 SET main_cv_i
+// 227: vf[n3] = (fv+fz);
+1432 LOD main_n3
+1433 P_LOD main_fv
+1434 F_ADD main_fz
+1435 STI vf
+// 228: fout(0, 2.0*vf[n3]);
 1436 F_MLT 2.0
 1437 F2I
 1438 OUT 0
-// 223: iv = 349; fv = 349.5; cv = 349+399i;
-1439 LOD 349
+// 229: iv = 351; fv = 351.5; cv = 351+401i;
+1439 LOD 351
 1440 SET main_iv
-1441 LOD 349.5
+1441 LOD 351.5
 1442 SET main_fv
-1443 LOD 349.0
+1443 LOD 351.0
 1444 SET main_cv
-1445 LOD 399.0
+1445 LOD 401.0
 1446 SET main_cv_i
-// 224: vf[(n2+z0)] = fv;
-1447 LOD main_n2
+// 230: vf[(n1+z0)] = (fv+fz);
+1447 LOD main_n1
 1448 ADD main_z0
 1449 P_LOD main_fv
-1450 STI vf
-// 225: fout(0, 2.0*vf[n2]);
-1451 LOD main_n2
-1452 LDI vf
-1453 F_MLT 2.0
-1454 F2I
-1455 OUT 0
-// 226: iv = 350; fv = 350.5; cv = 350+400i;
-1456 LOD 350
-1457 SET main_iv
-1458 LOD 350.5
-1459 SET main_fv
-1460 LOD 350.0
-1461 SET main_cv
-1462 LOD 400.0
-1463 SET main_cv_i
-// 227: vf[n3] = (fv+fz);
-1464 LOD main_n3
-1465 P_LOD main_fv
-1466 F_ADD main_fz
+1450 F_ADD main_fz
+1451 STI vf
+// 231: fout(0, 2.0*vf[n1]);
+1452 LOD main_n1
+1453 LDI vf
+1454 F_MLT 2.0
+1455 F2I
+1456 OUT 0
+// 232: iv = 352; fv = 352.5; cv = 352+402i;
+1457 LOD 352
+1458 SET main_iv
+1459 LOD 352.5
+1460 SET main_fv
+1461 LOD 352.0
+1462 SET main_cv
+1463 LOD 402.0
+1464 SET main_cv_i
+// 233: vf[n2] = 352.5;
+1465 LOD main_n2
+1466 P_LOD 352.5
 1467 STI vf
-// 228: fout(0, 2.0*vf[n3]);
+// 234: fout(0, 2.0*vf[n2]);
 1468 F_MLT 2.0
 1469 F2I
 1470 OUT 0
-// 229: iv = 351; fv = 351.5; cv = 351+401i;
-1471 LOD 351
-1472 SET main_iv
-1473 LOD 351.5
-1474 SET main_fv
-1475 LOD 351.0
-1476 SET main_cv
-1477 LOD 401.0
-1478 SET main_cv_i
-// 230: vf[(n1+z0)] = (fv+fz);
-1479 LOD main_n1
-1480 ADD main_z0
-1481 P_LOD main_fv
-1482 F_ADD main_fz
-1483 STI vf
-// 231: fout(0, 2.0*vf[n1]);
-1484 LOD main_n1
-1485 LDI vf
-1486 F_MLT 2.0
-1487 F2I
-1488 OUT 0
-// 232: iv = 352; fv = 352.5; cv = 352+402i;
-1489 LOD 352
-1490 SET main_iv
-1491 LOD 352.5
-1492 SET main_fv
-1493 LOD 352.0
-1494 SET main_cv
-1495 LOD 402.0
-1496 SET main_cv_i
-// 233: vf[n2] = 352.5;
-1497 LOD main_n2
-1498 P_LOD 352.5
-1499 STI vf
-// 234: fout(0, 2.0*vf[n2]);
-1500 F_MLT 2.0
-1501 F2I
-1502 OUT 0
 // 235: iv = 353; fv = 353.5; cv = 353+403i;
-1503 LOD 353
-1504 SET main_iv
-1505 LOD 353.5
-1506 SET main_fv
-1507 LOD 353.0
-1508 SET main_cv
-1509 LOD 403.0
-1510 SET main_cv_i
+1471 LOD 353
+1472 SET main_iv
+1473 LOD 353.5
+1474 SET main_fv
+1475 LOD 353.0
+1476 SET main_cv
+1477 LOD 403.0
+1478 SET main_cv_i
 // 236: vf[(n3+z0)] = 353.5;
-1511 LOD main_n3
-1512 ADD main_z0
-1513 P_LOD 353.5
-1514 STI vf
+1479 LOD main_n3
+1480 ADD main_z0
+1481 P_LOD 353.5
+1482 STI vf
 // 237: fout(0, 2.0*vf[n3]);
-1515 LOD main_n3
-1516 LDI vf
-1517 F_MLT 2.0
-1518 F2I
-1519 OUT 0
+1483 LOD main_n3
+1484 LDI vf
+1485 F_MLT 2.0
+1486 F2I
+1487 OUT 0
 // 238: iv = 354; fv = 354.5; cv = 354+404i;
-1520 LOD 354
-1521 SET main_iv
-1522 LOD 354.5
-1523 SET main_fv
-1524 LOD 354.0
-1525 SET main_cv
-1526 LOD 404.0
-1527 SET main_cv_i
+1488 LOD 354
+1489 SET main_iv
+1490 LOD 354.5
+1491 SET main_fv
+1492 LOD 354.0
+1493 SET main_cv
+1494 LOD 404.0
+1495 SET main_cv_i
 // 239: vf[n1] = cv;
-1528 LOD main_n1
-1529 P_LOD main_cv
-1530 STI vf
+1496 LOD main_n1
+1497 P_LOD main_cv
+1498 STI vf
 // 240: fout(0, 2.0*vf[n1]);
-1531 F_MLT 2.0
-1532 F2I
-1533 OUT 0
+1499 F_MLT 2.0
+1500 F2I
+1501 OUT 0
 // 241: iv = 355; fv = 355.5; cv = 355+405i;
-1534 LOD 355
-1535 SET main_iv
-1536 LOD 355.5
-1537 SET main_fv
-1538 LOD 355.0
-1539 SET main_cv
-1540 LOD 405.0
-1541 SET main_cv_i
+1502 LOD 355
+1503 SET main_iv
+1504 LOD 355.5
+1505 SET main_fv
+1506 LOD 355.0
+1507 SET main_cv
+1508 LOD 405.0
+1509 SET main_cv_i
 // 242: vf[(n2+z0)] = cv;
-1542 LOD main_n2
-1543 ADD main_z0
-1544 P_LOD main_cv
-1545 STI vf
+1510 LOD main_n2
+1511 ADD main_z0
+1512 P_LOD main_cv
+1513 STI vf
 // 243: fout(0, 2.0*vf[n2]);
-1546 LOD main_n2
-1547 LDI vf
-1548 F_MLT 2.0
-1549 F2I
-1550 OUT 0
+1514 LOD main_n2
+1515 LDI vf
+1516 F_MLT 2.0
+1517 F2I
+1518 OUT 0
 // 244: iv = 356; fv = 356.5; cv = 356+406i;
-1551 LOD 356
-1552 SET main_iv
-1553 LOD 356.5
-1554 SET main_fv
-1555 LOD 356.0
-1556 SET main_cv
-1557 LOD 406.0
-1558 SET main_cv_i
+1519 LOD 356
+1520 SET main_iv
+1521 LOD 356.5
+1522 SET main_fv
+1523 LOD 356.0
+1524 SET main_cv
+1525 LOD 406.0
+1526 SET main_cv_i
 // 245: vf[n3] = (cv*one);
-1559 LOD main_n3
-1560 P_LOD main_cv
-1561 F_MLT main_one
-1562 P_LOD main_cv_i
-1563 F_MLT main_one_i
-1564 SF_SU2
-1565 P_LOD main_cv
-1566 F_MLT main_one_i
-1567 P_LOD main_cv_i
-1568 F_MLT main_one
-1569 SF_ADD
-1570 POP
-1571 STI vf
+1527 LOD main_n3
+1528 P_LOD main_cv
+1529 F_MLT main_one
+1530 P_LOD main_cv_i
+1531 F_MLT main_one_i
+1532 SF_SU2
+1533 P_LOD main_cv
+1534 F_MLT main_one_i
+1535 P_LOD main_cv_i
+1536 F_MLT main_one
+1537 SF_ADD
+1538 POP
+1539 STI vf
 // 246: fout(0, 2.0*vf[n3]);
-1572 F_MLT 2.0
-1573 F2I
-1574 OUT 0
+1540 F_MLT 2.0
+1541 F2I
+1542 OUT 0
 // 247: iv = 357; fv = 357.5; cv = 357+407i;
-1575 LOD 357
-1576 SET main_iv
-1577 LOD 357.5
-1578 SET main_fv
-1579 LOD 357.0
-1580 SET main_cv
-1581 LOD 407.0
-1582 SET main_cv_i
+1543 LOD 357
+1544 SET main_iv
+1545 LOD 357.5
+1546 SET main_fv
+1547 LOD 357.0
+1548 SET main_cv
+1549 LOD 407.0
+1550 SET main_cv_i
 // 248: vf[(n1+z0)] = (cv*one);
-1583 LOD main_n1
-1584 ADD main_z0
-1585 P_LOD main_cv
-1586 F_MLT main_one
-1587 P_LOD main_cv_i
-1588 F_MLT main_one_i
-1589 SF_SU2
-1590 P_LOD main_cv
-1591 F_MLT main_one_i
-1592 P_LOD main_cv_i
-1593 F_MLT main_one
-1594 SF_ADD
-1595 POP
-1596 STI vf
+1551 LOD main_n1
+1552 ADD main_z0
+1553 P_LOD main_cv
+1554 F_MLT main_one
+1555 P_LOD main_cv_i
+1556 F_MLT main_one_i
+1557 SF_SU2
+1558 P_LOD main_cv
+1559 F_MLT main_one_i
+1560 P_LOD main_cv_i
+1561 F_MLT main_one
+1562 SF_ADD
+1563 POP
+1564 STI vf
 // 249: fout(0, 2.0*vf[n1]);
-1597 LOD main_n1
-1598 LDI vf
-1599 F_MLT 2.0
-1600 F2I
-1601 OUT 0
+1565 LOD main_n1
+1566 LDI vf
+1567 F_MLT 2.0
+1568 F2I
+1569 OUT 0
 // 250: iv = 358; fv = 358.5; cv = 358+408i;
-1602 LOD 358
-1603 SET main_iv
-1604 LOD 358.5
-1605 SET main_fv
-1606 LOD 358.0
-1607 SET main_cv
-1608 LOD 408.0
-1609 SET main_cv_i
+1570 LOD 358
+1571 SET main_iv
+1572 LOD 358.5
+1573 SET main_fv
+1574 LOD 358.0
+1575 SET main_cv
+1576 LOD 408.0
+1577 SET main_cv_i
 // 251: vf[n2] = (358+408i);
-1610 LOD main_n2
-1611 P_LOD 358.0
-1612 STI vf
+1578 LOD main_n2
+1579 P_LOD 358.0
+1580 STI vf
 // 252: fout(0, 2.0*vf[n2]);
-1613 F_MLT 2.0
-1614 F2I
-1615 OUT 0
+1581 F_MLT 2.0
+1582 F2I
+1583 OUT 0
 // 253: iv = 359; fv = 359.5; cv = 359+409i;
-1616 LOD 359
-1617 SET main_iv
-1618 LOD 359.5
-1619 SET main_fv
-1620 LOD 359.0
-1621 SET main_cv
-1622 LOD 409.0
-1623 SET main_cv_i
+1584 LOD 359
+1585 SET main_iv
+1586 LOD 359.5
+1587 SET main_fv
+1588 LOD 359.0
+1589 SET main_cv
+1590 LOD 409.0
+1591 SET main_cv_i
 // 254: vf[(n3+z0)] = (359+409i);
-1624 LOD main_n3
-1625 ADD main_z0
-1626 P_LOD 359.0
-1627 STI vf
+1592 LOD main_n3
+1593 ADD main_z0
+1594 P_LOD 359.0
+1595 STI vf
 // 255: fout(0, 2.0*vf[n3]);
-1628 LOD main_n3
-1629 LDI vf
-1630 F_MLT 2.0
-1631 F2I
-1632 OUT 0
+1596 LOD main_n3
+1597 LDI vf
+1598 F_MLT 2.0
+1599 F2I
+1600 OUT 0
 // 256: iv = 360; fv = 360.5; cv = 360+410i;
-1633 LOD 360
-1634 SET main_iv
-1635 LOD 360.5
-1636 SET main_fv
-1637 LOD 360.0
-1638 SET main_cv
-1639 LOD 410.0
-1640 SET main_cv_i
+1601 LOD 360
+1602 SET main_iv
+1603 LOD 360.5
+1604 SET main_fv
+1605 LOD 360.0
+1606 SET main_cv
+1607 LOD 410.0
+1608 SET main_cv_i
 // 257: vc[n1] = iv;
-1641 LOD main_n1
-1642 SET __aux_var
-1643 P_I2F_M main_iv
-1644 STI vc
-1645 LOD __aux_var
-1646 P_LOD 0.0
-1647 STI vc_i
+1609 LOD main_n1
+1610 SET __aux_var
+1611 P_I2F_M main_iv
+1612 STI vc
+1613 LOD __aux_var
+1614 P_LOD 0.0
+1615 STI vc_i
 // 258: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1648 LOD main_n1
-1649 LDI vc
-1650 P_LOD main_n1
-1651 LDI vc_i
-1652 SET_P main_w_i
-1653 SET main_w
-1654 LOD 2.0
-1655 F_MLT main_w
-1656 F2I
-1657 OUT 0
-1658 LOD 2.0
-1659 F_MLT main_w_i
-1660 F2I
-1661 OUT 0
+1616 LOD main_n1
+1617 LDI vc
+1618 P_LOD main_n1
+1619 LDI vc_i
+1620 SET_P main_w_i
+1621 SET main_w
+1622 LOD 2.0
+1623 F_MLT main_w
+1624 F2I
+1625 OUT 0
+1626 LOD 2.0
+1627 F_MLT main_w_i
+1628 F2I
+1629 OUT 0
 // 259: iv = 361; fv = 361.5; cv = 361+411i;
-1662 LOD 361
-1663 SET main_iv
-1664 LOD 361.5
-1665 SET main_fv
-1666 LOD 361.0
-1667 SET main_cv
-1668 LOD 411.0
-1669 SET main_cv_i
+1630 LOD 361
+1631 SET main_iv
+1632 LOD 361.5
+1633 SET main_fv
+1634 LOD 361.0
+1635 SET main_cv
+1636 LOD 411.0
+1637 SET main_cv_i
 // 260: vc[(n2+z0)] = iv;
-1670 LOD main_n2
-1671 ADD main_z0
-1672 SET __aux_var
-1673 P_I2F_M main_iv
-1674 STI vc
-1675 LOD __aux_var
-1676 P_LOD 0.0
-1677 STI vc_i
+1638 LOD main_n2
+1639 ADD main_z0
+1640 SET __aux_var
+1641 P_I2F_M main_iv
+1642 STI vc
+1643 LOD __aux_var
+1644 P_LOD 0.0
+1645 STI vc_i
 // 261: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1678 LOD main_n2
-1679 LDI vc
-1680 P_LOD main_n2
-1681 LDI vc_i
-1682 SET_P main_w_i
-1683 SET main_w
-1684 LOD 2.0
-1685 F_MLT main_w
-1686 F2I
-1687 OUT 0
-1688 LOD 2.0
-1689 F_MLT main_w_i
-1690 F2I
-1691 OUT 0
+1646 LOD main_n2
+1647 LDI vc
+1648 P_LOD main_n2
+1649 LDI vc_i
+1650 SET_P main_w_i
+1651 SET main_w
+1652 LOD 2.0
+1653 F_MLT main_w
+1654 F2I
+1655 OUT 0
+1656 LOD 2.0
+1657 F_MLT main_w_i
+1658 F2I
+1659 OUT 0
 // 262: iv = 362; fv = 362.5; cv = 362+412i;
-1692 LOD 362
-1693 SET main_iv
-1694 LOD 362.5
-1695 SET main_fv
-1696 LOD 362.0
-1697 SET main_cv
-1698 LOD 412.0
-1699 SET main_cv_i
+1660 LOD 362
+1661 SET main_iv
+1662 LOD 362.5
+1663 SET main_fv
+1664 LOD 362.0
+1665 SET main_cv
+1666 LOD 412.0
+1667 SET main_cv_i
 // 263: vc[n3] = (iv+z0);
-1700 LOD main_n3
-1701 P_LOD main_iv
-1702 ADD main_z0
-1703 I2F
-1704 STI vc
-1705 LOD main_n3
-1706 P_LOD 0.0
-1707 STI vc_i
+1668 LOD main_n3
+1669 P_LOD main_iv
+1670 ADD main_z0
+1671 I2F
+1672 STI vc
+1673 LOD main_n3
+1674 P_LOD 0.0
+1675 STI vc_i
 // 264: w = vc[n3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1708 LOD main_n3
-1709 LDI vc
-1710 P_LOD main_n3
-1711 LDI vc_i
-1712 SET_P main_w_i
-1713 SET main_w
-1714 LOD 2.0
-1715 F_MLT main_w
-1716 F2I
-1717 OUT 0
-1718 LOD 2.0
-1719 F_MLT main_w_i
-1720 F2I
-1721 OUT 0
+1676 LOD main_n3
+1677 LDI vc
+1678 P_LOD main_n3
+1679 LDI vc_i
+1680 SET_P main_w_i
+1681 SET main_w
+1682 LOD 2.0
+1683 F_MLT main_w
+1684 F2I
+1685 OUT 0
+1686 LOD 2.0
+1687 F_MLT main_w_i
+1688 F2I
+1689 OUT 0
 // 265: iv = 363; fv = 363.5; cv = 363+413i;
-1722 LOD 363
-1723 SET main_iv
-1724 LOD 363.5
-1725 SET main_fv
-1726 LOD 363.0
-1727 SET main_cv
-1728 LOD 413.0
-1729 SET main_cv_i
+1690 LOD 363
+1691 SET main_iv
+1692 LOD 363.5
+1693 SET main_fv
+1694 LOD 363.0
+1695 SET main_cv
+1696 LOD 413.0
+1697 SET main_cv_i
 // 266: vc[(n1+z0)] = (iv+z0);
-1730 LOD main_n1
-1731 ADD main_z0
-1732 P_LOD main_iv
-1733 ADD main_z0
-1734 I2F
-1735 SET_P __aux_var
-1736 SET __aux_var2
-1737 P_LOD __aux_var
-1738 STI vc
-1739 LOD __aux_var2
-1740 P_LOD 0.0
-1741 STI vc_i
+1698 LOD main_n1
+1699 ADD main_z0
+1700 P_LOD main_iv
+1701 ADD main_z0
+1702 I2F
+1703 SET_P __aux_var
+1704 SET __aux_var2
+1705 P_LOD __aux_var
+1706 STI vc
+1707 LOD __aux_var2
+1708 P_LOD 0.0
+1709 STI vc_i
 // 267: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1742 LOD main_n1
-1743 LDI vc
-1744 P_LOD main_n1
-1745 LDI vc_i
-1746 SET_P main_w_i
-1747 SET main_w
-1748 LOD 2.0
-1749 F_MLT main_w
-1750 F2I
-1751 OUT 0
-1752 LOD 2.0
-1753 F_MLT main_w_i
-1754 F2I
-1755 OUT 0
+1710 LOD main_n1
+1711 LDI vc
+1712 P_LOD main_n1
+1713 LDI vc_i
+1714 SET_P main_w_i
+1715 SET main_w
+1716 LOD 2.0
+1717 F_MLT main_w
+1718 F2I
+1719 OUT 0
+1720 LOD 2.0
+1721 F_MLT main_w_i
+1722 F2I
+1723 OUT 0
 // 268: iv = 364; fv = 364.5; cv = 364+414i;
-1756 LOD 364
-1757 SET main_iv
-1758 LOD 364.5
-1759 SET main_fv
-1760 LOD 364.0
-1761 SET main_cv
-1762 LOD 414.0
-1763 SET main_cv_i
+1724 LOD 364
+1725 SET main_iv
+1726 LOD 364.5
+1727 SET main_fv
+1728 LOD 364.0
+1729 SET main_cv
+1730 LOD 414.0
+1731 SET main_cv_i
 // 269: vc[n2] = 364;
-1764 LOD main_n2
-1765 SET __aux_var
-1766 P_LOD 364.0
-1767 STI vc
-1768 LOD __aux_var
-1769 P_LOD 0.0
-1770 STI vc_i
+1732 LOD main_n2
+1733 SET __aux_var
+1734 P_LOD 364.0
+1735 STI vc
+1736 LOD __aux_var
+1737 P_LOD 0.0
+1738 STI vc_i
 // 270: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1771 LOD main_n2
-1772 LDI vc
-1773 P_LOD main_n2
-1774 LDI vc_i
-1775 SET_P main_w_i
-1776 SET main_w
-1777 LOD 2.0
-1778 F_MLT main_w
-1779 F2I
-1780 OUT 0
-1781 LOD 2.0
-1782 F_MLT main_w_i
-1783 F2I
-1784 OUT 0
+1739 LOD main_n2
+1740 LDI vc
+1741 P_LOD main_n2
+1742 LDI vc_i
+1743 SET_P main_w_i
+1744 SET main_w
+1745 LOD 2.0
+1746 F_MLT main_w
+1747 F2I
+1748 OUT 0
+1749 LOD 2.0
+1750 F_MLT main_w_i
+1751 F2I
+1752 OUT 0
 // 271: iv = 365; fv = 365.5; cv = 365+415i;
-1785 LOD 365
-1786 SET main_iv
-1787 LOD 365.5
-1788 SET main_fv
-1789 LOD 365.0
-1790 SET main_cv
-1791 LOD 415.0
-1792 SET main_cv_i
+1753 LOD 365
+1754 SET main_iv
+1755 LOD 365.5
+1756 SET main_fv
+1757 LOD 365.0
+1758 SET main_cv
+1759 LOD 415.0
+1760 SET main_cv_i
 // 272: vc[(n3+z0)] = 365;
-1793 LOD main_n3
-1794 ADD main_z0
-1795 SET __aux_var
-1796 P_LOD 365.0
-1797 STI vc
-1798 LOD __aux_var
-1799 P_LOD 0.0
-1800 STI vc_i
+1761 LOD main_n3
+1762 ADD main_z0
+1763 SET __aux_var
+1764 P_LOD 365.0
+1765 STI vc
+1766 LOD __aux_var
+1767 P_LOD 0.0
+1768 STI vc_i
 // 273: w = vc[n3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1801 LOD main_n3
-1802 LDI vc
-1803 P_LOD main_n3
-1804 LDI vc_i
-1805 SET_P main_w_i
-1806 SET main_w
+1769 LOD main_n3
+1770 LDI vc
+1771 P_LOD main_n3
+1772 LDI vc_i
+1773 SET_P main_w_i
+1774 SET main_w
+1775 LOD 2.0
+1776 F_MLT main_w
+1777 F2I
+1778 OUT 0
+1779 LOD 2.0
+1780 F_MLT main_w_i
+1781 F2I
+1782 OUT 0
+// 274: iv = 366; fv = 366.5; cv = 366+416i;
+1783 LOD 366
+1784 SET main_iv
+1785 LOD 366.5
+1786 SET main_fv
+1787 LOD 366.0
+1788 SET main_cv
+1789 LOD 416.0
+1790 SET main_cv_i
+// 275: vc[n1] = fv;
+1791 LOD main_n1
+1792 P_LOD main_fv
+1793 STI vc
+1794 LOD main_n1
+1795 P_LOD 0.0
+1796 STI vc_i
+// 276: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+1797 LOD main_n1
+1798 LDI vc
+1799 P_LOD main_n1
+1800 LDI vc_i
+1801 SET_P main_w_i
+1802 SET main_w
+1803 LOD 2.0
+1804 F_MLT main_w
+1805 F2I
+1806 OUT 0
 1807 LOD 2.0
-1808 F_MLT main_w
+1808 F_MLT main_w_i
 1809 F2I
 1810 OUT 0
-1811 LOD 2.0
-1812 F_MLT main_w_i
-1813 F2I
-1814 OUT 0
-// 274: iv = 366; fv = 366.5; cv = 366+416i;
-1815 LOD 366
-1816 SET main_iv
-1817 LOD 366.5
-1818 SET main_fv
-1819 LOD 366.0
-1820 SET main_cv
-1821 LOD 416.0
-1822 SET main_cv_i
-// 275: vc[n1] = fv;
-1823 LOD main_n1
-1824 P_LOD main_fv
-1825 STI vc
-1826 LOD main_n1
-1827 P_LOD 0.0
-1828 STI vc_i
-// 276: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1829 LOD main_n1
-1830 LDI vc
-1831 P_LOD main_n1
-1832 LDI vc_i
-1833 SET_P main_w_i
-1834 SET main_w
-1835 LOD 2.0
-1836 F_MLT main_w
-1837 F2I
-1838 OUT 0
-1839 LOD 2.0
-1840 F_MLT main_w_i
-1841 F2I
-1842 OUT 0
 // 277: iv = 367; fv = 367.5; cv = 367+417i;
-1843 LOD 367
-1844 SET main_iv
-1845 LOD 367.5
-1846 SET main_fv
-1847 LOD 367.0
-1848 SET main_cv
-1849 LOD 417.0
-1850 SET main_cv_i
+1811 LOD 367
+1812 SET main_iv
+1813 LOD 367.5
+1814 SET main_fv
+1815 LOD 367.0
+1816 SET main_cv
+1817 LOD 417.0
+1818 SET main_cv_i
 // 278: vc[(n2+z0)] = fv;
-1851 LOD main_n2
-1852 ADD main_z0
-1853 SET __aux_var
-1854 P_LOD main_fv
-1855 STI vc
-1856 LOD __aux_var
-1857 P_LOD 0.0
-1858 STI vc_i
+1819 LOD main_n2
+1820 ADD main_z0
+1821 SET __aux_var
+1822 P_LOD main_fv
+1823 STI vc
+1824 LOD __aux_var
+1825 P_LOD 0.0
+1826 STI vc_i
 // 279: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1859 LOD main_n2
-1860 LDI vc
-1861 P_LOD main_n2
-1862 LDI vc_i
-1863 SET_P main_w_i
-1864 SET main_w
-1865 LOD 2.0
-1866 F_MLT main_w
-1867 F2I
-1868 OUT 0
-1869 LOD 2.0
-1870 F_MLT main_w_i
-1871 F2I
-1872 OUT 0
+1827 LOD main_n2
+1828 LDI vc
+1829 P_LOD main_n2
+1830 LDI vc_i
+1831 SET_P main_w_i
+1832 SET main_w
+1833 LOD 2.0
+1834 F_MLT main_w
+1835 F2I
+1836 OUT 0
+1837 LOD 2.0
+1838 F_MLT main_w_i
+1839 F2I
+1840 OUT 0
 // 280: iv = 368; fv = 368.5; cv = 368+418i;
-1873 LOD 368
-1874 SET main_iv
-1875 LOD 368.5
-1876 SET main_fv
-1877 LOD 368.0
-1878 SET main_cv
-1879 LOD 418.0
-1880 SET main_cv_i
+1841 LOD 368
+1842 SET main_iv
+1843 LOD 368.5
+1844 SET main_fv
+1845 LOD 368.0
+1846 SET main_cv
+1847 LOD 418.0
+1848 SET main_cv_i
 // 281: vc[n3] = (fv+fz);
-1881 LOD main_n3
-1882 P_LOD main_fv
-1883 F_ADD main_fz
-1884 STI vc
-1885 LOD main_n3
-1886 P_LOD 0.0
-1887 STI vc_i
+1849 LOD main_n3
+1850 P_LOD main_fv
+1851 F_ADD main_fz
+1852 STI vc
+1853 LOD main_n3
+1854 P_LOD 0.0
+1855 STI vc_i
 // 282: w = vc[n3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1888 LOD main_n3
-1889 LDI vc
-1890 P_LOD main_n3
-1891 LDI vc_i
-1892 SET_P main_w_i
-1893 SET main_w
-1894 LOD 2.0
-1895 F_MLT main_w
-1896 F2I
-1897 OUT 0
-1898 LOD 2.0
-1899 F_MLT main_w_i
-1900 F2I
-1901 OUT 0
+1856 LOD main_n3
+1857 LDI vc
+1858 P_LOD main_n3
+1859 LDI vc_i
+1860 SET_P main_w_i
+1861 SET main_w
+1862 LOD 2.0
+1863 F_MLT main_w
+1864 F2I
+1865 OUT 0
+1866 LOD 2.0
+1867 F_MLT main_w_i
+1868 F2I
+1869 OUT 0
 // 283: iv = 369; fv = 369.5; cv = 369+419i;
-1902 LOD 369
-1903 SET main_iv
-1904 LOD 369.5
-1905 SET main_fv
-1906 LOD 369.0
-1907 SET main_cv
-1908 LOD 419.0
-1909 SET main_cv_i
+1870 LOD 369
+1871 SET main_iv
+1872 LOD 369.5
+1873 SET main_fv
+1874 LOD 369.0
+1875 SET main_cv
+1876 LOD 419.0
+1877 SET main_cv_i
 // 284: vc[(n1+z0)] = (fv+fz);
-1910 LOD main_n1
-1911 ADD main_z0
-1912 P_LOD main_fv
-1913 F_ADD main_fz
-1914 SET_P __aux_var
-1915 SET __aux_var2
-1916 P_LOD __aux_var
-1917 STI vc
-1918 LOD __aux_var2
-1919 P_LOD 0.0
-1920 STI vc_i
+1878 LOD main_n1
+1879 ADD main_z0
+1880 P_LOD main_fv
+1881 F_ADD main_fz
+1882 SET_P __aux_var
+1883 SET __aux_var2
+1884 P_LOD __aux_var
+1885 STI vc
+1886 LOD __aux_var2
+1887 P_LOD 0.0
+1888 STI vc_i
 // 285: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1921 LOD main_n1
-1922 LDI vc
-1923 P_LOD main_n1
-1924 LDI vc_i
-1925 SET_P main_w_i
-1926 SET main_w
+1889 LOD main_n1
+1890 LDI vc
+1891 P_LOD main_n1
+1892 LDI vc_i
+1893 SET_P main_w_i
+1894 SET main_w
+1895 LOD 2.0
+1896 F_MLT main_w
+1897 F2I
+1898 OUT 0
+1899 LOD 2.0
+1900 F_MLT main_w_i
+1901 F2I
+1902 OUT 0
+// 286: iv = 370; fv = 370.5; cv = 370+420i;
+1903 LOD 370
+1904 SET main_iv
+1905 LOD 370.5
+1906 SET main_fv
+1907 LOD 370.0
+1908 SET main_cv
+1909 LOD 420.0
+1910 SET main_cv_i
+// 287: vc[n2] = 370.5;
+1911 LOD main_n2
+1912 P_LOD 370.5
+1913 STI vc
+1914 LOD main_n2
+1915 P_LOD 0.0
+1916 STI vc_i
+// 288: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+1917 LOD main_n2
+1918 LDI vc
+1919 P_LOD main_n2
+1920 LDI vc_i
+1921 SET_P main_w_i
+1922 SET main_w
+1923 LOD 2.0
+1924 F_MLT main_w
+1925 F2I
+1926 OUT 0
 1927 LOD 2.0
-1928 F_MLT main_w
+1928 F_MLT main_w_i
 1929 F2I
 1930 OUT 0
-1931 LOD 2.0
-1932 F_MLT main_w_i
-1933 F2I
-1934 OUT 0
-// 286: iv = 370; fv = 370.5; cv = 370+420i;
-1935 LOD 370
-1936 SET main_iv
-1937 LOD 370.5
-1938 SET main_fv
-1939 LOD 370.0
-1940 SET main_cv
-1941 LOD 420.0
-1942 SET main_cv_i
-// 287: vc[n2] = 370.5;
-1943 LOD main_n2
-1944 P_LOD 370.5
-1945 STI vc
-1946 LOD main_n2
-1947 P_LOD 0.0
-1948 STI vc_i
-// 288: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1949 LOD main_n2
-1950 LDI vc
-1951 P_LOD main_n2
-1952 LDI vc_i
-1953 SET_P main_w_i
-1954 SET main_w
-1955 LOD 2.0
-1956 F_MLT main_w
-1957 F2I
-1958 OUT 0
-1959 LOD 2.0
-1960 F_MLT main_w_i
-1961 F2I
-1962 OUT 0
 // 289: iv = 371; fv = 371.5; cv = 371+421i;
-1963 LOD 371
-1964 SET main_iv
-1965 LOD 371.5
-1966 SET main_fv
-1967 LOD 371.0
-1968 SET main_cv
-1969 LOD 421.0
-1970 SET main_cv_i
+1931 LOD 371
+1932 SET main_iv
+1933 LOD 371.5
+1934 SET main_fv
+1935 LOD 371.0
+1936 SET main_cv
+1937 LOD 421.0
+1938 SET main_cv_i
 // 290: vc[(n3+z0)] = 371.5;
-1971 LOD main_n3
-1972 ADD main_z0
-1973 SET __aux_var
-1974 P_LOD 371.5
-1975 STI vc
-1976 LOD __aux_var
-1977 P_LOD 0.0
-1978 STI vc_i
+1939 LOD main_n3
+1940 ADD main_z0
+1941 SET __aux_var
+1942 P_LOD 371.5
+1943 STI vc
+1944 LOD __aux_var
+1945 P_LOD 0.0
+1946 STI vc_i
 // 291: w = vc[n3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-1979 LOD main_n3
-1980 LDI vc
-1981 P_LOD main_n3
-1982 LDI vc_i
-1983 SET_P main_w_i
-1984 SET main_w
+1947 LOD main_n3
+1948 LDI vc
+1949 P_LOD main_n3
+1950 LDI vc_i
+1951 SET_P main_w_i
+1952 SET main_w
+1953 LOD 2.0
+1954 F_MLT main_w
+1955 F2I
+1956 OUT 0
+1957 LOD 2.0
+1958 F_MLT main_w_i
+1959 F2I
+1960 OUT 0
+// 292: iv = 372; fv = 372.5; cv = 372+422i;
+1961 LOD 372
+1962 SET main_iv
+1963 LOD 372.5
+1964 SET main_fv
+1965 LOD 372.0
+1966 SET main_cv
+1967 LOD 422.0
+1968 SET main_cv_i
+// 293: vc[n1] = cv;
+1969 LOD main_n1
+1970 P_LOD main_cv
+1971 STI vc
+1972 LOD main_n1
+1973 P_LOD main_cv_i
+1974 STI vc_i
+// 294: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+1975 LOD main_n1
+1976 LDI vc
+1977 P_LOD main_n1
+1978 LDI vc_i
+1979 SET_P main_w_i
+1980 SET main_w
+1981 LOD 2.0
+1982 F_MLT main_w
+1983 F2I
+1984 OUT 0
 1985 LOD 2.0
-1986 F_MLT main_w
+1986 F_MLT main_w_i
 1987 F2I
 1988 OUT 0
-1989 LOD 2.0
-1990 F_MLT main_w_i
-1991 F2I
-1992 OUT 0
-// 292: iv = 372; fv = 372.5; cv = 372+422i;
-1993 LOD 372
-1994 SET main_iv
-1995 LOD 372.5
-1996 SET main_fv
-1997 LOD 372.0
-1998 SET main_cv
-1999 LOD 422.0
-2000 SET main_cv_i
-// 293: vc[n1] = cv;
-2001 LOD main_n1
-2002 P_LOD main_cv
-2003 STI vc
-2004 LOD main_n1
-2005 P_LOD main_cv_i
-2006 STI vc_i
-// 294: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2007 LOD main_n1
-2008 LDI vc
-2009 P_LOD main_n1
-2010 LDI vc_i
-2011 SET_P main_w_i
-2012 SET main_w
-2013 LOD 2.0
-2014 F_MLT main_w
-2015 F2I
-2016 OUT 0
-2017 LOD 2.0
-2018 F_MLT main_w_i
-2019 F2I
-2020 OUT 0
 // 295: iv = 373; fv = 373.5; cv = 373+423i;
-2021 LOD 373
-2022 SET main_iv
-2023 LOD 373.5
-2024 SET main_fv
-2025 LOD 373.0
-2026 SET main_cv
-2027 LOD 423.0
-2028 SET main_cv_i
+1989 LOD 373
+1990 SET main_iv
+1991 LOD 373.5
+1992 SET main_fv
+1993 LOD 373.0
+1994 SET main_cv
+1995 LOD 423.0
+1996 SET main_cv_i
 // 296: vc[(n2+z0)] = cv;
-2029 LOD main_n2
-2030 ADD main_z0
-2031 SET __aux_var
-2032 P_LOD main_cv
-2033 STI vc
-2034 LOD __aux_var
-2035 P_LOD main_cv_i
-2036 STI vc_i
+1997 LOD main_n2
+1998 ADD main_z0
+1999 SET __aux_var
+2000 P_LOD main_cv
+2001 STI vc
+2002 LOD __aux_var
+2003 P_LOD main_cv_i
+2004 STI vc_i
 // 297: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2037 LOD main_n2
-2038 LDI vc
-2039 P_LOD main_n2
-2040 LDI vc_i
-2041 SET_P main_w_i
-2042 SET main_w
-2043 LOD 2.0
-2044 F_MLT main_w
-2045 F2I
-2046 OUT 0
-2047 LOD 2.0
-2048 F_MLT main_w_i
-2049 F2I
-2050 OUT 0
+2005 LOD main_n2
+2006 LDI vc
+2007 P_LOD main_n2
+2008 LDI vc_i
+2009 SET_P main_w_i
+2010 SET main_w
+2011 LOD 2.0
+2012 F_MLT main_w
+2013 F2I
+2014 OUT 0
+2015 LOD 2.0
+2016 F_MLT main_w_i
+2017 F2I
+2018 OUT 0
 // 298: iv = 374; fv = 374.5; cv = 374+424i;
-2051 LOD 374
-2052 SET main_iv
-2053 LOD 374.5
-2054 SET main_fv
-2055 LOD 374.0
-2056 SET main_cv
-2057 LOD 424.0
-2058 SET main_cv_i
+2019 LOD 374
+2020 SET main_iv
+2021 LOD 374.5
+2022 SET main_fv
+2023 LOD 374.0
+2024 SET main_cv
+2025 LOD 424.0
+2026 SET main_cv_i
 // 299: vc[n3] = (cv*one);
-2059 LOD main_n3
-2060 P_LOD main_cv
-2061 F_MLT main_one
-2062 P_LOD main_cv_i
-2063 F_MLT main_one_i
-2064 SF_SU2
-2065 P_LOD main_cv
-2066 F_MLT main_one_i
-2067 P_LOD main_cv_i
-2068 F_MLT main_one
-2069 SF_ADD
-2070 SET_P __aux_var
-2071 STI vc
-2072 LOD main_n3
-2073 P_LOD __aux_var
-2074 STI vc_i
+2027 LOD main_n3
+2028 P_LOD main_cv
+2029 F_MLT main_one
+2030 P_LOD main_cv_i
+2031 F_MLT main_one_i
+2032 SF_SU2
+2033 P_LOD main_cv
+2034 F_MLT main_one_i
+2035 P_LOD main_cv_i
+2036 F_MLT main_one
+2037 SF_ADD
+2038 SET_P __aux_var
+2039 STI vc
+2040 LOD main_n3
+2041 P_LOD __aux_var
+2042 STI vc_i
 // 300: w = vc[n3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2075 LOD main_n3
-2076 LDI vc
-2077 P_LOD main_n3
-2078 LDI vc_i
-2079 SET_P main_w_i
-2080 SET main_w
-2081 LOD 2.0
-2082 F_MLT main_w
-2083 F2I
-2084 OUT 0
-2085 LOD 2.0
-2086 F_MLT main_w_i
-2087 F2I
-2088 OUT 0
+2043 LOD main_n3
+2044 LDI vc
+2045 P_LOD main_n3
+2046 LDI vc_i
+2047 SET_P main_w_i
+2048 SET main_w
+2049 LOD 2.0
+2050 F_MLT main_w
+2051 F2I
+2052 OUT 0
+2053 LOD 2.0
+2054 F_MLT main_w_i
+2055 F2I
+2056 OUT 0
 // 301: iv = 375; fv = 375.5; cv = 375+425i;
-2089 LOD 375
-2090 SET main_iv
-2091 LOD 375.5
-2092 SET main_fv
-2093 LOD 375.0
-2094 SET main_cv
-2095 LOD 425.0
-2096 SET main_cv_i
+2057 LOD 375
+2058 SET main_iv
+2059 LOD 375.5
+2060 SET main_fv
+2061 LOD 375.0
+2062 SET main_cv
+2063 LOD 425.0
+2064 SET main_cv_i
 // 302: vc[(n1+z0)] = (cv*one);
-2097 LOD main_n1
-2098 ADD main_z0
-2099 P_LOD main_cv
-2100 F_MLT main_one
-2101 P_LOD main_cv_i
-2102 F_MLT main_one_i
-2103 SF_SU2
-2104 P_LOD main_cv
-2105 F_MLT main_one_i
-2106 P_LOD main_cv_i
-2107 F_MLT main_one
-2108 SF_ADD
-2109 SET_P __aux_var
-2110 SET_P __aux_var2
-2111 SET __aux_var3
-2112 P_LOD __aux_var2
-2113 STI vc
-2114 LOD __aux_var3
-2115 P_LOD __aux_var
-2116 STI vc_i
+2065 LOD main_n1
+2066 ADD main_z0
+2067 P_LOD main_cv
+2068 F_MLT main_one
+2069 P_LOD main_cv_i
+2070 F_MLT main_one_i
+2071 SF_SU2
+2072 P_LOD main_cv
+2073 F_MLT main_one_i
+2074 P_LOD main_cv_i
+2075 F_MLT main_one
+2076 SF_ADD
+2077 SET_P __aux_var
+2078 SET_P __aux_var2
+2079 SET __aux_var3
+2080 P_LOD __aux_var2
+2081 STI vc
+2082 LOD __aux_var3
+2083 P_LOD __aux_var
+2084 STI vc_i
 // 303: w = vc[n1]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2117 LOD main_n1
-2118 LDI vc
-2119 P_LOD main_n1
-2120 LDI vc_i
-2121 SET_P main_w_i
-2122 SET main_w
+2085 LOD main_n1
+2086 LDI vc
+2087 P_LOD main_n1
+2088 LDI vc_i
+2089 SET_P main_w_i
+2090 SET main_w
+2091 LOD 2.0
+2092 F_MLT main_w
+2093 F2I
+2094 OUT 0
+2095 LOD 2.0
+2096 F_MLT main_w_i
+2097 F2I
+2098 OUT 0
+// 304: iv = 376; fv = 376.5; cv = 376+426i;
+2099 LOD 376
+2100 SET main_iv
+2101 LOD 376.5
+2102 SET main_fv
+2103 LOD 376.0
+2104 SET main_cv
+2105 LOD 426.0
+2106 SET main_cv_i
+// 305: vc[n2] = (376+426i);
+2107 LOD main_n2
+2108 P_LOD 376.0
+2109 STI vc
+2110 LOD main_n2
+2111 P_LOD 426.0
+2112 STI vc_i
+// 306: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+2113 LOD main_n2
+2114 LDI vc
+2115 P_LOD main_n2
+2116 LDI vc_i
+2117 SET_P main_w_i
+2118 SET main_w
+2119 LOD 2.0
+2120 F_MLT main_w
+2121 F2I
+2122 OUT 0
 2123 LOD 2.0
-2124 F_MLT main_w
+2124 F_MLT main_w_i
 2125 F2I
 2126 OUT 0
-2127 LOD 2.0
-2128 F_MLT main_w_i
-2129 F2I
-2130 OUT 0
-// 304: iv = 376; fv = 376.5; cv = 376+426i;
-2131 LOD 376
-2132 SET main_iv
-2133 LOD 376.5
-2134 SET main_fv
-2135 LOD 376.0
-2136 SET main_cv
-2137 LOD 426.0
-2138 SET main_cv_i
-// 305: vc[n2] = (376+426i);
-2139 LOD main_n2
-2140 P_LOD 376.0
-2141 STI vc
-2142 LOD main_n2
-2143 P_LOD 426.0
-2144 STI vc_i
-// 306: w = vc[n2]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2145 LOD main_n2
-2146 LDI vc
-2147 P_LOD main_n2
-2148 LDI vc_i
-2149 SET_P main_w_i
-2150 SET main_w
-2151 LOD 2.0
-2152 F_MLT main_w
-2153 F2I
-2154 OUT 0
-2155 LOD 2.0
-2156 F_MLT main_w_i
-2157 F2I
-2158 OUT 0
 // 307: iv = 377; fv = 377.5; cv = 377+427i;
-2159 LOD 377
-2160 SET main_iv
-2161 LOD 377.5
-2162 SET main_fv
-2163 LOD 377.0
-2164 SET main_cv
-2165 LOD 427.0
-2166 SET main_cv_i
+2127 LOD 377
+2128 SET main_iv
+2129 LOD 377.5
+2130 SET main_fv
+2131 LOD 377.0
+2132 SET main_cv
+2133 LOD 427.0
+2134 SET main_cv_i
 // 308: vc[(n3+z0)] = (377+427i);
-2167 LOD main_n3
-2168 ADD main_z0
-2169 SET __aux_var
-2170 P_LOD 377.0
-2171 STI vc
-2172 LOD __aux_var
-2173 P_LOD 427.0
-2174 STI vc_i
+2135 LOD main_n3
+2136 ADD main_z0
+2137 SET __aux_var
+2138 P_LOD 377.0
+2139 STI vc
+2140 LOD __aux_var
+2141 P_LOD 427.0
+2142 STI vc_i
 // 309: w = vc[n3]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2175 LOD main_n3
-2176 LDI vc
-2177 P_LOD main_n3
-2178 LDI vc_i
-2179 SET_P main_w_i
-2180 SET main_w
-2181 LOD 2.0
-2182 F_MLT main_w
-2183 F2I
-2184 OUT 0
-2185 LOD 2.0
-2186 F_MLT main_w_i
-2187 F2I
-2188 OUT 0
+2143 LOD main_n3
+2144 LDI vc
+2145 P_LOD main_n3
+2146 LDI vc_i
+2147 SET_P main_w_i
+2148 SET main_w
+2149 LOD 2.0
+2150 F_MLT main_w
+2151 F2I
+2152 OUT 0
+2153 LOD 2.0
+2154 F_MLT main_w_i
+2155 F2I
+2156 OUT 0
 // 310: vi[n1]++;
-2189 LOD main_n1
-2190 PSH
-2191 LDI vi
-2192 ADD 1
-2193 STI vi
+2157 LOD main_n1
+2158 PSH
+2159 LDI vi
+2160 ADD 1
+2161 STI vi
 // 311: out(0, vi[1]);
-2194 LOD_V vi 1
-2195 OUT 0
+2162 LOD_V vi 1
+2163 OUT 0
 // 312: vi[(n2+z0)]++;
-2196 LOD main_n2
-2197 ADD main_z0
-2198 PSH
-2199 LDI vi
-2200 ADD 1
-2201 STI vi
+2164 LOD main_n2
+2165 ADD main_z0
+2166 PSH
+2167 LDI vi
+2168 ADD 1
+2169 STI vi
 // 313: out(0, vi[2]);
-2202 LOD_V vi 2
-2203 OUT 0
+2170 LOD_V vi 2
+2171 OUT 0
 // 314: vi[3]++;
-2204 LOD 3
-2205 PSH
-2206 LDI vi
-2207 ADD 1
-2208 STI vi
+2172 LOD 3
+2173 PSH
+2174 LDI vi
+2175 ADD 1
+2176 STI vi
 // 315: out(0, vi[3]);
-2209 LOD_V vi 3
-2210 OUT 0
+2177 LOD_V vi 3
+2178 OUT 0
 // 316: vi[f1]++;
-2211 F2I_M main_f1
-2212 PSH
-2213 LDI vi
-2214 ADD 1
-2215 STI vi
+2179 F2I_M main_f1
+2180 PSH
+2181 LDI vi
+2182 ADD 1
+2183 STI vi
 // 317: out(0, vi[1]);
-2216 LOD_V vi 1
-2217 OUT 0
+2184 LOD_V vi 1
+2185 OUT 0
 // 318: vi[(f2+fz)]++;
-2218 LOD main_f2
-2219 F_ADD main_fz
-2220 F2I
+2186 LOD main_f2
+2187 F_ADD main_fz
+2188 F2I
+2189 PSH
+2190 LDI vi
+2191 ADD 1
+2192 STI vi
+// 319: out(0, vi[2]);
+2193 LOD_V vi 2
+2194 OUT 0
+// 320: vi[(3+9i)]++;
+2195 F2I_M 3.0
+2196 PSH
+2197 LDI vi
+2198 ADD 1
+2199 STI vi
+// 321: out(0, vi[3]);
+2200 LOD_V vi 3
+2201 OUT 0
+// 322: vi[(c1*one)]++;
+2202 LOD main_c1
+2203 F_MLT main_one
+2204 P_LOD main_c1_i
+2205 F_MLT main_one_i
+2206 SF_SU2
+2207 P_LOD main_c1
+2208 F_MLT main_one_i
+2209 P_LOD main_c1_i
+2210 F_MLT main_one
+2211 SF_ADD
+2212 POP
+2213 F2I
+2214 PSH
+2215 LDI vi
+2216 ADD 1
+2217 STI vi
+// 323: out(0, vi[1]);
+2218 LOD_V vi 1
+2219 OUT 0
+// 324: vi[c2]++;
+2220 F2I_M main_c2
 2221 PSH
 2222 LDI vi
 2223 ADD 1
 2224 STI vi
-// 319: out(0, vi[2]);
+// 325: out(0, vi[2]);
 2225 LOD_V vi 2
 2226 OUT 0
-// 320: vi[(3+9i)]++;
-2227 F2I_M 3.0
-2228 PSH
-2229 LDI vi
-2230 ADD 1
-2231 STI vi
-// 321: out(0, vi[3]);
-2232 LOD_V vi 3
-2233 OUT 0
-// 322: vi[(c1*one)]++;
-2234 LOD main_c1
-2235 F_MLT main_one
-2236 P_LOD main_c1_i
-2237 F_MLT main_one_i
-2238 SF_SU2
-2239 P_LOD main_c1
-2240 F_MLT main_one_i
-2241 P_LOD main_c1_i
-2242 F_MLT main_one
-2243 SF_ADD
-2244 POP
-2245 F2I
-2246 PSH
-2247 LDI vi
-2248 ADD 1
-2249 STI vi
-// 323: out(0, vi[1]);
-2250 LOD_V vi 1
-2251 OUT 0
-// 324: vi[c2]++;
-2252 F2I_M main_c2
-2253 PSH
-2254 LDI vi
-2255 ADD 1
-2256 STI vi
-// 325: out(0, vi[2]);
-2257 LOD_V vi 2
-2258 OUT 0
 // 326: vf[n3]++;
-2259 LOD main_n3
-2260 PSH
-2261 LDI vf
-2262 F_ADD 1.0
-2263 STI vf
+2227 LOD main_n3
+2228 PSH
+2229 LDI vf
+2230 F_ADD 1.0
+2231 STI vf
 // 327: fout(0, 2.0*vf[3]);
-2264 LOD_V vf 3
-2265 F_MLT 2.0
-2266 F2I
-2267 OUT 0
+2232 LOD_V vf 3
+2233 F_MLT 2.0
+2234 F2I
+2235 OUT 0
 // 328: vf[(n1+z0)]++;
-2268 LOD main_n1
-2269 ADD main_z0
-2270 PSH
-2271 LDI vf
-2272 F_ADD 1.0
-2273 STI vf
+2236 LOD main_n1
+2237 ADD main_z0
+2238 PSH
+2239 LDI vf
+2240 F_ADD 1.0
+2241 STI vf
 // 329: fout(0, 2.0*vf[1]);
-2274 LOD_V vf 1
-2275 F_MLT 2.0
-2276 F2I
-2277 OUT 0
+2242 LOD_V vf 1
+2243 F_MLT 2.0
+2244 F2I
+2245 OUT 0
 // 330: vf[2]++;
-2278 LOD 2
-2279 PSH
-2280 LDI vf
-2281 F_ADD 1.0
-2282 STI vf
+2246 LOD 2
+2247 PSH
+2248 LDI vf
+2249 F_ADD 1.0
+2250 STI vf
 // 331: fout(0, 2.0*vf[2]);
-2283 LOD_V vf 2
-2284 F_MLT 2.0
-2285 F2I
-2286 OUT 0
+2251 LOD_V vf 2
+2252 F_MLT 2.0
+2253 F2I
+2254 OUT 0
 // 332: vf[f3]++;
-2287 F2I_M main_f3
-2288 PSH
-2289 LDI vf
-2290 F_ADD 1.0
-2291 STI vf
+2255 F2I_M main_f3
+2256 PSH
+2257 LDI vf
+2258 F_ADD 1.0
+2259 STI vf
 // 333: fout(0, 2.0*vf[3]);
-2292 LOD_V vf 3
-2293 F_MLT 2.0
-2294 F2I
-2295 OUT 0
+2260 LOD_V vf 3
+2261 F_MLT 2.0
+2262 F2I
+2263 OUT 0
 // 334: vf[(f1+fz)]++;
-2296 LOD main_f1
-2297 F_ADD main_fz
-2298 F2I
-2299 PSH
-2300 LDI vf
-2301 F_ADD 1.0
-2302 STI vf
+2264 LOD main_f1
+2265 F_ADD main_fz
+2266 F2I
+2267 PSH
+2268 LDI vf
+2269 F_ADD 1.0
+2270 STI vf
 // 335: fout(0, 2.0*vf[1]);
-2303 LOD_V vf 1
-2304 F_MLT 2.0
-2305 F2I
-2306 OUT 0
+2271 LOD_V vf 1
+2272 F_MLT 2.0
+2273 F2I
+2274 OUT 0
 // 336: vf[(2+9i)]++;
-2307 F2I_M 2.0
-2308 PSH
-2309 LDI vf
-2310 F_ADD 1.0
-2311 STI vf
+2275 F2I_M 2.0
+2276 PSH
+2277 LDI vf
+2278 F_ADD 1.0
+2279 STI vf
 // 337: fout(0, 2.0*vf[2]);
-2312 LOD_V vf 2
-2313 F_MLT 2.0
-2314 F2I
-2315 OUT 0
+2280 LOD_V vf 2
+2281 F_MLT 2.0
+2282 F2I
+2283 OUT 0
 // 338: vf[(c3*one)]++;
-2316 LOD main_c3
-2317 F_MLT main_one
-2318 P_LOD main_c3_i
-2319 F_MLT main_one_i
-2320 SF_SU2
-2321 P_LOD main_c3
-2322 F_MLT main_one_i
-2323 P_LOD main_c3_i
-2324 F_MLT main_one
-2325 SF_ADD
-2326 POP
-2327 F2I
-2328 PSH
-2329 LDI vf
-2330 F_ADD 1.0
-2331 STI vf
+2284 LOD main_c3
+2285 F_MLT main_one
+2286 P_LOD main_c3_i
+2287 F_MLT main_one_i
+2288 SF_SU2
+2289 P_LOD main_c3
+2290 F_MLT main_one_i
+2291 P_LOD main_c3_i
+2292 F_MLT main_one
+2293 SF_ADD
+2294 POP
+2295 F2I
+2296 PSH
+2297 LDI vf
+2298 F_ADD 1.0
+2299 STI vf
 // 339: fout(0, 2.0*vf[3]);
-2332 LOD_V vf 3
-2333 F_MLT 2.0
-2334 F2I
-2335 OUT 0
+2300 LOD_V vf 3
+2301 F_MLT 2.0
+2302 F2I
+2303 OUT 0
 // 340: vf[c1]++;
-2336 F2I_M main_c1
-2337 PSH
-2338 LDI vf
-2339 F_ADD 1.0
-2340 STI vf
+2304 F2I_M main_c1
+2305 PSH
+2306 LDI vf
+2307 F_ADD 1.0
+2308 STI vf
 // 341: fout(0, 2.0*vf[1]);
-2341 LOD_V vf 1
-2342 F_MLT 2.0
-2343 F2I
-2344 OUT 0
+2309 LOD_V vf 1
+2310 F_MLT 2.0
+2311 F2I
+2312 OUT 0
 // 342: x = vi[n1); out(0, x);
-2345 LOD main_n1
-2346 ILI vi
-2347 OUT 0
+2313 LOD main_n1
+2314 ILI vi
+2315 OUT 0
 // 343: iv = 378; fv = 378.5; cv = 378+428i;
-2348 LOD 378
-2349 SET main_iv
-2350 LOD 378.5
-2351 SET main_fv
-2352 LOD 378.0
-2353 SET main_cv
-2354 LOD 428.0
-2355 SET main_cv_i
+2316 LOD 378
+2317 SET main_iv
+2318 LOD 378.5
+2319 SET main_fv
+2320 LOD 378.0
+2321 SET main_cv
+2322 LOD 428.0
+2323 SET main_cv_i
 // 344: vi[n1) = iv;
-2356 LOD main_n1
-2357 P_LOD main_iv
-2358 ISI vi
+2324 LOD main_n1
+2325 P_LOD main_iv
+2326 ISI vi
 // 345: out(0, vi[4]);
-2359 LOD_V vi 4
-2360 OUT 0
+2327 LOD_V vi 4
+2328 OUT 0
 // 346: x = vi[(n3+z0)); out(0, x);
-2361 LOD main_n3
-2362 ADD main_z0
-2363 ILI vi
-2364 OUT 0
+2329 LOD main_n3
+2330 ADD main_z0
+2331 ILI vi
+2332 OUT 0
 // 347: iv = 379; fv = 379.5; cv = 379+429i;
-2365 LOD 379
-2366 SET main_iv
-2367 LOD 379.5
-2368 SET main_fv
-2369 LOD 379.0
-2370 SET main_cv
-2371 LOD 429.0
-2372 SET main_cv_i
+2333 LOD 379
+2334 SET main_iv
+2335 LOD 379.5
+2336 SET main_fv
+2337 LOD 379.0
+2338 SET main_cv
+2339 LOD 429.0
+2340 SET main_cv_i
 // 348: vi[(n3+z0)) = iv;
-2373 LOD main_n3
-2374 ADD main_z0
-2375 P_LOD main_iv
-2376 ISI vi
+2341 LOD main_n3
+2342 ADD main_z0
+2343 P_LOD main_iv
+2344 ISI vi
 // 349: out(0, vi[6]);
-2377 LOD_V vi 6
-2378 OUT 0
+2345 LOD_V vi 6
+2346 OUT 0
 // 350: y = vf[n1); fout(0, 2.0*y);
-2379 LOD main_n1
-2380 ILI vf
-2381 SET main_y
-2382 LOD 2.0
-2383 F_MLT main_y
-2384 F2I
-2385 OUT 0
+2347 LOD main_n1
+2348 ILI vf
+2349 F_MLT 2.0
+2350 F2I
+2351 OUT 0
 // 351: iv = 380; fv = 380.5; cv = 380+430i;
-2386 LOD 380
-2387 SET main_iv
-2388 LOD 380.5
-2389 SET main_fv
-2390 LOD 380.0
-2391 SET main_cv
-2392 LOD 430.0
-2393 SET main_cv_i
+2352 LOD 380
+2353 SET main_iv
+2354 LOD 380.5
+2355 SET main_fv
+2356 LOD 380.0
+2357 SET main_cv
+2358 LOD 430.0
+2359 SET main_cv_i
 // 352: vf[n1) = fv;
-2394 LOD main_n1
-2395 P_LOD main_fv
-2396 ISI vf
+2360 LOD main_n1
+2361 P_LOD main_fv
+2362 ISI vf
 // 353: fout(0, 2.0*vf[4]);
-2397 LOD_V vf 4
-2398 F_MLT 2.0
-2399 F2I
-2400 OUT 0
+2363 LOD_V vf 4
+2364 F_MLT 2.0
+2365 F2I
+2366 OUT 0
 // 354: y = vf[(n3+z0)); fout(0, 2.0*y);
-2401 LOD main_n3
-2402 ADD main_z0
-2403 ILI vf
-2404 SET main_y
-2405 LOD 2.0
-2406 F_MLT main_y
-2407 F2I
-2408 OUT 0
+2367 LOD main_n3
+2368 ADD main_z0
+2369 ILI vf
+2370 F_MLT 2.0
+2371 F2I
+2372 OUT 0
 // 355: iv = 381; fv = 381.5; cv = 381+431i;
-2409 LOD 381
-2410 SET main_iv
-2411 LOD 381.5
-2412 SET main_fv
-2413 LOD 381.0
-2414 SET main_cv
-2415 LOD 431.0
-2416 SET main_cv_i
+2373 LOD 381
+2374 SET main_iv
+2375 LOD 381.5
+2376 SET main_fv
+2377 LOD 381.0
+2378 SET main_cv
+2379 LOD 431.0
+2380 SET main_cv_i
 // 356: vf[(n3+z0)) = fv;
-2417 LOD main_n3
-2418 ADD main_z0
-2419 P_LOD main_fv
-2420 ISI vf
+2381 LOD main_n3
+2382 ADD main_z0
+2383 P_LOD main_fv
+2384 ISI vf
 // 357: fout(0, 2.0*vf[6]);
-2421 LOD_V vf 6
-2422 F_MLT 2.0
+2385 LOD_V vf 6
+2386 F_MLT 2.0
+2387 F2I
+2388 OUT 0
+// 358: w = vc[n1); fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+2389 LOD main_n1
+2390 ILI vc
+2391 P_LOD main_n1
+2392 ILI vc_i
+2393 SET_P main_w_i
+2394 SET main_w
+2395 LOD 2.0
+2396 F_MLT main_w
+2397 F2I
+2398 OUT 0
+2399 LOD 2.0
+2400 F_MLT main_w_i
+2401 F2I
+2402 OUT 0
+// 359: iv = 382; fv = 382.5; cv = 382+432i;
+2403 LOD 382
+2404 SET main_iv
+2405 LOD 382.5
+2406 SET main_fv
+2407 LOD 382.0
+2408 SET main_cv
+2409 LOD 432.0
+2410 SET main_cv_i
+// 360: vc[n1) = cv;
+2411 LOD main_n1
+2412 P_LOD main_cv
+2413 ISI vc
+2414 LOD main_n1
+2415 P_LOD main_cv_i
+2416 ISI vc_i
+// 361: w = vc[4]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
+2417 LOD_V vc 4
+2418 P_LOD_V vc_i 4
+2419 SET_P main_w_i
+2420 SET main_w
+2421 LOD 2.0
+2422 F_MLT main_w
 2423 F2I
 2424 OUT 0
-// 358: w = vc[n1); fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2425 LOD main_n1
-2426 ILI vc
-2427 P_LOD main_n1
-2428 ILI vc_i
-2429 SET_P main_w_i
-2430 SET main_w
-2431 LOD 2.0
-2432 F_MLT main_w
-2433 F2I
-2434 OUT 0
-2435 LOD 2.0
-2436 F_MLT main_w_i
-2437 F2I
-2438 OUT 0
-// 359: iv = 382; fv = 382.5; cv = 382+432i;
-2439 LOD 382
-2440 SET main_iv
-2441 LOD 382.5
-2442 SET main_fv
-2443 LOD 382.0
-2444 SET main_cv
-2445 LOD 432.0
-2446 SET main_cv_i
-// 360: vc[n1) = cv;
-2447 LOD main_n1
-2448 P_LOD main_cv
-2449 ISI vc
-2450 LOD main_n1
-2451 P_LOD main_cv_i
-2452 ISI vc_i
-// 361: w = vc[4]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2453 LOD_V vc 4
-2454 P_LOD_V vc_i 4
-2455 SET_P main_w_i
-2456 SET main_w
-2457 LOD 2.0
-2458 F_MLT main_w
-2459 F2I
-2460 OUT 0
-2461 LOD 2.0
-2462 F_MLT main_w_i
-2463 F2I
-2464 OUT 0
+2425 LOD 2.0
+2426 F_MLT main_w_i
+2427 F2I
+2428 OUT 0
 // 362: w = vc[(n3+z0)); fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2465 LOD main_n3
-2466 ADD main_z0
-2467 SET __aux_var
-2468 ILI vc
-2469 P_LOD __aux_var
-2470 ILI vc_i
-2471 SET_P main_w_i
-2472 SET main_w
-2473 LOD 2.0
-2474 F_MLT main_w
-2475 F2I
-2476 OUT 0
-2477 LOD 2.0
-2478 F_MLT main_w_i
-2479 F2I
-2480 OUT 0
+2429 LOD main_n3
+2430 ADD main_z0
+2431 SET __aux_var
+2432 ILI vc
+2433 P_LOD __aux_var
+2434 ILI vc_i
+2435 SET_P main_w_i
+2436 SET main_w
+2437 LOD 2.0
+2438 F_MLT main_w
+2439 F2I
+2440 OUT 0
+2441 LOD 2.0
+2442 F_MLT main_w_i
+2443 F2I
+2444 OUT 0
 // 363: iv = 383; fv = 383.5; cv = 383+433i;
-2481 LOD 383
-2482 SET main_iv
-2483 LOD 383.5
-2484 SET main_fv
-2485 LOD 383.0
-2486 SET main_cv
-2487 LOD 433.0
-2488 SET main_cv_i
+2445 LOD 383
+2446 SET main_iv
+2447 LOD 383.5
+2448 SET main_fv
+2449 LOD 383.0
+2450 SET main_cv
+2451 LOD 433.0
+2452 SET main_cv_i
 // 364: vc[(n3+z0)) = cv;
-2489 LOD main_n3
-2490 ADD main_z0
-2491 SET __aux_var
-2492 P_LOD main_cv
-2493 ISI vc
-2494 LOD __aux_var
-2495 P_LOD main_cv_i
-2496 ISI vc_i
+2453 LOD main_n3
+2454 ADD main_z0
+2455 SET __aux_var
+2456 P_LOD main_cv
+2457 ISI vc
+2458 LOD __aux_var
+2459 P_LOD main_cv_i
+2460 ISI vc_i
 // 365: w = vc[6]; fout(0, 2.0*real(w)); fout(0, 2.0*imag(w));
-2497 LOD_V vc 6
-2498 P_LOD_V vc_i 6
-2499 SET_P main_w_i
-2500 SET main_w
-2501 LOD 2.0
-2502 F_MLT main_w
-2503 F2I
-2504 OUT 0
-2505 LOD 2.0
-2506 F_MLT main_w_i
-2507 F2I
-2508 OUT 0
+2461 LOD_V vc 6
+2462 P_LOD_V vc_i 6
+2463 SET_P main_w_i
+2464 SET main_w
+2465 LOD 2.0
+2466 F_MLT main_w
+2467 F2I
+2468 OUT 0
+2469 LOD 2.0
+2470 F_MLT main_w_i
+2471 F2I
+2472 OUT 0
 // -3: END
-2509 JMP fim
+2473 JMP fim

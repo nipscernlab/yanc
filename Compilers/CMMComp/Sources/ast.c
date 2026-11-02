@@ -1143,17 +1143,26 @@ static expr ast_emit_expr_impl(expr_node *n)
                 a = ast_emit_expr(n->left );
                 b = ast_emit_expr(n->right);
             }
-            // both int operands in memory and the acc already holding the
-            // right one (s = s + t after SET t): swap them, so the load the
+            // both operands in memory and the acc already holding the right
+            // one (s = s + t after SET t): swap them, so the load the
             // operator emits first is the one the peephole drops (ADD s, not
             // LOD s; ADD t). Only ops whose result is the same word either
-            // way round; not float (F_ADD / F_MLT are not checked for that).
-            // Two variables only: with a literal the operators already put
-            // the variable first (oper_bitw: 0 ^ k is LOD k; XOR 0)
-            if (acc_ok == 0 && n->left->kind == EXPR_VAR && n->right->kind == EXPR_VAR
-                && a.id != 0 && b.id != 0 && a.type == 1 && b.type == 1
+            // way round:
+            // - int + * & | ^ == && || of two variables (with a literal the
+            //   int operators already put the variable first: 0 ^ k is
+            //   LOD k; XOR 0);
+            // - float + and * of two floats, variables or literals (4.0*y
+            //   after SET y is F_MLT 4.0): F_ADD and F_MLT give the same word
+            //   with their operands swapped, simulated on 3000 random pairs
+            //   at each #FROUND level (issue #69, 2026-11-02)
+            int swap_int = n->left->kind == EXPR_VAR && n->right->kind == EXPR_VAR
+                && a.type == 1 && b.type == 1
                 && (n->op == OP_ADD || n->op == OP_MUL || n->op == OP_AND || n->op == OP_OR
-                    || n->op == OP_XOR || n->op == OP_EQ || n->op == OP_LAN || n->op == OP_LOR)
+                    || n->op == OP_XOR || n->op == OP_EQ || n->op == OP_LAN || n->op == OP_LOR);
+            int swap_flt = (n->left->kind  == EXPR_VAR || n->left->kind  == EXPR_LITERAL)
+                && (n->right->kind == EXPR_VAR || n->right->kind == EXPR_LITERAL)
+                && a.type == 2 && b.type == 2 && (n->op == OP_ADD || n->op == OP_MUL);
+            if (acc_ok == 0 && a.id != 0 && b.id != 0 && (swap_int || swap_flt)
                 && acc_holds(v_table[b.id].name) && !acc_holds(v_table[a.id].name))
             {
                 expr t = a; a = b; b = t;

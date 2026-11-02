@@ -5,31 +5,30 @@ NOP
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-#SHARE __csqrt_im main_y
-#SHARE main_w_i main_y
-#SHARE __aux_var main_y
+#SHARE main_w_i __csqrt_im
+#SHARE __aux_var __csqrt_im
 #SHARE __aux_var1 main_w
-#SHARE __fase_re main_y
-#SHARE __fase_t main_y
-#SHARE __clog_im main_y
+#SHARE __fase_re __csqrt_im
+#SHARE __fase_t __csqrt_im
+#SHARE __clog_im __csqrt_im
 #SHARE __csin_eb __csin_shb
-#SHARE __csin_emb main_y
-#SHARE __csin_b main_y
+#SHARE __csin_emb __csqrt_im
+#SHARE __csin_b __csqrt_im
 #SHARE __ccos_eb __ccos_shb
-#SHARE __ccos_emb main_y
-#SHARE __ccos_b main_y
+#SHARE __ccos_emb __csqrt_im
+#SHARE __ccos_b __csqrt_im
 #SHARE __ctan_eb main_w
 #SHARE __ctan_emb __aux_var2
-#SHARE __ctan_chb main_y
+#SHARE __ctan_chb __csqrt_im
 #SHARE __ctan_shb main_w
-#SHARE __ctan_d main_y
+#SHARE __ctan_d __csqrt_im
 #SHARE __ctan_b __ctan_tb
-#SHARE __catan_bp main_y
-#SHARE __catan_num main_y
+#SHARE __catan_bp __csqrt_im
+#SHARE __catan_num __csqrt_im
 #SHARE __catan_bm main_w
-#SHARE __catan_im main_y
+#SHARE __catan_im __csqrt_im
 #SHARE __catan_a __fase_im
-#SHARE __tanh_e main_y
+#SHARE __tanh_e __csqrt_im
 #SHARE __tanh_n main_w
 #SHARE __floor_x main_ca
 #SHARE __floor_t main_ca_i
@@ -37,29 +36,29 @@ NOP
 #SHARE __ceil_t main_ca_i
 #SHARE __round_x main_ca
 #SHARE __pow_x main_w
-#SHARE __pow_r main_y
+#SHARE __pow_r __csqrt_im
 #SHARE __pow_c __aux_var2
 #SHARE __pow_b __pow_y
-#SHARE __sqrt_num main_y
-#SHARE __atan_x main_y
+#SHARE __sqrt_num __csqrt_im
+#SHARE __atan_x __csqrt_im
 #SHARE __atan_t main_w
 #SHARE __atan_w __aux_var2
-#SHARE __sin_x main_y
+#SHARE __sin_x __csqrt_im
 #SHARE __sin_q main_w
 #SHARE __sin_k main_w
-#SHARE __sin_r main_y
+#SHARE __sin_r __csqrt_im
 #SHARE __sin_w main_w
-#SHARE __tan_x main_y
+#SHARE __tan_x __csqrt_im
 #SHARE __tan_q main_w
-#SHARE __tan_r main_y
+#SHARE __tan_r __csqrt_im
 #SHARE __tan_u main_w
 #SHARE __tan_w __aux_var2
-#SHARE __exp_x main_y
+#SHARE __exp_x __csqrt_im
 #SHARE __exp_q main_w
 #SHARE __exp_n main_w
-#SHARE __exp_r main_y
+#SHARE __exp_r __csqrt_im
 #SHARE __log_x main_w
-#SHARE __log_e main_y
+#SHARE __log_e __csqrt_im
 #SHARE __log_ne __aux_var2
 #SHARE __log_m main_w
 #SHARE __log_t1 __aux_var2
@@ -91,9 +90,7 @@ LOD 4.0
 SET main_ca_i
 I2F_M main_ia
 CAL __float_sqrt
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -101,18 +98,14 @@ F_ADD main_fz
 P_I2F_M main_ia
 CAL __float_sqrt
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
 CAL __float_sqrt
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -122,16 +115,12 @@ ADD main_z0
 I2F
 CAL __float_sqrt
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.0
 CAL __float_sqrt
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -139,16 +128,12 @@ F_ADD main_fz
 P_LOD 2.0
 CAL __float_sqrt
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 CAL __float_sqrt
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -156,17 +141,13 @@ F_ADD main_fz
 P_LOD main_fa
 CAL __float_sqrt
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 CAL __float_sqrt
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -175,16 +156,12 @@ P_LOD main_fa
 F_ADD main_fz
 CAL __float_sqrt
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.25
 CAL __float_sqrt
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -192,9 +169,7 @@ F_ADD main_fz
 P_LOD 2.25
 CAL __float_sqrt
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -450,9 +425,7 @@ LOD 0.25
 SET main_ca_i
 I2F_M main_ia
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -460,18 +433,14 @@ F_ADD main_fz
 P_I2F_M main_ia
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -481,16 +450,12 @@ ADD main_z0
 I2F
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -498,16 +463,12 @@ F_ADD main_fz
 P_LOD 1.0
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -515,17 +476,13 @@ F_ADD main_fz
 P_LOD main_fa
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -534,16 +491,12 @@ P_LOD main_fa
 F_ADD main_fz
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.5
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -551,9 +504,7 @@ F_ADD main_fz
 P_LOD 0.5
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -765,9 +716,7 @@ SET main_ca
 SET main_ca_i
 I2F_M main_ia
 CAL __float_log
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -775,18 +724,14 @@ F_ADD main_fz
 P_I2F_M main_ia
 CAL __float_log
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
 CAL __float_log
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -796,16 +741,12 @@ ADD main_z0
 I2F
 CAL __float_log
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3.0
 CAL __float_log
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -813,16 +754,12 @@ F_ADD main_fz
 P_LOD 3.0
 CAL __float_log
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 CAL __float_log
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -830,17 +767,13 @@ F_ADD main_fz
 P_LOD main_fa
 CAL __float_log
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 CAL __float_log
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -849,16 +782,12 @@ P_LOD main_fa
 F_ADD main_fz
 CAL __float_log
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.5
 CAL __float_log
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -866,9 +795,7 @@ F_ADD main_fz
 P_LOD 2.5
 CAL __float_log
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -1336,9 +1263,7 @@ LOD 0.25
 SET main_ca_i
 I2F_M main_ia
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1346,18 +1271,14 @@ F_ADD main_fz
 P_I2F_M main_ia
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1367,16 +1288,12 @@ ADD main_z0
 I2F
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1384,16 +1301,12 @@ F_ADD main_fz
 P_LOD 1.0
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1401,17 +1314,13 @@ F_ADD main_fz
 P_LOD main_fa
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1420,16 +1329,12 @@ P_LOD main_fa
 F_ADD main_fz
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.5
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1437,9 +1342,7 @@ F_ADD main_fz
 P_LOD 0.5
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca_i
@@ -1728,9 +1631,7 @@ SET main_ca_i
 I2F_M main_ia
 F_SU2 1.570796327
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1739,9 +1640,7 @@ P_I2F_M main_ia
 F_SU2 1.570796327
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -1749,9 +1648,7 @@ ADD main_z0
 I2F
 F_SU2 1.570796327
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1762,17 +1659,13 @@ I2F
 F_SU2 1.570796327
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
 F_SU2 1.570796327
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1781,17 +1674,13 @@ P_LOD 1.0
 F_SU2 1.570796327
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_SU2 1.570796327
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1800,18 +1689,14 @@ P_LOD main_fa
 F_SU2 1.570796327
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_SU2 1.570796327
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1821,17 +1706,13 @@ F_ADD main_fz
 F_SU2 1.570796327
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.5
 F_SU2 1.570796327
 CAL __float_sin
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -1840,9 +1721,7 @@ P_LOD 0.5
 F_SU2 1.570796327
 CAL __float_sin
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca_i
@@ -2136,9 +2015,7 @@ LOD 0.25
 SET main_ca_i
 I2F_M main_ia
 CAL __float_tan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2146,18 +2023,14 @@ F_ADD main_fz
 P_I2F_M main_ia
 CAL __float_tan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
 CAL __float_tan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2167,16 +2040,12 @@ ADD main_z0
 I2F
 CAL __float_tan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
 CAL __float_tan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2184,16 +2053,12 @@ F_ADD main_fz
 P_LOD 1.0
 CAL __float_tan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 CAL __float_tan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2201,17 +2066,13 @@ F_ADD main_fz
 P_LOD main_fa
 CAL __float_tan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 CAL __float_tan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2220,16 +2081,12 @@ P_LOD main_fa
 F_ADD main_fz
 CAL __float_tan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.5
 CAL __float_tan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2237,9 +2094,7 @@ F_ADD main_fz
 P_LOD 0.5
 CAL __float_tan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -2619,9 +2474,7 @@ LOD 0.25
 SET main_ca_i
 I2F_M main_ia
 CAL __float_atan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2629,18 +2482,14 @@ F_ADD main_fz
 P_I2F_M main_ia
 CAL __float_atan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
 CAL __float_atan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2650,16 +2499,12 @@ ADD main_z0
 I2F
 CAL __float_atan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.0
 CAL __float_atan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2667,16 +2512,12 @@ F_ADD main_fz
 P_LOD 2.0
 CAL __float_atan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 CAL __float_atan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2684,17 +2525,13 @@ F_ADD main_fz
 P_LOD main_fa
 CAL __float_atan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 CAL __float_atan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2703,16 +2540,12 @@ P_LOD main_fa
 F_ADD main_fz
 CAL __float_atan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.5
 CAL __float_atan
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -2720,9 +2553,7 @@ F_ADD main_fz
 P_LOD 0.5
 CAL __float_atan
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -3308,9 +3139,7 @@ F_NEG_M __sinh_x
 CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3324,9 +3153,7 @@ CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -3339,9 +3166,7 @@ F_NEG_M __sinh_x
 CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3357,9 +3182,7 @@ CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
@@ -3370,9 +3193,7 @@ F_NEG_M __sinh_x
 CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3386,9 +3207,7 @@ CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -3399,9 +3218,7 @@ F_NEG_M __sinh_x
 CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3415,9 +3232,7 @@ CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -3429,9 +3244,7 @@ F_NEG_M __sinh_x
 CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3446,9 +3259,7 @@ CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.5
@@ -3459,9 +3270,7 @@ F_NEG_M __sinh_x
 CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3475,9 +3284,7 @@ CAL __float_exp
 F_SU2 __sinh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1
@@ -3495,9 +3302,7 @@ F_NEG_M __cosh_x
 CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3511,9 +3316,7 @@ CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -3526,9 +3329,7 @@ F_NEG_M __cosh_x
 CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3544,9 +3345,7 @@ CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
@@ -3557,9 +3356,7 @@ F_NEG_M __cosh_x
 CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3573,9 +3370,7 @@ CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -3586,9 +3381,7 @@ F_NEG_M __cosh_x
 CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3602,9 +3395,7 @@ CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -3616,9 +3407,7 @@ F_NEG_M __cosh_x
 CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3633,9 +3422,7 @@ CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.5
@@ -3646,9 +3433,7 @@ F_NEG_M __cosh_x
 CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3662,9 +3447,7 @@ CAL __float_exp
 F_ADD __cosh_t
 F_MLT 0.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1
@@ -3686,9 +3469,7 @@ F_DIV __tanh_n
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3706,9 +3487,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -3725,9 +3504,7 @@ F_DIV __tanh_n
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3747,9 +3524,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
@@ -3764,9 +3539,7 @@ F_DIV __tanh_n
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3784,9 +3557,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -3801,9 +3572,7 @@ F_DIV __tanh_n
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3821,9 +3590,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -3839,9 +3606,7 @@ F_DIV __tanh_n
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3860,9 +3625,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.5
@@ -3877,9 +3640,7 @@ F_DIV __tanh_n
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3897,9 +3658,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0
@@ -3950,9 +3709,7 @@ JIZ __Lfa13e
 LOD -1.57079632679
 JMP __Lfa13z
 @__Lfa13e LOD 0.0
-@__Lfa13z SET main_y
-LOD 1000.0
-F_MLT main_y
+@__Lfa13z F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -3998,9 +3755,7 @@ LOD -1.57079632679
 JMP __Lfa14z
 @__Lfa14e LOD 0.0
 @__Lfa14z SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -4055,9 +3810,7 @@ JIZ __Lfa15e
 LOD -1.57079632679
 JMP __Lfa15z
 @__Lfa15e LOD 0.0
-@__Lfa15z SET main_y
-LOD 1000.0
-F_MLT main_y
+@__Lfa15z F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4115,9 +3868,7 @@ LOD -1.57079632679
 JMP __Lfa16z
 @__Lfa16e LOD 0.0
 @__Lfa16z SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.0
@@ -4160,9 +3911,7 @@ JIZ __Lfa17e
 LOD -1.57079632679
 JMP __Lfa17z
 @__Lfa17e LOD 0.0
-@__Lfa17z SET main_y
-LOD 1000.0
-F_MLT main_y
+@__Lfa17z F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4208,9 +3957,7 @@ LOD -1.57079632679
 JMP __Lfa18z
 @__Lfa18e LOD 0.0
 @__Lfa18z SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3
@@ -4231,9 +3978,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr1end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4250,9 +3995,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr2end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -4268,9 +4011,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr3end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4289,9 +4030,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr4end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3.0
@@ -4305,9 +4044,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr5end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4324,9 +4061,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr6end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -4340,9 +4075,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr7end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4359,9 +4092,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr8end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -4376,9 +4107,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr9end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4396,9 +4125,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr10end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.6
@@ -4412,9 +4139,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr11end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4431,9 +4156,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr12end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3
@@ -4455,9 +4178,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel1end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4475,9 +4196,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel2end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -4494,9 +4213,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel3end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4516,9 +4233,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel4end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3.0
@@ -4533,9 +4248,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel5end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4553,9 +4266,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel6end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -4570,9 +4281,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel7end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4590,9 +4299,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel8end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -4608,9 +4315,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel9end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4629,9 +4334,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel10end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.6
@@ -4646,9 +4349,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel11end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4666,9 +4367,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel12end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3
@@ -4685,9 +4384,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4700,9 +4397,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -4714,9 +4409,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4731,9 +4424,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3.0
@@ -4743,9 +4434,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4758,9 +4447,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -4770,9 +4457,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4785,9 +4470,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -4798,9 +4481,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4814,9 +4495,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.6
@@ -4826,9 +4505,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4841,9 +4518,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 5
@@ -4876,26 +4551,20 @@ ADD main_pa
 ADD main_z0
 OUT 0
 F_PST_M main_fa
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 PF_PST_M main_fa
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_PST
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4904,24 +4573,18 @@ P_LOD main_fa
 F_ADD main_fz
 F_PST
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 F_PST_M 2.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 PF_PST_M 2.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 640
@@ -4970,9 +4633,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr13end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -4989,9 +4650,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr14end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -5007,9 +4666,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr15end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5028,9 +4685,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr16end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 3
@@ -5045,9 +4700,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr17end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5065,9 +4718,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr18end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -5081,9 +4732,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr19end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5100,9 +4749,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr20end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -5117,9 +4764,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr21end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5137,9 +4782,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr22end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD -2.6
@@ -5153,9 +4796,7 @@ LOD __floor_t
 F_ADD -1.0
 SET __floor_t
 @__Lflr23end LOD __floor_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5172,9 +4813,7 @@ F_ADD -1.0
 SET __floor_t
 @__Lflr24end LOD __floor_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 3
@@ -5196,9 +4835,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel13end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5216,9 +4853,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel14end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -5235,9 +4870,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel15end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5257,9 +4890,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel16end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 3
@@ -5275,9 +4906,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel17end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5296,9 +4925,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel18end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -5313,9 +4940,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel19end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5333,9 +4958,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel20end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -5351,9 +4974,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel21end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5372,9 +4993,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel22end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD -2.6
@@ -5389,9 +5008,7 @@ LOD __ceil_t
 F_ADD 1.0
 SET __ceil_t
 @__Lcel23end LOD __ceil_t
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5409,9 +5026,7 @@ F_ADD 1.0
 SET __ceil_t
 @__Lcel24end LOD __ceil_t
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 3
@@ -5428,9 +5043,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5443,9 +5056,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -5457,9 +5068,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5474,9 +5083,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 3
@@ -5487,9 +5094,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5503,9 +5108,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -5515,9 +5118,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5530,9 +5131,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -5543,9 +5142,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5559,9 +5156,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD -2.6
@@ -5571,9 +5166,7 @@ F_SGN __round_x
 F_ADD __round_x
 F2I
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5586,9 +5179,7 @@ F_ADD __round_x
 F2I
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 5
@@ -5623,26 +5214,20 @@ ADD main_pa
 ADD main_z0
 OUT 0
 F_PST_M main_fa
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 PF_PST_M main_fa
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_PST
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5651,24 +5236,18 @@ P_LOD main_fa
 F_ADD main_fz
 F_PST
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 F_PST_M -2.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 PF_PST_M -2.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 640
@@ -5734,26 +5313,20 @@ ADD main_pa
 ADD main_z0
 OUT 0
 F_ABS_M main_fa
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 PF_ABS_M main_fa
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_ABS
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5762,24 +5335,18 @@ P_LOD main_fa
 F_ADD main_fz
 F_ABS
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 F_ABS_M -2.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 PF_ABS_M -2.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -5788,9 +5355,7 @@ P_LOD main_ca_i
 F_MLT main_ca_i
 SF_ADD
 CAL __float_sqrt
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5802,9 +5367,7 @@ F_MLT main_ca_i
 SF_ADD
 CAL __float_sqrt
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -5825,9 +5388,7 @@ SF_MLT
 P_LOD __aux_var
 SF_ADD
 CAL __float_sqrt
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5851,9 +5412,7 @@ P_LOD __aux_var
 SF_ADD
 CAL __float_sqrt
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3.0
@@ -5862,9 +5421,7 @@ P_LOD 4.0
 F_MLT 4.0
 SF_ADD
 CAL __float_sqrt
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5876,9 +5433,7 @@ F_MLT 4.0
 SF_ADD
 CAL __float_sqrt
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0
@@ -5890,17 +5445,13 @@ SET main_ca
 LOD 4.0
 SET main_ca_i
 LOD main_ca
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 F_ADD main_ca
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -5908,9 +5459,7 @@ F_MLT main_one
 P_LOD main_ca_i
 F_MLT main_one_i
 SF_SU2
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5921,23 +5470,17 @@ P_LOD main_ca_i
 F_MLT main_one_i
 SF_SU2
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 F_ADD 3.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0
@@ -5948,17 +5491,13 @@ LOD 3.0
 SET main_ca
 LOD 4.0
 SET main_ca_i
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 F_ADD main_ca_i
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -5966,9 +5505,7 @@ F_MLT main_one_i
 P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -5979,23 +5516,17 @@ P_LOD main_ca_i
 F_MLT main_one
 SF_ADD
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 4.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 F_ADD 4.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0
@@ -6010,9 +5541,7 @@ F_MLT main_ca_i
 P_LOD main_ca
 F_MLT main_ca
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -6023,9 +5552,7 @@ P_LOD main_ca_i
 F_MLT main_ca_i
 SF_ADD
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ca
@@ -6045,9 +5572,7 @@ PSH
 SF_MLT
 P_LOD __aux_var
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -6070,9 +5595,7 @@ SF_MLT
 P_LOD __aux_var
 SF_ADD
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 3.0
@@ -6080,9 +5603,7 @@ F_MLT 3.0
 P_LOD 4.0
 F_MLT 4.0
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -6093,9 +5614,7 @@ P_LOD 4.0
 F_MLT 4.0
 SF_ADD
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2
@@ -6655,9 +6174,7 @@ F2I
 OUT 0
 LOD main_fb
 F_SGN main_ia
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -6665,9 +6182,7 @@ F_ADD main_fz
 P_LOD main_fb
 F_SGN main_ia
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 I2F_M main_ia
@@ -6713,9 +6228,7 @@ OUT 0
 LOD main_fb
 F_ADD main_fz
 F_SGN main_ia
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -6724,9 +6237,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_SGN main_ia
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fb
@@ -6777,9 +6288,7 @@ F2I
 OUT 0
 LOD 2.5
 F_SGN main_ia
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -6787,9 +6296,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_SGN main_ia
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 I2F_M main_ia
@@ -7012,9 +6519,7 @@ LOD main_ia
 ADD main_z0
 P_LOD main_fb
 SF_SGN
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -7024,9 +6529,7 @@ ADD main_z0
 P_LOD main_fb
 SF_SGN
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -7078,9 +6581,7 @@ ADD main_z0
 P_LOD main_fb
 F_ADD main_fz
 SF_SGN
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -7091,9 +6592,7 @@ P_LOD main_fb
 F_ADD main_fz
 SF_SGN
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -7150,9 +6649,7 @@ LOD main_ia
 ADD main_z0
 P_LOD 2.5
 SF_SGN
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -7162,9 +6659,7 @@ ADD main_z0
 P_LOD 2.5
 SF_SGN
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -7378,9 +6873,7 @@ OUT 0
 NEG_M 3
 P_LOD main_fb
 SF_SGN
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -7389,9 +6882,7 @@ P_NEG_M 3
 P_LOD main_fb
 SF_SGN
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 3
@@ -7440,9 +6931,7 @@ NEG_M 3
 P_LOD main_fb
 F_ADD main_fz
 SF_SGN
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -7452,9 +6941,7 @@ P_LOD main_fb
 F_ADD main_fz
 SF_SGN
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 3
@@ -7508,9 +6995,7 @@ OUT 0
 NEG_M 3
 P_LOD 2.5
 SF_SGN
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -7519,9 +7004,7 @@ P_NEG_M 3
 P_LOD 2.5
 SF_SGN
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 3
@@ -7720,9 +7203,7 @@ F2I
 OUT 0
 LOD main_fb
 F_SGN main_fa
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -7730,9 +7211,7 @@ F_ADD main_fz
 P_LOD main_fb
 F_SGN main_fa
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -7778,9 +7257,7 @@ OUT 0
 LOD main_fb
 F_ADD main_fz
 F_SGN main_fa
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -7789,9 +7266,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_SGN main_fa
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fb
@@ -7842,9 +7317,7 @@ F2I
 OUT 0
 LOD 2.5
 F_SGN main_fa
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -7852,9 +7325,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_SGN main_fa
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -8069,9 +7540,7 @@ LOD main_fa
 F_ADD main_fz
 P_LOD main_fb
 SF_SGN
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8081,9 +7550,7 @@ F_ADD main_fz
 P_LOD main_fb
 SF_SGN
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -8133,9 +7600,7 @@ F_ADD main_fz
 P_LOD main_fb
 F_ADD main_fz
 SF_SGN
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8146,9 +7611,7 @@ P_LOD main_fb
 F_ADD main_fz
 SF_SGN
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -8199,9 +7662,7 @@ LOD main_fa
 F_ADD main_fz
 P_LOD 2.5
 SF_SGN
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8211,9 +7672,7 @@ F_ADD main_fz
 P_LOD 2.5
 SF_SGN
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -8412,9 +7871,7 @@ F2I
 OUT 0
 LOD main_fb
 F_SGN -2.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8422,9 +7879,7 @@ F_ADD main_fz
 P_LOD main_fb
 F_SGN -2.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD -2.5
@@ -8470,9 +7925,7 @@ OUT 0
 LOD main_fb
 F_ADD main_fz
 F_SGN -2.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8481,9 +7934,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_SGN -2.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fb
@@ -8534,9 +7985,7 @@ F2I
 OUT 0
 LOD 2.5
 F_SGN -2.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8544,9 +7993,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_SGN -2.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD -2.5
@@ -8628,9 +8075,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow1pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8664,9 +8109,7 @@ F_QUO
 SET __pow_r
 @__Lpow2pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ib
@@ -8700,9 +8143,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow3pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8739,9 +8180,7 @@ F_QUO
 SET __pow_r
 @__Lpow4pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 I2F_M main_ia
@@ -8752,9 +8191,7 @@ LOD __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8768,9 +8205,7 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fb
@@ -8781,9 +8216,7 @@ SET __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8797,38 +8230,28 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 F_ADD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 I2F_M main_ia
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 P_I2F_M main_ia
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 I2F_M main_ia
@@ -8836,9 +8259,7 @@ SET __pow_b
 F_MLT __pow_b
 SET __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8849,9 +8270,7 @@ F_MLT __pow_b
 SET __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 I2F_M main_ia
@@ -8864,9 +8283,7 @@ SET __pow_b
 LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8882,9 +8299,7 @@ LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 2
@@ -8917,9 +8332,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow5pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -8955,9 +8368,7 @@ F_QUO
 SET __pow_r
 @__Lpow6pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -8990,9 +8401,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow7pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9028,9 +8437,7 @@ F_QUO
 SET __pow_r
 @__Lpow8pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -9066,9 +8473,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow9pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9107,9 +8512,7 @@ F_QUO
 SET __pow_r
 @__Lpow10pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -9122,9 +8525,7 @@ LOD __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9140,9 +8541,7 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -9155,9 +8554,7 @@ SET __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9173,15 +8570,11 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9189,17 +8582,13 @@ F_ADD main_fz
 P_LOD main_ia
 LOD 1.0
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9208,9 +8597,7 @@ P_LOD main_ia
 ADD main_z0
 I2F
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -9220,9 +8607,7 @@ SET __pow_b
 F_MLT __pow_b
 SET __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9235,9 +8620,7 @@ F_MLT __pow_b
 SET __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -9252,9 +8635,7 @@ SET __pow_b
 LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9272,9 +8653,7 @@ LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ia
@@ -9309,9 +8688,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow11pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9349,9 +8726,7 @@ F_QUO
 SET __pow_r
 @__Lpow12pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.0
@@ -9382,9 +8757,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow13pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9418,9 +8791,7 @@ F_QUO
 SET __pow_r
 @__Lpow14pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ib
@@ -9454,9 +8825,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow15pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9493,9 +8862,7 @@ F_QUO
 SET __pow_r
 @__Lpow16pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.0
@@ -9506,9 +8873,7 @@ LOD __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9522,9 +8887,7 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fb
@@ -9535,9 +8898,7 @@ SET __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9551,38 +8912,28 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 F_ADD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 P_LOD 2.0
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.0
@@ -9590,9 +8941,7 @@ SET __pow_b
 F_MLT __pow_b
 SET __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9603,9 +8952,7 @@ F_MLT __pow_b
 SET __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 2.0
@@ -9618,9 +8965,7 @@ SET __pow_b
 LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9636,9 +8981,7 @@ LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 2
@@ -9671,9 +9014,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow17pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9709,9 +9050,7 @@ F_QUO
 SET __pow_r
 @__Lpow18pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -9742,9 +9081,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow19pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9778,9 +9115,7 @@ F_QUO
 SET __pow_r
 @__Lpow20pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ib
@@ -9814,9 +9149,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow21pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9853,9 +9186,7 @@ F_QUO
 SET __pow_r
 @__Lpow22pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -9866,9 +9197,7 @@ LOD __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9882,9 +9211,7 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fb
@@ -9895,9 +9222,7 @@ SET __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9911,38 +9236,28 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 F_ADD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 P_LOD main_fa
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -9950,9 +9265,7 @@ SET __pow_b
 F_MLT __pow_b
 SET __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9963,9 +9276,7 @@ F_MLT __pow_b
 SET __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -9978,9 +9289,7 @@ SET __pow_b
 LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -9996,9 +9305,7 @@ LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 2
@@ -10031,9 +9338,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow23pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10069,9 +9374,7 @@ F_QUO
 SET __pow_r
 @__Lpow24pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -10103,9 +9406,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow25pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10140,9 +9441,7 @@ F_QUO
 SET __pow_r
 @__Lpow26pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -10177,9 +9476,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow27pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10217,9 +9514,7 @@ F_QUO
 SET __pow_r
 @__Lpow28pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -10231,9 +9526,7 @@ LOD __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10248,9 +9541,7 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -10262,9 +9553,7 @@ SET __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10279,15 +9568,11 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10295,16 +9580,12 @@ F_ADD main_fz
 P_LOD main_fa
 LOD 1.0
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10312,9 +9593,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_ADD main_fz
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -10323,9 +9602,7 @@ SET __pow_b
 F_MLT __pow_b
 SET __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10337,9 +9614,7 @@ F_MLT __pow_b
 SET __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -10353,9 +9628,7 @@ SET __pow_b
 LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10372,9 +9645,7 @@ LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
@@ -10408,9 +9679,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow29pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10447,9 +9716,7 @@ F_QUO
 SET __pow_r
 @__Lpow30pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.5
@@ -10480,9 +9747,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow31pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10516,9 +9781,7 @@ F_QUO
 SET __pow_r
 @__Lpow32pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_ib
@@ -10552,9 +9815,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow33pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10591,9 +9852,7 @@ F_QUO
 SET __pow_r
 @__Lpow34pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.5
@@ -10604,9 +9863,7 @@ LOD __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10620,9 +9877,7 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fb
@@ -10633,9 +9888,7 @@ SET __pow_x
 CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10649,38 +9902,28 @@ CAL __float_log
 F_MLT __pow_y
 CAL __float_exp
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 F_ADD 1.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.5
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
 P_LOD 1.5
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.5
@@ -10688,9 +9931,7 @@ SET __pow_b
 F_MLT __pow_b
 SET __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10701,9 +9942,7 @@ F_MLT __pow_b
 SET __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 1.5
@@ -10716,9 +9955,7 @@ SET __pow_b
 LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10734,9 +9971,7 @@ LOD __pow_r
 F_MLT __pow_b
 SET __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 NEG_M 2
@@ -10769,9 +10004,7 @@ NOP
 F_QUO
 SET __pow_r
 @__Lpow35pos LOD __pow_r
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_pf
@@ -10807,9 +10040,7 @@ F_QUO
 SET __pow_r
 @__Lpow36pos LOD __pow_r
 SF_ADD
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 42
@@ -10826,22 +10057,16 @@ OUT 0
 LOD 42
 OUT 0
 LOD main_fa
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 4.25
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 @fim JMP fim

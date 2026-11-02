@@ -20,31 +20,23 @@ LOD 2.0
 SET main_w_i
 LOD main_a
 F_MLT 0.625
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_f
 F_MLT 0.333333333
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD main_a
 F_ADD main_f
 F_MLT 0.142857143
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 I2F_M main_n
 F_MLT 0.333333333
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 LOD 0.333333333
@@ -87,9 +79,7 @@ LOD main_a
 F_MLT 0.142857143
 F_ADD 1000.0
 F_SU1 1000.0
-SET main_y
-LOD 1000.0
-F_MLT main_y
+F_MLT 1000.0
 F2I
 OUT 0
 @fim JMP fim

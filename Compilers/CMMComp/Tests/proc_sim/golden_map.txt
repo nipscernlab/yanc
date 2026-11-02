@@ -18,10 +18,10 @@ Info: constant 0.1053 on line 36 approximated to 0.1053009033203125 (error = 9.0
 Info: constant 0.0215 on line 36 approximated to 0.021500110626220703 (error = 1.11e-07)
 Heads up on line 28: if you don't want this warning, use 'fout'.
 Heads up on line 46: if you don't want this warning, use 'fout'.
-Info: 88 assembly instructions generated
+Info: 87 assembly instructions generated
 Info: 10 variables share 9 data words (1 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 88 instructions and 539 variables were found
+Info: 87 instructions and 539 variables were found
 Info: filling array with 512 values read from file "Valores_Interpolados_Canal_A12-L_512bins.txt"
 Info: largest approximation error in file 'Valores_Interpolados_Canal_A12-L_512bins.txt' is 0.02669700048864 on line 512
 Info: adding data input handling
@@ -104,57 +104,56 @@ lang C+-
 42 SF_SU2
 43 SET main_xl
 // 36: y  = 0.0222*xl + 0.1068*r1 + 0.1894*r2 + 0.1037*r3 - (0.1063*r4 +  0.1890*r5 + 0.1053*r6 + 0.0215*r7);
-44 LOD 0.0222
-45 F_MLT main_xl
-46 P_LOD 0.1068
-47 F_MLT main_r1
-48 SF_ADD
-49 P_LOD 0.1894
-50 F_MLT main_r2
-51 SF_ADD
-52 P_LOD 0.1037
-53 F_MLT main_r3
-54 SF_ADD
-55 P_LOD 0.1063
-56 F_MLT main_r4
-57 P_LOD 0.1890
-58 F_MLT main_r5
-59 SF_ADD
-60 P_LOD 0.1053
-61 F_MLT main_r6
-62 SF_ADD
-63 P_LOD 0.0215
-64 F_MLT main_r7
-65 SF_ADD
-66 SF_SU2
-67 SET main_y
+44 F_MLT 0.0222
+45 P_LOD 0.1068
+46 F_MLT main_r1
+47 SF_ADD
+48 P_LOD 0.1894
+49 F_MLT main_r2
+50 SF_ADD
+51 P_LOD 0.1037
+52 F_MLT main_r3
+53 SF_ADD
+54 P_LOD 0.1063
+55 F_MLT main_r4
+56 P_LOD 0.1890
+57 F_MLT main_r5
+58 SF_ADD
+59 P_LOD 0.1053
+60 F_MLT main_r6
+61 SF_ADD
+62 P_LOD 0.0215
+63 F_MLT main_r7
+64 SF_ADD
+65 SF_SU2
+66 SET main_y
 // 38: r7 = r6;
-68 LOD main_r6
-69 SET main_r7
+67 LOD main_r6
+68 SET main_r7
 // 39: r6 = r5;
-70 LOD main_r5
-71 SET main_r6
+69 LOD main_r5
+70 SET main_r6
 // 40: r5 = r4;
-72 LOD main_r4
-73 SET main_r5
+71 LOD main_r4
+72 SET main_r5
 // 41: r4 = r3;
-74 LOD main_r3
-75 SET main_r4
+73 LOD main_r3
+74 SET main_r4
 // 42: r3 = r2;
-76 LOD main_r2
-77 SET main_r3
+75 LOD main_r2
+76 SET main_r3
 // 43: r2 = r1;
-78 LOD main_r1
-79 SET main_r2
+77 LOD main_r1
+78 SET main_r2
 // 44: r1 = xl;
-80 LOD main_xl
-81 SET main_r1
+79 LOD main_xl
+80 SET main_r1
 // 46: out(1,y*1000.0);
-82 LOD main_y
-83 F_MLT 1000.0
-84 F2I
-85 OUT 1
+81 LOD main_y
+82 F_MLT 1000.0
+83 F2I
+84 OUT 1
 // 22: while (1)
-86 JMP __Lwh1
+85 JMP __Lwh1
 // -3: END
-87 JMP fim
+86 JMP fim

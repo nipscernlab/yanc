@@ -20,8 +20,6 @@ NOP
 #SHARE main_w main_s
 #SHARE __dhf1_main main_m5
 #SHARE __dk0_main main_s
-#SHARE __dhf0_main main_m5
-#SHARE main_y main_m5
 #SHARE locals_w_i main_s
 #SHARE locals_w main_k
 @main LOD 2
@@ -390,9 +388,7 @@ F2I
 OUT 0
 LOD main_fs
 F_ADD main_fz
-SET __dhf0_main
-LOD fa1
-F_MLT __dhf0_main
+F_MLT fa1
 F2I
 SET_V i1 0
 LOD_V i1 0
@@ -431,9 +427,7 @@ JIZ __Ld4e
 JMP __Ld4
 @__Ld4e POP
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 F_NEG_M 3.0
@@ -486,9 +480,7 @@ LOD main_pf
 F_ADD main_fz
 P_LOD_V fa3 1
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_cv
