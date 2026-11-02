@@ -15,8 +15,7 @@ LOD main_a
 SET_V main_v 0
 LOD main_b
 SET_V main_v 1
-LOD main_a
-ADD main_b
+ADD main_a
 SET_V main_v 3
 LOD main_a
 MLT main_b

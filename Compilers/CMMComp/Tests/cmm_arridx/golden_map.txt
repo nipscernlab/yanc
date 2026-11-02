@@ -1,7 +1,7 @@
 ## messages
-Info: 31 assembly instructions generated
+Info: 30 assembly instructions generated
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 31 instructions and 12 variables were found
+Info: 30 instructions and 12 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> integer multiplier
 Info: adding data output handling
@@ -28,34 +28,33 @@ lang C+-
 7 LOD main_b
 8 SET_V main_v 1
 // 26: v[3] = a + b;
-9 LOD main_a
-10 ADD main_b
-11 SET_V main_v 3
+9 ADD main_a
+10 SET_V main_v 3
 // 27: v[5] = a * b;
-12 LOD main_a
-13 MLT main_b
-14 SET_V main_v 5
+11 LOD main_a
+12 MLT main_b
+13 SET_V main_v 5
 // 28: v[7] = (a + b) + a;
-15 LOD main_a
-16 ADD main_b
-17 ADD main_a
-18 SET_V main_v 7
+14 LOD main_a
+15 ADD main_b
+16 ADD main_a
+17 SET_V main_v 7
 // 29: out(0, v[0]);
-19 LOD_V main_v 0
-20 OUT 0
+18 LOD_V main_v 0
+19 OUT 0
 // 30: out(0, v[1]);
-21 LOD_V main_v 1
-22 OUT 0
+20 LOD_V main_v 1
+21 OUT 0
 // 31: out(0, v[3]);
-23 LOD_V main_v 3
-24 OUT 0
+22 LOD_V main_v 3
+23 OUT 0
 // 32: out(0, v[5]);
-25 LOD_V main_v 5
-26 OUT 0
+24 LOD_V main_v 5
+25 OUT 0
 // 33: out(0, v[7]);
-27 LOD_V main_v 7
-28 OUT 0
+26 LOD_V main_v 7
+27 OUT 0
 // 21: while (1)
-29 JMP __Lwh1
+28 JMP __Lwh1
 // -3: END
-30 JMP fim
+29 JMP fim

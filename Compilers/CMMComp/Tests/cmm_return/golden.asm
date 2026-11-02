@@ -9,7 +9,32 @@ NOP
 #SHARE nestedFind_target firstHit_limit
 #SHARE nestedFind_a firstHit_k
 #SHARE maybe_x firstHit_limit
-JMP main
+@main @__Lwh4 LOD 10
+CAL add5
+OUT 0
+LOD 4
+CAL firstHit
+OUT 0
+LOD 23
+CAL nestedFind
+OUT 0
+LOD 1
+CAL classify
+OUT 0
+LOD 2
+CAL classify
+OUT 0
+LOD 7
+CAL classify
+OUT 0
+LOD 0
+CAL maybe
+LOD 3
+CAL maybe
+LOD 600
+OUT 0
+JMP __Lwh4
+@__Lwh4end @fim JMP fim
 @add5 ADD 5
 RET
 @firstHit SET firstHit_limit
@@ -73,29 +98,3 @@ RET
 ADD maybe_x
 OUT 0
 RET
-@main @__Lwh4 LOD 10
-CAL add5
-OUT 0
-LOD 4
-CAL firstHit
-OUT 0
-LOD 23
-CAL nestedFind
-OUT 0
-LOD 1
-CAL classify
-OUT 0
-LOD 2
-CAL classify
-OUT 0
-LOD 7
-CAL classify
-OUT 0
-LOD 0
-CAL maybe
-LOD 3
-CAL maybe
-LOD 600
-OUT 0
-JMP __Lwh4
-@__Lwh4end @fim JMP fim

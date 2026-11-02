@@ -2,7 +2,7 @@
 Heads up on line 53: if you don't want this warning, use 'fout'.
 Heads up on line 55: if you don't want this warning, use 'fout'.
 Heads up on line 56: if you don't want this warning, use 'fout'.
-Info: 102 assembly instructions generated
+Info: 99 assembly instructions generated
 Info: 3 variables written and never read removed (5 instructions)
 Info: 5 instructions computing an argument never read removed
 Info: 14 variables share 6 data words (8 saved)
@@ -10,11 +10,11 @@ Heads up: variable 'q' in function 'add_unread' is never read, so it's out of th
 Heads up: variable 'p' in function 'one' is never read, so it's out of the program and the waveform (#WAVE p, in the function, keeps it).
 Heads up: variable 'u' in function 'main' is never read, so it's out of the program and the waveform (#WAVE u, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 94 instructions and 14 variables were found
+Info: 91 instructions and 14 variables were found
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float-point adder
-Info: ULA resource -> > operator for int
 Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: adding data output handling
 Info: ULA resource -> float to int converter
 Info: adding stack memory for function calls
@@ -46,118 +46,114 @@ lang C+-
 ## listing
 // -1: INTERNAL
 0 NOP
-// -2: void main();
-1 JMP main
-// 30: comp add_unread(comp a, comp b)
-2 SET_P add_unread_b_i
-3 SET_P add_unread_b
-4 SET_P add_unread_a_i
-5 SET add_unread_a
-// 33: q = a*b;
-6 F_MLT add_unread_b
-7 P_LOD add_unread_a_i
-8 F_MLT add_unread_b_i
-9 SF_SU2
-10 P_LOD add_unread_a
-11 F_MLT add_unread_b_i
-12 P_LOD add_unread_a_i
-13 F_MLT add_unread_b
-14 SF_ADD
-15 POP
-// 34: return a + b;
-16 LOD add_unread_a
-17 F_ADD add_unread_b
-18 P_LOD add_unread_a_i
-19 F_ADD add_unread_b_i
-20 RET
-// 39: return 7;
-21 LOD 7
-22 RET
 // 46: z = 1.0+2.0i;
-23 LOD 1.0
-24 SET main_z
-25 LOD 2.0
-26 SET main_z_i
+1 LOD 1.0
+2 SET main_z
+3 LOD 2.0
+4 SET main_z_i
 // 47: u = z*(3.0+1.0i);
-27 LOD main_z
-28 F_MLT 3.0
-29 P_LOD main_z_i
-30 SF_SU2
-31 P_LOD main_z
-32 P_LOD main_z_i
-33 F_MLT 3.0
-34 SF_ADD
-35 POP
+5 LOD main_z
+6 F_MLT 3.0
+7 P_LOD main_z_i
+8 SF_SU2
+9 P_LOD main_z
+10 P_LOD main_z_i
+11 F_MLT 3.0
+12 SF_ADD
+13 POP
 // 48: v = z*z;
-36 LOD main_z
-37 F_MLT main_z
-38 P_LOD main_z_i
-39 F_MLT main_z_i
-40 SF_SU2
-41 P_LOD main_z
-42 F_MLT main_z_i
-43 P_LOD main_z_i
-44 F_MLT main_z
-45 SF_ADD
-46 SET_P main_v_i
-47 SET main_v
+14 LOD main_z
+15 F_MLT main_z
+16 P_LOD main_z_i
+17 F_MLT main_z_i
+18 SF_SU2
+19 P_LOD main_z
+20 F_MLT main_z_i
+21 P_LOD main_z_i
+22 F_MLT main_z
+23 SF_ADD
+24 SET_P main_v_i
+25 SET main_v
 // 49: n = 0; k = 0;
-48 LOD 0
-49 SET main_n
-50 SET main_k
+26 LOD 0
+27 SET main_n
+28 SET main_k
 // 50: while (k < 3) { n = n + k; k++; }
-51 LOD main_k
-52 GRE 3
-53 JIZ __Lwh1end
-54 LOD main_n
-55 ADD main_k
-56 SET main_n
-57 LOD main_k
-58 ADD 1
-59 SET main_k
-60 JMP __Lwh1
+29 LOD main_n
+30 ADD main_k
+31 SET main_n
+32 LOD main_k
+33 ADD 1
+34 SET main_k
+35 LES 2
+36 JIZ __Lwh1top
 // 51: out(0, n);
-61 LOD main_n
-62 OUT 0
+37 LOD main_n
+38 OUT 0
 // 52: re = real(v);
-63 LOD main_v
-64 SET main_re
+39 LOD main_v
+40 SET main_re
 // 53: out(0, re);
-65 F2I_M main_re
-66 OUT 0
+41 F2I_M main_re
+42 OUT 0
 // 54: z = add_unread(z, 2.0+1.0i);
-67 LOD main_z
-68 P_LOD main_z_i
-69 P_LOD 2.0
-70 P_LOD 1.0
-71 CAL add_unread
-72 SET_P main_z_i
-73 SET main_z
+43 LOD main_z
+44 P_LOD main_z_i
+45 P_LOD 2.0
+46 P_LOD 1.0
+47 CAL add_unread
+48 SET_P main_z_i
+49 SET main_z
 // 55: out(0, real(z));
-74 F2I_M main_z
-75 OUT 0
+50 F2I_M main_z
+51 OUT 0
 // 56: out(0, imag(z));
-76 F2I_M main_z_i
-77 OUT 0
+52 F2I_M main_z_i
+53 OUT 0
 // 57: out(0, one(5));
-78 CAL one
-79 OUT 0
+54 CAL one
+55 OUT 0
 // 58: out(0, one(k*3+1));
-80 CAL one
-81 OUT 0
+56 CAL one
+57 OUT 0
 // 59: out(0, one(one(2)));
-82 CAL one
-83 CAL one
-84 OUT 0
+58 CAL one
+59 CAL one
+60 OUT 0
 // 60: g = 2.5;
-85 LOD 2.5
-86 SET g
+61 LOD 2.5
+62 SET g
 // 61: w = z*2.0;
-87 LOD 2.0
-88 F_MLT main_z
-89 P_LOD 2.0
-90 F_MLT main_z_i
-91 SET_P main_w_i
-92 SET main_w
+63 LOD 2.0
+64 F_MLT main_z
+65 P_LOD 2.0
+66 F_MLT main_z_i
+67 SET_P main_w_i
+68 SET main_w
 // -3: END
-93 JMP fim
+69 JMP fim
+// 30: comp add_unread(comp a, comp b)
+70 SET_P add_unread_b_i
+71 SET_P add_unread_b
+72 SET_P add_unread_a_i
+73 SET add_unread_a
+// 33: q = a*b;
+74 F_MLT add_unread_b
+75 P_LOD add_unread_a_i
+76 F_MLT add_unread_b_i
+77 SF_SU2
+78 P_LOD add_unread_a
+79 F_MLT add_unread_b_i
+80 P_LOD add_unread_a_i
+81 F_MLT add_unread_b
+82 SF_ADD
+83 POP
+// 34: return a + b;
+84 LOD add_unread_a
+85 F_ADD add_unread_b
+86 P_LOD add_unread_a_i
+87 F_ADD add_unread_b_i
+88 RET
+// 39: return 7;
+89 LOD 7
+90 RET

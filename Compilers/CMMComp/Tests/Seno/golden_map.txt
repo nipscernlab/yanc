@@ -10,28 +10,28 @@ Info: array initialization with file "sin_y.txt" for variable 'a' at line 24
 Heads up on line 24: local array 'a' is initialized from file "sin_y.txt" only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
 Info: constant 6.283185307 on line 31 approximated to 6.2831850051879883 (error = -3.02e-07)
 Heads up on line 15: variable 'idx' is int, but getting a float.
-Info: 67 assembly instructions generated
+Info: 62 assembly instructions generated
 Info: adding assembly macro for sin computation
 Info: 14 variables share 5 data words (9 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 98 instructions and 2170 variables were found
+Info: 93 instructions and 2170 variables were found
+Info: filling array with 1000 values read from file "sin_x.txt"
+Info: largest approximation error in file 'sin_x.txt' is 0.00000023751831 on line 102
+Info: filling array with 1000 values read from file "sin_y.txt"
+Info: largest approximation error in file 'sin_y.txt' is -0.00000005910492 on line 278
+Info: adding array handling
+Info: ULA resource -> float-point adder
+Info: adding stack memory for function calls
+Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: filling array with 152 values read from file "Seno_LUT.txt"
 Info: largest approximation error in file 'Seno_LUT.txt' is -0.00000005907226 on line 38
 Info: ULA resource -> float-point absolute operation
 Info: ULA resource -> < operator for float
 Info: ULA resource -> float-point sign computation (standard library)
-Info: ULA resource -> float-point adder
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float to int converter
-Info: adding array handling
-Info: ULA resource -> integer adder
 Info: ULA resource -> int to float converter
-Info: filling array with 1000 values read from file "sin_x.txt"
-Info: largest approximation error in file 'sin_x.txt' is 0.00000023751831 on line 102
-Info: filling array with 1000 values read from file "sin_y.txt"
-Info: largest approximation error in file 'sin_y.txt' is -0.00000005910492 on line 278
-Info: ULA resource -> > operator for int
-Info: adding stack memory for function calls
 Info: ULA resource -> & operator
 Info: ULA resource -> float-point negative operation
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
@@ -51,123 +51,115 @@ lang C+-
 ## listing
 // -1: INTERNAL
 0 NOP
-// -2: void main();
-1 JMP main
-// 8: float seno_LUT(float x)
-2 SET seno_LUT_x
-// 12: while (abs(x) > 3.141592653589793) x = x - sign(x, 6.283185307);
-3 F_ABS_M seno_LUT_x
-4 F_LES 3.141592653589793
-5 JIZ __Lwh1end
-6 LOD 6.283185307
-7 F_SGN seno_LUT_x
-8 F_SU2 seno_LUT_x
-9 SET seno_LUT_x
-10 JMP __Lwh1
-// 14: float idxf = abs(x * 47.746482927568);  // 150.0/pi;
-11 LOD seno_LUT_x
-12 F_MLT 47.746482927568
-13 F_ABS
-14 SET seno_LUT_idxf
-// 15: int idx = idxf;
-15 F2I_M seno_LUT_idxf
-16 SET seno_LUT_idx
-// 17: float v = Seno_LUT[idx];
-17 LDI seno_LUT_Seno_LUT
-18 SET seno_LUT_v
-// 18: return sign(x, v + (Seno_LUT[idx+1] - v) * (idxf - idx));
-19 LOD seno_LUT_idx
-20 ADD 1
-21 LDI seno_LUT_Seno_LUT
-22 F_SU1 seno_LUT_v
-23 P_I2F_M seno_LUT_idx
-24 F_SU2 seno_LUT_idxf
-25 SF_MLT
-26 F_ADD seno_LUT_v
-27 F_SGN seno_LUT_x
-28 RET
 // 28: int j=0;
-29 LOD 0
-30 SET main_j
-// 29: while (j < 1000)
-31 LOD main_j
-32 GRE 1000
-33 JIZ __Lwh2end
+1 LOD 0
+2 SET main_j
 // 31: y = sin(x[j]+6.283185307);
-34 LOD main_j
-35 LDI main_x
-36 F_ADD 6.283185307
-37 CAL __float_sin
-38 SET main_y
+3 LOD main_j
+4 LDI main_x
+5 F_ADD 6.283185307
+6 CAL __float_sin
+7 SET main_y
 // 32: t = a[j];
-39 LOD main_j
-40 LDI main_a
-41 SET main_t
+8 LOD main_j
+9 LDI main_a
+10 SET main_t
 // 33: e = t - y;
-42 F_SU1 main_y
-43 SET main_e
+11 F_SU1 main_y
+12 SET main_e
 // 34: j++;
-44 LOD main_j
-45 ADD 1
-46 SET main_j
+13 LOD main_j
+14 ADD 1
+15 SET main_j
 // 29: while (j < 1000)
-47 JMP __Lwh2
+16 LES 999
+17 JIZ __Lwh2top
 // 37: j=0;
-48 LOD 0
-49 SET main_j
-// 38: while (j < 1000)
-50 LOD main_j
-51 GRE 1000
-52 JIZ fim
+18 LOD 0
+19 SET main_j
 // 40: y = seno_LUT(x[j]);
-53 LOD main_j
-54 LDI main_x
-55 CAL seno_LUT
-56 SET main_y
+20 LOD main_j
+21 LDI main_x
+22 CAL seno_LUT
+23 SET main_y
 // 41: t = a[j];
-57 LOD main_j
-58 LDI main_a
-59 SET main_t
+24 LOD main_j
+25 LDI main_a
+26 SET main_t
 // 42: e = t - y;
-60 F_SU1 main_y
-61 SET main_e
+27 F_SU1 main_y
+28 SET main_e
 // 43: j++;
-62 LOD main_j
-63 ADD 1
-64 SET main_j
+29 LOD main_j
+30 ADD 1
+31 SET main_j
 // 38: while (j < 1000)
-65 JMP __Lwh3
+32 LES 999
+33 JIZ __Lwh3top
 // -3: END
-66 JMP fim
+34 JMP fim
+// 8: float seno_LUT(float x)
+35 SET seno_LUT_x
+// 12: while (abs(x) > 3.141592653589793) x = x - sign(x, 6.283185307);
+36 F_ABS_M seno_LUT_x
+37 F_LES 3.141592653589793
+38 JIZ __Lwh1end
+39 LOD 6.283185307
+40 F_SGN seno_LUT_x
+41 F_SU2 seno_LUT_x
+42 SET seno_LUT_x
+43 JMP __Lwh1
+// 14: float idxf = abs(x * 47.746482927568);  // 150.0/pi;
+44 LOD seno_LUT_x
+45 F_MLT 47.746482927568
+46 F_ABS
+47 SET seno_LUT_idxf
+// 15: int idx = idxf;
+48 F2I_M seno_LUT_idxf
+49 SET seno_LUT_idx
+// 17: float v = Seno_LUT[idx];
+50 LDI seno_LUT_Seno_LUT
+51 SET seno_LUT_v
+// 18: return sign(x, v + (Seno_LUT[idx+1] - v) * (idxf - idx));
+52 LOD seno_LUT_idx
+53 ADD 1
+54 LDI seno_LUT_Seno_LUT
+55 F_SU1 seno_LUT_v
+56 P_I2F_M seno_LUT_idx
+57 F_SU2 seno_LUT_idxf
+58 SF_MLT
+59 F_ADD seno_LUT_v
+60 F_SGN seno_LUT_x
+61 RET
 // library macros, no source line
-67 SET __sin_x
-68 F_MLT 0.3183098862
-69 SET __sin_q
-70 LOD 0.5
-71 F_SGN __sin_q
-72 F_ADD __sin_q
-73 F2I
-74 SET __sin_k
-75 I2F
-76 F_MLT 3.1415926536
-77 F_SU2 __sin_x
-78 SET __sin_r
-79 F_MLT __sin_r
-80 SET __sin_w
-81 LOD -0.000184472138
-82 F_MLT __sin_w
-83 F_ADD 0.008309516704
-84 F_MLT __sin_w
-85 F_ADD -0.166651680787
-86 F_MLT __sin_w
-87 F_ADD 0.999997487148
-88 F_MLT __sin_r
-89 SET __sin_p
-90 LOD __sin_k
-91 AND 1
-92 JIZ __L_sin_even
-93 LOD __sin_p
-94 F_NEG
-95 RET
-96 LOD __sin_p
-97 RET
+62 SET __sin_x
+63 F_MLT 0.3183098862
+64 SET __sin_q
+65 LOD 0.5
+66 F_SGN __sin_q
+67 F_ADD __sin_q
+68 F2I
+69 SET __sin_k
+70 I2F
+71 F_MLT 3.1415926536
+72 F_SU2 __sin_x
+73 SET __sin_r
+74 F_MLT __sin_r
+75 SET __sin_w
+76 LOD -0.000184472138
+77 F_MLT __sin_w
+78 F_ADD 0.008309516704
+79 F_MLT __sin_w
+80 F_ADD -0.166651680787
+81 F_MLT __sin_w
+82 F_ADD 0.999997487148
+83 F_MLT __sin_r
+84 SET __sin_p
+85 LOD __sin_k
+86 AND 1
+87 JIZ __L_sin_even
+88 LOD __sin_p
+89 F_NEG
+90 RET
+91 LOD __sin_p
+92 RET

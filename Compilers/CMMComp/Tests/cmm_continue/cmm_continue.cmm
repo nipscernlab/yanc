@@ -8,8 +8,9 @@
 // Exhaustive `continue` coverage, validated by the SIMULATED OUTPUT VALUES.
 // continue binds to the innermost LOOP (a switch does NOT catch it), and a
 // for-continue MUST run the step before re-testing -- otherwise the index never
-// advances and the loop hangs. The codegen jumps a while-continue to the loop
-// top and a for-continue to the step label (Lwh<n>cont, just before the step).
+// advances and the loop hangs. The codegen jumps a while-continue to Lwh<n> (the
+// loop top, or the test of a while tested at the bottom, C1) and a for-continue
+// to the step label (Lwh<n>cont, just before the step).
 //
 //   C1 while  : skip k==3                          -> 1 2 4 5
 //   C2 for    : skip k==2 (step still runs!)        -> 10 11 13 14 15

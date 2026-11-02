@@ -280,8 +280,8 @@ typedef enum {
     STMT_DECLAR_ARR_1D, // int/float/comp x[N];  or with file init  id=id_var, id2=id_arg, id3=id_fname
     STMT_DECLAR_ARR_2D, // int/float/comp x[N][M];  id=id_var, id2=id_x, id3=id_y, id4=id_fname
     STMT_DECLAR_DIRAC,  // float a[N] # exp;  id=id_var, id2=id_N, rhs=the Dirac expression
-    STMT_FUNC_HEADER,   // @label + optional JMP main + per-param SET[_P];
-                        // id=func v_table index, op=needs_jmp_main flag,
+    STMT_FUNC_HEADER,   // @label + per-param SET[_P];
+                        // id=func v_table index,
                         // params[]/n_params=param ids in declaration order
     STMT_DIRECTIVE,     // #PRNAME / #NUBITS / ... ; dir_str=directive token,
                         // id=v_table index of the operand value
@@ -402,11 +402,9 @@ stmt_node *stmt_declar_arr_2d(int id_var, int id_x, int id_y, int id_fname);
 // stmt_declar_arr_1d; the expression then goes the way of STMT_DIRAC.
 stmt_node *stmt_declar_dirac(int id_var, int id_N, struct expr_node *rhs);
 
-// Function prologue: @label + optional JMP main (when this is the first
-// non-main function) + per-parameter SET[_P]. params[] is consumed (takes
+// Function prologue: @label + per-parameter SET[_P]. params[] is consumed (takes
 // ownership of the heap array; freed by stmt_free).
-stmt_node *stmt_func_header (int func_id, int needs_jmp_main,
-                             int *params, int n_params);
+stmt_node *stmt_func_header (int func_id, int *params, int n_params);
 
 // Top-level directive (#PRNAME / #NUBITS / ...). The dir argument is a
 // string literal kept by reference (not freed). id is the v_table index

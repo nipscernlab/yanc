@@ -39,10 +39,6 @@ static int *func_params = NULL;
 static int  func_nparams = 0;
 static int  func_params_cap = 0;
 
-// Set by declar_fun when it decides the current function needs a `JMP main`
-// prologue (the first non-main function in source order). Consumed by
-// func_body_begin when it builds the STMT_FUNC_HEADER, then resets.
-static int func_jmp_main = 0;
 
 // ----------------------------------------------------------------------------
 // arg-stack frames for nested function calls --------------------------------
@@ -322,24 +318,14 @@ void par_check(expr e, int k)
 // ----------------------------------------------------------------------------
 
 // declares a function
-// Records the function entry in v_table + decides whether a `JMP main`
-// prologue will be needed once this function gets emitted. No codegen
-// happens here - the @label, the optional JMP main and the per-parameter
+// Records the function entry in v_table. No codegen happens here - the
+// @label and the per-parameter
 // SET / SET_P all live in the walker case for STMT_FUNC_HEADER and fire
 // only when func_body_begin builds that node.
 void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
 {
     check_name(id2, 1);   // not a variable's or another function's name, not an instruction
-    int is_main = (strcmp(v_table[id2].name, "main") == 0);
-    if (mainok == 0)
-    {
-        func_jmp_main = !is_main; // walker emits JMP main before the @label
-        mainok        = 1;        // first function resolves the main question
-    }
-    else
-    {
-        func_jmp_main = 0;
-    }
+    mainok = 1;                   // first function resolves the main question
 
     strcpy(fname, v_table[id2].name); // set the fname state to the function being analyzed
     v_table[id2].type = id1+6       ; // v_type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
@@ -575,7 +561,7 @@ void declar_ret(expr e, int ret)
 
 // fires at the opening '{' of a function body. Opens the stmt_list that
 // collects every statement reduced inside the body, then drops a
-// STMT_FUNC_HEADER on top of it so the walker emits @label / JMP main /
+// STMT_FUNC_HEADER on top of it so the walker emits @label /
 // per-parameter SET[_P] before the body's stmts. The matching '}' (in
 // func_ret) closes the list and walks it through stmt_emit, producing the
 // function body's assembly all at once.
@@ -593,10 +579,8 @@ void func_body_begin(void)
         if (!params) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
         memcpy(params, func_params, sizeof(int) * func_nparams);
     }
-    stmt_append(stmt_func_header(fun_parse, func_jmp_main,
-                                      params, func_nparams));
+    stmt_append(stmt_func_header(fun_parse, params, func_nparams));
     func_nparams = 0;
-    func_jmp_main = 0;
 }
 
 // end of the parsing for a function declaration. Closes the body stmt_list

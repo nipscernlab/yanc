@@ -19,8 +19,7 @@ NEG_M main_a
 ADD main_b
 SET main_b
 OUT 0
-LOD main_a
-MLT main_b
+MLT main_a
 OUT 0
 @__Lwh1 LOD main_a
 SET main_b

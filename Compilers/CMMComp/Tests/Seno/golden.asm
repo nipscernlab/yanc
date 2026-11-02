@@ -6,16 +6,51 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE main_y seno_LUT_x
-#SHARE main_t seno_LUT_idxf
-#SHARE main_e seno_LUT_x
-#SHARE __sin_x seno_LUT_idxf
-#SHARE __sin_q seno_LUT_x
-#SHARE __sin_k seno_LUT_x
-#SHARE __sin_r seno_LUT_idxf
+@main #arrays main_x 2 1000 "sin_x.txt"
+#arrays main_a 2 1000 "sin_y.txt"
+#SHARE main_e main_y
+#SHARE seno_LUT_x main_y
+#SHARE seno_LUT_idxf main_t
+#SHARE __sin_x main_t
+#SHARE __sin_q main_y
+#SHARE __sin_k main_y
+#SHARE __sin_r main_t
 #SHARE __sin_w seno_LUT_idx
-#SHARE __sin_p seno_LUT_idxf
-JMP main
+#SHARE __sin_p main_t
+LOD 0
+SET main_j
+@__Lwh2top LOD main_j
+LDI main_x
+F_ADD 6.283185307
+CAL __float_sin
+SET main_y
+LOD main_j
+LDI main_a
+SET main_t
+F_SU1 main_y
+SET main_e
+LOD main_j
+ADD 1
+SET main_j
+LES 999
+JIZ __Lwh2top
+@__Lwh2end LOD 0
+SET main_j
+@__Lwh3top LOD main_j
+LDI main_x
+CAL seno_LUT
+SET main_y
+LOD main_j
+LDI main_a
+SET main_t
+F_SU1 main_y
+SET main_e
+LOD main_j
+ADD 1
+SET main_j
+LES 999
+JIZ __Lwh3top
+@__Lwh3end @fim JMP fim
 @seno_LUT SET seno_LUT_x
 #arrays seno_LUT_Seno_LUT 2 152 "Seno_LUT.txt"
 @__Lwh1 F_ABS_M seno_LUT_x
@@ -44,46 +79,6 @@ SF_MLT
 F_ADD seno_LUT_v
 F_SGN seno_LUT_x
 RET
-@main #arrays main_x 2 1000 "sin_x.txt"
-#arrays main_a 2 1000 "sin_y.txt"
-LOD 0
-SET main_j
-@__Lwh2 LOD main_j
-GRE 1000
-JIZ __Lwh2end
-LOD main_j
-LDI main_x
-F_ADD 6.283185307
-CAL __float_sin
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP __Lwh2
-@__Lwh2end LOD 0
-SET main_j
-@__Lwh3 LOD main_j
-GRE 1000
-JIZ fim
-LOD main_j
-LDI main_x
-CAL seno_LUT
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP __Lwh3
-@__Lwh3end @fim JMP fim
 
 // Sine function --------------------------------------------------------------
 // O(1) range reduction to [-pi/2, pi/2]: k = round(x/pi); r = x - k*pi; then

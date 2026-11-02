@@ -6,19 +6,52 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE main_y arctan_LUT_x
-#SHARE main_t arctan_LUT_signo
-#SHARE main_e arctan_LUT_x
-#SHARE __atan_x arctan_LUT_x
+@main #arrays main_x 2 1000 "atan_x.txt"
+#arrays main_a 2 1000 "atan_y.txt"
+#SHARE main_e main_y
+#SHARE arctan_LUT_x main_y
+#SHARE arctan_LUT_signo main_t
+#SHARE __atan_x main_y
 #SHARE __atan_ax arctan_LUT_v0
-#SHARE __atan_big arctan_LUT_signo
+#SHARE __atan_big main_t
 #SHARE __atan_t arctan_LUT_v0
 #SHARE __atan_w arctan_LUT_idxf
 #SHARE __atan_p arctan_LUT_v0
-JMP main
+LOD 0
+SET main_j
+@__Lwh1top LOD main_j
+LDI main_x
+CAL __float_atan
+SET main_y
+LOD main_j
+LDI main_a
+SET main_t
+F_SU1 main_y
+SET main_e
+LOD main_j
+ADD 1
+SET main_j
+LES 999
+JIZ __Lwh1top
+@__Lwh1end LOD 0
+SET main_j
+@__Lwh2top LOD main_j
+LDI main_x
+CAL arctan_LUT
+SET main_y
+LOD main_j
+LDI main_a
+SET main_t
+F_SU1 main_y
+SET main_e
+LOD main_j
+ADD 1
+SET main_j
+LES 999
+JIZ __Lwh2top
+@__Lwh2end @fim JMP fim
 @arctan_LUT SET arctan_LUT_x
 #arrays arctan_LUT_atan_lut 2 49 "Arctan_LUT.txt"
-LOD arctan_LUT_x
 SET arctan_LUT_signo
 F_ABS_M arctan_LUT_x
 SET arctan_LUT_x
@@ -53,45 +86,6 @@ F_ADD arctan_LUT_x
 F_SU2 arctan_LUT_v0
 F_SGN arctan_LUT_signo
 RET
-@main #arrays main_x 2 1000 "atan_x.txt"
-#arrays main_a 2 1000 "atan_y.txt"
-LOD 0
-SET main_j
-@__Lwh1 LOD main_j
-GRE 1000
-JIZ __Lwh1end
-LOD main_j
-LDI main_x
-CAL __float_atan
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP __Lwh1
-@__Lwh1end LOD 0
-SET main_j
-@__Lwh2 LOD main_j
-GRE 1000
-JIZ fim
-LOD main_j
-LDI main_x
-CAL arctan_LUT
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP __Lwh2
-@__Lwh2end @fim JMP fim
 
 // Arctangent function --------------------------------------------------------
 // |x| is folded into [0,1] with the 1/x identity: atan(|x|) = pi/2 - atan(1/|x|)

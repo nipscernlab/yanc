@@ -11,140 +11,18 @@ NOP
 #array mf 2 12
 #arrayd si 1 4 4 1 2 3 4
 #arrayd sf 2 4 4 1.5 2.5 3.5 4.5
-#SHARE mix_c_i par_c_p_i
-#SHARE mix_c par_c_p
-#SHARE main_n1 par_c_p_i
-#SHARE main_n2 par_c_p
-#SHARE main_y mix_b
-#SHARE main_w mix_b
-#SHARE main_w_i mix_a
-#SHARE main_k mix_b
-#SHARE main_g mix_a
-#SHARE __aux_var mix_b
-#SHARE __aux_var1 par_c_p_i
-#SHARE __aux_var2 par_c_p
-JMP main
-@par_i RET
-@par_f RET
-@par_c SET_P par_c_p_i
-SET par_c_p
-P_LOD par_c_p_i
-RET
-@ret_i_i0 LOD gi
-RET
-@ret_i_i1 LOD gi
-ADD gz
-RET
-@ret_i_i2 LOD 7
-RET
-@ret_i_f0 F2I_M gf
-RET
-@ret_i_f1 LOD gf
-F_ADD gfz
-F2I
-RET
-@ret_i_f2 F2I_M 2.5
-RET
-@ret_i_c0 F2I_M gc
-RET
-@ret_i_c1 LOD gc
-F_MLT gone
-P_LOD gc_i
-F_MLT gone_i
-SF_SU2
-P_LOD gc
-F_MLT gone_i
-P_LOD gc_i
-F_MLT gone
-SF_ADD
-POP
-F2I
-RET
-@ret_i_c2 F2I_M 3.0
-RET
-@ret_f_i0 I2F_M gi
-RET
-@ret_f_i1 LOD gi
-ADD gz
-I2F
-RET
-@ret_f_i2 LOD 7.0
-RET
-@ret_f_f0 LOD gf
-RET
-@ret_f_f1 LOD gf
-F_ADD gfz
-RET
-@ret_f_f2 LOD 2.5
-RET
-@ret_f_c0 LOD gc
-RET
-@ret_f_c1 LOD gc
-F_MLT gone
-P_LOD gc_i
-F_MLT gone_i
-SF_SU2
-P_LOD gc
-F_MLT gone_i
-P_LOD gc_i
-F_MLT gone
-SF_ADD
-POP
-RET
-@ret_f_c2 LOD 3.0
-RET
-@ret_c_i0 I2F_M gi
-P_LOD 0.0
-RET
-@ret_c_i1 LOD gi
-ADD gz
-I2F
-P_LOD 0.0
-RET
-@ret_c_i2 LOD 7.0
-P_LOD 0.0
-RET
-@ret_c_f0 LOD gf
-P_LOD 0.0
-RET
-@ret_c_f1 LOD gf
-F_ADD gfz
-P_LOD 0.0
-RET
-@ret_c_f2 LOD 2.5
-P_LOD 0.0
-RET
-@ret_c_c0 LOD gc
-P_LOD gc_i
-RET
-@ret_c_c1 LOD gc
-F_MLT gone
-P_LOD gc_i
-F_MLT gone_i
-SF_SU2
-P_LOD gc
-F_MLT gone_i
-P_LOD gc_i
-F_MLT gone
-SF_ADD
-RET
-@ret_c_c2 LOD 3.0
-P_LOD 4.0
-RET
-@early JIZ __Lif1else
-RET
-@__Lif1else LOD 77
-OUT 0
-RET
-@mix SET_P mix_c_i
-SET_P mix_c
-SET_P mix_b
-SET mix_a
-I2F_M mix_a
-F_ADD mix_b
-F_ADD mix_c
-F_ADD mix_c_i
-RET
+#SHARE main_w main_y
+#SHARE main_k main_y
+#SHARE main_g main_w_i
+#SHARE __aux_var main_y
+#SHARE __aux_var1 main_n1
+#SHARE __aux_var2 main_n2
+#SHARE par_c_p_i main_n1
+#SHARE par_c_p main_n2
+#SHARE mix_c_i main_n1
+#SHARE mix_c main_n2
+#SHARE mix_b main_y
+#SHARE mix_a main_w_i
 @main LOD 7
 SET gi
 LOD 0
@@ -2715,3 +2593,124 @@ OUT 0
 LOD 7
 OUT 0
 @fim JMP fim
+@par_i RET
+@par_f RET
+@par_c SET_P par_c_p_i
+SET par_c_p
+P_LOD par_c_p_i
+RET
+@ret_i_i0 LOD gi
+RET
+@ret_i_i1 LOD gi
+ADD gz
+RET
+@ret_i_i2 LOD 7
+RET
+@ret_i_f0 F2I_M gf
+RET
+@ret_i_f1 LOD gf
+F_ADD gfz
+F2I
+RET
+@ret_i_f2 F2I_M 2.5
+RET
+@ret_i_c0 F2I_M gc
+RET
+@ret_i_c1 LOD gc
+F_MLT gone
+P_LOD gc_i
+F_MLT gone_i
+SF_SU2
+P_LOD gc
+F_MLT gone_i
+P_LOD gc_i
+F_MLT gone
+SF_ADD
+POP
+F2I
+RET
+@ret_i_c2 F2I_M 3.0
+RET
+@ret_f_i0 I2F_M gi
+RET
+@ret_f_i1 LOD gi
+ADD gz
+I2F
+RET
+@ret_f_i2 LOD 7.0
+RET
+@ret_f_f0 LOD gf
+RET
+@ret_f_f1 LOD gf
+F_ADD gfz
+RET
+@ret_f_f2 LOD 2.5
+RET
+@ret_f_c0 LOD gc
+RET
+@ret_f_c1 LOD gc
+F_MLT gone
+P_LOD gc_i
+F_MLT gone_i
+SF_SU2
+P_LOD gc
+F_MLT gone_i
+P_LOD gc_i
+F_MLT gone
+SF_ADD
+POP
+RET
+@ret_f_c2 LOD 3.0
+RET
+@ret_c_i0 I2F_M gi
+P_LOD 0.0
+RET
+@ret_c_i1 LOD gi
+ADD gz
+I2F
+P_LOD 0.0
+RET
+@ret_c_i2 LOD 7.0
+P_LOD 0.0
+RET
+@ret_c_f0 LOD gf
+P_LOD 0.0
+RET
+@ret_c_f1 LOD gf
+F_ADD gfz
+P_LOD 0.0
+RET
+@ret_c_f2 LOD 2.5
+P_LOD 0.0
+RET
+@ret_c_c0 LOD gc
+P_LOD gc_i
+RET
+@ret_c_c1 LOD gc
+F_MLT gone
+P_LOD gc_i
+F_MLT gone_i
+SF_SU2
+P_LOD gc
+F_MLT gone_i
+P_LOD gc_i
+F_MLT gone
+SF_ADD
+RET
+@ret_c_c2 LOD 3.0
+P_LOD 4.0
+RET
+@early JIZ __Lif1else
+RET
+@__Lif1else LOD 77
+OUT 0
+RET
+@mix SET_P mix_c_i
+SET_P mix_c
+SET_P mix_b
+SET mix_a
+I2F_M mix_a
+F_ADD mix_b
+F_ADD mix_c
+F_ADD mix_c_i
+RET

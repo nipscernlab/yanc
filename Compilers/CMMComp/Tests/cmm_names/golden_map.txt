@@ -1,7 +1,7 @@
 ## messages
 Heads up on line 40: variable 'y' is int, but getting a float.
 Heads up on line 44: variable 'r' is int, but getting a float.
-Info: 81 assembly instructions generated
+Info: 79 assembly instructions generated
 Info: adding assembly macro for root square computation
 Info: 4 divisions, 5 words each for DIV/MOD and 4 for F_DIV (12 added)
 Info: 5 variables written and never read removed (7 instructions)
@@ -14,9 +14,9 @@ Heads up: variable 'y' in function 'main' is never read, so it's out of the prog
 Heads up: variable 's' in function 'main' is never read, so it's out of the program and the waveform (#WAVE s, in the function, keeps it).
 Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 102 instructions and 23 variables were found
-Info: ULA resource -> > operator for int
+Info: 100 instructions and 22 variables were found
 Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: adding data output handling
 Info: adding array handling
 Info: ULA resource -> float-point adder
@@ -70,105 +70,103 @@ lang C+-
 13 SET main_k
 // 33: while (k < 3) k = k + 1;
 14 LOD main_k
-15 GRE 3
-16 JIZ __Lwh1end
-17 LOD main_k
-18 ADD 1
-19 SET main_k
-20 JMP __Lwh1
+15 ADD 1
+16 SET main_k
+17 LES 2
+18 JIZ __Lwh1top
 // 34: out(0, Lwh1 + k);
-21 LOD Lwh1
-22 ADD main_k
-23 OUT 0
+19 LOD Lwh1
+20 ADD main_k
+21 OUT 0
 // 36: g[0] = 1.5;
-24 LOD 1.5
-25 SET_V g 0
+22 LOD 1.5
+23 SET_V g 0
 // 37: float yy = g[0]++;               // keeps the old g[0] in aux_var
-26 LOD 0
-27 PSH
-28 LDI g
-29 SET __aux_var
-30 F_ADD 1.0
-31 STI g
+24 LOD 0
+25 PSH
+26 LDI g
+27 SET __aux_var
+28 F_ADD 1.0
+29 STI g
 // 38: out(0, aux_var);
-32 LOD aux_var
-33 OUT 0
+30 LOD aux_var
+31 OUT 0
 // 40: int y = pow(2, 3);
-34 LOD 2.0
-35 SET __pow_b
-36 SET __pow_r
-37 F_MLT __pow_b
-38 SET __pow_b
-39 LOD __pow_r
-40 F_MLT __pow_b
-41 SET __pow_r
-42 F2I
+32 LOD 2.0
+33 SET __pow_b
+34 SET __pow_r
+35 F_MLT __pow_b
+36 SET __pow_b
+37 LOD __pow_r
+38 F_MLT __pow_b
+39 SET __pow_r
+40 F2I
 // 41: out(0, y + pow_b);
-43 ADD pow_b
-44 OUT 0
+41 ADD pow_b
+42 OUT 0
 // 43: float s = sqrt(16.0);
-45 LOD 16.0
-46 CAL __float_sqrt
+43 LOD 16.0
+44 CAL __float_sqrt
 // 44: int r = floor(s + floor_x);
-47 F_ADD floor_x
-48 SET __floor_x
-49 F2I
-50 I2F
-51 SET __floor_t
-52 F_LES __floor_x
-53 JIZ __Lflr1end
-54 LOD __floor_t
-55 F_ADD -1.0
-56 SET __floor_t
-57 LOD __floor_t
-58 F2I
+45 F_ADD floor_x
+46 SET __floor_x
+47 F2I
+48 I2F
+49 SET __floor_t
+50 F_LES __floor_x
+51 JIZ __Lflr1end
+52 LOD __floor_t
+53 F_ADD -1.0
+54 SET __floor_t
+55 LOD __floor_t
+56 F2I
 // 45: out(0, r);
-59 OUT 0
+57 OUT 0
 // 47: switch (k)
-60 LOD main_k
-61 ADD -3
-62 JIZ __sw_body_1_1
-63 JMP __sw_body_1_2
+58 LOD main_k
+59 ADD -3
+60 JIZ __sw_body_1_1
+61 JMP __sw_body_1_2
 // 49: case 3: switch_exp = 1; break;
-64 LOD 1
-65 JMP __switch_end_1
+62 LOD 1
+63 JMP __switch_end_1
 // 52: out(0, sw_body_1_1);
-66 LOD sw_body_1_1
-67 OUT 0
+64 LOD sw_body_1_1
+65 OUT 0
 // 53: out(0, fim);
-68 LOD fim
-69 OUT 0
+66 LOD fim
+67 OUT 0
 // -3: END
-70 JMP fim
+68 JMP fim
 // library macros, no source line
-71 SET __sqrt_num
-72 F_ROT
-73 PSH
-74 F_DIV __sqrt_num
-75 NOP
-76 NOP
-77 F_QUO
-78 SF_ADD
-79 F_MLT 0.5
-80 PSH
-81 F_DIV __sqrt_num
-82 NOP
-83 NOP
-84 F_QUO
-85 SF_ADD
-86 F_MLT 0.5
-87 PSH
-88 F_DIV __sqrt_num
-89 NOP
-90 NOP
-91 F_QUO
-92 SF_ADD
-93 F_MLT 0.5
-94 PSH
-95 F_DIV __sqrt_num
-96 NOP
-97 NOP
-98 F_QUO
-99 SF_ADD
-100 F_MLT 0.5
-101 RET
+69 SET __sqrt_num
+70 F_ROT
+71 PSH
+72 F_DIV __sqrt_num
+73 NOP
+74 NOP
+75 F_QUO
+76 SF_ADD
+77 F_MLT 0.5
+78 PSH
+79 F_DIV __sqrt_num
+80 NOP
+81 NOP
+82 F_QUO
+83 SF_ADD
+84 F_MLT 0.5
+85 PSH
+86 F_DIV __sqrt_num
+87 NOP
+88 NOP
+89 F_QUO
+90 SF_ADD
+91 F_MLT 0.5
+92 PSH
+93 F_DIV __sqrt_num
+94 NOP
+95 NOP
+96 F_QUO
+97 SF_ADD
+98 F_MLT 0.5
+99 RET

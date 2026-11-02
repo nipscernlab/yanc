@@ -1,15 +1,15 @@
 ## messages
-Info: 28 assembly instructions generated
+Info: 27 assembly instructions generated
 Info: 2 variables written and never read removed (2 instructions)
 Info: 6 variables share 4 data words (2 saved)
 Heads up: variable 'a' in function 'add' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
 Heads up: variable 'x' in function 'triple_sum' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 26 instructions and 6 variables were found
-Info: ULA resource -> integer adder
+Info: 25 instructions and 6 variables were found
 Info: adding data input handling
 Info: adding stack memory for function calls
 Info: adding data output handling
+Info: ULA resource -> integer adder
 Info: stack depths from the program: SDEPTH 2, NDSTAC 3
 Info: using 7% of the Assembly Instruction Set
 Info: using 2% of the ULA operations
@@ -27,40 +27,38 @@ lang C+-
 ## listing
 // -1: INTERNAL
 0 NOP
-// -2: void main();
-1 JMP main
-// 14: int add(int a, int b)
-2 SET_P add_b
-// 16: return a + b;
-3 ADD add_b
-4 RET
-// 19: int triple_sum(int x, int y, int z)
-5 SET_P triple_sum_z
-6 SET_P triple_sum_y
-// 21: return x + y + z;
-7 ADD triple_sum_y
-8 ADD triple_sum_z
-9 RET
 // 28: int v = in(0);
-10 INN 0
-11 SET main_v
+1 INN 0
+2 SET main_v
 // 30: int two   = add       (v, 1);
-12 P_LOD 1
-13 CAL add
-14 SET main_two
+3 P_LOD 1
+4 CAL add
+5 SET main_two
 // 31: int three = triple_sum(v, 1, 2);
-15 LOD main_v
-16 P_LOD 1
-17 P_LOD 2
-18 CAL triple_sum
-19 SET main_three
+6 LOD main_v
+7 P_LOD 1
+8 P_LOD 2
+9 CAL triple_sum
+10 SET main_three
 // 33: out(0, two);
-20 LOD main_two
-21 OUT 0
+11 LOD main_two
+12 OUT 0
 // 34: out(0, three);
-22 LOD main_three
-23 OUT 0
+13 LOD main_three
+14 OUT 0
 // 26: while (1)
-24 JMP __Lwh1
+15 JMP __Lwh1
 // -3: END
-25 JMP fim
+16 JMP fim
+// 14: int add(int a, int b)
+17 SET_P add_b
+// 16: return a + b;
+18 ADD add_b
+19 RET
+// 19: int triple_sum(int x, int y, int z)
+20 SET_P triple_sum_z
+21 SET_P triple_sum_y
+// 21: return x + y + z;
+22 ADD triple_sum_y
+23 ADD triple_sum_z
+24 RET

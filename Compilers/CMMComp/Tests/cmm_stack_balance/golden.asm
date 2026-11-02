@@ -5,19 +5,13 @@ NOP
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-JMP main
-@g P_LOD 2.0
-RET
 @main LOD 3.0
 SET main_a
 LOD 4.0
 SET main_b
 LOD 0
 SET main_k
-@__Lwh1 LOD main_k
-GRE 40
-JIZ __Lwh1end
-LOD main_k
+@__Lwh1top LOD main_k
 ADD 1
 ADD 1
 OUT 0
@@ -33,7 +27,10 @@ POP
 LOD main_k
 ADD 1
 SET main_k
-JMP __Lwh1
+LES 39
+JIZ __Lwh1top
 @__Lwh1end LOD main_k
 OUT 0
 @fim JMP fim
+@g P_LOD 2.0
+RET

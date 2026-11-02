@@ -132,6 +132,17 @@ tags consumed by Aurora.
   kept in `__aux_var`; and, in the pass shared with cppcomp, a value nobody
   reads (the load of a `SET` that `asm_unread` took out) and a push a `POP`
   undoes. 140 words fewer over the C± tests, none in the real programs.
+  Then, from the second audit of cmmcomp (2026-11-02): a `while` right
+  after `k = c;` tests at the bottom as a `for` does, two cycles fewer a
+  turn, its `continue` going to the test (`procBlind` 588 → 521); an int
+  `+ * & | ^ == && ||` of two variables with the right one in the acc takes
+  the left one as the operand instead of loading it (`s = s + t` after
+  `SET t` is `ADD s`); an int `!=` in a condition is
+  `XOR; JIZ` instead of `EQU; LIN; JIZ`; the acc is kept through an array's
+  declaration (ArcTan's `arctan_LUT`), a `TOM` and a `JIZ`; `<<`, `>>`
+  and `>>>` of int literals are folded (`Sqrt`); and `main` comes right
+  after the globals' initializers, so no `JMP main`. 536 words fewer over
+  59 C± tests (`sapho_all` 997 → 904, `ArcTan` 75 → 69, `Sqrt` 91 → 84).
 - **cmmcomp writes one space between the words of an instruction**, none
   at either end, whatever the padding of the format string: the goldens
   are compared byte for byte, and a restructured emitter would have had to

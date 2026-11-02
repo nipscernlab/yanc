@@ -5,13 +5,13 @@ NOP
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-#SHARE main_x soma_n
-#SHARE main_w soma_s
 #SHARE gw_i ga
 #SHARE gw gc
 #SHARE main_y main_b
-#SHARE main_z_i soma_n
-#SHARE main_z soma_s
+#SHARE main_z_i main_x
+#SHARE main_z main_w
+#SHARE soma_n main_x
+#SHARE soma_s main_w
 LOD 3
 SET ga
 ADD 4
@@ -22,22 +22,6 @@ LOD 1.0
 SET gz
 LOD 2.0
 SET gz_i
-JMP main
-@soma LOD 0
-SET soma_n
-SET soma_s
-@__Lwh1 LOD soma_n
-GRE 3
-JIZ __Lwh1end
-LOD soma_n
-ADD 1
-SET soma_n
-LOD soma_s
-ADD soma_n
-SET soma_s
-JMP __Lwh1
-@__Lwh1end LOD soma_s
-RET
 @main LOD 5
 SET main_b
 MLT 2
@@ -107,3 +91,17 @@ OUT 0
 CAL soma
 OUT 0
 @fim JMP fim
+@soma LOD 0
+SET soma_n
+SET soma_s
+@__Lwh1 LOD soma_n
+GRE 3
+JIZ __Lwh1end
+LOD soma_n
+ADD 1
+SET soma_n
+ADD soma_s
+SET soma_s
+JMP __Lwh1
+@__Lwh1end LOD soma_s
+RET

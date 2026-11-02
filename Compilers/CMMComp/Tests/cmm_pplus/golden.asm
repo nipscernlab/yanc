@@ -241,10 +241,7 @@ LOD 3
 SET_V s 5
 LOD 0
 SET main_j
-@__Lwh3 LOD main_j
-GRE 6
-JIZ __Lwh3end
-LOD main_j
+@__Lwh3top LOD main_j
 LDI s
 PSH
 LDI hist
@@ -253,7 +250,8 @@ STI hist
 LOD main_j
 ADD 1
 SET main_j
-JMP __Lwh3
+LES 5
+JIZ __Lwh3top
 @__Lwh3end LOD_V hist 0
 OUT 0
 LOD_V hist 1

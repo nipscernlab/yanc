@@ -12,57 +12,28 @@ NOP
 #FROUND 2
 #array ia 1 8
 #array fa 2 8
-#SHARE diff_b twice_v
-#SHARE main_w twice_v
-#SHARE main_fx diff_a
+@main #ITRAD
 #SHARE main_y main_k
-#SHARE __aux_var twice_v
-#SHARE __aux_var1 diff_a
+#SHARE __aux_var main_w
+#SHARE __aux_var1 main_fx
 #SHARE __aux_var2 main_z
-#SHARE __sqrt_num twice_v
-#SHARE __exp_x twice_v
-#SHARE __exp_q diff_a
-#SHARE __exp_n diff_a
-#SHARE __exp_r twice_v
-#SHARE __log_x diff_a
-#SHARE __log_e twice_v
+#SHARE twice_v main_w
+#SHARE diff_b main_w
+#SHARE diff_a main_fx
+#SHARE __sqrt_num main_w
+#SHARE __exp_x main_w
+#SHARE __exp_q main_fx
+#SHARE __exp_n main_fx
+#SHARE __exp_r main_w
+#SHARE __log_x main_fx
+#SHARE __log_e main_w
 #SHARE __log_ne main_z
 #SHARE __log_m main_z
-#SHARE __log_t2 diff_a
+#SHARE __log_t2 main_fx
 #SHARE __log_t1 main_z
-#SHARE __log_u diff_a
+#SHARE __log_u main_fx
 #SHARE __log_w main_z
-#SHARE __log_lm diff_a
-JMP main
-@twice SET twice_v
-ADD twice_v
-RET
-@diff SET_P diff_b
-SET diff_a
-NEG_M diff_b
-ADD diff_a
-RET
-@n7 ADD 1
-RET
-@n6 CAL n7
-ADD 1
-RET
-@n5 CAL n6
-ADD 1
-RET
-@n4 CAL n5
-ADD 1
-RET
-@n3 CAL n4
-ADD 1
-RET
-@n2 CAL n3
-ADD 1
-RET
-@n1 CAL n2
-ADD 1
-RET
-@main #ITRAD
+#SHARE __log_lm main_fx
 @__Lwh1 LOD 0
 SET s
 SET main_w
@@ -71,8 +42,7 @@ CAD 0
 SET main_k
 INN 0
 SET main_x
-EQU main_k
-LIN
+XOR main_k
 JIZ __Lif1else
 LOD s
 ADD 4096
@@ -105,14 +75,12 @@ SET main_fz
 LOD main_x
 ADD main_y
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 MLT main_y
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 DIV main_z
@@ -121,8 +89,7 @@ NOP
 NOP
 QUO
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 MOD main_z
@@ -131,62 +98,52 @@ NOP
 NOP
 REM
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 AND main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 ORR main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 XOR main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 LAN main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_w
 LOR main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 SHL main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 SHR main_z
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 SRS main_z
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_z
 SGN main_y
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 LES main_x
@@ -211,8 +168,7 @@ MLT 2
 ADD main_x
 ADD 1
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD 1
@@ -220,8 +176,7 @@ P_LOD main_y
 ADD 2
 S_MLT
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_z
 ADD -1
@@ -233,8 +188,7 @@ NOP
 NOP
 QUO
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_z
 ADD -1
@@ -246,8 +200,7 @@ NOP
 NOP
 REM
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD 1
@@ -255,8 +208,7 @@ P_LOD main_y
 ADD 2
 S_AND
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD 1
@@ -264,8 +216,7 @@ P_LOD main_y
 ADD 2
 S_ORR
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD 1
@@ -273,8 +224,7 @@ P_LOD main_y
 ADD 2
 S_XOR
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD 1
@@ -282,8 +232,7 @@ P_LOD main_y
 ADD -3
 S_LAN
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD -7
@@ -291,8 +240,7 @@ P_LOD main_y
 ADD 2
 S_LOR
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD 1
@@ -300,8 +248,7 @@ P_LOD main_y
 ADD -1
 S_SHL
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_z
 ADD -1
@@ -309,8 +256,7 @@ P_LOD main_y
 ADD -1
 S_SHR
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_z
 ADD -1
@@ -318,8 +264,7 @@ P_LOD main_y
 ADD -1
 S_SRS
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 ADD 1
@@ -327,8 +272,7 @@ P_LOD main_z
 ADD -1
 S_SGN
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD 1
@@ -361,121 +305,103 @@ SET s
 ADD main_y
 NEG
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 NEG_M main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 NEG_M main_x
 NEG
 ADD main_y
 ADD 1
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_z
 ADD -1
 ABS
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 ABS_M main_z
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 ABS_M main_z
 NEG
 ADD main_y
 ADD 1
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_z
 ADD -1
 PST
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 PST_M main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 PST_M main_z
 NEG
 ADD main_y
 ADD 1
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 MLT 1000
 NRM
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 NRM_M main_z
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 NRM_M main_x
 NEG
 ADD main_y
 ADD 1
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD main_y
 INV
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 INV_M main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 INV_M main_x
 NEG
 ADD main_y
 ADD 1
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD -7
 LIN
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LIN_M main_x
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LIN_M main_x
 NEG
 ADD main_y
 ADD 1
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 MLT 2
@@ -487,8 +413,7 @@ NEG_M main_x
 ADD main_t
 P_LOD main_y
 ADD main_y
-S_EQU
-LIN
+S_XOR
 JIZ __Lif10else
 LOD s
 ADD 4096
@@ -503,8 +428,7 @@ ABS_M main_z
 ADD main_t
 P_LOD main_y
 ADD main_y
-S_EQU
-LIN
+S_XOR
 JIZ __Lif11else
 LOD s
 ADD 4096
@@ -519,8 +443,7 @@ PST_M main_z
 ADD main_t
 P_LOD main_y
 ADD main_y
-S_EQU
-LIN
+S_XOR
 JIZ __Lif12else
 LOD s
 ADD 4096
@@ -535,8 +458,7 @@ NRM_M main_x
 ADD main_t
 P_LOD main_y
 ADD main_y
-S_EQU
-LIN
+S_XOR
 JIZ __Lif13else
 LOD s
 ADD 4096
@@ -551,8 +473,7 @@ INV_M main_x
 ADD main_t
 P_LOD main_y
 ADD main_y
-S_EQU
-LIN
+S_XOR
 JIZ __Lif14else
 LOD s
 ADD 4096
@@ -567,8 +488,7 @@ LIN_M main_x
 ADD main_t
 P_LOD main_y
 ADD main_y
-S_EQU
-LIN
+S_XOR
 JIZ __Lif15else
 LOD s
 ADD 4096
@@ -578,16 +498,14 @@ F_ADD main_fy
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fx
 F_MLT main_fy
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fy
 F_DIV main_fx
@@ -597,24 +515,21 @@ F_QUO
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fx
 F_SU1 main_fy
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fz
 F_SGN main_fy
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fx
 F_ADD 1.0
@@ -624,8 +539,7 @@ SF_ADD
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fx
 F_ADD 1.0
@@ -635,8 +549,7 @@ SF_MLT
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fx
 F_ADD 1.0
@@ -649,8 +562,7 @@ F_QUO
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fx
 F_ADD 1.0
@@ -660,8 +572,7 @@ SF_SU2
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fx
 F_MLT 2.0
@@ -669,8 +580,7 @@ F_SU2 main_fy
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fy
 F_ADD 1.0
@@ -680,8 +590,7 @@ SF_SGN
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fx
 F_GRE main_fy
@@ -719,15 +628,13 @@ F_NEG
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 F_NEG_M main_fx
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fy
 F_ADD 1.0
@@ -736,8 +643,7 @@ SF_SU2
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fz
 F_SU1 1.0
@@ -745,15 +651,13 @@ F_ABS
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 F_ABS_M main_fz
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fy
 F_ADD 1.0
@@ -762,8 +666,7 @@ SF_SU2
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fz
 F_SU1 1.0
@@ -771,15 +674,13 @@ F_PST
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 F_PST_M main_fx
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fy
 F_ADD 1.0
@@ -788,8 +689,7 @@ SF_SU2
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 ADD main_y
@@ -797,15 +697,13 @@ I2F
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 I2F_M main_x
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fy
 F_ADD 1.0
@@ -814,8 +712,7 @@ SF_SU2
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fy
 F_ADD 1.0
@@ -824,20 +721,17 @@ SF_SU1
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fx
 F_ADD main_fy
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 F2I_M main_fy
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 ADD 1
@@ -845,8 +739,7 @@ I2F
 F_SU1 main_fy
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fy
 AND 8388607
@@ -855,8 +748,7 @@ NEG
 ADD main_y
 ADD 1
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 F2I_M main_fy
 LDI ia
@@ -865,8 +757,7 @@ LDI ia
 NEG
 S_ADD
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_y
 ADD 1
@@ -874,8 +765,7 @@ P_INN 0
 NEG
 S_ADD
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_fy
 F_ADD 1.0
@@ -884,16 +774,14 @@ SF_SU2
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD 7
 AND main_y
 P_LOD main_x
 STI ia
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD 7
 AND main_y
@@ -903,8 +791,7 @@ LOD 7
 AND main_y
 ILI ia
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD 7
 AND main_y
@@ -913,21 +800,18 @@ STI fa
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 CAL twice
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 P_LOD main_y
 CAL diff
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD 2.0
 P_LOD 1.0
@@ -943,40 +827,35 @@ POP
 F2I
 LDI ia
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD 4.0
 CAL __float_sqrt
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD 0.0
 CAL __float_exp
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD 1.0
 CAL __float_log
 F_MLT 4194304.0
 F2I
 SET main_t
-LOD s
-ADD main_t
+ADD s
 SET s
 LOD main_x
 CAL n1
 SET main_t
 LOD main_x
 ADD 7
-EQU main_t
-LIN
+XOR main_t
 JIZ __Lif20else
 LOD s
 ADD 1024
@@ -1015,8 +894,7 @@ SET main_t
 NEG_M main_y
 ADD main_x
 MLT 14
-EQU main_t
-LIN
+XOR main_t
 JIZ __Lif21else
 LOD s
 ADD 2048
@@ -1039,6 +917,34 @@ OUT 0
 #TOAQUI
 JMP __Lwh1
 @__Lwh1end @fim JMP fim
+@twice SET twice_v
+ADD twice_v
+RET
+@diff SET_P diff_b
+SET diff_a
+NEG_M diff_b
+ADD diff_a
+RET
+@n7 ADD 1
+RET
+@n6 CAL n7
+ADD 1
+RET
+@n5 CAL n6
+ADD 1
+RET
+@n4 CAL n5
+ADD 1
+RET
+@n3 CAL n4
+ADD 1
+RET
+@n2 CAL n3
+ADD 1
+RET
+@n1 CAL n2
+ADD 1
+RET
 
 // sqrt function --------------------------------------------------------------
 

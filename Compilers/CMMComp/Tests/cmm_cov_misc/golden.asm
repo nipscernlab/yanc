@@ -15,64 +15,15 @@ NOP
 #array i1 1 1
 #array vc 3 4
 #array vc_i 4 4
-#SHARE main_k locals_w
-#SHARE main_s locals_w_i
 #SHARE __switch_exp main_m5
 #SHARE main_w_i main_m5
-#SHARE main_w locals_w_i
+#SHARE main_w main_s
 #SHARE __dhf1_main main_m5
-#SHARE __dk0_main locals_w_i
-#SHARE __dhi0_main main_m5
+#SHARE __dk0_main main_s
 #SHARE __dhf0_main main_m5
 #SHARE main_y main_m5
-JMP main
-@locals #arrays locals_li 1 3 "li.txt"
-#arrays locals_lf 2 3 "lf.txt"
-#arrays locals_lc 3 2 "lc.txt"
-#arrays locals_lc_i 4 2 "lc.txt"
-#arrays locals_lmi 1 6 "mi.txt"
-#arrays locals_lmf 2 6 "mf.txt"
-#arrays locals_lmc 3 4 "mc.txt"
-#arrays locals_lmc_i 4 4 "mc.txt"
-LOD_V locals_li 2
-OUT 0
-LOD_V locals_lf 2
-F_MLT 4.0
-F2I
-OUT 0
-LOD_V locals_lc 1
-P_LOD_V locals_lc_i 1
-SET_P locals_w_i
-SET locals_w
-LOD 4.0
-F_MLT locals_w
-F2I
-OUT 0
-LOD 4.0
-F_MLT locals_w_i
-F2I
-OUT 0
-LOD_V locals_lmi 5
-OUT 0
-LOD_V locals_lmf 3
-F_MLT 4.0
-F2I
-OUT 0
-LOD_V locals_lmc 3
-P_LOD_V locals_lmc_i 3
-SET_P locals_w_i
-SET locals_w
-LOD 4.0
-F_MLT locals_w
-F2I
-OUT 0
-LOD 4.0
-F_MLT locals_w_i
-F2I
-OUT 0
-RET
-@noarg LOD 5
-RET
+#SHARE locals_w_i main_s
+#SHARE locals_w main_k
 @main LOD 2
 SET main_n2
 LOD 5
@@ -120,9 +71,8 @@ OUT 0
 LOD 0
 SET main_k
 SET main_s
-@__Lwh2 LOD main_k
-EQU 5
-LIN
+@__Lwh2 LOD 5
+XOR main_k
 JIZ __Lwh2end
 LOD main_k
 ADD 1
@@ -138,101 +88,93 @@ OUT 0
 LOD 0
 SET main_s
 SET main_k
-@__Lwh3 LOD 2
+@__Lwh3top LOD main_k
+ADD 1
+SET main_k
+LOD 3
 XOR main_k
-JIZ __Lwh3cont
+JIZ __Lwh3
 LOD main_s
 ADD main_k
 SET main_s
-@__Lwh3cont LOD main_k
-ADD 1
-SET main_k
+@__Lwh3 LOD main_k
 LES 4
-JIZ __Lwh3
+JIZ __Lwh3top
 @__Lwh3end LOD main_s
 OUT 0
 LOD 0
-SET main_k
 SET main_s
-@__Lwh4 LOD main_k
-ADD 1
 SET main_k
-LOD 2
+@__Lwh4 LOD 2
 XOR main_k
 JIZ __Lwh4cont
 LOD main_s
 ADD main_k
 SET main_s
 @__Lwh4cont LOD main_k
-GRE 4
-JIZ __Lwh4end
-JMP __Lwh4
+ADD 1
+SET main_k
+LES 4
+JIZ __Lwh4
 @__Lwh4end LOD main_s
+OUT 0
+LOD 0
+SET main_k
+SET main_s
+@__Lwh5 LOD main_k
+ADD 1
+SET main_k
+LOD 2
+XOR main_k
+JIZ __Lwh5cont
+LOD main_s
+ADD main_k
+SET main_s
+@__Lwh5cont LOD main_k
+GRE 4
+JIZ __Lwh5end
+JMP __Lwh5
+@__Lwh5end LOD main_s
 OUT 0
 LOD 3
 SET main_k
 LOD 0
 SET main_s
-@__Lwh5 LOD main_k
-JIZ __Lwh5end
-LOD main_s
-ADD main_k
+@__Lwh6 LOD main_k
+JIZ __Lwh6end
+ADD main_s
 SET main_s
 LOD main_k
 ADD -1
 SET main_k
-JMP __Lwh5
-@__Lwh5end LOD main_s
-OUT 0
-LOD 0
-SET main_k
-SET main_s
-@__Lwh6 LOD main_k
-EQU 5
-LIN
-JIZ __Lwh6end
-LOD main_k
-ADD 1
-SET main_k
-EQU 3
-JIZ __Lif5else
-LOD main_s
-ADD 100
-SET main_s
-JMP __Lwh6
-@__Lif5else LOD main_s
-ADD main_k
-SET main_s
 JMP __Lwh6
 @__Lwh6end LOD main_s
 OUT 0
 LOD 0
-SET main_s
 SET main_k
-@__Lwh7 LOD main_k
-EQU 2
+SET main_s
+@__Lwh7 LOD 5
+XOR main_k
+JIZ __Lwh7end
+LOD main_k
+ADD 1
+SET main_k
+EQU 3
 JIZ __Lif6else
 LOD main_s
 ADD 100
 SET main_s
-JMP __Lwh7cont
+JMP __Lwh7
 @__Lif6else LOD main_s
 ADD main_k
 SET main_s
-@__Lwh7cont LOD main_k
-ADD 1
-SET main_k
-LES 4
-JIZ __Lwh7
+JMP __Lwh7
 @__Lwh7end LOD main_s
 OUT 0
 LOD 0
 SET main_s
 SET main_k
-@__Lwh8 LOD main_m5
-LES main_k
-JIZ __Lwh8end
-LOD main_k
+@__Lwh8 LOD main_k
 EQU 2
 JIZ __Lif7else
 LOD main_s
@@ -245,15 +187,17 @@ SET main_s
 @__Lwh8cont LOD main_k
 ADD 1
 SET main_k
-JMP __Lwh8
+LES 4
+JIZ __Lwh8
 @__Lwh8end LOD main_s
 OUT 0
 LOD 0
-SET main_k
 SET main_s
-@__Lwh9 LOD main_k
-ADD 1
 SET main_k
+@__Lwh9 LOD main_m5
+LES main_k
+JIZ __Lwh9end
+LOD main_k
 EQU 2
 JIZ __Lif8else
 LOD main_s
@@ -264,10 +208,31 @@ JMP __Lwh9cont
 ADD main_k
 SET main_s
 @__Lwh9cont LOD main_k
-GRE 4
-JIZ __Lwh9end
+ADD 1
+SET main_k
 JMP __Lwh9
 @__Lwh9end LOD main_s
+OUT 0
+LOD 0
+SET main_k
+SET main_s
+@__Lwh10 LOD main_k
+ADD 1
+SET main_k
+EQU 2
+JIZ __Lif9else
+LOD main_s
+ADD 100
+SET main_s
+JMP __Lwh10cont
+@__Lif9else LOD main_s
+ADD main_k
+SET main_s
+@__Lwh10cont LOD main_k
+GRE 4
+JIZ __Lwh10end
+JMP __Lwh10
+@__Lwh10end LOD main_s
 OUT 0
 LOD 0
 SET main_s
@@ -416,9 +381,7 @@ LOD_V i1 0
 OUT 0
 LOD main_n2
 ADD main_z0
-SET __dhi0_main
-LOD ia1
-MLT __dhi0_main
+MLT ia1
 I2F
 SET_V f1 0
 LOD_V f1 0
@@ -553,3 +516,50 @@ F_MLT main_w_i
 F2I
 OUT 0
 @fim JMP fim
+@locals #arrays locals_li 1 3 "li.txt"
+#arrays locals_lf 2 3 "lf.txt"
+#arrays locals_lc 3 2 "lc.txt"
+#arrays locals_lc_i 4 2 "lc.txt"
+#arrays locals_lmi 1 6 "mi.txt"
+#arrays locals_lmf 2 6 "mf.txt"
+#arrays locals_lmc 3 4 "mc.txt"
+#arrays locals_lmc_i 4 4 "mc.txt"
+LOD_V locals_li 2
+OUT 0
+LOD_V locals_lf 2
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V locals_lc 1
+P_LOD_V locals_lc_i 1
+SET_P locals_w_i
+SET locals_w
+LOD 4.0
+F_MLT locals_w
+F2I
+OUT 0
+LOD 4.0
+F_MLT locals_w_i
+F2I
+OUT 0
+LOD_V locals_lmi 5
+OUT 0
+LOD_V locals_lmf 3
+F_MLT 4.0
+F2I
+OUT 0
+LOD_V locals_lmc 3
+P_LOD_V locals_lmc_i 3
+SET_P locals_w_i
+SET locals_w
+LOD 4.0
+F_MLT locals_w
+F2I
+OUT 0
+LOD 4.0
+F_MLT locals_w_i
+F2I
+OUT 0
+RET
+@noarg LOD 5
+RET

@@ -6,61 +6,27 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-#SHARE addc_b_i echo_c_i
-#SHARE addc_b echo_c
-#SHARE mk_im echo_c_i
-#SHARE mk_re echo_c
-#SHARE sumri_c_i echo_c_i
-#SHARE sumri_c echo_c
-#SHARE midcomp_b echo_c_i
-#SHARE midcomp_c_i echo_c
+#SHARE main_s_i main_e_i
+#SHARE main_s main_e
+#SHARE main_m_i main_e_i
+#SHARE main_m main_e
+#SHARE main_ci_i main_e_i
+#SHARE main_ci main_e
+#SHARE main_cf_i main_e_i
+#SHARE main_cf main_e
+#SHARE main_nest_i main_e_i
+#SHARE main_nest main_e
+#SHARE echo_c_i main_e_i
+#SHARE echo_c main_e
+#SHARE addc_b_i main_e_i
+#SHARE addc_b main_e
+#SHARE mk_im main_e_i
+#SHARE mk_re main_e
+#SHARE sumri_c_i main_e_i
+#SHARE sumri_c main_e
+#SHARE midcomp_b main_e_i
+#SHARE midcomp_c_i main_e
 #SHARE midcomp_c addc_a_i
-#SHARE main_e_i echo_c_i
-#SHARE main_e echo_c
-#SHARE main_s_i echo_c_i
-#SHARE main_s echo_c
-#SHARE main_m_i echo_c_i
-#SHARE main_m echo_c
-#SHARE main_ci_i echo_c_i
-#SHARE main_ci echo_c
-#SHARE main_cf_i echo_c_i
-#SHARE main_cf echo_c
-#SHARE main_nest_i echo_c_i
-#SHARE main_nest echo_c
-JMP main
-@echo SET_P echo_c_i
-SET echo_c
-P_LOD echo_c_i
-RET
-@addc SET_P addc_b_i
-SET_P addc_b
-SET_P addc_a_i
-SET addc_a
-F_ADD addc_b
-P_LOD addc_a_i
-F_ADD addc_b_i
-RET
-@mk SET_P mk_im
-SET mk_re
-I2F_M mk_re
-P_I2F_M mk_im
-RET
-@sumri SET_P sumri_c_i
-SET sumri_c
-F_ADD sumri_c_i
-F2I
-RET
-@takesint RET
-@midcomp SET_P midcomp_b
-SET_P midcomp_c_i
-SET_P midcomp_c
-OUT 0
-F2I_M midcomp_c
-OUT 0
-F2I_M midcomp_c_i
-OUT 0
-LOD midcomp_b
-RET
 @main @__Lwh1 LOD 3.0
 P_LOD 4.0
 CAL echo
@@ -133,3 +99,36 @@ F2I_M main_nest_i
 OUT 0
 JMP __Lwh1
 @__Lwh1end @fim JMP fim
+@echo SET_P echo_c_i
+SET echo_c
+P_LOD echo_c_i
+RET
+@addc SET_P addc_b_i
+SET_P addc_b
+SET_P addc_a_i
+SET addc_a
+F_ADD addc_b
+P_LOD addc_a_i
+F_ADD addc_b_i
+RET
+@mk SET_P mk_im
+SET mk_re
+I2F_M mk_re
+P_I2F_M mk_im
+RET
+@sumri SET_P sumri_c_i
+SET sumri_c
+F_ADD sumri_c_i
+F2I
+RET
+@takesint RET
+@midcomp SET_P midcomp_b
+SET_P midcomp_c_i
+SET_P midcomp_c
+OUT 0
+F2I_M midcomp_c
+OUT 0
+F2I_M midcomp_c_i
+OUT 0
+LOD midcomp_b
+RET

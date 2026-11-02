@@ -6,17 +6,8 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-#SHARE triple_sum_z add_b
 #SHARE main_three main_v
-JMP main
-@add SET_P add_b
-ADD add_b
-RET
-@triple_sum SET_P triple_sum_z
-SET_P triple_sum_y
-ADD triple_sum_y
-ADD triple_sum_z
-RET
+#SHARE triple_sum_z add_b
 @main @__Lwh1 INN 0
 SET main_v
 P_LOD 1
@@ -33,3 +24,11 @@ LOD main_three
 OUT 0
 JMP __Lwh1
 @__Lwh1end @fim JMP fim
+@add SET_P add_b
+ADD add_b
+RET
+@triple_sum SET_P triple_sum_z
+SET_P triple_sum_y
+ADD triple_sum_y
+ADD triple_sum_z
+RET

@@ -1,20 +1,19 @@
 ## messages
-Info: 62 assembly instructions generated
+Info: 60 assembly instructions generated
 Info: 1 jumps to the next instruction removed
 Info: 3 variables written and never read removed (3 instructions)
 Heads up: variable 'm' in function 'main' is never read, so it's out of the program and the waveform (#WAVE m, in the function, keeps it).
 Heads up: variable 's' in function 'main' is never read, so it's out of the program and the waveform (#WAVE s, in the function, keeps it).
 Heads up: variable 'y' in function 'main' is never read, so it's out of the program and the waveform (#WAVE y, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 58 instructions and 23 variables were found
+Info: 56 instructions and 22 variables were found
 Info: adding data output handling
-Info: ULA resource -> << operator
 Info: ULA resource -> integer adder
 Info: ULA resource -> integer negative operation
 Info: ULA resource -> & operator
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 7% of the Assembly Instruction Set
-Info: using 11% of the ULA operations
+Info: using 6% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
 main m 1
@@ -61,53 +60,50 @@ lang C+-
 // 37: out(0, m);
 22 OUT 0
 // 38: out(0, 1 << 0x4);
-23 LOD 4
-24 SHL 1
-25 OUT 0
-// 40: int s = 16;
-26 LOD 16
+23 LOD 16
+24 OUT 0
 // 41: switch (s)
-27 ADD -16
-28 JIZ __sw_body_1_1
-29 ADD 8
-30 JIZ __sw_body_1_2
-31 JMP __switch_end_1
+25 ADD -16
+26 JIZ __sw_body_1_1
+27 ADD 8
+28 JIZ __sw_body_1_2
+29 JMP __switch_end_1
 // 43: case 0x10: out(0, 1); break;
-32 LOD 1
-33 OUT 0
-34 JMP __switch_end_1
+30 LOD 1
+31 OUT 0
+32 JMP __switch_end_1
 // 44: case 010:  out(0, 2); break;
-35 LOD 2
-36 OUT 0
+33 LOD 2
+34 OUT 0
 // 47: out(0, 0xFFFFFFFF);
-37 NEG_M 1
-38 OUT 0
+35 NEG_M 1
+36 OUT 0
 // 48: out(0, 0x80000000);
-39 NEG_M 2147483647
-40 ADD -1
-41 OUT 0
+37 NEG_M 2147483647
+38 ADD -1
+39 OUT 0
 // 49: out(0, b[0]);
-42 LOD_V b 0
-43 OUT 0
+40 LOD_V b 0
+41 OUT 0
 // 50: out(0, b[1]);
-44 LOD_V b 1
-45 OUT 0
+42 LOD_V b 1
+43 OUT 0
 // 51: out(0, b[2]);
-46 LOD_V b 2
-47 OUT 0
+44 LOD_V b 2
+45 OUT 0
 // 52: int y = 0x12345678 & 0xFFFF0000;
-48 NEG_M 65536
-49 AND 305419896
+46 NEG_M 65536
+47 AND 305419896
 // 53: out(0, y);
-50 OUT 0
+48 OUT 0
 // 54: int x = 5;
-51 LOD 5
-52 SET main_x
+49 LOD 5
+50 SET main_x
 // 55: out(0, x + 0xFFFFFFFF);
-53 NEG_M 1
-54 ADD main_x
-55 OUT 0
+51 NEG_M 1
+52 ADD main_x
+53 OUT 0
 // 57: while (1) {}
-56 JMP __Lwh1
+54 JMP __Lwh1
 // -3: END
-57 JMP fim
+55 JMP fim

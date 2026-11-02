@@ -13,16 +13,14 @@ NOP
 SET len_ref
 LOD 0
 SET cont
-@__Lwh1 LOD cont
-GRE 75
-JIZ __Lwh1end
-LOD cont
+@__Lwh1top LOD cont
 P_LOD 0
 STI data_ref
 LOD cont
 ADD 1
 SET cont
-JMP __Lwh1
+LES 74
+JIZ __Lwh1top
 @__Lwh1end LOD 10
 OUT 2
 NEG_M 122
@@ -37,10 +35,7 @@ INN 2
 SET len_data
 LOD 0
 SET cont
-@__Lwh2 LOD cont
-GRE 75
-JIZ __Lwh2end
-LOD cont
+@__Lwh2top LOD cont
 GRE len_data
 JIZ __Lif1else
 LOD cont
@@ -53,7 +48,8 @@ STI data
 @__Lif1end LOD cont
 ADD 1
 SET cont
-JMP __Lwh2
+LES 74
+JIZ __Lwh2top
 @__Lwh2end NEG_M 124
 OUT 2
 LOD k
