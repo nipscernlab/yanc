@@ -653,14 +653,12 @@ P_LOD 7
 CAL par_i
 S_ADD
 OUT 0
-LOD gf
-F2I
+F2I_M gf
 CAL par_i
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD gf
-F2I
+P_F2I_M gf
 CAL par_i
 S_ADD
 OUT 0
@@ -677,25 +675,21 @@ F2I
 CAL par_i
 S_ADD
 OUT 0
-LOD 2.5
-F2I
+F2I_M 2.5
 CAL par_i
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD 2.5
-F2I
+P_F2I_M 2.5
 CAL par_i
 S_ADD
 OUT 0
-LOD gc
-F2I
+F2I_M gc
 CAL par_i
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD gc
-F2I
+P_F2I_M gc
 CAL par_i
 S_ADD
 OUT 0
@@ -730,14 +724,12 @@ F2I
 CAL par_i
 S_ADD
 OUT 0
-LOD 3.0
-F2I
+F2I_M 3.0
 CAL par_i
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD 3.0
-F2I
+P_F2I_M 3.0
 CAL par_i
 S_ADD
 OUT 0
@@ -2223,8 +2215,7 @@ OUT 0
 JMP __switch_end_9
 @__sw_body_9_4 LOD 99
 OUT 0
-@__switch_end_9 LOD gf
-F2I
+@__switch_end_9 F2I_M gf
 SHL gi
 OUT 0
 LOD gi
@@ -2234,8 +2225,7 @@ F_ADD gfz
 F2I
 S_SHL
 OUT 0
-LOD 2.5
-F2I
+F2I_M 2.5
 SHR gi
 OUT 0
 LOD_V si 2

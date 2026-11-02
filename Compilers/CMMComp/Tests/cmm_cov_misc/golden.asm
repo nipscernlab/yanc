@@ -402,15 +402,13 @@ LOD_V f1 0
 F_MLT 4.0
 F2I
 OUT 0
-LOD ia1
-I2F
+I2F_M ia1
 SET_V f1 0
 LOD_V f1 0
 F_MLT 4.0
 F2I
 OUT 0
-LOD fa1
-F2I
+F2I_M fa1
 SET_V i1 0
 LOD_V i1 0
 OUT 0
@@ -469,8 +467,7 @@ SHL main_n2
 OUT 0
 LOD main_n2
 ADD main_z0
-P_LOD main_fs
-F2I
+P_F2I_M main_fs
 S_SHL
 OUT 0
 LOD main_n2

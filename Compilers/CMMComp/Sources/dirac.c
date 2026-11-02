@@ -725,14 +725,12 @@ static int tmp_block(int words, int line)
 static void store(expr e, const dl_dst *d, long off)
 {
     // a value in memory goes over the index, which is still in the acc; one
-    // of another type is converted in the acc, a word more than the _M form
-    // (no Dirac case reaches that: Scripts/cmm_cov.sh, issue #69)
-    if (e.id != 0) add_instr("P_LOD %s\n", v_table[e.id].name);
-    if (d->type == 2 && e.type == 1) add_instr("I2F\n");
-    if (d->type == 1 && e.type == 2) {
+    // of another type is converted on the way, by the _M form
+    if (d->type == 1 && e.type == 2)
         fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
-        add_instr("F2I\n");
-    }
+    int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
+    if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "P_I2F_M" : conv == 2 ? "P_F2I_M" : "P_LOD", v_table[e.id].name);
+    else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
     add_instr("STI_V %s %ld\n", arr_name(d->arr), off);
     acc_ok = 0;
 }
@@ -741,12 +739,12 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
 {
     if (d->kind == 0 && six->nt == 0) {                // one cell: a plain store
         acc_ok = 0;
-        expr e = in_acc(ast_emit_expr(el));
-        if (d->type == 2 && e.type == 1) add_instr("I2F\n");
-        if (d->type == 1 && e.type == 2) {
+        expr e = ast_emit_expr(el);
+        if (d->type == 1 && e.type == 2)
             fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
-            add_instr("F2I\n");
-        }
+        int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
+        if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "I2F_M" : conv == 2 ? "F2I_M" : "LOD", v_table[e.id].name);
+        else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
         add_instr("SET_V %s %ld\n", arr_name(d->arr), six->k + d->base);
         acc_ok = 0;
     } else if (d->kind == 0) {
