@@ -107,6 +107,11 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
 // before it. On a #ITRAD, or on anything the pass does not understand, it
 // leaves the file untouched.
 //
+// The same pass drops a value nobody reads anywhere: the instructions that
+// change only the acc, right before one that writes the acc without reading
+// it. asm_unread leaves them when it takes out the SET they fed
+// (`LOD 1000.0; SET pf; LOD 3` becomes `LOD 1000.0; LOD 3`).
+//
 // Run it after asm_unread. pc_path (may be NULL) loses the lines of the
 // dropped instructions. Returns how many dropped instructions the pc map
 // covered, -1 on an I/O error.

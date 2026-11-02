@@ -9185,8 +9185,6 @@ LOD 1000.0
 F_MLT main_y
 F2I
 OUT 0
-LOD main_ia
-ADD main_z0
 LOD 1.0
 SET main_y
 LOD 1000.0
@@ -9196,7 +9194,6 @@ OUT 0
 LOD main_pf
 F_ADD main_fz
 P_LOD main_ia
-ADD main_z0
 LOD 1.0
 SF_ADD
 SET main_y
@@ -10294,8 +10291,6 @@ LOD 1000.0
 F_MLT main_y
 F2I
 OUT 0
-LOD main_fa
-F_ADD main_fz
 LOD 1.0
 SET main_y
 LOD 1000.0
@@ -10305,7 +10300,6 @@ OUT 0
 LOD main_pf
 F_ADD main_fz
 P_LOD main_fa
-F_ADD main_fz
 LOD 1.0
 SF_ADD
 SET main_y

@@ -14,8 +14,7 @@ NOP
 #SHARE main_iv main_w
 #SHARE __aux_var2 main_c2_i
 #SHARE __aux_var3 main_w
-@main LOD 0
-LOD 1
+@main LOD 1
 SET main_n1
 LOD 2
 SET main_n2
@@ -23,7 +22,6 @@ LOD 3
 SET main_n3
 LOD 0
 SET main_z0
-LOD 0.7
 LOD 1.7
 SET main_f1
 LOD 2.7
@@ -32,7 +30,6 @@ LOD 3.7
 SET main_f3
 LOD 0.0
 SET main_fz
-LOD 3.0
 LOD 1.0
 SET main_c1
 LOD 4.0

@@ -12,7 +12,6 @@ RET
 SET main_a
 LOD 4.0
 SET main_b
-LOD 5.0
 LOD 0
 SET main_k
 @__Lwh1 LOD main_k
