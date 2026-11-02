@@ -42,24 +42,18 @@ NOP
 #SHARE __pow_b __pow_y
 #SHARE __sqrt_num main_y
 #SHARE __atan_x main_y
-#SHARE __atan_ax __aux_var2
-#SHARE __atan_big main_w
-#SHARE __atan_t __aux_var2
-#SHARE __atan_p __aux_var2
-#SHARE __sin_x main_w
-#SHARE __sin_q main_y
-#SHARE __sin_k main_y
-#SHARE __sin_r main_w
-#SHARE __sin_w __aux_var2
-#SHARE __sin_p main_w
+#SHARE __atan_t main_w
+#SHARE __atan_w __aux_var2
+#SHARE __sin_x main_y
+#SHARE __sin_q main_w
+#SHARE __sin_k main_w
+#SHARE __sin_r main_y
+#SHARE __sin_w main_w
 #SHARE __tan_x main_y
 #SHARE __tan_q main_w
 #SHARE __tan_r main_y
-#SHARE __tan_a __aux_var2
-#SHARE __tan_fold main_w
-#SHARE __tan_u __aux_var2
-#SHARE __tan_w __atan_w
-#SHARE __tan_p __aux_var2
+#SHARE __tan_u main_w
+#SHARE __tan_w __aux_var2
 #SHARE __exp_x main_y
 #SHARE __exp_q main_w
 #SHARE __exp_n main_w
@@ -67,8 +61,7 @@ NOP
 #SHARE __log_x main_w
 #SHARE __log_e main_y
 #SHARE __log_ne __aux_var2
-#SHARE __log_m __aux_var2
-#SHARE __log_t2 main_w
+#SHARE __log_m main_w
 #SHARE __log_t1 __aux_var2
 #SHARE __log_u main_w
 #SHARE __log_w __aux_var2
@@ -10896,27 +10889,25 @@ F_QUO
 // |x| is folded into [0,1] with the 1/x identity: atan(|x|) = pi/2 - atan(1/|x|)
 // for |x|>1. atan(t) on [0,1] is a degree-11 odd minimax polynomial (least-
 // squares fit, max abs error ~4.9e-6 -- ~6 digits, vs the old 49-point LUT's
-// ~4e-5). One shared polynomial for both branches; no table, no new hardware.
+// ~4e-5). Each branch has its own copy of the polynomial, so neither stores a
+// flag to test again after it: fewer cycles, a few more words. No table, no
+// new hardware.
 
 @__float_atan SET   __atan_x                 // save x
-            F_ABS_M __atan_x               // ax = |x|
-            SET   __atan_ax
-            F_LES 1.0                    // (ax > 1)?  [F_LES true when acc > X]
-            SET   __atan_big               // flag: 1 if |x|>1 (use 1/x)
+            F_ABS                        // t = |x|
+            SET   __atan_t
+            F_LES 1.0                    // (|x| > 1)?  [F_LES true when acc > X]
             JIZ   __L_atan_small
-            LOD   __atan_ax                // big branch: t = 1/ax
-            F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
+
+            LOD   __atan_t                 // |x| > 1: t = 1/|x|
+            F_DIV 1.0                    // 1.0 / |x|   (F_DIV X = X/acc)
 NOP
 NOP
 F_QUO
-            JMP   __L_atan_haveT
-@__L_atan_small LOD __atan_ax               // small branch: t = ax
-@__L_atan_haveT SET __atan_t
-
+            SET   __atan_t
             F_MLT __atan_t                 // w = t^2
             SET   __atan_w
-            LOD  -0.012300666580         // Horner in w: atan(t)/t = a1 + a3 w + ... + a11 w^5
-            F_MLT __atan_w                 // a11
+            F_MLT -0.012300666580           // Horner in w: atan(t)/t = a1 + a3 w + ... + a11 w^5
             F_ADD 0.054084934779         // a9
             F_MLT __atan_w
             F_ADD -0.117697073484        // a7
@@ -10927,15 +10918,25 @@ F_QUO
             F_MLT __atan_w
             F_ADD 0.999980069822         // a1
             F_MLT __atan_t                 // * t  -> atan(t)
-            SET   __atan_p
+            F_SU2 1.5707963268           // pi/2 - atan(1/|x|)   (F_SU2 X = X - acc)
+            F_SGN __atan_x                 // the sign of x
+            RET
 
-            LOD   __atan_big
-            JIZ   __L_atan_done            // |x|<=1 -> result = atan(t)
-            LOD   __atan_p                 // |x|>1  -> result = pi/2 - atan(1/x)
-            F_SU2 1.5707963268           // pi/2 - p   (F_SU2 X = X - acc)
-            JMP   __L_atan_sign
-@__L_atan_done LOD __atan_p
-@__L_atan_sign F_SGN __atan_x                // apply the sign of x
+@__L_atan_small LOD __atan_t               // |x| <= 1: t = |x|
+            F_MLT __atan_t                 // w = t^2
+            SET   __atan_w
+            F_MLT -0.012300666580           // the same polynomial
+            F_ADD 0.054084934779
+            F_MLT __atan_w
+            F_ADD -0.117697073484
+            F_MLT __atan_w
+            F_ADD 0.194020561451
+            F_MLT __atan_w
+            F_ADD -0.332694520616
+            F_MLT __atan_w
+            F_ADD 0.999980069822
+            F_MLT __atan_t                 // atan(|x|)
+            F_SGN __atan_x                 // the sign of x
             RET
 
 // Sine function --------------------------------------------------------------
@@ -10943,6 +10944,10 @@ F_QUO
 // sin(x) = (-1)^k * sin(r). sin(r) is a degree-7 odd minimax polynomial (the
 // coefficients are a least-squares fit on [0, pi/2], max abs error ~1.6e-6 --
 // ~6 digits, vs the old 152-point LUT's ~3). No lookup table, no new hardware.
+// The parity of k is tested as soon as k is known, and each branch has its
+// own copy of the polynomial: an odd k negates r before it, which gives
+// -sin(r) because the polynomial is odd (w = r^2 is the same, and only the
+// last product by r changes sign). Fewer cycles, a few more words.
 // NB: F2I truncates toward zero, so round-to-nearest uses a sign-half bias.
 
 @__float_sin  SET   __sin_x                  // save x
@@ -10952,40 +10957,50 @@ F_QUO
             F_SGN __sin_q                  // copysign(0.5, q)
             F_ADD __sin_q                  // q + copysign(0.5,q)
             F2I                          // k = round(q)
-            SET   __sin_k                  // keep k (int) for the (-1)^k sign
-            I2F                          // float(k)
+            SET   __sin_k
+            AND   1                      // k & 1  (parity)
+            JIZ   __L_sin_even             // k even -> +sin(r)
+
+            I2F_M __sin_k                  // k odd: float(k)
             F_MLT 3.1415926536           // k * pi
             F_SU2 __sin_x                  // r = x - k*pi  -> [-pi/2, pi/2]
+            F_NEG                        // -r: the polynomial gives -sin(r)
             SET   __sin_r
             F_MLT __sin_r                  // w = r^2
             SET   __sin_w
-
-            LOD  -0.000184472138         // Horner in w: sin(r)/r = a1 + a3 w + a5 w^2 + a7 w^3
-            F_MLT __sin_w                  // a7
+            F_MLT -0.000184472138        // Horner in w: sin(r)/r = a1 + a3 w + a5 w^2 + a7 w^3: w * a7
             F_ADD 0.008309516704         // a5
             F_MLT __sin_w
             F_ADD -0.166651680787        // a3
             F_MLT __sin_w
             F_ADD 0.999997487148         // a1
             F_MLT __sin_r                  // * r  -> sin(r)
-            SET   __sin_p
-
-            LOD   __sin_k
-            AND   1                      // k & 1  (parity)
-            JIZ   __L_sin_even             // k even -> +sin(r)
-            LOD   __sin_p
-            F_NEG                        // k odd  -> -sin(r)
             RET
-@__L_sin_even LOD   __sin_p
+
+@__L_sin_even I2F_M __sin_k              // k even: float(k)
+            F_MLT 3.1415926536
+            F_SU2 __sin_x                  // r
+            SET   __sin_r
+            F_MLT __sin_r                  // w = r^2
+            SET   __sin_w
+            F_MLT -0.000184472138        // the same polynomial
+            F_ADD 0.008309516704
+            F_MLT __sin_w
+            F_ADD -0.166651680787
+            F_MLT __sin_w
+            F_ADD 0.999997487148
+            F_MLT __sin_r
             RET
 
 // Tangent function -----------------------------------------------------------
 // tan has period pi, so x is reduced to r = x - round(x/pi)*pi in [-pi/2, pi/2].
 // Since +-pi/2 are poles, r is folded into [0, pi/4] with the cotangent identity
-// tan(r) = 1/tan(pi/2 - |r|) for |r| > pi/4, and one shared degree-11 odd minimax
-// polynomial (least-squares fit of tan(u)/u on [0, pi/4], max abs error ~6.5e-7)
-// serves both branches. tan is odd, so the sign of r is applied at the end with
-// F_SGN. No lookup table, no new hardware.
+// tan(r) = 1/tan(pi/2 - |r|) for |r| > pi/4, and one degree-11 odd minimax
+// polynomial (least-squares fit of tan(u)/u on [0, pi/4], max abs error
+// ~6.5e-7) serves both branches; each branch has its own copy of it, so
+// neither stores a flag to test again after it (fewer cycles, a few more
+// words). tan is odd, so the sign of r is applied at the end with F_SGN. No
+// lookup table, no new hardware.
 // NB: F2I truncates toward zero, so round-to-nearest uses a sign-half bias.
 
 @__float_tan  SET   __tan_x                  // save x
@@ -11000,20 +11015,16 @@ F_QUO
             F_SU2 __tan_x                  // r = x - k*pi  -> [-pi/2, pi/2]  (F_SU2 X = X - acc)
             SET   __tan_r
             F_ABS                        // a = |r|
-            SET   __tan_a
+            SET   __tan_u
             F_LES 0.785398163            // a > pi/4 ?  [F_LES true when acc > X]
-            SET   __tan_fold               // flag: 1 -> cotangent branch
             JIZ   __L_tan_inner
-            LOD   __tan_a                  // outer branch: u = pi/2 - a   (u in [0,pi/4))
-            F_SU2 1.5707963268           // pi/2 - a   (F_SU2 X = X - acc)
-            JMP   __L_tan_haveU
-@__L_tan_inner LOD  __tan_a                  // inner branch: u = a
-@__L_tan_haveU SET  __tan_u
 
+            LOD   __tan_u                  // a > pi/4: u = pi/2 - a   (u in [0,pi/4))
+            F_SU2 1.5707963268           // pi/2 - a   (F_SU2 X = X - acc)
+            SET   __tan_u
             F_MLT __tan_u                  // w = u^2
             SET   __tan_w
-            LOD   0.019691612742         // Horner in w: tan(u)/u = a1 + a3 w + ... + a11 w^5
-            F_MLT __tan_w                  // a11
+            F_MLT 0.019691612742           // Horner in w: tan(u)/u = a1 + a3 w + ... + a11 w^5
             F_ADD 0.013512594373         // a9
             F_MLT __tan_w
             F_ADD 0.056704928952         // a7
@@ -11024,18 +11035,28 @@ F_QUO
             F_MLT __tan_w
             F_ADD 0.999999838962         // a1
             F_MLT __tan_u                  // * u  -> tan(u) = P  (>= 0)
-            SET   __tan_p
-
-            LOD   __tan_fold
-            JIZ   __L_tan_done             // a <= pi/4 -> tan = P
-            LOD   __tan_p                  // a > pi/4  -> tan = 1/P  (cotangent)
-            F_DIV 1.0                    // 1.0 / P   (F_DIV X = X/acc)
+            F_DIV 1.0                    // 1.0 / P: the cotangent   (F_DIV X = X/acc)
 NOP
 NOP
 F_QUO
-            JMP   __L_tan_sign
-@__L_tan_done LOD  __tan_p
-@__L_tan_sign F_SGN __tan_r                  // tan is odd -> apply the sign of r
+            F_SGN __tan_r                  // tan is odd -> the sign of r
+            RET
+
+@__L_tan_inner LOD  __tan_u                  // a <= pi/4: u = a
+            F_MLT __tan_u                  // w = u^2
+            SET   __tan_w
+            F_MLT 0.019691612742           // the same polynomial
+            F_ADD 0.013512594373
+            F_MLT __tan_w
+            F_ADD 0.056704928952
+            F_MLT __tan_w
+            F_ADD 0.132942907215
+            F_MLT __tan_w
+            F_ADD 0.333353228230
+            F_MLT __tan_w
+            F_ADD 0.999999838962
+            F_MLT __tan_u                  // tan(u) = P
+            F_SGN __tan_r                  // the sign of r
             RET
 
 // Exponential function -------------------------------------------------------
@@ -11055,9 +11076,7 @@ F_QUO
             F_MLT 0.6931471806          // n * ln2
             F_SU2 __exp_x                 // r = x - n*ln2   (F_SU2 X = X - acc)
             SET   __exp_r
-
-            LOD   0.0013888889          // Horner, exp(r) = sum r^k/k! (k=0..6)
-            F_MLT __exp_r                 // 1/6!
+            F_MLT 0.0013888889          // Horner, exp(r) = sum r^k/k! (k=0..6): r * 1/6!
             F_ADD 0.0083333333          // 1/5!
             F_MLT __exp_r
             F_ADD 0.0416666667          // 1/4!
@@ -11075,15 +11094,17 @@ F_QUO
 // Natural logarithm ----------------------------------------------------------
 // log(x) = e*ln2 + log(m),  e = XPO(x) = floor(log2 x),  m = x*2^-e in [1,2).
 // O(1): e via XPO, m via a single F_SCL (no halve/double loop). log(m) is the
-// atanh series 2u(1 + u^2/3 + u^4/5 + u^6/7 + u^8/9), u = (m-1)/(m+1).
+// atanh series 2u(1 + u^2/3 + u^4/5 + u^6/7 + u^8/9), u = (m-1)/(m+1); its
+// factor 2 is in the coefficients (2/9 ... 2/3, 2): a power of two only moves
+// the exponent, so each step is exactly twice the one of 2u(...) and the
+// result is the same word.
 // x <= 0 returns 0.
 
 @__float_log  SET   __log_x                 // save x (acc still = x)
             F_LES 0.0                    // (x > 0) ?   [F_LES true when acc > X]
             JIZ   __L_log_zero             // x <= 0 -> bail out with 0
 
-            LOD   __log_x
-            XPO                          // e = floor(log2 x)   (int)
+            XPO_M __log_x                  // e = floor(log2 x)   (int)
             SET   __log_e
             NEG                          // -e
             SET   __log_ne
@@ -11091,12 +11112,10 @@ F_QUO
             F_SCL __log_ne                 // m = x * 2^(-e)  -> [1,2)
             SET   __log_m
 
-            F_ADD 1.0                    // m+1   (acc still = m)
-            SET   __log_t2
-            LOD   __log_m
             F_SU1 1.0                    // m-1   (acc - X)
             SET   __log_t1
-            LOD   __log_t2
+            LOD   __log_m
+            F_ADD 1.0                    // m+1
             F_DIV __log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
 NOP
 NOP
@@ -11104,22 +11123,18 @@ F_QUO
             SET   __log_u
             F_MLT __log_u
             SET   __log_w                  // w = u^2
-
-            LOD   0.1111111111           // Horner in w (1/9, 1/7, 1/5, 1/3, 1)
+            F_MLT 0.2222222222           // Horner in w (2/9, 2/7, 2/5, 2/3, 2): w * 2/9
+            F_ADD 0.2857142858
             F_MLT __log_w
-            F_ADD 0.1428571429
+            F_ADD 0.4
             F_MLT __log_w
-            F_ADD 0.2
+            F_ADD 0.6666666666
             F_MLT __log_w
-            F_ADD 0.3333333333
-            F_MLT __log_w
-            F_ADD 1.0
-            F_MLT __log_u
-            F_MLT 2.0                     // log(m)
+            F_ADD 2.0
+            F_MLT __log_u                   // log(m)
             SET   __log_lm
 
-            LOD   __log_e
-            I2F                           // float(e)
+            I2F_M __log_e                   // float(e)
             F_MLT 0.6931471806            // e * ln2
             F_ADD __log_lm                  // + log(m)  -> log(x)
             RET

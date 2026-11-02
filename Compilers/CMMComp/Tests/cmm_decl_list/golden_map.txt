@@ -1,13 +1,12 @@
 ## messages
-Info: 98 assembly instructions generated
+Info: 96 assembly instructions generated
 Info: 2 variables written and never read removed (2 instructions)
 Info: 18 variables share 11 data words (7 saved)
 Heads up: global variable 'gf' is never read, so it's out of the program and the waveform (#WAVE gf keeps it).
 Heads up: variable 'a' in function 'main' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 96 instructions and 24 variables were found
+Info: 94 instructions and 24 variables were found
 Info: ULA resource -> integer adder
-Info: ULA resource -> > operator for int
 Info: ULA resource -> integer multiplier
 Info: adding data output handling
 Info: ULA resource -> float-point multiplier
@@ -15,6 +14,7 @@ Info: ULA resource -> float to int converter
 Info: ULA resource -> integer negative operation
 Info: ULA resource -> float-point adder
 Info: adding stack memory for function calls
+Info: ULA resource -> > operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 14% of the Assembly Instruction Set
 Info: using 19% of the ULA operations
@@ -57,113 +57,110 @@ lang C+-
 8 SET gz
 9 LOD 2.0
 10 SET gz_i
-// -2: void main();
-11 JMP main
-// 24: int n = 0, s = 0;
-12 LOD 0
-13 SET soma_n
-14 SET soma_s
-// 25: while (n < 3)
-15 LOD soma_n
-16 GRE 3
-17 JIZ __Lwh1end
-// 27: n = n + 1;
-18 LOD soma_n
-19 ADD 1
-20 SET soma_n
-// 28: s = s + n;
-21 LOD soma_s
-22 ADD soma_n
-23 SET soma_s
-// 25: while (n < 3)
-24 JMP __Lwh1
-// 30: return s;
-25 LOD soma_s
-26 RET
 // 35: int   a, b = 5, c = b * 2;
-27 LOD 5
-28 SET main_b
-29 MLT 2
-30 SET main_c
+11 LOD 5
+12 SET main_b
+13 MLT 2
+14 SET main_c
 // 36: float x = 0.5, y;
-31 LOD 0.5
-32 SET main_x
+15 LOD 0.5
+16 SET main_x
 // 37: comp  z, w = 3.0-1.0i;
-33 LOD 3.0
-34 SET main_w
-35 LOD -1.0
-36 SET main_w_i
+17 LOD 3.0
+18 SET main_w
+19 LOD -1.0
+20 SET main_w_i
 // 39: gb = 1;
-37 LOD 1
-38 SET gb
+21 LOD 1
+22 SET gb
 // 40: out(0, ga); out(0, gb); out(0, gc);
-39 LOD ga
-40 OUT 0
-41 LOD gb
-42 OUT 0
-43 LOD gc
-44 OUT 0
+23 LOD ga
+24 OUT 0
+25 LOD gb
+26 OUT 0
+27 LOD gc
+28 OUT 0
 // 41: gf = gg * 2.0;
-45 LOD gg
-46 F_MLT 2.0
+29 LOD gg
+30 F_MLT 2.0
 // 42: fout(0, gf * 4.0); fout(0, gg * 4.0);
-47 F_MLT 4.0
-48 F2I
-49 OUT 0
-50 LOD gg
-51 F_MLT 4.0
-52 F2I
-53 OUT 0
+31 F_MLT 4.0
+32 F2I
+33 OUT 0
+34 LOD gg
+35 F_MLT 4.0
+36 F2I
+37 OUT 0
 // 43: gw = gz * 2.0;
-54 LOD 2.0
-55 F_MLT gz
-56 P_LOD 2.0
-57 F_MLT gz_i
-58 SET_P gw_i
-59 SET gw
+38 LOD 2.0
+39 F_MLT gz
+40 P_LOD 2.0
+41 F_MLT gz_i
+42 SET_P gw_i
+43 SET gw
 // 44: fout(0, real(gw)); fout(0, imag(gw));
-60 F2I_M gw
-61 OUT 0
-62 F2I_M gw_i
-63 OUT 0
+44 F2I_M gw
+45 OUT 0
+46 F2I_M gw_i
+47 OUT 0
 // 46: a = c - b;
-64 NEG_M main_b
-65 ADD main_c
+48 NEG_M main_b
+49 ADD main_c
 // 47: out(0, a); out(0, b); out(0, c);
-66 OUT 0
-67 LOD main_b
-68 OUT 0
-69 LOD main_c
-70 OUT 0
+50 OUT 0
+51 LOD main_b
+52 OUT 0
+53 LOD main_c
+54 OUT 0
 // 48: y = x + 1.0;
-71 LOD main_x
-72 F_ADD 1.0
-73 SET main_y
+55 LOD main_x
+56 F_ADD 1.0
+57 SET main_y
 // 49: fout(0, x * 4.0); fout(0, y * 4.0);
-74 LOD main_x
-75 F_MLT 4.0
-76 F2I
-77 OUT 0
-78 LOD main_y
-79 F_MLT 4.0
-80 F2I
-81 OUT 0
+58 LOD main_x
+59 F_MLT 4.0
+60 F2I
+61 OUT 0
+62 LOD main_y
+63 F_MLT 4.0
+64 F2I
+65 OUT 0
 // 50: z = w + 1.0;
-82 LOD 1.0
-83 F_ADD main_w
-84 P_LOD main_w_i
-85 SET_P main_z_i
-86 SET main_z
+66 LOD 1.0
+67 F_ADD main_w
+68 P_LOD main_w_i
+69 SET_P main_z_i
+70 SET main_z
 // 51: fout(0, real(z)); fout(0, imag(z));
-87 F2I_M main_z
-88 OUT 0
-89 F2I_M main_z_i
-90 OUT 0
+71 F2I_M main_z
+72 OUT 0
+73 F2I_M main_z_i
+74 OUT 0
 // 53: out(0, soma());
-91 CAL soma
-92 OUT 0
+75 CAL soma
+76 OUT 0
 // 54: out(0, soma());
-93 CAL soma
-94 OUT 0
+77 CAL soma
+78 OUT 0
 // -3: END
-95 JMP fim
+79 JMP fim
+// 24: int n = 0, s = 0;
+80 LOD 0
+81 SET soma_n
+82 SET soma_s
+// 25: while (n < 3)
+83 LOD soma_n
+84 GRE 3
+85 JIZ __Lwh1end
+// 27: n = n + 1;
+86 LOD soma_n
+87 ADD 1
+88 SET soma_n
+// 28: s = s + n;
+89 ADD soma_s
+90 SET soma_s
+// 25: while (n < 3)
+91 JMP __Lwh1
+// 30: return s;
+92 LOD soma_s
+93 RET

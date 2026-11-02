@@ -1,17 +1,17 @@
 ## messages
-Info: 39 assembly instructions generated
+Info: 38 assembly instructions generated
 Info: 15 unreachable instructions removed
 Info: 2 variables written and never read removed (2 instructions)
 Heads up: function 'chain' isn't being used. Save some memory, will ya!
 Heads up: variable 'u' in function 'rare' is never read, so it's out of the program and the waveform (#WAVE u, in the function, keeps it).
 Heads up: variable 'u' in function 'live1' is never read, so it's out of the program and the waveform (#WAVE u, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 22 instructions and 8 variables were found
-Info: ULA resource -> integer adder
+Info: 21 instructions and 8 variables were found
 Info: adding data input handling
 Info: adding stack memory for function calls
 Info: ULA resource -> == operator
 Info: adding data output handling
+Info: ULA resource -> integer adder
 Info: using 7% of the Assembly Instruction Set
 Info: using 5% of the ULA operations
 Sweet: the processor is good to go.
@@ -28,34 +28,32 @@ lang C+-
 ## listing
 // -1: INTERNAL
 0 NOP
-// -2: void main();
-1 JMP main
-// 38: int rare(int u) { return u - 7; }
-2 ADD -7
-3 RET
-// 42: buf[1] = u;
-4 SET_V buf 1
-// 43: return buf[1] + 2;
-5 LOD_V buf 1
-6 ADD 2
-7 RET
 // 50: int x = in(0);
-8 INN 0
-9 SET main_x
+1 INN 0
+2 SET main_x
 // 51: int y = live1(x);
-10 CAL live1
-11 SET main_y
+3 CAL live1
+4 SET main_y
 // 52: if (x == 12345) y = rare(y);
-12 LOD main_x
-13 EQU 12345
-14 JIZ __Lif1else
-15 LOD main_y
-16 CAL rare
-17 SET main_y
+5 LOD main_x
+6 EQU 12345
+7 JIZ __Lif1else
+8 LOD main_y
+9 CAL rare
+10 SET main_y
 // 53: out(0, y);
-18 LOD main_y
-19 OUT 0
+11 LOD main_y
+12 OUT 0
 // 48: while (1)
-20 JMP __Lwh1
+13 JMP __Lwh1
 // -3: END
-21 JMP fim
+14 JMP fim
+// 38: int rare(int u) { return u - 7; }
+15 ADD -7
+16 RET
+// 42: buf[1] = u;
+17 SET_V buf 1
+// 43: return buf[1] + 2;
+18 LOD_V buf 1
+19 ADD 2
+20 RET

@@ -6,11 +6,45 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE main_y my_sqrt_num
-#SHARE main_t my_sqrt_x
-#SHARE main_e my_sqrt_num
-#SHARE __sqrt_num my_sqrt_num
-JMP main
+@main #arrays main_x 2 1000 "sqrt_x.txt"
+#arrays main_a 2 1000 "sqrt_y.txt"
+#SHARE main_e main_y
+#SHARE my_sqrt_num main_y
+#SHARE my_sqrt_x main_t
+#SHARE __sqrt_num main_y
+LOD 0
+SET main_j
+@__Lwh1top LOD main_j
+LDI main_x
+CAL __float_sqrt
+SET main_y
+LOD main_j
+LDI main_a
+SET main_t
+F_SU1 main_y
+SET main_e
+LOD main_j
+ADD 1
+SET main_j
+LES 999
+JIZ __Lwh1top
+@__Lwh1end LOD 0
+SET main_j
+@__Lwh2top LOD main_j
+LDI main_x
+CAL my_sqrt
+SET main_y
+LOD main_j
+LDI main_a
+SET main_t
+F_SU1 main_y
+SET main_e
+LOD main_j
+ADD 1
+SET main_j
+LES 999
+JIZ __Lwh2top
+@__Lwh2end @fim JMP fim
 @my_sqrt SET my_sqrt_num
 EQU 0.0
 JIZ __Lif1else
@@ -26,9 +60,7 @@ S_SRS
 ADD -22
 P_LOD 23
 S_SHL
-P_LOD 22
-SHL 1
-S_ADD
+ADD 4194304
 P_LOD 1
 S_SHL
 P_LOD 1
@@ -63,45 +95,6 @@ F_ADD my_sqrt_x
 F_MLT 0.5
 SET my_sqrt_x
 RET
-@main #arrays main_x 2 1000 "sqrt_x.txt"
-#arrays main_a 2 1000 "sqrt_y.txt"
-LOD 0
-SET main_j
-@__Lwh1 LOD main_j
-GRE 1000
-JIZ __Lwh1end
-LOD main_j
-LDI main_x
-CAL __float_sqrt
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP __Lwh1
-@__Lwh1end LOD 0
-SET main_j
-@__Lwh2 LOD main_j
-GRE 1000
-JIZ fim
-LOD main_j
-LDI main_x
-CAL my_sqrt
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP __Lwh2
-@__Lwh2end @fim JMP fim
 
 // sqrt function --------------------------------------------------------------
 

@@ -1,11 +1,11 @@
 ## messages
-Info: 14 assembly instructions generated
+Info: 12 assembly instructions generated
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 14 instructions and 5 variables were found
-Info: ULA resource -> > operator for int
+Info: 12 instructions and 5 variables were found
 Info: ULA resource -> integer multiplier
 Info: adding toma (TOM), which hands a value to the partner processor
 Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 6% of the Assembly Instruction Set
 Info: using 8% of the ULA operations
@@ -19,19 +19,16 @@ lang C+-
 // 12: int n = 0;
 1 LOD 0
 2 SET main_n
-// 13: while (n < 16)
-3 LOD main_n
-4 GRE 16
-5 JIZ fim
 // 15: toma(0, n * 7);
-6 LOD main_n
-7 MLT 7
-8 TOM 0
+3 LOD main_n
+4 MLT 7
+5 TOM 0
 // 16: n++;
-9 LOD main_n
-10 ADD 1
-11 SET main_n
+6 LOD main_n
+7 ADD 1
+8 SET main_n
 // 13: while (n < 16)
-12 JMP __Lwh1
+9 LES 15
+10 JIZ __Lwh1top
 // -3: END
-13 JMP fim
+11 JMP fim

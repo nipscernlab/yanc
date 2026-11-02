@@ -16,10 +16,7 @@ LOD 2
 SET main_b
 LOD 0
 SET main_k
-@__Lwh1 LOD main_k
-GRE 6
-JIZ __Lwh1end
-LOD main_k
+@__Lwh1top LOD main_k
 P_LOD main_k
 STI vi
 LOD main_k
@@ -29,7 +26,8 @@ STI vf
 LOD main_k
 ADD 1
 SET main_k
-JMP __Lwh1
+LES 5
+JIZ __Lwh1top
 @__Lwh1end LOD main_a
 ADD main_b
 PSH
@@ -109,10 +107,7 @@ F2I
 OUT 0
 LOD 0
 SET main_k
-@__Lwh2 LOD main_k
-GRE 3
-JIZ __Lwh2end
-LOD main_k
+@__Lwh2top LOD main_k
 ADD 1
 PSH
 LDI vi
@@ -121,7 +116,8 @@ STI vi
 LOD main_k
 ADD 1
 SET main_k
-JMP __Lwh2
+LES 2
+JIZ __Lwh2top
 @__Lwh2end LOD_V vi 1
 OUT 0
 LOD_V vi 2

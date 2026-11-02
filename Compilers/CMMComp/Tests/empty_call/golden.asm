@@ -6,12 +6,6 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-JMP main
-@answer LOD 42
-RET
-@emit_one LOD 1
-OUT 0
-RET
 @main @__Lwh1 CAL answer
 SET main_y
 CAL emit_one
@@ -19,3 +13,8 @@ LOD main_y
 OUT 0
 JMP __Lwh1
 @__Lwh1end @fim JMP fim
+@answer LOD 42
+RET
+@emit_one LOD 1
+OUT 0
+RET

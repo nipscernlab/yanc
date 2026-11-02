@@ -15,7 +15,27 @@ CAL h
 SET k
 LOD 7
 SET vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-JMP main
+@main LOD a
+OUT 0
+LOD g
+OUT 0
+LOD k
+OUT 0
+LOD 1
+CAL f
+OUT 0
+LOD 0
+CAL f
+OUT 0
+LOD 1
+CAL s
+OUT 0
+LOD 7
+CAL s
+OUT 0
+LOD vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+OUT 0
+@fim JMP fim
 @f LES 0
 JIZ __Lif1else
 LOD 1
@@ -39,24 +59,4 @@ JMP __sw_body_1_2
 RET
 @__sw_body_1_2 LOD 20
 RET
-@__switch_end_1 @main LOD a
-OUT 0
-LOD g
-OUT 0
-LOD k
-OUT 0
-LOD 1
-CAL f
-OUT 0
-LOD 0
-CAL f
-OUT 0
-LOD 1
-CAL s
-OUT 0
-LOD 7
-CAL s
-OUT 0
-LOD vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-OUT 0
-@fim JMP fim
+@__switch_end_1 

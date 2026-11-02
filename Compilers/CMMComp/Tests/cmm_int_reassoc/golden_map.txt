@@ -1,8 +1,8 @@
 ## messages
-Info: 127 assembly instructions generated
-Info: 35 variables written and never read removed (45 instructions)
+Info: 125 assembly instructions generated
+Info: 36 variables written and never read removed (46 instructions)
 Info: 1 instructions computing an argument never read removed
-Info: 6 variables share 4 data words (2 saved)
+Info: 5 variables share 4 data words (1 saved)
 Heads up: global variable 'v1' is never read, so it's out of the program and the waveform (#WAVE v1 keeps it).
 Heads up: global variable 'v2' is never read, so it's out of the program and the waveform (#WAVE v2 keeps it).
 Heads up: global variable 'v3' is never read, so it's out of the program and the waveform (#WAVE v3 keeps it).
@@ -35,11 +35,12 @@ Heads up: global variable 'v29' is never read, so it's out of the program and th
 Heads up: global variable 'v30' is never read, so it's out of the program and the waveform (#WAVE v30 keeps it).
 Heads up: global variable 'v31' is never read, so it's out of the program and the waveform (#WAVE v31 keeps it).
 Heads up: global variable 'v32' is never read, so it's out of the program and the waveform (#WAVE v32 keeps it).
+Heads up: global variable 'v33' is never read, so it's out of the program and the waveform (#WAVE v33 keeps it).
 Heads up: variable 'a' in function 'g' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
 Heads up: variable 'b' in function 'g' is never read, so it's out of the program and the waveform (#WAVE b, in the function, keeps it).
 Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 82 instructions and 12 variables were found
+Info: 79 instructions and 12 variables were found
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> integer adder
 Info: adding data output handling
@@ -95,106 +96,101 @@ lang C+-
 ## listing
 // -1: INTERNAL
 0 NOP
-// -2: void main();
-1 JMP main
-// 31: int g(int a, int b)
-2 POP
-// 33: return a * 2;
-3 MLT 2
-4 RET
 // 39: x = 6; y = 4; k = 3; j = 2;
-5 LOD 6
-6 SET main_x
-7 LOD 4
-8 SET main_y
-9 LOD 3
-10 SET main_k
-11 LOD 2
-12 SET main_j
+1 LOD 6
+2 SET main_x
+3 LOD 4
+4 SET main_y
+5 LOD 3
+6 SET main_k
+7 LOD 2
+8 SET main_j
 // 40: r = x*y + (k + j);  out(0, r);
-13 LOD main_x
-14 MLT main_y
-15 ADD main_k
-16 ADD main_j
-17 OUT 0
+9 LOD main_x
+10 MLT main_y
+11 ADD main_k
+12 ADD main_j
+13 OUT 0
 // 41: r = x*y + (k - j);  out(0, r);
-18 LOD main_x
-19 MLT main_y
-20 ADD main_k
-21 P_NEG_M main_j
-22 S_ADD
-23 OUT 0
+14 LOD main_x
+15 MLT main_y
+16 ADD main_k
+17 P_NEG_M main_j
+18 S_ADD
+19 OUT 0
 // 42: r = x*y - (k + j);  out(0, r);
-24 LOD main_x
-25 MLT main_y
-26 P_NEG_M main_k
-27 S_ADD
-28 P_NEG_M main_j
-29 S_ADD
-30 OUT 0
+20 LOD main_x
+21 MLT main_y
+22 P_NEG_M main_k
+23 S_ADD
+24 P_NEG_M main_j
+25 S_ADD
+26 OUT 0
 // 43: r = x*y - (k - j);  out(0, r);
-31 LOD main_x
-32 MLT main_y
-33 P_NEG_M main_k
-34 S_ADD
-35 ADD main_j
-36 OUT 0
+27 LOD main_x
+28 MLT main_y
+29 P_NEG_M main_k
+30 S_ADD
+31 ADD main_j
+32 OUT 0
 // 44: r = x*y - (k - 1);  out(0, r);
-37 LOD main_x
-38 MLT main_y
-39 P_NEG_M main_k
-40 S_ADD
-41 ADD 1
-42 OUT 0
+33 LOD main_x
+34 MLT main_y
+35 P_NEG_M main_k
+36 S_ADD
+37 ADD 1
+38 OUT 0
 // 45: r = x*y + (j - 7);  out(0, r);
-43 LOD main_x
-44 MLT main_y
-45 ADD main_j
-46 ADD -7
-47 OUT 0
+39 LOD main_x
+40 MLT main_y
+41 ADD main_j
+42 ADD -7
+43 OUT 0
 // 46: r = (k - 1) + x*y;  out(0, r);
-48 LOD main_x
-49 MLT main_y
-50 ADD main_k
-51 ADD -1
-52 OUT 0
+44 LOD main_x
+45 MLT main_y
+46 ADD main_k
+47 ADD -1
+48 OUT 0
 // 47: r = (k + j) - x*y;  out(0, r);
-53 LOD main_x
-54 MLT main_y
-55 NEG
-56 ADD main_k
-57 ADD main_j
-58 OUT 0
+49 LOD main_x
+50 MLT main_y
+51 NEG
+52 ADD main_k
+53 ADD main_j
+54 OUT 0
 // 48: r = x - (y + 1);    out(0, r);
-59 NEG_M main_y
-60 ADD main_x
-61 ADD -1
-62 OUT 0
+55 NEG_M main_y
+56 ADD main_x
+57 ADD -1
+58 OUT 0
 // 49: r = k - (j - 4);    out(0, r);
-63 NEG_M main_j
-64 ADD main_k
-65 ADD 4
-66 OUT 0
+59 NEG_M main_j
+60 ADD main_k
+61 ADD 4
+62 OUT 0
 // 50: out(0, g(x + 1, y * 3));
-67 LOD main_x
-68 ADD 1
-69 P_LOD main_y
-70 CAL g
-71 OUT 0
+63 LOD main_x
+64 ADD 1
+65 P_LOD main_y
+66 CAL g
+67 OUT 0
 // 51: v0 = 9;
-72 LOD 9
-73 SET v0
+68 LOD 9
+69 SET v0
 // 83: v32 = 9;
-74 LOD 9
-// 84: v33 = 9;
-75 SET v33
+70 LOD 9
 // 85: out(0, v0 + v33);
-76 LOD v0
-77 ADD v33
-78 OUT 0
+71 ADD v0
+72 OUT 0
 // 86: r = 9;
-79 LOD 9
+73 LOD 9
 // 87: out(0, r);
-80 OUT 0
+74 OUT 0
 // -3: END
-81 JMP fim
+75 JMP fim
+// 31: int g(int a, int b)
+76 POP
+// 33: return a * 2;
+77 MLT 2
+78 RET

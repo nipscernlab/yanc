@@ -1,14 +1,14 @@
 ## messages
 Info: interruption directive found at line 27
 Info on line 33: #TOAQUI marker registered (drives the cheguei pin)
-Info: 18 assembly instructions generated
-Info: 1 unreachable instructions removed
+Info: 16 assembly instructions generated
+Info: 1 jumps to the next instruction removed
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
 Info: implementing interruption handling
-Info: 17 instructions and 6 variables were found
+Info: 15 instructions and 6 variables were found
 Info: ULA resource -> integer adder
 Info: adding data output handling
-Info: ULA resource -> > operator for int
+Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 5% of the Assembly Instruction Set
 Info: using 5% of the ULA operations
@@ -32,15 +32,12 @@ lang C+-
 // 30: k = 0;
 7 LOD 0
 8 SET main_k
-// 31: while (k < 3)
-9 LOD main_k
-10 GRE 3
-11 JIZ fim
 // 34: k = k + 1;
-12 LOD main_k
-13 ADD 1
-14 SET main_k
+9 LOD main_k
+10 ADD 1
+11 SET main_k
 // 31: while (k < 3)
-15 JMP __Lwh1
+12 LES 2
+13 JIZ __Lwh1top
 // -3: END
-16 JMP fim
+14 JMP fim

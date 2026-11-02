@@ -11,17 +11,7 @@ NOP
 #arrayd q 1 4 3 1 2 3
 #arrayd c 3 2 2 1.5 3
 #arrayd c_i 4 2 2 -2.0 0.0
-#SHARE main_k loc_s
-JMP main
-@loc #arrayd loc_l 1 3 2 4 5
-LOD_V loc_l 1
-P_LOD_V loc_l 2
-S_ADD
-SET loc_s
-LOD 9
-SET_V loc_l 2
-LOD loc_s
-RET
+#SHARE loc_s main_k
 @main LOD 0
 SET main_k
 @__Lwh1 LOD main_k
@@ -78,3 +68,12 @@ OUT 0
 CAL loc
 OUT 0
 @fim JMP fim
+@loc #arrayd loc_l 1 3 2 4 5
+LOD_V loc_l 1
+P_LOD_V loc_l 2
+S_ADD
+SET loc_s
+LOD 9
+SET_V loc_l 2
+LOD loc_s
+RET

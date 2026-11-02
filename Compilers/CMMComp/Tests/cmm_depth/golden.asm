@@ -6,7 +6,13 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-JMP main
+@main @__Lwh1 INN 0
+P_LOD 2
+P_LOD 3
+CAL top
+OUT 0
+JMP __Lwh1
+@__Lwh1end @fim JMP fim
 @leaf SET_P leaf_b
 ADD leaf_b
 RET
@@ -24,10 +30,3 @@ CAL mid
 ADD top_b
 ADD top_c
 RET
-@main @__Lwh1 INN 0
-P_LOD 2
-P_LOD 3
-CAL top
-OUT 0
-JMP __Lwh1
-@__Lwh1end @fim JMP fim

@@ -7,12 +7,21 @@ Heads up on line 32: local array 'x' is initialized from file "atan_x.txt" only 
 Info: array initialization with file "atan_y.txt" for variable 'a' at line 33
 Heads up on line 33: local array 'a' is initialized from file "atan_y.txt" only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
 Heads up on line 25: variable 'idx' is int, but getting a float.
-Info: 72 assembly instructions generated
+Info: 66 assembly instructions generated
 Info: adding assembly macro for arc-tangent computation
 Info: 2 divisions, 5 words each for DIV/MOD and 4 for F_DIV (6 added)
-Info: 15 variables share 6 data words (9 saved)
+Info: 12 variables share 6 data words (6 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
 Info: 112 instructions and 2069 variables were found
+Info: filling array with 1000 values read from file "atan_x.txt"
+Info: largest approximation error in file 'atan_x.txt' is 0.00000011908996 on line 51
+Info: filling array with 1000 values read from file "atan_y.txt"
+Info: largest approximation error in file 'atan_y.txt' is -0.00000011740048 on line 9
+Info: adding array handling
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point adder
+Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: filling array with 49 values read from file "Arctan_LUT.txt"
 Info: largest approximation error in file 'Arctan_LUT.txt' is -0.00000005928844 on line 38
 Info: ULA resource -> float-point absolute operation
@@ -20,19 +29,10 @@ Info: ULA resource -> < operator for float
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float to int converter
-Info: adding array handling
-Info: ULA resource -> integer adder
-Info: ULA resource -> float-point adder
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point sign computation (standard library)
-Info: filling array with 1000 values read from file "atan_x.txt"
-Info: largest approximation error in file 'atan_x.txt' is 0.00000011908996 on line 51
-Info: filling array with 1000 values read from file "atan_y.txt"
-Info: largest approximation error in file 'atan_y.txt' is -0.00000011740048 on line 9
-Info: ULA resource -> > operator for int
-Info: adding stack memory for function calls
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 17% of the Assembly Instruction Set
+Info: using 18% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
@@ -49,142 +49,139 @@ lang C+-
 ## listing
 // -1: INTERNAL
 0 NOP
-// -2: void main();
-1 JMP main
-// 8: float arctan_LUT(float x)
-2 SET arctan_LUT_x
-// 12: float signo = x;
-3 LOD arctan_LUT_x
-4 SET arctan_LUT_signo
-// 13: x = abs(x);
-5 F_ABS_M arctan_LUT_x
-6 SET arctan_LUT_x
-// 17: float v0=0.0;
-7 LOD 0.0
-8 SET arctan_LUT_v0
-// 18: if (x > 1.0)
-9 LOD arctan_LUT_x
-10 F_LES 1.0
-11 JIZ __Lif1else
-// 20: x = 1/x;
-12 LOD arctan_LUT_x
-13 F_DIV 1.0
-14 NOP
-15 NOP
-16 F_QUO
-17 SET arctan_LUT_x
-// 21: v0 = 1.57079632679;
-18 LOD 1.57079632679
-19 SET arctan_LUT_v0
-// 24: idxf = 47.0*x;
-20 LOD 47.0
-21 F_MLT arctan_LUT_x
-22 SET arctan_LUT_idxf
-// 25: idx = idxf;
-23 F2I_M arctan_LUT_idxf
-24 SET arctan_LUT_idx
-// 26: x = atan_lut[idx];
-25 LDI arctan_LUT_atan_lut
-26 SET arctan_LUT_x
-// 27: return sign(signo, v0 - (x + (atan_lut[idx+1] - x) * (idxf - idx)));
-27 LOD arctan_LUT_idx
-28 ADD 1
-29 LDI arctan_LUT_atan_lut
-30 F_SU1 arctan_LUT_x
-31 P_I2F_M arctan_LUT_idx
-32 F_SU2 arctan_LUT_idxf
-33 SF_MLT
-34 F_ADD arctan_LUT_x
-35 F_SU2 arctan_LUT_v0
-36 F_SGN arctan_LUT_signo
-37 RET
 // 37: int j=0;
-38 LOD 0
-39 SET main_j
-// 38: while (j < 1000)
-40 LOD main_j
-41 GRE 1000
-42 JIZ __Lwh1end
+1 LOD 0
+2 SET main_j
 // 40: y = atan(x[j]);
-43 LOD main_j
-44 LDI main_x
-45 CAL __float_atan
-46 SET main_y
+3 LOD main_j
+4 LDI main_x
+5 CAL __float_atan
+6 SET main_y
 // 41: t = a[j];
-47 LOD main_j
-48 LDI main_a
-49 SET main_t
+7 LOD main_j
+8 LDI main_a
+9 SET main_t
 // 42: e = t - y;
-50 F_SU1 main_y
-51 SET main_e
+10 F_SU1 main_y
+11 SET main_e
 // 43: j++;
-52 LOD main_j
-53 ADD 1
-54 SET main_j
+12 LOD main_j
+13 ADD 1
+14 SET main_j
 // 38: while (j < 1000)
-55 JMP __Lwh1
+15 LES 999
+16 JIZ __Lwh1top
 // 46: j=0;
-56 LOD 0
-57 SET main_j
-// 47: while (j < 1000)
-58 LOD main_j
-59 GRE 1000
-60 JIZ fim
+17 LOD 0
+18 SET main_j
 // 49: y = arctan_LUT(x[j]);
-61 LOD main_j
-62 LDI main_x
-63 CAL arctan_LUT
-64 SET main_y
+19 LOD main_j
+20 LDI main_x
+21 CAL arctan_LUT
+22 SET main_y
 // 50: t = a[j];
-65 LOD main_j
-66 LDI main_a
-67 SET main_t
+23 LOD main_j
+24 LDI main_a
+25 SET main_t
 // 51: e = t - y;
-68 F_SU1 main_y
-69 SET main_e
+26 F_SU1 main_y
+27 SET main_e
 // 52: j++;
-70 LOD main_j
-71 ADD 1
-72 SET main_j
+28 LOD main_j
+29 ADD 1
+30 SET main_j
 // 47: while (j < 1000)
-73 JMP __Lwh2
+31 LES 999
+32 JIZ __Lwh2top
 // -3: END
-74 JMP fim
+33 JMP fim
+// 8: float arctan_LUT(float x)
+34 SET arctan_LUT_x
+// 12: float signo = x;
+35 SET arctan_LUT_signo
+// 13: x = abs(x);
+36 F_ABS_M arctan_LUT_x
+37 SET arctan_LUT_x
+// 17: float v0=0.0;
+38 LOD 0.0
+39 SET arctan_LUT_v0
+// 18: if (x > 1.0)
+40 LOD arctan_LUT_x
+41 F_LES 1.0
+42 JIZ __Lif1else
+// 20: x = 1/x;
+43 LOD arctan_LUT_x
+44 F_DIV 1.0
+45 NOP
+46 NOP
+47 F_QUO
+48 SET arctan_LUT_x
+// 21: v0 = 1.57079632679;
+49 LOD 1.57079632679
+50 SET arctan_LUT_v0
+// 24: idxf = 47.0*x;
+51 LOD 47.0
+52 F_MLT arctan_LUT_x
+53 SET arctan_LUT_idxf
+// 25: idx = idxf;
+54 F2I_M arctan_LUT_idxf
+55 SET arctan_LUT_idx
+// 26: x = atan_lut[idx];
+56 LDI arctan_LUT_atan_lut
+57 SET arctan_LUT_x
+// 27: return sign(signo, v0 - (x + (atan_lut[idx+1] - x) * (idxf - idx)));
+58 LOD arctan_LUT_idx
+59 ADD 1
+60 LDI arctan_LUT_atan_lut
+61 F_SU1 arctan_LUT_x
+62 P_I2F_M arctan_LUT_idx
+63 F_SU2 arctan_LUT_idxf
+64 SF_MLT
+65 F_ADD arctan_LUT_x
+66 F_SU2 arctan_LUT_v0
+67 F_SGN arctan_LUT_signo
+68 RET
 // library macros, no source line
-75 SET __atan_x
-76 F_ABS_M __atan_x
-77 SET __atan_ax
-78 F_LES 1.0
-79 SET __atan_big
-80 JIZ __L_atan_small
-81 LOD __atan_ax
-82 F_DIV 1.0
-83 NOP
-84 NOP
-85 F_QUO
-86 JMP __L_atan_haveT
-87 LOD __atan_ax
-88 SET __atan_t
-89 F_MLT __atan_t
-90 SET __atan_w
-91 LOD -0.012300666580
-92 F_MLT __atan_w
-93 F_ADD 0.054084934779
-94 F_MLT __atan_w
-95 F_ADD -0.117697073484
-96 F_MLT __atan_w
-97 F_ADD 0.194020561451
-98 F_MLT __atan_w
-99 F_ADD -0.332694520616
-100 F_MLT __atan_w
-101 F_ADD 0.999980069822
-102 F_MLT __atan_t
-103 SET __atan_p
-104 LOD __atan_big
-105 JIZ __L_atan_done
-106 LOD __atan_p
-107 F_SU2 1.5707963268
-108 JMP __L_atan_sign
-109 LOD __atan_p
+69 SET __atan_x
+70 F_ABS
+71 SET __atan_t
+72 F_LES 1.0
+73 JIZ __L_atan_small
+74 LOD __atan_t
+75 F_DIV 1.0
+76 NOP
+77 NOP
+78 F_QUO
+79 SET __atan_t
+80 F_MLT __atan_t
+81 SET __atan_w
+82 F_MLT -0.012300666580
+83 F_ADD 0.054084934779
+84 F_MLT __atan_w
+85 F_ADD -0.117697073484
+86 F_MLT __atan_w
+87 F_ADD 0.194020561451
+88 F_MLT __atan_w
+89 F_ADD -0.332694520616
+90 F_MLT __atan_w
+91 F_ADD 0.999980069822
+92 F_MLT __atan_t
+93 F_SU2 1.5707963268
+94 F_SGN __atan_x
+95 RET
+96 LOD __atan_t
+97 F_MLT __atan_t
+98 SET __atan_w
+99 F_MLT -0.012300666580
+100 F_ADD 0.054084934779
+101 F_MLT __atan_w
+102 F_ADD -0.117697073484
+103 F_MLT __atan_w
+104 F_ADD 0.194020561451
+105 F_MLT __atan_w
+106 F_ADD -0.332694520616
+107 F_MLT __atan_w
+108 F_ADD 0.999980069822
+109 F_MLT __atan_t
 110 F_SGN __atan_x
 111 RET

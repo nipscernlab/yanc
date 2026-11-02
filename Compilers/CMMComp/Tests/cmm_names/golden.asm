@@ -26,13 +26,11 @@ SET fim
 #array g 2 2
 @main LOD 0
 SET main_k
-@__Lwh1 LOD main_k
-GRE 3
-JIZ __Lwh1end
-LOD main_k
+@__Lwh1top LOD main_k
 ADD 1
 SET main_k
-JMP __Lwh1
+LES 2
+JIZ __Lwh1top
 @__Lwh1end LOD Lwh1
 ADD main_k
 OUT 0

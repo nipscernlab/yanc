@@ -7,9 +7,9 @@ Info: constant -0.7853982 on line 20 approximated to -0.78539824485778809 (error
 Info: 45 assembly instructions generated
 Info: adding assembly macro for tangent computation
 Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (3 added)
-Info: 9 variables share 4 data words (5 saved)
+Info: 6 variables share 3 data words (3 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 92 instructions and 23 variables were found
+Info: 98 instructions and 22 variables were found
 Info: adding stack memory for function calls
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float to int converter
@@ -96,38 +96,44 @@ lang C+-
 54 F_SU2 __tan_x
 55 SET __tan_r
 56 F_ABS
-57 SET __tan_a
+57 SET __tan_u
 58 F_LES 0.785398163
-59 SET __tan_fold
-60 JIZ __L_tan_inner
-61 LOD __tan_a
-62 F_SU2 1.5707963268
-63 JMP __L_tan_haveU
-64 LOD __tan_a
-65 SET __tan_u
-66 F_MLT __tan_u
-67 SET __tan_w
-68 LOD 0.019691612742
+59 JIZ __L_tan_inner
+60 LOD __tan_u
+61 F_SU2 1.5707963268
+62 SET __tan_u
+63 F_MLT __tan_u
+64 SET __tan_w
+65 F_MLT 0.019691612742
+66 F_ADD 0.013512594373
+67 F_MLT __tan_w
+68 F_ADD 0.056704928952
 69 F_MLT __tan_w
-70 F_ADD 0.013512594373
+70 F_ADD 0.132942907215
 71 F_MLT __tan_w
-72 F_ADD 0.056704928952
+72 F_ADD 0.333353228230
 73 F_MLT __tan_w
-74 F_ADD 0.132942907215
-75 F_MLT __tan_w
-76 F_ADD 0.333353228230
-77 F_MLT __tan_w
-78 F_ADD 0.999999838962
-79 F_MLT __tan_u
-80 SET __tan_p
-81 LOD __tan_fold
-82 JIZ __L_tan_done
-83 LOD __tan_p
-84 F_DIV 1.0
-85 NOP
-86 NOP
-87 F_QUO
-88 JMP __L_tan_sign
-89 LOD __tan_p
-90 F_SGN __tan_r
-91 RET
+74 F_ADD 0.999999838962
+75 F_MLT __tan_u
+76 F_DIV 1.0
+77 NOP
+78 NOP
+79 F_QUO
+80 F_SGN __tan_r
+81 RET
+82 LOD __tan_u
+83 F_MLT __tan_u
+84 SET __tan_w
+85 F_MLT 0.019691612742
+86 F_ADD 0.013512594373
+87 F_MLT __tan_w
+88 F_ADD 0.056704928952
+89 F_MLT __tan_w
+90 F_ADD 0.132942907215
+91 F_MLT __tan_w
+92 F_ADD 0.333353228230
+93 F_MLT __tan_w
+94 F_ADD 0.999999838962
+95 F_MLT __tan_u
+96 F_SGN __tan_r
+97 RET

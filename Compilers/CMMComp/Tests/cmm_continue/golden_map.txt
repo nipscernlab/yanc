@@ -1,18 +1,17 @@
 ## messages
-Info: 70 assembly instructions generated
+Info: 69 assembly instructions generated
 Info: 1 unreachable instructions removed
 Info: 1 jumps to the next instruction removed
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 68 instructions and 12 variables were found
-Info: ULA resource -> > operator for int
+Info: 67 instructions and 13 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> ^ operator
 Info: adding data output handling
 Info: ULA resource -> < operator for int
 Info: ULA resource -> integer multiplier
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 8% of the Assembly Instruction Set
-Info: using 13% of the ULA operations
+Info: using 7% of the Assembly Instruction Set
+Info: using 11% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
 main k 1
@@ -21,83 +20,82 @@ lang C+-
 ## listing
 // -1: INTERNAL
 0 NOP
-// 32: k = 0;
+// 33: k = 0;
 1 LOD 0
 2 SET main_k
-// 33: while (k < 5) { k = k + 1; if (k == 3) continue; out(0, k); }
+// 34: while (k < 5) { k = k + 1; if (k == 3) continue; out(0, k); }
 3 LOD main_k
-4 GRE 5
-5 JIZ __Lwh2end
-6 LOD main_k
-7 ADD 1
-8 SET main_k
-9 LOD 3
-10 XOR main_k
-11 JIZ __Lwh2
-12 LOD main_k
-13 OUT 0
-14 JMP __Lwh2
-// 37: for (k = 0; k < 6; k = k + 1) { if (k == 2) continue; out(0, 10 + k); }
-15 LOD 0
-16 SET main_k
-17 LOD 2
-18 XOR main_k
-19 JIZ __Lwh3cont
-20 LOD 10
-21 ADD main_k
-22 OUT 0
-23 LOD main_k
-24 ADD 1
-25 SET main_k
-26 LES 5
-27 JIZ __Lwh3
-// 40: for (k = 0; k < 3; k = k + 1)
-28 LOD 0
-29 SET main_k
-// 42: for (n = 0; n < 3; n = n + 1) { if (n == 1) continue; out(0, 20 + k * 10 + n); }
-30 LOD 0
-31 SET main_n
-32 LOD 1
-33 XOR main_n
-34 JIZ __Lwh5cont
-35 LOD main_k
-36 MLT 10
-37 ADD 20
-38 ADD main_n
-39 OUT 0
-40 LOD main_n
-41 ADD 1
-42 SET main_n
-43 LES 2
-44 JIZ __Lwh5
-// 40: for (k = 0; k < 3; k = k + 1)
-45 LOD main_k
-46 ADD 1
-47 SET main_k
-48 LES 2
-49 JIZ __Lwh4
-// 48: for (k = 0; k < 4; k = k + 1)
-50 LOD 0
-51 SET main_k
-// 50: switch (k) {
-52 LOD main_k
-53 ADD -2
-54 JIZ __Lwh6cont
-// 52: default: out(0, 50 + k);
-55 LOD 50
-56 ADD main_k
-57 OUT 0
-// 54: out(0, 60 + k);
-58 LOD 60
-59 ADD main_k
-60 OUT 0
-// 48: for (k = 0; k < 4; k = k + 1)
-61 LOD main_k
-62 ADD 1
-63 SET main_k
-64 LES 3
-65 JIZ __Lwh6
-// 29: while (1)
-66 JMP __Lwh1
+4 ADD 1
+5 SET main_k
+6 LOD 3
+7 XOR main_k
+8 JIZ __Lwh2
+9 LOD main_k
+10 OUT 0
+11 LOD main_k
+12 LES 4
+13 JIZ __Lwh2top
+// 38: for (k = 0; k < 6; k = k + 1) { if (k == 2) continue; out(0, 10 + k); }
+14 LOD 0
+15 SET main_k
+16 LOD 2
+17 XOR main_k
+18 JIZ __Lwh3cont
+19 LOD 10
+20 ADD main_k
+21 OUT 0
+22 LOD main_k
+23 ADD 1
+24 SET main_k
+25 LES 5
+26 JIZ __Lwh3
+// 41: for (k = 0; k < 3; k = k + 1)
+27 LOD 0
+28 SET main_k
+// 43: for (n = 0; n < 3; n = n + 1) { if (n == 1) continue; out(0, 20 + k * 10 + n); }
+29 LOD 0
+30 SET main_n
+31 LOD 1
+32 XOR main_n
+33 JIZ __Lwh5cont
+34 LOD main_k
+35 MLT 10
+36 ADD 20
+37 ADD main_n
+38 OUT 0
+39 LOD main_n
+40 ADD 1
+41 SET main_n
+42 LES 2
+43 JIZ __Lwh5
+// 41: for (k = 0; k < 3; k = k + 1)
+44 LOD main_k
+45 ADD 1
+46 SET main_k
+47 LES 2
+48 JIZ __Lwh4
+// 49: for (k = 0; k < 4; k = k + 1)
+49 LOD 0
+50 SET main_k
+// 51: switch (k) {
+51 LOD main_k
+52 ADD -2
+53 JIZ __Lwh6cont
+// 53: default: out(0, 50 + k);
+54 LOD 50
+55 ADD main_k
+56 OUT 0
+// 55: out(0, 60 + k);
+57 LOD 60
+58 ADD main_k
+59 OUT 0
+// 49: for (k = 0; k < 4; k = k + 1)
+60 LOD main_k
+61 ADD 1
+62 SET main_k
+63 LES 3
+64 JIZ __Lwh6
+// 30: while (1)
+65 JMP __Lwh1
 // -3: END
-67 JMP fim
+66 JMP fim

@@ -6,36 +6,11 @@ NOP
 #NBMANT 10
 #NBEXPO 5
 #NUGAIN 128
-#SHARE three_mixed_r_i one_comp_c_i
-#SHARE three_mixed_r one_comp_c_i
-#SHARE three_mixed_q one_comp_c
 #SHARE main_v4_i main_v4
-#SHARE main_v5 one_comp_c_i
-JMP main
-@noargs_void LOD 7
-OUT 0
-RET
-@noargs_int LOD 42
-RET
-@one_int ADD 1
-RET
-@one_float F_ADD 0.5
-RET
-@one_comp SET_P one_comp_c_i
-SET one_comp_c
-P_LOD one_comp_c_i
-RET
-@three_mixed SET_P three_mixed_r_i
-SET_P three_mixed_r
-SET_P three_mixed_q
-SET three_mixed_p
-OUT 0
-F2I_M three_mixed_q
-OUT 0
-F2I_M three_mixed_r
-OUT 0
-LOD three_mixed_p
-RET
+#SHARE one_comp_c_i main_v5
+#SHARE three_mixed_r_i main_v5
+#SHARE three_mixed_r main_v5
+#SHARE three_mixed_q one_comp_c
 @main @__Lwh1 CAL noargs_void
 CAL noargs_int
 SET main_v1
@@ -68,3 +43,27 @@ LOD main_v5
 OUT 0
 JMP __Lwh1
 @__Lwh1end @fim JMP fim
+@noargs_void LOD 7
+OUT 0
+RET
+@noargs_int LOD 42
+RET
+@one_int ADD 1
+RET
+@one_float F_ADD 0.5
+RET
+@one_comp SET_P one_comp_c_i
+SET one_comp_c
+P_LOD one_comp_c_i
+RET
+@three_mixed SET_P three_mixed_r_i
+SET_P three_mixed_r
+SET_P three_mixed_q
+SET three_mixed_p
+OUT 0
+F2I_M three_mixed_q
+OUT 0
+F2I_M three_mixed_r
+OUT 0
+LOD three_mixed_p
+RET

@@ -1,11 +1,11 @@
 ## messages
-Info: 13 assembly instructions generated
+Info: 11 assembly instructions generated
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 13 instructions and 4 variables were found
-Info: ULA resource -> > operator for int
+Info: 11 instructions and 4 variables were found
 Info: adding cade (CAD), which takes a value from the partner processor
 Info: adding data output handling
 Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 6% of the Assembly Instruction Set
 Info: using 5% of the ULA operations
@@ -19,18 +19,15 @@ lang C+-
 // 12: int n = 0;
 1 LOD 0
 2 SET main_n
-// 13: while (n < 16)
-3 LOD main_n
-4 GRE 16
-5 JIZ fim
 // 15: out(0, cade(0));
-6 CAD 0
-7 OUT 0
+3 CAD 0
+4 OUT 0
 // 16: n++;
-8 LOD main_n
-9 ADD 1
-10 SET main_n
+5 LOD main_n
+6 ADD 1
+7 SET main_n
 // 13: while (n < 16)
-11 JMP __Lwh1
+8 LES 15
+9 JIZ __Lwh1top
 // -3: END
-12 JMP fim
+10 JMP fim

@@ -425,11 +425,12 @@ static int jump_only_target(stmt_node *s, char *buf, size_t sz)
 //   k > c  ->  (c+1) > k        k >= c  ->  c > k
 //   k != c ->  c == k           k == c  ->  c ^ k
 // NULL when the loop is not of that form (the walker keeps the top test).
-static expr_node *for_bottom_test(stmt_node *n)
+// init is the assignment that runs right before the loop: a for's own, or the
+// statement before a while in its block (`k = 0; while (k < 10) ...`).
+static expr_node *for_bottom_test(stmt_node *n, stmt_node *init)
 {
-    stmt_node *init = n->then_body;
     expr_node *c = n->cond;
-    if (!init || init->kind != STMT_ASSIGN || !n->else_body || !c || c->kind != EXPR_BINOP) return NULL;
+    if (!init || init->kind != STMT_ASSIGN || !c || c->kind != EXPR_BINOP) return NULL;
     if (!init->rhs || init->rhs->kind != EXPR_LITERAL || v_table[init->id].type != 1) return NULL;
     expr_node *var = c->left, *lit = c->right; int op = c->op;
     if (var && var->kind == EXPR_LITERAL && lit && lit->kind == EXPR_VAR) {   // c OP k: mirror
@@ -905,13 +906,12 @@ static expr comp_partwise_emit(expr_node *n, int from, int to)
 
 // Constant folding. const_eval recursively evaluates a subtree as a
 // compile-time int constant: it succeeds (returns 1, sets *val) only for an int
-// literal, or +/-/*/&/|/^ of foldable constants whose result -- AT EVERY LEVEL
-// -- stays non-negative and within the signed NUBITS-bit range. That guard is
-// what makes the C-side arithmetic match the hardware: if any intermediate
-// would overflow or go negative, we bail and let the runtime op handle the
-// NUBITS wraparound / negation (so e.g. (30000+30000) is NOT folded). Float is
-// never folded (the YANC float is not IEEE-bit-compatible); div/mod/shift/
-// comparison/logical ops are left to the runtime too.
+// literal, or + - * & | ^ << >> >>> of foldable constants whose result -- AT
+// EVERY LEVEL -- stays within [-max, max] (the bitwise ops and the shifts take
+// only non-negative operands). That guard is what makes the C-side arithmetic
+// match the hardware: past it we bail and let the runtime op handle the
+// wraparound. Float is never folded (the YANC float is not IEEE-bit-compatible);
+// div/mod/comparison/logical ops are left to the runtime too.
 static int const_eval(expr_node *n, long *val)
 {
     if (!n) return 0;
@@ -951,6 +951,12 @@ static int const_eval(expr_node *n, long *val)
             case OP_AND: if (a < 0 || b < 0) return 0; r = a & b; break;
             case OP_OR:  if (a < 0 || b < 0) return 0; r = a | b; break;
             case OP_XOR: if (a < 0 || b < 0) return 0; r = a ^ b; break;
+            // shifts the same way: a non-negative value, by less than the
+            // word, where >> and >>> agree (the range check below stops a <<
+            // that would reach the sign bit)
+            case OP_SHL:  if (a < 0 || b < 0 || b >= nubits - 1) return 0; r = a << b; break;
+            case OP_SHR:
+            case OP_SSHR: if (a < 0 || b < 0 || b >= nubits) return 0;     r = a >> b; break;
             default: return 0;
         }
         if (r < min || r > max) return 0;
@@ -1136,6 +1142,21 @@ static expr ast_emit_expr_impl(expr_node *n)
             } else {
                 a = ast_emit_expr(n->left );
                 b = ast_emit_expr(n->right);
+            }
+            // both int operands in memory and the acc already holding the
+            // right one (s = s + t after SET t): swap them, so the load the
+            // operator emits first is the one the peephole drops (ADD s, not
+            // LOD s; ADD t). Only ops whose result is the same word either
+            // way round; not float (F_ADD / F_MLT are not checked for that).
+            // Two variables only: with a literal the operators already put
+            // the variable first (oper_bitw: 0 ^ k is LOD k; XOR 0)
+            if (acc_ok == 0 && n->left->kind == EXPR_VAR && n->right->kind == EXPR_VAR
+                && a.id != 0 && b.id != 0 && a.type == 1 && b.type == 1
+                && (n->op == OP_ADD || n->op == OP_MUL || n->op == OP_AND || n->op == OP_OR
+                    || n->op == OP_XOR || n->op == OP_EQ || n->op == OP_LAN || n->op == OP_LOR)
+                && acc_holds(v_table[b.id].name) && !acc_holds(v_table[a.id].name))
+            {
+                expr t = a; a = b; b = t;
             }
             switch (n->op) {
                 case OP_ADD:  return oper_soma (a, b);
@@ -1642,12 +1663,10 @@ stmt_node *stmt_declar_dirac(int id_var, int id_N, expr_node *rhs)
     return n;
 }
 
-stmt_node *stmt_func_header(int func_id, int needs_jmp_main,
-                            int *params, int n_params)
+stmt_node *stmt_func_header(int func_id, int *params, int n_params)
 {
     stmt_node *n = snode_new(STMT_FUNC_HEADER);
     n->id       = func_id;
-    n->op       = needs_jmp_main;
     n->params   = params;
     n->n_params = n_params;
     return n;
@@ -1760,6 +1779,25 @@ static void dirac_out(stmt_node *n)
     dirac_loops_out(n->id, r, n->op, n->line);
 }
 
+// the condition of an if, while or do, for a JIZ to its false side: an int
+// a != b becomes a ^ b, zero exactly when the two are equal, one XOR where
+// a != b as a value is EQU; LIN (two literals still fold as a whole)
+static expr cond_expr(expr_node *c)
+{
+    if (c->kind == EXPR_BINOP && c->op == OP_NE
+        && !(c->left->kind == EXPR_LITERAL && c->right->kind == EXPR_LITERAL))
+    {
+        typecheck_expr(c);
+        if (c->left->type == 1 && c->right->type == 1)
+        {
+            expr a = ast_emit_expr(c->left);
+            expr b = ast_emit_expr(c->right);
+            return oper_bitw(a, b, 2);
+        }
+    }
+    return ast_emit_expr(c);
+}
+
 static void emit_cond_int_load(expr e, int is_switch)
 {
     const char *msg_float = MSG_WARN_CASE_FLOAT;       // a switch index still converts (truncates)
@@ -1851,6 +1889,8 @@ static int falls_through(const stmt_node *n)
     }
 }
 
+static stmt_node *stmt_prev;   // set by STMT_BLOCK for the kid it emits next
+
 void stmt_emit(stmt_node *n)
 {
     // Idempotent guard: once a node has been emitted, subsequent walker
@@ -1869,6 +1909,12 @@ void stmt_emit(stmt_node *n)
     emit_line = n->line;
     int saved_line_num = line_num;   // keep warning / MSG_INFO line in sync (see ast_emit_expr)
     line_num = n->line - 1;
+
+    // the statement emitted right before this one in the same block, nothing
+    // between (a while uses it as its for-init: see for_bottom_test); a
+    // statement reached any other way has none
+    stmt_node *prev = stmt_prev;
+    stmt_prev = NULL;
 
     switch (n->kind)
     {
@@ -2032,7 +2078,11 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_BLOCK:
-            for (int i = 0; i < n->kids_n; i++) stmt_emit(n->kids[i]);
+            for (int i = 0; i < n->kids_n; i++)
+            {
+                stmt_prev = i ? n->kids[i - 1] : NULL;
+                stmt_emit(n->kids[i]);
+            }
             break;
 
         case STMT_IF: {
@@ -2056,7 +2106,7 @@ void stmt_emit(stmt_node *n)
                     break;
                 }
             }
-            emit_cond_int_load(ast_emit_expr(n->cond), 0);
+            emit_cond_int_load(cond_expr(n->cond), 0);
             add_instr("JIZ __Lif%delse\n", n->id);
             acc_ok = 0;
 
@@ -2077,7 +2127,26 @@ void stmt_emit(stmt_node *n)
         }
 
         case STMT_WHILE: {
-            expr_node *bt = for_bottom_test(n);
+            // a while right after `k = c0;` in its block, with no step: the
+            // same bottom test as a for. Its continue jumps to Lwh<n> (the
+            // loop's top for a while), so Lwh<n> goes right before the test,
+            // only when a continue needs it (a label clears the acc peephole,
+            // which drops the test's LOD k after the body's SET k), and the
+            // body starts at Lwh<n>top
+            expr_node *wt = !n->then_body && !n->else_body ? for_bottom_test(n, prev) : NULL;
+            if (wt) {
+                add_sinst(0, "@__Lwh%dtop ", n->id);
+                acc_ok = 0;
+                stmt_emit(n->body);
+                if (has_break(n->body, STMT_CONTINUE, n->id)) add_sinst(0, "@__Lwh%d ", n->id);
+                emit_cond_int_load(ast_emit_expr(wt), 0);
+                add_instr("JIZ __Lwh%dtop\n", n->id);  // condition holds -> next turn
+                add_sinst(0, "@__Lwh%dend ", n->id);
+                acc_ok = 0;
+                expr_free(wt);
+                break;
+            }
+            expr_node *bt = n->else_body ? for_bottom_test(n, n->then_body ? n->then_body : prev) : NULL;
             if (bt) {                                // for (k = c0; k < c1; ...): see for_bottom_test
                 add_sinst(0, "@__Lwh%d ", n->id);
                 acc_ok = 0;
@@ -2093,7 +2162,7 @@ void stmt_emit(stmt_node *n)
             }
             add_sinst(0, "@__Lwh%d ", n->id);
             if (!is_const_true(n->cond)) {          // while (1): nothing to test
-                emit_cond_int_load(ast_emit_expr(n->cond), 0);
+                emit_cond_int_load(cond_expr(n->cond), 0);
                 add_instr("JIZ __Lwh%dend\n", n->id);
             }
             acc_ok = 0;
@@ -2126,7 +2195,7 @@ void stmt_emit(stmt_node *n)
 
             if (n->op) add_sinst(0, "@__Lwh%dcont ", n->id);   // continue target
             if (!is_const_true(n->cond)) {                     // while (1): no test
-                emit_cond_int_load(ast_emit_expr(n->cond), 0);
+                emit_cond_int_load(cond_expr(n->cond), 0);
                 add_instr("JIZ __Lwh%dend\n", n->id);           // condition false -> exit
             }
             add_instr("JMP __Lwh%d\n",    n->id);   // condition true  -> loop
@@ -2272,7 +2341,8 @@ void stmt_emit(stmt_node *n)
 
         case STMT_CONTINUE:
             // for: jump to the step label (Lwh<n>cont) so the step runs before
-            // the next condition test; while: jump straight to the top.
+            // the next condition test; while: jump to Lwh<n>, its top, or its
+            // test when it tests at the bottom (STMT_WHILE).
             if (n->op) add_instr("JMP __Lwh%dcont\n", n->id);
             else       add_instr("JMP __Lwh%d\n",     n->id);
             break;
@@ -2296,17 +2366,14 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_FUNC_HEADER: {
-            // Function prologue. Emits, in order:
-            //   - JMP main\n             (only when this is the first non-main
-            //                             function: control falls through at
-            //                             reset, so we redirect to main)
+            // Function prologue (main comes first in the program, prog_emit,
+            // so no JMP main is needed to reach it). Emits, in order:
             //   - @<funcname>            (label)
             //   - SET_P <p[k]>           (last-to-second param, with imag
             //                             half first when the param is comp)
             //   - SET   <p[0]>           (first param)
             // Mirrors the pre-AST pattern that declar_fun / declar_fst /
             // set_par used to do inline at parse time.
-            if (n->op) add_sinst(-2, "JMP main\n");
             add_sinst(0, "@%s ", v_table[n->id].name);
             for (int i = n->n_params - 1; i >= 1; i--)
             {

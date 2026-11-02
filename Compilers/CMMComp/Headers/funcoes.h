@@ -7,7 +7,7 @@
 // state variables ------------------------------------------------------------
 
 extern char fname[512];             // name of the function currently being parsed
-extern int  mainok;                 // main function status: 0 -> undefined, 1 -> resolved (how it will be called)
+extern int  mainok;                 // 1 once a function named main is declared
 extern int  fun_id;                 // stores the id of the function being used
 extern int  ret_ok;                 // set by STMT_RETURN walker when a `return` statement fires
 extern int  fun_parse;              // function being walked (set by STMT_FUNC walker; declar_ret reads it)

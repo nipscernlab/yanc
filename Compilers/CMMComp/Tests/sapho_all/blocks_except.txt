@@ -2,6 +2,6 @@
 # or they need a second processor.
 # Scripts/check_blocks.py fails if one of these IS instantiated (stale list).
 SF_SCL   F_SCL is reached only inside the exp/log macros, always with a memory operand
-XPO_M    XPO is reached only inside the log macro, always on the accumulator
+XPO      XPO is reached only inside the log macro, always with a memory operand (XPO_M)
 TOM      toma needs a partner processor: alone it waits forever (docs/design/toma-and-cade.md)
 CAD      cade needs a partner processor: alone it waits forever (docs/design/toma-and-cade.md)

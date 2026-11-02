@@ -8,13 +8,11 @@ NOP
 #NUGAIN 128
 @main LOD 0
 SET main_n
-@__Lwh1 LOD main_n
-GRE 16
-JIZ fim
-CAD 0
+@__Lwh1top CAD 0
 OUT 0
 LOD main_n
 ADD 1
 SET main_n
-JMP __Lwh1
+LES 15
+JIZ __Lwh1top
 @__Lwh1end @fim JMP fim

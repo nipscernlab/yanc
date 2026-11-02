@@ -29,10 +29,8 @@ LOD_V a 2
 OUT 0
 LOD 15
 OUT 0
-LOD 4
-SHL 1
-OUT 0
 LOD 16
+OUT 0
 ADD -16
 JIZ __sw_body_1_1
 ADD 8

@@ -3,9 +3,9 @@ Info: 306 assembly instructions generated
 Info: adding assembly macro for arc-tangent computation
 Info: adding assembly macro for natural-logarithm computation
 Info: 12 divisions, 5 words each for DIV/MOD and 4 for F_DIV (36 added)
-Info: 28 variables share 10 data words (18 saved)
+Info: 24 variables share 9 data words (15 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 416 instructions and 34 variables were found
+Info: 416 instructions and 33 variables were found
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float-point adder
 Info: adding stack memory for function calls
@@ -378,80 +378,80 @@ lang C+-
 335 JMP fim
 // library macros, no source line
 336 SET __atan_x
-337 F_ABS_M __atan_x
-338 SET __atan_ax
+337 F_ABS
+338 SET __atan_t
 339 F_LES 1.0
-340 SET __atan_big
-341 JIZ __L_atan_small
-342 LOD __atan_ax
-343 F_DIV 1.0
+340 JIZ __L_atan_small
+341 LOD __atan_t
+342 F_DIV 1.0
+343 NOP
 344 NOP
-345 NOP
-346 F_QUO
-347 JMP __L_atan_haveT
-348 LOD __atan_ax
-349 SET __atan_t
-350 F_MLT __atan_t
-351 SET __atan_w
-352 LOD -0.012300666580
+345 F_QUO
+346 SET __atan_t
+347 F_MLT __atan_t
+348 SET __atan_w
+349 F_MLT -0.012300666580
+350 F_ADD 0.054084934779
+351 F_MLT __atan_w
+352 F_ADD -0.117697073484
 353 F_MLT __atan_w
-354 F_ADD 0.054084934779
+354 F_ADD 0.194020561451
 355 F_MLT __atan_w
-356 F_ADD -0.117697073484
+356 F_ADD -0.332694520616
 357 F_MLT __atan_w
-358 F_ADD 0.194020561451
-359 F_MLT __atan_w
-360 F_ADD -0.332694520616
-361 F_MLT __atan_w
-362 F_ADD 0.999980069822
-363 F_MLT __atan_t
-364 SET __atan_p
-365 LOD __atan_big
-366 JIZ __L_atan_done
-367 LOD __atan_p
-368 F_SU2 1.5707963268
-369 JMP __L_atan_sign
-370 LOD __atan_p
-371 F_SGN __atan_x
-372 RET
-373 SET __log_x
-374 F_LES 0.0
-375 JIZ __L_log_zero
-376 LOD __log_x
-377 XPO
-378 SET __log_e
-379 NEG
-380 SET __log_ne
-381 LOD __log_x
-382 F_SCL __log_ne
-383 SET __log_m
-384 F_ADD 1.0
-385 SET __log_t2
-386 LOD __log_m
-387 F_SU1 1.0
-388 SET __log_t1
-389 LOD __log_t2
-390 F_DIV __log_t1
-391 NOP
-392 NOP
-393 F_QUO
-394 SET __log_u
-395 F_MLT __log_u
-396 SET __log_w
-397 LOD 0.1111111111
-398 F_MLT __log_w
-399 F_ADD 0.1428571429
-400 F_MLT __log_w
-401 F_ADD 0.2
+358 F_ADD 0.999980069822
+359 F_MLT __atan_t
+360 F_SU2 1.5707963268
+361 F_SGN __atan_x
+362 RET
+363 LOD __atan_t
+364 F_MLT __atan_t
+365 SET __atan_w
+366 F_MLT -0.012300666580
+367 F_ADD 0.054084934779
+368 F_MLT __atan_w
+369 F_ADD -0.117697073484
+370 F_MLT __atan_w
+371 F_ADD 0.194020561451
+372 F_MLT __atan_w
+373 F_ADD -0.332694520616
+374 F_MLT __atan_w
+375 F_ADD 0.999980069822
+376 F_MLT __atan_t
+377 F_SGN __atan_x
+378 RET
+379 SET __log_x
+380 F_LES 0.0
+381 JIZ __L_log_zero
+382 XPO_M __log_x
+383 SET __log_e
+384 NEG
+385 SET __log_ne
+386 LOD __log_x
+387 F_SCL __log_ne
+388 SET __log_m
+389 F_SU1 1.0
+390 SET __log_t1
+391 LOD __log_m
+392 F_ADD 1.0
+393 F_DIV __log_t1
+394 NOP
+395 NOP
+396 F_QUO
+397 SET __log_u
+398 F_MLT __log_u
+399 SET __log_w
+400 F_MLT 0.2222222222
+401 F_ADD 0.2857142858
 402 F_MLT __log_w
-403 F_ADD 0.3333333333
+403 F_ADD 0.4
 404 F_MLT __log_w
-405 F_ADD 1.0
-406 F_MLT __log_u
-407 F_MLT 2.0
-408 SET __log_lm
-409 LOD __log_e
-410 I2F
+405 F_ADD 0.6666666666
+406 F_MLT __log_w
+407 F_ADD 2.0
+408 F_MLT __log_u
+409 SET __log_lm
+410 I2F_M __log_e
 411 F_MLT 0.6931471806
 412 F_ADD __log_lm
 413 RET

@@ -3,9 +3,9 @@ Info: 113 assembly instructions generated
 Info: adding assembly macro for exponential computation
 Info: adding assembly macro for natural-logarithm computation
 Info: 2 divisions, 5 words each for DIV/MOD and 4 for F_DIV (6 added)
-Info: 19 variables share 4 data words (15 saved)
+Info: 18 variables share 4 data words (14 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 186 instructions and 24 variables were found
+Info: 179 instructions and 24 variables were found
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float to int converter
 Info: adding data output handling
@@ -168,61 +168,54 @@ lang C+-
 125 F_MLT 0.6931471806
 126 F_SU2 __exp_x
 127 SET __exp_r
-128 LOD 0.0013888889
-129 F_MLT __exp_r
-130 F_ADD 0.0083333333
-131 F_MLT __exp_r
-132 F_ADD 0.0416666667
-133 F_MLT __exp_r
-134 F_ADD 0.1666666667
-135 F_MLT __exp_r
-136 F_ADD 0.5
-137 F_MLT __exp_r
-138 F_ADD 1.0
-139 F_MLT __exp_r
-140 F_ADD 1.0
-141 F_SCL __exp_n
-142 RET
-143 SET __log_x
-144 F_LES 0.0
-145 JIZ __L_log_zero
-146 LOD __log_x
-147 XPO
-148 SET __log_e
-149 NEG
-150 SET __log_ne
-151 LOD __log_x
-152 F_SCL __log_ne
-153 SET __log_m
-154 F_ADD 1.0
-155 SET __log_t2
-156 LOD __log_m
-157 F_SU1 1.0
-158 SET __log_t1
-159 LOD __log_t2
-160 F_DIV __log_t1
-161 NOP
-162 NOP
-163 F_QUO
-164 SET __log_u
-165 F_MLT __log_u
-166 SET __log_w
-167 LOD 0.1111111111
-168 F_MLT __log_w
-169 F_ADD 0.1428571429
-170 F_MLT __log_w
-171 F_ADD 0.2
-172 F_MLT __log_w
-173 F_ADD 0.3333333333
-174 F_MLT __log_w
-175 F_ADD 1.0
-176 F_MLT __log_u
-177 F_MLT 2.0
-178 SET __log_lm
-179 LOD __log_e
-180 I2F
-181 F_MLT 0.6931471806
-182 F_ADD __log_lm
-183 RET
-184 LOD 0.0
-185 RET
+128 F_MLT 0.0013888889
+129 F_ADD 0.0083333333
+130 F_MLT __exp_r
+131 F_ADD 0.0416666667
+132 F_MLT __exp_r
+133 F_ADD 0.1666666667
+134 F_MLT __exp_r
+135 F_ADD 0.5
+136 F_MLT __exp_r
+137 F_ADD 1.0
+138 F_MLT __exp_r
+139 F_ADD 1.0
+140 F_SCL __exp_n
+141 RET
+142 SET __log_x
+143 F_LES 0.0
+144 JIZ __L_log_zero
+145 XPO_M __log_x
+146 SET __log_e
+147 NEG
+148 SET __log_ne
+149 LOD __log_x
+150 F_SCL __log_ne
+151 SET __log_m
+152 F_SU1 1.0
+153 SET __log_t1
+154 LOD __log_m
+155 F_ADD 1.0
+156 F_DIV __log_t1
+157 NOP
+158 NOP
+159 F_QUO
+160 SET __log_u
+161 F_MLT __log_u
+162 SET __log_w
+163 F_MLT 0.2222222222
+164 F_ADD 0.2857142858
+165 F_MLT __log_w
+166 F_ADD 0.4
+167 F_MLT __log_w
+168 F_ADD 0.6666666666
+169 F_MLT __log_w
+170 F_ADD 2.0
+171 F_MLT __log_u
+172 SET __log_lm
+173 I2F_M __log_e
+174 F_MLT 0.6931471806
+175 F_ADD __log_lm
+176 RET
+177 LOD 0.0
+178 RET

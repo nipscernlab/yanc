@@ -132,6 +132,32 @@ tags consumed by Aurora.
   kept in `__aux_var`; and, in the pass shared with cppcomp, a value nobody
   reads (the load of a `SET` that `asm_unread` took out) and a push a `POP`
   undoes. 140 words fewer over the C± tests, none in the real programs.
+  Then, from the second audit of cmmcomp (2026-11-02): a `while` right
+  after `k = c;` tests at the bottom as a `for` does, two cycles fewer a
+  turn, its `continue` going to the test (`procBlind` 588 → 521); an int
+  `+ * & | ^ == && ||` of two variables with the right one in the acc takes
+  the left one as the operand instead of loading it (`s = s + t` after
+  `SET t` is `ADD s`); an int `!=` in a condition is
+  `XOR; JIZ` instead of `EQU; LIN; JIZ`; the acc is kept through an array's
+  declaration (ArcTan's `arctan_LUT`), a `TOM` and a `JIZ`; `<<`, `>>`
+  and `>>>` of int literals are folded (`Sqrt`); and `main` comes right
+  after the globals' initializers, so no `JMP main`. 536 words fewer over
+  59 C± tests (`sapho_all` 997 → 904, `ArcTan` 75 → 69, `Sqrt` 91 → 84).
+- **C±: the library routines take fewer cycles, with the same results.**
+  `atan`, `tan` and `sin` keep a copy of their polynomial in each branch,
+  so that no branch stores a flag and tests it again (`sin` tests the
+  parity of k as soon as k is known and negates r before the polynomial,
+  which is odd); `log` takes m-1 before m+1, `XPO_M` and `I2F_M`, and has
+  its factor 2 in the coefficients (a power of two moves only the
+  exponent); every Horner starts with one `F_MLT` (`F_MLT c` instead of
+  `LOD c; F_MLT w`). Per call: `atan` 7.9 cycles fewer, `tan` 7.5, `log`
+  5.7, `sin` 4, `exp` 1, at a few more instructions (docs/library.md).
+  The results are the same words: 300 inputs of each function at
+  `#FROUND` 0, 1 and 2, against the old routines. The Horner change rests
+  on `F_MLT` (and `F_ADD`) giving the same word with its operands swapped,
+  checked on 3000 random pairs at each level (a planted difference is
+  caught). The tests that call them write more outputs in the same clocks
+  (`cmm_trig` 2826 → 3319); their sim goldens grow only at the end.
 - **cmmcomp writes one space between the words of an instruction**, none
   at either end, whatever the padding of the format string: the goldens
   are compared byte for byte, and a restructured emitter would have had to
@@ -228,6 +254,10 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **C±: a program with functions but no `main` is refused.** Any function
+  counted as the main question resolved, so such a program compiled; now
+  that `main` comes first in the program, the reset fell into the first
+  function. NegTest `no_main_funcs` (found by the third cmmcomp audit).
 - **asmcomp: a long name no longer overruns a buffer.** The waveform signal
   of each variable (`me1_f_<function>_v_<name>_e_`) was written into a row
   of 64 bytes, so a name of 46 characters or more (cmmcomp takes 50) ran

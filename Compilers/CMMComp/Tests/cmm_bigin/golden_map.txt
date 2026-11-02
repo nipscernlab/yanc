@@ -1,13 +1,13 @@
 ## messages
-Info: 14 assembly instructions generated
+Info: 12 assembly instructions generated
 Info: 1 variables written and never read removed (1 instructions)
 Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 13 instructions and 4 variables were found
-Info: ULA resource -> > operator for int
+Info: 11 instructions and 4 variables were found
 Info: adding data input handling
 Info: adding data output handling
 Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 6% of the Assembly Instruction Set
 Info: using 5% of the ULA operations
@@ -22,19 +22,16 @@ lang C+-
 // 20: k = 0;
 1 LOD 0
 2 SET main_k
-// 21: while (k < 6)
-3 LOD main_k
-4 GRE 6
-5 JIZ fim
 // 23: x = in(0);
-6 INN 0
+3 INN 0
 // 24: out(0, x);
-7 OUT 0
+4 OUT 0
 // 25: k = k + 1;
-8 LOD main_k
-9 ADD 1
-10 SET main_k
+5 LOD main_k
+6 ADD 1
+7 SET main_k
 // 21: while (k < 6)
-11 JMP __Lwh1
+8 LES 5
+9 JIZ __Lwh1top
 // -3: END
-12 JMP fim
+10 JMP fim

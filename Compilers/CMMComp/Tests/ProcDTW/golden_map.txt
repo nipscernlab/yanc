@@ -1,17 +1,17 @@
 ## messages
 Info: interruption directive found at line 31
-Info: 237 assembly instructions generated
+Info: 233 assembly instructions generated
 Info: 7 variables share 6 data words (1 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
 Info: implementing interruption handling
-Info: 237 instructions and 5791 variables were found
-Info: ULA resource -> > operator for int
+Info: 233 instructions and 5792 variables were found
 Info: adding array handling
 Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: adding data output handling
 Info: ULA resource -> integer negative operation
 Info: adding data input handling
-Info: ULA resource -> < operator for int
+Info: ULA resource -> > operator for int
 Info: ULA resource -> == operator
 Info: ULA resource -> && operator
 Info: ULA resource -> integer multiplier
@@ -39,299 +39,293 @@ lang C+-
 // 18: cont    = 0;
 3 LOD 0
 4 SET cont
-// 19: while(cont < 75) // Fill vector 1 with 0s if len_ref is 0 (for the first case)
-5 LOD cont
-6 GRE 75
-7 JIZ __Lwh1end
 // 21: data_ref[cont] = 0;
-8 LOD cont
-9 P_LOD 0
-10 STI data_ref
+5 LOD cont
+6 P_LOD 0
+7 STI data_ref
 // 22: cont++;
-11 LOD cont
-12 ADD 1
-13 SET cont
+8 LOD cont
+9 ADD 1
+10 SET cont
 // 19: while(cont < 75) // Fill vector 1 with 0s if len_ref is 0 (for the first case)
-14 JMP __Lwh1
+11 LES 74
+12 JIZ __Lwh1top
 // 24: out(2, 10);
-15 LOD 10
-16 OUT 2
+13 LOD 10
+14 OUT 2
 // 28: out(2,-122);
-17 NEG_M 122
-18 OUT 2
+15 NEG_M 122
+16 OUT 2
 // -3: END
-19 JMP fim
+17 JMP fim
 // 32: out(2,-123);
-20 NEG_M 123
-21 OUT 2
+18 NEG_M 123
+19 OUT 2
 // 33: k = 0;
-22 LOD 0
-23 SET k
+20 LOD 0
+21 SET k
 // 35: len_data = in(2);        // Length of vector 2
-24 INN 2
-25 SET len_data
+22 INN 2
+23 SET len_data
 // 37: cont = 0;
-26 LOD 0
-27 SET cont
-// 39: while(cont < 75) // Fill vector 2
-28 LOD cont
-29 GRE 75
-30 JIZ __Lwh2end
+24 LOD 0
+25 SET cont
 // 41: if (len_data > cont)
-31 LOD cont
-32 GRE len_data
-33 JIZ __Lif1else
+26 LOD cont
+27 GRE len_data
+28 JIZ __Lif1else
 // 43: data[cont]= in(1);
-34 LOD cont
-35 P_INN 1
-36 STI data
+29 LOD cont
+30 P_INN 1
+31 STI data
 // 41: if (len_data > cont)
-37 JMP __Lif1end
+32 JMP __Lif1end
 // 47: data[cont] = 0;
-38 LOD cont
-39 P_LOD 0
-40 STI data
+33 LOD cont
+34 P_LOD 0
+35 STI data
 // 49: cont++;
-41 LOD cont
-42 ADD 1
-43 SET cont
+36 LOD cont
+37 ADD 1
+38 SET cont
 // 39: while(cont < 75) // Fill vector 2
-44 JMP __Lwh2
+39 LES 74
+40 JIZ __Lwh2top
 // 51: out(2,-124);
-45 NEG_M 124
-46 OUT 2
+41 NEG_M 124
+42 OUT 2
 // 52: out(2,k);
-47 LOD k
-48 OUT 2
+43 LOD k
+44 OUT 2
 // 53: out(2,len_data);
-49 LOD len_data
-50 OUT 2
+45 LOD len_data
+46 OUT 2
 // 55: while (k < len_data) // rows of the dtw matrix
-51 LOD len_data
-52 LES k
-53 JIZ __Lwh3end
+47 LOD len_data
+48 LES k
+49 JIZ __Lwh3end
 // 57: j = 0;
-54 LOD 0
-55 SET j
+50 LOD 0
+51 SET j
 // 58: out(2,-125);
-56 NEG_M 125
-57 OUT 2
+52 NEG_M 125
+53 OUT 2
 // 59: while (j < len_ref)
-58 LOD len_ref
-59 LES j
-60 JIZ __Lwh4end
+54 LOD len_ref
+55 LES j
+56 JIZ __Lwh4end
 // 61: if(k == 0 && j == 0)        // First position k=0, j=0
-61 LOD k
-62 EQU 0
-63 P_LOD j
-64 EQU 0
-65 S_LAN
-66 JIZ __Lif2else
+57 LOD k
+58 EQU 0
+59 P_LOD j
+60 EQU 0
+61 S_LAN
+62 JIZ __Lif2else
 // 63: dtw[k][j] = abs(data[k] - data_ref[j]);
-67 LOD k
-68 MLT 75
-69 ADD j
-70 P_LOD k
-71 LDI data
-72 P_LOD j
-73 LDI data_ref
-74 NEG
-75 S_ADD
-76 ABS
-77 STI dtw
+63 LOD k
+64 MLT 75
+65 ADD j
+66 P_LOD k
+67 LDI data
+68 P_LOD j
+69 LDI data_ref
+70 NEG
+71 S_ADD
+72 ABS
+73 STI dtw
 // 64: out(2, dtw[k][j]);
-78 OUT 2
+74 OUT 2
 // 61: if(k == 0 && j == 0)        // First position k=0, j=0
-79 JMP __Lif2end
+75 JMP __Lif2end
 // 68: if(k == 0 && j > 0)         // First row
-80 LOD k
-81 EQU 0
-82 P_LOD j
-83 LES 0
-84 S_LAN
-85 JIZ __Lif3else
+76 LOD k
+77 EQU 0
+78 P_LOD j
+79 LES 0
+80 S_LAN
+81 JIZ __Lif3else
 // 70: dtw[k][j] = abs(data[k] - data_ref[j]) + dtw[k][j-1];
-86 LOD k
-87 MLT 75
-88 ADD j
-89 P_LOD k
-90 LDI data
-91 P_LOD j
-92 LDI data_ref
-93 NEG
-94 S_ADD
-95 ABS
-96 P_LOD k
-97 MLT 75
-98 ADD j
-99 ADD -1
-100 LDI dtw
-101 S_ADD
-102 STI dtw
+82 LOD k
+83 MLT 75
+84 ADD j
+85 P_LOD k
+86 LDI data
+87 P_LOD j
+88 LDI data_ref
+89 NEG
+90 S_ADD
+91 ABS
+92 P_LOD k
+93 MLT 75
+94 ADD j
+95 ADD -1
+96 LDI dtw
+97 S_ADD
+98 STI dtw
 // 71: out(2, dtw[k][j]);
-103 OUT 2
+99 OUT 2
 // 75: if (k > 0 && j == 0)             // First column
-104 LOD k
-105 LES 0
-106 P_LOD j
-107 EQU 0
-108 S_LAN
-109 JIZ __Lif4else
+100 LOD k
+101 LES 0
+102 P_LOD j
+103 EQU 0
+104 S_LAN
+105 JIZ __Lif4else
 // 77: dtw[k][j] = abs(data[k] - data_ref[j]) + dtw[k - 1][j];
-110 LOD k
-111 MLT 75
-112 ADD j
-113 P_LOD k
-114 LDI data
-115 P_LOD j
-116 LDI data_ref
-117 NEG
-118 S_ADD
-119 ABS
-120 P_LOD k
-121 ADD -1
-122 MLT 75
-123 ADD j
-124 LDI dtw
-125 S_ADD
-126 STI dtw
+106 LOD k
+107 MLT 75
+108 ADD j
+109 P_LOD k
+110 LDI data
+111 P_LOD j
+112 LDI data_ref
+113 NEG
+114 S_ADD
+115 ABS
+116 P_LOD k
+117 ADD -1
+118 MLT 75
+119 ADD j
+120 LDI dtw
+121 S_ADD
+122 STI dtw
 // 78: out(2, dtw[k][j]);
-127 OUT 2
+123 OUT 2
 // 75: if (k > 0 && j == 0)             // First column
-128 JMP __Lif4end
+124 JMP __Lif4end
 // 82: if (k > 0 && j > 0)         // For the remaining positions
-129 LOD k
-130 LES 0
-131 P_LOD j
-132 LES 0
-133 S_LAN
-134 JIZ __Lif5else
+125 LOD k
+126 LES 0
+127 P_LOD j
+128 LES 0
+129 S_LAN
+130 JIZ __Lif5else
 // 84: menor = dtw[k-1][j];
-135 LOD k
-136 ADD -1
-137 MLT 75
-138 ADD j
-139 LDI dtw
-140 SET menor
+131 LOD k
+132 ADD -1
+133 MLT 75
+134 ADD j
+135 LDI dtw
+136 SET menor
 // 85: out(2, menor);
-141 OUT 2
+137 OUT 2
 // 86: if (dtw[k][j-1] < menor)
-142 LOD k
-143 MLT 75
-144 ADD j
-145 ADD -1
-146 LDI dtw
-147 GRE menor
-148 JIZ __Lif6else
+138 LOD k
+139 MLT 75
+140 ADD j
+141 ADD -1
+142 LDI dtw
+143 GRE menor
+144 JIZ __Lif6else
 // 88: menor = dtw[k][j-1];
-149 LOD k
-150 MLT 75
-151 ADD j
-152 ADD -1
-153 LDI dtw
-154 SET menor
+145 LOD k
+146 MLT 75
+147 ADD j
+148 ADD -1
+149 LDI dtw
+150 SET menor
 // 89: out(2, menor);
-155 OUT 2
+151 OUT 2
 // 91: out(2, dtw[k-1][j-1]);
-156 LOD k
-157 ADD -1
-158 MLT 75
-159 ADD j
-160 ADD -1
-161 LDI dtw
-162 OUT 2
+152 LOD k
+153 ADD -1
+154 MLT 75
+155 ADD j
+156 ADD -1
+157 LDI dtw
+158 OUT 2
 // 92: if (dtw[k-1][j-1] < menor)
-163 LOD k
-164 ADD -1
-165 MLT 75
-166 ADD j
-167 ADD -1
-168 LDI dtw
-169 GRE menor
-170 JIZ __Lif7else
+159 LOD k
+160 ADD -1
+161 MLT 75
+162 ADD j
+163 ADD -1
+164 LDI dtw
+165 GRE menor
+166 JIZ __Lif7else
 // 94: menor = dtw[k-1][j-1];
-171 LOD k
-172 ADD -1
-173 MLT 75
-174 ADD j
-175 ADD -1
-176 LDI dtw
-177 SET menor
+167 LOD k
+168 ADD -1
+169 MLT 75
+170 ADD j
+171 ADD -1
+172 LDI dtw
+173 SET menor
 // 95: out(2, menor);
-178 OUT 2
+174 OUT 2
 // 97: dtw[k][j] = abs(data[k] - data_ref[j]) + menor;
-179 LOD k
-180 MLT 75
-181 ADD j
-182 P_LOD k
-183 LDI data
-184 P_LOD j
-185 LDI data_ref
-186 NEG
-187 S_ADD
-188 ABS
-189 ADD menor
-190 STI dtw
+175 LOD k
+176 MLT 75
+177 ADD j
+178 P_LOD k
+179 LDI data
+180 P_LOD j
+181 LDI data_ref
+182 NEG
+183 S_ADD
+184 ABS
+185 ADD menor
+186 STI dtw
 // 98: out(2, dtw[k][j]);
-191 OUT 2
+187 OUT 2
 // 101: j++;
-192 LOD j
-193 ADD 1
-194 SET j
+188 LOD j
+189 ADD 1
+190 SET j
 // 59: while (j < len_ref)
-195 JMP __Lwh4
+191 JMP __Lwh4
 // 103: k++;
-196 LOD k
-197 ADD 1
-198 SET k
+192 LOD k
+193 ADD 1
+194 SET k
 // 55: while (k < len_data) // rows of the dtw matrix
-199 JMP __Lwh3
+195 JMP __Lwh3
 // 106: val_final = dtw[k-1][j-1];
-200 LOD k
-201 ADD -1
-202 MLT 75
-203 ADD j
-204 ADD -1
-205 LDI dtw
-206 SET val_final
+196 LOD k
+197 ADD -1
+198 MLT 75
+199 ADD j
+200 ADD -1
+201 LDI dtw
+202 SET val_final
 // 108: if(dtw[k-1][j-1]>36000)  //If there is novelty
-207 LOD k
-208 ADD -1
-209 MLT 75
-210 ADD j
-211 ADD -1
-212 LDI dtw
-213 LES 36000
-214 JIZ __Lif8else
+203 LOD k
+204 ADD -1
+205 MLT 75
+206 ADD j
+207 ADD -1
+208 LDI dtw
+209 LES 36000
+210 JIZ __Lif8else
 // 110: cont    = 0;           // Reset the counter
-215 LOD 0
-216 SET cont
+211 LOD 0
+212 SET cont
 // 111: len_ref = len_data;        // Update the length
-217 LOD len_data
-218 SET len_ref
+213 LOD len_data
+214 SET len_ref
 // 112: while(cont < 75)    // Update vector 1
-219 LOD cont
-220 GRE 75
-221 JIZ __Lwh5end
+215 LOD cont
+216 GRE 75
+217 JIZ __Lwh5end
 // 114: data_ref[cont]= data[cont];
-222 LOD cont
-223 P_LOD cont
-224 LDI data
-225 STI data_ref
+218 LOD cont
+219 P_LOD cont
+220 LDI data
+221 STI data_ref
 // 115: cont++ ;
-226 LOD cont
-227 ADD 1
-228 SET cont
+222 LOD cont
+223 ADD 1
+224 SET cont
 // 112: while(cont < 75)    // Update vector 1
-229 JMP __Lwh5
+225 JMP __Lwh5
 // 119: out(1,val_final);
-230 LOD val_final
-231 OUT 1
+226 LOD val_final
+227 OUT 1
 // 120: out(2, 36000);
-232 LOD 36000
-233 OUT 2
+228 LOD 36000
+229 OUT 2
 // 123: out(0,1);
-234 LOD 1
-235 OUT 0
+230 LOD 1
+231 OUT 0
 // -3: END
-236 JMP fim
+232 JMP fim

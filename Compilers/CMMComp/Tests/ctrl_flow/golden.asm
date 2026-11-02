@@ -33,7 +33,6 @@ JMP __Lif4end
 OUT 0
 @__Lif4end LOD 1
 JIZ __Lif5else
-LOD 1
 JIZ __Lif6else
 LOD 41
 OUT 0
@@ -63,7 +62,6 @@ JMP __Lwh2
 SET main_ic
 @__Lwh3 LOD main_ic
 JIZ __Lwh3end
-LOD main_ic
 JIZ __Lif10else
 LOD 70
 ADD main_ic

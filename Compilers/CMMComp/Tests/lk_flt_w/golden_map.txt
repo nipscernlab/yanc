@@ -1,15 +1,15 @@
 ## messages
 Heads up on line 16: variable 'f' is float, but getting an int.
-Info: 15 assembly instructions generated
+Info: 13 assembly instructions generated
 Info: 1 variables written and never read removed (1 instructions)
 Heads up: variable 'f' in function 'main' is never read, so it's out of the program and the waveform (#WAVE f, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 14 instructions and 5 variables were found
-Info: ULA resource -> > operator for int
+Info: 12 instructions and 5 variables were found
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point multiplier
 Info: adding toma (TOM), which hands a value to the partner processor
 Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 7% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
@@ -24,20 +24,17 @@ lang C+-
 // 12: int n = 0;
 1 LOD 0
 2 SET main_n
-// 14: while (n < 16)
-3 LOD main_n
-4 GRE 16
-5 JIZ fim
 // 16: f = n;
-6 I2F_M main_n
+3 I2F_M main_n
 // 17: toma(0, f * 1.5);
-7 F_MLT 1.5
-8 TOM 0
+4 F_MLT 1.5
+5 TOM 0
 // 18: n++;
-9 LOD main_n
-10 ADD 1
-11 SET main_n
+6 LOD main_n
+7 ADD 1
+8 SET main_n
 // 14: while (n < 16)
-12 JMP __Lwh1
+9 LES 15
+10 JIZ __Lwh1top
 // -3: END
-13 JMP fim
+11 JMP fim

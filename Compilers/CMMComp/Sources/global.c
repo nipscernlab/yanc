@@ -251,6 +251,11 @@ void prog_emit(void)
     stmt_node *prog = stmt_list_close();
     for (int i = 0; i < prog->kids_n; i++)
         if (prog->kids[i]->kind != STMT_FUNC) stmt_emit(prog->kids[i]);
+    // main right after the globals' initializers, where the reset falls
+    // through to it (no JMP main); the other functions follow its @fim
+    for (int i = 0; i < prog->kids_n; i++)
+        if (prog->kids[i]->kind == STMT_FUNC && strcmp(v_table[prog->kids[i]->id].name, "main") == 0)
+            stmt_emit(prog->kids[i]);
     stmt_emit(prog);
     stmt_free(prog);
 }
@@ -465,9 +470,10 @@ void add_instr(char *inst, ...)
     if (find_opc("__float_log" , str)) mac_add("flog" );
 
     // track what is now in the accumulator: a plain LOD / P_LOD / SET of an
-    // operand leaves that operand's value there, OUT, PSH and SET_V leave the
-    // acc as it is, anything else clobbers it. A SET keeps the names before it
-    // too: after LOD y; SET y_n1 the acc is both
+    // operand leaves that operand's value there, OUT, PSH, TOM, JIZ (only
+    // read it: isa.tsv; a JIZ's target has a label, which clears all this)
+    // and SET_V leave the acc as it is, anything else clobbers it. A SET keeps
+    // the names before it too: after LOD y; SET y_n1 the acc is both
     char nm[600];
     if      (strncmp(str, "SET ", 4) == 0 && sscanf(str + 4, "%599s", nm) == 1)
         acc_add(nm);
@@ -475,7 +481,8 @@ void add_instr(char *inst, ...)
         acc_only(nm);
     else if (strncmp(str, "P_LOD ", 6) == 0 && sscanf(str + 6, "%599s", nm) == 1)
         acc_only(nm);
-    else if (strncmp(str, "OUT ", 4) == 0 || strcmp(str, "PSH\n") == 0)
+    else if (strncmp(str, "OUT ", 4) == 0 || strcmp(str, "PSH\n") == 0
+          || strncmp(str, "TOM ", 4) == 0 || strncmp(str, "JIZ ", 4) == 0)
         ;                                // they read the acc and leave it as it is
     else if (strncmp(str, "SET_V ", 6) == 0)
         acc_drop_keys();                 // an element store: as a SET, the keys go
@@ -497,7 +504,10 @@ void add_sinst(int type, char *inst, ...)
     // Labels, directives and inline comments are control-flow / scaffolding
     // boundaries: a label may be a jump target, so dropping a LOD that
     // follows it would be unsafe. Reset the peephole window before emitting.
-    emit_peephole_reset();
+    // An array's declaration (#array, #arrays, #arrayd) is data, no code and
+    // no entry: the acc goes through it (a local array declared after the
+    // first statement of a function, ArcTan's arctan_LUT)
+    if (strncmp(inst, "#array", 6) != 0) emit_peephole_reset();
 
     va_list  args;
     va_start(args , inst);

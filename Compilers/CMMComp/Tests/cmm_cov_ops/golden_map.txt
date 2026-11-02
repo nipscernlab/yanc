@@ -1,12 +1,12 @@
 ## messages
-Info: 14936 assembly instructions generated
+Info: 14932 assembly instructions generated
 Info: 30 divisions by a constant kept: the float divider is needed anyway
 Info: 261 divisions, 5 words each for DIV/MOD and 4 for F_DIV (810 added)
 Info: 1 variables written and never read removed (436 instructions)
 Info: 25 variables share 21 data words (4 saved)
 Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 15230 instructions and 47 variables were found
+Info: 15226 instructions and 49 variables were found
 Info: ULA resource -> integer adder
 Info: adding data output handling
 Info: ULA resource -> int to float converter
@@ -14519,1798 +14519,1794 @@ lang C+-
 13746 REM
 13747 OUT 0
 // 727: x = 101 << 3; out(0, x);
-13748 LOD 3
-13749 SHL 101
-13750 OUT 0
+13748 LOD 808
+13749 OUT 0
 // 728: x = 101 >> 3; out(0, x);
-13751 LOD 3
-13752 SHR 101
-13753 OUT 0
+13750 LOD 12
+13751 OUT 0
 // 729: x = 101 >>> 3; out(0, x);
-13754 LOD 3
-13755 SRS 101
-13756 OUT 0
+13752 OUT 0
 // 730: x = 101 & 3; out(0, x);
-13757 LOD 1
-13758 OUT 0
+13753 LOD 1
+13754 OUT 0
 // 731: x = 101 | 3; out(0, x);
-13759 LOD 103
-13760 OUT 0
+13755 LOD 103
+13756 OUT 0
 // 732: x = 101 ^ 3; out(0, x);
-13761 LOD 102
-13762 OUT 0
+13757 LOD 102
+13758 OUT 0
 // 733: x = -101 >>> 3; out(0, x);
-13763 NEG_M 101
-13764 P_LOD 3
-13765 S_SRS
-13766 OUT 0
+13759 NEG_M 101
+13760 P_LOD 3
+13761 S_SRS
+13762 OUT 0
 // 734: x = ia < ib; out(0, x);
-13767 LOD main_ib
-13768 LES main_ia
-13769 OUT 0
+13763 LOD main_ib
+13764 LES main_ia
+13765 OUT 0
 // 735: x = ia > ib; out(0, x);
-13770 LOD main_ib
-13771 GRE main_ia
-13772 OUT 0
+13766 LOD main_ib
+13767 GRE main_ia
+13768 OUT 0
 // 736: x = ia <= ib; out(0, x);
+13769 LOD main_ib
+13770 GRE main_ia
+13771 LIN
+13772 OUT 0
+// 737: x = ia >= ib; out(0, x);
 13773 LOD main_ib
-13774 GRE main_ia
+13774 LES main_ia
 13775 LIN
 13776 OUT 0
-// 737: x = ia >= ib; out(0, x);
-13777 LOD main_ib
-13778 LES main_ia
-13779 LIN
-13780 OUT 0
 // 738: x = ia == ib; out(0, x);
-13781 LOD main_ib
-13782 EQU main_ia
-13783 OUT 0
+13777 LOD main_ib
+13778 EQU main_ia
+13779 OUT 0
 // 739: x = ia != ib; out(0, x);
-13784 LOD main_ib
-13785 EQU main_ia
-13786 LIN
-13787 OUT 0
+13780 LOD main_ib
+13781 EQU main_ia
+13782 LIN
+13783 OUT 0
 // 740: x = ia && ib; out(0, x);
-13788 LOD main_ib
-13789 LAN main_ia
-13790 OUT 0
+13784 LOD main_ib
+13785 LAN main_ia
+13786 OUT 0
 // 741: x = ia || ib; out(0, x);
-13791 LOD main_ib
-13792 LOR main_ia
-13793 OUT 0
+13787 LOD main_ib
+13788 LOR main_ia
+13789 OUT 0
 // 742: x = ia < (ib+z0); out(0, x);
+13790 LOD main_ib
+13791 ADD main_z0
+13792 LES main_ia
+13793 OUT 0
+// 743: x = ia > (ib+z0); out(0, x);
 13794 LOD main_ib
 13795 ADD main_z0
-13796 LES main_ia
+13796 GRE main_ia
 13797 OUT 0
-// 743: x = ia > (ib+z0); out(0, x);
+// 744: x = ia <= (ib+z0); out(0, x);
 13798 LOD main_ib
 13799 ADD main_z0
 13800 GRE main_ia
-13801 OUT 0
-// 744: x = ia <= (ib+z0); out(0, x);
-13802 LOD main_ib
-13803 ADD main_z0
-13804 GRE main_ia
-13805 LIN
-13806 OUT 0
+13801 LIN
+13802 OUT 0
 // 745: x = ia >= (ib+z0); out(0, x);
-13807 LOD main_ib
-13808 ADD main_z0
-13809 LES main_ia
-13810 LIN
-13811 OUT 0
+13803 LOD main_ib
+13804 ADD main_z0
+13805 LES main_ia
+13806 LIN
+13807 OUT 0
 // 746: x = ia == (ib+z0); out(0, x);
+13808 LOD main_ib
+13809 ADD main_z0
+13810 EQU main_ia
+13811 OUT 0
+// 747: x = ia != (ib+z0); out(0, x);
 13812 LOD main_ib
 13813 ADD main_z0
 13814 EQU main_ia
-13815 OUT 0
-// 747: x = ia != (ib+z0); out(0, x);
-13816 LOD main_ib
-13817 ADD main_z0
-13818 EQU main_ia
-13819 LIN
-13820 OUT 0
+13815 LIN
+13816 OUT 0
 // 748: x = ia && (ib+z0); out(0, x);
+13817 LOD main_ib
+13818 ADD main_z0
+13819 LAN main_ia
+13820 OUT 0
+// 749: x = ia || (ib+z0); out(0, x);
 13821 LOD main_ib
 13822 ADD main_z0
-13823 LAN main_ia
+13823 LOR main_ia
 13824 OUT 0
-// 749: x = ia || (ib+z0); out(0, x);
-13825 LOD main_ib
-13826 ADD main_z0
-13827 LOR main_ia
-13828 OUT 0
 // 750: x = ia < 3; out(0, x);
-13829 LOD main_ia
-13830 GRE 3
-13831 OUT 0
+13825 LOD main_ia
+13826 GRE 3
+13827 OUT 0
 // 751: x = ia > 3; out(0, x);
-13832 LOD main_ia
-13833 LES 3
-13834 OUT 0
+13828 LOD main_ia
+13829 LES 3
+13830 OUT 0
 // 752: x = ia <= 3; out(0, x);
+13831 LOD main_ia
+13832 LES 3
+13833 LIN
+13834 OUT 0
+// 753: x = ia >= 3; out(0, x);
 13835 LOD main_ia
-13836 LES 3
+13836 GRE 3
 13837 LIN
 13838 OUT 0
-// 753: x = ia >= 3; out(0, x);
-13839 LOD main_ia
-13840 GRE 3
-13841 LIN
-13842 OUT 0
 // 754: x = ia == 3; out(0, x);
-13843 LOD main_ia
-13844 EQU 3
-13845 OUT 0
+13839 LOD main_ia
+13840 EQU 3
+13841 OUT 0
 // 755: x = ia != 3; out(0, x);
-13846 LOD main_ia
-13847 EQU 3
-13848 LIN
-13849 OUT 0
+13842 LOD main_ia
+13843 EQU 3
+13844 LIN
+13845 OUT 0
 // 756: x = ia && 3; out(0, x);
-13850 LOD 3
-13851 LAN main_ia
-13852 OUT 0
+13846 LOD 3
+13847 LAN main_ia
+13848 OUT 0
 // 757: x = ia || 3; out(0, x);
-13853 LOD 3
-13854 LOR main_ia
-13855 OUT 0
+13849 LOD 3
+13850 LOR main_ia
+13851 OUT 0
 // 758: x = ia < fb; out(0, x);
-13856 I2F_M main_ia
-13857 F_GRE main_fb
-13858 OUT 0
+13852 I2F_M main_ia
+13853 F_GRE main_fb
+13854 OUT 0
 // 759: x = ia > fb; out(0, x);
-13859 I2F_M main_ia
-13860 F_LES main_fb
-13861 OUT 0
+13855 I2F_M main_ia
+13856 F_LES main_fb
+13857 OUT 0
 // 760: x = ia <= fb; out(0, x);
+13858 I2F_M main_ia
+13859 F_LES main_fb
+13860 LIN
+13861 OUT 0
+// 761: x = ia >= fb; out(0, x);
 13862 I2F_M main_ia
-13863 F_LES main_fb
+13863 F_GRE main_fb
 13864 LIN
 13865 OUT 0
-// 761: x = ia >= fb; out(0, x);
-13866 I2F_M main_ia
-13867 F_GRE main_fb
-13868 LIN
-13869 OUT 0
 // 762: x = ia == fb; out(0, x);
-13870 I2F_M main_ia
-13871 EQU main_fb
-13872 OUT 0
+13866 I2F_M main_ia
+13867 EQU main_fb
+13868 OUT 0
 // 763: x = ia != fb; out(0, x);
-13873 I2F_M main_ia
-13874 EQU main_fb
-13875 LIN
-13876 OUT 0
+13869 I2F_M main_ia
+13870 EQU main_fb
+13871 LIN
+13872 OUT 0
 // 764: x = ia && fb; out(0, x);
+13873 LOD main_fb
+13874 AND 8388607
+13875 LAN main_ia
+13876 OUT 0
+// 765: x = ia || fb; out(0, x);
 13877 LOD main_fb
 13878 AND 8388607
-13879 LAN main_ia
+13879 LOR main_ia
 13880 OUT 0
-// 765: x = ia || fb; out(0, x);
-13881 LOD main_fb
-13882 AND 8388607
-13883 LOR main_ia
-13884 OUT 0
 // 766: x = ia < (fb+fz); out(0, x);
-13885 LOD main_fb
-13886 F_ADD main_fz
-13887 P_I2F_M main_ia
-13888 SF_GRE
-13889 OUT 0
+13881 LOD main_fb
+13882 F_ADD main_fz
+13883 P_I2F_M main_ia
+13884 SF_GRE
+13885 OUT 0
 // 767: x = ia > (fb+fz); out(0, x);
-13890 LOD main_fb
-13891 F_ADD main_fz
-13892 P_I2F_M main_ia
-13893 SF_LES
-13894 OUT 0
+13886 LOD main_fb
+13887 F_ADD main_fz
+13888 P_I2F_M main_ia
+13889 SF_LES
+13890 OUT 0
 // 768: x = ia <= (fb+fz); out(0, x);
-13895 LOD main_fb
-13896 F_ADD main_fz
-13897 P_I2F_M main_ia
-13898 SF_LES
-13899 LIN
-13900 OUT 0
+13891 LOD main_fb
+13892 F_ADD main_fz
+13893 P_I2F_M main_ia
+13894 SF_LES
+13895 LIN
+13896 OUT 0
 // 769: x = ia >= (fb+fz); out(0, x);
-13901 LOD main_fb
-13902 F_ADD main_fz
-13903 P_I2F_M main_ia
-13904 SF_GRE
-13905 LIN
-13906 OUT 0
+13897 LOD main_fb
+13898 F_ADD main_fz
+13899 P_I2F_M main_ia
+13900 SF_GRE
+13901 LIN
+13902 OUT 0
 // 770: x = ia == (fb+fz); out(0, x);
-13907 LOD main_fb
-13908 F_ADD main_fz
-13909 P_I2F_M main_ia
-13910 S_EQU
-13911 OUT 0
+13903 LOD main_fb
+13904 F_ADD main_fz
+13905 P_I2F_M main_ia
+13906 S_EQU
+13907 OUT 0
 // 771: x = ia != (fb+fz); out(0, x);
-13912 LOD main_fb
-13913 F_ADD main_fz
-13914 P_I2F_M main_ia
-13915 S_EQU
-13916 LIN
-13917 OUT 0
+13908 LOD main_fb
+13909 F_ADD main_fz
+13910 P_I2F_M main_ia
+13911 S_EQU
+13912 LIN
+13913 OUT 0
 // 772: x = ia && (fb+fz); out(0, x);
-13918 LOD main_fb
-13919 F_ADD main_fz
-13920 AND 8388607
-13921 LAN main_ia
-13922 OUT 0
+13914 LOD main_fb
+13915 F_ADD main_fz
+13916 AND 8388607
+13917 LAN main_ia
+13918 OUT 0
 // 773: x = ia || (fb+fz); out(0, x);
-13923 LOD main_fb
-13924 F_ADD main_fz
-13925 AND 8388607
-13926 LOR main_ia
-13927 OUT 0
+13919 LOD main_fb
+13920 F_ADD main_fz
+13921 AND 8388607
+13922 LOR main_ia
+13923 OUT 0
 // 774: x = ia < 1.25; out(0, x);
-13928 I2F_M main_ia
-13929 F_GRE 1.25
-13930 OUT 0
+13924 I2F_M main_ia
+13925 F_GRE 1.25
+13926 OUT 0
 // 775: x = ia > 1.25; out(0, x);
-13931 I2F_M main_ia
-13932 F_LES 1.25
-13933 OUT 0
+13927 I2F_M main_ia
+13928 F_LES 1.25
+13929 OUT 0
 // 776: x = ia <= 1.25; out(0, x);
+13930 I2F_M main_ia
+13931 F_LES 1.25
+13932 LIN
+13933 OUT 0
+// 777: x = ia >= 1.25; out(0, x);
 13934 I2F_M main_ia
-13935 F_LES 1.25
+13935 F_GRE 1.25
 13936 LIN
 13937 OUT 0
-// 777: x = ia >= 1.25; out(0, x);
-13938 I2F_M main_ia
-13939 F_GRE 1.25
-13940 LIN
-13941 OUT 0
 // 778: x = ia == 1.25; out(0, x);
-13942 I2F_M main_ia
-13943 EQU 1.25
-13944 OUT 0
+13938 I2F_M main_ia
+13939 EQU 1.25
+13940 OUT 0
 // 779: x = ia != 1.25; out(0, x);
-13945 I2F_M main_ia
-13946 EQU 1.25
-13947 LIN
-13948 OUT 0
+13941 I2F_M main_ia
+13942 EQU 1.25
+13943 LIN
+13944 OUT 0
 // 780: x = ia && 1.25; out(0, x);
+13945 LOD 1.25
+13946 AND 8388607
+13947 LAN main_ia
+13948 OUT 0
+// 781: x = ia || 1.25; out(0, x);
 13949 LOD 1.25
 13950 AND 8388607
-13951 LAN main_ia
+13951 LOR main_ia
 13952 OUT 0
-// 781: x = ia || 1.25; out(0, x);
-13953 LOD 1.25
-13954 AND 8388607
-13955 LOR main_ia
-13956 OUT 0
 // 782: x = (ia+z0) < ib; out(0, x);
+13953 LOD main_ia
+13954 ADD main_z0
+13955 GRE main_ib
+13956 OUT 0
+// 783: x = (ia+z0) > ib; out(0, x);
 13957 LOD main_ia
 13958 ADD main_z0
-13959 GRE main_ib
+13959 LES main_ib
 13960 OUT 0
-// 783: x = (ia+z0) > ib; out(0, x);
+// 784: x = (ia+z0) <= ib; out(0, x);
 13961 LOD main_ia
 13962 ADD main_z0
 13963 LES main_ib
-13964 OUT 0
-// 784: x = (ia+z0) <= ib; out(0, x);
-13965 LOD main_ia
-13966 ADD main_z0
-13967 LES main_ib
-13968 LIN
-13969 OUT 0
+13964 LIN
+13965 OUT 0
 // 785: x = (ia+z0) >= ib; out(0, x);
-13970 LOD main_ia
-13971 ADD main_z0
-13972 GRE main_ib
-13973 LIN
-13974 OUT 0
+13966 LOD main_ia
+13967 ADD main_z0
+13968 GRE main_ib
+13969 LIN
+13970 OUT 0
 // 786: x = (ia+z0) == ib; out(0, x);
+13971 LOD main_ia
+13972 ADD main_z0
+13973 EQU main_ib
+13974 OUT 0
+// 787: x = (ia+z0) != ib; out(0, x);
 13975 LOD main_ia
 13976 ADD main_z0
 13977 EQU main_ib
-13978 OUT 0
-// 787: x = (ia+z0) != ib; out(0, x);
-13979 LOD main_ia
-13980 ADD main_z0
-13981 EQU main_ib
-13982 LIN
-13983 OUT 0
+13978 LIN
+13979 OUT 0
 // 788: x = (ia+z0) && ib; out(0, x);
+13980 LOD main_ia
+13981 ADD main_z0
+13982 LAN main_ib
+13983 OUT 0
+// 789: x = (ia+z0) || ib; out(0, x);
 13984 LOD main_ia
 13985 ADD main_z0
-13986 LAN main_ib
+13986 LOR main_ib
 13987 OUT 0
-// 789: x = (ia+z0) || ib; out(0, x);
+// 790: x = (ia+z0) < (ib+z0); out(0, x);
 13988 LOD main_ia
 13989 ADD main_z0
-13990 LOR main_ib
-13991 OUT 0
-// 790: x = (ia+z0) < (ib+z0); out(0, x);
-13992 LOD main_ia
-13993 ADD main_z0
-13994 P_LOD main_ib
-13995 ADD main_z0
-13996 S_LES
-13997 OUT 0
+13990 P_LOD main_ib
+13991 ADD main_z0
+13992 S_LES
+13993 OUT 0
 // 791: x = (ia+z0) > (ib+z0); out(0, x);
-13998 LOD main_ia
-13999 ADD main_z0
-14000 P_LOD main_ib
-14001 ADD main_z0
-14002 S_GRE
-14003 OUT 0
+13994 LOD main_ia
+13995 ADD main_z0
+13996 P_LOD main_ib
+13997 ADD main_z0
+13998 S_GRE
+13999 OUT 0
 // 792: x = (ia+z0) <= (ib+z0); out(0, x);
-14004 LOD main_ia
-14005 ADD main_z0
-14006 P_LOD main_ib
-14007 ADD main_z0
-14008 S_GRE
-14009 LIN
-14010 OUT 0
+14000 LOD main_ia
+14001 ADD main_z0
+14002 P_LOD main_ib
+14003 ADD main_z0
+14004 S_GRE
+14005 LIN
+14006 OUT 0
 // 793: x = (ia+z0) >= (ib+z0); out(0, x);
-14011 LOD main_ia
-14012 ADD main_z0
-14013 P_LOD main_ib
-14014 ADD main_z0
-14015 S_LES
-14016 LIN
-14017 OUT 0
+14007 LOD main_ia
+14008 ADD main_z0
+14009 P_LOD main_ib
+14010 ADD main_z0
+14011 S_LES
+14012 LIN
+14013 OUT 0
 // 794: x = (ia+z0) == (ib+z0); out(0, x);
-14018 LOD main_ia
-14019 ADD main_z0
-14020 P_LOD main_ib
-14021 ADD main_z0
-14022 S_EQU
-14023 OUT 0
+14014 LOD main_ia
+14015 ADD main_z0
+14016 P_LOD main_ib
+14017 ADD main_z0
+14018 S_EQU
+14019 OUT 0
 // 795: x = (ia+z0) != (ib+z0); out(0, x);
-14024 LOD main_ia
-14025 ADD main_z0
-14026 P_LOD main_ib
-14027 ADD main_z0
-14028 S_EQU
-14029 LIN
-14030 OUT 0
+14020 LOD main_ia
+14021 ADD main_z0
+14022 P_LOD main_ib
+14023 ADD main_z0
+14024 S_EQU
+14025 LIN
+14026 OUT 0
 // 796: x = (ia+z0) && (ib+z0); out(0, x);
-14031 LOD main_ia
-14032 ADD main_z0
-14033 P_LOD main_ib
-14034 ADD main_z0
-14035 S_LAN
-14036 OUT 0
+14027 LOD main_ia
+14028 ADD main_z0
+14029 P_LOD main_ib
+14030 ADD main_z0
+14031 S_LAN
+14032 OUT 0
 // 797: x = (ia+z0) || (ib+z0); out(0, x);
-14037 LOD main_ia
-14038 ADD main_z0
-14039 P_LOD main_ib
-14040 ADD main_z0
-14041 S_LOR
-14042 OUT 0
+14033 LOD main_ia
+14034 ADD main_z0
+14035 P_LOD main_ib
+14036 ADD main_z0
+14037 S_LOR
+14038 OUT 0
 // 798: x = (ia+z0) < 3; out(0, x);
+14039 LOD main_ia
+14040 ADD main_z0
+14041 GRE 3
+14042 OUT 0
+// 799: x = (ia+z0) > 3; out(0, x);
 14043 LOD main_ia
 14044 ADD main_z0
-14045 GRE 3
+14045 LES 3
 14046 OUT 0
-// 799: x = (ia+z0) > 3; out(0, x);
+// 800: x = (ia+z0) <= 3; out(0, x);
 14047 LOD main_ia
 14048 ADD main_z0
 14049 LES 3
-14050 OUT 0
-// 800: x = (ia+z0) <= 3; out(0, x);
-14051 LOD main_ia
-14052 ADD main_z0
-14053 LES 3
-14054 LIN
-14055 OUT 0
+14050 LIN
+14051 OUT 0
 // 801: x = (ia+z0) >= 3; out(0, x);
-14056 LOD main_ia
-14057 ADD main_z0
-14058 GRE 3
-14059 LIN
-14060 OUT 0
+14052 LOD main_ia
+14053 ADD main_z0
+14054 GRE 3
+14055 LIN
+14056 OUT 0
 // 802: x = (ia+z0) == 3; out(0, x);
+14057 LOD main_ia
+14058 ADD main_z0
+14059 EQU 3
+14060 OUT 0
+// 803: x = (ia+z0) != 3; out(0, x);
 14061 LOD main_ia
 14062 ADD main_z0
 14063 EQU 3
-14064 OUT 0
-// 803: x = (ia+z0) != 3; out(0, x);
-14065 LOD main_ia
-14066 ADD main_z0
-14067 EQU 3
-14068 LIN
-14069 OUT 0
+14064 LIN
+14065 OUT 0
 // 804: x = (ia+z0) && 3; out(0, x);
+14066 LOD main_ia
+14067 ADD main_z0
+14068 LAN 3
+14069 OUT 0
+// 805: x = (ia+z0) || 3; out(0, x);
 14070 LOD main_ia
 14071 ADD main_z0
-14072 LAN 3
+14072 LOR 3
 14073 OUT 0
-// 805: x = (ia+z0) || 3; out(0, x);
+// 806: x = (ia+z0) < fb; out(0, x);
 14074 LOD main_ia
 14075 ADD main_z0
-14076 LOR 3
-14077 OUT 0
-// 806: x = (ia+z0) < fb; out(0, x);
-14078 LOD main_ia
-14079 ADD main_z0
-14080 I2F
-14081 F_GRE main_fb
-14082 OUT 0
+14076 I2F
+14077 F_GRE main_fb
+14078 OUT 0
 // 807: x = (ia+z0) > fb; out(0, x);
-14083 LOD main_ia
-14084 ADD main_z0
-14085 I2F
-14086 F_LES main_fb
-14087 OUT 0
+14079 LOD main_ia
+14080 ADD main_z0
+14081 I2F
+14082 F_LES main_fb
+14083 OUT 0
 // 808: x = (ia+z0) <= fb; out(0, x);
-14088 LOD main_ia
-14089 ADD main_z0
-14090 I2F
-14091 F_LES main_fb
-14092 LIN
-14093 OUT 0
+14084 LOD main_ia
+14085 ADD main_z0
+14086 I2F
+14087 F_LES main_fb
+14088 LIN
+14089 OUT 0
 // 809: x = (ia+z0) >= fb; out(0, x);
-14094 LOD main_ia
-14095 ADD main_z0
-14096 I2F
-14097 F_GRE main_fb
-14098 LIN
-14099 OUT 0
+14090 LOD main_ia
+14091 ADD main_z0
+14092 I2F
+14093 F_GRE main_fb
+14094 LIN
+14095 OUT 0
 // 810: x = (ia+z0) == fb; out(0, x);
-14100 LOD main_ia
-14101 ADD main_z0
-14102 I2F
-14103 EQU main_fb
-14104 OUT 0
+14096 LOD main_ia
+14097 ADD main_z0
+14098 I2F
+14099 EQU main_fb
+14100 OUT 0
 // 811: x = (ia+z0) != fb; out(0, x);
-14105 LOD main_ia
-14106 ADD main_z0
-14107 I2F
-14108 EQU main_fb
-14109 LIN
-14110 OUT 0
+14101 LOD main_ia
+14102 ADD main_z0
+14103 I2F
+14104 EQU main_fb
+14105 LIN
+14106 OUT 0
 // 812: x = (ia+z0) && fb; out(0, x);
-14111 LOD main_ia
-14112 ADD main_z0
-14113 P_LOD main_fb
-14114 AND 8388607
-14115 S_LAN
-14116 OUT 0
+14107 LOD main_ia
+14108 ADD main_z0
+14109 P_LOD main_fb
+14110 AND 8388607
+14111 S_LAN
+14112 OUT 0
 // 813: x = (ia+z0) || fb; out(0, x);
-14117 LOD main_ia
-14118 ADD main_z0
-14119 P_LOD main_fb
-14120 AND 8388607
-14121 S_LOR
-14122 OUT 0
+14113 LOD main_ia
+14114 ADD main_z0
+14115 P_LOD main_fb
+14116 AND 8388607
+14117 S_LOR
+14118 OUT 0
 // 814: x = (ia+z0) < (fb+fz); out(0, x);
-14123 LOD main_ia
-14124 ADD main_z0
-14125 P_LOD main_fb
-14126 F_ADD main_fz
-14127 SET_P __aux_var
-14128 I2F
-14129 F_GRE __aux_var
-14130 OUT 0
+14119 LOD main_ia
+14120 ADD main_z0
+14121 P_LOD main_fb
+14122 F_ADD main_fz
+14123 SET_P __aux_var
+14124 I2F
+14125 F_GRE __aux_var
+14126 OUT 0
 // 815: x = (ia+z0) > (fb+fz); out(0, x);
-14131 LOD main_ia
-14132 ADD main_z0
-14133 P_LOD main_fb
-14134 F_ADD main_fz
-14135 SET_P __aux_var
-14136 I2F
-14137 F_LES __aux_var
-14138 OUT 0
+14127 LOD main_ia
+14128 ADD main_z0
+14129 P_LOD main_fb
+14130 F_ADD main_fz
+14131 SET_P __aux_var
+14132 I2F
+14133 F_LES __aux_var
+14134 OUT 0
 // 816: x = (ia+z0) <= (fb+fz); out(0, x);
-14139 LOD main_ia
-14140 ADD main_z0
-14141 P_LOD main_fb
-14142 F_ADD main_fz
-14143 SET_P __aux_var
-14144 I2F
-14145 F_LES __aux_var
-14146 LIN
-14147 OUT 0
+14135 LOD main_ia
+14136 ADD main_z0
+14137 P_LOD main_fb
+14138 F_ADD main_fz
+14139 SET_P __aux_var
+14140 I2F
+14141 F_LES __aux_var
+14142 LIN
+14143 OUT 0
 // 817: x = (ia+z0) >= (fb+fz); out(0, x);
-14148 LOD main_ia
-14149 ADD main_z0
-14150 P_LOD main_fb
-14151 F_ADD main_fz
-14152 SET_P __aux_var
-14153 I2F
-14154 F_GRE __aux_var
-14155 LIN
-14156 OUT 0
+14144 LOD main_ia
+14145 ADD main_z0
+14146 P_LOD main_fb
+14147 F_ADD main_fz
+14148 SET_P __aux_var
+14149 I2F
+14150 F_GRE __aux_var
+14151 LIN
+14152 OUT 0
 // 818: x = (ia+z0) == (fb+fz); out(0, x);
-14157 LOD main_ia
-14158 ADD main_z0
-14159 P_LOD main_fb
-14160 F_ADD main_fz
-14161 SET_P __aux_var
-14162 I2F
-14163 EQU __aux_var
-14164 OUT 0
+14153 LOD main_ia
+14154 ADD main_z0
+14155 P_LOD main_fb
+14156 F_ADD main_fz
+14157 SET_P __aux_var
+14158 I2F
+14159 EQU __aux_var
+14160 OUT 0
 // 819: x = (ia+z0) != (fb+fz); out(0, x);
-14165 LOD main_ia
-14166 ADD main_z0
-14167 P_LOD main_fb
-14168 F_ADD main_fz
-14169 SET_P __aux_var
-14170 I2F
-14171 EQU __aux_var
-14172 LIN
-14173 OUT 0
+14161 LOD main_ia
+14162 ADD main_z0
+14163 P_LOD main_fb
+14164 F_ADD main_fz
+14165 SET_P __aux_var
+14166 I2F
+14167 EQU __aux_var
+14168 LIN
+14169 OUT 0
 // 820: x = (ia+z0) && (fb+fz); out(0, x);
-14174 LOD main_ia
-14175 ADD main_z0
-14176 P_LOD main_fb
-14177 F_ADD main_fz
-14178 AND 8388607
-14179 S_LAN
-14180 OUT 0
+14170 LOD main_ia
+14171 ADD main_z0
+14172 P_LOD main_fb
+14173 F_ADD main_fz
+14174 AND 8388607
+14175 S_LAN
+14176 OUT 0
 // 821: x = (ia+z0) || (fb+fz); out(0, x);
-14181 LOD main_ia
-14182 ADD main_z0
-14183 P_LOD main_fb
-14184 F_ADD main_fz
-14185 AND 8388607
-14186 S_LOR
-14187 OUT 0
+14177 LOD main_ia
+14178 ADD main_z0
+14179 P_LOD main_fb
+14180 F_ADD main_fz
+14181 AND 8388607
+14182 S_LOR
+14183 OUT 0
 // 822: x = (ia+z0) < 1.25; out(0, x);
-14188 LOD main_ia
-14189 ADD main_z0
-14190 I2F
-14191 F_GRE 1.25
-14192 OUT 0
+14184 LOD main_ia
+14185 ADD main_z0
+14186 I2F
+14187 F_GRE 1.25
+14188 OUT 0
 // 823: x = (ia+z0) > 1.25; out(0, x);
-14193 LOD main_ia
-14194 ADD main_z0
-14195 I2F
-14196 F_LES 1.25
-14197 OUT 0
+14189 LOD main_ia
+14190 ADD main_z0
+14191 I2F
+14192 F_LES 1.25
+14193 OUT 0
 // 824: x = (ia+z0) <= 1.25; out(0, x);
-14198 LOD main_ia
-14199 ADD main_z0
-14200 I2F
-14201 F_LES 1.25
-14202 LIN
-14203 OUT 0
+14194 LOD main_ia
+14195 ADD main_z0
+14196 I2F
+14197 F_LES 1.25
+14198 LIN
+14199 OUT 0
 // 825: x = (ia+z0) >= 1.25; out(0, x);
-14204 LOD main_ia
-14205 ADD main_z0
-14206 I2F
-14207 F_GRE 1.25
-14208 LIN
-14209 OUT 0
+14200 LOD main_ia
+14201 ADD main_z0
+14202 I2F
+14203 F_GRE 1.25
+14204 LIN
+14205 OUT 0
 // 826: x = (ia+z0) == 1.25; out(0, x);
-14210 LOD main_ia
-14211 ADD main_z0
-14212 I2F
-14213 EQU 1.25
-14214 OUT 0
+14206 LOD main_ia
+14207 ADD main_z0
+14208 I2F
+14209 EQU 1.25
+14210 OUT 0
 // 827: x = (ia+z0) != 1.25; out(0, x);
-14215 LOD main_ia
-14216 ADD main_z0
-14217 I2F
-14218 EQU 1.25
-14219 LIN
-14220 OUT 0
+14211 LOD main_ia
+14212 ADD main_z0
+14213 I2F
+14214 EQU 1.25
+14215 LIN
+14216 OUT 0
 // 828: x = (ia+z0) && 1.25; out(0, x);
-14221 LOD main_ia
-14222 ADD main_z0
-14223 P_LOD 1.25
-14224 AND 8388607
-14225 S_LAN
-14226 OUT 0
+14217 LOD main_ia
+14218 ADD main_z0
+14219 P_LOD 1.25
+14220 AND 8388607
+14221 S_LAN
+14222 OUT 0
 // 829: x = (ia+z0) || 1.25; out(0, x);
-14227 LOD main_ia
-14228 ADD main_z0
-14229 P_LOD 1.25
-14230 AND 8388607
-14231 S_LOR
-14232 OUT 0
+14223 LOD main_ia
+14224 ADD main_z0
+14225 P_LOD 1.25
+14226 AND 8388607
+14227 S_LOR
+14228 OUT 0
 // 830: x = 101 < ib; out(0, x);
-14233 LOD main_ib
-14234 LES 101
-14235 OUT 0
+14229 LOD main_ib
+14230 LES 101
+14231 OUT 0
 // 831: x = 101 > ib; out(0, x);
-14236 LOD main_ib
-14237 GRE 101
-14238 OUT 0
+14232 LOD main_ib
+14233 GRE 101
+14234 OUT 0
 // 832: x = 101 <= ib; out(0, x);
+14235 LOD main_ib
+14236 GRE 101
+14237 LIN
+14238 OUT 0
+// 833: x = 101 >= ib; out(0, x);
 14239 LOD main_ib
-14240 GRE 101
+14240 LES 101
 14241 LIN
 14242 OUT 0
-// 833: x = 101 >= ib; out(0, x);
-14243 LOD main_ib
-14244 LES 101
-14245 LIN
-14246 OUT 0
 // 834: x = 101 == ib; out(0, x);
-14247 LOD main_ib
-14248 EQU 101
-14249 OUT 0
+14243 LOD main_ib
+14244 EQU 101
+14245 OUT 0
 // 835: x = 101 != ib; out(0, x);
-14250 LOD main_ib
-14251 EQU 101
-14252 LIN
-14253 OUT 0
+14246 LOD main_ib
+14247 EQU 101
+14248 LIN
+14249 OUT 0
 // 836: x = 101 && ib; out(0, x);
-14254 LOD main_ib
-14255 LAN 101
-14256 OUT 0
+14250 LOD main_ib
+14251 LAN 101
+14252 OUT 0
 // 837: x = 101 || ib; out(0, x);
-14257 LOD main_ib
-14258 LOR 101
-14259 OUT 0
+14253 LOD main_ib
+14254 LOR 101
+14255 OUT 0
 // 838: x = 101 < (ib+z0); out(0, x);
+14256 LOD main_ib
+14257 ADD main_z0
+14258 LES 101
+14259 OUT 0
+// 839: x = 101 > (ib+z0); out(0, x);
 14260 LOD main_ib
 14261 ADD main_z0
-14262 LES 101
+14262 GRE 101
 14263 OUT 0
-// 839: x = 101 > (ib+z0); out(0, x);
+// 840: x = 101 <= (ib+z0); out(0, x);
 14264 LOD main_ib
 14265 ADD main_z0
 14266 GRE 101
-14267 OUT 0
-// 840: x = 101 <= (ib+z0); out(0, x);
-14268 LOD main_ib
-14269 ADD main_z0
-14270 GRE 101
-14271 LIN
-14272 OUT 0
+14267 LIN
+14268 OUT 0
 // 841: x = 101 >= (ib+z0); out(0, x);
-14273 LOD main_ib
-14274 ADD main_z0
-14275 LES 101
-14276 LIN
-14277 OUT 0
+14269 LOD main_ib
+14270 ADD main_z0
+14271 LES 101
+14272 LIN
+14273 OUT 0
 // 842: x = 101 == (ib+z0); out(0, x);
+14274 LOD main_ib
+14275 ADD main_z0
+14276 EQU 101
+14277 OUT 0
+// 843: x = 101 != (ib+z0); out(0, x);
 14278 LOD main_ib
 14279 ADD main_z0
 14280 EQU 101
-14281 OUT 0
-// 843: x = 101 != (ib+z0); out(0, x);
-14282 LOD main_ib
-14283 ADD main_z0
-14284 EQU 101
-14285 LIN
-14286 OUT 0
+14281 LIN
+14282 OUT 0
 // 844: x = 101 && (ib+z0); out(0, x);
+14283 LOD main_ib
+14284 ADD main_z0
+14285 LAN 101
+14286 OUT 0
+// 845: x = 101 || (ib+z0); out(0, x);
 14287 LOD main_ib
 14288 ADD main_z0
-14289 LAN 101
+14289 LOR 101
 14290 OUT 0
-// 845: x = 101 || (ib+z0); out(0, x);
-14291 LOD main_ib
-14292 ADD main_z0
-14293 LOR 101
-14294 OUT 0
 // 846: x = 101 < 3; out(0, x);
-14295 LOD 3
-14296 LES 101
-14297 OUT 0
+14291 LOD 3
+14292 LES 101
+14293 OUT 0
 // 847: x = 101 > 3; out(0, x);
-14298 LOD 3
-14299 GRE 101
-14300 OUT 0
+14294 LOD 3
+14295 GRE 101
+14296 OUT 0
 // 848: x = 101 <= 3; out(0, x);
+14297 LOD 3
+14298 GRE 101
+14299 LIN
+14300 OUT 0
+// 849: x = 101 >= 3; out(0, x);
 14301 LOD 3
-14302 GRE 101
+14302 LES 101
 14303 LIN
 14304 OUT 0
-// 849: x = 101 >= 3; out(0, x);
-14305 LOD 3
-14306 LES 101
-14307 LIN
-14308 OUT 0
 // 850: x = 101 == 3; out(0, x);
-14309 LOD 3
-14310 EQU 101
-14311 OUT 0
+14305 LOD 3
+14306 EQU 101
+14307 OUT 0
 // 851: x = 101 != 3; out(0, x);
-14312 LOD 3
-14313 EQU 101
-14314 LIN
-14315 OUT 0
+14308 LOD 3
+14309 EQU 101
+14310 LIN
+14311 OUT 0
 // 852: x = 101 && 3; out(0, x);
-14316 LOD 3
-14317 LAN 101
-14318 OUT 0
+14312 LOD 3
+14313 LAN 101
+14314 OUT 0
 // 853: x = 101 || 3; out(0, x);
-14319 LOD 3
-14320 LOR 101
-14321 OUT 0
+14315 LOD 3
+14316 LOR 101
+14317 OUT 0
 // 854: x = 101 < fb; out(0, x);
-14322 LOD main_fb
-14323 F_LES 101.0
-14324 OUT 0
+14318 LOD main_fb
+14319 F_LES 101.0
+14320 OUT 0
 // 855: x = 101 > fb; out(0, x);
-14325 LOD main_fb
-14326 F_GRE 101.0
-14327 OUT 0
+14321 LOD main_fb
+14322 F_GRE 101.0
+14323 OUT 0
 // 856: x = 101 <= fb; out(0, x);
+14324 LOD main_fb
+14325 F_GRE 101.0
+14326 LIN
+14327 OUT 0
+// 857: x = 101 >= fb; out(0, x);
 14328 LOD main_fb
-14329 F_GRE 101.0
+14329 F_LES 101.0
 14330 LIN
 14331 OUT 0
-// 857: x = 101 >= fb; out(0, x);
-14332 LOD main_fb
-14333 F_LES 101.0
-14334 LIN
-14335 OUT 0
 // 858: x = 101 == fb; out(0, x);
-14336 LOD main_fb
-14337 EQU 101.0
-14338 OUT 0
+14332 LOD main_fb
+14333 EQU 101.0
+14334 OUT 0
 // 859: x = 101 != fb; out(0, x);
-14339 LOD main_fb
-14340 EQU 101.0
-14341 LIN
-14342 OUT 0
+14335 LOD main_fb
+14336 EQU 101.0
+14337 LIN
+14338 OUT 0
 // 860: x = 101 && fb; out(0, x);
+14339 LOD main_fb
+14340 AND 8388607
+14341 LAN 101
+14342 OUT 0
+// 861: x = 101 || fb; out(0, x);
 14343 LOD main_fb
 14344 AND 8388607
-14345 LAN 101
+14345 LOR 101
 14346 OUT 0
-// 861: x = 101 || fb; out(0, x);
-14347 LOD main_fb
-14348 AND 8388607
-14349 LOR 101
-14350 OUT 0
 // 862: x = 101 < (fb+fz); out(0, x);
+14347 LOD main_fb
+14348 F_ADD main_fz
+14349 F_LES 101.0
+14350 OUT 0
+// 863: x = 101 > (fb+fz); out(0, x);
 14351 LOD main_fb
 14352 F_ADD main_fz
-14353 F_LES 101.0
+14353 F_GRE 101.0
 14354 OUT 0
-// 863: x = 101 > (fb+fz); out(0, x);
+// 864: x = 101 <= (fb+fz); out(0, x);
 14355 LOD main_fb
 14356 F_ADD main_fz
 14357 F_GRE 101.0
-14358 OUT 0
-// 864: x = 101 <= (fb+fz); out(0, x);
-14359 LOD main_fb
-14360 F_ADD main_fz
-14361 F_GRE 101.0
-14362 LIN
-14363 OUT 0
+14358 LIN
+14359 OUT 0
 // 865: x = 101 >= (fb+fz); out(0, x);
-14364 LOD main_fb
-14365 F_ADD main_fz
-14366 F_LES 101.0
-14367 LIN
-14368 OUT 0
+14360 LOD main_fb
+14361 F_ADD main_fz
+14362 F_LES 101.0
+14363 LIN
+14364 OUT 0
 // 866: x = 101 == (fb+fz); out(0, x);
+14365 LOD main_fb
+14366 F_ADD main_fz
+14367 EQU 101.0
+14368 OUT 0
+// 867: x = 101 != (fb+fz); out(0, x);
 14369 LOD main_fb
 14370 F_ADD main_fz
 14371 EQU 101.0
-14372 OUT 0
-// 867: x = 101 != (fb+fz); out(0, x);
-14373 LOD main_fb
-14374 F_ADD main_fz
-14375 EQU 101.0
-14376 LIN
-14377 OUT 0
+14372 LIN
+14373 OUT 0
 // 868: x = 101 && (fb+fz); out(0, x);
-14378 LOD main_fb
-14379 F_ADD main_fz
-14380 AND 8388607
-14381 LAN 101
-14382 OUT 0
+14374 LOD main_fb
+14375 F_ADD main_fz
+14376 AND 8388607
+14377 LAN 101
+14378 OUT 0
 // 869: x = 101 || (fb+fz); out(0, x);
-14383 LOD main_fb
-14384 F_ADD main_fz
-14385 AND 8388607
-14386 LOR 101
-14387 OUT 0
+14379 LOD main_fb
+14380 F_ADD main_fz
+14381 AND 8388607
+14382 LOR 101
+14383 OUT 0
 // 870: x = 101 < 1.25; out(0, x);
-14388 LOD 101.0
-14389 F_GRE 1.25
-14390 OUT 0
+14384 LOD 101.0
+14385 F_GRE 1.25
+14386 OUT 0
 // 871: x = 101 > 1.25; out(0, x);
-14391 LOD 101.0
-14392 F_LES 1.25
-14393 OUT 0
+14387 LOD 101.0
+14388 F_LES 1.25
+14389 OUT 0
 // 872: x = 101 <= 1.25; out(0, x);
+14390 LOD 101.0
+14391 F_LES 1.25
+14392 LIN
+14393 OUT 0
+// 873: x = 101 >= 1.25; out(0, x);
 14394 LOD 101.0
-14395 F_LES 1.25
+14395 F_GRE 1.25
 14396 LIN
 14397 OUT 0
-// 873: x = 101 >= 1.25; out(0, x);
-14398 LOD 101.0
-14399 F_GRE 1.25
-14400 LIN
-14401 OUT 0
 // 874: x = 101 == 1.25; out(0, x);
-14402 LOD 101.0
-14403 EQU 1.25
-14404 OUT 0
+14398 LOD 101.0
+14399 EQU 1.25
+14400 OUT 0
 // 875: x = 101 != 1.25; out(0, x);
-14405 LOD 101.0
-14406 EQU 1.25
-14407 LIN
-14408 OUT 0
+14401 LOD 101.0
+14402 EQU 1.25
+14403 LIN
+14404 OUT 0
 // 876: x = 101 && 1.25; out(0, x);
+14405 LOD 1.25
+14406 AND 8388607
+14407 LAN 101
+14408 OUT 0
+// 877: x = 101 || 1.25; out(0, x);
 14409 LOD 1.25
 14410 AND 8388607
-14411 LAN 101
+14411 LOR 101
 14412 OUT 0
-// 877: x = 101 || 1.25; out(0, x);
-14413 LOD 1.25
-14414 AND 8388607
-14415 LOR 101
-14416 OUT 0
 // 878: x = fa < ib; out(0, x);
-14417 I2F_M main_ib
-14418 F_LES main_fa
-14419 OUT 0
+14413 I2F_M main_ib
+14414 F_LES main_fa
+14415 OUT 0
 // 879: x = fa > ib; out(0, x);
-14420 I2F_M main_ib
-14421 F_GRE main_fa
-14422 OUT 0
+14416 I2F_M main_ib
+14417 F_GRE main_fa
+14418 OUT 0
 // 880: x = fa <= ib; out(0, x);
+14419 I2F_M main_ib
+14420 F_GRE main_fa
+14421 LIN
+14422 OUT 0
+// 881: x = fa >= ib; out(0, x);
 14423 I2F_M main_ib
-14424 F_GRE main_fa
+14424 F_LES main_fa
 14425 LIN
 14426 OUT 0
-// 881: x = fa >= ib; out(0, x);
-14427 I2F_M main_ib
-14428 F_LES main_fa
-14429 LIN
-14430 OUT 0
 // 882: x = fa == ib; out(0, x);
-14431 I2F_M main_ib
-14432 EQU main_fa
-14433 OUT 0
+14427 I2F_M main_ib
+14428 EQU main_fa
+14429 OUT 0
 // 883: x = fa != ib; out(0, x);
-14434 I2F_M main_ib
-14435 EQU main_fa
-14436 LIN
-14437 OUT 0
+14430 I2F_M main_ib
+14431 EQU main_fa
+14432 LIN
+14433 OUT 0
 // 884: x = fa && ib; out(0, x);
-14438 LOD main_ib
-14439 P_LOD main_fa
-14440 AND 8388607
-14441 S_LAN
-14442 OUT 0
+14434 LOD main_ib
+14435 P_LOD main_fa
+14436 AND 8388607
+14437 S_LAN
+14438 OUT 0
 // 885: x = fa || ib; out(0, x);
-14443 LOD main_ib
-14444 P_LOD main_fa
-14445 AND 8388607
-14446 S_LOR
-14447 OUT 0
+14439 LOD main_ib
+14440 P_LOD main_fa
+14441 AND 8388607
+14442 S_LOR
+14443 OUT 0
 // 886: x = fa < (ib+z0); out(0, x);
-14448 LOD main_ib
-14449 ADD main_z0
-14450 I2F
-14451 F_LES main_fa
-14452 OUT 0
+14444 LOD main_ib
+14445 ADD main_z0
+14446 I2F
+14447 F_LES main_fa
+14448 OUT 0
 // 887: x = fa > (ib+z0); out(0, x);
-14453 LOD main_ib
-14454 ADD main_z0
-14455 I2F
-14456 F_GRE main_fa
-14457 OUT 0
+14449 LOD main_ib
+14450 ADD main_z0
+14451 I2F
+14452 F_GRE main_fa
+14453 OUT 0
 // 888: x = fa <= (ib+z0); out(0, x);
-14458 LOD main_ib
-14459 ADD main_z0
-14460 I2F
-14461 F_GRE main_fa
-14462 LIN
-14463 OUT 0
+14454 LOD main_ib
+14455 ADD main_z0
+14456 I2F
+14457 F_GRE main_fa
+14458 LIN
+14459 OUT 0
 // 889: x = fa >= (ib+z0); out(0, x);
-14464 LOD main_ib
-14465 ADD main_z0
-14466 I2F
-14467 F_LES main_fa
-14468 LIN
-14469 OUT 0
+14460 LOD main_ib
+14461 ADD main_z0
+14462 I2F
+14463 F_LES main_fa
+14464 LIN
+14465 OUT 0
 // 890: x = fa == (ib+z0); out(0, x);
-14470 LOD main_ib
-14471 ADD main_z0
-14472 I2F
-14473 EQU main_fa
-14474 OUT 0
+14466 LOD main_ib
+14467 ADD main_z0
+14468 I2F
+14469 EQU main_fa
+14470 OUT 0
 // 891: x = fa != (ib+z0); out(0, x);
-14475 LOD main_ib
-14476 ADD main_z0
-14477 I2F
-14478 EQU main_fa
-14479 LIN
-14480 OUT 0
+14471 LOD main_ib
+14472 ADD main_z0
+14473 I2F
+14474 EQU main_fa
+14475 LIN
+14476 OUT 0
 // 892: x = fa && (ib+z0); out(0, x);
-14481 LOD main_ib
-14482 ADD main_z0
-14483 P_LOD main_fa
-14484 AND 8388607
-14485 S_LAN
-14486 OUT 0
+14477 LOD main_ib
+14478 ADD main_z0
+14479 P_LOD main_fa
+14480 AND 8388607
+14481 S_LAN
+14482 OUT 0
 // 893: x = fa || (ib+z0); out(0, x);
-14487 LOD main_ib
-14488 ADD main_z0
-14489 P_LOD main_fa
-14490 AND 8388607
-14491 S_LOR
-14492 OUT 0
+14483 LOD main_ib
+14484 ADD main_z0
+14485 P_LOD main_fa
+14486 AND 8388607
+14487 S_LOR
+14488 OUT 0
 // 894: x = fa < 3; out(0, x);
-14493 LOD main_fa
-14494 F_GRE 3.0
-14495 OUT 0
+14489 LOD main_fa
+14490 F_GRE 3.0
+14491 OUT 0
 // 895: x = fa > 3; out(0, x);
-14496 LOD main_fa
-14497 F_LES 3.0
-14498 OUT 0
+14492 LOD main_fa
+14493 F_LES 3.0
+14494 OUT 0
 // 896: x = fa <= 3; out(0, x);
+14495 LOD main_fa
+14496 F_LES 3.0
+14497 LIN
+14498 OUT 0
+// 897: x = fa >= 3; out(0, x);
 14499 LOD main_fa
-14500 F_LES 3.0
+14500 F_GRE 3.0
 14501 LIN
 14502 OUT 0
-// 897: x = fa >= 3; out(0, x);
-14503 LOD main_fa
-14504 F_GRE 3.0
-14505 LIN
-14506 OUT 0
 // 898: x = fa == 3; out(0, x);
-14507 LOD main_fa
-14508 EQU 3.0
-14509 OUT 0
+14503 LOD main_fa
+14504 EQU 3.0
+14505 OUT 0
 // 899: x = fa != 3; out(0, x);
-14510 LOD main_fa
-14511 EQU 3.0
-14512 LIN
-14513 OUT 0
+14506 LOD main_fa
+14507 EQU 3.0
+14508 LIN
+14509 OUT 0
 // 900: x = fa && 3; out(0, x);
-14514 LOD 3
-14515 P_LOD main_fa
-14516 AND 8388607
-14517 S_LAN
-14518 OUT 0
+14510 LOD 3
+14511 P_LOD main_fa
+14512 AND 8388607
+14513 S_LAN
+14514 OUT 0
 // 901: x = fa || 3; out(0, x);
-14519 LOD 3
-14520 P_LOD main_fa
-14521 AND 8388607
-14522 S_LOR
-14523 OUT 0
+14515 LOD 3
+14516 P_LOD main_fa
+14517 AND 8388607
+14518 S_LOR
+14519 OUT 0
 // 902: x = fa < fb; out(0, x);
-14524 LOD main_fa
-14525 F_GRE main_fb
-14526 OUT 0
+14520 LOD main_fa
+14521 F_GRE main_fb
+14522 OUT 0
 // 903: x = fa > fb; out(0, x);
-14527 LOD main_fa
-14528 F_LES main_fb
-14529 OUT 0
+14523 LOD main_fa
+14524 F_LES main_fb
+14525 OUT 0
 // 904: x = fa <= fb; out(0, x);
+14526 LOD main_fa
+14527 F_LES main_fb
+14528 LIN
+14529 OUT 0
+// 905: x = fa >= fb; out(0, x);
 14530 LOD main_fa
-14531 F_LES main_fb
+14531 F_GRE main_fb
 14532 LIN
 14533 OUT 0
-// 905: x = fa >= fb; out(0, x);
-14534 LOD main_fa
-14535 F_GRE main_fb
-14536 LIN
-14537 OUT 0
 // 906: x = fa == fb; out(0, x);
-14538 LOD main_fa
-14539 EQU main_fb
-14540 OUT 0
+14534 LOD main_fa
+14535 EQU main_fb
+14536 OUT 0
 // 907: x = fa != fb; out(0, x);
-14541 LOD main_fa
-14542 EQU main_fb
-14543 LIN
-14544 OUT 0
+14537 LOD main_fa
+14538 EQU main_fb
+14539 LIN
+14540 OUT 0
 // 908: x = fa && fb; out(0, x);
-14545 LOD main_fb
-14546 AND 8388607
-14547 P_LOD main_fa
-14548 AND 8388607
-14549 S_LAN
-14550 OUT 0
+14541 LOD main_fb
+14542 AND 8388607
+14543 P_LOD main_fa
+14544 AND 8388607
+14545 S_LAN
+14546 OUT 0
 // 909: x = fa || fb; out(0, x);
-14551 LOD main_fb
-14552 AND 8388607
-14553 P_LOD main_fa
-14554 AND 8388607
-14555 S_LOR
-14556 OUT 0
+14547 LOD main_fb
+14548 AND 8388607
+14549 P_LOD main_fa
+14550 AND 8388607
+14551 S_LOR
+14552 OUT 0
 // 910: x = fa < (fb+fz); out(0, x);
+14553 LOD main_fb
+14554 F_ADD main_fz
+14555 F_LES main_fa
+14556 OUT 0
+// 911: x = fa > (fb+fz); out(0, x);
 14557 LOD main_fb
 14558 F_ADD main_fz
-14559 F_LES main_fa
+14559 F_GRE main_fa
 14560 OUT 0
-// 911: x = fa > (fb+fz); out(0, x);
+// 912: x = fa <= (fb+fz); out(0, x);
 14561 LOD main_fb
 14562 F_ADD main_fz
 14563 F_GRE main_fa
-14564 OUT 0
-// 912: x = fa <= (fb+fz); out(0, x);
-14565 LOD main_fb
-14566 F_ADD main_fz
-14567 F_GRE main_fa
-14568 LIN
-14569 OUT 0
+14564 LIN
+14565 OUT 0
 // 913: x = fa >= (fb+fz); out(0, x);
-14570 LOD main_fb
-14571 F_ADD main_fz
-14572 F_LES main_fa
-14573 LIN
-14574 OUT 0
+14566 LOD main_fb
+14567 F_ADD main_fz
+14568 F_LES main_fa
+14569 LIN
+14570 OUT 0
 // 914: x = fa == (fb+fz); out(0, x);
+14571 LOD main_fb
+14572 F_ADD main_fz
+14573 EQU main_fa
+14574 OUT 0
+// 915: x = fa != (fb+fz); out(0, x);
 14575 LOD main_fb
 14576 F_ADD main_fz
 14577 EQU main_fa
-14578 OUT 0
-// 915: x = fa != (fb+fz); out(0, x);
-14579 LOD main_fb
-14580 F_ADD main_fz
-14581 EQU main_fa
-14582 LIN
-14583 OUT 0
+14578 LIN
+14579 OUT 0
 // 916: x = fa && (fb+fz); out(0, x);
-14584 LOD main_fb
-14585 F_ADD main_fz
-14586 AND 8388607
-14587 P_LOD main_fa
-14588 AND 8388607
-14589 S_LAN
-14590 OUT 0
+14580 LOD main_fb
+14581 F_ADD main_fz
+14582 AND 8388607
+14583 P_LOD main_fa
+14584 AND 8388607
+14585 S_LAN
+14586 OUT 0
 // 917: x = fa || (fb+fz); out(0, x);
-14591 LOD main_fb
-14592 F_ADD main_fz
-14593 AND 8388607
-14594 P_LOD main_fa
-14595 AND 8388607
-14596 S_LOR
-14597 OUT 0
+14587 LOD main_fb
+14588 F_ADD main_fz
+14589 AND 8388607
+14590 P_LOD main_fa
+14591 AND 8388607
+14592 S_LOR
+14593 OUT 0
 // 918: x = fa < 1.25; out(0, x);
-14598 LOD main_fa
-14599 F_GRE 1.25
-14600 OUT 0
+14594 LOD main_fa
+14595 F_GRE 1.25
+14596 OUT 0
 // 919: x = fa > 1.25; out(0, x);
-14601 LOD main_fa
-14602 F_LES 1.25
-14603 OUT 0
+14597 LOD main_fa
+14598 F_LES 1.25
+14599 OUT 0
 // 920: x = fa <= 1.25; out(0, x);
+14600 LOD main_fa
+14601 F_LES 1.25
+14602 LIN
+14603 OUT 0
+// 921: x = fa >= 1.25; out(0, x);
 14604 LOD main_fa
-14605 F_LES 1.25
+14605 F_GRE 1.25
 14606 LIN
 14607 OUT 0
-// 921: x = fa >= 1.25; out(0, x);
-14608 LOD main_fa
-14609 F_GRE 1.25
-14610 LIN
-14611 OUT 0
 // 922: x = fa == 1.25; out(0, x);
-14612 LOD main_fa
-14613 EQU 1.25
-14614 OUT 0
+14608 LOD main_fa
+14609 EQU 1.25
+14610 OUT 0
 // 923: x = fa != 1.25; out(0, x);
-14615 LOD main_fa
-14616 EQU 1.25
-14617 LIN
-14618 OUT 0
+14611 LOD main_fa
+14612 EQU 1.25
+14613 LIN
+14614 OUT 0
 // 924: x = fa && 1.25; out(0, x);
-14619 LOD 1.25
-14620 AND 8388607
-14621 P_LOD main_fa
-14622 AND 8388607
-14623 S_LAN
-14624 OUT 0
+14615 LOD 1.25
+14616 AND 8388607
+14617 P_LOD main_fa
+14618 AND 8388607
+14619 S_LAN
+14620 OUT 0
 // 925: x = fa || 1.25; out(0, x);
-14625 LOD 1.25
-14626 AND 8388607
-14627 P_LOD main_fa
-14628 AND 8388607
-14629 S_LOR
-14630 OUT 0
+14621 LOD 1.25
+14622 AND 8388607
+14623 P_LOD main_fa
+14624 AND 8388607
+14625 S_LOR
+14626 OUT 0
 // 926: x = (fa+fz) < ib; out(0, x);
-14631 LOD main_fa
-14632 F_ADD main_fz
-14633 P_I2F_M main_ib
-14634 SF_LES
-14635 OUT 0
+14627 LOD main_fa
+14628 F_ADD main_fz
+14629 P_I2F_M main_ib
+14630 SF_LES
+14631 OUT 0
 // 927: x = (fa+fz) > ib; out(0, x);
-14636 LOD main_fa
-14637 F_ADD main_fz
-14638 P_I2F_M main_ib
-14639 SF_GRE
-14640 OUT 0
+14632 LOD main_fa
+14633 F_ADD main_fz
+14634 P_I2F_M main_ib
+14635 SF_GRE
+14636 OUT 0
 // 928: x = (fa+fz) <= ib; out(0, x);
-14641 LOD main_fa
-14642 F_ADD main_fz
-14643 P_I2F_M main_ib
-14644 SF_GRE
-14645 LIN
-14646 OUT 0
+14637 LOD main_fa
+14638 F_ADD main_fz
+14639 P_I2F_M main_ib
+14640 SF_GRE
+14641 LIN
+14642 OUT 0
 // 929: x = (fa+fz) >= ib; out(0, x);
-14647 LOD main_fa
-14648 F_ADD main_fz
-14649 P_I2F_M main_ib
-14650 SF_LES
-14651 LIN
-14652 OUT 0
+14643 LOD main_fa
+14644 F_ADD main_fz
+14645 P_I2F_M main_ib
+14646 SF_LES
+14647 LIN
+14648 OUT 0
 // 930: x = (fa+fz) == ib; out(0, x);
-14653 LOD main_fa
-14654 F_ADD main_fz
-14655 P_I2F_M main_ib
-14656 S_EQU
-14657 OUT 0
+14649 LOD main_fa
+14650 F_ADD main_fz
+14651 P_I2F_M main_ib
+14652 S_EQU
+14653 OUT 0
 // 931: x = (fa+fz) != ib; out(0, x);
-14658 LOD main_fa
-14659 F_ADD main_fz
-14660 P_I2F_M main_ib
-14661 S_EQU
-14662 LIN
-14663 OUT 0
+14654 LOD main_fa
+14655 F_ADD main_fz
+14656 P_I2F_M main_ib
+14657 S_EQU
+14658 LIN
+14659 OUT 0
 // 932: x = (fa+fz) && ib; out(0, x);
-14664 LOD main_fa
-14665 F_ADD main_fz
-14666 AND 8388607
-14667 LAN main_ib
-14668 OUT 0
+14660 LOD main_fa
+14661 F_ADD main_fz
+14662 AND 8388607
+14663 LAN main_ib
+14664 OUT 0
 // 933: x = (fa+fz) || ib; out(0, x);
-14669 LOD main_fa
-14670 F_ADD main_fz
-14671 AND 8388607
-14672 LOR main_ib
-14673 OUT 0
+14665 LOD main_fa
+14666 F_ADD main_fz
+14667 AND 8388607
+14668 LOR main_ib
+14669 OUT 0
 // 934: x = (fa+fz) < (ib+z0); out(0, x);
-14674 LOD main_fa
-14675 F_ADD main_fz
-14676 P_LOD main_ib
-14677 ADD main_z0
-14678 I2F
-14679 SF_LES
-14680 OUT 0
+14670 LOD main_fa
+14671 F_ADD main_fz
+14672 P_LOD main_ib
+14673 ADD main_z0
+14674 I2F
+14675 SF_LES
+14676 OUT 0
 // 935: x = (fa+fz) > (ib+z0); out(0, x);
-14681 LOD main_fa
-14682 F_ADD main_fz
-14683 P_LOD main_ib
-14684 ADD main_z0
-14685 I2F
-14686 SF_GRE
-14687 OUT 0
+14677 LOD main_fa
+14678 F_ADD main_fz
+14679 P_LOD main_ib
+14680 ADD main_z0
+14681 I2F
+14682 SF_GRE
+14683 OUT 0
 // 936: x = (fa+fz) <= (ib+z0); out(0, x);
-14688 LOD main_fa
-14689 F_ADD main_fz
-14690 P_LOD main_ib
-14691 ADD main_z0
-14692 I2F
-14693 SF_GRE
-14694 LIN
-14695 OUT 0
+14684 LOD main_fa
+14685 F_ADD main_fz
+14686 P_LOD main_ib
+14687 ADD main_z0
+14688 I2F
+14689 SF_GRE
+14690 LIN
+14691 OUT 0
 // 937: x = (fa+fz) >= (ib+z0); out(0, x);
-14696 LOD main_fa
-14697 F_ADD main_fz
-14698 P_LOD main_ib
-14699 ADD main_z0
-14700 I2F
-14701 SF_LES
-14702 LIN
-14703 OUT 0
+14692 LOD main_fa
+14693 F_ADD main_fz
+14694 P_LOD main_ib
+14695 ADD main_z0
+14696 I2F
+14697 SF_LES
+14698 LIN
+14699 OUT 0
 // 938: x = (fa+fz) == (ib+z0); out(0, x);
-14704 LOD main_fa
-14705 F_ADD main_fz
-14706 P_LOD main_ib
-14707 ADD main_z0
-14708 I2F
-14709 S_EQU
-14710 OUT 0
+14700 LOD main_fa
+14701 F_ADD main_fz
+14702 P_LOD main_ib
+14703 ADD main_z0
+14704 I2F
+14705 S_EQU
+14706 OUT 0
 // 939: x = (fa+fz) != (ib+z0); out(0, x);
-14711 LOD main_fa
-14712 F_ADD main_fz
-14713 P_LOD main_ib
-14714 ADD main_z0
-14715 I2F
-14716 S_EQU
-14717 LIN
-14718 OUT 0
+14707 LOD main_fa
+14708 F_ADD main_fz
+14709 P_LOD main_ib
+14710 ADD main_z0
+14711 I2F
+14712 S_EQU
+14713 LIN
+14714 OUT 0
 // 940: x = (fa+fz) && (ib+z0); out(0, x);
-14719 LOD main_fa
-14720 F_ADD main_fz
-14721 P_LOD main_ib
-14722 ADD main_z0
-14723 SET_P __aux_var
-14724 AND 8388607
-14725 LAN __aux_var
-14726 OUT 0
+14715 LOD main_fa
+14716 F_ADD main_fz
+14717 P_LOD main_ib
+14718 ADD main_z0
+14719 SET_P __aux_var
+14720 AND 8388607
+14721 LAN __aux_var
+14722 OUT 0
 // 941: x = (fa+fz) || (ib+z0); out(0, x);
-14727 LOD main_fa
-14728 F_ADD main_fz
-14729 P_LOD main_ib
-14730 ADD main_z0
-14731 SET_P __aux_var
-14732 AND 8388607
-14733 LOR __aux_var
-14734 OUT 0
+14723 LOD main_fa
+14724 F_ADD main_fz
+14725 P_LOD main_ib
+14726 ADD main_z0
+14727 SET_P __aux_var
+14728 AND 8388607
+14729 LOR __aux_var
+14730 OUT 0
 // 942: x = (fa+fz) < 3; out(0, x);
+14731 LOD main_fa
+14732 F_ADD main_fz
+14733 F_GRE 3.0
+14734 OUT 0
+// 943: x = (fa+fz) > 3; out(0, x);
 14735 LOD main_fa
 14736 F_ADD main_fz
-14737 F_GRE 3.0
+14737 F_LES 3.0
 14738 OUT 0
-// 943: x = (fa+fz) > 3; out(0, x);
+// 944: x = (fa+fz) <= 3; out(0, x);
 14739 LOD main_fa
 14740 F_ADD main_fz
 14741 F_LES 3.0
-14742 OUT 0
-// 944: x = (fa+fz) <= 3; out(0, x);
-14743 LOD main_fa
-14744 F_ADD main_fz
-14745 F_LES 3.0
-14746 LIN
-14747 OUT 0
+14742 LIN
+14743 OUT 0
 // 945: x = (fa+fz) >= 3; out(0, x);
-14748 LOD main_fa
-14749 F_ADD main_fz
-14750 F_GRE 3.0
-14751 LIN
-14752 OUT 0
+14744 LOD main_fa
+14745 F_ADD main_fz
+14746 F_GRE 3.0
+14747 LIN
+14748 OUT 0
 // 946: x = (fa+fz) == 3; out(0, x);
+14749 LOD main_fa
+14750 F_ADD main_fz
+14751 EQU 3.0
+14752 OUT 0
+// 947: x = (fa+fz) != 3; out(0, x);
 14753 LOD main_fa
 14754 F_ADD main_fz
 14755 EQU 3.0
-14756 OUT 0
-// 947: x = (fa+fz) != 3; out(0, x);
-14757 LOD main_fa
-14758 F_ADD main_fz
-14759 EQU 3.0
-14760 LIN
-14761 OUT 0
+14756 LIN
+14757 OUT 0
 // 948: x = (fa+fz) && 3; out(0, x);
-14762 LOD main_fa
-14763 F_ADD main_fz
-14764 AND 8388607
-14765 LAN 3
-14766 OUT 0
+14758 LOD main_fa
+14759 F_ADD main_fz
+14760 AND 8388607
+14761 LAN 3
+14762 OUT 0
 // 949: x = (fa+fz) || 3; out(0, x);
-14767 LOD main_fa
-14768 F_ADD main_fz
-14769 AND 8388607
-14770 LOR 3
-14771 OUT 0
+14763 LOD main_fa
+14764 F_ADD main_fz
+14765 AND 8388607
+14766 LOR 3
+14767 OUT 0
 // 950: x = (fa+fz) < fb; out(0, x);
+14768 LOD main_fa
+14769 F_ADD main_fz
+14770 F_GRE main_fb
+14771 OUT 0
+// 951: x = (fa+fz) > fb; out(0, x);
 14772 LOD main_fa
 14773 F_ADD main_fz
-14774 F_GRE main_fb
+14774 F_LES main_fb
 14775 OUT 0
-// 951: x = (fa+fz) > fb; out(0, x);
+// 952: x = (fa+fz) <= fb; out(0, x);
 14776 LOD main_fa
 14777 F_ADD main_fz
 14778 F_LES main_fb
-14779 OUT 0
-// 952: x = (fa+fz) <= fb; out(0, x);
-14780 LOD main_fa
-14781 F_ADD main_fz
-14782 F_LES main_fb
-14783 LIN
-14784 OUT 0
+14779 LIN
+14780 OUT 0
 // 953: x = (fa+fz) >= fb; out(0, x);
-14785 LOD main_fa
-14786 F_ADD main_fz
-14787 F_GRE main_fb
-14788 LIN
-14789 OUT 0
+14781 LOD main_fa
+14782 F_ADD main_fz
+14783 F_GRE main_fb
+14784 LIN
+14785 OUT 0
 // 954: x = (fa+fz) == fb; out(0, x);
+14786 LOD main_fa
+14787 F_ADD main_fz
+14788 EQU main_fb
+14789 OUT 0
+// 955: x = (fa+fz) != fb; out(0, x);
 14790 LOD main_fa
 14791 F_ADD main_fz
 14792 EQU main_fb
-14793 OUT 0
-// 955: x = (fa+fz) != fb; out(0, x);
-14794 LOD main_fa
-14795 F_ADD main_fz
-14796 EQU main_fb
-14797 LIN
-14798 OUT 0
+14793 LIN
+14794 OUT 0
 // 956: x = (fa+fz) && fb; out(0, x);
-14799 LOD main_fa
-14800 F_ADD main_fz
-14801 AND 8388607
-14802 P_LOD main_fb
-14803 AND 8388607
-14804 S_LAN
-14805 OUT 0
+14795 LOD main_fa
+14796 F_ADD main_fz
+14797 AND 8388607
+14798 P_LOD main_fb
+14799 AND 8388607
+14800 S_LAN
+14801 OUT 0
 // 957: x = (fa+fz) || fb; out(0, x);
-14806 LOD main_fa
-14807 F_ADD main_fz
-14808 AND 8388607
-14809 P_LOD main_fb
-14810 AND 8388607
-14811 S_LOR
-14812 OUT 0
+14802 LOD main_fa
+14803 F_ADD main_fz
+14804 AND 8388607
+14805 P_LOD main_fb
+14806 AND 8388607
+14807 S_LOR
+14808 OUT 0
 // 958: x = (fa+fz) < (fb+fz); out(0, x);
-14813 LOD main_fa
-14814 F_ADD main_fz
-14815 P_LOD main_fb
-14816 F_ADD main_fz
-14817 SF_LES
-14818 OUT 0
+14809 LOD main_fa
+14810 F_ADD main_fz
+14811 P_LOD main_fb
+14812 F_ADD main_fz
+14813 SF_LES
+14814 OUT 0
 // 959: x = (fa+fz) > (fb+fz); out(0, x);
-14819 LOD main_fa
-14820 F_ADD main_fz
-14821 P_LOD main_fb
-14822 F_ADD main_fz
-14823 SF_GRE
-14824 OUT 0
+14815 LOD main_fa
+14816 F_ADD main_fz
+14817 P_LOD main_fb
+14818 F_ADD main_fz
+14819 SF_GRE
+14820 OUT 0
 // 960: x = (fa+fz) <= (fb+fz); out(0, x);
-14825 LOD main_fa
-14826 F_ADD main_fz
-14827 P_LOD main_fb
-14828 F_ADD main_fz
-14829 SF_GRE
-14830 LIN
-14831 OUT 0
+14821 LOD main_fa
+14822 F_ADD main_fz
+14823 P_LOD main_fb
+14824 F_ADD main_fz
+14825 SF_GRE
+14826 LIN
+14827 OUT 0
 // 961: x = (fa+fz) >= (fb+fz); out(0, x);
-14832 LOD main_fa
-14833 F_ADD main_fz
-14834 P_LOD main_fb
-14835 F_ADD main_fz
-14836 SF_LES
-14837 LIN
-14838 OUT 0
+14828 LOD main_fa
+14829 F_ADD main_fz
+14830 P_LOD main_fb
+14831 F_ADD main_fz
+14832 SF_LES
+14833 LIN
+14834 OUT 0
 // 962: x = (fa+fz) == (fb+fz); out(0, x);
-14839 LOD main_fa
-14840 F_ADD main_fz
-14841 P_LOD main_fb
-14842 F_ADD main_fz
-14843 S_EQU
-14844 OUT 0
+14835 LOD main_fa
+14836 F_ADD main_fz
+14837 P_LOD main_fb
+14838 F_ADD main_fz
+14839 S_EQU
+14840 OUT 0
 // 963: x = (fa+fz) != (fb+fz); out(0, x);
-14845 LOD main_fa
-14846 F_ADD main_fz
-14847 P_LOD main_fb
-14848 F_ADD main_fz
-14849 S_EQU
-14850 LIN
-14851 OUT 0
+14841 LOD main_fa
+14842 F_ADD main_fz
+14843 P_LOD main_fb
+14844 F_ADD main_fz
+14845 S_EQU
+14846 LIN
+14847 OUT 0
 // 964: x = (fa+fz) && (fb+fz); out(0, x);
-14852 LOD main_fa
-14853 F_ADD main_fz
-14854 P_LOD main_fb
-14855 F_ADD main_fz
-14856 AND 8388607
-14857 SET_P __aux_var
-14858 AND 8388607
-14859 LAN __aux_var
-14860 OUT 0
+14848 LOD main_fa
+14849 F_ADD main_fz
+14850 P_LOD main_fb
+14851 F_ADD main_fz
+14852 AND 8388607
+14853 SET_P __aux_var
+14854 AND 8388607
+14855 LAN __aux_var
+14856 OUT 0
 // 965: x = (fa+fz) || (fb+fz); out(0, x);
-14861 LOD main_fa
-14862 F_ADD main_fz
-14863 P_LOD main_fb
-14864 F_ADD main_fz
-14865 AND 8388607
-14866 SET_P __aux_var
-14867 AND 8388607
-14868 LOR __aux_var
-14869 OUT 0
+14857 LOD main_fa
+14858 F_ADD main_fz
+14859 P_LOD main_fb
+14860 F_ADD main_fz
+14861 AND 8388607
+14862 SET_P __aux_var
+14863 AND 8388607
+14864 LOR __aux_var
+14865 OUT 0
 // 966: x = (fa+fz) < 1.25; out(0, x);
+14866 LOD main_fa
+14867 F_ADD main_fz
+14868 F_GRE 1.25
+14869 OUT 0
+// 967: x = (fa+fz) > 1.25; out(0, x);
 14870 LOD main_fa
 14871 F_ADD main_fz
-14872 F_GRE 1.25
+14872 F_LES 1.25
 14873 OUT 0
-// 967: x = (fa+fz) > 1.25; out(0, x);
+// 968: x = (fa+fz) <= 1.25; out(0, x);
 14874 LOD main_fa
 14875 F_ADD main_fz
 14876 F_LES 1.25
-14877 OUT 0
-// 968: x = (fa+fz) <= 1.25; out(0, x);
-14878 LOD main_fa
-14879 F_ADD main_fz
-14880 F_LES 1.25
-14881 LIN
-14882 OUT 0
+14877 LIN
+14878 OUT 0
 // 969: x = (fa+fz) >= 1.25; out(0, x);
-14883 LOD main_fa
-14884 F_ADD main_fz
-14885 F_GRE 1.25
-14886 LIN
-14887 OUT 0
+14879 LOD main_fa
+14880 F_ADD main_fz
+14881 F_GRE 1.25
+14882 LIN
+14883 OUT 0
 // 970: x = (fa+fz) == 1.25; out(0, x);
+14884 LOD main_fa
+14885 F_ADD main_fz
+14886 EQU 1.25
+14887 OUT 0
+// 971: x = (fa+fz) != 1.25; out(0, x);
 14888 LOD main_fa
 14889 F_ADD main_fz
 14890 EQU 1.25
-14891 OUT 0
-// 971: x = (fa+fz) != 1.25; out(0, x);
-14892 LOD main_fa
-14893 F_ADD main_fz
-14894 EQU 1.25
-14895 LIN
-14896 OUT 0
+14891 LIN
+14892 OUT 0
 // 972: x = (fa+fz) && 1.25; out(0, x);
-14897 LOD main_fa
-14898 F_ADD main_fz
-14899 AND 8388607
-14900 P_LOD 1.25
-14901 AND 8388607
-14902 S_LAN
-14903 OUT 0
+14893 LOD main_fa
+14894 F_ADD main_fz
+14895 AND 8388607
+14896 P_LOD 1.25
+14897 AND 8388607
+14898 S_LAN
+14899 OUT 0
 // 973: x = (fa+fz) || 1.25; out(0, x);
-14904 LOD main_fa
-14905 F_ADD main_fz
-14906 AND 8388607
-14907 P_LOD 1.25
-14908 AND 8388607
-14909 S_LOR
-14910 OUT 0
+14900 LOD main_fa
+14901 F_ADD main_fz
+14902 AND 8388607
+14903 P_LOD 1.25
+14904 AND 8388607
+14905 S_LOR
+14906 OUT 0
 // 974: x = 2.5 < ib; out(0, x);
-14911 I2F_M main_ib
-14912 F_LES 2.5
-14913 OUT 0
+14907 I2F_M main_ib
+14908 F_LES 2.5
+14909 OUT 0
 // 975: x = 2.5 > ib; out(0, x);
-14914 I2F_M main_ib
-14915 F_GRE 2.5
-14916 OUT 0
+14910 I2F_M main_ib
+14911 F_GRE 2.5
+14912 OUT 0
 // 976: x = 2.5 <= ib; out(0, x);
+14913 I2F_M main_ib
+14914 F_GRE 2.5
+14915 LIN
+14916 OUT 0
+// 977: x = 2.5 >= ib; out(0, x);
 14917 I2F_M main_ib
-14918 F_GRE 2.5
+14918 F_LES 2.5
 14919 LIN
 14920 OUT 0
-// 977: x = 2.5 >= ib; out(0, x);
-14921 I2F_M main_ib
-14922 F_LES 2.5
-14923 LIN
-14924 OUT 0
 // 978: x = 2.5 == ib; out(0, x);
-14925 I2F_M main_ib
-14926 EQU 2.5
-14927 OUT 0
+14921 I2F_M main_ib
+14922 EQU 2.5
+14923 OUT 0
 // 979: x = 2.5 != ib; out(0, x);
-14928 I2F_M main_ib
-14929 EQU 2.5
-14930 LIN
-14931 OUT 0
+14924 I2F_M main_ib
+14925 EQU 2.5
+14926 LIN
+14927 OUT 0
 // 980: x = 2.5 && ib; out(0, x);
-14932 LOD main_ib
-14933 P_LOD 2.5
-14934 AND 8388607
-14935 S_LAN
-14936 OUT 0
+14928 LOD main_ib
+14929 P_LOD 2.5
+14930 AND 8388607
+14931 S_LAN
+14932 OUT 0
 // 981: x = 2.5 || ib; out(0, x);
-14937 LOD main_ib
-14938 P_LOD 2.5
-14939 AND 8388607
-14940 S_LOR
-14941 OUT 0
+14933 LOD main_ib
+14934 P_LOD 2.5
+14935 AND 8388607
+14936 S_LOR
+14937 OUT 0
 // 982: x = 2.5 < (ib+z0); out(0, x);
-14942 LOD main_ib
-14943 ADD main_z0
-14944 I2F
-14945 F_LES 2.5
-14946 OUT 0
+14938 LOD main_ib
+14939 ADD main_z0
+14940 I2F
+14941 F_LES 2.5
+14942 OUT 0
 // 983: x = 2.5 > (ib+z0); out(0, x);
-14947 LOD main_ib
-14948 ADD main_z0
-14949 I2F
-14950 F_GRE 2.5
-14951 OUT 0
+14943 LOD main_ib
+14944 ADD main_z0
+14945 I2F
+14946 F_GRE 2.5
+14947 OUT 0
 // 984: x = 2.5 <= (ib+z0); out(0, x);
-14952 LOD main_ib
-14953 ADD main_z0
-14954 I2F
-14955 F_GRE 2.5
-14956 LIN
-14957 OUT 0
+14948 LOD main_ib
+14949 ADD main_z0
+14950 I2F
+14951 F_GRE 2.5
+14952 LIN
+14953 OUT 0
 // 985: x = 2.5 >= (ib+z0); out(0, x);
-14958 LOD main_ib
-14959 ADD main_z0
-14960 I2F
-14961 F_LES 2.5
-14962 LIN
-14963 OUT 0
+14954 LOD main_ib
+14955 ADD main_z0
+14956 I2F
+14957 F_LES 2.5
+14958 LIN
+14959 OUT 0
 // 986: x = 2.5 == (ib+z0); out(0, x);
-14964 LOD main_ib
-14965 ADD main_z0
-14966 I2F
-14967 EQU 2.5
-14968 OUT 0
+14960 LOD main_ib
+14961 ADD main_z0
+14962 I2F
+14963 EQU 2.5
+14964 OUT 0
 // 987: x = 2.5 != (ib+z0); out(0, x);
-14969 LOD main_ib
-14970 ADD main_z0
-14971 I2F
-14972 EQU 2.5
-14973 LIN
-14974 OUT 0
+14965 LOD main_ib
+14966 ADD main_z0
+14967 I2F
+14968 EQU 2.5
+14969 LIN
+14970 OUT 0
 // 988: x = 2.5 && (ib+z0); out(0, x);
-14975 LOD main_ib
-14976 ADD main_z0
-14977 P_LOD 2.5
-14978 AND 8388607
-14979 S_LAN
-14980 OUT 0
+14971 LOD main_ib
+14972 ADD main_z0
+14973 P_LOD 2.5
+14974 AND 8388607
+14975 S_LAN
+14976 OUT 0
 // 989: x = 2.5 || (ib+z0); out(0, x);
-14981 LOD main_ib
-14982 ADD main_z0
-14983 P_LOD 2.5
-14984 AND 8388607
-14985 S_LOR
-14986 OUT 0
+14977 LOD main_ib
+14978 ADD main_z0
+14979 P_LOD 2.5
+14980 AND 8388607
+14981 S_LOR
+14982 OUT 0
 // 990: x = 2.5 < 3; out(0, x);
-14987 LOD 2.5
-14988 F_GRE 3.0
-14989 OUT 0
+14983 LOD 2.5
+14984 F_GRE 3.0
+14985 OUT 0
 // 991: x = 2.5 > 3; out(0, x);
-14990 LOD 2.5
-14991 F_LES 3.0
-14992 OUT 0
+14986 LOD 2.5
+14987 F_LES 3.0
+14988 OUT 0
 // 992: x = 2.5 <= 3; out(0, x);
+14989 LOD 2.5
+14990 F_LES 3.0
+14991 LIN
+14992 OUT 0
+// 993: x = 2.5 >= 3; out(0, x);
 14993 LOD 2.5
-14994 F_LES 3.0
+14994 F_GRE 3.0
 14995 LIN
 14996 OUT 0
-// 993: x = 2.5 >= 3; out(0, x);
-14997 LOD 2.5
-14998 F_GRE 3.0
-14999 LIN
-15000 OUT 0
 // 994: x = 2.5 == 3; out(0, x);
-15001 LOD 2.5
-15002 EQU 3.0
-15003 OUT 0
+14997 LOD 2.5
+14998 EQU 3.0
+14999 OUT 0
 // 995: x = 2.5 != 3; out(0, x);
-15004 LOD 2.5
-15005 EQU 3.0
-15006 LIN
-15007 OUT 0
+15000 LOD 2.5
+15001 EQU 3.0
+15002 LIN
+15003 OUT 0
 // 996: x = 2.5 && 3; out(0, x);
-15008 LOD 3
-15009 P_LOD 2.5
-15010 AND 8388607
-15011 S_LAN
-15012 OUT 0
+15004 LOD 3
+15005 P_LOD 2.5
+15006 AND 8388607
+15007 S_LAN
+15008 OUT 0
 // 997: x = 2.5 || 3; out(0, x);
-15013 LOD 3
-15014 P_LOD 2.5
-15015 AND 8388607
-15016 S_LOR
-15017 OUT 0
+15009 LOD 3
+15010 P_LOD 2.5
+15011 AND 8388607
+15012 S_LOR
+15013 OUT 0
 // 998: x = 2.5 < fb; out(0, x);
-15018 LOD main_fb
-15019 F_LES 2.5
-15020 OUT 0
+15014 LOD main_fb
+15015 F_LES 2.5
+15016 OUT 0
 // 999: x = 2.5 > fb; out(0, x);
-15021 LOD main_fb
-15022 F_GRE 2.5
-15023 OUT 0
+15017 LOD main_fb
+15018 F_GRE 2.5
+15019 OUT 0
 // 1000: x = 2.5 <= fb; out(0, x);
+15020 LOD main_fb
+15021 F_GRE 2.5
+15022 LIN
+15023 OUT 0
+// 1001: x = 2.5 >= fb; out(0, x);
 15024 LOD main_fb
-15025 F_GRE 2.5
+15025 F_LES 2.5
 15026 LIN
 15027 OUT 0
-// 1001: x = 2.5 >= fb; out(0, x);
-15028 LOD main_fb
-15029 F_LES 2.5
-15030 LIN
-15031 OUT 0
 // 1002: x = 2.5 == fb; out(0, x);
-15032 LOD main_fb
-15033 EQU 2.5
-15034 OUT 0
+15028 LOD main_fb
+15029 EQU 2.5
+15030 OUT 0
 // 1003: x = 2.5 != fb; out(0, x);
-15035 LOD main_fb
-15036 EQU 2.5
-15037 LIN
-15038 OUT 0
+15031 LOD main_fb
+15032 EQU 2.5
+15033 LIN
+15034 OUT 0
 // 1004: x = 2.5 && fb; out(0, x);
-15039 LOD main_fb
-15040 AND 8388607
-15041 P_LOD 2.5
-15042 AND 8388607
-15043 S_LAN
-15044 OUT 0
+15035 LOD main_fb
+15036 AND 8388607
+15037 P_LOD 2.5
+15038 AND 8388607
+15039 S_LAN
+15040 OUT 0
 // 1005: x = 2.5 || fb; out(0, x);
-15045 LOD main_fb
-15046 AND 8388607
-15047 P_LOD 2.5
-15048 AND 8388607
-15049 S_LOR
-15050 OUT 0
+15041 LOD main_fb
+15042 AND 8388607
+15043 P_LOD 2.5
+15044 AND 8388607
+15045 S_LOR
+15046 OUT 0
 // 1006: x = 2.5 < (fb+fz); out(0, x);
+15047 LOD main_fb
+15048 F_ADD main_fz
+15049 F_LES 2.5
+15050 OUT 0
+// 1007: x = 2.5 > (fb+fz); out(0, x);
 15051 LOD main_fb
 15052 F_ADD main_fz
-15053 F_LES 2.5
+15053 F_GRE 2.5
 15054 OUT 0
-// 1007: x = 2.5 > (fb+fz); out(0, x);
+// 1008: x = 2.5 <= (fb+fz); out(0, x);
 15055 LOD main_fb
 15056 F_ADD main_fz
 15057 F_GRE 2.5
-15058 OUT 0
-// 1008: x = 2.5 <= (fb+fz); out(0, x);
-15059 LOD main_fb
-15060 F_ADD main_fz
-15061 F_GRE 2.5
-15062 LIN
-15063 OUT 0
+15058 LIN
+15059 OUT 0
 // 1009: x = 2.5 >= (fb+fz); out(0, x);
-15064 LOD main_fb
-15065 F_ADD main_fz
-15066 F_LES 2.5
-15067 LIN
-15068 OUT 0
+15060 LOD main_fb
+15061 F_ADD main_fz
+15062 F_LES 2.5
+15063 LIN
+15064 OUT 0
 // 1010: x = 2.5 == (fb+fz); out(0, x);
+15065 LOD main_fb
+15066 F_ADD main_fz
+15067 EQU 2.5
+15068 OUT 0
+// 1011: x = 2.5 != (fb+fz); out(0, x);
 15069 LOD main_fb
 15070 F_ADD main_fz
 15071 EQU 2.5
-15072 OUT 0
-// 1011: x = 2.5 != (fb+fz); out(0, x);
-15073 LOD main_fb
-15074 F_ADD main_fz
-15075 EQU 2.5
-15076 LIN
-15077 OUT 0
+15072 LIN
+15073 OUT 0
 // 1012: x = 2.5 && (fb+fz); out(0, x);
-15078 LOD main_fb
-15079 F_ADD main_fz
-15080 AND 8388607
-15081 P_LOD 2.5
-15082 AND 8388607
-15083 S_LAN
-15084 OUT 0
+15074 LOD main_fb
+15075 F_ADD main_fz
+15076 AND 8388607
+15077 P_LOD 2.5
+15078 AND 8388607
+15079 S_LAN
+15080 OUT 0
 // 1013: x = 2.5 || (fb+fz); out(0, x);
-15085 LOD main_fb
-15086 F_ADD main_fz
-15087 AND 8388607
-15088 P_LOD 2.5
-15089 AND 8388607
-15090 S_LOR
-15091 OUT 0
+15081 LOD main_fb
+15082 F_ADD main_fz
+15083 AND 8388607
+15084 P_LOD 2.5
+15085 AND 8388607
+15086 S_LOR
+15087 OUT 0
 // 1014: x = 2.5 < 1.25; out(0, x);
-15092 LOD 2.5
-15093 F_GRE 1.25
-15094 OUT 0
+15088 LOD 2.5
+15089 F_GRE 1.25
+15090 OUT 0
 // 1015: x = 2.5 > 1.25; out(0, x);
-15095 LOD 2.5
-15096 F_LES 1.25
-15097 OUT 0
+15091 LOD 2.5
+15092 F_LES 1.25
+15093 OUT 0
 // 1016: x = 2.5 <= 1.25; out(0, x);
+15094 LOD 2.5
+15095 F_LES 1.25
+15096 LIN
+15097 OUT 0
+// 1017: x = 2.5 >= 1.25; out(0, x);
 15098 LOD 2.5
-15099 F_LES 1.25
+15099 F_GRE 1.25
 15100 LIN
 15101 OUT 0
-// 1017: x = 2.5 >= 1.25; out(0, x);
-15102 LOD 2.5
-15103 F_GRE 1.25
-15104 LIN
-15105 OUT 0
 // 1018: x = 2.5 == 1.25; out(0, x);
-15106 LOD 2.5
-15107 EQU 1.25
-15108 OUT 0
+15102 LOD 2.5
+15103 EQU 1.25
+15104 OUT 0
 // 1019: x = 2.5 != 1.25; out(0, x);
-15109 LOD 2.5
-15110 EQU 1.25
-15111 LIN
-15112 OUT 0
+15105 LOD 2.5
+15106 EQU 1.25
+15107 LIN
+15108 OUT 0
 // 1020: x = 2.5 && 1.25; out(0, x);
-15113 LOD 1.25
-15114 AND 8388607
-15115 P_LOD 2.5
-15116 AND 8388607
-15117 S_LAN
-15118 OUT 0
+15109 LOD 1.25
+15110 AND 8388607
+15111 P_LOD 2.5
+15112 AND 8388607
+15113 S_LAN
+15114 OUT 0
 // 1021: x = 2.5 || 1.25; out(0, x);
-15119 LOD 1.25
-15120 AND 8388607
-15121 P_LOD 2.5
-15122 AND 8388607
-15123 S_LOR
-15124 OUT 0
+15115 LOD 1.25
+15116 AND 8388607
+15117 P_LOD 2.5
+15118 AND 8388607
+15119 S_LOR
+15120 OUT 0
 // 1022: x = -ia; out(0, x);
-15125 NEG_M main_ia
-15126 OUT 0
+15121 NEG_M main_ia
+15122 OUT 0
 // 1023: x = !ia; out(0, x);
-15127 LIN_M main_ia
-15128 OUT 0
+15123 LIN_M main_ia
+15124 OUT 0
 // 1024: x = ~ia; out(0, x);
-15129 INV_M main_ia
-15130 OUT 0
+15125 INV_M main_ia
+15126 OUT 0
 // 1025: x = -(ia+z0); out(0, x);
+15127 LOD main_ia
+15128 ADD main_z0
+15129 NEG
+15130 OUT 0
+// 1026: x = !(ia+z0); out(0, x);
 15131 LOD main_ia
 15132 ADD main_z0
-15133 NEG
+15133 LIN
 15134 OUT 0
-// 1026: x = !(ia+z0); out(0, x);
+// 1027: x = ~(ia+z0); out(0, x);
 15135 LOD main_ia
 15136 ADD main_z0
-15137 LIN
+15137 INV
 15138 OUT 0
-// 1027: x = ~(ia+z0); out(0, x);
-15139 LOD main_ia
-15140 ADD main_z0
-15141 INV
-15142 OUT 0
 // 1028: x = -101; out(0, x);
-15143 NEG_M 101
-15144 OUT 0
+15139 NEG_M 101
+15140 OUT 0
 // 1029: x = !101; out(0, x);
-15145 LIN_M 101
-15146 OUT 0
+15141 LIN_M 101
+15142 OUT 0
 // 1030: x = ~101; out(0, x);
-15147 INV_M 101
-15148 OUT 0
+15143 INV_M 101
+15144 OUT 0
 // 1031: y = -fa; fout(0, 4.0*y);
-15149 F_NEG_M main_fa
-15150 SET main_y
-15151 LOD 4.0
-15152 F_MLT main_y
-15153 F2I
-15154 OUT 0
+15145 F_NEG_M main_fa
+15146 SET main_y
+15147 LOD 4.0
+15148 F_MLT main_y
+15149 F2I
+15150 OUT 0
 // 1032: x = !fa; out(0, x);
-15155 LOD main_fa
-15156 AND 8388607
-15157 LIN
-15158 OUT 0
+15151 LOD main_fa
+15152 AND 8388607
+15153 LIN
+15154 OUT 0
 // 1033: y = -(fa+fz); fout(0, 4.0*y);
-15159 LOD main_fa
-15160 F_ADD main_fz
-15161 F_NEG
-15162 SET main_y
-15163 LOD 4.0
-15164 F_MLT main_y
-15165 F2I
-15166 OUT 0
+15155 LOD main_fa
+15156 F_ADD main_fz
+15157 F_NEG
+15158 SET main_y
+15159 LOD 4.0
+15160 F_MLT main_y
+15161 F2I
+15162 OUT 0
 // 1034: x = !(fa+fz); out(0, x);
-15167 LOD main_fa
-15168 F_ADD main_fz
-15169 AND 8388607
-15170 LIN
-15171 OUT 0
+15163 LOD main_fa
+15164 F_ADD main_fz
+15165 AND 8388607
+15166 LIN
+15167 OUT 0
 // 1035: y = -2.5; fout(0, 4.0*y);
-15172 LOD -2.5
-15173 SET main_y
-15174 LOD 4.0
-15175 F_MLT main_y
-15176 F2I
-15177 OUT 0
+15168 LOD -2.5
+15169 SET main_y
+15170 LOD 4.0
+15171 F_MLT main_y
+15172 F2I
+15173 OUT 0
 // 1036: x = !2.5; out(0, x);
-15178 LOD 2.5
-15179 AND 8388607
-15180 LIN
-15181 OUT 0
+15174 LOD 2.5
+15175 AND 8388607
+15176 LIN
+15177 OUT 0
 // 1037: w = -ca; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-15182 F_NEG_M main_ca
-15183 PF_NEG_M main_ca_i
-15184 SET_P main_w_i
-15185 SET main_w
+15178 F_NEG_M main_ca
+15179 PF_NEG_M main_ca_i
+15180 SET_P main_w_i
+15181 SET main_w
+15182 LOD 4.0
+15183 F_MLT main_w
+15184 F2I
+15185 OUT 0
 15186 LOD 4.0
-15187 F_MLT main_w
+15187 F_MLT main_w_i
 15188 F2I
 15189 OUT 0
-15190 LOD 4.0
-15191 F_MLT main_w_i
-15192 F2I
-15193 OUT 0
 // 1038: w = -(ca*one); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-15194 LOD main_ca
-15195 F_MLT main_one
-15196 P_LOD main_ca_i
-15197 F_MLT main_one_i
-15198 SF_SU2
-15199 P_LOD main_ca
-15200 F_MLT main_one_i
-15201 P_LOD main_ca_i
-15202 F_MLT main_one
-15203 SF_ADD
-15204 SET_P __aux_var
-15205 F_NEG
-15206 PF_NEG_M __aux_var
-15207 SET_P main_w_i
-15208 SET main_w
+15190 LOD main_ca
+15191 F_MLT main_one
+15192 P_LOD main_ca_i
+15193 F_MLT main_one_i
+15194 SF_SU2
+15195 P_LOD main_ca
+15196 F_MLT main_one_i
+15197 P_LOD main_ca_i
+15198 F_MLT main_one
+15199 SF_ADD
+15200 SET_P __aux_var
+15201 F_NEG
+15202 PF_NEG_M __aux_var
+15203 SET_P main_w_i
+15204 SET main_w
+15205 LOD 4.0
+15206 F_MLT main_w
+15207 F2I
+15208 OUT 0
 15209 LOD 4.0
-15210 F_MLT main_w
+15210 F_MLT main_w_i
 15211 F2I
 15212 OUT 0
-15213 LOD 4.0
-15214 F_MLT main_w_i
-15215 F2I
-15216 OUT 0
 // 1039: w = -(3+2i); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-15217 LOD -3.0
-15218 SET main_w
-15219 LOD -2.0
-15220 SET main_w_i
+15213 LOD -3.0
+15214 SET main_w
+15215 LOD -2.0
+15216 SET main_w_i
+15217 LOD 4.0
+15218 F_MLT main_w
+15219 F2I
+15220 OUT 0
 15221 LOD 4.0
-15222 F_MLT main_w
+15222 F_MLT main_w_i
 15223 F2I
 15224 OUT 0
-15225 LOD 4.0
-15226 F_MLT main_w_i
-15227 F2I
-15228 OUT 0
 // -3: END
-15229 JMP fim
+15225 JMP fim

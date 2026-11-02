@@ -1,10 +1,10 @@
 ## messages
-Info: 33 assembly instructions generated
+Info: 29 assembly instructions generated
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 33 instructions and 10 variables were found
+Info: 29 instructions and 10 variables were found
 Info: adding data output handling
-Info: ULA resource -> > operator for int
 Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 5% of the Assembly Instruction Set
 Info: using 5% of the ULA operations
@@ -29,28 +29,24 @@ lang C+-
 10 SET main_k
 // 17: while (k < 9) { out(0, k); k = k + 1; }
 11 LOD main_k
-12 GRE 9
-13 JIZ __Lwh1end
-14 LOD main_k
-15 OUT 0
-16 ADD 1
-17 SET main_k
-18 JMP __Lwh1
+12 OUT 0
+13 ADD 1
+14 SET main_k
+15 LES 8
+16 JIZ __Lwh1top
 // 18: k = 11;
-19 LOD 11
-20 SET main_k
+17 LOD 11
+18 SET main_k
 // 19: while (k < 15) { out(0, k); k = k + 1; }
-21 LOD main_k
-22 GRE 15
-23 JIZ __Lwh2end
-24 LOD main_k
-25 OUT 0
-26 ADD 1
-27 SET main_k
-28 JMP __Lwh2
+19 LOD main_k
+20 OUT 0
+21 ADD 1
+22 SET main_k
+23 LES 14
+24 JIZ __Lwh2top
 // 20: while (1) { k = 0; }
-29 LOD 0
-30 SET main_k
-31 JMP __Lwh3
+25 LOD 0
+26 SET main_k
+27 JMP __Lwh3
 // -3: END
-32 JMP fim
+28 JMP fim

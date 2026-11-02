@@ -6,16 +6,50 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-#SHARE main_y seno_LUT_x
-#SHARE main_t seno_LUT_idxf
-#SHARE main_e seno_LUT_x
-#SHARE __sin_x seno_LUT_idxf
-#SHARE __sin_q seno_LUT_x
-#SHARE __sin_k seno_LUT_x
-#SHARE __sin_r seno_LUT_idxf
-#SHARE __sin_w seno_LUT_idx
-#SHARE __sin_p seno_LUT_idxf
-JMP main
+@main #arrays main_x 2 1000 "sin_x.txt"
+#arrays main_a 2 1000 "sin_y.txt"
+#SHARE main_e main_y
+#SHARE seno_LUT_x main_y
+#SHARE seno_LUT_idxf main_t
+#SHARE __sin_x main_y
+#SHARE __sin_q main_t
+#SHARE __sin_k main_t
+#SHARE __sin_r main_y
+#SHARE __sin_w main_t
+LOD 0
+SET main_j
+@__Lwh2top LOD main_j
+LDI main_x
+F_ADD 6.283185307
+CAL __float_sin
+SET main_y
+LOD main_j
+LDI main_a
+SET main_t
+F_SU1 main_y
+SET main_e
+LOD main_j
+ADD 1
+SET main_j
+LES 999
+JIZ __Lwh2top
+@__Lwh2end LOD 0
+SET main_j
+@__Lwh3top LOD main_j
+LDI main_x
+CAL seno_LUT
+SET main_y
+LOD main_j
+LDI main_a
+SET main_t
+F_SU1 main_y
+SET main_e
+LOD main_j
+ADD 1
+SET main_j
+LES 999
+JIZ __Lwh3top
+@__Lwh3end @fim JMP fim
 @seno_LUT SET seno_LUT_x
 #arrays seno_LUT_Seno_LUT 2 152 "Seno_LUT.txt"
 @__Lwh1 F_ABS_M seno_LUT_x
@@ -44,52 +78,16 @@ SF_MLT
 F_ADD seno_LUT_v
 F_SGN seno_LUT_x
 RET
-@main #arrays main_x 2 1000 "sin_x.txt"
-#arrays main_a 2 1000 "sin_y.txt"
-LOD 0
-SET main_j
-@__Lwh2 LOD main_j
-GRE 1000
-JIZ __Lwh2end
-LOD main_j
-LDI main_x
-F_ADD 6.283185307
-CAL __float_sin
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP __Lwh2
-@__Lwh2end LOD 0
-SET main_j
-@__Lwh3 LOD main_j
-GRE 1000
-JIZ fim
-LOD main_j
-LDI main_x
-CAL seno_LUT
-SET main_y
-LOD main_j
-LDI main_a
-SET main_t
-F_SU1 main_y
-SET main_e
-LOD main_j
-ADD 1
-SET main_j
-JMP __Lwh3
-@__Lwh3end @fim JMP fim
 
 // Sine function --------------------------------------------------------------
 // O(1) range reduction to [-pi/2, pi/2]: k = round(x/pi); r = x - k*pi; then
 // sin(x) = (-1)^k * sin(r). sin(r) is a degree-7 odd minimax polynomial (the
 // coefficients are a least-squares fit on [0, pi/2], max abs error ~1.6e-6 --
 // ~6 digits, vs the old 152-point LUT's ~3). No lookup table, no new hardware.
+// The parity of k is tested as soon as k is known, and each branch has its
+// own copy of the polynomial: an odd k negates r before it, which gives
+// -sin(r) because the polynomial is odd (w = r^2 is the same, and only the
+// last product by r changes sign). Fewer cycles, a few more words.
 // NB: F2I truncates toward zero, so round-to-nearest uses a sign-half bias.
 
 @__float_sin  SET   __sin_x                  // save x
@@ -99,29 +97,37 @@ JMP __Lwh3
             F_SGN __sin_q                  // copysign(0.5, q)
             F_ADD __sin_q                  // q + copysign(0.5,q)
             F2I                          // k = round(q)
-            SET   __sin_k                  // keep k (int) for the (-1)^k sign
-            I2F                          // float(k)
+            SET   __sin_k
+            AND   1                      // k & 1  (parity)
+            JIZ   __L_sin_even             // k even -> +sin(r)
+
+            I2F_M __sin_k                  // k odd: float(k)
             F_MLT 3.1415926536           // k * pi
             F_SU2 __sin_x                  // r = x - k*pi  -> [-pi/2, pi/2]
+            F_NEG                        // -r: the polynomial gives -sin(r)
             SET   __sin_r
             F_MLT __sin_r                  // w = r^2
             SET   __sin_w
-
-            LOD  -0.000184472138         // Horner in w: sin(r)/r = a1 + a3 w + a5 w^2 + a7 w^3
-            F_MLT __sin_w                  // a7
+            F_MLT -0.000184472138        // Horner in w: sin(r)/r = a1 + a3 w + a5 w^2 + a7 w^3: w * a7
             F_ADD 0.008309516704         // a5
             F_MLT __sin_w
             F_ADD -0.166651680787        // a3
             F_MLT __sin_w
             F_ADD 0.999997487148         // a1
             F_MLT __sin_r                  // * r  -> sin(r)
-            SET   __sin_p
-
-            LOD   __sin_k
-            AND   1                      // k & 1  (parity)
-            JIZ   __L_sin_even             // k even -> +sin(r)
-            LOD   __sin_p
-            F_NEG                        // k odd  -> -sin(r)
             RET
-@__L_sin_even LOD   __sin_p
+
+@__L_sin_even I2F_M __sin_k              // k even: float(k)
+            F_MLT 3.1415926536
+            F_SU2 __sin_x                  // r
+            SET   __sin_r
+            F_MLT __sin_r                  // w = r^2
+            SET   __sin_w
+            F_MLT -0.000184472138        // the same polynomial
+            F_ADD 0.008309516704
+            F_MLT __sin_w
+            F_ADD -0.166651680787
+            F_MLT __sin_w
+            F_ADD 0.999997487148
+            F_MLT __sin_r
             RET

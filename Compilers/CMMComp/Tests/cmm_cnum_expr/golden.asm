@@ -7,18 +7,10 @@ NOP
 #NUIOOU 1
 #arrayd v 3 4 4 1.0 -3.0 0.0 -5.0
 #arrayd v_i 4 4 4 2.0 -4.0 2.0 6.0
-#SHARE main_y put_z_i
-#SHARE main_z_i put_z_i
-#SHARE main_z put_z
-#SHARE __aux_var put_z_i
-JMP main
-@put SET_P put_z_i
-SET put_z
-F2I_M put_z
-OUT 0
-F2I_M put_z_i
-OUT 0
-RET
+#SHARE main_z_i main_y
+#SHARE __aux_var main_y
+#SHARE put_z_i main_y
+#SHARE put_z main_z
 @main LOD 2.0
 SET main_y
 LOD 4
@@ -120,3 +112,10 @@ SET main_k
 LES 3
 JIZ __Lwh1
 @__Lwh1end @fim JMP fim
+@put SET_P put_z_i
+SET put_z
+F2I_M put_z
+OUT 0
+F2I_M put_z_i
+OUT 0
+RET

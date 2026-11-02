@@ -1,22 +1,4 @@
 ## messages
-Heads up on line 50: gonna convert float to int on the return of function 'ret_i_f0'? Code away then!
-Heads up on line 55: gonna convert float to int on the return of function 'ret_i_f1'? Code away then!
-Heads up on line 60: gonna convert float to int on the return of function 'ret_i_f2'? Code away then!
-Heads up on line 65: in this conversion I'm truncating the real part, just so you know!
-Heads up on line 70: in this conversion I'm truncating the real part, just so you know!
-Heads up on line 75: in this conversion I'm truncating the real part, just so you know!
-Heads up on line 80: return is float, but getting an int.
-Heads up on line 85: return is float, but getting an int.
-Heads up on line 90: return is float, but getting an int.
-Heads up on line 110: in this conversion I'm only grabbing the real part, just so you know!
-Heads up on line 115: in this conversion I'm only grabbing the real part, just so you know!
-Heads up on line 120: in this conversion I'm only grabbing the real part, just so you know!
-Heads up on line 125: function return is comp, but getting an int.
-Heads up on line 130: function return is comp, but getting an int.
-Heads up on line 135: function return is comp, but getting an int.
-Heads up on line 140: function return is comp, but getting a float.
-Heads up on line 145: function return is comp, but getting a float.
-Heads up on line 150: function return is comp, but getting a float.
 Heads up on line 191: variable 'x' is int, but getting a float.
 Heads up on line 193: variable 'x' is int, but getting a float.
 Heads up on line 195: variable 'x' is int, but getting a float.
@@ -113,7 +95,25 @@ Heads up on line 552: if you don't want this warning, use 'fout'.
 Heads up on line 553: if you don't want this warning, use 'out'.
 Heads up on line 554: if you don't want this warning, use 'out'.
 Heads up on line 555: if you don't want this warning, use 'out'.
-Info: 2777 assembly instructions generated
+Heads up on line 50: gonna convert float to int on the return of function 'ret_i_f0'? Code away then!
+Heads up on line 55: gonna convert float to int on the return of function 'ret_i_f1'? Code away then!
+Heads up on line 60: gonna convert float to int on the return of function 'ret_i_f2'? Code away then!
+Heads up on line 65: in this conversion I'm truncating the real part, just so you know!
+Heads up on line 70: in this conversion I'm truncating the real part, just so you know!
+Heads up on line 75: in this conversion I'm truncating the real part, just so you know!
+Heads up on line 80: return is float, but getting an int.
+Heads up on line 85: return is float, but getting an int.
+Heads up on line 90: return is float, but getting an int.
+Heads up on line 110: in this conversion I'm only grabbing the real part, just so you know!
+Heads up on line 115: in this conversion I'm only grabbing the real part, just so you know!
+Heads up on line 120: in this conversion I'm only grabbing the real part, just so you know!
+Heads up on line 125: function return is comp, but getting an int.
+Heads up on line 130: function return is comp, but getting an int.
+Heads up on line 135: function return is comp, but getting an int.
+Heads up on line 140: function return is comp, but getting a float.
+Heads up on line 145: function return is comp, but getting a float.
+Heads up on line 150: function return is comp, but getting a float.
+Info: 2776 assembly instructions generated
 Info: 18 unreachable instructions removed
 Info: 18 jumps to the next instruction removed
 Info: 4 variables written and never read removed (48 instructions)
@@ -123,13 +123,13 @@ Heads up: variable 'p' in function 'par_f' is never read, so it's out of the pro
 Heads up: variable 'p' in function 'early' is never read, so it's out of the program and the waveform (#WAVE p, in the function, keeps it).
 Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 2693 instructions and 85 variables were found
+Info: 2692 instructions and 85 variables were found
+Info: adding data output handling
 Info: ULA resource -> integer adder
 Info: ULA resource -> float to int converter
 Info: ULA resource -> float-point adder
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> int to float converter
-Info: adding data output handling
 Info: adding array handling
 Info: ULA resource -> integer multiplier
 Info: adding stack memory for function calls
@@ -180,343 +180,320 @@ lang C+-
 ## listing
 // -1: INTERNAL
 0 NOP
-// -2: void main();
-1 JMP main
-// 20: return p;
-2 RET
-// 25: return p;
-3 RET
-// 28: comp par_c(comp p)
-4 SET_P par_c_p_i
-5 SET par_c_p
-// 30: return p;
-6 P_LOD par_c_p_i
-7 RET
-// 35: return gi;
-8 LOD gi
-9 RET
-// 40: return (gi+gz);
-10 LOD gi
-11 ADD gz
-12 RET
-// 45: return 7;
-13 LOD 7
-14 RET
-// 50: return gf;
-15 F2I_M gf
-16 RET
-// 55: return (gf+gfz);
-17 LOD gf
-18 F_ADD gfz
-19 F2I
-20 RET
-// 60: return 2.5;
-21 F2I_M 2.5
-22 RET
-// 65: return gc;
-23 F2I_M gc
-24 RET
-// 70: return (gc*gone);
-25 LOD gc
-26 F_MLT gone
-27 P_LOD gc_i
-28 F_MLT gone_i
-29 SF_SU2
-30 P_LOD gc
-31 F_MLT gone_i
-32 P_LOD gc_i
-33 F_MLT gone
-34 SF_ADD
-35 POP
-36 F2I
-37 RET
-// 75: return (3.0+4.0i);
-38 F2I_M 3.0
-39 RET
-// 80: return gi;
-40 I2F_M gi
-41 RET
-// 85: return (gi+gz);
-42 LOD gi
-43 ADD gz
-44 I2F
-45 RET
-// 90: return 7;
-46 LOD 7.0
-47 RET
-// 95: return gf;
-48 LOD gf
-49 RET
-// 100: return (gf+gfz);
-50 LOD gf
-51 F_ADD gfz
-52 RET
-// 105: return 2.5;
-53 LOD 2.5
-54 RET
-// 110: return gc;
-55 LOD gc
-56 RET
-// 115: return (gc*gone);
-57 LOD gc
-58 F_MLT gone
-59 P_LOD gc_i
-60 F_MLT gone_i
-61 SF_SU2
-62 P_LOD gc
-63 F_MLT gone_i
-64 P_LOD gc_i
-65 F_MLT gone
-66 SF_ADD
-67 POP
-68 RET
-// 120: return (3.0+4.0i);
-69 LOD 3.0
-70 RET
-// 125: return gi;
-71 I2F_M gi
-72 P_LOD 0.0
-73 RET
-// 130: return (gi+gz);
-74 LOD gi
-75 ADD gz
-76 I2F
-77 P_LOD 0.0
-78 RET
-// 135: return 7;
-79 LOD 7.0
-80 P_LOD 0.0
-81 RET
-// 140: return gf;
-82 LOD gf
-83 P_LOD 0.0
-84 RET
-// 145: return (gf+gfz);
-85 LOD gf
-86 F_ADD gfz
-87 P_LOD 0.0
-88 RET
-// 150: return 2.5;
-89 LOD 2.5
-90 P_LOD 0.0
-91 RET
-// 155: return gc;
-92 LOD gc
-93 P_LOD gc_i
-94 RET
-// 160: return (gc*gone);
-95 LOD gc
-96 F_MLT gone
-97 P_LOD gc_i
-98 F_MLT gone_i
-99 SF_SU2
-100 P_LOD gc
-101 F_MLT gone_i
-102 P_LOD gc_i
-103 F_MLT gone
-104 SF_ADD
-105 RET
-// 165: return (3.0+4.0i);
-106 LOD 3.0
-107 P_LOD 4.0
-108 RET
-// 170: if (p) return;
-109 JIZ __Lif1else
-110 RET
-// 171: out(0, 77);
-111 LOD 77
-112 OUT 0
-// 172: }
-113 RET
-// 174: float mix(int a, float b, comp c)
-114 SET_P mix_c_i
-115 SET_P mix_c
-116 SET_P mix_b
-117 SET mix_a
-// 176: return a + b + real(c) + imag(c);
-118 I2F_M mix_a
-119 F_ADD mix_b
-120 F_ADD mix_c
-121 F_ADD mix_c_i
-122 RET
 // 183: gi = 7; gz = 0; gf = 2.5; gfz = 0.0; gc = 3.0+4.0i; gone = 1+0i;
-123 LOD 7
-124 SET gi
-125 LOD 0
-126 SET gz
-127 LOD 2.5
-128 SET gf
-129 LOD 0.0
-130 SET gfz
-131 LOD 3.0
-132 SET gc
-133 LOD 4.0
-134 SET gc_i
-135 LOD 1.0
-136 SET gone
-137 LOD 0.0
-138 SET gone_i
+1 LOD 7
+2 SET gi
+3 LOD 0
+4 SET gz
+5 LOD 2.5
+6 SET gf
+7 LOD 0.0
+8 SET gfz
+9 LOD 3.0
+10 SET gc
+11 LOD 4.0
+12 SET gc_i
+13 LOD 1.0
+14 SET gone
+15 LOD 0.0
+16 SET gone_i
 // 184: n1 = 1; n2 = 2; z0 = 0; pa = 1000; fz = 0.0; pf = 1000.0; one = 1+0i; pc = 100+100i;
-139 LOD 1
-140 SET main_n1
-141 LOD 2
-142 SET main_n2
-143 LOD 0
-144 SET main_z0
-145 LOD 1000
-146 SET main_pa
-147 LOD 0.0
-148 SET main_fz
-149 LOD 1000.0
-150 SET main_pf
-151 LOD 1.0
-152 SET main_one
-153 LOD 0.0
-154 SET main_one_i
-155 LOD 100.0
-156 SET main_pc
-157 SET main_pc_i
+17 LOD 1
+18 SET main_n1
+19 LOD 2
+20 SET main_n2
+21 LOD 0
+22 SET main_z0
+23 LOD 1000
+24 SET main_pa
+25 LOD 0.0
+26 SET main_fz
+27 LOD 1000.0
+28 SET main_pf
+29 LOD 1.0
+30 SET main_one
+31 LOD 0.0
+32 SET main_one_i
+33 LOD 100.0
+34 SET main_pc
+35 SET main_pc_i
 // 185: x = gi;
-158 LOD gi
+36 LOD gi
 // 186: out(0, x);
-159 OUT 0
+37 OUT 0
 // 187: x = (gi+gz);
-160 ADD gz
+38 ADD gz
 // 188: out(0, x);
-161 OUT 0
+39 OUT 0
 // 189: x = 7;
-162 LOD 7
+40 LOD 7
 // 190: out(0, x);
-163 OUT 0
+41 OUT 0
 // 191: x = gf;
-164 F2I_M gf
+42 F2I_M gf
 // 192: out(0, x);
-165 OUT 0
+43 OUT 0
 // 193: x = (gf+gfz);
-166 LOD gf
-167 F_ADD gfz
-168 F2I
+44 LOD gf
+45 F_ADD gfz
+46 F2I
 // 194: out(0, x);
-169 OUT 0
+47 OUT 0
 // 195: x = 2.5;
-170 F2I_M 2.5
+48 F2I_M 2.5
 // 196: out(0, x);
-171 OUT 0
+49 OUT 0
 // 197: x = gc;
-172 F2I_M gc
+50 F2I_M gc
 // 198: out(0, x);
-173 OUT 0
+51 OUT 0
 // 199: x = (gc*gone);
-174 LOD gc
-175 F_MLT gone
-176 P_LOD gc_i
-177 F_MLT gone_i
-178 SF_SU2
-179 P_LOD gc
-180 F_MLT gone_i
-181 P_LOD gc_i
-182 F_MLT gone
-183 SF_ADD
-184 POP
-185 F2I
+52 LOD gc
+53 F_MLT gone
+54 P_LOD gc_i
+55 F_MLT gone_i
+56 SF_SU2
+57 P_LOD gc
+58 F_MLT gone_i
+59 P_LOD gc_i
+60 F_MLT gone
+61 SF_ADD
+62 POP
+63 F2I
 // 200: out(0, x);
-186 OUT 0
+64 OUT 0
 // 201: x = (3.0+4.0i);
-187 F2I_M 3.0
+65 F2I_M 3.0
 // 202: out(0, x);
-188 OUT 0
+66 OUT 0
 // 203: y = gi;
-189 I2F_M gi
-190 SET main_y
+67 I2F_M gi
+68 SET main_y
 // 204: fout(0, 4.0*y);
-191 LOD 4.0
-192 F_MLT main_y
-193 F2I
-194 OUT 0
+69 LOD 4.0
+70 F_MLT main_y
+71 F2I
+72 OUT 0
 // 205: y = (gi+gz);
-195 LOD gi
-196 ADD gz
-197 I2F
-198 SET main_y
+73 LOD gi
+74 ADD gz
+75 I2F
+76 SET main_y
 // 206: fout(0, 4.0*y);
-199 LOD 4.0
-200 F_MLT main_y
-201 F2I
-202 OUT 0
+77 LOD 4.0
+78 F_MLT main_y
+79 F2I
+80 OUT 0
 // 207: y = 7;
-203 LOD 7.0
-204 SET main_y
+81 LOD 7.0
+82 SET main_y
 // 208: fout(0, 4.0*y);
-205 LOD 4.0
-206 F_MLT main_y
-207 F2I
-208 OUT 0
+83 LOD 4.0
+84 F_MLT main_y
+85 F2I
+86 OUT 0
 // 209: y = gf;
-209 LOD gf
-210 SET main_y
+87 LOD gf
+88 SET main_y
 // 210: fout(0, 4.0*y);
-211 LOD 4.0
-212 F_MLT main_y
-213 F2I
-214 OUT 0
+89 LOD 4.0
+90 F_MLT main_y
+91 F2I
+92 OUT 0
 // 211: y = (gf+gfz);
-215 LOD gf
-216 F_ADD gfz
-217 SET main_y
+93 LOD gf
+94 F_ADD gfz
+95 SET main_y
 // 212: fout(0, 4.0*y);
-218 LOD 4.0
-219 F_MLT main_y
-220 F2I
-221 OUT 0
+96 LOD 4.0
+97 F_MLT main_y
+98 F2I
+99 OUT 0
 // 213: y = 2.5;
-222 LOD 2.5
-223 SET main_y
+100 LOD 2.5
+101 SET main_y
 // 214: fout(0, 4.0*y);
-224 LOD 4.0
-225 F_MLT main_y
-226 F2I
-227 OUT 0
+102 LOD 4.0
+103 F_MLT main_y
+104 F2I
+105 OUT 0
 // 215: y = gc;
-228 LOD gc
-229 SET main_y
+106 LOD gc
+107 SET main_y
 // 216: fout(0, 4.0*y);
-230 LOD 4.0
-231 F_MLT main_y
-232 F2I
-233 OUT 0
+108 LOD 4.0
+109 F_MLT main_y
+110 F2I
+111 OUT 0
 // 217: y = (gc*gone);
-234 LOD gc
-235 F_MLT gone
-236 P_LOD gc_i
-237 F_MLT gone_i
-238 SF_SU2
-239 P_LOD gc
-240 F_MLT gone_i
-241 P_LOD gc_i
-242 F_MLT gone
-243 SF_ADD
-244 POP
-245 SET main_y
+112 LOD gc
+113 F_MLT gone
+114 P_LOD gc_i
+115 F_MLT gone_i
+116 SF_SU2
+117 P_LOD gc
+118 F_MLT gone_i
+119 P_LOD gc_i
+120 F_MLT gone
+121 SF_ADD
+122 POP
+123 SET main_y
 // 218: fout(0, 4.0*y);
-246 LOD 4.0
-247 F_MLT main_y
-248 F2I
-249 OUT 0
+124 LOD 4.0
+125 F_MLT main_y
+126 F2I
+127 OUT 0
 // 219: y = (3.0+4.0i);
-250 LOD 3.0
-251 SET main_y
+128 LOD 3.0
+129 SET main_y
 // 220: fout(0, 4.0*y);
-252 LOD 4.0
-253 F_MLT main_y
-254 F2I
-255 OUT 0
+130 LOD 4.0
+131 F_MLT main_y
+132 F2I
+133 OUT 0
 // 221: w = gi;
-256 I2F_M gi
-257 SET main_w
-258 LOD 0.0
-259 SET main_w_i
+134 I2F_M gi
+135 SET main_w
+136 LOD 0.0
+137 SET main_w_i
 // 222: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-260 LOD main_w
+138 LOD main_w
+139 SET main_w
+140 LOD main_w_i
+141 SET main_w_i
+142 LOD 4.0
+143 F_MLT main_w
+144 F2I
+145 OUT 0
+146 LOD 4.0
+147 F_MLT main_w_i
+148 F2I
+149 OUT 0
+// 223: w = (gi+gz);
+150 LOD gi
+151 ADD gz
+152 I2F
+153 SET main_w
+154 LOD 0.0
+155 SET main_w_i
+// 224: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+156 LOD main_w
+157 SET main_w
+158 LOD main_w_i
+159 SET main_w_i
+160 LOD 4.0
+161 F_MLT main_w
+162 F2I
+163 OUT 0
+164 LOD 4.0
+165 F_MLT main_w_i
+166 F2I
+167 OUT 0
+// 225: w = 7;
+168 LOD 7.0
+169 SET main_w
+170 LOD 0.0
+171 SET main_w_i
+// 226: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+172 LOD main_w
+173 SET main_w
+174 LOD main_w_i
+175 SET main_w_i
+176 LOD 4.0
+177 F_MLT main_w
+178 F2I
+179 OUT 0
+180 LOD 4.0
+181 F_MLT main_w_i
+182 F2I
+183 OUT 0
+// 227: w = gf;
+184 LOD gf
+185 SET main_w
+186 LOD 0.0
+187 SET main_w_i
+// 228: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+188 LOD main_w
+189 SET main_w
+190 LOD main_w_i
+191 SET main_w_i
+192 LOD 4.0
+193 F_MLT main_w
+194 F2I
+195 OUT 0
+196 LOD 4.0
+197 F_MLT main_w_i
+198 F2I
+199 OUT 0
+// 229: w = (gf+gfz);
+200 LOD gf
+201 F_ADD gfz
+202 SET main_w
+203 LOD 0.0
+204 SET main_w_i
+// 230: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+205 LOD main_w
+206 SET main_w
+207 LOD main_w_i
+208 SET main_w_i
+209 LOD 4.0
+210 F_MLT main_w
+211 F2I
+212 OUT 0
+213 LOD 4.0
+214 F_MLT main_w_i
+215 F2I
+216 OUT 0
+// 231: w = 2.5;
+217 LOD 2.5
+218 SET main_w
+219 LOD 0.0
+220 SET main_w_i
+// 232: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+221 LOD main_w
+222 SET main_w
+223 LOD main_w_i
+224 SET main_w_i
+225 LOD 4.0
+226 F_MLT main_w
+227 F2I
+228 OUT 0
+229 LOD 4.0
+230 F_MLT main_w_i
+231 F2I
+232 OUT 0
+// 233: w = gc;
+233 LOD gc
+234 SET main_w
+235 LOD gc_i
+236 SET main_w_i
+// 234: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+237 LOD main_w
+238 SET main_w
+239 LOD main_w_i
+240 SET main_w_i
+241 LOD 4.0
+242 F_MLT main_w
+243 F2I
+244 OUT 0
+245 LOD 4.0
+246 F_MLT main_w_i
+247 F2I
+248 OUT 0
+// 235: w = (gc*gone);
+249 LOD gc
+250 F_MLT gone
+251 P_LOD gc_i
+252 F_MLT gone_i
+253 SF_SU2
+254 P_LOD gc
+255 F_MLT gone_i
+256 P_LOD gc_i
+257 F_MLT gone
+258 SF_ADD
+259 SET_P main_w_i
+260 SET main_w
+// 236: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
 261 SET main_w
 262 LOD main_w_i
 263 SET main_w_i
@@ -528,2758 +505,2779 @@ lang C+-
 269 F_MLT main_w_i
 270 F2I
 271 OUT 0
-// 223: w = (gi+gz);
-272 LOD gi
-273 ADD gz
-274 I2F
-275 SET main_w
-276 LOD 0.0
-277 SET main_w_i
-// 224: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-278 LOD main_w
-279 SET main_w
-280 LOD main_w_i
-281 SET main_w_i
-282 LOD 4.0
-283 F_MLT main_w
-284 F2I
-285 OUT 0
-286 LOD 4.0
-287 F_MLT main_w_i
-288 F2I
-289 OUT 0
-// 225: w = 7;
-290 LOD 7.0
-291 SET main_w
-292 LOD 0.0
-293 SET main_w_i
-// 226: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-294 LOD main_w
-295 SET main_w
-296 LOD main_w_i
-297 SET main_w_i
-298 LOD 4.0
-299 F_MLT main_w
-300 F2I
-301 OUT 0
+// 237: w = (3.0+4.0i);
+272 LOD 3.0
+273 SET main_w
+274 LOD 4.0
+275 SET main_w_i
+// 238: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+276 LOD main_w
+277 SET main_w
+278 LOD main_w_i
+279 SET main_w_i
+280 LOD 4.0
+281 F_MLT main_w
+282 F2I
+283 OUT 0
+284 LOD 4.0
+285 F_MLT main_w_i
+286 F2I
+287 OUT 0
+// 239: k = 5; x = k++; out(0, x); out(0, k);
+288 LOD 5
+289 SET main_k
+290 PSH
+291 ADD 1
+292 SET_P main_k
+293 OUT 0
+294 LOD main_k
+295 OUT 0
+// 240: g = 1.5; y = g++; fout(0, 4.0*y); fout(0, 4.0*g);
+296 LOD 1.5
+297 SET main_g
+298 PSH
+299 F_ADD 1.0
+300 SET_P main_g
+301 SET main_y
 302 LOD 4.0
-303 F_MLT main_w_i
+303 F_MLT main_y
 304 F2I
 305 OUT 0
-// 227: w = gf;
-306 LOD gf
-307 SET main_w
-308 LOD 0.0
-309 SET main_w_i
-// 228: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-310 LOD main_w
-311 SET main_w
-312 LOD main_w_i
-313 SET main_w_i
-314 LOD 4.0
-315 F_MLT main_w
-316 F2I
-317 OUT 0
-318 LOD 4.0
-319 F_MLT main_w_i
-320 F2I
-321 OUT 0
-// 229: w = (gf+gfz);
-322 LOD gf
-323 F_ADD gfz
-324 SET main_w
-325 LOD 0.0
-326 SET main_w_i
-// 230: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-327 LOD main_w
-328 SET main_w
-329 LOD main_w_i
-330 SET main_w_i
+306 LOD 4.0
+307 F_MLT main_g
+308 F2I
+309 OUT 0
+// 241: vi[1] = 5; x = vi[n1]++; out(0, x); out(0, vi[1]);
+310 LOD 5
+311 SET_V vi 1
+312 LOD main_n1
+313 PSH
+314 LDI vi
+315 ADD 1
+316 STI vi
+317 ADD -1
+318 OUT 0
+319 LOD_V vi 1
+320 OUT 0
+// 242: vf[1] = 1.5; y = vf[n1]++; fout(0, 4.0*y); fout(0, 4.0*vf[1]);
+321 LOD 1.5
+322 SET_V vf 1
+323 LOD main_n1
+324 PSH
+325 LDI vf
+326 SET __aux_var
+327 F_ADD 1.0
+328 STI vf
+329 LOD __aux_var
+330 SET main_y
 331 LOD 4.0
-332 F_MLT main_w
+332 F_MLT main_y
 333 F2I
 334 OUT 0
-335 LOD 4.0
-336 F_MLT main_w_i
+335 LOD_V vf 1
+336 F_MLT 4.0
 337 F2I
 338 OUT 0
-// 231: w = 2.5;
-339 LOD 2.5
-340 SET main_w
-341 LOD 0.0
-342 SET main_w_i
-// 232: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-343 LOD main_w
-344 SET main_w
-345 LOD main_w_i
-346 SET main_w_i
-347 LOD 4.0
-348 F_MLT main_w
-349 F2I
-350 OUT 0
-351 LOD 4.0
-352 F_MLT main_w_i
-353 F2I
-354 OUT 0
-// 233: w = gc;
-355 LOD gc
-356 SET main_w
-357 LOD gc_i
-358 SET main_w_i
-// 234: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-359 LOD main_w
-360 SET main_w
-361 LOD main_w_i
-362 SET main_w_i
-363 LOD 4.0
-364 F_MLT main_w
-365 F2I
-366 OUT 0
-367 LOD 4.0
-368 F_MLT main_w_i
-369 F2I
-370 OUT 0
-// 235: w = (gc*gone);
-371 LOD gc
-372 F_MLT gone
-373 P_LOD gc_i
-374 F_MLT gone_i
-375 SF_SU2
-376 P_LOD gc
-377 F_MLT gone_i
-378 P_LOD gc_i
-379 F_MLT gone
-380 SF_ADD
-381 SET_P main_w_i
-382 SET main_w
-// 236: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-383 SET main_w
-384 LOD main_w_i
-385 SET main_w_i
-386 LOD 4.0
-387 F_MLT main_w
-388 F2I
-389 OUT 0
-390 LOD 4.0
-391 F_MLT main_w_i
-392 F2I
-393 OUT 0
-// 237: w = (3.0+4.0i);
-394 LOD 3.0
-395 SET main_w
-396 LOD 4.0
-397 SET main_w_i
-// 238: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-398 LOD main_w
-399 SET main_w
-400 LOD main_w_i
-401 SET main_w_i
-402 LOD 4.0
-403 F_MLT main_w
-404 F2I
-405 OUT 0
-406 LOD 4.0
-407 F_MLT main_w_i
-408 F2I
-409 OUT 0
-// 239: k = 5; x = k++; out(0, x); out(0, k);
-410 LOD 5
-411 SET main_k
-412 PSH
-413 ADD 1
-414 SET_P main_k
-415 OUT 0
-416 LOD main_k
-417 OUT 0
-// 240: g = 1.5; y = g++; fout(0, 4.0*y); fout(0, 4.0*g);
-418 LOD 1.5
-419 SET main_g
-420 PSH
-421 F_ADD 1.0
-422 SET_P main_g
-423 SET main_y
-424 LOD 4.0
-425 F_MLT main_y
-426 F2I
-427 OUT 0
-428 LOD 4.0
-429 F_MLT main_g
-430 F2I
-431 OUT 0
-// 241: vi[1] = 5; x = vi[n1]++; out(0, x); out(0, vi[1]);
-432 LOD 5
-433 SET_V vi 1
-434 LOD main_n1
-435 PSH
-436 LDI vi
-437 ADD 1
-438 STI vi
-439 ADD -1
-440 OUT 0
-441 LOD_V vi 1
-442 OUT 0
-// 242: vf[1] = 1.5; y = vf[n1]++; fout(0, 4.0*y); fout(0, 4.0*vf[1]);
-443 LOD 1.5
-444 SET_V vf 1
-445 LOD main_n1
-446 PSH
-447 LDI vf
-448 SET __aux_var
-449 F_ADD 1.0
-450 STI vf
-451 LOD __aux_var
-452 SET main_y
-453 LOD 4.0
-454 F_MLT main_y
-455 F2I
-456 OUT 0
-457 LOD_V vf 1
-458 F_MLT 4.0
-459 F2I
-460 OUT 0
 // 243: mi[1][2] = 5; x = mi[n1][n2]++; out(0, x); out(0, mi[1][2]);
-461 LOD 5
-462 SET_V mi 6
-463 LOD main_n1
-464 MLT 4
-465 ADD main_n2
-466 PSH
-467 LDI mi
-468 ADD 1
-469 STI mi
-470 ADD -1
-471 OUT 0
-472 LOD_V mi 6
-473 OUT 0
+339 LOD 5
+340 SET_V mi 6
+341 LOD main_n1
+342 MLT 4
+343 ADD main_n2
+344 PSH
+345 LDI mi
+346 ADD 1
+347 STI mi
+348 ADD -1
+349 OUT 0
+350 LOD_V mi 6
+351 OUT 0
 // 244: mf[1][2] = 1.5; y = mf[n1][n2]++; fout(0, 4.0*y); fout(0, 4.0*mf[1][2]);
-474 LOD 1.5
-475 SET_V mf 6
-476 LOD main_n1
-477 MLT 4
-478 ADD main_n2
-479 PSH
-480 LDI mf
-481 SET __aux_var
-482 F_ADD 1.0
-483 STI mf
-484 LOD __aux_var
-485 SET main_y
-486 LOD 4.0
-487 F_MLT main_y
-488 F2I
-489 OUT 0
-490 LOD_V mf 6
-491 F_MLT 4.0
-492 F2I
-493 OUT 0
+352 LOD 1.5
+353 SET_V mf 6
+354 LOD main_n1
+355 MLT 4
+356 ADD main_n2
+357 PSH
+358 LDI mf
+359 SET __aux_var
+360 F_ADD 1.0
+361 STI mf
+362 LOD __aux_var
+363 SET main_y
+364 LOD 4.0
+365 F_MLT main_y
+366 F2I
+367 OUT 0
+368 LOD_V mf 6
+369 F_MLT 4.0
+370 F2I
+371 OUT 0
 // 245: k = 5; x = (pa+z0) + k++; out(0, x); out(0, k);
-494 LOD 5
-495 SET main_k
-496 LOD main_pa
-497 ADD main_z0
-498 P_LOD main_k
-499 PSH
-500 ADD 1
-501 SET_P main_k
-502 S_ADD
-503 OUT 0
-504 LOD main_k
-505 OUT 0
+372 LOD 5
+373 SET main_k
+374 LOD main_pa
+375 ADD main_z0
+376 P_LOD main_k
+377 PSH
+378 ADD 1
+379 SET_P main_k
+380 S_ADD
+381 OUT 0
+382 LOD main_k
+383 OUT 0
 // 246: g = 1.5; y = (pf+fz) + g++; fout(0, 4.0*y); fout(0, 4.0*g);
-506 LOD 1.5
-507 SET main_g
-508 LOD main_pf
-509 F_ADD main_fz
-510 P_LOD main_g
-511 PSH
-512 F_ADD 1.0
-513 SET_P main_g
-514 SF_ADD
-515 SET main_y
-516 LOD 4.0
-517 F_MLT main_y
-518 F2I
-519 OUT 0
-520 LOD 4.0
-521 F_MLT main_g
-522 F2I
-523 OUT 0
+384 LOD 1.5
+385 SET main_g
+386 LOD main_pf
+387 F_ADD main_fz
+388 P_LOD main_g
+389 PSH
+390 F_ADD 1.0
+391 SET_P main_g
+392 SF_ADD
+393 SET main_y
+394 LOD 4.0
+395 F_MLT main_y
+396 F2I
+397 OUT 0
+398 LOD 4.0
+399 F_MLT main_g
+400 F2I
+401 OUT 0
 // 247: vi[1] = 5; x = (pa+z0) + vi[n1]++; out(0, x); out(0, vi[1]);
-524 LOD 5
-525 SET_V vi 1
-526 LOD main_pa
-527 ADD main_z0
-528 PSH
-529 LOD main_n1
-530 PSH
-531 LDI vi
-532 ADD 1
-533 STI vi
-534 ADD -1
-535 S_ADD
-536 OUT 0
-537 LOD_V vi 1
-538 OUT 0
+402 LOD 5
+403 SET_V vi 1
+404 LOD main_pa
+405 ADD main_z0
+406 PSH
+407 LOD main_n1
+408 PSH
+409 LDI vi
+410 ADD 1
+411 STI vi
+412 ADD -1
+413 S_ADD
+414 OUT 0
+415 LOD_V vi 1
+416 OUT 0
 // 248: vf[1] = 1.5; y = (pf+fz) + vf[n1]++; fout(0, 4.0*y); fout(0, 4.0*vf[1]);
-539 LOD 1.5
-540 SET_V vf 1
-541 LOD main_pf
-542 F_ADD main_fz
-543 PSH
-544 LOD main_n1
-545 PSH
-546 LDI vf
-547 SET __aux_var
-548 F_ADD 1.0
-549 STI vf
-550 LOD __aux_var
-551 SF_ADD
-552 SET main_y
-553 LOD 4.0
-554 F_MLT main_y
-555 F2I
-556 OUT 0
-557 LOD_V vf 1
-558 F_MLT 4.0
-559 F2I
-560 OUT 0
+417 LOD 1.5
+418 SET_V vf 1
+419 LOD main_pf
+420 F_ADD main_fz
+421 PSH
+422 LOD main_n1
+423 PSH
+424 LDI vf
+425 SET __aux_var
+426 F_ADD 1.0
+427 STI vf
+428 LOD __aux_var
+429 SF_ADD
+430 SET main_y
+431 LOD 4.0
+432 F_MLT main_y
+433 F2I
+434 OUT 0
+435 LOD_V vf 1
+436 F_MLT 4.0
+437 F2I
+438 OUT 0
 // 249: mi[1][2] = 5; x = (pa+z0) + mi[n1][n2]++; out(0, x); out(0, mi[1][2]);
-561 LOD 5
-562 SET_V mi 6
+439 LOD 5
+440 SET_V mi 6
+441 LOD main_pa
+442 ADD main_z0
+443 PSH
+444 LOD main_n1
+445 MLT 4
+446 ADD main_n2
+447 PSH
+448 LDI mi
+449 ADD 1
+450 STI mi
+451 ADD -1
+452 S_ADD
+453 OUT 0
+454 LOD_V mi 6
+455 OUT 0
+// 250: mf[1][2] = 1.5; y = (pf+fz) + mf[n1][n2]++; fout(0, 4.0*y); fout(0, 4.0*mf[1][2]);
+456 LOD 1.5
+457 SET_V mf 6
+458 LOD main_pf
+459 F_ADD main_fz
+460 PSH
+461 LOD main_n1
+462 MLT 4
+463 ADD main_n2
+464 PSH
+465 LDI mf
+466 SET __aux_var
+467 F_ADD 1.0
+468 STI mf
+469 LOD __aux_var
+470 SF_ADD
+471 SET main_y
+472 LOD 4.0
+473 F_MLT main_y
+474 F2I
+475 OUT 0
+476 LOD_V mf 6
+477 F_MLT 4.0
+478 F2I
+479 OUT 0
+// 251: out(0, par_i(gi));
+480 LOD gi
+481 CAL par_i
+482 OUT 0
+// 252: x = (pa+z0) + par_i(gi);
+483 LOD main_pa
+484 ADD main_z0
+485 P_LOD gi
+486 CAL par_i
+487 S_ADD
+// 253: out(0, x);
+488 OUT 0
+// 254: out(0, par_i((gi+gz)));
+489 LOD gi
+490 ADD gz
+491 CAL par_i
+492 OUT 0
+// 255: x = (pa+z0) + par_i((gi+gz));
+493 LOD main_pa
+494 ADD main_z0
+495 P_LOD gi
+496 ADD gz
+497 CAL par_i
+498 S_ADD
+// 256: out(0, x);
+499 OUT 0
+// 257: out(0, par_i(7));
+500 LOD 7
+501 CAL par_i
+502 OUT 0
+// 258: x = (pa+z0) + par_i(7);
+503 LOD main_pa
+504 ADD main_z0
+505 P_LOD 7
+506 CAL par_i
+507 S_ADD
+// 259: out(0, x);
+508 OUT 0
+// 260: out(0, par_i(gf));
+509 F2I_M gf
+510 CAL par_i
+511 OUT 0
+// 261: x = (pa+z0) + par_i(gf);
+512 LOD main_pa
+513 ADD main_z0
+514 P_F2I_M gf
+515 CAL par_i
+516 S_ADD
+// 262: out(0, x);
+517 OUT 0
+// 263: out(0, par_i((gf+gfz)));
+518 LOD gf
+519 F_ADD gfz
+520 F2I
+521 CAL par_i
+522 OUT 0
+// 264: x = (pa+z0) + par_i((gf+gfz));
+523 LOD main_pa
+524 ADD main_z0
+525 P_LOD gf
+526 F_ADD gfz
+527 F2I
+528 CAL par_i
+529 S_ADD
+// 265: out(0, x);
+530 OUT 0
+// 266: out(0, par_i(2.5));
+531 F2I_M 2.5
+532 CAL par_i
+533 OUT 0
+// 267: x = (pa+z0) + par_i(2.5);
+534 LOD main_pa
+535 ADD main_z0
+536 P_F2I_M 2.5
+537 CAL par_i
+538 S_ADD
+// 268: out(0, x);
+539 OUT 0
+// 269: out(0, par_i(gc));
+540 F2I_M gc
+541 CAL par_i
+542 OUT 0
+// 270: x = (pa+z0) + par_i(gc);
+543 LOD main_pa
+544 ADD main_z0
+545 P_F2I_M gc
+546 CAL par_i
+547 S_ADD
+// 271: out(0, x);
+548 OUT 0
+// 272: out(0, par_i((gc*gone)));
+549 LOD gc
+550 F_MLT gone
+551 P_LOD gc_i
+552 F_MLT gone_i
+553 SF_SU2
+554 P_LOD gc
+555 F_MLT gone_i
+556 P_LOD gc_i
+557 F_MLT gone
+558 SF_ADD
+559 POP
+560 F2I
+561 CAL par_i
+562 OUT 0
+// 273: x = (pa+z0) + par_i((gc*gone));
 563 LOD main_pa
 564 ADD main_z0
-565 PSH
-566 LOD main_n1
-567 MLT 4
-568 ADD main_n2
-569 PSH
-570 LDI mi
-571 ADD 1
-572 STI mi
-573 ADD -1
-574 S_ADD
-575 OUT 0
-576 LOD_V mi 6
-577 OUT 0
-// 250: mf[1][2] = 1.5; y = (pf+fz) + mf[n1][n2]++; fout(0, 4.0*y); fout(0, 4.0*mf[1][2]);
-578 LOD 1.5
-579 SET_V mf 6
-580 LOD main_pf
-581 F_ADD main_fz
-582 PSH
-583 LOD main_n1
-584 MLT 4
-585 ADD main_n2
-586 PSH
-587 LDI mf
-588 SET __aux_var
-589 F_ADD 1.0
-590 STI mf
-591 LOD __aux_var
-592 SF_ADD
-593 SET main_y
-594 LOD 4.0
-595 F_MLT main_y
-596 F2I
-597 OUT 0
-598 LOD_V mf 6
-599 F_MLT 4.0
-600 F2I
-601 OUT 0
-// 251: out(0, par_i(gi));
-602 LOD gi
-603 CAL par_i
-604 OUT 0
-// 252: x = (pa+z0) + par_i(gi);
-605 LOD main_pa
-606 ADD main_z0
-607 P_LOD gi
-608 CAL par_i
-609 S_ADD
-// 253: out(0, x);
-610 OUT 0
-// 254: out(0, par_i((gi+gz)));
-611 LOD gi
-612 ADD gz
-613 CAL par_i
-614 OUT 0
-// 255: x = (pa+z0) + par_i((gi+gz));
-615 LOD main_pa
-616 ADD main_z0
-617 P_LOD gi
-618 ADD gz
-619 CAL par_i
-620 S_ADD
-// 256: out(0, x);
-621 OUT 0
-// 257: out(0, par_i(7));
-622 LOD 7
-623 CAL par_i
-624 OUT 0
-// 258: x = (pa+z0) + par_i(7);
-625 LOD main_pa
-626 ADD main_z0
-627 P_LOD 7
-628 CAL par_i
-629 S_ADD
-// 259: out(0, x);
-630 OUT 0
-// 260: out(0, par_i(gf));
-631 F2I_M gf
-632 CAL par_i
-633 OUT 0
-// 261: x = (pa+z0) + par_i(gf);
-634 LOD main_pa
-635 ADD main_z0
-636 P_F2I_M gf
-637 CAL par_i
-638 S_ADD
-// 262: out(0, x);
-639 OUT 0
-// 263: out(0, par_i((gf+gfz)));
-640 LOD gf
-641 F_ADD gfz
-642 F2I
-643 CAL par_i
-644 OUT 0
-// 264: x = (pa+z0) + par_i((gf+gfz));
-645 LOD main_pa
-646 ADD main_z0
-647 P_LOD gf
-648 F_ADD gfz
-649 F2I
-650 CAL par_i
-651 S_ADD
-// 265: out(0, x);
-652 OUT 0
-// 266: out(0, par_i(2.5));
-653 F2I_M 2.5
-654 CAL par_i
-655 OUT 0
-// 267: x = (pa+z0) + par_i(2.5);
-656 LOD main_pa
-657 ADD main_z0
-658 P_F2I_M 2.5
-659 CAL par_i
-660 S_ADD
-// 268: out(0, x);
-661 OUT 0
-// 269: out(0, par_i(gc));
-662 F2I_M gc
-663 CAL par_i
-664 OUT 0
-// 270: x = (pa+z0) + par_i(gc);
-665 LOD main_pa
-666 ADD main_z0
-667 P_F2I_M gc
-668 CAL par_i
-669 S_ADD
-// 271: out(0, x);
-670 OUT 0
-// 272: out(0, par_i((gc*gone)));
-671 LOD gc
-672 F_MLT gone
-673 P_LOD gc_i
-674 F_MLT gone_i
-675 SF_SU2
-676 P_LOD gc
-677 F_MLT gone_i
-678 P_LOD gc_i
-679 F_MLT gone
-680 SF_ADD
-681 POP
-682 F2I
-683 CAL par_i
-684 OUT 0
-// 273: x = (pa+z0) + par_i((gc*gone));
-685 LOD main_pa
-686 ADD main_z0
-687 P_LOD gc
-688 F_MLT gone
-689 P_LOD gc_i
-690 F_MLT gone_i
-691 SF_SU2
-692 P_LOD gc
-693 F_MLT gone_i
-694 P_LOD gc_i
-695 F_MLT gone
-696 SF_ADD
-697 POP
-698 F2I
-699 CAL par_i
-700 S_ADD
+565 P_LOD gc
+566 F_MLT gone
+567 P_LOD gc_i
+568 F_MLT gone_i
+569 SF_SU2
+570 P_LOD gc
+571 F_MLT gone_i
+572 P_LOD gc_i
+573 F_MLT gone
+574 SF_ADD
+575 POP
+576 F2I
+577 CAL par_i
+578 S_ADD
 // 274: out(0, x);
-701 OUT 0
+579 OUT 0
 // 275: out(0, par_i((3.0+4.0i)));
-702 F2I_M 3.0
-703 CAL par_i
-704 OUT 0
+580 F2I_M 3.0
+581 CAL par_i
+582 OUT 0
 // 276: x = (pa+z0) + par_i((3.0+4.0i));
-705 LOD main_pa
-706 ADD main_z0
-707 P_F2I_M 3.0
-708 CAL par_i
-709 S_ADD
+583 LOD main_pa
+584 ADD main_z0
+585 P_F2I_M 3.0
+586 CAL par_i
+587 S_ADD
 // 277: out(0, x);
-710 OUT 0
+588 OUT 0
 // 278: fout(0, 4.0*par_f(gi));
-711 I2F_M gi
-712 CAL par_f
-713 F_MLT 4.0
-714 F2I
-715 OUT 0
+589 I2F_M gi
+590 CAL par_f
+591 F_MLT 4.0
+592 F2I
+593 OUT 0
 // 279: y = (pf+fz) + par_f(gi);
-716 LOD main_pf
-717 F_ADD main_fz
-718 P_I2F_M gi
-719 CAL par_f
-720 SF_ADD
-721 SET main_y
+594 LOD main_pf
+595 F_ADD main_fz
+596 P_I2F_M gi
+597 CAL par_f
+598 SF_ADD
+599 SET main_y
 // 280: fout(0, 4.0*y);
-722 LOD 4.0
-723 F_MLT main_y
-724 F2I
-725 OUT 0
+600 LOD 4.0
+601 F_MLT main_y
+602 F2I
+603 OUT 0
 // 281: fout(0, 4.0*par_f((gi+gz)));
-726 LOD gi
-727 ADD gz
-728 I2F
-729 CAL par_f
-730 F_MLT 4.0
-731 F2I
-732 OUT 0
+604 LOD gi
+605 ADD gz
+606 I2F
+607 CAL par_f
+608 F_MLT 4.0
+609 F2I
+610 OUT 0
 // 282: y = (pf+fz) + par_f((gi+gz));
-733 LOD main_pf
-734 F_ADD main_fz
-735 P_LOD gi
-736 ADD gz
-737 I2F
-738 CAL par_f
-739 SF_ADD
-740 SET main_y
+611 LOD main_pf
+612 F_ADD main_fz
+613 P_LOD gi
+614 ADD gz
+615 I2F
+616 CAL par_f
+617 SF_ADD
+618 SET main_y
 // 283: fout(0, 4.0*y);
-741 LOD 4.0
-742 F_MLT main_y
-743 F2I
-744 OUT 0
+619 LOD 4.0
+620 F_MLT main_y
+621 F2I
+622 OUT 0
 // 284: fout(0, 4.0*par_f(7));
-745 LOD 7.0
-746 CAL par_f
-747 F_MLT 4.0
+623 LOD 7.0
+624 CAL par_f
+625 F_MLT 4.0
+626 F2I
+627 OUT 0
+// 285: y = (pf+fz) + par_f(7);
+628 LOD main_pf
+629 F_ADD main_fz
+630 P_LOD 7.0
+631 CAL par_f
+632 SF_ADD
+633 SET main_y
+// 286: fout(0, 4.0*y);
+634 LOD 4.0
+635 F_MLT main_y
+636 F2I
+637 OUT 0
+// 287: fout(0, 4.0*par_f(gf));
+638 LOD gf
+639 CAL par_f
+640 F_MLT 4.0
+641 F2I
+642 OUT 0
+// 288: y = (pf+fz) + par_f(gf);
+643 LOD main_pf
+644 F_ADD main_fz
+645 P_LOD gf
+646 CAL par_f
+647 SF_ADD
+648 SET main_y
+// 289: fout(0, 4.0*y);
+649 LOD 4.0
+650 F_MLT main_y
+651 F2I
+652 OUT 0
+// 290: fout(0, 4.0*par_f((gf+gfz)));
+653 LOD gf
+654 F_ADD gfz
+655 CAL par_f
+656 F_MLT 4.0
+657 F2I
+658 OUT 0
+// 291: y = (pf+fz) + par_f((gf+gfz));
+659 LOD main_pf
+660 F_ADD main_fz
+661 P_LOD gf
+662 F_ADD gfz
+663 CAL par_f
+664 SF_ADD
+665 SET main_y
+// 292: fout(0, 4.0*y);
+666 LOD 4.0
+667 F_MLT main_y
+668 F2I
+669 OUT 0
+// 293: fout(0, 4.0*par_f(2.5));
+670 LOD 2.5
+671 CAL par_f
+672 F_MLT 4.0
+673 F2I
+674 OUT 0
+// 294: y = (pf+fz) + par_f(2.5);
+675 LOD main_pf
+676 F_ADD main_fz
+677 P_LOD 2.5
+678 CAL par_f
+679 SF_ADD
+680 SET main_y
+// 295: fout(0, 4.0*y);
+681 LOD 4.0
+682 F_MLT main_y
+683 F2I
+684 OUT 0
+// 296: fout(0, 4.0*par_f(gc));
+685 LOD gc
+686 CAL par_f
+687 F_MLT 4.0
+688 F2I
+689 OUT 0
+// 297: y = (pf+fz) + par_f(gc);
+690 LOD main_pf
+691 F_ADD main_fz
+692 P_LOD gc
+693 CAL par_f
+694 SF_ADD
+695 SET main_y
+// 298: fout(0, 4.0*y);
+696 LOD 4.0
+697 F_MLT main_y
+698 F2I
+699 OUT 0
+// 299: fout(0, 4.0*par_f((gc*gone)));
+700 LOD gc
+701 F_MLT gone
+702 P_LOD gc_i
+703 F_MLT gone_i
+704 SF_SU2
+705 P_LOD gc
+706 F_MLT gone_i
+707 P_LOD gc_i
+708 F_MLT gone
+709 SF_ADD
+710 POP
+711 CAL par_f
+712 F_MLT 4.0
+713 F2I
+714 OUT 0
+// 300: y = (pf+fz) + par_f((gc*gone));
+715 LOD main_pf
+716 F_ADD main_fz
+717 P_LOD gc
+718 F_MLT gone
+719 P_LOD gc_i
+720 F_MLT gone_i
+721 SF_SU2
+722 P_LOD gc
+723 F_MLT gone_i
+724 P_LOD gc_i
+725 F_MLT gone
+726 SF_ADD
+727 POP
+728 CAL par_f
+729 SF_ADD
+730 SET main_y
+// 301: fout(0, 4.0*y);
+731 LOD 4.0
+732 F_MLT main_y
+733 F2I
+734 OUT 0
+// 302: fout(0, 4.0*par_f((3.0+4.0i)));
+735 LOD 3.0
+736 CAL par_f
+737 F_MLT 4.0
+738 F2I
+739 OUT 0
+// 303: y = (pf+fz) + par_f((3.0+4.0i));
+740 LOD main_pf
+741 F_ADD main_fz
+742 P_LOD 3.0
+743 CAL par_f
+744 SF_ADD
+745 SET main_y
+// 304: fout(0, 4.0*y);
+746 LOD 4.0
+747 F_MLT main_y
 748 F2I
 749 OUT 0
-// 285: y = (pf+fz) + par_f(7);
-750 LOD main_pf
-751 F_ADD main_fz
-752 P_LOD 7.0
-753 CAL par_f
-754 SF_ADD
-755 SET main_y
-// 286: fout(0, 4.0*y);
-756 LOD 4.0
-757 F_MLT main_y
-758 F2I
-759 OUT 0
-// 287: fout(0, 4.0*par_f(gf));
-760 LOD gf
-761 CAL par_f
-762 F_MLT 4.0
-763 F2I
-764 OUT 0
-// 288: y = (pf+fz) + par_f(gf);
-765 LOD main_pf
-766 F_ADD main_fz
-767 P_LOD gf
-768 CAL par_f
-769 SF_ADD
-770 SET main_y
-// 289: fout(0, 4.0*y);
-771 LOD 4.0
-772 F_MLT main_y
-773 F2I
-774 OUT 0
-// 290: fout(0, 4.0*par_f((gf+gfz)));
-775 LOD gf
-776 F_ADD gfz
-777 CAL par_f
-778 F_MLT 4.0
-779 F2I
-780 OUT 0
-// 291: y = (pf+fz) + par_f((gf+gfz));
-781 LOD main_pf
-782 F_ADD main_fz
-783 P_LOD gf
-784 F_ADD gfz
-785 CAL par_f
-786 SF_ADD
-787 SET main_y
-// 292: fout(0, 4.0*y);
-788 LOD 4.0
-789 F_MLT main_y
-790 F2I
-791 OUT 0
-// 293: fout(0, 4.0*par_f(2.5));
-792 LOD 2.5
-793 CAL par_f
-794 F_MLT 4.0
-795 F2I
-796 OUT 0
-// 294: y = (pf+fz) + par_f(2.5);
-797 LOD main_pf
-798 F_ADD main_fz
-799 P_LOD 2.5
-800 CAL par_f
-801 SF_ADD
-802 SET main_y
-// 295: fout(0, 4.0*y);
-803 LOD 4.0
-804 F_MLT main_y
-805 F2I
-806 OUT 0
-// 296: fout(0, 4.0*par_f(gc));
-807 LOD gc
-808 CAL par_f
-809 F_MLT 4.0
-810 F2I
-811 OUT 0
-// 297: y = (pf+fz) + par_f(gc);
-812 LOD main_pf
-813 F_ADD main_fz
-814 P_LOD gc
-815 CAL par_f
-816 SF_ADD
-817 SET main_y
-// 298: fout(0, 4.0*y);
-818 LOD 4.0
-819 F_MLT main_y
-820 F2I
-821 OUT 0
-// 299: fout(0, 4.0*par_f((gc*gone)));
-822 LOD gc
-823 F_MLT gone
-824 P_LOD gc_i
-825 F_MLT gone_i
-826 SF_SU2
-827 P_LOD gc
-828 F_MLT gone_i
-829 P_LOD gc_i
-830 F_MLT gone
-831 SF_ADD
-832 POP
-833 CAL par_f
-834 F_MLT 4.0
-835 F2I
-836 OUT 0
-// 300: y = (pf+fz) + par_f((gc*gone));
-837 LOD main_pf
-838 F_ADD main_fz
-839 P_LOD gc
-840 F_MLT gone
-841 P_LOD gc_i
-842 F_MLT gone_i
-843 SF_SU2
-844 P_LOD gc
-845 F_MLT gone_i
-846 P_LOD gc_i
-847 F_MLT gone
-848 SF_ADD
-849 POP
-850 CAL par_f
-851 SF_ADD
-852 SET main_y
-// 301: fout(0, 4.0*y);
+// 305: w = par_c(gi); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+750 I2F_M gi
+751 P_LOD 0.0
+752 CAL par_c
+753 SET_P main_w_i
+754 SET main_w
+755 LOD 4.0
+756 F_MLT main_w
+757 F2I
+758 OUT 0
+759 LOD 4.0
+760 F_MLT main_w_i
+761 F2I
+762 OUT 0
+// 306: w = (pc*one) + par_c(gi);
+763 LOD main_pc
+764 F_MLT main_one
+765 P_LOD main_pc_i
+766 F_MLT main_one_i
+767 SF_SU2
+768 P_LOD main_pc
+769 F_MLT main_one_i
+770 P_LOD main_pc_i
+771 F_MLT main_one
+772 SF_ADD
+773 P_I2F_M gi
+774 P_LOD 0.0
+775 CAL par_c
+776 SET_P __aux_var
+777 SET_P __aux_var1
+778 SET_P __aux_var2
+779 F_ADD __aux_var1
+780 P_LOD __aux_var2
+781 F_ADD __aux_var
+782 SET_P main_w_i
+783 SET main_w
+// 307: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+784 SET main_w
+785 LOD main_w_i
+786 SET main_w_i
+787 LOD 4.0
+788 F_MLT main_w
+789 F2I
+790 OUT 0
+791 LOD 4.0
+792 F_MLT main_w_i
+793 F2I
+794 OUT 0
+// 308: w = par_c((gi+gz)); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+795 LOD gi
+796 ADD gz
+797 I2F
+798 P_LOD 0.0
+799 CAL par_c
+800 SET_P main_w_i
+801 SET main_w
+802 LOD 4.0
+803 F_MLT main_w
+804 F2I
+805 OUT 0
+806 LOD 4.0
+807 F_MLT main_w_i
+808 F2I
+809 OUT 0
+// 309: w = (pc*one) + par_c((gi+gz));
+810 LOD main_pc
+811 F_MLT main_one
+812 P_LOD main_pc_i
+813 F_MLT main_one_i
+814 SF_SU2
+815 P_LOD main_pc
+816 F_MLT main_one_i
+817 P_LOD main_pc_i
+818 F_MLT main_one
+819 SF_ADD
+820 P_LOD gi
+821 ADD gz
+822 I2F
+823 P_LOD 0.0
+824 CAL par_c
+825 SET_P __aux_var
+826 SET_P __aux_var1
+827 SET_P __aux_var2
+828 F_ADD __aux_var1
+829 P_LOD __aux_var2
+830 F_ADD __aux_var
+831 SET_P main_w_i
+832 SET main_w
+// 310: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+833 SET main_w
+834 LOD main_w_i
+835 SET main_w_i
+836 LOD 4.0
+837 F_MLT main_w
+838 F2I
+839 OUT 0
+840 LOD 4.0
+841 F_MLT main_w_i
+842 F2I
+843 OUT 0
+// 311: w = par_c(7); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+844 LOD 7.0
+845 P_LOD 0.0
+846 CAL par_c
+847 SET_P main_w_i
+848 SET main_w
+849 LOD 4.0
+850 F_MLT main_w
+851 F2I
+852 OUT 0
 853 LOD 4.0
-854 F_MLT main_y
+854 F_MLT main_w_i
 855 F2I
 856 OUT 0
-// 302: fout(0, 4.0*par_f((3.0+4.0i)));
-857 LOD 3.0
-858 CAL par_f
-859 F_MLT 4.0
-860 F2I
-861 OUT 0
-// 303: y = (pf+fz) + par_f((3.0+4.0i));
-862 LOD main_pf
-863 F_ADD main_fz
-864 P_LOD 3.0
-865 CAL par_f
+// 312: w = (pc*one) + par_c(7);
+857 LOD main_pc
+858 F_MLT main_one
+859 P_LOD main_pc_i
+860 F_MLT main_one_i
+861 SF_SU2
+862 P_LOD main_pc
+863 F_MLT main_one_i
+864 P_LOD main_pc_i
+865 F_MLT main_one
 866 SF_ADD
-867 SET main_y
-// 304: fout(0, 4.0*y);
-868 LOD 4.0
-869 F_MLT main_y
-870 F2I
-871 OUT 0
-// 305: w = par_c(gi); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-872 I2F_M gi
-873 P_LOD 0.0
-874 CAL par_c
-875 SET_P main_w_i
-876 SET main_w
-877 LOD 4.0
-878 F_MLT main_w
-879 F2I
-880 OUT 0
+867 P_LOD 7.0
+868 P_LOD 0.0
+869 CAL par_c
+870 SET_P __aux_var
+871 SET_P __aux_var1
+872 SET_P __aux_var2
+873 F_ADD __aux_var1
+874 P_LOD __aux_var2
+875 F_ADD __aux_var
+876 SET_P main_w_i
+877 SET main_w
+// 313: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+878 SET main_w
+879 LOD main_w_i
+880 SET main_w_i
 881 LOD 4.0
-882 F_MLT main_w_i
+882 F_MLT main_w
 883 F2I
 884 OUT 0
-// 306: w = (pc*one) + par_c(gi);
-885 LOD main_pc
-886 F_MLT main_one
-887 P_LOD main_pc_i
-888 F_MLT main_one_i
-889 SF_SU2
-890 P_LOD main_pc
-891 F_MLT main_one_i
-892 P_LOD main_pc_i
-893 F_MLT main_one
-894 SF_ADD
-895 P_I2F_M gi
-896 P_LOD 0.0
-897 CAL par_c
-898 SET_P __aux_var
-899 SET_P __aux_var1
-900 SET_P __aux_var2
-901 F_ADD __aux_var1
-902 P_LOD __aux_var2
-903 F_ADD __aux_var
-904 SET_P main_w_i
-905 SET main_w
-// 307: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-906 SET main_w
-907 LOD main_w_i
-908 SET main_w_i
-909 LOD 4.0
-910 F_MLT main_w
-911 F2I
-912 OUT 0
-913 LOD 4.0
-914 F_MLT main_w_i
-915 F2I
-916 OUT 0
-// 308: w = par_c((gi+gz)); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-917 LOD gi
-918 ADD gz
-919 I2F
-920 P_LOD 0.0
-921 CAL par_c
-922 SET_P main_w_i
-923 SET main_w
-924 LOD 4.0
-925 F_MLT main_w
-926 F2I
-927 OUT 0
-928 LOD 4.0
-929 F_MLT main_w_i
-930 F2I
-931 OUT 0
-// 309: w = (pc*one) + par_c((gi+gz));
-932 LOD main_pc
-933 F_MLT main_one
-934 P_LOD main_pc_i
-935 F_MLT main_one_i
-936 SF_SU2
-937 P_LOD main_pc
-938 F_MLT main_one_i
-939 P_LOD main_pc_i
-940 F_MLT main_one
-941 SF_ADD
-942 P_LOD gi
-943 ADD gz
-944 I2F
-945 P_LOD 0.0
-946 CAL par_c
-947 SET_P __aux_var
-948 SET_P __aux_var1
-949 SET_P __aux_var2
-950 F_ADD __aux_var1
-951 P_LOD __aux_var2
-952 F_ADD __aux_var
-953 SET_P main_w_i
-954 SET main_w
-// 310: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-955 SET main_w
-956 LOD main_w_i
-957 SET main_w_i
-958 LOD 4.0
-959 F_MLT main_w
-960 F2I
-961 OUT 0
-962 LOD 4.0
-963 F_MLT main_w_i
-964 F2I
-965 OUT 0
-// 311: w = par_c(7); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-966 LOD 7.0
-967 P_LOD 0.0
-968 CAL par_c
-969 SET_P main_w_i
-970 SET main_w
-971 LOD 4.0
-972 F_MLT main_w
-973 F2I
-974 OUT 0
-975 LOD 4.0
-976 F_MLT main_w_i
-977 F2I
-978 OUT 0
-// 312: w = (pc*one) + par_c(7);
-979 LOD main_pc
-980 F_MLT main_one
-981 P_LOD main_pc_i
-982 F_MLT main_one_i
-983 SF_SU2
-984 P_LOD main_pc
-985 F_MLT main_one_i
-986 P_LOD main_pc_i
-987 F_MLT main_one
-988 SF_ADD
-989 P_LOD 7.0
-990 P_LOD 0.0
-991 CAL par_c
-992 SET_P __aux_var
-993 SET_P __aux_var1
-994 SET_P __aux_var2
-995 F_ADD __aux_var1
-996 P_LOD __aux_var2
-997 F_ADD __aux_var
-998 SET_P main_w_i
-999 SET main_w
-// 313: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1000 SET main_w
-1001 LOD main_w_i
-1002 SET main_w_i
-1003 LOD 4.0
-1004 F_MLT main_w
-1005 F2I
-1006 OUT 0
-1007 LOD 4.0
-1008 F_MLT main_w_i
-1009 F2I
-1010 OUT 0
+885 LOD 4.0
+886 F_MLT main_w_i
+887 F2I
+888 OUT 0
 // 314: w = par_c(gf); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1011 LOD gf
-1012 P_LOD 0.0
-1013 CAL par_c
-1014 SET_P main_w_i
-1015 SET main_w
-1016 LOD 4.0
-1017 F_MLT main_w
-1018 F2I
-1019 OUT 0
-1020 LOD 4.0
-1021 F_MLT main_w_i
-1022 F2I
-1023 OUT 0
+889 LOD gf
+890 P_LOD 0.0
+891 CAL par_c
+892 SET_P main_w_i
+893 SET main_w
+894 LOD 4.0
+895 F_MLT main_w
+896 F2I
+897 OUT 0
+898 LOD 4.0
+899 F_MLT main_w_i
+900 F2I
+901 OUT 0
 // 315: w = (pc*one) + par_c(gf);
-1024 LOD main_pc
-1025 F_MLT main_one
-1026 P_LOD main_pc_i
-1027 F_MLT main_one_i
-1028 SF_SU2
-1029 P_LOD main_pc
-1030 F_MLT main_one_i
-1031 P_LOD main_pc_i
-1032 F_MLT main_one
-1033 SF_ADD
-1034 P_LOD gf
-1035 P_LOD 0.0
-1036 CAL par_c
-1037 SET_P __aux_var
-1038 SET_P __aux_var1
-1039 SET_P __aux_var2
-1040 F_ADD __aux_var1
-1041 P_LOD __aux_var2
-1042 F_ADD __aux_var
-1043 SET_P main_w_i
-1044 SET main_w
+902 LOD main_pc
+903 F_MLT main_one
+904 P_LOD main_pc_i
+905 F_MLT main_one_i
+906 SF_SU2
+907 P_LOD main_pc
+908 F_MLT main_one_i
+909 P_LOD main_pc_i
+910 F_MLT main_one
+911 SF_ADD
+912 P_LOD gf
+913 P_LOD 0.0
+914 CAL par_c
+915 SET_P __aux_var
+916 SET_P __aux_var1
+917 SET_P __aux_var2
+918 F_ADD __aux_var1
+919 P_LOD __aux_var2
+920 F_ADD __aux_var
+921 SET_P main_w_i
+922 SET main_w
 // 316: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1045 SET main_w
-1046 LOD main_w_i
-1047 SET main_w_i
-1048 LOD 4.0
-1049 F_MLT main_w
-1050 F2I
-1051 OUT 0
-1052 LOD 4.0
-1053 F_MLT main_w_i
-1054 F2I
-1055 OUT 0
+923 SET main_w
+924 LOD main_w_i
+925 SET main_w_i
+926 LOD 4.0
+927 F_MLT main_w
+928 F2I
+929 OUT 0
+930 LOD 4.0
+931 F_MLT main_w_i
+932 F2I
+933 OUT 0
 // 317: w = par_c((gf+gfz)); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1056 LOD gf
-1057 F_ADD gfz
-1058 P_LOD 0.0
-1059 CAL par_c
-1060 SET_P main_w_i
-1061 SET main_w
-1062 LOD 4.0
-1063 F_MLT main_w
-1064 F2I
-1065 OUT 0
-1066 LOD 4.0
-1067 F_MLT main_w_i
-1068 F2I
-1069 OUT 0
+934 LOD gf
+935 F_ADD gfz
+936 P_LOD 0.0
+937 CAL par_c
+938 SET_P main_w_i
+939 SET main_w
+940 LOD 4.0
+941 F_MLT main_w
+942 F2I
+943 OUT 0
+944 LOD 4.0
+945 F_MLT main_w_i
+946 F2I
+947 OUT 0
 // 318: w = (pc*one) + par_c((gf+gfz));
-1070 LOD main_pc
-1071 F_MLT main_one
-1072 P_LOD main_pc_i
-1073 F_MLT main_one_i
-1074 SF_SU2
-1075 P_LOD main_pc
-1076 F_MLT main_one_i
-1077 P_LOD main_pc_i
-1078 F_MLT main_one
-1079 SF_ADD
-1080 P_LOD gf
-1081 F_ADD gfz
-1082 P_LOD 0.0
-1083 CAL par_c
-1084 SET_P __aux_var
-1085 SET_P __aux_var1
-1086 SET_P __aux_var2
-1087 F_ADD __aux_var1
-1088 P_LOD __aux_var2
-1089 F_ADD __aux_var
-1090 SET_P main_w_i
-1091 SET main_w
+948 LOD main_pc
+949 F_MLT main_one
+950 P_LOD main_pc_i
+951 F_MLT main_one_i
+952 SF_SU2
+953 P_LOD main_pc
+954 F_MLT main_one_i
+955 P_LOD main_pc_i
+956 F_MLT main_one
+957 SF_ADD
+958 P_LOD gf
+959 F_ADD gfz
+960 P_LOD 0.0
+961 CAL par_c
+962 SET_P __aux_var
+963 SET_P __aux_var1
+964 SET_P __aux_var2
+965 F_ADD __aux_var1
+966 P_LOD __aux_var2
+967 F_ADD __aux_var
+968 SET_P main_w_i
+969 SET main_w
 // 319: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1092 SET main_w
-1093 LOD main_w_i
-1094 SET main_w_i
-1095 LOD 4.0
-1096 F_MLT main_w
-1097 F2I
-1098 OUT 0
-1099 LOD 4.0
-1100 F_MLT main_w_i
-1101 F2I
-1102 OUT 0
+970 SET main_w
+971 LOD main_w_i
+972 SET main_w_i
+973 LOD 4.0
+974 F_MLT main_w
+975 F2I
+976 OUT 0
+977 LOD 4.0
+978 F_MLT main_w_i
+979 F2I
+980 OUT 0
 // 320: w = par_c(2.5); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1103 LOD 2.5
-1104 P_LOD 0.0
-1105 CAL par_c
-1106 SET_P main_w_i
-1107 SET main_w
-1108 LOD 4.0
-1109 F_MLT main_w
-1110 F2I
-1111 OUT 0
-1112 LOD 4.0
-1113 F_MLT main_w_i
-1114 F2I
-1115 OUT 0
+981 LOD 2.5
+982 P_LOD 0.0
+983 CAL par_c
+984 SET_P main_w_i
+985 SET main_w
+986 LOD 4.0
+987 F_MLT main_w
+988 F2I
+989 OUT 0
+990 LOD 4.0
+991 F_MLT main_w_i
+992 F2I
+993 OUT 0
 // 321: w = (pc*one) + par_c(2.5);
-1116 LOD main_pc
-1117 F_MLT main_one
-1118 P_LOD main_pc_i
-1119 F_MLT main_one_i
-1120 SF_SU2
-1121 P_LOD main_pc
-1122 F_MLT main_one_i
-1123 P_LOD main_pc_i
-1124 F_MLT main_one
-1125 SF_ADD
-1126 P_LOD 2.5
-1127 P_LOD 0.0
-1128 CAL par_c
-1129 SET_P __aux_var
-1130 SET_P __aux_var1
-1131 SET_P __aux_var2
-1132 F_ADD __aux_var1
-1133 P_LOD __aux_var2
-1134 F_ADD __aux_var
+994 LOD main_pc
+995 F_MLT main_one
+996 P_LOD main_pc_i
+997 F_MLT main_one_i
+998 SF_SU2
+999 P_LOD main_pc
+1000 F_MLT main_one_i
+1001 P_LOD main_pc_i
+1002 F_MLT main_one
+1003 SF_ADD
+1004 P_LOD 2.5
+1005 P_LOD 0.0
+1006 CAL par_c
+1007 SET_P __aux_var
+1008 SET_P __aux_var1
+1009 SET_P __aux_var2
+1010 F_ADD __aux_var1
+1011 P_LOD __aux_var2
+1012 F_ADD __aux_var
+1013 SET_P main_w_i
+1014 SET main_w
+// 322: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1015 SET main_w
+1016 LOD main_w_i
+1017 SET main_w_i
+1018 LOD 4.0
+1019 F_MLT main_w
+1020 F2I
+1021 OUT 0
+1022 LOD 4.0
+1023 F_MLT main_w_i
+1024 F2I
+1025 OUT 0
+// 323: w = par_c(gc); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1026 LOD gc
+1027 P_LOD gc_i
+1028 CAL par_c
+1029 SET_P main_w_i
+1030 SET main_w
+1031 LOD 4.0
+1032 F_MLT main_w
+1033 F2I
+1034 OUT 0
+1035 LOD 4.0
+1036 F_MLT main_w_i
+1037 F2I
+1038 OUT 0
+// 324: w = (pc*one) + par_c(gc);
+1039 LOD main_pc
+1040 F_MLT main_one
+1041 P_LOD main_pc_i
+1042 F_MLT main_one_i
+1043 SF_SU2
+1044 P_LOD main_pc
+1045 F_MLT main_one_i
+1046 P_LOD main_pc_i
+1047 F_MLT main_one
+1048 SF_ADD
+1049 P_LOD gc
+1050 P_LOD gc_i
+1051 CAL par_c
+1052 SET_P __aux_var
+1053 SET_P __aux_var1
+1054 SET_P __aux_var2
+1055 F_ADD __aux_var1
+1056 P_LOD __aux_var2
+1057 F_ADD __aux_var
+1058 SET_P main_w_i
+1059 SET main_w
+// 325: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1060 SET main_w
+1061 LOD main_w_i
+1062 SET main_w_i
+1063 LOD 4.0
+1064 F_MLT main_w
+1065 F2I
+1066 OUT 0
+1067 LOD 4.0
+1068 F_MLT main_w_i
+1069 F2I
+1070 OUT 0
+// 326: w = par_c((gc*gone)); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1071 LOD gc
+1072 F_MLT gone
+1073 P_LOD gc_i
+1074 F_MLT gone_i
+1075 SF_SU2
+1076 P_LOD gc
+1077 F_MLT gone_i
+1078 P_LOD gc_i
+1079 F_MLT gone
+1080 SF_ADD
+1081 CAL par_c
+1082 SET_P main_w_i
+1083 SET main_w
+1084 LOD 4.0
+1085 F_MLT main_w
+1086 F2I
+1087 OUT 0
+1088 LOD 4.0
+1089 F_MLT main_w_i
+1090 F2I
+1091 OUT 0
+// 327: w = (pc*one) + par_c((gc*gone));
+1092 LOD main_pc
+1093 F_MLT main_one
+1094 P_LOD main_pc_i
+1095 F_MLT main_one_i
+1096 SF_SU2
+1097 P_LOD main_pc
+1098 F_MLT main_one_i
+1099 P_LOD main_pc_i
+1100 F_MLT main_one
+1101 SF_ADD
+1102 P_LOD gc
+1103 F_MLT gone
+1104 P_LOD gc_i
+1105 F_MLT gone_i
+1106 SF_SU2
+1107 P_LOD gc
+1108 F_MLT gone_i
+1109 P_LOD gc_i
+1110 F_MLT gone
+1111 SF_ADD
+1112 CAL par_c
+1113 SET_P __aux_var
+1114 SET_P __aux_var1
+1115 SET_P __aux_var2
+1116 F_ADD __aux_var1
+1117 P_LOD __aux_var2
+1118 F_ADD __aux_var
+1119 SET_P main_w_i
+1120 SET main_w
+// 328: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1121 SET main_w
+1122 LOD main_w_i
+1123 SET main_w_i
+1124 LOD 4.0
+1125 F_MLT main_w
+1126 F2I
+1127 OUT 0
+1128 LOD 4.0
+1129 F_MLT main_w_i
+1130 F2I
+1131 OUT 0
+// 329: w = par_c((3.0+4.0i)); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1132 LOD 3.0
+1133 P_LOD 4.0
+1134 CAL par_c
 1135 SET_P main_w_i
 1136 SET main_w
-// 322: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1137 SET main_w
-1138 LOD main_w_i
-1139 SET main_w_i
-1140 LOD 4.0
-1141 F_MLT main_w
-1142 F2I
-1143 OUT 0
-1144 LOD 4.0
-1145 F_MLT main_w_i
-1146 F2I
-1147 OUT 0
-// 323: w = par_c(gc); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1148 LOD gc
-1149 P_LOD gc_i
-1150 CAL par_c
-1151 SET_P main_w_i
-1152 SET main_w
-1153 LOD 4.0
-1154 F_MLT main_w
-1155 F2I
-1156 OUT 0
-1157 LOD 4.0
-1158 F_MLT main_w_i
-1159 F2I
-1160 OUT 0
-// 324: w = (pc*one) + par_c(gc);
-1161 LOD main_pc
-1162 F_MLT main_one
-1163 P_LOD main_pc_i
-1164 F_MLT main_one_i
-1165 SF_SU2
-1166 P_LOD main_pc
-1167 F_MLT main_one_i
-1168 P_LOD main_pc_i
-1169 F_MLT main_one
-1170 SF_ADD
-1171 P_LOD gc
-1172 P_LOD gc_i
-1173 CAL par_c
-1174 SET_P __aux_var
-1175 SET_P __aux_var1
-1176 SET_P __aux_var2
-1177 F_ADD __aux_var1
-1178 P_LOD __aux_var2
-1179 F_ADD __aux_var
-1180 SET_P main_w_i
-1181 SET main_w
-// 325: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1182 SET main_w
-1183 LOD main_w_i
-1184 SET main_w_i
-1185 LOD 4.0
-1186 F_MLT main_w
-1187 F2I
-1188 OUT 0
-1189 LOD 4.0
-1190 F_MLT main_w_i
-1191 F2I
-1192 OUT 0
-// 326: w = par_c((gc*gone)); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1193 LOD gc
-1194 F_MLT gone
-1195 P_LOD gc_i
-1196 F_MLT gone_i
-1197 SF_SU2
-1198 P_LOD gc
-1199 F_MLT gone_i
-1200 P_LOD gc_i
-1201 F_MLT gone
-1202 SF_ADD
-1203 CAL par_c
-1204 SET_P main_w_i
-1205 SET main_w
-1206 LOD 4.0
-1207 F_MLT main_w
-1208 F2I
-1209 OUT 0
-1210 LOD 4.0
-1211 F_MLT main_w_i
-1212 F2I
-1213 OUT 0
-// 327: w = (pc*one) + par_c((gc*gone));
-1214 LOD main_pc
-1215 F_MLT main_one
-1216 P_LOD main_pc_i
-1217 F_MLT main_one_i
-1218 SF_SU2
-1219 P_LOD main_pc
-1220 F_MLT main_one_i
-1221 P_LOD main_pc_i
-1222 F_MLT main_one
-1223 SF_ADD
-1224 P_LOD gc
-1225 F_MLT gone
-1226 P_LOD gc_i
-1227 F_MLT gone_i
-1228 SF_SU2
-1229 P_LOD gc
-1230 F_MLT gone_i
-1231 P_LOD gc_i
-1232 F_MLT gone
-1233 SF_ADD
-1234 CAL par_c
-1235 SET_P __aux_var
-1236 SET_P __aux_var1
-1237 SET_P __aux_var2
-1238 F_ADD __aux_var1
-1239 P_LOD __aux_var2
-1240 F_ADD __aux_var
-1241 SET_P main_w_i
-1242 SET main_w
-// 328: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1243 SET main_w
-1244 LOD main_w_i
-1245 SET main_w_i
-1246 LOD 4.0
-1247 F_MLT main_w
-1248 F2I
-1249 OUT 0
-1250 LOD 4.0
-1251 F_MLT main_w_i
-1252 F2I
-1253 OUT 0
-// 329: w = par_c((3.0+4.0i)); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1254 LOD 3.0
-1255 P_LOD 4.0
-1256 CAL par_c
-1257 SET_P main_w_i
-1258 SET main_w
-1259 LOD 4.0
-1260 F_MLT main_w
-1261 F2I
-1262 OUT 0
-1263 LOD 4.0
-1264 F_MLT main_w_i
-1265 F2I
-1266 OUT 0
+1137 LOD 4.0
+1138 F_MLT main_w
+1139 F2I
+1140 OUT 0
+1141 LOD 4.0
+1142 F_MLT main_w_i
+1143 F2I
+1144 OUT 0
 // 330: w = (pc*one) + par_c((3.0+4.0i));
-1267 LOD main_pc
-1268 F_MLT main_one
-1269 P_LOD main_pc_i
-1270 F_MLT main_one_i
-1271 SF_SU2
-1272 P_LOD main_pc
-1273 F_MLT main_one_i
-1274 P_LOD main_pc_i
-1275 F_MLT main_one
-1276 SF_ADD
-1277 P_LOD 3.0
-1278 P_LOD 4.0
-1279 CAL par_c
-1280 SET_P __aux_var
-1281 SET_P __aux_var1
-1282 SET_P __aux_var2
-1283 F_ADD __aux_var1
-1284 P_LOD __aux_var2
-1285 F_ADD __aux_var
-1286 SET_P main_w_i
-1287 SET main_w
+1145 LOD main_pc
+1146 F_MLT main_one
+1147 P_LOD main_pc_i
+1148 F_MLT main_one_i
+1149 SF_SU2
+1150 P_LOD main_pc
+1151 F_MLT main_one_i
+1152 P_LOD main_pc_i
+1153 F_MLT main_one
+1154 SF_ADD
+1155 P_LOD 3.0
+1156 P_LOD 4.0
+1157 CAL par_c
+1158 SET_P __aux_var
+1159 SET_P __aux_var1
+1160 SET_P __aux_var2
+1161 F_ADD __aux_var1
+1162 P_LOD __aux_var2
+1163 F_ADD __aux_var
+1164 SET_P main_w_i
+1165 SET main_w
 // 331: w = w; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1288 SET main_w
-1289 LOD main_w_i
-1290 SET main_w_i
-1291 LOD 4.0
-1292 F_MLT main_w
-1293 F2I
-1294 OUT 0
-1295 LOD 4.0
-1296 F_MLT main_w_i
-1297 F2I
-1298 OUT 0
+1166 SET main_w
+1167 LOD main_w_i
+1168 SET main_w_i
+1169 LOD 4.0
+1170 F_MLT main_w
+1171 F2I
+1172 OUT 0
+1173 LOD 4.0
+1174 F_MLT main_w_i
+1175 F2I
+1176 OUT 0
 // 332: out(0, ret_i_i0());
-1299 CAL ret_i_i0
-1300 OUT 0
+1177 CAL ret_i_i0
+1178 OUT 0
 // 333: out(0, ret_i_i1());
-1301 CAL ret_i_i1
-1302 OUT 0
+1179 CAL ret_i_i1
+1180 OUT 0
 // 334: out(0, ret_i_i2());
-1303 CAL ret_i_i2
-1304 OUT 0
+1181 CAL ret_i_i2
+1182 OUT 0
 // 335: out(0, ret_i_f0());
-1305 CAL ret_i_f0
-1306 OUT 0
+1183 CAL ret_i_f0
+1184 OUT 0
 // 336: out(0, ret_i_f1());
-1307 CAL ret_i_f1
-1308 OUT 0
+1185 CAL ret_i_f1
+1186 OUT 0
 // 337: out(0, ret_i_f2());
-1309 CAL ret_i_f2
-1310 OUT 0
+1187 CAL ret_i_f2
+1188 OUT 0
 // 338: out(0, ret_i_c0());
-1311 CAL ret_i_c0
-1312 OUT 0
+1189 CAL ret_i_c0
+1190 OUT 0
 // 339: out(0, ret_i_c1());
-1313 CAL ret_i_c1
-1314 OUT 0
+1191 CAL ret_i_c1
+1192 OUT 0
 // 340: out(0, ret_i_c2());
-1315 CAL ret_i_c2
-1316 OUT 0
+1193 CAL ret_i_c2
+1194 OUT 0
 // 341: fout(0, 4.0*ret_f_i0());
-1317 CAL ret_f_i0
-1318 F_MLT 4.0
-1319 F2I
-1320 OUT 0
+1195 CAL ret_f_i0
+1196 F_MLT 4.0
+1197 F2I
+1198 OUT 0
 // 342: fout(0, 4.0*ret_f_i1());
-1321 CAL ret_f_i1
-1322 F_MLT 4.0
-1323 F2I
-1324 OUT 0
+1199 CAL ret_f_i1
+1200 F_MLT 4.0
+1201 F2I
+1202 OUT 0
 // 343: fout(0, 4.0*ret_f_i2());
-1325 CAL ret_f_i2
-1326 F_MLT 4.0
-1327 F2I
-1328 OUT 0
+1203 CAL ret_f_i2
+1204 F_MLT 4.0
+1205 F2I
+1206 OUT 0
 // 344: fout(0, 4.0*ret_f_f0());
-1329 CAL ret_f_f0
-1330 F_MLT 4.0
-1331 F2I
-1332 OUT 0
+1207 CAL ret_f_f0
+1208 F_MLT 4.0
+1209 F2I
+1210 OUT 0
 // 345: fout(0, 4.0*ret_f_f1());
-1333 CAL ret_f_f1
-1334 F_MLT 4.0
-1335 F2I
-1336 OUT 0
+1211 CAL ret_f_f1
+1212 F_MLT 4.0
+1213 F2I
+1214 OUT 0
 // 346: fout(0, 4.0*ret_f_f2());
-1337 CAL ret_f_f2
-1338 F_MLT 4.0
-1339 F2I
-1340 OUT 0
+1215 CAL ret_f_f2
+1216 F_MLT 4.0
+1217 F2I
+1218 OUT 0
 // 347: fout(0, 4.0*ret_f_c0());
-1341 CAL ret_f_c0
-1342 F_MLT 4.0
-1343 F2I
-1344 OUT 0
+1219 CAL ret_f_c0
+1220 F_MLT 4.0
+1221 F2I
+1222 OUT 0
 // 348: fout(0, 4.0*ret_f_c1());
-1345 CAL ret_f_c1
-1346 F_MLT 4.0
-1347 F2I
-1348 OUT 0
+1223 CAL ret_f_c1
+1224 F_MLT 4.0
+1225 F2I
+1226 OUT 0
 // 349: fout(0, 4.0*ret_f_c2());
-1349 CAL ret_f_c2
-1350 F_MLT 4.0
-1351 F2I
-1352 OUT 0
+1227 CAL ret_f_c2
+1228 F_MLT 4.0
+1229 F2I
+1230 OUT 0
 // 350: w = ret_c_i0(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1353 CAL ret_c_i0
-1354 SET_P main_w_i
-1355 SET main_w
-1356 LOD 4.0
-1357 F_MLT main_w
+1231 CAL ret_c_i0
+1232 SET_P main_w_i
+1233 SET main_w
+1234 LOD 4.0
+1235 F_MLT main_w
+1236 F2I
+1237 OUT 0
+1238 LOD 4.0
+1239 F_MLT main_w_i
+1240 F2I
+1241 OUT 0
+// 351: w = ret_c_i1(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1242 CAL ret_c_i1
+1243 SET_P main_w_i
+1244 SET main_w
+1245 LOD 4.0
+1246 F_MLT main_w
+1247 F2I
+1248 OUT 0
+1249 LOD 4.0
+1250 F_MLT main_w_i
+1251 F2I
+1252 OUT 0
+// 352: w = ret_c_i2(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1253 CAL ret_c_i2
+1254 SET_P main_w_i
+1255 SET main_w
+1256 LOD 4.0
+1257 F_MLT main_w
+1258 F2I
+1259 OUT 0
+1260 LOD 4.0
+1261 F_MLT main_w_i
+1262 F2I
+1263 OUT 0
+// 353: w = ret_c_f0(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1264 CAL ret_c_f0
+1265 SET_P main_w_i
+1266 SET main_w
+1267 LOD 4.0
+1268 F_MLT main_w
+1269 F2I
+1270 OUT 0
+1271 LOD 4.0
+1272 F_MLT main_w_i
+1273 F2I
+1274 OUT 0
+// 354: w = ret_c_f1(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1275 CAL ret_c_f1
+1276 SET_P main_w_i
+1277 SET main_w
+1278 LOD 4.0
+1279 F_MLT main_w
+1280 F2I
+1281 OUT 0
+1282 LOD 4.0
+1283 F_MLT main_w_i
+1284 F2I
+1285 OUT 0
+// 355: w = ret_c_f2(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1286 CAL ret_c_f2
+1287 SET_P main_w_i
+1288 SET main_w
+1289 LOD 4.0
+1290 F_MLT main_w
+1291 F2I
+1292 OUT 0
+1293 LOD 4.0
+1294 F_MLT main_w_i
+1295 F2I
+1296 OUT 0
+// 356: w = ret_c_c0(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1297 CAL ret_c_c0
+1298 SET_P main_w_i
+1299 SET main_w
+1300 LOD 4.0
+1301 F_MLT main_w
+1302 F2I
+1303 OUT 0
+1304 LOD 4.0
+1305 F_MLT main_w_i
+1306 F2I
+1307 OUT 0
+// 357: w = ret_c_c1(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1308 CAL ret_c_c1
+1309 SET_P main_w_i
+1310 SET main_w
+1311 LOD 4.0
+1312 F_MLT main_w
+1313 F2I
+1314 OUT 0
+1315 LOD 4.0
+1316 F_MLT main_w_i
+1317 F2I
+1318 OUT 0
+// 358: w = ret_c_c2(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+1319 CAL ret_c_c2
+1320 SET_P main_w_i
+1321 SET main_w
+1322 LOD 4.0
+1323 F_MLT main_w
+1324 F2I
+1325 OUT 0
+1326 LOD 4.0
+1327 F_MLT main_w_i
+1328 F2I
+1329 OUT 0
+// 359: early(1); early(0);
+1330 LOD 1
+1331 CAL early
+1332 LOD 0
+1333 CAL early
+// 360: fout(0, 4.0*mix(gi, (gf+gfz), (3.0+4.0i)));
+1334 LOD gi
+1335 P_LOD gf
+1336 F_ADD gfz
+1337 P_LOD 3.0
+1338 P_LOD 4.0
+1339 CAL mix
+1340 F_MLT 4.0
+1341 F2I
+1342 OUT 0
+// 361: fout(0, 4.0*mix((gi+gz), 2.5, (gc*gone)));
+1343 LOD gi
+1344 ADD gz
+1345 P_LOD 2.5
+1346 P_LOD gc
+1347 F_MLT gone
+1348 P_LOD gc_i
+1349 F_MLT gone_i
+1350 SF_SU2
+1351 P_LOD gc
+1352 F_MLT gone_i
+1353 P_LOD gc_i
+1354 F_MLT gone
+1355 SF_ADD
+1356 CAL mix
+1357 F_MLT 4.0
 1358 F2I
 1359 OUT 0
-1360 LOD 4.0
-1361 F_MLT main_w_i
-1362 F2I
-1363 OUT 0
-// 351: w = ret_c_i1(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1364 CAL ret_c_i1
-1365 SET_P main_w_i
-1366 SET main_w
-1367 LOD 4.0
-1368 F_MLT main_w
-1369 F2I
-1370 OUT 0
-1371 LOD 4.0
-1372 F_MLT main_w_i
-1373 F2I
-1374 OUT 0
-// 352: w = ret_c_i2(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1375 CAL ret_c_i2
-1376 SET_P main_w_i
-1377 SET main_w
-1378 LOD 4.0
-1379 F_MLT main_w
-1380 F2I
-1381 OUT 0
-1382 LOD 4.0
-1383 F_MLT main_w_i
-1384 F2I
-1385 OUT 0
-// 353: w = ret_c_f0(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1386 CAL ret_c_f0
-1387 SET_P main_w_i
-1388 SET main_w
-1389 LOD 4.0
-1390 F_MLT main_w
-1391 F2I
-1392 OUT 0
-1393 LOD 4.0
-1394 F_MLT main_w_i
-1395 F2I
-1396 OUT 0
-// 354: w = ret_c_f1(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1397 CAL ret_c_f1
-1398 SET_P main_w_i
-1399 SET main_w
-1400 LOD 4.0
-1401 F_MLT main_w
-1402 F2I
-1403 OUT 0
-1404 LOD 4.0
-1405 F_MLT main_w_i
-1406 F2I
-1407 OUT 0
-// 355: w = ret_c_f2(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1408 CAL ret_c_f2
-1409 SET_P main_w_i
-1410 SET main_w
-1411 LOD 4.0
-1412 F_MLT main_w
-1413 F2I
-1414 OUT 0
-1415 LOD 4.0
-1416 F_MLT main_w_i
-1417 F2I
-1418 OUT 0
-// 356: w = ret_c_c0(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1419 CAL ret_c_c0
-1420 SET_P main_w_i
-1421 SET main_w
-1422 LOD 4.0
-1423 F_MLT main_w
-1424 F2I
-1425 OUT 0
-1426 LOD 4.0
-1427 F_MLT main_w_i
-1428 F2I
-1429 OUT 0
-// 357: w = ret_c_c1(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1430 CAL ret_c_c1
-1431 SET_P main_w_i
-1432 SET main_w
-1433 LOD 4.0
-1434 F_MLT main_w
-1435 F2I
-1436 OUT 0
-1437 LOD 4.0
-1438 F_MLT main_w_i
-1439 F2I
-1440 OUT 0
-// 358: w = ret_c_c2(); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
-1441 CAL ret_c_c2
-1442 SET_P main_w_i
-1443 SET main_w
-1444 LOD 4.0
-1445 F_MLT main_w
-1446 F2I
-1447 OUT 0
-1448 LOD 4.0
-1449 F_MLT main_w_i
-1450 F2I
-1451 OUT 0
-// 359: early(1); early(0);
-1452 LOD 1
-1453 CAL early
-1454 LOD 0
-1455 CAL early
-// 360: fout(0, 4.0*mix(gi, (gf+gfz), (3.0+4.0i)));
-1456 LOD gi
-1457 P_LOD gf
-1458 F_ADD gfz
-1459 P_LOD 3.0
-1460 P_LOD 4.0
-1461 CAL mix
-1462 F_MLT 4.0
-1463 F2I
-1464 OUT 0
-// 361: fout(0, 4.0*mix((gi+gz), 2.5, (gc*gone)));
-1465 LOD gi
-1466 ADD gz
-1467 P_LOD 2.5
-1468 P_LOD gc
-1469 F_MLT gone
-1470 P_LOD gc_i
-1471 F_MLT gone_i
-1472 SF_SU2
-1473 P_LOD gc
-1474 F_MLT gone_i
-1475 P_LOD gc_i
-1476 F_MLT gone
-1477 SF_ADD
-1478 CAL mix
-1479 F_MLT 4.0
-1480 F2I
-1481 OUT 0
 // 362: gi = 7; gf = 2.5; gc = 3.0+4.0i;
-1482 LOD 7
-1483 SET gi
-1484 LOD 2.5
-1485 SET gf
-1486 LOD 3.0
-1487 SET gc
-1488 LOD 4.0
-1489 SET gc_i
+1360 LOD 7
+1361 SET gi
+1362 LOD 2.5
+1363 SET gf
+1364 LOD 3.0
+1365 SET gc
+1366 LOD 4.0
+1367 SET gc_i
 // 363: if (gi) out(0, 1); else out(0, 0);
-1490 LOD gi
-1491 JIZ __Lif2else
-1492 LOD 1
-1493 OUT 0
-1494 JMP __Lif2end
-1495 LOD 0
-1496 OUT 0
+1368 LOD gi
+1369 JIZ __Lif2else
+1370 LOD 1
+1371 OUT 0
+1372 JMP __Lif2end
+1373 LOD 0
+1374 OUT 0
 // 364: k = 0; while (gi) { k = 1; break; } out(0, k);
-1497 LOD 0
-1498 SET main_k
-1499 LOD gi
-1500 JIZ __Lwh1end
-1501 LOD 1
-1502 SET main_k
-1503 LOD main_k
-1504 OUT 0
+1375 LOD 0
+1376 SET main_k
+1377 LOD gi
+1378 JIZ __Lwh1end
+1379 LOD 1
+1380 SET main_k
+1381 LOD main_k
+1382 OUT 0
 // 365: x = !gi; out(0, x);
-1505 LIN_M gi
-1506 OUT 0
+1383 LIN_M gi
+1384 OUT 0
 // 366: if ((gi+gz)) out(0, 1); else out(0, 0);
-1507 LOD gi
-1508 ADD gz
-1509 JIZ __Lif3else
-1510 LOD 1
-1511 OUT 0
-1512 JMP __Lif3end
-1513 LOD 0
-1514 OUT 0
+1385 LOD gi
+1386 ADD gz
+1387 JIZ __Lif3else
+1388 LOD 1
+1389 OUT 0
+1390 JMP __Lif3end
+1391 LOD 0
+1392 OUT 0
 // 367: k = 0; while ((gi+gz)) { k = 1; break; } out(0, k);
-1515 LOD 0
-1516 SET main_k
-1517 LOD gi
-1518 ADD gz
-1519 JIZ __Lwh2end
-1520 LOD 1
-1521 SET main_k
-1522 LOD main_k
-1523 OUT 0
+1393 LOD 0
+1394 SET main_k
+1395 LOD gi
+1396 ADD gz
+1397 JIZ __Lwh2end
+1398 LOD 1
+1399 SET main_k
+1400 LOD main_k
+1401 OUT 0
 // 368: x = !(gi+gz); out(0, x);
-1524 LOD gi
-1525 ADD gz
-1526 LIN
-1527 OUT 0
+1402 LOD gi
+1403 ADD gz
+1404 LIN
+1405 OUT 0
 // 369: if (7) out(0, 1); else out(0, 0);
-1528 LOD 7
-1529 JIZ __Lif4else
-1530 LOD 1
-1531 OUT 0
-1532 JMP __Lif4end
-1533 LOD 0
-1534 OUT 0
+1406 LOD 7
+1407 JIZ __Lif4else
+1408 LOD 1
+1409 OUT 0
+1410 JMP __Lif4end
+1411 LOD 0
+1412 OUT 0
 // 370: k = 0; while (7) { k = 1; break; } out(0, k);
-1535 LOD 0
-1536 SET main_k
-1537 LOD 1
-1538 SET main_k
-1539 LOD main_k
-1540 OUT 0
+1413 LOD 0
+1414 SET main_k
+1415 LOD 1
+1416 SET main_k
+1417 LOD main_k
+1418 OUT 0
 // 371: x = !7; out(0, x);
-1541 LIN_M 7
-1542 OUT 0
+1419 LIN_M 7
+1420 OUT 0
 // 372: gi = 7; gf = 2.5; gc = 3.0+4.0i;
-1543 LOD 7
-1544 SET gi
-1545 LOD 2.5
-1546 SET gf
-1547 LOD 3.0
-1548 SET gc
-1549 LOD 4.0
-1550 SET gc_i
+1421 LOD 7
+1422 SET gi
+1423 LOD 2.5
+1424 SET gf
+1425 LOD 3.0
+1426 SET gc
+1427 LOD 4.0
+1428 SET gc_i
 // 373: gi = 0; gf = 0.0; gc = 0.0+0.0i;
-1551 LOD 0
-1552 SET gi
-1553 LOD 0.0
-1554 SET gf
-1555 SET gc
-1556 SET gc_i
+1429 LOD 0
+1430 SET gi
+1431 LOD 0.0
+1432 SET gf
+1433 SET gc
+1434 SET gc_i
 // 374: if (gi) out(0, 1); else out(0, 0);
-1557 LOD gi
-1558 JIZ __Lif5else
-1559 LOD 1
-1560 OUT 0
-1561 JMP __Lif5end
-1562 LOD 0
-1563 OUT 0
+1435 LOD gi
+1436 JIZ __Lif5else
+1437 LOD 1
+1438 OUT 0
+1439 JMP __Lif5end
+1440 LOD 0
+1441 OUT 0
 // 375: k = 0; while (gi) { k = 1; break; } out(0, k);
-1564 LOD 0
-1565 SET main_k
-1566 LOD gi
-1567 JIZ __Lwh4end
-1568 LOD 1
-1569 SET main_k
-1570 LOD main_k
-1571 OUT 0
+1442 LOD 0
+1443 SET main_k
+1444 LOD gi
+1445 JIZ __Lwh4end
+1446 LOD 1
+1447 SET main_k
+1448 LOD main_k
+1449 OUT 0
 // 376: x = !gi; out(0, x);
-1572 LIN_M gi
-1573 OUT 0
+1450 LIN_M gi
+1451 OUT 0
 // 377: if ((gi+gz)) out(0, 1); else out(0, 0);
-1574 LOD gi
-1575 ADD gz
-1576 JIZ __Lif6else
-1577 LOD 1
-1578 OUT 0
-1579 JMP __Lif6end
-1580 LOD 0
-1581 OUT 0
+1452 LOD gi
+1453 ADD gz
+1454 JIZ __Lif6else
+1455 LOD 1
+1456 OUT 0
+1457 JMP __Lif6end
+1458 LOD 0
+1459 OUT 0
 // 378: k = 0; while ((gi+gz)) { k = 1; break; } out(0, k);
-1582 LOD 0
-1583 SET main_k
-1584 LOD gi
-1585 ADD gz
-1586 JIZ __Lwh5end
-1587 LOD 1
-1588 SET main_k
-1589 LOD main_k
-1590 OUT 0
+1460 LOD 0
+1461 SET main_k
+1462 LOD gi
+1463 ADD gz
+1464 JIZ __Lwh5end
+1465 LOD 1
+1466 SET main_k
+1467 LOD main_k
+1468 OUT 0
 // 379: x = !(gi+gz); out(0, x);
-1591 LOD gi
-1592 ADD gz
-1593 LIN
-1594 OUT 0
+1469 LOD gi
+1470 ADD gz
+1471 LIN
+1472 OUT 0
 // 380: if (0) out(0, 1); else out(0, 0);
-1595 LOD 0
-1596 JIZ __Lif7else
-1597 LOD 1
-1598 OUT 0
-1599 JMP __Lif7end
-1600 LOD 0
-1601 OUT 0
+1473 LOD 0
+1474 JIZ __Lif7else
+1475 LOD 1
+1476 OUT 0
+1477 JMP __Lif7end
+1478 LOD 0
+1479 OUT 0
 // 381: k = 0; while (0) { k = 1; break; } out(0, k);
-1602 LOD 0
-1603 SET main_k
-1604 LOD 0
-1605 JIZ __Lwh6end
-1606 LOD 1
-1607 SET main_k
-1608 LOD main_k
-1609 OUT 0
+1480 LOD 0
+1481 SET main_k
+1482 LOD 0
+1483 JIZ __Lwh6end
+1484 LOD 1
+1485 SET main_k
+1486 LOD main_k
+1487 OUT 0
 // 382: x = !0; out(0, x);
-1610 LIN_M 0
-1611 OUT 0
+1488 LIN_M 0
+1489 OUT 0
 // 383: gi = 7; gf = 2.5; gc = 3.0+4.0i;
-1612 LOD 7
-1613 SET gi
-1614 LOD 2.5
-1615 SET gf
-1616 LOD 3.0
-1617 SET gc
-1618 LOD 4.0
-1619 SET gc_i
+1490 LOD 7
+1491 SET gi
+1492 LOD 2.5
+1493 SET gf
+1494 LOD 3.0
+1495 SET gc
+1496 LOD 4.0
+1497 SET gc_i
 // 384: gi = 7; gf = 2.5; gc = 3.0+4.0i;
-1620 LOD 7
-1621 SET gi
-1622 LOD 2.5
-1623 SET gf
-1624 LOD 3.0
-1625 SET gc
-1626 LOD 4.0
-1627 SET gc_i
+1498 LOD 7
+1499 SET gi
+1500 LOD 2.5
+1501 SET gf
+1502 LOD 3.0
+1503 SET gc
+1504 LOD 4.0
+1505 SET gc_i
 // 385: if (gf) out(0, 1); else out(0, 0);
-1628 LOD gf
-1629 AND 8388607
-1630 JIZ __Lif8else
-1631 LOD 1
-1632 OUT 0
-1633 JMP __Lif8end
-1634 LOD 0
-1635 OUT 0
+1506 LOD gf
+1507 AND 8388607
+1508 JIZ __Lif8else
+1509 LOD 1
+1510 OUT 0
+1511 JMP __Lif8end
+1512 LOD 0
+1513 OUT 0
 // 386: k = 0; while (gf) { k = 1; break; } out(0, k);
-1636 LOD 0
-1637 SET main_k
-1638 LOD gf
-1639 AND 8388607
-1640 JIZ __Lwh7end
-1641 LOD 1
-1642 SET main_k
-1643 LOD main_k
-1644 OUT 0
+1514 LOD 0
+1515 SET main_k
+1516 LOD gf
+1517 AND 8388607
+1518 JIZ __Lwh7end
+1519 LOD 1
+1520 SET main_k
+1521 LOD main_k
+1522 OUT 0
 // 387: x = !gf; out(0, x);
-1645 LOD gf
-1646 AND 8388607
-1647 LIN
-1648 OUT 0
+1523 LOD gf
+1524 AND 8388607
+1525 LIN
+1526 OUT 0
 // 388: if ((gf+gfz)) out(0, 1); else out(0, 0);
-1649 LOD gf
-1650 F_ADD gfz
-1651 AND 8388607
-1652 JIZ __Lif9else
-1653 LOD 1
-1654 OUT 0
-1655 JMP __Lif9end
-1656 LOD 0
-1657 OUT 0
+1527 LOD gf
+1528 F_ADD gfz
+1529 AND 8388607
+1530 JIZ __Lif9else
+1531 LOD 1
+1532 OUT 0
+1533 JMP __Lif9end
+1534 LOD 0
+1535 OUT 0
 // 389: k = 0; while ((gf+gfz)) { k = 1; break; } out(0, k);
-1658 LOD 0
-1659 SET main_k
-1660 LOD gf
-1661 F_ADD gfz
-1662 AND 8388607
-1663 JIZ __Lwh8end
-1664 LOD 1
-1665 SET main_k
-1666 LOD main_k
-1667 OUT 0
+1536 LOD 0
+1537 SET main_k
+1538 LOD gf
+1539 F_ADD gfz
+1540 AND 8388607
+1541 JIZ __Lwh8end
+1542 LOD 1
+1543 SET main_k
+1544 LOD main_k
+1545 OUT 0
 // 390: x = !(gf+gfz); out(0, x);
-1668 LOD gf
-1669 F_ADD gfz
-1670 AND 8388607
-1671 LIN
-1672 OUT 0
+1546 LOD gf
+1547 F_ADD gfz
+1548 AND 8388607
+1549 LIN
+1550 OUT 0
 // 391: if (2.5) out(0, 1); else out(0, 0);
-1673 LOD 2.5
-1674 AND 8388607
-1675 JIZ __Lif10else
-1676 LOD 1
-1677 OUT 0
-1678 JMP __Lif10end
-1679 LOD 0
-1680 OUT 0
+1551 LOD 2.5
+1552 AND 8388607
+1553 JIZ __Lif10else
+1554 LOD 1
+1555 OUT 0
+1556 JMP __Lif10end
+1557 LOD 0
+1558 OUT 0
 // 392: k = 0; while (2.5) { k = 1; break; } out(0, k);
-1681 LOD 0
-1682 SET main_k
-1683 LOD 2.5
-1684 AND 8388607
-1685 JIZ __Lwh9end
-1686 LOD 1
-1687 SET main_k
-1688 LOD main_k
-1689 OUT 0
+1559 LOD 0
+1560 SET main_k
+1561 LOD 2.5
+1562 AND 8388607
+1563 JIZ __Lwh9end
+1564 LOD 1
+1565 SET main_k
+1566 LOD main_k
+1567 OUT 0
 // 393: x = !2.5; out(0, x);
-1690 LOD 2.5
-1691 AND 8388607
-1692 LIN
-1693 OUT 0
+1568 LOD 2.5
+1569 AND 8388607
+1570 LIN
+1571 OUT 0
 // 394: gi = 7; gf = 2.5; gc = 3.0+4.0i;
-1694 LOD 7
-1695 SET gi
-1696 LOD 2.5
-1697 SET gf
-1698 LOD 3.0
-1699 SET gc
-1700 LOD 4.0
-1701 SET gc_i
+1572 LOD 7
+1573 SET gi
+1574 LOD 2.5
+1575 SET gf
+1576 LOD 3.0
+1577 SET gc
+1578 LOD 4.0
+1579 SET gc_i
 // 395: gi = 0; gf = 0.0; gc = 0.0+0.0i;
-1702 LOD 0
-1703 SET gi
-1704 LOD 0.0
-1705 SET gf
-1706 SET gc
-1707 SET gc_i
+1580 LOD 0
+1581 SET gi
+1582 LOD 0.0
+1583 SET gf
+1584 SET gc
+1585 SET gc_i
 // 396: if (gf) out(0, 1); else out(0, 0);
-1708 AND 8388607
-1709 JIZ __Lif11else
-1710 LOD 1
-1711 OUT 0
-1712 JMP __Lif11end
-1713 LOD 0
-1714 OUT 0
+1586 AND 8388607
+1587 JIZ __Lif11else
+1588 LOD 1
+1589 OUT 0
+1590 JMP __Lif11end
+1591 LOD 0
+1592 OUT 0
 // 397: k = 0; while (gf) { k = 1; break; } out(0, k);
-1715 LOD 0
-1716 SET main_k
-1717 LOD gf
-1718 AND 8388607
-1719 JIZ __Lwh10end
-1720 LOD 1
-1721 SET main_k
-1722 LOD main_k
-1723 OUT 0
+1593 LOD 0
+1594 SET main_k
+1595 LOD gf
+1596 AND 8388607
+1597 JIZ __Lwh10end
+1598 LOD 1
+1599 SET main_k
+1600 LOD main_k
+1601 OUT 0
 // 398: x = !gf; out(0, x);
-1724 LOD gf
-1725 AND 8388607
-1726 LIN
-1727 OUT 0
+1602 LOD gf
+1603 AND 8388607
+1604 LIN
+1605 OUT 0
 // 399: if ((gf+gfz)) out(0, 1); else out(0, 0);
-1728 LOD gf
-1729 F_ADD gfz
-1730 AND 8388607
-1731 JIZ __Lif12else
-1732 LOD 1
-1733 OUT 0
-1734 JMP __Lif12end
-1735 LOD 0
-1736 OUT 0
+1606 LOD gf
+1607 F_ADD gfz
+1608 AND 8388607
+1609 JIZ __Lif12else
+1610 LOD 1
+1611 OUT 0
+1612 JMP __Lif12end
+1613 LOD 0
+1614 OUT 0
 // 400: k = 0; while ((gf+gfz)) { k = 1; break; } out(0, k);
-1737 LOD 0
-1738 SET main_k
-1739 LOD gf
-1740 F_ADD gfz
-1741 AND 8388607
-1742 JIZ __Lwh11end
-1743 LOD 1
-1744 SET main_k
-1745 LOD main_k
-1746 OUT 0
+1615 LOD 0
+1616 SET main_k
+1617 LOD gf
+1618 F_ADD gfz
+1619 AND 8388607
+1620 JIZ __Lwh11end
+1621 LOD 1
+1622 SET main_k
+1623 LOD main_k
+1624 OUT 0
 // 401: x = !(gf+gfz); out(0, x);
-1747 LOD gf
-1748 F_ADD gfz
-1749 AND 8388607
-1750 LIN
-1751 OUT 0
+1625 LOD gf
+1626 F_ADD gfz
+1627 AND 8388607
+1628 LIN
+1629 OUT 0
 // 402: if (0.0) out(0, 1); else out(0, 0);
-1752 LOD 0.0
-1753 AND 8388607
-1754 JIZ __Lif13else
-1755 LOD 1
-1756 OUT 0
-1757 JMP __Lif13end
-1758 LOD 0
-1759 OUT 0
+1630 LOD 0.0
+1631 AND 8388607
+1632 JIZ __Lif13else
+1633 LOD 1
+1634 OUT 0
+1635 JMP __Lif13end
+1636 LOD 0
+1637 OUT 0
 // 403: k = 0; while (0.0) { k = 1; break; } out(0, k);
-1760 LOD 0
-1761 SET main_k
-1762 LOD 0.0
-1763 AND 8388607
-1764 JIZ __Lwh12end
-1765 LOD 1
-1766 SET main_k
-1767 LOD main_k
-1768 OUT 0
+1638 LOD 0
+1639 SET main_k
+1640 LOD 0.0
+1641 AND 8388607
+1642 JIZ __Lwh12end
+1643 LOD 1
+1644 SET main_k
+1645 LOD main_k
+1646 OUT 0
 // 404: x = !0.0; out(0, x);
-1769 LOD 0.0
-1770 AND 8388607
-1771 LIN
-1772 OUT 0
+1647 LOD 0.0
+1648 AND 8388607
+1649 LIN
+1650 OUT 0
 // 405: gi = 7; gf = 2.5; gc = 3.0+4.0i;
-1773 LOD 7
-1774 SET gi
-1775 LOD 2.5
-1776 SET gf
-1777 LOD 3.0
-1778 SET gc
-1779 LOD 4.0
-1780 SET gc_i
+1651 LOD 7
+1652 SET gi
+1653 LOD 2.5
+1654 SET gf
+1655 LOD 3.0
+1656 SET gc
+1657 LOD 4.0
+1658 SET gc_i
 // 406: gi = 7; gf = 2.5; gc = 3.0+4.0i;
-1781 LOD 7
-1782 SET gi
-1783 LOD 2.5
-1784 SET gf
-1785 LOD 3.0
-1786 SET gc
-1787 LOD 4.0
-1788 SET gc_i
+1659 LOD 7
+1660 SET gi
+1661 LOD 2.5
+1662 SET gf
+1663 LOD 3.0
+1664 SET gc
+1665 LOD 4.0
+1666 SET gc_i
 // 407: if (gc) out(0, 1); else out(0, 0);
-1789 LOD gc
-1790 ORR gc_i
-1791 AND 8388607
-1792 JIZ __Lif14else
-1793 LOD 1
-1794 OUT 0
-1795 JMP __Lif14end
-1796 LOD 0
-1797 OUT 0
+1667 LOD gc
+1668 ORR gc_i
+1669 AND 8388607
+1670 JIZ __Lif14else
+1671 LOD 1
+1672 OUT 0
+1673 JMP __Lif14end
+1674 LOD 0
+1675 OUT 0
 // 408: k = 0; while (gc) { k = 1; break; } out(0, k);
-1798 LOD 0
-1799 SET main_k
-1800 LOD gc
-1801 ORR gc_i
-1802 AND 8388607
-1803 JIZ __Lwh13end
-1804 LOD 1
-1805 SET main_k
-1806 LOD main_k
-1807 OUT 0
+1676 LOD 0
+1677 SET main_k
+1678 LOD gc
+1679 ORR gc_i
+1680 AND 8388607
+1681 JIZ __Lwh13end
+1682 LOD 1
+1683 SET main_k
+1684 LOD main_k
+1685 OUT 0
 // 409: x = !gc; out(0, x);
-1808 LOD gc
-1809 ORR gc_i
-1810 AND 8388607
-1811 LIN
-1812 OUT 0
+1686 LOD gc
+1687 ORR gc_i
+1688 AND 8388607
+1689 LIN
+1690 OUT 0
 // 410: if ((gc*gone)) out(0, 1); else out(0, 0);
-1813 LOD gc
-1814 F_MLT gone
-1815 P_LOD gc_i
-1816 F_MLT gone_i
-1817 SF_SU2
-1818 P_LOD gc
-1819 F_MLT gone_i
-1820 P_LOD gc_i
-1821 F_MLT gone
-1822 SF_ADD
-1823 S_ORR
-1824 AND 8388607
-1825 JIZ __Lif15else
-1826 LOD 1
-1827 OUT 0
-1828 JMP __Lif15end
-1829 LOD 0
-1830 OUT 0
+1691 LOD gc
+1692 F_MLT gone
+1693 P_LOD gc_i
+1694 F_MLT gone_i
+1695 SF_SU2
+1696 P_LOD gc
+1697 F_MLT gone_i
+1698 P_LOD gc_i
+1699 F_MLT gone
+1700 SF_ADD
+1701 S_ORR
+1702 AND 8388607
+1703 JIZ __Lif15else
+1704 LOD 1
+1705 OUT 0
+1706 JMP __Lif15end
+1707 LOD 0
+1708 OUT 0
 // 411: k = 0; while ((gc*gone)) { k = 1; break; } out(0, k);
-1831 LOD 0
-1832 SET main_k
-1833 LOD gc
-1834 F_MLT gone
-1835 P_LOD gc_i
-1836 F_MLT gone_i
-1837 SF_SU2
-1838 P_LOD gc
-1839 F_MLT gone_i
-1840 P_LOD gc_i
-1841 F_MLT gone
-1842 SF_ADD
-1843 S_ORR
-1844 AND 8388607
-1845 JIZ __Lwh14end
-1846 LOD 1
-1847 SET main_k
-1848 LOD main_k
-1849 OUT 0
+1709 LOD 0
+1710 SET main_k
+1711 LOD gc
+1712 F_MLT gone
+1713 P_LOD gc_i
+1714 F_MLT gone_i
+1715 SF_SU2
+1716 P_LOD gc
+1717 F_MLT gone_i
+1718 P_LOD gc_i
+1719 F_MLT gone
+1720 SF_ADD
+1721 S_ORR
+1722 AND 8388607
+1723 JIZ __Lwh14end
+1724 LOD 1
+1725 SET main_k
+1726 LOD main_k
+1727 OUT 0
 // 412: x = !(gc*gone); out(0, x);
-1850 LOD gc
-1851 F_MLT gone
-1852 P_LOD gc_i
-1853 F_MLT gone_i
-1854 SF_SU2
-1855 P_LOD gc
-1856 F_MLT gone_i
-1857 P_LOD gc_i
-1858 F_MLT gone
-1859 SF_ADD
-1860 S_ORR
-1861 AND 8388607
-1862 LIN
-1863 OUT 0
+1728 LOD gc
+1729 F_MLT gone
+1730 P_LOD gc_i
+1731 F_MLT gone_i
+1732 SF_SU2
+1733 P_LOD gc
+1734 F_MLT gone_i
+1735 P_LOD gc_i
+1736 F_MLT gone
+1737 SF_ADD
+1738 S_ORR
+1739 AND 8388607
+1740 LIN
+1741 OUT 0
 // 413: if ((3.0+4.0i)) out(0, 1); else out(0, 0);
-1864 LOD 3.0
-1865 ORR 4.0
-1866 AND 8388607
-1867 JIZ __Lif16else
-1868 LOD 1
-1869 OUT 0
-1870 JMP __Lif16end
-1871 LOD 0
-1872 OUT 0
+1742 LOD 3.0
+1743 ORR 4.0
+1744 AND 8388607
+1745 JIZ __Lif16else
+1746 LOD 1
+1747 OUT 0
+1748 JMP __Lif16end
+1749 LOD 0
+1750 OUT 0
 // 414: k = 0; while ((3.0+4.0i)) { k = 1; break; } out(0, k);
-1873 LOD 0
-1874 SET main_k
-1875 LOD 3.0
-1876 ORR 4.0
-1877 AND 8388607
-1878 JIZ __Lwh15end
-1879 LOD 1
-1880 SET main_k
-1881 LOD main_k
-1882 OUT 0
+1751 LOD 0
+1752 SET main_k
+1753 LOD 3.0
+1754 ORR 4.0
+1755 AND 8388607
+1756 JIZ __Lwh15end
+1757 LOD 1
+1758 SET main_k
+1759 LOD main_k
+1760 OUT 0
 // 415: x = !(3.0+4.0i); out(0, x);
-1883 LOD 3.0
-1884 ORR 4.0
-1885 AND 8388607
-1886 LIN
-1887 OUT 0
+1761 LOD 3.0
+1762 ORR 4.0
+1763 AND 8388607
+1764 LIN
+1765 OUT 0
 // 416: gi = 7; gf = 2.5; gc = 3.0+4.0i;
-1888 LOD 7
-1889 SET gi
-1890 LOD 2.5
-1891 SET gf
-1892 LOD 3.0
-1893 SET gc
-1894 LOD 4.0
-1895 SET gc_i
+1766 LOD 7
+1767 SET gi
+1768 LOD 2.5
+1769 SET gf
+1770 LOD 3.0
+1771 SET gc
+1772 LOD 4.0
+1773 SET gc_i
 // 417: gi = 0; gf = 0.0; gc = 0.0+0.0i;
-1896 LOD 0
-1897 SET gi
-1898 LOD 0.0
-1899 SET gf
-1900 SET gc
-1901 SET gc_i
+1774 LOD 0
+1775 SET gi
+1776 LOD 0.0
+1777 SET gf
+1778 SET gc
+1779 SET gc_i
 // 418: if (gc) out(0, 1); else out(0, 0);
-1902 ORR gc_i
-1903 AND 8388607
-1904 JIZ __Lif17else
-1905 LOD 1
-1906 OUT 0
-1907 JMP __Lif17end
-1908 LOD 0
-1909 OUT 0
+1780 ORR gc_i
+1781 AND 8388607
+1782 JIZ __Lif17else
+1783 LOD 1
+1784 OUT 0
+1785 JMP __Lif17end
+1786 LOD 0
+1787 OUT 0
 // 419: k = 0; while (gc) { k = 1; break; } out(0, k);
-1910 LOD 0
-1911 SET main_k
-1912 LOD gc
-1913 ORR gc_i
-1914 AND 8388607
-1915 JIZ __Lwh16end
-1916 LOD 1
-1917 SET main_k
-1918 LOD main_k
-1919 OUT 0
+1788 LOD 0
+1789 SET main_k
+1790 LOD gc
+1791 ORR gc_i
+1792 AND 8388607
+1793 JIZ __Lwh16end
+1794 LOD 1
+1795 SET main_k
+1796 LOD main_k
+1797 OUT 0
 // 420: x = !gc; out(0, x);
-1920 LOD gc
-1921 ORR gc_i
-1922 AND 8388607
-1923 LIN
-1924 OUT 0
+1798 LOD gc
+1799 ORR gc_i
+1800 AND 8388607
+1801 LIN
+1802 OUT 0
 // 421: if ((gc*gone)) out(0, 1); else out(0, 0);
-1925 LOD gc
-1926 F_MLT gone
-1927 P_LOD gc_i
-1928 F_MLT gone_i
-1929 SF_SU2
-1930 P_LOD gc
-1931 F_MLT gone_i
-1932 P_LOD gc_i
-1933 F_MLT gone
-1934 SF_ADD
-1935 S_ORR
-1936 AND 8388607
-1937 JIZ __Lif18else
-1938 LOD 1
-1939 OUT 0
-1940 JMP __Lif18end
-1941 LOD 0
-1942 OUT 0
+1803 LOD gc
+1804 F_MLT gone
+1805 P_LOD gc_i
+1806 F_MLT gone_i
+1807 SF_SU2
+1808 P_LOD gc
+1809 F_MLT gone_i
+1810 P_LOD gc_i
+1811 F_MLT gone
+1812 SF_ADD
+1813 S_ORR
+1814 AND 8388607
+1815 JIZ __Lif18else
+1816 LOD 1
+1817 OUT 0
+1818 JMP __Lif18end
+1819 LOD 0
+1820 OUT 0
 // 422: k = 0; while ((gc*gone)) { k = 1; break; } out(0, k);
-1943 LOD 0
-1944 SET main_k
-1945 LOD gc
-1946 F_MLT gone
-1947 P_LOD gc_i
-1948 F_MLT gone_i
-1949 SF_SU2
-1950 P_LOD gc
-1951 F_MLT gone_i
-1952 P_LOD gc_i
-1953 F_MLT gone
-1954 SF_ADD
-1955 S_ORR
-1956 AND 8388607
-1957 JIZ __Lwh17end
-1958 LOD 1
-1959 SET main_k
-1960 LOD main_k
-1961 OUT 0
+1821 LOD 0
+1822 SET main_k
+1823 LOD gc
+1824 F_MLT gone
+1825 P_LOD gc_i
+1826 F_MLT gone_i
+1827 SF_SU2
+1828 P_LOD gc
+1829 F_MLT gone_i
+1830 P_LOD gc_i
+1831 F_MLT gone
+1832 SF_ADD
+1833 S_ORR
+1834 AND 8388607
+1835 JIZ __Lwh17end
+1836 LOD 1
+1837 SET main_k
+1838 LOD main_k
+1839 OUT 0
 // 423: x = !(gc*gone); out(0, x);
-1962 LOD gc
-1963 F_MLT gone
-1964 P_LOD gc_i
-1965 F_MLT gone_i
-1966 SF_SU2
-1967 P_LOD gc
-1968 F_MLT gone_i
-1969 P_LOD gc_i
-1970 F_MLT gone
-1971 SF_ADD
-1972 S_ORR
-1973 AND 8388607
-1974 LIN
-1975 OUT 0
+1840 LOD gc
+1841 F_MLT gone
+1842 P_LOD gc_i
+1843 F_MLT gone_i
+1844 SF_SU2
+1845 P_LOD gc
+1846 F_MLT gone_i
+1847 P_LOD gc_i
+1848 F_MLT gone
+1849 SF_ADD
+1850 S_ORR
+1851 AND 8388607
+1852 LIN
+1853 OUT 0
 // 424: if ((0.0+0.0i)) out(0, 1); else out(0, 0);
-1976 LOD 0.0
-1977 ORR 0.0
-1978 AND 8388607
-1979 JIZ __Lif19else
-1980 LOD 1
-1981 OUT 0
-1982 JMP __Lif19end
-1983 LOD 0
-1984 OUT 0
+1854 LOD 0.0
+1855 ORR 0.0
+1856 AND 8388607
+1857 JIZ __Lif19else
+1858 LOD 1
+1859 OUT 0
+1860 JMP __Lif19end
+1861 LOD 0
+1862 OUT 0
 // 425: k = 0; while ((0.0+0.0i)) { k = 1; break; } out(0, k);
-1985 LOD 0
-1986 SET main_k
-1987 LOD 0.0
-1988 ORR 0.0
-1989 AND 8388607
-1990 JIZ __Lwh18end
-1991 LOD 1
-1992 SET main_k
-1993 LOD main_k
-1994 OUT 0
+1863 LOD 0
+1864 SET main_k
+1865 LOD 0.0
+1866 ORR 0.0
+1867 AND 8388607
+1868 JIZ __Lwh18end
+1869 LOD 1
+1870 SET main_k
+1871 LOD main_k
+1872 OUT 0
 // 426: x = !(0.0+0.0i); out(0, x);
-1995 LOD 0.0
-1996 ORR 0.0
-1997 AND 8388607
-1998 LIN
-1999 OUT 0
+1873 LOD 0.0
+1874 ORR 0.0
+1875 AND 8388607
+1876 LIN
+1877 OUT 0
 // 427: gi = 7; gf = 2.5; gc = 3.0+4.0i;
-2000 LOD 7
-2001 SET gi
-2002 LOD 2.5
-2003 SET gf
-2004 LOD 3.0
-2005 SET gc
-2006 LOD 4.0
-2007 SET gc_i
+1878 LOD 7
+1879 SET gi
+1880 LOD 2.5
+1881 SET gf
+1882 LOD 3.0
+1883 SET gc
+1884 LOD 4.0
+1885 SET gc_i
 // 428: switch (gi) { case 2: out(0, 20); break; case 3: out(0, 30); break; case 7: out(0, 70); break; default: out(0, 99); }
-2008 LOD gi
-2009 ADD -2
-2010 JIZ __sw_body_1_1
-2011 ADD -1
-2012 JIZ __sw_body_1_2
-2013 ADD -4
-2014 JIZ __sw_body_1_3
-2015 JMP __sw_body_1_4
-2016 LOD 20
-2017 OUT 0
-2018 JMP __switch_end_1
-2019 LOD 30
-2020 OUT 0
-2021 JMP __switch_end_1
-2022 LOD 70
-2023 OUT 0
-2024 JMP __switch_end_1
-2025 LOD 99
-2026 OUT 0
+1886 LOD gi
+1887 ADD -2
+1888 JIZ __sw_body_1_1
+1889 ADD -1
+1890 JIZ __sw_body_1_2
+1891 ADD -4
+1892 JIZ __sw_body_1_3
+1893 JMP __sw_body_1_4
+1894 LOD 20
+1895 OUT 0
+1896 JMP __switch_end_1
+1897 LOD 30
+1898 OUT 0
+1899 JMP __switch_end_1
+1900 LOD 70
+1901 OUT 0
+1902 JMP __switch_end_1
+1903 LOD 99
+1904 OUT 0
 // 429: switch ((gi+gz)) { case 2: out(0, 20); break; case 3: out(0, 30); break; case 7: out(0, 70); break; default: out(0, 99); }
-2027 LOD gi
-2028 ADD gz
-2029 ADD -2
-2030 JIZ __sw_body_2_1
-2031 ADD -1
-2032 JIZ __sw_body_2_2
-2033 ADD -4
-2034 JIZ __sw_body_2_3
-2035 JMP __sw_body_2_4
-2036 LOD 20
-2037 OUT 0
-2038 JMP __switch_end_2
-2039 LOD 30
-2040 OUT 0
-2041 JMP __switch_end_2
-2042 LOD 70
-2043 OUT 0
-2044 JMP __switch_end_2
-2045 LOD 99
-2046 OUT 0
+1905 LOD gi
+1906 ADD gz
+1907 ADD -2
+1908 JIZ __sw_body_2_1
+1909 ADD -1
+1910 JIZ __sw_body_2_2
+1911 ADD -4
+1912 JIZ __sw_body_2_3
+1913 JMP __sw_body_2_4
+1914 LOD 20
+1915 OUT 0
+1916 JMP __switch_end_2
+1917 LOD 30
+1918 OUT 0
+1919 JMP __switch_end_2
+1920 LOD 70
+1921 OUT 0
+1922 JMP __switch_end_2
+1923 LOD 99
+1924 OUT 0
 // 430: switch (7) { case 2: out(0, 20); break; case 3: out(0, 30); break; case 7: out(0, 70); break; default: out(0, 99); }
-2047 LOD 7
-2048 ADD -2
-2049 JIZ __sw_body_3_1
-2050 ADD -1
-2051 JIZ __sw_body_3_2
-2052 ADD -4
-2053 JIZ __sw_body_3_3
-2054 JMP __sw_body_3_4
-2055 LOD 20
-2056 OUT 0
-2057 JMP __switch_end_3
-2058 LOD 30
-2059 OUT 0
-2060 JMP __switch_end_3
-2061 LOD 70
-2062 OUT 0
-2063 JMP __switch_end_3
-2064 LOD 99
-2065 OUT 0
+1925 LOD 7
+1926 ADD -2
+1927 JIZ __sw_body_3_1
+1928 ADD -1
+1929 JIZ __sw_body_3_2
+1930 ADD -4
+1931 JIZ __sw_body_3_3
+1932 JMP __sw_body_3_4
+1933 LOD 20
+1934 OUT 0
+1935 JMP __switch_end_3
+1936 LOD 30
+1937 OUT 0
+1938 JMP __switch_end_3
+1939 LOD 70
+1940 OUT 0
+1941 JMP __switch_end_3
+1942 LOD 99
+1943 OUT 0
 // 431: switch (gf) { case 2: out(0, 20); break; case 3: out(0, 30); break; case 7: out(0, 70); break; default: out(0, 99); }
-2066 F2I_M gf
-2067 ADD -2
-2068 JIZ __sw_body_4_1
-2069 ADD -1
-2070 JIZ __sw_body_4_2
-2071 ADD -4
-2072 JIZ __sw_body_4_3
-2073 JMP __sw_body_4_4
-2074 LOD 20
-2075 OUT 0
-2076 JMP __switch_end_4
-2077 LOD 30
-2078 OUT 0
-2079 JMP __switch_end_4
-2080 LOD 70
-2081 OUT 0
-2082 JMP __switch_end_4
-2083 LOD 99
-2084 OUT 0
+1944 F2I_M gf
+1945 ADD -2
+1946 JIZ __sw_body_4_1
+1947 ADD -1
+1948 JIZ __sw_body_4_2
+1949 ADD -4
+1950 JIZ __sw_body_4_3
+1951 JMP __sw_body_4_4
+1952 LOD 20
+1953 OUT 0
+1954 JMP __switch_end_4
+1955 LOD 30
+1956 OUT 0
+1957 JMP __switch_end_4
+1958 LOD 70
+1959 OUT 0
+1960 JMP __switch_end_4
+1961 LOD 99
+1962 OUT 0
 // 432: switch ((gf+gfz)) { case 2: out(0, 20); break; case 3: out(0, 30); break; case 7: out(0, 70); break; default: out(0, 99); }
-2085 LOD gf
-2086 F_ADD gfz
-2087 F2I
-2088 ADD -2
-2089 JIZ __sw_body_5_1
-2090 ADD -1
-2091 JIZ __sw_body_5_2
-2092 ADD -4
-2093 JIZ __sw_body_5_3
-2094 JMP __sw_body_5_4
-2095 LOD 20
-2096 OUT 0
-2097 JMP __switch_end_5
-2098 LOD 30
-2099 OUT 0
-2100 JMP __switch_end_5
-2101 LOD 70
-2102 OUT 0
-2103 JMP __switch_end_5
-2104 LOD 99
-2105 OUT 0
+1963 LOD gf
+1964 F_ADD gfz
+1965 F2I
+1966 ADD -2
+1967 JIZ __sw_body_5_1
+1968 ADD -1
+1969 JIZ __sw_body_5_2
+1970 ADD -4
+1971 JIZ __sw_body_5_3
+1972 JMP __sw_body_5_4
+1973 LOD 20
+1974 OUT 0
+1975 JMP __switch_end_5
+1976 LOD 30
+1977 OUT 0
+1978 JMP __switch_end_5
+1979 LOD 70
+1980 OUT 0
+1981 JMP __switch_end_5
+1982 LOD 99
+1983 OUT 0
 // 433: switch (2.5) { case 2: out(0, 20); break; case 3: out(0, 30); break; case 7: out(0, 70); break; default: out(0, 99); }
-2106 F2I_M 2.5
-2107 ADD -2
-2108 JIZ __sw_body_6_1
-2109 ADD -1
-2110 JIZ __sw_body_6_2
-2111 ADD -4
-2112 JIZ __sw_body_6_3
-2113 JMP __sw_body_6_4
-2114 LOD 20
-2115 OUT 0
-2116 JMP __switch_end_6
-2117 LOD 30
-2118 OUT 0
-2119 JMP __switch_end_6
-2120 LOD 70
-2121 OUT 0
-2122 JMP __switch_end_6
-2123 LOD 99
-2124 OUT 0
+1984 F2I_M 2.5
+1985 ADD -2
+1986 JIZ __sw_body_6_1
+1987 ADD -1
+1988 JIZ __sw_body_6_2
+1989 ADD -4
+1990 JIZ __sw_body_6_3
+1991 JMP __sw_body_6_4
+1992 LOD 20
+1993 OUT 0
+1994 JMP __switch_end_6
+1995 LOD 30
+1996 OUT 0
+1997 JMP __switch_end_6
+1998 LOD 70
+1999 OUT 0
+2000 JMP __switch_end_6
+2001 LOD 99
+2002 OUT 0
 // 434: switch (gc) { case 2: out(0, 20); break; case 3: out(0, 30); break; case 7: out(0, 70); break; default: out(0, 99); }
-2125 F2I_M gc
-2126 ADD -2
-2127 JIZ __sw_body_7_1
-2128 ADD -1
-2129 JIZ __sw_body_7_2
-2130 ADD -4
-2131 JIZ __sw_body_7_3
-2132 JMP __sw_body_7_4
-2133 LOD 20
-2134 OUT 0
-2135 JMP __switch_end_7
-2136 LOD 30
-2137 OUT 0
-2138 JMP __switch_end_7
-2139 LOD 70
-2140 OUT 0
-2141 JMP __switch_end_7
-2142 LOD 99
-2143 OUT 0
+2003 F2I_M gc
+2004 ADD -2
+2005 JIZ __sw_body_7_1
+2006 ADD -1
+2007 JIZ __sw_body_7_2
+2008 ADD -4
+2009 JIZ __sw_body_7_3
+2010 JMP __sw_body_7_4
+2011 LOD 20
+2012 OUT 0
+2013 JMP __switch_end_7
+2014 LOD 30
+2015 OUT 0
+2016 JMP __switch_end_7
+2017 LOD 70
+2018 OUT 0
+2019 JMP __switch_end_7
+2020 LOD 99
+2021 OUT 0
 // 435: switch ((gc*gone)) { case 2: out(0, 20); break; case 3: out(0, 30); break; case 7: out(0, 70); break; default: out(0, 99); }
-2144 LOD gc
-2145 F_MLT gone
-2146 P_LOD gc_i
-2147 F_MLT gone_i
-2148 SF_SU2
-2149 P_LOD gc
-2150 F_MLT gone_i
-2151 P_LOD gc_i
-2152 F_MLT gone
-2153 SF_ADD
-2154 POP
-2155 F2I
-2156 ADD -2
-2157 JIZ __sw_body_8_1
-2158 ADD -1
-2159 JIZ __sw_body_8_2
-2160 ADD -4
-2161 JIZ __sw_body_8_3
-2162 JMP __sw_body_8_4
-2163 LOD 20
-2164 OUT 0
-2165 JMP __switch_end_8
-2166 LOD 30
-2167 OUT 0
-2168 JMP __switch_end_8
-2169 LOD 70
-2170 OUT 0
-2171 JMP __switch_end_8
-2172 LOD 99
-2173 OUT 0
+2022 LOD gc
+2023 F_MLT gone
+2024 P_LOD gc_i
+2025 F_MLT gone_i
+2026 SF_SU2
+2027 P_LOD gc
+2028 F_MLT gone_i
+2029 P_LOD gc_i
+2030 F_MLT gone
+2031 SF_ADD
+2032 POP
+2033 F2I
+2034 ADD -2
+2035 JIZ __sw_body_8_1
+2036 ADD -1
+2037 JIZ __sw_body_8_2
+2038 ADD -4
+2039 JIZ __sw_body_8_3
+2040 JMP __sw_body_8_4
+2041 LOD 20
+2042 OUT 0
+2043 JMP __switch_end_8
+2044 LOD 30
+2045 OUT 0
+2046 JMP __switch_end_8
+2047 LOD 70
+2048 OUT 0
+2049 JMP __switch_end_8
+2050 LOD 99
+2051 OUT 0
 // 436: switch ((3.0+4.0i)) { case 2: out(0, 20); break; case 3: out(0, 30); break; case 7: out(0, 70); break; default: out(0, 99); }
-2174 F2I_M 3.0
-2175 ADD -2
-2176 JIZ __sw_body_9_1
-2177 ADD -1
-2178 JIZ __sw_body_9_2
-2179 ADD -4
-2180 JIZ __sw_body_9_3
-2181 JMP __sw_body_9_4
-2182 LOD 20
-2183 OUT 0
-2184 JMP __switch_end_9
-2185 LOD 30
-2186 OUT 0
-2187 JMP __switch_end_9
-2188 LOD 70
-2189 OUT 0
-2190 JMP __switch_end_9
-2191 LOD 99
-2192 OUT 0
+2052 F2I_M 3.0
+2053 ADD -2
+2054 JIZ __sw_body_9_1
+2055 ADD -1
+2056 JIZ __sw_body_9_2
+2057 ADD -4
+2058 JIZ __sw_body_9_3
+2059 JMP __sw_body_9_4
+2060 LOD 20
+2061 OUT 0
+2062 JMP __switch_end_9
+2063 LOD 30
+2064 OUT 0
+2065 JMP __switch_end_9
+2066 LOD 70
+2067 OUT 0
+2068 JMP __switch_end_9
+2069 LOD 99
+2070 OUT 0
 // 437: x = gi << gf; out(0, x);
-2193 F2I_M gf
-2194 SHL gi
-2195 OUT 0
+2071 F2I_M gf
+2072 SHL gi
+2073 OUT 0
 // 438: x = (gi+gz) << (gf+gfz); out(0, x);
-2196 LOD gi
-2197 ADD gz
-2198 P_LOD gf
-2199 F_ADD gfz
-2200 F2I
-2201 S_SHL
-2202 OUT 0
+2074 LOD gi
+2075 ADD gz
+2076 P_LOD gf
+2077 F_ADD gfz
+2078 F2I
+2079 S_SHL
+2080 OUT 0
 // 439: x = gi >> 2.5; out(0, x);
-2203 F2I_M 2.5
-2204 SHR gi
-2205 OUT 0
+2081 F2I_M 2.5
+2082 SHR gi
+2083 OUT 0
 // 440: si # gi -> |si>;
-2206 LOD_V si 2
-2207 SET_V si 3
-2208 LOD_V si 1
-2209 SET_V si 2
-2210 LOD_V si 0
-2211 SET_V si 1
-2212 LOD gi
-2213 SET si
+2084 LOD_V si 2
+2085 SET_V si 3
+2086 LOD_V si 1
+2087 SET_V si 2
+2088 LOD_V si 0
+2089 SET_V si 1
+2090 LOD gi
+2091 SET si
 // 441: out(0, si[0]);
-2214 LOD_V si 0
-2215 OUT 0
+2092 LOD_V si 0
+2093 OUT 0
 // 442: out(0, si[1]);
-2216 LOD_V si 1
-2217 OUT 0
+2094 LOD_V si 1
+2095 OUT 0
 // 443: out(0, si[2]);
-2218 LOD_V si 2
-2219 OUT 0
+2096 LOD_V si 2
+2097 OUT 0
 // 444: out(0, si[3]);
-2220 LOD_V si 3
-2221 OUT 0
+2098 LOD_V si 3
+2099 OUT 0
 // 445: si # (gi+gz) -> |si>;
-2222 LOD_V si 2
-2223 SET_V si 3
-2224 LOD_V si 1
-2225 SET_V si 2
-2226 LOD_V si 0
-2227 SET_V si 1
-2228 LOD gi
-2229 ADD gz
-2230 SET si
+2100 LOD_V si 2
+2101 SET_V si 3
+2102 LOD_V si 1
+2103 SET_V si 2
+2104 LOD_V si 0
+2105 SET_V si 1
+2106 LOD gi
+2107 ADD gz
+2108 SET si
 // 446: out(0, si[0]);
-2231 LOD_V si 0
-2232 OUT 0
+2109 LOD_V si 0
+2110 OUT 0
 // 447: out(0, si[1]);
-2233 LOD_V si 1
-2234 OUT 0
+2111 LOD_V si 1
+2112 OUT 0
 // 448: out(0, si[2]);
-2235 LOD_V si 2
-2236 OUT 0
+2113 LOD_V si 2
+2114 OUT 0
 // 449: out(0, si[3]);
-2237 LOD_V si 3
-2238 OUT 0
+2115 LOD_V si 3
+2116 OUT 0
 // 450: si # 7 -> |si>;
-2239 LOD_V si 2
-2240 SET_V si 3
-2241 LOD_V si 1
-2242 SET_V si 2
-2243 LOD_V si 0
-2244 SET_V si 1
-2245 LOD 7
-2246 SET si
+2117 LOD_V si 2
+2118 SET_V si 3
+2119 LOD_V si 1
+2120 SET_V si 2
+2121 LOD_V si 0
+2122 SET_V si 1
+2123 LOD 7
+2124 SET si
 // 451: out(0, si[0]);
-2247 LOD_V si 0
-2248 OUT 0
+2125 LOD_V si 0
+2126 OUT 0
 // 452: out(0, si[1]);
-2249 LOD_V si 1
-2250 OUT 0
+2127 LOD_V si 1
+2128 OUT 0
 // 453: out(0, si[2]);
-2251 LOD_V si 2
-2252 OUT 0
+2129 LOD_V si 2
+2130 OUT 0
 // 454: out(0, si[3]);
-2253 LOD_V si 3
-2254 OUT 0
+2131 LOD_V si 3
+2132 OUT 0
 // 455: si # (ret_i_i0()+gz) -> |si>;
-2255 CAL ret_i_i0
-2256 ADD gz
-2257 SET __aux_var
-2258 LOD_V si 2
-2259 SET_V si 3
-2260 LOD_V si 1
-2261 SET_V si 2
-2262 LOD_V si 0
-2263 SET_V si 1
-2264 LOD __aux_var
-2265 SET si
+2133 CAL ret_i_i0
+2134 ADD gz
+2135 SET __aux_var
+2136 LOD_V si 2
+2137 SET_V si 3
+2138 LOD_V si 1
+2139 SET_V si 2
+2140 LOD_V si 0
+2141 SET_V si 1
+2142 LOD __aux_var
+2143 SET si
 // 456: out(0, si[0]);
-2266 LOD_V si 0
-2267 OUT 0
+2144 LOD_V si 0
+2145 OUT 0
 // 457: out(0, si[1]);
-2268 LOD_V si 1
-2269 OUT 0
+2146 LOD_V si 1
+2147 OUT 0
 // 458: out(0, si[2]);
-2270 LOD_V si 2
-2271 OUT 0
+2148 LOD_V si 2
+2149 OUT 0
 // 459: out(0, si[3]);
-2272 LOD_V si 3
-2273 OUT 0
+2150 LOD_V si 3
+2151 OUT 0
 // 460: si # (3+4) -> |si>;
-2274 LOD_V si 2
-2275 SET_V si 3
-2276 LOD_V si 1
-2277 SET_V si 2
-2278 LOD_V si 0
-2279 SET_V si 1
-2280 LOD 7
-2281 SET si
+2152 LOD_V si 2
+2153 SET_V si 3
+2154 LOD_V si 1
+2155 SET_V si 2
+2156 LOD_V si 0
+2157 SET_V si 1
+2158 LOD 7
+2159 SET si
 // 461: out(0, si[0]);
-2282 LOD_V si 0
-2283 OUT 0
+2160 LOD_V si 0
+2161 OUT 0
 // 462: out(0, si[1]);
-2284 LOD_V si 1
-2285 OUT 0
+2162 LOD_V si 1
+2163 OUT 0
 // 463: out(0, si[2]);
-2286 LOD_V si 2
-2287 OUT 0
+2164 LOD_V si 2
+2165 OUT 0
 // 464: out(0, si[3]);
-2288 LOD_V si 3
-2289 OUT 0
+2166 LOD_V si 3
+2167 OUT 0
 // 465: si # (si[2]+gz) -> |si>;
-2290 LOD_V si 2
-2291 ADD gz
-2292 SET __aux_var
-2293 LOD_V si 2
-2294 SET_V si 3
-2295 LOD_V si 1
-2296 SET_V si 2
-2297 LOD_V si 0
-2298 SET_V si 1
-2299 LOD __aux_var
-2300 SET si
+2168 LOD_V si 2
+2169 ADD gz
+2170 SET __aux_var
+2171 LOD_V si 2
+2172 SET_V si 3
+2173 LOD_V si 1
+2174 SET_V si 2
+2175 LOD_V si 0
+2176 SET_V si 1
+2177 LOD __aux_var
+2178 SET si
 // 466: out(0, si[0]);
-2301 LOD_V si 0
-2302 OUT 0
+2179 LOD_V si 0
+2180 OUT 0
 // 467: out(0, si[1]);
-2303 LOD_V si 1
-2304 OUT 0
+2181 LOD_V si 1
+2182 OUT 0
 // 468: out(0, si[2]);
-2305 LOD_V si 2
-2306 OUT 0
+2183 LOD_V si 2
+2184 OUT 0
 // 469: out(0, si[3]);
-2307 LOD_V si 3
-2308 OUT 0
+2185 LOD_V si 3
+2186 OUT 0
 // 470: si # gf -> |si>;
-2309 F2I_M gf
-2310 SET __aux_var
-2311 LOD_V si 2
-2312 SET_V si 3
-2313 LOD_V si 1
-2314 SET_V si 2
-2315 LOD_V si 0
-2316 SET_V si 1
-2317 LOD __aux_var
-2318 SET si
+2187 F2I_M gf
+2188 SET __aux_var
+2189 LOD_V si 2
+2190 SET_V si 3
+2191 LOD_V si 1
+2192 SET_V si 2
+2193 LOD_V si 0
+2194 SET_V si 1
+2195 LOD __aux_var
+2196 SET si
 // 471: out(0, si[0]);
-2319 LOD_V si 0
-2320 OUT 0
+2197 LOD_V si 0
+2198 OUT 0
 // 472: out(0, si[1]);
-2321 LOD_V si 1
-2322 OUT 0
+2199 LOD_V si 1
+2200 OUT 0
 // 473: out(0, si[2]);
-2323 LOD_V si 2
-2324 OUT 0
+2201 LOD_V si 2
+2202 OUT 0
 // 474: out(0, si[3]);
-2325 LOD_V si 3
-2326 OUT 0
+2203 LOD_V si 3
+2204 OUT 0
 // 475: si # (gf+gfz) -> |si>;
-2327 LOD_V si 2
-2328 SET_V si 3
-2329 LOD_V si 1
-2330 SET_V si 2
-2331 LOD_V si 0
-2332 SET_V si 1
-2333 LOD gf
-2334 F_ADD gfz
-2335 F2I
-2336 SET si
+2205 LOD_V si 2
+2206 SET_V si 3
+2207 LOD_V si 1
+2208 SET_V si 2
+2209 LOD_V si 0
+2210 SET_V si 1
+2211 LOD gf
+2212 F_ADD gfz
+2213 F2I
+2214 SET si
 // 476: out(0, si[0]);
-2337 LOD_V si 0
-2338 OUT 0
+2215 LOD_V si 0
+2216 OUT 0
 // 477: out(0, si[1]);
-2339 LOD_V si 1
-2340 OUT 0
+2217 LOD_V si 1
+2218 OUT 0
 // 478: out(0, si[2]);
-2341 LOD_V si 2
-2342 OUT 0
+2219 LOD_V si 2
+2220 OUT 0
 // 479: out(0, si[3]);
-2343 LOD_V si 3
-2344 OUT 0
+2221 LOD_V si 3
+2222 OUT 0
 // 480: si # 2.5 -> |si>;
-2345 F2I_M 2.5
-2346 SET __aux_var
-2347 LOD_V si 2
-2348 SET_V si 3
-2349 LOD_V si 1
-2350 SET_V si 2
-2351 LOD_V si 0
-2352 SET_V si 1
-2353 LOD __aux_var
-2354 SET si
+2223 F2I_M 2.5
+2224 SET __aux_var
+2225 LOD_V si 2
+2226 SET_V si 3
+2227 LOD_V si 1
+2228 SET_V si 2
+2229 LOD_V si 0
+2230 SET_V si 1
+2231 LOD __aux_var
+2232 SET si
 // 481: out(0, si[0]);
-2355 LOD_V si 0
-2356 OUT 0
+2233 LOD_V si 0
+2234 OUT 0
 // 482: out(0, si[1]);
-2357 LOD_V si 1
-2358 OUT 0
+2235 LOD_V si 1
+2236 OUT 0
 // 483: out(0, si[2]);
-2359 LOD_V si 2
-2360 OUT 0
+2237 LOD_V si 2
+2238 OUT 0
 // 484: out(0, si[3]);
-2361 LOD_V si 3
-2362 OUT 0
+2239 LOD_V si 3
+2240 OUT 0
 // 485: si # (ret_f_f0()+gfz) -> |si>;
-2363 CAL ret_f_f0
-2364 F_ADD gfz
-2365 F2I
-2366 SET __aux_var
-2367 LOD_V si 2
-2368 SET_V si 3
-2369 LOD_V si 1
-2370 SET_V si 2
-2371 LOD_V si 0
-2372 SET_V si 1
-2373 LOD __aux_var
-2374 SET si
+2241 CAL ret_f_f0
+2242 F_ADD gfz
+2243 F2I
+2244 SET __aux_var
+2245 LOD_V si 2
+2246 SET_V si 3
+2247 LOD_V si 1
+2248 SET_V si 2
+2249 LOD_V si 0
+2250 SET_V si 1
+2251 LOD __aux_var
+2252 SET si
 // 486: out(0, si[0]);
-2375 LOD_V si 0
-2376 OUT 0
+2253 LOD_V si 0
+2254 OUT 0
 // 487: out(0, si[1]);
-2377 LOD_V si 1
-2378 OUT 0
+2255 LOD_V si 1
+2256 OUT 0
 // 488: out(0, si[2]);
-2379 LOD_V si 2
-2380 OUT 0
+2257 LOD_V si 2
+2258 OUT 0
 // 489: out(0, si[3]);
-2381 LOD_V si 3
-2382 OUT 0
+2259 LOD_V si 3
+2260 OUT 0
 // 490: si # (1.5+1.0) -> |si>;
-2383 LOD_V si 2
-2384 SET_V si 3
-2385 LOD_V si 1
-2386 SET_V si 2
-2387 LOD_V si 0
-2388 SET_V si 1
-2389 LOD 1.5
-2390 F_ADD 1.0
-2391 F2I
-2392 SET si
+2261 LOD_V si 2
+2262 SET_V si 3
+2263 LOD_V si 1
+2264 SET_V si 2
+2265 LOD_V si 0
+2266 SET_V si 1
+2267 LOD 1.5
+2268 F_ADD 1.0
+2269 F2I
+2270 SET si
 // 491: out(0, si[0]);
-2393 LOD_V si 0
-2394 OUT 0
+2271 LOD_V si 0
+2272 OUT 0
 // 492: out(0, si[1]);
-2395 LOD_V si 1
-2396 OUT 0
+2273 LOD_V si 1
+2274 OUT 0
 // 493: out(0, si[2]);
-2397 LOD_V si 2
-2398 OUT 0
+2275 LOD_V si 2
+2276 OUT 0
 // 494: out(0, si[3]);
-2399 LOD_V si 3
-2400 OUT 0
+2277 LOD_V si 3
+2278 OUT 0
 // 495: sf # gi -> |sf>;
-2401 LOD_V sf 2
-2402 SET_V sf 3
-2403 LOD_V sf 1
-2404 SET_V sf 2
-2405 LOD_V sf 0
-2406 SET_V sf 1
-2407 I2F_M gi
-2408 SET sf
+2279 LOD_V sf 2
+2280 SET_V sf 3
+2281 LOD_V sf 1
+2282 SET_V sf 2
+2283 LOD_V sf 0
+2284 SET_V sf 1
+2285 I2F_M gi
+2286 SET sf
 // 496: fout(0, 4.0*sf[0]);
-2409 LOD_V sf 0
-2410 F_MLT 4.0
-2411 F2I
-2412 OUT 0
+2287 LOD_V sf 0
+2288 F_MLT 4.0
+2289 F2I
+2290 OUT 0
 // 497: fout(0, 4.0*sf[1]);
-2413 LOD_V sf 1
-2414 F_MLT 4.0
-2415 F2I
-2416 OUT 0
+2291 LOD_V sf 1
+2292 F_MLT 4.0
+2293 F2I
+2294 OUT 0
 // 498: fout(0, 4.0*sf[2]);
-2417 LOD_V sf 2
-2418 F_MLT 4.0
-2419 F2I
-2420 OUT 0
+2295 LOD_V sf 2
+2296 F_MLT 4.0
+2297 F2I
+2298 OUT 0
 // 499: fout(0, 4.0*sf[3]);
-2421 LOD_V sf 3
-2422 F_MLT 4.0
-2423 F2I
-2424 OUT 0
+2299 LOD_V sf 3
+2300 F_MLT 4.0
+2301 F2I
+2302 OUT 0
 // 500: sf # (gi+gz) -> |sf>;
-2425 LOD_V sf 2
-2426 SET_V sf 3
-2427 LOD_V sf 1
-2428 SET_V sf 2
-2429 LOD_V sf 0
-2430 SET_V sf 1
-2431 LOD gi
-2432 ADD gz
-2433 I2F
-2434 SET sf
+2303 LOD_V sf 2
+2304 SET_V sf 3
+2305 LOD_V sf 1
+2306 SET_V sf 2
+2307 LOD_V sf 0
+2308 SET_V sf 1
+2309 LOD gi
+2310 ADD gz
+2311 I2F
+2312 SET sf
 // 501: fout(0, 4.0*sf[0]);
-2435 LOD_V sf 0
-2436 F_MLT 4.0
-2437 F2I
-2438 OUT 0
+2313 LOD_V sf 0
+2314 F_MLT 4.0
+2315 F2I
+2316 OUT 0
 // 502: fout(0, 4.0*sf[1]);
-2439 LOD_V sf 1
-2440 F_MLT 4.0
-2441 F2I
-2442 OUT 0
+2317 LOD_V sf 1
+2318 F_MLT 4.0
+2319 F2I
+2320 OUT 0
 // 503: fout(0, 4.0*sf[2]);
-2443 LOD_V sf 2
-2444 F_MLT 4.0
-2445 F2I
-2446 OUT 0
+2321 LOD_V sf 2
+2322 F_MLT 4.0
+2323 F2I
+2324 OUT 0
 // 504: fout(0, 4.0*sf[3]);
-2447 LOD_V sf 3
-2448 F_MLT 4.0
-2449 F2I
-2450 OUT 0
+2325 LOD_V sf 3
+2326 F_MLT 4.0
+2327 F2I
+2328 OUT 0
 // 505: sf # 7 -> |sf>;
-2451 LOD_V sf 2
-2452 SET_V sf 3
-2453 LOD_V sf 1
-2454 SET_V sf 2
-2455 LOD_V sf 0
-2456 SET_V sf 1
-2457 LOD 7.0
-2458 SET sf
+2329 LOD_V sf 2
+2330 SET_V sf 3
+2331 LOD_V sf 1
+2332 SET_V sf 2
+2333 LOD_V sf 0
+2334 SET_V sf 1
+2335 LOD 7.0
+2336 SET sf
 // 506: fout(0, 4.0*sf[0]);
-2459 LOD_V sf 0
-2460 F_MLT 4.0
-2461 F2I
-2462 OUT 0
+2337 LOD_V sf 0
+2338 F_MLT 4.0
+2339 F2I
+2340 OUT 0
 // 507: fout(0, 4.0*sf[1]);
-2463 LOD_V sf 1
-2464 F_MLT 4.0
-2465 F2I
-2466 OUT 0
+2341 LOD_V sf 1
+2342 F_MLT 4.0
+2343 F2I
+2344 OUT 0
 // 508: fout(0, 4.0*sf[2]);
-2467 LOD_V sf 2
-2468 F_MLT 4.0
-2469 F2I
-2470 OUT 0
+2345 LOD_V sf 2
+2346 F_MLT 4.0
+2347 F2I
+2348 OUT 0
 // 509: fout(0, 4.0*sf[3]);
-2471 LOD_V sf 3
-2472 F_MLT 4.0
-2473 F2I
-2474 OUT 0
+2349 LOD_V sf 3
+2350 F_MLT 4.0
+2351 F2I
+2352 OUT 0
 // 510: sf # (ret_i_i0()+gz) -> |sf>;
-2475 CAL ret_i_i0
-2476 ADD gz
-2477 SET __aux_var
-2478 LOD_V sf 2
-2479 SET_V sf 3
-2480 LOD_V sf 1
-2481 SET_V sf 2
-2482 LOD_V sf 0
-2483 SET_V sf 1
-2484 I2F_M __aux_var
-2485 SET sf
+2353 CAL ret_i_i0
+2354 ADD gz
+2355 SET __aux_var
+2356 LOD_V sf 2
+2357 SET_V sf 3
+2358 LOD_V sf 1
+2359 SET_V sf 2
+2360 LOD_V sf 0
+2361 SET_V sf 1
+2362 I2F_M __aux_var
+2363 SET sf
 // 511: fout(0, 4.0*sf[0]);
-2486 LOD_V sf 0
-2487 F_MLT 4.0
-2488 F2I
-2489 OUT 0
+2364 LOD_V sf 0
+2365 F_MLT 4.0
+2366 F2I
+2367 OUT 0
 // 512: fout(0, 4.0*sf[1]);
-2490 LOD_V sf 1
-2491 F_MLT 4.0
-2492 F2I
-2493 OUT 0
+2368 LOD_V sf 1
+2369 F_MLT 4.0
+2370 F2I
+2371 OUT 0
 // 513: fout(0, 4.0*sf[2]);
-2494 LOD_V sf 2
-2495 F_MLT 4.0
-2496 F2I
-2497 OUT 0
+2372 LOD_V sf 2
+2373 F_MLT 4.0
+2374 F2I
+2375 OUT 0
 // 514: fout(0, 4.0*sf[3]);
-2498 LOD_V sf 3
-2499 F_MLT 4.0
-2500 F2I
-2501 OUT 0
+2376 LOD_V sf 3
+2377 F_MLT 4.0
+2378 F2I
+2379 OUT 0
 // 515: sf # (3+4) -> |sf>;
-2502 LOD_V sf 2
-2503 SET_V sf 3
-2504 LOD_V sf 1
-2505 SET_V sf 2
-2506 LOD_V sf 0
-2507 SET_V sf 1
-2508 LOD 7.0
-2509 SET sf
+2380 LOD_V sf 2
+2381 SET_V sf 3
+2382 LOD_V sf 1
+2383 SET_V sf 2
+2384 LOD_V sf 0
+2385 SET_V sf 1
+2386 LOD 7.0
+2387 SET sf
 // 516: fout(0, 4.0*sf[0]);
-2510 LOD_V sf 0
-2511 F_MLT 4.0
-2512 F2I
-2513 OUT 0
+2388 LOD_V sf 0
+2389 F_MLT 4.0
+2390 F2I
+2391 OUT 0
 // 517: fout(0, 4.0*sf[1]);
-2514 LOD_V sf 1
-2515 F_MLT 4.0
-2516 F2I
-2517 OUT 0
+2392 LOD_V sf 1
+2393 F_MLT 4.0
+2394 F2I
+2395 OUT 0
 // 518: fout(0, 4.0*sf[2]);
-2518 LOD_V sf 2
-2519 F_MLT 4.0
-2520 F2I
-2521 OUT 0
+2396 LOD_V sf 2
+2397 F_MLT 4.0
+2398 F2I
+2399 OUT 0
 // 519: fout(0, 4.0*sf[3]);
-2522 LOD_V sf 3
-2523 F_MLT 4.0
-2524 F2I
-2525 OUT 0
+2400 LOD_V sf 3
+2401 F_MLT 4.0
+2402 F2I
+2403 OUT 0
 // 520: sf # gf -> |sf>;
-2526 LOD_V sf 2
-2527 SET_V sf 3
-2528 LOD_V sf 1
-2529 SET_V sf 2
-2530 LOD_V sf 0
-2531 SET_V sf 1
-2532 LOD gf
-2533 SET sf
+2404 LOD_V sf 2
+2405 SET_V sf 3
+2406 LOD_V sf 1
+2407 SET_V sf 2
+2408 LOD_V sf 0
+2409 SET_V sf 1
+2410 LOD gf
+2411 SET sf
 // 521: fout(0, 4.0*sf[0]);
-2534 LOD_V sf 0
-2535 F_MLT 4.0
-2536 F2I
-2537 OUT 0
+2412 LOD_V sf 0
+2413 F_MLT 4.0
+2414 F2I
+2415 OUT 0
 // 522: fout(0, 4.0*sf[1]);
-2538 LOD_V sf 1
-2539 F_MLT 4.0
-2540 F2I
-2541 OUT 0
+2416 LOD_V sf 1
+2417 F_MLT 4.0
+2418 F2I
+2419 OUT 0
 // 523: fout(0, 4.0*sf[2]);
-2542 LOD_V sf 2
-2543 F_MLT 4.0
-2544 F2I
-2545 OUT 0
+2420 LOD_V sf 2
+2421 F_MLT 4.0
+2422 F2I
+2423 OUT 0
 // 524: fout(0, 4.0*sf[3]);
-2546 LOD_V sf 3
-2547 F_MLT 4.0
-2548 F2I
-2549 OUT 0
+2424 LOD_V sf 3
+2425 F_MLT 4.0
+2426 F2I
+2427 OUT 0
 // 525: sf # (gf+gfz) -> |sf>;
-2550 LOD_V sf 2
-2551 SET_V sf 3
-2552 LOD_V sf 1
-2553 SET_V sf 2
-2554 LOD_V sf 0
-2555 SET_V sf 1
-2556 LOD gf
-2557 F_ADD gfz
-2558 SET sf
+2428 LOD_V sf 2
+2429 SET_V sf 3
+2430 LOD_V sf 1
+2431 SET_V sf 2
+2432 LOD_V sf 0
+2433 SET_V sf 1
+2434 LOD gf
+2435 F_ADD gfz
+2436 SET sf
 // 526: fout(0, 4.0*sf[0]);
-2559 LOD_V sf 0
-2560 F_MLT 4.0
-2561 F2I
-2562 OUT 0
+2437 LOD_V sf 0
+2438 F_MLT 4.0
+2439 F2I
+2440 OUT 0
 // 527: fout(0, 4.0*sf[1]);
-2563 LOD_V sf 1
-2564 F_MLT 4.0
-2565 F2I
-2566 OUT 0
+2441 LOD_V sf 1
+2442 F_MLT 4.0
+2443 F2I
+2444 OUT 0
 // 528: fout(0, 4.0*sf[2]);
-2567 LOD_V sf 2
-2568 F_MLT 4.0
-2569 F2I
-2570 OUT 0
+2445 LOD_V sf 2
+2446 F_MLT 4.0
+2447 F2I
+2448 OUT 0
 // 529: fout(0, 4.0*sf[3]);
-2571 LOD_V sf 3
-2572 F_MLT 4.0
-2573 F2I
-2574 OUT 0
+2449 LOD_V sf 3
+2450 F_MLT 4.0
+2451 F2I
+2452 OUT 0
 // 530: sf # 2.5 -> |sf>;
-2575 LOD_V sf 2
-2576 SET_V sf 3
-2577 LOD_V sf 1
-2578 SET_V sf 2
-2579 LOD_V sf 0
-2580 SET_V sf 1
-2581 LOD 2.5
-2582 SET sf
+2453 LOD_V sf 2
+2454 SET_V sf 3
+2455 LOD_V sf 1
+2456 SET_V sf 2
+2457 LOD_V sf 0
+2458 SET_V sf 1
+2459 LOD 2.5
+2460 SET sf
 // 531: fout(0, 4.0*sf[0]);
-2583 LOD_V sf 0
-2584 F_MLT 4.0
-2585 F2I
-2586 OUT 0
+2461 LOD_V sf 0
+2462 F_MLT 4.0
+2463 F2I
+2464 OUT 0
 // 532: fout(0, 4.0*sf[1]);
-2587 LOD_V sf 1
-2588 F_MLT 4.0
-2589 F2I
-2590 OUT 0
+2465 LOD_V sf 1
+2466 F_MLT 4.0
+2467 F2I
+2468 OUT 0
 // 533: fout(0, 4.0*sf[2]);
-2591 LOD_V sf 2
-2592 F_MLT 4.0
-2593 F2I
-2594 OUT 0
+2469 LOD_V sf 2
+2470 F_MLT 4.0
+2471 F2I
+2472 OUT 0
 // 534: fout(0, 4.0*sf[3]);
-2595 LOD_V sf 3
-2596 F_MLT 4.0
-2597 F2I
-2598 OUT 0
+2473 LOD_V sf 3
+2474 F_MLT 4.0
+2475 F2I
+2476 OUT 0
 // 535: sf # (ret_f_f0()+gfz) -> |sf>;
-2599 CAL ret_f_f0
-2600 F_ADD gfz
-2601 SET __aux_var
-2602 LOD_V sf 2
-2603 SET_V sf 3
-2604 LOD_V sf 1
-2605 SET_V sf 2
-2606 LOD_V sf 0
-2607 SET_V sf 1
-2608 LOD __aux_var
-2609 SET sf
+2477 CAL ret_f_f0
+2478 F_ADD gfz
+2479 SET __aux_var
+2480 LOD_V sf 2
+2481 SET_V sf 3
+2482 LOD_V sf 1
+2483 SET_V sf 2
+2484 LOD_V sf 0
+2485 SET_V sf 1
+2486 LOD __aux_var
+2487 SET sf
 // 536: fout(0, 4.0*sf[0]);
-2610 LOD_V sf 0
-2611 F_MLT 4.0
-2612 F2I
-2613 OUT 0
+2488 LOD_V sf 0
+2489 F_MLT 4.0
+2490 F2I
+2491 OUT 0
 // 537: fout(0, 4.0*sf[1]);
-2614 LOD_V sf 1
-2615 F_MLT 4.0
-2616 F2I
-2617 OUT 0
+2492 LOD_V sf 1
+2493 F_MLT 4.0
+2494 F2I
+2495 OUT 0
 // 538: fout(0, 4.0*sf[2]);
-2618 LOD_V sf 2
-2619 F_MLT 4.0
-2620 F2I
-2621 OUT 0
+2496 LOD_V sf 2
+2497 F_MLT 4.0
+2498 F2I
+2499 OUT 0
 // 539: fout(0, 4.0*sf[3]);
-2622 LOD_V sf 3
-2623 F_MLT 4.0
-2624 F2I
-2625 OUT 0
+2500 LOD_V sf 3
+2501 F_MLT 4.0
+2502 F2I
+2503 OUT 0
 // 540: sf # (1.5+1.0) -> |sf>;
-2626 LOD_V sf 2
-2627 SET_V sf 3
-2628 LOD_V sf 1
-2629 SET_V sf 2
-2630 LOD_V sf 0
-2631 SET_V sf 1
-2632 LOD 1.5
-2633 F_ADD 1.0
-2634 SET sf
+2504 LOD_V sf 2
+2505 SET_V sf 3
+2506 LOD_V sf 1
+2507 SET_V sf 2
+2508 LOD_V sf 0
+2509 SET_V sf 1
+2510 LOD 1.5
+2511 F_ADD 1.0
+2512 SET sf
 // 541: fout(0, 4.0*sf[0]);
-2635 LOD_V sf 0
-2636 F_MLT 4.0
-2637 F2I
-2638 OUT 0
+2513 LOD_V sf 0
+2514 F_MLT 4.0
+2515 F2I
+2516 OUT 0
 // 542: fout(0, 4.0*sf[1]);
-2639 LOD_V sf 1
-2640 F_MLT 4.0
-2641 F2I
-2642 OUT 0
+2517 LOD_V sf 1
+2518 F_MLT 4.0
+2519 F2I
+2520 OUT 0
 // 543: fout(0, 4.0*sf[2]);
-2643 LOD_V sf 2
-2644 F_MLT 4.0
-2645 F2I
-2646 OUT 0
+2521 LOD_V sf 2
+2522 F_MLT 4.0
+2523 F2I
+2524 OUT 0
 // 544: fout(0, 4.0*sf[3]);
-2647 LOD_V sf 3
-2648 F_MLT 4.0
-2649 F2I
-2650 OUT 0
+2525 LOD_V sf 3
+2526 F_MLT 4.0
+2527 F2I
+2528 OUT 0
 // 545: sf # (sf[2]+gfz) -> |sf>;
-2651 LOD_V sf 2
-2652 F_ADD gfz
-2653 SET __aux_var
-2654 LOD_V sf 2
-2655 SET_V sf 3
-2656 LOD_V sf 1
-2657 SET_V sf 2
-2658 LOD_V sf 0
-2659 SET_V sf 1
-2660 LOD __aux_var
-2661 SET sf
+2529 LOD_V sf 2
+2530 F_ADD gfz
+2531 SET __aux_var
+2532 LOD_V sf 2
+2533 SET_V sf 3
+2534 LOD_V sf 1
+2535 SET_V sf 2
+2536 LOD_V sf 0
+2537 SET_V sf 1
+2538 LOD __aux_var
+2539 SET sf
 // 546: fout(0, 4.0*sf[0]);
-2662 LOD_V sf 0
-2663 F_MLT 4.0
-2664 F2I
-2665 OUT 0
+2540 LOD_V sf 0
+2541 F_MLT 4.0
+2542 F2I
+2543 OUT 0
 // 547: fout(0, 4.0*sf[1]);
-2666 LOD_V sf 1
-2667 F_MLT 4.0
-2668 F2I
-2669 OUT 0
+2544 LOD_V sf 1
+2545 F_MLT 4.0
+2546 F2I
+2547 OUT 0
 // 548: fout(0, 4.0*sf[2]);
-2670 LOD_V sf 2
-2671 F_MLT 4.0
-2672 F2I
-2673 OUT 0
+2548 LOD_V sf 2
+2549 F_MLT 4.0
+2550 F2I
+2551 OUT 0
 // 549: fout(0, 4.0*sf[3]);
-2674 LOD_V sf 3
-2675 F_MLT 4.0
-2676 F2I
-2677 OUT 0
+2552 LOD_V sf 3
+2553 F_MLT 4.0
+2554 F2I
+2555 OUT 0
 // 550: out(0, gf);
-2678 F2I_M gf
-2679 OUT 0
+2556 F2I_M gf
+2557 OUT 0
 // 551: out(0, (gf+gfz));
-2680 LOD gf
-2681 F_ADD gfz
-2682 F2I
-2683 OUT 0
+2558 LOD gf
+2559 F_ADD gfz
+2560 F2I
+2561 OUT 0
 // 552: out(0, 2.5);
-2684 F2I_M 2.5
-2685 OUT 0
+2562 F2I_M 2.5
+2563 OUT 0
 // 553: fout(0, gi);
-2686 LOD gi
-2687 OUT 0
+2564 LOD gi
+2565 OUT 0
 // 554: fout(0, (gi+gz));
-2688 ADD gz
-2689 OUT 0
+2566 ADD gz
+2567 OUT 0
 // 555: fout(0, 7);
-2690 LOD 7
-2691 OUT 0
+2568 LOD 7
+2569 OUT 0
 // -3: END
-2692 JMP fim
+2570 JMP fim
+// 20: return p;
+2571 RET
+// 25: return p;
+2572 RET
+// 28: comp par_c(comp p)
+2573 SET_P par_c_p_i
+2574 SET par_c_p
+// 30: return p;
+2575 P_LOD par_c_p_i
+2576 RET
+// 35: return gi;
+2577 LOD gi
+2578 RET
+// 40: return (gi+gz);
+2579 LOD gi
+2580 ADD gz
+2581 RET
+// 45: return 7;
+2582 LOD 7
+2583 RET
+// 50: return gf;
+2584 F2I_M gf
+2585 RET
+// 55: return (gf+gfz);
+2586 LOD gf
+2587 F_ADD gfz
+2588 F2I
+2589 RET
+// 60: return 2.5;
+2590 F2I_M 2.5
+2591 RET
+// 65: return gc;
+2592 F2I_M gc
+2593 RET
+// 70: return (gc*gone);
+2594 LOD gc
+2595 F_MLT gone
+2596 P_LOD gc_i
+2597 F_MLT gone_i
+2598 SF_SU2
+2599 P_LOD gc
+2600 F_MLT gone_i
+2601 P_LOD gc_i
+2602 F_MLT gone
+2603 SF_ADD
+2604 POP
+2605 F2I
+2606 RET
+// 75: return (3.0+4.0i);
+2607 F2I_M 3.0
+2608 RET
+// 80: return gi;
+2609 I2F_M gi
+2610 RET
+// 85: return (gi+gz);
+2611 LOD gi
+2612 ADD gz
+2613 I2F
+2614 RET
+// 90: return 7;
+2615 LOD 7.0
+2616 RET
+// 95: return gf;
+2617 LOD gf
+2618 RET
+// 100: return (gf+gfz);
+2619 LOD gf
+2620 F_ADD gfz
+2621 RET
+// 105: return 2.5;
+2622 LOD 2.5
+2623 RET
+// 110: return gc;
+2624 LOD gc
+2625 RET
+// 115: return (gc*gone);
+2626 LOD gc
+2627 F_MLT gone
+2628 P_LOD gc_i
+2629 F_MLT gone_i
+2630 SF_SU2
+2631 P_LOD gc
+2632 F_MLT gone_i
+2633 P_LOD gc_i
+2634 F_MLT gone
+2635 SF_ADD
+2636 POP
+2637 RET
+// 120: return (3.0+4.0i);
+2638 LOD 3.0
+2639 RET
+// 125: return gi;
+2640 I2F_M gi
+2641 P_LOD 0.0
+2642 RET
+// 130: return (gi+gz);
+2643 LOD gi
+2644 ADD gz
+2645 I2F
+2646 P_LOD 0.0
+2647 RET
+// 135: return 7;
+2648 LOD 7.0
+2649 P_LOD 0.0
+2650 RET
+// 140: return gf;
+2651 LOD gf
+2652 P_LOD 0.0
+2653 RET
+// 145: return (gf+gfz);
+2654 LOD gf
+2655 F_ADD gfz
+2656 P_LOD 0.0
+2657 RET
+// 150: return 2.5;
+2658 LOD 2.5
+2659 P_LOD 0.0
+2660 RET
+// 155: return gc;
+2661 LOD gc
+2662 P_LOD gc_i
+2663 RET
+// 160: return (gc*gone);
+2664 LOD gc
+2665 F_MLT gone
+2666 P_LOD gc_i
+2667 F_MLT gone_i
+2668 SF_SU2
+2669 P_LOD gc
+2670 F_MLT gone_i
+2671 P_LOD gc_i
+2672 F_MLT gone
+2673 SF_ADD
+2674 RET
+// 165: return (3.0+4.0i);
+2675 LOD 3.0
+2676 P_LOD 4.0
+2677 RET
+// 170: if (p) return;
+2678 JIZ __Lif1else
+2679 RET
+// 171: out(0, 77);
+2680 LOD 77
+2681 OUT 0
+// 172: }
+2682 RET
+// 174: float mix(int a, float b, comp c)
+2683 SET_P mix_c_i
+2684 SET_P mix_c
+2685 SET_P mix_b
+2686 SET mix_a
+// 176: return a + b + real(c) + imag(c);
+2687 I2F_M mix_a
+2688 F_ADD mix_b
+2689 F_ADD mix_c
+2690 F_ADD mix_c_i
+2691 RET

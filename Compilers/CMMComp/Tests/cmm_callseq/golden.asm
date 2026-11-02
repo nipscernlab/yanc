@@ -6,15 +6,6 @@ NOP
 #NBMANT 23
 #NBEXPO 8
 #NUGAIN 128
-JMP main
-@f0 LOD 100
-RET
-@f SET f_q
-LOD g
-MLT 10
-ADD f_q
-SET g
-RET
 @main LOD 0
 SET main_x
 ADD 5
@@ -59,3 +50,11 @@ OUT 0
 LOD g
 OUT 0
 @fim JMP fim
+@f0 LOD 100
+RET
+@f SET f_q
+LOD g
+MLT 10
+ADD f_q
+SET g
+RET

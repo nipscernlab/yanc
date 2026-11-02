@@ -16,24 +16,20 @@ LOD 4
 OUT 0
 LOD 5
 SET main_k
-@__Lwh1 LOD main_k
-GRE 9
-JIZ __Lwh1end
-LOD main_k
+@__Lwh1top LOD main_k
 OUT 0
 ADD 1
 SET main_k
-JMP __Lwh1
+LES 8
+JIZ __Lwh1top
 @__Lwh1end LOD 11
 SET main_k
-@__Lwh2 LOD main_k
-GRE 15
-JIZ __Lwh2end
-LOD main_k
+@__Lwh2top LOD main_k
 OUT 0
 ADD 1
 SET main_k
-JMP __Lwh2
+LES 14
+JIZ __Lwh2top
 @__Lwh2end @__Lwh3 LOD 0
 SET main_k
 JMP __Lwh3

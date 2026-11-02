@@ -5,14 +5,6 @@ NOP
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-JMP main
-@early JIZ __Lif1else
-LOD 10
-OUT 0
-RET
-@__Lif1else LOD 20
-OUT 0
-RET
 @main LOD 1
 CAL early
 LOD 0
@@ -26,3 +18,10 @@ JMP fim
 @__Lif2else LOD 6
 OUT 0
 @fim JMP fim
+@early JIZ __Lif1else
+LOD 10
+OUT 0
+RET
+@__Lif1else LOD 20
+OUT 0
+RET

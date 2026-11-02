@@ -14,12 +14,10 @@ SET n
 OUT 0
 LOD 0
 SET main_k
-@__Lwh1 LOD main_k
-GRE 3
-JIZ fim
-#TOAQUI
+@__Lwh1top #TOAQUI
 LOD main_k
 ADD 1
 SET main_k
-JMP __Lwh1
+LES 2
+JIZ __Lwh1top
 @fim JMP fim

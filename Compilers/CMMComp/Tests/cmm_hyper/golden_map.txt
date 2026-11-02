@@ -4,7 +4,7 @@ Info: adding assembly macro for exponential computation
 Info: 3 divisions, 5 words each for DIV/MOD and 4 for F_DIV (9 added)
 Info: 11 variables share 6 data words (5 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 150 instructions and 19 variables were found
+Info: 149 instructions and 19 variables were found
 Info: adding stack memory for function calls
 Info: ULA resource -> float-point negative operation
 Info: ULA resource -> float-point adder
@@ -171,18 +171,17 @@ lang C+-
 132 F_MLT 0.6931471806
 133 F_SU2 __exp_x
 134 SET __exp_r
-135 LOD 0.0013888889
-136 F_MLT __exp_r
-137 F_ADD 0.0083333333
-138 F_MLT __exp_r
-139 F_ADD 0.0416666667
-140 F_MLT __exp_r
-141 F_ADD 0.1666666667
-142 F_MLT __exp_r
-143 F_ADD 0.5
-144 F_MLT __exp_r
-145 F_ADD 1.0
-146 F_MLT __exp_r
-147 F_ADD 1.0
-148 F_SCL __exp_n
-149 RET
+135 F_MLT 0.0013888889
+136 F_ADD 0.0083333333
+137 F_MLT __exp_r
+138 F_ADD 0.0416666667
+139 F_MLT __exp_r
+140 F_ADD 0.1666666667
+141 F_MLT __exp_r
+142 F_ADD 0.5
+143 F_MLT __exp_r
+144 F_ADD 1.0
+145 F_MLT __exp_r
+146 F_ADD 1.0
+147 F_SCL __exp_n
+148 RET

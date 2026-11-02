@@ -1,11 +1,11 @@
 ## messages
 Heads up on line 36: variable 'r' is int, but getting a float.
-Info: 251 assembly instructions generated
+Info: 249 assembly instructions generated
 Info: 1 variables written and never read removed (1 instructions)
 Info: 6 variables share 3 data words (3 saved)
 Heads up: variable 'y' in function 'main' is never read, so it's out of the program and the waveform (#WAVE y, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 250 instructions and 46 variables were found
+Info: 248 instructions and 45 variables were found
 Info: ULA resource -> integer adder
 Info: adding data output handling
 Info: ULA resource -> float-point adder
@@ -14,9 +14,10 @@ Info: ULA resource -> float to int converter
 Info: adding array handling
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> > operator for int
+Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 3
-Info: using 15% of the Assembly Instruction Set
-Info: using 16% of the ULA operations
+Info: using 16% of the Assembly Instruction Set
+Info: using 19% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
 main k 1
@@ -281,28 +282,26 @@ lang C+-
 226 SET main_j
 // 61: while (j < 6) { hist[s[j]]++; j++; }
 227 LOD main_j
-228 GRE 6
-229 JIZ __Lwh3end
-230 LOD main_j
-231 LDI s
-232 PSH
-233 LDI hist
+228 LDI s
+229 PSH
+230 LDI hist
+231 ADD 1
+232 STI hist
+233 LOD main_j
 234 ADD 1
-235 STI hist
-236 LOD main_j
-237 ADD 1
-238 SET main_j
-239 JMP __Lwh3
+235 SET main_j
+236 LES 5
+237 JIZ __Lwh3top
 // 62: out(0, hist[0]); out(0, hist[1]); out(0, hist[2]); out(0, hist[3]); // 1 3 0 2  (a histogram)
-240 LOD_V hist 0
+238 LOD_V hist 0
+239 OUT 0
+240 LOD_V hist 1
 241 OUT 0
-242 LOD_V hist 1
+242 LOD_V hist 2
 243 OUT 0
-244 LOD_V hist 2
+244 LOD_V hist 3
 245 OUT 0
-246 LOD_V hist 3
-247 OUT 0
 // 31: while (1)
-248 JMP __Lwh1
+246 JMP __Lwh1
 // -3: END
-249 JMP fim
+247 JMP fim

@@ -1,8 +1,8 @@
 ## messages
-Info: 78 assembly instructions generated
+Info: 76 assembly instructions generated
 Info: 5 variables share 2 data words (3 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 78 instructions and 12 variables were found
+Info: 76 instructions and 12 variables were found
 Info: ULA resource -> integer adder
 Info: adding data output handling
 Info: ULA resource -> < operator for int
@@ -88,39 +88,36 @@ lang C+-
 // 56: idx = 0;
 50 LOD 0
 51 SET main_idx
-// 57: for ( ; idx < 2; idx++)
-52 LOD main_idx
-53 GRE 2
-54 JIZ __Lwh7end
 // 59: out(0, 60 + idx);
-55 LOD 60
-56 ADD main_idx
-57 OUT 0
+52 LOD 60
+53 ADD main_idx
+54 OUT 0
 // 57: for ( ; idx < 2; idx++)
-58 LOD main_idx
-59 ADD 1
-60 SET main_idx
-61 JMP __Lwh7
+55 LOD main_idx
+56 ADD 1
+57 SET main_idx
+58 LES 1
+59 JIZ __Lwh7
 // 63: for (idx = 0; idx < 2; )
-62 LOD 0
-63 SET main_idx
-64 LOD main_idx
-65 GRE 2
-66 JIZ __Lwh8end
+60 LOD 0
+61 SET main_idx
+62 LOD main_idx
+63 GRE 2
+64 JIZ __Lwh8end
 // 65: out(0, 70 + idx);
-67 LOD 70
-68 ADD main_idx
-69 OUT 0
+65 LOD 70
+66 ADD main_idx
+67 OUT 0
 // 66: idx = idx + 1;
-70 LOD main_idx
-71 ADD 1
-72 SET main_idx
+68 LOD main_idx
+69 ADD 1
+70 SET main_idx
 // 63: for (idx = 0; idx < 2; )
-73 JMP __Lwh8
+71 JMP __Lwh8
 // 69: out(0, 99);
-74 LOD 99
-75 OUT 0
+72 LOD 99
+73 OUT 0
 // 26: while (1)
-76 JMP __Lwh1
+74 JMP __Lwh1
 // -3: END
-77 JMP fim
+75 JMP fim

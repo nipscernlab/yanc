@@ -6,11 +6,6 @@ NOP
 #NUIOIN 1
 #NUIOOU 1
 #SHARE v0 main_x
-#SHARE v33 main_y
-JMP main
-@g POP
-MLT 2
-RET
 @main LOD 6
 SET main_x
 LOD 4
@@ -81,10 +76,11 @@ OUT 0
 LOD 9
 SET v0
 LOD 9
-SET v33
-LOD v0
-ADD v33
+ADD v0
 OUT 0
 LOD 9
 OUT 0
 @fim JMP fim
+@g POP
+MLT 2
+RET

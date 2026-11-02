@@ -5,9 +5,9 @@ Info: 53 assembly instructions generated
 Info: adding assembly macro for arc-tangent computation
 Info: adding assembly macro for sin computation
 Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (3 added)
-Info: 13 variables share 4 data words (9 saved)
+Info: 9 variables share 3 data words (6 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 121 instructions and 28 variables were found
+Info: 135 instructions and 27 variables were found
 Info: adding stack memory for function calls
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float to int converter
@@ -17,8 +17,8 @@ Info: ULA resource -> float-point absolute operation
 Info: ULA resource -> < operator for float
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: ULA resource -> float-point sign computation (standard library)
-Info: ULA resource -> int to float converter
 Info: ULA resource -> & operator
+Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point negative operation
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 16% of the Assembly Instruction Set
@@ -94,70 +94,84 @@ lang C+-
 52 JMP fim
 // library macros, no source line
 53 SET __atan_x
-54 F_ABS_M __atan_x
-55 SET __atan_ax
+54 F_ABS
+55 SET __atan_t
 56 F_LES 1.0
-57 SET __atan_big
-58 JIZ __L_atan_small
-59 LOD __atan_ax
-60 F_DIV 1.0
+57 JIZ __L_atan_small
+58 LOD __atan_t
+59 F_DIV 1.0
+60 NOP
 61 NOP
-62 NOP
-63 F_QUO
-64 JMP __L_atan_haveT
-65 LOD __atan_ax
-66 SET __atan_t
-67 F_MLT __atan_t
-68 SET __atan_w
-69 LOD -0.012300666580
+62 F_QUO
+63 SET __atan_t
+64 F_MLT __atan_t
+65 SET __atan_w
+66 F_MLT -0.012300666580
+67 F_ADD 0.054084934779
+68 F_MLT __atan_w
+69 F_ADD -0.117697073484
 70 F_MLT __atan_w
-71 F_ADD 0.054084934779
+71 F_ADD 0.194020561451
 72 F_MLT __atan_w
-73 F_ADD -0.117697073484
+73 F_ADD -0.332694520616
 74 F_MLT __atan_w
-75 F_ADD 0.194020561451
-76 F_MLT __atan_w
-77 F_ADD -0.332694520616
-78 F_MLT __atan_w
-79 F_ADD 0.999980069822
-80 F_MLT __atan_t
-81 SET __atan_p
-82 LOD __atan_big
-83 JIZ __L_atan_done
-84 LOD __atan_p
-85 F_SU2 1.5707963268
-86 JMP __L_atan_sign
-87 LOD __atan_p
-88 F_SGN __atan_x
-89 RET
-90 SET __sin_x
-91 F_MLT 0.3183098862
-92 SET __sin_q
-93 LOD 0.5
-94 F_SGN __sin_q
-95 F_ADD __sin_q
-96 F2I
-97 SET __sin_k
-98 I2F
-99 F_MLT 3.1415926536
-100 F_SU2 __sin_x
-101 SET __sin_r
-102 F_MLT __sin_r
-103 SET __sin_w
-104 LOD -0.000184472138
-105 F_MLT __sin_w
-106 F_ADD 0.008309516704
-107 F_MLT __sin_w
-108 F_ADD -0.166651680787
-109 F_MLT __sin_w
-110 F_ADD 0.999997487148
+75 F_ADD 0.999980069822
+76 F_MLT __atan_t
+77 F_SU2 1.5707963268
+78 F_SGN __atan_x
+79 RET
+80 LOD __atan_t
+81 F_MLT __atan_t
+82 SET __atan_w
+83 F_MLT -0.012300666580
+84 F_ADD 0.054084934779
+85 F_MLT __atan_w
+86 F_ADD -0.117697073484
+87 F_MLT __atan_w
+88 F_ADD 0.194020561451
+89 F_MLT __atan_w
+90 F_ADD -0.332694520616
+91 F_MLT __atan_w
+92 F_ADD 0.999980069822
+93 F_MLT __atan_t
+94 F_SGN __atan_x
+95 RET
+96 SET __sin_x
+97 F_MLT 0.3183098862
+98 SET __sin_q
+99 LOD 0.5
+100 F_SGN __sin_q
+101 F_ADD __sin_q
+102 F2I
+103 SET __sin_k
+104 AND 1
+105 JIZ __L_sin_even
+106 I2F_M __sin_k
+107 F_MLT 3.1415926536
+108 F_SU2 __sin_x
+109 F_NEG
+110 SET __sin_r
 111 F_MLT __sin_r
-112 SET __sin_p
-113 LOD __sin_k
-114 AND 1
-115 JIZ __L_sin_even
-116 LOD __sin_p
-117 F_NEG
-118 RET
-119 LOD __sin_p
+112 SET __sin_w
+113 F_MLT -0.000184472138
+114 F_ADD 0.008309516704
+115 F_MLT __sin_w
+116 F_ADD -0.166651680787
+117 F_MLT __sin_w
+118 F_ADD 0.999997487148
+119 F_MLT __sin_r
 120 RET
+121 I2F_M __sin_k
+122 F_MLT 3.1415926536
+123 F_SU2 __sin_x
+124 SET __sin_r
+125 F_MLT __sin_r
+126 SET __sin_w
+127 F_MLT -0.000184472138
+128 F_ADD 0.008309516704
+129 F_MLT __sin_w
+130 F_ADD -0.166651680787
+131 F_MLT __sin_w
+132 F_ADD 0.999997487148
+133 F_MLT __sin_r
+134 RET

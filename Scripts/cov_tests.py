@@ -792,6 +792,8 @@ def misc():
     # loops: jump-only if, continue in while / for / do, while on a variable
     body.append("    k = 0; s = 0; while (1) { k = k + 1; if (k == 4) break; s = s + k; } out(0, s);"); out.append(6)
     body.append("    k = 0; s = 0; while (k != 5) { k = k + 1; if (k != 3) continue; s = s + 10; } out(0, s);"); out.append(10)
+    # a while right after k = 0 tests at the bottom; its continue goes to the test
+    body.append("    s = 0; k = 0; while (k < 5) { k = k + 1; if (k == 3) continue; s = s + k; } out(0, s);"); out.append(1 + 2 + 4 + 5)
     body.append("    s = 0; for (k = 0; k < 5; k++) { if (k == 2) continue; s = s + k; } out(0, s);"); out.append(8)
     body.append("    k = 0; s = 0; do { k = k + 1; if (k == 2) continue; s = s + k; } while (k < 4); out(0, s);"); out.append(8)
     body.append("    k = 3; s = 0; while (k) { s = s + k; k = k - 1; } out(0, s);"); out.append(6)
