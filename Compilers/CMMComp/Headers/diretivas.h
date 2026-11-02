@@ -10,6 +10,7 @@ extern int  nbexpo;      // exponent width (bits)
 extern int  nuioin;      // number of input ports
 extern int  nuioou;      // number of output ports
 extern int  fround;      // float rounding level (#FROUND)
+extern int  fftsiz;      // low bits of an index v[k) reverses (#FFTSIZ)
 
 // directive parsing
 void dire_exec (char *dir, int id, int t);

@@ -1214,16 +1214,27 @@ static expr ast_emit_expr_impl(expr_node *n)
                     return expr_make(v_table[n->id].type, 0);
                 }
             }
-            // Constant 1D forward index: read directly with LOD_V (offset
-            // baked into the address), skipping the index materialise +
-            // indirect LDI; a comp array reads both halves that way. Other
-            // shapes (2D, reversed) fall through to the indirect path.
-            if (!n->right && n->op == 0
+            // Constant 1D index: read directly with LOD_V (offset baked into
+            // the address), skipping the index materialise + indirect LDI; a
+            // comp array reads both halves that way. A reversed index v[k)
+            // is the same word the hardware reads: the low #FFTSIZ bits of k
+            // reversed, the others kept (core.v rel_addr). 2D falls through
+            // to the indirect path.
+            if (!n->right
                 && n->left->kind == EXPR_LITERAL && v_table[n->id].type >= 1 && v_table[n->id].type <= 3)
             {
                 typecheck_expr(n->left);
                 if (n->left->type == 1)
-                    return arr_1d2exp_const(n->id, atoi(v_table[n->left->id].name), 1);
+                {
+                    int k = atoi(v_table[n->left->id].name);
+                    if (n->op)
+                    {
+                        int low = 0;
+                        for (int b = 0; b < fftsiz; b++) if (k & (1 << b)) low |= 1 << (fftsiz - 1 - b);
+                        k = (k & ~((1 << fftsiz) - 1)) | low;
+                    }
+                    return arr_1d2exp_const(n->id, k, 1);
+                }
             }
             // two constant indexes of a matrix: one constant offset, row by row
             if (n->right && n->left->kind == EXPR_LITERAL && n->right->kind == EXPR_LITERAL

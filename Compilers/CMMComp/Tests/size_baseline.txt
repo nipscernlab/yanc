@@ -109,7 +109,7 @@ lk_flt_w   12
 lk_merge   11
 multiparam 25
 pplus_arr  19
-proc_fft   219
+proc_fft   203
 proc_rls   224
 proc_sim   87
 procBlind  521
