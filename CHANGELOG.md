@@ -9,6 +9,11 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **Test `sapho_min`**, the opposite of `sapho_all`: `out(0, 5)` on an 8-bit
+  processor. The regression synthesises its processor with Yosys, flattened
+  and with the two memories as black boxes, and holds it to 12 flip-flops
+  and 19 LUT4 (`Tests/sapho_min/cells.txt`): a block the program does not
+  use must not be generated. Skipped without Yosys or with `--no-sim`.
 - **C±: `#WAVE a, b`** keeps variables the program never reads, to see them
   in the waveform. Fixtures `cmm_unread`, NegTests `wave_undeclared` and
   `wave_not_var`. Manual: docs/directives.md.

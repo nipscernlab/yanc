@@ -1,0 +1,5 @@
+# Yosys 0.56, synth -flatten -noshare -lut 4, mem_instr and mem_data black
+# boxes (Scripts/regress.sh, section 4a-min): what the processor of sapho_min.cmm
+# may have. FF: the acc (8), the PC (2), out_en (1), the ULA op (1).
+FF 12
+LUT 19
