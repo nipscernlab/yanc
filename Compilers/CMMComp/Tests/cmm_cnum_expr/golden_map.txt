@@ -1,0 +1,161 @@
+## messages
+Info: 110 assembly instructions generated
+Info: 11 variables share 7 data words (4 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 110 instructions and 29 variables were found
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point multiplier
+Info: adding stack memory for function calls
+Info: ULA resource -> integer adder
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point negative operation
+Info: adding array handling
+Info: ULA resource -> < operator for int
+Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: using 17% of the Assembly Instruction Set
+Info: using 19% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+put z 3
+put z_i 3
+main z 3
+main z_i 3
+main w 3
+main w_i 3
+main y 2
+main x 2
+main n 1
+main k 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 22: void put(comp z)
+2 SET_P put_z_i
+3 SET put_z
+// 24: fout(0, real(z));
+4 F2I_M put_z
+5 OUT 0
+// 25: fout(0, imag(z));
+6 F2I_M put_z_i
+7 OUT 0
+// 26: }
+8 RET
+// 31: y = 2.0; n = 4; w = 1+1i; x = 2.0;
+9 LOD 2.0
+10 SET main_y
+11 LOD 4
+12 SET main_n
+13 LOD 1.0
+14 SET main_w
+15 SET main_w_i
+16 LOD 2.0
+17 SET main_x
+// 32: z = y*3+2i;     put(z);
+18 LOD main_y
+19 F_MLT 3.0
+20 P_LOD 2.0
+21 SET_P main_z_i
+22 SET main_z
+23 P_LOD main_z_i
+24 CAL put
+// 33: z = n-1+2i;     put(z);
+25 LOD main_n
+26 ADD -1
+27 I2F
+28 P_LOD 2.0
+29 SET_P main_z_i
+30 SET main_z
+31 P_LOD main_z_i
+32 CAL put
+// 34: z = w - 3 + 4i; put(z);
+33 LOD 3.0
+34 F_SU2 main_w
+35 P_LOD main_w_i
+36 SET_P __aux_var
+37 P_LOD __aux_var
+38 F_ADD 4.0
+39 SET_P main_z_i
+40 SET main_z
+41 P_LOD main_z_i
+42 CAL put
+// 35: z = 3 - 2 i;    put(z);
+43 LOD 3.0
+44 SET main_z
+45 LOD -2.0
+46 SET main_z_i
+47 LOD main_z
+48 P_LOD main_z_i
+49 CAL put
+// 36: z = 2i - 3;     put(z);
+50 LOD -3.0
+51 SET main_z
+52 LOD 2.0
+53 SET main_z_i
+54 LOD main_z
+55 P_LOD main_z_i
+56 CAL put
+// 37: z = -2i;        put(z);
+57 LOD 0.0
+58 SET main_z
+59 LOD -2.0
+60 SET main_z_i
+61 LOD main_z
+62 P_LOD main_z_i
+63 CAL put
+// 38: z = -1-5i;      put(z);
+64 LOD -1.0
+65 SET main_z
+66 LOD -5.0
+67 SET main_z_i
+68 LOD main_z
+69 P_LOD main_z_i
+70 CAL put
+// 39: z = x + 1i;     put(z);
+71 LOD main_x
+72 P_LOD 1.0
+73 SET_P main_z_i
+74 SET main_z
+75 P_LOD main_z_i
+76 CAL put
+// 40: z = 1i - x;     put(z);
+77 F_NEG_M main_x
+78 P_LOD 1.0
+79 SET_P main_z_i
+80 SET main_z
+81 P_LOD main_z_i
+82 CAL put
+// 41: z = 2i*2i;      put(z);
+83 LOD 0.0
+84 F_MLT 0.0
+85 P_LOD 2.0
+86 F_MLT 2.0
+87 SF_SU2
+88 P_LOD 0.0
+89 F_MLT 2.0
+90 P_LOD 2.0
+91 F_MLT 0.0
+92 SF_ADD
+93 SET_P main_z_i
+94 SET main_z
+95 P_LOD main_z_i
+96 CAL put
+// 42: for (k = 0; k < 4; k++) put(v[k]);
+97 LOD 0
+98 SET main_k
+99 LOD main_k
+100 LDI v
+101 P_LOD main_k
+102 LDI v_i
+103 CAL put
+104 LOD main_k
+105 ADD 1
+106 SET main_k
+107 LES 3
+108 JIZ __Lwh1
+// -3: END
+109 JMP fim

@@ -1,0 +1,185 @@
+## messages
+Info: constant 0.001 on line 34 approximated to 0.00099998712539672852 (error = -1.29e-08)
+Info on line 31: 'a' is read at one spot and written at another, so the result takes a detour through the temporary area (4 words).
+Info: 149 assembly instructions generated
+Info: the Dirac temporary area (__dirac_tmp) takes 4 words of data memory. To save them: write the result to an array that isn't on the right-hand side, or compute the middle product into an array of your own, on a line before. Who used it:
+      line 31: 4 words
+Info: 5 variables share 4 data words (1 saved)
+Heads up: global variable 'A' is never read, so it's out of the program and the waveform (#WAVE A keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 149 instructions and 59 variables were found
+Info: adding array handling
+Info: ULA resource -> integer adder
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: adding data input handling
+Info: ULA resource -> int to float converter
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 4
+Info: using 13% of the Assembly Instruction Set
+Info: using 11% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 24: A # 1.0|I|;
+1 LOD -16
+2 SET __dk0_main
+3 P_LOD 0.0
+4 STI_V A 16
+5 LOD __dk0_main
+6 ADD 1
+7 SET __dk0_main
+8 JIZ __Ld0e
+9 JMP __Ld0
+10 LOD -20
+11 SET __dk1_main
+12 P_LOD 1.0
+13 STI_V A 20
+14 LOD __dk1_main
+15 ADD 5
+16 SET __dk1_main
+17 JIZ __Ld1e
+18 JMP __Ld1
+// 25: B # 1.0|I|;
+19 LOD -16
+20 SET __dk0_main
+21 P_LOD 0.0
+22 STI_V B 16
+23 LOD __dk0_main
+24 ADD 1
+25 SET __dk0_main
+26 JIZ __Ld2e
+27 JMP __Ld2
+28 LOD -20
+29 SET __dk1_main
+30 P_LOD 1.0
+31 STI_V B 20
+32 LOD __dk1_main
+33 ADD 5
+34 SET __dk1_main
+35 JIZ __Ld3e
+36 JMP __Ld3
+// 26: a # |0>;
+37 LOD -4
+38 SET __dk0_main
+39 P_LOD 0.0
+40 STI_V a 4
+41 LOD __dk0_main
+42 ADD 1
+43 SET __dk0_main
+44 JIZ __Ld4e
+45 JMP __Ld4
+// 27: b # |0>;
+46 LOD -4
+47 SET __dk0_main
+48 P_LOD 0.0
+49 STI_V b 4
+50 LOD __dk0_main
+51 ADD 1
+52 SET __dk0_main
+53 JIZ __Ld5e
+54 JMP __Ld5
+// 31: a # |B|a>;           // exec_Mv:    a = B * a
+55 LOD_V a 0
+56 SET __dhf2_main
+57 LOD -4
+58 SET __dd3_main
+59 LOD -16
+60 SET __dk0_main
+61 LOD __dd3_main
+62 P_LOD __dk0_main
+63 LDI_V B 16
+64 F_MLT __dhf2_main
+65 P_LOD -3
+66 SET __dk1_main
+67 ADD __dk0_main
+68 LDI_V B 20
+69 P_LOD __dk1_main
+70 LDI_V a 4
+71 SF_MLT
+72 SF_ADD
+73 P_LOD __dk1_main
+74 ADD 1
+75 SET __dk1_main
+76 JIZ __Ld7e
+77 JMP __Ld7
+78 POP
+79 STI_V __dirac_tmp 4
+80 LOD __dd3_main
+81 ADD 1
+82 SET __dd3_main
+83 LOD __dk0_main
+84 ADD 4
+85 SET __dk0_main
+86 JIZ __Ld6e
+87 JMP __Ld6
+88 LOD -4
+89 SET __dk4_main
+90 PSH
+91 LDI_V __dirac_tmp 4
+92 STI_V a 4
+93 LOD __dk4_main
+94 ADD 1
+95 SET __dk4_main
+96 JIZ __Ld8e
+97 JMP __Ld8
+// 32: a # 2.0|b>;          // exec_cv:    a = 2.0 * b
+98 LOD -4
+99 SET __dk0_main
+100 PSH
+101 LDI_V b 4
+102 F_MLT 2.0
+103 STI_V a 4
+104 LOD __dk0_main
+105 ADD 1
+106 SET __dk0_main
+107 JIZ __Ld9e
+108 JMP __Ld9
+// 33: A # |a><b|;          // exec_vvt:   A = a * b^T
+109 LOD -16
+110 SET __dd3_main
+111 LOD -4
+112 SET __dk0_main
+113 LDI_V a 4
+114 SET __dhf2_main
+115 LOD -4
+116 SET __dk1_main
+117 ADD __dd3_main
+118 P_LOD __dk1_main
+119 LDI_V b 4
+120 F_MLT __dhf2_main
+121 STI_V A 20
+122 LOD __dk1_main
+123 ADD 1
+124 SET __dk1_main
+125 JIZ __Ld11e
+126 JMP __Ld11
+127 LOD __dd3_main
+128 ADD 4
+129 SET __dd3_main
+130 LOD __dk0_main
+131 ADD 1
+132 SET __dk0_main
+133 JIZ __Ld10e
+134 JMP __Ld10
+// 34: a # 0.001|in(0)>;    // exec_cvin:  a = 0.001 * input(0)
+135 LOD -4
+136 SET __dk0_main
+137 PF_INN 0
+138 F_MLT 0.001
+139 STI_V a 4
+140 LOD __dk0_main
+141 ADD 1
+142 SET __dk0_main
+143 JIZ __Ld12e
+144 JMP __Ld12
+// 35: out(0, 1);
+145 LOD 1
+146 OUT 0
+// 29: while (1)
+147 JMP __Lwh1
+// -3: END
+148 JMP fim

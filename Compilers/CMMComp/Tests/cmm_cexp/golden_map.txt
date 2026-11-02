@@ -1,0 +1,226 @@
+## messages
+Info: constant 1.5707963 on line 20 approximated to 1.5707962512969971 (error = -4.87e-08)
+Info: constant 3.1415927 on line 21 approximated to 3.1415925025939941 (error = -1.97e-07)
+Info: constant 0.5707963 on line 22 approximated to 0.57079625129699707 (error = -4.87e-08)
+Info: 126 assembly instructions generated
+Info: adding assembly macro for sin computation
+Info: adding assembly macro for exponential computation
+Info: 1 variables written and never read removed (1 instructions)
+Info: 19 variables share 7 data words (12 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 183 instructions and 28 variables were found
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> int to float converter
+Info: ULA resource -> & operator
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> float scale by a power of two (2^k)
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 15% of the Assembly Instruction Set
+Info: using 22% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main z 3
+main z_i 3
+main w 3
+main w_i 3
+main c 3
+main c_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 19: z = 1.0+0.0i;                      c = exp(z);      fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+1 LOD 1.0
+2 SET main_z
+3 LOD 0.0
+4 SET main_z_i
+5 LOD main_z
+6 CAL __float_exp
+7 SET __cexp_ea
+8 LOD main_z_i
+9 CAL __float_sin
+10 F_MLT __cexp_ea
+11 SET __cexp_im
+12 LOD main_z_i
+13 F_SU2 1.570796327
+14 CAL __float_sin
+15 F_MLT __cexp_ea
+16 P_LOD __cexp_im
+17 SET_P main_c_i
+18 SET main_c
+19 F_MLT 1000.0
+20 F2I
+21 OUT 0
+22 LOD main_c_i
+23 F_MLT 1000.0
+24 F2I
+25 OUT 0
+// 20: c = exp(0.0+1.5707963i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+26 LOD 0.0
+27 CAL __float_exp
+28 SET __cexp_ea
+29 LOD 1.5707963
+30 CAL __float_sin
+31 F_MLT __cexp_ea
+32 SET __cexp_im
+33 LOD 1.5707963
+34 F_SU2 1.570796327
+35 CAL __float_sin
+36 F_MLT __cexp_ea
+37 P_LOD __cexp_im
+38 SET_P main_c_i
+39 SET main_c
+40 F_MLT 1000.0
+41 F2I
+42 OUT 0
+43 LOD main_c_i
+44 F_MLT 1000.0
+45 F2I
+46 OUT 0
+// 21: c = exp(0.0+3.1415927i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+47 LOD 0.0
+48 CAL __float_exp
+49 SET __cexp_ea
+50 LOD 3.1415927
+51 CAL __float_sin
+52 F_MLT __cexp_ea
+53 SET __cexp_im
+54 LOD 3.1415927
+55 F_SU2 1.570796327
+56 CAL __float_sin
+57 F_MLT __cexp_ea
+58 P_LOD __cexp_im
+59 SET_P main_c_i
+60 SET main_c
+61 F_MLT 1000.0
+62 F2I
+63 OUT 0
+64 LOD main_c_i
+65 F_MLT 1000.0
+66 F2I
+67 OUT 0
+// 22: z = 1.0+1.0i;  w = 0.0+0.5707963i; c = exp(z + w);  fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+68 LOD 1.0
+69 SET main_z
+70 SET main_z_i
+71 LOD 0.0
+72 SET main_w
+73 LOD 0.5707963
+74 SET main_w_i
+75 LOD main_z
+76 F_ADD main_w
+77 P_LOD main_z_i
+78 F_ADD main_w_i
+79 SET_P __cexp_b
+80 CAL __float_exp
+81 SET __cexp_ea
+82 LOD __cexp_b
+83 CAL __float_sin
+84 F_MLT __cexp_ea
+85 SET __cexp_im
+86 LOD __cexp_b
+87 F_SU2 1.570796327
+88 CAL __float_sin
+89 F_MLT __cexp_ea
+90 P_LOD __cexp_im
+91 SET_P main_c_i
+92 SET main_c
+93 F_MLT 1000.0
+94 F2I
+95 OUT 0
+96 LOD main_c_i
+97 F_MLT 1000.0
+98 F2I
+99 OUT 0
+// 23: z = 0.0+0.0i;                      c = exp(z);      fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+100 LOD 0.0
+101 SET main_z
+102 SET main_z_i
+103 CAL __float_exp
+104 SET __cexp_ea
+105 LOD main_z_i
+106 CAL __float_sin
+107 F_MLT __cexp_ea
+108 SET __cexp_im
+109 LOD main_z_i
+110 F_SU2 1.570796327
+111 CAL __float_sin
+112 F_MLT __cexp_ea
+113 P_LOD __cexp_im
+114 SET_P main_c_i
+115 SET main_c
+116 F_MLT 1000.0
+117 F2I
+118 OUT 0
+119 LOD main_c_i
+120 F_MLT 1000.0
+121 F2I
+122 OUT 0
+// 18: while (1) {
+123 JMP __Lwh1
+// -3: END
+124 JMP fim
+// library macros, no source line
+125 SET __sin_x
+126 F_MLT 0.3183098862
+127 SET __sin_q
+128 LOD 0.5
+129 F_SGN __sin_q
+130 F_ADD __sin_q
+131 F2I
+132 SET __sin_k
+133 I2F
+134 F_MLT 3.1415926536
+135 F_SU2 __sin_x
+136 SET __sin_r
+137 F_MLT __sin_r
+138 SET __sin_w
+139 LOD -0.000184472138
+140 F_MLT __sin_w
+141 F_ADD 0.008309516704
+142 F_MLT __sin_w
+143 F_ADD -0.166651680787
+144 F_MLT __sin_w
+145 F_ADD 0.999997487148
+146 F_MLT __sin_r
+147 SET __sin_p
+148 LOD __sin_k
+149 AND 1
+150 JIZ __L_sin_even
+151 LOD __sin_p
+152 F_NEG
+153 RET
+154 LOD __sin_p
+155 RET
+156 SET __exp_x
+157 F_MLT 1.4426950409
+158 SET __exp_q
+159 LOD 0.5
+160 F_SGN __exp_q
+161 F_ADD __exp_q
+162 F2I
+163 SET __exp_n
+164 I2F
+165 F_MLT 0.6931471806
+166 F_SU2 __exp_x
+167 SET __exp_r
+168 LOD 0.0013888889
+169 F_MLT __exp_r
+170 F_ADD 0.0083333333
+171 F_MLT __exp_r
+172 F_ADD 0.0416666667
+173 F_MLT __exp_r
+174 F_ADD 0.1666666667
+175 F_MLT __exp_r
+176 F_ADD 0.5
+177 F_MLT __exp_r
+178 F_ADD 1.0
+179 F_MLT __exp_r
+180 F_ADD 1.0
+181 F_SCL __exp_n
+182 RET

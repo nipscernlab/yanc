@@ -1,0 +1,133 @@
+## messages
+Info: constant 0.5235988 on line 17 approximated to 0.52359879016876221 (error = -9.83e-09)
+Info: constant 0.7853982 on line 18 approximated to 0.78539824485778809 (error = 4.49e-08)
+Info: constant 0.7853982 on line 20 approximated to 0.78539824485778809 (error = 4.49e-08)
+Info: constant 1.4 on line 22 approximated to 1.4000000953674316 (error = 9.54e-08)
+Info: constant -0.7853982 on line 20 approximated to -0.78539824485778809 (error = -4.49e-08)
+Info: 45 assembly instructions generated
+Info: adding assembly macro for tangent computation
+Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (3 added)
+Info: 9 variables share 4 data words (5 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 92 instructions and 23 variables were found
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> float-point adder
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float-point absolute operation
+Info: ULA resource -> < operator for float
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 14% of the Assembly Instruction Set
+Info: using 22% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main r 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 16: r = tan(0.0)       * 1000.0;   fout(0, r);   // 0
+1 LOD 0.0
+2 CAL __float_tan
+3 F_MLT 1000.0
+4 SET main_r
+5 F2I_M main_r
+6 OUT 0
+// 17: r = tan(0.5235988) * 1000.0;   fout(0, r);   // tan(pi/6) = 577    (inner branch)
+7 LOD 0.5235988
+8 CAL __float_tan
+9 F_MLT 1000.0
+10 SET main_r
+11 F2I_M main_r
+12 OUT 0
+// 18: r = tan(0.7853982) * 1000.0;   fout(0, r);   // tan(pi/4) ~ 1000   (boundary)
+13 LOD 0.7853982
+14 CAL __float_tan
+15 F_MLT 1000.0
+16 SET main_r
+17 F2I_M main_r
+18 OUT 0
+// 19: r = tan(1.0)       * 1000.0;   fout(0, r);   // 1557              (cotangent fold)
+19 LOD 1.0
+20 CAL __float_tan
+21 F_MLT 1000.0
+22 SET main_r
+23 F2I_M main_r
+24 OUT 0
+// 20: r = tan(-0.7853982)* 1000.0;   fout(0, r);   // -1000  (odd: sign of r)
+25 LOD -0.7853982
+26 CAL __float_tan
+27 F_MLT 1000.0
+28 SET main_r
+29 F2I_M main_r
+30 OUT 0
+// 21: r = tan(2.0)       * 1000.0;   fout(0, r);   // -2185  (k=1, r=2-pi, fold + sign)
+31 LOD 2.0
+32 CAL __float_tan
+33 F_MLT 1000.0
+34 SET main_r
+35 F2I_M main_r
+36 OUT 0
+// 22: r = tan(1.4)       * 1000.0;   fout(0, r);   // 5797   (near pi/2, cotangent branch)
+37 LOD 1.4
+38 CAL __float_tan
+39 F_MLT 1000.0
+40 SET main_r
+41 F2I_M main_r
+42 OUT 0
+// 15: while (1) {
+43 JMP __Lwh1
+// -3: END
+44 JMP fim
+// library macros, no source line
+45 SET __tan_x
+46 F_MLT 0.3183098862
+47 SET __tan_q
+48 LOD 0.5
+49 F_SGN __tan_q
+50 F_ADD __tan_q
+51 F2I
+52 I2F
+53 F_MLT 3.1415926536
+54 F_SU2 __tan_x
+55 SET __tan_r
+56 F_ABS
+57 SET __tan_a
+58 F_LES 0.785398163
+59 SET __tan_fold
+60 JIZ __L_tan_inner
+61 LOD __tan_a
+62 F_SU2 1.5707963268
+63 JMP __L_tan_haveU
+64 LOD __tan_a
+65 SET __tan_u
+66 F_MLT __tan_u
+67 SET __tan_w
+68 LOD 0.019691612742
+69 F_MLT __tan_w
+70 F_ADD 0.013512594373
+71 F_MLT __tan_w
+72 F_ADD 0.056704928952
+73 F_MLT __tan_w
+74 F_ADD 0.132942907215
+75 F_MLT __tan_w
+76 F_ADD 0.333353228230
+77 F_MLT __tan_w
+78 F_ADD 0.999999838962
+79 F_MLT __tan_u
+80 SET __tan_p
+81 LOD __tan_fold
+82 JIZ __L_tan_done
+83 LOD __tan_p
+84 F_DIV 1.0
+85 NOP
+86 NOP
+87 F_QUO
+88 JMP __L_tan_sign
+89 LOD __tan_p
+90 F_SGN __tan_r
+91 RET

@@ -1,0 +1,246 @@
+## messages
+Heads up on line 38: local array 'zv' gets the values between braces only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
+Heads up on line 39: local array 'zm' gets the values between braces only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
+Info: 203 assembly instructions generated
+Info: 9 instructions computing a value never read removed
+Info: 9 variables share 6 data words (3 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 194 instructions and 27 variables were found
+Info: adding array handling
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> integer adder
+Info: ULA resource -> float-point adder
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> float-point negative operation
+Info: stack depths from the program: SDEPTH 2, NDSTAC 4
+Info: using 16% of the Assembly Instruction Set
+Info: using 16% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main y 2
+main k 1
+main a 3
+main a_i 3
+main b 3
+main b_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 43: k = 1; a = 1.0+2.0i; b = 3.0-2.0i;
+1 LOD 1
+2 SET main_k
+3 LOD 1.0
+4 SET main_a
+5 LOD 2.0
+6 SET main_a_i
+7 LOD 3.0
+8 SET main_b
+9 LOD -2.0
+10 SET main_b_i
+// 45: y = real(zv[k]);        fout(0, 4.0*y);
+11 LOD main_k
+12 LDI main_zv
+13 SET main_y
+14 LOD 4.0
+15 F_MLT main_y
+16 F2I
+17 OUT 0
+// 46: y = imag(zv[k]);        fout(0, 4.0*y);
+18 LOD main_k
+19 LDI main_zv_i
+20 SET main_y
+21 LOD 4.0
+22 F_MLT main_y
+23 F2I
+24 OUT 0
+// 47: y = real(zv[2]);        fout(0, 4.0*y);
+25 LOD_V main_zv 2
+26 SET main_y
+27 LOD 4.0
+28 F_MLT main_y
+29 F2I
+30 OUT 0
+// 48: y = imag(zv[2]);        fout(0, 4.0*y);
+31 LOD_V main_zv_i 2
+32 SET main_y
+33 LOD 4.0
+34 F_MLT main_y
+35 F2I
+36 OUT 0
+// 49: y = imag(zv[k+1]);      fout(0, 4.0*y);
+37 LOD main_k
+38 ADD 1
+39 LDI main_zv_i
+40 SET main_y
+41 LOD 4.0
+42 F_MLT main_y
+43 F2I
+44 OUT 0
+// 50: y = 1.0 + imag(zv[k]);  fout(0, 4.0*y);
+45 LOD main_k
+46 LDI main_zv_i
+47 F_ADD 1.0
+48 SET main_y
+49 LOD 4.0
+50 F_MLT main_y
+51 F2I
+52 OUT 0
+// 51: y = real(zm[k][0]);     fout(0, 4.0*y);
+53 LOD main_k
+54 MLT 2
+55 LDI main_zm
+56 SET main_y
+57 LOD 4.0
+58 F_MLT main_y
+59 F2I
+60 OUT 0
+// 52: y = imag(zm[1][k]);     fout(0, 4.0*y);
+61 LOD 1
+62 MLT 2
+63 ADD main_k
+64 LDI main_zm_i
+65 SET main_y
+66 LOD 4.0
+67 F_MLT main_y
+68 F2I
+69 OUT 0
+// 53: y = imag(zm[0][1]);     fout(0, 4.0*y);
+70 LOD_V main_zm_i 1
+71 SET main_y
+72 LOD 4.0
+73 F_MLT main_y
+74 F2I
+75 OUT 0
+// 54: y = real(a*b);          fout(0, 4.0*y);
+76 LOD main_a
+77 F_MLT main_b
+78 P_LOD main_a_i
+79 F_MLT main_b_i
+80 SF_SU2
+81 SET main_y
+82 LOD 4.0
+83 F_MLT main_y
+84 F2I
+85 OUT 0
+// 55: y = imag(a*b);          fout(0, 4.0*y);
+86 LOD main_a
+87 F_MLT main_b_i
+88 P_LOD main_a_i
+89 F_MLT main_b
+90 SF_ADD
+91 SET main_y
+92 LOD 4.0
+93 F_MLT main_y
+94 F2I
+95 OUT 0
+// 56: y = real(zv[0]+zv[1]);  fout(0, 4.0*y);
+96 LOD_V main_zv 0
+97 P_LOD_V main_zv 1
+98 SF_ADD
+99 SET main_y
+100 LOD 4.0
+101 F_MLT main_y
+102 F2I
+103 OUT 0
+// 57: y = imag(zv[0]+zv[1]);  fout(0, 4.0*y);
+104 LOD_V main_zv_i 0
+105 P_LOD_V main_zv_i 1
+106 SF_ADD
+107 SET main_y
+108 LOD 4.0
+109 F_MLT main_y
+110 F2I
+111 OUT 0
+// 58: y = real(zv[0]*zv[1]);  fout(0, 4.0*y);
+112 LOD_V main_zv 0
+113 P_LOD_V main_zv 1
+114 SF_MLT
+115 P_LOD_V main_zv_i 0
+116 P_LOD_V main_zv_i 1
+117 SF_MLT
+118 SF_SU2
+119 SET main_y
+120 LOD 4.0
+121 F_MLT main_y
+122 F2I
+123 OUT 0
+// 59: y = imag(zv[0]*zv[1]);  fout(0, 4.0*y);
+124 LOD_V main_zv 0
+125 P_LOD_V main_zv_i 1
+126 SF_MLT
+127 P_LOD_V main_zv_i 0
+128 P_LOD_V main_zv 1
+129 SF_MLT
+130 SF_ADD
+131 SET main_y
+132 LOD 4.0
+133 F_MLT main_y
+134 F2I
+135 OUT 0
+// 60: y = real(a + conj(b));        fout(0, 4.0*y);
+136 LOD main_b
+137 PF_NEG_M main_b_i
+138 SET_P __aux_var
+139 F_ADD main_a
+140 SET main_y
+141 LOD 4.0
+142 F_MLT main_y
+143 F2I
+144 OUT 0
+// 61: y = imag(conj(b) + a);        fout(0, 4.0*y);
+145 LOD main_b
+146 PF_NEG_M main_b_i
+147 SET_P __aux_var
+148 F_ADD main_a
+149 P_LOD __aux_var
+150 F_ADD main_a_i
+151 SET_P __aux_var
+152 LOD __aux_var
+153 SET main_y
+154 LOD 4.0
+155 F_MLT main_y
+156 F2I
+157 OUT 0
+// 62: y = real(a - conj(b));        fout(0, 4.0*y);
+158 LOD main_b
+159 PF_NEG_M main_b_i
+160 SET_P __aux_var
+161 F_SU2 main_a
+162 SET main_y
+163 LOD 4.0
+164 F_MLT main_y
+165 F2I
+166 OUT 0
+// 63: y = real(conj(b) - a);        fout(0, 4.0*y);
+167 LOD main_b
+168 PF_NEG_M main_b_i
+169 SET_P __aux_var
+170 F_SU1 main_a
+171 SET main_y
+172 LOD 4.0
+173 F_MLT main_y
+174 F2I
+175 OUT 0
+// 64: y = imag(conj(a) - conj(b));  fout(0, 4.0*y);
+176 LOD main_a
+177 PF_NEG_M main_a_i
+178 P_LOD main_b
+179 PF_NEG_M main_b_i
+180 SET_P __aux_var
+181 SET_P __aux_var1
+182 SET_P __aux_var2
+183 F_SU1 __aux_var1
+184 P_LOD __aux_var2
+185 F_SU1 __aux_var
+186 SET_P __aux_var
+187 LOD __aux_var
+188 SET main_y
+189 LOD 4.0
+190 F_MLT main_y
+191 F2I
+192 OUT 0
+// -3: END
+193 JMP fim

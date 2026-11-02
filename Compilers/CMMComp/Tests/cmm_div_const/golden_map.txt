@@ -1,0 +1,125 @@
+## messages
+Info: constant 1.6 on line 26 approximated to 1.5999999046325684 (error = -9.54e-08)
+Info: 107 assembly instructions generated
+Info: 7 divisions by a constant became products by the reciprocal: no float divider
+Info: 9 variables share 6 data words (3 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 86 instructions and 15 variables were found
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point adder
+Info: ULA resource -> int to float converter
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 9% of the Assembly Instruction Set
+Info: using 11% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main a 2
+main f 2
+main y 2
+main n 1
+main w 3
+main w_i 3
+main z 3
+main z_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 23: a = 3.0; f = 1.0; n = 10;
+1 LOD 3.0
+2 SET main_a
+3 LOD 1.0
+4 SET main_f
+5 LOD 10
+6 SET main_n
+// 24: w = 1.0+2.0i;
+7 LOD 1.0
+8 SET main_w
+9 LOD 2.0
+10 SET main_w_i
+// 26: y = a / 1.6;            fout(0, 1000.0*y);      // float in memory
+11 LOD main_a
+12 F_MLT 0.625
+13 SET main_y
+14 LOD 1000.0
+15 F_MLT main_y
+16 F2I
+17 OUT 0
+// 27: y = f / 3.0;            fout(0, 1000.0*y);
+18 LOD main_f
+19 F_MLT 0.333333333
+20 SET main_y
+21 LOD 1000.0
+22 F_MLT main_y
+23 F2I
+24 OUT 0
+// 28: y = (a + f) / 7.0;      fout(0, 1000.0*y);      // float in the acc
+25 LOD main_a
+26 F_ADD main_f
+27 F_MLT 0.142857143
+28 SET main_y
+29 LOD 1000.0
+30 F_MLT main_y
+31 F2I
+32 OUT 0
+// 29: y = n / 3.0;            fout(0, 1000.0*y);      // int in memory
+33 I2F_M main_n
+34 F_MLT 0.333333333
+35 SET main_y
+36 LOD 1000.0
+37 F_MLT main_y
+38 F2I
+39 OUT 0
+// 30: z = w / 3.0;            fout(0, 1000.0*real(z)); fout(0, 1000.0*imag(z));   // comp in memory
+40 LOD 0.333333333
+41 F_MLT main_w
+42 P_LOD 0.333333333
+43 F_MLT main_w_i
+44 SET_P main_z_i
+45 SET main_z
+46 LOD 1000.0
+47 F_MLT main_z
+48 F2I
+49 OUT 0
+50 LOD 1000.0
+51 F_MLT main_z_i
+52 F2I
+53 OUT 0
+// 31: z = (w*(2.0+0.0i) + (4.0+4.0i)) / 7.0;          // comp in the acc: (6+8i)/7
+54 LOD 2.0
+55 F_MLT main_w
+56 P_LOD 2.0
+57 F_MLT main_w_i
+58 SET_P __aux_var
+59 F_ADD 4.0
+60 P_LOD __aux_var
+61 F_ADD 4.0
+62 SET_P __aux_var
+63 F_MLT 0.142857143
+64 P_LOD __aux_var
+65 F_MLT 0.142857143
+66 SET_P main_z_i
+67 SET main_z
+// 32: fout(0, 1000.0*real(z)); fout(0, 1000.0*imag(z));
+68 LOD 1000.0
+69 F_MLT main_z
+70 F2I
+71 OUT 0
+72 LOD 1000.0
+73 F_MLT main_z_i
+74 F2I
+75 OUT 0
+// 33: y = (1000.0 + a / 7.0) - 1000.0;  fout(0, 1000.0*y);     // a pending value under the product
+76 LOD main_a
+77 F_MLT 0.142857143
+78 F_ADD 1000.0
+79 F_SU1 1000.0
+80 SET main_y
+81 LOD 1000.0
+82 F_MLT main_y
+83 F2I
+84 OUT 0
+// -3: END
+85 JMP fim

@@ -1,0 +1,360 @@
+## messages
+Info: constant 0.7853982 on line 22 approximated to 0.78539824485778809 (error = 4.49e-08)
+Info: constant 0.7853982 on line 22 approximated to 0.78539824485778809 (error = 4.49e-08)
+Info: 214 assembly instructions generated
+Info: adding assembly macro for sin computation
+Info: adding assembly macro for exponential computation
+Info: 15 divisions, 5 words each for DIV/MOD and 4 for F_DIV (45 added)
+Info: 1 variables written and never read removed (1 instructions)
+Info: 26 variables share 7 data words (19 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 316 instructions and 27 variables were found
+Info: ULA resource -> float-point multiplier
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> int to float converter
+Info: ULA resource -> & operator
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> float scale by a power of two (2^k)
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 17% of the Assembly Instruction Set
+Info: using 25% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main z 3
+main z_i 3
+main w 3
+main w_i 3
+main c 3
+main c_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 18: c = tan(0.0+0.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+1 LOD 0.0
+2 F_MLT 2.0
+3 SET __ctan_ta
+4 LOD 0.0
+5 F_MLT 2.0
+6 SET __ctan_tb
+7 LOD __ctan_ta
+8 CAL __float_sin
+9 SET __ctan_s2a
+10 LOD __ctan_ta
+11 F_SU2 1.570796327
+12 CAL __float_sin
+13 SET __ctan_c2a
+14 LOD __ctan_tb
+15 CAL __float_exp
+16 SET __ctan_eb
+17 F_DIV 1.0
+18 NOP
+19 NOP
+20 F_QUO
+21 SET __ctan_emb
+22 F_ADD __ctan_eb
+23 F_MLT 0.5
+24 SET __ctan_chb
+25 LOD __ctan_eb
+26 F_SU1 __ctan_emb
+27 F_MLT 0.5
+28 SET __ctan_shb
+29 LOD __ctan_c2a
+30 F_ADD __ctan_chb
+31 SET __ctan_d
+32 F_DIV __ctan_s2a
+33 NOP
+34 NOP
+35 F_QUO
+36 P_LOD __ctan_d
+37 F_DIV __ctan_shb
+38 NOP
+39 NOP
+40 F_QUO
+41 SET_P main_c_i
+42 SET main_c
+43 F_MLT 1000.0
+44 F2I
+45 OUT 0
+46 LOD main_c_i
+47 F_MLT 1000.0
+48 F2I
+49 OUT 0
+// 19: c = tan(0.0+1.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+50 LOD 0.0
+51 F_MLT 2.0
+52 SET __ctan_ta
+53 LOD 1.0
+54 F_MLT 2.0
+55 SET __ctan_tb
+56 LOD __ctan_ta
+57 CAL __float_sin
+58 SET __ctan_s2a
+59 LOD __ctan_ta
+60 F_SU2 1.570796327
+61 CAL __float_sin
+62 SET __ctan_c2a
+63 LOD __ctan_tb
+64 CAL __float_exp
+65 SET __ctan_eb
+66 F_DIV 1.0
+67 NOP
+68 NOP
+69 F_QUO
+70 SET __ctan_emb
+71 F_ADD __ctan_eb
+72 F_MLT 0.5
+73 SET __ctan_chb
+74 LOD __ctan_eb
+75 F_SU1 __ctan_emb
+76 F_MLT 0.5
+77 SET __ctan_shb
+78 LOD __ctan_c2a
+79 F_ADD __ctan_chb
+80 SET __ctan_d
+81 F_DIV __ctan_s2a
+82 NOP
+83 NOP
+84 F_QUO
+85 P_LOD __ctan_d
+86 F_DIV __ctan_shb
+87 NOP
+88 NOP
+89 F_QUO
+90 SET_P main_c_i
+91 SET main_c
+92 F_MLT 1000.0
+93 F2I
+94 OUT 0
+95 LOD main_c_i
+96 F_MLT 1000.0
+97 F2I
+98 OUT 0
+// 20: z = 1.0+1.0i;          c = tan(z);            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+99 LOD 1.0
+100 SET main_z
+101 SET main_z_i
+102 F_MLT 2.0
+103 SET __ctan_ta
+104 LOD main_z_i
+105 F_MLT 2.0
+106 SET __ctan_tb
+107 LOD __ctan_ta
+108 CAL __float_sin
+109 SET __ctan_s2a
+110 LOD __ctan_ta
+111 F_SU2 1.570796327
+112 CAL __float_sin
+113 SET __ctan_c2a
+114 LOD __ctan_tb
+115 CAL __float_exp
+116 SET __ctan_eb
+117 F_DIV 1.0
+118 NOP
+119 NOP
+120 F_QUO
+121 SET __ctan_emb
+122 F_ADD __ctan_eb
+123 F_MLT 0.5
+124 SET __ctan_chb
+125 LOD __ctan_eb
+126 F_SU1 __ctan_emb
+127 F_MLT 0.5
+128 SET __ctan_shb
+129 LOD __ctan_c2a
+130 F_ADD __ctan_chb
+131 SET __ctan_d
+132 F_DIV __ctan_s2a
+133 NOP
+134 NOP
+135 F_QUO
+136 P_LOD __ctan_d
+137 F_DIV __ctan_shb
+138 NOP
+139 NOP
+140 F_QUO
+141 SET_P main_c_i
+142 SET main_c
+143 F_MLT 1000.0
+144 F2I
+145 OUT 0
+146 LOD main_c_i
+147 F_MLT 1000.0
+148 F2I
+149 OUT 0
+// 21: z = 0.5+0.5i;  w = 0.5+0.5i;  c = tan(z + w); fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+150 LOD 0.5
+151 SET main_z
+152 SET main_z_i
+153 SET main_w
+154 SET main_w_i
+155 F_ADD main_w
+156 P_LOD main_z_i
+157 F_ADD main_w_i
+158 SET_P __ctan_b
+159 F_MLT 2.0
+160 SET __ctan_ta
+161 LOD __ctan_b
+162 F_MLT 2.0
+163 SET __ctan_tb
+164 LOD __ctan_ta
+165 CAL __float_sin
+166 SET __ctan_s2a
+167 LOD __ctan_ta
+168 F_SU2 1.570796327
+169 CAL __float_sin
+170 SET __ctan_c2a
+171 LOD __ctan_tb
+172 CAL __float_exp
+173 SET __ctan_eb
+174 F_DIV 1.0
+175 NOP
+176 NOP
+177 F_QUO
+178 SET __ctan_emb
+179 F_ADD __ctan_eb
+180 F_MLT 0.5
+181 SET __ctan_chb
+182 LOD __ctan_eb
+183 F_SU1 __ctan_emb
+184 F_MLT 0.5
+185 SET __ctan_shb
+186 LOD __ctan_c2a
+187 F_ADD __ctan_chb
+188 SET __ctan_d
+189 F_DIV __ctan_s2a
+190 NOP
+191 NOP
+192 F_QUO
+193 P_LOD __ctan_d
+194 F_DIV __ctan_shb
+195 NOP
+196 NOP
+197 F_QUO
+198 SET_P main_c_i
+199 SET main_c
+200 F_MLT 1000.0
+201 F2I
+202 OUT 0
+203 LOD main_c_i
+204 F_MLT 1000.0
+205 F2I
+206 OUT 0
+// 22: c = tan(0.7853982+0.0i);                      fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+207 LOD 0.7853982
+208 F_MLT 2.0
+209 SET __ctan_ta
+210 LOD 0.0
+211 F_MLT 2.0
+212 SET __ctan_tb
+213 LOD __ctan_ta
+214 CAL __float_sin
+215 SET __ctan_s2a
+216 LOD __ctan_ta
+217 F_SU2 1.570796327
+218 CAL __float_sin
+219 SET __ctan_c2a
+220 LOD __ctan_tb
+221 CAL __float_exp
+222 SET __ctan_eb
+223 F_DIV 1.0
+224 NOP
+225 NOP
+226 F_QUO
+227 SET __ctan_emb
+228 F_ADD __ctan_eb
+229 F_MLT 0.5
+230 SET __ctan_chb
+231 LOD __ctan_eb
+232 F_SU1 __ctan_emb
+233 F_MLT 0.5
+234 SET __ctan_shb
+235 LOD __ctan_c2a
+236 F_ADD __ctan_chb
+237 SET __ctan_d
+238 F_DIV __ctan_s2a
+239 NOP
+240 NOP
+241 F_QUO
+242 P_LOD __ctan_d
+243 F_DIV __ctan_shb
+244 NOP
+245 NOP
+246 F_QUO
+247 SET_P main_c_i
+248 SET main_c
+249 F_MLT 1000.0
+250 F2I
+251 OUT 0
+252 LOD main_c_i
+253 F_MLT 1000.0
+254 F2I
+255 OUT 0
+// 17: while (1) {
+256 JMP __Lwh1
+// -3: END
+257 JMP fim
+// library macros, no source line
+258 SET __sin_x
+259 F_MLT 0.3183098862
+260 SET __sin_q
+261 LOD 0.5
+262 F_SGN __sin_q
+263 F_ADD __sin_q
+264 F2I
+265 SET __sin_k
+266 I2F
+267 F_MLT 3.1415926536
+268 F_SU2 __sin_x
+269 SET __sin_r
+270 F_MLT __sin_r
+271 SET __sin_w
+272 LOD -0.000184472138
+273 F_MLT __sin_w
+274 F_ADD 0.008309516704
+275 F_MLT __sin_w
+276 F_ADD -0.166651680787
+277 F_MLT __sin_w
+278 F_ADD 0.999997487148
+279 F_MLT __sin_r
+280 SET __sin_p
+281 LOD __sin_k
+282 AND 1
+283 JIZ __L_sin_even
+284 LOD __sin_p
+285 F_NEG
+286 RET
+287 LOD __sin_p
+288 RET
+289 SET __exp_x
+290 F_MLT 1.4426950409
+291 SET __exp_q
+292 LOD 0.5
+293 F_SGN __exp_q
+294 F_ADD __exp_q
+295 F2I
+296 SET __exp_n
+297 I2F
+298 F_MLT 0.6931471806
+299 F_SU2 __exp_x
+300 SET __exp_r
+301 LOD 0.0013888889
+302 F_MLT __exp_r
+303 F_ADD 0.0083333333
+304 F_MLT __exp_r
+305 F_ADD 0.0416666667
+306 F_MLT __exp_r
+307 F_ADD 0.1666666667
+308 F_MLT __exp_r
+309 F_ADD 0.5
+310 F_MLT __exp_r
+311 F_ADD 1.0
+312 F_MLT __exp_r
+313 F_ADD 1.0
+314 F_SCL __exp_n
+315 RET

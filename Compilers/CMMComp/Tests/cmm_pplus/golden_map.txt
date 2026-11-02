@@ -1,0 +1,308 @@
+## messages
+Heads up on line 36: variable 'r' is int, but getting a float.
+Info: 251 assembly instructions generated
+Info: 1 variables written and never read removed (1 instructions)
+Info: 6 variables share 3 data words (3 saved)
+Heads up: variable 'y' in function 'main' is never read, so it's out of the program and the waveform (#WAVE y, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 250 instructions and 46 variables were found
+Info: ULA resource -> integer adder
+Info: adding data output handling
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding array handling
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> > operator for int
+Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: using 15% of the Assembly Instruction Set
+Info: using 16% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main k 1
+main j 1
+main r 1
+main n 1
+main x 2
+main y 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 34: k = 5; k++;                       out(0, k);                        // 6
+1 LOD 5
+2 SET main_k
+3 ADD 1
+4 SET main_k
+5 OUT 0
+// 35: x = 1.5; x++;                     fout(0, x * 10.0);                // 25
+6 LOD 1.5
+7 SET main_x
+8 F_ADD 1.0
+9 SET main_x
+10 F_MLT 10.0
+11 F2I
+12 OUT 0
+// 36: x = 2.5; r = x++;                 out(0, r); fout(0, x * 10.0);     // 2 35
+13 LOD 2.5
+14 SET main_x
+15 PSH
+16 F_ADD 1.0
+17 SET_P main_x
+18 F2I
+19 SET main_r
+20 OUT 0
+21 LOD main_x
+22 F_MLT 10.0
+23 F2I
+24 OUT 0
+// 37: n = 5; r = n++;                   out(0, r); out(0, n);             // 5 6
+25 LOD 5
+26 SET main_n
+27 PSH
+28 ADD 1
+29 SET_P main_n
+30 SET main_r
+31 OUT 0
+32 LOD main_n
+33 OUT 0
+// 39: a[0] = 0; a[1] = 0; a[2] = 0; a[3] = 0;
+34 LOD 0
+35 SET_V a 0
+36 SET_V a 1
+37 SET_V a 2
+38 SET_V a 3
+// 40: j = 2; a[j]++; a[j]++;            out(0, a[2]);                     // 2
+39 LOD 2
+40 SET main_j
+41 PSH
+42 LDI a
+43 ADD 1
+44 STI a
+45 LOD main_j
+46 PSH
+47 LDI a
+48 ADD 1
+49 STI a
+50 LOD_V a 2
+51 OUT 0
+// 41: out(0, a[0] + a[1] + a[3]);                                         // 0  (no stray store)
+52 LOD_V a 0
+53 P_LOD_V a 1
+54 S_ADD
+55 P_LOD_V a 3
+56 S_ADD
+57 OUT 0
+// 42: b[1][2] = 5; b[1][2]++;           out(0, b[1][2]);                  // 6
+58 LOD 5
+59 SET_V b 5
+60 LOD 1
+61 MLT 3
+62 ADD 2
+63 PSH
+64 LDI b
+65 ADD 1
+66 STI b
+67 LOD_V b 5
+68 OUT 0
+// 43: j = 1; b[j][j]++; b[j][j]++;      out(0, b[1][1]);                  // 2
+69 LOD 1
+70 SET main_j
+71 MLT 3
+72 ADD main_j
+73 PSH
+74 LDI b
+75 ADD 1
+76 STI b
+77 LOD main_j
+78 MLT 3
+79 ADD main_j
+80 PSH
+81 LDI b
+82 ADD 1
+83 STI b
+84 LOD_V b 4
+85 OUT 0
+// 44: f[1] = 2.5; f[1]++;               fout(0, f[1] * 10.0);             // 35
+86 LOD 2.5
+87 SET_V f 1
+88 LOD 1
+89 PSH
+90 LDI f
+91 F_ADD 1.0
+92 STI f
+93 LOD_V f 1
+94 F_MLT 10.0
+95 F2I
+96 OUT 0
+// 46: j = 3; r = a[j]++;                out(0, r); out(0, a[3]);          // 0 1
+97 LOD 3
+98 SET main_j
+99 PSH
+100 LDI a
+101 ADD 1
+102 STI a
+103 ADD -1
+104 SET main_r
+105 OUT 0
+106 LOD_V a 3
+107 OUT 0
+// 47: r = a[j]++ + a[j]++;              out(0, r); out(0, a[3]);          // 3 3
+108 LOD main_j
+109 PSH
+110 LDI a
+111 ADD 1
+112 STI a
+113 ADD -1
+114 PSH
+115 LOD main_j
+116 PSH
+117 LDI a
+118 ADD 1
+119 STI a
+120 ADD -1
+121 S_ADD
+122 SET main_r
+123 OUT 0
+124 LOD_V a 3
+125 OUT 0
+// 48: f[0] = 1.5; y = f[0]++;           fout(0, y * 10.0); fout(0, f[0] * 10.0);   // 15 25
+126 LOD 1.5
+127 SET_V f 0
+128 LOD 0
+129 PSH
+130 LDI f
+131 SET __aux_var
+132 F_ADD 1.0
+133 STI f
+134 LOD __aux_var
+135 F_MLT 10.0
+136 F2I
+137 OUT 0
+138 LOD_V f 0
+139 F_MLT 10.0
+140 F2I
+141 OUT 0
+// 49: r = b[1][1]++;                    out(0, r); out(0, b[1][1]);       // 2 3
+142 LOD 1
+143 MLT 3
+144 ADD 1
+145 PSH
+146 LDI b
+147 ADD 1
+148 STI b
+149 ADD -1
+150 SET main_r
+151 OUT 0
+152 LOD_V b 4
+153 OUT 0
+// 50: k = 10; r = k + a[j]++;           out(0, r); out(0, a[3]);          // 13 4  (a live operand)
+154 LOD 10
+155 SET main_k
+156 LOD main_j
+157 PSH
+158 LDI a
+159 ADD 1
+160 STI a
+161 ADD -1
+162 ADD main_k
+163 SET main_r
+164 OUT 0
+165 LOD_V a 3
+166 OUT 0
+// 52: n = 0; buf[0] = 0; buf[1] = 0; buf[2] = 0;
+167 LOD 0
+168 SET main_n
+169 SET_V buf 0
+170 SET_V buf 1
+171 SET_V buf 2
+// 53: buf[n++] = 7; buf[n++] = 9;
+172 PSH
+173 ADD 1
+174 SET_P main_n
+175 P_LOD 7
+176 STI buf
+177 LOD main_n
+178 PSH
+179 ADD 1
+180 SET_P main_n
+181 P_LOD 9
+182 STI buf
+// 54: out(0, n); out(0, buf[0]); out(0, buf[1]); out(0, buf[2]);          // 2 7 9 0
+183 LOD main_n
+184 OUT 0
+185 LOD_V buf 0
+186 OUT 0
+187 LOD_V buf 1
+188 OUT 0
+189 LOD_V buf 2
+190 OUT 0
+// 55: k = 0; r = 0;
+191 LOD 0
+192 SET main_k
+193 SET main_r
+// 56: while (k++ < 3) { r = r + 1; }
+194 LOD main_k
+195 PSH
+196 ADD 1
+197 SET_P main_k
+198 GRE 3
+199 JIZ __Lwh2end
+200 LOD main_r
+201 ADD 1
+202 SET main_r
+203 JMP __Lwh2
+// 57: out(0, r); out(0, k);                                               // 3 4
+204 LOD main_r
+205 OUT 0
+206 LOD main_k
+207 OUT 0
+// 58: hist[0] = 0; hist[1] = 0; hist[2] = 0; hist[3] = 0;
+208 LOD 0
+209 SET_V hist 0
+210 SET_V hist 1
+211 SET_V hist 2
+212 SET_V hist 3
+// 59: s[0] = 1; s[1] = 3; s[2] = 1; s[3] = 0; s[4] = 1; s[5] = 3;
+213 LOD 1
+214 SET_V s 0
+215 LOD 3
+216 SET_V s 1
+217 LOD 1
+218 SET_V s 2
+219 LOD 0
+220 SET_V s 3
+221 LOD 1
+222 SET_V s 4
+223 LOD 3
+224 SET_V s 5
+// 60: j = 0;
+225 LOD 0
+226 SET main_j
+// 61: while (j < 6) { hist[s[j]]++; j++; }
+227 LOD main_j
+228 GRE 6
+229 JIZ __Lwh3end
+230 LOD main_j
+231 LDI s
+232 PSH
+233 LDI hist
+234 ADD 1
+235 STI hist
+236 LOD main_j
+237 ADD 1
+238 SET main_j
+239 JMP __Lwh3
+// 62: out(0, hist[0]); out(0, hist[1]); out(0, hist[2]); out(0, hist[3]); // 1 3 0 2  (a histogram)
+240 LOD_V hist 0
+241 OUT 0
+242 LOD_V hist 1
+243 OUT 0
+244 LOD_V hist 2
+245 OUT 0
+246 LOD_V hist 3
+247 OUT 0
+// 31: while (1)
+248 JMP __Lwh1
+// -3: END
+249 JMP fim

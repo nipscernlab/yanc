@@ -1,0 +1,19 @@
+## messages
+Info: 4 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 4 instructions and 1 variables were found
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 1% of the Assembly Instruction Set
+Info: using 0% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 14: out(0, 5);
+1 LOD 5
+2 OUT 0
+// -3: END
+3 JMP fim

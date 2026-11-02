@@ -1,0 +1,160 @@
+## messages
+Info: array initialization with file "Valores_Interpolados_Canal_A12-L_512bins.txt" for variable 'ene' at line 12
+Heads up on line 12: local array 'ene' is initialized from file "Valores_Interpolados_Canal_A12-L_512bins.txt" only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
+Info: constant 0.1267 on line 35 approximated to 0.12670135498046875 (error = 1.35e-06)
+Info: constant 0.4181 on line 35 approximated to 0.41809844970703125 (error = -1.55e-06)
+Info: constant 0.4352 on line 35 approximated to 0.43520355224609375 (error = 3.55e-06)
+Info: constant 0.1524 on line 35 approximated to 0.15240097045898438 (error = 9.7e-07)
+Info: constant 0.0056 on line 35 approximated to 0.0055999755859375 (error = -2.44e-08)
+Info: constant 0.0709 on line 35 approximated to 0.07089996337890625 (error = -3.66e-08)
+Info: constant 0.0643 on line 35 approximated to 0.064300537109375 (error = 5.37e-07)
+Info: constant 0.0222 on line 36 approximated to 0.022200107574462891 (error = 1.08e-07)
+Info: constant 0.1068 on line 36 approximated to 0.10680007934570312 (error = 7.93e-08)
+Info: constant 0.1894 on line 36 approximated to 0.18939971923828125 (error = -2.81e-07)
+Info: constant 0.1037 on line 36 approximated to 0.10370063781738281 (error = 6.38e-07)
+Info: constant 0.1063 on line 36 approximated to 0.10630035400390625 (error = 3.54e-07)
+Info: constant 0.1890 on line 36 approximated to 0.18899917602539062 (error = -8.24e-07)
+Info: constant 0.1053 on line 36 approximated to 0.1053009033203125 (error = 9.03e-07)
+Info: constant 0.0215 on line 36 approximated to 0.021500110626220703 (error = 1.11e-07)
+Heads up on line 28: if you don't want this warning, use 'fout'.
+Heads up on line 46: if you don't want this warning, use 'fout'.
+Info: 88 assembly instructions generated
+Info: 10 variables share 9 data words (1 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 88 instructions and 539 variables were found
+Info: filling array with 512 values read from file "Valores_Interpolados_Canal_A12-L_512bins.txt"
+Info: largest approximation error in file 'Valores_Interpolados_Canal_A12-L_512bins.txt' is 0.02669700048864 on line 512
+Info: adding data input handling
+Info: ULA resource -> > operator for int
+Info: adding array handling
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point adder
+Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: using 12% of the Assembly Instruction Set
+Info: using 11% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main x 2
+main xl 2
+main y 2
+main r1 2
+main r2 2
+main r3 2
+main r4 2
+main r5 2
+main r6 2
+main r7 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 14: float r1 = 0.0;
+1 LOD 0.0
+2 SET main_r1
+// 15: float r2 = 0.0;
+3 SET main_r2
+// 16: float r3 = 0.0;
+4 SET main_r3
+// 17: float r4 = 0.0;
+5 SET main_r4
+// 18: float r5 = 0.0;
+6 SET main_r5
+// 19: float r6 = 0.0;
+7 SET main_r6
+// 20: float r7 = 0.0;
+8 SET main_r7
+// 26: if (in(0) < 300) x = ene[in(0)]; else x = 0.0;
+9 INN 0
+10 GRE 300
+11 JIZ __Lif1else
+12 INN 0
+13 LDI main_ene
+14 SET main_x
+15 JMP __Lif1end
+16 LOD 0.0
+17 SET main_x
+// 28: out(0,x*1000.0);
+18 LOD main_x
+19 F_MLT 1000.0
+20 F2I
+21 OUT 0
+// 35: xl =        x  + 0.1267*r2 + 0.4181*r3 + 0.4352*r4 +  0.1524*r6 - (0.0056*r1 + 0.0709*r5 + 0.0643*r7);
+22 LOD 0.1267
+23 F_MLT main_r2
+24 F_ADD main_x
+25 P_LOD 0.4181
+26 F_MLT main_r3
+27 SF_ADD
+28 P_LOD 0.4352
+29 F_MLT main_r4
+30 SF_ADD
+31 P_LOD 0.1524
+32 F_MLT main_r6
+33 SF_ADD
+34 P_LOD 0.0056
+35 F_MLT main_r1
+36 P_LOD 0.0709
+37 F_MLT main_r5
+38 SF_ADD
+39 P_LOD 0.0643
+40 F_MLT main_r7
+41 SF_ADD
+42 SF_SU2
+43 SET main_xl
+// 36: y  = 0.0222*xl + 0.1068*r1 + 0.1894*r2 + 0.1037*r3 - (0.1063*r4 +  0.1890*r5 + 0.1053*r6 + 0.0215*r7);
+44 LOD 0.0222
+45 F_MLT main_xl
+46 P_LOD 0.1068
+47 F_MLT main_r1
+48 SF_ADD
+49 P_LOD 0.1894
+50 F_MLT main_r2
+51 SF_ADD
+52 P_LOD 0.1037
+53 F_MLT main_r3
+54 SF_ADD
+55 P_LOD 0.1063
+56 F_MLT main_r4
+57 P_LOD 0.1890
+58 F_MLT main_r5
+59 SF_ADD
+60 P_LOD 0.1053
+61 F_MLT main_r6
+62 SF_ADD
+63 P_LOD 0.0215
+64 F_MLT main_r7
+65 SF_ADD
+66 SF_SU2
+67 SET main_y
+// 38: r7 = r6;
+68 LOD main_r6
+69 SET main_r7
+// 39: r6 = r5;
+70 LOD main_r5
+71 SET main_r6
+// 40: r5 = r4;
+72 LOD main_r4
+73 SET main_r5
+// 41: r4 = r3;
+74 LOD main_r3
+75 SET main_r4
+// 42: r3 = r2;
+76 LOD main_r2
+77 SET main_r3
+// 43: r2 = r1;
+78 LOD main_r1
+79 SET main_r2
+// 44: r1 = xl;
+80 LOD main_xl
+81 SET main_r1
+// 46: out(1,y*1000.0);
+82 LOD main_y
+83 F_MLT 1000.0
+84 F2I
+85 OUT 1
+// 22: while (1)
+86 JMP __Lwh1
+// -3: END
+87 JMP fim

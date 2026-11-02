@@ -1,0 +1,228 @@
+## messages
+Info: 113 assembly instructions generated
+Info: adding assembly macro for exponential computation
+Info: adding assembly macro for natural-logarithm computation
+Info: 2 divisions, 5 words each for DIV/MOD and 4 for F_DIV (6 added)
+Info: 19 variables share 4 data words (15 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 186 instructions and 24 variables were found
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> integer negative operation
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float-point absolute operation
+Info: ULA resource -> < operator for float
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> float scale by a power of two (2^k)
+Info: ULA resource -> base-2 exponent extraction of float
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 20% of the Assembly Instruction Set
+Info: using 30% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main r 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 18: r = pow(2.0, 3);             fout(0, r);   // 8     (int exp -> square-and-multiply, exact)
+1 LOD 2.0
+2 SET __pow_b
+3 SET __pow_r
+4 F_MLT __pow_b
+5 SET __pow_b
+6 LOD __pow_r
+7 F_MLT __pow_b
+8 SET __pow_r
+9 SET main_r
+10 F2I_M main_r
+11 OUT 0
+// 19: r = pow(2.0, 10);            fout(0, r);   // 1024  (int exp, exact)
+12 LOD 2.0
+13 SET __pow_b
+14 F_MLT __pow_b
+15 SET __pow_b
+16 SET __pow_r
+17 F_MLT __pow_b
+18 SET __pow_b
+19 F_MLT __pow_b
+20 SET __pow_b
+21 LOD __pow_r
+22 F_MLT __pow_b
+23 SET __pow_r
+24 SET main_r
+25 F2I_M main_r
+26 OUT 0
+// 20: r = pow(2, 8);               fout(0, r);   // 256   (int base too -> I2F, exact)
+27 LOD 2.0
+28 SET __pow_b
+29 F_MLT __pow_b
+30 SET __pow_b
+31 F_MLT __pow_b
+32 SET __pow_b
+33 F_MLT __pow_b
+34 SET __pow_b
+35 SET __pow_r
+36 SET main_r
+37 F2I_M main_r
+38 OUT 0
+// 21: r = pow(3.0, 0);             fout(0, r);   // 1     (x^0)
+39 LOD 1.0
+40 SET main_r
+41 F2I_M main_r
+42 OUT 0
+// 22: r = pow(5.0, 1);             fout(0, r);   // 5     (x^1)
+43 LOD 5.0
+44 SET main_r
+45 F2I_M main_r
+46 OUT 0
+// 23: r = pow(2.0, -2) * 1000.0;   fout(0, r);   // 250   (negative int exp -> reciprocal)
+47 NEG_M 2
+48 SET __pow_y
+49 LOD 2.0
+50 SET __pow_x
+51 I2F_M __pow_y
+52 SET __pow_y
+53 LOD 1.0
+54 SET __pow_r
+55 F_ABS_M __pow_y
+56 SET __pow_c
+57 LOD __pow_c
+58 F_LES 0.5
+59 JIZ __Lpow1end
+60 LOD __pow_r
+61 F_MLT __pow_x
+62 SET __pow_r
+63 LOD __pow_c
+64 F_ADD -1.0
+65 SET __pow_c
+66 JMP __Lpow1
+67 LOD 0.0
+68 F_LES __pow_y
+69 JIZ __Lpow1pos
+70 LOD __pow_r
+71 F_DIV 1.0
+72 NOP
+73 NOP
+74 F_QUO
+75 SET __pow_r
+76 LOD __pow_r
+77 F_MLT 1000.0
+78 SET main_r
+79 F2I_M main_r
+80 OUT 0
+// 24: r = pow(1.5, 2)  * 1000.0;   fout(0, r);   // 2250  (fractional base, int exp, exact)
+81 LOD 1.5
+82 SET __pow_b
+83 F_MLT __pow_b
+84 SET __pow_b
+85 SET __pow_r
+86 F_MLT 1000.0
+87 SET main_r
+88 F2I_M main_r
+89 OUT 0
+// 25: r = pow(9.0, 0.5) * 1000.0;  fout(0, r);   // ~3000 (float exp -> exp(0.5*ln 9))
+90 LOD 9.0
+91 SET __pow_x
+92 LOD 0.5
+93 SET __pow_y
+94 LOD __pow_x
+95 CAL __float_log
+96 F_MLT __pow_y
+97 CAL __float_exp
+98 F_MLT 1000.0
+99 SET main_r
+100 F2I_M main_r
+101 OUT 0
+// 26: r = pow(2.0, 0.5) * 1000.0;  fout(0, r);   // ~1414 (sqrt 2 via exp/log)
+102 LOD 2.0
+103 SET __pow_x
+104 LOD 0.5
+105 SET __pow_y
+106 LOD __pow_x
+107 CAL __float_log
+108 F_MLT __pow_y
+109 CAL __float_exp
+110 F_MLT 1000.0
+111 SET main_r
+112 F2I_M main_r
+113 OUT 0
+// 17: while (1) {
+114 JMP __Lwh1
+// -3: END
+115 JMP fim
+// library macros, no source line
+116 SET __exp_x
+117 F_MLT 1.4426950409
+118 SET __exp_q
+119 LOD 0.5
+120 F_SGN __exp_q
+121 F_ADD __exp_q
+122 F2I
+123 SET __exp_n
+124 I2F
+125 F_MLT 0.6931471806
+126 F_SU2 __exp_x
+127 SET __exp_r
+128 LOD 0.0013888889
+129 F_MLT __exp_r
+130 F_ADD 0.0083333333
+131 F_MLT __exp_r
+132 F_ADD 0.0416666667
+133 F_MLT __exp_r
+134 F_ADD 0.1666666667
+135 F_MLT __exp_r
+136 F_ADD 0.5
+137 F_MLT __exp_r
+138 F_ADD 1.0
+139 F_MLT __exp_r
+140 F_ADD 1.0
+141 F_SCL __exp_n
+142 RET
+143 SET __log_x
+144 F_LES 0.0
+145 JIZ __L_log_zero
+146 LOD __log_x
+147 XPO
+148 SET __log_e
+149 NEG
+150 SET __log_ne
+151 LOD __log_x
+152 F_SCL __log_ne
+153 SET __log_m
+154 F_ADD 1.0
+155 SET __log_t2
+156 LOD __log_m
+157 F_SU1 1.0
+158 SET __log_t1
+159 LOD __log_t2
+160 F_DIV __log_t1
+161 NOP
+162 NOP
+163 F_QUO
+164 SET __log_u
+165 F_MLT __log_u
+166 SET __log_w
+167 LOD 0.1111111111
+168 F_MLT __log_w
+169 F_ADD 0.1428571429
+170 F_MLT __log_w
+171 F_ADD 0.2
+172 F_MLT __log_w
+173 F_ADD 0.3333333333
+174 F_MLT __log_w
+175 F_ADD 1.0
+176 F_MLT __log_u
+177 F_MLT 2.0
+178 SET __log_lm
+179 LOD __log_e
+180 I2F
+181 F_MLT 0.6931471806
+182 F_ADD __log_lm
+183 RET
+184 LOD 0.0
+185 RET

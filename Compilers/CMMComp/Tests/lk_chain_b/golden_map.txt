@@ -1,0 +1,28 @@
+## messages
+Info: 7 assembly instructions generated
+Info: 1 variables written and never read removed (1 instructions)
+Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 6 instructions and 1 variables were found
+Info: adding cade (CAD), which takes a value from the partner processor
+Info: ULA resource -> integer multiplier
+Info: adding toma (TOM), which hands a value to the partner processor
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 2% of the Assembly Instruction Set
+Info: using 2% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main x 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 16: x = cade_sync(0);
+1 CAD 0
+// 17: toma(1, x * 2);
+2 MLT 2
+3 TOM 1
+// 14: while (1)
+4 JMP __Lwh1
+// -3: END
+5 JMP fim

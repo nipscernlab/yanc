@@ -1,0 +1,52 @@
+## messages
+Info: 24 assembly instructions generated
+Info: 2 variables written and never read removed (2 instructions)
+Heads up: variable 'p' in function 'early' is never read, so it's out of the program and the waveform (#WAVE p, in the function, keeps it).
+Heads up: variable 'n' in function 'main' is never read, so it's out of the program and the waveform (#WAVE n, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 22 instructions and 7 variables were found
+Info: adding data output handling
+Info: adding stack memory for function calls
+Info: ULA resource -> == operator
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 4% of the Assembly Instruction Set
+Info: using 2% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+early p 1
+main n 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 19: if (p) { out(0, 10); return; }
+2 JIZ __Lif1else
+3 LOD 10
+4 OUT 0
+5 RET
+// 20: out(0, 20);
+6 LOD 20
+7 OUT 0
+// 21: }
+8 RET
+// 26: early(1);
+9 LOD 1
+10 CAL early
+// 27: early(0);
+11 LOD 0
+12 CAL early
+// 28: n = 2;
+13 LOD 2
+// 29: if (n == 2) { out(0, 5); return; }
+14 EQU 2
+15 JIZ __Lif2else
+16 LOD 5
+17 OUT 0
+18 JMP fim
+// 30: out(0, 6);
+19 LOD 6
+20 OUT 0
+// -3: END
+21 JMP fim

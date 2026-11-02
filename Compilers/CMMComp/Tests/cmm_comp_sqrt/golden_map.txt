@@ -1,0 +1,219 @@
+## messages
+Info: 151 assembly instructions generated
+Info: adding assembly macro for root square computation
+Info: 4 divisions, 5 words each for DIV/MOD and 4 for F_DIV (12 added)
+Info: 12 variables share 8 data words (4 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 182 instructions and 16 variables were found
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> root-square approximation for float
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 14% of the Assembly Instruction Set
+Info: using 16% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main z 3
+main z_i 3
+main w 3
+main w_i 3
+main r 3
+main r_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 15: z = 3.0+4.0i;                 r = sqrt(z);      fout(0, real(r)); fout(0, imag(r));
+1 LOD 3.0
+2 SET main_z
+3 LOD 4.0
+4 SET main_z_i
+5 LOD main_z
+6 F_MLT main_z
+7 P_LOD main_z_i
+8 F_MLT main_z_i
+9 SF_ADD
+10 CAL __float_sqrt
+11 SET __csqrt_r
+12 F_ADD main_z
+13 F_MLT 0.5
+14 CAL __float_sqrt
+15 SET __csqrt_re
+16 LOD __csqrt_r
+17 F_SU1 main_z
+18 F_MLT 0.5
+19 CAL __float_sqrt
+20 F_SGN main_z_i
+21 SET __csqrt_im
+22 LOD __csqrt_re
+23 P_LOD __csqrt_im
+24 SET_P main_r_i
+25 SET main_r
+26 F2I_M main_r
+27 OUT 0
+28 F2I_M main_r_i
+29 OUT 0
+// 16: r = sqrt(-3.0+4.0i);                            fout(0, real(r)); fout(0, imag(r));
+30 LOD -3.0
+31 F_MLT -3.0
+32 P_LOD 4.0
+33 F_MLT 4.0
+34 SF_ADD
+35 CAL __float_sqrt
+36 SET __csqrt_r
+37 F_ADD -3.0
+38 F_MLT 0.5
+39 CAL __float_sqrt
+40 SET __csqrt_re
+41 LOD __csqrt_r
+42 F_SU1 -3.0
+43 F_MLT 0.5
+44 CAL __float_sqrt
+45 F_SGN 4.0
+46 SET __csqrt_im
+47 LOD __csqrt_re
+48 P_LOD __csqrt_im
+49 SET_P main_r_i
+50 SET main_r
+51 F2I_M main_r
+52 OUT 0
+53 F2I_M main_r_i
+54 OUT 0
+// 17: z = 1.0+2.0i;  w = 2.0+2.0i;  r = sqrt(z + w);  fout(0, real(r)); fout(0, imag(r));
+55 LOD 1.0
+56 SET main_z
+57 LOD 2.0
+58 SET main_z_i
+59 SET main_w
+60 SET main_w_i
+61 LOD main_z
+62 F_ADD main_w
+63 P_LOD main_z_i
+64 F_ADD main_w_i
+65 SET_P __csqrt_b
+66 SET __csqrt_a
+67 F_MLT __csqrt_a
+68 P_LOD __csqrt_b
+69 F_MLT __csqrt_b
+70 SF_ADD
+71 CAL __float_sqrt
+72 SET __csqrt_r
+73 F_ADD __csqrt_a
+74 F_MLT 0.5
+75 CAL __float_sqrt
+76 SET __csqrt_re
+77 LOD __csqrt_r
+78 F_SU1 __csqrt_a
+79 F_MLT 0.5
+80 CAL __float_sqrt
+81 F_SGN __csqrt_b
+82 SET __csqrt_im
+83 LOD __csqrt_re
+84 P_LOD __csqrt_im
+85 SET_P main_r_i
+86 SET main_r
+87 F2I_M main_r
+88 OUT 0
+89 F2I_M main_r_i
+90 OUT 0
+// 18: z = 4.0+0.0i;                 r = sqrt(z);      fout(0, real(r)); fout(0, imag(r));
+91 LOD 4.0
+92 SET main_z
+93 LOD 0.0
+94 SET main_z_i
+95 LOD main_z
+96 F_MLT main_z
+97 P_LOD main_z_i
+98 F_MLT main_z_i
+99 SF_ADD
+100 CAL __float_sqrt
+101 SET __csqrt_r
+102 F_ADD main_z
+103 F_MLT 0.5
+104 CAL __float_sqrt
+105 SET __csqrt_re
+106 LOD __csqrt_r
+107 F_SU1 main_z
+108 F_MLT 0.5
+109 CAL __float_sqrt
+110 F_SGN main_z_i
+111 SET __csqrt_im
+112 LOD __csqrt_re
+113 P_LOD __csqrt_im
+114 SET_P main_r_i
+115 SET main_r
+116 F2I_M main_r
+117 OUT 0
+118 F2I_M main_r_i
+119 OUT 0
+// 19: z = -4.0+0.0i;                r = sqrt(z);      fout(0, real(r)); fout(0, imag(r));
+120 LOD -4.0
+121 SET main_z
+122 LOD 0.0
+123 SET main_z_i
+124 LOD main_z
+125 F_MLT main_z
+126 P_LOD main_z_i
+127 F_MLT main_z_i
+128 SF_ADD
+129 CAL __float_sqrt
+130 SET __csqrt_r
+131 F_ADD main_z
+132 F_MLT 0.5
+133 CAL __float_sqrt
+134 SET __csqrt_re
+135 LOD __csqrt_r
+136 F_SU1 main_z
+137 F_MLT 0.5
+138 CAL __float_sqrt
+139 F_SGN main_z_i
+140 SET __csqrt_im
+141 LOD __csqrt_re
+142 P_LOD __csqrt_im
+143 SET_P main_r_i
+144 SET main_r
+145 F2I_M main_r
+146 OUT 0
+147 F2I_M main_r_i
+148 OUT 0
+// 14: while (1) {
+149 JMP __Lwh1
+// -3: END
+150 JMP fim
+// library macros, no source line
+151 SET __sqrt_num
+152 F_ROT
+153 PSH
+154 F_DIV __sqrt_num
+155 NOP
+156 NOP
+157 F_QUO
+158 SF_ADD
+159 F_MLT 0.5
+160 PSH
+161 F_DIV __sqrt_num
+162 NOP
+163 NOP
+164 F_QUO
+165 SF_ADD
+166 F_MLT 0.5
+167 PSH
+168 F_DIV __sqrt_num
+169 NOP
+170 NOP
+171 F_QUO
+172 SF_ADD
+173 F_MLT 0.5
+174 PSH
+175 F_DIV __sqrt_num
+176 NOP
+177 NOP
+178 F_QUO
+179 SF_ADD
+180 F_MLT 0.5
+181 RET

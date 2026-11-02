@@ -1,0 +1,53 @@
+## messages
+Info: constant 1.999999 on line 19 approximated to 2 (error = 1e-06)
+Info: constant 3.999999 on line 20 approximated to 4 (error = 1e-06)
+Info: constant 0.999999 on line 21 approximated to 1 (error = 1e-06)
+Heads up on line 22: if you don't want this warning, use 'fout'.
+Heads up on line 23: if you don't want this warning, use 'fout'.
+Heads up on line 24: if you don't want this warning, use 'fout'.
+Info: 21 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 21 instructions and 7 variables were found
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 4% of the Assembly Instruction Set
+Info: using 5% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main a 2
+main b 2
+main c 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 19: a = 1.999999;   // rounds to 2.0 at 10-bit; bug -> 0.0
+1 LOD 1.999999
+2 SET main_a
+// 20: b = 3.999999;   // rounds to 4.0;            bug -> 0.0
+3 LOD 3.999999
+4 SET main_b
+// 21: c = 0.999999;   // rounds to 1.0;            bug -> 0.0
+5 LOD 0.999999
+6 SET main_c
+// 22: out(0, a * 1000.0);   // 2000
+7 LOD main_a
+8 F_MLT 1000.0
+9 F2I
+10 OUT 0
+// 23: out(0, b * 1000.0);   // 4000
+11 LOD main_b
+12 F_MLT 1000.0
+13 F2I
+14 OUT 0
+// 24: out(0, c * 1000.0);   // 1000
+15 LOD main_c
+16 F_MLT 1000.0
+17 F2I
+18 OUT 0
+// 17: while (1)
+19 JMP __Lwh1
+// -3: END
+20 JMP fim

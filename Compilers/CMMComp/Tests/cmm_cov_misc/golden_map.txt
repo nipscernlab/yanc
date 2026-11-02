@@ -1,0 +1,639 @@
+## messages
+Info: array initialization with file "li.txt" for variable 'li' at line 20
+Heads up on line 20: local array 'li' is initialized from file "li.txt" only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
+Info: array initialization with file "lf.txt" for variable 'lf' at line 21
+Heads up on line 21: local array 'lf' is initialized from file "lf.txt" only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
+Info: array initialization with file "lc.txt" for variable 'lc' at line 22
+Heads up on line 22: local array 'lc' is initialized from file "lc.txt" only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
+Info: array initialization with file "mi.txt" for variable 'lmi' at line 23
+Heads up on line 23: local array 'lmi' is initialized from file "mi.txt" only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
+Info: array initialization with file "mf.txt" for variable 'lmf' at line 24
+Heads up on line 24: local array 'lmf' is initialized from file "mf.txt" only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
+Info: array initialization with file "mc.txt" for variable 'lmc' at line 25
+Heads up on line 25: local array 'lmc' is initialized from file "mc.txt" only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
+Heads up on line 60: variable 'iv3' is int, but getting a float.
+Heads up on line 63: variable 'i1' is int, but getting a float.
+Heads up on line 65: variable 'i1' is int, but getting a float.
+Heads up on line 70: the second operand of the shift is a float. Now you're killin' me!
+Heads up on line 71: the second operand of the shift is a float. Now you're killin' me!
+Heads up on line 72: if you don't want this warning, use 'fout'.
+Heads up on line 72: if you don't want this warning, use 'out'.
+Info: 527 assembly instructions generated
+Info: 2 unreachable instructions removed
+Info: 1 variables written and never read removed (4 instructions)
+Info: 23 variables share 13 data words (10 saved)
+Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 521 instructions and 91 variables were found
+Info: filling array with 3 values read from file "li.txt"
+Info: filling array with 3 values read from file "lf.txt"
+Info: filling array with 2 values read from file "lc.txt"
+Info: filling array with 6 values read from file "mi.txt"
+Info: filling array with 6 values read from file "mf.txt"
+Info: filling array with 4 values read from file "mc.txt"
+Info: adding data output handling
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding stack memory for function calls
+Info: ULA resource -> integer adder
+Info: ULA resource -> ^ operator
+Info: ULA resource -> == operator
+Info: ULA resource -> ! operator
+Info: ULA resource -> < operator for int
+Info: ULA resource -> > operator for int
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float-point adder
+Info: adding array handling
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> << operator
+Info: stack depths from the program: SDEPTH 2, NDSTAC 4
+Info: using 32% of the Assembly Instruction Set
+Info: using 36% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+locals w 3
+locals w_i 3
+main x 1
+main y 2
+main w 3
+main w_i 3
+main k 1
+main s 1
+main n2 1
+main z0 1
+main pa 1
+main m5 1
+main fs 2
+main fz 2
+main pf 2
+main cv 3
+main cv_i 3
+main one 3
+main one_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 27: out(0, li[2]); fout(0, 4.0*lf[2]);
+2 LOD_V locals_li 2
+3 OUT 0
+4 LOD_V locals_lf 2
+5 F_MLT 4.0
+6 F2I
+7 OUT 0
+// 28: w = lc[1]; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+8 LOD_V locals_lc 1
+9 P_LOD_V locals_lc_i 1
+10 SET_P locals_w_i
+11 SET locals_w
+12 LOD 4.0
+13 F_MLT locals_w
+14 F2I
+15 OUT 0
+16 LOD 4.0
+17 F_MLT locals_w_i
+18 F2I
+19 OUT 0
+// 29: out(0, lmi[1][2]); fout(0, 4.0*lmf[1][0]);
+20 LOD_V locals_lmi 5
+21 OUT 0
+22 LOD_V locals_lmf 3
+23 F_MLT 4.0
+24 F2I
+25 OUT 0
+// 30: w = lmc[1][1]; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+26 LOD_V locals_lmc 3
+27 P_LOD_V locals_lmc_i 3
+28 SET_P locals_w_i
+29 SET locals_w
+30 LOD 4.0
+31 F_MLT locals_w
+32 F2I
+33 OUT 0
+34 LOD 4.0
+35 F_MLT locals_w_i
+36 F2I
+37 OUT 0
+// 31: }
+38 RET
+// 35: return 5;
+39 LOD 5
+40 RET
+// 42: n2 = 2; m5 = 5; z0 = 0; pa = 1000; fs = 2.5; fz = 0.0; pf = 1000.0; cv = 3+4i; one = 1+0i;
+41 LOD 2
+42 SET main_n2
+43 LOD 5
+44 SET main_m5
+45 LOD 0
+46 SET main_z0
+47 LOD 1000
+48 SET main_pa
+49 LOD 2.5
+50 SET main_fs
+51 LOD 0.0
+52 SET main_fz
+53 LOD 1000.0
+54 SET main_pf
+55 LOD 3.0
+56 SET main_cv
+57 LOD 4.0
+58 SET main_cv_i
+59 LOD 1.0
+60 SET main_one
+61 LOD 0.0
+62 SET main_one_i
+// 43: locals();
+63 CAL locals
+// 44: x = (pa+z0) + noarg(); out(0, x);
+64 LOD main_pa
+65 ADD main_z0
+66 PSH
+67 CAL noarg
+68 S_ADD
+69 OUT 0
+// 45: k = 0; s = 0; while (1) { k = k + 1; if (k == 4) break; s = s + k; } out(0, s);
+70 LOD 0
+71 SET main_k
+72 SET main_s
+73 LOD main_k
+74 ADD 1
+75 SET main_k
+76 LOD 4
+77 XOR main_k
+78 JIZ __Lwh1end
+79 LOD main_s
+80 ADD main_k
+81 SET main_s
+82 JMP __Lwh1
+83 LOD main_s
+84 OUT 0
+// 46: k = 0; s = 0; while (k != 5) { k = k + 1; if (k != 3) continue; s = s + 10; } out(0, s);
+85 LOD 0
+86 SET main_k
+87 SET main_s
+88 LOD main_k
+89 EQU 5
+90 LIN
+91 JIZ __Lwh2end
+92 LOD main_k
+93 ADD 1
+94 SET main_k
+95 EQU 3
+96 JIZ __Lwh2
+97 LOD main_s
+98 ADD 10
+99 SET main_s
+100 JMP __Lwh2
+101 LOD main_s
+102 OUT 0
+// 47: s = 0; for (k = 0; k < 5; k++) { if (k == 2) continue; s = s + k; } out(0, s);
+103 LOD 0
+104 SET main_s
+105 SET main_k
+106 LOD 2
+107 XOR main_k
+108 JIZ __Lwh3cont
+109 LOD main_s
+110 ADD main_k
+111 SET main_s
+112 LOD main_k
+113 ADD 1
+114 SET main_k
+115 LES 4
+116 JIZ __Lwh3
+117 LOD main_s
+118 OUT 0
+// 48: k = 0; s = 0; do { k = k + 1; if (k == 2) continue; s = s + k; } while (k < 4); out(0, s);
+119 LOD 0
+120 SET main_k
+121 SET main_s
+122 LOD main_k
+123 ADD 1
+124 SET main_k
+125 LOD 2
+126 XOR main_k
+127 JIZ __Lwh4cont
+128 LOD main_s
+129 ADD main_k
+130 SET main_s
+131 LOD main_k
+132 GRE 4
+133 JIZ __Lwh4end
+134 JMP __Lwh4
+135 LOD main_s
+136 OUT 0
+// 49: k = 3; s = 0; while (k) { s = s + k; k = k - 1; } out(0, s);
+137 LOD 3
+138 SET main_k
+139 LOD 0
+140 SET main_s
+141 LOD main_k
+142 JIZ __Lwh5end
+143 LOD main_s
+144 ADD main_k
+145 SET main_s
+146 LOD main_k
+147 ADD -1
+148 SET main_k
+149 JMP __Lwh5
+150 LOD main_s
+151 OUT 0
+// 50: k = 0; s = 0; while (k != 5) { k = k + 1; if (k == 3) { s = s + 100; continue; } s = s + k; } out(0, s);
+152 LOD 0
+153 SET main_k
+154 SET main_s
+155 LOD main_k
+156 EQU 5
+157 LIN
+158 JIZ __Lwh6end
+159 LOD main_k
+160 ADD 1
+161 SET main_k
+162 EQU 3
+163 JIZ __Lif5else
+164 LOD main_s
+165 ADD 100
+166 SET main_s
+167 JMP __Lwh6
+168 LOD main_s
+169 ADD main_k
+170 SET main_s
+171 JMP __Lwh6
+172 LOD main_s
+173 OUT 0
+// 51: s = 0; for (k = 0; k < 5; k++) { if (k == 2) { s = s + 100; continue; } s = s + k; } out(0, s);
+174 LOD 0
+175 SET main_s
+176 SET main_k
+177 LOD main_k
+178 EQU 2
+179 JIZ __Lif6else
+180 LOD main_s
+181 ADD 100
+182 SET main_s
+183 JMP __Lwh7cont
+184 LOD main_s
+185 ADD main_k
+186 SET main_s
+187 LOD main_k
+188 ADD 1
+189 SET main_k
+190 LES 4
+191 JIZ __Lwh7
+192 LOD main_s
+193 OUT 0
+// 52: s = 0; for (k = 0; k < m5; k++) { if (k == 2) { s = s + 100; continue; } s = s + k; } out(0, s);
+194 LOD 0
+195 SET main_s
+196 SET main_k
+197 LOD main_m5
+198 LES main_k
+199 JIZ __Lwh8end
+200 LOD main_k
+201 EQU 2
+202 JIZ __Lif7else
+203 LOD main_s
+204 ADD 100
+205 SET main_s
+206 JMP __Lwh8cont
+207 LOD main_s
+208 ADD main_k
+209 SET main_s
+210 LOD main_k
+211 ADD 1
+212 SET main_k
+213 JMP __Lwh8
+214 LOD main_s
+215 OUT 0
+// 53: k = 0; s = 0; do { k = k + 1; if (k == 2) { s = s + 100; continue; } s = s + k; } while (k < 4); out(0, s);
+216 LOD 0
+217 SET main_k
+218 SET main_s
+219 LOD main_k
+220 ADD 1
+221 SET main_k
+222 EQU 2
+223 JIZ __Lif8else
+224 LOD main_s
+225 ADD 100
+226 SET main_s
+227 JMP __Lwh9cont
+228 LOD main_s
+229 ADD main_k
+230 SET main_s
+231 LOD main_k
+232 GRE 4
+233 JIZ __Lwh9end
+234 JMP __Lwh9
+235 LOD main_s
+236 OUT 0
+// 54: s = 0; switch (n2) { case 1: s = 10; break; case 3: s = 30; } out(0, s);
+237 LOD 0
+238 SET main_s
+239 LOD main_n2
+240 ADD -1
+241 JIZ __sw_body_1_1
+242 ADD -2
+243 JIZ __sw_body_1_2
+244 JMP __switch_end_1
+245 LOD 10
+246 SET main_s
+247 JMP __switch_end_1
+248 LOD 30
+249 SET main_s
+250 LOD main_s
+251 OUT 0
+// 55: s = 0; switch (n2) { case 1.5: s = 15; break; case 2.0: s = 20; } out(0, s);
+252 LOD 0
+253 SET main_s
+254 LOD main_n2
+255 SET __switch_exp
+256 I2F_M __switch_exp
+257 EQU 1.5
+258 JIZ __sw_disp_2_1
+259 JMP __sw_body_2_1
+260 I2F_M __switch_exp
+261 EQU 2.0
+262 JIZ __switch_end_2
+263 JMP __sw_body_2_2
+264 LOD 15
+265 SET main_s
+266 JMP __switch_end_2
+267 LOD 20
+268 SET main_s
+269 LOD main_s
+270 OUT 0
+// 56: s = 0; switch (n2) { case 1.5: s = 15; break; case 3.0: s = 30; } out(0, s);
+271 LOD 0
+272 SET main_s
+273 LOD main_n2
+274 SET __switch_exp
+275 I2F_M __switch_exp
+276 EQU 1.5
+277 JIZ __sw_disp_3_1
+278 JMP __sw_body_3_1
+279 I2F_M __switch_exp
+280 EQU 3.0
+281 JIZ __switch_end_3
+282 JMP __sw_body_3_2
+283 LOD 15
+284 SET main_s
+285 JMP __switch_end_3
+286 LOD 30
+287 SET main_s
+288 LOD main_s
+289 OUT 0
+// 57: vc[2] = (cv*one); w = vc[2]; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+290 LOD main_cv
+291 F_MLT main_one
+292 P_LOD main_cv_i
+293 F_MLT main_one_i
+294 SF_SU2
+295 P_LOD main_cv
+296 F_MLT main_one_i
+297 P_LOD main_cv_i
+298 F_MLT main_one
+299 SF_ADD
+300 SET_V vc_i 2
+301 POP
+302 SET_V vc 2
+303 LOD_V vc 2
+304 P_LOD_V vc_i 2
+305 SET_P main_w_i
+306 SET main_w
+307 LOD 4.0
+308 F_MLT main_w
+309 F2I
+310 OUT 0
+311 LOD 4.0
+312 F_MLT main_w_i
+313 F2I
+314 OUT 0
+// 58: fv3 # (n2+z0)|fa3>; fout(0, 4.0*fv3[0]); fout(0, 4.0*fv3[2]);
+315 LOD main_n2
+316 ADD main_z0
+317 I2F
+318 SET __dhf1_main
+319 LOD -3
+320 SET __dk0_main
+321 PSH
+322 LDI_V fa3 3
+323 F_MLT __dhf1_main
+324 STI_V fv3 3
+325 LOD __dk0_main
+326 ADD 1
+327 SET __dk0_main
+328 JIZ __Ld0e
+329 JMP __Ld0
+330 LOD_V fv3 0
+331 F_MLT 4.0
+332 F2I
+333 OUT 0
+334 LOD_V fv3 2
+335 F_MLT 4.0
+336 F2I
+337 OUT 0
+// 59: fv3 # |ia3>; fout(0, 4.0*fv3[1]);
+338 LOD -3
+339 SET __dk0_main
+340 PSH
+341 LDI_V ia3 3
+342 I2F
+343 STI_V fv3 3
+344 LOD __dk0_main
+345 ADD 1
+346 SET __dk0_main
+347 JIZ __Ld1e
+348 JMP __Ld1
+349 LOD_V fv3 1
+350 F_MLT 4.0
+351 F2I
+352 OUT 0
+// 60: iv3 # |fa3>; out(0, iv3[2]);
+353 LOD -3
+354 SET __dk0_main
+355 PSH
+356 LDI_V fa3 3
+357 F2I
+358 STI_V iv3 3
+359 LOD __dk0_main
+360 ADD 1
+361 SET __dk0_main
+362 JIZ __Ld2e
+363 JMP __Ld2
+364 LOD_V iv3 2
+365 OUT 0
+// 61: f1 # |fa1>; fout(0, 4.0*f1[0]);
+366 LOD fa1
+367 SET_V f1 0
+368 LOD_V f1 0
+369 F_MLT 4.0
+370 F2I
+371 OUT 0
+// 62: f1 # |ia1>; fout(0, 4.0*f1[0]);
+372 I2F_M ia1
+373 SET_V f1 0
+374 LOD_V f1 0
+375 F_MLT 4.0
+376 F2I
+377 OUT 0
+// 63: i1 # |fa1>; out(0, i1[0]);
+378 F2I_M fa1
+379 SET_V i1 0
+380 LOD_V i1 0
+381 OUT 0
+// 64: f1 # (n2+z0)|ia1>; fout(0, 4.0*f1[0]);
+382 LOD main_n2
+383 ADD main_z0
+384 SET __dhi0_main
+385 LOD ia1
+386 MLT __dhi0_main
+387 I2F
+388 SET_V f1 0
+389 LOD_V f1 0
+390 F_MLT 4.0
+391 F2I
+392 OUT 0
+// 65: i1 # (fs+fz)|fa1>; out(0, i1[0]);
+393 LOD main_fs
+394 F_ADD main_fz
+395 SET __dhf0_main
+396 LOD fa1
+397 F_MLT __dhf0_main
+398 F2I
+399 SET_V i1 0
+400 LOD_V i1 0
+401 OUT 0
+// 66: fv3 # fs|fa3>; fout(0, 4.0*fv3[2]);
+402 LOD -3
+403 SET __dk0_main
+404 PSH
+405 LDI_V fa3 3
+406 F_MLT main_fs
+407 STI_V fv3 3
+408 LOD __dk0_main
+409 ADD 1
+410 SET __dk0_main
+411 JIZ __Ld3e
+412 JMP __Ld3
+413 LOD_V fv3 2
+414 F_MLT 4.0
+415 F2I
+416 OUT 0
+// 67: y = (pf+fz) + <fa3|ia3>; fout(0, 4.0*y);
+417 LOD main_pf
+418 F_ADD main_fz
+419 P_I2F_M ia3
+420 F_MLT fa3
+421 P_LOD -2
+422 SET __dk0_main
+423 LDI_V fa3 3
+424 P_LOD __dk0_main
+425 LDI_V ia3 3
+426 I2F
+427 SF_MLT
+428 SF_ADD
+429 P_LOD __dk0_main
+430 ADD 1
+431 SET __dk0_main
+432 JIZ __Ld4e
+433 JMP __Ld4
+434 POP
+435 SF_ADD
+436 SET main_y
+437 LOD 4.0
+438 F_MLT main_y
+439 F2I
+440 OUT 0
+// 68: w = -(3.0+0.0i); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+441 F_NEG_M 3.0
+442 PF_NEG_M 0.0
+443 SET_P main_w_i
+444 SET main_w
+445 LOD 4.0
+446 F_MLT main_w
+447 F2I
+448 OUT 0
+449 LOD 4.0
+450 F_MLT main_w_i
+451 F2I
+452 OUT 0
+// 69: w = -(0.0+2.0i); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+453 LOD 0.0
+454 SET main_w
+455 LOD -2.0
+456 SET main_w_i
+457 LOD 4.0
+458 F_MLT main_w
+459 F2I
+460 OUT 0
+461 LOD 4.0
+462 F_MLT main_w_i
+463 F2I
+464 OUT 0
+// 70: x = n2 << (fs+fz); out(0, x);
+465 LOD main_fs
+466 F_ADD main_fz
+467 F2I
+468 SHL main_n2
+469 OUT 0
+// 71: x = (n2+z0) << fs; out(0, x);
+470 LOD main_n2
+471 ADD main_z0
+472 P_F2I_M main_fs
+473 S_SHL
+474 OUT 0
+// 72: out(0, n2); fout(0, fs); out(0, fs); fout(0, n2);
+475 LOD main_n2
+476 OUT 0
+477 F2I_M main_fs
+478 OUT 0
+479 F2I_M main_fs
+480 OUT 0
+481 LOD main_n2
+482 OUT 0
+// 73: x = (pa+z0) + ia3[2]; out(0, x);
+483 LOD_V ia3 2
+484 ADD main_pa
+485 ADD main_z0
+486 OUT 0
+// 74: y = (pf+fz) + fa3[1]; fout(0, 4.0*y);
+487 LOD main_pf
+488 F_ADD main_fz
+489 P_LOD_V fa3 1
+490 SF_ADD
+491 SET main_y
+492 LOD 4.0
+493 F_MLT main_y
+494 F2I
+495 OUT 0
+// 75: w = (cv*one) + vc[2]; fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
+496 LOD main_cv
+497 F_MLT main_one
+498 P_LOD main_cv_i
+499 F_MLT main_one_i
+500 SF_SU2
+501 P_LOD_V vc 2
+502 SF_ADD
+503 P_LOD main_cv
+504 F_MLT main_one_i
+505 P_LOD main_cv_i
+506 F_MLT main_one
+507 SF_ADD
+508 P_LOD_V vc_i 2
+509 SF_ADD
+510 SET_P main_w_i
+511 SET main_w
+512 LOD 4.0
+513 F_MLT main_w
+514 F2I
+515 OUT 0
+516 LOD 4.0
+517 F_MLT main_w_i
+518 F2I
+519 OUT 0
+// -3: END
+520 JMP fim

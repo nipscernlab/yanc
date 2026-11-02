@@ -1,0 +1,56 @@
+## messages
+Info: 33 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 33 instructions and 10 variables were found
+Info: adding data output handling
+Info: ULA resource -> > operator for int
+Info: ULA resource -> integer adder
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 5% of the Assembly Instruction Set
+Info: using 5% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main k 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 15: out(0, 1); out(0, 2); out(0, 3); out(0, 4);
+1 LOD 1
+2 OUT 0
+3 LOD 2
+4 OUT 0
+5 LOD 3
+6 OUT 0
+7 LOD 4
+8 OUT 0
+// 16: int k = 5;
+9 LOD 5
+10 SET main_k
+// 17: while (k < 9) { out(0, k); k = k + 1; }
+11 LOD main_k
+12 GRE 9
+13 JIZ __Lwh1end
+14 LOD main_k
+15 OUT 0
+16 ADD 1
+17 SET main_k
+18 JMP __Lwh1
+// 18: k = 11;
+19 LOD 11
+20 SET main_k
+// 19: while (k < 15) { out(0, k); k = k + 1; }
+21 LOD main_k
+22 GRE 15
+23 JIZ __Lwh2end
+24 LOD main_k
+25 OUT 0
+26 ADD 1
+27 SET main_k
+28 JMP __Lwh2
+// 20: while (1) { k = 0; }
+29 LOD 0
+30 SET main_k
+31 JMP __Lwh3
+// -3: END
+32 JMP fim

@@ -1,0 +1,48 @@
+## messages
+Info: 17 assembly instructions generated
+Info: 7 variables written and never read removed (7 instructions)
+Heads up: variable 'v' in function 'main' is never read, so it's out of the program and the waveform (#WAVE v, in the function, keeps it).
+Heads up: variable 'a' in function 'main' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Heads up: variable 'b' in function 'main' is never read, so it's out of the program and the waveform (#WAVE b, in the function, keeps it).
+Heads up: variable 'c' in function 'main' is never read, so it's out of the program and the waveform (#WAVE c, in the function, keeps it).
+Heads up: variable 'd' in function 'main' is never read, so it's out of the program and the waveform (#WAVE d, in the function, keeps it).
+Heads up: variable 'e' in function 'main' is never read, so it's out of the program and the waveform (#WAVE e, in the function, keeps it).
+Heads up: variable 'f' in function 'main' is never read, so it's out of the program and the waveform (#WAVE f, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 10 instructions and 0 variables were found
+Info: adding data input handling
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 1% of the Assembly Instruction Set
+Info: using 0% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main v 1
+main a 1
+main b 1
+main c 1
+main d 1
+main e 1
+main f 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 22: int  v = in(0);
+1 INN 0
+// 31: out(0, a);
+2 OUT 0
+// 32: out(0, b);
+3 OUT 0
+// 33: out(0, c);
+4 OUT 0
+// 34: out(0, d);
+5 OUT 0
+// 35: out(0, e);
+6 OUT 0
+// 36: out(0, f);
+7 OUT 0
+// 20: while (1)
+8 JMP __Lwh1
+// -3: END
+9 JMP fim

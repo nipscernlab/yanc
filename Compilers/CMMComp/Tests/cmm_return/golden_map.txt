@@ -1,0 +1,153 @@
+## messages
+Info: 95 assembly instructions generated
+Info: 2 unreachable instructions removed
+Info: 2 variables written and never read removed (2 instructions)
+Info: 6 variables share 3 data words (3 saved)
+Heads up: variable 'a' in function 'add5' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Heads up: variable 'x' in function 'classify' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 91 instructions and 19 variables were found
+Info: ULA resource -> integer adder
+Info: ULA resource -> == operator
+Info: ULA resource -> < operator for int
+Info: ULA resource -> integer multiplier
+Info: adding data output handling
+Info: adding stack memory for function calls
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 8% of the Assembly Instruction Set
+Info: using 11% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+add5 a 1
+firstHit limit 1
+firstHit k 1
+nestedFind target 1
+nestedFind a 1
+nestedFind b 1
+classify x 1
+maybe x 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 24: return a + 5;
+2 ADD 5
+3 RET
+// 27: int firstHit(int limit)
+4 SET firstHit_limit
+// 30: for (k = 0; k < 100; k = k + 1) { if (k == limit) return k + k; }
+5 LOD 0
+6 SET firstHit_k
+7 LOD firstHit_limit
+8 EQU firstHit_k
+9 JIZ __Lif1else
+10 LOD firstHit_k
+11 ADD firstHit_k
+12 RET
+13 LOD firstHit_k
+14 ADD 1
+15 SET firstHit_k
+16 LES 99
+17 JIZ __Lwh1
+// 31: return 0;   // unreached for limit < 100
+18 LOD 0
+19 RET
+// 34: int nestedFind(int target)
+20 SET nestedFind_target
+// 37: for (a = 0; a < 5; a = a + 1)
+21 LOD 0
+22 SET nestedFind_a
+// 39: for (b = 0; b < 5; b = b + 1)
+23 LOD 0
+24 SET nestedFind_b
+// 41: if (a * 10 + b == target) return a * 100 + b;
+25 LOD nestedFind_a
+26 MLT 10
+27 ADD nestedFind_b
+28 EQU nestedFind_target
+29 JIZ __Lif2else
+30 LOD nestedFind_a
+31 MLT 100
+32 ADD nestedFind_b
+33 RET
+// 39: for (b = 0; b < 5; b = b + 1)
+34 LOD nestedFind_b
+35 ADD 1
+36 SET nestedFind_b
+37 LES 4
+38 JIZ __Lwh3
+// 37: for (a = 0; a < 5; a = a + 1)
+39 LOD nestedFind_a
+40 ADD 1
+41 SET nestedFind_a
+42 LES 4
+43 JIZ __Lwh2
+// 44: return 0;   // unreached when target is found
+44 LOD 0
+45 RET
+// 49: switch (x) {
+46 ADD -1
+47 JIZ __sw_body_1_1
+48 ADD -1
+49 JIZ __sw_body_1_2
+50 JMP __sw_body_1_3
+// 50: case 1: return 11;
+51 LOD 11
+52 RET
+// 51: case 2: return 22;
+53 LOD 22
+54 RET
+// 52: default: return 99;
+55 LOD 99
+56 RET
+// 57: void maybe(int x)
+57 SET maybe_x
+// 59: if (x == 0) return;   // void early return: nothing is emitted
+58 EQU 0
+59 JIZ __Lif3else
+60 RET
+// 60: out(0, 500 + x);
+61 LOD 500
+62 ADD maybe_x
+63 OUT 0
+// 61: }
+64 RET
+// 67: out(0, add5(10));
+65 LOD 10
+66 CAL add5
+67 OUT 0
+// 68: out(0, firstHit(4));
+68 LOD 4
+69 CAL firstHit
+70 OUT 0
+// 69: out(0, nestedFind(23));
+71 LOD 23
+72 CAL nestedFind
+73 OUT 0
+// 70: out(0, classify(1));
+74 LOD 1
+75 CAL classify
+76 OUT 0
+// 71: out(0, classify(2));
+77 LOD 2
+78 CAL classify
+79 OUT 0
+// 72: out(0, classify(7));
+80 LOD 7
+81 CAL classify
+82 OUT 0
+// 73: maybe(0);
+83 LOD 0
+84 CAL maybe
+// 74: maybe(3);
+85 LOD 3
+86 CAL maybe
+// 75: out(0, 600);
+87 LOD 600
+88 OUT 0
+// 65: while (1)
+89 JMP __Lwh4
+// -3: END
+90 JMP fim

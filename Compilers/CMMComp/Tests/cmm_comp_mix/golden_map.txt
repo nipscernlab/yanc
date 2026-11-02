@@ -1,0 +1,308 @@
+## messages
+Info: 242 assembly instructions generated
+Info: 4 divisions, 5 words each for DIV/MOD and 4 for F_DIV (12 added)
+Info: 9 variables share 8 data words (1 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 254 instructions and 16 variables were found
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> int to float converter
+Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: using 15% of the Assembly Instruction Set
+Info: using 16% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main c 3
+main c_i 3
+main c2 3
+main c2_i 3
+main r 3
+main r_i 3
+main ni 1
+main nf 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 20: c = 3.0+4.0i; c2 = 6.0+8.0i; ni = 2; nf = 2.0;
+1 LOD 3.0
+2 SET main_c
+3 LOD 4.0
+4 SET main_c_i
+5 LOD 6.0
+6 SET main_c2
+7 LOD 8.0
+8 SET main_c2_i
+9 LOD 2
+10 SET main_ni
+11 LOD 2.0
+12 SET main_nf
+// 21: r = c + 2;      fout(0, real(r)); fout(0, imag(r));
+13 F_ADD main_c
+14 P_LOD main_c_i
+15 SET_P main_r_i
+16 SET main_r
+17 F2I_M main_r
+18 OUT 0
+19 F2I_M main_r_i
+20 OUT 0
+// 22: r = c - 2;      fout(0, real(r)); fout(0, imag(r));
+21 LOD 2.0
+22 F_SU2 main_c
+23 P_LOD main_c_i
+24 SET_P main_r_i
+25 SET main_r
+26 F2I_M main_r
+27 OUT 0
+28 F2I_M main_r_i
+29 OUT 0
+// 23: r = c * 2;      fout(0, real(r)); fout(0, imag(r));
+30 LOD 2.0
+31 F_MLT main_c
+32 P_LOD 2.0
+33 F_MLT main_c_i
+34 SET_P main_r_i
+35 SET main_r
+36 F2I_M main_r
+37 OUT 0
+38 F2I_M main_r_i
+39 OUT 0
+// 24: r = c2 / 2;     fout(0, real(r)); fout(0, imag(r));
+40 LOD 0.5
+41 F_MLT main_c2
+42 P_LOD 0.5
+43 F_MLT main_c2_i
+44 SET_P main_r_i
+45 SET main_r
+46 F2I_M main_r
+47 OUT 0
+48 F2I_M main_r_i
+49 OUT 0
+// 25: r = 2 + c;      fout(0, real(r)); fout(0, imag(r));
+50 LOD 2.0
+51 F_ADD main_c
+52 P_LOD main_c_i
+53 SET_P main_r_i
+54 SET main_r
+55 F2I_M main_r
+56 OUT 0
+57 F2I_M main_r_i
+58 OUT 0
+// 26: r = 2 - c;      fout(0, real(r)); fout(0, imag(r));
+59 LOD 2.0
+60 F_SU1 main_c
+61 PF_NEG_M main_c_i
+62 SET_P main_r_i
+63 SET main_r
+64 F2I_M main_r
+65 OUT 0
+66 F2I_M main_r_i
+67 OUT 0
+// 27: r = 2 * c;      fout(0, real(r)); fout(0, imag(r));
+68 LOD 2.0
+69 F_MLT main_c
+70 P_LOD 2.0
+71 F_MLT main_c_i
+72 SET_P main_r_i
+73 SET main_r
+74 F2I_M main_r
+75 OUT 0
+76 F2I_M main_r_i
+77 OUT 0
+// 28: r = 25 / c;     fout(0, real(r)); fout(0, imag(r));
+78 LOD main_c
+79 F_MLT main_c
+80 P_LOD main_c_i
+81 F_MLT main_c_i
+82 SF_ADD
+83 SET __aux_var
+84 LOD 25.0
+85 F_MLT main_c
+86 P_LOD __aux_var
+87 SF_DIV
+88 NOP
+89 NOP
+90 F_QUO
+91 P_LOD 25.0
+92 F_MLT main_c_i
+93 P_LOD __aux_var
+94 SF_DIV
+95 NOP
+96 NOP
+97 F_QUO
+98 F_NEG
+99 SET_P main_r_i
+100 SET main_r
+101 F2I_M main_r
+102 OUT 0
+103 F2I_M main_r_i
+104 OUT 0
+// 29: r = c + 2.0;    fout(0, real(r)); fout(0, imag(r));
+105 LOD 2.0
+106 F_ADD main_c
+107 P_LOD main_c_i
+108 SET_P main_r_i
+109 SET main_r
+110 F2I_M main_r
+111 OUT 0
+112 F2I_M main_r_i
+113 OUT 0
+// 30: r = c - 2.0;    fout(0, real(r)); fout(0, imag(r));
+114 LOD 2.0
+115 F_SU2 main_c
+116 P_LOD main_c_i
+117 SET_P main_r_i
+118 SET main_r
+119 F2I_M main_r
+120 OUT 0
+121 F2I_M main_r_i
+122 OUT 0
+// 31: r = c * 2.0;    fout(0, real(r)); fout(0, imag(r));
+123 LOD 2.0
+124 F_MLT main_c
+125 P_LOD 2.0
+126 F_MLT main_c_i
+127 SET_P main_r_i
+128 SET main_r
+129 F2I_M main_r
+130 OUT 0
+131 F2I_M main_r_i
+132 OUT 0
+// 32: r = c2 / 2.0;   fout(0, real(r)); fout(0, imag(r));
+133 LOD 0.5
+134 F_MLT main_c2
+135 P_LOD 0.5
+136 F_MLT main_c2_i
+137 SET_P main_r_i
+138 SET main_r
+139 F2I_M main_r
+140 OUT 0
+141 F2I_M main_r_i
+142 OUT 0
+// 33: r = 2.0 + c;    fout(0, real(r)); fout(0, imag(r));
+143 LOD 2.0
+144 F_ADD main_c
+145 P_LOD main_c_i
+146 SET_P main_r_i
+147 SET main_r
+148 F2I_M main_r
+149 OUT 0
+150 F2I_M main_r_i
+151 OUT 0
+// 34: r = 2.0 - c;    fout(0, real(r)); fout(0, imag(r));
+152 LOD 2.0
+153 F_SU1 main_c
+154 PF_NEG_M main_c_i
+155 SET_P main_r_i
+156 SET main_r
+157 F2I_M main_r
+158 OUT 0
+159 F2I_M main_r_i
+160 OUT 0
+// 35: r = 2.0 * c;    fout(0, real(r)); fout(0, imag(r));
+161 LOD 2.0
+162 F_MLT main_c
+163 P_LOD 2.0
+164 F_MLT main_c_i
+165 SET_P main_r_i
+166 SET main_r
+167 F2I_M main_r
+168 OUT 0
+169 F2I_M main_r_i
+170 OUT 0
+// 36: r = 25.0 / c;   fout(0, real(r)); fout(0, imag(r));
+171 LOD main_c
+172 F_MLT main_c
+173 P_LOD main_c_i
+174 F_MLT main_c_i
+175 SF_ADD
+176 SET __aux_var
+177 LOD 25.0
+178 F_MLT main_c
+179 P_LOD __aux_var
+180 SF_DIV
+181 NOP
+182 NOP
+183 F_QUO
+184 P_LOD 25.0
+185 F_MLT main_c_i
+186 P_LOD __aux_var
+187 SF_DIV
+188 NOP
+189 NOP
+190 F_QUO
+191 F_NEG
+192 SET_P main_r_i
+193 SET main_r
+194 F2I_M main_r
+195 OUT 0
+196 F2I_M main_r_i
+197 OUT 0
+// 37: r = (3.0+4.0i) + 2;  fout(0, real(r)); fout(0, imag(r));
+198 LOD 2.0
+199 F_ADD 3.0
+200 P_LOD 4.0
+201 SET_P main_r_i
+202 SET main_r
+203 F2I_M main_r
+204 OUT 0
+205 F2I_M main_r_i
+206 OUT 0
+// 38: r = (3.0+4.0i) * 2;  fout(0, real(r)); fout(0, imag(r));
+207 LOD 2.0
+208 F_MLT 3.0
+209 P_LOD 2.0
+210 F_MLT 4.0
+211 SET_P main_r_i
+212 SET main_r
+213 F2I_M main_r
+214 OUT 0
+215 F2I_M main_r_i
+216 OUT 0
+// 39: r = (3.0+4.0i) * 1;  fout(0, real(r)); fout(0, imag(r));
+217 LOD 3.0
+218 SET main_r
+219 LOD 4.0
+220 SET main_r_i
+221 F2I_M main_r
+222 OUT 0
+223 F2I_M main_r_i
+224 OUT 0
+// 40: r = (3.0+4.0i) + 0;  fout(0, real(r)); fout(0, imag(r));
+225 LOD 3.0
+226 SET main_r
+227 LOD 4.0
+228 SET main_r_i
+229 F2I_M main_r
+230 OUT 0
+231 F2I_M main_r_i
+232 OUT 0
+// 41: r = c + ni;     fout(0, real(r)); fout(0, imag(r));
+233 I2F_M main_ni
+234 F_ADD main_c
+235 P_LOD main_c_i
+236 SET_P main_r_i
+237 SET main_r
+238 F2I_M main_r
+239 OUT 0
+240 F2I_M main_r_i
+241 OUT 0
+// 42: r = nf * c;     fout(0, real(r)); fout(0, imag(r));
+242 LOD main_nf
+243 F_MLT main_c
+244 P_LOD main_nf
+245 F_MLT main_c_i
+246 SET_P main_r_i
+247 SET main_r
+248 F2I_M main_r
+249 OUT 0
+250 F2I_M main_r_i
+251 OUT 0
+// 19: while (1) {
+252 JMP __Lwh1
+// -3: END
+253 JMP fim

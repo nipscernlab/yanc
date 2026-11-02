@@ -1,0 +1,21 @@
+## messages
+Info: 5 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 5 instructions and 0 variables were found
+Info: adding cade (CAD), which takes a value from the partner processor
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 1% of the Assembly Instruction Set
+Info: using 0% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 12: while (1) out(0, cade(0));
+1 CAD 0
+2 OUT 0
+3 JMP __Lwh1
+// -3: END
+4 JMP fim

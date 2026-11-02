@@ -1,0 +1,149 @@
+## messages
+Info: 101 assembly instructions generated
+Info: 6 divisions, 5 words each for DIV/MOD and 4 for F_DIV (18 added)
+Info: 7 variables share 5 data words (2 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 119 instructions and 12 variables were found
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: using 10% of the Assembly Instruction Set
+Info: using 11% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main x 3
+main x_i 3
+main y 3
+main y_i 3
+main r 3
+main r_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 16: x = 4.0+2.0i; y = 1.0+1.0i; r = x / y;  fout(0, real(r)); fout(0, imag(r));
+1 LOD 4.0
+2 SET main_x
+3 LOD 2.0
+4 SET main_x_i
+5 LOD 1.0
+6 SET main_y
+7 SET main_y_i
+8 F_MLT main_y
+9 P_LOD main_y_i
+10 F_MLT main_y_i
+11 SF_ADD
+12 SET __aux_var
+13 LOD main_x
+14 F_MLT main_y
+15 P_LOD main_x_i
+16 F_MLT main_y_i
+17 SF_ADD
+18 P_LOD __aux_var
+19 SF_DIV
+20 NOP
+21 NOP
+22 F_QUO
+23 P_LOD main_x_i
+24 F_MLT main_y
+25 P_LOD main_x
+26 F_MLT main_y_i
+27 SF_SU2
+28 P_LOD __aux_var
+29 SF_DIV
+30 NOP
+31 NOP
+32 F_QUO
+33 SET_P main_r_i
+34 SET main_r
+35 F2I_M main_r
+36 OUT 0
+37 F2I_M main_r_i
+38 OUT 0
+// 17: x = 8.0+6.0i; y = 1.0-1.0i; r = x / y;  fout(0, real(r)); fout(0, imag(r));
+39 LOD 8.0
+40 SET main_x
+41 LOD 6.0
+42 SET main_x_i
+43 LOD 1.0
+44 SET main_y
+45 LOD -1.0
+46 SET main_y_i
+47 F_MLT main_y_i
+48 P_LOD main_y
+49 F_MLT main_y
+50 SF_ADD
+51 SET __aux_var
+52 LOD main_x
+53 F_MLT main_y
+54 P_LOD main_x_i
+55 F_MLT main_y_i
+56 SF_ADD
+57 P_LOD __aux_var
+58 SF_DIV
+59 NOP
+60 NOP
+61 F_QUO
+62 P_LOD main_x_i
+63 F_MLT main_y
+64 P_LOD main_x
+65 F_MLT main_y_i
+66 SF_SU2
+67 P_LOD __aux_var
+68 SF_DIV
+69 NOP
+70 NOP
+71 F_QUO
+72 SET_P main_r_i
+73 SET main_r
+74 F2I_M main_r
+75 OUT 0
+76 F2I_M main_r_i
+77 OUT 0
+// 18: x = 6.0+8.0i; y = 2.0+0.0i; r = x / y;  fout(0, real(r)); fout(0, imag(r));
+78 LOD 6.0
+79 SET main_x
+80 LOD 8.0
+81 SET main_x_i
+82 LOD 2.0
+83 SET main_y
+84 LOD 0.0
+85 SET main_y_i
+86 F_MLT main_y_i
+87 P_LOD main_y
+88 F_MLT main_y
+89 SF_ADD
+90 SET __aux_var
+91 LOD main_x
+92 F_MLT main_y
+93 P_LOD main_x_i
+94 F_MLT main_y_i
+95 SF_ADD
+96 P_LOD __aux_var
+97 SF_DIV
+98 NOP
+99 NOP
+100 F_QUO
+101 P_LOD main_x_i
+102 F_MLT main_y
+103 P_LOD main_x
+104 F_MLT main_y_i
+105 SF_SU2
+106 P_LOD __aux_var
+107 SF_DIV
+108 NOP
+109 NOP
+110 F_QUO
+111 SET_P main_r_i
+112 SET main_r
+113 F2I_M main_r
+114 OUT 0
+115 F2I_M main_r_i
+116 OUT 0
+// 15: while (1) {
+117 JMP __Lwh1
+// -3: END
+118 JMP fim

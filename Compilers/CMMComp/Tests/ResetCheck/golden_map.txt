@@ -1,0 +1,49 @@
+## messages
+Info: 21 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 21 instructions and 4 variables were found
+Info: adding data output handling
+Info: ULA resource -> integer adder
+Info: ULA resource -> integer negative operation
+Info: ULA resource -> integer multiplier
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 5% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main a 1
+main b 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 26: a = 3;
+1 LOD 3
+2 SET main_a
+// 27: b = 40;
+3 LOD 40
+4 SET main_b
+// 28: out(0, a);          // 3
+5 LOD main_a
+6 OUT 0
+// 29: a = a + b;          // mutates a: proves dirty memory is rewritten
+7 ADD main_b
+8 SET main_a
+// 30: out(0, a);          // 43
+9 OUT 0
+// 31: b = b - a;          // mutates b (goes negative)
+10 NEG_M main_a
+11 ADD main_b
+12 SET main_b
+// 32: out(0, b);          // -3
+13 OUT 0
+// 33: out(0, a * b);      // -129
+14 LOD main_a
+15 MLT main_b
+16 OUT 0
+// 34: while (1) { b = a; }  // park with no further outputs until a reset
+17 LOD main_a
+18 SET main_b
+19 JMP __Lwh1
+// -3: END
+20 JMP fim

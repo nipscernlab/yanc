@@ -1,0 +1,218 @@
+## messages
+Info: 182 assembly instructions generated
+Info: 8 variables share 6 data words (2 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 182 instructions and 15 variables were found
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point adder
+Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: using 10% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main w 3
+main w_i 3
+main one 3
+main one_i 3
+main z 3
+main z_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 29: w = 3.0+2.0i; one = 1.0+0.0i;
+1 LOD 3.0
+2 SET main_w
+3 LOD 2.0
+4 SET main_w_i
+5 LOD 1.0
+6 SET main_one
+7 LOD 0.0
+8 SET main_one_i
+// 31: z = w*(2.0i);           fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+9 LOD main_w_i
+10 F_MLT -2.0
+11 P_LOD main_w
+12 F_MLT 2.0
+13 SET_P main_z_i
+14 SET main_z
+15 LOD 4.0
+16 F_MLT main_z
+17 F2I
+18 OUT 0
+19 LOD 4.0
+20 F_MLT main_z_i
+21 F2I
+22 OUT 0
+// 32: z = (2.0i)*w;           fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+23 LOD main_w_i
+24 F_MLT -2.0
+25 P_LOD main_w
+26 F_MLT 2.0
+27 SET_P main_z_i
+28 SET main_z
+29 LOD 4.0
+30 F_MLT main_z
+31 F2I
+32 OUT 0
+33 LOD 4.0
+34 F_MLT main_z_i
+35 F2I
+36 OUT 0
+// 33: z = (w*one)*(2.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+37 LOD main_w
+38 F_MLT main_one
+39 P_LOD main_w_i
+40 F_MLT main_one_i
+41 SF_SU2
+42 P_LOD main_w
+43 F_MLT main_one_i
+44 P_LOD main_w_i
+45 F_MLT main_one
+46 SF_ADD
+47 F_MLT -2.0
+48 SET_P __aux_var
+49 F_MLT 2.0
+50 SET __aux_var1
+51 LOD __aux_var
+52 P_LOD __aux_var1
+53 SET_P main_z_i
+54 SET main_z
+55 LOD 4.0
+56 F_MLT main_z
+57 F2I
+58 OUT 0
+59 LOD 4.0
+60 F_MLT main_z_i
+61 F2I
+62 OUT 0
+// 34: z = w*(-0.5i);          fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+63 LOD main_w_i
+64 F_MLT 0.5
+65 P_LOD main_w
+66 F_MLT -0.5
+67 SET_P main_z_i
+68 SET main_z
+69 LOD 4.0
+70 F_MLT main_z
+71 F2I
+72 OUT 0
+73 LOD 4.0
+74 F_MLT main_z_i
+75 F2I
+76 OUT 0
+// 35: z = w*(3.0+0.0i);       fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+77 LOD 3.0
+78 F_MLT main_w
+79 P_LOD 3.0
+80 F_MLT main_w_i
+81 SET_P main_z_i
+82 SET main_z
+83 LOD 4.0
+84 F_MLT main_z
+85 F2I
+86 OUT 0
+87 LOD 4.0
+88 F_MLT main_z_i
+89 F2I
+90 OUT 0
+// 36: z = w + (3.0+0.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+91 LOD 3.0
+92 F_ADD main_w
+93 P_LOD main_w_i
+94 SET_P main_z_i
+95 SET main_z
+96 LOD 4.0
+97 F_MLT main_z
+98 F2I
+99 OUT 0
+100 LOD 4.0
+101 F_MLT main_z_i
+102 F2I
+103 OUT 0
+// 37: z = w - (1.0+0.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+104 LOD 1.0
+105 F_SU2 main_w
+106 P_LOD main_w_i
+107 SET_P main_z_i
+108 SET main_z
+109 LOD 4.0
+110 F_MLT main_z
+111 F2I
+112 OUT 0
+113 LOD 4.0
+114 F_MLT main_z_i
+115 F2I
+116 OUT 0
+// 38: z = w / (2.0+0.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+117 LOD 0.5
+118 F_MLT main_w
+119 P_LOD 0.5
+120 F_MLT main_w_i
+121 SET_P main_z_i
+122 SET main_z
+123 LOD 4.0
+124 F_MLT main_z
+125 F2I
+126 OUT 0
+127 LOD 4.0
+128 F_MLT main_z_i
+129 F2I
+130 OUT 0
+// 39: z = w - 2.0i;           fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+131 LOD main_w
+132 P_LOD main_w_i
+133 F_ADD -2.0
+134 SET_P main_z_i
+135 SET main_z
+136 LOD 4.0
+137 F_MLT main_z
+138 F2I
+139 OUT 0
+140 LOD 4.0
+141 F_MLT main_z_i
+142 F2I
+143 OUT 0
+// 40: z = (w*one) - 0.5i;     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+144 LOD main_w
+145 F_MLT main_one
+146 P_LOD main_w_i
+147 F_MLT main_one_i
+148 SF_SU2
+149 P_LOD main_w
+150 F_MLT main_one_i
+151 P_LOD main_w_i
+152 F_MLT main_one
+153 SF_ADD
+154 SET_P __aux_var
+155 P_LOD __aux_var
+156 F_ADD -0.5
+157 SET_P main_z_i
+158 SET main_z
+159 LOD 4.0
+160 F_MLT main_z
+161 F2I
+162 OUT 0
+163 LOD 4.0
+164 F_MLT main_z_i
+165 F2I
+166 OUT 0
+// 41: z = w - (1.0+1.0i);     fout(0, 4.0*real(z)); fout(0, 4.0*imag(z));
+167 LOD main_w
+168 F_ADD -1.0
+169 P_LOD main_w_i
+170 F_ADD -1.0
+171 SET_P main_z_i
+172 SET main_z
+173 LOD 4.0
+174 F_MLT main_z
+175 F2I
+176 OUT 0
+177 LOD 4.0
+178 F_MLT main_z_i
+179 F2I
+180 OUT 0
+// -3: END
+181 JMP fim

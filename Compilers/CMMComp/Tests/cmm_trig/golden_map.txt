@@ -1,0 +1,163 @@
+## messages
+Info: constant 1.5707963 on line 19 approximated to 1.5707962512969971 (error = -4.87e-08)
+Info: constant 3.1415927 on line 22 approximated to 3.1415925025939941 (error = -1.97e-07)
+Info: 53 assembly instructions generated
+Info: adding assembly macro for arc-tangent computation
+Info: adding assembly macro for sin computation
+Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (3 added)
+Info: 13 variables share 4 data words (9 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 121 instructions and 28 variables were found
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point absolute operation
+Info: ULA resource -> < operator for float
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> int to float converter
+Info: ULA resource -> & operator
+Info: ULA resource -> float-point negative operation
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 16% of the Assembly Instruction Set
+Info: using 27% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main r 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 18: r = sin(0.0)       * 1000.0;   fout(0, r);   // 0
+1 LOD 0.0
+2 CAL __float_sin
+3 F_MLT 1000.0
+4 SET main_r
+5 F2I_M main_r
+6 OUT 0
+// 19: r = sin(1.5707963) * 1000.0;   fout(0, r);   // sin(pi/2)=1
+7 LOD 1.5707963
+8 CAL __float_sin
+9 F_MLT 1000.0
+10 SET main_r
+11 F2I_M main_r
+12 OUT 0
+// 20: r = cos(0.0)       * 1000.0;   fout(0, r);   // cos(0)=1
+13 LOD 0.0
+14 F_SU2 1.570796327
+15 CAL __float_sin
+16 F_MLT 1000.0
+17 SET main_r
+18 F2I_M main_r
+19 OUT 0
+// 21: r = sin(100.0)     * 1000.0;   fout(0, r);   // sin(100 rad) ~ -0.506  (O(1) reduction)
+20 LOD 100.0
+21 CAL __float_sin
+22 F_MLT 1000.0
+23 SET main_r
+24 F2I_M main_r
+25 OUT 0
+// 22: r = cos(3.1415927) * 1000.0;   fout(0, r);   // cos(pi)=-1
+26 LOD 3.1415927
+27 F_SU2 1.570796327
+28 CAL __float_sin
+29 F_MLT 1000.0
+30 SET main_r
+31 F2I_M main_r
+32 OUT 0
+// 23: r = atan(1.0)      * 1000.0;   fout(0, r);   // pi/4 = 785
+33 LOD 1.0
+34 CAL __float_atan
+35 F_MLT 1000.0
+36 SET main_r
+37 F2I_M main_r
+38 OUT 0
+// 24: r = atan(2.0)      * 1000.0;   fout(0, r);   // 1107  (1/x branch)
+39 LOD 2.0
+40 CAL __float_atan
+41 F_MLT 1000.0
+42 SET main_r
+43 F2I_M main_r
+44 OUT 0
+// 25: r = atan(-1.0)     * 1000.0;   fout(0, r);   // -785  (sign)
+45 LOD -1.0
+46 CAL __float_atan
+47 F_MLT 1000.0
+48 SET main_r
+49 F2I_M main_r
+50 OUT 0
+// 17: while (1) {
+51 JMP __Lwh1
+// -3: END
+52 JMP fim
+// library macros, no source line
+53 SET __atan_x
+54 F_ABS_M __atan_x
+55 SET __atan_ax
+56 F_LES 1.0
+57 SET __atan_big
+58 JIZ __L_atan_small
+59 LOD __atan_ax
+60 F_DIV 1.0
+61 NOP
+62 NOP
+63 F_QUO
+64 JMP __L_atan_haveT
+65 LOD __atan_ax
+66 SET __atan_t
+67 F_MLT __atan_t
+68 SET __atan_w
+69 LOD -0.012300666580
+70 F_MLT __atan_w
+71 F_ADD 0.054084934779
+72 F_MLT __atan_w
+73 F_ADD -0.117697073484
+74 F_MLT __atan_w
+75 F_ADD 0.194020561451
+76 F_MLT __atan_w
+77 F_ADD -0.332694520616
+78 F_MLT __atan_w
+79 F_ADD 0.999980069822
+80 F_MLT __atan_t
+81 SET __atan_p
+82 LOD __atan_big
+83 JIZ __L_atan_done
+84 LOD __atan_p
+85 F_SU2 1.5707963268
+86 JMP __L_atan_sign
+87 LOD __atan_p
+88 F_SGN __atan_x
+89 RET
+90 SET __sin_x
+91 F_MLT 0.3183098862
+92 SET __sin_q
+93 LOD 0.5
+94 F_SGN __sin_q
+95 F_ADD __sin_q
+96 F2I
+97 SET __sin_k
+98 I2F
+99 F_MLT 3.1415926536
+100 F_SU2 __sin_x
+101 SET __sin_r
+102 F_MLT __sin_r
+103 SET __sin_w
+104 LOD -0.000184472138
+105 F_MLT __sin_w
+106 F_ADD 0.008309516704
+107 F_MLT __sin_w
+108 F_ADD -0.166651680787
+109 F_MLT __sin_w
+110 F_ADD 0.999997487148
+111 F_MLT __sin_r
+112 SET __sin_p
+113 LOD __sin_k
+114 AND 1
+115 JIZ __L_sin_even
+116 LOD __sin_p
+117 F_NEG
+118 RET
+119 LOD __sin_p
+120 RET
