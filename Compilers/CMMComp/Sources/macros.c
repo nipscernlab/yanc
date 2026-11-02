@@ -76,7 +76,7 @@ void mac_copy(char *fasm)
 
     // copy what is needed at the end of the asm ------------------------------
 
-    char tasm[2048]; snprintf(tasm, sizeof(tasm), "%s/%s", dir_tmp, "tasm.txt");
+    char tasm[2048];                 // the path of each macro file, in turn
 
     if (fsqrt)
     {
