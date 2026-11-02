@@ -23,19 +23,20 @@
 #include "../Headers/messages.h"
 #include "../../common/exe_dir.h"
 #include "../../common/asm_share.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// directories used to access the files
-char proc_dir[1024];    // processor directory
-char temp_dir[1024];    // Tmp folder directory
-char  hdl_dir[1024];    // HDL folder directory
-char  mac_dir[1024];    // Macros folder directory
+// directories used to access the files (the command line's, any length)
+char *proc_dir = "";    // processor directory
+char *temp_dir = "";    // Tmp folder directory
+char * hdl_dir = "";    // HDL folder directory
+char * mac_dir = "";    // Macros folder directory
 
 // stores the directive values
-char prname   [128];    // processor name
+char *prname   = "";    // processor name
 // Defaults: the one set shared with cmmcomp, cppcomp and the HDL (audit 1.7).
 // They only apply to a directive the program did not write; every C+- fixture
 // writes NUBITS/NBMANT/NBEXPO and the stack depths, and cppcomp emits all of
@@ -62,13 +63,20 @@ FILE *f_data, *f_instr; // .mif of the data and instruction memories
 
 // state variables
 int  state =   0 ;      // tracks the compiler state
-char opc_name[64];      // stores the current opcode name
-char  va_name[64];      // stores the current variable name
+char opc_name[64];      // stores the current opcode name (a mnemonic of the ISA)
+static char *off_base;  // the name a constant offset is added to (LOD_V x 4: x)
 int  opc_idx;           // stores the current opcode index
 int  arr_typ;           // stores the array type
 int  arr_tam;           // stores the array size
-static char arrd_nm[128]; // #arrayd: the array's name
-char  sh_var[512];      // stores the name of the #SHARE being read
+static char *arrd_nm;   // #arrayd: the array's name
+static char *sh_var;    // stores the name of the #SHARE being read
+
+// the copy of s in *keep, replacing the one it had
+static void keep_name(char **keep, const char *s)
+{
+    free(*keep);
+    *keep = xstrdup(s);
+}
 
 // helper variables
 int  n_ins	  = 0;      // number of instructions added
@@ -90,24 +98,23 @@ int  nbopr;             // number of operand bits
 // rest of the line, so a path with spaces holds); without it, the output folder
 const char *src_dir(void)
 {
-    static char dir[2048];
-    static int  done = 0;
-    if (done) return dir;
-    done = 1;
-    snprintf(dir, sizeof(dir), "%s", temp_dir);
+    static char *dir = NULL;
+    if (dir) return dir;
 
-    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", temp_dir);
+    char *path = xasprintf("%s/prog_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
-    if (input == NULL) return dir;
-    char linha[2048];
-    while (fgets(linha, sizeof(linha), input))
-        if (strncmp(linha, "srcdir ", 7) == 0)
+    free(path);
+    if (input != NULL)
+    {
+        char *linha;
+        while (!dir && (linha = xgetline(input)) != NULL)
         {
-            linha[strcspn(linha, "\r\n")] = 0;
-            memcpy(dir, linha + 7, strlen(linha + 7) + 1);   // fits: linha is no longer than dir
-            break;
+            if (strncmp(linha, "srcdir ", 7) == 0) dir = xstrdup(linha + 7);
+            free(linha);
         }
-    fclose(input);
+        fclose(input);
+    }
+    if (!dir) dir = xstrdup(temp_dir);
     return dir;
 }
 
@@ -121,24 +128,38 @@ const char *src_rel(void)
     return rel;
 }
 
-// fetches a parameter from the log file
-int eval_get(char *fname, char *var, char *val)
+// fetches a parameter from the log file: the word after "<var> " on its line,
+// in a block the caller frees, or NULL when no line has it
+char *eval_get(char *fname, char *var)
 {
     // open the log file
-    char path[2048]; snprintf(path, sizeof(path), "%s/%s", temp_dir, fname);
+    char *path = xasprintf("%s/%s", temp_dir, fname);
     FILE *input = fopen(path , "r");
     if   (input == NULL) {fprintf(stderr, MSG_ERR_FILE_WHERE, path); exit(EXIT_FAILURE);}
+    free(path);
 
-    char linha[1001];
-    char nome [128 ];
-    while (fgets (linha,sizeof(linha),input)) if (sscanf(linha,"%s %s", nome, val) == 2) if (strcmp(nome,var) == 0)
+    char *linha, *val = NULL;
+    while (!val && (linha = xgetline(input)) != NULL)
     {
-        fclose(input);
-        return 1; // variable found
+        size_t n = strlen(linha) + 1;               // no word is longer than its line
+        char *nome = xrealloc(NULL, n), *v = xrealloc(NULL, n);
+        if (sscanf(linha, "%s %s", nome, v) == 2 && strcmp(nome, var) == 0) val = v;
+        else free(v);
+        free(nome); free(linha);
     }
 
     fclose(input);
-    return 0; // variable not found
+    return val;
+}
+
+// the same, read as an int into *x; returns whether the line was there
+static int eval_get_int(char *fname, char *var, int *x)
+{
+    char *v = eval_get(fname, var);
+    if (!v) return 0;
+    *x = atoi(v);
+    free(v);
+    return 1;
 }
 
 // registers an ALU instruction
@@ -299,16 +320,16 @@ void instr_ind(char *va, int is_const)
     sim_add(opc_name, va);
 }
 
-// generates an instruction with address va_name + va (pseudo instruction)
+// generates an instruction with address off_base + va (pseudo instruction)
 void instr_oft(char *va)
 {
     // write the new instruction
-    fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(var_find(va_name)+atoi(va),nbopr));
+    fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(var_find(off_base)+atoi(va),nbopr));
 
     // also register it in the simulation translator
-    strcat ( va_name, " ");
-    strcat ( va_name, va );
-    sim_add(opc_name, va_name);
+    char *both = xasprintf("%s %s", off_base, va);
+    sim_add(opc_name, both);
+    free(both);
 }
 
 // ----------------------------------------------------------------------------
@@ -324,9 +345,9 @@ int get_n_ins()
     if (f == NULL) return 0;
     fclose(f);
 
-    char aux[256] = "0"; eval_get("prog_log.txt","num_ins", aux);
+    int n = 0; eval_get_int("prog_log.txt","num_ins", &n);
 
-    return atoi(aux);
+    return n;
 }
 
 int inn_used(int i) {return i_used[i];} // tells whether input port  i was used
@@ -345,11 +366,14 @@ void eval_init(int clk, int clk_n)
 
     // pull parameters from app_log.txt ---------------------------------------
 
-    char aux[2048];
+    char *name = eval_get("app_log.txt","prname");               // processor name
+    if (name) prname = name;
+    eval_get_int("app_log.txt","n_ins", &n_ins);                  // number of instructions added
+    eval_get_int("app_log.txt","n_dat", &n_dat);                  // number of variables added
 
-    eval_get("app_log.txt","prname", prname);                     // processor name
-    eval_get("app_log.txt","n_ins" ,    aux); n_ins  = atoi(aux); // number of instructions added
-    eval_get("app_log.txt","n_dat" ,    aux); n_dat  = atoi(aux); // number of variables added
+    // a program with no instruction makes no processor (and its memory's
+    // address width, log2 of the size, would be undefined)
+    if (n_ins < 1) {fprintf(stderr, MSG_ERR_NO_INSTRUCTIONS); exit(EXIT_FAILURE);}
 
     // A data memory needs at least 2 words: its address is $clog2(MDATAS)
     // bits wide (processor.v), and 1 word would make that 0 bits -- a [-1:0]
@@ -359,20 +383,20 @@ void eval_init(int clk, int clk_n)
     n_dat_used = n_dat;
     if (n_dat < 2) n_dat = 2;
     // the widths a program left out keep their defaults (32/23/8, above)
-    if (eval_get("app_log.txt","nubits", aux) == 1) nubits = atoi(aux); // ALU word width (bits)
+    eval_get_int("app_log.txt","nubits", &nubits);                // ALU word width (bits)
     // the words are built in a C int (itob, f2mf): the width stops at 32 (issue #29)
     if (nubits > 32) {fprintf(stderr, MSG_ERR_NUBITS_WIDE, nubits); exit(EXIT_FAILURE);}
-    if (eval_get("app_log.txt","nbmant", aux) == 1) nbmant = atoi(aux); // mantissa width (bits)
-    if (eval_get("app_log.txt","nbexpo", aux) == 1) nbexpo = atoi(aux); // exponent width (bits)
+    eval_get_int("app_log.txt","nbmant", &nbmant);                // mantissa width (bits)
+    eval_get_int("app_log.txt","nbexpo", &nbexpo);                // exponent width (bits)
 
     // float rounding level: needed before the first constant is encoded (f2mf)
-    if (eval_get("app_log.txt","fround", aux) == 1) fround = atoi(aux);
+    eval_get_int("app_log.txt","fround", &fround);
 
     // if there's an interrupt, pull its address
-    if (eval_get("app_log.txt","itr_addr", aux) == 1) itr_addr = atoi(aux); // interrupt address
+    eval_get_int("app_log.txt","itr_addr", &itr_addr);            // interrupt address
 
     // if there's a #TOAQUI marker, pull its address
-    if (eval_get("app_log.txt","toaqui_addr", aux) == 1) toaqui_addr = atoi(aux); // cheguei marker address
+    eval_get_int("app_log.txt","toaqui_addr", &toaqui_addr);      // cheguei marker address
 
     lab_reg(); // register labels found in app_log.txt
 
@@ -382,13 +406,15 @@ void eval_init(int clk, int clk_n)
     // with few words and a high port had its port number cut ---------------
 
     nbopr = (n_ins > n_dat) ? ceil(log2(n_ins)) : ceil(log2(n_dat));
-    if (eval_get("app_log.txt","max_io", aux) == 1)
-        for (int m = atoi(aux); (m >> nbopr) != 0; ) nbopr++;
+    int max_io;
+    if (eval_get_int("app_log.txt","max_io", &max_io))
+        for (int m = max_io; (m >> nbopr) != 0; ) nbopr++;
 
     // open the .mif files ----------------------------------------------------
 
-    snprintf(aux, sizeof(aux), "%s/%s_data.mif", proc_dir, prname); f_data  = fopen(aux, "w");
-    snprintf(aux, sizeof(aux), "%s/%s_inst.mif", proc_dir, prname); f_instr = fopen(aux, "w");
+    char *aux;
+    aux = xasprintf("%s/%s_data.mif", proc_dir, prname); f_data  = fopen(aux, "w"); free(aux);
+    aux = xasprintf("%s/%s_inst.mif", proc_dir, prname); f_instr = fopen(aux, "w"); free(aux);
 
     // initialize routines for iverilog simulation ----------------------------
 
@@ -434,7 +460,7 @@ void eval_opcode(int op, int next_state, char *text, char *nome)
     div_seq(text);         // a division must be followed by NOP and its read
 
     opc_idx = op;          // record the current opcode
-    strcpy(opc_name,text); // store the current opcode name for the translation file
+    snprintf(opc_name, sizeof(opc_name), "%s", text); // the current opcode name, for the translation file (a mnemonic: it fits)
 
     // next state depends on the opcode type:
     // 0 : no operand
@@ -477,16 +503,16 @@ void eval_opernd(char *va, int is_const)
         case 19: instr_salto   (va);                    state =  0; break; // jump operations
         case 20: instr_inn     (va);                    state =  0; break; // input operations
         case 21: instr_out     (va);                    state =  0; break; // output operations
-        case 22: strcpy(va_name,va);                    state = 23; break; // prepare constant offset
+        case 22: keep_name(&off_base, va);              state = 23; break; // prepare constant offset
         case 23: instr_oft     (va);                    state =  0; break; // instr with constant offset
         case 24: instr_lea     (va);                    state =  0; break; // load-effective-address pseudo (LEA -> LOD <const>)
         case 25: fround =  atoi(va);                    state =  0; break; // float rounding level
-        case 26: snprintf(sh_var, sizeof(sh_var), "%s", va); state = 27; break; // #SHARE: the name
+        case 26: keep_name(&sh_var, va);                state = 27; break; // #SHARE: the name
         case 27: var_share(sh_var, va);                 state =  0; break; // #SHARE: the home it uses
         case 28: instr_ind     (va,is_const);           state =  0; break; // indirect load/store: array name or raw base
         case 29: instr_link    (va);                    state =  0; break; // TOM / CAD: the link number
         case 30: l_sync[link_num("#LKSYNC", va)] = 1;   state =  0; break; // #LKSYNC k: link k on my clock
-        case 31: instr_arr     (va); strcpy(arrd_nm,va); state = 32; break; // #arrayd: the name
+        case 31: instr_arr     (va); keep_name(&arrd_nm, va); state = 32; break; // #arrayd: the name
         case 32: arr_typ = atoi(va);                    state = 33; break; // #arrayd: the type
         case 33: arr_tam = atoi(va);                    state = 34; break; // #arrayd: the size
         case 34: state = arrd_start(arrd_nm, arr_tam, arr_typ, atoi(va), f_data) ? 35 : 0; break; // #arrayd: how many values

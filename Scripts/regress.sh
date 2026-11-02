@@ -325,7 +325,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex -o pass1_lex.c pass1.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
         ASMComp.c pass1_lex.c pass1.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
+        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/xstr.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
     rm -f ASMComp.c pass1_lex.c
     popd >/dev/null
 

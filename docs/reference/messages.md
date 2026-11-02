@@ -264,6 +264,7 @@ value. What the common ones mean and how to get past them is in
 ### Errors
 
 - Error: out of memory while growing the symbol table!
+- Error: the program has no instruction, so there is no processor to make.
 - Error: where the heck is the file <name>?
 - Error: couldn't open the file '<name>' for the life of me!!
 - Error: couldn't create the file <name>/app\_log.txt.
