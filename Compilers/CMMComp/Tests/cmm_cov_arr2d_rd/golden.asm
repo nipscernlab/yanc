@@ -227,10 +227,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD main_n2
+P_LOD main_n2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 OUT 0
 LOD main_c1
@@ -245,10 +244,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD main_n2
+P_LOD main_n2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
@@ -265,10 +263,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD main_n2
+P_LOD main_n2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -760,10 +757,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD 2
+P_LOD 2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 OUT 0
 LOD main_c1
@@ -778,10 +774,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD 2
+P_LOD 2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
@@ -798,10 +793,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD 2
+P_LOD 2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -867,28 +861,25 @@ F2I_M main_w_i
 OUT 0
 LOD main_n3
 ADD main_z0
-SET __aux_var
-F2I_M main_f2
+P_F2I_M main_f2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 OUT 0
 LOD main_n3
 ADD main_z0
-SET __aux_var
-F2I_M main_f2
+P_F2I_M main_f2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
 LOD main_n3
 ADD main_z0
-SET __aux_var
-F2I_M main_f2
+P_F2I_M main_f2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -955,19 +946,17 @@ OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M main_f1
+P_F2I_M main_f1
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M main_f1
+P_F2I_M main_f1
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
@@ -975,10 +964,9 @@ OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M main_f1
+P_F2I_M main_f1
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -1067,10 +1055,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M main_f2
+P_F2I_M main_f2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -1453,31 +1440,25 @@ F2I_M main_w_i
 OUT 0
 LOD main_n3
 ADD main_z0
-F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 OUT 0
 LOD main_n3
 ADD main_z0
-F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
 LOD main_n3
 ADD main_z0
-F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -1544,19 +1525,17 @@ OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M 1.0
+P_F2I_M 1.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M 1.0
+P_F2I_M 1.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
@@ -1564,10 +1543,9 @@ OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M 1.0
+P_F2I_M 1.0
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -1618,10 +1596,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 OUT 0
 LOD main_c1
@@ -1636,10 +1613,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
@@ -1656,10 +1632,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -2414,10 +2389,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M main_c2
+P_F2I_M main_c2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 OUT 0
 LOD main_c1
@@ -2432,10 +2406,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M main_c2
+P_F2I_M main_c2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
@@ -2452,10 +2425,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M main_c2
+P_F2I_M main_c2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -2710,10 +2682,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD main_n2
+P_LOD main_n2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 ADD 1000
 OUT 0
@@ -2729,10 +2700,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD main_n2
+P_LOD main_n2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -2750,10 +2720,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD main_n2
+P_LOD main_n2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -3339,10 +3308,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD 2
+P_LOD 2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 ADD 1000
 OUT 0
@@ -3358,10 +3326,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD 2
+P_LOD 2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -3379,10 +3346,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-LOD 2
+P_LOD 2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -3464,19 +3430,17 @@ F2I_M main_w_i
 OUT 0
 LOD main_n3
 ADD main_z0
-SET __aux_var
-F2I_M main_f2
+P_F2I_M main_f2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 ADD 1000
 OUT 0
 LOD main_n3
 ADD main_z0
-SET __aux_var
-F2I_M main_f2
+P_F2I_M main_f2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -3484,10 +3448,9 @@ F2I_M main_y
 OUT 0
 LOD main_n3
 ADD main_z0
-SET __aux_var
-F2I_M main_f2
+P_F2I_M main_f2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -3570,20 +3533,18 @@ OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M main_f1
+P_F2I_M main_f1
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 ADD 1000
 OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M main_f1
+P_F2I_M main_f1
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -3592,10 +3553,9 @@ OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M main_f1
+P_F2I_M main_f1
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -3696,10 +3656,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M main_f2
+P_F2I_M main_f2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -4146,21 +4105,17 @@ F2I_M main_w_i
 OUT 0
 LOD main_n3
 ADD main_z0
-F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 ADD 1000
 OUT 0
 LOD main_n3
 ADD main_z0
-F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -4168,11 +4123,9 @@ F2I_M main_y
 OUT 0
 LOD main_n3
 ADD main_z0
-F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -4255,20 +4208,18 @@ OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M 1.0
+P_F2I_M 1.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 ADD 1000
 OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M 1.0
+P_F2I_M 1.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -4277,10 +4228,9 @@ OUT 0
 LOD main_f2
 F_ADD main_fz
 F2I
-SET __aux_var
-F2I_M 1.0
+P_F2I_M 1.0
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -4341,10 +4291,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 ADD 1000
 OUT 0
@@ -4360,10 +4309,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -4381,10 +4329,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M 2.0
+P_F2I_M 2.0
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
@@ -5233,10 +5180,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M main_c2
+P_F2I_M main_c2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mi
 ADD 1000
 OUT 0
@@ -5252,10 +5198,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M main_c2
+P_F2I_M main_c2
 MLT 4
-ADD __aux_var
+S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
@@ -5273,10 +5218,9 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET __aux_var
-F2I_M main_c2
+P_F2I_M main_c2
 MLT 4
-ADD __aux_var
+S_ADD
 SET __aux_var
 LDI mc
 P_LOD __aux_var
