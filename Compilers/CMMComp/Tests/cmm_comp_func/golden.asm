@@ -112,8 +112,7 @@ F2I_M main_cf
 OUT 0
 F2I_M main_cf_i
 OUT 0
-LOD 7.0
-F2I
+F2I_M 7.0
 CAL takesint
 OUT 0
 LOD 1

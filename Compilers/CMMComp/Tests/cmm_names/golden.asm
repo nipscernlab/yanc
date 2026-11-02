@@ -21,7 +21,6 @@ LOD 0.5
 SET floor_x
 LOD 5
 SET sw_body_1_1
-LOD 0
 LOD 9
 SET fim
 #array g 2 2
@@ -45,7 +44,6 @@ LDI g
 SET __aux_var
 F_ADD 1.0
 STI g
-LOD __aux_var
 LOD aux_var
 OUT 0
 LOD 2.0
@@ -80,8 +78,7 @@ JIZ __sw_body_1_1
 JMP __sw_body_1_2
 @__sw_body_1_1 LOD 1
 JMP __switch_end_1
-@__sw_body_1_2 LOD 2
-@__switch_end_1 LOD sw_body_1_1
+@__sw_body_1_2 @__switch_end_1 LOD sw_body_1_1
 OUT 0
 LOD fim
 OUT 0

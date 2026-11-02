@@ -3086,8 +3086,7 @@ expr oper_shift(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
-        add_instr("%s %s\n", ld, v_table[e2.id].name);
-        add_instr("F2I\n");
+        add_instr("%s %s\n", acc_ok ? "P_F2I_M" : "F2I_M", v_table[e2.id].name);
         add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
@@ -3118,8 +3117,7 @@ expr oper_shift(expr e1, expr e2, int type)
     {
         fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
-        add_instr("P_LOD %s\n", v_table[e2.id].name);
-        add_instr("F2I\n");
+        add_instr("P_F2I_M %s\n", v_table[e2.id].name);
         add_instr("S_%s\n", op);
     }
 

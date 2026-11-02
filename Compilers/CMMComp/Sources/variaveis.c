@@ -29,25 +29,23 @@ static int   v_cap   = 0;  // current capacity of the parallel arrays
 // isar, isco, size, siz2, npar, ptyp, fnid) live here. Grown on demand by var_grow.
 symbol *v_table = NULL;
 
-#define GROW(arr, old_cap, new_cap)                                       \
-    do {                                                                  \
-        void *_tmp = realloc((arr), (size_t)(new_cap) * sizeof(*(arr)));  \
-        if (!_tmp) {                                                      \
-            fprintf(stderr, MSG_ERR_OUT_OF_MEMORY);                       \
-            exit(EXIT_FAILURE);                                           \
-        }                                                                 \
-        (arr) = _tmp;                                                     \
-        memset((arr) + (old_cap), 0,                                      \
-               (size_t)((new_cap) - (old_cap)) * sizeof(*(arr)));         \
-    } while (0)
-
+// The table moves to a bigger block and the old one is kept, not freed: code
+// that holds a name, `const char *X = v_table[exec_id("...")].name`, and then
+// adds a symbol (stdlib.c does it about 50 times) still reads the same name
+// after the move. A name is written once, by add_var, so the old copy never
+// goes stale; its other fields do, and nothing keeps a pointer to them. The
+// blocks kept add up to less than the final table. Names of any length
+// (issue #66) will make this unnecessary.
 static void var_grow(int needed)
 {
     if (needed <= v_cap) return;
     int new_cap = v_cap ? v_cap : 256;
     while (new_cap < needed) new_cap *= 2;
 
-    GROW(v_table, v_cap, new_cap);
+    symbol *t = calloc((size_t)new_cap, sizeof(*t));
+    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    if (v_table) memcpy(t, v_table, (size_t)v_cap * sizeof(*t));
+    v_table = t;
 
     v_cap = new_cap;
 }

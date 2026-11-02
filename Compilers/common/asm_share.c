@@ -1501,6 +1501,17 @@ static int acc_kills(int op)
     return strcmp(isa[op].acc, "w") == 0 && strcmp(isa[op].cls, "link") != 0 && !div_read(isa[op].mn);
 }
 
+// a push of the acc that changes nothing else (PSH, or a load that pushes:
+// P_LOD, P_F2I_M, ...): followed by a POP, the two leave everything as it was
+static int push_load(int op)
+{
+    const as_isa *d = &isa[op];
+    return strcmp(d->stk, "push") == 0 && (strcmp(d->acc, "rw") == 0 || strcmp(d->acc, "r") == 0)
+        && strcmp(d->flow, "-") == 0 && strcmp(d->io, "-") == 0 && strcmp(d->cls, "link") != 0
+        && strcmp(d->opnd, "w") != 0 && strcmp(d->opnd, "base_w") != 0
+        && !asm_div_words(d->mn) && !div_read(d->mn);
+}
+
 int asm_callarg(const char *asm_path, const char *pc_path)
 {
     FILE *f = fopen(asm_path, "r");
@@ -1589,7 +1600,39 @@ int asm_callarg(const char *asm_path, const char *pc_path)
             dead[k] = 1; drop++;
         }
     }
-    if (drop == 0) goto done;
+
+    // a value nobody reads: the instructions that change only the acc, right
+    // before one that writes the acc without reading it (LOD 1000.0 whose SET
+    // asm_unread took out, then LOD 3). The value can only flow to that next
+    // instruction, so a label on it changes nothing. And a load that pushes,
+    // right before a POP no jump lands on, changes nothing at all (P_LOD x_i;
+    // POP: the imaginary half of a comp whose real half is kept). Each removal
+    // can expose another, so the two rules run until neither finds one
+    int nouse = 0;
+    for (int more = 1; more; )
+    {
+        more = 0;
+        for (int ln = 0; ln < lines.n; ln++)
+        {
+            if (op_of[ln] < 0 || dead[ln]) continue;
+            int k = ln - 1;
+            while (k >= 0 && dead[k]) k--;
+            if (strcmp(isa[op_of[ln]].mn, "POP") == 0 && !memchr(lines.s[ln], '@', mn_at[ln])
+                && k >= 0 && op_of[k] >= 0 && push_load(op_of[k]))
+            {
+                dead[k] = dead[ln] = 1; nouse += 2; more = 1;
+            }
+            else if (acc_kills(op_of[ln]))
+            {
+                while (k >= 0 && op_of[k] >= 0 && acc_only(op_of[k]))
+                {
+                    dead[k] = 1; nouse++; more = 1;
+                    do k--; while (k >= 0 && dead[k]);
+                }
+            }
+        }
+    }
+    if (drop + nouse == 0) goto done;
 
     if (pc_path)
     {
@@ -1627,8 +1670,12 @@ int asm_callarg(const char *asm_path, const char *pc_path)
         }
     }
     free(gone);
-    printf(yanc_lang_en ? "Info: %d instructions computing an argument never read removed\n"
-                        : "Info: %d instruções que calculavam um argumento nunca lido removidas\n", drop);
+    if (drop)
+        printf(yanc_lang_en ? "Info: %d instructions computing an argument never read removed\n"
+                            : "Info: %d instruções que calculavam um argumento nunca lido removidas\n", drop);
+    if (nouse)
+        printf(yanc_lang_en ? "Info: %d instructions computing a value never read removed\n"
+                            : "Info: %d instruções que calculavam um valor nunca lido removidas\n", nouse);
 
 done:
     free(op_of); free(mn_at); free(tgt_of); free(ins_of); free(dead); free(jumped); free(at);

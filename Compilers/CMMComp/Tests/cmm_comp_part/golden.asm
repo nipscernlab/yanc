@@ -151,9 +151,6 @@ LOD main_b
 PF_NEG_M main_b_i
 SET_P __aux_var
 F_ADD main_a
-P_LOD main_a_i
-F_ADD __aux_var
-POP
 SET main_y
 LOD 4.0
 F_MLT main_y
@@ -166,7 +163,7 @@ F_ADD main_a
 P_LOD __aux_var
 F_ADD main_a_i
 SET_P __aux_var
-LOD   __aux_var
+LOD __aux_var
 SET main_y
 LOD 4.0
 F_MLT main_y
@@ -176,9 +173,6 @@ LOD main_b
 PF_NEG_M main_b_i
 SET_P __aux_var
 F_SU2 main_a
-P_LOD main_a_i
-F_SU1 __aux_var
-POP
 SET main_y
 LOD 4.0
 F_MLT main_y
@@ -188,9 +182,6 @@ LOD main_b
 PF_NEG_M main_b_i
 SET_P __aux_var
 F_SU1 main_a
-P_LOD __aux_var
-F_SU1 main_a_i
-POP
 SET main_y
 LOD 4.0
 F_MLT main_y
@@ -200,14 +191,14 @@ LOD main_a
 PF_NEG_M main_a_i
 P_LOD main_b
 PF_NEG_M main_b_i
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_SU1 __aux_var1
 P_LOD __aux_var2
-F_SU1 __aux_var 
+F_SU1 __aux_var
 SET_P __aux_var
-LOD   __aux_var
+LOD __aux_var
 SET main_y
 LOD 4.0
 F_MLT main_y

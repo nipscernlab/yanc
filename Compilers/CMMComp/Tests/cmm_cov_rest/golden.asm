@@ -485,9 +485,9 @@ F2I
 OUT 0
 LOD 5
 SET_V mi 6
-LOD  main_n1
-MLT  4
-ADD  main_n2
+LOD main_n1
+MLT 4
+ADD main_n2
 PSH
 LDI mi
 ADD 1
@@ -498,9 +498,9 @@ LOD_V mi 6
 OUT 0
 LOD 1.5
 SET_V mf 6
-LOD  main_n1
-MLT  4
-ADD  main_n2
+LOD main_n1
+MLT 4
+ADD main_n2
 PSH
 LDI mf
 SET __aux_var
@@ -588,9 +588,9 @@ SET_V mi 6
 LOD main_pa
 ADD main_z0
 PSH
-LOD  main_n1
-MLT  4
-ADD  main_n2
+LOD main_n1
+MLT 4
+ADD main_n2
 PSH
 LDI mi
 ADD 1
@@ -605,9 +605,9 @@ SET_V mf 6
 LOD main_pf
 F_ADD main_fz
 PSH
-LOD  main_n1
-MLT  4
-ADD  main_n2
+LOD main_n1
+MLT 4
+ADD main_n2
 PSH
 LDI mf
 SET __aux_var
@@ -653,14 +653,12 @@ P_LOD 7
 CAL par_i
 S_ADD
 OUT 0
-LOD gf
-F2I
+F2I_M gf
 CAL par_i
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD gf
-F2I
+P_F2I_M gf
 CAL par_i
 S_ADD
 OUT 0
@@ -677,25 +675,21 @@ F2I
 CAL par_i
 S_ADD
 OUT 0
-LOD 2.5
-F2I
+F2I_M 2.5
 CAL par_i
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD 2.5
-F2I
+P_F2I_M 2.5
 CAL par_i
 S_ADD
 OUT 0
-LOD gc
-F2I
+F2I_M gc
 CAL par_i
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD gc
-F2I
+P_F2I_M gc
 CAL par_i
 S_ADD
 OUT 0
@@ -730,14 +724,12 @@ F2I
 CAL par_i
 S_ADD
 OUT 0
-LOD 3.0
-F2I
+F2I_M 3.0
 CAL par_i
 OUT 0
 LOD main_pa
 ADD main_z0
-P_LOD 3.0
-F2I
+P_F2I_M 3.0
 CAL par_i
 S_ADD
 OUT 0
@@ -928,12 +920,12 @@ SF_ADD
 P_I2F_M gi
 P_LOD 0.0
 CAL par_c
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 SET_P main_w_i
 SET main_w
 SET main_w
@@ -977,12 +969,12 @@ ADD gz
 I2F
 P_LOD 0.0
 CAL par_c
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 SET_P main_w_i
 SET main_w
 SET main_w
@@ -1022,12 +1014,12 @@ SF_ADD
 P_LOD 7.0
 P_LOD 0.0
 CAL par_c
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 SET_P main_w_i
 SET main_w
 SET main_w
@@ -1067,12 +1059,12 @@ SF_ADD
 P_LOD gf
 P_LOD 0.0
 CAL par_c
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 SET_P main_w_i
 SET main_w
 SET main_w
@@ -1114,12 +1106,12 @@ P_LOD gf
 F_ADD gfz
 P_LOD 0.0
 CAL par_c
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 SET_P main_w_i
 SET main_w
 SET main_w
@@ -1159,12 +1151,12 @@ SF_ADD
 P_LOD 2.5
 P_LOD 0.0
 CAL par_c
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 SET_P main_w_i
 SET main_w
 SET main_w
@@ -1204,12 +1196,12 @@ SF_ADD
 P_LOD gc
 P_LOD gc_i
 CAL par_c
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 SET_P main_w_i
 SET main_w
 SET main_w
@@ -1265,12 +1257,12 @@ P_LOD gc_i
 F_MLT gone
 SF_ADD
 CAL par_c
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 SET_P main_w_i
 SET main_w
 SET main_w
@@ -1310,12 +1302,12 @@ SF_ADD
 P_LOD 3.0
 P_LOD 4.0
 CAL par_c
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 SET_P main_w_i
 SET main_w
 SET main_w
@@ -2223,8 +2215,7 @@ OUT 0
 JMP __switch_end_9
 @__sw_body_9_4 LOD 99
 OUT 0
-@__switch_end_9 LOD gf
-F2I
+@__switch_end_9 F2I_M gf
 SHL gi
 OUT 0
 LOD gi
@@ -2234,8 +2225,7 @@ F_ADD gfz
 F2I
 S_SHL
 OUT 0
-LOD 2.5
-F2I
+F2I_M 2.5
 SHR gi
 OUT 0
 LOD_V si 2

@@ -76,9 +76,9 @@ P_LOD j
 EQU 0
 S_LAN
 JIZ __Lif2else
-LOD  k
-MLT  75
-ADD  j
+LOD k
+MLT 75
+ADD j
 P_LOD k
 LDI data
 P_LOD j
@@ -95,9 +95,9 @@ P_LOD j
 LES 0
 S_LAN
 JIZ __Lif3else
-LOD  k
-MLT  75
-ADD  j
+LOD k
+MLT 75
+ADD j
 P_LOD k
 LDI data
 P_LOD j
@@ -119,9 +119,9 @@ P_LOD j
 EQU 0
 S_LAN
 JIZ __Lif4else
-LOD  k
-MLT  75
-ADD  j
+LOD k
+MLT 75
+ADD j
 P_LOD k
 LDI data
 P_LOD j
@@ -188,9 +188,9 @@ ADD -1
 LDI dtw
 SET menor
 OUT 2
-@__Lif7else LOD  k
-MLT  75
-ADD  j
+@__Lif7else LOD k
+MLT 75
+ADD j
 P_LOD k
 LDI data
 P_LOD j

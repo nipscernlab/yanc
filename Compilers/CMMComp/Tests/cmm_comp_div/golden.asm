@@ -19,7 +19,7 @@ F_MLT main_y
 P_LOD main_y_i
 F_MLT main_y_i
 SF_ADD
-SET   __aux_var
+SET __aux_var
 LOD main_x
 F_MLT main_y
 P_LOD main_x_i
@@ -58,7 +58,7 @@ F_MLT main_y_i
 P_LOD main_y
 F_MLT main_y
 SF_ADD
-SET   __aux_var
+SET __aux_var
 LOD main_x
 F_MLT main_y
 P_LOD main_x_i
@@ -97,7 +97,7 @@ F_MLT main_y_i
 P_LOD main_y
 F_MLT main_y
 SF_ADD
-SET   __aux_var
+SET __aux_var
 LOD main_x
 F_MLT main_y
 P_LOD main_x_i

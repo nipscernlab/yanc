@@ -61,6 +61,9 @@ void main()
     f1 # |fa1⟩; fout(0, 4.0*f1[0]);
     f1 # |ia1⟩; fout(0, 4.0*f1[0]);
     i1 # |fa1⟩; out(0, i1[0]);
+    f1 # (n2+z0)|ia1⟩; fout(0, 4.0*f1[0]);
+    i1 # (fs+fz)|fa1⟩; out(0, i1[0]);
+    fv3 # fs|fa3⟩; fout(0, 4.0*fv3[2]);
     y = (pf+fz) + ⟨fa3|ia3⟩; fout(0, 4.0*y);
     w = -(3.0+0.0i); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));
     w = -(0.0+2.0i); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));

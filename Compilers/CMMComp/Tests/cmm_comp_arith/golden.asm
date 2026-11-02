@@ -28,7 +28,7 @@ OUT 0
 LOD 1.0
 P_LOD 1.0
 SF_ADD
-SET   __aux_var
+SET __aux_var
 LOD 4.0
 P_LOD 2.0
 SF_ADD

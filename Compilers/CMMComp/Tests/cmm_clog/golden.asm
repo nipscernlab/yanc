@@ -293,7 +293,7 @@ F_ADD main_w
 P_LOD main_z_i
 F_ADD main_w_i
 SET_P __clog_b
-SET   __clog_a
+SET __clog_a
 F_MLT __clog_a
 P_LOD __clog_b
 F_MLT __clog_b

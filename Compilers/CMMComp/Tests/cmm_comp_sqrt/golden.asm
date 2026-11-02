@@ -75,7 +75,7 @@ F_ADD main_w
 P_LOD main_z_i
 F_ADD main_w_i
 SET_P __csqrt_b
-SET   __csqrt_a
+SET __csqrt_a
 F_MLT __csqrt_a
 P_LOD __csqrt_b
 F_MLT __csqrt_b

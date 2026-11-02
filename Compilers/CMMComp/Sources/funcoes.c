@@ -119,6 +119,7 @@ void par_check(expr e, int k)
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
     char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char f2i[10]; if (acc_ok == 0) strcpy(f2i,"F2I_M"); else strcpy(f2i,"P_F2I_M");
 
     // ------------------------------------------------------------------------
     // check every combination ------------------------------------------------
@@ -146,8 +147,7 @@ void par_check(expr e, int k)
     {
         fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("F2I\n");
+        add_instr("%s %s\n", f2i, v_table[e.id].name);
     }
 
     // original is int and call is float acc ----------------------------------
@@ -167,8 +167,7 @@ void par_check(expr e, int k)
 
         get_cmp_cst(e,&etr,&eti);
 
-        add_instr("%s %s\n", ld, v_table[etr.id].name);
-        add_instr("F2I\n");
+        add_instr("%s %s\n", f2i, v_table[etr.id].name);
     }
 
     // original is int and call is comp var -----------------------------------
@@ -177,8 +176,7 @@ void par_check(expr e, int k)
     {
         fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("F2I\n");
+        add_instr("%s %s\n", f2i, v_table[e.id].name);
     }
 
     // original is int and call is comp acc -----------------------------------

@@ -14,9 +14,9 @@ PSH
 LDI main_a
 ADD 1
 STI main_a
-LOD  main_idx
-MLT  4
-ADD  main_idx
+LOD main_idx
+MLT 4
+ADD main_idx
 PSH
 LDI main_b
 ADD 1

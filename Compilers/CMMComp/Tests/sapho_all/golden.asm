@@ -924,12 +924,12 @@ LOD 2.0
 P_LOD 1.0
 P_LOD 1.0
 P_LOD 0.0
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
 F_ADD __aux_var1
 P_LOD __aux_var2
-F_ADD __aux_var 
+F_ADD __aux_var
 POP
 F2I
 LDI ia

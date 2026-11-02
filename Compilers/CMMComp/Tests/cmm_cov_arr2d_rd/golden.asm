@@ -12,8 +12,7 @@ NOP
 #SHARE main_one main_c3_i
 #SHARE __aux_var main_y
 #SHARE main_w_i main_y
-@main LOD 0
-LOD 1
+@main LOD 1
 SET main_n1
 LOD 2
 SET main_n2
@@ -21,7 +20,6 @@ LOD 3
 SET main_n3
 LOD 0
 SET main_z0
-LOD 0.7
 LOD 1.7
 SET main_f1
 LOD 2.7
@@ -30,7 +28,6 @@ LOD 3.7
 SET main_f3
 LOD 0.0
 SET main_fz
-LOD 3.0
 LOD 1.0
 SET main_c1
 LOD 4.0
@@ -59,13 +56,13 @@ LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
-LOD   main_n1
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
+LOD main_n1
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -90,7 +87,7 @@ LOD main_n2
 MLT 4
 ADD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 LDI mc
 P_LOD __aux_var
 LDI mc_i
@@ -112,103 +109,103 @@ LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
-LOD   main_n2
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
+LOD main_n2
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_f3
 S_ADD
-LDI     mi
+LDI mi
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_f3
 S_ADD
-LDI     mf
+LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_f3
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD main_n1
-MLT   4
-S_ADD
-LDI   mi
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD main_n1
-MLT   4
-S_ADD
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD main_n1
-MLT   4
-S_ADD
-SET   __aux_var
-LDI   mc
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD     main_n2
-MLT     4
-P_F2I_M 3.0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD main_n1
+MLT 4
 S_ADD
-LDI     mi
+LDI mi
 OUT 0
-LOD     main_n2
-MLT     4
-P_F2I_M 3.0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD main_n1
+MLT 4
 S_ADD
-LDI     mf
+LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
-LOD     main_n2
-MLT     4
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD main_n1
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n2
+MLT 4
 P_F2I_M 3.0
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
+LDI mi
+OUT 0
+LOD main_n2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -227,11 +224,10 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET   __aux_var
-LOD   main_n2
-MLT   4
-ADD   __aux_var
-LDI   mi
+P_LOD main_n2
+MLT 4
+S_ADD
+LDI mi
 OUT 0
 LOD main_c1
 F_MLT main_one
@@ -245,11 +241,10 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET   __aux_var
-LOD   main_n2
-MLT   4
-ADD   __aux_var
-LDI   mf
+P_LOD main_n2
+MLT 4
+S_ADD
+LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
@@ -265,42 +260,41 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET   __aux_var
-LOD   main_n2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
+P_LOD main_n2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_c3
 S_ADD
-LDI     mi
+LDI mi
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_c3
 S_ADD
-LDI     mf
+LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_c3
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -323,12 +317,12 @@ F2I_M main_y
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -356,7 +350,7 @@ ADD main_z0
 MLT 4
 ADD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 LDI mc
 P_LOD __aux_var
 LDI mc_i
@@ -382,12 +376,12 @@ F2I_M main_y
 OUT 0
 LOD main_n2
 ADD main_z0
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -396,69 +390,69 @@ F2I_M main_w_i
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_f3
 S_ADD
-LDI     mi
+LDI mi
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_f3
 S_ADD
-LDI     mf
+LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_f3
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_n1
-ADD main_z0
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_n1
-ADD main_z0
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_n1
-ADD main_z0
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n1
+ADD main_z0
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+MLT 4
+ADD __aux_var
+LDI mi
+OUT 0
+LOD main_n1
+ADD main_z0
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+MLT 4
+ADD __aux_var
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n1
+ADD main_z0
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -467,29 +461,29 @@ F2I_M main_w_i
 OUT 0
 LOD main_n2
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M 3.0
 S_ADD
-LDI     mi
+LDI mi
 OUT 0
 LOD main_n2
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M 3.0
 S_ADD
-LDI     mf
+LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
 LOD main_n2
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M 3.0
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -511,9 +505,9 @@ SF_ADD
 SET_P __aux_var
 F2I
 SET_P __aux_var
-MLT   4
-ADD   __aux_var
-LDI   mi
+MLT 4
+ADD __aux_var
+LDI mi
 OUT 0
 LOD main_n2
 ADD main_z0
@@ -530,9 +524,9 @@ SF_ADD
 SET_P __aux_var
 F2I
 SET_P __aux_var
-MLT   4
-ADD   __aux_var
-LDI   mf
+MLT 4
+ADD __aux_var
+LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
@@ -551,12 +545,12 @@ SF_ADD
 SET_P __aux_var
 F2I
 SET_P __aux_var
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -565,29 +559,29 @@ F2I_M main_w_i
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_c3
 S_ADD
-LDI     mi
+LDI mi
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_c3
 S_ADD
-LDI     mf
+LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_c3
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -606,13 +600,13 @@ LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
-LOD   1
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
+LOD 1
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -634,7 +628,7 @@ OUT 0
 LOD 8
 ADD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 LDI mc
 P_LOD __aux_var
 LDI mc_i
@@ -658,1806 +652,26 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD     1
-MLT     4
+LOD 1
+MLT 4
 P_F2I_M main_f3
-S_ADD
-LDI     mi
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD 1
-MLT   4
-S_ADD
-LDI   mi
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD 1
-MLT   4
-S_ADD
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD 1
-MLT   4
-S_ADD
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD     2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-OUT 0
-LOD     2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD     2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-LOD   2
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-LOD   2
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-LOD   2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_f1
-MLT 4
-ADD main_n2
-LDI mi
-OUT 0
-F2I_M main_f1
-MLT 4
-ADD main_n2
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M    main_f1
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_n3
-ADD main_z0
-SET   __aux_var
-F2I_M main_f2
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_n3
-ADD main_z0
-SET   __aux_var
-F2I_M main_f2
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_n3
-ADD main_z0
-SET   __aux_var
-F2I_M main_f2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_f2
-MLT 4
-ADD 1
-LDI mi
-OUT 0
-F2I_M main_f2
-MLT 4
-ADD 1
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M    main_f2
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mi
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI      mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M main_f1
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M main_f1
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M main_f1
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     main_f2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-OUT 0
-F2I_M     main_f2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M main_f2
-MLT 4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_f2 
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_f2 
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_f2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT 4
-ADD main_n2
-LDI mi
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT 4
-ADD main_n2
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT 4
-ADD 1
-LDI mi
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT 4
-ADD 1
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mi
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f1
-F_ADD main_fz
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_f1
-F_ADD main_fz
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f1
-F_ADD main_fz
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT 4
-P_F2I_M 3.0
 S_ADD
 LDI mi
 OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
+LOD 1
 MLT 4
-P_F2I_M 3.0
+P_F2I_M main_f3
 S_ADD
 LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M 1.0
+LOD 1
 MLT 4
-ADD main_n2
-LDI mi
-OUT 0
-F2I_M 1.0
-MLT 4
-ADD main_n2
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M   1.0
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_n3
-ADD main_z0
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_n3
-ADD main_z0
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_n3
-ADD main_z0
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M 2.0
-MLT 4
-ADD 1
-LDI mi
-OUT 0
-F2I_M 2.0
-MLT 4
-ADD 1
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M   2.0
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     1.0
-MLT     4
 P_F2I_M main_f3
 S_ADD
-LDI     mi
-OUT 0
-F2I_M     1.0
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     1.0
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M 1.0
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M 1.0
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M 1.0
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M 2.0
-MLT 4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-OUT 0
-F2I_M 2.0
-MLT 4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M 2.0
-MLT 4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     1.0
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-OUT 0
-F2I_M     1.0
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M      1.0
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT 4
-ADD main_n2
-LDI mi
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT 4
-ADD main_n2
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT 4
-ADD 1
-LDI mi
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT 4
-ADD 1
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mi
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P   __aux_var
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT  4
-ADD  __aux_var
-LDI  mi
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT  4
-ADD  __aux_var
-LDI  mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI    mc
-P_LOD __aux_var
-LDI    mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-SET_P   __aux_var
-F2I
-MLT     4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P   __aux_var
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_c1
-MLT 4
-ADD main_n2
-LDI mi
-OUT 0
-F2I_M main_c1
-MLT 4
-ADD main_n2
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M    main_c1
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_n3
-ADD main_z0
-P_F2I_M main_c2
-MLT     4
-S_ADD
-LDI     mi
-OUT 0
-LOD main_n3
-ADD main_z0
-P_F2I_M main_c2
-MLT     4
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_n3
-ADD main_z0
-P_F2I_M main_c2
-MLT     4
-S_ADD
-SET     __aux_var
-LDI      mc
-P_LOD   __aux_var
-LDI      mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_c2
-MLT 4
-ADD 1
-LDI mi
-OUT 0
-F2I_M main_c2
-MLT 4
-ADD 1
-LDI mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M    main_c2
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_c1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mi
-OUT 0
-F2I_M main_c1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     main_c1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_F2I_M main_c1
-MLT     4
-S_ADD
-LDI     mi
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_F2I_M main_c1
-MLT     4
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_F2I_M main_c1
-MLT     4
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     main_c2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-OUT 0
-F2I_M     main_c2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     main_c2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_c2
-MLT   4
-ADD   __aux_var
-LDI   mi
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_c2
-MLT   4
-ADD   __aux_var
-LDI   mf
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_c2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
+SET __aux_var
+LDI mc
 P_LOD __aux_var
 LDI mc_i
 SET_P main_w_i
@@ -2466,28 +680,1783 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-F2I_M      main_c1
-MLT     4
-P_F2I_M main_c3
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD 1
+MLT 4
 S_ADD
-LDI     mi
+LDI mi
 OUT 0
-F2I_M      main_c1
-MLT     4
-P_F2I_M main_c3
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD 1
+MLT 4
 S_ADD
-LDI     mf
+LDI mf
 SET main_y
 F2I_M main_y
 OUT 0
- F2I_M     main_c1
-MLT     4
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD 1
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD 2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+OUT 0
+LOD 2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD 2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_LOD 2
+MLT 4
+S_ADD
+LDI mi
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_LOD 2
+MLT 4
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_LOD 2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD 1
+MLT 4
 P_F2I_M main_c3
 S_ADD
-SET     __aux_var
- LDI     mc
-P_LOD   __aux_var
- LDI     mc_i
+LDI mi
+OUT 0
+LOD 1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD 1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f1
+MLT 4
+ADD main_n2
+LDI mi
+OUT 0
+F2I_M main_f1
+MLT 4
+ADD main_n2
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f1
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_f2
+MLT 4
+S_ADD
+LDI mi
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_f2
+MLT 4
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_f2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f2
+MLT 4
+ADD 1
+LDI mi
+OUT 0
+F2I_M main_f2
+MLT 4
+ADD 1
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f2
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_f1
+MLT 4
+S_ADD
+LDI mi
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_f1
+MLT 4
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_f1
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+OUT 0
+F2I_M main_f2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET __aux_var
+F2I_M main_f2
+MLT 4
+ADD __aux_var
+LDI mi
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET __aux_var
+F2I_M main_f2
+MLT 4
+ADD __aux_var
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M main_f2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+ADD main_n2
+LDI mi
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+ADD main_n2
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+ADD 1
+LDI mi
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+ADD 1
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f1
+F_ADD main_fz
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+OUT 0
+LOD main_f1
+F_ADD main_fz
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f1
+F_ADD main_fz
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 1.0
+MLT 4
+ADD main_n2
+LDI mi
+OUT 0
+F2I_M 1.0
+MLT 4
+ADD main_n2
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 1.0
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M 2.0
+MLT 4
+S_ADD
+LDI mi
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M 2.0
+MLT 4
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M 2.0
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 2.0
+MLT 4
+ADD 1
+LDI mi
+OUT 0
+F2I_M 2.0
+MLT 4
+ADD 1
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 2.0
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M 1.0
+MLT 4
+S_ADD
+LDI mi
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M 1.0
+MLT 4
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M 1.0
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 2.0
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+OUT 0
+F2I_M 2.0
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 2.0
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M 2.0
+MLT 4
+S_ADD
+LDI mi
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M 2.0
+MLT 4
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M 2.0
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+ADD main_n2
+LDI mi
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+ADD main_n2
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+ADD 1
+LDI mi
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+ADD 1
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c1
+MLT 4
+ADD main_n2
+LDI mi
+OUT 0
+F2I_M main_c1
+MLT 4
+ADD main_n2
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c1
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_c2
+MLT 4
+S_ADD
+LDI mi
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_c2
+MLT 4
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_c2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c2
+MLT 4
+ADD 1
+LDI mi
+OUT 0
+F2I_M main_c2
+MLT 4
+ADD 1
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c2
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_c1
+MLT 4
+S_ADD
+LDI mi
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_c1
+MLT 4
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_c1
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+OUT 0
+F2I_M main_c2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M main_c2
+MLT 4
+S_ADD
+LDI mi
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M main_c2
+MLT 4
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M main_c2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P main_w_i
 SET main_w
 F2I_M main_w
@@ -2508,13 +2477,13 @@ F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
-LOD   main_n1
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
+LOD main_n1
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -2545,7 +2514,7 @@ LOD main_n2
 MLT 4
 ADD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 LDI mc
 P_LOD __aux_var
 LDI mc_i
@@ -2573,13 +2542,13 @@ F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
-LOD   main_n2
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
+LOD main_n2
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -2590,70 +2559,30 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_f3
 S_ADD
-LDI     mi
+LDI mi
 ADD 1000
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_f3
 S_ADD
-LDI     mf
+LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_f3
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD main_n1
-MLT   4
-S_ADD
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD main_n1
-MLT   4
-S_ADD
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD main_n1
-MLT   4
-S_ADD
-SET   __aux_var
-LDI   mc
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -2664,30 +2593,70 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD     main_n2
-MLT     4
-P_F2I_M 3.0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD main_n1
+MLT 4
 S_ADD
-LDI     mi
+LDI mi
 ADD 1000
 OUT 0
-LOD     main_n2
-MLT     4
-P_F2I_M 3.0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD main_n1
+MLT 4
 S_ADD
-LDI     mf
+LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
-LOD     main_n2
-MLT     4
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD main_n1
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n2
+MLT 4
 P_F2I_M 3.0
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
+LDI mi
+ADD 1000
+OUT 0
+LOD main_n2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -2710,11 +2679,10 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET   __aux_var
-LOD   main_n2
-MLT   4
-ADD   __aux_var
-LDI   mi
+P_LOD main_n2
+MLT 4
+S_ADD
+LDI mi
 ADD 1000
 OUT 0
 LOD main_c1
@@ -2729,11 +2697,10 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET   __aux_var
-LOD   main_n2
-MLT   4
-ADD   __aux_var
-LDI   mf
+P_LOD main_n2
+MLT 4
+S_ADD
+LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
@@ -2750,14 +2717,13 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 F2I
-SET   __aux_var
-LOD   main_n2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
+P_LOD main_n2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -2768,30 +2734,30 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_c3
 S_ADD
-LDI     mi
+LDI mi
 ADD 1000
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_c3
 S_ADD
-LDI     mf
+LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
-LOD     main_n1
-MLT     4
+LOD main_n1
+MLT 4
 P_F2I_M main_c3
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -2820,12 +2786,12 @@ F2I_M main_y
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -2859,7 +2825,7 @@ ADD main_z0
 MLT 4
 ADD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 LDI mc
 P_LOD __aux_var
 LDI mc_i
@@ -2891,12 +2857,12 @@ F2I_M main_y
 OUT 0
 LOD main_n2
 ADD main_z0
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -2909,77 +2875,77 @@ F2I_M main_w_i
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_f3
 S_ADD
-LDI     mi
+LDI mi
 ADD 1000
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_f3
 S_ADD
-LDI     mf
+LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_f3
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_n1
-ADD main_z0
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_n1
-ADD main_z0
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_n1
-ADD main_z0
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n1
+ADD main_z0
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+MLT 4
+ADD __aux_var
+LDI mi
+ADD 1000
+OUT 0
+LOD main_n1
+ADD main_z0
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+MLT 4
+ADD __aux_var
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n1
+ADD main_z0
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -2992,31 +2958,31 @@ F2I_M main_w_i
 OUT 0
 LOD main_n2
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M 3.0
 S_ADD
-LDI     mi
+LDI mi
 ADD 1000
 OUT 0
 LOD main_n2
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M 3.0
 S_ADD
-LDI     mf
+LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
 LOD main_n2
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M 3.0
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -3042,9 +3008,9 @@ SF_ADD
 SET_P __aux_var
 F2I
 SET_P __aux_var
-MLT   4
-ADD   __aux_var
-LDI   mi
+MLT 4
+ADD __aux_var
+LDI mi
 ADD 1000
 OUT 0
 LOD main_n2
@@ -3062,9 +3028,9 @@ SF_ADD
 SET_P __aux_var
 F2I
 SET_P __aux_var
-MLT   4
-ADD   __aux_var
-LDI   mf
+MLT 4
+ADD __aux_var
+LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
@@ -3084,12 +3050,12 @@ SF_ADD
 SET_P __aux_var
 F2I
 SET_P __aux_var
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -3102,31 +3068,31 @@ F2I_M main_w_i
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_c3
 S_ADD
-LDI     mi
+LDI mi
 ADD 1000
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_c3
 S_ADD
-LDI     mf
+LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
 LOD main_n1
 ADD main_z0
-MLT     4
+MLT 4
 P_F2I_M main_c3
 S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -3151,13 +3117,13 @@ F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
-LOD   1
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
+LOD 1
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
 P_LOD __aux_var
-LDI   mc_i
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0
@@ -3185,7 +3151,7 @@ OUT 0
 LOD 8
 ADD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 LDI mc
 P_LOD __aux_var
 LDI mc_i
@@ -3219,2066 +3185,28 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-LOD     1
-MLT     4
+LOD 1
+MLT 4
 P_F2I_M main_f3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD 1
-MLT   4
-S_ADD
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD 1
-MLT   4
-S_ADD
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_LOD 1
-MLT   4
-S_ADD
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD     2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD     2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD     2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-LOD   2
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-LOD   2
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-LOD   2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD     1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_f1
-MLT 4
-ADD main_n2
-LDI mi
-ADD 1000
-OUT 0
-F2I_M main_f1
-MLT 4
-ADD main_n2
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M    main_f1
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_n3
-ADD main_z0
-SET   __aux_var
-F2I_M main_f2
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_n3
-ADD main_z0
-SET   __aux_var
-F2I_M main_f2
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_n3
-ADD main_z0
-SET   __aux_var
-F2I_M main_f2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_f2
-MLT 4
-ADD 1
-LDI mi
-ADD 1000
-OUT 0
-F2I_M main_f2
-MLT 4
-ADD 1
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M    main_f2
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI      mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M main_f1
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M main_f1
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M main_f1
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     main_f2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-F2I_M     main_f2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M main_f2
-MLT 4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_f2 
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_f2 
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_f2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     main_f1
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT 4
-ADD main_n2
-LDI mi
-ADD 1000
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT 4
-ADD main_n2
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT 4
-ADD 1
-LDI mi
-ADD 1000
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT 4
-ADD 1
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f1
-F_ADD main_fz
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_f1
-F_ADD main_fz
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f1
-F_ADD main_fz
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT 4
-P_F2I_M 3.0
 S_ADD
 LDI mi
 ADD 1000
 OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
+LOD 1
 MLT 4
-P_F2I_M 3.0
+P_F2I_M main_f3
 S_ADD
 LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET_P __aux_var
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f1
-F_ADD main_fz
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M 1.0
+LOD 1
 MLT 4
-ADD main_n2
-LDI mi
-ADD 1000
-OUT 0
-F2I_M 1.0
-MLT 4
-ADD main_n2
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M   1.0
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_n3
-ADD main_z0
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_n3
-ADD main_z0
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_n3
-ADD main_z0
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M 2.0
-MLT 4
-ADD 1
-LDI mi
-ADD 1000
-OUT 0
-F2I_M 2.0
-MLT 4
-ADD 1
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M   2.0
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     1.0
-MLT     4
 P_F2I_M main_f3
 S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-F2I_M     1.0
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     1.0
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M 1.0
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M 1.0
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-SET   __aux_var
-F2I_M 1.0
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M 2.0
-MLT 4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-F2I_M 2.0
-MLT 4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M 2.0
-MLT 4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M 2.0
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     1.0
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-F2I_M     1.0
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M      1.0
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT 4
-ADD main_n2
-LDI mi
-ADD 1000
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT 4
-ADD main_n2
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_n3
-ADD main_z0
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT 4
-ADD 1
-LDI mi
-ADD 1000
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT 4
-ADD 1
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P   __aux_var
-F2I
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT  4
-ADD  __aux_var
-LDI  mi
-ADD 1000
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT  4
-ADD  __aux_var
-LDI  mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-P_LOD main_f2
-F_ADD main_fz
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI    mc
-P_LOD __aux_var
-LDI    mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-SET_P   __aux_var
-F2I
-MLT     4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c2
-F_MLT main_one
-P_LOD main_c2_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c2
-F_MLT main_one_i
-P_LOD main_c2_i
-F_MLT main_one
-SF_ADD
-P_LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET_P __aux_var
-POP
-F2I
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-POP
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P   __aux_var
-F2I
-MLT     4
-P_F2I_M main_c3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_c1
-MLT 4
-ADD main_n2
-LDI mi
-ADD 1000
-OUT 0
-F2I_M main_c1
-MLT 4
-ADD main_n2
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M    main_c1
-MLT   4
-ADD   main_n2
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_n3
-ADD main_z0
-P_F2I_M main_c2
-MLT     4
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD main_n3
-ADD main_z0
-P_F2I_M main_c2
-MLT     4
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_n3
-ADD main_z0
-P_F2I_M main_c2
-MLT     4
-S_ADD
-SET     __aux_var
-LDI      mc
-P_LOD   __aux_var
-LDI      mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_c2
-MLT 4
-ADD 1
-LDI mi
-ADD 1000
-OUT 0
-F2I_M main_c2
-MLT 4
-ADD 1
-LDI mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M    main_c2
-MLT   4
-ADD   1
-SET   __aux_var
-LDI   mc
-P_LOD __aux_var
-LDI   mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M main_c1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-F2I_M main_c1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     main_c1
-MLT     4
-P_F2I_M main_f3
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_F2I_M main_c1
-MLT     4
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_F2I_M main_c1
-MLT     4
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_f2
-F_ADD main_fz
-F2I
-P_F2I_M main_c1
-MLT     4
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-F2I_M     main_c2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mi
-ADD 1000
-OUT 0
-F2I_M     main_c2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-LDI     mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-F2I_M     main_c2
-MLT     4
-P_F2I_M 3.0
-S_ADD
-SET     __aux_var
-LDI     mc
-P_LOD   __aux_var
-LDI     mc_i
-SET_P __aux_var
-F_ADD 100.0
-P_LOD 100.0
-F_ADD __aux_var
-SET_P main_w_i
-SET main_w
-F2I_M main_w
-OUT 0
-F2I_M main_w_i
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_c2
-MLT   4
-ADD   __aux_var
-LDI   mi
-ADD 1000
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_c2
-MLT   4
-ADD   __aux_var
-LDI   mf
-F_ADD 1000.0
-SET main_y
-F2I_M main_y
-OUT 0
-LOD main_c1
-F_MLT main_one
-P_LOD main_c1_i
-F_MLT main_one_i
-SF_SU2
-P_LOD main_c1
-F_MLT main_one_i
-P_LOD main_c1_i
-F_MLT main_one
-SF_ADD
-SET_P __aux_var
-F2I
-SET   __aux_var
-F2I_M main_c2
-MLT   4
-ADD   __aux_var
-SET   __aux_var
-LDI   mc
+SET __aux_var
+LDI mc
 P_LOD __aux_var
 LDI mc_i
 SET_P __aux_var
@@ -5291,30 +3219,2043 @@ F2I_M main_w
 OUT 0
 F2I_M main_w_i
 OUT 0
-F2I_M      main_c1
-MLT     4
-P_F2I_M main_c3
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD 1
+MLT 4
 S_ADD
-LDI     mi
+LDI mi
 ADD 1000
 OUT 0
-F2I_M      main_c1
-MLT     4
-P_F2I_M main_c3
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD 1
+MLT 4
 S_ADD
-LDI     mf
+LDI mf
 F_ADD 1000.0
 SET main_y
 F2I_M main_y
 OUT 0
- F2I_M     main_c1
-MLT     4
+LOD main_f2
+F_ADD main_fz
+F2I
+P_LOD 1
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD 2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD 2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD 2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_LOD 2
+MLT 4
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_LOD 2
+MLT 4
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_LOD 2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD 1
+MLT 4
 P_F2I_M main_c3
 S_ADD
-SET     __aux_var
- LDI     mc
-P_LOD   __aux_var
- LDI     mc_i
+LDI mi
+ADD 1000
+OUT 0
+LOD 1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD 1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f1
+MLT 4
+ADD main_n2
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_f1
+MLT 4
+ADD main_n2
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f1
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_f2
+MLT 4
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_f2
+MLT 4
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_f2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f2
+MLT 4
+ADD 1
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_f2
+MLT 4
+ADD 1
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f2
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_f1
+MLT 4
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_f1
+MLT 4
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_f1
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_f2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET __aux_var
+F2I_M main_f2
+MLT 4
+ADD __aux_var
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET __aux_var
+F2I_M main_f2
+MLT 4
+ADD __aux_var
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M main_f2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_f1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+ADD main_n2
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+ADD main_n2
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+ADD 1
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+ADD 1
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f1
+F_ADD main_fz
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f1
+F_ADD main_fz
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f1
+F_ADD main_fz
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET_P __aux_var
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f1
+F_ADD main_fz
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 1.0
+MLT 4
+ADD main_n2
+LDI mi
+ADD 1000
+OUT 0
+F2I_M 1.0
+MLT 4
+ADD main_n2
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 1.0
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M 2.0
+MLT 4
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M 2.0
+MLT 4
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M 2.0
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 2.0
+MLT 4
+ADD 1
+LDI mi
+ADD 1000
+OUT 0
+F2I_M 2.0
+MLT 4
+ADD 1
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 2.0
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M 1.0
+MLT 4
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M 1.0
+MLT 4
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M 1.0
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 2.0
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+F2I_M 2.0
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 2.0
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M 2.0
+MLT 4
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M 2.0
+MLT 4
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M 2.0
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M 1.0
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+ADD main_n2
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+ADD main_n2
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_n3
+ADD main_z0
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+ADD 1
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+ADD 1
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+P_LOD main_f2
+F_ADD main_fz
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c2
+F_MLT main_one
+P_LOD main_c2_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c2
+F_MLT main_one_i
+P_LOD main_c2_i
+F_MLT main_one
+SF_ADD
+P_LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+SET_P __aux_var
+POP
+F2I
+MLT 4
+ADD __aux_var
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+POP
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c1
+MLT 4
+ADD main_n2
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_c1
+MLT 4
+ADD main_n2
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c1
+MLT 4
+ADD main_n2
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_c2
+MLT 4
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_c2
+MLT 4
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_n3
+ADD main_z0
+P_F2I_M main_c2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c2
+MLT 4
+ADD 1
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_c2
+MLT 4
+ADD 1
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c2
+MLT 4
+ADD 1
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_f3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_c1
+MLT 4
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_c1
+MLT 4
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_f2
+F_ADD main_fz
+F2I
+P_F2I_M main_c1
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_c2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c2
+MLT 4
+P_F2I_M 3.0
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M main_c2
+MLT 4
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M main_c2
+MLT 4
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+LOD main_c1
+F_MLT main_one
+P_LOD main_c1_i
+F_MLT main_one_i
+SF_SU2
+P_LOD main_c1
+F_MLT main_one_i
+P_LOD main_c1_i
+F_MLT main_one
+SF_ADD
+SET_P __aux_var
+F2I
+P_F2I_M main_c2
+MLT 4
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
+SET_P __aux_var
+F_ADD 100.0
+P_LOD 100.0
+F_ADD __aux_var
+SET_P main_w_i
+SET main_w
+F2I_M main_w
+OUT 0
+F2I_M main_w_i
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mi
+ADD 1000
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+LDI mf
+F_ADD 1000.0
+SET main_y
+F2I_M main_y
+OUT 0
+F2I_M main_c1
+MLT 4
+P_F2I_M main_c3
+S_ADD
+SET __aux_var
+LDI mc
+P_LOD __aux_var
+LDI mc_i
 SET_P __aux_var
 F_ADD 100.0
 P_LOD 100.0

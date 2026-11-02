@@ -170,7 +170,7 @@ F_ADD main_w
 P_LOD main_z_i
 F_ADD main_w_i
 SET_P __csin_b
-SET   __csin_a
+SET __csin_a
 LOD __csin_b
 CAL __float_exp
 SET __csin_eb
