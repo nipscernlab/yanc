@@ -22,6 +22,8 @@ NOP
 #SHARE main_w locals_w_i
 #SHARE __dhf1_main main_m5
 #SHARE __dk0_main locals_w_i
+#SHARE __dhi0_main main_m5
+#SHARE __dhf0_main main_m5
 #SHARE main_y main_m5
 JMP main
 @locals #arrays locals_li 1 3 "li.txt"
@@ -412,13 +414,48 @@ F2I_M fa1
 SET_V i1 0
 LOD_V i1 0
 OUT 0
+LOD main_n2
+ADD main_z0
+SET __dhi0_main
+LOD ia1
+MLT __dhi0_main
+I2F
+SET_V f1 0
+LOD_V f1 0
+F_MLT 4.0
+F2I
+OUT 0
+LOD main_fs
+F_ADD main_fz
+SET __dhf0_main
+LOD fa1
+F_MLT __dhf0_main
+F2I
+SET_V i1 0
+LOD_V i1 0
+OUT 0
+LOD -3
+SET __dk0_main
+@__Ld3 PSH
+LDI_V fa3 3
+F_MLT main_fs
+STI_V fv3 3
+LOD __dk0_main
+ADD 1
+SET __dk0_main
+JIZ __Ld3e
+JMP __Ld3
+@__Ld3e LOD_V fv3 2
+F_MLT 4.0
+F2I
+OUT 0
 LOD main_pf
 F_ADD main_fz
 P_I2F_M ia3
 F_MLT fa3
 P_LOD -2
 SET __dk0_main
-@__Ld3 LDI_V fa3 3
+@__Ld4 LDI_V fa3 3
 P_LOD __dk0_main
 LDI_V ia3 3
 I2F
@@ -427,9 +464,9 @@ SF_ADD
 P_LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld3e
-JMP __Ld3
-@__Ld3e POP
+JIZ __Ld4e
+JMP __Ld4
+@__Ld4e POP
 SF_ADD
 SET main_y
 LOD 4.0

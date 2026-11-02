@@ -818,6 +818,10 @@ def misc():
     body.append("    f1 # |fa1⟩; fout(0, 4.0*f1[0]);"); out.append(10)
     body.append("    f1 # |ia1⟩; fout(0, 4.0*f1[0]);"); out.append(12)
     body.append("    i1 # |fa1⟩; out(0, i1[0]);"); out.append(2)
+    # a one-cell target of the other type, from a value computed in the acc
+    body.append("    f1 # (n2+z0)|ia1⟩; fout(0, 4.0*f1[0]);"); out.append(4 * 2 * 3)
+    body.append("    i1 # (fs+fz)|fa1⟩; out(0, i1[0]);"); out.append(trunc(2.5 * 2.5))
+    body.append("    fv3 # fs|fa3⟩; fout(0, 4.0*fv3[2]);"); out.append(trunc(4 * 2.5 * 3))
     body.append("    y = (pf+fz) + ⟨fa3|ia3⟩; fout(0, 4.0*y);"); out.append(safe_trunc(4 * (1000 + 1 * 1 + 2 * 2 + 3 * 3)))
     # the negation of a comp constant with a zero part (kept, for -0)
     body.append("    w = -(3.0+0.0i); fout(0, 4.0*real(w)); fout(0, 4.0*imag(w));"); out += [-12, 0]

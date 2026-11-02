@@ -743,8 +743,11 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
         if (d->type == 1 && e.type == 2)
             fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
         int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
-        if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "I2F_M" : conv == 2 ? "F2I_M" : "LOD", v_table[e.id].name);
-        else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
+        if (conv && e.id != 0) add_instr("%s %s\n", conv == 1 ? "I2F_M" : "F2I_M", v_table[e.id].name);
+        else {
+            e = in_acc(e);
+            if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
+        }
         add_instr("SET_V %s %ld\n", arr_name(d->arr), six->k + d->base);
         acc_ok = 0;
     } else if (d->kind == 0) {
