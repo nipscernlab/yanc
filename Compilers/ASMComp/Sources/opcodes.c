@@ -1044,7 +1044,7 @@ void opc_add(char *mne)
 		// then register the new opcode ---------------------------------------
 		// --------------------------------------------------------------------
 		
-    	strcpy(m_name[m_count], mne); m_count++;
+    	snprintf(m_name[m_count], sizeof(m_name[0]), "%s", mne); m_count++; // a mnemonic of the ISA: it fits
 	}
 }
 

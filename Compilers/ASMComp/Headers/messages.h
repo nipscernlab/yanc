@@ -28,6 +28,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: memória insuficiente pra alocar a tabela de símbolos!\n", \
       "Error: out of memory while growing the symbol table!\n")
 
+#define MSG_ERR_NO_INSTRUCTIONS \
+    M("Erro: o programa não tem nenhuma instrução, então não há processador pra gerar.\n", \
+      "Error: the program has no instruction, so there is no processor to make.\n")
+
 #define MSG_ERR_FILE_WHERE \
     M("Erro: cadê o arquivo %s?\n", \
       "Error: where the heck is the file %s?\n")

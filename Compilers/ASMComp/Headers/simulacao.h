@@ -27,7 +27,7 @@ void  sim_store  (char *va);                        // the next instruction writ
 int   sim_shared (int    i);                        // whether the variable is in a #SHARE group
 int   sim_nstore (int    i);                        // how many SETs write it
 int   sim_store_at(int i, int k);                   // instruction index of the k-th SET
-void  sim_mem    (int addr, char *var);             // gets the memory contents
+char *sim_mem    (int addr);                       // the data word at addr (the caller frees it)
 
 // user array operations ------------------------------------------------------
 

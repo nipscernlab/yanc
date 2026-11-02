@@ -27,6 +27,15 @@
 // (valr10, for the $finish) carry this attribute. To Icarus it is a comment.
 #define VPUB " /* verilator public_flat */"
 
+// whether the signal im is the imaginary half of the comp signal re: re is
+// <x>_e_ and im is <x>_i_e_ (the compilers name a comp's halves x and x_i)
+static int imag_of(const char *re, const char *im)
+{
+    size_t n = strlen(re);
+    if (n < 3 || strlen(im) != n + 2) return 0;
+    return strncmp(re, im, n - 3) == 0 && strcmp(im + n - 3, "_i_e_") == 0;
+}
+
 // ----------------------------------------------------------------------------
 // generates the verilog file with a processor instance -----------------------
 // ----------------------------------------------------------------------------
@@ -388,27 +397,23 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // write is registered pc_sim_val is already one past the SET (measured).
     for (int i = 0; i < sim_cont(); i++)
     {
-        char *cond = malloc(64 + 32 * (size_t)sim_nstore(i));
-        if (!cond) {fprintf(stderr, "asmcomp: out of memory\n"); exit(EXIT_FAILURE);}
-        if (!sim_shared(i)) sprintf(cond, "mem_addr_wr == %d && mem_wr", sim_addr(i));
-        else if (sim_nstore(i) == 0) sprintf(cond, "1'b0");
+        fprintf(f_veri, "   if (");
+        if (!sim_shared(i)) fprintf(f_veri, "mem_addr_wr == %d && mem_wr", sim_addr(i));
+        else if (sim_nstore(i) == 0) fprintf(f_veri, "1'b0");
         else
         {
-            int p = sprintf(cond, "mem_wr && (");
+            fprintf(f_veri, "mem_wr && (");
             for (int k = 0; k < sim_nstore(i); k++)
-                p += sprintf(cond + p, "%spc_sim_val == %d", k ? " || " : "", sim_store_at(i, k) + 1);
-            sprintf(cond + p, ")");
+                fprintf(f_veri, "%spc_sim_val == %d", k ? " || " : "", sim_store_at(i, k) + 1);
+            fprintf(f_veri, ")");
         }
-        if (sim_type(i) == 1) fprintf(f_veri, "   if (%s) %s <= out;\n"                   , cond, sim_name(i));
-        if (sim_type(i) == 2) fprintf(f_veri, "   if (%s) %s <= sm_me2*$pow(2.0,e_me2);\n", cond, sim_name(i));
-        if (sim_type(i) >  2) fprintf(f_veri, "   if (%s) %s <= out;\n"                   , cond, sim_name(i));
-        free(cond);
+        if (sim_type(i) == 2) fprintf(f_veri, ") %s <= sm_me2*$pow(2.0,e_me2);\n", sim_name(i));
+        else                  fprintf(f_veri, ") %s <= out;\n"                   , sim_name(i));
     }
     fprintf(f_veri, "end\n\n");
 
     // for comp variables ...
     // combine real and imag parts into a variable twice the width
-    char ni[64],nj[64],im[64];
     int has_comp = 0;
     for (int i = 0; i < sim_cont(); i++)
     {
@@ -417,13 +422,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
             has_comp = 1;
             for (int j = 0; j < sim_cont(); j++)
             {
-                strcpy(ni,sim_name(i));
-                strcpy(nj,sim_name(j));
-                ni[strlen(ni)-3] = '\0';
-                nj[strlen(nj)-3] = '\0';
-
-                sprintf(im, "%s_i", ni);
-                if (strcmp(nj,im) == 0)
+                if (imag_of(sim_name(i), sim_name(j)))
                     fprintf(f_veri,"wire [16+%d*2-1:0] comp_%s = {8'd%d, 8'd%d, %s, %s};\n", nubits, sim_name(i), nbmant, nbexpo, sim_name(i), sim_name(j));
             }
         }
@@ -444,7 +443,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
         for (int j = 0; j < sim_size_arr(i); j++)
         {
             // grab the value from the .mif file
-            char val[256]; sim_mem(sim_addr_arr(i)+j, val);
+            char *val = sim_mem(sim_addr_arr(i)+j);
 
             // int: use the reg data type in the simulation
             if (sim_type_arr(i) == 1)
@@ -463,6 +462,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
             {
                 fprintf(f_veri, "reg [%d-1:0] %s%04d=%d'b%s;\n", nubits, sim_name_arr(i), j, nubits, val);
             }
+            free(val);
         }
     }
 
@@ -489,13 +489,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
         {
             for (int j = 0; j < sim_cont_arr(); j++)
             {
-                strcpy(ni,sim_name_arr(i));
-                strcpy(nj,sim_name_arr(j));
-                ni[strlen(ni)-3] = '\0';
-                nj[strlen(nj)-3] = '\0';
-
-                sprintf(im, "%s_i", ni);
-                if (strcmp(nj,im) == 0)
+                if (imag_of(sim_name_arr(i), sim_name_arr(j)))
                     for (int k = 0; k < sim_size_arr(i); k++)
                         fprintf(f_veri,"wire [16+%d*2-1:0] comp_%s%04d = {8'd%d, 8'd%d, %s%04d, %s%04d};\n", nubits, sim_name_arr(i), k, nbmant, nbexpo, sim_name_arr(i), k, sim_name_arr(j), k);
             }
