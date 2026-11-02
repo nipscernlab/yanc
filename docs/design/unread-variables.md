@@ -65,16 +65,21 @@ Measured (2026-11-01): `procBlind` 605 → 588 words (the 17 `LOD 0` before
 calls to functions with a `dummy` parameter; its Verilator output is
 unchanged), and no other program changes.
 
-## What it does not do yet
+## A value nobody reads
 
-The computation that fed a removed `SET` stays: in `e = t - y` without
-`#WAVE`, the subtraction is still computed and thrown away. A pass that
-follows the acc's liveness in straight-line code would remove it, but over
-the C± tests it finds 21 words, all in coverage fixtures and none in the
-real programs (measured 2026-11-01), so it was not built.
+The computation that fed a removed `SET` stayed: in `e = t - y` without
+`#WAVE`, the subtraction was still computed and thrown away. The same pass,
+`asm_callarg`, now also drops the instructions that change only the acc
+right before one that writes the acc without reading it (a `LOD`, a `POP`),
+and a push of the acc right before a `POP` no jump lands on, which together
+change nothing (`P_LOD a_i; ...; POP`, the imaginary half of a comp whose
+real half is kept). Each removal can expose another, so the two rules run
+until neither finds one. The value can only flow to the next instruction,
+so a label on that instruction changes nothing.
 
-cppcomp runs the pass without callbacks: no warning, and no `#WAVE` (a
-`#pragma yanc` form is not done).
+It looks at one instruction ahead, not at the liveness of the acc across
+jumps. Measured (2026-11-02, issue #69 lot 7): 30 words over 8 C± tests,
+all of them fixtures, none in the real programs.
 
 ## Measured (2026-11-01)
 
