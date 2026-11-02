@@ -102,6 +102,13 @@ tags consumed by Aurora.
   `Scripts/cmm_cov.sh` build with their own flags but read the lists from
   it (`make -s print-CMMCOMP_C`, `print-CMMCOMP_COMMON`, ...), so a new
   `.c` is added in one place. Step P1 of the restructure (#93).
+- **cmmcomp loses its dead code** (#92, step P2 of #93): the if and while
+  label stacks nobody read, the expression dumper nobody called, seven
+  branches of `oper_subt` it cannot reach, the `EE` macro, `dir_soft`,
+  commented-out C± copies of two macros, `itob`'s wide case and a
+  self-assignment; comments that described code which no longer exists are
+  fixed and the in-file TODO blocks removed. The assembly and the
+  waveform's tables are byte-identical.
 - **A variable written and never read leaves the program**, in both
   compilers: its `SET`s, its data word and its waveform signal (`asm_unread`,
   issue #69). cmmcomp's warning says so and names `#WAVE`. 46 C± tests lost
