@@ -2,10 +2,6 @@
 // variable declaration -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-/*
-TODO:
-1- think of more useful initializations using Dirac notation
-*/
 
 // global includes
 #include <string.h>
@@ -25,7 +21,7 @@ TODO:
 // global variable definitions ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int type_tmp; // captures the type when a variable is declared (see c2asm.l)
+int type_tmp; // captures the type when a variable is declared (see CMMComp.l)
 
 // ----------------------------------------------------------------------------
 // standard declarations ------------------------------------------------------

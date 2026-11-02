@@ -42,9 +42,10 @@ void dire_exec(char *dir, int id, int t)
     int ival = atoi(v_table[id].name);
 
     // action to take depending on the directive
-    // only directives 3, 4, 7 and 8 affect the cmm compiler; 9 and 10 are
-    // validated here (asmcomp validates them again: it is the gate every front
-    // end passes through; this one just knows the source line)
+    // directives 3, 4, 7, 8, 9, 11 and 12 set what the compiler reads
+    // (#NBMANT, #NBEXPO, #NUIOIN, #NUIOOU, #FROUND, #NUBITS, #FFTSIZ); 9 and 10
+    // are validated here (asmcomp validates them again: it is the gate every
+    // front end passes through; this one just knows the source line)
     switch(t)
     {
         case 11: nubits = ival             ; break;

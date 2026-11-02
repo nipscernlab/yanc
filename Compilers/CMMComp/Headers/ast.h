@@ -8,9 +8,9 @@
 //     reducing `exp`. The bison %union holds `expr_node *` directly. Codegen
 //     is deferred: when a statement-level consumer calls ast_emit_expr(), the
 //     walker traverses the tree and dispatches to the existing oper_*/exec_*/
-//     arr_*/pplus_*/id2exp/num2exp helpers in post-order DFS - exactly the
-//     order the parser used to reduce, which keeps the assembly stream
-//     byte-identical to the older inline-emit compiler.
+//     arr_*/pplus_*/id2exp/num2exp helpers in post-order DFS, the order the
+//     parser reduces, except where reordering saves instructions (the
+//     heavier operand of a commutative op first, an operand the acc holds).
 //
 //   - `stmt_node` carries whole statements. Each function body and each
 //     compound body (if / while / switch) accumulates its statements in a
@@ -386,8 +386,8 @@ stmt_node *stmt_break_while (int while_label);
 // the do-while re-tests its bottom condition); a while jumps to the top (Lwh<n>).
 stmt_node *stmt_continue    (int loop_label, int cont_lbl);
 
-// Array declarations. The v_table side effects (v_type / v_isar / v_size /
-// v_fnid + f_log writes) already ran at parse time when the constructor was
+// Array declarations. The v_table side effects (type / isar / size /
+// fnid + f_log writes) already ran at parse time when the constructor was
 // called; the stmt_node only carries what the walker needs to emit the
 // `#array` directive (and, for 2D, the LOD/SET arr_size helper instructions).
 stmt_node *stmt_declar_arr_1d(int id_var, int id_arg, int id_fname);

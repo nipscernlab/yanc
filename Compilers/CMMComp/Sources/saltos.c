@@ -342,7 +342,7 @@ void exec_switch(expr_node *cond)
 {
     // Pre-declare the implicit switch_exp variable so case_test (at parse
     // time) can record its case_idx referencing it; the walker fills in
-    // v_type at emit time once it knows the cond's evaluated type. The variable
+    // its type at emit time once it knows the cond's evaluated type. The variable
     // is shared across all switches, including nested ones, and stays correct:
     // the walker emits all of a switch's compares in a dispatch block before any
     // case body runs, so an inner switch (inside a body) reusing switch_exp can

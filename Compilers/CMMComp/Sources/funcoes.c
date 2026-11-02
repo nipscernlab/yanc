@@ -328,7 +328,7 @@ void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
     if (strcmp(v_table[id2].name, "main") == 0) mainok = 1; // the reset reaches main: it must exist
 
     strcpy(fname, v_table[id2].name); // set the fname state to the function being analyzed
-    v_table[id2].type = id1+6       ; // v_type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
+    v_table[id2].type = id1+6       ; // type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
     fun_parse    = id2; // set the fun_parse state to the function's name id
     ret_ok       = 0;   // set ret_ok to zero (function parsing starts)
     func_nparams = 0;   // reset param collection for the new function

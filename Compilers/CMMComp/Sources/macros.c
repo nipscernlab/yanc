@@ -2,11 +2,6 @@
 // functions and variables used to create and use macros ----------------------
 // ----------------------------------------------------------------------------
 
-/*
-TODO:
-1- implement more non-linear functions
-2- check Tiago Falcao's thesis for which method is best in each case
-*/
 
 // global includes
 #include <math.h>

@@ -291,9 +291,8 @@ void expr_free(expr_node *n)
 // ----------------------------------------------------------------------------
 // Single entry point for expression codegen. Dispatches on n->kind, recurses
 // into children, and calls the existing oper_*/exec_*/arr_*/pplus_*/num2exp/
-// id2exp/par_check helpers in left-to-right post-order. The traversal order
-// matches what the parser used to reduce, so the emit stream is byte-identical
-// to the previous inline-emit compiler.
+// id2exp/par_check helpers in left-to-right post-order, the order the parser
+// reduces, except where reordering saves instructions (see the binop case).
 //
 // Result POD carries the freshly-emitted value's location: id == 0 means
 // "in the accumulator", id > 0 means "in v_table[id].name".
