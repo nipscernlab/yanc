@@ -1622,8 +1622,8 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         ( cd "$sm_dir" && yosys -q -l cells.log cells.ys >/dev/null 2>&1 )
         sm_ff=$(awk '/Printing statistics/{s=1; ff=0} s && /\$_[A-Z]*DFF[A-Z0-9_]*[ \t]+[0-9]+/{ff+=$2} END{print ff+0}' "$sm_dir/cells.log")
         sm_lut=$(grep -E '^\s+\$lut\s+[0-9]+' "$sm_dir/cells.log" | tail -1 | awk '{print $2}')
-        sm_want_ff=$(awk '$1 == "FF"  {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
-        sm_want_lut=$(awk '$1 == "LUT" {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
+        sm_want_ff=$(awk '{ sub(/\r$/, "") } $1 == "FF"  {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
+        sm_want_lut=$(awk '{ sub(/\r$/, "") } $1 == "LUT" {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
         if [ -z "$sm_lut" ]; then
             echo "FAIL (sapho_min-cells): Yosys gave no count (see $sm_dir/cells.log)"
             fail=$((fail + 1)); failed_names+=("sapho_min-cells")
