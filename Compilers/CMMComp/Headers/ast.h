@@ -232,9 +232,8 @@ void expr_free(expr_node *n);
 
 // recursively walks an expression tree and emits the corresponding assembly
 // via the existing oper_* / exec_* / arr_* / pplus_* / num2exp / id2exp
-// helpers. Returns the result POD the same way those helpers do. Driven by
-// every consumer of an exp value (via the EE() macro in CMMComp.y), plus
-// directly by vcall() for void statement-level function calls.
+// helpers. Returns the result POD the same way those helpers do. Called by
+// the statement walker (stmt_emit) for every expression a statement holds.
 expr ast_emit_expr(expr_node *n);
 void typecheck_expr(expr_node *n);   // bottom-up: fills n->type on composites
 

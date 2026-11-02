@@ -621,7 +621,7 @@ void void_ret()
 
 // Each arg's exp_list reduce just records the arg's tree node on the current
 // call's frame. The emit (subtree + par_check stage + CAL) happens later when
-// the walker reaches the EXPR_FUNC_CALL node at consumer-EE / vcall time.
+// the walker reaches the EXPR_FUNC_CALL node (or the void call's statement).
 void par_exp(expr_node *n)
 {
     args_push(n);
@@ -663,7 +663,7 @@ stmt_node *vcall(int id)
 
 // value-returning call: pre-validates and packages the call as an
 // EXPR_FUNC_CALL node, hands the node up to whichever consumer reduces next.
-// No emit at parse time - the walker emits when the consumer calls EE($N).
+// No emit at parse time - the walker emits it with its statement.
 expr_node *fcall(int id)
 {
     if (v_table[id].type == 6)
