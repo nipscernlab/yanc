@@ -2,9 +2,9 @@
 Info: 368 assembly instructions generated
 Info: adding assembly macro for arc-tangent computation
 Info: 19 divisions, 5 words each for DIV/MOD and 4 for F_DIV (57 added)
-Info: 9 variables share 5 data words (4 saved)
+Info: 6 variables share 4 data words (2 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 459 instructions and 22 variables were found
+Info: 465 instructions and 21 variables were found
 Info: ULA resource -> < operator for float
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: adding stack memory for function calls
@@ -459,39 +459,45 @@ lang C+-
 421 JMP fim
 // library macros, no source line
 422 SET __atan_x
-423 F_ABS_M __atan_x
-424 SET __atan_ax
+423 F_ABS
+424 SET __atan_t
 425 F_LES 1.0
-426 SET __atan_big
-427 JIZ __L_atan_small
-428 LOD __atan_ax
-429 F_DIV 1.0
+426 JIZ __L_atan_small
+427 LOD __atan_t
+428 F_DIV 1.0
+429 NOP
 430 NOP
-431 NOP
-432 F_QUO
-433 JMP __L_atan_haveT
-434 LOD __atan_ax
-435 SET __atan_t
-436 F_MLT __atan_t
-437 SET __atan_w
-438 LOD -0.012300666580
+431 F_QUO
+432 SET __atan_t
+433 F_MLT __atan_t
+434 SET __atan_w
+435 F_MLT -0.012300666580
+436 F_ADD 0.054084934779
+437 F_MLT __atan_w
+438 F_ADD -0.117697073484
 439 F_MLT __atan_w
-440 F_ADD 0.054084934779
+440 F_ADD 0.194020561451
 441 F_MLT __atan_w
-442 F_ADD -0.117697073484
+442 F_ADD -0.332694520616
 443 F_MLT __atan_w
-444 F_ADD 0.194020561451
-445 F_MLT __atan_w
-446 F_ADD -0.332694520616
-447 F_MLT __atan_w
-448 F_ADD 0.999980069822
-449 F_MLT __atan_t
-450 SET __atan_p
-451 LOD __atan_big
-452 JIZ __L_atan_done
-453 LOD __atan_p
-454 F_SU2 1.5707963268
-455 JMP __L_atan_sign
-456 LOD __atan_p
-457 F_SGN __atan_x
-458 RET
+444 F_ADD 0.999980069822
+445 F_MLT __atan_t
+446 F_SU2 1.5707963268
+447 F_SGN __atan_x
+448 RET
+449 LOD __atan_t
+450 F_MLT __atan_t
+451 SET __atan_w
+452 F_MLT -0.012300666580
+453 F_ADD 0.054084934779
+454 F_MLT __atan_w
+455 F_ADD -0.117697073484
+456 F_MLT __atan_w
+457 F_ADD 0.194020561451
+458 F_MLT __atan_w
+459 F_ADD -0.332694520616
+460 F_MLT __atan_w
+461 F_ADD 0.999980069822
+462 F_MLT __atan_t
+463 F_SGN __atan_x
+464 RET

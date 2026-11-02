@@ -12,9 +12,9 @@ Info: constant 6.283185307 on line 31 approximated to 6.2831850051879883 (error 
 Heads up on line 15: variable 'idx' is int, but getting a float.
 Info: 62 assembly instructions generated
 Info: adding assembly macro for sin computation
-Info: 14 variables share 5 data words (9 saved)
+Info: 13 variables share 5 data words (8 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 93 instructions and 2170 variables were found
+Info: 101 instructions and 2170 variables were found
 Info: filling array with 1000 values read from file "sin_x.txt"
 Info: largest approximation error in file 'sin_x.txt' is 0.00000023751831 on line 102
 Info: filling array with 1000 values read from file "sin_y.txt"
@@ -140,26 +140,34 @@ lang C+-
 67 F_ADD __sin_q
 68 F2I
 69 SET __sin_k
-70 I2F
-71 F_MLT 3.1415926536
-72 F_SU2 __sin_x
-73 SET __sin_r
-74 F_MLT __sin_r
-75 SET __sin_w
-76 LOD -0.000184472138
-77 F_MLT __sin_w
-78 F_ADD 0.008309516704
-79 F_MLT __sin_w
-80 F_ADD -0.166651680787
+70 AND 1
+71 JIZ __L_sin_even
+72 I2F_M __sin_k
+73 F_MLT 3.1415926536
+74 F_SU2 __sin_x
+75 F_NEG
+76 SET __sin_r
+77 F_MLT __sin_r
+78 SET __sin_w
+79 F_MLT -0.000184472138
+80 F_ADD 0.008309516704
 81 F_MLT __sin_w
-82 F_ADD 0.999997487148
-83 F_MLT __sin_r
-84 SET __sin_p
-85 LOD __sin_k
-86 AND 1
-87 JIZ __L_sin_even
-88 LOD __sin_p
-89 F_NEG
-90 RET
-91 LOD __sin_p
-92 RET
+82 F_ADD -0.166651680787
+83 F_MLT __sin_w
+84 F_ADD 0.999997487148
+85 F_MLT __sin_r
+86 RET
+87 I2F_M __sin_k
+88 F_MLT 3.1415926536
+89 F_SU2 __sin_x
+90 SET __sin_r
+91 F_MLT __sin_r
+92 SET __sin_w
+93 F_MLT -0.000184472138
+94 F_ADD 0.008309516704
+95 F_MLT __sin_w
+96 F_ADD -0.166651680787
+97 F_MLT __sin_w
+98 F_ADD 0.999997487148
+99 F_MLT __sin_r
+100 RET

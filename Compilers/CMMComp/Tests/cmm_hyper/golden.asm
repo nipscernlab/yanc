@@ -151,9 +151,7 @@ JMP __Lwh1
             F_MLT 0.6931471806          // n * ln2
             F_SU2 __exp_x                 // r = x - n*ln2   (F_SU2 X = X - acc)
             SET   __exp_r
-
-            LOD   0.0013888889          // Horner, exp(r) = sum r^k/k! (k=0..6)
-            F_MLT __exp_r                 // 1/6!
+            F_MLT 0.0013888889          // Horner, exp(r) = sum r^k/k! (k=0..6): r * 1/6!
             F_ADD 0.0083333333          // 1/5!
             F_MLT __exp_r
             F_ADD 0.0416666667          // 1/4!

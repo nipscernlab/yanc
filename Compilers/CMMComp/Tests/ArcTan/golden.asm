@@ -12,11 +12,8 @@ NOP
 #SHARE arctan_LUT_x main_y
 #SHARE arctan_LUT_signo main_t
 #SHARE __atan_x main_y
-#SHARE __atan_ax arctan_LUT_v0
-#SHARE __atan_big main_t
-#SHARE __atan_t arctan_LUT_v0
-#SHARE __atan_w arctan_LUT_idxf
-#SHARE __atan_p arctan_LUT_v0
+#SHARE __atan_t main_t
+#SHARE __atan_w arctan_LUT_v0
 LOD 0
 SET main_j
 @__Lwh1top LOD main_j
@@ -91,27 +88,25 @@ RET
 // |x| is folded into [0,1] with the 1/x identity: atan(|x|) = pi/2 - atan(1/|x|)
 // for |x|>1. atan(t) on [0,1] is a degree-11 odd minimax polynomial (least-
 // squares fit, max abs error ~4.9e-6 -- ~6 digits, vs the old 49-point LUT's
-// ~4e-5). One shared polynomial for both branches; no table, no new hardware.
+// ~4e-5). Each branch has its own copy of the polynomial, so neither stores a
+// flag to test again after it: fewer cycles, a few more words. No table, no
+// new hardware.
 
 @__float_atan SET   __atan_x                 // save x
-            F_ABS_M __atan_x               // ax = |x|
-            SET   __atan_ax
-            F_LES 1.0                    // (ax > 1)?  [F_LES true when acc > X]
-            SET   __atan_big               // flag: 1 if |x|>1 (use 1/x)
+            F_ABS                        // t = |x|
+            SET   __atan_t
+            F_LES 1.0                    // (|x| > 1)?  [F_LES true when acc > X]
             JIZ   __L_atan_small
-            LOD   __atan_ax                // big branch: t = 1/ax
-            F_DIV 1.0                    // 1.0 / ax   (F_DIV X = X/acc)
+
+            LOD   __atan_t                 // |x| > 1: t = 1/|x|
+            F_DIV 1.0                    // 1.0 / |x|   (F_DIV X = X/acc)
 NOP
 NOP
 F_QUO
-            JMP   __L_atan_haveT
-@__L_atan_small LOD __atan_ax               // small branch: t = ax
-@__L_atan_haveT SET __atan_t
-
+            SET   __atan_t
             F_MLT __atan_t                 // w = t^2
             SET   __atan_w
-            LOD  -0.012300666580         // Horner in w: atan(t)/t = a1 + a3 w + ... + a11 w^5
-            F_MLT __atan_w                 // a11
+            F_MLT -0.012300666580           // Horner in w: atan(t)/t = a1 + a3 w + ... + a11 w^5
             F_ADD 0.054084934779         // a9
             F_MLT __atan_w
             F_ADD -0.117697073484        // a7
@@ -122,13 +117,23 @@ F_QUO
             F_MLT __atan_w
             F_ADD 0.999980069822         // a1
             F_MLT __atan_t                 // * t  -> atan(t)
-            SET   __atan_p
+            F_SU2 1.5707963268           // pi/2 - atan(1/|x|)   (F_SU2 X = X - acc)
+            F_SGN __atan_x                 // the sign of x
+            RET
 
-            LOD   __atan_big
-            JIZ   __L_atan_done            // |x|<=1 -> result = atan(t)
-            LOD   __atan_p                 // |x|>1  -> result = pi/2 - atan(1/x)
-            F_SU2 1.5707963268           // pi/2 - p   (F_SU2 X = X - acc)
-            JMP   __L_atan_sign
-@__L_atan_done LOD __atan_p
-@__L_atan_sign F_SGN __atan_x                // apply the sign of x
+@__L_atan_small LOD __atan_t               // |x| <= 1: t = |x|
+            F_MLT __atan_t                 // w = t^2
+            SET   __atan_w
+            F_MLT -0.012300666580           // the same polynomial
+            F_ADD 0.054084934779
+            F_MLT __atan_w
+            F_ADD -0.117697073484
+            F_MLT __atan_w
+            F_ADD 0.194020561451
+            F_MLT __atan_w
+            F_ADD -0.332694520616
+            F_MLT __atan_w
+            F_ADD 0.999980069822
+            F_MLT __atan_t                 // atan(|x|)
+            F_SGN __atan_x                 // the sign of x
             RET

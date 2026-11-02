@@ -10,9 +10,9 @@ Heads up on line 25: variable 'idx' is int, but getting a float.
 Info: 66 assembly instructions generated
 Info: adding assembly macro for arc-tangent computation
 Info: 2 divisions, 5 words each for DIV/MOD and 4 for F_DIV (6 added)
-Info: 15 variables share 6 data words (9 saved)
+Info: 12 variables share 6 data words (6 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 106 instructions and 2069 variables were found
+Info: 112 instructions and 2069 variables were found
 Info: filling array with 1000 values read from file "atan_x.txt"
 Info: largest approximation error in file 'atan_x.txt' is 0.00000011908996 on line 51
 Info: filling array with 1000 values read from file "atan_y.txt"
@@ -32,7 +32,7 @@ Info: ULA resource -> float to int converter
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point sign computation (standard library)
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 17% of the Assembly Instruction Set
+Info: using 18% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
@@ -143,39 +143,45 @@ lang C+-
 68 RET
 // library macros, no source line
 69 SET __atan_x
-70 F_ABS_M __atan_x
-71 SET __atan_ax
+70 F_ABS
+71 SET __atan_t
 72 F_LES 1.0
-73 SET __atan_big
-74 JIZ __L_atan_small
-75 LOD __atan_ax
-76 F_DIV 1.0
+73 JIZ __L_atan_small
+74 LOD __atan_t
+75 F_DIV 1.0
+76 NOP
 77 NOP
-78 NOP
-79 F_QUO
-80 JMP __L_atan_haveT
-81 LOD __atan_ax
-82 SET __atan_t
-83 F_MLT __atan_t
-84 SET __atan_w
-85 LOD -0.012300666580
+78 F_QUO
+79 SET __atan_t
+80 F_MLT __atan_t
+81 SET __atan_w
+82 F_MLT -0.012300666580
+83 F_ADD 0.054084934779
+84 F_MLT __atan_w
+85 F_ADD -0.117697073484
 86 F_MLT __atan_w
-87 F_ADD 0.054084934779
+87 F_ADD 0.194020561451
 88 F_MLT __atan_w
-89 F_ADD -0.117697073484
+89 F_ADD -0.332694520616
 90 F_MLT __atan_w
-91 F_ADD 0.194020561451
-92 F_MLT __atan_w
-93 F_ADD -0.332694520616
-94 F_MLT __atan_w
-95 F_ADD 0.999980069822
-96 F_MLT __atan_t
-97 SET __atan_p
-98 LOD __atan_big
-99 JIZ __L_atan_done
-100 LOD __atan_p
-101 F_SU2 1.5707963268
-102 JMP __L_atan_sign
-103 LOD __atan_p
-104 F_SGN __atan_x
-105 RET
+91 F_ADD 0.999980069822
+92 F_MLT __atan_t
+93 F_SU2 1.5707963268
+94 F_SGN __atan_x
+95 RET
+96 LOD __atan_t
+97 F_MLT __atan_t
+98 SET __atan_w
+99 F_MLT -0.012300666580
+100 F_ADD 0.054084934779
+101 F_MLT __atan_w
+102 F_ADD -0.117697073484
+103 F_MLT __atan_w
+104 F_ADD 0.194020561451
+105 F_MLT __atan_w
+106 F_ADD -0.332694520616
+107 F_MLT __atan_w
+108 F_ADD 0.999980069822
+109 F_MLT __atan_t
+110 F_SGN __atan_x
+111 RET

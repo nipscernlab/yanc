@@ -143,6 +143,21 @@ tags consumed by Aurora.
   and `>>>` of int literals are folded (`Sqrt`); and `main` comes right
   after the globals' initializers, so no `JMP main`. 536 words fewer over
   59 C± tests (`sapho_all` 997 → 904, `ArcTan` 75 → 69, `Sqrt` 91 → 84).
+- **C±: the library routines take fewer cycles, with the same results.**
+  `atan`, `tan` and `sin` keep a copy of their polynomial in each branch,
+  so that no branch stores a flag and tests it again (`sin` tests the
+  parity of k as soon as k is known and negates r before the polynomial,
+  which is odd); `log` takes m-1 before m+1, `XPO_M` and `I2F_M`, and has
+  its factor 2 in the coefficients (a power of two moves only the
+  exponent); every Horner starts with one `F_MLT` (`F_MLT c` instead of
+  `LOD c; F_MLT w`). Per call: `atan` 7.9 cycles fewer, `tan` 7.5, `log`
+  5.7, `sin` 4, `exp` 1, at a few more instructions (docs/library.md).
+  The results are the same words: 300 inputs of each function at
+  `#FROUND` 0, 1 and 2, against the old routines. The Horner change rests
+  on `F_MLT` (and `F_ADD`) giving the same word with its operands swapped,
+  checked on 3000 random pairs at each level (a planted difference is
+  caught). The tests that call them write more outputs in the same clocks
+  (`cmm_trig` 2826 → 3319); their sim goldens grow only at the end.
 - **cmmcomp writes one space between the words of an instruction**, none
   at either end, whatever the padding of the format string: the goldens
   are compared byte for byte, and a restructured emitter would have had to

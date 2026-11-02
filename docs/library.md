@@ -7,9 +7,13 @@ instructions, added once however many times it is called. C++ has its own
 headers (see [The C++ YANC accepts](language-cpp.md#the-standard-headers)).
 
 The costs below were measured on 2026-10-13 (32-bit processor, `#FROUND
-0`): the instructions and data words a program `fout(0, f(fin(0)))` has
-beyond the same program without `f`. They are program memory, not time:
-how many cycles a routine takes depends on its argument.
+0`), and those of the routines rewritten on 2026-11-02 changed by what was
+measured then: the instructions and data words a program `fout(0, f(fin(0)))`
+has beyond the same program without `f`. They are program memory, not time:
+how many cycles a routine takes depends on its argument. `atan`, `tan` and
+`sin` keep a copy of their polynomial in each branch, so that no branch
+stores a flag to test again: a few instructions more, 4 to 8 cycles fewer a
+call (`log` 6, `exp` 1), with the same results.
 
 ## Input and output
 
@@ -42,15 +46,15 @@ They take a `float` (an `int` is converted) and return a `float`.
 | function | cost: instructions, data words | also takes a `comp` |
 |---|---|---|
 | `sqrt(x)` | 28, 1 | yes (44, 4) |
-| `exp(x)` | 28, 9 | yes (68, 19) |
-| `log(x)` | 43, 10 | yes (129, 25) |
-| `sin(x)` | 32, 10 | yes (80, 20) |
-| `cos(x)` | 33, 11 | yes (81, 20) |
-| `tan(x)` | 47, 15 | yes (93, 21) |
-| `atan(x)` | 37, 11 | yes (148, 27) |
-| `sinh(x)`, `cosh(x)` | 34, 11 | no |
-| `tanh(x)` | 37, 11 | no |
-| `pow(x, y)` | 76, 18 | no |
+| `exp(x)` | 27, 9 | yes (75, 18) |
+| `log(x)` | 37, 10 | yes (129, 24) |
+| `sin(x)` | 40, 9 | yes (87, 19) |
+| `cos(x)` | 41, 10 | yes (88, 19) |
+| `tan(x)` | 53, 14 | yes (100, 20) |
+| `atan(x)` | 43, 10 | yes (148, 26) |
+| `sinh(x)`, `cosh(x)` | 33, 11 | no |
+| `tanh(x)` | 36, 11 | no |
+| `pow(x, y)` | 69, 18 | no |
 | `floor(x)` | 10, 2 | no |
 | `ceil(x)` | 11, 2 | no |
 | `round(x)` | 6, 1 | no |
@@ -58,7 +62,7 @@ They take a `float` (an `int` is converted) and return a `float`.
 The complex forms are measured against a program that builds and writes a
 `comp` (11 instructions, 3 words). Functions that share a routine share its
 cost: `sin` and `cos` together cost
-36 instructions, not 65. The methods behind them are described in
+44 instructions, not 81. The methods behind them are described in
 *Implementação de Funções Não-Lineares em Processador Soft-Core* (ENMC 2025,
 <https://cdn.nipscern.com/publications/enemc-2025-implementacao-de-funcoes.pdf>).
 Their accuracy follows the float format: the routines are written for 23

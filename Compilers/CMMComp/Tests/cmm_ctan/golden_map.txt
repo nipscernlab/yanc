@@ -6,9 +6,9 @@ Info: adding assembly macro for sin computation
 Info: adding assembly macro for exponential computation
 Info: 15 divisions, 5 words each for DIV/MOD and 4 for F_DIV (45 added)
 Info: 1 variables written and never read removed (1 instructions)
-Info: 26 variables share 7 data words (19 saved)
+Info: 25 variables share 6 data words (19 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 316 instructions and 27 variables were found
+Info: 323 instructions and 26 variables were found
 Info: ULA resource -> float-point multiplier
 Info: adding stack memory for function calls
 Info: ULA resource -> float-point adder
@@ -16,12 +16,12 @@ Info: ULA resource -> float-point divider (not recomended for high frequency opp
 Info: ULA resource -> float to int converter
 Info: adding data output handling
 Info: ULA resource -> float-point sign computation (standard library)
-Info: ULA resource -> int to float converter
 Info: ULA resource -> & operator
+Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point negative operation
 Info: ULA resource -> float scale by a power of two (2^k)
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 17% of the Assembly Instruction Set
+Info: using 18% of the Assembly Instruction Set
 Info: using 25% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
@@ -308,53 +308,60 @@ lang C+-
 263 F_ADD __sin_q
 264 F2I
 265 SET __sin_k
-266 I2F
-267 F_MLT 3.1415926536
-268 F_SU2 __sin_x
-269 SET __sin_r
-270 F_MLT __sin_r
-271 SET __sin_w
-272 LOD -0.000184472138
-273 F_MLT __sin_w
-274 F_ADD 0.008309516704
-275 F_MLT __sin_w
-276 F_ADD -0.166651680787
+266 AND 1
+267 JIZ __L_sin_even
+268 I2F_M __sin_k
+269 F_MLT 3.1415926536
+270 F_SU2 __sin_x
+271 F_NEG
+272 SET __sin_r
+273 F_MLT __sin_r
+274 SET __sin_w
+275 F_MLT -0.000184472138
+276 F_ADD 0.008309516704
 277 F_MLT __sin_w
-278 F_ADD 0.999997487148
-279 F_MLT __sin_r
-280 SET __sin_p
-281 LOD __sin_k
-282 AND 1
-283 JIZ __L_sin_even
-284 LOD __sin_p
-285 F_NEG
-286 RET
-287 LOD __sin_p
-288 RET
-289 SET __exp_x
-290 F_MLT 1.4426950409
-291 SET __exp_q
-292 LOD 0.5
-293 F_SGN __exp_q
-294 F_ADD __exp_q
-295 F2I
-296 SET __exp_n
-297 I2F
-298 F_MLT 0.6931471806
-299 F_SU2 __exp_x
-300 SET __exp_r
-301 LOD 0.0013888889
-302 F_MLT __exp_r
-303 F_ADD 0.0083333333
-304 F_MLT __exp_r
-305 F_ADD 0.0416666667
-306 F_MLT __exp_r
-307 F_ADD 0.1666666667
-308 F_MLT __exp_r
-309 F_ADD 0.5
-310 F_MLT __exp_r
-311 F_ADD 1.0
-312 F_MLT __exp_r
-313 F_ADD 1.0
-314 F_SCL __exp_n
-315 RET
+278 F_ADD -0.166651680787
+279 F_MLT __sin_w
+280 F_ADD 0.999997487148
+281 F_MLT __sin_r
+282 RET
+283 I2F_M __sin_k
+284 F_MLT 3.1415926536
+285 F_SU2 __sin_x
+286 SET __sin_r
+287 F_MLT __sin_r
+288 SET __sin_w
+289 F_MLT -0.000184472138
+290 F_ADD 0.008309516704
+291 F_MLT __sin_w
+292 F_ADD -0.166651680787
+293 F_MLT __sin_w
+294 F_ADD 0.999997487148
+295 F_MLT __sin_r
+296 RET
+297 SET __exp_x
+298 F_MLT 1.4426950409
+299 SET __exp_q
+300 LOD 0.5
+301 F_SGN __exp_q
+302 F_ADD __exp_q
+303 F2I
+304 SET __exp_n
+305 I2F
+306 F_MLT 0.6931471806
+307 F_SU2 __exp_x
+308 SET __exp_r
+309 F_MLT 0.0013888889
+310 F_ADD 0.0083333333
+311 F_MLT __exp_r
+312 F_ADD 0.0416666667
+313 F_MLT __exp_r
+314 F_ADD 0.1666666667
+315 F_MLT __exp_r
+316 F_ADD 0.5
+317 F_MLT __exp_r
+318 F_ADD 1.0
+319 F_MLT __exp_r
+320 F_ADD 1.0
+321 F_SCL __exp_n
+322 RET
