@@ -365,10 +365,6 @@ void declar_ret(expr e, int ret)
     if (v_table[fun_parse].type == 6)
         {fprintf (stderr, MSG_ERR_VOID_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
 
-    // test whether it is inside an if/else
-    //if ((get_if() > 0) && (v_table[fun_parse].type != 6))
-        //fprintf(stdout, "Heads up on line %d: using return inside if/else can break if you forget it somewhere!\n", line_num+1);
-
     // ------------------------------------------------------------------------
     // check every combination ------------------------------------------------
     // ------------------------------------------------------------------------

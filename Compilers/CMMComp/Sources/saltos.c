@@ -159,7 +159,6 @@ void if_exp(expr_node *cond)
 stmt_node *if_stmt()
 {
     stmt_node *then_body = stmt_list_close();
-    pop_if();
     stmt_node *partial   = pending_pop();
     partial->then_body   = then_body;
     return partial;
@@ -177,7 +176,6 @@ void else_stmt()
 stmt_node *if_fim()
 {
     stmt_node *else_body = stmt_list_close();
-    pop_if();
     stmt_node *partial   = pending_pop();
     partial->else_body   = else_body;
     return partial;
@@ -210,7 +208,6 @@ stmt_node *while_stmt()
     stmt_node *body    = stmt_list_close();
     cont_pop();
     brk_pop();
-    pop_while();
     stmt_node *partial = pending_pop();
     partial->body      = body;
     return partial;
@@ -263,7 +260,6 @@ stmt_node *for_finish()
     stmt_node *body    = stmt_list_close();
     cont_pop();
     brk_pop();
-    pop_while();
     stmt_node *partial = pending_pop();
 
     stmt_node *init = partial->then_body;
@@ -308,7 +304,6 @@ stmt_node *do_finish(expr_node *cond)
     stmt_node *body    = stmt_list_close();
     cont_pop();
     brk_pop();
-    pop_while();
     stmt_node *partial = pending_pop();
     partial->cond = cond;
     partial->body = body;
