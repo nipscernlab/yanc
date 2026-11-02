@@ -154,6 +154,14 @@ tags consumed by Aurora.
   and `>>>` of int literals are folded (`Sqrt`); and `main` comes right
   after the globals' initializers, so no `JMP main`. 536 words fewer over
   59 C± tests (`sapho_all` 997 → 904, `ArcTan` 75 → 69, `Sqrt` 91 → 84).
+  Then a float `+` or `*` of two floats is swapped the same way (`4.0*y`
+  after `SET y` is `F_MLT 4.0`): `F_ADD` and `F_MLT` give the same word
+  with their operands swapped, simulated on 3000 random pairs at each
+  `#FROUND` level (1517 words, most in the coverage tests); a reversed
+  array read at a constant index, `v[k)`, is one `LOD_V` at the index the
+  hardware would compute, with cmmcomp now keeping `#FFTSIZ` (`proc_fft`
+  219 → 203); and an array element just read stays named in the acc, so
+  `out(2, d[k][j]); if (d[k][j] < m)` reads it once (`ProcDTW` 233 → 227).
 - **C±: the library routines take fewer cycles, with the same results.**
   `atan`, `tan` and `sin` keep a copy of their polynomial in each branch,
   so that no branch stores a flag and tests it again (`sin` tests the
