@@ -30,7 +30,7 @@ FILE *f_lin;          // line file for the cmm program
 
 char dir_macro[1024]; // Macros directory
 char dir_tmp  [1024]; // Temp directory
-char cmm_src  [1024]; // the .cmm the parser reads (re-read for src_lines.txt)
+static char cmm_src[1024]; // the .cmm the parser reads (re-read for src_lines.txt)
 
 // state variables
 int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
@@ -143,7 +143,7 @@ void acc_holds_index(const char *key)
 // ----------------------------------------------------------------------------
 
 // helper that finds the right instruction inside add_instr
-int find_opc(const char *opc, const char *str)
+static int find_opc(const char *opc, const char *str)
 {
     size_t len = strlen(opc);
     const char *p = str;
@@ -166,7 +166,7 @@ int find_opc(const char *opc, const char *str)
 
 // Replaces ⟨ with < and ⟩ with >
 // so they can be displayed in gtkwave
-void substituir_braket(char *str)
+static void substituir_braket(char *str)
 {
     unsigned char *src = (unsigned char *)str;
     unsigned char *dst = (unsigned char *)str;

@@ -2,6 +2,9 @@
 // identifier table -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+#ifndef CMM_VARIAVEIS_H
+#define CMM_VARIAVEIS_H
+
 #include <stddef.h>
 
 // One row of the symbol table.
@@ -28,12 +31,13 @@ typedef struct symbol {
 #define CMM_NAME_MAX 50
 
 extern symbol *v_table;                  // AoS storage, indexed by ID 0..v_count
+extern int     v_count;                  // how many entries v_table holds
 
 // table element manipulation -------------------------------------------------
 
 int    find_var(char *val);              // searches the table for the ID (-1 if not found)
 void    add_var(char *var);              // adds an ID to the table
-void  check_var();                       // checks what was used in the table (at the end of the parser)
+void  check_var(void);                       // checks what was used in the table (at the end of the parser)
 char *rem_fname(char *var, char *fname); // removes the function name from the variable
 void  check_name(int id, int is_fun);     // a declared name must be free in the .asm and not an instruction
 void  dire_wave (int id);                // #WAVE name: the variable stays even if never read
@@ -58,3 +62,5 @@ extern int fnum_quiet;                   // 1: exec_fnum says nothing of an appr
 int exec_cnum(char *text);               // a comp constant was found
 void fnum_text (const char *in, char *out, size_t n); // a float literal as the .asm writes it
 void cnum_split(const char *txt, char *re, char *im); // a comp literal's two parts
+
+#endif // CMM_VARIAVEIS_H

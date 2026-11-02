@@ -309,7 +309,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     pushd "$ROOT/Compilers/CMMComp/Sources" >/dev/null
     bison -y -d CMMComp.y
     flex CMMComp.l
-    gcc -O2 -Wall -Werror -o "$CMMCOMP" \
+    gcc -O2 -Wall -Werror $(mk_list CMM_WARN) -o "$CMMCOMP" \
         $(mk_list CMMCOMP_C) lex.yy.c y.tab.c \
         $(mk_list CMMCOMP_COMMON ../../common/) $UTF8RES -lm
     rm -f lex.yy.c y.tab.c y.tab.h

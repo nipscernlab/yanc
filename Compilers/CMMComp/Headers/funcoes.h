@@ -2,6 +2,9 @@
 // routines and state variables for the function parser -----------------------
 // ----------------------------------------------------------------------------
 
+#ifndef CMM_FUNCOES_H
+#define CMM_FUNCOES_H
+
 #include "ast.h"   // expr
 
 // state variables ------------------------------------------------------------
@@ -29,7 +32,7 @@ int   declar_par(int   t, int id ); // appends to the deferred STMT_FUNC_HEADER 
 void  declar_ret(expr e , int ret); // a return keyword was found
 void func_body_begin(void);         // fires at the function's '{', builds STMT_FUNC_HEADER
 void    func_ret(int id);           // end/return of the function
-void    void_ret(      );           // end of a void function
+void    void_ret(void);           // end of a void function
 
 // usage ----------------------------------------------------------------------
 
@@ -43,3 +46,5 @@ expr_node *fcall      (int id);       // value user call: builds and returns nod
 // par_listexp push each arg's node onto the frame; fcall / vcall drain the
 // frame when ')' is reduced.
 void  args_frame_push(void);
+
+#endif // CMM_FUNCOES_H

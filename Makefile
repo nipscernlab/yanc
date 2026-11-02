@@ -76,6 +76,9 @@ CPPCOMP_C := main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c
 CMMCOMP_COMMON := yanc_num.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 ASMCOMP_COMMON := yanc_num.c xstr.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 CPPCOMP_COMMON := asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
+# cmmcomp's headers declare every function another file uses (each .c includes
+# its own .h, the rest is static): these keep it so under -Werror
+CMM_WARN := -Wmissing-prototypes -Wstrict-prototypes
 
 BINARIES := $(BIN)/yanc$(EXE) $(BIN)/cmmcomp$(EXE) $(BIN)/asmcomp$(EXE) \
             $(BIN)/cppcomp$(EXE) \
@@ -123,7 +126,7 @@ $(BIN)/cmmcomp$(EXE): $(addprefix $(CMM)/,$(CMMCOMP_C)) \
                       $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(CONSOLE) $(EXEDIR) \
                       $(wildcard Compilers/CMMComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(CMM) && $(BISON) -y -d CMMComp.y && $(FLEX) CMMComp.l
-	$(CC) $(CFLAGS) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(addprefix $(COMMON)/,$(CMMCOMP_COMMON)) $(UTF8) $(LDLIBS)
+	$(CC) $(CFLAGS) $(CMM_WARN) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(addprefix $(COMMON)/,$(CMMCOMP_COMMON)) $(UTF8) $(LDLIBS)
 
 # --- asmcomp (flex: pass1.l is the first pass, ASMComp.l the second) --------
 $(BIN)/asmcomp$(EXE): $(addprefix $(ASM)/,$(ASMCOMP_C)) $(ASM)/ASMComp.l $(ASM)/pass1.l $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(COMMON)/xstr.c $(COMMON)/xstr.h $(CONSOLE) $(EXEDIR) \

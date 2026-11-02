@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 // local includes
+#include "../Headers/funcoes.h"
 #include "../Headers/ast.h"
 #include "../Headers/t2t.h"
 #include "../Headers/labels.h"
@@ -595,7 +596,7 @@ void func_ret(int id) // id -> id of the current function
 }
 
 // return without exp (return;)
-void void_ret()
+void void_ret(void)
 {
     // check whether it really is void, or a non-void by mistake
     if (v_table[fun_parse].type != 6)

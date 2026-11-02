@@ -9,6 +9,7 @@
 #include  <stdio.h>
 
 // local includes
+#include "../Headers/data_declar.h"
 #include "../Headers/t2t.h"
 #include "../Headers/ast.h"
 #include "../Headers/global.h"

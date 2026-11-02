@@ -2,9 +2,12 @@
 // interrupt handling ---------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-extern int itr_ok;    // tells whether an interrupt has already been used
-extern int itr_seen;  // the program has a #PRACA (set while parsing)
-extern int toaqui_ok; // tells whether a #TOAQUI marker has already been used
+#ifndef CMM_ITR_H
+#define CMM_ITR_H
 
-void dire_inter ();   // marks the interrupt start point         (#PRACA)
-void dire_toaqui();   // marks the address compared by the cheguei pin (#TOAQUI)
+extern int itr_seen;  // the program has a #PRACA (set while parsing)
+
+void dire_inter (void);   // marks the interrupt start point         (#PRACA)
+void dire_toaqui(void);   // marks the address compared by the cheguei pin (#TOAQUI)
+
+#endif // CMM_ITR_H

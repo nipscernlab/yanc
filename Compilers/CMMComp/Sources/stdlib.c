@@ -132,7 +132,7 @@ int link_use(int id, int sync)
     return k;
 }
 
-void link_sync_emit()
+void link_sync_emit(void)
 {
     for (int k = 0; k < MAX_LINKS; k++) if (lnk_mode[k] == 2) add_sinst(0, "#LKSYNC %d\n", k);
 }

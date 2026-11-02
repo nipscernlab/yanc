@@ -3,6 +3,10 @@
 // ----------------------------------------------------------------------------
 
 // state the cmm compiler keeps from the directives
+
+#ifndef CMM_DIRETIVAS_H
+#define CMM_DIRETIVAS_H
+
 extern char prname[128]; // processor name
 extern int  nubits;      // word width (bits)
 extern int  nbmant;      // mantissa width (bits)
@@ -14,3 +18,5 @@ extern int  fftsiz;      // low bits of an index v[k) reverses (#FFTSIZ)
 
 // directive parsing
 void dire_exec (char *dir, int id, int t);
+
+#endif // CMM_DIRETIVAS_H
