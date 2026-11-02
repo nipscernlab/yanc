@@ -1594,6 +1594,49 @@ if [ "$CPP_ONLY" -eq 0 ] && command -v python3 >/dev/null 2>&1; then
     fi
 fi
 
+# ---- 4a-min. the smallest processor (sapho_min) -----------------------------
+# sapho_min writes a constant out with an 8-bit processor: it must get no block
+# it does not use. Yosys synthesises it flattened, as Quartus does, so a block
+# whose opcodes the program lacks folds away; the two memories are black boxes,
+# or Yosys would fold the program itself into constants. The flip-flops and
+# LUTs are held to Tests/sapho_min/cells.txt, both ways: fewer means the
+# baseline is lowered on purpose.
+if [ "$CPP_ONLY" -eq 0 ]; then
+    echo ""
+    echo "==> the smallest processor (sapho_min)"
+    sm_v="$WORK_DIR/sapho_min/sapho_min/sapho_min.v"
+    if [ "$NO_SIM" -eq 1 ]; then
+        echo "SKIP (sapho_min-cells): --no-sim builds no .v"
+    elif ! command -v yosys >/dev/null 2>&1; then
+        echo "SKIP (sapho_min-cells): no yosys on PATH"
+    elif [ ! -s "$sm_v" ]; then
+        echo "FAIL (sapho_min-cells): $sm_v missing - did its build pass?"
+        fail=$((fail + 1)); failed_names+=("sapho_min-cells")
+    else
+        # Yosys is a native Windows build there: it gets relative names only
+        sm_dir="$TMP_DIR/sapho_min_cells"; mkdir -p "$sm_dir"
+        cp "$sm_v" "$HDL"/{processor,core,ula,addr_dec,instr_dec}.v "$sm_dir/"
+        printf '%s\n' "read_verilog -sv sapho_min.v processor.v core.v ula.v addr_dec.v instr_dec.v" \
+            "blackbox mem_instr mem_data" "hierarchy -top sapho_min" \
+            "synth -top sapho_min -flatten -noshare -lut 4" "stat" > "$sm_dir/cells.ys"
+        ( cd "$sm_dir" && yosys -q -l cells.log cells.ys >/dev/null 2>&1 )
+        sm_ff=$(awk '/Printing statistics/{s=1; ff=0} s && /\$_[A-Z]*DFF[A-Z0-9_]*[ \t]+[0-9]+/{ff+=$2} END{print ff+0}' "$sm_dir/cells.log")
+        sm_lut=$(grep -E '^\s+\$lut\s+[0-9]+' "$sm_dir/cells.log" | tail -1 | awk '{print $2}')
+        sm_want_ff=$(awk '$1 == "FF"  {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
+        sm_want_lut=$(awk '$1 == "LUT" {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
+        if [ -z "$sm_lut" ]; then
+            echo "FAIL (sapho_min-cells): Yosys gave no count (see $sm_dir/cells.log)"
+            fail=$((fail + 1)); failed_names+=("sapho_min-cells")
+        elif [ "$sm_ff" = "$sm_want_ff" ] && [ "$sm_lut" = "$sm_want_lut" ]; then
+            echo "PASS (sapho_min-cells): $sm_ff flip-flops, $sm_lut LUT4 = cells.txt"
+            pass=$((pass + 1))
+        else
+            echo "FAIL (sapho_min-cells): $sm_ff flip-flops, $sm_lut LUT4; cells.txt says $sm_want_ff and $sm_want_lut"
+            fail=$((fail + 1)); failed_names+=("sapho_min-cells")
+        fi
+    fi
+fi
+
 # ---- 4a2b. round to nearest on varying data -----------------------------------
 # cmm_fround_mean accumulates pseudo-random addends at #FROUND 2 (TODO item
 # 2(b)). Its sim golden is checked line by line against model.py, which rounds

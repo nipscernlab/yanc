@@ -1,0 +1,15 @@
+#NUBITS 8
+
+// The opposite of sapho_all: the smallest program that still does something,
+// a constant written out by an 8-bit processor. Its processor must get no
+// block it does not use (pay only for what you use): the regression
+// synthesises it with Yosys, flattened, and holds the flip-flops and LUTs to
+// the counts in cells.txt. hardware.txt holds the sizes the generated top
+// passes the processor.
+//
+// out(0, 5) once                                            -> 5
+
+void main()
+{
+    out(0, 5);
+}

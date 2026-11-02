@@ -117,6 +117,7 @@ ResetCheck 21
 sapho_all  997
 sapho_all_a 1000
 sapho_all_b 1005
+sapho_min   4
 Seno       67
 Sqrt       91
 sw_test    19
