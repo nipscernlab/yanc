@@ -258,6 +258,21 @@ tags consumed by Aurora.
   counted as the main question resolved, so such a program compiled; now
   that `main` comes first in the program, the reset fell into the first
   function. NegTest `no_main_funcs` (found by the third cmmcomp audit).
+- **asmcomp: a long name no longer overruns a buffer.** The waveform signal
+  of each variable (`me1_f_<function>_v_<name>_e_`) was written into a row
+  of 64 bytes, so a name of 46 characters or more (cmmcomp takes 50) ran
+  into the next variable's row: `cmm_flow_globals`' 50-letter global
+  showed in the waveform under the next variable's name, and with names of
+  50 in a function of 50 asmcomp aborted (`_FORTIFY_SOURCE`). The tables of
+  variables, labels, `#SHARE` names and array names, the offset of `LOD_V`,
+  the folders of the command line, the lines of `prog_log.txt`/`app_log.txt`
+  and of an array's file now take any length, through a small module
+  shared by the tools (Compilers/common/xstr.c); asmcomp has no `strcpy`,
+  `strcat` or `sprintf` left. An .asm with no instruction is now refused
+  instead of computing `log2(0)`. Found by the waveform's variable check;
+  checked with every test built under AddressSanitizer, UBSan and
+  `_FORTIFY_SOURCE` (WSL), which report nothing now. Test
+  `cmm_long_names`: names of 50 in every kind of declaration.
 - **cmmcomp: a name taken from the symbol table survives its growth.**
   About 50 places in the library keep a name and then add a symbol; past
   256, 512, ... symbols the table moved and left those names on freed

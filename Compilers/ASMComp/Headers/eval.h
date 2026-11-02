@@ -6,13 +6,13 @@
 // global variables -----------------------------------------------------------
 
 // directories used to access the .mif and .v files
-extern char proc_dir[1024];    // processor directory
-extern char temp_dir[1024];    // Tmp folder directory
-extern char  hdl_dir[1024];    // HDL folder directory
-extern char  mac_dir[1024];    // Macros folder directory
+extern char *proc_dir;          // processor directory
+extern char *temp_dir;          // Tmp folder directory
+extern char * hdl_dir;          // HDL folder directory
+extern char * mac_dir;          // Macros folder directory
 
 // stores the directive values
-extern char prname  [128 ];    // processor name
+extern char *prname;            // processor name
 extern int  nubits;            // ALU word width (bits)
 extern int  nbmant;            // mantissa width (bits)
 extern int  nbexpo;            // exponent width (bits)

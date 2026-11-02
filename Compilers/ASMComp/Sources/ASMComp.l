@@ -257,10 +257,10 @@ int main(int argc, char *argv[])
   cli_args a;
   cli_parse(argc, argv, &a);                 // parses the named options (or exits with usage)
 
-  strcpy(proc_dir, a.proc_dir);              // output folder: the folder of the .asm (everything asmcomp writes goes here)
-  strcpy( hdl_dir, a.hdl_dir);               // HDL folder path
-  strcpy( mac_dir, a.macros_dir);            // Macros folder path
-  strcpy(temp_dir, a.temp_dir);              // the same folder: the tables of the compilers are read from here
+  proc_dir = a.proc_dir;                     // output folder: the folder of the .asm (everything asmcomp writes goes here)
+   hdl_dir = a.hdl_dir;                      // HDL folder path
+   mac_dir = a.macros_dir;                   // Macros folder path
+  temp_dir = a.temp_dir;                     // the same folder: the tables of the compilers are read from here
 
   // a JIZ/LDI/ILI right after a float operation gets a NOP (they read the ALU
   // before the normaliser; Compilers/common/asm_share.h); the source-line map

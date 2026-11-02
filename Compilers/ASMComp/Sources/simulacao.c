@@ -11,6 +11,8 @@
 #include "../Headers/eval.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/simulacao.h"
+#include "../Headers/messages.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------
@@ -25,128 +27,71 @@ FILE *f_tran;          // opcode translation file
 int  sim_n_opc = 0;    // number of instructions in the translation file
 int  sim_fim;          // address of the end of the program
 
-// user-declared variables
-int  s_count  = 0;     // number of registered variables
-char s_name[1000][64]; // name     of the found variable
-int  s_addr[1000];     // address  of the found variable
-int  s_type[1000];     // type     of the found variable
-char s_raw [1000][64]; // name as the .asm spells it
-int  s_shar[1000];     // in a #SHARE group: followed by its writes, not its address
-int *s_st  [1000];     // instruction indices of the SETs that write it (if shared)
-int  s_nst [1000];     // how many
+// user-declared variables: as many as the program has, names of any length
+typedef struct
+{
+    char *name;        // its signal in the testbench (me<type>_f_<function>_v_<name>_e_)
+    char *raw;         // its name as the .asm spells it
+    int   addr;        // address of its word
+    int   type;        // type
+    int   shar;        // in a #SHARE group: followed by its writes, not its address
+    int  *st;          // instruction indices of the SETs that write it (if shared)
+    int   nst;         // how many
+} sim_var;
+static sim_var *sv;
+static int      s_count = 0, s_cap = 0;
 
 // user-declared arrays
-int  s_count_arr  = 0;     // number of registered arrays
-char s_name_arr[1000][64]; // name     of the found array
-int  s_addr_arr[1000];     // address  of the found array
-int  s_type_arr[1000];     // type     of the found array
-int  s_size_arr[1000];     // size     of the found array
+typedef struct
+{
+    char *name;        // its signals' prefix in the testbench
+    int   addr;        // address of its first word
+    int   type;        // type
+    int   size;        // words
+} sim_arr;
+static sim_arr *sa;
+static int      s_count_arr = 0, sa_cap = 0;
 
 // ----------------------------------------------------------------------------
 // helper functions -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// helper that searches prog_log.txt to check whether ...
-// char *va points to a variable declared in the .cmm
-// also returns the type of the variable found
-int sim_is_var(char *va, int *tipo, int *is_global, char *nome)
+// searches prog_log.txt for the variable (arr = 0: lines "<function> <name>
+// <type>") or the array (arr = 1: "<function> <name> <type> <size>") that the
+// .asm calls va (a global by its name, a local as <function>_<name>); on a
+// match, returns 1, its type (and size) and, in *nome, "<function>_v_<name>"
+static int sim_find(const char *va, int arr, int *tipo, int *size, int *is_global, char **nome)
 {
-    // open the log file ------------------------------------------------------
-
     char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
-    if (input == NULL) return 0;   // an .asm written by hand: no source variables
-
-    // scan the file lines looking for the variable ---------------------------
-
-    char texto[1001];
-    char funcao[128];
-    char variav[128];
+    if (input == NULL) return 0;   // an .asm written by hand: no source names
 
     int ok = 0;
-    while(fgets(texto, 1001, input) != NULL)
+    char *texto;
+    while (!ok && (texto = xgetline(input)) != NULL)
     {
-        // pick up the variable's 3 parameters --------------------------------
-
-        if (sscanf (texto, "%s %s %d", funcao, variav, tipo) != 3) continue;
-
-        // build the variable name from the log data --------------------------
-
-        // global variables don't include the function name
-        if (strcmp(funcao,"global")==0)
+        size_t n = strlen(texto) + 1;               // no word is longer than its line
+        char *funcao = xrealloc(NULL, n), *variav = xrealloc(NULL, n);
+        int t, z = 0;
+        int got = arr ? sscanf(texto, "%s %s %d %d", funcao, variav, &t, &z)
+                      : sscanf(texto, "%s %s %d"   , funcao, variav, &t);
+        if (got == (arr ? 4 : 3))
         {
-            *is_global = 1;
-            sprintf(nome , "%s", variav);
+            int global = strcmp(funcao, "global") == 0;
+            char *asm_name = global ? xstrdup(variav) : xasprintf("%s_%s", funcao, variav);
+            if (strcmp(asm_name, va) == 0)
+            {
+                *tipo = t; if (size) *size = z;
+                *is_global = global;
+                *nome = xasprintf("%s_v_%s", funcao, variav);
+                ok = 1;
+            }
+            free(asm_name);
         }
-        else
-        {
-            *is_global = 0;
-            sprintf(nome , "%s_%s", funcao, variav);
-        }
-
-        // if it matches the wanted variable, build its name and break --------
-
-        if (strcmp(nome,va) == 0)
-        {
-            sprintf(nome , "%s_v_%s", funcao, variav);
-            ok = 1; break;
-        }
+        free(funcao); free(variav); free(texto);
     }
 
     fclose(input);
-
-    return ok;
-}
-
-// helper that searches prog_log.txt to check whether ...
-// char *va points to an array declared in the .cmm
-// also returns the type and size of the array found
-int sim_is_arr(char *va, int *tipo, int *size, int *is_global, char *nome)
-{
-    // open the log file ------------------------------------------------------
-
-    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", temp_dir);
-    FILE *input = fopen(path, "r");
-    if (input == NULL) return 0;   // an .asm written by hand: no source arrays
-
-    // scan the file lines looking for the variable --------------------------
-
-    char texto[1001];
-    char funcao[128];
-    char variav[128];
-
-    int ok = 0;
-    while(fgets(texto, 1001, input) != NULL)
-    {
-        // pick up the array's 4 parameters -----------------------------------
-
-        if (sscanf (texto, "%s %s %d %d", funcao, variav, tipo, size) != 4) continue;
-
-        // build the array name from the log data -----------------------------
-
-        // global arrays don't include the function name
-        if (strcmp(funcao,"global")==0)
-        {
-            *is_global = 1;
-            sprintf(nome , "%s", variav);
-        }
-        else
-        {
-            *is_global = 0;
-            sprintf(nome , "%s_%s", funcao, variav);
-        }
-
-        // if it matches the wanted array, build its name and break -----------
-
-        if (strcmp(nome,va) == 0)
-        {
-            sprintf(nome , "%s_v_%s", funcao, variav);
-            ok = 1; break;
-        }
-    }
-
-    fclose(input);
-
     return ok;
 }
 
@@ -198,23 +143,23 @@ int sim_regi(char *va)
 // same, for a variable whose word is at addr (a #SHARE name uses its home's)
 int sim_regi_at(char *va, int addr)
 {
-    int  tipo;
-    int  is_global;
-    char var_name[128];
+    int   tipo = 0;
+    int   is_global;
+    char *var_name;
 
-    if (sim_is_var(va, &tipo, &is_global, var_name))
+    if (sim_find(va, 0, &tipo, NULL, &is_global, &var_name))
     {
-        if (is_global)
-            sprintf(s_name[s_count], "me%d_f_global_v_%s_e_", tipo, va);
-        else
-            sprintf(s_name[s_count], "me%d_f_%s_e_", tipo, var_name);
-        snprintf(s_raw[s_count], sizeof(s_raw[0]), "%s", va);
-        s_addr[s_count] = addr;
-        s_type[s_count] = tipo;
-        s_shar[s_count] = var_shared(va);
-        s_st  [s_count] = NULL;
-        s_nst [s_count] = 0;
-        s_count++;
+        if (s_count == s_cap) sv = xrealloc(sv, (size_t)(s_cap = s_cap ? 2 * s_cap : 64) * sizeof(*sv));
+        sim_var *v = &sv[s_count++];
+        v->name = is_global ? xasprintf("me%d_f_global_v_%s_e_", tipo, va)
+                            : xasprintf("me%d_f_%s_e_", tipo, var_name);
+        v->raw  = xstrdup(va);
+        v->addr = addr;
+        v->type = tipo;
+        v->shar = var_shared(va);
+        v->st   = NULL;
+        v->nst  = 0;
+        free(var_name);
     }
 
     return tipo;
@@ -223,18 +168,17 @@ int sim_regi_at(char *va, int addr)
 // whether va is already registered
 int sim_has(char *va)
 {
-    for (int i = 0; i < s_count; i++) if (strcmp(s_raw[i], va) == 0) return 1;
+    for (int i = 0; i < s_count; i++) if (strcmp(sv[i].raw, va) == 0) return 1;
     return 0;
 }
 
 // the instruction about to be added (sim_n_opc) writes va
 void sim_store(char *va)
 {
-    for (int i = 0; i < s_count; i++) if (strcmp(s_raw[i], va) == 0)
+    for (int i = 0; i < s_count; i++) if (strcmp(sv[i].raw, va) == 0)
     {
-        s_st[i] = realloc(s_st[i], (size_t)(s_nst[i] + 1) * sizeof(int));
-        if (!s_st[i]) {fprintf(stderr, "asmcomp: out of memory\n"); exit(EXIT_FAILURE);}
-        s_st[i][s_nst[i]++] = sim_n_opc;
+        sv[i].st = xrealloc(sv[i].st, (size_t)(sv[i].nst + 1) * sizeof(int));
+        sv[i].st[sv[i].nst++] = sim_n_opc;
         return;
     }
 }
@@ -243,54 +187,50 @@ void sim_store(char *va)
 // if so, registers it for display in the simulator
 void sim_regi_arr(char *va)
 {
-    int  tipo, size;
-    int  is_global;
-    char var_name[128];
+    int   tipo, size;
+    int   is_global;
+    char *var_name;
 
-    if (sim_is_arr(va, &tipo, &size, &is_global, var_name))
+    if (sim_find(va, 1, &tipo, &size, &is_global, &var_name))
     {
-        if (is_global)
-            sprintf(s_name_arr[s_count_arr], "arr_me%d_f_global_v_%s_e_", tipo, va);
-        else
-            sprintf(s_name_arr[s_count_arr], "arr_me%d_f_%s_e_", tipo, var_name);
-        s_addr_arr[s_count_arr] = var_cnt()-1;
-        s_type_arr[s_count_arr] = tipo;
-        s_size_arr[s_count_arr] = size;
-        s_count_arr++;
+        if (s_count_arr == sa_cap) sa = xrealloc(sa, (size_t)(sa_cap = sa_cap ? 2 * sa_cap : 16) * sizeof(*sa));
+        sim_arr *r = &sa[s_count_arr++];
+        r->name = is_global ? xasprintf("arr_me%d_f_global_v_%s_e_", tipo, va)
+                            : xasprintf("arr_me%d_f_%s_e_", tipo, var_name);
+        r->addr = var_cnt()-1;
+        r->type = tipo;
+        r->size = size;
+        free(var_name);
     }
 }
 
-// returns the memory contents
-void sim_mem(int addr, char *val)
+// the word at addr of the data memory, as its binary digits (the caller frees it)
+char *sim_mem(int addr)
 {
     char aux[2048]; snprintf(aux, sizeof(aux), "%s/%s_data.mif", proc_dir, prname);
     FILE *f_data = fopen(aux, "r");
+    if (f_data == NULL) {fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, aux); exit(EXIT_FAILURE);}
 
-    int i = 0;
-    while (fgets(aux,sizeof(aux),f_data))
+    char *line, *val = NULL;
+    for (int i = 0; (line = xgetline(f_data)) != NULL; i++)
     {
-        if (i == addr)
-        {
-            aux[strcspn(aux, "\r\n")] = 0; // remove newline characters
-            strcpy(val, aux);
-            break;
-        }
-        i++;
+        if (i == addr) {val = line; break;}
+        free(line);
     }
-
     fclose(f_data);
+    return val ? val : xstrdup("0");
 }
 
-char* sim_name    (int i){return s_name    [i];} // returns the variable name
-int   sim_addr    (int i){return s_addr    [i];} // returns the variable address
-int   sim_type    (int i){return s_type    [i];} // returns the variable type
+char* sim_name    (int i){return sv[i].name   ;} // returns the variable name
+int   sim_addr    (int i){return sv[i].addr   ;} // returns the variable address
+int   sim_type    (int i){return sv[i].type   ;} // returns the variable type
 int   sim_cont    (     ){return s_count      ;} // returns the number of registered variables
-int   sim_shared  (int i){return s_shar    [i];} // returns whether the variable is in a #SHARE group
-int   sim_nstore  (int i){return s_nst     [i];} // returns how many SETs write it
-int   sim_store_at(int i, int k){return s_st[i][k];} // returns the instruction index of the k-th
+int   sim_shared  (int i){return sv[i].shar   ;} // returns whether the variable is in a #SHARE group
+int   sim_nstore  (int i){return sv[i].nst    ;} // returns how many SETs write it
+int   sim_store_at(int i, int k){return sv[i].st[k];} // returns the instruction index of the k-th
 
-char* sim_name_arr(int i){return s_name_arr[i];} // returns the array name
-int   sim_addr_arr(int i){return s_addr_arr[i];} // returns the array address
-int   sim_type_arr(int i){return s_type_arr[i];} // returns the array type
+char* sim_name_arr(int i){return sa[i].name   ;} // returns the array name
+int   sim_addr_arr(int i){return sa[i].addr   ;} // returns the array address
+int   sim_type_arr(int i){return sa[i].type   ;} // returns the array type
 int   sim_cont_arr(     ){return s_count_arr  ;} // returns the number of registered arrays
-int   sim_size_arr(int i){return s_size_arr[i];} // returns the array size
+int   sim_size_arr(int i){return sa[i].size   ;} // returns the array size

@@ -16,6 +16,7 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
 #include "../../common/yanc_num.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // helper functions -----------------------------------------------------------
@@ -113,9 +114,10 @@ int parse_float(const char *str, float *out_value, const char **out_end)
                             return 1; // conversion ok
 }
 
-// helper to split a comp's real and imaginary parts
+// helper to split a comp's real and imaginary parts; real and imag must each
+// hold strlen(entrada) + 1 chars (neither part is longer than the input)
 void separar_complexo(const char *entrada, char *real, char *imag) {
-    char buffer[100];
+    char *buffer = xrealloc(NULL, strlen(entrada) + 1);
     int j = 0;
 
     // strip whitespace
@@ -129,7 +131,7 @@ void separar_complexo(const char *entrada, char *real, char *imag) {
     // find the last '+' or '-' that splits real from imaginary (a sign right
     // after an e belongs to an exponent: 1e-8+2e-8i)
     int pos = -1;
-    for (int i = 1; buffer[i] != '\0'; i++) { // skip index 0 to avoid confusing it with the real part's sign
+    for (int i = 1; i < j; i++) { // skip index 0 to avoid confusing it with the real part's sign
         if ((buffer[i] == '+' || buffer[i] == '-') && buffer[i-1] != 'e' && buffer[i-1] != 'E') {
             pos = i;
         }
@@ -139,19 +141,21 @@ void separar_complexo(const char *entrada, char *real, char *imag) {
         fprintf(stderr, MSG_ERR_BAD_FORMAT);
         real[0] = '\0';
         imag[0] = '\0';
+        free(buffer);
         return;
     }
 
     // copy the real part
-    strncpy(real, buffer, pos);
+    memcpy(real, buffer, (size_t)pos);
     real[pos] = '\0';
 
     // copy the imaginary part (without the 'i')
-    strcpy(imag, buffer + pos);
+    memcpy(imag, buffer + pos, (size_t)(j - pos) + 1);
     size_t len = strlen(imag);
     if (len > 0 && imag[len - 1] == 'i') {
         imag[len - 1] = '\0';
     }
+    free(buffer);
 }
 
 // helper that checks whether a line contains a valid comp
@@ -181,7 +185,7 @@ int linha_e_comp(const char *linha, int idx, char *f_name, float *delta)
 
     // range check ------------------------------------------------------------
 
-    char real[100], imag[100];
+    char *real = xrealloc(NULL, strlen(linha) + 1), *imag = xrealloc(NULL, strlen(linha) + 1);
 
     separar_complexo(linha, real, imag);
 
@@ -197,7 +201,9 @@ int linha_e_comp(const char *linha, int idx, char *f_name, float *delta)
 
     // convert the real part and compute the residual -------------------------
 
-    return f2mf(real,delta);
+    int word = f2mf(real,delta);
+    free(real); free(imag);
+    return word;
 }
 
 // helper that fills an array in data memory
@@ -232,14 +238,13 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
     // below set it for the expected types, but GCC cannot prove the
     // domain so we initialize defensively.
     int  val = 0;
-    char linha[128];
-    char real [64], imag[64];
+    char *linha;                     // a line of any length
 
     int   i     =   0;
     int   idx   =   0;
     float delta = 0.0;
     float dmax  = 0.0;
-    while (fgets (linha, sizeof(linha), f_file))
+    for (; (linha = xgetline(f_file)) != NULL; free(linha))
     {
         i++;
 
@@ -265,8 +270,10 @@ void fill_mem(char *f_name, int tam, int fil_typ, FILE *f_data)
         // imaginary part of a comp
         if (fil_typ == 4)
         {
+            char *real = xrealloc(NULL, strlen(linha) + 1), *imag = xrealloc(NULL, strlen(linha) + 1);
             separar_complexo(linha, real, imag);
             val = f2mf(imag,&delta);
+            free(real); free(imag);
             // keep track of the largest approximation error
             if (fabs(delta) > fabs(dmax)) {dmax = delta; idx = i;}
         }

@@ -1,0 +1,62 @@
+// ----------------------------------------------------------------------------
+// Strings and tables of any length, for every YANC tool (xstr.h) -------------
+// ----------------------------------------------------------------------------
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "xstr.h"
+#include "yanc_lang.h"
+
+static void out_of_memory(void)
+{
+    fprintf(stderr, yanc_lang_en ? "Error: out of memory.\n"
+                                 : "Erro: memória insuficiente.\n");
+    exit(EXIT_FAILURE);
+}
+
+void *xrealloc(void *p, size_t n)
+{
+    void *q = realloc(p, n ? n : 1);
+    if (!q) out_of_memory();
+    return q;
+}
+
+char *xstrdup(const char *s)
+{
+    size_t n = strlen(s) + 1;
+    char *d = xrealloc(NULL, n);
+    memcpy(d, s, n);
+    return d;
+}
+
+char *xasprintf(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int n = vsnprintf(NULL, 0, fmt, ap);             // how long the text is
+    va_end(ap);
+    if (n < 0) out_of_memory();                      // only an encoding error gets here
+    char *s = xrealloc(NULL, (size_t)n + 1);
+    va_start(ap, fmt);
+    vsnprintf(s, (size_t)n + 1, fmt, ap);
+    va_end(ap);
+    return s;
+}
+
+char *xgetline(FILE *f)
+{
+    size_t cap = 128, len = 0;
+    char *s = xrealloc(NULL, cap);
+    int c;
+    while ((c = fgetc(f)) != EOF && c != '\n')
+    {
+        if (len + 1 >= cap) s = xrealloc(s, cap *= 2);
+        s[len++] = (char)c;
+    }
+    if (c == EOF && len == 0) {free(s); return NULL;}
+    if (len > 0 && s[len - 1] == '\r') len--;
+    s[len] = '\0';
+    return s;
+}

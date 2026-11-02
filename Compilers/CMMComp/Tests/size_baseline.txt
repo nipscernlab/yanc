@@ -63,6 +63,7 @@ cmm_ilit8  18
 cmm_ioports 13
 cmm_itr    15
 cmm_log    35
+cmm_long_names 48
 cmm_main_return 21
 cmm_names  69
 cmm_nofloat 21

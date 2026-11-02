@@ -12,27 +12,27 @@
 #include "../Headers/eval.h"
 #include "../Headers/messages.h"
 #include "../../common/yanc_num.h"
+#include "../../common/xstr.h"
 
 // converts the integer x to a binary string of length w
 // could be revised to support ints wider than 32 bits
 // one way would be to switch x to an ascii representation as well
 char *itob(int x, int w)
 {
-	int z;
-    char *b = (char *) malloc(w+1);
-    b[0] = '\0';
+	int z, n = 0;
+    char *b = xrealloc(NULL, (size_t)w + 1);   // w digits and the terminator
 
 	int s = (w > 31) ? 31 : w;
 	if (w > 31)
     {
         for (z = 0; z < w- 31; z++)
-            if (x < 0) strcat(b,"1");
-            else       strcat(b,"0");
+            b[n++] = (x < 0) ? '1' : '0';
     }
 
     for (z = pow(2,s-1); z > 0; z >>= 1)
-		strcat(b, ((x & z) == z) ? "1" : "0");
+		b[n++] = ((x & z) == z) ? '1' : '0';
 
+    b[n] = '\0';
     return b;
 }
 

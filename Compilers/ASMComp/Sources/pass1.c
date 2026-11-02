@@ -13,6 +13,7 @@
 // local includes
 #include "../Headers/pass1.h"
 #include "../Headers/messages.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // the data-word table --------------------------------------------------------
@@ -20,7 +21,7 @@
 
 static int    v_count = 0;
 static int    v_cap   = 0;
-static char (*v_name)[512] = NULL;
+static char **v_name = NULL;   // names of any length (NULL: an array's later words)
 
 static void var_grow(int needed)
 {
@@ -28,10 +29,7 @@ static void var_grow(int needed)
     int new_cap = v_cap ? v_cap : 256;
     while (new_cap < needed) new_cap *= 2;
 
-    void *t = realloc(v_name, (size_t)new_cap * sizeof(*v_name));
-    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
-
-    v_name = t;
+    v_name = xrealloc(v_name, (size_t)new_cap * sizeof(*v_name));
     memset(v_name + v_cap, 0, (size_t)(new_cap - v_cap) * sizeof(*v_name));
     v_cap = new_cap;
 }
@@ -40,15 +38,15 @@ static void var_grow(int needed)
 static int var_find(char *val)
 {
     for (int i = 0; i < v_count; i++)
-        if (strcmp(val, v_name[i]) == 0) return i;
+        if (v_name[i] && strcmp(val, v_name[i]) == 0) return i;
     return -1;
 }
 
 // #SHARE <name> <home>: <name> has no word of its own, it uses <home>'s
 // (asm_share, in Compilers/common, decides which variables can)
 static int    sh_count = 0;
-static char (*sh_name)[512] = NULL;
-static char (*sh_home)[512] = NULL;
+static char **sh_name = NULL;
+static char **sh_home = NULL;
 
 static char *var_home(char *va)
 {
@@ -60,11 +58,10 @@ static char *var_home(char *va)
 // records that va shares home's word
 static void var_share(char *va, char *home)
 {
-    sh_name = realloc(sh_name, (size_t)(sh_count + 1) * sizeof(*sh_name));
-    sh_home = realloc(sh_home, (size_t)(sh_count + 1) * sizeof(*sh_home));
-    if (!sh_name || !sh_home) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
-    snprintf(sh_name[sh_count], sizeof(*sh_name), "%s", va  );
-    snprintf(sh_home[sh_count], sizeof(*sh_home), "%s", home);
+    sh_name = xrealloc(sh_name, (size_t)(sh_count + 1) * sizeof(*sh_name));
+    sh_home = xrealloc(sh_home, (size_t)(sh_count + 1) * sizeof(*sh_home));
+    sh_name[sh_count] = xstrdup(va  );
+    sh_home[sh_count] = xstrdup(home);
     sh_count++;
 }
 
@@ -75,8 +72,8 @@ static void var_add(char *va, int size)
 
     if (var_find(va) == -1)
     {
-        var_grow(v_count + size);
-        strcpy(v_name[v_count], va);
+        var_grow(v_count + (size > 0 ? size : 1)); // the name needs its row even for 0 words
+        v_name[v_count] = xstrdup(va);
         v_count += size;
     }
 }
@@ -87,8 +84,15 @@ static void var_add(char *va, int size)
 
 static int   tam_arr;       // array size
 static int   arrd_left;     // #arrayd: values still to come
-static char  name_arr[128]; // name of the array currently being read
-static char  name_sh [512]; // name of the #SHARE variable currently being read
+static char *name_arr;      // name of the array currently being read
+static char *name_sh;       // name of the #SHARE variable currently being read
+
+// the copy of s in *keep, replacing the one it had
+static void keep_name(char **keep, const char *s)
+{
+    free(*keep);
+    *keep = xstrdup(s);
+}
 
 static int   n_ins = 0;     // number of instructions
 static int   state = 0;     // scanner state
@@ -157,19 +161,19 @@ void p1_opernd(char *va)
         case  3: fprintf(f_log, "nbmant %s\n", va ); state =  0; break; // mantissa width (bits)
         case  4: fprintf(f_log, "nbexpo %s\n", va ); state =  0; break; // exponent width (bits)
         case 25: fprintf(f_log, "fround %s\n", va ); state =  0; break; // float rounding level
-        case 26: snprintf(name_sh, sizeof(name_sh), "%s", va); state = 27; break; // #SHARE: the name
+        case 26: keep_name(&name_sh ,           va ); state = 27; break; // #SHARE: the name
         case 27: var_share(name_sh,            va ); state =  0; break; // #SHARE: the home it uses
         case 28: if (!isdigit((unsigned char)va[0]) && va[0] != '-' && va[0] != '+')
                      var_add(va,1);                                          // LDI/STI <array>: a data operand
                  n_ins++;                            state =  0; break; // LDI/STI <number>: raw base, no data word
-        case 11: strcpy (name_arr,             va ); state = 12; break; // found an array without initialization
+        case 11: keep_name(&name_arr,           va ); state = 12; break; // found an array without initialization
         case 12:                                     state = 13; break; // its data type (not needed here)
         case 13: var_add(name_arr,        atoi(va)); state =  0; break; // declare array without initialization
-        case 14: strcpy (name_arr,             va ); state = 15; break; // found an array with initialization
+        case 14: keep_name(&name_arr,           va ); state = 15; break; // found an array with initialization
         case 15:                                     state = 16; break; // its data type (not needed here)
         case 16:          tam_arr =       atoi(va ); state = 17; break; // the file-initialized array's size
         case 17: var_add(name_arr,         tam_arr); state =  0; break; // its words
-        case 31: strcpy (name_arr,             va ); state = 32; break; // #arrayd: the name
+        case 31: keep_name(&name_arr,           va ); state = 32; break; // #arrayd: the name
         case 32:                                     state = 33; break; // its data type (not needed here)
         case 33: var_add(name_arr,        atoi(va)); state = 34; break; // its words
         case 34: arrd_left = atoi(va);  state = arrd_left ? 35 : 0; break; // how many values follow
