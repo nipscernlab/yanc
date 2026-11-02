@@ -367,6 +367,23 @@ void parse_end(char *prname, char *d_proc)
 // functions for registering instructions -------------------------------------
 // ----------------------------------------------------------------------------
 
+// writes an instruction with one space between its words and none at either
+// end, whatever padding its format string had. Only the file gets it: the
+// peephole below still reads the text as it was formatted. A leading space
+// cannot glue it to a label: add_sinst ends every label with one.
+static void put_instr(const char *s)
+{
+    while (*s == ' ' || *s == '\t') s++;
+    int gap = 0;
+    for (; *s && *s != '\n'; s++)
+    {
+        if (*s == ' ' || *s == '\t') {gap = 1; continue;}
+        if (gap) {fputc(' ', f_asm); gap = 0;}
+        fputc(*s, f_asm);
+    }
+    fputc('\n', f_asm);
+}
+
 // adds an instruction to the asm file
 void add_instr(char *inst, ...)
 {
@@ -429,7 +446,7 @@ void add_instr(char *inst, ...)
     // append the instruction -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    fprintf(f_asm, "%s", str);
+    put_instr(str);
 
     // table for the gtkwave assembly translator ------------------------------
 

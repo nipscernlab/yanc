@@ -46,17 +46,17 @@ P_LOD fft_j
 ILI data
 P_LOD fft_j
 ILI data_i
-SET_P __aux_var 
+SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
-SET   __aux_var3
+SET __aux_var3
 F_MLT __aux_var1
-P_LOD __aux_var 
+P_LOD __aux_var
 F_MLT __aux_var2
 SF_SU2
 P_LOD __aux_var1
 F_MLT __aux_var2
-P_LOD __aux_var 
+P_LOD __aux_var
 F_MLT __aux_var3
 SF_ADD
 SET_P fft_temp_i

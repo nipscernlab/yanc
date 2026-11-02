@@ -285,7 +285,7 @@ F_ADD main_w
 P_LOD main_z_i
 F_ADD main_w_i
 SET_P __catan_b
-SET   __catan_a
+SET __catan_a
 F_MLT __catan_a
 SET __catan_a2
 LOD __catan_b

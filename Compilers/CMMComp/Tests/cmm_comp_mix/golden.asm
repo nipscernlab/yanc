@@ -89,7 +89,7 @@ F_MLT main_c
 P_LOD main_c_i
 F_MLT main_c_i
 SF_ADD
-SET   __aux_var
+SET __aux_var
 LOD 25.0
 F_MLT main_c
 P_LOD __aux_var
@@ -182,7 +182,7 @@ F_MLT main_c
 P_LOD main_c_i
 F_MLT main_c_i
 SF_ADD
-SET   __aux_var
+SET __aux_var
 LOD 25.0
 F_MLT main_c
 P_LOD __aux_var
@@ -239,9 +239,9 @@ F2I_M main_r
 OUT 0
 F2I_M main_r_i
 OUT 0
-I2F_M  main_ni
+I2F_M main_ni
 F_ADD main_c
-P_LOD  main_c_i
+P_LOD main_c_i
 SET_P main_r_i
 SET main_r
 F2I_M main_r

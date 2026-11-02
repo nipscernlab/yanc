@@ -74,9 +74,9 @@ S_ADD
 OUT 0
 LOD 5
 SET_V b 5
-LOD  1
-MLT  3
-ADD  2
+LOD 1
+MLT 3
+ADD 2
 PSH
 LDI b
 ADD 1
@@ -85,15 +85,15 @@ LOD_V b 5
 OUT 0
 LOD 1
 SET main_j
-MLT  3
-ADD  main_j
+MLT 3
+ADD main_j
 PSH
 LDI b
 ADD 1
 STI b
-LOD  main_j
-MLT  3
-ADD  main_j
+LOD main_j
+MLT 3
+ADD main_j
 PSH
 LDI b
 ADD 1
@@ -156,9 +156,9 @@ LOD_V f 0
 F_MLT 10.0
 F2I
 OUT 0
-LOD  1
-MLT  3
-ADD  1
+LOD 1
+MLT 3
+ADD 1
 PSH
 LDI b
 ADD 1

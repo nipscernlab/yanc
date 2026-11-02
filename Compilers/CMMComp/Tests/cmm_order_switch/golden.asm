@@ -28,8 +28,8 @@ ADD 1
 P_LOD main_b
 ADD 1
 SET_P __aux_var
-MLT   4
-ADD   __aux_var
+MLT 4
+ADD __aux_var
 PSH
 LDI m
 ADD 1

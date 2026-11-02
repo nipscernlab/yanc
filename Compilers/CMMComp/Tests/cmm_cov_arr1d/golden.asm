@@ -171,7 +171,7 @@ F2I
 OUT 0
 LOD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -198,7 +198,7 @@ F_MLT main_w_i
 F2I
 OUT 0
 F2I_M main_f2
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -215,7 +215,7 @@ OUT 0
 LOD main_f3
 F_ADD main_fz
 F2I
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -256,7 +256,7 @@ F_MLT main_one
 SF_ADD
 POP
 F2I
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -271,7 +271,7 @@ F_MLT main_w_i
 F2I
 OUT 0
 F2I_M main_c3
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -427,7 +427,7 @@ F2I
 OUT 0
 LOD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -462,7 +462,7 @@ F_MLT main_w_i
 F2I
 OUT 0
 F2I_M main_f2
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -483,7 +483,7 @@ OUT 0
 LOD main_f3
 F_ADD main_fz
 F2I
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -532,7 +532,7 @@ F_MLT main_one
 SF_ADD
 POP
 F2I
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -551,7 +551,7 @@ F_MLT main_w_i
 F2I
 OUT 0
 F2I_M main_c3
-SET   __aux_var
+SET __aux_var
 LDI vc
 P_LOD __aux_var
 LDI vc_i
@@ -869,7 +869,7 @@ LOD 367.0
 SET main_cv_i
 LOD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 P_LOD main_cv
 STI vc
 LOD __aux_var
@@ -924,7 +924,7 @@ SET main_cv
 LOD 369.0
 SET main_cv_i
 F2I_M main_f2
-SET   __aux_var
+SET __aux_var
 P_LOD main_cv
 STI vc
 LOD __aux_var
@@ -955,7 +955,7 @@ SET main_cv_i
 LOD main_f3
 F_ADD main_fz
 F2I
-SET   __aux_var
+SET __aux_var
 P_LOD main_cv
 STI vc
 LOD __aux_var
@@ -984,7 +984,7 @@ SET main_cv
 LOD 371.0
 SET main_cv_i
 F2I_M 1.0
-SET   __aux_var
+SET __aux_var
 P_LOD main_cv
 STI vc
 LOD __aux_var
@@ -1024,7 +1024,7 @@ F_MLT main_one
 SF_ADD
 POP
 F2I
-SET   __aux_var
+SET __aux_var
 P_LOD main_cv
 STI vc
 LOD __aux_var
@@ -1053,7 +1053,7 @@ SET main_cv
 LOD 373.0
 SET main_cv_i
 F2I_M main_c3
-SET   __aux_var
+SET __aux_var
 P_LOD main_cv
 STI vc
 LOD __aux_var
@@ -1752,10 +1752,10 @@ P_LOD main_iv
 ADD main_z0
 I2F
 SET_P __aux_var
-SET   __aux_var2
+SET __aux_var2
 P_LOD __aux_var
 STI vc
-LOD   __aux_var2
+LOD __aux_var2
 P_LOD 0.0
 STI vc_i
 LOD main_n1
@@ -1869,7 +1869,7 @@ LOD 417.0
 SET main_cv_i
 LOD main_n2
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 P_LOD main_fv
 STI vc
 LOD __aux_var
@@ -1931,10 +1931,10 @@ ADD main_z0
 P_LOD main_fv
 F_ADD main_fz
 SET_P __aux_var
-SET   __aux_var2
+SET __aux_var2
 P_LOD __aux_var
 STI vc
-LOD   __aux_var2
+LOD __aux_var2
 P_LOD 0.0
 STI vc_i
 LOD main_n1
@@ -1989,7 +1989,7 @@ LOD 421.0
 SET main_cv_i
 LOD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 P_LOD 371.5
 STI vc
 LOD __aux_var
@@ -2047,7 +2047,7 @@ LOD 423.0
 SET main_cv_i
 LOD main_n2
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 P_LOD main_cv
 STI vc
 LOD __aux_var
@@ -2127,10 +2127,10 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 SET_P __aux_var2
-SET   __aux_var3
+SET __aux_var3
 P_LOD __aux_var2
 STI vc
-LOD   __aux_var3
+LOD __aux_var3
 P_LOD __aux_var
 STI vc_i
 LOD main_n1
@@ -2185,7 +2185,7 @@ LOD 427.0
 SET main_cv_i
 LOD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 P_LOD 377.0
 STI vc
 LOD __aux_var
@@ -2483,7 +2483,7 @@ F2I
 OUT 0
 LOD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 ILI vc
 P_LOD __aux_var
 ILI vc_i
@@ -2507,7 +2507,7 @@ LOD 433.0
 SET main_cv_i
 LOD main_n3
 ADD main_z0
-SET   __aux_var
+SET __aux_var
 P_LOD main_cv
 ISI vc
 LOD __aux_var
