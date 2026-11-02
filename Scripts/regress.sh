@@ -267,6 +267,11 @@ hw_check() {   # hw_check <hardware.txt> <top.v>
 # With the depths asmcomp works out (peak + 1) it never should; a declared
 # depth that is too small shows up here even when the outputs happen to match.
 # Returns 1 when a flag fired, 0 otherwise (and when there is no VCD).
+mk_list() {   # mk_list <VAR> [prefix]: a source list of the Makefile, the only place it is written
+    local f
+    for f in $(make -s -C "$ROOT" "print-$1"); do printf '%s%s ' "${2:-}" "$f"; done
+}
+
 stack_check() {   # stack_check <tb.vcd>
     [ -f "$1" ] || return 0
     awk '{ sub(/\r$/, "") }
@@ -305,10 +310,8 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     bison -y -d CMMComp.y
     flex CMMComp.l
     gcc -O2 -Wall -Werror -o "$CMMCOMP" \
-        ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
-        funcoes.c labels.c lex.yy.c oper.c saltos.c stdlib.c t2t.c \
-        variaveis.c array_index.c global.c macros.c messages.c args.c dirac.c \
-        y.tab.c ../../common/yanc_num.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
+        $(mk_list CMMCOMP_C) lex.yy.c y.tab.c \
+        $(mk_list CMMCOMP_COMMON ../../common/) $UTF8RES -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
@@ -317,8 +320,8 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex CPPComp.l
     gcc -O2 -Wall \
         $CPP_DEFS -o "$CPPC" \
-        main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c lex.yy.c y.tab.c \
-        ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
+        $(mk_list CPPCOMP_C) lex.yy.c y.tab.c \
+        $(mk_list CPPCOMP_COMMON ../../common/) $UTF8RES -lm
     rm -f lex.yy.c y.tab.c y.tab.h
     popd >/dev/null
 
@@ -326,8 +329,8 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex -o ASMComp.c ASMComp.l
     flex -o pass1_lex.c pass1.l
     gcc -O2 -Wall -Werror -o "$ASMCOMP" \
-        ASMComp.c pass1_lex.c pass1.c eval.c labels.c opcodes.c variaveis.c t2t.c \
-        hdl.c simulacao.c array.c messages.c args.c ../../common/yanc_num.c ../../common/xstr.c ../../common/asm_share.c ../../common/proc_name.c ../../common/console_utf8.c ../../common/exe_dir.c ../../common/yanc_lang.c $UTF8RES -lm
+        ASMComp.c pass1_lex.c $(mk_list ASMCOMP_C) \
+        $(mk_list ASMCOMP_COMMON ../../common/) $UTF8RES -lm
     rm -f ASMComp.c pass1_lex.c
     popd >/dev/null
 

@@ -34,11 +34,12 @@ C="$T/Compilers/common"
 (cd "$S" && bison -y -d CMMComp.y 2>/dev/null && flex CMMComp.l) || { echo "cmm_cov: bison/flex failed"; exit 1; }
 mkdir -p "$T/bin" "$T/w" "$T/hits"
 cp -r "$ROOT/Compilers/CMMComp/Includes" "$T/Macros"          # cmmcomp looks for ../Macros next to its bin/
-(cd "$S" && gcc -O0 -w -o "$T/bin/cmmcomp.exe" ast.c data_assign.c data_declar.c data_use.c itr.c \
-    diretivas.c funcoes.c labels.c oper.c saltos.c stdlib.c t2t.c variaveis.c array_index.c global.c \
-    macros.c messages.c args.c dirac.c lex.yy.c y.tab.c cov.c \
-    "$C/yanc_num.c" "$C/asm_share.c" "$C/proc_name.c" "$C/console_utf8.c" "$C/exe_dir.c" \
-    "$C/yanc_lang.c" -lm) || { echo "cmm_cov: the numbered copy did not build"; exit 1; }
+# the source lists come from the Makefile, the only place they are written
+SRC=$(make -s -C "$ROOT" print-CMMCOMP_C)
+COMMON=$(for f in $(make -s -C "$ROOT" print-CMMCOMP_COMMON); do printf '%s ' "$C/$f"; done)
+[ -n "$SRC" ] && [ -n "$COMMON" ] || { echo "cmm_cov: no source list from the Makefile"; exit 1; }
+(cd "$S" && gcc -O0 -w -o "$T/bin/cmmcomp.exe" $SRC lex.yy.c y.tab.c cov.c $COMMON -lm) \
+    || { echo "cmm_cov: the numbered copy did not build"; exit 1; }
 
 bad=0
 for d in "$ROOT"/Compilers/CMMComp/Tests/*/; do
