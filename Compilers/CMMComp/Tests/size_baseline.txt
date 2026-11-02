@@ -33,6 +33,7 @@ cmm_cov_arr2d_wr 9090
 cmm_cov_lib 10786
 cmm_cov_misc 489
 cmm_cov_ops 15230
+cmm_cov_ops2 10322
 cmm_cov_rest 2703
 cmm_csincos 184
 cmm_ctan   258
