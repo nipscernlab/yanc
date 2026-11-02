@@ -8,7 +8,7 @@ NOP
 #NUGAIN 128
 #SHARE main_r_i __csqrt_im
 #SHARE main_w __csqrt_b
-#SHARE main_w_i __csqrt_a
+#SHARE main_w_i __csqrt_b
 #SHARE __sqrt_num __csqrt_im
 @main @__Lwh1 LOD 3.0
 SET main_z
@@ -70,8 +70,7 @@ LOD 2.0
 SET main_z_i
 SET main_w
 SET main_w_i
-LOD main_z
-F_ADD main_w
+F_ADD main_z
 P_LOD main_z_i
 F_ADD main_w_i
 SET_P __csqrt_b

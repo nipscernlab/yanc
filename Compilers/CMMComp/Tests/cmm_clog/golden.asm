@@ -10,7 +10,7 @@ NOP
 #SHARE __clog_im __fase_re
 #SHARE main_c_i __fase_re
 #SHARE main_w __clog_b
-#SHARE main_w_i __clog_a
+#SHARE main_w_i __clog_b
 #SHARE __atan_x __fase_re
 #SHARE __atan_t main_c
 #SHARE __log_x main_c
@@ -285,8 +285,7 @@ LOD 2.0
 SET main_z_i
 SET main_w
 SET main_w_i
-LOD main_z
-F_ADD main_w
+F_ADD main_z
 P_LOD main_z_i
 F_ADD main_w_i
 SET_P __clog_b

@@ -117,14 +117,16 @@ int acc_holds(const char *name)
     return 0;
 }
 
-// An indexed store (STI, ISI) leaves the stored value in the acc: the walker
-// names it by the element, "v[k]", which no variable name can be, so that a
-// read of the same element right after it takes the acc (ast.c). Only when the
-// store is the last instruction emitted; any instruction after it but a SET
-// forgets the name, and a SET does too, since it may write an index
+// An indexed store (STI, ISI) or read (LDI) leaves the element in the acc: the
+// walker names it by the element, "v[k]", which no variable name can be, so
+// that a read of the same element after it takes the acc (ast.c). Only when
+// the store or read is the last instruction emitted; an instruction after it
+// that keeps the acc (OUT, PSH, TOM, JIZ) keeps the name, any other forgets
+// it, and a SET does too, since it may write an index
 void acc_holds_elem(const char *key)
 {
-    if (strncmp(last_str, "STI ", 4) == 0 || strncmp(last_str, "ISI ", 4) == 0)
+    if (strncmp(last_str, "STI ", 4) == 0 || strncmp(last_str, "ISI ", 4) == 0
+     || strncmp(last_str, "LDI ", 4) == 0)        // a read leaves the element too
         acc_only(key);
 }
 

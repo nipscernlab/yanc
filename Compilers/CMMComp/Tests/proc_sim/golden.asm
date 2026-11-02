@@ -52,8 +52,7 @@ F_MLT main_r7
 SF_ADD
 SF_SU2
 SET main_xl
-LOD 0.0222
-F_MLT main_xl
+F_MLT 0.0222
 P_LOD 0.1068
 F_MLT main_r1
 SF_ADD

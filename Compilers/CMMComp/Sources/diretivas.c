@@ -27,6 +27,7 @@ int  nbexpo  =  8; // exponent width (bits)
 int  nuioin  =  1; // number of input ports
 int  nuioou  =  1; // number of output ports
 int  fround  =  0; // float rounding level (#FROUND)
+int  fftsiz  =  3; // low bits of an index v[k) reverses (#FFTSIZ; asmcomp's default too)
 
 // ----------------------------------------------------------------------------
 // Directive handling ---------------------------------------------------------
@@ -47,6 +48,7 @@ void dire_exec(char *dir, int id, int t)
     switch(t)
     {
         case 11: nubits = ival             ; break;
+        case 12: fftsiz = ival             ; break;
         case  3: nbmant = ival             ; break;
         case  4: nbexpo = ival             ; break;
         case  7: nuioin = ival             ; break;

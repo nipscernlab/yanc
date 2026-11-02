@@ -9,8 +9,7 @@ NOP
 #arrayd vf 2 8 8 50.0 51.0 52.0 53.0 54.0 55.0 56.0 57.0
 #arrayd vc 3 8 8 20.0 21.0 22.0 23.0 24.0 25.0 26.0 27.0
 #arrayd vc_i 4 8 8 -1.0 -2.0 -3.0 -4.0 -5.0 -6.0 -7.0 -8.0
-#SHARE main_w_i main_y
-#SHARE __aux_var main_y
+#SHARE __aux_var main_w_i
 #SHARE main_iv main_w
 #SHARE __aux_var2 main_c2_i
 #SHARE __aux_var3 main_w
@@ -85,46 +84,34 @@ LDI vi
 OUT 0
 LOD main_n3
 LDI vf
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD main_n1
 ADD main_z0
 LDI vf
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD_V vf 2
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 F2I_M main_f3
 LDI vf
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD main_f1
 F_ADD main_fz
 F2I
 LDI vf
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 F2I_M 2.0
 LDI vf
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD main_c3
@@ -140,16 +127,12 @@ SF_ADD
 POP
 F2I
 LDI vf
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 F2I_M main_c1
 LDI vf
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD main_n2
@@ -330,33 +313,25 @@ OUT 0
 LOD main_n3
 LDI vf
 F_ADD 1000.0
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD main_n1
 ADD main_z0
 LDI vf
 F_ADD 1000.0
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD_V vf 2
 F_ADD 1000.0
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 F2I_M main_f3
 LDI vf
 F_ADD 1000.0
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD main_f1
@@ -364,17 +339,13 @@ F_ADD main_fz
 F2I
 LDI vf
 F_ADD 1000.0
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 F2I_M 2.0
 LDI vf
 F_ADD 1000.0
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD main_c3
@@ -391,17 +362,13 @@ POP
 F2I
 LDI vf
 F_ADD 1000.0
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 F2I_M main_c1
 LDI vf
 F_ADD 1000.0
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD main_n2
@@ -2394,9 +2361,7 @@ LOD_V vi 6
 OUT 0
 LOD main_n1
 ILI vf
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD 380
@@ -2417,9 +2382,7 @@ OUT 0
 LOD main_n3
 ADD main_z0
 ILI vf
-SET main_y
-LOD 2.0
-F_MLT main_y
+F_MLT 2.0
 F2I
 OUT 0
 LOD 381

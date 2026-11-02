@@ -515,6 +515,17 @@ static int elem_key(int id, expr_node *i1, expr_node *i2, char *b, size_t sz)
     return strlen(b) + 1 < sz;
 }
 
+// a forward element read just emitted: name the element in the acc
+// (acc_holds_elem keeps the name only when the read's LDI is the last
+// instruction), so that a second read of it with nothing between that changes
+// an index takes the acc: out(2, d[k][j]); if (d[k][j] < m) reads d once
+static expr elem_read(expr_node *n, expr r)
+{
+    char key[600];
+    if (r.id == 0 && elem_key(n->id, n->left, n->right, key, sizeof key)) acc_holds_elem(key);
+    return r;
+}
+
 // the name of a computed int index for the acc peephole, "[(ii#1#j)]": the
 // brackets keep a SET from passing it on (global.c). 0 for a leaf, whose
 // read costs no more than a PSH
@@ -1143,17 +1154,26 @@ static expr ast_emit_expr_impl(expr_node *n)
                 a = ast_emit_expr(n->left );
                 b = ast_emit_expr(n->right);
             }
-            // both int operands in memory and the acc already holding the
-            // right one (s = s + t after SET t): swap them, so the load the
+            // both operands in memory and the acc already holding the right
+            // one (s = s + t after SET t): swap them, so the load the
             // operator emits first is the one the peephole drops (ADD s, not
             // LOD s; ADD t). Only ops whose result is the same word either
-            // way round; not float (F_ADD / F_MLT are not checked for that).
-            // Two variables only: with a literal the operators already put
-            // the variable first (oper_bitw: 0 ^ k is LOD k; XOR 0)
-            if (acc_ok == 0 && n->left->kind == EXPR_VAR && n->right->kind == EXPR_VAR
-                && a.id != 0 && b.id != 0 && a.type == 1 && b.type == 1
+            // way round:
+            // - int + * & | ^ == && || of two variables (with a literal the
+            //   int operators already put the variable first: 0 ^ k is
+            //   LOD k; XOR 0);
+            // - float + and * of two floats, variables or literals (4.0*y
+            //   after SET y is F_MLT 4.0): F_ADD and F_MLT give the same word
+            //   with their operands swapped, simulated on 3000 random pairs
+            //   at each #FROUND level (issue #69, 2026-11-02)
+            int swap_int = n->left->kind == EXPR_VAR && n->right->kind == EXPR_VAR
+                && a.type == 1 && b.type == 1
                 && (n->op == OP_ADD || n->op == OP_MUL || n->op == OP_AND || n->op == OP_OR
-                    || n->op == OP_XOR || n->op == OP_EQ || n->op == OP_LAN || n->op == OP_LOR)
+                    || n->op == OP_XOR || n->op == OP_EQ || n->op == OP_LAN || n->op == OP_LOR);
+            int swap_flt = (n->left->kind  == EXPR_VAR || n->left->kind  == EXPR_LITERAL)
+                && (n->right->kind == EXPR_VAR || n->right->kind == EXPR_LITERAL)
+                && a.type == 2 && b.type == 2 && (n->op == OP_ADD || n->op == OP_MUL);
+            if (acc_ok == 0 && a.id != 0 && b.id != 0 && (swap_int || swap_flt)
                 && acc_holds(v_table[b.id].name) && !acc_holds(v_table[a.id].name))
             {
                 expr t = a; a = b; b = t;
@@ -1205,16 +1225,27 @@ static expr ast_emit_expr_impl(expr_node *n)
                     return expr_make(v_table[n->id].type, 0);
                 }
             }
-            // Constant 1D forward index: read directly with LOD_V (offset
-            // baked into the address), skipping the index materialise +
-            // indirect LDI; a comp array reads both halves that way. Other
-            // shapes (2D, reversed) fall through to the indirect path.
-            if (!n->right && n->op == 0
+            // Constant 1D index: read directly with LOD_V (offset baked into
+            // the address), skipping the index materialise + indirect LDI; a
+            // comp array reads both halves that way. A reversed index v[k)
+            // is the same word the hardware reads: the low #FFTSIZ bits of k
+            // reversed, the others kept (core.v rel_addr). 2D falls through
+            // to the indirect path.
+            if (!n->right
                 && n->left->kind == EXPR_LITERAL && v_table[n->id].type >= 1 && v_table[n->id].type <= 3)
             {
                 typecheck_expr(n->left);
                 if (n->left->type == 1)
-                    return arr_1d2exp_const(n->id, atoi(v_table[n->left->id].name), 1);
+                {
+                    int k = atoi(v_table[n->left->id].name);
+                    if (n->op)
+                    {
+                        int low = 0;
+                        for (int b = 0; b < fftsiz; b++) if (k & (1 << b)) low |= 1 << (fftsiz - 1 - b);
+                        k = (k & ~((1 << fftsiz) - 1)) | low;
+                    }
+                    return arr_1d2exp_const(n->id, k, 1);
+                }
             }
             // two constant indexes of a matrix: one constant offset, row by row
             if (n->right && n->left->kind == EXPR_LITERAL && n->right->kind == EXPR_LITERAL
@@ -1250,7 +1281,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                     v_table[n->id].isar = 1;
                     expr r = arr_1d2exp(n->id, e, 0);
                     v_table[n->id].isar = 2;
-                    return r;
+                    return elem_read(n, r);
                 }
             }
             // a computed index the store of this statement left in the acc:
@@ -1261,15 +1292,16 @@ static expr ast_emit_expr_impl(expr_node *n)
                 if (idx_key(n->left, key, sizeof key) && acc_holds(key))
                 {
                     add_instr("PSH\n");
-                    return arr_1d2exp(n->id, expr_make(1, 0), 0);
+                    return elem_read(n, arr_1d2exp(n->id, expr_make(1, 0), 0));
                 }
             }
             expr idx1 = ast_emit_expr(n->left);
             if (n->right) {
                 expr idx2 = ast_emit_expr(n->right);
-                return arr_2d2exp(n->id, idx1, idx2);
+                return elem_read(n, arr_2d2exp(n->id, idx1, idx2));
             }
-            return arr_1d2exp(n->id, idx1, n->op);  // op = reversed flag
+            if (n->op) return arr_1d2exp(n->id, idx1, n->op);  // reversed: not named
+            return elem_read(n, arr_1d2exp(n->id, idx1, 0));
         }
 
         case EXPR_PPLUS: {

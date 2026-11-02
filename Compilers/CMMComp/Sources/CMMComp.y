@@ -194,7 +194,7 @@ direct : PRNAME   ID   {fprintf(stderr, MSG_ERR_PRNAME_GONE, line_num+1); exit(E
        | NUIOIN unum   {dire_exec("#NUIOIN",$2, 7);} // number of input ports
        | NUIOOU unum   {dire_exec("#NUIOOU",$2, 8);} // number of output ports
        | NUGAIN unum   {dire_exec("#NUGAIN",$2,10);} // division constant (norm(.)): a power of two (validated)
-       | FFTSIZ unum   {dire_exec("#FFTSIZ",$2, 0);} // FFT size (2^FFTSIZ)
+       | FFTSIZ unum   {dire_exec("#FFTSIZ",$2,12);} // FFT size (2^FFTSIZ)
        | FROUND unum   {dire_exec("#FROUND",$2, 9);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
        | WAVE wave_list                             // globals kept for the waveform even if never read
 

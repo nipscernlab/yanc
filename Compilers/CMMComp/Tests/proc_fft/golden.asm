@@ -62,83 +62,67 @@ LOD 0.0
 SET_V data_i 7
 LOD 8
 CAL fft
-LOD 0
-ILI data
+LOD_V data 0
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0
-ILI data_i
+LOD_V data_i 0
 F_MLT 1000.0
 F2I
 OUT 1
-LOD 1
-ILI data
+LOD_V data 4
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 1
-ILI data_i
+LOD_V data_i 4
 F_MLT 1000.0
 F2I
 OUT 1
-LOD 2
-ILI data
+LOD_V data 2
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 2
-ILI data_i
+LOD_V data_i 2
 F_MLT 1000.0
 F2I
 OUT 1
-LOD 3
-ILI data
+LOD_V data 6
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 3
-ILI data_i
+LOD_V data_i 6
 F_MLT 1000.0
 F2I
 OUT 1
-LOD 4
-ILI data
+LOD_V data 1
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 4
-ILI data_i
+LOD_V data_i 1
 F_MLT 1000.0
 F2I
 OUT 1
-LOD 5
-ILI data
+LOD_V data 5
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 5
-ILI data_i
+LOD_V data_i 5
 F_MLT 1000.0
 F2I
 OUT 1
-LOD 6
-ILI data
+LOD_V data 3
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 6
-ILI data_i
+LOD_V data_i 3
 F_MLT 1000.0
 F2I
 OUT 1
-LOD 7
-ILI data
+LOD_V data 7
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 7
-ILI data_i
+LOD_V data_i 7
 F_MLT 1000.0
 F2I
 OUT 1

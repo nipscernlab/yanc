@@ -11,17 +11,16 @@ NOP
 #array mf 2 12
 #arrayd si 1 4 4 1 2 3 4
 #arrayd sf 2 4 4 1.5 2.5 3.5 4.5
-#SHARE main_w main_y
-#SHARE main_k main_y
-#SHARE main_g main_w_i
-#SHARE __aux_var main_y
+#SHARE main_k main_w
+#SHARE main_g main_w
+#SHARE __aux_var main_w
 #SHARE __aux_var1 main_n1
 #SHARE __aux_var2 main_n2
 #SHARE par_c_p_i main_n1
 #SHARE par_c_p main_n2
 #SHARE mix_c_i main_n1
 #SHARE mix_c main_n2
-#SHARE mix_b main_y
+#SHARE mix_b main_w
 #SHARE mix_a main_w_i
 @main LOD 7
 SET gi
@@ -90,48 +89,34 @@ OUT 0
 F2I_M 3.0
 OUT 0
 I2F_M gi
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gi
 ADD gz
 I2F
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 7.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gf
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gf
 F_ADD gfz
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gc
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gc
@@ -145,15 +130,11 @@ P_LOD gc_i
 F_MLT gone
 SF_ADD
 POP
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 I2F_M gi
@@ -323,9 +304,7 @@ SET main_g
 PSH
 F_ADD 1.0
 SET_P main_g
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 4.0
@@ -352,9 +331,7 @@ SET __aux_var
 F_ADD 1.0
 STI vf
 LOD __aux_var
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD_V vf 1
@@ -385,9 +362,7 @@ SET __aux_var
 F_ADD 1.0
 STI mf
 LOD __aux_var
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD_V mf 6
@@ -415,9 +390,7 @@ PSH
 F_ADD 1.0
 SET_P main_g
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 4.0
@@ -452,9 +425,7 @@ F_ADD 1.0
 STI vf
 LOD __aux_var
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD_V vf 1
@@ -493,9 +464,7 @@ F_ADD 1.0
 STI mf
 LOD __aux_var
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD_V mf 6
@@ -621,9 +590,7 @@ F_ADD main_fz
 P_I2F_M gi
 CAL par_f
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gi
@@ -640,9 +607,7 @@ ADD gz
 I2F
 CAL par_f
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 7.0
@@ -655,9 +620,7 @@ F_ADD main_fz
 P_LOD 7.0
 CAL par_f
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gf
@@ -670,9 +633,7 @@ F_ADD main_fz
 P_LOD gf
 CAL par_f
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gf
@@ -687,9 +648,7 @@ P_LOD gf
 F_ADD gfz
 CAL par_f
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
@@ -702,9 +661,7 @@ F_ADD main_fz
 P_LOD 2.5
 CAL par_f
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gc
@@ -717,9 +674,7 @@ F_ADD main_fz
 P_LOD gc
 CAL par_f
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD gc
@@ -752,9 +707,7 @@ SF_ADD
 POP
 CAL par_f
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 3.0
@@ -767,9 +720,7 @@ F_ADD main_fz
 P_LOD 3.0
 CAL par_f
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 I2F_M gi

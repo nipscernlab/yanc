@@ -5,10 +5,9 @@ NOP
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-#SHARE main_w_i main_y
-#SHARE __aux_var main_y
+#SHARE __aux_var main_w_i
 #SHARE __aux_var1 main_w
-#SHARE __aux_soma main_y
+#SHARE __aux_soma main_w_i
 @main LOD 101
 SET main_ia
 LOD 3
@@ -52,25 +51,19 @@ ADD 3
 OUT 0
 I2F_M main_ia
 F_ADD main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 P_I2F_M main_ia
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 I2F_M main_ia
 F_ADD 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 I2F_M main_ia
@@ -140,9 +133,7 @@ LOD main_ia
 ADD main_z0
 I2F
 F_ADD main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
@@ -152,18 +143,14 @@ F_ADD main_fz
 SET_P __aux_var
 I2F
 F_ADD __aux_var
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
 F_ADD 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
@@ -234,24 +221,18 @@ LOD 104
 OUT 0
 LOD 101.0
 F_ADD main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 F_ADD 101.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 101.0
 F_ADD 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 101.0
@@ -305,47 +286,35 @@ F2I
 OUT 0
 I2F_M main_ib
 F_ADD main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ib
 ADD main_z0
 I2F
 F_ADD main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 F_ADD main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -401,9 +370,7 @@ LOD main_fa
 F_ADD main_fz
 P_I2F_M main_ib
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -412,25 +379,19 @@ P_LOD main_ib
 ADD main_z0
 I2F
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_ADD 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_ADD main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -438,17 +399,13 @@ F_ADD main_fz
 P_LOD main_fb
 F_ADD main_fz
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_ADD 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -506,47 +463,35 @@ F2I
 OUT 0
 I2F_M main_ib
 F_ADD 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ib
 ADD main_z0
 I2F
 F_ADD 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
 F_ADD 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
 F_ADD main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 F_ADD 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
 F_ADD 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
@@ -1107,9 +1052,7 @@ F_ADD main_fz
 P_I2F_M main_ia
 F_ADD main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1119,9 +1062,7 @@ F_ADD main_fz
 P_I2F_M main_ia
 SF_ADD
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1129,9 +1070,7 @@ F_ADD main_fz
 P_I2F_M main_ia
 F_ADD 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -1258,9 +1197,7 @@ ADD main_z0
 I2F
 F_ADD main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1273,9 +1210,7 @@ SET_P __aux_var
 I2F
 F_ADD __aux_var
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1285,9 +1220,7 @@ ADD main_z0
 I2F
 F_ADD 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -1416,9 +1349,7 @@ F_ADD main_fz
 P_LOD 101.0
 F_ADD main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1427,9 +1358,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_ADD 101.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1437,9 +1366,7 @@ F_ADD main_fz
 P_LOD 101.0
 F_ADD 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -1544,9 +1471,7 @@ F_ADD main_fz
 P_I2F_M main_ib
 F_ADD main_fa
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1556,9 +1481,7 @@ ADD main_z0
 I2F
 F_ADD main_fa
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1566,9 +1489,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_ADD 3.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1576,9 +1497,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_ADD main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1587,9 +1506,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_ADD main_fa
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1597,9 +1514,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_ADD 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -1706,9 +1621,7 @@ F_ADD main_fz
 P_I2F_M main_ib
 SF_ADD
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1720,9 +1633,7 @@ ADD main_z0
 I2F
 SF_ADD
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1731,9 +1642,7 @@ P_LOD main_fa
 F_ADD main_fz
 F_ADD 3.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1742,9 +1651,7 @@ P_LOD main_fa
 F_ADD main_fz
 F_ADD main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1755,9 +1662,7 @@ P_LOD main_fb
 F_ADD main_fz
 SF_ADD
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1766,9 +1671,7 @@ P_LOD main_fa
 F_ADD main_fz
 F_ADD 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -1877,9 +1780,7 @@ F_ADD main_fz
 P_I2F_M main_ib
 F_ADD 2.5
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1889,9 +1790,7 @@ ADD main_z0
 I2F
 F_ADD 2.5
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1899,9 +1798,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_ADD 3.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1909,9 +1806,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_ADD main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1920,9 +1815,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_ADD 2.5
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -1930,9 +1823,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_ADD 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -2949,25 +2840,19 @@ ADD -3
 OUT 0
 I2F_M main_ia
 F_SU1 main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 P_I2F_M main_ia
 SF_SU1
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 I2F_M main_ia
 F_SU1 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 I2F_M main_ia
@@ -3040,9 +2925,7 @@ LOD main_ia
 ADD main_z0
 I2F
 F_SU1 main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
@@ -3052,18 +2935,14 @@ F_ADD main_fz
 SET_P __aux_var
 I2F
 F_SU1 __aux_var
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
 F_SU1 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
@@ -3135,24 +3014,18 @@ LOD 98
 OUT 0
 LOD 101.0
 F_SU1 main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 F_SU2 101.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 101.0
 F_SU1 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 101.0
@@ -3206,47 +3079,35 @@ F2I
 OUT 0
 I2F_M main_ib
 F_SU2 main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ib
 ADD main_z0
 I2F
 F_SU2 main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_SU1 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_SU1 main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 F_SU2 main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_SU1 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -3302,9 +3163,7 @@ LOD main_fa
 F_ADD main_fz
 P_I2F_M main_ib
 SF_SU2
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -3313,25 +3172,19 @@ P_LOD main_ib
 ADD main_z0
 I2F
 SF_SU2
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_SU1 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_SU1 main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -3339,17 +3192,13 @@ F_ADD main_fz
 P_LOD main_fb
 F_ADD main_fz
 SF_SU2
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_SU1 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -3407,47 +3256,35 @@ F2I
 OUT 0
 I2F_M main_ib
 F_SU2 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ib
 ADD main_z0
 I2F
 F_SU2 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
 F_SU1 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
 F_SU1 main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 F_SU2 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
 F_SU1 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
@@ -4010,9 +3847,7 @@ F_ADD main_fz
 P_I2F_M main_ia
 F_SU1 main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4022,9 +3857,7 @@ F_ADD main_fz
 P_I2F_M main_ia
 SF_SU1
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4032,9 +3865,7 @@ F_ADD main_fz
 P_I2F_M main_ia
 F_SU1 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -4164,9 +3995,7 @@ ADD main_z0
 I2F
 F_SU1 main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4179,9 +4008,7 @@ SET_P __aux_var
 I2F
 F_SU1 __aux_var
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4191,9 +4018,7 @@ ADD main_z0
 I2F
 F_SU1 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -4324,9 +4149,7 @@ F_ADD main_fz
 P_LOD 101.0
 F_SU1 main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4335,9 +4158,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_SU2 101.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4345,9 +4166,7 @@ F_ADD main_fz
 P_LOD 101.0
 F_SU1 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -4452,9 +4271,7 @@ F_ADD main_fz
 P_I2F_M main_ib
 F_SU2 main_fa
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4464,9 +4281,7 @@ ADD main_z0
 I2F
 F_SU2 main_fa
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4474,9 +4289,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_SU1 3.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4484,9 +4297,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_SU1 main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4495,9 +4306,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_SU2 main_fa
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4505,9 +4314,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_SU1 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -4614,9 +4421,7 @@ F_ADD main_fz
 P_I2F_M main_ib
 SF_SU2
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4628,9 +4433,7 @@ ADD main_z0
 I2F
 SF_SU2
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4639,9 +4442,7 @@ P_LOD main_fa
 F_ADD main_fz
 F_SU1 3.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4650,9 +4451,7 @@ P_LOD main_fa
 F_ADD main_fz
 F_SU1 main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4663,9 +4462,7 @@ P_LOD main_fb
 F_ADD main_fz
 SF_SU2
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4674,9 +4471,7 @@ P_LOD main_fa
 F_ADD main_fz
 F_SU1 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -4785,9 +4580,7 @@ F_ADD main_fz
 P_I2F_M main_ib
 F_SU2 2.5
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4797,9 +4590,7 @@ ADD main_z0
 I2F
 F_SU2 2.5
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4807,9 +4598,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_SU1 3.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4817,9 +4606,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_SU1 main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4828,9 +4615,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_SU2 2.5
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -4838,9 +4623,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_SU1 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -5856,25 +5639,19 @@ MLT 3
 OUT 0
 I2F_M main_ia
 F_MLT main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 P_I2F_M main_ia
 SF_MLT
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 I2F_M main_ia
 F_MLT 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 I2F_M main_ia
@@ -5948,9 +5725,7 @@ LOD main_ia
 ADD main_z0
 I2F
 F_MLT main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
@@ -5960,18 +5735,14 @@ F_ADD main_fz
 SET_P __aux_var
 I2F
 F_MLT __aux_var
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
 ADD main_z0
 I2F
 F_MLT 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
@@ -6047,24 +5818,18 @@ LOD 303
 OUT 0
 LOD 101.0
 F_MLT main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 F_MLT 101.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 101.0
 F_MLT 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 101.0
@@ -6120,47 +5885,35 @@ F2I
 OUT 0
 I2F_M main_ib
 F_MLT main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ib
 ADD main_z0
 I2F
 F_MLT main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_MLT 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_MLT main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 F_MLT main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_MLT 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -6218,9 +5971,7 @@ LOD main_fa
 F_ADD main_fz
 P_I2F_M main_ib
 SF_MLT
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -6229,25 +5980,19 @@ P_LOD main_ib
 ADD main_z0
 I2F
 SF_MLT
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_MLT 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_MLT main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -6255,17 +6000,13 @@ F_ADD main_fz
 P_LOD main_fb
 F_ADD main_fz
 SF_MLT
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
 F_ADD main_fz
 F_MLT 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -6329,47 +6070,35 @@ F2I
 OUT 0
 I2F_M main_ib
 F_MLT 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ib
 ADD main_z0
 I2F
 F_MLT 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
 F_MLT 3.0
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
 F_MLT main_fb
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
 F_MLT 2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
 F_MLT 1.25
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
@@ -7016,9 +6745,7 @@ F_ADD main_fz
 P_I2F_M main_ia
 F_MLT main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7028,9 +6755,7 @@ F_ADD main_fz
 P_I2F_M main_ia
 SF_MLT
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7038,9 +6763,7 @@ F_ADD main_fz
 P_I2F_M main_ia
 F_MLT 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -7171,9 +6894,7 @@ ADD main_z0
 I2F
 F_MLT main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7186,9 +6907,7 @@ SET_P __aux_var
 I2F
 F_MLT __aux_var
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7198,9 +6917,7 @@ ADD main_z0
 I2F
 F_MLT 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -7333,9 +7050,7 @@ F_ADD main_fz
 P_LOD 101.0
 F_MLT main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7344,9 +7059,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_MLT 101.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7354,9 +7067,7 @@ F_ADD main_fz
 P_LOD 101.0
 F_MLT 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -7463,9 +7174,7 @@ F_ADD main_fz
 P_I2F_M main_ib
 F_MLT main_fa
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7475,9 +7184,7 @@ ADD main_z0
 I2F
 F_MLT main_fa
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7485,9 +7192,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_MLT 3.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7495,9 +7200,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_MLT main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7506,9 +7209,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_MLT main_fa
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7516,9 +7217,7 @@ F_ADD main_fz
 P_LOD main_fa
 F_MLT 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -7627,9 +7326,7 @@ F_ADD main_fz
 P_I2F_M main_ib
 SF_MLT
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7641,9 +7338,7 @@ ADD main_z0
 I2F
 SF_MLT
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7652,9 +7347,7 @@ P_LOD main_fa
 F_ADD main_fz
 F_MLT 3.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7663,9 +7356,7 @@ P_LOD main_fa
 F_ADD main_fz
 F_MLT main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7676,9 +7367,7 @@ P_LOD main_fb
 F_ADD main_fz
 SF_MLT
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7687,9 +7376,7 @@ P_LOD main_fa
 F_ADD main_fz
 F_MLT 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -7804,9 +7491,7 @@ F_ADD main_fz
 P_I2F_M main_ib
 F_MLT 2.5
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7816,9 +7501,7 @@ ADD main_z0
 I2F
 F_MLT 2.5
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7826,9 +7509,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_MLT 3.0
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7836,9 +7517,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_MLT main_fb
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7847,9 +7526,7 @@ P_LOD main_fb
 F_ADD main_fz
 F_MLT 2.5
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -7857,9 +7534,7 @@ F_ADD main_fz
 P_LOD 2.5
 F_MLT 1.25
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -8989,9 +8664,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
@@ -9003,9 +8676,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 I2F_M main_ia
@@ -9014,9 +8685,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_cb
@@ -9158,9 +8827,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
@@ -9174,9 +8841,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
@@ -9187,9 +8852,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ia
@@ -9334,9 +8997,7 @@ F_DIV 101.0
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
@@ -9345,9 +9006,7 @@ F_DIV 101.0
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 1.25
@@ -9355,9 +9014,7 @@ F_DIV 101.0
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_cb
@@ -9467,9 +9124,7 @@ F_DIV main_fa
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ib
@@ -9479,9 +9134,7 @@ F_DIV main_fa
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 3.0
@@ -9489,9 +9142,7 @@ F_DIV main_fa
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
@@ -9499,9 +9150,7 @@ F_DIV main_fa
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
@@ -9510,9 +9159,7 @@ F_DIV main_fa
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 1.25
@@ -9520,9 +9167,7 @@ F_DIV main_fa
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_cb
@@ -9634,9 +9279,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -9648,9 +9291,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -9660,9 +9301,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -9672,9 +9311,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -9685,9 +9322,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -9697,9 +9332,7 @@ SF_DIV
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -9819,9 +9452,7 @@ F_DIV 2.5
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_ib
@@ -9831,9 +9462,7 @@ F_DIV 2.5
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 3.0
@@ -9841,9 +9470,7 @@ F_DIV 2.5
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
@@ -9851,9 +9478,7 @@ F_DIV 2.5
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fb
@@ -9862,9 +9487,7 @@ F_DIV 2.5
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 1.25
@@ -9872,9 +9495,7 @@ F_DIV 2.5
 NOP
 NOP
 F_QUO
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_cb
@@ -10854,9 +10475,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -10871,9 +10490,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -10885,9 +10502,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -11086,9 +10701,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11105,9 +10718,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11121,9 +10732,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -11325,9 +10934,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11339,9 +10946,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11352,9 +10957,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -11515,9 +11118,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11530,9 +11131,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11543,9 +11142,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11556,9 +11153,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11570,9 +11165,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11583,9 +11176,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -11748,9 +11339,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11765,9 +11354,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11780,9 +11367,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11795,9 +11380,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11811,9 +11394,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -11826,9 +11407,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -11999,9 +11578,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -12014,9 +11591,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -12027,9 +11602,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -12040,9 +11613,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -12054,9 +11625,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pf
@@ -12067,9 +11636,7 @@ NOP
 NOP
 F_QUO
 SF_ADD
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_pc
@@ -15154,9 +14721,7 @@ OUT 0
 INV_M 101
 OUT 0
 F_NEG_M main_fa
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -15166,9 +14731,7 @@ OUT 0
 LOD main_fa
 F_ADD main_fz
 F_NEG
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD main_fa
@@ -15177,9 +14740,7 @@ AND 8388607
 LIN
 OUT 0
 LOD -2.5
-SET main_y
-LOD 4.0
-F_MLT main_y
+F_MLT 4.0
 F2I
 OUT 0
 LOD 2.5
