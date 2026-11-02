@@ -230,9 +230,6 @@ void shapecheck_expr(expr_node *n);
 // frees the node and every descendant recursively
 void expr_free(expr_node *n);
 
-// dumps a human-readable indented tree to stderr (for debugging)
-void expr_dump(expr_node *n);
-
 // recursively walks an expression tree and emits the corresponding assembly
 // via the existing oper_* / exec_* / arr_* / pplus_* / num2exp / id2exp
 // helpers. Returns the result POD the same way those helpers do. Driven by
