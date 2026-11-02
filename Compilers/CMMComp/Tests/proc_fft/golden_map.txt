@@ -1,0 +1,313 @@
+## messages
+Info: constant 0.7071067811 on line 47 approximated to 0.7071075439453125 (error = 7.63e-07)
+Info: constant 0.7071067811 on line 49 approximated to 0.7071075439453125 (error = 7.63e-07)
+Info: constant 0.7071067811 on line 47 approximated to 0.7071075439453125 (error = 7.63e-07)
+Info: constant 0.7071067811 on line 47 approximated to 0.7071075439453125 (error = 7.63e-07)
+Info: constant -0.7071067811 on line 49 approximated to -0.7071075439453125 (error = -7.63e-07)
+Info: constant 0.7071067811 on line 49 approximated to 0.7071075439453125 (error = 7.63e-07)
+Info: 220 assembly instructions generated
+Info: 14 variables share 12 data words (2 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 220 instructions and 57 variables were found
+Info: ULA resource -> < operator for int
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> integer adder
+Info: adding array handling
+Info: adding bit-reverse array index (FFT)
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: adding stack memory for function calls
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 4
+Info: using 18% of the Assembly Instruction Set
+Info: using 16% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+fft N 1
+fft temp 3
+fft temp_i 3
+fft mmax 1
+fft istep 1
+fft m 1
+fft ind 1
+fft sind 1
+fft k 1
+fft j 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 12: void fft(int N)
+2 SET fft_N
+// 16: int mmax = 1;
+3 LOD 1
+4 SET fft_mmax
+// 18: while (mmax < N)
+5 LOD fft_N
+6 LES fft_mmax
+7 JIZ __Lwh1end
+// 20: int istep = mmax*2;
+8 LOD fft_mmax
+9 MLT 2
+10 SET fft_istep
+// 21: int    m  = 0;
+11 LOD 0
+12 SET fft_m
+// 22: int  ind  = 0;
+13 SET fft_ind
+// 23: int sind  = 0;
+14 SET fft_sind
+// 24: while (m < mmax)
+15 LOD fft_mmax
+16 LES fft_m
+17 JIZ __Lwh2end
+// 26: int k = m;
+18 LOD fft_m
+19 SET fft_k
+// 27: while (k < N)
+20 LOD fft_N
+21 LES fft_k
+22 JIZ __Lwh3end
+// 29: int j   = k+mmax;
+23 LOD fft_k
+24 ADD fft_mmax
+25 SET fft_j
+// 30: temp    = wpv[sind]*data[j);
+26 LOD fft_sind
+27 LDI wpv
+28 P_LOD fft_sind
+29 LDI wpv_i
+30 P_LOD fft_j
+31 ILI data
+32 P_LOD fft_j
+33 ILI data_i
+34 SET_P __aux_var
+35 SET_P __aux_var1
+36 SET_P __aux_var2
+37 SET __aux_var3
+38 F_MLT __aux_var1
+39 P_LOD __aux_var
+40 F_MLT __aux_var2
+41 SF_SU2
+42 P_LOD __aux_var1
+43 F_MLT __aux_var2
+44 P_LOD __aux_var
+45 F_MLT __aux_var3
+46 SF_ADD
+47 SET_P fft_temp_i
+48 SET fft_temp
+// 31: data[j) =   data[k) - temp;
+49 LOD fft_j
+50 P_LOD fft_k
+51 ILI data
+52 F_SU1 fft_temp
+53 P_LOD fft_k
+54 ILI data_i
+55 F_SU1 fft_temp_i
+56 SET_P __aux_var
+57 ISI data
+58 LOD fft_j
+59 P_LOD __aux_var
+60 ISI data_i
+// 32: data[k) =   data[k) + temp;
+61 LOD fft_k
+62 P_LOD fft_k
+63 ILI data
+64 F_ADD fft_temp
+65 P_LOD fft_k
+66 ILI data_i
+67 F_ADD fft_temp_i
+68 SET_P __aux_var
+69 ISI data
+70 LOD fft_k
+71 P_LOD __aux_var
+72 ISI data_i
+// 33: k       = k+istep;
+73 LOD fft_k
+74 ADD fft_istep
+75 SET fft_k
+// 34: ind++;
+76 LOD fft_ind
+77 ADD 1
+78 SET fft_ind
+// 27: while (k < N)
+79 JMP __Lwh3
+// 36: sind = ind;
+80 LOD fft_ind
+81 SET fft_sind
+// 37: m++;
+82 LOD fft_m
+83 ADD 1
+84 SET fft_m
+// 24: while (m < mmax)
+85 JMP __Lwh2
+// 39: mmax = istep;
+86 LOD fft_istep
+87 SET fft_mmax
+// 18: while (mmax < N)
+88 JMP __Lwh1
+// 41: }
+89 RET
+// 46: wpv[0] =  1.0 + 0.0i;
+90 LOD 1.0
+91 SET_V wpv 0
+92 LOD 0.0
+93 SET_V wpv_i 0
+// 47: wpv[1] =  0.7071067811 + 0.7071067811i;
+94 LOD 0.7071067811
+95 SET_V wpv 1
+96 SET_V wpv_i 1
+// 48: wpv[2] =  0.0 + 1.0i;
+97 LOD 0.0
+98 SET_V wpv 2
+99 LOD 1.0
+100 SET_V wpv_i 2
+// 49: wpv[3] = -0.7071067811 + 0.7071067811i;
+101 LOD -0.7071067811
+102 SET_V wpv 3
+103 LOD 0.7071067811
+104 SET_V wpv_i 3
+// 51: data[0] = 1.0+0.0i;
+105 LOD 1.0
+106 SET_V data 0
+107 LOD 0.0
+108 SET_V data_i 0
+// 52: data[1] = 2.0+0.0i;
+109 LOD 2.0
+110 SET_V data 1
+111 LOD 0.0
+112 SET_V data_i 1
+// 53: data[2] = 3.0+0.0i;
+113 LOD 3.0
+114 SET_V data 2
+115 LOD 0.0
+116 SET_V data_i 2
+// 54: data[3] = 4.0+0.0i;
+117 LOD 4.0
+118 SET_V data 3
+119 LOD 0.0
+120 SET_V data_i 3
+// 55: data[4] = 5.0+0.0i;
+121 LOD 5.0
+122 SET_V data 4
+123 LOD 0.0
+124 SET_V data_i 4
+// 56: data[5] = 6.0+0.0i;
+125 LOD 6.0
+126 SET_V data 5
+127 LOD 0.0
+128 SET_V data_i 5
+// 57: data[6] = 7.0+0.0i;
+129 LOD 7.0
+130 SET_V data 6
+131 LOD 0.0
+132 SET_V data_i 6
+// 58: data[7] = 8.0+0.0i;
+133 LOD 8.0
+134 SET_V data 7
+135 LOD 0.0
+136 SET_V data_i 7
+// 60: fft(8);
+137 LOD 8
+138 CAL fft
+// 62: fout(0,1000.0*real(data[0)));
+139 LOD 0
+140 ILI data
+141 F_MLT 1000.0
+142 F2I
+143 OUT 0
+// 63: fout(1,1000.0*imag(data[0)));
+144 LOD 0
+145 ILI data_i
+146 F_MLT 1000.0
+147 F2I
+148 OUT 1
+// 64: fout(0,1000.0*real(data[1)));
+149 LOD 1
+150 ILI data
+151 F_MLT 1000.0
+152 F2I
+153 OUT 0
+// 65: fout(1,1000.0*imag(data[1)));
+154 LOD 1
+155 ILI data_i
+156 F_MLT 1000.0
+157 F2I
+158 OUT 1
+// 66: fout(0,1000.0*real(data[2)));
+159 LOD 2
+160 ILI data
+161 F_MLT 1000.0
+162 F2I
+163 OUT 0
+// 67: fout(1,1000.0*imag(data[2)));
+164 LOD 2
+165 ILI data_i
+166 F_MLT 1000.0
+167 F2I
+168 OUT 1
+// 68: fout(0,1000.0*real(data[3)));
+169 LOD 3
+170 ILI data
+171 F_MLT 1000.0
+172 F2I
+173 OUT 0
+// 69: fout(1,1000.0*imag(data[3)));
+174 LOD 3
+175 ILI data_i
+176 F_MLT 1000.0
+177 F2I
+178 OUT 1
+// 70: fout(0,1000.0*real(data[4)));
+179 LOD 4
+180 ILI data
+181 F_MLT 1000.0
+182 F2I
+183 OUT 0
+// 71: fout(1,1000.0*imag(data[4)));
+184 LOD 4
+185 ILI data_i
+186 F_MLT 1000.0
+187 F2I
+188 OUT 1
+// 72: fout(0,1000.0*real(data[5)));
+189 LOD 5
+190 ILI data
+191 F_MLT 1000.0
+192 F2I
+193 OUT 0
+// 73: fout(1,1000.0*imag(data[5)));
+194 LOD 5
+195 ILI data_i
+196 F_MLT 1000.0
+197 F2I
+198 OUT 1
+// 74: fout(0,1000.0*real(data[6)));
+199 LOD 6
+200 ILI data
+201 F_MLT 1000.0
+202 F2I
+203 OUT 0
+// 75: fout(1,1000.0*imag(data[6)));
+204 LOD 6
+205 ILI data_i
+206 F_MLT 1000.0
+207 F2I
+208 OUT 1
+// 76: fout(0,1000.0*real(data[7)));
+209 LOD 7
+210 ILI data
+211 F_MLT 1000.0
+212 F2I
+213 OUT 0
+// 77: fout(1,1000.0*imag(data[7)));
+214 LOD 7
+215 ILI data_i
+216 F_MLT 1000.0
+217 F2I
+218 OUT 1
+// -3: END
+219 JMP fim

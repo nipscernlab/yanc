@@ -1,0 +1,31 @@
+## messages
+Heads up on line 15: variable 't' is int, but getting a float.
+Info: 8 assembly instructions generated
+Info: 1 variables written and never read removed (1 instructions)
+Heads up: variable 't' in function 'main' is never read, so it's out of the program and the waveform (#WAVE t, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 7 instructions and 1 variables were found
+Info: adding cade (CAD), which takes a value from the partner processor
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 3% of the Assembly Instruction Set
+Info: using 5% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main t 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 15: t = fcade(0) * 2.0;
+1 CAD 0
+2 F_MLT 2.0
+3 F2I
+// 16: out(0, t);
+4 OUT 0
+// 13: while (1)
+5 JMP __Lwh1
+// -3: END
+6 JMP fim

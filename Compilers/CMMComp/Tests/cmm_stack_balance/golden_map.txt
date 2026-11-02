@@ -1,0 +1,79 @@
+## messages
+Info: 38 assembly instructions generated
+Info: 3 variables written and never read removed (4 instructions)
+Info: 1 instructions computing a value never read removed
+Heads up: variable 's' in function 'g' is never read, so it's out of the program and the waveform (#WAVE s, in the function, keeps it).
+Heads up: variable 'j' in function 'main' is never read, so it's out of the program and the waveform (#WAVE j, in the function, keeps it).
+Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 33 instructions and 11 variables were found
+Info: ULA resource -> > operator for int
+Info: ULA resource -> integer adder
+Info: adding data output handling
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float to int converter
+Info: adding stack memory for function calls
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 11% of the Assembly Instruction Set
+Info: using 13% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+g s 2
+main k 1
+main j 1
+main x 2
+main a 2
+main b 2
+main y 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 22: return complex(s, 2.0);
+2 P_LOD 2.0
+3 RET
+// 28: a = 3.0; b = 4.0; x = 5.0;
+4 LOD 3.0
+5 SET main_a
+6 LOD 4.0
+7 SET main_b
+// 29: k = 0;
+8 LOD 0
+9 SET main_k
+// 30: while (k < 40) {
+10 LOD main_k
+11 GRE 40
+12 JIZ __Lwh1end
+// 31: copy(k + 1, j);
+13 LOD main_k
+14 ADD 1
+// 32: j = j + 1;
+15 ADD 1
+// 33: out(0, j);
+16 OUT 0
+// 34: y = a*b + pow(x, 0);
+17 LOD main_a
+18 F_MLT main_b
+19 F_ADD 1.0
+20 SET main_y
+// 35: fout(0, y);
+21 F2I_M main_y
+22 OUT 0
+// 36: g(y);
+23 LOD main_y
+24 CAL g
+25 POP
+// 37: k = k + 1;
+26 LOD main_k
+27 ADD 1
+28 SET main_k
+// 30: while (k < 40) {
+29 JMP __Lwh1
+// 39: out(0, k);
+30 LOD main_k
+31 OUT 0
+// -3: END
+32 JMP fim

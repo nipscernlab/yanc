@@ -1,0 +1,126 @@
+## messages
+Info: constant 1e-1 on line 19 approximated to 0.099999994039535522 (error = -5.96e-09)
+Info: constant 1e-8 on line 23 approximated to 1.000000082740371e-08 (error = 8.27e-16)
+Info: constant 1e-8 on line 26 approximated to 1.000000082740371e-08 (error = 8.27e-16)
+Info: constant 1.0e-8 on line 26 approximated to 1.000000082740371e-08 (error = 8.27e-16)
+Info: constant 2.0e-8 on line 26 approximated to 2.000000165480742e-08 (error = 1.65e-15)
+Info: 74 assembly instructions generated
+Info: 1 variables written and never read removed (1 instructions)
+Info: 6 variables share 2 data words (4 saved)
+Heads up: variable 'a' in function 'main' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 73 instructions and 22 variables were found
+Info: largest approximation error in the values of array 'c' is -0.00000000596046 on value 1
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 8% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main a 2
+main z 3
+main z_i 3
+main n 2
+main w 3
+main w_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 23: float a = 1e-8;
+1 LOD 1.0e-8
+// 24: fout(0, a * 1e8 + 0.5);
+2 F_MLT 1.0e8
+3 F_ADD 0.5
+4 F2I
+5 OUT 0
+// 26: comp z = 1e-8+2e-8i;
+6 LOD 1.0e-8
+7 SET main_z
+8 LOD 2.0e-8
+9 SET main_z_i
+// 27: fout(0, real(z) * 1e8 + 0.5);
+10 LOD main_z
+11 F_MLT 1.0e8
+12 F_ADD 0.5
+13 F2I
+14 OUT 0
+// 28: fout(0, imag(z) * 1e8 + 0.5);
+15 LOD main_z_i
+16 F_MLT 1.0e8
+17 F_ADD 0.5
+18 F2I
+19 OUT 0
+// 30: fout(0, 2.5E+3);
+20 F2I_M 2.5e3
+21 OUT 0
+// 31: fout(0, .5 * 4.0);
+22 LOD 0.5
+23 F_MLT 4.0
+24 F2I
+25 OUT 0
+// 32: fout(0, 5.);
+26 F2I_M 5.0
+27 OUT 0
+// 33: fout(0, 007.5 * 2.0);
+28 LOD 7.5
+29 F_MLT 2.0
+30 F2I
+31 OUT 0
+// 34: fout(0, 1.5f * 2.0);
+32 LOD 1.5
+33 F_MLT 2.0
+34 F2I
+35 OUT 0
+// 36: float n = -2.5e1;
+36 LOD -2.5e1
+37 SET main_n
+// 37: fout(0, n);
+38 F2I_M main_n
+39 OUT 0
+// 39: comp w = complex(10.0, 10.0) - (3e0+4e0i);
+40 LOD 10.0
+41 P_LOD 10.0
+42 SET_P __aux_var
+43 F_ADD -3.0e0
+44 P_LOD __aux_var
+45 F_ADD -4.0e0
+46 SET_P main_w_i
+47 SET main_w
+// 40: fout(0, real(w));
+48 F2I_M main_w
+49 OUT 0
+// 41: fout(0, imag(w));
+50 F2I_M main_w_i
+51 OUT 0
+// 43: fout(0, g[0]);
+52 LOD_V g 0
+53 F2I
+54 OUT 0
+// 44: fout(0, g[1] * 4.0);
+55 LOD_V g 1
+56 F_MLT 4.0
+57 F2I
+58 OUT 0
+// 45: fout(0, g[2] * 8.0);
+59 LOD_V g 2
+60 F_MLT 8.0
+61 F2I
+62 OUT 0
+// 47: fout(0, real(c[0]) * 10.0 + 0.5);
+63 LOD_V c 0
+64 F_MLT 10.0
+65 F_ADD 0.5
+66 F2I
+67 OUT 0
+// 48: fout(0, imag(c[0]));
+68 LOD_V c_i 0
+69 F2I
+70 OUT 0
+// 50: while (1) {}
+71 JMP __Lwh1
+// -3: END
+72 JMP fim

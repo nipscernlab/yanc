@@ -1,0 +1,2004 @@
+## messages
+Info on line 37: the product in the middle of the chain goes to the temporary area (3 words), or it'd be computed all over again for every element.
+Info on line 55: 'v' is read at one spot and written at another, so the result takes a detour through the temporary area (3 words).
+Info on line 76: the product in the middle of the chain goes to the temporary area (3 words), or it'd be computed all over again for every element.
+Info on line 92: the product in the middle of the chain goes to the temporary area (3 words), or it'd be computed all over again for every element.
+Info on line 94: the product in the middle of the chain goes to the temporary area (3 words), or it'd be computed all over again for every element.
+Info: Dirac notation for shift register in vector iv detected at line 122
+Info on line 135: 'C' is read at one spot and written at another, so the result takes a detour through the temporary area (9 words).
+Info on line 138: 'v' is read at one spot and written at another, so the result takes a detour through the temporary area (3 words).
+Heads up on line 143: variable 'iv' is int, but getting a float.
+Info on line 151: the product in the middle of the chain goes to the temporary area (3 words), or it'd be computed all over again for every element.
+Heads up on line 151: if you don't want this warning, use 'fout'.
+Info on line 155: the product in the middle of the chain goes to the temporary area (3 words), or it'd be computed all over again for every element.
+Info on line 159: the product in the middle of the chain goes to the temporary area (3 words), or it'd be computed all over again for every element.
+Info: 1857 assembly instructions generated
+Info: the Dirac temporary area (__dirac_tmp) takes 9 words of data memory. To save them: write the result to an array that isn't on the right-hand side, or compute the middle product into an array of your own, on a line before. Who used it:
+      line 37: 3 words
+      line 55: 3 words
+      line 76: 3 words
+      line 92: 3 words
+      line 94: 3 words
+      line 135: 9 words
+      line 138: 3 words
+      line 151: 3 words
+      line 155: 3 words
+      line 159: 3 words
+Info: 52 variables share 6 data words (46 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 1857 instructions and 101 variables were found
+Info: ULA resource -> float-point adder
+Info: adding array handling
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> integer adder
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> < operator for int
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> int to float converter
+Info: adding data input handling
+Info: adding stack memory for function calls
+Info: stack depths from the program: SDEPTH 2, NDSTAC 6
+Info: using 26% of the Assembly Instruction Set
+Info: using 22% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+global k 1
+global n 1
+global x 2
+tw s 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 34: float tw(float s)
+2 SET tw_s
+// 36: w # (s + 1.0)|e>;
+3 F_ADD 1.0
+4 SET __dhf1_tw
+5 LOD -3
+6 SET __dk0_tw
+7 PSH
+8 LDI_V e 3
+9 F_MLT __dhf1_tw
+10 STI_V w 3
+11 LOD __dk0_tw
+12 ADD 1
+13 SET __dk0_tw
+14 JIZ __Ld0e
+15 JMP __Ld0
+// 37: w # |M|M|w>;
+16 LOD -3
+17 SET __dd6_tw
+18 LOD -9
+19 SET __dk4_tw
+20 LOD __dd6_tw
+21 P_LOD __dk4_tw
+22 LDI_V M 9
+23 F_MLT w
+24 P_LOD -2
+25 SET __dk5_tw
+26 ADD __dk4_tw
+27 LDI_V M 12
+28 P_LOD __dk5_tw
+29 LDI_V w 3
+30 SF_MLT
+31 SF_ADD
+32 P_LOD __dk5_tw
+33 ADD 1
+34 SET __dk5_tw
+35 JIZ __Ld2e
+36 JMP __Ld2
+37 POP
+38 STI_V __dirac_tmp 3
+39 LOD __dd6_tw
+40 ADD 1
+41 SET __dd6_tw
+42 LOD __dk4_tw
+43 ADD 3
+44 SET __dk4_tw
+45 JIZ __Ld1e
+46 JMP __Ld1
+47 LOD_V __dirac_tmp 0
+48 SET __dhf9_tw
+49 LOD -3
+50 SET __dd10_tw
+51 LOD -9
+52 SET __dk7_tw
+53 LOD __dd10_tw
+54 P_LOD __dk7_tw
+55 LDI_V M 9
+56 F_MLT __dhf9_tw
+57 P_LOD -2
+58 SET __dk8_tw
+59 ADD __dk7_tw
+60 LDI_V M 12
+61 P_LOD __dk8_tw
+62 LDI_V __dirac_tmp 3
+63 SF_MLT
+64 SF_ADD
+65 P_LOD __dk8_tw
+66 ADD 1
+67 SET __dk8_tw
+68 JIZ __Ld4e
+69 JMP __Ld4
+70 POP
+71 STI_V w 3
+72 LOD __dd10_tw
+73 ADD 1
+74 SET __dd10_tw
+75 LOD __dk7_tw
+76 ADD 3
+77 SET __dk7_tw
+78 JIZ __Ld3e
+79 JMP __Ld3
+// 38: return s + 1.0;
+80 LOD tw_s
+81 F_ADD 1.0
+82 RET
+// 44: A # |a><b|;
+83 LOD -6
+84 SET __dd3_main
+85 LOD -3
+86 SET __dk0_main
+87 LDI_V a 3
+88 SET __dhf2_main
+89 LOD -2
+90 SET __dk1_main
+91 ADD __dd3_main
+92 P_LOD __dk1_main
+93 LDI_V b 2
+94 F_MLT __dhf2_main
+95 STI_V A 8
+96 LOD __dk1_main
+97 ADD 1
+98 SET __dk1_main
+99 JIZ __Ld6e
+100 JMP __Ld6
+101 LOD __dd3_main
+102 ADD 2
+103 SET __dd3_main
+104 LOD __dk0_main
+105 ADD 1
+106 SET __dk0_main
+107 JIZ __Ld5e
+108 JMP __Ld5
+// 45: for (k = 0; k < 3; k = k + 1) {fout(0, A[k][0]); fout(0, A[k][1]);}
+109 LOD 0
+110 SET k
+111 LOD k
+112 MLT 2
+113 LDI A
+114 F2I
+115 OUT 0
+116 LOD k
+117 MLT 2
+118 ADD 1
+119 LDI A
+120 F2I
+121 OUT 0
+122 LOD k
+123 ADD 1
+124 SET k
+125 LES 2
+126 JIZ __Lwh1
+// 48: A # |B| - |a><b|;
+127 LOD -3
+128 SET __dd3_main
+129 LOD -6
+130 SET __dk0_main
+131 LOD __dd3_main
+132 LDI_V a 3
+133 SET __dhf2_main
+134 LOD -2
+135 SET __dk1_main
+136 ADD __dk0_main
+137 PSH
+138 LDI_V B 8
+139 P_LOD __dk1_main
+140 LDI_V b 2
+141 F_MLT __dhf2_main
+142 SF_SU2
+143 STI_V A 8
+144 LOD __dk1_main
+145 ADD 1
+146 SET __dk1_main
+147 JIZ __Ld8e
+148 JMP __Ld8
+149 LOD __dd3_main
+150 ADD 1
+151 SET __dd3_main
+152 LOD __dk0_main
+153 ADD 2
+154 SET __dk0_main
+155 JIZ __Ld7e
+156 JMP __Ld7
+// 49: for (k = 0; k < 3; k = k + 1) {fout(0, A[k][0]); fout(0, A[k][1]);}
+157 LOD 0
+158 SET k
+159 LOD k
+160 MLT 2
+161 LDI A
+162 F2I
+163 OUT 0
+164 LOD k
+165 MLT 2
+166 ADD 1
+167 LDI A
+168 F2I
+169 OUT 0
+170 LOD k
+171 ADD 1
+172 SET k
+173 LES 2
+174 JIZ __Lwh2
+// 50: A # |B| + 2.0|a><b|;
+175 LOD -3
+176 SET __dd3_main
+177 LOD -6
+178 SET __dk0_main
+179 LOD __dd3_main
+180 LDI_V a 3
+181 F_MLT 2.0
+182 SET __dhf2_main
+183 LOD -2
+184 SET __dk1_main
+185 ADD __dk0_main
+186 PSH
+187 LDI_V B 8
+188 P_LOD __dk1_main
+189 LDI_V b 2
+190 F_MLT __dhf2_main
+191 SF_ADD
+192 STI_V A 8
+193 LOD __dk1_main
+194 ADD 1
+195 SET __dk1_main
+196 JIZ __Ld10e
+197 JMP __Ld10
+198 LOD __dd3_main
+199 ADD 1
+200 SET __dd3_main
+201 LOD __dk0_main
+202 ADD 2
+203 SET __dk0_main
+204 JIZ __Ld9e
+205 JMP __Ld9
+// 51: for (k = 0; k < 3; k = k + 1) {fout(0, A[k][0]); fout(0, A[k][1]);}
+206 LOD 0
+207 SET k
+208 LOD k
+209 MLT 2
+210 LDI A
+211 F2I
+212 OUT 0
+213 LOD k
+214 MLT 2
+215 ADD 1
+216 LDI A
+217 F2I
+218 OUT 0
+219 LOD k
+220 ADD 1
+221 SET k
+222 LES 2
+223 JIZ __Lwh3
+// 54: v # |a>;
+224 LOD -3
+225 SET __dk0_main
+226 PSH
+227 LDI_V a 3
+228 STI_V v 3
+229 LOD __dk0_main
+230 ADD 1
+231 SET __dk0_main
+232 JIZ __Ld11e
+233 JMP __Ld11
+// 55: v # |P|v>;
+234 LOD_V v 0
+235 SET __dhf2_main
+236 LOD -3
+237 SET __dd3_main
+238 LOD -9
+239 SET __dk0_main
+240 LOD __dd3_main
+241 P_LOD __dk0_main
+242 LDI_V P 9
+243 F_MLT __dhf2_main
+244 P_LOD -2
+245 SET __dk1_main
+246 ADD __dk0_main
+247 LDI_V P 12
+248 P_LOD __dk1_main
+249 LDI_V v 3
+250 SF_MLT
+251 SF_ADD
+252 P_LOD __dk1_main
+253 ADD 1
+254 SET __dk1_main
+255 JIZ __Ld13e
+256 JMP __Ld13
+257 POP
+258 STI_V __dirac_tmp 3
+259 LOD __dd3_main
+260 ADD 1
+261 SET __dd3_main
+262 LOD __dk0_main
+263 ADD 3
+264 SET __dk0_main
+265 JIZ __Ld12e
+266 JMP __Ld12
+267 LOD -3
+268 SET __dk4_main
+269 PSH
+270 LDI_V __dirac_tmp 3
+271 STI_V v 3
+272 LOD __dk4_main
+273 ADD 1
+274 SET __dk4_main
+275 JIZ __Ld14e
+276 JMP __Ld14
+// 56: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+277 LOD 0
+278 SET k
+279 LOD k
+280 LDI v
+281 F2I
+282 OUT 0
+283 LOD k
+284 ADD 1
+285 SET k
+286 LES 2
+287 JIZ __Lwh4
+// 59: v # |a> + |e>;
+288 LOD -3
+289 SET __dk0_main
+290 PSH
+291 LDI_V a 3
+292 P_LOD __dk0_main
+293 LDI_V e 3
+294 SF_ADD
+295 STI_V v 3
+296 LOD __dk0_main
+297 ADD 1
+298 SET __dk0_main
+299 JIZ __Ld15e
+300 JMP __Ld15
+// 60: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+301 LOD 0
+302 SET k
+303 LOD k
+304 LDI v
+305 F2I
+306 OUT 0
+307 LOD k
+308 ADD 1
+309 SET k
+310 LES 2
+311 JIZ __Lwh5
+// 61: v # |a> - |e>;
+312 LOD -3
+313 SET __dk0_main
+314 PSH
+315 LDI_V a 3
+316 P_LOD __dk0_main
+317 LDI_V e 3
+318 SF_SU2
+319 STI_V v 3
+320 LOD __dk0_main
+321 ADD 1
+322 SET __dk0_main
+323 JIZ __Ld16e
+324 JMP __Ld16
+// 62: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+325 LOD 0
+326 SET k
+327 LOD k
+328 LDI v
+329 F2I
+330 OUT 0
+331 LOD k
+332 ADD 1
+333 SET k
+334 LES 2
+335 JIZ __Lwh6
+// 63: v # -|a>;
+336 LOD -3
+337 SET __dk0_main
+338 PSH
+339 LDI_V a 3
+340 F_NEG
+341 STI_V v 3
+342 LOD __dk0_main
+343 ADD 1
+344 SET __dk0_main
+345 JIZ __Ld17e
+346 JMP __Ld17
+// 64: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+347 LOD 0
+348 SET k
+349 LOD k
+350 LDI v
+351 F2I
+352 OUT 0
+353 LOD k
+354 ADD 1
+355 SET k
+356 LES 2
+357 JIZ __Lwh7
+// 65: v # |a> - 2.0|e>;
+358 LOD -3
+359 SET __dk0_main
+360 PSH
+361 LDI_V a 3
+362 P_LOD __dk0_main
+363 LDI_V e 3
+364 F_MLT 2.0
+365 SF_SU2
+366 STI_V v 3
+367 LOD __dk0_main
+368 ADD 1
+369 SET __dk0_main
+370 JIZ __Ld18e
+371 JMP __Ld18
+// 66: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+372 LOD 0
+373 SET k
+374 LOD k
+375 LDI v
+376 F2I
+377 OUT 0
+378 LOD k
+379 ADD 1
+380 SET k
+381 LES 2
+382 JIZ __Lwh8
+// 67: v # |a>;
+383 LOD -3
+384 SET __dk0_main
+385 PSH
+386 LDI_V a 3
+387 STI_V v 3
+388 LOD __dk0_main
+389 ADD 1
+390 SET __dk0_main
+391 JIZ __Ld19e
+392 JMP __Ld19
+// 68: v # |v> + 2.0|e>;
+393 LOD -3
+394 SET __dk0_main
+395 PSH
+396 LDI_V v 3
+397 P_LOD __dk0_main
+398 LDI_V e 3
+399 F_MLT 2.0
+400 SF_ADD
+401 STI_V v 3
+402 LOD __dk0_main
+403 ADD 1
+404 SET __dk0_main
+405 JIZ __Ld20e
+406 JMP __Ld20
+// 69: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+407 LOD 0
+408 SET k
+409 LOD k
+410 LDI v
+411 F2I
+412 OUT 0
+413 LOD k
+414 ADD 1
+415 SET k
+416 LES 2
+417 JIZ __Lwh9
+// 72: x = <a|M|e>;
+418 LOD M
+419 F_MLT e
+420 P_LOD -2
+421 SET __dk0_main
+422 LDI_V M 3
+423 P_LOD __dk0_main
+424 LDI_V e 3
+425 SF_MLT
+426 SF_ADD
+427 P_LOD __dk0_main
+428 ADD 1
+429 SET __dk0_main
+430 JIZ __Ld21e
+431 JMP __Ld21
+432 POP
+433 F_MLT a
+434 P_LOD -2
+435 SET __dd3_main
+436 LOD -6
+437 SET __dk1_main
+438 LOD __dd3_main
+439 LDI_V a 3
+440 P_LOD __dk1_main
+441 LDI_V M 9
+442 F_MLT e
+443 P_LOD -2
+444 SET __dk2_main
+445 ADD __dk1_main
+446 LDI_V M 12
+447 P_LOD __dk2_main
+448 LDI_V e 3
+449 SF_MLT
+450 SF_ADD
+451 P_LOD __dk2_main
+452 ADD 1
+453 SET __dk2_main
+454 JIZ __Ld23e
+455 JMP __Ld23
+456 POP
+457 SF_MLT
+458 SF_ADD
+459 P_LOD __dd3_main
+460 ADD 1
+461 SET __dd3_main
+462 LOD __dk1_main
+463 ADD 3
+464 SET __dk1_main
+465 JIZ __Ld22e
+466 JMP __Ld22
+467 POP
+468 SET x
+// 73: fout(0, x);
+469 F2I_M x
+470 OUT 0
+// 74: x = 1.0 + 2.0*<a|e>;
+471 LOD a
+472 F_MLT e
+473 P_LOD -2
+474 SET __dk0_main
+475 LDI_V a 3
+476 P_LOD __dk0_main
+477 LDI_V e 3
+478 SF_MLT
+479 SF_ADD
+480 P_LOD __dk0_main
+481 ADD 1
+482 SET __dk0_main
+483 JIZ __Ld24e
+484 JMP __Ld24
+485 POP
+486 F_MLT 2.0
+487 F_ADD 1.0
+488 SET x
+// 75: fout(0, x);
+489 F2I_M x
+490 OUT 0
+// 76: x = <a|M||M|e>;
+491 LOD -3
+492 SET __dd9_main
+493 LOD -9
+494 SET __dk7_main
+495 LOD __dd9_main
+496 P_LOD __dk7_main
+497 LDI_V M 9
+498 F_MLT e
+499 P_LOD -2
+500 SET __dk8_main
+501 ADD __dk7_main
+502 LDI_V M 12
+503 P_LOD __dk8_main
+504 LDI_V e 3
+505 SF_MLT
+506 SF_ADD
+507 P_LOD __dk8_main
+508 ADD 1
+509 SET __dk8_main
+510 JIZ __Ld26e
+511 JMP __Ld26
+512 POP
+513 STI_V __dirac_tmp 3
+514 LOD __dd9_main
+515 ADD 1
+516 SET __dd9_main
+517 LOD __dk7_main
+518 ADD 3
+519 SET __dk7_main
+520 JIZ __Ld25e
+521 JMP __Ld25
+522 LOD_V __dirac_tmp 0
+523 SET __dhf13_main
+524 LOD_V __dirac_tmp 0
+525 F_MLT M
+526 P_LOD -2
+527 SET __dk10_main
+528 LDI_V M 3
+529 P_LOD __dk10_main
+530 LDI_V __dirac_tmp 3
+531 SF_MLT
+532 SF_ADD
+533 P_LOD __dk10_main
+534 ADD 1
+535 SET __dk10_main
+536 JIZ __Ld27e
+537 JMP __Ld27
+538 POP
+539 F_MLT a
+540 P_LOD -2
+541 SET __dd14_main
+542 LOD -6
+543 SET __dk11_main
+544 LOD __dd14_main
+545 LDI_V a 3
+546 P_LOD __dk11_main
+547 LDI_V M 9
+548 F_MLT __dhf13_main
+549 P_LOD -2
+550 SET __dk12_main
+551 ADD __dk11_main
+552 LDI_V M 12
+553 P_LOD __dk12_main
+554 LDI_V __dirac_tmp 3
+555 SF_MLT
+556 SF_ADD
+557 P_LOD __dk12_main
+558 ADD 1
+559 SET __dk12_main
+560 JIZ __Ld29e
+561 JMP __Ld29
+562 POP
+563 SF_MLT
+564 SF_ADD
+565 P_LOD __dd14_main
+566 ADD 1
+567 SET __dd14_main
+568 LOD __dk11_main
+569 ADD 3
+570 SET __dk11_main
+571 JIZ __Ld28e
+572 JMP __Ld28
+573 POP
+574 SET x
+// 77: fout(0, x);
+575 F2I_M x
+576 OUT 0
+// 80: y # <a|B|;
+577 LOD -2
+578 SET __dk0_main
+579 PSH
+580 LDI_V B 2
+581 F_MLT a
+582 P_LOD -4
+583 SET __dd2_main
+584 LOD -2
+585 SET __dk1_main
+586 LDI_V a 3
+587 P_LOD __dd2_main
+588 ADD __dk0_main
+589 LDI_V B 8
+590 SF_MLT
+591 SF_ADD
+592 P_LOD __dd2_main
+593 ADD 2
+594 SET __dd2_main
+595 LOD __dk1_main
+596 ADD 1
+597 SET __dk1_main
+598 JIZ __Ld31e
+599 JMP __Ld31
+600 POP
+601 STI_V y 2
+602 LOD __dk0_main
+603 ADD 1
+604 SET __dk0_main
+605 JIZ __Ld30e
+606 JMP __Ld30
+// 81: fout(0, y[0]); fout(0, y[1]);
+607 LOD_V y 0
+608 F2I
+609 OUT 0
+610 LOD_V y 1
+611 F2I
+612 OUT 0
+// 82: v # <a|M|;
+613 LOD -3
+614 SET __dk0_main
+615 PSH
+616 LDI_V M 3
+617 F_MLT a
+618 P_LOD -6
+619 SET __dd2_main
+620 LOD -2
+621 SET __dk1_main
+622 LDI_V a 3
+623 P_LOD __dd2_main
+624 ADD __dk0_main
+625 LDI_V M 12
+626 SF_MLT
+627 SF_ADD
+628 P_LOD __dd2_main
+629 ADD 3
+630 SET __dd2_main
+631 LOD __dk1_main
+632 ADD 1
+633 SET __dk1_main
+634 JIZ __Ld33e
+635 JMP __Ld33
+636 POP
+637 STI_V v 3
+638 LOD __dk0_main
+639 ADD 1
+640 SET __dk0_main
+641 JIZ __Ld32e
+642 JMP __Ld32
+// 83: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+643 LOD 0
+644 SET k
+645 LOD k
+646 LDI v
+647 F2I
+648 OUT 0
+649 LOD k
+650 ADD 1
+651 SET k
+652 LES 2
+653 JIZ __Lwh10
+// 86: v # |B|b>;
+654 LOD_V b 1
+655 SET __dhf1_main
+656 LOD -3
+657 SET __dd2_main
+658 LOD -6
+659 SET __dk0_main
+660 LOD __dd2_main
+661 P_LOD __dk0_main
+662 LDI_V B 6
+663 F_MLT b
+664 P_LOD __dk0_main
+665 LDI_V B 7
+666 F_MLT __dhf1_main
+667 SF_ADD
+668 STI_V v 3
+669 LOD __dd2_main
+670 ADD 1
+671 SET __dd2_main
+672 LOD __dk0_main
+673 ADD 2
+674 SET __dk0_main
+675 JIZ __Ld34e
+676 JMP __Ld34
+// 87: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+677 LOD 0
+678 SET k
+679 LOD k
+680 LDI v
+681 F2I
+682 OUT 0
+683 LOD k
+684 ADD 1
+685 SET k
+686 LES 2
+687 JIZ __Lwh11
+// 88: v # |M|a> + |e>;
+688 LOD -3
+689 SET __dd2_main
+690 LOD -9
+691 SET __dk0_main
+692 LOD __dd2_main
+693 P_LOD __dk0_main
+694 LDI_V M 9
+695 F_MLT a
+696 P_LOD -2
+697 SET __dk1_main
+698 ADD __dk0_main
+699 LDI_V M 12
+700 P_LOD __dk1_main
+701 LDI_V a 3
+702 SF_MLT
+703 SF_ADD
+704 P_LOD __dk1_main
+705 ADD 1
+706 SET __dk1_main
+707 JIZ __Ld36e
+708 JMP __Ld36
+709 POP
+710 P_LOD __dd2_main
+711 LDI_V e 3
+712 SF_ADD
+713 STI_V v 3
+714 LOD __dd2_main
+715 ADD 1
+716 SET __dd2_main
+717 LOD __dk0_main
+718 ADD 3
+719 SET __dk0_main
+720 JIZ __Ld35e
+721 JMP __Ld35
+// 89: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+722 LOD 0
+723 SET k
+724 LOD k
+725 LDI v
+726 F2I
+727 OUT 0
+728 LOD k
+729 ADD 1
+730 SET k
+731 LES 2
+732 JIZ __Lwh12
+// 92: v # |M||M|a>;
+733 LOD -3
+734 SET __dd6_main
+735 LOD -9
+736 SET __dk4_main
+737 LOD __dd6_main
+738 P_LOD __dk4_main
+739 LDI_V M 9
+740 F_MLT a
+741 P_LOD -2
+742 SET __dk5_main
+743 ADD __dk4_main
+744 LDI_V M 12
+745 P_LOD __dk5_main
+746 LDI_V a 3
+747 SF_MLT
+748 SF_ADD
+749 P_LOD __dk5_main
+750 ADD 1
+751 SET __dk5_main
+752 JIZ __Ld38e
+753 JMP __Ld38
+754 POP
+755 STI_V __dirac_tmp 3
+756 LOD __dd6_main
+757 ADD 1
+758 SET __dd6_main
+759 LOD __dk4_main
+760 ADD 3
+761 SET __dk4_main
+762 JIZ __Ld37e
+763 JMP __Ld37
+764 LOD_V __dirac_tmp 0
+765 SET __dhf9_main
+766 LOD -3
+767 SET __dd10_main
+768 LOD -9
+769 SET __dk7_main
+770 LOD __dd10_main
+771 P_LOD __dk7_main
+772 LDI_V M 9
+773 F_MLT __dhf9_main
+774 P_LOD -2
+775 SET __dk8_main
+776 ADD __dk7_main
+777 LDI_V M 12
+778 P_LOD __dk8_main
+779 LDI_V __dirac_tmp 3
+780 SF_MLT
+781 SF_ADD
+782 P_LOD __dk8_main
+783 ADD 1
+784 SET __dk8_main
+785 JIZ __Ld40e
+786 JMP __Ld40
+787 POP
+788 STI_V v 3
+789 LOD __dd10_main
+790 ADD 1
+791 SET __dd10_main
+792 LOD __dk7_main
+793 ADD 3
+794 SET __dk7_main
+795 JIZ __Ld39e
+796 JMP __Ld39
+// 93: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+797 LOD 0
+798 SET k
+799 LOD k
+800 LDI v
+801 F2I
+802 OUT 0
+803 LOD k
+804 ADD 1
+805 SET k
+806 LES 2
+807 JIZ __Lwh13
+// 94: v # |M|P|a>;
+808 LOD -3
+809 SET __dd6_main
+810 LOD -9
+811 SET __dk4_main
+812 LOD __dd6_main
+813 P_LOD __dk4_main
+814 LDI_V P 9
+815 F_MLT a
+816 P_LOD -2
+817 SET __dk5_main
+818 ADD __dk4_main
+819 LDI_V P 12
+820 P_LOD __dk5_main
+821 LDI_V a 3
+822 SF_MLT
+823 SF_ADD
+824 P_LOD __dk5_main
+825 ADD 1
+826 SET __dk5_main
+827 JIZ __Ld42e
+828 JMP __Ld42
+829 POP
+830 STI_V __dirac_tmp 3
+831 LOD __dd6_main
+832 ADD 1
+833 SET __dd6_main
+834 LOD __dk4_main
+835 ADD 3
+836 SET __dk4_main
+837 JIZ __Ld41e
+838 JMP __Ld41
+839 LOD_V __dirac_tmp 0
+840 SET __dhf9_main
+841 LOD -3
+842 SET __dd10_main
+843 LOD -9
+844 SET __dk7_main
+845 LOD __dd10_main
+846 P_LOD __dk7_main
+847 LDI_V M 9
+848 F_MLT __dhf9_main
+849 P_LOD -2
+850 SET __dk8_main
+851 ADD __dk7_main
+852 LDI_V M 12
+853 P_LOD __dk8_main
+854 LDI_V __dirac_tmp 3
+855 SF_MLT
+856 SF_ADD
+857 P_LOD __dk8_main
+858 ADD 1
+859 SET __dk8_main
+860 JIZ __Ld44e
+861 JMP __Ld44
+862 POP
+863 STI_V v 3
+864 LOD __dd10_main
+865 ADD 1
+866 SET __dd10_main
+867 LOD __dk7_main
+868 ADD 3
+869 SET __dk7_main
+870 JIZ __Ld43e
+871 JMP __Ld43
+// 95: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+872 LOD 0
+873 SET k
+874 LOD k
+875 LDI v
+876 F2I
+877 OUT 0
+878 LOD k
+879 ADD 1
+880 SET k
+881 LES 2
+882 JIZ __Lwh14
+// 98: C # |M||P|;
+883 LOD -9
+884 SET __dk0_main
+885 LDI_V M 9
+886 SET __dhf3_main
+887 LOD -3
+888 SET __dk1_main
+889 ADD __dk0_main
+890 P_LOD __dk1_main
+891 LDI_V P 3
+892 F_MLT __dhf3_main
+893 P_LOD -6
+894 SET __dd4_main
+895 LOD -2
+896 SET __dk2_main
+897 ADD __dk0_main
+898 LDI_V M 12
+899 P_LOD __dd4_main
+900 ADD __dk1_main
+901 LDI_V P 12
+902 SF_MLT
+903 SF_ADD
+904 P_LOD __dd4_main
+905 ADD 3
+906 SET __dd4_main
+907 LOD __dk2_main
+908 ADD 1
+909 SET __dk2_main
+910 JIZ __Ld47e
+911 JMP __Ld47
+912 POP
+913 STI_V C 12
+914 LOD __dk1_main
+915 ADD 1
+916 SET __dk1_main
+917 JIZ __Ld46e
+918 JMP __Ld46
+919 LOD __dk0_main
+920 ADD 3
+921 SET __dk0_main
+922 JIZ __Ld45e
+923 JMP __Ld45
+// 99: for (k = 0; k < 3; k = k + 1) {fout(0, C[k][0]); fout(0, C[k][1]); fout(0, C[k][2]);}
+924 LOD 0
+925 SET k
+926 LOD k
+927 MLT 3
+928 LDI C
+929 F2I
+930 OUT 0
+931 LOD k
+932 MLT 3
+933 ADD 1
+934 LDI C
+935 F2I
+936 OUT 0
+937 LOD k
+938 MLT 3
+939 ADD 2
+940 LDI C
+941 F2I
+942 OUT 0
+943 LOD k
+944 ADD 1
+945 SET k
+946 LES 2
+947 JIZ __Lwh15
+// 100: C # |M| - 2.0|P|;
+948 LOD -9
+949 SET __dk0_main
+950 PSH
+951 LDI_V M 9
+952 P_LOD __dk0_main
+953 LDI_V P 9
+954 F_MLT 2.0
+955 SF_SU2
+956 STI_V C 9
+957 LOD __dk0_main
+958 ADD 1
+959 SET __dk0_main
+960 JIZ __Ld48e
+961 JMP __Ld48
+// 101: for (k = 0; k < 3; k = k + 1) {fout(0, C[k][0]); fout(0, C[k][1]); fout(0, C[k][2]);}
+962 LOD 0
+963 SET k
+964 LOD k
+965 MLT 3
+966 LDI C
+967 F2I
+968 OUT 0
+969 LOD k
+970 MLT 3
+971 ADD 1
+972 LDI C
+973 F2I
+974 OUT 0
+975 LOD k
+976 MLT 3
+977 ADD 2
+978 LDI C
+979 F2I
+980 OUT 0
+981 LOD k
+982 ADD 1
+983 SET k
+984 LES 2
+985 JIZ __Lwh16
+// 102: C # 3.0|I|;
+986 LOD -9
+987 SET __dk0_main
+988 P_LOD 0.0
+989 STI_V C 9
+990 LOD __dk0_main
+991 ADD 1
+992 SET __dk0_main
+993 JIZ __Ld49e
+994 JMP __Ld49
+995 LOD -12
+996 SET __dk1_main
+997 P_LOD 3.0
+998 STI_V C 12
+999 LOD __dk1_main
+1000 ADD 4
+1001 SET __dk1_main
+1002 JIZ __Ld50e
+1003 JMP __Ld50
+// 103: for (k = 0; k < 3; k = k + 1) {fout(0, C[k][0]); fout(0, C[k][1]); fout(0, C[k][2]);}
+1004 LOD 0
+1005 SET k
+1006 LOD k
+1007 MLT 3
+1008 LDI C
+1009 F2I
+1010 OUT 0
+1011 LOD k
+1012 MLT 3
+1013 ADD 1
+1014 LDI C
+1015 F2I
+1016 OUT 0
+1017 LOD k
+1018 MLT 3
+1019 ADD 2
+1020 LDI C
+1021 F2I
+1022 OUT 0
+1023 LOD k
+1024 ADD 1
+1025 SET k
+1026 LES 2
+1027 JIZ __Lwh17
+// 104: A # 2.0|I|;
+1028 LOD -6
+1029 SET __dk0_main
+1030 P_LOD 0.0
+1031 STI_V A 6
+1032 LOD __dk0_main
+1033 ADD 1
+1034 SET __dk0_main
+1035 JIZ __Ld51e
+1036 JMP __Ld51
+1037 LOD -6
+1038 SET __dk1_main
+1039 P_LOD 2.0
+1040 STI_V A 6
+1041 LOD __dk1_main
+1042 ADD 3
+1043 SET __dk1_main
+1044 JIZ __Ld52e
+1045 JMP __Ld52
+// 105: for (k = 0; k < 3; k = k + 1) {fout(0, A[k][0]); fout(0, A[k][1]);}
+1046 LOD 0
+1047 SET k
+1048 LOD k
+1049 MLT 2
+1050 LDI A
+1051 F2I
+1052 OUT 0
+1053 LOD k
+1054 MLT 2
+1055 ADD 1
+1056 LDI A
+1057 F2I
+1058 OUT 0
+1059 LOD k
+1060 ADD 1
+1061 SET k
+1062 LES 2
+1063 JIZ __Lwh18
+// 106: C # |a><e| + |M|;
+1064 LOD -3
+1065 SET __dd3_main
+1066 LOD -9
+1067 SET __dk0_main
+1068 LOD __dd3_main
+1069 LDI_V a 3
+1070 SET __dhf2_main
+1071 LOD -3
+1072 SET __dk1_main
+1073 ADD __dk0_main
+1074 P_LOD __dk1_main
+1075 LDI_V e 3
+1076 F_MLT __dhf2_main
+1077 P_LOD __dk1_main
+1078 ADD __dk0_main
+1079 LDI_V M 12
+1080 SF_ADD
+1081 STI_V C 12
+1082 LOD __dk1_main
+1083 ADD 1
+1084 SET __dk1_main
+1085 JIZ __Ld54e
+1086 JMP __Ld54
+1087 LOD __dd3_main
+1088 ADD 1
+1089 SET __dd3_main
+1090 LOD __dk0_main
+1091 ADD 3
+1092 SET __dk0_main
+1093 JIZ __Ld53e
+1094 JMP __Ld53
+// 107: for (k = 0; k < 3; k = k + 1) {fout(0, C[k][0]); fout(0, C[k][1]); fout(0, C[k][2]);}
+1095 LOD 0
+1096 SET k
+1097 LOD k
+1098 MLT 3
+1099 LDI C
+1100 F2I
+1101 OUT 0
+1102 LOD k
+1103 MLT 3
+1104 ADD 1
+1105 LDI C
+1106 F2I
+1107 OUT 0
+1108 LOD k
+1109 MLT 3
+1110 ADD 2
+1111 LDI C
+1112 F2I
+1113 OUT 0
+1114 LOD k
+1115 ADD 1
+1116 SET k
+1117 LES 2
+1118 JIZ __Lwh19
+// 110: iv # |IM|ia>;
+1119 LOD -3
+1120 SET __dd2_main
+1121 LOD -9
+1122 SET __dk0_main
+1123 LOD __dd2_main
+1124 P_LOD __dk0_main
+1125 LDI_V IM 9
+1126 MLT ia
+1127 P_LOD -2
+1128 SET __dk1_main
+1129 ADD __dk0_main
+1130 LDI_V IM 12
+1131 P_LOD __dk1_main
+1132 LDI_V ia 3
+1133 S_MLT
+1134 S_ADD
+1135 P_LOD __dk1_main
+1136 ADD 1
+1137 SET __dk1_main
+1138 JIZ __Ld56e
+1139 JMP __Ld56
+1140 POP
+1141 STI_V iv 3
+1142 LOD __dd2_main
+1143 ADD 1
+1144 SET __dd2_main
+1145 LOD __dk0_main
+1146 ADD 3
+1147 SET __dk0_main
+1148 JIZ __Ld55e
+1149 JMP __Ld55
+// 111: for (k = 0; k < 3; k = k + 1) out(0, iv[k]);
+1150 LOD 0
+1151 SET k
+1152 LOD k
+1153 LDI iv
+1154 OUT 0
+1155 LOD k
+1156 ADD 1
+1157 SET k
+1158 LES 2
+1159 JIZ __Lwh20
+// 112: n = 5;
+1160 LOD 5
+1161 SET n
+// 113: v # n|ia>;
+1162 LOD -3
+1163 SET __dk0_main
+1164 PSH
+1165 LDI_V ia 3
+1166 MLT n
+1167 I2F
+1168 STI_V v 3
+1169 LOD __dk0_main
+1170 ADD 1
+1171 SET __dk0_main
+1172 JIZ __Ld57e
+1173 JMP __Ld57
+// 114: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+1174 LOD 0
+1175 SET k
+1176 LOD k
+1177 LDI v
+1178 F2I
+1179 OUT 0
+1180 LOD k
+1181 ADD 1
+1182 SET k
+1183 LES 2
+1184 JIZ __Lwh21
+// 115: v # n|a>;
+1185 I2F_M n
+1186 SET __dhf1_main
+1187 LOD -3
+1188 SET __dk0_main
+1189 PSH
+1190 LDI_V a 3
+1191 F_MLT __dhf1_main
+1192 STI_V v 3
+1193 LOD __dk0_main
+1194 ADD 1
+1195 SET __dk0_main
+1196 JIZ __Ld58e
+1197 JMP __Ld58
+// 116: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+1198 LOD 0
+1199 SET k
+1200 LOD k
+1201 LDI v
+1202 F2I
+1203 OUT 0
+1204 LOD k
+1205 ADD 1
+1206 SET k
+1207 LES 2
+1208 JIZ __Lwh22
+// 117: x = <ia|e>;
+1209 I2F_M ia
+1210 F_MLT e
+1211 P_LOD -2
+1212 SET __dk0_main
+1213 LDI_V ia 3
+1214 P_LOD __dk0_main
+1215 LDI_V e 3
+1216 SET_P __aux_var
+1217 I2F
+1218 F_MLT __aux_var
+1219 SF_ADD
+1220 P_LOD __dk0_main
+1221 ADD 1
+1222 SET __dk0_main
+1223 JIZ __Ld59e
+1224 JMP __Ld59
+1225 POP
+1226 SET x
+// 118: fout(0, x);
+1227 F2I_M x
+1228 OUT 0
+// 121: iv # |ia>;
+1229 LOD -3
+1230 SET __dk0_main
+1231 PSH
+1232 LDI_V ia 3
+1233 STI_V iv 3
+1234 LOD __dk0_main
+1235 ADD 1
+1236 SET __dk0_main
+1237 JIZ __Ld60e
+1238 JMP __Ld60
+// 122: iv # n+1 -> |iv>;
+1239 LOD_V iv 1
+1240 SET_V iv 2
+1241 LOD_V iv 0
+1242 SET_V iv 1
+1243 LOD n
+1244 ADD 1
+1245 SET iv
+// 123: for (k = 0; k < 3; k = k + 1) out(0, iv[k]);
+1246 LOD 0
+1247 SET k
+1248 LOD k
+1249 LDI iv
+1250 OUT 0
+1251 LOD k
+1252 ADD 1
+1253 SET k
+1254 LES 2
+1255 JIZ __Lwh23
+// 126: v # |in(0)>;
+1256 LOD -3
+1257 SET __dk0_main
+1258 PF_INN 0
+1259 STI_V v 3
+1260 LOD __dk0_main
+1261 ADD 1
+1262 SET __dk0_main
+1263 JIZ __Ld61e
+1264 JMP __Ld61
+// 127: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+1265 LOD 0
+1266 SET k
+1267 LOD k
+1268 LDI v
+1269 F2I
+1270 OUT 0
+1271 LOD k
+1272 ADD 1
+1273 SET k
+1274 LES 2
+1275 JIZ __Lwh24
+// 128: v # 2.0|in(0)>;
+1276 LOD -3
+1277 SET __dk0_main
+1278 PF_INN 0
+1279 F_MLT 2.0
+1280 STI_V v 3
+1281 LOD __dk0_main
+1282 ADD 1
+1283 SET __dk0_main
+1284 JIZ __Ld62e
+1285 JMP __Ld62
+// 129: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+1286 LOD 0
+1287 SET k
+1288 LOD k
+1289 LDI v
+1290 F2I
+1291 OUT 0
+1292 LOD k
+1293 ADD 1
+1294 SET k
+1295 LES 2
+1296 JIZ __Lwh25
+// 130: v # |0>;
+1297 LOD -3
+1298 SET __dk0_main
+1299 P_LOD 0.0
+1300 STI_V v 3
+1301 LOD __dk0_main
+1302 ADD 1
+1303 SET __dk0_main
+1304 JIZ __Ld63e
+1305 JMP __Ld63
+// 131: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+1306 LOD 0
+1307 SET k
+1308 LOD k
+1309 LDI v
+1310 F2I
+1311 OUT 0
+1312 LOD k
+1313 ADD 1
+1314 SET k
+1315 LES 2
+1316 JIZ __Lwh26
+// 134: C # |P|;
+1317 LOD -9
+1318 SET __dk0_main
+1319 PSH
+1320 LDI_V P 9
+1321 STI_V C 9
+1322 LOD __dk0_main
+1323 ADD 1
+1324 SET __dk0_main
+1325 JIZ __Ld64e
+1326 JMP __Ld64
+// 135: C # |M||C|;
+1327 LOD -9
+1328 SET __dk0_main
+1329 LDI_V M 9
+1330 SET __dhf3_main
+1331 LOD -3
+1332 SET __dk1_main
+1333 ADD __dk0_main
+1334 P_LOD __dk1_main
+1335 LDI_V C 3
+1336 F_MLT __dhf3_main
+1337 P_LOD -6
+1338 SET __dd4_main
+1339 LOD -2
+1340 SET __dk2_main
+1341 ADD __dk0_main
+1342 LDI_V M 12
+1343 P_LOD __dd4_main
+1344 ADD __dk1_main
+1345 LDI_V C 12
+1346 SF_MLT
+1347 SF_ADD
+1348 P_LOD __dd4_main
+1349 ADD 3
+1350 SET __dd4_main
+1351 LOD __dk2_main
+1352 ADD 1
+1353 SET __dk2_main
+1354 JIZ __Ld67e
+1355 JMP __Ld67
+1356 POP
+1357 STI_V __dirac_tmp 12
+1358 LOD __dk1_main
+1359 ADD 1
+1360 SET __dk1_main
+1361 JIZ __Ld66e
+1362 JMP __Ld66
+1363 LOD __dk0_main
+1364 ADD 3
+1365 SET __dk0_main
+1366 JIZ __Ld65e
+1367 JMP __Ld65
+1368 LOD -9
+1369 SET __dk5_main
+1370 PSH
+1371 LDI_V __dirac_tmp 9
+1372 STI_V C 9
+1373 LOD __dk5_main
+1374 ADD 1
+1375 SET __dk5_main
+1376 JIZ __Ld68e
+1377 JMP __Ld68
+// 136: for (k = 0; k < 3; k = k + 1) {fout(0, C[k][0]); fout(0, C[k][1]); fout(0, C[k][2]);}
+1378 LOD 0
+1379 SET k
+1380 LOD k
+1381 MLT 3
+1382 LDI C
+1383 F2I
+1384 OUT 0
+1385 LOD k
+1386 MLT 3
+1387 ADD 1
+1388 LDI C
+1389 F2I
+1390 OUT 0
+1391 LOD k
+1392 MLT 3
+1393 ADD 2
+1394 LDI C
+1395 F2I
+1396 OUT 0
+1397 LOD k
+1398 ADD 1
+1399 SET k
+1400 LES 2
+1401 JIZ __Lwh27
+// 137: v # |a>;
+1402 LOD -3
+1403 SET __dk0_main
+1404 PSH
+1405 LDI_V a 3
+1406 STI_V v 3
+1407 LOD __dk0_main
+1408 ADD 1
+1409 SET __dk0_main
+1410 JIZ __Ld69e
+1411 JMP __Ld69
+// 138: v # <v|M|;
+1412 LOD_V v 0
+1413 SET __dhf2_main
+1414 LOD -3
+1415 SET __dk0_main
+1416 PSH
+1417 LDI_V M 3
+1418 F_MLT __dhf2_main
+1419 P_LOD -6
+1420 SET __dd3_main
+1421 LOD -2
+1422 SET __dk1_main
+1423 LDI_V v 3
+1424 P_LOD __dd3_main
+1425 ADD __dk0_main
+1426 LDI_V M 12
+1427 SF_MLT
+1428 SF_ADD
+1429 P_LOD __dd3_main
+1430 ADD 3
+1431 SET __dd3_main
+1432 LOD __dk1_main
+1433 ADD 1
+1434 SET __dk1_main
+1435 JIZ __Ld71e
+1436 JMP __Ld71
+1437 POP
+1438 STI_V __dirac_tmp 3
+1439 LOD __dk0_main
+1440 ADD 1
+1441 SET __dk0_main
+1442 JIZ __Ld70e
+1443 JMP __Ld70
+1444 LOD -3
+1445 SET __dk4_main
+1446 PSH
+1447 LDI_V __dirac_tmp 3
+1448 STI_V v 3
+1449 LOD __dk4_main
+1450 ADD 1
+1451 SET __dk4_main
+1452 JIZ __Ld72e
+1453 JMP __Ld72
+// 139: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+1454 LOD 0
+1455 SET k
+1456 LOD k
+1457 LDI v
+1458 F2I
+1459 OUT 0
+1460 LOD k
+1461 ADD 1
+1462 SET k
+1463 LES 2
+1464 JIZ __Lwh28
+// 142: x = 2.0;
+1465 LOD 2.0
+1466 SET x
+// 143: iv # x|ia>;
+1467 LOD -3
+1468 SET __dk0_main
+1469 PSH
+1470 LDI_V ia 3
+1471 I2F
+1472 F_MLT x
+1473 F2I
+1474 STI_V iv 3
+1475 LOD __dk0_main
+1476 ADD 1
+1477 SET __dk0_main
+1478 JIZ __Ld73e
+1479 JMP __Ld73
+// 144: for (k = 0; k < 3; k = k + 1) out(0, iv[k]);
+1480 LOD 0
+1481 SET k
+1482 LOD k
+1483 LDI iv
+1484 OUT 0
+1485 LOD k
+1486 ADD 1
+1487 SET k
+1488 LES 2
+1489 JIZ __Lwh29
+// 147: out(0, |ia>);
+1490 LOD -3
+1491 SET __dk0_main
+1492 LDI_V ia 3
+1493 OUT 0
+1494 LOD __dk0_main
+1495 ADD 1
+1496 SET __dk0_main
+1497 JIZ __Ld74e
+1498 JMP __Ld74
+// 148: out(0, 1|ia>);
+1499 LOD -3
+1500 SET __dk0_main
+1501 LDI_V ia 3
+1502 OUT 0
+1503 LOD __dk0_main
+1504 ADD 1
+1505 SET __dk0_main
+1506 JIZ __Ld75e
+1507 JMP __Ld75
+// 149: fout(0, 2.0|a>);
+1508 LOD -3
+1509 SET __dk0_main
+1510 LDI_V a 3
+1511 F_MLT 2.0
+1512 F2I
+1513 OUT 0
+1514 LOD __dk0_main
+1515 ADD 1
+1516 SET __dk0_main
+1517 JIZ __Ld76e
+1518 JMP __Ld76
+// 150: out(0, |IM|ia>);
+1519 LOD -9
+1520 SET __dk0_main
+1521 LDI_V IM 9
+1522 MLT ia
+1523 P_LOD -2
+1524 SET __dk1_main
+1525 ADD __dk0_main
+1526 LDI_V IM 12
+1527 P_LOD __dk1_main
+1528 LDI_V ia 3
+1529 S_MLT
+1530 S_ADD
+1531 P_LOD __dk1_main
+1532 ADD 1
+1533 SET __dk1_main
+1534 JIZ __Ld78e
+1535 JMP __Ld78
+1536 POP
+1537 OUT 0
+1538 LOD __dk0_main
+1539 ADD 3
+1540 SET __dk0_main
+1541 JIZ __Ld77e
+1542 JMP __Ld77
+// 151: out(0, |M||M|a>);
+1543 LOD -3
+1544 SET __dd6_main
+1545 LOD -9
+1546 SET __dk4_main
+1547 LOD __dd6_main
+1548 P_LOD __dk4_main
+1549 LDI_V M 9
+1550 F_MLT a
+1551 P_LOD -2
+1552 SET __dk5_main
+1553 ADD __dk4_main
+1554 LDI_V M 12
+1555 P_LOD __dk5_main
+1556 LDI_V a 3
+1557 SF_MLT
+1558 SF_ADD
+1559 P_LOD __dk5_main
+1560 ADD 1
+1561 SET __dk5_main
+1562 JIZ __Ld80e
+1563 JMP __Ld80
+1564 POP
+1565 STI_V __dirac_tmp 3
+1566 LOD __dd6_main
+1567 ADD 1
+1568 SET __dd6_main
+1569 LOD __dk4_main
+1570 ADD 3
+1571 SET __dk4_main
+1572 JIZ __Ld79e
+1573 JMP __Ld79
+1574 LOD_V __dirac_tmp 0
+1575 SET __dhf9_main
+1576 LOD -9
+1577 SET __dk7_main
+1578 LDI_V M 9
+1579 F_MLT __dhf9_main
+1580 P_LOD -2
+1581 SET __dk8_main
+1582 ADD __dk7_main
+1583 LDI_V M 12
+1584 P_LOD __dk8_main
+1585 LDI_V __dirac_tmp 3
+1586 SF_MLT
+1587 SF_ADD
+1588 P_LOD __dk8_main
+1589 ADD 1
+1590 SET __dk8_main
+1591 JIZ __Ld82e
+1592 JMP __Ld82
+1593 POP
+1594 F2I
+1595 OUT 0
+1596 LOD __dk7_main
+1597 ADD 3
+1598 SET __dk7_main
+1599 JIZ __Ld81e
+1600 JMP __Ld81
+// 154: x = 3.0;
+1601 LOD 3.0
+1602 SET x
+// 155: x = x*3.0 + <a|M|M|M|e>;
+1603 F_MLT 3.0
+1604 SET __dhf9_main
+1605 LOD -3
+1606 SET __dk10_main
+1607 PSH
+1608 LDI_V M 3
+1609 F_MLT a
+1610 P_LOD -6
+1611 SET __dd12_main
+1612 LOD -2
+1613 SET __dk11_main
+1614 LDI_V a 3
+1615 P_LOD __dd12_main
+1616 ADD __dk10_main
+1617 LDI_V M 12
+1618 SF_MLT
+1619 SF_ADD
+1620 P_LOD __dd12_main
+1621 ADD 3
+1622 SET __dd12_main
+1623 LOD __dk11_main
+1624 ADD 1
+1625 SET __dk11_main
+1626 JIZ __Ld84e
+1627 JMP __Ld84
+1628 POP
+1629 STI_V __dirac_tmp 3
+1630 LOD __dk10_main
+1631 ADD 1
+1632 SET __dk10_main
+1633 JIZ __Ld83e
+1634 JMP __Ld83
+1635 LOD_V __dirac_tmp 0
+1636 SET __dhf18_main
+1637 LOD __dhf9_main
+1638 P_LOD_V __dirac_tmp 0
+1639 F_MLT M
+1640 P_LOD -6
+1641 SET __dd19_main
+1642 LOD -2
+1643 SET __dk13_main
+1644 LDI_V __dirac_tmp 3
+1645 P_LOD __dd19_main
+1646 LDI_V M 9
+1647 SF_MLT
+1648 SF_ADD
+1649 P_LOD __dd19_main
+1650 ADD 3
+1651 SET __dd19_main
+1652 LOD __dk13_main
+1653 ADD 1
+1654 SET __dk13_main
+1655 JIZ __Ld85e
+1656 JMP __Ld85
+1657 POP
+1658 P_LOD M
+1659 F_MLT e
+1660 P_LOD -2
+1661 SET __dk14_main
+1662 LDI_V M 3
+1663 P_LOD __dk14_main
+1664 LDI_V e 3
+1665 SF_MLT
+1666 SF_ADD
+1667 P_LOD __dk14_main
+1668 ADD 1
+1669 SET __dk14_main
+1670 JIZ __Ld86e
+1671 JMP __Ld86
+1672 POP
+1673 SF_MLT
+1674 P_LOD -6
+1675 SET __dd20_main
+1676 LOD -2
+1677 SET __dk15_main
+1678 LDI_V M 3
+1679 F_MLT __dhf18_main
+1680 P_LOD -6
+1681 SET __dd21_main
+1682 LOD -2
+1683 SET __dk16_main
+1684 LDI_V __dirac_tmp 3
+1685 P_LOD __dd21_main
+1686 ADD __dk15_main
+1687 LDI_V M 12
+1688 SF_MLT
+1689 SF_ADD
+1690 P_LOD __dd21_main
+1691 ADD 3
+1692 SET __dd21_main
+1693 LOD __dk16_main
+1694 ADD 1
+1695 SET __dk16_main
+1696 JIZ __Ld88e
+1697 JMP __Ld88
+1698 POP
+1699 P_LOD __dd20_main
+1700 LDI_V M 9
+1701 F_MLT e
+1702 P_LOD -2
+1703 SET __dk17_main
+1704 ADD __dd20_main
+1705 LDI_V M 12
+1706 P_LOD __dk17_main
+1707 LDI_V e 3
+1708 SF_MLT
+1709 SF_ADD
+1710 P_LOD __dk17_main
+1711 ADD 1
+1712 SET __dk17_main
+1713 JIZ __Ld89e
+1714 JMP __Ld89
+1715 POP
+1716 SF_MLT
+1717 SF_ADD
+1718 P_LOD __dd20_main
+1719 ADD 3
+1720 SET __dd20_main
+1721 LOD __dk15_main
+1722 ADD 1
+1723 SET __dk15_main
+1724 JIZ __Ld87e
+1725 JMP __Ld87
+1726 POP
+1727 SF_ADD
+1728 SET x
+// 156: fout(0, x);
+1729 F2I_M x
+1730 OUT 0
+// 159: v # |M|M|a> + tw(2.0)|e>;
+1731 LOD 2.0
+1732 CAL tw
+1733 SET __dhf4_main
+1734 LOD -3
+1735 SET __dd7_main
+1736 LOD -9
+1737 SET __dk5_main
+1738 LOD __dd7_main
+1739 P_LOD __dk5_main
+1740 LDI_V M 9
+1741 F_MLT a
+1742 P_LOD -2
+1743 SET __dk6_main
+1744 ADD __dk5_main
+1745 LDI_V M 12
+1746 P_LOD __dk6_main
+1747 LDI_V a 3
+1748 SF_MLT
+1749 SF_ADD
+1750 P_LOD __dk6_main
+1751 ADD 1
+1752 SET __dk6_main
+1753 JIZ __Ld91e
+1754 JMP __Ld91
+1755 POP
+1756 STI_V __dirac_tmp 3
+1757 LOD __dd7_main
+1758 ADD 1
+1759 SET __dd7_main
+1760 LOD __dk5_main
+1761 ADD 3
+1762 SET __dk5_main
+1763 JIZ __Ld90e
+1764 JMP __Ld90
+1765 LOD_V __dirac_tmp 0
+1766 SET __dhf10_main
+1767 LOD -3
+1768 SET __dd11_main
+1769 LOD -9
+1770 SET __dk8_main
+1771 LOD __dd11_main
+1772 P_LOD __dk8_main
+1773 LDI_V M 9
+1774 F_MLT __dhf10_main
+1775 P_LOD -2
+1776 SET __dk9_main
+1777 ADD __dk8_main
+1778 LDI_V M 12
+1779 P_LOD __dk9_main
+1780 LDI_V __dirac_tmp 3
+1781 SF_MLT
+1782 SF_ADD
+1783 P_LOD __dk9_main
+1784 ADD 1
+1785 SET __dk9_main
+1786 JIZ __Ld93e
+1787 JMP __Ld93
+1788 POP
+1789 P_LOD __dd11_main
+1790 LDI_V e 3
+1791 F_MLT __dhf4_main
+1792 SF_ADD
+1793 STI_V v 3
+1794 LOD __dd11_main
+1795 ADD 1
+1796 SET __dd11_main
+1797 LOD __dk8_main
+1798 ADD 3
+1799 SET __dk8_main
+1800 JIZ __Ld92e
+1801 JMP __Ld92
+// 160: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+1802 LOD 0
+1803 SET k
+1804 LOD k
+1805 LDI v
+1806 F2I
+1807 OUT 0
+1808 LOD k
+1809 ADD 1
+1810 SET k
+1811 LES 2
+1812 JIZ __Lwh30
+// 161: v # tw(1.0)|a> + (x - 1.0)|e>;
+1813 LOD 1.0
+1814 CAL tw
+1815 SET __dhf1_main
+1816 LOD x
+1817 F_SU1 1.0
+1818 SET __dhf2_main
+1819 LOD -3
+1820 SET __dk0_main
+1821 PSH
+1822 LDI_V a 3
+1823 F_MLT __dhf1_main
+1824 P_LOD __dk0_main
+1825 LDI_V e 3
+1826 F_MLT __dhf2_main
+1827 SF_ADD
+1828 STI_V v 3
+1829 LOD __dk0_main
+1830 ADD 1
+1831 SET __dk0_main
+1832 JIZ __Ld94e
+1833 JMP __Ld94
+// 162: for (k = 0; k < 3; k = k + 1) fout(0, v[k]);
+1834 LOD 0
+1835 SET k
+1836 LOD k
+1837 LDI v
+1838 F2I
+1839 OUT 0
+1840 LOD k
+1841 ADD 1
+1842 SET k
+1843 LES 2
+1844 JIZ __Lwh31
+// 163: for (k = 0; k < 3; k = k + 1) fout(0, w[k]);
+1845 LOD 0
+1846 SET k
+1847 LOD k
+1848 LDI w
+1849 F2I
+1850 OUT 0
+1851 LOD k
+1852 ADD 1
+1853 SET k
+1854 LES 2
+1855 JIZ __Lwh32
+// -3: END
+1856 JMP fim

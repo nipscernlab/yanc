@@ -1,0 +1,187 @@
+## messages
+Heads up on line 34: gonna convert float to int on the return of function 'sumri'? Code away then!
+Heads up on line 63: converting int to comp on parameter 1 of function 'echo'.
+Heads up on line 66: converting float to comp on parameter 1 of function 'echo'.
+Heads up on line 69: converting comp to int on parameter 1 of function 'takesint'.
+Info: 109 assembly instructions generated
+Info: 2 variables written and never read removed (2 instructions)
+Info: 25 variables share 4 data words (21 saved)
+Heads up: variable 'x' in function 'takesint' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Heads up: variable 'a' in function 'midcomp' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 107 instructions and 20 variables were found
+Info: ULA resource -> float-point adder
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: adding stack memory for function calls
+Info: stack depths from the program: SDEPTH 2, NDSTAC 4
+Info: using 10% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+echo c 3
+echo c_i 3
+addc a 3
+addc a_i 3
+addc b 3
+addc b_i 3
+mk re 1
+mk im 1
+sumri c 3
+sumri c_i 3
+takesint x 1
+midcomp a 1
+midcomp c 3
+midcomp c_i 3
+midcomp b 1
+main e 3
+main e_i 3
+main s 3
+main s_i 3
+main m 3
+main m_i 3
+main ci 3
+main ci_i 3
+main cf 3
+main cf_i 3
+main nest 3
+main nest_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 28: comp echo(comp c) { return c; }
+2 SET_P echo_c_i
+3 SET echo_c
+4 P_LOD echo_c_i
+5 RET
+// 30: comp addc(comp a, comp b) { return a + b; }
+6 SET_P addc_b_i
+7 SET_P addc_b
+8 SET_P addc_a_i
+9 SET addc_a
+10 F_ADD addc_b
+11 P_LOD addc_a_i
+12 F_ADD addc_b_i
+13 RET
+// 32: comp mk(int re, int im) { return complex(re, im); }
+14 SET_P mk_im
+15 SET mk_re
+16 I2F_M mk_re
+17 P_I2F_M mk_im
+18 RET
+// 34: int sumri(comp c) { return real(c) + imag(c); }
+19 SET_P sumri_c_i
+20 SET sumri_c
+21 F_ADD sumri_c_i
+22 F2I
+23 RET
+// 36: int takesint(int x) { return x; }
+24 RET
+// 40: int midcomp(int a, comp c, int b)
+25 SET_P midcomp_b
+26 SET_P midcomp_c_i
+27 SET_P midcomp_c
+// 42: out (0, a);
+28 OUT 0
+// 43: fout(0, real(c));
+29 F2I_M midcomp_c
+30 OUT 0
+// 44: fout(0, imag(c));
+31 F2I_M midcomp_c_i
+32 OUT 0
+// 45: return b;
+33 LOD midcomp_b
+34 RET
+// 52: comp e = echo(3.0 + 4.0i);
+35 LOD 3.0
+36 P_LOD 4.0
+37 CAL echo
+38 SET_P main_e_i
+39 SET main_e
+// 53: fout(0, real(e)); fout(0, imag(e));
+40 F2I_M main_e
+41 OUT 0
+42 F2I_M main_e_i
+43 OUT 0
+// 55: comp s = addc(1.0 + 2.0i, 3.0 + 4.0i);
+44 LOD 1.0
+45 P_LOD 2.0
+46 P_LOD 3.0
+47 P_LOD 4.0
+48 CAL addc
+49 SET_P main_s_i
+50 SET main_s
+// 56: fout(0, real(s)); fout(0, imag(s));
+51 F2I_M main_s
+52 OUT 0
+53 F2I_M main_s_i
+54 OUT 0
+// 58: comp m = mk(5, 9);
+55 LOD 5
+56 P_LOD 9
+57 CAL mk
+58 SET_P main_m_i
+59 SET main_m
+// 59: fout(0, real(m)); fout(0, imag(m));
+60 F2I_M main_m
+61 OUT 0
+62 F2I_M main_m_i
+63 OUT 0
+// 61: out(0, sumri(10.0 + 5.0i));
+64 LOD 10.0
+65 P_LOD 5.0
+66 CAL sumri
+67 OUT 0
+// 63: comp ci = echo(8);
+68 LOD 8.0
+69 P_LOD 0.0
+70 CAL echo
+71 SET_P main_ci_i
+72 SET main_ci
+// 64: fout(0, real(ci)); fout(0, imag(ci));
+73 F2I_M main_ci
+74 OUT 0
+75 F2I_M main_ci_i
+76 OUT 0
+// 66: comp cf = echo(5.0);
+77 LOD 5.0
+78 P_LOD 0.0
+79 CAL echo
+80 SET_P main_cf_i
+81 SET main_cf
+// 67: fout(0, real(cf)); fout(0, imag(cf));
+82 F2I_M main_cf
+83 OUT 0
+84 F2I_M main_cf_i
+85 OUT 0
+// 69: out(0, takesint(7.0 + 2.0i));
+86 F2I_M 7.0
+87 CAL takesint
+88 OUT 0
+// 71: out(0, midcomp(1, 11.0 + 22.0i, 2));
+89 LOD 1
+90 P_LOD 11.0
+91 P_LOD 22.0
+92 P_LOD 2
+93 CAL midcomp
+94 OUT 0
+// 73: comp nest = echo(echo(6.0 + 7.0i));
+95 LOD 6.0
+96 P_LOD 7.0
+97 CAL echo
+98 CAL echo
+99 SET_P main_nest_i
+100 SET main_nest
+// 74: fout(0, real(nest)); fout(0, imag(nest));
+101 F2I_M main_nest
+102 OUT 0
+103 F2I_M main_nest_i
+104 OUT 0
+// 50: while (1)
+105 JMP __Lwh1
+// -3: END
+106 JMP fim

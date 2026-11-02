@@ -1,0 +1,459 @@
+## messages
+Info: 306 assembly instructions generated
+Info: adding assembly macro for arc-tangent computation
+Info: adding assembly macro for natural-logarithm computation
+Info: 12 divisions, 5 words each for DIV/MOD and 4 for F_DIV (36 added)
+Info: 28 variables share 10 data words (18 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 416 instructions and 34 variables were found
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: adding stack memory for function calls
+Info: ULA resource -> < operator for float
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point absolute operation
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> base-2 exponent extraction of float
+Info: ULA resource -> integer negative operation
+Info: ULA resource -> float scale by a power of two (2^k)
+Info: ULA resource -> int to float converter
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 20% of the Assembly Instruction Set
+Info: using 30% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main z 3
+main z_i 3
+main w 3
+main w_i 3
+main c 3
+main c_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 18: c = log(1.0+0.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+1 LOD 1.0
+2 P_LOD 0.0
+3 F_MLT 0.0
+4 SF_ADD
+5 CAL __float_log
+6 F_MLT 0.5
+7 SET __clog_re
+8 LOD 1.0
+9 P_LOD 0.0
+10 SET_P __fase_im
+11 SET __fase_re
+12 LOD 0.0
+13 F_LES __fase_re
+14 JIZ __Lfa1a
+15 LOD __fase_re
+16 F_DIV __fase_im
+17 NOP
+18 NOP
+19 F_QUO
+20 CAL __float_atan
+21 SET __fase_t
+22 LOD 0.0
+23 F_LES __fase_im
+24 JIZ __Lfa1b
+25 LOD __fase_t
+26 F_ADD -3.14159265359
+27 JMP __Lfa1z
+28 LOD __fase_t
+29 F_ADD 3.14159265359
+30 JMP __Lfa1z
+31 LOD __fase_re
+32 F_LES 0.0
+33 JIZ __Lfa1c
+34 LOD __fase_re
+35 F_DIV __fase_im
+36 NOP
+37 NOP
+38 F_QUO
+39 CAL __float_atan
+40 JMP __Lfa1z
+41 LOD __fase_im
+42 F_LES 0.0
+43 JIZ __Lfa1d
+44 LOD 1.57079632679
+45 JMP __Lfa1z
+46 LOD 0.0
+47 F_LES __fase_im
+48 JIZ __Lfa1e
+49 LOD -1.57079632679
+50 JMP __Lfa1z
+51 LOD 0.0
+52 SET __clog_im
+53 LOD __clog_re
+54 P_LOD __clog_im
+55 SET_P main_c_i
+56 SET main_c
+57 F_MLT 1000.0
+58 F2I
+59 OUT 0
+60 LOD main_c_i
+61 F_MLT 1000.0
+62 F2I
+63 OUT 0
+// 19: c = log(0.0+1.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+64 LOD 0.0
+65 F_MLT 0.0
+66 P_LOD 1.0
+67 SF_ADD
+68 CAL __float_log
+69 F_MLT 0.5
+70 SET __clog_re
+71 LOD 0.0
+72 P_LOD 1.0
+73 SET_P __fase_im
+74 SET __fase_re
+75 LOD 0.0
+76 F_LES __fase_re
+77 JIZ __Lfa2a
+78 LOD __fase_re
+79 F_DIV __fase_im
+80 NOP
+81 NOP
+82 F_QUO
+83 CAL __float_atan
+84 SET __fase_t
+85 LOD 0.0
+86 F_LES __fase_im
+87 JIZ __Lfa2b
+88 LOD __fase_t
+89 F_ADD -3.14159265359
+90 JMP __Lfa2z
+91 LOD __fase_t
+92 F_ADD 3.14159265359
+93 JMP __Lfa2z
+94 LOD __fase_re
+95 F_LES 0.0
+96 JIZ __Lfa2c
+97 LOD __fase_re
+98 F_DIV __fase_im
+99 NOP
+100 NOP
+101 F_QUO
+102 CAL __float_atan
+103 JMP __Lfa2z
+104 LOD __fase_im
+105 F_LES 0.0
+106 JIZ __Lfa2d
+107 LOD 1.57079632679
+108 JMP __Lfa2z
+109 LOD 0.0
+110 F_LES __fase_im
+111 JIZ __Lfa2e
+112 LOD -1.57079632679
+113 JMP __Lfa2z
+114 LOD 0.0
+115 SET __clog_im
+116 LOD __clog_re
+117 P_LOD __clog_im
+118 SET_P main_c_i
+119 SET main_c
+120 F_MLT 1000.0
+121 F2I
+122 OUT 0
+123 LOD main_c_i
+124 F_MLT 1000.0
+125 F2I
+126 OUT 0
+// 20: c = log(-1.0+0.0i);                           fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+127 LOD -1.0
+128 F_MLT -1.0
+129 P_LOD 0.0
+130 F_MLT 0.0
+131 SF_ADD
+132 CAL __float_log
+133 F_MLT 0.5
+134 SET __clog_re
+135 LOD -1.0
+136 P_LOD 0.0
+137 SET_P __fase_im
+138 SET __fase_re
+139 LOD 0.0
+140 F_LES __fase_re
+141 JIZ __Lfa3a
+142 LOD __fase_re
+143 F_DIV __fase_im
+144 NOP
+145 NOP
+146 F_QUO
+147 CAL __float_atan
+148 SET __fase_t
+149 LOD 0.0
+150 F_LES __fase_im
+151 JIZ __Lfa3b
+152 LOD __fase_t
+153 F_ADD -3.14159265359
+154 JMP __Lfa3z
+155 LOD __fase_t
+156 F_ADD 3.14159265359
+157 JMP __Lfa3z
+158 LOD __fase_re
+159 F_LES 0.0
+160 JIZ __Lfa3c
+161 LOD __fase_re
+162 F_DIV __fase_im
+163 NOP
+164 NOP
+165 F_QUO
+166 CAL __float_atan
+167 JMP __Lfa3z
+168 LOD __fase_im
+169 F_LES 0.0
+170 JIZ __Lfa3d
+171 LOD 1.57079632679
+172 JMP __Lfa3z
+173 LOD 0.0
+174 F_LES __fase_im
+175 JIZ __Lfa3e
+176 LOD -1.57079632679
+177 JMP __Lfa3z
+178 LOD 0.0
+179 SET __clog_im
+180 LOD __clog_re
+181 P_LOD __clog_im
+182 SET_P main_c_i
+183 SET main_c
+184 F_MLT 1000.0
+185 F2I
+186 OUT 0
+187 LOD main_c_i
+188 F_MLT 1000.0
+189 F2I
+190 OUT 0
+// 21: z = 3.0+4.0i;          c = log(z);            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+191 LOD 3.0
+192 SET main_z
+193 LOD 4.0
+194 SET main_z_i
+195 LOD main_z
+196 F_MLT main_z
+197 P_LOD main_z_i
+198 F_MLT main_z_i
+199 SF_ADD
+200 CAL __float_log
+201 F_MLT 0.5
+202 SET __clog_re
+203 LOD main_z
+204 P_LOD main_z_i
+205 SET_P __fase_im
+206 SET __fase_re
+207 LOD 0.0
+208 F_LES __fase_re
+209 JIZ __Lfa4a
+210 LOD __fase_re
+211 F_DIV __fase_im
+212 NOP
+213 NOP
+214 F_QUO
+215 CAL __float_atan
+216 SET __fase_t
+217 LOD 0.0
+218 F_LES __fase_im
+219 JIZ __Lfa4b
+220 LOD __fase_t
+221 F_ADD -3.14159265359
+222 JMP __Lfa4z
+223 LOD __fase_t
+224 F_ADD 3.14159265359
+225 JMP __Lfa4z
+226 LOD __fase_re
+227 F_LES 0.0
+228 JIZ __Lfa4c
+229 LOD __fase_re
+230 F_DIV __fase_im
+231 NOP
+232 NOP
+233 F_QUO
+234 CAL __float_atan
+235 JMP __Lfa4z
+236 LOD __fase_im
+237 F_LES 0.0
+238 JIZ __Lfa4d
+239 LOD 1.57079632679
+240 JMP __Lfa4z
+241 LOD 0.0
+242 F_LES __fase_im
+243 JIZ __Lfa4e
+244 LOD -1.57079632679
+245 JMP __Lfa4z
+246 LOD 0.0
+247 SET __clog_im
+248 LOD __clog_re
+249 P_LOD __clog_im
+250 SET_P main_c_i
+251 SET main_c
+252 F_MLT 1000.0
+253 F2I
+254 OUT 0
+255 LOD main_c_i
+256 F_MLT 1000.0
+257 F2I
+258 OUT 0
+// 22: z = 1.0+2.0i;  w = 2.0+2.0i;  c = log(z + w); fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
+259 LOD 1.0
+260 SET main_z
+261 LOD 2.0
+262 SET main_z_i
+263 SET main_w
+264 SET main_w_i
+265 LOD main_z
+266 F_ADD main_w
+267 P_LOD main_z_i
+268 F_ADD main_w_i
+269 SET_P __clog_b
+270 SET __clog_a
+271 F_MLT __clog_a
+272 P_LOD __clog_b
+273 F_MLT __clog_b
+274 SF_ADD
+275 CAL __float_log
+276 F_MLT 0.5
+277 SET __clog_re
+278 LOD __clog_a
+279 P_LOD __clog_b
+280 SET_P __fase_im
+281 SET __fase_re
+282 LOD 0.0
+283 F_LES __fase_re
+284 JIZ __Lfa5a
+285 LOD __fase_re
+286 F_DIV __fase_im
+287 NOP
+288 NOP
+289 F_QUO
+290 CAL __float_atan
+291 SET __fase_t
+292 LOD 0.0
+293 F_LES __fase_im
+294 JIZ __Lfa5b
+295 LOD __fase_t
+296 F_ADD -3.14159265359
+297 JMP __Lfa5z
+298 LOD __fase_t
+299 F_ADD 3.14159265359
+300 JMP __Lfa5z
+301 LOD __fase_re
+302 F_LES 0.0
+303 JIZ __Lfa5c
+304 LOD __fase_re
+305 F_DIV __fase_im
+306 NOP
+307 NOP
+308 F_QUO
+309 CAL __float_atan
+310 JMP __Lfa5z
+311 LOD __fase_im
+312 F_LES 0.0
+313 JIZ __Lfa5d
+314 LOD 1.57079632679
+315 JMP __Lfa5z
+316 LOD 0.0
+317 F_LES __fase_im
+318 JIZ __Lfa5e
+319 LOD -1.57079632679
+320 JMP __Lfa5z
+321 LOD 0.0
+322 SET __clog_im
+323 LOD __clog_re
+324 P_LOD __clog_im
+325 SET_P main_c_i
+326 SET main_c
+327 F_MLT 1000.0
+328 F2I
+329 OUT 0
+330 LOD main_c_i
+331 F_MLT 1000.0
+332 F2I
+333 OUT 0
+// 17: while (1) {
+334 JMP __Lwh1
+// -3: END
+335 JMP fim
+// library macros, no source line
+336 SET __atan_x
+337 F_ABS_M __atan_x
+338 SET __atan_ax
+339 F_LES 1.0
+340 SET __atan_big
+341 JIZ __L_atan_small
+342 LOD __atan_ax
+343 F_DIV 1.0
+344 NOP
+345 NOP
+346 F_QUO
+347 JMP __L_atan_haveT
+348 LOD __atan_ax
+349 SET __atan_t
+350 F_MLT __atan_t
+351 SET __atan_w
+352 LOD -0.012300666580
+353 F_MLT __atan_w
+354 F_ADD 0.054084934779
+355 F_MLT __atan_w
+356 F_ADD -0.117697073484
+357 F_MLT __atan_w
+358 F_ADD 0.194020561451
+359 F_MLT __atan_w
+360 F_ADD -0.332694520616
+361 F_MLT __atan_w
+362 F_ADD 0.999980069822
+363 F_MLT __atan_t
+364 SET __atan_p
+365 LOD __atan_big
+366 JIZ __L_atan_done
+367 LOD __atan_p
+368 F_SU2 1.5707963268
+369 JMP __L_atan_sign
+370 LOD __atan_p
+371 F_SGN __atan_x
+372 RET
+373 SET __log_x
+374 F_LES 0.0
+375 JIZ __L_log_zero
+376 LOD __log_x
+377 XPO
+378 SET __log_e
+379 NEG
+380 SET __log_ne
+381 LOD __log_x
+382 F_SCL __log_ne
+383 SET __log_m
+384 F_ADD 1.0
+385 SET __log_t2
+386 LOD __log_m
+387 F_SU1 1.0
+388 SET __log_t1
+389 LOD __log_t2
+390 F_DIV __log_t1
+391 NOP
+392 NOP
+393 F_QUO
+394 SET __log_u
+395 F_MLT __log_u
+396 SET __log_w
+397 LOD 0.1111111111
+398 F_MLT __log_w
+399 F_ADD 0.1428571429
+400 F_MLT __log_w
+401 F_ADD 0.2
+402 F_MLT __log_w
+403 F_ADD 0.3333333333
+404 F_MLT __log_w
+405 F_ADD 1.0
+406 F_MLT __log_u
+407 F_MLT 2.0
+408 SET __log_lm
+409 LOD __log_e
+410 I2F
+411 F_MLT 0.6931471806
+412 F_ADD __log_lm
+413 RET
+414 LOD 0.0
+415 RET

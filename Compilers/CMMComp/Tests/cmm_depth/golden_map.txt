@@ -1,0 +1,61 @@
+## messages
+Info: 29 assembly instructions generated
+Info: 3 variables written and never read removed (3 instructions)
+Heads up: variable 'a' in function 'leaf' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Heads up: variable 'a' in function 'top' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 26 instructions and 7 variables were found
+Info: ULA resource -> integer adder
+Info: adding stack memory for function calls
+Info: adding data input handling
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 4, NDSTAC 3
+Info: using 7% of the Assembly Instruction Set
+Info: using 2% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+leaf a 1
+leaf b 1
+mid a 1
+top a 1
+top b 1
+top c 1
+main x 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 15: int leaf(int a, int b) { return a + b; }
+2 SET_P leaf_b
+3 ADD leaf_b
+4 RET
+// 16: int mid(int a) { return leaf(a, 1) + leaf(a, 2); }
+5 SET mid_a
+6 P_LOD 1
+7 CAL leaf
+8 P_LOD mid_a
+9 P_LOD 2
+10 CAL leaf
+11 S_ADD
+12 RET
+// 17: int top(int a, int b, int c) { return mid(a) + b + c; }
+13 SET_P top_c
+14 SET_P top_b
+15 CAL mid
+16 ADD top_b
+17 ADD top_c
+18 RET
+// 23: int x = in(0);
+19 INN 0
+// 24: out(0, top(x, 2, 3));
+20 P_LOD 2
+21 P_LOD 3
+22 CAL top
+23 OUT 0
+// 21: while (1)
+24 JMP __Lwh1
+// -3: END
+25 JMP fim

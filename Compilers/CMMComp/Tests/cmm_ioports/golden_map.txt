@@ -1,0 +1,65 @@
+## messages
+Info: 13 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 13 instructions and 4 variables were found
+Info: adding data input handling
+Info: adding data output handling
+Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 6% of the Assembly Instruction Set
+Info: using 5% of the ULA operations
+Heads up: output port 0 isn't being used. Burning hardware for nothing!
+Heads up: output port 1 isn't being used. Burning hardware for nothing!
+Heads up: output port 2 isn't being used. Burning hardware for nothing!
+Heads up: output port 3 isn't being used. Burning hardware for nothing!
+Heads up: output port 4 isn't being used. Burning hardware for nothing!
+Heads up: output port 5 isn't being used. Burning hardware for nothing!
+Heads up: output port 6 isn't being used. Burning hardware for nothing!
+Heads up: output port 7 isn't being used. Burning hardware for nothing!
+Heads up: output port 8 isn't being used. Burning hardware for nothing!
+Heads up: output port 10 isn't being used. Burning hardware for nothing!
+Heads up: output port 11 isn't being used. Burning hardware for nothing!
+Heads up: output port 12 isn't being used. Burning hardware for nothing!
+Heads up: output port 13 isn't being used. Burning hardware for nothing!
+Heads up: output port 14 isn't being used. Burning hardware for nothing!
+Heads up: output port 15 isn't being used. Burning hardware for nothing!
+Heads up: output port 16 isn't being used. Burning hardware for nothing!
+Heads up: output port 17 isn't being used. Burning hardware for nothing!
+Heads up: output port 18 isn't being used. Burning hardware for nothing!
+Heads up: output port 19 isn't being used. Burning hardware for nothing!
+Heads up: output port 20 isn't being used. Burning hardware for nothing!
+Heads up: output port 21 isn't being used. Burning hardware for nothing!
+Heads up: output port 22 isn't being used. Burning hardware for nothing!
+Heads up: output port 23 isn't being used. Burning hardware for nothing!
+Heads up: output port 24 isn't being used. Burning hardware for nothing!
+Heads up: output port 25 isn't being used. Burning hardware for nothing!
+Heads up: output port 26 isn't being used. Burning hardware for nothing!
+Heads up: output port 27 isn't being used. Burning hardware for nothing!
+Heads up: output port 28 isn't being used. Burning hardware for nothing!
+Heads up: output port 29 isn't being used. Burning hardware for nothing!
+Heads up: output port 30 isn't being used. Burning hardware for nothing!
+Sweet: the processor is good to go.
+## variables
+main k 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 14: for (k = 0; k < 3; k = k + 1)
+1 LOD 0
+2 SET main_k
+// 16: out(31, in(0));
+3 INN 0
+4 OUT 31
+// 17: out(9, in(0));
+5 INN 0
+6 OUT 9
+// 14: for (k = 0; k < 3; k = k + 1)
+7 LOD main_k
+8 ADD 1
+9 SET main_k
+10 LES 2
+11 JIZ __Lwh1
+// -3: END
+12 JMP fim

@@ -1,0 +1,158 @@
+## messages
+Info: constant 2.7 on line 16 approximated to 2.6999998092651367 (error = -1.91e-07)
+Info: constant 2.3 on line 17 approximated to 2.3000001907348633 (error = 1.91e-07)
+Info: constant 2.3 on line 18 approximated to 2.3000001907348633 (error = 1.91e-07)
+Info: constant 2.3 on line 19 approximated to 2.3000001907348633 (error = 1.91e-07)
+Info: constant 2.4 on line 22 approximated to 2.4000000953674316 (error = 9.54e-08)
+Info: constant -2.3 on line 17 approximated to -2.3000001907348633 (error = -1.91e-07)
+Info: constant -2.3 on line 19 approximated to -2.3000001907348633 (error = -1.91e-07)
+Info: 120 assembly instructions generated
+Info: 6 variables share 2 data words (4 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 120 instructions and 13 variables were found
+Info: ULA resource -> float to int converter
+Info: ULA resource -> int to float converter
+Info: ULA resource -> < operator for float
+Info: ULA resource -> float-point adder
+Info: adding data output handling
+Info: ULA resource -> float-point sign computation (standard library)
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 9% of the Assembly Instruction Set
+Info: using 13% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main r 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 16: r = floor(2.7);    fout(0, r);   // 2
+1 LOD 2.7
+2 SET __floor_x
+3 F2I
+4 I2F
+5 SET __floor_t
+6 F_LES __floor_x
+7 JIZ __Lflr1end
+8 LOD __floor_t
+9 F_ADD -1.0
+10 SET __floor_t
+11 LOD __floor_t
+12 SET main_r
+13 F2I_M main_r
+14 OUT 0
+// 17: r = floor(-2.3);   fout(0, r);   // -3   (negative non-integer -> -1)
+15 LOD -2.3
+16 SET __floor_x
+17 F2I
+18 I2F
+19 SET __floor_t
+20 F_LES __floor_x
+21 JIZ __Lflr2end
+22 LOD __floor_t
+23 F_ADD -1.0
+24 SET __floor_t
+25 LOD __floor_t
+26 SET main_r
+27 F2I_M main_r
+28 OUT 0
+// 18: r = ceil(2.3);     fout(0, r);   // 3    (positive non-integer -> +1)
+29 LOD 2.3
+30 SET __ceil_x
+31 F2I
+32 I2F
+33 SET __ceil_t
+34 LOD __ceil_x
+35 F_LES __ceil_t
+36 JIZ __Lcel1end
+37 LOD __ceil_t
+38 F_ADD 1.0
+39 SET __ceil_t
+40 LOD __ceil_t
+41 SET main_r
+42 F2I_M main_r
+43 OUT 0
+// 19: r = ceil(-2.3);    fout(0, r);   // -2
+44 LOD -2.3
+45 SET __ceil_x
+46 F2I
+47 I2F
+48 SET __ceil_t
+49 LOD __ceil_x
+50 F_LES __ceil_t
+51 JIZ __Lcel2end
+52 LOD __ceil_t
+53 F_ADD 1.0
+54 SET __ceil_t
+55 LOD __ceil_t
+56 SET main_r
+57 F2I_M main_r
+58 OUT 0
+// 20: r = round(2.5);    fout(0, r);   // 3    (tie -> away from zero)
+59 LOD 2.5
+60 SET __round_x
+61 LOD 0.5
+62 F_SGN __round_x
+63 F_ADD __round_x
+64 F2I
+65 I2F
+66 SET main_r
+67 F2I_M main_r
+68 OUT 0
+// 21: r = round(-2.5);   fout(0, r);   // -3   (tie -> away from zero)
+69 LOD -2.5
+70 SET __round_x
+71 LOD 0.5
+72 F_SGN __round_x
+73 F_ADD __round_x
+74 F2I
+75 I2F
+76 SET main_r
+77 F2I_M main_r
+78 OUT 0
+// 22: r = round(2.4);    fout(0, r);   // 2
+79 LOD 2.4
+80 SET __round_x
+81 LOD 0.5
+82 F_SGN __round_x
+83 F_ADD __round_x
+84 F2I
+85 I2F
+86 SET main_r
+87 F2I_M main_r
+88 OUT 0
+// 23: r = floor(5.0);    fout(0, r);   // 5    (integer -> unchanged)
+89 LOD 5.0
+90 SET __floor_x
+91 F2I
+92 I2F
+93 SET __floor_t
+94 F_LES __floor_x
+95 JIZ __Lflr3end
+96 LOD __floor_t
+97 F_ADD -1.0
+98 SET __floor_t
+99 LOD __floor_t
+100 SET main_r
+101 F2I_M main_r
+102 OUT 0
+// 24: r = ceil(-5.0);    fout(0, r);   // -5
+103 LOD -5.0
+104 SET __ceil_x
+105 F2I
+106 I2F
+107 SET __ceil_t
+108 LOD __ceil_x
+109 F_LES __ceil_t
+110 JIZ __Lcel3end
+111 LOD __ceil_t
+112 F_ADD 1.0
+113 SET __ceil_t
+114 LOD __ceil_t
+115 SET main_r
+116 F2I_M main_r
+117 OUT 0
+// 15: while (1) {
+118 JMP __Lwh1
+// -3: END
+119 JMP fim

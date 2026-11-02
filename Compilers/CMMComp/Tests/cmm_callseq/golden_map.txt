@@ -1,0 +1,94 @@
+## messages
+Info: 58 assembly instructions generated
+Info: 1 variables written and never read removed (4 instructions)
+Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 54 instructions and 11 variables were found
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> integer adder
+Info: adding stack memory for function calls
+Info: ULA resource -> integer negative operation
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 4
+Info: using 10% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+global g 1
+f q 1
+main x 1
+main r 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 23: return 100;
+2 LOD 100
+3 RET
+// 26: int f(int q)
+4 SET f_q
+// 28: g = g * 10 + q;
+5 LOD g
+6 MLT 10
+7 ADD f_q
+8 SET g
+// 29: return g;
+9 RET
+// 35: x = 0;
+10 LOD 0
+11 SET main_x
+// 36: r = (x + 5) - f0();                              // 5 - 100
+12 ADD 5
+13 PSH
+14 CAL f0
+15 NEG
+16 S_ADD
+// 37: out(0, r);
+17 OUT 0
+// 38: r = (x + 5) + f0();                              // 5 + 100
+18 LOD main_x
+19 ADD 5
+20 PSH
+21 CAL f0
+22 S_ADD
+// 39: out(0, r);
+23 OUT 0
+// 40: r = f0() + ((x + 1) * (x + 2)) * ((x + 3) * (x + 4));   // 100 + 2*12
+24 CAL f0
+25 P_LOD main_x
+26 ADD 1
+27 P_LOD main_x
+28 ADD 2
+29 S_MLT
+30 P_LOD main_x
+31 ADD 3
+32 P_LOD main_x
+33 ADD 4
+34 S_MLT
+35 S_MLT
+36 S_ADD
+// 41: out(0, r);
+37 OUT 0
+// 42: g = 0;
+38 LOD 0
+39 SET g
+// 43: r = f(1) + (f(2) + 1) * (f(3) + 1);             // g: 1, 12, 123 -> 1 + 13*124
+40 LOD 1
+41 CAL f
+42 P_LOD 2
+43 CAL f
+44 ADD 1
+45 P_LOD 3
+46 CAL f
+47 ADD 1
+48 S_MLT
+49 S_ADD
+// 44: out(0, r);
+50 OUT 0
+// 45: out(0, g);
+51 LOD g
+52 OUT 0
+// -3: END
+53 JMP fim

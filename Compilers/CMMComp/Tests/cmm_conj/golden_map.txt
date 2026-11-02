@@ -1,0 +1,87 @@
+## messages
+Warning on line 17: conj of a real number? It's just itself with a zero imaginary part, but ok!
+Info: 56 assembly instructions generated
+Info: 6 variables share 4 data words (2 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 56 instructions and 12 variables were found
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point adder
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 8% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main z 3
+main z_i 3
+main w 3
+main w_i 3
+main c 3
+main c_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 13: c = conj(3.0+4.0i);                       fout(0, real(c)); fout(0, imag(c));   // 3, -4   (const)
+1 LOD 3.0
+2 PF_NEG_M 4.0
+3 SET_P main_c_i
+4 SET main_c
+5 F2I_M main_c
+6 OUT 0
+7 F2I_M main_c_i
+8 OUT 0
+// 14: c = conj(1.0-2.0i);                       fout(0, real(c)); fout(0, imag(c));   // 1, 2    (const)
+9 LOD 1.0
+10 PF_NEG_M -2.0
+11 SET_P main_c_i
+12 SET main_c
+13 F2I_M main_c
+14 OUT 0
+15 F2I_M main_c_i
+16 OUT 0
+// 15: z = 2.0+5.0i;        c = conj(z);         fout(0, real(c)); fout(0, imag(c));   // 2, -5   (memory)
+17 LOD 2.0
+18 SET main_z
+19 LOD 5.0
+20 SET main_z_i
+21 LOD main_z
+22 PF_NEG_M main_z_i
+23 SET_P main_c_i
+24 SET main_c
+25 F2I_M main_c
+26 OUT 0
+27 F2I_M main_c_i
+28 OUT 0
+// 16: z = 1.0+1.0i; w = 1.0+2.0i; c = conj(z+w); fout(0, real(c)); fout(0, imag(c));  // 2, -3   (acc)
+29 LOD 1.0
+30 SET main_z
+31 SET main_z_i
+32 SET main_w
+33 LOD 2.0
+34 SET main_w_i
+35 LOD main_z
+36 F_ADD main_w
+37 P_LOD main_z_i
+38 F_ADD main_w_i
+39 F_NEG
+40 SET_P main_c_i
+41 SET main_c
+42 F2I_M main_c
+43 OUT 0
+44 F2I_M main_c_i
+45 OUT 0
+// 17: c = conj(7.0);                            fout(0, real(c)); fout(0, imag(c));   // 7, 0    (float -> x+0i)
+46 LOD 7.0
+47 P_LOD 0.0
+48 SET_P main_c_i
+49 SET main_c
+50 F2I_M main_c
+51 OUT 0
+52 F2I_M main_c_i
+53 OUT 0
+// 12: while (1) {
+54 JMP __Lwh1
+// -3: END
+55 JMP fim

@@ -1,0 +1,142 @@
+## messages
+Heads up on line 32: case index came out float! Gonna truncate it.
+Heads up on line 41: case index came out float! Gonna truncate it.
+Heads up on line 48: case index came out comp! Gonna truncate the real part.
+Info: 88 assembly instructions generated
+Info: 1 unreachable instructions removed
+Info: 8 variables share 2 data words (6 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 87 instructions and 32 variables were found
+Info: ULA resource -> integer adder
+Info: ULA resource -> integer multiplier
+Info: adding array handling
+Info: adding data output handling
+Info: ULA resource -> float to int converter
+Info: ULA resource -> float-point adder
+Info: ULA resource -> < operator for int
+Info: ULA resource -> int to float converter
+Info: ULA resource -> == operator
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 15% of the Assembly Instruction Set
+Info: using 19% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main a 1
+main b 1
+main k 1
+main f 2
+main z 3
+main z_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 24: a = 0; b = 1;
+1 LOD 0
+2 SET main_a
+3 LOD 1
+4 SET main_b
+// 25: m[a+1][b+1] = 7;
+5 LOD main_a
+6 ADD 1
+7 MLT 4
+8 ADD main_b
+9 ADD 1
+10 P_LOD 7
+11 STI m
+// 26: m[a+1][b+1]++;
+12 LOD main_a
+13 ADD 1
+14 P_LOD main_b
+15 ADD 1
+16 SET_P __aux_var
+17 MLT 4
+18 ADD __aux_var
+19 PSH
+20 LDI m
+21 ADD 1
+22 STI m
+// 27: out(0, m[1][2]);
+23 LOD_V m 6
+24 OUT 0
+// 28: out(0, m[2][1]);
+25 LOD_V m 9
+26 OUT 0
+// 30: f = 0.5;
+27 LOD 0.5
+28 SET main_f
+// 31: for (k = 0; k < 4; k++) {
+29 LOD 0
+30 SET main_k
+// 32: switch (f) {
+31 F2I_M main_f
+32 ADD -1
+33 JIZ __sw_body_1_1
+34 ADD -1
+35 JIZ __sw_body_1_2
+36 JMP __sw_body_1_3
+// 33: case 1:  out(0, 10); break;
+37 LOD 10
+38 OUT 0
+39 JMP __switch_end_1
+// 34: case 2:  out(0, 20); break;
+40 LOD 20
+41 OUT 0
+42 JMP __switch_end_1
+// 35: default: out(0, 99);
+43 LOD 99
+44 OUT 0
+// 37: f = f + 1.0;
+45 LOD main_f
+46 F_ADD 1.0
+47 SET main_f
+// 31: for (k = 0; k < 4; k++) {
+48 LOD main_k
+49 ADD 1
+50 SET main_k
+51 LES 3
+52 JIZ __Lwh1
+// 40: f = 2.25;
+53 LOD 2.25
+54 SET main_f
+// 41: switch (f) {
+55 F2I_M main_f
+56 SET __switch_exp
+57 I2F_M __switch_exp
+58 EQU 1.5
+59 JIZ __sw_disp_2_1
+60 JMP __sw_body_2_1
+61 I2F_M __switch_exp
+62 EQU 2.0
+63 JIZ __sw_body_2_3
+64 JMP __sw_body_2_2
+// 42: case 1.5: out(0, 15); break;
+65 LOD 15
+66 OUT 0
+67 JMP __switch_end_2
+// 43: case 2.0: out(0, 2);  break;
+68 LOD 2
+69 OUT 0
+70 JMP __switch_end_2
+// 44: default:  out(0, 99);
+71 LOD 99
+72 OUT 0
+// 47: z = 3.5+1i;
+73 LOD 3.5
+74 SET main_z
+75 LOD 1.0
+76 SET main_z_i
+// 48: switch (z) {
+77 F2I_M main_z
+78 ADD -3
+79 JIZ __sw_body_3_1
+80 JMP __sw_body_3_2
+// 49: case 3:  out(0, 3); break;
+81 LOD 3
+82 OUT 0
+83 JMP fim
+// 50: default: out(0, 99);
+84 LOD 99
+85 OUT 0
+// -3: END
+86 JMP fim

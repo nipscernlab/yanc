@@ -1,0 +1,188 @@
+## messages
+Info: 114 assembly instructions generated
+Info: adding assembly macro for exponential computation
+Info: 3 divisions, 5 words each for DIV/MOD and 4 for F_DIV (9 added)
+Info: 11 variables share 6 data words (5 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 150 instructions and 19 variables were found
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float scale by a power of two (2^k)
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 13% of the Assembly Instruction Set
+Info: using 22% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main r 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 17: r = cosh(0.0)  * 1000.0;   fout(0, r);   // 1000
+1 LOD 0.0
+2 SET __cosh_x
+3 CAL __float_exp
+4 SET __cosh_t
+5 F_NEG_M __cosh_x
+6 CAL __float_exp
+7 F_ADD __cosh_t
+8 F_MLT 0.5
+9 F_MLT 1000.0
+10 SET main_r
+11 F2I_M main_r
+12 OUT 0
+// 18: r = cosh(1.0)  * 1000.0;   fout(0, r);   // 1543
+13 LOD 1.0
+14 SET __cosh_x
+15 CAL __float_exp
+16 SET __cosh_t
+17 F_NEG_M __cosh_x
+18 CAL __float_exp
+19 F_ADD __cosh_t
+20 F_MLT 0.5
+21 F_MLT 1000.0
+22 SET main_r
+23 F2I_M main_r
+24 OUT 0
+// 19: r = cosh(-1.0) * 1000.0;   fout(0, r);   // 1543  (even)
+25 LOD -1.0
+26 SET __cosh_x
+27 CAL __float_exp
+28 SET __cosh_t
+29 F_NEG_M __cosh_x
+30 CAL __float_exp
+31 F_ADD __cosh_t
+32 F_MLT 0.5
+33 F_MLT 1000.0
+34 SET main_r
+35 F2I_M main_r
+36 OUT 0
+// 20: r = sinh(0.0)  * 1000.0;   fout(0, r);   // 0
+37 LOD 0.0
+38 SET __sinh_x
+39 CAL __float_exp
+40 SET __sinh_t
+41 F_NEG_M __sinh_x
+42 CAL __float_exp
+43 F_SU2 __sinh_t
+44 F_MLT 0.5
+45 F_MLT 1000.0
+46 SET main_r
+47 F2I_M main_r
+48 OUT 0
+// 21: r = sinh(1.0)  * 1000.0;   fout(0, r);   // 1175
+49 LOD 1.0
+50 SET __sinh_x
+51 CAL __float_exp
+52 SET __sinh_t
+53 F_NEG_M __sinh_x
+54 CAL __float_exp
+55 F_SU2 __sinh_t
+56 F_MLT 0.5
+57 F_MLT 1000.0
+58 SET main_r
+59 F2I_M main_r
+60 OUT 0
+// 22: r = sinh(-1.0) * 1000.0;   fout(0, r);   // -1175 (odd)
+61 LOD -1.0
+62 SET __sinh_x
+63 CAL __float_exp
+64 SET __sinh_t
+65 F_NEG_M __sinh_x
+66 CAL __float_exp
+67 F_SU2 __sinh_t
+68 F_MLT 0.5
+69 F_MLT 1000.0
+70 SET main_r
+71 F2I_M main_r
+72 OUT 0
+// 23: r = tanh(0.0)  * 1000.0;   fout(0, r);   // 0
+73 LOD 0.0
+74 F_MLT 2.0
+75 CAL __float_exp
+76 SET __tanh_e
+77 F_ADD -1.0
+78 SET __tanh_n
+79 LOD __tanh_e
+80 F_ADD 1.0
+81 F_DIV __tanh_n
+82 NOP
+83 NOP
+84 F_QUO
+85 F_MLT 1000.0
+86 SET main_r
+87 F2I_M main_r
+88 OUT 0
+// 24: r = tanh(1.0)  * 1000.0;   fout(0, r);   // 761
+89 LOD 1.0
+90 F_MLT 2.0
+91 CAL __float_exp
+92 SET __tanh_e
+93 F_ADD -1.0
+94 SET __tanh_n
+95 LOD __tanh_e
+96 F_ADD 1.0
+97 F_DIV __tanh_n
+98 NOP
+99 NOP
+100 F_QUO
+101 F_MLT 1000.0
+102 SET main_r
+103 F2I_M main_r
+104 OUT 0
+// 25: r = tanh(3.0)  * 1000.0;   fout(0, r);   // 995   (saturating)
+105 LOD 3.0
+106 F_MLT 2.0
+107 CAL __float_exp
+108 SET __tanh_e
+109 F_ADD -1.0
+110 SET __tanh_n
+111 LOD __tanh_e
+112 F_ADD 1.0
+113 F_DIV __tanh_n
+114 NOP
+115 NOP
+116 F_QUO
+117 F_MLT 1000.0
+118 SET main_r
+119 F2I_M main_r
+120 OUT 0
+// 16: while (1) {
+121 JMP __Lwh1
+// -3: END
+122 JMP fim
+// library macros, no source line
+123 SET __exp_x
+124 F_MLT 1.4426950409
+125 SET __exp_q
+126 LOD 0.5
+127 F_SGN __exp_q
+128 F_ADD __exp_q
+129 F2I
+130 SET __exp_n
+131 I2F
+132 F_MLT 0.6931471806
+133 F_SU2 __exp_x
+134 SET __exp_r
+135 LOD 0.0013888889
+136 F_MLT __exp_r
+137 F_ADD 0.0083333333
+138 F_MLT __exp_r
+139 F_ADD 0.0416666667
+140 F_MLT __exp_r
+141 F_ADD 0.1666666667
+142 F_MLT __exp_r
+143 F_ADD 0.5
+144 F_MLT __exp_r
+145 F_ADD 1.0
+146 F_MLT __exp_r
+147 F_ADD 1.0
+148 F_SCL __exp_n
+149 RET

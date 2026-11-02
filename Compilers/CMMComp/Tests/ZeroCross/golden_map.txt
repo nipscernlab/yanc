@@ -1,0 +1,236 @@
+## messages
+Info: constant 0.0000001 on line 65 approximated to 9.9999994063182385e-08 (error = -5.94e-15)
+Info: constant 0.615089250452674 on line 72 approximated to 0.6150892972946167 (error = 4.68e-08)
+Info: constant 1.976807847899757 on line 74 approximated to 1.9768078327178955 (error = -1.52e-08)
+Info: constant 1.948321338555645 on line 74 approximated to 1.9483213424682617 (error = 3.91e-09)
+Info: constant 0.962586582007368 on line 74 approximated to 0.96258664131164551 (error = 5.93e-08)
+Info: constant 0.442537969917818 on line 85 approximated to 0.44253796339035034 (error = -6.53e-09)
+Info: constant 1.956939074607570 on line 87 approximated to 1.9569389820098877 (error = -9.26e-08)
+Info: constant 1.844400456753102 on line 87 approximated to 1.8444004058837891 (error = -5.09e-08)
+Info: constant 0.863456551259050 on line 87 approximated to 0.8634566068649292 (error = 5.56e-08)
+Info: constant 0.098185425944027 on line 100 approximated to 0.098185420036315918 (error = -5.91e-09)
+Info: constant 1.699499939983501 on line 102 approximated to 1.6994998455047607 (error = -9.45e-08)
+Info: constant 1.681701824664379 on line 102 approximated to 1.6817018985748291 (error = 7.39e-08)
+Info: constant 0.711206551053305 on line 102 approximated to 0.71120655536651611 (error = 4.31e-09)
+Info: constant 0.0000001 on line 113 approximated to 9.9999994063182385e-08 (error = -5.94e-15)
+Info: constant 0.0000001 on line 115 approximated to 9.9999994063182385e-08 (error = -5.94e-15)
+Info: interruption directive found at line 56
+Heads up on line 81: if you don't want this warning, use 'fout'.
+Heads up on line 110: if you don't want this warning, use 'fout'.
+Heads up on line 117: if you don't want this warning, use 'fout'.
+Heads up on line 118: if you don't want this warning, use 'fout'.
+Heads up on line 123: if you don't want this warning, use 'fout'.
+Info: 117 assembly instructions generated
+Info: 20 variables share 15 data words (5 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: implementing interruption handling
+Info: 117 instructions and 32 variables were found
+Info: ULA resource -> integer negative operation
+Info: adding data output handling
+Info: adding data input handling
+Info: ULA resource -> int to float converter
+Info: ULA resource -> == operator
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float to int converter
+Info: ULA resource -> > operator for float
+Info: ULA resource -> < operator for float
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 15% of the Assembly Instruction Set
+Info: using 22% of the ULA operations
+Heads up: input port 0 isn't being used. Burning hardware for nothing!
+Sweet: the processor is good to go.
+## variables
+global sinal_entrada 2
+global x1 2
+global x1_n1 2
+global x1_n2 2
+global x2 2
+global x2_n1 2
+global x2_n2 2
+global x3 2
+global x3_n1 2
+global x3_n2 2
+global y1 2
+global y1_n1 2
+global y1_n2 2
+global y2 2
+global y2_n1 2
+global y2_n2 2
+global y3 2
+global y3_n1 2
+global y3_n2 2
+global amostra_anterior 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 24: out(2,-126);
+1 NEG_M 126
+2 OUT 2
+// 25: sinal_entrada    = 0.0;
+3 LOD 0.0
+4 SET sinal_entrada
+// 26: amostra_anterior = 0.0;
+5 SET amostra_anterior
+// 28: x1    = 0.0;
+6 SET x1
+// 29: x1_n1 = 0.0;
+7 SET x1_n1
+// 30: x1_n2 = 0.0;
+8 SET x1_n2
+// 32: x2    = 0.0;
+9 SET x2
+// 33: x2_n1 = 0.0;
+10 SET x2_n1
+// 34: x2_n2 = 0.0;
+11 SET x2_n2
+// 36: x3    = 0.0;
+12 SET x3
+// 37: x3_n1 = 0.0;
+13 SET x3_n1
+// 38: x3_n2 = 0.0;
+14 SET x3_n2
+// 40: y1    = 0.0;
+15 SET y1
+// 41: y1_n1 = 0.0;
+16 SET y1_n1
+// 42: y1_n2 = 0.0;
+17 SET y1_n2
+// 44: y2    = 0.0;
+18 SET y2
+// 45: y2_n1 = 0.0;
+19 SET y2_n1
+// 46: y2_n2 = 0.0;
+20 SET y2_n2
+// 48: y3    = 0.0;
+21 SET y3
+// 49: y3_n1 = 0.0;
+22 SET y3_n1
+// 50: y3_n2 = 0.0;
+23 SET y3_n2
+// 52: out(2,-127);
+24 NEG_M 127
+25 OUT 2
+// -3: END
+26 JMP fim
+// 61: sinal_entrada = fin(1);
+27 F_INN 1
+28 SET sinal_entrada
+// 63: if(sinal_entrada == 0)
+29 EQU 0.0
+30 JIZ __Lif1else
+// 65: sinal_entrada = 0.0000001;
+31 LOD 0.0000001
+32 SET sinal_entrada
+// 72: x1 = sinal_entrada*0.615089250452674;
+33 LOD sinal_entrada
+34 F_MLT 0.615089250452674
+35 SET x1
+// 74: y1 = x1 - 1.976807847899757*x1_n1 + x1_n2 + 1.948321338555645*y1_n1 - 0.962586582007368*y1_n2;
+36 LOD 1.976807847899757
+37 F_MLT x1_n1
+38 F_SU2 x1
+39 F_ADD x1_n2
+40 P_LOD 1.948321338555645
+41 F_MLT y1_n1
+42 SF_ADD
+43 P_LOD 0.962586582007368
+44 F_MLT y1_n2
+45 SF_SU2
+46 SET y1
+// 76: x1_n2 = x1_n1;
+47 LOD x1_n1
+48 SET x1_n2
+// 77: x1_n1 = x1;
+49 LOD x1
+50 SET x1_n1
+// 79: y1_n2 = y1_n1;
+51 LOD y1_n1
+52 SET y1_n2
+// 80: y1_n1 = y1;
+53 LOD y1
+54 SET y1_n1
+// 81: out(3,y1);
+55 F2I_M y1
+56 OUT 3
+// 85: x2 = y1*0.442537969917818;
+57 LOD y1
+58 F_MLT 0.442537969917818
+59 SET x2
+// 87: y2 = x2 - x2_n1*1.956939074607570 + x2_n2 + y2_n1*1.844400456753102 - y2_n2*0.863456551259050;
+60 LOD x2_n1
+61 F_MLT 1.956939074607570
+62 F_SU2 x2
+63 F_ADD x2_n2
+64 P_LOD y2_n1
+65 F_MLT 1.844400456753102
+66 SF_ADD
+67 P_LOD y2_n2
+68 F_MLT 0.863456551259050
+69 SF_SU2
+70 SET y2
+// 89: x2_n2 = x2_n1;
+71 LOD x2_n1
+72 SET x2_n2
+// 90: x2_n1 = x2;
+73 LOD x2
+74 SET x2_n1
+// 92: y2_n2 = y2_n1;
+75 LOD y2_n1
+76 SET y2_n2
+// 93: y2_n1 = y2;
+77 LOD y2
+78 SET y2_n1
+// 100: x3 = y2*0.098185425944027;
+79 F_MLT 0.098185425944027
+80 SET x3
+// 102: y3 = x3 - x3_n1*1.699499939983501 + x3_n2 + y3_n1*1.681701824664379 - y3_n2*0.711206551053305;
+81 LOD x3_n1
+82 F_MLT 1.699499939983501
+83 F_SU2 x3
+84 F_ADD x3_n2
+85 P_LOD y3_n1
+86 F_MLT 1.681701824664379
+87 SF_ADD
+88 P_LOD y3_n2
+89 F_MLT 0.711206551053305
+90 SF_SU2
+91 SET y3
+// 104: x3_n2 = x3_n1;
+92 LOD x3_n1
+93 SET x3_n2
+// 105: x3_n1 = x3;
+94 LOD x3
+95 SET x3_n1
+// 107: y3_n2 = y3_n1;
+96 LOD y3_n1
+97 SET y3_n2
+// 108: y3_n1 = y3;
+98 LOD y3
+99 SET y3_n1
+// 110: out(4, y3);
+100 F2I_M y3
+101 OUT 4
+// 113: if(y3<0.0000001)
+102 LOD y3
+103 F_GRE 0.0000001
+104 JIZ __Lif2else
+// 115: if(amostra_anterior>0.0000001)
+105 LOD amostra_anterior
+106 F_LES 0.0000001
+107 JIZ __Lif3else
+// 117: out(1, 1.0);
+108 F2I_M 1.0
+109 OUT 1
+// 118: out(1,0.0);
+110 F2I_M 0.0
+111 OUT 1
+// 121: amostra_anterior = y3;
+112 LOD y3
+113 SET amostra_anterior
+// 123: out(0,1.0);
+114 F2I_M 1.0
+115 OUT 0
+// -3: END
+116 JMP fim

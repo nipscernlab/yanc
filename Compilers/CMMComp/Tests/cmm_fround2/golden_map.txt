@@ -1,0 +1,293 @@
+## messages
+Info: constant 1000000000000000000000000000000.0 on line 32 approximated to 1.0000000150474662e+30 (error = 1.5e+22)
+Info: constant 0.000000000000000000000000000001 on line 33 approximated to 1.0000000031710769e-30 (error = 3.17e-39)
+Heads up on line 35: constant 0.000000000000000000000000000000001 is below the smallest normal float (1.2326e-32) and becomes 0 at #FROUND 2. Use #FROUND 0 or raise #NBEXPO.
+Info: constant 1000000000000000000000000000000000000.0 on line 36 approximated to 9.9999996169031625e+35 (error = -3.83e+28)
+Info: constant 0.001 on line 57 approximated to 0.00099999993108212948 (error = -6.89e-11)
+Heads up on line 67: variable 'x' is float, but getting an int.
+Heads up on line 68: variable 'x' is float, but getting an int.
+Heads up on line 69: variable 'x' is float, but getting an int.
+Heads up on line 70: variable 'x' is float, but getting an int.
+Heads up on line 71: variable 'x' is float, but getting an int.
+Heads up on line 72: variable 'x' is float, but getting an int.
+Heads up on line 73: if you don't want this warning, use 'fout'.
+Heads up on line 74: if you don't want this warning, use 'fout'.
+Info: 199 assembly instructions generated
+Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (3 added)
+Info: 16 variables share 13 data words (3 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 202 instructions and 40 variables were found
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
+Info: ULA resource -> < operator for float
+Info: ULA resource -> == operator
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> int to float converter
+Info: ULA resource -> integer negative operation
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 15% of the Assembly Instruction Set
+Info: using 30% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main one 2
+main u 2
+main h 2
+main q 2
+main hp 2
+main big 2
+main tiny 2
+main ulp 2
+main d33 2
+main b36 2
+main x 2
+main y 2
+main z 2
+main acc 2
+main k 1
+main flag 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 27: float one  = 1.0;
+1 LOD 1.0
+2 SET main_one
+// 28: float u    = 0.000000238418579101562500;               // 2^-22 = 1 ULP of 1.0
+3 LOD 0.000000238418579101562500
+4 SET main_u
+// 29: float h    = 0.000000119209289550781250;               // 2^-23 = half ULP
+5 LOD 0.000000119209289550781250
+6 SET main_h
+// 30: float q    = 0.000000059604644775390625;               // 2^-24 = quarter ULP
+7 LOD 0.000000059604644775390625
+8 SET main_q
+// 31: float hp   = 0.000000120140612125396728515625;         // 2^-23 + 2^-30 (just above half)
+9 LOD 0.000000120140612125396728515625
+10 SET main_hp
+// 32: float big  = 1000000000000000000000000000000.0;        // 1e30
+11 LOD 1000000000000000000000000000000.0
+12 SET main_big
+// 33: float tiny = 0.000000000000000000000000000001;         // 1e-30
+13 LOD 0.000000000000000000000000000001
+14 SET main_tiny
+// 34: float ulp  = 4194304.0;                                // 2^22: scales an error at 1.0 to ULPs
+15 LOD 4194304.0
+16 SET main_ulp
+// 35: float d33  = 0.000000000000000000000000000000001;   // 1e-33
+17 LOD 0.000000000000000000000000000000001
+18 SET main_d33
+// 36: float b36  = 1000000000000000000000000000000000000.0;   // 1e36
+19 LOD 1000000000000000000000000000000000000.0
+20 SET main_b36
+// 43: x = (one + u) - one;  y = x * ulp;          fout(0, y);   //   0  /  1  /  1   (exact 1)
+21 LOD main_one
+22 F_ADD main_u
+23 F_SU1 main_one
+24 SET main_x
+25 F_MLT main_ulp
+26 SET main_y
+27 F2I_M main_y
+28 OUT 0
+// 44: x = (one + u) * one;  y = (x - one) * ulp;  fout(0, y);   //   0  /  1  /  1   (exact 1)
+29 LOD main_one
+30 F_ADD main_u
+31 F_MLT main_one
+32 SET main_x
+33 F_SU1 main_one
+34 F_MLT main_ulp
+35 SET main_y
+36 F2I_M main_y
+37 OUT 0
+// 45: x = one / (one + 0.5); y = x * 3.0 - 2.0;   y = y * ulp; fout(0, y); // 0 / -2 / 0 (exact 0; level 0 loses the residual itself)
+38 LOD main_one
+39 F_ADD 0.5
+40 F_DIV main_one
+41 NOP
+42 NOP
+43 F_QUO
+44 SET main_x
+45 F_MLT 3.0
+46 F_SU1 2.0
+47 SET main_y
+48 F_MLT main_ulp
+49 SET main_y
+50 F2I_M main_y
+51 OUT 0
+// 49: x = one + q;          y = (x - one) * ulp;  fout(0, y);   //   0  /  0  /  0   (below half ULP)
+52 LOD main_one
+53 F_ADD main_q
+54 SET main_x
+55 F_SU1 main_one
+56 F_MLT main_ulp
+57 SET main_y
+58 F2I_M main_y
+59 OUT 0
+// 50: x = one + h;          y = (x - one) * ulp;  fout(0, y);   //   0  /  0  /  0   (tie -> even)
+60 LOD main_one
+61 F_ADD main_h
+62 SET main_x
+63 F_SU1 main_one
+64 F_MLT main_ulp
+65 SET main_y
+66 F2I_M main_y
+67 OUT 0
+// 51: x = one + hp;         y = (x - one) * ulp;  fout(0, y);   //   0  /  0  /  1   (above half)
+68 LOD main_one
+69 F_ADD main_hp
+70 SET main_x
+71 F_SU1 main_one
+72 F_MLT main_ulp
+73 SET main_y
+74 F2I_M main_y
+75 OUT 0
+// 52: x = (one + u) + h;    y = (x - one) * ulp;  fout(0, y);   //   0  /  1  /  2   (tie, odd -> up)
+76 LOD main_one
+77 F_ADD main_u
+78 F_ADD main_h
+79 SET main_x
+80 F_SU1 main_one
+81 F_MLT main_ulp
+82 SET main_y
+83 F2I_M main_y
+84 OUT 0
+// 53: x = 1.5 * (one + u);  y = (x - 1.5) * ulp;  fout(0, y);   //   0  /  1  /  2   (tie, odd -> up)
+85 LOD main_one
+86 F_ADD main_u
+87 F_MLT 1.5
+88 SET main_x
+89 F_SU1 1.5
+90 F_MLT main_ulp
+91 SET main_y
+92 F2I_M main_y
+93 OUT 0
+// 56: acc = 0.0;
+94 LOD 0.0
+95 SET main_acc
+// 57: for (k = 0; k < 1000; k = k + 1) acc = acc + 0.001;
+96 LOD 0
+97 SET main_k
+98 LOD main_acc
+99 F_ADD 0.001
+100 SET main_acc
+101 LOD main_k
+102 ADD 1
+103 SET main_k
+104 LES 999
+105 JIZ __Lwh2
+// 58: y = (acc - one) * ulp;                      fout(0, y);   // -240 / -177 / 78  (exact 0)
+106 LOD main_acc
+107 F_SU1 main_one
+108 F_MLT main_ulp
+109 SET main_y
+110 F2I_M main_y
+111 OUT 0
+// 61: y = big * big;   if (y > big)   flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = saturated)
+112 LOD main_big
+113 F_MLT main_big
+114 SET main_y
+115 F_LES main_big
+116 JIZ __Lif1else
+117 LOD 1
+118 SET main_flag
+119 JMP __Lif1end
+120 LOD 0
+121 SET main_flag
+122 LOD main_flag
+123 OUT 0
+// 62: y = tiny * tiny; if (y == 0.0)  flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = flushed to zero)
+124 LOD main_tiny
+125 F_MLT main_tiny
+126 SET main_y
+127 EQU 0.0
+128 JIZ __Lif2else
+129 LOD 1
+130 SET main_flag
+131 JMP __Lif2end
+132 LOD 0
+133 SET main_flag
+134 LOD main_flag
+135 OUT 0
+// 63: z = x - x;       y = -z;
+136 LOD main_x
+137 F_SU1 main_x
+138 SET main_z
+139 F_NEG_M main_z
+140 SET main_y
+// 64: if (y == 0.0)  flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = -0.0 equals 0.0)
+141 EQU 0.0
+142 JIZ __Lif3else
+143 LOD 1
+144 SET main_flag
+145 JMP __Lif3end
+146 LOD 0
+147 SET main_flag
+148 LOD main_flag
+149 OUT 0
+// 67: k = 4194303;          x = k;  fout(0, x);   // 4194303 / 4194303 / 4194303  (fits the mantissa)
+150 LOD 4194303
+151 SET main_k
+152 I2F_M main_k
+153 SET main_x
+154 F2I_M main_x
+155 OUT 0
+// 68: k = 5000000;          x = k;  fout(0, x);   // -3388608 / 5000000 / 5000000  (bit 22 taken as the sign)
+156 LOD 5000000
+157 SET main_k
+158 I2F_M main_k
+159 SET main_x
+160 F2I_M main_x
+161 OUT 0
+// 69: k = 16777217;         x = k;  fout(0, x);   // 1 / 16777216 / 16777216  (2^24+1: two bits dropped, 0.25 -> down)
+162 LOD 16777217
+163 SET main_k
+164 I2F_M main_k
+165 SET main_x
+166 F2I_M main_x
+167 OUT 0
+// 70: k = 16777219;         x = k;  fout(0, x);   // 3 / 16777216 / 16777220  (2^24+3: two bits dropped, 0.75 -> up at level 2)
+168 LOD 16777219
+169 SET main_k
+170 I2F_M main_k
+171 SET main_x
+172 F2I_M main_x
+173 OUT 0
+// 71: k = 2147483647;       x = k;  fout(0, x);   // -1 / 2147483392 / 2147483647  (level 2 rounds to 2^31, F2I saturates)
+174 LOD 2147483647
+175 SET main_k
+176 I2F_M main_k
+177 SET main_x
+178 F2I_M main_x
+179 OUT 0
+// 72: k = -2147483647 - 1;  x = k;  fout(0, x);   // 0 / -2147483648 / -2147483648  (low 23 bits are zero)
+180 NEG_M 2147483647
+181 ADD -1
+182 SET main_k
+183 I2F_M main_k
+184 SET main_x
+185 F2I_M main_x
+186 OUT 0
+// 73: x = 3000000000.0;             out(0, x);    // -1294967296 / 2147483647 / 2147483647  (F2I saturates)
+187 LOD 3000000000.0
+188 SET main_x
+189 F2I_M main_x
+190 OUT 0
+// 74: x = -3000000000.0;            out(0, x);    // 1294967296 / -2147483648 / -2147483648
+191 LOD -3000000000.0
+192 SET main_x
+193 F2I_M main_x
+194 OUT 0
+// 77: x = d33 * b36;                fout(0, x);   // 999 / 0 / 0  (exact 1000, fout truncates 999.99; before the encoder fix
+195 LOD main_d33
+196 F_MLT main_b36
+197 SET main_x
+198 F2I_M main_x
+199 OUT 0
+// 40: while (1)
+200 JMP __Lwh1
+// -3: END
+201 JMP fim

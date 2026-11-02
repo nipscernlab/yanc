@@ -1,0 +1,440 @@
+## messages
+Heads up on line 54: converting int to float on parameter 5 of function 'm20'.
+Heads up on line 54: converting int to float on parameter 20 of function 'm20'.
+Info: 328 assembly instructions generated
+Info: 67 variables share 27 data words (40 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 328 instructions and 59 variables were found
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> integer adder
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: ULA resource -> int to float converter
+Info: adding stack memory for function calls
+Info: adding data output handling
+Info: ULA resource -> float to int converter
+Info: stack depths from the program: SDEPTH 2, NDSTAC 26
+Info: using 13% of the Assembly Instruction Set
+Info: using 16% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+global g 1
+w11 a1 1
+w11 a2 1
+w11 a3 1
+w11 a4 1
+w11 a5 1
+w11 a6 1
+w11 a7 1
+w11 a8 1
+w11 a9 1
+w11 a10 1
+w11 a11 1
+f10 b1 2
+f10 b2 2
+f10 b3 2
+f10 b4 2
+f10 b5 2
+f10 b6 2
+f10 b7 2
+f10 b8 2
+f10 b9 2
+f10 b10 2
+s12 c1 1
+s12 c2 1
+s12 c3 1
+s12 c4 1
+s12 c5 1
+s12 c6 1
+s12 c7 1
+s12 c8 1
+s12 c9 1
+s12 c10 1
+s12 c11 1
+s12 c12 1
+m20 p1 1
+m20 p2 2
+m20 p3 3
+m20 p3_i 3
+m20 p4 1
+m20 p5 2
+m20 p6 3
+m20 p6_i 3
+m20 p7 1
+m20 p8 2
+m20 p9 3
+m20 p9_i 3
+m20 p10 1
+m20 p11 2
+m20 p12 3
+m20 p12_i 3
+m20 p13 1
+m20 p14 2
+m20 p15 3
+m20 p15_i 3
+m20 p16 1
+m20 p17 2
+m20 p18 3
+m20 p18_i 3
+m20 p19 1
+m20 p20 2
+m20 si 1
+m20 sf 2
+m20 sc 3
+m20 sc_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 20: int w11(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, int a11)
+2 SET_P w11_a11
+3 SET_P w11_a10
+4 SET_P w11_a9
+5 SET_P w11_a8
+6 SET_P w11_a7
+7 SET_P w11_a6
+8 SET_P w11_a5
+9 SET_P w11_a4
+10 SET_P w11_a3
+11 SET_P w11_a2
+12 SET w11_a1
+// 22: return a1 + a2*2 + a3*3 + a4*4 + a5*5 + a6*6 + a7*7 + a8*8 + a9*9 + a10*10 + a11*11;
+13 LOD w11_a2
+14 MLT 2
+15 ADD w11_a1
+16 P_LOD w11_a3
+17 MLT 3
+18 S_ADD
+19 P_LOD w11_a4
+20 MLT 4
+21 S_ADD
+22 P_LOD w11_a5
+23 MLT 5
+24 S_ADD
+25 P_LOD w11_a6
+26 MLT 6
+27 S_ADD
+28 P_LOD w11_a7
+29 MLT 7
+30 S_ADD
+31 P_LOD w11_a8
+32 MLT 8
+33 S_ADD
+34 P_LOD w11_a9
+35 MLT 9
+36 S_ADD
+37 P_LOD w11_a10
+38 MLT 10
+39 S_ADD
+40 P_LOD w11_a11
+41 MLT 11
+42 S_ADD
+43 RET
+// 25: float f10(float b1, float b2, float b3, float b4, float b5, float b6, float b7, float b8, float b9, float b10)
+44 SET_P f10_b10
+45 SET_P f10_b9
+46 SET_P f10_b8
+47 SET_P f10_b7
+48 SET_P f10_b6
+49 SET_P f10_b5
+50 SET_P f10_b4
+51 SET_P f10_b3
+52 SET_P f10_b2
+53 SET f10_b1
+// 27: return b1 + b2*2.0 + b3*3.0 + b4*4.0 + b5*5.0 + b6*6.0 + b7*7.0 + b8*8.0 + b9*9.0 + b10*10.0;
+54 LOD f10_b2
+55 F_MLT 2.0
+56 F_ADD f10_b1
+57 P_LOD f10_b3
+58 F_MLT 3.0
+59 SF_ADD
+60 P_LOD f10_b4
+61 F_MLT 4.0
+62 SF_ADD
+63 P_LOD f10_b5
+64 F_MLT 5.0
+65 SF_ADD
+66 P_LOD f10_b6
+67 F_MLT 6.0
+68 SF_ADD
+69 P_LOD f10_b7
+70 F_MLT 7.0
+71 SF_ADD
+72 P_LOD f10_b8
+73 F_MLT 8.0
+74 SF_ADD
+75 P_LOD f10_b9
+76 F_MLT 9.0
+77 SF_ADD
+78 P_LOD f10_b10
+79 F_MLT 10.0
+80 SF_ADD
+81 RET
+// 30: void s12(int c1, int c2, int c3, int c4, int c5, int c6, int c7, int c8, int c9, int c10, int c11, int c12)
+82 SET_P s12_c12
+83 SET_P s12_c11
+84 SET_P s12_c10
+85 SET_P s12_c9
+86 SET_P s12_c8
+87 SET_P s12_c7
+88 SET_P s12_c6
+89 SET_P s12_c5
+90 SET_P s12_c4
+91 SET_P s12_c3
+92 SET_P s12_c2
+93 SET s12_c1
+// 32: g = c1 + c2*2 + c3*3 + c4*4 + c5*5 + c6*6 + c7*7 + c8*8 + c9*9 + c10*10 + c11*11 + c12*12;
+94 LOD s12_c2
+95 MLT 2
+96 ADD s12_c1
+97 P_LOD s12_c3
+98 MLT 3
+99 S_ADD
+100 P_LOD s12_c4
+101 MLT 4
+102 S_ADD
+103 P_LOD s12_c5
+104 MLT 5
+105 S_ADD
+106 P_LOD s12_c6
+107 MLT 6
+108 S_ADD
+109 P_LOD s12_c7
+110 MLT 7
+111 S_ADD
+112 P_LOD s12_c8
+113 MLT 8
+114 S_ADD
+115 P_LOD s12_c9
+116 MLT 9
+117 S_ADD
+118 P_LOD s12_c10
+119 MLT 10
+120 S_ADD
+121 P_LOD s12_c11
+122 MLT 11
+123 S_ADD
+124 P_LOD s12_c12
+125 MLT 12
+126 S_ADD
+127 SET g
+// 33: }
+128 RET
+// 36: float p11, comp p12, int p13, float p14, comp p15, int p16, float p17, comp p18, int p19, float p20)
+129 SET_P m20_p20
+130 SET_P m20_p19
+131 SET_P m20_p18_i
+132 SET_P m20_p18
+133 SET_P m20_p17
+134 SET_P m20_p16
+135 SET_P m20_p15_i
+136 SET_P m20_p15
+137 SET_P m20_p14
+138 SET_P m20_p13
+139 SET_P m20_p12_i
+140 SET_P m20_p12
+141 SET_P m20_p11
+142 SET_P m20_p10
+143 SET_P m20_p9_i
+144 SET_P m20_p9
+145 SET_P m20_p8
+146 SET_P m20_p7
+147 SET_P m20_p6_i
+148 SET_P m20_p6
+149 SET_P m20_p5
+150 SET_P m20_p4
+151 SET_P m20_p3_i
+152 SET_P m20_p3
+153 SET_P m20_p2
+154 SET m20_p1
+// 38: int   si = p1 + p4*4 + p7*7 + p10*10 + p13*13 + p16*16 + p19*19;
+155 LOD m20_p4
+156 MLT 4
+157 ADD m20_p1
+158 P_LOD m20_p7
+159 MLT 7
+160 S_ADD
+161 P_LOD m20_p10
+162 MLT 10
+163 S_ADD
+164 P_LOD m20_p13
+165 MLT 13
+166 S_ADD
+167 P_LOD m20_p16
+168 MLT 16
+169 S_ADD
+170 P_LOD m20_p19
+171 MLT 19
+172 S_ADD
+173 SET m20_si
+// 39: float sf = p2*2.0 + p5*5.0 + p8*8.0 + p11*11.0 + p14*14.0 + p17*17.0 + p20*20.0;
+174 LOD m20_p2
+175 F_MLT 2.0
+176 P_LOD m20_p5
+177 F_MLT 5.0
+178 SF_ADD
+179 P_LOD m20_p8
+180 F_MLT 8.0
+181 SF_ADD
+182 P_LOD m20_p11
+183 F_MLT 11.0
+184 SF_ADD
+185 P_LOD m20_p14
+186 F_MLT 14.0
+187 SF_ADD
+188 P_LOD m20_p17
+189 F_MLT 17.0
+190 SF_ADD
+191 P_LOD m20_p20
+192 F_MLT 20.0
+193 SF_ADD
+194 SET m20_sf
+// 40: comp  sc = p3*3.0 + p6*6.0 + p9*9.0 + p12*12.0 + p15*15.0 + p18*18.0;
+195 LOD 3.0
+196 F_MLT m20_p3
+197 P_LOD 3.0
+198 F_MLT m20_p3_i
+199 P_LOD 6.0
+200 F_MLT m20_p6
+201 P_LOD 6.0
+202 F_MLT m20_p6_i
+203 SET_P __aux_var
+204 SET_P __aux_var1
+205 SET_P __aux_var2
+206 F_ADD __aux_var1
+207 P_LOD __aux_var2
+208 F_ADD __aux_var
+209 P_LOD 9.0
+210 F_MLT m20_p9
+211 P_LOD 9.0
+212 F_MLT m20_p9_i
+213 SET_P __aux_var
+214 SET_P __aux_var1
+215 SET_P __aux_var2
+216 F_ADD __aux_var1
+217 P_LOD __aux_var2
+218 F_ADD __aux_var
+219 P_LOD 12.0
+220 F_MLT m20_p12
+221 P_LOD 12.0
+222 F_MLT m20_p12_i
+223 SET_P __aux_var
+224 SET_P __aux_var1
+225 SET_P __aux_var2
+226 F_ADD __aux_var1
+227 P_LOD __aux_var2
+228 F_ADD __aux_var
+229 P_LOD 15.0
+230 F_MLT m20_p15
+231 P_LOD 15.0
+232 F_MLT m20_p15_i
+233 SET_P __aux_var
+234 SET_P __aux_var1
+235 SET_P __aux_var2
+236 F_ADD __aux_var1
+237 P_LOD __aux_var2
+238 F_ADD __aux_var
+239 P_LOD 18.0
+240 F_MLT m20_p18
+241 P_LOD 18.0
+242 F_MLT m20_p18_i
+243 SET_P __aux_var
+244 SET_P __aux_var1
+245 SET_P __aux_var2
+246 F_ADD __aux_var1
+247 P_LOD __aux_var2
+248 F_ADD __aux_var
+249 SET_P m20_sc_i
+250 SET m20_sc
+// 41: return sf + real(sc) + imag(sc) + si;
+251 LOD m20_sf
+252 F_ADD m20_sc
+253 F_ADD m20_sc_i
+254 P_I2F_M m20_si
+255 SF_ADD
+256 RET
+// 46: out(0, w11(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
+257 LOD 1
+258 P_LOD 2
+259 P_LOD 3
+260 P_LOD 4
+261 P_LOD 5
+262 P_LOD 6
+263 P_LOD 7
+264 P_LOD 8
+265 P_LOD 9
+266 P_LOD 10
+267 P_LOD 11
+268 CAL w11
+269 OUT 0
+// 48: fout(0, f10(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0));
+270 LOD 1.0
+271 P_LOD 2.0
+272 P_LOD 3.0
+273 P_LOD 4.0
+274 P_LOD 5.0
+275 P_LOD 6.0
+276 P_LOD 7.0
+277 P_LOD 8.0
+278 P_LOD 9.0
+279 P_LOD 10.0
+280 CAL f10
+281 F2I
+282 OUT 0
+// 50: s12(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+283 LOD 1
+284 P_LOD 2
+285 P_LOD 3
+286 P_LOD 4
+287 P_LOD 5
+288 P_LOD 6
+289 P_LOD 7
+290 P_LOD 8
+291 P_LOD 9
+292 P_LOD 10
+293 P_LOD 11
+294 P_LOD 12
+295 CAL s12
+// 51: out(0, g);
+296 LOD g
+297 OUT 0
+// 54: 11.0, complex(12.0, 1.0), 13, 14.0, complex(15.0, 1.0), 16, 17.0, complex(18.0, 1.0), 19, 20));
+298 LOD 1
+299 P_LOD 2.0
+// 53: fout(0, m20(1, 2.0, complex(3.0, 1.0), 4, 5, complex(6.0, 1.0), 7, 8.0, complex(9.0, 1.0), 10,
+300 P_LOD 3.0
+301 P_LOD 1.0
+// 54: 11.0, complex(12.0, 1.0), 13, 14.0, complex(15.0, 1.0), 16, 17.0, complex(18.0, 1.0), 19, 20));
+302 P_LOD 4
+303 P_LOD 5.0
+// 53: fout(0, m20(1, 2.0, complex(3.0, 1.0), 4, 5, complex(6.0, 1.0), 7, 8.0, complex(9.0, 1.0), 10,
+304 P_LOD 6.0
+305 P_LOD 1.0
+// 54: 11.0, complex(12.0, 1.0), 13, 14.0, complex(15.0, 1.0), 16, 17.0, complex(18.0, 1.0), 19, 20));
+306 P_LOD 7
+307 P_LOD 8.0
+// 53: fout(0, m20(1, 2.0, complex(3.0, 1.0), 4, 5, complex(6.0, 1.0), 7, 8.0, complex(9.0, 1.0), 10,
+308 P_LOD 9.0
+309 P_LOD 1.0
+// 54: 11.0, complex(12.0, 1.0), 13, 14.0, complex(15.0, 1.0), 16, 17.0, complex(18.0, 1.0), 19, 20));
+310 P_LOD 10
+311 P_LOD 11.0
+312 P_LOD 12.0
+313 P_LOD 1.0
+314 P_LOD 13
+315 P_LOD 14.0
+316 P_LOD 15.0
+317 P_LOD 1.0
+318 P_LOD 16
+319 P_LOD 17.0
+320 P_LOD 18.0
+321 P_LOD 1.0
+322 P_LOD 19
+323 P_LOD 20.0
+324 CAL m20
+325 F2I
+326 OUT 0
+// -3: END
+327 JMP fim

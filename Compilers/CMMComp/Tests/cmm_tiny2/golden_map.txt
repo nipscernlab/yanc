@@ -1,0 +1,28 @@
+## messages
+Info: 8 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 8 instructions and 2 variables were found
+Info: adding data input handling
+Info: ULA resource -> & operator
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 4% of the Assembly Instruction Set
+Info: using 2% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main x 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 19: x = in(0);
+1 INN 0
+2 SET main_x
+// 20: out(0, x & 1);
+3 LOD 1
+4 AND main_x
+5 OUT 0
+// 17: while (1)
+6 JMP __Lwh1
+// -3: END
+7 JMP fim

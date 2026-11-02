@@ -1,0 +1,119 @@
+## messages
+Info: 60 assembly instructions generated
+Info: 2 variables written and never read removed (2 instructions)
+Info: 12 variables share 7 data words (5 saved)
+Heads up: variable 'a' in function 'one_int' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Heads up: variable 'b' in function 'one_float' is never read, so it's out of the program and the waveform (#WAVE b, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 58 instructions and 18 variables were found
+Info: adding data output handling
+Info: ULA resource -> integer adder
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float to int converter
+Info: adding stack memory for function calls
+Info: stack depths from the program: SDEPTH 2, NDSTAC 4
+Info: using 8% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+one_int a 1
+one_float b 2
+one_comp c 3
+one_comp c_i 3
+three_mixed p 1
+three_mixed q 2
+three_mixed r 3
+three_mixed r_i 3
+main v1 1
+main v2 1
+main v3 2
+main v4 3
+main v4_i 3
+main v5 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 22: out(0, 7);
+2 LOD 7
+3 OUT 0
+// 23: }
+4 RET
+// 27: return 42;
+5 LOD 42
+6 RET
+// 32: return a + 1;
+7 ADD 1
+8 RET
+// 37: return b + 0.5;
+9 F_ADD 0.5
+10 RET
+// 40: comp one_comp(comp c)
+11 SET_P one_comp_c_i
+12 SET one_comp_c
+// 42: return c;
+13 P_LOD one_comp_c_i
+14 RET
+// 45: int three_mixed(int p, float q, comp r)
+15 SET_P three_mixed_r_i
+16 SET_P three_mixed_r
+17 SET_P three_mixed_q
+18 SET three_mixed_p
+// 47: out (0, p);
+19 OUT 0
+// 48: fout(0, q);
+20 F2I_M three_mixed_q
+21 OUT 0
+// 49: fout(0, real(r));
+22 F2I_M three_mixed_r
+23 OUT 0
+// 50: return p;
+24 LOD three_mixed_p
+25 RET
+// 57: noargs_void();
+26 CAL noargs_void
+// 58: int v1 = noargs_int();
+27 CAL noargs_int
+28 SET main_v1
+// 60: int   v2 = one_int  (5);
+29 LOD 5
+30 CAL one_int
+31 SET main_v2
+// 61: float v3 = one_float(2.5);
+32 LOD 2.5
+33 CAL one_float
+34 SET main_v3
+// 62: comp  v4 = one_comp (1.0+2.0i);
+35 LOD 1.0
+36 P_LOD 2.0
+37 CAL one_comp
+38 SET_P main_v4_i
+39 SET main_v4
+// 64: int v5 = three_mixed(7, 3.5, 6.0+7.0i);
+40 LOD 7
+41 P_LOD 3.5
+42 P_LOD 6.0
+43 P_LOD 7.0
+44 CAL three_mixed
+45 SET main_v5
+// 66: out (0, v1);
+46 LOD main_v1
+47 OUT 0
+// 67: out (0, v2);
+48 LOD main_v2
+49 OUT 0
+// 68: fout(0, v3);
+50 F2I_M main_v3
+51 OUT 0
+// 69: fout(0, real(v4));
+52 F2I_M main_v4
+53 OUT 0
+// 70: out (0, v5);
+54 LOD main_v5
+55 OUT 0
+// 55: while (1)
+56 JMP __Lwh1
+// -3: END
+57 JMP fim

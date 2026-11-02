@@ -1,0 +1,44 @@
+## messages
+Info: 16 assembly instructions generated
+Info: 1 variables written and never read removed (1 instructions)
+Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 15 instructions and 4 variables were found
+Info: ULA resource -> > operator for int
+Info: adding toma (TOM), which hands a value to the partner processor
+Info: adding cade (CAD), which takes a value from the partner processor
+Info: adding data output handling
+Info: ULA resource -> integer adder
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 7% of the Assembly Instruction Set
+Info: using 5% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main n 1
+main r 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 12: int n = 0;
+1 LOD 0
+2 SET main_n
+// 14: while (n < 16)
+3 LOD main_n
+4 GRE 16
+5 JIZ fim
+// 16: toma(0, n);
+6 LOD main_n
+7 TOM 0
+// 17: r = cade(0);
+8 CAD 0
+// 18: out(0, r);
+9 OUT 0
+// 19: n++;
+10 LOD main_n
+11 ADD 1
+12 SET main_n
+// 14: while (n < 16)
+13 JMP __Lwh1
+// -3: END
+14 JMP fim

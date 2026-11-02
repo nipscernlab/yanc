@@ -1,0 +1,106 @@
+## messages
+Info: 58 assembly instructions generated
+Info: 1 unreachable instructions removed
+Info: 2 variables written and never read removed (2 instructions)
+Info: 5 variables share 4 data words (1 saved)
+Heads up: variable 'x' in function 'f' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Heads up: variable 'x' in function 's' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 55 instructions and 13 variables were found
+Info: adding stack memory for function calls
+Info: ULA resource -> < operator for int
+Info: ULA resource -> integer adder
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 6% of the Assembly Instruction Set
+Info: using 5% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+global a 1
+f x 1
+global g 1
+h x 1
+global k 1
+s x 1
+global vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 18: int a = 3;
+1 LOD 3
+2 SET a
+// 26: int g = 5;
+3 LOD 5
+4 SET g
+// 36: int k = h(1);
+5 LOD 1
+6 CAL h
+7 SET k
+// 46: int vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = 7;
+8 LOD 7
+9 SET vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// -2: void main();
+10 JMP main
+// 22: if (x > 0) return 1;
+11 LES 0
+12 JIZ __Lif1else
+13 LOD 1
+14 RET
+// 23: else       return 2;
+15 LOD 2
+16 RET
+// 28: int h(int x)
+17 SET h_x
+// 31: if (x > 3) return x;
+18 LOD h_x
+19 LES 3
+20 JIZ __Lif2else
+21 LOD h_x
+22 RET
+// 32: x = x + 1;
+23 LOD h_x
+24 ADD 1
+25 SET h_x
+// 30: while (1) {
+26 JMP __Lwh1
+// 40: switch (x) {
+27 ADD -1
+28 JIZ __sw_body_1_1
+29 JMP __sw_body_1_2
+// 41: case 1:  return 10;
+30 LOD 10
+31 RET
+// 42: default: return 20;
+32 LOD 20
+33 RET
+// 50: out(0, a);
+34 LOD a
+35 OUT 0
+// 51: out(0, g);
+36 LOD g
+37 OUT 0
+// 52: out(0, k);
+38 LOD k
+39 OUT 0
+// 53: out(0, f(1));
+40 LOD 1
+41 CAL f
+42 OUT 0
+// 54: out(0, f(0));
+43 LOD 0
+44 CAL f
+45 OUT 0
+// 55: out(0, s(1));
+46 LOD 1
+47 CAL s
+48 OUT 0
+// 56: out(0, s(7));
+49 LOD 7
+50 CAL s
+51 OUT 0
+// 57: out(0, vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv);
+52 LOD vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+53 OUT 0
+// -3: END
+54 JMP fim

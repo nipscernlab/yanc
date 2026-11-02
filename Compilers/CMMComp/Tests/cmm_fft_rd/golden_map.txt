@@ -1,0 +1,52 @@
+## messages
+Info: 27 assembly instructions generated
+Info: 1 variables written and never read removed (1 instructions)
+Heads up: variable 'v' in function 'main' is never read, so it's out of the program and the waveform (#WAVE v, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 26 instructions and 12 variables were found
+Info: ULA resource -> > operator for int
+Info: adding array handling
+Info: ULA resource -> integer adder
+Info: adding bit-reverse array index (FFT)
+Info: adding data output handling
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 8% of the Assembly Instruction Set
+Info: using 5% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main k 1
+main v 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 18: int k = 0;
+1 LOD 0
+2 SET main_k
+// 19: while (k < 8) { x[k] = k; k++; }
+3 LOD main_k
+4 GRE 8
+5 JIZ __Lwh1end
+6 LOD main_k
+7 P_LOD main_k
+8 STI x
+9 LOD main_k
+10 ADD 1
+11 SET main_k
+12 JMP __Lwh1
+// 20: k = 0;
+13 LOD 0
+14 SET main_k
+// 21: while (k < 8) { int v = x[k); out(0, v); k++; }
+15 LOD main_k
+16 GRE 8
+17 JIZ fim
+18 LOD main_k
+19 ILI x
+20 OUT 0
+21 LOD main_k
+22 ADD 1
+23 SET main_k
+24 JMP __Lwh2
+// -3: END
+25 JMP fim

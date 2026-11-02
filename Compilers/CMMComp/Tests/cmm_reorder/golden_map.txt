@@ -1,0 +1,86 @@
+## messages
+Info: 56 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 56 instructions and 16 variables were found
+Info: ULA resource -> integer adder
+Info: adding data output handling
+Info: ULA resource -> integer multiplier
+Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: using 7% of the Assembly Instruction Set
+Info: using 5% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main a 1
+main b 1
+main c 1
+main d 1
+main e 1
+main f 1
+main g 1
+main h 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 26: a = 7; b = 3; c = 5; d = 11; e = 2; f = 13; g = 4; h = 6;
+1 LOD 7
+2 SET main_a
+3 LOD 3
+4 SET main_b
+5 LOD 5
+6 SET main_c
+7 LOD 11
+8 SET main_d
+9 LOD 2
+10 SET main_e
+11 LOD 13
+12 SET main_f
+13 LOD 4
+14 SET main_g
+15 LOD 6
+16 SET main_h
+// 27: out(0, (a + b) + ((c + d) + (e + f)));
+17 LOD main_c
+18 ADD main_d
+19 ADD main_e
+20 ADD main_f
+21 ADD main_a
+22 ADD main_b
+23 OUT 0
+// 28: out(0, ((a + b) * (c + d)) + ((e + f) * (g + h)));
+24 LOD main_a
+25 ADD main_b
+26 P_LOD main_c
+27 ADD main_d
+28 S_MLT
+29 P_LOD main_e
+30 ADD main_f
+31 P_LOD main_g
+32 ADD main_h
+33 S_MLT
+34 S_ADD
+35 OUT 0
+// 29: out(0, (a * b) + ((c * d) + (e * f)));
+36 LOD main_c
+37 MLT main_d
+38 P_LOD main_e
+39 MLT main_f
+40 S_ADD
+41 P_LOD main_a
+42 MLT main_b
+43 S_ADD
+44 OUT 0
+// 30: out(0, a + b + c + d + e + f + g + h);
+45 LOD main_a
+46 ADD main_b
+47 ADD main_c
+48 ADD main_d
+49 ADD main_e
+50 ADD main_f
+51 ADD main_g
+52 ADD main_h
+53 OUT 0
+// 24: while (1)
+54 JMP __Lwh1
+// -3: END
+55 JMP fim

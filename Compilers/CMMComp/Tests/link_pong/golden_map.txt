@@ -1,0 +1,32 @@
+## messages
+Info: 11 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 11 instructions and 2 variables were found
+Info: ULA resource -> integer multiplier
+Info: adding cade (CAD), which takes a value from the partner processor
+Info: ULA resource -> integer adder
+Info: adding toma (TOM), which hands a value to the partner processor
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 6% of the Assembly Instruction Set
+Info: using 5% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main um 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 13: int um = 1;
+1 LOD 1
+2 SET main_um
+// 16: toma(0, um * um + cade(0));
+3 LOD main_um
+4 MLT main_um
+5 PSH
+6 CAD 0
+7 S_ADD
+8 TOM 0
+// 14: while (1)
+9 JMP __Lwh1
+// -3: END
+10 JMP fim

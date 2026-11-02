@@ -1,0 +1,180 @@
+## messages
+Heads up on line 39: if you don't want this warning, use 'fout'.
+Heads up on line 46: if you don't want this warning, use 'fout'.
+Heads up on line 51: if you don't want this warning, use 'fout'.
+Heads up on line 56: if you don't want this warning, use 'fout'.
+Info: 121 assembly instructions generated
+Info: 1 variables written and never read removed (1 instructions)
+Info: 4 variables share 3 data words (1 saved)
+Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 120 instructions and 54 variables were found
+Info: ULA resource -> > operator for int
+Info: adding array handling
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> integer adder
+Info: adding data output handling
+Info: ULA resource -> float to int converter
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> float-point adder
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 18% of the Assembly Instruction Set
+Info: using 19% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main a 1
+main b 1
+main k 1
+main x 1
+main y 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 32: a = 1; b = 2;
+1 LOD 1
+2 SET main_a
+3 LOD 2
+4 SET main_b
+// 33: k = 0;
+5 LOD 0
+6 SET main_k
+// 34: while (k < 6) { vi[k] = k; vf[k] = k * 0.5; k++; }
+7 LOD main_k
+8 GRE 6
+9 JIZ __Lwh1end
+10 LOD main_k
+11 P_LOD main_k
+12 STI vi
+13 LOD main_k
+14 P_I2F_M main_k
+15 F_MLT 0.5
+16 STI vf
+17 LOD main_k
+18 ADD 1
+19 SET main_k
+20 JMP __Lwh1
+// 36: vi[a+b] = vi[a+b] + 10;
+21 LOD main_a
+22 ADD main_b
+23 PSH
+24 LDI vi
+25 ADD 10
+26 STI vi
+// 37: out(0, vi[3]);
+27 LOD_V vi 3
+28 OUT 0
+// 38: vf[a+b] = vf[a+b] * 4.0;
+29 LOD main_a
+30 ADD main_b
+31 PSH
+32 LDI vf
+33 F_MLT 4.0
+34 STI vf
+// 39: out(0, vf[3]);
+35 LOD_V vf 3
+36 F2I
+37 OUT 0
+// 41: mi[1][3] = 5;
+38 LOD 5
+39 SET_V mi 7
+// 42: mi[a][b+1] = mi[a][b+1] + 7;
+40 LOD main_a
+41 MLT 4
+42 ADD main_b
+43 ADD 1
+44 PSH
+45 LDI mi
+46 ADD 7
+47 STI mi
+// 43: out(0, mi[1][3]);
+48 LOD_V mi 7
+49 OUT 0
+// 44: mf[1][3] = 2.5;
+50 LOD 2.5
+51 SET_V mf 7
+// 45: mf[a][b+1] = mf[a][b+1] * 2.0;
+52 LOD main_a
+53 MLT 4
+54 ADD main_b
+55 ADD 1
+56 PSH
+57 LDI mf
+58 F_MLT 2.0
+59 STI mf
+// 46: out(0, mf[1][3]);
+60 LOD_V mf 7
+61 F2I
+62 OUT 0
+// 48: x = vi[a+b]*vi[a+b];
+63 LOD main_a
+64 ADD main_b
+65 LDI vi
+66 PSH
+67 S_MLT
+// 49: out(0, x);
+68 OUT 0
+// 50: y = vf[a+b]*vf[a+b];
+69 LOD main_a
+70 ADD main_b
+71 LDI vf
+72 PSH
+73 SF_MLT
+74 SET main_y
+// 51: out(0, y);
+75 F2I_M main_y
+76 OUT 0
+// 53: vi[a+b] = vi[a+b-1] + 1;
+77 LOD main_a
+78 ADD main_b
+79 P_LOD main_a
+80 ADD main_b
+81 ADD -1
+82 LDI vi
+83 ADD 1
+84 STI vi
+// 54: out(0, vi[3]);
+85 LOD_V vi 3
+86 OUT 0
+// 55: vf[a+b] = vi[a+b] + 0.5;
+87 LOD main_a
+88 ADD main_b
+89 PSH
+90 LDI vi
+91 I2F
+92 F_ADD 0.5
+93 STI vf
+// 56: out(0, 2.0*vf[3]);
+94 LOD_V vf 3
+95 F_MLT 2.0
+96 F2I
+97 OUT 0
+// 58: k = 0;
+98 LOD 0
+99 SET main_k
+// 59: while (k < 3) { vi[k+1] = vi[k+1] + 100; k++; }
+100 LOD main_k
+101 GRE 3
+102 JIZ __Lwh2end
+103 LOD main_k
+104 ADD 1
+105 PSH
+106 LDI vi
+107 ADD 100
+108 STI vi
+109 LOD main_k
+110 ADD 1
+111 SET main_k
+112 JMP __Lwh2
+// 60: out(0, vi[1]);
+113 LOD_V vi 1
+114 OUT 0
+// 61: out(0, vi[2]);
+115 LOD_V vi 2
+116 OUT 0
+// 62: out(0, vi[3]);
+117 LOD_V vi 3
+118 OUT 0
+// -3: END
+119 JMP fim

@@ -5,8 +5,15 @@
 #
 #   1. CMM phase: for every Compilers/CMMComp/Tests/<prname>/<prname>.cmm
 #      run cmmcomp and compare the produced .asm against
-#      Compilers/CMMComp/Tests/<prname>/golden.asm. For the sim-enabled subset also
-#      run asmcomp + iverilog + vvp and compare output_*.txt
+#      Compilers/CMMComp/Tests/<prname>/golden.asm, then asmcomp. The
+#      waveform's tables must put each instruction on a line that can have
+#      produced it (Scripts/wave_map.py, whose rules must also notice the
+#      broken maps of its --selftest on sapho_all), and what the waveform
+#      shows (the messages, the variables, each source line with its
+#      instructions) is compared against golden_map.txt; also under --no-sim.
+#      For the sim-enabled subset also run iverilog + vvp, check that the
+#      waveform's source-line and instruction tracks show the same address
+#      at every change, and compare output_*.txt
 #      against Compilers/CMMComp/Tests/<prname>/golden_sim/. Plus a project pass for
 #      the multi-proc DTW example (Compilers/CMMComp/Tests/DTW/TopLevel/).
 #
@@ -58,6 +65,7 @@
 # Usage (from repo root, in msys2/git-bash on Windows):
 #   Scripts/regress.sh                check against goldens (exit 0 = pass)
 #   Scripts/regress.sh --update       regenerate goldens (review diff!)
+#   Scripts/regress.sh --update-map   rewrite only the golden_map.txt (review diff!)
 #   Scripts/regress.sh --update-size  ratchet down Compilers/CMMComp/Tests/size_baseline.txt
 #   Scripts/regress.sh --skip-build   reuse binaries already in .smoke/bin
 #   Scripts/regress.sh --no-sim       skip every simulation step
@@ -85,6 +93,7 @@ if command -v cygpath >/dev/null 2>&1; then
 fi
 
 UPDATE=0
+UPDATE_MAP=0
 UPDATE_SIZE=0
 SKIP_BUILD=0
 NO_SIM=0
@@ -92,7 +101,8 @@ CMM_ONLY=0
 CPP_ONLY=0
 for arg in "$@"; do
     case "$arg" in
-        --update)       UPDATE=1 ;;
+        --update)       UPDATE=1; UPDATE_MAP=1 ;;
+        --update-map)   UPDATE_MAP=1 ;;
         --update-size)  UPDATE_SIZE=1 ;;
         --skip-build)   SKIP_BUILD=1 ;;
         --no-sim)       NO_SIM=1 ;;
@@ -367,7 +377,8 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         golden="$proc_dir_rel/golden.asm"
 
         # cmmcomp step ------------------------------------------------------
-        if ! "$CMMCOMP" -o "$out" "$work_proc/$filename" >/dev/null 2>&1; then
+        msgs="$work_proc/messages.txt"      # what cmmcomp and asmcomp print
+        if ! "$CMMCOMP" -o "$out" "$work_proc/$filename" >"$msgs" 2>&1; then
             echo "FAIL ($prname): cmmcomp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
@@ -413,6 +424,38 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
 
+        # asmcomp and the waveform's tables -----------------------------------
+        # The source line and the instruction the waveform shows at each
+        # address, and its variables, come from tables cmmcomp writes and
+        # asmcomp completes, not from the .asm: a change can keep the .asm and
+        # move them. wave_map.py checks the tables agree with each other and
+        # with the .asm, and that each instruction is on a line that can have
+        # produced it; golden_map.txt holds what they show.
+        if ! "$ASMCOMP" -f 100 -c 100000 "$asm_file" >>"$msgs" 2>&1; then
+            echo "FAIL ($prname): asmcomp exited non-zero"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+        golden_map="$proc_dir_rel/golden_map.txt"
+        if ! python3 "$ROOT/Scripts/wave_map.py" "$out" "$prname" "$msgs" >"$work_proc/map.txt"; then
+            echo "FAIL ($prname): the waveform's tables are wrong (Scripts/wave_map.py, above)"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+        # sapho_all has every construct: the rules must notice its map broken
+        if [ "$prname" = sapho_all ] && ! python3 "$ROOT/Scripts/wave_map.py" "$out" "$prname" --selftest >/dev/null; then
+            echo "FAIL ($prname): the waveform's rules miss a broken map (wave_map.py --selftest, above)"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+        if [ "$UPDATE_MAP" -eq 1 ]; then
+            cp "$work_proc/map.txt" "$golden_map"
+        elif [ ! -f "$golden_map" ]; then
+            echo "FAIL ($prname): no golden_map.txt (run --update-map?)"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        elif ! cmp -s "$work_proc/map.txt" "$golden_map"; then
+            echo "FAIL ($prname): what the waveform shows differs from golden_map.txt"
+            diff "$golden_map" "$work_proc/map.txt" | head -20 | sed 's/^/    /'
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+
         # simulation phase --------------------------------------------------
         if [ "$NO_SIM" -eq 1 ] || build_skipped "$prname"; then
             echo "$asm_status ($prname)  [sim skipped]$size_msg"
@@ -420,10 +463,6 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             continue
         fi
 
-        if ! "$ASMCOMP" -f 100 -c 100000 "$asm_file" >/dev/null 2>&1; then
-            echo "FAIL ($prname): asmcomp exited non-zero"
-            fail=$((fail + 1)); failed_names+=("$prname"); continue
-        fi
         if ! hw_msg=$(hw_check "$proc_dir_rel/hardware.txt" "$out/$prname.v"); then
             echo "FAIL ($prname): $hw_msg"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
@@ -463,6 +502,10 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
         if ! stack_check "$tmp/${prname}_tb.vcd"; then
             echo "FAIL ($prname): a stack reached its depth in the simulation (fl_full)"
+            fail=$((fail + 1)); failed_names+=("$prname"); continue
+        fi
+        if [ -f "$tmp/${prname}_tb.vcd" ] && ! python3 "$ROOT/Scripts/wave_map.py" "$out" "$prname" --vcd "$tmp/${prname}_tb.vcd" >/dev/null; then
+            echo "FAIL ($prname): the waveform shows an instruction on another's line (wave_map.py --vcd, above)"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
 

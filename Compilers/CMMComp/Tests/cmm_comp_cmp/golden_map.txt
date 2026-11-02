@@ -1,0 +1,546 @@
+## messages
+Info: 503 assembly instructions generated
+Info: 1 variables written and never read removed (36 instructions)
+Info: 15 variables share 14 data words (1 saved)
+Heads up: variable 'k' in function 'main' is never read, so it's out of the program and the waveform (#WAVE k, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 467 instructions and 26 variables were found
+Info: ULA resource -> == operator
+Info: ULA resource -> & operator
+Info: adding data output handling
+Info: ULA resource -> ! operator
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float-point adder
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> integer adder
+Info: ULA resource -> integer negative operation
+Info: ULA resource -> float to int converter
+Info: stack depths from the program: SDEPTH 2, NDSTAC 5
+Info: using 20% of the Assembly Instruction Set
+Info: using 27% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main z 3
+main z_i 3
+main w 3
+main w_i 3
+main u 3
+main u_i 3
+main e 3
+main e_i 3
+main r 3
+main r_i 3
+main x 2
+main n 1
+main k 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 23: z = 3+4i; w = 3+4i; u = 4+3i; e = 1+0i; r = 3+0i; x = 3.0; n = 3;
+1 LOD 3.0
+2 SET main_z
+3 LOD 4.0
+4 SET main_z_i
+5 LOD 3.0
+6 SET main_w
+7 LOD 4.0
+8 SET main_w_i
+9 SET main_u
+10 LOD 3.0
+11 SET main_u_i
+12 LOD 1.0
+13 SET main_e
+14 LOD 0.0
+15 SET main_e_i
+16 LOD 3.0
+17 SET main_r
+18 LOD 0.0
+19 SET main_r_i
+20 LOD 3.0
+21 SET main_x
+22 LOD 3
+23 SET main_n
+// 24: k = z == w; out(0, k);
+24 LOD main_z
+25 EQU main_w
+26 P_LOD main_z_i
+27 EQU main_w_i
+28 S_AND
+29 OUT 0
+// 25: k = z == u; out(0, k);
+30 LOD main_z
+31 EQU main_u
+32 P_LOD main_z_i
+33 EQU main_u_i
+34 S_AND
+35 OUT 0
+// 26: k = z != u; out(0, k);
+36 LOD main_z
+37 EQU main_u
+38 P_LOD main_z_i
+39 EQU main_u_i
+40 S_AND
+41 LIN
+42 OUT 0
+// 27: k = z != w; out(0, k);
+43 LOD main_z
+44 EQU main_w
+45 P_LOD main_z_i
+46 EQU main_w_i
+47 S_AND
+48 LIN
+49 OUT 0
+// 28: k = r == x; out(0, k);
+50 LOD main_r
+51 EQU main_x
+52 P_LOD main_r_i
+53 EQU 0.0
+54 S_AND
+55 OUT 0
+// 29: k = x == r; out(0, k);
+56 LOD main_x
+57 EQU main_r
+58 P_LOD 0.0
+59 EQU main_r_i
+60 S_AND
+61 OUT 0
+// 30: k = r == n; out(0, k);
+62 I2F_M main_n
+63 EQU main_r
+64 P_LOD 0.0
+65 EQU main_r_i
+66 S_AND
+67 OUT 0
+// 31: k = n == r; out(0, k);
+68 I2F_M main_n
+69 EQU main_r
+70 P_LOD 0.0
+71 EQU main_r_i
+72 S_AND
+73 OUT 0
+// 32: k = z == x; out(0, k);
+74 LOD main_z
+75 EQU main_x
+76 P_LOD main_z_i
+77 EQU 0.0
+78 S_AND
+79 OUT 0
+// 33: k = z == n; out(0, k);
+80 I2F_M main_n
+81 EQU main_z
+82 P_LOD 0.0
+83 EQU main_z_i
+84 S_AND
+85 OUT 0
+// 34: k = r == 3; out(0, k);
+86 LOD main_r
+87 EQU 3.0
+88 P_LOD main_r_i
+89 EQU 0.0
+90 S_AND
+91 OUT 0
+// 35: k = r == 3.0; out(0, k);
+92 LOD main_r
+93 EQU 3.0
+94 P_LOD main_r_i
+95 EQU 0.0
+96 S_AND
+97 OUT 0
+// 36: k = z == 3+4i; out(0, k);
+98 LOD main_z
+99 EQU 3.0
+100 P_LOD main_z_i
+101 EQU 4.0
+102 S_AND
+103 OUT 0
+// 37: k = 3+4i == z; out(0, k);
+104 LOD 3.0
+105 EQU main_z
+106 P_LOD 4.0
+107 EQU main_z_i
+108 S_AND
+109 OUT 0
+// 38: k = z == 4+3i; out(0, k);
+110 LOD main_z
+111 EQU 4.0
+112 P_LOD main_z_i
+113 EQU 3.0
+114 S_AND
+115 OUT 0
+// 39: k = (z*e) == w; out(0, k);
+116 LOD main_z
+117 F_MLT main_e
+118 P_LOD main_z_i
+119 F_MLT main_e_i
+120 SF_SU2
+121 P_LOD main_z
+122 F_MLT main_e_i
+123 P_LOD main_z_i
+124 F_MLT main_e
+125 SF_ADD
+126 EQU main_w_i
+127 SET_P __aux_var
+128 EQU main_w
+129 AND __aux_var
+130 OUT 0
+// 40: k = w == (z*e); out(0, k);
+131 LOD main_z
+132 F_MLT main_e
+133 P_LOD main_z_i
+134 F_MLT main_e_i
+135 SF_SU2
+136 P_LOD main_z
+137 F_MLT main_e_i
+138 P_LOD main_z_i
+139 F_MLT main_e
+140 SF_ADD
+141 EQU main_w_i
+142 SET_P __aux_var
+143 EQU main_w
+144 AND __aux_var
+145 OUT 0
+// 41: k = (z*e) == (u*e); out(0, k);
+146 LOD main_z
+147 F_MLT main_e
+148 P_LOD main_z_i
+149 F_MLT main_e_i
+150 SF_SU2
+151 P_LOD main_z
+152 F_MLT main_e_i
+153 P_LOD main_z_i
+154 F_MLT main_e
+155 SF_ADD
+156 P_LOD main_u
+157 F_MLT main_e
+158 P_LOD main_u_i
+159 F_MLT main_e_i
+160 SF_SU2
+161 P_LOD main_u
+162 F_MLT main_e_i
+163 P_LOD main_u_i
+164 F_MLT main_e
+165 SF_ADD
+166 SET_P __aux_var
+167 SET_P __aux_var1
+168 EQU __aux_var
+169 SET_P __aux_var2
+170 EQU __aux_var1
+171 AND __aux_var2
+172 OUT 0
+// 42: k = (z*e) == (w*e); out(0, k);
+173 LOD main_z
+174 F_MLT main_e
+175 P_LOD main_z_i
+176 F_MLT main_e_i
+177 SF_SU2
+178 P_LOD main_z
+179 F_MLT main_e_i
+180 P_LOD main_z_i
+181 F_MLT main_e
+182 SF_ADD
+183 P_LOD main_w
+184 F_MLT main_e
+185 P_LOD main_w_i
+186 F_MLT main_e_i
+187 SF_SU2
+188 P_LOD main_w
+189 F_MLT main_e_i
+190 P_LOD main_w_i
+191 F_MLT main_e
+192 SF_ADD
+193 SET_P __aux_var
+194 SET_P __aux_var1
+195 EQU __aux_var
+196 SET_P __aux_var2
+197 EQU __aux_var1
+198 AND __aux_var2
+199 OUT 0
+// 43: k = (z*e) == 3+4i; out(0, k);
+200 LOD main_z
+201 F_MLT main_e
+202 P_LOD main_z_i
+203 F_MLT main_e_i
+204 SF_SU2
+205 P_LOD main_z
+206 F_MLT main_e_i
+207 P_LOD main_z_i
+208 F_MLT main_e
+209 SF_ADD
+210 EQU 4.0
+211 SET_P __aux_var
+212 EQU 3.0
+213 AND __aux_var
+214 OUT 0
+// 44: k = (r*e) == x; out(0, k);
+215 LOD main_r
+216 F_MLT main_e
+217 P_LOD main_r_i
+218 F_MLT main_e_i
+219 SF_SU2
+220 P_LOD main_r
+221 F_MLT main_e_i
+222 P_LOD main_r_i
+223 F_MLT main_e
+224 SF_ADD
+225 EQU 0.0
+226 SET_P __aux_var
+227 EQU main_x
+228 AND __aux_var
+229 OUT 0
+// 45: k = (r*e) == n; out(0, k);
+230 LOD main_r
+231 F_MLT main_e
+232 P_LOD main_r_i
+233 F_MLT main_e_i
+234 SF_SU2
+235 P_LOD main_r
+236 F_MLT main_e_i
+237 P_LOD main_r_i
+238 F_MLT main_e
+239 SF_ADD
+240 EQU 0.0
+241 SET_P __aux_var
+242 P_I2F_M main_n
+243 S_EQU
+244 AND __aux_var
+245 OUT 0
+// 46: k = (z*e) == n; out(0, k);
+246 LOD main_z
+247 F_MLT main_e
+248 P_LOD main_z_i
+249 F_MLT main_e_i
+250 SF_SU2
+251 P_LOD main_z
+252 F_MLT main_e_i
+253 P_LOD main_z_i
+254 F_MLT main_e
+255 SF_ADD
+256 EQU 0.0
+257 SET_P __aux_var
+258 P_I2F_M main_n
+259 S_EQU
+260 AND __aux_var
+261 OUT 0
+// 47: k = (r*e) == (x*2.0-3.0); out(0, k);
+262 LOD main_r
+263 F_MLT main_e
+264 P_LOD main_r_i
+265 F_MLT main_e_i
+266 SF_SU2
+267 P_LOD main_r
+268 F_MLT main_e_i
+269 P_LOD main_r_i
+270 F_MLT main_e
+271 SF_ADD
+272 P_LOD main_x
+273 F_MLT 2.0
+274 F_SU1 3.0
+275 SET_P __aux_var
+276 EQU 0.0
+277 SET_P __aux_var1
+278 EQU __aux_var
+279 AND __aux_var1
+280 OUT 0
+// 48: k = (x*2.0-3.0) == (r*e); out(0, k);
+281 LOD main_x
+282 F_MLT 2.0
+283 F_SU1 3.0
+284 P_LOD main_r
+285 F_MLT main_e
+286 P_LOD main_r_i
+287 F_MLT main_e_i
+288 SF_SU2
+289 P_LOD main_r
+290 F_MLT main_e_i
+291 P_LOD main_r_i
+292 F_MLT main_e
+293 SF_ADD
+294 EQU 0.0
+295 SET_P __aux_var
+296 S_EQU
+297 AND __aux_var
+298 OUT 0
+// 49: k = (r*e) == (n*2-3); out(0, k);
+299 LOD main_r
+300 F_MLT main_e
+301 P_LOD main_r_i
+302 F_MLT main_e_i
+303 SF_SU2
+304 P_LOD main_r
+305 F_MLT main_e_i
+306 P_LOD main_r_i
+307 F_MLT main_e
+308 SF_ADD
+309 P_LOD main_n
+310 MLT 2
+311 ADD -3
+312 I2F
+313 SET_P __aux_var
+314 EQU 0.0
+315 SET_P __aux_var1
+316 EQU __aux_var
+317 AND __aux_var1
+318 OUT 0
+// 50: k = (n*2-3) == (r*e); out(0, k);
+319 LOD main_n
+320 MLT 2
+321 ADD -3
+322 P_LOD main_r
+323 F_MLT main_e
+324 P_LOD main_r_i
+325 F_MLT main_e_i
+326 SF_SU2
+327 P_LOD main_r
+328 F_MLT main_e_i
+329 P_LOD main_r_i
+330 F_MLT main_e
+331 SF_ADD
+332 EQU 0.0
+333 SET_P __aux_var
+334 SET_P __aux_var1
+335 I2F
+336 EQU __aux_var1
+337 AND __aux_var
+338 OUT 0
+// 51: k = (r*e) == (n*2-2); out(0, k);
+339 LOD main_r
+340 F_MLT main_e
+341 P_LOD main_r_i
+342 F_MLT main_e_i
+343 SF_SU2
+344 P_LOD main_r
+345 F_MLT main_e_i
+346 P_LOD main_r_i
+347 F_MLT main_e
+348 SF_ADD
+349 P_LOD main_n
+350 MLT 2
+351 ADD -2
+352 I2F
+353 SET_P __aux_var
+354 EQU 0.0
+355 SET_P __aux_var1
+356 EQU __aux_var
+357 AND __aux_var1
+358 OUT 0
+// 52: k = (n*2-3) == r; out(0, k);
+359 LOD main_n
+360 MLT 2
+361 ADD -3
+362 I2F
+363 EQU main_r
+364 P_LOD main_r_i
+365 EQU 0.0
+366 S_AND
+367 OUT 0
+// 53: k = r == (n*2-3); out(0, k);
+368 LOD main_n
+369 MLT 2
+370 ADD -3
+371 I2F
+372 EQU main_r
+373 P_LOD main_r_i
+374 EQU 0.0
+375 S_AND
+376 OUT 0
+// 54: k = (x*2.0-3.0) == r; out(0, k);
+377 LOD main_x
+378 F_MLT 2.0
+379 F_SU1 3.0
+380 EQU main_r
+381 P_LOD main_r_i
+382 EQU 0.0
+383 S_AND
+384 OUT 0
+// 55: k = (x*2.0-2.0) == r; out(0, k);
+385 LOD main_x
+386 F_MLT 2.0
+387 F_SU1 2.0
+388 EQU main_r
+389 P_LOD main_r_i
+390 EQU 0.0
+391 S_AND
+392 OUT 0
+// 56: k = (z*e) != (u*e); out(0, k);
+393 LOD main_z
+394 F_MLT main_e
+395 P_LOD main_z_i
+396 F_MLT main_e_i
+397 SF_SU2
+398 P_LOD main_z
+399 F_MLT main_e_i
+400 P_LOD main_z_i
+401 F_MLT main_e
+402 SF_ADD
+403 P_LOD main_u
+404 F_MLT main_e
+405 P_LOD main_u_i
+406 F_MLT main_e_i
+407 SF_SU2
+408 P_LOD main_u
+409 F_MLT main_e_i
+410 P_LOD main_u_i
+411 F_MLT main_e
+412 SF_ADD
+413 SET_P __aux_var
+414 SET_P __aux_var1
+415 EQU __aux_var
+416 SET_P __aux_var2
+417 EQU __aux_var1
+418 AND __aux_var2
+419 LIN
+420 OUT 0
+// 57: k = (z*e) != (w*e); out(0, k);
+421 LOD main_z
+422 F_MLT main_e
+423 P_LOD main_z_i
+424 F_MLT main_e_i
+425 SF_SU2
+426 P_LOD main_z
+427 F_MLT main_e_i
+428 P_LOD main_z_i
+429 F_MLT main_e
+430 SF_ADD
+431 P_LOD main_w
+432 F_MLT main_e
+433 P_LOD main_w_i
+434 F_MLT main_e_i
+435 SF_SU2
+436 P_LOD main_w
+437 F_MLT main_e_i
+438 P_LOD main_w_i
+439 F_MLT main_e
+440 SF_ADD
+441 SET_P __aux_var
+442 SET_P __aux_var1
+443 EQU __aux_var
+444 SET_P __aux_var2
+445 EQU __aux_var1
+446 AND __aux_var2
+447 LIN
+448 OUT 0
+// 58: k = (1+0i) == (0+1i); out(0, k);
+449 LOD 1.0
+450 EQU 0.0
+451 P_LOD 0.0
+452 EQU 1.0
+453 S_AND
+454 OUT 0
+// 59: k = -5 == 3+4i; out(0, k);
+455 NEG_M 5
+456 I2F
+457 EQU 3.0
+458 P_LOD 4.0
+459 EQU 0.0
+460 S_AND
+461 OUT 0
+// 60: fout(0, real(5-7i));
+462 F2I_M 5.0
+463 OUT 0
+// 61: fout(0, imag(5-7i));
+464 F2I_M -7.0
+465 OUT 0
+// -3: END
+466 JMP fim

@@ -1,0 +1,175 @@
+## messages
+Info: 103 assembly instructions generated
+Info: 5 variables share 2 data words (3 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 103 instructions and 22 variables were found
+Info: adding data output handling
+Info: ULA resource -> integer adder
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> ^ operator
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 6% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main wc 1
+main ic 1
+main outer 1
+main inner 1
+main bc 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 29: if (1)
+1 LOD 1
+2 JIZ __Lif1else
+// 31: out(0, 11);
+3 LOD 11
+4 OUT 0
+// 35: if (0)
+5 LOD 0
+6 JIZ __Lif2else
+// 37: out(0, 12);
+7 LOD 12
+8 OUT 0
+// 41: if (1)
+9 LOD 1
+10 JIZ __Lif3else
+// 43: out(0, 21);
+11 LOD 21
+12 OUT 0
+// 41: if (1)
+13 JMP __Lif3end
+// 47: out(0, 22);
+14 LOD 22
+15 OUT 0
+// 51: if (0)
+16 LOD 0
+17 JIZ __Lif4else
+// 53: out(0, 31);
+18 LOD 31
+19 OUT 0
+// 51: if (0)
+20 JMP __Lif4end
+// 57: out(0, 32);
+21 LOD 32
+22 OUT 0
+// 61: if (1)
+23 LOD 1
+24 JIZ __Lif5else
+// 63: if (1)
+25 LOD 1
+26 JIZ __Lif6else
+// 65: out(0, 41);
+27 LOD 41
+28 OUT 0
+// 70: if (0)
+29 LOD 0
+30 JIZ __Lif7else
+// 72: out(0, 51);
+31 LOD 51
+32 OUT 0
+// 70: if (0)
+33 JMP __Lif7end
+// 76: if (1)
+34 LOD 1
+35 JIZ __Lif8else
+// 78: out(0, 52);
+36 LOD 52
+37 OUT 0
+// 83: if (1)
+38 LOD 1
+39 JIZ __Lif9else
+// 85: int wc = 3;
+40 LOD 3
+41 SET main_wc
+// 86: while (wc)
+42 LOD main_wc
+43 JIZ __Lwh2end
+// 88: out(0, 60 + wc);
+44 LOD 60
+45 ADD main_wc
+46 OUT 0
+// 89: wc = wc - 1;
+47 LOD main_wc
+48 ADD -1
+49 SET main_wc
+// 86: while (wc)
+50 JMP __Lwh2
+// 94: int ic = 2;
+51 LOD 2
+52 SET main_ic
+// 95: while (ic)
+53 LOD main_ic
+54 JIZ __Lwh3end
+// 97: if (ic)
+55 LOD main_ic
+56 JIZ __Lif10else
+// 99: out(0, 70 + ic);
+57 LOD 70
+58 ADD main_ic
+59 OUT 0
+// 101: ic = ic - 1;
+60 LOD main_ic
+61 ADD -1
+62 SET main_ic
+// 95: while (ic)
+63 JMP __Lwh3
+// 105: int outer = 2;
+64 LOD 2
+65 SET main_outer
+// 106: while (outer)
+66 LOD main_outer
+67 JIZ __Lwh4end
+// 108: int inner = 2;
+68 LOD 2
+69 SET main_inner
+// 109: while (inner)
+70 LOD main_inner
+71 JIZ __Lwh5end
+// 111: out(0, 80 + outer * 10 + inner);
+72 LOD main_outer
+73 MLT 10
+74 ADD 80
+75 ADD main_inner
+76 OUT 0
+// 112: inner = inner - 1;
+77 LOD main_inner
+78 ADD -1
+79 SET main_inner
+// 109: while (inner)
+80 JMP __Lwh5
+// 114: outer = outer - 1;
+81 LOD main_outer
+82 ADD -1
+83 SET main_outer
+// 106: while (outer)
+84 JMP __Lwh4
+// 118: int bc = 5;
+85 LOD 5
+86 SET main_bc
+// 119: while (bc)
+87 LOD main_bc
+88 JIZ __Lwh6end
+// 121: if (bc == 3)
+89 LOD 3
+90 XOR main_bc
+91 JIZ __Lwh6end
+// 125: out(0, 100 + bc);
+92 LOD 100
+93 ADD main_bc
+94 OUT 0
+// 126: bc = bc - 1;
+95 LOD main_bc
+96 ADD -1
+97 SET main_bc
+// 119: while (bc)
+98 JMP __Lwh6
+// 129: out(0, 0);    // per-iteration sentinel
+99 LOD 0
+100 OUT 0
+// 26: while (1)
+101 JMP __Lwh1
+// -3: END
+102 JMP fim

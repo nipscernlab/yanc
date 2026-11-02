@@ -1,0 +1,38 @@
+## messages
+Info: 15 assembly instructions generated
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 15 instructions and 5 variables were found
+Info: ULA resource -> > operator for int
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> integer adder
+Info: adding toma (TOM), which hands a value to the partner processor
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 6% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main n 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 13: int n = 0;
+1 LOD 0
+2 SET main_n
+// 14: while (n < 16)
+3 LOD main_n
+4 GRE 16
+5 JIZ fim
+// 16: toma_sync(0, n * 3 + 1);
+6 LOD main_n
+7 MLT 3
+8 ADD 1
+9 TOM 0
+// 17: n++;
+10 LOD main_n
+11 ADD 1
+12 SET main_n
+// 14: while (n < 16)
+13 JMP __Lwh1
+// -3: END
+14 JMP fim

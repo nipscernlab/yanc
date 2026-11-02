@@ -1,0 +1,145 @@
+## messages
+Info: 36 assembly instructions generated
+Info: adding assembly macro for exponential computation
+Info: adding assembly macro for natural-logarithm computation
+Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (3 added)
+Info: 1 variables written and never read removed (1 instructions)
+Info: 14 variables share 3 data words (11 saved)
+Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 105 instructions and 19 variables were found
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float scale by a power of two (2^k)
+Info: ULA resource -> < operator for float
+Info: ULA resource -> base-2 exponent extraction of float
+Info: ULA resource -> integer negative operation
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 17% of the Assembly Instruction Set
+Info: using 27% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main x 2
+main r 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 15: r = log(1.0)  * 1000.0;        fout(0, r);   // 0
+1 LOD 1.0
+2 CAL __float_log
+3 F_MLT 1000.0
+4 SET main_r
+5 F2I_M main_r
+6 OUT 0
+// 16: r = log(2.0)  * 1000.0;        fout(0, r);   // 693   (ln2)
+7 LOD 2.0
+8 CAL __float_log
+9 F_MLT 1000.0
+10 SET main_r
+11 F2I_M main_r
+12 OUT 0
+// 17: x = 8.0;  r = log(x + 2.0) * 1000.0;  fout(0, r);   // 2302  (log10, acc path)
+13 LOD 8.0
+14 F_ADD 2.0
+15 CAL __float_log
+16 F_MLT 1000.0
+17 SET main_r
+18 F2I_M main_r
+19 OUT 0
+// 18: r = exp(log(8.0)) * 1000.0;    fout(0, r);   // 8000  (round-trip, exact)
+20 LOD 8.0
+21 CAL __float_log
+22 CAL __float_exp
+23 F_MLT 1000.0
+24 SET main_r
+25 F2I_M main_r
+26 OUT 0
+// 19: r = log(0.0)  * 1000.0;        fout(0, r);   // 0     (guard, x<=0)
+27 LOD 0.0
+28 CAL __float_log
+29 F_MLT 1000.0
+30 SET main_r
+31 F2I_M main_r
+32 OUT 0
+// 14: while (1) {
+33 JMP __Lwh1
+// -3: END
+34 JMP fim
+// library macros, no source line
+35 SET __exp_x
+36 F_MLT 1.4426950409
+37 SET __exp_q
+38 LOD 0.5
+39 F_SGN __exp_q
+40 F_ADD __exp_q
+41 F2I
+42 SET __exp_n
+43 I2F
+44 F_MLT 0.6931471806
+45 F_SU2 __exp_x
+46 SET __exp_r
+47 LOD 0.0013888889
+48 F_MLT __exp_r
+49 F_ADD 0.0083333333
+50 F_MLT __exp_r
+51 F_ADD 0.0416666667
+52 F_MLT __exp_r
+53 F_ADD 0.1666666667
+54 F_MLT __exp_r
+55 F_ADD 0.5
+56 F_MLT __exp_r
+57 F_ADD 1.0
+58 F_MLT __exp_r
+59 F_ADD 1.0
+60 F_SCL __exp_n
+61 RET
+62 SET __log_x
+63 F_LES 0.0
+64 JIZ __L_log_zero
+65 LOD __log_x
+66 XPO
+67 SET __log_e
+68 NEG
+69 SET __log_ne
+70 LOD __log_x
+71 F_SCL __log_ne
+72 SET __log_m
+73 F_ADD 1.0
+74 SET __log_t2
+75 LOD __log_m
+76 F_SU1 1.0
+77 SET __log_t1
+78 LOD __log_t2
+79 F_DIV __log_t1
+80 NOP
+81 NOP
+82 F_QUO
+83 SET __log_u
+84 F_MLT __log_u
+85 SET __log_w
+86 LOD 0.1111111111
+87 F_MLT __log_w
+88 F_ADD 0.1428571429
+89 F_MLT __log_w
+90 F_ADD 0.2
+91 F_MLT __log_w
+92 F_ADD 0.3333333333
+93 F_MLT __log_w
+94 F_ADD 1.0
+95 F_MLT __log_u
+96 F_MLT 2.0
+97 SET __log_lm
+98 LOD __log_e
+99 I2F
+100 F_MLT 0.6931471806
+101 F_ADD __log_lm
+102 RET
+103 LOD 0.0
+104 RET

@@ -1,0 +1,200 @@
+## messages
+Info: 127 assembly instructions generated
+Info: 35 variables written and never read removed (45 instructions)
+Info: 1 instructions computing an argument never read removed
+Info: 6 variables share 4 data words (2 saved)
+Heads up: global variable 'v1' is never read, so it's out of the program and the waveform (#WAVE v1 keeps it).
+Heads up: global variable 'v2' is never read, so it's out of the program and the waveform (#WAVE v2 keeps it).
+Heads up: global variable 'v3' is never read, so it's out of the program and the waveform (#WAVE v3 keeps it).
+Heads up: global variable 'v4' is never read, so it's out of the program and the waveform (#WAVE v4 keeps it).
+Heads up: global variable 'v5' is never read, so it's out of the program and the waveform (#WAVE v5 keeps it).
+Heads up: global variable 'v6' is never read, so it's out of the program and the waveform (#WAVE v6 keeps it).
+Heads up: global variable 'v7' is never read, so it's out of the program and the waveform (#WAVE v7 keeps it).
+Heads up: global variable 'v8' is never read, so it's out of the program and the waveform (#WAVE v8 keeps it).
+Heads up: global variable 'v9' is never read, so it's out of the program and the waveform (#WAVE v9 keeps it).
+Heads up: global variable 'v10' is never read, so it's out of the program and the waveform (#WAVE v10 keeps it).
+Heads up: global variable 'v11' is never read, so it's out of the program and the waveform (#WAVE v11 keeps it).
+Heads up: global variable 'v12' is never read, so it's out of the program and the waveform (#WAVE v12 keeps it).
+Heads up: global variable 'v13' is never read, so it's out of the program and the waveform (#WAVE v13 keeps it).
+Heads up: global variable 'v14' is never read, so it's out of the program and the waveform (#WAVE v14 keeps it).
+Heads up: global variable 'v15' is never read, so it's out of the program and the waveform (#WAVE v15 keeps it).
+Heads up: global variable 'v16' is never read, so it's out of the program and the waveform (#WAVE v16 keeps it).
+Heads up: global variable 'v17' is never read, so it's out of the program and the waveform (#WAVE v17 keeps it).
+Heads up: global variable 'v18' is never read, so it's out of the program and the waveform (#WAVE v18 keeps it).
+Heads up: global variable 'v19' is never read, so it's out of the program and the waveform (#WAVE v19 keeps it).
+Heads up: global variable 'v20' is never read, so it's out of the program and the waveform (#WAVE v20 keeps it).
+Heads up: global variable 'v21' is never read, so it's out of the program and the waveform (#WAVE v21 keeps it).
+Heads up: global variable 'v22' is never read, so it's out of the program and the waveform (#WAVE v22 keeps it).
+Heads up: global variable 'v23' is never read, so it's out of the program and the waveform (#WAVE v23 keeps it).
+Heads up: global variable 'v24' is never read, so it's out of the program and the waveform (#WAVE v24 keeps it).
+Heads up: global variable 'v25' is never read, so it's out of the program and the waveform (#WAVE v25 keeps it).
+Heads up: global variable 'v26' is never read, so it's out of the program and the waveform (#WAVE v26 keeps it).
+Heads up: global variable 'v27' is never read, so it's out of the program and the waveform (#WAVE v27 keeps it).
+Heads up: global variable 'v28' is never read, so it's out of the program and the waveform (#WAVE v28 keeps it).
+Heads up: global variable 'v29' is never read, so it's out of the program and the waveform (#WAVE v29 keeps it).
+Heads up: global variable 'v30' is never read, so it's out of the program and the waveform (#WAVE v30 keeps it).
+Heads up: global variable 'v31' is never read, so it's out of the program and the waveform (#WAVE v31 keeps it).
+Heads up: global variable 'v32' is never read, so it's out of the program and the waveform (#WAVE v32 keeps it).
+Heads up: variable 'a' in function 'g' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Heads up: variable 'b' in function 'g' is never read, so it's out of the program and the waveform (#WAVE b, in the function, keeps it).
+Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 82 instructions and 12 variables were found
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> integer adder
+Info: adding data output handling
+Info: ULA resource -> integer negative operation
+Info: adding stack memory for function calls
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 11% of the Assembly Instruction Set
+Info: using 8% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+global v0 1
+global v1 1
+global v2 1
+global v3 1
+global v4 1
+global v5 1
+global v6 1
+global v7 1
+global v8 1
+global v9 1
+global v10 1
+global v11 1
+global v12 1
+global v13 1
+global v14 1
+global v15 1
+global v16 1
+global v17 1
+global v18 1
+global v19 1
+global v20 1
+global v21 1
+global v22 1
+global v23 1
+global v24 1
+global v25 1
+global v26 1
+global v27 1
+global v28 1
+global v29 1
+global v30 1
+global v31 1
+global v32 1
+global v33 1
+g a 1
+g b 1
+main x 1
+main y 1
+main k 1
+main j 1
+main r 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// -2: void main();
+1 JMP main
+// 31: int g(int a, int b)
+2 POP
+// 33: return a * 2;
+3 MLT 2
+4 RET
+// 39: x = 6; y = 4; k = 3; j = 2;
+5 LOD 6
+6 SET main_x
+7 LOD 4
+8 SET main_y
+9 LOD 3
+10 SET main_k
+11 LOD 2
+12 SET main_j
+// 40: r = x*y + (k + j);  out(0, r);
+13 LOD main_x
+14 MLT main_y
+15 ADD main_k
+16 ADD main_j
+17 OUT 0
+// 41: r = x*y + (k - j);  out(0, r);
+18 LOD main_x
+19 MLT main_y
+20 ADD main_k
+21 P_NEG_M main_j
+22 S_ADD
+23 OUT 0
+// 42: r = x*y - (k + j);  out(0, r);
+24 LOD main_x
+25 MLT main_y
+26 P_NEG_M main_k
+27 S_ADD
+28 P_NEG_M main_j
+29 S_ADD
+30 OUT 0
+// 43: r = x*y - (k - j);  out(0, r);
+31 LOD main_x
+32 MLT main_y
+33 P_NEG_M main_k
+34 S_ADD
+35 ADD main_j
+36 OUT 0
+// 44: r = x*y - (k - 1);  out(0, r);
+37 LOD main_x
+38 MLT main_y
+39 P_NEG_M main_k
+40 S_ADD
+41 ADD 1
+42 OUT 0
+// 45: r = x*y + (j - 7);  out(0, r);
+43 LOD main_x
+44 MLT main_y
+45 ADD main_j
+46 ADD -7
+47 OUT 0
+// 46: r = (k - 1) + x*y;  out(0, r);
+48 LOD main_x
+49 MLT main_y
+50 ADD main_k
+51 ADD -1
+52 OUT 0
+// 47: r = (k + j) - x*y;  out(0, r);
+53 LOD main_x
+54 MLT main_y
+55 NEG
+56 ADD main_k
+57 ADD main_j
+58 OUT 0
+// 48: r = x - (y + 1);    out(0, r);
+59 NEG_M main_y
+60 ADD main_x
+61 ADD -1
+62 OUT 0
+// 49: r = k - (j - 4);    out(0, r);
+63 NEG_M main_j
+64 ADD main_k
+65 ADD 4
+66 OUT 0
+// 50: out(0, g(x + 1, y * 3));
+67 LOD main_x
+68 ADD 1
+69 P_LOD main_y
+70 CAL g
+71 OUT 0
+// 51: v0 = 9;
+72 LOD 9
+73 SET v0
+// 83: v32 = 9;
+74 LOD 9
+// 84: v33 = 9;
+75 SET v33
+// 85: out(0, v0 + v33);
+76 LOD v0
+77 ADD v33
+78 OUT 0
+// 86: r = 9;
+79 LOD 9
+// 87: out(0, r);
+80 OUT 0
+// -3: END
+81 JMP fim
