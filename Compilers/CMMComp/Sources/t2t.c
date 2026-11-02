@@ -3,9 +3,7 @@
 // ----------------------------------------------------------------------------
 
 // global includes
-#include   <math.h>
 #include <stdlib.h>
-#include <string.h>
 
 // local includes
 #include "../Headers/global.h"
@@ -16,25 +14,15 @@
 // data conversion ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// converts the integer x to a binary string of length w
-// could be revised to support ints wider than 32 bits
+// converts the integer x to a binary string of its w low bits (w <= 31: the
+// line numbers of pc_<name>_mem.txt, 20 bits, are its only use)
 char *itob(int x, int w)
 {
-	int z;
     char *b = (char *) malloc(w+1);
-    b[0] = '\0';
-
-	int s = (w > 31) ? 31 : w;
-	if (w > 31)
-    {
-        for (z = 0; z < w- 31; z++)
-            if (x < 0) strcat(b,"1");
-            else       strcat(b,"0");
-    }
-
-    for (z = pow(2,s-1); z > 0; z >>= 1)
-		strcat(b, ((x & z) == z) ? "1" : "0");
-
+    int n = 0;
+    for (int z = 1 << (w - 1); z > 0; z >>= 1)
+        b[n++] = ((x & z) == z) ? '1' : '0';
+    b[n] = '\0';
     return b;
 }
 
