@@ -43,16 +43,23 @@ char *xstrdup(const char *s)
     return d;
 }
 
+char *xvasprintf(const char *fmt, va_list ap)
+{
+    va_list aq;
+    va_copy(aq, ap);
+    int n = vsnprintf(NULL, 0, fmt, aq);             // how long the text is
+    va_end(aq);
+    if (n < 0) out_of_memory();                      // only an encoding error gets here
+    char *s = xrealloc(NULL, (size_t)n + 1);
+    vsnprintf(s, (size_t)n + 1, fmt, ap);
+    return s;
+}
+
 char *xasprintf(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    int n = vsnprintf(NULL, 0, fmt, ap);             // how long the text is
-    va_end(ap);
-    if (n < 0) out_of_memory();                      // only an encoding error gets here
-    char *s = xrealloc(NULL, (size_t)n + 1);
-    va_start(ap, fmt);
-    vsnprintf(s, (size_t)n + 1, fmt, ap);
+    char *s = xvasprintf(fmt, ap);
     va_end(ap);
     return s;
 }
