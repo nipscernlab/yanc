@@ -7,7 +7,7 @@
 // One row of the symbol table.
 typedef struct symbol {
     char name[512];   // name of the variable or function
-    int  type;        // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 5 -> const comp
+    int  type;        // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 4 -> a comp's imaginary part, 5 -> const comp, 6-9 -> function returning void, int, float, comp
     int  used;        // whether the ID has already been used
     int  npar;        // if the ID is a function, how many parameters it has
     int *ptyp;        // and the type of each one (1, 2 or 3), npar entries

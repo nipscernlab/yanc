@@ -159,7 +159,6 @@ void if_exp(expr_node *cond)
 stmt_node *if_stmt()
 {
     stmt_node *then_body = stmt_list_close();
-    pop_if();
     stmt_node *partial   = pending_pop();
     partial->then_body   = then_body;
     return partial;
@@ -177,7 +176,6 @@ void else_stmt()
 stmt_node *if_fim()
 {
     stmt_node *else_body = stmt_list_close();
-    pop_if();
     stmt_node *partial   = pending_pop();
     partial->else_body   = else_body;
     return partial;
@@ -210,7 +208,6 @@ stmt_node *while_stmt()
     stmt_node *body    = stmt_list_close();
     cont_pop();
     brk_pop();
-    pop_while();
     stmt_node *partial = pending_pop();
     partial->body      = body;
     return partial;
@@ -263,14 +260,12 @@ stmt_node *for_finish()
     stmt_node *body    = stmt_list_close();
     cont_pop();
     brk_pop();
-    pop_while();
     stmt_node *partial = pending_pop();
 
-    stmt_node *init = partial->then_body;
     // then_body keeps a REFERENCE to the init (the parent list emits it, the
     // STMT_WHILE walker never does): with `for (k = c0; k < c1; ...)` it lets
     // the walker see that the entry test holds and drop it (for_bottom_test)
-    partial->then_body = init;
+    stmt_node *init = partial->then_body;
     // The step stays on partial->else_body; the STMT_WHILE walker emits it after
     // the body (where `continue` lands), so the step always runs.
     partial->body = body;
@@ -308,7 +303,6 @@ stmt_node *do_finish(expr_node *cond)
     stmt_node *body    = stmt_list_close();
     cont_pop();
     brk_pop();
-    pop_while();
     stmt_node *partial = pending_pop();
     partial->cond = cond;
     partial->body = body;
@@ -348,7 +342,7 @@ void exec_switch(expr_node *cond)
 {
     // Pre-declare the implicit switch_exp variable so case_test (at parse
     // time) can record its case_idx referencing it; the walker fills in
-    // v_type at emit time once it knows the cond's evaluated type. The variable
+    // its type at emit time once it knows the cond's evaluated type. The variable
     // is shared across all switches, including nested ones, and stays correct:
     // the walker emits all of a switch's compares in a dispatch block before any
     // case body runs, so an inner switch (inside a body) reusing switch_exp can

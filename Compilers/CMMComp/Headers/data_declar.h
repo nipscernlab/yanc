@@ -4,7 +4,7 @@
 
 #include "ast.h"   // expr / expr_node / stmt_node
 
-extern int type_tmp; // captures the type when a variable is declared (see c2asm.l)
+extern int type_tmp; // captures the type when a variable is declared (see CMMComp.l)
 
 // ----------------------------------------------------------------------------
 // standard declarations ------------------------------------------------------

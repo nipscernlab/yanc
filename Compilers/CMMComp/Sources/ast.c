@@ -287,106 +287,12 @@ void expr_free(expr_node *n)
 }
 
 // ----------------------------------------------------------------------------
-// debugging dump -------------------------------------------------------------
-// ----------------------------------------------------------------------------
-
-static const char *kind_name(expr_kind k)
-{
-    switch (k) {
-        case EXPR_LITERAL:     return "LITERAL";
-        case EXPR_VAR:         return "VAR";
-        case EXPR_BINOP:       return "BINOP";
-        case EXPR_UNOP:        return "UNOP";
-        case EXPR_ARRAY_INDEX: return "ARRAY_INDEX";
-        case EXPR_PPLUS:       return "PPLUS";
-        case EXPR_STDLIB_CALL: return "STDLIB_CALL";
-        case EXPR_FUNC_CALL:   return "FUNC_CALL";
-        case EXPR_DIRAC_REF:   return "DIRAC_REF";
-        case EXPR_DIRAC_PROD:  return "DIRAC_PROD";
-        case EXPR_DIRAC_CONST: return "DIRAC_CONST";
-        case EXPR_DIRAC_IN:    return "DIRAC_IN";
-        case EXPR_DIRAC_ELEM:  return "DIRAC_ELEM";
-        case EXPR_DIRAC_SUM:   return "DIRAC_SUM";
-    }
-    return "?";
-}
-
-static const char *type_name(int t)
-{
-    switch (t) {
-        case 0: return "void";
-        case 1: return "int";
-        case 2: return "float";
-        case 3: return "comp";
-        case 4: return "comp_im";
-        case 5: return "comp_const";
-    }
-    return "?";
-}
-
-static void expr_dump_at(expr_node *n, int depth)
-{
-    if (!n) return;
-    for (int i = 0; i < depth; i++) fputs("  ", stderr);
-    fprintf(stderr, "%s type=%s line=%d", kind_name(n->kind), type_name(n->type), n->line);
-    switch (n->kind) {
-        case EXPR_LITERAL:
-        case EXPR_VAR:
-            fprintf(stderr, " id=%d (%s)", n->id, n->id ? v_table[n->id].name : "<acc>");
-            break;
-        case EXPR_BINOP:
-        case EXPR_UNOP:
-            fprintf(stderr, " op=%d", n->op);
-            break;
-        case EXPR_ARRAY_INDEX:
-            fprintf(stderr, " id=%d (%s) reversed=%d", n->id, v_table[n->id].name, n->op);
-            break;
-        case EXPR_PPLUS:
-            fprintf(stderr, " id=%d (%s)", n->id, v_table[n->id].name);
-            break;
-        case EXPR_STDLIB_CALL:
-            fprintf(stderr, " op=%d port=%d", n->op, n->id);
-            break;
-        case EXPR_FUNC_CALL:
-            fprintf(stderr, " id=%d (%s) n_args=%d", n->id, v_table[n->id].name, n->n_args);
-            break;
-        case EXPR_DIRAC_REF:
-            fprintf(stderr, " id=%d (%s) role=%d", n->id, v_table[n->id].name, n->op);
-            break;
-        case EXPR_DIRAC_PROD:
-            /* left/right get printed by the recursive walk */
-            break;
-        case EXPR_DIRAC_CONST:
-            fprintf(stderr, " %s", n->op == DIRAC_EYE ? "|I|" : "|0>");
-            break;
-        case EXPR_DIRAC_IN:
-            fprintf(stderr, " port=%d", n->id);
-            break;
-        case EXPR_DIRAC_ELEM:
-        case EXPR_DIRAC_SUM:
-            fprintf(stderr, " (dirac.c)");
-            break;
-    }
-    if (n->rows) fprintf(stderr, " shape=%dx%d", n->rows, n->cols);
-    fputc('\n', stderr);
-    expr_dump_at(n->left,  depth + 1);
-    expr_dump_at(n->right, depth + 1);
-    for (int i = 0; i < n->n_args; i++) expr_dump_at(n->args[i], depth + 1);
-}
-
-void expr_dump(expr_node *n)
-{
-    expr_dump_at(n, 0);
-}
-
-// ----------------------------------------------------------------------------
 // expression tree walker (codegen) -------------------------------------------
 // ----------------------------------------------------------------------------
 // Single entry point for expression codegen. Dispatches on n->kind, recurses
 // into children, and calls the existing oper_*/exec_*/arr_*/pplus_*/num2exp/
-// id2exp/par_check helpers in left-to-right post-order. The traversal order
-// matches what the parser used to reduce, so the emit stream is byte-identical
-// to the previous inline-emit compiler.
+// id2exp/par_check helpers in left-to-right post-order, the order the parser
+// reduces, except where reordering saves instructions (see the binop case).
 //
 // Result POD carries the freshly-emitted value's location: id == 0 means
 // "in the accumulator", id > 0 means "in v_table[id].name".

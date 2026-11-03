@@ -84,12 +84,6 @@
 int   yylex  (void);
 void  yyerror(char const *s);
 
-// Walker invocation shorthand. Producer rules just build the expression tree
-// (no inline emit); every statement-level consumer of an `exp` value triggers
-// codegen for that subtree by calling EE($N), which runs the walker and
-// returns the result POD (type/id/node).
-#define EE(NODE) ast_emit_expr(NODE)
-
 %}
 
 // Bison emits the YYSTYPE union into y.tab.h as well, so types referenced
@@ -158,8 +152,8 @@ void  yyerror(char const *s);
 %type <ival> func_intro unum asize
 
 // expressions ride the bison stack as expr_node *. Each producer builds the
-// subtree it just parsed; codegen happens when a statement-level consumer
-// hits EE($N), which runs ast_emit_expr() over the subtree.
+// subtree it just parsed; the statement that holds it keeps the tree, and the
+// walker emits it after the parse (stmt_emit -> ast_emit_expr).
 %type <eval> func_call
 %type <eval> std_in std_fin std_cade std_fcade
 %type <eval> std_pst std_abs std_sign std_nrm
@@ -547,9 +541,8 @@ dchain   : DBAR ID                            {$$ = dirac_open(0, $2);}
          | dchain DBAR ID                     {$$ = dirac_push($1, $3);}
 
 // terminals used in reductions for expressions -------------------------------
-// Pure tree-construction: no emit, no walker call. The expression's emit
-// runs in one batch when a statement-level consumer calls EE($N), which
-// invokes the walker on the root and emits the entire subtree.
+// Pure tree-construction: no emit, no walker call. The expression is emitted
+// with its statement when the walker reaches it after the parse.
 
          // constants
 terminal : INUM                               {$$ = expr_lit(1, inum_word($1));}

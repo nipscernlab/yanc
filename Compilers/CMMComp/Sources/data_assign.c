@@ -2,11 +2,6 @@
 // assignment instruction implementation --------------------------------------
 // ----------------------------------------------------------------------------
 
-/*
-TODO:
-1- revisit the ++ increment operators
-2- AST will save a lot of code with comp
-*/
 
 // global includes
 #include <string.h>

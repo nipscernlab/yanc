@@ -14,7 +14,6 @@ extern FILE *f_log;              // log file with project information
 extern FILE *f_lin;              // memory in pc.v that shows the instructions in gtkwave
 
 extern char dir_macro[1024];     // Macros directory
-extern char dir_soft [1024];     // Software directory
 extern char dir_tmp  [1024];     // Temp directory
 
 // ----------------------------------------------------------------------------

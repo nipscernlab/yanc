@@ -673,12 +673,6 @@ expr oper_subt(expr e1, expr e2)
         add_instr("SF_SU1\n");
     }
 
-    // int var with comp const (probably never happens, but just in case...)
-    if ((e1.type==1) && (e1.id!=0) && (e2.type==5))
-    {
-        return oper_soma(e1, oper_neg(e2));
-    }
-
     // int var with comp var
     if ((e1.type==1) && (e1.id!=0) && (e2.type==3) && (e2.id!=0))
     {
@@ -723,12 +717,6 @@ expr oper_subt(expr e1, expr e2)
         add_instr("SET_P __aux_var\n");
         add_instr("I2F\n");
         add_instr("F_SU1 __aux_var\n");
-    }
-
-    // int acc with comp const
-    if ((e1.type==1) && (e1.id==0) && (e2.type==5))
-    {
-        return oper_soma(e1, oper_neg(e2));
     }
 
     // int acc with comp var
@@ -778,12 +766,6 @@ expr oper_subt(expr e1, expr e2)
         add_instr("F_SU2 %s\n", v_table[e1.id].name);
     }
 
-    // float var with comp const (no negative comp const)
-    if ((e1.type==2) && (e1.id!=0) && (e2.type==5))
-    {
-        return oper_soma(e1, oper_neg(e2));
-    }
-
     // float var with comp var
     if ((e1.type==2) && (e1.id!=0) && (e2.type==3) && (e2.id!=0))
     {
@@ -826,12 +808,6 @@ expr oper_subt(expr e1, expr e2)
     if ((e1.type==2) && (e1.id==0) && (e2.type==2) && (e2.id==0))
     {
         add_instr("SF_SU2\n");
-    }
-
-    // float acc with comp const (does not happen)
-    if ((e1.type==2) && (e1.id==0) && (e2.type==5))
-    {
-        return oper_soma(e1, oper_neg(e2));
     }
 
     // float acc with comp var
@@ -888,12 +864,6 @@ expr oper_subt(expr e1, expr e2)
 
         add_instr("F_SU2 %s\n", v_table[etr.id].name);
         add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // comp const with comp const (no comp const subtraction)
-    if ((e1.type==5) && (e2.type==5))
-    {
-        return oper_soma(e1, oper_neg(e2));
     }
 
     // comp const with comp var
@@ -963,12 +933,6 @@ expr oper_subt(expr e1, expr e2)
         add_instr("P_LOD %s\n", v_table[eti.id].name);
     }
 
-    // comp var with comp const (no comp const subtraction)
-    if ((e1.type==3) && (e1.id!=0) && (e2.type==5))
-    {
-        return oper_soma(e1, oper_neg(e2));
-    }
-
     // comp var with comp var: the walker computes it part by part (ast.c,
     // comp_partwise), so it does not reach here
 
@@ -1018,12 +982,6 @@ expr oper_subt(expr e1, expr e2)
         add_instr("SET_P __aux_var1\n");
         add_instr("F_SU1 __aux_var\n" );
         add_instr("P_LOD __aux_var1\n");
-    }
-
-    // comp acc with comp const (no comp const subtraction)
-    if ((e1.type==3) && (e1.id==0) && (e2.type==5))
-    {
-        return oper_soma(e1, oper_neg(e2));
     }
 
     // comp acc with comp var

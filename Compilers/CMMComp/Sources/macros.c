@@ -2,11 +2,6 @@
 // functions and variables used to create and use macros ----------------------
 // ----------------------------------------------------------------------------
 
-/*
-TODO:
-1- implement more non-linear functions
-2- check Tiago Falcao's thesis for which method is best in each case
-*/
 
 // global includes
 #include <math.h>
@@ -76,7 +71,7 @@ void mac_copy(char *fasm)
 
     // copy what is needed at the end of the asm ------------------------------
 
-    char tasm[2048]; snprintf(tasm, sizeof(tasm), "%s/%s", dir_tmp, "tasm.txt");
+    char tasm[2048];                 // the path of each macro file, in turn
 
     if (fsqrt)
     {
@@ -120,60 +115,3 @@ void mac_copy(char *fasm)
         fcat2end(tasm,fasm);
     }
 }
-
-// ----------------------------------------------------------------------------
-// backup of the c+- code for the predefined macros ---------------------------
-// ----------------------------------------------------------------------------
-
-// arctangent for float (float_atan.asm)
-/*float float_atan(float x)
-{
-    float ax = abs(x);
-
-    if (ax == 0.0) return 0.0;
-    if (ax > 1.02) return sign(x, 1.5707963268) - my_atan(1.0/x);
-    if (ax > 0.98)
-    {
-        float xm1 = ax-1;
-        return sign(x, 0.7853981634 + xm1*0.5 - xm1*xm1*0.25);
-    }
-
-    float termo      = x;
-    float x2         = x*x;
-    float resultado  = termo;
-    float tolerancia = 0.000008/x2;
-
-    int indiceX = 3;
-
-    while ((abs(termo) > tolerancia) && (indiceX < 100)) {
-        termo = termo * (- x2 * (indiceX - 2)) / indiceX;
-
-        resultado = resultado + termo;
-        indiceX = indiceX + 2;
-    }
-
-    return resultado;
-}*/
-
-// sine for float (float_sin.asm)
-/*float sin(float x)
-{
-    if (x == 0) return 0.0;
-
-    while (abs(x) > 3.141592654) x = x - sign(x, 6.283185307);
-
-    float termo      = x;
-    float x2         = x * x;
-    float resultado  = termo;
-    float tolerancia = 0.000008/x2;
-
-    int indiceX = 3;
-
-    while (abs(termo) > tolerancia) {
-        termo = termo * (- x2) / ((indiceX - 1) * indiceX);
-        resultado = resultado + termo;
-        indiceX = indiceX + 2;
-    }
-
-    return resultado;
-}*/

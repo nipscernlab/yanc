@@ -328,7 +328,7 @@ void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
     if (strcmp(v_table[id2].name, "main") == 0) mainok = 1; // the reset reaches main: it must exist
 
     strcpy(fname, v_table[id2].name); // set the fname state to the function being analyzed
-    v_table[id2].type = id1+6       ; // v_type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
+    v_table[id2].type = id1+6       ; // type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
     fun_parse    = id2; // set the fun_parse state to the function's name id
     ret_ok       = 0;   // set ret_ok to zero (function parsing starts)
     func_nparams = 0;   // reset param collection for the new function
@@ -364,10 +364,6 @@ void declar_ret(expr e, int ret)
     // check whether it really is a function, or void by mistake
     if (v_table[fun_parse].type == 6)
         {fprintf (stderr, MSG_ERR_VOID_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
-
-    // test whether it is inside an if/else
-    //if ((get_if() > 0) && (v_table[fun_parse].type != 6))
-        //fprintf(stdout, "Heads up on line %d: using return inside if/else can break if you forget it somewhere!\n", line_num+1);
 
     // ------------------------------------------------------------------------
     // check every combination ------------------------------------------------
@@ -625,7 +621,7 @@ void void_ret()
 
 // Each arg's exp_list reduce just records the arg's tree node on the current
 // call's frame. The emit (subtree + par_check stage + CAL) happens later when
-// the walker reaches the EXPR_FUNC_CALL node at consumer-EE / vcall time.
+// the walker reaches the EXPR_FUNC_CALL node (or the void call's statement).
 void par_exp(expr_node *n)
 {
     args_push(n);
@@ -667,7 +663,7 @@ stmt_node *vcall(int id)
 
 // value-returning call: pre-validates and packages the call as an
 // EXPR_FUNC_CALL node, hands the node up to whichever consumer reduces next.
-// No emit at parse time - the walker emits when the consumer calls EE($N).
+// No emit at parse time - the walker emits it with its statement.
 expr_node *fcall(int id)
 {
     if (v_table[id].type == 6)

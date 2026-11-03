@@ -2,10 +2,6 @@
 // routines for exp reduction -------------------------------------------------
 // ----------------------------------------------------------------------------
 
-/*
-TODO:
-1- revisit the ++ increment operators
-*/
 
 // global includes
 #include  <stdio.h>

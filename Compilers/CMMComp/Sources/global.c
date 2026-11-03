@@ -30,7 +30,6 @@ FILE *f_lin;          // line file for the cmm program
 
 char dir_macro[1024]; // Macros directory
 char dir_tmp  [1024]; // Temp directory
-char dir_soft [1024]; // output folder (the .asm)
 char cmm_src  [1024]; // the .cmm the parser reads (re-read for src_lines.txt)
 
 // state variables
@@ -205,7 +204,6 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
     if (yyin  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_src); exit(EXIT_FAILURE); }
 
     char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/%s.asm", d_proc, prname); // output .asm file name
-    snprintf(dir_soft, sizeof(dir_soft), "%s", d_proc);
     f_asm = fopen(asm_file, "w"); // create the .asm file
     if (f_asm == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, asm_file); exit(EXIT_FAILURE); }
 
