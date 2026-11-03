@@ -9,6 +9,7 @@
 #include "../Headers/args.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
+#include "../../common/xstr.h"
 #include "../../common/exe_dir.h"
 #include "../../common/proc_name.h"
 
@@ -80,8 +81,7 @@ void cli_parse(int argc, char **argv, cli_args *out)
     }
     if (!out->proc_dir && out->name)
     {
-        out->proc_dir = malloc(strlen(out->name) + 3);
-        if (out->proc_dir) sprintf(out->proc_dir, "./%s", out->name);
+        out->proc_dir = xasprintf("./%s", out->name);
     }
     if (out->proc_dir) {make_dir(out->proc_dir); out->temp_dir = out->proc_dir;}
 

@@ -18,6 +18,7 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -115,9 +116,9 @@ static ini_arr *ini_done;              // per array: the values of its #arrayd
 
 void ini_add(int id, int kind, int neg)
 {
-    if (ini_n == ini_cap) { ini_cap = ini_cap ? 2 * ini_cap : 64; ini_v = realloc(ini_v, ini_cap * sizeof(ini_val)); }
+    if (ini_n == ini_cap) { ini_cap = ini_cap ? 2 * ini_cap : 64; ini_v = xrealloc(ini_v, ini_cap * sizeof(ini_val)); }
     const char *t = v_table[id].name;
-    char *s = malloc(strlen(t) + 2);
+    char *s = xmalloc(strlen(t) + 2);
     sprintf(s, "%s%s", neg ? "-" : "", t);
     ini_v[ini_n].txt  = s;
     ini_v[ini_n].kind = kind;
@@ -161,21 +162,21 @@ static void ini_take(int id_var, int size, int siz2)
     }
 
     int n = maxpos + 1;
-    char **re = calloc(n + 1, sizeof(char *)), **im = calloc(n + 1, sizeof(char *));
+    char **re = xcalloc(n + 1, sizeof(char *)), **im = xcalloc(n + 1, sizeof(char *));
     size_t lr = 1, li = 1;
     for (int k = 0; k < ini_n; k++)
     {
         int pos = (ini_rows > 0) ? ini_v[k].row * siz2 + ini_v[k].col : k;
         char r[sizeof(v_table[0].name) + 2], i[sizeof(v_table[0].name) + 2];   // a literal and its sign
         ini_split(&ini_v[k], r, i);
-        re[pos] = strdup(r); im[pos] = strdup(i);
+        re[pos] = xstrdup(r); im[pos] = xstrdup(i);
     }
     const char *zero = (type == 1) ? "0" : "0.0";
     for (int p = 0; p < n; p++) { lr += strlen(re[p] ? re[p] : zero) + 1; li += strlen(im[p] ? im[p] : "0.0") + 1; }
 
-    ini_arr *a = calloc(1, sizeof(ini_arr));
+    ini_arr *a = xcalloc(1, sizeof(ini_arr));
     a->id = id_var; a->n = n;
-    a->re = malloc(lr); a->im = malloc(li); a->re[0] = a->im[0] = 0;
+    a->re = xmalloc(lr); a->im = xmalloc(li); a->re[0] = a->im[0] = 0;
     for (int p = 0; p < n; p++)
     {
         strcat(a->re, " "); strcat(a->re, re[p] ? re[p] : zero);

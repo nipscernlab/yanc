@@ -18,6 +18,7 @@
 #include "../Headers/data_declar.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -62,8 +63,7 @@ static void args_grow_stack(int needed)
     if (needed <= arg_stack_cap) return;
     int new_cap = arg_stack_cap ? arg_stack_cap * 2 : 8;
     while (new_cap < needed) new_cap *= 2;
-    expr_node **t = realloc(arg_stack, (size_t)new_cap * sizeof(*t));
-    if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
+    expr_node **t = xrealloc(arg_stack, (size_t)new_cap * sizeof(*t));
     arg_stack     = t;
     arg_stack_cap = new_cap;
 }
@@ -73,8 +73,7 @@ static void args_grow_marks(int needed)
     if (needed <= frame_marks_cap) return;
     int new_cap = frame_marks_cap ? frame_marks_cap * 2 : 8;
     while (new_cap < needed) new_cap *= 2;
-    int *t = realloc(frame_marks, (size_t)new_cap * sizeof(*t));
-    if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
+    int *t = xrealloc(frame_marks, (size_t)new_cap * sizeof(*t));
     frame_marks     = t;
     frame_marks_cap = new_cap;
 }
@@ -97,7 +96,7 @@ static expr_node **args_frame_pop(int *n_out)
 {
     int mark = frame_marks[--frame_marks_n];
     int n    = arg_stack_n - mark;
-    expr_node **out = (n > 0) ? malloc((size_t)n * sizeof(*out)) : NULL;
+    expr_node **out = (n > 0) ? xmalloc((size_t)n * sizeof(*out)) : NULL;
     if (n > 0) memcpy(out, arg_stack + mark, (size_t)n * sizeof(*out));
     arg_stack_n = mark;
     *n_out = n;
@@ -345,15 +344,13 @@ int declar_par(int type, int id)
 
     // store the data type of every parameter, in order
     symbol *f = &v_table[fun_parse];
-    f->ptyp = realloc(f->ptyp, (size_t)(f->npar+1) * sizeof(int));
-    if (!f->ptyp) fatal(MSG_ERR_OUT_OF_MEMORY);
+    f->ptyp = xrealloc(f->ptyp, (size_t)(f->npar+1) * sizeof(int));
     f->ptyp[f->npar++] = type;
 
     if (func_nparams == func_params_cap)
     {
         func_params_cap = func_params_cap ? func_params_cap*2 : 16;
-        func_params = realloc(func_params, (size_t)func_params_cap * sizeof(int));
-        if (!func_params) fatal(MSG_ERR_OUT_OF_MEMORY);
+        func_params = xrealloc(func_params, (size_t)func_params_cap * sizeof(int));
     }
     func_params[func_nparams++] = id;
 
@@ -573,8 +570,7 @@ void func_body_begin(void)
     int *params = NULL;
     if (func_nparams > 0)
     {
-        params = malloc(sizeof(int) * func_nparams);
-        if (!params) fatal(MSG_ERR_OUT_OF_MEMORY);
+        params = xmalloc(sizeof(int) * func_nparams);
         memcpy(params, func_params, sizeof(int) * func_nparams);
     }
     stmt_append(stmt_func_header(fun_parse, params, func_nparams));
@@ -706,9 +702,9 @@ void fun_call_edge(int caller, int callee, int line)
     if (ce_n == ce_cap)
     {
         ce_cap  = ce_cap ? 2 * ce_cap : 64;
-        ce_from = realloc(ce_from, ce_cap * sizeof(int));
-        ce_to   = realloc(ce_to  , ce_cap * sizeof(int));
-        ce_line = realloc(ce_line, ce_cap * sizeof(int));
+        ce_from = xrealloc(ce_from, ce_cap * sizeof(int));
+        ce_to   = xrealloc(ce_to  , ce_cap * sizeof(int));
+        ce_line = xrealloc(ce_line, ce_cap * sizeof(int));
     }
     ce_from[ce_n] = caller; ce_to[ce_n] = callee; ce_line[ce_n] = line; ce_n++;
 }
@@ -747,8 +743,8 @@ void check_rec(void)
         if (ce_from[k] > top) top = ce_from[k];
         if (ce_to[k]   > top) top = ce_to[k];
     }
-    char *state = calloc(top + 1, 1);
-    int  *path  = malloc((ce_n + 2) * sizeof(int));
+    char *state = xcalloc(top + 1, 1);
+    int  *path  = xmalloc((ce_n + 2) * sizeof(int));
     for (int k = 0; k < ce_n; k++)
         if (state[ce_from[k]] == 0) rec_dfs(ce_from[k], state, path, 0);
     free(state); free(path);

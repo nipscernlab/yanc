@@ -42,6 +42,7 @@
 #include "../Headers/messages.h"
 #include "../Headers/dirac.h"
 #include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // state ----------------------------------------------------------------------
@@ -119,24 +120,21 @@ static int next_cap(int cap, int need) {if (cap < 8) cap = 8; while (cap < need)
 
 static void *re(void *p, int cap, size_t sz)
 {
-    p = realloc(p, (size_t)cap * sz);
-    if (!p) fatal(MSG_ERR_OUT_OF_MEMORY);
+    p = xrealloc(p, (size_t)cap * sz);
     return p;
 }
 
 // a copy of sz bytes, to put a table back after a statement inside another
 static void *dup_mem(const void *p, size_t sz)
 {
-    void *q = malloc(sz ? sz : 1);
-    if (!q) fatal(MSG_ERR_OUT_OF_MEMORY);
+    void *q = xmalloc(sz ? sz : 1);
     if (sz) memcpy(q, p, sz);
     return q;
 }
 
 static expr_node *node_new(expr_kind k, int type)
 {
-    expr_node *n = calloc(1, sizeof(*n));
-    if (!n) fatal(MSG_ERR_OUT_OF_MEMORY);
+    expr_node *n = xcalloc(1, sizeof(*n));
     n->kind = k;
     n->line = cur_line;
     n->type = type;
@@ -189,7 +187,7 @@ static void ix_add(dl_ix *ix, dl_pos p, int stride)
 static expr_node *elem_new(int arr, int type, dl_ix ix)
 {
     expr_node *n = node_new(EXPR_DIRAC_ELEM, type);
-    dl_elem *e = calloc(1, sizeof *e);
+    dl_elem *e = xcalloc(1, sizeof *e);
     e->arr = arr; e->ix = ix;
     n->dl = e;
     n->id = arr;
@@ -276,7 +274,7 @@ static expr_node *scalar_of(expr_node *n)
         if (*hoist_pre[j] == n) return expr_var(conv ? 2 : n->type, hoist_pre_v[j] & ~(1 << 30));
     int t = conv ? 2 : n->type;
     int v = scalar_var(t);
-    expr_node **slot = malloc(sizeof *slot);
+    expr_node **slot = xmalloc(sizeof *slot);
     *slot = n;
     hoist_pre_add(slot, v | (conv << 30));
     return expr_var(t, v);
@@ -337,7 +335,7 @@ static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top)
             int lv = new_loop(k - 1, 1);
             dl_pos p = {lv, 0};
             expr_node *s = node_new(EXPR_DIRAC_SUM, 0);
-            dl_sum *d = calloc(1, sizeof *d);
+            dl_sum *d = xcalloc(1, sizeof *d);
             d->lv = lv; d->first = first; d->src = n;
             d->body = build_op(OP_MUL, L, r, p, R, p, c);
             typecheck_expr(d->first);
@@ -420,7 +418,7 @@ static void hoist_inv(expr_node **slot, int *path, int np)
         for (int i = np - 1; i >= 0; i--) if (dep_on(n, path[i])) {at = path[i]; break;}
         typecheck_expr(n);
         int v = scalar_var(n->type);
-        expr_node **keep = malloc(sizeof *keep);
+        expr_node **keep = xmalloc(sizeof *keep);
         *keep = n;
         if (at < 0) hoist_pre_add(keep, v);
         else {
@@ -713,9 +711,8 @@ static int tmp_block(int words, int line)
     if (tmp_at > tmp_max) tmp_max = tmp_at;
     if (n_tmp_lines == cap_tmp_lines) {
         cap_tmp_lines = cap_tmp_lines ? 2 * cap_tmp_lines : 16;
-        tmp_lines = realloc(tmp_lines, cap_tmp_lines * sizeof *tmp_lines);
-        tmp_words = realloc(tmp_words, cap_tmp_lines * sizeof *tmp_words);
-        if (!tmp_lines || !tmp_words) fatal(MSG_ERR_OUT_OF_MEMORY);
+        tmp_lines = xrealloc(tmp_lines, cap_tmp_lines * sizeof *tmp_lines);
+        tmp_words = xrealloc(tmp_words, cap_tmp_lines * sizeof *tmp_words);
     }
     tmp_lines[n_tmp_lines] = line; tmp_words[n_tmp_lines++] = words;
     return at;
@@ -822,7 +819,7 @@ static expr_node *build_target(expr_node *r, int rows, int cols, int flat, int *
         dl_dst td = {0, tmp_id, 0, off, ctx_type, p->cols > 1 && p->rows > 1 ? p->cols : 0};
         emit_statement(&copy, &td, p->rows, p->cols, line);
 
-        dl_tmpref *tr = calloc(1, sizeof *tr); tr->off = off;
+        dl_tmpref *tr = xcalloc(1, sizeof *tr); tr->off = off;
         p->kind = EXPR_DIRAC_REF;
         p->op   = (p->cols == 1) ? DIRAC_ROLE_KET : (p->rows == 1) ? DIRAC_ROLE_BRA : DIRAC_ROLE_MAT;
         p->id   = tmp_id;
@@ -1096,13 +1093,16 @@ void dirac_finish(const char *asm_file)
             done = 1;
         }
         size_t k = strlen(line), a = strlen(add);
-        if (len + k + a + 1 > cap) {cap = 2 * (len + k + a + 1); text = realloc(text, cap);}
+        if (len + k + a + 1 > cap) {cap = 2 * (len + k + a + 1); text = xrealloc(text, cap);}
         memcpy(text + len, line, k); len += k;
         memcpy(text + len, add, a);  len += a;
         text[len] = '\0';
     }
     fclose(f);
-    if ((f = fopen(asm_file, "w"))) {if (text) fputs(text, f); fclose(f);}
+    f = fopen(asm_file, "w");
+    if (!f) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
+    if (text) fputs(text, f);
+    fclose(f);
     free(text);
 
     warn(MSG_INFO_DIRAC_TEMP_TOTAL, tmp_max);

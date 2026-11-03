@@ -31,8 +31,8 @@ static void fcat2end(char *n_read, char *n_write)
     FILE *f_out = fopen(n_write, "a");
     if (f_out == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, n_write);
 
-    char a;
-    do {a = fgetc(f_in); if (a != EOF) fputc(a, f_out);} while (a != EOF);
+    int a;
+    while ((a = fgetc(f_in)) != EOF) fputc(a, f_out);
 
     fclose(f_in );
     fclose(f_out);

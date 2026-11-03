@@ -118,7 +118,9 @@ tags consumed by Aurora.
 - **cmmcomp stops on an error in one place** (step P4 of #93): `fatal()`
   (diag.c) prints the message on stderr and ends with `EXIT_FAILURE`; it
   replaces 210 hand-written `fprintf(stderr, ...); exit(EXIT_FAILURE)`
-  pairs. Every message keeps its text and its stream.
+  pairs. `warn()` prints the warnings and notes on stdout, in place of 254
+  `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
+  and its stream.
 - **A variable written and never read leaves the program**, in both
   compilers: its `SET`s, its data word and its waveform signal (`asm_unread`,
   issue #69). cmmcomp's warning says so and names `#WAVE`. 46 C± tests lost

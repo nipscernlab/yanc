@@ -73,7 +73,7 @@ CPPCOMP_C := main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c
 # ... and the Compilers/common .c each one links. Scripts/regress.sh and
 # Scripts/cmm_cov.sh build with their own flags but read these lists
 # (make -s print-CMMCOMP_C, ...): this is the only place they are written.
-CMMCOMP_COMMON := yanc_num.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
+CMMCOMP_COMMON := yanc_num.c xstr.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 ASMCOMP_COMMON := yanc_num.c xstr.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 CPPCOMP_COMMON := asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 # cmmcomp's headers declare every function another file uses (each .c includes
@@ -123,7 +123,7 @@ $(BIN):
 # --- cmmcomp (flex + bison) -------------------------------------------------
 $(BIN)/cmmcomp$(EXE): $(addprefix $(CMM)/,$(CMMCOMP_C)) \
                       $(CMM)/CMMComp.l $(CMM)/CMMComp.y \
-                      $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(CONSOLE) $(EXEDIR) \
+                      $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(COMMON)/xstr.c $(COMMON)/xstr.h $(CONSOLE) $(EXEDIR) \
                       $(wildcard Compilers/CMMComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(CMM) && $(BISON) -y -d CMMComp.y && $(FLEX) CMMComp.l
 	$(CC) $(CFLAGS) $(CMM_WARN) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(addprefix $(COMMON)/,$(CMMCOMP_COMMON)) $(UTF8) $(LDLIBS)

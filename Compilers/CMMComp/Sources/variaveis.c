@@ -19,6 +19,7 @@
 #include "../Headers/messages.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/diag.h"
+#include "../../common/xstr.h"
 #include "../../common/asm_share.h"
 #include "../../common/yanc_num.h"
 
@@ -43,8 +44,7 @@ static void var_grow(int needed)
     int new_cap = v_cap ? v_cap : 256;
     while (new_cap < needed) new_cap *= 2;
 
-    symbol *t = calloc((size_t)new_cap, sizeof(*t));
-    if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
+    symbol *t = xcalloc((size_t)new_cap, sizeof(*t));
     if (v_table) memcpy(t, v_table, (size_t)v_cap * sizeof(*t));
     v_table = t;
 

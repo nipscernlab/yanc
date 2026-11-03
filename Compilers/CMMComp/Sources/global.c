@@ -457,7 +457,9 @@ void add_instr(char *inst, ...)
     // table for the gtkwave assembly translator ------------------------------
 
     num_ins++;
-    fprintf(f_lin, "%s\n", itob(emit_line,20));
+    char *bits = itob(emit_line,20);
+    fprintf(f_lin, "%s\n", bits);
+    free(bits);
 
     // ------------------------------------------------------------------------
     // check whether the instruction needs a special macro --------------------
@@ -523,6 +525,8 @@ void add_sinst(int type, char *inst, ...)
     if (type != 0)
     {
         num_ins++;
-        fprintf(f_lin, "%s\n", itob(type,20));
+        char *bits = itob(type,20);
+        fprintf(f_lin, "%s\n", bits);
+        free(bits);
     }
 }

@@ -7,6 +7,7 @@
 #include "../Headers/data_declar.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +45,7 @@ static void def_add(const char *name, char *body) {
         g_def[i].body = NULL;
     }
     free(g_def[i].body);
-    g_def[i].body = strdup(body);
+    g_def[i].body = xstrdup(body);
     g_def[i].active = 0;
 }
 

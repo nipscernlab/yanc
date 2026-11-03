@@ -28,10 +28,6 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro de sintaxe na linha %d. Você é uma pessoa confusa!\n", \
       "Syntax error on line %d. You're a confused soul!\n")
 
-#define MSG_ERR_OUT_OF_MEMORY \
-    M("Erro: memória insuficiente pra alocar a tabela de símbolos!\n", \
-      "Error: out of memory while growing the symbol table!\n")
-
 #define MSG_ERR_NO_MAIN \
     M("Erro: cadê a função main()?\n", \
       "Error: yo, where's the main() function?\n")

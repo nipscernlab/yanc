@@ -26,6 +26,7 @@
 #include "../Headers/diag.h"
 #include "../Headers/t2t.h"      // get_cmp_cst for complex cond loads
 #include "../Headers/dirac.h"    // the Dirac notation in loops
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // expressions ----------------------------------------------------------------
@@ -45,8 +46,7 @@ expr expr_make(int type, int id)
 
 static expr_node *enode_new(expr_kind k)
 {
-    expr_node *n = calloc(1, sizeof(*n));
-    if (!n) fatal(MSG_ERR_OUT_OF_MEMORY);
+    expr_node *n = xcalloc(1, sizeof(*n));
     n->kind = k;
     n->line = line_num + 1;
     return n;
@@ -754,8 +754,7 @@ static int comp_partwise(const expr_node *n, int *leaves)
 
 static expr_node *part_node(const expr_node *from)
 {
-    expr_node *n = malloc(sizeof *n);
-    if (!n) fatal(MSG_ERR_OUT_OF_MEMORY);
+    expr_node *n = xmalloc(sizeof *n);
     *n = *from; n->emitted = 0; n->rows = 1; n->cols = 1;
     part_made[part_n++] = n;
     return n;
@@ -1329,8 +1328,7 @@ static expr ast_emit_expr_impl(expr_node *n)
 
 static stmt_node *snode_new(stmt_kind k)
 {
-    stmt_node *n = calloc(1, sizeof(*n));
-    if (!n) fatal(MSG_ERR_OUT_OF_MEMORY);
+    stmt_node *n = xcalloc(1, sizeof(*n));
     n->kind = k;
     n->line = line_num + 1;
     return n;
@@ -1450,8 +1448,7 @@ void stmt_block_push(stmt_node *blk, stmt_node *kid)
     if (blk->kids_n + 1 > blk->kids_cap)
     {
         int new_cap = blk->kids_cap ? blk->kids_cap * 2 : 8;
-        stmt_node **t = realloc(blk->kids, (size_t)new_cap * sizeof(*t));
-        if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
+        stmt_node **t = xrealloc(blk->kids, (size_t)new_cap * sizeof(*t));
         blk->kids     = t;
         blk->kids_cap = new_cap;
     }
@@ -1467,8 +1464,7 @@ void stmt_list_open(void)
     if (stmt_list_stack_n + 1 > stmt_list_stack_cap)
     {
         int new_cap = stmt_list_stack_cap ? stmt_list_stack_cap * 2 : 8;
-        stmt_node **t = realloc(stmt_list_stack, (size_t)new_cap * sizeof(*t));
-        if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
+        stmt_node **t = xrealloc(stmt_list_stack, (size_t)new_cap * sizeof(*t));
         stmt_list_stack     = t;
         stmt_list_stack_cap = new_cap;
     }

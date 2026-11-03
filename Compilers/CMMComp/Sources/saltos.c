@@ -18,6 +18,7 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 // Monotonic switch id: a unique label namespace per switch (sw_case_<id>_* /
 // switch_end_<id>). Per-switch state -- the running case count -- lives on the
@@ -38,8 +39,7 @@ static void pending_push(stmt_node *n)
     if (pending_stack_n + 1 > pending_stack_cap)
     {
         int new_cap = pending_stack_cap ? pending_stack_cap * 2 : 8;
-        stmt_node **t = realloc(pending_stack, (size_t)new_cap * sizeof(*t));
-        if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
+        stmt_node **t = xrealloc(pending_stack, (size_t)new_cap * sizeof(*t));
         pending_stack     = t;
         pending_stack_cap = new_cap;
     }
@@ -72,8 +72,7 @@ static void brk_push(int is_switch, int id)
     if (brk_n + 1 > brk_cap)
     {
         int new_cap = brk_cap ? brk_cap * 2 : 8;
-        brk_target *t = realloc(brk_stk, (size_t)new_cap * sizeof(*t));
-        if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
+        brk_target *t = xrealloc(brk_stk, (size_t)new_cap * sizeof(*t));
         brk_stk  = t;
         brk_cap  = new_cap;
     }
@@ -106,8 +105,7 @@ static void cont_push(stmt_node *node, int cont_lbl)
     if (cont_n + 1 > cont_cap)
     {
         int new_cap = cont_cap ? cont_cap * 2 : 8;
-        cont_target *t = realloc(cont_stk, (size_t)new_cap * sizeof(*t));
-        if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
+        cont_target *t = xrealloc(cont_stk, (size_t)new_cap * sizeof(*t));
         cont_stk = t;
         cont_cap = new_cap;
     }
@@ -135,8 +133,7 @@ static void sw_push(stmt_node *n)
     if (sw_n + 1 > sw_cap)
     {
         int new_cap = sw_cap ? sw_cap * 2 : 8;
-        stmt_node **t = realloc(sw_stk, (size_t)new_cap * sizeof(*t));
-        if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
+        stmt_node **t = xrealloc(sw_stk, (size_t)new_cap * sizeof(*t));
         sw_stk  = t;
         sw_cap  = new_cap;
     }

@@ -12,7 +12,6 @@ value. What the common ones mean and how to get past them is in
 ### Errors
 
 - Syntax error on line <n>. You're a confused soul!
-- Error: out of memory while growing the symbol table!
 - Error: yo, where's the main() function?
 - Error: couldn't open the file '<name>' for the life of me!!
 - Error on line <n>: the symbol 'i' is reserved for the imaginary part of a complex constant. Hands off!

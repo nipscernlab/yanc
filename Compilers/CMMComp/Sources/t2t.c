@@ -10,6 +10,7 @@
 #include "../Headers/global.h"
 #include "../Headers/data_use.h"
 #include "../Headers/variaveis.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // data conversion ------------------------------------------------------------
@@ -19,7 +20,7 @@
 // line numbers of pc_<name>_mem.txt, 20 bits, are its only use)
 char *itob(int x, int w)
 {
-    char *b = (char *) malloc(w+1);
+    char *b = (char *) xmalloc(w+1);
     int n = 0;
     for (int z = 1 << (w - 1); z > 0; z >>= 1)
         b[n++] = ((x & z) == z) ? '1' : '0';
