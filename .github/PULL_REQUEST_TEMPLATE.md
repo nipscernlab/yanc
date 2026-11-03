@@ -5,7 +5,9 @@ Thanks for the PR! A few quick reminders:
   MSG_* convention.
 - CI builds the tools, runs the pipeline (cmmcomp -> asmcomp) on every
   C± test, the README quick start and the manual. It does not compare
-  goldens: run Scripts/regress.sh before requesting review.
+  goldens: run Scripts/regress.sh --no-sim before requesting review;
+  the whole Scripts/regress.sh passes before the batch's last merge
+  (AGENTS.md, "Work in batches").
 - Source comments in English. User-facing strings stay bilingual
   through the M("pt", "en") macro.
 -->
@@ -25,7 +27,8 @@ it's a refactor or feature, explain what motivated it.
 
 <!--
 - [ ] make CFLAGS="-O2 -Wall -Werror" builds
-- [ ] Scripts/regress.sh passes (every golden, every simulation)
+- [ ] Scripts/regress.sh --no-sim passes (every golden)
+- [ ] Scripts/regress.sh passes (every simulation), before the batch's last merge
 - [ ] CI (`.github/workflows/ci.yml`) passes
 - [ ] Manually exercised on examples: <which ones>
 - [ ] (For language/codegen changes) inspected the generated .asm / .v
