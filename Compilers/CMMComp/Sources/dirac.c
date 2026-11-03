@@ -260,7 +260,7 @@ static expr_node *scalar_of(expr_node *n)
     if (n->kind == EXPR_VAR     && !conv) {v_table[n->id].used = 1; return expr_var(n->type, n->id);}
     if (n->kind == EXPR_LITERAL) {
         long k = atol(v_table[n->id].name);
-        if (k < (1L << nbmant)) {
+        if (k < mant_pow2()) {
             char b[32]; snprintf(b, sizeof b, "%ld.0", k);
             return expr_lit(2, exec_fnum(b));
         }

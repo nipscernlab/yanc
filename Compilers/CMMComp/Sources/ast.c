@@ -842,7 +842,7 @@ static expr comp_partwise_emit(expr_node *n, int from, int to)
 // match the hardware: past it we bail and let the runtime op handle the
 // wraparound. Float is never folded (the YANC float is not IEEE-bit-compatible);
 // div/mod/comparison/logical ops are left to the runtime too.
-static int const_eval(expr_node *n, long *val)
+static int const_eval(expr_node *n, long long *val)
 {
     if (!n) return 0;
     // Range that keeps the result both representable and emittable: a positive
@@ -854,23 +854,28 @@ static int const_eval(expr_node *n, long *val)
     // the caller takes the result to the word before it becomes a literal
     // (issue #14, cmm_nubits8). Nothing may compare such a value at compile
     // time: for_bottom_test checks its literals against the word itself.
-    long max = ((long)1 << (nbmant + nbexpo)) - 1;
-    long min = -max;
+    // In long long, with NBMANT + NBEXPO held to 31 (a word of 32 bits, the
+    // most asmcomp takes): every operand is then at most 2^31 - 1, so a sum, a
+    // product or a shift by less than 31 stays defined, and the result is the
+    // same where long has 32 bits (64-bit Windows) as where it has 64 (#94 J)
+    int       mb  = nbmant + nbexpo < 0 ? 0 : nbmant + nbexpo > 31 ? 31 : nbmant + nbexpo;
+    long long max = (1LL << mb) - 1;
+    long long min = -max;
 
     if (n->kind == EXPR_LITERAL && n->type == 1) {
-        *val = atol(v_table[n->id].name);
+        *val = atoll(v_table[n->id].name);
         return 1;
     }
     if (n->kind == EXPR_UNOP && n->op == OP_NEG) {       // -(const)
-        long a;
+        long long a;
         if (!const_eval(n->left, &a)) return 0;
-        long r = -a;
+        long long r = -a;
         if (r < min || r > max) return 0;
         *val = r;
         return 1;
     }
     if (n->kind == EXPR_BINOP) {
-        long a, b, r;
+        long long a, b, r;
         if (!const_eval(n->left, &a) || !const_eval(n->right, &b)) return 0;
         switch (n->op) {
             case OP_ADD: r = a + b; break;
@@ -998,18 +1003,18 @@ static expr ast_emit_expr_impl(expr_node *n)
             // (100 + 100 at #NUBITS 8 is -56), so the literal fits the word;
             // the most negative int is NEG_M of 2^(NUBITS-1), as for 0x80.
             {
-                long cval;
+                long long cval;
                 if (const_eval(n, &cval)) {
                     char buf[32];
-                    long long m = 1LL << nubits, w = (((long long)cval % m) + m) % m;
+                    long long m = 1LL << nubits, w = ((cval % m) + m) % m;
                     if (w >= m / 2) w -= m;
-                    cval = (long)w;
+                    cval = w;
                     if (cval == -(m / 2)) return oper_neg(num2exp(inum_min_id(), 1));
                     if (cval >= 0) {
-                        snprintf(buf, sizeof buf, "%ld", cval);
+                        snprintf(buf, sizeof buf, "%lld", cval);
                         return num2exp(exec_inum(buf), 1);
                     }
-                    snprintf(buf, sizeof buf, "%ld", -cval);
+                    snprintf(buf, sizeof buf, "%lld", -cval);
                     return oper_neg(num2exp(exec_inum(buf), 1));
                 }
             }
@@ -1763,14 +1768,14 @@ static void emit_cond_int_load(expr e, int is_switch)
     // float is zero exactly when its mantissa is (the leading one is kept),
     // so C's "true when not zero" is AND 2^NBMANT - 1 (Scripts/fcond). A switch
     // index still converts (F2I, truncating).
-    long mask = (1L << nbmant) - 1;
+    long long mask = mant_pow2() - 1;
     if ((e.type == 2) && (e.id != 0)) {
         if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
-        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("AND %ld\n", mask); }
+        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("AND %lld\n", mask); }
     }
     if ((e.type == 2) && (e.id == 0)) {
         if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I\n"); }
-        else           add_instr("AND %ld\n", mask);
+        else           add_instr("AND %lld\n", mask);
     }
     // a comp condition is true when its real or its imaginary part is not
     // zero (C99): (re OR im) AND mask, the mask being the same for both
@@ -1778,15 +1783,15 @@ static void emit_cond_int_load(expr e, int is_switch)
         expr etr, eti;
         get_cmp_cst(e, &etr, &eti);
         if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[etr.id].name); }
-        else           { add_instr("LOD %s\n", v_table[etr.id].name); add_instr("ORR %s\n", v_table[eti.id].name); add_instr("AND %ld\n", mask); }
+        else           { add_instr("LOD %s\n", v_table[etr.id].name); add_instr("ORR %s\n", v_table[eti.id].name); add_instr("AND %lld\n", mask); }
     }
     if ((e.type == 3) && (e.id != 0)) {
         if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
-        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %ld\n", mask); }
+        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %lld\n", mask); }
     }
     if ((e.type == 3) && (e.id == 0)) {                    // the imag part in the acc, the real on the stack
         if (is_switch) { warn(msg_comp, line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
-        else           { add_instr("S_ORR\n"); add_instr("AND %ld\n", mask); }
+        else           { add_instr("S_ORR\n"); add_instr("AND %lld\n", mask); }
     }
 }
 

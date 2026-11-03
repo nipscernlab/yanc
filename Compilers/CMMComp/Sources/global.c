@@ -441,7 +441,7 @@ void add_instr(char *inst, ...)
     {
         int  p = (strncmp(str, "P_I2F_M ", 8) == 0) ? 8 : (strncmp(str, "I2F_M ", 6) == 0) ? 6 : 0;
         long n; char end[8];
-        if (p && sscanf(str + p, "%ld%7s", &n, end) == 1 && labs(n) < (1L << nbmant))
+        if (p && sscanf(str + p, "%ld%7s", &n, end) == 1 && labs(n) < mant_pow2())
         {
             free(str);
             str = xasprintf("%s %ld.0\n", p == 8 ? "P_LOD" : "LOD", n);

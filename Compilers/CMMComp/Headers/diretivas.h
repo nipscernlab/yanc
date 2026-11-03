@@ -10,6 +10,7 @@
 extern const char *prname; // processor name
 extern int  nubits;      // word width (bits)
 extern int  nbmant;      // mantissa width (bits)
+long long mant_pow2(void); // 2^NBMANT, defined for any #NBMANT
 extern int  nbexpo;      // exponent width (bits)
 extern int  nuioin;      // number of input ports
 extern int  nuioou;      // number of output ports

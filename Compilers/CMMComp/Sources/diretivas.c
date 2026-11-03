@@ -31,6 +31,18 @@ int  nuioou  =  1; // number of output ports
 int  fround  =  0; // float rounding level (#FROUND)
 int  fftsiz  =  3; // low bits of an index v[k) reverses (#FFTSIZ; asmcomp's default too)
 
+// 2^NBMANT, one past the largest mantissa. Only float code uses it, and
+// asmcomp refuses a program with float whose #NBMANT passes 29 (#NUBITS of at
+// most 32 = NBMANT + NBEXPO + 1, NBEXPO of at least 2: docs/directives.md).
+// cmmcomp reads the directive before that check, so the shift is held where it
+// is defined for any #NBMANT (#94 J): 1L << 31 is undefined where long has 32
+// bits, as on 64-bit Windows
+long long mant_pow2(void)
+{
+    int b = nbmant < 0 ? 0 : nbmant > 62 ? 62 : nbmant;
+    return 1LL << b;
+}
+
 // ----------------------------------------------------------------------------
 // Directive handling ---------------------------------------------------------
 // ----------------------------------------------------------------------------

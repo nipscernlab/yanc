@@ -27,7 +27,7 @@ static int int_flit_id(expr e)
 {
     if (e.type != 1 || e.id == 0 || v_table[e.id].isco != 1) return 0;
     long n; char end[8];
-    if (sscanf(v_table[e.id].name, "%ld%7s", &n, end) != 1 || labs(n) >= (1L << nbmant)) return 0;
+    if (sscanf(v_table[e.id].name, "%ld%7s", &n, end) != 1 || labs(n) >= mant_pow2()) return 0;
     char t[32]; snprintf(t, sizeof t, "%ld.0", n);
     return exec_fnum(t);
 }
@@ -2806,14 +2806,14 @@ expr oper_lin(expr e)
     {
         // a float is zero exactly when its mantissa is (see emit_cond_int_load)
         add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("AND %ld\n", (1L << nbmant) - 1);
+        add_instr("AND %lld\n", mant_pow2() - 1);
         add_instr("LIN\n");
     }
 
     // when it is a float in the acc
     if ((e.type == 2) && (e.id == 0))
     {
-        add_instr("AND %ld\n", (1L << nbmant) - 1);
+        add_instr("AND %lld\n", mant_pow2() - 1);
         add_instr("LIN\n");
     }
 
@@ -2826,7 +2826,7 @@ expr oper_lin(expr e)
 
         add_instr("%s %s\n", ld, v_table[etr.id].name);
         add_instr("ORR %s\n", v_table[eti.id].name);
-        add_instr("AND %ld\n", (1L << nbmant) - 1);
+        add_instr("AND %lld\n", mant_pow2() - 1);
         add_instr("LIN\n");
     }
 
@@ -2835,7 +2835,7 @@ expr oper_lin(expr e)
     {
         add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("ORR %s\n", v_table[get_img_id(e.id)].name);
-        add_instr("AND %ld\n", (1L << nbmant) - 1);
+        add_instr("AND %lld\n", mant_pow2() - 1);
         add_instr("LIN\n");
     }
 
@@ -2843,7 +2843,7 @@ expr oper_lin(expr e)
     if ((e.type == 3) && (e.id == 0))
     {
         add_instr("S_ORR\n");
-        add_instr("AND %ld\n", (1L << nbmant) - 1);
+        add_instr("AND %lld\n", mant_pow2() - 1);
         add_instr("LIN\n");
     }
 
@@ -2876,26 +2876,26 @@ expr oper_lanor(expr e1, expr e2, int type)
     // the two operands does not matter
     if ((e1.type == 2) || (e2.type == 2))
     {
-        long mask = (1L << nbmant) - 1;
+        long long mask = mant_pow2() - 1;
         if ((e1.id != 0) && (e2.id != 0))                     // var with var
         {
             add_instr("%s %s\n", ld, v_table[e2.id].name);
-            if (e2.type == 2) add_instr("AND %ld\n", mask);
-            if (e1.type == 2) { add_instr("P_LOD %s\n", v_table[e1.id].name); add_instr("AND %ld\n", mask); add_instr("S_%s\n", op); }
+            if (e2.type == 2) add_instr("AND %lld\n", mask);
+            if (e1.type == 2) { add_instr("P_LOD %s\n", v_table[e1.id].name); add_instr("AND %lld\n", mask); add_instr("S_%s\n", op); }
             else              add_instr("%s %s\n", op, v_table[e1.id].name);
         }
         else if ((e1.id != 0) || (e2.id != 0))                // var with acc
         {
             expr ea = (e1.id == 0) ? e1 : e2;                  // the one in the acc
             expr ev = (e1.id == 0) ? e2 : e1;                  // the one in memory
-            if (ea.type == 2) add_instr("AND %ld\n", mask);
-            if (ev.type == 2) { add_instr("P_LOD %s\n", v_table[ev.id].name); add_instr("AND %ld\n", mask); add_instr("S_%s\n", op); }
+            if (ea.type == 2) add_instr("AND %lld\n", mask);
+            if (ev.type == 2) { add_instr("P_LOD %s\n", v_table[ev.id].name); add_instr("AND %lld\n", mask); add_instr("S_%s\n", op); }
             else              add_instr("%s %s\n", op, v_table[ev.id].name);
         }
         else                                                  // acc with acc: e2 in the acc, e1 on the stack
         {
-            if (e2.type == 2) add_instr("AND %ld\n", mask);
-            if (e1.type == 2) { add_instr("SET_P __aux_var\n"); add_instr("AND %ld\n", mask); add_instr("%s __aux_var\n", op); }
+            if (e2.type == 2) add_instr("AND %lld\n", mask);
+            if (e1.type == 2) { add_instr("SET_P __aux_var\n"); add_instr("AND %lld\n", mask); add_instr("%s __aux_var\n", op); }
             else              add_instr("S_%s\n", op);
         }
         acc_ok = 1;
