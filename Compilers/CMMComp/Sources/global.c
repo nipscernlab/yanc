@@ -406,7 +406,6 @@ void parse_end(char *d_proc)
     if (input  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, cmm_src);
 
     fputs("-1 INTERNAL\n"    , output); // code for the file start
-    fputs("-2 void main();\n", output); // code for CAL main
     fputs("-3 END\n"         , output); // code for @fim JMP fim
 
     // one numbered line per source line, of any length, with its end of line
@@ -572,7 +571,6 @@ void add_instr(char *inst, ...)
 // adds special instructions
 // type =  0 -> comment
 // type = -1 -> INTERNAL
-// type = -2 -> void main();
 // type = -3 -> END
 void add_sinst(int type, char *inst, ...)
 {
