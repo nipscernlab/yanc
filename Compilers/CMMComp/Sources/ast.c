@@ -2185,7 +2185,7 @@ void stmt_emit(stmt_node *n)
             {
                 emit_cond_int_load(cond_e, 1);
                 int nub = nubits;
-                long long mod = 1LL << nub, prev = 0;
+                long long mod = 1LL << nub, last_v = 0;
                 int def_idx = -1;
                 stmt_node *body = n->body;
                 for (int i = 0; body && i < body->kids_n; i++)
@@ -2194,11 +2194,11 @@ void stmt_emit(stmt_node *n)
                     if (kid->kind == STMT_CASE_LABEL)
                     {
                         long long v = atoll(v_table[kid->id3].name);
-                        long long d = ((prev - v) % mod + mod) % mod;    // acc += d
+                        long long d = ((last_v - v) % mod + mod) % mod;    // acc += d
                         if (d >= mod / 2) d -= mod;                        // as a signed word
                         if (d) add_instr("ADD %lld\n", d);
                         add_instr("JIZ __sw_body_%d_%d\n", n->id, kid->id2);
-                        prev = v;
+                        last_v = v;
                     }
                     else if (kid->kind == STMT_DEFAULT_LABEL) def_idx = kid->id2;
                 }

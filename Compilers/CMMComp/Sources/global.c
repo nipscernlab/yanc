@@ -243,7 +243,7 @@ static FILE *f_src = NULL;            // src_lines.txt, while parse_end writes i
 // parser start and end functions ---------------------------------------------
 // ----------------------------------------------------------------------------
 
-void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d_tmp, char *d_array)
+void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_array)
 {
     // pick up the arguments --------------------------------------------------
 
@@ -327,7 +327,7 @@ static int unread_keep(const char *name)
     return id >= 0 && v_table[id].wave;
 }
 
-void parse_end(char *prname, char *d_proc)
+void parse_end(char *d_proc)
 {
     warn(MSG_INFO_INS_GENERATED, num_ins);
 

@@ -174,13 +174,17 @@ static void ini_take(int id_var, int size, int siz2)
 
     ini_arr *a = xcalloc(1, sizeof(ini_arr));
     a->id = id_var; a->n = n;
-    a->re = xmalloc(lr); a->im = xmalloc(li); a->re[0] = a->im[0] = 0;
+    a->re = xmalloc(lr); a->im = xmalloc(li);
+    char *pr = a->re, *pi = a->im;         // where the next value goes: one pass, not strcat (#94 K)
     for (int p = 0; p < n; p++)
     {
-        strcat(a->re, " "); strcat(a->re, re[p] ? re[p] : zero);
-        strcat(a->im, " "); strcat(a->im, im[p] ? im[p] : "0.0");
+        const char *r = re[p] ? re[p] : zero, *i = im[p] ? im[p] : "0.0";
+        size_t kr = strlen(r), ki = strlen(i);
+        *pr++ = ' '; memcpy(pr, r, kr); pr += kr;
+        *pi++ = ' '; memcpy(pi, i, ki); pi += ki;
         free(re[p]); free(im[p]);
     }
+    *pr = *pi = '\0';
     free(re); free(im);
     a->next = ini_done; ini_done = a;
 

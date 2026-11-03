@@ -121,6 +121,11 @@ tags consumed by Aurora.
   pairs. `warn()` prints the warnings and notes on stdout, in place of 254
   `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
   and its stream.
+- **cmmcomp builds a brace list in one pass** (#94 K): the values went in
+  with `strcat`, which walks the whole string each time; a list of 60000
+  floats compiles in 0.36 s instead of 0.78 s, to the same .asm. The
+  switch ladder's last value and the `prname` parameters of `parse_init`
+  and `parse_end` no longer shadow other names (#94 L, `-Wshadow`).
 - **A C± name has up to 1000 characters** (step P5 of #93, issue #66;
   Luciano, 2026-11-03), from 50. The limit is a rule of the language,
   checked once in the lexer, not the size of a buffer: cmmcomp, the
