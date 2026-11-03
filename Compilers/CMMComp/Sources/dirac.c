@@ -35,7 +35,7 @@
 #include "../Headers/ast.h"
 #include "../Headers/global.h"
 #include "../Headers/symbols.h"
-#include "../Headers/diretivas.h"
+#include "../Headers/directives.h"
 #include "../Headers/functions.h"
 #include "../Headers/oper.h"
 #include "../Headers/stdlib.h"

@@ -15,7 +15,7 @@
 #include "../Headers/global.h"
 #include "../Headers/functions.h"
 #include "../Headers/symbols.h"
-#include "../Headers/diretivas.h"
+#include "../Headers/directives.h"
 #include "../Headers/messages.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/diag.h"

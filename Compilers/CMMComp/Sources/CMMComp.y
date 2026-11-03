@@ -71,7 +71,7 @@
 #include "../Headers/functions.h"     // function creation and usage
 #include "../Headers/data_use.h"    // data usage
 #include "../Headers/symbols.h"   // variable table
-#include "../Headers/diretivas.h"   // compilation directives
+#include "../Headers/directives.h"   // compilation directives
 #include "../Headers/data_declar.h" // data declaration
 #include "../Headers/data_assign.h" // data assignment
 #include "../Headers/array_index.h" // array index handling

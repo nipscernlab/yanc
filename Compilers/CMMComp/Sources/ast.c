@@ -10,7 +10,7 @@
 #include "../Headers/ast.h"
 #include "../Headers/global.h"
 #include "../Headers/symbols.h"   // v_table[].name for the dump
-#include "../Headers/diretivas.h"   // nbmant / nbexpo / nubits for the constant ranges
+#include "../Headers/directives.h"   // nbmant / nbexpo / nubits for the constant ranges
 #include "../Headers/messages.h"
 
 // needed by the expression-tree walker (ast_emit_expr) below
