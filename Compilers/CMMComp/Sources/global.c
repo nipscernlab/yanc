@@ -20,6 +20,7 @@
 #include "../Headers/diag.h"
 #include "../../common/asm_share.h"
 #include "../../common/exe_dir.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -29,16 +30,16 @@ FILE *f_asm;          // output file
 FILE *f_log;          // log file holding project information (name, nbmant, etc.)
 FILE *f_lin;          // line file for the cmm program
 
-char dir_macro[1024]; // Macros directory
-char dir_tmp  [1024]; // Temp directory
-static char cmm_src[1024]; // the .cmm the parser reads (re-read for src_lines.txt)
+const char *dir_macro = ""; // Macros directory (main's arguments: they live to the end)
+const char *dir_tmp   = ""; // Temp directory
+static const char *cmm_src = ""; // the .cmm the parser reads (re-read for src_lines.txt)
 
 // state variables
 int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
 int  line_num = 0;    // parser-time: line the lexer is currently reading
 int  emit_line= 1;    // emit-time: line the AST walker tags onto each instruction
 int  emit_fid = -1;   // emit-time: id of the function whose body the walker is in (-1: none)
-char emit_fname[512] = ""; // emit-time: name of the function whose body the AST
+const char *emit_fname = ""; // emit-time: name of the function whose body the AST
                            // walker is in, for rem_fname() in diagnostics only
                            // (exec_id keeps using the global fname). "" = global
 int  num_ins  = 0;    // number of instructions parsed
@@ -48,7 +49,7 @@ int  sim_arr  = 0;    // tells whether the array is simulated or not
 // recent string passed to add_instr so the next call can detect a redundant
 // load. Cleared by every control-flow boundary (labels via add_sinst, capture
 // push/pop, macro start/end) so the drop only fires within a basic block.
-static char last_str[256] = "";
+static char *last_str = NULL;           // NULL: none
 
 // Name of the variable/constant currently sitting in the accumulator, or "" when
 // unknown. A plain LOD/P_LOD/SET of an operand leaves that operand's value in the
@@ -58,13 +59,19 @@ static char last_str[256] = "";
 // adds its name to the ones the acc already holds: after LOD 0.0; SET a; SET b;
 // SET c the acc is 0.0, a, b and c, and a fourth "LOD 0.0" is dropped too.
 #define ACC_NAMES 32
-static char acc_names[ACC_NAMES][600];   // a name is up to 511 characters (v_table)
-static int  acc_n = 0;                   // how many of them the acc holds
+static char *acc_names[ACC_NAMES];       // each in a block of its own
+static int   acc_n = 0;                  // how many of them the acc holds
+
+static void acc_clear(void)
+{
+    for (int i = 0; i < acc_n; i++) free(acc_names[i]);
+    acc_n = 0;
+}
 
 static void acc_only(const char *name)   // the acc holds this one name ("": none)
 {
-    acc_n = 0;
-    if (name && name[0]) snprintf(acc_names[acc_n++], sizeof acc_names[0], "%s", name);
+    acc_clear();
+    if (name && name[0]) acc_names[acc_n++] = xstrdup(name);
 }
 
 // a store leaves the acc as it is, but an element or an index key ("v[k]",
@@ -73,11 +80,8 @@ static void acc_drop_keys(void)
 {
     int k = 0;
     for (int i = 0; i < acc_n; i++)
-        if (!strchr(acc_names[i], '['))
-        {
-            if (k != i) strcpy(acc_names[k], acc_names[i]);
-            k++;
-        }
+        if (!strchr(acc_names[i], '[')) acc_names[k++] = acc_names[i];
+        else free(acc_names[i]);
     acc_n = k;
 }
 
@@ -87,24 +91,22 @@ static void acc_add(const char *name)
     acc_drop_keys();
     int k = 0;
     for (int i = 0; i < acc_n; i++)
-        if (strcmp(acc_names[i], name) != 0)
-        {
-            if (k != i) strcpy(acc_names[k], acc_names[i]);
-            k++;
-        }
+        if (strcmp(acc_names[i], name) != 0) acc_names[k++] = acc_names[i];
+        else free(acc_names[i]);
     acc_n = k;
     if (acc_n == ACC_NAMES)              // full: the oldest goes
     {
-        for (int i = 1; i < acc_n; i++) strcpy(acc_names[i - 1], acc_names[i]);
+        free(acc_names[0]);
+        memmove(acc_names, acc_names + 1, (size_t)(acc_n - 1) * sizeof acc_names[0]);
         acc_n--;
     }
-    snprintf(acc_names[acc_n++], sizeof acc_names[0], "%s", name);
+    acc_names[acc_n++] = xstrdup(name);
 }
 
 void emit_peephole_reset(void)
 {
-    last_str[0] = '\0';
-    acc_n = 0;
+    free(last_str); last_str = NULL;
+    acc_clear();
 }
 
 // True when the accumulator is known to currently hold variable `name`. Used by
@@ -125,8 +127,8 @@ int acc_holds(const char *name)
 // it, and a SET does too, since it may write an index
 void acc_holds_elem(const char *key)
 {
-    if (strncmp(last_str, "STI ", 4) == 0 || strncmp(last_str, "ISI ", 4) == 0
-     || strncmp(last_str, "LDI ", 4) == 0)        // a read leaves the element too
+    if (last_str && (strncmp(last_str, "STI ", 4) == 0 || strncmp(last_str, "ISI ", 4) == 0
+                  || strncmp(last_str, "LDI ", 4) == 0))   // a read leaves the element too
         acc_only(key);
 }
 
@@ -191,6 +193,24 @@ static void substituir_braket(char *str)
     *dst = '\0';
 }
 
+// the next line of f with its end of line, of any length (NULL at the end of
+// the file); the block is the caller's
+static char *read_src_line(FILE *f)
+{
+    char   chunk[256];
+    char  *line = NULL;
+    size_t len  = 0;
+    while (fgets(chunk, sizeof chunk, f) != NULL)
+    {
+        size_t k = strlen(chunk);
+        line = xrealloc(line, len + k + 1);
+        memcpy(line + len, chunk, k + 1);
+        len += k;
+        if (k > 0 && chunk[k - 1] == '\n') break;
+    }
+    return line;
+}
+
 // ----------------------------------------------------------------------------
 // parser start and end functions ---------------------------------------------
 // ----------------------------------------------------------------------------
@@ -200,16 +220,17 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
     // pick up the arguments --------------------------------------------------
 
     // the .cmm, by its path
-    snprintf(cmm_src, sizeof(cmm_src), "%s", f_name);
+    cmm_src = f_name;
     yyin = fopen(cmm_src, "r");
     if (yyin  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, cmm_src);
 
-    char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/%s.asm", d_proc, prname); // output .asm file name
+    char *asm_file = xasprintf("%s/%s.asm", d_proc, prname); // output .asm file name
     f_asm = fopen(asm_file, "w"); // create the .asm file
     if (f_asm == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
+    free(asm_file);
 
-    strcpy (dir_macro,                d_macro); // record the Macro directory
-    strcpy (dir_tmp  ,                d_tmp  ); // record the Tmp directory
+    dir_macro = d_macro; // record the Macro directory
+    dir_tmp   = d_tmp  ; // record the Tmp directory
 
     sim_arr = strcmp(d_array, "1") == 0;
 
@@ -223,12 +244,12 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 
     // create helper files ----------------------------------------------------
 
-    char path[2048];
-
-    snprintf(path, sizeof(path),   "%s/prog_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
+    char *path = xasprintf("%s/prog_log.txt", dir_tmp); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
     if (f_log == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
-    snprintf(path, sizeof(path), "%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
+    free(path);
+    path = xasprintf("%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
     if (f_lin == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
+    free(path);
 
     // Open the top-level stmt_list collector. Every directive, declaration
     // and function reduce appends a stmt_node here; nothing reaches f_asm
@@ -287,7 +308,7 @@ void parse_end(char *prname, char *d_proc)
 
     // check whether macros need to be appended to the .asm file --------------
 
-    char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/%s.asm", d_proc, prname);
+    char *asm_file = xasprintf("%s/%s.asm", d_proc, prname);
 
 	// the area the Dirac loops share, when a statement needed it ------------
 
@@ -301,7 +322,7 @@ void parse_end(char *prname, char *d_proc)
 
 	// code no path reaches leaves the program, and with it its hardware -----
 
-	char pc_file[2048]; snprintf(pc_file, sizeof(pc_file), "%s/pc_%s_mem.txt", dir_tmp, prname);
+	char *pc_file = xasprintf("%s/pc_%s_mem.txt", dir_tmp, prname);
 	int  gone = asm_reach(asm_file, pc_file);
 	if  (gone > 0) num_ins -= gone;
 
@@ -327,6 +348,7 @@ void parse_end(char *prname, char *d_proc)
 	// variables that are never alive at the same time share a data word ------
 
 	asm_share(asm_file);
+	free(asm_file); free(pc_file);
 
 	// check consistency of all variables and functions -----------------------
 
@@ -344,25 +366,27 @@ void parse_end(char *prname, char *d_proc)
 
     // (the source the parser read: before, <proc>/Software/<prname>.cmm, which
     // failed when the file was not named after the processor)
-    char     path[2048]; snprintf(path, sizeof(path), "%s/%s", dir_tmp, "src_lines.txt");
+    char *path = xasprintf("%s/%s", dir_tmp, "src_lines.txt");
 
     FILE *output = fopen(path    , "w");
     if (output == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
+    free(path);
     FILE *input  = fopen(cmm_src, "r");
     if (input  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, cmm_src);
 
-    char linha[1001], texto[1001] = "";
     fputs("-1 INTERNAL\n"    , output); // code for the file start
     fputs("-2 void main();\n", output); // code for CAL main
     fputs("-3 END\n"         , output); // code for @fim JMP fim
 
+    // one numbered line per source line, of any length, with its end of line
+    // as read (a line of 1000 characters and more used to come out as two)
     int cnt = 1;
-    while(fgets(texto, 1001, input) != NULL)
+    char *texto;
+    while ((texto = read_src_line(input)) != NULL)
     {
         substituir_braket(texto);
-        snprintf(linha, sizeof(linha), "%d %s", cnt++, texto);
-        fputs(linha, output);
-        memset(texto, 0, sizeof(char) * 1001);
+        fprintf(output, "%d %s", cnt++, texto);
+        free(texto);
     }
 
     fclose(input );
@@ -390,14 +414,21 @@ static void put_instr(const char *s)
     fputc('\n', f_asm);
 }
 
+// the first word of s, after any blanks (NULL: none); the block is the caller's
+static char *word_of(const char *s)
+{
+    while (*s == ' ' || *s == '\t') s++;
+    size_t n = strcspn(s, " \t\r\n");
+    return n ? xasprintf("%.*s", (int)n, s) : NULL;
+}
+
 // adds an instruction to the asm file
 void add_instr(char *inst, ...)
 {
     va_list  args;
     va_start(args , inst);
 
-    char     str[1200];                // an opcode and a name or a literal (up to 511 characters)
-    vsnprintf(str, sizeof(str), inst, args);
+    char    *str = xvasprintf(inst, args);   // an opcode and a name or a literal, of any length
     va_end  (args);
 
     // ------------------------------------------------------------------------
@@ -411,7 +442,10 @@ void add_instr(char *inst, ...)
         int  p = (strncmp(str, "P_I2F_M ", 8) == 0) ? 8 : (strncmp(str, "I2F_M ", 6) == 0) ? 6 : 0;
         long n; char end[8];
         if (p && sscanf(str + p, "%ld%7s", &n, end) == 1 && labs(n) < (1L << nbmant))
-            snprintf(str, sizeof(str), "%s %ld.0\n", p == 8 ? "P_LOD" : "LOD", n);
+        {
+            free(str);
+            str = xasprintf("%s %ld.0\n", p == 8 ? "P_LOD" : "LOD", n);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -428,9 +462,10 @@ void add_instr(char *inst, ...)
 
     if (strncmp(str, "LOD ", 4) == 0)
     {
-        char lod_var[600];
-        if (sscanf(str + 4, "%599s", lod_var) == 1 && acc_holds(lod_var))
-            return;   // acc already holds it -- acc_names / last_str stay valid
+        char *lod_var = word_of(str + 4);
+        int   held    = lod_var && acc_holds(lod_var);
+        free(lod_var);
+        if (held) {free(str); return;}   // acc already holds it -- acc_names / last_str stay valid
     }
 
     // an operation by its identity leaves the acc as it is: "ADD 0" (a matrix
@@ -445,7 +480,7 @@ void add_instr(char *inst, ...)
              (strcmp(op, "F_ADD") == 0 && strcmp(arg, "0.0") == 0) ||
              (strcmp(op, "F_SU1") == 0 && strcmp(arg, "0.0") == 0) ||
              (strcmp(op, "F_MLT") == 0 && strcmp(arg, "1.0") == 0)))
-            return;
+            {free(str); return;}
     }
 
     // ------------------------------------------------------------------------
@@ -477,12 +512,12 @@ void add_instr(char *inst, ...)
     // read it: isa.tsv; a JIZ's target has a label, which clears all this)
     // and SET_V leave the acc as it is, anything else clobbers it. A SET keeps
     // the names before it too: after LOD y; SET y_n1 the acc is both
-    char nm[600];
-    if      (strncmp(str, "SET ", 4) == 0 && sscanf(str + 4, "%599s", nm) == 1)
+    char *nm = strncmp(str, "SET ",   4) == 0 ? word_of(str + 4)
+             : strncmp(str, "LOD ",   4) == 0 ? word_of(str + 4)
+             : strncmp(str, "P_LOD ", 6) == 0 ? word_of(str + 6) : NULL;
+    if      (nm && strncmp(str, "SET ", 4) == 0)
         acc_add(nm);
-    else if (strncmp(str, "LOD ", 4) == 0 && sscanf(str + 4, "%599s", nm) == 1)
-        acc_only(nm);
-    else if (strncmp(str, "P_LOD ", 6) == 0 && sscanf(str + 6, "%599s", nm) == 1)
+    else if (nm)
         acc_only(nm);
     else if (strncmp(str, "OUT ", 4) == 0 || strcmp(str, "PSH\n") == 0
           || strncmp(str, "TOM ", 4) == 0 || strncmp(str, "JIZ ", 4) == 0)
@@ -490,11 +525,12 @@ void add_instr(char *inst, ...)
     else if (strncmp(str, "SET_V ", 6) == 0)
         acc_drop_keys();                 // an element store: as a SET, the keys go
     else
-        acc_n = 0;
+        acc_clear();
+    free(nm);
 
     // remember this emit for the next peephole check
-    strncpy(last_str, str, sizeof(last_str) - 1);
-    last_str[sizeof(last_str) - 1] = '\0';
+    free(last_str);
+    last_str = str;
 }
 
 // adds special instructions

@@ -9,7 +9,9 @@
 
 // One row of the symbol table.
 typedef struct symbol {
-    char name[512];   // name of the variable or function
+    char *name;       // name of the variable or function, in a block of its own
+                      // (add_var's xstrdup), never moved or freed: code may keep
+                      // the pointer while the table grows
     int  type;        // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 4 -> a comp's imaginary part, 5 -> const comp, 6-9 -> function returning void, int, float, comp
     int  used;        // whether the ID has already been used
     int  npar;        // if the ID is a function, how many parameters it has
@@ -22,23 +24,24 @@ typedef struct symbol {
     int  wave;        // #WAVE: kept for the waveform even if never read
 } symbol;
 
-// the longest name a program may write. The longest name the compiler
-// builds from it, a local comp's imaginary part <function>_<name>_i, is
-// 2 * CMM_NAME_MAX + 3 = 103 characters: it must go through asmcomp, whose
-// buffers of 128 stopped a global name of 121 characters (measured
-// 2026-10-30; 120 went through), and fits name[512] here with room to spare;
-// GitHub issue #66 is to take names of any length and drop this limit
-#define CMM_NAME_MAX 50
+// the longest name a program may write (issue #66, Luciano 2026-11-03). It
+// is a rule of the language, not the size of a buffer: every name lives in a
+// block of its own exact size. The limit comes from the tools after YANC: the
+// longest name built from a user name, a local comp's imaginary part
+// <function>_<name>_i, becomes a Verilog identifier of about 2 * CMM_NAME_MAX
+// + 15 characters (me1_f_<function>_v_<name>_e_), and iverilog takes up to
+// 16382 (measured 2026-11-03, #66); 1000 leaves room for that eight times
+#define CMM_NAME_MAX 1000
 
 extern symbol *v_table;                  // AoS storage, indexed by ID 0..v_count
 extern int     v_count;                  // how many entries v_table holds
 
 // table element manipulation -------------------------------------------------
 
-int    find_var(char *val);              // searches the table for the ID (-1 if not found)
-void    add_var(char *var);              // adds an ID to the table
+int    find_var(const char *val);             // searches the table for the ID (-1 if not found)
+void    add_var(const char *var);             // adds an ID to the table
 void  check_var(void);                       // checks what was used in the table (at the end of the parser)
-char *rem_fname(char *var, char *fname); // removes the function name from the variable
+char *rem_fname(char *var, const char *fname); // removes the function name from the variable
 void  check_name(int id, int is_fun);     // a declared name must be free in the .asm and not an instruction
 void  dire_wave (int id);                // #WAVE name: the variable stays even if never read
 
@@ -47,7 +50,7 @@ void  dire_wave (int id);                // #WAVE name: the variable stays even 
 int exec_id  (char *text);               // an ID was found
 int cnum_join(const char *re, int sub, int imid); // re +/- an imaginary literal: the comp literal
 int cnum_is_imag(int id);                // a comp literal whose real part is zero
-const char *neg_text(int id);            // "-" and the text of literal id
+char *neg_text(int id);                  // "-" and the text of literal id (the block is the caller's)
 int cnum_imag_fnum(int id, int neg);     // the imaginary part of a comp literal, as a float literal
 int find_id  (const char *text);         // the ID as exec_id would resolve it, without creating it (-1 if none)
 int exec_inum(char *text);               // an int constant was found
@@ -60,7 +63,7 @@ int inum_min_id(void);                   // 2^(NUBITS-1), for a NIMIN in a brace
 int exec_fnum(char *text);               // a float constant was found
 extern int fnum_quiet;                   // 1: exec_fnum says nothing of an approximation (a constant the compiler made)
 int exec_cnum(char *text);               // a comp constant was found
-void fnum_text (const char *in, char *out, size_t n); // a float literal as the .asm writes it
-void cnum_split(const char *txt, char *re, char *im); // a comp literal's two parts
+char *fnum_text (const char *in);       // a float literal as the .asm writes it (the block is the caller's)
+void cnum_split(const char *txt, char **re, char **im); // a comp literal's two parts (the blocks are the caller's)
 
 #endif // CMM_VARIAVEIS_H

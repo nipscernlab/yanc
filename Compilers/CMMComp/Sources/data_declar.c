@@ -56,7 +56,7 @@ void declar_var(int id)
     // register the variable in the log file ----------------------------------
 
     // save the function it belongs to
-    char func[sizeof fname]; if (strcmp(fname,"")==0) strcpy(func, "global"); else strcpy(func, fname);
+    const char *func = strcmp(fname,"")==0 ? "global" : fname;
     // save the data in the log file
     fprintf(f_log, "%s %s %d\n", func, rem_fname(v_table[id].name, fname), type_tmp);
     // if comp, save the imaginary part too
@@ -77,7 +77,7 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
 
     int type = type_tmp;
 
-    char func[sizeof fname]; if (strcmp(fname,"")==0) strcpy(func, "global"); else strcpy(func, fname);
+    const char *func = strcmp(fname,"")==0 ? "global" : fname;
     if (sim_arr == 1)
     {
                        fprintf(f_log, "%s %s   %d %s\n", func, rem_fname(v_table[id_var].name, fname), type_tmp, v_table[id_arg].name);
@@ -132,9 +132,9 @@ void ini_row_close(void) { ini_row = -1; }
 
 // a comp constant "3+4i" / "-1.5-2i" as its two parts; an int or a float is
 // all real
-static void ini_split(const ini_val *v, char *re, char *im)
+static void ini_split(const ini_val *v, char **re, char **im)
 {
-    if (v->kind != 3) { strcpy(re, v->txt); strcpy(im, "0.0"); return; }
+    if (v->kind != 3) { *re = xstrdup(v->txt); *im = xstrdup("0.0"); return; }
     cnum_split(v->txt, re, im);                 // a sign after an e is the exponent's
 }
 
@@ -167,9 +167,7 @@ static void ini_take(int id_var, int size, int siz2)
     for (int k = 0; k < ini_n; k++)
     {
         int pos = (ini_rows > 0) ? ini_v[k].row * siz2 + ini_v[k].col : k;
-        char r[sizeof(v_table[0].name) + 2], i[sizeof(v_table[0].name) + 2];   // a literal and its sign
-        ini_split(&ini_v[k], r, i);
-        re[pos] = xstrdup(r); im[pos] = xstrdup(i);
+        ini_split(&ini_v[k], &re[pos], &im[pos]);   // a literal and its sign
     }
     const char *zero = (type == 1) ? "0" : "0.0";
     for (int p = 0; p < n; p++) { lr += strlen(re[p] ? re[p] : zero) + 1; li += strlen(im[p] ? im[p] : "0.0") + 1; }

@@ -7,7 +7,7 @@
 #ifndef CMM_DIRETIVAS_H
 #define CMM_DIRETIVAS_H
 
-extern char prname[128]; // processor name
+extern const char *prname; // processor name
 extern int  nubits;      // word width (bits)
 extern int  nbmant;      // mantissa width (bits)
 extern int  nbexpo;      // exponent width (bits)

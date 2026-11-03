@@ -18,6 +18,7 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 // an int literal a float meets: the id of its float literal, which a memory
 // form takes as it is (exact below 2^NBMANT, as add_instr's I2F_M rewrite); 0
@@ -67,24 +68,29 @@ expr oper_neg(expr e)
     // F_NEG_M 0.0 gives -0 (TODO.md item 4)
     if (e.type == 2 && e.id != 0 && v_table[e.id].isco)
     {
-        char *nm = v_table[e.id].name, txt[sizeof(v_table[0].name) + 2];
+        char *nm = v_table[e.id].name;
         if (atof(nm) != 0.0)
         {
-            if (nm[0] == '-') snprintf(txt, sizeof txt, "%s" , nm + 1);
-            else              snprintf(txt, sizeof txt, "-%s", nm    );
-            return num2exp(exec_fnum(txt), 2);
+            char *txt = nm[0] == '-' ? xstrdup(nm + 1) : xasprintf("-%s", nm);
+            int id = exec_fnum(txt);
+            free(txt);
+            return num2exp(id, 2);
         }
     }
     if (e.type == 5)
     {
-        char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)], txt[2*sizeof(v_table[0].name) + 4];
-        cnum_split(v_table[e.id].name, re, im);
+        char *re, *im;
+        cnum_split(v_table[e.id].name, &re, &im);
+        int id = -1;
         if (atof(re) != 0.0 && atof(im) != 0.0)
         {   // each part's sign flipped on the text, as for a float above
-            snprintf(txt, sizeof txt, "%s%s%s%si", re[0] == '-' ? "" : "-", re + (re[0] == '-'),
-                                                   im[0] == '-' ? "+" : "-", im + (im[0] == '-'));
-            return num2exp(exec_cnum(txt), 5);
+            char *txt = xasprintf("%s%s%s%si", re[0] == '-' ? "" : "-", re + (re[0] == '-'),
+                                               im[0] == '-' ? "+" : "-", im + (im[0] == '-'));
+            id = exec_cnum(txt);
+            free(txt);
         }
+        free(re); free(im);
+        if (id >= 0) return num2exp(id, 5);
     }
 
     // when it is an int variable in memory
@@ -624,13 +630,15 @@ expr oper_subt(expr e1, expr e2)
     // are the same value, and add_instr drops the F_ADD 0.0
     if (e2.type == 5)
     {
-        char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)], txt[2*sizeof(v_table[0].name) + 8];
-        cnum_split(v_table[e2.id].name, re, im);
+        char *re, *im;
+        cnum_split(v_table[e2.id].name, &re, &im);
         int zr = atof(re) == 0.0, zi = atof(im) == 0.0;
-        snprintf(txt, sizeof txt, "%s%s%s%si",
+        char *txt = xasprintf("%s%s%s%si",
                  zr ? "" : (re[0] == '-' ? "" : "-"), zr ? "0.0" : re + (re[0] == '-'),
                  zi ? "+" : (im[0] == '-' ? "+" : "-"), zi ? "0.0" : im + (im[0] == '-'));
-        return oper_soma(e1, num2exp(exec_cnum(txt), 5));
+        int id = exec_cnum(txt);
+        free(txt); free(re); free(im);
+        return oper_soma(e1, num2exp(id, 5));
     }
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -1035,11 +1043,12 @@ expr oper_mult(expr e1, expr e2)
     if (e1.type == 3 && e2.type == 5)
     {
         expr er, ei; get_cmp_cst(e2, &er, &ei);
-        char *c = v_table[ei.id].name, nt[sizeof(v_table[0].name) + 2];
+        char *c = v_table[ei.id].name;
         if (atof(v_table[er.id].name) == 0.0 && atof(c) != 0.0)
         {
-            snprintf(nt, sizeof nt, c[0] == '-' ? "%s" : "-%s", c[0] == '-' ? c + 1 : c);
+            char *nt = c[0] == '-' ? xstrdup(c + 1) : xasprintf("-%s", c);
             int nid = exec_fnum(nt);                                   // -c
+            free(nt);
             if (e1.id != 0)                                            // in memory: 4 words
             {
                 get_cmp_ets(e1, &etr, &eti);
@@ -2481,14 +2490,16 @@ typedef struct {
     int  acc;         // 1: in the acc (a comp: real on the stack, imag in the acc)
     int  comp;        // 1: a comp, 0: a real
     int  is_int;      // a real int: its real part is converted (I2F)
-    char re[600];     // in memory: the real part's operand
-    char im[600];     // in memory: the imaginary part's operand
+    const char *re;   // in memory: the real part's operand (a v_table name)
+    const char *im;   // in memory: the imaginary part's operand (a v_table name)
 } cmp_side;
 
 static const char *cmp_flit(const char *t)
 {
-    char b[sizeof(v_table[0].name) + 8]; snprintf(b, sizeof b, "%s", t);
-    return v_table[exec_fnum(b)].name;
+    char *b = xstrdup(t);                    // exec_fnum may edit its text
+    int id = exec_fnum(b);
+    free(b);
+    return v_table[id].name;
 }
 
 static cmp_side cmp_side_of(expr e)
@@ -2497,23 +2508,24 @@ static cmp_side cmp_side_of(expr e)
     d.comp = (e.type >= 3);
     if (e.type == 5) {                                  // a comp constant: two float literals
         expr er, ei; get_cmp_cst(e, &er, &ei);
-        snprintf(d.re, sizeof d.re, "%s", v_table[er.id].name);
-        snprintf(d.im, sizeof d.im, "%s", v_table[ei.id].name);
+        d.re = v_table[er.id].name;
+        d.im = v_table[ei.id].name;
         return d;
     }
     if (e.id == 0) {d.acc = 1; d.is_int = (e.type == 1); return d;}
     v_table[e.id].used = 1;
     if (e.type == 3) {
-        snprintf(d.re, sizeof d.re, "%s", v_table[e.id].name);
-        snprintf(d.im, sizeof d.im, "%s", v_table[get_img_id(e.id)].name);
+        d.re = v_table[e.id].name;
+        d.im = v_table[get_img_id(e.id)].name;
     } else if (e.type == 1 && v_table[e.id].isco == 1) {  // an int literal: the float literal
-        char t[sizeof(v_table[0].name) + 4]; snprintf(t, sizeof t, "%s.0", v_table[e.id].name);
-        snprintf(d.re, sizeof d.re, "%s", cmp_flit(t));
-        snprintf(d.im, sizeof d.im, "%s", cmp_flit("0.0"));
+        char *t = xasprintf("%s.0", v_table[e.id].name);
+        d.re = cmp_flit(t);
+        d.im = cmp_flit("0.0");
+        free(t);
     } else {
         d.is_int = (e.type == 1);
-        snprintf(d.re, sizeof d.re, "%s", v_table[e.id].name);
-        snprintf(d.im, sizeof d.im, "%s", cmp_flit("0.0"));
+        d.re = v_table[e.id].name;
+        d.im = cmp_flit("0.0");
     }
     return d;
 }

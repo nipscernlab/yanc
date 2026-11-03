@@ -3,6 +3,7 @@
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -80,14 +81,15 @@ expr_node *expr_binop(int op, expr_node *left, expr_node *right)
     return n;
 }
 
-// the text of a real literal, or of its negation, as the source wrote it
-static int real_lit_text(const expr_node *n, char *b, size_t sz)
+// the text of a real literal, or of its negation, as the source wrote it,
+// with the sign `pre` in front ("" or "-"); NULL when n is not one. The block
+// is the caller's
+static char *real_lit_text(const expr_node *n, const char *pre)
 {
     int neg = 0;
     if (n->kind == EXPR_UNOP && n->op == OP_NEG && n->left) {neg = 1; n = n->left;}
-    if (n->kind != EXPR_LITERAL || (n->type != 1 && n->type != 2)) return 0;
-    snprintf(b, sz, "%s%s", neg ? "-" : "", v_table[n->id].name);
-    return 1;
+    if (n->kind != EXPR_LITERAL || (n->type != 1 && n->type != 2)) return NULL;
+    return xasprintf("%s%s%s", pre, neg ? "-" : "", v_table[n->id].name);
 }
 
 static int imag_lit(const expr_node *n)
@@ -106,16 +108,16 @@ static int is_real_exp(expr_node *n) {typecheck_expr(n); return n->type == 1 || 
 expr_node *expr_addsub(int op, expr_node *left, expr_node *right)
 {
     if (op != OP_ADD && op != OP_SUB) return expr_binop(op, left, right);
-    char re[sizeof(v_table[0].name) + 1];
+    char *re;
     int id = -1;
-    if (imag_lit(right) && real_lit_text(left, re, sizeof re))
+    if (imag_lit(right) && (re = real_lit_text(left, ""))) {
         id = cnum_join(re, op == OP_SUB, right->id);
-    else if (imag_lit(left) && real_lit_text(right, re + 1, sizeof re - 1)) {
-        if (op == OP_SUB) {                                // 2i - 3: the real part is -3
-            if (re[1] == '-') memmove(re, re + 2, strlen(re + 2) + 1);
-            else re[0] = '-';
-        } else memmove(re, re + 1, strlen(re + 1) + 1);
-        id = cnum_join(re, 0, left->id);
+        free(re);
+    }
+    else if (imag_lit(left) && (re = real_lit_text(right, op == OP_SUB ? "-" : ""))) {
+        if (op == OP_SUB && re[1] == '-') memmove(re, re + 2, strlen(re + 2) + 1);   // 2i - -3: the real part is 3
+        id = cnum_join(re, 0, left->id);                                         // 2i - 3: the real part is -3
+        free(re);
     }
     if (id >= 0) {expr_free(left); expr_free(right); return expr_lit(5, id);}
 
@@ -392,33 +394,46 @@ static int expr_reads(expr_node *n, int id)
 // scalar variables and operators, so that the same name means the same
 // element as long as no instruction runs between the store and the read
 // (global.c, acc_holds_elem). 0 when an index has any other node
-static int elem_key_tree(expr_node *e, char *b, size_t sz)
+// appends the formatted text to the key *b (a block of its own, never NULL)
+static void key_cat(char **b, const char *fmt, ...)
 {
-    size_t l = strlen(b);
-    if (!e || l + 1 >= sz) return 0;
+    va_list ap;
+    va_start(ap, fmt);
+    char *t = xvasprintf(fmt, ap);
+    va_end(ap);
+    char *n = xasprintf("%s%s", *b, t);
+    free(*b); free(t);
+    *b = n;
+}
+
+static int elem_key_tree(expr_node *e, char **b)
+{
+    if (!e) return 0;
     if (e->kind == EXPR_LITERAL || (e->kind == EXPR_VAR && v_table[e->id].isar == 0))
     {
         if (e->kind == EXPR_LITERAL && v_table[e->id].type != 1) return 0;
-        snprintf(b + l, sz - l, "%s", v_table[e->id].name);
-        return strlen(b) + 1 < sz;
+        key_cat(b, "%s", v_table[e->id].name);
+        return 1;
     }
     if (e->kind != EXPR_BINOP) return 0;
-    snprintf(b + l, sz - l, "(");
-    if (!elem_key_tree(e->left, b, sz)) return 0;
-    l = strlen(b); snprintf(b + l, sz - l, "#%d#", e->op);
-    if (!elem_key_tree(e->right, b, sz)) return 0;
-    l = strlen(b); snprintf(b + l, sz - l, ")");
-    return strlen(b) + 1 < sz;
+    key_cat(b, "(");
+    if (!elem_key_tree(e->left, b)) return 0;
+    key_cat(b, "#%d#", e->op);
+    if (!elem_key_tree(e->right, b)) return 0;
+    key_cat(b, ")");
+    return 1;
 }
 
-static int elem_key(int id, expr_node *i1, expr_node *i2, char *b, size_t sz)
+// the key in *b (the caller frees it, whatever the answer; NULL when 0 at once)
+static int elem_key(int id, expr_node *i1, expr_node *i2, char **b)
 {
+    *b = NULL;
     if (v_table[id].type != 1 && v_table[id].type != 2) return 0;
-    snprintf(b, sz, "%s[", v_table[id].name);
-    if (!elem_key_tree(i1, b, sz)) return 0;
-    if (i2) { strncat(b, "][", sz - strlen(b) - 1); if (!elem_key_tree(i2, b, sz)) return 0; }
-    strncat(b, "]", sz - strlen(b) - 1);
-    return strlen(b) + 1 < sz;
+    *b = xasprintf("%s[", v_table[id].name);
+    if (!elem_key_tree(i1, b)) return 0;
+    if (i2) { key_cat(b, "]["); if (!elem_key_tree(i2, b)) return 0; }
+    key_cat(b, "]");
+    return 1;
 }
 
 // a forward element read just emitted: name the element in the acc
@@ -427,23 +442,25 @@ static int elem_key(int id, expr_node *i1, expr_node *i2, char *b, size_t sz)
 // an index takes the acc: out(2, d[k][j]); if (d[k][j] < m) reads d once
 static expr elem_read(expr_node *n, expr r)
 {
-    char key[600];
-    if (r.id == 0 && elem_key(n->id, n->left, n->right, key, sizeof key)) acc_holds_elem(key);
+    char *key = NULL;
+    if (r.id == 0 && elem_key(n->id, n->left, n->right, &key)) acc_holds_elem(key);
+    free(key);
     return r;
 }
 
 // the name of a computed int index for the acc peephole, "[(ii#1#j)]": the
 // brackets keep a SET from passing it on (global.c). 0 for a leaf, whose
-// read costs no more than a PSH
-static int idx_key(expr_node *ix, char *b, size_t sz)
+// read costs no more than a PSH. The key in *b, as elem_key
+static int idx_key(expr_node *ix, char **b)
 {
+    *b = NULL;
     if (!ix || ix->kind == EXPR_LITERAL || ix->kind == EXPR_VAR) return 0;
     typecheck_expr(ix);
     if (ix->type != 1) return 0;
-    snprintf(b, sz, "[");
-    if (!elem_key_tree(ix, b, sz)) return 0;
-    strncat(b, "]", sz - strlen(b) - 1);
-    return strlen(b) + 1 < sz;
+    *b = xstrdup("[");
+    if (!elem_key_tree(ix, b)) return 0;
+    key_cat(b, "]");
+    return 1;
 }
 
 static int is_const_true(expr_node *n)
@@ -935,12 +952,14 @@ static expr ast_emit_expr_impl(expr_node *n)
             if (n->op == OP_MUL && n->left->kind == EXPR_ARRAY_INDEX && n->right->kind == EXPR_ARRAY_INDEX
                 && n->left->op == 0 && n->right->op == 0)
             {
-                char k1[600], k2[600];
+                char *k1 = NULL, *k2 = NULL;
                 typecheck_expr(n);
-                if ((n->type == 1 || n->type == 2) && n->left->type == n->type
-                    && elem_key(n->left ->id, n->left ->left, n->left ->right, k1, sizeof k1)
-                    && elem_key(n->right->id, n->right->left, n->right->right, k2, sizeof k2)
-                    && strcmp(k1, k2) == 0)
+                int same = (n->type == 1 || n->type == 2) && n->left->type == n->type
+                    && elem_key(n->left ->id, n->left ->left, n->left ->right, &k1)
+                    && elem_key(n->right->id, n->right->left, n->right->right, &k2)
+                    && strcmp(k1, k2) == 0;
+                free(k1); free(k2);
+                if (same)
                 {
                     ast_emit_expr(n->left);
                     add_instr("PSH\n");
@@ -1120,8 +1139,10 @@ static expr ast_emit_expr_impl(expr_node *n)
             // the element an indexed store has just left in the acc: no read
             if (acc_ok == 0 && n->op == 0)
             {
-                char key[600];
-                if (elem_key(n->id, n->left, n->right, key, sizeof key) && acc_holds(key))
+                char *key;
+                int held = elem_key(n->id, n->left, n->right, &key) && acc_holds(key);
+                free(key);
+                if (held)
                 {
                     acc_ok = 1;
                     return expr_make(v_table[n->id].type, 0);
@@ -1173,10 +1194,12 @@ static expr ast_emit_expr_impl(expr_node *n)
                     expr_node *s = expr_lit(1, exec_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->left, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->right);
-                    char key[600];
+                    char *key = NULL;
                     expr e;
                     // the index the store of this statement left in the acc
-                    if (acc_ok == 1 && idx_key(a, key, sizeof key) && acc_holds(key))
+                    int held = acc_ok == 1 && idx_key(a, &key) && acc_holds(key);
+                    free(key);
+                    if (held)
                         {add_instr("PSH\n"); e = expr_make(1, 0);}
                     else e = ast_emit_expr(a);
                     free(a); free(m); free(s);
@@ -1190,8 +1213,10 @@ static expr ast_emit_expr_impl(expr_node *n)
             // PSH pushes what was pending and leaves the index for the LDI
             if (!n->right && n->op == 0 && acc_ok == 1)
             {
-                char key[600];
-                if (idx_key(n->left, key, sizeof key) && acc_holds(key))
+                char *key;
+                int held = idx_key(n->left, &key) && acc_holds(key);
+                free(key);
+                if (held)
                 {
                     add_instr("PSH\n");
                     return elem_read(n, arr_1d2exp(n->id, expr_make(1, 0), 0));
@@ -1922,8 +1947,9 @@ void stmt_emit(stmt_node *n)
                     v_table[n->id].isar = 1;
                     arr_1d_index(n->id, e);
                     v_table[n->id].isar = 2;
-                    char key[600];
-                    if (idx_key(a, key, sizeof key)) acc_holds_index(key);
+                    char *key;
+                    if (idx_key(a, &key)) acc_holds_index(key);
+                    free(key);
                     free(a); free(m); free(s);
                 }
                 else
@@ -1936,8 +1962,9 @@ void stmt_emit(stmt_node *n)
             else
             {
                 arr_1d_index(n->id, ast_emit_expr(n->idx));
-                char key[600];
-                if (idx_key(n->idx, key, sizeof key)) acc_holds_index(key);
+                char *key;
+                if (idx_key(n->idx, &key)) acc_holds_index(key);
+                free(key);
             }
             // an int variable as the whole index, which the right-hand side
             // cannot change: ass_array may read it again for a second word
@@ -1948,9 +1975,10 @@ void stmt_emit(stmt_node *n)
             // the store leaves the element in the acc: a read of it right
             // after takes the acc, when the right-hand side changed no index
             {
-                char key[600];
-                if (n->op == 0 && rhs_keeps(n->rhs) && elem_key(n->id, n->idx, n->idx2, key, sizeof key))
+                char *key = NULL;
+                if (n->op == 0 && rhs_keeps(n->rhs) && elem_key(n->id, n->idx, n->idx2, &key))
                     acc_holds_elem(key);
+                free(key);
             }
             break;
 
@@ -2347,15 +2375,14 @@ void stmt_emit(stmt_node *n)
             // DISPLAY-ONLY: exec_id() still keys off the (empty-during-walk)
             // global fname, so the temp-variable names -- and the assembly -- are
             // unchanged. Globals (no prefix) are unaffected by rem_fname.
-            char saved_emit_fname[512];
-            strcpy(saved_emit_fname, emit_fname);
-            strcpy(emit_fname, v_table[n->id].name);
+            const char *saved_emit_fname = emit_fname;
+            emit_fname = v_table[n->id].name;
             int saved_emit_fid = emit_fid;   // the caller of every CAL in the body
             emit_fid  = n->id;
             ret_ok    = 0;
             stmt_emit(n->body);
             emit_fid  = saved_emit_fid;
-            strcpy(emit_fname, saved_emit_fname);
+            emit_fname = saved_emit_fname;
             fun_parse = saved_fun_parse;
 
             // not void: no path may reach the end (the next function's code)

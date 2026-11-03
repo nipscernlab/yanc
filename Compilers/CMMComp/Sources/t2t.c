@@ -36,23 +36,25 @@ char *itob(int x, int w)
 // the real part is in the id parameter
 int get_img_id(int id)
 {
-       char name[1024];
-    sprintf(name, "%s_i", v_table[id].name);
+    char *name = xasprintf("%s_i", v_table[id].name);
 
-       if (find_var(name) == -1) add_var(name);
-    return find_var(name);
+    if (find_var(name) == -1) add_var(name);
+    int idi = find_var(name);
+    free(name);
+    return idi;
 }
 
 // splits the real and imaginary parts of a complex constant
 // generating two floating-point entries in the table
 void get_cmp_cst(expr e, expr *er, expr *ei)
 {
-    char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)];
+    char *re, *im;
 
-    cnum_split(v_table[e.id].name, re, im);   // the text, not a host float: no digit lost
+    cnum_split(v_table[e.id].name, &re, &im);   // the text, not a host float: no digit lost
 
     *er = num2exp(exec_fnum(re), 2);   // typed constants: real(5-7i) can be a built-in's argument
     *ei = num2exp(exec_fnum(im), 2);
+    free(re); free(im);
 }
 
 // generates the extended float exprs for the real and imag parts

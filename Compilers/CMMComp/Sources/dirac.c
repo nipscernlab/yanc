@@ -48,7 +48,6 @@
 // state ----------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-#define DL_NM      (sizeof emit_fname + 32)   // a name of the compiler: __dk<n>_<function>
 
 // a loop: its counter __dk<num> runs from -n*step up to 0 in steps of step;
 // the index it stands for is first + the turn (0 .. n-1)
@@ -103,7 +102,7 @@ static int keep_live, keep_v;
 
 // what the accumulator holds right now: a sum of loop variables (key), valid
 // while no instruction has been emitted since (num_ins == acc_mark)
-static char acc_key[2 * DL_NM];
+static char *acc_key = NULL;            // a block of its own (NULL: none)
 static int  acc_mark = -1;
 
 // the lines that went through __dirac_tmp, for the summary
@@ -142,21 +141,23 @@ static expr_node *node_new(expr_kind k, int type)
     return n;
 }
 
-static void key_set(const char *k) {snprintf(acc_key, sizeof acc_key, "%s", k); acc_mark = num_ins;}
-static int  key_is (const char *k) {return acc_mark == num_ins && strcmp(acc_key, k) == 0;}
+static void key_set(const char *k) {free(acc_key); acc_key = xstrdup(k); acc_mark = num_ins;}
+static int  key_is (const char *k) {return acc_mark == num_ins && acc_key && strcmp(acc_key, k) == 0;}
 
 // a variable of the compiler, __<stem><n>_<function>: each function has its
-// own, so that a call made inside a statement leaves the caller's alone
-static void dl_nm(char *b, size_t sz, const char *stem, int n) {snprintf(b, sz, "__%s%d_%s", stem, n, emit_fname);}
+// own, so that a call made inside a statement leaves the caller's alone. The
+// names below are blocks the caller frees
+static char *dl_nm(const char *stem, int n) {return xasprintf("__%s%d_%s", stem, n, emit_fname);}
 
-static void ctr_name(char *b, size_t sz, int lv) {dl_nm(b, sz, "dk", loops[lv].num);}
+static char *ctr_name(int lv) {return dl_nm("dk", loops[lv].num);}
 
 // a scalar variable of the compiler, of type t, as a v_table entry
 static int scalar_var(int t)
 {
-    char name[DL_NM]; dl_nm(name, sizeof name, t == 1 ? "dhi" : "dhf", n_names++);
+    char *name = dl_nm(t == 1 ? "dhi" : "dhf", n_names++);
     int id = find_var(name);
     if (id < 0) {add_var(name); id = find_var(name);}
+    free(name);
     v_table[id].type = t;
     v_table[id].used = 1;
     return id;
@@ -225,9 +226,7 @@ static expr_node *elem_of(expr_node *ref, dl_pos r, dl_pos c)
                 alias_arr = re(alias_arr, cap_alias, sizeof *alias_arr);
                 alias_id  = re(alias_id,  cap_alias, sizeof *alias_id);
             }
-            char nm[sizeof v_table[arr].name];         // add_var may move v_table
-            snprintf(nm, sizeof nm, "%s", v_table[arr].name);
-            add_var(nm);                               // the same name: find_var still finds the array first
+            add_var(v_table[arr].name);                // the same name: find_var still finds the array first
             id = v_count - 1;
             v_table[id].type = type;
             v_table[id].used = 1;
@@ -503,40 +502,46 @@ static void choose_steps(int from)
 }
 
 // the variable that holds stride * turn (minus stride * n) of loop lv
-static void var_of(char *b, size_t sz, int lv, int stride)
+static char *var_of(int lv, int stride)
 {
     dl_loop *l = &loops[lv];
-    if (stride == l->step) {ctr_name(b, sz, lv); return;}
-    for (int j = 0; j < l->nd; j++) if (l->ds[j] == stride) {dl_nm(b, sz, "dd", l->dv[j]); return;}
+    if (stride == l->step) return ctr_name(lv);
+    for (int j = 0; j < l->nd; j++) if (l->ds[j] == stride) return dl_nm("dd", l->dv[j]);
     die(MSG_ERR_DIRAC_NOT_YET, cur_line);
+    return NULL;
 }
 
 // the variables of an index, the innermost loop first, and the constant
 // offset that makes the sum of them the cell's address
-static int ix_vars(const dl_ix *ix, char v[2][DL_NM], long *off)
+static int ix_vars(const dl_ix *ix, char *v[2], long *off)
 {
+    v[0] = v[1] = NULL;
     int ord[2] = {0, 1};
     if (ix->nt == 2 && ix->lv[1] > ix->lv[0]) {ord[0] = 1; ord[1] = 0;}   // inner loops are allocated later
     *off = ix->k;
     for (int i = 0; i < ix->nt; i++) {
         int t = ord[i], lv = ix->lv[t], s = ix->st[t];
-        var_of(v[i], DL_NM, lv, s);
+        v[i] = var_of(lv, s);
         *off += (long)s * (loops[lv].first + loops[lv].n);
     }
     return ix->nt;
 }
 
 // puts the index of ix in the accumulator (pushing what is there when
-// acc_ok); returns the constant offset
-static long ix_load(const dl_ix *ix, char *key, size_t ksz)
+// acc_ok); returns the constant offset, and in *key the sum it loaded (a
+// block the caller frees)
+static long ix_load(const dl_ix *ix, char **key)
 {
-    char v[2][DL_NM]; long off;
+    char *v[2]; long off;
     int nt = ix_vars(ix, v, &off);
-    snprintf(key, ksz, "%s%s%s", v[0], nt > 1 ? "+" : "", nt > 1 ? v[1] : "");
-    if (key_is(key)) {if (acc_ok) add_instr("PSH\n"); return off;}
-    if (!key_is(v[0]) || acc_ok) add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", v[0]);
-    if (nt > 1) add_instr("ADD %s\n", v[1]);
-    key_set(key);
+    *key = xasprintf("%s%s%s", v[0], nt > 1 ? "+" : "", nt > 1 ? v[1] : "");
+    if (key_is(*key)) {if (acc_ok) add_instr("PSH\n");}
+    else {
+        if (!key_is(v[0]) || acc_ok) add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", v[0]);
+        if (nt > 1) add_instr("ADD %s\n", v[1]);
+        key_set(*key);
+    }
+    free(v[0]); free(v[1]);
     return off;
 }
 
@@ -552,8 +557,9 @@ expr dirac_elem_emit(expr_node *n)
     if (e->ix.nt == 0)
         add_instr("%s %s %ld\n", acc_ok ? "P_LOD_V" : "LOD_V", arr_name(e->arr), e->ix.k);
     else {
-        char key[2 * DL_NM];
-        long off = ix_load(&e->ix, key, sizeof key);
+        char *key;
+        long off = ix_load(&e->ix, &key);
+        free(key);
         add_instr("LDI_V %s %ld\n", arr_name(e->arr), off);
     }
     acc_ok = 1;
@@ -614,18 +620,20 @@ static void emit_pre(void)
 static void loop_open(int lv, int push, char *top, char *end)
 {
     dl_loop *l = &loops[lv];
-    char c[DL_NM], dd[DL_NM]; ctr_name(c, sizeof c, lv);
+    char *c = ctr_name(lv);
     snprintf(top, 32, "__Ld%d", label_n);
     snprintf(end, 32, "__Ld%de", label_n++);
     for (int j = 0; j < l->nd; j++) {
         add_instr("%s %ld\n", push ? "P_LOD" : "LOD", -(long)l->ds[j] * l->n); push = 0;
-        dl_nm(dd, sizeof dd, "dd", l->dv[j]);
+        char *dd = dl_nm("dd", l->dv[j]);
         add_instr("SET %s\n", dd);
+        free(dd);
     }
     add_instr("%s %ld\n", push ? "P_LOD" : "LOD", -(long)l->step * l->n);
     add_instr("SET %s\n", c);
     add_sinst(0, "@%s ", top);
     key_set(c);
+    free(c);
     acc_ok = 0;
 }
 
@@ -640,16 +648,18 @@ static void loop_hoists(int lv)
 static void loop_close(int lv, int push, const char *top, const char *end)
 {
     dl_loop *l = &loops[lv];
-    char c[DL_NM], dd[DL_NM]; ctr_name(c, sizeof c, lv);
+    char *c = ctr_name(lv);
     for (int j = 0; j < l->nd; j++) {
-        dl_nm(dd, sizeof dd, "dd", l->dv[j]);
+        char *dd = dl_nm("dd", l->dv[j]);
         add_instr("%s %s\n", push ? "P_LOD" : "LOD", dd); push = 0;
         add_instr("ADD %d\n", l->ds[j]);
         add_instr("SET %s\n", dd);
+        free(dd);
     }
     add_instr("%s %s\n", push ? "P_LOD" : "LOD", c);
     add_instr("ADD %d\n", l->step);
     add_instr("SET %s\n", c);
+    free(c);
     add_instr("JIZ %s\n", end);
     add_instr("JMP %s\n", top);
     add_sinst(0, "@%s ", end);
@@ -748,11 +758,12 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
         add_instr("SET_V %s %ld\n", arr_name(d->arr), six->k + d->base);
         acc_ok = 0;
     } else if (d->kind == 0) {
-        char key[2 * DL_NM];
+        char *key;
         acc_ok = 0;
-        long off = ix_load(six, key, sizeof key);
+        long off = ix_load(six, &key);
         acc_ok = 1;                       // the index is the value to keep: the first load pushes it
         key_set(key);
+        free(key);
         expr e = ast_emit_expr(el);
         store(e, d, off + d->base);
     } else {
@@ -1085,23 +1096,27 @@ void dirac_finish(const char *asm_file)
 
     FILE *f = fopen(asm_file, "r");
     if (!f) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
-    char *text = NULL; size_t len = 0, cap = 0; char line[4096]; int done = 0;
-    while (fgets(line, sizeof line, f)) {
-        char add[128] = "";
-        if (!done && strncmp(line, "#PRNAME", 7) == 0) {
-            snprintf(add, sizeof add, "#array __dirac_tmp %d %d\n", tmp_type, tmp_max);
-            done = 1;
-        }
-        size_t k = strlen(line), a = strlen(add);
-        if (len + k + a + 1 > cap) {cap = 2 * (len + k + a + 1); text = xrealloc(text, cap);}
-        memcpy(text + len, line, k); len += k;
-        memcpy(text + len, add, a);  len += a;
-        text[len] = '\0';
+    char *text = NULL; size_t len = 0, cap = 0, n; char chunk[4096];
+    while ((n = fread(chunk, 1, sizeof chunk, f)) > 0) {      // the whole file, lines of any length
+        if (len + n + 1 > cap) {cap = 2 * (len + n + 1); text = xrealloc(text, cap);}
+        memcpy(text + len, chunk, n); len += n;
     }
     fclose(f);
+    if (text) text[len] = '\0';
+
+    // the directive goes on the line after the first #PRNAME
+    size_t at = len; int found = 0;
+    for (size_t p = 0; p < len; ) {
+        char *nl = memchr(text + p, '\n', len - p);
+        size_t next = nl ? (size_t)(nl - text) + 1 : len;
+        if (strncmp(text + p, "#PRNAME", 7) == 0) {at = next; found = 1; break;}
+        p = next;
+    }
     f = fopen(asm_file, "w");
     if (!f) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
-    if (text) fputs(text, f);
+    fwrite(text ? text : "", 1, at, f);
+    if (found) fprintf(f, "#array __dirac_tmp %d %d\n", tmp_type, tmp_max);
+    fwrite(text ? text + at : "", 1, len - at, f);
     fclose(f);
     free(text);
 
