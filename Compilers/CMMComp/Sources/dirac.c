@@ -769,8 +769,8 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
     } else {
         acc_ok = 0;
         expr e = ast_emit_expr(el);
-        if (d->kind == 2) exec_fout(d->port, e);
-        else              exec_out (d->port, e);
+        if (d->kind == 2) builtin_fout(d->port, e);
+        else              builtin_out (d->port, e);
         acc_ok = 0;
     }
 }

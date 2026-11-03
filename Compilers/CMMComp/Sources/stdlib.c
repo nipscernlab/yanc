@@ -24,7 +24,7 @@
 // ----------------------------------------------------------------------------
 
 // input ex: int x = in(0);
-expr exec_in(int id)
+expr builtin_in(int id)
 {
     if (atoi(v_table[id].name) >= nuioin) fatal(MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name);
 
@@ -36,7 +36,7 @@ expr exec_in(int id)
 }
 
 // input ex: float x = fin(0);
-expr exec_fin(int id)
+expr builtin_fin(int id)
 {
     if (atoi(v_table[id].name) >= nuioin) fatal(MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name);
 
@@ -48,7 +48,7 @@ expr exec_fin(int id)
 }
 
 // output ex: out(0,x);
-void exec_out(int id, expr e)
+void builtin_out(int id, expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -139,7 +139,7 @@ void link_sync_emit(void)
 }
 
 // toma(k, x); -- the word goes as it is (int or float bits): no conversion
-void exec_toma(expr e, int k)
+void builtin_toma(expr e, int k)
 {
     // check whether e was declared
     if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
@@ -166,7 +166,7 @@ void exec_toma(expr e, int k)
 
 // x = cade(k); -- the only form allowed (STMT_ASSIGN): link k's word lands
 // in x with x's type, so the caller's SET converts nothing
-expr exec_cade(int dest, int k)
+expr builtin_cade(int dest, int k)
 {
     if (v_table[dest].type == TY_NONE) fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[dest].name));
     if (v_table[dest].dims  > AR_NONE) fatal(MSG_ERR_ARRAY_NEEDS_IDX,    line_num+1, rem_fname(v_table[dest].name));
@@ -182,7 +182,7 @@ expr exec_cade(int dest, int k)
 // cade(k) / fcade(k) inside an expression, an index or an argument: type 1 (int)
 // or 2 (float). CAD has no push form, so a live acc is pushed first; the PSH
 // runs once, CAD's waiting loop jumps back to CAD itself.
-expr exec_cade_expr(int type, int k)
+expr builtin_cade_expr(int type, int k)
 {
     if (acc_ok) add_instr("PSH\n");
 
@@ -194,7 +194,7 @@ expr exec_cade_expr(int type, int k)
 }
 
 // output ex: fout(0,x);
-void exec_fout(int id, expr e)
+void builtin_fout(int id, expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -258,7 +258,7 @@ void exec_fout(int id, expr e)
 // ----------------------------------------------------------------------------
 
 // takes the sign of the first argument and applies it to the second
-expr exec_sign(expr e1, expr e2)
+expr builtin_sign(expr e1, expr e2)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -406,7 +406,7 @@ expr exec_sign(expr e1, expr e2)
 }
 
 // absolute value (int, float and comp)
-expr exec_abs(expr e)
+expr builtin_abs(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -463,7 +463,7 @@ expr exec_abs(expr e)
     // comp const, in memory and in acc
     if ((e.type == TY_COMP) || (e.type == TY_CCONST))
     {
-        e = exec_sqrt(exec_mod2(e));
+        e = builtin_sqrt(builtin_mod2(e));
     }
 
     acc_ok = 1;
@@ -472,7 +472,7 @@ expr exec_abs(expr e)
 }
 
 // clears if negative
-expr exec_pst(expr e)
+expr builtin_pst(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -538,7 +538,7 @@ expr exec_pst(expr e)
 }
 
 // division by constant
-expr exec_norm(expr e)
+expr builtin_norm(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -586,7 +586,7 @@ expr exec_norm(expr e)
     return expr_make(TY_INT, 0);
 }
 
-void exec_copy(expr e, int id2)
+void builtin_copy(expr e, int id2)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -635,7 +635,7 @@ void exec_copy(expr e, int id2)
 // ----------------------------------------------------------------------------
 
 // square root
-expr exec_sqrt(expr e)
+expr builtin_sqrt(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -694,21 +694,21 @@ expr exec_sqrt(expr e)
         add_instr("P_LOD %s\n", B);                      // push a²; acc = b  (P_LOD = PSH+LOD)
         add_instr("F_MLT %s\n", B);                      // acc = b²
         add_instr("SF_ADD\n");                           // acc = a² + b²
-        exec_sqrt(expr_make(TY_FLOAT, 0));                      // acc = r
+        builtin_sqrt(expr_make(TY_FLOAT, 0));                      // acc = r
         add_instr("SET %s\n", R);
 
         // re = sqrt((r + a)/2)
         add_instr("LOD %s\n", R);                        // acc = r (peephole drops if redundant)
         add_instr("F_ADD %s\n", A);                      // acc = r + a
         add_instr("F_MLT 0.5\n");                        // acc = (r + a)/2
-        exec_sqrt(expr_make(TY_FLOAT, 0));                      // acc = sqrt((r+a)/2)
+        builtin_sqrt(expr_make(TY_FLOAT, 0));                      // acc = sqrt((r+a)/2)
         add_instr("SET %s\n", RE);
 
         // im = sign(b) * sqrt((r - a)/2)
         add_instr("LOD %s\n", R);                        // acc = r
         add_instr("F_SU1 %s\n", A);                      // acc = r - a   (F_SU1 X = acc - X)
         add_instr("F_MLT 0.5\n");                        // acc = (r - a)/2
-        exec_sqrt(expr_make(TY_FLOAT, 0));                      // acc = sqrt((r-a)/2)  (>= 0)
+        builtin_sqrt(expr_make(TY_FLOAT, 0));                      // acc = sqrt((r-a)/2)  (>= 0)
         add_instr("F_SGN %s\n", B);                      // acc = magnitude with sign of b
         add_instr("SET %s\n", IM);
 
@@ -764,7 +764,7 @@ expr exec_sqrt(expr e)
 }
 
 // exponential (e^x)
-expr exec_exp(expr e)
+expr builtin_exp(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -786,7 +786,7 @@ expr exec_exp(expr e)
 
     // ------------------------------------------------------------------------
     // complex argument: exp(a+bi) = exp(a)*(cos b + i*sin b), composed from the
-    // real exp/sin/cos. Mirrors the comp branch of exec_sqrt: same a/b extraction
+    // real exp/sin/cos. Mirrors the comp branch of builtin_sqrt: same a/b extraction
     // (const/mem/acc) and the same comp-in-acc result assembly (real in acc, imag
     // pushed on the stack).
     // ------------------------------------------------------------------------
@@ -819,18 +819,18 @@ expr exec_exp(expr e)
 
         // ea = exp(a)
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
-        exec_exp(expr_make(TY_FLOAT, 0));                       // acc = exp(a)
+        builtin_exp(expr_make(TY_FLOAT, 0));                       // acc = exp(a)
         add_instr("SET %s\n", EA);
 
         // im = exp(a) * sin(b)
         add_instr("LOD %s\n", B);                        // acc = b
-        exec_sin(expr_make(TY_FLOAT, 0));                       // acc = sin(b)
+        builtin_sin(expr_make(TY_FLOAT, 0));                       // acc = sin(b)
         add_instr("F_MLT %s\n", EA);                     // acc = exp(a)*sin(b)
         add_instr("SET %s\n", IM);
 
         // re = exp(a) * cos(b)
         add_instr("LOD %s\n", B);                        // acc = b
-        exec_cos(expr_make(TY_FLOAT, 0));                       // acc = cos(b)
+        builtin_cos(expr_make(TY_FLOAT, 0));                       // acc = cos(b)
         add_instr("F_MLT %s\n", EA);                     // acc = re = exp(a)*cos(b)
 
         // assemble the complex result: real on the stack, imag in acc
@@ -884,7 +884,7 @@ expr exec_exp(expr e)
 }
 
 // natural logarithm (ln x)
-expr exec_log(expr e)
+expr builtin_log(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -907,7 +907,7 @@ expr exec_log(expr e)
     // ------------------------------------------------------------------------
     // complex argument: log(a+bi) = 1/2*ln(a²+b²) + i*fase(z). Real part is half
     // the log of the squared magnitude (a²+b² inline); imaginary part is the
-    // phase, reusing exec_fase (the 4-quadrant atan2). Mirrors exec_exp's a/b
+    // phase, reusing builtin_fase (the 4-quadrant atan2). Mirrors builtin_exp's a/b
     // extraction and comp-in-acc assembly.
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
@@ -943,14 +943,14 @@ expr exec_log(expr e)
         add_instr("P_LOD %s\n", B);                      // push a²; acc = b  (P_LOD = PSH+LOD)
         add_instr("F_MLT %s\n", B);                      // b²
         add_instr("SF_ADD\n");                           // a² + b²
-        exec_log(expr_make(TY_FLOAT, 0));                       // ln(a²+b²)
+        builtin_log(expr_make(TY_FLOAT, 0));                       // ln(a²+b²)
         add_instr("F_MLT 0.5\n");                        // 1/2 * ln(...)
         add_instr("SET %s\n", RE);
 
         // im = fase(z) -- rebuild the comp in the acc (real on stack, imag in acc)
         add_instr("LOD %s\n",   A);                      // acc = a (real)
         add_instr("P_LOD %s\n", B);                      // push a; acc = b -> comp in acc
-        exec_fase(expr_make(TY_COMP, 0));                      // arg(z)
+        builtin_fase(expr_make(TY_COMP, 0));                      // arg(z)
         add_instr("SET %s\n", IM);
 
         // assemble the complex result: real in acc, imag on the stack
@@ -1013,7 +1013,7 @@ expr exec_log(expr e)
 //                             a reciprocal when y < 0 (so pow(x,-2) = 0.25 too).
 //   * float                -> general identity x^y = exp(y*ln x), needs x > 0.
 // The base is widened to float in every path; the result is a float in the acc.
-expr exec_pow(expr ex, expr ey)
+expr builtin_pow(expr ex, expr ey)
 {
     static int pow_lbl = 0;
 
@@ -1095,7 +1095,7 @@ expr exec_pow(expr ex, expr ey)
     // normalize the base into pow_x and the exponent into pow_y (both float in
     // memory), so the two runtime strategies below read plain operands. The
     // only entangled position is "both in the acc" (base on the stack, exponent
-    // on top), spilled with SET_P exactly like exec_fase / the complex-sqrt
+    // on top), spilled with SET_P exactly like builtin_fase / the complex-sqrt
     // branch.
     // ------------------------------------------------------------------------
     const char *X = v_table[lex_id("__pow_x")].name;          // base     (float)
@@ -1184,7 +1184,7 @@ expr exec_pow(expr ex, expr ey)
 }
 
 // arctangent
-expr exec_atan(expr e)
+expr builtin_atan(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -1208,9 +1208,9 @@ expr exec_atan(expr e)
     // complex argument: atan(a+bi) =
     //   Re = 1/2 * atan2(2a, 1 - a² - b²)                          (uses fase)
     //   Im = 1/4 * ln( (a²+(b+1)²) / (a²+(b-1)²) )                 (uses real log)
-    // Mirrors the exec_exp/exec_log comp branch (a/b extraction + comp-in-acc
+    // Mirrors the builtin_exp/builtin_log comp branch (a/b extraction + comp-in-acc
     // assembly). atan2 is built by reconstructing the comp (1-a²-b²) + (2a)i in
-    // the acc and calling exec_fase.
+    // the acc and calling builtin_fase.
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
@@ -1258,7 +1258,7 @@ expr exec_atan(expr e)
         add_instr("F_SU2 1.0\n");                        // wr = 1 - (a²+b²)   (F_SU2 X = X - acc)
         add_instr("P_LOD %s\n", A);                      // push wr (real); acc = a
         add_instr("F_MLT 2.0\n");                        // wi = 2a (imag) -> comp wr + wi*i in the acc
-        exec_fase(expr_make(TY_COMP, 0));                      // atan2(2a, 1-a²-b²)
+        builtin_fase(expr_make(TY_COMP, 0));                      // atan2(2a, 1-a²-b²)
         add_instr("F_MLT 0.5\n");
         add_instr("SET %s\n", RE);
 
@@ -1277,7 +1277,7 @@ expr exec_atan(expr e)
         add_instr("SET %s\n", DEN);
         add_instr("LOD %s\n", DEN);
         add_instr("F_DIV %s\n", NUM);                    // num/den   (F_DIV X = X/acc)
-        exec_log(expr_make(TY_FLOAT, 0));                       // ln(num/den)
+        builtin_log(expr_make(TY_FLOAT, 0));                       // ln(num/den)
         add_instr("F_MLT 0.25\n");
         add_instr("SET %s\n", IM);
 
@@ -1333,7 +1333,7 @@ expr exec_atan(expr e)
 }
 
 // sine
-expr exec_sin(expr e)
+expr builtin_sin(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -1356,8 +1356,8 @@ expr exec_sin(expr e)
     // ------------------------------------------------------------------------
     // complex argument: sin(a+bi) = sin a*cosh b + i*cos a*sinh b. Fast form --
     // ONE exp gives e^b; e^-b = 1/e^b (reciprocal), so cosh/sinh come from a
-    // single exponential instead of four exec_cosh/exec_sinh calls. Mirrors the
-    // exec_exp/exec_sqrt comp branch (a/b extraction + comp-in-acc assembly).
+    // single exponential instead of four builtin_cosh/builtin_sinh calls. Mirrors the
+    // builtin_exp/builtin_sqrt comp branch (a/b extraction + comp-in-acc assembly).
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
@@ -1391,7 +1391,7 @@ expr exec_sin(expr e)
 
         // e^b (single exponential), e^-b = 1/e^b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
-        exec_exp(expr_make(TY_FLOAT, 0));                       // acc = e^b
+        builtin_exp(expr_make(TY_FLOAT, 0));                       // acc = e^b
         add_instr("SET %s\n", EB);
         add_instr("F_DIV 1.0\n");                        // 1.0/e^b = e^-b  (F_DIV X = X/acc)
         add_instr("SET %s\n", EMB);
@@ -1401,8 +1401,8 @@ expr exec_sin(expr e)
         add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
 
         // cos a first, so sin a is still in the acc for the real part
-        add_instr("LOD %s\n", A); exec_cos(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", CA);
-        add_instr("LOD %s\n", A); exec_sin(expr_make(TY_FLOAT, 0));
+        add_instr("LOD %s\n", A); builtin_cos(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", CA);
+        add_instr("LOD %s\n", A); builtin_sin(expr_make(TY_FLOAT, 0));
 
         // re = sin a * cosh b, pushed; im = cos a * sinh b -> comp in acc
         add_instr("F_MLT %s\n", CHB);
@@ -1456,7 +1456,7 @@ expr exec_sin(expr e)
 }
 
 // tangent
-expr exec_tan(expr e)
+expr builtin_tan(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -1480,7 +1480,7 @@ expr exec_tan(expr e)
     // complex argument: tan(a+bi) = (sin 2a + i*sinh 2b) / (cos 2a + cosh 2b).
     // The denominator D = cos 2a + cosh 2b is REAL, so no complex division is
     // needed. cosh/sinh 2b come from a single exp(2b) + reciprocal (fast form).
-    // Mirrors the exec_exp/exec_log comp branch (a/b extraction + comp assembly).
+    // Mirrors the builtin_exp/builtin_log comp branch (a/b extraction + comp assembly).
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
@@ -1523,11 +1523,11 @@ expr exec_tan(expr e)
         add_instr("F_MLT 2.0\n");  add_instr("SET %s\n", TB);
 
         // sin 2a, cos 2a
-        add_instr("LOD %s\n", TA); exec_sin(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", S2A);
-        add_instr("LOD %s\n", TA); exec_cos(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", C2A);
+        add_instr("LOD %s\n", TA); builtin_sin(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", S2A);
+        add_instr("LOD %s\n", TA); builtin_cos(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", C2A);
 
         // e^(2b), e^(-2b) = 1/e^(2b); cosh 2b, sinh 2b
-        add_instr("LOD %s\n", TB); exec_exp(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", EB);
+        add_instr("LOD %s\n", TB); builtin_exp(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", EB);
         add_instr("F_DIV 1.0\n");  add_instr("SET %s\n", EMB);                         // e^(-2b)
         add_instr("F_ADD %s\n", EB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);  // acc holds e^-b already
         add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
@@ -1587,7 +1587,7 @@ expr exec_tan(expr e)
 }
 
 // cosine
-expr exec_cos(expr e)
+expr builtin_cos(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -1610,7 +1610,7 @@ expr exec_cos(expr e)
     // ------------------------------------------------------------------------
     // complex argument: cos(a+bi) = cos a*cosh b - i*sin a*sinh b. Fast form --
     // ONE exp gives e^b; e^-b = 1/e^b (reciprocal), so cosh/sinh come from a
-    // single exponential. Mirrors the exec_sin comp branch; only the real/imag
+    // single exponential. Mirrors the builtin_sin comp branch; only the real/imag
     // assignment differs (re uses cos a, im is negated).
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
@@ -1645,7 +1645,7 @@ expr exec_cos(expr e)
 
         // e^b (single exponential), e^-b = 1/e^b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
-        exec_exp(expr_make(TY_FLOAT, 0));                       // acc = e^b
+        builtin_exp(expr_make(TY_FLOAT, 0));                       // acc = e^b
         add_instr("SET %s\n", EB);
         add_instr("F_DIV 1.0\n");                        // 1.0/e^b = e^-b  (F_DIV X = X/acc)
         add_instr("SET %s\n", EMB);
@@ -1655,8 +1655,8 @@ expr exec_cos(expr e)
         add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
 
         // sin a first, so cos a is still in the acc for the real part
-        add_instr("LOD %s\n", A); exec_sin(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", SA);
-        add_instr("LOD %s\n", A); exec_cos(expr_make(TY_FLOAT, 0));
+        add_instr("LOD %s\n", A); builtin_sin(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", SA);
+        add_instr("LOD %s\n", A); builtin_cos(expr_make(TY_FLOAT, 0));
 
         // re = cos a * cosh b, pushed; im = -(sin a * sinh b) -> comp in acc
         // (negated after the product, not before: a zero product is +0 and
@@ -1723,7 +1723,7 @@ expr exec_cos(expr e)
 // ----------------------------------------------------------------------------
 
 // hyperbolic cosine
-expr exec_cosh(expr e)
+expr builtin_cosh(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -1776,7 +1776,7 @@ expr exec_cosh(expr e)
 }
 
 // hyperbolic sine
-expr exec_sinh(expr e)
+expr builtin_sinh(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -1829,7 +1829,7 @@ expr exec_sinh(expr e)
 }
 
 // hyperbolic tangent
-expr exec_tanh(expr e)
+expr builtin_tanh(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -1890,7 +1890,7 @@ expr exec_tanh(expr e)
 // ----------------------------------------------------------------------------
 
 // largest integral float <= x
-expr exec_floor(expr e)
+expr builtin_floor(expr e)
 {
     static int floor_lbl = 0;
 
@@ -1950,7 +1950,7 @@ expr exec_floor(expr e)
 }
 
 // smallest integral float >= x
-expr exec_ceil(expr e)
+expr builtin_ceil(expr e)
 {
     static int ceil_lbl = 0;
 
@@ -2011,7 +2011,7 @@ expr exec_ceil(expr e)
 }
 
 // nearest integral float, ties away from zero
-expr exec_round(expr e)
+expr builtin_round(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -2066,7 +2066,7 @@ expr exec_round(expr e)
 // ----------------------------------------------------------------------------
 
 // returns the real part of a comp
-expr exec_real(expr e)
+expr builtin_real(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -2127,7 +2127,7 @@ expr exec_real(expr e)
 }
 
 // returns the imag part of a comp
-expr exec_imag(expr e)
+expr builtin_imag(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -2189,7 +2189,7 @@ expr exec_imag(expr e)
 }
 
 // squared magnitude of a complex number
-expr exec_mod2(expr e)
+expr builtin_mod2(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -2254,7 +2254,7 @@ expr exec_mod2(expr e)
 }
 
 // computes the phase (in radians) of a complex number
-expr exec_fase(expr e)
+expr builtin_fase(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -2327,7 +2327,7 @@ expr exec_fase(expr e)
     // --- real < 0 (nonzero): atan(imag/real) +/- PI ---
     add_instr("LOD %s\n", R);
     add_instr("F_DIV %s\n", M);                        // imag/real  (F_DIV X = X/acc)
-    exec_atan(expr_make(TY_FLOAT, 0));                         // atan(imag/real) -> acc
+    builtin_atan(expr_make(TY_FLOAT, 0));                         // atan(imag/real) -> acc
     add_instr("SET %s\n", t);
     add_instr("LOD 0.0\n");
     add_instr("F_LES %s\n", M);                        // imag < 0 ?  (0 > imag)
@@ -2347,7 +2347,7 @@ expr exec_fase(expr e)
     add_instr("JIZ __Lfa%dc\n", n);
     add_instr("LOD %s\n", R);
     add_instr("F_DIV %s\n", M);                        // imag/real
-    exec_atan(expr_make(TY_FLOAT, 0));
+    builtin_atan(expr_make(TY_FLOAT, 0));
     add_instr("JMP __Lfa%dz\n", n);
 
     // --- real == 0 : +/- PI/2 (0 if imag == 0) ---
@@ -2373,7 +2373,7 @@ expr exec_fase(expr e)
 }
 
 // joins two real numbers into a complex
-expr exec_comp(expr er, expr ei)
+expr builtin_comp(expr er, expr ei)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -2531,7 +2531,7 @@ expr exec_comp(expr er, expr ei)
 }
 
 // complex conjugate: comp -> a - bi ; int/float -> x + 0i (always returns a comp)
-expr exec_conj(expr e)
+expr builtin_conj(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -2632,8 +2632,8 @@ expr exec_conj(expr e)
 // create a new array type for shift register?
 // later: the walker computes the value after the shift (it reads no element of
 // the vector), so eb carries only its type; the shift is emitted alone and
-// exec_shift_in stores the value, with no word set aside in __aux_var
-void exec_shift(int ida, expr eb, int idc, int later)
+// builtin_shift_in stores the value, with no word set aside in __aux_var
+void builtin_shift(int ida, expr eb, int idc, int later)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
@@ -2798,7 +2798,7 @@ void exec_shift(int ida, expr eb, int idc, int later)
 }
 
 // the value of a shift emitted with later, in the acc or in memory, into a[0]
-void exec_shift_in(int ida, expr e)
+void builtin_shift_in(int ida, expr e)
 {
     // an int folded into a constant comes in memory; a float in memory goes
     // through the acc (LOD, F2I), since the walker folds no float expression

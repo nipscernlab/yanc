@@ -63,7 +63,7 @@ expr oper_neg(expr e)
 
     // a float or comp literal needs no instruction: its negation is another
     // literal (-2.5 is loaded as such, x - (3+4i) adds -3-4i). Not an int one: the
-    // compiler holds int literals non-negative (lex_inum, exec_pow's exponent
+    // compiler holds int literals non-negative (lex_inum, builtin_pow's exponent
     // loop). Not when a float part is zero either: "-0.0" encodes as +0, and
     // F_NEG_M 0.0 gives -0 (TODO.md item 4)
     if (e.type == TY_FLOAT && e.id != 0 && v_table[e.id].is_const)

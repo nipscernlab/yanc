@@ -110,7 +110,7 @@ void emit_peephole_reset(void)
 }
 
 // True when the accumulator is known to currently hold variable `name`. Used by
-// the codegen (e.g. the comp c²+d² in oper_div / exec_mod2) to square the
+// the codegen (e.g. the comp c²+d² in oper_div / builtin_mod2) to square the
 // acc-resident half first, so its LOD is dropped by the peephole above.
 int acc_holds(const char *name)
 {

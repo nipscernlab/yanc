@@ -1249,30 +1249,30 @@ static expr ast_emit_expr_impl(expr_node *n)
 
         case EXPR_STDLIB_CALL: {
             switch (n->op) {
-                case OP_STD_IN:   return exec_in (n->id);
-                case OP_STD_FIN:  return exec_fin(n->id);
+                case OP_STD_IN:   return builtin_in (n->id);
+                case OP_STD_FIN:  return builtin_fin(n->id);
                 // inside an expression, an index or an argument (the whole
                 // right-hand side of an assignment is taken by STMT_ASSIGN)
-                case OP_STD_CADE:  return exec_cade_expr(1, n->id);
-                case OP_STD_FCADE: return exec_cade_expr(2, n->id);
-                case OP_STD_PST:  { expr a = ast_emit_expr(n->left); return exec_pst (a); }
-                case OP_STD_ABS:  { expr a = ast_emit_expr(n->left); return exec_abs (a); }
-                case OP_STD_SIGN: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_sign(a, b); }
-                case OP_STD_NRM:  { expr a = ast_emit_expr(n->left); return exec_norm(a); }
-                case OP_STD_SQRT: { expr a = ast_emit_expr(n->left); return exec_sqrt(a); }
-                case OP_STD_ATAN: { expr a = ast_emit_expr(n->left); return exec_atan(a); }
-                case OP_STD_SIN:  { expr a = ast_emit_expr(n->left); return exec_sin (a); }
-                case OP_STD_COS:  { expr a = ast_emit_expr(n->left); return exec_cos (a); }
-                case OP_STD_TAN:  { expr a = ast_emit_expr(n->left); return exec_tan (a); }
-                case OP_STD_COSH: { expr a = ast_emit_expr(n->left); return exec_cosh(a); }
-                case OP_STD_SINH: { expr a = ast_emit_expr(n->left); return exec_sinh(a); }
-                case OP_STD_TANH: { expr a = ast_emit_expr(n->left); return exec_tanh(a); }
-                case OP_STD_EXP:  { expr a = ast_emit_expr(n->left); return exec_exp (a); }
-                case OP_STD_LOG:  { expr a = ast_emit_expr(n->left); return exec_log (a); }
-                case OP_STD_POW:  { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_pow (a, b); }
-                case OP_STD_FLOOR:{ expr a = ast_emit_expr(n->left); return exec_floor(a); }
-                case OP_STD_CEIL: { expr a = ast_emit_expr(n->left); return exec_ceil (a); }
-                case OP_STD_ROUND:{ expr a = ast_emit_expr(n->left); return exec_round(a); }
+                case OP_STD_CADE:  return builtin_cade_expr(1, n->id);
+                case OP_STD_FCADE: return builtin_cade_expr(2, n->id);
+                case OP_STD_PST:  { expr a = ast_emit_expr(n->left); return builtin_pst (a); }
+                case OP_STD_ABS:  { expr a = ast_emit_expr(n->left); return builtin_abs (a); }
+                case OP_STD_SIGN: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return builtin_sign(a, b); }
+                case OP_STD_NRM:  { expr a = ast_emit_expr(n->left); return builtin_norm(a); }
+                case OP_STD_SQRT: { expr a = ast_emit_expr(n->left); return builtin_sqrt(a); }
+                case OP_STD_ATAN: { expr a = ast_emit_expr(n->left); return builtin_atan(a); }
+                case OP_STD_SIN:  { expr a = ast_emit_expr(n->left); return builtin_sin (a); }
+                case OP_STD_COS:  { expr a = ast_emit_expr(n->left); return builtin_cos (a); }
+                case OP_STD_TAN:  { expr a = ast_emit_expr(n->left); return builtin_tan (a); }
+                case OP_STD_COSH: { expr a = ast_emit_expr(n->left); return builtin_cosh(a); }
+                case OP_STD_SINH: { expr a = ast_emit_expr(n->left); return builtin_sinh(a); }
+                case OP_STD_TANH: { expr a = ast_emit_expr(n->left); return builtin_tanh(a); }
+                case OP_STD_EXP:  { expr a = ast_emit_expr(n->left); return builtin_exp (a); }
+                case OP_STD_LOG:  { expr a = ast_emit_expr(n->left); return builtin_log (a); }
+                case OP_STD_POW:  { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return builtin_pow (a, b); }
+                case OP_STD_FLOOR:{ expr a = ast_emit_expr(n->left); return builtin_floor(a); }
+                case OP_STD_CEIL: { expr a = ast_emit_expr(n->left); return builtin_ceil (a); }
+                case OP_STD_ROUND:{ expr a = ast_emit_expr(n->left); return builtin_round(a); }
                 case OP_STD_REAL: case OP_STD_IMAG:
                     // a part of a comp array element: the array of that part (v, or
                     // v_i) is read as a float array, the other one not at all
@@ -1296,12 +1296,12 @@ static expr ast_emit_expr_impl(expr_node *n)
                         if (n->left->kind == EXPR_BINOP && n->left->type == TY_COMP && comp_partwise(n->left, &leaves))
                             return comp_partwise_emit(n->left, !re, !re);
                     }
-                    if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return exec_real(a); }
-                    else                      { expr a = ast_emit_expr(n->left); return exec_imag(a); }
-                case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_comp(a, b); }
-                case OP_STD_FASE: { expr a = ast_emit_expr(n->left); return exec_fase(a); }
-                case OP_STD_MOD2: { expr a = ast_emit_expr(n->left); return exec_mod2(a); }
-                case OP_STD_CONJ: { expr a = ast_emit_expr(n->left); return exec_conj(a); }
+                    if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return builtin_real(a); }
+                    else                      { expr a = ast_emit_expr(n->left); return builtin_imag(a); }
+                case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return builtin_comp(a, b); }
+                case OP_STD_FASE: { expr a = ast_emit_expr(n->left); return builtin_fase(a); }
+                case OP_STD_MOD2: { expr a = ast_emit_expr(n->left); return builtin_mod2(a); }
+                case OP_STD_CONJ: { expr a = ast_emit_expr(n->left); return builtin_conj(a); }
                 default: break;
             }
             break;
@@ -1722,8 +1722,8 @@ static void dirac_out(stmt_node *n)
 
     if (!is_number(r)) {typecheck_expr(r); r = dirac_fold_neg(r);}
     if (is_number(r)) {
-        if (n->op) exec_fout(n->id, ast_emit_expr(r));
-        else       exec_out (n->id, ast_emit_expr(r));
+        if (n->op) builtin_fout(n->id, ast_emit_expr(r));
+        else       builtin_out (n->id, ast_emit_expr(r));
         return;
     }
     if (r->rows != 1 && r->cols != 1) {
@@ -1878,7 +1878,7 @@ void stmt_emit(stmt_node *n)
             // partner's word goes into x as it is, with x's type (no convert)
             if (n->rhs && n->rhs->kind == EXPR_STDLIB_CALL &&
                 (n->rhs->op == OP_STD_CADE || n->rhs->op == OP_STD_FCADE))
-                 assign_set(n->id, exec_cade(n->id, n->rhs->id));
+                 assign_set(n->id, builtin_cade(n->id, n->rhs->id));
             else assign_set(n->id, ast_emit_expr(n->rhs));
             break;
 
@@ -1994,11 +1994,11 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_TOMA:
-            exec_toma(ast_emit_expr(n->rhs), n->id);
+            builtin_toma(ast_emit_expr(n->rhs), n->id);
             break;
 
         case STMT_COPY:
-            exec_copy(ast_emit_expr(n->rhs), n->id);
+            builtin_copy(ast_emit_expr(n->rhs), n->id);
             break;
 
         case STMT_DIRAC:
@@ -2014,10 +2014,10 @@ void stmt_emit(stmt_node *n)
                 && !expr_reads(n->rhs, n->id) && (n->rhs->type == TY_INT || n->rhs->type == TY_FLOAT)
                 && v_table[n->id].dims == AR_1D && (v_table[n->id].type == TY_INT || v_table[n->id].type == TY_FLOAT))
             {
-                exec_shift(n->id, expr_make(n->rhs->type, 0), n->id2, 1);
-                exec_shift_in(n->id, ast_emit_expr(n->rhs));
+                builtin_shift(n->id, expr_make(n->rhs->type, 0), n->id2, 1);
+                builtin_shift_in(n->id, ast_emit_expr(n->rhs));
             }
-            else exec_shift(n->id, ast_emit_expr(n->rhs), n->id2, 0);
+            else builtin_shift(n->id, ast_emit_expr(n->rhs), n->id2, 0);
             break;
 
         case STMT_VOID_CALL:

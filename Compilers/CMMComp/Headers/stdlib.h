@@ -13,61 +13,61 @@
 // input and output -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-expr exec_in  (int port);          //  data input
-expr exec_fin (int port);          //  data input (converting to float)
-void exec_out (int port, expr e);  // data output
-void exec_fout(int port, expr e);  // data output (converting to float)
+expr builtin_in  (int port);          //  data input
+expr builtin_fin (int port);          //  data input (converting to float)
+void builtin_out (int port, expr e);  // data output
+void builtin_fout(int port, expr e);  // data output (converting to float)
 int  link_use(int id, int sync);   // the link number of a toma/cade (id: its INUM); records plain / _sync
 void link_sync_emit(void);             // #LKSYNC k for every link used with a _sync form
-void exec_toma(expr e, int k);     // toma(k, e): hands e over link k (docs/design/toma-and-cade-links.md)
-expr exec_cade(int dest, int k);   // x = cade(k): takes link k's word for x, as x's type
-expr exec_cade_expr(int type, int k); // cade(k) (1, int) / fcade(k) (2, float) inside an expression
+void builtin_toma(expr e, int k);     // toma(k, e): hands e over link k (docs/design/toma-and-cade-links.md)
+expr builtin_cade(int dest, int k);   // x = cade(k): takes link k's word for x, as x's type
+expr builtin_cade_expr(int type, int k); // cade(k) (1, int) / fcade(k) (2, float) inside an expression
 
 // ----------------------------------------------------------------------------
 // special functions that save code -------------------------------------------
 // ----------------------------------------------------------------------------
 
-expr exec_sign(expr e1, expr e2); // takes the sign of the first argument and applies it to the second
-expr exec_abs (expr e);           // absolute value
-expr exec_pst (expr e);           // clears if negative
-expr exec_norm(expr e);           // division by constant
-void exec_copy(expr e, int id);   // copies the value of the first argument into the second (no type checking)
+expr builtin_sign(expr e1, expr e2); // takes the sign of the first argument and applies it to the second
+expr builtin_abs (expr e);           // absolute value
+expr builtin_pst (expr e);           // clears if negative
+expr builtin_norm(expr e);           // division by constant
+void builtin_copy(expr e, int id);   // copies the value of the first argument into the second (no type checking)
 
 // ----------------------------------------------------------------------------
 // arithmetic functions -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-expr exec_sqrt(expr e);           // square root
-expr exec_atan(expr e);           // arctangent
-expr exec_sin (expr e);           // sine
-expr exec_cos (expr e);           // cosine
-expr exec_tan (expr e);           // tangent
-expr exec_cosh(expr e);           // hyperbolic cosine
-expr exec_sinh(expr e);           // hyperbolic sine
-expr exec_tanh(expr e);           // hyperbolic tangent
-expr exec_exp (expr e);           // exponential (e^x)
-expr exec_log (expr e);           // natural logarithm (ln x)
-expr exec_pow (expr ex, expr ey); // power x^y (const int exp: square-and-multiply; int var: loop; else exp(y*ln x))
-expr exec_floor(expr e);          // largest integral float <= x
-expr exec_ceil (expr e);          // smallest integral float >= x
-expr exec_round(expr e);          // nearest integral float, ties away from zero
+expr builtin_sqrt(expr e);           // square root
+expr builtin_atan(expr e);           // arctangent
+expr builtin_sin (expr e);           // sine
+expr builtin_cos (expr e);           // cosine
+expr builtin_tan (expr e);           // tangent
+expr builtin_cosh(expr e);           // hyperbolic cosine
+expr builtin_sinh(expr e);           // hyperbolic sine
+expr builtin_tanh(expr e);           // hyperbolic tangent
+expr builtin_exp (expr e);           // exponential (e^x)
+expr builtin_log (expr e);           // natural logarithm (ln x)
+expr builtin_pow (expr ex, expr ey); // power x^y (const int exp: square-and-multiply; int var: loop; else exp(y*ln x))
+expr builtin_floor(expr e);          // largest integral float <= x
+expr builtin_ceil (expr e);          // smallest integral float >= x
+expr builtin_round(expr e);          // nearest integral float, ties away from zero
 
 // ----------------------------------------------------------------------------
 // special functions for complex numbers --------------------------------------
 // ----------------------------------------------------------------------------
 
-expr exec_real(expr e);           // returns the real part
-expr exec_imag(expr e);           // returns the imaginary part
-expr exec_mod2(expr e);           // squared magnitude (move to the parser)
-expr exec_fase(expr e);           // phase in radians
-expr exec_comp(expr er, expr ei); // combines two real numbers into a complex
-expr exec_conj(expr e);           // complex conjugate (a-bi); real x -> x+0i; always comp
+expr builtin_real(expr e);           // returns the real part
+expr builtin_imag(expr e);           // returns the imaginary part
+expr builtin_mod2(expr e);           // squared magnitude (move to the parser)
+expr builtin_fase(expr e);           // phase in radians
+expr builtin_comp(expr er, expr ei); // combines two real numbers into a complex
+expr builtin_conj(expr e);           // complex conjugate (a-bi); real x -> x+0i; always comp
 
 // ----------------------------------------------------------------------------
 // the Dirac shift register (the other forms: dirac.c) -------------------------
 // ----------------------------------------------------------------------------
 
-void exec_shift(int ida, expr eb, int idc, int later); // shift register in vector a (a must equal c)
-void exec_shift_in(int ida, expr e);                   // later: the value, computed after the shift, into a[0]
+void builtin_shift(int ida, expr eb, int idc, int later); // shift register in vector a (a must equal c)
+void builtin_shift_in(int ida, expr e);                   // later: the value, computed after the shift, into a[0]
 
 #endif // CMM_STDLIB_H
