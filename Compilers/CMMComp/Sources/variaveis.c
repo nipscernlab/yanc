@@ -93,7 +93,7 @@ void check_var(void)
                 warn(MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
             else
             {
-                char *name = rem_fname(v_table[i].name, v_table[fnid].name);
+                char *name = strip_fn(v_table[i].name, v_table[fnid].name);
                 warn(MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[fnid].name, name);
             }
         }
@@ -109,25 +109,27 @@ void check_var(void)
 // declared before it, a global at the top level or a local inside a function
 void dire_wave(int id)
 {
-    char *name = rem_fname(v_table[id].name, fname);
+    char *name = rem_fname(v_table[id].name);
     if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, name);
     if (v_table[id].type > 3)  fatal(MSG_ERR_WAVE_NOT_VAR, line_num+1, name);
     v_table[id].wave = 1;
 }
 
-// strips the function name from the variable
-char* rem_fname(char *var, const char *fname)
+// a local is <func>_<name>: strip_fn gives <name>; anything else, a global
+// even if it starts like the function (`mainly` in `main`), keeps its name
+char *strip_fn(char *var, const char *func)
 {
-    // During the deferred AST walk the global fname is "" (reset at each
-    // function's end), so callers that pass it cannot strip the prefix. The
-    // walker keeps emit_fname pointed at the current function, so prefer it when
-    // set -- this is display-only and does not affect exec_id's naming.
-    if (emit_fname[0] != '\0') fname = emit_fname;
-    if (strcmp(fname,"") == 0) return var;
-    // a local is <function>_<name>; anything else (a global, even one that
-    // starts like the function, as `mainly` in `main`) keeps its name (#94 A)
-    size_t L = strlen(fname);
-    return (strncmp(var, fname, L) == 0 && var[L] == '_') ? var + L + 1 : var;
+    size_t L = strlen(func);
+    if (L == 0) return var;
+    return (strncmp(var, func, L) == 0 && var[L] == '_') ? var + L + 1 : var;   // #94 A
+}
+
+// the name a variable has in the function being compiled: the parse-time
+// fname, or during the deferred AST walk (when fname is "") emit_fname, the
+// function the walker is in. For messages only: exec_id names with fname
+char *rem_fname(char *var)
+{
+    return strip_fn(var, emit_fname[0] != '\0' ? emit_fname : fname);
 }
 
 // ----------------------------------------------------------------------------
@@ -199,7 +201,7 @@ void check_name(int id, int is_fun)
         int t = v_table[id].type;
         if (!is_fun && t < 6 && t != 4 && v_table[id].fnid == find_var(fname))
         {   // the same name declared twice in the same place
-            fatal(MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as, fname));
+            fatal(MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as));
         }
         name_taken(me, as, name_owner(id));
     }

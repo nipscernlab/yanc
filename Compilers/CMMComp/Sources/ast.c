@@ -273,7 +273,7 @@ expr_node *expr_dirac_in(int port)
 
 void dirac_not_vector(int id)
 {
-    char *name = rem_fname(v_table[id].name, fname);
+    char *name = rem_fname(v_table[id].name);
     if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST,   line_num + 1, name);
     else                       fatal(MSG_ERR_NOT_A_VECTOR, line_num + 1, name);
 }
@@ -608,7 +608,7 @@ void shapecheck_expr(expr_node *n)
     {
         case EXPR_DIRAC_REF: {
             int id = n->id;
-            char *name = rem_fname(v_table[id].name, fname);
+            char *name = rem_fname(v_table[id].name);
             if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST, n->line, name);
             if (n->op == DIRAC_ROLE_MAT) {
                 if (v_table[id].isar != 2) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
@@ -1667,7 +1667,7 @@ static int is_prod(const expr_node *n)
 // the target array dst against the shape of the expression
 static void dirac_check_target(int dst, expr_node *r, int line)
 {
-    char *name = rem_fname(v_table[dst].name, fname);
+    char *name = rem_fname(v_table[dst].name);
     if (v_table[dst].type == 0) fatal(MSG_ERR_DECL_FIRST, line, name);
 
     int rows = 1, cols = 1, fits;

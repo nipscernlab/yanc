@@ -55,13 +55,13 @@ void exec_out(int id, expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type > 2) fatal(MSG_ERR_PICK_COMP_INFO, line_num+1);
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // check port range
     if (atoi(v_table[id].name) >= nuioou) fatal(MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name);
@@ -142,13 +142,13 @@ void link_sync_emit(void)
 void exec_toma(expr e, int k)
 {
     // check whether e was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // a comp is two words: the link carries one
     if (e.type > 2) fatal(MSG_ERR_PICK_COMP_INFO, line_num+1);
 
     // an array needs its index
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     if (e.id != 0) v_table[e.id].used = 1;
 
@@ -168,9 +168,9 @@ void exec_toma(expr e, int k)
 // in x with x's type, so the caller's SET converts nothing
 expr exec_cade(int dest, int k)
 {
-    if (v_table[dest].type == 0) fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[dest].name, fname));
-    if (v_table[dest].isar  > 0) fatal(MSG_ERR_ARRAY_NEEDS_IDX,    line_num+1, rem_fname(v_table[dest].name, fname));
-    if (v_table[dest].type  > 2) fatal(MSG_ERR_CADE_COMP,          line_num+1, rem_fname(v_table[dest].name, fname));
+    if (v_table[dest].type == 0) fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[dest].name));
+    if (v_table[dest].isar  > 0) fatal(MSG_ERR_ARRAY_NEEDS_IDX,    line_num+1, rem_fname(v_table[dest].name));
+    if (v_table[dest].type  > 2) fatal(MSG_ERR_CADE_COMP,          line_num+1, rem_fname(v_table[dest].name));
 
     add_instr("CAD %d\n", k);
 
@@ -201,13 +201,13 @@ void exec_fout(int id, expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type > 2) fatal(MSG_ERR_PICK_COMP_INFO, line_num+1);
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // check port range
     if (atoi(v_table[id].name) >= nuioou) fatal(MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name);
@@ -265,16 +265,16 @@ expr exec_sign(expr e1, expr e2)
     // ------------------------------------------------------------------------
 
     // check whether et1 was declared
-    if (e1.id != 0 && v_table[e1.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e1.id].name, fname));
+    if (e1.id != 0 && v_table[e1.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e1.id].name));
     
     // check whether et2 was declared
-    if (e2.id != 0 && v_table[e2.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e2.id].name, fname));
+    if (e2.id != 0 && v_table[e2.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e2.id].name));
 
     // check whether et1 is a variable
-    if (e1.id != 0 && v_table[e1.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e1.id].name, fname));
+    if (e1.id != 0 && v_table[e1.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e1.id].name));
 
     // check whether et2 is a variable
-    if (e2.id != 0 && v_table[e2.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e2.id].name, fname));
+    if (e2.id != 0 && v_table[e2.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e2.id].name));
 
     // check whether there is a comp
     if ((e1.type > 2) || (e2.type > 2)) fatal(MSG_ERR_SIGN_COMPLEX, line_num+1);
@@ -413,10 +413,10 @@ expr exec_abs(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -479,10 +479,10 @@ expr exec_pst(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -545,10 +545,10 @@ expr exec_norm(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether it is int
     if (e.type != 1) fatal(MSG_ERR_NORM_NON_INT, line_num+1);
@@ -593,16 +593,16 @@ void exec_copy(expr e, int id2)
     // ------------------------------------------------------------------------
 
     // check whether the source expression was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether the source is a plain variable (not an array)
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether id2 was declared
-    if (v_table[id2].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[id2].name, fname));
+    if (v_table[id2].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[id2].name));
 
     // check whether id2 is a variable
-    if (v_table[id2].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[id2].name, fname));
+    if (v_table[id2].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[id2].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -642,10 +642,10 @@ expr exec_sqrt(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -771,10 +771,10 @@ expr exec_exp(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -891,10 +891,10 @@ expr exec_log(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1022,12 +1022,12 @@ expr exec_pow(expr ex, expr ey)
     // ------------------------------------------------------------------------
 
     // check whether the operands were declared
-    if (ex.id != 0 && v_table[ex.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ex.id].name, fname));
-    if (ey.id != 0 && v_table[ey.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ey.id].name, fname));
+    if (ex.id != 0 && v_table[ex.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ex.id].name));
+    if (ey.id != 0 && v_table[ey.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ey.id].name));
 
     // check whether the operands are plain variables (not arrays)
-    if (ex.id != 0 && v_table[ex.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ex.id].name, fname));
-    if (ey.id != 0 && v_table[ey.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ey.id].name, fname));
+    if (ex.id != 0 && v_table[ex.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ex.id].name));
+    if (ey.id != 0 && v_table[ey.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ey.id].name));
 
     // a complex base or exponent is not supported
     if (ex.type > 2 || ey.type > 2) fatal(MSG_ERR_POW_COMPLEX, line_num+1);
@@ -1191,10 +1191,10 @@ expr exec_atan(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1340,10 +1340,10 @@ expr exec_sin(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1463,10 +1463,10 @@ expr exec_tan(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1594,10 +1594,10 @@ expr exec_cos(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1729,8 +1729,8 @@ expr exec_cosh(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
     if (e.type > 2) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "cosh");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1782,8 +1782,8 @@ expr exec_sinh(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
     if (e.type > 2) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "sinh");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1835,8 +1835,8 @@ expr exec_tanh(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
     if (e.type > 2) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "tanh");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1898,8 +1898,8 @@ expr exec_floor(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
     if (e.type > 2) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "floor");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1958,8 +1958,8 @@ expr exec_ceil(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
     if (e.type > 2) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "ceil");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -2017,8 +2017,8 @@ expr exec_round(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
     if (e.type > 2) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "round");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -2073,10 +2073,10 @@ expr exec_real(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < 3) fatal(MSG_ERR_REAL_ARG_COMP, line_num+1);
@@ -2134,10 +2134,10 @@ expr exec_imag(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < 3) fatal(MSG_ERR_IMAG_ARG_COMP, line_num+1);
@@ -2196,10 +2196,10 @@ expr exec_mod2(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < 3) fatal(MSG_ERR_MOD2_ARG_COMP, line_num+1);
@@ -2261,10 +2261,10 @@ expr exec_fase(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < 3) fatal(MSG_ERR_FASE_ARG_COMP, line_num+1);
@@ -2380,16 +2380,16 @@ expr exec_comp(expr er, expr ei)
     // ------------------------------------------------------------------------
 
     // check whether etr was declared
-    if (er.id != 0 && v_table[er.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[er.id].name, fname));
+    if (er.id != 0 && v_table[er.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[er.id].name));
 
     // check whether eti was declared
-    if (ei.id != 0 && v_table[ei.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ei.id].name, fname));
+    if (ei.id != 0 && v_table[ei.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ei.id].name));
 
     // check whether etr is a variable
-    if (er.id != 0 && v_table[er.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[er.id].name, fname));
+    if (er.id != 0 && v_table[er.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[er.id].name));
 
     // check whether et is a variable
-    if (ei.id != 0 && v_table[ei.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ei.id].name, fname));
+    if (ei.id != 0 && v_table[ei.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ei.id].name));
 
     // check whether it is comp
     if (er.type > 2 || ei.type > 2) fatal(MSG_ERR_COMPLEX_OF_COMPLEX, line_num+1);
@@ -2538,10 +2538,10 @@ expr exec_conj(expr e)
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name, fname));
+    if (e.id != 0 && v_table[e.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -2640,10 +2640,10 @@ void exec_shift(int ida, expr eb, int idc, int later)
     // ------------------------------------------------------------------------
 
     // check whether ida was declared
-    if (v_table[ida].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ida].name, fname));
+    if (v_table[ida].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ida].name));
 
     // check whether etb was declared
-    if (eb.id != 0 && v_table[eb.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[eb.id].name, fname));
+    if (eb.id != 0 && v_table[eb.id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[eb.id].name));
 
     // check whether idc equals ida
     if (idc != ida) fatal(MSG_ERR_SHIFT_VEC_SELF, line_num+1);
@@ -2653,10 +2653,10 @@ void exec_shift(int ida, expr eb, int idc, int later)
 
     
     // check whether ida is a vector
-    if (v_table[ida].isar != 1) fatal(MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[ida].name, fname));
+    if (v_table[ida].isar != 1) fatal(MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[ida].name));
 
     // check whether etb is a variable
-    if (eb.id != 0 && v_table[eb.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[eb.id].name, fname));
+    if (eb.id != 0 && v_table[eb.id].isar > 0) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[eb.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -2679,7 +2679,7 @@ void exec_shift(int ida, expr eb, int idc, int later)
     if (later)
     {
         if (v_table[ida].type == 1 && eb.type == 2)
-            warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name, fname));
+            warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name));
 
         for (int i = N-1; i > 0; i--)
         {
@@ -2778,7 +2778,7 @@ void exec_shift(int ida, expr eb, int idc, int later)
     // ida int and etb float: converted, as an int variable getting a float
     if (v_table[ida].type == 1 && eb.type == 2)
     {
-        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name, fname));
+        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name));
 
         if (eb.id != 0) add_instr("F2I_M %s\n", v_table[eb.id].name);
         else            add_instr("F2I\n");

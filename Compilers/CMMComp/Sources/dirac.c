@@ -734,7 +734,7 @@ static void store(expr e, const dl_dst *d, long off)
     // a value in memory goes over the index, which is still in the acc; one
     // of another type is converted on the way, by the _M form
     if (d->type == 1 && e.type == 2)
-        warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
+        warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name));
     int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
     if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "P_I2F_M" : conv == 2 ? "P_F2I_M" : "P_LOD", v_table[e.id].name);
     else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
@@ -748,7 +748,7 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
         acc_ok = 0;
         expr e = ast_emit_expr(el);
         if (d->type == 1 && e.type == 2)
-            warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
+            warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name));
         int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
         if (conv && e.id != 0) add_instr("%s %s\n", conv == 1 ? "I2F_M" : "F2I_M", v_table[e.id].name);
         else {
@@ -929,7 +929,7 @@ static void emit_statement(expr_node *r, const dl_dst *d0, int rows, int cols, i
     if (d.kind == 0 && d.arr != tmp_id && reads_elsewhere(el, d.arr, &six, 0)) {
         int words = rows * cols;
         int off = tmp_block(words, line);
-        warn(MSG_INFO_DIRAC_TEMP, line, rem_fname(v_table[d.arr].name, fname), words);
+        warn(MSG_INFO_DIRAC_TEMP, line, rem_fname(v_table[d.arr].name), words);
         d.arr = tmp_id; d.base = off; d.type = ctx_type;
         copy_back = 1;
     }

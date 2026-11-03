@@ -41,7 +41,8 @@ extern int     v_count;                  // how many entries v_table holds
 int    find_var(const char *val);             // searches the table for the ID (-1 if not found)
 void    add_var(const char *var);             // adds an ID to the table
 void  check_var(void);                       // checks what was used in the table (at the end of the parser)
-char *rem_fname(char *var, const char *fname); // removes the function name from the variable
+char *strip_fn (char *var, const char *func); // <func>_<name> -> <name>; any other name as it is
+char *rem_fname(char *var);              // the same, for the function being compiled
 void  check_name(int id, int is_fun);     // a declared name must be free in the .asm and not an instruction
 void  dire_wave (int id);                // #WAVE name: the variable stays even if never read
 

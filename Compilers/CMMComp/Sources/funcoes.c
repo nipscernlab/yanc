@@ -641,14 +641,14 @@ stmt_node *vcall(int id)
 {
     if  (v_table[id].type < 6)
     {
-        fatal(MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name, fname));
+        fatal(MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
     if (n != v_table[id].npar)
     {
-        fatal(MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name, fname));
+        fatal(MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name));
     }
 
     v_table[id].used = 1;
@@ -668,7 +668,7 @@ expr_node *fcall(int id)
     }
     else if (v_table[id].type < 6)
     {
-        fatal(MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name, fname));
+        fatal(MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
