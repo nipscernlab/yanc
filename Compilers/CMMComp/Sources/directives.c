@@ -7,12 +7,12 @@
 #include <stdlib.h>
 
 // local includes
-#include "../Headers/diretivas.h"
+#include "../Headers/directives.h"
 #include "../Headers/ast.h"
-#include "../Headers/t2t.h"
+#include "../Headers/convert.h"
 #include "../Headers/global.h"
-#include "../Headers/funcoes.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/functions.h"
+#include "../Headers/symbols.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
 
@@ -51,7 +51,7 @@ long long mant_pow2(void)
 // reads these globals to make decisions before the AST walker runs), then
 // appends a STMT_DIRECTIVE to the open stmt_list so the emit fires from
 // the global walker at `fim`.
-void dire_exec(char *dir, int id, dir_code t)
+void directive_exec(char *dir, int id, dir_code t)
 {
     int ival = atoi(v_table[id].name);
 

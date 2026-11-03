@@ -7,14 +7,14 @@
 #include <stdlib.h>
 
 // local includes
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/ast.h"
-#include "../Headers/t2t.h"
+#include "../Headers/convert.h"
 #include "../Headers/labels.h"
 #include "../Headers/global.h"
-#include "../Headers/itr.h"
+#include "../Headers/interrupt.h"
 #include "../Headers/data_use.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
@@ -35,7 +35,7 @@ const char *fname = ""; // name of the function currently being parsed (a v_tabl
 int ret_ok;       // tells whether the function returned correctly
 int fun_parse;    // stores the id of the function being parsed
 
-// Parameter ids collected by declar_par for the function currently being
+// Parameter ids collected by declare_par for the function currently being
 // declared. func_body_begin moves these into a STMT_FUNC_HEADER node, then
 // resets the count. Grown on demand: a function takes any number of them.
 static int *func_params = NULL;
@@ -111,7 +111,7 @@ static expr_node **args_frame_pop(int *n_out)
 void par_check(expr e, int k)
 {
     int t_cal = e.type;                  // type of the argument (1, 2 or 3)
-    int t_fun = v_table[fun_id].ptyp[k]; // type of the parameter in the function
+    int t_fun = v_table[fun_id].param_types[k]; // type of the parameter in the function
     int index = k+1;                     // position of the parameter, for the messages
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -323,7 +323,7 @@ void par_check(expr e, int k)
 // @label and the per-parameter
 // SET / SET_P all live in the walker case for STMT_FUNC_HEADER and fire
 // only when func_body_begin builds that node.
-void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
+void declare_fun(int id1, int id2) // id1 -> type, id2 -> name index
 {
     check_name(id2, 1);   // not a variable's or another function's name, not an instruction
     if (strcmp(v_table[id2].name, "main") == 0) mainok = 1; // the reset reaches main: it must exist
@@ -335,17 +335,17 @@ void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
     func_nparams = 0;   // reset param collection for the new function
 }
 
-// Records a parameter. Each declar_par call appends to func_params in
+// Records a parameter. Each declare_par call appends to func_params in
 // declaration order; the emit (SET / SET_P) is deferred to the walker
 // via STMT_FUNC_HEADER built in func_body_begin.
-int declar_par(int type, int id)
+int declare_par(int type, int id)
 {
-    declar_var(id); // arrays cannot be passed as function parameters
+    declare_var(id); // arrays cannot be passed as function parameters
 
     // store the data type of every parameter, in order
     symbol *f = &v_table[fun_parse];
-    f->ptyp = xrealloc(f->ptyp, (size_t)(f->npar+1) * sizeof(int));
-    f->ptyp[f->npar++] = type;
+    f->param_types = xrealloc(f->param_types, (size_t)(f->n_params+1) * sizeof(int));
+    f->param_types[f->n_params++] = type;
 
     if (func_nparams == func_params_cap)
     {
@@ -358,7 +358,7 @@ int declar_par(int type, int id)
 }
 
 // when the return keyword is found
-void declar_ret(expr e, int ret)
+void declare_ret(expr e, int ret)
 {
     // check whether it really is a function, or void by mistake
     if (v_table[fun_parse].type == TY_FVOID)
@@ -641,14 +641,14 @@ stmt_node *vcall(int id)
 {
     if  (v_table[id].type < TY_FVOID)
     {
-        fatal(MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name));
+        fatal(MSG_ERR_FUNC_WHERE, line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
-    if (n != v_table[id].npar)
+    if (n != v_table[id].n_params)
     {
-        fatal(MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name));
+        fatal(MSG_ERR_PARAM_COUNT, line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     v_table[id].used = 1;
@@ -668,12 +668,12 @@ expr_node *fcall(int id)
     }
     else if (v_table[id].type < TY_FVOID)
     {
-        fatal(MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name));
+        fatal(MSG_ERR_FUNC_WHERE2, line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
-    if (n != v_table[id].npar)
+    if (n != v_table[id].n_params)
     {
         fatal(MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_table[id].name);
     }

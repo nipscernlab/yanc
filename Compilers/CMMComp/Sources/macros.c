@@ -11,11 +11,11 @@
 
 // local includes
 #include "../Headers/macros.h"
-#include "../Headers/t2t.h"
+#include "../Headers/convert.h"
 #include "../Headers/global.h"
-#include "../Headers/funcoes.h"
-#include "../Headers/diretivas.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/functions.h"
+#include "../Headers/directives.h"
+#include "../Headers/symbols.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
 #include "../../common/xstr.h"

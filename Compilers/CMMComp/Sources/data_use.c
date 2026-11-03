@@ -8,12 +8,12 @@
 #include <stdlib.h>
 
 // local includes
-#include "../Headers/t2t.h"
+#include "../Headers/convert.h"
 #include "../Headers/oper.h"
 #include "../Headers/global.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/data_use.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/data_assign.h"
 #include "../Headers/array_index.h"
 #include "../Headers/messages.h"
@@ -24,8 +24,8 @@
 expr num2exp(int id, int dtype)
 {
     v_table[id].used          = 1;
-    v_table[id].isco    = 1;
-    v_table[id].isar          = AR_NONE;
+    v_table[id].is_const    = 1;
+    v_table[id].dims          = AR_NONE;
     v_table[id].type          = dtype;
 
     return expr_make(dtype, id);
@@ -37,11 +37,11 @@ expr id2exp(int id)
 {
     // test whether the variable has already been declared
     if (v_table[id].type == TY_NONE)
-        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, strip_fn_prefix(v_table[id].name));
 
     // if it is an array, the index is missing
-    if (v_table[id].isar > AR_NONE)
-        fatal(MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_table[id].name));
+    if (v_table[id].dims > AR_NONE)
+        fatal(MSG_ERR_MISSING_ARR_IDX, line_num+1, strip_fn_prefix(v_table[id].name));
 
     v_table[id].used = 1;
 
@@ -77,13 +77,13 @@ expr pplus2exp(int id, int old)
     expr e1   = num2exp(lval, e.type);
 
     // then perform the addition
-    expr ret = oper_soma(e, e1);
+    expr ret = oper_add(e, e1);
 
     // finally, assign back to id; in an expression the value of `x++` is the
     // old x, which SET_P pops back into the acc after the store (id2exp above
-    // made ass_set's checks: declared, not an array)
+    // made assign_set's checks: declared, not an array)
     if (old) add_instr("SET_P %s\n", v_table[id].name);
-    else     ass_set(id, ret);
+    else     assign_set(id, ret);
 
     acc_ok = 1; // cannot free acc, since it is an exp
 
@@ -120,10 +120,10 @@ expr pplus1d2exp(int id, expr ete, int old)
     expr e1   = num2exp(lval, e.type);
 
     // then perform the addition
-    expr ret = oper_soma(e, e1);
+    expr ret = oper_add(e, e1);
 
     // assign back: the value is in the acc, the index on the stack
-    ass_array(id, ret, 0);
+    assign_array(id, ret, 0);
 
     // the value of `x[i]++` in an expression is the old element
     if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");
@@ -157,10 +157,10 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     expr eone = num2exp(lval, e.type);
 
     // then perform the addition
-    expr ret = oper_soma(e, eone);
+    expr ret = oper_add(e, eone);
 
     // assign back: the value is in the acc, the index on the stack
-    ass_array(id, ret, 0);
+    assign_array(id, ret, 0);
 
     // the value of `x[i][j]++` in an expression is the old element
     if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");

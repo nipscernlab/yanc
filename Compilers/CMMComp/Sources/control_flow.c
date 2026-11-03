@@ -11,11 +11,11 @@
 
 #include <stdlib.h>
 
-#include "../Headers/saltos.h"
+#include "../Headers/control_flow.h"
 #include "../Headers/ast.h"
 #include "../Headers/labels.h"
 #include "../Headers/global.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
 #include "../../common/xstr.h"

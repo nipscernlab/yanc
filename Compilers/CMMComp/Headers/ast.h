@@ -97,19 +97,19 @@ typedef enum {
     OP_NEG,   // unary -  (oper_neg)
     OP_LIN,   // unary !  (oper_lin, "logical inverter" in the ISA)
     OP_INV,   // unary ~  (oper_inv)
-    OP_ADD,   // x + y    (oper_soma)
-    OP_SUB,   // x - y    (oper_subt)
+    OP_ADD,   // x + y    (oper_add)
+    OP_SUB,   // x - y    (oper_sub)
     OP_MUL,   // x * y    (oper_mult)
-    OP_DIV,   // x / y    (oper_divi)
+    OP_DIV,   // x / y    (oper_div)
     OP_MOD,   // x % y    (oper_mod)
     OP_LT,    // x < y    (oper_cmp,  type=0)
     OP_GT,    // x > y    (oper_cmp,  type=1)
     OP_EQ,    // x == y   (oper_cmp,  type=2)
-    OP_GE,    // x >= y   (oper_greq)
-    OP_LE,    // x <= y   (oper_leeq)
-    OP_NE,    // x != y   (oper_dife)
-    OP_LAN,   // x && y   (oper_lanor, type=0)
-    OP_LOR,   // x || y   (oper_lanor, type=1)
+    OP_GE,    // x >= y   (oper_ge)
+    OP_LE,    // x <= y   (oper_le)
+    OP_NE,    // x != y   (oper_ne)
+    OP_LAN,   // x && y   (oper_logic, type=0)
+    OP_LOR,   // x || y   (oper_logic, type=1)
     OP_SHL,   // x << y   (oper_shift, type=0)
     OP_SHR,   // x >> y   (oper_shift, type=1)
     OP_SSHR,  // x >>> y  (oper_shift, type=2)  signed shift right
@@ -310,7 +310,7 @@ typedef struct stmt_node {
     int                n_params;
 
     // STMT_DIRECTIVE: directive token like "#PRNAME" / "#NUBITS" / ...
-    // Pointed at a string literal (the grammar's dire_exec call site), so
+    // Pointed at a string literal (the grammar's directive_exec call site), so
     // not owned and not freed.
     const char        *dir_str;
 
@@ -368,7 +368,7 @@ void       stmt_block_push(stmt_node *blk, stmt_node *kid);
 
 // Compound control-flow constructors (cond/body trees are owned). The bodies,
 // the do-while's condition and the switch's case count start empty: the
-// parser fills them in when it reaches them (saltos.c).
+// parser fills them in when it reaches them (control_flow.c).
 stmt_node *stmt_if          (int label, struct expr_node *cond);
 stmt_node *stmt_while       (int label, struct expr_node *cond);
 stmt_node *stmt_do          (int label);
@@ -383,8 +383,8 @@ stmt_node *stmt_break_while (int while_label);
 // the do-while re-tests its bottom condition); a while jumps to the top (Lwh<n>).
 stmt_node *stmt_continue    (int loop_label, int cont_lbl);
 
-// Array declarations. The v_table side effects (type / isar / size /
-// fnid + f_log writes) already ran at parse time when the constructor was
+// Array declarations. The v_table side effects (type / dims / size /
+// owner + f_log writes) already ran at parse time when the constructor was
 // called; the stmt_node only carries what the walker needs to emit the
 // `#array` directive (and, for 2D, the LOD/SET arr_size helper instructions).
 stmt_node *stmt_declar_arr_1d(int id_var, int id_arg, int id_fname);
@@ -430,7 +430,7 @@ stmt_node *stmt_dirac      (int dst, struct expr_node *rhs);
 stmt_node *stmt_dirac_shift(int dst, struct expr_node *c, int a);
 
 // walks a stmt_node and emits via the same helpers the inline grammar
-// actions used to call (ass_set, etc.).
+// actions used to call (assign_set, etc.).
 void       stmt_emit(stmt_node *n);
 
 // frees the node and every descendant (rhs included).

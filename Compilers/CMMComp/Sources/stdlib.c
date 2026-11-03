@@ -7,15 +7,15 @@
 #include <stdlib.h>
 
 // local includes
-#include "../Headers/t2t.h"
+#include "../Headers/convert.h"
 #include "../Headers/oper.h"
 #include "../Headers/stdlib.h"
 #include "../Headers/global.h"
 #include "../Headers/macros.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/data_use.h"
-#include "../Headers/variaveis.h"
-#include "../Headers/diretivas.h"
+#include "../Headers/symbols.h"
+#include "../Headers/directives.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
 
@@ -24,7 +24,7 @@
 // ----------------------------------------------------------------------------
 
 // input ex: int x = in(0);
-expr exec_in(int id)
+expr builtin_in(int id)
 {
     if (atoi(v_table[id].name) >= nuioin) fatal(MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name);
 
@@ -36,7 +36,7 @@ expr exec_in(int id)
 }
 
 // input ex: float x = fin(0);
-expr exec_fin(int id)
+expr builtin_fin(int id)
 {
     if (atoi(v_table[id].name) >= nuioin) fatal(MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name);
 
@@ -48,20 +48,20 @@ expr exec_fin(int id)
 }
 
 // output ex: out(0,x);
-void exec_out(int id, expr e)
+void builtin_out(int id, expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type > TY_FLOAT) fatal(MSG_ERR_PICK_COMP_INFO, line_num+1);
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check port range
     if (atoi(v_table[id].name) >= nuioou) fatal(MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name);
@@ -139,16 +139,16 @@ void link_sync_emit(void)
 }
 
 // toma(k, x); -- the word goes as it is (int or float bits): no conversion
-void exec_toma(expr e, int k)
+void builtin_toma(expr e, int k)
 {
     // check whether e was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a comp is two words: the link carries one
     if (e.type > TY_FLOAT) fatal(MSG_ERR_PICK_COMP_INFO, line_num+1);
 
     // an array needs its index
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     if (e.id != 0) v_table[e.id].used = 1;
 
@@ -166,11 +166,11 @@ void exec_toma(expr e, int k)
 
 // x = cade(k); -- the only form allowed (STMT_ASSIGN): link k's word lands
 // in x with x's type, so the caller's SET converts nothing
-expr exec_cade(int dest, int k)
+expr builtin_cade(int dest, int k)
 {
-    if (v_table[dest].type == TY_NONE) fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[dest].name));
-    if (v_table[dest].isar  > AR_NONE) fatal(MSG_ERR_ARRAY_NEEDS_IDX,    line_num+1, rem_fname(v_table[dest].name));
-    if (v_table[dest].type  > TY_FLOAT) fatal(MSG_ERR_CADE_COMP,          line_num+1, rem_fname(v_table[dest].name));
+    if (v_table[dest].type == TY_NONE) fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, strip_fn_prefix(v_table[dest].name));
+    if (v_table[dest].dims  > AR_NONE) fatal(MSG_ERR_ARRAY_NEEDS_IDX,    line_num+1, strip_fn_prefix(v_table[dest].name));
+    if (v_table[dest].type  > TY_FLOAT) fatal(MSG_ERR_CADE_COMP,          line_num+1, strip_fn_prefix(v_table[dest].name));
 
     add_instr("CAD %d\n", k);
 
@@ -182,7 +182,7 @@ expr exec_cade(int dest, int k)
 // cade(k) / fcade(k) inside an expression, an index or an argument: type 1 (int)
 // or 2 (float). CAD has no push form, so a live acc is pushed first; the PSH
 // runs once, CAD's waiting loop jumps back to CAD itself.
-expr exec_cade_expr(int type, int k)
+expr builtin_cade_expr(int type, int k)
 {
     if (acc_ok) add_instr("PSH\n");
 
@@ -194,20 +194,20 @@ expr exec_cade_expr(int type, int k)
 }
 
 // output ex: fout(0,x);
-void exec_fout(int id, expr e)
+void builtin_fout(int id, expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type > TY_FLOAT) fatal(MSG_ERR_PICK_COMP_INFO, line_num+1);
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check port range
     if (atoi(v_table[id].name) >= nuioou) fatal(MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name);
@@ -258,23 +258,23 @@ void exec_fout(int id, expr e)
 // ----------------------------------------------------------------------------
 
 // takes the sign of the first argument and applies it to the second
-expr exec_sign(expr e1, expr e2)
+expr builtin_sign(expr e1, expr e2)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et1 was declared
-    if (e1.id != 0 && v_table[e1.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e1.id].name));
+    if (e1.id != 0 && v_table[e1.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e1.id].name));
     
     // check whether et2 was declared
-    if (e2.id != 0 && v_table[e2.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e2.id].name));
+    if (e2.id != 0 && v_table[e2.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e2.id].name));
 
     // check whether et1 is a variable
-    if (e1.id != 0 && v_table[e1.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e1.id].name));
+    if (e1.id != 0 && v_table[e1.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e1.id].name));
 
     // check whether et2 is a variable
-    if (e2.id != 0 && v_table[e2.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e2.id].name));
+    if (e2.id != 0 && v_table[e2.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e2.id].name));
 
     // check whether there is a comp
     if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT)) fatal(MSG_ERR_SIGN_COMPLEX, line_num+1);
@@ -406,17 +406,17 @@ expr exec_sign(expr e1, expr e2)
 }
 
 // absolute value (int, float and comp)
-expr exec_abs(expr e)
+expr builtin_abs(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -463,7 +463,7 @@ expr exec_abs(expr e)
     // comp const, in memory and in acc
     if ((e.type == TY_COMP) || (e.type == TY_CCONST))
     {
-        e = exec_sqrt(exec_mod2(e));
+        e = builtin_sqrt(builtin_mod2(e));
     }
 
     acc_ok = 1;
@@ -472,17 +472,17 @@ expr exec_abs(expr e)
 }
 
 // clears if negative
-expr exec_pst(expr e)
+expr builtin_pst(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -538,17 +538,17 @@ expr exec_pst(expr e)
 }
 
 // division by constant
-expr exec_norm(expr e)
+expr builtin_norm(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is int
     if (e.type != TY_INT) fatal(MSG_ERR_NORM_NON_INT, line_num+1);
@@ -586,23 +586,23 @@ expr exec_norm(expr e)
     return expr_make(TY_INT, 0);
 }
 
-void exec_copy(expr e, int id2)
+void builtin_copy(expr e, int id2)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether the source expression was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether the source is a plain variable (not an array)
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether id2 was declared
-    if (v_table[id2].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[id2].name));
+    if (v_table[id2].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[id2].name));
 
     // check whether id2 is a variable
-    if (v_table[id2].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[id2].name));
+    if (v_table[id2].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[id2].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -635,17 +635,17 @@ void exec_copy(expr e, int id2)
 // ----------------------------------------------------------------------------
 
 // square root
-expr exec_sqrt(expr e)
+expr builtin_sqrt(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -678,15 +678,15 @@ expr exec_sqrt(expr e)
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
-            int ib = exec_id("__csqrt_b"), ia = exec_id("__csqrt_a");
+            int ib = lex_id("__csqrt_b"), ia = lex_id("__csqrt_a");
             add_instr("SET_P %s\n", v_table[ib].name);  // csqrt_b = imag; POP -> acc = real
             add_instr("SET   %s\n", v_table[ia].name);  // csqrt_a = real
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *R  = v_table[exec_id("__csqrt_r" )].name;   // |z|
-        const char *RE = v_table[exec_id("__csqrt_re")].name;   // result real part
-        const char *IM = v_table[exec_id("__csqrt_im")].name;   // result imag part
+        const char *R  = v_table[lex_id("__csqrt_r" )].name;   // |z|
+        const char *RE = v_table[lex_id("__csqrt_re")].name;   // result real part
+        const char *IM = v_table[lex_id("__csqrt_im")].name;   // result imag part
 
         // r = |z| = sqrt(a² + b²)
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -694,21 +694,21 @@ expr exec_sqrt(expr e)
         add_instr("P_LOD %s\n", B);                      // push a²; acc = b  (P_LOD = PSH+LOD)
         add_instr("F_MLT %s\n", B);                      // acc = b²
         add_instr("SF_ADD\n");                           // acc = a² + b²
-        exec_sqrt(expr_make(TY_FLOAT, 0));                      // acc = r
+        builtin_sqrt(expr_make(TY_FLOAT, 0));                      // acc = r
         add_instr("SET %s\n", R);
 
         // re = sqrt((r + a)/2)
         add_instr("LOD %s\n", R);                        // acc = r (peephole drops if redundant)
         add_instr("F_ADD %s\n", A);                      // acc = r + a
         add_instr("F_MLT 0.5\n");                        // acc = (r + a)/2
-        exec_sqrt(expr_make(TY_FLOAT, 0));                      // acc = sqrt((r+a)/2)
+        builtin_sqrt(expr_make(TY_FLOAT, 0));                      // acc = sqrt((r+a)/2)
         add_instr("SET %s\n", RE);
 
         // im = sign(b) * sqrt((r - a)/2)
         add_instr("LOD %s\n", R);                        // acc = r
         add_instr("F_SU1 %s\n", A);                      // acc = r - a   (F_SU1 X = acc - X)
         add_instr("F_MLT 0.5\n");                        // acc = (r - a)/2
-        exec_sqrt(expr_make(TY_FLOAT, 0));                      // acc = sqrt((r-a)/2)  (>= 0)
+        builtin_sqrt(expr_make(TY_FLOAT, 0));                      // acc = sqrt((r-a)/2)  (>= 0)
         add_instr("F_SGN %s\n", B);                      // acc = magnitude with sign of b
         add_instr("SET %s\n", IM);
 
@@ -764,17 +764,17 @@ expr exec_sqrt(expr e)
 }
 
 // exponential (e^x)
-expr exec_exp(expr e)
+expr builtin_exp(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -786,7 +786,7 @@ expr exec_exp(expr e)
 
     // ------------------------------------------------------------------------
     // complex argument: exp(a+bi) = exp(a)*(cos b + i*sin b), composed from the
-    // real exp/sin/cos. Mirrors the comp branch of exec_sqrt: same a/b extraction
+    // real exp/sin/cos. Mirrors the comp branch of builtin_sqrt: same a/b extraction
     // (const/mem/acc) and the same comp-in-acc result assembly (real in acc, imag
     // pushed on the stack).
     // ------------------------------------------------------------------------
@@ -808,29 +808,29 @@ expr exec_exp(expr e)
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
-            int ib = exec_id("__cexp_b"), ia = exec_id("__cexp_a");
+            int ib = lex_id("__cexp_b"), ia = lex_id("__cexp_a");
             add_instr("SET_P %s\n", v_table[ib].name);  // cexp_b = imag; POP -> acc = real
             add_instr("SET   %s\n", v_table[ia].name);  // cexp_a = real
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *EA = v_table[exec_id("__cexp_ea")].name;   // exp(a)
-        const char *IM = v_table[exec_id("__cexp_im")].name;   // result imag part
+        const char *EA = v_table[lex_id("__cexp_ea")].name;   // exp(a)
+        const char *IM = v_table[lex_id("__cexp_im")].name;   // result imag part
 
         // ea = exp(a)
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
-        exec_exp(expr_make(TY_FLOAT, 0));                       // acc = exp(a)
+        builtin_exp(expr_make(TY_FLOAT, 0));                       // acc = exp(a)
         add_instr("SET %s\n", EA);
 
         // im = exp(a) * sin(b)
         add_instr("LOD %s\n", B);                        // acc = b
-        exec_sin(expr_make(TY_FLOAT, 0));                       // acc = sin(b)
+        builtin_sin(expr_make(TY_FLOAT, 0));                       // acc = sin(b)
         add_instr("F_MLT %s\n", EA);                     // acc = exp(a)*sin(b)
         add_instr("SET %s\n", IM);
 
         // re = exp(a) * cos(b)
         add_instr("LOD %s\n", B);                        // acc = b
-        exec_cos(expr_make(TY_FLOAT, 0));                       // acc = cos(b)
+        builtin_cos(expr_make(TY_FLOAT, 0));                       // acc = cos(b)
         add_instr("F_MLT %s\n", EA);                     // acc = re = exp(a)*cos(b)
 
         // assemble the complex result: real on the stack, imag in acc
@@ -884,17 +884,17 @@ expr exec_exp(expr e)
 }
 
 // natural logarithm (ln x)
-expr exec_log(expr e)
+expr builtin_log(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -907,7 +907,7 @@ expr exec_log(expr e)
     // ------------------------------------------------------------------------
     // complex argument: log(a+bi) = 1/2*ln(a²+b²) + i*fase(z). Real part is half
     // the log of the squared magnitude (a²+b² inline); imaginary part is the
-    // phase, reusing exec_fase (the 4-quadrant atan2). Mirrors exec_exp's a/b
+    // phase, reusing builtin_fase (the 4-quadrant atan2). Mirrors builtin_exp's a/b
     // extraction and comp-in-acc assembly.
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
@@ -928,14 +928,14 @@ expr exec_log(expr e)
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
-            int ib = exec_id("__clog_b"), ia = exec_id("__clog_a");
+            int ib = lex_id("__clog_b"), ia = lex_id("__clog_a");
             add_instr("SET_P %s\n", v_table[ib].name);  // clog_b = imag; POP -> acc = real
             add_instr("SET   %s\n", v_table[ia].name);  // clog_a = real
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *RE = v_table[exec_id("__clog_re")].name;   // result real part
-        const char *IM = v_table[exec_id("__clog_im")].name;   // result imag part
+        const char *RE = v_table[lex_id("__clog_re")].name;   // result real part
+        const char *IM = v_table[lex_id("__clog_im")].name;   // result imag part
 
         // re = 1/2 * ln(a² + b²)
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -943,14 +943,14 @@ expr exec_log(expr e)
         add_instr("P_LOD %s\n", B);                      // push a²; acc = b  (P_LOD = PSH+LOD)
         add_instr("F_MLT %s\n", B);                      // b²
         add_instr("SF_ADD\n");                           // a² + b²
-        exec_log(expr_make(TY_FLOAT, 0));                       // ln(a²+b²)
+        builtin_log(expr_make(TY_FLOAT, 0));                       // ln(a²+b²)
         add_instr("F_MLT 0.5\n");                        // 1/2 * ln(...)
         add_instr("SET %s\n", RE);
 
         // im = fase(z) -- rebuild the comp in the acc (real on stack, imag in acc)
         add_instr("LOD %s\n",   A);                      // acc = a (real)
         add_instr("P_LOD %s\n", B);                      // push a; acc = b -> comp in acc
-        exec_fase(expr_make(TY_COMP, 0));                      // arg(z)
+        builtin_fase(expr_make(TY_COMP, 0));                      // arg(z)
         add_instr("SET %s\n", IM);
 
         // assemble the complex result: real in acc, imag on the stack
@@ -1006,14 +1006,14 @@ expr exec_log(expr e)
 
 // power x^y ------------------------------------------------------------------
 // The exponent's kind picks the strategy (tested here, the usual way):
-//   * int constant (isco)  -> square-and-multiply, unrolled at compile time
+//   * int constant (is_const)  -> square-and-multiply, unrolled at compile time
 //                             (exact; pulls in no exp/log macro). A literal is
 //                             always >= 0 (a leading '-' is a separate negate).
 //   * int variable / acc   -> runtime multiply loop: x folded |y| times, then
 //                             a reciprocal when y < 0 (so pow(x,-2) = 0.25 too).
 //   * float                -> general identity x^y = exp(y*ln x), needs x > 0.
 // The base is widened to float in every path; the result is a float in the acc.
-expr exec_pow(expr ex, expr ey)
+expr builtin_pow(expr ex, expr ey)
 {
     static int pow_lbl = 0;
 
@@ -1022,12 +1022,12 @@ expr exec_pow(expr ex, expr ey)
     // ------------------------------------------------------------------------
 
     // check whether the operands were declared
-    if (ex.id != 0 && v_table[ex.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ex.id].name));
-    if (ey.id != 0 && v_table[ey.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ey.id].name));
+    if (ex.id != 0 && v_table[ex.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[ex.id].name));
+    if (ey.id != 0 && v_table[ey.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[ey.id].name));
 
     // check whether the operands are plain variables (not arrays)
-    if (ex.id != 0 && v_table[ex.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ex.id].name));
-    if (ey.id != 0 && v_table[ey.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ey.id].name));
+    if (ex.id != 0 && v_table[ex.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[ex.id].name));
+    if (ey.id != 0 && v_table[ey.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[ey.id].name));
 
     // a complex base or exponent is not supported
     if (ex.type > TY_FLOAT || ey.type > TY_FLOAT) fatal(MSG_ERR_POW_COMPLEX, line_num+1);
@@ -1044,7 +1044,7 @@ expr exec_pow(expr ex, expr ey)
     // The literal is always non-negative, so the base is the only operand that
     // can be live; widen it to float and unroll the binary exponentiation.
     // ------------------------------------------------------------------------
-    if ((ey.type == TY_INT) && (ey.id != 0) && (v_table[ey.id].isco == 1))
+    if ((ey.type == TY_INT) && (ey.id != 0) && (v_table[ey.id].is_const == 1))
     {
         long n = atol(v_table[ey.id].name);
 
@@ -1054,7 +1054,7 @@ expr exec_pow(expr ex, expr ey)
         // x^0 = 1: a base in the acc is simply discarded; with a base in
         // memory the result is the literal 1.0 itself, which the caller loads
         // or takes as a memory operand (F_ADD 1.0)
-        if (n == 0 && ex.id != 0) return num2exp(exec_fnum("1.0"), 2);
+        if (n == 0 && ex.id != 0) return num2exp(lex_fnum("1.0"), 2);
         if (n == 0) { add_instr("LOD 1.0\n"); acc_ok = 1; return expr_make(TY_FLOAT, 0); }
 
         // widen the base to a float in the acc (the four operand shapes)
@@ -1066,8 +1066,8 @@ expr exec_pow(expr ex, expr ey)
 
         if (n == 1) return expr_make(TY_FLOAT, 0);                  // x^1 = x
 
-        const char *B = v_table[exec_id("__pow_b")].name;      // running square (x, x², x⁴, ...)
-        const char *R = v_table[exec_id("__pow_r")].name;      // running product (the result)
+        const char *B = v_table[lex_id("__pow_b")].name;      // running square (x, x², x⁴, ...)
+        const char *R = v_table[lex_id("__pow_r")].name;      // running product (the result)
         add_instr("SET %s\n", B);                            // pow_b = base
 
         int started = 0;                                     // has the result been seeded yet?
@@ -1095,11 +1095,11 @@ expr exec_pow(expr ex, expr ey)
     // normalize the base into pow_x and the exponent into pow_y (both float in
     // memory), so the two runtime strategies below read plain operands. The
     // only entangled position is "both in the acc" (base on the stack, exponent
-    // on top), spilled with SET_P exactly like exec_fase / the complex-sqrt
+    // on top), spilled with SET_P exactly like builtin_fase / the complex-sqrt
     // branch.
     // ------------------------------------------------------------------------
-    const char *X = v_table[exec_id("__pow_x")].name;          // base     (float)
-    const char *Y = v_table[exec_id("__pow_y")].name;          // exponent (float)
+    const char *X = v_table[lex_id("__pow_x")].name;          // base     (float)
+    const char *Y = v_table[lex_id("__pow_y")].name;          // exponent (float)
 
     if (ey.id == 0)                       // exponent in the acc
     {
@@ -1147,8 +1147,8 @@ expr exec_pow(expr ex, expr ey)
     // ------------------------------------------------------------------------
     if (ey.type == TY_INT)
     {
-        const char *R = v_table[exec_id("__pow_r")].name;      // running product
-        const char *C = v_table[exec_id("__pow_c")].name;      // counter |y|
+        const char *R = v_table[lex_id("__pow_r")].name;      // running product
+        const char *C = v_table[lex_id("__pow_c")].name;      // counter |y|
         int m = ++pow_lbl;
 
         add_instr("LOD 1.0\n");   add_instr("SET %s\n", R);                          // r = 1
@@ -1184,17 +1184,17 @@ expr exec_pow(expr ex, expr ey)
 }
 
 // arctangent
-expr exec_atan(expr e)
+expr builtin_atan(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1208,9 +1208,9 @@ expr exec_atan(expr e)
     // complex argument: atan(a+bi) =
     //   Re = 1/2 * atan2(2a, 1 - a² - b²)                          (uses fase)
     //   Im = 1/4 * ln( (a²+(b+1)²) / (a²+(b-1)²) )                 (uses real log)
-    // Mirrors the exec_exp/exec_log comp branch (a/b extraction + comp-in-acc
+    // Mirrors the builtin_exp/builtin_log comp branch (a/b extraction + comp-in-acc
     // assembly). atan2 is built by reconstructing the comp (1-a²-b²) + (2a)i in
-    // the acc and calling exec_fase.
+    // the acc and calling builtin_fase.
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
@@ -1230,20 +1230,20 @@ expr exec_atan(expr e)
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
-            int ib = exec_id("__catan_b"), ia = exec_id("__catan_a");
+            int ib = lex_id("__catan_b"), ia = lex_id("__catan_a");
             add_instr("SET_P %s\n", v_table[ib].name);  // catan_b = imag; POP -> acc = real
             add_instr("SET   %s\n", v_table[ia].name);  // catan_a = real
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *A2  = v_table[exec_id("__catan_a2" )].name;   // a²
-        const char *B2  = v_table[exec_id("__catan_b2" )].name;   // b²
-        const char *BP  = v_table[exec_id("__catan_bp" )].name;   // b+1
-        const char *BM  = v_table[exec_id("__catan_bm" )].name;   // b-1
-        const char *NUM = v_table[exec_id("__catan_num")].name;   // a²+(b+1)²
-        const char *DEN = v_table[exec_id("__catan_den")].name;   // a²+(b-1)²
-        const char *RE  = v_table[exec_id("__catan_re" )].name;   // result real
-        const char *IM  = v_table[exec_id("__catan_im" )].name;   // result imag
+        const char *A2  = v_table[lex_id("__catan_a2" )].name;   // a²
+        const char *B2  = v_table[lex_id("__catan_b2" )].name;   // b²
+        const char *BP  = v_table[lex_id("__catan_bp" )].name;   // b+1
+        const char *BM  = v_table[lex_id("__catan_bm" )].name;   // b-1
+        const char *NUM = v_table[lex_id("__catan_num")].name;   // a²+(b+1)²
+        const char *DEN = v_table[lex_id("__catan_den")].name;   // a²+(b-1)²
+        const char *RE  = v_table[lex_id("__catan_re" )].name;   // result real
+        const char *IM  = v_table[lex_id("__catan_im" )].name;   // result imag
 
         // a², b²
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -1258,7 +1258,7 @@ expr exec_atan(expr e)
         add_instr("F_SU2 1.0\n");                        // wr = 1 - (a²+b²)   (F_SU2 X = X - acc)
         add_instr("P_LOD %s\n", A);                      // push wr (real); acc = a
         add_instr("F_MLT 2.0\n");                        // wi = 2a (imag) -> comp wr + wi*i in the acc
-        exec_fase(expr_make(TY_COMP, 0));                      // atan2(2a, 1-a²-b²)
+        builtin_fase(expr_make(TY_COMP, 0));                      // atan2(2a, 1-a²-b²)
         add_instr("F_MLT 0.5\n");
         add_instr("SET %s\n", RE);
 
@@ -1277,7 +1277,7 @@ expr exec_atan(expr e)
         add_instr("SET %s\n", DEN);
         add_instr("LOD %s\n", DEN);
         add_instr("F_DIV %s\n", NUM);                    // num/den   (F_DIV X = X/acc)
-        exec_log(expr_make(TY_FLOAT, 0));                       // ln(num/den)
+        builtin_log(expr_make(TY_FLOAT, 0));                       // ln(num/den)
         add_instr("F_MLT 0.25\n");
         add_instr("SET %s\n", IM);
 
@@ -1333,17 +1333,17 @@ expr exec_atan(expr e)
 }
 
 // sine
-expr exec_sin(expr e)
+expr builtin_sin(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1356,8 +1356,8 @@ expr exec_sin(expr e)
     // ------------------------------------------------------------------------
     // complex argument: sin(a+bi) = sin a*cosh b + i*cos a*sinh b. Fast form --
     // ONE exp gives e^b; e^-b = 1/e^b (reciprocal), so cosh/sinh come from a
-    // single exponential instead of four exec_cosh/exec_sinh calls. Mirrors the
-    // exec_exp/exec_sqrt comp branch (a/b extraction + comp-in-acc assembly).
+    // single exponential instead of four builtin_cosh/builtin_sinh calls. Mirrors the
+    // builtin_exp/builtin_sqrt comp branch (a/b extraction + comp-in-acc assembly).
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
@@ -1377,21 +1377,21 @@ expr exec_sin(expr e)
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
-            int ib = exec_id("__csin_b"), ia = exec_id("__csin_a");
+            int ib = lex_id("__csin_b"), ia = lex_id("__csin_a");
             add_instr("SET_P %s\n", v_table[ib].name);  // csin_b = imag; POP -> acc = real
             add_instr("SET   %s\n", v_table[ia].name);  // csin_a = real
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *EB  = v_table[exec_id("__csin_eb" )].name;   // e^b
-        const char *EMB = v_table[exec_id("__csin_emb")].name;   // e^-b
-        const char *CHB = v_table[exec_id("__csin_chb")].name;   // cosh b
-        const char *SHB = v_table[exec_id("__csin_shb")].name;   // sinh b
-        const char *CA  = v_table[exec_id("__csin_ca" )].name;   // cos a
+        const char *EB  = v_table[lex_id("__csin_eb" )].name;   // e^b
+        const char *EMB = v_table[lex_id("__csin_emb")].name;   // e^-b
+        const char *CHB = v_table[lex_id("__csin_chb")].name;   // cosh b
+        const char *SHB = v_table[lex_id("__csin_shb")].name;   // sinh b
+        const char *CA  = v_table[lex_id("__csin_ca" )].name;   // cos a
 
         // e^b (single exponential), e^-b = 1/e^b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
-        exec_exp(expr_make(TY_FLOAT, 0));                       // acc = e^b
+        builtin_exp(expr_make(TY_FLOAT, 0));                       // acc = e^b
         add_instr("SET %s\n", EB);
         add_instr("F_DIV 1.0\n");                        // 1.0/e^b = e^-b  (F_DIV X = X/acc)
         add_instr("SET %s\n", EMB);
@@ -1401,8 +1401,8 @@ expr exec_sin(expr e)
         add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
 
         // cos a first, so sin a is still in the acc for the real part
-        add_instr("LOD %s\n", A); exec_cos(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", CA);
-        add_instr("LOD %s\n", A); exec_sin(expr_make(TY_FLOAT, 0));
+        add_instr("LOD %s\n", A); builtin_cos(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", CA);
+        add_instr("LOD %s\n", A); builtin_sin(expr_make(TY_FLOAT, 0));
 
         // re = sin a * cosh b, pushed; im = cos a * sinh b -> comp in acc
         add_instr("F_MLT %s\n", CHB);
@@ -1456,17 +1456,17 @@ expr exec_sin(expr e)
 }
 
 // tangent
-expr exec_tan(expr e)
+expr builtin_tan(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1480,7 +1480,7 @@ expr exec_tan(expr e)
     // complex argument: tan(a+bi) = (sin 2a + i*sinh 2b) / (cos 2a + cosh 2b).
     // The denominator D = cos 2a + cosh 2b is REAL, so no complex division is
     // needed. cosh/sinh 2b come from a single exp(2b) + reciprocal (fast form).
-    // Mirrors the exec_exp/exec_log comp branch (a/b extraction + comp assembly).
+    // Mirrors the builtin_exp/builtin_log comp branch (a/b extraction + comp assembly).
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
@@ -1500,21 +1500,21 @@ expr exec_tan(expr e)
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
-            int ib = exec_id("__ctan_b"), ia = exec_id("__ctan_a");
+            int ib = lex_id("__ctan_b"), ia = lex_id("__ctan_a");
             add_instr("SET_P %s\n", v_table[ib].name);  // ctan_b = imag; POP -> acc = real
             add_instr("SET   %s\n", v_table[ia].name);  // ctan_a = real
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *TA  = v_table[exec_id("__ctan_ta" )].name;   // 2a
-        const char *TB  = v_table[exec_id("__ctan_tb" )].name;   // 2b
-        const char *S2A = v_table[exec_id("__ctan_s2a")].name;   // sin 2a
-        const char *C2A = v_table[exec_id("__ctan_c2a")].name;   // cos 2a
-        const char *EB  = v_table[exec_id("__ctan_eb" )].name;   // e^(2b)
-        const char *EMB = v_table[exec_id("__ctan_emb")].name;   // e^(-2b)
-        const char *CHB = v_table[exec_id("__ctan_chb")].name;   // cosh 2b
-        const char *SHB = v_table[exec_id("__ctan_shb")].name;   // sinh 2b
-        const char *D   = v_table[exec_id("__ctan_d"  )].name;   // denominator
+        const char *TA  = v_table[lex_id("__ctan_ta" )].name;   // 2a
+        const char *TB  = v_table[lex_id("__ctan_tb" )].name;   // 2b
+        const char *S2A = v_table[lex_id("__ctan_s2a")].name;   // sin 2a
+        const char *C2A = v_table[lex_id("__ctan_c2a")].name;   // cos 2a
+        const char *EB  = v_table[lex_id("__ctan_eb" )].name;   // e^(2b)
+        const char *EMB = v_table[lex_id("__ctan_emb")].name;   // e^(-2b)
+        const char *CHB = v_table[lex_id("__ctan_chb")].name;   // cosh 2b
+        const char *SHB = v_table[lex_id("__ctan_shb")].name;   // sinh 2b
+        const char *D   = v_table[lex_id("__ctan_d"  )].name;   // denominator
 
         // 2a, 2b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -1523,11 +1523,11 @@ expr exec_tan(expr e)
         add_instr("F_MLT 2.0\n");  add_instr("SET %s\n", TB);
 
         // sin 2a, cos 2a
-        add_instr("LOD %s\n", TA); exec_sin(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", S2A);
-        add_instr("LOD %s\n", TA); exec_cos(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", C2A);
+        add_instr("LOD %s\n", TA); builtin_sin(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", S2A);
+        add_instr("LOD %s\n", TA); builtin_cos(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", C2A);
 
         // e^(2b), e^(-2b) = 1/e^(2b); cosh 2b, sinh 2b
-        add_instr("LOD %s\n", TB); exec_exp(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", EB);
+        add_instr("LOD %s\n", TB); builtin_exp(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", EB);
         add_instr("F_DIV 1.0\n");  add_instr("SET %s\n", EMB);                         // e^(-2b)
         add_instr("F_ADD %s\n", EB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", CHB);  // acc holds e^-b already
         add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
@@ -1587,17 +1587,17 @@ expr exec_tan(expr e)
 }
 
 // cosine
-expr exec_cos(expr e)
+expr builtin_cos(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1610,7 +1610,7 @@ expr exec_cos(expr e)
     // ------------------------------------------------------------------------
     // complex argument: cos(a+bi) = cos a*cosh b - i*sin a*sinh b. Fast form --
     // ONE exp gives e^b; e^-b = 1/e^b (reciprocal), so cosh/sinh come from a
-    // single exponential. Mirrors the exec_sin comp branch; only the real/imag
+    // single exponential. Mirrors the builtin_sin comp branch; only the real/imag
     // assignment differs (re uses cos a, im is negated).
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
@@ -1631,21 +1631,21 @@ expr exec_cos(expr e)
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
-            int ib = exec_id("__ccos_b"), ia = exec_id("__ccos_a");
+            int ib = lex_id("__ccos_b"), ia = lex_id("__ccos_a");
             add_instr("SET_P %s\n", v_table[ib].name);  // ccos_b = imag; POP -> acc = real
             add_instr("SET   %s\n", v_table[ia].name);  // ccos_a = real
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *EB  = v_table[exec_id("__ccos_eb" )].name;   // e^b
-        const char *EMB = v_table[exec_id("__ccos_emb")].name;   // e^-b
-        const char *CHB = v_table[exec_id("__ccos_chb")].name;   // cosh b
-        const char *SHB = v_table[exec_id("__ccos_shb")].name;   // sinh b
-        const char *SA  = v_table[exec_id("__ccos_sa" )].name;   // sin a
+        const char *EB  = v_table[lex_id("__ccos_eb" )].name;   // e^b
+        const char *EMB = v_table[lex_id("__ccos_emb")].name;   // e^-b
+        const char *CHB = v_table[lex_id("__ccos_chb")].name;   // cosh b
+        const char *SHB = v_table[lex_id("__ccos_shb")].name;   // sinh b
+        const char *SA  = v_table[lex_id("__ccos_sa" )].name;   // sin a
 
         // e^b (single exponential), e^-b = 1/e^b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
-        exec_exp(expr_make(TY_FLOAT, 0));                       // acc = e^b
+        builtin_exp(expr_make(TY_FLOAT, 0));                       // acc = e^b
         add_instr("SET %s\n", EB);
         add_instr("F_DIV 1.0\n");                        // 1.0/e^b = e^-b  (F_DIV X = X/acc)
         add_instr("SET %s\n", EMB);
@@ -1655,8 +1655,8 @@ expr exec_cos(expr e)
         add_instr("LOD %s\n", EB); add_instr("F_SU1 %s\n", EMB); add_instr("F_MLT 0.5\n"); add_instr("SET %s\n", SHB);
 
         // sin a first, so cos a is still in the acc for the real part
-        add_instr("LOD %s\n", A); exec_sin(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", SA);
-        add_instr("LOD %s\n", A); exec_cos(expr_make(TY_FLOAT, 0));
+        add_instr("LOD %s\n", A); builtin_sin(expr_make(TY_FLOAT, 0)); add_instr("SET %s\n", SA);
+        add_instr("LOD %s\n", A); builtin_cos(expr_make(TY_FLOAT, 0));
 
         // re = cos a * cosh b, pushed; im = -(sin a * sinh b) -> comp in acc
         // (negated after the product, not before: a zero product is +0 and
@@ -1723,14 +1723,14 @@ expr exec_cos(expr e)
 // ----------------------------------------------------------------------------
 
 // hyperbolic cosine
-expr exec_cosh(expr e)
+expr builtin_cosh(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "cosh");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1760,8 +1760,8 @@ expr exec_cosh(expr e)
     acc_ok = 1;
 
     // cosh(x) = (exp(x) + exp(-x)) / 2
-    const char *X = v_table[exec_id("__cosh_x")].name;
-    const char *T = v_table[exec_id("__cosh_t")].name;
+    const char *X = v_table[lex_id("__cosh_x")].name;
+    const char *T = v_table[lex_id("__cosh_t")].name;
 
     add_instr("SET %s\n", X);              // stash x
     add_instr("CAL __float_exp\n");          // exp(x)   (x was in acc)
@@ -1776,14 +1776,14 @@ expr exec_cosh(expr e)
 }
 
 // hyperbolic sine
-expr exec_sinh(expr e)
+expr builtin_sinh(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "sinh");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1813,8 +1813,8 @@ expr exec_sinh(expr e)
     acc_ok = 1;
 
     // sinh(x) = (exp(x) - exp(-x)) / 2
-    const char *X = v_table[exec_id("__sinh_x")].name;
-    const char *T = v_table[exec_id("__sinh_t")].name;
+    const char *X = v_table[lex_id("__sinh_x")].name;
+    const char *T = v_table[lex_id("__sinh_t")].name;
 
     add_instr("SET %s\n", X);              // stash x
     add_instr("CAL __float_exp\n");          // exp(x)
@@ -1829,14 +1829,14 @@ expr exec_sinh(expr e)
 }
 
 // hyperbolic tangent
-expr exec_tanh(expr e)
+expr builtin_tanh(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "tanh");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1866,8 +1866,8 @@ expr exec_tanh(expr e)
     acc_ok = 1;
 
     // tanh(x) = (exp(2x) - 1) / (exp(2x) + 1)   -- one exponential
-    const char *E = v_table[exec_id("__tanh_e")].name;     // exp(2x)
-    const char *N = v_table[exec_id("__tanh_n")].name;     // numerator
+    const char *E = v_table[lex_id("__tanh_e")].name;     // exp(2x)
+    const char *N = v_table[lex_id("__tanh_n")].name;     // numerator
 
     add_instr("F_MLT 2.0\n");              // 2x
     add_instr("CAL __float_exp\n");          // exp(2x)
@@ -1890,7 +1890,7 @@ expr exec_tanh(expr e)
 // ----------------------------------------------------------------------------
 
 // largest integral float <= x
-expr exec_floor(expr e)
+expr builtin_floor(expr e)
 {
     static int floor_lbl = 0;
 
@@ -1898,8 +1898,8 @@ expr exec_floor(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "floor");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1929,8 +1929,8 @@ expr exec_floor(expr e)
     acc_ok = 1;
 
     // floor(x) = trunc(x); if (trunc > x) trunc -= 1  (only for negative non-integers)
-    const char *X = v_table[exec_id("__floor_x")].name;
-    const char *T = v_table[exec_id("__floor_t")].name;
+    const char *X = v_table[lex_id("__floor_x")].name;
+    const char *T = v_table[lex_id("__floor_t")].name;
     int n = ++floor_lbl;
 
     add_instr("SET %s\n", X);              // stash x
@@ -1950,7 +1950,7 @@ expr exec_floor(expr e)
 }
 
 // smallest integral float >= x
-expr exec_ceil(expr e)
+expr builtin_ceil(expr e)
 {
     static int ceil_lbl = 0;
 
@@ -1958,8 +1958,8 @@ expr exec_ceil(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "ceil");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1989,8 +1989,8 @@ expr exec_ceil(expr e)
     acc_ok = 1;
 
     // ceil(x) = trunc(x); if (trunc < x) trunc += 1  (only for positive non-integers)
-    const char *X = v_table[exec_id("__ceil_x")].name;
-    const char *T = v_table[exec_id("__ceil_t")].name;
+    const char *X = v_table[lex_id("__ceil_x")].name;
+    const char *T = v_table[lex_id("__ceil_t")].name;
     int n = ++ceil_lbl;
 
     add_instr("SET %s\n", X);              // stash x
@@ -2011,14 +2011,14 @@ expr exec_ceil(expr e)
 }
 
 // nearest integral float, ties away from zero
-expr exec_round(expr e)
+expr builtin_round(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, line_num+1, "round");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -2048,7 +2048,7 @@ expr exec_round(expr e)
     acc_ok = 1;
 
     // round(x) = trunc(x + copysign(0.5, x))  -> ties away from zero
-    const char *X = v_table[exec_id("__round_x")].name;
+    const char *X = v_table[lex_id("__round_x")].name;
 
     add_instr("SET %s\n", X);              // stash x
     add_instr("LOD 0.5\n");
@@ -2066,17 +2066,17 @@ expr exec_round(expr e)
 // ----------------------------------------------------------------------------
 
 // returns the real part of a comp
-expr exec_real(expr e)
+expr builtin_real(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < TY_COMP) fatal(MSG_ERR_REAL_ARG_COMP, line_num+1);
@@ -2127,17 +2127,17 @@ expr exec_real(expr e)
 }
 
 // returns the imag part of a comp
-expr exec_imag(expr e)
+expr builtin_imag(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < TY_COMP) fatal(MSG_ERR_IMAG_ARG_COMP, line_num+1);
@@ -2189,17 +2189,17 @@ expr exec_imag(expr e)
 }
 
 // squared magnitude of a complex number
-expr exec_mod2(expr e)
+expr builtin_mod2(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < TY_COMP) fatal(MSG_ERR_MOD2_ARG_COMP, line_num+1);
@@ -2245,7 +2245,7 @@ expr exec_mod2(expr e)
         oper_mult(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // multiplica acc com pilha
         add_instr("P_LOD __aux_var\n");   // push the real-squared onto the stack and fetch the imag-squared
 
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // sum of the squares
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // sum of the squares
 
         etr = expr_make(TY_FLOAT, 0);          // output is a float in the accumulator
     }
@@ -2254,17 +2254,17 @@ expr exec_mod2(expr e)
 }
 
 // computes the phase (in radians) of a complex number
-expr exec_fase(expr e)
+expr builtin_fase(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < TY_COMP) fatal(MSG_ERR_FASE_ARG_COMP, line_num+1);
@@ -2306,13 +2306,13 @@ expr exec_fase(expr e)
     }
     else                                      // comp in acc (acc=imag, stack top=real)
     {
-        int im = exec_id("__fase_im"), re = exec_id("__fase_re");
+        int im = lex_id("__fase_im"), re = lex_id("__fase_re");
         add_instr("SET_P %s\n", v_table[im].name);   // fase_im = imag ; POP -> acc = real
         add_instr("SET %s\n",   v_table[re].name);   // fase_re = real
         R = v_table[re].name; M = v_table[im].name;
     }
 
-    const char *t = v_table[exec_id("__fase_t")].name;   // base atan result
+    const char *t = v_table[lex_id("__fase_t")].name;   // base atan result
     int         n = ++fase_lbl;
 
     // F_LES X is true when acc > X, so every "v < 0" test is `LOD 0.0; F_LES v`
@@ -2327,7 +2327,7 @@ expr exec_fase(expr e)
     // --- real < 0 (nonzero): atan(imag/real) +/- PI ---
     add_instr("LOD %s\n", R);
     add_instr("F_DIV %s\n", M);                        // imag/real  (F_DIV X = X/acc)
-    exec_atan(expr_make(TY_FLOAT, 0));                         // atan(imag/real) -> acc
+    builtin_atan(expr_make(TY_FLOAT, 0));                         // atan(imag/real) -> acc
     add_instr("SET %s\n", t);
     add_instr("LOD 0.0\n");
     add_instr("F_LES %s\n", M);                        // imag < 0 ?  (0 > imag)
@@ -2347,7 +2347,7 @@ expr exec_fase(expr e)
     add_instr("JIZ __Lfa%dc\n", n);
     add_instr("LOD %s\n", R);
     add_instr("F_DIV %s\n", M);                        // imag/real
-    exec_atan(expr_make(TY_FLOAT, 0));
+    builtin_atan(expr_make(TY_FLOAT, 0));
     add_instr("JMP __Lfa%dz\n", n);
 
     // --- real == 0 : +/- PI/2 (0 if imag == 0) ---
@@ -2373,23 +2373,23 @@ expr exec_fase(expr e)
 }
 
 // joins two real numbers into a complex
-expr exec_comp(expr er, expr ei)
+expr builtin_comp(expr er, expr ei)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether etr was declared
-    if (er.id != 0 && v_table[er.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[er.id].name));
+    if (er.id != 0 && v_table[er.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[er.id].name));
 
     // check whether eti was declared
-    if (ei.id != 0 && v_table[ei.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ei.id].name));
+    if (ei.id != 0 && v_table[ei.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[ei.id].name));
 
     // check whether etr is a variable
-    if (er.id != 0 && v_table[er.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[er.id].name));
+    if (er.id != 0 && v_table[er.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[er.id].name));
 
     // check whether et is a variable
-    if (ei.id != 0 && v_table[ei.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[ei.id].name));
+    if (ei.id != 0 && v_table[ei.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[ei.id].name));
 
     // check whether it is comp
     if (er.type > TY_FLOAT || ei.type > TY_FLOAT) fatal(MSG_ERR_COMPLEX_OF_COMPLEX, line_num+1);
@@ -2531,17 +2531,17 @@ expr exec_comp(expr er, expr ei)
 }
 
 // complex conjugate: comp -> a - bi ; int/float -> x + 0i (always returns a comp)
-expr exec_conj(expr e)
+expr builtin_conj(expr e)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[e.id].name));
+    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -2632,18 +2632,18 @@ expr exec_conj(expr e)
 // create a new array type for shift register?
 // later: the walker computes the value after the shift (it reads no element of
 // the vector), so eb carries only its type; the shift is emitted alone and
-// exec_shift_in stores the value, with no word set aside in __aux_var
-void exec_shift(int ida, expr eb, int idc, int later)
+// builtin_shift_in stores the value, with no word set aside in __aux_var
+void builtin_shift(int ida, expr eb, int idc, int later)
 {
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // check whether ida was declared
-    if (v_table[ida].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[ida].name));
+    if (v_table[ida].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[ida].name));
 
     // check whether etb was declared
-    if (eb.id != 0 && v_table[eb.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, rem_fname(v_table[eb.id].name));
+    if (eb.id != 0 && v_table[eb.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, strip_fn_prefix(v_table[eb.id].name));
 
     // check whether idc equals ida
     if (idc != ida) fatal(MSG_ERR_SHIFT_VEC_SELF, line_num+1);
@@ -2653,10 +2653,10 @@ void exec_shift(int ida, expr eb, int idc, int later)
 
     
     // check whether ida is a vector
-    if (v_table[ida].isar != AR_1D) fatal(MSG_ERR_NOT_A_VECTOR, line_num+1, rem_fname(v_table[ida].name));
+    if (v_table[ida].dims != AR_1D) fatal(MSG_ERR_NOT_A_VECTOR, line_num+1, strip_fn_prefix(v_table[ida].name));
 
     // check whether etb is a variable
-    if (eb.id != 0 && v_table[eb.id].isar > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, rem_fname(v_table[eb.id].name));
+    if (eb.id != 0 && v_table[eb.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[eb.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -2679,7 +2679,7 @@ void exec_shift(int ida, expr eb, int idc, int later)
     if (later)
     {
         if (v_table[ida].type == TY_INT && eb.type == TY_FLOAT)
-            warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name));
+            warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[ida].name));
 
         for (int i = N-1; i > 0; i--)
         {
@@ -2778,7 +2778,7 @@ void exec_shift(int ida, expr eb, int idc, int later)
     // ida int and etb float: converted, as an int variable getting a float
     if (v_table[ida].type == TY_INT && eb.type == TY_FLOAT)
     {
-        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name));
+        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[ida].name));
 
         if (eb.id != 0) add_instr("F2I_M %s\n", v_table[eb.id].name);
         else            add_instr("F2I\n");
@@ -2798,7 +2798,7 @@ void exec_shift(int ida, expr eb, int idc, int later)
 }
 
 // the value of a shift emitted with later, in the acc or in memory, into a[0]
-void exec_shift_in(int ida, expr e)
+void builtin_shift_in(int ida, expr e)
 {
     // an int folded into a constant comes in memory; a float in memory goes
     // through the acc (LOD, F2I), since the walker folds no float expression

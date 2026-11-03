@@ -13,9 +13,9 @@
 
 // local includes
 #include "../Headers/global.h"
-#include "../Headers/funcoes.h"
-#include "../Headers/variaveis.h"
-#include "../Headers/diretivas.h"
+#include "../Headers/functions.h"
+#include "../Headers/symbols.h"
+#include "../Headers/directives.h"
 #include "../Headers/messages.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/diag.h"
@@ -24,15 +24,15 @@
 #include "../../common/yanc_num.h"
 
 int          v_count = 0;  // stores the size of the table
-int          fnum_quiet = 0; // 1: exec_fnum says nothing of an approximation (variaveis.h)
+int          fnum_quiet = 0; // 1: lex_fnum says nothing of an approximation (symbols.h)
 static int   v_cap   = 0;  // current capacity of the parallel arrays
 
 // AoS storage: one row per identifier. All attributes (name, type, used,
-// isar, isco, size, siz2, npar, ptyp, fnid) live here. Grown on demand by var_grow.
+// dims, is_const, size, cols, n_params, param_types, owner) live here. Grown on demand by var_grow.
 symbol *v_table = NULL;
 
 // The table moves to a bigger block; each name stays where add_var put it, so
-// code that holds a name, `const char *X = v_table[exec_id("...")].name`, and
+// code that holds a name, `const char *X = v_table[lex_id("...")].name`, and
 // then adds a symbol (stdlib.c does it about 50 times) still reads the same
 // name after the move. Nothing keeps a pointer to a row.
 static void var_grow(int needed)
@@ -82,19 +82,19 @@ void check_var(void)
         // check whether a variable was declared but not used ...
         if (((v_table[i].type == TY_INT) || (v_table[i].type == TY_FLOAT) || (v_table[i].type == TY_COMP)) && (v_table[i].used == 0) && !v_table[i].wave)
         {
-            // v_table[i].fnid records the variable's owning function: a valid
-            // v_table index for locals, or "" / -1 for globals. declar_arr_1d
+            // v_table[i].owner records the variable's owning function: a valid
+            // v_table index for locals, or "" / -1 for globals. declare_arr_1d
             // etc. call find_var(fname) which returns -1 when fname is the
             // empty string and no "" entry exists in v_table yet - so treat
-            // any out-of-range fnid as the global case.
-            int fnid = v_table[i].fnid;
-            int is_global = (fnid < 0) || (strcmp(v_table[fnid].name, "") == 0);
+            // any out-of-range owner as the global case.
+            int owner = v_table[i].owner;
+            int is_global = (owner < 0) || (strcmp(v_table[owner].name, "") == 0);
             if (is_global)
                 warn(MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
             else
             {
-                char *name = strip_fn(v_table[i].name, v_table[fnid].name);
-                warn(MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[fnid].name, name);
+                char *name = strip_fn(v_table[i].name, v_table[owner].name);
+                warn(MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[owner].name, name);
             }
         }
 
@@ -108,9 +108,9 @@ void check_var(void)
 // #WAVE name: the variable stays in the program, and so in the waveform, even
 // if nothing reads it (asm_unread asks v_table[id].wave). It names a variable
 // declared before it, a global at the top level or a local inside a function
-void dire_wave(int id)
+void directive_wave(int id)
 {
-    char *name = rem_fname(v_table[id].name);
+    char *name = strip_fn_prefix(v_table[id].name);
     if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, name);
     if (v_table[id].type > TY_COMP)  fatal(MSG_ERR_WAVE_NOT_VAR, line_num+1, name);
     v_table[id].wave = 1;
@@ -127,8 +127,8 @@ char *strip_fn(char *var, const char *func)
 
 // the name a variable has in the function being compiled: the parse-time
 // fname, or during the deferred AST walk (when fname is "") emit_fname, the
-// function the walker is in. For messages only: exec_id names with fname
-char *rem_fname(char *var)
+// function the walker is in. For messages only: lex_id names with fname
+char *strip_fn_prefix(char *var)
 {
     return strip_fn(var, emit_fname[0] != '\0' ? emit_fname : fname);
 }
@@ -145,7 +145,7 @@ char *rem_fname(char *var)
 // who owns row id, in words, for the messages (the block is the caller's)
 static char *name_owner(int id)
 {
-    int  t = v_table[id].type, f = v_table[id].fnid;
+    int  t = v_table[id].type, f = v_table[id].owner;
     if (t >= 6 && t <= 9) return xasprintf(MSG_NAME_FUNC, v_table[id].name);
     char *nm = xstrdup(v_table[id].name);
     if (t == 4) nm[strlen(nm) - 2] = '\0';                    // drop the "_i"
@@ -200,9 +200,9 @@ void check_name(int id, int is_fun)
     if (v_table[id].type != TY_NONE)
     {
         int t = v_table[id].type;
-        if (!is_fun && t < 6 && t != 4 && v_table[id].fnid == find_var(fname))
+        if (!is_fun && t < 6 && t != 4 && v_table[id].owner == find_var(fname))
         {   // the same name declared twice in the same place
-            fatal(MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as));
+            fatal(MSG_ERR_VAR_EXISTS, line_num+1, strip_fn_prefix(as));
         }
         name_taken(me, as, name_owner(id));
     }
@@ -231,7 +231,7 @@ void check_name(int id, int is_fun)
 }
 
 // used when the lexer finds an ID
-int exec_id(char *text)
+int lex_id(char *text)
 {
     if (strcmp(text,"i") == 0)
         fatal(MSG_ERR_RESERVED_I, line_num+1);
@@ -250,7 +250,7 @@ int exec_id(char *text)
     return id;
 }
 
-// the same lookup as exec_id (a global first, then a local of the current
+// the same lookup as lex_id (a global first, then a local of the current
 // function), without adding the name: the lexer asks it whether the name
 // after a bar is an array (DBAR in CMMComp.l)
 int find_id(const char *text)
@@ -302,13 +302,13 @@ int inum_kind(const char *text)
 
 // the magnitude of a NINUM (2^w - v) as a positive literal; for a NIMIN, the
 // largest int (the grammar writes -max - 1)
-int exec_inum_neg(char *text)
+int lex_inum_neg(char *text)
 {
     int w = word_bits(); char t[32];
     unsigned long long v = inum_value(text, NULL);
     unsigned long long m = (inum_kind(text) == 2) ? (1ULL << (w - 1)) - 1 : (1ULL << w) - v;
     snprintf(t, sizeof(t), "%llu", m);
-    return exec_inum(t);
+    return lex_inum(t);
 }
 
 // the magnitude of the most negative int, 2^(w-1), as a table entry: a brace
@@ -319,7 +319,7 @@ int inum_min_id(void)
     char t[32]; snprintf(t, sizeof(t), "%llu", 1ULL << (word_bits() - 1));
     if (find_var(t) == -1) add_var(t);
     int id = find_var(t);
-    v_table[id].isco = 1;
+    v_table[id].is_const = 1;
     return id;
 }
 
@@ -349,7 +349,7 @@ int arr_size(int id)
 }
 
 // used when the lexer finds an int constant
-int exec_inum(char *text)
+int lex_inum(char *text)
 {
     // range check ------------------------------------------------------------
     // no negative constants ever reach this function
@@ -370,7 +370,7 @@ int exec_inum(char *text)
 
     int id = find_var(t);
 
-    v_table[id].isco = 1;
+    v_table[id].is_const = 1;
 
     return id;
 }
@@ -414,7 +414,7 @@ void cnum_split(const char *txt, char **re, char **im)
 }
 
 // used when the lexer finds a float constant
-int exec_fnum(char *text)
+int lex_fnum(char *text)
 {
     char *t = fnum_text(text);
 
@@ -446,7 +446,7 @@ int exec_fnum(char *text)
     int id = find_var(t);
     free(t);
 
-    v_table[id].isco = 1;
+    v_table[id].is_const = 1;
 
     return id;
 }
@@ -460,7 +460,7 @@ int cnum_join(const char *re, int sub, int imid)
     const char *sim = !sub ? im : im[0] == '-' ? im + 1 : NULL;     // NULL: "-" and im
     char *t = sim ? xasprintf("%s%s%si", re, sim[0] == '-' ? "" : "+", sim)
                   : xasprintf("%s-%si", re, im);
-    int id = exec_cnum(t);
+    int id = lex_cnum(t);
     free(t); free(r0); free(im);
     return id;
 }
@@ -477,7 +477,7 @@ int cnum_imag_fnum(int id, int neg)
     char *re, *im;
     cnum_split(v_table[id].name, &re, &im);
     char *t = !neg ? xstrdup(im) : im[0] == '-' ? xstrdup(im + 1) : xasprintf("-%s", im);
-    int r = exec_fnum(t);
+    int r = lex_fnum(t);
     free(t); free(re); free(im);
     return r;
 }
@@ -493,7 +493,7 @@ int cnum_is_imag(int id)
 }
 
 // used when the lexer finds a comp constant
-int exec_cnum(char *text)
+int lex_cnum(char *text)
 {
     // strip whitespace -------------------------------------------------------
 

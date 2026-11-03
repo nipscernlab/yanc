@@ -60,9 +60,7 @@
 #      Error-path coverage the golden phases don't give. (Runs with the CMM
 #      phase; skipped by --cpp-only.)
 #      The CPP negative phase does the same for cppcomp with
-#      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only), all
-#      but the empty folder: a rejected C++ program still leaves its .asm
-#      (issue #94).
+#      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only).
 #
 # Build phase builds the 4 binaries it runs once (cmmcomp, cppcomp, asmcomp, yanc), all
 # phases reuse them.
@@ -136,10 +134,14 @@ WORK_DIR="$SCRATCH/work"          # CMM phase scratch
 WORK_CPP="$SCRATCH/work_cpp"      # CPP phase scratch
 TMP_DIR="$SCRATCH/tmp"            # CMM phase tmps
 
-CMMCOMP="$BIN_DIR/cmmcomp.exe"
-CPPC="$BIN_DIR/cppcomp.exe"
-ASMCOMP="$BIN_DIR/asmcomp.exe"
-YANC="$BIN_DIR/yanc.exe"
+# the suffix the Makefile gives the tools: .exe on Windows, none elsewhere.
+# The driver runs the tools next to it by that name, so the yanc checks need
+# the binaries named as an install names them
+if [ "${OS:-}" = "Windows_NT" ]; then EXE=".exe"; else EXE=""; fi
+CMMCOMP="$BIN_DIR/cmmcomp$EXE"
+CPPC="$BIN_DIR/cppcomp$EXE"
+ASMCOMP="$BIN_DIR/asmcomp$EXE"
+YANC="$BIN_DIR/yanc$EXE"
 HDL="$ROOT/SAPHO"
 CMM_ROOT="$ROOT/Compilers/CMMComp"
 SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"
@@ -1869,6 +1871,10 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         elif ! printf '%s' "$out" | grep -qF "$expect"; then
             echo "FAIL ($name): exit $rc but missing diagnostic '$expect'"
             echo "    got: $(printf '%s' "$out" | head -1)"
+            fail=$((fail+1)); failed_names+=("$name")
+        elif [ -n "$(ls -A "$neg_work/p" 2>/dev/null)" ]; then
+            # a rejected program leaves no .asm or table behind (#94 N)
+            echo "FAIL ($name): rejected, but left $(ls "$neg_work/p" | tr '\n' ' ')in its output folder"
             fail=$((fail+1)); failed_names+=("$name")
         else
             echo "PASS ($name): rejected (exit $rc) -- \"$expect\""

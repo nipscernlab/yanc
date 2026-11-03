@@ -9,11 +9,11 @@
 
 // local includes
 #include "../Headers/array_index.h"
-#include "../Headers/t2t.h"
+#include "../Headers/convert.h"
 #include "../Headers/global.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/data_use.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
 
@@ -29,12 +29,12 @@ void arr_1d_index(int id, expr e)
     // ------------------------------------------------------------------------
 
     // must check that it really is an array
-    if (v_table[id].isar == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
+    if (v_table[id].dims == AR_NONE)
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it really is a 1D array
-    if (v_table[id].isar == AR_2D)
-        fatal(MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name));
+    if (v_table[id].dims == AR_2D)
+        fatal(MSG_ERR_ARRAY_2D  , line_num+1, strip_fn_prefix(v_table[id].name));
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -115,12 +115,12 @@ void arr_2d_index(int id, expr e1, expr e2)
     // ------------------------------------------------------------------------
 
     // must check that it really is an array
-    if (v_table[id].isar == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
+    if (v_table[id].dims == AR_NONE)
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it is not a 1D array
-    if (v_table[id].isar == AR_1D)
-        fatal(MSG_ERR_ARRAY_1D, line_num+1, rem_fname(v_table[id].name));
+    if (v_table[id].dims == AR_1D)
+        fatal(MSG_ERR_ARRAY_1D, line_num+1, strip_fn_prefix(v_table[id].name));
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -132,14 +132,14 @@ void arr_2d_index(int id, expr e1, expr e2)
     if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
         add_instr("SET_P __aux_var\n");
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   __aux_var\n");
     }
 
     // int in acc and int in memory
     if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
-        add_instr("MLT %d\n", v_table[id].siz2);
+        add_instr("MLT %d\n", v_table[id].cols);
         add_instr("ADD %s\n",  v_table[e2.id].name);
     }
 
@@ -150,7 +150,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("F2I\n");
         add_instr("SET_P __aux_var\n");
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   __aux_var\n");
     }
 
@@ -159,7 +159,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -171,7 +171,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         get_cmp_cst(e2, &etr, &eti);
 
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[etr.id].name);
         add_instr("S_ADD\n");
     }
@@ -184,7 +184,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
         add_instr("SET_P __aux_var\n");
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   __aux_var\n");
     }
 
@@ -193,7 +193,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -202,7 +202,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
         add_instr("P_LOD %s\n",  v_table[e1.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -210,7 +210,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
         add_instr("LOD  %s\n",  v_table[e1.id].name);
-        add_instr("MLT  %d\n", v_table[id].siz2);
+        add_instr("MLT  %d\n", v_table[id].cols);
         add_instr("ADD  %s\n",  v_table[e2.id].name);
     }
 
@@ -221,7 +221,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("F2I\n");
         add_instr("P_LOD %s\n",  v_table[e1.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -231,7 +231,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
         add_instr("LOD     %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -244,7 +244,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         get_cmp_cst(e2, &etr, &eti);
 
         add_instr("LOD     %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n",  v_table[etr.id].name);
         add_instr("S_ADD\n");
     }
@@ -257,7 +257,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
         add_instr("P_LOD %s\n", v_table[e1.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -267,7 +267,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("LOD     %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -279,7 +279,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   __aux_var\n");
     }
 
@@ -289,7 +289,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
         add_instr("F2I\n");
-        add_instr("MLT %d\n", v_table[id].siz2);
+        add_instr("MLT %d\n", v_table[id].cols);
         add_instr("ADD %s\n",  v_table[e2.id].name);
     }
 
@@ -301,7 +301,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("F2I\n");
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   __aux_var\n");
     }
 
@@ -311,7 +311,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I\n");
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -324,7 +324,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         get_cmp_cst(e2, &etr, &eti);
 
         add_instr("F2I\n");
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[etr.id].name);
         add_instr("S_ADD\n");
     }
@@ -338,7 +338,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("F2I\n");
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   __aux_var\n");
     }
 
@@ -348,7 +348,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I\n");
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -359,7 +359,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
         add_instr("P_F2I_M %s\n" , v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -369,7 +369,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
         add_instr("F2I_M  %s\n",  v_table[e1.id].name);
-        add_instr("MLT    %d\n", v_table[id].siz2);
+        add_instr("MLT    %d\n", v_table[id].cols);
         add_instr("ADD    %s\n",  v_table[e2.id].name);
     }
 
@@ -380,7 +380,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -390,7 +390,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDXS_FLOAT, line_num+1);
 
         add_instr("F2I_M   %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -403,7 +403,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         get_cmp_cst(e2, &etr, &eti);
 
         add_instr("F2I_M   %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n",  v_table[etr.id].name);
         add_instr("S_ADD\n");
     }
@@ -416,7 +416,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n", v_table[e1.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -426,7 +426,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I_M   %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -439,7 +439,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         get_cmp_cst(e1, &etr, &eti);
 
         add_instr("P_F2I_M %s\n", v_table[etr.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -451,7 +451,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         get_cmp_cst(e1, &etr, &eti);
 
         add_instr("F2I_M %s\n" , v_table[etr.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   %s\n",  v_table[e2.id].name);
     }
 
@@ -464,7 +464,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n", v_table[etr.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -476,7 +476,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         get_cmp_cst(e1, &etr, &eti);
 
         add_instr("F2I_M   %s\n" , v_table[etr.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -488,7 +488,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         get_cmp_cst(e1, &etr, &eti);
         add_instr("F2I_M   %s\n" , v_table[etr.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
 
         get_cmp_cst(e2, &etr, &eti);
         add_instr("P_F2I_M %s\n" , v_table[etr.id].name);
@@ -505,7 +505,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n", v_table[etr.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -517,7 +517,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         get_cmp_cst(e1, &etr, &eti);
 
         add_instr("F2I_M   %s\n" , v_table[etr.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -530,7 +530,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("SET_P __aux_var\n");
         add_instr("POP\n");
         add_instr("F2I\n");
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   __aux_var\n");
     }
 
@@ -541,7 +541,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("POP\n");
         add_instr("F2I\n");
-        add_instr("MLT %d\n", v_table[id].siz2);
+        add_instr("MLT %d\n", v_table[id].cols);
         add_instr("ADD %s\n",  v_table[e2.id].name);
     }
 
@@ -554,7 +554,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("SET_P __aux_var\n");
         add_instr("POP\n");
         add_instr("F2I\n");
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   __aux_var\n");
     }
 
@@ -565,7 +565,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("POP\n");
         add_instr("F2I\n");
-        add_instr("MLT %d\n"   , v_table[id].siz2);
+        add_instr("MLT %d\n"   , v_table[id].cols);
         add_instr("P_F2I_M %s\n", v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -579,7 +579,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("POP\n");
         add_instr("F2I\n");
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[etr.id].name);
         add_instr("S_ADD\n");
     }
@@ -594,7 +594,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("SET_P __aux_var\n");
         add_instr("POP\n");
         add_instr("F2I\n");
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   __aux_var\n");
     }
 
@@ -605,7 +605,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("POP\n");
         add_instr("F2I\n");
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -616,7 +616,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -626,7 +626,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
         add_instr("F2I_M %s\n",  v_table[e1.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("ADD   %s\n",  v_table[e2.id].name);
     }
 
@@ -637,7 +637,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -647,7 +647,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I_M   %s\n",  v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -660,7 +660,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         get_cmp_cst(e2, &etr, &eti);
 
         add_instr("F2I_M   %s\n" , v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[etr.id].name);
         add_instr("S_ADD\n");
     }
@@ -673,7 +673,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n", v_table[e1.id].name);
-        add_instr("MLT   %d\n", v_table[id].siz2);
+        add_instr("MLT   %d\n", v_table[id].cols);
         add_instr("S_ADD\n");
     }
 
@@ -683,7 +683,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
         add_instr("F2I_M   %s\n" , v_table[e1.id].name);
-        add_instr("MLT     %d\n", v_table[id].siz2);
+        add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
         add_instr("S_ADD\n");
     }
@@ -709,11 +709,11 @@ expr arr_1d2exp_const(int id, int k, int dims)
 {
     // the same checks and use mark as arr_1d2exp
     if (v_table[id].type == TY_NONE)
-        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
-    if (v_table[id].isar == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
-    if (v_table[id].isar == AR_2D && dims == 1)
-        fatal(MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name));
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, strip_fn_prefix(v_table[id].name));
+    if (v_table[id].dims == AR_NONE)
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
+    if (v_table[id].dims == AR_2D && dims == 1)
+        fatal(MSG_ERR_ARRAY_2D  , line_num+1, strip_fn_prefix(v_table[id].name));
     v_table[id].used = 1;
 
     if (acc_ok) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);
@@ -731,15 +731,15 @@ expr arr_1d2exp(int id, expr e, int fft)
 
     // test whether the variable has been declared
     if (v_table[id].type == TY_NONE)
-        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it really is an array
-    if (v_table[id].isar == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
+    if (v_table[id].dims == AR_NONE)
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it really is a 1D array
-    if (v_table[id].isar == AR_2D)
-        fatal(MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name));
+    if (v_table[id].dims == AR_2D)
+        fatal(MSG_ERR_ARRAY_2D  , line_num+1, strip_fn_prefix(v_table[id].name));
 
     // prepare the LOD commands ----------------------------------------------
 
@@ -919,15 +919,15 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
     // test whether the variable has been declared
     if (v_table[id].type == TY_NONE)
-        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it really is a 2D array
-    if (v_table[id].isar == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
+    if (v_table[id].dims == AR_NONE)
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it is not a 1D array
-    if (v_table[id].isar == AR_1D)
-        fatal(MSG_ERR_ARRAY_1D , line_num+1, rem_fname(v_table[id].name));
+    if (v_table[id].dims == AR_1D)
+        fatal(MSG_ERR_ARRAY_1D , line_num+1, strip_fn_prefix(v_table[id].name));
 
     // prepare the LOD commands -----------------------------------------------
 
@@ -952,7 +952,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and int in memory
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            add_instr("MLT %d\n", v_table[id].siz2);
+            add_instr("MLT %d\n", v_table[id].cols);
             add_instr("ADD %s\n" , v_table[e2.id].name);
             add_instr( "%s %s\n" , ldv   , v_table[id].name);
         }
@@ -964,7 +964,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -974,7 +974,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv    , v_table[id].name);
@@ -987,7 +987,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             get_cmp_cst(e2, &etr, &eti);
 
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv    , v_table[id].name);
@@ -1001,7 +1001,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1011,7 +1011,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv    , v_table[id].name);
@@ -1021,7 +1021,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             add_instr( "%s %s\n", ldi, v_table[e1.id].name);
-            add_instr("MLT %d\n"    , v_table[id].siz2);
+            add_instr("MLT %d\n"    , v_table[id].cols);
             add_instr("ADD %s\n"     , v_table[e2.id].name);
             add_instr( "%s %s\n", ldv        , v_table[id].name);
         }
@@ -1033,7 +1033,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("P_LOD %s\n" , v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1044,7 +1044,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_table[id].name);
@@ -1058,7 +1058,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_table[id].name);
@@ -1072,7 +1072,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
             add_instr("P_LOD %s\n", v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1083,7 +1083,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_table[id].name);
@@ -1096,7 +1096,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1107,7 +1107,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("MLT %d\n", v_table[id].siz2);
+            add_instr("MLT %d\n", v_table[id].cols);
             add_instr("ADD %s\n" , v_table[e2.id].name);
             add_instr( "%s %s\n" , ldv   , v_table[id].name);
         }
@@ -1120,7 +1120,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1131,7 +1131,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n" , ldv   , v_table[id].name);
@@ -1145,7 +1145,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e2, &etr, &eti);
 
             add_instr("F2I\n");
-            add_instr("MLT %d\n"   , v_table[id].siz2);
+            add_instr("MLT %d\n"   , v_table[id].cols);
             add_instr("P_F2I_M %s\n", v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr("%s %s\n", ldv        , v_table[id].name);
@@ -1160,7 +1160,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1171,7 +1171,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv,     v_table[id].name);
@@ -1183,7 +1183,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n" , ldv   , v_table[id].name);
         }
@@ -1194,7 +1194,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr( "%s %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT %d\n"    , v_table[id].siz2);
+            add_instr("MLT %d\n"    , v_table[id].cols);
             add_instr("ADD %s\n",      v_table[e2.id].name);
             add_instr( "%s %s\n", ldv        , v_table[id].name);
         }
@@ -1206,7 +1206,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1217,7 +1217,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_table[id].name);
@@ -1231,7 +1231,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_table[id].name);
@@ -1246,7 +1246,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("F2I\n");
             add_instr("SET   __aux_var\n");
             add_instr("F2I_M %s \n",   v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr( "%s   %s\n", ldv     , v_table[id].name);
         }
@@ -1257,7 +1257,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_table[id].name);
@@ -1271,7 +1271,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e1, &etr, &eti);
 
             add_instr("P_F2I_M %s\n", v_table[etr.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1284,7 +1284,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e1, &etr, &eti);
 
             add_instr( "%s %s\n", f2i, v_table[etr.id].name);
-            add_instr("MLT %d\n"    , v_table[id].siz2);
+            add_instr("MLT %d\n"    , v_table[id].cols);
             add_instr("ADD %s\n",      v_table[e2.id].name);
             add_instr( "%s %s\n", ldv        , v_table[id].name);
         }
@@ -1298,7 +1298,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[etr.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1311,7 +1311,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e1, &etr, &eti);
 
             add_instr( "%s     %s\n", f2i, v_table[etr.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_table[id].name);
@@ -1324,7 +1324,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             get_cmp_cst(e1, &etr, &eti);
             add_instr("%s %s\n", f2i, v_table[etr.id].name);
-            add_instr("MLT %d\n"   , v_table[id].siz2);
+            add_instr("MLT %d\n"   , v_table[id].cols);
 
             get_cmp_cst(e2, &etr, &eti);
             add_instr("P_F2I_M %s\n", v_table[etr.id].name);
@@ -1342,7 +1342,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[etr.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1355,7 +1355,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e1, &etr, &eti);
 
             add_instr( "%s     %s\n", f2i, v_table[etr.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_table[id].name);
@@ -1369,7 +1369,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1381,7 +1381,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT %d\n", v_table[id].siz2);
+            add_instr("MLT %d\n", v_table[id].cols);
             add_instr("ADD %s\n",  v_table[e2.id].name);
             add_instr( "%s %s\n",  ldv   , v_table[id].name);
         }
@@ -1395,7 +1395,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT  %d\n", v_table[id].siz2);
+            add_instr("MLT  %d\n", v_table[id].cols);
             add_instr("ADD  __aux_var\n");
             add_instr( "%s  %s\n", ldv    , v_table[id].name);
         }
@@ -1407,7 +1407,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_table[id].name);
@@ -1422,7 +1422,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n",  v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_table[id].name);
@@ -1438,7 +1438,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
         }
@@ -1450,7 +1450,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_table[id].name);
@@ -1462,7 +1462,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_table[id].name);
         }
@@ -1473,7 +1473,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr( "%s %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT %d\n"    , v_table[id].siz2);
+            add_instr("MLT %d\n"    , v_table[id].cols);
             add_instr("ADD %s\n",      v_table[e2.id].name);
             add_instr( "%s %s\n", ldv        , v_table[id].name);
         }
@@ -1485,7 +1485,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_table[id].name);
         }
@@ -1496,7 +1496,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("%s %s\n", f2i,  v_table[e1.id].name);
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n",  ldv   , v_table[id].name);
@@ -1510,7 +1510,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr( "%s     %s\n", ldv        , v_table[id].name);
@@ -1524,7 +1524,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr( "%s   %s\n",  ldv   , v_table[id].name);
         }
@@ -1535,7 +1535,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("%s      %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr ("%s     %s\n", ldv        , v_table[id].name);
@@ -1549,7 +1549,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and int in memory
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            add_instr("MLT   %d\n" , v_table[id].siz2);
+            add_instr("MLT   %d\n" , v_table[id].cols);
             add_instr("ADD   %s\n"  , v_table[e2.id].name);
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv   , v_table[id].name);
@@ -1564,7 +1564,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1577,7 +1577,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1593,7 +1593,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             get_cmp_cst(e2, &etr, &eti);
 
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1610,7 +1610,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1623,7 +1623,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1636,7 +1636,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             add_instr( "%s   %s\n", ldi, v_table[e1.id].name);
-            add_instr("MLT   %d\n"    , v_table[id].siz2);
+            add_instr("MLT   %d\n"    , v_table[id].cols);
             add_instr("ADD   %s\n",      v_table[e2.id].name);
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv      , v_table[id].name);
@@ -1651,7 +1651,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("P_LOD %s\n",  v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1665,7 +1665,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1682,7 +1682,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1699,7 +1699,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
             add_instr("P_LOD %s\n", v_table[e1.id].name);
-            add_instr("MLT   %d\n" , v_table[id].siz2);
+            add_instr("MLT   %d\n" , v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv   , v_table[id].name);
@@ -1713,7 +1713,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1729,7 +1729,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1743,7 +1743,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   %s\n" , v_table[e2.id].name);
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1759,7 +1759,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1773,7 +1773,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1790,7 +1790,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e2, &etr, &eti);
 
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1808,7 +1808,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1822,7 +1822,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1837,7 +1837,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1851,7 +1851,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("%s    %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT   %d\n"    , v_table[id].siz2);
+            add_instr("MLT   %d\n"    , v_table[id].cols);
             add_instr("ADD   %s\n"     , v_table[e2.id].name);
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv      , v_table[id].name);
@@ -1866,7 +1866,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1880,7 +1880,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1895,7 +1895,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT %d\n"    , v_table[id].siz2);
+            add_instr("MLT %d\n"    , v_table[id].cols);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -1915,7 +1915,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1929,7 +1929,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -1946,7 +1946,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e1, &etr, &eti);
 
             add_instr("P_F2I_M %s\n", v_table[etr.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1962,7 +1962,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e1, &etr, &eti);
 
             add_instr( "%s   %s\n", f2i, v_table[etr.id].name);
-            add_instr("MLT   %d\n"    , v_table[id].siz2);
+            add_instr("MLT   %d\n"    , v_table[id].cols);
             add_instr("ADD   %s\n",      v_table[e2.id].name);
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv      , v_table[id].name);
@@ -1979,7 +1979,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[etr.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -1995,7 +1995,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e1, &etr, &eti);
 
             add_instr( "%s     %s\n", f2i, v_table[etr.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -2011,7 +2011,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             get_cmp_cst(e1, &etr, &eti);
             add_instr( "%s %s\n", f2i, v_table[etr.id].name);
-            add_instr("MLT %d\n"    , v_table[id].siz2);
+            add_instr("MLT %d\n"    , v_table[id].cols);
 
             get_cmp_cst(e2, &etr, &eti);
             add_instr("P_F2I_M %s\n", v_table[etr.id].name);
@@ -2032,7 +2032,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[etr.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -2048,7 +2048,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e1, &etr, &eti);
 
             add_instr("%s      %s\n", f2i, v_table[etr.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -2065,7 +2065,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -2080,7 +2080,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   %s\n" , v_table[e2.id].name);
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -2097,7 +2097,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr("SET   __aux_var\n");
             add_instr("%s    %s\n"  , ldv  , v_table[id].name);
@@ -2112,7 +2112,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("SET_P   __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -2130,7 +2130,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("SET_P   __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -2149,7 +2149,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("POP\n");
             add_instr("F2I\n");
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("ADD   __aux_var\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv  , v_table[id].name);
@@ -2164,7 +2164,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("SET_P   __aux_var\n");
             add_instr("F2I\n");
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -2179,7 +2179,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("P_F2I_M %s\n" , v_table[e1.id].name);
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
             add_instr("%s      %s\n"  , ldv  , v_table[id].name);
@@ -2193,7 +2193,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
             add_instr("%s    %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT   %d\n"    , v_table[id].siz2);
+            add_instr("MLT   %d\n"    , v_table[id].cols);
             add_instr("ADD   %s\n",      v_table[e2.id].name);
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n"  , ldv      , v_table[id].name);
@@ -2208,7 +2208,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n" , v_table[e1.id].name);
-            add_instr("MLT     %d\n", v_table[id].siz2);
+            add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
             add_instr( "%s     %s\n"  , ldv  , v_table[id].name);
@@ -2222,7 +2222,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -2239,7 +2239,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             get_cmp_cst(e2, &etr, &eti);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n",      v_table[etr.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");
@@ -2256,7 +2256,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
-            add_instr("MLT   %d\n", v_table[id].siz2);
+            add_instr("MLT   %d\n", v_table[id].cols);
             add_instr("S_ADD\n");
             add_instr("SET   __aux_var\n");
             add_instr( "%s   %s\n", ldv    , v_table[id].name);
@@ -2270,7 +2270,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
             add_instr(" %s     %s\n", f2i, v_table[e1.id].name);
-            add_instr("MLT     %d\n"    , v_table[id].siz2);
+            add_instr("MLT     %d\n"    , v_table[id].cols);
             add_instr("P_F2I_M %s\n"     , v_table[e2.id].name);
             add_instr("S_ADD\n");
             add_instr("SET     __aux_var\n");

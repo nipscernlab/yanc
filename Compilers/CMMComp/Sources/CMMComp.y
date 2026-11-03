@@ -62,16 +62,16 @@
 
 #include <stdlib.h>
 
-#include "../Headers/itr.h"         // interrupt handling
+#include "../Headers/interrupt.h"         // interrupt handling
 #include "../Headers/oper.h"        // ALU operations
 #include "../Headers/stdlib.h"      // SAPHO standard library
-#include "../Headers/saltos.h"      // jump management (if/else while)
+#include "../Headers/control_flow.h"      // jump management (if/else while)
 #include "../Headers/global.h"      // global variables and functions
 #include "../Headers/macros.h"      // assembler macros
-#include "../Headers/funcoes.h"     // function creation and usage
+#include "../Headers/functions.h"     // function creation and usage
 #include "../Headers/data_use.h"    // data usage
-#include "../Headers/variaveis.h"   // variable table
-#include "../Headers/diretivas.h"   // compilation directives
+#include "../Headers/symbols.h"   // variable table
+#include "../Headers/directives.h"   // compilation directives
 #include "../Headers/data_declar.h" // data declaration
 #include "../Headers/data_assign.h" // data assignment
 #include "../Headers/array_index.h" // array index handling
@@ -145,7 +145,7 @@ void  yyerror(char const *s);
 %left '*' '/' '%'
 %left '!' '~' PPLUS
 
-// par_list / par_items have no semantic value (declar_par appends ids to the
+// par_list / par_items have no semantic value (declare_par appends ids to the
 // deferred func_params[] array; func_body_begin consumes them).
 //
 // func_intro carries the function's v_table id up to funcao so func_ret can
@@ -181,38 +181,38 @@ prog_elements : direct | declar | funcao
 // Compilation directives -----------------------------------------------------
 
 direct : PRNAME   ID   {fatal(MSG_ERR_PRNAME_GONE, line_num+1);} // the name is the file's
-       | NUBITS unum   {dire_exec("#NUBITS",$2,DIR_NUBITS);} // ALU word width
-       | NBMANT unum   {dire_exec("#NBMANT",$2,DIR_NBMANT);} // mantissa width (bits)
-       | NBEXPO unum   {dire_exec("#NBEXPO",$2,DIR_NBEXPO);} // exponent width (bits)
-       | NDSTAC unum   {dire_exec("#NDSTAC",$2,DIR_ASM_ONLY);} // data stack depth
-       | SDEPTH unum   {dire_exec("#SDEPTH",$2,DIR_ASM_ONLY);} // subroutine stack depth
-       | NUIOIN unum   {dire_exec("#NUIOIN",$2,DIR_NUIOIN);} // number of input ports
-       | NUIOOU unum   {dire_exec("#NUIOOU",$2,DIR_NUIOOU);} // number of output ports
-       | NUGAIN unum   {dire_exec("#NUGAIN",$2,DIR_NUGAIN);} // division constant (norm(.)): a power of two (validated)
-       | FFTSIZ unum   {dire_exec("#FFTSIZ",$2,DIR_FFTSIZ);} // FFT size (2^FFTSIZ)
-       | FROUND unum   {dire_exec("#FROUND",$2,DIR_FROUND);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
+       | NUBITS unum   {directive_exec("#NUBITS",$2,DIR_NUBITS);} // ALU word width
+       | NBMANT unum   {directive_exec("#NBMANT",$2,DIR_NBMANT);} // mantissa width (bits)
+       | NBEXPO unum   {directive_exec("#NBEXPO",$2,DIR_NBEXPO);} // exponent width (bits)
+       | NDSTAC unum   {directive_exec("#NDSTAC",$2,DIR_ASM_ONLY);} // data stack depth
+       | SDEPTH unum   {directive_exec("#SDEPTH",$2,DIR_ASM_ONLY);} // subroutine stack depth
+       | NUIOIN unum   {directive_exec("#NUIOIN",$2,DIR_NUIOIN);} // number of input ports
+       | NUIOOU unum   {directive_exec("#NUIOOU",$2,DIR_NUIOOU);} // number of output ports
+       | NUGAIN unum   {directive_exec("#NUGAIN",$2,DIR_NUGAIN);} // division constant (norm(.)): a power of two (validated)
+       | FFTSIZ unum   {directive_exec("#FFTSIZ",$2,DIR_FFTSIZ);} // FFT size (2^FFTSIZ)
+       | FROUND unum   {directive_exec("#FROUND",$2,DIR_FROUND);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
        | WAVE wave_list                             // globals kept for the waveform even if never read
 
 // Behavioral directives ------------------------------------------------------
 
-dire_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt start point (#PRACA)
+directive_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt start point (#PRACA)
            | TOAQUI             {stmt_append(stmt_dire_toaqui());} // PC tracker marker     (#TOAQUI -> cheguei pin)
            | WAVE wave_list                                      // locals kept for the waveform even if never read
 
-wave_list : ID                 {dire_wave($1);}                   // #WAVE a, b, ...
-          | wave_list ',' ID   {dire_wave($3);}
+wave_list : ID                 {directive_wave($1);}                   // #WAVE a, b, ...
+          | wave_list ',' ID   {directive_wave($3);}
 
 // Variable declaration -------------------------------------------------------
          // list declaration (one or more variables, each may have an initializer)
 declar : TYPE id_list                               ';'
          // array declaration with file initialization
-       | TYPE ID '[' asize ']'               STRING   ';' {declar_arr_1d($2,$4,$6    );}
-       | TYPE ID '[' asize ']' '[' asize ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
+       | TYPE ID '[' asize ']'               STRING   ';' {declare_arr_1d($2,$4,$6    );}
+       | TYPE ID '[' asize ']' '[' asize ']' STRING   ';' {declare_arr_2d($2,$4,$7,$9 );}
          // array declaration initialized between braces, as in C (the values go to the .mif)
-       | TYPE ID '[' asize ']'               '=' '{' ini_list '}' ';' {declar_arr_1d_ini($2,$4   );}
-       | TYPE ID '[' asize ']' '[' asize ']' '=' '{' ini_list '}' ';' {declar_arr_2d_ini($2,$4,$7);}
+       | TYPE ID '[' asize ']'               '=' '{' ini_list '}' ';' {declare_arr_1d_ini($2,$4   );}
+       | TYPE ID '[' asize ']' '[' asize ']' '=' '{' ini_list '}' ';' {declare_arr_2d_ini($2,$4,$7);}
          // array declaration with a Dirac expression
-       | TYPE ID '[' asize ']' '#' exp ';' {declar_dirac($2,$4,$7);}
+       | TYPE ID '[' asize ']' '#' exp ';' {declare_dirac($2,$4,$7);}
 
 id_list : IID | id_list ',' IID
 
@@ -246,10 +246,10 @@ ini_num  :     INUM {ini_add(inum_word($1),1,0);}
          | '-' INUM {ini_add(inum_word($2),1,1);}
          | '-' FNUM {ini_add($2,2,1);}
 
-IID    : ID                           {declar_var   ($1         );}
-       | ID '=' exp                   {declar_var   ($1         ); stmt_append(stmt_assign($1, $3));}
-       | ID '[' asize ']'               {declar_arr_1d($1,$3   ,-1);}
-       | ID '[' asize ']' '[' asize ']' {declar_arr_2d($1,$3,$6,-1);}
+IID    : ID                           {declare_var   ($1         );}
+       | ID '=' exp                   {declare_var   ($1         ); stmt_append(stmt_assign($1, $3));}
+       | ID '[' asize ']'               {declare_arr_1d($1,$3   ,-1);}
+       | ID '[' asize ']' '[' asize ']' {declare_arr_2d($1,$3,$6,-1);}
 
 // Function declaration -------------------------------------------------------
 
@@ -257,23 +257,23 @@ funcao : func_intro par_list ')' '{' stmt_list '}' {func_ret($1);} // $1 = func_
 
 // State-setup phase of a function declaration. Pulled into its own named
 // non-terminal so the action is a clean end-action - no mid-rule sitting
-// between TYPE ID '(' and par_list. declar_fun records fname / fun_parse /
-// the JMP-main flag / the parameter collector reset; par_list / declar_par
+// between TYPE ID '(' and par_list. declare_fun records fname / fun_parse /
+// the JMP-main flag / the parameter collector reset; par_list / declare_par
 // run afterwards and depend on that state being in place.
-func_intro : TYPE ID '('                  {declar_fun($1,$2); $$ = $2;}
+func_intro : TYPE ID '('                  {declare_fun($1,$2); $$ = $2;}
            ;
 
 // Parameter list. par_list always reduces, even when empty - its end-action
 // is the natural place to build the STMT_FUNC_HEADER (param count is final)
-// and open the body's stmt_list collector. declar_par records each parameter
+// and open the body's stmt_list collector. declare_par records each parameter
 // id in the deferred func_params[] array; the actual SET / SET_P emits live
 // in the STMT_FUNC_HEADER walker case. Arrays are not allowed as parameters.
 par_list  : /* empty */                   {func_body_begin();}
           | par_items                     {func_body_begin();}
           ;
 
-par_items : TYPE ID                       {declar_par($1,$2);}
-          | par_items ',' TYPE ID         {declar_par($3,$4);}
+par_items : TYPE ID                       {declare_par($1,$2);}
+          | par_items ',' TYPE ID         {declare_par($3,$4);}
 
 // function and void returns
 return_call : RET exp ';'                 {stmt_append(stmt_return($2  ));}
@@ -286,7 +286,7 @@ stmt_list: stmt_full | stmt_list stmt_full
 // Every statement that can be written inside a function. There is no separate
 // "statements allowed in a case" tier any more: a case body is an ordinary
 // stmt_list, and `break` binds to the innermost enclosing loop OR switch via
-// the break-target stack in saltos.c (see exec_break). That single change is
+// the break-target stack in control_flow.c (see exec_break). That single change is
 // what lets a switch nest inside a case, lets a `{ }` block live in a case, and
 // makes a `break` inside an if-in-a-case correctly exit the switch.
 stmt_full: '{' stmt_list '}' // statement block
@@ -305,7 +305,7 @@ stmt_full: '{' stmt_list '}' // statement block
          |   switch_case     // switch/case
          |         break     // break; (innermost loop or switch)
          |      continue     // continue; (innermost loop)
-         |    dire_inter     // interrupt point
+         |    directive_inter     // interrupt point
          |           ';'     // empty statement: emits nothing
          |       '{' '}'     // empty block: emits nothing
 
@@ -411,7 +411,7 @@ do_intro    : DO                          {do_open();}
 //     while (cond) { body; step; }
 //
 // for_init_clause / for_step_clause stash their stmt_node into static state
-// in saltos.c (for_init_set / for_step_set). for_intro reads the cond and
+// in control_flow.c (for_init_set / for_step_set). for_intro reads the cond and
 // pulls the stashed init/step into the pending stmt_while's then_body /
 // else_body slots so nested fors can each carry their own. for_finish
 // closes the body block, appends step at its tail, attaches the body to
@@ -423,7 +423,7 @@ for_intro       : FOR '(' for_init_clause ';' exp ';' for_step_clause ')' {for_o
 
 for_init_clause : /* empty */                          {for_init_set(NULL);}
                 | ID  '=' exp                          {for_init_set(stmt_assign($1, $3));}
-                | TYPE ID '=' exp                      {declar_var($2); for_init_set(stmt_assign($2, $4));}
+                | TYPE ID '=' exp                      {declare_var($2); for_init_set(stmt_assign($2, $4));}
 
 for_step_clause : /* empty */                          {for_step_set(NULL);}
                 | ID  '=' exp                          {for_step_set(stmt_assign($1, $3));}
@@ -552,7 +552,7 @@ terminal : INUM                               {$$ = expr_lit(TY_INT, inum_word($
          // the most negative one, whose magnitude does not fit, is -max - 1
          | NINUM                              {$$ = expr_unop(OP_NEG, expr_lit(TY_INT, $1));}
          | NIMIN                              {$$ = expr_binop(OP_SUB, expr_unop(OP_NEG, expr_lit(TY_INT, $1)),
-                                                               expr_lit(TY_INT, exec_inum("1")));}
+                                                               expr_lit(TY_INT, lex_inum("1")));}
          | FNUM                               {$$ = expr_lit(TY_FLOAT, $1);}
          | CNUM                               {$$ = expr_lit(TY_CCONST, $1);}
          // variables

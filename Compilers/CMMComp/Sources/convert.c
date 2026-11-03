@@ -6,10 +6,10 @@
 #include <stdlib.h>
 
 // local includes
-#include "../Headers/t2t.h"
+#include "../Headers/convert.h"
 #include "../Headers/global.h"
 #include "../Headers/data_use.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
@@ -18,7 +18,7 @@
 
 // converts the integer x to a binary string of its w low bits (w <= 31: the
 // line numbers of pc_<name>_mem.txt, 20 bits, are its only use)
-char *itob(int x, int w)
+char *int_to_bin(int x, int w)
 {
     char *b = (char *) xmalloc(w+1);
     int n = 0;
@@ -52,8 +52,8 @@ void get_cmp_cst(expr e, expr *er, expr *ei)
 
     cnum_split(v_table[e.id].name, &re, &im);   // the text, not a host float: no digit lost
 
-    *er = num2exp(exec_fnum(re), 2);   // typed constants: real(5-7i) can be a built-in's argument
-    *ei = num2exp(exec_fnum(im), 2);
+    *er = num2exp(lex_fnum(re), 2);   // typed constants: real(5-7i) can be a built-in's argument
+    *ei = num2exp(lex_fnum(im), 2);
     free(re); free(im);
 }
 

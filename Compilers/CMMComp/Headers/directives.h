@@ -4,8 +4,8 @@
 
 // state the cmm compiler keeps from the directives
 
-#ifndef CMM_DIRETIVAS_H
-#define CMM_DIRETIVAS_H
+#ifndef CMM_DIRECTIVES_H
+#define CMM_DIRECTIVES_H
 
 extern const char *prname; // processor name
 extern int  nubits;      // word width (bits)
@@ -25,6 +25,6 @@ typedef enum {
     DIR_FROUND, DIR_NUGAIN, DIR_NUBITS, DIR_FFTSIZ
 } dir_code;
 
-void dire_exec (char *dir, int id, dir_code t);
+void directive_exec (char *dir, int id, dir_code t);
 
-#endif // CMM_DIRETIVAS_H
+#endif // CMM_DIRECTIVES_H

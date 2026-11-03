@@ -9,8 +9,8 @@
 
 #include "../Headers/ast.h"
 #include "../Headers/global.h"
-#include "../Headers/variaveis.h"   // v_table[].name for the dump
-#include "../Headers/diretivas.h"   // nbmant / nbexpo / nubits for the constant ranges
+#include "../Headers/symbols.h"   // v_table[].name for the dump
+#include "../Headers/directives.h"   // nbmant / nbexpo / nubits for the constant ranges
 #include "../Headers/messages.h"
 
 // needed by the expression-tree walker (ast_emit_expr) below
@@ -18,14 +18,14 @@
 #include "../Headers/stdlib.h"
 #include "../Headers/array_index.h"
 #include "../Headers/data_use.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 
 // needed by the stmt_node walker
 #include "../Headers/data_assign.h"
 #include "../Headers/data_declar.h"  // declar_arr_*_emit for STMT_DECLAR_* walker
-#include "../Headers/itr.h"
+#include "../Headers/interrupt.h"
 #include "../Headers/diag.h"
-#include "../Headers/t2t.h"      // get_cmp_cst for complex cond loads
+#include "../Headers/convert.h"      // get_cmp_cst for complex cond loads
 #include "../Headers/dirac.h"    // the Dirac notation in loops
 #include "../../common/xstr.h"
 
@@ -273,7 +273,7 @@ expr_node *expr_dirac_in(int port)
 
 void dirac_not_vector(int id)
 {
-    char *name = rem_fname(v_table[id].name);
+    char *name = strip_fn_prefix(v_table[id].name);
     if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST,   line_num + 1, name);
     else                       fatal(MSG_ERR_NOT_A_VECTOR, line_num + 1, name);
 }
@@ -364,7 +364,7 @@ static expr_node *for_bottom_test(stmt_node *n, stmt_node *init)
     }
     if (!holds || k2 < 0 || k2 > max) return NULL;           // a literal has no negative form
     char buf[32]; snprintf(buf, sizeof buf, "%lld", k2);
-    return expr_binop(op2, expr_lit(TY_INT, exec_inum(buf)), expr_var(TY_INT, var->id));
+    return expr_binop(op2, expr_lit(TY_INT, lex_inum(buf)), expr_var(TY_INT, var->id));
 }
 
 // an int literal other than 0: a loop condition that is always true (while (1))
@@ -409,7 +409,7 @@ static void key_cat(char **b, const char *fmt, ...)
 static int elem_key_tree(expr_node *e, char **b)
 {
     if (!e) return 0;
-    if (e->kind == EXPR_LITERAL || (e->kind == EXPR_VAR && v_table[e->id].isar == AR_NONE))
+    if (e->kind == EXPR_LITERAL || (e->kind == EXPR_VAR && v_table[e->id].dims == AR_NONE))
     {
         if (e->kind == EXPR_LITERAL && v_table[e->id].type != TY_INT) return 0;
         key_cat(b, "%s", v_table[e->id].name);
@@ -608,14 +608,14 @@ void shapecheck_expr(expr_node *n)
     {
         case EXPR_DIRAC_REF: {
             int id = n->id;
-            char *name = rem_fname(v_table[id].name);
+            char *name = strip_fn_prefix(v_table[id].name);
             if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, n->line, name);
             if (n->op == DIRAC_ROLE_MAT) {
-                if (v_table[id].isar != AR_2D) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
+                if (v_table[id].dims != AR_2D) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
                 n->rows = v_table[id].size;
-                n->cols = v_table[id].siz2;
+                n->cols = v_table[id].cols;
             } else {
-                if (v_table[id].isar != AR_1D) fatal(MSG_ERR_NOT_A_VECTOR, n->line, name);
+                if (v_table[id].dims != AR_1D) fatal(MSG_ERR_NOT_A_VECTOR, n->line, name);
                 n->rows = (n->op == DIRAC_ROLE_KET) ? v_table[id].size : 1;
                 n->cols = (n->op == DIRAC_ROLE_KET) ? 1 : v_table[id].size;
             }
@@ -744,7 +744,7 @@ static expr_node *part_made[3*PART_MAX]; static int part_n;
 
 static int comp_part_leaf(const expr_node *n)
 {
-    if (n->kind == EXPR_VAR) return v_table[n->id].type == TY_COMP && v_table[n->id].isar == AR_NONE;
+    if (n->kind == EXPR_VAR) return v_table[n->id].type == TY_COMP && v_table[n->id].dims == AR_NONE;
     if (n->kind == EXPR_ARRAY_INDEX)
         return v_table[n->id].type == TY_COMP && is_expr_leaf(n->left) && (!n->right || is_expr_leaf(n->right));
     return 0;
@@ -789,8 +789,8 @@ static expr_node *part_bin(int op, expr_node *l, expr_node *r, const expr_node *
 static expr_node *part_leaf(const expr_node *l, int imag)
 {
     int id = l->id, part = imag ? get_img_id(id) : id, k = part_k++;
-    part_id[k] = part; part_type[k] = v_table[part].type; part_isar[k] = v_table[part].isar; part_siz2[k] = v_table[part].siz2;
-    v_table[part].type = TY_FLOAT; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
+    part_id[k] = part; part_type[k] = v_table[part].type; part_isar[k] = v_table[part].dims; part_siz2[k] = v_table[part].cols;
+    v_table[part].type = TY_FLOAT; v_table[part].dims = v_table[id].dims; v_table[part].cols = v_table[id].cols;
     v_table[id].used = 1;
     if (l->left ) l->left ->emitted = 0;
     if (l->right) l->right->emitted = 0;
@@ -826,7 +826,7 @@ static expr comp_partwise_emit(expr_node *n, int from, int to)
         ast_emit_expr(part_tree(n, imag));
         for (int k = part_k - 1; k >= 0; k--)
         {
-            v_table[part_id[k]].type = part_type[k]; v_table[part_id[k]].isar = part_isar[k]; v_table[part_id[k]].siz2 = part_siz2[k];
+            v_table[part_id[k]].type = part_type[k]; v_table[part_id[k]].dims = part_isar[k]; v_table[part_id[k]].cols = part_siz2[k];
         }
         for (int k = 0; k < part_n; k++) free(part_made[k]);
     }
@@ -1012,10 +1012,10 @@ static expr ast_emit_expr_impl(expr_node *n)
                     if (cval == -(m / 2)) return oper_neg(num2exp(inum_min_id(), 1));
                     if (cval >= 0) {
                         snprintf(buf, sizeof buf, "%lld", cval);
-                        return num2exp(exec_inum(buf), 1);
+                        return num2exp(lex_inum(buf), 1);
                     }
                     snprintf(buf, sizeof buf, "%lld", -cval);
-                    return oper_neg(num2exp(exec_inum(buf), 1));
+                    return oper_neg(num2exp(lex_inum(buf), 1));
                 }
             }
 
@@ -1105,19 +1105,19 @@ static expr ast_emit_expr_impl(expr_node *n)
                 expr t = a; a = b; b = t;
             }
             switch (n->op) {
-                case OP_ADD:  return oper_soma (a, b);
-                case OP_SUB:  return oper_subt (a, b);
+                case OP_ADD:  return oper_add (a, b);
+                case OP_SUB:  return oper_sub (a, b);
                 case OP_MUL:  return oper_mult (a, b);
-                case OP_DIV:  return oper_divi (a, b);
+                case OP_DIV:  return oper_div (a, b);
                 case OP_MOD:  return oper_mod  (a, b);
                 case OP_LT:   return oper_cmp  (a, b, 0);
                 case OP_GT:   return oper_cmp  (a, b, 1);
                 case OP_EQ:   return oper_cmp  (a, b, 2);
-                case OP_GE:   return oper_greq (a, b);
-                case OP_LE:   return oper_leeq (a, b);
-                case OP_NE:   return oper_dife (a, b);
-                case OP_LAN:  return oper_lanor(a, b, 0);
-                case OP_LOR:  return oper_lanor(a, b, 1);
+                case OP_GE:   return oper_ge (a, b);
+                case OP_LE:   return oper_le (a, b);
+                case OP_NE:   return oper_ne (a, b);
+                case OP_LAN:  return oper_logic(a, b, 0);
+                case OP_LOR:  return oper_logic(a, b, 1);
                 case OP_SHL:  return oper_shift(a, b, 0);
                 case OP_SHR:  return oper_shift(a, b, 1);
                 case OP_SSHR: return oper_shift(a, b, 2);
@@ -1177,26 +1177,26 @@ static expr ast_emit_expr_impl(expr_node *n)
             }
             // two constant indexes of a matrix: one constant offset, row by row
             if (n->right && n->left->kind == EXPR_LITERAL && n->right->kind == EXPR_LITERAL
-                && v_table[n->id].isar == AR_2D && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
+                && v_table[n->id].dims == AR_2D && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
             {
                 typecheck_expr(n->left);
                 typecheck_expr(n->right);
                 if (n->left->type == TY_INT && n->right->type == TY_INT)
-                    return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].siz2
+                    return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].cols
                                                  + atoi(v_table[n->right->id].name), 2);
             }
             // a matrix element whose column index is computed: row * row length +
             // column is one int expression, the column computed over the pushed
             // row, and the element is read as from a vector; arr_2d_index would
             // set the column aside in memory to multiply the row
-            if (n->right && !is_expr_leaf(n->right) && v_table[n->id].isar == AR_2D)
+            if (n->right && !is_expr_leaf(n->right) && v_table[n->id].dims == AR_2D)
             {
                 typecheck_expr(n->left);
                 typecheck_expr(n->right);
                 if (n->left->type == TY_INT && n->right->type == TY_INT)
                 {
-                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
-                    expr_node *s = expr_lit(TY_INT, exec_inum(b));
+                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].cols);
+                    expr_node *s = expr_lit(TY_INT, lex_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->left, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->right);
                     char *key = NULL;
@@ -1208,9 +1208,9 @@ static expr ast_emit_expr_impl(expr_node *n)
                         {add_instr("PSH\n"); e = expr_make(TY_INT, 0);}
                     else e = ast_emit_expr(a);
                     free(a); free(m); free(s);
-                    v_table[n->id].isar = AR_1D;
+                    v_table[n->id].dims = AR_1D;
                     expr r = arr_1d2exp(n->id, e, 0);
-                    v_table[n->id].isar = AR_2D;
+                    v_table[n->id].dims = AR_2D;
                     return elem_read(n, r);
                 }
             }
@@ -1249,42 +1249,42 @@ static expr ast_emit_expr_impl(expr_node *n)
 
         case EXPR_STDLIB_CALL: {
             switch (n->op) {
-                case OP_STD_IN:   return exec_in (n->id);
-                case OP_STD_FIN:  return exec_fin(n->id);
+                case OP_STD_IN:   return builtin_in (n->id);
+                case OP_STD_FIN:  return builtin_fin(n->id);
                 // inside an expression, an index or an argument (the whole
                 // right-hand side of an assignment is taken by STMT_ASSIGN)
-                case OP_STD_CADE:  return exec_cade_expr(1, n->id);
-                case OP_STD_FCADE: return exec_cade_expr(2, n->id);
-                case OP_STD_PST:  { expr a = ast_emit_expr(n->left); return exec_pst (a); }
-                case OP_STD_ABS:  { expr a = ast_emit_expr(n->left); return exec_abs (a); }
-                case OP_STD_SIGN: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_sign(a, b); }
-                case OP_STD_NRM:  { expr a = ast_emit_expr(n->left); return exec_norm(a); }
-                case OP_STD_SQRT: { expr a = ast_emit_expr(n->left); return exec_sqrt(a); }
-                case OP_STD_ATAN: { expr a = ast_emit_expr(n->left); return exec_atan(a); }
-                case OP_STD_SIN:  { expr a = ast_emit_expr(n->left); return exec_sin (a); }
-                case OP_STD_COS:  { expr a = ast_emit_expr(n->left); return exec_cos (a); }
-                case OP_STD_TAN:  { expr a = ast_emit_expr(n->left); return exec_tan (a); }
-                case OP_STD_COSH: { expr a = ast_emit_expr(n->left); return exec_cosh(a); }
-                case OP_STD_SINH: { expr a = ast_emit_expr(n->left); return exec_sinh(a); }
-                case OP_STD_TANH: { expr a = ast_emit_expr(n->left); return exec_tanh(a); }
-                case OP_STD_EXP:  { expr a = ast_emit_expr(n->left); return exec_exp (a); }
-                case OP_STD_LOG:  { expr a = ast_emit_expr(n->left); return exec_log (a); }
-                case OP_STD_POW:  { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_pow (a, b); }
-                case OP_STD_FLOOR:{ expr a = ast_emit_expr(n->left); return exec_floor(a); }
-                case OP_STD_CEIL: { expr a = ast_emit_expr(n->left); return exec_ceil (a); }
-                case OP_STD_ROUND:{ expr a = ast_emit_expr(n->left); return exec_round(a); }
+                case OP_STD_CADE:  return builtin_cade_expr(1, n->id);
+                case OP_STD_FCADE: return builtin_cade_expr(2, n->id);
+                case OP_STD_PST:  { expr a = ast_emit_expr(n->left); return builtin_pst (a); }
+                case OP_STD_ABS:  { expr a = ast_emit_expr(n->left); return builtin_abs (a); }
+                case OP_STD_SIGN: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return builtin_sign(a, b); }
+                case OP_STD_NRM:  { expr a = ast_emit_expr(n->left); return builtin_norm(a); }
+                case OP_STD_SQRT: { expr a = ast_emit_expr(n->left); return builtin_sqrt(a); }
+                case OP_STD_ATAN: { expr a = ast_emit_expr(n->left); return builtin_atan(a); }
+                case OP_STD_SIN:  { expr a = ast_emit_expr(n->left); return builtin_sin (a); }
+                case OP_STD_COS:  { expr a = ast_emit_expr(n->left); return builtin_cos (a); }
+                case OP_STD_TAN:  { expr a = ast_emit_expr(n->left); return builtin_tan (a); }
+                case OP_STD_COSH: { expr a = ast_emit_expr(n->left); return builtin_cosh(a); }
+                case OP_STD_SINH: { expr a = ast_emit_expr(n->left); return builtin_sinh(a); }
+                case OP_STD_TANH: { expr a = ast_emit_expr(n->left); return builtin_tanh(a); }
+                case OP_STD_EXP:  { expr a = ast_emit_expr(n->left); return builtin_exp (a); }
+                case OP_STD_LOG:  { expr a = ast_emit_expr(n->left); return builtin_log (a); }
+                case OP_STD_POW:  { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return builtin_pow (a, b); }
+                case OP_STD_FLOOR:{ expr a = ast_emit_expr(n->left); return builtin_floor(a); }
+                case OP_STD_CEIL: { expr a = ast_emit_expr(n->left); return builtin_ceil (a); }
+                case OP_STD_ROUND:{ expr a = ast_emit_expr(n->left); return builtin_round(a); }
                 case OP_STD_REAL: case OP_STD_IMAG:
                     // a part of a comp array element: the array of that part (v, or
                     // v_i) is read as a float array, the other one not at all
                     if (n->left->kind == EXPR_ARRAY_INDEX && v_table[n->left->id].type == TY_COMP)
                     {
                         int id = n->left->id, part = (n->op == OP_STD_IMAG) ? get_img_id(id) : id;
-                        int t0 = v_table[part].type, a0 = v_table[part].isar, s0 = v_table[part].siz2;
-                        v_table[part].type = TY_FLOAT; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
+                        int t0 = v_table[part].type, a0 = v_table[part].dims, s0 = v_table[part].cols;
+                        v_table[part].type = TY_FLOAT; v_table[part].dims = v_table[id].dims; v_table[part].cols = v_table[id].cols;
                         n->left->id = part;
                         expr a = ast_emit_expr(n->left);
                         n->left->id = id;
-                        v_table[part].type = t0; v_table[part].isar = a0; v_table[part].siz2 = s0;
+                        v_table[part].type = t0; v_table[part].dims = a0; v_table[part].cols = s0;
                         v_table[id].used = 1;
                         return a;
                     }
@@ -1296,12 +1296,12 @@ static expr ast_emit_expr_impl(expr_node *n)
                         if (n->left->kind == EXPR_BINOP && n->left->type == TY_COMP && comp_partwise(n->left, &leaves))
                             return comp_partwise_emit(n->left, !re, !re);
                     }
-                    if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return exec_real(a); }
-                    else                      { expr a = ast_emit_expr(n->left); return exec_imag(a); }
-                case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return exec_comp(a, b); }
-                case OP_STD_FASE: { expr a = ast_emit_expr(n->left); return exec_fase(a); }
-                case OP_STD_MOD2: { expr a = ast_emit_expr(n->left); return exec_mod2(a); }
-                case OP_STD_CONJ: { expr a = ast_emit_expr(n->left); return exec_conj(a); }
+                    if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return builtin_real(a); }
+                    else                      { expr a = ast_emit_expr(n->left); return builtin_imag(a); }
+                case OP_STD_COMP: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return builtin_comp(a, b); }
+                case OP_STD_FASE: { expr a = ast_emit_expr(n->left); return builtin_fase(a); }
+                case OP_STD_MOD2: { expr a = ast_emit_expr(n->left); return builtin_mod2(a); }
+                case OP_STD_CONJ: { expr a = ast_emit_expr(n->left); return builtin_conj(a); }
                 default: break;
             }
             break;
@@ -1323,7 +1323,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             if (n->n_args == 0 && acc_ok) add_instr("PSH\n");
             add_instr("CAL %s\n", v_table[n->id].name);
             v_table[n->id].used = 1;
-            fun_call_edge(emit_fid, n->id, emit_line);   // for check_rec (funcoes.c)
+            fun_call_edge(emit_fid, n->id, emit_line);   // for check_rec (functions.c)
             acc_ok = (n->type == TY_NONE) ? 0 : 1;
 
             fun_id = saved_fun_id;
@@ -1517,7 +1517,7 @@ stmt_node *stmt_list_top(void)
 // compound control-flow constructors -----------------------------------------
 // ----------------------------------------------------------------------------
 
-// Each is made when its header is parsed (saltos.c); the bodies, the
+// Each is made when its header is parsed (control_flow.c); the bodies, the
 // do-while's condition and the switch's case count are filled in later, when
 // the parser reaches them, and start empty (snode_new zeroes the node)
 
@@ -1651,7 +1651,7 @@ stmt_node *stmt_func(int func_id, stmt_node *body)
 
 // Shared cond-to-int load used by STMT_IF / STMT_WHILE / STMT_SWITCH walker
 // cases. Mirrors the if_exp / while_expexp / exec_switch parse-time code from
-// the pre-fase-6 saltos.c. The flag selects between MSG_WARN_COND_* (if /
+// the pre-fase-6 control_flow.c. The flag selects between MSG_WARN_COND_* (if /
 // while) and MSG_WARN_CASE_* (switch) for the float / comp warnings.
 // ----------------------------------------------------------------------------
 // Dirac statements -----------------------------------------------------------
@@ -1667,15 +1667,15 @@ static int is_prod(const expr_node *n)
 // the target array dst against the shape of the expression
 static void dirac_check_target(int dst, expr_node *r, int line)
 {
-    char *name = rem_fname(v_table[dst].name);
+    char *name = strip_fn_prefix(v_table[dst].name);
     if (v_table[dst].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line, name);
 
     int rows = 1, cols = 1, fits;
-    if (v_table[dst].isar == AR_1D) {
+    if (v_table[dst].dims == AR_1D) {
         rows = v_table[dst].size;
         fits = (dim_fits(r->rows, rows) && r->cols == 1) || (r->rows == 1 && dim_fits(r->cols, rows));
-    } else if (v_table[dst].isar == AR_2D) {
-        rows = v_table[dst].size; cols = v_table[dst].siz2;
+    } else if (v_table[dst].dims == AR_2D) {
+        rows = v_table[dst].size; cols = v_table[dst].cols;
         fits = dim_fits(r->rows, rows) && dim_fits(r->cols, cols);
     } else fits = 0;
 
@@ -1722,8 +1722,8 @@ static void dirac_out(stmt_node *n)
 
     if (!is_number(r)) {typecheck_expr(r); r = dirac_fold_neg(r);}
     if (is_number(r)) {
-        if (n->op) exec_fout(n->id, ast_emit_expr(r));
-        else       exec_out (n->id, ast_emit_expr(r));
+        if (n->op) builtin_fout(n->id, ast_emit_expr(r));
+        else       builtin_out (n->id, ast_emit_expr(r));
         return;
     }
     if (r->rows != 1 && r->cols != 1) {
@@ -1878,20 +1878,20 @@ void stmt_emit(stmt_node *n)
             // partner's word goes into x as it is, with x's type (no convert)
             if (n->rhs && n->rhs->kind == EXPR_STDLIB_CALL &&
                 (n->rhs->op == OP_STD_CADE || n->rhs->op == OP_STD_FCADE))
-                 ass_set(n->id, exec_cade(n->id, n->rhs->id));
-            else ass_set(n->id, ast_emit_expr(n->rhs));
+                 assign_set(n->id, builtin_cade(n->id, n->rhs->id));
+            else assign_set(n->id, ast_emit_expr(n->rhs));
             break;
 
         case STMT_PPLUS:
-            if      (!n->idx ) ass_pplus(n->id);
-            else if (!n->idx2) ass_aplus(n->id, ast_emit_expr(n->idx));
+            if      (!n->idx ) assign_pplus(n->id);
+            else if (!n->idx2) assign_aplus(n->id, ast_emit_expr(n->idx));
             else {
                 // one statement each: C leaves the order of a call's
                 // arguments to the host compiler, and the first index must
                 // be emitted first (it goes to the stack, the second to the acc)
                 expr i1 = ast_emit_expr(n->idx);
                 expr i2 = ast_emit_expr(n->idx2);
-                ass_apl2d(n->id, i1, i2);
+                assign_apl2d(n->id, i1, i2);
             }
             break;
 
@@ -1911,13 +1911,13 @@ void stmt_emit(stmt_node *n)
                 int rt = n->rhs->type;
                 if (n->idx->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
                     int k = atoi(v_table[n->idx->id].name);
-                    ass_array_const(n->id, k, 1, ast_emit_expr(n->rhs));
+                    assign_array_const(n->id, k, 1, ast_emit_expr(n->rhs));
                     break;
                 }
             }
             // two constant indexes of a matrix: one constant offset, row by row
             if (n->idx2 && n->idx->kind == EXPR_LITERAL && n->idx2->kind == EXPR_LITERAL
-                && v_table[n->id].isar == AR_2D && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
+                && v_table[n->id].dims == AR_2D && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
             {
                 int at = v_table[n->id].type;
                 typecheck_expr(n->idx);
@@ -1925,30 +1925,30 @@ void stmt_emit(stmt_node *n)
                 typecheck_expr(n->rhs);
                 int rt = n->rhs->type;
                 if (n->idx->type == TY_INT && n->idx2->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
-                    int k = atoi(v_table[n->idx->id].name) * v_table[n->id].siz2 + atoi(v_table[n->idx2->id].name);
-                    ass_array_const(n->id, k, 2, ast_emit_expr(n->rhs));
+                    int k = atoi(v_table[n->idx->id].name) * v_table[n->id].cols + atoi(v_table[n->idx2->id].name);
+                    assign_array_const(n->id, k, 2, ast_emit_expr(n->rhs));
                     break;
                 }
             }
             // First emit the index calculation (leaves it in acc),
             // then the walker on the RHS pushes that, computes the value,
-            // and ass_array emits the indexed-store.
+            // and assign_array emits the indexed-store.
             if (n->idx2) {
                 typecheck_expr(n->idx);
                 typecheck_expr(n->idx2);
                 // a computed column: row * row length + column as one int
                 // expression, as in EXPR_ARRAY_INDEX
-                if (!is_expr_leaf(n->idx2) && v_table[n->id].isar == AR_2D
+                if (!is_expr_leaf(n->idx2) && v_table[n->id].dims == AR_2D
                     && n->idx->type == TY_INT && n->idx2->type == TY_INT)
                 {
-                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
-                    expr_node *s = expr_lit(TY_INT, exec_inum(b));
+                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].cols);
+                    expr_node *s = expr_lit(TY_INT, lex_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->idx, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->idx2);
                     expr e = ast_emit_expr(a);
-                    v_table[n->id].isar = AR_1D;
+                    v_table[n->id].dims = AR_1D;
                     arr_1d_index(n->id, e);
-                    v_table[n->id].isar = AR_2D;
+                    v_table[n->id].dims = AR_2D;
                     char *key;
                     if (idx_key(a, &key)) acc_holds_index(key);
                     free(key);
@@ -1969,11 +1969,11 @@ void stmt_emit(stmt_node *n)
                 free(key);
             }
             // an int variable as the whole index, which the right-hand side
-            // cannot change: ass_array may read it again for a second word
-            ass_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == TY_INT
-                              && !v_table[n->idx->id].isar && rhs_keeps(n->rhs)) ? n->idx->id : 0;
-            ass_array(n->id, ast_emit_expr(n->rhs), n->op);
-            ass_idx_reload = 0;
+            // cannot change: assign_array may read it again for a second word
+            assign_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == TY_INT
+                              && !v_table[n->idx->id].dims && rhs_keeps(n->rhs)) ? n->idx->id : 0;
+            assign_array(n->id, ast_emit_expr(n->rhs), n->op);
+            assign_idx_reload = 0;
             // the store leaves the element in the acc: a read of it right
             // after takes the acc, when the right-hand side changed no index
             {
@@ -1985,7 +1985,7 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_RETURN:
-            if (n->rhs) declar_ret(ast_emit_expr(n->rhs), 1);
+            if (n->rhs) declare_ret(ast_emit_expr(n->rhs), 1);
             else        void_ret();
             break;
 
@@ -1994,11 +1994,11 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_TOMA:
-            exec_toma(ast_emit_expr(n->rhs), n->id);
+            builtin_toma(ast_emit_expr(n->rhs), n->id);
             break;
 
         case STMT_COPY:
-            exec_copy(ast_emit_expr(n->rhs), n->id);
+            builtin_copy(ast_emit_expr(n->rhs), n->id);
             break;
 
         case STMT_DIRAC:
@@ -2012,12 +2012,12 @@ void stmt_emit(stmt_node *n)
             typecheck_expr(n->rhs);
             if (n->id == n->id2 && !is_expr_leaf(n->rhs) && rhs_keeps(n->rhs)
                 && !expr_reads(n->rhs, n->id) && (n->rhs->type == TY_INT || n->rhs->type == TY_FLOAT)
-                && v_table[n->id].isar == AR_1D && (v_table[n->id].type == TY_INT || v_table[n->id].type == TY_FLOAT))
+                && v_table[n->id].dims == AR_1D && (v_table[n->id].type == TY_INT || v_table[n->id].type == TY_FLOAT))
             {
-                exec_shift(n->id, expr_make(n->rhs->type, 0), n->id2, 1);
-                exec_shift_in(n->id, ast_emit_expr(n->rhs));
+                builtin_shift(n->id, expr_make(n->rhs->type, 0), n->id2, 1);
+                builtin_shift_in(n->id, ast_emit_expr(n->rhs));
             }
-            else exec_shift(n->id, ast_emit_expr(n->rhs), n->id2, 0);
+            else builtin_shift(n->id, ast_emit_expr(n->rhs), n->id2, 0);
             break;
 
         case STMT_VOID_CALL:
@@ -2028,11 +2028,11 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_DIRE_INTER:
-            dire_inter();
+            directive_inter();
             break;
 
         case STMT_DIRE_TOAQUI:
-            dire_toaqui();
+            directive_toaqui();
             break;
 
         case STMT_BLOCK:
@@ -2310,16 +2310,16 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_DECLAR_ARR_1D:
-            declar_arr_1d_emit(n->id, n->id2, n->id3);
+            declare_arr_1d_emit(n->id, n->id2, n->id3);
             break;
 
         case STMT_DECLAR_ARR_2D:
-            declar_arr_2d_emit(n->id, n->id2, n->id3, n->id4);
+            declare_arr_2d_emit(n->id, n->id2, n->id3, n->id4);
             break;
 
         case STMT_DECLAR_DIRAC:
             // base array #array directive(s), then the Dirac expression
-            declar_arr_1d_emit(n->id, n->id2, -1);
+            declare_arr_1d_emit(n->id, n->id2, -1);
             dirac_emit(n->id, n->rhs, n->line);
             break;
 
@@ -2330,7 +2330,7 @@ void stmt_emit(stmt_node *n)
             //   - SET_P <p[k]>           (last-to-second param, with imag
             //                             half first when the param is comp)
             //   - SET   <p[0]>           (first param)
-            // Mirrors the pre-AST pattern that declar_fun / declar_fst /
+            // Mirrors the pre-AST pattern that declare_fun / declare_fst /
             // set_par used to do inline at parse time.
             add_sinst(0, "@%s ", v_table[n->id].name);
             for (int i = n->n_params - 1; i >= 1; i--)
@@ -2362,7 +2362,7 @@ void stmt_emit(stmt_node *n)
         case STMT_FUNC: {
             // Full function definition. Resets ret_ok (set by STMT_RETURN
             // walker when a `return` statement fires) and stashes the
-            // current function id into the global fun_parse so declar_ret
+            // current function id into the global fun_parse so declare_ret
             // - reached at walker time from STMT_RETURN - can validate the
             // return type against the enclosing function. Then walks the
             // body, validates that a non-void function actually emitted a
@@ -2373,10 +2373,10 @@ void stmt_emit(stmt_node *n)
             int saved_fun_parse = fun_parse;
             fun_parse = n->id;
             // emit_fname carries this function's name through the body walk so
-            // rem_fname() can strip the "<fn>_" prefix from diagnostics. It is
-            // DISPLAY-ONLY: exec_id() still keys off the (empty-during-walk)
+            // strip_fn_prefix() can strip the "<fn>_" prefix from diagnostics. It is
+            // DISPLAY-ONLY: lex_id() still keys off the (empty-during-walk)
             // global fname, so the temp-variable names -- and the assembly -- are
-            // unchanged. Globals (no prefix) are unaffected by rem_fname.
+            // unchanged. Globals (no prefix) are unaffected by strip_fn_prefix.
             const char *saved_emit_fname = emit_fname;
             emit_fname = v_table[n->id].name;
             int saved_emit_fid = emit_fid;   // the caller of every CAL in the body

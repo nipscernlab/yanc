@@ -121,6 +121,23 @@ tags consumed by Aurora.
   pairs. `warn()` prints the warnings and notes on stdout, in place of 254
   `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
   and its stream.
+- **cmmcomp's names are in English** (step P7 of #93). Files:
+  `saltos` → `control_flow`, `funcoes` → `functions`, `variaveis` →
+  `symbols`, `diretivas` → `directives`, `t2t` → `convert`, `itr` →
+  `interrupt` (asmcomp's files of the same name stay). Functions:
+  `oper_soma`/`subt`/`divi`/`dife`/`greq`/`leeq`/`lanor` →
+  `oper_add`/`sub`/`div`/`ne`/`ge`/`le`/`logic`, `ass_*` → `assign_*`,
+  `declar_*` → `declare_*`, `dire_*` → `directive_*`, the lexer's
+  `exec_*` → `lex_*`, the library's → `builtin_*`, `rem_fname` →
+  `strip_fn_prefix`, `itob` → `int_to_bin`. The symbol's fields: `isar`,
+  `isco`, `siz2`, `fnid`, `npar`, `ptyp` → `dims`, `is_const`, `cols`,
+  `owner`, `n_params`, `param_types`. One rename per commit; the assembly,
+  the waveform's tables and the messages are byte-identical. The design
+  notes in docs/design keep the names of the code they describe.
+- **The regression passes on Linux too.** Its five driver checks ran
+  `yanc.exe`, and `cov_tests.py --check` wanted CRLF sources, so a Linux
+  run, as a cloud session's, always had six failures that could hide a
+  new one.
 - **cmmcomp's codes have names** (step P6 of #93): the type of a symbol,
   an expression or a tree node is `TY_INT`, `TY_FLOAT`, `TY_COMP`, ... in
   `types.h` instead of a digit (about 1600 places), the dimensions of a
@@ -339,9 +356,11 @@ tags consumed by Aurora.
   error found at the end of the parse, such as a program with no `main`,
   left the `.asm`, `prog_log.txt` and `pc_<name>_mem.txt` it had written in
   the output folder, where a later step could take them for the result.
-  Every error that stops cmmcomp now removes the files of that run. The
-  regression's negative phase checks that a rejected program leaves its
-  output folder empty.
+  Every error that stops cmmcomp now removes the files of that run;
+  cppcomp, which left them the same way (9 of its NegTests), removes its
+  `.asm`, `pc_<name>_mem.txt`, `prog_log.txt` and `src_lines.txt` on any
+  exit but a successful one. The regression's negative phases check that a
+  rejected program leaves its output folder empty, in C± and in C++.
 - **cmmcomp: a global named like the start of a function** (#94 A). A
   global `mainly` read as an array inside `main` was reported as `'y' ain't
   an array`: the function prefix was taken off without checking the `_`

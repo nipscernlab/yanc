@@ -18,12 +18,12 @@ enum {
     TY_IMAG   = 4,   // the imaginary half of a comp variable, <name>_i
     TY_CCONST = 5,   // a comp constant, 3+7.5i
     TY_FVOID  = 6,   // a function returning void, int, float, comp: 6 + its
-    TY_FINT   = 7,   // return type (funcoes.c)
+    TY_FINT   = 7,   // return type (functions.c)
     TY_FFLOAT = 8,
     TY_FCOMP  = 9
 };
 
-// what a symbol is by its dimensions (symbol.isar): a scalar, a vector or a
+// what a symbol is by its dimensions (symbol.dims): a scalar, a vector or a
 // matrix; code compares with > AR_NONE for "an array"
 enum {
     AR_NONE = 0,

@@ -85,7 +85,7 @@ void parse_lang_flag(int *argc, char **argv);
       "Error on line %d: the variable '%s' already exists. Go grab an Ω³!\n")
 
 // a declared name, as the .asm spells it, already belongs to something else,
-// or the assembler would read it as an instruction (check_name, variaveis.c)
+// or the assembler would read it as an instruction (check_name, symbols.c)
 #define MSG_ERR_NAME_TAKEN \
     M("Erro na linha %d: %s vira '%s' no assembly, e esse nome já é %s. Troque um dos dois nomes.\n", \
       "Error on line %d: %s is '%s' in the assembly, and that name is already %s. Rename one of them.\n")
@@ -346,7 +346,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: o segundo operando do shift tá em float. Aí você me quebra!\n", \
       "Heads up on line %d: the second operand of the shift is a float. Now you're killin' me!\n")
 
-// type-conversion warnings (data_assign.c / funcoes.c) ----------------------
+// type-conversion warnings (data_assign.c / functions.c) ----------------------
 
 #define MSG_WARN_INT_RECV_FLOAT \
     M("Atenção na linha %d: variável '%s' é int, mas recebe float.\n", \
@@ -396,7 +396,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: nessa conversão, eu vou pegar só a parte real hein!\n", \
       "Heads up on line %d: in this conversion I'm only grabbing the real part, just so you know!\n")
 
-// function errors/warnings (funcoes.c) --------------------------------------
+// function errors/warnings (functions.c) --------------------------------------
 
 #define MSG_WARN_CONV_F2I_PARAM \
     M("Atenção na linha %d: convertendo float para int no parâmetro %d da função '%s'.\n", \
@@ -470,7 +470,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: lista de parâmetros da função '%s' difere da original.\n", \
       "Error on line %d: parameter list of function '%s' doesn't match the original.\n")
 
-// jump errors/warnings (saltos.c) -------------------------------------------
+// jump errors/warnings (control_flow.c) -------------------------------------------
 
 #define MSG_ERR_BREAK_LOST \
     M("Erro na linha %d: esse brake aí tá perdido!\n", \
@@ -522,7 +522,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: índice de array tá dando float. Vai gerar muito código pra truncar!\n", \
       "Heads up on line %d: array index is coming out float. Gonna generate a ton of code to truncate it!\n")
 
-// unused-variable errors/warnings (variaveis.c) -----------------------------
+// unused-variable errors/warnings (symbols.c) -----------------------------
 
 // a variable never read is not in the program (asm_unread), nor in the waveform
 #define MSG_WARN_UNUSED_GLOBAL_VAR \

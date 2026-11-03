@@ -34,9 +34,9 @@
 
 #include "../Headers/ast.h"
 #include "../Headers/global.h"
-#include "../Headers/variaveis.h"
-#include "../Headers/diretivas.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/symbols.h"
+#include "../Headers/directives.h"
+#include "../Headers/functions.h"
 #include "../Headers/oper.h"
 #include "../Headers/stdlib.h"
 #include "../Headers/messages.h"
@@ -85,7 +85,7 @@ static int     flat_mode;        // a matrix is read over one flat index
 static int     cur_dst = -1;     // the array the statement writes (-1: none)
 
 // the first cell of an array as a scalar operand: a v_table entry with the
-// array's name (variaveis.c keeps the count)
+// array's name (symbols.c keeps the count)
 static int *alias_arr, *alias_id, n_alias, cap_alias;
 
 // the statement-level parts computed before the loops
@@ -203,7 +203,7 @@ static expr_node *elem_of(expr_node *ref, dl_pos r, dl_pos c)
     if (ref->dl) {                                   // a block of __dirac_tmp
         ix.k = ((dl_tmpref *)ref->dl)->off;
         cols = ref->cols;
-    } else cols = v_table[arr].siz2;
+    } else cols = v_table[arr].cols;
 
     if      (ref->op == DIRAC_ROLE_KET) ix_add(&ix, r, 1);
     else if (ref->op == DIRAC_ROLE_BRA) ix_add(&ix, c, 1);
@@ -262,7 +262,7 @@ static expr_node *scalar_of(expr_node *n)
         long k = atol(v_table[n->id].name);
         if (k < mant_pow2()) {
             char b[32]; snprintf(b, sizeof b, "%ld.0", k);
-            return expr_lit(TY_FLOAT, exec_fnum(b));
+            return expr_lit(TY_FLOAT, lex_fnum(b));
         }
     }
 
@@ -281,7 +281,7 @@ static expr_node *scalar_of(expr_node *n)
 
 static expr_node *zero_of(int t)
 {
-    return t == 2 ? expr_lit(TY_FLOAT, exec_fnum("0.0")) : expr_lit(TY_INT, exec_inum("0"));
+    return t == 2 ? expr_lit(TY_FLOAT, lex_fnum("0.0")) : expr_lit(TY_INT, lex_inum("0"));
 }
 
 static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top);
@@ -677,7 +677,7 @@ expr dirac_sum_emit(expr_node *n)
     loop_hoists(d->lv);
     acc_ok = 0;
     expr b = in_acc(ast_emit_expr(d->body));
-    oper_soma(expr_make(t, 0), b);
+    oper_add(expr_make(t, 0), b);
     acc_ok = 1;
     loop_close(d->lv, 1, top, end);
     add_instr("POP\n");
@@ -711,7 +711,7 @@ static int tmp_block(int words, int line)
     if (tmp_id < 0) {
         add_var("__dirac_tmp");
         tmp_id = find_var("__dirac_tmp");
-        v_table[tmp_id].isar = AR_1D;
+        v_table[tmp_id].dims = AR_1D;
         v_table[tmp_id].used = 1;
     }
     if (ctx_type == 2) tmp_type = 2;
@@ -734,7 +734,7 @@ static void store(expr e, const dl_dst *d, long off)
     // a value in memory goes over the index, which is still in the acc; one
     // of another type is converted on the way, by the _M form
     if (d->type == TY_INT && e.type == TY_FLOAT)
-        warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name));
+        warn(MSG_WARN_INT_RECV_FLOAT, cur_line, strip_fn_prefix(v_table[d->arr].name));
     int conv = (d->type == TY_FLOAT && e.type == TY_INT) ? 1 : (d->type == TY_INT && e.type == TY_FLOAT) ? 2 : 0;
     if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "P_I2F_M" : conv == 2 ? "P_F2I_M" : "P_LOD", v_table[e.id].name);
     else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
@@ -748,7 +748,7 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
         acc_ok = 0;
         expr e = ast_emit_expr(el);
         if (d->type == TY_INT && e.type == TY_FLOAT)
-            warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name));
+            warn(MSG_WARN_INT_RECV_FLOAT, cur_line, strip_fn_prefix(v_table[d->arr].name));
         int conv = (d->type == TY_FLOAT && e.type == TY_INT) ? 1 : (d->type == TY_INT && e.type == TY_FLOAT) ? 2 : 0;
         if (conv && e.id != 0) add_instr("%s %s\n", conv == 1 ? "I2F_M" : "F2I_M", v_table[e.id].name);
         else {
@@ -769,8 +769,8 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
     } else {
         acc_ok = 0;
         expr e = ast_emit_expr(el);
-        if (d->kind == 2) exec_fout(d->port, e);
-        else              exec_out (d->port, e);
+        if (d->kind == 2) builtin_fout(d->port, e);
+        else              builtin_out (d->port, e);
         acc_ok = 0;
     }
 }
@@ -929,7 +929,7 @@ static void emit_statement(expr_node *r, const dl_dst *d0, int rows, int cols, i
     if (d.kind == 0 && d.arr != tmp_id && reads_elsewhere(el, d.arr, &six, 0)) {
         int words = rows * cols;
         int off = tmp_block(words, line);
-        warn(MSG_INFO_DIRAC_TEMP, line, rem_fname(v_table[d.arr].name), words);
+        warn(MSG_INFO_DIRAC_TEMP, line, strip_fn_prefix(v_table[d.arr].name), words);
         d.arr = tmp_id; d.base = off; d.type = ctx_type;
         copy_back = 1;
     }
@@ -975,11 +975,11 @@ static int dl_eye(int dst, expr_node *r, int line)
     else return 0;
 
     enter(line);
-    int R = v_table[dst].size, C = v_table[dst].siz2, t = v_table[dst].type;
+    int R = v_table[dst].size, C = v_table[dst].cols, t = v_table[dst].type;
     ctx_type = t;
     n_loops = 0; n_hoist_pre = 0;
     if (t > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
-    expr_node *val = c ? scalar_of(c) : expr_lit(t, t == 2 ? exec_fnum("1.0") : exec_inum("1"));
+    expr_node *val = c ? scalar_of(c) : expr_lit(t, t == 2 ? lex_fnum("1.0") : lex_inum("1"));
     for (int j = 0; j < n_hoist_pre; j++) emit_hoist(*hoist_pre[j], hoist_pre_v[j]);
 
     dl_dst d = {0, dst, 0, 0, t, C};
@@ -1019,11 +1019,11 @@ void dirac_loops(int dst, expr_node *r, int line)
     if (r->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
 
     int rows, cols;
-    if (v_table[dst].isar == AR_2D) {rows = v_table[dst].size; cols = v_table[dst].siz2;}
+    if (v_table[dst].dims == AR_2D) {rows = v_table[dst].size; cols = v_table[dst].cols;}
     else if (r->rows == 1 && r->cols != 1) {rows = 1; cols = v_table[dst].size;}   // a bra into a vector
     else {rows = v_table[dst].size; cols = 1;}
 
-    dl_dst d = {0, dst, 0, 0, t, v_table[dst].isar == AR_2D ? cols : 0};
+    dl_dst d = {0, dst, 0, 0, t, v_table[dst].dims == AR_2D ? cols : 0};
     acc_ok = 0;
     emit_statement(r, &d, rows, cols, line);
     acc_ok = 0;

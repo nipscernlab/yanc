@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../Headers/itr.h"
+#include "../Headers/interrupt.h"
 #include "../Headers/global.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
@@ -18,7 +18,7 @@ static int toaqui_ok = 0; // tells whether a #TOAQUI marker has already been use
 // still need to check the places where this is not allowed
 // e.g. inside a loop, inside a switch case, etc.
 // a warning may already be enough
-void dire_inter(void)
+void directive_inter(void)
 {
     if (itr_ok == 1) fatal(MSG_ERR_DUP_INTERRUPT, line_num+1);
 
@@ -31,7 +31,7 @@ void dire_inter(void)
 // emits the #TOAQUI directive
 // records the address that the hardware will compare against the PC; whenever
 // they match the cheguei output pin asserts. Only one #TOAQUI per program.
-void dire_toaqui(void)
+void directive_toaqui(void)
 {
     if (toaqui_ok == 1) fatal(MSG_ERR_DUP_TOAQUI, line_num+1);
 

@@ -3,7 +3,7 @@
 #include "y.tab.h"
 
 #include "../Headers/global.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
@@ -174,7 +174,7 @@ COMEN  "//"[^\n]*
                 while (*p == ' ' || *p == '\t') p++;
                 while (*p && *p != ' ' && *p != '\t' && *p != ')' && n < 63) num[n++] = *p++;
                 num[n] = 0;
-                yylval.ival = exec_inum(num);
+                yylval.ival = lex_inum(num);
                 return KETIN;
              }
 
@@ -193,7 +193,7 @@ COMEN  "//"[^\n]*
                 const char *name = yytext + 1 + strspn(yytext + 1, " \t\r\n");
                 int k = (def_find(name) >= 0) ? -1 : find_id(name);
                 yyless(1);
-                return (k >= 0 && v_table[k].isar) ? DBAR : '|';
+                return (k >= 0 && v_table[k].dims) ? DBAR : '|';
              }
  /* Two bars before the name of an array are a matrix that closes and a chain
   * that opens (|A||B|), not the logical or: the first bar goes out alone and
@@ -206,7 +206,7 @@ COMEN  "//"[^\n]*
 "||"[ \t\r\n]*{VARIA} {
                 const char *name = yytext + 2 + strspn(yytext + 2, " \t\r\n");
                 int k = (def_find(name) >= 0) ? -1 : find_id(name);
-                if (k >= 0 && v_table[k].isar) {yyless(1); return '|';}
+                if (k >= 0 && v_table[k].dims) {yyless(1); return '|';}
                 yyless(2);
                 return LOR;
              }
@@ -234,19 +234,19 @@ COMEN  "//"[^\n]*
                     // `__` starts the compiler's own names in the .asm
                     if (yytext[0] == '_' && yytext[1] == '_')
                         {fatal(MSG_ERR_NAME_UNDERSCORES, line_num+1, yytext);}
-                    yylval.ival = exec_id(yytext);
+                    yylval.ival = lex_id(yytext);
                     return ID;
                 }
              }
 			 
 {INNUM}      {
                 int k = inum_kind(yytext);
-                yylval.ival = (k == 1 || k == 2) ? exec_inum_neg(yytext) : k == 3 ? inum_min_id() : exec_inum(yytext);
+                yylval.ival = (k == 1 || k == 2) ? lex_inum_neg(yytext) : k == 3 ? inum_min_id() : lex_inum(yytext);
                 return k == 0 ? INUM : k == 1 ? NINUM : k == 2 ? NIMIN : DIMIN;
              }
 			 
 {FLNUM}      {
-                yylval.ival = exec_fnum(yytext);
+                yylval.ival = lex_fnum(yytext);
                 return FNUM;
              }
 			 
@@ -255,7 +255,7 @@ COMEN  "//"[^\n]*
                    parser writes a + bi as an expression and joins the two
                    literals (expr_addsub), so that y*3+2i is (y*3) + 2i */
                 char *t = xasprintf("0+%s", yytext);
-                yylval.ival = exec_cnum(t);
+                yylval.ival = lex_cnum(t);
                 free(t);
                 return CNUM;
              }
