@@ -3,6 +3,9 @@
 // reduces terminals into expr ------------------------------------------------
 // ----------------------------------------------------------------------------
 
+#ifndef CMM_DATA_USE_H
+#define CMM_DATA_USE_H
+
 #include "ast.h"   // expr
 
 expr    num2exp(int id, int dtype);          // reduces a number       into expr
@@ -12,3 +15,5 @@ expr     id2exp(int id);                     // reduces an identifier  into expr
 expr   pplus2exp(int id, int old);                    // reduces an i++         into expr
 expr pplus1d2exp(int id, expr ete, int old);          // reduces an x[i]++      into expr
 expr pplus2d2exp(int id, expr e1, expr e2, int old);  // reduces an x[i][j]++   into expr
+
+#endif // CMM_DATA_USE_H

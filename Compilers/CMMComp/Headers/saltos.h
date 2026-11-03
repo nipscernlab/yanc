@@ -2,6 +2,9 @@
 // routines for jump implementation -------------------------------------------
 // ----------------------------------------------------------------------------
 
+#ifndef CMM_SALTOS_H
+#define CMM_SALTOS_H
+
 #include "ast.h"   // expr / expr_node / stmt_node
 
 // if/else --------------------------------------------------------------------
@@ -45,3 +48,5 @@ void       exec_switch (expr_node *cond);          // opens STMT_SWITCH
 stmt_node *end_switch  (void);                     // returns the STMT_SWITCH
 // break (in a loop OR a case) is built by exec_break above via the break-target
 // stack -- there is no separate switch_break entry point any more.
+
+#endif // CMM_SALTOS_H

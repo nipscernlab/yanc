@@ -1,3 +1,6 @@
+#ifndef CMM_OPER_H
+#define CMM_OPER_H
+
 #include "ast.h"   // expr (for the migrated unary operators)
 
 // ----------------------------------------------------------------------------
@@ -40,3 +43,5 @@ expr oper_bitw(expr e1, expr e2, int type);  // x&y, x|y, x^y
 // ----------------------------------------------------------------------------
 
 expr oper_shift(expr e1, expr e2, int type); // x>>y, x<<y, x>>>y
+
+#endif // CMM_OPER_H

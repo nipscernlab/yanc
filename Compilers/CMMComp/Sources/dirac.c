@@ -85,7 +85,6 @@ static int     cur_dst = -1;     // the array the statement writes (-1: none)
 
 // the first cell of an array as a scalar operand: a v_table entry with the
 // array's name (variaveis.c keeps the count)
-extern int v_count;
 static int *alias_arr, *alias_id, n_alias, cap_alias;
 
 // the statement-level parts computed before the loops

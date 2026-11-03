@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 // local includes
+#include "../Headers/array_index.h"
 #include "../Headers/t2t.h"
 #include "../Headers/global.h"
 #include "../Headers/funcoes.h"

@@ -4,6 +4,9 @@
 
 // these routines should be called from the .y (parser)
 
+#ifndef CMM_STDLIB_H
+#define CMM_STDLIB_H
+
 #include "ast.h"   // expr
 
 // ----------------------------------------------------------------------------
@@ -15,7 +18,7 @@ expr exec_fin (int port);          //  data input (converting to float)
 void exec_out (int port, expr e);  // data output
 void exec_fout(int port, expr e);  // data output (converting to float)
 int  link_use(int id, int sync);   // the link number of a toma/cade (id: its INUM); records plain / _sync
-void link_sync_emit();             // #LKSYNC k for every link used with a _sync form
+void link_sync_emit(void);             // #LKSYNC k for every link used with a _sync form
 void exec_toma(expr e, int k);     // toma(k, e): hands e over link k (docs/design/toma-and-cade-links.md)
 expr exec_cade(int dest, int k);   // x = cade(k): takes link k's word for x, as x's type
 expr exec_cade_expr(int type, int k); // cade(k) (1, int) / fcade(k) (2, float) inside an expression
@@ -66,3 +69,5 @@ expr exec_conj(expr e);           // complex conjugate (a-bi); real x -> x+0i; a
 
 void exec_shift(int ida, expr eb, int idc, int later); // shift register in vector a (a must equal c)
 void exec_shift_in(int ida, expr e);                   // later: the value, computed after the shift, into a[0]
+
+#endif // CMM_STDLIB_H

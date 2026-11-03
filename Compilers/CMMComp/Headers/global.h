@@ -2,6 +2,9 @@
 // global functions and variables of the compiler -----------------------------
 // ----------------------------------------------------------------------------
 
+#ifndef CMM_GLOBAL_H
+#define CMM_GLOBAL_H
+
 #include <stdio.h>
 
 // ----------------------------------------------------------------------------
@@ -57,3 +60,5 @@ void acc_holds_elem(const char *key);
 
 // names the acc by the index of an indexed store just computed, "[k]" (ast.c)
 void acc_holds_index(const char *key);
+
+#endif // CMM_GLOBAL_H

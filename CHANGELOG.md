@@ -109,6 +109,12 @@ tags consumed by Aurora.
   self-assignment; comments that described code which no longer exists are
   fixed and the in-file TODO blocks removed. The assembly and the
   waveform's tables are byte-identical.
+- **cmmcomp's headers are in order** (step P3 of #93): every header has an
+  include guard, every `.c` includes its own header, the functions and
+  globals no other file uses are `static`, `()` is `(void)`, and
+  `v_count` is declared in variaveis.h instead of inside dirac.c. The
+  Makefile and the regression build cmmcomp with `-Wmissing-prototypes
+  -Wstrict-prototypes` under `-Werror` (also as C17), so it stays so.
 - **A variable written and never read leaves the program**, in both
   compilers: its `SET`s, its data word and its waveform signal (`asm_unread`,
   issue #69). cmmcomp's warning says so and names `#WAVE`. 46 C± tests lost

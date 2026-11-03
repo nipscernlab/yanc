@@ -2,6 +2,9 @@
 // assignment instructions (left-hand side) -----------------------------------
 // ----------------------------------------------------------------------------
 
+#ifndef CMM_DATA_ASSIGN_H
+#define CMM_DATA_ASSIGN_H
+
 #include "ast.h"   // expr
 
 void ass_set  (int id, expr e);           // standard assignment
@@ -11,3 +14,5 @@ void ass_array_const(int id, int k, int dims, expr e); // arr[const] or m[const]
 void ass_pplus(int id);                   // i++ assignment
 void ass_aplus(int id, expr e);           // i++ assignment for a 1D array
 void ass_apl2d(int id, expr e1, expr e2); // i++ assignment for a 2D array
+
+#endif // CMM_DATA_ASSIGN_H

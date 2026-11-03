@@ -75,7 +75,7 @@ void add_var(char *var)
 }
 
 // checks which variables and functions were used (at the end of the parse)
-void check_var()
+void check_var(void)
 {
     if (mainok == 0) {fprintf (stderr, MSG_ERR_NO_MAIN); exit(EXIT_FAILURE);}
 

@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 
+#include "../Headers/saltos.h"
 #include "../Headers/ast.h"
 #include "../Headers/labels.h"
 #include "../Headers/global.h"
@@ -21,7 +22,7 @@
 // switch_end_<id>). Per-switch state -- the running case count -- lives on the
 // switch's stmt_node->id2; break routing lives on the break-target stack
 // below. Nested switches therefore share no mutable global counter.
-int swit_cnt  = 0;
+static int swit_cnt  = 0;
 
 // ----------------------------------------------------------------------------
 // pending compound-statement stack -------------------------------------------
@@ -156,7 +157,7 @@ void if_exp(expr_node *cond)
     stmt_list_open();  // accumulate the then-body
 }
 
-stmt_node *if_stmt()
+stmt_node *if_stmt(void)
 {
     stmt_node *then_body = stmt_list_close();
     stmt_node *partial   = pending_pop();
@@ -164,7 +165,7 @@ stmt_node *if_stmt()
     return partial;
 }
 
-void else_stmt()
+void else_stmt(void)
 {
     stmt_node *then_body = stmt_list_close();
     stmt_node *partial   = pending_pop();
@@ -173,7 +174,7 @@ void else_stmt()
     stmt_list_open();       // accumulate the else-body
 }
 
-stmt_node *if_fim()
+stmt_node *if_fim(void)
 {
     stmt_node *else_body = stmt_list_close();
     stmt_node *partial   = pending_pop();
@@ -185,7 +186,7 @@ stmt_node *if_fim()
 // while ----------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-void while_expp()
+void while_expp(void)
 {
     int label = push_while();
     stmt_node *partial = stmt_while(label, NULL, NULL);
@@ -203,7 +204,7 @@ void while_expexp(expr_node *cond)
     stmt_list_open();  // accumulate the body
 }
 
-stmt_node *while_stmt()
+stmt_node *while_stmt(void)
 {
     stmt_node *body    = stmt_list_close();
     cont_pop();
@@ -255,7 +256,7 @@ void for_open(expr_node *cond)
     for_saved_step = NULL;
 }
 
-stmt_node *for_finish()
+stmt_node *for_finish(void)
 {
     stmt_node *body    = stmt_list_close();
     cont_pop();
@@ -288,7 +289,7 @@ stmt_node *for_finish()
 // Lwh<n>cont) ride the same stacks as while/for; cont_lbl=1 because a continue
 // re-evaluates the bottom test, landing at the Lwh<n>cont label.
 
-void do_open()
+void do_open(void)
 {
     int label = push_while();
     stmt_node *partial = stmt_do(label, NULL, NULL);
@@ -309,7 +310,7 @@ stmt_node *do_finish(expr_node *cond)
     return partial;
 }
 
-stmt_node *exec_break()
+stmt_node *exec_break(void)
 {
     if (brk_n == 0)  // break with no enclosing loop or switch
     {
@@ -320,7 +321,7 @@ stmt_node *exec_break()
     return t.is_switch ? stmt_switch_break(t.id) : stmt_break_while(t.id);
 }
 
-stmt_node *exec_continue()
+stmt_node *exec_continue(void)
 {
     if (cont_n == 0)  // continue with no enclosing loop
     {
@@ -369,7 +370,7 @@ void case_test(int val_id, int val_type)
     }
 }
 
-void defaut_test()
+void defaut_test(void)
 {
     stmt_node *sw  = sw_top();
     stmt_node *top = stmt_list_top();
@@ -380,7 +381,7 @@ void defaut_test()
     }
 }
 
-stmt_node *end_switch()
+stmt_node *end_switch(void)
 {
     stmt_node *body    = stmt_list_close();
     brk_pop();

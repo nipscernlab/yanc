@@ -2,6 +2,9 @@
 // variable declaration -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+#ifndef CMM_DATA_DECLAR_H
+#define CMM_DATA_DECLAR_H
+
 #include "ast.h"   // expr / expr_node / stmt_node
 
 extern int type_tmp; // captures the type when a variable is declared (see CMMComp.l)
@@ -38,3 +41,5 @@ void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname);
 // ----------------------------------------------------------------------------
 
 void declar_dirac (int id_name, int id_N  , expr_node *rhs         ); // e.g. float a[4] # |B|a>;
+
+#endif // CMM_DATA_DECLAR_H

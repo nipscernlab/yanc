@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 // local includes
+#include "../Headers/diretivas.h"
 #include "../Headers/ast.h"
 #include "../Headers/t2t.h"
 #include "../Headers/global.h"

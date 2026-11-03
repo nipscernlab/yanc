@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 // local includes
+#include "../Headers/macros.h"
 #include "../Headers/t2t.h"
 #include "../Headers/global.h"
 #include "../Headers/funcoes.h"
@@ -22,7 +23,7 @@
 // ----------------------------------------------------------------------------
 
 // concatenates the contents of the read file into the write file
-void fcat2end(char *n_read, char *n_write)
+static void fcat2end(char *n_read, char *n_write)
 {
     FILE *f_in  = fopen(n_read , "r");
     if (f_in  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, n_read);  exit(EXIT_FAILURE); }

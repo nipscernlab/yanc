@@ -2,6 +2,9 @@
 // array index handling -------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+#ifndef CMM_ARRAY_INDEX_H
+#define CMM_ARRAY_INDEX_H
+
 #include "ast.h"   // expr
 
 // array used in assignments (left-hand side) ---------------------------------
@@ -14,3 +17,5 @@ void arr_2d_index(int id, expr e1, expr e2);    // gets the index of a 2D array
 expr arr_1d2exp  (int id, expr e , int fft);    // turns a 1D array into an expr
 expr arr_2d2exp  (int id, expr e1, expr e2);    // turns a 2D array into an expr
 expr arr_1d2exp_const(int id, int k, int dims); // arr[const] or m[const][const] read, direct LOD_V (no indirect addressing)
+
+#endif // CMM_ARRAY_INDEX_H
