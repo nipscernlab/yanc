@@ -58,7 +58,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 1) && (e.type == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("F2I_M %s\n", v_table[e.id].name);
         add_instr("SET %s\n"  , v_table[id       ].name);
@@ -68,7 +68,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 1) && (e.type == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
         // consider an instruction that does f2i on the accumulator and stores in memory at once (FIAS)
         add_instr("F2I\n");
@@ -79,7 +79,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 1) && (e.type == 5))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -91,7 +91,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 1) && (e.type == 3) && (e.id != 0))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         add_instr("F2I_M %s\n", v_table[e.id].name);
         add_instr("SET %s\n"  , v_table[id       ].name);
@@ -101,7 +101,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 1) && (e.type == 3) && (e.id == 0))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -112,7 +112,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 2) && (e.type == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
         add_instr("SET %s\n"  , v_table[id     ].name);
@@ -122,7 +122,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 2) && (e.type == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("I2F\n");
         add_instr("SET %s\n", v_table[id].name);
@@ -147,7 +147,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 2) && (e.type == 5))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -159,7 +159,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 2) && (e.type == 3) && (e.id != 0))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -171,7 +171,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 2) && (e.type == 3) && (e.id == 0))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         add_instr("POP\n");
         add_instr("SET %s\n", v_table[id].name);
@@ -181,7 +181,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 3) && (e.type == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
         add_instr("SET %s\n"  , v_table[id     ].name);
@@ -194,7 +194,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 3) && (e.type == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("I2F\n");
         add_instr("SET %s\n"  , v_table[id].name);
@@ -207,7 +207,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 3) && (e.type == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("LOD %s\n" , v_table[e.id].name);
         add_instr("SET %s\n" , v_table[id     ].name);
@@ -220,7 +220,7 @@ void ass_set(int id, expr e)
 
     if ((v_table[id].type == 3) && (e.type == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("SET %s\n"  , v_table[id].name);
 
@@ -358,7 +358,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 1) && (e.type == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("P_F2I_M %s\n", v_table[e.id].name);
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -368,7 +368,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 1) && (e.type == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("F2I\n");
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -378,7 +378,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 1) && (e.type == 5))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -390,7 +390,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 1) && (e.type == 3) && (e.id != 0))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -402,7 +402,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 1) && (e.type == 3) && (e.id == 0))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -413,7 +413,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 2) && (e.type == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("P_I2F_M %s\n", v_table[e.id].name);
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -423,7 +423,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 2) && (e.type == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("I2F\n");
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -448,7 +448,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 2) && (e.type == 5))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -460,7 +460,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 2) && (e.type == 3) && (e.id != 0))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -472,7 +472,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 2) && (e.type == 3) && (e.id == 0))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         add_instr("POP\n");
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -482,7 +482,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 3) && (e.type == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("SET __aux_var\n");
         add_instr("P_I2F_M %s\n", v_table[e.id].name);
@@ -497,7 +497,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 3) && (e.type == 1) && (e.id == 0) && ass_idx_reload)
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("I2F\n");                                          // the index is on the stack
         add_instr("%s %s\n"  , set_type, v_table[id].name);
@@ -507,7 +507,7 @@ void ass_array(int id, expr e, int fft)
     }
     else if ((v_table[id].type == 3) && (e.type == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("I2F\n"                   );
         add_instr("SET_P __aux_var\n"         );
@@ -524,7 +524,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 3) && (e.type == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
         if (!ass_idx_reload) add_instr("SET   __aux_var\n");      // else the index is read again
         add_instr("P_LOD %s\n"  , v_table[e.id].name);
@@ -539,7 +539,7 @@ void ass_array(int id, expr e, int fft)
 
     if ((v_table[id].type == 3) && (e.type == 2) && (e.id == 0) && ass_idx_reload)
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("%s %s\n"  , set_type, v_table[id].name);         // the index is on the stack
         add_instr("LOD %s\n" , v_table[ass_idx_reload].name);
@@ -548,7 +548,7 @@ void ass_array(int id, expr e, int fft)
     }
     else if ((v_table[id].type == 3) && (e.type == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
+        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name, fname));
 
         add_instr("SET_P __aux_var\n"         );
         add_instr("SET   __aux_var2\n"        );

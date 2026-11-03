@@ -77,42 +77,42 @@ void mac_copy(char *fasm)
 
     if (fsqrt)
     {
-        printf(MSG_INFO_SQRT_MACRO);
+        warn(MSG_INFO_SQRT_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_sqrt.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fatan)
     {
-        printf(MSG_INFO_ATAN_MACRO);
+        warn(MSG_INFO_ATAN_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_atan.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fsin)
     {
-        printf(MSG_INFO_SIN_MACRO);
+        warn(MSG_INFO_SIN_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_sin.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (ftan)
     {
-        printf(MSG_INFO_TAN_MACRO);
+        warn(MSG_INFO_TAN_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_tan.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fexp)
     {
-        printf(MSG_INFO_EXP_MACRO);
+        warn(MSG_INFO_EXP_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_exp.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (flog)
     {
-        printf(MSG_INFO_LOG_MACRO);
+        warn(MSG_INFO_LOG_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_log.asm", dir_macro);
         fcat2end(tasm,fasm);
     }

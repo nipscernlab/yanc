@@ -91,7 +91,7 @@ void exec_out(int id, expr e)
     // float var
     if ((e.type == 2) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_USE_FOUT, line_num+1);
+        warn(MSG_WARN_USE_FOUT, line_num+1);
 
         add_instr("F2I_M %s\n", v_table[e.id].name);  // a statement starts with acc free
     }
@@ -99,7 +99,7 @@ void exec_out(int id, expr e)
     // float acc
     if ((e.type == 2) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_USE_FOUT, line_num+1);
+        warn(MSG_WARN_USE_FOUT, line_num+1);
 
         add_instr("F2I\n");
     }
@@ -225,7 +225,7 @@ void exec_fout(int id, expr e)
     // int var
     if ((e.type == 1) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_USE_OUT, line_num+1);
+        warn(MSG_WARN_USE_OUT, line_num+1);
 
         add_instr("LOD %s\n", v_table[e.id].name);    // a statement starts with acc free
     }
@@ -233,7 +233,7 @@ void exec_fout(int id, expr e)
     // int acc
     if ((e.type == 1) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_USE_OUT, line_num+1);
+        warn(MSG_WARN_USE_OUT, line_num+1);
     }
 
     // float var
@@ -2588,7 +2588,7 @@ expr exec_conj(expr e)
     // int in memory: x + 0i
     if ((e.type == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONJ_REAL, line_num+1);
+        warn(MSG_WARN_CONJ_REAL, line_num+1);
         add_instr("%s %s\n", i2f, v_table[e.id].name);      // acc = (float) x
         add_instr("P_LOD 0.0\n");                           // push x; acc = 0 (imag)
     }
@@ -2596,7 +2596,7 @@ expr exec_conj(expr e)
     // int in acc: x + 0i
     if ((e.type == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONJ_REAL, line_num+1);
+        warn(MSG_WARN_CONJ_REAL, line_num+1);
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
     }
@@ -2604,7 +2604,7 @@ expr exec_conj(expr e)
     // float in memory: x + 0i
     if ((e.type == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONJ_REAL, line_num+1);
+        warn(MSG_WARN_CONJ_REAL, line_num+1);
         add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
     }
@@ -2612,7 +2612,7 @@ expr exec_conj(expr e)
     // float in acc: x + 0i
     if ((e.type == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONJ_REAL, line_num+1);
+        warn(MSG_WARN_CONJ_REAL, line_num+1);
         add_instr("P_LOD 0.0\n");                           // push x (acc); acc = 0
     }
 
@@ -2674,12 +2674,12 @@ void exec_shift(int ida, expr eb, int idc, int later)
     // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    printf(MSG_INFO_DIRAC_SHIFT, v_table[ida].name, line_num+1);
+    warn(MSG_INFO_DIRAC_SHIFT, v_table[ida].name, line_num+1);
 
     if (later)
     {
         if (v_table[ida].type == 1 && eb.type == 2)
-            fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name, fname));
+            warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name, fname));
 
         for (int i = N-1; i > 0; i--)
         {
@@ -2778,7 +2778,7 @@ void exec_shift(int ida, expr eb, int idc, int later)
     // ida int and etb float: converted, as an int variable getting a float
     if (v_table[ida].type == 1 && eb.type == 2)
     {
-        fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name, fname));
+        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[ida].name, fname));
 
         if (eb.id != 0) add_instr("F2I_M %s\n", v_table[eb.id].name);
         else            add_instr("F2I\n");

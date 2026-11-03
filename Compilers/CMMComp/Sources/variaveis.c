@@ -94,17 +94,17 @@ void check_var(void)
             int fnid = v_table[i].fnid;
             int is_global = (fnid < 0) || (strcmp(v_table[fnid].name, "") == 0);
             if (is_global)
-                fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
+                warn(MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
             else
             {
                 char *name = rem_fname(v_table[i].name, v_table[fnid].name);
-                fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[fnid].name, name);
+                warn(MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[fnid].name, name);
             }
         }
 
         // check whether a function was declared but not used
         if (((v_table[i].type == 5) || (v_table[i].type == 6) || (v_table[i].type == 7)) && v_table[i].used == 0)
-            fprintf (stdout, MSG_WARN_UNUSED_FUNCTION, v_table[i].name);
+            warn(MSG_WARN_UNUSED_FUNCTION, v_table[i].name);
     }
 }
 
@@ -358,7 +358,7 @@ int inum_word(int id)
 int arr_size(int id)
 {
     unsigned long long n = strtoull(v_table[id].name, NULL, 10), half = 1ULL << (word_bits() - 1);
-    if (n > half) fprintf (stdout, MSG_WARN_ARR_SIZE_WORD, line_num+1, (int)n, word_bits(), (int)(half - 1));
+    if (n > half) warn(MSG_WARN_ARR_SIZE_WORD, line_num+1, (int)n, word_bits(), (int)(half - 1));
     return id;
 }
 
@@ -447,11 +447,11 @@ int exec_fnum(char *text)
     // a nonzero constant flushed to zero (below the smallest normal number at
     // #FROUND >= 1) is not an approximation the user can shrug off: warn
     if (r.flushed)
-        printf(MSG_WARN_CONST_FLUSHED, line_num+1, text, pow(2,nbmant-1)*pow(2,-pow(2,nbexpo-1)), fround);
+        warn(MSG_WARN_CONST_FLUSHED, line_num+1, text, pow(2,nbmant-1)*pow(2,-pow(2,nbexpo-1)), fround);
     else if (r.inexact && !fnum_quiet)
     {
         double mf = ldexp((double)r.m, (int)r.e);
-        printf(MSG_INFO_CONST_APPROX, text, line_num+1, r.s ? -mf : mf, r.delta);
+        warn(MSG_INFO_CONST_APPROX, text, line_num+1, r.s ? -mf : mf, r.delta);
     }
 
     // add to the table -------------------------------------------------------

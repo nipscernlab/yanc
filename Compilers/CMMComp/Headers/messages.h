@@ -2,7 +2,7 @@
 // bilingual PT/EN support for cmmcomp messages -------------------------------
 // ----------------------------------------------------------------------------
 // usage:
-//   printf(MSG_XXX, args...);   or   fprintf(stderr, MSG_XXX, args...);
+//   warn(MSG_XXX, args...);   or   fatal(MSG_XXX, args...);   (diag.h)
 // to see both string versions, search for MSG_XXX below.
 // ----------------------------------------------------------------------------
 

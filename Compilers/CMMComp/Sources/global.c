@@ -278,7 +278,7 @@ static int unread_keep(const char *name)
 
 void parse_end(char *prname, char *d_proc)
 {
-    printf(MSG_INFO_INS_GENERATED, num_ins);
+    warn(MSG_INFO_INS_GENERATED, num_ins);
 
     // close the files --------------------------------------------------------
 

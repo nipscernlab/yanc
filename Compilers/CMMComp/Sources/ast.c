@@ -1744,11 +1744,11 @@ static void emit_cond_int_load(expr e, int is_switch)
     // index still converts (F2I, truncating).
     long mask = (1L << nbmant) - 1;
     if ((e.type == 2) && (e.id != 0)) {
-        if (is_switch) { fprintf(stdout, msg_float, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
+        if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
         else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("AND %ld\n", mask); }
     }
     if ((e.type == 2) && (e.id == 0)) {
-        if (is_switch) { fprintf(stdout, msg_float, line_num+1); add_instr("F2I\n"); }
+        if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I\n"); }
         else           add_instr("AND %ld\n", mask);
     }
     // a comp condition is true when its real or its imaginary part is not
@@ -1756,15 +1756,15 @@ static void emit_cond_int_load(expr e, int is_switch)
     if (e.type == 5) {
         expr etr, eti;
         get_cmp_cst(e, &etr, &eti);
-        if (is_switch) { fprintf(stdout, msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[etr.id].name); }
+        if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[etr.id].name); }
         else           { add_instr("LOD %s\n", v_table[etr.id].name); add_instr("ORR %s\n", v_table[eti.id].name); add_instr("AND %ld\n", mask); }
     }
     if ((e.type == 3) && (e.id != 0)) {
-        if (is_switch) { fprintf(stdout, msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
+        if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
         else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %ld\n", mask); }
     }
     if ((e.type == 3) && (e.id == 0)) {                    // the imag part in the acc, the real on the stack
-        if (is_switch) { fprintf(stdout, msg_comp, line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
+        if (is_switch) { warn(msg_comp, line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
         else           { add_instr("S_ORR\n"); add_instr("AND %ld\n", mask); }
     }
 }

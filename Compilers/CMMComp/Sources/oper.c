@@ -3040,7 +3040,7 @@ expr oper_shift(expr e1, expr e2, int type)
     // int/float var with float var
     if ((e1.id != 0) && (e2.type == 2) && (e2.id != 0))
     {
-        fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
+        warn(MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
         add_instr("%s %s\n", acc_ok ? "P_F2I_M" : "F2I_M", v_table[e2.id].name);
         add_instr("%s %s\n", op, v_table[e1.id].name);
@@ -3049,7 +3049,7 @@ expr oper_shift(expr e1, expr e2, int type)
     // int/float var with float acc
     if ((e1.id != 0) && (e2.type == 2) && (e2.id == 0))
     {
-        fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
+        warn(MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
         add_instr("F2I\n");
         add_instr("%s %s\n", op, v_table[e1.id].name);
@@ -3071,7 +3071,7 @@ expr oper_shift(expr e1, expr e2, int type)
     // int/float acc with float var
     if ((e1.id == 0) && (e2.type == 2) && (e2.id != 0))
     {
-        fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
+        warn(MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
 
         add_instr("P_F2I_M %s\n", v_table[e2.id].name);
         add_instr("S_%s\n", op);
@@ -3080,7 +3080,7 @@ expr oper_shift(expr e1, expr e2, int type)
     // int/float acc with float acc
     if ((e1.id == 0) && (e2.type == 2) && (e2.id == 0))
     {
-        fprintf(stdout, MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
+        warn(MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
         
         add_instr("F2I\n");
         add_instr("S_%s\n", op);

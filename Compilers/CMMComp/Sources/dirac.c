@@ -727,7 +727,7 @@ static void store(expr e, const dl_dst *d, long off)
     // a value in memory goes over the index, which is still in the acc; one
     // of another type is converted on the way, by the _M form
     if (d->type == 1 && e.type == 2)
-        fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
+        warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
     int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
     if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "P_I2F_M" : conv == 2 ? "P_F2I_M" : "P_LOD", v_table[e.id].name);
     else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
@@ -741,7 +741,7 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
         acc_ok = 0;
         expr e = ast_emit_expr(el);
         if (d->type == 1 && e.type == 2)
-            fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
+            warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
         int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
         if (conv && e.id != 0) add_instr("%s %s\n", conv == 1 ? "I2F_M" : "F2I_M", v_table[e.id].name);
         else {
@@ -818,7 +818,7 @@ static expr_node *build_target(expr_node *r, int rows, int cols, int flat, int *
         expr_node copy = *p;
         int words = p->rows * p->cols;
         int off = tmp_block(words, line);
-        fprintf(stdout, MSG_INFO_DIRAC_TEMP_CHAIN, line, words);
+        warn(MSG_INFO_DIRAC_TEMP_CHAIN, line, words);
         dl_dst td = {0, tmp_id, 0, off, ctx_type, p->cols > 1 && p->rows > 1 ? p->cols : 0};
         emit_statement(&copy, &td, p->rows, p->cols, line);
 
@@ -921,7 +921,7 @@ static void emit_statement(expr_node *r, const dl_dst *d0, int rows, int cols, i
     if (d.kind == 0 && d.arr != tmp_id && reads_elsewhere(el, d.arr, &six, 0)) {
         int words = rows * cols;
         int off = tmp_block(words, line);
-        fprintf(stdout, MSG_INFO_DIRAC_TEMP, line, rem_fname(v_table[d.arr].name, fname), words);
+        warn(MSG_INFO_DIRAC_TEMP, line, rem_fname(v_table[d.arr].name, fname), words);
         d.arr = tmp_id; d.base = off; d.type = ctx_type;
         copy_back = 1;
     }
@@ -1105,6 +1105,6 @@ void dirac_finish(const char *asm_file)
     if ((f = fopen(asm_file, "w"))) {if (text) fputs(text, f); fclose(f);}
     free(text);
 
-    fprintf(stdout, MSG_INFO_DIRAC_TEMP_TOTAL, tmp_max);
-    for (int i = 0; i < n_tmp_lines; i++) fprintf(stdout, MSG_INFO_DIRAC_TEMP_LINE, tmp_lines[i], tmp_words[i]);
+    warn(MSG_INFO_DIRAC_TEMP_TOTAL, tmp_max);
+    for (int i = 0; i < n_tmp_lines; i++) warn(MSG_INFO_DIRAC_TEMP_LINE, tmp_lines[i], tmp_words[i]);
 }

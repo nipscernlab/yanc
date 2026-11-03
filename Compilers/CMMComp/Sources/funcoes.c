@@ -143,7 +143,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", f2i, v_table[e.id].name);
     }
@@ -152,7 +152,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("F2I\n");
     }
@@ -161,7 +161,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 5))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -172,7 +172,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 3) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", f2i, v_table[e.id].name);
     }
@@ -181,7 +181,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 3) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -191,7 +191,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", i2f, v_table[e.id].name);
     }
@@ -200,7 +200,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("I2F\n");
     }
@@ -223,7 +223,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 5))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -234,7 +234,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 3) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", ld, v_table[e.id].name);
     }
@@ -243,7 +243,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 3) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("POP\n");
     }
@@ -252,7 +252,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", i2f, v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -262,7 +262,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
@@ -272,7 +272,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -282,7 +282,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("P_LOD 0.0\n");
     }
@@ -389,7 +389,7 @@ void declar_ret(expr e, int ret)
     // int with float var
     if ((left_type == 7) && (e.type == 2) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
+        warn(MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
 
         add_instr("F2I_M %s\n", v_table[e.id].name);
     }
@@ -397,14 +397,14 @@ void declar_ret(expr e, int ret)
     // int with float acc
     if ((left_type == 7) && (e.type == 2) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
+        warn(MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
         add_instr("F2I\n");
     }
 
     // int with comp const
     if ((left_type == 7) && (e.type == 5))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -414,7 +414,7 @@ void declar_ret(expr e, int ret)
     // int with comp var
     if ((left_type == 7) && (e.type == 3) && (e.id!=0))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -424,7 +424,7 @@ void declar_ret(expr e, int ret)
     // int with comp acc
     if ((left_type == 7) && (e.type == 3) && (e.id==0))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -433,7 +433,7 @@ void declar_ret(expr e, int ret)
     // float with int var
     if ((left_type == 8) && (e.type == 1) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
     }
@@ -441,7 +441,7 @@ void declar_ret(expr e, int ret)
     // float with int acc
     if ((left_type == 8) && (e.type == 1) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
         add_instr("I2F\n");
     }
@@ -461,7 +461,7 @@ void declar_ret(expr e, int ret)
     // float with comp const
     if ((left_type == 8) && (e.type == 5))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -471,7 +471,7 @@ void declar_ret(expr e, int ret)
     // float with comp var
     if ((left_type == 8) && (e.type == 3) && (e.id!=0))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -481,7 +481,7 @@ void declar_ret(expr e, int ret)
     // float with comp acc
     if ((left_type == 8) && (e.type == 3) && (e.id==0))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         add_instr("POP\n");
     }
@@ -489,7 +489,7 @@ void declar_ret(expr e, int ret)
     // comp with int var
     if ((left_type == 9) && (e.type == 1) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_RET_COMP_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -498,7 +498,7 @@ void declar_ret(expr e, int ret)
     // comp with int acc
     if ((left_type == 9) && (e.type == 1) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_RET_COMP_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
@@ -507,7 +507,7 @@ void declar_ret(expr e, int ret)
     // comp with float var
     if ((left_type == 9) && (e.type == 2) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
         add_instr("LOD %s\n", v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -516,7 +516,7 @@ void declar_ret(expr e, int ret)
     // comp with float acc
     if ((left_type == 9) && (e.type == 2) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
         add_instr("P_LOD 0.0\n");
     }

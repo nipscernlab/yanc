@@ -22,7 +22,7 @@ void dire_inter(void)
 {
     if (itr_ok == 1) fatal(MSG_ERR_DUP_INTERRUPT, line_num+1);
 
-    printf(MSG_INFO_INTERRUPT_DIRECTIVE, line_num+1);
+    warn(MSG_INFO_INTERRUPT_DIRECTIVE, line_num+1);
 
     add_sinst(0, "#ITRAD\n");
     itr_ok = 1;
@@ -35,7 +35,7 @@ void dire_toaqui(void)
 {
     if (toaqui_ok == 1) fatal(MSG_ERR_DUP_TOAQUI, line_num+1);
 
-    printf(MSG_INFO_TOAQUI, line_num+1);
+    warn(MSG_INFO_TOAQUI, line_num+1);
 
     add_sinst(0, "#TOAQUI\n");
     toaqui_ok = 1;
