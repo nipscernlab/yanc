@@ -1985,7 +1985,7 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_RETURN:
-            if (n->rhs) declar_ret(ast_emit_expr(n->rhs), 1);
+            if (n->rhs) declare_ret(ast_emit_expr(n->rhs), 1);
             else        void_ret();
             break;
 
@@ -2310,16 +2310,16 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_DECLAR_ARR_1D:
-            declar_arr_1d_emit(n->id, n->id2, n->id3);
+            declare_arr_1d_emit(n->id, n->id2, n->id3);
             break;
 
         case STMT_DECLAR_ARR_2D:
-            declar_arr_2d_emit(n->id, n->id2, n->id3, n->id4);
+            declare_arr_2d_emit(n->id, n->id2, n->id3, n->id4);
             break;
 
         case STMT_DECLAR_DIRAC:
             // base array #array directive(s), then the Dirac expression
-            declar_arr_1d_emit(n->id, n->id2, -1);
+            declare_arr_1d_emit(n->id, n->id2, -1);
             dirac_emit(n->id, n->rhs, n->line);
             break;
 
@@ -2330,7 +2330,7 @@ void stmt_emit(stmt_node *n)
             //   - SET_P <p[k]>           (last-to-second param, with imag
             //                             half first when the param is comp)
             //   - SET   <p[0]>           (first param)
-            // Mirrors the pre-AST pattern that declar_fun / declar_fst /
+            // Mirrors the pre-AST pattern that declare_fun / declare_fst /
             // set_par used to do inline at parse time.
             add_sinst(0, "@%s ", v_table[n->id].name);
             for (int i = n->n_params - 1; i >= 1; i--)
@@ -2362,7 +2362,7 @@ void stmt_emit(stmt_node *n)
         case STMT_FUNC: {
             // Full function definition. Resets ret_ok (set by STMT_RETURN
             // walker when a `return` statement fires) and stashes the
-            // current function id into the global fun_parse so declar_ret
+            // current function id into the global fun_parse so declare_ret
             // - reached at walker time from STMT_RETURN - can validate the
             // return type against the enclosing function. Then walks the
             // body, validates that a non-void function actually emitted a

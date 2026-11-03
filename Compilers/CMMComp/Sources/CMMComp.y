@@ -145,7 +145,7 @@ void  yyerror(char const *s);
 %left '*' '/' '%'
 %left '!' '~' PPLUS
 
-// par_list / par_items have no semantic value (declar_par appends ids to the
+// par_list / par_items have no semantic value (declare_par appends ids to the
 // deferred func_params[] array; func_body_begin consumes them).
 //
 // func_intro carries the function's v_table id up to funcao so func_ret can
@@ -206,13 +206,13 @@ wave_list : ID                 {dire_wave($1);}                   // #WAVE a, b,
          // list declaration (one or more variables, each may have an initializer)
 declar : TYPE id_list                               ';'
          // array declaration with file initialization
-       | TYPE ID '[' asize ']'               STRING   ';' {declar_arr_1d($2,$4,$6    );}
-       | TYPE ID '[' asize ']' '[' asize ']' STRING   ';' {declar_arr_2d($2,$4,$7,$9 );}
+       | TYPE ID '[' asize ']'               STRING   ';' {declare_arr_1d($2,$4,$6    );}
+       | TYPE ID '[' asize ']' '[' asize ']' STRING   ';' {declare_arr_2d($2,$4,$7,$9 );}
          // array declaration initialized between braces, as in C (the values go to the .mif)
-       | TYPE ID '[' asize ']'               '=' '{' ini_list '}' ';' {declar_arr_1d_ini($2,$4   );}
-       | TYPE ID '[' asize ']' '[' asize ']' '=' '{' ini_list '}' ';' {declar_arr_2d_ini($2,$4,$7);}
+       | TYPE ID '[' asize ']'               '=' '{' ini_list '}' ';' {declare_arr_1d_ini($2,$4   );}
+       | TYPE ID '[' asize ']' '[' asize ']' '=' '{' ini_list '}' ';' {declare_arr_2d_ini($2,$4,$7);}
          // array declaration with a Dirac expression
-       | TYPE ID '[' asize ']' '#' exp ';' {declar_dirac($2,$4,$7);}
+       | TYPE ID '[' asize ']' '#' exp ';' {declare_dirac($2,$4,$7);}
 
 id_list : IID | id_list ',' IID
 
@@ -246,10 +246,10 @@ ini_num  :     INUM {ini_add(inum_word($1),1,0);}
          | '-' INUM {ini_add(inum_word($2),1,1);}
          | '-' FNUM {ini_add($2,2,1);}
 
-IID    : ID                           {declar_var   ($1         );}
-       | ID '=' exp                   {declar_var   ($1         ); stmt_append(stmt_assign($1, $3));}
-       | ID '[' asize ']'               {declar_arr_1d($1,$3   ,-1);}
-       | ID '[' asize ']' '[' asize ']' {declar_arr_2d($1,$3,$6,-1);}
+IID    : ID                           {declare_var   ($1         );}
+       | ID '=' exp                   {declare_var   ($1         ); stmt_append(stmt_assign($1, $3));}
+       | ID '[' asize ']'               {declare_arr_1d($1,$3   ,-1);}
+       | ID '[' asize ']' '[' asize ']' {declare_arr_2d($1,$3,$6,-1);}
 
 // Function declaration -------------------------------------------------------
 
@@ -257,23 +257,23 @@ funcao : func_intro par_list ')' '{' stmt_list '}' {func_ret($1);} // $1 = func_
 
 // State-setup phase of a function declaration. Pulled into its own named
 // non-terminal so the action is a clean end-action - no mid-rule sitting
-// between TYPE ID '(' and par_list. declar_fun records fname / fun_parse /
-// the JMP-main flag / the parameter collector reset; par_list / declar_par
+// between TYPE ID '(' and par_list. declare_fun records fname / fun_parse /
+// the JMP-main flag / the parameter collector reset; par_list / declare_par
 // run afterwards and depend on that state being in place.
-func_intro : TYPE ID '('                  {declar_fun($1,$2); $$ = $2;}
+func_intro : TYPE ID '('                  {declare_fun($1,$2); $$ = $2;}
            ;
 
 // Parameter list. par_list always reduces, even when empty - its end-action
 // is the natural place to build the STMT_FUNC_HEADER (param count is final)
-// and open the body's stmt_list collector. declar_par records each parameter
+// and open the body's stmt_list collector. declare_par records each parameter
 // id in the deferred func_params[] array; the actual SET / SET_P emits live
 // in the STMT_FUNC_HEADER walker case. Arrays are not allowed as parameters.
 par_list  : /* empty */                   {func_body_begin();}
           | par_items                     {func_body_begin();}
           ;
 
-par_items : TYPE ID                       {declar_par($1,$2);}
-          | par_items ',' TYPE ID         {declar_par($3,$4);}
+par_items : TYPE ID                       {declare_par($1,$2);}
+          | par_items ',' TYPE ID         {declare_par($3,$4);}
 
 // function and void returns
 return_call : RET exp ';'                 {stmt_append(stmt_return($2  ));}
@@ -423,7 +423,7 @@ for_intro       : FOR '(' for_init_clause ';' exp ';' for_step_clause ')' {for_o
 
 for_init_clause : /* empty */                          {for_init_set(NULL);}
                 | ID  '=' exp                          {for_init_set(stmt_assign($1, $3));}
-                | TYPE ID '=' exp                      {declar_var($2); for_init_set(stmt_assign($2, $4));}
+                | TYPE ID '=' exp                      {declare_var($2); for_init_set(stmt_assign($2, $4));}
 
 for_step_clause : /* empty */                          {for_step_set(NULL);}
                 | ID  '=' exp                          {for_step_set(stmt_assign($1, $3));}

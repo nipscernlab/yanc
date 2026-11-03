@@ -83,7 +83,7 @@ void check_var(void)
         if (((v_table[i].type == TY_INT) || (v_table[i].type == TY_FLOAT) || (v_table[i].type == TY_COMP)) && (v_table[i].used == 0) && !v_table[i].wave)
         {
             // v_table[i].owner records the variable's owning function: a valid
-            // v_table index for locals, or "" / -1 for globals. declar_arr_1d
+            // v_table index for locals, or "" / -1 for globals. declare_arr_1d
             // etc. call find_var(fname) which returns -1 when fname is the
             // empty string and no "" entry exists in v_table yet - so treat
             // any out-of-range owner as the global case.

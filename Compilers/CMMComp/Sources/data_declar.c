@@ -31,7 +31,7 @@ int type_tmp; // captures the type when a variable is declared (see CMMComp.l)
 // ----------------------------------------------------------------------------
 
 // declares a variable (non-array)
-void declar_var(int id)
+void declare_var(int id)
 {
     // consistency check ------------------------------------------------------
 
@@ -63,9 +63,9 @@ void declar_var(int id)
     if (type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, rem_fname(v_table[id].name));
 }
 
-// Parse-time half of declar_arr_1d: v_table update + log / info messages.
+// Parse-time half of declare_arr_1d: v_table update + log / info messages.
 // Called immediately so subsequent declarations can resolve this var.
-static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
+static void declare_arr_1d_parse(int id_var, int id_arg, int id_fname)
 {
     check_name(id_var, 0);
 
@@ -211,7 +211,7 @@ static int ini_emit(int id_var, int size)
 }
 
 // Walker-time half: only the `#array` / `#arrays` directives.
-void declar_arr_1d_emit(int id_var, int id_arg, int id_fname)
+void declare_arr_1d_emit(int id_var, int id_arg, int id_fname)
 {
     int type = v_table[id_var].type;
 
@@ -244,14 +244,14 @@ void declar_arr_1d_emit(int id_var, int id_arg, int id_fname)
 }
 
 // Public entry: parse-time work + defer the directive emit via STMT_DECLAR_ARR_1D.
-void declar_arr_1d(int id_var, int id_arg, int id_fname)
+void declare_arr_1d(int id_var, int id_arg, int id_fname)
 {
-    declar_arr_1d_parse(id_var, id_arg, id_fname);
+    declare_arr_1d_parse(id_var, id_arg, id_fname);
     stmt_append(stmt_declar_arr_1d(id_var, id_arg, id_fname));
 }
 
-// Parse-time half of declar_arr_2d.
-static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
+// Parse-time half of declare_arr_2d.
+static void declare_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 {
     check_name(id_var, 0);
 
@@ -274,7 +274,7 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 }
 
 // Walker-time half: the `#array` directive.
-void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
+void declare_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
 {
     int type = v_table[id_var].type;
     int size = atoi(v_table[id_x].name) * atoi(v_table[id_y].name);
@@ -310,24 +310,24 @@ void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
 }
 
 // Public entry.
-void declar_arr_2d(int id_var, int id_x, int id_y, int id_fname)
+void declare_arr_2d(int id_var, int id_x, int id_y, int id_fname)
 {
-    declar_arr_2d_parse(id_var, id_x, id_y, id_fname);
+    declare_arr_2d_parse(id_var, id_x, id_y, id_fname);
     stmt_append(stmt_declar_arr_2d(id_var, id_x, id_y, id_fname));
 }
 
 // int v[4] = {1, 2, 3};
-void declar_arr_1d_ini(int id_var, int id_arg)
+void declare_arr_1d_ini(int id_var, int id_arg)
 {
-    declar_arr_1d_parse(id_var, id_arg, -1);
+    declare_arr_1d_parse(id_var, id_arg, -1);
     ini_take(id_var, atoi(v_table[id_arg].name), 0);
     stmt_append(stmt_declar_arr_1d(id_var, id_arg, -1));
 }
 
 // int m[2][3] = {{1, 2, 3}, {4, 5, 6}};  or  = {1, 2, 3, 4, 5, 6};
-void declar_arr_2d_ini(int id_var, int id_x, int id_y)
+void declare_arr_2d_ini(int id_var, int id_x, int id_y)
 {
-    declar_arr_2d_parse(id_var, id_x, id_y, -1);
+    declare_arr_2d_parse(id_var, id_x, id_y, -1);
     ini_take(id_var, atoi(v_table[id_x].name) * atoi(v_table[id_y].name), atoi(v_table[id_y].name));
     stmt_append(stmt_declar_arr_2d(id_var, id_x, id_y, -1));
 }
@@ -340,8 +340,8 @@ void declar_arr_2d_ini(int id_var, int id_x, int id_y)
 // Parse-time work is identical to a plain `float v[N]` declaration; the
 // walker (STMT_DECLAR_DIRAC case in ast.c) emits the #array directive and
 // then the expression, as an assignment v # ...; would.
-void declar_dirac(int id_name, int id_N, expr_node *rhs)
+void declare_dirac(int id_name, int id_N, expr_node *rhs)
 {
-    declar_arr_1d_parse(id_name, id_N, -1);
+    declare_arr_1d_parse(id_name, id_N, -1);
     stmt_append(stmt_declar_dirac(id_name, id_N, rhs));
 }

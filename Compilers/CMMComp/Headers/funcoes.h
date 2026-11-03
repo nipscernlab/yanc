@@ -13,7 +13,7 @@ extern const char *fname;               // name of the function currently being 
 extern int  mainok;                 // 1 once a function named main is declared
 extern int  fun_id;                 // stores the id of the function being used
 extern int  ret_ok;                 // set by STMT_RETURN walker when a `return` statement fires
-extern int  fun_parse;              // function being walked (set by STMT_FUNC walker; declar_ret reads it)
+extern int  fun_parse;              // function being walked (set by STMT_FUNC walker; declare_ret reads it)
 
 // type-checks argument k (from 0) against the expected parameter and emits
 // LOD/SET to stage it for the upcoming CAL. Read by the EXPR_FUNC_CALL walker.
@@ -27,9 +27,9 @@ void check_rec(void);
 
 // declaration ----------------------------------------------------------------
 
-void  declar_fun(int id1, int id2); // type and name (state only - emit is deferred)
-int   declar_par(int   t, int id ); // appends to the deferred STMT_FUNC_HEADER param list
-void  declar_ret(expr e , int ret); // a return keyword was found
+void  declare_fun(int id1, int id2); // type and name (state only - emit is deferred)
+int   declare_par(int   t, int id ); // appends to the deferred STMT_FUNC_HEADER param list
+void  declare_ret(expr e , int ret); // a return keyword was found
 void func_body_begin(void);         // fires at the function's '{', builds STMT_FUNC_HEADER
 void    func_ret(int id);           // end/return of the function
 void    void_ret(void);           // end of a void function
