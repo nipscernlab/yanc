@@ -136,10 +136,14 @@ WORK_DIR="$SCRATCH/work"          # CMM phase scratch
 WORK_CPP="$SCRATCH/work_cpp"      # CPP phase scratch
 TMP_DIR="$SCRATCH/tmp"            # CMM phase tmps
 
-CMMCOMP="$BIN_DIR/cmmcomp.exe"
-CPPC="$BIN_DIR/cppcomp.exe"
-ASMCOMP="$BIN_DIR/asmcomp.exe"
-YANC="$BIN_DIR/yanc.exe"
+# the suffix the Makefile gives the tools: .exe on Windows, none elsewhere.
+# The driver runs the tools next to it by that name, so the yanc checks need
+# the binaries named as an install names them
+if [ "${OS:-}" = "Windows_NT" ]; then EXE=".exe"; else EXE=""; fi
+CMMCOMP="$BIN_DIR/cmmcomp$EXE"
+CPPC="$BIN_DIR/cppcomp$EXE"
+ASMCOMP="$BIN_DIR/asmcomp$EXE"
+YANC="$BIN_DIR/yanc$EXE"
 HDL="$ROOT/SAPHO"
 CMM_ROOT="$ROOT/Compilers/CMMComp"
 SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"

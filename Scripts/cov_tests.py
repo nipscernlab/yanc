@@ -917,9 +917,13 @@ def main():
                 open(gold, "w", newline="").write("".join(l + "\r\n" for l in lines))
                 print("cov_tests: recorded %s's golden_sim (%d values agree with Python)" % (name, len(out)))
         elif "--check" in sys.argv:
-            src_ok = open(os.path.join(d, name + ".cmm"), newline="", encoding="utf-8").read() == cmm and all(
-                os.path.exists(os.path.join(d, f)) and open(os.path.join(d, f), newline="", encoding="utf-8").read() == t
-                for f, t in files.items())
+            # the text, whatever the line ends: git keeps the sources with LF and
+            # checks them out with CRLF only where core.autocrlf asks (Windows)
+            def same(path, text):
+                return os.path.exists(path) and open(path, newline="", encoding="utf-8").read() \
+                    .replace("\r\n", "\n") == text.replace("\r\n", "\n")
+            src_ok = same(os.path.join(d, name + ".cmm"), cmm) and all(
+                same(os.path.join(d, f), t) for f, t in files.items())
             errs = agrees(out, open(gold).read().split()) if os.path.exists(gold) else ["no golden_sim"]
             ok = src_ok and not errs
             print("cov_tests: %s %s" % (name, "agrees with what the script computes (%d values)" % len(out)
