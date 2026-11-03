@@ -110,7 +110,7 @@ void check_var(void)
 // declared before it, a global at the top level or a local inside a function
 void directive_wave(int id)
 {
-    char *name = rem_fname(v_table[id].name);
+    char *name = strip_fn_prefix(v_table[id].name);
     if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, name);
     if (v_table[id].type > TY_COMP)  fatal(MSG_ERR_WAVE_NOT_VAR, line_num+1, name);
     v_table[id].wave = 1;
@@ -128,7 +128,7 @@ char *strip_fn(char *var, const char *func)
 // the name a variable has in the function being compiled: the parse-time
 // fname, or during the deferred AST walk (when fname is "") emit_fname, the
 // function the walker is in. For messages only: lex_id names with fname
-char *rem_fname(char *var)
+char *strip_fn_prefix(char *var)
 {
     return strip_fn(var, emit_fname[0] != '\0' ? emit_fname : fname);
 }
@@ -202,7 +202,7 @@ void check_name(int id, int is_fun)
         int t = v_table[id].type;
         if (!is_fun && t < 6 && t != 4 && v_table[id].owner == find_var(fname))
         {   // the same name declared twice in the same place
-            fatal(MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as));
+            fatal(MSG_ERR_VAR_EXISTS, line_num+1, strip_fn_prefix(as));
         }
         name_taken(me, as, name_owner(id));
     }

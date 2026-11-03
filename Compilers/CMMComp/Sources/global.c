@@ -40,7 +40,7 @@ int  line_num = 0;    // parser-time: line the lexer is currently reading
 int  emit_line= 1;    // emit-time: line the AST walker tags onto each instruction
 int  emit_fid = -1;   // emit-time: id of the function whose body the walker is in (-1: none)
 const char *emit_fname = ""; // emit-time: name of the function whose body the AST
-                           // walker is in, for rem_fname() in diagnostics only
+                           // walker is in, for strip_fn_prefix() in diagnostics only
                            // (lex_id keeps using the global fname). "" = global
 int  num_ins  = 0;    // number of instructions parsed
 int  sim_arr  = 0;    // tells whether the array is simulated or not
@@ -169,7 +169,7 @@ static int find_opc(const char *opc, const char *str)
 
 // Replaces ⟨ with < and ⟩ with >
 // so they can be displayed in gtkwave
-static void substituir_braket(char *str)
+static void replace_brackets(char *str)
 {
     unsigned char *src = (unsigned char *)str;
     unsigned char *dst = (unsigned char *)str;
@@ -414,7 +414,7 @@ void parse_end(char *d_proc)
     char *texto;
     while ((texto = read_src_line(input)) != NULL)
     {
-        substituir_braket(texto);
+        replace_brackets(texto);
         fprintf(output, "%d %s", cnt++, texto);
         free(texto);
     }
@@ -527,7 +527,7 @@ void add_instr(char *inst, ...)
     // table for the gtkwave assembly translator ------------------------------
 
     num_ins++;
-    char *bits = itob(emit_line,20);
+    char *bits = int_to_bin(emit_line,20);
     fprintf(f_lin, "%s\n", bits);
     free(bits);
 
@@ -595,7 +595,7 @@ void add_sinst(int type, char *inst, ...)
     if (type != 0)
     {
         num_ins++;
-        char *bits = itob(type,20);
+        char *bits = int_to_bin(type,20);
         fprintf(f_lin, "%s\n", bits);
         free(bits);
     }

@@ -7,7 +7,7 @@
 #ifndef CMM_T2T_H
 #define CMM_T2T_H
 
-char* itob(int x, int w);                           // converts an integer to a binary string
+char* int_to_bin(int x, int w);                           // converts an integer to a binary string
 
 #include "ast.h"   // expr
 

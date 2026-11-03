@@ -28,7 +28,7 @@ extern int  line_num;            // parser-time: line the lexer is currently rea
 extern int  emit_line;           // emit-time:  line of the AST node generating the current instruction
                                  //             (set by stmt_emit / ast_emit_expr; read by add_instr)
 extern int  emit_fid;            // emit-time:  id of the function whose body the walker is in (-1: none)
-extern const char *emit_fname;       // emit-time:  function whose body the walker is in (rem_fname display only)
+extern const char *emit_fname;       // emit-time:  function whose body the walker is in (strip_fn_prefix display only)
 extern int  num_ins ;            // number of parsed instructions (excluding final macros)
 extern int  sim_arr ;            // tells whether the array is simulated or not
 

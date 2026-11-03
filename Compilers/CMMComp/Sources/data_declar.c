@@ -58,9 +58,9 @@ void declare_var(int id)
     // save the function it belongs to
     const char *func = strcmp(fname,"")==0 ? "global" : fname;
     // save the data in the log file
-    fprintf(f_log, "%s %s %d\n", func, rem_fname(v_table[id].name), type_tmp);
+    fprintf(f_log, "%s %s %d\n", func, strip_fn_prefix(v_table[id].name), type_tmp);
     // if comp, save the imaginary part too
-    if (type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, rem_fname(v_table[id].name));
+    if (type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, strip_fn_prefix(v_table[id].name));
 }
 
 // Parse-time half of declare_arr_1d: v_table update + log / info messages.
@@ -80,18 +80,18 @@ static void declare_arr_1d_parse(int id_var, int id_arg, int id_fname)
     const char *func = strcmp(fname,"")==0 ? "global" : fname;
     if (sim_arr == 1)
     {
-                       fprintf(f_log, "%s %s   %d %s\n", func, rem_fname(v_table[id_var].name), type_tmp, v_table[id_arg].name);
-        if (type == 3) fprintf(f_log, "%s %s_i %d %s\n", func, rem_fname(v_table[id_var].name), type_tmp, v_table[id_arg].name);
+                       fprintf(f_log, "%s %s   %d %s\n", func, strip_fn_prefix(v_table[id_var].name), type_tmp, v_table[id_arg].name);
+        if (type == 3) fprintf(f_log, "%s %s_i %d %s\n", func, strip_fn_prefix(v_table[id_var].name), type_tmp, v_table[id_arg].name);
     }
 
     // for comp, mark the imaginary half as a 1D array too
     if (type == 3) v_table[get_img_id(id_var)].dims = AR_1D;
 
     if (id_fname != -1)
-        warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, rem_fname(v_table[id_var].name), line_num+1);
+        warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, strip_fn_prefix(v_table[id_var].name), line_num+1);
     // the file is .mif content, loaded once: a local keeps state across calls
     if (id_fname != -1 && strcmp(fname, "") != 0)
-        warn(MSG_WARN_ARRAY_FILE_LOCAL, line_num+1, rem_fname(v_table[id_var].name), v_table[id_fname].name);
+        warn(MSG_WARN_ARRAY_FILE_LOCAL, line_num+1, strip_fn_prefix(v_table[id_var].name), v_table[id_fname].name);
 }
 
 // ----------------------------------------------------------------------------
@@ -147,17 +147,17 @@ static void ini_take(int id_var, int size, int cols)
     for (int k = 0; k < ini_n; k++)
     {
         ini_val *v = &ini_v[k];
-        if (v->kind > type) fatal(MSG_ERR_ARRAY_INI_TYPE, line_num+1, rem_fname(v_table[id_var].name), tname, v->txt);
+        if (v->kind > type) fatal(MSG_ERR_ARRAY_INI_TYPE, line_num+1, strip_fn_prefix(v_table[id_var].name), tname, v->txt);
         int pos;
         if (ini_rows > 0)                        // rows between inner braces: a 2D array, every value in a row
         {
-            if (cols == 0) fatal(MSG_ERR_ARRAY_INI_1D, line_num+1, rem_fname(v_table[id_var].name));
+            if (cols == 0) fatal(MSG_ERR_ARRAY_INI_1D, line_num+1, strip_fn_prefix(v_table[id_var].name));
             if (v->row < 0 || v->col >= cols)
-                fatal(MSG_ERR_ARRAY_INI_ROWS, line_num+1, rem_fname(v_table[id_var].name), cols);
+                fatal(MSG_ERR_ARRAY_INI_ROWS, line_num+1, strip_fn_prefix(v_table[id_var].name), cols);
             pos = v->row * cols + v->col;
         }
         else pos = k;
-        if (pos >= size) fatal(MSG_ERR_ARRAY_INI_COUNT, line_num+1, rem_fname(v_table[id_var].name), size, pos + 1);
+        if (pos >= size) fatal(MSG_ERR_ARRAY_INI_COUNT, line_num+1, strip_fn_prefix(v_table[id_var].name), size, pos + 1);
         if (pos > maxpos) maxpos = pos;
     }
 
@@ -191,7 +191,7 @@ static void ini_take(int id_var, int size, int cols)
     for (int k = 0; k < ini_n; k++) free(ini_v[k].txt);
     ini_n = 0; ini_rows = 0; ini_row = -1;
 
-    if (strcmp(fname, "") != 0) warn(MSG_WARN_ARRAY_INI_LOCAL, line_num+1, rem_fname(v_table[id_var].name));
+    if (strcmp(fname, "") != 0) warn(MSG_WARN_ARRAY_INI_LOCAL, line_num+1, strip_fn_prefix(v_table[id_var].name));
 }
 
 // the #arrayd line(s) of an array initialized between braces; 0 if it is not one
@@ -267,10 +267,10 @@ static void declare_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
     if (type == 3) v_table[get_img_id(id_var)].dims = AR_2D;  // comp imag also 2D
 
     if (id_fname != -1)
-        warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, rem_fname(v_table[id_var].name), line_num+1);
+        warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, strip_fn_prefix(v_table[id_var].name), line_num+1);
     // the file is .mif content, loaded once: a local keeps state across calls
     if (id_fname != -1 && strcmp(fname, "") != 0)
-        warn(MSG_WARN_ARRAY_FILE_LOCAL, line_num+1, rem_fname(v_table[id_var].name), v_table[id_fname].name);
+        warn(MSG_WARN_ARRAY_FILE_LOCAL, line_num+1, strip_fn_prefix(v_table[id_var].name), v_table[id_fname].name);
 }
 
 // Walker-time half: the `#array` directive.

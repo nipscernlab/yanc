@@ -37,11 +37,11 @@ expr id2exp(int id)
 {
     // test whether the variable has already been declared
     if (v_table[id].type == TY_NONE)
-        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, strip_fn_prefix(v_table[id].name));
 
     // if it is an array, the index is missing
     if (v_table[id].dims > AR_NONE)
-        fatal(MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_table[id].name));
+        fatal(MSG_ERR_MISSING_ARR_IDX, line_num+1, strip_fn_prefix(v_table[id].name));
 
     v_table[id].used = 1;
 

@@ -273,7 +273,7 @@ expr_node *expr_dirac_in(int port)
 
 void dirac_not_vector(int id)
 {
-    char *name = rem_fname(v_table[id].name);
+    char *name = strip_fn_prefix(v_table[id].name);
     if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST,   line_num + 1, name);
     else                       fatal(MSG_ERR_NOT_A_VECTOR, line_num + 1, name);
 }
@@ -608,7 +608,7 @@ void shapecheck_expr(expr_node *n)
     {
         case EXPR_DIRAC_REF: {
             int id = n->id;
-            char *name = rem_fname(v_table[id].name);
+            char *name = strip_fn_prefix(v_table[id].name);
             if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, n->line, name);
             if (n->op == DIRAC_ROLE_MAT) {
                 if (v_table[id].dims != AR_2D) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
@@ -1667,7 +1667,7 @@ static int is_prod(const expr_node *n)
 // the target array dst against the shape of the expression
 static void dirac_check_target(int dst, expr_node *r, int line)
 {
-    char *name = rem_fname(v_table[dst].name);
+    char *name = strip_fn_prefix(v_table[dst].name);
     if (v_table[dst].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line, name);
 
     int rows = 1, cols = 1, fits;
@@ -2373,10 +2373,10 @@ void stmt_emit(stmt_node *n)
             int saved_fun_parse = fun_parse;
             fun_parse = n->id;
             // emit_fname carries this function's name through the body walk so
-            // rem_fname() can strip the "<fn>_" prefix from diagnostics. It is
+            // strip_fn_prefix() can strip the "<fn>_" prefix from diagnostics. It is
             // DISPLAY-ONLY: lex_id() still keys off the (empty-during-walk)
             // global fname, so the temp-variable names -- and the assembly -- are
-            // unchanged. Globals (no prefix) are unaffected by rem_fname.
+            // unchanged. Globals (no prefix) are unaffected by strip_fn_prefix.
             const char *saved_emit_fname = emit_fname;
             emit_fname = v_table[n->id].name;
             int saved_emit_fid = emit_fid;   // the caller of every CAL in the body

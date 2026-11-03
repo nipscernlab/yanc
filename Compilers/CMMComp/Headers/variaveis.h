@@ -44,7 +44,7 @@ int    find_var(const char *val);             // searches the table for the ID (
 void    add_var(const char *var);             // adds an ID to the table
 void  check_var(void);                       // checks what was used in the table (at the end of the parser)
 char *strip_fn (char *var, const char *func); // <func>_<name> -> <name>; any other name as it is
-char *rem_fname(char *var);              // the same, for the function being compiled
+char *strip_fn_prefix(char *var);              // the same, for the function being compiled
 void  check_name(int id, int is_fun);     // a declared name must be free in the .asm and not an instruction
 void  directive_wave (int id);                // #WAVE name: the variable stays even if never read
 

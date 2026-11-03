@@ -18,7 +18,7 @@
 
 // converts the integer x to a binary string of its w low bits (w <= 31: the
 // line numbers of pc_<name>_mem.txt, 20 bits, are its only use)
-char *itob(int x, int w)
+char *int_to_bin(int x, int w)
 {
     char *b = (char *) xmalloc(w+1);
     int n = 0;
