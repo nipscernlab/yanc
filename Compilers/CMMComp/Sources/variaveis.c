@@ -82,12 +82,12 @@ void check_var(void)
         // check whether a variable was declared but not used ...
         if (((v_table[i].type == TY_INT) || (v_table[i].type == TY_FLOAT) || (v_table[i].type == TY_COMP)) && (v_table[i].used == 0) && !v_table[i].wave)
         {
-            // v_table[i].fnid records the variable's owning function: a valid
+            // v_table[i].owner records the variable's owning function: a valid
             // v_table index for locals, or "" / -1 for globals. declar_arr_1d
             // etc. call find_var(fname) which returns -1 when fname is the
             // empty string and no "" entry exists in v_table yet - so treat
             // any out-of-range fnid as the global case.
-            int fnid = v_table[i].fnid;
+            int fnid = v_table[i].owner;
             int is_global = (fnid < 0) || (strcmp(v_table[fnid].name, "") == 0);
             if (is_global)
                 warn(MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
@@ -145,7 +145,7 @@ char *rem_fname(char *var)
 // who owns row id, in words, for the messages (the block is the caller's)
 static char *name_owner(int id)
 {
-    int  t = v_table[id].type, f = v_table[id].fnid;
+    int  t = v_table[id].type, f = v_table[id].owner;
     if (t >= 6 && t <= 9) return xasprintf(MSG_NAME_FUNC, v_table[id].name);
     char *nm = xstrdup(v_table[id].name);
     if (t == 4) nm[strlen(nm) - 2] = '\0';                    // drop the "_i"
@@ -200,7 +200,7 @@ void check_name(int id, int is_fun)
     if (v_table[id].type != TY_NONE)
     {
         int t = v_table[id].type;
-        if (!is_fun && t < 6 && t != 4 && v_table[id].fnid == find_var(fname))
+        if (!is_fun && t < 6 && t != 4 && v_table[id].owner == find_var(fname))
         {   // the same name declared twice in the same place
             fatal(MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as));
         }

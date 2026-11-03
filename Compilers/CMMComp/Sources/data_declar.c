@@ -41,7 +41,7 @@ void declar_var(int id)
 
     v_table[id].type          = type_tmp;            // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
     v_table[id].used          = 0;                   // just declared, so not used yet
-    v_table[id].fnid    = find_var(fname);     // record the function it belongs to
+    v_table[id].owner    = find_var(fname);     // record the function it belongs to
 
     // declare the imaginary part if comp -------------------------------------
 
@@ -50,7 +50,7 @@ void declar_var(int id)
         int idi              = get_img_id(id);
         v_table[idi].type          = TY_IMAG; // use type 4 for the imaginary part
         v_table[idi].used          = 0;
-        v_table[idi].fnid    = find_var(fname);
+        v_table[idi].owner    = find_var(fname);
     }
 
     // register the variable in the log file ----------------------------------
@@ -71,7 +71,7 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
 
     v_table[id_var].type       = type_tmp;
     v_table[id_var].used       = 0;
-    v_table[id_var].fnid = find_var(fname);
+    v_table[id_var].owner = find_var(fname);
     v_table[id_var].dims       = AR_1D;
     v_table[id_var].size       = atoi(v_table[id_arg].name);
 
@@ -257,7 +257,7 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 
     v_table[id_var].type       = type_tmp;
     v_table[id_var].used       = 0;
-    v_table[id_var].fnid = find_var(fname);
+    v_table[id_var].owner = find_var(fname);
     v_table[id_var].dims       = AR_2D;
     v_table[id_var].size       = atoi(v_table[id_x].name);
     v_table[id_var].cols = atoi(v_table[id_y].name);
