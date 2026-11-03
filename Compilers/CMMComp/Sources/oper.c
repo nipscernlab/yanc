@@ -2436,7 +2436,7 @@ expr oper_mod(expr e1, expr e2)
 {
 
     if ((e1.type > TY_INT) || (e2.type > TY_INT))
-        fatal(MSG_ERR_MOD_NON_INT, line_num+1);
+        fatal(MSG_ERR_MOD_NON_INT, pctx.line_num+1);
 
     char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
@@ -2532,7 +2532,7 @@ static cmp_side cmp_side_of(expr e)
 
 static expr oper_cmp_comp(expr e1, expr e2, int type)
 {
-    if (type != 2) fatal(MSG_ERR_CMP_COMP_ORDER, line_num+1);
+    if (type != 2) fatal(MSG_ERR_CMP_COMP_ORDER, pctx.line_num+1);
 
     cmp_side a = cmp_side_of(e1), b = cmp_side_of(e2);
     const char *z = cmp_flit("0.0");
@@ -2617,7 +2617,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         case 1: strcpy(op, "GRE"); break;
         case 2: strcpy(op, "EQU"); break;
         default:
-            fatal("oper_cmp: invalid type %d at line %d\n", type, line_num+1);
+            fatal("oper_cmp: invalid type %d at line %d\n", type, pctx.line_num+1);
     }
 
     // The memory forms compute `X op acc` (ula in1 = memory, in2 = acc), so an
@@ -2858,7 +2858,7 @@ expr oper_logic(expr e1, expr e2, int type)
 
     if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))
     {
-        fatal(MSG_ERR_LOGIC_NON_INT, line_num+1);
+        fatal(MSG_ERR_LOGIC_NON_INT, pctx.line_num+1);
     }
 
     char ld[10];
@@ -2941,7 +2941,7 @@ expr oper_inv(expr e)
 {
 
     if (e.type > TY_INT)
-        fatal(MSG_ERR_INV_NON_INT, line_num+1);
+        fatal(MSG_ERR_INV_NON_INT, pctx.line_num+1);
 
     char inv[10]; if (acc_ok == 0) strcpy(inv,"INV_M"); else strcpy(inv,"P_INV_M");
 
@@ -2968,7 +2968,7 @@ expr oper_bitw(expr e1, expr e2, int type)
 
     if (e1.type > TY_FLOAT || e2.type > TY_FLOAT)
     {
-        fatal(MSG_ERR_BITWISE_COMPLEX, line_num+1);
+        fatal(MSG_ERR_BITWISE_COMPLEX, pctx.line_num+1);
     }
     
     char op[16];
@@ -3020,10 +3020,10 @@ expr oper_shift(expr e1, expr e2, int type)
 {
 
     if (e1.type > TY_FLOAT)
-        fatal(MSG_ERR_SHIFT_COMPLEX, line_num+1);
+        fatal(MSG_ERR_SHIFT_COMPLEX, pctx.line_num+1);
 
     if (e2.type > TY_FLOAT)
-        fatal(MSG_ERR_SHIFT_BY_COMP, line_num+1);
+        fatal(MSG_ERR_SHIFT_BY_COMP, pctx.line_num+1);
 
     char op[16];
 
@@ -3052,7 +3052,7 @@ expr oper_shift(expr e1, expr e2, int type)
     // int/float var with float var
     if ((e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
-        warn(MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
+        warn(MSG_WARN_SHIFT_BY_FLOAT, pctx.line_num+1);
 
         add_instr("%s %s\n", acc_ok ? "P_F2I_M" : "F2I_M", v_table[e2.id].name);
         add_instr("%s %s\n", op, v_table[e1.id].name);
@@ -3061,7 +3061,7 @@ expr oper_shift(expr e1, expr e2, int type)
     // int/float var with float acc
     if ((e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
-        warn(MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
+        warn(MSG_WARN_SHIFT_BY_FLOAT, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("%s %s\n", op, v_table[e1.id].name);
@@ -3083,7 +3083,7 @@ expr oper_shift(expr e1, expr e2, int type)
     // int/float acc with float var
     if ((e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
-        warn(MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
+        warn(MSG_WARN_SHIFT_BY_FLOAT, pctx.line_num+1);
 
         add_instr("P_F2I_M %s\n", v_table[e2.id].name);
         add_instr("S_%s\n", op);
@@ -3092,7 +3092,7 @@ expr oper_shift(expr e1, expr e2, int type)
     // int/float acc with float acc
     if ((e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
-        warn(MSG_WARN_SHIFT_BY_FLOAT, line_num+1);
+        warn(MSG_WARN_SHIFT_BY_FLOAT, pctx.line_num+1);
         
         add_instr("F2I\n");
         add_instr("S_%s\n", op);

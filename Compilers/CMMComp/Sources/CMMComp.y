@@ -180,7 +180,7 @@ prog_elements : direct | declar | funcao
 
 // Compilation directives -----------------------------------------------------
 
-direct : PRNAME   ID   {fatal(MSG_ERR_PRNAME_GONE, line_num+1);} // the name is the file's
+direct : PRNAME   ID   {fatal(MSG_ERR_PRNAME_GONE, pctx.line_num+1);} // the name is the file's
        | NUBITS unum   {directive_exec("#NUBITS",$2,DIR_NUBITS);} // ALU word width
        | NBMANT unum   {directive_exec("#NBMANT",$2,DIR_NBMANT);} // mantissa width (bits)
        | NBEXPO unum   {directive_exec("#NBEXPO",$2,DIR_NBEXPO);} // exponent width (bits)
@@ -585,5 +585,5 @@ int main(int argc, char *argv[])
 void yyerror (char const *s)
 {
     if (yychar == DIMIN) inum_overflow();   // 128 at 8 bits, not after a minus
-    fatal(MSG_ERR_SYNTAX, line_num+1);
+    fatal(MSG_ERR_SYNTAX, pctx.line_num+1);
 }

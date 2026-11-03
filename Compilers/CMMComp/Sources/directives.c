@@ -68,8 +68,8 @@ void directive_exec(char *dir, int id, dir_code t)
         case DIR_NBEXPO: cfg.nbexpo = ival             ; break;
         case DIR_NUIOIN: cfg.nuioin = ival             ; break;
         case DIR_NUIOOU: cfg.nuioou = ival             ; break;
-        case DIR_FROUND: if (ival < 0 || ival > 2) fatal(MSG_ERR_FROUND_RANGE, line_num+1); cfg.fround = ival; break; // #FROUND level
-        case DIR_NUGAIN: if (ival <= 0 || (ival & (ival - 1)) != 0) fatal(MSG_ERR_NUGAIN_POW2, line_num+1, ival); break;
+        case DIR_FROUND: if (ival < 0 || ival > 2) fatal(MSG_ERR_FROUND_RANGE, pctx.line_num+1); cfg.fround = ival; break; // #FROUND level
+        case DIR_NUGAIN: if (ival <= 0 || (ival & (ival - 1)) != 0) fatal(MSG_ERR_NUGAIN_POW2, pctx.line_num+1, ival); break;
     }
 
     stmt_append(stmt_directive(dir, id));

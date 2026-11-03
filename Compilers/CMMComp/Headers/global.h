@@ -6,6 +6,7 @@
 #define CMM_GLOBAL_H
 
 #include <stdio.h>
+#include "context.h"
 
 // ----------------------------------------------------------------------------
 // global variables -----------------------------------------------------------
@@ -24,7 +25,6 @@ extern const char *dir_tmp;      // Temp directory
 // ----------------------------------------------------------------------------
 
 extern int  acc_ok  ;            // 0 -> acc empty (use LOD), 1 -> acc loaded (use P_LOD)
-extern int  line_num;            // parser-time: line the lexer is currently reading (used by MSG_ERR_*)
 extern int  emit_line;           // emit-time:  line of the AST node generating the current instruction
                                  //             (set by stmt_emit / ast_emit_expr; read by add_instr)
 extern int  emit_fid;            // emit-time:  id of the function whose body the walker is in (-1: none)

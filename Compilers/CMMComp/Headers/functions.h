@@ -6,14 +6,11 @@
 #define CMM_FUNCTIONS_H
 
 #include "ast.h"   // expr
+#include "context.h"
 
 // state variables ------------------------------------------------------------
 
-extern const char *fname;               // name of the function currently being parsed
-extern int  mainok;                 // 1 once a function named main is declared
 extern int  fun_id;                 // stores the id of the function being used
-extern int  ret_ok;                 // set by STMT_RETURN walker when a `return` statement fires
-extern int  fun_parse;              // function being walked (set by STMT_FUNC walker; declare_ret reads it)
 
 // type-checks argument k (from 0) against the expected parameter and emits
 // LOD/SET to stage it for the upcoming CAL. Read by the EXPR_FUNC_CALL walker.

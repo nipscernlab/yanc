@@ -24,13 +24,13 @@ void assign_set(int id, expr e)
     // test whether it has been declared so an assignment is allowed
     if (v_table[id].type == TY_NONE)
     {
-        fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_DECLARE_VAR_PLEASE, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     // test whether it is an array missing its index
     if (v_table[id].dims > AR_NONE)
     {
-        fatal(MSG_ERR_ARRAY_NEEDS_IDX, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_ARRAY_NEEDS_IDX, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     // ------------------------------------------------------------------------
@@ -58,7 +58,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_FLOAT) && (e.id != 0))
     {
-        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_INT_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("F2I_M %s\n", v_table[e.id].name);
         add_instr("SET %s\n"  , v_table[id       ].name);
@@ -68,7 +68,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_FLOAT) && (e.id == 0))
     {
-        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_INT_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         // consider an instruction that does f2i on the accumulator and stores in memory at once (FIAS)
         add_instr("F2I\n");
@@ -79,7 +79,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_CCONST))
     {
-        warn(MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -91,7 +91,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_COMP) && (e.id != 0))
     {
-        warn(MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
         add_instr("F2I_M %s\n", v_table[e.id].name);
         add_instr("SET %s\n"  , v_table[id       ].name);
@@ -101,7 +101,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_COMP) && (e.id == 0))
     {
-        warn(MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -112,7 +112,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_INT) && (e.id != 0))
     {
-        warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_FLOAT_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
         add_instr("SET %s\n"  , v_table[id     ].name);
@@ -122,7 +122,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_INT) && (e.id == 0))
     {
-        warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_FLOAT_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("I2F\n");
         add_instr("SET %s\n", v_table[id].name);
@@ -147,7 +147,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_CCONST))
     {
-        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -159,7 +159,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_COMP) && (e.id != 0))
     {
-        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -171,7 +171,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_COMP) && (e.id == 0))
     {
-        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
         add_instr("POP\n");
         add_instr("SET %s\n", v_table[id].name);
@@ -181,7 +181,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id != 0))
     {
-        warn(MSG_WARN_COMP_RECV_INT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
         add_instr("SET %s\n"  , v_table[id     ].name);
@@ -194,7 +194,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id == 0))
     {
-        warn(MSG_WARN_COMP_RECV_INT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("I2F\n");
         add_instr("SET %s\n"  , v_table[id].name);
@@ -207,7 +207,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id != 0))
     {
-        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("LOD %s\n" , v_table[e.id].name);
         add_instr("SET %s\n" , v_table[id     ].name);
@@ -220,7 +220,7 @@ void assign_set(int id, expr e)
 
     if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id == 0))
     {
-        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("SET %s\n"  , v_table[id].name);
 
@@ -278,11 +278,11 @@ void assign_array_const(int id, int k, int dims, expr e)
 {
     // the same checks as assign_array (a write does not mark the array used)
     if (v_table[id].type == TY_NONE)
-        fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_DECLARE_VAR_PLEASE, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     if (v_table[id].dims == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_NOT_ARRAY, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     if (v_table[id].dims == AR_2D && dims == 1)   // arr_1d_index refuses it on the general path
-        fatal(MSG_ERR_ARRAY_2D, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_ARRAY_2D, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     if (v_table[id].type == TY_COMP)
     {
@@ -322,13 +322,13 @@ void assign_array(int id, expr e, int fft)
     // test whether it has been declared so an assignment is allowed
     if (v_table[id].type == TY_NONE)
     {
-        fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_DECLARE_VAR_PLEASE, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     // array vs non-array check
     if (v_table[id].dims == AR_NONE)
     {
-        fatal(MSG_ERR_NOT_ARRAY, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_NOT_ARRAY, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     // ------------------------------------------------------------------------
@@ -358,7 +358,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_FLOAT) && (e.id != 0))
     {
-        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_INT_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("P_F2I_M %s\n", v_table[e.id].name);
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -368,7 +368,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_FLOAT) && (e.id == 0))
     {
-        warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_INT_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("F2I\n");
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -378,7 +378,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_CCONST))
     {
-        warn(MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -390,7 +390,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_COMP) && (e.id != 0))
     {
-        warn(MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -402,7 +402,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_INT) && (e.type == TY_COMP) && (e.id == 0))
     {
-        warn(MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -413,7 +413,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_INT) && (e.id != 0))
     {
-        warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_FLOAT_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("P_I2F_M %s\n", v_table[e.id].name);
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -423,7 +423,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_INT) && (e.id == 0))
     {
-        warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_FLOAT_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("I2F\n");
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -448,7 +448,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_CCONST))
     {
-        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -460,7 +460,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_COMP) && (e.id != 0))
     {
-        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -472,7 +472,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_FLOAT) && (e.type == TY_COMP) && (e.id == 0))
     {
-        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
         add_instr("POP\n");
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -482,7 +482,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id != 0))
     {
-        warn(MSG_WARN_COMP_RECV_INT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("SET __aux_var\n");
         add_instr("P_I2F_M %s\n", v_table[e.id].name);
@@ -497,7 +497,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id == 0) && assign_idx_reload)
     {
-        warn(MSG_WARN_COMP_RECV_INT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("I2F\n");                                          // the index is on the stack
         add_instr("%s %s\n"  , set_type, v_table[id].name);
@@ -507,7 +507,7 @@ void assign_array(int id, expr e, int fft)
     }
     else if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id == 0))
     {
-        warn(MSG_WARN_COMP_RECV_INT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("I2F\n"                   );
         add_instr("SET_P __aux_var\n"         );
@@ -524,7 +524,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id != 0))
     {
-        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         if (!assign_idx_reload) add_instr("SET   __aux_var\n");      // else the index is read again
         add_instr("P_LOD %s\n"  , v_table[e.id].name);
@@ -539,7 +539,7 @@ void assign_array(int id, expr e, int fft)
 
     if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id == 0) && assign_idx_reload)
     {
-        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("%s %s\n"  , set_type, v_table[id].name);         // the index is on the stack
         add_instr("LOD %s\n" , v_table[assign_idx_reload].name);
@@ -548,7 +548,7 @@ void assign_array(int id, expr e, int fft)
     }
     else if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id == 0))
     {
-        warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, strip_fn_prefix(v_table[id].name));
+        warn(MSG_WARN_COMP_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("SET_P __aux_var\n"         );
         add_instr("SET   __aux_var2\n"        );

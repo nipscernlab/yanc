@@ -7,7 +7,8 @@
 #ifndef CMM_DIRECTIVES_H
 #define CMM_DIRECTIVES_H
 
-#include "context.h"      // cfg: the target the directives set
+#include "context.h"
+
 long long mant_pow2(void); // 2^NBMANT, defined for any #NBMANT
 
 // directive parsing

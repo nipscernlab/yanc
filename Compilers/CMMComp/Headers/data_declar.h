@@ -6,8 +6,7 @@
 #define CMM_DATA_DECLAR_H
 
 #include "ast.h"   // expr / expr_node / stmt_node
-
-extern int type_tmp; // captures the type when a variable is declared (see CMMComp.l)
+#include "context.h"
 
 // ----------------------------------------------------------------------------
 // standard declarations ------------------------------------------------------

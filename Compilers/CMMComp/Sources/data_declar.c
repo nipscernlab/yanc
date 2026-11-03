@@ -24,7 +24,6 @@
 // global variable definitions ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int type_tmp; // captures the type when a variable is declared (see CMMComp.l)
 
 // ----------------------------------------------------------------------------
 // standard declarations ------------------------------------------------------
@@ -39,28 +38,28 @@ void declare_var(int id)
 
     // update the variable status ---------------------------------------------
 
-    v_table[id].type          = type_tmp;            // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
+    v_table[id].type          = pctx.type_tmp;            // the variable type is stored in type_tmp (see flex when it finds int, float or comp)
     v_table[id].used          = 0;                   // just declared, so not used yet
-    v_table[id].owner    = find_var(fname);     // record the function it belongs to
+    v_table[id].owner    = find_var(pctx.fname);     // record the function it belongs to
 
     // declare the imaginary part if comp -------------------------------------
 
-    if (type_tmp > 2)
+    if (pctx.type_tmp > 2)
     {
         int idi              = get_img_id(id);
         v_table[idi].type          = TY_IMAG; // use type 4 for the imaginary part
         v_table[idi].used          = 0;
-        v_table[idi].owner    = find_var(fname);
+        v_table[idi].owner    = find_var(pctx.fname);
     }
 
     // register the variable in the log file ----------------------------------
 
     // save the function it belongs to
-    const char *func = strcmp(fname,"")==0 ? "global" : fname;
+    const char *func = strcmp(pctx.fname,"")==0 ? "global" : pctx.fname;
     // save the data in the log file
-    fprintf(f_log, "%s %s %d\n", func, strip_fn_prefix(v_table[id].name), type_tmp);
+    fprintf(f_log, "%s %s %d\n", func, strip_fn_prefix(v_table[id].name), pctx.type_tmp);
     // if comp, save the imaginary part too
-    if (type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, strip_fn_prefix(v_table[id].name));
+    if (pctx.type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, strip_fn_prefix(v_table[id].name));
 }
 
 // Parse-time half of declare_arr_1d: v_table update + log / info messages.
@@ -69,29 +68,29 @@ static void declare_arr_1d_parse(int id_var, int id_arg, int id_fname)
 {
     check_name(id_var, 0);
 
-    v_table[id_var].type       = type_tmp;
+    v_table[id_var].type       = pctx.type_tmp;
     v_table[id_var].used       = 0;
-    v_table[id_var].owner = find_var(fname);
+    v_table[id_var].owner = find_var(pctx.fname);
     v_table[id_var].dims       = AR_1D;
     v_table[id_var].size       = atoi(v_table[id_arg].name);
 
-    int type = type_tmp;
+    int type = pctx.type_tmp;
 
-    const char *func = strcmp(fname,"")==0 ? "global" : fname;
+    const char *func = strcmp(pctx.fname,"")==0 ? "global" : pctx.fname;
     if (sim_arr == 1)
     {
-                       fprintf(f_log, "%s %s   %d %s\n", func, strip_fn_prefix(v_table[id_var].name), type_tmp, v_table[id_arg].name);
-        if (type == 3) fprintf(f_log, "%s %s_i %d %s\n", func, strip_fn_prefix(v_table[id_var].name), type_tmp, v_table[id_arg].name);
+                       fprintf(f_log, "%s %s   %d %s\n", func, strip_fn_prefix(v_table[id_var].name), pctx.type_tmp, v_table[id_arg].name);
+        if (type == 3) fprintf(f_log, "%s %s_i %d %s\n", func, strip_fn_prefix(v_table[id_var].name), pctx.type_tmp, v_table[id_arg].name);
     }
 
     // for comp, mark the imaginary half as a 1D array too
     if (type == 3) v_table[get_img_id(id_var)].dims = AR_1D;
 
     if (id_fname != -1)
-        warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, strip_fn_prefix(v_table[id_var].name), line_num+1);
+        warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, strip_fn_prefix(v_table[id_var].name), pctx.line_num+1);
     // the file is .mif content, loaded once: a local keeps state across calls
-    if (id_fname != -1 && strcmp(fname, "") != 0)
-        warn(MSG_WARN_ARRAY_FILE_LOCAL, line_num+1, strip_fn_prefix(v_table[id_var].name), v_table[id_fname].name);
+    if (id_fname != -1 && strcmp(pctx.fname, "") != 0)
+        warn(MSG_WARN_ARRAY_FILE_LOCAL, pctx.line_num+1, strip_fn_prefix(v_table[id_var].name), v_table[id_fname].name);
 }
 
 // ----------------------------------------------------------------------------
@@ -147,17 +146,17 @@ static void ini_take(int id_var, int size, int cols)
     for (int k = 0; k < ini_n; k++)
     {
         ini_val *v = &ini_v[k];
-        if (v->kind > type) fatal(MSG_ERR_ARRAY_INI_TYPE, line_num+1, strip_fn_prefix(v_table[id_var].name), tname, v->txt);
+        if (v->kind > type) fatal(MSG_ERR_ARRAY_INI_TYPE, pctx.line_num+1, strip_fn_prefix(v_table[id_var].name), tname, v->txt);
         int pos;
         if (ini_rows > 0)                        // rows between inner braces: a 2D array, every value in a row
         {
-            if (cols == 0) fatal(MSG_ERR_ARRAY_INI_1D, line_num+1, strip_fn_prefix(v_table[id_var].name));
+            if (cols == 0) fatal(MSG_ERR_ARRAY_INI_1D, pctx.line_num+1, strip_fn_prefix(v_table[id_var].name));
             if (v->row < 0 || v->col >= cols)
-                fatal(MSG_ERR_ARRAY_INI_ROWS, line_num+1, strip_fn_prefix(v_table[id_var].name), cols);
+                fatal(MSG_ERR_ARRAY_INI_ROWS, pctx.line_num+1, strip_fn_prefix(v_table[id_var].name), cols);
             pos = v->row * cols + v->col;
         }
         else pos = k;
-        if (pos >= size) fatal(MSG_ERR_ARRAY_INI_COUNT, line_num+1, strip_fn_prefix(v_table[id_var].name), size, pos + 1);
+        if (pos >= size) fatal(MSG_ERR_ARRAY_INI_COUNT, pctx.line_num+1, strip_fn_prefix(v_table[id_var].name), size, pos + 1);
         if (pos > maxpos) maxpos = pos;
     }
 
@@ -191,7 +190,7 @@ static void ini_take(int id_var, int size, int cols)
     for (int k = 0; k < ini_n; k++) free(ini_v[k].txt);
     ini_n = 0; ini_rows = 0; ini_row = -1;
 
-    if (strcmp(fname, "") != 0) warn(MSG_WARN_ARRAY_INI_LOCAL, line_num+1, strip_fn_prefix(v_table[id_var].name));
+    if (strcmp(pctx.fname, "") != 0) warn(MSG_WARN_ARRAY_INI_LOCAL, pctx.line_num+1, strip_fn_prefix(v_table[id_var].name));
 }
 
 // the #arrayd line(s) of an array initialized between braces; 0 if it is not one
@@ -255,22 +254,22 @@ static void declare_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 {
     check_name(id_var, 0);
 
-    v_table[id_var].type       = type_tmp;
+    v_table[id_var].type       = pctx.type_tmp;
     v_table[id_var].used       = 0;
-    v_table[id_var].owner = find_var(fname);
+    v_table[id_var].owner = find_var(pctx.fname);
     v_table[id_var].dims       = AR_2D;
     v_table[id_var].size       = atoi(v_table[id_x].name);
     v_table[id_var].cols = atoi(v_table[id_y].name);
 
-    int type = type_tmp;
+    int type = pctx.type_tmp;
 
     if (type == 3) v_table[get_img_id(id_var)].dims = AR_2D;  // comp imag also 2D
 
     if (id_fname != -1)
-        warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, strip_fn_prefix(v_table[id_var].name), line_num+1);
+        warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, strip_fn_prefix(v_table[id_var].name), pctx.line_num+1);
     // the file is .mif content, loaded once: a local keeps state across calls
-    if (id_fname != -1 && strcmp(fname, "") != 0)
-        warn(MSG_WARN_ARRAY_FILE_LOCAL, line_num+1, strip_fn_prefix(v_table[id_var].name), v_table[id_fname].name);
+    if (id_fname != -1 && strcmp(pctx.fname, "") != 0)
+        warn(MSG_WARN_ARRAY_FILE_LOCAL, pctx.line_num+1, strip_fn_prefix(v_table[id_var].name), v_table[id_fname].name);
 }
 
 // Walker-time half: the `#array` directive.

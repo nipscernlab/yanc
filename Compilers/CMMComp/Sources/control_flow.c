@@ -312,7 +312,7 @@ stmt_node *exec_break(void)
 {
     if (brk_n == 0)  // break with no enclosing loop or switch
     {
-        fatal(MSG_ERR_BREAK_LOST, line_num+1);
+        fatal(MSG_ERR_BREAK_LOST, pctx.line_num+1);
     }
     brk_target t = brk_stk[brk_n - 1];  // innermost
     return t.is_switch ? stmt_switch_break(t.id) : stmt_break_while(t.id);
@@ -322,7 +322,7 @@ stmt_node *exec_continue(void)
 {
     if (cont_n == 0)  // continue with no enclosing loop
     {
-        fatal(MSG_ERR_CONTINUE_LOST, line_num+1);
+        fatal(MSG_ERR_CONTINUE_LOST, pctx.line_num+1);
     }
     cont_target t = cont_stk[cont_n - 1];  // innermost loop
     // for / do-while need the Lwh<n>cont label emitted at the continue landing

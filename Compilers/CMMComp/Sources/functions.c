@@ -25,15 +25,11 @@
 // ----------------------------------------------------------------------------
 
 int  fun_id;      // stores the id of the function being used
-int  mainok  = 0; // 1 once a function named main is declared (check_var refuses a program without it)
-const char *fname = ""; // name of the function currently being parsed (a v_table name, or "")
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int ret_ok;       // tells whether the function returned correctly
-int fun_parse;    // stores the id of the function being parsed
 
 // Parameter ids collected by declare_par for the function currently being
 // declared. func_body_begin moves these into a STMT_FUNC_HEADER node, then
@@ -142,7 +138,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 2) && (e.id != 0))
     {
-        warn(MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", f2i, v_table[e.id].name);
     }
@@ -151,7 +147,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 2) && (e.id == 0))
     {
-        warn(MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("F2I\n");
     }
@@ -160,7 +156,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 5))
     {
-        warn(MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -171,7 +167,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 3) && (e.id != 0))
     {
-        warn(MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", f2i, v_table[e.id].name);
     }
@@ -180,7 +176,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 3) && (e.id == 0))
     {
-        warn(MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -190,7 +186,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 1) && (e.id != 0))
     {
-        warn(MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", i2f, v_table[e.id].name);
     }
@@ -199,7 +195,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 1) && (e.id == 0))
     {
-        warn(MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("I2F\n");
     }
@@ -222,7 +218,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 5))
     {
-        warn(MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -233,7 +229,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 3) && (e.id != 0))
     {
-        warn(MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", ld, v_table[e.id].name);
     }
@@ -242,7 +238,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 3) && (e.id == 0))
     {
-        warn(MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("POP\n");
     }
@@ -251,7 +247,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 1) && (e.id != 0))
     {
-        warn(MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", i2f, v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -261,7 +257,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 1) && (e.id == 0))
     {
-        warn(MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
@@ -271,7 +267,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 2) && (e.id != 0))
     {
-        warn(MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -281,7 +277,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 2) && (e.id == 0))
     {
-        warn(MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
         add_instr("P_LOD 0.0\n");
     }
@@ -326,12 +322,12 @@ void par_check(expr e, int k)
 void declare_fun(int id1, int id2) // id1 -> type, id2 -> name index
 {
     check_name(id2, 1);   // not a variable's or another function's name, not an instruction
-    if (strcmp(v_table[id2].name, "main") == 0) mainok = 1; // the reset reaches main: it must exist
+    if (strcmp(v_table[id2].name, "main") == 0) pctx.mainok = 1; // the reset reaches main: it must exist
 
-    fname = v_table[id2].name; // set the fname state to the function being analyzed
+    pctx.fname = v_table[id2].name; // set the fname state to the function being analyzed
     v_table[id2].type = TY_FVOID + id1; // a function: TY_FVOID .. TY_FCOMP by its return type (TY_NONE .. TY_COMP)
-    fun_parse    = id2; // set the fun_parse state to the function's name id
-    ret_ok       = 0;   // set ret_ok to zero (function parsing starts)
+    pctx.fun_parse    = id2; // set the fun_parse state to the function's name id
+    pctx.ret_ok       = 0;   // set ret_ok to zero (function parsing starts)
     func_nparams = 0;   // reset param collection for the new function
 }
 
@@ -343,7 +339,7 @@ int declare_par(int type, int id)
     declare_var(id); // arrays cannot be passed as function parameters
 
     // store the data type of every parameter, in order
-    symbol *f = &v_table[fun_parse];
+    symbol *f = &v_table[pctx.fun_parse];
     f->param_types = xrealloc(f->param_types, (size_t)(f->n_params+1) * sizeof(int));
     f->param_types[f->n_params++] = type;
 
@@ -361,15 +357,15 @@ int declare_par(int type, int id)
 void declare_ret(expr e, int ret)
 {
     // check whether it really is a function, or void by mistake
-    if (v_table[fun_parse].type == TY_FVOID)
-        fatal(MSG_ERR_VOID_RETURN_VALUE, line_num+1);
+    if (v_table[pctx.fun_parse].type == TY_FVOID)
+        fatal(MSG_ERR_VOID_RETURN_VALUE, pctx.line_num+1);
 
     // ------------------------------------------------------------------------
     // check every combination ------------------------------------------------
     // ------------------------------------------------------------------------
 
     expr etr, eti;
-    int left_type = v_table[fun_parse].type;
+    int left_type = v_table[pctx.fun_parse].type;
 
     // int with int var
     if ((left_type == 7) && (e.type == TY_INT) && (e.id!=0))
@@ -386,7 +382,7 @@ void declare_ret(expr e, int ret)
     // int with float var
     if ((left_type == 7) && (e.type == TY_FLOAT) && (e.id!=0))
     {
-        warn(MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
+        warn(MSG_WARN_CONV_F2I_RETURN, pctx.line_num+1, v_table[pctx.fun_parse].name);
 
         add_instr("F2I_M %s\n", v_table[e.id].name);
     }
@@ -394,14 +390,14 @@ void declare_ret(expr e, int ret)
     // int with float acc
     if ((left_type == 7) && (e.type == TY_FLOAT) && (e.id==0))
     {
-        warn(MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
+        warn(MSG_WARN_CONV_F2I_RETURN, pctx.line_num+1, v_table[pctx.fun_parse].name);
         add_instr("F2I\n");
     }
 
     // int with comp const
     if ((left_type == 7) && (e.type == TY_CCONST))
     {
-        warn(MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -411,7 +407,7 @@ void declare_ret(expr e, int ret)
     // int with comp var
     if ((left_type == 7) && (e.type == TY_COMP) && (e.id!=0))
     {
-        warn(MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -421,7 +417,7 @@ void declare_ret(expr e, int ret)
     // int with comp acc
     if ((left_type == 7) && (e.type == TY_COMP) && (e.id==0))
     {
-        warn(MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -430,7 +426,7 @@ void declare_ret(expr e, int ret)
     // float with int var
     if ((left_type == 8) && (e.type == TY_INT) && (e.id!=0))
     {
-        warn(MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_FLOAT_RECV_INT, pctx.line_num+1);
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
     }
@@ -438,7 +434,7 @@ void declare_ret(expr e, int ret)
     // float with int acc
     if ((left_type == 8) && (e.type == TY_INT) && (e.id==0))
     {
-        warn(MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_FLOAT_RECV_INT, pctx.line_num+1);
 
         add_instr("I2F\n");
     }
@@ -458,7 +454,7 @@ void declare_ret(expr e, int ret)
     // float with comp const
     if ((left_type == 8) && (e.type == TY_CCONST))
     {
-        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -468,7 +464,7 @@ void declare_ret(expr e, int ret)
     // float with comp var
     if ((left_type == 8) && (e.type == TY_COMP) && (e.id!=0))
     {
-        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -478,7 +474,7 @@ void declare_ret(expr e, int ret)
     // float with comp acc
     if ((left_type == 8) && (e.type == TY_COMP) && (e.id==0))
     {
-        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
         add_instr("POP\n");
     }
@@ -486,7 +482,7 @@ void declare_ret(expr e, int ret)
     // comp with int var
     if ((left_type == 9) && (e.type == TY_INT) && (e.id!=0))
     {
-        warn(MSG_WARN_RET_COMP_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_INT, pctx.line_num+1);
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -495,7 +491,7 @@ void declare_ret(expr e, int ret)
     // comp with int acc
     if ((left_type == 9) && (e.type == TY_INT) && (e.id==0))
     {
-        warn(MSG_WARN_RET_COMP_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_INT, pctx.line_num+1);
 
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
@@ -504,7 +500,7 @@ void declare_ret(expr e, int ret)
     // comp with float var
     if ((left_type == 9) && (e.type == TY_FLOAT) && (e.id!=0))
     {
-        warn(MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_FLOAT, pctx.line_num+1);
 
         add_instr("LOD %s\n", v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -513,7 +509,7 @@ void declare_ret(expr e, int ret)
     // comp with float acc
     if ((left_type == 9) && (e.type == TY_FLOAT) && (e.id==0))
     {
-        warn(MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_FLOAT, pctx.line_num+1);
 
         add_instr("P_LOD 0.0\n");
     }
@@ -551,7 +547,7 @@ void declare_ret(expr e, int ret)
     add_instr("RET\n");
 
     acc_ok = 0; // even with an exp in the acc, release it to start another function
-    ret_ok = 1; // the return keyword appeared properly in the function
+    pctx.ret_ok = 1; // the return keyword appeared properly in the function
 }
 
 // fires at the opening '{' of a function body. Opens the stmt_list that
@@ -573,7 +569,7 @@ void func_body_begin(void)
         params = xmalloc(sizeof(int) * func_nparams);
         memcpy(params, func_params, sizeof(int) * func_nparams);
     }
-    stmt_append(stmt_func_header(fun_parse, params, func_nparams));
+    stmt_append(stmt_func_header(pctx.fun_parse, params, func_nparams));
     func_nparams = 0;
 }
 
@@ -589,15 +585,15 @@ void func_ret(int id) // id -> id of the current function
     stmt_append(stmt_func(id, body));
 
     // env variable fname becomes empty (left a function)
-    fname = "";
+    pctx.fname = "";
 }
 
 // return without exp (return;)
 void void_ret(void)
 {
     // check whether it really is void, or a non-void by mistake
-    if (v_table[fun_parse].type != TY_FVOID)
-        fatal(MSG_ERR_NO_RETURN_VALUE, line_num+1);
+    if (v_table[pctx.fun_parse].type != TY_FVOID)
+        fatal(MSG_ERR_NO_RETURN_VALUE, pctx.line_num+1);
 
     // if main, jump to the @fim that the end of main emits, where the
     // testbench stops the simulation. With a #PRACA, return; waits in place
@@ -606,7 +602,7 @@ void void_ret(void)
     // v_table via fun_parse (set by the STMT_FUNC walker before walking
     // the body) - the parse-time `fname` is "" by now since walker time
     // happens after parse_end of every function.
-    if (strcmp(v_table[fun_parse].name, "main") != 0)
+    if (strcmp(v_table[pctx.fun_parse].name, "main") != 0)
          add_instr(             "RET\n");
     else if (itr_seen)
          add_sinst(-3, "@fim JMP fim\n");
@@ -641,14 +637,14 @@ stmt_node *vcall(int id)
 {
     if  (v_table[id].type < TY_FVOID)
     {
-        fatal(MSG_ERR_FUNC_WHERE, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_FUNC_WHERE, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
     if (n != v_table[id].n_params)
     {
-        fatal(MSG_ERR_PARAM_COUNT, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_PARAM_COUNT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     v_table[id].used = 1;
@@ -664,18 +660,18 @@ expr_node *fcall(int id)
 {
     if (v_table[id].type == TY_FVOID)
     {
-        fatal(MSG_ERR_VOID_FUNC_USE, line_num+1, v_table[id].name);
+        fatal(MSG_ERR_VOID_FUNC_USE, pctx.line_num+1, v_table[id].name);
     }
     else if (v_table[id].type < TY_FVOID)
     {
-        fatal(MSG_ERR_FUNC_WHERE2, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_FUNC_WHERE2, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
     if (n != v_table[id].n_params)
     {
-        fatal(MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_table[id].name);
+        fatal(MSG_ERR_PARAM_LIST_DIFF, pctx.line_num+1, v_table[id].name);
     }
 
     v_table[id].used = 1;

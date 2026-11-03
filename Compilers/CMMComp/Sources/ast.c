@@ -49,7 +49,7 @@ static expr_node *enode_new(expr_kind k)
 {
     expr_node *n = xcalloc(1, sizeof(*n));
     n->kind = k;
-    n->line = line_num + 1;
+    n->line = pctx.line_num + 1;
     return n;
 }
 
@@ -274,8 +274,8 @@ expr_node *expr_dirac_in(int port)
 void dirac_not_vector(int id)
 {
     char *name = strip_fn_prefix(v_table[id].name);
-    if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST,   line_num + 1, name);
-    else                       fatal(MSG_ERR_NOT_A_VECTOR, line_num + 1, name);
+    if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST,   pctx.line_num + 1, name);
+    else                       fatal(MSG_ERR_NOT_A_VECTOR, pctx.line_num + 1, name);
 }
 
 void expr_free(expr_node *n)
@@ -922,8 +922,8 @@ expr ast_emit_expr(expr_node *n)
     // n->line was captured as `line_num + 1` at parse time, so set n->line - 1 to
     // reproduce exactly what a parse-time print would have shown. Restored on the
     // way out so parse-time diagnostics keep using the real lexer line.
-    int saved_line_num = line_num;
-    if (n) line_num = n->line - 1;
+    int saved_line_num = pctx.line_num;
+    if (n) pctx.line_num = n->line - 1;
     typecheck_expr(n);  // annotate composite n->type before codegen
     shapecheck_expr(n); // a vector or a matrix has no place in a scalar result
     if (n && !is_number(n)) shape_not_number(n);
@@ -933,7 +933,7 @@ expr ast_emit_expr(expr_node *n)
         n->cached  = e;
     }
     emit_line = saved_emit_line;
-    line_num  = saved_line_num;
+    pctx.line_num  = saved_line_num;
     return e;
 }
 
@@ -1360,7 +1360,7 @@ static stmt_node *snode_new(stmt_kind k)
 {
     stmt_node *n = xcalloc(1, sizeof(*n));
     n->kind = k;
-    n->line = line_num + 1;
+    n->line = pctx.line_num + 1;
     return n;
 }
 
@@ -1767,11 +1767,11 @@ static void emit_cond_int_load(expr e, int is_switch)
     // index still converts (F2I, truncating).
     long long mask = mant_pow2() - 1;
     if ((e.type == TY_FLOAT) && (e.id != 0)) {
-        if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
+        if (is_switch) { warn(msg_float, pctx.line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
         else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("AND %lld\n", mask); }
     }
     if ((e.type == TY_FLOAT) && (e.id == 0)) {
-        if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I\n"); }
+        if (is_switch) { warn(msg_float, pctx.line_num+1); add_instr("F2I\n"); }
         else           add_instr("AND %lld\n", mask);
     }
     // a comp condition is true when its real or its imaginary part is not
@@ -1779,15 +1779,15 @@ static void emit_cond_int_load(expr e, int is_switch)
     if (e.type == TY_CCONST) {
         expr etr, eti;
         get_cmp_cst(e, &etr, &eti);
-        if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[etr.id].name); }
+        if (is_switch) { warn(msg_comp, pctx.line_num+1); add_instr("F2I_M %s\n", v_table[etr.id].name); }
         else           { add_instr("LOD %s\n", v_table[etr.id].name); add_instr("ORR %s\n", v_table[eti.id].name); add_instr("AND %lld\n", mask); }
     }
     if ((e.type == TY_COMP) && (e.id != 0)) {
-        if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
+        if (is_switch) { warn(msg_comp, pctx.line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
         else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %lld\n", mask); }
     }
     if ((e.type == TY_COMP) && (e.id == 0)) {                    // the imag part in the acc, the real on the stack
-        if (is_switch) { warn(msg_comp, line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
+        if (is_switch) { warn(msg_comp, pctx.line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
         else           { add_instr("S_ORR\n"); add_instr("AND %lld\n", mask); }
     }
 }
@@ -1862,8 +1862,8 @@ void stmt_emit(stmt_node *n)
     // to set emit_line explicitly from n->line here.
     int saved_emit_line = emit_line;
     emit_line = n->line;
-    int saved_line_num = line_num;   // keep warning / MSG_INFO line in sync (see ast_emit_expr)
-    line_num = n->line - 1;
+    int saved_line_num = pctx.line_num;   // keep warning / MSG_INFO line in sync (see ast_emit_expr)
+    pctx.line_num = n->line - 1;
 
     // the statement emitted right before this one in the same block, nothing
     // between (a while uses it as its for-init: see for_bottom_test); a
@@ -2370,8 +2370,8 @@ void stmt_emit(stmt_node *n)
             // instruction (@fim JMP fim for main, RET for void).
             // Non-void/non-main functions rely on the explicit `return
             // exp;` inside the body to emit their own RET.
-            int saved_fun_parse = fun_parse;
-            fun_parse = n->id;
+            int saved_fun_parse = pctx.fun_parse;
+            pctx.fun_parse = n->id;
             // emit_fname carries this function's name through the body walk so
             // strip_fn_prefix() can strip the "<fn>_" prefix from diagnostics. It is
             // DISPLAY-ONLY: lex_id() still keys off the (empty-during-walk)
@@ -2381,14 +2381,14 @@ void stmt_emit(stmt_node *n)
             emit_fname = v_table[n->id].name;
             int saved_emit_fid = emit_fid;   // the caller of every CAL in the body
             emit_fid  = n->id;
-            ret_ok    = 0;
+            pctx.ret_ok    = 0;
             stmt_emit(n->body);
             emit_fid  = saved_emit_fid;
             emit_fname = saved_emit_fname;
-            fun_parse = saved_fun_parse;
+            pctx.fun_parse = saved_fun_parse;
 
             // not void: no path may reach the end (the next function's code)
-            if ((v_table[n->id].type != TY_FVOID) && (ret_ok == 0 || falls_through(n->body)))
+            if ((v_table[n->id].type != TY_FVOID) && (pctx.ret_ok == 0 || falls_through(n->body)))
             {
                 fatal(MSG_ERR_FUNC_NO_RETURN, v_table[n->id].name);
             }
@@ -2409,7 +2409,7 @@ void stmt_emit(stmt_node *n)
 
     n->emitted = 1;
     emit_line  = saved_emit_line;
-    line_num   = saved_line_num;
+    pctx.line_num   = saved_line_num;
 }
 
 void stmt_free(stmt_node *n)

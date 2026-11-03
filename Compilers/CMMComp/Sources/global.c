@@ -34,9 +34,10 @@ const char *dir_macro = ""; // Macros directory (main's arguments: they live to 
 const char *dir_tmp   = ""; // Temp directory
 static const char *cmm_src = ""; // the .cmm the parser reads (re-read for src_lines.txt)
 
+parse_ctx pctx = {.fname = ""};   // the state of the parse (context.h)
+
 // state variables
 int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
-int  line_num = 0;    // parser-time: line the lexer is currently reading
 int  emit_line= 1;    // emit-time: line the AST walker tags onto each instruction
 int  emit_fid = -1;   // emit-time: id of the function whose body the walker is in (-1: none)
 const char *emit_fname = ""; // emit-time: name of the function whose body the AST
