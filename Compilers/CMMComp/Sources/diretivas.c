@@ -12,7 +12,7 @@
 #include "../Headers/t2t.h"
 #include "../Headers/global.h"
 #include "../Headers/functions.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
 

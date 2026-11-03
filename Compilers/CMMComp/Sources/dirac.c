@@ -34,7 +34,7 @@
 
 #include "../Headers/ast.h"
 #include "../Headers/global.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/diretivas.h"
 #include "../Headers/functions.h"
 #include "../Headers/oper.h"
@@ -85,7 +85,7 @@ static int     flat_mode;        // a matrix is read over one flat index
 static int     cur_dst = -1;     // the array the statement writes (-1: none)
 
 // the first cell of an array as a scalar operand: a v_table entry with the
-// array's name (variaveis.c keeps the count)
+// array's name (symbols.c keeps the count)
 static int *alias_arr, *alias_id, n_alias, cap_alias;
 
 // the statement-level parts computed before the loops

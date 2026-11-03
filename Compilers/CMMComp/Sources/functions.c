@@ -14,7 +14,7 @@
 #include "../Headers/global.h"
 #include "../Headers/itr.h"
 #include "../Headers/data_use.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"

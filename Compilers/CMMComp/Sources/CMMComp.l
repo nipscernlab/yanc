@@ -3,7 +3,7 @@
 #include "y.tab.h"
 
 #include "../Headers/global.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"

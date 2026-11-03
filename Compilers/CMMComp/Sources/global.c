@@ -13,7 +13,7 @@
 #include "../Headers/macros.h"
 #include "../Headers/global.h"
 #include "../Headers/diretivas.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/messages.h"
 #include "../Headers/dirac.h"
 #include "../Headers/functions.h"
@@ -382,7 +382,7 @@ void parse_end(char *d_proc)
 
 	// check consistency of all variables and functions -----------------------
 
-	check_var(); // (variaveis.c)
+	check_var(); // (symbols.c)
 
     // finalize the cmm log file ----------------------------------------------
 

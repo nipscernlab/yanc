@@ -85,7 +85,7 @@ void parse_lang_flag(int *argc, char **argv);
       "Error on line %d: the variable '%s' already exists. Go grab an Ω³!\n")
 
 // a declared name, as the .asm spells it, already belongs to something else,
-// or the assembler would read it as an instruction (check_name, variaveis.c)
+// or the assembler would read it as an instruction (check_name, symbols.c)
 #define MSG_ERR_NAME_TAKEN \
     M("Erro na linha %d: %s vira '%s' no assembly, e esse nome já é %s. Troque um dos dois nomes.\n", \
       "Error on line %d: %s is '%s' in the assembly, and that name is already %s. Rename one of them.\n")
@@ -522,7 +522,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: índice de array tá dando float. Vai gerar muito código pra truncar!\n", \
       "Heads up on line %d: array index is coming out float. Gonna generate a ton of code to truncate it!\n")
 
-// unused-variable errors/warnings (variaveis.c) -----------------------------
+// unused-variable errors/warnings (symbols.c) -----------------------------
 
 // a variable never read is not in the program (asm_unread), nor in the waveform
 #define MSG_WARN_UNUSED_GLOBAL_VAR \

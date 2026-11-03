@@ -70,7 +70,7 @@
 #include "../Headers/macros.h"      // assembler macros
 #include "../Headers/functions.h"     // function creation and usage
 #include "../Headers/data_use.h"    // data usage
-#include "../Headers/variaveis.h"   // variable table
+#include "../Headers/symbols.h"   // variable table
 #include "../Headers/diretivas.h"   // compilation directives
 #include "../Headers/data_declar.h" // data declaration
 #include "../Headers/data_assign.h" // data assignment

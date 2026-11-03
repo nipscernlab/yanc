@@ -13,7 +13,7 @@
 #include "../Headers/global.h"
 #include "../Headers/functions.h"
 #include "../Headers/data_use.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/data_assign.h"
 #include "../Headers/array_index.h"
 #include "../Headers/messages.h"

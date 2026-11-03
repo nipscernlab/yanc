@@ -15,7 +15,7 @@
 #include "../Headers/global.h"
 #include "../Headers/stdlib.h"
 #include "../Headers/functions.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
 #include "../../common/xstr.h"

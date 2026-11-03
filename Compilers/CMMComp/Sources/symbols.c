@@ -14,7 +14,7 @@
 // local includes
 #include "../Headers/global.h"
 #include "../Headers/functions.h"
-#include "../Headers/variaveis.h"
+#include "../Headers/symbols.h"
 #include "../Headers/diretivas.h"
 #include "../Headers/messages.h"
 #include "../Headers/data_declar.h"
@@ -24,7 +24,7 @@
 #include "../../common/yanc_num.h"
 
 int          v_count = 0;  // stores the size of the table
-int          fnum_quiet = 0; // 1: lex_fnum says nothing of an approximation (variaveis.h)
+int          fnum_quiet = 0; // 1: lex_fnum says nothing of an approximation (symbols.h)
 static int   v_cap   = 0;  // current capacity of the parallel arrays
 
 // AoS storage: one row per identifier. All attributes (name, type, used,

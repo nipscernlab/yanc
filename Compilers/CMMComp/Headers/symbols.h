@@ -2,8 +2,8 @@
 // identifier table -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-#ifndef CMM_VARIAVEIS_H
-#define CMM_VARIAVEIS_H
+#ifndef CMM_SYMBOLS_H
+#define CMM_SYMBOLS_H
 
 #include "types.h"
 
@@ -69,4 +69,4 @@ int lex_cnum(char *text);               // a comp constant was found
 char *fnum_text (const char *in);       // a float literal as the .asm writes it (the block is the caller's)
 void cnum_split(const char *txt, char **re, char **im); // a comp literal's two parts (the blocks are the caller's)
 
-#endif // CMM_VARIAVEIS_H
+#endif // CMM_SYMBOLS_H

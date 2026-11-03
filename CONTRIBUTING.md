@@ -78,7 +78,7 @@ When you add a new diagnostic:
 ### Memory and tables
 
 The symbol table of cmmcomp (`v_table`, one `symbol` row per name, in
-`variaveis.c`) is grow-on-demand: it starts small and `realloc`s on
+`symbols.c`) is grow-on-demand: it starts small and `realloc`s on
 overflow, with `memset` to keep the BSS-zero semantics that callers rely
 on. A new attribute of a name is a new field of `symbol`, and it grows
 with the table through `var_grow`.
