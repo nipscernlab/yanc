@@ -22,7 +22,7 @@
 void ass_set(int id, expr e)
 {
     // test whether it has been declared so an assignment is allowed
-    if (v_table[id].type == 0)
+    if (v_table[id].type == TY_NONE)
     {
         fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name));
     }
@@ -41,7 +41,7 @@ void ass_set(int id, expr e)
 
     // left int and right int in memory ---------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 1) && (e.id != 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_INT) && (e.id != 0))
     {
         add_instr("LOD %s\n",  v_table[e.id].name);
         add_instr("SET %s\n" , v_table[id       ].name);
@@ -49,14 +49,14 @@ void ass_set(int id, expr e)
 
     // left int and right int in the acc --------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 1) && (e.id == 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_INT) && (e.id == 0))
     {
         add_instr("SET %s\n", v_table[id].name);
     }
 
     // left int and right float in memory -------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 2) && (e.id != 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_FLOAT) && (e.id != 0))
     {
         warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name));
 
@@ -66,7 +66,7 @@ void ass_set(int id, expr e)
 
     // left int and right float in the acc ------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 2) && (e.id == 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_FLOAT) && (e.id == 0))
     {
         warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name));
 
@@ -77,7 +77,7 @@ void ass_set(int id, expr e)
 
     // left int and right comp const ------------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 5))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_CCONST))
     {
         warn(MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -89,7 +89,7 @@ void ass_set(int id, expr e)
 
     // left int and right comp in memory --------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 3) && (e.id != 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_COMP) && (e.id != 0))
     {
         warn(MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -99,7 +99,7 @@ void ass_set(int id, expr e)
 
     // left int and right comp in the acc -------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 3) && (e.id == 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_COMP) && (e.id == 0))
     {
         warn(MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -110,7 +110,7 @@ void ass_set(int id, expr e)
 
     // left float and right int in memory -------------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 1) && (e.id != 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_INT) && (e.id != 0))
     {
         warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name));
 
@@ -120,7 +120,7 @@ void ass_set(int id, expr e)
 
     // left float and right int in the acc ------------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 1) && (e.id == 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_INT) && (e.id == 0))
     {
         warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name));
 
@@ -130,7 +130,7 @@ void ass_set(int id, expr e)
 
     // left float and right float in memory -----------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 2) && (e.id != 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_FLOAT) && (e.id != 0))
     {
         add_instr("LOD %s\n", v_table[e.id].name);
         add_instr("SET %s\n", v_table[id     ].name);
@@ -138,14 +138,14 @@ void ass_set(int id, expr e)
 
     // left float and right float in the acc ----------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 2) && (e.id == 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_FLOAT) && (e.id == 0))
     {
         add_instr("SET %s\n", v_table[id].name);
     }
 
     // left float and right comp const ----------------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 5))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_CCONST))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -157,7 +157,7 @@ void ass_set(int id, expr e)
 
     // left float and right comp in memory ------------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 3) && (e.id != 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_COMP) && (e.id != 0))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -169,7 +169,7 @@ void ass_set(int id, expr e)
 
     // left float and right comp in the acc -----------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 3) && (e.id == 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_COMP) && (e.id == 0))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -179,7 +179,7 @@ void ass_set(int id, expr e)
 
     // left comp and right int in memory --------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 1) && (e.id != 0))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id != 0))
     {
         warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name));
 
@@ -192,7 +192,7 @@ void ass_set(int id, expr e)
 
     // left comp and right int in the acc -------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 1) && (e.id == 0))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id == 0))
     {
         warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name));
 
@@ -205,7 +205,7 @@ void ass_set(int id, expr e)
 
     // left comp and right float var in memory --------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 2) && (e.id != 0))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id != 0))
     {
         warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name));
 
@@ -218,7 +218,7 @@ void ass_set(int id, expr e)
 
     // left comp and right float in the acc -----------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 2) && (e.id == 0))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id == 0))
     {
         warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name));
 
@@ -230,7 +230,7 @@ void ass_set(int id, expr e)
 
     // left comp and right comp const -----------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 5))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_CCONST))
     {
         get_cmp_cst(e,&etr,&eti);
 
@@ -243,7 +243,7 @@ void ass_set(int id, expr e)
 
     // left comp and right comp in memory -------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 3) && (e.id != 0))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_COMP) && (e.id != 0))
     {
         get_cmp_ets(e,&etr,&eti);
 
@@ -256,7 +256,7 @@ void ass_set(int id, expr e)
 
     // left comp and right comp in the acc ------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 3) && (e.id == 0))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_COMP) && (e.id == 0))
     {
         add_instr("SET_P %s_i\n", v_table[id].name);
         add_instr("SET %s\n"    , v_table[id].name);
@@ -277,19 +277,19 @@ void ass_set(int id, expr e)
 void ass_array_const(int id, int k, int dims, expr e)
 {
     // the same checks as ass_array (a write does not mark the array used)
-    if (v_table[id].type == 0)
+    if (v_table[id].type == TY_NONE)
         fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name));
     if (v_table[id].isar == 0)
         fatal(MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name));
     if (v_table[id].isar == 2 && dims == 1)   // arr_1d_index refuses it on the general path
         fatal(MSG_ERR_ARRAY_2D, line_num+1, rem_fname(v_table[id].name));
 
-    if (v_table[id].type == 3)
+    if (v_table[id].type == TY_COMP)
     {
         if (e.id != 0)                                          // comp var or literal
         {
             expr er, ei;
-            if (e.type == 5) get_cmp_cst(e, &er, &ei); else get_cmp_ets(e, &er, &ei);
+            if (e.type == TY_CCONST) get_cmp_cst(e, &er, &ei); else get_cmp_ets(e, &er, &ei);
             add_instr("LOD %s\n"     , v_table[er.id].name);
             add_instr("SET_V %s %d\n", v_table[id].name, k);
             add_instr("LOD %s\n"     , v_table[ei.id].name);
@@ -320,7 +320,7 @@ int ass_idx_reload = 0;
 void ass_array(int id, expr e, int fft)
 {
     // test whether it has been declared so an assignment is allowed
-    if (v_table[id].type == 0)
+    if (v_table[id].type == TY_NONE)
     {
         fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name));
     }
@@ -341,7 +341,7 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right int in memory ---------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 1) && (e.id != 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_INT) && (e.id != 0))
     {
         add_instr("P_LOD %s\n",   v_table[e.id].name);
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -349,14 +349,14 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right int in the acc --------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 1) && (e.id == 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_INT) && (e.id == 0))
     {
         add_instr("%s %s\n", set_type, v_table[id].name);
     }
 
     // left int and right float in memory -------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 2) && (e.id != 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_FLOAT) && (e.id != 0))
     {
         warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name));
 
@@ -366,7 +366,7 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right float in the acc ------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 2) && (e.id == 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_FLOAT) && (e.id == 0))
     {
         warn(MSG_WARN_INT_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name));
 
@@ -376,7 +376,7 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right comp const ------------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 5))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_CCONST))
     {
         warn(MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -388,7 +388,7 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right comp in memory --------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 3) && (e.id != 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_COMP) && (e.id != 0))
     {
         warn(MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -400,7 +400,7 @@ void ass_array(int id, expr e, int fft)
 
     // left int and right comp in the acc -------------------------------------
 
-    if ((v_table[id].type == 1) && (e.type == 3) && (e.id == 0))
+    if ((v_table[id].type == TY_INT) && (e.type == TY_COMP) && (e.id == 0))
     {
         warn(MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -411,7 +411,7 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right int in memory -------------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 1) && (e.id != 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_INT) && (e.id != 0))
     {
         warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name));
 
@@ -421,7 +421,7 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right int in the acc ------------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 1) && (e.id == 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_INT) && (e.id == 0))
     {
         warn(MSG_WARN_FLOAT_RECV_INT, line_num+1, rem_fname(v_table[id].name));
 
@@ -431,7 +431,7 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right float in memory -----------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 2) && (e.id != 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_FLOAT) && (e.id != 0))
     {
         add_instr("P_LOD %s\n",   v_table[e.id].name);
         add_instr("%s %s\n", set_type, v_table[id].name);
@@ -439,14 +439,14 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right float in the acc ----------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 2) && (e.id == 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_FLOAT) && (e.id == 0))
     {
         add_instr("%s %s\n", set_type, v_table[id].name);
     }
 
     // left float and right comp const ----------------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 5))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_CCONST))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -458,7 +458,7 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right comp in memory ------------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 3) && (e.id != 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_COMP) && (e.id != 0))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -470,7 +470,7 @@ void ass_array(int id, expr e, int fft)
 
     // left float and right comp in the acc -----------------------------------
 
-    if ((v_table[id].type == 2) && (e.type == 3) && (e.id == 0))
+    if ((v_table[id].type == TY_FLOAT) && (e.type == TY_COMP) && (e.id == 0))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -480,7 +480,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right int in memory --------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 1) && (e.id != 0))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id != 0))
     {
         warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name));
 
@@ -495,7 +495,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right int in the acc -------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 1) && (e.id == 0) && ass_idx_reload)
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id == 0) && ass_idx_reload)
     {
         warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name));
 
@@ -505,7 +505,7 @@ void ass_array(int id, expr e, int fft)
         add_instr("P_LOD 0.0\n");
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
-    else if ((v_table[id].type == 3) && (e.type == 1) && (e.id == 0))
+    else if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id == 0))
     {
         warn(MSG_WARN_COMP_RECV_INT, line_num+1, rem_fname(v_table[id].name));
 
@@ -522,7 +522,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right float in memory ------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 2) && (e.id != 0))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id != 0))
     {
         warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name));
 
@@ -537,7 +537,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right float in the acc -----------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 2) && (e.id == 0) && ass_idx_reload)
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id == 0) && ass_idx_reload)
     {
         warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name));
 
@@ -546,7 +546,7 @@ void ass_array(int id, expr e, int fft)
         add_instr("P_LOD 0.0\n");
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
-    else if ((v_table[id].type == 3) && (e.type == 2) && (e.id == 0))
+    else if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id == 0))
     {
         warn(MSG_WARN_COMP_RECV_FLOAT, line_num+1, rem_fname(v_table[id].name));
 
@@ -562,7 +562,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right comp const -----------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 5))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_CCONST))
     {
         get_cmp_cst(e,&etr,&eti);
 
@@ -577,7 +577,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right comp in memory -------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 3) && (e.id != 0))
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_COMP) && (e.id != 0))
     {
         get_cmp_ets(e,&etr,&eti);
 
@@ -592,7 +592,7 @@ void ass_array(int id, expr e, int fft)
 
     // left comp and right comp in the acc ------------------------------------
 
-    if ((v_table[id].type == 3) && (e.type == 3) && (e.id == 0) && ass_idx_reload)
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_COMP) && (e.id == 0) && ass_idx_reload)
     {
         add_instr("SET_P __aux_var\n");                              // the imag aside, the real in the acc
         add_instr("%s %s\n"  , set_type, v_table[id].name);         // over the index on the stack
@@ -600,7 +600,7 @@ void ass_array(int id, expr e, int fft)
         add_instr("P_LOD __aux_var\n");
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
-    else if ((v_table[id].type == 3) && (e.type == 3) && (e.id == 0))
+    else if ((v_table[id].type == TY_COMP) && (e.type == TY_COMP) && (e.id == 0))
     {
         add_instr("SET_P __aux_var\n" );
         add_instr("SET_P __aux_var2\n");

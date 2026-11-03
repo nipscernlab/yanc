@@ -44,21 +44,21 @@ void arr_1d_index(int id, expr e)
 
     // when int in memory -------------------------------------------------
 
-    if ((e.type == 1) && (e.id != 0))
+    if ((e.type == TY_INT) && (e.id != 0))
     {
         add_instr("LOD %s\n", v_table[e.id].name);
     }
 
     // when int in acc ----------------------------------------------------
 
-    if ((e.type == 1) && (e.id == 0))
+    if ((e.type == TY_INT) && (e.id == 0))
     {
         // nothing to do
     }
 
     // when float in memory -----------------------------------------
 
-    if ((e.type == 2) && (e.id != 0))
+    if ((e.type == TY_FLOAT) && (e.id != 0))
     {
         warn(MSG_WARN_IDX_FLOAT, line_num+1);
 
@@ -67,7 +67,7 @@ void arr_1d_index(int id, expr e)
 
     // when float in acc --------------------------------------------------
 
-    if ((e.type == 2) && (e.id == 0))
+    if ((e.type == TY_FLOAT) && (e.id == 0))
     {
         warn(MSG_WARN_IDX_FLOAT, line_num+1);
 
@@ -76,7 +76,7 @@ void arr_1d_index(int id, expr e)
 
     // when comp const in memory ------------------------------------------
 
-    if (e.type == 5)
+    if (e.type == TY_CCONST)
     {
         warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -87,7 +87,7 @@ void arr_1d_index(int id, expr e)
 
     // when comp in acc ---------------------------------------------------
 
-    if ((e.type == 3) && (e.id == 0))
+    if ((e.type == TY_COMP) && (e.id == 0))
     {
         warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -97,7 +97,7 @@ void arr_1d_index(int id, expr e)
 
     // when comp in memory ------------------------------------------------
 
-    if ((e.type == 3) && (e.id != 0))
+    if ((e.type == TY_COMP) && (e.id != 0))
     {
         warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -129,7 +129,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     expr etr, eti;
 
     // int in acc and int in acc
-    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
+    if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
         add_instr("SET_P __aux_var\n");
         add_instr("MLT   %d\n", v_table[id].siz2);
@@ -137,14 +137,14 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in acc and int in memory
-    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
+    if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
         add_instr("MLT %d\n", v_table[id].siz2);
         add_instr("ADD %s\n",  v_table[e2.id].name);
     }
 
     // int in acc and float in acc
-    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
+    if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -155,7 +155,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in acc and float in memory
-    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
+    if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -165,7 +165,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in acc and comp const in memory
-    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
+    if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -177,7 +177,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in acc and comp in acc
-    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
+    if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -189,7 +189,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in acc and comp in memory
-    if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
+    if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -199,7 +199,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in memory and int in acc
-    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+    if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
         add_instr("P_LOD %s\n",  v_table[e1.id].name);
         add_instr("MLT   %d\n", v_table[id].siz2);
@@ -207,7 +207,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in memory and int in memory
-    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+    if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
         add_instr("LOD  %s\n",  v_table[e1.id].name);
         add_instr("MLT  %d\n", v_table[id].siz2);
@@ -215,7 +215,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in memory and float in acc
-    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+    if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -226,7 +226,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in memory and float in memory
-    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+    if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -237,7 +237,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in memory and comp const in memory
-    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+    if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -250,7 +250,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in memory and comp in acc
-    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+    if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -262,7 +262,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // int in memory and comp in memory
-    if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+    if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -273,7 +273,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and int in acc
-    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
+    if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -284,7 +284,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and int in memory
-    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
+    if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -294,7 +294,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and float in acc
-    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
+    if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_FLOAT, line_num+1);
 
@@ -306,7 +306,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and float in memory
-    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
+    if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -317,7 +317,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and comp const in memory
-    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
+    if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -330,7 +330,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and comp in acc
-    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
+    if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -343,7 +343,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in acc and comp in memory
-    if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
+    if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -354,7 +354,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in memory and int in acc
-    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+    if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -364,7 +364,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in memory and int in memory
-    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+    if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -374,7 +374,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in memory and float in acc
-    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+    if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_FLOAT, line_num+1);
 
@@ -385,7 +385,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in memory and float in memory
-    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+    if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_FLOAT, line_num+1);
 
@@ -396,7 +396,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in memory and comp const in memory
-    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+    if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -409,7 +409,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in memory and comp in acc
-    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+    if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -421,7 +421,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // float in memory and comp in memory
-    if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+    if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -432,7 +432,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and int in acc
-    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+    if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -444,7 +444,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and int in memory
-    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+    if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -456,7 +456,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and float in acc
-    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+    if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -469,7 +469,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and float in memory
-    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+    if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -482,7 +482,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and comp const in memory
-    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+    if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -496,7 +496,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and comp in acc
-    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+    if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -510,7 +510,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp const in memory and comp in memory
-    if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+    if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -523,7 +523,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and int in acc
-    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
+    if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -535,7 +535,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and int in memory
-    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
+    if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -546,7 +546,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and float in acc
-    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
+    if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -559,7 +559,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and float in memory
-    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
+    if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -571,7 +571,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and comp const in memory
-    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
+    if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -585,7 +585,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and comp in acc
-    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
+    if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -599,7 +599,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in acc and comp in memory
-    if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
+    if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -611,7 +611,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in memory and int in acc
-    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+    if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -621,7 +621,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in memory and int in memory
-    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+    if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -631,7 +631,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in memory and float in acc
-    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+    if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -642,7 +642,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in memory and float in memory
-    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+    if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -653,7 +653,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in memory and comp const in memory
-    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+    if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -666,7 +666,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in memory and comp in acc
-    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+    if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -678,7 +678,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     }
 
     // comp in memory and comp in memory
-    if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+    if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
         warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -708,7 +708,7 @@ void arr_2d_index(int id, expr e1, expr e2)
 expr arr_1d2exp_const(int id, int k, int dims)
 {
     // the same checks and use mark as arr_1d2exp
-    if (v_table[id].type == 0)
+    if (v_table[id].type == TY_NONE)
         fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
     if (v_table[id].isar == 0)
         fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
@@ -718,7 +718,7 @@ expr arr_1d2exp_const(int id, int k, int dims)
 
     if (acc_ok) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);
     else        add_instr(  "LOD_V %s %d\n", v_table[id].name, k);
-    if (v_table[id].type == 3) add_instr("P_LOD_V %s_i %d\n", v_table[id].name, k);
+    if (v_table[id].type == TY_COMP) add_instr("P_LOD_V %s_i %d\n", v_table[id].name, k);
     acc_ok = 1;  // value now in the accumulator
     return expr_make(v_table[id].type, 0);
 }
@@ -730,7 +730,7 @@ expr arr_1d2exp(int id, expr e, int fft)
     // consistency checks -----------------------------------------------------
 
     // test whether the variable has been declared
-    if (v_table[id].type == 0)
+    if (v_table[id].type == TY_NONE)
         fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
 
     // must check that it really is an array
@@ -759,20 +759,20 @@ expr arr_1d2exp(int id, expr e, int fft)
     if (type < 3)
     {
         // int in acc
-        if ((e.type == 1) && (e.id == 0))
+        if ((e.type == TY_INT) && (e.id == 0))
         {
             add_instr("%s %s\n", ldv, v_table[id].name);
         }
 
         // int in memory
-        if ((e.type == 1) && (e.id != 0))
+        if ((e.type == TY_INT) && (e.id != 0))
         {
             add_instr("%s %s\n", ldi, v_table[e.id].name);
             add_instr("%s %s\n", ldv, v_table[id].name);
         }
 
         // float in acc
-        if ((e.type == 2) && (e.id == 0))
+        if ((e.type == TY_FLOAT) && (e.id == 0))
         {
             warn(MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
@@ -781,7 +781,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // float in memory
-        if ((e.type == 2) && (e.id != 0))
+        if ((e.type == TY_FLOAT) && (e.id != 0))
         {
             warn(MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
@@ -790,7 +790,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp const in memory
-        if ((e.type == 5) && (e.id != 0))
+        if ((e.type == TY_CCONST) && (e.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -801,7 +801,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp in acc
-        if ((e.type == 3) && (e.id == 0))
+        if ((e.type == TY_COMP) && (e.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -811,7 +811,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp in memory
-        if ((e.type == 3) && (e.id != 0))
+        if ((e.type == TY_COMP) && (e.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -825,7 +825,7 @@ expr arr_1d2exp(int id, expr e, int fft)
     else
     {
         // int in acc
-        if ((e.type == 1) && (e.id == 0))
+        if ((e.type == TY_INT) && (e.id == 0))
         {
             add_instr("SET   __aux_var\n");
             add_instr("%s %s\n"  , ldv, v_table[id].name);
@@ -834,7 +834,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // int in memory
-        if ((e.type == 1) && (e.id != 0))
+        if ((e.type == TY_INT) && (e.id != 0))
         {
             add_instr("%s %s\n"    , ldi, v_table[e.id].name);
             add_instr("%s %s\n"    , ldv, v_table[id].name);
@@ -843,7 +843,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // float in acc
-        if ((e.type == 2) && (e.id == 0))
+        if ((e.type == TY_FLOAT) && (e.id == 0))
         {
             warn(MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
@@ -855,7 +855,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // float in memory
-        if ((e.type == 2) && (e.id != 0))
+        if ((e.type == TY_FLOAT) && (e.id != 0))
         {
             warn(MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
 
@@ -867,7 +867,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp const in memory
-        if ((e.type == 5) && (e.id != 0))
+        if ((e.type == TY_CCONST) && (e.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -881,7 +881,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp in acc
-        if ((e.type == 3) && (e.id == 0))
+        if ((e.type == TY_COMP) && (e.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -894,7 +894,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
 
         // comp in memory
-        if ((e.type == 3) && (e.id != 0))
+        if ((e.type == TY_COMP) && (e.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
 
@@ -918,7 +918,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     // consistency checks -----------------------------------------------------
 
     // test whether the variable has been declared
-    if (v_table[id].type == 0)
+    if (v_table[id].type == TY_NONE)
         fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
 
     // must check that it really is a 2D array
@@ -950,7 +950,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     if (type < 3)
     {
         // int in acc and int in memory
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             add_instr("MLT %d\n", v_table[id].siz2);
             add_instr("ADD %s\n" , v_table[e2.id].name);
@@ -958,7 +958,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and float in acc
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -970,7 +970,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and float in memory
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -981,7 +981,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp const in memory
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -994,7 +994,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp in acc
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1007,7 +1007,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp in memory
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1018,7 +1018,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and int in memory
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             add_instr( "%s %s\n", ldi, v_table[e1.id].name);
             add_instr("MLT %d\n"    , v_table[id].siz2);
@@ -1027,7 +1027,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and float in acc
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -1039,7 +1039,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and float in memory
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -1051,7 +1051,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp const in memory
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1065,7 +1065,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp in acc
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1078,7 +1078,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp in memory
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1090,7 +1090,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and int in acc
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -1102,7 +1102,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and int in memory
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -1113,7 +1113,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and float in acc
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_FLOAT, line_num+1);
 
@@ -1126,7 +1126,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and float in memory
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1138,7 +1138,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp const in memory
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1152,7 +1152,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp in acc
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1166,7 +1166,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp in memory
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1178,7 +1178,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and int in acc
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -1189,7 +1189,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and int in memory
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -1200,7 +1200,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and float in acc
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_FLOAT, line_num+1);
 
@@ -1212,7 +1212,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and float in memory
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1224,7 +1224,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp const in memory
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1238,7 +1238,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp in acc
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1252,7 +1252,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp in memory
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1264,7 +1264,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and int in acc
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1277,7 +1277,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and int in memory
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1290,7 +1290,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and float in acc
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1304,7 +1304,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and float in memory
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1318,7 +1318,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp const in memory
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1333,7 +1333,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp in acc
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1348,7 +1348,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp in memory
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1362,7 +1362,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and int in acc
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1375,7 +1375,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and int in memory
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1387,7 +1387,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and float in acc
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1401,7 +1401,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and float in memory
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1414,7 +1414,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp const in memory
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1429,7 +1429,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp in acc
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1444,7 +1444,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp in memory
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1457,7 +1457,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and int in acc
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1468,7 +1468,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and int in memory
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1479,7 +1479,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and float in acc
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1491,7 +1491,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and float in memory
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1503,7 +1503,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp const in memory
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1517,7 +1517,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp in acc
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1530,7 +1530,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp in memory
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1547,7 +1547,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     else
     {
         // int in acc and int in memory
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             add_instr("MLT   %d\n" , v_table[id].siz2);
             add_instr("ADD   %s\n"  , v_table[e2.id].name);
@@ -1558,7 +1558,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and float in acc
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -1573,7 +1573,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and float in memory
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -1587,7 +1587,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp const in memory
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1603,7 +1603,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp in acc
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1619,7 +1619,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in acc and comp in memory
-        if ((e1.type == 1) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1633,7 +1633,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and int in memory
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             add_instr( "%s   %s\n", ldi, v_table[e1.id].name);
             add_instr("MLT   %d\n"    , v_table[id].siz2);
@@ -1645,7 +1645,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and float in acc
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -1660,7 +1660,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and float in memory
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX2_FLOAT, line_num+1);
 
@@ -1675,7 +1675,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp const in memory
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1692,7 +1692,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp in acc
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1708,7 +1708,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // int in memory and comp in memory
-        if ((e1.type == 1) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1723,7 +1723,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and int in acc
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -1738,7 +1738,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and int in memory
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -1752,7 +1752,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and float in acc
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_FLOAT, line_num+1);
 
@@ -1768,7 +1768,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and float in memory
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1783,7 +1783,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp const in memory
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1800,7 +1800,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp in acc
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1817,7 +1817,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in acc and comp in memory
-        if ((e1.type == 2) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1832,7 +1832,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and int in acc
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX1_FLOAT, line_num+1);
 
@@ -1846,7 +1846,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and int in memory
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1860,7 +1860,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and float in acc
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1875,7 +1875,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and float in memory
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1890,7 +1890,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp const in memory
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1908,7 +1908,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp in acc
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1924,7 +1924,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // float in memory and comp in memory
-        if ((e1.type == 2) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1939,7 +1939,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and int in acc
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1955,7 +1955,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and int in memory
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -1971,7 +1971,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and float in acc
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -1988,7 +1988,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and float in memory
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2005,7 +2005,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp const in memory
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2023,7 +2023,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp in acc
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2041,7 +2041,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp const in memory and comp in memory
-        if ((e1.type == 5) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2058,7 +2058,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and int in acc
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -2074,7 +2074,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and int in memory
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -2089,7 +2089,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and float in acc
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2106,7 +2106,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and float in memory
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2122,7 +2122,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp const in memory
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2140,7 +2140,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp in acc
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2158,7 +2158,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in acc and comp in memory
-        if ((e1.type == 3) && (e1.id == 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2174,7 +2174,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and int in acc
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -2188,7 +2188,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and int in memory
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 1) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
 
@@ -2202,7 +2202,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and float in acc
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2217,7 +2217,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and float in memory
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 2) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2232,7 +2232,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp const in memory
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 5) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2249,7 +2249,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp in acc
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id == 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 
@@ -2265,7 +2265,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
 
         // comp in memory and comp in memory
-        if ((e1.type == 3) && (e1.id != 0) && (e2.type == 3) && (e2.id != 0))
+        if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
             warn(MSG_WARN_IDXS_MESS, line_num+1);
 

@@ -492,7 +492,7 @@ exp:       terminal                           {$$ = $1;}
          |    '-' exp                         {$$ = expr_minus($2);}            // -2i: one comp literal
          // -128 at 8 bits: 128 does not fit the word, so the lexer gives it
          // as a DIMIN, a value only here (and in a brace list)
-         |    '-' DIMIN                       {$$ = expr_unop(OP_NEG, expr_lit(1, $2));}
+         |    '-' DIMIN                       {$$ = expr_unop(OP_NEG, expr_lit(TY_INT, $2));}
          |    '!' exp                         {$$ = expr_unop(OP_LIN, $2);}
          |    '~' exp                         {$$ = expr_unop(OP_INV, $2);}
          | ID                         PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, NULL, NULL);}
@@ -546,15 +546,15 @@ dchain   : DBAR ID                            {$$ = dirac_open(0, $2);}
 // with its statement when the walker reaches it after the parse.
 
          // constants
-terminal : INUM                               {$$ = expr_lit(1, inum_word($1));}
+terminal : INUM                               {$$ = expr_lit(TY_INT, inum_word($1));}
          // a hex, octal or binary literal with the sign bit set is a negative
          // int, as in C: the negation of its magnitude (literals stay positive);
          // the most negative one, whose magnitude does not fit, is -max - 1
-         | NINUM                              {$$ = expr_unop(OP_NEG, expr_lit(1, $1));}
-         | NIMIN                              {$$ = expr_binop(OP_SUB, expr_unop(OP_NEG, expr_lit(1, $1)),
-                                                               expr_lit(1, exec_inum("1")));}
-         | FNUM                               {$$ = expr_lit(2, $1);}
-         | CNUM                               {$$ = expr_lit(5, $1);}
+         | NINUM                              {$$ = expr_unop(OP_NEG, expr_lit(TY_INT, $1));}
+         | NIMIN                              {$$ = expr_binop(OP_SUB, expr_unop(OP_NEG, expr_lit(TY_INT, $1)),
+                                                               expr_lit(TY_INT, exec_inum("1")));}
+         | FNUM                               {$$ = expr_lit(TY_FLOAT, $1);}
+         | CNUM                               {$$ = expr_lit(TY_CCONST, $1);}
          // variables
          | ID                                 {$$ = expr_var(v_table[$1].type, $1);}
 

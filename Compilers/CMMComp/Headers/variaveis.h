@@ -5,6 +5,8 @@
 #ifndef CMM_VARIAVEIS_H
 #define CMM_VARIAVEIS_H
 
+#include "types.h"
+
 #include <stddef.h>
 
 // One row of the symbol table.
@@ -12,10 +14,10 @@ typedef struct symbol {
     char *name;       // name of the variable or function, in a block of its own
                       // (add_var's xstrdup), never moved or freed: code may keep
                       // the pointer while the table grows
-    int  type;        // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 4 -> a comp's imaginary part, 5 -> const comp, 6-9 -> function returning void, int, float, comp
+    int  type;        // a TY_* code of types.h: TY_NONE until declared, a value type, or a function's
     int  used;        // whether the ID has already been used
     int  npar;        // if the ID is a function, how many parameters it has
-    int *ptyp;        // and the type of each one (1, 2 or 3), npar entries
+    int *ptyp;        // and the type of each one (TY_INT, TY_FLOAT or TY_COMP), npar entries
     int  fnid;        // ID of the function the variable belongs to
     int  isar;        // whether the variable is an array
     int  isco;        // whether the variable is a constant

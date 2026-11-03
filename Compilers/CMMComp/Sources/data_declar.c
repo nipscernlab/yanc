@@ -48,7 +48,7 @@ void declar_var(int id)
     if (type_tmp > 2)
     {
         int idi              = get_img_id(id);
-        v_table[idi].type          = 4; // use type 4 for the imaginary part
+        v_table[idi].type          = TY_IMAG; // use type 4 for the imaginary part
         v_table[idi].used          = 0;
         v_table[idi].fnid    = find_var(fname);
     }

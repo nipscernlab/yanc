@@ -36,7 +36,7 @@ expr num2exp(int id, int dtype)
 expr id2exp(int id)
 {
     // test whether the variable has already been declared
-    if (v_table[id].type == 0)
+    if (v_table[id].type == TY_NONE)
         fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
 
     // if it is an array, the index is missing
@@ -51,7 +51,7 @@ expr id2exp(int id)
 // ++ reduction into expr
 expr pplus2exp(int id, int old)
 {
-    if (v_table[id].type > 2)
+    if (v_table[id].type > TY_FLOAT)
         fatal(MSG_ERR_INCR_COMPLEX, line_num+1);
 
     // equivalent to taking x in the expression (x+1)
@@ -71,7 +71,7 @@ expr pplus2exp(int id, int old)
     // now turn the 1 into an expr (same data type as x): the name is the
     // assembler operand, so a float x needs "1.0" -- "1" would be assembled
     // as the int 1, whose bits the float adder reads as an unnormalised number
-    char *one = (e.type == 2) ? "1.0" : "1";
+    char *one = (e.type == TY_FLOAT) ? "1.0" : "1";
     if (find_var(one) == -1) add_var(one);
     int  lval = find_var(one);
     expr e1   = num2exp(lval, e.type);
@@ -93,7 +93,7 @@ expr pplus2exp(int id, int old)
 // ++ reduction into expr on a 1D array
 expr pplus1d2exp(int id, expr ete, int old)
 {
-    if (v_table[id].type > 2)
+    if (v_table[id].type > TY_FLOAT)
         fatal(MSG_ERR_INCR_COMPLEX, line_num+1);
 
     // a live operand in the acc (e.g. the left side of `y + x[i]++`) goes to
@@ -109,12 +109,12 @@ expr pplus1d2exp(int id, expr ete, int old)
     expr e = expr_make(v_table[id].type, 0);
     // a float element whose old value is wanted: keep a copy (the index sits
     // on the stack top for STI, so the stack cannot hold it)
-    if (old && e.type == 2) add_instr("SET __aux_var\n");
+    if (old && e.type == TY_FLOAT) add_instr("SET __aux_var\n");
 
     // now turn the 1 into an expr (same data type as x): the name is the
     // assembler operand, so a float x needs "1.0" -- "1" would be assembled
     // as the int 1, whose bits the float adder reads as an unnormalised number
-    char *one = (e.type == 2) ? "1.0" : "1";
+    char *one = (e.type == TY_FLOAT) ? "1.0" : "1";
     if (find_var(one) == -1) add_var(one);
     int  lval = find_var(one);
     expr e1   = num2exp(lval, e.type);
@@ -126,7 +126,7 @@ expr pplus1d2exp(int id, expr ete, int old)
     ass_array(id, ret, 0);
 
     // the value of `x[i]++` in an expression is the old element
-    if (old) add_instr(e.type == 2 ? "LOD __aux_var\n" : "ADD -1\n");
+    if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");
 
     acc_ok = 1; // cannot free acc, since it is an exp
 
@@ -136,7 +136,7 @@ expr pplus1d2exp(int id, expr ete, int old)
 // ++ reduction into expr on a 2D array
 expr pplus2d2exp(int id, expr e1, expr e2, int old)
 {
-    if (v_table[id].type > 2)
+    if (v_table[id].type > TY_FLOAT)
         fatal(MSG_ERR_INCR_COMPLEX, line_num+1);
 
     // a live operand in the acc goes to the stack first (see 1-D)
@@ -147,11 +147,11 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     add_instr("LDI %s\n", v_table[id].name);
     acc_ok = 1;                                // x[i][j] in the acc
     expr e = expr_make(v_table[id].type, 0);
-    if (old && e.type == 2) add_instr("SET __aux_var\n");   // see 1-D
+    if (old && e.type == TY_FLOAT) add_instr("SET __aux_var\n");   // see 1-D
 
     // now turn the 1 into an expr (same data type as x): "1.0" for a float
     // (see pplus2exp)
-    char *one = (e.type == 2) ? "1.0" : "1";
+    char *one = (e.type == TY_FLOAT) ? "1.0" : "1";
     if (find_var(one) == -1) add_var(one);
     int  lval = find_var(one);
     expr eone = num2exp(lval, e.type);
@@ -163,7 +163,7 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     ass_array(id, ret, 0);
 
     // the value of `x[i][j]++` in an expression is the old element
-    if (old) add_instr(e.type == 2 ? "LOD __aux_var\n" : "ADD -1\n");
+    if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");
 
     acc_ok = 1; // cannot free acc, since it is an exp
 

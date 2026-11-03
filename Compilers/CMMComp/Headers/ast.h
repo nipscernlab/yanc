@@ -21,6 +21,8 @@
 #ifndef YANC_AST_H
 #define YANC_AST_H
 
+#include "types.h"
+
 // ----------------------------------------------------------------------------
 // expression result POD -------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -29,13 +31,8 @@
 // pplus_* helpers inside the walker. Carries enough to describe where the
 // freshly-emitted value lives so the next emit helper can dispatch.
 //
-// type encoding:
-//   0 = undefined / void
-//   1 = int
-//   2 = float
-//   3 = comp (real half / variable)
-//   4 = comp (imag half)
-//   5 = comp constant (e.g. 3+7.5i)
+// type: a TY_* code of types.h (TY_INT, TY_FLOAT, TY_COMP, TY_IMAG,
+// TY_CCONST; TY_NONE for void)
 //
 // id is the index into v_table; id == 0 means "the result lives in the
 // accumulator, not in a variable".
@@ -153,7 +150,7 @@ typedef enum {
 typedef struct expr_node {
     expr_kind kind;
     int line;                          // source line (1-based)
-    int type;                          // data type (1=int, 2=float, 3=comp, 5=comp const)
+    int type;                          // data type: TY_INT, TY_FLOAT, TY_COMP, TY_CCONST (types.h)
     int id;                            // EXPR_LITERAL / EXPR_VAR: index into v_table
     int op;                            // EXPR_BINOP / EXPR_UNOP: operator code
     struct expr_node *left, *right;    // EXPR_BINOP: both; EXPR_UNOP: left only

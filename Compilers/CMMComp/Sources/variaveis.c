@@ -80,7 +80,7 @@ void check_var(void)
     for (int i = 0; i < v_count; i++)
     {
         // check whether a variable was declared but not used ...
-        if (((v_table[i].type == 1) || (v_table[i].type == 2) || (v_table[i].type == 3)) && (v_table[i].used == 0) && !v_table[i].wave)
+        if (((v_table[i].type == TY_INT) || (v_table[i].type == TY_FLOAT) || (v_table[i].type == TY_COMP)) && (v_table[i].used == 0) && !v_table[i].wave)
         {
             // v_table[i].fnid records the variable's owning function: a valid
             // v_table index for locals, or "" / -1 for globals. declar_arr_1d
@@ -100,7 +100,7 @@ void check_var(void)
 
         // check whether a function was declared but not used: the function
         // types are 6 to 9 (void, int, float, comp); 5 is a comp constant
-        if (v_table[i].type >= 6 && v_table[i].type <= 9 && v_table[i].used == 0)
+        if (v_table[i].type >= TY_FVOID && v_table[i].type <= TY_FCOMP && v_table[i].used == 0)
             warn(MSG_WARN_UNUSED_FUNCTION, v_table[i].name);
     }
 }
@@ -111,8 +111,8 @@ void check_var(void)
 void dire_wave(int id)
 {
     char *name = rem_fname(v_table[id].name);
-    if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, name);
-    if (v_table[id].type > 3)  fatal(MSG_ERR_WAVE_NOT_VAR, line_num+1, name);
+    if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, name);
+    if (v_table[id].type > TY_COMP)  fatal(MSG_ERR_WAVE_NOT_VAR, line_num+1, name);
     v_table[id].wave = 1;
 }
 
@@ -197,7 +197,7 @@ void check_name(int id, int is_fun)
         fatal(strstr(me, q) ? MSG_ERR_NAME_IS_MNEMONIC : MSG_ERR_NAME_MNEMONIC, line_num+1, me, as);
     }
 
-    if (v_table[id].type != 0)
+    if (v_table[id].type != TY_NONE)
     {
         int t = v_table[id].type;
         if (!is_fun && t < 6 && t != 4 && v_table[id].fnid == find_var(fname))
@@ -214,7 +214,7 @@ void check_name(int id, int is_fun)
     {
         char *nm = xasprintf("%s_i", as);
         int idi = find_var(nm);
-        if (idi >= 0 && v_table[idi].type != 0)
+        if (idi >= 0 && v_table[idi].type != TY_NONE)
             name_taken(xasprintf(MSG_NAME_IMAG, me), nm, name_owner(idi));
         free(nm);
     }
@@ -223,7 +223,7 @@ void check_name(int id, int is_fun)
     {
         char *nm = xasprintf("%.*s", (int)(L - 2), as);
         int idr = find_var(nm);
-        if (idr >= 0 && v_table[idr].type == 3)
+        if (idr >= 0 && v_table[idr].type == TY_COMP)
             name_taken(me, as, xasprintf(MSG_NAME_IMAG, name_owner(idr)));
         free(nm);
     }
