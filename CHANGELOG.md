@@ -319,6 +319,12 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **cmmcomp: a float or comp function never called gets its warning.**
+  `check_var` took types 5, 6 and 7 for functions, but they are 6 to 9
+  (void, int, float, comp) and 5 is a comp constant: an unused `float` or
+  `comp` function went by without the warning a `void` or `int` one gets.
+  Found while naming the type codes (#93 P6). `cmm_reach`'s
+  `golden_map.txt` gains the warning for its `float fdead`.
 - **cmmcomp: a failed compilation leaves no output behind** (#94 N). An
   error found at the end of the parse, such as a program with no `main`,
   left the `.asm`, `prog_log.txt` and `pc_<name>_mem.txt` it had written in

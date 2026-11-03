@@ -98,8 +98,9 @@ void check_var(void)
             }
         }
 
-        // check whether a function was declared but not used
-        if (((v_table[i].type == 5) || (v_table[i].type == 6) || (v_table[i].type == 7)) && v_table[i].used == 0)
+        // check whether a function was declared but not used: the function
+        // types are 6 to 9 (void, int, float, comp); 5 is a comp constant
+        if (v_table[i].type >= 6 && v_table[i].type <= 9 && v_table[i].used == 0)
             warn(MSG_WARN_UNUSED_FUNCTION, v_table[i].name);
     }
 }
