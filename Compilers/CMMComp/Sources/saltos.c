@@ -357,24 +357,18 @@ void exec_switch(expr_node *cond)
 
 void case_test(int val_id, int val_type)
 {
+    // the grammar reduces a case label only inside sw_body, after
+    // exec_switch pushed the switch and opened its body list
     stmt_node *sw  = sw_top();
-    stmt_node *top = stmt_list_top();
-    if (sw && top)
-    {
-        sw->id2++;  // running case count (becomes case_max at end_switch)
-        stmt_block_push(top, stmt_case_label(sw->id, sw->id2, val_id, val_type));
-    }
+    sw->id2++;  // running case count (becomes case_max at end_switch)
+    stmt_block_push(stmt_list_top(), stmt_case_label(sw->id, sw->id2, val_id, val_type));
 }
 
 void defaut_test(void)
 {
-    stmt_node *sw  = sw_top();
-    stmt_node *top = stmt_list_top();
-    if (sw && top)
-    {
-        sw->id2++;
-        stmt_block_push(top, stmt_default_label(sw->id, sw->id2));
-    }
+    stmt_node *sw  = sw_top();             // inside sw_body, as case_test
+    sw->id2++;
+    stmt_block_push(stmt_list_top(), stmt_default_label(sw->id, sw->id2));
 }
 
 stmt_node *end_switch(void)
