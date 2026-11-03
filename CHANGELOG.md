@@ -121,6 +121,17 @@ tags consumed by Aurora.
   pairs. `warn()` prints the warnings and notes on stdout, in place of 254
   `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
   and its stream.
+- **cmmcomp's state is three structs, and its helpers have unit tests**
+  (step P8 of #93). Some twenty globals are the fields of `cfg` (the
+  target the directives set), `pctx` (the parse) and `ectx` (the
+  emission), in `Headers/context.h`. `Compilers/CMMComp/UnitTest/
+  cmm_unit_test.c`, built by the regression with every object of cmmcomp,
+  checks `strip_fn`, `strip_fn_prefix`, `fnum_text`, `cnum_split`,
+  `mant_pow2`, `int_to_bin` and `lex_id` one by one (40 checks), errors
+  included through `fatal_hook`. With defect A of #94 put back, it fails
+  two checks; the second shows the read past the end of a name that the
+  audit had deduced. The assembly and the waveform's tables are
+  byte-identical.
 - **cmmcomp's names are in English** (step P7 of #93). Files:
   `saltos` → `control_flow`, `funcoes` → `functions`, `variaveis` →
   `symbols`, `diretivas` → `directives`, `t2t` → `convert`, `itr` →

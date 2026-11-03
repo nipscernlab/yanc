@@ -34,7 +34,13 @@ clean checkout, `make` builds the six tools into `bin/`.
    you push, and the whole `Scripts/regress.sh` once for a batch of pull
    requests before its last merge ([AGENTS.md](AGENTS.md), "The one
    command").
-4. **Open the PR against `main`** with a description that explains *why*
+4. **Test a helper of cmmcomp directly** when a change touches one that a
+   `.cmm` reaches only with effort (a name's prefix, a literal's text, a
+   width): `Compilers/CMMComp/UnitTest/cmm_unit_test.c` calls it with the
+   state set in `cfg`, `pctx` and `ectx` (`Headers/context.h`), and catches
+   a `fatal()` through `fatal_hook`. The regression builds it with cmmcomp
+   and runs it.
+5. **Open the PR against `main`** with a description that explains *why*
    the change is needed, not just what it does.
 
 ## Code conventions
