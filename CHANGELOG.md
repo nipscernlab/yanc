@@ -121,6 +121,16 @@ tags consumed by Aurora.
   pairs. `warn()` prints the warnings and notes on stdout, in place of 254
   `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
   and its stream.
+- **cmmcomp's codes have names** (step P6 of #93): the type of a symbol,
+  an expression or a tree node is `TY_INT`, `TY_FLOAT`, `TY_COMP`, ... in
+  `types.h` instead of a digit (about 1600 places), the dimensions of a
+  symbol `AR_NONE`, `AR_1D`, `AR_2D`, a directive's code a `dir_code`, and
+  `2^NBMANT` comes from `mant_pow2()`. The rest of #92's dead code goes:
+  the `-2` line of `src_lines.txt`, two always-true guards, eight
+  constructor parameters every caller passed empty, `rem_fname`'s second
+  argument, the unused directive codes. The build no longer prints
+  bison's two POSIX Yacc warnings (`-Wno-yacc`; the parser is the same).
+  The assembly and the waveform's tables are byte-identical.
 - **cmmcomp builds a brace list in one pass** (#94 K): the values went in
   with `strcat`, which walks the whole string each time; a list of 60000
   floats compiles in 0.36 s instead of 0.78 s, to the same .asm. The
