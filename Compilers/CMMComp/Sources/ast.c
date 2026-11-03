@@ -2028,11 +2028,11 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_DIRE_INTER:
-            dire_inter();
+            directive_inter();
             break;
 
         case STMT_DIRE_TOAQUI:
-            dire_toaqui();
+            directive_toaqui();
             break;
 
         case STMT_BLOCK:

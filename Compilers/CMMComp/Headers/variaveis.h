@@ -46,7 +46,7 @@ void  check_var(void);                       // checks what was used in the tabl
 char *strip_fn (char *var, const char *func); // <func>_<name> -> <name>; any other name as it is
 char *rem_fname(char *var);              // the same, for the function being compiled
 void  check_name(int id, int is_fun);     // a declared name must be free in the .asm and not an instruction
-void  dire_wave (int id);                // #WAVE name: the variable stays even if never read
+void  directive_wave (int id);                // #WAVE name: the variable stays even if never read
 
 // used in the lexer to pick up variables and constants -----------------------
 

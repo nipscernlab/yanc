@@ -310,7 +310,7 @@ typedef struct stmt_node {
     int                n_params;
 
     // STMT_DIRECTIVE: directive token like "#PRNAME" / "#NUBITS" / ...
-    // Pointed at a string literal (the grammar's dire_exec call site), so
+    // Pointed at a string literal (the grammar's directive_exec call site), so
     // not owned and not freed.
     const char        *dir_str;
 

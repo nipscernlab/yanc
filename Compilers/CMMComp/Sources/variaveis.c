@@ -108,7 +108,7 @@ void check_var(void)
 // #WAVE name: the variable stays in the program, and so in the waveform, even
 // if nothing reads it (asm_unread asks v_table[id].wave). It names a variable
 // declared before it, a global at the top level or a local inside a function
-void dire_wave(int id)
+void directive_wave(int id)
 {
     char *name = rem_fname(v_table[id].name);
     if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, name);

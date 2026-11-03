@@ -181,26 +181,26 @@ prog_elements : direct | declar | funcao
 // Compilation directives -----------------------------------------------------
 
 direct : PRNAME   ID   {fatal(MSG_ERR_PRNAME_GONE, line_num+1);} // the name is the file's
-       | NUBITS unum   {dire_exec("#NUBITS",$2,DIR_NUBITS);} // ALU word width
-       | NBMANT unum   {dire_exec("#NBMANT",$2,DIR_NBMANT);} // mantissa width (bits)
-       | NBEXPO unum   {dire_exec("#NBEXPO",$2,DIR_NBEXPO);} // exponent width (bits)
-       | NDSTAC unum   {dire_exec("#NDSTAC",$2,DIR_ASM_ONLY);} // data stack depth
-       | SDEPTH unum   {dire_exec("#SDEPTH",$2,DIR_ASM_ONLY);} // subroutine stack depth
-       | NUIOIN unum   {dire_exec("#NUIOIN",$2,DIR_NUIOIN);} // number of input ports
-       | NUIOOU unum   {dire_exec("#NUIOOU",$2,DIR_NUIOOU);} // number of output ports
-       | NUGAIN unum   {dire_exec("#NUGAIN",$2,DIR_NUGAIN);} // division constant (norm(.)): a power of two (validated)
-       | FFTSIZ unum   {dire_exec("#FFTSIZ",$2,DIR_FFTSIZ);} // FFT size (2^FFTSIZ)
-       | FROUND unum   {dire_exec("#FROUND",$2,DIR_FROUND);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
+       | NUBITS unum   {directive_exec("#NUBITS",$2,DIR_NUBITS);} // ALU word width
+       | NBMANT unum   {directive_exec("#NBMANT",$2,DIR_NBMANT);} // mantissa width (bits)
+       | NBEXPO unum   {directive_exec("#NBEXPO",$2,DIR_NBEXPO);} // exponent width (bits)
+       | NDSTAC unum   {directive_exec("#NDSTAC",$2,DIR_ASM_ONLY);} // data stack depth
+       | SDEPTH unum   {directive_exec("#SDEPTH",$2,DIR_ASM_ONLY);} // subroutine stack depth
+       | NUIOIN unum   {directive_exec("#NUIOIN",$2,DIR_NUIOIN);} // number of input ports
+       | NUIOOU unum   {directive_exec("#NUIOOU",$2,DIR_NUIOOU);} // number of output ports
+       | NUGAIN unum   {directive_exec("#NUGAIN",$2,DIR_NUGAIN);} // division constant (norm(.)): a power of two (validated)
+       | FFTSIZ unum   {directive_exec("#FFTSIZ",$2,DIR_FFTSIZ);} // FFT size (2^FFTSIZ)
+       | FROUND unum   {directive_exec("#FROUND",$2,DIR_FROUND);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
        | WAVE wave_list                             // globals kept for the waveform even if never read
 
 // Behavioral directives ------------------------------------------------------
 
-dire_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt start point (#PRACA)
+directive_inter : ITRADD             {stmt_append(stmt_dire_inter ());} // interrupt start point (#PRACA)
            | TOAQUI             {stmt_append(stmt_dire_toaqui());} // PC tracker marker     (#TOAQUI -> cheguei pin)
            | WAVE wave_list                                      // locals kept for the waveform even if never read
 
-wave_list : ID                 {dire_wave($1);}                   // #WAVE a, b, ...
-          | wave_list ',' ID   {dire_wave($3);}
+wave_list : ID                 {directive_wave($1);}                   // #WAVE a, b, ...
+          | wave_list ',' ID   {directive_wave($3);}
 
 // Variable declaration -------------------------------------------------------
          // list declaration (one or more variables, each may have an initializer)
@@ -305,7 +305,7 @@ stmt_full: '{' stmt_list '}' // statement block
          |   switch_case     // switch/case
          |         break     // break; (innermost loop or switch)
          |      continue     // continue; (innermost loop)
-         |    dire_inter     // interrupt point
+         |    directive_inter     // interrupt point
          |           ';'     // empty statement: emits nothing
          |       '{' '}'     // empty block: emits nothing
 
