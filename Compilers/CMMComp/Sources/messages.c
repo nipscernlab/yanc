@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// suporte bilingue PT/EN para as mensagens do cmmcomp ------------------------
+// bilingual PT/EN support for cmmcomp's messages -----------------------------
 // ----------------------------------------------------------------------------
 
 #include "../Headers/messages.h"
