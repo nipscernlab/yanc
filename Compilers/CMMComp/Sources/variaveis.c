@@ -124,12 +124,10 @@ char* rem_fname(char *var, const char *fname)
     // set -- this is display-only and does not affect exec_id's naming.
     if (emit_fname[0] != '\0') fname = emit_fname;
     if (strcmp(fname,"") == 0) return var;
-    int    ind = 0;
-    while (var[ind] == fname[ind] && fname[ind]) ind++;
-    // if ind != strlen(fname) it means the variable does not
-    // contain the full function name at the beginning,
-    // so it is better not to remove anything (it must be global)
-    return (ind == strlen(fname)) ? var + ind + 1 : var; // the +1 skips the '_'
+    // a local is <function>_<name>; anything else (a global, even one that
+    // starts like the function, as `mainly` in `main`) keeps its name (#94 A)
+    size_t L = strlen(fname);
+    return (strncmp(var, fname, L) == 0 && var[L] == '_') ? var + L + 1 : var;
 }
 
 // ----------------------------------------------------------------------------

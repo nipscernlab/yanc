@@ -1,0 +1,16 @@
+#NUBITS 32
+#NBMANT 23
+#NBEXPO 8
+#NUIOIN 1
+#NUIOOU 1
+
+// third cmmcomp audit (#94 A): a global whose name starts with the name of
+// the function that reads it was shown cut, 'y' for 'mainly', since the
+// function prefix was taken off without checking the _ after it
+
+int mainly;
+
+void main()
+{
+    out(0, mainly[0]);
+}
