@@ -383,8 +383,8 @@ stmt_node *stmt_break_while (int while_label);
 // the do-while re-tests its bottom condition); a while jumps to the top (Lwh<n>).
 stmt_node *stmt_continue    (int loop_label, int cont_lbl);
 
-// Array declarations. The v_table side effects (type / isar / size /
-// fnid + f_log writes) already ran at parse time when the constructor was
+// Array declarations. The v_table side effects (type / dims / size /
+// owner + f_log writes) already ran at parse time when the constructor was
 // called; the stmt_node only carries what the walker needs to emit the
 // `#array` directive (and, for 2D, the LOD/SET arr_size helper instructions).
 stmt_node *stmt_declar_arr_1d(int id_var, int id_arg, int id_fname);

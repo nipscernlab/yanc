@@ -28,7 +28,7 @@ int          fnum_quiet = 0; // 1: exec_fnum says nothing of an approximation (v
 static int   v_cap   = 0;  // current capacity of the parallel arrays
 
 // AoS storage: one row per identifier. All attributes (name, type, used,
-// isar, isco, size, siz2, npar, ptyp, fnid) live here. Grown on demand by var_grow.
+// dims, is_const, size, cols, n_params, param_types, owner) live here. Grown on demand by var_grow.
 symbol *v_table = NULL;
 
 // The table moves to a bigger block; each name stays where add_var put it, so
@@ -86,15 +86,15 @@ void check_var(void)
             // v_table index for locals, or "" / -1 for globals. declar_arr_1d
             // etc. call find_var(fname) which returns -1 when fname is the
             // empty string and no "" entry exists in v_table yet - so treat
-            // any out-of-range fnid as the global case.
-            int fnid = v_table[i].owner;
-            int is_global = (fnid < 0) || (strcmp(v_table[fnid].name, "") == 0);
+            // any out-of-range owner as the global case.
+            int owner = v_table[i].owner;
+            int is_global = (owner < 0) || (strcmp(v_table[owner].name, "") == 0);
             if (is_global)
                 warn(MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
             else
             {
-                char *name = strip_fn(v_table[i].name, v_table[fnid].name);
-                warn(MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[fnid].name, name);
+                char *name = strip_fn(v_table[i].name, v_table[owner].name);
+                warn(MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[owner].name, name);
             }
         }
 

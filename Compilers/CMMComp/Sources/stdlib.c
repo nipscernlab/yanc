@@ -1006,7 +1006,7 @@ expr exec_log(expr e)
 
 // power x^y ------------------------------------------------------------------
 // The exponent's kind picks the strategy (tested here, the usual way):
-//   * int constant (isco)  -> square-and-multiply, unrolled at compile time
+//   * int constant (is_const)  -> square-and-multiply, unrolled at compile time
 //                             (exact; pulls in no exp/log macro). A literal is
 //                             always >= 0 (a leading '-' is a separate negate).
 //   * int variable / acc   -> runtime multiply loop: x folded |y| times, then

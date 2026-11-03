@@ -139,7 +139,7 @@ static void ini_split(const ini_val *v, char **re, char **im)
 }
 
 // check the list against the array (type, size, rows) and keep its values
-static void ini_take(int id_var, int size, int siz2)
+static void ini_take(int id_var, int size, int cols)
 {
     int type = v_table[id_var].type;
     const char *tname = (type == 1) ? "int" : (type == 2) ? "float" : "comp";
@@ -151,10 +151,10 @@ static void ini_take(int id_var, int size, int siz2)
         int pos;
         if (ini_rows > 0)                        // rows between inner braces: a 2D array, every value in a row
         {
-            if (siz2 == 0) fatal(MSG_ERR_ARRAY_INI_1D, line_num+1, rem_fname(v_table[id_var].name));
-            if (v->row < 0 || v->col >= siz2)
-                fatal(MSG_ERR_ARRAY_INI_ROWS, line_num+1, rem_fname(v_table[id_var].name), siz2);
-            pos = v->row * siz2 + v->col;
+            if (cols == 0) fatal(MSG_ERR_ARRAY_INI_1D, line_num+1, rem_fname(v_table[id_var].name));
+            if (v->row < 0 || v->col >= cols)
+                fatal(MSG_ERR_ARRAY_INI_ROWS, line_num+1, rem_fname(v_table[id_var].name), cols);
+            pos = v->row * cols + v->col;
         }
         else pos = k;
         if (pos >= size) fatal(MSG_ERR_ARRAY_INI_COUNT, line_num+1, rem_fname(v_table[id_var].name), size, pos + 1);
@@ -166,7 +166,7 @@ static void ini_take(int id_var, int size, int siz2)
     size_t lr = 1, li = 1;
     for (int k = 0; k < ini_n; k++)
     {
-        int pos = (ini_rows > 0) ? ini_v[k].row * siz2 + ini_v[k].col : k;
+        int pos = (ini_rows > 0) ? ini_v[k].row * cols + ini_v[k].col : k;
         ini_split(&ini_v[k], &re[pos], &im[pos]);   // a literal and its sign
     }
     const char *zero = (type == 1) ? "0" : "0.0";
@@ -306,7 +306,7 @@ void declar_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
         }
     }
     // no helper variable: 2D index flattening multiplies by the row size as
-    // a constant (MLT <siz2>), so the declaration emits no instruction
+    // a constant (MLT <cols>), so the declaration emits no instruction
 }
 
 // Public entry.
