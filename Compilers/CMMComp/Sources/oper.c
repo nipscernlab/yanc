@@ -58,8 +58,8 @@ expr oper_neg(expr e)
 {
     expr   etr, eti;
 
-    char  neg[10]; if (acc_ok == 0) strcpy( neg,   "NEG_M"); else strcpy( neg,  "P_NEG_M");
-    char fneg[10]; if (acc_ok == 0) strcpy(fneg, "F_NEG_M"); else strcpy(fneg, "PF_NEG_M");
+    char  neg[10]; if (ectx.acc_ok == 0) strcpy( neg,   "NEG_M"); else strcpy( neg,  "P_NEG_M");
+    char fneg[10]; if (ectx.acc_ok == 0) strcpy(fneg, "F_NEG_M"); else strcpy(fneg, "PF_NEG_M");
 
     // a float or comp literal needs no instruction: its negation is another
     // literal (-2.5 is loaded as such, x - (3+4i) adds -3-4i). Not an int one: the
@@ -143,7 +143,7 @@ expr oper_neg(expr e)
         add_instr("PF_NEG_M __aux_var\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     // a comp constant got materialized into the comp (acc) representation
     if (e.type == TY_CCONST) e.type = TY_COMP;
@@ -158,8 +158,8 @@ expr oper_add(expr e1, expr e2)
 
     int_lit_float(&e1, &e2);
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // int var with int var
     if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
@@ -606,7 +606,7 @@ expr oper_add(expr e1, expr e2)
         add_instr("F_ADD __aux_var \n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     int type;
          if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))
@@ -641,8 +641,8 @@ expr oper_sub(expr e1, expr e2)
         return oper_add(e1, num2exp(id, 5));
     }
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // int minus an int literal: ADD of its negation, one word (the literal
     // stays non-negative in the table, as oper_neg wants; only the operand
@@ -652,7 +652,7 @@ expr oper_sub(expr e1, expr e2)
     {
         if (e1.id != 0) add_instr("%s %s\n", ld, v_table[e1.id].name);
         add_instr("ADD -%s\n", v_table[e2.id].name);
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_INT, 0);
     }
 
@@ -1017,7 +1017,7 @@ expr oper_sub(expr e1, expr e2)
         add_instr("F_SU1 __aux_var \n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     int type;
          if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))
@@ -1052,7 +1052,7 @@ expr oper_mult(expr e1, expr e2)
             if (e1.id != 0)                                            // in memory: 4 words
             {
                 get_cmp_ets(e1, &etr, &eti);
-                add_instr("%s %s\n", acc_ok ? "P_LOD" : "LOD", v_table[eti.id].name);
+                add_instr("%s %s\n", ectx.acc_ok ? "P_LOD" : "LOD", v_table[eti.id].name);
                 add_instr("F_MLT %s\n", v_table[nid].name);            // real: -c b
                 add_instr("P_LOD %s\n", v_table[etr.id].name);
                 add_instr("F_MLT %s\n", c);                            // imag: c a
@@ -1066,13 +1066,13 @@ expr oper_mult(expr e1, expr e2)
                 add_instr("LOD __aux_var\n");
                 add_instr("P_LOD __aux_var1\n");
             }
-            acc_ok = 1;
+            ectx.acc_ok = 1;
             return expr_make(TY_COMP, 0);
         }
     }
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // int var with int var
     if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
@@ -1571,7 +1571,7 @@ expr oper_mult(expr e1, expr e2)
         add_instr("SF_ADD\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     int type;
          if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))
@@ -1628,22 +1628,22 @@ expr oper_div(expr e1, expr e2)
         {
             char t[40]; snprintf(t, sizeof t, "%.9g", r);
             if (!strpbrk(t, ".eE")) strcat(t, ".0");
-            fnum_quiet = 1; int rid = lex_fnum(t); fnum_quiet = 0;   // the user did not write it
+            ectx.fnum_quiet = 1; int rid = lex_fnum(t); ectx.fnum_quiet = 0;   // the user did not write it
             int ex; if (fabs(frexp(c, &ex)) == 0.5) return oper_mult(e1, num2exp(rid, 2));
 
-            int acc0 = acc_ok;
+            int acc0 = ectx.acc_ok;
             add_sinst(0, "#DIVK\n");
             divk_inner = 1; oper_div(e1, e2); divk_inner = 0;
             add_sinst(0, "#MULK\n");
-            acc_ok = acc0;
+            ectx.acc_ok = acc0;
             expr m = oper_mult(e1, num2exp(rid, 2));
             add_sinst(0, "#ENDK\n");
             return m;
         }
     }
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // int var with int var
     if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
@@ -1683,7 +1683,7 @@ expr oper_div(expr e1, expr e2)
         emit_sq_sum(etr, eti);
         add_instr("SET __aux_var\n");   // save the result
 
-        acc_ok = 0;                   // libera acumulador
+        ectx.acc_ok = 0;                   // libera acumulador
 
         oper_mult(e1, etr);           // multiply int with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
@@ -1703,7 +1703,7 @@ expr oper_div(expr e1, expr e2)
         emit_sq_sum(etr, eti);
         add_instr("SET __aux_var\n");   // save the result
 
-        acc_ok = 0;                   // libera acumulador
+        ectx.acc_ok = 0;                   // libera acumulador
 
         oper_mult(e1, etr);           // multiply int with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
@@ -1777,7 +1777,7 @@ expr oper_div(expr e1, expr e2)
 
         add_instr("I2F\n");
         add_instr("SET __aux_var\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         emit_sq_sum(etr, eti);
         add_instr("SET   __aux_var1\n"); // save the result
@@ -1801,7 +1801,7 @@ expr oper_div(expr e1, expr e2)
 
         add_instr("I2F\n");
         add_instr("SET   __aux_var\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         emit_sq_sum(etr, eti);
         add_instr("SET   __aux_var1\n");  // save the result
@@ -1879,7 +1879,7 @@ expr oper_div(expr e1, expr e2)
 
         emit_sq_sum(etr, eti);
         add_instr("SET   __aux_var\n"); // save the result
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         oper_mult(e1, etr);           // multiply float with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
@@ -1898,7 +1898,7 @@ expr oper_div(expr e1, expr e2)
 
         emit_sq_sum(etr, eti);
         add_instr("SET   __aux_var\n"); // save the result
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         oper_mult(e1, etr);           // multiply float with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
@@ -1966,7 +1966,7 @@ expr oper_div(expr e1, expr e2)
         get_cmp_cst(e2,&etr,&eti);
 
         add_instr("SET   __aux_var\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         emit_sq_sum(etr, eti);
         add_instr("SET   __aux_var1\n"); // save the result
@@ -1989,7 +1989,7 @@ expr oper_div(expr e1, expr e2)
         get_cmp_ets(e2,&etr,&eti);
 
         add_instr("SET __aux_var\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         emit_sq_sum(etr, eti);
         add_instr("SET   __aux_var1\n"); // save the result
@@ -2084,7 +2084,7 @@ expr oper_div(expr e1, expr e2)
 
         emit_sq_sum(et2r, et2i);
         add_instr("SET   __aux_var\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
@@ -2110,7 +2110,7 @@ expr oper_div(expr e1, expr e2)
 
         emit_sq_sum(et2r, et2i);
         add_instr("SET __aux_var\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
@@ -2207,7 +2207,7 @@ expr oper_div(expr e1, expr e2)
 
         emit_sq_sum(et2r, et2i);
         add_instr("SET   __aux_var\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
@@ -2233,7 +2233,7 @@ expr oper_div(expr e1, expr e2)
 
         emit_sq_sum(et2r, et2i);
         add_instr("SET   __aux_var\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
@@ -2333,7 +2333,7 @@ expr oper_div(expr e1, expr e2)
 
         add_instr("SET_P __aux_var \n");
         add_instr("SET   __aux_var1\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         emit_sq_sum(etr, eti);
         add_instr("SET   __aux_var2\n");
@@ -2363,7 +2363,7 @@ expr oper_div(expr e1, expr e2)
 
         add_instr("SET_P __aux_var \n");
         add_instr("SET   __aux_var1\n");
-        acc_ok = 0;
+        ectx.acc_ok = 0;
 
         emit_sq_sum(etr, eti);
         add_instr("SET   __aux_var2\n");
@@ -2419,7 +2419,7 @@ expr oper_div(expr e1, expr e2)
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     int type;
          if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))
@@ -2438,7 +2438,7 @@ expr oper_mod(expr e1, expr e2)
     if ((e1.type > TY_INT) || (e2.type > TY_INT))
         fatal(MSG_ERR_MOD_NON_INT, pctx.line_num+1);
 
-    char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
+    char ld[10]; if (ectx.acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
     // int var with int var
     if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
@@ -2466,7 +2466,7 @@ expr oper_mod(expr e1, expr e2)
         add_instr("S_MOD\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_INT, 0); // int in the accumulator
 }
@@ -2540,7 +2540,7 @@ static expr oper_cmp_comp(expr e1, expr e2, int type)
     if (!a.acc && !b.acc)                               // both in memory: 5 words
     {
         if (b.is_int) {cmp_side t = a; a = b; b = t;}   // EQU is symmetric: the int one is loaded
-        add_instr("%s %s\n", a.is_int ? (acc_ok ? "P_I2F_M" : "I2F_M") : (acc_ok ? "P_LOD" : "LOD"), a.re);
+        add_instr("%s %s\n", a.is_int ? (ectx.acc_ok ? "P_I2F_M" : "I2F_M") : (ectx.acc_ok ? "P_LOD" : "LOD"), a.re);
         add_instr("EQU %s\n", b.re);
         add_instr("P_LOD %s\n", a.im);
         add_instr("EQU %s\n", b.im);
@@ -2593,7 +2593,7 @@ static expr oper_cmp_comp(expr e1, expr e2, int type)
         add_instr("AND __aux_var\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_INT, 0); // int boolean in the accumulator
 }
 
@@ -2607,8 +2607,8 @@ expr oper_cmp(expr e1, expr e2, int type)
 
     int_lit_float(&e1, &e2);
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld , "LOD" ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld , "LOD" ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     char op[16] = "";  // initialize so an unhandled 'type' produces a deterministic empty mnemonic instead of stack garbage
     switch (type)
@@ -2754,7 +2754,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_INT, 0); // int boolean in the accumulator
 }
@@ -2786,8 +2786,8 @@ expr oper_lin(expr e)
 {
     expr etr, eti;
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char lin[10]; if (acc_ok == 0) strcpy(lin,"LIN_M"); else strcpy(lin,"P_LIN_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char lin[10]; if (ectx.acc_ok == 0) strcpy(lin,"LIN_M"); else strcpy(lin,"P_LIN_M");
 
     // when it is an int in memory
     if ((e.type == TY_INT) && (e.id != 0))
@@ -2847,7 +2847,7 @@ expr oper_lin(expr e)
         add_instr("LIN\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_INT, 0); // int in the accumulator
 }
@@ -2862,7 +2862,7 @@ expr oper_logic(expr e1, expr e2, int type)
     }
 
     char ld[10];
-    if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
+    if (ectx.acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
     char op[16];
     switch (type)
@@ -2898,7 +2898,7 @@ expr oper_logic(expr e1, expr e2, int type)
             if (e1.type == TY_FLOAT) { add_instr("SET_P __aux_var\n"); add_instr("AND %lld\n", mask); add_instr("%s __aux_var\n", op); }
             else              add_instr("S_%s\n", op);
         }
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_INT, 0);
     }
 
@@ -2927,7 +2927,7 @@ expr oper_logic(expr e1, expr e2, int type)
         add_instr("S_%s\n", op);
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_INT, 0); // int boolean in the accumulator
 }
@@ -2943,7 +2943,7 @@ expr oper_inv(expr e)
     if (e.type > TY_INT)
         fatal(MSG_ERR_INV_NON_INT, pctx.line_num+1);
 
-    char inv[10]; if (acc_ok == 0) strcpy(inv,"INV_M"); else strcpy(inv,"P_INV_M");
+    char inv[10]; if (ectx.acc_ok == 0) strcpy(inv,"INV_M"); else strcpy(inv,"P_INV_M");
 
     // when it is an int in memory
     if ((e.type == TY_INT) && (e.id != 0))
@@ -2957,7 +2957,7 @@ expr oper_inv(expr e)
         add_instr("INV\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_INT, 0); // int in the accumulator
 }
@@ -2980,7 +2980,7 @@ expr oper_bitw(expr e1, expr e2, int type)
         case  2: strcpy(op, "XOR"); break;
     }
 
-    char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
+    char ld[10]; if (ectx.acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
     // var with var
     if ((e1.id != 0) && (e2.id != 0))
@@ -3007,7 +3007,7 @@ expr oper_bitw(expr e1, expr e2, int type)
         add_instr("S_%s\n", op);
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_INT, 0); // int in the accumulator
 }
@@ -3034,7 +3034,7 @@ expr oper_shift(expr e1, expr e2, int type)
         case  2: strcpy(op, "SRS"); break;
     }
 
-    char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
+    char ld[10]; if (ectx.acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
     // int/float var with int var
     if ((e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
@@ -3054,7 +3054,7 @@ expr oper_shift(expr e1, expr e2, int type)
     {
         warn(MSG_WARN_SHIFT_BY_FLOAT, pctx.line_num+1);
 
-        add_instr("%s %s\n", acc_ok ? "P_F2I_M" : "F2I_M", v_table[e2.id].name);
+        add_instr("%s %s\n", ectx.acc_ok ? "P_F2I_M" : "F2I_M", v_table[e2.id].name);
         add_instr("%s %s\n", op, v_table[e1.id].name);
     }
 
@@ -3098,7 +3098,7 @@ expr oper_shift(expr e1, expr e2, int type)
         add_instr("S_%s\n", op);
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_INT, 0); // int in the accumulator
 }

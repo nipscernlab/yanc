@@ -262,7 +262,7 @@ void assign_set(int id, expr e)
         add_instr("SET %s\n"    , v_table[id].name);
     }
 
-    acc_ok     = 0;  // acc released
+    ectx.acc_ok     = 0;  // acc released
 }
 
 // array assignment with a COMPILE-TIME-CONSTANT index, e.g. x[3] = y;
@@ -301,13 +301,13 @@ void assign_array_const(int id, int k, int dims, expr e)
             add_instr("POP\n");
             add_instr("SET_V %s %d\n", v_table[id].name, k);
         }
-        acc_ok = 0;  // acc released
+        ectx.acc_ok = 0;  // acc released
         return;
     }
 
     if (e.id != 0) add_instr("LOD %s\n", v_table[e.id].name);  // rhs -> acc
     add_instr("SET_V %s %d\n", v_table[id].name, k);
-    acc_ok = 0;  // acc released
+    ectx.acc_ok = 0;  // acc released
 }
 
 // array assignment, e.g. x[i] = y;
@@ -315,7 +315,6 @@ void assign_array_const(int id, int k, int dims, expr e)
 // emitted, when its right-hand side cannot change it (ast.c sets it): a comp
 // element is stored in two words, and the second store reads the index again
 // instead of keeping it in __aux_var words
-int assign_idx_reload = 0;
 
 void assign_array(int id, expr e, int fft)
 {
@@ -495,13 +494,13 @@ void assign_array(int id, expr e, int fft)
 
     // left comp and right int in the acc -------------------------------------
 
-    if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id == 0) && assign_idx_reload)
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_INT) && (e.id == 0) && ectx.assign_idx_reload)
     {
         warn(MSG_WARN_COMP_RECV_INT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("I2F\n");                                          // the index is on the stack
         add_instr("%s %s\n"  , set_type, v_table[id].name);
-        add_instr("LOD %s\n" , v_table[assign_idx_reload].name);
+        add_instr("LOD %s\n" , v_table[ectx.assign_idx_reload].name);
         add_instr("P_LOD 0.0\n");
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -526,23 +525,23 @@ void assign_array(int id, expr e, int fft)
     {
         warn(MSG_WARN_COMP_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
-        if (!assign_idx_reload) add_instr("SET   __aux_var\n");      // else the index is read again
+        if (!ectx.assign_idx_reload) add_instr("SET   __aux_var\n");      // else the index is read again
         add_instr("P_LOD %s\n"  , v_table[e.id].name);
         add_instr("%s %s\n"  , set_type, v_table[id].name);
 
-        add_instr("LOD %s\n", assign_idx_reload ? v_table[assign_idx_reload].name : "__aux_var");
+        add_instr("LOD %s\n", ectx.assign_idx_reload ? v_table[ectx.assign_idx_reload].name : "__aux_var");
         add_instr("P_LOD 0.0\n"             );
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
 
     // left comp and right float in the acc -----------------------------------
 
-    if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id == 0) && assign_idx_reload)
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_FLOAT) && (e.id == 0) && ectx.assign_idx_reload)
     {
         warn(MSG_WARN_COMP_RECV_FLOAT, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
         add_instr("%s %s\n"  , set_type, v_table[id].name);         // the index is on the stack
-        add_instr("LOD %s\n" , v_table[assign_idx_reload].name);
+        add_instr("LOD %s\n" , v_table[ectx.assign_idx_reload].name);
         add_instr("P_LOD 0.0\n");
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -566,11 +565,11 @@ void assign_array(int id, expr e, int fft)
     {
         get_cmp_cst(e,&etr,&eti);
 
-        if (!assign_idx_reload) add_instr("SET   __aux_var\n");      // else the index is read again
+        if (!ectx.assign_idx_reload) add_instr("SET   __aux_var\n");      // else the index is read again
         add_instr("P_LOD %s\n"  , v_table[etr.id].name);
         add_instr("%s %s\n" , set_type, v_table[id].name);
 
-        add_instr("LOD %s\n", assign_idx_reload ? v_table[assign_idx_reload].name : "__aux_var");
+        add_instr("LOD %s\n", ectx.assign_idx_reload ? v_table[ectx.assign_idx_reload].name : "__aux_var");
         add_instr("P_LOD %s\n"   , v_table[eti.id].name);
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -581,22 +580,22 @@ void assign_array(int id, expr e, int fft)
     {
         get_cmp_ets(e,&etr,&eti);
 
-        if (!assign_idx_reload) add_instr("SET   __aux_var\n");      // else the index is read again
+        if (!ectx.assign_idx_reload) add_instr("SET   __aux_var\n");      // else the index is read again
         add_instr("P_LOD %s\n"   , v_table[etr.id].name);
         add_instr("%s %s\n"  , set_type, v_table[id].name);
 
-        add_instr("LOD %s\n", assign_idx_reload ? v_table[assign_idx_reload].name : "__aux_var");
+        add_instr("LOD %s\n", ectx.assign_idx_reload ? v_table[ectx.assign_idx_reload].name : "__aux_var");
         add_instr("P_LOD %s\n"   , v_table[eti.id].name);
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
 
     // left comp and right comp in the acc ------------------------------------
 
-    if ((v_table[id].type == TY_COMP) && (e.type == TY_COMP) && (e.id == 0) && assign_idx_reload)
+    if ((v_table[id].type == TY_COMP) && (e.type == TY_COMP) && (e.id == 0) && ectx.assign_idx_reload)
     {
         add_instr("SET_P __aux_var\n");                              // the imag aside, the real in the acc
         add_instr("%s %s\n"  , set_type, v_table[id].name);         // over the index on the stack
-        add_instr("LOD %s\n" , v_table[assign_idx_reload].name);
+        add_instr("LOD %s\n" , v_table[ectx.assign_idx_reload].name);
         add_instr("P_LOD __aux_var\n");
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
@@ -614,26 +613,26 @@ void assign_array(int id, expr e, int fft)
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
 
-    acc_ok     = 0;  // acc released
+    ectx.acc_ok     = 0;  // acc released
 }
 
 // ++ operator assignment
 void assign_pplus(int id)
 {
     pplus2exp(id, 0);
-    acc_ok = 0; // acc released
+    ectx.acc_ok = 0; // acc released
 }
 
 // ++ operator assignment on a 1D array
 void assign_aplus(int id, expr e)
 {
     pplus1d2exp(id, e, 0);
-    acc_ok = 0; // acc released
+    ectx.acc_ok = 0; // acc released
 }
 
 // ++ operator assignment on a 2D array
 void assign_apl2d(int id, expr e1, expr e2)
 {
     pplus2d2exp(id, e1, e2, 0);
-    acc_ok = 0; // acc released
+    ectx.acc_ok = 0; // acc released
 }

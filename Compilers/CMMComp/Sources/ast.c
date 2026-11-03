@@ -830,7 +830,7 @@ static expr comp_partwise_emit(expr_node *n, int from, int to)
         }
         for (int k = 0; k < part_n; k++) free(part_made[k]);
     }
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(from == to ? 2 : 3, 0);
 }
 
@@ -913,8 +913,8 @@ expr ast_emit_expr(expr_node *n)
     //   exec_add(ast_emit_expr(L), ast_emit_expr(R))
     // emits the ADD with the binop's line, not whatever the last sub-walk
     // left behind.
-    int saved_emit_line = emit_line;
-    if (n) emit_line = n->line;
+    int saved_emit_line = ectx.emit_line;
+    if (n) ectx.emit_line = n->line;
     // line_num drives the warning / MSG_INFO prints inside the emit helpers
     // (oper_*, exec_*, arr_*, par_check, ...). Keep it in lock-step with the
     // node's source line during the walk so those messages report the right line
@@ -932,7 +932,7 @@ expr ast_emit_expr(expr_node *n)
         n->emitted = 1;
         n->cached  = e;
     }
-    emit_line = saved_emit_line;
+    ectx.emit_line = saved_emit_line;
     pctx.line_num  = saved_line_num;
     return e;
 }
@@ -969,7 +969,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                     ast_emit_expr(n->left);
                     add_instr("PSH\n");
                     add_instr(n->type == TY_FLOAT ? "SF_MLT\n" : "S_MLT\n");
-                    acc_ok = 1;
+                    ectx.acc_ok = 1;
                     return expr_make(n->type, 0);
                 }
             }
@@ -1099,7 +1099,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             int swap_flt = (n->left->kind  == EXPR_VAR || n->left->kind  == EXPR_LITERAL)
                 && (n->right->kind == EXPR_VAR || n->right->kind == EXPR_LITERAL)
                 && a.type == TY_FLOAT && b.type == TY_FLOAT && (n->op == OP_ADD || n->op == OP_MUL);
-            if (acc_ok == 0 && a.id != 0 && b.id != 0 && (swap_int || swap_flt)
+            if (ectx.acc_ok == 0 && a.id != 0 && b.id != 0 && (swap_int || swap_flt)
                 && acc_holds(v_table[b.id].name) && !acc_holds(v_table[a.id].name))
             {
                 expr t = a; a = b; b = t;
@@ -1142,14 +1142,14 @@ static expr ast_emit_expr_impl(expr_node *n)
 
         case EXPR_ARRAY_INDEX: {
             // the element an indexed store has just left in the acc: no read
-            if (acc_ok == 0 && n->op == 0)
+            if (ectx.acc_ok == 0 && n->op == 0)
             {
                 char *key;
                 int held = elem_key(n->id, n->left, n->right, &key) && acc_holds(key);
                 free(key);
                 if (held)
                 {
-                    acc_ok = 1;
+                    ectx.acc_ok = 1;
                     return expr_make(v_table[n->id].type, 0);
                 }
             }
@@ -1202,7 +1202,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                     char *key = NULL;
                     expr e;
                     // the index the store of this statement left in the acc
-                    int held = acc_ok == 1 && idx_key(a, &key) && acc_holds(key);
+                    int held = ectx.acc_ok == 1 && idx_key(a, &key) && acc_holds(key);
                     free(key);
                     if (held)
                         {add_instr("PSH\n"); e = expr_make(TY_INT, 0);}
@@ -1216,7 +1216,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             }
             // a computed index the store of this statement left in the acc:
             // PSH pushes what was pending and leaves the index for the LDI
-            if (!n->right && n->op == 0 && acc_ok == 1)
+            if (!n->right && n->op == 0 && ectx.acc_ok == 1)
             {
                 char *key;
                 int held = idx_key(n->left, &key) && acc_holds(key);
@@ -1315,16 +1315,16 @@ static expr ast_emit_expr_impl(expr_node *n)
             for (int i = 0; i < n->n_args; i++) {
                 expr a = ast_emit_expr(n->args[i]);
                 par_check(a, i);
-                acc_ok = 1;
+                ectx.acc_ok = 1;
             }
 
             // no argument pushed the acc: a live partial result (x+5 in
             // (x+5) - f()) must be pushed by hand, or the call overwrites it
-            if (n->n_args == 0 && acc_ok) add_instr("PSH\n");
+            if (n->n_args == 0 && ectx.acc_ok) add_instr("PSH\n");
             add_instr("CAL %s\n", v_table[n->id].name);
             v_table[n->id].used = 1;
-            fun_call_edge(emit_fid, n->id, emit_line);   // for check_rec (functions.c)
-            acc_ok = (n->type == TY_NONE) ? 0 : 1;
+            fun_call_edge(ectx.emit_fid, n->id, ectx.emit_line);   // for check_rec (functions.c)
+            ectx.acc_ok = (n->type == TY_NONE) ? 0 : 1;
 
             fun_id = saved_fun_id;
             return expr_make(n->type, 0);
@@ -1860,8 +1860,8 @@ void stmt_emit(stmt_node *n)
     // at every grammar action, so f_lin entries automatically tracked source
     // location. Post-AST the walker fires after parsing finishes, so we have
     // to set emit_line explicitly from n->line here.
-    int saved_emit_line = emit_line;
-    emit_line = n->line;
+    int saved_emit_line = ectx.emit_line;
+    ectx.emit_line = n->line;
     int saved_line_num = pctx.line_num;   // keep warning / MSG_INFO line in sync (see ast_emit_expr)
     pctx.line_num = n->line - 1;
 
@@ -1970,10 +1970,10 @@ void stmt_emit(stmt_node *n)
             }
             // an int variable as the whole index, which the right-hand side
             // cannot change: assign_array may read it again for a second word
-            assign_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == TY_INT
+            ectx.assign_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == TY_INT
                               && !v_table[n->idx->id].dims && rhs_keeps(n->rhs)) ? n->idx->id : 0;
             assign_array(n->id, ast_emit_expr(n->rhs), n->op);
-            assign_idx_reload = 0;
+            ectx.assign_idx_reload = 0;
             // the store leaves the element in the acc: a read of it right
             // after takes the acc, when the right-hand side changed no index
             {
@@ -2060,13 +2060,13 @@ void stmt_emit(stmt_node *n)
                     expr b = ast_emit_expr(n->cond->right);
                     emit_cond_int_load(n->cond->op == OP_EQ ? oper_bitw(a, b, 2) : oper_cmp(a, b, 2), 0);
                     add_instr("JIZ %s\n", jt);
-                    acc_ok = 0;
+                    ectx.acc_ok = 0;
                     break;
                 }
             }
             emit_cond_int_load(cond_expr(n->cond), 0);
             add_instr("JIZ __Lif%delse\n", n->id);
-            acc_ok = 0;
+            ectx.acc_ok = 0;
 
             stmt_emit(n->then_body);
 
@@ -2094,27 +2094,27 @@ void stmt_emit(stmt_node *n)
             expr_node *wt = !n->then_body && !n->else_body ? for_bottom_test(n, prev) : NULL;
             if (wt) {
                 add_sinst(0, "@__Lwh%dtop ", n->id);
-                acc_ok = 0;
+                ectx.acc_ok = 0;
                 stmt_emit(n->body);
                 if (has_break(n->body, STMT_CONTINUE, n->id)) add_sinst(0, "@__Lwh%d ", n->id);
                 emit_cond_int_load(ast_emit_expr(wt), 0);
                 add_instr("JIZ __Lwh%dtop\n", n->id);  // condition holds -> next turn
                 add_sinst(0, "@__Lwh%dend ", n->id);
-                acc_ok = 0;
+                ectx.acc_ok = 0;
                 expr_free(wt);
                 break;
             }
             expr_node *bt = n->else_body ? for_bottom_test(n, n->then_body ? n->then_body : prev) : NULL;
             if (bt) {                                // for (k = c0; k < c1; ...): see for_bottom_test
                 add_sinst(0, "@__Lwh%d ", n->id);
-                acc_ok = 0;
+                ectx.acc_ok = 0;
                 stmt_emit(n->body);
                 if (n->op) add_sinst(0, "@__Lwh%dcont ", n->id);
                 stmt_emit(n->else_body);
                 emit_cond_int_load(ast_emit_expr(bt), 0);
                 add_instr("JIZ __Lwh%d\n",   n->id);   // condition holds -> next turn
                 add_sinst(0, "@__Lwh%dend ", n->id);
-                acc_ok = 0;
+                ectx.acc_ok = 0;
                 expr_free(bt);
                 break;
             }
@@ -2123,7 +2123,7 @@ void stmt_emit(stmt_node *n)
                 emit_cond_int_load(cond_expr(n->cond), 0);
                 add_instr("JIZ __Lwh%dend\n", n->id);
             }
-            acc_ok = 0;
+            ectx.acc_ok = 0;
 
             stmt_emit(n->body);
 
@@ -2147,7 +2147,7 @@ void stmt_emit(stmt_node *n)
             // Lwh<n>cont) ride the same stacks as while/for. continue lands at
             // Lwh<n>cont, just before the test, so it re-evaluates the condition.
             add_sinst(0, "@__Lwh%d ", n->id);
-            acc_ok = 0;
+            ectx.acc_ok = 0;
 
             stmt_emit(n->body);
 
@@ -2158,7 +2158,7 @@ void stmt_emit(stmt_node *n)
             }
             add_instr("JMP __Lwh%d\n",    n->id);   // condition true  -> loop
             add_sinst(0, "@__Lwh%dend ",  n->id);
-            acc_ok = 0;
+            ectx.acc_ok = 0;
             break;
         }
 
@@ -2201,19 +2201,19 @@ void stmt_emit(stmt_node *n)
                 }
                 if (def_idx >= 0) add_instr("JMP __sw_body_%d_%d\n", n->id, def_idx);
                 else              add_instr("JMP __switch_end_%d\n",  n->id);
-                acc_ok = 0;
+                ectx.acc_ok = 0;
                 for (int i = 0; body && i < body->kids_n; i++)
                 {
                     stmt_node *kid = body->kids[i];
                     if (kid->kind == STMT_CASE_LABEL || kid->kind == STMT_DEFAULT_LABEL)
                     {
                         add_sinst(0, "@__sw_body_%d_%d ", n->id, kid->id2);
-                        acc_ok = 0;
+                        ectx.acc_ok = 0;
                     }
                     else stmt_emit(kid);
                 }
                 add_sinst(0, "@__switch_end_%d ", n->id);
-                acc_ok = 0;
+                ectx.acc_ok = 0;
                 break;
             }
 
@@ -2228,7 +2228,7 @@ void stmt_emit(stmt_node *n)
 
             emit_cond_int_load(cond_e, 1);
             add_instr("SET __switch_exp\n");
-            acc_ok = 0;
+            ectx.acc_ok = 0;
 
             // The body is a flat block of CASE_LABEL / DEFAULT_LABEL markers and
             // statements in source order. We emit it in two passes so the case
@@ -2253,7 +2253,7 @@ void stmt_emit(stmt_node *n)
                     add_instr("JIZ __sw_disp_%d_%d\n", n->id, kid->id2);  // not equal -> next entry
                     add_instr("JMP __sw_body_%d_%d\n", n->id, kid->id2);  // equal     -> this body
                     add_sinst(0, "@__sw_disp_%d_%d ", n->id, kid->id2);
-                    acc_ok = 0;
+                    ectx.acc_ok = 0;
                 }
                 else if (kid->kind == STMT_DEFAULT_LABEL)
                 {
@@ -2263,7 +2263,7 @@ void stmt_emit(stmt_node *n)
             // nothing matched -> default body (if any), else the switch end.
             if (def_idx >= 0) add_instr("JMP __sw_body_%d_%d\n", n->id, def_idx);
             else              add_instr("JMP __switch_end_%d\n",  n->id);
-            acc_ok = 0;
+            ectx.acc_ok = 0;
 
             // Pass 2 -- bodies, contiguous. A label node only drops its body
             // label; everything else emits in order (statements, breaks, nested
@@ -2275,7 +2275,7 @@ void stmt_emit(stmt_node *n)
                 if (kid->kind == STMT_CASE_LABEL || kid->kind == STMT_DEFAULT_LABEL)
                 {
                     add_sinst(0, "@__sw_body_%d_%d ", n->id, kid->id2);
-                    acc_ok = 0;
+                    ectx.acc_ok = 0;
                 }
                 else
                 {
@@ -2283,7 +2283,7 @@ void stmt_emit(stmt_node *n)
                 }
             }
             add_sinst(0, "@__switch_end_%d ", n->id);
-            acc_ok = 0;
+            ectx.acc_ok = 0;
             break;
         }
 
@@ -2377,14 +2377,14 @@ void stmt_emit(stmt_node *n)
             // DISPLAY-ONLY: lex_id() still keys off the (empty-during-walk)
             // global fname, so the temp-variable names -- and the assembly -- are
             // unchanged. Globals (no prefix) are unaffected by strip_fn_prefix.
-            const char *saved_emit_fname = emit_fname;
-            emit_fname = v_table[n->id].name;
-            int saved_emit_fid = emit_fid;   // the caller of every CAL in the body
-            emit_fid  = n->id;
+            const char *saved_emit_fname = ectx.emit_fname;
+            ectx.emit_fname = v_table[n->id].name;
+            int saved_emit_fid = ectx.emit_fid;   // the caller of every CAL in the body
+            ectx.emit_fid  = n->id;
             pctx.ret_ok    = 0;
             stmt_emit(n->body);
-            emit_fid  = saved_emit_fid;
-            emit_fname = saved_emit_fname;
+            ectx.emit_fid  = saved_emit_fid;
+            ectx.emit_fname = saved_emit_fname;
             pctx.fun_parse = saved_fun_parse;
 
             // not void: no path may reach the end (the next function's code)
@@ -2408,7 +2408,7 @@ void stmt_emit(stmt_node *n)
     }
 
     n->emitted = 1;
-    emit_line  = saved_emit_line;
+    ectx.emit_line  = saved_emit_line;
     pctx.line_num   = saved_line_num;
 }
 

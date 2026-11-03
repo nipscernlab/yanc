@@ -57,9 +57,9 @@ void declare_var(int id)
     // save the function it belongs to
     const char *func = strcmp(pctx.fname,"")==0 ? "global" : pctx.fname;
     // save the data in the log file
-    fprintf(f_log, "%s %s %d\n", func, strip_fn_prefix(v_table[id].name), pctx.type_tmp);
+    fprintf(ectx.f_log, "%s %s %d\n", func, strip_fn_prefix(v_table[id].name), pctx.type_tmp);
     // if comp, save the imaginary part too
-    if (pctx.type_tmp == 3) fprintf(f_log, "%s %s_i 3\n", func, strip_fn_prefix(v_table[id].name));
+    if (pctx.type_tmp == 3) fprintf(ectx.f_log, "%s %s_i 3\n", func, strip_fn_prefix(v_table[id].name));
 }
 
 // Parse-time half of declare_arr_1d: v_table update + log / info messages.
@@ -79,8 +79,8 @@ static void declare_arr_1d_parse(int id_var, int id_arg, int id_fname)
     const char *func = strcmp(pctx.fname,"")==0 ? "global" : pctx.fname;
     if (sim_arr == 1)
     {
-                       fprintf(f_log, "%s %s   %d %s\n", func, strip_fn_prefix(v_table[id_var].name), pctx.type_tmp, v_table[id_arg].name);
-        if (type == 3) fprintf(f_log, "%s %s_i %d %s\n", func, strip_fn_prefix(v_table[id_var].name), pctx.type_tmp, v_table[id_arg].name);
+                       fprintf(ectx.f_log, "%s %s   %d %s\n", func, strip_fn_prefix(v_table[id_var].name), pctx.type_tmp, v_table[id_arg].name);
+        if (type == 3) fprintf(ectx.f_log, "%s %s_i %d %s\n", func, strip_fn_prefix(v_table[id_var].name), pctx.type_tmp, v_table[id_arg].name);
     }
 
     // for comp, mark the imaginary half as a 1D array too

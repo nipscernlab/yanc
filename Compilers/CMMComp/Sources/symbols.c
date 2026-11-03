@@ -24,7 +24,6 @@
 #include "../../common/yanc_num.h"
 
 int          v_count = 0;  // stores the size of the table
-int          fnum_quiet = 0; // 1: lex_fnum says nothing of an approximation (symbols.h)
 static int   v_cap   = 0;  // current capacity of the parallel arrays
 
 // AoS storage: one row per identifier. All attributes (name, type, used,
@@ -130,7 +129,7 @@ char *strip_fn(char *var, const char *func)
 // function the walker is in. For messages only: lex_id names with fname
 char *strip_fn_prefix(char *var)
 {
-    return strip_fn(var, emit_fname[0] != '\0' ? emit_fname : pctx.fname);
+    return strip_fn(var, ectx.emit_fname[0] != '\0' ? ectx.emit_fname : pctx.fname);
 }
 
 // ----------------------------------------------------------------------------
@@ -433,7 +432,7 @@ int lex_fnum(char *text)
     // #FROUND >= 1) is not an approximation the user can shrug off: warn
     if (r.flushed)
         warn(MSG_WARN_CONST_FLUSHED, pctx.line_num+1, text, pow(2,cfg.nbmant-1)*pow(2,-pow(2,cfg.nbexpo-1)), cfg.fround);
-    else if (r.inexact && !fnum_quiet)
+    else if (r.inexact && !ectx.fnum_quiet)
     {
         double mf = ldexp((double)r.m, (int)r.e);
         warn(MSG_INFO_CONST_APPROX, text, pctx.line_num+1, r.s ? -mf : mf, r.delta);

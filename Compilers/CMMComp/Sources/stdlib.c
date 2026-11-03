@@ -28,9 +28,9 @@ expr builtin_in(int id)
 {
     if (atoi(v_table[id].name) >= cfg.nuioin) fatal(MSG_ERR_NO_IN_PORT, pctx.line_num+1, v_table[id].name);
 
-    if (acc_ok == 0) add_instr("INN %s\n", v_table[id].name); else add_instr("P_INN %s\n", v_table[id].name);
+    if (ectx.acc_ok == 0) add_instr("INN %s\n", v_table[id].name); else add_instr("P_INN %s\n", v_table[id].name);
 
-    acc_ok = 1;  // marks the acc as now holding a value
+    ectx.acc_ok = 1;  // marks the acc as now holding a value
 
     return expr_make(TY_INT, 0);
 }
@@ -40,9 +40,9 @@ expr builtin_fin(int id)
 {
     if (atoi(v_table[id].name) >= cfg.nuioin) fatal(MSG_ERR_NO_IN_PORT, pctx.line_num+1, v_table[id].name);
 
-    if (acc_ok == 0) add_instr("F_INN %s\n", v_table[id].name); else add_instr("PF_INN %s\n", v_table[id].name);
+    if (ectx.acc_ok == 0) add_instr("F_INN %s\n", v_table[id].name); else add_instr("PF_INN %s\n", v_table[id].name);
 
-    acc_ok = 1;  // marks the acc as now holding a value
+    ectx.acc_ok = 1;  // marks the acc as now holding a value
 
     return expr_make(TY_FLOAT, 0);
 }
@@ -106,7 +106,7 @@ void builtin_out(int id, expr e)
 
     add_instr("OUT %s\n", v_table[id].name);
 
-    acc_ok = 0; // libera acc    
+    ectx.acc_ok = 0; // libera acc    
 }
 
 // ----------------------------------------------------------------------------
@@ -161,7 +161,7 @@ void builtin_toma(expr e, int k)
 
     add_instr("TOM %d\n", k);
 
-    acc_ok = 0; // frees acc
+    ectx.acc_ok = 0; // frees acc
 }
 
 // x = cade(k); -- the only form allowed (STMT_ASSIGN): link k's word lands
@@ -174,7 +174,7 @@ expr builtin_cade(int dest, int k)
 
     add_instr("CAD %d\n", k);
 
-    acc_ok = 1; // acc now holds the partner's word
+    ectx.acc_ok = 1; // acc now holds the partner's word
 
     return expr_make(v_table[dest].type, 0);
 }
@@ -184,11 +184,11 @@ expr builtin_cade(int dest, int k)
 // runs once, CAD's waiting loop jumps back to CAD itself.
 expr builtin_cade_expr(int type, int k)
 {
-    if (acc_ok) add_instr("PSH\n");
+    if (ectx.acc_ok) add_instr("PSH\n");
 
     add_instr("CAD %d\n", k);
 
-    acc_ok = 1; // acc now holds the partner's word
+    ectx.acc_ok = 1; // acc now holds the partner's word
 
     return expr_make(type, 0);
 }
@@ -250,7 +250,7 @@ void builtin_fout(int id, expr e)
 
     add_instr("OUT %s\n", v_table[id].name);
 
-    acc_ok = 0; // libera acc    
+    ectx.acc_ok = 0; // libera acc    
 }
 
 // ----------------------------------------------------------------------------
@@ -290,7 +290,7 @@ expr builtin_sign(expr e1, expr e2)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
+    char ld[10]; if (ectx.acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -400,7 +400,7 @@ expr builtin_sign(expr e1, expr e2)
         add_instr("SF_SGN\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(e2.type, 0);
 }
@@ -428,9 +428,9 @@ expr builtin_abs(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
     
-    char  ld [10]; if (acc_ok == 0) strcpy(ld  , "LOD"   ); else strcpy(ld  , "P_LOD"  );
-    char  abs[10]; if (acc_ok == 0) strcpy( abs, "ABS_M" ); else strcpy( abs, "P_ABS_M");
-    char fabs[10]; if (acc_ok == 0) strcpy(fabs,"F_ABS_M"); else strcpy(fabs,"PF_ABS_M");
+    char  ld [10]; if (ectx.acc_ok == 0) strcpy(ld  , "LOD"   ); else strcpy(ld  , "P_LOD"  );
+    char  abs[10]; if (ectx.acc_ok == 0) strcpy( abs, "ABS_M" ); else strcpy( abs, "P_ABS_M");
+    char fabs[10]; if (ectx.acc_ok == 0) strcpy(fabs,"F_ABS_M"); else strcpy(fabs,"PF_ABS_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -466,7 +466,7 @@ expr builtin_abs(expr e)
         e = builtin_sqrt(builtin_mod2(e));
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(e.type, 0);
 }
@@ -494,9 +494,9 @@ expr builtin_pst(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char  ld [10]; if (acc_ok == 0) strcpy( ld , "LOD"   ); else strcpy( ld , "P_LOD"  );
-    char  pst[10]; if (acc_ok == 0) strcpy( pst, "PST_M" ); else strcpy( pst, "P_PST_M");
-    char fpst[10]; if (acc_ok == 0) strcpy(fpst,"F_PST_M"); else strcpy(fpst,"PF_PST_M");
+    char  ld [10]; if (ectx.acc_ok == 0) strcpy( ld , "LOD"   ); else strcpy( ld , "P_LOD"  );
+    char  pst[10]; if (ectx.acc_ok == 0) strcpy( pst, "PST_M" ); else strcpy( pst, "P_PST_M");
+    char fpst[10]; if (ectx.acc_ok == 0) strcpy(fpst,"F_PST_M"); else strcpy(fpst,"PF_PST_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -532,7 +532,7 @@ expr builtin_pst(expr e)
         fatal(MSG_ERR_PSET_COMPLEX, pctx.line_num+1);
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(e.type, 0);
 }
@@ -563,7 +563,7 @@ expr builtin_norm(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char nrm[10]; if (acc_ok == 0) strcpy(nrm,"NRM_M"); else strcpy(nrm,"P_NRM_M");
+    char nrm[10]; if (ectx.acc_ok == 0) strcpy(nrm,"NRM_M"); else strcpy(nrm,"P_NRM_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -581,7 +581,7 @@ expr builtin_norm(expr e)
         add_instr("NRM\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_INT, 0);
 }
@@ -627,7 +627,7 @@ void builtin_copy(expr e, int id2)
         add_instr("SET %s\n", v_table[id2].name);
     }
 
-    acc_ok = 0; // a statement: the acc holds nothing the next one needs
+    ectx.acc_ok = 0; // a statement: the acc holds nothing the next one needs
 }
 
 // ----------------------------------------------------------------------------
@@ -669,12 +669,12 @@ expr builtin_sqrt(expr e)
         if (e.type == TY_CCONST)                            // comp constant
         {
             get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else if (e.id != 0)                         // comp in memory
         {
             get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
@@ -716,7 +716,7 @@ expr builtin_sqrt(expr e)
         add_instr("LOD %s\n",   RE);                     // acc = re
         add_instr("P_LOD %s\n", IM);                     // push re; acc = im -> comp in acc
 
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_COMP, 0);
     }
 
@@ -724,8 +724,8 @@ expr builtin_sqrt(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -758,7 +758,7 @@ expr builtin_sqrt(expr e)
         add_instr("CAL __float_sqrt\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_FLOAT, 0);
 }
@@ -799,12 +799,12 @@ expr builtin_exp(expr e)
         if (e.type == TY_CCONST)                            // comp constant
         {
             get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else if (e.id != 0)                         // comp in memory
         {
             get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
@@ -836,7 +836,7 @@ expr builtin_exp(expr e)
         // assemble the complex result: real on the stack, imag in acc
         add_instr("P_LOD %s\n", IM);                     // push re; acc = im -> comp in acc
 
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_COMP, 0);
     }
 
@@ -844,8 +844,8 @@ expr builtin_exp(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -878,7 +878,7 @@ expr builtin_exp(expr e)
         add_instr("CAL __float_exp\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_FLOAT, 0);
 }
@@ -919,12 +919,12 @@ expr builtin_log(expr e)
         if (e.type == TY_CCONST)                            // comp constant
         {
             get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else if (e.id != 0)                         // comp in memory
         {
             get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
@@ -957,7 +957,7 @@ expr builtin_log(expr e)
         add_instr("LOD %s\n",   RE);
         add_instr("P_LOD %s\n", IM);
 
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_COMP, 0);
     }
 
@@ -965,8 +965,8 @@ expr builtin_log(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -999,7 +999,7 @@ expr builtin_log(expr e)
         add_instr("CAL __float_log\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_FLOAT, 0);
 }
@@ -1048,21 +1048,21 @@ expr builtin_pow(expr ex, expr ey)
     {
         long n = atol(v_table[ey.id].name);
 
-        char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-        char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+        char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+        char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
         // x^0 = 1: a base in the acc is simply discarded; with a base in
         // memory the result is the literal 1.0 itself, which the caller loads
         // or takes as a memory operand (F_ADD 1.0)
         if (n == 0 && ex.id != 0) return num2exp(lex_fnum("1.0"), 2);
-        if (n == 0) { add_instr("LOD 1.0\n"); acc_ok = 1; return expr_make(TY_FLOAT, 0); }
+        if (n == 0) { add_instr("LOD 1.0\n"); ectx.acc_ok = 1; return expr_make(TY_FLOAT, 0); }
 
         // widen the base to a float in the acc (the four operand shapes)
         if ((ex.type == TY_INT) && (ex.id != 0)) add_instr("%s %s\n", i2f, v_table[ex.id].name);  // int in memory
         if ((ex.type == TY_INT) && (ex.id == 0)) add_instr("I2F\n");                               // int in acc
         if ((ex.type == TY_FLOAT) && (ex.id != 0)) add_instr("%s %s\n", ld , v_table[ex.id].name);  // float in memory
         // float in acc: already there
-        acc_ok = 1;
+        ectx.acc_ok = 1;
 
         if (n == 1) return expr_make(TY_FLOAT, 0);                  // x^1 = x
 
@@ -1087,7 +1087,7 @@ expr builtin_pow(expr ex, expr ey)
             }
         }
         add_instr("LOD %s\n", R);                            // result -> acc (peephole drops if redundant)
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_FLOAT, 0);
     }
 
@@ -1120,8 +1120,8 @@ expr builtin_pow(expr ex, expr ey)
     }
     else                                  // exponent in memory (variable)
     {
-        char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-        char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+        char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+        char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
         if (ex.id == 0)                   // base in the acc
         {
@@ -1138,7 +1138,7 @@ expr builtin_pow(expr ex, expr ey)
         else              add_instr("LOD %s\n",   v_table[ey.id].name);
         add_instr("SET %s\n", Y);
     }
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     // ------------------------------------------------------------------------
     // exponent is an integer VARIABLE / acc -> runtime multiply loop ---------
@@ -1168,7 +1168,7 @@ expr builtin_pow(expr ex, expr ey)
         add_instr("LOD %s\n", R); add_instr("F_DIV 1.0\n"); add_instr("SET %s\n", R);     // r = 1/r
         add_sinst(0, "@__Lpow%dpos ", m);
         add_instr("LOD %s\n", R);
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_FLOAT, 0);
     }
 
@@ -1179,7 +1179,7 @@ expr builtin_pow(expr ex, expr ey)
     add_instr("CAL __float_log\n");        // ln(x)
     add_instr("F_MLT %s\n", Y);          // y * ln(x)
     add_instr("CAL __float_exp\n");        // exp(...)
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_FLOAT, 0);
 }
 
@@ -1221,12 +1221,12 @@ expr builtin_atan(expr e)
         if (e.type == TY_CCONST)                            // comp constant
         {
             get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else if (e.id != 0)                         // comp in memory
         {
             get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
@@ -1285,7 +1285,7 @@ expr builtin_atan(expr e)
         add_instr("LOD %s\n",   RE);
         add_instr("P_LOD %s\n", IM);
 
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_COMP, 0);
     }
 
@@ -1293,8 +1293,8 @@ expr builtin_atan(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1327,7 +1327,7 @@ expr builtin_atan(expr e)
         add_instr("CAL __float_atan\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_FLOAT, 0);
 }
@@ -1368,12 +1368,12 @@ expr builtin_sin(expr e)
         if (e.type == TY_CCONST)                            // comp constant
         {
             get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else if (e.id != 0)                         // comp in memory
         {
             get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
@@ -1408,7 +1408,7 @@ expr builtin_sin(expr e)
         add_instr("F_MLT %s\n", CHB);
         add_instr("P_LOD %s\n", CA); add_instr("F_MLT %s\n", SHB);
 
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_COMP, 0);
     }
 
@@ -1416,8 +1416,8 @@ expr builtin_sin(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1450,7 +1450,7 @@ expr builtin_sin(expr e)
         add_instr("CAL __float_sin\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_FLOAT, 0);
 }
@@ -1491,12 +1491,12 @@ expr builtin_tan(expr e)
         if (e.type == TY_CCONST)                            // comp constant
         {
             get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else if (e.id != 0)                         // comp in memory
         {
             get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
@@ -1539,7 +1539,7 @@ expr builtin_tan(expr e)
         add_instr("LOD %s\n", D);   add_instr("F_DIV %s\n", S2A);
         add_instr("P_LOD %s\n", D); add_instr("F_DIV %s\n", SHB);
 
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_COMP, 0);
     }
 
@@ -1547,8 +1547,8 @@ expr builtin_tan(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1581,7 +1581,7 @@ expr builtin_tan(expr e)
         add_instr("CAL __float_tan\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_FLOAT, 0);
 }
@@ -1622,12 +1622,12 @@ expr builtin_cos(expr e)
         if (e.type == TY_CCONST)                            // comp constant
         {
             get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else if (e.id != 0)                         // comp in memory
         {
             get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_ok;
+            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = ectx.acc_ok;
         }
         else                                        // comp in acc (acc=imag, stack=real)
         {
@@ -1664,7 +1664,7 @@ expr builtin_cos(expr e)
         add_instr("F_MLT %s\n", CHB);
         add_instr("P_LOD %s\n", SA); add_instr("F_MLT %s\n", SHB); add_instr("F_NEG\n");
 
-        acc_ok = 1;
+        ectx.acc_ok = 1;
         return expr_make(TY_COMP, 0);
     }
 
@@ -1672,8 +1672,8 @@ expr builtin_cos(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1710,7 +1710,7 @@ expr builtin_cos(expr e)
         add_instr("CAL __float_sin\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_FLOAT, 0);
 }
@@ -1739,8 +1739,8 @@ expr builtin_cosh(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
@@ -1757,7 +1757,7 @@ expr builtin_cosh(expr e)
 
     // float in acc: already there
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     // cosh(x) = (exp(x) + exp(-x)) / 2
     const char *X = v_table[lex_id("__cosh_x")].name;
@@ -1771,7 +1771,7 @@ expr builtin_cosh(expr e)
     add_instr("F_ADD %s\n", T);            // exp(-x) + exp(x)
     add_instr("F_MLT 0.5\n");              // / 2
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_FLOAT, 0);
 }
 
@@ -1792,8 +1792,8 @@ expr builtin_sinh(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
@@ -1810,7 +1810,7 @@ expr builtin_sinh(expr e)
 
     // float in acc: already there
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     // sinh(x) = (exp(x) - exp(-x)) / 2
     const char *X = v_table[lex_id("__sinh_x")].name;
@@ -1824,7 +1824,7 @@ expr builtin_sinh(expr e)
     add_instr("F_SU2 %s\n", T);            // T - acc = exp(x) - exp(-x)   (F_SU2 X = X - acc)
     add_instr("F_MLT 0.5\n");              // / 2
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_FLOAT, 0);
 }
 
@@ -1845,8 +1845,8 @@ expr builtin_tanh(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
@@ -1863,7 +1863,7 @@ expr builtin_tanh(expr e)
 
     // float in acc: already there
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     // tanh(x) = (exp(2x) - 1) / (exp(2x) + 1)   -- one exponential
     const char *E = v_table[lex_id("__tanh_e")].name;     // exp(2x)
@@ -1878,7 +1878,7 @@ expr builtin_tanh(expr e)
     add_instr("F_ADD 1.0\n");              // exp(2x) + 1  = denominator (acc)
     add_instr("F_DIV %s\n", N);            // N / acc = num/den   (F_DIV X = X/acc)
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_FLOAT, 0);
 }
 
@@ -1908,8 +1908,8 @@ expr builtin_floor(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
@@ -1926,7 +1926,7 @@ expr builtin_floor(expr e)
 
     // float in acc: already there
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     // floor(x) = trunc(x); if (trunc > x) trunc -= 1  (only for negative non-integers)
     const char *X = v_table[lex_id("__floor_x")].name;
@@ -1945,7 +1945,7 @@ expr builtin_floor(expr e)
     add_sinst(0, "@__Lflr%dend ", n);
     add_instr("LOD %s\n", T);
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_FLOAT, 0);
 }
 
@@ -1968,8 +1968,8 @@ expr builtin_ceil(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
@@ -1986,7 +1986,7 @@ expr builtin_ceil(expr e)
 
     // float in acc: already there
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     // ceil(x) = trunc(x); if (trunc < x) trunc += 1  (only for positive non-integers)
     const char *X = v_table[lex_id("__ceil_x")].name;
@@ -2006,7 +2006,7 @@ expr builtin_ceil(expr e)
     add_sinst(0, "@__Lcel%dend ", n);
     add_instr("LOD %s\n", T);
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_FLOAT, 0);
 }
 
@@ -2027,8 +2027,8 @@ expr builtin_round(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
@@ -2045,7 +2045,7 @@ expr builtin_round(expr e)
 
     // float in acc: already there
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     // round(x) = trunc(x + copysign(0.5, x))  -> ties away from zero
     const char *X = v_table[lex_id("__round_x")].name;
@@ -2057,7 +2057,7 @@ expr builtin_round(expr e)
     add_instr("F2I\n");                    // truncate toward zero
     add_instr("I2F\n");                    // back to float
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_FLOAT, 0);
 }
 
@@ -2121,7 +2121,7 @@ expr builtin_real(expr e)
         add_instr("POP\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     
     return expr_make(TY_FLOAT, 0);
 }
@@ -2183,7 +2183,7 @@ expr builtin_imag(expr e)
         add_instr("LOD   __aux_var\n");
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
 
     return expr_make(TY_FLOAT, 0);
 }
@@ -2297,12 +2297,12 @@ expr builtin_fase(expr e)
     if (e.type == TY_CCONST)                          // comp constant
     {
         get_cmp_cst(e, &etr, &eti);
-        R = v_table[etr.id].name; M = v_table[eti.id].name; pre = acc_ok;
+        R = v_table[etr.id].name; M = v_table[eti.id].name; pre = ectx.acc_ok;
     }
     else if (e.id != 0)                       // comp in memory
     {
         get_cmp_ets(e, &etr, &eti);
-        R = v_table[etr.id].name; M = v_table[eti.id].name; pre = acc_ok;
+        R = v_table[etr.id].name; M = v_table[eti.id].name; pre = ectx.acc_ok;
     }
     else                                      // comp in acc (acc=imag, stack top=real)
     {
@@ -2368,7 +2368,7 @@ expr builtin_fase(expr e)
 
     add_sinst(0, "@__Lfa%dz ", n);
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_FLOAT, 0);
 }
 
@@ -2405,8 +2405,8 @@ expr builtin_comp(expr er, expr ei)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -2526,7 +2526,7 @@ expr builtin_comp(expr er, expr ei)
         // nothing to do
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_COMP, 0);
 }
 
@@ -2553,8 +2553,8 @@ expr builtin_conj(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -2616,7 +2616,7 @@ expr builtin_conj(expr e)
         add_instr("P_LOD 0.0\n");                           // push x (acc); acc = 0
     }
 
-    acc_ok = 1;
+    ectx.acc_ok = 1;
     return expr_make(TY_COMP, 0);                                 // always comp
 }
 
@@ -2686,7 +2686,7 @@ void builtin_shift(int ida, expr eb, int idc, int later)
             add_instr("LOD_V %s %d\n", v_table[ida].name, i-1);
             add_instr("SET_V %s %d\n", v_table[ida].name, i);
         }
-        acc_ok = 0;
+        ectx.acc_ok = 0;
         return;
     }
 
@@ -2794,7 +2794,7 @@ void builtin_shift(int ida, expr eb, int idc, int later)
         add_instr("SET %s\n", v_table[ida].name);
     }
 
-    acc_ok = 0;
+    ectx.acc_ok = 0;
 }
 
 // the value of a shift emitted with later, in the acc or in memory, into a[0]
@@ -2811,5 +2811,5 @@ void builtin_shift_in(int ida, expr e)
         if (v_table[ida].type == TY_INT && e.type == TY_FLOAT) add_instr("F2I\n");
     }
     add_instr("SET %s\n", v_table[ida].name);
-    acc_ok = 0;
+    ectx.acc_ok = 0;
 }

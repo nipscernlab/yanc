@@ -9,7 +9,6 @@
 
 void assign_set  (int id, expr e);           // standard assignment
 void assign_array(int id, expr e , int fft); // array assignment
-extern int assign_idx_reload;                 // an index variable assign_array may read again (0: none; ast.c)
 void assign_array_const(int id, int k, int dims, expr e); // arr[const] or m[const][const] = rhs, direct SET_V (no indirect addressing)
 void assign_pplus(int id);                   // i++ assignment
 void assign_aplus(int id, expr e);           // i++ assignment for a 1D array
