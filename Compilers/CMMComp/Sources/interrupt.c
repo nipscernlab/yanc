@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../Headers/itr.h"
+#include "../Headers/interrupt.h"
 #include "../Headers/global.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"

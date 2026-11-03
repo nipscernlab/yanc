@@ -23,7 +23,7 @@
 // needed by the stmt_node walker
 #include "../Headers/data_assign.h"
 #include "../Headers/data_declar.h"  // declar_arr_*_emit for STMT_DECLAR_* walker
-#include "../Headers/itr.h"
+#include "../Headers/interrupt.h"
 #include "../Headers/diag.h"
 #include "../Headers/convert.h"      // get_cmp_cst for complex cond loads
 #include "../Headers/dirac.h"    // the Dirac notation in loops

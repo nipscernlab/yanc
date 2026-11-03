@@ -62,7 +62,7 @@
 
 #include <stdlib.h>
 
-#include "../Headers/itr.h"         // interrupt handling
+#include "../Headers/interrupt.h"         // interrupt handling
 #include "../Headers/oper.h"        // ALU operations
 #include "../Headers/stdlib.h"      // SAPHO standard library
 #include "../Headers/control_flow.h"      // jump management (if/else while)
