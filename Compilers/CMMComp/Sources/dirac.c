@@ -677,7 +677,7 @@ expr dirac_sum_emit(expr_node *n)
     loop_hoists(d->lv);
     acc_ok = 0;
     expr b = in_acc(ast_emit_expr(d->body));
-    oper_soma(expr_make(t, 0), b);
+    oper_add(expr_make(t, 0), b);
     acc_ok = 1;
     loop_close(d->lv, 1, top, end);
     add_instr("POP\n");

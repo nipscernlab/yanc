@@ -152,7 +152,7 @@ expr oper_neg(expr e)
 }
 
 // adds two numbers
-expr oper_soma(expr e1, expr e2)
+expr oper_add(expr e1, expr e2)
 {
     expr etr, eti;
 
@@ -619,7 +619,7 @@ expr oper_soma(expr e1, expr e2)
 }
 
 // subtraction between two numbers
-expr oper_subt(expr e1, expr e2)
+expr oper_sub(expr e1, expr e2)
 {
     expr etr, eti;
 
@@ -638,7 +638,7 @@ expr oper_subt(expr e1, expr e2)
                  zi ? "+" : (im[0] == '-' ? "+" : "-"), zi ? "0.0" : im + (im[0] == '-'));
         int id = exec_cnum(txt);
         free(txt); free(re); free(im);
-        return oper_soma(e1, num2exp(id, 5));
+        return oper_add(e1, num2exp(id, 5));
     }
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -659,13 +659,13 @@ expr oper_subt(expr e1, expr e2)
     // int var with int var
     if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
     {
-        return oper_soma(e1, oper_neg(e2));
+        return oper_add(e1, oper_neg(e2));
     }
 
     // int var with int acc
     if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
     {
-        return oper_soma(e1, oper_neg(e2));
+        return oper_add(e1, oper_neg(e2));
     }
 
     // int var with float var
@@ -704,13 +704,13 @@ expr oper_subt(expr e1, expr e2)
     // int acc with int var
     if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
     {
-        return oper_soma(e1, oper_neg(e2));
+        return oper_add(e1, oper_neg(e2));
     }
 
     // int acc with int acc
     if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id==0))
     {
-        return oper_soma(e1, oper_neg(e2));
+        return oper_add(e1, oper_neg(e2));
     }
 
     // int acc with float var
@@ -1603,11 +1603,11 @@ void emit_sq_sum(expr er, expr ei)
         oper_mult(er, er);
         oper_mult(ei, ei);
     }
-    oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+    oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 }
 
 // division between two numbers
-expr oper_divi(expr e1, expr e2)
+expr oper_div(expr e1, expr e2)
 {
     expr etr, eti;
 
@@ -1633,7 +1633,7 @@ expr oper_divi(expr e1, expr e2)
 
             int acc0 = acc_ok;
             add_sinst(0, "#DIVK\n");
-            divk_inner = 1; oper_divi(e1, e2); divk_inner = 0;
+            divk_inner = 1; oper_div(e1, e2); divk_inner = 0;
             add_sinst(0, "#MULK\n");
             acc_ok = acc0;
             expr m = oper_mult(e1, num2exp(rid, 2));
@@ -1687,11 +1687,11 @@ expr oper_divi(expr e1, expr e2)
 
         oper_mult(e1, etr);           // multiply int with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
 
         oper_mult(e1, eti);           // multiply int with imag part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));            // nega a parte imaginaria
     }
 
@@ -1707,11 +1707,11 @@ expr oper_divi(expr e1, expr e2)
 
         oper_mult(e1, etr);           // multiply int with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
 
         oper_mult(e1, eti);           // multiply int with imag part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));            // nega a parte imaginaria
     }
 
@@ -1731,12 +1731,12 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET   __aux_var3\n"); // save the float
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var2\n"); // fetch the squared magnitude
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
 
         add_instr("P_LOD __aux_var3\n"); // fetch the float
         add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD __aux_var2\n"); // fetch the squared magnitude
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -1785,12 +1785,12 @@ expr oper_divi(expr e1, expr e2)
         add_instr("LOD   __aux_var\n");
         oper_mult(expr_make(TY_FLOAT, 0), etr);         // multiply float with real part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
 
         add_instr("P_LOD  __aux_var\n");
         oper_mult(expr_make(TY_FLOAT, 0), eti);         // multiply float with imag part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -1809,12 +1809,12 @@ expr oper_divi(expr e1, expr e2)
         add_instr("LOD   __aux_var\n" );
         oper_mult(expr_make(TY_FLOAT, 0), etr);          // multiply float with real part
         add_instr("P_LOD __aux_var1\n");  // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // faz a divisao
 
         add_instr("P_LOD  __aux_var\n" );
         oper_mult(expr_make(TY_FLOAT, 0), eti);          // multiply float with imag part
         add_instr("P_LOD  __aux_var1\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -1836,12 +1836,12 @@ expr oper_divi(expr e1, expr e2)
         add_instr("LOD   __aux_var2\n"); // load the float
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
 
         add_instr("P_LOD __aux_var2\n"); // fetch the float
         add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -1883,11 +1883,11 @@ expr oper_divi(expr e1, expr e2)
 
         oper_mult(e1, etr);           // multiply float with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
 
         oper_mult(e1, eti);           // multiply float with imag part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -1902,11 +1902,11 @@ expr oper_divi(expr e1, expr e2)
 
         oper_mult(e1, etr);           // multiply float with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
 
         oper_mult(e1, eti);           // multiply float with imag part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -1924,12 +1924,12 @@ expr oper_divi(expr e1, expr e2)
         add_instr("LOD %s\n"  , v_table[e1.id].name); // load the float
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var2\n");             // fetch the squared magnitude
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));                  // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));                  // faz a divisao
 
         add_instr("P_LOD %s\n", v_table[e1.id].name); // load the float
         add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD __aux_var2\n");             // fetch the squared magnitude
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));                  // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));                  // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -1974,12 +1974,12 @@ expr oper_divi(expr e1, expr e2)
         add_instr("LOD   __aux_var \n");
         oper_mult(expr_make(TY_FLOAT, 0), etr);         // multiply float with real part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
 
         add_instr("P_LOD __aux_var \n");
         oper_mult(expr_make(TY_FLOAT, 0), eti);         // multiply float with imag part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -1997,12 +1997,12 @@ expr oper_divi(expr e1, expr e2)
         add_instr("LOD   __aux_var\n");
         oper_mult(expr_make(TY_FLOAT, 0), etr);         // multiply float with real part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
 
         add_instr("P_LOD __aux_var\n");
         oper_mult(expr_make(TY_FLOAT, 0), eti);         // multiply float with imag part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -2023,12 +2023,12 @@ expr oper_divi(expr e1, expr e2)
         add_instr("LOD   __aux_var2\n"); // load the float
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
 
         add_instr("P_LOD __aux_var2\n"); // fetch the float
         add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -2037,8 +2037,8 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        oper_divi(etr, e2);
-        oper_divi(eti, e2);
+        oper_div(etr, e2);
+        oper_div(eti, e2);
     }
 
     // comp const with int acc
@@ -2048,9 +2048,9 @@ expr oper_divi(expr e1, expr e2)
 
         add_instr("I2F\n");
         add_instr("SET   __aux_var\n");
-        oper_divi(etr, expr_make(TY_FLOAT, 0));
+        oper_div(etr, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(eti, expr_make(TY_FLOAT, 0));
+        oper_div(eti, expr_make(TY_FLOAT, 0));
     }
 
     // comp const with float var
@@ -2058,8 +2058,8 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_cst(e1,&etr,&eti);
 
-        oper_divi(etr, e2);
-        oper_divi(eti, e2);
+        oper_div(etr, e2);
+        oper_div(eti, e2);
     }
 
     // comp const with float acc
@@ -2068,9 +2068,9 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_cst(e1,&etr,&eti);
 
         add_instr("SET   __aux_var\n");
-        oper_divi(etr, expr_make(TY_FLOAT, 0));
+        oper_div(etr, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(eti, expr_make(TY_FLOAT, 0));
+        oper_div(eti, expr_make(TY_FLOAT, 0));
     }
 
     // comp const with comp const
@@ -2088,15 +2088,15 @@ expr oper_divi(expr e1, expr e2)
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 
         oper_mult(et1i, et2r);
         oper_mult(et1r, et2i);
-        oper_subt(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp const with comp var
@@ -2114,15 +2114,15 @@ expr oper_divi(expr e1, expr e2)
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 
         oper_mult(et1i, et2r);
         oper_mult(et1r, et2i);
-        oper_subt(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp const with comp acc
@@ -2135,24 +2135,24 @@ expr oper_divi(expr e1, expr e2)
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var \n");
         add_instr("F_MLT __aux_var \n");
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("SET   __aux_var2\n");
 
         add_instr("LOD   __aux_var1\n");
         oper_mult(etr, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var \n");
         oper_mult(eti, expr_make(TY_FLOAT, 0));
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var2\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 
         add_instr("P_LOD __aux_var1\n");
         oper_mult(eti, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var \n");
         oper_mult(etr, expr_make(TY_FLOAT, 0));
-        oper_subt(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var2\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp var with int var
@@ -2160,8 +2160,8 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        oper_divi(etr, e2);
-        oper_divi(eti, e2);
+        oper_div(etr, e2);
+        oper_div(eti, e2);
     }
 
     // comp var with int acc
@@ -2171,9 +2171,9 @@ expr oper_divi(expr e1, expr e2)
 
         add_instr("I2F\n");
         add_instr("SET   __aux_var\n");
-        oper_divi(etr, expr_make(TY_FLOAT, 0));
+        oper_div(etr, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(eti, expr_make(TY_FLOAT, 0));
+        oper_div(eti, expr_make(TY_FLOAT, 0));
     }
 
     // comp var with float var
@@ -2181,8 +2181,8 @@ expr oper_divi(expr e1, expr e2)
     {
         get_cmp_ets(e1,&etr,&eti);
 
-        oper_divi(etr, e2);
-        oper_divi(eti, e2);
+        oper_div(etr, e2);
+        oper_div(eti, e2);
     }
 
     // comp var with float acc
@@ -2191,9 +2191,9 @@ expr oper_divi(expr e1, expr e2)
         get_cmp_ets(e1,&etr,&eti);
 
         add_instr("SET   __aux_var\n");
-        oper_divi(etr, expr_make(TY_FLOAT, 0));
+        oper_div(etr, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(eti, expr_make(TY_FLOAT, 0));
+        oper_div(eti, expr_make(TY_FLOAT, 0));
     }
 
     // comp var with comp const
@@ -2211,15 +2211,15 @@ expr oper_divi(expr e1, expr e2)
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 
         oper_mult(et1i, et2r);
         oper_mult(et1r, et2i);
-        oper_subt(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp var with comp var
@@ -2237,15 +2237,15 @@ expr oper_divi(expr e1, expr e2)
 
         oper_mult(et1r, et2r);
         oper_mult(et1i, et2i);
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 
         oper_mult(et1i, et2r);
         oper_mult(et1r, et2i);
-        oper_subt(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp var with comp acc
@@ -2258,24 +2258,24 @@ expr oper_divi(expr e1, expr e2)
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var \n");
         add_instr("F_MLT __aux_var \n");
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("SET   __aux_var2\n");
 
         add_instr("LOD   __aux_var1\n");
         oper_mult(etr, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var \n");
         oper_mult(eti, expr_make(TY_FLOAT, 0));
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var2\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 
         add_instr("P_LOD __aux_var1\n");
         oper_mult(eti, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var \n");
         oper_mult(etr, expr_make(TY_FLOAT, 0));
-        oper_subt(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var2\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp acc with int var
@@ -2284,10 +2284,10 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET_P __aux_var \n");
         add_instr("P_I2F_M %s\n", v_table[e2.id].name);
         add_instr("SET   __aux_var1\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var \n");
         add_instr("P_LOD __aux_var1\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp acc with int acc
@@ -2297,10 +2297,10 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET_P __aux_var \n");
         add_instr("SET_P __aux_var1\n");
         add_instr("P_LOD __aux_var \n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var1\n");
         add_instr("P_LOD __aux_var \n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp acc with float var
@@ -2308,10 +2308,10 @@ expr oper_divi(expr e1, expr e2)
     {
         add_instr("SET_P __aux_var\n");
         add_instr("P_LOD %s\n", v_table[e2.id].name);
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var\n");
         add_instr("P_LOD %s\n", v_table[e2.id].name);
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp acc with float acc
@@ -2320,10 +2320,10 @@ expr oper_divi(expr e1, expr e2)
         add_instr("SET_P __aux_var \n");
         add_instr("SET_P __aux_var1\n");
         add_instr("P_LOD __aux_var \n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var1\n");
         add_instr("P_LOD __aux_var \n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
     // comp acc with comp const
@@ -2342,17 +2342,17 @@ expr oper_divi(expr e1, expr e2)
         oper_mult(etr, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var \n");
         oper_mult(eti, expr_make(TY_FLOAT, 0));
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var2\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 
         add_instr("P_LOD __aux_var1\n");
         oper_mult(eti, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var \n");
         oper_mult(etr, expr_make(TY_FLOAT, 0));
-        oper_subt(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var2\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -2372,17 +2372,17 @@ expr oper_divi(expr e1, expr e2)
         oper_mult(etr, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var \n");
         oper_mult(eti, expr_make(TY_FLOAT, 0));
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var2\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 
         add_instr("P_LOD __aux_var1\n");
         oper_mult(eti, expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var \n");
         oper_mult(etr, expr_make(TY_FLOAT, 0));
-        oper_subt(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var2\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -2407,15 +2407,15 @@ expr oper_divi(expr e1, expr e2)
         add_instr("F_MLT __aux_var \n");
         add_instr("SF_ADD        \n");
         add_instr("P_LOD __aux_var4\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 
         add_instr("P_LOD __aux_var3\n");
         add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD __aux_var2\n");
         add_instr("F_MLT __aux_var1\n");
-        oper_subt(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         add_instr("P_LOD __aux_var4\n");
-        oper_divi(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
@@ -2760,19 +2760,19 @@ expr oper_cmp(expr e1, expr e2, int type)
 }
 
 // compares greater-or-equal (opposite of less-than)
-expr oper_greq(expr e1, expr e2)
+expr oper_ge(expr e1, expr e2)
 {
     return oper_lin(oper_cmp(e1, e2, 0));
 }
 
 // compares less-or-equal (opposite of greater-than)
-expr oper_leeq(expr e1, expr e2)
+expr oper_le(expr e1, expr e2)
 {
     return oper_lin(oper_cmp(e1, e2, 1));
 }
 
 // compares not-equal (opposite of equal-to)
-expr oper_dife(expr e1, expr e2)
+expr oper_ne(expr e1, expr e2)
 {
     return oper_lin(oper_cmp(e1, e2, 2));
 }
@@ -2853,7 +2853,7 @@ expr oper_lin(expr e)
 }
 
 // logical and/or (&& ||)
-expr oper_lanor(expr e1, expr e2, int type)
+expr oper_logic(expr e1, expr e2, int type)
 {
 
     if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))

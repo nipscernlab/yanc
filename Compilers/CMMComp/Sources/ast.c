@@ -1105,19 +1105,19 @@ static expr ast_emit_expr_impl(expr_node *n)
                 expr t = a; a = b; b = t;
             }
             switch (n->op) {
-                case OP_ADD:  return oper_soma (a, b);
-                case OP_SUB:  return oper_subt (a, b);
+                case OP_ADD:  return oper_add (a, b);
+                case OP_SUB:  return oper_sub (a, b);
                 case OP_MUL:  return oper_mult (a, b);
-                case OP_DIV:  return oper_divi (a, b);
+                case OP_DIV:  return oper_div (a, b);
                 case OP_MOD:  return oper_mod  (a, b);
                 case OP_LT:   return oper_cmp  (a, b, 0);
                 case OP_GT:   return oper_cmp  (a, b, 1);
                 case OP_EQ:   return oper_cmp  (a, b, 2);
-                case OP_GE:   return oper_greq (a, b);
-                case OP_LE:   return oper_leeq (a, b);
-                case OP_NE:   return oper_dife (a, b);
-                case OP_LAN:  return oper_lanor(a, b, 0);
-                case OP_LOR:  return oper_lanor(a, b, 1);
+                case OP_GE:   return oper_ge (a, b);
+                case OP_LE:   return oper_le (a, b);
+                case OP_NE:   return oper_ne (a, b);
+                case OP_LAN:  return oper_logic(a, b, 0);
+                case OP_LOR:  return oper_logic(a, b, 1);
                 case OP_SHL:  return oper_shift(a, b, 0);
                 case OP_SHR:  return oper_shift(a, b, 1);
                 case OP_SSHR: return oper_shift(a, b, 2);

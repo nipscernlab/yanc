@@ -2245,7 +2245,7 @@ expr exec_mod2(expr e)
         oper_mult(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // multiplica acc com pilha
         add_instr("P_LOD __aux_var\n");   // push the real-squared onto the stack and fetch the imag-squared
 
-        oper_soma(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // sum of the squares
+        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // sum of the squares
 
         etr = expr_make(TY_FLOAT, 0);          // output is a float in the accumulator
     }
