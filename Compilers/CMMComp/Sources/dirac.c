@@ -41,6 +41,7 @@
 #include "../Headers/stdlib.h"
 #include "../Headers/messages.h"
 #include "../Headers/dirac.h"
+#include "../Headers/diag.h"
 
 // ----------------------------------------------------------------------------
 // state ----------------------------------------------------------------------
@@ -111,7 +112,7 @@ static int *tmp_lines, *tmp_words, n_tmp_lines, cap_tmp_lines;
 // small helpers --------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-static void die(const char *fmt, int line) {fprintf(stderr, fmt, line); exit(EXIT_FAILURE);}
+static void die(const char *fmt, int line) {fatal(fmt, line);}
 
 // a table that grows: the capacity for need entries, and the table moved there
 static int next_cap(int cap, int need) {if (cap < 8) cap = 8; while (cap < need) cap *= 2; return cap;}
@@ -119,7 +120,7 @@ static int next_cap(int cap, int need) {if (cap < 8) cap = 8; while (cap < need)
 static void *re(void *p, int cap, size_t sz)
 {
     p = realloc(p, (size_t)cap * sz);
-    if (!p) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    if (!p) fatal(MSG_ERR_OUT_OF_MEMORY);
     return p;
 }
 
@@ -127,7 +128,7 @@ static void *re(void *p, int cap, size_t sz)
 static void *dup_mem(const void *p, size_t sz)
 {
     void *q = malloc(sz ? sz : 1);
-    if (!q) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    if (!q) fatal(MSG_ERR_OUT_OF_MEMORY);
     if (sz) memcpy(q, p, sz);
     return q;
 }
@@ -135,7 +136,7 @@ static void *dup_mem(const void *p, size_t sz)
 static expr_node *node_new(expr_kind k, int type)
 {
     expr_node *n = calloc(1, sizeof(*n));
-    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    if (!n) fatal(MSG_ERR_OUT_OF_MEMORY);
     n->kind = k;
     n->line = cur_line;
     n->type = type;
@@ -714,7 +715,7 @@ static int tmp_block(int words, int line)
         cap_tmp_lines = cap_tmp_lines ? 2 * cap_tmp_lines : 16;
         tmp_lines = realloc(tmp_lines, cap_tmp_lines * sizeof *tmp_lines);
         tmp_words = realloc(tmp_words, cap_tmp_lines * sizeof *tmp_words);
-        if (!tmp_lines || !tmp_words) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        if (!tmp_lines || !tmp_words) fatal(MSG_ERR_OUT_OF_MEMORY);
     }
     tmp_lines[n_tmp_lines] = line; tmp_words[n_tmp_lines++] = words;
     return at;
@@ -1086,7 +1087,7 @@ void dirac_finish(const char *asm_file)
     if (tmp_max == 0) return;
 
     FILE *f = fopen(asm_file, "r");
-    if (!f) {fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, asm_file); exit(EXIT_FAILURE);}
+    if (!f) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
     char *text = NULL; size_t len = 0, cap = 0; char line[4096]; int done = 0;
     while (fgets(line, sizeof line, f)) {
         char add[128] = "";

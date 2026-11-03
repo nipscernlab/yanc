@@ -16,6 +16,7 @@
 #include "../Headers/data_use.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
 
 // standard assignment, e.g. x = y;
 void ass_set(int id, expr e)
@@ -23,15 +24,13 @@ void ass_set(int id, expr e)
     // test whether it has been declared so an assignment is allowed
     if (v_table[id].type == 0)
     {
-        fprintf (stderr, MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     // test whether it is an array missing its index
     if (v_table[id].isar > 0)
     {
-        fprintf (stderr, MSG_ERR_ARRAY_NEEDS_IDX, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_ARRAY_NEEDS_IDX, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     // ------------------------------------------------------------------------
@@ -279,11 +278,11 @@ void ass_array_const(int id, int k, int dims, expr e)
 {
     // the same checks as ass_array (a write does not mark the array used)
     if (v_table[id].type == 0)
-        {fprintf (stderr, MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name, fname));
     if (v_table[id].isar == 0)
-        {fprintf (stderr, MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name, fname));
     if (v_table[id].isar == 2 && dims == 1)   // arr_1d_index refuses it on the general path
-        {fprintf (stderr, MSG_ERR_ARRAY_2D, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_ARRAY_2D, line_num+1, rem_fname(v_table[id].name, fname));
 
     if (v_table[id].type == 3)
     {
@@ -323,15 +322,13 @@ void ass_array(int id, expr e, int fft)
     // test whether it has been declared so an assignment is allowed
     if (v_table[id].type == 0)
     {
-        fprintf (stderr, MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     // array vs non-array check
     if (v_table[id].isar == 0)
     {
-        fprintf (stderr, MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     // ------------------------------------------------------------------------

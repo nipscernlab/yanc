@@ -17,6 +17,7 @@
 #include "../Headers/funcoes.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -145,17 +146,17 @@ static void ini_take(int id_var, int size, int siz2)
     for (int k = 0; k < ini_n; k++)
     {
         ini_val *v = &ini_v[k];
-        if (v->kind > type) {fprintf(stderr, MSG_ERR_ARRAY_INI_TYPE, line_num+1, rem_fname(v_table[id_var].name, fname), tname, v->txt); exit(EXIT_FAILURE);}
+        if (v->kind > type) fatal(MSG_ERR_ARRAY_INI_TYPE, line_num+1, rem_fname(v_table[id_var].name, fname), tname, v->txt);
         int pos;
         if (ini_rows > 0)                        // rows between inner braces: a 2D array, every value in a row
         {
-            if (siz2 == 0) {fprintf(stderr, MSG_ERR_ARRAY_INI_1D, line_num+1, rem_fname(v_table[id_var].name, fname)); exit(EXIT_FAILURE);}
+            if (siz2 == 0) fatal(MSG_ERR_ARRAY_INI_1D, line_num+1, rem_fname(v_table[id_var].name, fname));
             if (v->row < 0 || v->col >= siz2)
-                {fprintf(stderr, MSG_ERR_ARRAY_INI_ROWS, line_num+1, rem_fname(v_table[id_var].name, fname), siz2); exit(EXIT_FAILURE);}
+                fatal(MSG_ERR_ARRAY_INI_ROWS, line_num+1, rem_fname(v_table[id_var].name, fname), siz2);
             pos = v->row * siz2 + v->col;
         }
         else pos = k;
-        if (pos >= size) {fprintf(stderr, MSG_ERR_ARRAY_INI_COUNT, line_num+1, rem_fname(v_table[id_var].name, fname), size, pos + 1); exit(EXIT_FAILURE);}
+        if (pos >= size) fatal(MSG_ERR_ARRAY_INI_COUNT, line_num+1, rem_fname(v_table[id_var].name, fname), size, pos + 1);
         if (pos > maxpos) maxpos = pos;
     }
 

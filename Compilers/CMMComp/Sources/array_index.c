@@ -15,6 +15,7 @@
 #include "../Headers/data_use.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
 
 // ----------------------------------------------------------------------------
 // array in assignment, e.g. x[i] = y; ----------------------------------------
@@ -29,11 +30,11 @@ void arr_1d_index(int id, expr e)
 
     // must check that it really is an array
     if (v_table[id].isar == 0)
-        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname));
 
     // must check that it really is a 1D array
     if (v_table[id].isar == 2)
-        {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name, fname));
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -115,11 +116,11 @@ void arr_2d_index(int id, expr e1, expr e2)
 
     // must check that it really is an array
     if (v_table[id].isar == 0)
-        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname));
 
     // must check that it is not a 1D array
     if (v_table[id].isar == 1)
-        {fprintf (stderr, MSG_ERR_ARRAY_1D, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_ARRAY_1D, line_num+1, rem_fname(v_table[id].name, fname));
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -708,11 +709,11 @@ expr arr_1d2exp_const(int id, int k, int dims)
 {
     // the same checks and use mark as arr_1d2exp
     if (v_table[id].type == 0)
-        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname));
     if (v_table[id].isar == 0)
-        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname));
     if (v_table[id].isar == 2 && dims == 1)
-        {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name, fname));
     v_table[id].used = 1;
 
     if (acc_ok) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);
@@ -730,15 +731,15 @@ expr arr_1d2exp(int id, expr e, int fft)
 
     // test whether the variable has been declared
     if (v_table[id].type == 0)
-        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname));
 
     // must check that it really is an array
     if (v_table[id].isar == 0)
-        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname));
 
     // must check that it really is a 1D array
     if (v_table[id].isar == 2)
-        {fprintf (stderr, MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name, fname));
 
     // prepare the LOD commands ----------------------------------------------
 
@@ -918,15 +919,15 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
     // test whether the variable has been declared
     if (v_table[id].type == 0)
-        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname));
 
     // must check that it really is a 2D array
     if (v_table[id].isar == 0)
-        {fprintf (stderr, MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name, fname));
 
     // must check that it is not a 1D array
     if (v_table[id].isar == 1)
-        {fprintf (stderr, MSG_ERR_ARRAY_1D , line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_ARRAY_1D , line_num+1, rem_fname(v_table[id].name, fname));
 
     // prepare the LOD commands -----------------------------------------------
 

@@ -17,6 +17,7 @@
 #include "../Headers/diretivas.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
 
 // an int literal a float meets: the id of its float literal, which a memory
 // form takes as it is (exact below 2^NBMANT, as add_instr's I2F_M rewrite); 0
@@ -2426,7 +2427,7 @@ expr oper_mod(expr e1, expr e2)
 {
 
     if ((e1.type > 1) || (e2.type > 1))
-        {fprintf(stderr, MSG_ERR_MOD_NON_INT, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_MOD_NON_INT, line_num+1);
 
     char ld[10]; if (acc_ok == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
 
@@ -2519,7 +2520,7 @@ static cmp_side cmp_side_of(expr e)
 
 static expr oper_cmp_comp(expr e1, expr e2, int type)
 {
-    if (type != 2) {fprintf(stderr, MSG_ERR_CMP_COMP_ORDER, line_num+1); exit(EXIT_FAILURE);}
+    if (type != 2) fatal(MSG_ERR_CMP_COMP_ORDER, line_num+1);
 
     cmp_side a = cmp_side_of(e1), b = cmp_side_of(e2);
     const char *z = cmp_flit("0.0");
@@ -2604,8 +2605,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         case 1: strcpy(op, "GRE"); break;
         case 2: strcpy(op, "EQU"); break;
         default:
-            fprintf(stderr, "oper_cmp: invalid type %d at line %d\n", type, line_num+1);
-            exit(EXIT_FAILURE);
+            fatal("oper_cmp: invalid type %d at line %d\n", type, line_num+1);
     }
 
     // The memory forms compute `X op acc` (ula in1 = memory, in2 = acc), so an
@@ -2846,8 +2846,7 @@ expr oper_lanor(expr e1, expr e2, int type)
 
     if ((e1.type > 2) || (e2.type > 2))
     {
-        fprintf(stderr, MSG_ERR_LOGIC_NON_INT, line_num+1);
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_LOGIC_NON_INT, line_num+1);
     }
 
     char ld[10];
@@ -2930,7 +2929,7 @@ expr oper_inv(expr e)
 {
 
     if (e.type > 1)
-        {fprintf(stderr, MSG_ERR_INV_NON_INT, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_INV_NON_INT, line_num+1);
 
     char inv[10]; if (acc_ok == 0) strcpy(inv,"INV_M"); else strcpy(inv,"P_INV_M");
 
@@ -2957,8 +2956,7 @@ expr oper_bitw(expr e1, expr e2, int type)
 
     if (e1.type > 2 || e2.type > 2)
     {
-        fprintf(stderr, MSG_ERR_BITWISE_COMPLEX, line_num+1);
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_BITWISE_COMPLEX, line_num+1);
     }
     
     char op[16];
@@ -3010,10 +3008,10 @@ expr oper_shift(expr e1, expr e2, int type)
 {
 
     if (e1.type > 2)
-        {fprintf(stderr, MSG_ERR_SHIFT_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_SHIFT_COMPLEX, line_num+1);
 
     if (e2.type > 2)
-        {fprintf(stderr, MSG_ERR_SHIFT_BY_COMP, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_SHIFT_BY_COMP, line_num+1);
 
     char op[16];
 

@@ -14,6 +14,7 @@
 #include "../Headers/funcoes.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -55,8 +56,8 @@ void dire_exec(char *dir, int id, int t)
         case  4: nbexpo = ival             ; break;
         case  7: nuioin = ival             ; break;
         case  8: nuioou = ival             ; break;
-        case  9: if (ival < 0 || ival > 2) {fprintf(stderr, MSG_ERR_FROUND_RANGE, line_num+1); exit(EXIT_FAILURE);} fround = ival; break; // #FROUND level
-        case 10: if (ival <= 0 || (ival & (ival - 1)) != 0) {fprintf(stderr, MSG_ERR_NUGAIN_POW2, line_num+1, ival); exit(EXIT_FAILURE);} break;
+        case  9: if (ival < 0 || ival > 2) fatal(MSG_ERR_FROUND_RANGE, line_num+1); fround = ival; break; // #FROUND level
+        case 10: if (ival <= 0 || (ival & (ival - 1)) != 0) fatal(MSG_ERR_NUGAIN_POW2, line_num+1, ival); break;
     }
 
     stmt_append(stmt_directive(dir, id));

@@ -17,6 +17,7 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -62,7 +63,7 @@ static void args_grow_stack(int needed)
     int new_cap = arg_stack_cap ? arg_stack_cap * 2 : 8;
     while (new_cap < needed) new_cap *= 2;
     expr_node **t = realloc(arg_stack, (size_t)new_cap * sizeof(*t));
-    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
     arg_stack     = t;
     arg_stack_cap = new_cap;
 }
@@ -73,7 +74,7 @@ static void args_grow_marks(int needed)
     int new_cap = frame_marks_cap ? frame_marks_cap * 2 : 8;
     while (new_cap < needed) new_cap *= 2;
     int *t = realloc(frame_marks, (size_t)new_cap * sizeof(*t));
-    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    if (!t) fatal(MSG_ERR_OUT_OF_MEMORY);
     frame_marks     = t;
     frame_marks_cap = new_cap;
 }
@@ -345,14 +346,14 @@ int declar_par(int type, int id)
     // store the data type of every parameter, in order
     symbol *f = &v_table[fun_parse];
     f->ptyp = realloc(f->ptyp, (size_t)(f->npar+1) * sizeof(int));
-    if (!f->ptyp) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    if (!f->ptyp) fatal(MSG_ERR_OUT_OF_MEMORY);
     f->ptyp[f->npar++] = type;
 
     if (func_nparams == func_params_cap)
     {
         func_params_cap = func_params_cap ? func_params_cap*2 : 16;
         func_params = realloc(func_params, (size_t)func_params_cap * sizeof(int));
-        if (!func_params) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        if (!func_params) fatal(MSG_ERR_OUT_OF_MEMORY);
     }
     func_params[func_nparams++] = id;
 
@@ -364,7 +365,7 @@ void declar_ret(expr e, int ret)
 {
     // check whether it really is a function, or void by mistake
     if (v_table[fun_parse].type == 6)
-        {fprintf (stderr, MSG_ERR_VOID_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_VOID_RETURN_VALUE, line_num+1);
 
     // ------------------------------------------------------------------------
     // check every combination ------------------------------------------------
@@ -573,7 +574,7 @@ void func_body_begin(void)
     if (func_nparams > 0)
     {
         params = malloc(sizeof(int) * func_nparams);
-        if (!params) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        if (!params) fatal(MSG_ERR_OUT_OF_MEMORY);
         memcpy(params, func_params, sizeof(int) * func_nparams);
     }
     stmt_append(stmt_func_header(fun_parse, params, func_nparams));
@@ -600,7 +601,7 @@ void void_ret(void)
 {
     // check whether it really is void, or a non-void by mistake
     if (v_table[fun_parse].type != 6)
-        {fprintf (stderr, MSG_ERR_NO_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NO_RETURN_VALUE, line_num+1);
 
     // if main, jump to the @fim that the end of main emits, where the
     // testbench stops the simulation. With a #PRACA, return; waits in place
@@ -644,16 +645,14 @@ stmt_node *vcall(int id)
 {
     if  (v_table[id].type < 6)
     {
-        fprintf(stderr, MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
     if (n != v_table[id].npar)
     {
-        fprintf(stderr, MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     v_table[id].used = 1;
@@ -669,21 +668,18 @@ expr_node *fcall(int id)
 {
     if (v_table[id].type == 6)
     {
-        fprintf (stderr, MSG_ERR_VOID_FUNC_USE, line_num+1, v_table[id].name);
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_VOID_FUNC_USE, line_num+1, v_table[id].name);
     }
     else if (v_table[id].type < 6)
     {
-        fprintf (stderr, MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
     if (n != v_table[id].npar)
     {
-        fprintf(stderr, MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_table[id].name);
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_table[id].name);
     }
 
     v_table[id].used = 1;
@@ -735,8 +731,7 @@ static int rec_dfs(int f, char *state, int *path, int depth)
                 strncat(chain, " -> ", sizeof(chain) - strlen(chain) - 1);
             }
             strncat(chain, v_table[g].name, sizeof(chain) - strlen(chain) - 1);
-            fprintf(stderr, MSG_ERR_RECURSION, ce_line[k], v_table[g].name, chain);
-            exit(EXIT_FAILURE);
+            fatal(MSG_ERR_RECURSION, ce_line[k], v_table[g].name, chain);
         }
         if (state[g] == 0 && rec_dfs(g, state, path, depth + 1)) return 1;
     }

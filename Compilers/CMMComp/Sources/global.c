@@ -17,6 +17,7 @@
 #include "../Headers/messages.h"
 #include "../Headers/dirac.h"
 #include "../Headers/funcoes.h"
+#include "../Headers/diag.h"
 #include "../../common/asm_share.h"
 #include "../../common/exe_dir.h"
 
@@ -201,11 +202,11 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
     // the .cmm, by its path
     snprintf(cmm_src, sizeof(cmm_src), "%s", f_name);
     yyin = fopen(cmm_src, "r");
-    if (yyin  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_src); exit(EXIT_FAILURE); }
+    if (yyin  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, cmm_src);
 
     char asm_file[1024]; snprintf(asm_file, sizeof(asm_file), "%s/%s.asm", d_proc, prname); // output .asm file name
     f_asm = fopen(asm_file, "w"); // create the .asm file
-    if (f_asm == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, asm_file); exit(EXIT_FAILURE); }
+    if (f_asm == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
 
     strcpy (dir_macro,                d_macro); // record the Macro directory
     strcpy (dir_tmp  ,                d_tmp  ); // record the Tmp directory
@@ -225,9 +226,9 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
     char path[2048];
 
     snprintf(path, sizeof(path),   "%s/prog_log.txt", dir_tmp        ); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
-    if (f_log == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path); exit(EXIT_FAILURE); }
+    if (f_log == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
     snprintf(path, sizeof(path), "%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
-    if (f_lin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path); exit(EXIT_FAILURE); }
+    if (f_lin == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
 
     // Open the top-level stmt_list collector. Every directive, declaration
     // and function reduce appends a stmt_node here; nothing reaches f_asm
@@ -346,9 +347,9 @@ void parse_end(char *prname, char *d_proc)
     char     path[2048]; snprintf(path, sizeof(path), "%s/%s", dir_tmp, "src_lines.txt");
 
     FILE *output = fopen(path    , "w");
-    if (output == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, path);    exit(EXIT_FAILURE); }
+    if (output == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
     FILE *input  = fopen(cmm_src, "r");
-    if (input  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, cmm_src); exit(EXIT_FAILURE); }
+    if (input  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, cmm_src);
 
     char linha[1001], texto[1001] = "";
     fputs("-1 INTERNAL\n"    , output); // code for the file start

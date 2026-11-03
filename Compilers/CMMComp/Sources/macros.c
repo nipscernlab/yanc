@@ -17,6 +17,7 @@
 #include "../Headers/diretivas.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
 
 // ----------------------------------------------------------------------------
 // helpers for generating predefined macros -----------------------------------
@@ -26,9 +27,9 @@
 static void fcat2end(char *n_read, char *n_write)
 {
     FILE *f_in  = fopen(n_read , "r");
-    if (f_in  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, n_read);  exit(EXIT_FAILURE); }
+    if (f_in  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, n_read);
     FILE *f_out = fopen(n_write, "a");
-    if (f_out == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, n_write); exit(EXIT_FAILURE); }
+    if (f_out == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, n_write);
 
     char a;
     do {a = fgetc(f_in); if (a != EOF) fputc(a, f_out);} while (a != EOF);
