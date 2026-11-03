@@ -430,7 +430,7 @@ stmt_node *stmt_dirac      (int dst, struct expr_node *rhs);
 stmt_node *stmt_dirac_shift(int dst, struct expr_node *c, int a);
 
 // walks a stmt_node and emits via the same helpers the inline grammar
-// actions used to call (ass_set, etc.).
+// actions used to call (assign_set, etc.).
 void       stmt_emit(stmt_node *n);
 
 // frees the node and every descendant (rhs included).

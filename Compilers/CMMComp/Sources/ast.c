@@ -1878,20 +1878,20 @@ void stmt_emit(stmt_node *n)
             // partner's word goes into x as it is, with x's type (no convert)
             if (n->rhs && n->rhs->kind == EXPR_STDLIB_CALL &&
                 (n->rhs->op == OP_STD_CADE || n->rhs->op == OP_STD_FCADE))
-                 ass_set(n->id, exec_cade(n->id, n->rhs->id));
-            else ass_set(n->id, ast_emit_expr(n->rhs));
+                 assign_set(n->id, exec_cade(n->id, n->rhs->id));
+            else assign_set(n->id, ast_emit_expr(n->rhs));
             break;
 
         case STMT_PPLUS:
-            if      (!n->idx ) ass_pplus(n->id);
-            else if (!n->idx2) ass_aplus(n->id, ast_emit_expr(n->idx));
+            if      (!n->idx ) assign_pplus(n->id);
+            else if (!n->idx2) assign_aplus(n->id, ast_emit_expr(n->idx));
             else {
                 // one statement each: C leaves the order of a call's
                 // arguments to the host compiler, and the first index must
                 // be emitted first (it goes to the stack, the second to the acc)
                 expr i1 = ast_emit_expr(n->idx);
                 expr i2 = ast_emit_expr(n->idx2);
-                ass_apl2d(n->id, i1, i2);
+                assign_apl2d(n->id, i1, i2);
             }
             break;
 
@@ -1911,7 +1911,7 @@ void stmt_emit(stmt_node *n)
                 int rt = n->rhs->type;
                 if (n->idx->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
                     int k = atoi(v_table[n->idx->id].name);
-                    ass_array_const(n->id, k, 1, ast_emit_expr(n->rhs));
+                    assign_array_const(n->id, k, 1, ast_emit_expr(n->rhs));
                     break;
                 }
             }
@@ -1926,13 +1926,13 @@ void stmt_emit(stmt_node *n)
                 int rt = n->rhs->type;
                 if (n->idx->type == TY_INT && n->idx2->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
                     int k = atoi(v_table[n->idx->id].name) * v_table[n->id].cols + atoi(v_table[n->idx2->id].name);
-                    ass_array_const(n->id, k, 2, ast_emit_expr(n->rhs));
+                    assign_array_const(n->id, k, 2, ast_emit_expr(n->rhs));
                     break;
                 }
             }
             // First emit the index calculation (leaves it in acc),
             // then the walker on the RHS pushes that, computes the value,
-            // and ass_array emits the indexed-store.
+            // and assign_array emits the indexed-store.
             if (n->idx2) {
                 typecheck_expr(n->idx);
                 typecheck_expr(n->idx2);
@@ -1969,11 +1969,11 @@ void stmt_emit(stmt_node *n)
                 free(key);
             }
             // an int variable as the whole index, which the right-hand side
-            // cannot change: ass_array may read it again for a second word
-            ass_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == TY_INT
+            // cannot change: assign_array may read it again for a second word
+            assign_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == TY_INT
                               && !v_table[n->idx->id].dims && rhs_keeps(n->rhs)) ? n->idx->id : 0;
-            ass_array(n->id, ast_emit_expr(n->rhs), n->op);
-            ass_idx_reload = 0;
+            assign_array(n->id, ast_emit_expr(n->rhs), n->op);
+            assign_idx_reload = 0;
             // the store leaves the element in the acc: a read of it right
             // after takes the acc, when the right-hand side changed no index
             {

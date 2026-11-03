@@ -101,8 +101,8 @@ def arr2d_read():
 
 # ---------------------------------------------------------------------------
 # writes: the address of a store (arr_1d_index, arr_2d_index), the store of
-# each kind of value into each kind of array with its conversion (ass_array),
-# and ++ on an element (ass_aplus, ass_apl2d). Every store is read back
+# each kind of value into each kind of array with its conversion (assign_array),
+# and ++ on an element (assign_aplus, assign_apl2d). Every store is read back
 # through a path the read test verifies (int variables as indexes). Each
 # store writes a value that is new to the array, so a store that does not
 # happen shows; floats are printed doubled, so that a float stored as a
@@ -620,7 +620,7 @@ def library():
 
 
 # ---------------------------------------------------------------------------
-# the rest: assignment to a variable (ass_set) and ++ inside an expression;
+# the rest: assignment to a variable (assign_set) and ++ inside an expression;
 # functions (parameters of each type taking each argument form, returns of
 # each kind of value from each type of function); conditions of if, while,
 # ! and switch on each form; shifts by a float; the Dirac shift register;

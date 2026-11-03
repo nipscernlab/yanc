@@ -81,9 +81,9 @@ expr pplus2exp(int id, int old)
 
     // finally, assign back to id; in an expression the value of `x++` is the
     // old x, which SET_P pops back into the acc after the store (id2exp above
-    // made ass_set's checks: declared, not an array)
+    // made assign_set's checks: declared, not an array)
     if (old) add_instr("SET_P %s\n", v_table[id].name);
-    else     ass_set(id, ret);
+    else     assign_set(id, ret);
 
     acc_ok = 1; // cannot free acc, since it is an exp
 
@@ -123,7 +123,7 @@ expr pplus1d2exp(int id, expr ete, int old)
     expr ret = oper_add(e, e1);
 
     // assign back: the value is in the acc, the index on the stack
-    ass_array(id, ret, 0);
+    assign_array(id, ret, 0);
 
     // the value of `x[i]++` in an expression is the old element
     if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");
@@ -160,7 +160,7 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     expr ret = oper_add(e, eone);
 
     // assign back: the value is in the acc, the index on the stack
-    ass_array(id, ret, 0);
+    assign_array(id, ret, 0);
 
     // the value of `x[i][j]++` in an expression is the old element
     if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");
