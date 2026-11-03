@@ -25,7 +25,7 @@ expr num2exp(int id, int dtype)
 {
     v_table[id].used          = 1;
     v_table[id].isco    = 1;
-    v_table[id].isar          = AR_NONE;
+    v_table[id].dims          = AR_NONE;
     v_table[id].type          = dtype;
 
     return expr_make(dtype, id);
@@ -40,7 +40,7 @@ expr id2exp(int id)
         fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
 
     // if it is an array, the index is missing
-    if (v_table[id].isar > AR_NONE)
+    if (v_table[id].dims > AR_NONE)
         fatal(MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_table[id].name));
 
     v_table[id].used = 1;

@@ -23,7 +23,7 @@ enum {
     TY_FCOMP  = 9
 };
 
-// what a symbol is by its dimensions (symbol.isar): a scalar, a vector or a
+// what a symbol is by its dimensions (symbol.dims): a scalar, a vector or a
 // matrix; code compares with > AR_NONE for "an array"
 enum {
     AR_NONE = 0,

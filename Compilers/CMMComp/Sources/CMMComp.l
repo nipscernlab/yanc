@@ -193,7 +193,7 @@ COMEN  "//"[^\n]*
                 const char *name = yytext + 1 + strspn(yytext + 1, " \t\r\n");
                 int k = (def_find(name) >= 0) ? -1 : find_id(name);
                 yyless(1);
-                return (k >= 0 && v_table[k].isar) ? DBAR : '|';
+                return (k >= 0 && v_table[k].dims) ? DBAR : '|';
              }
  /* Two bars before the name of an array are a matrix that closes and a chain
   * that opens (|A||B|), not the logical or: the first bar goes out alone and
@@ -206,7 +206,7 @@ COMEN  "//"[^\n]*
 "||"[ \t\r\n]*{VARIA} {
                 const char *name = yytext + 2 + strspn(yytext + 2, " \t\r\n");
                 int k = (def_find(name) >= 0) ? -1 : find_id(name);
-                if (k >= 0 && v_table[k].isar) {yyless(1); return '|';}
+                if (k >= 0 && v_table[k].dims) {yyless(1); return '|';}
                 yyless(2);
                 return LOR;
              }
