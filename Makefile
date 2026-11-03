@@ -70,15 +70,25 @@ CMMCOMP_C := ast.c data_assign.c data_declar.c data_use.c itr.c diretivas.c \
 ASMCOMP_C := eval.c labels.c opcodes.c variaveis.c t2t.c hdl.c simulacao.c \
              array.c messages.c args.c pass1.c
 CPPCOMP_C := main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c
+# ... and the Compilers/common .c each one links. Scripts/regress.sh and
+# Scripts/cmm_cov.sh build with their own flags but read these lists
+# (make -s print-CMMCOMP_C, ...): this is the only place they are written.
+CMMCOMP_COMMON := yanc_num.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
+ASMCOMP_COMMON := yanc_num.c xstr.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
+CPPCOMP_COMMON := asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 
 BINARIES := $(BIN)/yanc$(EXE) $(BIN)/cmmcomp$(EXE) $(BIN)/asmcomp$(EXE) \
             $(BIN)/cppcomp$(EXE) \
             $(BIN)/comp2gtkw$(EXE) $(BIN)/gen_gtkw$(EXE)
 
-.PHONY: all clean install stage \
+.PHONY: all clean install stage print-% \
         yanc cmmcomp asmcomp cppcomp comp2gtkw gen_gtkw
 
 all: $(BINARIES)
+
+# make -s print-VAR prints a variable (the source lists, for the scripts)
+print-%:
+	@echo $($*)
 
 # The deployable tree (see the header). Rebuilt from empty each time, so
 # nothing left over from an earlier stage can ride along; the folders are
@@ -113,14 +123,14 @@ $(BIN)/cmmcomp$(EXE): $(addprefix $(CMM)/,$(CMMCOMP_C)) \
                       $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(CONSOLE) $(EXEDIR) \
                       $(wildcard Compilers/CMMComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(CMM) && $(BISON) -y -d CMMComp.y && $(FLEX) CMMComp.l
-	$(CC) $(CFLAGS) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(COMMON)/yanc_num.c $(COMMON)/asm_share.c $(COMMON)/proc_name.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
+	$(CC) $(CFLAGS) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(addprefix $(COMMON)/,$(CMMCOMP_COMMON)) $(UTF8) $(LDLIBS)
 
 # --- asmcomp (flex: pass1.l is the first pass, ASMComp.l the second) --------
 $(BIN)/asmcomp$(EXE): $(addprefix $(ASM)/,$(ASMCOMP_C)) $(ASM)/ASMComp.l $(ASM)/pass1.l $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(COMMON)/xstr.c $(COMMON)/xstr.h $(CONSOLE) $(EXEDIR) \
                       $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(COMMON)/proc_name.c $(COMMON)/proc_name.h \
                       $(wildcard Compilers/ASMComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(ASM) && $(FLEX) -o ASMComp.c ASMComp.l && $(FLEX) -o pass1_lex.c pass1.l
-	$(CC) $(CFLAGS) -o $@ $(ASM)/ASMComp.c $(ASM)/pass1_lex.c $(addprefix $(ASM)/,$(ASMCOMP_C)) $(COMMON)/yanc_num.c $(COMMON)/xstr.c $(COMMON)/asm_share.c $(COMMON)/proc_name.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
+	$(CC) $(CFLAGS) -o $@ $(ASM)/ASMComp.c $(ASM)/pass1_lex.c $(addprefix $(ASM)/,$(ASMCOMP_C)) $(addprefix $(COMMON)/,$(ASMCOMP_COMMON)) $(UTF8) $(LDLIBS)
 
 # --- cppcomp (flex + bison; cpppp.c is its preprocessor) --------------------
 $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \
@@ -129,7 +139,7 @@ $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \
                       $(wildcard Compilers/CPPComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(CPP) && $(BISON) -y -d CPPComp.y && $(FLEX) CPPComp.l
 	$(CC) $(CFLAGS) -Wall -o $@ $(addprefix $(CPP)/,$(CPPCOMP_C)) \
-	      $(CPP)/lex.yy.c $(CPP)/y.tab.c $(COMMON)/asm_share.c $(COMMON)/proc_name.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
+	      $(CPP)/lex.yy.c $(CPP)/y.tab.c $(addprefix $(COMMON)/,$(CPPCOMP_COMMON)) $(UTF8) $(LDLIBS)
 
 # --- GTKWave helpers --------------------------------------------------------
 $(BIN)/comp2gtkw$(EXE): $(SCR)/comp2gtkw.c $(UTF8) | $(BIN)
