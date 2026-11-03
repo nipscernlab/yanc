@@ -346,7 +346,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: o segundo operando do shift tá em float. Aí você me quebra!\n", \
       "Heads up on line %d: the second operand of the shift is a float. Now you're killin' me!\n")
 
-// type-conversion warnings (data_assign.c / funcoes.c) ----------------------
+// type-conversion warnings (data_assign.c / functions.c) ----------------------
 
 #define MSG_WARN_INT_RECV_FLOAT \
     M("Atenção na linha %d: variável '%s' é int, mas recebe float.\n", \
@@ -396,7 +396,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Atenção na linha %d: nessa conversão, eu vou pegar só a parte real hein!\n", \
       "Heads up on line %d: in this conversion I'm only grabbing the real part, just so you know!\n")
 
-// function errors/warnings (funcoes.c) --------------------------------------
+// function errors/warnings (functions.c) --------------------------------------
 
 #define MSG_WARN_CONV_F2I_PARAM \
     M("Atenção na linha %d: convertendo float para int no parâmetro %d da função '%s'.\n", \

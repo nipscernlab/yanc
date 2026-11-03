@@ -11,7 +11,7 @@
 #include "../Headers/ast.h"
 #include "../Headers/t2t.h"
 #include "../Headers/global.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"

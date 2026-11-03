@@ -13,7 +13,7 @@
 #include "../Headers/macros.h"
 #include "../Headers/t2t.h"
 #include "../Headers/global.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/diretivas.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"

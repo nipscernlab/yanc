@@ -11,7 +11,7 @@
 #include "../Headers/t2t.h"
 #include "../Headers/oper.h"
 #include "../Headers/global.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/data_use.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/data_assign.h"

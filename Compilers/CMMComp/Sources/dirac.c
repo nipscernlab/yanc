@@ -36,7 +36,7 @@
 #include "../Headers/global.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/diretivas.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/oper.h"
 #include "../Headers/stdlib.h"
 #include "../Headers/messages.h"

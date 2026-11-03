@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 // local includes
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/ast.h"
 #include "../Headers/t2t.h"
 #include "../Headers/labels.h"

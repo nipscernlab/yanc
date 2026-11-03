@@ -18,7 +18,7 @@
 #include "../Headers/stdlib.h"
 #include "../Headers/array_index.h"
 #include "../Headers/data_use.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 
 // needed by the stmt_node walker
 #include "../Headers/data_assign.h"
@@ -1323,7 +1323,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             if (n->n_args == 0 && acc_ok) add_instr("PSH\n");
             add_instr("CAL %s\n", v_table[n->id].name);
             v_table[n->id].used = 1;
-            fun_call_edge(emit_fid, n->id, emit_line);   // for check_rec (funcoes.c)
+            fun_call_edge(emit_fid, n->id, emit_line);   // for check_rec (functions.c)
             acc_ok = (n->type == TY_NONE) ? 0 : 1;
 
             fun_id = saved_fun_id;

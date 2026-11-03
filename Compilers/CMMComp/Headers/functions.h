@@ -2,8 +2,8 @@
 // routines and state variables for the function parser -----------------------
 // ----------------------------------------------------------------------------
 
-#ifndef CMM_FUNCOES_H
-#define CMM_FUNCOES_H
+#ifndef CMM_FUNCTIONS_H
+#define CMM_FUNCTIONS_H
 
 #include "ast.h"   // expr
 
@@ -47,4 +47,4 @@ expr_node *fcall      (int id);       // value user call: builds and returns nod
 // frame when ')' is reduced.
 void  args_frame_push(void);
 
-#endif // CMM_FUNCOES_H
+#endif // CMM_FUNCTIONS_H

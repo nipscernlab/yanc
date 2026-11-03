@@ -18,7 +18,7 @@ enum {
     TY_IMAG   = 4,   // the imaginary half of a comp variable, <name>_i
     TY_CCONST = 5,   // a comp constant, 3+7.5i
     TY_FVOID  = 6,   // a function returning void, int, float, comp: 6 + its
-    TY_FINT   = 7,   // return type (funcoes.c)
+    TY_FINT   = 7,   // return type (functions.c)
     TY_FFLOAT = 8,
     TY_FCOMP  = 9
 };

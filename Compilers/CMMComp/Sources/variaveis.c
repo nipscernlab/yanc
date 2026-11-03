@@ -13,7 +13,7 @@
 
 // local includes
 #include "../Headers/global.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/diretivas.h"
 #include "../Headers/messages.h"

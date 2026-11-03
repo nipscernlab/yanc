@@ -12,7 +12,7 @@
 #include "../Headers/stdlib.h"
 #include "../Headers/global.h"
 #include "../Headers/macros.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/data_use.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/diretivas.h"

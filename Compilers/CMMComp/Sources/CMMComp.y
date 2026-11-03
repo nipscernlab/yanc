@@ -68,7 +68,7 @@
 #include "../Headers/control_flow.h"      // jump management (if/else while)
 #include "../Headers/global.h"      // global variables and functions
 #include "../Headers/macros.h"      // assembler macros
-#include "../Headers/funcoes.h"     // function creation and usage
+#include "../Headers/functions.h"     // function creation and usage
 #include "../Headers/data_use.h"    // data usage
 #include "../Headers/variaveis.h"   // variable table
 #include "../Headers/diretivas.h"   // compilation directives

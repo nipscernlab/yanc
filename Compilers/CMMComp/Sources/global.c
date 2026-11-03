@@ -16,7 +16,7 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
 #include "../Headers/dirac.h"
-#include "../Headers/funcoes.h"
+#include "../Headers/functions.h"
 #include "../Headers/diag.h"
 #include "../../common/asm_share.h"
 #include "../../common/exe_dir.h"
@@ -346,7 +346,7 @@ void parse_end(char *d_proc)
 
 	// a function that calls itself back would run over its own locals ------
 
-	check_rec(); // (funcoes.c)
+	check_rec(); // (functions.c)
 
 	mac_copy(asm_file);
 
