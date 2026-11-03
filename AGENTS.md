@@ -22,7 +22,17 @@ python -m sphinx -W --keep-going -b html docs docs/_build/html   # the manual, e
 
 and simulate the tests the change touches. The whole regression, `bash Scripts/regress.sh` (about 30 minutes, it simulates every test), runs once for a batch of pull requests, in the background while the work goes on, and passes before the batch's last merge (Luciano, 2026-10-30: the whole regression for each change held the work up).
 
-`Scripts/regress.sh` is stricter than CI: CI only smoke-tests the pipeline on every example, while the regression compares each assembly with its golden, simulates, and checks the results against references computed apart from YANC. Every change goes through it, the quick form on its own and the whole one with its batch.
+`Scripts/regress.sh` is stricter than CI: CI only smoke-tests the pipeline on every example, while the regression compares each assembly with its golden, simulates, and checks the results against references computed apart from YANC. Every change goes through it, the quick form with its batch's push and the whole one before its batch's last merge.
+
+### Work in batches
+
+Luciano, 2026-11-03: checking each small change on its own, then waiting for the regression and opening a pull request before the next one, held the work up more than it protected it. Work goes in batches:
+
+1. **During a batch**, one item after another, one commit per item. Each item is built and checked only on the tests it touches: the fixture it adds or changes, and a test that exercises the code it edits. No regression and no pull request per item.
+2. **At the end of the batch**, the three commands above run once, then the branches are pushed and their pull requests opened together (one per batch, or one per issue). The whole regression runs in the background while the person reviews, and passes before the last merge.
+3. **Checks beyond the regression** (a sanitizer sweep, a comparison with the previous binary, a second form of a test) are for an item that changes memory handling or a code generator. The agent says in one line why the check is worth it, and the person decides.
+
+If the regression of a batch fails, the commit to blame is found with `git bisect` or by reverting one commit: that is why each item has its own.
 
 ## Where the truth lives
 

@@ -150,7 +150,7 @@ static void       sw_pop(void) {sw_n--;}
 void if_exp(expr_node *cond)
 {
     int label = push_if();
-    stmt_node *partial = stmt_if(label, cond, NULL, NULL);
+    stmt_node *partial = stmt_if(label, cond);
     pending_push(partial);
     stmt_list_open();  // accumulate the then-body
 }
@@ -187,7 +187,7 @@ stmt_node *if_fim(void)
 void while_expp(void)
 {
     int label = push_while();
-    stmt_node *partial = stmt_while(label, NULL, NULL);
+    stmt_node *partial = stmt_while(label, NULL);
     pending_push(partial);
     brk_push(0, label);          // break inside the body exits this loop
     cont_push(partial, 0);       // continue jumps to the top (re-test cond)
@@ -240,7 +240,7 @@ void for_step_set(stmt_node *step) {for_saved_step = step;}
 void for_open(expr_node *cond)
 {
     int label = push_while();
-    stmt_node *partial = stmt_while(label, cond, NULL);
+    stmt_node *partial = stmt_while(label, cond);
     // Park init/step on the pending while so a nested for can reuse the
     // globals freely. for_finish reads them back.
     partial->then_body = for_saved_init;
@@ -290,7 +290,7 @@ stmt_node *for_finish(void)
 void do_open(void)
 {
     int label = push_while();
-    stmt_node *partial = stmt_do(label, NULL, NULL);
+    stmt_node *partial = stmt_do(label);
     pending_push(partial);
     brk_push(0, label);          // break exits this loop
     cont_push(partial, 1);       // continue lands at Lwh<n>cont (re-test cond)
@@ -348,7 +348,7 @@ void exec_switch(expr_node *cond)
     if (find_var("__switch_exp") == -1) add_var("__switch_exp");
 
     swit_cnt++;
-    stmt_node *partial = stmt_switch(swit_cnt, /*case_max=*/0, cond, NULL);
+    stmt_node *partial = stmt_switch(swit_cnt, cond);
     pending_push(partial);
     sw_push(partial);       // active switch for case_test / defaut_test
     brk_push(1, swit_cnt);  // break inside a case exits this switch
@@ -357,24 +357,18 @@ void exec_switch(expr_node *cond)
 
 void case_test(int val_id, int val_type)
 {
+    // the grammar reduces a case label only inside sw_body, after
+    // exec_switch pushed the switch and opened its body list
     stmt_node *sw  = sw_top();
-    stmt_node *top = stmt_list_top();
-    if (sw && top)
-    {
-        sw->id2++;  // running case count (becomes case_max at end_switch)
-        stmt_block_push(top, stmt_case_label(sw->id, sw->id2, val_id, val_type));
-    }
+    sw->id2++;  // running case count (becomes case_max at end_switch)
+    stmt_block_push(stmt_list_top(), stmt_case_label(sw->id, sw->id2, val_id, val_type));
 }
 
 void defaut_test(void)
 {
-    stmt_node *sw  = sw_top();
-    stmt_node *top = stmt_list_top();
-    if (sw && top)
-    {
-        sw->id2++;
-        stmt_block_push(top, stmt_default_label(sw->id, sw->id2));
-    }
+    stmt_node *sw  = sw_top();             // inside sw_body, as case_test
+    sw->id2++;
+    stmt_block_push(stmt_list_top(), stmt_default_label(sw->id, sw->id2));
 }
 
 stmt_node *end_switch(void)

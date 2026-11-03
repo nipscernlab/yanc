@@ -253,16 +253,16 @@ static void hoist_pre_add(expr_node **slot, int v)
 static expr_node *scalar_of(expr_node *n)
 {
     typecheck_expr(n);
-    if (n->type > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, cur_line);
-    int conv = (n->type == 1 && ctx_type == 2);
+    if (n->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, cur_line);
+    int conv = (n->type == TY_INT && ctx_type == 2);
 
     if (n->kind == EXPR_LITERAL && !conv) return expr_lit(n->type, n->id);
     if (n->kind == EXPR_VAR     && !conv) {v_table[n->id].used = 1; return expr_var(n->type, n->id);}
     if (n->kind == EXPR_LITERAL) {
         long k = atol(v_table[n->id].name);
-        if (k < (1L << nbmant)) {
+        if (k < mant_pow2()) {
             char b[32]; snprintf(b, sizeof b, "%ld.0", k);
-            return expr_lit(2, exec_fnum(b));
+            return expr_lit(TY_FLOAT, exec_fnum(b));
         }
     }
 
@@ -281,7 +281,7 @@ static expr_node *scalar_of(expr_node *n)
 
 static expr_node *zero_of(int t)
 {
-    return t == 2 ? expr_lit(2, exec_fnum("0.0")) : expr_lit(1, exec_inum("0"));
+    return t == 2 ? expr_lit(TY_FLOAT, exec_fnum("0.0")) : expr_lit(TY_INT, exec_inum("0"));
 }
 
 static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top);
@@ -580,10 +580,10 @@ static void emit_hoist(expr_node *n, int v)
     int conv = (v >> 30) & 1; v &= ~(1 << 30);
     acc_ok = 0;
     expr e = ast_emit_expr(n);
-    if (conv && e.type == 1 && e.id != 0) add_instr("I2F_M %s\n", v_table[e.id].name);
+    if (conv && e.type == TY_INT && e.id != 0) add_instr("I2F_M %s\n", v_table[e.id].name);
     else {
         e = in_acc(e);
-        if (conv && e.type == 1) add_instr("I2F\n");
+        if (conv && e.type == TY_INT) add_instr("I2F\n");
     }
     add_instr("SET %s\n", v_table[v].name);
     acc_ok = 0;
@@ -711,7 +711,7 @@ static int tmp_block(int words, int line)
     if (tmp_id < 0) {
         add_var("__dirac_tmp");
         tmp_id = find_var("__dirac_tmp");
-        v_table[tmp_id].isar = 1;
+        v_table[tmp_id].isar = AR_1D;
         v_table[tmp_id].used = 1;
     }
     if (ctx_type == 2) tmp_type = 2;
@@ -733,9 +733,9 @@ static void store(expr e, const dl_dst *d, long off)
 {
     // a value in memory goes over the index, which is still in the acc; one
     // of another type is converted on the way, by the _M form
-    if (d->type == 1 && e.type == 2)
-        warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
-    int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
+    if (d->type == TY_INT && e.type == TY_FLOAT)
+        warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name));
+    int conv = (d->type == TY_FLOAT && e.type == TY_INT) ? 1 : (d->type == TY_INT && e.type == TY_FLOAT) ? 2 : 0;
     if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "P_I2F_M" : conv == 2 ? "P_F2I_M" : "P_LOD", v_table[e.id].name);
     else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
     add_instr("STI_V %s %ld\n", arr_name(d->arr), off);
@@ -747,9 +747,9 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
     if (d->kind == 0 && six->nt == 0) {                // one cell: a plain store
         acc_ok = 0;
         expr e = ast_emit_expr(el);
-        if (d->type == 1 && e.type == 2)
-            warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
-        int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
+        if (d->type == TY_INT && e.type == TY_FLOAT)
+            warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name));
+        int conv = (d->type == TY_FLOAT && e.type == TY_INT) ? 1 : (d->type == TY_INT && e.type == TY_FLOAT) ? 2 : 0;
         if (conv && e.id != 0) add_instr("%s %s\n", conv == 1 ? "I2F_M" : "F2I_M", v_table[e.id].name);
         else {
             e = in_acc(e);
@@ -899,7 +899,7 @@ static void reassoc(expr_node *n)
         expr_node *A = L->left, *B = L->right;
         L->left = B; L->right = R;                 // L becomes B x
         L->rows = B->rows; L->cols = R->cols;
-        L->type = 0; typecheck_expr(L);
+        L->type = TY_NONE; typecheck_expr(L);
         n->left = A; n->right = L;
         reassoc(n->right);
     }
@@ -929,7 +929,7 @@ static void emit_statement(expr_node *r, const dl_dst *d0, int rows, int cols, i
     if (d.kind == 0 && d.arr != tmp_id && reads_elsewhere(el, d.arr, &six, 0)) {
         int words = rows * cols;
         int off = tmp_block(words, line);
-        warn(MSG_INFO_DIRAC_TEMP, line, rem_fname(v_table[d.arr].name, fname), words);
+        warn(MSG_INFO_DIRAC_TEMP, line, rem_fname(v_table[d.arr].name), words);
         d.arr = tmp_id; d.base = off; d.type = ctx_type;
         copy_back = 1;
     }
@@ -1015,15 +1015,15 @@ void dirac_loops(int dst, expr_node *r, int line)
     int t = v_table[dst].type;
     if (t > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
     int save = ctx_type;
-    ctx_type = (r->type == 1 || r->type == 2) ? r->type : t;
-    if (r->type > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
+    ctx_type = (r->type == TY_INT || r->type == TY_FLOAT) ? r->type : t;
+    if (r->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
 
     int rows, cols;
-    if (v_table[dst].isar == 2) {rows = v_table[dst].size; cols = v_table[dst].siz2;}
+    if (v_table[dst].isar == AR_2D) {rows = v_table[dst].size; cols = v_table[dst].siz2;}
     else if (r->rows == 1 && r->cols != 1) {rows = 1; cols = v_table[dst].size;}   // a bra into a vector
     else {rows = v_table[dst].size; cols = 1;}
 
-    dl_dst d = {0, dst, 0, 0, t, v_table[dst].isar == 2 ? cols : 0};
+    dl_dst d = {0, dst, 0, 0, t, v_table[dst].isar == AR_2D ? cols : 0};
     acc_ok = 0;
     emit_statement(r, &d, rows, cols, line);
     acc_ok = 0;
@@ -1033,8 +1033,8 @@ void dirac_loops(int dst, expr_node *r, int line)
 void dirac_loops_out(int port, expr_node *r, int fout, int line)
 {
     int save = ctx_type;
-    if (r->type > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
-    ctx_type = (r->type == 1 || r->type == 2) ? r->type : (fout ? 2 : 1);
+    if (r->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
+    ctx_type = (r->type == TY_INT || r->type == TY_FLOAT) ? r->type : (fout ? 2 : 1);
     int rows = r->rows, cols = r->cols;
     if (rows == DIRAC_ANY || cols == DIRAC_ANY) die(MSG_ERR_DIRAC_NOT_YET, line);   // |0⟩, |in(p)⟩ alone: no size
     dl_dst d = {fout ? 2 : 1, 0, port, 0, ctx_type, 0};
@@ -1057,7 +1057,7 @@ expr dirac_number(expr_node *n)
     expr_node ***save_hp = dup_mem(hoist_pre, n_hoist_pre * sizeof *hoist_pre);
     int *save_hv = dup_mem(hoist_pre_v, n_hoist_pre * sizeof *hoist_pre_v);
 
-    if (n->type > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, n->line);
+    if (n->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, n->line);
     ctx_type = n->type ? n->type : 1;
     reassoc(n);
     int save_flat = flat_mode, save_dst = cur_dst;

@@ -329,7 +329,7 @@ void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
     if (strcmp(v_table[id2].name, "main") == 0) mainok = 1; // the reset reaches main: it must exist
 
     fname = v_table[id2].name; // set the fname state to the function being analyzed
-    v_table[id2].type = id1+6       ; // type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
+    v_table[id2].type = TY_FVOID + id1; // a function: TY_FVOID .. TY_FCOMP by its return type (TY_NONE .. TY_COMP)
     fun_parse    = id2; // set the fun_parse state to the function's name id
     ret_ok       = 0;   // set ret_ok to zero (function parsing starts)
     func_nparams = 0;   // reset param collection for the new function
@@ -361,7 +361,7 @@ int declar_par(int type, int id)
 void declar_ret(expr e, int ret)
 {
     // check whether it really is a function, or void by mistake
-    if (v_table[fun_parse].type == 6)
+    if (v_table[fun_parse].type == TY_FVOID)
         fatal(MSG_ERR_VOID_RETURN_VALUE, line_num+1);
 
     // ------------------------------------------------------------------------
@@ -372,19 +372,19 @@ void declar_ret(expr e, int ret)
     int left_type = v_table[fun_parse].type;
 
     // int with int var
-    if ((left_type == 7) && (e.type == 1) && (e.id!=0))
+    if ((left_type == 7) && (e.type == TY_INT) && (e.id!=0))
     {
         add_instr("LOD %s\n", v_table[e.id].name);
     }
 
     // int with int acc
-    if ((left_type == 7) && (e.type == 1) && (e.id==0))
+    if ((left_type == 7) && (e.type == TY_INT) && (e.id==0))
     {
         // nothing to do
     }
 
     // int with float var
-    if ((left_type == 7) && (e.type == 2) && (e.id!=0))
+    if ((left_type == 7) && (e.type == TY_FLOAT) && (e.id!=0))
     {
         warn(MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
 
@@ -392,14 +392,14 @@ void declar_ret(expr e, int ret)
     }
 
     // int with float acc
-    if ((left_type == 7) && (e.type == 2) && (e.id==0))
+    if ((left_type == 7) && (e.type == TY_FLOAT) && (e.id==0))
     {
         warn(MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
         add_instr("F2I\n");
     }
 
     // int with comp const
-    if ((left_type == 7) && (e.type == 5))
+    if ((left_type == 7) && (e.type == TY_CCONST))
     {
         warn(MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -409,7 +409,7 @@ void declar_ret(expr e, int ret)
     }
 
     // int with comp var
-    if ((left_type == 7) && (e.type == 3) && (e.id!=0))
+    if ((left_type == 7) && (e.type == TY_COMP) && (e.id!=0))
     {
         warn(MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -419,7 +419,7 @@ void declar_ret(expr e, int ret)
     }
 
     // int with comp acc
-    if ((left_type == 7) && (e.type == 3) && (e.id==0))
+    if ((left_type == 7) && (e.type == TY_COMP) && (e.id==0))
     {
         warn(MSG_WARN_ROUND_REAL, line_num+1);
 
@@ -428,7 +428,7 @@ void declar_ret(expr e, int ret)
     }
 
     // float with int var
-    if ((left_type == 8) && (e.type == 1) && (e.id!=0))
+    if ((left_type == 8) && (e.type == TY_INT) && (e.id!=0))
     {
         warn(MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
@@ -436,7 +436,7 @@ void declar_ret(expr e, int ret)
     }
 
     // float with int acc
-    if ((left_type == 8) && (e.type == 1) && (e.id==0))
+    if ((left_type == 8) && (e.type == TY_INT) && (e.id==0))
     {
         warn(MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
@@ -444,19 +444,19 @@ void declar_ret(expr e, int ret)
     }
 
     // float with float var
-    if ((left_type == 8) && (e.type == 2) && (e.id!=0))
+    if ((left_type == 8) && (e.type == TY_FLOAT) && (e.id!=0))
     {
         add_instr("LOD %s\n", v_table[e.id].name);
     }
 
     // float with float acc
-    if ((left_type == 8) && (e.type == 2) && (e.id==0))
+    if ((left_type == 8) && (e.type == TY_FLOAT) && (e.id==0))
     {
         // nothing to do
     }
 
     // float with comp const
-    if ((left_type == 8) && (e.type == 5))
+    if ((left_type == 8) && (e.type == TY_CCONST))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -466,7 +466,7 @@ void declar_ret(expr e, int ret)
     }
 
     // float with comp var
-    if ((left_type == 8) && (e.type == 3) && (e.id!=0))
+    if ((left_type == 8) && (e.type == TY_COMP) && (e.id!=0))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -476,7 +476,7 @@ void declar_ret(expr e, int ret)
     }
 
     // float with comp acc
-    if ((left_type == 8) && (e.type == 3) && (e.id==0))
+    if ((left_type == 8) && (e.type == TY_COMP) && (e.id==0))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
@@ -484,7 +484,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with int var
-    if ((left_type == 9) && (e.type == 1) && (e.id!=0))
+    if ((left_type == 9) && (e.type == TY_INT) && (e.id!=0))
     {
         warn(MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
@@ -493,7 +493,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with int acc
-    if ((left_type == 9) && (e.type == 1) && (e.id==0))
+    if ((left_type == 9) && (e.type == TY_INT) && (e.id==0))
     {
         warn(MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
@@ -502,7 +502,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with float var
-    if ((left_type == 9) && (e.type == 2) && (e.id!=0))
+    if ((left_type == 9) && (e.type == TY_FLOAT) && (e.id!=0))
     {
         warn(MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
@@ -511,7 +511,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with float acc
-    if ((left_type == 9) && (e.type == 2) && (e.id==0))
+    if ((left_type == 9) && (e.type == TY_FLOAT) && (e.id==0))
     {
         warn(MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
@@ -519,7 +519,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with comp const
-    if ((left_type == 9) && (e.type == 5))
+    if ((left_type == 9) && (e.type == TY_CCONST))
     {
         get_cmp_cst(e,&etr,&eti);
 
@@ -528,7 +528,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with comp var
-    if ((left_type == 9) && (e.type == 3) && (e.id!=0))
+    if ((left_type == 9) && (e.type == TY_COMP) && (e.id!=0))
     {
         get_cmp_ets(e,&etr,&eti);
 
@@ -537,7 +537,7 @@ void declar_ret(expr e, int ret)
     }
 
     // comp with comp acc
-    if ((left_type == 9) && (e.type == 3) && (e.id==0))
+    if ((left_type == 9) && (e.type == TY_COMP) && (e.id==0))
     {
         // nothing to do
     }
@@ -596,7 +596,7 @@ void func_ret(int id) // id -> id of the current function
 void void_ret(void)
 {
     // check whether it really is void, or a non-void by mistake
-    if (v_table[fun_parse].type != 6)
+    if (v_table[fun_parse].type != TY_FVOID)
         fatal(MSG_ERR_NO_RETURN_VALUE, line_num+1);
 
     // if main, jump to the @fim that the end of main emits, where the
@@ -639,16 +639,16 @@ void par_listexp(expr_node *n)
 // walker visits the calls in source order, swapping arg lists.
 stmt_node *vcall(int id)
 {
-    if  (v_table[id].type < 6)
+    if  (v_table[id].type < TY_FVOID)
     {
-        fatal(MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name, fname));
+        fatal(MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
     if (n != v_table[id].npar)
     {
-        fatal(MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name, fname));
+        fatal(MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name));
     }
 
     v_table[id].used = 1;
@@ -662,13 +662,13 @@ stmt_node *vcall(int id)
 // No emit at parse time - the walker emits it with its statement.
 expr_node *fcall(int id)
 {
-    if (v_table[id].type == 6)
+    if (v_table[id].type == TY_FVOID)
     {
         fatal(MSG_ERR_VOID_FUNC_USE, line_num+1, v_table[id].name);
     }
-    else if (v_table[id].type < 6)
+    else if (v_table[id].type < TY_FVOID)
     {
-        fatal(MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name, fname));
+        fatal(MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
@@ -680,7 +680,7 @@ expr_node *fcall(int id)
 
     v_table[id].used = 1;
 
-    return expr_func_call(v_table[id].type-6, id, a, n);
+    return expr_func_call(v_table[id].type - TY_FVOID, id, a, n);
 }
 
 // ----------------------------------------------------------------------------

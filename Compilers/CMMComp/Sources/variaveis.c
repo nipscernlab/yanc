@@ -80,7 +80,7 @@ void check_var(void)
     for (int i = 0; i < v_count; i++)
     {
         // check whether a variable was declared but not used ...
-        if (((v_table[i].type == 1) || (v_table[i].type == 2) || (v_table[i].type == 3)) && (v_table[i].used == 0) && !v_table[i].wave)
+        if (((v_table[i].type == TY_INT) || (v_table[i].type == TY_FLOAT) || (v_table[i].type == TY_COMP)) && (v_table[i].used == 0) && !v_table[i].wave)
         {
             // v_table[i].fnid records the variable's owning function: a valid
             // v_table index for locals, or "" / -1 for globals. declar_arr_1d
@@ -93,13 +93,14 @@ void check_var(void)
                 warn(MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
             else
             {
-                char *name = rem_fname(v_table[i].name, v_table[fnid].name);
+                char *name = strip_fn(v_table[i].name, v_table[fnid].name);
                 warn(MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[fnid].name, name);
             }
         }
 
-        // check whether a function was declared but not used
-        if (((v_table[i].type == 5) || (v_table[i].type == 6) || (v_table[i].type == 7)) && v_table[i].used == 0)
+        // check whether a function was declared but not used: the function
+        // types are 6 to 9 (void, int, float, comp); 5 is a comp constant
+        if (v_table[i].type >= TY_FVOID && v_table[i].type <= TY_FCOMP && v_table[i].used == 0)
             warn(MSG_WARN_UNUSED_FUNCTION, v_table[i].name);
     }
 }
@@ -109,27 +110,27 @@ void check_var(void)
 // declared before it, a global at the top level or a local inside a function
 void dire_wave(int id)
 {
-    char *name = rem_fname(v_table[id].name, fname);
-    if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, name);
-    if (v_table[id].type > 3)  fatal(MSG_ERR_WAVE_NOT_VAR, line_num+1, name);
+    char *name = rem_fname(v_table[id].name);
+    if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line_num+1, name);
+    if (v_table[id].type > TY_COMP)  fatal(MSG_ERR_WAVE_NOT_VAR, line_num+1, name);
     v_table[id].wave = 1;
 }
 
-// strips the function name from the variable
-char* rem_fname(char *var, const char *fname)
+// a local is <func>_<name>: strip_fn gives <name>; anything else, a global
+// even if it starts like the function (`mainly` in `main`), keeps its name
+char *strip_fn(char *var, const char *func)
 {
-    // During the deferred AST walk the global fname is "" (reset at each
-    // function's end), so callers that pass it cannot strip the prefix. The
-    // walker keeps emit_fname pointed at the current function, so prefer it when
-    // set -- this is display-only and does not affect exec_id's naming.
-    if (emit_fname[0] != '\0') fname = emit_fname;
-    if (strcmp(fname,"") == 0) return var;
-    int    ind = 0;
-    while (var[ind] == fname[ind] && fname[ind]) ind++;
-    // if ind != strlen(fname) it means the variable does not
-    // contain the full function name at the beginning,
-    // so it is better not to remove anything (it must be global)
-    return (ind == strlen(fname)) ? var + ind + 1 : var; // the +1 skips the '_'
+    size_t L = strlen(func);
+    if (L == 0) return var;
+    return (strncmp(var, func, L) == 0 && var[L] == '_') ? var + L + 1 : var;   // #94 A
+}
+
+// the name a variable has in the function being compiled: the parse-time
+// fname, or during the deferred AST walk (when fname is "") emit_fname, the
+// function the walker is in. For messages only: exec_id names with fname
+char *rem_fname(char *var)
+{
+    return strip_fn(var, emit_fname[0] != '\0' ? emit_fname : fname);
 }
 
 // ----------------------------------------------------------------------------
@@ -196,12 +197,12 @@ void check_name(int id, int is_fun)
         fatal(strstr(me, q) ? MSG_ERR_NAME_IS_MNEMONIC : MSG_ERR_NAME_MNEMONIC, line_num+1, me, as);
     }
 
-    if (v_table[id].type != 0)
+    if (v_table[id].type != TY_NONE)
     {
         int t = v_table[id].type;
         if (!is_fun && t < 6 && t != 4 && v_table[id].fnid == find_var(fname))
         {   // the same name declared twice in the same place
-            fatal(MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as, fname));
+            fatal(MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as));
         }
         name_taken(me, as, name_owner(id));
     }
@@ -213,7 +214,7 @@ void check_name(int id, int is_fun)
     {
         char *nm = xasprintf("%s_i", as);
         int idi = find_var(nm);
-        if (idi >= 0 && v_table[idi].type != 0)
+        if (idi >= 0 && v_table[idi].type != TY_NONE)
             name_taken(xasprintf(MSG_NAME_IMAG, me), nm, name_owner(idi));
         free(nm);
     }
@@ -222,7 +223,7 @@ void check_name(int id, int is_fun)
     {
         char *nm = xasprintf("%.*s", (int)(L - 2), as);
         int idr = find_var(nm);
-        if (idr >= 0 && v_table[idr].type == 3)
+        if (idr >= 0 && v_table[idr].type == TY_COMP)
             name_taken(me, as, xasprintf(MSG_NAME_IMAG, name_owner(idr)));
         free(nm);
     }

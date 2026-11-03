@@ -69,7 +69,7 @@ expr_node *expr_var(int type, int id)
     return n;
 }
 
-// type is intentionally not a parameter: composite nodes carry n->type = 0
+// type is intentionally not a parameter: composite nodes carry n->type = TY_NONE
 // out of enode_new (calloc), and typecheck_expr fills it bottom-up before
 // codegen runs.
 expr_node *expr_binop(int op, expr_node *left, expr_node *right)
@@ -88,13 +88,13 @@ static char *real_lit_text(const expr_node *n, const char *pre)
 {
     int neg = 0;
     if (n->kind == EXPR_UNOP && n->op == OP_NEG && n->left) {neg = 1; n = n->left;}
-    if (n->kind != EXPR_LITERAL || (n->type != 1 && n->type != 2)) return NULL;
+    if (n->kind != EXPR_LITERAL || (n->type != TY_INT && n->type != TY_FLOAT)) return NULL;
     return xasprintf("%s%s%s", pre, neg ? "-" : "", v_table[n->id].name);
 }
 
 static int imag_lit(const expr_node *n)
 {
-    return n->kind == EXPR_LITERAL && n->type == 5 && cnum_is_imag(n->id);
+    return n->kind == EXPR_LITERAL && n->type == TY_CCONST && cnum_is_imag(n->id);
 }
 
 // a + b and a - b as the program writes them: a real literal and an
@@ -103,7 +103,7 @@ static int imag_lit(const expr_node *n)
 // (y*3 + 2i) are complex(y*3, 2), with no add of the zero real part; anything
 // else is the operation. No arithmetic is done here: an imaginary literal's
 // real part is zero, so the parts are only put side by side
-static int is_real_exp(expr_node *n) {typecheck_expr(n); return n->type == 1 || n->type == 2;}
+static int is_real_exp(expr_node *n) {typecheck_expr(n); return n->type == TY_INT || n->type == TY_FLOAT;}
 
 expr_node *expr_addsub(int op, expr_node *left, expr_node *right)
 {
@@ -119,15 +119,15 @@ expr_node *expr_addsub(int op, expr_node *left, expr_node *right)
         id = cnum_join(re, 0, left->id);                                         // 2i - 3: the real part is -3
         free(re);
     }
-    if (id >= 0) {expr_free(left); expr_free(right); return expr_lit(5, id);}
+    if (id >= 0) {expr_free(left); expr_free(right); return expr_lit(TY_CCONST, id);}
 
     if (imag_lit(right) && is_real_exp(left)) {            // x + bi, x - bi
-        expr_node *im = expr_lit(2, cnum_imag_fnum(right->id, op == OP_SUB));
+        expr_node *im = expr_lit(TY_FLOAT, cnum_imag_fnum(right->id, op == OP_SUB));
         expr_free(right);
         return expr_stdlib(OP_STD_COMP, 0, left, im);
     }
     if (imag_lit(left) && is_real_exp(right)) {            // bi + x, bi - x
-        expr_node *im = expr_lit(2, cnum_imag_fnum(left->id, 0));
+        expr_node *im = expr_lit(TY_FLOAT, cnum_imag_fnum(left->id, 0));
         expr_free(left);
         return expr_stdlib(OP_STD_COMP, 0, op == OP_SUB ? expr_unop(OP_NEG, right) : right, im);
     }
@@ -140,7 +140,7 @@ expr_node *expr_minus(expr_node *e)
     if (imag_lit(e)) {
         int id = cnum_join("0", 1, e->id);
         expr_free(e);
-        return expr_lit(5, id);
+        return expr_lit(TY_CCONST, id);
     }
     return expr_unop(OP_NEG, e);
 }
@@ -273,8 +273,8 @@ expr_node *expr_dirac_in(int port)
 
 void dirac_not_vector(int id)
 {
-    char *name = rem_fname(v_table[id].name, fname);
-    if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST,   line_num + 1, name);
+    char *name = rem_fname(v_table[id].name);
+    if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST,   line_num + 1, name);
     else                       fatal(MSG_ERR_NOT_A_VECTOR, line_num + 1, name);
 }
 
@@ -339,7 +339,7 @@ static expr_node *for_bottom_test(stmt_node *n, stmt_node *init)
 {
     expr_node *c = n->cond;
     if (!init || init->kind != STMT_ASSIGN || !c || c->kind != EXPR_BINOP) return NULL;
-    if (!init->rhs || init->rhs->kind != EXPR_LITERAL || v_table[init->id].type != 1) return NULL;
+    if (!init->rhs || init->rhs->kind != EXPR_LITERAL || v_table[init->id].type != TY_INT) return NULL;
     expr_node *var = c->left, *lit = c->right; int op = c->op;
     if (var && var->kind == EXPR_LITERAL && lit && lit->kind == EXPR_VAR) {   // c OP k: mirror
         expr_node *t = var; var = lit; lit = t;
@@ -348,7 +348,7 @@ static expr_node *for_bottom_test(stmt_node *n, stmt_node *init)
     }
     if (!var || var->kind != EXPR_VAR || var->id != init->id || !lit || lit->kind != EXPR_LITERAL) return NULL;
     typecheck_expr(init->rhs); typecheck_expr(lit);
-    if (init->rhs->type != 1 || lit->type != 1) return NULL;
+    if (init->rhs->type != TY_INT || lit->type != TY_INT) return NULL;
     long long c0 = atoll(v_table[init->rhs->id].name), c1 = atoll(v_table[lit->id].name);
     long long max = (1LL << (nubits - 1)) - 1;               // largest int of the word
     if (c0 > max || c1 > max) return NULL;                   // the word wraps it: holds is not the hardware's
@@ -364,7 +364,7 @@ static expr_node *for_bottom_test(stmt_node *n, stmt_node *init)
     }
     if (!holds || k2 < 0 || k2 > max) return NULL;           // a literal has no negative form
     char buf[32]; snprintf(buf, sizeof buf, "%lld", k2);
-    return expr_binop(op2, expr_lit(1, exec_inum(buf)), expr_var(1, var->id));
+    return expr_binop(op2, expr_lit(TY_INT, exec_inum(buf)), expr_var(TY_INT, var->id));
 }
 
 // an int literal other than 0: a loop condition that is always true (while (1))
@@ -409,9 +409,9 @@ static void key_cat(char **b, const char *fmt, ...)
 static int elem_key_tree(expr_node *e, char **b)
 {
     if (!e) return 0;
-    if (e->kind == EXPR_LITERAL || (e->kind == EXPR_VAR && v_table[e->id].isar == 0))
+    if (e->kind == EXPR_LITERAL || (e->kind == EXPR_VAR && v_table[e->id].isar == AR_NONE))
     {
-        if (e->kind == EXPR_LITERAL && v_table[e->id].type != 1) return 0;
+        if (e->kind == EXPR_LITERAL && v_table[e->id].type != TY_INT) return 0;
         key_cat(b, "%s", v_table[e->id].name);
         return 1;
     }
@@ -428,7 +428,7 @@ static int elem_key_tree(expr_node *e, char **b)
 static int elem_key(int id, expr_node *i1, expr_node *i2, char **b)
 {
     *b = NULL;
-    if (v_table[id].type != 1 && v_table[id].type != 2) return 0;
+    if (v_table[id].type != TY_INT && v_table[id].type != TY_FLOAT) return 0;
     *b = xasprintf("%s[", v_table[id].name);
     if (!elem_key_tree(i1, b)) return 0;
     if (i2) { key_cat(b, "]["); if (!elem_key_tree(i2, b)) return 0; }
@@ -456,7 +456,7 @@ static int idx_key(expr_node *ix, char **b)
     *b = NULL;
     if (!ix || ix->kind == EXPR_LITERAL || ix->kind == EXPR_VAR) return 0;
     typecheck_expr(ix);
-    if (ix->type != 1) return 0;
+    if (ix->type != TY_INT) return 0;
     *b = xstrdup("[");
     if (!elem_key_tree(ix, b)) return 0;
     key_cat(b, "]");
@@ -465,7 +465,7 @@ static int idx_key(expr_node *ix, char **b)
 
 static int is_const_true(expr_node *n)
 {
-    return n && n->kind == EXPR_LITERAL && n->type == 1 && atoll(v_table[n->id].name) != 0;
+    return n && n->kind == EXPR_LITERAL && n->type == TY_INT && atoll(v_table[n->id].name) != 0;
 }
 
 static int is_const_value(expr_node *n, double want)
@@ -475,7 +475,7 @@ static int is_const_value(expr_node *n, double want)
     // comp literal (type 3/4/5) is NOT -- e.g. 1+2i has real part 1 but is not
     // the constant 1 -- so matching its real half here would wrongly fold
     // 1*x / x/1 / x+0 and drop the operation (e.g. (1+2i)*(3+4i) -> (3+4i)).
-    if (n->type > 2) return 0;
+    if (n->type > TY_FLOAT) return 0;
     return atof(v_table[n->id].name) == want;
 }
 
@@ -491,7 +491,7 @@ static int is_const_value(expr_node *n, double want)
 void typecheck_expr(expr_node *n)
 {
     if (!n)           return;
-    if (n->type != 0) return;  // already typed (leaf, or prior pass)
+    if (n->type != TY_NONE) return;  // already typed (leaf, or prior pass)
 
     typecheck_expr(n->left);
     typecheck_expr(n->right);
@@ -514,7 +514,7 @@ void typecheck_expr(expr_node *n)
                 case OP_LAN: case OP_LOR:
                 case OP_SHL: case OP_SHR: case OP_SSHR:
                 case OP_AND: case OP_OR:  case OP_XOR:
-                    n->type = 1; break;
+                    n->type = TY_INT; break;
                 default: break;
             }
             break;
@@ -523,7 +523,7 @@ void typecheck_expr(expr_node *n)
             switch (n->op)
             {
                 case OP_NEG:              n->type = lt; break;   // preserves operand type
-                case OP_LIN: case OP_INV: n->type = 1;  break;   // int result
+                case OP_LIN: case OP_INV: n->type = TY_INT;  break;   // int result
                 default: break;
             }
             break;
@@ -531,13 +531,13 @@ void typecheck_expr(expr_node *n)
         case EXPR_STDLIB_CALL:
             switch (n->op)
             {
-                case OP_STD_IN:                                  n->type = 1;  break;
-                case OP_STD_FIN:                                 n->type = 2;  break;
-                case OP_STD_CADE:                                n->type = 1;  break;   // int   (x = cade(k);  takes x's type)
-                case OP_STD_FCADE:                               n->type = 2;  break;   // float (x = fcade(k); takes x's type)
+                case OP_STD_IN:                                  n->type = TY_INT;  break;
+                case OP_STD_FIN:                                 n->type = TY_FLOAT;  break;
+                case OP_STD_CADE:                                n->type = TY_INT;  break;   // int   (x = cade(k);  takes x's type)
+                case OP_STD_FCADE:                               n->type = TY_FLOAT;  break;   // float (x = fcade(k); takes x's type)
                 case OP_STD_PST: case OP_STD_ABS:                n->type = lt; break;
                 case OP_STD_SIGN:                                n->type = rt; break;
-                case OP_STD_NRM:                                 n->type = 1;  break;
+                case OP_STD_NRM:                                 n->type = TY_INT;  break;
                 // these accept comp: comp argument -> comp result, real arg -> float
                 case OP_STD_SQRT: case OP_STD_ATAN:
                 case OP_STD_SIN:  case OP_STD_COS:  case OP_STD_TAN:
@@ -545,10 +545,10 @@ void typecheck_expr(expr_node *n)
                 // real-only (reject comp) -> always float
                 case OP_STD_COSH: case OP_STD_SINH: case OP_STD_TANH:
                 case OP_STD_POW:
-                case OP_STD_FLOOR: case OP_STD_CEIL: case OP_STD_ROUND: n->type = 2;  break;
+                case OP_STD_FLOOR: case OP_STD_CEIL: case OP_STD_ROUND: n->type = TY_FLOAT;  break;
                 case OP_STD_REAL: case OP_STD_IMAG:
-                case OP_STD_FASE: case OP_STD_MOD2:              n->type = 2;  break;
-                case OP_STD_COMP: case OP_STD_CONJ:              n->type = 3;  break;
+                case OP_STD_FASE: case OP_STD_MOD2:              n->type = TY_FLOAT;  break;
+                case OP_STD_COMP: case OP_STD_CONJ:              n->type = TY_COMP;  break;
                 default: break;
             }
             break;
@@ -608,14 +608,14 @@ void shapecheck_expr(expr_node *n)
     {
         case EXPR_DIRAC_REF: {
             int id = n->id;
-            char *name = rem_fname(v_table[id].name, fname);
-            if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST, n->line, name);
+            char *name = rem_fname(v_table[id].name);
+            if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, n->line, name);
             if (n->op == DIRAC_ROLE_MAT) {
-                if (v_table[id].isar != 2) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
+                if (v_table[id].isar != AR_2D) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
                 n->rows = v_table[id].size;
                 n->cols = v_table[id].siz2;
             } else {
-                if (v_table[id].isar != 1) fatal(MSG_ERR_NOT_A_VECTOR, n->line, name);
+                if (v_table[id].isar != AR_1D) fatal(MSG_ERR_NOT_A_VECTOR, n->line, name);
                 n->rows = (n->op == DIRAC_ROLE_KET) ? v_table[id].size : 1;
                 n->cols = (n->op == DIRAC_ROLE_KET) ? 1 : v_table[id].size;
             }
@@ -714,7 +714,7 @@ static int stack_need(expr_node *n)
 // other commutative ops until their acc+acc paths are likewise confirmed.
 static int commutative_int_binop(const expr_node *n)
 {
-    return n->type == 1 && (n->op == OP_ADD || n->op == OP_MUL);
+    return n->type == TY_INT && (n->op == OP_ADD || n->op == OP_MUL);
 }
 
 // does evaluating the subtree do something besides compute a value (a user
@@ -744,9 +744,9 @@ static expr_node *part_made[3*PART_MAX]; static int part_n;
 
 static int comp_part_leaf(const expr_node *n)
 {
-    if (n->kind == EXPR_VAR) return v_table[n->id].type == 3 && v_table[n->id].isar == 0;
+    if (n->kind == EXPR_VAR) return v_table[n->id].type == TY_COMP && v_table[n->id].isar == AR_NONE;
     if (n->kind == EXPR_ARRAY_INDEX)
-        return v_table[n->id].type == 3 && is_expr_leaf(n->left) && (!n->right || is_expr_leaf(n->right));
+        return v_table[n->id].type == TY_COMP && is_expr_leaf(n->left) && (!n->right || is_expr_leaf(n->right));
     return 0;
 }
 
@@ -779,7 +779,7 @@ static expr_node *part_node(const expr_node *from)
 
 static expr_node *part_bin(int op, expr_node *l, expr_node *r, const expr_node *at)
 {
-    expr_node t = *at; t.kind = EXPR_BINOP; t.op = op; t.type = 2; t.left = l; t.right = r;
+    expr_node t = *at; t.kind = EXPR_BINOP; t.op = op; t.type = TY_FLOAT; t.left = l; t.right = r;
     t.args = NULL; t.n_args = 0;
     return part_node(&t);
 }
@@ -790,11 +790,11 @@ static expr_node *part_leaf(const expr_node *l, int imag)
 {
     int id = l->id, part = imag ? get_img_id(id) : id, k = part_k++;
     part_id[k] = part; part_type[k] = v_table[part].type; part_isar[k] = v_table[part].isar; part_siz2[k] = v_table[part].siz2;
-    v_table[part].type = 2; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
+    v_table[part].type = TY_FLOAT; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
     v_table[id].used = 1;
     if (l->left ) l->left ->emitted = 0;
     if (l->right) l->right->emitted = 0;
-    expr_node *n = part_node(l); n->id = part; n->type = 2;
+    expr_node *n = part_node(l); n->id = part; n->type = TY_FLOAT;
     return n;
 }
 
@@ -842,7 +842,7 @@ static expr comp_partwise_emit(expr_node *n, int from, int to)
 // match the hardware: past it we bail and let the runtime op handle the
 // wraparound. Float is never folded (the YANC float is not IEEE-bit-compatible);
 // div/mod/comparison/logical ops are left to the runtime too.
-static int const_eval(expr_node *n, long *val)
+static int const_eval(expr_node *n, long long *val)
 {
     if (!n) return 0;
     // Range that keeps the result both representable and emittable: a positive
@@ -854,23 +854,28 @@ static int const_eval(expr_node *n, long *val)
     // the caller takes the result to the word before it becomes a literal
     // (issue #14, cmm_nubits8). Nothing may compare such a value at compile
     // time: for_bottom_test checks its literals against the word itself.
-    long max = ((long)1 << (nbmant + nbexpo)) - 1;
-    long min = -max;
+    // In long long, with NBMANT + NBEXPO held to 31 (a word of 32 bits, the
+    // most asmcomp takes): every operand is then at most 2^31 - 1, so a sum, a
+    // product or a shift by less than 31 stays defined, and the result is the
+    // same where long has 32 bits (64-bit Windows) as where it has 64 (#94 J)
+    int       mb  = nbmant + nbexpo < 0 ? 0 : nbmant + nbexpo > 31 ? 31 : nbmant + nbexpo;
+    long long max = (1LL << mb) - 1;
+    long long min = -max;
 
-    if (n->kind == EXPR_LITERAL && n->type == 1) {
-        *val = atol(v_table[n->id].name);
+    if (n->kind == EXPR_LITERAL && n->type == TY_INT) {
+        *val = atoll(v_table[n->id].name);
         return 1;
     }
     if (n->kind == EXPR_UNOP && n->op == OP_NEG) {       // -(const)
-        long a;
+        long long a;
         if (!const_eval(n->left, &a)) return 0;
-        long r = -a;
+        long long r = -a;
         if (r < min || r > max) return 0;
         *val = r;
         return 1;
     }
     if (n->kind == EXPR_BINOP) {
-        long a, b, r;
+        long long a, b, r;
         if (!const_eval(n->left, &a) || !const_eval(n->right, &b)) return 0;
         switch (n->op) {
             case OP_ADD: r = a + b; break;
@@ -934,7 +939,7 @@ expr ast_emit_expr(expr_node *n)
 
 static expr ast_emit_expr_impl(expr_node *n)
 {
-    if (!n) return expr_make(0, 0);
+    if (!n) return expr_make(TY_NONE, 0);
 
     switch (n->kind)
     {
@@ -944,7 +949,7 @@ static expr ast_emit_expr_impl(expr_node *n)
         case EXPR_BINOP: {
             {
                 int leaves = 0;
-                if (n->type == 3 && (n->op == OP_ADD || n->op == OP_SUB || n->op == OP_MUL) && comp_partwise(n, &leaves))
+                if (n->type == TY_COMP && (n->op == OP_ADD || n->op == OP_SUB || n->op == OP_MUL) && comp_partwise(n, &leaves))
                     return comp_partwise_emit(n, 0, 1);
             }
             // the square of an int or float element, v[k]*v[k]: read once,
@@ -954,7 +959,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             {
                 char *k1 = NULL, *k2 = NULL;
                 typecheck_expr(n);
-                int same = (n->type == 1 || n->type == 2) && n->left->type == n->type
+                int same = (n->type == TY_INT || n->type == TY_FLOAT) && n->left->type == n->type
                     && elem_key(n->left ->id, n->left ->left, n->left ->right, &k1)
                     && elem_key(n->right->id, n->right->left, n->right->right, &k2)
                     && strcmp(k1, k2) == 0;
@@ -963,7 +968,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                 {
                     ast_emit_expr(n->left);
                     add_instr("PSH\n");
-                    add_instr(n->type == 2 ? "SF_MLT\n" : "S_MLT\n");
+                    add_instr(n->type == TY_FLOAT ? "SF_MLT\n" : "S_MLT\n");
                     acc_ok = 1;
                     return expr_make(n->type, 0);
                 }
@@ -998,18 +1003,18 @@ static expr ast_emit_expr_impl(expr_node *n)
             // (100 + 100 at #NUBITS 8 is -56), so the literal fits the word;
             // the most negative int is NEG_M of 2^(NUBITS-1), as for 0x80.
             {
-                long cval;
+                long long cval;
                 if (const_eval(n, &cval)) {
                     char buf[32];
-                    long long m = 1LL << nubits, w = (((long long)cval % m) + m) % m;
+                    long long m = 1LL << nubits, w = ((cval % m) + m) % m;
                     if (w >= m / 2) w -= m;
-                    cval = (long)w;
+                    cval = w;
                     if (cval == -(m / 2)) return oper_neg(num2exp(inum_min_id(), 1));
                     if (cval >= 0) {
-                        snprintf(buf, sizeof buf, "%ld", cval);
+                        snprintf(buf, sizeof buf, "%lld", cval);
                         return num2exp(exec_inum(buf), 1);
                     }
-                    snprintf(buf, sizeof buf, "%ld", -cval);
+                    snprintf(buf, sizeof buf, "%lld", -cval);
                     return oper_neg(num2exp(exec_inum(buf), 1));
                 }
             }
@@ -1020,19 +1025,19 @@ static expr ast_emit_expr_impl(expr_node *n)
             // sum stays in the acc instead of going to the stack: k*75 + (j-1)
             // is ADD j; ADD -1, not P_NEG_M 1; ADD j; S_ADD. A leaf a gains
             // only in a difference: x - (y + 1) is NEG_M y; ADD x; ADD -1
-            if (n->type == 1 && (n->op == OP_ADD || n->op == OP_SUB)
+            if (n->type == TY_INT && (n->op == OP_ADD || n->op == OP_SUB)
                 && (!is_expr_leaf(n->left) || n->op == OP_SUB)
-                && n->left->type == 1 && n->right->kind == EXPR_BINOP && n->right->type == 1
+                && n->left->type == TY_INT && n->right->kind == EXPR_BINOP && n->right->type == TY_INT
                 && (n->right->op == OP_ADD || n->right->op == OP_SUB)
                 && is_expr_leaf(n->right->left) && is_expr_leaf(n->right->right)
-                && n->right->left->type == 1 && n->right->right->type == 1)
+                && n->right->left->type == TY_INT && n->right->right->type == TY_INT)
             {
                 // two new nodes over the same subtrees, which other trees may
                 // share (a matrix element's linear index): only the new ones go
                 expr_node *r  = n->right;
                 expr_node *ab = expr_binop(n->op, n->left, r->left);                       // a ± b
                 expr_node *t  = expr_binop(n->op == r->op ? OP_ADD : OP_SUB, ab, r->right);  // then ± c
-                ab->type = t->type = 1; ab->line = t->line = n->line;
+                ab->type = t->type = TY_INT; ab->line = t->line = n->line;
                 expr e = ast_emit_expr(t);
                 ab->left = ab->right = t->left = t->right = NULL;
                 expr_free(ab); expr_free(t);
@@ -1042,18 +1047,18 @@ static expr ast_emit_expr_impl(expr_node *n)
             // the mirror, (b ± c) + a and (b ± c) - a, a computed: (a + b) ± c
             // and (-a + b) ± c. Here a goes first, so only when computing it
             // changes nothing b or c could read (no call, ++ or input)
-            if (n->type == 1 && (n->op == OP_ADD || n->op == OP_SUB)
-                && !is_expr_leaf(n->right) && n->right->type == 1 && !has_side_effect(n->right)
-                && n->left->kind == EXPR_BINOP && n->left->type == 1
+            if (n->type == TY_INT && (n->op == OP_ADD || n->op == OP_SUB)
+                && !is_expr_leaf(n->right) && n->right->type == TY_INT && !has_side_effect(n->right)
+                && n->left->kind == EXPR_BINOP && n->left->type == TY_INT
                 && (n->left->op == OP_ADD || n->left->op == OP_SUB)
                 && is_expr_leaf(n->left->left) && is_expr_leaf(n->left->right)
-                && n->left->left->type == 1 && n->left->right->type == 1)
+                && n->left->left->type == TY_INT && n->left->right->type == TY_INT)
             {
                 expr_node *l  = n->left;
                 expr_node *a  = n->op == OP_SUB ? expr_unop(OP_NEG, n->right) : n->right;  // ±a
                 expr_node *ab = expr_binop(OP_ADD, a, l->left);                            // ±a + b
                 expr_node *t  = expr_binop(l->op, ab, l->right);                           // then ± c
-                a->type = ab->type = t->type = 1; a->line = ab->line = t->line = n->line;
+                a->type = ab->type = t->type = TY_INT; a->line = ab->line = t->line = n->line;
                 expr e = ast_emit_expr(t);
                 if (a != n->right) {a->left = NULL; expr_free(a);}
                 ab->left = ab->right = t->left = t->right = NULL;
@@ -1088,12 +1093,12 @@ static expr ast_emit_expr_impl(expr_node *n)
             //   with their operands swapped, simulated on 3000 random pairs
             //   at each #FROUND level (issue #69, 2026-11-02)
             int swap_int = n->left->kind == EXPR_VAR && n->right->kind == EXPR_VAR
-                && a.type == 1 && b.type == 1
+                && a.type == TY_INT && b.type == TY_INT
                 && (n->op == OP_ADD || n->op == OP_MUL || n->op == OP_AND || n->op == OP_OR
                     || n->op == OP_XOR || n->op == OP_EQ || n->op == OP_LAN || n->op == OP_LOR);
             int swap_flt = (n->left->kind  == EXPR_VAR || n->left->kind  == EXPR_LITERAL)
                 && (n->right->kind == EXPR_VAR || n->right->kind == EXPR_LITERAL)
-                && a.type == 2 && b.type == 2 && (n->op == OP_ADD || n->op == OP_MUL);
+                && a.type == TY_FLOAT && b.type == TY_FLOAT && (n->op == OP_ADD || n->op == OP_MUL);
             if (acc_ok == 0 && a.id != 0 && b.id != 0 && (swap_int || swap_flt)
                 && acc_holds(v_table[b.id].name) && !acc_holds(v_table[a.id].name))
             {
@@ -1155,10 +1160,10 @@ static expr ast_emit_expr_impl(expr_node *n)
             // reversed, the others kept (core.v rel_addr). 2D falls through
             // to the indirect path.
             if (!n->right
-                && n->left->kind == EXPR_LITERAL && v_table[n->id].type >= 1 && v_table[n->id].type <= 3)
+                && n->left->kind == EXPR_LITERAL && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
             {
                 typecheck_expr(n->left);
-                if (n->left->type == 1)
+                if (n->left->type == TY_INT)
                 {
                     int k = atoi(v_table[n->left->id].name);
                     if (n->op)
@@ -1172,11 +1177,11 @@ static expr ast_emit_expr_impl(expr_node *n)
             }
             // two constant indexes of a matrix: one constant offset, row by row
             if (n->right && n->left->kind == EXPR_LITERAL && n->right->kind == EXPR_LITERAL
-                && v_table[n->id].isar == 2 && v_table[n->id].type >= 1 && v_table[n->id].type <= 3)
+                && v_table[n->id].isar == AR_2D && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
             {
                 typecheck_expr(n->left);
                 typecheck_expr(n->right);
-                if (n->left->type == 1 && n->right->type == 1)
+                if (n->left->type == TY_INT && n->right->type == TY_INT)
                     return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].siz2
                                                  + atoi(v_table[n->right->id].name), 2);
             }
@@ -1184,14 +1189,14 @@ static expr ast_emit_expr_impl(expr_node *n)
             // column is one int expression, the column computed over the pushed
             // row, and the element is read as from a vector; arr_2d_index would
             // set the column aside in memory to multiply the row
-            if (n->right && !is_expr_leaf(n->right) && v_table[n->id].isar == 2)
+            if (n->right && !is_expr_leaf(n->right) && v_table[n->id].isar == AR_2D)
             {
                 typecheck_expr(n->left);
                 typecheck_expr(n->right);
-                if (n->left->type == 1 && n->right->type == 1)
+                if (n->left->type == TY_INT && n->right->type == TY_INT)
                 {
                     char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
-                    expr_node *s = expr_lit(1, exec_inum(b));
+                    expr_node *s = expr_lit(TY_INT, exec_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->left, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->right);
                     char *key = NULL;
@@ -1200,12 +1205,12 @@ static expr ast_emit_expr_impl(expr_node *n)
                     int held = acc_ok == 1 && idx_key(a, &key) && acc_holds(key);
                     free(key);
                     if (held)
-                        {add_instr("PSH\n"); e = expr_make(1, 0);}
+                        {add_instr("PSH\n"); e = expr_make(TY_INT, 0);}
                     else e = ast_emit_expr(a);
                     free(a); free(m); free(s);
-                    v_table[n->id].isar = 1;
+                    v_table[n->id].isar = AR_1D;
                     expr r = arr_1d2exp(n->id, e, 0);
-                    v_table[n->id].isar = 2;
+                    v_table[n->id].isar = AR_2D;
                     return elem_read(n, r);
                 }
             }
@@ -1219,7 +1224,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                 if (held)
                 {
                     add_instr("PSH\n");
-                    return elem_read(n, arr_1d2exp(n->id, expr_make(1, 0), 0));
+                    return elem_read(n, arr_1d2exp(n->id, expr_make(TY_INT, 0), 0));
                 }
             }
             expr idx1 = ast_emit_expr(n->left);
@@ -1271,11 +1276,11 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_STD_REAL: case OP_STD_IMAG:
                     // a part of a comp array element: the array of that part (v, or
                     // v_i) is read as a float array, the other one not at all
-                    if (n->left->kind == EXPR_ARRAY_INDEX && v_table[n->left->id].type == 3)
+                    if (n->left->kind == EXPR_ARRAY_INDEX && v_table[n->left->id].type == TY_COMP)
                     {
                         int id = n->left->id, part = (n->op == OP_STD_IMAG) ? get_img_id(id) : id;
                         int t0 = v_table[part].type, a0 = v_table[part].isar, s0 = v_table[part].siz2;
-                        v_table[part].type = 2; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
+                        v_table[part].type = TY_FLOAT; v_table[part].isar = v_table[id].isar; v_table[part].siz2 = v_table[id].siz2;
                         n->left->id = part;
                         expr a = ast_emit_expr(n->left);
                         n->left->id = id;
@@ -1288,7 +1293,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                     {
                         int leaves = 0, re = (n->op == OP_STD_REAL);
                         typecheck_expr(n->left);
-                        if (n->left->kind == EXPR_BINOP && n->left->type == 3 && comp_partwise(n->left, &leaves))
+                        if (n->left->kind == EXPR_BINOP && n->left->type == TY_COMP && comp_partwise(n->left, &leaves))
                             return comp_partwise_emit(n->left, !re, !re);
                     }
                     if (n->op == OP_STD_REAL) { expr a = ast_emit_expr(n->left); return exec_real(a); }
@@ -1319,7 +1324,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             add_instr("CAL %s\n", v_table[n->id].name);
             v_table[n->id].used = 1;
             fun_call_edge(emit_fid, n->id, emit_line);   // for check_rec (funcoes.c)
-            acc_ok = (n->type == 0) ? 0 : 1;
+            acc_ok = (n->type == TY_NONE) ? 0 : 1;
 
             fun_id = saved_fun_id;
             return expr_make(n->type, 0);
@@ -1512,41 +1517,38 @@ stmt_node *stmt_list_top(void)
 // compound control-flow constructors -----------------------------------------
 // ----------------------------------------------------------------------------
 
-stmt_node *stmt_if(int label, expr_node *cond, stmt_node *then_body, stmt_node *else_body)
+// Each is made when its header is parsed (saltos.c); the bodies, the
+// do-while's condition and the switch's case count are filled in later, when
+// the parser reaches them, and start empty (snode_new zeroes the node)
+
+stmt_node *stmt_if(int label, expr_node *cond)
 {
     stmt_node *n = snode_new(STMT_IF);
-    n->id        = label;
-    n->cond      = cond;
-    n->then_body = then_body;
-    n->else_body = else_body;
+    n->id   = label;
+    n->cond = cond;
     return n;
 }
 
-stmt_node *stmt_while(int label, expr_node *cond, stmt_node *body)
+stmt_node *stmt_while(int label, expr_node *cond)
 {
     stmt_node *n = snode_new(STMT_WHILE);
     n->id   = label;
     n->cond = cond;
-    n->body = body;
     return n;
 }
 
-stmt_node *stmt_do(int label, expr_node *cond, stmt_node *body)
+stmt_node *stmt_do(int label)
 {
     stmt_node *n = snode_new(STMT_DO);
-    n->id   = label;
-    n->cond = cond;
-    n->body = body;
+    n->id = label;
     return n;
 }
 
-stmt_node *stmt_switch(int swit_id, int case_max, expr_node *cond, stmt_node *body)
+stmt_node *stmt_switch(int swit_id, expr_node *cond)
 {
     stmt_node *n = snode_new(STMT_SWITCH);
     n->id   = swit_id;
-    n->id2  = case_max;
     n->cond = cond;
-    n->body = body;
     return n;
 }
 
@@ -1665,14 +1667,14 @@ static int is_prod(const expr_node *n)
 // the target array dst against the shape of the expression
 static void dirac_check_target(int dst, expr_node *r, int line)
 {
-    char *name = rem_fname(v_table[dst].name, fname);
-    if (v_table[dst].type == 0) fatal(MSG_ERR_DECL_FIRST, line, name);
+    char *name = rem_fname(v_table[dst].name);
+    if (v_table[dst].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line, name);
 
     int rows = 1, cols = 1, fits;
-    if (v_table[dst].isar == 1) {
+    if (v_table[dst].isar == AR_1D) {
         rows = v_table[dst].size;
         fits = (dim_fits(r->rows, rows) && r->cols == 1) || (r->rows == 1 && dim_fits(r->cols, rows));
-    } else if (v_table[dst].isar == 2) {
+    } else if (v_table[dst].isar == AR_2D) {
         rows = v_table[dst].size; cols = v_table[dst].siz2;
         fits = dim_fits(r->rows, rows) && dim_fits(r->cols, cols);
     } else fits = 0;
@@ -1741,7 +1743,7 @@ static expr cond_expr(expr_node *c)
         && !(c->left->kind == EXPR_LITERAL && c->right->kind == EXPR_LITERAL))
     {
         typecheck_expr(c);
-        if (c->left->type == 1 && c->right->type == 1)
+        if (c->left->type == TY_INT && c->right->type == TY_INT)
         {
             expr a = ast_emit_expr(c->left);
             expr b = ast_emit_expr(c->right);
@@ -1756,37 +1758,37 @@ static void emit_cond_int_load(expr e, int is_switch)
     const char *msg_float = MSG_WARN_CASE_FLOAT;       // a switch index still converts (truncates)
     const char *msg_comp  = MSG_WARN_CASE_COMP;
 
-    if ((e.type == 1) && (e.id != 0)) add_instr("LOD %s\n", v_table[e.id].name);
+    if ((e.type == TY_INT) && (e.id != 0)) add_instr("LOD %s\n", v_table[e.id].name);
     // int acc: nothing
 
     // An if/while/for/do condition tests a float by its mantissa: a SAPHO
     // float is zero exactly when its mantissa is (the leading one is kept),
     // so C's "true when not zero" is AND 2^NBMANT - 1 (Scripts/fcond). A switch
     // index still converts (F2I, truncating).
-    long mask = (1L << nbmant) - 1;
-    if ((e.type == 2) && (e.id != 0)) {
+    long long mask = mant_pow2() - 1;
+    if ((e.type == TY_FLOAT) && (e.id != 0)) {
         if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
-        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("AND %ld\n", mask); }
+        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("AND %lld\n", mask); }
     }
-    if ((e.type == 2) && (e.id == 0)) {
+    if ((e.type == TY_FLOAT) && (e.id == 0)) {
         if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I\n"); }
-        else           add_instr("AND %ld\n", mask);
+        else           add_instr("AND %lld\n", mask);
     }
     // a comp condition is true when its real or its imaginary part is not
     // zero (C99): (re OR im) AND mask, the mask being the same for both
-    if (e.type == 5) {
+    if (e.type == TY_CCONST) {
         expr etr, eti;
         get_cmp_cst(e, &etr, &eti);
         if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[etr.id].name); }
-        else           { add_instr("LOD %s\n", v_table[etr.id].name); add_instr("ORR %s\n", v_table[eti.id].name); add_instr("AND %ld\n", mask); }
+        else           { add_instr("LOD %s\n", v_table[etr.id].name); add_instr("ORR %s\n", v_table[eti.id].name); add_instr("AND %lld\n", mask); }
     }
-    if ((e.type == 3) && (e.id != 0)) {
+    if ((e.type == TY_COMP) && (e.id != 0)) {
         if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
-        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %ld\n", mask); }
+        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %lld\n", mask); }
     }
-    if ((e.type == 3) && (e.id == 0)) {                    // the imag part in the acc, the real on the stack
+    if ((e.type == TY_COMP) && (e.id == 0)) {                    // the imag part in the acc, the real on the stack
         if (is_switch) { warn(msg_comp, line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
-        else           { add_instr("S_ORR\n"); add_instr("AND %ld\n", mask); }
+        else           { add_instr("S_ORR\n"); add_instr("AND %lld\n", mask); }
     }
 }
 
@@ -1901,13 +1903,13 @@ void stmt_emit(stmt_node *n)
             // + indirect STI. Every other shape (2D, reversed array, an RHS
             // that needs a conversion) falls through to the indirect path.
             if (!n->idx2 && n->op == 0 && n->idx->kind == EXPR_LITERAL
-                && v_table[n->id].type >= 1 && v_table[n->id].type <= 3)
+                && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
             {
                 int at = v_table[n->id].type;
                 typecheck_expr(n->idx);
                 typecheck_expr(n->rhs);
                 int rt = n->rhs->type;
-                if (n->idx->type == 1 && (rt == at || (at == 3 && rt == 5))) {
+                if (n->idx->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
                     int k = atoi(v_table[n->idx->id].name);
                     ass_array_const(n->id, k, 1, ast_emit_expr(n->rhs));
                     break;
@@ -1915,14 +1917,14 @@ void stmt_emit(stmt_node *n)
             }
             // two constant indexes of a matrix: one constant offset, row by row
             if (n->idx2 && n->idx->kind == EXPR_LITERAL && n->idx2->kind == EXPR_LITERAL
-                && v_table[n->id].isar == 2 && v_table[n->id].type >= 1 && v_table[n->id].type <= 3)
+                && v_table[n->id].isar == AR_2D && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
             {
                 int at = v_table[n->id].type;
                 typecheck_expr(n->idx);
                 typecheck_expr(n->idx2);
                 typecheck_expr(n->rhs);
                 int rt = n->rhs->type;
-                if (n->idx->type == 1 && n->idx2->type == 1 && (rt == at || (at == 3 && rt == 5))) {
+                if (n->idx->type == TY_INT && n->idx2->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
                     int k = atoi(v_table[n->idx->id].name) * v_table[n->id].siz2 + atoi(v_table[n->idx2->id].name);
                     ass_array_const(n->id, k, 2, ast_emit_expr(n->rhs));
                     break;
@@ -1936,17 +1938,17 @@ void stmt_emit(stmt_node *n)
                 typecheck_expr(n->idx2);
                 // a computed column: row * row length + column as one int
                 // expression, as in EXPR_ARRAY_INDEX
-                if (!is_expr_leaf(n->idx2) && v_table[n->id].isar == 2
-                    && n->idx->type == 1 && n->idx2->type == 1)
+                if (!is_expr_leaf(n->idx2) && v_table[n->id].isar == AR_2D
+                    && n->idx->type == TY_INT && n->idx2->type == TY_INT)
                 {
                     char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
-                    expr_node *s = expr_lit(1, exec_inum(b));
+                    expr_node *s = expr_lit(TY_INT, exec_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->idx, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->idx2);
                     expr e = ast_emit_expr(a);
-                    v_table[n->id].isar = 1;
+                    v_table[n->id].isar = AR_1D;
                     arr_1d_index(n->id, e);
-                    v_table[n->id].isar = 2;
+                    v_table[n->id].isar = AR_2D;
                     char *key;
                     if (idx_key(a, &key)) acc_holds_index(key);
                     free(key);
@@ -1968,7 +1970,7 @@ void stmt_emit(stmt_node *n)
             }
             // an int variable as the whole index, which the right-hand side
             // cannot change: ass_array may read it again for a second word
-            ass_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == 1
+            ass_idx_reload = (!n->idx2 && n->idx->kind == EXPR_VAR && v_table[n->idx->id].type == TY_INT
                               && !v_table[n->idx->id].isar && rhs_keeps(n->rhs)) ? n->idx->id : 0;
             ass_array(n->id, ast_emit_expr(n->rhs), n->op);
             ass_idx_reload = 0;
@@ -2009,8 +2011,8 @@ void stmt_emit(stmt_node *n)
             // goes straight into a[0], instead of waiting in __aux_var
             typecheck_expr(n->rhs);
             if (n->id == n->id2 && !is_expr_leaf(n->rhs) && rhs_keeps(n->rhs)
-                && !expr_reads(n->rhs, n->id) && (n->rhs->type == 1 || n->rhs->type == 2)
-                && v_table[n->id].isar == 1 && (v_table[n->id].type == 1 || v_table[n->id].type == 2))
+                && !expr_reads(n->rhs, n->id) && (n->rhs->type == TY_INT || n->rhs->type == TY_FLOAT)
+                && v_table[n->id].isar == AR_1D && (v_table[n->id].type == TY_INT || v_table[n->id].type == TY_FLOAT))
             {
                 exec_shift(n->id, expr_make(n->rhs->type, 0), n->id2, 1);
                 exec_shift_in(n->id, ast_emit_expr(n->rhs));
@@ -2022,7 +2024,7 @@ void stmt_emit(stmt_node *n)
             ast_emit_expr(n->rhs);  // walks the EXPR_FUNC_CALL: par_check + CAL
             // a comp function returns its real part on the stack: a call
             // whose value nobody uses drops it
-            if (v_table[n->rhs->id].type == 9) add_instr("POP\n");
+            if (v_table[n->rhs->id].type == TY_FCOMP) add_instr("POP\n");
             break;
 
         case STMT_DIRE_INTER:
@@ -2052,7 +2054,7 @@ void stmt_emit(stmt_node *n)
                 && n->cond->kind == EXPR_BINOP && (n->cond->op == OP_EQ || n->cond->op == OP_NE))
             {
                 typecheck_expr(n->cond);
-                if (n->cond->left->type == 1 && n->cond->right->type == 1)
+                if (n->cond->left->type == TY_INT && n->cond->right->type == TY_INT)
                 {
                     expr a = ast_emit_expr(n->cond->left);
                     expr b = ast_emit_expr(n->cond->right);
@@ -2180,7 +2182,7 @@ void stmt_emit(stmt_node *n)
             {
                 emit_cond_int_load(cond_e, 1);
                 int nub = nubits;
-                long long mod = 1LL << nub, prev = 0;
+                long long mod = 1LL << nub, last_v = 0;
                 int def_idx = -1;
                 stmt_node *body = n->body;
                 for (int i = 0; body && i < body->kids_n; i++)
@@ -2189,11 +2191,11 @@ void stmt_emit(stmt_node *n)
                     if (kid->kind == STMT_CASE_LABEL)
                     {
                         long long v = atoll(v_table[kid->id3].name);
-                        long long d = ((prev - v) % mod + mod) % mod;    // acc += d
+                        long long d = ((last_v - v) % mod + mod) % mod;    // acc += d
                         if (d >= mod / 2) d -= mod;                        // as a signed word
                         if (d) add_instr("ADD %lld\n", d);
                         add_instr("JIZ __sw_body_%d_%d\n", n->id, kid->id2);
-                        prev = v;
+                        last_v = v;
                     }
                     else if (kid->kind == STMT_DEFAULT_LABEL) def_idx = kid->id2;
                 }
@@ -2221,7 +2223,7 @@ void stmt_emit(stmt_node *n)
             // case converts the int: case 2.0 matches 2, case 1.5 nothing).
             if (find_var("__switch_exp") == -1) add_var("__switch_exp");
             int sw_id = find_var("__switch_exp");
-            v_table[sw_id].type = 1;
+            v_table[sw_id].type = TY_INT;
             v_table[sw_id].used = 0;
 
             emit_cond_int_load(cond_e, 1);
@@ -2334,14 +2336,14 @@ void stmt_emit(stmt_node *n)
             for (int i = n->n_params - 1; i >= 1; i--)
             {
                 int pid = n->params[i];
-                if (v_table[pid].type > 2)
+                if (v_table[pid].type > TY_FLOAT)
                     add_instr("SET_P %s\n", v_table[get_img_id(pid)].name);
                 add_instr("SET_P %s\n", v_table[pid].name);
             }
             if (n->n_params >= 1)
             {
                 int pid = n->params[0];
-                if (v_table[pid].type > 2)
+                if (v_table[pid].type > TY_FLOAT)
                     add_instr("SET_P %s\n", v_table[get_img_id(pid)].name);
                 add_instr("SET %s\n", v_table[pid].name);
             }
@@ -2386,7 +2388,7 @@ void stmt_emit(stmt_node *n)
             fun_parse = saved_fun_parse;
 
             // not void: no path may reach the end (the next function's code)
-            if ((v_table[n->id].type != 6) && (ret_ok == 0 || falls_through(n->body)))
+            if ((v_table[n->id].type != TY_FVOID) && (ret_ok == 0 || falls_through(n->body)))
             {
                 fatal(MSG_ERR_FUNC_NO_RETURN, v_table[n->id].name);
             }
@@ -2397,7 +2399,7 @@ void stmt_emit(stmt_node *n)
                 link_sync_emit();   // #LKSYNC k for the links used with a _sync form
                 v_table[n->id].used = 1;
             }
-            else if (v_table[n->id].type == 6)
+            else if (v_table[n->id].type == TY_FVOID)
             {
                 add_instr("RET\n");
             }

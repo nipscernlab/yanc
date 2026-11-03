@@ -2,6 +2,7 @@
 Info: 38 assembly instructions generated
 Info: 15 unreachable instructions removed
 Info: 2 variables written and never read removed (2 instructions)
+Heads up: function 'fdead' isn't being used. Save some memory, will ya!
 Heads up: function 'chain' isn't being used. Save some memory, will ya!
 Heads up: variable 'u' in function 'rare' is never read, so it's out of the program and the waveform (#WAVE u, in the function, keeps it).
 Heads up: variable 'u' in function 'live1' is never read, so it's out of the program and the waveform (#WAVE u, in the function, keeps it).

@@ -31,6 +31,18 @@ int  nuioou  =  1; // number of output ports
 int  fround  =  0; // float rounding level (#FROUND)
 int  fftsiz  =  3; // low bits of an index v[k) reverses (#FFTSIZ; asmcomp's default too)
 
+// 2^NBMANT, one past the largest mantissa. Only float code uses it, and
+// asmcomp refuses a program with float whose #NBMANT passes 29 (#NUBITS of at
+// most 32 = NBMANT + NBEXPO + 1, NBEXPO of at least 2: docs/directives.md).
+// cmmcomp reads the directive before that check, so the shift is held where it
+// is defined for any #NBMANT (#94 J): 1L << 31 is undefined where long has 32
+// bits, as on 64-bit Windows
+long long mant_pow2(void)
+{
+    int b = nbmant < 0 ? 0 : nbmant > 62 ? 62 : nbmant;
+    return 1LL << b;
+}
+
 // ----------------------------------------------------------------------------
 // Directive handling ---------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -39,25 +51,25 @@ int  fftsiz  =  3; // low bits of an index v[k) reverses (#FFTSIZ; asmcomp's def
 // reads these globals to make decisions before the AST walker runs), then
 // appends a STMT_DIRECTIVE to the open stmt_list so the emit fires from
 // the global walker at `fim`.
-void dire_exec(char *dir, int id, int t)
+void dire_exec(char *dir, int id, dir_code t)
 {
     int ival = atoi(v_table[id].name);
 
-    // action to take depending on the directive
-    // directives 3, 4, 7, 8, 9, 11 and 12 set what the compiler reads
-    // (#NBMANT, #NBEXPO, #NUIOIN, #NUIOOU, #FROUND, #NUBITS, #FFTSIZ); 9 and 10
-    // are validated here (asmcomp validates them again: it is the gate every
-    // front end passes through; this one just knows the source line)
+    // #NBMANT, #NBEXPO, #NUIOIN, #NUIOOU, #FROUND, #NUBITS and #FFTSIZ set
+    // what the compiler reads; #FROUND and #NUGAIN are validated here
+    // (asmcomp validates them again: it is the gate every front end passes
+    // through; this one just knows the source line)
     switch(t)
     {
-        case 11: nubits = ival             ; break;
-        case 12: fftsiz = ival             ; break;
-        case  3: nbmant = ival             ; break;
-        case  4: nbexpo = ival             ; break;
-        case  7: nuioin = ival             ; break;
-        case  8: nuioou = ival             ; break;
-        case  9: if (ival < 0 || ival > 2) fatal(MSG_ERR_FROUND_RANGE, line_num+1); fround = ival; break; // #FROUND level
-        case 10: if (ival <= 0 || (ival & (ival - 1)) != 0) fatal(MSG_ERR_NUGAIN_POW2, line_num+1, ival); break;
+        case DIR_ASM_ONLY: break;
+        case DIR_NUBITS: nubits = ival             ; break;
+        case DIR_FFTSIZ: fftsiz = ival             ; break;
+        case DIR_NBMANT: nbmant = ival             ; break;
+        case DIR_NBEXPO: nbexpo = ival             ; break;
+        case DIR_NUIOIN: nuioin = ival             ; break;
+        case DIR_NUIOOU: nuioou = ival             ; break;
+        case DIR_FROUND: if (ival < 0 || ival > 2) fatal(MSG_ERR_FROUND_RANGE, line_num+1); fround = ival; break; // #FROUND level
+        case DIR_NUGAIN: if (ival <= 0 || (ival & (ival - 1)) != 0) fatal(MSG_ERR_NUGAIN_POW2, line_num+1, ival); break;
     }
 
     stmt_append(stmt_directive(dir, id));

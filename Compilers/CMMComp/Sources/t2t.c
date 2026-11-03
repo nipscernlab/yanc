@@ -61,6 +61,6 @@ void get_cmp_cst(expr e, expr *er, expr *ei)
 // of a complex number in memory
 void get_cmp_ets(expr e, expr *er, expr *ei)
 {
-    *er = expr_make(2, e.id);
-    *ei = expr_make(2, get_img_id(e.id));
+    *er = expr_make(TY_FLOAT, e.id);
+    *ei = expr_make(TY_FLOAT, get_img_id(e.id));
 }

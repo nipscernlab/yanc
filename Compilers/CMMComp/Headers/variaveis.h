@@ -5,6 +5,8 @@
 #ifndef CMM_VARIAVEIS_H
 #define CMM_VARIAVEIS_H
 
+#include "types.h"
+
 #include <stddef.h>
 
 // One row of the symbol table.
@@ -12,12 +14,12 @@ typedef struct symbol {
     char *name;       // name of the variable or function, in a block of its own
                       // (add_var's xstrdup), never moved or freed: code may keep
                       // the pointer while the table grows
-    int  type;        // 0 -> unidentified, 1 -> int, 2 -> float, 3 -> comp, 4 -> a comp's imaginary part, 5 -> const comp, 6-9 -> function returning void, int, float, comp
+    int  type;        // a TY_* code of types.h: TY_NONE until declared, a value type, or a function's
     int  used;        // whether the ID has already been used
     int  npar;        // if the ID is a function, how many parameters it has
-    int *ptyp;        // and the type of each one (1, 2 or 3), npar entries
+    int *ptyp;        // and the type of each one (TY_INT, TY_FLOAT or TY_COMP), npar entries
     int  fnid;        // ID of the function the variable belongs to
-    int  isar;        // whether the variable is an array
+    int  isar;        // AR_NONE, AR_1D or AR_2D (types.h): a scalar, a vector, a matrix
     int  isco;        // whether the variable is a constant
     int  size;        // array size (when it is an array)
     int  siz2;        // size of the j dimension (when it is a matrix)
@@ -41,7 +43,8 @@ extern int     v_count;                  // how many entries v_table holds
 int    find_var(const char *val);             // searches the table for the ID (-1 if not found)
 void    add_var(const char *var);             // adds an ID to the table
 void  check_var(void);                       // checks what was used in the table (at the end of the parser)
-char *rem_fname(char *var, const char *fname); // removes the function name from the variable
+char *strip_fn (char *var, const char *func); // <func>_<name> -> <name>; any other name as it is
+char *rem_fname(char *var);              // the same, for the function being compiled
 void  check_name(int id, int is_fun);     // a declared name must be free in the .asm and not an instruction
 void  dire_wave (int id);                // #WAVE name: the variable stays even if never read
 

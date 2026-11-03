@@ -13,8 +13,8 @@ from tables the compilers write beside it, and asmcomp completes them.
   trad_opcode.txt     address -> instruction (asmcomp, after its NOPs)
   pc_<name>_mem.txt   address -> source line, 20-bit two's complement
                       (cmmcomp, shifted by asmcomp when it adds a NOP)
-  src_lines.txt       source line -> text (-1 INTERNAL, -2 the call to main,
-                      -3 END)
+  src_lines.txt       source line -> text (-1 INTERNAL, -3 END; cppcomp also
+                      -2, its call to main)
   prog_log.txt        the variables, num_ins (how many addresses have a
                       source line), srcdir, lang
 

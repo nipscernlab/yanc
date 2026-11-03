@@ -181,16 +181,16 @@ prog_elements : direct | declar | funcao
 // Compilation directives -----------------------------------------------------
 
 direct : PRNAME   ID   {fatal(MSG_ERR_PRNAME_GONE, line_num+1);} // the name is the file's
-       | NUBITS unum   {dire_exec("#NUBITS",$2,11);} // ALU word width
-       | NBMANT unum   {dire_exec("#NBMANT",$2, 3);} // mantissa width (bits)
-       | NBEXPO unum   {dire_exec("#NBEXPO",$2, 4);} // exponent width (bits)
-       | NDSTAC unum   {dire_exec("#NDSTAC",$2, 0);} // data stack depth
-       | SDEPTH unum   {dire_exec("#SDEPTH",$2, 0);} // subroutine stack depth
-       | NUIOIN unum   {dire_exec("#NUIOIN",$2, 7);} // number of input ports
-       | NUIOOU unum   {dire_exec("#NUIOOU",$2, 8);} // number of output ports
-       | NUGAIN unum   {dire_exec("#NUGAIN",$2,10);} // division constant (norm(.)): a power of two (validated)
-       | FFTSIZ unum   {dire_exec("#FFTSIZ",$2,12);} // FFT size (2^FFTSIZ)
-       | FROUND unum   {dire_exec("#FROUND",$2, 9);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
+       | NUBITS unum   {dire_exec("#NUBITS",$2,DIR_NUBITS);} // ALU word width
+       | NBMANT unum   {dire_exec("#NBMANT",$2,DIR_NBMANT);} // mantissa width (bits)
+       | NBEXPO unum   {dire_exec("#NBEXPO",$2,DIR_NBEXPO);} // exponent width (bits)
+       | NDSTAC unum   {dire_exec("#NDSTAC",$2,DIR_ASM_ONLY);} // data stack depth
+       | SDEPTH unum   {dire_exec("#SDEPTH",$2,DIR_ASM_ONLY);} // subroutine stack depth
+       | NUIOIN unum   {dire_exec("#NUIOIN",$2,DIR_NUIOIN);} // number of input ports
+       | NUIOOU unum   {dire_exec("#NUIOOU",$2,DIR_NUIOOU);} // number of output ports
+       | NUGAIN unum   {dire_exec("#NUGAIN",$2,DIR_NUGAIN);} // division constant (norm(.)): a power of two (validated)
+       | FFTSIZ unum   {dire_exec("#FFTSIZ",$2,DIR_FFTSIZ);} // FFT size (2^FFTSIZ)
+       | FROUND unum   {dire_exec("#FROUND",$2,DIR_FROUND);} // float rounding level: 0 legacy, 1 exact truncation + saturation, 2 nearest even
        | WAVE wave_list                             // globals kept for the waveform even if never read
 
 // Behavioral directives ------------------------------------------------------
@@ -492,7 +492,7 @@ exp:       terminal                           {$$ = $1;}
          |    '-' exp                         {$$ = expr_minus($2);}            // -2i: one comp literal
          // -128 at 8 bits: 128 does not fit the word, so the lexer gives it
          // as a DIMIN, a value only here (and in a brace list)
-         |    '-' DIMIN                       {$$ = expr_unop(OP_NEG, expr_lit(1, $2));}
+         |    '-' DIMIN                       {$$ = expr_unop(OP_NEG, expr_lit(TY_INT, $2));}
          |    '!' exp                         {$$ = expr_unop(OP_LIN, $2);}
          |    '~' exp                         {$$ = expr_unop(OP_INV, $2);}
          | ID                         PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, NULL, NULL);}
@@ -546,15 +546,15 @@ dchain   : DBAR ID                            {$$ = dirac_open(0, $2);}
 // with its statement when the walker reaches it after the parse.
 
          // constants
-terminal : INUM                               {$$ = expr_lit(1, inum_word($1));}
+terminal : INUM                               {$$ = expr_lit(TY_INT, inum_word($1));}
          // a hex, octal or binary literal with the sign bit set is a negative
          // int, as in C: the negation of its magnitude (literals stay positive);
          // the most negative one, whose magnitude does not fit, is -max - 1
-         | NINUM                              {$$ = expr_unop(OP_NEG, expr_lit(1, $1));}
-         | NIMIN                              {$$ = expr_binop(OP_SUB, expr_unop(OP_NEG, expr_lit(1, $1)),
-                                                               expr_lit(1, exec_inum("1")));}
-         | FNUM                               {$$ = expr_lit(2, $1);}
-         | CNUM                               {$$ = expr_lit(5, $1);}
+         | NINUM                              {$$ = expr_unop(OP_NEG, expr_lit(TY_INT, $1));}
+         | NIMIN                              {$$ = expr_binop(OP_SUB, expr_unop(OP_NEG, expr_lit(TY_INT, $1)),
+                                                               expr_lit(TY_INT, exec_inum("1")));}
+         | FNUM                               {$$ = expr_lit(TY_FLOAT, $1);}
+         | CNUM                               {$$ = expr_lit(TY_CCONST, $1);}
          // variables
          | ID                                 {$$ = expr_var(v_table[$1].type, $1);}
 
@@ -570,10 +570,10 @@ int main(int argc, char *argv[])
     cli_parse(argc, argv, &a);      // parses the named options (or exits with usage)
 
     prname = a.name;                // the processor takes the source file's name
-    parse_init(a.input, a.name, a.proc_dir, a.macros_dir, a.temp_dir,
+    parse_init(a.input, a.proc_dir, a.macros_dir, a.temp_dir,
                a.array_sim ? "1" : "0"); // initializes the parser and global variables
     yyparse   ();                       // here the magic happens!!
-    parse_end (a.name, a.proc_dir);     // finalizes the parser
+    parse_end (a.proc_dir);             // finalizes the parser
 
     // final message
     printf(MSG_OK_CMM_DONE);

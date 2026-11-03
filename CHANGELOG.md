@@ -121,6 +121,21 @@ tags consumed by Aurora.
   pairs. `warn()` prints the warnings and notes on stdout, in place of 254
   `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
   and its stream.
+- **cmmcomp's codes have names** (step P6 of #93): the type of a symbol,
+  an expression or a tree node is `TY_INT`, `TY_FLOAT`, `TY_COMP`, ... in
+  `types.h` instead of a digit (about 1600 places), the dimensions of a
+  symbol `AR_NONE`, `AR_1D`, `AR_2D`, a directive's code a `dir_code`, and
+  `2^NBMANT` comes from `mant_pow2()`. The rest of #92's dead code goes:
+  the `-2` line of `src_lines.txt`, two always-true guards, eight
+  constructor parameters every caller passed empty, `rem_fname`'s second
+  argument, the unused directive codes. The build no longer prints
+  bison's two POSIX Yacc warnings (`-Wno-yacc`; the parser is the same).
+  The assembly and the waveform's tables are byte-identical.
+- **cmmcomp builds a brace list in one pass** (#94 K): the values went in
+  with `strcat`, which walks the whole string each time; a list of 60000
+  floats compiles in 0.36 s instead of 0.78 s, to the same .asm. The
+  switch ladder's last value and the `prname` parameters of `parse_init`
+  and `parse_end` no longer shadow other names (#94 L, `-Wshadow`).
 - **A C± name has up to 1000 characters** (step P5 of #93, issue #66;
   Luciano, 2026-11-03), from 50. The limit is a rule of the language,
   checked once in the lexer, not the size of a buffer: cmmcomp, the
@@ -314,6 +329,35 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **cmmcomp: a float or comp function never called gets its warning.**
+  `check_var` took types 5, 6 and 7 for functions, but they are 6 to 9
+  (void, int, float, comp) and 5 is a comp constant: an unused `float` or
+  `comp` function went by without the warning a `void` or `int` one gets.
+  Found while naming the type codes (#93 P6). `cmm_reach`'s
+  `golden_map.txt` gains the warning for its `float fdead`.
+- **cmmcomp: a failed compilation leaves no output behind** (#94 N). An
+  error found at the end of the parse, such as a program with no `main`,
+  left the `.asm`, `prog_log.txt` and `pc_<name>_mem.txt` it had written in
+  the output folder, where a later step could take them for the result.
+  Every error that stops cmmcomp now removes the files of that run. The
+  regression's negative phase checks that a rejected program leaves its
+  output folder empty.
+- **cmmcomp: a global named like the start of a function** (#94 A). A
+  global `mainly` read as an array inside `main` was reported as `'y' ain't
+  an array`: the function prefix was taken off without checking the `_`
+  after it, and a name equal to the function's made the loop read past
+  both (deduced from the code). NegTest `name_prefix_global`.
+- **cmmcomp: no undefined shift or overflow in the float masks and the
+  constant folding** (#94 J). `1L << nbmant` was written at 10 places, and
+  the folding of int constants worked in `long`, with its range as
+  `(long)1 << (NBMANT + NBEXPO)`, 31 at the defaults. Where `long` has 32
+  bits, as on 64-bit Windows, that shift and a product or sum of two large
+  constants are undefined, so the same program could fold differently there
+  and on Linux (deduced from the code, not run on Windows). The masks now
+  come from `mant_pow2()` and the folding works in `long long`; on Linux,
+  where `long` has 64 bits, every golden is byte-identical. With `#NBMANT
+  70` the old cmmcomp, built with UBSan, reported `shift exponent 70 is too
+  large` at ast.c:1766; the new one reports nothing.
 - **C±: a program with functions but no `main` is refused.** Any function
   counted as the main question resolved, so such a program compiled; now
   that `main` comes first in the program, the reset fell into the first
