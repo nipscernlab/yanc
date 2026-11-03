@@ -25,7 +25,7 @@
 #include "../Headers/data_declar.h"  // declar_arr_*_emit for STMT_DECLAR_* walker
 #include "../Headers/itr.h"
 #include "../Headers/diag.h"
-#include "../Headers/t2t.h"      // get_cmp_cst for complex cond loads
+#include "../Headers/convert.h"      // get_cmp_cst for complex cond loads
 #include "../Headers/dirac.h"    // the Dirac notation in loops
 #include "../../common/xstr.h"
 
