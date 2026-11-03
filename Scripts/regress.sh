@@ -142,6 +142,7 @@ CMMCOMP="$BIN_DIR/cmmcomp$EXE"
 CPPC="$BIN_DIR/cppcomp$EXE"
 ASMCOMP="$BIN_DIR/asmcomp$EXE"
 YANC="$BIN_DIR/yanc$EXE"
+CMM_UNIT="$BIN_DIR/cmm_unit_test$EXE"
 HDL="$ROOT/SAPHO"
 CMM_ROOT="$ROOT/Compilers/CMMComp"
 SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"
@@ -317,7 +318,14 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     gcc -O2 -Wall -Werror $(mk_list CMM_WARN) -o "$CMMCOMP" \
         $(mk_list CMMCOMP_C) lex.yy.c y.tab.c \
         $(mk_list CMMCOMP_COMMON ../../common/) $UTF8RES -lm
-    rm -f lex.yy.c y.tab.c y.tab.h
+    # cmmcomp's helpers one by one (UnitTest/cmm_unit_test.c): every object of
+    # cmmcomp, the parser's main renamed so the test's own runs
+    gcc -O2 -Wall -Werror -c -Dmain=cmmcomp_main -o "$BIN_DIR/cmm_ytab.o" y.tab.c \
+      && gcc -O2 -Wall -Werror $(mk_list CMM_WARN) -o "$CMM_UNIT" ../UnitTest/cmm_unit_test.c \
+             $(mk_list CMMCOMP_C) lex.yy.c "$BIN_DIR/cmm_ytab.o" \
+             $(mk_list CMMCOMP_COMMON ../../common/) $UTF8RES -lm \
+      || rm -f "$CMM_UNIT"
+    rm -f lex.yy.c y.tab.c y.tab.h "$BIN_DIR/cmm_ytab.o"
     popd >/dev/null
 
     pushd "$CPP_ROOT/Sources" >/dev/null
@@ -1553,6 +1561,21 @@ if command -v python3 >/dev/null 2>&1; then
 else
     echo ""
     echo "==> ISA table  [skipped: no python3]"
+fi
+
+# ---- cmmcomp's helpers, one by one ---------------------------------------------
+# Compilers/CMMComp/UnitTest/cmm_unit_test.c, built with cmmcomp above: each
+# helper called directly, its state set in cfg, pctx and ectx (context.h)
+if [ "$CPP_ONLY" -eq 0 ]; then
+    echo ""
+    echo "==> cmmcomp unit tests"
+    if [ -x "$CMM_UNIT" ] && "$CMM_UNIT" 2>/dev/null; then
+        pass=$((pass + 1))
+    else
+        echo "FAIL (cmm_unit): a helper of cmmcomp fails its unit test (or it did not build)"
+        [ -x "$CMM_UNIT" ] && "$CMM_UNIT" 2>/dev/null | grep '^FAIL' | head -10 | sed 's/^/    /'
+        fail=$((fail + 1)); failed_names+=("cmm_unit")
+    fi
 fi
 
 # ---- 4a1. the exact constant encoder ------------------------------------------

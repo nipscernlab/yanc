@@ -91,9 +91,9 @@ COMEN  "//"[^\n]*
  /* object-like #define NAME body -- recorded here, expanded at the {VARIA} rule */
 "#define"               BEGIN(DEFNAME);
 <DEFNAME>{WS}           ;
-<DEFNAME>{VARIA}        { if (yyleng > CMM_NAME_MAX) fatal(MSG_ERR_NAME_TOO_LONG, line_num+1, CMM_NAME_MAX);
+<DEFNAME>{VARIA}        { if (yyleng > CMM_NAME_MAX) fatal(MSG_ERR_NAME_TOO_LONG, pctx.line_num+1, CMM_NAME_MAX);
                           free(g_def_pending); g_def_pending = xstrdup(yytext); BEGIN(DEFBODY); }
-<DEFNAME>\n             { line_num++; BEGIN(INITIAL); }
+<DEFNAME>\n             { pctx.line_num++; BEGIN(INITIAL); }
 <DEFNAME>.              BEGIN(INITIAL);
 <DEFBODY>[^\n]*         { def_add(g_def_pending, yytext); BEGIN(INITIAL); }
 
@@ -211,9 +211,9 @@ COMEN  "//"[^\n]*
                 return LOR;
              }
 
-"comp"       {type_tmp = 3; yylval.ival = 3; return TYPE;}
-"float"      {type_tmp = 2; yylval.ival = 2; return TYPE;}
-"int"        {type_tmp = 1; yylval.ival = 1; return TYPE;}
+"comp"       {pctx.type_tmp = 3; yylval.ival = 3; return TYPE;}
+"float"      {pctx.type_tmp = 2; yylval.ival = 2; return TYPE;}
+"int"        {pctx.type_tmp = 1; yylval.ival = 1; return TYPE;}
 "void"       {              yylval.ival = 0; return TYPE;}
 			 
 {VARIA}      {
@@ -233,7 +233,7 @@ COMEN  "//"[^\n]*
                 } else {
                     // `__` starts the compiler's own names in the .asm
                     if (yytext[0] == '_' && yytext[1] == '_')
-                        {fatal(MSG_ERR_NAME_UNDERSCORES, line_num+1, yytext);}
+                        {fatal(MSG_ERR_NAME_UNDERSCORES, pctx.line_num+1, yytext);}
                     yylval.ival = lex_id(yytext);
                     return ID;
                 }
@@ -268,9 +268,9 @@ COMEN  "//"[^\n]*
 			 
 {CARES}      {return *yytext;}
 			 
-\n            line_num++;
+\n            pctx.line_num++;
 
-{BLOCO}      {line_num += conta_linhas(yytext);}
+{BLOCO}      {pctx.line_num += conta_linhas(yytext);}
 {COMEN}      ;
 {WS}         ;
 .            ;

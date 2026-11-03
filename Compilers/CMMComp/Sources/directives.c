@@ -20,16 +20,16 @@
 // global variable definitions ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-const char *prname = ""; // processor name: the source file's (main sets it)
-// Defaults: the one set shared with asmcomp, cppcomp and the HDL (audit 1.7);
-// only reached when the program omits the directive.
-int  nubits  = 32; // word width (bits): an int literal in hex, octal or binary is a bit pattern of this word
-int  nbmant  = 23; // mantissa width (bits)
-int  nbexpo  =  8; // exponent width (bits)
-int  nuioin  =  1; // number of input ports
-int  nuioou  =  1; // number of output ports
-int  fround  =  0; // float rounding level (#FROUND)
-int  fftsiz  =  3; // low bits of an index v[k) reverses (#FFTSIZ; asmcomp's default too)
+target_cfg cfg = {
+    .prname = "",
+    .nubits = 32,
+    .nbmant = 23,
+    .nbexpo =  8,
+    .nuioin =  1,
+    .nuioou =  1,
+    .fround =  0,
+    .fftsiz =  3,
+};
 
 // 2^NBMANT, one past the largest mantissa. Only float code uses it, and
 // asmcomp refuses a program with float whose #NBMANT passes 29 (#NUBITS of at
@@ -39,7 +39,7 @@ int  fftsiz  =  3; // low bits of an index v[k) reverses (#FFTSIZ; asmcomp's def
 // bits, as on 64-bit Windows
 long long mant_pow2(void)
 {
-    int b = nbmant < 0 ? 0 : nbmant > 62 ? 62 : nbmant;
+    int b = cfg.nbmant < 0 ? 0 : cfg.nbmant > 62 ? 62 : cfg.nbmant;
     return 1LL << b;
 }
 
@@ -62,14 +62,14 @@ void directive_exec(char *dir, int id, dir_code t)
     switch(t)
     {
         case DIR_ASM_ONLY: break;
-        case DIR_NUBITS: nubits = ival             ; break;
-        case DIR_FFTSIZ: fftsiz = ival             ; break;
-        case DIR_NBMANT: nbmant = ival             ; break;
-        case DIR_NBEXPO: nbexpo = ival             ; break;
-        case DIR_NUIOIN: nuioin = ival             ; break;
-        case DIR_NUIOOU: nuioou = ival             ; break;
-        case DIR_FROUND: if (ival < 0 || ival > 2) fatal(MSG_ERR_FROUND_RANGE, line_num+1); fround = ival; break; // #FROUND level
-        case DIR_NUGAIN: if (ival <= 0 || (ival & (ival - 1)) != 0) fatal(MSG_ERR_NUGAIN_POW2, line_num+1, ival); break;
+        case DIR_NUBITS: cfg.nubits = ival             ; break;
+        case DIR_FFTSIZ: cfg.fftsiz = ival             ; break;
+        case DIR_NBMANT: cfg.nbmant = ival             ; break;
+        case DIR_NBEXPO: cfg.nbexpo = ival             ; break;
+        case DIR_NUIOIN: cfg.nuioin = ival             ; break;
+        case DIR_NUIOOU: cfg.nuioou = ival             ; break;
+        case DIR_FROUND: if (ival < 0 || ival > 2) fatal(MSG_ERR_FROUND_RANGE, pctx.line_num+1); cfg.fround = ival; break; // #FROUND level
+        case DIR_NUGAIN: if (ival <= 0 || (ival & (ival - 1)) != 0) fatal(MSG_ERR_NUGAIN_POW2, pctx.line_num+1, ival); break;
     }
 
     stmt_append(stmt_directive(dir, id));

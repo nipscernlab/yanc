@@ -20,9 +20,9 @@ static int toaqui_ok = 0; // tells whether a #TOAQUI marker has already been use
 // a warning may already be enough
 void directive_inter(void)
 {
-    if (itr_ok == 1) fatal(MSG_ERR_DUP_INTERRUPT, line_num+1);
+    if (itr_ok == 1) fatal(MSG_ERR_DUP_INTERRUPT, pctx.line_num+1);
 
-    warn(MSG_INFO_INTERRUPT_DIRECTIVE, line_num+1);
+    warn(MSG_INFO_INTERRUPT_DIRECTIVE, pctx.line_num+1);
 
     add_sinst(0, "#ITRAD\n");
     itr_ok = 1;
@@ -33,9 +33,9 @@ void directive_inter(void)
 // they match the cheguei output pin asserts. Only one #TOAQUI per program.
 void directive_toaqui(void)
 {
-    if (toaqui_ok == 1) fatal(MSG_ERR_DUP_TOAQUI, line_num+1);
+    if (toaqui_ok == 1) fatal(MSG_ERR_DUP_TOAQUI, pctx.line_num+1);
 
-    warn(MSG_INFO_TOAQUI, line_num+1);
+    warn(MSG_INFO_TOAQUI, pctx.line_num+1);
 
     add_sinst(0, "#TOAQUI\n");
     toaqui_ok = 1;

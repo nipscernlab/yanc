@@ -7,15 +7,9 @@
 #ifndef CMM_DIRECTIVES_H
 #define CMM_DIRECTIVES_H
 
-extern const char *prname; // processor name
-extern int  nubits;      // word width (bits)
-extern int  nbmant;      // mantissa width (bits)
+#include "context.h"
+
 long long mant_pow2(void); // 2^NBMANT, defined for any #NBMANT
-extern int  nbexpo;      // exponent width (bits)
-extern int  nuioin;      // number of input ports
-extern int  nuioou;      // number of output ports
-extern int  fround;      // float rounding level (#FROUND)
-extern int  fftsiz;      // low bits of an index v[k) reverses (#FFTSIZ)
 
 // directive parsing
 // what a configuration directive sets in cmmcomp (DIR_ASM_ONLY: nothing,

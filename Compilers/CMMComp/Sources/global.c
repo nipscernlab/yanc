@@ -26,23 +26,14 @@
 // global variable definitions ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-FILE *f_asm;          // output file
-FILE *f_log;          // log file holding project information (name, nbmant, etc.)
-FILE *f_lin;          // line file for the cmm program
-
 const char *dir_macro = ""; // Macros directory (main's arguments: they live to the end)
 const char *dir_tmp   = ""; // Temp directory
 static const char *cmm_src = ""; // the .cmm the parser reads (re-read for src_lines.txt)
 
+parse_ctx pctx = {.fname = ""};   // the state of the parse (context.h)
+emit_ctx  ectx = {.emit_line = 1, .emit_fid = -1, .emit_fname = ""};   // the state of the emission
+
 // state variables
-int  acc_ok   = 0;    // 0 -> acc empty (use LOD)  , 1 -> acc loaded (use P_LOD)
-int  line_num = 0;    // parser-time: line the lexer is currently reading
-int  emit_line= 1;    // emit-time: line the AST walker tags onto each instruction
-int  emit_fid = -1;   // emit-time: id of the function whose body the walker is in (-1: none)
-const char *emit_fname = ""; // emit-time: name of the function whose body the AST
-                           // walker is in, for strip_fn_prefix() in diagnostics only
-                           // (lex_id keeps using the global fname). "" = global
-int  num_ins  = 0;    // number of instructions parsed
 int  sim_arr  = 0;    // tells whether the array is simulated or not
 
 // One-instruction window for the SET-then-LOD peephole. Holds the most
@@ -254,10 +245,10 @@ void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_
 
     fatal_hook(out_remove);       // from here on, an error removes what this run wrote
 
-    char *asm_file = xasprintf("%s/%s.asm", d_proc, prname); // output .asm file name
-    f_asm = fopen(asm_file, "w"); // create the .asm file
-    if (f_asm == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
-    out_track(asm_file, &f_asm);
+    char *asm_file = xasprintf("%s/%s.asm", d_proc, cfg.prname); // output .asm file name
+    ectx.f_asm = fopen(asm_file, "w"); // create the .asm file
+    if (ectx.f_asm == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
+    out_track(asm_file, &ectx.f_asm);
 
     dir_macro = d_macro; // record the Macro directory
     dir_tmp   = d_tmp  ; // record the Tmp directory
@@ -274,12 +265,12 @@ void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_
 
     // create helper files ----------------------------------------------------
 
-    char *path = xasprintf("%s/prog_log.txt", dir_tmp); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
-    if (f_log == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
-    out_track(path, &f_log);
-    path = xasprintf("%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
-    if (f_lin == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
-    out_track(path, &f_lin);
+    char *path = xasprintf("%s/prog_log.txt", dir_tmp); ectx.f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
+    if (ectx.f_log == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
+    out_track(path, &ectx.f_log);
+    path = xasprintf("%s/pc_%s_mem.txt", dir_tmp, cfg.prname); ectx.f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
+    if (ectx.f_lin == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
+    out_track(path, &ectx.f_lin);
 
     // Open the top-level stmt_list collector. Every directive, declaration
     // and function reduce appends a stmt_node here; nothing reaches f_asm
@@ -298,7 +289,7 @@ void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_
 void prog_emit(void)
 {
     add_sinst(-1, "NOP\n");
-    add_sinst( 0, "#PRNAME %s\n", prname);   // the processor's name: the source file's
+    add_sinst( 0, "#PRNAME %s\n", cfg.prname);   // the processor's name: the source file's
 
     stmt_node *prog = stmt_list_close();
     for (int i = 0; i < prog->kids_n; i++)
@@ -329,16 +320,16 @@ static int unread_keep(const char *name)
 
 void parse_end(char *d_proc)
 {
-    warn(MSG_INFO_INS_GENERATED, num_ins);
+    warn(MSG_INFO_INS_GENERATED, ectx.num_ins);
 
     // close the files --------------------------------------------------------
 
-    fclose(f_asm); f_asm = NULL; // assembly code
-    fclose(f_lin); f_lin = NULL; // assembly translator
+    fclose(ectx.f_asm); ectx.f_asm = NULL; // assembly code
+    fclose(ectx.f_lin); ectx.f_lin = NULL; // assembly translator
 
     // check whether macros need to be appended to the .asm file --------------
 
-    char *asm_file = xasprintf("%s/%s.asm", d_proc, prname);
+    char *asm_file = xasprintf("%s/%s.asm", d_proc, cfg.prname);
 
 	// the area the Dirac loops share, when a statement needed it ------------
 
@@ -352,28 +343,28 @@ void parse_end(char *d_proc)
 
 	// code no path reaches leaves the program, and with it its hardware -----
 
-	char *pc_file = xasprintf("%s/pc_%s_mem.txt", dir_tmp, prname);
+	char *pc_file = xasprintf("%s/pc_%s_mem.txt", dir_tmp, cfg.prname);
 	int  gone = asm_reach(asm_file, pc_file);
-	if  (gone > 0) num_ins -= gone;
+	if  (gone > 0) ectx.num_ins -= gone;
 
 	// a division by a constant stays one only when the float divider is there anyway
 
 	int  kept = asm_divk(asm_file, pc_file);
-	if  (kept > 0) num_ins -= kept;
+	if  (kept > 0) ectx.num_ins -= kept;
 
 	// every division becomes <div> x; NOP...; <read>: the dividers take five / four cycles
 
 	int  more = asm_divseq(asm_file, pc_file);
-	if  (more > 0) num_ins += more;
+	if  (more > 0) ectx.num_ins += more;
 
 	// a variable written and never read leaves the program; check_var says so
 
 	int  unread = asm_unread(asm_file, pc_file, unread_gone, unread_keep);
-	if  (unread > 0) num_ins -= unread;
+	if  (unread > 0) ectx.num_ins -= unread;
 
 	// an argument the called function never reads is not computed
 	int  noarg = asm_callarg(asm_file, pc_file);
-	if  (noarg > 0) num_ins -= noarg;
+	if  (noarg > 0) ectx.num_ins -= noarg;
 
 	// variables that are never alive at the same time share a data word ------
 
@@ -386,11 +377,11 @@ void parse_end(char *d_proc)
 
     // finalize the cmm log file ----------------------------------------------
 
-    fprintf(f_log, "num_ins %d\n", num_ins); // number of instructions (excluding final macros)
+    fprintf(ectx.f_log, "num_ins %d\n", ectx.num_ins); // number of instructions (excluding final macros)
     char *src = dir_of(cmm_src);             // the folder of the source: asmcomp reads the user's
-    if (src) fprintf(f_log, "srcdir %s\n", src); // files there (array inits, input_N.txt, cade_k.txt)
-    fprintf(f_log, "lang C+-\n");            // the source language: the waveform's source track takes its name
-    fclose (f_log); f_log = NULL;
+    if (src) fprintf(ectx.f_log, "srcdir %s\n", src); // files there (array inits, input_N.txt, cade_k.txt)
+    fprintf(ectx.f_log, "lang C+-\n");            // the source language: the waveform's source track takes its name
+    fclose (ectx.f_log); ectx.f_log = NULL;
 
     // generate the translation file for the cmm code -------------------------
 
@@ -443,10 +434,10 @@ static void put_instr(const char *s)
     for (; *s && *s != '\n'; s++)
     {
         if (*s == ' ' || *s == '\t') {gap = 1; continue;}
-        if (gap) {fputc(' ', f_asm); gap = 0;}
-        fputc(*s, f_asm);
+        if (gap) {fputc(' ', ectx.f_asm); gap = 0;}
+        fputc(*s, ectx.f_asm);
     }
-    fputc('\n', f_asm);
+    fputc('\n', ectx.f_asm);
 }
 
 // the first word of s, after any blanks (NULL: none); the block is the caller's
@@ -526,9 +517,9 @@ void add_instr(char *inst, ...)
 
     // table for the gtkwave assembly translator ------------------------------
 
-    num_ins++;
-    char *bits = int_to_bin(emit_line,20);
-    fprintf(f_lin, "%s\n", bits);
+    ectx.num_ins++;
+    char *bits = int_to_bin(ectx.emit_line,20);
+    fprintf(ectx.f_lin, "%s\n", bits);
     free(bits);
 
     // ------------------------------------------------------------------------
@@ -587,16 +578,16 @@ void add_sinst(int type, char *inst, ...)
 
     // straight to the file: a #arrayd line carries a whole brace list, of
     // any length (a fixed buffer here overflowed past about 25 values)
-    vfprintf(f_asm, inst, args);
+    vfprintf(ectx.f_asm, inst, args);
     va_end  (args);
 
     // table for the gtkwave assembly translator ------------------------------
 
     if (type != 0)
     {
-        num_ins++;
+        ectx.num_ins++;
         char *bits = int_to_bin(type,20);
-        fprintf(f_lin, "%s\n", bits);
+        fprintf(ectx.f_lin, "%s\n", bits);
         free(bits);
     }
 }

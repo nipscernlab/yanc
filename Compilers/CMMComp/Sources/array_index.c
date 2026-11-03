@@ -30,11 +30,11 @@ void arr_1d_index(int id, expr e)
 
     // must check that it really is an array
     if (v_table[id].dims == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it really is a 1D array
     if (v_table[id].dims == AR_2D)
-        fatal(MSG_ERR_ARRAY_2D  , line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_ARRAY_2D  , pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -60,7 +60,7 @@ void arr_1d_index(int id, expr e)
 
     if ((e.type == TY_FLOAT) && (e.id != 0))
     {
-        warn(MSG_WARN_IDX_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX_FLOAT, pctx.line_num+1);
 
         add_instr("F2I_M %s\n", v_table[e.id].name);
     }
@@ -69,7 +69,7 @@ void arr_1d_index(int id, expr e)
 
     if ((e.type == TY_FLOAT) && (e.id == 0))
     {
-        warn(MSG_WARN_IDX_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX_FLOAT, pctx.line_num+1);
 
         add_instr("F2I\n");
     }
@@ -78,7 +78,7 @@ void arr_1d_index(int id, expr e)
 
     if (e.type == TY_CCONST)
     {
-        warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
+        warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
 
         get_cmp_cst(e, &etr, &eti);
 
@@ -89,7 +89,7 @@ void arr_1d_index(int id, expr e)
 
     if ((e.type == TY_COMP) && (e.id == 0))
     {
-        warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
+        warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -99,12 +99,12 @@ void arr_1d_index(int id, expr e)
 
     if ((e.type == TY_COMP) && (e.id != 0))
     {
-        warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
+        warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
 
         add_instr("F2I_M %s\n", v_table[e.id].name);
     }
 
-    acc_ok = 1; // acc carregado
+    ectx.acc_ok = 1; // acc carregado
 }
 
 // loads the array index into the accumulator (2D array)
@@ -116,11 +116,11 @@ void arr_2d_index(int id, expr e1, expr e2)
 
     // must check that it really is an array
     if (v_table[id].dims == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it is not a 1D array
     if (v_table[id].dims == AR_1D)
-        fatal(MSG_ERR_ARRAY_1D, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_ARRAY_1D, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -146,7 +146,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in acc and float in acc
     if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("SET_P __aux_var\n");
@@ -157,7 +157,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in acc and float in memory
     if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
         add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
@@ -167,7 +167,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in acc and comp const in memory
     if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         get_cmp_cst(e2, &etr, &eti);
 
@@ -179,7 +179,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in acc and comp in acc
     if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
@@ -191,7 +191,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in acc and comp in memory
     if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         add_instr("MLT     %d\n", v_table[id].cols);
         add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
@@ -217,7 +217,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in memory and float in acc
     if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("P_LOD %s\n",  v_table[e1.id].name);
@@ -228,7 +228,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in memory and float in memory
     if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
         add_instr("LOD     %s\n",  v_table[e1.id].name);
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -239,7 +239,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in memory and comp const in memory
     if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         get_cmp_cst(e2, &etr, &eti);
 
@@ -252,7 +252,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in memory and comp in acc
     if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
@@ -264,7 +264,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // int in memory and comp in memory
     if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         add_instr("LOD     %s\n",  v_table[e1.id].name);
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -275,7 +275,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in acc and int in acc
     if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
@@ -286,7 +286,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in acc and int in memory
     if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("MLT %d\n", v_table[id].cols);
@@ -296,7 +296,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in acc and float in acc
     if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_FLOAT, line_num+1);
+        warn(MSG_WARN_IDXS_FLOAT, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("SET_P __aux_var\n");
@@ -308,7 +308,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in acc and float in memory
     if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -319,7 +319,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in acc and comp const in memory
     if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         get_cmp_cst(e2, &etr, &eti);
 
@@ -332,7 +332,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in acc and comp in acc
     if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
@@ -345,7 +345,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in acc and comp in memory
     if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -356,7 +356,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in memory and int in acc
     if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
         add_instr("P_F2I_M %s\n" , v_table[e1.id].name);
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -366,7 +366,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in memory and int in memory
     if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+        warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
         add_instr("F2I_M  %s\n",  v_table[e1.id].name);
         add_instr("MLT    %d\n", v_table[id].cols);
@@ -376,7 +376,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in memory and float in acc
     if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_FLOAT, line_num+1);
+        warn(MSG_WARN_IDXS_FLOAT, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
@@ -387,7 +387,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in memory and float in memory
     if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_FLOAT, line_num+1);
+        warn(MSG_WARN_IDXS_FLOAT, pctx.line_num+1);
 
         add_instr("F2I_M   %s\n",  v_table[e1.id].name);
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -398,7 +398,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in memory and comp const in memory
     if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         get_cmp_cst(e2, &etr, &eti);
 
@@ -411,7 +411,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in memory and comp in acc
     if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
@@ -423,7 +423,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // float in memory and comp in memory
     if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("F2I_M   %s\n",  v_table[e1.id].name);
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -434,7 +434,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp const in memory and int in acc
     if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         get_cmp_cst(e1, &etr, &eti);
 
@@ -446,7 +446,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp const in memory and int in memory
     if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         get_cmp_cst(e1, &etr, &eti);
 
@@ -458,7 +458,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp const in memory and float in acc
     if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         get_cmp_cst(e1, &etr, &eti);
 
@@ -471,7 +471,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp const in memory and float in memory
     if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         get_cmp_cst(e1, &etr, &eti);
 
@@ -484,7 +484,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp const in memory and comp const in memory
     if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         get_cmp_cst(e1, &etr, &eti);
         add_instr("F2I_M   %s\n" , v_table[etr.id].name);
@@ -498,7 +498,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp const in memory and comp in acc
     if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         get_cmp_cst(e1, &etr, &eti);
 
@@ -512,7 +512,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp const in memory and comp in memory
     if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         get_cmp_cst(e1, &etr, &eti);
 
@@ -525,7 +525,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in acc and int in acc
     if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         add_instr("SET_P __aux_var\n");
         add_instr("POP\n");
@@ -537,7 +537,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in acc and int in memory
     if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -548,7 +548,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in acc and float in acc
     if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("SET_P __aux_var\n");
@@ -561,7 +561,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in acc and float in memory
     if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -573,7 +573,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in acc and comp const in memory
     if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         get_cmp_cst(e2, &etr, &eti);
 
@@ -587,7 +587,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in acc and comp in acc
     if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
@@ -601,7 +601,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in acc and comp in memory
     if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -613,7 +613,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in memory and int in acc
     if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -623,7 +623,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in memory and int in memory
     if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+        warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
         add_instr("F2I_M %s\n",  v_table[e1.id].name);
         add_instr("MLT   %d\n", v_table[id].cols);
@@ -633,7 +633,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in memory and float in acc
     if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("F2I\n");
         add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
@@ -644,7 +644,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in memory and float in memory
     if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("F2I_M   %s\n",  v_table[e1.id].name);
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -655,7 +655,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in memory and comp const in memory
     if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         get_cmp_cst(e2, &etr, &eti);
 
@@ -668,7 +668,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in memory and comp in acc
     if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("SET_P __aux_var\n");
         add_instr("F2I\n");
@@ -680,7 +680,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     // comp in memory and comp in memory
     if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
     {
-        warn(MSG_WARN_IDXS_MESS, line_num+1);
+        warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
         add_instr("F2I_M   %s\n" , v_table[e1.id].name);
         add_instr("MLT     %d\n", v_table[id].cols);
@@ -688,7 +688,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("S_ADD\n");
     }
 
-    acc_ok = 1; // acc carregado
+    ectx.acc_ok = 1; // acc carregado
 }
 
 // ----------------------------------------------------------------------------
@@ -709,17 +709,17 @@ expr arr_1d2exp_const(int id, int k, int dims)
 {
     // the same checks and use mark as arr_1d2exp
     if (v_table[id].type == TY_NONE)
-        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     if (v_table[id].dims == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     if (v_table[id].dims == AR_2D && dims == 1)
-        fatal(MSG_ERR_ARRAY_2D  , line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_ARRAY_2D  , pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     v_table[id].used = 1;
 
-    if (acc_ok) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);
+    if (ectx.acc_ok) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);
     else        add_instr(  "LOD_V %s %d\n", v_table[id].name, k);
     if (v_table[id].type == TY_COMP) add_instr("P_LOD_V %s_i %d\n", v_table[id].name, k);
-    acc_ok = 1;  // value now in the accumulator
+    ectx.acc_ok = 1;  // value now in the accumulator
     return expr_make(v_table[id].type, 0);
 }
 
@@ -731,21 +731,21 @@ expr arr_1d2exp(int id, expr e, int fft)
 
     // test whether the variable has been declared
     if (v_table[id].type == TY_NONE)
-        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it really is an array
     if (v_table[id].dims == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it really is a 1D array
     if (v_table[id].dims == AR_2D)
-        fatal(MSG_ERR_ARRAY_2D  , line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_ARRAY_2D  , pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // prepare the LOD commands ----------------------------------------------
 
     char ldv[10]; if (fft    == 1) strcpy(ldv,"ILI"    ); else strcpy(ldv,"LDI"  );
-    char ldi[10]; if (acc_ok == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
-    char f2i[10]; if (acc_ok == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
+    char ldi[10]; if (ectx.acc_ok == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
+    char f2i[10]; if (ectx.acc_ok == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
 
     // ------------------------------------------------------------------------
     // write the instructions -------------------------------------------------
@@ -774,7 +774,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // float in acc
         if ((e.type == TY_FLOAT) && (e.id == 0))
         {
-            warn(MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
+            warn(MSG_WARN_IDX_FLOAT_HEAVY, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("%s %s\n", ldv, v_table[id].name);
@@ -783,7 +783,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // float in memory
         if ((e.type == TY_FLOAT) && (e.id != 0))
         {
-            warn(MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
+            warn(MSG_WARN_IDX_FLOAT_HEAVY, pctx.line_num+1);
 
             add_instr("%s %s\n", f2i, v_table[e.id].name);
             add_instr("%s %s\n", ldv, v_table[id].name);
@@ -792,7 +792,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // comp const in memory
         if ((e.type == TY_CCONST) && (e.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
+            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
 
             get_cmp_cst(e, &etr, &eti);
 
@@ -803,7 +803,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // comp in acc
         if ((e.type == TY_COMP) && (e.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
+            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -813,7 +813,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // comp in memory
         if ((e.type == TY_COMP) && (e.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
+            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
 
             add_instr("%s %s\n", f2i, v_table[e.id].name);
             add_instr("%s %s\n", ldv, v_table[id].name);
@@ -845,7 +845,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // float in acc
         if ((e.type == TY_FLOAT) && (e.id == 0))
         {
-            warn(MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
+            warn(MSG_WARN_IDX_FLOAT_HEAVY, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET   __aux_var\n");
@@ -857,7 +857,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // float in memory
         if ((e.type == TY_FLOAT) && (e.id != 0))
         {
-            warn(MSG_WARN_IDX_FLOAT_HEAVY, line_num+1);
+            warn(MSG_WARN_IDX_FLOAT_HEAVY, pctx.line_num+1);
 
             add_instr("%s %s\n"  , f2i, v_table[e.id].name);
             add_instr("SET   __aux_var\n");
@@ -869,7 +869,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // comp const in memory
         if ((e.type == TY_CCONST) && (e.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
+            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
 
             get_cmp_cst(e, &etr, &eti);
 
@@ -883,7 +883,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // comp in acc
         if ((e.type == TY_COMP) && (e.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
+            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -896,7 +896,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         // comp in memory
         if ((e.type == TY_COMP) && (e.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_ROUND, line_num+1);
+            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
 
             add_instr("%s %s\n"  , f2i, v_table[e.id].name);
             add_instr("SET   __aux_var\n");
@@ -906,7 +906,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
     }
 
-    acc_ok     = 1;
+    ectx.acc_ok     = 1;
     v_table[id].used = 1;
 
     return expr_make(v_table[id].type, 0);
@@ -919,21 +919,21 @@ expr arr_2d2exp(int id, expr e1, expr e2)
 
     // test whether the variable has been declared
     if (v_table[id].type == TY_NONE)
-        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it really is a 2D array
     if (v_table[id].dims == AR_NONE)
-        fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_NOT_ARRAY_HARSH, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // must check that it is not a 1D array
     if (v_table[id].dims == AR_1D)
-        fatal(MSG_ERR_ARRAY_1D , line_num+1, strip_fn_prefix(v_table[id].name));
+        fatal(MSG_ERR_ARRAY_1D , pctx.line_num+1, strip_fn_prefix(v_table[id].name));
 
     // prepare the LOD commands -----------------------------------------------
 
     char ldv[10];                  strcpy(ldv,"LDI"    ); // no 2D FFT yet
-    char ldi[10]; if (acc_ok == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
-    char f2i[10]; if (acc_ok == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
+    char ldi[10]; if (ectx.acc_ok == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
+    char f2i[10]; if (ectx.acc_ok == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
 
     // ------------------------------------------------------------------------
     // write the instructions -------------------------------------------------
@@ -960,7 +960,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and float in acc
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
@@ -972,7 +972,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and float in memory
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
             add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
@@ -983,7 +983,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and comp const in memory
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -996,7 +996,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and comp in acc
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1009,7 +1009,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and comp in memory
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
@@ -1029,7 +1029,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and float in acc
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_LOD %s\n" , v_table[e1.id].name);
@@ -1041,7 +1041,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and float in memory
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -1053,7 +1053,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and comp const in memory
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -1067,7 +1067,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and comp in acc
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1080,7 +1080,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and comp in memory
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -1092,7 +1092,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and int in acc
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1104,7 +1104,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and int in memory
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT %d\n", v_table[id].cols);
@@ -1115,7 +1115,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and float in acc
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_FLOAT, line_num+1);
+            warn(MSG_WARN_IDXS_FLOAT, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
@@ -1128,7 +1128,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and float in memory
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %d\n", v_table[id].cols);
@@ -1140,7 +1140,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and comp const in memory
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -1154,7 +1154,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and comp in acc
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1168,7 +1168,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and comp in memory
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %d\n", v_table[id].cols);
@@ -1180,7 +1180,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and int in acc
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
             add_instr("MLT   %d\n", v_table[id].cols);
@@ -1191,7 +1191,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and int in memory
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
             add_instr( "%s %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT %d\n"    , v_table[id].cols);
@@ -1202,7 +1202,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and float in acc
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_FLOAT, line_num+1);
+            warn(MSG_WARN_IDXS_FLOAT, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
@@ -1214,7 +1214,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and float in memory
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -1226,7 +1226,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and comp const in memory
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -1240,7 +1240,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and comp in acc
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1254,7 +1254,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and comp in memory
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -1266,7 +1266,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and int in acc
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -1279,7 +1279,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and int in memory
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -1292,7 +1292,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and float in acc
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -1306,7 +1306,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and float in memory
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -1320,7 +1320,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and comp const in memory
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
             add_instr("%s %s\n", f2i, v_table[etr.id].name);
@@ -1335,7 +1335,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and comp in acc
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -1350,7 +1350,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and comp in memory
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -1364,7 +1364,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and int in acc
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("POP\n");
@@ -1377,7 +1377,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and int in memory
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -1389,7 +1389,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and float in acc
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
@@ -1403,7 +1403,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and float in memory
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -1416,7 +1416,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and comp const in memory
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -1431,7 +1431,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and comp in acc
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -1446,7 +1446,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and comp in memory
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("POP\n");
             add_instr("F2I\n");
@@ -1459,7 +1459,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and int in acc
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
             add_instr("MLT     %d\n", v_table[id].cols);
@@ -1470,7 +1470,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and int in memory
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr( "%s %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT %d\n"    , v_table[id].cols);
@@ -1481,7 +1481,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and float in acc
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n",  v_table[e1.id].name);
@@ -1493,7 +1493,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and float in memory
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("%s %s\n", f2i,  v_table[e1.id].name);
             add_instr("MLT     %d\n", v_table[id].cols);
@@ -1505,7 +1505,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and comp const in memory
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -1519,7 +1519,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and comp in acc
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1532,7 +1532,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and comp in memory
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("%s      %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -1560,7 +1560,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and float in acc
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
@@ -1575,7 +1575,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and float in memory
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
             add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n" , v_table[e2.id].name);
@@ -1589,7 +1589,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and comp const in memory
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -1605,7 +1605,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and comp in acc
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1621,7 +1621,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in acc and comp in memory
         if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("MLT     %d\n", v_table[id].cols);
             add_instr("P_F2I_M %s\n",  v_table[e2.id].name);
@@ -1647,7 +1647,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and float in acc
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_LOD %s\n",  v_table[e1.id].name);
@@ -1662,7 +1662,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and float in memory
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX2_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX2_FLOAT, pctx.line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -1677,7 +1677,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and comp const in memory
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -1694,7 +1694,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and comp in acc
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1710,7 +1710,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // int in memory and comp in memory
         if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr( "%s     %s\n", ldi, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -1725,7 +1725,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and int in acc
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1740,7 +1740,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and int in memory
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT   %d\n", v_table[id].cols);
@@ -1754,7 +1754,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and float in acc
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_FLOAT, line_num+1);
+            warn(MSG_WARN_IDXS_FLOAT, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
@@ -1770,7 +1770,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and float in memory
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %d\n", v_table[id].cols);
@@ -1785,7 +1785,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and comp const in memory
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -1802,7 +1802,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and comp in acc
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1819,7 +1819,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in acc and comp in memory
         if ((e1.type == TY_FLOAT) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("MLT     %d\n", v_table[id].cols);
@@ -1834,7 +1834,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and int in acc
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX1_FLOAT, line_num+1);
+            warn(MSG_WARN_IDX1_FLOAT, pctx.line_num+1);
 
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
             add_instr("MLT   %d\n", v_table[id].cols);
@@ -1848,7 +1848,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and int in memory
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("%s    %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT   %d\n"    , v_table[id].cols);
@@ -1862,7 +1862,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and float in acc
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n", v_table[e1.id].name);
@@ -1877,7 +1877,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and float in memory
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -1892,7 +1892,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and comp const in memory
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr( "%s %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT %d\n"    , v_table[id].cols);
@@ -1910,7 +1910,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and comp in acc
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -1926,7 +1926,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // float in memory and comp in memory
         if ((e1.type == TY_FLOAT) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -1941,7 +1941,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and int in acc
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -1957,7 +1957,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and int in memory
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -1973,7 +1973,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and float in acc
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -1990,7 +1990,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and float in memory
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -2007,7 +2007,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and comp const in memory
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
             add_instr( "%s %s\n", f2i, v_table[etr.id].name);
@@ -2025,7 +2025,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and comp in acc
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -2043,7 +2043,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp const in memory and comp in memory
         if ((e1.type == TY_CCONST) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e1, &etr, &eti);
 
@@ -2060,7 +2060,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and int in acc
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("POP\n");
@@ -2076,7 +2076,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and int in memory
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -2091,7 +2091,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and float in acc
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("SET_P __aux_var\n");
@@ -2108,7 +2108,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and float in memory
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("SET_P   __aux_var\n");
             add_instr("F2I\n");
@@ -2124,7 +2124,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and comp const in memory
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -2142,7 +2142,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and comp in acc
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -2160,7 +2160,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in acc and comp in memory
         if ((e1.type == TY_COMP) && (e1.id == 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("SET_P   __aux_var\n");
             add_instr("F2I\n");
@@ -2176,7 +2176,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and int in acc
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("P_F2I_M %s\n" , v_table[e1.id].name);
             add_instr("MLT     %d\n", v_table[id].cols);
@@ -2190,7 +2190,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and int in memory
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDX_COMP_GRAB, line_num+1);
+            warn(MSG_WARN_IDX_COMP_GRAB, pctx.line_num+1);
 
             add_instr("%s    %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT   %d\n"    , v_table[id].cols);
@@ -2204,7 +2204,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and float in acc
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("F2I\n");
             add_instr("P_F2I_M %s\n" , v_table[e1.id].name);
@@ -2219,7 +2219,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and float in memory
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_FLOAT) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr( "%s     %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -2234,7 +2234,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and comp const in memory
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_CCONST) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             get_cmp_cst(e2, &etr, &eti);
 
@@ -2251,7 +2251,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and comp in acc
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id == 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr("SET_P __aux_var\n");
             add_instr("F2I\n");
@@ -2267,7 +2267,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         // comp in memory and comp in memory
         if ((e1.type == TY_COMP) && (e1.id != 0) && (e2.type == TY_COMP) && (e2.id != 0))
         {
-            warn(MSG_WARN_IDXS_MESS, line_num+1);
+            warn(MSG_WARN_IDXS_MESS, pctx.line_num+1);
 
             add_instr(" %s     %s\n", f2i, v_table[e1.id].name);
             add_instr("MLT     %d\n"    , v_table[id].cols);
@@ -2280,7 +2280,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
     }
 
-    acc_ok     = 1;
+    ectx.acc_ok     = 1;
     v_table[id].used = 1;
 
     return expr_make(v_table[id].type, 0);
