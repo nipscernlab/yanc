@@ -148,8 +148,8 @@ $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \
 $(BIN)/comp2gtkw$(EXE): $(SCR)/comp2gtkw.c $(UTF8) | $(BIN)
 	$(CC) $(CFLAGS) -o $@ $(SCR)/comp2gtkw.c $(UTF8) $(LDLIBS)
 
-$(BIN)/gen_gtkw$(EXE): $(SCR)/gen_gtkw.c $(EXEDIR) | $(BIN)
-	$(CC) $(CFLAGS) -o $@ $(SCR)/gen_gtkw.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
+$(BIN)/gen_gtkw$(EXE): $(SCR)/gen_gtkw.c $(EXEDIR) $(COMMON)/xstr.c $(COMMON)/xstr.h | $(BIN)
+	$(CC) $(CFLAGS) -o $@ $(SCR)/gen_gtkw.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(COMMON)/xstr.c $(UTF8) $(LDLIBS)
 
 # --- yanc, the driver (runs the tools next to it) ---------------------------
 $(BIN)/yanc$(EXE): Compilers/Driver/yanc.c $(CONSOLE) $(EXEDIR) $(VERSION_H) | $(BIN)

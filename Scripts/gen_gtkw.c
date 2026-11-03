@@ -21,7 +21,9 @@
 //                     or from <base>/ when it is the output folder itself
 //     <comp2gtkw_exe> path to comp2gtkw.exe (process filter for complex signals)
 //
-// Built by the Makefile (`make gen_gtkw`), with exe_dir.c and yanc_lang.c.
+// Built by the Makefile (`make gen_gtkw`), with exe_dir.c, yanc_lang.c and
+// xstr.c. A name, a scope or a path has any length: each lives in a block of
+// its own size (xstr.h), never in a char[N] (issue #66).
 // ============================================================================
 
 #include <stdio.h>
@@ -31,6 +33,7 @@
 
 #include "../Compilers/common/exe_dir.h"
 #include "../Compilers/common/yanc_lang.h"
+#include "../Compilers/common/xstr.h"
 
 // every message a user sees, in Portuguese and in English (AGENTS.md, rule 4):
 // English unless --lang or YANC_LANG says pt
@@ -96,20 +99,20 @@
 
 // ---- signal model ----------------------------------------------------------
 typedef struct {
-    char scope[600];   // hierarchical scope path, e.g. tb.proc
-    char name[256];    // leaf signal name
-    int  width;
-    char range[64];    // e.g. "22:0" or "" if scalar
+    char *scope;       // hierarchical scope path, e.g. tb.proc
+    char *name;        // leaf signal name
+    int   width;
+    char *range;       // e.g. "22:0" or "" if scalar
 } Sig;
 
-static Sig  g_sig[60000];
-static int  g_nsig = 0;
+static Sig *g_sig = NULL;
+static int  g_nsig = 0, g_capsig = 0;
 
 // a detected processor instance
 typedef struct {
-    char inst[600];    // scope owning valr2 + linetabs (mirrors live here)
-    char core[600];    // <inst>...p_<type>.core (clk/rst, sp/isp/ula live below)
-    char type[128];    // module type, for <tmp_base>/<type>/trad_*.txt
+    char *inst;        // scope owning valr2 + linetabs (mirrors live here)
+    char *core;        // <inst>...p_<type>.core (clk/rst, sp/isp/ula live below), "" if none
+    char *type;        // module type, for <tmp_base>/<type>/trad_*.txt
 } Proc;
 static Proc g_proc[32];
 static int  g_nproc = 0;
@@ -125,34 +128,39 @@ static const char *g_comp2gtkw = "";
 static char  *g_buf = NULL;
 static size_t g_pos = 0, g_len = 0;
 
-static int read_token(char *out, size_t cap) {
+// the next token of the header, of any length (NULL at its end); the block is
+// the caller's
+static char *read_token(void) {
     while (g_pos < g_len && isspace((unsigned char)g_buf[g_pos])) g_pos++;
-    if (g_pos >= g_len) return 0;
+    if (g_pos >= g_len) return NULL;
     size_t s = g_pos;
     if (g_buf[g_pos] == '[') {
         size_t p = g_pos + 1;
         while (p < g_len && g_buf[p] != ']' && !isspace((unsigned char)g_buf[p])) p++;
         if (p < g_len && g_buf[p] == ']') p++;
         else p = g_pos + 1;
-        size_t n = p - s; if (n >= cap) n = cap - 1;
-        memcpy(out, g_buf + s, n); out[n] = 0; g_pos = p; return 1;
+        g_pos = p;
+        return xasprintf("%.*s", (int)(p - s), g_buf + s);
     }
     while (g_pos < g_len && !isspace((unsigned char)g_buf[g_pos])) g_pos++;
-    size_t n = g_pos - s; if (n >= cap) n = cap - 1;
-    memcpy(out, g_buf + s, n); out[n] = 0; return 1;
+    return xasprintf("%.*s", (int)(g_pos - s), g_buf + s);
 }
 
-static char g_stack[128][600];
-static int  g_stack_mod[128];
-static int  g_depth = 0;
+static char *g_stack[128];        // each a block of its own ("" for a scope that is no module)
+static int   g_stack_mod[128];
+static int   g_depth = 0;
 
 static const char *nearest_module_path(void) {
     for (int i = g_depth - 1; i >= 0; i--) if (g_stack_mod[i]) return g_stack[i];
     return NULL;
 }
 static void skip_to_end(void) {
-    char t[700];
-    while (read_token(t, sizeof t)) if (strcmp(t, "$end") == 0) return;
+    char *t;
+    while ((t = read_token()) != NULL) {
+        int end = strcmp(t, "$end") == 0;
+        free(t);
+        if (end) return;
+    }
 }
 
 static void parse_vcd_header(const char *path) {
@@ -167,52 +175,53 @@ static void parse_vcd_header(const char *path) {
     char *ed = strstr(g_buf, "$enddefinitions");
     if (ed) g_len = (size_t)(ed - g_buf);
 
-    char t[700];
-    while (read_token(t, sizeof t)) {
+    char *t;
+    int   stop = 0;
+    while (!stop && (t = read_token()) != NULL) {
         if (strcmp(t, "$scope") == 0) {
-            char stype[64] = "", sname[256] = "";
-            read_token(stype, sizeof stype);
-            read_token(sname, sizeof sname);
+            char *stype = read_token(), *sname = read_token();
+            if (!stype) stype = xstrdup("");
+            if (!sname) sname = xstrdup("");
             skip_to_end();
             if (strcmp(stype, "module") == 0 && g_depth < 128) {
                 const char *par = nearest_module_path();
-                char tmp[600];
-                if (par) snprintf(tmp, sizeof tmp, "%s.%s", par, sname);
-                else     snprintf(tmp, sizeof tmp, "%s", sname);
-                snprintf(g_stack[g_depth], 600, "%s", tmp);
+                g_stack[g_depth] = par ? xasprintf("%s.%s", par, sname) : xstrdup(sname);
                 g_stack_mod[g_depth] = 1; g_depth++;
             } else if (g_depth < 128) {
-                g_stack[g_depth][0] = 0; g_stack_mod[g_depth] = 0; g_depth++;
+                g_stack[g_depth] = xstrdup(""); g_stack_mod[g_depth] = 0; g_depth++;
             }
+            free(stype); free(sname);
         } else if (strcmp(t, "$upscope") == 0) {
             skip_to_end();
-            if (g_depth > 0) g_depth--;
+            if (g_depth > 0) free(g_stack[--g_depth]);
         } else if (strcmp(t, "$var") == 0) {
-            char vtype[32], vwidth[16], vid[64], vname[256], maybe[64];
-            read_token(vtype, sizeof vtype);
-            read_token(vwidth, sizeof vwidth);
-            read_token(vid, sizeof vid);
-            read_token(vname, sizeof vname);
-            char rng[64] = "";
-            if (read_token(maybe, sizeof maybe)) {
+            char *vtype = read_token(), *vwidth = read_token(), *vid = read_token(), *vname = read_token();
+            char *rng = xstrdup(""), *maybe = read_token();
+            if (maybe) {
                 if (maybe[0] == '[' && strcmp(maybe, "$end") != 0) {
                     size_t L = strlen(maybe);
-                    if (L >= 2 && maybe[L-1] == ']') { memcpy(rng, maybe+1, L-2); rng[L-2] = 0; }
+                    if (L >= 2 && maybe[L-1] == ']') { free(rng); rng = xasprintf("%.*s", (int)(L - 2), maybe + 1); }
                     skip_to_end();
                 } else if (strcmp(maybe, "$end") != 0) {
                     skip_to_end();
                 }
             }
-            if (g_depth > 0 && g_stack_mod[g_depth-1] && g_nsig < (int)(sizeof g_sig / sizeof g_sig[0])) {
+            if (g_depth > 0 && g_stack_mod[g_depth-1]) {
+                if (g_nsig == g_capsig) {
+                    g_capsig = g_capsig ? 2 * g_capsig : 1024;
+                    g_sig = xrealloc(g_sig, (size_t)g_capsig * sizeof *g_sig);
+                }
                 Sig *s = &g_sig[g_nsig++];
-                snprintf(s->scope, sizeof s->scope, "%s", g_stack[g_depth-1]);
-                snprintf(s->name, sizeof s->name, "%s", vname);
-                s->width = atoi(vwidth);
-                snprintf(s->range, sizeof s->range, "%s", rng);
+                s->scope = xstrdup(g_stack[g_depth-1]);
+                s->name  = xstrdup(vname ? vname : "");
+                s->width = vwidth ? atoi(vwidth) : 0;
+                s->range = rng; rng = NULL;
             }
+            free(vtype); free(vwidth); free(vid); free(vname); free(maybe); free(rng);
         } else if (strcmp(t, "$enddefinitions") == 0) {
-            break;
+            stop = 1;
         }
+        free(t);
     }
 }
 
@@ -228,24 +237,19 @@ static int under(const char *scope, const char *sc) {
     return strncmp(scope, sc, L) == 0 && (scope[L] == 0 || scope[L] == '.');
 }
 
-// extract func/var from a mangled name: ..._f_<func>_v_<var>_e_  (unanchored)
-static int split_func_var(const char *name, char *func, char *var) {
+// extract func/var from a mangled name: ..._f_<func>_v_<var>_e_  (unanchored);
+// *func and *var are blocks the caller frees (only when it returns 1)
+static int split_func_var(const char *name, char **func, char **var) {
     const char *f = strstr(name, "_f_"); if (!f) return 0;
     const char *v = strstr(f + 3, "_v_"); if (!v) return 0;
     const char *e = strstr(v + 3, "_e_"); if (!e) return 0;
-    size_t fl = (size_t)(v - (f + 3)); memcpy(func, f + 3, fl); func[fl] = 0;
-    size_t vl = (size_t)(e - (v + 3)); memcpy(var, v + 3, vl); var[vl] = 0;
+    *func = xasprintf("%.*s", (int)(v - (f + 3)), f + 3);
+    *var  = xasprintf("%.*s", (int)(e - (v + 3)), v + 3);
     return 1;
 }
-static void func_label(const char *func, char *out) {
-    if (strcmp(func, "global") == 0) strcpy(out, "global");
-    // Bound the func field so the "()" can never be truncated out of the
-    // 256-byte buffer (silences gcc -Werror=format-truncation): 253 + "()" + NUL.
-    else snprintf(out, 256, "%.253s()", func);
-}
-static void rng_suffix(const Sig *s, char *out) {
-    if (s->range[0]) snprintf(out, 80, "[%s]", s->range);
-    else out[0] = 0;
+// "global", or "<func>()" (the block is the caller's)
+static char *func_label(const char *func) {
+    return strcmp(func, "global") == 0 ? xstrdup("global") : xasprintf("%s()", func);
 }
 
 // ---- lookups ---------------------------------------------------------------
@@ -272,9 +276,9 @@ static void emit_signal(const Sig *s, unsigned flag, int color,
     if (color != COL_NORMAL) fprintf(g_out, "[color] %d\n", color);
     if (fileFilter) fprintf(g_out, "^%d %s\n", ++g_file_id, fileFilter);
     if (procFilter) fprintf(g_out, "^>%d %s\n", ++g_proc_id, procFilter);
-    char suf[80]; rng_suffix(s, suf);
-    if (alias && alias[0]) fprintf(g_out, "+{%s} %s.%s%s\n", alias, s->scope, s->name, suf);
-    else                   fprintf(g_out, "%s.%s%s\n", s->scope, s->name, suf);
+    const char *ob = s->range[0] ? "[" : "", *cb = s->range[0] ? "]" : "";
+    if (alias && alias[0]) fprintf(g_out, "+{%s} %s.%s%s%s%s\n", alias, s->scope, s->name, ob, s->range, cb);
+    else                   fprintf(g_out, "%s.%s%s%s%s\n", s->scope, s->name, ob, s->range, cb);
 }
 static void emit_comment(const char *text)     { fprintf(g_out, "@%x\n-%s\n", FLAG_COMMENT,   text); }
 static void emit_group_begin(const char *name) { fprintf(g_out, "@%x\n-%s\n", FLAG_GRP_BEGIN, name); }
@@ -305,19 +309,21 @@ static void emit_typed_vars(const char *inst, const char *prefix, unsigned flag,
     for (int i = 0; i < g_nsig; i++) {
         if (strcmp(g_sig[i].scope, inst) != 0) continue;
         if (!starts_with(g_sig[i].name, prefix)) continue;
-        char func[256], var[256], fl[256], alias[600];
-        if (!split_func_var(g_sig[i].name, func, var)) continue;
-        func_label(func, fl);
-        snprintf(alias, sizeof alias, "%s %s in %s", tlabel, var, fl);
+        char *func, *var;
+        if (!split_func_var(g_sig[i].name, &func, &var)) continue;
+        char *fl = func_label(func);
+        char *alias = xasprintf("%s %s in %s", tlabel, var, fl);
         emit_signal(&g_sig[i], flag, COL_ORANGE, alias, NULL, procFilter);
+        free(func); free(var); free(fl); free(alias);
     }
 }
 
-static int has_4digit_suffix(const char *nm, char *base, int *idx) {
+// a name that ends in 4 digits: *base_len is the length before them
+static int has_4digit_suffix(const char *nm, size_t *base_len, int *idx) {
     size_t L = strlen(nm);
     if (L < 4) return 0;
     for (int k = 0; k < 4; k++) if (!isdigit((unsigned char)nm[L-1-k])) return 0;
-    size_t bl = L - 4; memcpy(base, nm, bl); base[bl] = 0;
+    *base_len = L - 4;
     *idx = atoi(nm + L - 4);
     return 1;
 }
@@ -325,42 +331,53 @@ static int has_4digit_suffix(const char *nm, char *base, int *idx) {
 // array vars (arr_me1_/arr_me2_/comp_arr_me3_) within `inst`, grouped by base
 static void emit_typed_arrays(const char *inst, const char *prefix, unsigned flag,
                               const char *tlabel, const char *procFilter) {
-    char seen[256][256]; int nseen = 0;
+    char **seen = NULL; int nseen = 0;
     for (int i = 0; i < g_nsig; i++) {
         if (strcmp(g_sig[i].scope, inst) != 0) continue;
         if (!starts_with(g_sig[i].name, prefix)) continue;
-        char base[256]; int dummy;
-        if (!has_4digit_suffix(g_sig[i].name, base, &dummy)) continue;
+        size_t bl; int dummy;
+        if (!has_4digit_suffix(g_sig[i].name, &bl, &dummy)) continue;
+        char *base = xasprintf("%.*s", (int)bl, g_sig[i].name);
         int known = 0; for (int k = 0; k < nseen; k++) if (strcmp(seen[k], base) == 0) { known = 1; break; }
-        if (known) continue;
-        if (nseen < 256) strcpy(seen[nseen++], base);
+        if (known) { free(base); continue; }
+        seen = xrealloc(seen, (size_t)(nseen + 1) * sizeof *seen);
+        seen[nseen++] = base;
 
-        char func[256], var[256], fl[256], glabel[600], vv[256];
-        if (split_func_var(base, func, var)) { func_label(func, fl); snprintf(glabel, sizeof glabel, "%s %s in %s", tlabel, var, fl); strcpy(vv, var); }
-        else { snprintf(glabel, sizeof glabel, "%s %s", tlabel, base); strcpy(vv, base); }
+        char *func, *var, *glabel, *vv;
+        if (split_func_var(base, &func, &var)) {
+            char *fl = func_label(func);
+            glabel = xasprintf("%s %s in %s", tlabel, var, fl);
+            vv = var;
+            free(func); free(fl);
+        }
+        else { glabel = xasprintf("%s %s", tlabel, base); vv = xstrdup(base); }
         emit_group_begin(glabel);
 
         int mi[8192], mn = 0;
         for (int j = 0; j < g_nsig; j++) {
             if (strcmp(g_sig[j].scope, inst) != 0) continue;
             if (!starts_with(g_sig[j].name, prefix)) continue;
-            char b2[256]; int ix;
-            if (!has_4digit_suffix(g_sig[j].name, b2, &ix)) continue;
-            if (strcmp(b2, base) != 0) continue;
+            size_t b2; int ix;
+            if (!has_4digit_suffix(g_sig[j].name, &b2, &ix)) continue;
+            if (b2 != bl || strncmp(g_sig[j].name, base, bl) != 0) continue;
             if (mn < 8192) mi[mn++] = j;
         }
         for (int a = 1; a < mn; a++) {  // sort by suffix index
-            int ia = mi[a], ja = a - 1; char tb[256]; int va; has_4digit_suffix(g_sig[ia].name, tb, &va);
-            char tb2[256]; int vb;
-            while (ja >= 0 && (has_4digit_suffix(g_sig[mi[ja]].name, tb2, &vb), vb) > va) { mi[ja+1] = mi[ja]; ja--; }
+            int ia = mi[a], ja = a - 1; size_t tb; int va; has_4digit_suffix(g_sig[ia].name, &tb, &va);
+            size_t tb2; int vb;
+            while (ja >= 0 && (has_4digit_suffix(g_sig[mi[ja]].name, &tb2, &vb), vb) > va) { mi[ja+1] = mi[ja]; ja--; }
             mi[ja+1] = ia;
         }
         for (int a = 0; a < mn; a++) {
-            char al[320]; snprintf(al, sizeof al, "%s %d", vv, a);
+            char *al = xasprintf("%s %d", vv, a);
             emit_signal(&g_sig[mi[a]], flag, COL_ORANGE, al, NULL, procFilter);
+            free(al);
         }
         emit_group_end(glabel);
+        free(glabel); free(vv);
     }
+    for (int k = 0; k < nseen; k++) free(seen[k]);
+    free(seen);
 }
 
 // emit a flag signal if present, matched under `inst` by sub-scope suffix
@@ -370,15 +387,15 @@ static void emit_flag(const char *inst, const char *suffix, const char *name, un
 }
 
 static void emit_proc_section(const Proc *p) {
-    char banner[700];
     const char *instname = strrchr(p->inst, '.'); instname = instname ? instname + 1 : p->inst;
-    snprintf(banner, sizeof banner, "###### %s", instname);
+    char *banner = xasprintf("###### %s", instname);
     emit_comment(banner);
+    free(banner);
 
     // clk / rst / itr -- prefer the proc's core (project case: wrapper drives
     // core.clk); fall back to the tb top (single-proc generated tb: clk/rst are
     // testbench regs at the root scope).
-    char tbroot[600]; snprintf(tbroot, sizeof tbroot, "%s", p->inst);
+    char *tbroot = xstrdup(p->inst);
     char *dot = strchr(tbroot, '.'); if (dot) *dot = 0;
     const char *cs = p->core[0] ? p->core : p->inst;
     int ci;
@@ -388,6 +405,7 @@ static void emit_proc_section(const Proc *p) {
     if (ci >= 0) emit_signal(&g_sig[ci], FMT_BIN, COL_NORMAL, NULL, NULL, NULL);
     if ((ci = find_sig(cs, "itr")) < 0) ci = find_sig(tbroot, "itr");
     if (ci >= 0) emit_signal(&g_sig[ci], FMT_BIN, COL_NORMAL, NULL, NULL, NULL);
+    free(tbroot);
 
     emit_comment("I/O ****************");
     emit_io(p->inst, "req_in_sim_", FMT_BIN,        "req_in");
@@ -401,28 +419,36 @@ static void emit_proc_section(const Proc *p) {
     // folder of another name). Forward slashes work on both Windows and
     // POSIX, and GTKWave accepts them in the .gtkw paths. A file that is not
     // there (src_lines.txt of an .asm written by hand) is left out.
-    char tradop[800] = "", tradcmm[800] = "";
-    char lang[32] = "C+-";       // the source track's name: prog_log.txt's `lang`
+    char *tradop = xstrdup(""), *tradcmm = xstrdup("");
+    char *lang = xstrdup("C+-");  // the source track's name: prog_log.txt's `lang`
     if (p->type[0]) {
-        char dir[700];
-        snprintf(dir, sizeof dir, "%s/%s", g_tmp_base, p->type);
-        snprintf(tradop, sizeof tradop, "%s/trad_opcode.txt", dir);
+        char *dir = xasprintf("%s/%s", g_tmp_base, p->type);
+        free(tradop); tradop = xasprintf("%s/trad_opcode.txt", dir);
         FILE *t = fopen(tradop, "r");
         if (!t) {
-            char own[800]; snprintf(own, sizeof own, "%s/trad_opcode.txt", g_tmp_base);
-            if ((t = fopen(own, "r")) != NULL) snprintf(dir, sizeof dir, "%s", g_tmp_base);
+            char *own = xasprintf("%s/trad_opcode.txt", g_tmp_base);
+            if ((t = fopen(own, "r")) != NULL) { free(dir); dir = xstrdup(g_tmp_base); }
+            free(own);
         }
         if (t) fclose(t);
-        snprintf(tradop,  sizeof tradop,  "%s/trad_opcode.txt", dir);
-        snprintf(tradcmm, sizeof tradcmm, "%s/src_lines.txt",    dir);
+        free(tradop);  tradop  = xasprintf("%s/trad_opcode.txt", dir);
+        free(tradcmm); tradcmm = xasprintf("%s/src_lines.txt",    dir);
         FILE *s = fopen(tradcmm, "r");
         if (s) fclose(s); else tradcmm[0] = 0;
-        char logp[800]; snprintf(logp, sizeof logp, "%s/prog_log.txt", dir);
+        char *logp = xasprintf("%s/prog_log.txt", dir);
         FILE *lf = fopen(logp, "r");
+        free(logp); free(dir);
         if (lf) {
-            char ln[512];
-            while (fgets(ln, sizeof ln, lf))
-                if (sscanf(ln, "lang %31s", lang) == 1) break;
+            char *ln;
+            while ((ln = xgetline(lf)) != NULL) {
+                int is_lang = strncmp(ln, "lang", 4) == 0 && (ln[4] == ' ' || ln[4] == '\t');
+                char *v = ln + 4;
+                while (is_lang && (*v == ' ' || *v == '\t')) v++;
+                size_t n = strcspn(v, " \t");
+                if (is_lang && n > 0) { free(lang); lang = xasprintf("%.*s", (int)n, v); }
+                free(ln);
+                if (is_lang && n > 0) break;
+            }
             fclose(lf);
         }
     }
@@ -431,6 +457,7 @@ static void emit_proc_section(const Proc *p) {
     if (vi >= 0) emit_signal(&g_sig[vi], FMT_DEC, COL_INDIGO, "Assembly", tradop[0]?tradop:NULL, NULL);
     int li = find_sig(p->inst, "linetabs");
     if (li >= 0) emit_signal(&g_sig[li], FMT_SIGNED_DEC, COL_VIOLET, lang, tradcmm[0]?tradcmm:NULL, NULL);
+    free(tradop); free(tradcmm); free(lang);
 
     emit_comment("Variables **********");
     emit_typed_vars(p->inst, "me1_",      FMT_SIGNED_DEC, "int",   NULL);
@@ -470,14 +497,14 @@ static void derive_core_and_type(Proc *p) {
     // core = the ".core" scope under inst. Single-proc tbs dump no signal AT the
     // core scope itself (only core.sp/core.ula/...), so derive the core path by
     // truncating any under-inst signal scope that contains ".core" at that point.
-    p->core[0] = 0; p->type[0] = 0;
+    p->core = xstrdup(""); p->type = NULL;
     for (int i = 0; i < g_nsig; i++) {
         const char *sc = g_sig[i].scope;
         if (!under(sc, p->inst)) continue;
         const char *c = strstr(sc, ".core");
         if (c && (c[5] == '.' || c[5] == 0)) {
             size_t len = (size_t)(c - sc) + 5;              // include ".core"
-            if (len < sizeof p->core) { memcpy(p->core, sc, len); p->core[len] = 0; }
+            free(p->core); p->core = xasprintf("%.*s", (int)len, sc);
             break;
         }
     }
@@ -487,17 +514,13 @@ static void derive_core_and_type(Proc *p) {
         const char *seg_end = p->core + L - 5;            // points at ".core"
         const char *seg_start = seg_end;
         while (seg_start > p->core && *(seg_start - 1) != '.') seg_start--;
-        // seg holds a (short) module-type name; size it to match p->type so the
-        // snprintf below cannot truncate (keeps -Wformat-truncation quiet).
-        char seg[sizeof ((Proc*)0)->type]; size_t n = (size_t)(seg_end - seg_start);
-        if (n >= sizeof seg) n = sizeof seg - 1;
-        memcpy(seg, seg_start, n); seg[n] = 0;
-        if (strncmp(seg, "p_", 2) == 0) snprintf(p->type, sizeof p->type, "%s", seg + 2);
-        else                            snprintf(p->type, sizeof p->type, "%s", seg);
+        size_t n = (size_t)(seg_end - seg_start);
+        if (n >= 2 && strncmp(seg_start, "p_", 2) == 0) p->type = xasprintf("%.*s", (int)(n - 2), seg_start + 2);
+        else                                            p->type = xasprintf("%.*s", (int)n, seg_start);
     } else {
         // fall back: instance name with a trailing _inst stripped
         const char *nm = strrchr(p->inst, '.'); nm = nm ? nm + 1 : p->inst;
-        snprintf(p->type, sizeof p->type, "%s", nm);
+        p->type = xstrdup(nm);
         char *u = strstr(p->type, "_inst"); if (u && u[5] == 0) *u = 0;
     }
 }
@@ -509,9 +532,7 @@ static void detect_procs(void) {
         int dup = 0;
         for (int k = 0; k < g_nproc; k++) if (strcmp(g_proc[k].inst, g_sig[i].scope) == 0) { dup = 1; break; }
         if (dup) continue;
-        // inst and scope are the same fixed size and scope is NUL-terminated,
-        // so a fixed-size copy is safe and avoids -Wformat-truncation.
-        memcpy(g_proc[g_nproc].inst, g_sig[i].scope, sizeof g_proc[g_nproc].inst);
+        g_proc[g_nproc].inst = xstrdup(g_sig[i].scope);
         derive_core_and_type(&g_proc[g_nproc]);
         g_nproc++;
     }
@@ -527,11 +548,10 @@ int main(int argc, char **argv) {
     }
     const char *vcd = argv[1], *out = argv[2];
     g_tmp_base = argv[3];
-    static char c2g[4200];
 #ifdef _WIN32
-    snprintf(c2g, sizeof c2g, "%s/comp2gtkw.exe", exe_dir());
+    char *c2g = xasprintf("%s/comp2gtkw.exe", exe_dir());
 #else
-    snprintf(c2g, sizeof c2g, "%s/comp2gtkw", exe_dir());
+    char *c2g = xasprintf("%s/comp2gtkw", exe_dir());
 #endif
     g_comp2gtkw = (argc == 5) ? argv[4] : c2g;
 
