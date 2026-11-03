@@ -18,6 +18,13 @@ extern int  fround;      // float rounding level (#FROUND)
 extern int  fftsiz;      // low bits of an index v[k) reverses (#FFTSIZ)
 
 // directive parsing
-void dire_exec (char *dir, int id, int t);
+// what a configuration directive sets in cmmcomp (DIR_ASM_ONLY: nothing,
+// only asmcomp reads it: #NDSTAC, #SDEPTH)
+typedef enum {
+    DIR_ASM_ONLY, DIR_NBMANT, DIR_NBEXPO, DIR_NUIOIN, DIR_NUIOOU,
+    DIR_FROUND, DIR_NUGAIN, DIR_NUBITS, DIR_FFTSIZ
+} dir_code;
+
+void dire_exec (char *dir, int id, dir_code t);
 
 #endif // CMM_DIRETIVAS_H
