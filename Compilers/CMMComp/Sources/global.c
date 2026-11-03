@@ -254,7 +254,7 @@ void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_
 
     fatal_hook(out_remove);       // from here on, an error removes what this run wrote
 
-    char *asm_file = xasprintf("%s/%s.asm", d_proc, prname); // output .asm file name
+    char *asm_file = xasprintf("%s/%s.asm", d_proc, cfg.prname); // output .asm file name
     f_asm = fopen(asm_file, "w"); // create the .asm file
     if (f_asm == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
     out_track(asm_file, &f_asm);
@@ -277,7 +277,7 @@ void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_
     char *path = xasprintf("%s/prog_log.txt", dir_tmp); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
     if (f_log == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
     out_track(path, &f_log);
-    path = xasprintf("%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
+    path = xasprintf("%s/pc_%s_mem.txt", dir_tmp, cfg.prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
     if (f_lin == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
     out_track(path, &f_lin);
 
@@ -298,7 +298,7 @@ void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_
 void prog_emit(void)
 {
     add_sinst(-1, "NOP\n");
-    add_sinst( 0, "#PRNAME %s\n", prname);   // the processor's name: the source file's
+    add_sinst( 0, "#PRNAME %s\n", cfg.prname);   // the processor's name: the source file's
 
     stmt_node *prog = stmt_list_close();
     for (int i = 0; i < prog->kids_n; i++)
@@ -338,7 +338,7 @@ void parse_end(char *d_proc)
 
     // check whether macros need to be appended to the .asm file --------------
 
-    char *asm_file = xasprintf("%s/%s.asm", d_proc, prname);
+    char *asm_file = xasprintf("%s/%s.asm", d_proc, cfg.prname);
 
 	// the area the Dirac loops share, when a statement needed it ------------
 
@@ -352,7 +352,7 @@ void parse_end(char *d_proc)
 
 	// code no path reaches leaves the program, and with it its hardware -----
 
-	char *pc_file = xasprintf("%s/pc_%s_mem.txt", dir_tmp, prname);
+	char *pc_file = xasprintf("%s/pc_%s_mem.txt", dir_tmp, cfg.prname);
 	int  gone = asm_reach(asm_file, pc_file);
 	if  (gone > 0) num_ins -= gone;
 

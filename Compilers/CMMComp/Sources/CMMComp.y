@@ -569,7 +569,7 @@ int main(int argc, char *argv[])
     cli_args a;
     cli_parse(argc, argv, &a);      // parses the named options (or exits with usage)
 
-    prname = a.name;                // the processor takes the source file's name
+    cfg.prname = a.name;                // the processor takes the source file's name
     parse_init(a.input, a.proc_dir, a.macros_dir, a.temp_dir,
                a.array_sim ? "1" : "0"); // initializes the parser and global variables
     yyparse   ();                       // here the magic happens!!

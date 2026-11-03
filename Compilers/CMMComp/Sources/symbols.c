@@ -284,7 +284,7 @@ static unsigned long long inum_value(const char *text, int *base_out)
 }
 
 // the word width for a bit pattern: #NUBITS, 2..32
-static int word_bits(void) { return nubits < 2 ? 2 : nubits > 32 ? 32 : nubits; }
+static int word_bits(void) { return cfg.nubits < 2 ? 2 : cfg.nubits > 32 ? 32 : cfg.nubits; }
 
 // what the lexer returns for an int literal: 0 a plain INUM; 1 (NINUM) a hex,
 // octal or binary literal with the word's sign bit set, a negative int as in
@@ -421,10 +421,10 @@ int lex_fnum(char *text)
     // encode it as asmcomp will (common/yanc_num.c, exact): range and residual
 
     yn_float r;
-    yn_encode(t, nbmant, nbexpo, fround, &r);
+    yn_encode(t, cfg.nbmant, cfg.nbexpo, cfg.fround, &r);
 
-    double max = (pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1);         // largest representable magnitude
-    double min =                     pow(2,-pow(2,nbexpo-1));           // smallest representable magnitude
+    double max = (pow(2,cfg.nbmant)-1) * pow(2, pow(2,cfg.nbexpo-1)-1);         // largest representable magnitude
+    double min =                     pow(2,-pow(2,cfg.nbexpo-1));           // smallest representable magnitude
 
     if (r.overflow)                fatal(MSG_ERR_FLOAT_MAX, line_num+1, max);
     if (r.underflow && !r.flushed) fatal(MSG_ERR_FLOAT_MIN, line_num+1, min);
@@ -432,7 +432,7 @@ int lex_fnum(char *text)
     // a nonzero constant flushed to zero (below the smallest normal number at
     // #FROUND >= 1) is not an approximation the user can shrug off: warn
     if (r.flushed)
-        warn(MSG_WARN_CONST_FLUSHED, line_num+1, text, pow(2,nbmant-1)*pow(2,-pow(2,nbexpo-1)), fround);
+        warn(MSG_WARN_CONST_FLUSHED, line_num+1, text, pow(2,cfg.nbmant-1)*pow(2,-pow(2,cfg.nbexpo-1)), cfg.fround);
     else if (r.inexact && !fnum_quiet)
     {
         double mf = ldexp((double)r.m, (int)r.e);

@@ -26,7 +26,7 @@
 // input ex: int x = in(0);
 expr builtin_in(int id)
 {
-    if (atoi(v_table[id].name) >= nuioin) fatal(MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name);
+    if (atoi(v_table[id].name) >= cfg.nuioin) fatal(MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name);
 
     if (acc_ok == 0) add_instr("INN %s\n", v_table[id].name); else add_instr("P_INN %s\n", v_table[id].name);
 
@@ -38,7 +38,7 @@ expr builtin_in(int id)
 // input ex: float x = fin(0);
 expr builtin_fin(int id)
 {
-    if (atoi(v_table[id].name) >= nuioin) fatal(MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name);
+    if (atoi(v_table[id].name) >= cfg.nuioin) fatal(MSG_ERR_NO_IN_PORT, line_num+1, v_table[id].name);
 
     if (acc_ok == 0) add_instr("F_INN %s\n", v_table[id].name); else add_instr("PF_INN %s\n", v_table[id].name);
 
@@ -64,7 +64,7 @@ void builtin_out(int id, expr e)
     if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check port range
-    if (atoi(v_table[id].name) >= nuioou) fatal(MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name);
+    if (atoi(v_table[id].name) >= cfg.nuioou) fatal(MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name);
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -210,7 +210,7 @@ void builtin_fout(int id, expr e)
     if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check port range
-    if (atoi(v_table[id].name) >= nuioou) fatal(MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name);
+    if (atoi(v_table[id].name) >= cfg.nuioou) fatal(MSG_ERR_NO_OUT_PORT, line_num+1, v_table[id].name);
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------

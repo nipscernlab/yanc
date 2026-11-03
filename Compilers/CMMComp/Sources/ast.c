@@ -350,7 +350,7 @@ static expr_node *for_bottom_test(stmt_node *n, stmt_node *init)
     typecheck_expr(init->rhs); typecheck_expr(lit);
     if (init->rhs->type != TY_INT || lit->type != TY_INT) return NULL;
     long long c0 = atoll(v_table[init->rhs->id].name), c1 = atoll(v_table[lit->id].name);
-    long long max = (1LL << (nubits - 1)) - 1;               // largest int of the word
+    long long max = (1LL << (cfg.nubits - 1)) - 1;               // largest int of the word
     if (c0 > max || c1 > max) return NULL;                   // the word wraps it: holds is not the hardware's
     int holds; long long k2; int op2;
     switch (op) {
@@ -858,7 +858,7 @@ static int const_eval(expr_node *n, long long *val)
     // most asmcomp takes): every operand is then at most 2^31 - 1, so a sum, a
     // product or a shift by less than 31 stays defined, and the result is the
     // same where long has 32 bits (64-bit Windows) as where it has 64 (#94 J)
-    int       mb  = nbmant + nbexpo < 0 ? 0 : nbmant + nbexpo > 31 ? 31 : nbmant + nbexpo;
+    int       mb  = cfg.nbmant + cfg.nbexpo < 0 ? 0 : cfg.nbmant + cfg.nbexpo > 31 ? 31 : cfg.nbmant + cfg.nbexpo;
     long long max = (1LL << mb) - 1;
     long long min = -max;
 
@@ -889,9 +889,9 @@ static int const_eval(expr_node *n, long long *val)
             // shifts the same way: a non-negative value, by less than the
             // word, where >> and >>> agree (the range check below stops a <<
             // that would reach the sign bit)
-            case OP_SHL:  if (a < 0 || b < 0 || b >= nubits - 1) return 0; r = a << b; break;
+            case OP_SHL:  if (a < 0 || b < 0 || b >= cfg.nubits - 1) return 0; r = a << b; break;
             case OP_SHR:
-            case OP_SSHR: if (a < 0 || b < 0 || b >= nubits) return 0;     r = a >> b; break;
+            case OP_SSHR: if (a < 0 || b < 0 || b >= cfg.nubits) return 0;     r = a >> b; break;
             default: return 0;
         }
         if (r < min || r > max) return 0;
@@ -1006,7 +1006,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                 long long cval;
                 if (const_eval(n, &cval)) {
                     char buf[32];
-                    long long m = 1LL << nubits, w = ((cval % m) + m) % m;
+                    long long m = 1LL << cfg.nubits, w = ((cval % m) + m) % m;
                     if (w >= m / 2) w -= m;
                     cval = w;
                     if (cval == -(m / 2)) return oper_neg(num2exp(inum_min_id(), 1));
@@ -1169,8 +1169,8 @@ static expr ast_emit_expr_impl(expr_node *n)
                     if (n->op)
                     {
                         int low = 0;
-                        for (int b = 0; b < fftsiz; b++) if (k & (1 << b)) low |= 1 << (fftsiz - 1 - b);
-                        k = (k & ~((1 << fftsiz) - 1)) | low;
+                        for (int b = 0; b < cfg.fftsiz; b++) if (k & (1 << b)) low |= 1 << (cfg.fftsiz - 1 - b);
+                        k = (k & ~((1 << cfg.fftsiz) - 1)) | low;
                     }
                     return arr_1d2exp_const(n->id, k, 1);
                 }
@@ -2181,7 +2181,7 @@ void stmt_emit(stmt_node *n)
             if (int_cases)
             {
                 emit_cond_int_load(cond_e, 1);
-                int nub = nubits;
+                int nub = cfg.nubits;
                 long long mod = 1LL << nub, last_v = 0;
                 int def_idx = -1;
                 stmt_node *body = n->body;
