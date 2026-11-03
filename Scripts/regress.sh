@@ -310,7 +310,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     esac
 
     pushd "$ROOT/Compilers/CMMComp/Sources" >/dev/null
-    bison -y -d CMMComp.y
+    bison -y -d -Wno-yacc CMMComp.y      # as the Makefile: see there
     flex CMMComp.l
     gcc -O2 -Wall -Werror $(mk_list CMM_WARN) -o "$CMMCOMP" \
         $(mk_list CMMCOMP_C) lex.yy.c y.tab.c \

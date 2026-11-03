@@ -121,11 +121,14 @@ $(BIN):
 	mkdir -p $(BIN)
 
 # --- cmmcomp (flex + bison) -------------------------------------------------
+# -y keeps the y.tab.c / y.tab.h names the scripts use; -Wno-yacc quiets the
+# two POSIX Yacc warnings about %code and %expect, Bison features the grammar
+# uses on purpose (the generated parser is the same with or without it)
 $(BIN)/cmmcomp$(EXE): $(addprefix $(CMM)/,$(CMMCOMP_C)) \
                       $(CMM)/CMMComp.l $(CMM)/CMMComp.y \
                       $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(COMMON)/xstr.c $(COMMON)/xstr.h $(CONSOLE) $(EXEDIR) \
                       $(wildcard Compilers/CMMComp/Headers/*.h) $(VERSION_H) | $(BIN)
-	cd $(CMM) && $(BISON) -y -d CMMComp.y && $(FLEX) CMMComp.l
+	cd $(CMM) && $(BISON) -y -d -Wno-yacc CMMComp.y && $(FLEX) CMMComp.l
 	$(CC) $(CFLAGS) $(CMM_WARN) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(addprefix $(COMMON)/,$(CMMCOMP_COMMON)) $(UTF8) $(LDLIBS)
 
 # --- asmcomp (flex: pass1.l is the first pass, ASMComp.l the second) --------
