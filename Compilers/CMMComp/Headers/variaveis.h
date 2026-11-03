@@ -19,7 +19,7 @@ typedef struct symbol {
     int  npar;        // if the ID is a function, how many parameters it has
     int *ptyp;        // and the type of each one (TY_INT, TY_FLOAT or TY_COMP), npar entries
     int  fnid;        // ID of the function the variable belongs to
-    int  isar;        // whether the variable is an array
+    int  isar;        // AR_NONE, AR_1D or AR_2D (types.h): a scalar, a vector, a matrix
     int  isco;        // whether the variable is a constant
     int  size;        // array size (when it is an array)
     int  siz2;        // size of the j dimension (when it is a matrix)

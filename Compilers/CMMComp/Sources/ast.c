@@ -409,7 +409,7 @@ static void key_cat(char **b, const char *fmt, ...)
 static int elem_key_tree(expr_node *e, char **b)
 {
     if (!e) return 0;
-    if (e->kind == EXPR_LITERAL || (e->kind == EXPR_VAR && v_table[e->id].isar == 0))
+    if (e->kind == EXPR_LITERAL || (e->kind == EXPR_VAR && v_table[e->id].isar == AR_NONE))
     {
         if (e->kind == EXPR_LITERAL && v_table[e->id].type != TY_INT) return 0;
         key_cat(b, "%s", v_table[e->id].name);
@@ -611,11 +611,11 @@ void shapecheck_expr(expr_node *n)
             char *name = rem_fname(v_table[id].name);
             if (v_table[id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, n->line, name);
             if (n->op == DIRAC_ROLE_MAT) {
-                if (v_table[id].isar != 2) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
+                if (v_table[id].isar != AR_2D) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
                 n->rows = v_table[id].size;
                 n->cols = v_table[id].siz2;
             } else {
-                if (v_table[id].isar != 1) fatal(MSG_ERR_NOT_A_VECTOR, n->line, name);
+                if (v_table[id].isar != AR_1D) fatal(MSG_ERR_NOT_A_VECTOR, n->line, name);
                 n->rows = (n->op == DIRAC_ROLE_KET) ? v_table[id].size : 1;
                 n->cols = (n->op == DIRAC_ROLE_KET) ? 1 : v_table[id].size;
             }
@@ -744,7 +744,7 @@ static expr_node *part_made[3*PART_MAX]; static int part_n;
 
 static int comp_part_leaf(const expr_node *n)
 {
-    if (n->kind == EXPR_VAR) return v_table[n->id].type == TY_COMP && v_table[n->id].isar == 0;
+    if (n->kind == EXPR_VAR) return v_table[n->id].type == TY_COMP && v_table[n->id].isar == AR_NONE;
     if (n->kind == EXPR_ARRAY_INDEX)
         return v_table[n->id].type == TY_COMP && is_expr_leaf(n->left) && (!n->right || is_expr_leaf(n->right));
     return 0;
@@ -1177,7 +1177,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             }
             // two constant indexes of a matrix: one constant offset, row by row
             if (n->right && n->left->kind == EXPR_LITERAL && n->right->kind == EXPR_LITERAL
-                && v_table[n->id].isar == 2 && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
+                && v_table[n->id].isar == AR_2D && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
             {
                 typecheck_expr(n->left);
                 typecheck_expr(n->right);
@@ -1189,7 +1189,7 @@ static expr ast_emit_expr_impl(expr_node *n)
             // column is one int expression, the column computed over the pushed
             // row, and the element is read as from a vector; arr_2d_index would
             // set the column aside in memory to multiply the row
-            if (n->right && !is_expr_leaf(n->right) && v_table[n->id].isar == 2)
+            if (n->right && !is_expr_leaf(n->right) && v_table[n->id].isar == AR_2D)
             {
                 typecheck_expr(n->left);
                 typecheck_expr(n->right);
@@ -1208,9 +1208,9 @@ static expr ast_emit_expr_impl(expr_node *n)
                         {add_instr("PSH\n"); e = expr_make(TY_INT, 0);}
                     else e = ast_emit_expr(a);
                     free(a); free(m); free(s);
-                    v_table[n->id].isar = 1;
+                    v_table[n->id].isar = AR_1D;
                     expr r = arr_1d2exp(n->id, e, 0);
-                    v_table[n->id].isar = 2;
+                    v_table[n->id].isar = AR_2D;
                     return elem_read(n, r);
                 }
             }
@@ -1671,10 +1671,10 @@ static void dirac_check_target(int dst, expr_node *r, int line)
     if (v_table[dst].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, line, name);
 
     int rows = 1, cols = 1, fits;
-    if (v_table[dst].isar == 1) {
+    if (v_table[dst].isar == AR_1D) {
         rows = v_table[dst].size;
         fits = (dim_fits(r->rows, rows) && r->cols == 1) || (r->rows == 1 && dim_fits(r->cols, rows));
-    } else if (v_table[dst].isar == 2) {
+    } else if (v_table[dst].isar == AR_2D) {
         rows = v_table[dst].size; cols = v_table[dst].siz2;
         fits = dim_fits(r->rows, rows) && dim_fits(r->cols, cols);
     } else fits = 0;
@@ -1917,7 +1917,7 @@ void stmt_emit(stmt_node *n)
             }
             // two constant indexes of a matrix: one constant offset, row by row
             if (n->idx2 && n->idx->kind == EXPR_LITERAL && n->idx2->kind == EXPR_LITERAL
-                && v_table[n->id].isar == 2 && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
+                && v_table[n->id].isar == AR_2D && v_table[n->id].type >= TY_INT && v_table[n->id].type <= TY_COMP)
             {
                 int at = v_table[n->id].type;
                 typecheck_expr(n->idx);
@@ -1938,7 +1938,7 @@ void stmt_emit(stmt_node *n)
                 typecheck_expr(n->idx2);
                 // a computed column: row * row length + column as one int
                 // expression, as in EXPR_ARRAY_INDEX
-                if (!is_expr_leaf(n->idx2) && v_table[n->id].isar == 2
+                if (!is_expr_leaf(n->idx2) && v_table[n->id].isar == AR_2D
                     && n->idx->type == TY_INT && n->idx2->type == TY_INT)
                 {
                     char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
@@ -1946,9 +1946,9 @@ void stmt_emit(stmt_node *n)
                     expr_node *m = expr_binop(OP_MUL, n->idx, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->idx2);
                     expr e = ast_emit_expr(a);
-                    v_table[n->id].isar = 1;
+                    v_table[n->id].isar = AR_1D;
                     arr_1d_index(n->id, e);
-                    v_table[n->id].isar = 2;
+                    v_table[n->id].isar = AR_2D;
                     char *key;
                     if (idx_key(a, &key)) acc_holds_index(key);
                     free(key);
@@ -2012,7 +2012,7 @@ void stmt_emit(stmt_node *n)
             typecheck_expr(n->rhs);
             if (n->id == n->id2 && !is_expr_leaf(n->rhs) && rhs_keeps(n->rhs)
                 && !expr_reads(n->rhs, n->id) && (n->rhs->type == TY_INT || n->rhs->type == TY_FLOAT)
-                && v_table[n->id].isar == 1 && (v_table[n->id].type == TY_INT || v_table[n->id].type == TY_FLOAT))
+                && v_table[n->id].isar == AR_1D && (v_table[n->id].type == TY_INT || v_table[n->id].type == TY_FLOAT))
             {
                 exec_shift(n->id, expr_make(n->rhs->type, 0), n->id2, 1);
                 exec_shift_in(n->id, ast_emit_expr(n->rhs));

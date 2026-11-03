@@ -28,7 +28,7 @@ void ass_set(int id, expr e)
     }
 
     // test whether it is an array missing its index
-    if (v_table[id].isar > 0)
+    if (v_table[id].isar > AR_NONE)
     {
         fatal(MSG_ERR_ARRAY_NEEDS_IDX, line_num+1, rem_fname(v_table[id].name));
     }
@@ -279,9 +279,9 @@ void ass_array_const(int id, int k, int dims, expr e)
     // the same checks as ass_array (a write does not mark the array used)
     if (v_table[id].type == TY_NONE)
         fatal(MSG_ERR_DECLARE_VAR_PLEASE, line_num+1, rem_fname(v_table[id].name));
-    if (v_table[id].isar == 0)
+    if (v_table[id].isar == AR_NONE)
         fatal(MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name));
-    if (v_table[id].isar == 2 && dims == 1)   // arr_1d_index refuses it on the general path
+    if (v_table[id].isar == AR_2D && dims == 1)   // arr_1d_index refuses it on the general path
         fatal(MSG_ERR_ARRAY_2D, line_num+1, rem_fname(v_table[id].name));
 
     if (v_table[id].type == TY_COMP)
@@ -326,7 +326,7 @@ void ass_array(int id, expr e, int fft)
     }
 
     // array vs non-array check
-    if (v_table[id].isar == 0)
+    if (v_table[id].isar == AR_NONE)
     {
         fatal(MSG_ERR_NOT_ARRAY, line_num+1, rem_fname(v_table[id].name));
     }

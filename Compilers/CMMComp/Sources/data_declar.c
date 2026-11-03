@@ -72,7 +72,7 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
     v_table[id_var].type       = type_tmp;
     v_table[id_var].used       = 0;
     v_table[id_var].fnid = find_var(fname);
-    v_table[id_var].isar       = 1;
+    v_table[id_var].isar       = AR_1D;
     v_table[id_var].size       = atoi(v_table[id_arg].name);
 
     int type = type_tmp;
@@ -85,7 +85,7 @@ static void declar_arr_1d_parse(int id_var, int id_arg, int id_fname)
     }
 
     // for comp, mark the imaginary half as a 1D array too
-    if (type == 3) v_table[get_img_id(id_var)].isar = 1;
+    if (type == 3) v_table[get_img_id(id_var)].isar = AR_1D;
 
     if (id_fname != -1)
         warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, rem_fname(v_table[id_var].name), line_num+1);
@@ -258,13 +258,13 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
     v_table[id_var].type       = type_tmp;
     v_table[id_var].used       = 0;
     v_table[id_var].fnid = find_var(fname);
-    v_table[id_var].isar       = 2;
+    v_table[id_var].isar       = AR_2D;
     v_table[id_var].size       = atoi(v_table[id_x].name);
     v_table[id_var].siz2 = atoi(v_table[id_y].name);
 
     int type = type_tmp;
 
-    if (type == 3) v_table[get_img_id(id_var)].isar = 2;  // comp imag also 2D
+    if (type == 3) v_table[get_img_id(id_var)].isar = AR_2D;  // comp imag also 2D
 
     if (id_fname != -1)
         warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, rem_fname(v_table[id_var].name), line_num+1);

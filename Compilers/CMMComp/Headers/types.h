@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// the type codes of cmmcomp --------------------------------------------------
+// the type and dimension codes of cmmcomp ------------------------------------
 // ----------------------------------------------------------------------------
 // One numbering for the symbol table (symbol.type), an expression's value
 // (expr.type) and a tree node (expr_node.type). The order matters: code
@@ -21,6 +21,14 @@ enum {
     TY_FINT   = 7,   // return type (funcoes.c)
     TY_FFLOAT = 8,
     TY_FCOMP  = 9
+};
+
+// what a symbol is by its dimensions (symbol.isar): a scalar, a vector or a
+// matrix; code compares with > AR_NONE for "an array"
+enum {
+    AR_NONE = 0,
+    AR_1D   = 1,
+    AR_2D   = 2
 };
 
 #endif // CMM_TYPES_H

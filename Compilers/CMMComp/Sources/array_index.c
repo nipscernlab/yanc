@@ -29,11 +29,11 @@ void arr_1d_index(int id, expr e)
     // ------------------------------------------------------------------------
 
     // must check that it really is an array
-    if (v_table[id].isar == 0)
+    if (v_table[id].isar == AR_NONE)
         fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
 
     // must check that it really is a 1D array
-    if (v_table[id].isar == 2)
+    if (v_table[id].isar == AR_2D)
         fatal(MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name));
 
     // ------------------------------------------------------------------------
@@ -115,11 +115,11 @@ void arr_2d_index(int id, expr e1, expr e2)
     // ------------------------------------------------------------------------
 
     // must check that it really is an array
-    if (v_table[id].isar == 0)
+    if (v_table[id].isar == AR_NONE)
         fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
 
     // must check that it is not a 1D array
-    if (v_table[id].isar == 1)
+    if (v_table[id].isar == AR_1D)
         fatal(MSG_ERR_ARRAY_1D, line_num+1, rem_fname(v_table[id].name));
 
     // ------------------------------------------------------------------------
@@ -710,9 +710,9 @@ expr arr_1d2exp_const(int id, int k, int dims)
     // the same checks and use mark as arr_1d2exp
     if (v_table[id].type == TY_NONE)
         fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
-    if (v_table[id].isar == 0)
+    if (v_table[id].isar == AR_NONE)
         fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
-    if (v_table[id].isar == 2 && dims == 1)
+    if (v_table[id].isar == AR_2D && dims == 1)
         fatal(MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name));
     v_table[id].used = 1;
 
@@ -734,11 +734,11 @@ expr arr_1d2exp(int id, expr e, int fft)
         fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
 
     // must check that it really is an array
-    if (v_table[id].isar == 0)
+    if (v_table[id].isar == AR_NONE)
         fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
 
     // must check that it really is a 1D array
-    if (v_table[id].isar == 2)
+    if (v_table[id].isar == AR_2D)
         fatal(MSG_ERR_ARRAY_2D  , line_num+1, rem_fname(v_table[id].name));
 
     // prepare the LOD commands ----------------------------------------------
@@ -922,11 +922,11 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name));
 
     // must check that it really is a 2D array
-    if (v_table[id].isar == 0)
+    if (v_table[id].isar == AR_NONE)
         fatal(MSG_ERR_NOT_ARRAY_HARSH, line_num+1, rem_fname(v_table[id].name));
 
     // must check that it is not a 1D array
-    if (v_table[id].isar == 1)
+    if (v_table[id].isar == AR_1D)
         fatal(MSG_ERR_ARRAY_1D , line_num+1, rem_fname(v_table[id].name));
 
     // prepare the LOD commands -----------------------------------------------

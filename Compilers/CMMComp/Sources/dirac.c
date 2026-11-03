@@ -711,7 +711,7 @@ static int tmp_block(int words, int line)
     if (tmp_id < 0) {
         add_var("__dirac_tmp");
         tmp_id = find_var("__dirac_tmp");
-        v_table[tmp_id].isar = 1;
+        v_table[tmp_id].isar = AR_1D;
         v_table[tmp_id].used = 1;
     }
     if (ctx_type == 2) tmp_type = 2;
@@ -1019,11 +1019,11 @@ void dirac_loops(int dst, expr_node *r, int line)
     if (r->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
 
     int rows, cols;
-    if (v_table[dst].isar == 2) {rows = v_table[dst].size; cols = v_table[dst].siz2;}
+    if (v_table[dst].isar == AR_2D) {rows = v_table[dst].size; cols = v_table[dst].siz2;}
     else if (r->rows == 1 && r->cols != 1) {rows = 1; cols = v_table[dst].size;}   // a bra into a vector
     else {rows = v_table[dst].size; cols = 1;}
 
-    dl_dst d = {0, dst, 0, 0, t, v_table[dst].isar == 2 ? cols : 0};
+    dl_dst d = {0, dst, 0, 0, t, v_table[dst].isar == AR_2D ? cols : 0};
     acc_ok = 0;
     emit_statement(r, &d, rows, cols, line);
     acc_ok = 0;
