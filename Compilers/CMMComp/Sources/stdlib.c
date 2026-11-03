@@ -1044,7 +1044,7 @@ expr exec_pow(expr ex, expr ey)
     // The literal is always non-negative, so the base is the only operand that
     // can be live; widen it to float and unroll the binary exponentiation.
     // ------------------------------------------------------------------------
-    if ((ey.type == TY_INT) && (ey.id != 0) && (v_table[ey.id].isco == 1))
+    if ((ey.type == TY_INT) && (ey.id != 0) && (v_table[ey.id].is_const == 1))
     {
         long n = atol(v_table[ey.id].name);
 

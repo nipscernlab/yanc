@@ -25,7 +25,7 @@
 // for any other operand
 static int int_flit_id(expr e)
 {
-    if (e.type != TY_INT || e.id == 0 || v_table[e.id].isco != 1) return 0;
+    if (e.type != TY_INT || e.id == 0 || v_table[e.id].is_const != 1) return 0;
     long n; char end[8];
     if (sscanf(v_table[e.id].name, "%ld%7s", &n, end) != 1 || labs(n) >= mant_pow2()) return 0;
     char t[32]; snprintf(t, sizeof t, "%ld.0", n);
@@ -66,7 +66,7 @@ expr oper_neg(expr e)
     // compiler holds int literals non-negative (exec_inum, exec_pow's exponent
     // loop). Not when a float part is zero either: "-0.0" encodes as +0, and
     // F_NEG_M 0.0 gives -0 (TODO.md item 4)
-    if (e.type == TY_FLOAT && e.id != 0 && v_table[e.id].isco)
+    if (e.type == TY_FLOAT && e.id != 0 && v_table[e.id].is_const)
     {
         char *nm = v_table[e.id].name;
         if (atof(nm) != 0.0)
@@ -647,7 +647,7 @@ expr oper_subt(expr e1, expr e2)
     // int minus an int literal: ADD of its negation, one word (the literal
     // stays non-negative in the table, as oper_neg wants; only the operand
     // text carries the sign). x - 1 is LOD x; ADD -1, not NEG_M 1; ADD x
-    if ((e1.type==TY_INT) && (e2.type==TY_INT) && (e2.id!=0) && v_table[e2.id].isco
+    if ((e1.type==TY_INT) && (e2.type==TY_INT) && (e2.id!=0) && v_table[e2.id].is_const
         && strspn(v_table[e2.id].name, "0123456789") == strlen(v_table[e2.id].name))
     {
         if (e1.id != 0) add_instr("%s %s\n", ld, v_table[e1.id].name);
@@ -1621,7 +1621,7 @@ expr oper_divi(expr e1, expr e2)
     // multiplication between #MULK and #ENDK, and asm_divk keeps the division
     // when anything else in the program needs the divider, else the product
     static int divk_inner = 0;
-    if (!divk_inner && e2.type == TY_FLOAT && e2.id != 0 && v_table[e2.id].isco == 1)
+    if (!divk_inner && e2.type == TY_FLOAT && e2.id != 0 && v_table[e2.id].is_const == 1)
     {
         double c = strtod(v_table[e2.id].name, NULL), r = 1.0 / c;
         if (c != 0.0 && isfinite(r) && fabs(r) < 1e37 && fabs(r) > 1e-37)
@@ -2517,7 +2517,7 @@ static cmp_side cmp_side_of(expr e)
     if (e.type == TY_COMP) {
         d.re = v_table[e.id].name;
         d.im = v_table[get_img_id(e.id)].name;
-    } else if (e.type == TY_INT && v_table[e.id].isco == 1) {  // an int literal: the float literal
+    } else if (e.type == TY_INT && v_table[e.id].is_const == 1) {  // an int literal: the float literal
         char *t = xasprintf("%s.0", v_table[e.id].name);
         d.re = cmp_flit(t);
         d.im = cmp_flit("0.0");
@@ -2632,7 +2632,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     // memory, so a value the acc already holds is not loaded again
     if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
     {
-        if (v_table[e2.id].isco == 1 && v_table[e1.id].isco != 1)
+        if (v_table[e2.id].is_const == 1 && v_table[e1.id].is_const != 1)
         {
             add_instr("%s %s\n", ld , v_table[e1.id].name);
             add_instr("%s %s\n", rev, v_table[e2.id].name);
@@ -2709,7 +2709,7 @@ expr oper_cmp(expr e1, expr e2, int type)
     // float var with float var: the variable is loaded, the literal stays in memory
     if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id!=0))
     {
-        if (v_table[e1.id].isco == 1 && v_table[e2.id].isco != 1)
+        if (v_table[e1.id].is_const == 1 && v_table[e2.id].is_const != 1)
         {
             add_instr("%s %s\n", ld , v_table[e2.id].name);
             add_instr("%s %s\n", fop, v_table[e1.id].name);

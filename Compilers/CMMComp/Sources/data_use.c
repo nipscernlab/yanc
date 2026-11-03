@@ -24,7 +24,7 @@
 expr num2exp(int id, int dtype)
 {
     v_table[id].used          = 1;
-    v_table[id].isco    = 1;
+    v_table[id].is_const    = 1;
     v_table[id].dims          = AR_NONE;
     v_table[id].type          = dtype;
 

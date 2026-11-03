@@ -20,7 +20,7 @@ typedef struct symbol {
     int *ptyp;        // and the type of each one (TY_INT, TY_FLOAT or TY_COMP), npar entries
     int  fnid;        // ID of the function the variable belongs to
     int  dims;        // AR_NONE, AR_1D or AR_2D (types.h): a scalar, a vector, a matrix
-    int  isco;        // whether the variable is a constant
+    int  is_const;        // whether the variable is a constant
     int  size;        // array size (when it is an array)
     int  siz2;        // size of the j dimension (when it is a matrix)
     int  wave;        // #WAVE: kept for the waveform even if never read

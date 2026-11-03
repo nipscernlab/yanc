@@ -319,7 +319,7 @@ int inum_min_id(void)
     char t[32]; snprintf(t, sizeof(t), "%llu", 1ULL << (word_bits() - 1));
     if (find_var(t) == -1) add_var(t);
     int id = find_var(t);
-    v_table[id].isco = 1;
+    v_table[id].is_const = 1;
     return id;
 }
 
@@ -370,7 +370,7 @@ int exec_inum(char *text)
 
     int id = find_var(t);
 
-    v_table[id].isco = 1;
+    v_table[id].is_const = 1;
 
     return id;
 }
@@ -446,7 +446,7 @@ int exec_fnum(char *text)
     int id = find_var(t);
     free(t);
 
-    v_table[id].isco = 1;
+    v_table[id].is_const = 1;
 
     return id;
 }
