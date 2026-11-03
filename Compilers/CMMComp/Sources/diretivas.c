@@ -20,7 +20,7 @@
 // global variable definitions ------------------------------------------------
 // ----------------------------------------------------------------------------
 
-char prname[128] ; // processor name
+const char *prname = ""; // processor name: the source file's (main sets it)
 // Defaults: the one set shared with asmcomp, cppcomp and the HDL (audit 1.7);
 // only reached when the program omits the directive.
 int  nubits  = 32; // word width (bits): an int literal in hex, octal or binary is a bit pattern of this word

@@ -44,8 +44,10 @@ defaults; see [Directives](directives.md).
 ## Comments, names and literals
 
 - Comments: `// to the end of the line` and `/* across lines */`.
-- Names: letters, digits and `_`, not starting with a digit, at most 50
-  characters (the toolchain's buffers; GitHub issue #66). Names starting
+- Names: letters, digits and `_`, not starting with a digit, at most 1000
+  characters. The limit leaves room for the names the compiler builds from
+  yours, about twice as long, in the Verilog and the waveform (GitHub issue
+  #66). Names starting
   with `__` belong to the compiler. A name may not be spelt like an
   instruction of the processor once the compiler has prefixed it (a local
   `x` of the function `f` becomes `f_x` in the assembly): the compiler says

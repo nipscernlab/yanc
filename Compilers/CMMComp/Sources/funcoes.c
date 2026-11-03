@@ -26,7 +26,7 @@
 
 int  fun_id;      // stores the id of the function being used
 int  mainok  = 0; // 1 once a function named main is declared (check_var refuses a program without it)
-char fname [512]; // name of the function currently being parsed
+const char *fname = ""; // name of the function currently being parsed (a v_table name, or "")
 
 // ----------------------------------------------------------------------------
 // local variables ------------------------------------------------------------
@@ -328,7 +328,7 @@ void declar_fun(int id1, int id2) // id1 -> type, id2 -> name index
     check_name(id2, 1);   // not a variable's or another function's name, not an instruction
     if (strcmp(v_table[id2].name, "main") == 0) mainok = 1; // the reset reaches main: it must exist
 
-    strcpy(fname, v_table[id2].name); // set the fname state to the function being analyzed
+    fname = v_table[id2].name; // set the fname state to the function being analyzed
     v_table[id2].type = id1+6       ; // type becomes function (void, int, float, comp) -> (6, 7, 8, 9)
     fun_parse    = id2; // set the fun_parse state to the function's name id
     ret_ok       = 0;   // set ret_ok to zero (function parsing starts)
@@ -589,7 +589,7 @@ void func_ret(int id) // id -> id of the current function
     stmt_append(stmt_func(id, body));
 
     // env variable fname becomes empty (left a function)
-    strcpy(fname, "");
+    fname = "";
 }
 
 // return without exp (return;)
@@ -720,14 +720,13 @@ static int rec_dfs(int f, char *state, int *path, int depth)
         if (state[g] == 1)                         // back to a function still open
         {
             int at = 0; while (path[at] != g) at++;
-            char chain[1024] = "";
+            char *chain = xstrdup("");             // f -> g -> ... -> f, of any length
             for (int i = at; i <= depth; i++)
             {
-                strncat(chain, v_table[path[i]].name, sizeof(chain) - strlen(chain) - 1);
-                strncat(chain, " -> ", sizeof(chain) - strlen(chain) - 1);
+                char *c = xasprintf("%s%s -> ", chain, v_table[path[i]].name);
+                free(chain); chain = c;
             }
-            strncat(chain, v_table[g].name, sizeof(chain) - strlen(chain) - 1);
-            fatal(MSG_ERR_RECURSION, ce_line[k], v_table[g].name, chain);
+            fatal(MSG_ERR_RECURSION, ce_line[k], v_table[g].name, xasprintf("%s%s", chain, v_table[g].name));
         }
         if (state[g] == 0 && rec_dfs(g, state, path, depth + 1)) return 1;
     }

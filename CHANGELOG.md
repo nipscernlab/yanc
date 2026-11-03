@@ -121,6 +121,24 @@ tags consumed by Aurora.
   pairs. `warn()` prints the warnings and notes on stdout, in place of 254
   `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
   and its stream.
+- **A C± name has up to 1000 characters** (step P5 of #93, issue #66;
+  Luciano, 2026-11-03), from 50. The limit is a rule of the language,
+  checked once in the lexer, not the size of a buffer: cmmcomp, the
+  library shared with asmcomp and cppcomp (`asm_share.c`) and gen_gtkw keep
+  every name, path and source line in a block of its exact size. The value
+  comes from the tools after YANC: the longest name built from a user name,
+  `me1_f_<function>_v_<name>_e_`, is about 2015 characters, and iverilog
+  takes identifiers up to 16382 (measured in #66). Before, a name past the
+  buffers was cut short without a message, and two cut names could become
+  one: with names of 1000, the accumulator peephole took `c_i` for `c` and
+  dropped a load, and gen_gtkw left every variable out of the view. Test
+  `cmm_names_1000`: names of 1000 in every kind of declaration and a Dirac
+  loop in a function of that name; its assembly, tables, messages and
+  GTKWave view were checked equal to those of the same program with names
+  of 8. Every C± test through cmmcomp and asmcomp built with
+  AddressSanitizer, UBSan and `_FORTIFY_SOURCE` reports nothing (Linux,
+  2026-11-03). The other goldens are byte-identical, and gen_gtkw writes
+  the same view as before for eight simulated tests.
 - **A variable written and never read leaves the program**, in both
   compilers: its `SET`s, its data word and its waveform signal (`asm_unread`,
   issue #69). cmmcomp's warning says so and names `#WAVE`. 46 C± tests lost
@@ -383,8 +401,7 @@ tags consumed by Aurora.
 - **C±: a long name crashed cmmcomp** (cmmcomp audit, 2026-10-30). The
   local's assembly name went into a buffer of 64 characters, and asmcomp
   stops at about 120. A name now has at most 50 characters, with a message
-  past that; GitHub issue #66 is to take any length. NegTest
-  `name_too_long`.
+  past that (1000 since step P5 of #93, above). NegTest `name_too_long`.
 - **C±: three defects of the Dirac notation, which gave wrong results
   without a message** (docs/design/dirac-expressions.md section 2). The
   outer product was transposed: `A # |a⟩⟨b|` gave `b aᵀ`, and

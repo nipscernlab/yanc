@@ -18,13 +18,14 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
 #include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // helpers for generating predefined macros -----------------------------------
 // ----------------------------------------------------------------------------
 
 // concatenates the contents of the read file into the write file
-static void fcat2end(char *n_read, char *n_write)
+static void fcat2end(const char *n_read, const char *n_write)
 {
     FILE *f_in  = fopen(n_read , "r");
     if (f_in  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, n_read);
@@ -63,6 +64,14 @@ void mac_add(char *name)
     else if (strcmp(name, "flog" ) == 0) flog  = 1; // natural logarithm
 }
 
+// appends the macro file `file` of the Macros folder to the .asm
+static void mac_cat(const char *file, char *fasm)
+{
+    char *tasm = xasprintf("%s/%s", dir_macro, file);
+    fcat2end(tasm, fasm);
+    free(tasm);
+}
+
 // copies the predefined macros at the end of the assembler file --------------
 
 void mac_copy(char *fasm)
@@ -73,47 +82,39 @@ void mac_copy(char *fasm)
 
     // copy what is needed at the end of the asm ------------------------------
 
-    char tasm[2048];                 // the path of each macro file, in turn
-
     if (fsqrt)
     {
         warn(MSG_INFO_SQRT_MACRO);
-        snprintf(tasm, sizeof(tasm), "%s/float_sqrt.asm", dir_macro);
-        fcat2end(tasm,fasm);
+        mac_cat("float_sqrt.asm", fasm);
     }
 
     if (fatan)
     {
         warn(MSG_INFO_ATAN_MACRO);
-        snprintf(tasm, sizeof(tasm), "%s/float_atan.asm", dir_macro);
-        fcat2end(tasm,fasm);
+        mac_cat("float_atan.asm", fasm);
     }
 
     if (fsin)
     {
         warn(MSG_INFO_SIN_MACRO);
-        snprintf(tasm, sizeof(tasm), "%s/float_sin.asm", dir_macro);
-        fcat2end(tasm,fasm);
+        mac_cat("float_sin.asm", fasm);
     }
 
     if (ftan)
     {
         warn(MSG_INFO_TAN_MACRO);
-        snprintf(tasm, sizeof(tasm), "%s/float_tan.asm", dir_macro);
-        fcat2end(tasm,fasm);
+        mac_cat("float_tan.asm", fasm);
     }
 
     if (fexp)
     {
         warn(MSG_INFO_EXP_MACRO);
-        snprintf(tasm, sizeof(tasm), "%s/float_exp.asm", dir_macro);
-        fcat2end(tasm,fasm);
+        mac_cat("float_exp.asm", fasm);
     }
 
     if (flog)
     {
         warn(MSG_INFO_LOG_MACRO);
-        snprintf(tasm, sizeof(tasm), "%s/float_log.asm", dir_macro);
-        fcat2end(tasm,fasm);
+        mac_cat("float_log.asm", fasm);
     }
 }

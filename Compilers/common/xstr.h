@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <stdarg.h>
 
 void *xmalloc  (size_t n);                           // malloc, or the tool ends
 void *xcalloc  (size_t n, size_t size);              // calloc (zeroed), or the tool ends
@@ -23,6 +24,7 @@ char *xasprintf(const char *fmt, ...)                // the formatted text
     __attribute__((format(printf, 1, 2)))
 #endif
     ;
+char *xvasprintf(const char *fmt, va_list ap);       // the same, from a va_list
 char *xgetline (FILE *f);                            // the next line, any length,
                                                      // without its \r\n; NULL at
                                                      // the end of the file; the

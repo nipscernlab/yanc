@@ -75,7 +75,7 @@ CPPCOMP_C := main.c messages.c types.c symtab.c ast.c codegen.c cpppp.c
 # (make -s print-CMMCOMP_C, ...): this is the only place they are written.
 CMMCOMP_COMMON := yanc_num.c xstr.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 ASMCOMP_COMMON := yanc_num.c xstr.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
-CPPCOMP_COMMON := asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
+CPPCOMP_COMMON := xstr.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 # cmmcomp's headers declare every function another file uses (each .c includes
 # its own .h, the rest is static): these keep it so under -Werror
 CMM_WARN := -Wmissing-prototypes -Wstrict-prototypes
@@ -138,7 +138,7 @@ $(BIN)/asmcomp$(EXE): $(addprefix $(ASM)/,$(ASMCOMP_C)) $(ASM)/ASMComp.l $(ASM)/
 # --- cppcomp (flex + bison; cpppp.c is its preprocessor) --------------------
 $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \
                       $(CPP)/CPPComp.l $(CPP)/CPPComp.y \
-                      $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(CONSOLE) $(EXEDIR) \
+                      $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(COMMON)/xstr.c $(COMMON)/xstr.h $(CONSOLE) $(EXEDIR) \
                       $(wildcard Compilers/CPPComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(CPP) && $(BISON) -y -d CPPComp.y && $(FLEX) CPPComp.l
 	$(CC) $(CFLAGS) -Wall -o $@ $(addprefix $(CPP)/,$(CPPCOMP_C)) \
@@ -148,8 +148,8 @@ $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \
 $(BIN)/comp2gtkw$(EXE): $(SCR)/comp2gtkw.c $(UTF8) | $(BIN)
 	$(CC) $(CFLAGS) -o $@ $(SCR)/comp2gtkw.c $(UTF8) $(LDLIBS)
 
-$(BIN)/gen_gtkw$(EXE): $(SCR)/gen_gtkw.c $(EXEDIR) | $(BIN)
-	$(CC) $(CFLAGS) -o $@ $(SCR)/gen_gtkw.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
+$(BIN)/gen_gtkw$(EXE): $(SCR)/gen_gtkw.c $(EXEDIR) $(COMMON)/xstr.c $(COMMON)/xstr.h | $(BIN)
+	$(CC) $(CFLAGS) -o $@ $(SCR)/gen_gtkw.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(COMMON)/xstr.c $(UTF8) $(LDLIBS)
 
 # --- yanc, the driver (runs the tools next to it) ---------------------------
 $(BIN)/yanc$(EXE): Compilers/Driver/yanc.c $(CONSOLE) $(EXEDIR) $(VERSION_H) | $(BIN)

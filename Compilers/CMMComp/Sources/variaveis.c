@@ -31,28 +31,24 @@ static int   v_cap   = 0;  // current capacity of the parallel arrays
 // isar, isco, size, siz2, npar, ptyp, fnid) live here. Grown on demand by var_grow.
 symbol *v_table = NULL;
 
-// The table moves to a bigger block and the old one is kept, not freed: code
-// that holds a name, `const char *X = v_table[exec_id("...")].name`, and then
-// adds a symbol (stdlib.c does it about 50 times) still reads the same name
-// after the move. A name is written once, by add_var, so the old copy never
-// goes stale; its other fields do, and nothing keeps a pointer to them. The
-// blocks kept add up to less than the final table. Names of any length
-// (issue #66) will make this unnecessary.
+// The table moves to a bigger block; each name stays where add_var put it, so
+// code that holds a name, `const char *X = v_table[exec_id("...")].name`, and
+// then adds a symbol (stdlib.c does it about 50 times) still reads the same
+// name after the move. Nothing keeps a pointer to a row.
 static void var_grow(int needed)
 {
     if (needed <= v_cap) return;
     int new_cap = v_cap ? v_cap : 256;
     while (new_cap < needed) new_cap *= 2;
 
-    symbol *t = xcalloc((size_t)new_cap, sizeof(*t));
-    if (v_table) memcpy(t, v_table, (size_t)v_cap * sizeof(*t));
-    v_table = t;
+    v_table = xrealloc(v_table, (size_t)new_cap * sizeof(*v_table));
+    memset(v_table + v_cap, 0, (size_t)(new_cap - v_cap) * sizeof(*v_table));
 
     v_cap = new_cap;
 }
 
 // searches the table for the variable (-1 if not found)
-int find_var(char *val)
+int find_var(const char *val)
 {
 	int i, ind = -1;
 
@@ -68,10 +64,10 @@ int find_var(char *val)
 }
 
 // adds a variable to the table
-void add_var(char *var)
+void add_var(const char *var)
 {
     var_grow(v_count + 1);
-    strcpy(v_table[v_count].name, var);
+    v_table[v_count].name = xstrdup(var);
     v_count++;
 }
 
@@ -120,7 +116,7 @@ void dire_wave(int id)
 }
 
 // strips the function name from the variable
-char* rem_fname(char *var, char *fname)
+char* rem_fname(char *var, const char *fname)
 {
     // During the deferred AST walk the global fname is "" (reset at each
     // function's end), so callers that pass it cannot strip the prefix. The
@@ -129,7 +125,7 @@ char* rem_fname(char *var, char *fname)
     if (emit_fname[0] != '\0') fname = emit_fname;
     if (strcmp(fname,"") == 0) return var;
     int    ind = 0;
-    while (var[ind] == fname[ind]) ind++;
+    while (var[ind] == fname[ind] && fname[ind]) ind++;
     // if ind != strlen(fname) it means the variable does not
     // contain the full function name at the beginning,
     // so it is better not to remove anything (it must be global)
@@ -145,12 +141,12 @@ char* rem_fname(char *var, char *fname)
 // instruction) and that nobody else owns it (both would silently share one
 // word). Compiler-made names start with `__`, which the lexer refuses.
 
-// who owns row id, in words, for the messages
-static void name_owner(int id, char *out, size_t n)
+// who owns row id, in words, for the messages (the block is the caller's)
+static char *name_owner(int id)
 {
     int  t = v_table[id].type, f = v_table[id].fnid;
-    char nm[512]; strcpy(nm, v_table[id].name);
-    if (t >= 6 && t <= 9) {snprintf(out, n, MSG_NAME_FUNC, nm); return;}
+    if (t >= 6 && t <= 9) return xasprintf(MSG_NAME_FUNC, v_table[id].name);
+    char *nm = xstrdup(v_table[id].name);
     if (t == 4) nm[strlen(nm) - 2] = '\0';                    // drop the "_i"
     char *raw = nm;
     if (f >= 0)
@@ -158,11 +154,12 @@ static void name_owner(int id, char *out, size_t n)
         size_t L = strlen(v_table[f].name);
         if (strncmp(nm, v_table[f].name, L) == 0 && nm[L] == '_') raw = nm + L + 1;
     }
-    char base[1024];
-    if (f < 0) snprintf(base, sizeof(base), MSG_NAME_GLOBAL, raw);
-    else       snprintf(base, sizeof(base), MSG_NAME_LOCAL , raw, v_table[f].name);
-    if (t == 4) snprintf(out, n, MSG_NAME_IMAG, base);
-    else        snprintf(out, n, "%s", base);
+    char *base = f < 0 ? xasprintf(MSG_NAME_GLOBAL, raw) : xasprintf(MSG_NAME_LOCAL, raw, v_table[f].name);
+    free(nm);
+    if (t != 4) return base;
+    char *out = xasprintf(MSG_NAME_IMAG, base);
+    free(base);
+    return out;
 }
 
 static void name_taken(const char *me, const char *as, const char *who)
@@ -175,7 +172,7 @@ static void name_taken(const char *me, const char *as, const char *who)
 void check_name(int id, int is_fun)
 {
     char *as = v_table[id].name;
-    char  me[1200], who[1200];
+    char *me;                             // the name being declared, in words (it ends in fatal or is freed)
 
     if (is_fun)
     {
@@ -183,19 +180,19 @@ void check_name(int id, int is_fun)
                           strcmp(as, "global" ) == 0 ? MSG_NAME_GLOBAL_LOG :
                           strcmp(as, "num_ins") == 0 ? MSG_NAME_NUM_INS    : NULL;
         if (why) fatal(MSG_ERR_NAME_RESERVED, line_num+1, as, why);
-        snprintf(me, sizeof(me), MSG_NAME_FUNC, as);
+        me = xasprintf(MSG_NAME_FUNC, as);
     }
-    else if (strcmp(fname, "") == 0) snprintf(me, sizeof(me), MSG_NAME_GLOBAL, as);
+    else if (strcmp(fname, "") == 0) me = xasprintf(MSG_NAME_GLOBAL, as);
     else
     {
         size_t L = strlen(fname);
         char *raw = (strncmp(as, fname, L) == 0 && as[L] == '_') ? as + L + 1 : as;
-        snprintf(me, sizeof(me), MSG_NAME_LOCAL, raw, fname);
+        me = xasprintf(MSG_NAME_LOCAL, raw, fname);
     }
 
     if (asm_is_mnemonic(as))
     {
-        char q[600]; snprintf(q, sizeof(q), "'%s'", as);
+        char *q = xasprintf("'%s'", as);
         fatal(strstr(me, q) ? MSG_ERR_NAME_IS_MNEMONIC : MSG_ERR_NAME_MNEMONIC, line_num+1, me, as);
     }
 
@@ -206,37 +203,30 @@ void check_name(int id, int is_fun)
         {   // the same name declared twice in the same place
             fatal(MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as, fname));
         }
-        name_owner(id, who, sizeof(who));
-        name_taken(me, as, who);
+        name_taken(me, as, name_owner(id));
     }
 
-    if (is_fun) return;
+    if (is_fun) {free(me); return;}
 
     // a comp `z` also owns `z_i`, its imaginary part, and the other way round
-    char nm[1024];
     if (type_tmp == 3)
     {
-        snprintf(nm, sizeof(nm), "%s_i", as);
+        char *nm = xasprintf("%s_i", as);
         int idi = find_var(nm);
         if (idi >= 0 && v_table[idi].type != 0)
-        {
-            char im[1300]; snprintf(im, sizeof(im), MSG_NAME_IMAG, me);
-            name_owner(idi, who, sizeof(who));
-            name_taken(im, nm, who);
-        }
+            name_taken(xasprintf(MSG_NAME_IMAG, me), nm, name_owner(idi));
+        free(nm);
     }
     size_t L = strlen(as);
     if (L > 2 && strcmp(as + L - 2, "_i") == 0)
     {
-        snprintf(nm, sizeof(nm), "%.*s", (int)(L - 2), as);
+        char *nm = xasprintf("%.*s", (int)(L - 2), as);
         int idr = find_var(nm);
         if (idr >= 0 && v_table[idr].type == 3)
-        {
-            char base[1024]; name_owner(idr, base, sizeof(base));
-            snprintf(who, sizeof(who), MSG_NAME_IMAG, base);
-            name_taken(me, as, who);
-        }
+            name_taken(me, as, xasprintf(MSG_NAME_IMAG, name_owner(idr)));
+        free(nm);
     }
+    free(me);
 }
 
 // used when the lexer finds an ID
@@ -248,20 +238,15 @@ int exec_id(char *text)
     if ((int)strlen(text) > CMM_NAME_MAX)
         fatal(MSG_ERR_NAME_TOO_LONG, line_num+1, CMM_NAME_MAX);
 
-    char var_name[sizeof fname + CMM_NAME_MAX + 2];
+    int id = find_var(text);                                      // first check whether there is a global variable
+    if (id != -1) return id;
 
-    if (find_var(text) == -1)                                     // first check whether there is a global variable
-    {
-        if (strcmp(fname, "") != 0)                               // otherwise, prepend the current function name
-             snprintf(var_name, sizeof var_name, "%s_%s", fname, text);
-        else snprintf(var_name, sizeof var_name, "%s", text);
-        if (find_var(var_name)    == -1) add_var(var_name);       // create the local variable if it does not exist yet
-    }
-    else
-    {
-        strcpy(var_name, text);
-    }
-    return find_var(var_name);
+    char *var_name = strcmp(fname, "") != 0                       // otherwise, prepend the current function name
+                   ? xasprintf("%s_%s", fname, text) : xstrdup(text);
+    if (find_var(var_name) == -1) add_var(var_name);              // create the local variable if it does not exist yet
+    id = find_var(var_name);
+    free(var_name);
+    return id;
 }
 
 // the same lookup as exec_id (a global first, then a local of the current
@@ -269,13 +254,13 @@ int exec_id(char *text)
 // after a bar is an array (DBAR in CMMComp.l)
 int find_id(const char *text)
 {
-    char var_name[sizeof fname + CMM_NAME_MAX + 2];
-
-    int k = find_var((char *)text);
+    int k = find_var(text);
     if (k != -1 || strcmp(fname, "") == 0) return k;
 
-    snprintf(var_name, sizeof var_name, "%s_%s", fname, text);
-    return find_var(var_name);
+    char *var_name = xasprintf("%s_%s", fname, text);
+    k = find_var(var_name);
+    free(var_name);
+    return k;
 }
 
 // the value of an int literal in any form C writes it: 42, 052 (octal),
@@ -392,46 +377,45 @@ int exec_inum(char *text)
 // writes a float literal the one way the .asm reads it: C's forms (.5, 5.,
 // 007.5, 1e-8, 2.5E+3f) become [-]digits.digits[e[-]digits], with no suffix,
 // so asmcomp's lexer takes it and two spellings of one value are one constant
-void fnum_text(const char *in, char *out, size_t n)
+char *fnum_text(const char *in)
 {
-    char buf[sizeof(v_table[0].name)], *o = buf, *end = buf + sizeof(buf) - 4;
+    char *buf = xmalloc(strlen(in) + 4), *o = buf;      // at most a 0 before the point, ".0" and the end
     const char *p = in;
 
     if (*p == '+' || *p == '-') { if (*p == '-') *o++ = '-'; p++; }
     while (*p == '0' && isdigit((unsigned char)p[1])) p++;              // leading zeros
     if (*p == '.') *o++ = '0';                                          // .5 -> 0.5
-    while (isdigit((unsigned char)*p) && o < end) *o++ = *p++;
+    while (isdigit((unsigned char)*p)) *o++ = *p++;
     *o++ = '.';
     if (*p == '.') p++;
     if (!isdigit((unsigned char)*p)) *o++ = '0';                        // 5. -> 5.0
-    while (isdigit((unsigned char)*p) && o < end) *o++ = *p++;
+    while (isdigit((unsigned char)*p)) *o++ = *p++;
     if (*p == 'e' || *p == 'E')
     {
         *o++ = 'e'; p++;
         if (*p == '+') p++; else if (*p == '-') *o++ = *p++;
-        while (isdigit((unsigned char)*p) && o < end) *o++ = *p++;
+        while (isdigit((unsigned char)*p)) *o++ = *p++;
     }
     *o = '\0';                                                          // the f/F/l/L suffix stays out
-    snprintf(out, n, "%s", buf);
+    return buf;
 }
 
 // splits a comp literal ("-1.5-2i", "1e-8+2e-8i", no spaces) at the sign
 // between its parts: a sign right after an e belongs to the exponent. re and
 // im come out as the source wrote them (im keeps its sign, loses the i)
-void cnum_split(const char *txt, char *re, char *im)
+void cnum_split(const char *txt, char **re, char **im)
 {
     int len = (int)strlen(txt), k = len - 2;
     while (k > 0 && !((txt[k] == '+' || txt[k] == '-') && txt[k-1] != 'e' && txt[k-1] != 'E')) k--;
-    memcpy(re, txt, k); re[k] = '\0';
+    *re = xasprintf("%.*s", k, txt);
     int b = (txt[k] == '+') ? k + 1 : k;
-    memcpy(im, txt + b, len - 1 - b); im[len - 1 - b] = '\0';
+    *im = xasprintf("%.*s", len - 1 - b, txt + b);
 }
 
 // used when the lexer finds a float constant
 int exec_fnum(char *text)
 {
-    char t[sizeof(v_table[0].name)];
-    fnum_text(text, t, sizeof(t));
+    char *t = fnum_text(text);
 
     // encode it as asmcomp will (common/yanc_num.c, exact): range and residual
 
@@ -459,6 +443,7 @@ int exec_fnum(char *text)
     if (find_var(t) == -1) add_var(t);
 
     int id = find_var(t);
+    free(t);
 
     v_table[id].isco = 1;
 
@@ -469,41 +454,41 @@ int exec_fnum(char *text)
 // real part as the source wrote it, with its sign ("3", "-1.5")
 int cnum_join(const char *re, int sub, int imid)
 {
-    char r0[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)];
-    char sim[sizeof(v_table[0].name) + 1], t[2*sizeof(v_table[0].name) + 4];
-    cnum_split(v_table[imid].name, r0, im);
-    if (!sub)            snprintf(sim, sizeof sim, "%s", im);
-    else if (im[0]=='-') snprintf(sim, sizeof sim, "%s", im + 1);
-    else                 snprintf(sim, sizeof sim, "-%s", im);
-    snprintf(t, sizeof t, "%s%s%si", re, sim[0] == '-' ? "" : "+", sim);
-    return exec_cnum(t);
+    char *r0, *im;
+    cnum_split(v_table[imid].name, &r0, &im);
+    const char *sim = !sub ? im : im[0] == '-' ? im + 1 : NULL;     // NULL: "-" and im
+    char *t = sim ? xasprintf("%s%s%si", re, sim[0] == '-' ? "" : "+", sim)
+                  : xasprintf("%s-%si", re, im);
+    int id = exec_cnum(t);
+    free(t); free(r0); free(im);
+    return id;
 }
 
 // the text of literal id with a minus in front, for a brace list's -1 + 2i
-const char *neg_text(int id)
+char *neg_text(int id)
 {
-    static char b[sizeof(v_table[0].name) + 1];
-    snprintf(b, sizeof b, "-%s", v_table[id].name);
-    return b;
+    return xasprintf("-%s", v_table[id].name);
 }
 
 // the imaginary part of comp literal id, negated when neg, as a float literal
 int cnum_imag_fnum(int id, int neg)
 {
-    char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)], t[sizeof(v_table[0].name) + 1];
-    cnum_split(v_table[id].name, re, im);
-    if (!neg)            snprintf(t, sizeof t, "%s", im);
-    else if (im[0]=='-') snprintf(t, sizeof t, "%s", im + 1);
-    else                 snprintf(t, sizeof t, "-%s", im);
-    return exec_fnum(t);
+    char *re, *im;
+    cnum_split(v_table[id].name, &re, &im);
+    char *t = !neg ? xstrdup(im) : im[0] == '-' ? xstrdup(im + 1) : xasprintf("-%s", im);
+    int r = exec_fnum(t);
+    free(t); free(re); free(im);
+    return r;
 }
 
 // is the comp literal id an imaginary one (its real part zero)?
 int cnum_is_imag(int id)
 {
-    char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)];
-    cnum_split(v_table[id].name, re, im);
-    return strtod(re, NULL) == 0.0;
+    char *re, *im;
+    cnum_split(v_table[id].name, &re, &im);
+    int r = strtod(re, NULL) == 0.0;
+    free(re); free(im);
+    return r;
 }
 
 // used when the lexer finds a comp constant
@@ -511,29 +496,23 @@ int exec_cnum(char *text)
 {
     // strip whitespace -------------------------------------------------------
 
-    int i = 0, j = 0;
-    char temp[strlen(text) + 1];
-    strcpy(temp, text);
-    while (temp[i] != '\0')
-    {
-        while (temp[i] == ' ' || temp[i] == '\t') i++;
-        text[j] = temp[i];
-        if (temp[i] == '\0') break;
-        i++;
-        j++;
-    }
+    int j = 0;                                    // in place: j never passes i
+    for (int i = 0; text[i] != '\0'; i++)
+        if (text[i] != ' ' && text[i] != '\t') text[j++] = text[i];
     text[j] = '\0';
 
     // each part as a float literal is written (fnum_text) --------------------
 
-    char re[sizeof(v_table[0].name)], im[sizeof(v_table[0].name)], t[2*sizeof(v_table[0].name) + 4];
-    cnum_split(text, re, im);
-    fnum_text(re, re, sizeof(re));
-    fnum_text(im, im, sizeof(im));
-    snprintf(t, sizeof(t), "%s%s%si", re, im[0] == '-' ? "" : "+", im);
+    char *re0, *im0;
+    cnum_split(text, &re0, &im0);
+    char *re = fnum_text(re0), *im = fnum_text(im0);
+    char *t  = xasprintf("%s%s%si", re, im[0] == '-' ? "" : "+", im);
+    free(re0); free(im0); free(re); free(im);
 
     // add to the table -------------------------------------------------------
 
     if (find_var(t) == -1) add_var(t);
-    return find_var(t);
+    int id = find_var(t);
+    free(t);
+    return id;
 }

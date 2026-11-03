@@ -9,7 +9,7 @@
 
 // state variables ------------------------------------------------------------
 
-extern char fname[512];             // name of the function currently being parsed
+extern const char *fname;               // name of the function currently being parsed
 extern int  mainok;                 // 1 once a function named main is declared
 extern int  fun_id;                 // stores the id of the function being used
 extern int  ret_ok;                 // set by STMT_RETURN walker when a `return` statement fires

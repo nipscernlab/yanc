@@ -8,6 +8,7 @@
 #include <limits.h>
 #include "asm_share.h"
 #include "yanc_lang.h"
+#include "xstr.h"
 
 // ---- what each mnemonic does to its operand and to the flow -----------------
 // A copy of seven columns of isa.tsv (mnemonic, operand class, effect on the
@@ -181,9 +182,25 @@ typedef struct {
     int  op;          // row of isa[]
     int  name;        // data name it touches (-1: none, or a literal)
     int  line;        // line of the file it sits on
-    char target[128]; // label, for jmp / jz / call
+    char *target;     // label, for jmp / jz / call (NULL: none; the block is ins's)
     int  nsucc, succ[2];
 } as_ins;
+
+// a token of a line, as a string: the block is reused by the next call, so a
+// caller copies what it keeps (st_add does). A name has any length
+static char  *tok_b   = NULL;
+static size_t tok_cap = 0;
+static char *tok_of(const char *s, int len)
+{
+    if ((size_t)len + 1 > tok_cap)
+    {
+        tok_cap = 2 * ((size_t)len + 1);
+        tok_b   = xrealloc(tok_b, tok_cap);
+    }
+    memcpy(tok_b, s, (size_t)len);
+    tok_b[len] = '\0';
+    return tok_b;
+}
 
 static int is_literal(const char *s)
 {
@@ -263,12 +280,12 @@ int asm_share(const char *asm_path)
         }
 
         int t = 0;
-        char tok[256];
-        #define TOK(k) (snprintf(tok, sizeof(tok), "%.*s", tl[k], text + ts[k]), tok)
+        char *tok;
+        #define TOK(k) (tok = tok_of(text + ts[k], tl[k]))
 
         for (; t < nt && text[ts[t]] == '@'; t++)          // labels point at the next instruction
         {
-            snprintf(tok, sizeof(tok), "%.*s", tl[t] - 1, text + ts[t] + 1);
+            tok = tok_of(text + ts[t] + 1, tl[t] - 1);
             int li = st_add(&labels, tok);
             if (li >= lab_cap) { lab_cap = 2 * li + 64; lab_at = realloc(lab_at, lab_cap * sizeof(int)); }
             lab_at[li] = n;
@@ -306,7 +323,7 @@ int asm_share(const char *asm_path)
         if (strcmp(cls, "code") == 0)
         {
             if (t + 1 >= nt) { ok = 0; break; }
-            snprintf(x->target, sizeof(x->target), "%.*s", tl[t + 1], text + ts[t + 1]);
+            x->target = xasprintf("%.*s", tl[t + 1], text + ts[t + 1]);
         }
         else if (strcmp(cls, "data") == 0 || strcmp(cls, "offset") == 0 || strcmp(cls, "lea") == 0)
         {
@@ -344,7 +361,7 @@ int asm_share(const char *asm_path)
         const char *fl = isa[ins[i].op].flow;
         as_ins *x = &ins[i];
         int tgt = -1;
-        if (x->target[0])
+        if (x->target)
         {
             int li = st_find(&labels, x->target);
             if (li < 0) { ok = 0; break; }
@@ -486,6 +503,7 @@ int asm_share(const char *asm_path)
     free(adj); free(tmp); free(lout); free(lin); free(rets);
 
 done:
+    for (int i = 0; i < n; i++) free(ins[i].target);
     free(ins); free(lab_at); free(pinned);
     st_free(&names); st_free(&labels); st_free(&lines);
     return saved;
@@ -586,15 +604,15 @@ int asm_reach(const char *asm_path, const char *pc_path)
             tl[nt] = p - ts[nt]; nt++;
         }
 
-        char tok[256];
-        #define TOK(k) (snprintf(tok, sizeof(tok), "%.*s", tl[k], text + ts[k]), tok)
+        char *tok;
+        #define TOK(k) (tok = tok_of(text + ts[k], tl[k]))
 
         rl_line *l = &L[ln];
         l->kind = RL_OTHER; l->lab0 = lof_n; l->name = -1;
         int t = 0;
         for (; t < nt && text[ts[t]] == '@'; t++)          // labels point at the next instruction
         {
-            snprintf(tok, sizeof(tok), "%.*s", tl[t] - 1, text + ts[t] + 1);
+            tok = tok_of(text + ts[t] + 1, tl[t] - 1);
             int li = lab_add(&labels, &lab_at, &lab_cap, tok);
             lab_at[li] = n;
             lab_of = grow(lab_of, &lof_cap, lof_n, sizeof(int));
@@ -1136,16 +1154,16 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
             while (p < end && !isspace((unsigned char)text[p])) p++;
             tl[nt] = p - ts[nt]; nt++;
         }
-        char tok[256];
+        char *tok;
         int t = 0;
         for (; t < nt && text[ts[t]] == '@'; t++)
         {
-            snprintf(tok, sizeof(tok), "%.*s", tl[t] - 1, text + ts[t] + 1);
+            tok = tok_of(text + ts[t] + 1, tl[t] - 1);
             int li = lab_add(&labels, &lab_at, &lab_cap, tok);   // may move lab_at
             lab_at[li] = n;
         }
         if (t >= nt) continue;
-        snprintf(tok, sizeof(tok), "%.*s", tl[t], text + ts[t]);
+        tok = tok_of(text + ts[t], tl[t]);
         if (tok[0] == '#') { if (strcmp(tok, "#ITRAD") == 0) itr = n; continue; }
 
         op  = grow(op,  &op_cap,  n, sizeof(int));
@@ -1154,7 +1172,7 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
         if (op[n] < 0) { why = "an instruction it does not know"; break; }
         if (strcmp(isa[op[n]].cls, "code") == 0 && t + 1 < nt)
         {
-            snprintf(tok, sizeof(tok), "%.*s", tl[t + 1], text + ts[t + 1]);
+            tok = tok_of(text + ts[t + 1], tl[t + 1]);
             tgl[n] = lab_add(&labels, &lab_at, &lab_cap, tok);
         }
         n++;
@@ -1254,7 +1272,7 @@ int asm_divk(const char *asm_path, const char *pc_path)
     memset(keep_pc, 1, pc.n + 1);
     f = fopen(asm_path, "w");
     if (!f) { free(keep_pc); removed = -1; goto done; }
-    char carry[1024] = "";
+    char *carry = xstrdup("");                         // the labels of dropped lines, for the next kept one
     for (int ln = 0, i = 0; ln < lines.n; ln++)
     {
         const char *text = lines.s[ln];
@@ -1268,8 +1286,8 @@ int asm_divk(const char *asm_path, const char *pc_path)
                 if (*p != '@') break;
                 const char *q = p;
                 while (*q && *q != ' ' && *q != '\t' && *q != '\n' && *q != '\r') q++;
-                if (strlen(carry) + (size_t)(q - p) + 2 < sizeof(carry))
-                    { strncat(carry, p, (size_t)(q - p)); strcat(carry, " "); }
+                char *c = xasprintf("%s%.*s ", carry, (int)(q - p), p);
+                free(carry); carry = c;
                 p = q;
             }
             if (mn[0]) { if (i < pc.n) { keep_pc[i] = 0; removed++; } i++; }
@@ -1279,6 +1297,7 @@ int asm_divk(const char *asm_path, const char *pc_path)
         fputs(text, f);
         if (mn[0]) i++;
     }
+    free(carry);
     fclose(f);
 
     if (pc.n > 0 && removed > 0)
@@ -1337,7 +1356,7 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
             tl[nt] = p - ts[nt]; nt++;
         }
         int t = 0;
-        char tok[256];
+        char *tok;
         while (t < nt && text[ts[t]] == '@') t++;
         if (t >= nt) continue;
 
@@ -1346,7 +1365,7 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
         {
             for (int k = t + 1; k < nt; k++)
             {
-                snprintf(tok, sizeof(tok), "%.*s", tl[k], text + ts[k]);
+                tok = tok_of(text + ts[k], tl[k]);
                 if (is_literal(tok)) continue;
                 int ni = st_add(&names, tok);
                 if (ni >= rcap) { int o = rcap; rd = grow(rd, &rcap, ni, 1); memset(rd + o, 0, rcap - o); }
@@ -1356,7 +1375,7 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
             continue;
         }
 
-        snprintf(tok, sizeof(tok), "%.*s", tl[t], text + ts[t]);
+        tok = tok_of(text + ts[t], tl[t]);
         int op = isa_find(tok);
         if (op < 0) { ok = 0; break; }                     // not ours to guess
         ins_of[ln] = n++;
@@ -1365,7 +1384,7 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
         const char *cls = isa[op].cls;
         if ((strcmp(cls, "data") == 0 || strcmp(cls, "offset") == 0 || strcmp(cls, "lea") == 0) && t + 1 < nt)
         {
-            snprintf(tok, sizeof(tok), "%.*s", tl[t + 1], text + ts[t + 1]);
+            tok = tok_of(text + ts[t + 1], tl[t + 1]);
             if (is_literal(tok)) continue;
             int ni = st_add(&names, tok);
             if (ni >= rcap) { int o = rcap; rd = grow(rd, &rcap, ni, 1); memset(rd + o, 0, rcap - o); }
@@ -1385,9 +1404,9 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
     for (int i = 0; i < names.n; i++) out[i] = wr[i] && !rd[i];
     for (int i = 0; i < names.n; i++)
     {
-        char half[300];
-        snprintf(half, sizeof(half), "%s_i", names.s[i]);
+        char *half = xasprintf("%s_i", names.s[i]);
         int j = st_find(&names, half);
+        free(half);
         if (j >= 0 && out[i] != out[j]) out[i] = out[j] = 2;   // 2: one half is read
     }
     for (int i = 0; i < names.n; i++) if (out[i] == 2) out[i] = 0;
@@ -1419,7 +1438,7 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
     f = fopen(asm_path, "w");
     if (!f) { removed = -1; goto done; }
     char *dead = calloc(n + 1, 1);
-    char  lab[4096] = "";
+    char *lab = xstrdup("");                           // the labels of dropped lines, for the next instruction
     for (int ln = 0; ln < lines.n; ln++)
     {
         char *text = lines.s[ln];
@@ -1427,8 +1446,11 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
         {
             if (is_set[ln] == 1)
             {
-                size_t k = strlen(lab);
-                if (memchr(text, '@', mn_at[ln])) snprintf(lab + k, sizeof(lab) - k, "%.*s", mn_at[ln], text);
+                if (memchr(text, '@', mn_at[ln]))
+                {
+                    char *l = xasprintf("%s%.*s", lab, mn_at[ln], text);
+                    free(lab); lab = l;
+                }
                 dead[ins_of[ln]] = 1;
                 continue;
             }
@@ -1439,6 +1461,7 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
         if (ins_of[ln] >= 0 && lab[0]) { fputs(lab, f); lab[0] = 0; }
         fputs(text, f);
     }
+    free(lab);
     fclose(f);
 
     if (pc.n > 0)
@@ -1458,8 +1481,9 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
         size_t k = strlen(names.s[i]);
         if (k > 2 && strcmp(names.s[i] + k - 2, "_i") == 0)        // the imaginary half of a comp that goes
         {
-            char base[300]; snprintf(base, sizeof(base), "%.*s", (int)(k - 2), names.s[i]);
+            char *base = xasprintf("%.*s", (int)(k - 2), names.s[i]);
             int j = st_find(&names, base);
+            free(base);
             if (j >= 0 && out[j]) continue;
         }
         vars++;
@@ -1548,10 +1572,10 @@ int asm_callarg(const char *asm_path, const char *pc_path)
         }
         if (nt == 0) continue;
         int  t = 0;
-        char tok[256];
+        char *tok;
         for (; t < nt && text[ts[t]] == '@'; t++)
         {
-            snprintf(tok, sizeof(tok), "%.*s", tl[t] - 1, text + ts[t] + 1);
+            tok = tok_of(text + ts[t] + 1, tl[t] - 1);
             int li = lab_add(&labels, &at, &acap, tok);
             at[li] = ln;
         }
@@ -1562,13 +1586,13 @@ int asm_callarg(const char *asm_path, const char *pc_path)
             continue;
         }
 
-        snprintf(tok, sizeof(tok), "%.*s", tl[t], text + ts[t]);
+        tok = tok_of(text + ts[t], tl[t]);
         int op = isa_find(tok);
         if (op < 0) { ok = 0; break; }
         op_of[ln] = op; mn_at[ln] = ts[t]; ins_of[ln] = n++;
         if (strcmp(isa[op].cls, "code") == 0 && t + 1 < nt)
         {
-            snprintf(tok, sizeof(tok), "%.*s", tl[t + 1], text + ts[t + 1]);
+            tok = tok_of(text + ts[t + 1], tl[t + 1]);
             int li = lab_add(&labels, &at, &acap, tok);
             tgt_of[ln] = li;
             if (strcmp(isa[op].flow, "call") != 0)
@@ -1644,20 +1668,24 @@ int asm_callarg(const char *asm_path, const char *pc_path)
     f = fopen(asm_path, "w");
     if (!f) { removed = -1; goto done; }
     char *gone = calloc(n + 1, 1);
-    char  lab[4096] = "";
+    char *lab = xstrdup("");                           // the labels of dropped lines, for the next instruction
     for (int ln = 0; ln < lines.n; ln++)
     {
         char *text = lines.s[ln];
         if (dead[ln])
         {
-            size_t k = strlen(lab);
-            if (memchr(text, '@', mn_at[ln])) snprintf(lab + k, sizeof(lab) - k, "%.*s", mn_at[ln], text);
+            if (memchr(text, '@', mn_at[ln]))
+            {
+                char *l = xasprintf("%s%.*s", lab, mn_at[ln], text);
+                free(lab); lab = l;
+            }
             gone[ins_of[ln]] = 1;
             continue;
         }
         if (op_of[ln] >= 0 && lab[0]) { fputs(lab, f); lab[0] = 0; }
         fputs(text, f);
     }
+    free(lab);
     fclose(f);
 
     if (pc.n > 0)

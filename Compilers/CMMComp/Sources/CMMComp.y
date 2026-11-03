@@ -239,10 +239,10 @@ ini_num  :     INUM {ini_add(inum_word($1),1,0);}
          |     INUM '-' CNUM {ini_add(cnum_join(v_table[$1].name, 1, $3),3,0);}
          |     FNUM '+' CNUM {ini_add(cnum_join(v_table[$1].name, 0, $3),3,0);}
          |     FNUM '-' CNUM {ini_add(cnum_join(v_table[$1].name, 1, $3),3,0);}
-         | '-' INUM '+' CNUM {ini_add(cnum_join(neg_text($2), 0, $4),3,0);}
-         | '-' INUM '-' CNUM {ini_add(cnum_join(neg_text($2), 1, $4),3,0);}
-         | '-' FNUM '+' CNUM {ini_add(cnum_join(neg_text($2), 0, $4),3,0);}
-         | '-' FNUM '-' CNUM {ini_add(cnum_join(neg_text($2), 1, $4),3,0);}
+         | '-' INUM '+' CNUM {char *n = neg_text($2); ini_add(cnum_join(n, 0, $4),3,0); free(n);}
+         | '-' INUM '-' CNUM {char *n = neg_text($2); ini_add(cnum_join(n, 1, $4),3,0); free(n);}
+         | '-' FNUM '+' CNUM {char *n = neg_text($2); ini_add(cnum_join(n, 0, $4),3,0); free(n);}
+         | '-' FNUM '-' CNUM {char *n = neg_text($2); ini_add(cnum_join(n, 1, $4),3,0); free(n);}
          | '-' INUM {ini_add(inum_word($2),1,1);}
          | '-' FNUM {ini_add($2,2,1);}
 
@@ -569,7 +569,7 @@ int main(int argc, char *argv[])
     cli_args a;
     cli_parse(argc, argv, &a);      // parses the named options (or exits with usage)
 
-    snprintf(prname, sizeof(prname), "%s", a.name);   // the processor takes the source file's name
+    prname = a.name;                // the processor takes the source file's name
     parse_init(a.input, a.name, a.proc_dir, a.macros_dir, a.temp_dir,
                a.array_sim ? "1" : "0"); // initializes the parser and global variables
     yyparse   ();                       // here the magic happens!!
