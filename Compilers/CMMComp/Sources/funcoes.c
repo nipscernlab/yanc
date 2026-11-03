@@ -17,6 +17,8 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // global variable definitions ------------------------------------------------
@@ -61,8 +63,7 @@ static void args_grow_stack(int needed)
     if (needed <= arg_stack_cap) return;
     int new_cap = arg_stack_cap ? arg_stack_cap * 2 : 8;
     while (new_cap < needed) new_cap *= 2;
-    expr_node **t = realloc(arg_stack, (size_t)new_cap * sizeof(*t));
-    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    expr_node **t = xrealloc(arg_stack, (size_t)new_cap * sizeof(*t));
     arg_stack     = t;
     arg_stack_cap = new_cap;
 }
@@ -72,8 +73,7 @@ static void args_grow_marks(int needed)
     if (needed <= frame_marks_cap) return;
     int new_cap = frame_marks_cap ? frame_marks_cap * 2 : 8;
     while (new_cap < needed) new_cap *= 2;
-    int *t = realloc(frame_marks, (size_t)new_cap * sizeof(*t));
-    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    int *t = xrealloc(frame_marks, (size_t)new_cap * sizeof(*t));
     frame_marks     = t;
     frame_marks_cap = new_cap;
 }
@@ -96,7 +96,7 @@ static expr_node **args_frame_pop(int *n_out)
 {
     int mark = frame_marks[--frame_marks_n];
     int n    = arg_stack_n - mark;
-    expr_node **out = (n > 0) ? malloc((size_t)n * sizeof(*out)) : NULL;
+    expr_node **out = (n > 0) ? xmalloc((size_t)n * sizeof(*out)) : NULL;
     if (n > 0) memcpy(out, arg_stack + mark, (size_t)n * sizeof(*out));
     arg_stack_n = mark;
     *n_out = n;
@@ -142,7 +142,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", f2i, v_table[e.id].name);
     }
@@ -151,7 +151,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("F2I\n");
     }
@@ -160,7 +160,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 5))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -171,7 +171,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 3) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", f2i, v_table[e.id].name);
     }
@@ -180,7 +180,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 1) && (t_cal == 3) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2I_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -190,7 +190,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", i2f, v_table[e.id].name);
     }
@@ -199,7 +199,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("I2F\n");
     }
@@ -222,7 +222,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 5))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -233,7 +233,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 3) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", ld, v_table[e.id].name);
     }
@@ -242,7 +242,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 2) && (t_cal == 3) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_C2F_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("POP\n");
     }
@@ -251,7 +251,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 1) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", i2f, v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -261,7 +261,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 1) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_I2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
@@ -271,7 +271,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 2) && (e.id != 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("%s %s\n", ld, v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -281,7 +281,7 @@ void par_check(expr e, int k)
 
     if ((t_fun == 3) && (t_cal == 2) && (e.id == 0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
+        warn(MSG_WARN_CONV_F2C_PARAM, line_num+1, index, v_table[fun_id].name);
 
         add_instr("P_LOD 0.0\n");
     }
@@ -344,15 +344,13 @@ int declar_par(int type, int id)
 
     // store the data type of every parameter, in order
     symbol *f = &v_table[fun_parse];
-    f->ptyp = realloc(f->ptyp, (size_t)(f->npar+1) * sizeof(int));
-    if (!f->ptyp) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    f->ptyp = xrealloc(f->ptyp, (size_t)(f->npar+1) * sizeof(int));
     f->ptyp[f->npar++] = type;
 
     if (func_nparams == func_params_cap)
     {
         func_params_cap = func_params_cap ? func_params_cap*2 : 16;
-        func_params = realloc(func_params, (size_t)func_params_cap * sizeof(int));
-        if (!func_params) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        func_params = xrealloc(func_params, (size_t)func_params_cap * sizeof(int));
     }
     func_params[func_nparams++] = id;
 
@@ -364,7 +362,7 @@ void declar_ret(expr e, int ret)
 {
     // check whether it really is a function, or void by mistake
     if (v_table[fun_parse].type == 6)
-        {fprintf (stderr, MSG_ERR_VOID_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_VOID_RETURN_VALUE, line_num+1);
 
     // ------------------------------------------------------------------------
     // check every combination ------------------------------------------------
@@ -388,7 +386,7 @@ void declar_ret(expr e, int ret)
     // int with float var
     if ((left_type == 7) && (e.type == 2) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
+        warn(MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
 
         add_instr("F2I_M %s\n", v_table[e.id].name);
     }
@@ -396,14 +394,14 @@ void declar_ret(expr e, int ret)
     // int with float acc
     if ((left_type == 7) && (e.type == 2) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
+        warn(MSG_WARN_CONV_F2I_RETURN, line_num+1, v_table[fun_parse].name);
         add_instr("F2I\n");
     }
 
     // int with comp const
     if ((left_type == 7) && (e.type == 5))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -413,7 +411,7 @@ void declar_ret(expr e, int ret)
     // int with comp var
     if ((left_type == 7) && (e.type == 3) && (e.id!=0))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -423,7 +421,7 @@ void declar_ret(expr e, int ret)
     // int with comp acc
     if ((left_type == 7) && (e.type == 3) && (e.id==0))
     {
-        fprintf (stdout, MSG_WARN_ROUND_REAL, line_num+1);
+        warn(MSG_WARN_ROUND_REAL, line_num+1);
 
         add_instr("POP\n");
         add_instr("F2I\n");
@@ -432,7 +430,7 @@ void declar_ret(expr e, int ret)
     // float with int var
     if ((left_type == 8) && (e.type == 1) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
     }
@@ -440,7 +438,7 @@ void declar_ret(expr e, int ret)
     // float with int acc
     if ((left_type == 8) && (e.type == 1) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_FLOAT_RECV_INT, line_num+1);
 
         add_instr("I2F\n");
     }
@@ -460,7 +458,7 @@ void declar_ret(expr e, int ret)
     // float with comp const
     if ((left_type == 8) && (e.type == 5))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_cst(e,&etr,&eti);
 
@@ -470,7 +468,7 @@ void declar_ret(expr e, int ret)
     // float with comp var
     if ((left_type == 8) && (e.type == 3) && (e.id!=0))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         get_cmp_ets(e,&etr,&eti);
 
@@ -480,7 +478,7 @@ void declar_ret(expr e, int ret)
     // float with comp acc
     if ((left_type == 8) && (e.type == 3) && (e.id==0))
     {
-        fprintf (stdout, MSG_WARN_GRAB_REAL_ONLY, line_num+1);
+        warn(MSG_WARN_GRAB_REAL_ONLY, line_num+1);
 
         add_instr("POP\n");
     }
@@ -488,7 +486,7 @@ void declar_ret(expr e, int ret)
     // comp with int var
     if ((left_type == 9) && (e.type == 1) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_RET_COMP_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
         add_instr("I2F_M %s\n", v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -497,7 +495,7 @@ void declar_ret(expr e, int ret)
     // comp with int acc
     if ((left_type == 9) && (e.type == 1) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_RET_COMP_RECV_INT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_INT, line_num+1);
 
         add_instr("I2F\n");
         add_instr("P_LOD 0.0\n");
@@ -506,7 +504,7 @@ void declar_ret(expr e, int ret)
     // comp with float var
     if ((left_type == 9) && (e.type == 2) && (e.id!=0))
     {
-        fprintf(stdout, MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
         add_instr("LOD %s\n", v_table[e.id].name);
         add_instr("P_LOD 0.0\n");
@@ -515,7 +513,7 @@ void declar_ret(expr e, int ret)
     // comp with float acc
     if ((left_type == 9) && (e.type == 2) && (e.id==0))
     {
-        fprintf(stdout, MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
+        warn(MSG_WARN_RET_COMP_RECV_FLOAT, line_num+1);
 
         add_instr("P_LOD 0.0\n");
     }
@@ -572,8 +570,7 @@ void func_body_begin(void)
     int *params = NULL;
     if (func_nparams > 0)
     {
-        params = malloc(sizeof(int) * func_nparams);
-        if (!params) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        params = xmalloc(sizeof(int) * func_nparams);
         memcpy(params, func_params, sizeof(int) * func_nparams);
     }
     stmt_append(stmt_func_header(fun_parse, params, func_nparams));
@@ -600,7 +597,7 @@ void void_ret(void)
 {
     // check whether it really is void, or a non-void by mistake
     if (v_table[fun_parse].type != 6)
-        {fprintf (stderr, MSG_ERR_NO_RETURN_VALUE, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NO_RETURN_VALUE, line_num+1);
 
     // if main, jump to the @fim that the end of main emits, where the
     // testbench stops the simulation. With a #PRACA, return; waits in place
@@ -644,16 +641,14 @@ stmt_node *vcall(int id)
 {
     if  (v_table[id].type < 6)
     {
-        fprintf(stderr, MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_FUNC_WHERE, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
     if (n != v_table[id].npar)
     {
-        fprintf(stderr, MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     v_table[id].used = 1;
@@ -669,21 +664,18 @@ expr_node *fcall(int id)
 {
     if (v_table[id].type == 6)
     {
-        fprintf (stderr, MSG_ERR_VOID_FUNC_USE, line_num+1, v_table[id].name);
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_VOID_FUNC_USE, line_num+1, v_table[id].name);
     }
     else if (v_table[id].type < 6)
     {
-        fprintf (stderr, MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name, fname));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_FUNC_WHERE2, line_num+1, rem_fname(v_table[id].name, fname));
     }
 
     int n; expr_node **a = args_frame_pop(&n);
 
     if (n != v_table[id].npar)
     {
-        fprintf(stderr, MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_table[id].name);
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_table[id].name);
     }
 
     v_table[id].used = 1;
@@ -710,9 +702,9 @@ void fun_call_edge(int caller, int callee, int line)
     if (ce_n == ce_cap)
     {
         ce_cap  = ce_cap ? 2 * ce_cap : 64;
-        ce_from = realloc(ce_from, ce_cap * sizeof(int));
-        ce_to   = realloc(ce_to  , ce_cap * sizeof(int));
-        ce_line = realloc(ce_line, ce_cap * sizeof(int));
+        ce_from = xrealloc(ce_from, ce_cap * sizeof(int));
+        ce_to   = xrealloc(ce_to  , ce_cap * sizeof(int));
+        ce_line = xrealloc(ce_line, ce_cap * sizeof(int));
     }
     ce_from[ce_n] = caller; ce_to[ce_n] = callee; ce_line[ce_n] = line; ce_n++;
 }
@@ -735,8 +727,7 @@ static int rec_dfs(int f, char *state, int *path, int depth)
                 strncat(chain, " -> ", sizeof(chain) - strlen(chain) - 1);
             }
             strncat(chain, v_table[g].name, sizeof(chain) - strlen(chain) - 1);
-            fprintf(stderr, MSG_ERR_RECURSION, ce_line[k], v_table[g].name, chain);
-            exit(EXIT_FAILURE);
+            fatal(MSG_ERR_RECURSION, ce_line[k], v_table[g].name, chain);
         }
         if (state[g] == 0 && rec_dfs(g, state, path, depth + 1)) return 1;
     }
@@ -752,8 +743,8 @@ void check_rec(void)
         if (ce_from[k] > top) top = ce_from[k];
         if (ce_to[k]   > top) top = ce_to[k];
     }
-    char *state = calloc(top + 1, 1);
-    int  *path  = malloc((ce_n + 2) * sizeof(int));
+    char *state = xcalloc(top + 1, 1);
+    int  *path  = xmalloc((ce_n + 2) * sizeof(int));
     for (int k = 0; k < ce_n; k++)
         if (state[ce_from[k]] == 0) rec_dfs(ce_from[k], state, path, 0);
     free(state); free(path);

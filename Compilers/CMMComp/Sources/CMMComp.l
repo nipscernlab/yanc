@@ -6,6 +6,8 @@
 #include "../Headers/variaveis.h"
 #include "../Headers/data_declar.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,7 +45,7 @@ static void def_add(const char *name, char *body) {
         g_def[i].body = NULL;
     }
     free(g_def[i].body);
-    g_def[i].body = strdup(body);
+    g_def[i].body = xstrdup(body);
     g_def[i].active = 0;
 }
 
@@ -89,7 +91,7 @@ COMEN  "//"[^\n]*
  /* object-like #define NAME body -- recorded here, expanded at the {VARIA} rule */
 "#define"               BEGIN(DEFNAME);
 <DEFNAME>{WS}           ;
-<DEFNAME>{VARIA}        { if (yyleng > CMM_NAME_MAX) {fprintf(stderr, MSG_ERR_NAME_TOO_LONG, line_num+1, CMM_NAME_MAX); exit(EXIT_FAILURE);}
+<DEFNAME>{VARIA}        { if (yyleng > CMM_NAME_MAX) fatal(MSG_ERR_NAME_TOO_LONG, line_num+1, CMM_NAME_MAX);
                           snprintf(g_def_pending, sizeof g_def_pending, "%s", yytext); BEGIN(DEFBODY); }
 <DEFNAME>\n             { line_num++; BEGIN(INITIAL); }
 <DEFNAME>.              BEGIN(INITIAL);
@@ -231,7 +233,7 @@ COMEN  "//"[^\n]*
                 } else {
                     // `__` starts the compiler's own names in the .asm
                     if (yytext[0] == '_' && yytext[1] == '_')
-                        {fprintf(stderr, MSG_ERR_NAME_UNDERSCORES, line_num+1, yytext); exit(EXIT_FAILURE);}
+                        {fatal(MSG_ERR_NAME_UNDERSCORES, line_num+1, yytext);}
                     yylval.ival = exec_id(yytext);
                     return ID;
                 }

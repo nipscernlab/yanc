@@ -2,7 +2,7 @@
 // bilingual PT/EN support for cmmcomp messages -------------------------------
 // ----------------------------------------------------------------------------
 // usage:
-//   printf(MSG_XXX, args...);   or   fprintf(stderr, MSG_XXX, args...);
+//   warn(MSG_XXX, args...);   or   fatal(MSG_XXX, args...);   (diag.h)
 // to see both string versions, search for MSG_XXX below.
 // ----------------------------------------------------------------------------
 
@@ -27,10 +27,6 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_ERR_SYNTAX \
     M("Erro de sintaxe na linha %d. Você é uma pessoa confusa!\n", \
       "Syntax error on line %d. You're a confused soul!\n")
-
-#define MSG_ERR_OUT_OF_MEMORY \
-    M("Erro: memória insuficiente pra alocar a tabela de símbolos!\n", \
-      "Error: out of memory while growing the symbol table!\n")
 
 #define MSG_ERR_NO_MAIN \
     M("Erro: cadê a função main()?\n", \

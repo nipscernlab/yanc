@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <stddef.h>
 
+void *xmalloc  (size_t n);                           // malloc, or the tool ends
+void *xcalloc  (size_t n, size_t size);              // calloc (zeroed), or the tool ends
 void *xrealloc (void *p, size_t n);                  // realloc, or the tool ends
 char *xstrdup  (const char *s);                      // a copy of s
 char *xasprintf(const char *fmt, ...)                // the formatted text

@@ -41,6 +41,8 @@
 #include "../Headers/stdlib.h"
 #include "../Headers/messages.h"
 #include "../Headers/dirac.h"
+#include "../Headers/diag.h"
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // state ----------------------------------------------------------------------
@@ -111,31 +113,28 @@ static int *tmp_lines, *tmp_words, n_tmp_lines, cap_tmp_lines;
 // small helpers --------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-static void die(const char *fmt, int line) {fprintf(stderr, fmt, line); exit(EXIT_FAILURE);}
+static void die(const char *fmt, int line) {fatal(fmt, line);}
 
 // a table that grows: the capacity for need entries, and the table moved there
 static int next_cap(int cap, int need) {if (cap < 8) cap = 8; while (cap < need) cap *= 2; return cap;}
 
 static void *re(void *p, int cap, size_t sz)
 {
-    p = realloc(p, (size_t)cap * sz);
-    if (!p) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    p = xrealloc(p, (size_t)cap * sz);
     return p;
 }
 
 // a copy of sz bytes, to put a table back after a statement inside another
 static void *dup_mem(const void *p, size_t sz)
 {
-    void *q = malloc(sz ? sz : 1);
-    if (!q) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    void *q = xmalloc(sz ? sz : 1);
     if (sz) memcpy(q, p, sz);
     return q;
 }
 
 static expr_node *node_new(expr_kind k, int type)
 {
-    expr_node *n = calloc(1, sizeof(*n));
-    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    expr_node *n = xcalloc(1, sizeof(*n));
     n->kind = k;
     n->line = cur_line;
     n->type = type;
@@ -188,7 +187,7 @@ static void ix_add(dl_ix *ix, dl_pos p, int stride)
 static expr_node *elem_new(int arr, int type, dl_ix ix)
 {
     expr_node *n = node_new(EXPR_DIRAC_ELEM, type);
-    dl_elem *e = calloc(1, sizeof *e);
+    dl_elem *e = xcalloc(1, sizeof *e);
     e->arr = arr; e->ix = ix;
     n->dl = e;
     n->id = arr;
@@ -275,7 +274,7 @@ static expr_node *scalar_of(expr_node *n)
         if (*hoist_pre[j] == n) return expr_var(conv ? 2 : n->type, hoist_pre_v[j] & ~(1 << 30));
     int t = conv ? 2 : n->type;
     int v = scalar_var(t);
-    expr_node **slot = malloc(sizeof *slot);
+    expr_node **slot = xmalloc(sizeof *slot);
     *slot = n;
     hoist_pre_add(slot, v | (conv << 30));
     return expr_var(t, v);
@@ -336,7 +335,7 @@ static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top)
             int lv = new_loop(k - 1, 1);
             dl_pos p = {lv, 0};
             expr_node *s = node_new(EXPR_DIRAC_SUM, 0);
-            dl_sum *d = calloc(1, sizeof *d);
+            dl_sum *d = xcalloc(1, sizeof *d);
             d->lv = lv; d->first = first; d->src = n;
             d->body = build_op(OP_MUL, L, r, p, R, p, c);
             typecheck_expr(d->first);
@@ -419,7 +418,7 @@ static void hoist_inv(expr_node **slot, int *path, int np)
         for (int i = np - 1; i >= 0; i--) if (dep_on(n, path[i])) {at = path[i]; break;}
         typecheck_expr(n);
         int v = scalar_var(n->type);
-        expr_node **keep = malloc(sizeof *keep);
+        expr_node **keep = xmalloc(sizeof *keep);
         *keep = n;
         if (at < 0) hoist_pre_add(keep, v);
         else {
@@ -712,9 +711,8 @@ static int tmp_block(int words, int line)
     if (tmp_at > tmp_max) tmp_max = tmp_at;
     if (n_tmp_lines == cap_tmp_lines) {
         cap_tmp_lines = cap_tmp_lines ? 2 * cap_tmp_lines : 16;
-        tmp_lines = realloc(tmp_lines, cap_tmp_lines * sizeof *tmp_lines);
-        tmp_words = realloc(tmp_words, cap_tmp_lines * sizeof *tmp_words);
-        if (!tmp_lines || !tmp_words) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        tmp_lines = xrealloc(tmp_lines, cap_tmp_lines * sizeof *tmp_lines);
+        tmp_words = xrealloc(tmp_words, cap_tmp_lines * sizeof *tmp_words);
     }
     tmp_lines[n_tmp_lines] = line; tmp_words[n_tmp_lines++] = words;
     return at;
@@ -726,7 +724,7 @@ static void store(expr e, const dl_dst *d, long off)
     // a value in memory goes over the index, which is still in the acc; one
     // of another type is converted on the way, by the _M form
     if (d->type == 1 && e.type == 2)
-        fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
+        warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
     int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
     if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "P_I2F_M" : conv == 2 ? "P_F2I_M" : "P_LOD", v_table[e.id].name);
     else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
@@ -740,7 +738,7 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
         acc_ok = 0;
         expr e = ast_emit_expr(el);
         if (d->type == 1 && e.type == 2)
-            fprintf(stdout, MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
+            warn(MSG_WARN_INT_RECV_FLOAT, cur_line, rem_fname(v_table[d->arr].name, fname));
         int conv = (d->type == 2 && e.type == 1) ? 1 : (d->type == 1 && e.type == 2) ? 2 : 0;
         if (conv && e.id != 0) add_instr("%s %s\n", conv == 1 ? "I2F_M" : "F2I_M", v_table[e.id].name);
         else {
@@ -817,11 +815,11 @@ static expr_node *build_target(expr_node *r, int rows, int cols, int flat, int *
         expr_node copy = *p;
         int words = p->rows * p->cols;
         int off = tmp_block(words, line);
-        fprintf(stdout, MSG_INFO_DIRAC_TEMP_CHAIN, line, words);
+        warn(MSG_INFO_DIRAC_TEMP_CHAIN, line, words);
         dl_dst td = {0, tmp_id, 0, off, ctx_type, p->cols > 1 && p->rows > 1 ? p->cols : 0};
         emit_statement(&copy, &td, p->rows, p->cols, line);
 
-        dl_tmpref *tr = calloc(1, sizeof *tr); tr->off = off;
+        dl_tmpref *tr = xcalloc(1, sizeof *tr); tr->off = off;
         p->kind = EXPR_DIRAC_REF;
         p->op   = (p->cols == 1) ? DIRAC_ROLE_KET : (p->rows == 1) ? DIRAC_ROLE_BRA : DIRAC_ROLE_MAT;
         p->id   = tmp_id;
@@ -920,7 +918,7 @@ static void emit_statement(expr_node *r, const dl_dst *d0, int rows, int cols, i
     if (d.kind == 0 && d.arr != tmp_id && reads_elsewhere(el, d.arr, &six, 0)) {
         int words = rows * cols;
         int off = tmp_block(words, line);
-        fprintf(stdout, MSG_INFO_DIRAC_TEMP, line, rem_fname(v_table[d.arr].name, fname), words);
+        warn(MSG_INFO_DIRAC_TEMP, line, rem_fname(v_table[d.arr].name, fname), words);
         d.arr = tmp_id; d.base = off; d.type = ctx_type;
         copy_back = 1;
     }
@@ -1086,7 +1084,7 @@ void dirac_finish(const char *asm_file)
     if (tmp_max == 0) return;
 
     FILE *f = fopen(asm_file, "r");
-    if (!f) {fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, asm_file); exit(EXIT_FAILURE);}
+    if (!f) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
     char *text = NULL; size_t len = 0, cap = 0; char line[4096]; int done = 0;
     while (fgets(line, sizeof line, f)) {
         char add[128] = "";
@@ -1095,15 +1093,18 @@ void dirac_finish(const char *asm_file)
             done = 1;
         }
         size_t k = strlen(line), a = strlen(add);
-        if (len + k + a + 1 > cap) {cap = 2 * (len + k + a + 1); text = realloc(text, cap);}
+        if (len + k + a + 1 > cap) {cap = 2 * (len + k + a + 1); text = xrealloc(text, cap);}
         memcpy(text + len, line, k); len += k;
         memcpy(text + len, add, a);  len += a;
         text[len] = '\0';
     }
     fclose(f);
-    if ((f = fopen(asm_file, "w"))) {if (text) fputs(text, f); fclose(f);}
+    f = fopen(asm_file, "w");
+    if (!f) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
+    if (text) fputs(text, f);
+    fclose(f);
     free(text);
 
-    fprintf(stdout, MSG_INFO_DIRAC_TEMP_TOTAL, tmp_max);
-    for (int i = 0; i < n_tmp_lines; i++) fprintf(stdout, MSG_INFO_DIRAC_TEMP_LINE, tmp_lines[i], tmp_words[i]);
+    warn(MSG_INFO_DIRAC_TEMP_TOTAL, tmp_max);
+    for (int i = 0; i < n_tmp_lines; i++) warn(MSG_INFO_DIRAC_TEMP_LINE, tmp_lines[i], tmp_words[i]);
 }

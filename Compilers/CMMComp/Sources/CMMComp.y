@@ -77,6 +77,7 @@
 #include "../Headers/array_index.h" // array index handling
 #include "../Headers/messages.h"    // PT/EN bilingual support
 #include "../Headers/args.h"        // command-line argument parsing
+#include "../Headers/diag.h"        // fatal(): stop on an error
 #include "../../common/console_utf8.h" // UTF-8 messages on a Windows console
 
 // required flex/bison variables ----------------------------------------------
@@ -179,7 +180,7 @@ prog_elements : direct | declar | funcao
 
 // Compilation directives -----------------------------------------------------
 
-direct : PRNAME   ID   {fprintf(stderr, MSG_ERR_PRNAME_GONE, line_num+1); exit(EXIT_FAILURE);} // the name is the file's
+direct : PRNAME   ID   {fatal(MSG_ERR_PRNAME_GONE, line_num+1);} // the name is the file's
        | NUBITS unum   {dire_exec("#NUBITS",$2,11);} // ALU word width
        | NBMANT unum   {dire_exec("#NBMANT",$2, 3);} // mantissa width (bits)
        | NBEXPO unum   {dire_exec("#NBEXPO",$2, 4);} // exponent width (bits)
@@ -584,6 +585,5 @@ int main(int argc, char *argv[])
 void yyerror (char const *s)
 {
     if (yychar == DIMIN) inum_overflow();   // 128 at 8 bits, not after a minus
-    fprintf (stderr, MSG_ERR_SYNTAX, line_num+1);
-    exit(EXIT_FAILURE);
+    fatal(MSG_ERR_SYNTAX, line_num+1);
 }

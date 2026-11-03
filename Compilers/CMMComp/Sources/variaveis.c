@@ -18,6 +18,8 @@
 #include "../Headers/diretivas.h"
 #include "../Headers/messages.h"
 #include "../Headers/data_declar.h"
+#include "../Headers/diag.h"
+#include "../../common/xstr.h"
 #include "../../common/asm_share.h"
 #include "../../common/yanc_num.h"
 
@@ -42,8 +44,7 @@ static void var_grow(int needed)
     int new_cap = v_cap ? v_cap : 256;
     while (new_cap < needed) new_cap *= 2;
 
-    symbol *t = calloc((size_t)new_cap, sizeof(*t));
-    if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    symbol *t = xcalloc((size_t)new_cap, sizeof(*t));
     if (v_table) memcpy(t, v_table, (size_t)v_cap * sizeof(*t));
     v_table = t;
 
@@ -77,7 +78,7 @@ void add_var(char *var)
 // checks which variables and functions were used (at the end of the parse)
 void check_var(void)
 {
-    if (mainok == 0) {fprintf (stderr, MSG_ERR_NO_MAIN); exit(EXIT_FAILURE);}
+    if (mainok == 0) fatal(MSG_ERR_NO_MAIN);
 
     // walk the whole variable table
     for (int i = 0; i < v_count; i++)
@@ -93,17 +94,17 @@ void check_var(void)
             int fnid = v_table[i].fnid;
             int is_global = (fnid < 0) || (strcmp(v_table[fnid].name, "") == 0);
             if (is_global)
-                fprintf (stdout, MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
+                warn(MSG_WARN_UNUSED_GLOBAL_VAR, v_table[i].name, v_table[i].name);
             else
             {
                 char *name = rem_fname(v_table[i].name, v_table[fnid].name);
-                fprintf (stdout, MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[fnid].name, name);
+                warn(MSG_WARN_UNUSED_LOCAL_VAR, name, v_table[fnid].name, name);
             }
         }
 
         // check whether a function was declared but not used
         if (((v_table[i].type == 5) || (v_table[i].type == 6) || (v_table[i].type == 7)) && v_table[i].used == 0)
-            fprintf (stdout, MSG_WARN_UNUSED_FUNCTION, v_table[i].name);
+            warn(MSG_WARN_UNUSED_FUNCTION, v_table[i].name);
     }
 }
 
@@ -113,8 +114,8 @@ void check_var(void)
 void dire_wave(int id)
 {
     char *name = rem_fname(v_table[id].name, fname);
-    if (v_table[id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line_num+1, name); exit(EXIT_FAILURE);}
-    if (v_table[id].type > 3)  {fprintf(stderr, MSG_ERR_WAVE_NOT_VAR, line_num+1, name); exit(EXIT_FAILURE);}
+    if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST, line_num+1, name);
+    if (v_table[id].type > 3)  fatal(MSG_ERR_WAVE_NOT_VAR, line_num+1, name);
     v_table[id].wave = 1;
 }
 
@@ -166,8 +167,7 @@ static void name_owner(int id, char *out, size_t n)
 
 static void name_taken(const char *me, const char *as, const char *who)
 {
-    fprintf(stderr, MSG_ERR_NAME_TAKEN, line_num+1, me, as, who);
-    exit(EXIT_FAILURE);
+    fatal(MSG_ERR_NAME_TAKEN, line_num+1, me, as, who);
 }
 
 // called by every declaration (variable, array, parameter, function) on its
@@ -182,7 +182,7 @@ void check_name(int id, int is_fun)
         const char *why = strcmp(as, "fim"    ) == 0 ? MSG_NAME_FIM        :
                           strcmp(as, "global" ) == 0 ? MSG_NAME_GLOBAL_LOG :
                           strcmp(as, "num_ins") == 0 ? MSG_NAME_NUM_INS    : NULL;
-        if (why) {fprintf(stderr, MSG_ERR_NAME_RESERVED, line_num+1, as, why); exit(EXIT_FAILURE);}
+        if (why) fatal(MSG_ERR_NAME_RESERVED, line_num+1, as, why);
         snprintf(me, sizeof(me), MSG_NAME_FUNC, as);
     }
     else if (strcmp(fname, "") == 0) snprintf(me, sizeof(me), MSG_NAME_GLOBAL, as);
@@ -196,8 +196,7 @@ void check_name(int id, int is_fun)
     if (asm_is_mnemonic(as))
     {
         char q[600]; snprintf(q, sizeof(q), "'%s'", as);
-        fprintf(stderr, strstr(me, q) ? MSG_ERR_NAME_IS_MNEMONIC : MSG_ERR_NAME_MNEMONIC, line_num+1, me, as);
-        exit(EXIT_FAILURE);
+        fatal(strstr(me, q) ? MSG_ERR_NAME_IS_MNEMONIC : MSG_ERR_NAME_MNEMONIC, line_num+1, me, as);
     }
 
     if (v_table[id].type != 0)
@@ -205,8 +204,7 @@ void check_name(int id, int is_fun)
         int t = v_table[id].type;
         if (!is_fun && t < 6 && t != 4 && v_table[id].fnid == find_var(fname))
         {   // the same name declared twice in the same place
-            fprintf(stderr, MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as, fname));
-            exit(EXIT_FAILURE);
+            fatal(MSG_ERR_VAR_EXISTS, line_num+1, rem_fname(as, fname));
         }
         name_owner(id, who, sizeof(who));
         name_taken(me, as, who);
@@ -245,10 +243,10 @@ void check_name(int id, int is_fun)
 int exec_id(char *text)
 {
     if (strcmp(text,"i") == 0)
-        {fprintf (stderr, MSG_ERR_RESERVED_I, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_RESERVED_I, line_num+1);
 
     if ((int)strlen(text) > CMM_NAME_MAX)
-        {fprintf (stderr, MSG_ERR_NAME_TOO_LONG, line_num+1, CMM_NAME_MAX); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NAME_TOO_LONG, line_num+1, CMM_NAME_MAX);
 
     char var_name[sizeof fname + CMM_NAME_MAX + 2];
 
@@ -291,7 +289,7 @@ static unsigned long long inum_value(const char *text, int *base_out)
     {
         base = 8; p++;
         for (const char *q = p; isdigit((unsigned char)*q); q++)
-            if (*q > '7') {fprintf(stderr, MSG_ERR_OCTAL_DIGIT, line_num+1, text); exit(EXIT_FAILURE);}
+            if (*q > '7') fatal(MSG_ERR_OCTAL_DIGIT, line_num+1, text);
     }
     if (base_out) *base_out = base;
     errno = 0;
@@ -342,8 +340,7 @@ int inum_min_id(void)
 // a decimal int past the word (also a DIMIN anywhere but after a minus)
 void inum_overflow(void)
 {
-    fprintf (stderr, MSG_ERR_INT_MAX_OVERFLOW, line_num+1, (int)((1LL << (word_bits() - 1)) - 1));
-    exit(EXIT_FAILURE);
+    fatal(MSG_ERR_INT_MAX_OVERFLOW, line_num+1, (int)((1LL << (word_bits() - 1)) - 1));
 }
 
 // an int literal used as a value (an expression, a list between braces, a
@@ -361,7 +358,7 @@ int inum_word(int id)
 int arr_size(int id)
 {
     unsigned long long n = strtoull(v_table[id].name, NULL, 10), half = 1ULL << (word_bits() - 1);
-    if (n > half) fprintf (stdout, MSG_WARN_ARR_SIZE_WORD, line_num+1, (int)n, word_bits(), (int)(half - 1));
+    if (n > half) warn(MSG_WARN_ARR_SIZE_WORD, line_num+1, (int)n, word_bits(), (int)(half - 1));
     return id;
 }
 
@@ -444,17 +441,17 @@ int exec_fnum(char *text)
     double max = (pow(2,nbmant)-1) * pow(2, pow(2,nbexpo-1)-1);         // largest representable magnitude
     double min =                     pow(2,-pow(2,nbexpo-1));           // smallest representable magnitude
 
-    if (r.overflow)                {fprintf (stderr, MSG_ERR_FLOAT_MAX, line_num+1, max); exit(EXIT_FAILURE);}
-    if (r.underflow && !r.flushed) {fprintf (stderr, MSG_ERR_FLOAT_MIN, line_num+1, min); exit(EXIT_FAILURE);}
+    if (r.overflow)                fatal(MSG_ERR_FLOAT_MAX, line_num+1, max);
+    if (r.underflow && !r.flushed) fatal(MSG_ERR_FLOAT_MIN, line_num+1, min);
 
     // a nonzero constant flushed to zero (below the smallest normal number at
     // #FROUND >= 1) is not an approximation the user can shrug off: warn
     if (r.flushed)
-        printf(MSG_WARN_CONST_FLUSHED, line_num+1, text, pow(2,nbmant-1)*pow(2,-pow(2,nbexpo-1)), fround);
+        warn(MSG_WARN_CONST_FLUSHED, line_num+1, text, pow(2,nbmant-1)*pow(2,-pow(2,nbexpo-1)), fround);
     else if (r.inexact && !fnum_quiet)
     {
         double mf = ldexp((double)r.m, (int)r.e);
-        printf(MSG_INFO_CONST_APPROX, text, line_num+1, r.s ? -mf : mf, r.delta);
+        warn(MSG_INFO_CONST_APPROX, text, line_num+1, r.s ? -mf : mf, r.delta);
     }
 
     // add to the table -------------------------------------------------------

@@ -17,6 +17,7 @@
 #include "../Headers/data_assign.h"
 #include "../Headers/array_index.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
 
 // constant reduction into expr
 // does not emit a load, just updates the variable state
@@ -36,11 +37,11 @@ expr id2exp(int id)
 {
     // test whether the variable has already been declared
     if (v_table[id].type == 0)
-        {fprintf (stderr, MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_DECL_VAR_PROPERLY, line_num+1, rem_fname(v_table[id].name, fname));
 
     // if it is an array, the index is missing
     if (v_table[id].isar > 0)
-        {fprintf (stderr, MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_table[id].name, fname)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_MISSING_ARR_IDX, line_num+1, rem_fname(v_table[id].name, fname));
 
     v_table[id].used = 1;
 
@@ -51,7 +52,7 @@ expr id2exp(int id)
 expr pplus2exp(int id, int old)
 {
     if (v_table[id].type > 2)
-        {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_INCR_COMPLEX, line_num+1);
 
     // equivalent to taking x in the expression (x+1)
     expr e = id2exp(id);
@@ -93,7 +94,7 @@ expr pplus2exp(int id, int old)
 expr pplus1d2exp(int id, expr ete, int old)
 {
     if (v_table[id].type > 2)
-        {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_INCR_COMPLEX, line_num+1);
 
     // a live operand in the acc (e.g. the left side of `y + x[i]++`) goes to
     // the stack before the index load overwrites it; an index that is itself
@@ -136,7 +137,7 @@ expr pplus1d2exp(int id, expr ete, int old)
 expr pplus2d2exp(int id, expr e1, expr e2, int old)
 {
     if (v_table[id].type > 2)
-        {fprintf (stderr, MSG_ERR_INCR_COMPLEX, line_num+1); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_INCR_COMPLEX, line_num+1);
 
     // a live operand in the acc goes to the stack first (see 1-D)
     if (acc_ok == 1 && e1.id != 0 && e2.id != 0) add_instr("PSH\n");

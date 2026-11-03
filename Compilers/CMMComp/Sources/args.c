@@ -8,6 +8,8 @@
 
 #include "../Headers/args.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
+#include "../../common/xstr.h"
 #include "../../common/exe_dir.h"
 #include "../../common/proc_name.h"
 
@@ -75,12 +77,11 @@ void cli_parse(int argc, char **argv, cli_args *out)
         int bad = proc_name_problem(out->name);
         const char *why = bad == 1 ? MSG_PROC_NAME_CHARS   : bad == 2 ? MSG_PROC_NAME_DIGIT :
                           bad == 3 ? MSG_PROC_NAME_UNDERSC : MSG_PROC_NAME_KEYWORD;
-        if (bad) {fprintf(stderr, MSG_ERR_PROC_NAME, out->input, out->name, why); exit(EXIT_FAILURE);}
+        if (bad) fatal(MSG_ERR_PROC_NAME, out->input, out->name, why);
     }
     if (!out->proc_dir && out->name)
     {
-        out->proc_dir = malloc(strlen(out->name) + 3);
-        if (out->proc_dir) sprintf(out->proc_dir, "./%s", out->name);
+        out->proc_dir = xasprintf("./%s", out->name);
     }
     if (out->proc_dir) {make_dir(out->proc_dir); out->temp_dir = out->proc_dir;}
 
@@ -90,5 +91,5 @@ void cli_parse(int argc, char **argv, cli_args *out)
         cli_help(stderr);
         exit(EXIT_FAILURE);
     }
-    if (!out->macros_dir) {fprintf(stderr, MSG_ERR_NO_TOOL_DIR, "Macros"); exit(EXIT_FAILURE);}
+    if (!out->macros_dir) fatal(MSG_ERR_NO_TOOL_DIR, "Macros");
 }

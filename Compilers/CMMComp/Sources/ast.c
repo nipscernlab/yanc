@@ -23,8 +23,10 @@
 #include "../Headers/data_assign.h"
 #include "../Headers/data_declar.h"  // declar_arr_*_emit for STMT_DECLAR_* walker
 #include "../Headers/itr.h"
+#include "../Headers/diag.h"
 #include "../Headers/t2t.h"      // get_cmp_cst for complex cond loads
 #include "../Headers/dirac.h"    // the Dirac notation in loops
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // expressions ----------------------------------------------------------------
@@ -44,8 +46,7 @@ expr expr_make(int type, int id)
 
 static expr_node *enode_new(expr_kind k)
 {
-    expr_node *n = calloc(1, sizeof(*n));
-    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    expr_node *n = xcalloc(1, sizeof(*n));
     n->kind = k;
     n->line = line_num + 1;
     return n;
@@ -231,12 +232,12 @@ expr_node *dirac_close(expr_node *chain, int closed_by_ket)
 {
     expr_node *leaf[256];
     int k = dirac_leaves(chain, leaf, 0);
-    if (k > 256) {fprintf(stderr, MSG_ERR_SYNTAX, chain->line); exit(EXIT_FAILURE);}
+    if (k > 256) fatal(MSG_ERR_SYNTAX, chain->line);
     int opened_by_bra = (leaf[0]->op == -1);
 
     // ⟨a⟩ has no bar: neither an inner product nor a vector
     if (k == 1 && opened_by_bra && closed_by_ket)
-        {fprintf(stderr, MSG_ERR_SYNTAX, chain->line); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_SYNTAX, chain->line);
 
     for (int j = 0; j < k; j++) {
         if      (j == 0     && opened_by_bra) leaf[j]->op = DIRAC_ROLE_BRA;
@@ -271,9 +272,8 @@ expr_node *expr_dirac_in(int port)
 void dirac_not_vector(int id)
 {
     char *name = rem_fname(v_table[id].name, fname);
-    if (v_table[id].type == 0) fprintf(stderr, MSG_ERR_DECL_FIRST,   line_num + 1, name);
-    else                       fprintf(stderr, MSG_ERR_NOT_A_VECTOR, line_num + 1, name);
-    exit(EXIT_FAILURE);
+    if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST,   line_num + 1, name);
+    else                       fatal(MSG_ERR_NOT_A_VECTOR, line_num + 1, name);
 }
 
 void expr_free(expr_node *n)
@@ -573,8 +573,7 @@ static const char *shape_text(int rows, int cols, char *buf, size_t sz)
 static void shape_not_number(const expr_node *n)
 {
     char b[64];
-    fprintf(stderr, MSG_ERR_DIRAC_NOT_SCALAR, n->line, shape_text(n->rows, n->cols, b, sizeof b));
-    exit(EXIT_FAILURE);
+    fatal(MSG_ERR_DIRAC_NOT_SCALAR, n->line, shape_text(n->rows, n->cols, b, sizeof b));
 }
 
 void shapecheck_expr(expr_node *n)
@@ -593,13 +592,13 @@ void shapecheck_expr(expr_node *n)
         case EXPR_DIRAC_REF: {
             int id = n->id;
             char *name = rem_fname(v_table[id].name, fname);
-            if (v_table[id].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, n->line, name); exit(EXIT_FAILURE);}
+            if (v_table[id].type == 0) fatal(MSG_ERR_DECL_FIRST, n->line, name);
             if (n->op == DIRAC_ROLE_MAT) {
-                if (v_table[id].isar != 2) {fprintf(stderr, MSG_ERR_NOT_A_MATRIX, n->line, name); exit(EXIT_FAILURE);}
+                if (v_table[id].isar != 2) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
                 n->rows = v_table[id].size;
                 n->cols = v_table[id].siz2;
             } else {
-                if (v_table[id].isar != 1) {fprintf(stderr, MSG_ERR_NOT_A_VECTOR, n->line, name); exit(EXIT_FAILURE);}
+                if (v_table[id].isar != 1) fatal(MSG_ERR_NOT_A_VECTOR, n->line, name);
                 n->rows = (n->op == DIRAC_ROLE_KET) ? v_table[id].size : 1;
                 n->cols = (n->op == DIRAC_ROLE_KET) ? 1 : v_table[id].size;
             }
@@ -620,10 +619,9 @@ void shapecheck_expr(expr_node *n)
             if      (is_number(L)) {n->rows = R->rows; n->cols = R->cols;}
             else if (is_number(R)) {n->rows = L->rows; n->cols = L->cols;}
             else if (!dim_fits(L->cols, R->rows)) {
-                fprintf(stderr, MSG_ERR_DIRAC_PRODUCT_SHAPE, n->line,
-                        shape_text(L->rows, L->cols, b1, sizeof b1),
-                        shape_text(R->rows, R->cols, b2, sizeof b2));
-                exit(EXIT_FAILURE);
+                fatal(MSG_ERR_DIRAC_PRODUCT_SHAPE, n->line,
+                      shape_text(L->rows, L->cols, b1, sizeof b1),
+                      shape_text(R->rows, R->cols, b2, sizeof b2));
             }
             else {n->rows = L->rows; n->cols = R->cols;}
             return;
@@ -631,10 +629,9 @@ void shapecheck_expr(expr_node *n)
         case EXPR_BINOP:
             if ((n->op == OP_ADD || n->op == OP_SUB) && !(is_number(L) && is_number(R))) {
                 if (!dim_fits(L->rows, R->rows) || !dim_fits(L->cols, R->cols)) {
-                    fprintf(stderr, MSG_ERR_DIRAC_SUM_SHAPE, n->line,
-                            shape_text(L->rows, L->cols, b1, sizeof b1),
-                            shape_text(R->rows, R->cols, b2, sizeof b2));
-                    exit(EXIT_FAILURE);
+                    fatal(MSG_ERR_DIRAC_SUM_SHAPE, n->line,
+                          shape_text(L->rows, L->cols, b1, sizeof b1),
+                          shape_text(R->rows, R->cols, b2, sizeof b2));
                 }
                 n->rows = dim_pick(L->rows, R->rows);
                 n->cols = dim_pick(L->cols, R->cols);
@@ -757,8 +754,7 @@ static int comp_partwise(const expr_node *n, int *leaves)
 
 static expr_node *part_node(const expr_node *from)
 {
-    expr_node *n = malloc(sizeof *n);
-    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    expr_node *n = xmalloc(sizeof *n);
     *n = *from; n->emitted = 0; n->rows = 1; n->cols = 1;
     part_made[part_n++] = n;
     return n;
@@ -1317,9 +1313,8 @@ static expr ast_emit_expr_impl(expr_node *n)
         case EXPR_DIRAC_IN:
             break;
     }
-    fprintf(stderr, "ast_emit_expr: unhandled kind=%d op=%d at line %d\n",
-            n->kind, n->op, n->line);
-    exit(EXIT_FAILURE);
+    fatal("ast_emit_expr: unhandled kind=%d op=%d at line %d\n",
+          n->kind, n->op, n->line);
 }
 
 // ----------------------------------------------------------------------------
@@ -1333,8 +1328,7 @@ static expr ast_emit_expr_impl(expr_node *n)
 
 static stmt_node *snode_new(stmt_kind k)
 {
-    stmt_node *n = calloc(1, sizeof(*n));
-    if (!n) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+    stmt_node *n = xcalloc(1, sizeof(*n));
     n->kind = k;
     n->line = line_num + 1;
     return n;
@@ -1454,8 +1448,7 @@ void stmt_block_push(stmt_node *blk, stmt_node *kid)
     if (blk->kids_n + 1 > blk->kids_cap)
     {
         int new_cap = blk->kids_cap ? blk->kids_cap * 2 : 8;
-        stmt_node **t = realloc(blk->kids, (size_t)new_cap * sizeof(*t));
-        if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        stmt_node **t = xrealloc(blk->kids, (size_t)new_cap * sizeof(*t));
         blk->kids     = t;
         blk->kids_cap = new_cap;
     }
@@ -1471,8 +1464,7 @@ void stmt_list_open(void)
     if (stmt_list_stack_n + 1 > stmt_list_stack_cap)
     {
         int new_cap = stmt_list_stack_cap ? stmt_list_stack_cap * 2 : 8;
-        stmt_node **t = realloc(stmt_list_stack, (size_t)new_cap * sizeof(*t));
-        if (!t) {fprintf(stderr, MSG_ERR_OUT_OF_MEMORY); exit(EXIT_FAILURE);}
+        stmt_node **t = xrealloc(stmt_list_stack, (size_t)new_cap * sizeof(*t));
         stmt_list_stack     = t;
         stmt_list_stack_cap = new_cap;
     }
@@ -1649,7 +1641,7 @@ static int is_prod(const expr_node *n)
 static void dirac_check_target(int dst, expr_node *r, int line)
 {
     char *name = rem_fname(v_table[dst].name, fname);
-    if (v_table[dst].type == 0) {fprintf(stderr, MSG_ERR_DECL_FIRST, line, name); exit(EXIT_FAILURE);}
+    if (v_table[dst].type == 0) fatal(MSG_ERR_DECL_FIRST, line, name);
 
     int rows = 1, cols = 1, fits;
     if (v_table[dst].isar == 1) {
@@ -1662,10 +1654,9 @@ static void dirac_check_target(int dst, expr_node *r, int line)
 
     if (!fits) {
         char b1[64], b2[64];
-        fprintf(stderr, MSG_ERR_DIRAC_TARGET_SHAPE, line, name,
-                shape_text(rows, cols, b1, sizeof b1),
-                shape_text(r->rows, r->cols, b2, sizeof b2));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_DIRAC_TARGET_SHAPE, line, name,
+              shape_text(rows, cols, b1, sizeof b1),
+              shape_text(r->rows, r->cols, b2, sizeof b2));
     }
 }
 
@@ -1710,8 +1701,7 @@ static void dirac_out(stmt_node *n)
     }
     if (r->rows != 1 && r->cols != 1) {
         char b[64];
-        fprintf(stderr, MSG_ERR_DIRAC_OUT_MATRIX, n->line, shape_text(r->rows, r->cols, b, sizeof b));
-        exit(EXIT_FAILURE);
+        fatal(MSG_ERR_DIRAC_OUT_MATRIX, n->line, shape_text(r->rows, r->cols, b, sizeof b));
     }
     typecheck_expr(r);
     dirac_loops_out(n->id, r, n->op, n->line);
@@ -1750,11 +1740,11 @@ static void emit_cond_int_load(expr e, int is_switch)
     // index still converts (F2I, truncating).
     long mask = (1L << nbmant) - 1;
     if ((e.type == 2) && (e.id != 0)) {
-        if (is_switch) { fprintf(stdout, msg_float, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
+        if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
         else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("AND %ld\n", mask); }
     }
     if ((e.type == 2) && (e.id == 0)) {
-        if (is_switch) { fprintf(stdout, msg_float, line_num+1); add_instr("F2I\n"); }
+        if (is_switch) { warn(msg_float, line_num+1); add_instr("F2I\n"); }
         else           add_instr("AND %ld\n", mask);
     }
     // a comp condition is true when its real or its imaginary part is not
@@ -1762,15 +1752,15 @@ static void emit_cond_int_load(expr e, int is_switch)
     if (e.type == 5) {
         expr etr, eti;
         get_cmp_cst(e, &etr, &eti);
-        if (is_switch) { fprintf(stdout, msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[etr.id].name); }
+        if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[etr.id].name); }
         else           { add_instr("LOD %s\n", v_table[etr.id].name); add_instr("ORR %s\n", v_table[eti.id].name); add_instr("AND %ld\n", mask); }
     }
     if ((e.type == 3) && (e.id != 0)) {
-        if (is_switch) { fprintf(stdout, msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
+        if (is_switch) { warn(msg_comp, line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
         else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %ld\n", mask); }
     }
     if ((e.type == 3) && (e.id == 0)) {                    // the imag part in the acc, the real on the stack
-        if (is_switch) { fprintf(stdout, msg_comp, line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
+        if (is_switch) { warn(msg_comp, line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
         else           { add_instr("S_ORR\n"); add_instr("AND %ld\n", mask); }
     }
 }
@@ -2371,8 +2361,7 @@ void stmt_emit(stmt_node *n)
             // not void: no path may reach the end (the next function's code)
             if ((v_table[n->id].type != 6) && (ret_ok == 0 || falls_through(n->body)))
             {
-                fprintf(stderr, MSG_ERR_FUNC_NO_RETURN, v_table[n->id].name);
-                exit(EXIT_FAILURE);
+                fatal(MSG_ERR_FUNC_NO_RETURN, v_table[n->id].name);
             }
 
             if (strcmp(v_table[n->id].name, "main") == 0)

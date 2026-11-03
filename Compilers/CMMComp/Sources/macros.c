@@ -17,6 +17,7 @@
 #include "../Headers/diretivas.h"
 #include "../Headers/variaveis.h"
 #include "../Headers/messages.h"
+#include "../Headers/diag.h"
 
 // ----------------------------------------------------------------------------
 // helpers for generating predefined macros -----------------------------------
@@ -26,12 +27,12 @@
 static void fcat2end(char *n_read, char *n_write)
 {
     FILE *f_in  = fopen(n_read , "r");
-    if (f_in  == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, n_read);  exit(EXIT_FAILURE); }
+    if (f_in  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, n_read);
     FILE *f_out = fopen(n_write, "a");
-    if (f_out == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, n_write); exit(EXIT_FAILURE); }
+    if (f_out == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, n_write);
 
-    char a;
-    do {a = fgetc(f_in); if (a != EOF) fputc(a, f_out);} while (a != EOF);
+    int a;
+    while ((a = fgetc(f_in)) != EOF) fputc(a, f_out);
 
     fclose(f_in );
     fclose(f_out);
@@ -76,42 +77,42 @@ void mac_copy(char *fasm)
 
     if (fsqrt)
     {
-        printf(MSG_INFO_SQRT_MACRO);
+        warn(MSG_INFO_SQRT_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_sqrt.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fatan)
     {
-        printf(MSG_INFO_ATAN_MACRO);
+        warn(MSG_INFO_ATAN_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_atan.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fsin)
     {
-        printf(MSG_INFO_SIN_MACRO);
+        warn(MSG_INFO_SIN_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_sin.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (ftan)
     {
-        printf(MSG_INFO_TAN_MACRO);
+        warn(MSG_INFO_TAN_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_tan.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (fexp)
     {
-        printf(MSG_INFO_EXP_MACRO);
+        warn(MSG_INFO_EXP_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_exp.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
 
     if (flog)
     {
-        printf(MSG_INFO_LOG_MACRO);
+        warn(MSG_INFO_LOG_MACRO);
         snprintf(tasm, sizeof(tasm), "%s/float_log.asm", dir_macro);
         fcat2end(tasm,fasm);
     }
