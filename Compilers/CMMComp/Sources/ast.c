@@ -1517,7 +1517,7 @@ stmt_node *stmt_list_top(void)
 // compound control-flow constructors -----------------------------------------
 // ----------------------------------------------------------------------------
 
-// Each is made when its header is parsed (saltos.c); the bodies, the
+// Each is made when its header is parsed (control_flow.c); the bodies, the
 // do-while's condition and the switch's case count are filled in later, when
 // the parser reaches them, and start empty (snode_new zeroes the node)
 
@@ -1651,7 +1651,7 @@ stmt_node *stmt_func(int func_id, stmt_node *body)
 
 // Shared cond-to-int load used by STMT_IF / STMT_WHILE / STMT_SWITCH walker
 // cases. Mirrors the if_exp / while_expexp / exec_switch parse-time code from
-// the pre-fase-6 saltos.c. The flag selects between MSG_WARN_COND_* (if /
+// the pre-fase-6 control_flow.c. The flag selects between MSG_WARN_COND_* (if /
 // while) and MSG_WARN_CASE_* (switch) for the float / comp warnings.
 // ----------------------------------------------------------------------------
 // Dirac statements -----------------------------------------------------------

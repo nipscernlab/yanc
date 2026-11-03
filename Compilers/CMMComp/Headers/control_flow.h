@@ -2,8 +2,8 @@
 // routines for jump implementation -------------------------------------------
 // ----------------------------------------------------------------------------
 
-#ifndef CMM_SALTOS_H
-#define CMM_SALTOS_H
+#ifndef CMM_CONTROL_FLOW_H
+#define CMM_CONTROL_FLOW_H
 
 #include "ast.h"   // expr / expr_node / stmt_node
 
@@ -31,7 +31,7 @@ stmt_node *do_finish   (expr_node *cond);   // returns the STMT_DO
 // for ------------------------------------------------------------------------
 //
 // for (init; cond; step) body desugars to: init; while(cond) { body; step; }
-// for_init_set / for_step_set stash the init / step stmt_node in saltos.c
+// for_init_set / for_step_set stash the init / step stmt_node in control_flow.c
 // statics; for_open consumes them into the pending while's then_body /
 // else_body fields so nested fors don't trample each other.
 
@@ -49,4 +49,4 @@ stmt_node *end_switch  (void);                     // returns the STMT_SWITCH
 // break (in a loop OR a case) is built by exec_break above via the break-target
 // stack -- there is no separate switch_break entry point any more.
 
-#endif // CMM_SALTOS_H
+#endif // CMM_CONTROL_FLOW_H

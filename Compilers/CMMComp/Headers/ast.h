@@ -368,7 +368,7 @@ void       stmt_block_push(stmt_node *blk, stmt_node *kid);
 
 // Compound control-flow constructors (cond/body trees are owned). The bodies,
 // the do-while's condition and the switch's case count start empty: the
-// parser fills them in when it reaches them (saltos.c).
+// parser fills them in when it reaches them (control_flow.c).
 stmt_node *stmt_if          (int label, struct expr_node *cond);
 stmt_node *stmt_while       (int label, struct expr_node *cond);
 stmt_node *stmt_do          (int label);

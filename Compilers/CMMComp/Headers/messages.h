@@ -470,7 +470,7 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: lista de parâmetros da função '%s' difere da original.\n", \
       "Error on line %d: parameter list of function '%s' doesn't match the original.\n")
 
-// jump errors/warnings (saltos.c) -------------------------------------------
+// jump errors/warnings (control_flow.c) -------------------------------------------
 
 #define MSG_ERR_BREAK_LOST \
     M("Erro na linha %d: esse brake aí tá perdido!\n", \

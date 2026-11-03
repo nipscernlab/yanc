@@ -65,7 +65,7 @@
 #include "../Headers/itr.h"         // interrupt handling
 #include "../Headers/oper.h"        // ALU operations
 #include "../Headers/stdlib.h"      // SAPHO standard library
-#include "../Headers/saltos.h"      // jump management (if/else while)
+#include "../Headers/control_flow.h"      // jump management (if/else while)
 #include "../Headers/global.h"      // global variables and functions
 #include "../Headers/macros.h"      // assembler macros
 #include "../Headers/funcoes.h"     // function creation and usage
@@ -286,7 +286,7 @@ stmt_list: stmt_full | stmt_list stmt_full
 // Every statement that can be written inside a function. There is no separate
 // "statements allowed in a case" tier any more: a case body is an ordinary
 // stmt_list, and `break` binds to the innermost enclosing loop OR switch via
-// the break-target stack in saltos.c (see exec_break). That single change is
+// the break-target stack in control_flow.c (see exec_break). That single change is
 // what lets a switch nest inside a case, lets a `{ }` block live in a case, and
 // makes a `break` inside an if-in-a-case correctly exit the switch.
 stmt_full: '{' stmt_list '}' // statement block
@@ -411,7 +411,7 @@ do_intro    : DO                          {do_open();}
 //     while (cond) { body; step; }
 //
 // for_init_clause / for_step_clause stash their stmt_node into static state
-// in saltos.c (for_init_set / for_step_set). for_intro reads the cond and
+// in control_flow.c (for_init_set / for_step_set). for_intro reads the cond and
 // pulls the stashed init/step into the pending stmt_while's then_body /
 // else_body slots so nested fors can each carry their own. for_finish
 // closes the body block, appends step at its tail, attaches the body to
