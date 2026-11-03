@@ -46,6 +46,19 @@ static void lower_num_ins(const char *tmp_dir, int gone) {
     free(text);
 }
 
+/* The files of this processor in its output folder. A run that stops on an
+ * error, by msg_error's exit() or by a return from main, removes them (#94
+ * N): a compilation that failed leaves no .asm or table that a later step,
+ * or the user, could take for the result. */
+static char *out_files[4];
+static int   out_done = 0;
+
+static void remove_outputs(void)
+{
+    if (out_done) return;
+    for (int i = 0; i < 4; i++) if (out_files[i]) remove(out_files[i]);
+}
+
 extern int yyparse(void);
 extern struct yy_buffer_state *yy_scan_string(const char *text);   // flex
 extern unit *g_unit;
@@ -132,6 +145,15 @@ int main(int argc, char **argv)
     const char *tmp_dir = out_dir;
     char *outp = malloc(strlen(out_dir) + strlen(g_unit->prname) + 8);
     sprintf(outp, "%s/%s.asm", out_dir, g_unit->prname);
+    {
+        const char *fmt[4] = {"%s/%s.asm", "%s/pc_%s_mem.txt", "%s/prog_log.txt%.0s", "%s/src_lines.txt%.0s"};
+        for (int i = 0; i < 4; i++) {
+            size_t n = strlen(out_dir) + strlen(g_unit->prname) + 32;
+            out_files[i] = malloc(n);
+            snprintf(out_files[i], n, fmt[i], out_dir, g_unit->prname);
+        }
+        atexit(remove_outputs);
+    }
     FILE *fo = fopen(outp, "w");
     if (!fo) { fprintf(stderr, MSG_ERR_CANT_WRITE, outp); exit(1); }
 
@@ -177,5 +199,6 @@ int main(int argc, char **argv)
         fprintf(fl, "lang C++\n");       // the waveform's source track takes its name
         fclose(fl);
     }
+    out_done = 1;                        // compiled: what this run wrote stays
     return 0;
 }

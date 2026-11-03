@@ -339,9 +339,11 @@ tags consumed by Aurora.
   error found at the end of the parse, such as a program with no `main`,
   left the `.asm`, `prog_log.txt` and `pc_<name>_mem.txt` it had written in
   the output folder, where a later step could take them for the result.
-  Every error that stops cmmcomp now removes the files of that run. The
-  regression's negative phase checks that a rejected program leaves its
-  output folder empty.
+  Every error that stops cmmcomp now removes the files of that run;
+  cppcomp, which left them the same way (9 of its NegTests), removes its
+  `.asm`, `pc_<name>_mem.txt`, `prog_log.txt` and `src_lines.txt` on any
+  exit but a successful one. The regression's negative phases check that a
+  rejected program leaves its output folder empty, in C± and in C++.
 - **cmmcomp: a global named like the start of a function** (#94 A). A
   global `mainly` read as an array inside `main` was reported as `'y' ain't
   an array`: the function prefix was taken off without checking the `_`
